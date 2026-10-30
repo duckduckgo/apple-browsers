@@ -2,6 +2,24 @@
 // In your pixel definitions, you can reference these params by their key
 // See TEMPLATE.json for an example
 {
+    "compilation_wait_time": {
+        "key": "waitTime",
+        "type": "number",
+        "description": "Existing elapsed wait in seconds. Now includes both the Web Extension gate and the content-blocking gate, ending immediately on foreground interruption."
+    },
+    "web_extensions_wait_fraction": {
+        "key": "web_extensions_wait_fraction",
+        "type": "string",
+        "enum": ["0", "0.1", "0.25", "0.5", "0.75", "0.9", "1"],
+        "description": "Share spent waiting at the Web Extension gate, including bounded deadline release. Fraction of the total foreground setup interval, bucketed to the first inclusive upper bound. Zero when no time was spent at this gate. Fractions are independently bucketed; their labels must not be summed."
+    },
+    "content_blocking_wait_fraction": {
+        "key": "content_blocking_wait_fraction",
+        "type": "string",
+        "enum": ["0", "0.1", "0.25", "0.5", "0.75", "0.9", "1"],
+        "description": "Share spent waiting for installed content-blocking assets, including geolocation when required and accumulated across readiness retries. Fraction of the total foreground setup interval, bucketed to the first inclusive upper bound. Zero when no time was spent at this gate. Fractions are independently bucketed; their labels must not be summed."
+    },
+
     "promptDaysSinceInstall": {
         "key": "days_since_install",
         "type": "string",

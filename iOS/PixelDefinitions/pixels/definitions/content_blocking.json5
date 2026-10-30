@@ -5,5 +5,47 @@
         "triggers": ["other"],
         "suffixes": ["daily_count", "platform", "form_factor"],
         "parameters": ["appVersion"]
+    },
+    "m_compilation_result_success_time": {
+        "description": "Reports the first foreground main-frame HTTP(S) setup attempt once per process. Historically the compilation-result metric measured only rules waiting; it now includes the preceding extension gate in one elapsed interval. Compare app versions separately across this measurement change. Parallel preparation is not summed. Fractions describe sequential navigation waits, not preparation duration. Subframes and non-HTTP(S) navigations do not consume the sample. Both setup gates released navigation. Includes a bounded extension-gate deadline; it does not prove extension readiness, CPM delivery or successful page load. No asynchronous gate wait reports time_0.",
+        "owners": ["mallexxx"],
+        "triggers": ["feature_lifecycle"],
+        "suffixes": ["time_bucket", "compilation_state", "platform", "form_factor"],
+        "parameters": ["appVersion", "compilation_wait_time", "web_extensions_wait_fraction", "content_blocking_wait_fraction"]
+    },
+    "m_compilation_result_cancelled_time": {
+        "description": "Reports the first foreground main-frame HTTP(S) setup attempt once per process. Historically the compilation-result metric measured only rules waiting; it now includes the preceding extension gate in one elapsed interval. Compare app versions separately across this measurement change. Parallel preparation is not summed. Fractions describe sequential navigation waits, not preparation duration. Subframes and non-HTTP(S) navigations do not consume the sample. The setup attempt was stopped, superseded, intercepted by policy or otherwise cancelled before release. Reports the partial wait once; a stale completion cannot report success.",
+        "owners": ["mallexxx"],
+        "triggers": ["user_interaction", "feature_lifecycle", "exception"],
+        "suffixes": ["time_bucket", "compilation_state", "platform", "form_factor"],
+        "parameters": ["appVersion", "compilation_wait_time", "web_extensions_wait_fraction", "content_blocking_wait_fraction"]
+    },
+    "m_compilation_result_timeout_time": {
+        "description": "Reports the first foreground main-frame HTTP(S) setup attempt once per process. Historically the compilation-result metric measured only rules waiting; it now includes the preceding extension gate in one elapsed interval. Compare app versions separately across this measurement change. Parallel preparation is not summed. Fractions describe sequential navigation waits, not preparation duration. Subframes and non-HTTP(S) navigations do not consume the sample. The content-blocking/site-permissions readiness deadline expired before assets became ready. Reports the partial wait before error-page cancellation; extension deadline release remains success.",
+        "owners": ["mallexxx"],
+        "triggers": ["exception"],
+        "suffixes": ["time_bucket", "compilation_state", "platform", "form_factor"],
+        "parameters": ["appVersion", "compilation_wait_time", "web_extensions_wait_fraction", "content_blocking_wait_fraction"]
+    },
+    "m_compilation_result_tab_closed_time": {
+        "description": "Reports the first foreground main-frame HTTP(S) setup attempt once per process. Historically the compilation-result metric measured only rules waiting; it now includes the preceding extension gate in one elapsed interval. Compare app versions separately across this measurement change. Parallel preparation is not summed. Fractions describe sequential navigation waits, not preparation duration. Subframes and non-HTTP(S) navigations do not consume the sample. The tab closed before setup released navigation. Reports the partial wait once.",
+        "owners": ["mallexxx"],
+        "triggers": ["user_interaction", "feature_lifecycle"],
+        "suffixes": ["time_bucket", "compilation_state", "platform", "form_factor"],
+        "parameters": ["appVersion", "compilation_wait_time", "web_extensions_wait_fraction", "content_blocking_wait_fraction"]
+    },
+    "m_compilation_result_app_quit_time": {
+        "description": "Reports the first foreground main-frame HTTP(S) setup attempt once per process. Historically the compilation-result metric measured only rules waiting; it now includes the preceding extension gate in one elapsed interval. Compare app versions separately across this measurement change. Parallel preparation is not summed. Fractions describe sequential navigation waits, not preparation duration. Subframes and non-HTTP(S) navigations do not consume the sample. The app is terminating before setup released navigation. Reports the partial wait once.",
+        "owners": ["mallexxx"],
+        "triggers": ["feature_lifecycle"],
+        "suffixes": ["time_bucket", "compilation_state", "platform", "form_factor"],
+        "parameters": ["appVersion", "compilation_wait_time", "web_extensions_wait_fraction", "content_blocking_wait_fraction"]
+    },
+    "m_compilation_result_app_backgrounded_time": {
+        "description": "Reports the first foreground main-frame HTTP(S) setup attempt once per process. Historically the compilation-result metric measured only rules waiting; it now includes the preceding extension gate in one elapsed interval. Compare app versions separately across this measurement change. Parallel preparation is not summed. Fractions describe sequential navigation waits, not preparation duration. Subframes and non-HTTP(S) navigations do not consume the sample. The app entered background before setup released navigation. Ends the sample immediately so suspended time and later completion are not included.",
+        "owners": ["mallexxx"],
+        "triggers": ["feature_lifecycle"],
+        "suffixes": ["time_bucket", "compilation_state", "platform", "form_factor"],
+        "parameters": ["appVersion", "compilation_wait_time", "web_extensions_wait_fraction", "content_blocking_wait_fraction"]
     }
 }

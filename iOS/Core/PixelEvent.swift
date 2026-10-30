@@ -4082,6 +4082,9 @@ extension Pixel.Event {
         case tabClosed = "tab_closed"
         case appQuit = "app_quit"
         case appBackgrounded = "app_backgrounded"
+        case cancelled
+        /// Content-blocking readiness timed out; this is not a network or page-load timeout.
+        case timeout
         case success
         
     }

@@ -24,6 +24,9 @@ public enum iOSBrowserConfigSubfeature: String, PrivacySubfeature {
         .iOSBrowserConfig
     }
 
+    /// https://app.asana.com/1/137249556945/task/1219972523893967
+    case ipadMenuBar
+
     // Demonstrative case for default value. Remove once a real-world feature is added
     case intentionallyLocalOnlySubfeatureForTests
 

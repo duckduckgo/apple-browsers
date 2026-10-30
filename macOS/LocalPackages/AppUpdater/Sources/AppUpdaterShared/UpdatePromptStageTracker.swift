@@ -18,11 +18,12 @@
 
 import AppKit
 import Combine
+import ConcurrencyExtensions
 import Foundation
 import Persistence
 
 /// How far along the prompt ramp a user who hasn't updated is.
-public enum UpdatePromptStage: Int, Comparable, CaseIterable {
+public enum UpdatePromptStage: Int, Comparable, CaseIterable, Sendable {
     case none
     case available
     case firstPrompt
@@ -37,10 +38,10 @@ public enum UpdatePromptStage: Int, Comparable, CaseIterable {
 ///
 /// The clock survives relaunches and newer releases, and is cleared when the installed version changes
 /// or a check no longer finds an update. Critical updates go straight to `.secondPrompt`.
-/// Used from the main thread.
+@MainActor
 public final class UpdatePromptStageTracker {
 
-    public typealias Scheduler = (_ delay: TimeInterval, _ action: @escaping () -> Void) -> AnyCancellable
+    public typealias Scheduler = (_ delay: TimeInterval, _ action: @escaping @MainActor @Sendable () -> Void) -> AnyCancellable
 
     @Published public private(set) var stage: UpdatePromptStage = .none
 
@@ -77,7 +78,9 @@ public final class UpdatePromptStageTracker {
         }
 
         reevaluationTriggerCancellable = reevaluationTriggers.sink { [weak self] in
-            self?.reevaluate()
+            DispatchQueue.main.asyncOrNow {
+                self?.reevaluate()
+            }
         }
     }
 
@@ -153,13 +156,17 @@ public final class UpdatePromptStageTracker {
 
 public extension UpdatePromptStageTracker {
 
-    static let scheduleOnMainRunLoop: Scheduler = { delay, action in
-        let timer = Timer(timeInterval: delay, repeats: false) { _ in action() }
+    nonisolated static func scheduleOnMainRunLoop(_ delay: TimeInterval, _ action: @escaping @MainActor @Sendable () -> Void) -> AnyCancellable {
+        let timer = Timer(timeInterval: delay, repeats: false) { _ in
+            MainActor.assumeIsolated {
+                action()
+            }
+        }
         RunLoop.main.add(timer, forMode: .common)
         return AnyCancellable { timer.invalidate() }
     }
 
-    static var didBecomeActive: AnyPublisher<Void, Never> {
+    nonisolated static var didBecomeActive: AnyPublisher<Void, Never> {
         NotificationCenter.default.publisher(for: NSApplication.didBecomeActiveNotification)
             .map { _ in }
             .eraseToAnyPublisher()

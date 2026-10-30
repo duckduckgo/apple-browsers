@@ -23,6 +23,7 @@ import FoundationExtensions
 @_spi(Testing) import Persistence
 import Testing
 
+@MainActor
 @Suite("UpdatePromptStageTracker")
 final class UpdatePromptStageTrackerTests {
 
@@ -33,7 +34,7 @@ final class UpdatePromptStageTrackerTests {
     private var scheduled: (delay: TimeInterval, action: () -> Void)?
     private let becomeActive = PassthroughSubject<Void, Never>()
 
-    private func makeTracker(installedVersion: String = "1.0.0 (100)") -> UpdatePromptStageTracker {
+    private func makeTracker(installedVersion: String = "1.0.0 (100)", reevaluationTriggers: AnyPublisher<Void, Never>? = nil) -> UpdatePromptStageTracker {
         UpdatePromptStageTracker(store: store,
                                  settings: { [settings] in settings },
                                  installedVersion: installedVersion,
@@ -42,7 +43,7 @@ final class UpdatePromptStageTrackerTests {
                                      scheduled = (delay, action)
                                      return AnyCancellable { [unowned self] in scheduled = nil }
                                  },
-                                 reevaluationTriggers: becomeActive.eraseToAnyPublisher())
+                                 reevaluationTriggers: reevaluationTriggers ?? becomeActive.eraseToAnyPublisher())
     }
 
     private func advance(by interval: TimeInterval) {
@@ -192,6 +193,20 @@ final class UpdatePromptStageTrackerTests {
 
         advance(by: .hours(97))
         becomeActive.send()
+
+        #expect(tracker.stage == .secondPrompt)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("A trigger sent from a background thread re-evaluates on the main thread", .timeLimit(.minutes(1)))
+    func backgroundTriggerReevaluatesOnMain() async {
+        let tracker = makeTracker(reevaluationTriggers: becomeActive.receive(on: DispatchQueue.global()).eraseToAnyPublisher())
+        tracker.updateCheckDidFinish(isUpdateAvailable: true, isCritical: false)
+        advance(by: .hours(97))
+        let reachedSecondPrompt = tracker.$stage.first { $0 == .secondPrompt }.values
+
+        becomeActive.send()
+        for await _ in reachedSecondPrompt {}
 
         #expect(tracker.stage == .secondPrompt)
     }

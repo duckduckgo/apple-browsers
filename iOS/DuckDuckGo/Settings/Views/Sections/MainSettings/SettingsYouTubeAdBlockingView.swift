@@ -17,6 +17,7 @@
 //  limitations under the License.
 //
 
+import BrowserServicesKit
 import Core
 import SwiftUI
 import DesignResourcesKit
@@ -74,6 +75,19 @@ struct SettingsYouTubeAdBlockingView: View {
                     Section(header: Text(UserText.adBlockingYouTubeSectionHeader),
                             footer: Text(footerAttributedString)) {
                         adBlockingToggleCell
+                    }
+                }
+            }
+
+            if viewModel.isSponsorBlockAvailable {
+                Section(header: Text(verbatim: SponsorBlockCopy.sectionHeader),
+                        footer: Text(verbatim: SponsorBlockCopy.footer)) {
+                    SettingsCellView(label: SponsorBlockCopy.toggle,
+                                     accessory: .toggle(isOn: viewModel.sponsorBlockEnabled))
+                    if viewModel.sponsorBlockEnabled.wrappedValue {
+                        SettingsPickerCellView(label: SponsorBlockCopy.skipModeLabel,
+                                               options: SponsorBlockSkipMode.allCases,
+                                               selectedOption: viewModel.sponsorBlockSkipMode)
                     }
                 }
             }
@@ -142,6 +156,25 @@ struct SettingsYouTubeAdBlockingView: View {
         link.link = Self.learnMoreURL
         base.append(link)
         return base
+    }
+}
+
+// ponytail: untranslated PoC copy; move to UserText and Localizable.strings before any external release.
+private enum SponsorBlockCopy {
+    static let sectionHeader = "Sponsor Segments"
+    static let toggle = "Skip Sponsor Segments"
+    static let footer = "Marks sponsored segments on the video progress bar. Manual mode shows a Skip button, Automatic mode skips them for you."
+    static let skipModeLabel = "Skip Mode"
+    static let manual = "Manual"
+    static let auto = "Automatic"
+}
+
+extension SponsorBlockSkipMode: @retroactive CustomStringConvertible {
+    public var description: String {
+        switch self {
+        case .manual: SponsorBlockCopy.manual
+        case .auto: SponsorBlockCopy.auto
+        }
     }
 }
 

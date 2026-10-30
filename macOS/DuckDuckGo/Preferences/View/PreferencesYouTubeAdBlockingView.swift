@@ -16,6 +16,7 @@
 //  limitations under the License.
 //
 
+import BrowserServicesKit
 import PreferencesUI_macOS
  import PixelKit
 import SwiftUI
@@ -146,6 +147,28 @@ extension Preferences {
                     }
                 }
 
+                if model.isSponsorBlockAvailable {
+                    PreferencePaneSection(SponsorBlockCopy.sectionHeader) {
+                        TextMenuItemCaption(SponsorBlockCopy.explanation)
+
+                        Spacer().frame(height: 4)
+
+                        ToggleMenuItem(SponsorBlockCopy.toggle, isOn: $model.sponsorBlockEnabled)
+                            .accessibilityIdentifier("Preferences.SponsorBlock.enabledToggle")
+
+                        if model.sponsorBlockEnabled {
+                            Picker(SponsorBlockCopy.skipModeLabel, selection: $model.sponsorBlockSkipMode) {
+                                Text(verbatim: SponsorBlockCopy.manual).tag(SponsorBlockSkipMode.manual)
+                                Text(verbatim: SponsorBlockCopy.auto).tag(SponsorBlockSkipMode.auto)
+                            }
+                            .pickerStyle(.menu)
+                            .fixedSize()
+                            .padding(.leading, 19)
+                            .accessibilityIdentifier("Preferences.SponsorBlock.skipModePicker")
+                        }
+                    }
+                }
+
                 // Duck Player Section
                 PreferencePaneSection(UserText.duckPlayer) {
                     TextMenuItemCaption(UserText.duckPlayerYouTubeAdBlockingExplanation)
@@ -191,6 +214,16 @@ extension Preferences {
             }
         }
     }
+}
+
+// ponytail: untranslated PoC copy; move to UserText before any external release.
+private enum SponsorBlockCopy {
+    static let sectionHeader = "Sponsor Segments"
+    static let toggle = "Skip sponsor segments"
+    static let explanation = "Marks sponsored segments on the video progress bar. Manual mode shows a Skip button, Automatic mode skips them for you."
+    static let skipModeLabel = "Skip mode:"
+    static let manual = "Manual"
+    static let auto = "Automatic"
 }
 
 /// "YouTube Ad Block Unavailable" notice shown in the Preferences pane when the feature is

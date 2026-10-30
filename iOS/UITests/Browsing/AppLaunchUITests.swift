@@ -23,7 +23,7 @@ import UITestingSupport
 final class AppLaunchUITests: UITestCase {
 
     func testAppLaunchesIntoBrowser() {
-        let searchEntry = app.descendants(matching: .any)["searchEntry"]
+        let searchEntry = app.searchEntry
 
         XCTAssertTrue(
             searchEntry.waitForExistence(timeout: UITestTimeouts.navigation),

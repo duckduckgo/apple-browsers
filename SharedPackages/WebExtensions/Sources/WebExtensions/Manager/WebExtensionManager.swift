@@ -190,6 +190,8 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
     private var embeddedBackgroundStartupCompletion: AsyncStream<Void>.Continuation?
     private var isCPMMessagingRecoveryInProgress = false
     private var lastBackgroundLoadRecoveryAt: Date?
+    private let backgroundLoadRecoveryCooldown: TimeInterval
+    private var backgroundLoadRecoveryCooldownTask: Task<Void, Never>?
     private struct BackgroundLoadRecoveryAttempt {
         weak var context: WKWebExtensionContext?
         weak var failedView: WKWebView?
@@ -246,6 +248,7 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
                 cpmNetworkProcessRecoveryFeatureFlagUpdates: AnyPublisher<Void, Never>? = nil,
                 isCPMBackgroundLoadRecoveryEnabled: @escaping @MainActor () -> Bool = { true },
                 isCPMBackgroundLoadRestartEnabled: @escaping @MainActor () -> Bool = { false },
+                backgroundLoadRecoveryCooldown: TimeInterval = 60,
                 isApplicationInBackground: @escaping @MainActor () -> Bool = { false },
                 isCPMLateBackgroundDocumentRecoveryEnabled: @escaping @MainActor () -> Bool = { false },
                 isCPMStableBaseURLEnabled: @escaping @MainActor () -> Bool = { false },
@@ -312,6 +315,7 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
         )
         self.isCPMBackgroundLoadRecoveryEnabled = isCPMBackgroundLoadRecoveryEnabled
         self.isCPMBackgroundLoadRestartEnabled = isCPMBackgroundLoadRestartEnabled
+        self.backgroundLoadRecoveryCooldown = backgroundLoadRecoveryCooldown
         self.isApplicationInBackground = isApplicationInBackground
         self.messageRouter = messageRouter ?? WebExtensionMessageRouter()
         self.handlerProvider = handlerProvider
@@ -452,6 +456,7 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
     }
 
     deinit {
+        backgroundLoadRecoveryCooldownTask?.cancel()
         if let backgroundLoadErrorObserver {
             NotificationCenter.default.removeObserver(backgroundLoadErrorObserver)
         }
@@ -1073,7 +1078,7 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
     private func resumePendingBackgroundLoadRecovery() {
         guard !isApplicationInBackground(), !isBackgroundLoadRecoveryScheduled,
               let attempt = pendingBackgroundLoadRecovery else { return }
-        // Consume once; repeated foreground notifications must not replay a historical failure.
+        // Scheduling consumes invalid attempts, but preserves failures still waiting for cooldown.
         pendingBackgroundLoadRecovery = nil
         _ = scheduleBackgroundLoadRecovery(attempt)
     }
@@ -1086,7 +1091,16 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
             pendingBackgroundLoadRecovery = attempt
             return false
         }
-        guard lastBackgroundLoadRecoveryAt.map({ now().timeIntervalSince($0) >= 60 }) ?? true else { return false }
+        let remainingCooldown = lastBackgroundLoadRecoveryAt.map {
+            backgroundLoadRecoveryCooldown - now().timeIntervalSince($0)
+        } ?? 0
+        guard remainingCooldown <= 0 else {
+            pendingBackgroundLoadRecovery = attempt
+            scheduleBackgroundLoadRecoveryAfterCooldown(remainingCooldown)
+            return false
+        }
+        backgroundLoadRecoveryCooldownTask?.cancel()
+        backgroundLoadRecoveryCooldownTask = nil
         pendingBackgroundLoadRecovery = nil
         isBackgroundLoadRecoveryScheduled = true
         Task { @MainActor [weak self] in
@@ -1118,6 +1132,23 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
             await self.loadEmbeddedExtensionBackgroundContent(in: context)
         }
         return true
+    }
+
+    @MainActor
+    private func scheduleBackgroundLoadRecoveryAfterCooldown(_ delay: TimeInterval) {
+        guard backgroundLoadRecoveryCooldownTask == nil else { return }
+        backgroundLoadRecoveryCooldownTask = Task { @MainActor [weak self] in
+            do {
+                try await Task.sleep(for: .seconds(delay))
+            } catch {
+                return
+            }
+            guard !Task.isCancelled, let self else { return }
+            self.backgroundLoadRecoveryCooldownTask = nil
+            // If expiry happens in background, keep the attempt for the next recovery-ready event.
+            // Otherwise scheduling rechecks its context, view, runtime flags and cooldown.
+            self.resumePendingBackgroundLoadRecovery()
+        }
     }
 
     @MainActor
@@ -1568,6 +1599,9 @@ extension WebExtensionManager: WKWebExtensionControllerDelegate {
                                        forExtensionContext extensionContext: WKWebExtensionContext) {
         guard extensionContext.webExtension.duckDuckGoWebExtensionType == .embedded else { return }
         MainActor.assumeIsolated {
+            // WebKit clears background-load errors just after this callback. Reset this view's history
+            // now: delayed clear/add notifications may both see an equal error from the new view.
+            observedBackgroundLoadErrors.removeObject(forKey: extensionContext)
             cpmNetworkProcessRecovery.watch(webView, identifier: extensionContext.uniqueIdentifier) { [weak controller, weak extensionContext, weak webView] in
                 guard let extensionContext, let webView,
                       controller?.extensionContexts.contains(extensionContext) == true,

@@ -108,6 +108,7 @@ final class WebExtensionManagerTests: XCTestCase {
                              isCPMMessagingHangRecoveryEnabled: @escaping @MainActor () -> Bool = { true },
                              isCPMBackgroundLoadRecoveryEnabled: @escaping @MainActor () -> Bool = { true },
                              isCPMBackgroundLoadRestartEnabled: @escaping @MainActor () -> Bool = { false },
+                             backgroundLoadRecoveryCooldown: TimeInterval = 60,
                              isCPMStableBaseURLEnabled: @escaping @MainActor () -> Bool = { false },
                              isCPMLateBackgroundDocumentRecoveryEnabled: @escaping @MainActor () -> Bool = { false },
                              isApplicationInBackground: @escaping @MainActor () -> Bool = { false },
@@ -130,6 +131,7 @@ final class WebExtensionManagerTests: XCTestCase {
             isCPMMessagingHangRecoveryEnabled: isCPMMessagingHangRecoveryEnabled,
             isCPMBackgroundLoadRecoveryEnabled: isCPMBackgroundLoadRecoveryEnabled,
             isCPMBackgroundLoadRestartEnabled: isCPMBackgroundLoadRestartEnabled,
+            backgroundLoadRecoveryCooldown: backgroundLoadRecoveryCooldown,
             isApplicationInBackground: isApplicationInBackground,
             isCPMLateBackgroundDocumentRecoveryEnabled: isCPMLateBackgroundDocumentRecoveryEnabled,
             isCPMStableBaseURLEnabled: isCPMStableBaseURLEnabled,
@@ -706,6 +708,152 @@ final class WebExtensionManagerTests: XCTestCase {
         await fulfillment(of: [disturbed], timeout: 0.1)
         XCTAssertFalse(webExtensionLoadingMock.unloadExtensionCalled)
         XCTAssertTrue(context.completions.isEmpty)
+        date += 61
+        let recovered = expectation(description: "The deferred failure survives until cooldown expires")
+        context.onBackgroundLoad = { recovered.fulfill() }
+        postCPMRecoveryReady()
+        await fulfillment(of: [recovered], timeout: 1)
+        XCTAssertTrue(webExtensionLoadingMock.unloadExtensionCalled)
+        context.finishBackgroundLoads()
+    }
+
+    @MainActor
+    func testCooldownRetriesNewestFailedViewWithoutAnotherForegroundEvent() async throws {
+        var date = Date()
+        let pixels = CapturingCPMRestartPixels()
+        let manager = makeManager(controllerConfiguration: .nonPersistent(), pixelFiring: pixels,
+                                  isCPMBackgroundLoadRestartEnabled: { true },
+                                  backgroundLoadRecoveryCooldown: 0.05, now: { date })
+        let context = try await startBackgroundRecoveryCooldown(in: manager)
+        defer { manager.unloadAllExtensions() }
+        context.retainedBackgroundWebView = WKWebView()
+        context.recordedErrors = [NSError(domain: WKWebExtensionContext.errorDomain, code: 6)]
+        NotificationCenter.default.post(name: WKWebExtensionContext.errorsDidUpdateNotification, object: context)
+        XCTAssertFalse(webExtensionLoadingMock.unloadExtensionCalled)
+        // A newer view fails with the same error while the timer is already pending.
+        context.retainedBackgroundWebView = WKWebView()
+        manager.webExtensionController(manager.controller, didCreateBackgroundWebView: try XCTUnwrap(context.retainedBackgroundWebView),
+                                       forExtensionContext: context)
+        NotificationCenter.default.post(name: WKWebExtensionContext.errorsDidUpdateNotification, object: context)
+        let recovered = expectation(description: "Cooldown expiry services the newest failed view without another event")
+        context.onBackgroundLoad = { recovered.fulfill() }
+        date += 1
+        await fulfillment(of: [recovered], timeout: 2)
+        XCTAssertTrue(webExtensionLoadingMock.unloadExtensionCalled)
+        XCTAssertEqual(pixels.outcomes, [.restartStarted, .backgroundReady, .superseded, .restartStarted])
+        XCTAssertEqual(context.completions.count, 1)
+        context.finishBackgroundLoads()
+    }
+
+    @MainActor
+    func testCooldownExpiringInBackgroundRetainsFailureUntilForeground() async throws {
+        var date = Date()
+        var isBackground = false
+        let manager = makeManager(controllerConfiguration: .nonPersistent(),
+                                  isCPMBackgroundLoadRestartEnabled: { true },
+                                  backgroundLoadRecoveryCooldown: 0.05,
+                                  isApplicationInBackground: { isBackground }, now: { date })
+        let context = try await startBackgroundRecoveryCooldown(in: manager)
+        defer { manager.unloadAllExtensions() }
+        context.retainedBackgroundWebView = WKWebView()
+        context.recordedErrors = [NSError(domain: WKWebExtensionContext.errorDomain, code: 6)]
+        NotificationCenter.default.post(name: WKWebExtensionContext.errorsDidUpdateNotification, object: context)
+        isBackground = true
+        date += 1
+        let premature = expectation(description: "Timer expiry must not apply recovery in background")
+        premature.isInverted = true
+        context.onBackgroundLoad = { premature.fulfill() }
+        await fulfillment(of: [premature], timeout: 0.15)
+        XCTAssertFalse(webExtensionLoadingMock.unloadExtensionCalled)
+        let recovered = expectation(description: "Foreground services the failure whose cooldown already expired")
+        context.onBackgroundLoad = { recovered.fulfill() }
+        isBackground = false
+        postCPMRecoveryReady()
+        await fulfillment(of: [recovered], timeout: 1)
+        XCTAssertTrue(webExtensionLoadingMock.unloadExtensionCalled)
+        context.finishBackgroundLoads()
+    }
+
+    @MainActor
+    func testCooldownLeavesHealthyReplacementUntouched() async throws {
+        var date = Date()
+        let manager = makeManager(controllerConfiguration: .nonPersistent(),
+                                  isCPMBackgroundLoadRestartEnabled: { true },
+                                  backgroundLoadRecoveryCooldown: 0.05, now: { date })
+        let context = try await startBackgroundRecoveryCooldown(in: manager)
+        defer { manager.unloadAllExtensions() }
+        context.retainedBackgroundWebView = WKWebView()
+        context.recordedErrors = [NSError(domain: WKWebExtensionContext.errorDomain, code: 6)]
+        NotificationCenter.default.post(name: WKWebExtensionContext.errorsDidUpdateNotification, object: context)
+        let healthy = WKWebView()
+        context.retainedBackgroundWebView = healthy
+        manager.webExtensionController(manager.controller, didCreateBackgroundWebView: healthy, forExtensionContext: context)
+        // WebKit clears errors after the creation callback; delayed historical notifications see no failure.
+        context.recordedErrors = []
+        NotificationCenter.default.post(name: WKWebExtensionContext.errorsDidUpdateNotification, object: context)
+        let disturbed = expectation(description: "Cooldown expiry must not disturb WebKit's healthy replacement")
+        disturbed.isInverted = true
+        context.onBackgroundLoad = { disturbed.fulfill() }
+        date += 1
+        await fulfillment(of: [disturbed], timeout: 0.15)
+        XCTAssertFalse(webExtensionLoadingMock.unloadExtensionCalled)
+        XCTAssertIdentical(context.retainedBackgroundWebView, healthy)
+        XCTAssertTrue(context.completions.isEmpty)
+    }
+
+    @MainActor
+    private func startBackgroundRecoveryCooldown(in manager: WebExtensionManager) async throws -> DeferredCPMBackgroundContext {
+        let context = try await loadDeferredEmbeddedContext("embedded", into: manager)
+        context.retainedBackgroundWebView = WKWebView()
+        let restarted = expectation(description: "An applied restart starts the cooldown")
+        context.onBackgroundLoad = { restarted.fulfill() }
+        XCTAssertTrue(manager.recoverEmbeddedBackgroundLoadFailure(
+            NSError(domain: WKWebExtensionContext.errorDomain, code: 6), context: context))
+        await fulfillment(of: [restarted], timeout: 1)
+        // Restart schedules its background load after releasing the recovery guard and draining pending
+        // attempts. Unlike a plain retry, its completion cannot later drain a pending cooldown attempt.
+        context.finishBackgroundLoads()
+        XCTAssertTrue(webExtensionLoadingMock.unloadExtensionCalled)
+        webExtensionLoadingMock.unloadExtensionCalled = false
+        return context
+    }
+
+    @MainActor
+    func testCoalescedErrorRemovalAndNewFailureKeepsLatestView() async throws {
+        var isBackground = true
+        let pixels = CapturingCPMRestartPixels()
+        let manager = makeManager(controllerConfiguration: .nonPersistent(), pixelFiring: pixels,
+                                  isCPMBackgroundLoadRestartEnabled: { true },
+                                  isApplicationInBackground: { isBackground })
+        let context = try await loadDeferredEmbeddedContext("embedded", into: manager)
+        defer { manager.unloadAllExtensions() }
+        let error = NSError(domain: WKWebExtensionContext.errorDomain, code: 6)
+        context.retainedBackgroundWebView = WKWebView()
+        context.recordedErrors = [error]
+        NotificationCenter.default.post(name: WKWebExtensionContext.errorsDidUpdateNotification, object: context)
+        // Like WebKit, queue notifications without capturing the errors array at mutation time.
+        context.retainedBackgroundWebView = WKWebView()
+        manager.webExtensionController(manager.controller, didCreateBackgroundWebView: try XCTUnwrap(context.retainedBackgroundWebView),
+                                       forExtensionContext: context)
+        context.recordedErrors = []
+        DispatchQueue.main.async {
+            NotificationCenter.default.post(name: WKWebExtensionContext.errorsDidUpdateNotification, object: context)
+        }
+        context.recordedErrors = [NSError(domain: WKWebExtensionContext.errorDomain, code: 6)]
+        let notificationsDelivered = expectation(description: "Both delayed error updates arrive")
+        DispatchQueue.main.async {
+            NotificationCenter.default.post(name: WKWebExtensionContext.errorsDidUpdateNotification, object: context)
+            notificationsDelivered.fulfill()
+        }
+        await fulfillment(of: [notificationsDelivered], timeout: 1)
+        let recovered = expectation(description: "Wake recovers the newly failed view")
+        context.onBackgroundLoad = { recovered.fulfill() }
+        isBackground = false
+        postCPMRecoveryReady()
+        await fulfillment(of: [recovered], timeout: 1)
+        XCTAssertTrue(webExtensionLoadingMock.unloadExtensionCalled)
+        XCTAssertEqual(pixels.outcomes, [.restartStarted])
+        context.finishBackgroundLoads()
     }
 
     @MainActor

@@ -20,28 +20,7 @@
 import XCTest
 import UITestingSupport
 
-final class AppLaunchUITests: XCTestCase {
-
-    private let app = XCUIApplication()
-    override func setUpWithError() throws {
-        try super.setUpWithError()
-        continueAfterFailure = false
-
-        app.launchArguments = [
-            "-clearAllDefaults",
-            "isRunningUITests",
-            "-isOnboardingCompleted", "true",
-            "-AppleLanguages", "(en)",
-            "-AppleLocale", "en_US",
-        ]
-        app.launchEnvironment = ["UITEST_MODE": "1"]
-        app.launch()
-    }
-
-    override func tearDownWithError() throws {
-        app.terminate()
-        try super.tearDownWithError()
-    }
+final class AppLaunchUITests: UITestCase {
 
     func testAppLaunchesIntoBrowser() {
         let searchEntry = app.descendants(matching: .any)["searchEntry"]
@@ -76,10 +55,29 @@ final class AppLaunchUITests: XCTestCase {
         screenshot.name = "Tab switcher after automatic tab clearing"
         add(screenshot)
 
-        let newTab = app.buttons["Open new tab"]
-        XCTAssertTrue(newTab.waitForExistence(timeout: UITestTimeouts.navigation), "Cleared tab should display New Tab.")
-        XCTAssertTrue(newTab.isHittable)
-        let tabCells = app.collectionViews.cells.containing(.button, identifier: "Open new tab")
-        XCTAssertEqual(tabCells.count, 1)
+        let tabCells = app.collectionViews["TabSwitcher.Collection.Tabs"].cells
+        let newTab = tabCells.firstMatch.buttons.matching(
+            NSPredicate(format: "identifier == %@ AND label == %@", "TabSwitcher.Tab.Open", "Open new tab"))
+            .firstMatch
+        let newTabExists = newTab.waitForExistence(timeout: UITestTimeouts.navigation)
+        let tabCellCount = tabCells.count
+        let newTabLabel = newTabExists ? newTab.label : ""
+        let newTabIsHittable = newTabExists && newTab.isHittable
+
+        if !newTabExists || tabCellCount != 1 || newTabLabel != "Open new tab" || !newTabIsHittable {
+            let elementHierarchy = newTabExists ? newTab.debugDescription : app.debugDescription
+            let diagnostic = XCTAttachment(
+                string: "Tab cell count: \(tabCellCount)\nOpen control label: \(newTabLabel)\nOpen control hittable: \(newTabIsHittable)\nTab cells:\n\(tabCells.debugDescription)\nAccessibility hierarchy:\n\(elementHierarchy)")
+            diagnostic.name = "Tab switcher New Tab control diagnostics"
+            diagnostic.lifetime = .keepAlways
+            add(diagnostic)
+        }
+
+        XCTAssertTrue(newTabExists, "Cleared tab should display New Tab.")
+        XCTAssertEqual(tabCellCount, 1)
+        XCTAssertEqual(newTabLabel, "Open new tab")
+        XCTAssertTrue(
+            newTabIsHittable,
+            "Cleared tab's Open control was not hittable.")
     }
 }

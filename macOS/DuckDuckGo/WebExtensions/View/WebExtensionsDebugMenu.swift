@@ -224,6 +224,7 @@ final class WebExtensionsDebugMenu: NSMenu {
 }
 
 @available(macOS 15.4, *)
+@MainActor
 final class WebExtensionMenuItem: NSMenuItem {
 
     required init(coder: NSCoder) {
@@ -250,9 +251,12 @@ final class WebExtensionMenuItem: NSMenuItem {
 }
 
 @available(macOS 15.4, *)
+@MainActor
 final class WebExtensionSubMenu: NSMenu {
 
+    private static let olderVersion = "0.0.0.1"
     private let extensionIdentifier: String
+    private let updateVersionOverrideMenuItem = NSMenuItem(title: "Report Older Version (\(WebExtensionSubMenu.olderVersion))", action: #selector(WebExtensionSubMenu.toggleUpdateVersionOverride))
 
     required init(coder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
@@ -264,6 +268,8 @@ final class WebExtensionSubMenu: NSMenu {
     init(extensionIdentifier: String, isDisabled: Bool? = nil, isRemotelyDisabled: Bool = false) {
         self.extensionIdentifier = extensionIdentifier
         super.init(title: "")
+        updateVersionOverrideMenuItem.target = self
+        updateVersionOverrideMenuItem.isHidden = true
 
         let loadStateMenuItem = isDisabled.map { isDisabled in
             switch (isDisabled, isRemotelyDisabled) {
@@ -282,9 +288,31 @@ final class WebExtensionSubMenu: NSMenu {
             if let loadStateMenuItem {
                 loadStateMenuItem
             }
+            updateVersionOverrideMenuItem
             NSMenuItem.separator()
             NSMenuItem(title: "Remove the extension", action: #selector(uninstallExtension), target: self)
         }
+    }
+
+    override func update() {
+        super.update()
+        guard let manager = NSApp.delegateTyped.webExtensionManager,
+              let installed = manager.installedExtension(identifier: extensionIdentifier),
+              let identity = installed.storeIdentity, identity.store == .chromeWebStore else {
+            updateVersionOverrideMenuItem.isHidden = true
+            return
+        }
+        let service = manager.chromeWebStore as? ChromeWebStoreService
+        updateVersionOverrideMenuItem.isHidden = false
+        updateVersionOverrideMenuItem.isEnabled = service?.status(for: identity.id) == .installed && installed.version != nil
+        updateVersionOverrideMenuItem.state = service?.updateCheckVersionOverride(forInstallationIdentifier: extensionIdentifier) == nil ? .off : .on
+    }
+
+    @objc private func toggleUpdateVersionOverride() {
+        guard let service = NSApp.delegateTyped.webExtensionManager?.chromeWebStore as? ChromeWebStoreService else { return }
+        let version: String? = service.updateCheckVersionOverride(forInstallationIdentifier: extensionIdentifier) == nil ? Self.olderVersion : nil
+        service.setUpdateCheckVersionOverride(version, forInstallationIdentifier: extensionIdentifier)
+        update()
     }
 
     @objc func openFolderInFinder() {

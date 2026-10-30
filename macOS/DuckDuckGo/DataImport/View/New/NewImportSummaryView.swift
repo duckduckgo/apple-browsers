@@ -86,9 +86,7 @@ struct NewImportSummaryView: View {
                 .padding(.trailing, 14)
             HStack(alignment: .top, spacing: 0) {
                 VStack(alignment: .leading) {
-                    Text(item.primaryText)
-                        .font(.system(size: 13, weight: .medium))
-                        .foregroundColor(.primary)
+                    primaryText(for: item)
                     if let duplicateText = item.duplicateText {
                         Text(duplicateText)
                             .font(.system(size: 11))
@@ -114,6 +112,16 @@ struct NewImportSummaryView: View {
         .padding(.bottom, 10)
         .padding(.horizontal, 12)
         .frame(maxWidth: .infinity, minHeight: 41)
+    }
+
+    private func primaryText(for item: NewImportSummaryViewModel.SuccessItem) -> Text {
+        let primaryText = Text(item.primaryText)
+            .font(.system(size: 13, weight: .medium))
+            .foregroundColor(.primary)
+        guard let secondaryText = item.secondaryText else { return primaryText }
+        return primaryText + Text(" " + secondaryText)
+            .font(.system(size: 13))
+            .foregroundColor(Color(designSystemColor: .textSecondary))
     }
 
     private func importSuccessShortcutsRow(title: String, isOn: Binding<Bool>) -> some View {

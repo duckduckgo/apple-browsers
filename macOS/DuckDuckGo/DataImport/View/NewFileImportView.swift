@@ -50,7 +50,10 @@ func newFileImportMultipleTypeInstructionsBuilder(
 }
 
 private func safariArchiveInstructions(for dataTypes: Set<DataImport.DataType>) -> String {
-    switch (dataTypes.contains(.bookmarks), dataTypes.contains(.passwords)) {
+    if dataTypes.contains(.history) {
+        return safariArchiveInstructionsWithHistory(for: dataTypes)
+    }
+    return switch (dataTypes.contains(.bookmarks), dataTypes.contains(.passwords)) {
     case (true, false):
         NSLocalizedString("import.zip.instructions.safari.bookmarks", value: """
         %d Open %@ **Safari → File → Export Browsing Data to File...**
@@ -80,6 +83,55 @@ private func safariArchiveInstructions(for dataTypes: Set<DataImport.DataType>) 
         %d Upload the exported ZIP or CSV file to DuckDuckGo
         """, comment: """
         Instructions to import multiple data types exported as ZIP from Safari.
+        %N$d - step number
+        %2$@ - browser icon
+        **bold text**; _italic text_
+        """)
+    }
+}
+
+private func safariArchiveInstructionsWithHistory(for dataTypes: Set<DataImport.DataType>) -> String {
+    switch (dataTypes.contains(.bookmarks), dataTypes.contains(.passwords)) {
+    case (true, false):
+        NotLocalizedString("import.zip.instructions.safari.bookmarks.with-history", value: """
+        %d Open %@ **Safari → File → Export Browsing Data to File...**
+        %d Select from **Bookmarks, Credit Cards,** and **History** → **Export** and save the file
+        %d Upload the exported ZIP or HTML file to DuckDuckGo
+        """, comment: """
+        Instructions to import bookmarks, credit cards and history exported as ZIP from Safari.
+        %N$d - step number
+        %2$@ - browser icon
+        **bold text**; _italic text_
+        """)
+    case (false, true):
+        NotLocalizedString("import.zip.instructions.safari.passwords.with-history", value: """
+        %d Open %@ **Safari → File → Export Browsing Data to File...**
+        %d Select from **Passwords, Credit Cards,** and **History** → **Export** and save the file
+        %d Upload the exported ZIP or CSV file to DuckDuckGo
+        """, comment: """
+        Instructions to import passwords, credit cards and history exported as ZIP from Safari.
+        %N$d - step number
+        %2$@ - browser icon
+        **bold text**; _italic text_
+        """)
+    case (false, false):
+        NotLocalizedString("import.zip.instructions.safari.history", value: """
+        %d Open %@ **Safari → File → Export Browsing Data to File...**
+        %d Select **History** → **Export** and save the file
+        %d Upload the exported ZIP file to DuckDuckGo
+        """, comment: """
+        Instructions to import history exported as ZIP from Safari.
+        %N$d - step number
+        %2$@ - browser icon
+        **bold text**; _italic text_
+        """)
+    case (true, true):
+        NotLocalizedString("import.zip.instructions.safari.with-history", value: """
+        %d Open %@ **Safari → File → Export Browsing Data to File...**
+        %d Select from **Bookmarks, Passwords, Credit Cards,** and **History** → **Export** and save the file
+        %d Upload the exported ZIP or CSV file to DuckDuckGo
+        """, comment: """
+        Instructions to import multiple data types, including history, exported as ZIP from Safari.
         %N$d - step number
         %2$@ - browser icon
         **bold text**; _italic text_

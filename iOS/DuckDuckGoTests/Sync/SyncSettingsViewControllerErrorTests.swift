@@ -903,9 +903,27 @@ final class SyncSettingsViewControllerErrorTests: XCTestCase {
     }
 
     @MainActor
-    private func makeVC(source: String, featureFlagger: MockFeatureFlagger) -> SyncSettingsViewController {
+    func testWhenOpenedFromBookmarksPromoWithRedesignOnAndAccountCreationUnavailableThenDoesNotStartSetup() async {
+        let syncService = MockDDGSyncing(authState: .inactive, isSyncInProgress: false)
+        syncService.featureFlags = SyncFeatureFlags.all.subtracting(.accountCreation)
+        let vc = makeVC(source: SyncSettingsViewController.SourceConstants.bookmarksPromotion,
+                        featureFlagger: MockFeatureFlagger(enabledFeatureFlags: [.syncPromotionRedesign, .syncImprovedPairingFlow]),
+                        syncService: syncService)
+        let promptShown = expectSyncAnotherDevicePrompt(in: vc)
+        promptShown.isInverted = true
+
+        vc.loadViewIfNeeded()
+
+        await fulfillment(of: [promptShown], timeout: 0.5)
+        XCTAssertFalse(vc.viewModel.isBusy)
+    }
+
+    @MainActor
+    private func makeVC(source: String,
+                        featureFlagger: MockFeatureFlagger,
+                        syncService: MockDDGSyncing = MockDDGSyncing(authState: .inactive, isSyncInProgress: false)) -> SyncSettingsViewController {
         SyncSettingsViewController(
-            syncService: MockDDGSyncing(authState: .inactive, isSyncInProgress: false),
+            syncService: syncService,
             syncBookmarksAdapter: syncBookmarksAdapter,
             syncCredentialsAdapter: syncCredentialsAdapter,
             syncCreditCardsAdapter: syncCreditCardsAdapter,

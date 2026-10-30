@@ -461,11 +461,6 @@ jobs:
 
   shared-package-unit-tests:
 
-      # Common, DDGError, Persistence, PixelKit and Networking were BSK targets until they were
-      # split into their own packages (#6405 for the first four). Their tests ran under this
-      # workflow as part of the BSK suite and had no home afterwards, so they run here alongside
-      # WideEvent, ICSParser and FoundationExtensions.
-      # Keep these small suites in one job to share checkout, Xcode selection and cache setup.
       name: Run unit tests (shared packages, macOS)
 
       needs: should-run-checks

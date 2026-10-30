@@ -339,6 +339,10 @@ class AutofillLoginListViewModel: ObservableObject {
                && syncPromoManager.shouldPresentPromoFor(.passwords, count: accountsCount)
     }
 
+    func syncPromoDesign() -> SyncPromoManager.Design {
+        syncPromoManager.designFor(.passwords)
+    }
+
     func dismissSyncPromo() {
         syncPromoManager.dismissPromoFor(.passwords, reason: .userTapped)
     }

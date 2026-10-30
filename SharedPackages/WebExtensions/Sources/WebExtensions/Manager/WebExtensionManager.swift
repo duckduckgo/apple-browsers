@@ -190,6 +190,12 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
     private var embeddedBackgroundStartupCompletion: AsyncStream<Void>.Continuation?
     private var isCPMMessagingRecoveryInProgress = false
     private var lastBackgroundLoadRecoveryAt: Date?
+    private struct BackgroundLoadRecoveryAttempt {
+        weak var context: WKWebExtensionContext?
+        weak var failedView: WKWebView?
+    }
+    private var pendingBackgroundLoadRecovery: BackgroundLoadRecoveryAttempt?
+    private var isBackgroundLoadRecoveryScheduled = false
     private var backgroundLoadErrorObserver: NSObjectProtocol?
     /// WebKit can retain historical errors after recovery. Weak keys keep generations independent.
     private let observedBackgroundLoadErrors = NSMapTable<WKWebExtensionContext, NSArray>.weakToStrongObjects()
@@ -409,7 +415,9 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
                     await self?.reloadEmbeddedExtensionAfterCPMMessagingHang()
                 }
             }
-            self.cpmInterruptionObserver = CPMInterruptionObserver(monitor: healthMonitor)
+        }
+        self.cpmInterruptionObserver = CPMInterruptionObserver(monitor: cpmMessagingHealthMonitor) { [weak self] in
+            self?.resumePendingBackgroundLoadRecovery()
         }
 
         backgroundLoadErrorObserver = NotificationCenter.default.addObserver(
@@ -1047,25 +1055,59 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
     @discardableResult
     @MainActor
     func recoverEmbeddedBackgroundLoadFailure(_ error: Error, context: WKWebExtensionContext) -> Bool {
-        let error = NSError.webKitSafe(error)
-        guard error.isBackgroundContentLoadFailure,
-              context.webExtension.duckDuckGoWebExtensionType == .embedded,
-              self.context(for: context.uniqueIdentifier) === context,
-              embeddedBackgroundContextForNavigation === context,
-              isCPMBackgroundLoadRecoveryEnabled(),
-              !isApplicationInBackground(),
-              !isCPMMessagingRecoveryInProgress,
-              lastBackgroundLoadRecoveryAt.map({ Date().timeIntervalSince($0) >= 60 }) ?? true else { return false }
-        lastBackgroundLoadRecoveryAt = Date()
-        let failedView = backgroundWebView(in: context)
-        Task { @MainActor [weak self, weak failedView] in
-            guard let self, self.isCPMBackgroundLoadRecoveryEnabled(), !self.isApplicationInBackground(),
-                  !self.isCPMMessagingRecoveryInProgress,
-                  self.context(for: context.uniqueIdentifier) === context else { return }
-            if self.isCPMBackgroundLoadRestartEnabled(), let currentView = self.backgroundWebView(in: context) {
-                // A different view is WebKit's own recovery, even if it is still loading.
-                // Do not replace it or join its load using the old failure's recovery task.
-                guard currentView === failedView else { return }
+        guard NSError.webKitSafe(error).isBackgroundContentLoadFailure else { return false }
+        let attempt = BackgroundLoadRecoveryAttempt(context: context, failedView: backgroundWebView(in: context))
+        return scheduleBackgroundLoadRecovery(attempt)
+    }
+
+    @MainActor
+    private func canRecoverBackgroundLoad(in context: WKWebExtensionContext) -> Bool {
+        context.webExtension.duckDuckGoWebExtensionType == .embedded
+            && self.context(for: context.uniqueIdentifier) === context
+            && embeddedBackgroundContextForNavigation === context
+            && isCPMBackgroundLoadRecoveryEnabled()
+            && !isCPMMessagingRecoveryInProgress
+    }
+
+    @MainActor
+    private func resumePendingBackgroundLoadRecovery() {
+        guard !isApplicationInBackground(), !isBackgroundLoadRecoveryScheduled,
+              let attempt = pendingBackgroundLoadRecovery else { return }
+        // Consume once; repeated foreground notifications must not replay a historical failure.
+        pendingBackgroundLoadRecovery = nil
+        _ = scheduleBackgroundLoadRecovery(attempt)
+    }
+
+    @MainActor
+    private func scheduleBackgroundLoadRecovery(_ attempt: BackgroundLoadRecoveryAttempt) -> Bool {
+        guard let context = attempt.context, canRecoverBackgroundLoad(in: context) else { return false }
+        guard !isApplicationInBackground() else {
+            pendingBackgroundLoadRecovery = attempt
+            return false
+        }
+        guard !isBackgroundLoadRecoveryScheduled,
+              lastBackgroundLoadRecoveryAt.map({ now().timeIntervalSince($0) >= 60 }) ?? true else { return false }
+        pendingBackgroundLoadRecovery = nil
+        isBackgroundLoadRecoveryScheduled = true
+        Task { @MainActor [weak self] in
+            guard let self else { return }
+            self.isBackgroundLoadRecoveryScheduled = false
+            // A foreground notification can precede this task's turn. Preserve and service any
+            // newer deferred failure after this attempt has finished or skipped its obsolete view.
+            defer { self.resumePendingBackgroundLoadRecovery() }
+            guard let context = attempt.context, self.canRecoverBackgroundLoad(in: context) else { return }
+            guard !self.isApplicationInBackground() else {
+                // A newer error observed in the background takes precedence over this queued attempt.
+                if self.pendingBackgroundLoadRecovery == nil { self.pendingBackgroundLoadRecovery = attempt }
+                return
+            }
+            let currentView = self.backgroundWebView(in: context)
+            // Keep the original failure's view across suspension. A new view is WebKit's own recovery,
+            // even if the replacement is still loading; do not restart it or join its load.
+            guard currentView == nil || currentView === attempt.failedView else { return }
+            // A task skipped in the background has not applied recovery and must not consume its cooldown.
+            self.lastBackgroundLoadRecoveryAt = self.now()
+            if self.isCPMBackgroundLoadRestartEnabled(), currentView != nil {
                 // WebKit cannot replace a retained failed view with a background-only retry.
                 await self.restartEmbeddedExtensionAfterRetainedBackgroundLoadFailure(context)
                 return

@@ -256,6 +256,16 @@ final class AutofillLoginListViewController: UIViewController {
         registerForKeyboardNotifications()
     }
 
+    override func viewWillAppear(_ animated: Bool) {
+        super.viewWillAppear(animated)
+        guard transitionCoordinator?.viewController(forKey: .from) is SyncSettingsViewController else { return }
+        if viewModel.viewState == .authLocked {
+            authenticate()
+        } else {
+            updateTableHeaderView()
+        }
+    }
+
     override func viewDidAppear(_ animated: Bool) {
         super.viewDidAppear(animated)
         productSurfaceTelemetry.passwordsPageUsed()
@@ -380,9 +390,11 @@ final class AutofillLoginListViewController: UIViewController {
         guard !isInNewImportFlow else { return }
 
         // AutofillLoginDetailsViewController will handle calling authenticate() if it is the top view controller
-        guard navigationController?.topViewController is AutofillLoginDetailsViewController else {
-            authenticate()
+        switch navigationController?.topViewController {
+        case is AutofillLoginDetailsViewController, is SyncSettingsViewController:
             return
+        default:
+            authenticate()
         }
     }
 
@@ -479,6 +491,14 @@ final class AutofillLoginListViewController: UIViewController {
         let importController = ImportPasswordsViaSyncViewController(syncService: syncService)
         importController.delegate = self
         navigationController?.pushViewController(importController, animated: true)
+    }
+
+    private func pushSyncSettings(source: String) {
+        guard let mainVC = presentingViewController as? MainViewController else {
+            segueToSync(source: source)
+            return
+        }
+        navigationController?.pushViewController(mainVC.makeSyncSettingsViewController(source: source), animated: true)
     }
 
     func segueToSync(source: String? = nil) {
@@ -772,8 +792,9 @@ final class AutofillLoginListViewController: UIViewController {
         }
 
         if viewModel.shouldShowSyncPromo(), !surveyPromptPresented, !importPromoPresented {
-            if shouldUpdateHeaderView(for: .syncPromo(.passwords)) {
-                configureTableHeaderView(for: .syncPromo(.passwords))
+            let syncPromo = AutofillHeaderViewFactory.ViewType.syncPromo(.passwords, viewModel.syncPromoDesign())
+            if shouldUpdateHeaderView(for: syncPromo) {
+                configureTableHeaderView(for: syncPromo)
                 syncPromoPresented = true
             }
             return
@@ -816,8 +837,8 @@ final class AutofillLoginListViewController: UIViewController {
             if let hostingController = currentHeaderHostingController as? UIHostingController<AutofillSurveyView> {
                 setupTableHeaderView(with: hostingController)
             }
-        case .syncPromo(let promoType):
-            currentHeaderHostingController = headerViewFactory.makeHeaderView(for: .syncPromo(promoType))
+        case .syncPromo:
+            currentHeaderHostingController = headerViewFactory.makeHeaderView(for: type)
             if let hostingController = currentHeaderHostingController as? UIHostingController<SyncPromoView> {
                 setupTableHeaderView(with: hostingController)
             }
@@ -1194,8 +1215,13 @@ extension AutofillLoginListViewController: AutofillHeaderViewDelegate {
                 self.dismiss(animated: true)
             }
             viewModel.dismissSurvey(id: survey.id)
-        case .syncPromo(let touchpoint):
-            segueToSync(source: SyncSettingsViewController.SourceConstants.passwordsPromotion)
+        case .syncPromo(let touchpoint, let design):
+            switch design {
+            case .standard:
+                segueToSync(source: SyncSettingsViewController.SourceConstants.passwordsPromotion)
+            case .redesigned:
+                pushSyncSettings(source: SyncSettingsViewController.SourceConstants.passwordsPromotion)
+            }
             PixelKit.fire(Pixel.Event.syncPromoConfirmed, options: .parameters(["source": touchpoint.rawValue]))
         case .importPromo:
             segueToFileImport(source: DataImportViewModel.ImportScreen.promo)

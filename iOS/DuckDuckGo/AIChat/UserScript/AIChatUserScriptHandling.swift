@@ -150,6 +150,8 @@ final class AIChatUserScriptErrorEventMapper: EventMapping<AIChatUserScriptError
 
 // swiftlint:disable inclusive_language
 protocol AIChatUserScriptHandling: AnyObject {
+    @MainActor func mcpInitialize(params: Any, message: UserScriptMessage) async -> Encodable?
+    @MainActor func mcpNotificationsInitialized(params: Any, message: UserScriptMessage) async -> Encodable?
     @MainActor func mcpToolsList(params: Any, message: UserScriptMessage) async -> Encodable?
     @MainActor func mcpToolsCall(params: Any, message: UserScriptMessage, elicitationPusher: (any AIChatElicitationPushing)?) async -> Encodable?
     var displayMode: AIChatDisplayMode? { get set }
@@ -213,6 +215,17 @@ protocol AIChatUserScriptHandling: AnyObject {
     func sendToSetupSync(params: Any, message: UserScriptMessage) -> Encodable?
     func setAIChatHistoryEnabled(params: Any, message: UserScriptMessage) -> Encodable?
 }
+
+    @MainActor
+    func mcpInitialize(params: Any, message: UserScriptMessage) async -> Encodable? {
+        MCPInitializeResult(serverName: AIChatBrowserToolsService.serverName,
+                            serverVersion: AppVersion.shared.versionAndBuildNumber)
+    }
+
+    @MainActor
+    func mcpNotificationsInitialized(params: Any, message: UserScriptMessage) async -> Encodable? {
+        MCPEmptyResult()
+    }
 
     @MainActor
     func mcpToolsList(params: Any, message: UserScriptMessage) async -> Encodable? {
@@ -988,3 +1001,64 @@ extension AIChatUserScriptHandler {
         let url: String
     }
 }
+
+extension AIChatUserScriptHandler {
+
+    @MainActor
+    func mcpInitialize(params: Any, message: UserScriptMessage) async -> Encodable? {
+        let request: MCPInitializeRequest? = DecodableHelper.decode(from: params)
+        if let browserTools, let scope = browserToolsSource?.browserToolsScope,
+           browserTools.isAvailable(in: scope) {
+            browserTools.resetSession(forOwnerTabID: scope.ownerTabID)
+            browserTools.sessions.applyInitialize(forOwnerTabID: scope.ownerTabID,
+                                                  protocolVersion: request?.protocolVersion,
+                                                  supportsElicitationForm: request?.supportsElicitationForm ?? false)
+        }
+        return MCPInitializeResult(serverName: AIChatBrowserToolsService.serverName,
+                                   serverVersion: AppVersion.shared.versionAndBuildNumber)
+    }
+
+    @MainActor
+    func mcpNotificationsInitialized(params: Any, message: UserScriptMessage) async -> Encodable? {
+        if let browserTools, let scope = browserToolsSource?.browserToolsScope,
+           browserTools.isAvailable(in: scope) {
+            browserTools.sessions.markInitialized(forOwnerTabID: scope.ownerTabID)
+        }
+        return MCPEmptyResult()
+    }
+
+    @MainActor
+    func mcpToolsList(params: Any, message: UserScriptMessage) async -> Encodable? {
+        guard let browserTools, let scope = browserToolsSource?.browserToolsScope,
+              browserTools.isAvailable(in: scope) else {
+            return BrowserToolsListResponse(failure: .unavailable)
+        }
+        guard let session = browserTools.sessions.session(forOwnerTabID: scope.ownerTabID), session.isInitialized else {
+            return BrowserToolsListResponse(failure: .notInitialized)
+        }
+        return BrowserToolsListResponse(tools: browserTools.catalog.enabledTools.map {
+            $0.descriptor(permissionState: browserTools.permissions.effectiveState(for: $0).rawValue)
+        })
+    }
+
+    @MainActor
+    func mcpToolsCall(params: Any, message: UserScriptMessage, elicitationPusher: (any AIChatElicitationPushing)?) async -> Encodable? {
+        guard let request: InvokeBrowserToolRequest = DecodableHelper.decode(from: params), !request.name.isEmpty else {
+            let callID = (params as? [String: Any])?["callId"] as? String ?? ""
+            return InvokeBrowserToolResponse(callId: callID, result: .failure(.invalidRequest))
+        }
+        guard let browserTools, let origin = browserToolsSource, let scope = origin.browserToolsScope,
+              browserTools.isAvailable(in: scope) else {
+            return InvokeBrowserToolResponse(callId: request.callId, result: .failure(.unavailable))
+        }
+        guard let session = browserTools.sessions.session(forOwnerTabID: scope.ownerTabID), session.isInitialized else {
+            return InvokeBrowserToolResponse(callId: request.callId, result: .failure(.notInitialized))
+        }
+        let context = BrowserToolCallContext(ownerTabID: scope.ownerTabID,
+                                            ownerWindowToken: scope.token,
+                                            isBurner: scope.isBurner,
+                                            supportsElicitationForm: session.supportsElicitationForm)
+        let result = await browserTools.invoke(request: request, context: context, scope: scope,
+                                              source: origin, elicitationPusher: elicitationPusher)
+        return InvokeBrowserToolResponse(callId: request.callId, result: result.callToolResult)
+    }

@@ -120,6 +120,7 @@ final class AIChatUserScript: NSObject, Subfeature {
     weak var broker: UserScriptMessageBroker?
     weak var webView: WKWebView?
 
+    @MainActor var browserToolsExposureHandler: (() -> Void)?
     private let devicePlatform: DevicePlatformProviding.Type
     private let handler: AIChatUserScriptHandling
     private(set) var messageOriginPolicy: MessageOriginPolicy
@@ -232,6 +233,21 @@ final class AIChatUserScript: NSObject, Subfeature {
         delegate?.aiChatUserScript(self, didReceiveMessage: message)
 
         switch message {
+        case .initialize:
+            return { @MainActor [weak self] params, message in
+                guard let self, self.prepareBrowserTools(for: message) else {
+                    return MCPInitializeResult(serverName: AIChatBrowserToolsService.serverName,
+                                               serverVersion: AppVersion.shared.versionAndBuildNumber)
+                }
+                let result = await self.handler.mcpInitialize(params: params, message: message)
+                self.reportBrowserToolsExposure(isSupported: self.handler.supportsBrowserTools)
+                return result
+            }
+        case .notificationsInitialized:
+            return { @MainActor [weak self] params, message in
+                guard let self, self.prepareBrowserTools(for: message) else { return MCPEmptyResult() }
+                return await self.handler.mcpNotificationsInitialized(params: params, message: message)
+            }
         case .toolsList:
             return { @MainActor [weak self] params, message in
                 guard let self, self.prepareBrowserTools(for: message) else {
@@ -420,6 +436,11 @@ final class AIChatUserScript: NSObject, Subfeature {
         webView != nil && broker != nil
     }
 
+    @MainActor
+    private func reportBrowserToolsExposure(isSupported: Bool) {
+        guard isSupported else { return }
+        browserToolsExposureHandler?()
+    }
     @MainActor
     func connectInitialPromptSession(_ session: AIChatInitialPromptSession) {
         handler.connectInitialPromptSession(session)

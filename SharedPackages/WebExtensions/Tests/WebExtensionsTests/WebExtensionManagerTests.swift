@@ -1013,6 +1013,30 @@ final class WebExtensionManagerTests: XCTestCase {
     }
 
     @MainActor
+    func testCPMSyncErrorMarksOnlyBeforeLoadAndPreservesCause() async throws {
+        let bundle = try XCTUnwrap(EmbeddedWebExtensionRegistry.descriptor(for: .embedded)?.bundledURL)
+        let cause = NSError(domain: NSPOSIXErrorDomain, code: 13)
+        let original = NSError(domain: NSCocoaErrorDomain,
+                               code: CocoaError.fileWriteNoPermission.rawValue,
+                               userInfo: [NSUnderlyingErrorKey: cause, "test_context": "retained"])
+        storageProvidingMock.mockCopyError = original
+        storageProvidingMock.mockExtractError = original
+        installedExtensionStoringMock.add(makeInstalledWebExtension(uniqueIdentifier: "old-cpm", version: "2000.1.1", embeddedType: .embedded))
+        let pixels = EventCapturingPixelFiring()
+        let manager = makeManager(pixelFiring: pixels, bundledExtensionURL: { _ in bundle })
+
+        await manager.syncCPMExtensionBeforeLoad(isEnabled: true)
+        await manager.syncEmbeddedExtensions(enabledTypes: [.embedded])
+
+        XCTAssertEqual(pixels.cpmInstallErrors.map(\.domain), [NSCocoaErrorDomain + ".before_load", NSCocoaErrorDomain])
+        for error in pixels.cpmInstallErrors {
+            XCTAssertEqual(error.code, original.code)
+            XCTAssertEqual(error.userInfo as NSDictionary, original.userInfo as NSDictionary)
+        }
+        XCTAssertEqual(original.domain, NSCocoaErrorDomain)
+    }
+
+    @MainActor
     func testScriptletUpdateReloadsAnAlreadyLoadedContext() async throws {
         let manager = try await makeManagerWithLoadedAdBlocker()
 
@@ -2154,9 +2178,12 @@ private final class CapturingReloadErrorPixelFiring: WebExtensionPixelFiring {
 @available(macOS 15.4, iOS 18.4, *)
 private final class EventCapturingPixelFiring: WebExtensionPixelFiring {
     private(set) var events: [String] = []
+    private(set) var cpmInstallErrors: [NSError] = []
 
     func fire(_ event: WebExtensionPixelEvent) {
         switch event {
+        case .embeddedInstallError(let type, let error) where type == .embedded:
+            cpmInstallErrors.append(error as NSError)
         case .bitwardenDailyActive(let isDefault):
             events.append("bitwarden dau, default: \(isDefault)")
         case .defaultPasswordManagerSet(let pixelExtension):

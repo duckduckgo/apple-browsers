@@ -32,7 +32,7 @@ extension WebExtensionManager {
         connectEventsListener()
         if isEnabled {
             guard let descriptor = EmbeddedWebExtensionRegistry.descriptor(for: .embedded) else { return }
-            await syncEmbeddedExtension(descriptor, startScriptlets: false)
+            await syncEmbeddedExtension(descriptor, startScriptlets: false, beforeLoad: true)
         } else {
             if let installed = installedEmbeddedExtension(for: .embedded) {
                 await unloadGuard.awaitSettled(context(for: installed.uniqueIdentifier))
@@ -89,9 +89,12 @@ extension WebExtensionManager {
     }
 
     @MainActor
-    private func syncEmbeddedExtension(_ descriptor: EmbeddedWebExtensionDescriptor, startScriptlets: Bool = true) async {
+    private func syncEmbeddedExtension(_ descriptor: EmbeddedWebExtensionDescriptor,
+                                       startScriptlets: Bool = true,
+                                       beforeLoad: Bool = false) async {
         guard let bundledURL = bundledExtensionURL(descriptor) else {
             Logger.webExtensions.error("❌ Embedded extension not found in bundle: \(descriptor.resourceFilename)")
+            fireEmbeddedSyncError(EmbeddedSyncError.missingBundle, type: descriptor.type, beforeLoad: beforeLoad)
             return
         }
 
@@ -100,7 +103,7 @@ extension WebExtensionManager {
 
             guard bundledMetadata.type == descriptor.type else {
                 Logger.webExtensions.error("❌ Bundled extension type mismatch: expected \(descriptor.type.rawValue), got \(bundledMetadata.type?.rawValue ?? "nil")")
-                return
+                throw EmbeddedSyncError.typeMismatch
             }
 
             if let installed = installedEmbeddedExtension(for: descriptor.type) {
@@ -160,8 +163,21 @@ extension WebExtensionManager {
             }
         } catch {
             Logger.webExtensions.error("❌ Failed to sync embedded extension \(descriptor.type.rawValue): \(error.localizedDescription)")
-            pixelFiring.fire(.embeddedInstallError(type: descriptor.type, error: error))
+            fireEmbeddedSyncError(error, type: descriptor.type, beforeLoad: beforeLoad)
         }
+    }
+
+    @MainActor
+    private func fireEmbeddedSyncError(_ error: Error, type: DuckDuckGoWebExtensionType, beforeLoad: Bool) {
+        let reportedError: Error
+        if type == .embedded && beforeLoad {
+            // Mark only the telemetry copy; retain the original code, userInfo and underlying chain.
+            let original = NSError.webKitSafe(error)
+            reportedError = NSError(domain: original.domain + ".before_load", code: original.code, userInfo: original.userInfo)
+        } else {
+            reportedError = error
+        }
+        pixelFiring.fire(.embeddedInstallError(type: type, error: reportedError))
     }
 
     /// Finds an installed extension by its embedded type.
@@ -254,4 +270,12 @@ extension WebExtensionManager {
         SemanticVersionComparator().shouldUpgrade(installedVersion: installed.version, bundledVersion: bundledVersion)
     }
 
+}
+
+private enum EmbeddedSyncError: Int, CustomNSError {
+    case missingBundle = 1
+    case typeMismatch = 2
+
+    static var errorDomain: String { "WebExtensionEmbeddedSync" }
+    var errorCode: Int { rawValue }
 }

@@ -54,6 +54,11 @@ public struct InstalledWebExtension: Codable, Equatable, Identifiable {
     /// Nil preserves the installation UUID for existing records.
     public var cpmOriginIdentifier: UUID?
 
+    private enum CodingKeys: String, CodingKey {
+        case uniqueIdentifier, filename, name, version, embeddedType, storeIdentity, isDisabled
+        case cpmOriginIdentifier = "cpmStableOriginIdentifier"
+    }
+
     public var id: String { uniqueIdentifier }
 
     /// Whether this extension was installed from the app bundle (embedded).

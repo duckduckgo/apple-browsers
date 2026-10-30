@@ -133,7 +133,6 @@ final class AIChatPageContextHandler: AIChatPageContextHandling {
     private let mimeTypeProvider: PageContextMIMETypeProvider
     private let extractionPixelHandler: PageContextExtractionPixelFiring
 
-    private let isDocumentContextEnabled: () -> Bool
     private let makeDocumentContext: DocumentContextMaking
 
     /// FIFO-pairs collect requests with results so pixels carry the right trigger/latency; reset on navigation.
@@ -179,7 +178,6 @@ final class AIChatPageContextHandler: AIChatPageContextHandling {
          currentURLProvider: PageContextURLProvider? = nil,
          mimeTypeProvider: @escaping PageContextMIMETypeProvider = { _ in nil },
          extractionPixelHandler: PageContextExtractionPixelFiring = PageContextExtractionPixelHandler(),
-         isDocumentContextEnabled: @escaping () -> Bool = { false },
          makeDocumentContext: DocumentContextMaking? = nil,
          scheduleTimeout: ((TimeInterval, @escaping @MainActor () -> Void) -> Void)? = nil,
          now: @escaping () -> TimeInterval = { ProcessInfo.processInfo.systemUptime }) {
@@ -191,7 +189,6 @@ final class AIChatPageContextHandler: AIChatPageContextHandling {
         self.currentURLProvider = currentURLProvider ?? { webViewProvider()?.url }
         self.mimeTypeProvider = mimeTypeProvider
         self.extractionPixelHandler = extractionPixelHandler
-        self.isDocumentContextEnabled = isDocumentContextEnabled
         self.now = now
         self.makeDocumentContext = makeDocumentContext ?? { webView, url, title in
             await DocumentPageContextProvider.makeDocumentContext(webView: webView, url: url, title: title)
@@ -461,7 +458,6 @@ private extension AIChatPageContextHandler {
     /// Whether this tab's page goes to Duck.ai as document bytes rather than markdown.
     func isDocumentTab(_ url: URL) -> Bool {
         !url.isFileURL
-            && isDocumentContextEnabled()
             && DocumentPageContextProvider.isSupportedDocument(mimeType: mimeTypeProvider(url), url: url)
     }
 

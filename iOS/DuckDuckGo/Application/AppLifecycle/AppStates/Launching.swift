@@ -489,7 +489,7 @@ struct Launching: LaunchingHandling {
         )
 #endif
 
-        (UIApplication.shared.delegate as? AppDelegate)?.configureMainMenu(featureFlagger: featureFlagger)
+        AppDependencyProvider.shared.mainMenuService.requestRebuild()
 
         logAppLaunchTime()
         // Keep this init method minimal and think twice before adding anything here.

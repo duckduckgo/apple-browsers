@@ -19,24 +19,16 @@
 
 import UIKit
 import Common
-import PrivacyConfig
 
 @UIApplicationMain class AppDelegate: UIResponder, UIApplicationDelegate {
 
     let appStateMachine: AppStateMachine = AppStateMachine(initialState: .initializing(Initializing()))
 
-    private var mainMenuController: MainMenuController?
-
-    func configureMainMenu(featureFlagger: FeatureFlagger) {
-        mainMenuController = MainMenuController(featureFlagger: featureFlagger)
-        mainMenuController?.requestRebuild()
-    }
-
     override func buildMenu(with builder: UIMenuBuilder) {
         super.buildMenu(with: builder)
         guard builder.system == .main else { return }
 
-        MainMenuBuilder().build(mainMenuController?.spec ?? MainMenuSpec(isEnabled: false), with: builder)
+        AppDependencyProvider.shared.mainMenuService.buildMenu(with: builder)
     }
 
     func application(_ application: UIApplication, configurationForConnecting connectingSceneSession: UISceneSession, options: UIScene.ConnectionOptions) -> UISceneConfiguration {

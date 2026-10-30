@@ -93,17 +93,17 @@ struct MainMenuTests {
         var rebuildCount = 0
         let (rebuilds, continuation) = AsyncStream<Void>.makeStream()
         var iterator = rebuilds.makeAsyncIterator()
-        let controller = MainMenuController(featureFlagger: flagger, idiom: .pad,
-                                            rebuildDelay: .milliseconds(1)) {
+        let service = MainMenuService(featureFlagger: flagger, idiom: .pad,
+                                      rebuildDelay: .milliseconds(1)) {
             rebuildCount += 1
             continuation.yield(())
         }
-        #expect(controller.spec.removedMenus.isEmpty)
+        #expect(service.spec.removedMenus.isEmpty)
         for enabled in [true, false] {
             flagger.enabledFeatureFlags = enabled ? [.ipadMenuBar] : []
             flagger.triggerUpdate()
             _ = await iterator.next()
-            #expect(controller.spec.removedMenus == (enabled ? [.format] : []))
+            #expect(service.spec.removedMenus == (enabled ? [.format] : []))
         }
         #expect(rebuildCount == 2)
         flagger.triggerUpdate()
@@ -116,15 +116,15 @@ struct MainMenuTests {
     func iPhoneDoesNotRebuildWhenIPadFlagChanges() async throws {
         let flagger = MockFeatureFlagger()
         var rebuildCount = 0
-        let controller = MainMenuController(featureFlagger: flagger, idiom: .phone,
-                                            rebuildDelay: .milliseconds(1)) { rebuildCount += 1 }
-        #expect(controller.spec.shortcutRegistration == .legacy)
+        let service = MainMenuService(featureFlagger: flagger, idiom: .phone,
+                                      rebuildDelay: .milliseconds(1)) { rebuildCount += 1 }
+        #expect(service.spec.shortcutRegistration == .legacy)
         flagger.enabledFeatureFlags = [.ipadMenuBar]
         flagger.triggerUpdate()
-        controller.requestRebuild()
+        service.requestRebuild()
         try await Task.sleep(for: .milliseconds(30))
         #expect(rebuildCount == 0)
-        #expect(controller.spec.removedMenus.isEmpty)
-        #expect(controller.spec.shortcutRegistration == .responder)
+        #expect(service.spec.removedMenus.isEmpty)
+        #expect(service.spec.shortcutRegistration == .responder)
     }
 }

@@ -1,5 +1,5 @@
 //
-//  MainMenuController.swift
+//  MainMenuService.swift
 //  DuckDuckGo
 //
 //  Copyright © 2026 DuckDuckGo. All rights reserved.
@@ -22,7 +22,8 @@ import FeatureFlags_iOS
 import PrivacyConfig
 import UIKit
 
-final class MainMenuController {
+final class MainMenuService {
+
     private let featureFlagger: FeatureFlagger
     private let idiom: UIUserInterfaceIdiom
     private let rebuildRequests = PassthroughSubject<Void, Never>()
@@ -54,14 +55,21 @@ final class MainMenuController {
             .store(in: &cancellables)
     }
 
+    func buildMenu(with builder: UIMenuBuilder) {
+        MainMenuBuilder().build(spec, with: builder)
+    }
+
     func requestRebuild() {
         guard idiom == .pad else { return }
         rebuildRequests.send()
     }
+
 }
 
-extension FeatureFlagger {
-    func isIPadMenuBarEnabled(idiom: UIUserInterfaceIdiom = UIDevice.current.userInterfaceIdiom) -> Bool {
+private extension FeatureFlagger {
+
+    func isIPadMenuBarEnabled(idiom: UIUserInterfaceIdiom) -> Bool {
         idiom == .pad && isFeatureOn(.ipadMenuBar)
     }
+
 }

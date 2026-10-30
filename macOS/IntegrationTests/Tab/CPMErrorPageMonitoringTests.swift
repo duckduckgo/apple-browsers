@@ -230,6 +230,7 @@ private final class StubWebExtensionManager: WebExtensionManaging {
     func installedExtension(identifier: String) -> InstalledWebExtension? { nil }
     func extensionName(for identifier: String) -> String? { nil }
     func extensionVersion(for identifier: String) -> String? { nil }
+    func extensionPermissions(for identifier: String) -> [String] { [] }
     func extensionContext(for url: URL) -> WKWebExtensionContext? { nil }
     func context(for identifier: String) -> WKWebExtensionContext? { nil }
     func clearCachedScriptlets() {}

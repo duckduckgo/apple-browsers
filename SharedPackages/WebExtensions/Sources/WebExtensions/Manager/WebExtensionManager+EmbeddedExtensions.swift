@@ -16,6 +16,7 @@
 //  limitations under the License.
 //
 
+import DDGError
 import Foundation
 import os.log
 import WebKit
@@ -172,7 +173,7 @@ extension WebExtensionManager {
         let reportedError: Error
         if type == .embedded && beforeLoad {
             // Mark only the telemetry copy; retain the original code, userInfo and underlying chain.
-            let original = NSError.webKitSafe(error)
+            let original = error as NSError
             reportedError = NSError(domain: original.domain + ".before_load", code: original.code, userInfo: original.userInfo)
         } else {
             reportedError = error
@@ -272,10 +273,17 @@ extension WebExtensionManager {
 
 }
 
-private enum EmbeddedSyncError: Int, CustomNSError {
+private enum EmbeddedSyncError: Int, DDGError {
     case missingBundle = 1
     case typeMismatch = 2
 
     static var errorDomain: String { "WebExtensionEmbeddedSync" }
     var errorCode: Int { rawValue }
+
+    var description: String {
+        switch self {
+        case .missingBundle: return "Bundled extension was not found."
+        case .typeMismatch: return "Bundled extension type does not match the expected type."
+        }
+    }
 }

@@ -1034,6 +1034,18 @@ final class WebExtensionManagerTests: XCTestCase {
             XCTAssertEqual(error.userInfo as NSDictionary, original.userInfo as NSDictionary)
         }
         XCTAssertEqual(original.domain, NSCocoaErrorDomain)
+
+        let missingBundlePixels = EventCapturingPixelFiring()
+        let missingBundleManager = makeManager(pixelFiring: missingBundlePixels, bundledExtensionURL: { _ in nil })
+        await missingBundleManager.syncCPMExtensionBeforeLoad(isEnabled: true)
+        await missingBundleManager.syncEmbeddedExtensions(enabledTypes: [.embedded])
+
+        XCTAssertEqual(missingBundlePixels.cpmInstallErrors.map(\.domain), ["WebExtensionEmbeddedSync.before_load", "WebExtensionEmbeddedSync"])
+        for error in missingBundlePixels.cpmInstallErrors {
+            XCTAssertEqual(error.code, 1)
+            XCTAssertEqual(error.localizedDescription, "Bundled extension was not found.")
+            XCTAssertNil(error.userInfo[NSUnderlyingErrorKey])
+        }
     }
 
     @MainActor

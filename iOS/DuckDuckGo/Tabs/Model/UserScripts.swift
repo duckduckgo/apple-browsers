@@ -89,12 +89,15 @@ final class UserScripts: UserScriptsProvider {
          internalFeedbackTabCountProvider: InternalFeedbackTabCountProvider = AppDependencyProvider.shared.internalFeedbackTabCountProvider,
          geolocationUserScript: GeolocationUserScript? = nil,
          duckAiNativeStorageHandler: DuckAiNativeStorageHandling? = nil,
+         sponsorBlockPreferences: SponsorBlockPreferences,
          aiChatDebugSettings: AIChatDebugSettingsHandling = AIChatDebugSettings()) {
 
         isAutoconsentExtensionAvailable = sourceProvider.webExtensionAvailability?.isAutoconsentExtensionAvailable ?? false
 
         selectionFrameScript = SelectionFrameUserScript()
-        sponsorBlockSubfeature = SponsorBlockSubfeature(isEnabled: { featureFlagger.isFeatureOn(.sponsorBlock) })
+        sponsorBlockSubfeature = SponsorBlockSubfeature(isEnabled: {
+            featureFlagger.isFeatureOn(.sponsorBlock) && sponsorBlockPreferences.isEnabled
+        })
         self.mediaCaptureUserScript = mediaCaptureUserScript
         self.geolocationUserScript = sitePermissionsEnabled ? geolocationUserScript : nil
 

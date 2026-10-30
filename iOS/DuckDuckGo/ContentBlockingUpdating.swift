@@ -42,16 +42,18 @@ public final class ContentBlockingUpdating {
         let rulesUpdate: ContentBlockerRulesManager.UpdateEvent
         let sourceProvider: ScriptSourceProviding
         let duckAiNativeStorageHandler: DuckAiNativeStorageHandling?
+        let sponsorBlockPreferences: SponsorBlockPreferences
         var sitePermissionsMediaCaptureUserScript: MediaCaptureUserScript?
         var sitePermissionsGeolocationUserScript: GeolocationUserScript?
         var isSitePermissionsEnabled: Bool { sitePermissionsGeolocationUserScript != nil }
         var makeUserScripts: @MainActor (ScriptSourceProviding) -> UserScripts {
-            { [duckAiNativeStorageHandler, sitePermissionsMediaCaptureUserScript, sitePermissionsGeolocationUserScript, isSitePermissionsEnabled] sourceProvider in
+            { [duckAiNativeStorageHandler, sponsorBlockPreferences, sitePermissionsMediaCaptureUserScript, sitePermissionsGeolocationUserScript, isSitePermissionsEnabled] sourceProvider in
                 UserScripts(with: sourceProvider,
                             sitePermissionsEnabled: isSitePermissionsEnabled,
                             mediaCaptureUserScript: sitePermissionsMediaCaptureUserScript,
                             geolocationUserScript: sitePermissionsGeolocationUserScript,
-                            duckAiNativeStorageHandler: duckAiNativeStorageHandler)
+                            duckAiNativeStorageHandler: duckAiNativeStorageHandler,
+                            sponsorBlockPreferences: sponsorBlockPreferences)
             }
         }
 
@@ -75,13 +77,15 @@ public final class ContentBlockingUpdating {
     private(set) var userContentBlockingAssets: AnyPublisher<NewContent, Never>!
 
     init(userScriptsDependencies: DefaultScriptSourceProvider.Dependencies,
-         duckAiNativeStorageHandler: DuckAiNativeStorageHandling? = nil) {
+         duckAiNativeStorageHandler: DuckAiNativeStorageHandling? = nil,
+         sponsorBlockPreferences: SponsorBlockPreferences) {
 
         let makeValue: (Update) -> NewContent = { rulesUpdate in
             let sourceProvider = DefaultScriptSourceProvider(dependencies: userScriptsDependencies)
             return NewContent(rulesUpdate: rulesUpdate,
                               sourceProvider: sourceProvider,
                               duckAiNativeStorageHandler: duckAiNativeStorageHandler,
+                              sponsorBlockPreferences: sponsorBlockPreferences,
                               sitePermissionsGeolocationUserScript: nil)
         }
 

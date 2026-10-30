@@ -95,9 +95,8 @@ final class UserScripts: UserScriptsProvider {
         isAutoconsentExtensionAvailable = sourceProvider.webExtensionAvailability?.isAutoconsentExtensionAvailable ?? false
 
         selectionFrameScript = SelectionFrameUserScript()
-        sponsorBlockSubfeature = SponsorBlockSubfeature(isEnabled: {
-            featureFlagger.isFeatureOn(.sponsorBlock) && sponsorBlockPreferences.isEnabled
-        })
+        sponsorBlockSubfeature = SponsorBlockSubfeature(preferences: sponsorBlockPreferences,
+                                                        isFeatureFlagOn: { featureFlagger.isFeatureOn(.sponsorBlock) })
         self.mediaCaptureUserScript = mediaCaptureUserScript
         self.geolocationUserScript = sitePermissionsEnabled ? geolocationUserScript : nil
 

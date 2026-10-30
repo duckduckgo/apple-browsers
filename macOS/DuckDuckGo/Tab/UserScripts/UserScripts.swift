@@ -84,9 +84,8 @@ final class UserScripts: UserScriptsProvider, ReleaseNotesUserScriptProvider {
 
         self.contentScopePreferences = contentScopePreferences
         let featureFlagger = sourceProvider.featureFlagger
-        sponsorBlockSubfeature = SponsorBlockSubfeature(isEnabled: {
-            featureFlagger.isFeatureOn(.sponsorBlock) && sponsorBlockPreferences.isEnabled
-        })
+        sponsorBlockSubfeature = SponsorBlockSubfeature(preferences: sponsorBlockPreferences,
+                                                        isFeatureFlagOn: { featureFlagger.isFeatureOn(.sponsorBlock) })
         if #available(macOS 15.4, *) {
             chromeWebStoreUserScript = ChromeWebStoreUserScript(serviceProvider: {
                 NSApp.delegateTyped.webExtensionManager?.chromeWebStore

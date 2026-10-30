@@ -282,6 +282,7 @@ class BookmarksViewController: UIViewController, UITableViewDelegate {
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
         navigationController?.setToolbarHidden(false, animated: animated)
+        refreshFooterView()
     }
 
     override func viewDidAppear(_ animated: Bool) {

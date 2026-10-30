@@ -35,8 +35,13 @@ extension MainViewController: AIChatContextualSidebarHosting {
             && AppWidthObserver.shared.currentWidth >= minimumWindowWidth + margin
     }
 
-    func presentContextualSidebar(_ viewController: UIViewController, coversPage: Bool) {
-        contextualSidebarPresenter?.present(viewController, coversPage: coversPage)
+    func presentContextualSidebar(_ viewController: UIViewController, animated: Bool, coversPage: Bool) {
+        contextualSidebarPresenter?.present(viewController, animated: animated, coversPage: coversPage)
+    }
+
+    func isContextualSidebarShowing(_ viewController: UIViewController) -> Bool {
+        guard let contextualSidebarPresenter else { return false }
+        return contextualSidebarPresenter.isPresenting && contextualSidebarPresenter.hostedViewController === viewController
     }
 
     func dismissContextualSidebar(_ viewController: UIViewController, animated: Bool, completion: (() -> Void)?) {

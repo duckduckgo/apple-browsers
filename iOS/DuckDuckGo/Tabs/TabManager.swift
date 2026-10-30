@@ -791,6 +791,7 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
         }
         tabTerminationErrorPageDetector.removeHistory(forTabID: controller.tabModel.uid)
         controller.cancelPendingAIChatTabAttachmentPrompt()
+        controller.aiChatContextualSheetCoordinator.closeSurfaceAwayWithTab()
         controller.closeSitePermissions()
         controller.dismiss()
     }

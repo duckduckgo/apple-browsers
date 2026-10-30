@@ -1158,7 +1158,7 @@ extension MainViewController: TabsBarDelegate {
         let switchesTab = tab !== tabManager.currentTabsModel.currentTab
         if switchesTab {
             // The sidebar leaves the tabs bar usable, and tapping the tab it belongs to keeps it open.
-            currentTab?.aiChatContextualSheetCoordinator.dismissSheet()
+            currentTab?.aiChatContextualSheetCoordinator.tabWillLeaveScreen()
             chromeManager.preventNextScrollToTop()
         }
         dismissOmniBar()

@@ -46,4 +46,8 @@ public struct UserDefaultsETagStorage: BlockerListETagStorage {
         defaults?.set(etag, forKey: configuration.storeKey)
     }
 
+    public func removeEtag(for configuration: Configuration) {
+        defaults?.removeObject(forKey: configuration.storeKey)
+    }
+
 }

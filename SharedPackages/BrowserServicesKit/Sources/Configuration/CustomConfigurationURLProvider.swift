@@ -25,6 +25,8 @@ public protocol ConfigurationURLProviding {
 
 public protocol CustomConfigurationURLSetting {
     func setCustomURL(_ url: URL?, for configuration: Configuration) throws
+    /// Overrides the URL for this launch only. Nothing is persisted.
+    func setSessionURL(_ url: URL, for configuration: Configuration)
     var isCustomURLEnabled: Bool { get }
     func isURLOverridden(for configuration: Configuration) -> Bool
 }
@@ -47,6 +49,7 @@ public class ConfigurationURLProvider: CustomConfigurationURLProviding {
     private let defaultProvider: ConfigurationURLProviding
     private let internalUserDecider: InternalUserDecider
     private var store: CustomConfigurationURLStoring
+    private var sessionURLs = [Configuration: URL]()
 
     public var isCustomURLEnabled: Bool {
         internalUserDecider.isInternalUser
@@ -61,6 +64,7 @@ public class ConfigurationURLProvider: CustomConfigurationURLProviding {
     public func url(for configuration: Configuration) -> URL {
         let defaultURL = defaultProvider.url(for: configuration)
         guard isCustomURLEnabled else { return defaultURL }
+        if let sessionURL = sessionURLs[configuration] { return sessionURL }
 
         let customURL: URL?
         switch configuration {
@@ -95,7 +99,12 @@ public class ConfigurationURLProvider: CustomConfigurationURLProviding {
         }
     }
 
+    public func setSessionURL(_ url: URL, for configuration: Configuration) {
+        sessionURLs[configuration] = url
+    }
+
     public func isURLOverridden(for configuration: Configuration) -> Bool {
+        if sessionURLs[configuration] != nil { return true }
         switch configuration {
         case .bloomFilterSpec:
             return store.customBloomFilterSpecURL != nil

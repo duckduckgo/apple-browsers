@@ -736,6 +736,7 @@ private final class RecordingWebExtensionManager: WebExtensionManaging {
     @MainActor func disableExtension(identifier: String) async throws {}
     @MainActor func enableExtension(identifier: String) async throws {}
     func installedExtension(identifier: String) -> InstalledWebExtension? { nil }
+    func isRemotelyDisabled(identifier: String) -> Bool { false }
     func extensionName(for identifier: String) -> String? { nil }
     func extensionVersion(for identifier: String) -> String? { nil }
     func extensionContext(for url: URL) -> WKWebExtensionContext? { nil }

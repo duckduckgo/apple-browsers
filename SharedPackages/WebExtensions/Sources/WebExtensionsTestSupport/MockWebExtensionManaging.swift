@@ -31,6 +31,7 @@ public final class MockWebExtensionManaging: WebExtensionManaging {
 
     public var loadedExtensions: Set<WKWebExtensionContext> = []
     public var webExtensionIdentifiers: [String] = []
+    public var remotelyDisabledIdentifiers: Set<String> = []
     public lazy var eventsListener: WebExtensionEventsListening = WebExtensionEventsListener()
     public private(set) var attachedConfigurations = [WKWebViewConfiguration]()
     public var extensionsDirectory = FileManager.default.temporaryDirectory
@@ -103,6 +104,10 @@ public final class MockWebExtensionManaging: WebExtensionManaging {
 
     public func installedExtension(identifier: String) -> InstalledWebExtension? {
         installedExtensions.first { $0.uniqueIdentifier == identifier }
+    }
+
+    public func isRemotelyDisabled(identifier: String) -> Bool {
+        remotelyDisabledIdentifiers.contains(identifier)
     }
 
     private func setDisabled(_ isDisabled: Bool, for identifier: String) {

@@ -176,6 +176,11 @@ public protocol WebExtensionManaging: AnyObject {
     @available(macOS 15.4, iOS 18.4, *)
     func installedExtension(identifier: String) -> InstalledWebExtension?
 
+    /// Whether remote configuration disables the installed extension, so the user can't enable it.
+    @available(macOS 15.4, iOS 18.4, *)
+    @MainActor
+    func isRemotelyDisabled(identifier: String) -> Bool
+
     /// Returns the extension name for the given identifier.
     @available(macOS 15.4, iOS 18.4, *)
     func extensionName(for identifier: String) -> String?

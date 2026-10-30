@@ -739,6 +739,7 @@ private final class RecordingWebExtensionManager: WebExtensionManaging {
     func isRemotelyDisabled(identifier: String) -> Bool { false }
     func extensionName(for identifier: String) -> String? { nil }
     func extensionVersion(for identifier: String) -> String? { nil }
+    func extensionPermissions(for identifier: String) -> [String] { [] }
     func extensionContext(for url: URL) -> WKWebExtensionContext? { nil }
     func context(for identifier: String) -> WKWebExtensionContext? { nil }
     @MainActor func clearCachedScriptlets() {}

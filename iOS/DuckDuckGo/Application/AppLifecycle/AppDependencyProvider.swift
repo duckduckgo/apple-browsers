@@ -48,6 +48,7 @@ protocol DependencyProvider {
     var variantManager: VariantManager { get }
     var internalUserDecider: InternalUserDecider { get }
     var featureFlagger: FeatureFlagger { get }
+    var mainMenuService: MainMenuService? { get }
     var isSitePermissionsEnabled: Bool { get }
     var findInPageImplementation: FindInPageImplementation { get }
     var configurationURLProvider: CustomConfigurationURLProviding { get }
@@ -128,6 +129,10 @@ final class AppDependencyProvider: DependencyProvider {
     let variantManager: VariantManager = DefaultVariantManager()
     let internalUserDecider: InternalUserDecider = ContentBlocking.shared.privacyConfigurationManager.internalUserDecider
     let featureFlagger: FeatureFlagger
+    lazy var mainMenuService: MainMenuService? = {
+        guard featureFlagger.isFeatureOn(.ipadMenuBar) else { return nil }
+        return MainMenuService(featureFlagger: featureFlagger)
+    }()
     let isSitePermissionsEnabled: Bool
     let findInPageImplementation: FindInPageImplementation
     let configurationURLProvider: CustomConfigurationURLProviding

@@ -27,6 +27,14 @@ final class ExtensionsManagementPreferences: ObservableObject {
 
     @Published private(set) var installedExtensions: [InstalledExtensionEntry] = []
     @Published private(set) var uninstalledPasswordManagers: [ChromeWebStoreListing] = []
+    @Published private(set) var detailsListingID: String?
+
+    /// Looked up by store ID, so an update keeps the details open.
+    var detailsEntry: InstalledExtensionEntry? {
+        detailsListingID.flatMap { id in
+            installedExtensions.first { $0.listing.id == id }
+        }
+    }
 
     private let webExtensionManager: WebExtensionManaging?
     private let windowControllersManager: WindowControllersManagerProtocol
@@ -43,6 +51,14 @@ final class ExtensionsManagementPreferences: ObservableObject {
 
     func openStorePage(for item: ChromeWebStoreListing) {
         windowControllersManager.show(url: item.storeURL, source: .ui, newTab: true, selected: true)
+    }
+
+    func showDetails(for entry: InstalledExtensionEntry) {
+        detailsListingID = entry.listing.id
+    }
+
+    func hideDetails() {
+        detailsListingID = nil
     }
 
     func setEnabled(_ isEnabled: Bool, for entry: InstalledExtensionEntry) {
@@ -79,9 +95,65 @@ extension ExtensionsManagementPreferences {
         var record: InstalledWebExtension
         let listing: ChromeWebStoreListing
         let isRemotelyDisabled: Bool
+        /// Saved at installation, so they're known while the extension is disabled.
+        let permissions: [String]
 
         var id: String { record.uniqueIdentifier }
         var isEnabled: Bool { !record.isDisabled && !isRemotelyDisabled }
+
+        var permissionsSummary: String? {
+            let names = permissions
+                .compactMap(WebExtensionManifestPermission.init(rawValue:))
+                .map(\.displayName)
+
+            if names.isEmpty {
+                return nil
+            }
+
+            let summary = ListFormatter.localizedString(byJoining: names)
+            return summary.prefix(1).uppercased() + summary.dropFirst()
+        }
+    }
+}
+
+extension WebExtensionManifestPermission {
+
+    var displayName: String {
+        switch self {
+        case .accessibilityFeaturesModify: UserText.extensionsSettingsPermissionAccessibilityFeaturesModify
+        case .accessibilityFeaturesRead: UserText.extensionsSettingsPermissionAccessibilityFeaturesRead
+        case .bookmarks: UserText.extensionsSettingsPermissionBookmarks
+        case .clipboardRead: UserText.extensionsSettingsPermissionClipboardRead
+        case .clipboardWrite: UserText.extensionsSettingsPermissionClipboardWrite
+        case .contentSettings: UserText.extensionsSettingsPermissionContentSettings
+        case .debugger: UserText.extensionsSettingsPermissionDebugger
+        case .declarativeNetRequest: UserText.extensionsSettingsPermissionDeclarativeNetRequest
+        case .declarativeNetRequestFeedback: UserText.extensionsSettingsPermissionDeclarativeNetRequestFeedback
+        case .desktopCapture: UserText.extensionsSettingsPermissionDesktopCapture
+        case .downloads: UserText.extensionsSettingsPermissionDownloads
+        case .downloadsOpen: UserText.extensionsSettingsPermissionDownloadsOpen
+        case .downloadsUI: UserText.extensionsSettingsPermissionDownloadsUI
+        case .favicon: UserText.extensionsSettingsPermissionFavicon
+        case .geolocation: UserText.extensionsSettingsPermissionGeolocation
+        case .history: UserText.extensionsSettingsPermissionHistory
+        case .identityEmail: UserText.extensionsSettingsPermissionIdentityEmail
+        case .management: UserText.extensionsSettingsPermissionManagement
+        case .nativeMessaging: UserText.extensionsSettingsPermissionNativeMessaging
+        case .notifications: UserText.extensionsSettingsPermissionNotifications
+        case .pageCapture: UserText.extensionsSettingsPermissionPageCapture
+        case .privacy: UserText.extensionsSettingsPermissionPrivacy
+        case .proxy: UserText.extensionsSettingsPermissionProxy
+        case .readingList: UserText.extensionsSettingsPermissionReadingList
+        case .sessions: UserText.extensionsSettingsPermissionSessions
+        case .systemStorage: UserText.extensionsSettingsPermissionSystemStorage
+        case .tabCapture: UserText.extensionsSettingsPermissionTabCapture
+        case .tabGroups: UserText.extensionsSettingsPermissionTabGroups
+        case .tabs: UserText.extensionsSettingsPermissionTabs
+        case .topSites: UserText.extensionsSettingsPermissionTopSites
+        case .ttsEngine: UserText.extensionsSettingsPermissionTtsEngine
+        case .webAuthenticationProxy: UserText.extensionsSettingsPermissionWebAuthenticationProxy
+        case .webNavigation: UserText.extensionsSettingsPermissionWebNavigation
+        }
     }
 }
 
@@ -111,11 +183,17 @@ private extension ExtensionsManagementPreferences {
 
         installedExtensions = installedEntries(manager: manager, store: store)
         uninstalledPasswordManagers = availablePasswordManagers(in: store)
+
+        // Whoever removed it, a reinstall shouldn't reopen its details.
+        if detailsEntry == nil {
+            detailsListingID = nil
+        }
     }
 
     func resetExtensions() {
         installedExtensions = []
         uninstalledPasswordManagers = []
+        detailsListingID = nil
     }
 
     /// Built from the installation records, so extensions the catalog no longer offers stay listed.
@@ -133,7 +211,10 @@ private extension ExtensionsManagementPreferences {
                 continue
             }
 
-            let entry = InstalledExtensionEntry(record: record, listing: listing, isRemotelyDisabled: manager.isRemotelyDisabled(identifier: identifier))
+            let entry = InstalledExtensionEntry(record: record,
+                                                listing: listing,
+                                                isRemotelyDisabled: manager.isRemotelyDisabled(identifier: identifier),
+                                                permissions: manager.extensionPermissions(for: identifier))
             entries.append(entry)
             seenListingIDs.insert(listing.id)
         }

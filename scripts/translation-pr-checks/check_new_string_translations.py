@@ -8,6 +8,7 @@ Supports .xcstrings (String Catalogs), .strings files, and .stringsdict files.
 Usage:
     python3 check_new_string_translations.py --platform iOS
     python3 check_new_string_translations.py --platform macOS
+    python3 check_new_string_translations.py --platform iOS --warn-only
 
 Copyright © 2025 DuckDuckGo. All rights reserved.
 Licensed under the Apache License, Version 2.0
@@ -591,6 +592,11 @@ def main():
         help='Platform to check (iOS or macOS)'
     )
     parser.add_argument(
+        '--warn-only',
+        action='store_true',
+        help='Report untranslated strings as a warning without failing'
+    )
+    parser.add_argument(
         '--verbose',
         action='store_true',
         help='Show verbose output'
@@ -619,7 +625,11 @@ def main():
 
     all_issues = xcstrings_issues + strings_issues + stringsdict_issues
 
-    if all_issues:
+    if all_issues and args.warn_only:
+        print(format_issues(all_issues, required_locales))
+        print("::warning::Untranslated strings found. Not blocking: they are sent to Smartling after merge.")
+        sys.exit(0)
+    elif all_issues:
         print(format_issues(all_issues, required_locales))
         sys.exit(1)
     else:

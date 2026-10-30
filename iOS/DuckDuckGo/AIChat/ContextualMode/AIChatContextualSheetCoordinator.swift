@@ -808,7 +808,8 @@ final class AIChatContextualSheetCoordinator {
     private func moveIntoSidebar(_ sheetVC: AIChatContextualSheetViewController, host: AIChatContextualSidebarHosting) {
         sheetVC.prepareForSidebar()
         sidebarHost = host
-        host.presentContextualSidebar(sheetVC)
+        // Only a resize moves the chat into the sidebar here.
+        host.presentContextualSidebar(sheetVC, coversPage: false)
     }
 
     /// Every route off screen funnels through here, because a sheet in the sidebar is not presented and
@@ -979,7 +980,7 @@ private extension AIChatContextualSheetCoordinator {
         }
         if sheetVC.parent != nil {
             // Still in the sidebar, maybe sliding out, in which case the column turns back.
-            sidebarHost?.presentContextualSidebar(sheetVC)
+            sidebarHost?.presentContextualSidebar(sheetVC, coversPage: true)
             return
         }
         guard sheetVC.presentingViewController == nil else { return }
@@ -1035,7 +1036,7 @@ private extension AIChatContextualSheetCoordinator {
         self.sidebarHost = sidebarHost
         if let sidebarHost {
             sheetVC.prepareForSidebar()
-            sidebarHost.presentContextualSidebar(sheetVC)
+            sidebarHost.presentContextualSidebar(sheetVC, coversPage: true)
         } else {
             sheetVC.prepareForPresentation()
             presentingVC.present(sheetVC, animated: true)

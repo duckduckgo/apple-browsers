@@ -439,6 +439,10 @@ public enum FeatureFlag: String {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1219728649844711
     case cpmStableBaseURL
 
+    /// Failsafe for upgrading only CPM before launch load; evaluated when the manager is created.
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1220009029295774
+    case cpmUpgradeBeforeLoad
+
     /// Remotely activated Web Extension background Web View graveyard treatment.
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1218860832428343
     case cpmBackgroundGraveyardTreatment
@@ -964,6 +968,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(defaultValue: .enabled, source: .remoteReleasable(WebExtensionsSubfeature.cpmNetworkProcessRecovery))
         case .cpmStableBaseURL:
             Config(defaultValue: .enabled, source: .remoteReleasable(WebExtensionsSubfeature.cpmStableBaseURL))
+        case .cpmUpgradeBeforeLoad:
+            Config(defaultValue: .enabled, source: .remoteReleasable(WebExtensionsSubfeature.cpmUpgradeBeforeLoad))
         case .cpmBackgroundGraveyardTreatment:
             Config(defaultValue: .disabled, source: .remoteReleasable(WebExtensionsSubfeature.cpmBackgroundGraveyardTreatment))
         case .webExtensionProtectedDataLoadGate:

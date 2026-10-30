@@ -92,15 +92,11 @@ extension MainViewController {
         let offersMenu = duckAIAddressBarEntry == .menu
         let addressBarButton = omniBar.barView.aiChatButton
         if offersMenu, let button = addressBarButton as? BrowserChromeButton {
-            // UIKit reparents the preview, so hand it a stand-in from outside the field's glass group.
-            button.menuHighlightTarget = { [weak self, weak button] in
-                guard let button else { return nil }
-                return self?.duckAIMenuAnchorView(over: button)
+            button.menuPreviewContainer = { [weak self] in
+                self?.viewCoordinator.navigationBarContainer
             }
         } else {
-            (addressBarButton as? BrowserChromeButton)?.menuHighlightTarget = nil
-            duckAIMenuAnchor?.removeFromSuperview()
-            duckAIMenuAnchor = nil
+            (addressBarButton as? BrowserChromeButton)?.menuPreviewContainer = nil
         }
         attachDuckAIMenu(to: addressBarButton, offersMenu: offersMenu, source: .addressBarIcon, type: type)
         attachDuckAIMenu(to: tabsBarController?.aiChatMenuButton, offersMenu: offersMenu, source: .tabsBarButton, type: type)
@@ -123,25 +119,6 @@ extension MainViewController {
             }
         ])
         button.showsMenuAsPrimaryAction = true
-    }
-
-    /// Transparent stand-in over the button, outside the glass field, for the menu to reparent.
-    private func duckAIMenuAnchorView(over button: UIView) -> UIView? {
-        guard let container: UIView = viewCoordinator.navigationBarContainer else { return nil }
-        let anchor = duckAIMenuAnchor ?? {
-            let view = UIView()
-            view.isUserInteractionEnabled = false
-            view.isAccessibilityElement = false
-            duckAIMenuAnchor = view
-            return view
-        }()
-        if anchor.superview !== container {
-            container.addSubview(anchor)
-        }
-        // Laid out first: the bar repositions its buttons after a surface closes.
-        container.layoutIfNeeded()
-        anchor.frame = container.convert(button.bounds, from: button)
-        return anchor
     }
 
     func askAboutCurrentPageFromAddressBar() {

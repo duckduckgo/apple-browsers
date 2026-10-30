@@ -26,26 +26,65 @@ import SitePermissions
 
 class BrowserChromeButton: UIButton {
 
-    /// UIKit reparents this into the menu platter, so callers inside a glass group pass a throwaway.
-    var menuHighlightTarget: (() -> UIView?)?
+    /// Nil preserves system previews. Supply a container outside the glass group to opt into the workaround.
+    var menuPreviewContainer: (() -> UIView?)? {
+        didSet {
+            if menuPreviewContainer == nil {
+                removeMenuPreviewAnchor()
+            }
+        }
+    }
+
+    private var menuPreviewAnchor: UIView?
 
     @available(iOS 16.0, *)
     override func contextMenuInteraction(_ interaction: UIContextMenuInteraction,
                                          configuration: UIContextMenuConfiguration,
                                          highlightPreviewForItemWithIdentifier identifier: any NSCopying) -> UITargetedPreview? {
-        targetedMenuPreview()
+        targetedMenuPreview() ?? super.contextMenuInteraction(interaction,
+                                                              configuration: configuration,
+                                                              highlightPreviewForItemWithIdentifier: identifier)
     }
 
     @available(iOS 16.0, *)
     override func contextMenuInteraction(_ interaction: UIContextMenuInteraction,
                                          configuration: UIContextMenuConfiguration,
                                          dismissalPreviewForItemWithIdentifier identifier: any NSCopying) -> UITargetedPreview? {
-        targetedMenuPreview()
+        targetedMenuPreview() ?? super.contextMenuInteraction(interaction,
+                                                              configuration: configuration,
+                                                              dismissalPreviewForItemWithIdentifier: identifier)
     }
 
     private func targetedMenuPreview() -> UITargetedPreview? {
-        guard let target = menuHighlightTarget?() else { return nil }
-        return UITargetedPreview(view: target)
+        guard let container = menuPreviewContainer?() else {
+            removeMenuPreviewAnchor()
+            return nil
+        }
+        let anchor = menuPreviewAnchor ?? {
+            let view = UIView()
+            view.isUserInteractionEnabled = false
+            view.isAccessibilityElement = false
+            menuPreviewAnchor = view
+            return view
+        }()
+        if anchor.superview !== container {
+            container.addSubview(anchor)
+        }
+        container.layoutIfNeeded()
+        anchor.frame = container.convert(bounds, from: self)
+        return UITargetedPreview(view: anchor)
+    }
+
+    private func removeMenuPreviewAnchor() {
+        menuPreviewAnchor?.removeFromSuperview()
+        menuPreviewAnchor = nil
+    }
+
+    override func didMoveToSuperview() {
+        super.didMoveToSuperview()
+        if superview == nil {
+            removeMenuPreviewAnchor()
+        }
     }
 
     enum ButtonType {

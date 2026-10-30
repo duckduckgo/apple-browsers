@@ -235,6 +235,13 @@ public final class AutoconsentWebExtensionMessageHandler: WebExtensionMessageHan
     }
 
     private func privacyConfigIfNewerThan(lastVersion: String) -> WebExtensionMessageResult {
+        // The version is already parsed, so an unchanged config skips re-parsing the raw JSON.
+        if privacyConfigurationManager.privacyConfig.version == lastVersion {
+            return .success([
+                "updated": false
+            ])
+        }
+
         guard let privacyConfigData = try? PrivacyConfigurationData(data: privacyConfigurationManager.currentConfig),
               let currentVersion = privacyConfigData.version else {
             Logger.webExtensions.error("❌ Failed to read privacy config data or version is missing")

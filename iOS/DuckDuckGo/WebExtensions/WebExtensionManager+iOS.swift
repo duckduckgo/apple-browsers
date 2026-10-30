@@ -142,6 +142,7 @@ public enum WebExtensionManagerFactory {
             isCPMStableBaseURLEnabled: {
                 featureFlagger.isFeatureOn(.cpmStableBaseURL)
             },
+            isCPMUpgradeBeforeLoadEnabled: featureFlagger.isFeatureOn(.cpmUpgradeBeforeLoad),
             handlerProvider: WebExtensionHandlerProvider(
                 privacyConfigurationManager: privacyConfigurationManager,
                 autoconsentPreferences: preferencesAdapter,

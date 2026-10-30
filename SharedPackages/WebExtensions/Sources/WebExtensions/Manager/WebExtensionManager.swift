@@ -176,6 +176,8 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
     public let cpmDiagnosticsRecorder: CPMMessagingDiagnosticsRecorder?
     /// Reads the runtime kill switch immediately before a CPM messaging hang recovery reload.
     private let isCPMMessagingHangRecoveryEnabled: @MainActor () -> Bool
+    /// Captured at manager creation so one startup cannot mix the enabled and disabled upgrade paths.
+    public let isCPMUpgradeBeforeLoadEnabled: Bool
     /// Independent kill switch for retrying a failed background load in its current context.
     private let isCPMBackgroundLoadRecoveryEnabled: @MainActor () -> Bool
     /// Independent kill switch for restarting the context when a failed background view is still retained.
@@ -254,6 +256,7 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
                 isApplicationInBackground: @escaping @MainActor () -> Bool = { false },
                 isCPMLateBackgroundDocumentRecoveryEnabled: @escaping @MainActor () -> Bool = { false },
                 isCPMStableBaseURLEnabled: @escaping @MainActor () -> Bool = { false },
+                isCPMUpgradeBeforeLoadEnabled: Bool = false,
                 messageRouter: WebExtensionMessageRouting? = nil,
                 handlerProvider: WebExtensionHandlerProviding? = nil,
                 nativeMessagingHandler: WebExtensionNativeMessagingHandling? = nil,
@@ -310,6 +313,7 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
         )
         self.cpmDiagnosticsRecorder = cpmDiagnosticsRecorder
         self.isCPMMessagingHangRecoveryEnabled = isCPMMessagingHangRecoveryEnabled
+        self.isCPMUpgradeBeforeLoadEnabled = isCPMUpgradeBeforeLoadEnabled
         self.cpmNetworkProcessRecovery = CPMNetworkProcessRecovery(
             isEnabled: isCPMNetworkProcessRecoveryEnabled,
             featureFlagUpdates: cpmNetworkProcessRecoveryFeatureFlagUpdates,
@@ -942,6 +946,11 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
     }
 
     // MARK: - Loading
+
+    @MainActor
+    func connectEventsListener() {
+        listener.controller = controller
+    }
 
     @MainActor
     public func loadInstalledExtensions() async {

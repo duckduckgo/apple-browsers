@@ -107,6 +107,44 @@ final class CPMMessagingHealthMonitorTests: XCTestCase {
         XCTAssertEqual(pixels.restartOutcomes, [.restartStarted, .superseded])
     }
 
+    func testEmbeddedUpgradeSupersedesError6RestartObservation() {
+        let pixels = CapturingWebExtensionPixelFiring()
+        let monitor = CPMMessagingHealthMonitor(pixelFiring: pixels)
+        startError6Restart(on: monitor)
+        // Embedded upgrades install the new identifier before removing the old version.
+        monitor.handle(.loaded(identifier: "upgraded-embedded", type: .embedded))
+        XCTAssertEqual(pixels.restartOutcomes, [.restartStarted, .superseded])
+
+        monitor.handle(.navigationStarted(tabIdentifier: "tab", navigationKind: .other))
+        monitor.handle(.navigationCommitted(tabIdentifier: "tab", url: URL(string: "https://example.com")!))
+        monitor.handle(.dashboardResponse(extensionTabIdentifier: 1, url: URL(string: "https://example.com")!))
+        monitor.handle(.loaded(identifier: "upgraded-embedded", type: .embedded))
+        XCTAssertEqual(pixels.restartOutcomes, [.restartStarted, .superseded],
+                       "A replacement version's response must not count as recovery by the original restart")
+    }
+
+    func testLoadedSameIdentifierPreservesError6RestartObservation() {
+        let pixels = CapturingWebExtensionPixelFiring()
+        let monitor = CPMMessagingHealthMonitor(pixelFiring: pixels)
+        startError6Restart(on: monitor)
+        monitor.handle(.loaded(identifier: "embedded", type: .embedded))
+        XCTAssertEqual(pixels.restartOutcomes, [.restartStarted])
+
+        monitor.reportSuccess(monitor.beginMeasurement(tabIdentifier: "tab", navigationKind: .other))
+        XCTAssertEqual(pixels.restartOutcomes, [.restartStarted, .responseReceived])
+    }
+
+    func testLoadingOtherExtensionPreservesError6RestartObservation() {
+        let pixels = CapturingWebExtensionPixelFiring()
+        let monitor = CPMMessagingHealthMonitor(pixelFiring: pixels)
+        startError6Restart(on: monitor)
+        monitor.handle(.loaded(identifier: "other", type: .adBlockingExtension))
+        XCTAssertEqual(pixels.restartOutcomes, [.restartStarted])
+
+        monitor.reportSuccess(monitor.beginMeasurement(tabIdentifier: "tab", navigationKind: .other))
+        XCTAssertEqual(pixels.restartOutcomes, [.restartStarted, .responseReceived])
+    }
+
     func testError6RestartReportsReloadFailureOnce() {
         let pixels = CapturingWebExtensionPixelFiring()
         let monitor = CPMMessagingHealthMonitor(pixelFiring: pixels)

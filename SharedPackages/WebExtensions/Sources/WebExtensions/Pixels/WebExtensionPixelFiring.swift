@@ -267,7 +267,7 @@ public enum CPMBackgroundLoadRestartOutcome: String, CaseIterable, Sendable {
     case noResponseBeforeDeadline = "no_response_before_deadline"
     /// No post-restart navigation timeout or attributable response was observed by the deadline.
     case unobserved
-    /// Another context reload ended attribution to this restart.
+    /// Another context reload or embedded upgrade ended attribution to this restart.
     case superseded
     case reloadFailed = "reload_failed"
     case reloadTimedOut = "reload_timed_out"

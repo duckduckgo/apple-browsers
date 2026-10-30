@@ -935,7 +935,10 @@ public final class CPMMessagingHealthMonitor: CPMMessagingHealthMonitoring {
         discardExpiredState()
 
         switch event {
-        case .loaded:
+        case .loaded(let identifier, _):
+            if backgroundLoadRestartObservation?.identifier != identifier {
+                finishBackgroundLoadRestartObservation(.superseded)
+            }
             startGracePeriodsForFinishedNavigations()
         case .willReload(let identifier, _, let trigger):
             finishBackgroundLoadRestartObservation(.superseded)

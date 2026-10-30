@@ -467,6 +467,7 @@ final class AutoconsentWebExtensionMessageHandlerTests: XCTestCase {
     // MARK: - getResourceIfNew
 
     func testWhenGetResourceIfNewWithSameVersionThenReturnsNotUpdated() async {
+        mockPrivacyConfiguration.version = "1.0.0"
         mockPrivacyConfigurationManager.currentConfigString = """
         {
             "version": "1.0.0",
@@ -486,6 +487,26 @@ final class AutoconsentWebExtensionMessageHandlerTests: XCTestCase {
             XCTAssertEqual(dict?["updated"] as? Bool, false)
             XCTAssertNil(dict?["data"])
             XCTAssertNil(dict?["version"])
+        } else {
+            XCTFail("Expected success result")
+        }
+    }
+
+    func testWhenGetResourceIfNewWithSameVersionThenDoesNotParseRawConfig() async {
+        mockPrivacyConfiguration.version = "1.0.0"
+        mockPrivacyConfigurationManager.currentConfigString = "invalid json"
+
+        let message = createMessage(
+            method: "getResourceIfNew",
+            params: ["name": "config", "version": "1.0.0"]
+        )
+
+        let result = await handler.handleMessage(message)
+
+        if case .success(let response) = result {
+            let dict = response as? [String: Any]
+            XCTAssertEqual(dict?["updated"] as? Bool, false)
+            XCTAssertNil(dict?["data"])
         } else {
             XCTFail("Expected success result")
         }

@@ -33,7 +33,7 @@ struct ReturnSessionWideEventDataTests {
         #expect(ReturnSessionWideEventData.metadata.pixelName == "return_session")
         #expect(ReturnSessionWideEventData.metadata.featureName == "return-session")
         #expect(ReturnSessionWideEventData.metadata.type == "ios-return-session")
-        #expect(ReturnSessionWideEventData.metadata.version == "1.5.0")
+        #expect(ReturnSessionWideEventData.metadata.version == "1.6.0")
     }
 
     // MARK: - jsonParameters
@@ -296,7 +296,7 @@ struct ReturnSessionWideEventDataTests {
                                                   timeAwayMs: 120_000,
                                                   focused: true)
         original.statusReason = .returnToPageTapped
-        original.promptOrigin = AIChatEntryPointSource.voice.rawValue
+        original.promptOrigin = AIChatEntryPointSource.siri.rawValue
         original.sessionInterval.end = start.addingTimeInterval(5)
         original.firstInteractionInterval.end = start.addingTimeInterval(1)
         original.pageEngaged = true
@@ -314,7 +314,7 @@ struct ReturnSessionWideEventDataTests {
         #expect(decoded.timeAwayMs == 120_000)
         #expect(decoded.focused == true)
         #expect(decoded.statusReason == .returnToPageTapped)
-        #expect(decoded.promptOrigin == AIChatEntryPointSource.voice.rawValue)
+        #expect(decoded.promptOrigin == AIChatEntryPointSource.siri.rawValue)
         #expect(decoded.sessionInterval.start == start)
         #expect(decoded.sessionInterval.end == start.addingTimeInterval(5))
         #expect(decoded.firstInteractionInterval.start == start)

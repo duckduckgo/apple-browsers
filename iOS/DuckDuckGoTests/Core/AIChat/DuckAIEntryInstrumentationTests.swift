@@ -52,11 +52,11 @@ final class DuckAIEntryInstrumentationTests {
     }
 
     private func startTabEntry(_ sut: DefaultDuckAIEntryInstrumentation, source: AIChatEntryPointSource = .addressBarPrompt) {
-        sut.entryStarted(source: source, hasPrompt: true, surface: .duckAITab, chatState: nil)
+        sut.entryStarted(source: source, hasPrompt: true, voice: false, surface: .duckAITab, chatState: nil)
     }
 
     private func startSheetEntry(_ sut: DefaultDuckAIEntryInstrumentation) {
-        sut.entryStarted(source: .contextualChat, hasPrompt: false, surface: .contextualSheet, chatState: .existing)
+        sut.entryStarted(source: .contextualChat, hasPrompt: false, voice: false, surface: .contextualSheet, chatState: .existing)
     }
 
     private var started: [DuckAIEntryWideEventData] {
@@ -75,7 +75,7 @@ final class DuckAIEntryInstrumentationTests {
     @Test("An entry point starts an entry with its context", .timeLimit(.minutes(1)))
     func entryPointStartsEntry() {
         let sut = makeSUT()
-        sut.entryStarted(source: .chatHistoryOpenChat, hasPrompt: false, surface: .duckAITab, chatState: nil)
+        sut.entryStarted(source: .chatHistoryOpenChat, hasPrompt: false, voice: false, surface: .duckAITab, chatState: nil)
 
         #expect(started.count == 1)
         #expect(started.first?.source == "chat_history_open_chat")
@@ -101,12 +101,30 @@ final class DuckAIEntryInstrumentationTests {
     }
 
     @available(iOS 16, *)
+    @Test("A tab entry started with a known chat state keeps it when its tab is shown", .timeLimit(.minutes(1)))
+    func tabEntryKeepsKnownChatState() {
+        let sut = makeSUT()
+        sut.entryStarted(source: .duckAINewChat, hasPrompt: false, voice: false, surface: .duckAITab, chatState: .new)
+        sut.visibleTabDidChange(duckAI(Self.chatTab, chatID: "previous-chat"))
+        #expect(started.first?.chatState == .new)
+    }
+
+    @available(iOS 16, *)
     @Test("A sheet entry keeps the chat state it started with", .timeLimit(.minutes(1)))
     func sheetEntryKeepsItsChatState() {
         let sut = makeSUT()
         startSheetEntry(sut)
         sut.visibleTabDidChange(duckAI(Self.chatTab))
         #expect(started.first?.chatState == .existing)
+    }
+
+    @available(iOS 16, *)
+    @Test("A voice entry keeps its starting point and reports voice", .timeLimit(.minutes(1)))
+    func voiceEntryReportsVoice() {
+        let sut = makeSUT()
+        sut.entryStarted(source: .browsingMenuNTP, hasPrompt: false, voice: true, surface: .duckAITab, chatState: nil)
+        #expect(started.first?.source == "browsing_menu_ntp")
+        #expect(started.first?.jsonParameters()["feature.data.ext.voice"] as? Bool == true)
     }
 
     @available(iOS 16, *)

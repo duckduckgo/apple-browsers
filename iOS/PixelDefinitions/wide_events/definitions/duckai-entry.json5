@@ -4,7 +4,7 @@
         "owners": ["SabrinaTardio"],
         "meta": {
             "type": "ios-duckai-entry",
-            "version": "1.0"
+            "version": "2.0"
         },
         "feature": {
             "name": "duckai_entry",
@@ -64,6 +64,11 @@
                             "widget_favorite",
                             "widget_lock_screen",
                             "widget_control_center",
+                            "address_bar_custom_button",
+                            "toolbar_custom_button",
+                            "onboarding_completion_promo",
+                            "app_open",
+                            "tab_swipe",
                             "siri",
                             "deep_link_other",
                             "return_to_chat_card",
@@ -73,6 +78,10 @@
                     "has_prompt": {
                         "type": "boolean",
                         "description": "True when the user arrived with a prompt already, e.g. typed in the address bar."
+                    },
+                    "voice": {
+                        "type": "boolean",
+                        "description": "True when the user started by speaking: a voice chat, or voice search sent to Duck.ai. source says where they started."
                     },
                     "chat_state": {
                         "type": "string",

@@ -198,6 +198,15 @@ struct AIChatEntryPointSourceTests {
     }
 
     @available(iOS 16, *)
+    @Test("Every entry source is in the ios-duckai-entry source enum", .timeLimit(.minutes(1)))
+    func duckAIEntrySourceEnumCoversEveryEntrySource() throws {
+        let values = try Self.schemaEnum(metaType: "ios-duckai-entry",
+                                         version: DuckAIEntryWideEventData.metadata.version,
+                                         path: ["feature", "data", "ext", "source"])
+        #expect(Self.entrySourceValues.subtracting(values).isEmpty)
+    }
+
+    @available(iOS 16, *)
     @Test("Every entry source is in the ios-duckai-prompt origin enum", .timeLimit(.minutes(1)))
     func duckAIPromptOriginEnumCoversEveryEntrySource() throws {
         let values = try Self.schemaEnum(metaType: "ios-duckai-prompt",

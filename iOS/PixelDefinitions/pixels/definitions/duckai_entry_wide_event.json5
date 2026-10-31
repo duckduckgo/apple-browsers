@@ -90,6 +90,11 @@
                     "widget_favorite",
                     "widget_lock_screen",
                     "widget_control_center",
+                    "address_bar_custom_button",
+                    "toolbar_custom_button",
+                    "onboarding_completion_promo",
+                    "app_open",
+                    "tab_swipe",
                     "siri",
                     "deep_link_other",
                     "return_to_chat_card",
@@ -100,6 +105,11 @@
                 "key": "feature.data.ext.has_prompt",
                 "type": "boolean",
                 "description": "Whether the user arrived with a prompt already."
+            },
+            {
+                "key": "feature.data.ext.voice",
+                "type": "boolean",
+                "description": "Whether the user started by speaking: a voice chat, or voice search sent to Duck.ai."
             },
             {
                 "key": "feature.data.ext.chat_state",

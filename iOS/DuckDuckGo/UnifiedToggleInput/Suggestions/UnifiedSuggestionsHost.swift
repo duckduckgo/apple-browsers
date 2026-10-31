@@ -42,7 +42,6 @@ final class UnifiedSuggestionsHost {
     private var focusedMode: TextEntryMode = .search
     private var syncPromo: AnyView?
     private var contentInsets: UIEdgeInsets = .zero
-    private var embeddedHatchInset: CGFloat = 0
     private var cancellables = Set<AnyCancellable>()
     let favoritesPresentation: FocusedFavoritesPresentation
     private var redesignedSearchPresentation: RedesignedFocusedSearchPresentation?
@@ -65,8 +64,9 @@ final class UnifiedSuggestionsHost {
         favoritesPresentation.updateOpenedAfterIdle(openedAfterIdle)
     }
 
-    func setFocusedContent(mode: TextEntryMode, escapeHatch: EscapeHatchModel?, syncPromo: AnyView?) {
+    func setFocusedContent(mode: TextEntryMode, escapeHatchPlacement: FocusedContentPlacement, escapeHatch: EscapeHatchModel?, syncPromo: AnyView?) {
         focusedMode = mode
+        viewModel.setEscapeHatchPlacement(escapeHatchPlacement)
         if usesScrollableEscapeHatch {
             self.escapeHatch = escapeHatch
         }
@@ -75,15 +75,14 @@ final class UnifiedSuggestionsHost {
             favoritesPresentation.viewController?.setFocusedContent(LegacyFocusedNewTabPageContent(
                 recentChats: mode == .aiChat ? viewModel.listViewModel(for: .recents) : nil,
                 syncPromo: syncPromo,
-                isAddressBarAtBottom: isAddressBarAtBottom), escapeHatch: escapeHatch)
+                isAddressBarAtBottom: isAddressBarAtBottom,
+                onEscapeHatchGeometryChange: { [weak viewModel] in viewModel?.setEmbeddedEscapeHatchGeometry($0) }), escapeHatch: escapeHatch)
         } else {
             if redesignedSearchPresentation == nil {
                 favoritesPresentation.viewController?.setFocusedContent(nil)
             }
             rebuildRootView()
         }
-        let hatchPadding = redesignedSearchPresentation == nil ? 0 : EscapeHatchView.materialPadding * 2
-        embeddedHatchInset = !usesScrollableEscapeHatch || escapeHatch == nil ? 0 : 10 + TabSwitcherPill.compactSize + hatchPadding
         applyCombinedInsets()
     }
 
@@ -160,10 +159,10 @@ final class UnifiedSuggestionsHost {
 
     func setUsesRedesignedNewTabPageLayout(_ enabled: Bool) {
         guard enabled != (redesignedSearchPresentation != nil) else { return }
+        viewModel.setEmbeddedEscapeHatchGeometry(nil)
         redesignedPresentationCancellable = nil
         if enabled {
             favoritesPresentation.viewController?.setFocusedContent(nil)
-            embeddedHatchInset = 0
             let presentation = RedesignedFocusedSearchPresentation(
                 inputsPublisher: config.inputsPublisher,
                 dismissPublisher: viewModel.$dismissBehavior.eraseToAnyPublisher(),
@@ -246,7 +245,7 @@ final class UnifiedSuggestionsHost {
 
     private func applyCombinedInsets() {
         let top = escapeHatchTopInset + contentInsets.top
-        viewModel.chromeInsetTop = top + embeddedHatchInset
+        viewModel.chromeInsetTop = top
         let contentTopInset = usesScrollableEscapeHatch ? top : 0
         let duration = UIView.inheritedAnimationDuration
         let animation: Animation? = duration > 0 && !UIAccessibility.isReduceMotionEnabled ? .easeInOut(duration: duration) : nil
@@ -312,6 +311,7 @@ final class UnifiedSuggestionsHost {
         hostingController?.removeFromParent()
         hostingController = nil
         viewModel.logoViewportFrame = nil
+        viewModel.setEmbeddedEscapeHatchGeometry(nil)
     }
 
     // MARK: - Private

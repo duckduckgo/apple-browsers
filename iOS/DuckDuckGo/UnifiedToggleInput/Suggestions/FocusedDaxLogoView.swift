@@ -64,11 +64,15 @@ struct EscapeHatchLogoLayout: AnimatableModifier {
     var viewport: CGRect
     let hatchFrame: CGRect?
     private let fitsAtDestination: Bool
+    private let destinationCenterY: CGFloat
+    private let destinationViewport: CGRect
 
     init(centerY: CGFloat, viewport: CGRect, hatchFrame: CGRect?, destinationHatchFrame: CGRect?, fitsMargins: Bool = true) {
         self.centerY = centerY
         self.viewport = viewport
         self.hatchFrame = hatchFrame
+        self.destinationCenterY = centerY
+        self.destinationViewport = viewport
         // A logo squeezed between the hatch and the keyboard/input bar does not fit, even without overlap.
         fitsAtDestination = fitsMargins && Self.fits(centerY: centerY, viewport: viewport, hatchFrame: destinationHatchFrame)
     }
@@ -87,6 +91,14 @@ struct EscapeHatchLogoLayout: AnimatableModifier {
             // Check the animated position so a growing viewport cannot reveal an overlapping logo.
             .opacity(isVisible ? 1 : 0)
             .animation(nil, value: isVisible)
+    }
+
+    /// Where the logo rests once its animation settles, or nil when it does not fit there.
+    var visibleFrame: CGRect? {
+        guard fitsAtDestination else { return nil }
+        let size = FocusedDaxLogoView.size
+        return CGRect(x: destinationViewport.midX - size.width / 2, y: destinationCenterY - size.height / 2,
+                      width: size.width, height: size.height)
     }
 
     var isVisible: Bool {

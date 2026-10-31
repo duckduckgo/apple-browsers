@@ -156,6 +156,11 @@ final class UnifiedSuggestionsHost {
         ])
         hosting.didMove(toParent: parentViewController)
         hostingController = hosting
+        // The legacy focused hatch lives in the NTP hierarchy and blurs only what it covers.
+        viewModel.$backdropLogoFrame
+            .removeDuplicates()
+            .sink { [weak self] in self?.favoritesPresentation.viewController?.setFocusedLogoFrame($0) }
+            .store(in: &cancellables)
     }
 
     func setUsesRedesignedNewTabPageLayout(_ enabled: Bool) {

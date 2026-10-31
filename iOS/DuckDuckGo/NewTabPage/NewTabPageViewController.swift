@@ -194,6 +194,11 @@ final class NewTabPageViewController: UIViewController, NewTabPage, RemoteMessag
         newTabPageViewModel.focusedContentTopInset = inset
     }
 
+    func setFocusedLogoFrame(_ frame: CGRect?) {
+        guard newTabPageViewModel.focusedLogoFrame != frame else { return }
+        newTabPageViewModel.focusedLogoFrame = frame
+    }
+
     func setOpenedAfterIdle(_ openedAfterIdle: Bool) {
         newTabPageViewModel.openedAfterIdle = openedAfterIdle
         messagesModel.refresh()

@@ -36,6 +36,10 @@ public enum iOSBrowserConfigSubfeature: String, PrivacySubfeature {
     /// https://app.asana.com/1/137249556945/project/392891325557410/task/1218733091540132?focus=true
     case iPhoneDuoLaunchReporting
 
+    /// Hold Content Scope Scripts and Autofill back in blank subframes until the frame needs them.
+    /// https://app.asana.com/1/137249556945/project/414709148257752/task/1219638608202439
+    case blankFrameScriptDeferral
+
     // Local inactivity provisional notifications delivered to Notification Center.
     // https://app.asana.com/1/137249556945/project/72649045549333/task/1211003501974970?focus=true
     case inactivityNotification

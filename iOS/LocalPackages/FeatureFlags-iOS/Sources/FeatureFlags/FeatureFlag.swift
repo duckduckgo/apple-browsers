@@ -210,6 +210,11 @@ public enum FeatureFlag: String {
     /// https://app.asana.com/1/137249556945/project/392891325557410/task/1218733091540132?focus=true
     case iPhoneDuoLaunchReporting
 
+    /// Hold Content Scope Scripts and Autofill back in blank subframes until the frame reads a protected API, gets content
+    /// or gets a form field. Off by default.
+    /// https://app.asana.com/1/137249556945/project/414709148257752/task/1219638608202439
+    case blankFrameScriptDeferral
+
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866469585479
     case daxEasterEggLogos
 
@@ -830,6 +835,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(source: .remoteReleasable(iOSBrowserConfigSubfeature.widgetReporting), supportsLocalOverriding: false)
         case .iPhoneDuoLaunchReporting:
             Config(source: .remoteReleasable(iOSBrowserConfigSubfeature.iPhoneDuoLaunchReporting))
+        case .blankFrameScriptDeferral:
+            Config(source: .remoteReleasable(iOSBrowserConfigSubfeature.blankFrameScriptDeferral))
         case .daxEasterEggLogos:
             Config(defaultValue: .enabled, source: .remoteReleasable(DaxEasterEggLogosSubfeature.featureEnabled))
         case .daxEasterEggPermanentLogo:

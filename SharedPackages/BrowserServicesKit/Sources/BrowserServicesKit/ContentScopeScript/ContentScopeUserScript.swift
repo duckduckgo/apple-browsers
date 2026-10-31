@@ -367,6 +367,9 @@ public final class ContentScopeUserScript: NSObject, UserScript, UserScriptMessa
     public let injectionTime: WKUserScriptInjectionTime = .atDocumentStart
     public let forMainFrameOnly: Bool = false
     public var requiresRunInPageContentWorld: Bool { !self.scriptContext.isIsolated }
+
+    /// When this script starts in blank subframes; set before it's installed
+    public var blankFrameStart: BlankFrameStart = .immediately
 }
 
 @available(macOS 11.0, iOS 14.0, *)

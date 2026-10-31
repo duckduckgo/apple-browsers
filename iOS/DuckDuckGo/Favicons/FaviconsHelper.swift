@@ -39,6 +39,7 @@ struct FaviconsHelper {
 
     private static let tld: TLD = AppDependencyProvider.shared.storageCache.tld
     private static let sourcesProvider: FaviconSourcesProvider = DefaultFaviconSourcesProvider()
+    private static let diskQueue = DispatchQueue(label: "com.duckduckgo.favicons.diskRead", qos: .userInitiated)
 
     static func loadFaviconSync(forDomain domain: String?,
                                 usingCache cacheType: FaviconsCacheType,
@@ -63,10 +64,58 @@ struct FaviconsHelper {
             return (cachedImage, false)
         }
 
-        // Try loading from disk with proper error handling
+        if let image = loadFaviconFromDisk(cache: cache, cacheKey: resource.cacheKey, domain: domain) {
+            return (image, false)
+        }
+        return createFallbackResult(domain: domain,
+                                    useFakeFavicon: useFakeFavicon,
+                                    preferredLetters: preferredFakeFaviconLetters)
+    }
+
+    /// Same as `loadFaviconSync`, but reads the disk cache off the main thread.
+    /// Must be called on the main thread. `completion` is called on the main thread: synchronously when the favicon
+    /// doesn't need a disk read (custom image, memory cache hit or no cache entry), asynchronously otherwise.
+    static func loadFavicon(forDomain domain: String?,
+                            usingCache cacheType: FaviconsCacheType,
+                            useFakeFavicon: Bool,
+                            preferredFakeFaviconLetters: String? = nil,
+                            completion: @escaping (UIImage?, Bool) -> Void) {
+        if let customImage = customImage(for: domain) {
+            completion(customImage, false)
+            return
+        }
+
+        guard let cache = Favicons.Constants.caches[cacheType],
+              let resource = FaviconsHelper.defaultResource(forDomain: domain, sourcesProvider: sourcesProvider) else {
+            let result = createFallbackResult(domain: domain, useFakeFavicon: useFakeFavicon, preferredLetters: preferredFakeFaviconLetters)
+            completion(result.0, result.1)
+            return
+        }
+
+        if let cachedImage = cache.retrieveImageInMemoryCache(forKey: resource.cacheKey) {
+            completion(cachedImage, false)
+            return
+        }
+
+        diskQueue.async {
+            let image = loadFaviconFromDisk(cache: cache, cacheKey: resource.cacheKey, domain: domain)
+            DispatchQueue.main.async {
+                if let image {
+                    completion(image, false)
+                } else {
+                    // Fake favicons are drawn with UIKit, so they have to be created on the main thread.
+                    let result = createFallbackResult(domain: domain, useFakeFavicon: useFakeFavicon, preferredLetters: preferredFakeFaviconLetters)
+                    completion(result.0, result.1)
+                }
+            }
+        }
+    }
+
+    /// Reads the favicon from the disk cache and copies it into the memory cache. Safe to call off the main thread.
+    private static func loadFaviconFromDisk(cache: ImageCache, cacheKey: String, domain: String?) -> UIImage? {
         do {
-            let url = cache.diskStorage.cacheFileURL(forKey: resource.cacheKey)
-            
+            let url = cache.diskStorage.cacheFileURL(forKey: cacheKey)
+
             guard FileManager.default.fileExists(atPath: url.path) else {
                 throw FaviconError.missingFile
             }
@@ -81,7 +130,7 @@ struct FaviconsHelper {
                let fileModificationDate = attributes[.modificationDate] as? Date {
 
                 cache.store(image,
-                           forKey: resource.cacheKey,
+                           forKey: cacheKey,
                            options: KingfisherParsedOptionsInfo([
                             .cacheMemoryOnly,
                             .diskCacheAccessExtendingExpiration(.none),
@@ -90,13 +139,11 @@ struct FaviconsHelper {
                            toDisk: false)
             }
 
-            return (image, false)
+            return image
 
         } catch {
             Logger.general.error("Failed to load favicon from disk for domain: \(domain ?? "unknown"), error: \(error)")
-            return createFallbackResult(domain: domain,
-                                      useFakeFavicon: useFakeFavicon,
-                                      preferredLetters: preferredFakeFaviconLetters)
+            return nil
         }
     }
 

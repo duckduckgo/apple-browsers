@@ -21,9 +21,25 @@ import UIKit
 import Core
 import Kingfisher
 
+private final class FaviconLoadRequest {
+    let domain: String?
+
+    init(domain: String?) {
+        self.domain = domain
+    }
+}
+
 extension UIImageView {
-    
+
+    private static var faviconLoadRequestKey: UInt8 = 0
+
+    private var faviconLoadRequest: FaviconLoadRequest? {
+        get { objc_getAssociatedObject(self, UnsafeRawPointer(&Self.faviconLoadRequestKey)) as? FaviconLoadRequest }
+        set { objc_setAssociatedObject(self, UnsafeRawPointer(&Self.faviconLoadRequestKey), newValue, .OBJC_ASSOCIATION_RETAIN) }
+    }
+
     /// Load a favicon from the cache in to this uiview.  This will not load the favicon from the network.
+    /// Disk cache reads happen off the main thread, so the image (and `completion`) may arrive asynchronously.
     func loadFavicon(forDomain domain: String?,
                      usingCache cacheType: FaviconsCacheType,
                      useFakeFavicon: Bool = true,
@@ -31,10 +47,19 @@ extension UIImageView {
                      completion: ((UIImage?, Bool) -> Void)? = nil) {
 
         func load() {
-            FaviconsHelper.loadFaviconSync(forDomain: domain,
-                                           usingCache: cacheType,
-                                           useFakeFavicon: useFakeFavicon,
-                                           preferredFakeFaviconLetters: preferredFakeFaviconLetters) { image, fake in
+            let request = FaviconLoadRequest(domain: domain)
+            // Don't show another domain's favicon (e.g. of a reused cell) while the disk read is in flight.
+            if faviconLoadRequest?.domain != domain {
+                image = nil
+            }
+            faviconLoadRequest = request
+            let placeholder = image
+            FaviconsHelper.loadFavicon(forDomain: domain,
+                                       usingCache: cacheType,
+                                       useFakeFavicon: useFakeFavicon,
+                                       preferredFakeFaviconLetters: preferredFakeFaviconLetters) { [weak self] image, fake in
+                // Drop the result if another favicon was requested, or an image was set directly, in the meantime.
+                guard let self, self.faviconLoadRequest === request, self.image === placeholder else { return }
                 self.image = image
                 completion?(image, fake)
             }

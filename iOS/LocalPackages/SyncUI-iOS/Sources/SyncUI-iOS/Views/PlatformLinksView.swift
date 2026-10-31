@@ -23,6 +23,10 @@ import DesignResourcesKitIcons
 import DuckUI
 import MetricBuilder
 
+#if DEBUG
+import PreviewSnapshots
+#endif
+
 public struct PlatformLinksView: View {
 
     private struct Constants {
@@ -49,74 +53,68 @@ public struct PlatformLinksView: View {
             .padding(16)
             .frame(maxWidth: .infinity)
         }
-        .background(Color(designSystemColor: .background))
-        .ignoresSafeArea()
+        .background(Color(designSystemColor: .background).ignoresSafeArea())
         .navigationTitle(UserText.syncGetOtherDevicesScreenTitle)
     }
 
     private var content: some View {
-        VStack(alignment: .center, spacing: 0) {
-
-            Image("Sync-App-Download-128")
+        VStack(alignment: .center, spacing: 8) {
+            Image("DDG-App-Download-Feature-96", bundle: .module)
                 .resizable()
-                .frame(width: 96, height: 72)
+                .frame(width: 96, height: 96)
 
-
-            Text(UserText.syncGetOtherDevicesTitle)
-                .daxTitle3()
-                .foregroundColor(Color(designSystemColor: .textPrimary))
-                .padding([.top, .horizontal], 16)
-                .multilineTextAlignment(.center)
-
-            Group {
-                Text(UserText.syncGetOtherDevicesMessage)
-                    .daxBodyRegular()
+            VStack(spacing: 8) {
+                Text(UserText.syncGetOtherDevicesTitle)
+                    .daxHeadline()
                     .foregroundColor(Color(designSystemColor: .textPrimary))
-                    .padding(.top, 8)
-                    .multilineTextAlignment(.center)
 
-                Text(Constants.goToUrl)
-                    .daxBodyBold()
-                    .foregroundColor(Color(designSystemColor: .accentPrimary))
-                    .overlay(
-                        CopyActionOverlay(copyText: Constants.downloadUrl, onCopy: {
-                            model.fireOtherPlatformLinksPixel(for: .copy, source: source)
-                        })
-                        .frame(maxWidth: .infinity, maxHeight: .infinity)
-                    )
-                    .padding(.top, 2)
+                VStack(spacing: 0) {
+                    Text(UserText.syncGetOtherDevicesMessage)
+                        .daxSubheadRegular()
+                        .foregroundColor(Color(designSystemColor: .textSecondary))
 
-                Button {
-                    if let url = URL(string: Constants.downloadUrl) {
-                        model.shareLinkPressed(for: url, with: UserText.syncGetOtherDeviceShareLinkMessage, from: shareButtonFrame)
-                        model.fireOtherPlatformLinksPixel(for: .share, source: source)
-                    }
-                } label: {
-                    HStack(spacing: 6) {
-                        Image(uiImage: DesignSystemImages.Glyphs.Size24.shareApple)
-                        Text(UserText.syncGetOtherDevicesButtonTitle)
-                            .daxBodyBold()
-                    }
-                }
-                .buttonStyle(PrimaryButtonStyle())
-                .padding(.top, 24)
-                .background(
-                    GeometryReader { geometryProxy in
-                        Color.clear
-                            .preference(key: ShareButtonFramePreferenceKey.self, value: geometryProxy.frame(in: .global))
-                    }
-                )
-                .onPreferenceChange(ShareButtonFramePreferenceKey.self) { newFrameRect in
-                    shareButtonFrame = newFrameRect
+                    Text(Constants.goToUrl)
+                        .font(Font(UIFont.daxSubheadRegular()).weight(.medium))
+                        .foregroundColor(Color(designSystemColor: .accentPrimary))
+                        .overlay(
+                            CopyActionOverlay(copyText: Constants.downloadUrl, onCopy: {
+                                model.fireOtherPlatformLinksPixel(for: .copy, source: source)
+                            })
+                            .frame(maxWidth: .infinity, maxHeight: .infinity)
+                        )
                 }
             }
+            .multilineTextAlignment(.center)
             .padding(.horizontal, 24)
+            .padding(.vertical, 8)
 
+            Button {
+                if let url = URL(string: Constants.downloadUrl) {
+                    model.shareLinkPressed(for: url, with: UserText.syncGetOtherDeviceShareLinkMessage, from: shareButtonFrame)
+                    model.fireOtherPlatformLinksPixel(for: .share, source: source)
+                }
+            } label: {
+                HStack(spacing: 8) {
+                    Image(uiImage: DesignSystemImages.Glyphs.Size24.shareApple)
+                    Text(UserText.syncGetOtherDevicesButtonTitle)
+                }
+            }
+            .buttonStyle(PrimaryButtonStyle())
+            .background(
+                GeometryReader { geometryProxy in
+                    Color.clear
+                        .preference(key: ShareButtonFramePreferenceKey.self, value: geometryProxy.frame(in: .global))
+                }
+            )
+            .onPreferenceChange(ShareButtonFramePreferenceKey.self) { newFrameRect in
+                shareButtonFrame = newFrameRect
+            }
+            .padding(8)
         }
-        .padding(.vertical, 24)
+        .padding(16)
         .background(
             RoundedRectangle(cornerRadius: ContainerMetrics.cornerRadius)
-                .fill(Color(designSystemColor: .surface))
+                .fill(Color(designSystemColor: .surfaceSecondary))
         )
         .onAppear {
             model.fireOtherPlatformLinksPixel(for: .appear, source: source)
@@ -201,15 +199,30 @@ private class CopyableUIView: UIView {
     }
 }
 
+#if DEBUG
 struct PlatformLinksView_Previews: PreviewProvider {
+
     static var previews: some View {
-        PlatformLinksView(
-            model: SyncSettingsViewModel(
-                isOnDevEnvironment: { true },
-                switchToProdEnvironment: {},
-                autoRestoreProvider: SyncAutoRestorePreviewProvider.disabled
-            ),
-            source: .activated
-        )
+        snapshots.previews
     }
+
+    static let snapshots = PreviewSnapshots<Void>(
+        configurations: [
+            .init(name: "Platform Links", state: ())
+        ],
+        configure: { _ in
+            PreviewNavigationContainer {
+                PlatformLinksView(
+                    model: SyncSettingsViewModel(
+                        isOnDevEnvironment: { true },
+                        switchToProdEnvironment: {},
+                        autoRestoreProvider: SyncAutoRestorePreviewProvider.disabled
+                    ),
+                    source: .activated
+                )
+                .navigationBarTitleDisplayMode(.inline)
+            }
+        }
+    )
 }
+#endif

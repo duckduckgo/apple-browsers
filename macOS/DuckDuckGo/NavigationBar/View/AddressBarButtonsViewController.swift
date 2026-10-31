@@ -161,6 +161,16 @@ final class AddressBarButtonsViewController: NSViewController {
     private(set) var searchModeToggleControl: CustomToggleControl?
     private var searchModeToggleWidthConstraint: NSLayoutConstraint?
     private var wasToggleVisible: Bool = false
+    /// The toggle would be expanded, but the address bar lacks room for its labels
+    private var isToggleCollapsedForLackOfRoom: Bool = false
+
+    var isSearchModeToggleShown: Bool {
+        searchModeToggleControl?.isHidden == false
+    }
+
+    var isSearchModeToggleExpanded: Bool {
+        searchModeToggleControl?.isExpanded == true
+    }
 
     /// Callback to focus the AI Chat text view when Tab is pressed on the toggle in AI Chat mode.
     /// Set by MainViewController to wire up the connection between toggle and AI Chat text container.
@@ -190,6 +200,9 @@ final class AddressBarButtonsViewController: NSViewController {
     /// Width of the right buttons container (Bookmark button, AI Chat button…)
     /// Used to adjust the Passive Address Bar trailing constraint
     @Published private(set) var trailingButtonsWidth: CGFloat = 0
+    /// Part of `trailingButtonsWidth` taken by the expanded toggle's labels, which collapse when the address bar lacks room.
+    /// Updated before `trailingButtonsWidth`.
+    private(set) var trailingButtonsCollapsibleWidth: CGFloat = 0
 
     private let onboardingPixelReporter: OnboardingAddressBarReporting
 
@@ -814,7 +827,13 @@ final class AddressBarButtonsViewController: NSViewController {
             updateTrackingAreaForHover()
         }
         self.buttonsWidth = buttonsContainer.frame.size.width + 10.0
+        self.trailingButtonsCollapsibleWidth = searchModeToggleCollapsibleWidth
         self.trailingButtonsWidth = trailingButtonsContainer.frame.size.width + 14.0
+    }
+
+    private var searchModeToggleCollapsibleWidth: CGFloat {
+        guard let toggleControl = searchModeToggleControl, !toggleControl.isHidden else { return 0 }
+        return max(toggleControl.frame.width - toggleControl.collapsedWidth, 0)
     }
 
     func updateTrackingAreaForHover() {
@@ -2302,6 +2321,10 @@ final class AddressBarButtonsViewController: NSViewController {
         let hasUserTypedText = textFieldValue?.isUserTyped == true && hasText
         let hasInteractedBefore = aiChatToggleConditions.hasUserInteractedWithToggle
 
+        if shouldShowToggle != wasToggleVisible || hasUserTypedText {
+            isToggleCollapsedForLackOfRoom = false
+        }
+
         if shouldShowToggle && !wasToggleVisible {
             if hasText || hasInteractedBefore {
                 toggleControl.setExpanded(false, animated: false)
@@ -2319,6 +2342,27 @@ final class AddressBarButtonsViewController: NSViewController {
         }
 
         wasToggleVisible = shouldShowToggle
+    }
+
+    /// Collapses the expanded toggle when the address bar text would get narrower than `minimumTextWidth`,
+    /// and expands it again once there's room for its labels.
+    func updateToggleExpansion(forAvailableTextWidth availableTextWidth: CGFloat, minimumTextWidth: CGFloat) {
+        guard let toggleControl = searchModeToggleControl, !toggleControl.isHidden else { return }
+
+        if toggleControl.isExpanded && availableTextWidth < minimumTextWidth {
+            isToggleCollapsedForLackOfRoom = true
+            toggleControl.setExpanded(false, animated: false)
+            return
+        }
+
+        let labelsWidth = toggleControl.expandedWidth - toggleControl.collapsedWidth
+        let hasRoomForLabels = availableTextWidth - labelsWidth >= minimumTextWidth
+        let isTextEmpty = textFieldValue?.isEmpty ?? true
+        guard isToggleCollapsedForLackOfRoom, hasRoomForLabels, isTextEmpty,
+              !aiChatToggleConditions.hasUserInteractedWithToggle else { return }
+
+        isToggleCollapsedForLackOfRoom = false
+        toggleControl.setExpanded(true, animated: false)
     }
 
     @objc func zoomButtonAction(_ sender: Any) {

@@ -60,7 +60,6 @@ protocol DependencyProvider {
     var configurationManager: ConfigurationManager { get }
     var configurationStore: ConfigurationStore { get }
     var pageRefreshMonitor: PageRefreshMonitor { get }
-    var hardwareKeyboardMonitor: HardwareKeyboardMonitor { get }
     var vpnFeatureVisibility: DefaultNetworkProtectionVisibility { get }
     var networkProtectionTunnelController: NetworkProtectionTunnelController { get }
     var networkSignalsProvider: NetworkSignalsProviding { get }
@@ -148,7 +147,6 @@ final class AppDependencyProvider: DependencyProvider {
     let configurationStore = ConfigurationStore()
 
     let pageRefreshMonitor = PageRefreshMonitor(onDidDetectRefreshPattern: PageRefreshMonitor.onDidDetectRefreshPattern)
-    let hardwareKeyboardMonitor = HardwareKeyboardMonitor()
 
     // Subscription
     var subscriptionManager: any SubscriptionManager

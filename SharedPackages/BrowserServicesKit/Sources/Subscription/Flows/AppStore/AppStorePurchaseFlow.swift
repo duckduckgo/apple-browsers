@@ -159,7 +159,13 @@ public final class DefaultAppStorePurchaseFlow: AppStorePurchaseFlow {
         var externalID: String?
         var accountCreationDuration: WideEvent.MeasuredInterval?
 
-        if let existingExternalID = await getExpiredSubscriptionID() {
+        let existingSubscription = await existingSubscription()
+        if case .active = existingSubscription {
+            Logger.subscriptionAppStorePurchaseFlow.log("An active subscription is already present, not purchasing")
+            return .failure(.activeSubscriptionAlreadyPresent)
+        }
+
+        if case .reusable(let existingExternalID) = existingSubscription {
             Logger.subscriptionAppStorePurchaseFlow.log("External ID retrieved from expired subscription")
             externalID = existingExternalID
         } else {
@@ -286,18 +292,30 @@ public final class DefaultAppStorePurchaseFlow: AppStorePurchaseFlow {
         }
     }
 
-    private func getExpiredSubscriptionID() async -> String? {
+    /// The subscription of the current account, as far as a new purchase is concerned.
+    private enum ExistingSubscription {
+        /// The account has an active subscription on any platform, which must be cancelled before buying another one.
+        case active
+        /// The account has an expired subscription bought outside the App Store, so the purchase can reuse the account.
+        case reusable(externalID: String)
+        /// There is no subscription to consider: no account, no subscription, an expired App Store one, or it couldn't be fetched.
+        case none
+    }
+
+    /// Fetches the current account's subscription and classifies it for a new purchase.
+    private func existingSubscription() async -> ExistingSubscription {
         do {
-            guard let subscription = try await subscriptionManager.getSubscription(forceRefresh: true) else { return nil }
-            // Only return an externalID if the subscription is expired so to prevent creating multiple subscriptions in the same account
-            if !subscription.isActive,
-               subscription.platform != .apple {
-                return try await subscriptionManager.getTokenContainer(policy: .localValid).decodedAccessToken.externalID
+            guard let subscription = try await subscriptionManager.getSubscription(forceRefresh: true) else { return .none }
+            if subscription.isActive {
+                return .active
             }
-            return nil
+            if subscription.platform != .apple {
+                return .reusable(externalID: try await subscriptionManager.getTokenContainer(policy: .localValid).decodedAccessToken.externalID)
+            }
+            return .none
         } catch {
             Logger.subscription.error("Failed to retrieve the current subscription ID: \(String(describing: error), privacy: .public)")
-            return nil
+            return .none
         }
     }
 }

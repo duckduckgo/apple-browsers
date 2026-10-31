@@ -24,6 +24,8 @@ import SwiftUI
 /// (0 = Dax/search, 1 = Duck.ai). Renders through the same Lottie asset as `NewTabPageDaxLogoView`
 /// so the focused and NTP logos stay pixel-identical. No positioning or visibility logic — the host owns that.
 struct FocusedDaxLogoView: View {
+    static let size = CGSize(width: 210, height: 162)
+
     @Environment(\.colorScheme) private var colorScheme
 
     /// 0 = Dax (search), 1 = Duck.ai.
@@ -47,13 +49,119 @@ struct FocusedDaxLogoView: View {
         Lottie.LottieView(animation: LottieAnimation.named(animationName))
             .playbackMode(playbackMode)
             .animationSpeed(animationSpeed)
-            .frame(height: Constant.logoHeight)
+            .frame(height: Self.size.height)
             .id(animationName)
     }
 
     private enum Constant {
         static let animationName = "duckduckgo-ai-transition.json"
         static let darkAnimationName = "duckduckgo-ai-transition-dark.json"
-        static let logoHeight: CGFloat = 162
+    }
+}
+
+struct EscapeHatchLogoLayout: AnimatableModifier {
+    var centerY: CGFloat
+    var viewport: CGRect
+    let hatchFrame: CGRect?
+    private let fitsAtDestination: Bool
+
+    init(centerY: CGFloat, viewport: CGRect, hatchFrame: CGRect?, destinationHatchFrame: CGRect?, fitsMargins: Bool = true) {
+        self.centerY = centerY
+        self.viewport = viewport
+        self.hatchFrame = hatchFrame
+        // A logo squeezed between the hatch and the keyboard/input bar does not fit, even without overlap.
+        fitsAtDestination = fitsMargins && Self.fits(centerY: centerY, viewport: viewport, hatchFrame: destinationHatchFrame)
+    }
+
+    var animatableData: AnimatablePair<CGFloat, CGRect.AnimatableData> {
+        get { AnimatablePair(centerY, viewport.animatableData) }
+        set {
+            centerY = newValue.first
+            viewport.animatableData = newValue.second
+        }
+    }
+
+    func body(content: Content) -> some View {
+        content
+            .offset(y: centerY)
+            // Check the animated position so a growing viewport cannot reveal an overlapping logo.
+            .opacity(isVisible ? 1 : 0)
+            .animation(nil, value: isVisible)
+    }
+
+    var isVisible: Bool {
+        fitsAtDestination && Self.fits(centerY: centerY, viewport: viewport, hatchFrame: hatchFrame)
+    }
+
+    private static func fits(centerY: CGFloat, viewport: CGRect, hatchFrame: CGRect?) -> Bool {
+        guard let hatchFrame, !viewport.isEmpty else { return false }
+        let size = FocusedDaxLogoView.size
+        let logoFrame = CGRect(x: viewport.midX - size.width / 2, y: centerY - size.height / 2,
+                               width: size.width, height: size.height)
+        let overlap = logoFrame.intersection(hatchFrame)
+        return viewport.contains(logoFrame) && overlap.isEmpty
+    }
+}
+
+struct EmbeddedEscapeHatchGeometry: Equatable {
+    let frame: CGRect
+    var appliedContentTopInset: CGFloat = 0
+
+    func destinationFrame(contentTopInset: CGFloat) -> CGRect {
+        frame.offsetBy(dx: 0, dy: contentTopInset - appliedContentTopInset)
+    }
+}
+
+struct EmbeddedEscapeHatchGeometryKey: PreferenceKey {
+    static var defaultValue: EmbeddedEscapeHatchGeometry?
+
+    static func reduce(value: inout EmbeddedEscapeHatchGeometry?, nextValue: () -> EmbeddedEscapeHatchGeometry?) {
+        if let next = nextValue(), !next.frame.isEmpty { value = next }
+    }
+}
+
+struct EmbeddedEscapeHatchGeometryReader: ViewModifier {
+    /// Set on the focused scroll view; its content's offset in this space is the scroll displacement.
+    static let scrollSpace = "EmbeddedEscapeHatchScroll"
+    /// Set on the focused scroll content, which rests at the top of `scrollSpace`.
+    static let contentSpace = "EmbeddedEscapeHatchContent"
+
+    func body(content: Content) -> some View {
+        content.background {
+            GeometryReader { geometry in
+                Color.clear.preference(key: EmbeddedEscapeHatchGeometryKey.self,
+                                       value: EmbeddedEscapeHatchGeometry(frame: Self.restingFrame(of: geometry)))
+            }
+        }
+    }
+
+    /// The hatch frame with scrolling removed, so the logo neither follows nor reacts to a scroll.
+    /// Outside the focused scroll view both spaces resolve to global and nothing is removed.
+    private static func restingFrame(of geometry: GeometryProxy) -> CGRect {
+        let scrollOffset = geometry.frame(in: .named(scrollSpace)).minY - geometry.frame(in: .named(contentSpace)).minY
+        return geometry.frame(in: .global).offsetBy(dx: 0, dy: -scrollOffset)
+    }
+}
+
+struct FocusedContentTopInset: AnimatableModifier {
+    var topInset: CGFloat
+    var fixedTopInset: CGFloat = 0
+    var onEscapeHatchGeometryChange: ((EmbeddedEscapeHatchGeometry?) -> Void)?
+
+    var animatableData: CGFloat {
+        get { topInset }
+        set { topInset = newValue }
+    }
+
+    func body(content: Content) -> some View {
+        content
+            .padding(.top, fixedTopInset + topInset)
+            .coordinateSpace(name: EmbeddedEscapeHatchGeometryReader.contentSpace)
+            .transformPreference(EmbeddedEscapeHatchGeometryKey.self) { geometry in
+                geometry?.appliedContentTopInset = topInset
+            }
+            .onPreferenceChange(EmbeddedEscapeHatchGeometryKey.self) { geometry in
+                onEscapeHatchGeometryChange?(geometry)
+            }
     }
 }

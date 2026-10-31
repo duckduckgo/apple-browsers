@@ -28,6 +28,7 @@ struct LegacyFocusedNewTabPageContent {
     var recentChats: SuggestionsListViewModel?
     var syncPromo: AnyView?
     var isAddressBarAtBottom: Bool
+    var onEscapeHatchGeometryChange: ((EmbeddedEscapeHatchGeometry?) -> Void)?
 }
 
 final class NewTabPageViewModel: ObservableObject {
@@ -37,6 +38,7 @@ final class NewTabPageViewModel: ObservableObject {
     @Published var escapeHatch: EscapeHatchModel?
     @Published var focusedContent: LegacyFocusedNewTabPageContent?
     @Published var focusedContentTopInset: CGFloat = 0
+    var onFocusedEscapeHatchGeometryChange: ((EmbeddedEscapeHatchGeometry?) -> Void)?
     let scrollToTopRequests = PassthroughSubject<TimeInterval, Never>()
     var openedAfterIdle: Bool = false
     @Published var sectionTitle: String?
@@ -63,6 +65,7 @@ final class NewTabPageViewModel: ObservableObject {
     }
 
     func setFocusedContent(_ content: LegacyFocusedNewTabPageContent?, escapeHatch: EscapeHatchModel? = nil) {
+        onFocusedEscapeHatchGeometryChange = content?.onEscapeHatchGeometryChange
         // Focused chrome visibility must not change the session's remote-message eligibility.
         if self.escapeHatch !== escapeHatch {
             self.escapeHatch = escapeHatch

@@ -91,7 +91,7 @@ final class RedesignedFocusedSearchPresentationTests: XCTestCase {
             host.start(in: parent.view, parentViewController: parent, textPublisher: Just(""))
             defer { host.tearDown() }
             host.onContentChanged = {
-                host.setFocusedContent(mode: .search, escapeHatch: nil, syncPromo: nil)
+                host.setFocusedContent(mode: .search, escapeHatchPlacement: .hidden, escapeHatch: nil, syncPromo: nil)
             }
             let hostingController = try XCTUnwrap(parent.children.compactMap { $0 as? UIHostingController<UnifiedSuggestionsView> }.first)
             XCTAssertEqual(hostingController.rootView.usesScrollableEscapeHatch, usesScrollableEscapeHatch)

@@ -103,6 +103,22 @@ final class NewTabPageControllerDaxDialogTests: XCTestCase {
         hvc = nil
     }
 
+    func testWhenEscapeHatchIsVisibleThenLogoContentRemainsAvailableAfterInputDismissal() {
+        XCTAssertTrue(hvc.isShowingLogo)
+        let hatch = EscapeHatchModel.preview(title: "Website", subtitle: "", tabType: .regular,
+                                             domain: nil, targetTab: Tab(), tabCount: 1, keyValueStore: MockKeyValueFileStore())
+        hvc.setEscapeHatch(hatch)
+        hvc.setLogoHidden(true)
+        hvc.setLogoHidden(false)
+
+        XCTAssertTrue(hvc.isShowingLogo)
+        XCTAssertTrue(hvc.restingContentIsLogo)
+
+        hvc.setEscapeHatch(nil)
+        XCTAssertTrue(hvc.isShowingLogo)
+        XCTAssertTrue(hvc.restingContentIsLogo)
+    }
+
     func testWhenFocusedContentIsConfiguredBeforeLoadingThenHostedPageIsTransparent() throws {
         let (configuration, _) = makeConfiguration(withScheduledMessage: false)
         let controller = makeNewTabPage(openedAfterIdle: false, homePageMessagesConfiguration: configuration)
@@ -245,6 +261,70 @@ final class NewTabPageControllerDaxDialogTests: XCTestCase {
         }
     }
 
+    func testWhenSearchChangesToDuckAIThenLogoGeometryRemainsAvailable() throws {
+        let (configuration, _) = makeConfiguration(withScheduledMessage: false)
+        let controller = makeNewTabPage(openedAfterIdle: false, homePageMessagesConfiguration: configuration)
+        let inputs = CurrentValueSubject<UnifiedSuggestionsInputs, Never>(
+            .init(mode: .search, isTyping: false, hasFavorites: false, hasMessages: false, hasRecents: false, resultsPending: false))
+        let host = UnifiedSuggestionsHost(config: UnifiedSuggestionsHostConfig(
+            source: EmptySuggestionsSource(),
+            inputsPublisher: inputs.eraseToAnyPublisher(),
+            isAddressBarAtBottom: true,
+            favoritesProvider: { controller },
+            onSelectRow: { _ in },
+            onDeleteRow: { _ in },
+            onTapAheadRow: { _ in }), usesScrollableEscapeHatch: true)
+        let store = MockKeyValueFileStore()
+        LastTabShortcutAdapter(keyValueStore: store).setEnabled(true)
+        let hatch = EscapeHatchModel.preview(title: "Geometry", subtitle: "", tabType: .regular,
+                                             domain: nil, targetTab: Tab(), tabCount: 1, keyValueStore: store)
+        host.setFocusedContent(mode: .search, escapeHatchPlacement: .embedded, escapeHatch: hatch, syncPromo: nil)
+
+        let parent = UIViewController()
+        let scene = try XCTUnwrap(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }
+            .first { $0.activationState == .foregroundActive })
+        let window = UIWindow(windowScene: scene)
+        window.frame = UIScreen.main.bounds
+        window.rootViewController = parent
+        window.makeKeyAndVisible()
+        let container = UIView(frame: CGRect(x: 0, y: 0, width: window.bounds.width, height: 636))
+        parent.view.addSubview(container)
+        host.start(in: container, parentViewController: parent, isFloatingUIEnabled: true, textPublisher: Just(""))
+        defer {
+            host.tearDown()
+            window.isHidden = true
+            window.rootViewController = nil
+            testWindow?.makeKeyAndVisible()
+        }
+        host.setContentInsets(UIEdgeInsets(top: 0, left: 0, bottom: 120, right: 0))
+        let hosting = try XCTUnwrap(parent.children.compactMap { $0 as? UIHostingController<UnifiedSuggestionsView> }.first)
+        let model = hosting.rootView.viewModel
+        let mounted = XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in
+            parent.view.layoutIfNeeded()
+            guard let viewport = model.logoViewportFrame, let hatchFrame = model.embeddedEscapeHatchFrame else { return false }
+            return viewport.intersects(hatchFrame)
+        }, object: nil)
+        XCTAssertEqual(XCTWaiter.wait(for: [mounted], timeout: 5), .completed)
+        XCTAssertEqual(model.content, .logo)
+        XCTAssertEqual(try XCTUnwrap(model.logoViewportFrame).maxY, 516, accuracy: 1)
+        let animated = expectation(description: "Search-to-Duck.ai input animation completes")
+        let animator = UIViewPropertyAnimator(duration: 0.2, curve: .easeInOut) {
+            inputs.send(.init(mode: .aiChat, isTyping: false, hasFavorites: false, hasMessages: false, hasRecents: false, resultsPending: false))
+            host.setFocusedContent(mode: .aiChat, escapeHatchPlacement: .embedded, escapeHatch: hatch, syncPromo: nil)
+            host.setContentInsets(UIEdgeInsets(top: 0, left: 0, bottom: 221, right: 0))
+            parent.view.layoutIfNeeded()
+        }
+        animator.addCompletion { _ in animated.fulfill() }
+        animator.startAnimation()
+        wait(for: [animated], timeout: 5)
+        XCTAssertEqual(model.content, .logo)
+        let viewport = try XCTUnwrap(model.logoViewportFrame)
+        let hatchFrame = try XCTUnwrap(model.embeddedEscapeHatchFrame)
+        XCTAssertEqual(viewport.maxY, 415, accuracy: 1)
+        XCTAssertGreaterThan(viewport.maxY - hatchFrame.maxY, FocusedDaxLogoView.size.height)
+        XCTAssertTrue(EscapeHatchLogoLayout(centerY: 300, viewport: viewport, hatchFrame: hatchFrame, destinationHatchFrame: hatchFrame).isVisible)
+    }
+
     private func assertFocusedContentTracksTopClearance(
         usesRedesign: Bool,
         resetsScrolledContent: Bool = false,
@@ -270,7 +350,7 @@ final class NewTabPageControllerDaxDialogTests: XCTestCase {
                 probeRevision += 1
             })
         host.setUsesRedesignedNewTabPageLayout(usesRedesign)
-        host.setFocusedContent(mode: .aiChat, escapeHatch: nil, syncPromo: probe)
+        host.setFocusedContent(mode: .aiChat, escapeHatchPlacement: .hidden, escapeHatch: nil, syncPromo: probe)
 
         let parent = UIViewController()
         let scene = try XCTUnwrap(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }
@@ -365,7 +445,7 @@ final class NewTabPageControllerDaxDialogTests: XCTestCase {
             onSelectRow: { _ in },
             onDeleteRow: { _ in },
             onTapAheadRow: { _ in }), usesScrollableEscapeHatch: usesScrollableEscapeHatch)
-        host.setFocusedContent(mode: .search, escapeHatch: nil, syncPromo: nil)
+        host.setFocusedContent(mode: .search, escapeHatchPlacement: .hidden, escapeHatch: nil, syncPromo: nil)
         let parent = UIViewController()
         let scene = try XCTUnwrap(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }
             .first { $0.activationState == .foregroundActive })

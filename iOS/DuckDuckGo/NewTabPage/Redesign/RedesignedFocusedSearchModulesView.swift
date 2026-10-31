@@ -30,6 +30,7 @@ struct RedesignedFocusedSearchModulesView: View {
     var isAddressBarAtBottom = false
     var contentTopInset: CGFloat = 0
     var usesScrollableEscapeHatch = true
+    var onEscapeHatchGeometryChange: ((EmbeddedEscapeHatchGeometry?) -> Void)?
 
     var body: some View {
         GeometryReader { geometry in
@@ -43,6 +44,7 @@ struct RedesignedFocusedSearchModulesView: View {
                         .accessibilityHidden(!showsSearchModules)
                     if let escapeHatch {
                         RedesignedEscapeHatchView(model: escapeHatch)
+                            .modifier(EmbeddedEscapeHatchGeometryReader())
                             .frame(maxWidth: .infinity)
                             .padding(.top, hatchTopPadding)
                             .padding(.horizontal, 16)
@@ -68,10 +70,12 @@ struct RedesignedFocusedSearchModulesView: View {
                 .animation(nil, value: showsSearchModules)
                 .animation(nil, value: recentChats != nil)
                 .modifier(FocusedContentGeometryGroup(isEnabled: usesScrollableEscapeHatch))
-                .padding(.top, contentTopInset)
+                .modifier(FocusedContentTopInset(topInset: contentTopInset,
+                                                 onEscapeHatchGeometryChange: onEscapeHatchGeometryChange))
                 .padding(.leading, geometry.safeAreaInsets.leading)
                 .padding(.trailing, geometry.safeAreaInsets.trailing)
             }
+            .coordinateSpace(name: EmbeddedEscapeHatchGeometryReader.scrollSpace)
             // Clip at the page edges, not the landscape safe-area edges. The content keeps
             // its safe-area alignment while the message shadows can extend into the margins.
             .ignoresSafeArea(.container, edges: .horizontal)

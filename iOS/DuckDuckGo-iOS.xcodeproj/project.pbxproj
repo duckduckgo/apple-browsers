@@ -222,6 +222,7 @@
 		7BC26C9E2DFC0CA000E52480 /* VPN in Frameworks */ = {isa = PBXBuildFile; productRef = 7BC26C9D2DFC0CA000E52480 /* VPN */; };
 		7BC26CA02DFC0CAC00E52480 /* VPN in Frameworks */ = {isa = PBXBuildFile; productRef = 7BC26C9F2DFC0CAC00E52480 /* VPN */; };
 		7BC26CA22DFC0CB800E52480 /* VPN in Frameworks */ = {isa = PBXBuildFile; productRef = 7BC26CA12DFC0CB800E52480 /* VPN */; };
+		7ADA035B19F608095AA92EC9 /* VPNDebug in Frameworks */ = {isa = PBXBuildFile; productRef = F475CC7AD66D5431CD73C934 /* VPNDebug */; };
 		7BC26CB22DFC155500E52480 /* VPNTestUtils in Frameworks */ = {isa = PBXBuildFile; productRef = 7BC26CB12DFC155500E52480 /* VPNTestUtils */; };
 		7BC26CB42DFC155E00E52480 /* VPNTestUtils in Frameworks */ = {isa = PBXBuildFile; productRef = 7BC26CB32DFC155E00E52480 /* VPNTestUtils */; };
 		7BC26CB62DFC156A00E52480 /* VPNTestUtils in Frameworks */ = {isa = PBXBuildFile; productRef = 7BC26CB52DFC156A00E52480 /* VPNTestUtils */; };
@@ -2171,6 +2172,7 @@
 				02025664298818B200E694E7 /* NetworkExtension.framework in Frameworks */,
 				4BC95EB12D7417BF002FAB32 /* Subscription in Frameworks */,
 				7BC26CA22DFC0CB800E52480 /* VPN in Frameworks */,
+				7ADA035B19F608095AA92EC9 /* VPNDebug in Frameworks */,
 				4B470EE4299C6DFB0086EBDC /* Core.framework in Frameworks */,
 				4BC8948C2C7902E6009AA141 /* WireGuard in Frameworks */,
 			);
@@ -4314,6 +4316,7 @@
 				4BC8948B2C7902E6009AA141 /* WireGuard */,
 				4BC95EB02D7417BF002FAB32 /* Subscription */,
 				7BC26CA12DFC0CB800E52480 /* VPN */,
+				F475CC7AD66D5431CD73C934 /* VPNDebug */,
 				ED4B3F3C2F191E5F006C5FE4 /* PrivacyConfig */,
 			);
 			productName = PacketTunnelProvider;
@@ -6405,6 +6408,8 @@
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
 				SKIP_INSTALL = YES;
+				DUCK_WIREGUARD_DEBUG_FLAGS = DUCK_WIREGUARD_POC;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "$(inherited) DEBUG $(DUCK_WIREGUARD_DEBUG_FLAGS)";
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
@@ -9868,6 +9873,10 @@
 		FCFC00021F00000000030001 /* URLPredictor */ = {
 			isa = XCSwiftPackageProductDependency;
 			productName = URLPredictor;
+		};
+		F475CC7AD66D5431CD73C934 /* VPNDebug */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = VPNDebug;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};

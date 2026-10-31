@@ -34,6 +34,9 @@ import PixelKit
 import WideEvent
 import Subscription
 import VPN
+#if DEBUG && DUCK_WIREGUARD_POC
+import VPNDebug
+#endif
 import WidgetKit
 import WireGuard
 import PrivacyConfig
@@ -603,6 +606,15 @@ final class NetworkProtectionPacketTunnelProvider: PacketTunnelProvider {
             defaults: .networkProtectionGroupDefaults,
             wrappee: notificationsPresenter
         )
+#if DEBUG && DUCK_WIREGUARD_POC
+        let nativeAdapter = NativeWireGuardAdapter { message in
+            Logger.networkProtection.log("[DuckWireGuard debug] \(message, privacy: .public)")
+        }
+        let debugAdapter: WireGuardAdapterProtocol? = nativeAdapter
+#else
+        let debugAdapter: WireGuardAdapterProtocol? = nil
+#endif
+
         super.init(notificationsPresenter: notificationsPresenterDecorator,
                    tunnelHealthStore: NetworkProtectionTunnelHealthStore(),
                    controllerErrorStore: errorStore,
@@ -615,9 +627,13 @@ final class NetworkProtectionPacketTunnelProvider: PacketTunnelProvider {
                    settings: settings,
                    defaults: .networkProtectionGroupDefaults,
                    wideEvent: wideEvent,
+                   adapter: debugAdapter,
                    entitlementCheck: entitlementsCheck,
                    loopDetector: loopDetector,
                    sessionHealth: sessionHealth)
+#if DEBUG && DUCK_WIREGUARD_POC
+        nativeAdapter.attach(to: self)
+#endif
         startMonitoringMemoryPressureEvents()
 
         observeServerChanges()

@@ -141,7 +141,7 @@ struct UnifiedSuggestionsView: View {
     }
 
     private var isShowingLogo: Bool {
-        viewModel.isShowingLogo
+        viewModel.isShowingLogo && !viewModel.isLogoRevealDeferred
     }
 
     /// The Dax↔Duck.ai empty-state logo, morphing via bound `logoProgress`. Pinned to the exact

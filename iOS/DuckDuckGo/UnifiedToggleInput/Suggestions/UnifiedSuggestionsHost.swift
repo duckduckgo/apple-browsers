@@ -43,6 +43,7 @@ final class UnifiedSuggestionsHost {
     private var syncPromo: AnyView?
     private var contentInsets: UIEdgeInsets = .zero
     private var cancellables = Set<AnyCancellable>()
+    private var logoKeyboardCancellable: AnyCancellable?
     let favoritesPresentation: FocusedFavoritesPresentation
     private var redesignedSearchPresentation: RedesignedFocusedSearchPresentation?
     private var redesignedPresentationCancellable: AnyCancellable?
@@ -186,6 +187,40 @@ final class UnifiedSuggestionsHost {
     var isShowingLogo: Bool { viewModel.isShowingLogo }
     var isShowingFavorites: Bool { viewModel.isShowingFavorites }
 
+    func performInputModeChange(_ changes: () -> Void) {
+        guard usesScrollableEscapeHatch, viewModel.escapeHatchPlacement != .hidden, !viewModel.isShowingLogo else {
+            changes()
+            return
+        }
+        let wasEditing = UIResponder.currentFirstResponder() is UITextInput
+        viewModel.isLogoRevealDeferred = true
+        // Floating and split iPad keyboards report only frame changes, so those release the logo too.
+        logoKeyboardCancellable = NotificationCenter.default.publisher(for: UIResponder.keyboardDidShowNotification)
+            .merge(with: NotificationCenter.default.publisher(for: UIResponder.keyboardDidChangeFrameNotification),
+                   NotificationCenter.default.publisher(for: UIResponder.keyboardDidHideNotification)
+                .filter { _ in !(UIResponder.currentFirstResponder() is UITextInput) })
+            .first()
+            .sink { [weak self] _ in self?.finishDeferredLogoReveal() }
+        changes()
+        if #available(iOS 17.0, *), !wasEditing, UIResponder.currentFirstResponder() is UITextInput {
+            let inputContext: UITextInputContext? = .current()
+            if let inputContext,
+               !inputContext.isHardwareKeyboardInputExpected,
+               !inputContext.isPencilInputExpected,
+               !inputContext.isDictationInputExpected {
+                return
+            }
+        }
+        finishDeferredLogoReveal()
+    }
+
+    private func finishDeferredLogoReveal() {
+        hostingController?.view.window?.layoutIfNeeded()
+        hostingController?.view.layoutIfNeeded()
+        viewModel.isLogoRevealDeferred = false
+        logoKeyboardCancellable = nil
+    }
+
     /// Fire tabs render the fire empty state instead of the Dax logo for the empty (`.logo`) state.
     func setIsFireTab(_ value: Bool) {
         viewModel.setFireTab(value)
@@ -209,6 +244,8 @@ final class UnifiedSuggestionsHost {
 
     /// Resets the dismiss/morph state on each focus.
     func prepareForActivation(favoritesExpansionState: FavoritesExpansionState? = nil) {
+        logoKeyboardCancellable = nil
+        viewModel.isLogoRevealDeferred = false
         scrollLegacyContentToTop(duration: 0)
         if let favoritesExpansionState,
            let model = favoritesPresentation.viewController?.favoritesModel,
@@ -299,6 +336,8 @@ final class UnifiedSuggestionsHost {
     }
 
     func tearDown() {
+        logoKeyboardCancellable = nil
+        viewModel.isLogoRevealDeferred = false
         redesignedPresentationCancellable = nil
         redesignedSearchPresentation = nil
         cancellables.removeAll()

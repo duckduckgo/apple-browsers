@@ -1148,6 +1148,25 @@ extension MainViewController {
 
 extension MainViewController {
 
+    var isEscapeHatchHandoff: Bool {
+        isNewTabPageVisible
+            && escapeHatchForEditingState() != nil
+            && unifiedToggleInputCoordinator?.contentViewController.isShowingEscapeHatchContent == true
+    }
+
+    func resetLegacyScrollForDismiss(coordinator: UnifiedToggleInputCoordinator?, duration: TimeInterval) {
+        guard let coordinator, coordinator.contentViewController.usesScrollableEscapeHatch,
+              !coordinator.contentViewController.usesRedesignedNewTabPageLayout else { return }
+        coordinator.contentViewController.scrollLegacyContentToTop(duration: duration)
+        // Reset the resting copy while covered, so the last collapse frame reveals the same position.
+        (newTabPageViewController as? NewTabPageViewController)?.scrollToTop(duration: 0)
+    }
+
+    func updateLegacyContentInsetForDismiss(coordinator: UnifiedToggleInputCoordinator?) {
+        guard let coordinator, !coordinator.contentViewController.usesRedesignedNewTabPageLayout else { return }
+        coordinator.contentViewController.setContentInsetForDismiss(height: viewCoordinator.standardNavigationBarContainerHeight)
+    }
+
     func dismissUnifiedToggleInputToOmnibar(coordinator: UnifiedToggleInputCoordinator,
                                             completion: (() -> Void)? = nil) {
         if viewCoordinator.newTabPageInputPresentation.transition == .inlineInput {
@@ -1160,13 +1179,15 @@ extension MainViewController {
         let utiPlaceholderColor = coordinator.viewController.defaultPlaceholderColor
         let duration = Constants.omnibarTransitionDuration(isBottom: coordinator.cardPosition.isBottom, isFloatingUIEnabled: isFloatingUIEnabled)
 
+        resetLegacyScrollForDismiss(coordinator: coordinator, duration: duration)
         let isLogoToLogo = coordinator.contentViewController.isShowingLogoContent
             && newTabPageViewController?.restingContentIsLogo == true
         let isFavoritesToFavorites = coordinator.contentViewController.isShowingFavoritesContent
             && newTabPageViewController?.restingContentIsFavorites == true
-        let isSeamlessHandoff = isLogoToLogo || isFavoritesToFavorites
+        let isSeamlessHandoff = isLogoToLogo || isFavoritesToFavorites || isEscapeHatchHandoff
         let keepsFocusedContentStationary = coordinator.contentViewController.isShowingLogoContent
             || coordinator.contentViewController.isShowingFavoritesContent
+            || isEscapeHatchHandoff
         let contentContainer = viewCoordinator.unifiedInputContentContainer
         let stationaryContentSnapshot = makeStationaryFocusedContentSnapshotIfNeeded(
             keepsFocusedContentStationary: keepsFocusedContentStationary,
@@ -1175,7 +1196,7 @@ extension MainViewController {
 
         if isLogoToLogo {
             coordinator.contentViewController.morphLogoHomeForDismiss(matching: duration)
-        } else if !isFavoritesToFavorites {
+        } else if !isSeamlessHandoff {
             coordinator.contentViewController.beginDismissFade()
         }
 
@@ -1186,7 +1207,9 @@ extension MainViewController {
                 guard let self, let coordinator else { return }
                 coordinator.viewController.applyOmnibarEditingDismissPose()
                 self.viewCoordinator.superview.layoutIfNeeded()
-                if !keepsFocusedContentStationary {
+                if !coordinator.contentViewController.usesRedesignedNewTabPageLayout {
+                    self.updateLegacyContentInsetForDismiss(coordinator: coordinator)
+                } else if !keepsFocusedContentStationary {
                     coordinator.pushContentInsets()
                 }
                 if let omnibarPlaceholderWindowX {
@@ -1235,6 +1258,7 @@ extension MainViewController {
     }
 
     private func restoreChromeAfterInterruptedOmnibarDismiss() {
+        unifiedToggleInputCoordinator?.contentViewController.cancelContentInsetDismissal()
         viewCoordinator.unifiedInputContentContainer.alpha = 1
         newTabPageViewController?.setLogoHidden(false)
         newTabPageViewController?.setFavoritesHidden(false)

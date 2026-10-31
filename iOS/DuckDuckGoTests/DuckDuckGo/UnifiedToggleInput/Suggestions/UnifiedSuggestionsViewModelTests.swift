@@ -43,6 +43,48 @@ final class UnifiedSuggestionsViewModelTests: XCTestCase {
         XCTAssertEqual(sut.content, .list(.search))
     }
 
+    func test_visibleEscapeHatch_hidesLogoUntilRemoved() {
+        let inputs = CurrentValueSubject<UnifiedSuggestionsInputs, Never>(
+            .init(mode: .search, isTyping: false, hasFavorites: false, hasMessages: false, hasRecents: false, resultsPending: false))
+        let sut = UnifiedSuggestionsViewModel(inputsPublisher: inputs.eraseToAnyPublisher(),
+                                              listViewModel: SuggestionsListViewModel(source: EmptySuggestionsSource()))
+
+        XCTAssertTrue(sut.isShowingLogo)
+
+        for placement in [FocusedContentPlacement.embedded, .pinned] {
+            sut.setEscapeHatchPlacement(placement)
+            XCTAssertFalse(sut.isShowingLogo)
+            XCTAssertEqual(sut.content, .logo)
+        }
+
+        sut.setEscapeHatchPlacement(.hidden)
+        XCTAssertTrue(sut.isShowingLogo)
+    }
+
+    func test_uneditedURLWithoutRecentChats_hidesQueryRowsUntilTyping() {
+        let query = "https://example.com"
+        let sections = DuckAISuggestionsSource.sections(from: .init(chats: [], urls: [], isPending: false), query: query)
+        let duckAIList = SuggestionsListViewModel(source: StubSuggestionsSource(sections: sections))
+        let inputs = CurrentValueSubject<UnifiedSuggestionsInputs, Never>(
+            UnifiedSuggestionsInputsMerger.merge(mode: .aiChat, text: query, hasUserInteractedWithText: false,
+                                                 search: .init(hasFavorites: false, hasMessages: false),
+                                                 duckAI: .init(hasRecents: false, settled: true)))
+        let sut = UnifiedSuggestionsViewModel(inputsPublisher: inputs.eraseToAnyPublisher(),
+                                              listViewModel: SuggestionsListViewModel(source: EmptySuggestionsSource()),
+                                              duckAIListViewModel: duckAIList)
+
+        XCTAssertEqual(sut.content, .logo)
+        XCTAssertFalse(duckAIList.sections.isEmpty)
+        XCTAssertTrue(sut.listViewModel(for: .recents).sections.isEmpty)
+
+        inputs.send(UnifiedSuggestionsInputsMerger.merge(mode: .aiChat, text: query, hasUserInteractedWithText: true,
+                                                        search: .init(hasFavorites: false, hasMessages: false),
+                                                        duckAI: .init(hasRecents: false, settled: true)))
+
+        XCTAssertEqual(sut.content, .list(.duckAI))
+        XCTAssertEqual(sut.listViewModel(for: .duckAI).sections, sections)
+    }
+
     // MARK: - Duck.ai suggestions shown
 
     private func makeDuckAISUT(mode: TextEntryMode, sections: [SuggestionSection])

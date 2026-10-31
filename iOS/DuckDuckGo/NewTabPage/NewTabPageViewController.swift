@@ -42,11 +42,7 @@ final class NewTabPageViewController: UIViewController, NewTabPage, RemoteMessag
     /// `isLogoHidden`/`isFavoritesHidden` flags the focus/dismiss handoff toggles. The dismiss path
     /// uses these to pick the right handoff while those flags are still mid-transition.
     var restingContentIsLogo: Bool {
-        guard favoritesModel.isEmpty else { return false }
-        if newTabPageViewModel.escapeHatch != nil {
-            return view.bounds.width <= view.bounds.height
-        }
-        return true
+        favoritesModel.isEmpty && newTabPageViewModel.escapeHatch == nil
     }
 
     var restingContentIsFavorites: Bool {
@@ -178,6 +174,22 @@ final class NewTabPageViewController: UIViewController, NewTabPage, RemoteMessag
         updateBorderView()
     }
 
+    func setFocusedContent(_ content: LegacyFocusedNewTabPageContent?, escapeHatch: EscapeHatchModel? = nil) {
+        newTabPageViewModel.setFocusedContent(content, escapeHatch: escapeHatch)
+        if isViewLoaded {
+            view.backgroundColor = content == nil ? UIColor(designSystemColor: .background) : .clear
+        }
+    }
+
+    func scrollToTop(duration: TimeInterval) {
+        newTabPageViewModel.scrollToTopRequests.send(duration)
+    }
+
+    func setFocusedContentTopInset(_ inset: CGFloat) {
+        guard newTabPageViewModel.focusedContentTopInset != inset else { return }
+        newTabPageViewModel.focusedContentTopInset = inset
+    }
+
     func setOpenedAfterIdle(_ openedAfterIdle: Bool) {
         newTabPageViewModel.openedAfterIdle = openedAfterIdle
         messagesModel.refresh()
@@ -191,7 +203,7 @@ final class NewTabPageViewController: UIViewController, NewTabPage, RemoteMessag
     override func viewDidLoad() {
         super.viewDidLoad()
 
-        view.backgroundColor = UIColor(designSystemColor: .background)
+        view.backgroundColor = newTabPageViewModel.focusedContent == nil ? UIColor(designSystemColor: .background) : .clear
         embedPageHostingController()
         registerForNotifications()
     }
@@ -212,7 +224,16 @@ final class NewTabPageViewController: UIViewController, NewTabPage, RemoteMessag
 
     override func viewDidLayoutSubviews() {
         super.viewDidLayoutSubviews()
+        if newTabPageViewModel.focusedContent != nil {
+            // SwiftUI's scrollBounceBehavior is unavailable on iOS 15.
+            focusedScrollView(in: view)?.alwaysBounceVertical = true
+        }
         onboardingCoordinator.refreshContextualOnboardingDialogLayout()
+    }
+
+    private func focusedScrollView(in view: UIView) -> UIScrollView? {
+        if let scrollView = view as? UIScrollView { return scrollView }
+        return view.subviews.lazy.compactMap { self.focusedScrollView(in: $0) }.first
     }
 
     override func viewWillDisappear(_ animated: Bool) {

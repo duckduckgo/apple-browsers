@@ -50,10 +50,12 @@ final class UnifiedSuggestionsViewModel: ObservableObject {
     @Published private(set) var isFireTab = false
     /// iPhone landscape suppresses the empty state entirely because there is not enough room.
     @Published private(set) var isLandscape = false
+    @Published private(set) var escapeHatchPlacement: FocusedContentPlacement = .hidden
     /// Chrome bottom (bar + reserved hatch) below the host top, pushed by the container as the bar
     /// animates. The logo keeps a minimum distance from it — known *during* the resize, so the logo
     /// moves in the same pass, and only when the chrome is actually close (never in Search).
     @Published var chromeInsetTop: CGFloat = 0
+    @Published var contentTopInset: CGFloat = 0
     /// Floating chrome clearance comes from UIKit's keyboard-bounded host, independently of
     /// SwiftUI's transient coordinate origins during the omnibar handoff.
     @Published var logoViewportFrame: CGRect?
@@ -140,7 +142,7 @@ final class UnifiedSuggestionsViewModel: ObservableObject {
         }
     }
 
-    var isShowingLogo: Bool { content == .logo }
+    var isShowingLogo: Bool { content == .logo && escapeHatchPlacement == .hidden }
 
     var isShowingFavorites: Bool {
         if case .favorites = content { return true }
@@ -182,6 +184,11 @@ final class UnifiedSuggestionsViewModel: ObservableObject {
         isLandscape = value
     }
 
+    func setEscapeHatchPlacement(_ value: FocusedContentPlacement) {
+        guard escapeHatchPlacement != value else { return }
+        escapeHatchPlacement = value
+    }
+
     func setDuckAIListViewModel(_ viewModel: SuggestionsListViewModel?) {
         duckAIListViewModel = viewModel
         observeDuckAISections(of: viewModel)
@@ -194,6 +201,8 @@ final class UnifiedSuggestionsViewModel: ObservableObject {
         switch kind {
         case .search:
             return listViewModel
+        case .recents where content != .list(.recents):
+            return emptyListViewModel
         case .duckAI, .recents:
             return duckAIListViewModel ?? emptyListViewModel
         }

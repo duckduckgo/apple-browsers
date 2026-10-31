@@ -295,7 +295,7 @@ private extension MainViewController {
         // so it slides in without the container's fade (which otherwise reads as a flash over the slide).
         let isFavoritesToFavorites = newTabPageViewController?.isShowingFavorites == true
         let isBottom = coordinator.cardPosition.isBottom
-        let isSeamlessHandoff = isLogoToLogo || isFavoritesToFavorites
+        let isSeamlessHandoff = isLogoToLogo || isFavoritesToFavorites || isEscapeHatchHandoff
         let unifiedInputContentContainer: UIView = viewCoordinator.unifiedInputContentContainer
 
         viewCoordinator.focusedStateBackground.alpha = isSeamlessHandoff ? 1 : 0
@@ -357,20 +357,24 @@ private extension MainViewController {
             return
         }
         let coordinator = unifiedToggleInputCoordinator
+        let duration = Constants.omnibarTransitionDuration(isBottom: viewCoordinator.addressBarPosition.isBottom, isFloatingUIEnabled: isFloatingUIEnabled)
+        resetLegacyScrollForDismiss(coordinator: coordinator, duration: animated ? duration : 0)
         let fadesForFloatingBottom = animated && viewCoordinator.addressBarPosition.isBottom && isFloatingUIEnabled
+        let defersContentCleanup = fadesForFloatingBottom || (animated && coordinator?.contentViewController.usesScrollableEscapeHatch == true
+            && coordinator?.contentViewController.usesRedesignedNewTabPageLayout == false)
         let unifiedInputContentContainer: UIView = viewCoordinator.unifiedInputContentContainer
         let isLogoToLogo = coordinator?.contentViewController.isShowingLogoContent == true
             && newTabPageViewController?.restingContentIsLogo == true
         let isFavoritesToFavorites = coordinator?.contentViewController.isShowingFavoritesContent == true
             && newTabPageViewController?.restingContentIsFavorites == true
-        let isSeamlessHandoff = isLogoToLogo || isFavoritesToFavorites
+        let isSeamlessHandoff = isLogoToLogo || isFavoritesToFavorites || isEscapeHatchHandoff
         let onDismissed: () -> Void = { [weak self, weak coordinator] in
             coordinator?.viewController.setTextHorizontalShift(0)
             coordinator?.viewController.finalizeOmnibarEditingDismiss()
             coordinator?.clearText()
             self?.applyUnifiedInputChromeBackground(.standardChrome)
             self?.applyFloatingUIIfNeeded()
-            if fadesForFloatingBottom {
+            if defersContentCleanup {
                 // Lay out favorites while still covered by UTI, so a tall grid's last row doesn't pop in late.
                 self?.newTabPageViewController?.setLogoHidden(false)
                 self?.newTabPageViewController?.setFavoritesHidden(false)
@@ -382,7 +386,8 @@ private extension MainViewController {
             self?.refreshFloatingToolbarBackdrop()
         }
         let restoreNTPChromeIfNeeded: () -> Void = { [weak self] in
-            guard fadesForFloatingBottom else { return }
+            coordinator?.contentViewController.cancelContentInsetDismissal()
+            guard defersContentCleanup else { return }
             self?.newTabPageViewController?.setLogoHidden(false)
             self?.newTabPageViewController?.setFavoritesHidden(false)
             self?.refreshFloatingToolbarBackdrop()
@@ -393,14 +398,14 @@ private extension MainViewController {
             let omnibarPlaceholderWindowX = omnibarPlaceholderWindowXForHandoff(coordinator)
             let omnibarPlaceholderColor = currentOmnibarPlaceholderColor()
             let utiPlaceholderColor = coordinator?.viewController.defaultPlaceholderColor
-            let duration = Constants.omnibarTransitionDuration(isBottom: viewCoordinator.addressBarPosition.isBottom, isFloatingUIEnabled: isFloatingUIEnabled)
             if isLogoToLogo {
                 coordinator?.contentViewController.morphLogoHomeForDismiss(matching: duration)
-            } else if !isFavoritesToFavorites {
+            } else if !isSeamlessHandoff {
                 coordinator?.contentViewController.beginDismissFade()
             }
-            let additionalAnimations: () -> Void = {
+            let additionalAnimations: () -> Void = { [weak self] in
                 coordinator?.viewController.applyOmnibarEditingDismissPose()
+                self?.updateLegacyContentInsetForDismiss(coordinator: coordinator)
                 if let coordinator, let omnibarPlaceholderWindowX {
                     coordinator.viewController.alignVisibleTextLeadingEdge(toWindowX: omnibarPlaceholderWindowX)
                 }
@@ -427,12 +432,13 @@ private extension MainViewController {
         } else {
             // Match the animated path: restore resting layout before cleanup, else the returning tab's content is stranded.
             viewCoordinator.animateUnifiedToggleInputOmnibarDismissLayout(reattachingOmnibar: reattachingOmnibar)
+            updateLegacyContentInsetForDismiss(coordinator: coordinator)
             coordinator?.viewController.deactivateInput()
             viewCoordinator.finishUnifiedToggleInputOmnibarDismiss(reattachingOmnibar: reattachingOmnibar)
             onDismissed()
         }
-        // Floating-bottom keeps NTP chrome hidden until dismiss completion / interrupt cleanup.
-        resetUnifiedInputContentAfterHide(hidingContent: !fadesForFloatingBottom, restoringNTPChrome: !fadesForFloatingBottom)
+        // Keep the legacy scroll reset covered until the collapse finishes.
+        resetUnifiedInputContentAfterHide(hidingContent: !defersContentCleanup, restoringNTPChrome: !defersContentCleanup)
         viewCoordinator.suggestionTrayContainer.backgroundColor = .clear
     }
 

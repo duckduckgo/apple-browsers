@@ -55,6 +55,7 @@ struct FireModeEmptyStateView: View {
     // MARK: - Variables
 
     private let type: ViewType
+    private let contentTopInset: CGFloat
 
     private var onNewFireTab: NewFireTabBlock? {
         if case .tabSwitcher(let onNewFireTab) = type {
@@ -65,8 +66,9 @@ struct FireModeEmptyStateView: View {
 
     // MARK: - Initializer
 
-    init(type: ViewType) {
+    init(type: ViewType, contentTopInset: CGFloat = 0) {
         self.type = type
+        self.contentTopInset = contentTopInset
     }
 
     // MARK: - Body
@@ -77,7 +79,7 @@ struct FireModeEmptyStateView: View {
                 headerSection
                 contentCard
             }
-            .padding(.top, Constants.mainTopPadding)
+            .padding(.top, Constants.mainTopPadding + contentTopInset)
             .padding(.horizontal, Constants.mainHorizontalPadding)
             .frame(maxWidth: Constants.maxViewWidth)
         }

@@ -30,7 +30,7 @@ import XCTest
 @MainActor
 final class UnifiedInputContentContainerViewControllerTests: XCTestCase {
 
-    func testScrollableEscapeHatchFlagUsesDefaultOffRemoteSubfeatureAndLocalOverride() {
+    func testScrollableEscapeHatchFlagUsesInternalDefaultRemoteSubfeatureAndLocalOverride() {
         let flag = FeatureFlag.scrollableEscapeHatch
         guard case let .remoteReleasable(subfeature) = flag.source else {
             XCTFail("Expected remote-releasable source")
@@ -39,8 +39,8 @@ final class UnifiedInputContentContainerViewControllerTests: XCTestCase {
         XCTAssertEqual(subfeature as? iOSBrowserConfigSubfeature, .scrollableEscapeHatch)
         XCTAssertEqual(subfeature.parent, .iOSBrowserConfig)
         XCTAssertEqual(subfeature.rawValue, "scrollableEscapeHatch")
-        guard case .disabled = flag.defaultValue else {
-            XCTFail("Expected disabled default")
+        guard case .internalOnly = flag.defaultValue else {
+            XCTFail("Expected internal-only default")
             return
         }
         XCTAssertTrue(flag.supportsLocalOverriding)

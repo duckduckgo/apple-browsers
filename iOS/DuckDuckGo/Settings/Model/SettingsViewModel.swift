@@ -1804,10 +1804,6 @@ extension SettingsViewModel {
                                                                 showSettingsScreen: state.showSettingsScreen,
                                                                 source: state.autofillSource))
 
-        case .gpc:
-            firePixel(.settingsDoNotSellShown)
-            pushViewController(legacyViewProvider.gpc)
-        
         case .passwordsImport:
             pushViewController(legacyViewProvider.importPasswords(importScreen: .completeSetup,
                                                                   delegate: self,

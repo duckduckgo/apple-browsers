@@ -489,6 +489,7 @@ class TabViewCell: UICollectionViewCell {
         self.tab = tab
         self.isSelectionModeEnabled = isSelectionModeEnabled
         self.isFireModeEnabled = isFireModeEnabled
+        title.accessibilityIdentifier = "TabSwitcher.Tab.Open"
 
         if !isDeleting {
             isHidden = false

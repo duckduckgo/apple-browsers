@@ -410,26 +410,32 @@ final class AIChatPixelMetricHandlerTests: XCTestCase {
             return true
         })
         XCTAssertEqual(queryCount, 0)
-        XCTAssertFalse(monitor.isConnected)
+        XCTAssertNil(monitor.isConnected)
 
         notificationCenter.post(name: UIApplication.didBecomeActiveNotification, object: nil)
         XCTAssertEqual(queryCount, 1)
-        XCTAssertTrue(monitor.isConnected)
+        XCTAssertEqual(monitor.isConnected, true)
+    }
+
+    func testUnknownHardwareKeyboardIsLeftOutOfThePixelParameters() {
+        let parameters = UsageContext(hardwareKeyboard: nil, layout: .compact).parameters
+
+        XCTAssertEqual(parameters, ["layout": "compact"])
     }
 
     func testKeyboardMonitorFollowsConnectAndDisconnectNotifications() {
         let notificationCenter = NotificationCenter()
         var isConnectedNow = false
         let monitor = HardwareKeyboardMonitor(notificationCenter: notificationCenter, isConnectedNow: { isConnectedNow })
-        XCTAssertFalse(monitor.isConnected)
+        XCTAssertNil(monitor.isConnected)
 
         isConnectedNow = true
         notificationCenter.post(name: .GCKeyboardDidConnect, object: nil)
-        XCTAssertTrue(monitor.isConnected)
+        XCTAssertEqual(monitor.isConnected, true)
 
         isConnectedNow = false
         notificationCenter.post(name: .GCKeyboardDidDisconnect, object: nil)
-        XCTAssertFalse(monitor.isConnected)
+        XCTAssertEqual(monitor.isConnected, false)
     }
 
     func testContextualChatPromptsReportTheSheet() {

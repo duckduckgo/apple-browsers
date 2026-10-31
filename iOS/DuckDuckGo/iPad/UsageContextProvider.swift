@@ -36,7 +36,8 @@ struct UsageContext: Equatable {
         case partial
     }
 
-    let hardwareKeyboard: Bool
+    /// Nil until the keyboard state is first read, so early events don't report a keyboard as missing.
+    let hardwareKeyboard: Bool?
     let layout: Layout
 }
 
@@ -49,7 +50,7 @@ protocol UsageContextProviding {
 struct UsageContextProvider: UsageContextProviding {
 
     private let isPad: Bool
-    private let isHardwareKeyboardConnected: () -> Bool
+    private let isHardwareKeyboardConnected: () -> Bool?
     private let isLargeWidth: () -> Bool
     private let windowAndScreenWidths: @MainActor () -> (window: CGFloat, screen: CGFloat)?
 
@@ -97,7 +98,9 @@ extension UsageContext {
     }
 
     var parameters: [String: String] {
-        [ParameterName.layout: layout.rawValue, ParameterName.hardwareKeyboard: String(hardwareKeyboard)]
+        var parameters = [ParameterName.layout: layout.rawValue]
+        parameters[ParameterName.hardwareKeyboard] = hardwareKeyboard.map { String($0) }
+        return parameters
     }
 }
 
@@ -105,12 +108,12 @@ extension UsageContext {
 /// read this copy, refreshed on each app activation and on keyboard connect and disconnect notifications.
 ///
 /// The first read waits until the app becomes active: it starts GameController's device session, which can
-/// block a background launch past the launch watchdog. Until then the keyboard reports as disconnected.
+/// block a background launch past the launch watchdog. Until then the state is unknown.
 final class HardwareKeyboardMonitor {
 
     private let lock = NSLock()
     private let isConnectedNow: () -> Bool
-    private var isKeyboardConnected = false
+    private var isKeyboardConnected: Bool?
     private var observers: [NSObjectProtocol] = []
 
     init(notificationCenter: NotificationCenter = .default,
@@ -124,7 +127,8 @@ final class HardwareKeyboardMonitor {
         }
     }
 
-    var isConnected: Bool {
+    /// Nil until the first read.
+    var isConnected: Bool? {
         lock.withLock { isKeyboardConnected }
     }
 

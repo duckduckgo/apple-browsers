@@ -30,6 +30,7 @@ struct NewTabPageView: View {
     @ObservedObject private var viewModel: NewTabPageViewModel
     @ObservedObject private var messagesModel: NewTabPageMessagesModel
     @ObservedObject private var favoritesViewModel: FavoritesViewModel
+    @State private var escapeHatchFrame: CGRect?
 
     let isFocussedState: Bool
     let narrowLayoutInLandscape: Bool
@@ -141,11 +142,14 @@ private extension NewTabPageView {
                     }
                     .animation(nil, value: content.recentChats != nil)
                     .modifier(FocusedContentGeometryGroup())
-                    .padding(.top, contentTopInset(in: geometry) + viewModel.focusedContentTopInset)
+                    .modifier(FocusedContentTopInset(topInset: viewModel.focusedContentTopInset,
+                                                     fixedTopInset: contentTopInset(in: geometry),
+                                                     onEscapeHatchGeometryChange: { viewModel.onFocusedEscapeHatchGeometryChange?($0) }))
                     .padding(.bottom, sectionsViewPadding(in: geometry))
                     .padding(.horizontal, sectionsViewHorizontalPadding(in: geometry))
                 }
             }
+            .coordinateSpace(name: EmbeddedEscapeHatchGeometryReader.scrollSpace)
             .modifier(FocusedContentVerticalBounce())
             .if(dismissKeyboardOnScroll) { $0.scrollDismissesKeyboardIfAvailable() }
             .modifier(NewTabPageScrollToTop(requests: viewModel.scrollToTopRequests))
@@ -210,8 +214,18 @@ private extension NewTabPageView {
                 // lands at screen.midY - 72 — the splash storyboard's resting position. The
                 // dynamic offset compensates for the NTP body's centerY shifting based on top vs
                 // bottom omnibar chrome.
-                NewTabPageDaxLogoView()
-                    .offset(y: (UIScreen.main.bounds.midY - 55) - proxy.frame(in: .global).midY)
+                Group {
+                    if viewModel.escapeHatch != nil {
+                        NewTabPageDaxLogoView()
+                            .modifier(EscapeHatchLogoLayout(centerY: UIScreen.main.bounds.midY - 55,
+                                                           viewport: proxy.frame(in: .global), hatchFrame: escapeHatchFrame,
+                                                           destinationHatchFrame: escapeHatchFrame))
+                            .offset(y: -proxy.frame(in: .global).midY)
+                    } else {
+                        NewTabPageDaxLogoView()
+                            .offset(y: (UIScreen.main.bounds.midY - 55) - proxy.frame(in: .global).midY)
+                    }
+                }
                     .opacity(shouldShowLogoInEmptyState ? 1 : 0)
                     .allowsHitTesting(false)
 
@@ -227,8 +241,10 @@ private extension NewTabPageView {
                     .padding(.top, contentTopInset(in: proxy))
                     .padding(.bottom, sectionsViewPadding(in: proxy))
                     .padding(.horizontal, sectionsViewHorizontalPadding(in: proxy))
+                    .coordinateSpace(name: EmbeddedEscapeHatchGeometryReader.contentSpace)
                     .id(NewTabPageScrollToTop.topAnchor)
                 }
+                .coordinateSpace(name: EmbeddedEscapeHatchGeometryReader.scrollSpace)
                 .modifier(NewTabPageScrollToTop(requests: viewModel.scrollToTopRequests))
                 .if(dismissKeyboardOnScroll, transform: {
                     $0.scrollDismissesKeyboardIfAvailable()
@@ -243,8 +259,6 @@ private extension NewTabPageView {
     private var shouldShowLogoInEmptyState: Bool {
         guard !viewModel.isLogoHidden else { return false }
         guard messagesModel.homeMessageViewModels.isEmpty else { return false }
-        if viewModel.escapeHatch != nil && isLandscapeOrientation { return false }
-        if viewModel.escapeHatch != nil && isFocussedState { return false }
         return true
     }
 
@@ -265,6 +279,12 @@ private extension NewTabPageView {
         if let escapeHatch = viewModel.escapeHatch {
             EscapeHatchView(model: escapeHatch)
                 .frame(maxWidth: escapeHatchMaxWidth)
+                .modifier(EmbeddedEscapeHatchGeometryReader())
+                .onPreferenceChange(EmbeddedEscapeHatchGeometryKey.self) { geometry in
+                    if viewModel.focusedContent == nil {
+                        escapeHatchFrame = geometry?.frame
+                    }
+                }
                 .padding(.top, sectionTopNudge)
                 .padding(.horizontal, layoutConfiguration.escapeHatchHorizontalPadding)
         }

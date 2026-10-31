@@ -88,7 +88,8 @@ struct UnifiedSuggestionsView: View {
                                                    syncPromo: usesScrollableEscapeHatch ? syncPromo : nil,
                                                    isAddressBarAtBottom: isAddressBarAtBottom,
                                                    contentTopInset: viewModel.contentTopInset,
-                                                   usesScrollableEscapeHatch: usesScrollableEscapeHatch)
+                                                   usesScrollableEscapeHatch: usesScrollableEscapeHatch,
+                                                   onEscapeHatchGeometryChange: { viewModel.setEmbeddedEscapeHatchGeometry($0) })
                     .background(usesScrollableEscapeHatch ? Color.clear : Color(designSystemColor: .background))
                     // Keep expansion and scroll state while typing or switching modes. Only one
                     // favorites hierarchy is mounted for the selected layout.
@@ -140,8 +141,7 @@ struct UnifiedSuggestionsView: View {
     }
 
     private var isShowingLogo: Bool {
-        if case .logo = viewModel.content { return true }
-        return false
+        viewModel.isShowingLogo
     }
 
     /// The Dax↔Duck.ai empty-state logo, morphing via bound `logoProgress`. Pinned to the exact
@@ -150,30 +150,31 @@ struct UnifiedSuggestionsView: View {
     /// across Search↔Duck.ai toggles and the keyboard (screen-relative, not bar/keyboard-relative).
     private var logoLayer: some View {
         GeometryReader { proxy in
-            // Rests at the NTP logo's exact screen anchor (so focus/defocus is a crossfade from the NTP
-            // position, and the morph happens in place on a toggle), but kept a minimum gap from the
-            // chrome on *both* sides so the chrome never covers it:
-            //  • pushed DOWN if the top chrome (hatch) comes within `minChromeGap` of the logo's top
-            //    (top-bar Duck.ai); the chrome bottom is `minY + chromeInsetTop`, known as the bar animates.
-            //  • pushed UP if the bar's top edge comes within `minChromeGap` of the logo's bottom
-            //    (bottom-bar omnibar); the bar top is `maxY` — the content-area bottom rides the bar-height
-            //    safe-area inset, so it tracks the bar in the same pass.
-            // With room on both sides the pushes clamp to 0 and the logo stays at the NTP anchor.
             let frame = proxy.frame(in: .global)
             let nativeViewport = viewModel.logoViewportFrame
             let viewport = nativeViewport ?? frame
+            let topClearance = Self.logoTopClearance(
+                chromeBottom: viewport.minY + viewModel.chromeInsetTop,
+                embeddedHatchFrame: viewModel.escapeHatchPlacement == .embedded ? viewModel.embeddedEscapeHatchDestinationFrame : nil)
             let targetCenterY = Self.logoCenterY(
                 restingAt: UIScreen.main.bounds.midY - Metrics.logoScreenCenterOffset,
-                topChromeBottom: viewport.minY + viewModel.chromeInsetTop,
+                topChromeBottom: topClearance,
                 barTop: viewport.maxY)
+            let fitsMargins = Self.logoFits(topChromeBottom: topClearance, barTop: viewport.maxY)
             let offsetY = targetCenterY - frame.midY
             let logo = FocusedDaxLogoView(progress: viewModel.logoModel.progress,
                                          morph: viewModel.logoModel.morphs,
                                          animationSpeed: viewModel.logoModel.morphSpeed)
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
             let animation: Animation? = UIApplication.shared.applicationState == .active ? .easeInOut(duration: 0.2) : nil
+            let hatchLayout = escapeHatchLogoLayout(centerY: targetCenterY, viewport: viewport, fitsMargins: fitsMargins)
             Group {
-                if nativeViewport != nil {
+                if let hatchLayout {
+                    logo.modifier(hatchLayout)
+                        .animation(animation, value: targetCenterY)
+                        .offset(y: -frame.midY)
+                        .animation(nil, value: frame.midY)
+                } else if nativeViewport != nil {
                     // Animate real clearance changes; compensate transient host movement immediately.
                     logo.offset(y: targetCenterY)
                         .animation(animation, value: targetCenterY)
@@ -198,32 +199,49 @@ struct UnifiedSuggestionsView: View {
         .ignoresSafeArea(.container, edges: .top)
     }
 
-    /// The logo's screen-center Y: it rests at `restCenterY` (the NTP anchor) but is clamped into the band
-    /// between the chrome — pulled up to keep `bottomBarGap` above the bar/keyboard top edge (`barTop`), and
-    /// held at least `topChromeGap` below the top chrome (`topChromeBottom`, e.g. the hatch). On a short
-    /// screen where the band can't fit the logo plus both gaps, it centers the logo between the two chrome
-    /// edges instead — clearing the keyboard and the hatch as evenly as possible rather than slipping under
-    /// either (the wordmark must not hide behind the keyboard).
-    private static func logoCenterY(restingAt restCenterY: CGFloat,
-                                    topChromeBottom: CGFloat,
-                                    barTop: CGFloat) -> CGFloat {
+    private func escapeHatchLogoLayout(centerY: CGFloat, viewport: CGRect, fitsMargins: Bool) -> EscapeHatchLogoLayout? {
+        guard viewModel.escapeHatchPlacement != .hidden else { return nil }
+        let chromeFrame = CGRect(x: viewport.minX, y: viewport.minY, width: viewport.width, height: viewModel.chromeInsetTop)
+        let availableViewport = CGRect(x: viewport.minX, y: chromeFrame.maxY,
+                                       width: viewport.width, height: max(0, viewport.maxY - chromeFrame.maxY))
+        let isPinned = viewModel.escapeHatchPlacement == .pinned
+        return EscapeHatchLogoLayout(centerY: centerY, viewport: availableViewport,
+                                     hatchFrame: isPinned ? chromeFrame : viewModel.embeddedEscapeHatchFrame,
+                                     destinationHatchFrame: isPinned ? chromeFrame : viewModel.embeddedEscapeHatchDestinationFrame,
+                                     fitsMargins: fitsMargins)
+    }
+
+    /// An embedded hatch below the chrome pushes the logo under it, so a hidden keyboard can make room for it.
+    /// The logo may touch the hatch, matching the resting NTP logo, so focusing never shifts a visible logo:
+    /// the hatch bottom is offset by the chrome gap that `logoCenterY` and `logoFits` add back.
+    static func logoTopClearance(chromeBottom: CGFloat, embeddedHatchFrame: CGRect?) -> CGFloat {
+        max(chromeBottom, (embeddedHatchFrame?.maxY ?? -.infinity) - Metrics.topChromeGap)
+    }
+
+    /// Clamps the resting center between the top chrome and the keyboard/input bar.
+    /// If both margins do not fit, use the center of the available space.
+    static func logoCenterY(restingAt restCenterY: CGFloat,
+                            topChromeBottom: CGFloat,
+                            barTop: CGFloat) -> CGFloat {
         let halfHeight = Metrics.logoHeight / 2
-        let barLimit = barTop - Metrics.bottomBarGap - halfHeight
-        let hatchFloor = topChromeBottom + Metrics.topChromeGap + halfHeight
-        guard hatchFloor <= barLimit else { return (topChromeBottom + barTop) / 2 }
-        return min(max(restCenterY, hatchFloor), barLimit)
+        guard logoFits(topChromeBottom: topChromeBottom, barTop: barTop) else { return (topChromeBottom + barTop) / 2 }
+        return min(max(restCenterY, topChromeBottom + Metrics.topChromeGap + halfHeight),
+                   barTop - Metrics.bottomBarGap - halfHeight)
+    }
+
+    static func logoFits(topChromeBottom: CGFloat, barTop: CGFloat) -> Bool {
+        topChromeBottom + Metrics.topChromeGap + Metrics.logoHeight <= barTop - Metrics.bottomBarGap
     }
 
     private enum Metrics {
         /// Mirrors `NewTabPageDaxLogoView`'s screen-center offset so the focused Search logo lands exactly
         /// where the NTP logo sits — keep in sync with that view.
         static let logoScreenCenterOffset: CGFloat = 55
-        /// Min gap kept below the top chrome (hatch) before the logo is pushed down. Tune.
+        /// Min gap kept below the top chrome before the logo is pushed down. Tune.
         static let topChromeGap: CGFloat = 16
         /// Min gap kept above the bottom bar before the logo is pushed up. Larger than the top gap — the
         /// bottom bar is tall, so the logo needs more breathing room to sit balanced above it. Tune.
         static let bottomBarGap: CGFloat = 56
-        /// Mirrors `FocusedDaxLogoView`'s height — used to find the logo's top for the overlap check.
-        static let logoHeight: CGFloat = 162
+        static let logoHeight = FocusedDaxLogoView.size.height
     }
 }

@@ -42,11 +42,11 @@ jobs:
   build-end-to-end-tests:
     name: Build End to End Tests
     needs: setup-matrix
-    runs-on: ["image:osx-tahoe-27", general-purpose]
+    runs-on: ["image:osx-27-edge", general-purpose]
     timeout-minutes: 30
 
     env:
-      RUNS_ON: image:osx-tahoe-27,general-purpose # keep this in sync with runs-on above
+      RUNS_ON: image:osx-27-edge,general-purpose # keep this in sync with runs-on above
 
     steps:
     - name: Register SSH keys for private repos

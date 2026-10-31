@@ -90,7 +90,7 @@ permissions:
 jobs:
   smartling:
     name: ${{ inputs.platform }} ${{ inputs.kind }} translation job
-    runs-on: [image:osx-tahoe-27, m4pro]
+    runs-on: [image:osx-27-edge, m4pro]
     timeout-minutes: 45
     # Runs for the same job wait for each other, so they can't both create it. Nightly and merge runs share a group,
     # so only one of them submits main at a time, and they can't both miss each other's pending job. GitHub keeps one

@@ -41,8 +41,8 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - runner: [image:osx-tahoe-27, general-purpose]
-            runner-name: image-osx-tahoe-27,general-purpose # runner label without reserved characters, for use in the artifact name
+          - runner: [image:osx-27-edge, general-purpose]
+            runner-name: image-osx-27-edge,general-purpose # runner label without reserved characters, for use in the artifact name
 
     concurrency:
       group: ${{ github.workflow }}-${{ github.ref }}-${{ matrix.runner-name }}
@@ -97,7 +97,7 @@ jobs:
         # install-prerequisites.sh runs `npm install -g pnpm` unpinned, which now
         # resolves to pnpm 10 and turns ignored-builds into a hard error. Override
         # to v9 (matches the broker lockfile) until the broker repo pins it itself.
-        npm install -g pnpm@9.7.1
+        npm install -g --force pnpm@9.7.1
         pnpm start:all > "$GITHUB_WORKSPACE/macOS/pir-fake-broker.log" 2>&1 &
         echo $! > "$GITHUB_WORKSPACE/macOS/pir-fake-broker.pid"
 

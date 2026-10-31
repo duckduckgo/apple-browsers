@@ -41,8 +41,10 @@ final class WakeConnectivityMonitorTests: XCTestCase {
         super.tearDown()
     }
 
-    func testTwoFailedChecksFireOnceWithRetry() {
+    func testThreeFailedChecksFireOnceWithRetry() {
         monitor.wake(isEligible: true)
+        check(isConnected: false)
+        assertFireCount(0)
         check(isConnected: false)
         assertFireCount(0)
         check(isConnected: false)
@@ -56,6 +58,7 @@ final class WakeConnectivityMonitorTests: XCTestCase {
     func testNoObservationWhileAsleep() {
         check(isConnected: false)
         check(isConnected: false)
+        check(isConnected: false)
         assertFireCount(0)
     }
 
@@ -64,13 +67,16 @@ final class WakeConnectivityMonitorTests: XCTestCase {
         check(isConnected: true)
         check(isConnected: false)
         check(isConnected: false)
+        check(isConnected: false)
         assertFireCount(0)
     }
 
-    func testSuccessfulCheckAfterOneFailureEndsCycle() {
+    func testSuccessfulCheckBeforeThresholdEndsCycle() {
         monitor.wake(isEligible: true)
         check(isConnected: false)
+        check(isConnected: false)
         check(isConnected: true)
+        check(isConnected: false)
         check(isConnected: false)
         check(isConnected: false)
         assertFireCount(0)
@@ -83,12 +89,15 @@ final class WakeConnectivityMonitorTests: XCTestCase {
         check(isConnected: false)
         assertFireCount(0)
         check(isConnected: false)
+        assertFireCount(0)
+        check(isConnected: false)
         assertFireCount(1)
     }
 
     func testSuccessfulCheckStartedBeforeWakeDoesNotEndNewObservation() {
         monitor.wake(isEligible: true)
         monitor.connectionTestCompleted(isConnected: true, startedAt: date.addingTimeInterval(-1))
+        check(isConnected: false)
         check(isConnected: false)
         check(isConnected: false)
         assertFireCount(1)
@@ -99,8 +108,11 @@ final class WakeConnectivityMonitorTests: XCTestCase {
         check(isConnected: false)
         monitor.wake(isEligible: true)
         check(isConnected: false)
+        assertFireCount(0)
+        check(isConnected: false)
         assertFireCount(1)
         monitor.wake(isEligible: true)
+        check(isConnected: false)
         check(isConnected: false)
         check(isConnected: false)
         assertFireCount(1)
@@ -117,6 +129,8 @@ final class WakeConnectivityMonitorTests: XCTestCase {
         check(isConnected: false)
         assertFireCount(0)
         check(isConnected: false)
+        assertFireCount(0)
+        check(isConnected: false)
         assertFireCount(1)
     }
 
@@ -128,6 +142,7 @@ final class WakeConnectivityMonitorTests: XCTestCase {
         monitor.wake(isEligible: true)
         monitor.connectionTestCompleted(isConnected: false, startedAt: oldProbeStartedAt)
         check(isConnected: false)
+        check(isConnected: false)
         assertFireCount(0)
     }
 
@@ -138,9 +153,11 @@ final class WakeConnectivityMonitorTests: XCTestCase {
         monitor.wake(isEligible: true)
         check(isConnected: false)
         check(isConnected: false)
+        check(isConnected: false)
         assertFireCount(0)
         monitor.sleep()
         monitor.wake(isEligible: true)
+        check(isConnected: false)
         check(isConnected: false)
         check(isConnected: false)
         assertFireCount(1)
@@ -150,7 +167,9 @@ final class WakeConnectivityMonitorTests: XCTestCase {
         monitor.wake(isEligible: false)
         check(isConnected: false)
         check(isConnected: false)
+        check(isConnected: false)
         monitor.wake(isEligible: true)
+        check(isConnected: false)
         check(isConnected: false)
         check(isConnected: false)
         assertFireCount(0)
@@ -161,12 +180,15 @@ final class WakeConnectivityMonitorTests: XCTestCase {
         check(isConnected: false)
         // A new current tester run after a network/configuration change contributes normally.
         monitor.connectionTestCompleted(isConnected: false, startedAt: date.addingTimeInterval(30))
+        assertFireCount(0)
+        monitor.connectionTestCompleted(isConnected: false, startedAt: date.addingTimeInterval(50))
         assertFireCount(1)
     }
 
     func testCancelBeforeQueuedReportRunsSuppressesTheReport() {
         reportQueue.suspend()
         monitor.wake(isEligible: true)
+        check(isConnected: false)
         check(isConnected: false)
         check(isConnected: false)
         monitor.cancel()
@@ -179,8 +201,10 @@ final class WakeConnectivityMonitorTests: XCTestCase {
         monitor.wake(isEligible: true)
         check(isConnected: false)
         check(isConnected: false)
+        check(isConnected: false)
         monitor.sleep()
         monitor.wake(isEligible: true)
+        check(isConnected: false)
         check(isConnected: false)
         check(isConnected: false)
         reportQueue.resume()

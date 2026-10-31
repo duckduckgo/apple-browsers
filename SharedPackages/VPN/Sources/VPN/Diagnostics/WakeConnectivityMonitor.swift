@@ -79,7 +79,7 @@ public final class WakeConnectivityMonitor: @unchecked Sendable {
         if case .checking(let failureCount) = state, let wakeDate, startedAt >= wakeDate {
             if isConnected {
                 state = .finished
-            } else if failureCount + 1 == 2 {
+            } else if failureCount + 1 == 3 {
                 state = .finished
                 reportGeneration = generation
             } else {

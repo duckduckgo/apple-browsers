@@ -113,8 +113,8 @@ public struct CrashLogMessageExtractor {
     fileprivate static var nextUncaughtExceptionHandler: NSUncaughtExceptionHandler?
     internal static var nextCppTerminateHandler: (() -> Void)!
     fileprivate static var diagnosticsDirectory: URL!
-    // Guards against re-entrant calls to the terminate handler (e.g. when `throw;`
-    // inside `currentCxxException` triggers another `std::terminate` on Apple's libc++abi).
+    // Defensive guard against re-entrant calls to the terminate handler, e.g. if a
+    // `std::terminate` is raised while we are already recording a crash.
     internal static var isHandlingTermination = false
 
     /// Install uncaught NSException and C++ exception handlers.
@@ -200,36 +200,88 @@ public struct CrashLogMessageExtractor {
         try JSONEncoder().encode(diagnosticData).write(to: fileURL)
     }
 
+    /// How far the crash time reported by MetricKit may be from the diagnostic file timestamp.
+    /// On iOS MetricKit reports `timeStampBegin` as the crash time rounded to the *nearest* minute (a crash at 11:20:39
+    /// is reported as 11:21:00, a crash at 11:33:10 as 11:33:00), so the reported time is at most 30 seconds away from
+    /// the real crash time. Keeping the window this tight avoids attaching the message to a different crash that
+    /// happened later in the same minute (e.g. in a crash loop).
+    static let crashTimestampTolerance: TimeInterval = 30
+    /// The diagnostic file is written right *before* the process aborts and its name is truncated to whole seconds,
+    /// so the file timestamp may precede the real crash time by a little more than a second.
+    static let diagnosticFileTimestampSlack: TimeInterval = 2
+    /// `timeStampBegin` is truncated to a minute, so a file written in that minute may still be older than the moment
+    /// the report describes.
+    static let reportTimestampSlack: TimeInterval = 60
+
     /// Find saved crash diagnostics message for crash PID/timestamp
+    /// - Parameters:
+    ///   - timestamp: crash time as reported by the crash reporter.
+    ///   - pid: PID of the *crashed* process, if known (macOS crash reports). Note: `MXCrashDiagnostic.metaData.pid`
+    ///     is not reliable for that, see `crashDiagnostic(forMetricKitReportAt:pid:)`.
+    /// - Returns: the diagnostic written by the process with the matching `pid`; when there is none, the diagnostic
+    ///   closest to `timestamp` within `crashTimestampTolerance` (plus `diagnosticFileTimestampSlack` before it).
     public func crashDiagnostic(for timestamp: Date?, pid: pid_t?) -> CrashDiagnostic? {
-        guard timestamp != nil || pid != nil,
-              var crashLogs = try? fileManager.contentsOfDirectory(atPath: diagnosticsDirectory.path).compactMap({
-                  CrashDiagnostic(url: diagnosticsDirectory.appending($0))
-              }) else { return nil }
+        guard timestamp != nil || pid != nil, let crashLogs = loadCrashDiagnostics() else { return nil }
 
-        let calendar = Calendar.current
-        let roundedTimestamp = calendar.roundedToMinutes(timestamp)
+        // the pid identifies the crashed process; fall back to the time window only when nothing matches it
+        var candidates = crashLogs.filter { $0.pid == pid }
+        if candidates.isEmpty, let timestamp {
+            let window = -(Self.crashTimestampTolerance + Self.diagnosticFileTimestampSlack)...Self.crashTimestampTolerance
+            candidates = crashLogs.filter { window.contains($0.timestamp.timeIntervalSince(timestamp)) }
+        }
+        // closest to the crash time first (when known), latest first otherwise
+        func distance(_ log: CrashDiagnostic) -> TimeInterval {
+            timestamp.map { abs(log.timestamp.timeIntervalSince($0)) } ?? 0
+        }
+        candidates = candidates.sorted {
+            let (d0, d1) = (distance($0), distance($1))
+            return d0 != d1 ? d0 < d1 : $0.timestamp > $1.timestamp
+        }
 
-        if let pid {
-            crashLogs = crashLogs.filter {
-                // filter by matching timestamp and Process Identifier if it‘s known
-                $0.pid == pid && (roundedTimestamp == nil || calendar.roundedToMinutes($0.timestamp) == roundedTimestamp)
-            }
-        } else {
-            crashLogs = crashLogs.filter {
-                // filter by matching timestamp
-                calendar.roundedToMinutes($0.timestamp) == roundedTimestamp
-            }
+        return logLookupResult(candidates.first, timestamp: timestamp, pid: pid)
+    }
+
+    /// Find saved crash diagnostics for an `MXCrashDiagnostic` report.
+    ///
+    /// `MXDiagnosticPayload.timeStampBegin` is the time ReportCrash wrote the crash report, rounded to the nearest
+    /// minute. On iOS that is the crash time; on macOS the report has been observed to be written minutes after the
+    /// crash, in which case `MXCrashDiagnostic.metaData.pid` (the crashed pid when no app process was running while
+    /// the report was generated, the running pid otherwise) is the next best key. Lookup order:
+    /// 1. the diagnostic closest to `timestamp` within `crashTimestampTolerance`,
+    /// 2. the diagnostic written by `pid`,
+    /// 3. the oldest not yet consumed diagnostic that is not newer than the report.
+    /// Call `consume(_:)` once the diagnostic has been attached so that it is not matched against the next report.
+    public func crashDiagnostic(forMetricKitReportAt timestamp: Date, pid: pid_t?) -> CrashDiagnostic? {
+        if let crashLog = crashDiagnostic(for: timestamp, pid: nil) {
+            return crashLog
         }
-        crashLogs = crashLogs.sorted {
-            // sort by timestamp
-            $0.timestamp > $1.timestamp
+        if let pid, let crashLog = crashDiagnostic(for: nil, pid: pid) {
+            return crashLog
         }
-        // take latest
-        guard let crashLog = crashLogs.first else {
-            Logger.general.log("😵 no crash logs found for \(timestamp.map { ISO8601DateFormatter().string(from: $0) } ?? "<nil>", privacy: .public)/\(pid ?? 0)")
+        guard let crashLogs = loadCrashDiagnostics() else { return nil }
+        let candidates = crashLogs
+            .filter { $0.timestamp.timeIntervalSince(timestamp) <= Self.reportTimestampSlack }
+            .sorted { $0.timestamp < $1.timestamp }
+        return logLookupResult(candidates.first, timestamp: timestamp, pid: pid)
+    }
+
+    /// Remove the diagnostics file once its contents have been attached to a crash report.
+    public func consume(_ crashLog: CrashDiagnostic) {
+        try? fileManager.removeItem(at: crashLog.url)
+    }
+
+    private func loadCrashDiagnostics() -> [CrashDiagnostic]? {
+        let fileNames = try? fileManager.contentsOfDirectory(atPath: diagnosticsDirectory.path)
+        return fileNames?.compactMap { CrashDiagnostic(url: diagnosticsDirectory.appending($0)) }
+    }
+
+    private func logLookupResult(_ crashLog: CrashDiagnostic?, timestamp: Date?, pid: pid_t?) -> CrashDiagnostic? {
+        let timestampDescription = timestamp.map { ISO8601DateFormatter().string(from: $0) } ?? "<nil>"
+        guard let crashLog else {
+            Logger.general.log("😵 no crash logs found for \(timestampDescription, privacy: .public)/\(pid ?? 0)")
             return nil
         }
+        Logger.general.log("😵 found crash log \(crashLog.url.lastPathComponent, privacy: .public) for \(timestampDescription, privacy: .public)/\(pid ?? 0)")
         return crashLog
     }
 
@@ -243,11 +295,18 @@ private func handleTerminateOnCxxException() {
 extension CrashLogMessageExtractor {
     /// Body of the `std::terminate` handler, separated so it can be exercised in tests.
     ///
-    /// Re-entrant calls happen because `throw;` inside `currentCxxException` runs `__cxa_rethrow`.
-    /// On Apple's libc++abi (Darwin 25+) that requires an active *catch* context; when called
-    /// from a terminate handler (no catch context), it calls `std::terminate` again, recursing
-    /// until stack overflow.  The flag breaks the loop: on re-entry skip crash recording and
-    /// jump directly to the next handler.
+    /// - Note: libc++abi calls `__cxa_begin_catch` on the uncaught exception before invoking the
+    ///   terminate handler, so `throw;` inside `currentCxxException` is a regular rethrow that is
+    ///   caught there (verified by `CrashLogMessageExtractorTests` on macOS and iOS).
+    ///   The `isHandlingTermination` flag is purely defensive: if anything in this handler
+    ///   raises `std::terminate` again, the re-entrant call skips crash recording and goes
+    ///   straight to the next handler instead of recursing.
+    ///
+    /// - Important: This handler is also on the stack for every uncaught *NSException*, because
+    ///   libobjc's `_objc_terminate` runs as our `nextCppTerminateHandler`. In those crash reports
+    ///   `handleCxxTerminate` is merely the topmost in-app frame, not the cause; the real culprit is
+    ///   below `__cxa_rethrow`/`objc_exception_rethrow` and the exception reason is attached by
+    ///   `handleException` via the `NSUncaughtExceptionHandler` path.
     internal static func handleCxxTerminate() {
         guard !isHandlingTermination else {
             nextCppTerminateHandler()
@@ -277,11 +336,4 @@ private func handleException(_ exception: NSException) {
 /// Throw test C++ exception – used for debug purpose
 public func throwTestCppException() {
     _throwTestCppException("This a test C++ exception")
-}
-
-private extension Calendar {
-    func roundedToMinutes(_ date: Date?) -> Date? {
-        let components = date.map { self.dateComponents([.year, .month, .day, .hour, .minute], from: $0) }
-        return components.flatMap { self.date(from: $0) }
-    }
 }

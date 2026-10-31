@@ -172,6 +172,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var promptBarMenuBarCancellable: AnyCancellable?
     private var promptBarLauncherIntroductionCancellable: AnyCancellable?
     private var promptBarCoordinator: PromptBarCoordinator?
+    private var daxPetCoordinator: DaxPetCoordinator?
 
     private(set) var syncDataProviders: SyncDataProvidersSource?
     private(set) var syncService: DDGSyncing?
@@ -365,6 +366,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     let aiChatBrowserToolsService: AIChatBrowserToolsService
     let aiChatPreferences: AIChatPreferences
     let promptBarPreferences: PromptBarPreferences
+    let daxPetPreferences: DaxPetPreferences
     private(set) var aiChatHistoryCleaner: AIChatHistoryCleaning!
 
     /// Shared across the native address-bar omnibar and the New Tab Page omnibar so that model-selection
@@ -1061,12 +1063,16 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         cookiePopupProtectionPreferences = CookiePopupProtectionPreferences(persistor: CookiePopupProtectionPreferencesUserDefaultsPersistor(), windowControllersManager: windowControllersManager)
         promptBarPreferences = PromptBarPreferences(persistor: PromptBarPreferencesUserDefaultsPersistor(keyValueStore: keyValueStore),
                                                     aiChatMenuConfiguration: aiChatMenuConfiguration)
+        daxPetPreferences = DaxPetPreferences(persistor: DaxPetPreferencesUserDefaultsPersistor(keyValueStore: keyValueStore),
+                                              aiChatMenuConfiguration: aiChatMenuConfiguration,
+                                              featureFlagger: featureFlagger)
         aiChatPreferences = AIChatPreferences(
             storage: DefaultAIChatPreferencesStorage(),
             aiChatMenuConfiguration: aiChatMenuConfiguration,
             windowControllersManager: windowControllersManager,
             featureFlagger: featureFlagger,
-            promptBarPreferences: promptBarPreferences
+            promptBarPreferences: promptBarPreferences,
+            daxPetPreferences: daxPetPreferences
         )
 
         let subscriptionNavigationCoordinator = SubscriptionNavigationCoordinator(
@@ -1779,6 +1785,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         setUpPasswordsMenuBarVisibility()
         setUpPromptBar()
         setUpPromptBarMenuBarVisibility()
+        setUpDaxPet()
 
         remoteMessagingClient?.startRefreshingRemoteMessages()
 
@@ -2808,6 +2815,39 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 promptBarPreferences.pendingLauncherIntroduction = false
                 promptBarCoordinator?.showPromptBarForLauncherPromo()
             }
+    }
+
+    @MainActor
+    private func setUpDaxPet() {
+        let coordinator = DaxPetCoordinator(preferences: daxPetPreferences,
+                                            persistor: DaxPetPreferencesUserDefaultsPersistor(keyValueStore: keyValueStore),
+                                            submitter: DaxPetPromptSubmitter(
+                                                aiChatTabOpener: aiChatTabOpener,
+                                                windowControllersManager: windowControllersManager,
+                                                makeSuggestionsReader: { [featureFlagger, privacyFeatures, duckAiNativeStorageHandler] in
+                                                    let privacyConfig = privacyFeatures.contentBlocking.privacyConfigurationManager
+                                                    return AIChatSuggestionsReader(
+                                                        suggestionsReader: SuggestionsReader(
+                                                            featureFlagger: featureFlagger,
+                                                            privacyConfig: privacyConfig,
+                                                            nativeStorageHandler: duckAiNativeStorageHandler,
+                                                            featureFlagProvider: AIChatFeatureFlagProvider(featureFlagger: featureFlagger)
+                                                        ),
+                                                        historySettings: AIChatHistorySettings(privacyConfig: privacyConfig)
+                                                    )
+                                                },
+                                                capabilitiesProvider: DaxPetAttachmentCapabilitiesProvider(
+                                                    subscriptionManager: subscriptionManager,
+                                                    preferences: aiChatPreferencesPersistor
+                                                ),
+                                                featureFlagger: featureFlagger),
+                                            browsing: DaxPetBrowser(windowControllersManager: windowControllersManager,
+                                                                    historyCoordinator: historyCoordinator,
+                                                                    faviconManager: faviconManager),
+                                            browserToolActivity: aiChatBrowserToolsService.activity,
+                                            isInternalUser: { [internalUserDecider] in internalUserDecider.isInternalUser })
+        coordinator.start()
+        daxPetCoordinator = coordinator
     }
 
     // MARK: - Keychain availability

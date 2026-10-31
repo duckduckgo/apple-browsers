@@ -42,6 +42,7 @@ final class AIChatBrowserToolsService {
 
     private let configuration: AIChatBrowserToolsConfiguration
     private let windowControllersManager: WindowControllersManagerProtocol
+    private let activitySubject = PassthroughSubject<AIChatBrowserToolActivity, Never>()
     private let pushers = NSHashTable<AnyObject>.weakObjects()
     private var catalogChangeNotifier: BrowserToolCatalogChangeNotifier?
 
@@ -91,6 +92,58 @@ final class AIChatBrowserToolsService {
         ]
     }
 
+    // MARK: - Calls
+
+    /// What Duck.ai does in the browser, call by call, for whoever wants to show it. Fire Windows report nothing.
+    var activity: AnyPublisher<AIChatBrowserToolActivity, Never> {
+        activitySubject.eraseToAnyPublisher()
+    }
+
+    /// Runs a call through the invoker, reporting to `activity` when it starts, waits on the user and ends.
+    func invoke(toolNamed name: String,
+                arguments: JSONValue?,
+                context: BrowserToolCallContext,
+                callID: String,
+                elicitationPusher: (any AIChatElicitationPushing)?) async -> BrowserToolResult {
+        guard !context.isBurner else {
+            return await invoker.invoke(toolNamed: name, arguments: arguments, context: context, elicitationPusher: elicitationPusher)
+        }
+        let subject = subject(ofToolNamed: name, arguments: arguments, context: context)
+        let report = { [activitySubject] (phase: AIChatBrowserToolActivity.Phase) in
+            activitySubject.send(AIChatBrowserToolActivity(callID: callID, toolName: name, subject: subject, phase: phase))
+        }
+        report(.started)
+        let pusher = elicitationPusher.map { ActivityReportingElicitationPusher(pusher: $0) { report(.awaitingPermission) } }
+        let result = await invoker.invoke(toolNamed: name, arguments: arguments, context: context, elicitationPusher: pusher)
+        if case .success = result {
+            report(.finished(succeeded: true))
+        } else {
+            report(.finished(succeeded: false))
+        }
+        return result
+    }
+
+    /// Tools that act on the chat's own page when no tab is named.
+    private static let pageToolNames: Set<String> = ["readTabContent", "findInPage", "highlightInPage"]
+
+    /// What a call is about: the words searched for, or the title of the tab it acts on.
+    private func subject(ofToolNamed name: String, arguments: JSONValue?, context: BrowserToolCallContext) -> String? {
+        if let query = arguments?["query"]?.stringValue?.trimmingCharacters(in: .whitespacesAndNewlines), !query.isEmpty {
+            return query
+        }
+        let namedTabID = arguments?["tabId"]?.stringValue?.trimmingCharacters(in: .whitespaces)
+        guard let tabID = namedTabID.flatMap({ $0.isEmpty ? nil : $0 }) ?? (Self.pageToolNames.contains(name) ? context.ownerTabID : nil),
+              let token = context.ownerWindowToken,
+              let collection = AIChatTabPickerSource.tabCollectionViewModel(forWindowToken: token, in: windowControllersManager) else {
+            return nil
+        }
+        let tabs = (collection.pinnedTabsCollection?.tabs ?? []) + collection.tabCollection.tabs
+        guard let tab = tabs.first(where: { $0.uuid == tabID }), case .url(let url, _, _) = tab.content, !url.isDuckAIURL else {
+            return nil
+        }
+        return tab.title ?? url.host
+    }
+
     // MARK: - Pushes
 
     /// Live chats that can receive native→FE pushes. Held weakly; a chat unregisters by going away.
@@ -122,6 +175,42 @@ final class AIChatBrowserToolsService {
 }
 
 /// A chat surface that native can push browser-tools events to.
+/// One step of a browser tool call Duck.ai made.
+struct AIChatBrowserToolActivity: Equatable {
+
+    enum Phase: Equatable {
+        case started
+        /// The user's OK was asked for in the chat.
+        case awaitingPermission
+        case finished(succeeded: Bool)
+    }
+
+    let callID: String
+    let toolName: String
+    /// The words searched for, or the title of the tab acted on, when there is one.
+    let subject: String?
+    let phase: Phase
+}
+
+/// Passes permission prompts on, and says when one was shown.
+@MainActor
+private final class ActivityReportingElicitationPusher: AIChatElicitationPushing {
+
+    private let pusher: any AIChatElicitationPushing
+    private let onPush: () -> Void
+
+    init(pusher: any AIChatElicitationPushing, onPush: @escaping () -> Void) {
+        self.pusher = pusher
+        self.onPush = onPush
+    }
+
+    func pushElicitationCreate(_ params: MCPElicitationCreateParams) -> Bool {
+        let isShown = pusher.pushElicitationCreate(params)
+        if isShown { onPush() }
+        return isShown
+    }
+}
+
 @MainActor
 protocol AIChatBrowserToolsPushing: AnyObject {
 

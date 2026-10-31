@@ -177,6 +177,10 @@ protocol AIChatUserScriptHandling: AnyObject {
 
     /// Requested by the duckduckgo.com homepage for the chats it lists under its chat box.
     @MainActor func getAIChats(params: Any, message: UserScriptMessage) async -> Encodable?
+
+    /// Duck.ai's progress with an answer, sent while `supportsResponseStateReporting` is on. Native
+    /// rebroadcasts it as `aiChatResponseStateChanged`, carrying the source `WKWebView` as `object`.
+    @MainActor func getResponseState(params: Any, message: UserScriptMessage) async -> Encodable?
 }
 
 final class AIChatUserScriptHandler: AIChatUserScriptHandling {
@@ -1045,6 +1049,17 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
         return nil
     }
 
+    // MARK: - Response State
+
+    @MainActor
+    func getResponseState(params: Any, message: UserScriptMessage) async -> Encodable? {
+        guard let status: AIChatStatus = DecodableHelper.decode(from: params) else { return nil }
+        notificationCenter.post(name: .aiChatResponseStateChanged,
+                                object: message.messageWebView,
+                                userInfo: [AIChatNotificationUserInfoKey.responseStatus: status.status])
+        return nil
+    }
+
     @MainActor
     func voiceChatStartFailed(params: Any, message: UserScriptMessage) async -> Encodable? {
         // No-op when the feature flag is off — FE should never reach here in that case
@@ -1419,10 +1434,11 @@ extension AIChatUserScriptHandler {
             supportsElicitationForm: session.supportsElicitationForm
         )
 
-        let result = await browserTools.invoker.invoke(toolNamed: request.name,
-                                                       arguments: request.arguments,
-                                                       context: context,
-                                                       elicitationPusher: elicitationPusher)
+        let result = await browserTools.invoke(toolNamed: request.name,
+                                               arguments: request.arguments,
+                                               context: context,
+                                               callID: request.callId,
+                                               elicitationPusher: elicitationPusher)
         return InvokeBrowserToolResponse(callId: request.callId, result: result.callToolResult)
     }
 

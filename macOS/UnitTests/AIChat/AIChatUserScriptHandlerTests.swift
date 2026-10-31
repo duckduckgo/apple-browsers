@@ -217,6 +217,41 @@ struct AIChatUserScriptHandlerTests {
     }
 
     @available(iOS 16, macOS 13, *)
+    @Test("responseState is rebroadcast with its status", .timeLimit(.minutes(1)))
+    @MainActor
+    func testThatResponseStateIsRebroadcastWithItsStatus() async throws {
+        let notifications = AsyncStream { continuation in
+            let observer = notificationCenter.addObserver(forName: .aiChatResponseStateChanged, object: nil, queue: nil) { notification in
+                continuation.yield(notification)
+            }
+            continuation.onTermination = { _ in
+                notificationCenter.removeObserver(observer)
+            }
+        }
+
+        _ = await handler.getResponseState(params: ["status": "streaming"], message: WKScriptMessage.mock())
+
+        let notification = await notifications.first(where: { _ in true })
+        let status = notification?.userInfo?[AIChatNotificationUserInfoKey.responseStatus] as? AIChatStatusValue
+        #expect(status == .streaming)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("responseState with an unreadable status is dropped", .timeLimit(.minutes(1)))
+    @MainActor
+    func testThatAnUnreadableResponseStateIsDropped() async {
+        var posted = false
+        let observer = notificationCenter.addObserver(forName: .aiChatResponseStateChanged, object: nil, queue: nil) { _ in
+            posted = true
+        }
+        defer { notificationCenter.removeObserver(observer) }
+
+        _ = await handler.getResponseState(params: ["status": 42], message: WKScriptMessage.mock())
+
+        #expect(!posted)
+    }
+
+    @available(iOS 16, macOS 13, *)
     @Test("openAIChat posts a notification with a payload", .timeLimit(.minutes(1)))
     @MainActor
     func testThatOpenAIChatPostsNotificationWithPayload() async throws {

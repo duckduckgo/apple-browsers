@@ -35,6 +35,7 @@ final class AIChatPreferences: ObservableObject {
     private let featureFlagger: FeatureFlagger
     private let duckAIChromeButtonsVisibilityManager: DuckAIChromeButtonsVisibilityManaging
     let promptBarPreferences: PromptBarPreferences
+    let daxPetPreferences: DaxPetPreferences
     // Lazy: built on first use, not during early/transient inits when the store isn't ready yet.
     private lazy var serpSettings: SERPSettingsProviding = SERPSettingsProvider()
 
@@ -43,13 +44,15 @@ final class AIChatPreferences: ObservableObject {
          windowControllersManager: WindowControllersManagerProtocol = Application.appDelegate.windowControllersManager,
          featureFlagger: FeatureFlagger = Application.appDelegate.featureFlagger,
          duckAIChromeButtonsVisibilityManager: DuckAIChromeButtonsVisibilityManaging = LocalDuckAIChromeButtonsVisibilityManager(),
-         promptBarPreferences: PromptBarPreferences = Application.appDelegate.promptBarPreferences) {
+         promptBarPreferences: PromptBarPreferences = Application.appDelegate.promptBarPreferences,
+         daxPetPreferences: DaxPetPreferences = Application.appDelegate.daxPetPreferences) {
         self.storage = storage
         self.aiChatMenuConfiguration = aiChatMenuConfiguration
         self.windowControllersManager = windowControllersManager
         self.featureFlagger = featureFlagger
         self.duckAIChromeButtonsVisibilityManager = duckAIChromeButtonsVisibilityManager
         self.promptBarPreferences = promptBarPreferences
+        self.daxPetPreferences = daxPetPreferences
 
         isAIFeaturesEnabled = storage.isAIFeaturesEnabled
         showShortcutOnNewTabPage = storage.showShortcutOnNewTabPage

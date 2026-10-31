@@ -54,44 +54,10 @@ public extension AIChatInputBoxHandling {
     func cancelEdit() {}
 }
 
-public enum AIChatStatusValue: String, Codable {
-    case startStreamNewPrompt = "start_stream:new_prompt"
-    case startStreamRestartStream = "start_stream:restart_stream"
-    case loading
-    case streaming
-    case error
-    case ready
-    case blocked
-    case unknown
-}
-
 public enum AIChatInputBoxVisibility: String, Codable {
     case hidden
     case visible
     case unknown
 }
 
-public struct AIChatStatus: Codable {
-    public let status: AIChatStatusValue
-    public let attachments: AIChatAttachmentUsage?
-}
-
-public struct AIChatAttachmentUsage: Codable, Equatable {
-    public let imagesUsed: Int
-    public let filesUsed: Int
-    public let fileSizeBytesUsed: Int
-
-    public init(imagesUsed: Int, filesUsed: Int, fileSizeBytesUsed: Int) {
-        self.imagesUsed = imagesUsed
-        self.filesUsed = filesUsed
-        self.fileSizeBytesUsed = fileSizeBytesUsed
-    }
-
-    public init(from decoder: Decoder) throws {
-        let container = try decoder.container(keyedBy: CodingKeys.self)
-        imagesUsed = try container.decodeIfPresent(Int.self, forKey: .imagesUsed) ?? 0
-        filesUsed = try container.decodeIfPresent(Int.self, forKey: .filesUsed) ?? 0
-        fileSizeBytesUsed = try container.decodeIfPresent(Int.self, forKey: .fileSizeBytesUsed) ?? 0
-    }
-}
 #endif

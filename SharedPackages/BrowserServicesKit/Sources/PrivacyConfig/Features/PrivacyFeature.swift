@@ -597,6 +597,9 @@ public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
 
     case dragPromptBar
 
+    /// Dax, an always-on-top desktop companion that opens Duck.ai with what you type to him.
+    case daxPet
+
     /// Enables the Duck.ai limit extension promo (Boost bonus)
     /// https://app.asana.com/1/137249556945/project/1206329551987282/task/1217224457965768?focus=true
     case chatLimitExtensionPromo

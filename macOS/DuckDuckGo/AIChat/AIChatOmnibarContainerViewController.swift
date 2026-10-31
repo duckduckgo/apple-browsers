@@ -2377,7 +2377,7 @@ final class AIChatOmnibarContainerViewController: NSViewController {
     /// count / encryption so the validator can enforce the page-count limit and reject encrypted or
     /// unreadable files. MIME type comes from the URL's UTType so it matches the model's
     /// `supportedFileTypes` (which are MIME types). Returns `nil` if the bytes can't be read.
-    private nonisolated static func makeFileAttachment(from url: URL) -> AIChatFileAttachment? {
+    nonisolated static func makeFileAttachment(from url: URL) -> AIChatFileAttachment? {
         guard let data = try? Data(contentsOf: url) else { return nil }
         let mimeType = UTType(filenameExtension: url.pathExtension.lowercased())?.preferredMIMEType
             ?? "application/octet-stream"

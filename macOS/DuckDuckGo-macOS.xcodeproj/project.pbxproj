@@ -280,6 +280,24 @@
 		1E2A887A2E2E477A00C29AC0 /* AIChatSessionStoreTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1E2A88792E2E477A00C29AC0 /* AIChatSessionStoreTests.swift */; };
 		1E2A887B2E2E477A00C29AC0 /* AIChatSessionStoreTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1E2A88792E2E477A00C29AC0 /* AIChatSessionStoreTests.swift */; };
 		1E2A88802E2E532600C29AC0 /* AIChatCoordinatorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1E2A887F2E2E532600C29AC0 /* AIChatCoordinatorTests.swift */; };
+		E1C1D4A093BF9DDF4BCC2B98 /* DaxPetPreferencesTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A4AECEA140C316C064C9D31E /* DaxPetPreferencesTests.swift */; };
+		1720DD809A2D33AAC7A120E0 /* DaxPetPreferencesTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A4AECEA140C316C064C9D31E /* DaxPetPreferencesTests.swift */; };
+		DB3256B56603C9D1666E8371 /* DaxPetViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B87A6D8AED861FEE73EB1164 /* DaxPetViewModelTests.swift */; };
+		3DE24E39E95BA7002DD6923C /* DaxPetViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B87A6D8AED861FEE73EB1164 /* DaxPetViewModelTests.swift */; };
+		AA34BA1DBB7C7A29A3C9C626 /* DaxRigTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8DCED9FA1E7ADC07440C9A64 /* DaxRigTests.swift */; };
+		DB186FC7914A285AE63B972E /* DaxPetIntelligenceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A8EC30367E93B14BCFB04A71 /* DaxPetIntelligenceTests.swift */; };
+		704FB594AFFB69E578090EFF /* DaxPetBrowsingTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7E8E4FA42AB8AA567FBEF716 /* DaxPetBrowsingTests.swift */; };
+		4312C109CA95560195D85BD4 /* DaxOutfitTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00685BBB3DE355130CCCF23D /* DaxOutfitTests.swift */; };
+		07680164011752947684B5E6 /* DaxPetAttachmentsTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = FAB7B212D3BD55AFB2B51B0C /* DaxPetAttachmentsTests.swift */; };
+		CE1AB9135982086133D7D804 /* DaxPetCoordinatorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = FCDE4E4804B715C4A12C5ED9 /* DaxPetCoordinatorTests.swift */; };
+		6A4075C705DE61853F1DD0E0 /* DaxCharacterViewTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA62F815A31E391954396F90 /* DaxCharacterViewTests.swift */; };
+		2B6759D6378BEDC8D9B6973B /* DaxRigTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8DCED9FA1E7ADC07440C9A64 /* DaxRigTests.swift */; };
+		8009163D27ADAD96D27C190F /* DaxPetIntelligenceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A8EC30367E93B14BCFB04A71 /* DaxPetIntelligenceTests.swift */; };
+		0BB91D4A5DD1D7BE2696E693 /* DaxPetBrowsingTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7E8E4FA42AB8AA567FBEF716 /* DaxPetBrowsingTests.swift */; };
+		27BB7A382CF76A66499B710F /* DaxOutfitTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00685BBB3DE355130CCCF23D /* DaxOutfitTests.swift */; };
+		99918611294B84AFF0B5796F /* DaxPetAttachmentsTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = FAB7B212D3BD55AFB2B51B0C /* DaxPetAttachmentsTests.swift */; };
+		C76464E44EFF2A6B074D85AA /* DaxPetCoordinatorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = FCDE4E4804B715C4A12C5ED9 /* DaxPetCoordinatorTests.swift */; };
+		B2B03E6EBF85403F9837EAAC /* DaxCharacterViewTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA62F815A31E391954396F90 /* DaxCharacterViewTests.swift */; };
 		1E2A88812E2E532600C29AC0 /* AIChatCoordinatorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1E2A887F2E2E532600C29AC0 /* AIChatCoordinatorTests.swift */; };
 		1E4EDA282DE9ED2D0019B6E8 /* AIChatSessionStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1E4EDA272DE9ED2D0019B6E8 /* AIChatSessionStore.swift */; };
 		1E4EDA292DE9ED2D0019B6E8 /* AIChatSessionStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1E4EDA272DE9ED2D0019B6E8 /* AIChatSessionStore.swift */; };
@@ -411,6 +429,30 @@
 		31521AC02CC013AD00248E6F /* AIChatMenuVisibilityConfigurable.swift in Sources */ = {isa = PBXBuildFile; fileRef = 31521ABF2CC013A400248E6F /* AIChatMenuVisibilityConfigurable.swift */; };
 		31521AC12CC013AD00248E6F /* AIChatMenuVisibilityConfigurable.swift in Sources */ = {isa = PBXBuildFile; fileRef = 31521ABF2CC013A400248E6F /* AIChatMenuVisibilityConfigurable.swift */; };
 		31521AC32CC01BC700248E6F /* AIChatTabOpener.swift in Sources */ = {isa = PBXBuildFile; fileRef = 31521AC22CC01BC300248E6F /* AIChatTabOpener.swift */; };
+		C9A7ED3683CEA5081E117287 /* DaxCharacterView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8D9813E55E808312057866BE /* DaxCharacterView.swift */; };
+		31715EC97448A6F8442FF831 /* DaxCharacterView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8D9813E55E808312057866BE /* DaxCharacterView.swift */; };
+		27F7A452C0202D177502918B /* DaxPetCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = D85909EF60DA7B51A7652CF1 /* DaxPetCoordinator.swift */; };
+		624D61143D48A08A0CFFF87F /* DaxPetCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = D85909EF60DA7B51A7652CF1 /* DaxPetCoordinator.swift */; };
+		E444AE2D0DEB91BC8343D04E /* DaxPetPreferences.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3E67862B4ED543986F89CBC3 /* DaxPetPreferences.swift */; };
+		9FD6E4BBD14E4A41496E250A /* DaxPetPreferences.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3E67862B4ED543986F89CBC3 /* DaxPetPreferences.swift */; };
+		11C2B07F14E6D8469942488B /* DaxPetPreferencesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 422669F28C6FDEDAF91030E6 /* DaxPetPreferencesView.swift */; };
+		D955D6005801C2C5CA1E7F30 /* DaxPetPreferencesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 422669F28C6FDEDAF91030E6 /* DaxPetPreferencesView.swift */; };
+		2E58D022480CB93B7CF49DF0 /* DaxPetView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4ACE48166DEDD9C28DCB47D0 /* DaxPetView.swift */; };
+		B3B7DAE0F3F0F6F1F7D2DC40 /* DaxPetView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4ACE48166DEDD9C28DCB47D0 /* DaxPetView.swift */; };
+		9987A46C3819AA1A434F4C0A /* DaxPetViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 74DF1A869D1511D61F690971 /* DaxPetViewModel.swift */; };
+		9B632FDFD824EF7E7BF197B3 /* DaxPetViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 74DF1A869D1511D61F690971 /* DaxPetViewModel.swift */; };
+		82FF8643CBC4FBCCBB3F47F9 /* DaxRig.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0885AD7D2BC1B3D2834D16ED /* DaxRig.swift */; };
+		2B7DD651FC88FD590002E5A4 /* DaxPetScreenLooker.swift in Sources */ = {isa = PBXBuildFile; fileRef = 04690AF94773435CE5EB1E32 /* DaxPetScreenLooker.swift */; };
+		5A88F47949CAF303B0DC369E /* DaxPetBrowsing.swift in Sources */ = {isa = PBXBuildFile; fileRef = 372854BB5C923C82B98AB58C /* DaxPetBrowsing.swift */; };
+		EAE27112E3CFF562E5D353CF /* DaxPetIntelligence.swift in Sources */ = {isa = PBXBuildFile; fileRef = 646C271B4D8B09088C2F9FB4 /* DaxPetIntelligence.swift */; };
+		14A58F8FF88963953A4963FE /* DaxOutfit.swift in Sources */ = {isa = PBXBuildFile; fileRef = BE383E12A7D7550277D9A2A7 /* DaxOutfit.swift */; };
+		1B62F759DAAD005073A3188D /* DaxPetAttachments.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4871A3F0BFB917621800B776 /* DaxPetAttachments.swift */; };
+		FE26E80FE66AEAC6DF375F17 /* DaxRig.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0885AD7D2BC1B3D2834D16ED /* DaxRig.swift */; };
+		91FF5CC5208E38A5F135437D /* DaxPetScreenLooker.swift in Sources */ = {isa = PBXBuildFile; fileRef = 04690AF94773435CE5EB1E32 /* DaxPetScreenLooker.swift */; };
+		491025D79D6F0F7573E4EFA7 /* DaxPetBrowsing.swift in Sources */ = {isa = PBXBuildFile; fileRef = 372854BB5C923C82B98AB58C /* DaxPetBrowsing.swift */; };
+		66C6EF89FFB224FD20B95BE4 /* DaxPetIntelligence.swift in Sources */ = {isa = PBXBuildFile; fileRef = 646C271B4D8B09088C2F9FB4 /* DaxPetIntelligence.swift */; };
+		E5C88507AE3ED17CB7CF72A7 /* DaxOutfit.swift in Sources */ = {isa = PBXBuildFile; fileRef = BE383E12A7D7550277D9A2A7 /* DaxOutfit.swift */; };
+		1AC6816D2971A01A294FECE4 /* DaxPetAttachments.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4871A3F0BFB917621800B776 /* DaxPetAttachments.swift */; };
 		31521AC42CC01BC700248E6F /* AIChatTabOpener.swift in Sources */ = {isa = PBXBuildFile; fileRef = 31521AC22CC01BC300248E6F /* AIChatTabOpener.swift */; };
 		3154FD1428E6011A00909769 /* TabShadowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3154FD1328E6011A00909769 /* TabShadowView.swift */; };
 		3158B1492B0BF73000AF130C /* DBPHomeViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3192EC872A4DCF21001E97A5 /* DBPHomeViewController.swift */; };
@@ -3194,7 +3236,9 @@
 		AB1E70030000000000000002 /* SwitchToTabBrowserTool.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB1E70030000000000000001 /* SwitchToTabBrowserTool.swift */; };
 		AB1E70030000000000000003 /* SwitchToTabBrowserTool.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB1E70030000000000000001 /* SwitchToTabBrowserTool.swift */; };
 		AB1E70040000000000000002 /* BrowserToolInvokerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB1E70040000000000000001 /* BrowserToolInvokerTests.swift */; };
+		52EFE78367D8C6099A7D51FC /* AIChatBrowserToolsServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = E127DD329D3F0887EE29C53F /* AIChatBrowserToolsServiceTests.swift */; };
 		AB1E70040000000000000003 /* BrowserToolInvokerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB1E70040000000000000001 /* BrowserToolInvokerTests.swift */; };
+		0EEB7787C38D9EBF9F8DC5A0 /* AIChatBrowserToolsServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = E127DD329D3F0887EE29C53F /* AIChatBrowserToolsServiceTests.swift */; };
 		AB1E70060000000000000002 /* ListOpenTabsBrowserTool.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB1E70060000000000000001 /* ListOpenTabsBrowserTool.swift */; };
 		AB1E70060000000000000003 /* ListOpenTabsBrowserTool.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB1E70060000000000000001 /* ListOpenTabsBrowserTool.swift */; };
 		AB1E70070000000000000002 /* ListOpenTabsBrowserToolTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB1E70070000000000000001 /* ListOpenTabsBrowserToolTests.swift */; };
@@ -5246,6 +5290,15 @@
 		1E1B24AD2F4729C100D239CE /* WebExtensionAvailability+macOS.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "WebExtensionAvailability+macOS.swift"; sourceTree = "<group>"; };
 		1E2A88792E2E477A00C29AC0 /* AIChatSessionStoreTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIChatSessionStoreTests.swift; sourceTree = "<group>"; };
 		1E2A887F2E2E532600C29AC0 /* AIChatCoordinatorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIChatCoordinatorTests.swift; sourceTree = "<group>"; };
+		A4AECEA140C316C064C9D31E /* DaxPetPreferencesTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DaxPetPreferencesTests.swift; sourceTree = "<group>"; };
+		B87A6D8AED861FEE73EB1164 /* DaxPetViewModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DaxPetViewModelTests.swift; sourceTree = "<group>"; };
+		8DCED9FA1E7ADC07440C9A64 /* DaxRigTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DaxRigTests.swift; sourceTree = "<group>"; };
+		A8EC30367E93B14BCFB04A71 /* DaxPetIntelligenceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DaxPetIntelligenceTests.swift; sourceTree = "<group>"; };
+		7E8E4FA42AB8AA567FBEF716 /* DaxPetBrowsingTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DaxPetBrowsingTests.swift; sourceTree = "<group>"; };
+		00685BBB3DE355130CCCF23D /* DaxOutfitTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DaxOutfitTests.swift; sourceTree = "<group>"; };
+		FAB7B212D3BD55AFB2B51B0C /* DaxPetAttachmentsTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DaxPetAttachmentsTests.swift; sourceTree = "<group>"; };
+		FCDE4E4804B715C4A12C5ED9 /* DaxPetCoordinatorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DaxPetCoordinatorTests.swift; sourceTree = "<group>"; };
+		FA62F815A31E391954396F90 /* DaxCharacterViewTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DaxCharacterViewTests.swift; sourceTree = "<group>"; };
 		1E48DCA32EBB992A00E3959F /* History 7.xcdatamodel */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcdatamodel; path = "History 7.xcdatamodel"; sourceTree = "<group>"; };
 		1E4EDA272DE9ED2D0019B6E8 /* AIChatSessionStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIChatSessionStore.swift; sourceTree = "<group>"; };
 		1E4EDA2D2DE9ED710019B6E8 /* AIChatViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIChatViewController.swift; sourceTree = "<group>"; };
@@ -5310,6 +5363,18 @@
 		3148727D2CC68F6200EEF89B /* AIChatTabExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIChatTabExtension.swift; sourceTree = "<group>"; };
 		31521ABF2CC013A400248E6F /* AIChatMenuVisibilityConfigurable.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIChatMenuVisibilityConfigurable.swift; sourceTree = "<group>"; };
 		31521AC22CC01BC300248E6F /* AIChatTabOpener.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIChatTabOpener.swift; sourceTree = "<group>"; };
+		8D9813E55E808312057866BE /* DaxCharacterView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DaxCharacterView.swift; sourceTree = "<group>"; };
+		D85909EF60DA7B51A7652CF1 /* DaxPetCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DaxPetCoordinator.swift; sourceTree = "<group>"; };
+		3E67862B4ED543986F89CBC3 /* DaxPetPreferences.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DaxPetPreferences.swift; sourceTree = "<group>"; };
+		422669F28C6FDEDAF91030E6 /* DaxPetPreferencesView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DaxPetPreferencesView.swift; sourceTree = "<group>"; };
+		4ACE48166DEDD9C28DCB47D0 /* DaxPetView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DaxPetView.swift; sourceTree = "<group>"; };
+		74DF1A869D1511D61F690971 /* DaxPetViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DaxPetViewModel.swift; sourceTree = "<group>"; };
+		0885AD7D2BC1B3D2834D16ED /* DaxRig.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DaxRig.swift; sourceTree = "<group>"; };
+		04690AF94773435CE5EB1E32 /* DaxPetScreenLooker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DaxPetScreenLooker.swift; sourceTree = "<group>"; };
+		372854BB5C923C82B98AB58C /* DaxPetBrowsing.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DaxPetBrowsing.swift; sourceTree = "<group>"; };
+		646C271B4D8B09088C2F9FB4 /* DaxPetIntelligence.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DaxPetIntelligence.swift; sourceTree = "<group>"; };
+		BE383E12A7D7550277D9A2A7 /* DaxOutfit.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DaxOutfit.swift; sourceTree = "<group>"; };
+		4871A3F0BFB917621800B776 /* DaxPetAttachments.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DaxPetAttachments.swift; sourceTree = "<group>"; };
 		3154FD1328E6011A00909769 /* TabShadowView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TabShadowView.swift; sourceTree = "<group>"; };
 		315AA06F28CA5CC800200030 /* YoutubePlayerNavigationHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = YoutubePlayerNavigationHandler.swift; sourceTree = "<group>"; };
 		3161D15C2DA02380008F59B5 /* AIChatPixel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIChatPixel.swift; sourceTree = "<group>"; };
@@ -6585,6 +6650,7 @@
 		AB1E70020000000000000007 /* BrowserToolsWireFormatTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BrowserToolsWireFormatTests.swift; sourceTree = "<group>"; };
 		AB1E70030000000000000001 /* SwitchToTabBrowserTool.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SwitchToTabBrowserTool.swift; sourceTree = "<group>"; };
 		AB1E70040000000000000001 /* BrowserToolInvokerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BrowserToolInvokerTests.swift; sourceTree = "<group>"; };
+		E127DD329D3F0887EE29C53F /* AIChatBrowserToolsServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIChatBrowserToolsServiceTests.swift; sourceTree = "<group>"; };
 		AB1E70060000000000000001 /* ListOpenTabsBrowserTool.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ListOpenTabsBrowserTool.swift; sourceTree = "<group>"; };
 		AB1E70070000000000000001 /* ListOpenTabsBrowserToolTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ListOpenTabsBrowserToolTests.swift; sourceTree = "<group>"; };
 		AB1E70080000000000000001 /* BrowserToolPermissionStoreTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BrowserToolPermissionStoreTests.swift; sourceTree = "<group>"; };
@@ -8376,6 +8442,7 @@
 				31BFDB6F2ECA46DD00ADFABD /* AIChatOmnibarTextContainerViewController.swift */,
 				31E3FD712CE39C4600A392C8 /* Debug */,
 				1E4EDA262DE9ED1C0019B6E8 /* Sidebar */,
+				6F1DAE7474627E9208FB593B /* DaxPet */,
 				4773D76F5C4F4B31900F6E7A /* FloatingWindow */,
 				31CF74542CDC1771004ACCE5 /* UserScript */,
 				AB1E70010000000000000001 /* BrowserTools */,
@@ -8581,6 +8648,7 @@
 				1E2A88792E2E477A00C29AC0 /* AIChatSessionStoreTests.swift */,
 				1E66454E2E93F4010000A1B1 /* AIChatSessionTests.swift */,
 				1E66454A2E93F3FB000C8E35 /* AIChatStateTests.swift */,
+				BF4EBD8AC29FEAB38F058307 /* DaxPet */,
 				1E2A887F2E2E532600C29AC0 /* AIChatCoordinatorTests.swift */,
 				CC19E9EF2E82E36A0043F931 /* AIChatHistoryCleanerTests.swift */,
 				A077E4403848594FBFC19F74 /* AIChatDeleterTests.swift */,
@@ -8588,6 +8656,22 @@
 				FB0C0800000000000000CE04 /* PageContextExtractionPixelHandlerTests.swift */,
 			);
 			path = AIChat;
+			sourceTree = "<group>";
+		};
+		BF4EBD8AC29FEAB38F058307 /* DaxPet */ = {
+			isa = PBXGroup;
+			children = (
+				A4AECEA140C316C064C9D31E /* DaxPetPreferencesTests.swift */,
+				B87A6D8AED861FEE73EB1164 /* DaxPetViewModelTests.swift */,
+				8DCED9FA1E7ADC07440C9A64 /* DaxRigTests.swift */,
+				A8EC30367E93B14BCFB04A71 /* DaxPetIntelligenceTests.swift */,
+				7E8E4FA42AB8AA567FBEF716 /* DaxPetBrowsingTests.swift */,
+				00685BBB3DE355130CCCF23D /* DaxOutfitTests.swift */,
+				FAB7B212D3BD55AFB2B51B0C /* DaxPetAttachmentsTests.swift */,
+				FCDE4E4804B715C4A12C5ED9 /* DaxPetCoordinatorTests.swift */,
+				FA62F815A31E391954396F90 /* DaxCharacterViewTests.swift */,
+			);
+			path = DaxPet;
 			sourceTree = "<group>";
 		};
 		31F28C4B28C8EE9000119F70 /* YoutubePlayer */ = {
@@ -9231,6 +9315,25 @@
 				37FC2A172CF903060048E226 /* MockPrivacyStats.swift */,
 			);
 			path = Mocks;
+			sourceTree = "<group>";
+		};
+		6F1DAE7474627E9208FB593B /* DaxPet */ = {
+			isa = PBXGroup;
+			children = (
+				8D9813E55E808312057866BE /* DaxCharacterView.swift */,
+				D85909EF60DA7B51A7652CF1 /* DaxPetCoordinator.swift */,
+				3E67862B4ED543986F89CBC3 /* DaxPetPreferences.swift */,
+				422669F28C6FDEDAF91030E6 /* DaxPetPreferencesView.swift */,
+				4ACE48166DEDD9C28DCB47D0 /* DaxPetView.swift */,
+				74DF1A869D1511D61F690971 /* DaxPetViewModel.swift */,
+				0885AD7D2BC1B3D2834D16ED /* DaxRig.swift */,
+				04690AF94773435CE5EB1E32 /* DaxPetScreenLooker.swift */,
+				372854BB5C923C82B98AB58C /* DaxPetBrowsing.swift */,
+				646C271B4D8B09088C2F9FB4 /* DaxPetIntelligence.swift */,
+				BE383E12A7D7550277D9A2A7 /* DaxOutfit.swift */,
+				4871A3F0BFB917621800B776 /* DaxPetAttachments.swift */,
+			);
+			path = DaxPet;
 			sourceTree = "<group>";
 		};
 		4773D76F5C4F4B31900F6E7A /* FloatingWindow */ = {
@@ -12341,6 +12444,7 @@
 				AB1E70020000000000000001 /* AIChatMCPSessionTests.swift */,
 				AB1E70020000000000000004 /* BrowserToolCatalogTests.swift */,
 				AB1E70040000000000000001 /* BrowserToolInvokerTests.swift */,
+				E127DD329D3F0887EE29C53F /* AIChatBrowserToolsServiceTests.swift */,
 				AB1E70070000000000000001 /* ListOpenTabsBrowserToolTests.swift */,
 				AB1E70080000000000000001 /* BrowserToolPermissionStoreTests.swift */,
 				AB1E70090000000000000001 /* AIChatElicitationCoordinatorTests.swift */,
@@ -16174,6 +16278,18 @@
 				F18826812BBEB58100D9AC4F /* SubscriptionPixel.swift in Sources */,
 				BBC7BDA92D5B82BD0037A4AE /* DefaultBrowserAndDockPromptCoordinator.swift in Sources */,
 				31521AC42CC01BC700248E6F /* AIChatTabOpener.swift in Sources */,
+				31715EC97448A6F8442FF831 /* DaxCharacterView.swift in Sources */,
+				624D61143D48A08A0CFFF87F /* DaxPetCoordinator.swift in Sources */,
+				9FD6E4BBD14E4A41496E250A /* DaxPetPreferences.swift in Sources */,
+				D955D6005801C2C5CA1E7F30 /* DaxPetPreferencesView.swift in Sources */,
+				B3B7DAE0F3F0F6F1F7D2DC40 /* DaxPetView.swift in Sources */,
+				9B632FDFD824EF7E7BF197B3 /* DaxPetViewModel.swift in Sources */,
+				FE26E80FE66AEAC6DF375F17 /* DaxRig.swift in Sources */,
+				91FF5CC5208E38A5F135437D /* DaxPetScreenLooker.swift in Sources */,
+				491025D79D6F0F7573E4EFA7 /* DaxPetBrowsing.swift in Sources */,
+				66C6EF89FFB224FD20B95BE4 /* DaxPetIntelligence.swift in Sources */,
+				E5C88507AE3ED17CB7CF72A7 /* DaxOutfit.swift in Sources */,
+				1AC6816D2971A01A294FECE4 /* DaxPetAttachments.swift in Sources */,
 				1A77VST00000000000000004 /* VoiceSessionTracker.swift in Sources */,
 				3706FB88293F65D500E42796 /* PermissionAuthorizationQuery.swift in Sources */,
 				A5B001010000000000000032 /* PermissionPromptDecision.swift in Sources */,
@@ -17296,6 +17412,7 @@
 				AB1E70020000000000000003 /* AIChatMCPSessionTests.swift in Sources */,
 				AB1E70020000000000000006 /* BrowserToolCatalogTests.swift in Sources */,
 				AB1E70040000000000000003 /* BrowserToolInvokerTests.swift in Sources */,
+				0EEB7787C38D9EBF9F8DC5A0 /* AIChatBrowserToolsServiceTests.swift in Sources */,
 				AB1E70070000000000000003 /* ListOpenTabsBrowserToolTests.swift in Sources */,
 				AB1E70080000000000000003 /* BrowserToolPermissionStoreTests.swift in Sources */,
 				AB1E70090000000000000003 /* AIChatElicitationCoordinatorTests.swift in Sources */,
@@ -17550,6 +17667,15 @@
 				3706FE86293F661700E42796 /* FileDownloadManagerTests.swift in Sources */,
 				BDA7648E2BC4E4EF00D0400C /* DefaultVPNLocationFormatterTests.swift in Sources */,
 				1E2A88812E2E532600C29AC0 /* AIChatCoordinatorTests.swift in Sources */,
+				1720DD809A2D33AAC7A120E0 /* DaxPetPreferencesTests.swift in Sources */,
+				3DE24E39E95BA7002DD6923C /* DaxPetViewModelTests.swift in Sources */,
+				2B6759D6378BEDC8D9B6973B /* DaxRigTests.swift in Sources */,
+				8009163D27ADAD96D27C190F /* DaxPetIntelligenceTests.swift in Sources */,
+				0BB91D4A5DD1D7BE2696E693 /* DaxPetBrowsingTests.swift in Sources */,
+				27BB7A382CF76A66499B710F /* DaxOutfitTests.swift in Sources */,
+				99918611294B84AFF0B5796F /* DaxPetAttachmentsTests.swift in Sources */,
+				C76464E44EFF2A6B074D85AA /* DaxPetCoordinatorTests.swift in Sources */,
+				B2B03E6EBF85403F9837EAAC /* DaxCharacterViewTests.swift in Sources */,
 				365B21792F64460D00DE0CB0 /* DataClearingWideEventServiceTests.swift in Sources */,
 				3727A5AB2F180136002E10E1 /* MemoryPressureReporterTests.swift in Sources */,
 				56D5B3982DD3765D00407440 /* ScriptSourceProviderTests.swift in Sources */,
@@ -18464,6 +18590,18 @@
 				C1D3C5752E8ADB080086A2BD /* IdentitiesCleanupErrorHandling.swift in Sources */,
 				C1D3C5762E8ADB080086A2BD /* SyncIdentitiesAdapter.swift in Sources */,
 				31521AC32CC01BC700248E6F /* AIChatTabOpener.swift in Sources */,
+				C9A7ED3683CEA5081E117287 /* DaxCharacterView.swift in Sources */,
+				27F7A452C0202D177502918B /* DaxPetCoordinator.swift in Sources */,
+				E444AE2D0DEB91BC8343D04E /* DaxPetPreferences.swift in Sources */,
+				11C2B07F14E6D8469942488B /* DaxPetPreferencesView.swift in Sources */,
+				2E58D022480CB93B7CF49DF0 /* DaxPetView.swift in Sources */,
+				9987A46C3819AA1A434F4C0A /* DaxPetViewModel.swift in Sources */,
+				82FF8643CBC4FBCCBB3F47F9 /* DaxRig.swift in Sources */,
+				2B7DD651FC88FD590002E5A4 /* DaxPetScreenLooker.swift in Sources */,
+				5A88F47949CAF303B0DC369E /* DaxPetBrowsing.swift in Sources */,
+				EAE27112E3CFF562E5D353CF /* DaxPetIntelligence.swift in Sources */,
+				14A58F8FF88963953A4963FE /* DaxOutfit.swift in Sources */,
+				1B62F759DAAD005073A3188D /* DaxPetAttachments.swift in Sources */,
 				1A77VST00000000000000003 /* VoiceSessionTracker.swift in Sources */,
 				EE72DCB32EAB73810052661B /* NewImportTypePickerView.swift in Sources */,
 				37B904712E2996FA00E5DAF7 /* AppVersionModel.swift in Sources */,
@@ -19325,6 +19463,15 @@
 				CC26B6162F0BE1DC00D380B6 /* MockNewTabPageNextStepsCardsPixelHandler.swift in Sources */,
 				37EC314D2D8C02C00026C348 /* FaviconTests.swift in Sources */,
 				1E2A88802E2E532600C29AC0 /* AIChatCoordinatorTests.swift in Sources */,
+				E1C1D4A093BF9DDF4BCC2B98 /* DaxPetPreferencesTests.swift in Sources */,
+				DB3256B56603C9D1666E8371 /* DaxPetViewModelTests.swift in Sources */,
+				AA34BA1DBB7C7A29A3C9C626 /* DaxRigTests.swift in Sources */,
+				DB186FC7914A285AE63B972E /* DaxPetIntelligenceTests.swift in Sources */,
+				704FB594AFFB69E578090EFF /* DaxPetBrowsingTests.swift in Sources */,
+				4312C109CA95560195D85BD4 /* DaxOutfitTests.swift in Sources */,
+				07680164011752947684B5E6 /* DaxPetAttachmentsTests.swift in Sources */,
+				CE1AB9135982086133D7D804 /* DaxPetCoordinatorTests.swift in Sources */,
+				6A4075C705DE61853F1DD0E0 /* DaxCharacterViewTests.swift in Sources */,
 				37534CA52811987D002621E7 /* AdjacentItemEnumeratorTests.swift in Sources */,
 				9FBB0C092CBD39B70006B6A6 /* ViewHighlighterTests.swift in Sources */,
 				56B234BF2A84EFD200F2A1CC /* NavigationBarUrlExtensionsTests.swift in Sources */,
@@ -19618,6 +19765,7 @@
 				AB1E70020000000000000002 /* AIChatMCPSessionTests.swift in Sources */,
 				AB1E70020000000000000005 /* BrowserToolCatalogTests.swift in Sources */,
 				AB1E70040000000000000002 /* BrowserToolInvokerTests.swift in Sources */,
+				52EFE78367D8C6099A7D51FC /* AIChatBrowserToolsServiceTests.swift in Sources */,
 				AB1E70070000000000000002 /* ListOpenTabsBrowserToolTests.swift in Sources */,
 				AB1E70080000000000000002 /* BrowserToolPermissionStoreTests.swift in Sources */,
 				AB1E70090000000000000002 /* AIChatElicitationCoordinatorTests.swift in Sources */,

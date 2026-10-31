@@ -1650,7 +1650,7 @@ final class AIChatOmnibarController {
     /// Converts image attachments to base64-encoded `NativePromptImage` values for the JS bridge.
     /// Encodes each image in a format the model supports. Prefers the source format when supported;
     /// otherwise falls back to the first supported format (typically PNG).
-    private static func nativePromptImages(from attachments: [AIChatImageAttachment], supportedFormats: [String]) -> [AIChatNativePrompt.NativePromptImage]? {
+    static func nativePromptImages(from attachments: [AIChatImageAttachment], supportedFormats: [String]) -> [AIChatNativePrompt.NativePromptImage]? {
         guard !attachments.isEmpty else { return nil }
         let lowercasedFormats = Set(supportedFormats.map { $0.lowercased() })
 

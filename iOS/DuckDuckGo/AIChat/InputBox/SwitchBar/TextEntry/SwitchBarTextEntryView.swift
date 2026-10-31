@@ -64,6 +64,7 @@ class SwitchBarTextEntryView: UIView {
         static let textTopInset: CGFloat = 12
         static let textBottomInset: CGFloat = 12
         static let textHorizontalInset: CGFloat = 16
+        static let compactLeadingContentInset: CGFloat = 8
 
         // Placeholder positioning
         static let placeholderTopOffset: CGFloat = 12
@@ -227,6 +228,7 @@ class SwitchBarTextEntryView: UIView {
     private var buttonsCenterYConstraint: NSLayoutConstraint?
     private var placeholderTopConstraint: NSLayoutConstraint?
     private var placeholderCenterYConstraint: NSLayoutConstraint?
+    private var placeholderLeadingConstraint: NSLayoutConstraint?
 
     private var wasTextEmptyForAutocorrection: Bool = true
 
@@ -271,6 +273,15 @@ class SwitchBarTextEntryView: UIView {
     var placeholderTextAlignment: NSTextAlignment = .natural {
         didSet {
             updatePlaceholderAlignment()
+        }
+    }
+
+    /// Use a smaller inset when a back button shares the input row.
+    var usesCompactLeadingContentInset = false {
+        didSet {
+            guard usesCompactLeadingContentInset != oldValue else { return }
+            placeholderLeadingConstraint?.constant = usesCompactLeadingContentInset ? Constants.compactLeadingContentInset : placeholderHorizontalOffset
+            adjustTextViewContentInset()
         }
     }
 
@@ -487,8 +498,11 @@ class SwitchBarTextEntryView: UIView {
         buttonsCenterYConstraint = buttonsCenterY
         let placeholderTopConstraint = placeholderLabel.topAnchor.constraint(equalTo: textView.topAnchor, constant: Constants.placeholderTopOffset)
         let placeholderCenterYConstraint = placeholderLabel.centerYAnchor.constraint(equalTo: textView.centerYAnchor)
+        let placeholderLeadingConstraint = placeholderLabel.leadingAnchor.constraint(equalTo: textView.leadingAnchor,
+                                                                                      constant: placeholderHorizontalOffset)
         self.placeholderTopConstraint = placeholderTopConstraint
         self.placeholderCenterYConstraint = placeholderCenterYConstraint
+        self.placeholderLeadingConstraint = placeholderLeadingConstraint
         placeholderTopConstraint.isActive = false
 
         NSLayoutConstraint.activate([
@@ -503,7 +517,7 @@ class SwitchBarTextEntryView: UIView {
             textField.trailingAnchor.constraint(equalTo: trailingAnchor),
 
             placeholderCenterYConstraint,
-            placeholderLabel.leadingAnchor.constraint(equalTo: textView.leadingAnchor, constant: placeholderHorizontalOffset),
+            placeholderLeadingConstraint,
             // Trail to the buttons so a visible stop / search-go-to / voice button truncates the
             // placeholder. When `.noButtons`, buttonsView has zero width so this is a no-op.
             placeholderLabel.trailingAnchor.constraint(equalTo: buttonsView.leadingAnchor),
@@ -729,14 +743,16 @@ class SwitchBarTextEntryView: UIView {
             let fittingWidth = buttonsView.systemLayoutSizeFitting(UIView.layoutFittingCompressedSize).width
             let buttonsWidth = currentButtonState.showsAnyButton ? fittingWidth : 0
             let rightInset = buttonsWidth > 0 ? buttonsWidth : textHorizontalInset
-            textField.textLeftInset = textHorizontalInset + fragmentPadding
+            textField.textLeftInset = usesCompactLeadingContentInset ? Constants.compactLeadingContentInset : textHorizontalInset + fragmentPadding
             textField.textRightInset = rightInset + fragmentPadding
         } else {
             let buttonsIntersectionWidth = textView.frame.intersection(buttonsView.frame).width
             let rightInset = currentButtonState.showsAnyButton ? buttonsIntersectionWidth : textHorizontalInset
+            // Account for glyph padding so the text and placeholder share the compact inset.
+            let leftInset = usesCompactLeadingContentInset ? Constants.compactLeadingContentInset - fragmentPadding : textHorizontalInset
             textView.textContainerInset = UIEdgeInsets(
                 top: Constants.textTopInset,
-                left: textHorizontalInset,
+                left: leftInset,
                 bottom: Constants.textBottomInset,
                 right: rightInset
             )

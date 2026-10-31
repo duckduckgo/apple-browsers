@@ -1740,6 +1740,7 @@ private extension UnifiedToggleInputView {
         textEntryViewLeadingConstraint.constant = effective
             ? Constants.textEntryViewLeadingWithInlineDismiss
             : 0
+        textEntryView.usesCompactLeadingContentInset = effective
     }
 
     /// Pulls the toggle flush to the card's leading edge when the inline dismiss is suppressed;

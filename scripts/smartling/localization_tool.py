@@ -43,6 +43,7 @@ class SubmitResult:
     outcome: str
     job_id: str = ""
     job_name: str = ""
+    job_url: str = ""
     total_strings: Optional[int] = None  # Smartling's totalStrings: each string counted once per locale
     locales: Optional[int] = None
     max_usd: str = ""
@@ -918,6 +919,8 @@ async def submit_command(args):
                 auto_authorize_max_usd,
                 args.delete_job_on_failure
             )
+            if result.job_id:
+                result.job_url = job_url(client, result.job_id)
     except Exception as error:  # pylint: disable=broad-except
         log(f"❌ {error}")
         traceback.print_exc()

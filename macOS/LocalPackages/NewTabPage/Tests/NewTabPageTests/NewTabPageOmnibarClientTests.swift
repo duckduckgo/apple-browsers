@@ -1029,6 +1029,71 @@ final class NewTabPageOmnibarClientTests: XCTestCase {
         XCTAssertEqual(configProvider.launcherPromoIgnoredCallCount, 0)
     }
 
+    // MARK: - Suggested prompts
+
+    @MainActor
+    func testGetConfigIncludesShowSuggestedPromptsFromProvider() async throws {
+        configProvider.showSuggestedPrompts = true
+
+        let config: NewTabPageDataModel.OmnibarConfig = try await messageHelper.handleMessage(named: .getConfig)
+
+        XCTAssertEqual(config.showSuggestedPrompts, true)
+    }
+
+    @MainActor
+    func testWhileChipsAreShownEverySubmittedPromptIsCounted() async throws {
+        configProvider.showSuggestedPrompts = true
+        var chipPrompt = NewTabPageDataModel.SubmitChatAction(chat: "Hi", target: .sameTab, modelId: nil, images: nil, mode: nil, toolChoice: nil, reasoningEffort: nil, pageContext: nil, files: nil)
+        chipPrompt.suggestedPromptId = "jobapplication"
+        let typedPrompt = NewTabPageDataModel.SubmitChatAction(chat: "pizza", target: .sameTab, modelId: nil, images: nil, mode: nil, toolChoice: nil, reasoningEffort: nil, pageContext: nil, files: nil)
+
+        try await messageHelper.handleMessageExpectingNilResponse(named: .submitChat, parameters: chipPrompt)
+        try await messageHelper.handleMessageExpectingNilResponse(named: .submitChat, parameters: typedPrompt)
+
+        XCTAssertEqual(configProvider.suggestedPromptsPromptCount, 2)
+    }
+
+    @MainActor
+    func testWhenChipsAreNotShownPromptsAreNotCounted() async throws {
+        configProvider.showSuggestedPrompts = false
+        let action = NewTabPageDataModel.SubmitChatAction(chat: "pizza", target: .sameTab, modelId: nil, images: nil, mode: nil, toolChoice: nil, reasoningEffort: nil, pageContext: nil, files: nil)
+
+        try await messageHelper.handleMessageExpectingNilResponse(named: .submitChat, parameters: action)
+
+        XCTAssertEqual(configProvider.suggestedPromptsPromptCount, 0)
+    }
+
+    @MainActor
+    func testVoiceChatIsNotCounted() async throws {
+        configProvider.showSuggestedPrompts = true
+        let action = NewTabPageDataModel.SubmitChatAction(chat: "", target: .sameTab, modelId: nil, images: nil, mode: AIChatNativePrompt.voiceMode, toolChoice: nil, reasoningEffort: nil, pageContext: nil, files: nil)
+
+        try await messageHelper.handleMessageExpectingNilResponse(named: .submitChat, parameters: action)
+
+        XCTAssertEqual(configProvider.suggestedPromptsPromptCount, 0)
+    }
+
+    @MainActor
+    func testSubmissionFromASuggestedPromptIsReported() async throws {
+        var action = NewTabPageDataModel.SubmitChatAction(chat: "Hi", target: .sameTab, modelId: nil, images: nil, mode: nil, toolChoice: nil, reasoningEffort: nil, pageContext: nil, files: nil)
+        action.suggestedPromptId = "jobapplication"
+
+        try await messageHelper.handleMessageExpectingNilResponse(named: .submitChat, parameters: action)
+
+        let handler = try XCTUnwrap(actionHandler as? MockNewTabPageOmnibarActionsHandler)
+        XCTAssertEqual(handler.suggestedPromptSubmittedIds, ["jobapplication"])
+    }
+
+    @MainActor
+    func testTypedSubmissionIsNotReportedAsASuggestedPrompt() async throws {
+        let action = NewTabPageDataModel.SubmitChatAction(chat: "Hi", target: .sameTab, modelId: nil, images: nil, mode: nil, toolChoice: nil, reasoningEffort: nil, pageContext: nil, files: nil)
+
+        try await messageHelper.handleMessageExpectingNilResponse(named: .submitChat, parameters: action)
+
+        let handler = try XCTUnwrap(actionHandler as? MockNewTabPageOmnibarActionsHandler)
+        XCTAssertEqual(handler.suggestedPromptSubmittedIds, [])
+    }
+
     @MainActor
     func testDismissUsageLimitsIsForwardedToTheProvider() async throws {
         try await messageHelper.handleMessageExpectingNilResponse(named: .dismissUsageLimits)

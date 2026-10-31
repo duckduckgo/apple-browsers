@@ -18,6 +18,7 @@ tags:
         isOnboardingCompleted: ${ONBOARDING_COMPLETED}
         currentAppVariant: ${APP_VARIANT}
         "ff.uiTestFeatureFlag": "true"
+        "ff.alwaysShowKeyboardOnNewTabPage": "false"
         "experiment.uiTestExperiment": "treatment"
 
 # Open Debug Menu

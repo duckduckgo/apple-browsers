@@ -17,6 +17,7 @@
 //
 
 @_spi(Testing) import Persistence
+import PrivacyConfig
 import WebKit
 import XCTest
 @testable import WebExtensions
@@ -213,7 +214,9 @@ private struct StoreDownloaderMock: ChromeWebStoreDownloading {
 private final class StoreCatalogMock: ChromeWebStoreCatalogProviding {
     var allowed = true
     var extensionIDs: [String] = []
+    var learnMoreURL: URL?
     func contains(_ identifier: String) -> Bool { allowed }
+    func listing(of subfeature: ExtensionsCatalogSubfeature) -> ChromeWebStoreListing? { nil }
 }
 
 @MainActor

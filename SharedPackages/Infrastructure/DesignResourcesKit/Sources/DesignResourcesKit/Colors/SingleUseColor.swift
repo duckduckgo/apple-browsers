@@ -119,6 +119,9 @@ public enum SingleUseColor {
     case fireDialogTabShadowPrimary
     case fireDialogTabShadowSecondary
 
+    case spinnerStart
+    case spinnerFinal
+
 #endif
 
 }

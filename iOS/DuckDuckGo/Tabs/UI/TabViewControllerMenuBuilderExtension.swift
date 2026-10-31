@@ -615,7 +615,9 @@ extension TabViewController {
                  image: useSmallIcon ? DesignSystemImages.Glyphs.Size16.voice : DesignSystemImages.Glyphs.Size24.voice,
                  action: { [weak self] in
             guard let self else { return }
-            self.delegate?.tabDidRequestNewVoiceChat(self)
+            let source: AIChatEntryPointSource = self.tabModel.isAITab ? .browsingMenuDuckAI
+                : self.tabModel.link == nil ? .browsingMenuNTP : .browsingMenuWebpage
+            self.delegate?.tabDidRequestNewVoiceChat(self, source: source)
         })
     }
 

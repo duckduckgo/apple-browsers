@@ -50,6 +50,18 @@ final class WebViewTransitionGeometryTests: XCTestCase {
         XCTAssertNil(WebViewTransitionGeometry.aspectRatio(of: CGSize(width: 100, height: CGFloat.nan)))
     }
 
+    // MARK: - hasSameOrientation
+
+    func testHasSameOrientationForMatchingOrientations() {
+        XCTAssertTrue(WebViewTransitionGeometry.hasSameOrientation(CGSize(width: 390, height: 844), as: CGSize(width: 300, height: 600)))
+        XCTAssertTrue(WebViewTransitionGeometry.hasSameOrientation(CGSize(width: 844, height: 390), as: CGSize(width: 600, height: 300)))
+    }
+
+    func testHasSameOrientationIsFalseAfterRotation() {
+        XCTAssertFalse(WebViewTransitionGeometry.hasSameOrientation(CGSize(width: 844, height: 390), as: CGSize(width: 390, height: 844)))
+        XCTAssertFalse(WebViewTransitionGeometry.hasSameOrientation(CGSize(width: 390, height: 844), as: CGSize(width: 844, height: 390)))
+    }
+
     // MARK: - previewFrame (crash regression guard)
 
     func testPreviewFrameIsFiniteForZeroSizedPreview() {

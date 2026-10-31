@@ -428,6 +428,16 @@
                 "description": "Present only as true when the app version at session start differs from the completing or orphan-recovering process app version. Omitted when versions match."
             },
             {
+                "key": "feature.data.ext.os_version_changed",
+                "type": "boolean",
+                "description": "Present only as true when the OS version at session start differs from the OS version of the completing or orphan-recovering process. Omitted when versions match."
+            },
+            {
+                "key": "feature.data.ext.system_rebooted",
+                "type": "boolean",
+                "description": "Present only as true when the system boot time observed by the completing or orphan-recovering process is more than 60 seconds later than the one at session start. Omitted otherwise."
+            },
+            {
                 "key": "feature.data.ext.time_to_first_error_seconds_bucketed",
                 "type": "string",
                 "description": "Time from event start to the first error of any kind, bucketed (lower end of bucket, in seconds). Absent when there were none.",

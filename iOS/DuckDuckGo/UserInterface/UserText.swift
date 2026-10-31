@@ -63,6 +63,7 @@ public struct UserText {
     public static let scopedFireConfirmationAlertTitle = NSLocalizedString("scoped.fire.confirmation.alert.title", value: "Delete tabs and site data?", comment: "Title for scoped fire confirmation dialog asking user to delete tabs and site data")
     public static let scopedFireConfirmationAlertFireModeTitle = NSLocalizedString("scoped.fire.confirmation.alert.fireMode.title", value: "Delete Fire Tabs and their data?", comment: "Title for scoped fire confirmation dialog in fire mode, asking user to delete all fire tabs and their data")
     public static let scopedFireConfirmationAlertTitleWithAIChat = NSLocalizedString("scoped.fire.confirmation.alert.title.with.aichat", value: "Delete tabs, site data, and chats?", comment: "Title for scoped fire confirmation dialog when AI chat clearing is enabled")
+    public static let scopedFireConfirmationSlideToDeleteAll = NotLocalizedString("scoped.fire.confirmation.slide.to.delete.all", value: "Slide To Delete All", comment: "Slider to delete all tabs and site data in the fire confirmation dialog")
     public static let scopedFireConfirmationDeleteAllButton = NSLocalizedString("scoped.fire.confirmation.delete.all.button", value: "Delete All", comment: "Button to delete all tabs and data in scoped fire confirmation dialog")
     public static let scopedFireConfirmationDeleteChatsButton = NSLocalizedString("scoped.fire.confirmation.delete.chats.button", value: "Delete Chats", comment: "Button to delete all chats in scoped fire confirmation dialog")
     public static let scopedFireConfirmationDeleteThisTabButton = NSLocalizedString("scoped.fire.confirmation.delete.this.tab.button", value: "Delete This Tab", comment: "Button to delete only the current tab in scoped fire confirmation dialog")
@@ -2149,6 +2150,8 @@ public struct UserText {
     }
     public static let subscriptionChangePlan = NSLocalizedString("subscription.change.plan", value: "Update Plan or Cancel", comment: "Change plan or cancel title")
     public static let subscriptionManagePayment = NSLocalizedString("subscription.manage.payment", value: "Manage Payment or Cancel", comment: "Manage Payment or cancel action title")
+    public static let subscriptionManageSubscription = NotLocalizedString("subscription.manage.subscription", value: "Manage Subscription", comment: "Action title that opens the payment platform's subscription management screen. Used for en_US locale only.")
+    public static let subscriptionCancelSubscription = NotLocalizedString("subscription.cancel.subscription", value: "Cancel Subscription", comment: "Action title that starts the subscription cancellation flow. Used for en_US locale only.")
     public static let subscriptionHelpAndSupport = NSLocalizedString("subscription.help", value: "Help and support", comment: "Help and support Section header")
     public static let subscriptionFAQ = NSLocalizedString("subscription.faq", value: "FAQs and Support", comment: "FAQ Button")
     public static let subscriptionFeedback = NSLocalizedString("subscription.feedback", value: "Share Feedback", comment: "Share Feedback Button")

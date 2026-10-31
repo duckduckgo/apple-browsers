@@ -359,7 +359,7 @@ final class AIChatPageContextHandlerTests: XCTestCase {
             userScriptProvider: { mockScript },
             attachabilityPolicyProvider: { policy },
             currentURLProvider: { URL(string: "https://example.com/download") },
-            mimeTypeProvider: { _ in "application/pdf" },
+            mimeTypeProvider: { _ in "image/png" },
             extractionPixelHandler: extractionPixels
         )
 
@@ -368,7 +368,7 @@ final class AIChatPageContextHandlerTests: XCTestCase {
         XCTAssertFalse(didTrigger)
         XCTAssertEqual(mockScript.collectCallCount, 0)
         XCTAssertEqual(extractionPixels.calls.count, 1)
-        XCTAssertEqual(extractionPixels.calls.first?.outcome, .prevented("pdf"))
+        XCTAssertEqual(extractionPixels.calls.first?.outcome, .prevented("image"))
         XCTAssertEqual(extractionPixels.calls.first?.trigger, .navigation)
     }
 
@@ -380,7 +380,7 @@ final class AIChatPageContextHandlerTests: XCTestCase {
             webViewProvider: { WKWebView() },
             userScriptProvider: { mockScript },
             attachabilityPolicyProvider: { policy },
-            currentURLProvider: { URL(string: "https://example.com/report.pdf") },
+            currentURLProvider: { URL(string: "https://example.com/photo.png") },
             mimeTypeProvider: { _ in nil },
             extractionPixelHandler: extractionPixels
         )
@@ -389,7 +389,7 @@ final class AIChatPageContextHandlerTests: XCTestCase {
 
         XCTAssertFalse(didTrigger)
         XCTAssertEqual(mockScript.collectCallCount, 0)
-        XCTAssertEqual(extractionPixels.calls.first?.outcome, .prevented("pdf"))
+        XCTAssertEqual(extractionPixels.calls.first?.outcome, .prevented("image"))
         XCTAssertEqual(extractionPixels.calls.first?.trigger, .userRequest)
     }
 
@@ -503,8 +503,8 @@ final class AIChatPageContextHandlerTests: XCTestCase {
         let handler = makeHandler(
             webViewProvider: { WKWebView() },
             userScriptProvider: { mockScript },
-            currentURLProvider: { URL(string: "https://example.com/report.pdf") },
-            mimeTypeProvider: { _ in "application/pdf" },
+            currentURLProvider: { URL(string: "https://example.com/photo.png") },
+            mimeTypeProvider: { _ in "image/png" },
             extractionPixelHandler: extractionPixels
         )
 
@@ -556,15 +556,15 @@ final class AIChatPageContextHandlerTests: XCTestCase {
         let policy = makeBlocklistPolicy()
         let handler = makeHandler(
             attachabilityPolicyProvider: { policy },
-            currentURLProvider: { URL(string: "https://example.com/report.pdf") },
-            mimeTypeProvider: { _ in "application/pdf" },
+            currentURLProvider: { URL(string: "https://example.com/photo.png") },
+            mimeTypeProvider: { _ in "image/png" },
             extractionPixelHandler: extractionPixels
         )
 
         handler.reportAttachabilityMeasurement(trigger: .navigation)
 
         XCTAssertEqual(extractionPixels.calls.count, 1)
-        XCTAssertEqual(extractionPixels.calls.first?.outcome, .prevented("pdf"))
+        XCTAssertEqual(extractionPixels.calls.first?.outcome, .prevented("image"))
         XCTAssertEqual(extractionPixels.calls.first?.trigger, .navigation)
     }
 
@@ -586,8 +586,8 @@ final class AIChatPageContextHandlerTests: XCTestCase {
     func testReportAttachabilityMeasurementDoesNothingWhenNoConfig() {
         let extractionPixels = MockPageContextExtractionPixelFiring()
         let handler = makeHandler(
-            currentURLProvider: { URL(string: "https://example.com/report.pdf") },
-            mimeTypeProvider: { _ in "application/pdf" },
+            currentURLProvider: { URL(string: "https://example.com/photo.png") },
+            mimeTypeProvider: { _ in "image/png" },
             extractionPixelHandler: extractionPixels
         )
 
@@ -616,7 +616,6 @@ final class AIChatPageContextHandlerTests: XCTestCase {
             currentURLProvider: { pdfURL },
             mimeTypeProvider: { _ in "application/pdf" },
             extractionPixelHandler: extractionPixels,
-            isDocumentContextEnabled: { true },
             makeDocumentContext: { _, _, _ in
                 didReadDocument = true
                 return .document(document)
@@ -667,7 +666,6 @@ final class AIChatPageContextHandlerTests: XCTestCase {
             currentURLProvider: { pdfURL },
             mimeTypeProvider: { _ in "application/pdf" },
             extractionPixelHandler: extractionPixels,
-            isDocumentContextEnabled: { true },
             makeDocumentContext: { _, _, _ in .document(document) }
         )
 
@@ -696,7 +694,6 @@ final class AIChatPageContextHandlerTests: XCTestCase {
             currentURLProvider: { pdfURL },
             mimeTypeProvider: { _ in "application/pdf" },
             extractionPixelHandler: extractionPixels,
-            isDocumentContextEnabled: { true },
             makeDocumentContext: { _, url, title in
                 .tooLarge(DocumentPageContextProvider.metadataContext(url: url, title: title, attachable: false))
             }
@@ -719,7 +716,6 @@ final class AIChatPageContextHandlerTests: XCTestCase {
             currentURLProvider: { pdfURL },
             mimeTypeProvider: { _ in "application/pdf" },
             extractionPixelHandler: extractionPixels,
-            isDocumentContextEnabled: { true },
             makeDocumentContext: { _, _, _ in .unavailable }
         )
 
@@ -748,7 +744,6 @@ final class AIChatPageContextHandlerTests: XCTestCase {
             attachabilityPolicyProvider: { self.makeBlocklistPolicy() },
             currentURLProvider: { urlHolder.url },
             mimeTypeProvider: { _ in "application/pdf" },
-            isDocumentContextEnabled: { true },
             makeDocumentContext: { _, _, _ in
                 await withCheckedContinuation { continuation in
                     gate.continuation = continuation
@@ -785,8 +780,7 @@ final class AIChatPageContextHandlerTests: XCTestCase {
         let handler = makeHandler(
             attachabilityPolicyProvider: { self.makeBlocklistPolicy() },
             currentURLProvider: { pdfURL },
-            mimeTypeProvider: { _ in "application/pdf" },
-            isDocumentContextEnabled: { true }
+            mimeTypeProvider: { _ in "application/pdf" }
         )
 
         XCTAssertTrue(handler.isCurrentPageAttachable())
@@ -796,14 +790,12 @@ final class AIChatPageContextHandlerTests: XCTestCase {
         let localPDF = makeHandler(
             attachabilityPolicyProvider: { self.makeBlocklistPolicy() },
             currentURLProvider: { URL(string: "file:///Users/me/spec.pdf") },
-            mimeTypeProvider: { _ in "application/pdf" },
-            isDocumentContextEnabled: { true }
+            mimeTypeProvider: { _ in "application/pdf" }
         )
         let localPDFWithoutBlocklist = makeHandler(
             attachabilityPolicyProvider: { nil },
             currentURLProvider: { URL(string: "file:///Users/me/spec.pdf") },
-            mimeTypeProvider: { _ in "application/pdf" },
-            isDocumentContextEnabled: { true }
+            mimeTypeProvider: { _ in "application/pdf" }
         )
         let localHTML = makeHandler(
             attachabilityPolicyProvider: { self.makeBlocklistPolicy() },
@@ -846,7 +838,6 @@ final class AIChatPageContextHandlerTests: XCTestCase {
             currentURLProvider: { URL(string: "file:///Users/me/spec.pdf") },
             mimeTypeProvider: { _ in "application/pdf" },
             extractionPixelHandler: extractionPixels,
-            isDocumentContextEnabled: { true },
             makeDocumentContext: { _, _, _ in
                 didReadDocument = true
                 return .unavailable
@@ -877,25 +868,6 @@ final class AIChatPageContextHandlerTests: XCTestCase {
         XCTAssertEqual(extractionPixels.calls.first?.outcome, .prevented("localFile"))
     }
 
-    func testWhenDocumentTabAndFlagOffThenBlocklistStillPreventsCollection() {
-        let mockScript = MockPageContextCollecting()
-        let extractionPixels = MockPageContextExtractionPixelFiring()
-        let handler = makeHandler(
-            webViewProvider: { WKWebView() },
-            userScriptProvider: { mockScript },
-            attachabilityPolicyProvider: { self.makeBlocklistPolicy() },
-            currentURLProvider: { URL(string: "https://example.com/spec.pdf") },
-            mimeTypeProvider: { _ in "application/pdf" },
-            extractionPixelHandler: extractionPixels,
-            isDocumentContextEnabled: { false }
-        )
-
-        let didTrigger = handler.triggerContextCollection(trigger: .tabContent)
-
-        XCTAssertFalse(didTrigger)
-        XCTAssertEqual(mockScript.collectCallCount, 0)
-        XCTAssertEqual(extractionPixels.calls.first?.outcome, .prevented("pdf"))
-    }
 
     func testClearResetsExtractionQueueSoLaterCollectReportsItsOwnTrigger() {
         let mockScript = MockPageContextCollecting()
@@ -976,7 +948,6 @@ final class AIChatPageContextHandlerTests: XCTestCase {
         currentURLProvider: PageContextURLProvider? = nil,
         mimeTypeProvider: @escaping PageContextMIMETypeProvider = { _ in nil },
         extractionPixelHandler: PageContextExtractionPixelFiring? = nil,
-        isDocumentContextEnabled: @escaping () -> Bool = { false },
         makeDocumentContext: DocumentContextMaking? = nil
     ) -> DuckDuckGo.AIChatPageContextHandler {
         DuckDuckGo.AIChatPageContextHandler(
@@ -988,7 +959,6 @@ final class AIChatPageContextHandlerTests: XCTestCase {
             currentURLProvider: currentURLProvider,
             mimeTypeProvider: mimeTypeProvider,
             extractionPixelHandler: extractionPixelHandler ?? MockPageContextExtractionPixelFiring(),
-            isDocumentContextEnabled: isDocumentContextEnabled,
             makeDocumentContext: makeDocumentContext
         )
     }
@@ -1611,7 +1581,6 @@ final class AIChatAttachedPageCollectionTests: XCTestCase {
         let handler = DuckDuckGo.AIChatPageContextHandler(webViewProvider: { self.webView }, userScriptProvider: { self.script },
                                               faviconProvider: { _ in "data:image/png;base64,icon" },
                                               currentURLProvider: { self.url }, mimeTypeProvider: { _ in "application/pdf" },
-                                              isDocumentContextEnabled: { true },
                                               makeDocumentContext: { _, _, _ in .document(document) })
         let result = await handler.collectContext(for: url, isValid: { true })
         XCTAssertEqual(result, .collected(document.withFavicon([.init(href: "data:image/png;base64,icon", rel: "icon")])))
@@ -1621,7 +1590,7 @@ final class AIChatAttachedPageCollectionTests: XCTestCase {
         let cancelled = expectation(description: "Document read cancelled")
         let handler = DuckDuckGo.AIChatPageContextHandler(webViewProvider: { self.webView }, userScriptProvider: { nil },
                                               faviconProvider: { _ in nil }, currentURLProvider: { self.url },
-                                              mimeTypeProvider: { _ in "application/pdf" }, isDocumentContextEnabled: { true },
+                                              mimeTypeProvider: { _ in "application/pdf" },
                                               makeDocumentContext: { _, _, _ in
             do { try await Task.sleep(nanoseconds: 10_000_000_000) } catch { cancelled.fulfill() }
             return .unavailable

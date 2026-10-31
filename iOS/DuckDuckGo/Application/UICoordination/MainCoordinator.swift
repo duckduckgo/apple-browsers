@@ -795,7 +795,7 @@ extension MainCoordinator: URLHandling {
             let request = FireRequest(options: .all, trigger: .manualFire, scope: .all, source: .deeplink)
             controller.forgetAllWithAnimation(request: request)
         case .voiceSearch:
-            controller.onVoiceSearchPressed()
+            controller.handleVoiceSearchOpenRequest(entrySource: AIChatEntryPointSource.forDeepLink(url))
         case .newEmail:
             controller.newEmailAddress()
         case .openVPN:
@@ -871,7 +871,7 @@ extension MainCoordinator: ShortcutItemHandling {
         } else if item.type == ShortcutKey.aiChat {
             handleAIChatAppIconShortuct()
         } else if item.type == ShortcutKey.voiceSearch {
-            controller.onVoiceSearchPressed()
+            controller.handleVoiceSearchOpenRequest(entrySource: .iconShortcut)
         }
     }
 
@@ -987,10 +987,17 @@ extension MainCoordinator: IdleReturnLaunchDelegate {
 
     private func startReturnSession(afterIdleSurface: PostIdleSessionWideEventData.Surface?) {
         let focused = controller.isInputFocused
-        controller.postIdleSessionInstrumentation.sessionStarted(landedOn: landedOnForCurrentTab(), afterIdleSurface: afterIdleSurface,
+        let landedOn = landedOnForCurrentTab()
+        controller.postIdleSessionInstrumentation.sessionStarted(landedOn: landedOn, afterIdleSurface: afterIdleSurface,
                                                                  focused: focused,
                                                                  toggleEnabled: controller.isReturnSessionToggleEnabled,
                                                                  togglePosition: controller.returnSessionTogglePosition(focused: focused))
+        // A live voice chat carries on from its own entry.
+        if landedOn == .duckAI, !voiceSessionStateManager.isVoiceSessionActive {
+            controller.fireAIChatEntryPointPixel(source: .appOpen, opensNewTab: false, hasPrompt: false)
+            // The Duck.ai tab is already on screen, so show it to the entry that just started.
+            controller.reportDuckAISessionCurrentTab()
+        }
     }
 
     private func landedOnForCurrentTab() -> ReturnSessionWideEventData.LandedOn {

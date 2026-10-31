@@ -15,6 +15,7 @@ name: test_enter_chat_from_web
         isOnboardingCompleted: ${ONBOARDING_COMPLETED}
         currentAppVariant: ${APP_VARIANT}
         isRunningUITests: true
+        "ff.alwaysShowKeyboardOnNewTabPage": "false"
         ff.browsingMenuSheetEnabledByDefault: "true"
 
 # Dismiss any launch-time modals

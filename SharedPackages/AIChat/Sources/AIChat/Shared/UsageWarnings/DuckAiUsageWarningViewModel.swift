@@ -35,6 +35,7 @@ public final class DuckAiUsageWarningViewModel: ObservableObject {
     private let dismissalStore: DuckAiUsageWarningDismissalStoring
     private let resolver: DuckAiUsageWarningResolver
     private let isTrialEligible: () -> Bool
+    private let allowsSubscriptionUpsell: () -> Bool
     /// Re-read on every refresh, so a surface whose fire state changes at runtime can't go stale.
     private let isFireMode: () -> Bool
     private let dateProvider: () -> Date
@@ -46,6 +47,7 @@ public final class DuckAiUsageWarningViewModel: ObservableObject {
                 dismissalStore: DuckAiUsageWarningDismissalStoring,
                 modelSuggester: DuckAiModelSuggesting = NullDuckAiModelSuggester(),
                 isTrialEligible: @escaping () -> Bool = { false },
+                allowsSubscriptionUpsell: @escaping () -> Bool = { true },
                 isFireMode: @escaping () -> Bool = { false },
                 dateProvider: @escaping () -> Date = Date.init) {
         self.snapshotProvider = snapshotProvider
@@ -53,6 +55,7 @@ public final class DuckAiUsageWarningViewModel: ObservableObject {
         self.resolver = DuckAiUsageWarningResolver(dismissalStore: dismissalStore,
                                                    modelSuggester: modelSuggester)
         self.isTrialEligible = isTrialEligible
+        self.allowsSubscriptionUpsell = allowsSubscriptionUpsell
         self.isFireMode = isFireMode
         self.dateProvider = dateProvider
     }
@@ -165,6 +168,7 @@ public final class DuckAiUsageWarningViewModel: ObservableObject {
     private func resolveAndPublish() {
         let outcome = resolver.resolve(snapshot: lastReadSnapshot,
                                        isTrialEligible: isTrialEligible(),
+                                       allowsSubscriptionUpsell: allowsSubscriptionUpsell(),
                                        now: dateProvider())
         switch outcome {
         case .warning(let warning, let modelSuggestion):

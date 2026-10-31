@@ -2723,6 +2723,49 @@ final class AIChatOmnibarControllerTests: XCTestCase {
                        "With the upsell off there is nothing to route to — the row must not open the purchase dialog")
     }
 
+    /// Where the storefront sells nothing, the purchase page would only fail.
+    func testModelPickerItems_freeUserWithoutAppStoreProducts_hidesGatedModels() async {
+        featureFlagger.featuresStub[FeatureFlag.aiChatOmnibarSubscriptionUpsell.rawValue] = true
+        mockSubscriptionManager.hasAppStoreProductsAvailable = false
+        await loadModels([
+            makeRemoteModel(id: "free-a", accessTier: ["free"]),
+            makeRemoteModel(id: "gated-pro", accessTier: ["pro"]),
+        ], tier: nil, trialEligible: true)
+
+        let items = controller.modelPickerItems(selectedModelId: nil)
+
+        XCTAssertEqual(accessibleRows(items).map(\.id), ["free-a"])
+        XCTAssertTrue(gatedRows(items).isEmpty)
+        XCTAssertEqual(separatorCount(items), 0)
+    }
+
+    func testReasoningPickerItems_freeUserWithoutAppStoreProducts_hidesGatedEfforts() async {
+        featureFlagger.featuresStub[FeatureFlag.aiChatOmnibarReasoningEffort.rawValue] = true
+        featureFlagger.featuresStub[FeatureFlag.aiChatOmnibarSubscriptionUpsell.rawValue] = true
+        mockSubscriptionManager.hasAppStoreProductsAvailable = false
+        mockPreferences.selectedModelId = "reasoning-model"
+        await loadModels([gatedEffortModel()], tier: nil, trialEligible: true)
+
+        let items = controller.reasoningPickerItems()
+
+        XCTAssertFalse(items.isEmpty)
+        XCTAssertFalse(items.contains(where: \.isGated))
+    }
+
+    /// A subscriber may have bought on Stripe, so an empty storefront doesn't stop the upgrade.
+    func testModelPickerItems_plusUserWithoutAppStoreProducts_stillRoutesToUpgrade() async {
+        featureFlagger.featuresStub[FeatureFlag.aiChatOmnibarSubscriptionUpsell.rawValue] = true
+        mockSubscriptionManager.hasAppStoreProductsAvailable = false
+        await loadModels([
+            makeRemoteModel(id: "plus-a", accessTier: ["plus", "pro"]),
+            makeRemoteModel(id: "gated-pro", accessTier: ["pro"]),
+        ], tier: .plus)
+
+        let items = controller.modelPickerItems(selectedModelId: nil)
+
+        XCTAssertEqual(gatedRows(items).first?.routesToUpsell, true)
+    }
+
     func testModelPickerItems_noGatedModels_noSeparatorHeaderOrImpression() async {
         featureFlagger.featuresStub[FeatureFlag.aiChatOmnibarSubscriptionUpsell.rawValue] = true
         await loadModels([

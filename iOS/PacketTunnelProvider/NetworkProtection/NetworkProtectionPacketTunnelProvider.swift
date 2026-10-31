@@ -617,6 +617,7 @@ final class NetworkProtectionPacketTunnelProvider: PacketTunnelProvider {
                    wideEvent: wideEvent,
                    entitlementCheck: entitlementsCheck,
                    loopDetector: loopDetector,
+                   wakeHandshakeTimeoutMonitor: WakeHandshakeTimeoutMonitor(),
                    sessionHealth: sessionHealth)
         startMonitoringMemoryPressureEvents()
 

@@ -270,6 +270,11 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
                 return
             }
 
+            switch connectionStatus {
+            case .connected, .reasserting: break
+            default: wakeHandshakeTimeoutMonitor?.cancel()
+            }
+
             if case .connected = connectionStatus {
                 self.notificationsPresenter.showConnectedNotification(
                     serverLocation: lastSelectedServerInfo?.serverLocation,
@@ -436,6 +441,7 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
     public let loopDetector: ConnectionFailureLoopDetector
     private let heartbeatStore: TunnelHeartbeatStore?
     private let sessionHealth: VPNSessionHealthInstrumentation
+    private let wakeHandshakeTimeoutMonitor: WakeHandshakeTimeoutMonitor?
     private var sessionHealthStartAttemptID: UUID?
     private var heartbeatTask: Task<Never, Error>? {
         willSet { heartbeatTask?.cancel() }
@@ -471,6 +477,7 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
                 entitlementCheck: (() async -> Result<Bool, Error>)?,
                 loopDetector: ConnectionFailureLoopDetector,
                 heartbeatStore: TunnelHeartbeatStore? = nil,
+                wakeHandshakeTimeoutMonitor: WakeHandshakeTimeoutMonitor? = nil,
                 sessionHealth: VPNSessionHealthInstrumentation) {
         Logger.networkProtectionMemory.log("[+] PacketTunnelProvider")
 
@@ -495,6 +502,7 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
         self.loopDetector = loopDetector
         self.heartbeatStore = heartbeatStore
         self.sessionHealth = sessionHealth
+        self.wakeHandshakeTimeoutMonitor = wakeHandshakeTimeoutMonitor
 
         self.wideEvent = wideEvent ?? WideEvent(featureFlagProvider: WideEventFeatureFlagProvider(settings: settings))
 
@@ -540,6 +548,7 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
             wireGuardInterface: wireGuardInterface,
             eventHandler: wireGuardAdapterEventHandler
         ) { logLevel, message in
+            wakeHandshakeTimeoutMonitor?.consumeLog(message)
             if logLevel == .error {
                 Logger.networkProtectionWireGuard.error("🔴 Received error from adapter: \(message, privacy: .public)")
             } else {
@@ -1020,6 +1029,7 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
 
     @MainActor
     open override func stopTunnel(with reason: NEProviderStopReason) async {
+        wakeHandshakeTimeoutMonitor?.cancel()
         providerEvents.fire(.tunnelStopAttempt(.begin))
         stopHeartbeat()
 
@@ -1054,6 +1064,7 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
     /// Do not cancel, directly... call this method so that the adapter and tester are stopped too.
     @MainActor
     func cancelTunnel(with stopError: Error) async {
+        wakeHandshakeTimeoutMonitor?.cancel()
         providerEvents.fire(.tunnelStopAttempt(.begin))
         stopHeartbeat()
 
@@ -1078,6 +1089,7 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
     /// Signaling this API is being invoked might help us conclusively determine if the process is being terminated with no proper tunnel termination callbacks.
     ///
     open override func cancelTunnelWithError(_ error: Error?) {
+        wakeHandshakeTimeoutMonitor?.cancel()
         sessionHealth.tunnelCancelledWithError()
         super.cancelTunnelWithError(error)
     }
@@ -1599,6 +1611,7 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
     /// supersede any in-flight recovery.
     @MainActor
     private func stopMonitorsForReconfiguration(preservingFailureRecovery: Bool) async {
+        wakeHandshakeTimeoutMonitor?.cancel()
         sessionHealth.tunnelReconfigurationStarted()
         await tunnelMonitors.stop(includingFailureRecovery: !preservingFailureRecovery)
     }
@@ -1630,6 +1643,7 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
 
     @MainActor
     public override func sleep() async {
+        wakeHandshakeTimeoutMonitor?.sleep()
         Logger.networkProtectionSleep.log("Sleep")
         stopHeartbeat()
         sessionHealth.deviceWentToSleep()
@@ -1638,6 +1652,10 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
 
     @MainActor
     public override func wake() {
+        switch connectionStatus {
+        case .connected, .reasserting: wakeHandshakeTimeoutMonitor?.wake(isEligible: true)
+        default: wakeHandshakeTimeoutMonitor?.wake(isEligible: false)
+        }
         Logger.networkProtectionSleep.log("Wake up")
 
         // macOS can launch the extension due to calls to `sendProviderMessage`, so there's
@@ -1695,6 +1713,7 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
         }
 
         snoozeRequestProcessing = true
+        wakeHandshakeTimeoutMonitor?.cancel()
         Logger.networkProtection.log("Starting snooze mode with duration: \(duration, privacy: .public)")
 
         await stopMonitors(isIntentional: true)

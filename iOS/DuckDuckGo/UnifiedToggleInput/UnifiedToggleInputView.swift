@@ -232,6 +232,9 @@ final class UnifiedToggleInputView: UIView {
 
     private(set) var isExpanded = false
     private var currentLayout: UnifiedToggleInputCardLayout = .collapsed
+    private var isShowingInactiveCardAppearance = false
+    /// Speech is being transcribed into the field: the listening row replaces the toolbar, even in Search mode.
+    private(set) var isInlineVoiceListening = false
 
     var isToolbarAIVoiceChatActive: Bool = false {
         didSet { toolsToolbar.isAIVoiceChatActive = isToolbarAIVoiceChatActive }
@@ -269,7 +272,10 @@ final class UnifiedToggleInputView: UIView {
     }
 
     var isInputBlockedByUsageLimit: Bool = false {
-        didSet { toolsToolbar.isInputBlockedByUsageLimit = isInputBlockedByUsageLimit }
+        didSet {
+            toolsToolbar.isInputBlockedByUsageLimit = isInputBlockedByUsageLimit
+            updateSubmitButtonAvailability()
+        }
     }
 
     var isGenerating: Bool = false {
@@ -410,6 +416,8 @@ final class UnifiedToggleInputView: UIView {
     var onAttachmentTapped: ((UUID) -> Void)?
     var onInlineDismissTapped: (() -> Void)?
     var onAIChatShortcutTapped: (() -> Void)?
+    var onInlineVoiceStopTapped: (() -> Void)?
+    var onInlineVoiceSubmitTapped: (() -> Void)?
     var onFooterPrimaryTapped: ((UTIFooterItem.ID) -> Void)?
     var onFooterDismissTapped: ((UTIFooterItem.ID) -> Void)?
     var onFooterLinkTapped: ((UTIFooterItem.ID, URL) -> Void)?
@@ -662,6 +670,10 @@ final class UnifiedToggleInputView: UIView {
     private lazy var inlineDismissButton: UIButton = Self.makeInlineDismissButton()
     private let attachmentsStrip: UnifiedToggleInputAttachmentsStripView
     private let toolsToolbar = UnifiedToggleInputToolbarView()
+    /// Stands in for the toolbar row while speech is transcribed into the field.
+    private let voiceListeningView = UnifiedToggleInputVoiceListeningView()
+    /// Circles the card while the listening row shows.
+    private let listeningGlow = UnifiedToggleInputListeningGlow()
 
     private lazy var editReplaceDisclaimerCard = Self.makeEditReplaceDisclaimerCard()
     private let footerCard = UIStackView()
@@ -932,6 +944,7 @@ final class UnifiedToggleInputView: UIView {
         applyFireModeAppearance(isFireTab: fireMode)
         textEntryView.refreshFireMode(fireMode: fireMode)
         toolsToolbar.refreshFireMode(fireMode: fireMode)
+        voiceListeningView.refreshFireMode(fireMode: fireMode)
     }
 
     private func applyFireModeAppearance(isFireTab: Bool) {
@@ -1149,7 +1162,7 @@ final class UnifiedToggleInputView: UIView {
     private func updateToggleDisabledSearchPadding(for mode: TextEntryMode) {
         guard isExpanded else { return }
 
-        let showToolbar = mode == .aiChat
+        let showToolbar = mode == .aiChat || isInlineVoiceListening
 
         if isToggleEnabled {
             inputTopConstraint.constant = Constants.toggleBottomPadding + inputExtraPaddingTop
@@ -1217,6 +1230,9 @@ final class UnifiedToggleInputView: UIView {
     func applyCardLayout(_ layout: UnifiedToggleInputCardLayout, animated: Bool) {
         let expanded = layout.isExpanded
         isExpanded = expanded
+        if !expanded {
+            isShowingInactiveCardAppearance = false
+        }
         handler.isExpanded = expanded
         // The matched omnibar pose (`applyOmnibarMatchedInsets`) drops the top constraint below the
         // pinned height so the card stays the pill's height; restore it here so every other layout
@@ -1224,8 +1240,7 @@ final class UnifiedToggleInputView: UIView {
         cardTopConstraint.priority = .required
         // Flanked: hide the in-pill voice icon (external accessories flank the pill, voice is in the Plus menu).
         // Snap synchronously so the focus animation drives the transition — animating here would snapshot at the old layout and drift.
-        let collapsedVoice: SwitchBarTextEntryView.VoiceButtonAppearance = handler.prefersDictationOverVoiceChat ? .microphone : .aiVoicePlain
-        textEntryView.setVoiceButtonAppearance(layout == .flanked ? .hidden : (expanded ? .microphone : collapsedVoice), animated: false)
+        textEntryView.setVoiceButtonAppearance(isInlineVoiceListening ? .hidden : restingVoiceButtonAppearance(for: layout), animated: false)
         if layout != .flanked {
             // Non-flanked: card spans full width, so external fire/menu must hide. The reverse is `setAITabCollapsedFooterPoseActive` (fades in).
             aiTabCollapsedFireButton.isHidden = true
@@ -1239,6 +1254,7 @@ final class UnifiedToggleInputView: UIView {
 
         let showsToggle = layout.showsToggle
         let showToolbar = layout.showsToolbar
+        let showsToolbarSlot = showToolbar || (expanded && isInlineVoiceListening)
         toolsToolbar.prepareForToolbarVisibilityChange(showToolbar: showToolbar)
         let toggleHeight: CGFloat = showsToggle ? Constants.toggleHeight : 0
         // The toggle's leading slot is permanently reserved for the back button so the
@@ -1315,12 +1331,12 @@ final class UnifiedToggleInputView: UIView {
             // No toggle row → balance the card with matching top/bottom inset so content
             // doesn't sit flush against the edges.
             let toggleDisabledPadding = expanded && !self.isToggleEnabled
-            let toggleEnabledNoToolbarPadding = expanded && showsToggle && !showToolbar
+            let toggleEnabledNoToolbarPadding = expanded && showsToggle && !showsToolbarSlot
 
             self.inputTopConstraint.constant = ((expanded && showsToggle) ? Constants.toggleBottomPadding : (toggleDisabledPadding ? Constants.toggleDisabledSearchTopPadding : 0)) + self.inputExtraPaddingTop
             self.inputBottomConstraint.constant = self.inputExtraPaddingBottom
             self.toolbarBottomConstraint.constant = toggleDisabledPadding
-                ? (showToolbar ? 0 : -Constants.toggleDisabledSearchTopPadding)
+                ? (showsToolbarSlot ? 0 : -Constants.toggleDisabledSearchTopPadding)
                 : (toggleEnabledNoToolbarPadding ? -Constants.inputBottomPadding : 0)
             self.toggleView.alpha = (expanded && showsToggle) ? 1 : 0
             self.applyInlineDismissVerticalAnchor(useFieldRowAnchor: showFieldRowInlineDismiss)
@@ -1332,8 +1348,10 @@ final class UnifiedToggleInputView: UIView {
             if expanded {
                 self.textEntryView.clearDismissSnapshot()
             }
-            self.toolbarHeightConstraint.constant = showToolbar ? Constants.toolbarHeight : 0
-            self.toolsToolbar.alpha = showToolbar ? 1 : 0
+            self.toolbarHeightConstraint.constant = showsToolbarSlot ? Constants.toolbarHeight : 0
+            self.toolsToolbar.alpha = self.toolbarAlpha(showingToolbar: showToolbar)
+            self.voiceListeningView.alpha = (expanded && self.isInlineVoiceListening) ? 1 : 0
+            self.listeningGlow.setActive(expanded && self.isInlineVoiceListening)
             self.updateAttachmentsStripLayout()
             self.applyFooterForCardLayout(expanded: expanded)
         }
@@ -1554,10 +1572,12 @@ final class UnifiedToggleInputView: UIView {
         toggleView.alpha = 1
         applyInlineDismissVisibility(true)
         inputTopConstraint.constant = Constants.toggleBottomPadding
-        toolbarBottomConstraint.constant = showToolbar ? 0 : -Constants.inputBottomPadding
+        toolbarBottomConstraint.constant = (showToolbar || isInlineVoiceListening) ? 0 : -Constants.inputBottomPadding
         updateExpandedBorderVisibility(true)
-        toolbarHeightConstraint.constant = showToolbar ? Constants.toolbarHeight : 0
-        toolsToolbar.alpha = showToolbar ? 1 : 0
+        toolbarHeightConstraint.constant = toolbarSlotHeight(showingToolbar: showToolbar)
+        toolsToolbar.alpha = toolbarAlpha(showingToolbar: showToolbar)
+        voiceListeningView.alpha = isInlineVoiceListening ? 1 : 0
+        listeningGlow.setActive(isInlineVoiceListening)
         updateAttachmentsStripLayout()
     }
 
@@ -1574,6 +1594,8 @@ final class UnifiedToggleInputView: UIView {
         toolbarBottomConstraint.constant = 0
         toolbarHeightConstraint.constant = 0
         toolsToolbar.alpha = 0
+        voiceListeningView.alpha = 0
+        listeningGlow.setActive(false)
         attachmentsStripHeightConstraint.constant = 0
         attachmentsStrip.alpha = 0
         textEntryView.isExpandable = false
@@ -1583,6 +1605,7 @@ final class UnifiedToggleInputView: UIView {
 
     func setInactiveCardAppearance(_ inactive: Bool) {
         guard isExpanded else { return }
+        isShowingInactiveCardAppearance = inactive
 
         UIView.animate(withDuration: Constants.animationDuration, delay: 0, options: .curveEaseInOut) {
             if inactive {
@@ -1591,7 +1614,7 @@ final class UnifiedToggleInputView: UIView {
                 self.cardLeadingConstraint.constant = self.expandedCardHorizontalMargin
                 self.cardTrailingConstraint.constant = -self.expandedCardHorizontalMargin
                 self.cardBottomConstraint.constant = -Constants.cardVerticalMargin
-                self.toolbarHeightConstraint.constant = 0
+                self.toolbarHeightConstraint.constant = self.toolbarSlotHeight(showingToolbar: false)
                 self.toolsToolbar.alpha = 0
             } else {
                 self.cardView.layer.maskedCorners = Constants.allCorners
@@ -1607,12 +1630,70 @@ final class UnifiedToggleInputView: UIView {
                 self.cardLeadingConstraint.constant = leadingMargin
                 self.cardTrailingConstraint.constant = -trailingMargin
                 self.cardBottomConstraint.constant = -verticalMargin
-                self.toolbarHeightConstraint.constant = showToolbar ? Constants.toolbarHeight : 0
-                self.toolsToolbar.alpha = showToolbar ? 1 : 0
+                self.toolbarHeightConstraint.constant = self.toolbarSlotHeight(showingToolbar: showToolbar)
+                self.toolsToolbar.alpha = self.toolbarAlpha(showingToolbar: showToolbar)
             }
             self.layoutIfNeeded()
             self.requestHierarchyLayout()
         }
+    }
+
+    // MARK: - Inline Voice To Text
+
+    /// Swaps the toolbar row for the listening row, which shows in Search mode too, and hides the
+    /// in-field microphone. The field keeps focus but shows no keyboard while listening.
+    func setInlineVoiceListening(_ listening: Bool) {
+        guard listening != isInlineVoiceListening else { return }
+        isInlineVoiceListening = listening
+        textEntryView.isListeningForSpeech = listening
+        textEntryView.setVoiceButtonAppearance(listening ? .hidden : restingVoiceButtonAppearance(for: currentLayout))
+        updateSubmitButtonAvailability()
+
+        guard isExpanded else {
+            voiceListeningView.alpha = 0
+            listeningGlow.setActive(false)
+            return
+        }
+        listeningGlow.setActive(listening)
+
+        let mode = handler.currentToggleState
+        let showToolbar = mode == .aiChat && !isShowingInactiveCardAppearance
+        toolsToolbar.prepareForToolbarVisibilityChange(showToolbar: showToolbar)
+        updateToggleDisabledSearchPadding(for: mode)
+        toolbarHeightConstraint.constant = toolbarSlotHeight(showingToolbar: showToolbar)
+        if case .expanded(let showsToggle, _) = currentLayout {
+            currentLayout = .expanded(showsToggle: showsToggle, showsToolbar: mode == .aiChat)
+        }
+
+        UIView.animate(withDuration: Constants.animationDuration, delay: 0, options: [.curveEaseInOut, .beginFromCurrentState]) {
+            self.toolsToolbar.alpha = self.toolbarAlpha(showingToolbar: showToolbar)
+            self.voiceListeningView.alpha = listening ? 1 : 0
+            self.layoutIfNeeded()
+            self.requestHierarchyLayout()
+        } completion: { _ in
+            if showToolbar {
+                self.toolsToolbar.finalizeToolbarShown()
+            }
+        }
+    }
+
+    var softwareKeyboardSuppression: SwitchBarTextEntryView.SoftwareKeyboardSuppression {
+        get { textEntryView.softwareKeyboardSuppression }
+        set { textEntryView.softwareKeyboardSuppression = newValue }
+    }
+
+    /// The listening row borrows the toolbar's slot, so the slot stays open while listening even where the toolbar hides.
+    private func toolbarSlotHeight(showingToolbar showToolbar: Bool) -> CGFloat {
+        (showToolbar || (isExpanded && isInlineVoiceListening)) ? Constants.toolbarHeight : 0
+    }
+
+    private func toolbarAlpha(showingToolbar showToolbar: Bool) -> CGFloat {
+        (showToolbar && !isInlineVoiceListening) ? 1 : 0
+    }
+
+    private func restingVoiceButtonAppearance(for layout: UnifiedToggleInputCardLayout) -> SwitchBarTextEntryView.VoiceButtonAppearance {
+        let collapsedVoice: SwitchBarTextEntryView.VoiceButtonAppearance = handler.prefersDictationOverVoiceChat ? .microphone : .aiVoicePlain
+        return layout == .flanked ? .hidden : (layout.isExpanded ? .microphone : collapsedVoice)
     }
 
     // MARK: - Private
@@ -1626,9 +1707,9 @@ final class UnifiedToggleInputView: UIView {
 
         let showToolbar = mode == .aiChat
         toolsToolbar.prepareForToolbarVisibilityChange(showToolbar: showToolbar)
-        toolbarHeightConstraint.constant = showToolbar ? Constants.toolbarHeight : 0
+        toolbarHeightConstraint.constant = toolbarSlotHeight(showingToolbar: showToolbar)
         if isToggleEnabled {
-            toolbarBottomConstraint.constant = showToolbar ? 0 : -Constants.inputBottomPadding
+            toolbarBottomConstraint.constant = (showToolbar || isInlineVoiceListening) ? 0 : -Constants.inputBottomPadding
         }
         if case .expanded(let showsToggle, _) = currentLayout {
             currentLayout = .expanded(showsToggle: showsToggle, showsToolbar: showToolbar)
@@ -1636,7 +1717,7 @@ final class UnifiedToggleInputView: UIView {
         updateAttachmentsStripLayout()
 
         guard animated else {
-            toolsToolbar.alpha = showToolbar ? 1 : 0
+            toolsToolbar.alpha = toolbarAlpha(showingToolbar: showToolbar)
             attachmentsStrip.alpha = attachmentsStripHeightConstraint.constant > 0 ? 1 : 0
             layoutIfNeeded()
             if showToolbar {
@@ -1646,7 +1727,7 @@ final class UnifiedToggleInputView: UIView {
         }
 
         UIView.animate(withDuration: 0.2, delay: 0, options: [.curveEaseInOut, .beginFromCurrentState]) {
-            self.toolsToolbar.alpha = showToolbar ? 1 : 0
+            self.toolsToolbar.alpha = self.toolbarAlpha(showingToolbar: showToolbar)
             self.attachmentsStrip.alpha = self.attachmentsStripHeightConstraint.constant > 0 ? 1 : 0
             self.layoutIfNeeded()
             self.requestHierarchyLayout()
@@ -1680,6 +1761,7 @@ final class UnifiedToggleInputView: UIView {
         toolsToolbar.isSubmitBlockedByMissingPromptText = tabAttachmentsRequirePromptText && isAIChatMode
             && !hasText && hasValidAttachment && attachmentsStrip.attachments.allSatisfy(\.isTab)
         toolsToolbar.isSubmitEnabled = !hasInvalidAttachment && (hasText || hasValidAttachment)
+        voiceListeningView.isSubmitEnabled = toolsToolbar.isSubmitEnabled && !isInputBlockedByUsageLimit
         updateSubmitButtonStyle()
     }
 
@@ -1943,6 +2025,18 @@ private extension UnifiedToggleInputView {
         addSubview(toolsToolbar)
         toolsToolbar.refreshFireMode(fireMode: handler.isFireTab)
 
+        voiceListeningView.translatesAutoresizingMaskIntoConstraints = false
+        voiceListeningView.clipsToBounds = true
+        voiceListeningView.alpha = 0
+        voiceListeningView.onStopTapped = { [weak self] in
+            self?.onInlineVoiceStopTapped?()
+        }
+        voiceListeningView.onSubmitTapped = { [weak self] in
+            self?.onInlineVoiceSubmitTapped?()
+        }
+        addSubview(voiceListeningView)
+        voiceListeningView.refreshFireMode(fireMode: handler.isFireTab)
+
         frozenInputOverlay.translatesAutoresizingMaskIntoConstraints = false
         frozenInputOverlay.backgroundColor = UIColor.systemGray.withAlphaComponent(0.3)
         frozenInputOverlay.isUserInteractionEnabled = false
@@ -1970,6 +2064,8 @@ private extension UnifiedToggleInputView {
         }
 
         setupConstraints()
+        // Last, so the comet draws above the card's content as well as the card.
+        listeningGlow.install(around: cardView)
         applyFireModeAppearance(isFireTab: handler.isFireTab)
     }
 
@@ -2063,6 +2159,11 @@ private extension UnifiedToggleInputView {
             toolsToolbar.trailingAnchor.constraint(equalTo: cardView.trailingAnchor),
             toolbarBottomConstraint,
             toolbarHeightConstraint,
+
+            voiceListeningView.leadingAnchor.constraint(equalTo: toolsToolbar.leadingAnchor),
+            voiceListeningView.trailingAnchor.constraint(equalTo: toolsToolbar.trailingAnchor),
+            voiceListeningView.topAnchor.constraint(equalTo: toolsToolbar.topAnchor),
+            voiceListeningView.bottomAnchor.constraint(equalTo: toolsToolbar.bottomAnchor),
 
             aiTabCollapsedFireButton.leadingAnchor.constraint(equalTo: leadingAnchor, constant: Constants.flankedCardHorizontalMargin),
             aiTabCollapsedFireButton.centerYAnchor.constraint(equalTo: cardView.centerYAnchor),

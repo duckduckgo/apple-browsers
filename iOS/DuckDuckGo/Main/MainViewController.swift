@@ -4458,6 +4458,9 @@ class MainViewController: UIViewController {
             guard let self = self else { return }
             if permission {
                 self.voiceSearchEntrySource = entrySource
+                if self.startInlineVoiceToTextIfEnabled(preferredTarget: preferredTarget) {
+                    return
+                }
                 if let target = preferredTarget {
                     self.showVoiceSearch(preferredTarget: target)
                 } else {
@@ -4469,7 +4472,7 @@ class MainViewController: UIViewController {
         }
     }
 
-    private func showVoiceSearch(preferredTarget: VoiceSearchTarget? = nil) {
+    func showVoiceSearch(preferredTarget: VoiceSearchTarget? = nil) {
         // https://app.asana.com/0/0/1201408131067987
         UIMenuController.shared.hideMenu()
         dismissOmniBar()

@@ -27,6 +27,7 @@ struct ReturnToTabCard: View {
 
     @ObservedObject var model: EscapeHatchModel
     var showsBackground = true
+    var backdropFrame: CGRect?
 
     /// Frames of the Fire button and the three-dots menu button in the key window's coordinate space.
     /// Used as the popover anchor when burning a tab on iPad — the FireConfirmationPresenter expects
@@ -79,6 +80,7 @@ struct ReturnToTabCard: View {
             Capsule()
                 .fill(showsBackground ? Color(designSystemColor: .controlsFillSecondary) : Color.clear)
         )
+        .modifier(EscapeHatchBackdropBlur(backdropFrame: backdropFrame))
     }
 
     private var contentPaddingEdges: Edge.Set {

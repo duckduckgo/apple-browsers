@@ -168,6 +168,8 @@ struct UnifiedSuggestionsView: View {
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
             let animation: Animation? = UIApplication.shared.applicationState == .active ? .easeInOut(duration: 0.2) : nil
             let hatchLayout = escapeHatchLogoLayout(centerY: targetCenterY, viewport: viewport, fitsMargins: fitsMargins)
+            let isLogoDisplayed = isShowingLogo && !viewModel.isFireTab && !viewModel.isLandscape && !viewModel.isFadingOut
+            let backdropLogoFrame = isLogoDisplayed ? hatchLayout?.visibleFrame : nil
             Group {
                 if let hatchLayout {
                     logo.modifier(hatchLayout)
@@ -195,6 +197,8 @@ struct UnifiedSuggestionsView: View {
                 // toggle's instant show/hide above is unaffected.
                 .modifier(FocusedContentDismissFade(isFadingOut: viewModel.isFadingOut))
                 .allowsHitTesting(false)
+                .onAppear { viewModel.backdropLogoFrame = backdropLogoFrame }
+                .onChange(of: backdropLogoFrame) { viewModel.backdropLogoFrame = $0 }
         }
         .ignoresSafeArea(.container, edges: .top)
     }

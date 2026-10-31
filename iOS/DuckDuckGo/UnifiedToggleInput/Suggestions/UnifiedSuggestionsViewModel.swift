@@ -56,6 +56,8 @@ final class UnifiedSuggestionsViewModel: ObservableObject {
     var embeddedEscapeHatchDestinationFrame: CGRect? {
         embeddedEscapeHatchGeometry?.destinationFrame(contentTopInset: contentTopInset)
     }
+    /// The displayed logo's frame while it sits beside the escape hatch, so the hatch can blur it when scrolled over it.
+    @Published var backdropLogoFrame: CGRect?
     @Published var isLogoRevealDeferred = false
     /// Chrome bottom (bar + reserved hatch) below the host top, pushed by the container as the bar
     /// animates. The logo keeps a minimum distance from it — known *during* the resize, so the logo

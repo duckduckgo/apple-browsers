@@ -1163,6 +1163,7 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
                                    regenerateKey: Bool = false,
                                    attemptSource: ConnectionAttemptSource) async throws {
 
+        wakeHandshakeTimeoutMonitor?.cancel()
         providerEvents.fire(.tunnelUpdateAttempt(.begin))
         bumpTunnelPathGeneration()
 
@@ -1611,7 +1612,6 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
     /// supersede any in-flight recovery.
     @MainActor
     private func stopMonitorsForReconfiguration(preservingFailureRecovery: Bool) async {
-        wakeHandshakeTimeoutMonitor?.cancel()
         sessionHealth.tunnelReconfigurationStarted()
         await tunnelMonitors.stop(includingFailureRecovery: !preservingFailureRecovery)
     }

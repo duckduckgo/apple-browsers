@@ -1913,9 +1913,6 @@ private extension UnifiedToggleInputView {
             guard let self else { return }
             // Intent only — coordinator is the single writer of handler.currentToggleState.
             self.delegate?.unifiedToggleInputViewDidChangeMode(self, mode: mode)
-            if self.isExpanded {
-                self.textEntryView.becomeFirstResponder()
-            }
         }
         toggleView.onDragStateChanged = { [weak self] isDragging in
             guard let self else { return }

@@ -315,7 +315,10 @@ final class NewTabPageControllerDaxDialogTests: XCTestCase {
             parent.view.layoutIfNeeded()
         }
         animator.addCompletion { _ in animated.fulfill() }
-        animator.startAnimation()
+        host.performInputModeChange {
+            animator.startAnimation()
+            XCTAssertFalse(model.isLogoRevealDeferred)
+        }
         wait(for: [animated], timeout: 5)
         XCTAssertEqual(model.content, .logo)
         let viewport = try XCTUnwrap(model.logoViewportFrame)
@@ -323,6 +326,42 @@ final class NewTabPageControllerDaxDialogTests: XCTestCase {
         XCTAssertEqual(viewport.maxY, 415, accuracy: 1)
         XCTAssertGreaterThan(viewport.maxY - hatchFrame.maxY, FocusedDaxLogoView.size.height)
         XCTAssertTrue(EscapeHatchLogoLayout(centerY: 300, viewport: viewport, hatchFrame: hatchFrame, destinationHatchFrame: hatchFrame).isVisible)
+
+        guard #available(iOS 17.0, *) else { return }
+        container.frame.size.height = window.bounds.height
+        inputs.send(.init(mode: .search, isTyping: false, hasFavorites: true, hasMessages: false, hasRecents: false, resultsPending: false))
+        host.setFocusedContent(mode: .search, escapeHatchPlacement: .embedded, escapeHatch: hatch, syncPromo: nil)
+        host.setContentInsets(UIEdgeInsets(top: 0, left: 0, bottom: 120, right: 0))
+        parent.view.layoutIfNeeded()
+        XCTAssertEqual(model.content, .favorites)
+        let input = UITextField(frame: CGRect(x: 0, y: 500, width: 100, height: 40))
+        input.inputView = UIView(frame: CGRect(x: 0, y: 0, width: window.bounds.width, height: 300))
+        parent.view.addSubview(input)
+        var keyboardDidShow = false
+        let observer = NotificationCenter.default.addObserver(forName: UIResponder.keyboardDidShowNotification,
+                                                               object: nil, queue: .main) { _ in keyboardDidShow = true }
+        defer {
+            NotificationCenter.default.removeObserver(observer)
+            input.resignFirstResponder()
+        }
+        host.performInputModeChange {
+            XCTAssertTrue(model.isLogoRevealDeferred)
+            UIView.animate(withDuration: 0.2) {
+                inputs.send(.init(mode: .aiChat, isTyping: false, hasFavorites: true, hasMessages: false, hasRecents: false, resultsPending: false))
+                host.setFocusedContent(mode: .aiChat, escapeHatchPlacement: .embedded, escapeHatch: hatch, syncPromo: nil)
+                host.setContentInsets(UIEdgeInsets(top: 0, left: 0, bottom: 400, right: 0))
+                parent.view.layoutIfNeeded()
+            }
+            XCTAssertTrue(input.becomeFirstResponder())
+        }
+        if !keyboardDidShow { XCTAssertTrue(model.isLogoRevealDeferred) }
+        let keyboardReady = XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in
+            keyboardDidShow && !model.isLogoRevealDeferred
+        }, object: nil)
+        XCTAssertEqual(XCTWaiter.wait(for: [keyboardReady], timeout: 5), .completed)
+        let keyboardViewport = try XCTUnwrap(model.logoViewportFrame)
+        XCTAssertLessThan(keyboardViewport.maxY - hatchFrame.maxY, FocusedDaxLogoView.size.height)
+        XCTAssertFalse(EscapeHatchLogoLayout(centerY: 87, viewport: keyboardViewport, hatchFrame: hatchFrame, destinationHatchFrame: hatchFrame).isVisible)
     }
 
     private func assertFocusedContentTracksTopClearance(

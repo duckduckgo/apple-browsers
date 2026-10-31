@@ -56,6 +56,7 @@ final class UnifiedSuggestionsViewModel: ObservableObject {
     var embeddedEscapeHatchDestinationFrame: CGRect? {
         embeddedEscapeHatchGeometry?.destinationFrame(contentTopInset: contentTopInset)
     }
+    @Published var isLogoRevealDeferred = false
     /// Chrome bottom (bar + reserved hatch) below the host top, pushed by the container as the bar
     /// animates. The logo keeps a minimum distance from it — known *during* the resize, so the logo
     /// moves in the same pass, and only when the chrome is actually close (never in Search).

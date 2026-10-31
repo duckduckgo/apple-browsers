@@ -24,6 +24,7 @@ import Networking
 import Common
 import FoundationExtensions
 import WideEvent
+import JWTKit
 
 public enum AppStorePurchaseFlowError: DDGError {
     case noProductsFound
@@ -273,7 +274,8 @@ public final class DefaultAppStorePurchaseFlow: AppStorePurchaseFlow {
                     return .failure(.missingEntitlements)
                 } else {
                     pendingTransactionHandler?.handleSubscriptionActivated()
-                    NotificationCenter.default.post(name: .userDidPurchaseSubscription, object: self)
+                    let userInfo = Self.isFreeTrial(transactionJWS: transactionJWS).map { [UserDidPurchaseSubscriptionUserInfoKey.isFreeTrial: $0] }
+                    NotificationCenter.default.post(name: .userDidPurchaseSubscription, object: self, userInfo: userInfo)
                     return .success(.completed)
                 }
             } else {
@@ -300,4 +302,16 @@ public final class DefaultAppStorePurchaseFlow: AppStorePurchaseFlow {
             return nil
         }
     }
+
+    /// Reads `offerType` from the transaction payload. Our only introductory offers (type 1) are free trials. `nil` if the payload can't be read.
+    static func isFreeTrial(transactionJWS: TransactionJWS) -> Bool? {
+        (try? JWTSigners().unverified(transactionJWS, as: TransactionPayload.self)).map { $0.offerType == 1 }
+    }
+}
+
+/// StoreKit already verified the transaction; we only read it.
+private struct TransactionPayload: JWTPayload {
+    let offerType: Int?
+
+    func verify(using signer: JWTSigner) throws {}
 }

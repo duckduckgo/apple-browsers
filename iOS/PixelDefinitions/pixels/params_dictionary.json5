@@ -93,7 +93,7 @@
     "usage_hardware_keyboard": {
         "key": "hardware_keyboard",
         "type": "boolean",
-        "description": "Whether a hardware keyboard was connected when the pixel fired."
+        "description": "Whether a hardware keyboard was connected when the pixel fired. Omitted when not yet known, early in a launch."
     },
     "usage_window_mode": {
         "key": "window_mode",

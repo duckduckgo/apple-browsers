@@ -1,0 +1,23 @@
+{
+    "vpn_wake_handshake_timeouts": {
+        "description": "The iOS VPN observes two native WireGuard handshake timeouts after a post-wake handshake request, without an authenticated incoming handshake. Reported at most once per wake cycle. Observation ends on sleep, snooze, disconnection, reconfiguration, or an underlying network change. This measures handshake timeouts, not confirmed packet loss or failed session establishment.",
+        "owners": ["diegoreymendez"],
+        "triggers": ["exception"],
+        "suffixes": ["daily_count", "platform", "form_factor"],
+        "parameters": [
+            "appVersion",
+            {
+                "key": "originalPixelTimestamp",
+                "type": "string",
+                "description": "ISO 8601 timestamp of the original failed send. Present only when PixelKit replays a persisted pixel.",
+                "examples": ["2026-10-31T13:00:00Z"]
+            },
+            {
+                "key": "retriedPixel",
+                "type": "string",
+                "description": "Marks a replay from PixelKit's persistent retry queue. Absent on the original send.",
+                "enum": ["1"]
+            }
+        ]
+    }
+}

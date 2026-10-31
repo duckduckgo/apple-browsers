@@ -346,6 +346,14 @@ final class UnifiedInputContentContainerViewController: UIViewController {
     var isShowingFavoritesContent: Bool { unifiedSuggestionsHost?.isShowingFavorites ?? false }
     var isShowingEscapeHatchContent: Bool { chromePlacement.escapeHatch != .hidden }
 
+    func performInputModeChange(_ changes: () -> Void) {
+        guard let unifiedSuggestionsHost else {
+            changes()
+            return
+        }
+        unifiedSuggestionsHost.performInputModeChange(changes)
+    }
+
     /// Fades the focused content (logo / suggestion list) out as the UTI collapses, so the NTP
     /// content takes over cleanly.
     func beginDismissFade() {

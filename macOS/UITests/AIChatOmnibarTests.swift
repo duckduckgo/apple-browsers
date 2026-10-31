@@ -254,6 +254,44 @@ class AIChatOmnibarTests: UITestCase {
     /// the underlying flake (a `.suggestion(.askAIChat)` snapshot path that race-cleared the typed text)
     /// is sidestepped now that `lastAddressBarTextFieldValue` is mirrored live per keystroke from
     /// `handleTextDidChange`, always as the canonical `.text(typedText, userTyped: true)` shape.
+    /// The release smoke test: a query typed in the address bar and sent to Duck.ai with the toggle
+    /// shows up as the first message on duck.ai. The query is handed to the page by a user script, not in the URL,
+    /// so the test looks for it in the page.
+    func test_toggleClick_SubmitsTypedQueryOnDuckAI() throws {
+        let query = "Say hello to \(UITests.randomPageTitle(length: 6))"
+        app.activateAddressBar()
+        XCTAssertTrue(addressBarTextField.waitForExistence(timeout: UITests.Timeouts.elementExistence))
+        addressBarTextField.typeText(query)
+
+        let toggle = app.windows.firstMatch.descendants(matching: .any)[Identifiers.searchModeToggleControl]
+        XCTAssertTrue(toggle.waitForExistence(timeout: UITests.Timeouts.elementExistence),
+                      "Search/Duck.ai toggle should be visible")
+        // The toggle picks the segment by which half was clicked, and the Duck.ai segment is the right one
+        toggle.coordinate(withNormalizedOffset: CGVector(dx: 0.75, dy: 0.5)).click()
+        XCTAssertTrue(duckAIPanelContainer.waitForExistence(timeout: UITests.Timeouts.elementExistence),
+                      "Duck.ai panel container should appear after clicking the Duck.ai side of the toggle")
+        app.typeKey(.return, modifierFlags: [])
+
+        let selectedTab = app.windows.firstMatch.tabs.element(matching: \.isSelected, equalTo: true)
+        // Remote config picks the Duck.ai URL, so accept any the app treats as Duck.ai: duck.ai, or duckduckgo.com with ia=chat
+        let showsDuckAI = NSPredicate { element, _ in
+            guard let url = (element as? XCUIElement)?.url.flatMap(URLComponents.init(string:)), let host = url.host else { return false }
+            let isDuckDuckGoChat = (host == "duckduckgo.com" || host.hasSuffix(".duckduckgo.com"))
+                && url.queryItems?.contains { $0.name == "ia" && $0.value == "chat" } == true
+            return host == "duck.ai" || isDuckDuckGoChat
+        }
+        XCTAssertTrue(selectedTab.wait(for: showsDuckAI, timeout: UITests.Timeouts.navigation),
+                      "Submitting in Duck.ai mode should open duck.ai (current URL: \(selectedTab.url ?? "<nil>"))")
+
+        // Web pages expose their text as the static text's value, not its label, and some values are numbers
+        let submittedQuery = app.windows.firstMatch.webViews.firstMatch.staticTexts
+            .matching(NSPredicate { element, _ in
+                ((element as? NSObject)?.value(forKey: "value") as? String)?.contains(query) == true
+            }).firstMatch
+        XCTAssertTrue(submittedQuery.waitForExistence(timeout: UITests.Timeouts.navigation),
+                      "duck.ai should show the typed query as the first message")
+    }
+
     func test_tabSwitch_SearchModeDraft_PreservedAcrossSwitchBack() throws {
         // Tab 1: type a draft into the address bar in plain Search mode (no Duck.ai).
         app.activateAddressBar()

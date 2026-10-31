@@ -195,6 +195,7 @@ final class AIChatContextualSheetViewController: UIViewController {
         )
     )
     private var cancellables = Set<AnyCancellable>()
+    private var hostInputTextCancellable: AnyCancellable?
     private var contentContainerBottomConstraint: NSLayoutConstraint?
     private var headerTopConstraint: NSLayoutConstraint?
 
@@ -703,6 +704,9 @@ final class AIChatContextualSheetViewController: UIViewController {
         view.layer.cornerRadius = isSheet ? SheetMetrics.cornerRadius : 0
         view.layer.shadowOpacity = isSheet ? Constants.shadowOpacity : 0
         topSeparator.isHidden = !isSheet
+        if isSheet {
+            contextualInputViewController.resetFloatingSuggestions()
+        }
         headerTopConstraint?.constant = isSheet ? Constants.headerTopPadding : Constants.sidebarHeaderTopPadding
     }
 
@@ -762,6 +766,7 @@ final class AIChatContextualSheetViewController: UIViewController {
 
     func handleFirstUTISubmission() {
         cancelSuggestionSubmission()
+        contextualInputViewController.hideStartActionsForSubmittedPrompt()
         beginWaitingForInitialPromptResponseState()
     }
 
@@ -773,6 +778,12 @@ private extension AIChatContextualSheetViewController {
 
     func showContextualInput() {
         contextualInputViewController.delegate = self
+        contextualInputViewController.floatingSuggestionsColumn = { [weak self] in
+            guard let self, surfaceStyle == .sidebar else { return nil }
+            return view.superview
+        }
+        hostInputTextCancellable = persistentUTIHost?.textChangePublisher
+            .sink { [weak self] text in self?.contextualInputViewController.hostInputTextDidChange(text) }
         embedChildViewController(contextualInputViewController)
     }
 
@@ -1358,6 +1369,7 @@ private extension AIChatContextualSheetViewController {
             // and this sheet must not fall back to a pre-submit surface the user never opened.
             if isAwaitingSubmittedChat { return }
             cancelWaitingForInitialPromptResponseState()
+            contextualInputViewController.showStartActionsForNewChat()
             // When returning to native input (new chat), reload the default URL on existing web VC
             if isWebViewVisible, let webVC = webViewController {
                 contextualInputViewController.setStartActionsDimmed(false)
@@ -1465,6 +1477,7 @@ private extension AIChatContextualSheetViewController {
             Logger.aiChat.debug("[TermsOfService] Contextual prompt sent without Ask: acceptance not recorded, termsAccepted=false")
             termsAccepted = false
         }
+        contextualInputViewController.hideStartActionsForSubmittedPrompt()
         beginWaitingForInitialPromptResponseState()
         delegate?.aiChatContextualSheetViewController(self, didSubmitPrompt: prompt, termsAccepted: termsAccepted)
     }

@@ -83,11 +83,14 @@ final class NetworkProtectionConnectionTester: ConnectionTesting {
     var resultHandler: (@MainActor (Result) -> Void)?
 
     private var simulateFailure = false
+    private var testGeneration = UUID()
+    private let connectivityResultHandler: ((Bool, Date) -> Void)?
 
     // MARK: - Init & deinit
 
-    init(timerQueue: DispatchQueue) {
+    init(timerQueue: DispatchQueue, connectivityResultHandler: ((Bool, Date) -> Void)? = nil) {
         self.timerQueue = timerQueue
+        self.connectivityResultHandler = connectivityResultHandler
 
         Logger.networkProtectionMemory.debug("[+] \(String(describing: self), privacy: .public)")
     }
@@ -112,9 +115,12 @@ final class NetworkProtectionConnectionTester: ConnectionTesting {
         }
 
         isRunning = true
+        let generation = UUID()
+        testGeneration = generation
 
         Logger.networkProtectionConnectionTester.log("🟢 Starting connection tester (testImmediately: \(String(reflecting: testImmediately), privacy: .public)")
         let tunnelInterface = try await networkInterface(forInterfaceNamed: tunnelIfName)
+        guard isRunning, generation == testGeneration else { return }
         self.tunnelInterface = tunnelInterface
 
         await scheduleTimer(testImmediately: testImmediately)
@@ -124,6 +130,7 @@ final class NetworkProtectionConnectionTester: ConnectionTesting {
         Logger.networkProtectionConnectionTester.log("🔴 Stopping connection tester")
         stopScheduledTimer()
         isRunning = false
+        testGeneration = UUID()
     }
 
     // MARK: - Obtaining the interface
@@ -161,19 +168,21 @@ final class NetworkProtectionConnectionTester: ConnectionTesting {
     // MARK: - Timer scheduling
 
     private func scheduleTimer(testImmediately: Bool) async {
+        let generation = testGeneration
         stopScheduledTimer()
 
         if testImmediately {
-            await testConnection()
+            await testConnection(expectedGeneration: generation)
         }
 
+        guard isRunning, generation == testGeneration else { return }
         task = Task.periodic(interval: intervalBetweenTests) { [weak self] in
             // During regular connection tests we don't care about the error thrown
             // by this method, as it'll be handled through the result handler callback.
             // The error we're ignoring here is only used when this class is initialized
             // with an immediate test, to know whether the connection is up while the user
             // still sees "Connecting..."
-            await self?.testConnection()
+            await self?.testConnection(expectedGeneration: generation)
         }
     }
 
@@ -184,13 +193,16 @@ final class NetworkProtectionConnectionTester: ConnectionTesting {
 
     // MARK: - Testing the connection
 
-    func testConnection() async {
+    func testConnection(expectedGeneration: UUID? = nil) async {
+        if let expectedGeneration, expectedGeneration != testGeneration { return }
         guard let tunnelInterface = tunnelInterface else {
             Logger.networkProtectionConnectionTester.error("No interface to test!")
             return
         }
 
         Logger.networkProtectionConnectionTester.debug("Testing connection...")
+        let startedAt = Date()
+        let generation = testGeneration
 
         let vpnParameters = NWParameters.tcp
         vpnParameters.requiredInterface = tunnelInterface
@@ -212,6 +224,11 @@ final class NetworkProtectionConnectionTester: ConnectionTesting {
         guard isRunning else {
             Logger.networkProtectionConnectionTester.log("Tester skipped returning results as it was stopped while running the tests")
             return
+        }
+
+        // A result from a previous tester run must not enter the new wake observation.
+        if generation == testGeneration {
+            connectivityResultHandler?(vpnIsConnected, startedAt)
         }
 
         if onlyVPNIsDown {

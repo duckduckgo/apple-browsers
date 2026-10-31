@@ -1,6 +1,6 @@
 {
-    "vpn_wake_handshake_timeouts": {
-        "description": "The iOS VPN observes two native WireGuard handshake timeouts after a post-wake handshake request, without an authenticated incoming handshake. Reported at most once per wake cycle. Network changes do not reset the count. Observation ends on sleep, snooze, disconnection, or reconfiguration. This measures handshake timeouts, not confirmed packet loss or failed session establishment.",
+    "vpn_wake_connectivity_failure": {
+        "description": "Two connectivity checks started after device wake failed to establish a TCP connection through the VPN, before any successful check in that wake cycle. Reported at most once per eligible wake cycle, regardless of network or tunnel configuration changes. Observation ends on successful connectivity, sleep, snooze, or disconnection. The pixel does not identify the cause of the failure.",
         "owners": ["diegoreymendez"],
         "triggers": ["exception"],
         "suffixes": ["daily_count", "platform", "form_factor"],

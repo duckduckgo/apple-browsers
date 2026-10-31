@@ -1,5 +1,5 @@
 //
-//  VPNWakeHandshakePixel.swift
+//  VPNWakeConnectivityPixel.swift
 //
 //  Copyright © 2026 DuckDuckGo. All rights reserved.
 //
@@ -19,10 +19,10 @@
 import PixelKit
 
 /// Fired only by the iOS packet tunnel's wake monitor.
-public enum VPNWakeHandshakePixel: PixelKit.Event {
-    case timeouts
+public enum VPNWakeConnectivityPixel: PixelKit.Event {
+    case failure
 
-    public var name: String { "vpn_wake_handshake_timeouts" }
+    public var name: String { "vpn_wake_connectivity_failure" }
     public var parameters: [String: String]? { nil }
     public var standardParameters: [PixelKitStandardParameter]? { nil }
 }

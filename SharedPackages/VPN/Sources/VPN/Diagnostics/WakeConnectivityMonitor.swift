@@ -1,5 +1,5 @@
 //
-//  WakeHandshakeTimeoutMonitor.swift
+//  WakeConnectivityMonitor.swift
 //
 //  Copyright © 2026 DuckDuckGo. All rights reserved.
 //
@@ -19,29 +19,30 @@
 import Foundation
 import PixelKit
 
-/// Records repeated native WireGuard timeouts after wake, without querying or changing the tunnel.
-/// An authenticated incoming handshake ends this observation; it does not prove session completion.
-public final class WakeHandshakeTimeoutMonitor: @unchecked Sendable {
+/// Records failed connectivity after wake using the existing tunnel probes, regardless of cause.
+public final class WakeConnectivityMonitor: @unchecked Sendable {
     private enum State {
         case asleep
-        case waitingForRequest
-        case waitingForTimeouts(peer: String, count: Int)
+        case checking(failureCount: Int)
         case finished
     }
 
     private let lock = NSLock()
     private var state: State = .asleep
     private var generation: UInt64 = 0
+    private var wakeDate: Date?
+    private let now: () -> Date
     private let reportQueue: DispatchQueue
     private let pixelFiring: PixelKitFiring?
 
     public convenience init(pixelFiring: PixelKitFiring? = PixelKit.shared) {
-        self.init(pixelFiring: pixelFiring,
-                  reportQueue: DispatchQueue(label: "com.duckduckgo.vpn.wake-handshake-pixel"))
+        self.init(pixelFiring: pixelFiring, now: Date.init,
+                  reportQueue: DispatchQueue(label: "com.duckduckgo.vpn.wake-connectivity-pixel"))
     }
 
-    init(pixelFiring: PixelKitFiring?, reportQueue: DispatchQueue) {
+    init(pixelFiring: PixelKitFiring?, now: @escaping () -> Date, reportQueue: DispatchQueue) {
         self.pixelFiring = pixelFiring
+        self.now = now
         self.reportQueue = reportQueue
     }
 
@@ -53,9 +54,9 @@ public final class WakeHandshakeTimeoutMonitor: @unchecked Sendable {
             state = .finished
             return
         }
-        // Duplicate wake notifications must not restart an ended or partially counted cycle.
         guard case .asleep = state else { return }
-        state = .waitingForRequest
+        wakeDate = now()
+        state = .checking(failureCount: 0)
     }
 
     public func sleep() {
@@ -63,6 +64,7 @@ public final class WakeHandshakeTimeoutMonitor: @unchecked Sendable {
         defer { lock.unlock() }
         generation &+= 1
         state = .asleep
+        wakeDate = nil
     }
 
     public func cancel() {
@@ -71,36 +73,18 @@ public final class WakeHandshakeTimeoutMonitor: @unchecked Sendable {
         cancelInLock()
     }
 
-    /// Called directly from the native logger. No runtime reads, network requests or pixel sends here.
-    public func consumeLog(_ message: String) {
-        guard message.hasPrefix("peer("), let separator = message.range(of: ") - ") else { return }
-        let peer = String(message[..<separator.lowerBound])
-        let detail = String(message[separator.upperBound...])
-        let isProgress = detail == "Received handshake response" || detail == "Received handshake initiation"
-        let isTimeout = detail.range(of: #"^Handshake did not complete after [0-9]+ seconds, retrying \(try [0-9]+\)$"#,
-                                     options: .regularExpression) != nil
+    public func connectionTestCompleted(isConnected: Bool, startedAt: Date) {
         var reportGeneration: UInt64?
-
         lock.lock()
-        switch state {
-        case .waitingForRequest:
-            if isProgress {
+        if case .checking(let failureCount) = state, let wakeDate, startedAt >= wakeDate {
+            if isConnected {
                 state = .finished
-            } else if detail == "Sending handshake initiation" {
-                state = .waitingForTimeouts(peer: peer, count: 0)
-            }
-        case .waitingForTimeouts(let expectedPeer, let count) where expectedPeer == peer:
-            if isProgress {
+            } else if failureCount + 1 == 2 {
                 state = .finished
-            } else if isTimeout {
-                if count + 1 == 2 {
-                    state = .finished
-                    reportGeneration = generation
-                } else {
-                    state = .waitingForTimeouts(peer: peer, count: count + 1)
-                }
+                reportGeneration = generation
+            } else {
+                state = .checking(failureCount: failureCount + 1)
             }
-        default: break
         }
         lock.unlock()
 
@@ -122,6 +106,6 @@ public final class WakeHandshakeTimeoutMonitor: @unchecked Sendable {
         let isCurrent = generation == expectedGeneration
         lock.unlock()
         guard isCurrent else { return }
-        pixelFiring?.fire(VPNWakeHandshakePixel.timeouts, frequency: .dailyAndCount, options: .withRetry)
+        pixelFiring?.fire(VPNWakeConnectivityPixel.failure, frequency: .dailyAndCount, options: .withRetry)
     }
 }

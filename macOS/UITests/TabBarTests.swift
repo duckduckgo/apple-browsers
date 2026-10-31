@@ -156,7 +156,121 @@ class TabBarTests: UITestCase {
         XCTAssertTrue(contextMenu.waitForExistence(timeout: UITests.Timeouts.elementExistence), "Context menu should appear on control click")
     }
 
+    func testNewTabButtonOpensTab_andCloseButtonClosesIt() {
+        app.enforceSingleWindow()
+        let window = app.windows.firstMatch
+        let tabCount = window.tabs.count
+
+        hittableElement(in: window.buttons.matching(identifier: "NewTabButton")).click()
+        XCTAssertTrue(window.wait(for: .keyPath(\.tabs.count, equalTo: tabCount + 1), timeout: UITests.Timeouts.elementExistence),
+                      "Clicking the new tab button should open a tab")
+
+        let selectedTab = window.tabs.element(matching: \.isSelected, equalTo: true)
+        selectedTab.buttons["TabBarViewItem.closeButton"].clickAfterExistenceTestSucceeds()
+        XCTAssertTrue(window.wait(for: .keyPath(\.tabs.count, equalTo: tabCount), timeout: UITests.Timeouts.elementExistence),
+                      "Clicking the tab's close button should close it")
+    }
+
+    func testDraggingTabIntoAnotherOpenWindow_movesTabThere() {
+        app.enforceSingleWindow()
+        app.openSite(pageTitle: "Page #1")
+
+        app.openNewWindow()
+        app.openSite(pageTitle: "Page #2")
+        app.openNewTab()
+        app.openSite(pageTitle: "Page #3")
+
+        // The newest window is first until the drop activates the other one, so after the drop windows are told apart by frame
+        let secondWindow = app.windows.element(boundBy: 0)
+        let firstWindow = app.windows.element(boundBy: 1)
+        let firstWindowFrame = firstWindow.frame
+
+        // The second window is cascaded over the first one; move it down so the first window's tab bar can take the drop
+        // Just right of the new tab button the tab bar is empty at any window width, so dragging there moves the window
+        let newTabButtonFrame = hittableElement(in: secondWindow.buttons.matching(identifier: "NewTabButton")).frame
+        let secondWindowTitleBar = secondWindow.coordinate(withNormalizedOffset: .zero)
+            .withOffset(CGVector(dx: newTabButtonFrame.maxX + 30 - secondWindow.frame.minX, dy: newTabButtonFrame.midY - secondWindow.frame.minY))
+        secondWindowTitleBar.click(forDuration: 0.5, thenDragTo: secondWindowTitleBar.withOffset(CGVector(dx: 0, dy: 300)))
+        let secondWindowFrame = secondWindow.frame
+        XCTAssertGreaterThan(secondWindowFrame.minY, firstWindowFrame.minY + 100, "The second window should have moved out of the way")
+
+        let draggedTab = secondWindow.tabs.element(matching: \.isSelected, equalTo: true)
+        let dropPoint = firstWindow.tabs.element(boundBy: 0).coordinate(withNormalizedOffset: CGVector(dx: 0.75, dy: 0.5))
+        draggedTab.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5))
+            .click(forDuration: 0.5, thenDragTo: dropPoint, withVelocity: .slow, thenHoldForDuration: 0.5)
+
+        let tabsMoved = NSPredicate { _, _ in
+            self.tabCount(inWindowWithFrame: firstWindowFrame) == 2 && self.tabCount(inWindowWithFrame: secondWindowFrame) == 1
+        }
+        XCTAssertEqual(XCTWaiter.wait(for: [XCTNSPredicateExpectation(predicate: tabsMoved, object: nil)], timeout: UITests.Timeouts.elementExistence),
+                       .completed,
+                       "The dragged tab should move to the first window (tabs in the first window: \(tabCount(inWindowWithFrame: firstWindowFrame)), " +
+                       "in the second: \(tabCount(inWindowWithFrame: secondWindowFrame)))")
+    }
+
+    func testTabBarScrollButtons_bringFirstAndLastTabsIntoView() {
+        app.enforceSingleWindow()
+        let window = app.windows.firstMatch
+        let tabsScrollView = window.scrollViews["TabBarViewController.CollectionView.ScrollView"]
+        let leftScrollButton = window.buttons["TabBarViewController.leftScrollButton"]
+        let rightScrollButton = window.buttons["TabBarViewController.rightScrollButton"]
+        XCTAssertTrue(tabsScrollView.waitForExistence(timeout: UITests.Timeouts.elementExistence), "The tab bar scroll view should exist")
+
+        // `isHittable` stays true for tabs scrolled out of the tab bar, so visibility is checked against the scroll view's frame.
+        // How many tabs it takes to overflow depends on the screen size; new tabs are scrolled to, so the first one goes out of view.
+        let firstTab = window.tabs.element(boundBy: 0)
+        var openedTabs = 0
+        while isTab(firstTab, fullyVisibleIn: tabsScrollView) && openedTabs < 80 {
+            app.openNewTab()
+            openedTabs += 1
+        }
+        // A few more tabs so the bar overflows by more than one tab, and the last tab can't fit next to the first one
+        for _ in 0..<5 {
+            app.openNewTab()
+        }
+        XCTAssertFalse(isTab(firstTab, fullyVisibleIn: tabsScrollView), "The first tab should be scrolled out of view")
+        XCTAssertTrue(leftScrollButton.waitForExistence(timeout: UITests.Timeouts.elementExistence), "The tab bar should show scroll buttons")
+
+        let lastTab = window.tabs.element(boundBy: window.tabs.count - 1)
+        clickRepeatedly(leftScrollButton, until: { isTab(firstTab, fullyVisibleIn: tabsScrollView) })
+        XCTAssertTrue(isTab(firstTab, fullyVisibleIn: tabsScrollView), "The left scroll button should bring the first tab into view")
+        XCTAssertFalse(isTab(lastTab, fullyVisibleIn: tabsScrollView), "The last tab should be scrolled out of view")
+
+        clickRepeatedly(rightScrollButton, until: { isTab(lastTab, fullyVisibleIn: tabsScrollView) })
+        XCTAssertTrue(isTab(lastTab, fullyVisibleIn: tabsScrollView), "The right scroll button should bring the last tab into view")
+    }
+
     // MARK: - Utilities
+
+    /// The tab bar has two new tab buttons, one after the last tab and one pinned to the right when tabs overflow; only one is shown.
+    private func hittableElement(in query: XCUIElementQuery) -> XCUIElement {
+        let deadline = Date().addingTimeInterval(UITests.Timeouts.elementExistence)
+        repeat {
+            if let element = query.allElementsBoundByIndex.first(where: \.isHittable) {
+                return element
+            }
+            RunLoop.current.run(until: Date().addingTimeInterval(0.2))
+        } while Date() < deadline
+        XCTFail("No hittable element in \(query)")
+        return query.firstMatch
+    }
+
+    private func tabCount(inWindowWithFrame frame: CGRect) -> Int {
+        app.windows.allElementsBoundByIndex.first { $0.frame == frame && $0.tabs.firstMatch.exists }?.tabs.count ?? 0
+    }
+
+    private func isTab(_ tab: XCUIElement, fullyVisibleIn scrollView: XCUIElement) -> Bool {
+        let visibleFrame = scrollView.frame.insetBy(dx: -1, dy: -1)
+        return visibleFrame.minX <= tab.frame.minX && tab.frame.maxX <= visibleFrame.maxX
+    }
+
+    private func clickRepeatedly(_ button: XCUIElement, until condition: () -> Bool) {
+        var clicks = 0
+        while !condition() && clicks < 40 {
+            button.click()
+            clicks += 1
+        }
+    }
 
     private func resetPinnedTabs() {
         app.debugMenu.click()

@@ -308,7 +308,7 @@ private extension MainViewController {
         viewCoordinator.suggestionTrayContainer.isHidden = true
         updateUnifiedInputContentVisibility(for: coordinator)
         let duration = Constants.omnibarTransitionDuration(isBottom: isBottom, isFloatingUIEnabled: isFloatingUIEnabled)
-        if isFloatingUIEnabled, coordinator.cardPosition.isBottom {
+        if isFloatingUIEnabled {
             coordinator.viewController.prepareForOmnibarMaterialTransition(duration: duration)
         }
 

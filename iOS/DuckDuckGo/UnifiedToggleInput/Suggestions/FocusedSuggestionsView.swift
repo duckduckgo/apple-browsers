@@ -36,5 +36,6 @@ struct FocusedSuggestionsView: View {
             .animation(isVisible ? .easeInOut(duration: 0.2) : nil, value: isVisible)
             .modifier(FocusedContentDismissFade(isFadingOut: isFadingOut))
             .allowsHitTesting(isVisible)
+            .accessibilityHidden(!isVisible)
     }
 }

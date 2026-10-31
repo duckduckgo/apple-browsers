@@ -1,6 +1,6 @@
 {
     "vpn_wake_handshake_timeouts": {
-        "description": "The iOS VPN observes two native WireGuard handshake timeouts after a post-wake handshake request, without an authenticated incoming handshake. Reported at most once per wake cycle. Observation ends on sleep, snooze, disconnection, reconfiguration, or an underlying network change. This measures handshake timeouts, not confirmed packet loss or failed session establishment.",
+        "description": "The iOS VPN observes two native WireGuard handshake timeouts after a post-wake handshake request, without an authenticated incoming handshake. Reported at most once per wake cycle. Network changes do not reset the count. Observation ends on sleep, snooze, disconnection, or reconfiguration. This measures handshake timeouts, not confirmed packet loss or failed session establishment.",
         "owners": ["diegoreymendez"],
         "triggers": ["exception"],
         "suffixes": ["daily_count", "platform", "form_factor"],

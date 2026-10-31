@@ -31,7 +31,7 @@ final class WakeHandshakeTimeoutMonitorTests: XCTestCase {
         super.setUp()
         pixelFiring = RecordingPixelFiring()
         reportQueue = DispatchQueue(label: "WakeHandshakeTimeoutMonitorTests")
-        monitor = WakeHandshakeTimeoutMonitor(pixelFiring: pixelFiring, pathMonitor: nil, reportQueue: reportQueue)
+        monitor = WakeHandshakeTimeoutMonitor(pixelFiring: pixelFiring, reportQueue: reportQueue)
     }
 
     override func tearDown() {
@@ -186,48 +186,16 @@ final class WakeHandshakeTimeoutMonitorTests: XCTestCase {
         assertFireCount(0)
     }
 
-    func testInitialAndEquivalentPathNotificationsDoNotCancel() {
+    func testNetworkChangesAndRebindingDoNotDiscardTheFirstTimeout() {
         monitor.wake(isEligible: true)
         monitor.consumeLog(request)
         monitor.consumeLog(timeout)
-        monitor.updatePath(isSatisfied: true, physicalInterfaces: ["pdp_ip0", "en0"])
-        monitor.updatePath(isSatisfied: true, physicalInterfaces: ["en0", "pdp_ip0"])
+        monitor.consumeLog("Network change detected with unsatisfied route")
+        monitor.consumeLog("Network change detected with satisfied route")
+        monitor.consumeLog("UDP bind has been updated")
+        monitor.consumeLog(request)
         monitor.consumeLog(timeout)
         assertFireCount(1)
-    }
-
-    func testPhysicalInterfaceChangeCancels() {
-        monitor.updatePath(isSatisfied: true, physicalInterfaces: ["pdp_ip0"])
-        monitor.wake(isEligible: true)
-        monitor.consumeLog(request)
-        monitor.consumeLog(timeout)
-        monitor.updatePath(isSatisfied: true, physicalInterfaces: ["en0"])
-        monitor.consumeLog(timeout)
-        assertFireCount(0)
-    }
-
-    func testUnsatisfiedPathCancelsEvenOnInitialDelivery() {
-        monitor.wake(isEligible: true)
-        monitor.consumeLog(request)
-        monitor.consumeLog(timeout)
-        monitor.updatePath(isSatisfied: false, physicalInterfaces: [])
-        monitor.consumeLog(timeout)
-        assertFireCount(0)
-    }
-
-    func testPathUpdatesDuringSleepDoNotPreventNextWakeObservation() {
-        monitor.updatePath(isSatisfied: false, physicalInterfaces: [])
-        monitor.updatePath(isSatisfied: true, physicalInterfaces: ["pdp_ip0"])
-        monitor.wake(isEligible: true)
-        sendTwoTimeouts()
-        assertFireCount(1)
-    }
-
-    func testKnownUnsatisfiedPathDoesNotArmOnWake() {
-        monitor.updatePath(isSatisfied: false, physicalInterfaces: [])
-        monitor.wake(isEligible: true)
-        sendTwoTimeouts()
-        assertFireCount(0)
     }
 
     func testCancelBeforeQueuedReportRunsSuppressesTheReport() {

@@ -17,7 +17,6 @@
 //
 
 import Foundation
-import Network
 import PixelKit
 
 /// Records repeated native WireGuard timeouts after wake, without querying or changing the tunnel.
@@ -30,45 +29,26 @@ public final class WakeHandshakeTimeoutMonitor: @unchecked Sendable {
         case finished
     }
 
-    private struct PathIdentity: Equatable {
-        let isSatisfied: Bool
-        let interfaces: [String]
-    }
-
     private let lock = NSLock()
     private var state: State = .asleep
     private var generation: UInt64 = 0
-    private var previousPath: PathIdentity?
-    private let pathMonitor: NWPathMonitor?
     private let reportQueue: DispatchQueue
     private let pixelFiring: PixelKitFiring?
 
     public convenience init(pixelFiring: PixelKitFiring? = PixelKit.shared) {
-        self.init(pixelFiring: pixelFiring, pathMonitor: NWPathMonitor(),
+        self.init(pixelFiring: pixelFiring,
                   reportQueue: DispatchQueue(label: "com.duckduckgo.vpn.wake-handshake-pixel"))
     }
 
-    init(pixelFiring: PixelKitFiring?, pathMonitor: NWPathMonitor?, reportQueue: DispatchQueue) {
+    init(pixelFiring: PixelKitFiring?, reportQueue: DispatchQueue) {
         self.pixelFiring = pixelFiring
-        self.pathMonitor = pathMonitor
         self.reportQueue = reportQueue
-        pathMonitor?.pathUpdateHandler = { [weak self] path in
-            let interfaces = path.availableInterfaces.filter {
-                [.wifi, .cellular, .wiredEthernet].contains($0.type) && path.usesInterfaceType($0.type)
-            }.map { "\($0.type):\($0.name):\($0.index)" }
-            self?.updatePath(isSatisfied: path.status == .satisfied, physicalInterfaces: interfaces)
-        }
-        pathMonitor?.start(queue: DispatchQueue(label: "com.duckduckgo.vpn.wake-handshake-path"))
-    }
-
-    deinit {
-        pathMonitor?.cancel()
     }
 
     public func wake(isEligible: Bool) {
         lock.lock()
         defer { lock.unlock() }
-        guard isEligible, previousPath?.isSatisfied != false else {
+        guard isEligible else {
             cancelInLock()
             state = .finished
             return
@@ -129,17 +109,6 @@ public final class WakeHandshakeTimeoutMonitor: @unchecked Sendable {
                 self?.reportIfCurrent(generation: reportGeneration)
             }
         }
-    }
-
-    func updatePath(isSatisfied: Bool, physicalInterfaces: [String]) {
-        let path = PathIdentity(isSatisfied: isSatisfied, interfaces: physicalInterfaces.sorted())
-        lock.lock()
-        defer { lock.unlock() }
-        // Initial delivery seeds the identity. Quality/DNS updates and equivalent paths do not cancel.
-        if !isSatisfied || previousPath.map({ $0 != path }) == true {
-            cancelInLock()
-        }
-        previousPath = path
     }
 
     private func cancelInLock() {

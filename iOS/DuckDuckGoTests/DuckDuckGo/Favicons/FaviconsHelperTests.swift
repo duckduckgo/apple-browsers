@@ -112,4 +112,35 @@ class FaviconsHelperTests: XCTestCase {
         XCTAssertNotNil(result.image)
         XCTAssertFalse(result.isFake)
     }
+
+    func testLoadFaviconIntoImageView_WhenImageSetDuringDiskRead_KeepsThatImage() {
+        let cache = Favicons.Constants.caches[.fireproof]!
+        let testImageData = UIImage(named: "duckduckgo-favicon-128x128")!.pngData()!
+
+        let stored = expectation(description: "Stored on disk")
+        stored.expectedFulfillmentCount = 2
+        for domain in ["example.com", "example.org"] {
+            let resource = Favicons().defaultResource(forDomain: domain)!
+            cache.storeToDisk(testImageData, forKey: resource.cacheKey) { _ in stored.fulfill() }
+        }
+        wait(for: [stored], timeout: 5)
+        cache.clearMemoryCache()
+
+        let staleImageView = UIImageView()
+        staleImageView.loadFavicon(forDomain: "example.com", usingCache: .fireproof)
+        let sentinel = UIImage()
+        staleImageView.image = sentinel
+
+        // Disk reads are serial, so this load completes after the first one has delivered its result.
+        let loaded = expectation(description: "Loaded")
+        let imageView = UIImageView()
+        imageView.loadFavicon(forDomain: "example.org", usingCache: .fireproof) { _, isFake in
+            XCTAssertFalse(isFake)
+            loaded.fulfill()
+        }
+        wait(for: [loaded], timeout: 5)
+
+        XCTAssertNotNil(imageView.image)
+        XCTAssertTrue(staleImageView.image === sentinel)
+    }
 }

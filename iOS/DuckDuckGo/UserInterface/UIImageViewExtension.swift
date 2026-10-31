@@ -23,6 +23,7 @@ import Kingfisher
 
 private final class FaviconLoadRequest {
     let domain: String?
+    weak var appliedImage: UIImage?
 
     init(domain: String?) {
         self.domain = domain
@@ -48,9 +49,15 @@ extension UIImageView {
 
         func load() {
             let request = FaviconLoadRequest(domain: domain)
-            // Don't show another domain's favicon (e.g. of a reused cell) while the disk read is in flight.
-            if faviconLoadRequest?.domain != domain {
+            // While the disk read is in flight, keep the current image only if it's this domain's favicon.
+            // Otherwise (e.g. a reused cell) show nothing, or the fake favicon if one was already generated.
+            let previous = faviconLoadRequest
+            let isShowingThisDomainsFavicon = previous?.domain == domain && image != nil && image === previous?.appliedImage
+            if !isShowingThisDomainsFavicon {
                 image = nil
+                if useFakeFavicon, let domain {
+                    image = FaviconsHelper.cachedFakeFavicon(forDomain: domain, preferredFakeFaviconLetters: preferredFakeFaviconLetters)
+                }
             }
             faviconLoadRequest = request
             let placeholder = image
@@ -61,6 +68,7 @@ extension UIImageView {
                 // Drop the result if another favicon was requested, or an image was set directly, in the meantime.
                 guard let self, self.faviconLoadRequest === request, self.image === placeholder else { return }
                 self.image = image
+                request.appliedImage = image
                 completion?(image, fake)
             }
         }

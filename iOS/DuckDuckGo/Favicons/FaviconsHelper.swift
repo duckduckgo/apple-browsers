@@ -40,6 +40,7 @@ struct FaviconsHelper {
     private static let tld: TLD = AppDependencyProvider.shared.storageCache.tld
     private static let sourcesProvider: FaviconSourcesProvider = DefaultFaviconSourcesProvider()
     private static let diskQueue = DispatchQueue(label: "com.duckduckgo.favicons.diskRead", qos: .userInitiated)
+    private static let fakeFavicons = NSCache<NSString, UIImage>()
 
     static func loadFaviconSync(forDomain domain: String?,
                                 usingCache cacheType: FaviconsCacheType,
@@ -125,8 +126,9 @@ struct FaviconsHelper {
                 throw FaviconError.corruptedData
             }
 
-            // Store in memory cache with original expiry date
-            if let attributes = try? FileManager.default.attributesOfItem(atPath: url.path),
+            // Store in memory cache with original expiry date, unless a fresher favicon got there during the read
+            if cache.retrieveImageInMemoryCache(forKey: cacheKey) == nil,
+               let attributes = try? FileManager.default.attributesOfItem(atPath: url.path),
                let fileModificationDate = attributes[.modificationDate] as? Date {
 
                 cache.store(image,
@@ -218,10 +220,26 @@ struct FaviconsHelper {
             return (nil, false)
         }
 
+        if let fakeFavicon = cachedFakeFavicon(forDomain: domain, preferredFakeFaviconLetters: preferredLetters) {
+            return (fakeFavicon, true)
+        }
+
         let fakeFavicon = createFakeFavicon(forDomain: domain,
                                            backgroundColor: UIColor.forDomain(domain),
                                            preferredFakeFaviconLetters: preferredLetters)
+        if let fakeFavicon {
+            fakeFavicons.setObject(fakeFavicon, forKey: fakeFaviconKey(domain: domain, preferredLetters: preferredLetters))
+        }
         return (fakeFavicon, true)
+    }
+
+    /// Fake favicon previously generated for this domain, if any. Rendering one is expensive, so they're kept in memory.
+    static func cachedFakeFavicon(forDomain domain: String, preferredFakeFaviconLetters: String?) -> UIImage? {
+        fakeFavicons.object(forKey: fakeFaviconKey(domain: domain, preferredLetters: preferredFakeFaviconLetters))
+    }
+
+    private static func fakeFaviconKey(domain: String, preferredLetters: String?) -> NSString {
+        "\(domain)|\(preferredLetters ?? "")" as NSString
     }
 
     private static func customImage(for domain: String?) -> UIImage? {

@@ -32,25 +32,25 @@ import XCTest
 final class UnifiedInputContentContainerViewControllerTests: XCTestCase {
 
     func testScrollableEscapeHatchKeepsItsImplementationUntilTheContainerIsRecreated() {
-        let isIOS16OrLater: Bool
-        if #available(iOS 16.0, *) {
-            isIOS16OrLater = true
+        let isSupportedOS: Bool
+        if #available(iOS 16.4, *) {
+            isSupportedOS = true
         } else {
-            isIOS16OrLater = false
+            isSupportedOS = false
         }
         for initiallyEnabled in [false, true] {
             let featureFlagger = MockFeatureFlagger(enabledFeatureFlags: initiallyEnabled ? [.scrollableEscapeHatch] : [])
             let controller = UnifiedInputContentContainerViewController(
                 switchBarHandler: MockUnifiedInputSwitchBarHandler(), featureFlagger: featureFlagger)
-            XCTAssertEqual(controller.usesScrollableEscapeHatch, isIOS16OrLater && initiallyEnabled)
+            XCTAssertEqual(controller.usesScrollableEscapeHatch, isSupportedOS && initiallyEnabled)
 
             featureFlagger.enabledFeatureFlags = initiallyEnabled ? [] : [.scrollableEscapeHatch]
             featureFlagger.triggerUpdate()
-            XCTAssertEqual(controller.usesScrollableEscapeHatch, isIOS16OrLater && initiallyEnabled)
+            XCTAssertEqual(controller.usesScrollableEscapeHatch, isSupportedOS && initiallyEnabled)
 
             let nextController = UnifiedInputContentContainerViewController(
                 switchBarHandler: MockUnifiedInputSwitchBarHandler(), featureFlagger: featureFlagger)
-            XCTAssertEqual(nextController.usesScrollableEscapeHatch, isIOS16OrLater && !initiallyEnabled)
+            XCTAssertEqual(nextController.usesScrollableEscapeHatch, isSupportedOS && !initiallyEnabled)
         }
     }
 

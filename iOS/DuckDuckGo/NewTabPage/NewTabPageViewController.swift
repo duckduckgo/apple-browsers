@@ -226,16 +226,7 @@ final class NewTabPageViewController: UIViewController, NewTabPage, RemoteMessag
 
     override func viewDidLayoutSubviews() {
         super.viewDidLayoutSubviews()
-        if newTabPageViewModel.focusedContent != nil {
-            // SwiftUI's scrollBounceBehavior is unavailable on iOS 15.
-            focusedScrollView(in: view)?.alwaysBounceVertical = true
-        }
         onboardingCoordinator.refreshContextualOnboardingDialogLayout()
-    }
-
-    private func focusedScrollView(in view: UIView) -> UIScrollView? {
-        if let scrollView = view as? UIScrollView { return scrollView }
-        return view.subviews.lazy.compactMap { self.focusedScrollView(in: $0) }.first
     }
 
     override func viewWillDisappear(_ animated: Bool) {

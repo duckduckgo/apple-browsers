@@ -146,6 +146,7 @@ private extension NewTabPageView {
                     .padding(.horizontal, sectionsViewHorizontalPadding(in: geometry))
                 }
             }
+            .modifier(FocusedContentVerticalBounce())
             .if(dismissKeyboardOnScroll) { $0.scrollDismissesKeyboardIfAvailable() }
             .modifier(NewTabPageScrollToTop(requests: viewModel.scrollToTopRequests))
         }
@@ -303,6 +304,21 @@ private extension NewTabPageView {
         }
         let folded = layoutConfiguration.favoritesShareHatchTopInset ? Metrics.nonGridSectionTopPadding : 0
         return sectionsViewPadding(in: geometry) + folded
+    }
+}
+
+/// Short focused content still bounces, so the hatch can scroll and a drag can dismiss the keyboard.
+/// The scrollable escape hatch requires iOS 16.4, where this API is available.
+struct FocusedContentVerticalBounce: ViewModifier {
+    var isEnabled = true
+
+    @ViewBuilder
+    func body(content: Content) -> some View {
+        if #available(iOS 16.4, *), isEnabled {
+            content.scrollBounceBehavior(.always, axes: .vertical)
+        } else {
+            content
+        }
     }
 }
 

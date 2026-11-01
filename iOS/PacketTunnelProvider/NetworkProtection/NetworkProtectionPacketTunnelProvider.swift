@@ -617,7 +617,7 @@ final class NetworkProtectionPacketTunnelProvider: PacketTunnelProvider {
                    wideEvent: wideEvent,
                    entitlementCheck: entitlementsCheck,
                    loopDetector: loopDetector,
-                   wakeConnectivityMonitor: WakeConnectivityMonitor(),
+                   reportWakeConnectivityFailure: { VPNWakeConnectivityPixel.fireFailure() },
                    sessionHealth: sessionHealth)
         startMonitoringMemoryPressureEvents()
 

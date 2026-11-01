@@ -19,11 +19,59 @@
 import Foundation
 import NetworkExtension
 import XCTest
+@_spi(Testing) import PixelKit
 @testable import VPN
 
 final class PacketTunnelProviderTests: XCTestCase {
 
     typealias TunnelError = PacketTunnelProvider.TunnelError
+
+    func testPostWakeCounterReportsOnlyTheThirdFailure() {
+        let date = Date()
+        var counter = PacketTunnelProvider.PostWakeConnectivityFailures(wakeDate: date)
+        XCTAssertFalse(counter.record(isConnected: false, startedAt: date))
+        XCTAssertFalse(counter.record(isConnected: false, startedAt: date))
+        XCTAssertTrue(counter.record(isConnected: false, startedAt: date))
+        XCTAssertFalse(counter.record(isConnected: false, startedAt: date))
+    }
+
+    func testPostWakeCounterStopsOnSuccess() {
+        let date = Date()
+        var counter = PacketTunnelProvider.PostWakeConnectivityFailures(wakeDate: date)
+        XCTAssertFalse(counter.record(isConnected: false, startedAt: date))
+        XCTAssertFalse(counter.record(isConnected: false, startedAt: date))
+        XCTAssertFalse(counter.record(isConnected: true, startedAt: date))
+        for _ in 0..<3 { XCTAssertFalse(counter.record(isConnected: false, startedAt: date)) }
+    }
+
+    func testChecksStartedBeforeWakeDoNotAffectTheCounter() {
+        let date = Date()
+        var counter = PacketTunnelProvider.PostWakeConnectivityFailures(wakeDate: date)
+        let earlier = date.addingTimeInterval(-1)
+        XCTAssertFalse(counter.record(isConnected: true, startedAt: earlier))
+        for _ in 0..<3 { XCTAssertFalse(counter.record(isConnected: false, startedAt: earlier)) }
+        XCTAssertFalse(counter.record(isConnected: false, startedAt: date))
+        XCTAssertFalse(counter.record(isConnected: false, startedAt: date))
+        XCTAssertTrue(counter.record(isConnected: false, startedAt: date))
+    }
+
+    func testFreshWakeCounterStartsAtZero() {
+        let date = Date()
+        var counter = PacketTunnelProvider.PostWakeConnectivityFailures(wakeDate: date)
+        XCTAssertFalse(counter.record(isConnected: false, startedAt: date))
+        counter = PacketTunnelProvider.PostWakeConnectivityFailures(wakeDate: date.addingTimeInterval(60))
+        let later = date.addingTimeInterval(61)
+        XCTAssertFalse(counter.record(isConnected: false, startedAt: later))
+        XCTAssertFalse(counter.record(isConnected: false, startedAt: later))
+        XCTAssertTrue(counter.record(isConnected: false, startedAt: later))
+    }
+
+    func testPostWakePixelUsesPersistentRetry() {
+        let recorder = RetryRecordingPixelFiring()
+        VPNWakeConnectivityPixel.fireFailure(using: recorder)
+        XCTAssertEqual(recorder.mock.actualFireCalls, [ExpectedFireCall(pixel: VPNWakeConnectivityPixel.failure, frequency: .dailyAndCount)])
+        XCTAssertTrue(recorder.retryOnFailure)
+    }
 
     /// Tests that `TunnelError` has the expected underlying error information.
     ///
@@ -60,5 +108,15 @@ final class PacketTunnelProviderTests: XCTestCase {
             .serverMigration
         ]
         XCTAssertTrue(supersedingSources.allSatisfy { !$0.preservesFailureRecoveryDuringReassertUpdate })
+    }
+}
+
+private final class RetryRecordingPixelFiring: PixelKitFiring {
+    let mock = PixelKitMock()
+    private(set) var retryOnFailure = false
+
+    func fire(event: PixelKit.Event, frequency: PixelKit.Frequency, options: PixelKit.Options, onComplete: @escaping PixelKit.CompletionBlock) {
+        retryOnFailure = options.retryOnFailure
+        mock.fire(event: event, frequency: frequency, options: options, onComplete: onComplete)
     }
 }

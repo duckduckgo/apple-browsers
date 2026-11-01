@@ -18,11 +18,15 @@
 
 import PixelKit
 
-/// Fired only by the iOS packet tunnel's wake monitor.
+/// Fired only by the iOS packet tunnel's post-wake checks.
 public enum VPNWakeConnectivityPixel: PixelKit.Event {
     case failure
 
     public var name: String { "vpn_wake_connectivity_failure" }
     public var parameters: [String: String]? { nil }
     public var standardParameters: [PixelKitStandardParameter]? { nil }
+
+    public static func fireFailure(using pixelFiring: PixelKitFiring? = PixelKit.shared) {
+        pixelFiring?.fire(VPNWakeConnectivityPixel.failure, frequency: .dailyAndCount, options: .withRetry)
+    }
 }

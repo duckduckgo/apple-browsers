@@ -52,13 +52,16 @@ final class NetworkProtectionConnectionTester: ConnectionTesting {
     static let endpoint = NWEndpoint.hostPort(host: .name("www.duckduckgo.com", nil), port: .https)
 
     private var task: Task<Never, Error>?
-    private var startupTask: Task<Void, Error>?
 
     // MARK: - Dispatch Queue
 
     private let timerQueue: DispatchQueue
 
     // MARK: - Tunnel Data
+
+    /// This monitor will be used to retrieve the tunnel's NWInterface
+    ///
+    private var monitor: NWPathMonitor?
 
     /// The tunnel's interface we'll use to be able to test a connection going through, and a connection going out of the tunnel.
     ///
@@ -78,30 +81,20 @@ final class NetworkProtectionConnectionTester: ConnectionTesting {
 
     private var failureCount = 0
     var resultHandler: (@MainActor (Result) -> Void)?
+    var connectivityResultHandler: (@MainActor (Bool, Date) -> Void)?
 
     private var simulateFailure = false
-    private var testGeneration = UUID()
-    private let connectivityResultHandler: ((Bool, Date) -> Void)?
-    private let prepareConnectionTest: ((String) async throws -> Void)?
-    private let performConnectionTest: (() async throws -> (vpn: Bool, local: Bool))?
 
     // MARK: - Init & deinit
 
-    init(timerQueue: DispatchQueue,
-         connectivityResultHandler: ((Bool, Date) -> Void)? = nil,
-         prepareConnectionTest: ((String) async throws -> Void)? = nil,
-         performConnectionTest: (() async throws -> (vpn: Bool, local: Bool))? = nil) {
+    init(timerQueue: DispatchQueue) {
         self.timerQueue = timerQueue
-        self.connectivityResultHandler = connectivityResultHandler
-        self.prepareConnectionTest = prepareConnectionTest
-        self.performConnectionTest = performConnectionTest
 
         Logger.networkProtectionMemory.debug("[+] \(String(describing: self), privacy: .public)")
     }
 
     deinit {
         Logger.networkProtectionMemory.debug("[-] \(String(describing: self), privacy: .public)")
-        startupTask?.cancel()
         task?.cancel()
     }
 
@@ -120,92 +113,68 @@ final class NetworkProtectionConnectionTester: ConnectionTesting {
         }
 
         isRunning = true
-        let generation = UUID()
-        testGeneration = generation
 
         Logger.networkProtectionConnectionTester.log("🟢 Starting connection tester (testImmediately: \(String(reflecting: testImmediately), privacy: .public)")
-        let startupTask = Task { [weak self] in
-            guard let self else { return }
-            try Task.checkCancellation()
-            if let prepareConnectionTest = self.prepareConnectionTest {
-                try await prepareConnectionTest(tunnelIfName)
-            } else {
-                let interface = try await self.networkInterface(forInterfaceNamed: tunnelIfName)
-                try Task.checkCancellation()
-                self.tunnelInterface = interface
-            }
-            try Task.checkCancellation()
-            guard self.isRunning, generation == self.testGeneration else { throw CancellationError() }
-            await self.scheduleTimer(testImmediately: testImmediately)
-            try Task.checkCancellation()
-        }
-        self.startupTask = startupTask
+        let tunnelInterface = try await networkInterface(forInterfaceNamed: tunnelIfName)
+        self.tunnelInterface = tunnelInterface
 
-        do {
-            try await withTaskCancellationHandler {
-                try await startupTask.value
-                try Task.checkCancellation()
-            } onCancel: {
-                startupTask.cancel()
-            }
-        } catch is CancellationError {
-            if generation == testGeneration { stop() }
-            // A normal stop (for example, sleep) is not a startup failure for our caller.
-            if Task.isCancelled { throw CancellationError() }
-        } catch {
-            if generation == testGeneration { stop() }
-            throw error
-        }
+        await scheduleTimer(testImmediately: testImmediately)
     }
 
     func stop() {
         Logger.networkProtectionConnectionTester.log("🔴 Stopping connection tester")
-        startupTask?.cancel()
-        startupTask = nil
         stopScheduledTimer()
-        tunnelInterface = nil
         isRunning = false
-        testGeneration = UUID()
     }
 
     // MARK: - Obtaining the interface
 
     private func networkInterface(forInterfaceNamed interfaceName: String) async throws -> NWInterface {
-        try Task.checkCancellation()
-        let monitor = NWPathMonitor()
-        let (paths, continuation) = AsyncStream.makeStream(of: Network.NWPath.self)
-        monitor.pathUpdateHandler = { continuation.yield($0) }
-        monitor.start(queue: Self.monitorQueue)
-        defer {
-            monitor.pathUpdateHandler = nil
-            monitor.cancel()
-            continuation.finish()
-        }
+        try await withCheckedThrowingContinuation { continuation in
+            let monitor = NWPathMonitor()
+            var didResume = false
 
-        for await path in paths {
-            try Task.checkCancellation()
-            Logger.networkProtectionConnectionTester.log("All interfaces: \(String(describing: path.availableInterfaces), privacy: .public)")
-            guard let interface = path.availableInterfaces.first(where: { $0.name == interfaceName }) else {
-                throw TesterError.couldNotFindInterface(named: interfaceName)
+            monitor.pathUpdateHandler = { path in
+                guard !didResume else { return }
+                didResume = true
+
+                Logger.networkProtectionConnectionTester.log("All interfaces: \(String(describing: path.availableInterfaces), privacy: .public)")
+
+                guard let tunnelInterface = path.availableInterfaces.first(where: { $0.name == interfaceName }) else {
+                    Logger.networkProtectionConnectionTester.error("Could not find VPN interface \(interfaceName, privacy: .public)")
+                    monitor.cancel()
+                    monitor.pathUpdateHandler = nil
+
+                    continuation.resume(throwing: TesterError.couldNotFindInterface(named: interfaceName))
+                    return
+                }
+
+                monitor.cancel()
+                monitor.pathUpdateHandler = nil
+
+                continuation.resume(returning: tunnelInterface)
             }
-            return interface
+
+            monitor.start(queue: Self.monitorQueue)
         }
-        throw CancellationError()
     }
 
     // MARK: - Timer scheduling
 
     private func scheduleTimer(testImmediately: Bool) async {
-        let generation = testGeneration
         stopScheduledTimer()
 
         if testImmediately {
-            await testConnection(expectedGeneration: generation)
+            await testConnection()
         }
 
-        guard !Task.isCancelled, isRunning, generation == testGeneration else { return }
         task = Task.periodic(interval: intervalBetweenTests) { [weak self] in
-            await self?.testConnection(expectedGeneration: generation)
+            // During regular connection tests we don't care about the error thrown
+            // by this method, as it'll be handled through the result handler callback.
+            // The error we're ignoring here is only used when this class is initialized
+            // with an immediate test, to know whether the connection is up while the user
+            // still sees "Connecting..."
+            await self?.testConnection()
         }
     }
 
@@ -216,72 +185,71 @@ final class NetworkProtectionConnectionTester: ConnectionTesting {
 
     // MARK: - Testing the connection
 
-    func testConnection(expectedGeneration: UUID? = nil) async {
-        if let expectedGeneration, expectedGeneration != testGeneration { return }
-        guard !Task.isCancelled else { return }
+    func testConnection() async {
+        guard let tunnelInterface = tunnelInterface else {
+            Logger.networkProtectionConnectionTester.error("No interface to test!")
+            return
+        }
+
+        Logger.networkProtectionConnectionTester.debug("Testing connection...")
         let startedAt = Date()
-        let generation = testGeneration
 
-        do {
-            let result: (vpn: Bool, local: Bool)
-            if let performConnectionTest {
-                result = try await performConnectionTest()
-            } else {
-                guard let tunnelInterface else { return }
-                let vpnParameters = NWParameters.tcp
-                vpnParameters.requiredInterface = tunnelInterface
-                let localParameters = NWParameters.tcp
-                localParameters.prohibitedInterfaces = [tunnelInterface]
-                async let vpnConnected = testConnection(parameters: vpnParameters)
-                async let localConnected = testConnection(parameters: localParameters)
-                result = try await (vpnConnected, localConnected)
-            }
-            try Task.checkCancellation()
-            guard isRunning, generation == testGeneration else { return }
+        let vpnParameters = NWParameters.tcp
+        vpnParameters.requiredInterface = tunnelInterface
 
-            let onlyVPNIsDown = simulateFailure || (!result.vpn && result.local)
-            simulateFailure = false
-            connectivityResultHandler?(result.vpn, startedAt)
+        let localParameters = NWParameters.tcp
+        localParameters.prohibitedInterfaces = [tunnelInterface]
 
-            if onlyVPNIsDown {
-                Logger.networkProtectionConnectionTester.log("👎 VPN is DOWN")
-                handleDisconnected()
-            } else {
-                Logger.networkProtectionConnectionTester.log("👍 VPN: \(result.vpn ? "UP" : "DOWN", privacy: .public) local: \(result.local ? "UP" : "DOWN", privacy: .public)")
-                handleConnected()
-            }
-        } catch is CancellationError {
-            // Cancellation is not a connectivity failure and must not reach either callback.
-        } catch {
-            Logger.networkProtectionConnectionTester.error("Connection check failed: \(error.localizedDescription, privacy: .public)")
+        // This is a bit ugly, but it's a quick way to run the tests in parallel without a task group.
+        async let vpnConnected = testConnection(name: "VPN", parameters: vpnParameters)
+        async let localConnected = testConnection(name: "Local", parameters: localParameters)
+        let vpnIsConnected = await vpnConnected
+        let localIsConnected = await localConnected
+
+        let onlyVPNIsDown = simulateFailure || (!vpnIsConnected && localIsConnected)
+        simulateFailure = false
+
+        // After completing the connection tests we check if the tester is still supposed to be running
+        // to avoid giving results when it should not be running.
+        guard isRunning else {
+            Logger.networkProtectionConnectionTester.log("Tester skipped returning results as it was stopped while running the tests")
+            return
+        }
+
+        if !Task.isCancelled {
+            connectivityResultHandler?(vpnIsConnected, startedAt)
+        }
+
+        if onlyVPNIsDown {
+            Logger.networkProtectionConnectionTester.log("👎 VPN is DOWN")
+            handleDisconnected()
+        } else {
+            Logger.networkProtectionConnectionTester.log("👍 VPN: \(vpnIsConnected ? "UP" : "DOWN", privacy: .public) local: \(localIsConnected ? "UP" : "DOWN", privacy: .public)")
+            handleConnected()
         }
     }
 
-    private func testConnection(parameters: NWParameters) async throws -> Bool {
-        try Task.checkCancellation()
+    private func testConnection(name: String, parameters: NWParameters) async -> Bool {
         let connection = NWConnection(to: Self.endpoint, using: parameters)
         let stateUpdateStream = connection.stateUpdateStream
+
         connection.start(queue: Self.connectionTestQueue)
         defer {
-            connection.stateUpdateHandler = nil
             connection.cancel()
         }
 
         do {
-            let connected = try await withTimeout(Self.connectionTimeout) {
+            // await for .ready connection state and consider working
+            return try await withTimeout(Self.connectionTimeout) {
                 for await state in stateUpdateStream {
-                    try Task.checkCancellation()
-                    if case .ready = state { return true }
+                    if case .ready = state {
+                        return true
+                    }
                 }
-                try Task.checkCancellation()
                 return false
             }
-            try Task.checkCancellation()
-            return connected
-        } catch is CancellationError {
-            throw CancellationError()
         } catch {
-            try Task.checkCancellation()
+            // timeout
             return false
         }
     }

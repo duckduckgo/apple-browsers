@@ -216,9 +216,7 @@ final class NetworkProtectionConnectionTester: ConnectionTesting {
             return
         }
 
-        if !Task.isCancelled {
-            connectivityResultHandler?(vpnIsConnected, startedAt)
-        }
+        connectivityResultHandler?(vpnIsConnected, startedAt)
 
         if onlyVPNIsDown {
             Logger.networkProtectionConnectionTester.log("👎 VPN is DOWN")

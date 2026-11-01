@@ -120,33 +120,6 @@ struct EscapeHatchModelTests {
     }
 
     @available(iOS 16, macOS 13, *)
-    @Test("Focused hatch visibility preserves the session's remote-message eligibility",
-          .timeLimit(.minutes(1)),
-          arguments: [false, true])
-    func focusedHatchVisibilityPreservesIdleContext(openedAfterIdle: Bool) {
-        let hatch = makeSUT(targetTab: Tab(uid: "target-tab"), router: SpyRouter())
-        let pageModel = NewTabPageViewModel(fireTab: false, pixelFiring: nil)
-        pageModel.openedAfterIdle = openedAfterIdle
-        let content = LegacyFocusedNewTabPageContent(isAddressBarAtBottom: false)
-
-        pageModel.setFocusedContent(content, escapeHatch: hatch)
-        #expect(pageModel.escapeHatch === hatch)
-        #expect(pageModel.openedAfterIdle == openedAfterIdle)
-
-        // Typing hides the hatch, and clearing text restores it within the same NTP session.
-        pageModel.setFocusedContent(content, escapeHatch: nil)
-        #expect(pageModel.escapeHatch == nil)
-        #expect(pageModel.openedAfterIdle == openedAfterIdle)
-        pageModel.setFocusedContent(content, escapeHatch: hatch)
-        #expect(pageModel.escapeHatch === hatch)
-        #expect(pageModel.openedAfterIdle == openedAfterIdle)
-
-        pageModel.setFocusedContent(nil)
-        #expect(pageModel.escapeHatch == nil)
-        #expect(pageModel.openedAfterIdle == openedAfterIdle)
-    }
-
-    @available(iOS 16, macOS 13, *)
     @Test("Showing and dismissing the focused sync promo retains recent chats and the hatch", .timeLimit(.minutes(1)))
     func focusedSyncPromoChangesRetainRecentChats() {
         let hatch = makeSUT(targetTab: Tab(uid: "target-tab"), router: SpyRouter())

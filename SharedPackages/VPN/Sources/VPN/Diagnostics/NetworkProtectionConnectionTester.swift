@@ -81,7 +81,7 @@ final class NetworkProtectionConnectionTester: ConnectionTesting {
 
     private var failureCount = 0
     var resultHandler: (@MainActor (Result) -> Void)?
-    var connectivityResultHandler: (@MainActor (Bool, Date) -> Void)?
+    var connectivityResultHandler: (@MainActor (Bool, Bool, Date) -> Void)?
 
     private var simulateFailure = false
 
@@ -216,7 +216,7 @@ final class NetworkProtectionConnectionTester: ConnectionTesting {
             return
         }
 
-        connectivityResultHandler?(vpnIsConnected, startedAt)
+        connectivityResultHandler?(vpnIsConnected, localIsConnected, startedAt)
 
         if onlyVPNIsDown {
             Logger.networkProtectionConnectionTester.log("👎 VPN is DOWN")

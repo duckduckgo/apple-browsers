@@ -29,41 +29,64 @@ final class PacketTunnelProviderTests: XCTestCase {
     func testPostWakeCounterReportsOnlyTheThirdFailure() {
         let date = Date()
         var counter = PacketTunnelProvider.PostWakeConnectivityFailures(wakeDate: date)
-        XCTAssertFalse(counter.record(isConnected: false, startedAt: date))
-        XCTAssertFalse(counter.record(isConnected: false, startedAt: date))
-        XCTAssertTrue(counter.record(isConnected: false, startedAt: date))
-        XCTAssertFalse(counter.record(isConnected: false, startedAt: date))
+        XCTAssertFalse(counter.record(isConnected: false, localIsConnected: true, startedAt: date))
+        XCTAssertFalse(counter.record(isConnected: false, localIsConnected: true, startedAt: date))
+        XCTAssertTrue(counter.record(isConnected: false, localIsConnected: true, startedAt: date))
+        XCTAssertFalse(counter.record(isConnected: false, localIsConnected: true, startedAt: date))
+    }
+
+    func testPostWakeCounterIgnoresChecksWhereBothConnectionsFail() {
+        let date = Date()
+        var counter = PacketTunnelProvider.PostWakeConnectivityFailures(wakeDate: date)
+        for _ in 0..<3 {
+            XCTAssertFalse(counter.record(isConnected: false, localIsConnected: false, startedAt: date))
+        }
+        XCTAssertFalse(counter.record(isConnected: false, localIsConnected: true, startedAt: date))
+        XCTAssertFalse(counter.record(isConnected: false, localIsConnected: true, startedAt: date))
+        for _ in 0..<3 {
+            XCTAssertFalse(counter.record(isConnected: false, localIsConnected: false, startedAt: date))
+        }
+        XCTAssertTrue(counter.record(isConnected: false, localIsConnected: true, startedAt: date))
     }
 
     func testPostWakeCounterStopsOnSuccess() {
         let date = Date()
         var counter = PacketTunnelProvider.PostWakeConnectivityFailures(wakeDate: date)
-        XCTAssertFalse(counter.record(isConnected: false, startedAt: date))
-        XCTAssertFalse(counter.record(isConnected: false, startedAt: date))
-        XCTAssertFalse(counter.record(isConnected: true, startedAt: date))
-        for _ in 0..<3 { XCTAssertFalse(counter.record(isConnected: false, startedAt: date)) }
+        XCTAssertFalse(counter.record(isConnected: false, localIsConnected: true, startedAt: date))
+        XCTAssertFalse(counter.record(isConnected: false, localIsConnected: true, startedAt: date))
+        XCTAssertFalse(counter.record(isConnected: true, localIsConnected: true, startedAt: date))
+        for _ in 0..<3 { XCTAssertFalse(counter.record(isConnected: false, localIsConnected: true, startedAt: date)) }
+    }
+
+    func testPostWakeCounterStopsOnVPNSuccessEvenWhenLocalConnectionFails() {
+        let date = Date()
+        var counter = PacketTunnelProvider.PostWakeConnectivityFailures(wakeDate: date)
+        XCTAssertFalse(counter.record(isConnected: false, localIsConnected: true, startedAt: date))
+        XCTAssertFalse(counter.record(isConnected: false, localIsConnected: true, startedAt: date))
+        XCTAssertFalse(counter.record(isConnected: true, localIsConnected: false, startedAt: date))
+        for _ in 0..<3 { XCTAssertFalse(counter.record(isConnected: false, localIsConnected: true, startedAt: date)) }
     }
 
     func testChecksStartedBeforeWakeDoNotAffectTheCounter() {
         let date = Date()
         var counter = PacketTunnelProvider.PostWakeConnectivityFailures(wakeDate: date)
         let earlier = date.addingTimeInterval(-1)
-        XCTAssertFalse(counter.record(isConnected: true, startedAt: earlier))
-        for _ in 0..<3 { XCTAssertFalse(counter.record(isConnected: false, startedAt: earlier)) }
-        XCTAssertFalse(counter.record(isConnected: false, startedAt: date))
-        XCTAssertFalse(counter.record(isConnected: false, startedAt: date))
-        XCTAssertTrue(counter.record(isConnected: false, startedAt: date))
+        XCTAssertFalse(counter.record(isConnected: true, localIsConnected: true, startedAt: earlier))
+        for _ in 0..<3 { XCTAssertFalse(counter.record(isConnected: false, localIsConnected: true, startedAt: earlier)) }
+        XCTAssertFalse(counter.record(isConnected: false, localIsConnected: true, startedAt: date))
+        XCTAssertFalse(counter.record(isConnected: false, localIsConnected: true, startedAt: date))
+        XCTAssertTrue(counter.record(isConnected: false, localIsConnected: true, startedAt: date))
     }
 
     func testFreshWakeCounterStartsAtZero() {
         let date = Date()
         var counter = PacketTunnelProvider.PostWakeConnectivityFailures(wakeDate: date)
-        XCTAssertFalse(counter.record(isConnected: false, startedAt: date))
+        XCTAssertFalse(counter.record(isConnected: false, localIsConnected: true, startedAt: date))
         counter = PacketTunnelProvider.PostWakeConnectivityFailures(wakeDate: date.addingTimeInterval(60))
         let later = date.addingTimeInterval(61)
-        XCTAssertFalse(counter.record(isConnected: false, startedAt: later))
-        XCTAssertFalse(counter.record(isConnected: false, startedAt: later))
-        XCTAssertTrue(counter.record(isConnected: false, startedAt: later))
+        XCTAssertFalse(counter.record(isConnected: false, localIsConnected: true, startedAt: later))
+        XCTAssertFalse(counter.record(isConnected: false, localIsConnected: true, startedAt: later))
+        XCTAssertTrue(counter.record(isConnected: false, localIsConnected: true, startedAt: later))
     }
 
     func testPostWakePixelUsesPersistentRetry() {

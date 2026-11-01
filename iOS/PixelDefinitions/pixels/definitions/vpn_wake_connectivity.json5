@@ -1,6 +1,6 @@
 {
     "vpn_wake_connectivity_failure": {
-        "description": "Three connectivity checks started after device wake failed to establish a TCP connection through the VPN, before any successful check in that wake cycle. Reported at most once per eligible wake cycle, regardless of network or tunnel configuration changes. Observation ends on successful connectivity, sleep, snooze, or disconnection. The pixel does not identify the cause of the failure.",
+        "description": "Three connectivity checks started after device wake failed to establish a TCP connection through the VPN while the connection excluding the VPN interface succeeded, before any successful VPN check in that wake cycle. Checks where both connections fail do not count or reset the count. Reported at most once per eligible wake cycle, regardless of network or tunnel configuration changes. Observation ends on successful VPN connectivity, sleep, snooze, or disconnection. The pixel does not identify the cause of the failure.",
         "owners": ["diegoreymendez"],
         "triggers": ["exception"],
         "suffixes": ["daily_count", "platform", "form_factor"],

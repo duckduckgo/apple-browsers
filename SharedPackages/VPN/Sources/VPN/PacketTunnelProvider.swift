@@ -38,10 +38,12 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
 
         init(wakeDate: Date) { self.wakeDate = wakeDate }
 
-        mutating func record(isConnected: Bool, startedAt: Date) -> Bool {
+        mutating func record(isConnected: Bool, localIsConnected: Bool, startedAt: Date) -> Bool {
             guard let failureCount, startedAt >= wakeDate else { return false }
             if isConnected {
                 self.failureCount = nil
+            } else if !localIsConnected {
+                return false
             } else if failureCount + 1 == 3 {
                 self.failureCount = nil
                 return true
@@ -564,8 +566,8 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
 
         super.init()
 
-        (self.connectionTester as? NetworkProtectionConnectionTester)?.connectivityResultHandler = { [weak self] connected, startedAt in
-            if self?.wakeConnectivityFailures?.record(isConnected: connected, startedAt: startedAt) == true {
+        (self.connectionTester as? NetworkProtectionConnectionTester)?.connectivityResultHandler = { [weak self] connected, localConnected, startedAt in
+            if self?.wakeConnectivityFailures?.record(isConnected: connected, localIsConnected: localConnected, startedAt: startedAt) == true {
                 self?.reportWakeConnectivityFailure?()
             }
         }

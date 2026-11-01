@@ -172,8 +172,9 @@ struct UnifiedSuggestionsView: View {
             let backdropLogoFrame = isLogoDisplayed ? hatchLayout?.visibleFrame : nil
             Group {
                 if let hatchLayout {
+                    // A hidden logo moves straight to its target, so it appears at rest instead of sliding in.
                     logo.modifier(hatchLayout)
-                        .animation(animation, value: targetCenterY)
+                        .animation(viewModel.backdropLogoFrame == nil ? nil : animation, value: targetCenterY)
                         .offset(y: -frame.midY)
                         .animation(nil, value: frame.midY)
                 } else if nativeViewport != nil {
@@ -212,7 +213,7 @@ struct UnifiedSuggestionsView: View {
         return EscapeHatchLogoLayout(centerY: centerY, viewport: availableViewport,
                                      hatchFrame: isPinned ? chromeFrame : viewModel.embeddedEscapeHatchFrame,
                                      destinationHatchFrame: isPinned ? chromeFrame : viewModel.embeddedEscapeHatchDestinationFrame,
-                                     fitsMargins: fitsMargins)
+                                     fitsMargins: fitsMargins, followsHatch: !isPinned)
     }
 
     /// An embedded hatch below the chrome pushes the logo under it, so a hidden keyboard can make room for it.

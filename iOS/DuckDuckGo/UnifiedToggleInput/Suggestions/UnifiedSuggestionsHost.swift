@@ -340,9 +340,6 @@ private final class UnifiedSuggestionsHostingController: UIHostingController<Uni
 
     override func viewDidLayoutSubviews() {
         super.viewDidLayoutSubviews()
-        if rootView.usesScrollableEscapeHatch, rootView.usesRedesignedNewTabPageLayout {
-            enableVerticalBounce(in: view)
-        }
         guard isFloatingUIEnabled, view.window != nil, let containerView = view.superview else { return }
         // These are the native anchors used to constrain the host. The logo ignores the top
         // container safe area, but still reserves the bottom input-bar inset.
@@ -351,14 +348,6 @@ private final class UnifiedSuggestionsHostingController: UIHostingController<Uni
         viewport.size.height = max(0, keyboardTop - viewport.minY - view.safeAreaInsets.bottom)
         guard rootView.viewModel.logoViewportFrame != viewport else { return }
         rootView.viewModel.logoViewportFrame = viewport
-    }
-
-    private func enableVerticalBounce(in view: UIView) {
-        if let scrollView = view as? UIScrollView {
-            scrollView.alwaysBounceVertical = true
-            return
-        }
-        view.subviews.forEach { enableVerticalBounce(in: $0) }
     }
 
     func hasVisibleRemoteMessage(withID messageID: String) -> Bool {

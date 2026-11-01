@@ -75,6 +75,7 @@ struct RedesignedFocusedSearchModulesView: View {
             // Clip at the page edges, not the landscape safe-area edges. The content keeps
             // its safe-area alignment while the message shadows can extend into the margins.
             .ignoresSafeArea(.container, edges: .horizontal)
+            .modifier(FocusedContentVerticalBounce(isEnabled: usesScrollableEscapeHatch))
             .scrollDismissesKeyboardIfAvailable()
         }
     }

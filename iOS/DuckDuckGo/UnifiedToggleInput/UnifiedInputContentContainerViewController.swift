@@ -180,8 +180,8 @@ final class UnifiedInputContentContainerViewController: UIViewController {
         self.switchBarHandler = switchBarHandler
         self.appSettings = appSettings
         self.featureFlagger = featureFlagger
-        // The minimum OS version is independent of the rollout flag.
-        if #available(iOS 16.0, *) {
+        // The minimum OS version is independent of the rollout flag. 16.4 brings the scroll bounce control.
+        if #available(iOS 16.4, *) {
             self.usesScrollableEscapeHatch = featureFlagger.isFeatureOn(.scrollableEscapeHatch)
         } else {
             self.usesScrollableEscapeHatch = false

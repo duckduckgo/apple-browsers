@@ -4573,7 +4573,8 @@ class MainViewController: UIViewController {
             redirectURLComponents: redirectURLComponents
         )
 
-        if let settingsNavigationController = presentedViewController as? SettingsUINavigationController {
+        let presenter = topMostPresentedViewController() ?? self
+        if let settingsNavigationController = presenter as? SettingsUINavigationController {
             settingsNavigationController.pushViewController(subscriptionFlowViewController, animated: true)
             return
         }
@@ -4581,10 +4582,6 @@ class MainViewController: UIViewController {
         let navigationController = DataBrokerProtectionSubscriptionFlowNavigationController(
             rootViewController: subscriptionFlowViewController
         )
-        var presenter: UIViewController = self
-        while let presentedViewController = presenter.presentedViewController {
-            presenter = presentedViewController
-        }
         presenter.present(navigationController, animated: true)
     }
 
@@ -9616,9 +9613,7 @@ extension MainViewController: MessageNavigationDelegate {
         case .dismissModalsAndPresentFromRoot:
             segueToSettingsAIChat(openedFromSERPSettingsButton: openedFromSERPSettingsButton)
         case .withinCurrentContext:
-            launchSettings(deepLinkTarget: .aiChat, presentationStyle: presentationStyle) { viewModel, _ in
-                viewModel.openedFromSERPSettingsButton = openedFromSERPSettingsButton
-            }
+            assertionFailure("Not implemented yet.")
         }
     }
     
@@ -9693,7 +9688,12 @@ extension MainViewController: MessageNavigationDelegate {
     }
 
     func segueToPIR(presentationStyle: PresentationContext.Style) {
-        segueToPIRWithSubscriptionCheck(presentationStyle: presentationStyle)
+        switch presentationStyle {
+        case .dismissModalsAndPresentFromRoot:
+            segueToPIRWithSubscriptionCheck()
+        case .withinCurrentContext:
+            assertionFailure("Not implemented yet.")
+        }
     }
 
 }

@@ -186,7 +186,7 @@ private extension WhatsNewCoordinator {
                 },
                 onPrimaryAction: { [weak self] action in
                     self?.measurePrimaryActionTapped()
-                    await self?.handleAction(action)
+                    await self?.handleAction(action, dismissSource: .mainAction)
                 },
                 onDismiss: { [weak self] in
                     self?.dismiss(source: .mainAction)
@@ -243,24 +243,30 @@ extension WhatsNewCoordinator {
     }
 
     fileprivate func handleAction(_ action: RemoteAction, dismissSource: DismissSource) async {
-        guard case .url = action else {
+        let presentationStyle: PresentationContext.Style
+        switch action {
+        case .url:
+            presentationStyle = .withinCurrentContext
+        case .navigation(value: .duckAISettings), .navigation(value: .personalInformationRemoval):
+            presentationStyle = .dismissModalsAndPresentFromRoot
+        default:
             await handleAction(action)
             return
         }
 
         let presentingViewController = displayContext == .onDemand ? navigationController?.presentingViewController : nil
-        let performURLAction: () -> Void = { [weak self] in
-            guard let self else { return }
+        // Retain the coordinator until the redirect completes, even after its Settings owner is dismissed.
+        let performAction: () -> Void = { [self] in
             Task { @MainActor in
-                await self.handleAction(action)
+                await remoteMessageActionHandler.handleAction(action, context: .init(presenter: self, presentationStyle: presentationStyle))
             }
         }
 
         dismiss(source: dismissSource, onComplete: {
             if let presentingViewController {
-                presentingViewController.dismiss(animated: true, completion: performURLAction)
+                presentingViewController.dismiss(animated: true, completion: performAction)
             } else {
-                performURLAction()
+                performAction()
             }
         })
     }

@@ -64,15 +64,18 @@ struct EscapeHatchLogoLayout: AnimatableModifier {
     var viewport: CGRect
     let hatchFrame: CGRect?
     private let fitsAtDestination: Bool
+    private let followsHatch: Bool
     private let destinationCenterY: CGFloat
     private let destinationViewport: CGRect
 
-    init(centerY: CGFloat, viewport: CGRect, hatchFrame: CGRect?, destinationHatchFrame: CGRect?, fitsMargins: Bool = true) {
+    init(centerY: CGFloat, viewport: CGRect, hatchFrame: CGRect?, destinationHatchFrame: CGRect?, fitsMargins: Bool = true,
+         followsHatch: Bool = false) {
         self.centerY = centerY
         self.viewport = viewport
         self.hatchFrame = hatchFrame
         self.destinationCenterY = centerY
         self.destinationViewport = viewport
+        self.followsHatch = followsHatch
         // A logo squeezed between the hatch and the keyboard/input bar does not fit, even without overlap.
         fitsAtDestination = fitsMargins && Self.fits(centerY: centerY, viewport: viewport, hatchFrame: destinationHatchFrame)
     }
@@ -87,7 +90,7 @@ struct EscapeHatchLogoLayout: AnimatableModifier {
 
     func body(content: Content) -> some View {
         content
-            .offset(y: centerY)
+            .offset(y: displayedCenterY)
             // Check the animated position so a growing viewport cannot reveal an overlapping logo.
             .opacity(isVisible ? 1 : 0)
             .animation(nil, value: isVisible)
@@ -102,14 +105,21 @@ struct EscapeHatchLogoLayout: AnimatableModifier {
     }
 
     var isVisible: Bool {
-        fitsAtDestination && Self.fits(centerY: centerY, viewport: viewport, hatchFrame: hatchFrame)
+        fitsAtDestination && Self.fits(centerY: displayedCenterY, viewport: viewport, hatchFrame: hatchFrame)
+    }
+
+    /// A logo below a hatch it follows never gets ahead of it, as the two animate at different speeds.
+    private var displayedCenterY: CGFloat {
+        guard followsHatch, let hatchFrame, hatchFrame.midY < centerY else { return centerY }
+        return max(centerY, hatchFrame.maxY + FocusedDaxLogoView.size.height / 2)
     }
 
     private static func fits(centerY: CGFloat, viewport: CGRect, hatchFrame: CGRect?) -> Bool {
         guard let hatchFrame, !viewport.isEmpty else { return false }
         let size = FocusedDaxLogoView.size
+        // Half a point absorbs the rounding left when the logo is placed exactly against the hatch.
         let logoFrame = CGRect(x: viewport.midX - size.width / 2, y: centerY - size.height / 2,
-                               width: size.width, height: size.height)
+                               width: size.width, height: size.height).insetBy(dx: 0, dy: 0.5)
         let overlap = logoFrame.intersection(hatchFrame)
         return viewport.contains(logoFrame) && overlap.isEmpty
     }

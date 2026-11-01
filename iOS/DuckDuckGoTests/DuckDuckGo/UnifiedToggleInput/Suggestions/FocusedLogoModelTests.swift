@@ -148,6 +148,32 @@ final class FocusedLogoModelTests: XCTestCase {
         XCTAssertFalse(layout(barTop: 560).layout.isVisible, "A logo squeezed between the hatch and the keyboard must hide")
     }
 
+    func testLogoPlacedAgainstTheHatchStaysVisibleDespiteRounding() {
+        // Recorded redesigned-layout geometry whose arithmetic leaves the logo a sliver above the hatch's bottom.
+        let hatch = CGRect(x: 16, y: 321.866375277356, width: 408, height: 132)
+        let top = UnifiedSuggestionsView.logoTopClearance(chromeBottom: 302, embeddedHatchFrame: hatch)
+        let centerY = UnifiedSuggestionsView.logoCenterY(restingAt: 423, topChromeBottom: top, barTop: 873)
+        XCTAssertGreaterThan(hatch.maxY, centerY - FocusedDaxLogoView.size.height / 2, "Precondition: the rounding overlap is present")
+        let layout = EscapeHatchLogoLayout(centerY: centerY, viewport: CGRect(x: 0, y: 302, width: 440, height: 571),
+                                           hatchFrame: hatch, destinationHatchFrame: hatch,
+                                           fitsMargins: UnifiedSuggestionsView.logoFits(topChromeBottom: top, barTop: 873))
+        XCTAssertTrue(layout.isVisible)
+    }
+
+    func testLogoFollowingTheHatchNeverGetsAheadOfASlowerHatch() {
+        // Recorded Duck.ai-to-Search collapse: the logo's animation runs ahead of the hatch's inset animation.
+        let hatch = CGRect(x: 16, y: 317.33, width: 408, height: 132)
+        let viewport = CGRect(x: 0, y: 193, width: 440, height: 680)
+        var following = EscapeHatchLogoLayout(centerY: 426, viewport: viewport, hatchFrame: hatch, destinationHatchFrame: hatch.offsetBy(dx: 0, dy: -104),
+                                              followsHatch: true)
+        following.animatableData.first = 525.7
+        XCTAssertTrue(following.isVisible, "The logo waits below the hatch instead of hiding behind it")
+
+        var independent = EscapeHatchLogoLayout(centerY: 426, viewport: viewport, hatchFrame: hatch, destinationHatchFrame: hatch.offsetBy(dx: 0, dy: -104))
+        independent.animatableData.first = 525.7
+        XCTAssertFalse(independent.isVisible, "Without following, the same frame overlaps the hatch")
+    }
+
     func testHatchAboveTheChromeDoesNotMoveTheLogo() {
         XCTAssertEqual(UnifiedSuggestionsView.logoTopClearance(chromeBottom: 131, embeddedHatchFrame: CGRect(x: 16, y: -100, width: 408, height: 56)), 131)
         XCTAssertEqual(UnifiedSuggestionsView.logoTopClearance(chromeBottom: 131, embeddedHatchFrame: nil), 131)

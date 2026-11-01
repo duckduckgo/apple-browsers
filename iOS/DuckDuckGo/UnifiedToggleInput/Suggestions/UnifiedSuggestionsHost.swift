@@ -137,6 +137,7 @@ final class UnifiedSuggestionsHost {
             syncPromo: syncPromo)
         let hosting = UnifiedSuggestionsHostingController(rootView: view)
         hosting.isFloatingUIEnabled = isFloatingUIEnabled
+        hosting.onKeyboardGuideChange = { [weak self] in self?.deferLogoRevealUntilKeyboardSettles() }
         if #available(iOS 16.4, *) {
             // UIKit already bounds this host with the keyboard guide. Keep only container insets.
             hosting.safeAreaRegions = [.container]
@@ -161,6 +162,21 @@ final class UnifiedSuggestionsHost {
             .removeDuplicates()
             .sink { [weak self] in self?.favoritesPresentation.viewController?.setFocusedLogoFrame($0) }
             .store(in: &cancellables)
+        NotificationCenter.default.publisher(for: UIResponder.keyboardWillChangeFrameNotification)
+            .sink { [weak self] _ in self?.deferLogoRevealUntilKeyboardSettles() }
+            .store(in: &cancellables)
+    }
+
+    /// A hidden logo beside the hatch appears only once the keyboard settles, never sliding in with it.
+    /// A logo that is already shown keeps the existing fit checks, which hide it when room runs out.
+    private func deferLogoRevealUntilKeyboardSettles() {
+        guard viewModel.escapeHatchPlacement != .hidden, viewModel.backdropLogoFrame == nil, !viewModel.isLogoRevealDeferred else { return }
+        viewModel.isLogoRevealDeferred = true
+        logoKeyboardCancellable = NotificationCenter.default.publisher(for: UIResponder.keyboardDidChangeFrameNotification)
+            .merge(with: NotificationCenter.default.publisher(for: UIResponder.keyboardDidShowNotification),
+                   NotificationCenter.default.publisher(for: UIResponder.keyboardDidHideNotification))
+            .first()
+            .sink { [weak self] _ in self?.finishDeferredLogoReveal() }
     }
 
     func setUsesRedesignedNewTabPageLayout(_ enabled: Bool) {
@@ -381,9 +397,16 @@ final class UnifiedSuggestionsHost {
 private final class UnifiedSuggestionsHostingController: UIHostingController<UnifiedSuggestionsView>, RemoteMessagePresenting {
 
     var isFloatingUIEnabled = false
+    /// Fires when the keyboard starts moving, which can precede its notifications during an interactive dismiss.
+    var onKeyboardGuideChange: (() -> Void)?
+    private var keyboardGuideHeight: CGFloat?
 
     override func viewDidLayoutSubviews() {
         super.viewDidLayoutSubviews()
+        if view.window != nil, let height = view.superview?.keyboardLayoutGuide.layoutFrame.height {
+            if let keyboardGuideHeight, keyboardGuideHeight != height { onKeyboardGuideChange?() }
+            keyboardGuideHeight = height
+        }
         guard isFloatingUIEnabled, view.window != nil, let containerView = view.superview else { return }
         // These are the native anchors used to constrain the host. The logo ignores the top
         // container safe area, but still reserves the bottom input-bar inset.

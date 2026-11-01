@@ -259,6 +259,8 @@ private extension NewTabPageView {
     private var shouldShowLogoInEmptyState: Bool {
         guard !viewModel.isLogoHidden else { return false }
         guard messagesModel.homeMessageViewModels.isEmpty else { return false }
+        // Matches `restingContentIsLogo`, so focus transitions agree with what the page shows.
+        if viewModel.escapeHatch != nil && isLandscapeOrientation { return false }
         return true
     }
 

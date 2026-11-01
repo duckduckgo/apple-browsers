@@ -308,6 +308,11 @@ public extension NewTabPageDataModel {
         /// The web echoes it back in `omnibar_setConfig`, where native ignores it.
         var requiresAiTermsAcceptance: Bool?
         var launcherPromo: OmnibarLauncherPromo?
+        /// Shows the Duck.ai suggested-prompt chips below the Duck.ai input. Driven by the
+        /// `aiChatNtpSuggestedPrompts` feature flag; false once the user sent enough Duck.ai prompts,
+        /// which native counts from `omnibar_submitChat`. The web echoes it back in `omnibar_setConfig`,
+        /// where native ignores it.
+        var showSuggestedPrompts: Bool?
         /// Add Screenshot modes in display order (`dragToSelect`, `selectWindowOrDisplay`). Absent hides
         /// the screenshot UI; choosing a mode sends `omnibar_captureScreenshot`.
         var screenshotModes: [String]?
@@ -582,6 +587,9 @@ public extension NewTabPageDataModel {
         /// Enter, voice and the "Ask Duck.ai" suggestion never send it, because legal requires a click.
         var aiTermsAccepted: Bool?
         var launcherPromoVisible: Bool?
+        /// Fixed catalog ID of the suggested-prompt chip the user picked (e.g. `jobapplication`).
+        /// Omitted for typed prompts.
+        var suggestedPromptId: String?
     }
 
     // MARK: - omnibar_getOpenTabs / omnibar_getTabContent (attach tabs)

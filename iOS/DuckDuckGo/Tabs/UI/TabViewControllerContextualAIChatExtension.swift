@@ -147,7 +147,7 @@ extension TabViewController: AIChatContextualSheetCoordinatorDelegate {
     }
 
     func aiChatContextualSheetCoordinatorDidRequestNewVoiceChat(_ coordinator: AIChatContextualSheetCoordinator) {
-        delegate?.tabDidRequestNewVoiceChat(self)
+        delegate?.tabDidRequestNewVoiceChat(self, source: .contextualChat)
     }
 
     func aiChatContextualSheetCoordinator(_ coordinator: AIChatContextualSheetCoordinator,

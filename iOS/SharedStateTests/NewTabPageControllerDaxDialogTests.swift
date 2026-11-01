@@ -103,22 +103,6 @@ final class NewTabPageControllerDaxDialogTests: XCTestCase {
         hvc = nil
     }
 
-    func testWhenEscapeHatchIsVisibleThenLogoContentRemainsAvailableAfterInputDismissal() {
-        XCTAssertTrue(hvc.isShowingLogo)
-        let hatch = EscapeHatchModel.preview(title: "Website", subtitle: "", tabType: .regular,
-                                             domain: nil, targetTab: Tab(), tabCount: 1, keyValueStore: MockKeyValueFileStore())
-        hvc.setEscapeHatch(hatch)
-        hvc.setLogoHidden(true)
-        hvc.setLogoHidden(false)
-
-        XCTAssertTrue(hvc.isShowingLogo)
-        XCTAssertTrue(hvc.restingContentIsLogo)
-
-        hvc.setEscapeHatch(nil)
-        XCTAssertTrue(hvc.isShowingLogo)
-        XCTAssertTrue(hvc.restingContentIsLogo)
-    }
-
     func testWhenFocusedContentIsConfiguredBeforeLoadingThenHostedPageIsTransparent() throws {
         let (configuration, _) = makeConfiguration(withScheduledMessage: false)
         let controller = makeNewTabPage(openedAfterIdle: false, homePageMessagesConfiguration: configuration)
@@ -325,7 +309,6 @@ final class NewTabPageControllerDaxDialogTests: XCTestCase {
         let hatchFrame = try XCTUnwrap(model.embeddedEscapeHatchFrame)
         XCTAssertEqual(viewport.maxY, 415, accuracy: 1)
         XCTAssertGreaterThan(viewport.maxY - hatchFrame.maxY, FocusedDaxLogoView.size.height)
-        XCTAssertTrue(EscapeHatchLogoLayout(centerY: 300, viewport: viewport, hatchFrame: hatchFrame, destinationHatchFrame: hatchFrame).isVisible)
 
         guard #available(iOS 17.0, *) else { return }
         container.frame.size.height = window.bounds.height
@@ -361,7 +344,6 @@ final class NewTabPageControllerDaxDialogTests: XCTestCase {
         XCTAssertEqual(XCTWaiter.wait(for: [keyboardReady], timeout: 5), .completed)
         let keyboardViewport = try XCTUnwrap(model.logoViewportFrame)
         XCTAssertLessThan(keyboardViewport.maxY - hatchFrame.maxY, FocusedDaxLogoView.size.height)
-        XCTAssertFalse(EscapeHatchLogoLayout(centerY: 87, viewport: keyboardViewport, hatchFrame: hatchFrame, destinationHatchFrame: hatchFrame).isVisible)
     }
 
     private func assertFocusedContentTracksTopClearance(

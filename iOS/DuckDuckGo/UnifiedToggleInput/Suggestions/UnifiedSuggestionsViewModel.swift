@@ -103,7 +103,8 @@ final class UnifiedSuggestionsViewModel: ObservableObject {
                 // Unfreezes on the next focus.
                 guard self.dismissBehavior == .none else { return }
                 let resolved = UnifiedSuggestionsContentResolver.resolve(inputs, previous: self.content)
-                self.logoModel.update(wasLogo: self.content == .logo,
+                // A logo hidden beside the hatch for lack of room has no mark on screen to morph from.
+                self.logoModel.update(wasLogo: self.content == .logo && (self.escapeHatchPlacement == .hidden || self.backdropLogoFrame != nil),
                                       isLogo: resolved == .logo,
                                       isDuckAI: inputs.mode == .aiChat,
                                       isFirstSinceActivation: !self.hasResolvedSinceActivation)

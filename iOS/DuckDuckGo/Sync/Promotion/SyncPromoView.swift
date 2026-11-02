@@ -31,6 +31,7 @@ struct SyncPromoView: View {
 
     let viewModel: SyncPromoViewModel
     @State private var isAccessibilityHidden = true
+    @State private var isToggleOn = false
 
     var body: some View {
         ZStack(alignment: .topTrailing) {
@@ -50,25 +51,16 @@ struct SyncPromoView: View {
                         .frame(maxWidth: .infinity)
                 }
 
-                HStack(spacing: ButtonStackMetrics.interButtonSpacing) {
-                    if let secondaryButtonTitle = viewModel.secondaryButtonTitle {
-                        Button {
-                            viewModel.dismissButtonAction?()
-                        } label: {
-                            Text(secondaryButtonTitle)
-                        }
-                        .buttonStyle(SecondaryFillButtonStyle(compact: true, fullWidth: true))
-                        .accessibilityLabel(secondaryButtonTitle)
-                    }
-
-                    primaryButton
-                        .accessibilityLabel(viewModel.primaryButtonTitle)
+                switch viewModel.design {
+                case .standard:
+                    buttons
+                case .redesigned:
+                    toggle
                 }
-                .padding(.top, 12)
             }
             .multilineTextAlignment(.center)
             .padding(.top)
-            .padding(.bottom, ButtonStackMetrics.containerPadding)
+            .padding(.bottom, bottomPadding)
             .padding(.horizontal, ButtonStackMetrics.containerPadding)
 
             Button {
@@ -94,6 +86,63 @@ struct SyncPromoView: View {
                 isAccessibilityHidden = false
             }
         }
+        .onDisappear {
+            isToggleOn = false
+        }
+    }
+
+    private var bottomPadding: CGFloat {
+        switch viewModel.design {
+        case .standard:
+            ButtonStackMetrics.containerPadding
+        case .redesigned:
+            12
+        }
+    }
+
+    private var buttons: some View {
+        HStack(spacing: ButtonStackMetrics.interButtonSpacing) {
+            if let secondaryButtonTitle = viewModel.secondaryButtonTitle {
+                Button {
+                    viewModel.dismissButtonAction?()
+                } label: {
+                    Text(secondaryButtonTitle)
+                }
+                .buttonStyle(SecondaryFillButtonStyle(compact: true, fullWidth: true))
+                .accessibilityLabel(secondaryButtonTitle)
+            }
+
+            Button {
+                viewModel.primaryButtonAction?()
+            } label: {
+                Text(viewModel.primaryButtonTitle)
+            }
+            .buttonStyle(PrimaryButtonStyle(compact: true, fullWidth: true))
+            .accessibilityLabel(viewModel.primaryButtonTitle)
+        }
+        .padding(.top, 12)
+    }
+
+    private var toggle: some View {
+        VStack(spacing: 8) {
+            Rectangle()
+                .fill(Color(designSystemColor: .lines))
+                .frame(height: 1)
+
+            Toggle(isOn: Binding(get: { isToggleOn }, set: { isOn in
+                isToggleOn = isOn
+                if isOn {
+                    viewModel.primaryButtonAction?()
+                }
+            })) {
+                Text(viewModel.toggleTitle)
+                    .daxBodyRegular()
+                    .foregroundColor(Color(designSystemColor: .textPrimary))
+            }
+            .tint(Color(designSystemColor: .accentPrimary))
+        }
+        .multilineTextAlignment(.leading)
+        .padding(.top, 8)
     }
 
     private var subtitleColor: Color? {
@@ -102,22 +151,6 @@ struct SyncPromoView: View {
             nil
         case .redesigned:
             Color(designSystemColor: .textSecondary)
-        }
-    }
-
-    @ViewBuilder
-    private var primaryButton: some View {
-        let button = Button {
-            viewModel.primaryButtonAction?()
-        } label: {
-            Text(viewModel.primaryButtonTitle)
-        }
-
-        switch viewModel.design {
-        case .standard:
-            button.buttonStyle(PrimaryButtonStyle(compact: true, fullWidth: true))
-        case .redesigned:
-            button.buttonStyle(BrandButtonStyle(compact: true, fullWidth: true))
         }
     }
 }

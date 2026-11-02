@@ -5119,8 +5119,8 @@ Take back control of your personal information with the browser designed for dat
 /* Title for the Sync Promotion banner */
 "sync.promo.passwords.title" = "Sync & Back Up Your Passwords";
 
-/* Title for a button in the Sync Promotion banner that opens Sync settings and starts setting up Sync with another device */
-"sync.promo.turn-on.action" = "Turn On";
+/* Label for a toggle in the Sync Promotion banner that opens Sync settings and starts setting up Sync with another device */
+"sync.promo.toggle.title" = "Sync & Backup";
 
 /* Button title to start backup */
 "sync.recovery.alternative.prompt.backup.button" = "Sync & Backup This Device";

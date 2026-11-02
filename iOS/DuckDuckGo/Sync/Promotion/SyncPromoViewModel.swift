@@ -57,12 +57,11 @@ struct SyncPromoViewModel {
     }
 
     var primaryButtonTitle: String {
-        switch design {
-        case .standard:
-            UserText.syncPromoConfirmAction
-        case .redesigned:
-            UserText.syncPromoTurnOnAction
-        }
+        UserText.syncPromoConfirmAction
+    }
+
+    var toggleTitle: String {
+        UserText.syncPromoToggleTitle
     }
 
     var secondaryButtonTitle: String? {

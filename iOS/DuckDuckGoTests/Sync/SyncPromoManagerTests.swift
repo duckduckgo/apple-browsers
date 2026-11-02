@@ -457,7 +457,7 @@ final class SyncPromoManagerTests: XCTestCase {
         let viewModel = SyncPromoViewModel(touchpointType: .bookmarks, design: .redesigned)
 
         XCTAssertNil(viewModel.secondaryButtonTitle)
-        XCTAssertEqual(viewModel.primaryButtonTitle, UserText.syncPromoTurnOnAction)
+        XCTAssertEqual(viewModel.toggleTitle, UserText.syncPromoToggleTitle)
         XCTAssertEqual(viewModel.title, UserText.syncPromoBookmarksTitle)
         XCTAssertEqual(viewModel.subtitle, UserText.syncPromoBookmarksRedesignMessage)
     }

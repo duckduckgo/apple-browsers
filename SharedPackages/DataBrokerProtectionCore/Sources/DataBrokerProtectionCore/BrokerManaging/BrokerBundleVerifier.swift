@@ -76,7 +76,11 @@ public struct BrokerBundleSigningKeys: Decodable, Equatable {
         self.staging = staging
     }
 
-    /// Must match dbp-api's `dbp-json/bundle-signing-keys.json`. `macOS/scripts/update_embedded_brokers.sh` reads the same file.
+    /// Public verification keys bundled for production and staging broker updates.
+    /// Must match dbp-api's `dbp-json/bundle-signing-keys.json`; the embedded-broker
+    /// refresh script reads this same resource.
+    /// When backend signing keys rotate, update `bundle-signing-keys.json` and the
+    /// matching app-key expectations in the Swift and Bats tests together.
     public static let builtIn: BrokerBundleSigningKeys = {
         do {
             return try loadBuiltIn()

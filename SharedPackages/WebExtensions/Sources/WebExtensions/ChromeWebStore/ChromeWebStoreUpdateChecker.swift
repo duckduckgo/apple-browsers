@@ -95,7 +95,7 @@ public struct ChromeWebStoreUpdateChecker {
                 data.append(byte)
             }
             try Task.checkCancellation()
-            let update = try ManifestParser.parse(data, extensionID: extensionID)
+            let update = try ChromeWebStoreUpdateManifestParser.parse(data, extensionID: extensionID)
             let outcome: Outcome
             if let update, SemanticVersionComparator().isVersion(update.version, newerThan: installedVersion) {
                 outcome = .update(update)
@@ -115,7 +115,7 @@ public struct ChromeWebStoreUpdateChecker {
         return (error as? Failure) ?? .networkFailure
     }
 
-    private static func isValidVersion(_ version: String) -> Bool {
+    static func isValidVersion(_ version: String) -> Bool {
         let parts = version.split(separator: ".", omittingEmptySubsequences: false)
         return (1...Self.maximumVersionComponents).contains(parts.count) && parts.allSatisfy { part in
             !part.isEmpty && part.utf8.allSatisfy { (48...57).contains($0) }
@@ -123,7 +123,7 @@ public struct ChromeWebStoreUpdateChecker {
         } && parts.contains { $0 != "0" }
     }
 
-    private static func retryDeadline(response: HTTPURLResponse) -> Date? {
+    static func retryDeadline(response: HTTPURLResponse) -> Date? {
         guard let value = response.value(forHTTPHeaderField: "X-Retry-After")?.trimmingCharacters(in: .whitespaces),
               !value.isEmpty, value.utf8.allSatisfy({ (48...57).contains($0) }) else { return nil }
         // Very large positive integers also mean the capped delay, rather than losing the throttle.
@@ -138,100 +138,5 @@ public struct ChromeWebStoreUpdateChecker {
                         completionHandler: @escaping (URLRequest?) -> Void) {
             completionHandler(request.url.flatMap { ChromeWebStoreURL.isAllowedDownloadDestination($0) ? request : nil })
         }
-    }
-
-    private final class ManifestParser: NSObject, XMLParserDelegate {
-        private static let namespace = "http://www.google.com/update2/response"
-        private static let protocolVersion = "2.0"
-        private static let successStatus = "ok"
-        private static let noUpdateStatus = "noupdate"
-        private static let maximumDepth = 16
-        private static let maximumElementCount = 256
-        private static let sha256HexLength = 64
-        private let extensionID: String
-        private var path: [String] = []
-        private var elementCount = 0
-        private var appCount = 0
-        private var updateCount = 0
-        private var invalid = false
-        private var update: Update?
-
-        private init(extensionID: String) {
-            self.extensionID = extensionID
-        }
-
-        static func parse(_ data: Data, extensionID: String) throws -> Update? {
-            guard let xml = String(data: data, encoding: .utf8), !xml.contains("\0"), !xml.contains("<!DOCTYPE") else {
-                throw Failure.invalidManifest
-            }
-            // Reject declarations of other encodings before XMLParser can reinterpret the UTF-8 bytes.
-            let document = xml.hasPrefix("\u{FEFF}") ? String(xml.dropFirst()) : xml
-            if document.hasPrefix("<?xml"), let end = document.range(of: "?>") {
-                let declaration = String(document[..<end.lowerBound])
-                if declaration.contains("encoding"),
-                   declaration.range(of: #"encoding\s*=\s*['"]UTF-8['"]"#, options: [.regularExpression, .caseInsensitive]) == nil {
-                    throw Failure.invalidManifest
-                }
-            }
-            let delegate = ManifestParser(extensionID: extensionID)
-            let parser = XMLParser(data: data)
-            parser.shouldProcessNamespaces = true
-            parser.shouldResolveExternalEntities = false
-            parser.delegate = delegate
-            guard parser.parse(), !delegate.invalid, delegate.appCount == 1, delegate.updateCount == 1 else {
-                throw Failure.invalidManifest
-            }
-            return delegate.update
-        }
-
-        func parser(_ parser: XMLParser, didStartElement elementName: String, namespaceURI: String?,
-                    qualifiedName qName: String?, attributes attributeDict: [String: String]) {
-            path.append(elementName)
-            elementCount += 1
-            guard path.count <= Self.maximumDepth, elementCount <= Self.maximumElementCount, namespaceURI == Self.namespace else {
-                reject(parser)
-                return
-            }
-            switch path {
-            case ["gupdate"]:
-                if attributeDict["protocol"] != Self.protocolVersion { reject(parser) }
-            case ["gupdate", "app"]:
-                appCount += 1
-                if appCount != 1 || attributeDict["appid"] != extensionID || attributeDict["status"] != Self.successStatus { reject(parser) }
-            case ["gupdate", "app", "updatecheck"]:
-                readUpdate(attributeDict, parser: parser)
-            case ["gupdate", "daystart"]:
-                break
-            default:
-                reject(parser)
-            }
-        }
-
-        func parser(_ parser: XMLParser, didEndElement elementName: String, namespaceURI: String?, qualifiedName qName: String?) {
-            _ = path.popLast()
-        }
-
-        private func readUpdate(_ attributes: [String: String], parser: XMLParser) {
-            updateCount += 1
-            guard updateCount == 1 else { reject(parser); return }
-            if attributes["status"] == Self.noUpdateStatus { return }
-            guard attributes["status"] == Self.successStatus, let version = attributes["version"], ChromeWebStoreUpdateChecker.isValidVersion(version),
-                  let codebase = attributes["codebase"], let url = URL(string: codebase),
-                  ChromeWebStoreURL.isAllowedDownloadDestination(url), url.fragment == nil,
-                  let sizeValue = attributes["size"], !sizeValue.isEmpty, sizeValue.utf8.allSatisfy({ (48...57).contains($0) }),
-                  let size = Int(sizeValue), size > 0,
-                  let hash = attributes["hash_sha256"], hash.utf8.count == Self.sha256HexLength,
-                  hash.utf8.allSatisfy({ (48...57).contains($0) || (65...70).contains($0) || (97...102).contains($0) }) else {
-                reject(parser)
-                return
-            }
-            update = Update(extensionID: extensionID, version: version, downloadURL: url, size: size, sha256: hash.lowercased())
-        }
-
-        private func reject(_ parser: XMLParser) {
-            invalid = true
-            parser.abortParsing()
-        }
-
     }
 }

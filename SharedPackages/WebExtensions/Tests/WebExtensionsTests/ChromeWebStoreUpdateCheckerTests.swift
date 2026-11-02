@@ -23,30 +23,12 @@ import XCTest
 @available(macOS 15.4, iOS 18.4, *)
 @MainActor
 final class ChromeWebStoreUpdateCheckerTests: XCTestCase {
-    private let extensionID = "nngceckbapebfimnlniiiahkandclblb"
-    private let packageHash = "d92953eac40d64f5b38e254d2196babb0bf0c5e81c1d9afaae4cd88a55bab42c"
+    private let fixture = ChromeWebStoreUpdateManifestFixture()
 
     private func checker() -> ChromeWebStoreUpdateChecker {
         let configuration = URLSessionConfiguration.ephemeral
         configuration.protocolClasses = [UpdateURLProtocol.self]
         return ChromeWebStoreUpdateChecker(configuration: configuration)
-    }
-
-    private func manifest(_ update: String, appID: String? = nil, appStatus: String = "ok") -> String {
-        """
-        <?xml version="1.0" encoding="UTF-8"?>
-        <gupdate xmlns="http://www.google.com/update2/response" protocol="2.0" server="prod">
-          <daystart elapsed_days="7242" elapsed_seconds="22482"/>
-          <app appid="\(appID ?? extensionID)" status="\(appStatus)">\(update)</app>
-        </gupdate>
-        """
-    }
-
-    private func offer(version: String = "2026.10.1") -> String {
-        """
-        <updatecheck _esbAllowlist="true" codebase="https://clients2.googleusercontent.com/crx/extension.crx"
-          fp="1.\(packageHash)" hash_sha256="\(packageHash)" protected="0" size="26045122" status="ok" version="\(version)"/>
-        """
     }
 
     private func respond(_ xml: String, status: Int = 200, headers: [String: String] = [:]) {
@@ -61,27 +43,23 @@ final class ChromeWebStoreUpdateCheckerTests: XCTestCase {
         }
     }
 
-    func testAvailableUpdateFromRealResponseShape() async throws {
-        respond(manifest(offer()))
-        let result = await checker().check(extensionID: extensionID, installedVersion: "2026.1.0")
+    func testAvailableManifestMapsToUpdateResult() async {
+        respond(fixture.manifest(fixture.offer()))
+        let result = await checker().check(extensionID: fixture.extensionID, installedVersion: "2026.1.0")
         guard case .update(let update) = result.outcome else { return XCTFail("Expected update, got \(result)") }
-        XCTAssertEqual(update.extensionID, extensionID)
         XCTAssertEqual(update.version, "2026.10.1")
-        XCTAssertEqual(update.size, 26045122)
-        XCTAssertEqual(update.sha256, packageHash)
-        XCTAssertEqual(update.downloadURL.absoluteString, "https://clients2.googleusercontent.com/crx/extension.crx")
         XCTAssertNil(result.retryNotBefore)
     }
 
-    func testNoUpdateFromRealResponseShape() async {
-        respond(manifest(#"<updatecheck status="noupdate"/>"#))
-        let result = await checker().check(extensionID: extensionID, installedVersion: "2026.10.1")
+    func testNoUpdateManifestMapsToNoUpdateResult() async {
+        respond(fixture.manifest(#"<updatecheck status="noupdate"/>"#))
+        let result = await checker().check(extensionID: fixture.extensionID, installedVersion: "2026.10.1")
         XCTAssertEqual(result.outcome, .noUpdate)
     }
 
     func testRequestUsesOnlyRequiredParametersAndNoCookies() async {
-        let data = Data(manifest(#"<updatecheck status="noupdate"/>"#).utf8)
-        let expectedID = extensionID
+        let data = Data(fixture.manifest(#"<updatecheck status="noupdate"/>"#).utf8)
+        let expectedID = fixture.extensionID
         UpdateURLProtocol.setHandler { request in
             let url = try XCTUnwrap(request.url)
             let components = try XCTUnwrap(URLComponents(url: url, resolvingAgainstBaseURL: false))
@@ -100,8 +78,17 @@ final class ChromeWebStoreUpdateCheckerTests: XCTestCase {
                                                 headerFields: ["Set-Cookie": "update=tracking"])), data)
         }
         let checker = checker()
-        _ = await checker.check(extensionID: extensionID, installedVersion: "2026.1.0")
-        _ = await checker.check(extensionID: extensionID, installedVersion: "2026.1.0")
+        _ = await checker.check(extensionID: fixture.extensionID, installedVersion: "2026.1.0")
+        _ = await checker.check(extensionID: fixture.extensionID, installedVersion: "2026.1.0")
+    }
+
+    func testVersionValidation() {
+        for version in ["1", "1.0", "0.0.0.1", "4.10.0", "65535.65535.65535.65535"] {
+            XCTAssertTrue(ChromeWebStoreUpdateChecker.isValidVersion(version), version)
+        }
+        for version in ["", "1..0", "1.0-beta", "-1", "65536", "1.2.3.4.5", "01.2", "0.0", "１.0", "1.", ".1"] {
+            XCTAssertFalse(ChromeWebStoreUpdateChecker.isValidVersion(version), version)
+        }
     }
 
     func testInvalidInputNeverMakesARequest() async {
@@ -111,16 +98,14 @@ final class ChromeWebStoreUpdateCheckerTests: XCTestCase {
         }
         let result = await checker().check(extensionID: "invalid", installedVersion: "1.0")
         XCTAssertEqual(result.outcome, .failure(.invalidRequest))
-        for version in ["", "1..0", "1.0-beta", "-1", "65536", "1.2.3.4.5", "01.2", "0.0", "１.0"] {
-            let result = await checker().check(extensionID: extensionID, installedVersion: version)
-            XCTAssertEqual(result.outcome, .failure(.invalidRequest), version)
-        }
+        let invalidVersion = await checker().check(extensionID: fixture.extensionID, installedVersion: "1.0-beta")
+        XCTAssertEqual(invalidVersion.outcome, .failure(.invalidRequest))
     }
 
     func testVersionsAreComparedNumericallyAndDoNotDowngrade() async {
         for (version, expected) in [("4.10.0", true), ("4.9.3", false), ("4.9.3.0", false), ("4.8.0", false)] {
-            respond(manifest(offer(version: version)))
-            let result = await checker().check(extensionID: extensionID, installedVersion: "4.9.3")
+            respond(fixture.manifest(fixture.offer(version: version)))
+            let result = await checker().check(extensionID: fixture.extensionID, installedVersion: "4.9.3")
             if expected {
                 guard case .update = result.outcome else { return XCTFail("Expected newer version") }
             } else {
@@ -129,112 +114,24 @@ final class ChromeWebStoreUpdateCheckerTests: XCTestCase {
         }
     }
 
-    func testInvalidOfferMetadataIsRejected() async {
-        let valid = offer()
-        let replacements = [
-            ("version=\"2026.10.1\"", "version=\"1.0-beta\""),
-            ("version=\"2026.10.1\"", "version=\"65536\""),
-            ("version=\"2026.10.1\"", ""),
-            ("size=\"26045122\"", "size=\"0\""),
-            ("size=\"26045122\"", "size=\"-1\""),
-            ("size=\"26045122\"", "size=\"99999999999999999999999\""),
-            ("size=\"26045122\"", ""),
-            ("hash_sha256=\"\(packageHash)\"", "hash_sha256=\"bad\""),
-            ("hash_sha256=\"\(packageHash)\"", ""),
-            ("status=\"ok\"", "status=\"error\""),
-            ("status=\"ok\"", "")
-        ]
-        for (old, new) in replacements {
-            respond(manifest(valid.replacingOccurrences(of: old, with: new)))
-            let result = await checker().check(extensionID: extensionID, installedVersion: "1.0")
-            XCTAssertEqual(result.outcome, .failure(.invalidManifest), new)
-        }
-    }
-
-    func testDisallowedPackageURLsAreRejected() async {
-        for url in ["http://clients2.googleusercontent.com/x", "https://evil.example/x",
-                    "https://clients2.googleusercontent.com.evil.example/x", "https://user@clients2.googleusercontent.com/x",
-                    "https://clients2.googleusercontent.com:444/x", "https://clients2.googleusercontent.com/x#fragment"] {
-            respond(manifest(offer().replacingOccurrences(of: "https://clients2.googleusercontent.com/crx/extension.crx", with: url)))
-            let result = await checker().check(extensionID: extensionID, installedVersion: "1.0")
-            XCTAssertEqual(result.outcome, .failure(.invalidManifest), url)
-        }
-    }
-
-    func testWrongOrAmbiguousApplicationAndStatusAreRejected() async {
-        let app = "<app appid=\"\(extensionID)\" status=\"ok\">\(offer())</app>"
-        let invalid = [
-            manifest(offer(), appID: String(repeating: "a", count: 32)),
-            manifest(offer(), appStatus: "error-unknownApplication"),
-            manifest(offer() + offer()),
-            manifest(offer()).replacingOccurrences(of: "</gupdate>", with: app + "</gupdate>"),
-            manifest(offer()).replacingOccurrences(of: "protocol=\"2.0\"", with: "protocol=\"3.0\""),
-            manifest(offer()).replacingOccurrences(of: "http://www.google.com/update2/response", with: "https://evil.example"),
-            manifest(offer()).replacingOccurrences(of: "</gupdate>", with: ""),
-            "<gupdate/>", "", "not XML"
-        ]
-        for xml in invalid {
-            respond(xml)
-            let result = await checker().check(extensionID: extensionID, installedVersion: "1.0")
-            XCTAssertEqual(result.outcome, .failure(.invalidManifest), xml)
-        }
-    }
-
-    func testDTDsAndNonUTF8EncodingsAreRejected() async {
-        let body = manifest(offer())
-        let declaration = #"<?xml version="1.0" encoding="UTF-8"?>"#
-        let dtds = [
-            "<!DOCTYPE gupdate>",
-            #"<!DOCTYPE gupdate SYSTEM "https://evil.example/external.dtd">"#,
-            #"<!DOCTYPE gupdate [<!ENTITY example "expanded">]>"#,
-            #"<!DOCTYPE gupdate [<!ENTITY example SYSTEM "file:///etc/passwd">]>"#
-        ]
-        for dtd in dtds {
-            respond(body.replacingOccurrences(of: declaration, with: declaration + dtd))
-            let result = await checker().check(extensionID: extensionID, installedVersion: "1.0")
-            XCTAssertEqual(result.outcome, .failure(.invalidManifest))
-        }
-        for encoding in [String.Encoding.utf16LittleEndian, .utf16BigEndian, .utf32LittleEndian, .utf32BigEndian] {
-            respond(data: body.data(using: encoding) ?? Data())
-            let result = await checker().check(extensionID: extensionID, installedVersion: "1.0")
-            XCTAssertEqual(result.outcome, .failure(.invalidManifest))
-        }
-        respond(body.replacingOccurrences(of: "UTF-8", with: "ISO-8859-1"))
-        let result = await checker().check(extensionID: extensionID, installedVersion: "1.0")
-        XCTAssertEqual(result.outcome, .failure(.invalidManifest))
-    }
-
-    func testUTF8BOMAndNamespacePrefixesAreAccepted() async {
-        let xml = manifest(offer()).replacingOccurrences(of: "xmlns=", with: "xmlns:g=")
-            .replacingOccurrences(of: "<gupdate", with: "<g:gupdate")
-            .replacingOccurrences(of: "</gupdate", with: "</g:gupdate")
-            .replacingOccurrences(of: "<daystart", with: "<g:daystart")
-            .replacingOccurrences(of: "<app", with: "<g:app")
-            .replacingOccurrences(of: "</app", with: "</g:app")
-            .replacingOccurrences(of: "<updatecheck", with: "<g:updatecheck")
-        respond("\u{FEFF}" + xml)
-        let result = await checker().check(extensionID: extensionID, installedVersion: "1.0")
-        guard case .update = result.outcome else { return XCTFail("Expected update, got \(result)") }
-    }
-
     func testOversizedResponseWithAndWithoutContentLengthIsRejected() async {
         let data = Data(repeating: 32, count: ChromeWebStoreUpdateChecker.maximumResponseSize + 1)
         for headers in [[:], ["Content-Length": String(data.count)]] {
             respond(data: data, headers: headers)
-            let result = await checker().check(extensionID: extensionID, installedVersion: "1.0")
+            let result = await checker().check(extensionID: fixture.extensionID, installedVersion: "1.0")
             XCTAssertEqual(result.outcome, .failure(.responseTooLarge))
         }
     }
 
     func testRetryDeadlineIsRetainedOnSuccessAndFailures() async throws {
         for (status, xml, expected) in [
-            (200, manifest(#"<updatecheck status="noupdate"/>"#), ChromeWebStoreUpdateChecker.Outcome.noUpdate),
+            (200, fixture.manifest(#"<updatecheck status="noupdate"/>"#), ChromeWebStoreUpdateChecker.Outcome.noUpdate),
             (503, "unavailable", .failure(.httpStatus(503))),
             (200, "invalid XML", .failure(.invalidManifest))
         ] {
             respond(xml, status: status, headers: ["X-Retry-After": "600"])
             let before = Date()
-            let result = await checker().check(extensionID: extensionID, installedVersion: "1.0")
+            let result = await checker().check(extensionID: fixture.extensionID, installedVersion: "1.0")
             XCTAssertEqual(result.outcome, expected)
             let deadline = try XCTUnwrap(result.retryNotBefore)
             XCTAssertGreaterThanOrEqual(deadline.timeIntervalSince(before), 600)
@@ -242,19 +139,23 @@ final class ChromeWebStoreUpdateCheckerTests: XCTestCase {
         }
     }
 
-    func testRetryDeadlineIsCappedAndMalformedValuesAreIgnored() async throws {
-        for value in ["86401", String(repeating: "9", count: 400)] {
-            respond("", status: 429, headers: ["X-Retry-After": value])
+    func testRetryDeadlineParsesPositiveSecondsAndCapsLargeValues() throws {
+        let url = try XCTUnwrap(URL(string: "https://clients2.google.com/service/update2/crx"))
+        for (value, expectedSeconds) in [("600", 600.0), (" 600 ", 600.0), ("86401", 86400.0), (String(repeating: "9", count: 400), 86400.0)] {
+            let response = try XCTUnwrap(HTTPURLResponse(url: url, statusCode: 429, httpVersion: nil, headerFields: ["X-Retry-After": value]))
             let before = Date()
-            let result = await checker().check(extensionID: extensionID, installedVersion: "1.0")
-            let deadline = try XCTUnwrap(result.retryNotBefore)
-            XCTAssertGreaterThanOrEqual(deadline.timeIntervalSince(before), 86400)
-            XCTAssertLessThanOrEqual(deadline.timeIntervalSinceNow, 86400)
+            let deadline = try XCTUnwrap(ChromeWebStoreUpdateChecker.retryDeadline(response: response))
+            XCTAssertGreaterThanOrEqual(deadline.timeIntervalSince(before), expectedSeconds)
+            XCTAssertLessThanOrEqual(deadline.timeIntervalSinceNow, expectedSeconds)
         }
-        for value in ["", "0", "-1", "nan", "1.5", "tomorrow"] {
-            respond("", status: 503, headers: ["X-Retry-After": value])
-            let result = await checker().check(extensionID: extensionID, installedVersion: "1.0")
-            XCTAssertNil(result.retryNotBefore, value)
+    }
+
+    func testMissingOrMalformedRetryHeadersAreIgnored() throws {
+        let url = try XCTUnwrap(URL(string: "https://clients2.google.com/service/update2/crx"))
+        for value: String? in [nil, "", "0", "-1", "nan", "1.5", "tomorrow"] {
+            let headers = value.map { ["X-Retry-After": $0] }
+            let response = try XCTUnwrap(HTTPURLResponse(url: url, statusCode: 503, httpVersion: nil, headerFields: headers))
+            XCTAssertNil(ChromeWebStoreUpdateChecker.retryDeadline(response: response), value ?? "Missing header")
         }
     }
 
@@ -262,11 +163,11 @@ final class ChromeWebStoreUpdateCheckerTests: XCTestCase {
         for (code, expected) in [(URLError.Code.notConnectedToInternet, ChromeWebStoreUpdateChecker.Failure.networkFailure),
                                  (.cancelled, .cancelled)] {
             UpdateURLProtocol.setHandler { _ in throw URLError(code) }
-            let result = await checker().check(extensionID: extensionID, installedVersion: "1.0")
+            let result = await checker().check(extensionID: fixture.extensionID, installedVersion: "1.0")
             XCTAssertEqual(result.outcome, .failure(expected))
         }
         let checker = checker()
-        let extensionID = extensionID
+        let extensionID = fixture.extensionID
         let task = Task {
             withUnsafeCurrentTask { $0?.cancel() }
             return await checker.check(extensionID: extensionID, installedVersion: "1.0")
@@ -276,7 +177,7 @@ final class ChromeWebStoreUpdateCheckerTests: XCTestCase {
     }
 
     func testAllowedRedirectProceeds() async {
-        let data = Data(manifest(#"<updatecheck status="noupdate"/>"#).utf8)
+        let data = Data(fixture.manifest(#"<updatecheck status="noupdate"/>"#).utf8)
         let redirected = expectation(description: "Allowed destination is requested")
         UpdateURLProtocol.setHandler { request in
             let url = try XCTUnwrap(request.url)
@@ -287,7 +188,7 @@ final class ChromeWebStoreUpdateCheckerTests: XCTestCase {
             redirected.fulfill()
             return (try XCTUnwrap(HTTPURLResponse(url: url, statusCode: 200, httpVersion: nil, headerFields: nil)), data)
         }
-        let result = await checker().check(extensionID: extensionID, installedVersion: "1.0")
+        let result = await checker().check(extensionID: fixture.extensionID, installedVersion: "1.0")
         XCTAssertEqual(result.outcome, .noUpdate)
         await fulfillment(of: [redirected], timeout: 5)
     }
@@ -318,7 +219,7 @@ final class ChromeWebStoreUpdateCheckerTests: XCTestCase {
         let stopped = expectation(description: "Transport cancelled")
         UpdateURLProtocol.setPendingHandler(started: { started.fulfill() }, stopped: { stopped.fulfill() })
         let checker = checker()
-        let extensionID = extensionID
+        let extensionID = fixture.extensionID
         let task = Task { await checker.check(extensionID: extensionID, installedVersion: "1.0") }
         await fulfillment(of: [started], timeout: 5)
         task.cancel()

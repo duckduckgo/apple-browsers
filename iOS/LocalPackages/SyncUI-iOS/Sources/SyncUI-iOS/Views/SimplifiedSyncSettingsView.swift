@@ -594,14 +594,14 @@ extension SimplifiedSyncSettingsView {
         if model.isDeviceActivityAvailable {
             Section {
                 NavigationLink(destination: DeviceActivityView()) {
-                    HStack {
-                        Image(uiImage: DesignSystemImages.Glyphs.Size24.history)
-                            .foregroundColor(Color(designSystemColor: .icons))
+                    Label(title: {
                         Text(UserText.deviceActivityTitle)
                             .daxBodyRegular()
                             .foregroundColor(Color(designSystemColor: .textPrimary))
-                        Spacer()
-                    }
+                    }, icon: {
+                        Image(uiImage: DesignSystemImages.Glyphs.Size24.history)
+                            .foregroundColor(Color(designSystemColor: .icons))
+                    })
                 }
                 .buttonStyle(.plain)
             }

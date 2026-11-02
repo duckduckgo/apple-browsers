@@ -20,26 +20,29 @@
 import Testing
 @testable import DuckDuckGo
 
-@available(iOS 16, macOS 13, *)
 struct IdleReturnLaunchLandingTests {
 
     private let ntp = IdleReturnOutcome.afterIdle(treatment: .ntp, timeAwayMs: 61_000)
 
+    @available(iOS 16, macOS 13, *)
     @Test("An after-idle New Tab Page replacing a restored page is drawn at launch", .timeLimit(.minutes(1)))
     func afterIdleNTPIsDrawnAtLaunch() {
         #expect(ntp.drawsNewTabPageAtLaunch(isAppLockEnabled: false, hasPageToReplace: true))
     }
 
+    @available(iOS 16, macOS 13, *)
     @Test("With App Lock on the New Tab Page is not drawn at launch", .timeLimit(.minutes(1)))
     func appLockIsNotDrawnAtLaunch() {
         #expect(!ntp.drawsNewTabPageAtLaunch(isAppLockEnabled: true, hasPageToReplace: true))
     }
 
+    @available(iOS 16, macOS 13, *)
     @Test("With no restored page to replace the New Tab Page is not drawn at launch", .timeLimit(.minutes(1)))
     func noPageToReplaceIsNotDrawnAtLaunch() {
         #expect(!ntp.drawsNewTabPageAtLaunch(isAppLockEnabled: false, hasPageToReplace: false))
     }
 
+    @available(iOS 16, macOS 13, *)
     @Test("Last-used-tab and ordinary returns are not drawn at launch", .timeLimit(.minutes(1)),
           arguments: [IdleReturnOutcome.afterIdle(treatment: .lut, timeAwayMs: 61_000), .ordinary(timeAwayMs: 5_000)])
     func otherOutcomesAreNotDrawnAtLaunch(outcome: IdleReturnOutcome) {
@@ -47,6 +50,7 @@ struct IdleReturnLaunchLandingTests {
     }
 
     @MainActor
+    @available(iOS 16, macOS 13, *)
     @Test("A drawn New Tab Page is taken once", .timeLimit(.minutes(1)))
     func drawnNewTabPageIsTakenOnce() {
         let landing = IdleReturnLaunchLanding(drewNewTabPage: true)
@@ -55,6 +59,7 @@ struct IdleReturnLaunchLandingTests {
     }
 
     @MainActor
+    @available(iOS 16, macOS 13, *)
     @Test("Nothing is taken when the launch didn't draw the New Tab Page", .timeLimit(.minutes(1)))
     func nothingIsTakenWhenNotDrawn() {
         let landing = IdleReturnLaunchLanding(drewNewTabPage: false)

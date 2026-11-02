@@ -2414,7 +2414,10 @@ class MainViewController: UIViewController {
         } else {
             tabManager.addHomeTab()
         }
-        attachHomeScreen(isNewTab: true, openedAfterIdle: true)
+        // Without the deferred keyboard, the held focus raises it as `newTab` would after idle.
+        attachHomeScreen(isNewTab: true,
+                         allowingKeyboard: !featureFlagger.isFeatureOn(.alwaysShowKeyboardOnNewTabPage),
+                         openedAfterIdle: true)
     }
 
     /// Call before the view loads; a cold start after idle can land on the New Tab Page directly.

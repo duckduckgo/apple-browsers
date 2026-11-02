@@ -24,10 +24,23 @@ import XCTest
 
 final class HistoryMenuTests: XCTestCase {
 
+    var featureFlagger: MockFeatureFlagger!
+    var sut: HistoryMenu!
+
+    @MainActor
+    override func setUp() {
+        featureFlagger = MockFeatureFlagger()
+        sut = makeHistoryMenu(location: .mainMenu)
+    }
+
+    @MainActor
+    override func tearDown() {
+        sut = nil
+        featureFlagger = nil
+    }
+
     @MainActor
     func testWhenDataImportHistoryIsOff_ThenImportHistoryMenuItemIsHidden() {
-        let sut = makeHistoryMenu(featureFlagger: MockFeatureFlagger())
-
         sut.update()
 
         XCTAssertEqual(importHistoryMenuItem(in: sut)?.isHidden, true)
@@ -35,7 +48,7 @@ final class HistoryMenuTests: XCTestCase {
 
     @MainActor
     func testWhenDataImportHistoryIsOn_ThenImportHistoryMenuItemOpensDataImport() throws {
-        let sut = makeHistoryMenu(featureFlagger: MockFeatureFlagger(featuresStub: [FeatureFlag.dataImportHistory.rawValue: true]))
+        featureFlagger.featuresStub = [FeatureFlag.dataImportHistory.rawValue: true]
 
         sut.update()
 
@@ -47,8 +60,6 @@ final class HistoryMenuTests: XCTestCase {
 
     @MainActor
     func testWhenDataImportHistoryChangesWhileRunning_ThenImportHistoryMenuItemFollowsOnNextUpdate() {
-        let featureFlagger = MockFeatureFlagger()
-        let sut = makeHistoryMenu(featureFlagger: featureFlagger)
         sut.update()
         featureFlagger.featuresStub = [FeatureFlag.dataImportHistory.rawValue: true]
 
@@ -59,16 +70,16 @@ final class HistoryMenuTests: XCTestCase {
 
     @MainActor
     func testMoreOptionsHistoryMenuHasNoImportHistoryMenuItem() {
-        let featureFlagger = MockFeatureFlagger(featuresStub: [FeatureFlag.dataImportHistory.rawValue: true])
-        let sut = makeHistoryMenu(location: .moreOptionsMenu, featureFlagger: featureFlagger)
+        featureFlagger.featuresStub = [FeatureFlag.dataImportHistory.rawValue: true]
+        let moreOptionsHistoryMenu = makeHistoryMenu(location: .moreOptionsMenu)
 
-        sut.update()
+        moreOptionsHistoryMenu.update()
 
-        XCTAssertNil(importHistoryMenuItem(in: sut))
+        XCTAssertNil(importHistoryMenuItem(in: moreOptionsHistoryMenu))
     }
 
     @MainActor
-    private func makeHistoryMenu(location: HistoryMenu.Location = .mainMenu, featureFlagger: FeatureFlagger) -> HistoryMenu {
+    private func makeHistoryMenu(location: HistoryMenu.Location) -> HistoryMenu {
         HistoryMenu(
             location: location,
             historyGroupingDataSource: HistoryCoordinatingMock(),

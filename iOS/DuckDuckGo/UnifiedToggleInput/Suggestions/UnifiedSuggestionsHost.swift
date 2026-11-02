@@ -220,17 +220,18 @@ final class UnifiedSuggestionsHost {
             changes()
             return
         }
-        let wasEditing = UIResponder.currentFirstResponder() is UITextInput
+        // The input view forwards its text view's focus, so any first responder here is the input.
+        let wasEditing = UIResponder.currentFirstResponder() != nil
         viewModel.isLogoRevealDeferred = true
         // Floating and split iPad keyboards report only frame changes, so those release the logo too.
         logoKeyboardCancellable = NotificationCenter.default.publisher(for: UIResponder.keyboardDidShowNotification)
             .merge(with: NotificationCenter.default.publisher(for: UIResponder.keyboardDidChangeFrameNotification),
                    NotificationCenter.default.publisher(for: UIResponder.keyboardDidHideNotification)
-                .filter { _ in !(UIResponder.currentFirstResponder() is UITextInput) })
+                .filter { _ in UIResponder.currentFirstResponder() == nil })
             .first()
             .sink { [weak self] _ in self?.finishDeferredLogoReveal() }
         changes()
-        if #available(iOS 17.0, *), !wasEditing, UIResponder.currentFirstResponder() is UITextInput {
+        if #available(iOS 17.0, *), !wasEditing, UIResponder.currentFirstResponder() != nil {
             let inputContext: UITextInputContext? = .current()
             if let inputContext,
                !inputContext.isHardwareKeyboardInputExpected,

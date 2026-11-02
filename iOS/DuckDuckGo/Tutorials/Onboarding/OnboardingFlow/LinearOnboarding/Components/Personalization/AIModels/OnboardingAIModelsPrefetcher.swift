@@ -43,7 +43,10 @@ struct OnboardingAIModelResponse: Equatable {
 
 @MainActor
 protocol OnboardingAIModelsPrefetching {
+    /// The onboarding picker options: the first accessible model of each supported provider. Falls back to the curated list until a fetch succeeds.
     var resolvedModel: OnboardingAIModelResponse { get }
+    /// Every accessible model from the last successful fetch, from any provider. `nil` until a fetch succeeds.
+    var fetchedModels: [AIChatRemoteModel]? { get }
 
     @discardableResult
     func prefetch() -> Task<Void, Never>
@@ -69,6 +72,8 @@ final class OnboardingAIModelsPrefetcher: OnboardingAIModelsPrefetching {
 
     // The mapped result, computed once when the fetch completes.
     private var resolved: OnboardingAIModelResponse?
+
+    private(set) var fetchedModels: [AIChatRemoteModel]?
 
     var resolvedModel: OnboardingAIModelResponse {
         resolved ?? fallback.aiModels
@@ -99,7 +104,9 @@ final class OnboardingAIModelsPrefetcher: OnboardingAIModelsPrefetching {
             defer { self.inFlight = nil }
             do {
                 let apiModels = try await service.fetchModels().models
-                let resolved = self.resolver(apiModels)
+                let accessibleModels = apiModels.filter(\.entityHasAccess)
+                self.fetchedModels = accessibleModels
+                let resolved = self.resolver(accessibleModels)
                 // If the fetch resolves to zero usable models, fall back.
                 self.resolved = resolved.models.isEmpty ? self.fallback.aiModels : resolved
             } catch {

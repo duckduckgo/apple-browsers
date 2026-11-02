@@ -312,9 +312,7 @@ final class OnboardingIntroViewModel: ObservableObject {
     func aiModelContinueAction() {
         // Report the model's provider (e.g. "openai") rather than the specific model id — coarser and
         // more privacy-preserving.
-        let selectedModelID = personalizationManager.selectedAIChatModelID
-        let provider = aiModelsPrefetcher.resolvedModel.models.first { $0.id == selectedModelID }?.provider
-        pixelReporter.measureAIModelSelection(model: provider?.rawValue ?? "unknown")
+        pixelReporter.measureAIModelSelection(model: personalizationManager.selectedAIChatModelProvider ?? "unknown")
         makeNextViewState()
     }
 
@@ -453,8 +451,13 @@ private extension OnboardingIntroViewModel {
                 )
             case .aiModelSelection:
                 let resolved = aiModelsPrefetcher.resolvedModel
+                // Preselect the saved provider's first model, so if the saved model was replaced, its provider's new model is selected.
+                // Without a saved provider, preselect the saved model if still offered, otherwise the default.
+                let persistedProvider = personalizationManager.selectedAIChatModelProvider
                 let persistedId = personalizationManager.selectedAIChatModelID
-                let selectedId = resolved.models.contains(where: { $0.id == persistedId }) ? persistedId : resolved.defaultModelId
+                let selectedId = resolved.models.first(where: { $0.provider.rawValue == persistedProvider })?.id
+                    ?? resolved.models.first(where: { $0.id == persistedId })?.id
+                    ?? resolved.defaultModelId
                 return .onboarding(
                     .init(
                         type: .aiModelDialog(

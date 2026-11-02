@@ -45,13 +45,15 @@ struct OnboardingPersonalizationManagerTests {
         // GIVEN
         let store = MockOnboardingAIModelStore()
         let manager = makeManager(aiModelSettings: store)
-        let model = OnboardingAIModel(id: "mistral", name: "Mistral")
+        let model = OnboardingAIModel(id: "mistral-id", name: "Mistral", provider: "mistral")
 
         // WHEN
         manager.setAIChatModel(model)
 
         // THEN
         #expect(store.selectedAIModel == model)
+        #expect(manager.selectedAIChatModelID == "mistral-id")
+        #expect(manager.selectedAIChatModelProvider == "mistral")
     }
 
     // MARK: - AI Chat new-tab step

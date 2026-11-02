@@ -33,8 +33,12 @@ final class MockOnboardingPersonalizationManager: OnboardingPersonalizationManag
     private(set) var capturedApplyDefaultsReason: OnboardingDownloadReason?
 
     var selectedAIChatModelID: String?
+    var selectedAIChatModelProvider: String?
 
-    func setAIChatModel(_ model: OnboardingAIModel) { selectedAIChatModelID = model.id }
+    func setAIChatModel(_ model: OnboardingAIModel) {
+        selectedAIChatModelID = model.id
+        selectedAIChatModelProvider = model.provider
+    }
     func setNewTabOpensWithAIChat(_ opensWithAIChat: Bool) { doesNewTabOpenWithAIChat = opensWithAIChat }
     func setSearchAssist(_ enabled: Bool) { isSearchAssistEnabled = enabled }
     func setAIGeneratedImagesHidden(_ hidden: Bool) { areAIGeneratedImagesHidden = hidden }

@@ -499,6 +499,8 @@ struct Launching: LaunchingHandling {
                 }
             })
         }
+        // Registered last: it waits on a network fetch, so it shouldn't hold up the tasks above.
+        launchTaskManager.register(task: OnboardingAIModelReconcileLaunchTask())
 
         // MARK: - Final Configuration
         // Complete the configuration process and set up the main window

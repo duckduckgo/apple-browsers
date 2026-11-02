@@ -30,11 +30,13 @@ import Onboarding
 @Suite("Onboarding Personalization – AI Model Adapter")
 struct OnboardingPersonalizationAIModelTests {
     private let persistor: AIChatPreferencesPersistor
+    private let providerStore: any KeyedStoring<OnboardingAIModelStoringKeys>
     private let sut: OnboardingAIModelAdapter
 
     init() {
         persistor = AIChatPreferencesPersistor(keyValueStore: InMemoryKeyValueStore())
-        sut = OnboardingAIModelAdapter(persistor: persistor)
+        providerStore = InMemoryKeyValueStore().keyedStoring()
+        sut = OnboardingAIModelAdapter(persistor: persistor, providerStore: providerStore)
     }
 
     @Test("Selected model is nil when nothing is stored")
@@ -46,7 +48,7 @@ struct OnboardingPersonalizationAIModelTests {
     @Test("Setting a model persists both its id and short name")
     func settingModelPersistsIdAndName() {
         // GIVEN
-        let model = OnboardingAIModel(id: "gpt-x", name: "ChatGPT")
+        let model = OnboardingAIModel(id: "gpt-x", name: "ChatGPT", provider: nil)
 
         // WHEN
         sut.selectedAIModel = model
@@ -57,6 +59,30 @@ struct OnboardingPersonalizationAIModelTests {
         #expect(sut.selectedAIModel == model)
     }
 
+    @Test("Setting a model persists its provider in the onboarding store")
+    func settingModelPersistsProvider() {
+        // GIVEN
+        let model = OnboardingAIModel(id: "gpt-x", name: "ChatGPT", provider: "openai")
+
+        // WHEN
+        sut.selectedAIModel = model
+
+        // THEN
+        #expect(providerStore.selectedModelProvider == "openai")
+        #expect(sut.selectedAIModel == model)
+    }
+
+    @Test("Getting a model reflects the stored provider")
+    func getReflectsStoredProvider() {
+        // GIVEN
+        persistor.selectedModelId = "claude-x"
+        persistor.selectedModelShortName = "Claude"
+        providerStore.selectedModelProvider = "anthropic"
+
+        // THEN
+        #expect(sut.selectedAIModel == OnboardingAIModel(id: "claude-x", name: "Claude", provider: "anthropic"))
+    }
+
     @Test("Getting a model reflects the stored id and short name")
     func getReflectsStoredIdAndName() {
         // GIVEN
@@ -64,7 +90,7 @@ struct OnboardingPersonalizationAIModelTests {
         persistor.selectedModelShortName = "Claude"
 
         // THEN
-        #expect(sut.selectedAIModel == OnboardingAIModel(id: "claude-x", name: "Claude"))
+        #expect(sut.selectedAIModel == OnboardingAIModel(id: "claude-x", name: "Claude", provider: nil))
     }
 
     @Test("Getting a model with no stored short name yields a best-effort empty name")
@@ -73,13 +99,13 @@ struct OnboardingPersonalizationAIModelTests {
         persistor.selectedModelId = "id-only"
 
         // THEN - only the id is guaranteed; the manager resolves the canonical name from the catalog.
-        #expect(sut.selectedAIModel == OnboardingAIModel(id: "id-only", name: ""))
+        #expect(sut.selectedAIModel == OnboardingAIModel(id: "id-only", name: "", provider: nil))
     }
 
     @Test("Setting nil clears the stored model")
     func settingNilClearsModel() {
         // GIVEN
-        sut.selectedAIModel = OnboardingAIModel(id: "mistral-x", name: "Mistral")
+        sut.selectedAIModel = OnboardingAIModel(id: "mistral-x", name: "Mistral", provider: "mistral")
 
         // WHEN
         sut.selectedAIModel = nil
@@ -87,6 +113,7 @@ struct OnboardingPersonalizationAIModelTests {
         // THEN
         #expect(persistor.selectedModelId == nil)
         #expect(persistor.selectedModelShortName == nil)
+        #expect(providerStore.selectedModelProvider == nil)
         #expect(sut.selectedAIModel == nil)
     }
 }

@@ -20,6 +20,7 @@
 import Foundation
 import AIChat
 import Onboarding
+import Persistence
 
 // MARK: - OnboardingAIChatPersonalizationStore
 
@@ -60,17 +61,17 @@ extension AIChatSettings: OnboardingAIChatPersonalizationStore {
 
 /// Store adapter backing the **AI Chat model** picker on the first AI Chat onboarding step.
 ///
-/// Persists the chosen model onto `AIChatPreferencesPersisting`:
-/// - get: reads `selectedModelId`; the name comes from `selectedModelShortName` (best-effort — the
-///   manager resolves the canonical name by matching the id against the offered catalog).
-/// - set: writes both `selectedModelId` and `selectedModelShortName`; `nil` clears them.
+/// Persists the model id and short name in `AIChatPreferencesPersisting`, where Duck.ai reads them,
+/// and the provider in the onboarding store. Setting `nil` clears all three.
 ///
 /// - See: [AI Chat: Setup step 1](https://app.asana.com/1/137249556945/task/1216445221863466?focus=true)
 final class OnboardingAIModelAdapter: OnboardingAIModelPersonalizationStore {
     private var persistor: AIChatPreferencesPersisting
+    private let providerStore: any KeyedStoring<OnboardingAIModelStoringKeys>
 
-    init(persistor: AIChatPreferencesPersisting) {
+    init(persistor: AIChatPreferencesPersisting, providerStore: any KeyedStoring<OnboardingAIModelStoringKeys> = UserDefaults.app.keyedStoring()) {
         self.persistor = persistor
+        self.providerStore = providerStore
     }
 
     var selectedAIModel: OnboardingAIModel? {
@@ -78,11 +79,22 @@ final class OnboardingAIModelAdapter: OnboardingAIModelPersonalizationStore {
             guard let id = persistor.selectedModelId else { return nil }
             // Best-effort name; the manager resolves the canonical name by matching `id`
             // against the fetched catalog, so only `id` needs to be correct here.
-            return OnboardingAIModel(id: id, name: persistor.selectedModelShortName ?? "")
+            return OnboardingAIModel(id: id, name: persistor.selectedModelShortName ?? "", provider: providerStore.selectedModelProvider)
         }
         set {
             persistor.selectedModelId = newValue?.id
             persistor.selectedModelShortName = newValue?.name
+            providerStore.selectedModelProvider = newValue?.provider
         }
     }
+}
+
+private enum OnboardingAIModelStorageKeys: String, StorageKeyDescribing {
+    case selectedModelProvider = "com.duckduckgo.onboarding.selectedAIModelProvider"
+}
+
+/// Onboarding-owned storage for the AI model picked during onboarding.
+/// The model id and short name live in `AIChatPreferencesPersisting`, where Duck.ai reads them; only onboarding needs the provider.
+struct OnboardingAIModelStoringKeys: StoringKeys {
+    let selectedModelProvider = StorageKey<String>(OnboardingAIModelStorageKeys.selectedModelProvider)
 }

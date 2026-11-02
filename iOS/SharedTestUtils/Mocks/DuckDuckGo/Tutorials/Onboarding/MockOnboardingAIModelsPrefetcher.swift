@@ -18,10 +18,12 @@
 //
 
 import Foundation
+import AIChat
 @testable import DuckDuckGo
 
 final class MockOnboardingAIModelsPrefetcher: OnboardingAIModelsPrefetching {
     var resolvedModel: DuckDuckGo.OnboardingAIModelResponse = OnboardingAIModelResponse(models: [], defaultModelId: nil)
+    var fetchedModels: [AIChatRemoteModel]?
 
     private(set) var prefetchCallCount = 0
 

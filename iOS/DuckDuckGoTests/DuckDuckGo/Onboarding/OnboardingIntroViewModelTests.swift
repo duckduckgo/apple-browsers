@@ -1641,6 +1641,25 @@ extension OnboardingIntroViewModelTests {
         XCTAssertEqual(selectedID, "claude-1")
     }
 
+    func testAIModelStepPreselectsModelFromPersistedProviderWhenPersistedModelWasReplaced() {
+        // GIVEN a persisted model that has since been replaced by another model for the same provider
+        let prefetcher = MockOnboardingAIModelsPrefetcher()
+        prefetcher.resolvedModel = aiModelCatalog()
+        let personalizationManager = MockOnboardingPersonalizationManager()
+        personalizationManager.selectedAIChatModelID = "claude-0"
+        personalizationManager.selectedAIChatModelProvider = "anthropic"
+        let sut = makeSUT(currentOnboardingStep: .aiModelSelection, personalizationManager: personalizationManager, aiModelsPrefetcher: prefetcher)
+        sut.onAppear()
+
+        // WHEN
+        guard case let .aiModelDialog(_, _, selectedID) = sut.state.intro?.type else {
+            return XCTFail("Expected aiModelDialog state, got \(String(describing: sut.state.intro?.type))")
+        }
+
+        // THEN the persisted provider's current model is selected
+        XCTAssertEqual(selectedID, "claude-1")
+    }
+
     func testAIModelStepPreselectsCatalogDefaultWhenNothingPersisted() {
         // GIVEN no persisted model
         let prefetcher = MockOnboardingAIModelsPrefetcher()
@@ -1974,6 +1993,7 @@ extension OnboardingIntroViewModelTests {
         )
         let personalizationManager = MockOnboardingPersonalizationManager()
         personalizationManager.selectedAIChatModelID = "claude-1"
+        personalizationManager.selectedAIChatModelProvider = "anthropic"
         let sut = makeSUT(currentOnboardingStep: .aiModelSelection, personalizationManager: personalizationManager, aiModelsPrefetcher: prefetcher)
 
         // WHEN
@@ -1984,7 +2004,7 @@ extension OnboardingIntroViewModelTests {
         XCTAssertEqual(pixelReporterMock.didCaptureAIModelSelection, "anthropic")
     }
 
-    func testWhenAIModelContinueAndSelectedModelNotInCatalogThenSelectionPixelReportsUnknown() {
+    func testWhenAIModelContinueAndNoProviderPersistedThenSelectionPixelReportsUnknown() {
         // GIVEN
         onboardingManagerMock.onboardingSteps = [.aiModelSelection]
         let prefetcher = MockOnboardingAIModelsPrefetcher()
@@ -1994,6 +2014,7 @@ extension OnboardingIntroViewModelTests {
         )
         let personalizationManager = MockOnboardingPersonalizationManager()
         personalizationManager.selectedAIChatModelID = "not-in-catalog"
+        personalizationManager.selectedAIChatModelProvider = nil
         let sut = makeSUT(currentOnboardingStep: .aiModelSelection, personalizationManager: personalizationManager, aiModelsPrefetcher: prefetcher)
 
         // WHEN

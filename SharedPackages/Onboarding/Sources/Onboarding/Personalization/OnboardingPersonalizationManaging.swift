@@ -21,17 +21,21 @@ import Foundation
 /// Represents an AI model the user can pick as their default during onboarding.
 ///
 /// Keeps the Onboarding and AIChat packages decoupled: it carries only a stable ``id`` — which the
-/// concrete, platform-specific manager maps onto whatever the underlying AI Chat store expects — and
-/// a user-facing ``name``.
+/// concrete, platform-specific manager maps onto whatever the underlying AI Chat store expects — a
+/// user-facing ``name`` and the model's ``provider``.
 public struct OnboardingAIModel: Equatable, Identifiable {
     /// Stable identifier used by the concrete manager to persist the selection. Opaque to onboarding.
     public let id: String
     /// The user-facing display name (e.g. "ChatGPT").
     public let name: String
+    /// The model's provider (e.g. "openai"). Persisted so the choice survives the specific model being replaced.
+    /// `nil` for selections persisted before the provider was stored.
+    public let provider: String?
 
-    public init(id: String, name: String) {
+    public init(id: String, name: String, provider: String?) {
         self.id = id
         self.name = name
+        self.provider = provider
     }
 }
 
@@ -41,6 +45,8 @@ public struct OnboardingAIModel: Equatable, Identifiable {
 public protocol OnboardingAIChatModelPersonalizing: AnyObject {
     /// The id of the already-persisted AI chat model, or `nil` when none has been chosen.
     var selectedAIChatModelID: String? { get }
+    /// The provider of the already-persisted AI chat model, or `nil` when none has been stored.
+    var selectedAIChatModelProvider: String? { get }
     /// Persists `model` as the user's selected AI chat model.
     func setAIChatModel(_ model: OnboardingAIModel)
 }

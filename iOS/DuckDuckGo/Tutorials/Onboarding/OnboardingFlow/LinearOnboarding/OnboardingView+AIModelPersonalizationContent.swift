@@ -168,7 +168,7 @@ extension OnboardingPersonalizationSelectionItem {
 extension OnboardingAIModel {
 
     init(_ option: OnboardingAIModelOption) {
-        self.init(id: option.id, name: option.modelShortName ?? "")
+        self.init(id: option.id, name: option.modelShortName ?? "", provider: option.provider.rawValue)
     }
 
 }

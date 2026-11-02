@@ -3862,8 +3862,8 @@
 /* Title of the dialog in the Duck.ai onboarding flow asking the user if they want to set DuckDuckGo as their default browser. */
 "onboarding.duckai.browser.title" = "DuckDuckGoをデフォルトのブラウザに設定しますか？";
 
-/* Message of the last screen of the onboarding to the browser app for the Duck.ai flow. 'Duck.ai' is a brand name and should not be translated. '[[chat_icon]]' is a placeholder and should not be translated. */
-"onboarding.duckai.contextual.end-of-journey.message" = "Duck.aiとのプライベートAIチャットを開始するか、保護されたブラウジングのための検索に切り替えます。\n\nDuck.aiはチャットアイコン[[chat_icon]]が表示されている場所ならどこからでも使えます";
+/* Message of the last screen of the onboarding to the browser app for the Duck.ai flow. */
+"onboarding.duckai.contextual.end-of-journey.message" = "Duck.aiとプライベートなAIチャットを開始したり、保護されたブラウザでの検索に切り替えたりしましょう。";
 
 /* Body text of the subscription promo shown at the end of the Duck.ai onboarding flow. Describes the paid Duck.ai subscription. 'GPT', 'Claude' are brand names and should not be translated. */
 "onboarding.duckai.contextual.subscription.message" = "また、GPTやClaudeの高度なAIモデルを備えた上限の高いチャット、セキュアなVPN、その他を含む有料サブスクリプションも提供しています。";

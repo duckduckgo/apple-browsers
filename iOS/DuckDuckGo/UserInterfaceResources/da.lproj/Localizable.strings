@@ -3862,8 +3862,8 @@
 /* Title of the dialog in the Duck.ai onboarding flow asking the user if they want to set DuckDuckGo as their default browser. */
 "onboarding.duckai.browser.title" = "Vil du gøre DuckDuckGo til din standardbrowser?";
 
-/* Message of the last screen of the onboarding to the browser app for the Duck.ai flow. 'Duck.ai' is a brand name and should not be translated. '[[chat_icon]]' is a placeholder and should not be translated. */
-"onboarding.duckai.contextual.end-of-journey.message" = "Start en privat AI-chat med Duck.ai, eller vælg Søg efter beskyttet browsing.\n\nDu kan bruge Duck.ai fra alle steder, hvor du ser chatikonet [[chat_icon]]";
+/* Message of the last screen of the onboarding to the browser app for the Duck.ai flow. */
+"onboarding.duckai.contextual.end-of-journey.message" = "Start en privat AI-chat med Duck.ai, eller skift til Søg med beskyttet browsing.";
 
 /* Body text of the subscription promo shown at the end of the Duck.ai onboarding flow. Describes the paid Duck.ai subscription. 'GPT', 'Claude' are brand names and should not be translated. */
 "onboarding.duckai.contextual.subscription.message" = "Vi tilbyder også et betalt abonnement med avancerede AI-modeller med højere chatgrænser fra GPT og Claude, en sikker VPN og meget mere.";

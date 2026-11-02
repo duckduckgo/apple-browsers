@@ -140,10 +140,6 @@ struct UnifiedSuggestionsView: View {
             content: viewModel.content)
     }
 
-    private var isShowingLogo: Bool {
-        viewModel.isShowingLogo && !viewModel.isLogoRevealDeferred
-    }
-
     /// The Dax↔Duck.ai empty-state logo, morphing via bound `logoProgress`. Pinned to the exact
     /// screen-relative anchor `NewTabPageDaxLogoView` uses, so the focused and NTP logos share one
     /// resting position+size — focus/defocus is a pixel-identical crossfade (no slide), and it's stable
@@ -169,7 +165,8 @@ struct UnifiedSuggestionsView: View {
                                          animationSpeed: viewModel.logoModel.morphSpeed,
                                          freezes: hatchLayout != nil && hatchLayout?.visibleFrame == nil)
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
-            let isLogoDisplayed = isShowingLogo && !viewModel.isFireTab && !viewModel.isLandscape && !viewModel.isFadingOut
+            let isLogoDisplayed = viewModel.isShowingLogo && !viewModel.isLogoRevealDeferred
+                && !viewModel.isFireTab && !viewModel.isLandscape && !viewModel.isFadingOut
             let backdropLogoFrame = isLogoDisplayed ? hatchLayout?.visibleFrame : nil
             Group {
                 if let hatchLayout {

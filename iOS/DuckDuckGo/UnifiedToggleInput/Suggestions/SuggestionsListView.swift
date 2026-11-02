@@ -84,13 +84,7 @@ struct SuggestionsListView: View {
             Button {
                 viewModel.selectRow(id: row.id)
             } label: {
-                SuggestionRowView(
-                    row: row,
-                    isAddressBarAtBottom: isAddressBarAtBottom,
-                    isSelected: row.id == viewModel.selectedRowID,
-                    onTapAhead: { viewModel.tapAheadRow(id: row.id) },
-                    onDelete: { viewModel.deleteRow(id: row.id) },
-                    onFire: { frame in viewModel.fireDeleteRow(id: row.id, sourceRect: frame) })
+                SuggestionRowView(row: row, viewModel: viewModel, isAddressBarAtBottom: isAddressBarAtBottom)
             }
             .accessibilityIdentifier(row.accessibilityID)
             .listRowInsets(rowInsets(for: row))
@@ -180,13 +174,7 @@ struct LegacyRecentChatsView: View {
         Button {
             viewModel.selectRow(id: row.id)
         } label: {
-            SuggestionRowView(
-                row: row,
-                isAddressBarAtBottom: isAddressBarAtBottom,
-                isSelected: row.id == viewModel.selectedRowID,
-                onTapAhead: { viewModel.tapAheadRow(id: row.id) },
-                onDelete: { viewModel.deleteRow(id: row.id) },
-                onFire: { frame in viewModel.fireDeleteRow(id: row.id, sourceRect: frame) })
+            SuggestionRowView(row: row, viewModel: viewModel, isAddressBarAtBottom: isAddressBarAtBottom)
                 .padding(.vertical, row.subtitle == nil ? Metrics.rowVerticalPaddingSingleLine : Metrics.rowVerticalPaddingWithSubtitle)
                 .padding(.leading, Metrics.rowLeftInset)
                 .padding(.trailing, Metrics.rowRightInset)
@@ -274,5 +262,18 @@ private struct SeparatorTrailingToContentModifier: ViewModifier {
         } else {
             content
         }
+    }
+}
+
+private extension SuggestionRowView {
+
+    /// A row wired to the list view model's selection and row actions.
+    init(row: SuggestionRow, viewModel: SuggestionsListViewModel, isAddressBarAtBottom: Bool) {
+        self.init(row: row,
+                  isAddressBarAtBottom: isAddressBarAtBottom,
+                  isSelected: row.id == viewModel.selectedRowID,
+                  onTapAhead: { viewModel.tapAheadRow(id: row.id) },
+                  onDelete: { viewModel.deleteRow(id: row.id) },
+                  onFire: { frame in viewModel.fireDeleteRow(id: row.id, sourceRect: frame) })
     }
 }

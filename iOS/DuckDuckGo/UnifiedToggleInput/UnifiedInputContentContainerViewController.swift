@@ -360,8 +360,12 @@ final class UnifiedInputContentContainerViewController: UIViewController {
         unifiedSuggestionsHost?.beginDismissFade()
     }
 
+    /// Whether focused content scrolls inside the legacy NTP's favorites view.
+    var usesLegacyScrollableContent: Bool {
+        usesScrollableEscapeHatch && !usesRedesignedNewTabPageLayout
+    }
+
     func scrollLegacyContentToTop(duration: TimeInterval) {
-        guard usesScrollableEscapeHatch else { return }
         unifiedSuggestionsHost?.scrollLegacyContentToTop(duration: duration)
     }
 
@@ -410,8 +414,9 @@ final class UnifiedInputContentContainerViewController: UIViewController {
     }
 
     private func updatePinnedChrome() {
-        let hatchModel = chromePlacement.escapeHatch == .pinned ? escapeHatchModel : nil
-        let promo: AnyView? = chromePlacement.syncPromo == .pinned ? syncPromoView : nil
+        let placement = chromePlacement
+        let hatchModel = placement.escapeHatch == .pinned ? escapeHatchModel : nil
+        let promo: AnyView? = placement.syncPromo == .pinned ? syncPromoView : nil
         guard hatchModel != nil || promo != nil || chromeHostingController != nil else { return }
 
         let rootView = FocusedChromeView(
@@ -464,14 +469,10 @@ final class UnifiedInputContentContainerViewController: UIViewController {
         topBarContentGap + effectiveContentInset.top
     }
 
-    private var shouldShowPinnedHatch: Bool {
-        chromePlacement.escapeHatch == .pinned
-    }
-
     private var currentChromeReservedHeight: CGFloat {
         if chromePlacement.syncPromo == .pinned {
             return chromeMeasuredHeight
-        } else if shouldShowPinnedHatch {
+        } else if chromePlacement.escapeHatch == .pinned {
             let cardPadding = usesRedesignedNewTabPageLayout ? EscapeHatchView.materialPadding * 2 : 0
             return chromeTopInsetForPosition + TabSwitcherPill.compactSize + cardPadding + FocusedChromeView.Metrics.bottomInset
         } else {
@@ -738,7 +739,6 @@ final class UnifiedInputContentContainerViewController: UIViewController {
                    parentViewController: self,
                    isFloatingUIEnabled: isFloatingUIEnabled,
                    textPublisher: searchTextPublisher)
-        host.setAdditionalTopInset(0)
         host.setIsFireTab(switchBarHandler.isFireTab)
         host.setLandscape(isLandscapeOrientation)
         updateSingleHostTopOffset()
@@ -1046,7 +1046,6 @@ private extension UnifiedInputContentContainerViewController {
 
         let applyContentUpdates = {
             self.refreshSyncPromoIfActive()
-            self.updateSingleHostTopOffset()
             self.applyRequestedContentInset()
             self.view.layoutIfNeeded()
         }

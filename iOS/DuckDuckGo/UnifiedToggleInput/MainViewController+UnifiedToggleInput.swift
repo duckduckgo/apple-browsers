@@ -1156,9 +1156,18 @@ extension MainViewController {
             && (newTabPageViewController?.restingContentIsFavorites == true ? content.isShowingFavoritesContent : content.isShowingLogoContent)
     }
 
+    func focusedContentDismissBehavior(for coordinator: UnifiedToggleInputCoordinator?) -> UnifiedSuggestionsViewModel.DismissBehavior {
+        if coordinator?.contentViewController.isShowingLogoContent == true,
+           newTabPageViewController?.restingContentIsLogo == true {
+            return .morphHome
+        }
+        let isFavoritesToFavorites = coordinator?.contentViewController.isShowingFavoritesContent == true
+            && newTabPageViewController?.restingContentIsFavorites == true
+        return isFavoritesToFavorites || isEscapeHatchHandoff ? .none : .fadeOut
+    }
+
     func resetLegacyScrollForDismiss(coordinator: UnifiedToggleInputCoordinator?, duration: TimeInterval) {
-        guard let coordinator, coordinator.contentViewController.usesScrollableEscapeHatch,
-              !coordinator.contentViewController.usesRedesignedNewTabPageLayout else { return }
+        guard let coordinator, coordinator.contentViewController.usesLegacyScrollableContent else { return }
         coordinator.contentViewController.scrollLegacyContentToTop(duration: duration)
         // Reset the resting copy while covered, so the last collapse frame reveals the same position.
         (newTabPageViewController as? NewTabPageViewController)?.scrollToTop(duration: 0)
@@ -1182,21 +1191,17 @@ extension MainViewController {
         let duration = Constants.omnibarTransitionDuration(isBottom: coordinator.cardPosition.isBottom, isFloatingUIEnabled: isFloatingUIEnabled)
 
         resetLegacyScrollForDismiss(coordinator: coordinator, duration: duration)
-        let isLogoToLogo = coordinator.contentViewController.isShowingLogoContent
-            && newTabPageViewController?.restingContentIsLogo == true
-        let isFavoritesToFavorites = coordinator.contentViewController.isShowingFavoritesContent
-            && newTabPageViewController?.restingContentIsFavorites == true
-        let isSeamlessHandoff = isLogoToLogo || isFavoritesToFavorites || isEscapeHatchHandoff
+        let dismissBehavior = focusedContentDismissBehavior(for: coordinator)
+        let isSeamlessHandoff = dismissBehavior != .fadeOut
         let keepsFocusedContentStationary = coordinator.contentViewController.isShowingLogoContent
             || coordinator.contentViewController.isShowingFavoritesContent
-            || isEscapeHatchHandoff
         let contentContainer = viewCoordinator.unifiedInputContentContainer
         let stationaryContentSnapshot = makeStationaryFocusedContentSnapshotIfNeeded(
             keepsFocusedContentStationary: keepsFocusedContentStationary,
             contentContainer: contentContainer
         )
 
-        if isLogoToLogo {
+        if dismissBehavior == .morphHome {
             coordinator.contentViewController.morphLogoHomeForDismiss(matching: duration)
         } else if !isSeamlessHandoff {
             coordinator.contentViewController.beginDismissFade()

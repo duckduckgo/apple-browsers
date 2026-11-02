@@ -38,10 +38,7 @@ struct RedesignedFocusedSearchModulesView: View {
                 VStack(spacing: 0) {
                     RedesignedNewTabPageModulesView(favoritesModel: favoritesModel)
                         .fixedSize(horizontal: false, vertical: true)
-                        .frame(height: showsSearchModules ? nil : 0)
-                        .opacity(showsSearchModules ? 1 : 0)
-                        .allowsHitTesting(showsSearchModules)
-                        .accessibilityHidden(!showsSearchModules)
+                        .modifier(CollapsedUnlessShown(isShown: showsSearchModules))
                     if let escapeHatch {
                         RedesignedEscapeHatchView(model: escapeHatch)
                             .modifier(EmbeddedEscapeHatchGeometryReader())
@@ -61,10 +58,7 @@ struct RedesignedFocusedSearchModulesView: View {
                     }
                     if let messagesModel {
                         RedesignedNewTabPageMessagesView(messagesModel: messagesModel)
-                            .frame(height: showsSearchModules ? nil : 0)
-                            .opacity(showsSearchModules ? 1 : 0)
-                            .allowsHitTesting(showsSearchModules)
-                            .accessibilityHidden(!showsSearchModules)
+                            .modifier(CollapsedUnlessShown(isShown: showsSearchModules))
                     }
                 }
                 .animation(nil, value: showsSearchModules)
@@ -87,5 +81,18 @@ struct RedesignedFocusedSearchModulesView: View {
     private var hatchTopPadding: CGFloat {
         guard !showsSearchModules else { return 0 }
         return RedesignedNewTabPageModulesView.topPadding
+    }
+}
+
+/// Collapses, hides and disables a view while it is not shown.
+private struct CollapsedUnlessShown: ViewModifier {
+    let isShown: Bool
+
+    func body(content: Content) -> some View {
+        content
+            .frame(height: isShown ? nil : 0)
+            .opacity(isShown ? 1 : 0)
+            .allowsHitTesting(isShown)
+            .accessibilityHidden(!isShown)
     }
 }

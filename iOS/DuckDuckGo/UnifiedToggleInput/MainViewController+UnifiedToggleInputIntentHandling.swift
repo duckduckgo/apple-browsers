@@ -360,14 +360,10 @@ private extension MainViewController {
         let duration = Constants.omnibarTransitionDuration(isBottom: viewCoordinator.addressBarPosition.isBottom, isFloatingUIEnabled: isFloatingUIEnabled)
         resetLegacyScrollForDismiss(coordinator: coordinator, duration: animated ? duration : 0)
         let fadesForFloatingBottom = animated && viewCoordinator.addressBarPosition.isBottom && isFloatingUIEnabled
-        let defersContentCleanup = fadesForFloatingBottom || (animated && coordinator?.contentViewController.usesScrollableEscapeHatch == true
-            && coordinator?.contentViewController.usesRedesignedNewTabPageLayout == false)
+        let defersContentCleanup = fadesForFloatingBottom || (animated && coordinator?.contentViewController.usesLegacyScrollableContent == true)
         let unifiedInputContentContainer: UIView = viewCoordinator.unifiedInputContentContainer
-        let isLogoToLogo = coordinator?.contentViewController.isShowingLogoContent == true
-            && newTabPageViewController?.restingContentIsLogo == true
-        let isFavoritesToFavorites = coordinator?.contentViewController.isShowingFavoritesContent == true
-            && newTabPageViewController?.restingContentIsFavorites == true
-        let isSeamlessHandoff = isLogoToLogo || isFavoritesToFavorites || isEscapeHatchHandoff
+        let dismissBehavior = focusedContentDismissBehavior(for: coordinator)
+        let isSeamlessHandoff = dismissBehavior != .fadeOut
         let onDismissed: () -> Void = { [weak self, weak coordinator] in
             coordinator?.viewController.setTextHorizontalShift(0)
             coordinator?.viewController.finalizeOmnibarEditingDismiss()
@@ -398,7 +394,7 @@ private extension MainViewController {
             let omnibarPlaceholderWindowX = omnibarPlaceholderWindowXForHandoff(coordinator)
             let omnibarPlaceholderColor = currentOmnibarPlaceholderColor()
             let utiPlaceholderColor = coordinator?.viewController.defaultPlaceholderColor
-            if isLogoToLogo {
+            if dismissBehavior == .morphHome {
                 coordinator?.contentViewController.morphLogoHomeForDismiss(matching: duration)
             } else if !isSeamlessHandoff {
                 coordinator?.contentViewController.beginDismissFade()

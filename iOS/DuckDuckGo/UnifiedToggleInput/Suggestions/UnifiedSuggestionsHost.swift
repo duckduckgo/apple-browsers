@@ -37,7 +37,6 @@ final class UnifiedSuggestionsHost {
     /// config's install-time value, which is stale once the bar position is finalized).
     private var isAddressBarAtBottom: Bool
     private var hostingController: UIHostingController<UnifiedSuggestionsView>?
-    private var escapeHatchTopInset: CGFloat = 0
     private var escapeHatch: EscapeHatchModel?
     private var focusedMode: TextEntryMode = .search
     private var syncPromo: AnyView?
@@ -48,13 +47,11 @@ final class UnifiedSuggestionsHost {
     let favoritesPresentation: FocusedFavoritesPresentation
     private var redesignedSearchPresentation: RedesignedFocusedSearchPresentation?
     private var redesignedPresentationCancellable: AnyCancellable?
-    private var showsRedesignedSearchModules = false
+    private(set) var isShowingRedesignedSearchModules = false
 
     /// Single-host path only: the duck.ai surface's source/VM, attached lazily and detached on
     /// disappear (mirrors the legacy per-host lifecycle). Nil on the old single-surface path.
     private var duckAISurface: UnifiedSuggestionsDuckAISurface?
-
-    var isShowingRedesignedSearchModules: Bool { showsRedesignedSearchModules }
 
     func setEscapeHatch(_ model: EscapeHatchModel?) {
         guard escapeHatch !== model else { return }
@@ -132,7 +129,7 @@ final class UnifiedSuggestionsHost {
             favoritesPresentation: favoritesPresentation,
             usesScrollableEscapeHatch: usesScrollableEscapeHatch,
             usesRedesignedNewTabPageLayout: redesignedSearchPresentation != nil,
-            showsRedesignedSearchModules: showsRedesignedSearchModules,
+            showsRedesignedSearchModules: isShowingRedesignedSearchModules,
             mode: focusedMode,
             escapeHatch: escapeHatch,
             syncPromo: syncPromo)
@@ -209,13 +206,13 @@ final class UnifiedSuggestionsHost {
                 .sink { [weak self] showsSearchModules in
                     // Use the emitted value: @Published sends before the stored value changes.
                     guard let self else { return }
-                    self.showsRedesignedSearchModules = showsSearchModules
+                    self.isShowingRedesignedSearchModules = showsSearchModules
                     self.rebuildRootView()
                     self.onContentChanged?()
                 }
         } else {
             redesignedSearchPresentation = nil
-            showsRedesignedSearchModules = false
+            isShowingRedesignedSearchModules = false
             rebuildRootView()
         }
     }
@@ -299,12 +296,6 @@ final class UnifiedSuggestionsHost {
         viewModel.prepareForActivation()
     }
 
-    func setAdditionalTopInset(_ inset: CGFloat) {
-        escapeHatchTopInset = inset
-        applyCombinedInsets()
-    }
-
-
     /// Updates the tap-ahead arrow direction to match the UTI's current position.
     func setIsAddressBarAtBottom(_ value: Bool) {
         guard isAddressBarAtBottom != value else { return }
@@ -320,7 +311,7 @@ final class UnifiedSuggestionsHost {
     }
 
     private func applyCombinedInsets() {
-        let top = escapeHatchTopInset + contentInsets.top
+        let top = contentInsets.top
         viewModel.chromeInsetTop = top
         let contentTopInset = usesScrollableEscapeHatch ? top : 0
         let duration = UIView.inheritedAnimationDuration
@@ -402,7 +393,7 @@ final class UnifiedSuggestionsHost {
             favoritesPresentation: favoritesPresentation,
             usesScrollableEscapeHatch: usesScrollableEscapeHatch,
             usesRedesignedNewTabPageLayout: redesignedSearchPresentation != nil,
-            showsRedesignedSearchModules: showsRedesignedSearchModules,
+            showsRedesignedSearchModules: isShowingRedesignedSearchModules,
             mode: focusedMode,
             escapeHatch: escapeHatch,
             syncPromo: syncPromo)

@@ -36,7 +36,7 @@ final class NewTabPageViewModel: ObservableObject {
     @Published var canEditFavorites = true
     @Published private(set) var isOnboarding: Bool
     @Published var escapeHatch: EscapeHatchModel?
-    @Published var focusedContent: LegacyFocusedNewTabPageContent?
+    @Published private(set) var focusedContent: LegacyFocusedNewTabPageContent?
     @Published var focusedContentTopInset: CGFloat = 0
     /// The focused logo's frame behind the escape hatch; the hatch blurs it only where they overlap.
     @Published var focusedLogoFrame: CGRect?
@@ -66,7 +66,7 @@ final class NewTabPageViewModel: ObservableObject {
         isOnboarding = false
     }
 
-    func setFocusedContent(_ content: LegacyFocusedNewTabPageContent?, escapeHatch: EscapeHatchModel? = nil) {
+    func setFocusedContent(_ content: LegacyFocusedNewTabPageContent?, escapeHatch: EscapeHatchModel?) {
         onFocusedEscapeHatchGeometryChange = content?.onEscapeHatchGeometryChange
         // Focused chrome visibility must not change the session's remote-message eligibility.
         if self.escapeHatch !== escapeHatch {

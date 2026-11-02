@@ -111,8 +111,6 @@ protocol OnboardingAddToDockReporting {
 protocol OnboardingDownloadReasonPixelReporting {
     func measureDownloadReasonImpression()
     func measureDownloadReasonSelection(_ reason: OnboardingDownloadReason)
-    func measureSearchPrivacySettingsImpression()
-    func measureSearchPrivacySettingsSelection(recentlyVisitedSitesEnabled: Bool, safeSearchEnabled: Bool)
     func measureAIModelImpression()
     func measureAIModelSelection(model: String)
     func measureToggleInputModeImpression()
@@ -559,14 +557,6 @@ extension OnboardingPixelReporter: OnboardingDownloadReasonPixelReporting {
         // Persist the chosen reason as the variant so every subsequent tailored-step pixel carries it.
         setVariantIfNotAlreadySet(OnboardingPixelParameter.Variant(reason))
         downloadReasonExperimentMetric.measureDownloadReasonSelected(reason)
-    }
-
-    func measureSearchPrivacySettingsImpression() {
-        fireSharedPixel(.preferencesSerp(.shown))
-    }
-
-    func measureSearchPrivacySettingsSelection(recentlyVisitedSitesEnabled: Bool, safeSearchEnabled: Bool) {
-        fireSharedPixel(.preferencesSerp(.clicked(recentlyVisitedSitesEnabled: recentlyVisitedSitesEnabled, safeSearchEnabled: safeSearchEnabled)))
     }
 
     func measureAIModelImpression() {

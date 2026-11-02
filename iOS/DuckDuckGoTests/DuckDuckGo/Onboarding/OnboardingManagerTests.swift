@@ -589,7 +589,6 @@ struct OnboardingStepsForConfiguredFlow {
         #expect(OnboardingIntroStep.introDialog(isReturningUser: false).resumeStep == nil)
         #expect(OnboardingIntroStep.introDialog(isReturningUser: true).resumeStep == nil)
         #expect(OnboardingIntroStep.downloadReasonSelection.resumeStep == .downloadReasonSelection)
-        #expect(OnboardingIntroStep.searchPrivacySettingsSelection.resumeStep == .searchPrivacySettingsSelection)
         #expect(OnboardingIntroStep.aiSearchSettingsSelection.resumeStep == .aiSearchSettingsSelection)
         #expect(OnboardingIntroStep.aiModelSelection.resumeStep == .aiModelSelection)
         #expect(OnboardingIntroStep.toggleInputModeSelection.resumeStep == .toggleInputModeSelection)

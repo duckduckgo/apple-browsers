@@ -714,6 +714,10 @@ public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1218321368831117
     case aiChatBrowserToolHighlightInPage
 
+    /// Prototype: answers duck.ai's "Summarize this page" with Apple's on-device model. Local override only.
+    /// https://app.asana.com/1/137249556945/project/1148564399326804/task/1219665121531469
+    case aiChatLocalSummarizePrototype
+
     /// Makes onboarding non-blocking (tabs, address bar remain usable; closing the onboarding tab skips it).
     case onboardingAsync
 
@@ -1174,6 +1178,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(defaultValue: .internalOnly, source: .remoteReleasable(AIChatBrowserToolsSubfeature.findInPage), category: .duckAI)
         case .aiChatBrowserToolHighlightInPage:
             Config(defaultValue: .internalOnly, source: .remoteReleasable(AIChatBrowserToolsSubfeature.highlightInPage), category: .duckAI)
+        case .aiChatLocalSummarizePrototype:
+            Config(source: .disabled, category: .duckAI)
 
         case .onboardingAsync:
             Config(defaultValue: .disabled, source: .remoteReleasable(MacOSBrowserConfigSubfeature.onboardingAsync))

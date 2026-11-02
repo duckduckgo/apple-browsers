@@ -256,6 +256,10 @@ final class UserScripts: UserScriptsProvider, ReleaseNotesUserScriptProvider {
             userScripts.append(webExtensionPageStubUserScript)
         }
 
+        if sourceProvider.featureFlagger.isFeatureOn(.aiChatLocalSummarizePrototype) {
+            userScripts.append(LocalSummarizeInterceptUserScript())
+        }
+
         contentScopeUserScriptIsolated.registerSubfeature(delegate: webTelemetryScript)
         contentScopeUserScriptIsolated.registerSubfeature(delegate: faviconScript)
         contentScopeUserScriptIsolated.registerSubfeature(delegate: tabSuspensionScript)

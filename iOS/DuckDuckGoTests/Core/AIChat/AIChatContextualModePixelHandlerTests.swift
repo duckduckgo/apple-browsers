@@ -668,14 +668,10 @@ final class AIChatContextualModePixelHandlerTests {
 
         sut.fireSidebarOpened()
         sut.fireSidebarClosed()
-        sut.firePromptSentOnIPad(isSidebarEnabled: true)
-        sut.firePromptSentOnIPad(isSidebarEnabled: false)
 
         #expect(fired == [
             "aichat_contextual_sidebar_opened",
-            "aichat_contextual_sidebar_closed",
-            "aichat_contextual_prompt_sent_sidebar_on",
-            "aichat_contextual_prompt_sent_sidebar_off"
+            "aichat_contextual_sidebar_closed"
         ])
     }
 

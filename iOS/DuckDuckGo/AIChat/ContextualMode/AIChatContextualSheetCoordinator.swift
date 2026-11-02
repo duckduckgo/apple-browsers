@@ -1105,12 +1105,6 @@ private extension AIChatContextualSheetCoordinator {
         return host
     }
 
-    private func recordPromptSent() {
-        sessionState.recordPromptSent()
-        guard isPad else { return }
-        pixelHandler.firePromptSentOnIPad(isSidebarEnabled: featureFlagger.isFeatureOn(.ipadAIChatContextSidebar))
-    }
-
     func makeSuggestionsReaderIfEnabled() -> AIChatSuggestionsReading? {
         AIChatSuggestionsReader.makeRecentChatsReader(isFireMode: isFireTab,
                                                       nativeStorageHandler: duckAiNativeStorageHandler,
@@ -1163,7 +1157,7 @@ private extension AIChatContextualSheetCoordinator {
             self.sheetViewController?.handleFirstUTISubmission()
         }
         host.onPromptSent = { [weak self] in
-            self?.recordPromptSent()
+            self?.sessionState.recordPromptSent()
         }
         host.onPromptDelivered = { [weak self] in
             self?.sessionState.markUTIContextDelivered()

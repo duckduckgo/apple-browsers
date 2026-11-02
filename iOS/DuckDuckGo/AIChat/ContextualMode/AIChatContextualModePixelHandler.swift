@@ -33,7 +33,6 @@ protocol AIChatContextualModePixelFiring {
     // MARK: - iPad Sidebar
     func fireSidebarOpened()
     func fireSidebarClosed()
-    func firePromptSentOnIPad(isSidebarEnabled: Bool)
 
     // MARK: - Sheet Actions
     func fireExpandButtonTapped()
@@ -182,10 +181,6 @@ final class AIChatContextualModePixelHandler: AIChatContextualModePixelFiring {
 
     func fireSidebarClosed() {
         firePixelKitEvent(AIChatContextualSidebarPixel.closed, .dailyAndCount)
-    }
-
-    func firePromptSentOnIPad(isSidebarEnabled: Bool) {
-        firePixelKitEvent(AIChatContextualSidebarPixel.promptSent(isSidebarEnabled: isSidebarEnabled), .dailyAndCount)
     }
 
     // MARK: - Sheet Actions
@@ -548,8 +543,6 @@ enum AIChatContextualSessionPixel: PixelKit.Event {
 enum AIChatContextualSidebarPixel: PixelKit.Event {
     case opened
     case closed
-    /// Every iPad contextual prompt, named for the sidebar flag's state, so both cohorts compare whatever surface they saw.
-    case promptSent(isSidebarEnabled: Bool)
 
     var name: String {
         switch self {
@@ -557,8 +550,6 @@ enum AIChatContextualSidebarPixel: PixelKit.Event {
             return "aichat_contextual_sidebar_opened"
         case .closed:
             return "aichat_contextual_sidebar_closed"
-        case .promptSent(let isSidebarEnabled):
-            return "aichat_contextual_prompt_sent_sidebar_\(isSidebarEnabled ? "on" : "off")"
         }
     }
 

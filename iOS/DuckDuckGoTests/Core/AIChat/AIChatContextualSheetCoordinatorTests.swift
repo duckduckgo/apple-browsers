@@ -366,50 +366,6 @@ final class AIChatContextualSheetCoordinatorTests: XCTestCase {
         XCTAssertNotNil(iPadSUT.persistentUTIHost)
     }
 
-    // MARK: - iPad prompt sent pixels
-
-    @MainActor
-    func testWhenAPromptIsSentOnIPadWithTheSidebarFlagOffThenTheSidebarOffPixelFires() async throws {
-        mockFeatureFlagger.enabledFeatureFlags = [.aiChatContextualUnifiedToggleInput]
-        let iPadSUT = makeSUT(isPad: true)
-        await iPadSUT.presentSheet(from: MockPresentingViewController())
-        let host = try XCTUnwrap(iPadSUT.persistentUTIHost)
-
-        host.onPromptSent?()
-
-        XCTAssertEqual(firedPixelKitEventNames.filter { $0.hasPrefix("aichat_contextual_prompt_sent_sidebar") },
-                       ["aichat_contextual_prompt_sent_sidebar_off"])
-    }
-
-    @MainActor
-    func testWhenAPromptIsSentOnIPadWithTheSidebarFlagOnThenTheSidebarOnPixelFiresForEachPrompt() async throws {
-        mockFeatureFlagger.enabledFeatureFlags = [.aiChatContextualUnifiedToggleInput]
-        let iPadSUT = makeSUT(isPad: true)
-        let sidebarHost = makeSidebarHost()
-        await iPadSUT.presentSheet(from: sidebarHost)
-        let host = try XCTUnwrap(iPadSUT.persistentUTIHost)
-
-        host.onPromptSent?()
-        host.onPromptSent?()
-
-        XCTAssertTrue(iPadSUT.isSheetInSidebar)
-        XCTAssertEqual(firedPixelKitEventNames.filter { $0.hasPrefix("aichat_contextual_prompt_sent_sidebar") },
-                       ["aichat_contextual_prompt_sent_sidebar_on", "aichat_contextual_prompt_sent_sidebar_on"])
-    }
-
-    @MainActor
-    func testWhenAPromptIsSentOnIPhoneThenNoSidebarPromptPixelFires() async throws {
-        mockUnifiedToggleInputFeature.isAvailable = true
-        mockFeatureFlagger.enabledFeatureFlags = [.aiChatContextualUnifiedToggleInput, .ipadAIChatContextSidebar]
-        await sut.presentSheet(from: mockPresentingVC)
-        let host = try XCTUnwrap(sut.persistentUTIHost)
-
-        host.onPromptSent?()
-
-        XCTAssertTrue(firedPixelKitEventNames.contains("aichat_contextual_prompt_depth"))
-        XCTAssertFalse(firedPixelKitEventNames.contains { $0.hasPrefix("aichat_contextual_prompt_sent_sidebar") })
-    }
-
     // MARK: - handleSelectionAction Tests
 
     @MainActor

@@ -221,7 +221,7 @@ public final class AttributedMetricManager: @unchecked Sendable {
         case userDidSearch
         case userDidSelectAD
         case userDidDuckAIChat
-        /// `isFreeTrial` from the purchase itself; `nil` falls back to `SubscriptionStateProviding.isFreeTrial()`.
+        /// `isFreeTrial`: whether the App Store purchase started a free trial. `nil` when unknown (e.g. Stripe), in which case the backend is asked.
         case userDidSubscribe(isFreeTrial: Bool?)
         case userDidSync(devicesCount: Int)
 

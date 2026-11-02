@@ -91,7 +91,7 @@ final class AppStorePurchaseFlowTests: XCTestCase {
     func test_purchaseSubscription_successfulPurchase_returnsTransactionJWS() async {
         appStoreRestoreFlowMock.restoreAccountFromPastPurchaseResult = .failure(AppStoreRestoreFlowError.missingAccountOrTransactions)
         subscriptionManagerMock.resultCreateAccountTokenContainer = OAuthTokensFactory.makeValidTokenContainerWithEntitlements()
-        storePurchaseManagerMock.purchaseSubscriptionResult = .success("transactionJWS")
+        storePurchaseManagerMock.purchaseSubscriptionResult = .success((transactionJWS: "transactionJWS", isFreeTrial: false))
 
         let result = await sut.purchaseSubscription(with: "testSubscriptionID", includeProTier: false)
 
@@ -99,9 +99,20 @@ final class AppStorePurchaseFlowTests: XCTestCase {
         switch result {
         case .success(let payload):
             XCTAssertEqual(payload.transactionJWS, "transactionJWS")
+            XCTAssertFalse(payload.isFreeTrial)
         case .failure(let error):
             XCTFail("Unexpected failure: \(error)")
         }
+    }
+
+    func test_purchaseSubscription_freeTrialPurchase_returnsIsFreeTrialTrue() async {
+        appStoreRestoreFlowMock.restoreAccountFromPastPurchaseResult = .failure(AppStoreRestoreFlowError.missingAccountOrTransactions)
+        subscriptionManagerMock.resultCreateAccountTokenContainer = OAuthTokensFactory.makeValidTokenContainerWithEntitlements()
+        storePurchaseManagerMock.purchaseSubscriptionResult = .success((transactionJWS: "transactionJWS", isFreeTrial: true))
+
+        let result = await sut.purchaseSubscription(with: "testSubscriptionID", includeProTier: false)
+
+        XCTAssertEqual(try? result.get().isFreeTrial, true)
     }
 
     func test_purchaseSubscription_purchaseCancelledByUser_returnsCancelledError() async {
@@ -145,7 +156,7 @@ final class AppStorePurchaseFlowTests: XCTestCase {
         subscriptionManagerMock.resultSubscription = .success(subscription)
         subscriptionManagerMock.confirmPurchaseResponse = .success(subscription)
 
-        let result = await sut.completeSubscriptionPurchase(with: "transactionJWS", experimentAttribution: nil)
+        let result = await sut.completeSubscriptionPurchase(with: "transactionJWS", isFreeTrial: nil, experimentAttribution: nil)
 
         XCTAssertEqual(result, .success(.completed))
     }
@@ -156,7 +167,7 @@ final class AppStorePurchaseFlowTests: XCTestCase {
         subscriptionManagerMock.resultSubscription = .success(subscription)
         subscriptionManagerMock.confirmPurchaseResponse = .success(subscription)
 
-        let result = await sut.completeSubscriptionPurchase(with: "transactionJWS", experimentAttribution: nil)
+        let result = await sut.completeSubscriptionPurchase(with: "transactionJWS", isFreeTrial: nil, experimentAttribution: nil)
 
         XCTAssertEqual(result, .failure(.missingEntitlements))
     }
@@ -167,7 +178,7 @@ final class AppStorePurchaseFlowTests: XCTestCase {
         subscriptionManagerMock.resultSubscription = .success(expiredSubscription)
         subscriptionManagerMock.confirmPurchaseResponse = .success(expiredSubscription)
 
-        let result = await sut.completeSubscriptionPurchase(with: "transactionJWS", experimentAttribution: nil)
+        let result = await sut.completeSubscriptionPurchase(with: "transactionJWS", isFreeTrial: nil, experimentAttribution: nil)
 
         XCTAssertEqual(result, .failure(.purchaseFailed(AppStoreRestoreFlowError.subscriptionExpired)))
     }
@@ -177,7 +188,7 @@ final class AppStorePurchaseFlowTests: XCTestCase {
         subscriptionManagerMock.resultTokenContainer = OAuthTokensFactory.makeValidTokenContainerWithEntitlements()
         subscriptionManagerMock.confirmPurchaseResponse = .failure(OAuthServiceError.invalidResponseCode(HTTPStatusCode.badRequest))
 
-        let result = await sut.completeSubscriptionPurchase(with: "transactionJWS", experimentAttribution: nil)
+        let result = await sut.completeSubscriptionPurchase(with: "transactionJWS", isFreeTrial: nil, experimentAttribution: nil)
         switch result {
         case .success:
             XCTFail("Unexpected success")
@@ -201,7 +212,7 @@ final class AppStorePurchaseFlowTests: XCTestCase {
 
         let notificationPosted = expectation(forNotification: .userDidPurchaseSubscription, object: nil, notificationCenter: .default)
 
-        _ = await sut.completeSubscriptionPurchase(with: "transactionJWS", experimentAttribution: nil)
+        _ = await sut.completeSubscriptionPurchase(with: "transactionJWS", isFreeTrial: nil, experimentAttribution: nil)
 
         await fulfillment(of: [notificationPosted], timeout: 1.0)
     }
@@ -215,12 +226,12 @@ final class AppStorePurchaseFlowTests: XCTestCase {
         let notificationPosted = expectation(forNotification: .userDidPurchaseSubscription, object: nil, notificationCenter: .default)
         notificationPosted.isInverted = true
 
-        _ = await sut.completeSubscriptionPurchase(with: "transactionJWS", experimentAttribution: nil)
+        _ = await sut.completeSubscriptionPurchase(with: "transactionJWS", isFreeTrial: nil, experimentAttribution: nil)
 
         await fulfillment(of: [notificationPosted], timeout: 1.0)
     }
 
-    func test_completeSubscriptionPurchase_withIntroductoryOfferTransaction_postsIsFreeTrialTrue() async {
+    func test_completeSubscriptionPurchase_withFreeTrial_postsIsFreeTrialTrue() async {
         subscriptionManagerMock.resultTokenContainer = OAuthTokensFactory.makeValidTokenContainerWithEntitlements()
         let subscription = SubscriptionMockFactory.appleSubscription
         subscriptionManagerMock.resultSubscription = .success(subscription)
@@ -230,12 +241,12 @@ final class AppStorePurchaseFlowTests: XCTestCase {
             notification.userInfo?[UserDidPurchaseSubscriptionUserInfoKey.isFreeTrial] as? Bool == true
         }
 
-        _ = await sut.completeSubscriptionPurchase(with: makeTransactionJWS(payload: #"{"offerType":1}"#), experimentAttribution: nil)
+        _ = await sut.completeSubscriptionPurchase(with: "transactionJWS", isFreeTrial: true, experimentAttribution: nil)
 
         await fulfillment(of: [notificationPosted], timeout: 1.0)
     }
 
-    func test_completeSubscriptionPurchase_withUnreadableTransaction_postsNoIsFreeTrial() async {
+    func test_completeSubscriptionPurchase_withUnknownFreeTrial_postsNoIsFreeTrial() async {
         subscriptionManagerMock.resultTokenContainer = OAuthTokensFactory.makeValidTokenContainerWithEntitlements()
         let subscription = SubscriptionMockFactory.appleSubscription
         subscriptionManagerMock.resultSubscription = .success(subscription)
@@ -245,36 +256,9 @@ final class AppStorePurchaseFlowTests: XCTestCase {
             notification.userInfo?[UserDidPurchaseSubscriptionUserInfoKey.isFreeTrial] == nil
         }
 
-        _ = await sut.completeSubscriptionPurchase(with: "transactionJWS", experimentAttribution: nil)
+        _ = await sut.completeSubscriptionPurchase(with: "transactionJWS", isFreeTrial: nil, experimentAttribution: nil)
 
         await fulfillment(of: [notificationPosted], timeout: 1.0)
-    }
-
-    // MARK: - isFreeTrial(transactionJWS:) Tests
-
-    func test_isFreeTrial_withIntroductoryOffer_returnsTrue() {
-        XCTAssertEqual(DefaultAppStorePurchaseFlow.isFreeTrial(transactionJWS: makeTransactionJWS(payload: #"{"offerType":1}"#)), true)
-    }
-
-    func test_isFreeTrial_withNonIntroductoryOffer_returnsFalse() {
-        XCTAssertEqual(DefaultAppStorePurchaseFlow.isFreeTrial(transactionJWS: makeTransactionJWS(payload: #"{"offerType":3}"#)), false)
-    }
-
-    func test_isFreeTrial_withoutOffer_returnsFalse() {
-        XCTAssertEqual(DefaultAppStorePurchaseFlow.isFreeTrial(transactionJWS: makeTransactionJWS(payload: #"{"productId":"monthly"}"#)), false)
-    }
-
-    func test_isFreeTrial_withMalformedJWS_returnsNil() {
-        XCTAssertNil(DefaultAppStorePurchaseFlow.isFreeTrial(transactionJWS: "transactionJWS"))
-        XCTAssertNil(DefaultAppStorePurchaseFlow.isFreeTrial(transactionJWS: "header.!!!.signature"))
-    }
-
-    private func makeTransactionJWS(payload: String) -> String {
-        let encoded = Data(payload.utf8).base64EncodedString()
-            .replacingOccurrences(of: "+", with: "-")
-            .replacingOccurrences(of: "/", with: "_")
-            .replacingOccurrences(of: "=", with: "")
-        return "header.\(encoded).signature"
     }
 
     // MARK: - PendingTransactionHandler Tests
@@ -287,7 +271,7 @@ final class AppStorePurchaseFlowTests: XCTestCase {
         subscriptionManagerMock.confirmPurchaseResponse = .success(subscription)
 
         // When
-        let result = await sut.completeSubscriptionPurchase(with: "transactionJWS", experimentAttribution: nil)
+        let result = await sut.completeSubscriptionPurchase(with: "transactionJWS", isFreeTrial: nil, experimentAttribution: nil)
 
         // Then
         XCTAssertEqual(result, .success(.completed))
@@ -302,7 +286,7 @@ final class AppStorePurchaseFlowTests: XCTestCase {
         subscriptionManagerMock.confirmPurchaseResponse = .success(subscription)
 
         // When
-        let result = await sut.completeSubscriptionPurchase(with: "transactionJWS", experimentAttribution: nil)
+        let result = await sut.completeSubscriptionPurchase(with: "transactionJWS", isFreeTrial: nil, experimentAttribution: nil)
 
         // Then
         XCTAssertEqual(result, .failure(.missingEntitlements))

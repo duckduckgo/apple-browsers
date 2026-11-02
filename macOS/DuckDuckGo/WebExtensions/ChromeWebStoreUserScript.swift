@@ -28,6 +28,11 @@ import WebKit
 final class ChromeWebStoreUserScript: NSObject, Subfeature {
     static let featureNameValue = "chromeWebstorePatching"
     let featureName = featureNameValue
+
+    enum UserInfoKeys {
+        static let extensionID = "extensionId"
+    }
+
     let messageOriginPolicy: MessageOriginPolicy = .only(rules: [.exact(hostname: ChromeWebStoreURL.host)])
     weak var broker: UserScriptMessageBroker?
     private let isEnabled: Bool
@@ -146,7 +151,12 @@ final class ChromeWebStoreUserScript: NSObject, Subfeature {
                   ChromeWebStoreURL.isValidDownloadURL(request.versionedCrxUrl, for: request.extensionId) else {
                 throw ChromeWebStoreError.invalidRequest
             }
+            // Captured before the install: while loading, the extension may open and select a tab of its own.
+            let window = webView?.window
             let success = await service?.install(identifier: request.extensionId, downloadURL: request.versionedCrxUrl) ?? false
+            if success, let window {
+                notificationCenter.post(name: .chromeWebStoreExtensionInstalled, object: window, userInfo: [UserInfoKeys.extensionID: request.extensionId])
+            }
             return OperationResponse(success: success)
         case .removeExtension:
             let success = await service?.remove(identifier: request.extensionId) ?? false
@@ -155,4 +165,8 @@ final class ChromeWebStoreUserScript: NSObject, Subfeature {
             return nil
         }
     }
+}
+
+extension Notification.Name {
+    static let chromeWebStoreExtensionInstalled = Notification.Name("chromeWebStoreExtensionInstalled")
 }

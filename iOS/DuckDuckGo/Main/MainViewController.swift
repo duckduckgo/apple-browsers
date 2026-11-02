@@ -1282,7 +1282,7 @@ class MainViewController: UIViewController {
                 pixelFiring?.fire(Pixel.Event.swipeTabsUsedDaily, frequency: .legacyDailyNoSuffix)
                 newTabPageSessionInstrumentation.visitEnded(terminalAction: .swipeToOtherTab)
                 postIdleSessionInstrumentation.sessionEnded(reason: .tabSwiped)
-                currentTab?.aiChatContextualSheetCoordinator.dismissSheet()
+                currentTabWillLeaveScreen(.tabSwitched)
                 if tab.isAITab {
                     // Before selecting, so the entry attaches to this tab when it is shown.
                     fireAIChatEntryPointPixel(source: .tabSwipe, opensNewTab: false, hasPrompt: false)
@@ -1296,7 +1296,7 @@ class MainViewController: UIViewController {
         } newTab: { [weak self] in
             PixelKit.fire(Pixel.Event.swipeToOpenNewTab)
             self?.postIdleSessionInstrumentation.sessionEnded(reason: .tabSwiped)
-            self?.currentTab?.aiChatContextualSheetCoordinator.dismissSheet()
+            self?.currentTabWillLeaveScreen(.newTabOpened)
             self?.newTab()
         } onSwipeStarted: { [weak self] in
             self?.rememberNewTabPageInputFocusForTabSwitch()
@@ -1516,6 +1516,8 @@ class MainViewController: UIViewController {
         hasBoundAIChatChromeChip = true
         boundAIChatChromeChipCoordinator = coordinator
         aiChatChromeChipCancellables.removeAll()
+        // Only on an actual tab change: the tab leaving refreshes the omnibar while it is still the current one.
+        coordinator?.tabDidReturnToScreen(presentedFrom: self)
 
         guard let coordinator else {
             refreshAIChatChromeChip()
@@ -3318,7 +3320,7 @@ class MainViewController: UIViewController {
             tabManager.setSuppressTrackerAnimationOnFirstLoad(for: tab.tabModel, shouldSuppress: true)
         }
 
-        currentTab?.aiChatContextualSheetCoordinator.dismissSheet()
+        currentTab?.aiChatContextualSheetCoordinator.tabWillLeaveScreen()
         dismissOmniBar()
         resetUnifiedToggleInputForTabTransition(to: tab)
         attachTab(tab: tab)
@@ -3340,7 +3342,7 @@ class MainViewController: UIViewController {
         guard let tab else { return }
         // Re-selecting the current tab keeps its sidebar chat open.
         if previousTab !== tab {
-            previousTab?.aiChatContextualSheetCoordinator.dismissSheet()
+            previousTab?.aiChatContextualSheetCoordinator.tabWillLeaveScreen()
         }
         previousTab?.tabModel.openedAfterIdle = false
         dismissSystemFindNavigator(for: previousTab)
@@ -4327,9 +4329,8 @@ class MainViewController: UIViewController {
         // Tear down active editing before building the new tab; non-animated so its collapse doesn't race the new tab's focus animation.
         dismissOmniBar(animated: false)
         hideNotificationBarIfBrokenSitePromptShown()
-        currentTab?.aiChatContextualSheetCoordinator.dismissSheet()
+        currentTabWillLeaveScreen(.newTabOpened)
 
-        recordDuckAISessionPendingExit(.newTabOpened)
         let previousTab = tabManager.current()
         dismissSystemFindNavigator(for: previousTab)
         captureForSwipeBack(tabManager.currentTabsModel.currentTab)
@@ -7869,7 +7870,7 @@ extension MainViewController: TabDelegate {
         hideNotificationBarIfBrokenSitePromptShown()
         showBars()
         currentTab?.dismiss()
-        tab.aiChatContextualSheetCoordinator.dismissSheet()
+        tab.aiChatContextualSheetCoordinator.tabWillLeaveScreen()
         themeColorManager.updateThemeColor()
 
         // Don't use a request or else the page gets stuck on "about:blank"
@@ -8083,7 +8084,7 @@ extension MainViewController: TabDelegate {
         }
         _ = findInPageView?.resignFirstResponder()
         hideNotificationBarIfBrokenSitePromptShown()
-        tab.aiChatContextualSheetCoordinator.dismissSheet()
+        tab.aiChatContextualSheetCoordinator.tabWillLeaveScreen()
 
         // The new tab carries a URL, so no New Tab Page attaches to supersede the visit and nothing
         // else would end it. Reached from the browsing menu's Duck.ai entry on builds where chat

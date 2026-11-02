@@ -37,7 +37,7 @@ public struct PlatformLinksView: View {
     private var model: any PlatformLinksHandling
     private var source: SyncSettingsViewModel.PlatformLinksPixelSource
 
-    @State private var shareButtonFrame: CGRect = .zero
+    @State private var shareButtonAnchor = ShareButtonAnchor()
 
     public init(model: any PlatformLinksHandling, source: SyncSettingsViewModel.PlatformLinksPixelSource) {
         self.model = model
@@ -90,7 +90,7 @@ public struct PlatformLinksView: View {
 
             Button {
                 if let url = URL(string: Constants.downloadUrl) {
-                    model.shareLinkPressed(for: url, with: UserText.syncGetOtherDeviceShareLinkMessage, from: shareButtonFrame)
+                    model.shareLinkPressed(for: url, with: UserText.syncGetOtherDeviceShareLinkMessage, from: shareButtonAnchor.frameInWindow)
                     model.fireOtherPlatformLinksPixel(for: .share, source: source)
                 }
             } label: {
@@ -100,15 +100,7 @@ public struct PlatformLinksView: View {
                 }
             }
             .buttonStyle(PrimaryButtonStyle())
-            .background(
-                GeometryReader { geometryProxy in
-                    Color.clear
-                        .preference(key: ShareButtonFramePreferenceKey.self, value: geometryProxy.frame(in: .global))
-                }
-            )
-            .onPreferenceChange(ShareButtonFramePreferenceKey.self) { newFrameRect in
-                shareButtonFrame = newFrameRect
-            }
+            .background(ShareButtonAnchorView(anchor: shareButtonAnchor))
             .padding(8)
         }
         .padding(16)
@@ -122,11 +114,27 @@ public struct PlatformLinksView: View {
     }
 }
 
-private struct ShareButtonFramePreferenceKey: PreferenceKey {
-    static var defaultValue: CGRect = .zero
+private final class ShareButtonAnchor {
+    weak var view: UIView?
 
-    static func reduce(value: inout CGRect, nextValue: () -> CGRect) {
-        value = nextValue()
+    var frameInWindow: CGRect {
+        guard let view else { return .zero }
+        return view.convert(view.bounds, to: nil)
+    }
+}
+
+private struct ShareButtonAnchorView: UIViewRepresentable {
+    let anchor: ShareButtonAnchor
+
+    func makeUIView(context: Context) -> UIView {
+        let view = UIView()
+        view.isUserInteractionEnabled = false
+        anchor.view = view
+        return view
+    }
+
+    func updateUIView(_ uiView: UIView, context: Context) {
+        anchor.view = uiView
     }
 }
 

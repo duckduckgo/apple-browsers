@@ -150,10 +150,13 @@ final class AIChatUserScriptErrorEventMapper: EventMapping<AIChatUserScriptError
 
 // swiftlint:disable inclusive_language
 protocol AIChatUserScriptHandling: AnyObject {
+    @MainActor func configureBrowserTools(service: AIChatBrowserToolsService?, source: (any AIChatBrowserToolsPushing)?)
+    @MainActor var supportsBrowserTools: Bool { get }
     @MainActor func mcpInitialize(params: Any, message: UserScriptMessage) async -> Encodable?
     @MainActor func mcpNotificationsInitialized(params: Any, message: UserScriptMessage) async -> Encodable?
     @MainActor func mcpToolsList(params: Any, message: UserScriptMessage) async -> Encodable?
     @MainActor func mcpToolsCall(params: Any, message: UserScriptMessage, elicitationPusher: (any AIChatElicitationPushing)?) async -> Encodable?
+    @MainActor func mcpElicitationResponse(params: Any, message: UserScriptMessage) async -> Encodable?
     var displayMode: AIChatDisplayMode? { get set }
     var isFireModeProvider: (() -> Bool)? { get set }
     var focusChatInputHandler: (@MainActor () -> Void)? { get set }
@@ -216,6 +219,10 @@ protocol AIChatUserScriptHandling: AnyObject {
     func setAIChatHistoryEnabled(params: Any, message: UserScriptMessage) -> Encodable?
 }
 
+extension AIChatUserScriptHandling {
+    @MainActor func configureBrowserTools(service: AIChatBrowserToolsService?, source: (any AIChatBrowserToolsPushing)?) {}
+    @MainActor var supportsBrowserTools: Bool { false }
+
     @MainActor
     func mcpInitialize(params: Any, message: UserScriptMessage) async -> Encodable? {
         MCPInitializeResult(serverName: AIChatBrowserToolsService.serverName,
@@ -239,7 +246,29 @@ protocol AIChatUserScriptHandling: AnyObject {
         let failure: BrowserToolFailure = request?.name.isEmpty == false ? .unavailable : .invalidRequest
         return InvokeBrowserToolResponse(callId: callID, result: .failure(failure))
     }
+
+    @MainActor
+    func mcpElicitationResponse(params: Any, message: UserScriptMessage) async -> Encodable? {
+        MCPEmptyResult()
+    }
+}
+
 final class AIChatUserScriptHandler: AIChatUserScriptHandling {
+
+    @MainActor private var browserTools: AIChatBrowserToolsService?
+    @MainActor private weak var browserToolsSource: (any AIChatBrowserToolsPushing)?
+
+    @MainActor
+    func configureBrowserTools(service: AIChatBrowserToolsService?, source: (any AIChatBrowserToolsPushing)?) {
+        browserTools = service
+        browserToolsSource = source
+    }
+
+    @MainActor
+    var supportsBrowserTools: Bool {
+        guard let browserTools, let browserToolsSource else { return false }
+        return browserTools.isAvailable(in: browserToolsSource.browserToolsScope)
+    }
 
     @MainActor private var initialPromptConnection: AIChatInitialPromptSession.Connection?
 
@@ -526,6 +555,7 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
             supportsBlobSafeDataClearing: true,
             installType: installTypeProvider(),
             installAge: AIChatNativeConfigValues.installAgeBucket(installDate: installDateProvider()),
+            supportsBrowserTools: supportsBrowserTools && browserToolsSource?.allowsBrowserTools(for: message) == true,
             supportsAttachmentPrivacyDisplay: isAttachmentPrivacyEnabled,
             supportsHomePageChatSuggestions: supportsHomePageChatSuggestions(for: message),
             supportsCanonicalChatFormat: true
@@ -1062,3 +1092,13 @@ extension AIChatUserScriptHandler {
                                               source: origin, elicitationPusher: elicitationPusher)
         return InvokeBrowserToolResponse(callId: request.callId, result: result.callToolResult)
     }
+
+    @MainActor
+    func mcpElicitationResponse(params: Any, message: UserScriptMessage) async -> Encodable? {
+        if let response: AIChatElicitationResponseRequest = DecodableHelper.decode(from: params), !response.id.isEmpty,
+           let browserTools, let origin = browserToolsSource {
+            browserTools.completeElicitation(response, source: origin)
+        }
+        return MCPEmptyResult()
+    }
+}

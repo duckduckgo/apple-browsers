@@ -228,22 +228,31 @@ final class MultiTabAttachmentPreparation: TabObserver {
         let now = self.now
         let isValid: @MainActor () -> Bool = { [weak self] in self?.isValid(operation: operation) == true }
         task = Task { @MainActor [weak self] in
-            guard !Task.isCancelled, isValid() else { return .cancelled }
+            guard !Task.isCancelled, isValid() else {
+                return .cancelled
+            }
             let timeout = max(0, deadline - now())
-            guard timeout > 0 else { return .timedOut }
+            guard timeout > 0 else {
+                return .timedOut
+            }
             if state.isLoading {
                 let finished = page.changes.prepend(())
                     .filter { !isValid() || page.state()?.isLoading != true }
                     .eraseToAnyPublisher()
                 switch await MultiTabAttachmentWaiter.firstValue(from: finished, timeout: timeout) {
-                case .timedOut: return .timedOut
-                case .cancelled: return .cancelled
-                case .finished: return .unavailable
+                case .timedOut:
+                    return .timedOut
+                case .cancelled:
+                    return .cancelled
+                case .finished:
+                    return .unavailable
                 case .value: break
                 }
             }
             guard !Task.isCancelled, isValid(), let ready = page.state(),
-                  ready.isLoaded, !ready.isLoading, ready.isAttachable, let url = ready.url else { return .unavailable }
+                  ready.isLoaded, !ready.isLoading, ready.isAttachable, let url = ready.url else {
+                return .unavailable
+            }
             self?.navigationDeadline = nil
             return await page.collect(url, isValid)
         }
@@ -255,7 +264,9 @@ final class MultiTabAttachmentPreparation: TabObserver {
         while !Task.isCancelled && !isCancelled && isEnabled() {
             refresh()
             if requiresProcessRecovery {
-                guard !retried else { return nil }
+                guard !retried else {
+                    return nil
+                }
                 retried = true
                 recoverPageAtSend()
             }
@@ -273,14 +284,20 @@ final class MultiTabAttachmentPreparation: TabObserver {
                     pending?.cancel()
                 }
             )
-            guard !Task.isCancelled, !isCancelled, isEnabled() else { return nil }
+            guard !Task.isCancelled, !isCancelled, isEnabled() else {
+                return nil
+            }
             refresh()
-            guard operation == operationID else { continue }
+            guard operation == operationID else {
+                continue
+            }
             switch result {
             case .collected(let context):
                 return validated(context)
             case .failed, .timedOut:
-                guard !retried else { return nil }
+                guard !retried else {
+                    return nil
+                }
                 retried = true
                 navigationDeadline = nil
                 startCollection()
@@ -296,7 +313,9 @@ final class MultiTabAttachmentPreparation: TabObserver {
               !state.isLoading, state.isLoaded, state.isAttachable,
               let url = URL(string: context.url), let pageURL, url.equals(pageURL, by: .sameDocument),
               tab.link?.url.equals(url, by: .sameDocument) == true,
-              context.hasAttachedPage, context.attachable != false else { return nil }
+              context.hasAttachedPage, context.attachable != false else {
+            return nil
+        }
         return context.withTabId(tab.uid)
     }
 }

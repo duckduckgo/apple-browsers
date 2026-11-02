@@ -120,7 +120,12 @@ final class AIChatUserScript: NSObject, Subfeature {
     weak var broker: UserScriptMessageBroker?
     weak var webView: WKWebView?
 
+    @MainActor var browserToolsScopeProvider: (() -> BrowserToolScope?)?
+    @MainActor private(set) var browserToolsScope: BrowserToolScope?
+    @MainActor private(set) var browserToolsSurface: AIChatBrowserToolsService.Surface = .fullTab
     @MainActor var browserToolsExposureHandler: (() -> Void)?
+    @MainActor private var browserToolsService: AIChatBrowserToolsService?
+
     private let devicePlatform: DevicePlatformProviding.Type
     private let handler: AIChatUserScriptHandling
     private(set) var messageOriginPolicy: MessageOriginPolicy
@@ -192,6 +197,9 @@ final class AIChatUserScript: NSObject, Subfeature {
             rules.append(.exact(hostname: debugHostname))
         }
         
+        if let customURL = debugSettings.customURL, let host = URL(string: customURL)?.host {
+            rules.append(.exact(hostname: host))
+        }
         return rules
     }
 
@@ -204,6 +212,9 @@ final class AIChatUserScript: NSObject, Subfeature {
 
         if let debugHostname = debugSettings.messagePolicyHostname {
             rules.append(.exact(hostname: debugHostname))
+        }
+        if let customURL = debugSettings.customURL, let host = URL(string: customURL)?.host {
+            rules.append(.exact(hostname: host))
         }
         return rules
     }
@@ -265,10 +276,21 @@ final class AIChatUserScript: NSObject, Subfeature {
                 }
                 return await self.handler.mcpToolsCall(params: params, message: message, elicitationPusher: self)
             }
+        case .elicitationResponse:
+            return { @MainActor [weak self] params, message in
+                guard let self, self.prepareBrowserTools(for: message) else { return MCPEmptyResult() }
+                return await self.handler.mcpElicitationResponse(params: params, message: message)
+            }
         case .responseState:
             return handler.getResponseState
         case .getAIChatNativeConfigValues:
-            return handler.getAIChatNativeConfigValues
+            return { @MainActor [weak self] params, message in
+                guard let self else { return nil }
+                _ = self.prepareBrowserTools(for: message)
+                let result = self.handler.getAIChatNativeConfigValues(params: params, message: message)
+                self.reportBrowserToolsExposure(isSupported: (result as? AIChatNativeConfigValues)?.supportsBrowserTools == true)
+                return result
+            }
         case .getAIChats:
             return handler.getAIChats
         case .getAIChatNativePrompt:
@@ -441,6 +463,27 @@ final class AIChatUserScript: NSObject, Subfeature {
         guard isSupported else { return }
         browserToolsExposureHandler?()
     }
+
+    @MainActor
+    private func prepareBrowserTools(for message: UserScriptMessage) -> Bool {
+        guard allowsBrowserTools(for: message) else { return false }
+        if browserToolsScope == nil {
+            setBrowserTools(service: browserToolsService, scope: browserToolsScopeProvider?(), surface: browserToolsSurface)
+        }
+        return true
+    }
+
+    @MainActor
+    func setBrowserTools(service: AIChatBrowserToolsService?, scope: BrowserToolScope?, surface: AIChatBrowserToolsService.Surface) {
+        guard browserToolsService !== service || browserToolsScope !== scope || browserToolsSurface != surface else { return }
+        browserToolsService?.unregister(self)
+        browserToolsService = service
+        browserToolsScope = scope
+        browserToolsSurface = surface
+        handler.configureBrowserTools(service: service, source: self)
+        service?.register(self)
+    }
+
     @MainActor
     func connectInitialPromptSession(_ session: AIChatInitialPromptSession) {
         handler.connectInitialPromptSession(session)
@@ -448,6 +491,9 @@ final class AIChatUserScript: NSObject, Subfeature {
 
     @MainActor
     func cleanUpForReplacement() {
+        setBrowserTools(service: nil, scope: nil, surface: browserToolsSurface)
+        browserToolsScopeProvider = nil
+        browserToolsExposureHandler = nil
         handler.disconnectInitialPromptSession()
         cancelQueuedTabContextSubmissions()
         inputBoxHandler = nil
@@ -724,10 +770,35 @@ extension AIChatUserScript: AIChatMetricReportingHandling {
         delegate?.aiChatUserScript(self, didReceiveMetric: metric)
     }
 }
+
+extension AIChatUserScript: AIChatElicitationPushing, AIChatBrowserToolsPushing {
+    @MainActor
+    func allowsBrowserTools(for message: UserScriptMessage) -> Bool {
+        guard let webView, message.isMainFrame, message.messageWebView === webView,
+              messageDestinationPolicy.isAllowed(message.messageHost),
+              let host = webView.url?.host, messageDestinationPolicy.isAllowed(host) else { return false }
+        return true
+    }
+
+    @MainActor var browserToolsChatID: String? {
+        guard let url = webView?.url, let host = url.host, messageDestinationPolicy.isAllowed(host) else { return nil }
+        return URLComponents(url: url, resolvingAgainstBaseURL: false)?.queryItems?.first(where: { $0.name == "chatID" })?.value
+    }
+    @MainActor
+    func pushElicitationCreate(_ params: MCPElicitationCreateParams) -> Bool {
+        pushBrowserToolsMessage(.elicitationCreate, params: params)
+    }
+
     @MainActor
     func pushToolsListChanged() {
         _ = pushBrowserToolsMessage(.toolsListChanged, params: nil)
     }
+
+    @MainActor
+    func pushTabChanged(_ data: AIChatTabChangedData) {
+        _ = pushBrowserToolsMessage(.aiChatTabChanged, params: data)
+    }
+
     @MainActor
     private func pushBrowserToolsMessage(_ message: AIChatUserScriptMessages, params: Encodable?) -> Bool {
         guard let webView, let broker, let host = webView.url?.host,

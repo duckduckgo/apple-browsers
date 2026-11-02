@@ -132,6 +132,7 @@ class FireExecutor: FireExecuting {
     // MARK: - Variables
     private let fireWorkers: [FireExecutorWorker]
     private let tabManager: TabManaging
+    private let browserToolsService: AIChatBrowserToolsService?
     private let downloadManager: DownloadManaging
     private let favicons: FaviconManaging
     private let historyManager: HistoryManaging
@@ -185,11 +186,13 @@ class FireExecutor: FireExecuting {
          idManager: DataStoreIDManaging = DataStoreIDManager.shared,
          dataStoreWarmupWorker: DataStoreWarmupWorker = DataStoreWarmupWorker(),
          backgroundTask: FireBackgroundTasking = FireBackgroundTask(),
+         browserToolsService: AIChatBrowserToolsService? = nil,
          clearAppSwitcherSnapshots: @escaping @MainActor () async -> Void = {
              await AppSwitcherSnapshotCleaner().clearSnapshots()
          }) {
         self.backgroundTask = backgroundTask
         self.tabManager = tabManager
+        self.browserToolsService = browserToolsService
         self.downloadManager = downloadManager
         self.favicons = favicons
         self.historyManager = historyManager
@@ -285,6 +288,8 @@ class FireExecutor: FireExecuting {
         }
 
         burnInProgress = true
+        let browserToolsClearing = browserToolsService?.beginClearing(for: request)
+        defer { if let browserToolsClearing { browserToolsService?.endClearing(browserToolsClearing) } }
         pixelsReporter.burnDidStart()
         // Leaving the app mid-Fire would otherwise suspend it with the burn half done.
         backgroundTask.begin()
@@ -404,21 +409,27 @@ class FireExecutor: FireExecuting {
     @discardableResult
     @MainActor
     func burnChat(chatID: String, isFireMode: Bool) async -> Result<Void, Error> {
+        let browserToolsClearing = browserToolsService?.beginClearingChats([chatID], isFireMode: isFireMode)
         let result = await aiChatDeleter.deleteChat(chatID: chatID, isFireMode: isFireMode)
+        defer { if let browserToolsClearing { browserToolsService?.endClearingChats(browserToolsClearing, result: result) } }
         return await clearAppSwitcherSnapshotsIfNeeded(after: result)
     }
 
     @discardableResult
     @MainActor
     func burnChats(chatIDs: [String], isFireMode: Bool) async -> Result<Void, Error> {
+        let browserToolsClearing = browserToolsService?.beginClearingChats(Set(chatIDs), isFireMode: isFireMode)
         let result = await aiChatDeleter.deleteChats(chatIDs: chatIDs, isFireMode: isFireMode)
+        defer { if let browserToolsClearing { browserToolsService?.endClearingChats(browserToolsClearing, result: result) } }
         return await clearAppSwitcherSnapshotsIfNeeded(after: result)
     }
 
     @discardableResult
     @MainActor
     func burnAllChats(isFireMode: Bool) async -> Result<Void, Error> {
+        let browserToolsClearing = browserToolsService?.beginClearingChats(isFireMode: isFireMode)
         let result = await aiChatDeleter.deleteAllChats(isFireMode: isFireMode)
+        defer { if let browserToolsClearing { browserToolsService?.endClearingChats(browserToolsClearing, result: result) } }
         return await clearAppSwitcherSnapshotsIfNeeded(after: result)
     }
 
@@ -689,6 +700,7 @@ class FireExecutor: FireExecuting {
     @MainActor
     private func burnTabAIHistory(tabViewModel: TabViewModel) async -> Result<Void, Error> {
         if let chatID = tabViewModel.currentAIChatId {
+            browserToolsService?.invalidateChats([chatID], isFireMode: tabViewModel.tab.fireTab)
             let result = await aiChatDeleter.deleteChat(chatID: chatID, isFireMode: tabViewModel.tab.fireTab)
             if let report = aiChatDeleter.lastClearingReport {
                 dataClearingWideEventService?.recordAIChatClearing(report)

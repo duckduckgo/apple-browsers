@@ -193,6 +193,27 @@ final class AIChatContextualSheetCoordinator {
         AIChatFeatureFlagProvider(featureFlagger: featureFlagger).isNativeDataAccessEnabled()
     }
 
+    weak var browserToolsService: AIChatBrowserToolsService?
+    var browserToolsScopeProvider: (() -> BrowserToolScope?)?
+    private var browserToolsScope: BrowserToolScope?
+    private weak var browserToolsWebViewController: AIChatContextualWebViewController?
+
+    func notifyBrowserToolsTabChanged(url: URL, isAttachable: Bool) {
+        guard let browserToolsScope else { return }
+        browserToolsService?.notifyTabChanged(ownerTabID: browserToolsScope.ownerTabID, url: url, isAttachable: isAttachable)
+    }
+
+    private func refreshBrowserToolsOpening() {
+        let nextScope = browserToolsScopeProvider?()
+        let requiresReload = browserToolsScope != nil
+            && (browserToolsWebViewController?.hasExposedBrowserTools == true || browserToolsService?.isAvailable(in: nextScope) == true)
+        if let browserToolsScope {
+            browserToolsService?.invalidate(scope: browserToolsScope)
+        }
+        browserToolsScope = nextScope
+        browserToolsWebViewController?.setBrowserTools(service: browserToolsService, scope: nextScope, reload: requiresReload)
+    }
+
     private func discardActiveChatIfDeleted() async {
         guard !isSheetPresented,
               sessionState.hasActiveChat,
@@ -842,6 +863,9 @@ final class AIChatContextualSheetCoordinator {
         if !isHandingOverToFloatingInput {
             delegate?.aiChatContextualSheetCoordinatorDidCloseSurface(self, chatDeleted: false)
         }
+        if let browserToolsScope {
+            browserToolsService?.invalidate(scope: browserToolsScope)
+        }
         persistentUTIHost?.endPresentation()
         selectionJourneyInstrumentation.surfaceDismissed()
         stopObservingContextUpdates()
@@ -853,6 +877,11 @@ final class AIChatContextualSheetCoordinator {
     // clear nukes the chat and doesn't want a pending timer firing afterwards. Keep aligned
     // when adding side effects to handleSheetDismissed.
     func clearActiveChat(reason: DuckAISelectionJourneyWideEventData.TerminalReason = .chatCleared) {
+        if let browserToolsScope {
+            browserToolsService?.invalidate(scope: browserToolsScope)
+        }
+        browserToolsScope = nil
+        browserToolsWebViewController = nil
         let sheetInSidebar = isSheetInSidebar ? sheetViewController : nil
         let parkedSheet = parkedSheetViewController
         parkedSheetViewController = nil
@@ -1032,6 +1061,7 @@ private extension AIChatContextualSheetCoordinator {
     func show(_ sheetVC: AIChatContextualSheetViewController,
               from presentingVC: UIViewController,
               in sidebarHost: AIChatContextualSidebarHosting?) {
+        refreshBrowserToolsOpening()
         self.sidebarHost = sidebarHost
         if let sidebarHost {
             sheetVC.prepareForSidebar()
@@ -1319,6 +1349,8 @@ private extension AIChatContextualSheetCoordinator {
             }
         )
 
+        browserToolsWebViewController = webVC
+        webVC.setBrowserTools(service: browserToolsService, scope: browserToolsScope)
         webVC.setAttachedSelectionsProvider { [weak self] in
             self?.sessionState.attachedSelections ?? []
         }

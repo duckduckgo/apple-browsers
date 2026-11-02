@@ -28,9 +28,11 @@ import DebugServer
 struct AIChatDebugView: View {
     @StateObject private var viewModel = AIChatDebugViewModel()
     private let duckAiNativeStorageHandler: DuckAiNativeStorageHandling?
+    private let tabManager: TabManager?
 
-    init(duckAiNativeStorageHandler: DuckAiNativeStorageHandling? = nil) {
+    init(duckAiNativeStorageHandler: DuckAiNativeStorageHandling? = nil, tabManager: TabManager? = nil) {
         self.duckAiNativeStorageHandler = duckAiNativeStorageHandler
+        self.tabManager = tabManager
     }
 
     var body: some View {
@@ -38,6 +40,14 @@ struct AIChatDebugView: View {
             AIChatStorageServerSection(duckAiNativeStorageHandler: duckAiNativeStorageHandler)
 
 #if DEBUG || ALPHA
+            Section(header: Text(verbatim: "Browser Tools")) {
+                if let tabManager {
+                    NavigationLink(destination: BrowserToolsDebugView(tabManager: tabManager)) {
+                        Text(verbatim: "Browser Tools")
+                    }
+                }
+            }
+
             Section(header: Text(verbatim: "Footer Messages")) {
                 NavigationLink(destination: AIChatInputFooterDebugView(duckAiNativeStorageHandler: duckAiNativeStorageHandler)) {
                     Text(verbatim: "Native Input Footer Messages")

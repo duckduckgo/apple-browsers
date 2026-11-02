@@ -99,7 +99,9 @@ final class UserScripts: UserScriptsProvider {
         do {
             let configGenerator = ContentScopePrivacyConfigurationJSONGenerator(featureFlagger: AppDependencyProvider.shared.featureFlagger,
                                                                                 privacyConfigurationManager: sourceProvider.privacyConfigurationManager,
-                                                                                excludedFeatures: [PrivacyFeature.autoconsent.rawValue, PrivacyFeature.eventHub.rawValue])
+                                                                                excludedFeatures: [PrivacyFeature.autoconsent.rawValue,
+                                                                                                   PrivacyFeature.eventHub.rawValue,
+                                                                                                   PrivacyFeature.aiChatBrowserTools.rawValue])
             let isolatedConfigGenerator = ContentScopePrivacyConfigurationJSONGenerator(featureFlagger: AppDependencyProvider.shared.featureFlagger,
                                                                                         privacyConfigurationManager: sourceProvider.privacyConfigurationManager)
             contentScopeUserScript = try ContentScopeUserScript(sourceProvider.privacyConfigurationManager,

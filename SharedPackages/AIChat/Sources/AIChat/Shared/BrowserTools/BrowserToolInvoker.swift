@@ -43,7 +43,9 @@ public final class BrowserToolInvoker {
     public func invoke(toolNamed name: String,
                        arguments: JSONValue?,
                        context: BrowserToolCallContext,
-                       elicitationPusher: (any AIChatElicitationPushing)?) async -> BrowserToolResult {
+                       elicitationPusher: (any AIChatElicitationPushing)?,
+                       isContextValid: @MainActor () -> Bool = { true }) async -> BrowserToolResult {
+        guard !Task.isCancelled, isContextValid() else { return .failure(.cancelled) }
         guard configuration.isEnabled else { return .failure(.unavailable) }
 
         // Covers an unknown name and a disabled sub-feature alike: the front end learns only that
@@ -66,11 +68,15 @@ public final class BrowserToolInvoker {
                                                    requestedSchema: BrowserToolPermissionElicitation.choiceSchema,
                                                    ownerTabID: context.ownerTabID,
                                                    pusher: elicitationPusher)
+            guard !Task.isCancelled, isContextValid() else { return .failure(.cancelled) }
+            guard configuration.isEnabled, catalog.tool(named: name) != nil else { return .failure(.unavailable) }
             if let refusal = apply(answer, forToolNamed: tool.name) {
                 return .failure(refusal)
             }
         }
 
+        guard !Task.isCancelled, isContextValid() else { return .failure(.cancelled) }
+        guard configuration.isEnabled, catalog.tool(named: name) != nil else { return .failure(.unavailable) }
         return await tool.execute(arguments: arguments, context: context)
     }
 

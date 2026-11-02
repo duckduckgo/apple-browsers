@@ -294,10 +294,16 @@ final class AIChatPageContextHandler: AIChatPageContextHandling {
     func collectContext(for expectedURL: URL,
                         timeout: TimeInterval = 5,
                         isValid: @escaping @MainActor () -> Bool) async -> MultiTabAttachmentCollectionResult {
-        guard !Task.isCancelled else { return .cancelled }
+        guard !Task.isCancelled else {
+            return .cancelled
+        }
         guard isValid(), currentURLProvider()?.equals(expectedURL, by: .sameDocument) == true,
-              let webView = webViewProvider() else { return .unavailable }
-        guard !firePreventedIfNonAttachable(for: expectedURL, trigger: .userRequest) else { return .unavailable }
+              let webView = webViewProvider() else {
+            return .unavailable
+        }
+        guard !firePreventedIfNonAttachable(for: expectedURL, trigger: .userRequest) else {
+            return .unavailable
+        }
 
         let result: MultiTabAttachmentCollectionResult
         if isDocumentTab(expectedURL) {
@@ -306,13 +312,23 @@ final class AIChatPageContextHandler: AIChatPageContextHandling {
             result = await collectHTMLContext(for: expectedURL, webView: webView, timeout: timeout, isValid: isValid)
         }
 
-        guard !Task.isCancelled else { return .cancelled }
+        guard !Task.isCancelled else {
+            return .cancelled
+        }
         guard isValid(), webViewProvider() === webView,
               currentURLProvider()?.equals(expectedURL, by: .sameDocument) == true,
-              isCurrentPageAttachable() else { return .unavailable }
-        guard case .collected(let context) = result else { return result }
-        guard context.attachable != false else { return .unavailable }
-        guard context.hasAttachedPage else { return .empty }
+              isCurrentPageAttachable() else {
+            return .unavailable
+        }
+        guard case .collected(let context) = result else {
+            return result
+        }
+        guard context.attachable != false else {
+            return .unavailable
+        }
+        guard context.hasAttachedPage else {
+            return .empty
+        }
         return .collected(enrichWithFavicon(context))
     }
 }
@@ -340,10 +356,14 @@ private extension AIChatPageContextHandler {
             }
         )
         switch outcome {
-        case .value(.document(let context)): return .collected(context)
-        case .value(.tooLarge), .value(.unavailable), .finished: return .unavailable
-        case .timedOut: return .timedOut
-        case .cancelled: return .cancelled
+        case .value(.document(let context)):
+            return .collected(context)
+        case .value(.tooLarge), .value(.unavailable), .finished:
+            return .unavailable
+        case .timedOut:
+            return .timedOut
+        case .cancelled:
+            return .cancelled
         }
     }
 
@@ -404,11 +424,16 @@ private extension AIChatPageContextHandler {
             }
         )
         switch outcome {
-        case .value(.collected(let context)): return .collected(context)
-        case .value(.scriptError), .value(.decodeFailed): return .failed
-        case .timedOut: return .timedOut
-        case .cancelled: return .cancelled
-        case .finished: return .unavailable
+        case .value(.collected(let context)):
+            return .collected(context)
+        case .value(.scriptError), .value(.decodeFailed):
+            return .failed
+        case .timedOut:
+            return .timedOut
+        case .cancelled:
+            return .cancelled
+        case .finished:
+            return .unavailable
         }
     }
 

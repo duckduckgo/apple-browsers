@@ -43,7 +43,9 @@ final class MultiTabAttachmentContext {
     func prepare(_ attachment: UnifiedToggleInputTabAttachment,
                  onChange: @escaping (UnifiedToggleInputTabAttachment?) -> Void) -> MultiTabAttachmentPreparation? {
         guard isEnabled, let source, includesCurrentTab || attachment.tabId != source.currentTabID,
-              let tab = source.tabsProvider().first(where: { $0.uid == attachment.tabId && $0.mode == source.mode }) else { return nil }
+              let tab = source.tabsProvider().first(where: { $0.uid == attachment.tabId && $0.mode == source.mode }) else {
+            return nil
+        }
         return MultiTabAttachmentPreparation(attachment: attachment, tab: tab, source: source,
                                              isEnabled: { [feature] in
                                                  if case .available = feature.state { return true }
@@ -53,13 +55,17 @@ final class MultiTabAttachmentContext {
 
     func makeRequest(preparations: [MultiTabAttachmentPreparation],
                      didDispatch: @escaping @MainActor (MultiTabAttachmentRequest.SubmissionResult) -> Void = { _ in }) -> MultiTabAttachmentRequest? {
-        guard !preparations.isEmpty else { return nil }
+        guard !preparations.isEmpty else {
+            return nil
+        }
         let currentTabID = includesCurrentTab ? source?.currentTabID : nil
         return makeRequest {
             MultiTabAttachmentRequest(contexts: {
                 var results: [AIChatPageContextData] = []
                 for preparation in preparations {
-                    guard !Task.isCancelled else { return [] }
+                    guard !Task.isCancelled else {
+                        return []
+                    }
                     if let context = await preparation.value() {
                         results.append(context.tabId == currentTabID ? context.withTabId(nil) : context)
                     }
@@ -79,11 +85,17 @@ final class MultiTabAttachmentContext {
     }
 
     func makeRequest(using provider: () -> MultiTabAttachmentRequest?) -> MultiTabAttachmentRequest? {
-        guard isEnabled, let request = provider() else { return nil }
+        guard isEnabled, let request = provider() else {
+            return nil
+        }
         return MultiTabAttachmentRequest(contexts: { [feature] in
-            guard case .available = feature.state else { return [] }
+            guard case .available = feature.state else {
+                return []
+            }
             let contexts = await request.contexts()
-            guard !Task.isCancelled, case .available = feature.state else { return [] }
+            guard !Task.isCancelled, case .available = feature.state else {
+                return []
+            }
             return request.validate(contexts)
         }, didConsume: { [feature] in
             guard case .available = feature.state else { return }

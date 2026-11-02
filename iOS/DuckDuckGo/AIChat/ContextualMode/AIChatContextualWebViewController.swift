@@ -302,6 +302,18 @@ final class AIChatContextualWebViewController: UIViewController {
         submitPendingIfReady()
     }
 
+    private weak var browserToolsService: AIChatBrowserToolsService?
+    private var browserToolsScope: BrowserToolScope?
+    private weak var browserToolsUserScript: AIChatUserScript?
+    private(set) var hasExposedBrowserTools = false
+
+    func setBrowserTools(service: AIChatBrowserToolsService?, scope: BrowserToolScope?, reload: Bool = false) {
+        browserToolsService = service
+        browserToolsScope = scope
+        browserToolsUserScript?.setBrowserTools(service: service, scope: scope, surface: .contextual)
+        if reload, isViewLoaded { self.reload() }
+    }
+
     func cancelPendingTabAttachmentPrompt() {
         if let request = pendingRichPrompt?.tabAttachmentRequest {
             request.cancel()
@@ -551,6 +563,11 @@ extension AIChatContextualWebViewController: UserContentControllerDelegate {
     }
 
     func configureContentHandler(with userScript: AIChatUserScript) {
+        browserToolsUserScript = userScript
+        userScript.browserToolsExposureHandler = { [weak self] in
+            self?.hasExposedBrowserTools = true
+        }
+        userScript.setBrowserTools(service: browserToolsService, scope: browserToolsScope, surface: .contextual)
         aiChatContentHandler.setup(with: userScript, webView: webView, displayMode: .contextual)
         userScript.setContextualModePixelHandler(pixelHandler)
         utiHost?.bindToUserScript(userScript)
@@ -586,7 +603,20 @@ extension AIChatContextualWebViewController: WKNavigationDelegate {
     }
 
     func webView(_ webView: WKWebView, didStartProvisionalNavigation navigation: WKNavigation!) {
+        if let browserToolsScope {
+            browserToolsService?.cancelOperations(for: browserToolsScope)
+        }
         loadingView.startAnimating()
+    }
+
+    func webView(_ webView: WKWebView, didCommit navigation: WKNavigation!) {
+        hasExposedBrowserTools = false
+    }
+
+    func webViewWebContentProcessDidTerminate(_ webView: WKWebView) {
+        if let browserToolsScope {
+            browserToolsService?.cancelOperations(for: browserToolsScope)
+        }
     }
 
     func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {

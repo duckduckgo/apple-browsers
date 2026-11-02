@@ -807,6 +807,25 @@ class TabViewController: UIViewController {
     private var lastMainFramePageContextResponse: (url: URL, mimeType: String?)?
 
     var tabAttachmentSource: MultiTabAttachmentSource?
+    weak var browserToolsService: AIChatBrowserToolsService?
+    var browserToolsScopeProvider: (() -> BrowserToolScope?)?
+    private weak var browserToolsContextualCoordinator: AIChatContextualSheetCoordinator?
+    private var fullTabBrowserToolsScope: BrowserToolScope?
+
+    private func scopeForFullTab() -> BrowserToolScope? {
+        if fullTabBrowserToolsScope == nil {
+            fullTabBrowserToolsScope = browserToolsScopeProvider?()
+        }
+        return fullTabBrowserToolsScope
+    }
+
+    private func resetFullTabBrowserTools() {
+        if let fullTabBrowserToolsScope {
+            browserToolsService?.invalidate(scope: fullTabBrowserToolsScope)
+        }
+        fullTabBrowserToolsScope = nil
+        userScripts?.aiChatUserScript.setBrowserTools(service: browserToolsService, scope: nil, surface: .fullTab)
+    }
 
     private var pageContextNavigationID = UUID()
     private var pageContextLoadedNavigationID: UUID?
@@ -833,16 +852,21 @@ class TabViewController: UIViewController {
         guard let webView else { return nil }
         return MultiTabAttachmentPage(state: { [weak self] in
             guard let self, let webView = self.webView else { return nil }
+            let isInitialRequestPending = self.pageContextInitialRequestPending
+                || (self.pageContextRestoredPageNeedsLoad && !self.pageContextNavigationInProgress && webView.isLoading)
             return .init(identity: .init(webView: ObjectIdentifier(webView), navigation: self.pageContextNavigationID),
                          url: webView.url,
-                         isLoading: self.pageContextInitialRequestPending || self.pageContextNavigationInProgress || webView.isLoading,
+                         isLoading: isInitialRequestPending || self.pageContextNavigationInProgress || webView.isLoading,
                          isLoaded: self.pageContextLoadedNavigationID == self.pageContextNavigationID,
                          isAttachable: self.pageContextHandler.isCurrentPageAttachable(),
-                         hasTerminatedProcess: self.pageContextProcessTerminated)
+                         hasTerminatedProcess: self.pageContextProcessTerminated,
+                         isInitialRequestPending: isInitialRequestPending)
         }, changes: Publishers.Merge3(urlPublisher.map { _ in () }, pageContextPageChanges,
                                      webView.publisher(for: \.isLoading).map { _ in () }).eraseToAnyPublisher(),
         collect: { [weak self] url, isValid in
-            guard let handler = self?.pageContextHandler else { return .unavailable }
+            guard let handler = self?.pageContextHandler else {
+                return .unavailable
+            }
             return await handler.collectContext(for: url, isValid: isValid)
         }, loadIfNeeded: { [weak self] in
             self?.loadPageForTabAttachmentIfNeeded()
@@ -852,7 +876,9 @@ class TabViewController: UIViewController {
     private func loadPageForTabAttachmentIfNeeded() {
         guard pageContextRestoredPageNeedsLoad || pageContextProcessTerminated, !pageContextInitialRequestPending,
               !pageContextNavigationInProgress, let webView, !webView.isLoading,
-              webView.url != nil, pageContextLoadedNavigationID != pageContextNavigationID else { return }
+              webView.url != nil, pageContextLoadedNavigationID != pageContextNavigationID else {
+            return
+        }
         pageContextRestoredPageNeedsLoad = false
         pageContextProcessTerminated = false
         pageContextInitialRequestPending = true
@@ -882,6 +908,9 @@ class TabViewController: UIViewController {
             selectionJourneyScopeID: tabModel.uid,
             tabAttachmentSource: tabAttachmentSource
         )
+        browserToolsContextualCoordinator = coordinator
+        coordinator.browserToolsService = browserToolsService
+        coordinator.browserToolsScopeProvider = { [weak self] in self?.browserToolsScopeProvider?() }
         coordinator.delegate = self
         return coordinator
     }()
@@ -1745,6 +1774,8 @@ class TabViewController: UIViewController {
     }
 
     func prepareForDataClearing() {
+        browserToolsService?.invalidate(tabID: tabModel.uid)
+        resetFullTabBrowserTools()
         freezeMonitor.end(.fire)
         cancelPendingAIChatTabAttachmentPrompt()
         cancelWebExtensionNavigationWait()
@@ -2878,6 +2909,7 @@ extension TabViewController: WKNavigationDelegate {
     }
 
     func webView(_ webView: WKWebView, didStartProvisionalNavigation navigation: WKNavigation!) {
+        if webView === self.webView { resetFullTabBrowserTools() }
         if webView === self.webView, case .available = aiChatContextualAttachMoreTabsFeature.state {
             if initialAIChatPromptSession.didStartNavigation(navigation) {
                 userScripts?.aiChatUserScript.cancelPendingTabContextSubmission()
@@ -2948,6 +2980,9 @@ extension TabViewController: WKNavigationDelegate {
         pageContextNavigationInProgress = false
         pageContextPageChanges.send()
         didFinishURLSubject.send(webView.url)
+        if !tabModel.fireTab, let url = webView.url, ["http", "https"].contains(url.scheme?.lowercased() ?? "") {
+            browserToolsContextualCoordinator?.notifyBrowserToolsTabChanged(url: url, isAttachable: pageContextHandler.isCurrentPageAttachable())
+        }
         onTextZoomChange()
         adClickAttributionDetection.onDidFinishNavigation(url: webView.url)
         adClickExternalOpenDetector.finishNavigation()
@@ -4730,6 +4765,7 @@ extension TabViewController: WKUIDelegate {
     }
 
     private func handleWebContentProcessDidTerminate(_ webView: WKWebView, reasonName: String?) {
+        resetFullTabBrowserTools()
         // Before the delegate call below, which can start the next termination reload.
         terminationReloadMonitor.didTerminate()
 
@@ -5031,6 +5067,8 @@ extension TabViewController: UserContentControllerDelegate {
         userScripts.serpSettingsUserScript.webView = webView
         configureSitePermissionsGeolocation(with: userScripts.geolocationUserScript)
         
+        userScripts.aiChatUserScript.setBrowserTools(service: browserToolsService, scope: fullTabBrowserToolsScope, surface: .fullTab)
+        userScripts.aiChatUserScript.browserToolsScopeProvider = { [weak self] in self?.scopeForFullTab() }
         userScripts.aiChatUserScript.setFireModeProvider { [weak self] in self?.tabModel.fireTab ?? false }
         userScripts.aiChatUserScript.setFocusChatInputHandler { [weak self] in
             guard let self else { return }

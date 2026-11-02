@@ -270,6 +270,7 @@ final class MainCoordinator {
                                         duckAiNativeStorageHandler: contentBlockingService.duckAiNativeStorageHandler,
                                         fireModeStorageController: contentBlockingService.fireModeStorageController,
                                         wideEvent: wideEvent,
+                                        browserToolsService: tabManager.browserToolsService,
                                         clearAppSwitcherSnapshots: clearAppSwitcherSnapshots)
         let syncAutoRestoreHandler = SyncAutoRestoreHandler(
             decisionManager: syncAutoRestoreDecisionManager,

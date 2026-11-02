@@ -192,8 +192,11 @@ struct UnifiedSuggestionsView: View {
                 // favorites/lists during a toggle. Logo→logo keeps it shown, so this never cuts a morph.
                 // Suppressed on fire tabs (fire screen takes the slot) and in landscape (no room — matches
                 // the unfocused NTP / legacy gate).
-                .opacity(isShowingLogo && !viewModel.isFireTab && !viewModel.isLandscape ? 1 : 0)
-                .animation(nil, value: isShowingLogo)
+                .opacity(viewModel.isShowingLogo && !viewModel.isFireTab && !viewModel.isLandscape ? 1 : 0)
+                .animation(nil, value: viewModel.isShowingLogo)
+                // A logo held back for the keyboard fades in once it settles.
+                .opacity(viewModel.isLogoRevealDeferred ? 0 : 1)
+                .animation(viewModel.isLogoRevealDeferred ? nil : animation, value: viewModel.isLogoRevealDeferred)
                 // On dismiss it fades out (the NTP content takes over) — a separate opacity so the
                 // toggle's instant show/hide above is unaffected.
                 .modifier(FocusedContentDismissFade(isFadingOut: viewModel.isFadingOut))

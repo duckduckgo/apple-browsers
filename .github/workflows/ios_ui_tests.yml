@@ -116,12 +116,13 @@ jobs:
           TEST_CLASSES: ${{ inputs.single_test_class }}
         run: |
           # Follow macOS class discovery; Common/Support contain helper-only base classes.
-          # KeyboardSettingsUITests from main owns its launch setup outside UITestCase.
+          # KeyboardSettingsUITests and GlobalPrivacyControlUITests from main own launch setup outside UITestCase.
           invalid_classes=$(grep -r 'class.*:.*XCTestCase' iOS/UITests --include='*.swift' \
             | grep -v 'class UITestCase:' \
-            | grep -v 'class KeyboardSettingsUITests: XCTestCase' || true)
+            | grep -v 'class KeyboardSettingsUITests: XCTestCase' \
+            | grep -v 'class GlobalPrivacyControlUITests: XCTestCase' || true)
           if [[ -n "$invalid_classes" ]]; then
-            echo "::error::Unsupported UI test base class (KeyboardSettingsUITests is allowlisted): $invalid_classes"
+            echo "::error::Unsupported UI test base class (KeyboardSettingsUITests and GlobalPrivacyControlUITests are allowlisted): $invalid_classes"
             exit 1
           fi
           test_names=$(grep -rh -E 'class.*:.*(UITestCase|XCTestCase)' iOS/UITests --include='*.swift' \
@@ -174,7 +175,7 @@ jobs:
 
   build-for-testing:
     name: Build UI Tests
-    runs-on: ['image:osx-tahoe-27', ui-tests]
+    runs-on: ['image:osx-27-edge', ui-tests]
 
     needs: should-run-checks
     if: needs.should-run-checks.outputs.should_run == 'true'

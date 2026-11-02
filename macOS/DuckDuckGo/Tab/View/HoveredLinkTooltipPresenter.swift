@@ -260,9 +260,13 @@ final class HoveredLinkTooltipPresenter {
         let frame = Self.frame(size: size, hostFrame: hostFrame, parentFrame: parent.frame,
                                screenFrame: screenFrame, mouseLocation: mouseLocation())
         window.appearance = hostView.effectiveAppearance
-        label.frame = NSRect(x: 12, y: 6, width: max(0, size.width - 20), height: labelSize.height)
+        label.frame = NSRect(x: 12, y: 6, width: max(0, frame.width - 20), height: labelSize.height)
         guard targetFrame != frame else { return }
         targetFrame = frame
+        if animated, window.frame.minX != frame.minX {
+            // Only the vertical movement is animated: sideways changes apply instantly.
+            move(window, NSRect(origin: NSPoint(x: frame.minX, y: window.frame.minY), size: frame.size), 0)
+        }
         let duration = animated && !NSWorkspace.shared.accessibilityDisplayShouldReduceMotion ? 0.12 : 0
         move(window, frame, duration)
     }
@@ -280,8 +284,13 @@ final class HoveredLinkTooltipPresenter {
         if belowWindow >= screenFrame.minY {
             frame.origin.y = belowWindow
         } else {
-            // Fullscreen, maximized, or near the Dock: keep the URL above the pointer.
-            frame.origin.y = min(max(frame.maxY, mouseLocation.y + 16), screenFrame.maxY - size.height)
+            // Fullscreen, maximized, or near the Dock: keep the URL at the bottom but in the half of the host
+            // opposite to the pointer, limited to half of the width so it never lands under the pointer.
+            let maxWidth = hostFrame.width / 2
+            frame.size.width = min(frame.width, maxWidth)
+            let isPointerInLeftHalf = mouseLocation.x < hostFrame.midX
+            frame.origin.x = isPointerInLeftHalf ? hostFrame.maxX - frame.width : hostFrame.minX
+            frame.origin.x = min(max(frame.minX, screenFrame.minX), screenFrame.maxX - frame.width)
         }
         return frame
     }

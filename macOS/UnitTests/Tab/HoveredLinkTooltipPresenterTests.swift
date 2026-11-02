@@ -59,18 +59,34 @@ final class HoveredLinkTooltipPresenterTests: XCTestCase {
         XCTAssertEqual(frame.maxY, host.minY)
     }
 
-    func testWhenWindowIsAtScreenBottomThenTooltipMovesAboveCursor() {
+    func testWhenNoRoomBelowAndCursorInLeftHalfThenTooltipMovesToRightSide() {
         let host = NSRect(x: 100, y: 0, width: 1000, height: 600)
         let mouse = NSPoint(x: 150, y: 10)
         let frame = tooltipFrame(mouse: mouse, host: host)
-        XCTAssertGreaterThan(frame.minY, mouse.y)
+        XCTAssertEqual(frame.maxX, host.maxX)
+        XCTAssertEqual(frame.minY, host.minY)
+        XCTAssertFalse(frame.contains(mouse))
         XCTAssertTrue(screen.contains(frame))
     }
 
-    func testWhenWindowIsFullscreenThenTooltipStaysOnScreenAboveCursor() {
+    func testWhenNoRoomBelowAndCursorInRightHalfThenTooltipStaysAtLeftWithinHalfWidth() {
+        let host = NSRect(x: 100, y: 0, width: 400, height: 600)
+        let mouse = NSPoint(x: 395, y: 10)
+        let size = NSSize(width: 300, height: 28)
+        let frame = HoveredLinkTooltipPresenter.frame(size: size, hostFrame: host, parentFrame: host,
+                                                     screenFrame: screen, mouseLocation: mouse)
+        XCTAssertEqual(frame.minX, host.minX)
+        XCTAssertEqual(frame.width, host.width / 2)
+        XCTAssertEqual(frame.minY, host.minY)
+        XCTAssertFalse(frame.contains(mouse))
+    }
+
+    func testWhenWindowIsFullscreenThenTooltipMovesSidewaysInsteadOfUp() {
         let mouse = NSPoint(x: 50, y: 10)
         let frame = tooltipFrame(mouse: mouse, host: screen)
-        XCTAssertGreaterThan(frame.minY, mouse.y)
+        XCTAssertEqual(frame.minY, screen.minY)
+        XCTAssertEqual(frame.maxX, screen.maxX)
+        XCTAssertFalse(frame.contains(mouse))
         XCTAssertTrue(screen.contains(frame))
     }
 

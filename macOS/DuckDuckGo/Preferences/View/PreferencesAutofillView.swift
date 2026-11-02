@@ -58,15 +58,20 @@ extension Preferences {
                     Button(UserText.autofillViewContentButtonPasswords) {
                         model.showAutofillPopover(.logins, source: .settings)
                     }
+
                     Button(UserText.autofillViewContentButtonIdentities) {
                         model.showAutofillPopover(.identities, source: .settings)
                     }
+
                     Button(UserText.autofillViewContentButtonCreditCards) {
                         model.showAutofillPopover(.cards, source: .settings)
                     }
+
                     Button(UserText.importPasswords) {
                         model.openImportPasswordsWindow()
                     }
+                    .disabled(model.isManagedByExtension)
+
                     Button(UserText.exportLogins) {
                         model.openExportLogins()
                     }

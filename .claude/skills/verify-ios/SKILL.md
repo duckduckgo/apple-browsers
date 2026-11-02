@@ -34,6 +34,17 @@ bin/verify-ios: command line over the same library, for setup and for exploring 
 Only `driver.py` knows how the UI is driven. A different driver means a new class with the same methods, which must
 pass `tests/must_fail.py` before it is used.
 
+## Check it works here
+
+```bash
+$V selftest                    # both devices; --devices iphone for a quicker check
+```
+
+Sets up the simulators, builds the app and runner if the build isn't current (a first build takes 3–20 minutes), runs
+the tool's tests, the "must fail" trust checks and one worked proof on each device, and confirms nothing was left
+running. Ends with `"ok": true` and the report paths, or names the step that failed and why. Run it on a new Mac, a
+new checkout, or after an Xcode update.
+
 ## First time in a worktree
 
 ```bash

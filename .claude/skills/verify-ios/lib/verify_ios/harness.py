@@ -7,10 +7,10 @@ and may set `DEVICES = ["iphone", "ipad"]`, `LIVE = ["duck.ai"]` (live services 
 A run passes only when the proof returned, recorded at least one passing check and no failing one, and the app was
 still in the foreground at the end. Anything that goes wrong before the proof's own steps is an error, not a failure.
 """
-import importlib.util, inspect, json, os, py_compile, shutil, signal, sys, time, traceback, urllib.parse, uuid
+import importlib.util, inspect, json, os, shutil, signal, sys, time, traceback, urllib.parse, uuid
 
 from . import env
-from .device import Device, fixture
+from .device import Device, fixture, fixture_release
 from .env import APP, EVIDENCE, ROOT, SKILL, Busy, DeviceLock, Failed, SetupFailed, Unsupported, run
 from .telemetry import Pixels, WideEvents
 
@@ -339,8 +339,11 @@ class Ios:
         try:
             self.d.alert("dismiss", None, within)
         except Failed as e:
-            if _code(e) == "NOT_FOUND":
+            runner = (getattr(e, "extra", None) or {}).get("runner") or {}
+            if _code(e) == "NOT_FOUND" and "alert" not in runner:   # the runner saw no alert at all
                 return self._record("no alert shown", True)
+            if "alert" in runner:   # an alert was on screen, just not answerable
+                self.check("no alert shown", False, runner)
             raise
         self.check("no alert shown", False, "an alert appeared (and was dismissed)")
 
@@ -396,10 +399,11 @@ def _trim(v, n=600):
 def load(path):
     """Compile and import a proof without running it; return (module, problems)."""
     problems = []
-    try:
-        py_compile.compile(path, doraise=True)
-    except py_compile.PyCompileError as e:
-        return None, [f"does not compile: {e.msg}"]
+    try:   # compile in memory: py_compile would write a __pycache__ into the attempt folder
+        with open(path) as f:
+            compile(f.read(), path, "exec")
+    except SyntaxError as e:
+        return None, [f"does not compile: {e.msg} (line {e.lineno})"]
     name = f"proof_{uuid.uuid4().hex[:8]}"
     spec = importlib.util.spec_from_file_location(name, path)
     mod = importlib.util.module_from_spec(spec)
@@ -441,7 +445,13 @@ def evidence_root(decision_log=None):
     log = os.path.realpath(decision_log)
     if not os.path.isfile(log) or not log.endswith(".tsv"):
         raise Failed(f"--decision-log must be an existing decisions .tsv file: {decision_log}")
-    return os.path.join(os.path.dirname(log), "proofs")
+    root = os.path.join(os.path.dirname(log), "proofs")
+    inside = os.path.realpath(root).startswith(os.path.realpath(ROOT) + os.sep)
+    if inside and not os.path.realpath(root).startswith(os.path.realpath(os.path.join(ROOT, ".claude")) + os.sep):
+        # untracked evidence there would change the app source fingerprint and make every later proof "stale"
+        raise Failed("keep the decision log outside this checkout (or under .claude/): evidence written next to it "
+                     "would count as a source change")
+    return root
 
 
 def _new_attempt(stem, root=EVIDENCE):
@@ -541,7 +551,7 @@ def _run_device(mod, device, evidence, keep, flags, device_obj=None):
             ios = Ios(device, evidence, flags, device_obj)
             ios.launch()
             ios.capture = ios.d.capture_conditions()   # the defaults this run starts from; setters update it
-            fixture()
+            fixture(user=device)
             ios.pixels = Pixels(ios.d.udid, f"{evidence}/pixels.ndjson")
             ios.pixels.start()
             ios.wide_events = WideEvents(ios.d.data_container)
@@ -643,18 +653,10 @@ def _cleanup(device):
         problems += [p for r in res.get("removed", []) if isinstance(r, dict) for p in r.get("problems", [])]
     except Exception as e:
         problems.append(f"cleanup failed: {type(e).__name__}: {e}")
-    others = [DeviceLock(d) for d in env.PORT_OFFSET if d != device]
-    try:
-        for o in others:
-            o.acquire("cleanup check")
-        fixture(stop=True)
-    except Busy:
-        pass
+    try:   # the server is shared: it stops only when no other device's proof still uses it (no lock taken)
+        fixture_release(device)
     except Exception as e:
         problems.append(f"fixture server stop failed: {type(e).__name__}: {e}")
-    finally:
-        for o in others:
-            o.release()
     return problems
 
 

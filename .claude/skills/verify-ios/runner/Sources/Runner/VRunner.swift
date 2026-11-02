@@ -258,7 +258,8 @@ final class VRunner: XCTestCase {
     private func describe(_ element: XCUIElement) -> [String: Any] {
         let frame = element.frame
         return ["type": element.elementType.rawValue, "id": element.identifier, "label": element.label, "value": "\(element.value ?? "")",
-                "enabled": element.isEnabled, "hittable": element.isHittable, "frame": [frame.minX, frame.minY, frame.width, frame.height]]
+                "enabled": element.isEnabled, "hittable": element.isHittable, "frame": [frame.minX, frame.minY, frame.width, frame.height],
+                "placeholder": element.placeholderValue ?? ""]
     }
 
     private func tree() -> [[String: Any]]? {

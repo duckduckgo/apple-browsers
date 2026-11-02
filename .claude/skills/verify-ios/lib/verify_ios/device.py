@@ -170,7 +170,12 @@ class Device:
         if started:
             env.update_state(lambda st: st.setdefault("devices", {}).setdefault(self.device, {}).setdefault("started", []).append(
                 dict(processes=started, port=self.runner_port)))
-        args = [a for name, on in sorted(flags.items()) for a in (f"-ff.{name}", "true" if on else "false")]
+        unknown = sorted(set(flags) - env.feature_flag_names())
+        if unknown:
+            raise Failed(f"not feature flags in this app: {unknown} (see iOS/LocalPackages/FeatureFlags-iOS/…/FeatureFlag.swift)")
+        # The app applies -ff. overrides only for internal users or in UI-test mode (AppDependencyProvider's
+        # allowOverrides). UI-test mode is the narrower switch: it doesn't turn on internal-only features.
+        args = ["isRunningUITests"] + [a for name, on in sorted(flags.items()) for a in (f"-ff.{name}", "true" if on else "false")]
         self.driver.launch({"AUTOMATION_TOKEN": self.token}, args)
         if self.web.wait_ready(60) is None:
             raise Failed(f"AutomationServer on [::1]:{self.web_port} never reported /contentBlockerReady true")
@@ -318,8 +323,10 @@ class Device:
 
     def clear(self, locator):
         el = self.driver.get(native(locator))
-        n = len(el.get("value") or "")
-        return self._result(self.driver.type(native(locator), "\b" * n)) if n else dict(matched=el, after=None)
+        value = el.get("value") or ""
+        if not value or value == el.get("placeholder"):   # an empty field reports its placeholder as its value
+            return dict(matched=el, after=None)
+        return self._result(self.driver.type(native(locator), "\b" * len(value)))
 
     def key(self, combo):
         return self._result(self.driver.key(combo))
@@ -362,36 +369,67 @@ class Device:
 
 
 # ---------------------------------------------------------------- fixture server (shared by both devices)
-def fixture(stop=False):
-    """Serve the skill's fixture pages on this worktree's fixture port; returns the page URL prefix."""
+def _fixture_lock():
     import fcntl
     os.makedirs(HOME, exist_ok=True)
+    lock = open(f"{HOME}/fixture.lock", "w")   # both devices' proofs may start or release it at the same moment
+    fcntl.flock(lock, fcntl.LOCK_EX)
+    return lock
+
+
+def _stop_fixture(fx):
+    if fx and env.still_ours(fx):
+        os.kill(fx["pid"], signal.SIGTERM)
+    env.update_state(lambda st: st.pop("fixture", None))
+
+
+def fixture(stop=False, user=None):
+    """Serve the skill's fixture pages on this worktree's fixture port; returns the page URL prefix.
+    `user` (a device, or "cli") records who needs the server, so a proof finishing on one device never stops it under
+    a proof running on the other. `stop=True` stops it regardless (callers hold both device locks)."""
     port = env.fixture_port()
     url = f"http://127.0.0.1:{port}/index.html?token="
-    with open(f"{HOME}/fixture.lock", "w") as lock:   # both devices' proofs may start it at the same moment
-        fcntl.flock(lock, fcntl.LOCK_EX)
+    with _fixture_lock():
         fx = env.load_state().get("fixture")
         if stop:
-            if fx and env.still_ours(fx):
-                os.kill(fx["pid"], signal.SIGTERM)
-            env.update_state(lambda st: st.pop("fixture", None))
+            _stop_fixture(fx)
             return dict(stopped=bool(fx))
         if fx and env.still_ours(fx) and env.port_listening(port):
+            if user and user not in fx.get("users", []):
+                env.update_state(lambda st: st["fixture"].setdefault("users", []).append(user))
             return dict(url=url, port=port, pid=fx["pid"], started=False)
         if env.port_listening(port):
             raise Failed(f"fixture port {port} is taken by something this worktree did not start")
         os.makedirs(f"{HOME}/logs", exist_ok=True)
         p = subprocess.Popen([sys.executable, "-m", "http.server", str(port), "--bind", "127.0.0.1", "--directory", f"{SKILL}/fixture"],
                              stdout=open(f"{HOME}/logs/fixture.log", "a"), stderr=subprocess.STDOUT, start_new_session=True)
-        for _ in range(40):
+        for _ in range(100):
             if env.port_listening(port):
                 break
+            if p.poll() is not None:
+                break
             time.sleep(0.1)
-        else:
-            raise Failed("fixture server did not start")
-        ident = env.process_identity(p.pid)
+        if not env.port_listening(port):
+            p.terminate()   # never leave an unrecorded server behind that would later block the port
+            p.wait(5)
+            raise Failed("fixture server did not start (see logs/fixture.log)")
+        ident = dict(env.process_identity(p.pid), users=[user] if user else [])
         env.update_state(lambda st: st.__setitem__("fixture", ident))
         return dict(url=url, port=port, pid=p.pid, started=True)
+
+
+def fixture_release(user):
+    """`user` no longer needs the fixture server; stop it when nobody does."""
+    with _fixture_lock():
+        fx = env.load_state().get("fixture")
+        if not fx:
+            return dict(stopped=False)
+        users = [u for u in fx.get("users", []) if u != user]
+        if users:
+            env.update_state(lambda st: st["fixture"].__setitem__("users", users))
+            return dict(stopped=False, stillUsedBy=users)
+        _stop_fixture(fx)
+        return dict(stopped=True)
 
 
 def info():

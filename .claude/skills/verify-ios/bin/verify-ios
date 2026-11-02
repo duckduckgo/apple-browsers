@@ -27,6 +27,8 @@ def build_parser():
     p.add_argument("--evidence", help="directory for artifacts and transcript.jsonl")
     sp = p.add_subparsers(dest="cmd", required=True)
     sp.add_parser("info", help="worktree key, state dir, sims, ports")
+    a = sp.add_parser("selftest", help="check verify-ios works here: setup, build if needed, tests, trust checks, one proof")
+    a.add_argument("--devices", default="iphone,ipad", help="iphone,ipad (default: both)")
     a = sp.add_parser("new-proof", help="create a fresh evidence folder with a proof template; prints its path")
     a.add_argument("name")
     a.add_argument("--decision-log", help="decisions.tsv of an AStack show-me-your-work log: evidence goes in its proofs/")
@@ -98,6 +100,12 @@ def build_parser():
 def dispatch(args):
     if args.cmd == "info":
         return info()
+    if args.cmd == "selftest":
+        from verify_ios import selftest
+        code, out = selftest.run(harness.check_devices(args.devices.split(",")))
+        if code:
+            raise ProveExit(code, out)
+        return out
     if args.cmd == "new-proof":
         return dict(proof=harness.new_proof(args.name, harness.evidence_root(args.decision_log)))
     if args.cmd == "check":
@@ -131,7 +139,7 @@ def dispatch(args):
 
 def run_command(args):
     if args.cmd == "fixture":
-        return fixture(stop=args.sub == "stop")
+        return fixture(stop=args.sub == "stop", user=None if args.sub == "stop" else "cli")
     devices = list(env.PORT_OFFSET) if getattr(args, "all", False) else [args.device]
     d = Device(args.device)
     ev = args.evidence or f"{env.EVIDENCE}/adhoc"
@@ -185,6 +193,7 @@ def run_command(args):
             return dict(url=d.web.page_url())   # null when the tab shows no web page
         if args.sub == "handles":
             return dict(handles=d.web.handles())
+        os.makedirs(ev, exist_ok=True)
         return dict(path=d.web.screenshot(os.path.join(ev, f"web-{stamp}.png")))
     if c == "capture":
         os.makedirs(ev, exist_ok=True)

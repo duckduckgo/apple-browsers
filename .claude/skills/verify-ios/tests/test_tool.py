@@ -231,6 +231,12 @@ class EvidenceTests(unittest.TestCase):
         folders = {harness.attempt_dir(src)[0] for _ in range(1)} | {harness._new_attempt("same") for _ in range(5)}
         self.assertEqual(len(folders), 6)
 
+    def test_check_leaves_a_new_proof_folder_reusable(self):
+        path = harness.new_proof("checked")
+        self.assertEqual(harness.load(path)[1], [])
+        self.assertEqual(os.listdir(os.path.dirname(path)), ["proof.py"], "checking must not write __pycache__ there")
+        self.assertEqual(harness.attempt_dir(path)[0], os.path.dirname(os.path.realpath(path)))
+
     def test_template_passes_preflight(self):
         self.assertEqual(harness.load(harness.new_proof("template"))[1], [])
 
@@ -323,15 +329,16 @@ class FakePixels:
 class HarnessTests(unittest.TestCase):
     def setUp(self):
         self.fake = FakeDevice()
-        self.saved = (harness.Device, harness.fixture, harness.Pixels, harness.WideEvents)
+        self.saved = (harness.Device, harness.fixture, harness.Pixels, harness.WideEvents, harness.fixture_release)
         harness.Device = lambda device: self.fake
         harness.Device.check_build_current = staticmethod(lambda: {})
-        harness.fixture = lambda stop=False: dict(url="http://127.0.0.1:1/index.html?token=")
+        harness.fixture = lambda stop=False, user=None: dict(url="http://127.0.0.1:1/index.html?token=")
+        harness.fixture_release = lambda user: {}
         harness.Pixels = FakePixels
         harness.WideEvents = lambda container: telemetry.WideEvents(container)
 
     def tearDown(self):
-        harness.Device, harness.fixture, harness.Pixels, harness.WideEvents = self.saved
+        harness.Device, harness.fixture, harness.Pixels, harness.WideEvents, harness.fixture_release = self.saved
 
     def run_proof(self, run, **fake):
         self.fake.__dict__.update(fake)
@@ -423,6 +430,20 @@ class HarnessTests(unittest.TestCase):
         self.assertIn("did not take effect", r["reason"])
         self.assertFalse(self.fake.status_fixed, "the override was cleared again")
 
+    def test_no_alert_check_fails_when_an_alert_is_on_screen_but_unanswerable(self):
+        def alert(action, button, timeout):
+            raise env.Failed("no button", runner=dict(code="NOT_FOUND", alert="Allow location?", buttons=[]))
+        self.fake.alert = alert
+        r = self.run_proof(lambda ios: ios.expect_no_alert(within=0))
+        self.assertEqual(r["status"], "fail", r)
+
+    def test_no_alert_check_passes_when_there_is_none(self):
+        def alert(action, button, timeout):
+            raise env.Failed("no alert", runner=dict(code="NOT_FOUND", message="no alert"))
+        self.fake.alert = alert
+        r = self.run_proof(lambda ios: ios.expect_no_alert(within=0))
+        self.assertEqual(r["status"], "pass", r)
+
     def test_reset_failing_inside_the_proof_is_an_error(self):
         r = self.run_proof(lambda ios: (ios.reset(), ios.check("never reached", True)), fail_reset=True)
         self.assertEqual(r["status"], "error", r)
@@ -482,6 +503,18 @@ class DecisionLogTests(unittest.TestCase):
         self.assertTrue(path.startswith(os.path.realpath(os.path.join(audit, "proofs")) + os.sep), path)
         with self.assertRaises(env.Failed):
             harness.evidence_root(os.path.join(audit, "missing.tsv"))
+
+    def test_decision_log_inside_the_checkout_is_refused(self):
+        inside = os.path.join(env.ROOT, "verify-ios-test-decision-log")
+        os.makedirs(inside, exist_ok=True)
+        log = os.path.join(inside, "decisions.tsv")
+        try:
+            open(log, "w").close()
+            with self.assertRaises(env.Failed):
+                harness.evidence_root(log)
+        finally:
+            os.remove(log)
+            os.rmdir(inside)
 
 
 class CliTests(unittest.TestCase):

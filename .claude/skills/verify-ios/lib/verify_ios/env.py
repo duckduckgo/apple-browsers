@@ -96,6 +96,16 @@ def update_state(change):
         return result
 
 
+def feature_flag_names():
+    """The app's FeatureFlag case names, read from this checkout's source (a pinned flag must be one of them)."""
+    import re
+    path = os.path.join(ROOT, "iOS/LocalPackages/FeatureFlags-iOS/Sources/FeatureFlags/FeatureFlag.swift")
+    with open(path) as f:
+        source = f.read()
+    body = source.split("public enum FeatureFlag", 1)[-1].split("\n}", 1)[0]
+    return set(re.findall(r"^\s*case\s+(\w+)\s*$", body, re.M))
+
+
 def source_stamp():
     """Fingerprint of the app source in this worktree: HEAD plus every uncommitted change outside .claude/.
     Recorded when the app is built and compared before a proof, so a proof can't pass against a stale build."""

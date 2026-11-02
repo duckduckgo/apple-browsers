@@ -46,7 +46,7 @@ on:
 jobs:
   run-ui-test:
     name: ${{ inputs.test }} (${{ inputs.device }}${{ inputs.user-mode == 'internal' && ', internal' || '' }})
-    runs-on: ['image:osx-tahoe-27', ui-tests]
+    runs-on: ['image:osx-27-edge', ui-tests]
 
     # Internal-mode failures are advance warning for features still gated to internal users; they
     # must not fail the overall workflow. Setting continue-on-error here (a normal job inside the

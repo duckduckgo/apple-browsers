@@ -36,13 +36,16 @@ struct FocusedDaxLogoView: View {
     /// Playback rate for the morph. >1 finishes faster — used so a dismiss morph fits inside the
     /// (shorter) bar collapse instead of being cut off.
     var animationSpeed: Double = 1
+    /// Holds the current frame, so a logo fading out for lack of room does not morph on the way.
+    var freezes = false
 
     private var animationName: String {
         colorScheme == .dark ? Constant.darkAnimationName : Constant.animationName
     }
 
     private var playbackMode: LottiePlaybackMode {
-        morph ? .playing(.toProgress(progress, loopMode: .playOnce)) : .paused(at: .progress(progress))
+        if freezes { return .paused(at: .currentFrame) }
+        return morph ? .playing(.toProgress(progress, loopMode: .playOnce)) : .paused(at: .progress(progress))
     }
 
     var body: some View {

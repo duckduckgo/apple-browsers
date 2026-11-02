@@ -24,6 +24,7 @@ import os.log
 import Combine
 import UserScript
 import BrowserServicesKit
+import FeatureFlags_iOS
 import PrivacyConfig
 
 struct DuckPlayerWebView: UIViewRepresentable {
@@ -32,6 +33,7 @@ struct DuckPlayerWebView: UIViewRepresentable {
     let contentController: WKUserContentController
     let scriptSourceProvider: ScriptSourceProviding
     let duckPlayerUserScript: DuckPlayerUserScriptPlayer
+    let sponsorBlockSubfeature: SponsorBlockSubfeature
     let contentScopeUserScripts: ContentScopeUserScript
     
     static func dismantleUIView(_ uiView: WKWebView, coordinator: Coordinator) {
@@ -65,6 +67,7 @@ struct DuckPlayerWebView: UIViewRepresentable {
    init(viewModel: DuckPlayerViewModel,
         contentController: WKUserContentController = WKUserContentController(),
         scriptSourceProviderDependencies: DefaultScriptSourceProvider.Dependencies,
+        sponsorBlockPreferences: SponsorBlockPreferences,
         duckPlayerUserScript: DuckPlayerUserScriptPlayer? = nil,
         featureFlagger: FeatureFlagger = AppDependencyProvider.shared.featureFlagger,
         privacyConfigurationJSONGenerator: ContentScopePrivacyConfigurationJSONGenerator? = nil,
@@ -75,6 +78,9 @@ struct DuckPlayerWebView: UIViewRepresentable {
        self.scriptSourceProvider = DefaultScriptSourceProvider(dependencies: scriptSourceProviderDependencies)
               
        self.duckPlayerUserScript = duckPlayerUserScript ?? DuckPlayerUserScriptPlayer(viewModel: viewModel)
+       // Duck Player loads youtube-nocookie.com in its own web view, so the tab's SponsorBlock subfeature never sees it.
+       self.sponsorBlockSubfeature = SponsorBlockSubfeature(preferences: sponsorBlockPreferences,
+                                                            isFeatureFlagOn: { featureFlagger.isFeatureOn(.sponsorBlock) })
 
        let jsonGenerator = privacyConfigurationJSONGenerator ??
             ContentScopePrivacyConfigurationJSONGenerator(featureFlagger: featureFlagger,
@@ -112,6 +118,7 @@ struct DuckPlayerWebView: UIViewRepresentable {
 
        // Add the scripts directly to the WKUserContentController
        contentScopeUserScripts.registerSubfeature(delegate: duckPlayerUserScript)
+       contentScopeUserScripts.registerSubfeature(delegate: sponsorBlockSubfeature)
        contentController.addHandler(contentScopeUserScripts)
        contentController.addUserScript(contentScopeUserScripts.makeWKUserScriptSync())
        configuration.userContentController = contentController

@@ -791,6 +791,8 @@ class TabViewController: UIViewController {
         let duckPlayer = DuckPlayer(settings: DuckPlayerSettingsDefault(),
                                     featureFlagger: featureFlagger,
                                     userScriptsDependencies: userScriptsDependencies,
+                                    // Same app store as ContentBlockingService's instance; instances sync through the store notification.
+                                    sponsorBlockPreferences: SponsorBlockPreferences(store: keyValueStore),
                                     floatingUIManager: floatingUIManager)
 
         if duckPlayer.settings.nativeUI {

@@ -43,6 +43,7 @@ final class AIChatContextualUTIHost: UnifiedToggleInputDelegate, AIChatContextua
     private var frozenBottomConstraint: NSLayoutConstraint?
     private let startsPreSubmit: Bool
     private var hasKeyboardAppeared = false
+    private var isTransitioningSize = false
     /// Launch-time snapshot: re-reading the feature costs a privacy-config evaluation each time.
     private let usesFloatingInput: Bool
     private var cancellables = Set<AnyCancellable>()
@@ -175,12 +176,22 @@ final class AIChatContextualUTIHost: UnifiedToggleInputDelegate, AIChatContextua
             .store(in: &cancellables)
     }
 
+    /// A rotation or window resize hides the keyboard and shows it again at the new size, which is not the user
+    /// dismissing it: resigning on that hide drops the keyboard mid-rotation.
+    func willTransitionSize(with transitionCoordinator: UIViewControllerTransitionCoordinator) {
+        isTransitioningSize = true
+        transitionCoordinator.animate(alongsideTransition: nil) { [weak self] _ in
+            self?.isTransitioningSize = false
+        }
+    }
+
     /// Only a keyboard that was really shown can be lost: a hardware keyboard hides on every keystroke.
     private func collapseForKeyboardDismissal() {
         guard hasKeyboardAppeared else { return }
         hasKeyboardAppeared = false
         // Backgrounding takes the keyboard too, and offscreen hosts were never above one.
         guard UIApplication.shared.applicationState == .active,
+              !isTransitioningSize,
               !coordinator.isPresentingAttachmentModal,
               coordinator.isInputOnScreen,
               !coordinator.isContextualChatCollapsed else { return }

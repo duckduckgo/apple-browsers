@@ -2966,6 +2966,15 @@ struct DuckAiNativeStoragePixelAdapter: DuckAiNativeStoragePixelFiring {
             break
         case .lastUsedReasoningModeParseError:
             break
+        case .invalidValue(let invalidValue):
+            PixelKit.fire(DuckAiNativeStorageInvalidValuePixel(parameters: invalidValue.parameters), frequency: .dailyAndCount)
         }
     }
+}
+
+struct DuckAiNativeStorageInvalidValuePixel: PixelKit.Event {
+    let parameters: [String: String]?
+    var name: String { DuckAiNativeStorageInvalidValue.pixelName + "_macos" }
+    var namePrefix: PixelKitNamePrefix { .none }
+    var standardParameters: [PixelKitStandardParameter]? { nil }
 }

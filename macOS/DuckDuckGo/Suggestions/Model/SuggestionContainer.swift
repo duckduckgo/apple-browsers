@@ -26,6 +26,7 @@ import os.log
 import PixelKit
 import PrivacyConfig
 import Suggestions
+import WebExtensions
 
 private let maximumURLSessionTaskPriority: Float = 1.0
 private let remoteSuggestionsConnectionPrewarmInterval: TimeInterval = 30
@@ -79,6 +80,7 @@ final class SuggestionContainer: SuggestionContainerProtocol {
 
     private let startupPreferences: StartupPreferences
     private let featureFlagger: FeatureFlagger
+    private let webExtensionAvailability: WebExtensionAvailabilityProviding
     private let loading: SuggestionLoading
     private let burnerMode: BurnerMode
     private let windowControllersManager: WindowControllersManagerProtocol
@@ -100,6 +102,7 @@ final class SuggestionContainer: SuggestionContainerProtocol {
         bookmarkProvider: BookmarkProvider,
         startupPreferences: StartupPreferences? = nil,
         featureFlagger: FeatureFlagger? = nil,
+        webExtensionAvailability: WebExtensionAvailabilityProviding? = nil,
         burnerMode: BurnerMode,
         isUrlIgnored: @escaping (URL) -> Bool,
         windowControllersManager: WindowControllersManagerProtocol? = nil
@@ -111,6 +114,7 @@ final class SuggestionContainer: SuggestionContainerProtocol {
         self.startupPreferences = startupPreferences ?? NSApp.delegateTyped.startupPreferences
         let effectiveFeatureFlagger = featureFlagger ?? NSApp.delegateTyped.featureFlagger
         self.featureFlagger = effectiveFeatureFlagger
+        self.webExtensionAvailability = webExtensionAvailability ?? NSApp.delegateTyped.webExtensionAvailability
         let suggestionLoadingDecider = SuggestionLoadingDecider(featureFlagger: effectiveFeatureFlagger)
         self.loading = suggestionLoading ?? SuggestionLoader(
             shouldLoadSuggestionsForUserInput: suggestionLoadingDecider.shouldLoadSuggestions(for:),
@@ -261,8 +265,10 @@ extension SuggestionContainer: SuggestionLoadingDataSource {
         }
         result += PreferencePaneIdentifier.allCases.compactMap { pane in
             // Subscriber Offers opens a web page rather than a settings pane, so there is no pane to
-            // suggest navigating to. Skip Duck AI too when its feature flag is off.
-            if pane == .partnershipsHub || (pane == .paidAIChat && !featureFlagger.isFeatureOn(.paidAIChat)) {
+            // suggest navigating to. Skip Duck AI and Extensions too when unavailable.
+            if pane == .partnershipsHub
+                || (pane == .paidAIChat && !featureFlagger.isFeatureOn(.paidAIChat))
+                || (pane == .extensions && !webExtensionAvailability.isExtensionManagementAvailable) {
                 return nil
             }
             // preference panes URLs

@@ -22,6 +22,7 @@ import Foundation
 
 public typealias DesignSystemColor = SharedDesignSystemColor
 
+/// # Important: Please use `SingleUseColor` if you're adding a color that's not mapped to a Figma Export
 public enum SharedDesignSystemColor {
 
     // Accent
@@ -135,10 +136,6 @@ public enum SharedDesignSystemColor {
     case unifiedInputFireTextSecondary
     case unifiedInputTextPrimary
     case unifiedInputTextSecondary
-
-    // System
-    case spinnerStart
-    case spinnerFinal
 
     // Shadows
     case shadowPrimary

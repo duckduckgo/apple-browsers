@@ -149,6 +149,20 @@ final class AIChatContextualSheetCoordinatorTests: XCTestCase {
                                               didSubmitDuckAIPromptWithOrigin origin: AIChatEntryPointSource?) {
             submittedPromptOrigins.append(origin)
         }
+
+        var closedSurfaceCount = 0
+        var closedWithDeletedChat: [Bool] = []
+
+        func aiChatContextualSheetCoordinatorDidCloseSurface(_ coordinator: AIChatContextualSheetCoordinator, chatDeleted: Bool) {
+            closedSurfaceCount += 1
+            closedWithDeletedChat.append(chatDeleted)
+        }
+
+        var newChatCount = 0
+
+        func aiChatContextualSheetCoordinatorDidStartNewChat(_ coordinator: AIChatContextualSheetCoordinator) {
+            newChatCount += 1
+        }
     }
 
     private final class MockPresentingViewController: UIViewController {
@@ -180,7 +194,7 @@ final class AIChatContextualSheetCoordinatorTests: XCTestCase {
         var sidebarDetachments: [UIViewController] = []
         var modalPresentationCount = 0
 
-        func presentContextualSidebar(_ viewController: UIViewController) {
+        func presentContextualSidebar(_ viewController: UIViewController, coversPage: Bool) {
             sidebarPresentations.append(viewController)
             guard viewController.parent !== self else { return }
             addChild(viewController)
@@ -685,6 +699,76 @@ final class AIChatContextualSheetCoordinatorTests: XCTestCase {
         XCTAssertEqual(sut.sessionState.viewState.quickActions, [.askAboutPage])
     }
     
+    // MARK: - Surface close
+
+    @MainActor
+    func testDismissingTheSheetReportsOneClose() async throws {
+        await sut.presentSheet(from: mockPresentingVC)
+        let sheet = try XCTUnwrap(sut.sheetViewController)
+
+        sut.aiChatContextualSheetViewControllerDidDismiss(sheet)
+        sut.aiChatContextualSheetViewControllerDidDismiss(sheet)
+
+        XCTAssertEqual(mockDelegate.closedSurfaceCount, 1)
+    }
+
+    @MainActor
+    func testDismissingTheFloatingInputReportsAClose() async {
+        mockFloatingInputFeature.isAvailable = true
+        mockUnifiedToggleInputFeature.isAvailable = true
+        await sut.handleSelectionAction(.ask, selection: .init(text: "selected text", url: nil, faviconBase64: nil), from: mockPresentingVC)
+        XCTAssertTrue(sut.isFloatingInputPresented)
+
+        sut.dismissFloatingInput()
+
+        XCTAssertEqual(mockDelegate.closedSurfaceCount, 1)
+    }
+
+    @MainActor
+    func testPromotingTheFloatingInputToTheSheetIsNotAClose() async {
+        mockFloatingInputFeature.isAvailable = true
+        mockUnifiedToggleInputFeature.isAvailable = true
+        await sut.handleSelectionAction(.ask, selection: .init(text: "selected text", url: nil, faviconBase64: nil), from: mockPresentingVC)
+        XCTAssertTrue(sut.isFloatingInputPresented)
+
+        sut.promoteFloatingInputToSheet()
+
+        XCTAssertFalse(sut.isFloatingInputPresented)
+        XCTAssertEqual(mockDelegate.closedSurfaceCount, 0)
+    }
+
+    @MainActor
+    func testClearingTheChatReportsACloseOnlyWhenTheSheetWasShowing() async {
+        sut.clearActiveChat()
+        XCTAssertEqual(mockDelegate.closedSurfaceCount, 0)
+
+        await sut.presentSheet(from: mockPresentingVC)
+        sut.clearActiveChat()
+
+        XCTAssertEqual(mockDelegate.closedSurfaceCount, 1)
+    }
+
+    @MainActor
+    func testClearingTheChatTellsWhetherItWasDeleted() async {
+        await sut.presentSheet(from: mockPresentingVC)
+        sut.clearActiveChat()
+        await sut.presentSheet(from: mockPresentingVC)
+        sut.clearActiveChat(reason: .movedToTab)
+
+        XCTAssertEqual(mockDelegate.closedWithDeletedChat, [true, false])
+    }
+
+    @MainActor
+    func testNewChatFromTheSheetReportsANewEntryWithoutAClose() async throws {
+        await sut.presentSheet(from: mockPresentingVC)
+        let sheet = try XCTUnwrap(sut.sheetViewController)
+
+        sut.aiChatContextualSheetViewControllerDidRequestNewChat(sheet)
+
+        XCTAssertEqual(mockDelegate.newChatCount, 1)
+        XCTAssertEqual(mockDelegate.closedSurfaceCount, 0)
+    }
+
     // MARK: - clearActiveChat Tests
 
     @MainActor
@@ -1856,6 +1940,51 @@ final class AIChatContextualSheetCoordinatorTests: XCTestCase {
         // Then
         XCTAssertEqual(mockPageContextHandler.triggerContextCollectionCallCount, 0, "The page must not be read at all")
         XCTAssertNil(host.chipViewModel.suggestedContext)
+    }
+
+    // MARK: - Recent chats storage
+
+    @MainActor
+    func testRecentChatsInFireModeComeFromFireStorageOnly() async throws {
+        let fireStorage = MockDuckAiChatStorage()
+        try mockNativeStorage.putChat(chatId: "regular", data: makeChatData(chatId: "regular"))
+        try fireStorage.putChat(chatId: "fire", data: makeChatData(chatId: "fire"))
+
+        let reader = makeRecentChatsReader(isFireMode: true, fireModeStorage: fireStorage)
+        let result = await reader.fetchSuggestions(query: nil, maxChats: 5)
+
+        XCTAssertEqual((result.pinned + result.recent).map { $0.chatId }, ["fire"])
+    }
+
+    @MainActor
+    func testRecentChatsInFireModeWithoutFireStorageAreEmpty() async throws {
+        try mockNativeStorage.putChat(chatId: "regular", data: makeChatData(chatId: "regular"))
+
+        let reader = makeRecentChatsReader(isFireMode: true, fireModeStorage: nil)
+        let result = await reader.fetchSuggestions(query: nil, maxChats: 5)
+
+        XCTAssertTrue((result.pinned + result.recent).isEmpty)
+    }
+
+    @MainActor
+    private func makeRecentChatsReader(isFireMode: Bool, fireModeStorage: DuckAiNativeStorageHandling?) -> AIChatSuggestionsReading {
+        AIChatSuggestionsReader.makeRecentChatsReader(isFireMode: isFireMode,
+                                                      nativeStorageHandler: mockNativeStorage,
+                                                      fireModeStorageHandler: fireModeStorage,
+                                                      featureFlagger: mockFeatureFlagger,
+                                                      privacyConfig: MockPrivacyConfigurationManager())
+    }
+
+    private func makeChatData(chatId: String) throws -> Data {
+        let lastEdit = AIChatSuggestion.formatISO8601Date(Date()) ?? ""
+        return try JSONSerialization.data(withJSONObject: [
+            "chatId": chatId,
+            "title": chatId,
+            "model": "gpt-4o-mini",
+            "lastEdit": lastEdit,
+            "pinned": false,
+            "messages": [["role": "user", "content": "Hello"]]
+        ] as [String: Any])
     }
 
     // MARK: - Open Duck.ai

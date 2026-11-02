@@ -335,5 +335,26 @@
             ["platform", "form_factor"]
         ],
         "parameters": ["appVersion", "errorDomain", "errorCode", "underlyingErrorCode", "underlyingErrorDomain"]
+    },
+    "duck-ai_native-storage_invalid-value": {
+        "description": "Fires when Duck.ai asks native storage to save a value JSON can't store, such as a JS Date, NaN or Infinity, so it's dropped instead of saved. Bulk saves fire once per message, not once per chat.",
+        "owners": ["tomasstrba", "Bunn"],
+        "triggers": ["exception"],
+        "suffixes": ["daily_count", "platform", "form_factor"],
+        "parameters": [
+            "appVersion",
+            {
+                "key": "operation",
+                "description": "The storage message that carried the value.",
+                "type": "string",
+                "enum": ["putEntry", "replaceAllEntries", "putChat", "putChats", "migrateChats", "putFile"]
+            },
+            {
+                "key": "value_type",
+                "description": "The first value found that JSON can't store. `date` is a JS Date, `non_finite_number` is NaN or Infinity.",
+                "type": "string",
+                "enum": ["date", "non_finite_number", "other"]
+            }
+        ]
     }
 }

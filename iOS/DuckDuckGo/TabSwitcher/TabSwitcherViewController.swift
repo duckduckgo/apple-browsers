@@ -121,6 +121,9 @@ class TabSwitcherViewController: UIViewController {
 
     weak var delegate: TabSwitcherDelegate!
     weak var previewsSource: TabPreviewsSource!
+    /// Backs the Duck.ai button's recent chats menu per browsing mode; `nil` keeps the button opening a new chat.
+    var recentChatsReaderProvider: ((BrowsingMode) -> AIChatSuggestionsReading)?
+    private var recentChatsReaders: [BrowsingMode: AIChatSuggestionsReading] = [:]
 
     var selectedTabs: [IndexPath] {
         activePageController.selectedIndexPaths
@@ -292,6 +295,7 @@ class TabSwitcherViewController: UIViewController {
         chrome.install(in: view, contentView: pagingScrollView)
         chrome.actions = makeChromeActions()
         chrome.configurePlusButtonLongPressMenu(isFireModeEnabled: fireModeCapability.isFireModeEnabled)
+        chrome.configureDuckChatMenu(makeRecentChatsMenu())
 
         setupModeToggle()
 
@@ -702,6 +706,8 @@ class TabSwitcherViewController: UIViewController {
         }
 
         canUpdateCollection = false
+        recentChatsReaders.values.forEach { $0.tearDown() }
+        recentChatsReaders = [:]
         if let firePC = firePageController {
             tabManager.tabsModel(for: .fire).tabs.forEach { $0.removeObserver(firePC) }
         }
@@ -860,4 +866,72 @@ extension BrowsingMode {
                 unselectedImage: Image(uiImage: DesignSystemImages.Glyphs.Size24.fireTabs))
         }
     }
+}
+
+// MARK: - Recent chats menu
+
+extension TabSwitcherViewController {
+
+    func makeRecentChatsMenu() -> UIMenu? {
+        guard recentChatsReaderProvider != nil else { return nil }
+        return UIMenu(children: [
+            AIChatRecentChatsMenuViewModel.deferredMenuElement(
+                // The viewed page's mode, which is where the chosen chat opens.
+                reader: { [weak self] in self.flatMap { $0.recentChatsReader(for: $0.selectedBrowsingMode) } },
+                sections: { [weak self] in self?.makeRecentChatsMenuSections(for: $0) ?? [] }
+            )
+        ])
+    }
+
+    private func makeRecentChatsMenuSections(for viewModel: AIChatRecentChatsMenuViewModel) -> [UIMenuElement] {
+        PixelKit.fire(AIChatTabSwitcherMenuPixel.shown, frequency: .dailyAndCount)
+        return viewModel.makeMenuSections(style: .compact, actions: .init(
+            newChat: { [weak self] in
+                PixelKit.fire(AIChatTabSwitcherMenuPixel.newChatSelected, frequency: .dailyAndCount)
+                self?.addNewAIChatTab()
+            },
+            selectChat: { [weak self] in
+                PixelKit.fire(AIChatTabSwitcherMenuPixel.recentChatSelected, frequency: .dailyAndCount)
+                self?.openRecentChat($0)
+            },
+            viewAll: { [weak self] in
+                PixelKit.fire(AIChatTabSwitcherMenuPixel.viewAllChatsSelected, frequency: .dailyAndCount)
+                self?.openAIChatHistory()
+            }
+        ))
+    }
+
+    private func recentChatsReader(for mode: BrowsingMode) -> AIChatSuggestionsReading? {
+        if let reader = recentChatsReaders[mode] { return reader }
+        let reader = recentChatsReaderProvider?(mode)
+        recentChatsReaders[mode] = reader
+        return reader
+    }
+
+    private func openRecentChat(_ chat: AIChatSuggestion) {
+        guard !isProcessingUpdates else { return }
+        canUpdateCollection = false
+        dismissIfPossible(forceDismissOnEmpty: true)
+        delegate.tabSwitcher(self, didRequestAIChat: chat.chatId)
+    }
+
+    private func openAIChatHistory() {
+        guard !isProcessingUpdates else { return }
+        canUpdateCollection = false
+        dismiss(animated: true) { [weak self] in
+            guard let self else { return }
+            self.delegate.tabSwitcherDidRequestAIChatHistory(self)
+        }
+    }
+}
+
+enum AIChatTabSwitcherMenuPixel: String, PixelKit.Event {
+    case shown = "aichat_tab_switcher_menu_shown"
+    case newChatSelected = "aichat_tab_switcher_menu_new_chat_selected"
+    case recentChatSelected = "aichat_tab_switcher_menu_recent_chat_selected"
+    case viewAllChatsSelected = "aichat_tab_switcher_menu_view_all_chats_selected"
+
+    var name: String { rawValue }
+    var parameters: [String: String]? { nil }
+    var standardParameters: [PixelKitStandardParameter]? { nil }
 }

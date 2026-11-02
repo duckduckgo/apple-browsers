@@ -121,6 +121,12 @@ public final class DuckAiNativeStorageHandler: DuckAiNativeStorageHandling, Duck
             .setFailureType(to: Error.self)
             .eraseToAnyPublisher()
     }
+    public func chatCountPublisher() -> AnyPublisher<Int, Error> {
+        if let observing = backing as? DuckAiNativeChatsObserving {
+            return observing.chatCountPublisher()
+        }
+        return chatsPublisher().map(\.count).eraseToAnyPublisher()
+    }
     public func deleteChat(chatId: String) throws { try backing.deleteChat(chatId: chatId) }
     public func deleteAllChats() throws { try backing.deleteAllChats() }
 

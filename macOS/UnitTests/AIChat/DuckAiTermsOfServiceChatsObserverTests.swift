@@ -148,7 +148,7 @@ final class DuckAiTermsOfServiceChatsObserverTests: XCTestCase {
     }
 }
 
-private final class ObservableChatStorage: DuckAiNativeStorageHandling, DuckAiNativeChatsObserving {
+final class ObservableChatStorage: DuckAiNativeStorageHandling, DuckAiNativeChatsObserving {
 
     let chats = CurrentValueSubject<[DuckAiChatRecord], Error>([])
     private(set) var chatsPublisherRequests = 0

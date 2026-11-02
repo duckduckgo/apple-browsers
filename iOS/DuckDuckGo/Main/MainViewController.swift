@@ -641,6 +641,7 @@ class MainViewController: UIViewController {
     var unifiedToggleInputCancellables = Set<AnyCancellable>()
     var unifiedToggleInputFloatingReturnKeyKeyboardBottomConstraint: NSLayoutConstraint?
     var unifiedToggleInputFloatingReturnKeyInputTopConstraint: NSLayoutConstraint?
+    var duckAIKeyboardEdgeSweepView: DuckAIKeyboardEdgeSweepView?
     var aiChatTabChatHeaderView: AIChatTabChatHeaderView?
     /// Minimal header shown in place of `aiChatTabChatHeaderView` while editing a message.
     var aiChatEditHeaderView: AIChatEditHeaderView?
@@ -2155,6 +2156,7 @@ class MainViewController: UIViewController {
         isKeyboardOverlappingContent = keyboardVisible
         keyboardHeight = keyboardFrameInView.height
         updateUnifiedToggleInputKeyboardVisibility(keyboardVisible)
+        updateDuckAIKeyboardEdgeSweep()
         updateWebInputChromeVisibility()
         if isFloatingUIEnabled {
             currentTab?.updateWebViewLayoutForKeyboard()

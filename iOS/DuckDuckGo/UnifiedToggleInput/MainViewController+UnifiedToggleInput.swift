@@ -126,6 +126,7 @@ extension MainViewController {
         browserTabMentionSuggestionsController = mentions
         coordinator.onTabMentionSuggestionsChanged = { [weak mentions] in mentions?.show($0) }
         installFloatingReturnKeyViewController()
+        installDuckAIKeyboardEdgeSweep()
         installSwipeTabsGesturesForUnifiedInput()
 
         subscribeToIntentPublisher(coordinator)
@@ -586,6 +587,7 @@ private extension MainViewController {
 
     func handleModeChange(_ mode: TextEntryMode) {
         guard let coordinator = unifiedToggleInputCoordinator else { return }
+        updateDuckAIKeyboardEdgeSweep()
 
         if let tab = tabManager.currentTabsModel.currentTab, tab.link == nil {
             ntpAfterIdleInstrumentation.toggleUsedFromNTP(afterIdle: tab.openedAfterIdle)
@@ -1109,6 +1111,31 @@ extension MainViewController {
     func updateUnifiedInputContentPresentation(presentation: NewTabPageInputPresentation, isOnAITab: Bool) {
         unifiedToggleInputCoordinator?.contentViewController.usesRedesignedNewTabPageLayout =
             presentation.usesRedesignedFocusedLayout(isOnAITab: isOnAITab)
+    }
+
+    func installDuckAIKeyboardEdgeSweep() {
+        let sweepView = DuckAIKeyboardEdgeSweepView()
+        sweepView.translatesAutoresizingMaskIntoConstraints = false
+        view.addSubview(sweepView)
+        NSLayoutConstraint.activate([
+            sweepView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            sweepView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            sweepView.topAnchor.constraint(equalTo: view.keyboardLayoutGuide.topAnchor),
+            sweepView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
+        ])
+        duckAIKeyboardEdgeSweepView = sweepView
+    }
+
+    /// Plays the keyboard edge sweep once whenever the keyboard belongs to the Duck.ai input.
+    func updateDuckAIKeyboardEdgeSweep() {
+        guard let coordinator = unifiedToggleInputCoordinator else { return }
+        // Read on every update so toggling the flag mid-session takes effect on the next keyboard.
+        duckAIKeyboardEdgeSweepView?.isActive = DuckAIKeyboardEdgeSweepView.isActive(
+            isFeatureOn: featureFlagger.isFeatureOn(.unifiedToggleInputKeyboardEdgeSweep),
+            isInputEditing: coordinator.isInputEditing,
+            inputMode: coordinator.inputMode,
+            isUnifiedToggleInputAvailable: unifiedToggleInputFeature.isAvailable
+        )
     }
 
     func installFloatingReturnKeyViewController() {

@@ -43,6 +43,7 @@ final class HistoryMenuTests: XCTestCase {
         XCTAssertFalse(item.isHidden)
         XCTAssertEqual(item.title, UserText.mainMenuHistoryImportHistory)
         XCTAssertEqual(item.action, #selector(AppDelegate.openImportBrowserDataWindow))
+        XCTAssertEqual(sut.item(at: sut.index(of: item) - 2)?.title, UserText.mainMenuHistoryShowAllHistory)
     }
 
     @MainActor

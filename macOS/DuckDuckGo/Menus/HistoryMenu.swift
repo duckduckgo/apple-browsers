@@ -110,14 +110,11 @@ final class HistoryMenu: NSMenu {
             if location == .mainMenu {
                 showHistorySeparator
                 showHistoryMenuItem
-            }
-            clearAllHistorySeparator
-            clearAllHistoryMenuItem
-
-            if location == .mainMenu {
                 importHistorySeparator
                 importHistoryMenuItem
             }
+            clearAllHistorySeparator
+            clearAllHistoryMenuItem
         }
 
         reopenMenuItemKeyEquivalentManager.reopenLastClosedMenuItem = reopenLastClosedMenuItem

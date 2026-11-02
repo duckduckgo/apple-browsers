@@ -23,6 +23,50 @@ import VPNTestUtils
 
 final class NetworkProtectionConnectionBandwidthAnalyzerTests: XCTestCase {
 
+    func testUnchangedCountersAreIdle() async {
+        let analyzer = NetworkProtectionConnectionBandwidthAnalyzer()
+        await analyzer.record(rxBytes: 1000, txBytes: 1000)
+        await analyzer.record(rxBytes: 1000, txBytes: 1000)
+
+        let idle = await analyzer.isConnectionIdle()
+        XCTAssertTrue(idle)
+    }
+
+    func testLowOneWayTrafficIsIdle() async throws {
+        for (rxBytes, txBytes) in [(UInt64(1000), UInt64(1001)), (UInt64(1001), UInt64(1000))] {
+            let analyzer = NetworkProtectionConnectionBandwidthAnalyzer()
+            await analyzer.record(rxBytes: 1000, txBytes: 1000)
+            try await Task.sleep(nanoseconds: 10_000_000)
+            await analyzer.record(rxBytes: rxBytes, txBytes: txBytes)
+
+            let idle = await analyzer.isConnectionIdle()
+            XCTAssertTrue(idle, "Low traffic should be idle when either counter is unchanged")
+        }
+    }
+
+    func testHighOneWayTrafficIsNotIdle() async throws {
+        for (rxBytes, txBytes) in [(UInt64(1000), UInt64(1_000_000_000)), (UInt64(1_000_000_000), UInt64(1000))] {
+            let analyzer = NetworkProtectionConnectionBandwidthAnalyzer()
+            await analyzer.record(rxBytes: 1000, txBytes: 1000)
+            try await Task.sleep(nanoseconds: 10_000_000)
+            await analyzer.record(rxBytes: rxBytes, txBytes: txBytes)
+
+            let idle = await analyzer.isConnectionIdle()
+            XCTAssertFalse(idle, "High traffic should not be idle when the other counter is unchanged")
+        }
+    }
+
+    func testDecreasingCountersAreNotIdle() async {
+        for (rxBytes, txBytes) in [(UInt64(999), UInt64(1001)), (UInt64(1001), UInt64(999))] {
+            let analyzer = NetworkProtectionConnectionBandwidthAnalyzer()
+            await analyzer.record(rxBytes: 1000, txBytes: 1000)
+            await analyzer.record(rxBytes: rxBytes, txBytes: txBytes)
+
+            let idle = await analyzer.isConnectionIdle()
+            XCTAssertFalse(idle, "Counter resets should invalidate the bandwidth sample")
+        }
+    }
+
     func testBytesPerSecondCalculationIsCorrect() {
         let deltaSeconds = TimeInterval(5)
         let oldDate = Date()

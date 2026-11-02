@@ -36,12 +36,16 @@ final class AppLaunchUITests: UITestCase {
         app.launchArguments += ["-ff.slideToDelete", "true", "-ff.fireMode", "true", "-ff.fireButtonRefinements", "true"]
         app.launch()
 
-        let menuButton = app.buttons["Browser.Toolbar.Button.Menu"]
+        let dismissInput = app.buttons.matching(NSPredicate(format: "identifier IN %@", [
+            "UnifiedToggleInput.Button.Dismiss", "Browser.OmniBar.Button.Dismiss"
+        ])).firstMatch
+        if dismissInput.waitForExistence(timeout: 3) { dismissInput.tap() }
+
+        let menuIdentifier = UIDevice.current.userInterfaceIdiom == .pad
+            ? "Browser.OmniBar.Button.BrowsingMenu"
+            : "Browser.Toolbar.Button.Menu"
+        let menuButton = app.buttons[menuIdentifier]
         XCTAssertTrue(menuButton.waitForExistence(timeout: UITestTimeouts.navigation))
-        let dismissInput = app.buttons["UnifiedToggleInput.Button.Dismiss"]
-        if dismissInput.waitForExistence(timeout: 3) {
-            dismissInput.tap()
-        }
         menuButton.tap()
         let newTab = app.buttons["New Tab"]
         XCTAssertTrue(newTab.waitForExistence(timeout: UITestTimeouts.navigation))
@@ -58,7 +62,9 @@ final class AppLaunchUITests: UITestCase {
         XCTAssertEqual(slider.label, "Slide To Delete All")
         let deleteThis = app.buttons["Fire.Confirmation.Button.ThisTab"]
         XCTAssertTrue(deleteThis.waitForExistence(timeout: UITestTimeouts.navigation))
-        app.swipeUp()
+        if UIDevice.current.userInterfaceIdiom != .pad {
+            app.swipeUp()
+        }
         slider.tap()
         XCTAssertTrue(slider.exists)
 
@@ -75,9 +81,11 @@ final class AppLaunchUITests: UITestCase {
             dismissInput.tap()
         }
         app.buttons["Browser.Toolbar.Button.TabSwitcher"].tap()
-        let newTabButton = app.buttons["Open new tab"]
+        let tabSwitcher = app.collectionViews["TabSwitcher.Collection.Tabs"]
+        let newTabButton = tabSwitcher.buttons["Open new tab"]
         XCTAssertTrue(newTabButton.waitForExistence(timeout: UITestTimeouts.navigation))
-        XCTAssertEqual(app.collectionViews.cells.containing(.button, identifier: "Open new tab").count, 1)
+        let tabSwitcherCells = tabSwitcher.cells
+        XCTAssertEqual(tabSwitcherCells.containing(.button, identifier: "TabSwitcher.Tab.Open").count, 1)
     }
 
     func testSlideToDeleteDisabledKeepsDeleteAllButton() {

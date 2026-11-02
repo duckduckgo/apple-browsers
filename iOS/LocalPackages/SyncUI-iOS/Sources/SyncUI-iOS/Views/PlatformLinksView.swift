@@ -34,12 +34,12 @@ public struct PlatformLinksView: View {
         static let downloadUrl: String = "https://duckduckgo.com/app?origin=funnel_browser_ios_sync"
     }
 
-    private var model: SyncSettingsViewModel
+    private var model: any PlatformLinksHandling
     private var source: SyncSettingsViewModel.PlatformLinksPixelSource
 
     @State private var shareButtonFrame: CGRect = .zero
 
-    public init(model: SyncSettingsViewModel, source: SyncSettingsViewModel.PlatformLinksPixelSource) {
+    public init(model: any PlatformLinksHandling, source: SyncSettingsViewModel.PlatformLinksPixelSource) {
         self.model = model
         self.source = source
     }

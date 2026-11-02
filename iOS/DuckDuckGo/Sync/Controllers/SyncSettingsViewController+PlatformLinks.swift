@@ -18,10 +18,23 @@
 //
 
 import UIKit
+import Core
+import PixelKit
+import SyncUI_iOS
 
 extension SyncSettingsViewController {
     
     func shareLink(for url: URL, with message: String, from rect: CGRect) {
+        PlatformLinksActions(presenter: self, pixelFiring: pixelFiring).shareLinkPressed(for: url, with: message, from: rect)
+    }
+}
+
+struct PlatformLinksActions: PlatformLinksHandling {
+
+    weak var presenter: UIViewController?
+    let pixelFiring: (any PixelKitFiring)?
+
+    func shareLinkPressed(for url: URL, with message: String, from rect: CGRect) {
         let itemSource = ShareItemSource(url: url, message: message)
         let activityViewController = UIActivityViewController(activityItems: [itemSource], applicationActivities: nil)
 
@@ -30,7 +43,20 @@ extension SyncSettingsViewController {
             activityViewController.popoverPresentationController?.sourceRect = rect
         }
 
-        present(activityViewController, animated: true, completion: nil)
+        presenter?.present(activityViewController, animated: true, completion: nil)
+    }
+
+    func fireOtherPlatformLinksPixel(for event: SyncSettingsViewModel.PlatformLinksPixelEvent, source: SyncSettingsViewModel.PlatformLinksPixelSource) {
+        let params = ["source": source.rawValue]
+
+        switch event {
+        case .appear:
+            pixelFiring?.fire(Pixel.Event.syncGetOtherDevices, options: .parameters(params))
+        case .copy:
+            pixelFiring?.fire(Pixel.Event.syncGetOtherDevicesCopy, options: .parameters(params))
+        case .share:
+            pixelFiring?.fire(Pixel.Event.syncGetOtherDevicesShare, options: .parameters(params))
+        }
     }
 }
 

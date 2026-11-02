@@ -2468,6 +2468,30 @@ final class DataImportViewModelTests: XCTestCase {
         }
     }
 
+    func testMergeImportSummary_historyFailsWhileBookmarksAndPasswordsSucceed_postsImportComplete() async throws {
+        try await startSafariImport(returning: [
+            .bookmarks: .success(.init(successful: 10, duplicate: 0, failed: 0)),
+            .passwords: .success(.init(successful: 5, duplicate: 0, failed: 0)),
+            .history: .failure(Failure(.history, .other))
+        ])
+        let importComplete = expectation(forNotification: .dataImportComplete, object: nil)
+
+        await fulfillImport()
+
+        await fulfillment(of: [importComplete], timeout: 1)
+    }
+
+    func testMergeImportSummary_historyOnlySucceeds_postsImportComplete() async throws {
+        try await startSafariImport(selecting: [.history], returning: [
+            .history: .success(.init(successful: 100, duplicate: 0, failed: 0))
+        ])
+        let importComplete = expectation(forNotification: .dataImportComplete, object: nil)
+
+        await fulfillImport()
+
+        await fulfillment(of: [importComplete], timeout: 1)
+    }
+
     func testMergeImportSummary_showsFileImportForPasswords_whenBookmarksSucceedPasswordsEmpty() async {
         // GIVEN
         await MainActor.run {
@@ -3035,6 +3059,19 @@ final class DataImportViewModelTests: XCTestCase {
         let originalValue = featureFlagger.featuresStub[key]
         featureFlagger.featuresStub[key] = isOn
         addTeardownBlock { featureFlagger.featuresStub[key] = originalValue }
+    }
+
+    @MainActor
+    private func startSafariImport(
+        selecting dataTypes: Set<DataType> = [.bookmarks, .passwords, .history],
+        returning summary: DataImportSummary
+    ) throws {
+        try setHistoryImportFlag(true)
+        setupModel(with: .safari, dataImporterFactory: { _, _, _, _ in
+            ImporterMock(importTask: { _, _ in summary })
+        })
+        model.selectDataTypes(dataTypes)
+        model.initiateImport(fileURL: .testProfile)
     }
 
     @MainActor

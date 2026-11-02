@@ -439,17 +439,21 @@ final class SafariArchiveImporter: DataImporter {
     private func importHistory(_ historyContents: [String], _ types: Set<DataImport.DataType>, _ updateProgress: DataImportProgressCallback, _ cumulativeFraction: inout Double) async throws -> DataImportSummary {
         try updateProgress(.importingHistory(numberOfVisits: nil, fraction: cumulativeFraction))
 
-        // Safari exports a History file for each of its profiles
+        // Safari exports a History file for each of its profiles. One that can't be read doesn't stop the others.
         var visits = [HistoryImport.Visit]()
         var skipped = 0
+        var readErrors = [any DataImportError]()
         for content in historyContents {
             switch historyReader.readVisits(fromHistoryJSON: Data(content.utf8), since: .monthAgo) {
             case .success(let result):
                 visits += result.visits
                 skipped += result.skipped
             case .failure(let error):
-                return [.history: .failure(error)]
+                readErrors.append(error)
             }
+        }
+        if readErrors.count == historyContents.count, let readError = readErrors.first {
+            return [.history: .failure(readError)]
         }
         let parseResult = HistoryImport.ParseResult(visits: visits, skipped: skipped)
         // parsing a large export can take a while: don't add visits to history after the import was cancelled

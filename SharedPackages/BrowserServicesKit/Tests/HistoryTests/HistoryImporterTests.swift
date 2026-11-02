@@ -54,15 +54,27 @@ final class HistoryImporterTests: XCTestCase {
     }
 
     @MainActor
-    func testWhenHistoryHasNotFinishedLoading_ThenImportThrows() async {
+    func testWhenHistoryDoesNotFinishLoadingInTime_ThenImportThrows() async {
         let coordinator = HistoryCoordinatingMock()
         coordinator.historyDictionary = [:]
-        let importer = HistoryImporter(historyCoordinator: coordinator)
+        let importer = HistoryImporter(historyCoordinator: coordinator, historyLoadTimeout: 0)
 
         let error = await importError(of: [visit(newURL, hoursAgo: 1)], using: importer)
 
         XCTAssertEqual(error as? HistoryImport.Error, .historyNotLoaded)
         XCTAssertTrue(coordinator.addImportedVisitsCalls.isEmpty)
+    }
+
+    @MainActor
+    func testWhenHistoryFinishesLoadingDuringImport_ThenVisitsAreImported() async throws {
+        let coordinator = HistoryCoordinatingMock()
+        coordinator.historyDictionary = [:]
+        let importer = HistoryImporter(historyCoordinator: coordinator, historyLoadTimeout: 5)
+        finishLoadingHistory(of: coordinator, afterSeconds: 0.2)
+
+        let summary = try await importer.importVisits(HistoryImport.ParseResult(visits: [visit(newURL, hoursAgo: 1)], skipped: 0))
+
+        XCTAssertEqual(summary, HistoryImport.Summary(imported: 1))
     }
 
     @MainActor
@@ -93,6 +105,14 @@ final class HistoryImporterTests: XCTestCase {
             return nil
         } catch {
             return error
+        }
+    }
+
+    @MainActor
+    private func finishLoadingHistory(of coordinator: HistoryCoordinatingMock, afterSeconds seconds: Double) {
+        Task { @MainActor in
+            try? await Task.sleep(nanoseconds: UInt64(seconds * 1_000_000_000))
+            coordinator.isHistoryLoaded = true
         }
     }
 

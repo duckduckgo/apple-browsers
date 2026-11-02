@@ -1261,6 +1261,7 @@ extension DataImportViewModel {
     mutating func importButtonPressed() {
         setupAndStartWideEventIfNeeded()
         fireBookmarksSourceFileMissingPixelIfNeeded()
+        fireHistorySourceFileMissingPixelIfNeeded()
         guard let importer = selectedProfile.map({
             dataImporterFactory(/* importSource: */ importSource,
                                 /* dataType: */ nil,
@@ -1304,6 +1305,21 @@ extension DataImportViewModel {
               case .unavailable = selectedProfile.validateProfileData()?.bookmarks else { return }
 
         let pixel = DataImportBookmarksPixel.sourceFileMissing(
+            source: importSource.pixelSourceParameterName,
+            sourceVersion: importSource.installedAppsMajorVersionDescription(selectedProfile: selectedProfile)
+        )
+        pixelFiring?.fire(pixel, frequency: .dailyAndCount)
+    }
+
+    /// The profile folder could be read, but it has no history database where the importer looks for it,
+    /// so History isn't offered for it, e.g. after the browser renamed the database.
+    private func fireHistorySourceFileMissingPixelIfNeeded() {
+        guard importSource.supportedDataTypes.contains(.history),
+              let selectedProfile,
+              selectedProfile.validateProfileData() != nil,
+              !selectedProfile.hasValidProfileData(for: .history) else { return }
+
+        let pixel = DataImportHistoryPixel.sourceFileMissing(
             source: importSource.pixelSourceParameterName,
             sourceVersion: importSource.installedAppsMajorVersionDescription(selectedProfile: selectedProfile)
         )

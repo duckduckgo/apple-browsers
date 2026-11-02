@@ -40,6 +40,11 @@ final class FirefoxHistoryVisitsReaderTests {
     private let download: Int64 = 7
     private let framedLink: Int64 = 8
 
+    private let placesSchema = """
+        CREATE TABLE moz_places (id INTEGER PRIMARY KEY, url LONGVARCHAR, title LONGVARCHAR, hidden INTEGER DEFAULT 0 NOT NULL);
+        CREATE TABLE moz_historyvisits (id INTEGER PRIMARY KEY, from_visit INTEGER, place_id INTEGER, visit_date INTEGER, visit_type INTEGER);
+        """
+
     private let profileURL = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
     /// Kept open while reading, like Firefox keeps its connection, so the rows stay in `places.sqlite-wal`.
     private var writerQueue: DatabaseQueue?
@@ -77,6 +82,18 @@ final class FirefoxHistoryVisitsReaderTests {
         #expect(result.skipped == 7)
     }
 
+    @available(iOS 16, macOS 13, *)
+    @Test("Check if the visits in the Firefox places database are read when its write-ahead log doesn't match it", .timeLimit(.minutes(1)))
+    func readingVisitsWithMismatchedWriteAheadLog() throws {
+        let visitDate = wholeSecondsDate(daysAgo: 2)
+        try makePlacesDatabase(rows: [VisitRow(url: "https://duckduckgo.com/", date: visitDate, visitType: link, title: "DuckDuckGo")])
+        try replaceWriteAheadLogWithOneFromALargerDatabase()
+
+        let result = FirefoxHistoryVisitsReader(firefoxDataDirectoryURL: profileURL).readVisits(since: wholeSecondsDate(daysAgo: 30))
+
+        #expect(try result.get().visits == [HistoryImport.Visit(url: URL(string: "https://duckduckgo.com/")!, title: "DuckDuckGo", date: visitDate)])
+    }
+
     private func wholeSecondsDate(daysAgo days: Int) -> Date {
         Date(timeIntervalSince1970: (Date().timeIntervalSince1970 - TimeInterval(days * 24 * 60 * 60)).rounded())
     }
@@ -94,10 +111,7 @@ final class FirefoxHistoryVisitsReaderTests {
             try database.execute(sql: "PRAGMA journal_mode = WAL; PRAGMA wal_autocheckpoint = 0")
         }
         try queue.write { database in
-            try database.execute(sql: """
-                CREATE TABLE moz_places (id INTEGER PRIMARY KEY, url LONGVARCHAR, title LONGVARCHAR, hidden INTEGER DEFAULT 0 NOT NULL);
-                CREATE TABLE moz_historyvisits (id INTEGER PRIMARY KEY, from_visit INTEGER, place_id INTEGER, visit_date INTEGER, visit_type INTEGER);
-                """)
+            try database.execute(sql: placesSchema)
             for (index, row) in rows.enumerated() {
                 try database.execute(sql: "INSERT INTO moz_places (id, url, title, hidden) VALUES (?, ?, ?, ?)",
                                      arguments: [index + 1, row.url, row.title, row.hidden])
@@ -106,5 +120,22 @@ final class FirefoxHistoryVisitsReaderTests {
             }
         }
         writerQueue = queue
+    }
+
+    /// Closing the writer moves every row into `places.sqlite`. The log put in its place, like one Firefox wrote after
+    /// the database was copied, points at tables on pages past the end of the database, so SQLite reports it as malformed.
+    private func replaceWriteAheadLogWithOneFromALargerDatabase() throws {
+        writerQueue = nil
+        let largerDatabaseURL = profileURL.appendingPathComponent("larger").appendingPathComponent("places.sqlite")
+        try FileManager.default.createDirectory(at: largerDatabaseURL.deletingLastPathComponent(), withIntermediateDirectories: true)
+        let largerQueue = try DatabaseQueue(path: largerDatabaseURL.path)
+        try largerQueue.writeWithoutTransaction { database in
+            try database.execute(sql: "PRAGMA journal_mode = WAL; PRAGMA wal_autocheckpoint = 0")
+            try database.execute(sql: "CREATE TABLE filler (data BLOB); INSERT INTO filler VALUES (zeroblob(100000))")
+            try database.execute(sql: placesSchema)
+            try database.execute(sql: "PRAGMA wal_checkpoint(TRUNCATE)")
+            try database.execute(sql: "PRAGMA user_version = 1")
+        }
+        try FileManager.default.copyItem(atPath: largerDatabaseURL.path + "-wal", toPath: profileURL.appendingPathComponent("places.sqlite-wal").path)
     }
 }

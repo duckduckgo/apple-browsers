@@ -65,10 +65,20 @@ final class FirefoxHistoryVisitsReader: FirefoxHistoryVisitsReaderProtocol {
     }
 
     func readVisits(since cutoff: Date) -> DataImportResult<HistoryImport.ParseResult> {
+        let result = readVisits(since: cutoff, includingWriteAheadLog: true)
+        // The database and its write-ahead log are copied one after the other, so Firefox can write in between and
+        // leave a pair that doesn't match. The database alone is consistent, only missing the latest visits.
+        guard case .failure(let error) = result, isUnreadableCopy(error) else { return result }
+        return readVisits(since: cutoff, includingWriteAheadLog: false)
+    }
+
+    // MARK: - Private
+
+    private func readVisits(since cutoff: Date, includingWriteAheadLog: Bool) -> DataImportResult<HistoryImport.ParseResult> {
         currentOperationType = .copyTemporaryFile
         do {
             // Firefox keeps the database locked while it runs, so read a copy.
-            return try withTemporaryCopyIncludingWriteAheadLog { temporaryDatabaseURL in
+            return try withTemporaryCopy(includingWriteAheadLog: includingWriteAheadLog) { temporaryDatabaseURL in
                 .success(try readVisits(from: temporaryDatabaseURL, since: cutoff))
             }
         } catch {
@@ -76,11 +86,14 @@ final class FirefoxHistoryVisitsReader: FirefoxHistoryVisitsReaderProtocol {
         }
     }
 
-    // MARK: - Private
+    private func isUnreadableCopy(_ error: any DataImportError) -> Bool {
+        guard let databaseError = error.underlyingError as? DatabaseError else { return false }
+        return [.SQLITE_CORRUPT, .SQLITE_NOTADB, .SQLITE_BUSY].contains(databaseError.resultCode)
+    }
 
     /// Firefox uses WAL mode, so recent visits may still be in `places.sqlite-wal`.
     /// It's copied alongside the database under the matching name so SQLite applies it.
-    private func withTemporaryCopyIncludingWriteAheadLog<T>(_ body: (URL) throws -> T) throws -> T {
+    private func withTemporaryCopy<T>(includingWriteAheadLog: Bool, _ body: (URL) throws -> T) throws -> T {
         let fileManager = FileManager.default
         let directoryURL = fileManager.temporaryDirectory.appendingPathComponent(UUID().uuidString, isDirectory: true)
         try fileManager.createDirectory(at: directoryURL, withIntermediateDirectories: true)
@@ -89,7 +102,7 @@ final class FirefoxHistoryVisitsReader: FirefoxHistoryVisitsReaderProtocol {
         let databaseCopyURL = directoryURL.appendingPathComponent(firefoxHistoryDatabaseURL.lastPathComponent)
         try fileManager.copyItem(at: firefoxHistoryDatabaseURL, to: databaseCopyURL)
         let writeAheadLogURL = URL(fileURLWithPath: firefoxHistoryDatabaseURL.path + "-wal")
-        if fileManager.fileExists(atPath: writeAheadLogURL.path) {
+        if includingWriteAheadLog, fileManager.fileExists(atPath: writeAheadLogURL.path) {
             try fileManager.copyItem(at: writeAheadLogURL, to: URL(fileURLWithPath: databaseCopyURL.path + "-wal"))
         }
         return try body(databaseCopyURL)

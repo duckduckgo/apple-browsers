@@ -30,7 +30,6 @@ internal class FirefoxDataImporter: DataImporter {
     private let faviconManager: FaviconManagement
     private let historyReader: FirefoxHistoryVisitsReaderProtocol
     private let historyImporter: HistoryImporterProtocol
-    private let pixelFiring: PixelFiring?
     private let profile: DataImport.BrowserProfile
     private var source: DataImport.Source {
         profile.browser.importSource
@@ -45,8 +44,7 @@ internal class FirefoxDataImporter: DataImporter {
         bookmarkImporter: BookmarkImporter,
         faviconManager: FaviconManagement,
         historyReader: FirefoxHistoryVisitsReaderProtocol,
-        historyImporter: HistoryImporterProtocol,
-        pixelFiring: PixelFiring? = PixelKit.shared
+        historyImporter: HistoryImporterProtocol
     ) {
         self.profile = profile
         self.primaryPassword = primaryPassword
@@ -55,7 +53,6 @@ internal class FirefoxDataImporter: DataImporter {
         self.faviconManager = faviconManager
         self.historyReader = historyReader
         self.historyImporter = historyImporter
-        self.pixelFiring = pixelFiring
     }
 
     convenience init(profile: DataImport.BrowserProfile, primaryPassword: String?, loginImporter: LoginImporter, bookmarkImporter: BookmarkImporter) {
@@ -179,7 +176,6 @@ internal class FirefoxDataImporter: DataImporter {
         case .success(let result):
             parseResult = result
         case .failure(let error):
-            fireHistorySourceFileMissingPixelIfNeeded()
             return .failure(error)
         }
         // reading a large database can take a while: don't add visits to history after the import was cancelled
@@ -191,17 +187,6 @@ internal class FirefoxDataImporter: DataImporter {
         } catch {
             return .failure(FirefoxHistoryVisitsReader.ImportError(type: .importVisits, underlyingError: error))
         }
-    }
-
-    /// The profile folder could be read, but it has no places database where the importer looks for it.
-    private func fireHistorySourceFileMissingPixelIfNeeded() {
-        guard profile.validateProfileData() != nil, !profile.hasValidProfileData(for: .history) else { return }
-
-        let pixel = DataImportHistoryPixel.sourceFileMissing(
-            source: source.pixelSourceParameterName,
-            sourceVersion: profile.installedAppsMajorVersionDescription()
-        )
-        pixelFiring?.fire(pixel, frequency: .dailyAndCount)
     }
 
     private func importFavicons() async {

@@ -72,6 +72,15 @@ final class ChromiumHistoryReader: ChromiumHistoryReaderProtocol {
     }
 
     func readVisits(since cutoff: Date) -> DataImportResult<HistoryImport.ParseResult> {
+        let result = readVisitsFromCopy(since: cutoff)
+        // A copy taken while Chromium writes to the database can be unreadable, and a new copy usually isn't.
+        guard case .failure(let error) = result, isUnreadableCopy(error) else { return result }
+        return readVisitsFromCopy(since: cutoff)
+    }
+
+    // MARK: - Private
+
+    private func readVisitsFromCopy(since cutoff: Date) -> DataImportResult<HistoryImport.ParseResult> {
         currentOperationType = .copyTemporaryFile
         do {
             // Chromium keeps the database locked while it runs, so read a copy.
@@ -83,7 +92,10 @@ final class ChromiumHistoryReader: ChromiumHistoryReaderProtocol {
         }
     }
 
-    // MARK: - Private
+    private func isUnreadableCopy(_ error: any DataImportError) -> Bool {
+        guard let databaseError = error.underlyingError as? DatabaseError else { return false }
+        return [.SQLITE_CORRUPT, .SQLITE_NOTADB, .SQLITE_BUSY].contains(databaseError.resultCode)
+    }
 
     private func readVisits(from databaseURL: URL, since cutoff: Date) throws -> HistoryImport.ParseResult {
         currentOperationType = .dbOpen

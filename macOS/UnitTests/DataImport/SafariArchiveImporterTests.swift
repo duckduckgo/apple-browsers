@@ -203,6 +203,23 @@ final class SafariArchiveImporterTests: XCTestCase {
         XCTAssertTrue(pixelKit.actualFireCalls.isEmpty)
     }
 
+    func testWhenOneProfilesHistoryCantBeReadThenTheOtherProfilesHistoryIsImported() async throws {
+        let workHistoryJSON = historyJSON.replacingOccurrences(of: "https://duckduckgo.com", with: "https://example.com")
+        let zipURL = try createZipArchive(files: ["History.json": historyJSON, "Work - History.json": workHistoryJSON])
+        let parseResult = HistoryImport.ParseResult(visits: [HistoryImport.Visit(url: URL(string: "https://duckduckgo.com")!, title: nil, date: Date())], skipped: 0)
+        let historyReader = MockSafariHistoryReader(resultsByHistoryJSON: [
+            historyJSON: .success(parseResult),
+            workHistoryJSON: .failure(SafariHistoryReader.ImportError(type: .decodeHistory, underlyingError: nil))
+        ])
+        let historyImporter = MockHistoryImporter()
+        let importer = makeImporter(fileURL: zipURL, historyReader: historyReader, historyImporter: historyImporter)
+
+        let summary = await importer.importData(types: [.history]).task.value
+
+        XCTAssertNotNil(try summary[.history]?.get())
+        XCTAssertEqual(historyImporter.importedParseResults, [parseResult])
+    }
+
     func testWhenArchiveHasHistoryFileInUnknownFormatThenSourceFileMissingPixelIsFired() async throws {
         let unknownHistoryJSON = historyJSON.replacingOccurrences(of: "\"data_type\": \"history\"", with: "\"data_type\": \"browsing_history\"")
         let zipURL = try createZipArchive(files: ["passwords.csv": "title,url,username,password\nExample,duck.com,user,pass", "History.json": unknownHistoryJSON])

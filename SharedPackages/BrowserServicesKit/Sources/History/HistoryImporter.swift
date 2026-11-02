@@ -31,16 +31,24 @@ public final class HistoryImporter: HistoryImporterProtocol {
 
     private let historyCoordinator: HistoryCoordinating
     private let cutoff: () -> Date
+    private let historyLoadTimeout: TimeInterval
 
     /// `cutoff` is read on every import, so a long-lived importer keeps up with the date.
-    public init(historyCoordinator: HistoryCoordinating, cutoff: @escaping () -> Date = { .monthAgo }) {
+    /// An import that starts while history is still loading, such as one right after launch, waits up to `historyLoadTimeout`.
+    public init(
+        historyCoordinator: HistoryCoordinating,
+        cutoff: @escaping () -> Date = { .monthAgo },
+        historyLoadTimeout: TimeInterval = 10
+    ) {
         self.historyCoordinator = historyCoordinator
         self.cutoff = cutoff
+        self.historyLoadTimeout = historyLoadTimeout
     }
 
     @MainActor
     public func importVisits(_ parseResult: HistoryImport.ParseResult) async throws -> HistoryImport.Summary {
-        guard historyCoordinator.isHistoryLoaded, let historyDictionary = historyCoordinator.historyDictionary else {
+        try await waitForHistoryToLoad()
+        guard let historyDictionary = historyCoordinator.historyDictionary else {
             throw HistoryImport.Error.historyNotLoaded
         }
 
@@ -68,5 +76,16 @@ public final class HistoryImporter: HistoryImporterProtocol {
         try await historyCoordinator.addImportedVisits(newVisits)
         summary.imported = newVisits.count
         return summary
+    }
+
+    @MainActor
+    private func waitForHistoryToLoad() async throws {
+        let deadline = Date().addingTimeInterval(historyLoadTimeout)
+        while !historyCoordinator.isHistoryLoaded {
+            guard Date() < deadline else {
+                throw HistoryImport.Error.historyNotLoaded
+            }
+            try await Task.sleep(nanoseconds: 100_000_000)
+        }
     }
 }

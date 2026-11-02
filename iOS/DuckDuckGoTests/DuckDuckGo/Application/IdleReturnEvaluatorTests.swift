@@ -80,58 +80,37 @@ final class IdleReturnEvaluatorTests {
 
     @available(iOS 16, *)
     @Test("When feature is unavailable then the return is ordinary", .timeLimit(.minutes(1)))
-    func whenFeatureUnavailableThenReturnsFalse() {
+    func whenFeatureUnavailableThenReturnIsOrdinary() {
         let evaluator = makeEvaluator(featureAvailable: false, secondsSinceLastBackground: 61)
         #expect(evaluator.evaluateReturn() == .ordinary(timeAwayMs: 61_000))
     }
 
     @available(iOS 16, *)
     @Test("When no background date is stored then the return is ordinary", .timeLimit(.minutes(1)))
-    func whenNoStoredBackgroundDateThenReturnsFalse() {
+    func whenNoStoredBackgroundDateThenReturnIsOrdinary() {
         let evaluator = makeEvaluator()
         #expect(evaluator.evaluateReturn() == .ordinary(timeAwayMs: nil))
     }
 
     @available(iOS 16, *)
     @Test("When under threshold then the return is ordinary", .timeLimit(.minutes(1)))
-    func whenUnderThresholdThenReturnsFalse() {
+    func whenUnderThresholdThenReturnIsOrdinary() {
         let evaluator = makeEvaluator(thresholdSeconds: 120, secondsSinceLastBackground: 110)
         #expect(evaluator.evaluateReturn() == .ordinary(timeAwayMs: 110_000))
     }
 
     @available(iOS 16, *)
     @Test("When over threshold then the return is after idle", .timeLimit(.minutes(1)))
-    func whenOverThresholdThenReturnsTrue() {
+    func whenOverThresholdThenReturnIsAfterIdle() {
         let evaluator = makeEvaluator(thresholdSeconds: 120, secondsSinceLastBackground: 121)
         #expect(evaluator.evaluateReturn() == .afterIdle(treatment: .ntp, timeAwayMs: 121_000))
     }
 
     @available(iOS 16, *)
     @Test("When at exactly threshold then the return is after idle", .timeLimit(.minutes(1)))
-    func whenAtThresholdThenReturnsTrue() {
+    func whenAtThresholdThenReturnIsAfterIdle() {
         let evaluator = makeEvaluator(thresholdSeconds: 120, secondsSinceLastBackground: 120)
         #expect(evaluator.evaluateReturn() == .afterIdle(treatment: .ntp, timeAwayMs: 120_000))
-    }
-
-    @available(iOS 16, *)
-    @Test("When no background date is stored then timeAwayMs is nil", .timeLimit(.minutes(1)))
-    func whenNoStoredBackgroundDateThenTimeAwayIsNil() {
-        let evaluator = makeEvaluator()
-        #expect(evaluator.evaluateReturn().timeAwayMs == nil)
-    }
-
-    @available(iOS 16, *)
-    @Test("timeAwayMs reports the gap since the stored background date", .timeLimit(.minutes(1)))
-    func timeAwayMsReportsGap() {
-        let evaluator = makeEvaluator(secondsSinceLastBackground: 90)
-        #expect(evaluator.evaluateReturn().timeAwayMs == 90_000)
-    }
-
-    @available(iOS 16, *)
-    @Test("timeAwayMs is reported even when the return did not qualify as idle", .timeLimit(.minutes(1)))
-    func timeAwayMsReportedForOrdinaryReturn() {
-        let evaluator = makeEvaluator(thresholdSeconds: 120, secondsSinceLastBackground: 30)
-        #expect(evaluator.evaluateReturn() == .ordinary(timeAwayMs: 30_000))
     }
 
     @available(iOS 16, *)

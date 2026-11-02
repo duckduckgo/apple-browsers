@@ -27,14 +27,6 @@ public struct GetCustomerPortalURLResponse: Codable, Equatable {
     public let customerPortalUrl: String
 }
 
-public struct GetWithdrawalEligibilityResponse: Codable, Equatable {
-    public let withdrawal: WithdrawalEligibility
-
-    public init(withdrawal: WithdrawalEligibility) {
-        self.withdrawal = withdrawal
-    }
-}
-
 public struct WithdrawalEligibility: Codable, Equatable {
     public let eligible: Bool
     public let eligibleUntil: Date?
@@ -139,7 +131,7 @@ public protocol SubscriptionEndpointService {
     /// Fetches whether the Stripe subscription can be withdrawn from for a full refund.
     /// - Parameter accessToken: The user's access token for authentication
     /// - Returns: The withdrawal eligibility, with the deadline and refund amount when eligible
-    func getWithdrawalEligibility(accessToken: String) async throws -> GetWithdrawalEligibilityResponse
+    func getWithdrawalEligibility(accessToken: String) async throws -> WithdrawalEligibility
 
     /// Withdraws from the Stripe subscription: ends it immediately and refunds it in full.
     /// - Parameter accessToken: The user's access token for authentication
@@ -235,7 +227,7 @@ public struct DefaultSubscriptionEndpointService: SubscriptionEndpointService {
 
     // MARK: - Withdrawal
 
-    public func getWithdrawalEligibility(accessToken: String) async throws -> GetWithdrawalEligibilityResponse {
+    public func getWithdrawalEligibility(accessToken: String) async throws -> WithdrawalEligibility {
         guard let request = SubscriptionRequest.getWithdrawalEligibility(baseURL: baseURL, accessToken: accessToken) else {
             throw SubscriptionEndpointServiceError.invalidRequest
         }

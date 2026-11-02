@@ -4969,6 +4969,9 @@ Take back control of your personal information with the browser designed for dat
 /* Progress view title when restoring past subscription purchase */
 "subscription.progress.view.restoring.subscription" = "Restoring subscription...";
 
+/* Progress view title while withdrawing from the subscription contract */
+"subscription.progress.view.withdraw.in.progress" = "Withdrawal in progress…";
+
 /* Dismiss button on the reinstaller subscription promo. */
 "subscription.promo.reinstaller.buttons.notNow" = "Not Now";
 

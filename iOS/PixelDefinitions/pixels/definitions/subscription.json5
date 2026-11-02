@@ -1113,7 +1113,7 @@
         "parameters": ["appVersion", "pixelSource"]
     },
     "subscription_withdrawal_dialog_shown": {
-        "description": "Fired when the withdrawal confirmation dialog is shown, right after the user taps 'Withdraw from Contract'.",
+        "description": "Fired when the withdrawal confirmation dialog is presented, which happens when the user taps 'Withdraw from Contract'.",
         "owners": ["hanyutang-sandra"],
         "triggers": ["user_interaction"],
         "suffixes": ["platform", "form_factor"],

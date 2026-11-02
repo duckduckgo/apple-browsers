@@ -1,5 +1,5 @@
 //
-//  SubscriptionWithdrawalFlowModel.swift
+//  SubscriptionWithdrawalModel.swift
 //  DuckDuckGo
 //
 //  Copyright © 2026 DuckDuckGo. All rights reserved.
@@ -24,9 +24,10 @@ import Networking
 import os.log
 import PrivacyConfig
 import Subscription
+import UIKit
 
 /// Display-ready values for the "Withdraw from Contract" row and its confirmation alert.
-struct SubscriptionWithdrawalOffer: Equatable {
+struct SubscriptionWithdrawalOffer {
     let eligibleUntil: String?
     let refundAmount: String
     let tierName: String
@@ -39,23 +40,33 @@ struct SubscriptionWithdrawalConfirmation: Equatable {
     let refundAmount: String
 }
 
-final class SubscriptionWithdrawalFlowModel: ObservableObject {
+final class SubscriptionWithdrawalModel: ObservableObject {
 
     @Published private(set) var eligibility: WithdrawalEligibility?
     @Published var isShowingError = false
+    @Published private(set) var isWithdrawing = false
 
     private static let amountLocale = Locale(identifier: "en_US_POSIX")
 
     private let subscriptionManager: SubscriptionManager
     private let featureFlagger: FeatureFlagger
     private let locale: Locale
-    private let dateFormatter: DateFormatter
+    private let dateFormatter: DateFormatter = {
+        let formatter = DateFormatter()
+        formatter.dateStyle = .long
+        formatter.timeStyle = .none
+        return formatter
+    }()
     private let instrumentation: SubscriptionWithdrawalInstrumenting
-    private let openURL: @MainActor (URL) -> Void
-    private var isWithdrawing = false
+    private let urlOpener: URLOpener
     private lazy var currencyFormatter: NumberFormatter = {
         let formatter = NumberFormatter()
         formatter.numberStyle = .currency
+        formatter.locale = locale
+        return formatter
+    }()
+    private lazy var listFormatter: ListFormatter = {
+        let formatter = ListFormatter()
         formatter.locale = locale
         return formatter
     }()
@@ -63,15 +74,13 @@ final class SubscriptionWithdrawalFlowModel: ObservableObject {
     init(subscriptionManager: SubscriptionManager,
          featureFlagger: FeatureFlagger,
          locale: Locale,
-         dateFormatter: DateFormatter,
          instrumentation: SubscriptionWithdrawalInstrumenting = SubscriptionWithdrawalInstrumentation(),
-         openURL: @escaping @MainActor (URL) -> Void) {
+         urlOpener: URLOpener = UIApplication.shared) {
         self.subscriptionManager = subscriptionManager
         self.featureFlagger = featureFlagger
         self.locale = locale
-        self.dateFormatter = dateFormatter
         self.instrumentation = instrumentation
-        self.openURL = openURL
+        self.urlOpener = urlOpener
     }
 
     func offer(for subscription: DuckDuckGoSubscription?) -> SubscriptionWithdrawalOffer? {
@@ -102,8 +111,6 @@ final class SubscriptionWithdrawalFlowModel: ObservableObject {
                 }
             }
         guard !featureNames.isEmpty else { return message }
-        let listFormatter = ListFormatter()
-        listFormatter.locale = locale
         guard let list = listFormatter.string(from: featureNames) else { return message }
         return message + "\n\n" + UserText.subscriptionWithdrawConfirmFeaturesMessage(features: list)
     }
@@ -124,16 +131,14 @@ final class SubscriptionWithdrawalFlowModel: ObservableObject {
     func withdraw() async -> SubscriptionWithdrawalConfirmation? {
         guard !isWithdrawing else { return nil }
         isWithdrawing = true
-        defer { isWithdrawing = false }
         instrumentation.confirmClicked()
 
         do {
             let response = try await subscriptionManager.withdrawSubscription()
-            let confirmation = SubscriptionWithdrawalConfirmation(withdrawalDate: dateFormatter.string(from: response.requestedAt ?? Date()),
-                                                                  refundAmount: formattedAmount(response.refundedAmount, currency: response.currency))
-            await subscriptionManager.signOut(notifyUI: true, userInitiated: true)
-            return confirmation
+            return SubscriptionWithdrawalConfirmation(withdrawalDate: dateFormatter.string(from: response.requestedAt ?? Date()),
+                                                      refundAmount: formattedAmount(response.refundedAmount, currency: response.currency))
         } catch {
+            isWithdrawing = false
             instrumentation.withdrawalFailed(error)
             if case SubscriptionEndpointServiceError.invalidResponseCode(.conflict) = error {
                 eligibility = nil
@@ -146,6 +151,9 @@ final class SubscriptionWithdrawalFlowModel: ObservableObject {
 
     func withdrawTapped() {
         instrumentation.withdrawClicked()
+    }
+
+    func confirmationShown() {
         instrumentation.dialogShown()
     }
 
@@ -155,8 +163,9 @@ final class SubscriptionWithdrawalFlowModel: ObservableObject {
 
     @MainActor
     func openHelpPage() {
-        let helpURL = URL(string: AppDeepLinkSchemes.quickLink.appending(subscriptionManager.url(for: .helpPagesCancelOrChangeSubscription).absoluteString))!
-        openURL(helpURL)
+        guard let helpURL = URL(string: AppDeepLinkSchemes.quickLink.appending(subscriptionManager.url(for: .helpPagesCancelOrChangeSubscription).absoluteString)),
+              urlOpener.canOpenURL(helpURL) else { return }
+        urlOpener.open(helpURL)
     }
 
     private func formattedAmount(_ amount: String?, currency: String?) -> String {

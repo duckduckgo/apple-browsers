@@ -96,36 +96,36 @@ final class SubscriptionEndpointServiceTests: XCTestCase {
 
     // MARK: - Withdrawal Tests
 
-    func testGetWithdrawalEligibilityDecodesWrappedResponse() async throws {
+    func testGetWithdrawalEligibilityDecodesResponse() async throws {
         let data = """
-        {"withdrawal": {"eligible": true, "eligibleUntil": 1760950800000, "refundAmount": "9.99", "refundCurrency": "GBP", "reason": null}}
+        {"eligible": true, "eligibleUntil": 1760950800000, "refundAmount": "9.99", "refundCurrency": "GBP", "reason": null}
         """.data(using: .utf8)!
         let request = SubscriptionRequest.getWithdrawalEligibility(baseURL: baseURL, accessToken: "token")!.apiRequest
         apiService.set(response: createAPIResponse(statusCode: 200, data: data), forRequest: request)
 
         let result = try await endpointService.getWithdrawalEligibility(accessToken: "token")
 
-        XCTAssertTrue(result.withdrawal.eligible)
-        XCTAssertEqual(result.withdrawal.eligibleUntil, Date(timeIntervalSince1970: 1760950800))
-        XCTAssertEqual(result.withdrawal.refundAmount, "9.99")
-        XCTAssertEqual(result.withdrawal.refundCurrency, "GBP")
-        XCTAssertNil(result.withdrawal.reason)
+        XCTAssertTrue(result.eligible)
+        XCTAssertEqual(result.eligibleUntil, Date(timeIntervalSince1970: 1760950800))
+        XCTAssertEqual(result.refundAmount, "9.99")
+        XCTAssertEqual(result.refundCurrency, "GBP")
+        XCTAssertNil(result.reason)
     }
 
     func testGetWithdrawalEligibilityDecodesIneligibleResponse() async throws {
         let data = """
-        {"withdrawal": {"eligible": false, "eligibleUntil": null, "refundAmount": null, "refundCurrency": null, "reason": "trial"}}
+        {"eligible": false, "eligibleUntil": null, "refundAmount": null, "refundCurrency": null, "reason": "trial"}
         """.data(using: .utf8)!
         let request = SubscriptionRequest.getWithdrawalEligibility(baseURL: baseURL, accessToken: "token")!.apiRequest
         apiService.set(response: createAPIResponse(statusCode: 200, data: data), forRequest: request)
 
         let result = try await endpointService.getWithdrawalEligibility(accessToken: "token")
 
-        XCTAssertFalse(result.withdrawal.eligible)
-        XCTAssertNil(result.withdrawal.eligibleUntil)
-        XCTAssertNil(result.withdrawal.refundAmount)
-        XCTAssertNil(result.withdrawal.refundCurrency)
-        XCTAssertEqual(result.withdrawal.reason, "trial")
+        XCTAssertFalse(result.eligible)
+        XCTAssertNil(result.eligibleUntil)
+        XCTAssertNil(result.refundAmount)
+        XCTAssertNil(result.refundCurrency)
+        XCTAssertEqual(result.reason, "trial")
     }
 
     func testWithdrawSubscriptionDecodesResponse() async throws {

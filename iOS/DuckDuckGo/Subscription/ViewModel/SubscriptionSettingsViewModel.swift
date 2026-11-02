@@ -52,13 +52,7 @@ final class SubscriptionSettingsViewModel: ObservableObject {
     private let aiChatSettings: AIChatSettingsProvider
     private let locale: Locale
     let cancellationInstrumentation: SubscriptionCancellationInstrumenting
-    private let withdrawalInstrumentation: SubscriptionWithdrawalInstrumenting
-    private(set) lazy var withdrawalFlow = SubscriptionWithdrawalFlowModel(subscriptionManager: subscriptionManager,
-                                                                         featureFlagger: featureFlagger,
-                                                                         locale: locale,
-                                                                         dateFormatter: dateFormatter,
-                                                                         instrumentation: withdrawalInstrumentation,
-                                                                         openURL: { [weak self] url in self?.openURL(url) })
+    let withdrawal: SubscriptionWithdrawalModel
 
     private var externalAllowedDomains = ["stripe.com"]
 
@@ -257,7 +251,10 @@ final class SubscriptionSettingsViewModel: ObservableObject {
         self.aiChatSettings = aiChatSettings
         self.locale = locale
         self.cancellationInstrumentation = cancellationInstrumentation
-        self.withdrawalInstrumentation = withdrawalInstrumentation
+        self.withdrawal = SubscriptionWithdrawalModel(subscriptionManager: subscriptionManager,
+                                                      featureFlagger: featureFlagger,
+                                                      locale: locale,
+                                                      instrumentation: withdrawalInstrumentation)
         self.subscriptionFlowsExecuter = subscriptionFlowsExecuter ?? SubscriptionContainerViewFactory.makeSubscriptionFlowsExecuter(
             subscriptionManager: subscriptionManager,
             wideEvent: wideEvent)
@@ -307,8 +304,8 @@ final class SubscriptionSettingsViewModel: ObservableObject {
     }
 
     func onFirstAppear() {
-        Task { @MainActor in
-            await self.withdrawalFlow.fetchEligibility()
+        Task {
+            await self.withdrawal.fetchEligibility()
         }
 
         Task {

@@ -1,5 +1,5 @@
 //
-//  SubscriptionWithdrawalFlowModelTests.swift
+//  SubscriptionWithdrawalModelTests.swift
 //  DuckDuckGo
 //
 //  Copyright © 2026 DuckDuckGo. All rights reserved.
@@ -25,8 +25,8 @@ import SubscriptionTestingUtilities
 @testable import DuckDuckGo
 
 @MainActor
-@Suite("Subscription withdrawal flow model")
-struct SubscriptionWithdrawalFlowModelTests {
+@Suite("Subscription withdrawal model")
+struct SubscriptionWithdrawalModelTests {
 
     private let subscriptionManager = SubscriptionManagerMock()
     private let featureFlagger = MockFeatureFlagger(enabledFeatureFlags: [.stripeInternationalSubscriptionWithdrawal])
@@ -43,11 +43,11 @@ struct SubscriptionWithdrawalFlowModelTests {
     @available(iOS 16, macOS 13, *)
     @Test("An eligible Stripe subscriber gets an offer with a formatted amount and deadline", .timeLimit(.minutes(1)))
     func eligibleStripeSubscriberGetsOffer() async {
-        let flow = makeFlow()
+        let model = makeModel()
 
-        await flow.fetchEligibility()
+        await model.fetchEligibility()
 
-        let offer = flow.offer(for: stripeSubscription)
+        let offer = model.offer(for: stripeSubscription)
         #expect(offer?.eligibleUntil != nil)
         #expect(offer?.refundAmount == "£9.99")
         #expect(offer?.tierName == "Plus")
@@ -57,45 +57,45 @@ struct SubscriptionWithdrawalFlowModelTests {
     @Test("A missing deadline still shows the offer, without the deadline", .timeLimit(.minutes(1)))
     func missingDeadlineStillShowsOffer() async {
         subscriptionManager.getWithdrawalEligibilityResult = .success(Self.makeEligibility(eligibleUntil: nil))
-        let flow = makeFlow()
+        let model = makeModel()
 
-        await flow.fetchEligibility()
+        await model.fetchEligibility()
 
-        #expect(flow.offer(for: stripeSubscription) != nil)
-        #expect(flow.offer(for: stripeSubscription)?.eligibleUntil == nil)
+        #expect(model.offer(for: stripeSubscription) != nil)
+        #expect(model.offer(for: stripeSubscription)?.eligibleUntil == nil)
     }
 
     @available(iOS 16, macOS 13, *)
     @Test("An ineligible subscriber gets no offer", .timeLimit(.minutes(1)))
     func ineligibleSubscriberGetsNoOffer() async {
         subscriptionManager.getWithdrawalEligibilityResult = .success(WithdrawalEligibility(eligible: false, reason: "trial"))
-        let flow = makeFlow()
+        let model = makeModel()
 
-        await flow.fetchEligibility()
+        await model.fetchEligibility()
 
-        #expect(flow.offer(for: stripeSubscription) == nil)
+        #expect(model.offer(for: stripeSubscription) == nil)
     }
 
     @available(iOS 16, macOS 13, *)
     @Test("A non-Stripe subscriber gets no offer", .timeLimit(.minutes(1)))
     func nonStripeSubscriberGetsNoOffer() async {
-        let flow = makeFlow()
+        let model = makeModel()
 
-        await flow.fetchEligibility()
+        await model.fetchEligibility()
 
-        #expect(flow.offer(for: SubscriptionMockFactory.subscription(status: .autoRenewable, platform: .apple, tier: .plus)) == nil)
+        #expect(model.offer(for: SubscriptionMockFactory.subscription(status: .autoRenewable, platform: .apple, tier: .plus)) == nil)
     }
 
     @available(iOS 16, macOS 13, *)
     @Test("With the flag off, eligibility is not fetched", .timeLimit(.minutes(1)))
     func flagOffDoesNotFetch() async {
         featureFlagger.enabledFeatureFlags = []
-        let flow = makeFlow()
+        let model = makeModel()
 
-        await flow.fetchEligibility()
+        await model.fetchEligibility()
 
-        #expect(flow.eligibility == nil)
-        #expect(flow.offer(for: stripeSubscription) == nil)
+        #expect(model.eligibility == nil)
+        #expect(model.offer(for: stripeSubscription) == nil)
         #expect(instrumentation.eligibilityFailures.isEmpty)
     }
 
@@ -103,11 +103,11 @@ struct SubscriptionWithdrawalFlowModelTests {
     @Test("A signed-out user does not fetch eligibility or fire the failure pixel", .timeLimit(.minutes(1)))
     func signedOutUserDoesNotFetch() async {
         subscriptionManager.resultTokenContainer = nil
-        let flow = makeFlow()
+        let model = makeModel()
 
-        await flow.fetchEligibility()
+        await model.fetchEligibility()
 
-        #expect(flow.eligibility == nil)
+        #expect(model.eligibility == nil)
         #expect(instrumentation.eligibilityFailures.isEmpty)
     }
 
@@ -115,11 +115,11 @@ struct SubscriptionWithdrawalFlowModelTests {
     @Test("A failed eligibility fetch fires the eligibility failure pixel and shows no offer", .timeLimit(.minutes(1)))
     func failedEligibilityFetchFiresPixel() async {
         subscriptionManager.getWithdrawalEligibilityResult = .failure(SubscriptionEndpointServiceError.invalidResponseCode(.internalServerError))
-        let flow = makeFlow()
+        let model = makeModel()
 
-        await flow.fetchEligibility()
+        await model.fetchEligibility()
 
-        #expect(flow.offer(for: stripeSubscription) == nil)
+        #expect(model.offer(for: stripeSubscription) == nil)
         #expect(instrumentation.eligibilityFailures.count == 1)
     }
 
@@ -128,7 +128,7 @@ struct SubscriptionWithdrawalFlowModelTests {
     @available(iOS 16, macOS 13, *)
     @Test("The confirmation message lists each feature once, in order", .timeLimit(.minutes(1)))
     func confirmationMessageListsFeaturesOnceInOrder() {
-        let flow = makeFlow()
+        let model = makeModel()
         let offer = SubscriptionWithdrawalOffer(eligibleUntil: nil,
                                                 refundAmount: "£9.99",
                                                 tierName: "Plus",
@@ -141,35 +141,36 @@ struct SubscriptionWithdrawalFlowModelTests {
                                                    UserText.settingsPProITRTitle,
                                                    UserText.settingsSubscriptionAiChatTitle])!
 
-        #expect(flow.confirmationMessage(for: offer) == UserText.subscriptionWithdrawConfirmMessage(tierName: "Plus", refundAmount: "£9.99")
+        #expect(model.confirmationMessage(for: offer) == UserText.subscriptionWithdrawConfirmMessage(tierName: "Plus", refundAmount: "£9.99")
                 + "\n\n" + UserText.subscriptionWithdrawConfirmFeaturesMessage(features: features))
     }
 
     @available(iOS 16, macOS 13, *)
     @Test("Without entitlements, the confirmation message omits the feature paragraph", .timeLimit(.minutes(1)))
     func confirmationMessageWithoutEntitlements() {
-        let flow = makeFlow()
+        let model = makeModel()
         let offer = SubscriptionWithdrawalOffer(eligibleUntil: nil, refundAmount: "£9.99", tierName: "Plus", entitlements: [])
 
-        #expect(flow.confirmationMessage(for: offer) == UserText.subscriptionWithdrawConfirmMessage(tierName: "Plus", refundAmount: "£9.99"))
+        #expect(model.confirmationMessage(for: offer) == UserText.subscriptionWithdrawConfirmMessage(tierName: "Plus", refundAmount: "£9.99"))
     }
 
     // MARK: - Withdraw
 
     @available(iOS 16, macOS 13, *)
-    @Test("A successful withdrawal returns the confirmation and signs out", .timeLimit(.minutes(1)))
-    func successfulWithdrawalSignsOut() async {
+    @Test("A successful withdrawal returns the confirmation without signing out", .timeLimit(.minutes(1)))
+    func successfulWithdrawalReturnsConfirmation() async {
         subscriptionManager.withdrawSubscriptionResult = .success(WithdrawSubscriptionResponse(refundedAmount: "9.99",
                                                                                                currency: "EUR",
                                                                                                requestedAt: Date(timeIntervalSince1970: 1760950800)))
-        let flow = makeFlow()
+        let model = makeModel()
 
-        let confirmation = await flow.withdraw()
+        let confirmation = await model.withdraw()
 
         #expect(confirmation?.refundAmount == "€9.99")
+        #expect(model.isWithdrawing)
         #expect(confirmation?.withdrawalDate.isEmpty == false)
-        #expect(subscriptionManager.resultTokenContainer == nil)
-        #expect(!flow.isShowingError)
+        #expect(subscriptionManager.resultTokenContainer != nil)
+        #expect(!model.isShowingError)
         #expect(instrumentation.confirmClickedCount == 1)
         #expect(instrumentation.withdrawalFailures.isEmpty)
     }
@@ -178,15 +179,16 @@ struct SubscriptionWithdrawalFlowModelTests {
     @Test("A 409 hides the offer without an error alert and fires the failure pixel", .timeLimit(.minutes(1)))
     func conflictHidesOffer() async {
         subscriptionManager.withdrawSubscriptionResult = .failure(SubscriptionEndpointServiceError.invalidResponseCode(.conflict))
-        let flow = makeFlow()
-        await flow.fetchEligibility()
-        #expect(flow.offer(for: stripeSubscription) != nil)
+        let model = makeModel()
+        await model.fetchEligibility()
+        #expect(model.offer(for: stripeSubscription) != nil)
 
-        let confirmation = await flow.withdraw()
+        let confirmation = await model.withdraw()
 
         #expect(confirmation == nil)
-        #expect(flow.offer(for: stripeSubscription) == nil)
-        #expect(!flow.isShowingError)
+        #expect(model.offer(for: stripeSubscription) == nil)
+        #expect(!model.isShowingError)
+        #expect(!model.isWithdrawing)
         #expect(subscriptionManager.resultTokenContainer != nil)
         #expect(instrumentation.withdrawalFailures.count == 1)
     }
@@ -198,12 +200,13 @@ struct SubscriptionWithdrawalFlowModelTests {
     ])
     func otherFailureShowsError(error: Error) async {
         subscriptionManager.withdrawSubscriptionResult = .failure(error)
-        let flow = makeFlow()
+        let model = makeModel()
 
-        let confirmation = await flow.withdraw()
+        let confirmation = await model.withdraw()
 
         #expect(confirmation == nil)
-        #expect(flow.isShowingError)
+        #expect(model.isShowingError)
+        #expect(!model.isWithdrawing)
         #expect(subscriptionManager.resultTokenContainer != nil)
         #expect(instrumentation.withdrawalFailures.count == 1)
     }
@@ -211,18 +214,27 @@ struct SubscriptionWithdrawalFlowModelTests {
     // MARK: - Dialog
 
     @available(iOS 16, macOS 13, *)
-    @Test("Tapping the row fires the click and dialog shown pixels", .timeLimit(.minutes(1)))
-    func withdrawTappedFiresPixels() {
-        makeFlow().withdrawTapped()
+    @Test("Tapping the row fires only the click pixel", .timeLimit(.minutes(1)))
+    func withdrawTappedFiresClickPixel() {
+        makeModel().withdrawTapped()
 
         #expect(instrumentation.withdrawClickedCount == 1)
+        #expect(instrumentation.dialogShownCount == 0)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Showing the confirmation dialog fires the dialog shown pixel", .timeLimit(.minutes(1)))
+    func confirmationShownFiresPixel() {
+        makeModel().confirmationShown()
+
         #expect(instrumentation.dialogShownCount == 1)
+        #expect(instrumentation.withdrawClickedCount == 0)
     }
 
     @available(iOS 16, macOS 13, *)
     @Test("Keeping the subscription fires the keep pixel only", .timeLimit(.minutes(1)))
     func keepTappedFiresPixel() {
-        makeFlow().keepTapped()
+        makeModel().keepTapped()
 
         #expect(instrumentation.keepClickedCount == 1)
         #expect(instrumentation.confirmClickedCount == 0)
@@ -230,15 +242,12 @@ struct SubscriptionWithdrawalFlowModelTests {
 
     // MARK: - Helpers
 
-    private func makeFlow() -> SubscriptionWithdrawalFlowModel {
-        let dateFormatter = DateFormatter()
-        dateFormatter.dateStyle = .long
-        return SubscriptionWithdrawalFlowModel(subscriptionManager: subscriptionManager,
-                                               featureFlagger: featureFlagger,
-                                               locale: Locale(identifier: "en_US"),
-                                               dateFormatter: dateFormatter,
-                                               instrumentation: instrumentation,
-                                               openURL: { _ in })
+    private func makeModel() -> SubscriptionWithdrawalModel {
+        SubscriptionWithdrawalModel(subscriptionManager: subscriptionManager,
+                                    featureFlagger: featureFlagger,
+                                    locale: Locale(identifier: "en_US"),
+                                    instrumentation: instrumentation,
+                                    urlOpener: MockURLOpener())
     }
 
     private static func makeEligibility(eligibleUntil: Date? = Date(timeIntervalSince1970: 1760950800)) -> WithdrawalEligibility {

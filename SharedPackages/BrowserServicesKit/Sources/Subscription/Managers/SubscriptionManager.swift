@@ -570,7 +570,7 @@ public final class DefaultSubscriptionManager: SubscriptionManager {
         }
 
         let tokenContainer = try await getTokenContainer(policy: .localValid)
-        return try await subscriptionEndpointService.getWithdrawalEligibility(accessToken: tokenContainer.accessToken).withdrawal
+        return try await subscriptionEndpointService.getWithdrawalEligibility(accessToken: tokenContainer.accessToken)
     }
 
     public func withdrawSubscription() async throws -> WithdrawSubscriptionResponse {

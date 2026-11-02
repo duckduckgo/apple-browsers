@@ -2008,6 +2008,7 @@ public struct UserText {
     static let subscriptionCompletingPurchaseTitle = NSLocalizedString("subscription.progress.view.completing.purchase", value: "Completing purchase...", comment: "Progress view title when completing the purchase")
     static let subscriptionPlanChangeInProgressTitle = NSLocalizedString("subscription.progress.view.plan.change.in.progress", value: "Plan change in progress…", comment: "Progress view title when starting a plan change (upgrade, downgrade, or cancel downgrade)")
     static let subscriptionCompletePlanChangeTitle = NSLocalizedString("subscription.progress.view.complete.plan.change", value: "Completing plan change…", comment: "Progress view title when completing a plan change with the backend")
+    static let subscriptionWithdrawInProgressTitle = NSLocalizedString("subscription.progress.view.withdraw.in.progress", value: "Withdrawal in progress…", comment: "Progress view title while withdrawing from the subscription contract")
 
     // Subscription Settings
     public static var subscriptionTitle = NSLocalizedString("subscription.settings.title", value: "DuckDuckGo Subscription", comment: "Navigation bar Title for subscriptions")

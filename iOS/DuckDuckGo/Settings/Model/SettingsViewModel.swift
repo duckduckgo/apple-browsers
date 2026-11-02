@@ -1942,6 +1942,14 @@ extension SettingsViewModel {
             }
         }
     }
+
+    @MainActor
+    func completeSubscriptionWithdrawal(_ confirmation: SubscriptionWithdrawalConfirmation) async {
+        await subscriptionManager.signOut(notifyUI: true, userInitiated: true)
+        subscriptionStateCache.reset()
+        await setupSubscriptionEnvironment()
+        triggerDeepLinkNavigation(to: .subscriptionWithdrawn(confirmation))
+    }
 }
 
 // MARK: Subscriptions

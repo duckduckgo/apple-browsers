@@ -60,8 +60,8 @@ public final class SubscriptionEndpointServiceMock: SubscriptionEndpointService 
 
     // MARK: - Withdrawal
 
-    public var getWithdrawalEligibilityResult: Result<GetWithdrawalEligibilityResponse, APIRequestV2Error>?
-    public func getWithdrawalEligibility(accessToken: String) async throws -> GetWithdrawalEligibilityResponse {
+    public var getWithdrawalEligibilityResult: Result<WithdrawalEligibility, APIRequestV2Error>?
+    public func getWithdrawalEligibility(accessToken: String) async throws -> WithdrawalEligibility {
         switch getWithdrawalEligibilityResult! {
         case .success(let result): return result
         case .failure(let error): throw error

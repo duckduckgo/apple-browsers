@@ -249,9 +249,9 @@ struct SubscriptionSettingsViewV2: View {
 
                 removeFromDeviceView
 
-                SubscriptionWithdrawalRowView(flow: viewModel.withdrawalFlow,
+                SubscriptionWithdrawalRowView(withdrawal: viewModel.withdrawal,
                                               subscription: viewModel.state.subscriptionInfo) { confirmation in
-                    settingsViewModel.triggerDeepLinkNavigation(to: .subscriptionWithdrawn(confirmation))
+                    await settingsViewModel.completeSubscriptionWithdrawal(confirmation)
                 }
 
             case .activating:
@@ -614,6 +614,11 @@ struct SubscriptionSettingsViewV2: View {
                 let message = cancelDowngradeOverlayMessage(for: status)
                 PurchaseInProgressView(status: message)
             }
+        }
+
+        // Withdrawal in progress overlay
+        .overlay {
+            SubscriptionWithdrawalProgressView(withdrawal: viewModel.withdrawal)
         }
 
         .onChange(of: isShowingManageEmailView) { value in

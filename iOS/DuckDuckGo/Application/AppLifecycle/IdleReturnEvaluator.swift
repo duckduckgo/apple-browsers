@@ -33,6 +33,13 @@ enum IdleReturnOutcome: Equatable {
     case afterIdle(treatment: IdleReturnTreatment, timeAwayMs: Int?)
     case ordinary(timeAwayMs: Int?)
 
+    var timeAwayMs: Int? {
+        switch self {
+        case .afterIdle(_, let timeAwayMs), .ordinary(let timeAwayMs):
+            return timeAwayMs
+        }
+    }
+
     /// True for any return that crossed the threshold, whichever treatment applies.
     var isAfterIdle: Bool {
         if case .afterIdle = self { return true }

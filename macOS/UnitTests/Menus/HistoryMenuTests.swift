@@ -25,12 +25,12 @@ import XCTest
 final class HistoryMenuTests: XCTestCase {
 
     @MainActor
-    func testWhenDataImportHistoryIsOff_ThenImportHistoryMenuItemIsHidden() throws {
+    func testWhenDataImportHistoryIsOff_ThenImportHistoryMenuItemIsHidden() {
         let sut = makeHistoryMenu(featureFlagger: MockFeatureFlagger())
 
         sut.update()
 
-        XCTAssertTrue(try importHistoryMenuItem(in: sut).isHidden)
+        XCTAssertEqual(importHistoryMenuItem(in: sut)?.isHidden, true)
     }
 
     @MainActor
@@ -39,14 +39,14 @@ final class HistoryMenuTests: XCTestCase {
 
         sut.update()
 
-        let item = try importHistoryMenuItem(in: sut)
+        let item = try XCTUnwrap(importHistoryMenuItem(in: sut))
         XCTAssertFalse(item.isHidden)
         XCTAssertEqual(item.title, UserText.mainMenuHistoryImportHistory)
         XCTAssertEqual(item.action, #selector(AppDelegate.openImportBrowserDataWindow))
     }
 
     @MainActor
-    func testWhenDataImportHistoryChangesWhileRunning_ThenImportHistoryMenuItemFollowsOnNextUpdate() throws {
+    func testWhenDataImportHistoryChangesWhileRunning_ThenImportHistoryMenuItemFollowsOnNextUpdate() {
         let featureFlagger = MockFeatureFlagger()
         let sut = makeHistoryMenu(featureFlagger: featureFlagger)
         sut.update()
@@ -54,7 +54,7 @@ final class HistoryMenuTests: XCTestCase {
 
         sut.update()
 
-        XCTAssertFalse(try importHistoryMenuItem(in: sut).isHidden)
+        XCTAssertEqual(importHistoryMenuItem(in: sut)?.isHidden, false)
     }
 
     @MainActor
@@ -64,7 +64,7 @@ final class HistoryMenuTests: XCTestCase {
 
         sut.update()
 
-        XCTAssertNil(sut.items.first { $0.accessibilityIdentifier() == "HistoryMenu.importHistory" })
+        XCTAssertNil(importHistoryMenuItem(in: sut))
     }
 
     @MainActor
@@ -77,7 +77,7 @@ final class HistoryMenuTests: XCTestCase {
         )
     }
 
-    private func importHistoryMenuItem(in menu: NSMenu) throws -> NSMenuItem {
-        try XCTUnwrap(menu.items.first { $0.accessibilityIdentifier() == "HistoryMenu.importHistory" })
+    private func importHistoryMenuItem(in menu: NSMenu) -> NSMenuItem? {
+        menu.items.first { $0.accessibilityIdentifier() == "HistoryMenu.importHistory" }
     }
 }

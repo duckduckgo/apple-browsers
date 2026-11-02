@@ -93,6 +93,7 @@ extension TabSwitcherViewController {
             shortcutsEnabled: !isProcessingUpdates && ((presentingViewController as? MainViewController)?.isShortcutEnabled() ?? true),
             presentation: presentedViewController == nil ? .tabSwitcher : .blockingModal)
         state.fireModeEnabled = fireModeCapability.isFireModeEnabled
+        state.passwordsEnabled = featureFlagger.isFeatureOn(.autofillAccessCredentialManagement)
         state.canHideTabs = canDismissOnEmpty || !tabsModel.isEmpty
         return MenuCommandAvailability(state: state)
     }

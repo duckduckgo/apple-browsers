@@ -28,6 +28,8 @@ import DataBrokerProtectionCoreTestsUtils
 /// The fixtures in `BundleResources/BrokerBundleSigning` are real dbp-api packaging output, signed with the TEST staging key.
 final class BrokerBundleVerificationTests: XCTestCase {
 
+    // Expected SHA-256 fingerprints of the public fixture keys in `dbpAPITestKeys`.
+    // Backend signing-key rotations do not change these values.
     private static let testStagingKeyID = "7d70813fd5b624988cc80dc8a59eae4773c8ed8beb2998ed99e13326439afe65"
     private static let testProductionKeyID = "5f36a83cf7110611f6151e579a80349e55eacf252e7bd8fa95fe8b8d04fa571b"
     private static let fixtureManifestVersion = 1790906518
@@ -74,6 +76,8 @@ final class BrokerBundleVerificationTests: XCTestCase {
 
     // MARK: - Keys
 
+    // Expected app public keys and fingerprints, pinned independently of the bundled JSON.
+    // Update these alongside `bundle-signing-keys.json` when backend signing keys rotate.
     func testBuiltInKeysMatchTheDbpAPIKeys() throws {
         let keys = try BrokerBundleSigningKeys.loadBuiltIn()
         XCTAssertEqual(BrokerBundleSigningKeys.builtIn, keys)
@@ -674,7 +678,10 @@ private extension HTTPURLResponse {
 }
 
 extension BrokerBundleSigningKeys {
-    /// dbp-api's test key pair, which signed the fixtures in `BundleResources/BrokerBundleSigning`. Never ship these.
+    /// Public keys from dbp-api's test configuration, separate from the app's trusted keys.
+    /// The staging key verifies the fixtures; the production key tests wrong-key rejection.
+    /// Backend signing-key rotations do not change these values.
+    /// If the test signing keys change, update these keys, their expected IDs and affected fixture signatures.
     static let dbpAPITestKeys = BrokerBundleSigningKeys(
         production: ["MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAErmuPs8CapwHjt32La//bKRjV9ercvqY3jTzjWFSmdtnqI8ZrxOqMgEoKR6o0He6XZUy/oKOpW70+zur/7//+KQ=="],
         staging: ["MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEqpP7ubErpgXf5cpp1OFghScG7tJbhUhrKyzkxFdXGErtklupZcJx078xfZRmdYoxLbnaIAt3NYs9XeOr1oJESA=="]

@@ -710,9 +710,7 @@ extension DataBrokerProtectionSharedPixels: PixelKit.Event {
         case .mainFrameChallengeDetected,
                 .challengeClearanceObserved,
                 .challengeSolved,
-                .challengeFailed,
-                .bundleVerificationFailure,
-                .bundleVerificationSuccess:
+                .challengeFailed:
             return .none
         default:
             return .platformDefault
@@ -931,8 +929,7 @@ public class DataBrokerProtectionSharedPixelsHandler: EventMapping<DataBrokerPro
             case .mainFrameChallengeDetected,
                     .challengeClearanceObserved,
                     .challengeSolved,
-                    .challengeFailed,
-                    .bundleVerificationFailure:
+                    .challengeFailed:
                 pixelKit.fire(event, frequency: .dailyAndCount, withAdditionalParameters: parameters)
             case .bundleVerificationFailure:
                 pixelKit.fire(event.prefixed(platform.pixelNamePrefix), frequency: .dailyAndCount)

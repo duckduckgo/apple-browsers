@@ -347,6 +347,10 @@ class AutofillLoginListViewModel: ObservableObject {
         syncPromoManager.dismissPromoFor(.passwords, reason: .userTapped)
     }
 
+    func recordSyncPromoConfirmed() {
+        syncPromoManager.recordPromoConfirmedFor(.passwords)
+    }
+
     func getSurveyToPresent() -> AutofillSurveyManager.AutofillSurvey? {
         guard locale.isEnglishLanguage,
               viewState == .showItems || viewState == .empty,

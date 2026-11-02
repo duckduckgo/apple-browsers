@@ -464,6 +464,7 @@ struct Launching: LaunchingHandling {
                 taskContext.finish()
             }
         })
+        launchTaskManager.register(task: SyncDevicesCountLaunchTask(syncPromoManager: SyncPromoManager(syncService: syncService.sync)))
         if #available(iOS 26, *) {
             launchTaskManager.register(task: BlockLaunchTask(name: "Report Screen Time Data") { taskContext in
                 Task { @MainActor in

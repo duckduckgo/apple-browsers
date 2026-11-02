@@ -5104,6 +5104,15 @@ Take back control of your personal information with the browser designed for dat
 /* Fallback device name for confirmation dialogs */
 "sync.pairing-v2.unknown-peer-name" = "the other device";
 
+/* Title for a button in the Sync Promotion banner on the Bookmarks screen that opens a screen with links to get DuckDuckGo on other platforms */
+"sync.promo.bookmarks.another-device.get-desktop-app.action" = "Get Desktop App";
+
+/* Title for a button in the Sync Promotion banner on the Bookmarks screen that opens Sync settings to connect another device */
+"sync.promo.bookmarks.another-device.sync.action" = "Sync Bookmarks";
+
+/* Title for the Sync Promotion banner on the Bookmarks screen, shown when Sync is on but only this device is connected */
+"sync.promo.bookmarks.another-device.title" = "Sync bookmarks with your Desktop app.";
+
 /* Message for the Sync Promotion banner when user has bookmarks that can be synced */
 "sync.promo.bookmarks.message" = "No account needed. End-to-end encryption means nobody but you can see your bookmarks, not even us.";
 

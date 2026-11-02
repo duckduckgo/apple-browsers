@@ -95,6 +95,7 @@ class Device:
                                     "-scheme", "VRunner-iOS", "-destination", f"platform=iOS Simulator,id={self.udid}",
                                     "-derivedDataPath", RUNNER_DD]))
         source = env.source_stamp() if app else None
+        runner_source = env.runner_stamp() if runner else None
         for name, cmd in jobs:
             log = f"{HOME}/logs/{name}-build.log"
             t0 = time.time()
@@ -102,9 +103,14 @@ class Device:
                 code = subprocess.run(cmd, stdout=f, stderr=subprocess.STDOUT).returncode
             out[name] = dict(exit=code, secs=int(time.time() - t0), log=log)
             if code:
-                if name == "app":
-                    env.update_state(lambda st: st.pop("appBuild", None))
+                env.update_state(lambda st: st.pop(f"{name}Build", None))
                 raise Failed(f"{name} build failed (see {log})", **out)
+        if runner:
+            if env.runner_stamp() != runner_source:
+                env.update_state(lambda st: st.pop("runnerBuild", None))
+                raise Failed("the runner source changed while it was building; build again")
+            env.update_state(lambda st: st.__setitem__("runnerBuild", dict(source=runner_source,
+                                                                           at=time.strftime("%Y-%m-%dT%H:%M:%S%z"))))
         if app:
             if env.source_stamp() != source:
                 env.update_state(lambda st: st.pop("appBuild", None))
@@ -116,16 +122,25 @@ class Device:
 
     @staticmethod
     def check_build_current():
-        """Fail unless the app build product was built by `build` from the source as it is now."""
-        built = env.load_state().get("appBuild")
+        """Fail unless the app and the runner were built by `build` from their source as it is now."""
+        st = env.load_state()
+        stale = {}   # part → why it's stale
+        built = st.get("appBuild")
         if not built:
-            raise Failed("no record of how the app build was made: run `build --app-only`")
-        if not os.path.exists(f"{APP}/DuckDuckGo") or env.sha256(f"{APP}/DuckDuckGo") != built["sha256"]:
-            raise Failed("the app build product changed since `build` recorded it: run `build --app-only`")
-        now = env.source_stamp()
-        if now != built["source"]:
-            raise Failed("the app build is stale: the source changed since it was built. Run `build --app-only`",
-                         builtFrom=built["source"], sourceNow=now)
+            stale["app"] = "no record of how the app build was made"
+        elif not os.path.exists(f"{APP}/DuckDuckGo") or env.sha256(f"{APP}/DuckDuckGo") != built["sha256"]:
+            stale["app"] = "the app build product changed since `build` recorded it"
+        elif env.source_stamp() != built["source"]:
+            stale["app"] = "the app source changed since it was built"
+        runner = st.get("runnerBuild")
+        products = f"{RUNNER_DD}/Build/Products"
+        if not runner or not os.path.isdir(products) or not any(f.endswith(".xctestrun") for f in os.listdir(products)):
+            stale["runner"] = "no record of a runner build"
+        elif env.runner_stamp() != runner["source"]:
+            stale["runner"] = "the runner source changed since it was built"
+        if stale:
+            fix = "build" if len(stale) == 2 else f"build --{next(iter(stale))}-only"
+            raise Failed(f"stale build: {'; '.join(stale.values())}. Run `{fix}`", stale=sorted(stale))
         return built
 
     # app -----------------------------------------------------------------------
@@ -170,9 +185,9 @@ class Device:
         if started:
             env.update_state(lambda st: st.setdefault("devices", {}).setdefault(self.device, {}).setdefault("started", []).append(
                 dict(processes=started, port=self.runner_port)))
-        unknown = sorted(set(flags) - env.feature_flag_names())
-        if unknown:
-            raise Failed(f"not feature flags in this app: {unknown} (see iOS/LocalPackages/FeatureFlags-iOS/…/FeatureFlag.swift)")
+        problem = env.flag_problem(flags)
+        if problem:
+            raise Failed(problem)
         # The app applies -ff. overrides only for internal users or in UI-test mode (AppDependencyProvider's
         # allowOverrides). UI-test mode is the narrower switch: it doesn't turn on internal-only features.
         args = ["isRunningUITests"] + [a for name, on in sorted(flags.items()) for a in (f"-ff.{name}", "true" if on else "false")]

@@ -128,11 +128,24 @@ class PreflightTests(unittest.TestCase):
             "no run": ('"""x"""\n', "run(ios)"),
             "devices": ('"""x"""\nDEVICES = ["mac"]\ndef run(ios): pass\n', "DEVICES"),
             "docstring": ('def run(ios): pass\n', "docstring"),
+            "unknown flag": ('"""x"""\nFLAGS = {"newTabPageRedesgin": True}\ndef run(ios): pass\n', "not feature flags"),
+            "flag the app won't override": ('"""x"""\nFLAGS = {"duckPlayer": True}\ndef run(ios): pass\n', "local overrides"),
         }
         for name, (body, expected) in cases.items():
             with self.subTest(name):
                 _, problems = harness.load(self.write(body))
                 self.assertTrue(any(expected in p for p in problems), problems)
+
+    def test_overridable_flag_is_accepted(self):
+        _, problems = harness.load(self.write('"""x"""\nFLAGS = {"newTabPageRedesign": False}\ndef run(ios): pass\n'))
+        self.assertEqual(problems, [])
+
+    def test_flags_declared_without_local_overriding_are_found(self):
+        names, fixed = env.feature_flags()
+        self.assertTrue({"duckPlayer", "sync", "autofillCredentialInjecting"} <= fixed, fixed)
+        self.assertNotIn("newTabPageRedesign", fixed)
+        self.assertIn("newTabPageRedesign", names)
+        self.assertLessEqual(fixed, names)
 
     def test_run_proofs_refuses_all_when_one_is_broken(self):
         good = self.write('"""ok"""\ndef run(ios): pass\n')
@@ -515,6 +528,65 @@ class DecisionLogTests(unittest.TestCase):
         finally:
             os.remove(log)
             os.rmdir(inside)
+
+    def test_decision_log_under_dot_claude_is_refused_too(self):
+        inside = tempfile.mkdtemp(dir=os.path.join(env.ROOT, ".claude"))
+        log = os.path.join(inside, "decisions.tsv")
+        try:
+            open(log, "w").close()
+            with self.assertRaises(env.Failed):
+                harness.evidence_root(log)
+        finally:
+            os.remove(log)
+            os.rmdir(inside)
+
+
+class BuildCurrentTests(unittest.TestCase):
+    """`prove` and `selftest` must treat a runner built from older runner source as stale, like the app."""
+
+    def setUp(self):
+        from verify_ios import device
+        self.device, self.saved = device, (device.APP, device.RUNNER_DD, env.source_stamp)
+        app, self.dd = tempfile.mkdtemp(dir=TMP), tempfile.mkdtemp(dir=TMP)
+        device.APP, device.RUNNER_DD = app, self.dd
+        env.source_stamp = lambda: {"stamp": "now"}
+        open(os.path.join(app, "DuckDuckGo"), "w").write("binary")
+        os.makedirs(os.path.join(self.dd, "Build", "Products"))
+        open(os.path.join(self.dd, "Build", "Products", "VRunner.xctestrun"), "w").close()
+        env.update_state(lambda st: st.update(appBuild=dict(source={"stamp": "now"}, sha256=env.sha256(f"{app}/DuckDuckGo"))))
+
+    def tearDown(self):
+        self.device.APP, self.device.RUNNER_DD, env.source_stamp = self.saved
+        env.update_state(lambda st: [st.pop(k, None) for k in ("appBuild", "runnerBuild")])
+
+    def test_runner_built_from_old_source_is_stale(self):
+        env.update_state(lambda st: st.__setitem__("runnerBuild", dict(source="older")))
+        with self.assertRaises(env.Failed) as e:
+            self.device.Device.check_build_current()
+        self.assertEqual(e.exception.extra["stale"], ["runner"])
+        self.assertIn("build --runner-only", str(e.exception))
+
+    def test_current_app_and_runner_pass(self):
+        env.update_state(lambda st: st.__setitem__("runnerBuild", dict(source=env.runner_stamp())))
+        self.assertEqual(self.device.Device.check_build_current()["source"], {"stamp": "now"})
+
+    def test_no_records_means_build_both(self):
+        env.update_state(lambda st: [st.pop(k, None) for k in ("appBuild", "runnerBuild")])
+        with self.assertRaises(env.Failed) as e:
+            self.device.Device.check_build_current()
+        self.assertIn("Run `build`", str(e.exception))
+
+
+class SelftestTests(unittest.TestCase):
+    def test_leftover_check_ignores_other_devices(self):
+        from verify_ios import selftest
+        me = env.process_identity(os.getpid())
+        env.update_state(lambda st: st.setdefault("devices", {}).__setitem__("ipad", {"started": [{"processes": [me]}]}))
+        try:
+            self.assertEqual(selftest._running(["iphone"]), set())
+            self.assertEqual(selftest._running(["ipad"]), {os.getpid()})
+        finally:
+            env.update_state(lambda st: st.get("devices", {}).pop("ipad", None))
 
 
 class CliTests(unittest.TestCase):

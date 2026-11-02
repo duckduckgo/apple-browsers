@@ -42,6 +42,7 @@ def run(devices):
                                       reports=reports, worktree=env.ROOT, stateDir=env.HOME)
 
     _say(f"verify-ios self-test for {env.ROOT} on {', '.join(devices)} (a first run takes about 10-25 minutes)")
+    before = _running(devices)   # left running by earlier exploring: not this self-test's to report
     for d in devices:
         code, out, err = _cli("--device", d, "setup", timeout=600)
         if not step(f"{d} simulator ready", code == 0, out.get("message") or err):
@@ -49,8 +50,8 @@ def run(devices):
 
     try:
         Device.check_build_current()
-        built = os.path.isdir(f"{env.RUNNER_DD}/Build/Products")
-        step("app build is current (build skipped)", True)
+        built = True
+        step("app and runner builds are current (build skipped)", True)
     except env.Failed:
         built = False
     if not built:
@@ -81,11 +82,17 @@ def run(devices):
     if not all(s["ok"] for s in steps):
         return done()
 
-    st = env.load_state()
-    left = [p["pid"] for d in st.get("devices", {}).values() for s in d.get("started", []) for p in s.get("processes", [])
-            if env.still_ours(p)]
-    fx = st.get("fixture")
-    if fx and env.still_ours(fx):
-        left.append(fx["pid"])
+    left = sorted(_running(devices) - before)
     step("nothing left running", not left, f"still running: {left}")
     return done()
+
+
+def _running(devices):
+    """Pids of the runner processes and fixture server recorded for these devices that are still ours."""
+    st = env.load_state()
+    pids = {p["pid"] for d in devices for s in st.get("devices", {}).get(d, {}).get("started", [])
+            for p in s.get("processes", []) if env.still_ours(p)}
+    fx = st.get("fixture")
+    if fx and env.still_ours(fx):
+        pids.add(fx["pid"])
+    return pids

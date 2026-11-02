@@ -425,6 +425,8 @@ def load(path):
     flags = getattr(mod, "FLAGS", {})
     if not isinstance(flags, dict) or not all(isinstance(k, str) and isinstance(v, bool) for k, v in flags.items()):
         problems.append("FLAGS must map feature flag names to True/False")
+    elif env.flag_problem(flags):
+        problems.append(f"FLAGS: {env.flag_problem(flags)}")
     if not (mod.__doc__ or "").strip():
         problems.append("needs a docstring saying what it proves")
     return mod, problems
@@ -446,11 +448,9 @@ def evidence_root(decision_log=None):
     if not os.path.isfile(log) or not log.endswith(".tsv"):
         raise Failed(f"--decision-log must be an existing decisions .tsv file: {decision_log}")
     root = os.path.join(os.path.dirname(log), "proofs")
-    inside = os.path.realpath(root).startswith(os.path.realpath(ROOT) + os.sep)
-    if inside and not os.path.realpath(root).startswith(os.path.realpath(os.path.join(ROOT, ".claude")) + os.sep):
-        # untracked evidence there would change the app source fingerprint and make every later proof "stale"
-        raise Failed("keep the decision log outside this checkout (or under .claude/): evidence written next to it "
-                     "would count as a source change")
+    if os.path.realpath(root).startswith(os.path.realpath(ROOT) + os.sep):
+        # evidence there would be untracked files that could be committed, and would change the source fingerprint
+        raise Failed("keep the decision log outside this checkout: evidence written next to it would land in the repo")
     return root
 
 

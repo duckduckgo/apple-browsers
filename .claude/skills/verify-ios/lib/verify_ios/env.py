@@ -96,14 +96,39 @@ def update_state(change):
         return result
 
 
-def feature_flag_names():
-    """The app's FeatureFlag case names, read from this checkout's source (a pinned flag must be one of them)."""
+FEATURE_FLAG_SWIFT = "iOS/LocalPackages/FeatureFlags-iOS/Sources/FeatureFlags/FeatureFlag.swift"
+
+
+def feature_flags():
+    """(every FeatureFlag case name, the ones declared `supportsLocalOverriding: false`), read from this checkout's
+    source. The app ignores a `-ff.` override for the second set, so those can't be pinned."""
     import re
-    path = os.path.join(ROOT, "iOS/LocalPackages/FeatureFlags-iOS/Sources/FeatureFlags/FeatureFlag.swift")
-    with open(path) as f:
+    with open(os.path.join(ROOT, FEATURE_FLAG_SWIFT)) as f:
         source = f.read()
     body = source.split("public enum FeatureFlag", 1)[-1].split("\n}", 1)[0]
-    return set(re.findall(r"^\s*case\s+(\w+)\s*$", body, re.M))
+    names = set(re.findall(r"^\s*case\s+(\w+)\s*$", body, re.M))
+    config = source.split("private var config: Config {", 1)[-1]
+    fixed, current = set(), []
+    for line in config.splitlines():
+        case = re.match(r"^\s*case\s+(\.\w+(?:\s*,\s*\.\w+)*)\s*:", line)
+        if case:
+            current = re.findall(r"\.(\w+)", case.group(1))
+        elif re.match(r"^\s*default\s*:", line):
+            current = []
+        if "supportsLocalOverriding: false" in line:
+            fixed.update(current)
+    return names, fixed
+
+
+def flag_problem(flags):
+    """Why these flags can't be pinned for a launch, or None."""
+    names, fixed = feature_flags()
+    unknown, locked = sorted(set(flags) - names), sorted(set(flags) & fixed)
+    if unknown:
+        return f"not feature flags in this app: {unknown} (see {FEATURE_FLAG_SWIFT})"
+    if locked:
+        return f"these flags don't support local overrides, so the app would ignore the pin: {locked}"
+    return None
 
 
 def source_stamp():
@@ -120,6 +145,19 @@ def source_stamp():
         except OSError:
             pass
     return dict(head=head, stamp=h.hexdigest())
+
+
+def runner_stamp():
+    """Fingerprint of the runner's source (runner/, without Xcode's per-user files), recorded when it's built."""
+    h = hashlib.sha256()
+    base = os.path.join(SKILL, "runner")
+    for top, dirs, files in os.walk(base):
+        dirs[:] = sorted(d for d in dirs if d != "xcuserdata" and not d.startswith("."))
+        for name in sorted(files):
+            path = os.path.join(top, name)
+            h.update(os.path.relpath(path, base).encode())
+            h.update(sha256(path).encode())
+    return h.hexdigest()
 
 
 def token():

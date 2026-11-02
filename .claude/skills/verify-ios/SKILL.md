@@ -55,7 +55,8 @@ $V build                                              # app (3–20 min) + runne
 `build` targets a concrete simulator: a `generic/platform=iOS Simulator` build fails in the WebKit-workaround phase.
 One app build serves both devices. `build` records a fingerprint of the source it built from (HEAD plus every
 uncommitted change outside `.claude/`); `prove` refuses to run (exit 2) when the source has changed since, so a proof
-can't pass against a stale build. After changing app code, `build --app-only`.
+can't pass against a stale build. It records the runner's source the same way. After changing app code,
+`build --app-only`; after pulling runner changes, `build --runner-only`. The error names which one.
 
 ## Write and run a proof
 
@@ -144,6 +145,7 @@ plus `nth=<n>` when several match (otherwise the action fails with AMBIGUOUS; it
   mocked. A dead pixel stream fails the assertion; it never passes `expect_no_pixel`.
 - Feature flags: proofs must not depend on the live privacy configuration. Every launch pins `env.PINNED_FLAGS`
   (`newTabPageRedesign: true`, which the iPhone ids assume); a proof pins more with `FLAGS`. The manifest records them.
+  `check` rejects an unknown flag, and a flag declared `supportsLocalOverriding: false`, which the app wouldn't honour.
 - Use a fresh token per run; the fixture page (`fixture/`) shows it, writes localStorage, and has a link, a disabled
   button, two buttons sharing one label, a location button and a long list. The simulator reaches the host at
   `127.0.0.1`.
@@ -162,6 +164,7 @@ An attempt folder is used once: a proof inside a folder that holds anything else
 
 With an AStack show-me-your-work decision log, pass `--decision-log <path to decisions.tsv>` to `new-proof` and
 `prove`: attempt folders then go in `proofs/` next to the log, so the log can link them, and the manifest records it.
+Keep the log outside the checkout, so evidence never lands in the repo.
 
 Report to the user from `report.md`: **passed, failed and unverified** behavior per device, whether the evidence used
 live services or only the local fixture, the revision, the rerun command, and links to the evidence. Look at the

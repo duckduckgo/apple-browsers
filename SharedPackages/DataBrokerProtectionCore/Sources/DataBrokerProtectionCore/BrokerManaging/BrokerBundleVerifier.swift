@@ -18,14 +18,37 @@
 
 import Foundation
 import CryptoKit
+import DDGError
 import os.log
 
-public enum BrokerBundleVerificationError: String, Error, CaseIterable {
+public enum BrokerBundleVerificationError: String, DDGError, CaseIterable {
     case signatureMissing = "signature_missing"
     case signatureInvalid = "signature_invalid"
     case rollback
     case digestMismatch = "digest_mismatch"
     case other
+
+    public static var errorDomain: String { "com.duckduckgo.databrokerprotection.BrokerBundleVerificationError" }
+
+    public var errorCode: Int {
+        switch self {
+        case .signatureMissing: return 1
+        case .signatureInvalid: return 2
+        case .rollback: return 3
+        case .digestMismatch: return 4
+        case .other: return 5
+        }
+    }
+
+    public var description: String {
+        switch self {
+        case .signatureMissing: return "Broker bundle signature is missing"
+        case .signatureInvalid: return "Broker bundle signature is invalid"
+        case .rollback: return "Broker bundle manifest version is older than the last verified version"
+        case .digestMismatch: return "Broker bundle digest does not match the verified manifest"
+        case .other: return "Broker bundle verification failed"
+        }
+    }
 }
 
 public struct BrokerBundleSigningKey {

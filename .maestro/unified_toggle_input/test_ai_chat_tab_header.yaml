@@ -13,7 +13,7 @@ name: test_ai_chat_tab_header
 # Step 1: Verify Duck.ai chat tab header elements
 - assertVisible: "Free Plan"
 - assertVisible: "Upgrade"
-- assertVisible: "Close tab"
+- assertNotVisible: "Close tab"
 - assertVisible: "Recent chats"
 - assertVisible: "New"
 
@@ -23,7 +23,7 @@ name: test_ai_chat_tab_header
 - assertNotVisible:
     id: "AddressBar.Button.DuckAI"
 
-# Step 3: Close-tab button dismisses the chat tab and restores the omnibar
-- tapOn: "Close tab"
+# Step 3: Tab Switcher button opens the tab switcher
+- tapOn: "Tab Switcher"
 - assertVisible:
-    id: "Browser.OmniBar.Button.AIChat"
+    id: "TabSwitcher.Button.DuckChat"

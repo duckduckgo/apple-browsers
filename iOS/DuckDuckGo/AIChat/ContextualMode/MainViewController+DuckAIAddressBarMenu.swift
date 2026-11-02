@@ -104,6 +104,7 @@ extension MainViewController {
         }
         attachDuckAIMenu(to: addressBarButton, offersMenu: offersMenu, source: .addressBarIcon, type: type)
         attachDuckAIMenu(to: tabsBarController?.aiChatMenuButton, offersMenu: offersMenu, source: .tabsBarButton, type: type)
+        attachDuckAIMenuToFocusedInput(offersMenu: offersMenu)
     }
 
     private func attachDuckAIMenu(to button: UIButton?, offersMenu: Bool, source: AIChatEntryPointSource, type: DuckAIAddressBarMenuType) {
@@ -114,15 +115,26 @@ extension MainViewController {
             return
         }
 
+        button.menu = makeDuckAIMenu(source: source, type: type)
+        button.showsMenuAsPrimaryAction = true
+    }
+
+    /// Only on home tabs: elsewhere the focused input is prefilled with the page address, so the tap keeps opening Duck.ai.
+    private func attachDuckAIMenuToFocusedInput(offersMenu: Bool) {
+        let isHomeTab = tabManager.currentTabsModel.currentTab?.isHomeTab ?? true
+        let menu = offersMenu && isHomeTab ? makeDuckAIMenu(source: .addressBarShortcutChip, type: .webPage) : nil
+        unifiedToggleInputCoordinator?.updateAIChatShortcutEmptyInputMenu(menu)
+    }
+
+    func makeDuckAIMenu(source: AIChatEntryPointSource, type: DuckAIAddressBarMenuType) -> UIMenu {
         // Deferred so the shown pixel records an actual display rather than the menu being attached.
-        button.menu = UIMenu(title: UserText.duckAiFeatureName, children: [
+        UIMenu(title: UserText.duckAiFeatureName, children: [
             UIDeferredMenuElement.uncached { [weak self] completion in
                 self?.recordNewTabPageSessionAction { $0.tapDuckaiButton() }
                 self?.duckAIAddressBarPixelHandler.fireAddressBarMenuShown(source: DuckAIMenuSource(source))
                 completion(self?.duckAIAddressBarMenuChildren(source: source, type: type) ?? [])
             }
         ])
-        button.showsMenuAsPrimaryAction = true
     }
 
     /// Transparent stand-in over the button, outside the glass field, for the menu to reparent.

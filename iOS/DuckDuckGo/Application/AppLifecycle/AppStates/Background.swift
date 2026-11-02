@@ -56,8 +56,8 @@ struct Background: BackgroundHandling {
         Logger.lifecycle.info("\(type(of: self)): \(#function)")
 
         services.applicationShortcutItemsService.suspend()
-        // Only once the user got past App Lock (or needed no unlock) since launch, so a background
-        // launch or leaving at the first lock prompt keeps the time away from the last real use.
+        // Skipped until this launch reaches the app (unlocked, or no App Lock): a background launch
+        // or leaving at the cold-start lock prompt isn't use, so the next return measures from the last real one.
         if sceneDependencies.authenticationService.hasCompletedAuthentication {
             try? lastBackgroundDateStorage.set(Date(), for: \.lastBackgroundDate)
         }

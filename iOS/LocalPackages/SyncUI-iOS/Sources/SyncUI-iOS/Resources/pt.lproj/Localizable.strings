@@ -46,9 +46,6 @@
 /* Camera View - Permission Required */
 "camera.permission.required" = "É necessária a permissão para usar a câmara";
 
-/* No comment provided by engineer. */
-"Cancel" = "Cancelar";
-
 /* Standard Buttons - Cancel Button */
 "cancel.button" = "Cancelar";
 

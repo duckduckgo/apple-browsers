@@ -278,6 +278,10 @@ final class AIChatContextualUTIHost: UnifiedToggleInputDelegate, AIChatContextua
         coordinator.observeChatUpdates(publisher)
     }
 
+    var textChangePublisher: AnyPublisher<String, Never> {
+        coordinator.textChangePublisher
+    }
+
     /// Called when a prompt carrying page context is delivered; routes to the session state via `onPromptDelivered`.
     func notifyPromptDelivered() {
         onPromptDelivered?()

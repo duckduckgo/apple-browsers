@@ -31,7 +31,7 @@ final class DuckAIEntryWideEventData: WideEventData {
         mobileMetaType: "ios-duckai-entry",
         // API requires both; only mobileMetaType is read on iOS.
         desktopMetaType: "macos-duckai-entry",
-        version: "1.1.0"
+        version: "1.2.0"
     )
 
     enum StatusReason: String, Codable, CaseIterable {
@@ -63,6 +63,8 @@ final class DuckAIEntryWideEventData: WideEventData {
     /// An `AIChatEntryPointSource` raw value.
     let source: String
     let hasPrompt: Bool
+    /// Optional so flows pending from 1.1.0 decode.
+    let voice: Bool?
     /// For a tab, read from the chat ID when its Duck.ai tab is first shown; nil until then.
     var chatState: ChatState?
     let surface: Surface
@@ -75,6 +77,7 @@ final class DuckAIEntryWideEventData: WideEventData {
 
     init(source: AIChatEntryPointSource,
          hasPrompt: Bool,
+         voice: Bool = false,
          chatState: ChatState?,
          surface: Surface,
          startedAt: Date = Date(),
@@ -86,6 +89,7 @@ final class DuckAIEntryWideEventData: WideEventData {
          globalData: WideEventGlobalData = WideEventGlobalData()) {
         self.source = source.rawValue
         self.hasPrompt = hasPrompt
+        self.voice = voice
         self.chatState = chatState
         self.surface = surface
         self.statusReason = statusReason
@@ -122,6 +126,7 @@ extension DuckAIEntryWideEventData {
             (WideEventParameter.DuckAIEntryFeature.exitTrigger, reportedExitTrigger),
             (WideEventParameter.DuckAIEntryFeature.source, source),
             (WideEventParameter.DuckAIEntryFeature.hasPrompt, hasPrompt),
+            (WideEventParameter.DuckAIEntryFeature.voice, voice),
             (WideEventParameter.DuckAIEntryFeature.chatState, chatState?.rawValue),
             (WideEventParameter.DuckAIEntryFeature.surface, surface.rawValue),
             (WideEventParameter.DuckAIEntryFeature.promptSubmitted, promptSubmitted),
@@ -137,6 +142,7 @@ extension WideEventParameter {
         static let exitTrigger = "feature.data.ext.exit_trigger"
         static let source = "feature.data.ext.source"
         static let hasPrompt = "feature.data.ext.has_prompt"
+        static let voice = "feature.data.ext.voice"
         static let chatState = "feature.data.ext.chat_state"
         static let surface = "feature.data.ext.surface"
         static let promptSubmitted = "feature.data.ext.prompt_submitted"

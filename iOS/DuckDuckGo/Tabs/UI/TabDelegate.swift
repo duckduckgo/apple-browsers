@@ -40,7 +40,7 @@ protocol TabDelegate: AnyObject {
 
     func tabDidRequestNewTab(_ tab: TabViewController)
 
-    func tabDidRequestNewVoiceChat(_ tab: TabViewController)
+    func tabDidRequestNewVoiceChat(_ tab: TabViewController, source: AIChatEntryPointSource)
 
     func newTab(reuseExisting: Bool)
 
@@ -264,7 +264,7 @@ extension TabDelegate {
 
     func tabDidFinishNavigation(_ tab: TabViewController) {}
 
-    func tabDidRequestNewVoiceChat(_ tab: TabViewController) {}
+    func tabDidRequestNewVoiceChat(_ tab: TabViewController, source: AIChatEntryPointSource) {}
 
     func tab(_ tab: TabViewController, didFailDuckAINavigationFor url: URL, error: Error) {}
 

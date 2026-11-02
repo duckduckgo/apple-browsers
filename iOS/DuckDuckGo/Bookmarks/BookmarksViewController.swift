@@ -1084,6 +1084,7 @@ extension BookmarksViewController {
     private func decorate() {
         let theme = ThemeManager.shared.currentTheme
         decorateNavigationBar(with: theme)
+        navigationController?.navigationBar.isTranslucent = false
         decorateToolbar(with: theme)
 
         searchController?.searchBar.searchTextField.textColor = theme.searchBarTextColor

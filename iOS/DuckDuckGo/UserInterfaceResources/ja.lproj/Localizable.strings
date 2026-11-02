@@ -4066,24 +4066,6 @@
 /* Title for the private search Duck.ai query onboarding screen. */
 "onboarding.personalization.duckAIQuery.privateSearch.title" = "さあ、プライベート検索を試してみましょう！";
 
-/* Button to continue to the next onboarding screen from the search personalization screen. */
-"onboarding.personalization.search.cta" = "次へ";
-
-/* Subtitle for the recently visited sites option on the onboarding search personalization screen. */
-"onboarding.personalization.search.recentlyVisitedSites.subtitle" = "最近アクセスしたサイトを検索候補に表示します。 プライベートなまま、デバイス上にのみ保存されます。";
-
-/* Title for the recently visited sites option on the onboarding search personalization screen. */
-"onboarding.personalization.search.recentlyVisitedSites.title" = "検索履歴";
-
-/* Subtitle for the safe search option on the onboarding search personalization screen. */
-"onboarding.personalization.search.safeSearch.subtitle" = "検索結果から好ましくない（主に成人向けの）コンテンツを除外します。";
-
-/* Title for the safe search option on the onboarding search personalization screen. */
-"onboarding.personalization.search.safeSearch.title" = "セーフサーチ";
-
-/* Title of the onboarding search personalization screen. */
-"onboarding.personalization.search.title" = "検索も自分好みに。";
-
 /* Button on the Privacy Pro promotion onboarding step. Tapping the button navigates to the Privacy Pro paywall. */
 "onboarding.privacypro.promo.buttons.learnMore" = "詳細情報";
 

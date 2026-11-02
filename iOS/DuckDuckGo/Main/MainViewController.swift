@@ -68,7 +68,7 @@ struct StartupOnboardingDecision {
         case .downloadReasonSelection, .setDefaultBrowser, .aiIntro, .addToDockPromo, .appIconSelection,
              .addressBarPositionSelection, .searchExperienceSelection,
              .duckAIQuerySelection, .interludeDuckAI,
-             .searchPrivacySettingsSelection, .aiSearchSettingsSelection, .aiModelSelection,
+             .aiSearchSettingsSelection, .aiModelSelection,
              .toggleInputModeSelection, .keepDuckAISelection, .adBlockingPersonalization:
             shouldShowOnboarding = true
             return

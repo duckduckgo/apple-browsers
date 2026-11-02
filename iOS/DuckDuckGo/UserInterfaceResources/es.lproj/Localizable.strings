@@ -4066,24 +4066,6 @@
 /* Title for the private search Duck.ai query onboarding screen. */
 "onboarding.personalization.duckAIQuery.privateSearch.title" = "¡Prueba ahora la búsqueda privada!";
 
-/* Button to continue to the next onboarding screen from the search personalization screen. */
-"onboarding.personalization.search.cta" = "Siguiente";
-
-/* Subtitle for the recently visited sites option on the onboarding search personalization screen. */
-"onboarding.personalization.search.recentlyVisitedSites.subtitle" = "Mostrar los sitios visitados recientemente en las sugerencias de búsqueda. Privada, solo en tu dispositivo.";
-
-/* Title for the recently visited sites option on the onboarding search personalization screen. */
-"onboarding.personalization.search.recentlyVisitedSites.title" = "Historial de búsquedas";
-
-/* Subtitle for the safe search option on the onboarding search personalization screen. */
-"onboarding.personalization.search.safeSearch.subtitle" = "Omitir material cuestionable (principalmente para adultos) de los resultados.";
-
-/* Title for the safe search option on the onboarding search personalization screen. */
-"onboarding.personalization.search.safeSearch.title" = "Búsqueda segura";
-
-/* Title of the onboarding search personalization screen. */
-"onboarding.personalization.search.title" = "Tu búsqueda, a tu manera.";
-
 /* Button on the Privacy Pro promotion onboarding step. Tapping the button navigates to the Privacy Pro paywall. */
 "onboarding.privacypro.promo.buttons.learnMore" = "Más información";
 

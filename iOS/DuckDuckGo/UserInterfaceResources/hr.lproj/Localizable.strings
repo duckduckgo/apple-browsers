@@ -4066,24 +4066,6 @@
 /* Title for the private search Duck.ai query onboarding screen. */
 "onboarding.personalization.duckAIQuery.privateSearch.title" = "Sada isprobaj privatno pretraživanje!";
 
-/* Button to continue to the next onboarding screen from the search personalization screen. */
-"onboarding.personalization.search.cta" = "Dalje";
-
-/* Subtitle for the recently visited sites option on the onboarding search personalization screen. */
-"onboarding.personalization.search.recentlyVisitedSites.subtitle" = "Prikaži nedavno posjećena mrežna mjesta u prijedlozima pretraživanja. Privatno, samo na tvom uređaju.";
-
-/* Title for the recently visited sites option on the onboarding search personalization screen. */
-"onboarding.personalization.search.recentlyVisitedSites.title" = "Povijest pretraživanja";
-
-/* Subtitle for the safe search option on the onboarding search personalization screen. */
-"onboarding.personalization.search.safeSearch.subtitle" = "Izostavi upitan sadržaj (uglavnom namijenjen odraslima) iz rezultata.";
-
-/* Title for the safe search option on the onboarding search personalization screen. */
-"onboarding.personalization.search.safeSearch.title" = "Sigurno pretraživanje";
-
-/* Title of the onboarding search personalization screen. */
-"onboarding.personalization.search.title" = "Tvoje pretraživanje, po tvome.";
-
 /* Button on the Privacy Pro promotion onboarding step. Tapping the button navigates to the Privacy Pro paywall. */
 "onboarding.privacypro.promo.buttons.learnMore" = "Saznajte više";
 

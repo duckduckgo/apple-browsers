@@ -4066,24 +4066,6 @@
 /* Title for the private search Duck.ai query onboarding screen. */
 "onboarding.personalization.duckAIQuery.privateSearch.title" = "Kokeile nyt yksityistä hakua!";
 
-/* Button to continue to the next onboarding screen from the search personalization screen. */
-"onboarding.personalization.search.cta" = "Seuraava";
-
-/* Subtitle for the recently visited sites option on the onboarding search personalization screen. */
-"onboarding.personalization.search.recentlyVisitedSites.subtitle" = "Näytä viimeksi katsotut sivustot hakuehdotuksissa. Yksityisesti vain omalla laitteellasi.";
-
-/* Title for the recently visited sites option on the onboarding search personalization screen. */
-"onboarding.personalization.search.recentlyVisitedSites.title" = "Hakuhistoria";
-
-/* Subtitle for the safe search option on the onboarding search personalization screen. */
-"onboarding.personalization.search.safeSearch.subtitle" = "Jätä kyseenalainen (enimmäkseen aikuisille suunnattu) materiaali pois tuloksista.";
-
-/* Title for the safe search option on the onboarding search personalization screen. */
-"onboarding.personalization.search.safeSearch.title" = "Turvallinen haku";
-
-/* Title of the onboarding search personalization screen. */
-"onboarding.personalization.search.title" = "Haku omalla tavallasi.";
-
 /* Button on the Privacy Pro promotion onboarding step. Tapping the button navigates to the Privacy Pro paywall. */
 "onboarding.privacypro.promo.buttons.learnMore" = "Lue lisää";
 

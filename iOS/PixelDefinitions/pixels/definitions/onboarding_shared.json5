@@ -306,31 +306,6 @@
             "onboardingFlowVariant"
         ]
     },
-    "m_ios_onboarding_preferences_serp": {
-        "description": "Fired during linear onboarding on the SERP preferences step of the download-reason segmented flow (treatment cohort).",
-        "owners": ["alessandroboron"],
-        "triggers": ["other"],
-        "parameters": [
-            "appVersion",
-            "pixelSource",
-            "onboardingEventType",
-            {
-                "key": "recently_visited_sites_enabled",
-                "type": "boolean",
-                "description": "On the engagement (clicked) event: whether recently visited sites is enabled: true or false"
-            },
-            {
-                "key": "safe_search_enabled",
-                "type": "boolean",
-                "description": "On the engagement (clicked) event: whether safe search is enabled: true or false"
-            },
-            "onboardingInstallType",
-            "onboardingDaysSinceInstall",
-            "onboardingSource",
-            "onboardingFlow",
-            "onboardingFlowVariant"
-        ]
-    },
     "m_ios_onboarding_preferences_ai-model": {
         "description": "Fired during linear onboarding on the AI model picker step of the download-reason segmented flow (treatment cohort).",
         "owners": ["alessandroboron"],

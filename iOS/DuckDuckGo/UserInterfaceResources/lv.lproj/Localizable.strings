@@ -4066,24 +4066,6 @@
 /* Title for the private search Duck.ai query onboarding screen. */
 "onboarding.personalization.duckAIQuery.privateSearch.title" = "Tagad izmēģini privātu meklēšanu!";
 
-/* Button to continue to the next onboarding screen from the search personalization screen. */
-"onboarding.personalization.search.cta" = "Tālāk";
-
-/* Subtitle for the recently visited sites option on the onboarding search personalization screen. */
-"onboarding.personalization.search.recentlyVisitedSites.subtitle" = "Meklēšanas ieteikumos rādīt nesen apmeklētās vietnes. Privāti, tikai tavā ierīcē.";
-
-/* Title for the recently visited sites option on the onboarding search personalization screen. */
-"onboarding.personalization.search.recentlyVisitedSites.title" = "Meklēšanas vēsture";
-
-/* Subtitle for the safe search option on the onboarding search personalization screen. */
-"onboarding.personalization.search.safeSearch.subtitle" = "Nerādīt apšaubāmu (pārsvarā pieaugušajiem paredzētu) saturu rezultātos.";
-
-/* Title for the safe search option on the onboarding search personalization screen. */
-"onboarding.personalization.search.safeSearch.title" = "Drošā meklēšana";
-
-/* Title of the onboarding search personalization screen. */
-"onboarding.personalization.search.title" = "Tava meklēšana, tavā stilā.";
-
 /* Button on the Privacy Pro promotion onboarding step. Tapping the button navigates to the Privacy Pro paywall. */
 "onboarding.privacypro.promo.buttons.learnMore" = "Uzzināt vairāk";
 

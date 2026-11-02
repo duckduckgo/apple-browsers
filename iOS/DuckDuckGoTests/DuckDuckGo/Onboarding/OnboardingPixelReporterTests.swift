@@ -1296,7 +1296,6 @@ final class OnboardingPixelReporterTests: XCTestCase {
     func testWhenMeasureTailoredStepImpressionsThenCorrectShownPixelsFire() {
         // WHEN
         sut.measureDownloadReasonImpression()
-        sut.measureSearchPrivacySettingsImpression()
         sut.measureAIModelImpression()
         sut.measureToggleInputModeImpression()
         sut.measureAISearchSettingsImpression()
@@ -1306,7 +1305,6 @@ final class OnboardingPixelReporterTests: XCTestCase {
         // THEN
         XCTAssertEqual(sharedPixelHandlerMock.eventsFired, [
             .downloadChoice(.shown),
-            .preferencesSerp(.shown),
             .preferencesAIModel(.shown),
             .preferencesAIToggleMode(.shown),
             .preferencesAISearch(.shown),
@@ -1332,10 +1330,10 @@ final class OnboardingPixelReporterTests: XCTestCase {
         sharedPixelsStorageMock.onboardingVariant = .downloadReasonSearch
 
         // WHEN
-        sut.measureSearchPrivacySettingsImpression()
+        sut.measureAISearchSettingsImpression()
 
         // THEN
-        XCTAssertEqual(sharedPixelHandlerMock.eventsFired, [.preferencesSerp(.shown)])
+        XCTAssertEqual(sharedPixelHandlerMock.eventsFired, [.preferencesAISearch(.shown)])
         XCTAssertEqual(sharedPixelHandlerMock.receivedVariant, .downloadReasonSearch)
     }
 
@@ -1459,14 +1457,6 @@ final class OnboardingPixelReporterTests: XCTestCase {
             // THEN
             XCTAssertTrue(MockExperimentPixelFiring.firedMetrics.contains(expectedMetric), "Failed for reason \(reason)")
         }
-    }
-
-    func testWhenMeasureSearchPrivacySettingsSelectionThenSerpClickedFires() {
-        // WHEN
-        sut.measureSearchPrivacySettingsSelection(recentlyVisitedSitesEnabled: true, safeSearchEnabled: false)
-
-        // THEN
-        XCTAssertEqual(sharedPixelHandlerMock.eventsFired, [.preferencesSerp(.clicked(recentlyVisitedSitesEnabled: true, safeSearchEnabled: false))])
     }
 
     func testWhenMeasureAIModelSelectionThenAIModelClickedFires() {

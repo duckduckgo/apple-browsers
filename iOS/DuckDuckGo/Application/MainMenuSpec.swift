@@ -51,8 +51,13 @@ struct MainMenuSpec {
     let removedMenus: [UIMenu.Identifier]
     let shortcutRegistration: ShortcutRegistration
 
+    private static func systemHasMenuBar(idiom: UIUserInterfaceIdiom) -> Bool {
+        guard idiom == .pad, #available(iOS 26.0, *) else { return false }
+        return true
+    }
+
     init(isEnabled: Bool, idiom: UIUserInterfaceIdiom = UIDevice.current.userInterfaceIdiom) {
-        shortcutRegistration = isEnabled ? (idiom == .pad ? .menu : .responder) : .legacy
+        shortcutRegistration = isEnabled ? (Self.systemHasMenuBar(idiom: idiom) ? .menu : .responder) : .legacy
         baselineMenus = [Menu(identifier: .preferences, items: [
             Item(command: .settings, title: UserText.settingsTitle,
                  shortcut: Shortcut(input: ",", modifiers: .command))

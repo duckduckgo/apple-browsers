@@ -51,10 +51,12 @@ final class ChromeWebStoreServiceTests: XCTestCase {
     }
 
     private func scheduledService(_ manager: WebExtensionManager, interval: TimeInterval = 0.01,
-                                  check: @escaping (String, String) async -> ChromeWebStoreUpdateChecker.CheckResult) -> ChromeWebStoreService {
+                                  check: @escaping @MainActor @Sendable (String, String) async -> ChromeWebStoreUpdateChecker.CheckResult) -> ChromeWebStoreService {
         ChromeWebStoreService(manager: manager, catalog: catalog,
                               downloader: StoreDownloaderMock(action: { Data() }), presenter: presenter,
-                              verifier: ChromeWebStorePackageVerifier(), updateCheck: check, updateCheckInterval: interval)
+                              verifier: ChromeWebStorePackageVerifier(), updateCheck: { identifier, version in
+                                  await check(identifier, version)
+                              }, updateCheckInterval: interval)
     }
 
     private func installed(_ identifier: String, version: String?, storeID: String? = nil) -> InstalledWebExtension {

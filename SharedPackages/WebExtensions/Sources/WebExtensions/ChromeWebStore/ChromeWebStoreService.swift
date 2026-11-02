@@ -17,7 +17,6 @@
 //
 
 import Foundation
-import os.log
 import PrivacyConfig
 import WebKit
 
@@ -57,8 +56,6 @@ public protocol ChromeWebStorePresenting {
 @available(macOS 15.4, iOS 18.4, *)
 @MainActor
 public final class ChromeWebStoreService: ChromeWebStoreManaging {
-    private nonisolated static let defaultUpdateCheckInterval: TimeInterval = 2 * 60 * 60
-
     private struct UpdateVersionOverride {
         let installationIdentifiers: Set<String>
         let installedVersion: String
@@ -70,47 +67,51 @@ public final class ChromeWebStoreService: ChromeWebStoreManaging {
     private let downloader: ChromeWebStoreDownloading
     private let presenter: ChromeWebStorePresenting
     private let verifier: ChromeWebStorePackageVerifier
-    private let updateCheck: ((String, String) async -> ChromeWebStoreUpdateChecker.CheckResult)?
     // The service is shared by all tabs. Only one install/removal can own the browser's UI at a time.
     private var isPerformingOperation = false
-    private var updateSchedulerTask: Task<Void, Never>?
-    private var updateBatchTask: Task<Void, Never>?
-    private var retryNotBefore: Date?
-    private var lastCheckedIdentifier: String?
+    private var updateCoordinator: ChromeWebStoreUpdateCoordinator?
     private var updateVersionOverrides: [String: UpdateVersionOverride] = [:]
 
     public convenience init(manager: WebExtensionManager, catalog: ChromeWebStoreCatalogProviding,
                             downloader: ChromeWebStoreDownloading = ChromeWebStoreDownloader(), presenter: ChromeWebStorePresenting) {
-        let checker = ChromeWebStoreUpdateChecker()
         self.init(manager: manager, catalog: catalog, downloader: downloader, presenter: presenter,
-                  verifier: ChromeWebStorePackageVerifier(), updateCheck: checker.check)
+                  verifier: ChromeWebStorePackageVerifier(), updateCheck: { identifier, version in
+                      await ChromeWebStoreUpdateChecker().check(extensionID: identifier, installedVersion: version)
+                  })
     }
 
     init(manager: WebExtensionManager, catalog: ChromeWebStoreCatalogProviding,
          downloader: ChromeWebStoreDownloading, presenter: ChromeWebStorePresenting, verifier: ChromeWebStorePackageVerifier,
-         updateCheck: ((String, String) async -> ChromeWebStoreUpdateChecker.CheckResult)? = nil,
-         updateCheckInterval: TimeInterval = ChromeWebStoreService.defaultUpdateCheckInterval) {
+         updateCheck: ChromeWebStoreUpdateCoordinator.Check? = nil,
+         updateCheckInterval: TimeInterval = ChromeWebStoreUpdateCoordinator.defaultCheckInterval) {
         self.manager = manager
         self.catalog = catalog
         self.downloader = downloader
         self.presenter = presenter
         self.verifier = verifier
-        self.updateCheck = updateCheck
-        if updateCheck != nil {
-            startUpdateChecks(interval: updateCheckInterval)
+        if let updateCheck {
+            let coordinator = ChromeWebStoreUpdateCoordinator(interval: updateCheckInterval, installedIdentifiers: { [weak self] in
+                guard let versions = self?.eligibleInstalledVersions() else { return nil }
+                return Array(versions.keys)
+            }, version: { [weak self] identifier in
+                guard let self, let version = self.eligibleInstalledVersions()?[identifier] else { return nil }
+                return .init(installedVersion: version, reportedVersion: self.reportedVersion(for: identifier, installedVersion: version))
+            }, check: updateCheck)
+            updateCoordinator = coordinator
+            Task { await coordinator.start() }
         }
     }
 
     deinit {
-        updateSchedulerTask?.cancel()
-        updateBatchTask?.cancel()
+        if let updateCoordinator {
+            Task { await updateCoordinator.stop() }
+        }
     }
 
     /// Checks now, joining an active batch and honoring the server's retry deadline.
     public func checkForUpdatesNow() async {
         guard !Task.isCancelled else { return }
-        let batch = startUpdateCheck()
-        await batch?.value
+        await updateCoordinator?.checkForUpdatesNow()
     }
 
     public func updateCheckVersionOverride(forInstallationIdentifier identifier: String) -> String? {
@@ -132,59 +133,6 @@ public final class ChromeWebStoreService: ChromeWebStoreManaging {
         guard let installedVersion = eligibleInstalledVersions()?[identity.id] else { return }
         updateVersionOverrides[identity.id] = UpdateVersionOverride(installationIdentifiers: installationIdentifiers(for: identity.id),
                                                                   installedVersion: installedVersion, reportedVersion: version)
-    }
-
-    private func startUpdateChecks(interval: TimeInterval) {
-        Logger.webExtensions.info("Extension update discovery: started (interval \(interval, privacy: .public)s)")
-        updateSchedulerTask = Task { [weak self] in
-            while !Task.isCancelled {
-                guard self?.manager != nil else { return }
-                let batch = self?.startUpdateCheck()
-                await batch?.value
-                do {
-                    try await Task.sleep(for: .seconds(interval))
-                } catch {
-                    return
-                }
-            }
-        }
-    }
-
-    private func startUpdateCheck() -> Task<Void, Never>? {
-        if let updateBatchTask { return updateBatchTask }
-        guard let check = updateCheck else { return nil }
-        if let retryNotBefore, retryNotBefore > Date() {
-            Logger.webExtensions.info("Extension update discovery: deferred until server retry deadline=\(retryNotBefore, privacy: .public)")
-            return nil
-        }
-        guard let candidates = updateCandidateIdentifiers(after: lastCheckedIdentifier) else { return nil }
-        let batch = Task { [weak self] in
-            defer { self?.updateBatchTask = nil }
-            Logger.webExtensions.info("Extension update discovery: checking \(candidates.count) installed extensions")
-            for identifier in candidates {
-                guard !Task.isCancelled, self != nil else { return }
-                // Installs and removals can happen while an earlier request is suspended.
-                guard let version = self?.eligibleInstalledVersions()?[identifier] else { continue }
-                guard let reportedVersion = self?.reportedVersion(for: identifier, installedVersion: version) else { return }
-                let result = await check(identifier, reportedVersion)
-                guard !Task.isCancelled else { return }
-                self?.lastCheckedIdentifier = identifier
-                self?.logUpdateCheck(result, identifier: identifier, installedVersion: version, reportedVersion: reportedVersion)
-                if let deadline = result.retryNotBefore, deadline > Date() {
-                    self?.retryNotBefore = deadline
-                    break
-                }
-            }
-        }
-        updateBatchTask = batch
-        return batch
-    }
-
-    private func updateCandidateIdentifiers(after identifier: String?) -> [String]? {
-        guard let versions = eligibleInstalledVersions() else { return nil }
-        let candidates = versions.keys.sorted()
-        guard let identifier, let next = candidates.firstIndex(where: { $0 > identifier }) else { return candidates }
-        return Array(candidates[next...]) + Array(candidates[..<next])
     }
 
     private func eligibleInstalledVersions() -> [String: String]? {
@@ -216,21 +164,6 @@ public final class ChromeWebStoreService: ChromeWebStoreManaging {
             return nil
         }
         return override.reportedVersion
-    }
-
-    private func logUpdateCheck(_ result: ChromeWebStoreUpdateChecker.CheckResult, identifier: String,
-                                installedVersion: String, reportedVersion: String) {
-        switch result.outcome {
-        case .update(let update):
-            Logger.webExtensions.info("Extension update discovery: \(identifier, privacy: .public) installed=\(installedVersion, privacy: .public) reported=\(reportedVersion, privacy: .public) available=\(update.version, privacy: .public)")
-        case .noUpdate:
-            Logger.webExtensions.info("Extension update discovery: \(identifier, privacy: .public) installed=\(installedVersion, privacy: .public) reported=\(reportedVersion, privacy: .public) noUpdate")
-        case .failure(let failure):
-            Logger.webExtensions.error("Extension update discovery: \(identifier, privacy: .public) installed=\(installedVersion, privacy: .public) reported=\(reportedVersion, privacy: .public) failed=\(String(describing: failure), privacy: .public)")
-        }
-        if let deadline = result.retryNotBefore {
-            Logger.webExtensions.info("Extension update discovery: server retry deadline=\(deadline, privacy: .public)")
-        }
     }
 
     public var catalogExtensionIDs: [String] {

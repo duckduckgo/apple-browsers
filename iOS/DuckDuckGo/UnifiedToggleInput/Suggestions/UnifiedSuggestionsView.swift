@@ -162,12 +162,13 @@ struct UnifiedSuggestionsView: View {
                 barTop: viewport.maxY)
             let fitsMargins = Self.logoFits(topChromeBottom: topClearance, barTop: viewport.maxY)
             let offsetY = targetCenterY - frame.midY
-            let logo = FocusedDaxLogoView(progress: viewModel.logoModel.progress,
-                                         morph: viewModel.logoModel.morphs,
-                                         animationSpeed: viewModel.logoModel.morphSpeed)
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
             let animation: Animation? = UIApplication.shared.applicationState == .active ? .easeInOut(duration: 0.2) : nil
             let hatchLayout = escapeHatchLogoLayout(centerY: targetCenterY, viewport: viewport, fitsMargins: fitsMargins)
+            let logo = FocusedDaxLogoView(progress: viewModel.logoModel.progress,
+                                         morph: viewModel.logoModel.morphs,
+                                         animationSpeed: viewModel.logoModel.morphSpeed,
+                                         freezes: hatchLayout != nil && hatchLayout?.visibleFrame == nil)
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
             let isLogoDisplayed = isShowingLogo && !viewModel.isFireTab && !viewModel.isLandscape && !viewModel.isFadingOut
             let backdropLogoFrame = isLogoDisplayed ? hatchLayout?.visibleFrame : nil
             Group {

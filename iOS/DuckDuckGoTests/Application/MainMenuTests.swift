@@ -30,7 +30,8 @@ struct MainMenuTests {
         let spec = MainMenuSpec(isEnabled: enabled, idiom: idiom)
         let availability = MenuCommandAvailability(state: .init(shortcutsEnabled: true, presentation: .browser))
         let commands = MainMenuBuilder().keyCommands(for: spec, from: [], availability: availability)
-        if enabled && idiom == .pad {
+        let inMenuBar = registersInMenuBar(enabled: enabled, idiom: idiom)
+        if inMenuBar {
             #expect(spec.shortcutRegistration == .menu)
             #expect(commands.isEmpty)
         } else {
@@ -49,8 +50,8 @@ struct MainMenuTests {
                 }
             }
         }
-        #expect(spec.removedMenus == (enabled && idiom == .pad ? [.format] : []))
-        #expect(spec.mainMenus.map(\.identifier) == (enabled && idiom == .pad ? spec.menus.map(\.identifier) : [.preferences]))
+        #expect(spec.removedMenus == (inMenuBar ? [.format] : []))
+        #expect(spec.mainMenus.map(\.identifier) == (inMenuBar ? spec.menus.map(\.identifier) : [.preferences]))
     }
 
     @available(iOS 16, macOS 13, *)
@@ -108,8 +109,9 @@ struct MainMenuTests {
         let shared = commands.filter {
             $0.action == #selector(MainViewController.keyboardSettings) && $0.input == "," && $0.modifierFlags == .command
         }
-        #expect(shared.count == (enabled && idiom == .pad ? 0 : 1))
-        let sharedItems = enabled && idiom == .pad ? [] : spec.shortcutItems.filter { !enabled || availability.isEnabled($0.command) }
+        let inMenuBar = registersInMenuBar(enabled: enabled, idiom: idiom)
+        #expect(shared.count == (inMenuBar ? 0 : 1))
+        let sharedItems = inMenuBar ? [] : spec.shortcutItems.filter { !enabled || availability.isEnabled($0.command) }
         #expect(commands.count == sharedItems.count + 2)
     }
 
@@ -130,7 +132,7 @@ struct MainMenuTests {
             flagger.enabledFeatureFlags = enabled ? [.ipadMenuBar] : []
             flagger.triggerUpdate()
             _ = await iterator.next()
-            #expect(service.spec.removedMenus == (enabled ? [.format] : []))
+            #expect(service.spec.removedMenus == (registersInMenuBar(enabled: enabled, idiom: .pad) ? [.format] : []))
         }
         #expect(rebuildCount == 2)
         flagger.triggerUpdate()
@@ -220,5 +222,10 @@ struct MainMenuTests {
     func lockedAndBlockingPresentationsDisableCommands(command: MainMenuCommand) {
         #expect(!MenuCommandAvailability(state: .init(shortcutsEnabled: false, presentation: .browser)).isEnabled(command))
         #expect(!MenuCommandAvailability(state: .init(shortcutsEnabled: true, presentation: .blockingModal)).isEnabled(command))
+    }
+
+    private func registersInMenuBar(enabled: Bool, idiom: UIUserInterfaceIdiom) -> Bool {
+        guard enabled, idiom == .pad, #available(iOS 26.0, *) else { return false }
+        return true
     }
 }

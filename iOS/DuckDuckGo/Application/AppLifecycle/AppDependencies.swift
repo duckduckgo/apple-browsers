@@ -36,7 +36,7 @@ struct AppDependencies {
 
 struct AppServices {
 
-    let mainMenuService: MainMenuService?
+    let mainMenuService: MainMenuService
     let contentBlockingService: ContentBlockingService
     let syncService: SyncService
     let vpnService: VPNService

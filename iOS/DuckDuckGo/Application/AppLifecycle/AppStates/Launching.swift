@@ -422,17 +422,11 @@ struct Launching: LaunchingHandling {
 
         winBackOfferService.setURLHandler(mainCoordinator)
 
-        let mainMenuService: MainMenuService?
-        if featureFlagger.isFeatureOn(.ipadMenuBar) {
-            let voiceSearchHelper = self.voiceSearchHelper
-            let fireModeCapability = mainCoordinator.controller.fireModeCapability
-            mainMenuService = MainMenuService(featureFlagger: featureFlagger, contextProvider: {
-                .init(voiceSearchEnabled: voiceSearchHelper.isVoiceSearchEnabled, fireModeEnabled: fireModeCapability.isFireModeEnabled)
-            })
-            mainMenuService?.registerBuildHandler()
-        } else {
-            mainMenuService = nil
-        }
+        let voiceSearchHelper = self.voiceSearchHelper
+        let fireModeCapability = mainCoordinator.controller.fireModeCapability
+        let mainMenuService = MainMenuService(featureFlagger: featureFlagger, contextProvider: {
+            .init(voiceSearchEnabled: voiceSearchHelper.isVoiceSearchEnabled, fireModeEnabled: fireModeCapability.isFireModeEnabled)
+        })
 
         // MARK: - App Services aggregation
         // This object serves as a central hub for app-wide services that:

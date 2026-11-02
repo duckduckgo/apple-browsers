@@ -45,6 +45,11 @@ struct NewImportTypePickerView: View {
                     HStack(alignment: .center) {
                         Text(item.wrappedValue.dataType.displayName)
                         Spacer()
+                        if item.wrappedValue.dataType == .history {
+                            Text(UserText.importHistoryTimeRange)
+                                .font(.system(size: 11))
+                                .foregroundColor(Color(designSystemColor: .textSecondary))
+                        }
                         Toggle(isOn: item.isSelected)
                             .toggleStyle(.switch)
                             .rebrandedControlTint()

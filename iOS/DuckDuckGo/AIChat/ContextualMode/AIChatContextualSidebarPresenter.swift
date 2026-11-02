@@ -27,7 +27,9 @@ protocol AIChatContextualSidebarHosting: AnyObject {
     /// When false the surface is presented as a sheet instead.
     var canPresentContextualSidebar: Bool { get }
 
-    func presentContextualSidebar(_ viewController: UIViewController)
+    /// - Parameter coversPage: False when the window is resizing, which reflows the page anyway; an image of it at
+    ///   its old size would show as a second copy.
+    func presentContextualSidebar(_ viewController: UIViewController, coversPage: Bool)
 
     /// `completion` runs once `viewController` has left the sidebar, or straight away when it isn't in it.
     func dismissContextualSidebar(_ viewController: UIViewController, animated: Bool, completion: (() -> Void)?)
@@ -98,7 +100,7 @@ final class AIChatContextualSidebarPresenter {
         self.hiddenConstraint = hiddenConstraint
     }
 
-    func present(_ viewController: UIViewController, animated: Bool = true) {
+    func present(_ viewController: UIViewController, animated: Bool = true, coversPage: Bool = true) {
         guard let parent, !(isPresenting && hostedViewController === viewController) else { return }
         if hostedViewController === viewController {
             reverseDismissal(of: viewController, animated: animated)
@@ -110,7 +112,7 @@ final class AIChatContextualSidebarPresenter {
         removeHostedViewController()
         embed(viewController, in: parent)
         isPresenting = true
-        move(toShown: true, animated: animated && !isReplacingShownSurface) { [weak viewController] in
+        move(toShown: true, animated: animated && !isReplacingShownSurface, coversPage: coversPage) { [weak viewController] in
             UIAccessibility.post(notification: .screenChanged, argument: viewController?.view)
         }
     }
@@ -159,7 +161,8 @@ final class AIChatContextualSidebarPresenter {
         standIn = image
         removeHostedViewController()
         isPresenting = false
-        move(toShown: false, animated: true) { [weak self] in
+        // Detaching is for a resizing window, which reflows the page anyway: an image of it would show as a second copy.
+        move(toShown: false, animated: true, coversPage: false) { [weak self] in
             self?.finishDismissal()
         }
     }

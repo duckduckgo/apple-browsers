@@ -149,6 +149,20 @@ final class AIChatContextualSheetCoordinatorTests: XCTestCase {
                                               didSubmitDuckAIPromptWithOrigin origin: AIChatEntryPointSource?) {
             submittedPromptOrigins.append(origin)
         }
+
+        var closedSurfaceCount = 0
+        var closedWithDeletedChat: [Bool] = []
+
+        func aiChatContextualSheetCoordinatorDidCloseSurface(_ coordinator: AIChatContextualSheetCoordinator, chatDeleted: Bool) {
+            closedSurfaceCount += 1
+            closedWithDeletedChat.append(chatDeleted)
+        }
+
+        var newChatCount = 0
+
+        func aiChatContextualSheetCoordinatorDidStartNewChat(_ coordinator: AIChatContextualSheetCoordinator) {
+            newChatCount += 1
+        }
     }
 
     private final class MockPresentingViewController: UIViewController {
@@ -685,6 +699,76 @@ final class AIChatContextualSheetCoordinatorTests: XCTestCase {
         XCTAssertEqual(sut.sessionState.viewState.quickActions, [.askAboutPage])
     }
     
+    // MARK: - Surface close
+
+    @MainActor
+    func testDismissingTheSheetReportsOneClose() async throws {
+        await sut.presentSheet(from: mockPresentingVC)
+        let sheet = try XCTUnwrap(sut.sheetViewController)
+
+        sut.aiChatContextualSheetViewControllerDidDismiss(sheet)
+        sut.aiChatContextualSheetViewControllerDidDismiss(sheet)
+
+        XCTAssertEqual(mockDelegate.closedSurfaceCount, 1)
+    }
+
+    @MainActor
+    func testDismissingTheFloatingInputReportsAClose() async {
+        mockFloatingInputFeature.isAvailable = true
+        mockUnifiedToggleInputFeature.isAvailable = true
+        await sut.handleSelectionAction(.ask, selection: .init(text: "selected text", url: nil, faviconBase64: nil), from: mockPresentingVC)
+        XCTAssertTrue(sut.isFloatingInputPresented)
+
+        sut.dismissFloatingInput()
+
+        XCTAssertEqual(mockDelegate.closedSurfaceCount, 1)
+    }
+
+    @MainActor
+    func testPromotingTheFloatingInputToTheSheetIsNotAClose() async {
+        mockFloatingInputFeature.isAvailable = true
+        mockUnifiedToggleInputFeature.isAvailable = true
+        await sut.handleSelectionAction(.ask, selection: .init(text: "selected text", url: nil, faviconBase64: nil), from: mockPresentingVC)
+        XCTAssertTrue(sut.isFloatingInputPresented)
+
+        sut.promoteFloatingInputToSheet()
+
+        XCTAssertFalse(sut.isFloatingInputPresented)
+        XCTAssertEqual(mockDelegate.closedSurfaceCount, 0)
+    }
+
+    @MainActor
+    func testClearingTheChatReportsACloseOnlyWhenTheSheetWasShowing() async {
+        sut.clearActiveChat()
+        XCTAssertEqual(mockDelegate.closedSurfaceCount, 0)
+
+        await sut.presentSheet(from: mockPresentingVC)
+        sut.clearActiveChat()
+
+        XCTAssertEqual(mockDelegate.closedSurfaceCount, 1)
+    }
+
+    @MainActor
+    func testClearingTheChatTellsWhetherItWasDeleted() async {
+        await sut.presentSheet(from: mockPresentingVC)
+        sut.clearActiveChat()
+        await sut.presentSheet(from: mockPresentingVC)
+        sut.clearActiveChat(reason: .movedToTab)
+
+        XCTAssertEqual(mockDelegate.closedWithDeletedChat, [true, false])
+    }
+
+    @MainActor
+    func testNewChatFromTheSheetReportsANewEntryWithoutAClose() async throws {
+        await sut.presentSheet(from: mockPresentingVC)
+        let sheet = try XCTUnwrap(sut.sheetViewController)
+
+        sut.aiChatContextualSheetViewControllerDidRequestNewChat(sheet)
+
+        XCTAssertEqual(mockDelegate.newChatCount, 1)
+        XCTAssertEqual(mockDelegate.closedSurfaceCount, 0)
+    }
+
     // MARK: - clearActiveChat Tests
 
     @MainActor

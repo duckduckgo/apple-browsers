@@ -100,7 +100,7 @@ public class CoreDataDatabase: CoreDataStoring {
 
         container.loadPersistentStores { _, error in
             if let error = error {
-                completion(nil, error)
+                completion(nil, (error as NSError).unpackingSQLiteResultCode())
                 return
             }
 

@@ -43,6 +43,7 @@ public enum SubscriptionURL: Equatable {
     case addEmail
     case addEmailSuccess
     case partnershipsHub
+    case cancellationFlow
 
     public enum StaticURLs {
         public static let defaultBaseSubscriptionURL = URL(string: "https://duckduckgo.com/subscriptions")!
@@ -99,6 +100,8 @@ public enum SubscriptionURL: Equatable {
                 // A top-level page, not a subscription page, so it replaces the base URL's path
                 // rather than extending it - the same shape as `.identityTheftRestoration`.
                 baseURL.replacing(path: "partner-benefits")
+            case .cancellationFlow:
+                baseURL.appendingPathComponent("cancel")
             }
         }()
 

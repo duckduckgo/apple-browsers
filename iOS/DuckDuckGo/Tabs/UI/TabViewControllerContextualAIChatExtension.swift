@@ -117,11 +117,7 @@ extension TabViewController: AIChatContextualSheetCoordinatorDelegate {
     func aiChatContextualSheetCoordinator(_ coordinator: AIChatContextualSheetCoordinator,
                                           didRequestExpandWithURL url: URL,
                                           entrySource: AIChatEntryPointSource) {
-        AIChatEntryPointPixel.fire(source: entrySource,
-                                   duckAIEnabled: aiChatSettings.isAIChatEnabled,
-                                   toggleEnabled: aiChatSettings.isAIChatSearchInputUserSettingsEnabled,
-                                   opensNewTab: true,
-                                   hasPrompt: false)
+        delegate?.tab(self, didReportDuckAIEntry: entrySource, opensNewTab: true, hasPrompt: false)
         delegate?.tab(self, didRequestNewDuckAITabForUrl: url, entrySource: entrySource)
     }
 
@@ -151,11 +147,19 @@ extension TabViewController: AIChatContextualSheetCoordinatorDelegate {
     }
 
     func aiChatContextualSheetCoordinatorDidRequestNewVoiceChat(_ coordinator: AIChatContextualSheetCoordinator) {
-        delegate?.tabDidRequestNewVoiceChat(self)
+        delegate?.tabDidRequestNewVoiceChat(self, source: .contextualChat)
     }
 
     func aiChatContextualSheetCoordinator(_ coordinator: AIChatContextualSheetCoordinator,
                                           didSubmitDuckAIPromptWithOrigin origin: AIChatEntryPointSource?) {
         delegate?.tab(self, didSubmitDuckAIPromptWithOrigin: origin)
+    }
+
+    func aiChatContextualSheetCoordinatorDidCloseSurface(_ coordinator: AIChatContextualSheetCoordinator, chatDeleted: Bool) {
+        delegate?.tabDidCloseContextualDuckAI(self, chatDeleted: chatDeleted)
+    }
+
+    func aiChatContextualSheetCoordinatorDidStartNewChat(_ coordinator: AIChatContextualSheetCoordinator) {
+        delegate?.tab(self, didReportDuckAIEntry: .contextualChat, opensNewTab: false, hasPrompt: false)
     }
 }

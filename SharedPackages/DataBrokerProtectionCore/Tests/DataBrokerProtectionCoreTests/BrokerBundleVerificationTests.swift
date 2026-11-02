@@ -435,6 +435,62 @@ final class BrokerBundleVerificationTests: XCTestCase {
         XCTAssertEqual(settings.bundleSigningKeyFingerprint, Self.testStagingKeyID)
     }
 
+    func testVerificationErrorsPreserveStableNSErrorAndPixelMetadata() throws {
+        let expectedErrors: [(error: BrokerBundleVerificationError, code: Int, reason: String)] = [
+            (.signatureMissing, 1, "signature_missing"),
+            (.signatureInvalid, 2, "signature_invalid"),
+            (.rollback, 3, "rollback"),
+            (.digestMismatch, 4, "digest_mismatch"),
+            (.other, 5, "other")
+        ]
+        let expectedDomain = "com.duckduckgo.databrokerprotection.BrokerBundleVerificationError"
+
+        for expected in expectedErrors {
+            let nsError = expected.error as NSError
+            XCTAssertEqual(nsError.domain, expectedDomain)
+            XCTAssertEqual(nsError.code, expected.code)
+            XCTAssertEqual(expected.error.rawValue, expected.reason)
+            XCTAssertNil(nsError.userInfo[NSUnderlyingErrorKey])
+
+            let event = DataBrokerProtectionSharedPixels.bundleVerificationFailure(reason: expected.error)
+            let reflectedError = try XCTUnwrap(event.error)
+            XCTAssertEqual(reflectedError.domain, expectedDomain)
+            XCTAssertEqual(reflectedError.code, expected.code)
+
+            for (platform, source, prefix) in [(DataBrokerProtectionSharedPixelsHandler.Platform.macOS, PixelKit.Source.macDMG, "m_mac_"),
+                                               (.iOS, .iOS, "m_ios_")] {
+                let prefixedError = try XCTUnwrap(event.prefixed(prefix).error)
+                XCTAssertEqual(prefixedError.domain, expectedDomain)
+                XCTAssertEqual(prefixedError.code, expected.code)
+
+                var firedPixels: [(name: String, parameters: [String: String])] = []
+                let suiteName = "\(#function)-\(UUID().uuidString)"
+                let defaults = try XCTUnwrap(UserDefaults(suiteName: suiteName))
+                defer { defaults.removePersistentDomain(forName: suiteName) }
+                let pixelKit = PixelKit(dryRun: false,
+                                        appVersion: "1.0.0",
+                                        source: source.rawValue,
+                                        defaultHeaders: [:],
+                                        defaults: defaults) { name, _, parameters, _, _, _ in
+                    firedPixels.append((name, parameters))
+                }
+                let handler = DataBrokerProtectionSharedPixelsHandler(pixelKit: pixelKit, platform: platform)
+
+                handler.fire(event)
+
+                XCTAssertEqual(firedPixels.map(\.name), ["\(prefix)dbp_bundle_verification_failure_daily",
+                                                         "\(prefix)dbp_bundle_verification_failure_count"])
+                for pixel in firedPixels {
+                    XCTAssertEqual(pixel.parameters["d"], expectedDomain)
+                    XCTAssertEqual(pixel.parameters["e"], String(expected.code))
+                    XCTAssertEqual(pixel.parameters["reason"], expected.reason)
+                    XCTAssertNil(pixel.parameters["ud"])
+                    XCTAssertNil(pixel.parameters["ue"])
+                }
+            }
+        }
+    }
+
     func testVerificationPixelsFollowThePlatformNaming() throws {
         for (platform, source, prefix) in [(DataBrokerProtectionSharedPixelsHandler.Platform.macOS, PixelKit.Source.macDMG, "m_mac_"),
                                            (.iOS, .iOS, "m_ios_")] {

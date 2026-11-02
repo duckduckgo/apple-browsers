@@ -1731,7 +1731,10 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
 
     private func commitCurrentToggleState() {
         committedInputMode = inputMode
-        stateStore.commitToggleMode(inputMode)
+        // Only the address bar's toggle is the user's choice; a contextual chat has none and is always Duck.ai.
+        if host == .omnibar {
+            stateStore.commitToggleMode(inputMode)
+        }
         delegate?.unifiedToggleInputDidCommitMode(inputMode)
     }
 

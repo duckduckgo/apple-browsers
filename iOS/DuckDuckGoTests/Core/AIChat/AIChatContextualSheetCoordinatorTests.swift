@@ -194,7 +194,7 @@ final class AIChatContextualSheetCoordinatorTests: XCTestCase {
         var sidebarDetachments: [UIViewController] = []
         var modalPresentationCount = 0
 
-        func presentContextualSidebar(_ viewController: UIViewController) {
+        func presentContextualSidebar(_ viewController: UIViewController, coversPage: Bool) {
             sidebarPresentations.append(viewController)
             guard viewController.parent !== self else { return }
             addChild(viewController)

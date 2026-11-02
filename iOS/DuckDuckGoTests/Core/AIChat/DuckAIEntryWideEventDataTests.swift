@@ -155,7 +155,7 @@ struct DuckAIEntryWideEventDataTests {
     func enumRawValuesMatchDefinition() {
         #expect(Set(DuckAIEntryWideEventData.StatusReason.allCases.map(\.rawValue)) == ["left_duckai", "new_entry", "app_backgrounded"])
         #expect(Set(DuckAIEntryWideEventData.ChatState.allCases.map(\.rawValue)) == ["new", "existing"])
-        #expect(Set(DuckAIEntryWideEventData.Surface.allCases.map(\.rawValue)) == ["duck_ai_tab", "contextual_sheet"])
+        #expect(Set(DuckAIEntryWideEventData.Surface.allCases.map(\.rawValue)) == ["duck_ai_tab", "contextual_sheet", "contextual_sidebar"])
     }
 
     @available(iOS 16, *)

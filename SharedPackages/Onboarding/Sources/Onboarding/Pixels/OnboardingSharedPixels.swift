@@ -25,7 +25,7 @@ public protocol OnboardingSharedPixelHandling {
     func fire(_ event: OnboardingSharedPixelEvent,
               source: OnboardingPixelParameter.Source?,
               flow: OnboardingPixelParameter.Flow?,
-              variant: OnboardingPixelParameter.Variant?)
+              variants: OnboardingPixelParameter.Variants)
 }
 
 public extension OnboardingSharedPixelHandling {
@@ -33,7 +33,7 @@ public extension OnboardingSharedPixelHandling {
     /// Fires the provided shared onboarding pixel event with nil source and flow parameters.
     /// For use on macOS only, which has no non-default onboarding sources, flows, or variants.
     func fire(_ event: OnboardingSharedPixelEvent) {
-        fire(event, source: nil, flow: nil, variant: nil)
+        fire(event, source: nil, flow: nil, variants: .init())
     }
     #endif
 }
@@ -53,19 +53,34 @@ public enum OnboardingPixelParameter {
         case tailoredByDownloadReasonVPN = "tailored_by_download_reason_vpn"
     }
 
-    /// Pixel parameter for the variant of the onboarding flow the user enters after a branching step during onboarding.
-    public enum Variant: String {
+    /// The user's choice at the search experience fork: searching or chatting with Duck.ai.
+    public enum SearchExperienceVariant: String {
         case duckAISearch = "search_plus_duckai-search"
         case duckAIChat = "search_plus_duckai-chat"
-        // Records the download reason the user selected, passed to every pixel after the choice for internal cohort segmentation.
+    }
+
+    /// The download reason the user selected, passed to every pixel after the choice for internal cohort segmentation.
+    public enum DownloadReasonVariant: String {
         case downloadReasonSearch = "download_reason_search"
         case downloadReasonAIChat = "download_reason_ai-chat"
         case downloadReasonNoAI = "download_reason_no-ai"
         case downloadReasonAdBlocking = "download_reason_ad-blocking"
     }
+
+    /// The variants of the onboarding flow the user entered at each branching step (fork).
+    /// Each fork is reported under its own `variant_<fork>` key, so a later fork never overwrites an earlier one.
+    public struct Variants: Equatable {
+        public var searchExperience: SearchExperienceVariant?
+        public var downloadReason: DownloadReasonVariant?
+
+        public init(searchExperience: SearchExperienceVariant? = nil, downloadReason: DownloadReasonVariant? = nil) {
+            self.searchExperience = searchExperience
+            self.downloadReason = downloadReason
+        }
+    }
 }
 
-public extension OnboardingPixelParameter.Variant {
+public extension OnboardingPixelParameter.DownloadReasonVariant {
     /// Maps the domain download reason to its pixel variant, so the selected reason can be
     /// recorded on the segmented-onboarding pixels for cohort segmentation.
     init(_ reason: OnboardingDownloadReason) {
@@ -84,7 +99,8 @@ final public class OnboardingSharedPixelHandler: OnboardingSharedPixelHandling {
         static let daysSinceInstall = "daysSinceInstall"
         static let source = "source"
         static let flow = "flow"
-        static let variant = "variant"
+        static let variantSearchExperience = "variant_search_experience"
+        static let variantDownloadReason = "variant_download_reason"
     }
 
     public enum InstallType: String {
@@ -164,7 +180,7 @@ final public class OnboardingSharedPixelHandler: OnboardingSharedPixelHandling {
     public func fire(_ event: OnboardingSharedPixelEvent,
                      source: OnboardingPixelParameter.Source?,
                      flow: OnboardingPixelParameter.Flow?,
-                     variant: OnboardingPixelParameter.Variant?) {
+                     variants: OnboardingPixelParameter.Variants) {
         var additionalParameters = installParameters
         if let source {
             additionalParameters[ParameterKeys.source] = source.rawValue
@@ -172,8 +188,11 @@ final public class OnboardingSharedPixelHandler: OnboardingSharedPixelHandling {
         if let flow {
             additionalParameters[ParameterKeys.flow] = flow.rawValue
         }
-        if let variant {
-            additionalParameters[ParameterKeys.variant] = variant.rawValue
+        if let searchExperience = variants.searchExperience {
+            additionalParameters[ParameterKeys.variantSearchExperience] = searchExperience.rawValue
+        }
+        if let downloadReason = variants.downloadReason {
+            additionalParameters[ParameterKeys.variantDownloadReason] = downloadReason.rawValue
         }
 
         pixelFiring?.fire(event.prefixed(platform.pixelPrefix),

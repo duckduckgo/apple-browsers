@@ -2462,6 +2462,12 @@ public final class MockFileManager: FileManager, @unchecked Sendable {
         hasUnzippedContent = false
     }
 
+    public override func createDirectory(at url: URL, withIntermediateDirectories createIntermediates: Bool, attributes: [FileAttributeKey: Any]? = nil) throws {
+    }
+
+    public override func moveItem(at srcURL: URL, to dstURL: URL) throws {
+    }
+
     public override func unzipArchive(at sourceURL: URL, to destinationURL: URL) throws {
         hasUnzippedContent = true
     }

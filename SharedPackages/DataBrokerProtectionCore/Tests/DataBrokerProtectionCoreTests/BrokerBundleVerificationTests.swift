@@ -21,6 +21,7 @@ import CryptoKit
 import Foundation
 import SecureStorage
 import PixelKit
+import ZIPFoundation
 @testable import DataBrokerProtectionCore
 import DataBrokerProtectionCoreTestsUtils
 
@@ -46,6 +47,8 @@ final class BrokerBundleVerificationTests: XCTestCase {
     var eTag: String!
     var mainConfigRequests = [URLRequest]()
     var signatureRequests = [URLRequest]()
+    private let temporaryRootURL = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString, isDirectory: true)
+    private var fileManager: BrokerBundleTemporaryFileManager!
 
     var urlSession: URLSession {
         let config = URLSessionConfiguration.default
@@ -53,10 +56,12 @@ final class BrokerBundleVerificationTests: XCTestCase {
         return URLSession(configuration: config)
     }
 
-    override func setUp() {
+    override func setUpWithError() throws {
         settings = DataBrokerProtectionSettings(defaults: UserDefaults(suiteName: "com.dbp.tests.\(UUID().uuidString)")!)
         settings.selectedEnvironment = .staging
         eTag = UUID().uuidString
+        fileManager = BrokerBundleTemporaryFileManager(directoryURL: temporaryRootURL.appendingPathComponent("downloads", isDirectory: true))
+        try FileManager.default.createDirectory(at: fileManager.temporaryDirectory, withIntermediateDirectories: true)
     }
 
     override func tearDown() {
@@ -64,8 +69,7 @@ final class BrokerBundleVerificationTests: XCTestCase {
         resources.reset()
         vault.reset()
         pixelHandler.clear()
-        try? FileManager.default.removeItem(at: extractedDirectoryURL)
-        try? FileManager.default.removeItem(at: archiveURL)
+        try? FileManager.default.removeItem(at: temporaryRootURL)
     }
 
     // MARK: - Keys
@@ -169,23 +173,31 @@ final class BrokerBundleVerificationTests: XCTestCase {
     // MARK: - Update flow
 
     func testWhenRefreshFailsThenAnotherRefreshFilesArePreserved() async throws {
-        try stageExtractedBrokers(tampering: "anywho.com.json")
+        let eTag = try XCTUnwrap(eTag)
+        let otherArchiveURL = fileManager.temporaryDirectory.appendingPathComponent(eTag).appendingPathExtension("zip")
+        let otherDirectoryURL = fileManager.temporaryDirectory.appendingPathComponent(eTag, isDirectory: true)
+        let otherJSONDirectoryURL = otherDirectoryURL.appendingPathComponent("json", isDirectory: true)
+        try FileManager.default.createDirectory(at: otherJSONDirectoryURL, withIntermediateDirectories: true)
         let otherArchive = Data("another refresh's archive".utf8)
-        try otherArchive.write(to: archiveURL)
-        let otherBrokerURL = extractedDirectoryURL.appendingPathComponent("json/anywho.com.json")
-        let otherBroker = try Data(contentsOf: otherBrokerURL)
+        try otherArchive.write(to: otherArchiveURL)
+        let otherBrokerURL = otherJSONDirectoryURL.appendingPathComponent("anywho.com.json")
+        let otherBroker = Data("another refresh's extracted broker".utf8)
+        try otherBroker.write(to: otherBrokerURL)
         appendFixtureResponses()
         MockURLProtocol.requestHandlerQueue.append { _ in (HTTPURLResponse.internalServerError, nil) }
 
         do {
             try await makeService().checkForUpdates()
             XCTFail("Expected the refresh to fail")
+        } catch RemoteBrokerJSONService.Error.serverError(let code) {
+            XCTAssertEqual(code, 500)
         } catch {
-            // A failed refresh must only clean up files it owns.
+            XCTFail("Unexpected error \(error)")
         }
 
-        XCTAssertEqual(try? Data(contentsOf: archiveURL), otherArchive, "Another refresh's archive must survive cleanup")
+        XCTAssertEqual(try? Data(contentsOf: otherArchiveURL), otherArchive, "Another refresh's archive must survive cleanup")
         XCTAssertEqual(try? Data(contentsOf: otherBrokerURL), otherBroker, "Another refresh's extracted broker must survive cleanup")
+        XCTAssertEqual(try FileManager.default.contentsOfDirectory(atPath: fileManager.temporaryDirectory.path).sorted(), [eTag, "\(eTag).zip"].sorted())
     }
 
     func testWhenBundleIsValidThenBrokersAreStoredAndManifestVersionIsSaved() async throws {
@@ -199,7 +211,8 @@ final class BrokerBundleVerificationTests: XCTestCase {
         XCTAssertEqual(settings.mainConfigETag, eTag)
         XCTAssertTrue(firedVerificationFailures.isEmpty)
         XCTAssertEqual(firedVerificationSuccessCount, 1)
-        XCTAssertEqual(MockURLProtocol.lastRequest?.url?.path, "/dbp/remote/v0/main_config.json.sig")
+        XCTAssertEqual(MockURLProtocol.lastRequest?.url?.query, "name=all.zip&type=spec")
+        XCTAssertEqual(try FileManager.default.contentsOfDirectory(atPath: fileManager.temporaryDirectory.path), [])
     }
 
     func testWhenMainConfigIsUnchangedThenVerificationSuccessIsReported() async throws {
@@ -361,7 +374,7 @@ final class BrokerBundleVerificationTests: XCTestCase {
         XCTAssertEqual(vault.lastSavedBrokerResource?.broker.url, "verecor.com")
         XCTAssertNil(settings.mainConfigETag)
         XCTAssertTrue(settings.lastManifestVersions.isEmpty)
-        XCTAssertFalse(FileManager.default.fileExists(atPath: extractedDirectoryURL.path), "Download should be discarded so it's fetched again")
+        XCTAssertEqual(try FileManager.default.contentsOfDirectory(atPath: fileManager.temporaryDirectory.path), [], "Download should be discarded so it's fetched again")
     }
 
     func testWhenInactiveBrokerDoesNotMatchDigestThenUpdateSucceeds() async throws {
@@ -455,11 +468,11 @@ final class BrokerBundleVerificationTests: XCTestCase {
     }
 
     private var extractedDirectoryURL: URL {
-        FileManager.default.temporaryDirectory.appendingPathComponent(eTag)
+        temporaryRootURL.appendingPathComponent(eTag, isDirectory: true)
     }
 
     private var archiveURL: URL {
-        FileManager.default.temporaryDirectory.appendingPathComponent(eTag).appendingPathExtension("zip")
+        temporaryRootURL.appendingPathComponent(eTag).appendingPathExtension("zip")
     }
 
     private var firedVerificationFailures: [BrokerBundleVerificationError] {
@@ -494,6 +507,7 @@ final class BrokerBundleVerificationTests: XCTestCase {
         return RemoteBrokerJSONService(featureFlagger: DisabledOptOutRetryErrorFeatureFlagger(),
                                        settings: settings,
                                        vault: vault,
+                                       fileManager: fileManager,
                                        urlSession: urlSession,
                                        authenticationManager: authenticationManager,
                                        pixelHandler: pixelHandler,
@@ -523,11 +537,9 @@ final class BrokerBundleVerificationTests: XCTestCase {
         }
     }
 
-    /// Stands in for a downloaded and extracted all.zip, so no archive request is made.
     private func stageExtractedBrokers(tampering tamperedFileName: String? = nil) throws {
         let jsonDirectoryURL = extractedDirectoryURL.appendingPathComponent("json", isDirectory: true)
         try FileManager.default.createDirectory(at: jsonDirectoryURL, withIntermediateDirectories: true)
-        try Data().write(to: archiveURL)
 
         for fileName in Self.fixtureBrokerFileNames {
             var data = try fixture(fileName)
@@ -557,6 +569,14 @@ final class BrokerBundleVerificationTests: XCTestCase {
             self?.signatureRequests.append(request)
             return signatureResponse
         }
+        if FileManager.default.fileExists(atPath: extractedDirectoryURL.path) {
+            let extractedDirectoryURL = extractedDirectoryURL
+            let archiveURL = archiveURL
+            MockURLProtocol.requestHandlerQueue.append { _ in
+                try FileManager.default.zipItem(at: extractedDirectoryURL, to: archiveURL, shouldKeepParent: false)
+                return (HTTPURLResponse.ok, try Data(contentsOf: archiveURL))
+            }
+        }
     }
 
     private func assertCheckForUpdatesFails(with expectedError: BrokerBundleVerificationError,
@@ -579,6 +599,17 @@ final class BrokerBundleVerificationTests: XCTestCase {
         XCTAssertNil(settings.mainConfigETag, file: file, line: line)
         XCTAssertTrue(settings.lastManifestVersions.isEmpty, file: file, line: line)
     }
+}
+
+private final class BrokerBundleTemporaryFileManager: FileManager, @unchecked Sendable {
+    private let directoryURL: URL
+
+    init(directoryURL: URL) {
+        self.directoryURL = directoryURL
+        super.init()
+    }
+
+    override var temporaryDirectory: URL { directoryURL }
 }
 
 private extension HTTPURLResponse {

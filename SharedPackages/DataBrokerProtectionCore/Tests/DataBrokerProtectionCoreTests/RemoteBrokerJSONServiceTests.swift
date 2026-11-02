@@ -245,7 +245,7 @@ final class RemoteBrokerJSONServiceTests: XCTestCase {
         )
 
         try testRemoteService.processBrokerJSONs(
-            eTag: "test-etag",
+            directoryURL: mockFileManager.temporaryDirectory.appendingPathComponent("test-etag/json"),
             fileNames: ["\(fixtureFileName).json"],
             eTagMapping: ["\(fixtureFileName).json": "etag123"],
             sha256Mapping: try fixtureSHA256Mapping(for: fixtureFileName),
@@ -289,7 +289,7 @@ final class RemoteBrokerJSONServiceTests: XCTestCase {
         )
 
         try testRemoteService.processBrokerJSONs(
-            eTag: "test-etag-removed",
+            directoryURL: mockFileManager.temporaryDirectory.appendingPathComponent("test-etag-removed/json"),
             fileNames: ["\(fixtureFileName).json"],
             eTagMapping: ["\(fixtureFileName).json": "etag456"],
             sha256Mapping: try fixtureSHA256Mapping(for: fixtureFileName),
@@ -342,7 +342,7 @@ final class RemoteBrokerJSONServiceTests: XCTestCase {
 
         // When: processing JSONs for an existing broker (update path, not insert path).
         try testRemoteService.processBrokerJSONs(
-            eTag: "test-etag-raw-payload",
+            directoryURL: mockFileManager.temporaryDirectory.appendingPathComponent("test-etag-raw-payload/json"),
             fileNames: ["\(fixtureFileName).json"],
             eTagMapping: ["\(fixtureFileName).json": "etag-raw"],
             sha256Mapping: try fixtureSHA256Mapping(for: fixtureFileName),
@@ -401,7 +401,7 @@ final class RemoteBrokerJSONServiceTests: XCTestCase {
         )
 
         try testRemoteService.processBrokerJSONs(
-            eTag: "test-etag-invalid",
+            directoryURL: mockFileManager.temporaryDirectory.appendingPathComponent("test-etag-invalid/json"),
             fileNames: ["\(fixtureFileName).json"],
             eTagMapping: ["\(fixtureFileName).json": "etag789"],
             sha256Mapping: try fixtureSHA256Mapping(for: fixtureFileName),
@@ -449,7 +449,7 @@ final class RemoteBrokerJSONServiceTests: XCTestCase {
 
         // This should throw due to upsert failure, but should fire a failure pixel
         XCTAssertThrowsError(try testRemoteService.processBrokerJSONs(
-            eTag: "test-etag-upsert-fail",
+            directoryURL: mockFileManager.temporaryDirectory.appendingPathComponent("test-etag-upsert-fail/json"),
             fileNames: ["\(fixtureFileName).json"],
             eTagMapping: ["\(fixtureFileName).json": "etag999"],
             sha256Mapping: try fixtureSHA256Mapping(for: fixtureFileName),
@@ -514,7 +514,7 @@ final class RemoteBrokerJSONServiceTests: XCTestCase {
 
         // isFreeScan = true (unauthenticated)
         try testRemoteService.processBrokerJSONs(
-            eTag: "test-etag-freescan",
+            directoryURL: jsonDir,
             fileNames: ["broker.com.json"],
             eTagMapping: ["broker.com.json": "etag-fs"],
             sha256Mapping: ["broker.com.json": Data(testBrokerContent.utf8).sha256HexString],
@@ -531,7 +531,7 @@ final class RemoteBrokerJSONServiceTests: XCTestCase {
 
         // isFreeScan = false (authenticated)
         try testRemoteService.processBrokerJSONs(
-            eTag: "test-etag-freescan",
+            directoryURL: jsonDir,
             fileNames: ["broker.com.json"],
             eTagMapping: ["broker.com.json": "etag-fs2"],
             sha256Mapping: ["broker.com.json": Data(testBrokerContent.utf8).sha256HexString],

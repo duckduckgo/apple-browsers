@@ -211,7 +211,7 @@ public final class RemoteBrokerJSONService: BrokerJSONServiceProvider {
             let (mainConfig, signingKey) = try await verifiedMainConfig(from: data)
 
             /// 6. Download, extract, and process changed broker JSONs
-            try await checkForBrokerJSONUpdatesFromMainConfig(mainConfig, eTag: newETag)
+            try await checkForBrokerJSONUpdatesFromMainConfig(mainConfig)
 
             /// 7. Update last successful update timestamp
             settings.lastManifestVersions[signingKey.id] = mainConfig.manifestVersion
@@ -287,7 +287,7 @@ public final class RemoteBrokerJSONService: BrokerJSONServiceProvider {
         }
     }
 
-    func checkForBrokerJSONUpdatesFromMainConfig(_ mainConfig: MainConfig, eTag: String) async throws {
+    func checkForBrokerJSONUpdatesFromMainConfig(_ mainConfig: MainConfig) async throws {
         let eTagMapping = mainConfig.jsonETags.current
         let incomingBrokerJSONs = BrokerJSON.from(payload: eTagMapping)
         let savedBrokerJSONs = try vault.fetchAllBrokers().map { BrokerJSON(fileName: $0.url.appendingPathExtension("json"), eTag: $0.eTag) }
@@ -302,9 +302,14 @@ public final class RemoteBrokerJSONService: BrokerJSONServiceProvider {
 
         let isFreeScan = !(await authenticationManager.isUserAuthenticated)
 
-        defer { try? cleanUp(eTag: eTag) }
-        try await downloadAndExtractBrokerJSONsIfNeeded(eTag: eTag)
-        try processBrokerJSONs(eTag: eTag,
+        let workspaceURL = fileManager.temporaryDirectory.appendingPathComponent(UUID().uuidString, isDirectory: true)
+        try fileManager.createDirectory(at: workspaceURL, withIntermediateDirectories: true)
+        defer { try? fileManager.removeItem(at: workspaceURL) }
+
+        let brokerArchiveURL = workspaceURL.appendingPathComponent("all.zip")
+        let extractedDirectoryURL = workspaceURL.appendingPathComponent("extracted", isDirectory: true)
+        try await downloadAndExtractBrokerJSONsIfNeeded(archiveURL: brokerArchiveURL, directoryURL: extractedDirectoryURL)
+        try processBrokerJSONs(directoryURL: extractedDirectoryURL.appendingPathComponent("json", isDirectory: true),
                                fileNames: diff.map(\.fileName),
                                eTagMapping: eTagMapping,
                                sha256Mapping: mainConfig.jsonSHA256,
@@ -315,10 +320,7 @@ public final class RemoteBrokerJSONService: BrokerJSONServiceProvider {
 
     // MARK: - File handling
 
-    func downloadAndExtractBrokerJSONsIfNeeded(eTag: String) async throws {
-        let brokerArchiveURL = fileManager.temporaryDirectory.appendingPathComponent(eTag).appendingPathExtension("zip")
-        let directoryURL = fileManager.temporaryDirectory.appendingPathComponent(eTag)
-
+    func downloadAndExtractBrokerJSONsIfNeeded(archiveURL brokerArchiveURL: URL, directoryURL: URL) async throws {
         /// 1. Return early if all.zip is already extracted
         var isDirectory: ObjCBool = false
         guard !fileManager.fileExists(atPath: directoryURL.path, isDirectory: &isDirectory) else {
@@ -378,14 +380,13 @@ public final class RemoteBrokerJSONService: BrokerJSONServiceProvider {
     }
 
     /// brokerFileNames might contain both active and test brokers
-    func processBrokerJSONs(eTag: String,
+    func processBrokerJSONs(directoryURL: URL,
                             fileNames changedBrokerFileNames: [String],
                             eTagMapping: [String: String],
                             sha256Mapping: [String: String],
                             activeBrokers: [String],
                             testBrokers: [String],
                             isFreeScan: Bool) throws {
-        let directoryURL = fileManager.temporaryDirectory.appendingPathComponent(eTag).appendingPathComponent("json", isDirectory: true)
         let fileURLs = try fileManager.contentsOfDirectory(at: directoryURL,
                                                            includingPropertiesForKeys: nil,
                                                            options: [.skipsHiddenFiles])
@@ -421,15 +422,6 @@ public final class RemoteBrokerJSONService: BrokerJSONServiceProvider {
         if hasDigestMismatch {
             throw BrokerBundleVerificationError.digestMismatch
         }
-    }
-
-    private func cleanUp(eTag: String) throws {
-        let brokerArchiveURL = fileManager.temporaryDirectory.appendingPathComponent(eTag).appendingPathExtension("zip")
-        let directoryURL = fileManager.temporaryDirectory.appendingPathComponent(eTag)
-
-        try fileManager.removeItem(at: brokerArchiveURL)
-        try fileManager.removeItem(at: directoryURL)
-        Logger.dataBrokerProtection.log("🧩 Temporary files removed")
     }
 }
 

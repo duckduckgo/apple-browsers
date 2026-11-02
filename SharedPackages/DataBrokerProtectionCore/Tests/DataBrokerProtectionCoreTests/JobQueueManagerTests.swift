@@ -1139,8 +1139,7 @@ final class JobQueueManagerTests: XCTestCase {
                                      dataBrokerProtectionSettings: DataBrokerProtectionSettings(defaults: UserDefaults(suiteName: "JobQueueManagerTests.\(UUID().uuidString)")!),
                                      emailConfirmationDataService: MockEmailConfirmationDataServiceProvider(),
                                      captchaService: CaptchaServiceMock(),
-                                     featureFlagger: MockDBPFeatureFlagger(),
-                                     applicationNameForUserAgentProvider: { nil })
+                                     featureFlagger: MockDBPFeatureFlagger())
     }
 }
 

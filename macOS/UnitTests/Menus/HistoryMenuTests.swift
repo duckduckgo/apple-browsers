@@ -25,15 +25,59 @@ import XCTest
 final class HistoryMenuTests: XCTestCase {
 
     @MainActor
-    func testWhenDataImportHistoryIsOn_ThenImportHistoryMenuItemIsVisible() {
-        let sut = HistoryMenu(
-            historyGroupingDataSource: HistoryCoordinatingMock(),
-            recentlyClosedCoordinator: RecentlyClosedCoordinatorMock(),
-            featureFlagger: MockFeatureFlagger(featuresStub: [FeatureFlag.dataImportHistory.rawValue: true])
-        )
+    func testWhenDataImportHistoryIsOff_ThenImportHistoryMenuItemIsHidden() throws {
+        let sut = makeHistoryMenu(featureFlagger: MockFeatureFlagger())
 
         sut.update()
 
-        XCTAssertEqual(sut.items.first { $0.title == UserText.mainMenuHistoryImportHistory }?.isHidden, false)
+        XCTAssertTrue(try importHistoryMenuItem(in: sut).isHidden)
+    }
+
+    @MainActor
+    func testWhenDataImportHistoryIsOn_ThenImportHistoryMenuItemOpensDataImport() throws {
+        let sut = makeHistoryMenu(featureFlagger: MockFeatureFlagger(featuresStub: [FeatureFlag.dataImportHistory.rawValue: true]))
+
+        sut.update()
+
+        let item = try importHistoryMenuItem(in: sut)
+        XCTAssertFalse(item.isHidden)
+        XCTAssertEqual(item.title, UserText.mainMenuHistoryImportHistory)
+        XCTAssertEqual(item.action, #selector(AppDelegate.openImportBrowserDataWindow))
+    }
+
+    @MainActor
+    func testWhenDataImportHistoryChangesWhileRunning_ThenImportHistoryMenuItemFollowsOnNextUpdate() throws {
+        let featureFlagger = MockFeatureFlagger()
+        let sut = makeHistoryMenu(featureFlagger: featureFlagger)
+        sut.update()
+        featureFlagger.featuresStub = [FeatureFlag.dataImportHistory.rawValue: true]
+
+        sut.update()
+
+        XCTAssertFalse(try importHistoryMenuItem(in: sut).isHidden)
+    }
+
+    @MainActor
+    func testMoreOptionsHistoryMenuHasNoImportHistoryMenuItem() {
+        let featureFlagger = MockFeatureFlagger(featuresStub: [FeatureFlag.dataImportHistory.rawValue: true])
+        let sut = makeHistoryMenu(location: .moreOptionsMenu, featureFlagger: featureFlagger)
+
+        sut.update()
+
+        XCTAssertNil(sut.items.first { $0.accessibilityIdentifier() == "HistoryMenu.importHistory" })
+    }
+
+    @MainActor
+    private func makeHistoryMenu(location: HistoryMenu.Location = .mainMenu, featureFlagger: FeatureFlagger) -> HistoryMenu {
+        HistoryMenu(
+            location: location,
+            historyGroupingDataSource: HistoryCoordinatingMock(),
+            recentlyClosedCoordinator: RecentlyClosedCoordinatorMock(),
+            featureFlagger: featureFlagger
+        )
+    }
+
+    private func importHistoryMenuItem(in menu: NSMenu) throws -> NSMenuItem {
+        try XCTUnwrap(menu.items.first { $0.accessibilityIdentifier() == "HistoryMenu.importHistory" })
     }
 }

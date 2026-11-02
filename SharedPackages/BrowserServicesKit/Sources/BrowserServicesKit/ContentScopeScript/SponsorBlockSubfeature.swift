@@ -94,12 +94,14 @@ public final class SponsorBlockSubfeature: NSObject, Subfeature {
     }
 
     public func handler(forMethodNamed methodName: String) -> Subfeature.Handler? {
+        Logger.sponsorBlock.debug("message received: \(methodName, privacy: .public)")
         switch MessageNames(rawValue: methodName) {
         case .getSegments:
             return { [weak self] in try await self?.handleGetSegments(params: $0, original: $1) }
         case .getConfig:
             return { [weak self] in try await self?.handleGetConfig(params: $0, original: $1) }
         default:
+            Logger.sponsorBlock.debug("unknown method: \(methodName, privacy: .public)")
             return nil
         }
     }
@@ -107,21 +109,33 @@ public final class SponsorBlockSubfeature: NSObject, Subfeature {
     @MainActor
     private func handleGetConfig(params: Any, original: WKScriptMessage) async throws -> Encodable? {
         webView = original.webView
-        return ConfigResponse(enabled: isEnabled, skipMode: preferences.skipMode.rawValue, version: Self.contractVersion)
+        let response = ConfigResponse(enabled: isEnabled, skipMode: preferences.skipMode.rawValue, version: Self.contractVersion)
+        Logger.sponsorBlock.debug("getConfig answered: enabled=\(response.enabled) skipMode=\(response.skipMode, privacy: .public) version=\(response.version)")
+        return response
     }
 
     private func pushConfigChanged() {
-        guard let broker, let webView else { return }
+        guard let broker, let webView else {
+            Logger.sponsorBlock.debug("onConfigChanged dropped: no page has asked for config yet")
+            return
+        }
         let update = ConfigUpdate(enabled: isEnabled, skipMode: preferences.skipMode.rawValue)
+        Logger.sponsorBlock.debug("onConfigChanged pushed: enabled=\(update.enabled) skipMode=\(update.skipMode, privacy: .public)")
         broker.push(method: Self.onConfigChanged, params: update, for: self, into: webView)
     }
 
     /// Rejects malformed params, but every lookup failure resolves to an empty list: the page never retries.
     private func handleGetSegments(params: Any, original: WKScriptMessage) async throws -> Encodable? {
         let query = try SponsorBlockSegmentsProvider.Query(params: params)
-        guard isEnabled else { return GetSegmentsResponse(segments: []) }
+        guard isEnabled else {
+            Logger.sponsorBlock.debug("getSegments skipped: featureFlag=\(self.isFeatureFlagOn()) userSetting=\(self.preferences.isEnabled)")
+            return GetSegmentsResponse(segments: [])
+        }
         do {
-            return GetSegmentsResponse(segments: try await segmentsProvider.segments(for: query))
+            let segments = try await segmentsProvider.segments(for: query)
+            // Count only: segment times would identify the video.
+            Logger.sponsorBlock.debug("getSegments answered with \(segments.count) segments")
+            return GetSegmentsResponse(segments: segments)
         } catch {
             // Domain and code only: a URLError description can carry the request URL, which holds the hash prefix.
             let error = error as NSError

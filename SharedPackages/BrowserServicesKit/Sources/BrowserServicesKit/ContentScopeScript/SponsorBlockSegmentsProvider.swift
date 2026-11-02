@@ -120,11 +120,14 @@ public actor SponsorBlockSegmentsProvider {
 
     public func segments(for query: Query) async throws -> [Segment] {
         if let cached = cachedSegments(for: query) {
+            Logger.sponsorBlock.debug("segments served from cache")
             return cached
         }
         if let task = inFlight[query] {
+            Logger.sponsorBlock.debug("segments joined an in-flight request")
             return try await task.value
         }
+        Logger.sponsorBlock.debug("segments fetched from the API")
 
         let load = self.load
         let task = Task { try await Self.fetchSegments(for: query, load: load) }
@@ -167,6 +170,7 @@ public actor SponsorBlockSegmentsProvider {
         guard let httpResponse = response as? HTTPURLResponse else {
             throw ProviderError.invalidResponse
         }
+        Logger.sponsorBlock.debug("API responded with HTTP \(httpResponse.statusCode)")
         switch httpResponse.statusCode {
         case 200: return try parseSegments(from: data, videoID: query.videoID)
         case 404: return []
@@ -217,6 +221,7 @@ public actor SponsorBlockSegmentsProvider {
             throw ProviderError.invalidResponse
         }
         let rawSegments = entries.first { $0.videoID == videoID }?.segments ?? []
+        Logger.sponsorBlock.debug("API returned \(entries.count) videos for the hash prefix, \(rawSegments.count) raw segments for the requested one")
         return rawSegments.compactMap { raw -> Segment? in
             guard let times = raw.segment, times.count == 2, times[1] >= times[0],
                   let uuid = raw.UUID, let category = raw.category, let actionType = raw.actionType else {

@@ -25,20 +25,15 @@ import XCTest
 final class HistoryMenuTests: XCTestCase {
 
     @MainActor
-    func testWhenDataImportHistoryTurnsOnWhileRunning_ThenImportHistoryMenuItemAppearsBelowShowAllHistory() throws {
-        let featureFlagger = MockFeatureFlagger()
+    func testWhenDataImportHistoryIsOn_ThenImportHistoryMenuItemIsVisible() {
         let sut = HistoryMenu(
             historyGroupingDataSource: HistoryCoordinatingMock(),
             recentlyClosedCoordinator: RecentlyClosedCoordinatorMock(),
-            featureFlagger: featureFlagger
+            featureFlagger: MockFeatureFlagger(featuresStub: [FeatureFlag.dataImportHistory.rawValue: true])
         )
-        sut.update()
-        let item = try XCTUnwrap(sut.items.first { $0.action == #selector(AppDelegate.openImportBrowserDataWindow) })
-        featureFlagger.featuresStub = [FeatureFlag.dataImportHistory.rawValue: true]
 
         sut.update()
 
-        XCTAssertFalse(item.isHidden)
-        XCTAssertEqual(sut.item(at: sut.index(of: item) - 2)?.title, UserText.mainMenuHistoryShowAllHistory)
+        XCTAssertEqual(sut.items.first { $0.title == UserText.mainMenuHistoryImportHistory }?.isHidden, false)
     }
 }

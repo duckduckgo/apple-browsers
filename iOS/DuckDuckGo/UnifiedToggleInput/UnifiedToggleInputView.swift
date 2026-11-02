@@ -1057,21 +1057,30 @@ final class UnifiedToggleInputView: UIView {
         guard let fill = omnibarMaterialEditingFillView else { return }
         fill.layer.removeAllAnimations()
         let glassBackdrop = omnibarMaterialBackdropView as? UIVisualEffectView
-        let animations = {
-            fill.alpha = alpha
-            if #available(iOS 26.0, *) {
-                glassBackdrop?.effect = alpha == 0 ? self.omnibarGlassEffect() : nil
+        // Keep the glass fully present while the fill fades over it. Cross-fading both lets the
+        // screen behind show through mid-fade, a light flash under the dark Fire card.
+        let setGlass = { (isVisible: Bool) in
+            guard #available(iOS 26.0, *) else { return }
+            UIView.performWithoutAnimation {
+                glassBackdrop?.effect = isVisible ? self.omnibarGlassEffect() : nil
             }
         }
+        if alpha == 0 {
+            setGlass(true)
+        }
         if UIAccessibility.isReduceMotionEnabled {
-            UIView.performWithoutAnimation(animations)
+            UIView.performWithoutAnimation { fill.alpha = alpha }
+            if alpha > 0 { setGlass(false) }
             return
         }
         UIView.animate(
             withDuration: max(duration, 0.01),
             delay: max(delay, 0),
             options: [.curveEaseInOut, .beginFromCurrentState, .allowUserInteraction],
-            animations: animations
+            animations: { fill.alpha = alpha },
+            completion: { finished in
+                if finished && alpha > 0 { setGlass(false) }
+            }
         )
     }
 

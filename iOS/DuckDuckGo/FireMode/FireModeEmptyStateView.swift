@@ -79,7 +79,8 @@ struct FireModeEmptyStateView: View {
                 headerSection
                 contentCard
             }
-            .padding(.top, Constants.mainTopPadding + contentTopInset)
+            // Animatable, so the content moves with the focused input instead of jumping inside the scroll view.
+            .modifier(FocusedContentTopInset(topInset: contentTopInset, fixedTopInset: Constants.mainTopPadding))
             .padding(.horizontal, Constants.mainHorizontalPadding)
             .frame(maxWidth: Constants.maxViewWidth)
         }

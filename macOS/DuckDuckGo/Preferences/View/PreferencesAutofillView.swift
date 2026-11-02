@@ -158,10 +158,6 @@ extension Preferences {
                 model.viewDidAppear()
             }
         }
-
-        private var shouldShowImportExportButtons: Bool {
-            return model.passwordManager == .duckduckgo
-        }
     }
 }
 

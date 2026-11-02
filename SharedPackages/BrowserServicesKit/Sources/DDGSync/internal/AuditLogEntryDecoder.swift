@@ -132,6 +132,12 @@ struct AuditLogEntryDecoder {
     private let deviceMapper: any RegisteredDeviceMapping
     private let thirdPartyPasswordRecoveryCache: ThirdPartyPasswordRecoveryCache?
     private let jweCompactCodec: JWECompactCodec
+    private let timestampFormatter = ISO8601DateFormatter()
+    private let fractionalTimestampFormatter: ISO8601DateFormatter = {
+        let formatter = ISO8601DateFormatter()
+        formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+        return formatter
+    }()
 
     init(accountInfoKeys: (any AccountInfoKeyProviding)?,
          deviceMapper: any RegisteredDeviceMapping,
@@ -254,15 +260,13 @@ struct AuditLogEntryDecoder {
             return .unknownType(typeProbe.type)
         }
         guard let payload = try? JSONDecoder.snakeCaseKeys.decode(Payload.self, from: payloadData),
-              let occurredAt = Self.parseTimestamp(payload.occurredAt) else {
+              let occurredAt = parseTimestamp(payload.occurredAt) else {
             return .invalid
         }
         return .known(type, payload, occurredAt)
     }
 
-    private static func parseTimestamp(_ value: String) -> Date? {
-        let fractionalFormatter = ISO8601DateFormatter()
-        fractionalFormatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
-        return fractionalFormatter.date(from: value) ?? ISO8601DateFormatter().date(from: value)
+    private func parseTimestamp(_ value: String) -> Date? {
+        fractionalTimestampFormatter.date(from: value) ?? timestampFormatter.date(from: value)
     }
 }

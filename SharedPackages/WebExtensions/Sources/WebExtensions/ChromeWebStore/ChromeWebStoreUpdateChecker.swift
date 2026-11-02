@@ -49,6 +49,9 @@ public struct ChromeWebStoreUpdateChecker {
     }
 
     static let maximumResponseSize = 1024 * 1024
+    private static let requestTimeout: TimeInterval = 30
+    private static let maximumRetryDelay: TimeInterval = 24 * 60 * 60
+    private static let maximumVersionComponents = 4
     private let configuration: URLSessionConfiguration
 
     public init() {
@@ -62,8 +65,8 @@ public struct ChromeWebStoreUpdateChecker {
         configuration.urlCredentialStorage = nil
         configuration.urlCache = nil
         configuration.requestCachePolicy = .reloadIgnoringLocalCacheData
-        configuration.timeoutIntervalForRequest = 30
-        configuration.timeoutIntervalForResource = 30
+        configuration.timeoutIntervalForRequest = Self.requestTimeout
+        configuration.timeoutIntervalForResource = Self.requestTimeout
         self.configuration = configuration
     }
 
@@ -114,7 +117,7 @@ public struct ChromeWebStoreUpdateChecker {
 
     private static func isValidVersion(_ version: String) -> Bool {
         let parts = version.split(separator: ".", omittingEmptySubsequences: false)
-        return (1...4).contains(parts.count) && parts.allSatisfy { part in
+        return (1...Self.maximumVersionComponents).contains(parts.count) && parts.allSatisfy { part in
             !part.isEmpty && part.utf8.allSatisfy { (48...57).contains($0) }
                 && (part.count == 1 || part.first != "0") && UInt16(part) != nil
         } && parts.contains { $0 != "0" }
@@ -124,7 +127,7 @@ public struct ChromeWebStoreUpdateChecker {
         guard let value = response.value(forHTTPHeaderField: "X-Retry-After")?.trimmingCharacters(in: .whitespaces),
               !value.isEmpty, value.utf8.allSatisfy({ (48...57).contains($0) }) else { return nil }
         // Very large positive integers also mean the capped delay, rather than losing the throttle.
-        let seconds = min(Double(value) ?? .infinity, 24 * 60 * 60)
+        let seconds = min(Double(value) ?? .infinity, Self.maximumRetryDelay)
         guard seconds > 0 else { return nil }
         return Date().addingTimeInterval(seconds)
     }
@@ -139,6 +142,12 @@ public struct ChromeWebStoreUpdateChecker {
 
     private final class ManifestParser: NSObject, XMLParserDelegate {
         private static let namespace = "http://www.google.com/update2/response"
+        private static let protocolVersion = "2.0"
+        private static let successStatus = "ok"
+        private static let noUpdateStatus = "noupdate"
+        private static let maximumDepth = 16
+        private static let maximumElementCount = 256
+        private static let sha256HexLength = 64
         private let extensionID: String
         private var path: [String] = []
         private var elementCount = 0
@@ -179,16 +188,16 @@ public struct ChromeWebStoreUpdateChecker {
                     qualifiedName qName: String?, attributes attributeDict: [String: String]) {
             path.append(elementName)
             elementCount += 1
-            guard path.count <= 16, elementCount <= 256, namespaceURI == Self.namespace else {
+            guard path.count <= Self.maximumDepth, elementCount <= Self.maximumElementCount, namespaceURI == Self.namespace else {
                 reject(parser)
                 return
             }
             switch path {
             case ["gupdate"]:
-                if attributeDict["protocol"] != "2.0" { reject(parser) }
+                if attributeDict["protocol"] != Self.protocolVersion { reject(parser) }
             case ["gupdate", "app"]:
                 appCount += 1
-                if appCount != 1 || attributeDict["appid"] != extensionID || attributeDict["status"] != "ok" { reject(parser) }
+                if appCount != 1 || attributeDict["appid"] != extensionID || attributeDict["status"] != Self.successStatus { reject(parser) }
             case ["gupdate", "app", "updatecheck"]:
                 readUpdate(attributeDict, parser: parser)
             case ["gupdate", "daystart"]:
@@ -205,13 +214,13 @@ public struct ChromeWebStoreUpdateChecker {
         private func readUpdate(_ attributes: [String: String], parser: XMLParser) {
             updateCount += 1
             guard updateCount == 1 else { reject(parser); return }
-            if attributes["status"] == "noupdate" { return }
-            guard attributes["status"] == "ok", let version = attributes["version"], ChromeWebStoreUpdateChecker.isValidVersion(version),
+            if attributes["status"] == Self.noUpdateStatus { return }
+            guard attributes["status"] == Self.successStatus, let version = attributes["version"], ChromeWebStoreUpdateChecker.isValidVersion(version),
                   let codebase = attributes["codebase"], let url = URL(string: codebase),
                   ChromeWebStoreURL.isAllowedDownloadDestination(url), url.fragment == nil,
                   let sizeValue = attributes["size"], !sizeValue.isEmpty, sizeValue.utf8.allSatisfy({ (48...57).contains($0) }),
                   let size = Int(sizeValue), size > 0,
-                  let hash = attributes["hash_sha256"], hash.utf8.count == 64,
+                  let hash = attributes["hash_sha256"], hash.utf8.count == Self.sha256HexLength,
                   hash.utf8.allSatisfy({ (48...57).contains($0) || (65...70).contains($0) || (97...102).contains($0) }) else {
                 reject(parser)
                 return

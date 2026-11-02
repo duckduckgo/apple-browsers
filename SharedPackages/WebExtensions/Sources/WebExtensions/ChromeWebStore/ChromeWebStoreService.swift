@@ -57,6 +57,8 @@ public protocol ChromeWebStorePresenting {
 @available(macOS 15.4, iOS 18.4, *)
 @MainActor
 public final class ChromeWebStoreService: ChromeWebStoreManaging {
+    private nonisolated static let defaultUpdateCheckInterval: TimeInterval = 2 * 60 * 60
+
     private struct UpdateVersionOverride {
         let installationIdentifiers: Set<String>
         let installedVersion: String
@@ -71,7 +73,7 @@ public final class ChromeWebStoreService: ChromeWebStoreManaging {
     private let updateCheck: ((String, String) async -> ChromeWebStoreUpdateChecker.CheckResult)?
     // The service is shared by all tabs. Only one install/removal can own the browser's UI at a time.
     private var isPerformingOperation = false
-    private var updateCheckTask: Task<Void, Never>?
+    private var updateSchedulerTask: Task<Void, Never>?
     private var updateBatchTask: Task<Void, Never>?
     private var retryNotBefore: Date?
     private var lastCheckedIdentifier: String?
@@ -87,7 +89,7 @@ public final class ChromeWebStoreService: ChromeWebStoreManaging {
     init(manager: WebExtensionManager, catalog: ChromeWebStoreCatalogProviding,
          downloader: ChromeWebStoreDownloading, presenter: ChromeWebStorePresenting, verifier: ChromeWebStorePackageVerifier,
          updateCheck: ((String, String) async -> ChromeWebStoreUpdateChecker.CheckResult)? = nil,
-         updateCheckInterval: TimeInterval = 2 * 60 * 60) {
+         updateCheckInterval: TimeInterval = ChromeWebStoreService.defaultUpdateCheckInterval) {
         self.manager = manager
         self.catalog = catalog
         self.downloader = downloader
@@ -100,7 +102,7 @@ public final class ChromeWebStoreService: ChromeWebStoreManaging {
     }
 
     deinit {
-        updateCheckTask?.cancel()
+        updateSchedulerTask?.cancel()
         updateBatchTask?.cancel()
     }
 
@@ -134,7 +136,7 @@ public final class ChromeWebStoreService: ChromeWebStoreManaging {
 
     private func startUpdateChecks(interval: TimeInterval) {
         Logger.webExtensions.info("Extension update discovery: started (interval \(interval, privacy: .public)s)")
-        updateCheckTask = Task { [weak self] in
+        updateSchedulerTask = Task { [weak self] in
             while !Task.isCancelled {
                 guard self?.manager != nil else { return }
                 let batch = self?.startUpdateCheck()
@@ -155,11 +157,11 @@ public final class ChromeWebStoreService: ChromeWebStoreManaging {
             Logger.webExtensions.info("Extension update discovery: deferred until server retry deadline=\(retryNotBefore, privacy: .public)")
             return nil
         }
-        guard let candidates = updateCandidates(after: lastCheckedIdentifier) else { return nil }
+        guard let candidates = updateCandidateIdentifiers(after: lastCheckedIdentifier) else { return nil }
         let batch = Task { [weak self] in
             defer { self?.updateBatchTask = nil }
             Logger.webExtensions.info("Extension update discovery: checking \(candidates.count) installed extensions")
-            for (identifier, _) in candidates {
+            for identifier in candidates {
                 guard !Task.isCancelled, self != nil else { return }
                 // Installs and removals can happen while an earlier request is suspended.
                 guard let version = self?.eligibleInstalledVersions()?[identifier] else { continue }
@@ -178,10 +180,10 @@ public final class ChromeWebStoreService: ChromeWebStoreManaging {
         return batch
     }
 
-    private func updateCandidates(after identifier: String?) -> [(String, String)]? {
+    private func updateCandidateIdentifiers(after identifier: String?) -> [String]? {
         guard let versions = eligibleInstalledVersions() else { return nil }
-        let candidates = versions.sorted { $0.key < $1.key }.map { ($0.key, $0.value) }
-        guard let identifier, let next = candidates.firstIndex(where: { $0.0 > identifier }) else { return candidates }
+        let candidates = versions.keys.sorted()
+        guard let identifier, let next = candidates.firstIndex(where: { $0 > identifier }) else { return candidates }
         return Array(candidates[next...]) + Array(candidates[..<next])
     }
 

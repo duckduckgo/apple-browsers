@@ -157,8 +157,26 @@ public final class AMPCanonicalExtractor: NSObject {
         }
 #endif
 
-        return ampKeywords.contains { keyword in
-            return urlStr.contains(keyword)
+        return Self.urlString(urlStr, containsAnyOf: ampKeywords)
+    }
+
+    /// Searches the URL string's UTF-8 bytes up to the first `#` for any of the keywords.
+    ///
+    /// A fragment is never sent to the server, so it can't make a link an AMP link. `String.contains` takes seconds
+    /// on multi-megabyte URLs because it compares Unicode-aware; `memmem` is a vectorized byte search. The keywords
+    /// are ASCII, so an exact byte match finds the same URLs.
+    static func urlString(_ urlStr: String, containsAnyOf keywords: [String]) -> Bool {
+        var urlStr = urlStr
+        return urlStr.withUTF8 { bytes in
+            guard let haystack = bytes.baseAddress else { return false }
+            let end = bytes.firstIndex(of: UInt8(ascii: "#")) ?? bytes.count
+            return keywords.contains { keyword in
+                var keyword = keyword
+                return keyword.withUTF8 { needle in
+                    guard let needleBase = needle.baseAddress, !needle.isEmpty else { return false }
+                    return memmem(haystack, end, needleBase, needle.count) != nil
+                }
+            }
         }
     }
 

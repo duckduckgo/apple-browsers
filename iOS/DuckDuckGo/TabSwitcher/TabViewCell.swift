@@ -40,9 +40,9 @@ class TabViewCell: UICollectionViewCell {
 
         static let swipeToDeleteAlpha: CGFloat = 0.5
 
-        static var borderRadius: CGFloat { AppRebrand.isAppRebranded() ? 28.0 : 14.0 }
+        static let borderRadius: CGFloat = 28.0
 
-        static var cellCornerRadius: CGFloat { AppRebrand.isAppRebranded() ? 26.0 : 12.0 }
+        static let cellCornerRadius: CGFloat = 26.0
         static let cellHeaderHeight: CGFloat = 36.0 + 4.0 // height + top padding
         static let cellLogoSize: CGFloat = 68.0
 
@@ -247,27 +247,11 @@ class TabViewCell: UICollectionViewCell {
         return asset
     }
 
-    private static let legacyLogoImage: UIImage = {
-        let renderFormat = UIGraphicsImageRendererFormat.default()
-        renderFormat.opaque = false
-        let renderer = UIGraphicsImageRenderer(size: CGSize(width: Constants.cellLogoSize,
-                                                            height: Constants.cellLogoSize),
-                                               format: renderFormat)
-        return renderer.image { _ in
-            UIImage(rebrandable: "duckduckgo-favicon-128x128")?.draw(in: CGRect(x: 0,
-                                                     y: 0,
-                                                     width: Constants.cellLogoSize,
-                                                     height: Constants.cellLogoSize))
-        }
-    }()
-
     static func logoImage(for tab: Tab?) -> UIImage {
         if let tab, tab.fireTab {
             return DesignSystemImages.Color.Size96.fireTab
-        } else if AppRebrand.isAppRebranded() {
-            return DesignSystemImages.Color.Size96.duckDuckGo
         } else {
-            return legacyLogoImage
+            return DesignSystemImages.Color.Size96.duckDuckGo
         }
     }
 
@@ -564,7 +548,7 @@ class TabViewCell: UICollectionViewCell {
             updateEmptyTabLabel(for: tab)
             link?.isHidden = false
             link?.text = UserText.homeTabSearchAndFavorites
-            favicon.image = UIImage(rebrandable: "duckduckgo-favicon-128x128")
+            favicon.image = UIImage(resource: .duckduckgoFavicon128X128)
             unread.isHidden = true
             self.preview?.isHidden = !tab.viewed
             title.isHidden = !tab.viewed

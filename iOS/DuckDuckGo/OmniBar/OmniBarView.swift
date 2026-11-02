@@ -18,10 +18,9 @@
 //
 
 import UIKit
-import DesignResourcesKitIcons
 
 enum OmniBarMetrics {
-    static var cornerRadius: CGFloat { AppRebrand.isAppRebranded() ? 22 : 16 }
+    static let cornerRadius: CGFloat = 22
 
     /// The size of the omnibar's controls and leading icon slot.
     static let itemSize: CGFloat = 44
@@ -130,6 +129,7 @@ protocol OmniBarView: UIView, OmniBarStatusUpdateable {
     func revealButtons()
     func setBookmarksPosition(leading: Bool, hidden: Bool)
     func refreshLongPressMenuAvailability()
+    func performAfterLongPressMenuDismissal(_ action: @escaping () -> Void)
 
     // Fire mode
     func refreshFireMode(fireMode: Bool)
@@ -161,6 +161,10 @@ protocol OmniBarView: UIView, OmniBarStatusUpdateable {
 }
 
 extension OmniBarView {
+    func performAfterLongPressMenuDismissal(_ action: @escaping () -> Void) {
+        action()
+    }
+
     /// Size of the visible search field (the glass). Local bounds stay stable while the bar slides,
     /// unlike the bar's window frame. Falls back to the full bar size before the first layout.
     var restingSearchFieldSize: CGSize {

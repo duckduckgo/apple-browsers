@@ -113,6 +113,12 @@ struct UTIFooterMessage: Equatable {
         let attachmentAccessibilityLabel: String
     }
 
+    /// `.error` sets the title in the subtitle's size and in red, so it reads as the error line above its explanation.
+    enum TitleStyle: Equatable {
+        case standard
+        case error
+    }
+
     struct PrimaryAction: Equatable {
         let title: String
     }
@@ -130,6 +136,7 @@ struct UTIFooterMessage: Equatable {
     let isDismissible: Bool
     let link: Link?
     let titleFormatting: TitleFormatting?
+    let titleStyle: TitleStyle
 
     init(icon: Icon,
          title: String,
@@ -137,7 +144,8 @@ struct UTIFooterMessage: Equatable {
          primaryAction: PrimaryAction?,
          isDismissible: Bool,
          link: Link? = nil,
-         titleFormatting: TitleFormatting? = nil) {
+         titleFormatting: TitleFormatting? = nil,
+         titleStyle: TitleStyle = .standard) {
         self.icon = icon
         self.title = title
         self.subtitle = subtitle
@@ -145,6 +153,7 @@ struct UTIFooterMessage: Equatable {
         self.isDismissible = isDismissible
         self.link = link
         self.titleFormatting = titleFormatting
+        self.titleStyle = titleStyle
     }
 }
 

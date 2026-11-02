@@ -23,6 +23,6 @@ import SwiftUI
 public enum SyncUIImages {
 
     public static var recover: Image {
-        Image(rebrandable: "Sync-Recover-128", bundle: .module)
+        Image("Sync-Recover-128", bundle: .module)
     }
 }

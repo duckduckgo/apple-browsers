@@ -76,7 +76,7 @@ struct ScoringService {
             if url.isRoot { score += 2000 }
         } else if queryCount > 2 && domain.contains(lowerQuery) {
             score += 150
-        } else if queryCount > 2 && lowercasedTitle.contains(" \(lowerQuery)") {
+        } else if queryCount > 2 && lowercasedTitle.containsAtWordStart(lowerQuery) {
             // Exact match from the beginning of the word within string.
             score += 100
         } else if queryTokens.count > 1 {
@@ -84,7 +84,7 @@ struct ScoringService {
             var matchesAllTokens = true
             for token in queryTokens {
                 // Match only from the beginning of the word to avoid unintuitive matches.
-                guard lowercasedTitle.leadingBoundaryStartsWith(token) || lowercasedTitle.contains(" \(token)") || nakedUrl.starts(with: token) else {
+                guard lowercasedTitle.leadingBoundaryStartsWith(token) || lowercasedTitle.containsAtWordStart(token) || nakedUrl.starts(with: token) else {
                     matchesAllTokens = false
                     break
                 }
@@ -155,6 +155,20 @@ extension String {
     /// Splits the search query into tokens (separate words).
     func tokenized() -> [String] {
         components(separatedBy: .whitespacesAndNewlines).filter { !$0.isEmpty }
+    }
+
+    /// Whether `s` occurs at the start of a word, i.e. not directly preceded by a letter or a digit.
+    /// e.g. "Pull Request #7531" matches `7531` and `#7531`, but "x7531" doesn't.
+    func containsAtWordStart(_ s: String) -> Bool {
+        guard !s.isEmpty else { return false }
+        var searchRange = startIndex..<endIndex
+        while let found = range(of: s, range: searchRange) {
+            if found.lowerBound == startIndex { return true }
+            let previous = self[index(before: found.lowerBound)]
+            if !previous.isLetter && !previous.isNumber { return true }
+            searchRange = found.upperBound..<endIndex
+        }
+        return false
     }
 
     /// e.g. "Cats and Dogs" would match `Cats` or `"Cats`

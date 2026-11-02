@@ -55,7 +55,6 @@ struct SyncPromoView: View {
         .background(
             GeometryReader { geometry in
                 Color.clear.onAppear {
-                    PixelKit.fire(SyncPromoPixelKitEvent.syncPromoDisplayed, withAdditionalParameters: ["source": viewModel.touchpointType.rawValue])
                     width = geometry.size.width
                 }
                 .onChange(of: geometry.size.width) { newWidth in

@@ -1369,9 +1369,9 @@ class NavigationRedirectsTests: DistributedNavigationDelegateTestsBase {
 
         withWebView { webView in
             // Validate back/forward history
-            let backURLs = webView.backForwardList.backList.map(\.url)
-            let forwardURLs = webView.backForwardList.forwardList.map(\.url)
-            let currentURL = webView.backForwardList.currentItem?.url
+            let backURLs = webView.backForwardList.backList.compactMap(\.safeURL)
+            let forwardURLs = webView.backForwardList.forwardList.compactMap(\.safeURL)
+            let currentURL = webView.backForwardList.currentItem?.safeURL
 
             // js-redir page (urls.local2) should NOT appear in back history due to interrupted redirect
             XCTAssertEqual(backURLs.map { $0.separatedString }, [urls.local.separatedString])
@@ -1439,9 +1439,9 @@ class NavigationRedirectsTests: DistributedNavigationDelegateTestsBase {
 
         withWebView { webView in
             // Validate back/forward history
-            let backURLs = webView.backForwardList.backList.map(\.url)
-            let forwardURLs = webView.backForwardList.forwardList.map(\.url)
-            let currentURL = webView.backForwardList.currentItem?.url
+            let backURLs = webView.backForwardList.backList.compactMap(\.safeURL)
+            let forwardURLs = webView.backForwardList.forwardList.compactMap(\.safeURL)
+            let currentURL = webView.backForwardList.currentItem?.safeURL
 
             // js-redir page (urls.local2) should NOT appear in back history due to interrupted redirect
             XCTAssertEqual(backURLs.map { $0.separatedString }, [urls.local.separatedString])
@@ -1501,9 +1501,9 @@ class NavigationRedirectsTests: DistributedNavigationDelegateTestsBase {
 
         withWebView { webView in
             // Validate new tab has no back history
-            let backURLs = webView.backForwardList.backList.map(\.url)
-            let forwardURLs = webView.backForwardList.forwardList.map(\.url)
-            let currentURL = webView.backForwardList.currentItem?.url
+            let backURLs = webView.backForwardList.backList.compactMap(\.safeURL)
+            let forwardURLs = webView.backForwardList.forwardList.compactMap(\.safeURL)
+            let currentURL = webView.backForwardList.currentItem?.safeURL
 
             // Should have no back history (empty back list)
             XCTAssertEqual(backURLs, [], "New tab should have no back history")
@@ -1588,9 +1588,9 @@ class NavigationRedirectsTests: DistributedNavigationDelegateTestsBase {
 
         withWebView { webView in
             // Validate back/forward history
-            let backURLs = webView.backForwardList.backList.map(\.url)
-            let forwardURLs = webView.backForwardList.forwardList.map(\.url)
-            let currentURL = webView.backForwardList.currentItem?.url
+            let backURLs = webView.backForwardList.backList.compactMap(\.safeURL)
+            let forwardURLs = webView.backForwardList.forwardList.compactMap(\.safeURL)
+            let currentURL = webView.backForwardList.currentItem?.safeURL
 
             // Both client-redirect pages (urls.local5 and urls.local5) should NOT appear in back history due to interrupted redirects
             XCTAssertEqual(backURLs.map { $0.separatedString }, [urls.local.separatedString], "Back history should only contain initial page")

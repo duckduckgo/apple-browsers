@@ -39,7 +39,7 @@ final class ReportingService {
     private let deviceLaunchPixelReporter: DeviceLaunchPixelReporter
 
     let marketplaceAdPostbackManager = MarketplaceAdPostbackManager()
-    let onboardingPixelReporter = OnboardingPixelReporter()
+    let onboardingPixelReporter: OnboardingPixelReporter
     let subscriptionDataReporter: SubscriptionDataReporting
     let featureFlagging: FeatureFlagger
     let attributedMetricManager: AttributedMetricManager
@@ -66,6 +66,7 @@ final class ReportingService {
         self.featureFlagging = featureFlagging
         self.subscriptionDataReporter = SubscriptionDataReporter(fireproofing: fireproofing)
         self.adAttributionPixelReporter = AdAttributionPixelReporter(privacyConfigurationManager: privacyConfigurationManager)
+        self.onboardingPixelReporter = OnboardingPixelReporter(subscriptionManager: appDependencies.subscriptionManager)
 
         // AttributedMetric initialisation
         let errorHandler = AttributedMetricErrorHandler(pixelKit: pixelKit)

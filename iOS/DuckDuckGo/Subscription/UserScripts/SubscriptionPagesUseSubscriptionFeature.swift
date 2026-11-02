@@ -62,6 +62,9 @@ private struct Handlers {
     static let subscriptionChangeSelected = "subscriptionChangeSelected"
     static let activateSubscription = "activateSubscription"
     static let featureSelected = "featureSelected"
+    // Cancellation flow
+    static let showFeatureInfo = "showFeatureInfo"
+    static let requestCancellation = "requestCancellation"
     // Notification permission & scheduling (expiration reminder experiment)
     static let getUserSettings = "getUserSettings"
     static let requestNotificationsPermission = "requestNotificationsPermission"
@@ -119,6 +122,8 @@ protocol SubscriptionPagesUseSubscriptionFeature: Subfeature, ObservableObject {
     var onFeatureSelected: ((SubscriptionEntitlement) -> Void)? { get set }
     var onActivateSubscription: (() -> Void)? { get set }
     var onPurchaseCompleted: (() -> Void)? { get set }
+    var onShowFeatureInfo: ((SubscriptionEntitlement) -> Void)? { get set }
+    var onRequestCancellation: (() -> Void)? { get set }
 
     func with(broker: UserScriptMessageBroker)
     func handler(forMethodNamed methodName: String) -> Subfeature.Handler?
@@ -134,6 +139,8 @@ protocol SubscriptionPagesUseSubscriptionFeature: Subfeature, ObservableObject {
     func activateSubscription(params: Any, original: WKScriptMessage) async -> Encodable?
     func featureSelected(params: Any, original: WKScriptMessage) async -> Encodable?
     func backToSettings(params: Any, original: WKScriptMessage) async -> Encodable?
+    func showFeatureInfo(params: Any, original: WKScriptMessage) async -> Encodable?
+    func requestCancellation(params: Any, original: WKScriptMessage) async -> Encodable?
     func getAccessToken(params: Any, original: WKScriptMessage) async throws -> Encodable?
 
     func subscriptionsMonthlyPriceClicked(params: Any, original: WKScriptMessage) async -> Encodable?
@@ -154,6 +161,7 @@ protocol SubscriptionPagesUseSubscriptionFeature: Subfeature, ObservableObject {
 final class DefaultSubscriptionPagesUseSubscriptionFeature: SubscriptionPagesUseSubscriptionFeature {
 
     private let subscriptionAttributionOrigin: String?
+    private let wideEventOrigin: String?
     private let subscriptionManager: SubscriptionManager
     private let appStorePurchaseFlow: AppStorePurchaseFlow
     private let appStoreRestoreFlow: AppStoreRestoreFlow
@@ -178,6 +186,7 @@ final class DefaultSubscriptionPagesUseSubscriptionFeature: SubscriptionPagesUse
     init(subscriptionManager: SubscriptionManager,
          subscriptionFeatureAvailability: SubscriptionFeatureAvailability,
          subscriptionAttributionOrigin: String?,
+         planChangeEntry: String? = nil,
          appStorePurchaseFlow: AppStorePurchaseFlow,
          appStoreRestoreFlow: AppStoreRestoreFlow,
          subscriptionDataReporter: SubscriptionDataReporting? = nil,
@@ -201,6 +210,7 @@ final class DefaultSubscriptionPagesUseSubscriptionFeature: SubscriptionPagesUse
         self.appStorePurchaseFlow = appStorePurchaseFlow
         self.appStoreRestoreFlow = appStoreRestoreFlow
         self.subscriptionAttributionOrigin = subscriptionAttributionOrigin
+        self.wideEventOrigin = subscriptionAttributionOrigin ?? planChangeEntry
         self.subscriptionDataReporter = subscriptionAttributionOrigin != nil ? subscriptionDataReporter : nil
         self.internalUserDecider = internalUserDecider
         self.wideEvent = wideEvent
@@ -227,9 +237,15 @@ final class DefaultSubscriptionPagesUseSubscriptionFeature: SubscriptionPagesUse
     var onFeatureSelected: ((SubscriptionEntitlement) -> Void)?
     var onActivateSubscription: (() -> Void)?
     var onPurchaseCompleted: (() -> Void)?
+    var onShowFeatureInfo: ((SubscriptionEntitlement) -> Void)?
+    var onRequestCancellation: (() -> Void)?
 
     struct FeatureSelection: Codable {
         let productFeature: SubscriptionEntitlement
+    }
+
+    struct FeatureInfoRequest: Decodable {
+        let feature: SubscriptionEntitlement
     }
 
     struct SubscriptionSelection: Decodable {
@@ -276,6 +292,8 @@ final class DefaultSubscriptionPagesUseSubscriptionFeature: SubscriptionPagesUse
         case Handlers.activateSubscription: return activateSubscription
         case Handlers.featureSelected: return featureSelected
         case Handlers.backToSettings: return backToSettings
+        case Handlers.showFeatureInfo: return showFeatureInfo
+        case Handlers.requestCancellation: return requestCancellation
         case Handlers.completeStripePayment: return completeStripePayment
             // Pixel related events
         case Handlers.subscriptionsMonthlyPriceClicked: return subscriptionsMonthlyPriceClicked
@@ -483,7 +501,7 @@ final class DefaultSubscriptionPagesUseSubscriptionFeature: SubscriptionPagesUse
             purchasePlatform: .appStore,
             subscriptionIdentifier: subscriptionSelection.id,
             freeTrialEligible: freeTrialEligible,
-            entryPoint: SubscriptionFunnelOrigin.purchaseWideEventEntryPoint(for: subscriptionAttributionOrigin))
+            entryPoint: SubscriptionFunnelOrigin.purchaseWideEventEntryPoint(for: wideEventOrigin))
 
         self.purchaseWideEventData = data
         wideEvent.startFlow(data)
@@ -648,7 +666,7 @@ final class DefaultSubscriptionPagesUseSubscriptionFeature: SubscriptionPagesUse
             await subscriptionFlowsExecuter.performTierChange(
                 to: subscriptionSelection.id,
                 changeType: subscriptionSelection.change,
-                contextName: subscriptionAttributionOrigin,
+                wideEventFunnelName: wideEventOrigin,
                 setTransactionStatus: { self.setTransactionStatus($0) },
                 setTransactionError: { self.setTransactionError($0.map { self.useSubscriptionError(from: $0) }) },
                 pushPurchaseUpdate: { await self.pushPurchaseUpdate(originalMessage: message, purchaseUpdate: $0) }
@@ -665,7 +683,7 @@ final class DefaultSubscriptionPagesUseSubscriptionFeature: SubscriptionPagesUse
                 changeType: changeType,
                 fromPlan: fromPlan,
                 toPlan: subscriptionSelection.id,
-                funnelName: subscriptionAttributionOrigin
+                funnelName: wideEventOrigin
             )
             planChangeWideEventData = wideData
             wideEvent.startFlow(wideData)
@@ -748,6 +766,19 @@ final class DefaultSubscriptionPagesUseSubscriptionFeature: SubscriptionPagesUse
         Logger.subscription.log("Back to settings")
         _ = try? await subscriptionManager.getTokenContainer(policy: .localForceRefresh)
         onBackToSettings?()
+        return nil
+    }
+
+    func showFeatureInfo(params: Any, original: WKScriptMessage) async -> Encodable? {
+        Logger.subscription.log("Show feature info")
+        let request: FeatureInfoRequest? = CodableHelper.decode(from: params)
+        onShowFeatureInfo?(request?.feature ?? .unknown)
+        return nil
+    }
+
+    func requestCancellation(params: Any, original: WKScriptMessage) async -> Encodable? {
+        Logger.subscription.log("Request cancellation")
+        onRequestCancellation?()
         return nil
     }
 
@@ -891,6 +922,8 @@ final class DefaultSubscriptionPagesUseSubscriptionFeature: SubscriptionPagesUse
         onActivateSubscription = nil
         onBackToSettings = nil
         onPurchaseCompleted = nil
+        onShowFeatureInfo = nil
+        onRequestCancellation = nil
     }
 
     private func fireFreemiumUpsellPixel() {

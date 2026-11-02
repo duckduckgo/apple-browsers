@@ -58,6 +58,14 @@ extension WebExtensionManager: WebExtensionLoadingDelegate {
     public func webExtensionLoader(_ loader: WebExtensionLoading,
                                    willLoad context: WKWebExtensionContext,
                                    identifier: String) {
+        // Keep Chrome Web Store origins stable across launches while retaining the installation UUID.
+        if let identity = installingStoreIdentities[identifier]
+            ?? installationStore.installedExtension(withUniqueIdentifier: identifier)?.storeIdentity,
+           identity.store == .chromeWebStore,
+           let baseURL = URL(string: "webkit-extension://\(identity.id)/") {
+            context.baseURL = baseURL
+            Logger.webExtensions.debug("Chrome Web Store extension base URL: \(baseURL.absoluteString, privacy: .public)")
+        }
         registerHandlersForExtension(identifier: identifier, context: context)
 #if os(macOS)
         // Saved shortcuts are in place before the extension runs. The app loads extensions on the main thread.
@@ -212,11 +220,11 @@ extension WebExtensionManager {
 
     /// Hands a new native messaging port to the handler.
     ///
-    /// Uses the completion-handler form of the delegate method so a message handler is installed
-    /// synchronously, before WebKit processes the extension's next message. WebKit drops a port
-    /// message that arrives while the port has no handler, and an extension usually posts its first
-    /// message in the same turn as `connectNative()`. Messages that arrive while the host process
-    /// is starting are kept in order and replayed once the handler has installed its own.
+    /// WebKit drops every message the extension posts before `completionHandler` is called, and an
+    /// extension usually posts its first message in the same turn as `connectNative()`. iCloud
+    /// Passwords sends its hello that way, and its host answers nothing without it. So the port is
+    /// accepted right away, with a handler that keeps messages in order while the host process
+    /// starts, and they are replayed once the native messaging handler has installed its own.
     public func webExtensionController(_ controller: WKWebExtensionController,
                                        connectUsing port: WKWebExtension.MessagePort,
                                        for extensionContext: WKWebExtensionContext,
@@ -243,6 +251,7 @@ extension WebExtensionManager {
         port.messageHandler = { message, error in
             pending.append(message: message, error: error)
         }
+        completionHandler(nil)
 
         Task { @MainActor in
             do {
@@ -257,11 +266,10 @@ extension WebExtensionManager {
                 if !replayed.isEmpty {
                     Logger.webExtensions.debug("🔗 Replayed \(replayed.count, privacy: .public) message(s) that \(displayName) posted before its host was up")
                 }
-                completionHandler(nil)
             } catch {
-                // WebKit only disconnects the port, so this is the one place the failure is recorded.
+                // The disconnect is all the extension sees, so this is the one place the failure is recorded.
                 Logger.webExtensions.error("❌ Port of \(displayName) to \(applicationIdentifier, privacy: .public) failed: \(error.localizedDescription, privacy: .public)")
-                completionHandler(error)
+                port.disconnect(throwing: error)
             }
         }
     }

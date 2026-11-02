@@ -39,8 +39,6 @@ public struct TunnelControllerView: View {
     @ObservedObject
     var model: TunnelControllerViewModel
 
-    private let isAppRebranded = DesignSystemRebrand.isAppRebranded()
-
     // MARK: - Initializers
 
     public init(model: TunnelControllerViewModel) {
@@ -171,20 +169,14 @@ public struct TunnelControllerView: View {
 
     @ViewBuilder
     private func headerAnimationView() -> some View {
-        if isAppRebranded {
-            headerAnimationView("vpn-animation")
-        } else if colorScheme == .light {
-            headerAnimationView("vpn-light-mode")
-        } else {
-            headerAnimationView("vpn-dark-mode")
-        }
+        headerAnimationView("vpn-animation")
     }
 
     @ViewBuilder
     private func headerAnimationView(_ animationName: String) -> some View {
         let tintedAnimationView = LottieView(animation: .named(animationName))
-            .configure { [isAppRebranded, enforceRoutes = model.enforceRoutes, colorScheme] animationView in
-                Self.applyStrictRoutingTint(spec: isAppRebranded ? .rebranded : .legacy,
+            .configure { [enforceRoutes = model.enforceRoutes, colorScheme] animationView in
+                Self.applyStrictRoutingTint(spec: .default,
                                             enforceRoutes: enforceRoutes,
                                             colorScheme: colorScheme,
                                             to: animationView)
@@ -192,57 +184,35 @@ public struct TunnelControllerView: View {
 
         // Re-create the view on a light/dark switch so the tint is re-applied for the new scheme;
         // otherwise it keeps the colours resolved when the view was first configured.
-        if isAppRebranded {
-            tintedAnimationView
-                .playing(withIntro: .init(
-                    skipIntro: model.isConnectedOrConnecting && !model.isToggleDisabled,
-                    introStartFrame: 0,
-                    introEndFrame: 30,
-                    loopStartFrame: 30,
-                    loopEndFrame: 120,
-                ), isAnimating: model.isConnectedOrConnecting)
-                .id(colorScheme)
-        } else {
-            tintedAnimationView
-                .playing(withIntro: .init(
-                    skipIntro: model.isConnectedOrConnecting && !model.isToggleDisabled,
-                    introStartFrame: 0,
-                    introEndFrame: 100,
-                    loopStartFrame: 130,
-                    loopEndFrame: 370
-                ), isAnimating: model.isConnectedOrConnecting)
-                .id(colorScheme)
-        }
+        tintedAnimationView
+            .playing(withIntro: .init(
+                skipIntro: model.isConnectedOrConnecting && !model.isToggleDisabled,
+                introStartFrame: 0,
+                introEndFrame: 30,
+                loopStartFrame: 30,
+                loopEndFrame: 120,
+            ), isAnimating: model.isConnectedOrConnecting)
+            .id(colorScheme)
     }
 
-    /// The Lottie keypaths the strict-routing tint recolors, per header animation variant.
-    ///
-    /// The legacy animation's groups and fills are unnamed in the JSON; lottie-ios decodes a
-    /// null `nm` as "Layer", which is why the legacy keypaths read `<layer>.Layer.Layer.Color`.
+    /// The Lottie keypaths the strict-routing tint recolors in the header animation.
     struct TintSpec {
         /// The badge circle behind the lock. Its color is keyframed to reveal below `revealFrame`.
         let badgeKeypath: String
         /// The frame at which the badge reveal completes: black before, accent after.
         let revealFrame: CGFloat
-        /// Decorative arc lines that take the accent color (rebrand only).
+        /// Decorative arc lines that take the accent color.
         let accentLineKeypaths: [(fill: String, stroke: String)]
         /// The lock glyph, which takes the foreground color.
         let lockKeypaths: [String]
 
-        static let rebranded = TintSpec(
+        static let `default` = TintSpec(
             badgeKeypath: "badge-fill.badge-fill.Fill 1.Color",
             revealFrame: 14,
             accentLineKeypaths: ["Line", "Line 2", "Line 3"].map {
                 (fill: "\($0).Shape 1.Fill 1.Color", stroke: "\($0).Shape 1.Stroke 1.Color")
             },
             lockKeypaths: ["lock 1.lock.Stroke 1.Color", "lock-body.lock-body.Fill 1.Color"]
-        )
-
-        static let legacy = TintSpec(
-            badgeKeypath: "bg.Layer.Layer.Color",
-            revealFrame: 35,
-            accentLineKeypaths: [],
-            lockKeypaths: ["lock-hook.Layer.Layer.Color", "lock-base.Layer.Layer.Color"]
         )
     }
 
@@ -312,11 +282,7 @@ public struct TunnelControllerView: View {
     }
 
     private func statusColor(isConnected: Bool) -> Color {
-        if isAppRebranded {
-            return isConnected ? .green : Color(designSystemColor: .statusYellowSecondary)
-        }
-
-        return isConnected ? .green : .yellow
+        isConnected ? .green : Color(designSystemColor: .statusYellowSecondary)
     }
 
     /// Connected/Selected location

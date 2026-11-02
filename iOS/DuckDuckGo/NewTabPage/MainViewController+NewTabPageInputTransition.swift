@@ -22,7 +22,7 @@ import UIKit
 extension MainViewController {
 
     func showInlineNewTabPageInput(coordinator: UnifiedToggleInputCoordinator, height: CGFloat, pendingHeight: CGFloat?) {
-        let showsFocusedSurfaceDirectly = isPerformingOnboardingInputHandoff
+        let showsFocusedSurfaceDirectly = isPerformingOnboardingInputHandoff || isPresentingNewTabInputDirectly
         let restingSnapshot = showsFocusedSurfaceDirectly ? nil : makeRestingNewTabPageSnapshot()
         coordinator.contentViewController.refreshSuggestionsCaches()
         coordinator.viewController.omnibarPillWindowFrame = nil
@@ -80,8 +80,8 @@ extension MainViewController {
             restingSnapshot?.transform = CGAffineTransform(translationX: 0, y: -contentOffset)
         }
         if showsFocusedSurfaceDirectly {
-            // An onboarding dialog just covered the page. Revealing its resting modules during a fade
-            // would flash them before focus, so stage the opaque focused pose synchronously.
+            // Automatic new-tab focus and onboarding handoffs must not fade through resting modules.
+            // Stage the opaque focused pose synchronously.
             UIView.performWithoutAnimation(animations)
             refreshFloatingToolbarBackdrop()
             return
@@ -158,9 +158,10 @@ extension MainViewController {
                     source?.alpha = 1
                 }
             },
-            interruptCleanup: { [weak self] in
+            interruptCleanup: { [weak self, weak coordinator] in
                 inputContainer.transform = .identity
                 contentContainer.transform = .identity
+                coordinator?.clearText()
                 self?.viewCoordinator.unifiedInputContentContainer.alpha = 1
                 self?.viewCoordinator.unifiedToggleInputContainer.alpha = 1
                 self?.viewCoordinator.focusedStateBackground.alpha = 1

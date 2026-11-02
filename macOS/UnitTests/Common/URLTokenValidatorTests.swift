@@ -17,72 +17,70 @@
 //
 
 import Foundation
-
-import XCTest
+import Testing
 @testable import DuckDuckGo_Privacy_Browser
 
-class URLTokenValidatorTests: XCTestCase {
-
-    var validator: URLTokenValidator!
-
-    override func setUp() {
-        super.setUp()
-        validator = URLTokenValidator.shared
-    }
-
-    override func tearDown() {
-        validator = nil
-        super.tearDown()
-    }
-
+final class URLTokenValidatorTests {
+    @available(iOS 16, macOS 13, *)
+    @Test("Token generation produces valid token with expected format", .timeLimit(.minutes(1)))
     func testGenerateToken() {
+        let validator = URLTokenValidator.shared
         let url = URL(string: "https://example.com/")!
         let token = validator.generateToken(for: url)
 
-        XCTAssertNotNil(token, "Token should not be nil")
-        XCTAssertTrue(token.contains(":"), "Token should contain a colon separating the signature and timestamp")
+        #expect(token.contains(":"), "Token should contain a colon separating the signature and timestamp")
     }
 
+    @available(iOS 16, macOS 13, *)
+    @Test("Generated token is valid for the original URL", .timeLimit(.minutes(1)))
     func testValidateToken() {
+        let validator = URLTokenValidator.shared
         let url = URL(string: "https://example.com/")!
         let token = validator.generateToken(for: url)
 
         let isValid = validator.validateToken(token, for: url)
-        XCTAssertTrue(isValid, "Token should be valid for the given URL")
+        #expect(isValid, "Token should be valid for the given URL")
     }
 
+    @available(iOS 16, macOS 13, *)
+    @Test("Token is not valid for a different URL", .timeLimit(.minutes(1)))
     func testValidateTokenWithInvalidURL() {
+        let validator = URLTokenValidator.shared
         let url = URL(string: "https://example.com/some-page")!
         let token = validator.generateToken(for: url)
 
         let invalidURL = URL(string: "https://example.com/other-page")!
         let isValid = validator.validateToken(token, for: invalidURL)
-        XCTAssertFalse(isValid, "Token should not be valid for a different URL")
+        #expect(!isValid, "Token should not be valid for a different URL")
     }
 
+    @available(iOS 16, macOS 13, *)
+    @Test("Garbage token data is not valid", .timeLimit(.minutes(1)))
     func testValidateTokenWithGarbageData() {
+        let validator = URLTokenValidator.shared
         let url = URL(string: "https://example.com/special-page")!
         let garbageToken = "Dxa0cx+a51qfucPFMxqIbAiuQHFJx/2TYseu73ww"
 
         let isValid = validator.validateToken(garbageToken, for: url)
-        XCTAssertFalse(isValid, "Token should not be valid for the given URL when the token is garbage data")
+        #expect(!isValid, "Token should not be valid for the given URL when the token is garbage data")
     }
 
-    func testValidateTokenWithExpiredTimestamp() {
+    @available(iOS 16, macOS 13, *)
+    @Test("Token with expired timestamp is not valid", .timeLimit(.minutes(1)))
+    func testValidateTokenWithExpiredTimestamp() throws {
+        let validator = URLTokenValidator.shared
         let url = URL(string: "https://example.com/")!
         let token = validator.generateToken(for: url)
 
         // Simulate an expired token by manipulating the timestamp
         let components = token.split(separator: ":")
-        guard components.count == 2, let timestampString = components.last else {
-            XCTFail("Token format is invalid")
-            return
-        }
+        #expect(components.count == 2, "Token format is invalid")
+        let timestampString = try #require(components[safe: 1], "Token format is invalid")
 
         let expiredTimestamp = String(Int(timestampString)! - Int(validator.timeWindow) - 1)
         let expiredToken = "\(components.first!):\(expiredTimestamp)"
 
         let isValid = validator.validateToken(expiredToken, for: url)
-        XCTAssertFalse(isValid, "Token should not be valid if the timestamp is expired")
+        #expect(!isValid, "Token should not be valid if the timestamp is expired")
     }
 }

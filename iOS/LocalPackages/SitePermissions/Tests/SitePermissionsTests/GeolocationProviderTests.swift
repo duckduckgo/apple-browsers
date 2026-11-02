@@ -1048,7 +1048,7 @@ final class GeolocationProviderTests: XCTestCase {
         XCTAssertEqual(harness.locationManager.startUpdatingCallCount, 0)
     }
 
-    func testWhenSystemPermissionIsRemovedWhileTabIsHiddenThenReturningStopsWatch() throws {
+    func testWhenSystemPermissionIsRemovedWhileTabIsHiddenThenWatchStops() throws {
         let harness = try Harness()
         var results = [GeolocationPositionResult]()
         harness.provider.startWatch(withID: "watch", context: harness.context) {
@@ -1057,6 +1057,7 @@ final class GeolocationProviderTests: XCTestCase {
         }
         harness.provider.setIsActive(false)
         harness.locationManager.authorizationStatusValue = .denied
+        harness.locationManager.delegate?.locationManagerDidChangeAuthorization?(harness.locationManager)
 
         harness.provider.setIsActive(true)
 
@@ -1065,6 +1066,49 @@ final class GeolocationProviderTests: XCTestCase {
         XCTAssertEqual(harness.locationManager.stopUpdatingCallCount, 1)
         XCTAssertNil(harness.provider.currentContext(tabID: harness.context.tabID,
                                                      requestingFrameID: harness.context.requestingFrameID))
+    }
+
+    func testWhenSystemPermissionRemovalIsReportedAfterTabReturnsThenWatchStops() throws {
+        let harness = try Harness()
+        var results = [GeolocationPositionResult]()
+        harness.provider.startWatch(withID: "watch", context: harness.context) {
+            results.append($0)
+            return true
+        }
+        harness.provider.setIsActive(false)
+        harness.provider.setIsActive(true)
+        XCTAssertEqual(harness.locationManager.startUpdatingCallCount, 2)
+
+        harness.locationManager.authorizationStatusValue = .notDetermined
+        harness.locationManager.delegate?.locationManagerDidChangeAuthorization?(harness.locationManager)
+
+        XCTAssertEqual(results, [.failure(.init(code: .permissionDenied, message: "Location permission was denied"))])
+        XCTAssertEqual(harness.locationManager.stopUpdatingCallCount, 2)
+        XCTAssertFalse(harness.provider.isLocationActive)
+    }
+
+    func testWhenRequestsArriveBeforeCoreLocationReportsAuthorizationThenPermissionWaitsForTheReport() async throws {
+        var permissionRequestCount = 0
+        let harness = try Harness(reportsInitialAuthorization: false, requestPermission: { _, completion in
+            permissionRequestCount += 1
+            completion(.grant)
+        })
+        let oneShot = Task { await harness.provider.requestCurrentPosition(context: harness.context) }
+        await waitUntil {
+            harness.provider.currentContext(tabID: harness.context.tabID,
+                                            requestingFrameID: harness.context.requestingFrameID) != nil
+        }
+        harness.provider.startWatch(withID: "watch", context: harness.context) { _ in true }
+        XCTAssertEqual(permissionRequestCount, 0)
+
+        harness.locationManager.delegate?.locationManagerDidChangeAuthorization?(harness.locationManager)
+        XCTAssertEqual(permissionRequestCount, 2)
+        XCTAssertEqual(harness.locationManager.startUpdatingCallCount, 1)
+
+        let location = CLLocation(latitude: 37.3317, longitude: -122.0301)
+        harness.send([location])
+        let result = await oneShot.value
+        XCTAssertEqual(result, .success(.init(location: location)))
     }
 
     private func waitUntil(_ condition: @escaping @MainActor () -> Bool) async {
@@ -1085,8 +1129,10 @@ private final class Harness {
     let context: SitePermissionRequestContext
     let provider: GeolocationProvider
 
-    init(requestPermission: GeolocationProvider.PermissionRequestHandler? = nil,
+    init(reportsInitialAuthorization: Bool = true,
+         requestPermission: GeolocationProvider.PermissionRequestHandler? = nil,
          queryPermission: @escaping GeolocationProvider.PermissionQueryHandler = { _ in .granted }) throws {
+        locationManager.reportsAuthorizationWhenDelegateIsSet = reportsInitialAuthorization
         let site = try XCTUnwrap(SitePermissionKey(committedURL: URL(string: "https://example.com")!))
         context = SitePermissionRequestContext(tabID: "tab",
                                                topLevelSite: site,
@@ -1121,8 +1167,18 @@ private final class ProviderMockLocationManager: CLLocationManager {
     private(set) var startUpdatingCallCount = 0
     private(set) var stopUpdatingCallCount = 0
     var authorizationStatusValue = CLAuthorizationStatus.authorizedWhenInUse
+    var reportsAuthorizationWhenDelegateIsSet = true
 
     override var authorizationStatus: CLAuthorizationStatus { authorizationStatusValue }
+
+    // Core Location reports the current authorization once a delegate is set.
+    override var delegate: (any CLLocationManagerDelegate)? {
+        didSet {
+            if reportsAuthorizationWhenDelegateIsSet {
+                delegate?.locationManagerDidChangeAuthorization?(self)
+            }
+        }
+    }
 
     override func startUpdatingLocation() {
         startUpdatingCallCount += 1

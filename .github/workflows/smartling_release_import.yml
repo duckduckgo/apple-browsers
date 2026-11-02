@@ -1,0 +1,286 @@
+name: Smartling - Release Import
+
+on:
+  schedule:
+    - cron: '47 4 * * *'
+  workflow_dispatch:
+    inputs:
+      platform:
+        description: "Platform"
+        type: choice
+        default: both
+        options:
+          - both
+          - iOS
+          - macOS
+      release_branch:
+        description: "Release branch, e.g. release/ios/7.200.0, or a test branch with a version (defaults to the latest release branch; needs a single platform)"
+        type: string
+        default: ""
+      version:
+        description: "Release version, e.g. 0.1.0, for a branch outside release/<platform>/ (taken from a release branch if empty)"
+        type: string
+        default: ""
+      dry_run:
+        description: "Import into the working tree only: no commit, push or pull request (the release files in Smartling are still refreshed)"
+        type: boolean
+        default: false
+      reimport:
+        description: "Import again even if a translations pull request for this version already exists (updates it if it's still open)"
+        type: boolean
+        default: false
+      simulate_wednesday:
+        description: "Report on the Translations subtask as the Wednesday run does when the translations aren't ready"
+        type: boolean
+        default: false
+
+permissions:
+  contents: write
+  pull-requests: write
+
+concurrency:
+  group: smartling-release-import
+  cancel-in-progress: false
+
+jobs:
+  import:
+    name: ${{ matrix.platform }} release translations
+    runs-on: [image:osx-tahoe-27, m4pro]
+    timeout-minutes: 60
+    strategy:
+      fail-fast: false
+      matrix:
+        platform: ${{ fromJSON((github.event_name == 'schedule' || inputs.platform == 'both') && '["iOS","macOS"]' || format('["{0}"]', inputs.platform)) }}
+
+    steps:
+      - name: Resolve platform configuration
+        env:
+          PLATFORM: ${{ matrix.platform }}
+        run: |
+          case "$PLATFORM" in
+            iOS)
+              {
+                echo "SMARTLING_USER_ID=${{ secrets.IOS_SMARTLING_USER_ID }}"
+                echo "SMARTLING_USER_SECRET=${{ secrets.IOS_SMARTLING_USER_SECRET }}"
+                echo "SMARTLING_PROJECT_ID=${{ vars.IOS_SMARTLING_PROJECT_ID }}"
+                echo "ASANA_PROJECT_ID=${{ vars.GH_ASANA_IOS_APP_PROJECT_ID }}"
+                echo "ASANA_INCOMING_SECTION_NAME=Incoming"
+                echo "ASANA_TRIAGE_ROTATION_SECTION_ID=1210869535563575"
+                echo "REVIEW_TASK_GITHUB_ASSIGNEE=pballart"
+              } >> "$GITHUB_ENV"
+              ;;
+            macOS)
+              {
+                echo "SMARTLING_USER_ID=${{ secrets.MACOS_SMARTLING_USER_ID }}"
+                echo "SMARTLING_USER_SECRET=${{ secrets.MACOS_SMARTLING_USER_SECRET }}"
+                echo "SMARTLING_PROJECT_ID=${{ vars.MACOS_SMARTLING_PROJECT_ID }}"
+                echo "ASANA_PROJECT_ID=${{ vars.MACOS_APP_DEVELOPMENT_ASANA_PROJECT_ID }}"
+                echo "ASANA_INCOMING_SECTION_NAME=Incoming: Dev Related Issues"
+                echo "ASANA_TRIAGE_ROTATION_SECTION_ID=1210871971126998"
+                echo "REVIEW_TASK_GITHUB_ASSIGNEE=andremartingo"
+              } >> "$GITHUB_ENV"
+              ;;
+            *)
+              echo "Unknown platform: $PLATFORM" >&2
+              exit 1
+              ;;
+          esac
+
+      - name: Check out the Asana task scripts
+        uses: actions/checkout@v6
+        with:
+          path: workflow-scripts
+          sparse-checkout: |
+            scripts/smartling/asana_review_task.py
+            scripts/smartling/release_translations_task.py
+          sparse-checkout-cone-mode: false
+
+      - name: Keep the Asana task scripts
+        run: |
+          cp workflow-scripts/scripts/smartling/asana_review_task.py "$RUNNER_TEMP/asana_review_task.py"
+          cp workflow-scripts/scripts/smartling/release_translations_task.py "$RUNNER_TEMP/release_translations_task.py"
+          rm -rf workflow-scripts
+
+      - name: Find the release branch
+        id: release
+        env:
+          PLATFORM: ${{ matrix.platform }}
+          INPUT_PLATFORM: ${{ inputs.platform }}
+          INPUT_RELEASE_BRANCH: ${{ inputs.release_branch }}
+          REPOSITORY_URL: ${{ github.server_url }}/${{ github.repository }}
+          IS_SCHEDULED: ${{ github.event_name == 'schedule' }}
+          SIMULATE_WEDNESDAY: ${{ inputs.simulate_wednesday || false }}
+        shell: bash
+        run: |
+          platform_slug="$(echo "$PLATFORM" | tr '[:upper:]' '[:lower:]')"
+          if [ -n "$INPUT_RELEASE_BRANCH" ]; then
+            if [ "$INPUT_PLATFORM" = "both" ]; then
+              echo "Pick a single platform when setting the release branch." >&2
+              exit 1
+            fi
+            branch="$INPUT_RELEASE_BRANCH"
+          else
+            branch="$(git ls-remote --heads "$REPOSITORY_URL" "refs/heads/release/$platform_slug/*" \
+              | awk '{ print $2 }' | sed 's#^refs/heads/##' | sort -V | tail -n 1)"
+          fi
+          if [ "$SIMULATE_WEDNESDAY" = "true" ] || { [ "$IS_SCHEDULED" = "true" ] && [ "$(date -u +%u)" = "3" ]; }; then
+            is_wednesday="true"
+          else
+            is_wednesday="false"
+          fi
+          echo "Release branch: ${branch:-none}"
+          echo "Wednesday check: $is_wednesday"
+          {
+            echo "branch=$branch"
+            echo "is_wednesday=$is_wednesday"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Register SSH keys for private repos
+        if: steps.release.outputs.branch != ''
+        uses: webfactory/ssh-agent@v0.10.0
+        with:
+          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY_DUCKSANS_FONT }}
+
+      - name: Check out the release branch
+        if: steps.release.outputs.branch != ''
+        uses: actions/checkout@v6
+        with:
+          ref: ${{ steps.release.outputs.branch }}
+          submodules: recursive
+          token: ${{ secrets.GHA_ELEVATED_PERMISSIONS_TOKEN }}
+
+      - name: Check the release branch has the import script
+        id: script
+        if: steps.release.outputs.branch != ''
+        env:
+          RELEASE_BRANCH: ${{ steps.release.outputs.branch }}
+        run: |
+          if [ -x ./scripts/smartling/smartling_release_import.sh ]; then
+            echo "available=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "available=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::$RELEASE_BRANCH was cut before the release import existed, so there is nothing to do."
+          fi
+
+      - name: Select Xcode
+        if: steps.script.outputs.available == 'true'
+        uses: ./.github/actions/select-xcode-version
+
+      - name: Set up Python
+        if: steps.script.outputs.available == 'true' && runner.environment != 'self-hosted'
+        uses: actions/setup-python@v6
+        with:
+          python-version: '3.11'
+
+      - name: Install Python dependencies
+        if: steps.script.outputs.available == 'true'
+        run: pip install aiohttp
+
+      - name: Install xmlstarlet
+        if: steps.script.outputs.available == 'true' && matrix.platform == 'macOS'
+        run: brew install xmlstarlet
+
+      - name: Find the release task's Translations subtask
+        id: translations-task
+        if: steps.script.outputs.available == 'true' && inputs.dry_run != true
+        continue-on-error: true
+        env:
+          ASANA_ACCESS_TOKEN: ${{ secrets.ASANA_ACCESS_TOKEN }}
+          PLATFORM: ${{ matrix.platform }}
+          RELEASE_BRANCH: ${{ steps.release.outputs.branch }}
+        run: python3 "$RUNNER_TEMP/release_translations_task.py" find --platform "$PLATFORM" --release-branch "$RELEASE_BRANCH"
+
+      - name: Import ${{ matrix.platform }} release translations
+        id: import
+        if: steps.script.outputs.available == 'true'
+        env:
+          PLATFORM: ${{ matrix.platform }}
+          RELEASE_BRANCH: ${{ steps.release.outputs.branch }}
+          VERSION: ${{ inputs.version }}
+          TRANSLATIONS_TASK_URL: ${{ steps.translations-task.outputs.task_url }}
+          DRY_RUN: ${{ inputs.dry_run || false }}
+          REIMPORT: ${{ inputs.reimport || false }}
+          GH_TOKEN: ${{ secrets.GHA_ELEVATED_PERMISSIONS_TOKEN }}
+        run: |
+          args=("$PLATFORM" --release-branch "$RELEASE_BRANCH")
+          [ -z "$VERSION" ] || args+=(--version "$VERSION")
+          [ "$DRY_RUN" != "true" ] || args+=(--dry-run)
+          [ "$REIMPORT" != "true" ] || args+=(--reimport)
+          ./scripts/smartling/smartling_release_import.sh "${args[@]}"
+
+      - name: Decide on an Asana task
+        id: task
+        if: ${{ !cancelled() }}
+        env:
+          OUTCOME: ${{ steps.import.outputs.outcome }}
+          JOB_STATUS: ${{ job.status }}
+          IS_WEDNESDAY: ${{ steps.release.outputs.is_wednesday }}
+          IS_SCHEDULED: ${{ github.event_name == 'schedule' }}
+          TASK_NOTES: |
+            ${{ (steps.import.outputs.outcome == 'not_ready' || steps.import.outputs.outcome == 'status_error') && format('⏳ The {0} translations for {1} aren''t ready to import yet. Please follow up with the Smartling AoR DRI.', matrix.platform, steps.release.outputs.branch) || format('❌ The nightly {0} release translations import failed for {1}.', matrix.platform, steps.release.outputs.branch || 'the release branch') }}
+
+            🔗 Job: ${{ steps.import.outputs.job_url || 'no release job found' }} (${{ steps.import.outputs.job_status || 'unknown status' }})
+            📝 String translations left: ${{ steps.import.outputs.strings_left && format('{0} of {1}', steps.import.outputs.strings_left, steps.import.outputs.total_strings) || 'unavailable' }}
+            🌍 Incomplete locales: ${{ steps.import.outputs.incomplete_locales || 'unavailable' }}
+            🔒 String translations not authorized, either in a job awaiting authorization or in no job (send those with the PR labels): ${{ steps.import.outputs.strings_awaiting_authorization || 'unavailable' }}
+            ✋ Reason: ${{ steps.import.outputs.reason || 'A step failed before the import ran. See the workflow logs.' }}
+            🌿 Release branch: ${{ steps.release.outputs.branch || 'not found' }}
+            ⚙️ Workflow: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}
+            ⏸️ Jobs awaiting authorization, which keep their strings out of other jobs: ${{ steps.import.outputs.jobs_awaiting_authorization == '' && 'none' || '' }}
+            ${{ steps.import.outputs.jobs_awaiting_authorization }}
+        run: |
+          if [[ "$OUTCOME" == not_ready || "$OUTCOME" == status_error ]]; then
+            [[ "$IS_WEDNESDAY" != true ]] || echo "kind=not_ready" >> "$GITHUB_OUTPUT"
+          elif [[ "$JOB_STATUS" == failure && "$IS_SCHEDULED" == true ]]; then
+            echo "kind=failure" >> "$GITHUB_OUTPUT"
+          fi
+          {
+            echo "notes<<TASK_NOTES_EOF"
+            echo "$TASK_NOTES"
+            echo "TASK_NOTES_EOF"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Update the Translations subtask
+        id: translations-update
+        if: >-
+          ${{ !cancelled() && steps.translations-task.outputs.task_id != '' && (
+            contains(fromJSON('["pr_opened","pr_updated","no_changes","pr_closed"]'), steps.import.outputs.outcome) ||
+            steps.task.outputs.kind == 'not_ready'
+          ) }}
+        continue-on-error: true
+        env:
+          ASANA_ACCESS_TOKEN: ${{ secrets.ASANA_ACCESS_TOKEN }}
+          TASK_ID: ${{ steps.translations-task.outputs.task_id }}
+          OUTCOME: ${{ steps.import.outputs.outcome }}
+          NOTES: ${{ steps.task.outputs.kind == 'not_ready' && steps.task.outputs.notes || '' }}
+          PR_URL: ${{ steps.import.outputs.pr_url }}
+        run: python3 "$RUNNER_TEMP/release_translations_task.py" update --task-id "$TASK_ID" --outcome "$OUTCOME" --notes "$NOTES" --pr-url "$PR_URL"
+
+      - name: Resolve ${{ matrix.platform }} task assignee
+        id: task-assignee
+        if: ${{ !cancelled() && steps.task.outputs.kind != '' && steps.translations-update.outputs.commented != 'true' }}
+        continue-on-error: true
+        uses: duckduckgo/native-github-asana-sync@v2.5.1
+        with:
+          action: get-asana-user-id
+          github-username: ${{ env.REVIEW_TASK_GITHUB_ASSIGNEE }}
+          github-pat: ${{ secrets.APPLE_GH_RO_PAT }}
+
+      - name: Open ${{ matrix.platform }} release translations ${{ steps.task.outputs.kind }} task
+        if: ${{ !cancelled() && steps.task.outputs.kind != '' && steps.translations-update.outputs.commented != 'true' }}
+        env:
+          ASANA_ACCESS_TOKEN: ${{ secrets.ASANA_ACCESS_TOKEN }}
+          TASK_KIND: ${{ steps.task.outputs.kind }}
+          ASSIGNEE: ${{ steps.task-assignee.outputs.asanaUserId }}
+          TASK_NAME: "${{ steps.task.outputs.kind == 'not_ready' && 'Release translations not ready' || 'Release translations import failed' }}: ${{ matrix.platform }} ${{ steps.import.outputs.version || steps.release.outputs.branch }}"
+          TASK_NOTES: ${{ steps.task.outputs.notes }}
+        run: |
+          task_args=()
+          [ "$TASK_KIND" != not_ready ] || task_args+=(--rotation-section "$ASANA_TRIAGE_ROTATION_SECTION_ID")
+          [ -z "$ASSIGNEE" ] || task_args+=(--assignee "$ASSIGNEE")
+          python3 "$RUNNER_TEMP/asana_review_task.py" \
+            --project "$ASANA_PROJECT_ID" \
+            --section-name "$ASANA_INCOMING_SECTION_NAME" \
+            --name "$TASK_NAME" \
+            --notes "$TASK_NOTES" \
+            ${task_args[@]+"${task_args[@]}"}

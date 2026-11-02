@@ -19,6 +19,7 @@
 
 import Bookmarks
 import Combine
+import Core
 import Foundation
 import PixelKit
 
@@ -28,9 +29,28 @@ final class AddFavoriteViewModel: ObservableObject {
     @Published var urlText = ""
     var onSave: (() -> Void)?
 
-    private var validatedURL: URL? {
+    private var normalizedURLText: String? {
         let trimmed = urlText.trimmingCharacters(in: .whitespacesAndNewlines)
-        return trimmed.isEmpty ? nil : BookmarkUtils.url(from: trimmed)
+        guard !trimmed.isEmpty else { return nil }
+        if trimmed.isBookmarklet() {
+            return BookmarkUtils.url(from: trimmed) == nil ? nil : trimmed
+        }
+        guard trimmed.contains("://") else {
+            return Self.secureWebURL(fromSchemeLessText: trimmed)?.absoluteString
+        }
+        if let webURL = URL.webUrl(from: trimmed) {
+            return webURL.absoluteString
+        }
+        // Explicit non-web schemes (e.g. ftp or app deep links) are kept as typed.
+        return URL(string: trimmed) != nil ? trimmed : nil
+    }
+
+    /// Prefixes `https://` rather than relying on `URL.webUrl`, which reads `host:port` input as a URL scheme.
+    private static func secureWebURL(fromSchemeLessText text: String) -> URL? {
+        guard let url = URL.webUrl(from: "https://" + text),
+              let host = url.host,
+              host.contains(".") || host == "localhost" else { return nil }
+        return url
     }
     private let bookmarks: MenuBookmarksInteracting
     private let pixelFiring: (any PixelKitFiring)?
@@ -41,13 +61,12 @@ final class AddFavoriteViewModel: ObservableObject {
         self.pixelFiring = pixelFiring
     }
 
-    var canSave: Bool { validatedURL != nil }
+    var canSave: Bool { normalizedURLText != nil }
 
     func save() -> Bool {
-        guard canSave else { return false }
+        guard let normalizedURLText else { return false }
         let trimmedName = name.trimmingCharacters(in: .whitespacesAndNewlines)
-        let trimmedURL = urlText.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard bookmarks.saveFavorite(title: trimmedName.isEmpty ? nil : trimmedName, urlString: trimmedURL) else { return false }
+        guard bookmarks.saveFavorite(title: trimmedName.isEmpty ? nil : trimmedName, urlString: normalizedURLText) else { return false }
         pixelFiring?.fire(AddFavoritePixel.saved, frequency: .dailyAndCount)
         onSave?()
         return true

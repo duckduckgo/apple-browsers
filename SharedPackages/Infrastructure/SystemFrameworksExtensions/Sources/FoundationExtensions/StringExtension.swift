@@ -93,7 +93,9 @@ public extension String {
                    ellipsis: String = "…",
                    trimmingWhitespace: Bool = true) -> String {
         precondition(maxLength >= 1)
-        guard count > maxLength else { return self }
+        // `count` walks every grapheme cluster, which takes milliseconds on multi-megabyte strings such as URLs.
+        // Stepping `maxLength` characters is bounded and tells the same thing.
+        guard let limit = index(startIndex, offsetBy: maxLength, limitedBy: endIndex), limit != endIndex else { return self }
 
         func trim(_ s: some StringProtocol) -> String {
             trimmingWhitespace ? String(s).trimmingCharacters(in: .whitespaces) : String(s)

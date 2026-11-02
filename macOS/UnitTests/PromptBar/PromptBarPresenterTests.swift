@@ -227,6 +227,17 @@ final class PromptBarPresenterTests: XCTestCase {
 
         XCTAssertEqual(firedPixels.first?.parameters?["reason"], PromptBarCancellationReason.menuBarIcon.rawValue)
     }
+
+    /// A screenshot capture keeps going after the bar hides, and would attach to a reset draft.
+    func testWhenToggledWhilePresentingAuxiliaryUIThenTheBarStaysAndIsNotReset() {
+        presenter.show(source: .keyboardShortcut)
+        content.isPresentingAuxiliaryUI = true
+
+        presenter.toggle(source: .keyboardShortcut)
+
+        XCTAssertTrue(presenter.isVisible)
+        XCTAssertEqual(content.resetCount, 0)
+    }
 }
 
 // MARK: - Stubs

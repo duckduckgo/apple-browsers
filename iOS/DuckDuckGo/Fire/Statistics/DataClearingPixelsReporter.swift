@@ -21,7 +21,19 @@ import Foundation
 import PixelKit
 import QuartzCore
 
-final class DataClearingPixelsReporter {
+protocol DataClearingInstrumentation {
+    @MainActor func fireRetriggerPixelIfNeeded(request: FireRequest)
+    @MainActor func burnDidStart()
+    @MainActor func fireDroppedBurnPixel(request: FireRequest)
+    func fireUserActionBeforeCompletionPixel()
+    func fireSingleTabBurnRequested(optimized: Bool, dropped: Bool)
+    func fireSingleTabBurnFinished(optimized: Bool, measurement: DataClearingPixelsReporter.Measurement, tabClosure: TimeInterval?)
+    func beginMeasurement() -> DataClearingPixelsReporter.Measurement
+    func duration(of measurement: DataClearingPixelsReporter.Measurement) -> TimeInterval
+    func fireDataClearingCompletionPixel(_ pixel: DataClearingCompletionPixels)
+}
+
+final class DataClearingPixelsReporter: DataClearingInstrumentation {
 
     var timeProvider: () -> CFTimeInterval
     private let pixelFiring: PixelFiring?
@@ -76,7 +88,18 @@ final class DataClearingPixelsReporter {
     }
 
     func fireUserActionBeforeCompletionPixel() {
-        pixelFiring?.fire(DataClearingPixels.userActionBeforeCompletion, frequency: .standard)
+        pixelFiring?.fire(DataClearingPixels.userActionBeforeCompletion, frequency: .dailyAndStandard)
+    }
+
+    func fireSingleTabBurnRequested(optimized: Bool, dropped: Bool) {
+        pixelFiring?.fire(SingleTabBurnPixels.requested(optimized: optimized, dropped: dropped), frequency: .standard)
+    }
+
+    func fireSingleTabBurnFinished(optimized: Bool, measurement: Measurement, tabClosure: TimeInterval?) {
+        pixelFiring?.fire(SingleTabBurnPixels.finished(optimized: optimized,
+                                                     duration: .init(seconds: duration(of: measurement)),
+                                                     tabClosure: tabClosure.map { .init(seconds: $0) }),
+                          frequency: .standard)
     }
 
     // MARK: - Data Clearing Completion

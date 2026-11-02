@@ -2209,7 +2209,7 @@ public final class MockBrokerProfileJobStatusReportingDelegate: BrokerProfileJob
 public final class MockDBPFeatureFlagger: DBPFeatureFlagging, FreemiumPIRFeatureFlagging {
     public let isForegroundRunningOnAppActiveFeatureOn: Bool
     public let isContinuedProcessingFeatureOn: Bool
-    public let isWebViewUserAgentOn: Bool
+    public let isCustomWebViewUserAgentOn: Bool
     public let isOptOutRetryErrorFrequencyExperimentOn: Bool
     public let isFreemiumPIREnabled: Bool
     public let isExtractedProfileRefreshOn: Bool
@@ -2217,14 +2217,14 @@ public final class MockDBPFeatureFlagger: DBPFeatureFlagging, FreemiumPIRFeature
 
     public init(isForegroundRunningOnAppActiveFeatureOn: Bool = true,
                 isContinuedProcessingFeatureOn: Bool = true,
-                isWebViewUserAgentOn: Bool = false,
+                isCustomWebViewUserAgentOn: Bool = false,
                 isOptOutRetryErrorFrequencyExperimentOn: Bool = false,
                 isFreemiumPIREnabled: Bool = false,
                 isExtractedProfileRefreshOn: Bool = true,
                 isChallengeSolverOn: Bool = false) {
         self.isForegroundRunningOnAppActiveFeatureOn = isForegroundRunningOnAppActiveFeatureOn
         self.isContinuedProcessingFeatureOn = isContinuedProcessingFeatureOn
-        self.isWebViewUserAgentOn = isWebViewUserAgentOn
+        self.isCustomWebViewUserAgentOn = isCustomWebViewUserAgentOn
         self.isOptOutRetryErrorFrequencyExperimentOn = isOptOutRetryErrorFrequencyExperimentOn
         self.isFreemiumPIREnabled = isFreemiumPIREnabled
         self.isExtractedProfileRefreshOn = isExtractedProfileRefreshOn
@@ -2291,7 +2291,6 @@ public final class MockBrokerProfileJobDependencies: BrokerProfileJobDependencyP
     public var vpnBypassService: (any VPNBypassFeatureProvider)?
     public var jobSortPredicate: BrokerJobDataComparators.Predicate = BrokerJobDataComparators.default
     public var featureFlagger: DBPFeatureFlagging
-    public var applicationNameForUserAgentProvider: () -> String? = { nil }
     public var wideEvent: WideEventManaging?
     public var contentBlocking: DBPWebViewContentBlocking?
     public var isAuthenticatedUserProvider: () async -> Bool = { true }

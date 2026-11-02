@@ -108,6 +108,20 @@ final class HistoryStoreTests: XCTestCase {
         }
     }
 
+    func testWhenEntriesAreSavedTogether_ThenEveryEntryAndItsVisitsAreStored() async throws {
+        let first = historyEntryWithOneVisit(of: URL(string: "https://first.example/")!)
+        let second = historyEntryWithOneVisit(of: URL(string: "https://second.example/")!)
+
+        let storedVisitIDs = try await historyStore.save(entries: [first, second])
+
+        XCTAssertEqual(storedVisitIDs[first.identifier]?.count, 1)
+        XCTAssertEqual(storedVisitIDs[second.identifier]?.count, 1)
+        try await cleanOldAndWait(cleanUntil: Date(timeIntervalSince1970: 0)) { history in
+            XCTAssertEqual(Set(history.map(\.url)), [first.url, second.url])
+            XCTAssertEqual(history.map(\.visits.count), [1, 1])
+        }
+    }
+
     func testWhenRemoveEntriesIsCalled_ThenEntriesMustBeCleaned() async throws {
         let visitDate = Date(timeIntervalSince1970: 1234)
         let visit = Visit(date: visitDate)
@@ -374,6 +388,14 @@ final class HistoryStoreTests: XCTestCase {
         }
         try await save(entry: historyEntry, expectation: expectation, file: file, line: line)
         return historyEntry
+    }
+
+    private func historyEntryWithOneVisit(of url: URL) -> HistoryEntry {
+        let visitDate = Date()
+        let visit = Visit(date: visitDate)
+        let entry = HistoryEntry(identifier: UUID(), url: url, title: nil, numberOfVisits: 1, lastVisit: visitDate, visits: [visit])
+        visit.historyEntry = entry
+        return entry
     }
 
     private func save(entry: HistoryEntry, expectation: XCTestExpectation? = nil, file: StaticString = #file, line: UInt = #line) async throws {

@@ -150,6 +150,10 @@ final class AIChatViewController: NSViewController {
         aiTab.aiChat?.pageContextRemovedPublisher
     }
 
+    public var pageContextAddedPublisher: AnyPublisher<Void, Never>? {
+        aiTab.aiChat?.pageContextAddedPublisher
+    }
+
     public var chatRestorationDataPublisher: AnyPublisher<AIChatRestorationData?, Never>? {
         aiTab.aiChat?.chatRestorationDataPublisher
     }

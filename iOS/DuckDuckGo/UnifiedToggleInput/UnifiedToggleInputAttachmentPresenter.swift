@@ -460,7 +460,8 @@ extension UnifiedToggleInputAttachmentPresenter: PHPickerViewControllerDelegate 
             let suggestedName = provider.suggestedName ?? "image"
 
             provider.loadObject(ofClass: UIImage.self) { [weak self] object, _ in
-                guard let image = object as? UIImage else { return }
+                guard let picked = object as? UIImage else { return }
+                let image = AIChatImageAttachment.resizedForAttachment(picked)
 
                 Task { @MainActor in
                     let surface = self?.pixelSurfaceProvider?() ?? .addressBar
@@ -480,11 +481,14 @@ extension UnifiedToggleInputAttachmentPresenter: UIImagePickerControllerDelegate
         let callbacks = takeCallbacks(for: picker)
         picker.dismiss(animated: true)
         callbacks.onExpandIfNeeded?()
-        guard let image = info[.originalImage] as? UIImage else { return }
+        guard let photo = info[.originalImage] as? UIImage else { return }
         PixelKit.fire(Pixel.Event.unifiedToggleInputImageAttached,
                       frequency: .dailyAndCount,
                       options: .parameters(["source": "camera", "surface": (pixelSurfaceProvider?() ?? .addressBar).rawValue]))
-        callbacks.onImagePicked?(image, "photo")
+        Task {
+            let image = await Task.detached { AIChatImageAttachment.resizedForAttachment(photo) }.value
+            callbacks.onImagePicked?(image, "photo")
+        }
     }
 
     func imagePickerControllerDidCancel(_ picker: UIImagePickerController) {

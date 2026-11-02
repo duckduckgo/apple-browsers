@@ -142,6 +142,8 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         static let modelPickerTrailingSpacing: CGFloat = 4
         static let modelPickerHeight: CGFloat = 28
         static let recentTabsInMenu = 5
+        static let screenshotMenuFadeDelay: UInt64 = 100_000_000
+        static let screenshotFocusSettleDelay: UInt64 = 500_000_000
         static let attachmentsLeadingInset: CGFloat = 13
         static let attachmentsBottomSpacing: CGFloat = 16
         static let attachmentsRowHeight: CGFloat = AIChatImageAttachmentThumbnailView.totalHeight
@@ -207,6 +209,9 @@ final class AIChatOmnibarContainerViewController: NSViewController {
 
     /// Holds ongoing resize tasks keyed by attachment ID, so we can await them before submission.
     private var resizeTasks: [UUID: Task<Void, Never>] = [:]
+
+    /// How each staged image arrived, for the remove pixel. Missing entries read as `file`.
+    private var imageAttachmentSources: [UUID: AIChatImageAttachmentSource] = [:]
 
     /// Constraint for suggestions view height
     private var suggestionsHeightConstraint: NSLayoutConstraint?
@@ -287,6 +292,13 @@ final class AIChatOmnibarContainerViewController: NSViewController {
     private var isDeferringCarouselLayout = false
 
     private var didMutateDuringAttachMenuSession = false
+
+    /// True from the menu pick until the capture ends; the prompt bar stays open while it is.
+    private(set) var isCapturingScreenshot = false
+    private let screenshotCaptureCancellation = PassthroughSubject<Void, Never>()
+
+    /// Called once a screenshot has finished and focus has settled, for the prompt bar to take key back.
+    var onScreenshotCaptureEnded: (() -> Void)?
 
     /// Sticky error from the most recent file pick that was rejected at pick-time (too large, too
     /// many pages, encrypted/unreadable, unsupported, or over the count limit). Shown in the
@@ -1011,7 +1023,11 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         // of truth for the order; the carousel itself never mutates its own state.
         attachmentsCarouselView.onImageAttachmentRemoveRequested = { [weak self] id in
             guard let self else { return }
-            omnibarController.pixelHandler.fire(.imageRemoved)
+            let source = self.imageAttachmentSources.removeValue(forKey: id) ?? .file
+            omnibarController.pixelHandler.fire(.imageRemoved(source: source))
+            if source == .screenshot {
+                omnibarController.pixelHandler.fire(.screenshotRemoved)
+            }
             self.lastAttachmentError = nil
             self.resizeTasks[id]?.cancel()
             self.resizeTasks.removeValue(forKey: id)
@@ -1863,7 +1879,7 @@ final class AIChatOmnibarContainerViewController: NSViewController {
     /// image-and-file picker directly. Keeps the legacy file-picker path 1-to-1 for users with
     /// the new flag off.
     @objc private func attachButtonClicked() {
-        if omnibarController.isOmnibarTabPickerEnabled {
+        if omnibarController.isOmnibarTabPickerEnabled || omnibarController.isOmnibarScreenshotEnabled {
             let menu = buildAttachMenu()
             menu.delegate = self
             // Hold the panel layout still while the menu is up — see `isDeferringCarouselLayout`
@@ -1887,7 +1903,7 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         guard let window = view.window else { return }
         panel.beginSheetModal(for: window) { [weak self] response in
             guard let self, response == .OK else { return }
-            self.addPickedAttachments(from: panel.urls)
+            self.addPickedAttachments(from: panel.urls, source: .file)
         }
     }
 
@@ -1897,7 +1913,7 @@ final class AIChatOmnibarContainerViewController: NSViewController {
     /// surfaced in the error label. Limits are evaluated cumulatively so a multi-select batch can't
     /// collectively overshoot. Images keep the `displayCap` (one-over) cue since they have no
     /// size / page dimension and a single submission is bounded to the per-turn image count.
-    private func addPickedAttachments(from urls: [URL], rejection: String? = nil) {
+    private func addPickedAttachments(from urls: [URL], source: AIChatImageAttachmentSource, rejection: String? = nil) {
         // Reading bytes off disk and parsing PDFs (page count / encryption) is offloaded to a
         // background task per file — a large PDF would otherwise block the main thread. Validation,
         // attachment, and label updates stay on the main actor; files are processed in order so the
@@ -1913,7 +1929,7 @@ final class AIChatOmnibarContainerViewController: NSViewController {
                 let utType = UTType(filenameExtension: url.pathExtension.lowercased())
                 if let utType, utType.conforms(to: .image) {
                     guard imagesAdded < imageCap else { continue }
-                    self.addImageAttachment(from: url)
+                    self.addImageAttachment(from: url, source: source)
                     imagesAdded += 1
                 } else {
                     guard let attachment = await Task.detached(priority: .userInitiated, operation: {
@@ -2044,6 +2060,14 @@ final class AIChatOmnibarContainerViewController: NSViewController {
             menu.addItem(imageItem)
         }
 
+        // Hidden when the model takes no images; disabled at the image cap.
+        if omnibarController.isOmnibarScreenshotEnabled && shouldShowImageUpload {
+            menu.addItem(makeScreenshotMenuItem())
+        }
+
+        // The prompt bar has no page context, so it shows screenshots without tabs.
+        guard omnibarController.isOmnibarTabPickerEnabled else { return menu }
+
         let candidates = omnibarController.openTabsForOmnibarPicker()
 
         let attachTabsItem = NSMenuItem(
@@ -2059,6 +2083,27 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         appendRecentTabs(candidates, to: menu)
 
         return menu
+    }
+
+    private func makeScreenshotMenuItem() -> NSMenuItem {
+        let submenu = NSMenu()
+        submenu.autoenablesItems = false
+        let rows: [(title: String, image: NSImage, mode: AIChatScreenshotMode)] = [
+            (UserText.aiChatScreenshotDragToSelect, DesignSystemImages.Glyphs.Size16.cut, .dragToSelect),
+            (UserText.aiChatScreenshotSelectWindowOrDisplay, DesignSystemImages.Glyphs.Size16.deviceDesktop, .selectWindowOrDisplay)
+        ]
+        for row in rows {
+            let item = NSMenuItem(title: row.title, action: #selector(screenshotModeClicked(_:)), keyEquivalent: "")
+            item.target = self
+            item.representedObject = row.mode.rawValue
+            item.withImage(row.image, visibleOnMacOS27: true)
+            submenu.addItem(item)
+        }
+
+        let item = NSMenuItem(title: UserText.aiChatAddScreenshot, action: nil, keyEquivalent: "")
+        item.withImage(DesignSystemImages.Glyphs.Size16.camera, visibleOnMacOS27: true)
+        item.isEnabled = canAttachScreenshot
+        return item.submenu(submenu)
     }
 
     private func appendRecentTabs(_ allCandidates: [AIChatTabAttachment], to menu: NSMenu) {
@@ -2131,6 +2176,140 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         ).show(in: view.window)
     }
 
+    // MARK: - Screenshots
+
+    /// A screenshot is an image, so it follows the image cap; one capture at a time across the app.
+    private var canAttachScreenshot: Bool {
+        canPickAdditionalImages && !NSApp.delegateTyped.aiChatScreenshotCaptureService.isCapturing
+    }
+
+    /// The prompt bar floats over other apps, so it stays out of the picker and the frozen frame.
+    private var screenshotExcludedWindows: [NSWindow] {
+        guard omnibarController.surface == .promptBar, let window = view.window else { return [] }
+        return [window]
+    }
+
+    /// Moves our own chrome out of the capture's way and returns how to put it back. The address-bar
+    /// panel sits over the page; the prompt bar's dim covers its whole display.
+    private func clearSurfaceForScreenshot() -> () -> Void {
+        switch omnibarController.surface {
+        case .addressBar:
+            // The shadows live in the window's content view, outside `view`.
+            let views = [view, shadowView, usageWarningShadowView]
+            views.forEach { $0.alphaValue = 0 }
+            return {
+                views.forEach { $0.alphaValue = 1 }
+            }
+        case .promptBar:
+            let dimWindows = NSApp.windows.filter { $0.identifier == .promptBarDimWindow && $0.isVisible }
+            dimWindows.forEach { $0.orderOut(nil) }
+            return { [weak self] in
+                guard let panel = self?.view.window, panel.isVisible else { return }
+                dimWindows.forEach { $0.order(.below, relativeTo: panel.windowNumber) }
+            }
+        }
+    }
+
+    @objc private func screenshotModeClicked(_ sender: NSMenuItem) {
+        guard let rawValue = sender.representedObject as? String,
+              let mode = AIChatScreenshotMode(rawValue: rawValue),
+              canAttachScreenshot else { return }
+        didMutateDuringAttachMenuSession = true
+        isCapturingScreenshot = true
+        Task { @MainActor [weak self] in
+            // The menu fades out after its action fires; keep it out of a frozen frame.
+            try? await Task.sleep(nanoseconds: Constants.screenshotMenuFadeDelay)
+            await self?.captureScreenshot(mode: mode)
+        }
+    }
+
+    /// For a surface whose draft goes when it's dismissed, so a capture still open never lands in the next prompt.
+    func cancelScreenshotCapture() {
+        screenshotCaptureCancellation.send()
+    }
+
+    private func captureScreenshot(mode: AIChatScreenshotMode) async {
+        let restoreSurface = clearSurfaceForScreenshot()
+        // The screenshot lands in the active tab's draft, so switching or closing the tab cancels it.
+        let result = await NSApp.delegateTyped.aiChatScreenshotCaptureService.capture(mode: mode,
+                                                                          excluding: screenshotExcludedWindows,
+                                                                          returningFocusTo: view.window,
+                                                                          cancellingOn: omnibarController.activeDraftChangesPublisher
+                                                                            .merge(with: screenshotCaptureCancellation)
+                                                                            .eraseToAnyPublisher())
+        restoreSurface()
+        handleScreenshotResult(result)
+        // The picker and the overlay hand focus back asynchronously, and the prompt bar would read
+        // losing key then as a click outside; the capture lasts until focus has settled.
+        try? await Task.sleep(nanoseconds: Constants.screenshotFocusSettleDelay)
+        isCapturingScreenshot = false
+        onScreenshotCaptureEnded?()
+    }
+
+    private func handleScreenshotResult(_ result: AIChatScreenshotCaptureResult) {
+        // Every capture that isn't cancelled or refused for the permission ends as exactly one of taken (in `attachScreenshot`) or failed.
+        if let reason = result.failureReason {
+            omnibarController.pixelHandler.fire(.screenshotFailed(reason: reason))
+        }
+        switch result {
+        case .image(let screenshot):
+            attachScreenshot(screenshot)
+        case .cancelled:
+            return
+        case .permissionDenied:
+            NSApp.delegateTyped.aiChatScreenshotCaptureService.presentPermissionAlert(on: view.window)
+        case .failed:
+            lastAttachmentError = UserText.aiChatScreenshotCaptureFailed
+            updateAttachmentsLayout()
+        }
+    }
+
+    private func attachScreenshot(_ screenshot: AIChatProcessedScreenshot) {
+        let fileExtension = screenshot.format == .png ? "png" : "jpg"
+        // Already sized, so no resize task: those reload from a file URL, and this never had one.
+        let attachment = AIChatImageAttachment(image: NSImage(cgImage: screenshot.image, size: .zero),
+                                               fileName: "\(UserText.aiChatScreenshotAttachmentName).\(fileExtension)",
+                                               fileURL: nil,
+                                               skipResize: true)
+        lastAttachmentError = nil
+        guard omnibarController.addImageAttachmentToActiveTab(attachment) else {
+            omnibarController.pixelHandler.fire(.screenshotFailed(reason: .failed))
+            lastAttachmentError = UserText.aiChatAttachmentImageTurnLimit(maxImagesPerTurn: omnibarController.maxImageAttachments)
+            updateAttachmentsLayout()
+            return
+        }
+        imageAttachmentSources[attachment.id] = .screenshot
+        omnibarController.pixelHandler.fire(.imageAttached(source: .screenshot))
+        omnibarController.pixelHandler.fire(.screenshotTaken(kind: screenshot.kind))
+        updateAttachmentsLayout()
+    }
+
+    /// A pasted bitmap has no file to reload from, so it's sized and encoded here like a screenshot.
+    /// - Returns: `true` when the paste was consumed, including when it was refused with an error.
+    func attachPastedImage(_ image: CGImage) -> Bool {
+        lastAttachmentError = nil
+        guard shouldShowImageUpload else {
+            lastAttachmentError = dropRejectionMessage(hasRejectedFiles: false)
+            updateAttachmentsLayout()
+            return true
+        }
+        guard let encoded = AIChatScreenshotImageProcessor.encode(image) else { return false }
+        let fileExtension = encoded.format == .png ? "png" : "jpg"
+        let attachment = AIChatImageAttachment(image: NSImage(cgImage: encoded.image, size: .zero),
+                                               fileName: "\(UserText.aiChatPastedImageAttachmentName).\(fileExtension)",
+                                               fileURL: nil,
+                                               skipResize: true)
+        guard omnibarController.addImageAttachmentToActiveTab(attachment) else {
+            lastAttachmentError = UserText.aiChatAttachmentImageTurnLimit(maxImagesPerTurn: omnibarController.maxImageAttachments)
+            updateAttachmentsLayout()
+            return true
+        }
+        imageAttachmentSources[attachment.id] = .paste
+        omnibarController.pixelHandler.fire(.imageAttached(source: .paste))
+        updateAttachmentsLayout()
+        return true
+    }
+
     private func applyTabSelection(_ selected: [AIChatTabAttachment], offered: [AIChatTabAttachment]) {
         // Confirming is a fresh pick action; a rejection from last time no longer applies.
         lastAttachmentError = nil
@@ -2147,11 +2326,11 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         updateAttachmentsLayout()
     }
 
-    /// Attaches dropped images and PDFs through the same validation as the picker. A file of a kind
+    /// Attaches dropped or pasted images and PDFs through the same validation as the picker. A file of a kind
     /// the omnibar attaches always consumes the drag, even when it can't be taken — letting it fall
     /// through would put its absolute path into the prompt as text.
     /// - Returns: `true` if the drop was consumed.
-    func addAttachmentsFromDrop(_ urls: [URL]) -> Bool {
+    func addAttachmentsFromDrop(_ urls: [URL], source: AIChatImageAttachmentSource = .drop) -> Bool {
         let dropped = urls.compactMap { url in UTType(filenameExtension: url.pathExtension.lowercased()).map { (url: url, type: $0) } }
         let images = dropped.filter { $0.type.conforms(to: .image) }
         let files = dropped.filter { !$0.type.conforms(to: .image) }
@@ -2175,7 +2354,7 @@ final class AIChatOmnibarContainerViewController: NSViewController {
             updateAttachmentsLayout()
             return true
         }
-        addPickedAttachments(from: acceptedImages + acceptedFiles, rejection: rejection)
+        addPickedAttachments(from: acceptedImages + acceptedFiles, source: source, rejection: rejection)
         return true
     }
 
@@ -2212,7 +2391,7 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         )
     }
 
-    private func addImageAttachment(from url: URL) {
+    private func addImageAttachment(from url: URL, source: AIChatImageAttachmentSource) {
         guard let originalImage = NSImage(contentsOf: url) else { return }
 
         let placeholderId = UUID()
@@ -2224,7 +2403,8 @@ final class AIChatOmnibarContainerViewController: NSViewController {
             skipResize: true
         )
         omnibarController.addImageAttachmentToActiveTab(placeholder)
-        omnibarController.pixelHandler.fire(.imageAttached)
+        imageAttachmentSources[placeholderId] = source
+        omnibarController.pixelHandler.fire(.imageAttached(source: source))
 
         resizeTasks[placeholderId] = makeResizeTask(for: url, placeholderId: placeholderId)
     }
@@ -2776,6 +2956,8 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         reasoningPickerButton.focusRingColor = focusRingColor
         modelPickerButton.tintColor = toolButtonTintColor
         modelPickerButton.focusRingColor = focusRingColor
+        modelPickerButton.borderColor = NSColor(designSystemColor: .surfaceDecorationPrimary)
+        suggestionsView.separatorColor = NSColor(designSystemColor: .surfaceDecorationPrimary)
 
         // The two borders read as one crisp edge over an opaque fill, but split into a visible
         // double outline over a translucent one.
@@ -2828,6 +3010,8 @@ extension AIChatOmnibarContainerViewController: NSMenuDelegate {
 
     func menuWillOpen(_ menu: NSMenu) {
         didMutateDuringAttachMenuSession = false
+        // The menu also opens for screenshots alone; it's only the tab picker when it lists tabs.
+        guard omnibarController.isOmnibarTabPickerEnabled else { return }
         omnibarController.pixelHandler.fire(.tabPickerShown)
     }
 
@@ -2838,7 +3022,7 @@ extension AIChatOmnibarContainerViewController: NSMenuDelegate {
     /// state stay in sync with whatever the user attached while the menu was open.
     func menuDidClose(_ menu: NSMenu) {
         DispatchQueue.main.async { [weak self] in
-            guard let self, !self.didMutateDuringAttachMenuSession else { return }
+            guard let self, self.omnibarController.isOmnibarTabPickerEnabled, !self.didMutateDuringAttachMenuSession else { return }
             self.omnibarController.pixelHandler.fire(.tabPickerCanceled)
         }
         guard isDeferringCarouselLayout else { return }

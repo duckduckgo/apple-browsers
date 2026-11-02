@@ -52,6 +52,9 @@ protocol ToolbarStateHandling {
 
     func setTabSwitcherView(_ view: UIView)
     func updateToolbarWithState(_ state: ToolbarContentState)
+
+    /// Views the toolbar shows for a new tab page or a loaded page, in display order.
+    func toolbarButtonViews(showsNewTabPage: Bool) -> [UIView]
 }
 
 final class ToolbarHandler: ToolbarStateHandling {
@@ -144,13 +147,32 @@ final class ToolbarHandler: ToolbarStateHandling {
         let views: [UIView] = {
             switch state {
             case .pageLoaded:
-                return createPageLoadedViews()
+                return toolbarButtonViews(showsNewTabPage: false)
             case .newTab:
-                return createNewTabViews()
+                return toolbarButtonViews(showsNewTabPage: true)
             }
         }()
 
         toolbar.setToolbarButtons(views)
+    }
+
+    func toolbarButtonViews(showsNewTabPage: Bool) -> [UIView] {
+        if showsNewTabPage {
+            return [
+                bookmarkButton,
+                passwordsButton,
+                fireButton,
+                tabSwitcherView,
+                browserMenuButton,
+            ]
+        }
+        return [
+            backButton,
+            forwardButton,
+            fireButton,
+            tabSwitcherView,
+            browserMenuButton,
+        ]
     }
 
     // MARK: - Private Methods
@@ -165,25 +187,5 @@ final class ToolbarHandler: ToolbarStateHandling {
 
         backButton.isEnabled = currentTab?.canGoBack ?? false
         forwardButton.isEnabled = currentTab?.canGoForward ?? false
-    }
-
-    private func createPageLoadedViews() -> [UIView] {
-        [
-            backButton,
-            forwardButton,
-            fireButton,
-            tabSwitcherView,
-            browserMenuButton,
-        ]
-    }
-
-    private func createNewTabViews() -> [UIView] {
-        [
-            bookmarkButton,
-            passwordsButton,
-            fireButton,
-            tabSwitcherView,
-            browserMenuButton,
-        ]
     }
 }

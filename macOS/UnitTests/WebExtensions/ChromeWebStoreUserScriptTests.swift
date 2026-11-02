@@ -16,6 +16,7 @@
 //  limitations under the License.
 //
 
+import PrivacyConfig
 import WebExtensions
 import WebKit
 import XCTest
@@ -212,6 +213,7 @@ final class ChromeWebStoreUserScriptTests: XCTestCase {
 @MainActor
 private final class ChromeWebStoreServiceMock: ChromeWebStoreManaging {
     var catalogExtensionIDs: [String] = []
+    var learnMoreURL: URL?
     var currentStatus = ChromeWebStoreStatus.installable
     var success = true
     var statusRequests = 0
@@ -229,6 +231,7 @@ private final class ChromeWebStoreServiceMock: ChromeWebStoreManaging {
         removedIdentifier = identifier
         return success
     }
+    func listing(of subfeature: ExtensionsCatalogSubfeature) -> ChromeWebStoreListing? { nil }
 }
 
 private final class StoreURLWebView: WKWebView {

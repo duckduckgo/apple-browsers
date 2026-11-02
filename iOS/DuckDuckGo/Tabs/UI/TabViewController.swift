@@ -89,71 +89,10 @@ enum WebViewPreviewSnapshotGeometry {
 
 enum WebViewPreviewSnapshotPolicy {
 
+    static let timeout: TimeInterval = 1
+
     static func shouldCapture(isLoading: Bool) -> Bool {
         !isLoading
-    }
-}
-
-enum WebViewScrollViewInsetUpdater {
-
-    // WebKit's resting offset and adjusted inset can differ by floating-point rounding.
-    private static let topPositionTolerance: CGFloat = 0.001
-
-    struct AdjustmentBehavior {
-        let contentInsetAdjustmentBehavior: UIScrollView.ContentInsetAdjustmentBehavior
-        let automaticallyAdjustsScrollIndicatorInsets: Bool
-    }
-
-    static func beginManaging(_ scrollView: UIScrollView) -> AdjustmentBehavior {
-        let behavior = AdjustmentBehavior(
-            contentInsetAdjustmentBehavior: scrollView.contentInsetAdjustmentBehavior,
-            automaticallyAdjustsScrollIndicatorInsets: scrollView.automaticallyAdjustsScrollIndicatorInsets
-        )
-        scrollView.contentInsetAdjustmentBehavior = .never
-        scrollView.automaticallyAdjustsScrollIndicatorInsets = false
-        return behavior
-    }
-
-    static func endManaging(_ scrollView: UIScrollView, restoring behavior: AdjustmentBehavior) {
-        scrollView.contentInsetAdjustmentBehavior = behavior.contentInsetAdjustmentBehavior
-        scrollView.automaticallyAdjustsScrollIndicatorInsets = behavior.automaticallyAdjustsScrollIndicatorInsets
-    }
-
-    static func shouldDeferDuringTopBounce(_ scrollView: UIScrollView) -> Bool {
-        (scrollView.isTracking || scrollView.isDragging || scrollView.isDecelerating)
-            && scrollView.contentOffset.y + scrollView.adjustedContentInset.top <= topPositionTolerance
-    }
-
-    static func update(_ scrollView: UIScrollView, insets: UIEdgeInsets, isFloatingUIEnabled: Bool = false, animated: Bool = false) {
-        if scrollView.contentInset != insets {
-            let isPinnedToTop = isFloatingUIEnabled
-                ? scrollView.contentOffset.y + scrollView.adjustedContentInset.top <= topPositionTolerance
-                : scrollView.contentOffset.y <= -scrollView.adjustedContentInset.top
-            scrollView.contentInset = insets
-            if isPinnedToTop {
-                if isFloatingUIEnabled {
-                    scrollView.setContentOffset(CGPoint(x: scrollView.contentOffset.x, y: -insets.top), animated: animated)
-                } else {
-                    scrollView.contentOffset.y = -insets.top
-                }
-            }
-        }
-
-        updateScrollIndicatorInsets(scrollView, insets: insets)
-    }
-
-    static func updateScrollIndicatorInsets(_ scrollView: UIScrollView, insets: UIEdgeInsets) {
-        if scrollView.verticalScrollIndicatorInsets != insets {
-            scrollView.verticalScrollIndicatorInsets = insets
-        }
-        if scrollView.horizontalScrollIndicatorInsets != insets {
-            scrollView.horizontalScrollIndicatorInsets = insets
-        }
-    }
-
-    static func shouldUpdateDuringChromeTransition(barsVisibilityPercent: CGFloat,
-                                                   hasAppliedInsets: Bool) -> Bool {
-        !hasAppliedInsets || barsVisibilityPercent <= 0 || barsVisibilityPercent >= 1
     }
 }
 
@@ -194,6 +133,7 @@ struct HTTPSUpgradeNavigationTracker {
 }
 
 class TabViewController: UIViewController {
+    private var cpmReadinessDocumentIsGET = false
 
     private struct Constants {
         static let frameLoadInterruptedErrorCode = 102
@@ -267,6 +207,7 @@ class TabViewController: UIViewController {
     let tabInteractionStateSource: TabInteractionStateSource?
 
     var isLinkPreview = false
+    var linkPreviewNavigationCancellable: AnyCancellable?
 
     // A workaround for an issue when in some cases webview reports `isLoading == true` when it was stoppped.
     var isLoading: Bool {
@@ -375,6 +316,7 @@ class TabViewController: UIViewController {
     let privacyConfigurationManager: PrivacyConfigurationManaging
 
     var featureFlagger: FeatureFlagger
+    let findInPageImplementation: FindInPageImplementation
     let contentScopeExperimentsManager: ContentScopeExperimentsManaging
     private lazy var internalUserDecider = AppDependencyProvider.shared.internalUserDecider
 
@@ -592,7 +534,7 @@ class TabViewController: UIViewController {
 
     var isShowingDocument: Bool {
         // Local (file://) pages aren't attachable, so don't offer the document menu for a local PDF.
-        guard featureFlagger.isFeatureOn(.aiChatPdfPageContext), let url, !url.isFileURL else { return false }
+        guard let url, !url.isFileURL else { return false }
         return DocumentPageContextProvider.isSupportedDocument(mimeType: lastMainFramePageContextMIMEType(for: url), url: url)
     }
 
@@ -708,6 +650,7 @@ class TabViewController: UIViewController {
                                    webExtensionInitialLoadWaiterProvider: @escaping @MainActor () -> WebExtensionInitialLoadWaiter? = { nil },
                                    pixelFiring: (any PixelKitFiring)? = PixelKit.shared,
                                    sitePermissionsEnabled: Bool = AppDependencyProvider.shared.isSitePermissionsEnabled,
+                                   findInPageImplementation: FindInPageImplementation = AppDependencyProvider.shared.findInPageImplementation,
                                    sitePermissionsDependenciesProvider: @escaping @MainActor () -> SitePermissionsDependencies? = { nil }) -> TabViewController {
 
         return TabViewController(tabModel: model,
@@ -750,6 +693,7 @@ class TabViewController: UIViewController {
                                  pixelFiring: pixelFiring,
                                  webExtensionManagerProvider: webExtensionManagerProvider,
                                  sitePermissionsEnabled: sitePermissionsEnabled,
+                                 findInPageImplementation: findInPageImplementation,
                                  webExtensionInitialLoadWaiterProvider: webExtensionInitialLoadWaiterProvider,
                                  sitePermissionsDependenciesProvider: sitePermissionsDependenciesProvider)
     }
@@ -843,6 +787,7 @@ class TabViewController: UIViewController {
     private let tabTerminationErrorPageInstrumentation: any TabTerminationErrorPageInstrumenting
     private lazy var terminationReloadMonitor = TerminationReloadMonitor(pixelFiring: pixelFiring)
     private let freezeMonitor: WebContentFreezeMonitor
+    private let previewSnapshotCapturer = WebViewPreviewSnapshotCapturer()
 
     private(set) var aiChatContentHandler: AIChatContentHandling
     private(set) var voiceSearchHelper: VoiceSearchHelperProtocol
@@ -880,8 +825,7 @@ class TabViewController: UIViewController {
             userScriptProvider: { [weak self] in self?.userScripts?.pageContextUserScript },
             faviconProvider: { [weak self] url in self?.getFaviconBase64(for: url) },
             attachabilityPolicyProvider: { [weak self] in self?.currentPageContextAttachabilityPolicy() },
-            mimeTypeProvider: { [weak self] url in self?.lastMainFramePageContextMIMEType(for: url) },
-            isDocumentContextEnabled: { [weak self] in self?.featureFlagger.isFeatureOn(.aiChatPdfPageContext) ?? false }
+            mimeTypeProvider: { [weak self] url in self?.lastMainFramePageContextMIMEType(for: url) }
         )
     }
 
@@ -990,6 +934,7 @@ class TabViewController: UIViewController {
          tabTerminationErrorPageInstrumentation: (any TabTerminationErrorPageInstrumenting)? = nil,
          webExtensionManagerProvider: @escaping () -> WebExtensionManaging? = { nil },
          sitePermissionsEnabled: Bool = AppDependencyProvider.shared.isSitePermissionsEnabled,
+         findInPageImplementation: FindInPageImplementation = AppDependencyProvider.shared.findInPageImplementation,
          webExtensionInitialLoadWaiterProvider: @escaping @MainActor () -> WebExtensionInitialLoadWaiter? = { nil },
          sitePermissionsDependenciesProvider: @escaping @MainActor () -> SitePermissionsDependencies? = { nil }) {
 
@@ -1001,13 +946,18 @@ class TabViewController: UIViewController {
         self.historyManager = historyManager
         self.syncService = syncService
         self.userScriptsDependencies = userScriptsDependencies
-        self.contentBlockingAssetsPublisher = contentBlockingAssetsPublisher
+        self.contentBlockingAssetsPublisher = contentBlockingAssetsPublisher.map { content in
+            var content = content
+            content.findInPageImplementation = findInPageImplementation
+            return content
+        }.eraseToAnyPublisher()
         self.certificateTrustEvaluator = certificateTrustEvaluator
         self.subscriptionDataReporter = subscriptionDataReporter
         self.contextualOnboardingPresenter = contextualOnboardingPresenter
         self.contextualOnboardingLogic = contextualOnboardingLogic
         self.onboardingPixelReporter = onboardingPixelReporter
         self.featureFlagger = featureFlagger
+        self.findInPageImplementation = findInPageImplementation
         self.isFloatingUIFeatureEnabledForCurrentLaunch = isFloatingUIFeatureEnabledForCurrentLaunch
             ?? featureFlagger.isFloatingUIFeatureEnabled()
         self.contentScopeExperimentsManager = contentScopeExperimentManager
@@ -1231,15 +1181,20 @@ class TabViewController: UIViewController {
         applyWebViewLayout(for: barsVisibilityPercent)
     }
 
+    func updateWebViewLayoutForKeyboard() {
+        guard floatingUIManager.isFloatingUIEnabled, webView != nil else { return }
+        applyWebViewLayout(for: chromeDelegate?.currentBarsVisibility ?? lastAppliedBarsVisibilityPercent, forceFloatingUIInsets: true)
+    }
+
     func applyDeferredFloatingUIInsetsIfNeeded() {
         guard floatingUIManager.isFloatingUIEnabled, hasDeferredFloatingUIInsets, let webView,
               !WebViewScrollViewInsetUpdater.shouldDeferDuringTopBounce(webView.scrollView) else { return }
         applyWebViewLayout(for: chromeDelegate?.currentBarsVisibility ?? lastAppliedBarsVisibilityPercent)
     }
 
-    private func applyWebViewLayout(for barsVisibilityPercent: CGFloat) {
+    private func applyWebViewLayout(for barsVisibilityPercent: CGFloat, forceFloatingUIInsets: Bool = false) {
         if floatingUIManager.isFloatingUIEnabled {
-            updateWebViewLayoutForFloatingUI(for: barsVisibilityPercent)
+            updateWebViewLayoutForFloatingUI(for: barsVisibilityPercent, forceInsets: forceFloatingUIInsets)
         } else {
             updateWebViewBottomConstraint(for: barsVisibilityPercent)
             updateWebViewLayoutForClassicUI(for: barsVisibilityPercent)
@@ -1297,7 +1252,7 @@ class TabViewController: UIViewController {
         return true
     }
 
-    private func updateWebViewLayoutForFloatingUI(for barsVisibilityPercent: CGFloat) {
+    private func updateWebViewLayoutForFloatingUI(for barsVisibilityPercent: CGFloat, forceInsets: Bool = false) {
         guard #available(iOS 26, *) else {
             assertionFailure("Floating UI requires iOS 26")
             return
@@ -1343,7 +1298,7 @@ class TabViewController: UIViewController {
         }
         // WebKit clamps overscroll when obscuredContentInsets changes, even for bottom-only changes.
         // Keep both inset types stable until the bounce ends or the gesture moves back into the page.
-        if hasAppliedFloatingUIScrollViewInsets,
+        if !forceInsets, hasAppliedFloatingUIScrollViewInsets,
            WebViewScrollViewInsetUpdater.shouldDeferDuringTopBounce(webView.scrollView) {
             hasDeferredFloatingUIInsets = true
             return
@@ -1351,7 +1306,7 @@ class TabViewController: UIViewController {
         let hadDeferredInsets = hasDeferredFloatingUIInsets
         let animateTopAlignment = hadDeferredInsets
             && !webView.scrollView.isTracking && !webView.scrollView.isDragging && !webView.scrollView.isDecelerating
-        let shouldUpdateScrollInsets = WebViewScrollViewInsetUpdater.shouldUpdateDuringChromeTransition(
+        let shouldUpdateScrollInsets = forceInsets || WebViewScrollViewInsetUpdater.shouldUpdateDuringChromeTransition(
             barsVisibilityPercent: barsVisibilityPercent,
             hasAppliedInsets: hasAppliedFloatingUIScrollViewInsets
         )
@@ -2026,6 +1981,11 @@ class TabViewController: UIViewController {
     
     func updateContentMode() {
         webView.configuration.defaultWebpagePreferences.preferredContentMode = tabModel.isDesktop ? .desktop : .mobile
+
+        // Desktop sites expect the Fullscreen API that iPhone Safari's mobile mode doesn't expose.
+        if #available(iOS 16.0, *), UIDevice.current.userInterfaceIdiom == .phone {
+            webView.configuration.preferences.isElementFullscreenEnabled = tabModel.isDesktop && featureFlagger.isFeatureOn(.elementFullscreen)
+        }
     }
 
     func goBack() {
@@ -2189,7 +2149,7 @@ class TabViewController: UIViewController {
         pullToRefreshViewAdapter?.setNativeErrorPageVisible(isVisible)
     }
 
-    private func setErrorInfoImage(resource: ImageResource = AppRebrand.isAppRebranded() ? .daxAccident : .daxAccidentLegacy,
+    private func setErrorInfoImage(resource: ImageResource = .daxAccident,
                                    size: CGSize = CGSize(width: 296, height: 188)) {
         errorInfoImage.image = UIImage(resource: resource)
         errorInfoImageWidthConstraint.constant = size.width
@@ -2946,6 +2906,9 @@ extension TabViewController: WKNavigationDelegate {
             webExtensionManagerProvider()?.cpmMessagingHealthMonitor.handle(
                 .navigationStarted(tabIdentifier: tabModel.uid, navigationKind: navigationKind)
             )
+            webExtensionManagerProvider()?.cpmMessagingHealthMonitor.matchReadinessRecoveryNavigation(tabIdentifier: tabModel.uid) {
+                $0 === navigation
+            }
         }
         sitePermissionsDidStartProvisionalNavigation(webView, navigation: navigation)
         navigationPixelResponder.didStart(navigation)
@@ -2999,6 +2962,9 @@ extension TabViewController: WKNavigationDelegate {
 
         if let url = webView.url {
             if #available(iOS 18.4, *), let webExtensionManager = webExtensionManagerProvider() {
+                webExtensionManager.cpmMessagingHealthMonitor.registerReadinessRecoveryDocument(
+                    tabIdentifier: tabModel.uid, webView: webView, isGET: cpmReadinessDocumentIsGET
+                )
                 webExtensionManager.cpmMessagingHealthMonitor.handle(.navigationFinished(
                     tabIdentifier: tabModel.uid,
                     url: url,
@@ -3092,7 +3058,8 @@ extension TabViewController: WKNavigationDelegate {
     /// Captures a preview of the current web content via WebKit's asynchronous `takeSnapshot`, which
     /// renders out of process rather than blocking the main thread. Falls back to `preparePreviewSync`
     /// only while a JS alert is on screen, since `takeSnapshot` captures web content but not native overlays.
-    func preparePreview(completion: @escaping (UIImage?) -> Void) {
+    /// `reportTimeout` fires `web-content_preview-snapshot-timeout` when the snapshot times out; only the tab switcher sets it.
+    func preparePreview(reportTimeout: Bool = false, completion: @escaping (UIImage?) -> Void) {
         let capturesFullBounds = floatingUIManager.isFloatingUIEnabled
 
         DispatchQueue.main.async { [weak self] in
@@ -3121,11 +3088,13 @@ extension TabViewController: WKNavigationDelegate {
                 return
             }
 
-            let configuration = makePreviewSnapshotConfiguration(
-                rect: visibleRect,
-                windowSize: webView.window?.bounds.size ?? visibleRect.size,
-                afterScreenUpdates: true)
-            webView.takeSnapshot(with: configuration) { image, _ in
+            previewSnapshotCapturer.capture(webView: webView,
+                                            rect: visibleRect,
+                                            timeout: WebViewPreviewSnapshotPolicy.timeout,
+                                            waitForScreenUpdates: true) { [weak self] image, result in
+                if reportTimeout, result.isTimeout {
+                    self?.freezeMonitor.previewSnapshotTimedOut(result: result)
+                }
                 completion(image)
             }
         }
@@ -3148,25 +3117,14 @@ extension TabViewController: WKNavigationDelegate {
             return
         }
 
-        let configuration = makePreviewSnapshotConfiguration(
-            rect: rect,
-            windowSize: webView.window?.bounds.size ?? rect.size,
-            afterScreenUpdates: false)
-        webView.takeSnapshot(with: configuration) { image, _ in
+        previewSnapshotCapturer.capture(webView: webView,
+                                        rect: rect,
+                                        timeout: WebViewPreviewSnapshotPolicy.timeout,
+                                        waitForScreenUpdates: false) { image, _ in
             DispatchQueue.main.async {
                 completion(image)
             }
         }
-    }
-
-    private func makePreviewSnapshotConfiguration(rect: CGRect,
-                                                  windowSize: CGSize,
-                                                  afterScreenUpdates: Bool) -> WKSnapshotConfiguration {
-        let configuration = WKSnapshotConfiguration()
-        configuration.rect = rect
-        configuration.snapshotWidth = NSNumber(value: WebViewPreviewSnapshotGeometry.snapshotWidth(for: rect, windowSize: windowSize))
-        configuration.afterScreenUpdates = afterScreenUpdates
-        return configuration
     }
 
     /// Renders the web view on the calling thread. `drawHierarchy` blocks until the render server
@@ -3644,6 +3602,9 @@ extension TabViewController: WKNavigationDelegate {
         // `didStartProvisional` — no other `decidePolicyFor` can interleave between them.
         let wrappedHandler: (TabNavigationDecision) -> Void = { [weak self] decision in
             if case .allow = decision {
+                if navigationAction.isTargetingMainFrame {
+                    self?.cpmReadinessDocumentIsGET = navigationAction.request.httpMethod == "GET"
+                }
                 self?.navigationPixelResponder.willStart(navigationAction)
             }
             decisionHandler(decision.webKitPolicy)
@@ -3653,6 +3614,7 @@ extension TabViewController: WKNavigationDelegate {
         // Content Blocking retry below, so that retry does not wait on extension startup twice.
         if #available(iOS 18.4, *),
            navigationAction.isTargetingMainFrame,
+           [.http, .https].contains(navigationAction.request.url?.navigationalScheme),
            let initialLoadWaiter = webExtensionInitialLoadWaiterProvider() {
             webExtensionNavigationTask = Task { @MainActor [weak self, webView, webExtensionNavigationGate] in
                 guard !Task.isCancelled else {
@@ -4859,7 +4821,7 @@ extension TabViewController: WKUIDelegate {
         
         let alert = WebJSAlert(domain: frame.safeRequest?.url?.host
                                // in case the web view is navigating to another host
-                               ?? webView.backForwardList.currentItem?.url.host
+                               ?? webView.backForwardList.currentItem?.safeURL?.host
                                ?? self.url?.absoluteString
                                ?? "",
                                message: message,
@@ -4879,7 +4841,7 @@ extension TabViewController: WKUIDelegate {
         
         let alert = WebJSAlert(domain: frame.safeRequest?.url?.host
                                // in case the web view is navigating to another host
-                               ?? webView.backForwardList.currentItem?.url.host
+                               ?? webView.backForwardList.currentItem?.safeURL?.host
                                ?? self.url?.absoluteString
                                ?? "",
                                message: message,
@@ -4898,9 +4860,9 @@ extension TabViewController: WKUIDelegate {
             return
         }
         
-        let alert = WebJSAlert(domain: frame.request.url?.host
+        let alert = WebJSAlert(domain: frame.safeRequest?.url?.host
                                // in case the web view is navigating to another host
-                               ?? webView.backForwardList.currentItem?.url.host
+                               ?? webView.backForwardList.currentItem?.safeURL?.host
                                ?? self.url?.absoluteString
                                ?? "",
                                message: prompt,
@@ -4962,12 +4924,12 @@ extension TabViewController: UIGestureRecognizerDelegate {
     }
 
     func requestFindInPage() {
-        if #available(iOS 16.0, *) {
+        pixelFiring?.fire(FindInPagePixel.opened, frequency: .daily)
+
+        if #available(iOS 16.0, *), findInPageImplementation == .system {
             webView.isFindInteractionEnabled = true
             let findInteraction = webView.findInteraction
-            // Ignore repeat invocations while find is open so in-progress text isn't replaced with a stored query.
             guard findInteraction?.isFindNavigatorVisible == false else { return }
-            // Default to empty (not nil) so this tab's field doesn't fall back to the system-wide retained query from another tab.
             findInteraction?.searchText = (webView as? WebView)?.lastFindInPageQuery ?? ""
             findInteraction?.presentFindNavigator(showingReplace: false)
             (webView as? WebView)?.beginTrackingFindInPageQuery()

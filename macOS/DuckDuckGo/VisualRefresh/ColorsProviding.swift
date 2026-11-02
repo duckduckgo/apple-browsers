@@ -22,7 +22,6 @@ import PrivacyConfig
 
 protocol ColorsProviding {
     // MARK: - Address Bar
-    var addressBarOutlineShadow: NSColor { get }
     var addressBarShadowColor: NSColor { get }
     var addressBarSuffixTextColor: NSColor { get }
     var addressBarTextFieldColor: NSColor { get }
@@ -92,7 +91,6 @@ final class ColorsProvider: ColorsProviding {
     private let palette: ThemeColors
 
     // MARK: - Address Bar
-    var addressBarOutlineShadow: NSColor { palette.accentAltGlowPrimary }
     var addressBarShadowColor: NSColor { palette.shadowTertiary }
     var addressBarSuffixTextColor: NSColor { palette.textSecondary }
     var addressBarTextFieldColor: NSColor { palette.textPrimary }

@@ -112,7 +112,9 @@ class TabsBarViewController: UIViewController {
     }
 
     lazy var fireButton: UIButton = {
-        createButton(image: DesignSystemImages.Glyphs.Size24.fireSolid)
+        let button = createButton(image: DesignSystemImages.Glyphs.Size24.fireSolid)
+        button.accessibilityIdentifier = "Browser.Toolbar.Button.Fire"
+        return button
     }()
 
     lazy var addTabButton: UIButton = {
@@ -1152,14 +1154,14 @@ extension MainViewController: TabsBarDelegate {
             return
         }
 
-        currentTab?.aiChatContextualSheetCoordinator.dismissSheet()
-        dismissOmniBar()
-
         // Tabs bar is iPad only and this is to work around on a problem iOS 26 which will be fixed later with Xcode 26.
         let switchesTab = tab !== tabManager.currentTabsModel.currentTab
         if switchesTab {
+            // The sidebar leaves the tabs bar usable, and tapping the tab it belongs to keeps it open.
+            currentTab?.aiChatContextualSheetCoordinator.dismissSheet()
             chromeManager.preventNextScrollToTop()
         }
+        dismissOmniBar()
         
         selectTab(tab)
         if switchesTab {

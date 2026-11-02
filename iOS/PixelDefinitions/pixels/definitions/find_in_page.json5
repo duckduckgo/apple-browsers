@@ -1,0 +1,10 @@
+{
+    "find-in-page_opened": {
+        "description": "Fires when the user requests Find in Page through the browsing menu, share sheet, or keyboard shortcut. Measures daily usage attempts, including requests where the system find UI fails to appear.",
+        "owners": ["brindy"],
+        "triggers": ["user_interaction"],
+        "suffixes": ["daily", "platform", "form_factor"],
+        "parameters": ["appVersion"],
+        "expires": "2027-01-19"
+    }
+}

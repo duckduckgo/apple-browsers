@@ -115,6 +115,7 @@ final class AIChatTabExtension {
         pageContextRequestedPublisher = pageContextRequestedSubject.eraseToAnyPublisher()
         pageContextConsumedPublisher = pageContextConsumedSubject.eraseToAnyPublisher()
         pageContextRemovedPublisher = pageContextRemovedSubject.eraseToAnyPublisher()
+        pageContextAddedPublisher = pageContextAddedSubject.eraseToAnyPublisher()
         chatRestorationDataPublisher = chatRestorationDataSubject.eraseToAnyPublisher()
 
         webViewPublisher.sink { [weak self] webView in
@@ -206,6 +207,12 @@ final class AIChatTabExtension {
             }
             .store(in: &userScriptCancellables)
 
+        aiChatUserScript.handler.pageContextAddedPublisher
+            .sink { [weak self] _ in
+                self?.pageContextAddedSubject.send()
+            }
+            .store(in: &userScriptCancellables)
+
         aiChatUserScript.handler.chatRestorationDataPublisher
             .sink { [weak self] data in
                 self?.chatRestorationDataSubject.send(data)
@@ -221,6 +228,9 @@ final class AIChatTabExtension {
 
     private let pageContextRemovedSubject = PassthroughSubject<Void, Never>()
     let pageContextRemovedPublisher: AnyPublisher<Void, Never>
+
+    private let pageContextAddedSubject = PassthroughSubject<Void, Never>()
+    let pageContextAddedPublisher: AnyPublisher<Void, Never>
 
     private let chatRestorationDataSubject = PassthroughSubject<AIChatRestorationData?, Never>()
     let chatRestorationDataPublisher: AnyPublisher<AIChatRestorationData?, Never>
@@ -585,6 +595,7 @@ protocol AIChatProtocol: AnyObject, NavigationResponder {
     var pageContextRequestedPublisher: AnyPublisher<Void, Never> { get }
     var pageContextConsumedPublisher: AnyPublisher<Void, Never> { get }
     var pageContextRemovedPublisher: AnyPublisher<Void, Never> { get }
+    var pageContextAddedPublisher: AnyPublisher<Void, Never> { get }
     var chatRestorationDataPublisher: AnyPublisher<AIChatRestorationData?, Never> { get }
 }
 

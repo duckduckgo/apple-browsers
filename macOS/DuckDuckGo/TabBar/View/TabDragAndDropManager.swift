@@ -67,11 +67,12 @@ final class TabDragAndDropManager {
             return
         }
 
-        let destinationCollection = destinationUnit.index.isPinnedTab ? destinationTabCollectionViewModel.pinnedTabsCollection : destinationTabCollectionViewModel.tabCollection
-        if let destinationCollection {
-            let newIndex = min(destinationUnit.index.item, destinationCollection.tabs.count)
-            sourceTabCollectionViewModel.moveTab(at: sourceUnit.index.item, to: destinationTabCollectionViewModel, at: newIndex)
-        }
+        // Move Tab is limited From(Unpinned) > To(Unpinned)
+        // When the Drop destination is the Pinned collection, we'll instead place it at `Location = 0` in the Unpinned collection
+        let requestedIndex = destinationUnit.index.isPinnedTab ? 0 : destinationUnit.index.item
+        let targetIndex = min(requestedIndex, destinationTabCollectionViewModel.tabCollection.tabs.count)
+
+        sourceTabCollectionViewModel.moveTab(at: sourceUnit.index.item, to: destinationTabCollectionViewModel, at: targetIndex)
     }
 
     func clear() {

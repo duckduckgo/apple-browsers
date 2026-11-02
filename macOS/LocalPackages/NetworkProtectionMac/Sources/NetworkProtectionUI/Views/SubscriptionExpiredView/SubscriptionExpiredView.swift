@@ -24,25 +24,15 @@ import DesignResourcesKit
 struct SubscriptionExpiredView: View {
     enum Constants {
         static let backgroundCornerRadius = 16.0
-        static let legacyBackgroundCornerRadius = 6.0
     }
 
     let subscribeButtonHandler: () -> Void
     let uninstallButtonHandler: () -> Void
 
-    /// Captured at init so it stays stable for the view's lifetime.
-    let isAppRebranded: Bool
-
     init(subscribeButtonHandler: @escaping () -> Void,
-         uninstallButtonHandler: @escaping () -> Void,
-         isAppRebranded: Bool = DesignSystemRebrand.isAppRebranded()) {
+         uninstallButtonHandler: @escaping () -> Void) {
         self.subscribeButtonHandler = subscribeButtonHandler
         self.uninstallButtonHandler = uninstallButtonHandler
-        self.isAppRebranded = isAppRebranded
-    }
-
-    private var cornerRadius: CGFloat {
-        isAppRebranded ? Constants.backgroundCornerRadius : Constants.legacyBackgroundCornerRadius
     }
 
     public var body: some View {
@@ -74,10 +64,10 @@ struct SubscriptionExpiredView: View {
         .padding(.horizontal, 10)
         .cornerRadius(8)
         .background(
-            RoundedRectangle(cornerRadius: cornerRadius, style: .circular)
+            RoundedRectangle(cornerRadius: Constants.backgroundCornerRadius, style: .circular)
                 .stroke(Color(.onboardingStepBorder), lineWidth: 1)
                 .background(
-                    RoundedRectangle(cornerRadius: cornerRadius, style: .circular)
+                    RoundedRectangle(cornerRadius: Constants.backgroundCornerRadius, style: .circular)
                         .fill(Color(.onboardingStepBackground))
                 )
         )

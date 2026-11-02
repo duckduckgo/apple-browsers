@@ -63,15 +63,9 @@ final class UserScripts: UserScriptsProvider {
     var specialErrorPageUserScript: SpecialErrorPageUserScript?
 
     private(set) var faviconScript = FaviconUserScript()
-    private(set) var findInPageScript: FindInPageUserScript? = {
-        if #available(iOS 26, *) {
-            return nil
-        }
-        return FindInPageUserScript()
-    }()
+    private(set) var findInPageScript: FindInPageUserScript?
 
     private(set) var selectionFrameScript: SelectionFrameUserScript
-    private(set) var fullScreenVideoScript = FullScreenVideoUserScript()
     private(set) var mediaCaptureUserScript: MediaCaptureUserScript?
     private(set) var geolocationUserScript: GeolocationUserScript?
     private(set) var printingSubfeature = PrintingSubfeature()
@@ -82,6 +76,7 @@ final class UserScripts: UserScriptsProvider {
     init(with sourceProvider: ScriptSourceProviding,
          appSettings: AppSettings = AppDependencyProvider.shared.appSettings,
          featureFlagger: FeatureFlagger = AppDependencyProvider.shared.featureFlagger,
+         findInPageImplementation: FindInPageImplementation = AppDependencyProvider.shared.findInPageImplementation,
          sitePermissionsEnabled: Bool = false,
          mediaCaptureUserScript: MediaCaptureUserScript? = nil,
          internalFeedbackAttachmentsProvider: InternalFeedbackAttachmentsProviding = AppDependencyProvider.shared.internalFeedbackAttachmentsProvider,
@@ -91,6 +86,7 @@ final class UserScripts: UserScriptsProvider {
          aiChatDebugSettings: AIChatDebugSettingsHandling = AIChatDebugSettings()) {
 
         isAutoconsentExtensionAvailable = sourceProvider.webExtensionAvailability?.isAutoconsentExtensionAvailable ?? false
+        findInPageScript = findInPageImplementation == .legacy ? FindInPageUserScript() : nil
 
         selectionFrameScript = SelectionFrameUserScript()
         self.mediaCaptureUserScript = mediaCaptureUserScript
@@ -103,13 +99,14 @@ final class UserScripts: UserScriptsProvider {
         do {
             let configGenerator = ContentScopePrivacyConfigurationJSONGenerator(featureFlagger: AppDependencyProvider.shared.featureFlagger,
                                                                                 privacyConfigurationManager: sourceProvider.privacyConfigurationManager,
-                                                                                excludedFeatures: [PrivacyFeature.autoconsent.rawValue])
+                                                                                excludedFeatures: [PrivacyFeature.autoconsent.rawValue, PrivacyFeature.eventHub.rawValue])
             let isolatedConfigGenerator = ContentScopePrivacyConfigurationJSONGenerator(featureFlagger: AppDependencyProvider.shared.featureFlagger,
                                                                                         privacyConfigurationManager: sourceProvider.privacyConfigurationManager)
             contentScopeUserScript = try ContentScopeUserScript(sourceProvider.privacyConfigurationManager,
                                                                 properties: sourceProvider.contentScopeProperties,
                                                                 scriptContext: .contentScope(surrogateTrackerData: sourceProvider.trackerProtectionDataSource?.surrogateFilteredTrackerData),
-                                                                allowedNonisolatedFeatures: [PageContextUserScript.featureName, PrintingSubfeature.featureNameValue, TrackerProtectionSubfeature.featureNameValue],
+                                                                allowedNonisolatedFeatures: [PageContextUserScript.featureName, PrintingSubfeature.featureNameValue, TrackerProtectionSubfeature.featureNameValue,
+                                                                                             SelectionFrameUserScript.featureName],
                                                                 privacyConfigurationJSONGenerator: configGenerator)
             contentScopeUserScriptIsolated = try ContentScopeUserScript(sourceProvider.privacyConfigurationManager,
                                                                         properties: sourceProvider.contentScopeProperties,
@@ -184,7 +181,6 @@ final class UserScripts: UserScriptsProvider {
         contentScopeUserScriptIsolated.registerSubfeature(delegate: aiChatUserScript)
         contentScopeUserScriptIsolated.registerSubfeature(delegate: subscriptionUserScript)
         contentScopeUserScriptIsolated.registerSubfeature(delegate: serpSettingsUserScript)
-        contentScopeUserScriptIsolated.registerSubfeature(delegate: selectionFrameScript)
         contentScopeUserScriptIsolated.registerSubfeature(delegate: internalFeedbackUserScript)
         if let duckAiNativeStorageUserScript {
             contentScopeUserScriptIsolated.registerSubfeature(delegate: duckAiNativeStorageUserScript)
@@ -192,6 +188,7 @@ final class UserScripts: UserScriptsProvider {
         contentScopeUserScript.registerSubfeature(delegate: printingSubfeature)
         contentScopeUserScript.registerSubfeature(delegate: pageContextUserScript)
         contentScopeUserScript.registerSubfeature(delegate: trackerProtectionSubfeature)
+        contentScopeUserScript.registerSubfeature(delegate: selectionFrameScript)
 
         // Special pages - Such as Duck Player
         specialPages = SpecialPagesUserScript()
@@ -213,7 +210,6 @@ final class UserScripts: UserScriptsProvider {
     lazy var userScripts: [UserScript] = {
         var scripts: [UserScript?] = [
             findInPageScript,
-            fullScreenVideoScript,
             mediaCaptureUserScript,
             geolocationUserScript?.policyScript,
             geolocationUserScript,
@@ -352,12 +348,6 @@ private final class IOSInternalFeedbackDeviceInfoProvider: InternalFeedbackDevic
             let used = Self.string(fromByteCount: Int64(memoryFootprint), countStyle: .memory)
             let total = Self.string(fromByteCount: Int64(ProcessInfo.processInfo.physicalMemory), countStyle: .memory)
             diagnostics["Memory"] = "\(used) used, \(total) total"
-        }
-
-        let homeURL = URL(fileURLWithPath: NSHomeDirectory())
-        if let values = try? homeURL.resourceValues(forKeys: [.volumeAvailableCapacityForImportantUsageKey]),
-           let freeBytes = values.volumeAvailableCapacityForImportantUsage {
-            diagnostics["Disk"] = "\(Self.string(fromByteCount: freeBytes, countStyle: .file)) free"
         }
 
         return diagnostics

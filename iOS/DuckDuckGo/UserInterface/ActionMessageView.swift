@@ -20,7 +20,6 @@
 import UIKit
 import Core
 import DesignResourcesKit
-import DesignResourcesKitIcons
 import MetricBuilder
 
 extension ActionMessageView: NibLoading {}
@@ -48,9 +47,8 @@ class ActionMessageView: UIView, ActionMessagePresenting {
     private enum Constants {
         static var maxWidth: CGFloat = 346
         static var minimumHorizontalPadding: CGFloat = 20
-        static var cornerRadius: CGFloat = 10
 
-        @MainActor static var rebrandedMinimumHeight: CGFloat {
+        @MainActor static var minimumHeight: CGFloat {
             ContainerMetrics.cornerRadius * 2
         }
 
@@ -100,24 +98,22 @@ class ActionMessageView: UIView, ActionMessagePresenting {
     override func awakeFromNib() {
         super.awakeFromNib()
         
-        layer.cornerRadius = AppRebrand.isAppRebranded() ? ContainerMetrics.cornerRadius : Constants.cornerRadius
-        if AppRebrand.isAppRebranded() {
-            heightAnchor.constraint(greaterThanOrEqualToConstant: Constants.rebrandedMinimumHeight).isActive = true
-            labelToLeading.constant = 16
-            buttonToTrailing.constant = 16
-        }
+        layer.cornerRadius = ContainerMetrics.cornerRadius
+        heightAnchor.constraint(greaterThanOrEqualToConstant: Constants.minimumHeight).isActive = true
+        labelToLeading.constant = 16
+        buttonToTrailing.constant = 16
         applySystemFonts()
     }
 
     private func applySystemFonts() {
-        let messageFont = AppRebrand.isAppRebranded() ? UIFont.daxBodyRegular() : UIFont.daxSubheadRegular()
+        let messageFont = UIFont.daxBodyRegular()
         if let attributedText = message.attributedText {
             message.attributedText = attributedText.withFont(messageFont)
         } else {
             message.font = messageFont
         }
 
-        let buttonFont = AppRebrand.isAppRebranded() ? UIFont.daxBodySemibold() : UIFont.daxSubheadSemibold()
+        let buttonFont = UIFont.daxBodySemibold()
         if let attributedTitle = actionButton.attributedTitle(for: .normal) {
             actionButton.setAttributedTitle(attributedTitle.withFont(buttonFont), for: .normal)
         } else {

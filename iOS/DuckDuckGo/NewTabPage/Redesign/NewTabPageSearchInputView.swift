@@ -27,6 +27,8 @@ struct NewTabPageSearchInputView: View {
     @ObservedObject var model: NewTabPageSearchInputModel
     let onActivate: (TextEntryMode) -> Void
     let onVoiceSearch: (TextEntryMode) -> Void
+    /// When non-nil, the Duck.ai button shows this menu instead of opening Duck.ai.
+    var aiChatMenu: () -> UIMenu? = { nil }
 
     var body: some View {
         VStack(spacing: 0) {
@@ -40,7 +42,8 @@ struct NewTabPageSearchInputView: View {
                                         isAIChatButtonShown: model.isAIChatButtonShown,
                                         isVoiceSearchEnabled: model.settings.isVoiceSearchEnabled,
                                         onActivate: onActivate,
-                                        onVoiceSearch: onVoiceSearch)
+                                        onVoiceSearch: onVoiceSearch,
+                                        aiChatMenu: aiChatMenu)
                 .frame(height: Metrics.fieldHeight)
         }
         .background(RedesignedNewTabPageCardBackground())
@@ -69,6 +72,7 @@ private struct NewTabPageRestingSearchField: UIViewRepresentable {
     let isVoiceSearchEnabled: Bool
     let onActivate: (TextEntryMode) -> Void
     let onVoiceSearch: (TextEntryMode) -> Void
+    let aiChatMenu: () -> UIMenu?
 
     func makeCoordinator() -> Coordinator {
         Coordinator(field: self)
@@ -91,6 +95,7 @@ private struct NewTabPageRestingSearchField: UIViewRepresentable {
         // Give the non-editable placeholder a VoiceOver action without intercepting trailing buttons.
         let activateButton = context.coordinator.activateButton
         activateButton.searchView = view
+        activateButton.accessibilityIdentifier = "searchEntry"
         view.addSubview(activateButton)
         activateButton.translatesAutoresizingMaskIntoConstraints = false
         NSLayoutConstraint.activate([
@@ -103,6 +108,7 @@ private struct NewTabPageRestingSearchField: UIViewRepresentable {
         view.aiChatButton.addTarget(context.coordinator, action: #selector(Coordinator.activateAIChat), for: .touchUpInside)
         view.voiceSearchButton.addTarget(context.coordinator, action: #selector(Coordinator.activateVoiceSearch), for: .touchUpInside)
         view.aiChatButton.accessibilityLabel = UserText.duckAiFeatureName
+        view.aiChatButton.accessibilityIdentifier = "Browser.OmniBar.Button.AIChat"
         view.voiceSearchButton.accessibilityLabel = UserText.settingsVoiceSearch
         return view
     }
@@ -115,6 +121,8 @@ private struct NewTabPageRestingSearchField: UIViewRepresentable {
             attributes: [.foregroundColor: UIColor(designSystemColor: .textSecondary)])
         context.coordinator.activateButton.accessibilityLabel = placeholder
         view.aiChatButton.isHidden = !isAIChatButtonShown
+        view.aiChatButton.menu = aiChatMenu()
+        view.aiChatButton.showsMenuAsPrimaryAction = view.aiChatButton.menu != nil
         view.voiceSearchButton.isHidden = !isVoiceSearchEnabled
     }
 

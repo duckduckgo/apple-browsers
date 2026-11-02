@@ -23,18 +23,15 @@ import FeatureFlags_iOS
 extension MainViewController {
     
     override var keyCommands: [UIKeyCommand]? {
-        let settingsCommand = UIKeyCommand(title: UserText.settingsTitle, action: #selector(keyboardSettings),
-                                          input: ",", modifierFlags: .command)
-        settingsCommand.wantsPriorityOverSystemBehavior = true
+        let menuSpec = MainMenuSpec(isEnabled: featureFlagger.isFeatureOn(.ipadMenuBar))
 
         let alwaysAvailable: [UIKeyCommand] = [
-            settingsCommand,
             UIKeyCommand(title: "", action: #selector(keyboardFire), input: UIKeyCommand.inputBackspace,
                          modifierFlags: [ .control, .alternate ], discoverabilityTitle: UserText.keyCommandFire)
         ]
         
         guard tabSwitcherController == nil else {
-            return alwaysAvailable
+            return MainMenuBuilder().keyCommands(for: menuSpec, from: alwaysAvailable, availability: menuCommandAvailability)
         }
         
         var browsingCommands = [UIKeyCommand]()
@@ -144,7 +141,34 @@ extension MainViewController {
         commands.forEach {
             $0.wantsPriorityOverSystemBehavior = true
         }
-        return commands
+        return MainMenuBuilder().keyCommands(for: menuSpec, from: commands, availability: menuCommandAvailability)
+    }
+
+    override func validate(_ command: UICommand) {
+        super.validate(command)
+        guard featureFlagger.isFeatureOn(.ipadMenuBar), let menuCommand = MainMenuCommand(action: command.action) else { return }
+        if menuCommandAvailability.isEnabled(menuCommand) {
+            command.attributes.remove(.disabled)
+        } else {
+            command.attributes.insert(.disabled)
+        }
+    }
+
+    override func canPerformAction(_ action: Selector, withSender sender: Any?) -> Bool {
+        guard featureFlagger.isFeatureOn(.ipadMenuBar), let command = MainMenuCommand(action: action) else {
+            return super.canPerformAction(action, withSender: sender)
+        }
+        return menuCommandAvailability.isEnabled(command)
+    }
+
+    private var menuCommandAvailability: MenuCommandAvailability {
+        let presentation: MenuCommandAvailability.State.Presentation
+        if let tabSwitcherController {
+            presentation = tabSwitcherController.presentedViewController == nil ? .tabSwitcher : .blockingModal
+        } else {
+            presentation = presentedViewController == nil ? .browser : .blockingModal
+        }
+        return MenuCommandAvailability(state: .init(shortcutsEnabled: isShortcutEnabled(), presentation: presentation))
     }
 
     @objc func keyboardMoveSelectionUp() {
@@ -156,34 +180,41 @@ extension MainViewController {
     }
 
     @objc func keyboardReload() {
+        KeyboardShortcutPixel.fireUsed(with: pixelFiring)
         guard isShortcutEnabled() else { return }
         self.currentTab?.refresh()
     }
 
     @objc func keyboardZoomIn() {
+        KeyboardShortcutPixel.fireUsed(with: pixelFiring)
         guard isShortcutEnabled() else { return }
         currentTab?.zoomIn()
     }
 
     @objc func keyboardZoomOut() {
+        KeyboardShortcutPixel.fireUsed(with: pixelFiring)
         guard isShortcutEnabled() else { return }
         currentTab?.zoomOut()
     }
 
     @objc func keyboardZoomReset() {
+        KeyboardShortcutPixel.fireUsed(with: pixelFiring)
         guard isShortcutEnabled() else { return }
         currentTab?.resetTextZoom()
     }
 
     @objc func keyboardFindNext() {
+        KeyboardShortcutPixel.fireUsed(with: pixelFiring)
         self.findInPageView?.findInPage?.next()
     }
 
     @objc func keyboardFindPrevious() {
+        KeyboardShortcutPixel.fireUsed(with: pixelFiring)
         self.findInPageView?.findInPage?.previous()
     }
 
     @objc func keyboardLocation() {
+        KeyboardShortcutPixel.fireUsed(with: pixelFiring)
         guard tabSwitcherController == nil else { return }
         guard isShortcutEnabled() else { return }
 
@@ -196,10 +227,12 @@ extension MainViewController {
     }
 
     @objc func keyboardFire() {
+        KeyboardShortcutPixel.fireUsed(with: pixelFiring)
         onQuickFirePressed()
     }
 
     @objc func keyboardSettings() {
+        KeyboardShortcutPixel.fireUsed(with: pixelFiring)
         guard isShortcutEnabled() else { return }
         if let tabSwitcherController {
             guard tabSwitcherController.presentedViewController == nil else { return }
@@ -213,13 +246,14 @@ extension MainViewController {
     }
     
     @objc func keyboardFind() {
+        KeyboardShortcutPixel.fireUsed(with: pixelFiring)
         guard isShortcutEnabled() else { return }
         currentTab?.requestFindInPage()
     }
     
     @objc func keyboardEscape() {
         guard tabSwitcherController == nil else { return }
-        if #available(iOS 16.0, *) {
+        if #available(iOS 16.0, *), currentTab?.findInPageImplementation == .system {
             dismissSystemFindNavigator(for: currentTab)
         } else {
             findInPageView?.done()
@@ -229,6 +263,7 @@ extension MainViewController {
     }
     
     @objc func keyboardNewTab() {
+        KeyboardShortcutPixel.fireUsed(with: pixelFiring)
         guard tabSwitcherController == nil else { return }
         guard isShortcutEnabled() else { return }
         
@@ -237,11 +272,12 @@ extension MainViewController {
             recordUserOpenedTab()
             newTab()
         } else {
-            keyboardFind()
+            currentTab?.requestFindInPage()
         }
     }
 
     @objc func keyboardNewFireTab() {
+        KeyboardShortcutPixel.fireUsed(with: pixelFiring)
         guard tabSwitcherController == nil else { return }
         guard isShortcutEnabled() else { return }
         guard fireModeCapability.isFireModeEnabled else { return }
@@ -254,6 +290,7 @@ extension MainViewController {
     }
     
     @objc func keyboardCloseTab() {
+        KeyboardShortcutPixel.fireUsed(with: pixelFiring)
         guard tabSwitcherController == nil else { return }
         guard isShortcutEnabled() else { return }
         
@@ -262,6 +299,7 @@ extension MainViewController {
     }
     
     @objc func keyboardNextTab() {
+        KeyboardShortcutPixel.fireUsed(with: pixelFiring)
         guard tabSwitcherController == nil else { return }
         
         guard let targetTab = tabManager.currentTabsModel.nextTab else { return }
@@ -269,6 +307,7 @@ extension MainViewController {
     }
 
     @objc func keyboardSelectTab(_ command: UIKeyCommand) {
+        KeyboardShortcutPixel.fireUsed(with: pixelFiring)
         guard tabSwitcherController == nil, presentedViewController == nil else { return }
         guard isShortcutEnabled() else { return }
         guard let input = command.input, let number = Int(input), (1...9).contains(number),
@@ -278,6 +317,7 @@ extension MainViewController {
     }
     
     @objc func keyboardPreviousTab() {
+        KeyboardShortcutPixel.fireUsed(with: pixelFiring)
         guard tabSwitcherController == nil else { return }
         
         guard let targetTab = tabManager.currentTabsModel.previousTab else { return }
@@ -295,6 +335,7 @@ extension MainViewController {
     }
     
     @objc func keyboardShowAllTabs() {
+        KeyboardShortcutPixel.fireUsed(with: pixelFiring)
         guard tabSwitcherController == nil else { return }
         guard isShortcutEnabled() else { return }
         
@@ -303,6 +344,7 @@ extension MainViewController {
     }
     
     @objc func keyboardBrowserForward() {
+        KeyboardShortcutPixel.fireUsed(with: pixelFiring)
         guard tabSwitcherController == nil else { return }
         guard isShortcutEnabled() else { return }
         
@@ -310,6 +352,7 @@ extension MainViewController {
     }
     
     @objc func keyboardBrowserBack() {
+        KeyboardShortcutPixel.fireUsed(with: pixelFiring)
         guard tabSwitcherController == nil else { return }
         guard isShortcutEnabled() else { return }
 
@@ -318,16 +361,19 @@ extension MainViewController {
     }
     
     @objc func keyboardPrint() {
+        KeyboardShortcutPixel.fireUsed(with: pixelFiring)
         guard isShortcutEnabled() else { return }
         currentTab?.print()
     }
 
     @objc func keyboardAddBookmark() {
+        KeyboardShortcutPixel.fireUsed(with: pixelFiring)
         guard isShortcutEnabled() else { return }
         saveBookmark(favorite: false)
     }
 
     @objc func keyboardAddFavorite() {
+        KeyboardShortcutPixel.fireUsed(with: pixelFiring)
         guard isShortcutEnabled() else { return }
         saveBookmark(favorite: true)
     }

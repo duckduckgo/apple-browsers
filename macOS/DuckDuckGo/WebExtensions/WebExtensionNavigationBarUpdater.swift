@@ -29,10 +29,6 @@ import WebKit
 /// unique identifier, so an extension without a button shows no popup at all.
 ///
 /// Each browser window owns its own updater, because each window has its own navigation bar.
-///
-/// The updater reads the manager through a closure on every update, because the app delegate
-/// releases the manager when the web extensions feature flag turns off and creates a new one when
-/// it turns back on. When the closure returns `nil`, the updater removes every button.
 @available(macOS 15.4, *)
 @MainActor
 final class WebExtensionNavigationBarUpdater: NSObject, ThemeUpdateListening {

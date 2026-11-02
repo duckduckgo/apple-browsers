@@ -85,6 +85,9 @@ final class WebExtensionAPICompatibilityClassifierTests: XCTestCase {
         XCTAssertEqual(
             classify("Invalid call to browser.windows.create(). The 'createData' value is invalid, because it is not an object."),
             Issue(kind: .invalidArgs, api: "chrome.windows.create"))
+        XCTAssertEqual(
+            classify("Invalid call to action.openPopup(). The 'options' value is invalid, because it has unsupported keys: tabId."),
+            Issue(kind: .invalidArgs, api: "chrome.action.openPopup"))
     }
 
     func testWhenAnInvalidCallIsNotAboutAValue_ThenItIsDropped() {

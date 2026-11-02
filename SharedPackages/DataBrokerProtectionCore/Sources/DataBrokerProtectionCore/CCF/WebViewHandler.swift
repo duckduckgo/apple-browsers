@@ -42,10 +42,12 @@ public final class DataBrokerProtectionWebViewHandler: NSObject, WebViewHandler 
 
     private let isFakeBroker: Bool
     private let executionConfig: BrokerJobExecutionConfig
+    private let customUserAgent: String?
     private(set) var webViewConfiguration: WKWebViewConfiguration?
     private var userContentController: DataBrokerUserContentController?
 
     private var webView: WebView?
+    var webViewForTesting: WKWebView? { webView }
 
 #if os(macOS)
     private var urlObservation: NSKeyValueObservation?
@@ -67,13 +69,14 @@ public final class DataBrokerProtectionWebViewHandler: NSObject, WebViewHandler 
                 dataBroker: DataBroker? = nil,
                 isChallengeSolverEnabled: Bool = false,
                 shouldContinueActionHandler: @escaping () -> Bool,
-                applicationNameForUserAgentProvider: () -> String?,
+                customUserAgent: String? = nil,
                 contentBlocking: DBPWebViewContentBlocking? = nil,
                 pixelHandler: EventMapping<DataBrokerProtectionSharedPixels>? = nil,
                 actionLogContext: PIRActionLogContext? = nil,
                 challengeEventHandler: ((String) -> Void)? = nil) throws {
         self.isFakeBroker = isFakeBroker
         self.executionConfig = executionConfig
+        self.customUserAgent = customUserAgent
 #if os(macOS)
         self.challengeSolver = ChallengeSolver(
             isEnabled: isChallengeSolverEnabled,
@@ -94,9 +97,6 @@ public final class DataBrokerProtectionWebViewHandler: NSObject, WebViewHandler 
                                                        contentBlocking: contentBlocking)
         configuration.preferences.setValue(true, forKey: "developerExtrasEnabled")
         configuration.websiteDataStore = WKWebsiteDataStore.nonPersistent()
-        if let applicationNameForUserAgent = applicationNameForUserAgentProvider() {
-            configuration.applicationNameForUserAgent = applicationNameForUserAgent
-        }
 
         self.webViewConfiguration = configuration
 
@@ -118,6 +118,9 @@ public final class DataBrokerProtectionWebViewHandler: NSObject, WebViewHandler 
 
         webView = WebView(frame: CGRect(origin: .zero, size: CGSize(width: 1024, height: 1024)), configuration: configuration)
         webView?.navigationDelegate = self
+        if let customUserAgent {
+            webView?.customUserAgent = customUserAgent
+        }
 #if os(macOS)
         challengeSolver.page = webView.map { WebViewChallengePage(webView: $0) }
 #endif

@@ -20,7 +20,6 @@
 import Core
 import SwiftUI
 import DesignResourcesKit
-import DesignResourcesKitIcons
 import Common
 import FoundationExtensions
 
@@ -42,20 +41,11 @@ struct AboutViewText: View {
 
     var body: some View {
         VStack(spacing: 12) {
-            if AppRebrand.isAppRebranded() {
-                Image(.logoStacked)
-                    .resizable()
-                    .scaledToFit()
-                    .frame(width: 160, height: 128)
-                    .padding(.top)
-            } else {
-                Image(.logo)
-                    .resizable()
-                    .frame(width: 96, height: 96)
-                    .padding(.top)
-
-                Image(.textDuckDuckGo)
-            }
+            Image(.logoStacked)
+                .resizable()
+                .scaledToFit()
+                .frame(width: 160, height: 128)
+                .padding(.top)
 
             Text(UserText.aboutProtectionTagline)
                 .daxHeadline()

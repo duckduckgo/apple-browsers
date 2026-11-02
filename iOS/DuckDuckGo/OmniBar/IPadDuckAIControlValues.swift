@@ -35,6 +35,9 @@ protocol IPadDuckAIControlValues {
 
     var selectedAttachments: AIChatPromptAttachments { get }
 
+    /// The prompt wide event's `attachments_selected`, which leaves out pastes.
+    var attachmentsSelected: Bool { get }
+
     /// The user's Duck.ai tier as the model picker last resolved it.
     var userTier: AIChatUserTier { get }
 }
@@ -46,5 +49,6 @@ struct IPadDuckAIControlValuesSnapshot: IPadDuckAIControlValues {
     var selectedReasoningEffort: AIChatReasoningEffort?
     var selectedTools: [AIChatRAGTool]?
     var selectedAttachments: AIChatPromptAttachments = .none
+    var attachmentsSelected = false
     var userTier: AIChatUserTier = .free
 }

@@ -418,6 +418,10 @@ final class MockAIChatUserScriptHandler: AIChatUserScriptHandling {
         PassthroughSubject<Void, Never>().eraseToAnyPublisher()
     }
 
+    var pageContextAddedPublisher: AnyPublisher<Void, Never> {
+        PassthroughSubject<Void, Never>().eraseToAnyPublisher()
+    }
+
     var didGetAIChatOpenTabs = false
     var didGetAIChatTabContent = false
 

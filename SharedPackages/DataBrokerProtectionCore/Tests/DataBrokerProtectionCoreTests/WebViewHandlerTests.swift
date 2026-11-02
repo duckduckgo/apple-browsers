@@ -74,26 +74,28 @@ final class WebViewHandlerTests: XCTestCase {
     }
 
     @MainActor
-    func testWhenInitialized_thenApplicationNameForUserAgentClosureIsEvaluatedAndAppliedToConfiguration() throws {
-        // Given
-        let expectedApplicationName = "TestApp/1.0"
-        var invocationCount = 0
-        let provider: () -> String? = {
-            invocationCount += 1
-            return expectedApplicationName
-        }
+    func testWhenCustomUserAgentIsProvided_thenWebViewUsesIt() async throws {
+        let customUserAgent = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:142.0) Gecko/20100101 Firefox/142.0"
+        let sut = try makeWebViewHandler(customUserAgent: customUserAgent)
 
-        // When
-        let sut = try makeWebViewHandler(applicationNameForUserAgentProvider: provider)
+        await sut.initializeWebView(showWebView: false)
 
-        // Then
-        XCTAssertEqual(invocationCount, 1)
-        XCTAssertEqual(sut.webViewConfiguration?.applicationNameForUserAgent, expectedApplicationName)
+        XCTAssertEqual(sut.webViewForTesting?.customUserAgent, customUserAgent)
+    }
+
+    @MainActor
+    func testWhenCustomUserAgentIsNil_thenWebViewKeepsDefaultUserAgent() async throws {
+        let sut = try makeWebViewHandler()
+
+        await sut.initializeWebView(showWebView: false)
+
+        let webView = try XCTUnwrap(sut.webViewForTesting)
+        XCTAssertTrue(webView.customUserAgent?.isEmpty ?? true)
     }
 
     @MainActor
     private func makeWebViewHandler(
-        applicationNameForUserAgentProvider: @escaping () -> String? = { nil },
+        customUserAgent: String? = nil,
         pixelHandler: EventMapping<DataBrokerProtectionSharedPixels>? = nil
     ) throws -> DataBrokerProtectionWebViewHandler {
         try DataBrokerProtectionWebViewHandler(
@@ -102,7 +104,7 @@ final class WebViewHandlerTests: XCTestCase {
             delegate: MockWebViewCommunicationDelegate(),
             executionConfig: BrokerJobExecutionConfig(),
             shouldContinueActionHandler: { true },
-            applicationNameForUserAgentProvider: applicationNameForUserAgentProvider,
+            customUserAgent: customUserAgent,
             pixelHandler: pixelHandler
         )
     }

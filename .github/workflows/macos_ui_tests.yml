@@ -66,7 +66,11 @@ on:
     # We're also adding ready_for_review to run checks when a draft PR becomes ready for review.
     types: [opened, synchronize, reopened, ready_for_review]
     paths:
-      - '.github/**'
+      - '.github/workflows/macos_ui_tests.yml'
+      - '.github/workflows/macos_build_notarized.yml'
+      - '.github/workflows/macos_run_ui_test.yml'
+      - '.github/workflows/should_run_pr_checks.yml'
+      - '.github/actions/**'
       - '.xcode-version'
       - 'SharedPackages/BrowserServicesKit/Package.swift'
 
@@ -166,7 +170,6 @@ jobs:
           else
             all_os_versions='true'
             config=$(jq -c <<< '[
-              {"runner": ["macos-14-xlarge"], "os-version": "14", "xcode-version": "16.2"},
               {"runner": ["macos-15-xlarge"], "os-version": "15", "xcode-version": "26.2"},
               {"runner": ["image:osx-tahoe-27", "ui-tests"], "os-version": "27", "xcode-version": "27.0"}
             ]')

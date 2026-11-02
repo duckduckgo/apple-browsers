@@ -25,7 +25,7 @@ final class WebExtensionPixelExtensionTests: XCTestCase {
     /// catalog entry can't ship without its value in the definition, which would reject the pixel.
     func testParameterValuesMatchThePixelDefinition() {
         XCTAssertEqual(WebExtensionPixelExtension.allCases.map(\.parameterValue),
-                       ["bitwarden", "onePassword", "lastPass", "other"])
+                       ["bitwarden", "onePassword", "lastPass", "iCloudPasswords", "darkReader", "other"])
     }
 
     func testOnlyAChromeFormatVersionIsSent() {

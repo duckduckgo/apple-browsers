@@ -176,6 +176,7 @@ class MainViewController: UIViewController {
     var newTabPageViewController: (any NewTabPage)?
     var isAddressBarHandOffInProgress = false
     var isPerformingOnboardingInputHandoff = false
+    var isPresentingNewTabInputDirectly = false
     var restingNewTabPageSnapshot: (image: UIImage, frame: CGRect, viewportSize: CGSize, favoritesState: (expanded: Bool, visible: Bool))?
 
     private let daxGreetingActivity: DaxGreetingActivityStore?
@@ -229,6 +230,10 @@ class MainViewController: UIViewController {
     private weak var sitePermissionAnimationTab: TabViewController?
     var isNewTabPageVisible: Bool {
         newTabPageViewController != nil
+    }
+
+    var hasInlineNewTabPageInput: Bool {
+        newTabPageViewController?.hasInlineSearchInput == true
     }
 
     /// Allows delayed keyboard callbacks to detect cancellation.
@@ -335,6 +340,11 @@ class MainViewController: UIViewController {
     var vpnConnectedWhenLeavingNewTabPage: Bool?
     let duckAIWideEventInstrumentation: DuckAIWideEventInstrumentation
     let duckAISessionInstrumentation: DuckAISessionInstrumentation
+    let duckAIEntryInstrumentation: DuckAIEntryInstrumentation
+    /// The new tab page onboarding's Try Duck.ai opened the address bar on, until the next entry.
+    weak var onboardingPromoTab: Tab?
+    /// Where voice search was opened from outside the address bar, e.g. a widget; nil when opened in-app.
+    private var voiceSearchEntrySource: AIChatEntryPointSource?
     let syncAutoRestoreHandler: SyncAutoRestoreHandling
     private let lastActiveTabStore: LastActiveTabStoring
     let fireModeCapability: FireModeCapable
@@ -362,6 +372,10 @@ class MainViewController: UIViewController {
     /// Separates "bound to no tab" from "never bound", so a launch onto a tab-less NTP still refreshes.
     private var hasBoundAIChatChromeChip = false
     var duckAIMenuAnchor: UIView?
+    /// iPad only: shows the contextual Duck.ai surface beside the page.
+    lazy var contextualSidebarPresenter: AIChatContextualSidebarPresenter? = makeContextualSidebarPresenter()
+    /// Watches a live window resize for its end, when the contextual surface settles where it fits.
+    var contextualSurfaceResizeEndObservation: NSKeyValueObservation?
     private var customizableButtonMenuAnchor: UIView?
     private var settingsCancellables = Set<AnyCancellable>()
     private var webViewViewportRefreshCancellable: AnyCancellable?
@@ -853,6 +867,11 @@ class MainViewController: UIViewController {
             isEnabled: { featureFlagger.isFeatureOn(.duckAISessionWideEvent) },
             completeOrphanedFlowsOnInit: true
         )
+        self.duckAIEntryInstrumentation = DefaultDuckAIEntryInstrumentation(
+            wideEvent: AppDependencyProvider.shared.wideEvent,
+            isEnabled: { featureFlagger.isFeatureOn(.duckAIEntryWideEvent) },
+            completeOrphanedFlowsOnInit: true
+        )
         self.syncAutoRestoreHandler = syncAutoRestoreHandler
         self.fireproofing = fireproofing
         self.favicons = favicons
@@ -1247,6 +1266,9 @@ class MainViewController: UIViewController {
                                                             return false
                                                         }
                                                         return NewTabPageRedesignFeature(featureFlagger: self.featureFlagger).isAvailable
+                                                    },
+                                                    usesMinimalChromeForWebPages: { [weak self] in
+                                                        self?.usesMinimalChromeForWebPages() ?? false
                                                     }) { [weak self] tab in
 
             guard let self else { return }
@@ -1261,6 +1283,10 @@ class MainViewController: UIViewController {
                 newTabPageSessionInstrumentation.visitEnded(terminalAction: .swipeToOtherTab)
                 postIdleSessionInstrumentation.sessionEnded(reason: .tabSwiped)
                 currentTab?.aiChatContextualSheetCoordinator.dismissSheet()
+                if tab.isAITab {
+                    // Before selecting, so the entry attaches to this tab when it is shown.
+                    fireAIChatEntryPointPixel(source: .tabSwipe, opensNewTab: false, hasPrompt: false)
+                }
                 selectTab(tab)
             }
             if shouldRestoreFocus {
@@ -1304,7 +1330,8 @@ class MainViewController: UIViewController {
         swipeTabsCoordinator?.swipeOverlayView = overlay
     }
 
-    func updatePreviewForCurrentTab(completion: (() -> Void)? = nil) {
+    /// `reportingSnapshotTimeout`: see `TabViewController.preparePreview`.
+    func updatePreviewForCurrentTab(reportingSnapshotTimeout: Bool = false, completion: (() -> Void)? = nil) {
         assert(Thread.isMainThread)
         // Returning by swipe also needs chrome and screen geometry when the NTP was left
         // through the tab switcher, which otherwise only saves a content-sized thumbnail.
@@ -1323,8 +1350,9 @@ class MainViewController: UIViewController {
 
         } else if let currentTab = self.tabManager.current(), currentTab.link != nil {
             // Web view
-            currentTab.preparePreview(completion: { image in
-                if let image {
+            // A snapshot that never answers (a frozen page) must not keep a closed tab alive.
+            currentTab.preparePreview(reportTimeout: reportingSnapshotTimeout, completion: { [weak currentTab] image in
+                if let image, let currentTab {
                     self.previewsSource.update(preview: image,
                                                forTab: currentTab.tabModel)
                 }
@@ -1482,6 +1510,7 @@ class MainViewController: UIViewController {
 
     /// Driven by `refreshOmniBar` to cover every tab change, cold launch included. Idempotent.
     func bindAIChatChromeChipToCurrentTab() {
+        reconcileContextualSidebarWithCurrentTab()
         let coordinator = currentTab?.aiChatContextualSheetCoordinator
         guard coordinator !== boundAIChatChromeChipCoordinator || !hasBoundAIChatChromeChip else { return }
         hasBoundAIChatChromeChip = true
@@ -1610,18 +1639,20 @@ class MainViewController: UIViewController {
         dismissContextualSheetIfKeyboardIsForBackgroundContent()
         // Keyboard up. Fix minimal chrome bar spot.
         refreshMinimalChromeBottomAnchor()
+        updateWebInputChromeVisibility()
     }
 
     private func dismissContextualSheetIfKeyboardIsForBackgroundContent() {
         guard let currentTab,
               currentTab.aiChatContextualSheetCoordinator.isSheetPresented,
+              !isContextualSurfaceInSidebar,
               let sheetVC = currentTab.aiChatContextualSheetCoordinator.sheetViewController else {
             return
         }
 
         // Check if first responder is within the sheet's view hierarchy
         if let firstResponder = UIResponder.currentFirstResponder(),
-           firstResponder.isInViewHierarchy(of: sheetVC.view) {
+           firstResponder.isInViewHierarchy(ofPresentationChainFrom: sheetVC) {
             // Keyboard is for the sheet, don't dismiss
             return
         }
@@ -1708,7 +1739,8 @@ class MainViewController: UIViewController {
 
     /// Bottom bar hidden behind web keyboard.
     var isBottomAddressBarHiddenForWebKeyboard: Bool {
-        isStandardBottomOmnibar && (keyboardShowing || isKeyboardOverlappingContent) && !isKeyboardOwnedByOmnibar
+        if viewCoordinator.isWebInputEditing && appSettings.currentAddressBarPosition.isBottom { return true }
+        return isStandardBottomOmnibar && (keyboardShowing || isKeyboardOverlappingContent) && !isKeyboardOwnedByOmnibar
     }
 
     /// Minimal chrome bar: stick to bottom behind keyboard. Lift above keyboard only when omnibar has
@@ -1876,6 +1908,7 @@ class MainViewController: UIViewController {
         newTabPageReturnTimeAwayMs = nil
         postIdleSessionInstrumentation.sessionCancelledByBackground()
         duckAISessionInstrumentation.sessionCancelledByBackground()
+        duckAIEntryInstrumentation.entryCancelledByBackground()
         recordNewTabPageSessionVPNChangeIfNeeded()
         newTabPageSessionInstrumentation.visitBackgrounded()
 
@@ -1955,7 +1988,7 @@ class MainViewController: UIViewController {
 
     private func updateFloatingDomainCapsuleVisibility(for barsVisibilityPercent: CGFloat) {
         floatingDomainCapsuleController.update(addressBarPosition: appSettings.currentAddressBarPosition,
-                                               isFloatingUIEnabled: isFloatingUIEnabled,
+                                               isFloatingUIEnabled: isFloatingUIEnabled && !isBottomAddressBarHiddenForWebKeyboard,
                                                isUnifiedToggleInputActive: unifiedToggleInputCoordinator?.isActive == true,
                                                isAITab: currentTab?.isAITab == true,
                                                isMinimalChromeLayout: isInMinimalChromeLayout,
@@ -1964,13 +1997,14 @@ class MainViewController: UIViewController {
                                                expandedFrame: floatingBarExpandedFrame(),
                                                reduceMotion: UIAccessibility.isReduceMotionEnabled,
                                                in: view)
+        bringFindInPageToFrontIfNeeded()
     }
 
     /// True when the floating domain capsule morph is driving the chrome transition (floating UI on,
     /// not minimal chrome / unified toggle input / AI tab).
     private var isFloatingCapsuleActive: Bool {
         FloatingUILayoutPolicy.shouldShowFloatingDomainCapsule(
-            isFloatingUIEnabled: isFloatingUIEnabled,
+            isFloatingUIEnabled: isFloatingUIEnabled && !isBottomAddressBarHiddenForWebKeyboard,
             isUnifiedToggleInputActive: unifiedToggleInputCoordinator?.isActive == true,
             isAITab: currentTab?.isAITab == true,
             isMinimalChromeLayout: isInMinimalChromeLayout
@@ -2071,26 +2105,46 @@ class MainViewController: UIViewController {
     /// keyboard handler defers the landscape cap to that settle instead of fighting it.
     private var isUTIRotating = false
 
-    /// Based on https://stackoverflow.com/a/46117073/73479
-    ///  Handles iPhone X devices properly.
     @objc private func keyboardWillChangeFrame(_ notification: Notification) {
+        guard let keyboard = BrowserKeyboardLayout(notification: notification) else { return }
+        adjustUI(withKeyboardFrame: keyboard.frame, in: keyboard.duration, animationCurve: keyboard.animationCurve)
+    }
 
-        guard let userInfo = notification.userInfo,
-            let keyboardFrame = (userInfo[UIResponder.keyboardFrameEndUserInfoKey] as? NSValue)?.cgRectValue else {
-            return
+    private var floatingWebInputKeyboardFrame: CGRect {
+        BrowserKeyboardLayout.webInputFrame(notificationFrame: view.convert(latestKeyboardFrame, from: nil),
+                                             layoutGuideFrame: view.keyboardLayoutGuide.layoutFrame,
+                                             viewBounds: view.bounds,
+                                             safeAreaFrame: view.safeAreaLayoutGuide.layoutFrame)
+    }
+
+    private func updateWebInputChromeVisibility() {
+        let hasVisibleKeyboard = keyboardShowing || isKeyboardOverlappingContent
+        let isEditing: Bool
+        if isFloatingUIEnabled, !isAnyAITabUTIState,
+           hasVisibleKeyboard || !floatingWebInputKeyboardFrame.isEmpty, !isKeyboardOwnedByOmnibar,
+           let webView = currentTab?.webView,
+           let firstResponder = UIResponder.currentFirstResponder() {
+            let hasStaleAccessoryGuide: Bool
+            if #available(iOS 27, *) {
+                hasStaleAccessoryGuide = false
+            } else {
+                // iOS 26 keeps dismissed accessory guides.
+                hasStaleAccessoryGuide = !hasVisibleKeyboard && (firstResponder as? UITextInput)?.selectedTextRange == nil
+            }
+            isEditing = firstResponder.isInViewHierarchy(of: webView)
+                && !hasStaleAccessoryGuide
+        } else {
+            isEditing = false
         }
-
-        latestKeyboardFrame = keyboardFrame
-        let duration: TimeInterval = (userInfo[UIResponder.keyboardAnimationDurationUserInfoKey] as? NSNumber)?.doubleValue ?? 0
-        let animationCurveRawNSN = userInfo[UIResponder.keyboardAnimationCurveUserInfoKey] as? NSNumber
-        let animationCurveRaw = animationCurveRawNSN?.uintValue ?? UIView.AnimationOptions.curveEaseInOut.rawValue
-        let animationCurve = UIView.AnimationOptions(rawValue: animationCurveRaw)
-
-        adjustUI(withKeyboardFrame: keyboardFrame, in: duration, animationCurve: animationCurve)
+        guard viewCoordinator.setWebInputEditing(isEditing) else { return }
+        reconcileToolbarVisibilityForCurrentTab()
+        updateFloatingDomainCapsuleVisibility(for: currentBarsVisibility)
+        currentTab?.updateWebViewLayoutForKeyboard()
     }
 
     // swiftlint:disable:next cyclomatic_complexity
     func adjustUI(withKeyboardFrame keyboardFrame: CGRect, in duration: TimeInterval = 0.2, animationCurve: UIView.AnimationOptions = .curveEaseInOut) {
+        latestKeyboardFrame = keyboardFrame
         var keyboardHeight = keyboardFrame.size.height
 
         let omniBarHeight = viewCoordinator.omniBar.barView.expectedHeight
@@ -2101,6 +2155,10 @@ class MainViewController: UIViewController {
         isKeyboardOverlappingContent = keyboardVisible
         keyboardHeight = keyboardFrameInView.height
         updateUnifiedToggleInputKeyboardVisibility(keyboardVisible)
+        updateWebInputChromeVisibility()
+        if isFloatingUIEnabled {
+            currentTab?.updateWebViewLayoutForKeyboard()
+        }
 
         let coordinator = unifiedToggleInputCoordinator
         let isAITabCollapsed = coordinator?.isAITabCollapsed == true
@@ -2520,6 +2578,14 @@ class MainViewController: UIViewController {
             return
         }
 
+        // Normal mode should always have a current tab, but `bulkRemoveTabs` leaves the model empty until
+        // the tab switcher inserts a replacement in its delete animation's completion. Backgrounding or a
+        // late `webViewDidClose` from a removed tab can land in that window, so add a tab instead of crashing.
+        if tabManager.currentTabsModel.currentTab == nil {
+            pixelFiring?.fire(HomeScreenAttachPixel.missingCurrentTabRecovered, frequency: .dailyAndCount)
+            tabManager.addHomeTab()
+        }
+
         pageBackgroundColorObservation = nil
         siteThemeColorObservation = nil
         pageContentBackgroundColorObservation = nil
@@ -2545,7 +2611,8 @@ class MainViewController: UIViewController {
 
         // Access the tab model directly as we don't want to create a new tab controller here
         guard let tabModel = tabManager.currentTabsModel.currentTab else {
-            fatalError("No tab model")
+            assertionFailure("No current tab after recovery")
+            return
         }
         // Focus remembered for a swipe back is stale once the page is attached by any other arrival.
         tabModel.wasInputFocusedBeforeTabSwitch = false
@@ -2581,6 +2648,7 @@ class MainViewController: UIViewController {
         controller.chromeDelegate = self
 
         newTabPageViewController = controller
+        updateCompactToolbarForNewTabPage()
 
         controller.setEscapeHatch(hatch)
         controller.setChromeLayoutContext(isBorderSuppressed: isInMinimalChromeLayout)
@@ -2615,6 +2683,30 @@ class MainViewController: UIViewController {
         updateScrollInteractionIfNeeded()
         presentContextualOnboardingDialogIfNeeded()
 
+        if willBeginEditing,
+           let switcher = tabSwitcherController, presentedViewController === switcher, switcher.isBeingDismissed,
+           let defaultOmniBar = omniBar as? DefaultOmniBarViewController {
+            let requestID = appOpenKeyboardRequestID
+            let tabID = tabModel.uid
+            let isRequestValid = { [weak self, weak controller, weak switcher] in
+                guard let self, let controller else { return false }
+                let isDismissingOriginalSwitcher = switcher?.isBeingDismissed == true && presentedViewController === switcher
+                return appOpenKeyboardRequestID == requestID && isAppOpenKeyboardWindowVisible
+                    && tabManager.currentTabsModel.currentTab?.uid == tabID && newTabPageViewController === controller
+                    && KeyboardSettings().onNewTab && !isNewTabPageKeyboardBlockedByDialog
+                    && !(featureFlagger.isFeatureOn(.alwaysShowKeyboardOnNewTabPage) && isNewTabPageKeyboardHeldForOnboarding)
+                    && !daxDialogsManager.isShowingContextualOnboardingDialog
+                    && (presentedViewController == nil || isDismissingOriginalSwitcher)
+            }
+            let beginEditing = featureFlagger.isFeatureOn(.alwaysShowKeyboardOnNewTabPage)
+                ? defaultOmniBar.beginEditingOnNewTabPageAppOpen
+                : defaultOmniBar.beginEditingAutomatically
+            let wasPresentingDirectly = isPresentingNewTabInputDirectly
+            isPresentingNewTabInputDirectly = controller.hasInlineSearchInput
+            defer { isPresentingNewTabInputDirectly = wasPresentingDirectly }
+            beginEditing(isRequestValid) { _ in }
+        }
+
         scheduleAttachedNewTabPagePresentation(for: controller, trigger: sessionTrigger,
                                                startsVisit: startsNewTabPageSessionVisit,
                                                openedAfterIdle: openedAfterIdle, hatch: hatch,
@@ -2645,8 +2737,8 @@ class MainViewController: UIViewController {
             guard let self, appOpenKeyboardRequestID == requestID, KeyboardSettings().onNewTab,
                   !isNewTabPageKeyboardBlockedByDialog else { return }
             let focusCompleted: (Bool) -> Void = { [weak self] didFocus in
-                if openedAfterIdle && didFocus {
-                    self?.postIdleSessionInstrumentation.keyboardRaisedOnArrival()
+                if openedAfterIdle && didFocus, let self {
+                    postIdleSessionInstrumentation.keyboardRaisedOnArrival(togglePosition: returnSessionTogglePosition(focused: true))
                 }
             }
             if wasKeyboardFeatureEnabled {
@@ -2676,7 +2768,9 @@ class MainViewController: UIViewController {
         }
         if openedAfterIdle {
             postIdleSessionInstrumentation.noteReturn(timeAwayMs: newTabPageReturnTimeAwayMs)
-            postIdleSessionInstrumentation.sessionStarted(landedOn: .ntp, afterIdleSurface: .ntp, focused: focused)
+            postIdleSessionInstrumentation.sessionStarted(landedOn: .ntp, afterIdleSurface: .ntp, focused: focused,
+                                                          toggleEnabled: isReturnSessionToggleEnabled,
+                                                          togglePosition: returnSessionTogglePosition(focused: focused))
         }
     }
 
@@ -2712,6 +2806,7 @@ class MainViewController: UIViewController {
         newTabPageViewController?.willMove(toParent: nil)
         newTabPageViewController?.dismiss()
         newTabPageViewController = nil
+        updateCompactToolbarForNewTabPage()
         isAddressBarHandOffInProgress = false
         clearEscapeHatch()
         updateAddressBarSuppressionForNewTabPage()
@@ -3012,8 +3107,8 @@ class MainViewController: UIViewController {
     /// Behind `.alwaysShowKeyboardOnNewTabPage` only: the keyboard rule for the tab the app opens onto.
     func showKeyboardOnAppOpenIfAllowed(completion: @escaping (Bool) -> Void) {
         showKeyboardIfAllowed { [weak self] didShowKeyboard in
-            if didShowKeyboard {
-                self?.postIdleSessionInstrumentation.keyboardRaisedOnArrival()
+            if didShowKeyboard, let self {
+                postIdleSessionInstrumentation.keyboardRaisedOnArrival(togglePosition: returnSessionTogglePosition(focused: true))
             }
             completion(didShowKeyboard)
         }
@@ -3071,8 +3166,8 @@ class MainViewController: UIViewController {
     /// The flag-off App Launch keyboard. Like the flag-on path, it counts toward the post-idle session's `focused` value.
     func enterSearchOnAppOpen() {
         enterSearchAutomatically { [weak self] didFocus in
-            if didFocus {
-                self?.postIdleSessionInstrumentation.keyboardRaisedOnArrival()
+            if didFocus, let self {
+                postIdleSessionInstrumentation.keyboardRaisedOnArrival(togglePosition: returnSessionTogglePosition(focused: true))
             }
         }
     }
@@ -3105,6 +3200,12 @@ class MainViewController: UIViewController {
             }
             completion(true)
         }
+        if let coordinator = unifiedToggleInputCoordinator, coordinator.isOmnibarSession {
+            coordinator.restoreOmnibarInputOnAppOpen(isRequestValid: isRequestValid, completion: focusCompleted)
+            return
+        }
+        isPresentingNewTabInputDirectly = hasInlineNewTabPageInput && tabManager.currentTabsModel.currentTab?.openedAfterIdle == true
+        defer { isPresentingNewTabInputDirectly = false }
         showBars()
         if let defaultOmniBar = viewCoordinator.omniBar as? DefaultOmniBarViewController {
             defaultOmniBar.beginEditingAutomatically(isRequestValid: isRequestValid, completion: focusCompleted)
@@ -3196,8 +3297,15 @@ class MainViewController: UIViewController {
         transitionTo(tab: tab, from: nil)
     }
 
+    /// Swiping back shows a tab's full-screen snapshot; without one it falls back to the tab switcher thumbnail.
+    private func captureForSwipeBack(_ outgoingTab: Tab?) {
+        guard featureFlagger.isFeatureOn(.aiChatTabHandoffImprovements), let outgoingTab else { return }
+        swipeTabsCoordinator?.updateFullScreenSnapshot(forTab: outgoingTab)
+    }
+
     @discardableResult
     private func addTab(url: URL?, inheritedAttribution: AdClickAttributionLogic.State?, fromExternalLink: Bool = false, voiceMode: Bool = false) -> Tab {
+        captureForSwipeBack(tabManager.currentTabsModel.currentTab)
         let tab = tabManager.add(url: url, inheritedAttribution: inheritedAttribution)
         tab.inferredOpenerContext = .external
         tab.isVoiceModeRequested = voiceMode
@@ -3230,7 +3338,10 @@ class MainViewController: UIViewController {
     private func transitionTo(tab: TabViewController?, from previousTab: TabViewController?) {
         cancelPendingAppOpenKeyboard()
         guard let tab else { return }
-        previousTab?.aiChatContextualSheetCoordinator.dismissSheet()
+        // Re-selecting the current tab keeps its sidebar chat open.
+        if previousTab !== tab {
+            previousTab?.aiChatContextualSheetCoordinator.dismissSheet()
+        }
         previousTab?.tabModel.openedAfterIdle = false
         dismissSystemFindNavigator(for: previousTab)
         previousTab?.dismiss()
@@ -3395,6 +3506,31 @@ class MainViewController: UIViewController {
             resolved = (tab.isAITab && !isPad) ? .aiChat : .search
         }
         return resolved.displayed(isAIChatSearchInputEnabled: aiChatSettings.isAIChatSearchInputUserSettingsEnabled)
+    }
+
+    /// iPhone honours a pending onboarding choice; iPad reads the setting.
+    var isReturnSessionToggleEnabled: Bool {
+        isPad ? aiChatSettings.isAIChatSearchInputUserSettingsEnabled : isAIChatSearchInputToggleEnabledForCurrentOnboardingState()
+    }
+
+    func returnSessionTogglePosition(focused: Bool) -> ReturnSessionWideEventData.TogglePosition? {
+        guard let tab = tabManager.currentTabsModel.currentTab else { return nil }
+        // The resting NTP draws its own toggle.
+        if !focused, tab.isHomeTab, let page = newTabPageViewController, page.hasInlineSearchInput {
+            return page.inlineToggleMode.map(ReturnSessionWideEventData.TogglePosition.init)
+        }
+        return .onScreen(mode: liveToggleMode ?? initialOmnibarToggleMode(for: tab),
+                         isToggleEnabled: isReturnSessionToggleEnabled,
+                         isPad: isPad,
+                         isFocused: focused,
+                         isDuckAITab: tab.isAITab)
+    }
+
+    /// A restored input keeps its side rather than the initial mode.
+    private var liveToggleMode: TextEntryMode? {
+        if isPad { return viewCoordinator.omniBar.selectedTextEntryMode }
+        guard let coordinator = unifiedToggleInputCoordinator, coordinator.isOmnibarSession else { return nil }
+        return coordinator.switchBarHandler.currentToggleState
     }
 
     func refreshOmniBar() {
@@ -3594,6 +3730,7 @@ class MainViewController: UIViewController {
         if needsWidthUpdate {
             applyWidth(for: size)
         }
+        contextualSurfaceWillTransition(with: coordinator)
 
         let isShowingToolbar = wasMinimalChrome && !isInMinimalChromeLayout
         if isShowingToolbar {
@@ -3704,12 +3841,25 @@ class MainViewController: UIViewController {
         // The redesigned NTP hides the resting address bar. Keep the normal toolbar rather than
         // moving its controls into the hidden minimal-chrome bar, for either floating UI setting.
         guard newTabPageViewController?.hasInlineSearchInput != true else { return false }
-        let size = size ?? view.bounds.size
-        return MinimalChromeModeDecision.isActive(
-            minimalChromeEnabled: minimalChromeSettings.shouldApplyMinimalChrome(isCurrentTabAITab: currentTab?.isAITab ?? false),
+        return minimalChromeDecision(isAITab: currentTab?.isAITab ?? false, size: size ?? view.bounds.size)
+    }
+
+    /// Whether a web page tab would use minimal chrome at `size`, even while the NTP keeps its regular chrome.
+    private func usesMinimalChromeForWebPages(in size: CGSize? = nil) -> Bool {
+        minimalChromeDecision(isAITab: false, size: size ?? view.bounds.size)
+    }
+
+    private func minimalChromeDecision(isAITab: Bool, size: CGSize) -> Bool {
+        MinimalChromeModeDecision.isActive(
+            minimalChromeEnabled: minimalChromeSettings.shouldApplyMinimalChrome(isCurrentTabAITab: isAITab),
             isPad: AppWidthObserver.shared.isPad,
             isLandscape: size.width > size.height
         )
+    }
+
+    private func updateCompactToolbarForNewTabPage(for size: CGSize? = nil) {
+        let isCompact = newTabPageViewController?.hasInlineSearchInput == true && usesMinimalChromeForWebPages(in: size)
+        viewCoordinator.setCompactStandaloneToolbar(isCompact)
     }
 
     private var isApplyingWidth = false
@@ -3729,6 +3879,7 @@ class MainViewController: UIViewController {
             applySmallWidth()
         }
 
+        updateCompactToolbarForNewTabPage(for: size)
         updateNewTabPageLayoutForCurrentChromeMode()
 
         DispatchQueue.main.async {
@@ -3976,6 +4127,12 @@ class MainViewController: UIViewController {
 
     override func viewDidLayoutSubviews() {
         super.viewDidLayoutSubviews()
+        if isFloatingUIEnabled {
+            // Guide and selection settle after layout.
+            DispatchQueue.main.async { [weak self] in
+                self?.updateWebInputChromeVisibility()
+            }
+        }
         updateAddressBarSuppressionForNewTabPage()
         updateWindowControlsRowMetricsIfNeeded()
         ViewHighlighter.updatePositions()
@@ -3984,6 +4141,7 @@ class MainViewController: UIViewController {
         browserTabMentionSuggestionsController?.updateLayout()
         updateWindowedAddressBarCorners()
         newTabPageViewController?.refreshContextualOnboardingDialogLayout()
+        bringFindInPageToFrontIfNeeded()
     }
 
     // True while the address-bar move animation runs; it owns the container background. See `onMoveAddressBar`.
@@ -4173,6 +4331,7 @@ class MainViewController: UIViewController {
         recordDuckAISessionPendingExit(.newTabOpened)
         let previousTab = tabManager.current()
         dismissSystemFindNavigator(for: previousTab)
+        captureForSwipeBack(tabManager.currentTabsModel.currentTab)
         currentTab?.dismiss()
 
         if reuseExisting, let existing = tabManager.firstHomeTab() {
@@ -4237,10 +4396,17 @@ class MainViewController: UIViewController {
         currentTab?.findInPage?.delegate = self
         findInPageView?.update(with: currentTab?.findInPage, updateTextField: true)
         findInPageView?.updateConstraints()
+        bringFindInPageToFrontIfNeeded()
+    }
+
+    private func bringFindInPageToFrontIfNeeded() {
+        guard let findInPageView, !findInPageView.isHidden,
+              view.subviews.last !== findInPageView else { return }
+        view.bringSubviewToFront(findInPageView)
     }
 
     func dismissSystemFindNavigator(for tab: TabViewController?) {
-        guard #available(iOS 16.0, *) else { return }
+        guard #available(iOS 16.0, *), tab?.findInPageImplementation == .system else { return }
         rememberFindInPageQuery(for: tab)
         tab?.webView.findInteraction?.dismissFindNavigator()
         restoreChromeIfHiddenByFindInPage()
@@ -4295,10 +4461,11 @@ class MainViewController: UIViewController {
         (tab?.webView as? WebView)?.lastFindInPageQuery = tab?.webView.findInteraction?.searchText
     }
 
-    func handleVoiceSearchOpenRequest(preferredTarget: VoiceSearchTarget? = nil) {
+    func handleVoiceSearchOpenRequest(preferredTarget: VoiceSearchTarget? = nil, entrySource: AIChatEntryPointSource? = nil) {
         SpeechRecognizer.requestMicAccess { [weak self] permission in
             guard let self = self else { return }
             if permission {
+                self.voiceSearchEntrySource = entrySource
                 if let target = preferredTarget {
                     self.showVoiceSearch(preferredTarget: target)
                 } else {
@@ -4883,7 +5050,8 @@ class MainViewController: UIViewController {
                     fromDeepLink: Bool = false,
                     termsAccepted: Bool = false,
                     nativePromptFlow: DuckAIPromptFlowStart? = nil,
-                    tabAttachmentRequest: MultiTabAttachmentRequest?) {
+                    tabAttachmentRequest: MultiTabAttachmentRequest?,
+                    voice: Bool = false) {
 
         // A query means the user asked something and a response is what they are waiting for;
         // without one they are only opening the chat surface.
@@ -4904,16 +5072,46 @@ class MainViewController: UIViewController {
             fromDeepLink: fromDeepLink,
             termsAccepted: termsAccepted,
             nativePromptFlow: nativePromptFlow,
-            tabAttachmentRequest: tabAttachmentRequest
+            tabAttachmentRequest: tabAttachmentRequest,
+            voice: voice
         )
     }
 
-    func fireAIChatEntryPointPixel(source: AIChatEntryPointSource, opensNewTab: Bool, hasPrompt: Bool) {
+    /// `chatState` overrides how the entry wide event reads it, for an entry that starts a new chat in the tab on screen.
+    /// Returns the source reported, which the caller stamps on the tab so its prompts report it too.
+    @discardableResult
+    func fireAIChatEntryPointPixel(source: AIChatEntryPointSource, opensNewTab: Bool, hasPrompt: Bool, voice: Bool = false,
+                                   chatState: DuckAIEntryWideEventData.ChatState? = nil) -> AIChatEntryPointSource {
+        let source = takeOnboardingPromoSource(for: source)
         AIChatEntryPointPixel.fire(source: source,
                                    duckAIEnabled: aiChatSettings.isAIChatEnabled,
                                    toggleEnabled: aiChatSettings.isAIChatSearchInputUserSettingsEnabled,
                                    opensNewTab: opensNewTab,
-                                   hasPrompt: hasPrompt)
+                                   hasPrompt: hasPrompt,
+                                   voice: voice)
+        let surface = DuckAIEntryWideEventData.Surface(source: source, opensNewTab: opensNewTab)
+        // A tab entry reads its chat state once its Duck.ai tab is shown.
+        let sheetChatState: DuckAIEntryWideEventData.ChatState? = surface == .contextualSheet
+            ? (currentTab?.hasContextualChatToReopen == true ? .existing : .new)
+            : nil
+        duckAIEntryInstrumentation.entryStarted(source: source, hasPrompt: hasPrompt, voice: voice, surface: surface,
+                                                chatState: chatState ?? sheetChatState)
+        if surface == .contextualSheet {
+            // Gives the sheet entry the page it opened on, so it can notice that page changing later.
+            reportDuckAISessionCurrentTab()
+        }
+        return source
+    }
+
+    /// An address-bar prompt from the tab onboarding's Try Duck.ai opened reports the promo; any entry clears it.
+    private func takeOnboardingPromoSource(for source: AIChatEntryPointSource) -> AIChatEntryPointSource {
+        defer { onboardingPromoTab = nil }
+        guard let promoTab = onboardingPromoTab,
+              promoTab === tabManager.currentTabsModel.currentTab,
+              promoTab.link == nil,
+              source == .addressBarPrompt || source == .ipadTogglePrompt
+        else { return source }
+        return .onboardingCompletionPromo
     }
 
     func stampDuckAIEntrySourceOnCurrentTab(_ source: AIChatEntryPointSource) {
@@ -4932,25 +5130,23 @@ class MainViewController: UIViewController {
 
     /// Voice requested from the address bar (iPad) or Unified Input.
     func onDuckAIVoiceModeRequested() {
-        startDuckAIVoiceMode(from: .addressBar)
+        startDuckAIVoiceMode(from: .addressBar, entrySource: isPad ? .ipadTogglePrompt : .addressBarPrompt)
     }
 
-    func startDuckAIVoiceMode(from source: VoiceEntryPointSource) {
+    func startDuckAIVoiceMode(from source: VoiceEntryPointSource, entrySource: AIChatEntryPointSource) {
         pixelFiring?.fire(Pixel.Event.voiceEntryPointTapped, options: .parameters([PixelParameters.source: source.rawValue]))
         if let tab = tabManager.currentTabsModel.currentTab, tab.link == nil {
             ntpAfterIdleInstrumentation.barUsedFromNTP(afterIdle: tab.openedAfterIdle)
         }
         postIdleSessionInstrumentation.duckAIOpenedWithoutPrompt()
-        openAIChatInVoiceMode()
+        openAIChatInVoiceMode(source: entrySource, fromDeepLink: false)
     }
 
     func openAIVoiceChatFromDeepLink(source: AIChatEntryPointSource) {
-        openAIChatInVoiceMode(deepLinkSource: source)
+        openAIChatInVoiceMode(source: source, fromDeepLink: true)
     }
 
-    /// `deepLinkSource` is nil when voice was started in-app, so a widget voice entry is
-    /// attributed to the widget; `m_aichat_voice_entry_point_tapped` separates voice from text.
-    private func openAIChatInVoiceMode(deepLinkSource: AIChatEntryPointSource? = nil) {
+    private func openAIChatInVoiceMode(source: AIChatEntryPointSource, fromDeepLink: Bool) {
         if let reminder = NoMicPermissionAlert.buildVoiceChatReminderIfNeeded(
             isSitePermissionsEnabled: tabManager.isSitePermissionsEnabled,
             microphoneAuthorization: AVCaptureDevice.authorizationStatus(for: .audio),
@@ -4966,8 +5162,6 @@ class MainViewController: UIViewController {
         }
 
         // Voice mode bypasses `openAIChat`, so fire the entry pixel directly.
-        let source = deepLinkSource ?? .voice
-        let fromDeepLink = deepLinkSource != nil
         openAIChatVoiceModeInTab(source: source, fromDeepLink: fromDeepLink)
     }
 
@@ -4985,7 +5179,7 @@ class MainViewController: UIViewController {
         // Voice always opens a new tab over existing content (chat included) — voice over a chat would replace the prior conversation. NTP stays in-place via `link != nil`.
         let hasContent = currentTab.tabModel.link != nil
         let openInNewTab = hasContent && (unifiedToggleInputFeature.isAvailable || fromDeepLink)
-        fireAIChatEntryPointPixel(source: source, opensNewTab: openInNewTab, hasPrompt: false)
+        let source = fireAIChatEntryPointPixel(source: source, opensNewTab: openInNewTab, hasPrompt: false, voice: true)
 
         if openInNewTab {
             let voiceURL = currentTab.aiChatContentHandler.buildVoiceModeURL()
@@ -5029,7 +5223,8 @@ class MainViewController: UIViewController {
                                  fromDeepLink: Bool = false,
                                  termsAccepted: Bool = false,
                                  nativePromptFlow: DuckAIPromptFlowStart? = nil,
-                                 tabAttachmentRequest: MultiTabAttachmentRequest? = nil) {
+                                 tabAttachmentRequest: MultiTabAttachmentRequest? = nil,
+                                 voice: Bool = false) {
         guard tabManager.current(createIfNeeded: true) != nil else {
             assertionFailure("openAIChatInTab: no current tab available")
             tabAttachmentRequest?.cancel()
@@ -5053,12 +5248,15 @@ class MainViewController: UIViewController {
         let opening = AIChatOpeningRequest(url: openingQuery.url(using: currentTab.aiChatContentHandler),
                                            payload: payload, source: source,
                                            opensNewTab: shouldOpenInNewTab,
-                                           prompt: .sharedHandler(openingQuery, reportsNewTab: reportsNewTab, fromDeepLink: fromDeepLink))
+                                           prompt: .sharedHandler(openingQuery, reportsNewTab: reportsNewTab, fromDeepLink: fromDeepLink),
+                                           isVoice: voice)
         openAIChat(opening, from: currentTab)
     }
 
     private func openAIChat(_ request: AIChatOpeningRequest, from originatingTab: TabViewController) {
-        fireAIChatEntryPointPixel(source: request.source, opensNewTab: request.reportsNewTab, hasPrompt: request.hasEntryPrompt)
+        var request = request
+        request.source = fireAIChatEntryPointPixel(source: request.source, opensNewTab: request.reportsNewTab,
+                                                   hasPrompt: request.hasEntryPrompt, voice: request.isVoice)
         // Record NTP use before ending the idle session.
         if !request.opensNewTab {
             measureAIChatUseFromNewTabPage(originatingTab)
@@ -5455,7 +5653,7 @@ extension MainViewController: BrowserChromeDelegate {
         let buttonCollapseProgress = isFloatingCapsuleActive && !reduceMotion
             ? FloatingUILayoutPolicy.toolbarButtonRowCollapseProgress(
                 barsVisibilityPercent: percent,
-                collapseStart: FloatingDomainCapsuleController.handoffStart
+                collapseStart: FloatingDomainCapsuleController.handoffEnd
               )
             : 0
         let panelHeight = toolbar.setButtonRowCollapseProgress(
@@ -5531,7 +5729,8 @@ extension MainViewController: BrowserChromeDelegate {
         if isWindowControlsRowEnabled {
             tabsBarController?.setCurrentTabSelectionAlpha(hidden ? 0 : 1)
         }
-        viewCoordinator.statusBackground.alpha = hidden ? 0 : 1
+        let keepsStatusBackgroundVisible = isFloatingUIEnabled && viewCoordinator.addressBarPosition.isBottom
+        viewCoordinator.statusBackground.alpha = hidden && !keepsStatusBackgroundVisible ? 0 : 1
         updateFloatingDomainCapsuleVisibility(for: hidden ? 0 : 1)
     }
 
@@ -5669,6 +5868,9 @@ extension MainViewController: BrowserChromeDelegate {
     }
 
     func floatingWebViewBottomObscuredHeight(for barsVisibilityPercent: CGFloat) -> CGFloat {
+        if viewCoordinator.isWebInputEditing {
+            return view.safeAreaInsets.bottom
+        }
         // Minimal chrome hides the toolbar: reserve the single bar's height only for a bottom address
         // bar (reclaimed as it scrolls away); a top address bar leaves just the safe area.
         if isInMinimalChromeLayout {
@@ -5688,10 +5890,16 @@ extension MainViewController: BrowserChromeDelegate {
     }
 
     func floatingWebViewObscuredInsets(for barsVisibilityPercent: CGFloat) -> UIEdgeInsets {
-        UIEdgeInsets(top: floatingWebViewTopObscuredHeight(for: barsVisibilityPercent),
-                     left: 0,
-                     bottom: floatingWebViewBottomObscuredHeight(for: barsVisibilityPercent),
-                     right: 0)
+        let chromeInsets = UIEdgeInsets(top: floatingWebViewTopObscuredHeight(for: barsVisibilityPercent),
+                                       left: 0,
+                                       bottom: floatingWebViewBottomObscuredHeight(for: barsVisibilityPercent),
+                                       right: 0)
+        guard isFloatingUIEnabled, !isKeyboardOwnedByOmnibar else { return chromeInsets }
+        return BrowserKeyboardLayout.obscuredInsets(chromeInsets: chromeInsets,
+                                                    keyboardFrame: viewCoordinator.isWebInputEditing
+                                                        ? floatingWebInputKeyboardFrame
+                                                        : view.convert(latestKeyboardFrame, from: nil),
+                                                    viewBounds: view.bounds)
     }
 
     /// Read off the card's applied constraints, so it honours the landscape cap and the hidden-chrome
@@ -6296,8 +6504,21 @@ extension MainViewController: OmniBarDelegate {
                 } else {
                     sheet.detents = [.medium()]
                 }
-            } else if let initialDetentHeight, #available(iOS 16.0, *) {
-                sheet.detents = [.custom { _ in initialDetentHeight }, .large()]
+            } else if let openBookmarksVisibleHeight = initialDetentHeight, #available(iOS 16.0, *) {
+                func mediumHeight(in context: UISheetPresentationControllerDetentResolutionContext) -> CGFloat {
+                    UISheetPresentationController.Detent.medium().resolvedValue(in: context) ?? openBookmarksVisibleHeight
+                }
+                func fitsWithinMediumHeight(in context: UISheetPresentationControllerDetentResolutionContext) -> Bool {
+                    contentHeight <= mediumHeight(in: context)
+                }
+                sheet.detents = [
+                    .custom { context in
+                        fitsWithinMediumHeight(in: context) ? contentHeight : max(openBookmarksVisibleHeight, mediumHeight(in: context))
+                    },
+                    .custom { context in
+                        fitsWithinMediumHeight(in: context) ? contentHeight : context.maximumDetentValue
+                    }
+                ]
             } else {
                 sheet.detents = [.medium(), .large()]
             }
@@ -6432,6 +6653,12 @@ extension MainViewController: OmniBarDelegate {
                 self?.currentTab?.onCopyAction(forUrl: url)
             },
             onMoveAddressBar: { [weak self] in
+                if self?.isFloatingUIEnabled == true {
+                    self?.omniBar.barView.performAfterLongPressMenuDismissal { [weak self] in
+                        self?.moveFloatingAddressBar()
+                    }
+                    return
+                }
                 // iOS 26 has broken something so we have to use an animation
                 //  to get symmetry in the movement (rather than disabling animations
                 //  which doesn't appear to work properly on iOS 26.4,
@@ -6465,6 +6692,62 @@ extension MainViewController: OmniBarDelegate {
         longPressBarMenuBuilder.fireOmniBarMenuOpenPixel()
     }
 
+    private func moveFloatingAddressBar() {
+        guard !isAddressBarMoveInProgress else { return }
+        isAddressBarMoveInProgress = true
+        view.layoutIfNeeded()
+        viewCoordinator.navigationBarContainer.backgroundColor = .clear
+        omniBar.prepareForMoveTransition()
+
+        if #available(iOS 26.0, *), newTabPageViewController != nil, !UIAccessibility.isReduceMotionEnabled {
+            UIView.animate(springDuration: 0.5, bounce: 0, options: [.allowUserInteraction, .beginFromCurrentState]) {
+                self.toggleAddressBarLocation()
+                self.omniBar.moveTransitionCompleted()
+                self.revealFloatingChromeImmediately()
+                self.decorate()
+                self.view.layoutIfNeeded()
+            } completion: { [weak self] _ in
+                self?.isAddressBarMoveInProgress = false
+            }
+            return
+        }
+
+        let snapshot: UIImageView?
+        if !UIAccessibility.isReduceMotionEnabled, let window = view.window, !window.bounds.isEmpty {
+            // Freeze glass before rehosting.
+            let format = UIGraphicsImageRendererFormat()
+            format.scale = window.traitCollection.displayScale
+            let image = UIGraphicsImageRenderer(bounds: window.bounds, format: format).image { _ in
+                window.drawHierarchy(in: window.bounds, afterScreenUpdates: true)
+            }
+            snapshot = UIImageView(image: image)
+            snapshot?.frame = window.bounds
+            snapshot?.autoresizingMask = [.flexibleWidth, .flexibleHeight]
+            snapshot?.isUserInteractionEnabled = false
+            if let snapshot {
+                window.addSubview(snapshot)
+            }
+        } else {
+            snapshot = nil
+        }
+
+        UIView.performWithoutAnimation {
+            self.toggleAddressBarLocation()
+            self.omniBar.moveTransitionCompleted()
+            self.revealFloatingChromeImmediately()
+            self.decorate()
+            self.view.layoutIfNeeded()
+        }
+
+        isAddressBarMoveInProgress = false
+        guard let snapshot else { return }
+        UIView.animate(withDuration: 0.25, delay: 0, options: [.curveEaseOut, .allowUserInteraction], animations: {
+            snapshot.alpha = 0
+        }) { _ in
+            snapshot.removeFromSuperview()
+        }
+    }
+
     private func toggleAddressBarLocation() {
         // The setter posts `addressBarPositionChanged`, so `onAddressBarPositionChanged` has already
         // rehosted the bar and refreshed the scroll-edge interactions by the time this returns.
@@ -6490,7 +6773,7 @@ extension MainViewController: OmniBarDelegate {
         // The scroll-edge chrome must track the currently visible scroll view. On the NTP (or any
         // tab without a web view) there's no scroll view to track, so we leave the interactions
         // detached rather than pointing them at a dismissed tab's scroll view.
-        guard let scrollView = currentTab?.webView?.scrollView else { return }
+        guard newTabPageViewController == nil, let scrollView = currentTab?.webView?.scrollView else { return }
 
         func attach(to view: UIView, onEdge edge: UIRectEdge) {
             let interaction = UIScrollEdgeElementContainerInteraction()
@@ -6506,6 +6789,9 @@ extension MainViewController: OmniBarDelegate {
             // The split bottom pill is slid by a container transform. A scroll-edge interaction
             // on it makes UIGlassEffect move independently of the icons.
         } else {
+            if currentTab?.isAITab == false {
+                attach(to: viewCoordinator.statusBackground, onEdge: .top)
+            }
             attach(to: floatingDomainCapsuleController.button, onEdge: .bottom)
             // The toolbar is already pinned to the concentric layout guides. A scroll-edge
             // interaction would apply a second, larger device-concentric inset.
@@ -6530,6 +6816,7 @@ extension MainViewController: OmniBarDelegate {
     }
 
     func performCancel(animated: Bool = true) {
+        onboardingPromoTab = nil
         cancelPendingAppOpenKeyboard()
         dismissOmniBar(animated: animated)
         omniBar.cancel()
@@ -6622,7 +6909,7 @@ extension MainViewController: OmniBarDelegate {
         guard !areSuggestionsVisible else { return }
 
         // Dismiss contextual AI chat sheet when omni bar becomes active
-        if let currentTab, tapped {
+        if let currentTab, tapped, !isContextualSurfaceInSidebar {
             currentTab.aiChatContextualSheetCoordinator.dismissSheet()
         }
 
@@ -6671,20 +6958,19 @@ extension MainViewController: OmniBarDelegate {
     }
 
     @objc private func dismissContextualSheetOnBackgroundTap() {
+        guard !isContextualSurfaceInSidebar else { return }
         currentTab?.aiChatContextualSheetCoordinator.dismissSheet()
     }
 
+    /// Clears a modal sheet out of the way of what is shown next. The sidebar is beside the page, so it stays.
     func dismissContextualSheetIfNeeded(completion: @escaping () -> Void) {
-        guard let currentTab,
-              currentTab.aiChatContextualSheetCoordinator.isSheetPresented,
-              let sheetVC = currentTab.aiChatContextualSheetCoordinator.sheetViewController else {
+        guard let coordinator = currentTab?.aiChatContextualSheetCoordinator,
+              coordinator.isSheetPresented,
+              !coordinator.isSheetInSidebar else {
             completion()
             return
         }
-
-        sheetVC.dismiss(animated: true) {
-            completion()
-        }
+        coordinator.dismissSheet(completion: completion)
     }
 
     func onTextFieldDidBeginEditing(_ omniBar: OmniBarView) -> Bool {
@@ -7327,6 +7613,10 @@ extension MainViewController: EscapeHatchActionRouter {
 
 extension MainViewController: NewTabPageControllerDelegate {
 
+    func newTabPageDidOpenDuckAIOnboardingPromo(_ controller: any NewTabPage) {
+        onboardingPromoTab = tabManager.currentTabsModel.currentTab
+    }
+
     func newTabPageDidRequestSettings(_ controller: any NewTabPage) {
         segueToSettings()
     }
@@ -7555,6 +7845,11 @@ extension MainViewController: TabDelegate {
 
     func tab(_ tab: TabViewController, didSubmitDuckAIPromptWithOrigin origin: AIChatEntryPointSource?) {
         postIdleSessionInstrumentation.promptSubmittedWithoutNavigation(origin: origin)
+        duckAIEntryInstrumentation.sheetPromptSubmitted()
+    }
+
+    func tabDidCloseContextualDuckAI(_ tab: TabViewController, chatDeleted: Bool) {
+        duckAIEntryInstrumentation.sheetDismissed(exitTrigger: chatDeleted ? .chatDeleted : nil)
     }
 
     func tab(_ tab: TabViewController, didFailDuckAINavigationFor url: URL, error: Error) {
@@ -7655,10 +7950,9 @@ extension MainViewController: TabDelegate {
         newTab()
     }
 
-    func tabDidRequestNewVoiceChat(_ tab: TabViewController) {
+    func tabDidRequestNewVoiceChat(_ tab: TabViewController, source: AIChatEntryPointSource) {
         endNewTabPageSessionWithMenuItem()
-        // Same as the Duck.ai header Plus-menu "New Voice Chat".
-        aiChatTabChatHeaderDidTapNewVoiceChat()
+        startDuckAIVoiceMode(from: .duckAI, entrySource: source)
     }
 
     private func presentChatPathOnboardingCompletionIfNeeded() {
@@ -7729,12 +8023,18 @@ extension MainViewController: TabDelegate {
                    completion: stampingDuckAIEntrySource(entrySource, then: nil))
     }
 
+    func tab(_ tab: TabViewController, didReportDuckAIEntry source: AIChatEntryPointSource, opensNewTab: Bool, hasPrompt: Bool) {
+        fireAIChatEntryPointPixel(source: source, opensNewTab: opensNewTab, hasPrompt: hasPrompt)
+    }
+
     func tab(_ tab: TabViewController,
              didRequestNewDuckAITabForUrl url: URL,
-             entrySource: AIChatEntryPointSource?) {
+             entrySource: AIChatEntryPointSource?,
+             newChatInputRequest: DuckAINewChatInputRequest?) {
         recordUserOpenedTab()
         openNewTab(from: tab, url: url, openedByPage: false, inheritedAttribution: nil) {
             $0.duckAIEntrySource = entrySource
+            $0.newChatInputRequest = newChatInputRequest
         }
     }
 
@@ -7881,9 +8181,12 @@ extension MainViewController: TabDelegate {
 
     /// The new chat continues the visit to Duck.ai, so its tab keeps this page's entry source;
     /// `source` names only the control, on the entry pixel.
-    func openNewChatFromDuckAIPage(_ tab: TabViewController, source: AIChatEntryPointSource) {
+    func openNewChatFromDuckAIPage(_ tab: TabViewController,
+                                   source: AIChatEntryPointSource,
+                                   inputRequest: DuckAINewChatInputRequest = DuckAINewChatInputRequest()) {
         fireAIChatEntryPointPixel(source: source, opensNewTab: true, hasPrompt: false)
-        tab.openNewChatInNewTab(source: tab.tabModel.duckAIEntrySource)
+        let focusRequest = featureFlagger.isFeatureOn(.aiChatTabHandoffImprovements) ? inputRequest : nil
+        tab.openNewChatInNewTab(source: tab.tabModel.duckAIEntrySource, inputRequest: focusRequest)
     }
 
     func tab(_ tab: TabViewController, didRequestAIChatForSelectedText text: String) {
@@ -8038,7 +8341,7 @@ extension MainViewController: TabDelegate {
     }
 
     func closeFindInPage(tab: TabViewController) {
-        if #available(iOS 16.0, *) {
+        if #available(iOS 16.0, *), tab.findInPageImplementation == .system {
             dismissSystemFindNavigator(for: tab)
             return
         }
@@ -8155,6 +8458,8 @@ extension MainViewController: TabDelegate {
         postIdleSessionInstrumentation.sessionEnded(reason: .tabSelected)
         if tab.isAITab {
             fireAIChatEntryPointPixel(source: .tabsBarExistingChat, opensNewTab: false, hasPrompt: false)
+            // This tab was shown before the entry started, so report it again for the entry.
+            reportDuckAISessionCurrentTab()
         }
     }
 
@@ -8444,6 +8749,18 @@ extension MainViewController: TabSwitcherDelegate {
         newChatLongPressMenuAction()
     }
 
+    func tabSwitcher(_ tabSwitcher: TabSwitcherViewController, didRequestAIChat chatID: String) {
+        fireAIChatUsagePixelAndSetFeatureUsed(.openAIChatFromTabManager)
+        fireAIChatEntryPointPixel(source: .tabSwitcher, opensNewTab: true, hasPrompt: false)
+        loadUrlInNewTab(aiChatSettings.aiChatURL.withChatID(chatID), inheritedAttribution: nil) {
+            $0.duckAIEntrySource = .tabSwitcher
+        }
+    }
+
+    func tabSwitcherDidRequestAIChatHistory(_ tabSwitcher: TabSwitcherViewController) {
+        openAIChatHistory(source: .tabSwitcher)
+    }
+
     private func tabSwitcherNewTabWithAnimation() {
         // The new tab shows its own keyboard, so a pick the switcher reported just before doesn't add a second one.
         pendingTabSwitcherKeyboard = nil
@@ -8534,7 +8851,7 @@ extension MainViewController: TabSwitcherButtonDelegate {
         // Don't clear `openedAfterIdle` on switcher open — the after-idle session
         // ends on actual tab transition (see `transitionTo`), not on peeking.
         hideNotificationBarIfBrokenSitePromptShown()
-        updatePreviewForCurrentTab {
+        updatePreviewForCurrentTab(reportingSnapshotTimeout: true) {
             ViewHighlighter.hideAll()
             Task { @MainActor in
                 await self.segueToTabSwitcher()
@@ -8623,8 +8940,11 @@ extension MainViewController {
 
         fireExecutor.prepare(for: request)
         
-        fireButtonAnimator.animate {
+        let instrumentation = DefaultFireAnimationInstrumentation(request: request)
+        fireButtonAnimator.animate(instrumentation: instrumentation) {
+            instrumentation.burnDidStart(accepted: !self.fireExecutor.burnInProgress)
             await self.fireExecutor.burn(request: request, applicationState: .unknown)
+            instrumentation.burnDidFinish()
             Instruments.shared.endTimedEvent(for: spid)
             self.daxDialogsManager.resumeRegularFlow()
         } onTransitionCompleted: { [weak self] in
@@ -9229,7 +9549,8 @@ extension MainViewController: VoiceSearchViewControllerDelegate {
                 coordinator.submitVoicePrompt(query)
             } else {
                 performCancel()
-                openAIChat(source: .voice, query, autoSend: true)
+                let source = voiceSearchEntrySource ?? (isPad ? .ipadTogglePrompt : .addressBarPrompt)
+                openAIChat(source: source, query, autoSend: true, tabAttachmentRequest: nil, voice: true)
             }
         }
     }
@@ -9639,7 +9960,7 @@ extension MainViewController {
 
         case .duckAIVoice:
             pixelFiring?.fire(Pixel.Event.voiceEntryPointTapped, options: .parameters([PixelParameters.source: VoiceEntryPointSource.toolbar.rawValue]))
-            self.openAIChatInVoiceMode()
+            self.openAIChatInVoiceMode(source: .toolbarCustomButton, fromDeepLink: false)
 
         default:
             assertionFailure("Unexpected case \(button)")
@@ -9734,7 +10055,7 @@ extension MainViewController {
 
         case .duckAIVoice:
             pixelFiring?.fire(Pixel.Event.voiceEntryPointTapped, options: .parameters([PixelParameters.source: VoiceEntryPointSource.addressBar.rawValue]))
-            openAIChatInVoiceMode()
+            openAIChatInVoiceMode(source: .addressBarCustomButton, fromDeepLink: false)
 
         default:
             assertionFailure("Unexpected case: \(button)")

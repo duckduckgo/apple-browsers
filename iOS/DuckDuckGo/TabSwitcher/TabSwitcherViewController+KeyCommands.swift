@@ -26,7 +26,7 @@ extension TabSwitcherViewController {
             UIKeyCommand(title: "", action: #selector(keyboardCloseWindow), input: UIKeyCommand.inputEscape,
                          modifierFlags: [], discoverabilityTitle: UserText.keyCommandClose),
 
-            UIKeyCommand(title: "", action: #selector(keyboardCloseWindow), input: "w",
+            UIKeyCommand(title: "", action: #selector(keyboardCloseWindowShortcut), input: "w",
                          modifierFlags: [.command], discoverabilityTitle: UserText.keyCommandClose)
         ]
 
@@ -71,12 +71,14 @@ extension TabSwitcherViewController {
     }
     
     @objc func keyboardNewTab() {
+        KeyboardShortcutPixel.fireUsed(with: pixelFiring)
         guard !isProcessingUpdates else { return }
         dismissIfPossible(forceDismissOnEmpty: true)
         delegate?.tabSwitcherDidRequestNewTab(tabSwitcher: self)
     }
 
     @objc func keyboardNewFireTab() {
+        KeyboardShortcutPixel.fireUsed(with: pixelFiring)
         guard !isProcessingUpdates else { return }
         guard fireModeCapability.isFireModeEnabled else { return }
 
@@ -85,6 +87,11 @@ extension TabSwitcherViewController {
     
     @objc func keyboardCloseWindow() {
         dismissIfPossible()
+    }
+
+    @objc func keyboardCloseWindowShortcut() {
+        KeyboardShortcutPixel.fireUsed(with: pixelFiring)
+        keyboardCloseWindow()
     }
     
     @objc func keyboardSelectCurrent() {

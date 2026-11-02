@@ -54,7 +54,8 @@ struct ThemeColors {
     let destructiveContentPrimary: NSColor
     let destructiveContentSecondary: NSColor
     let destructiveContentTertiary: NSColor
-    let destructiveGlow: NSColor
+    let destructiveGlowPrimary: NSColor
+    let destructiveGlowSecondary: NSColor
     let destructivePrimary: NSColor
     let destructiveSecondary: NSColor
     let destructiveTertiary: NSColor
@@ -135,7 +136,8 @@ extension ThemeColors {
         destructiveContentPrimary = NSColor(designSystemColor: .destructiveContentPrimary, palette: palette)
         destructiveContentSecondary = NSColor(designSystemColor: .destructiveContentSecondary, palette: palette)
         destructiveContentTertiary = NSColor(designSystemColor: .destructiveContentTertiary, palette: palette)
-        destructiveGlow = NSColor(designSystemColor: .destructiveGlow, palette: palette)
+        destructiveGlowPrimary = NSColor(designSystemColor: .destructiveGlowPrimary, palette: palette)
+        destructiveGlowSecondary = NSColor(designSystemColor: .destructiveGlowSecondary, palette: palette)
         destructivePrimary = NSColor(designSystemColor: .destructivePrimary, palette: palette)
         destructiveSecondary = NSColor(designSystemColor: .destructiveSecondary, palette: palette)
         destructiveTertiary = NSColor(designSystemColor: .destructiveTertiary, palette: palette)

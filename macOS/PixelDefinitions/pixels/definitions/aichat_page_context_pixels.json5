@@ -10,7 +10,7 @@
             "pixelSource",
             {
                 "key": "automaticEnabled",
-                "description": "Whether the automatic page context collection is enabled in AI Features settings",
+                "description": "Whether page context is attached automatically: the AI Features setting, or always true when the aiChatPageContextAutoAttach feature flag is on",
                 "type": "boolean"
             },
             "channel"
@@ -26,7 +26,7 @@
             "pixelSource",
             {
                 "key": "automaticEnabled",
-                "description": "Whether the automatic page context collection is enabled in AI Features settings",
+                "description": "Whether page context is attached automatically: the AI Features setting, or always true when the aiChatPageContextAutoAttach feature flag is on",
                 "type": "boolean"
             },
             "channel"

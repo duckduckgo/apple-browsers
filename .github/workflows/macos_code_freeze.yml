@@ -48,6 +48,8 @@ jobs:
       - name: Check out the code
         uses: actions/checkout@v6
         with:
+          # Elevated permissions token is needed to push to the release branch, which is protected by a ruleset
+          token: ${{ secrets.GHA_ELEVATED_PERMISSIONS_TOKEN }}
           fetch-depth: 0 # Fetch all history and tags in order to extract Asana task URLs from git log
           submodules: recursive
 
@@ -109,6 +111,20 @@ jobs:
       branch: ${{ needs.create_release_branch.outputs.release_branch_name }}
     secrets: inherit
 
+  submit_translations:
+    name: Submit Release to Smartling
+    # Nothing depends on this job, so a failed submission never blocks the release, though it fails the run and
+    # comments on the release task.
+    # The version comes from the release branch name, which covers both a given and a calculated version.
+    needs: create_release_branch
+    uses: ./.github/workflows/smartling_submit.yml
+    with:
+      kind: release
+      platform: macOS
+      branch: ${{ needs.create_release_branch.outputs.release_branch_name }}
+      release_task_id: ${{ needs.create_release_branch.outputs.asana_task_id }}
+    secrets: inherit
+
   increment_build_number:
 
     name: Increment Build Number
@@ -125,6 +141,8 @@ jobs:
       - name: Check out the code
         uses: actions/checkout@v6
         with:
+          # Elevated permissions token is needed to push to the release branch, which is protected by a ruleset
+          token: ${{ secrets.GHA_ELEVATED_PERMISSIONS_TOKEN }}
           submodules: recursive
           ref: ${{ needs.create_release_branch.outputs.release_branch_name }}
 

@@ -23,7 +23,6 @@ import Kingfisher
 import Common
 import FoundationExtensions
 import DesignResourcesKit
-import DesignResourcesKitIcons
 
 struct FaviconsHelper {
 
@@ -188,7 +187,7 @@ struct FaviconsHelper {
             return nil
         }
 
-        let image = UIImage(rebrandable: imageName)
+        let image = UIImage(named: imageName)
         image?.accessibilityIdentifier = imageName
         return image
     }

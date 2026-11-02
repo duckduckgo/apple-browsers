@@ -96,8 +96,6 @@ let temporarilyAllowedMisplacedFiles: Set<String> = [
     "DuckDuckGo/NetworkProtection/AppTargets/BothAppTargets/Assets/upsell_devices_loop.json",
     "DuckDuckGo/NetworkProtection/AppTargets/BothAppTargets/Assets/upsell_devices_reveal.json",
     "DuckDuckGo/NetworkProtection/AppTargets/BothAppTargets/Assets/vpn-animation.json",
-    "DuckDuckGo/NetworkProtection/AppTargets/BothAppTargets/Assets/vpn-dark-mode.json",
-    "DuckDuckGo/NetworkProtection/AppTargets/BothAppTargets/Assets/vpn-light-mode.json",
     "DuckDuckGo/NetworkProtection/NetworkExtensionTargets/NetworkExtensionAndNotificationTargets/Localizable.xcstrings",
     "DuckDuckGo/NetworkProtection/NetworkExtensionTargets/NetworkExtensionAndNotificationTargets/NetworkProtectionLocalizable.xcstrings",
 ]

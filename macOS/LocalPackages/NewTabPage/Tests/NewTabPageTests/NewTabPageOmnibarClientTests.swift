@@ -1029,6 +1029,71 @@ final class NewTabPageOmnibarClientTests: XCTestCase {
         XCTAssertEqual(configProvider.launcherPromoIgnoredCallCount, 0)
     }
 
+    // MARK: - Suggested prompts
+
+    @MainActor
+    func testGetConfigIncludesShowSuggestedPromptsFromProvider() async throws {
+        configProvider.showSuggestedPrompts = true
+
+        let config: NewTabPageDataModel.OmnibarConfig = try await messageHelper.handleMessage(named: .getConfig)
+
+        XCTAssertEqual(config.showSuggestedPrompts, true)
+    }
+
+    @MainActor
+    func testWhileChipsAreShownEverySubmittedPromptIsCounted() async throws {
+        configProvider.showSuggestedPrompts = true
+        var chipPrompt = NewTabPageDataModel.SubmitChatAction(chat: "Hi", target: .sameTab, modelId: nil, images: nil, mode: nil, toolChoice: nil, reasoningEffort: nil, pageContext: nil, files: nil)
+        chipPrompt.suggestedPromptId = "jobapplication"
+        let typedPrompt = NewTabPageDataModel.SubmitChatAction(chat: "pizza", target: .sameTab, modelId: nil, images: nil, mode: nil, toolChoice: nil, reasoningEffort: nil, pageContext: nil, files: nil)
+
+        try await messageHelper.handleMessageExpectingNilResponse(named: .submitChat, parameters: chipPrompt)
+        try await messageHelper.handleMessageExpectingNilResponse(named: .submitChat, parameters: typedPrompt)
+
+        XCTAssertEqual(configProvider.suggestedPromptsPromptCount, 2)
+    }
+
+    @MainActor
+    func testWhenChipsAreNotShownPromptsAreNotCounted() async throws {
+        configProvider.showSuggestedPrompts = false
+        let action = NewTabPageDataModel.SubmitChatAction(chat: "pizza", target: .sameTab, modelId: nil, images: nil, mode: nil, toolChoice: nil, reasoningEffort: nil, pageContext: nil, files: nil)
+
+        try await messageHelper.handleMessageExpectingNilResponse(named: .submitChat, parameters: action)
+
+        XCTAssertEqual(configProvider.suggestedPromptsPromptCount, 0)
+    }
+
+    @MainActor
+    func testVoiceChatIsNotCounted() async throws {
+        configProvider.showSuggestedPrompts = true
+        let action = NewTabPageDataModel.SubmitChatAction(chat: "", target: .sameTab, modelId: nil, images: nil, mode: AIChatNativePrompt.voiceMode, toolChoice: nil, reasoningEffort: nil, pageContext: nil, files: nil)
+
+        try await messageHelper.handleMessageExpectingNilResponse(named: .submitChat, parameters: action)
+
+        XCTAssertEqual(configProvider.suggestedPromptsPromptCount, 0)
+    }
+
+    @MainActor
+    func testSubmissionFromASuggestedPromptIsReported() async throws {
+        var action = NewTabPageDataModel.SubmitChatAction(chat: "Hi", target: .sameTab, modelId: nil, images: nil, mode: nil, toolChoice: nil, reasoningEffort: nil, pageContext: nil, files: nil)
+        action.suggestedPromptId = "jobapplication"
+
+        try await messageHelper.handleMessageExpectingNilResponse(named: .submitChat, parameters: action)
+
+        let handler = try XCTUnwrap(actionHandler as? MockNewTabPageOmnibarActionsHandler)
+        XCTAssertEqual(handler.suggestedPromptSubmittedIds, ["jobapplication"])
+    }
+
+    @MainActor
+    func testTypedSubmissionIsNotReportedAsASuggestedPrompt() async throws {
+        let action = NewTabPageDataModel.SubmitChatAction(chat: "Hi", target: .sameTab, modelId: nil, images: nil, mode: nil, toolChoice: nil, reasoningEffort: nil, pageContext: nil, files: nil)
+
+        try await messageHelper.handleMessageExpectingNilResponse(named: .submitChat, parameters: action)
+
+        let handler = try XCTUnwrap(actionHandler as? MockNewTabPageOmnibarActionsHandler)
+        XCTAssertEqual(handler.suggestedPromptSubmittedIds, [])
+    }
+
     @MainActor
     func testDismissUsageLimitsIsForwardedToTheProvider() async throws {
         try await messageHelper.handleMessageExpectingNilResponse(named: .dismissUsageLimits)
@@ -1311,6 +1376,96 @@ final class NewTabPageOmnibarClientTests: XCTestCase {
         try await messageHelper.handleMessageExpectingNilResponse(named: .removeSuggestion, parameters: action)
 
         XCTAssertFalse(handlerCalled)
+    }
+
+    // MARK: - screenshots
+
+    private var retainedScreenshotClient: NewTabPageOmnibarClient?
+
+    private func makeScreenshotClient(_ provider: MockNewTabPageOmnibarScreenshotProvider) -> MessageHelper<NewTabPageOmnibarClient.MessageName> {
+        let screenshotClient = NewTabPageOmnibarClient(configProvider: configProvider,
+                                                       suggestionsProvider: suggestionsProvider,
+                                                       aiChatsProvider: aiChatsProvider,
+                                                       modelsProvider: modelsProvider,
+                                                       actionHandler: actionHandler,
+                                                       tabsProvider: tabsProvider,
+                                                       subscriptionDialogPresenter: subscriptionDialogPresenter,
+                                                       screenshotProvider: provider)
+        let screenshotUserScript = NewTabPageUserScript()
+        screenshotClient.registerMessageHandlers(for: screenshotUserScript)
+        retainedScreenshotClient = screenshotClient
+        return MessageHelper(userScript: screenshotUserScript)
+    }
+
+    @MainActor
+    func testGetConfigOmitsScreenshotModesWithoutAProvider() async throws {
+        let config: NewTabPageDataModel.OmnibarConfig = try await messageHelper.handleMessage(named: .getConfig)
+        XCTAssertNil(config.screenshotModes)
+    }
+
+    @MainActor
+    func testGetConfigPassesScreenshotModesThrough() async throws {
+        let provider = MockNewTabPageOmnibarScreenshotProvider()
+        provider.screenshotModes = ["dragToSelect", "selectWindowOrDisplay"]
+        let helper = makeScreenshotClient(provider)
+
+        let config: NewTabPageDataModel.OmnibarConfig = try await helper.handleMessage(named: .getConfig)
+        XCTAssertEqual(config.screenshotModes, ["dragToSelect", "selectWindowOrDisplay"])
+    }
+
+    @MainActor
+    func testGetConfigOmitsEnablePastedAttachmentsWithoutAProvider() async throws {
+        let config: NewTabPageDataModel.OmnibarConfig = try await messageHelper.handleMessage(named: .getConfig)
+        XCTAssertNil(config.enablePastedAttachments)
+    }
+
+    @MainActor
+    func testGetConfigPassesEnablePastedAttachmentsThrough() async throws {
+        let provider = MockNewTabPageOmnibarScreenshotProvider()
+        let helper = makeScreenshotClient(provider)
+
+        let off: NewTabPageDataModel.OmnibarConfig = try await helper.handleMessage(named: .getConfig)
+        XCTAssertEqual(off.enablePastedAttachments, false)
+
+        provider.enablePastedAttachments = true
+        let on: NewTabPageDataModel.OmnibarConfig = try await helper.handleMessage(named: .getConfig)
+        XCTAssertEqual(on.enablePastedAttachments, true)
+    }
+
+    @MainActor
+    func testCaptureScreenshotReturnsTheProvidersResponse() async throws {
+        let provider = MockNewTabPageOmnibarScreenshotProvider()
+        provider.captureResponse = .init(image: .init(data: "AAAA", format: "png", kind: "window"))
+        let helper = makeScreenshotClient(provider)
+
+        let response: NewTabPageDataModel.OmnibarCaptureScreenshotResponse = try await helper.handleMessage(named: .captureScreenshot,
+                                                                                                             parameters: ["mode": "selectWindowOrDisplay"])
+        XCTAssertEqual(response, provider.captureResponse)
+        XCTAssertEqual(provider.requestedModes, ["selectWindowOrDisplay"])
+    }
+
+    @MainActor
+    func testCaptureScreenshotWithBadParamsIsACancel() async throws {
+        let provider = MockNewTabPageOmnibarScreenshotProvider()
+        let helper = makeScreenshotClient(provider)
+
+        let response: NewTabPageDataModel.OmnibarCaptureScreenshotResponse = try await helper.handleMessage(named: .captureScreenshot,
+                                                                                                             parameters: ["unexpected": 1])
+        XCTAssertEqual(response, .cancelled)
+        XCTAssertTrue(provider.requestedModes.isEmpty)
+    }
+
+    @MainActor
+    func testCaptureScreenshotWithoutAProviderIsACancel() async throws {
+        let response: NewTabPageDataModel.OmnibarCaptureScreenshotResponse = try await messageHelper.handleMessage(named: .captureScreenshot,
+                                                                                                                    parameters: ["mode": "dragToSelect"])
+        XCTAssertEqual(response, .cancelled)
+    }
+
+    func testCancelledAndFailedResponsesEncodeAsThePageExpects() throws {
+        XCTAssertEqual(try JSONEncoder().encode(NewTabPageDataModel.OmnibarCaptureScreenshotResponse.cancelled), Data("{}".utf8))
+        let failed = try JSONSerialization.jsonObject(with: JSONEncoder().encode(NewTabPageDataModel.OmnibarCaptureScreenshotResponse.failed)) as? [String: String]
+        XCTAssertEqual(failed, ["error": "screenshotFailed"])
     }
 
     // MARK: - Helpers

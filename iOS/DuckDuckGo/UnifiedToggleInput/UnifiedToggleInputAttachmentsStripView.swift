@@ -33,6 +33,7 @@ final class UnifiedToggleInputAttachmentsStripView: UIView {
     private(set) var attachments: [UnifiedToggleInputAttachment] = []
     var onAttachmentRemoved: ((UUID, UnifiedToggleInputAttachment, Bool) -> Void)?
     var onAttachmentsChanged: (() -> Void)?
+    var onAttachmentTapped: ((UUID) -> Void)?
     var onPageContextRemove: (() -> Void)?
     /// Tapping the chip in its placeholder state asks for the page to be attached again.
     var onPageContextTap: (() -> Void)?
@@ -300,6 +301,9 @@ final class UnifiedToggleInputAttachmentsStripView: UIView {
         let thumbnail = UnifiedToggleInputAttachmentThumbnailView(attachment: attachment, usesCompactLayout: usesCompactLayout)
         thumbnail.onRemove = { [weak self] id in
             self?.removeAttachment(id: id, isUserInitiated: true)
+        }
+        thumbnail.onTap = { [weak self] id in
+            self?.onAttachmentTapped?(id)
         }
         return thumbnail
     }

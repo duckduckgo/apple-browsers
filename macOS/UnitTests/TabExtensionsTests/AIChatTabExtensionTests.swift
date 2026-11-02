@@ -567,6 +567,7 @@ final class AIChatTabExtensionMock: TabExtension, AIChatProtocol {
     var pageContextRequestedPublisher: AnyPublisher<Void, Never> { Empty().eraseToAnyPublisher() }
     var pageContextConsumedPublisher: AnyPublisher<Void, Never> { Empty().eraseToAnyPublisher() }
     var pageContextRemovedPublisher: AnyPublisher<Void, Never> { Empty().eraseToAnyPublisher() }
+    var pageContextAddedPublisher: AnyPublisher<Void, Never> { Empty().eraseToAnyPublisher() }
     var chatRestorationDataPublisher: AnyPublisher<AIChatRestorationData?, Never> { Empty().eraseToAnyPublisher() }
 
     func getPublicProtocol() -> AIChatProtocol { self }

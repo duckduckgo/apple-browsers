@@ -61,6 +61,8 @@ jobs:
       - name: Check out the code
         uses: actions/checkout@v6
         with:
+          # Elevated permissions token is needed to push to the release branch, which is protected by a ruleset
+          token: ${{ secrets.GHA_ELEVATED_PERMISSIONS_TOKEN }}
           fetch-depth: 0
           submodules: recursive
 
@@ -118,6 +120,20 @@ jobs:
     uses: ./.github/workflows/ios_sync_end_to_end.yml
     with:
       branch: ${{ needs.create_release_branch.outputs.release_branch_name }}
+    secrets: inherit
+
+  submit_translations:
+    name: Submit Release to Smartling
+    # Nothing depends on this job, so a failed submission never blocks the release, though it fails the run and
+    # comments on the release task.
+    # The version comes from the release branch name, which covers both a given and a calculated version.
+    needs: create_release_branch
+    uses: ./.github/workflows/smartling_submit.yml
+    with:
+      kind: release
+      platform: iOS
+      branch: ${{ needs.create_release_branch.outputs.release_branch_name }}
+      release_task_id: ${{ needs.create_release_branch.outputs.asana_task_id }}
     secrets: inherit
 
   prepare_release:

@@ -118,25 +118,6 @@ struct AIChatPromptLimitsTests {
 
     @available(iOS 16, macOS 13, *)
     @Test(.timeLimit(.minutes(1)))
-    func editingLimitIsWhatRemainsAfterTheOtherContent() {
-        let paste = AIChatPastedText(content: text(5_000))
-        let other = AIChatPastedText(content: text(6_000))
-        let length = limits.evaluate(prompt: text(1_000), pastedTexts: [paste, other], hasImage: false, maxCharactersWithImage: nil)
-        #expect(length.limit(forEditing: paste) == 9_000)
-    }
-
-    @available(iOS 16, macOS 13, *)
-    @Test(.timeLimit(.minutes(1)))
-    func editingLimitCanBeBelowThePasteAndBelowZero() {
-        let paste = AIChatPastedText(content: text(5_000))
-        let belowOwnLength = limits.evaluate(prompt: text(12_000), pastedTexts: [paste], hasImage: false, maxCharactersWithImage: nil)
-        #expect(belowOwnLength.limit(forEditing: paste) == 4_000)
-        let negative = limits.evaluate(prompt: text(17_000), pastedTexts: [paste], hasImage: false, maxCharactersWithImage: nil)
-        #expect(negative.limit(forEditing: paste) == -1_000)
-    }
-
-    @available(iOS 16, macOS 13, *)
-    @Test(.timeLimit(.minutes(1)))
     func titleIsTheFirstNonBlankLineTrimmed() {
         #expect(AIChatPastedText(content: "  Hello world  \nsecond").title == "Hello world")
         #expect(AIChatPastedText(content: "\n \n\t\n  Third line \nfourth").title == "Third line")

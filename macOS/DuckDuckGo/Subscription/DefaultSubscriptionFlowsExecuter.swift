@@ -30,7 +30,7 @@ public protocol SubscriptionFlowsExecuting: AnyObject {
 
     /// Performs an App Store tier change.
     /// - Returns: `PurchaseUpdate` on success; `nil` on failure or user cancel.
-    func performTierChange(to productId: String, changeType: String?, contextName: String) async -> PurchaseUpdate?
+    func performTierChange(to productId: String, changeType: String?, wideEventFunnelName: String) async -> PurchaseUpdate?
 }
 
 @MainActor
@@ -57,14 +57,14 @@ public final class DefaultSubscriptionFlowsExecuter: SubscriptionFlowsExecuting 
         self.notificationCenter = notificationCenter
     }
 
-    public func performTierChange(to productId: String, changeType: String?, contextName: String) async -> PurchaseUpdate? {
+    public func performTierChange(to productId: String, changeType: String?, wideEventFunnelName: String) async -> PurchaseUpdate? {
         let currentSubscription = try? await subscriptionManager.getSubscription()
         let fromPlan = currentSubscription?.productId ?? ""
         let resolvedChangeType = SubscriptionPlanChangeWideEventData.ChangeType.parse(string: changeType)
-        return await executeAppStoreTierChange(to: productId, changeType: resolvedChangeType, fromPlan: fromPlan, contextName: contextName)
+        return await executeAppStoreTierChange(to: productId, changeType: resolvedChangeType, fromPlan: fromPlan, wideEventFunnelName: wideEventFunnelName)
     }
 
-    private func executeAppStoreTierChange(to productId: String, changeType: SubscriptionPlanChangeWideEventData.ChangeType?, fromPlan: String, contextName: String) async -> PurchaseUpdate? {
+    private func executeAppStoreTierChange(to productId: String, changeType: SubscriptionPlanChangeWideEventData.ChangeType?, fromPlan: String, wideEventFunnelName: String) async -> PurchaseUpdate? {
 
         // Initialize wide event data
         let wideData = SubscriptionPlanChangeWideEventData(
@@ -72,7 +72,7 @@ public final class DefaultSubscriptionFlowsExecuter: SubscriptionFlowsExecuting 
             changeType: changeType,
             fromPlan: fromPlan,
             toPlan: productId,
-            funnelName: contextName,
+            funnelName: wideEventFunnelName,
             paymentDuration: WideEvent.MeasuredInterval.startingNow()
         )
         wideEvent.startFlow(wideData)

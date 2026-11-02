@@ -446,8 +446,13 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
             supportsContextualMode = aichatContextualModeFeature.isAvailable || defaults.supportsAIChatContextualMode
         }
 
-        let supportsNativeChatInput = (supportsFullMode || supportsContextualMode) && unifiedToggleInputFeature.isAvailable
+        let supportsNativeChatInput = (supportsFullMode || supportsContextualMode) && isNativeChatInputAvailable
         return (supportsFullMode, supportsContextualMode, supportsNativeChatInput)
+    }
+
+    /// iPad keeps the web input on a full-tab chat, but its contextual sheet and sidebar use the native input like iPhone.
+    private var isNativeChatInputAvailable: Bool {
+        unifiedToggleInputFeature.isAvailable || displayMode == .contextual
     }
 
     private var supportsBrowserTabContexts: Bool {
@@ -465,7 +470,6 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
         let supportsNativePrompt = supportsNativeChatInput || defaults.supportsNativePrompt || iPadDuckAIControlsFeature.isAvailable
         let fireMode = isFireModeProvider?() ?? false
 
-        let supportsSuggestions = supportsContextualMode && featureFlagger.isFeatureOn(.contextualSuggestedPrompts)
         let supportsNativeUsageWarnings = featureFlagger.isFeatureOn(.utiDuckAIWarnings)
             && devicePlatform.isIphone
             && supportsNativeChatInput
@@ -490,7 +494,7 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
             supportsNativeStorage: featureFlagger.isFeatureOn(.aiChatNativeStorage) && isNativeStorageBridgeAvailable,
             supportsNativePromptEditing: featureFlagger.isFeatureOn(.nativeAIPromptEditing) && supportsNativeChatInput,
             supportsPromoCards: supportsNativeChatInput,
-            supportsSuggestions: supportsSuggestions,
+            supportsSuggestions: supportsContextualMode,
             supportsNativeUsageWarnings: supportsNativeUsageWarnings,
             supportsBlobSafeDataClearing: true,
             installType: installTypeProvider(),
@@ -794,7 +798,7 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
 
     @MainActor
     func focusChatInput(params: Any, message: UserScriptMessage) async -> Encodable? {
-        guard unifiedToggleInputFeature.isAvailable else { return nil }
+        guard isNativeChatInputAvailable else { return nil }
         focusChatInputHandler?()
         return nil
     }

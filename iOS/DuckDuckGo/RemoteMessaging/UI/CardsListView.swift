@@ -327,7 +327,7 @@ private extension RemoteMessagingUI {
                         onImageLoadSuccess?()
                     }
             } else {
-                Image(rebrandable: placeholderIcon)
+                Image(placeholderIcon)
                     .resizable()
                     .aspectRatio(contentMode: .fit)
                     .frame(width: size.width, height: size.height)
@@ -386,7 +386,7 @@ private extension RemoteMessagingUI.CardsListView {
                     .scaledToFit()
                     .frame(maxHeight: Metrics.CardsList.headerImageMaxHeight)
             } else if let icon {
-                Image(rebrandable: icon)
+                Image(icon)
                     .scaledToFit()
                     .task {
                         await loadRemoteImage()

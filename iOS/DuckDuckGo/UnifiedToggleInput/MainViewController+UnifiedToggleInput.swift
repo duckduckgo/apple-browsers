@@ -156,7 +156,8 @@ extension MainViewController {
         ToolbarVisibilityDecision.resolve(.init(
             isCurrentTabUsingUnifiedInputAIChrome: isCurrentTabUsingUnifiedInputAIChrome,
             isLargeWidth: AppWidthObserver.shared.isLargeWidth,
-            isInMinimalChromeLayout: isInMinimalChromeLayout
+            isInMinimalChromeLayout: isInMinimalChromeLayout,
+            isFloatingWebInputEditing: viewCoordinator.isWebInputEditing
         ))
     }
 
@@ -402,6 +403,7 @@ struct UnifiedToggleInputRefreshActionInputs: Equatable {
     let tabLinkURL: URL?
     let tabIsVoiceModeRequested: Bool
     let tabRequestsDeepLinkSurface: Bool
+    let tabRequestsNewChatInput: Bool
     let coordinatorIsAITabState: Bool
     let coordinatorIsActive: Bool
     let coordinatorIsOmnibarSession: Bool
@@ -416,6 +418,11 @@ struct UnifiedToggleInputRefreshActionInputs: Equatable {
 extension MainViewController {
 
     static func decideRefreshAction(for inputs: UnifiedToggleInputRefreshActionInputs) -> UnifiedToggleInputRefreshAction {
+        // A tab opened for a new chat starts focused, even when the tab it came from left the input collapsed.
+        if inputs.tabRequestsNewChatInput {
+            return .refreshAITab(.showCollapsed(expandAfterRefresh: true))
+        }
+
         // During a fresh navigation (e.g. opening a chat in a new tab), `tabModel.link` is briefly
         // set to nil before WebView reports the new URL. `tab.isAITab` is link-derived, so it would
         // momentarily report false and route us through `refreshNonAITab` → `coordinator.hide()`,
@@ -461,7 +468,7 @@ extension MainViewController {
     }
 }
 
-private extension MainViewController {
+extension MainViewController {
 
     /// While Dax Dialogs are still in progress, the onboarding Search vs Search & Duck.ai choice
     /// is not applied to AIChatSettings yet. Use that pending choice for UTI presentation so
@@ -469,6 +476,9 @@ private extension MainViewController {
     func isAIChatSearchInputToggleEnabledForCurrentOnboardingState() -> Bool {
         onboardingSearchExperienceSettingsResolver.deferredValue ?? aiChatSettings.isAIChatSearchInputUserSettingsEnabled
     }
+}
+
+private extension MainViewController {
 
     func installUnifiedToggleInputViewController(_ inputVC: UnifiedToggleInputViewController) {
         addChild(inputVC)
@@ -785,6 +795,7 @@ private extension MainViewController {
             tabLinkURL: tab.link?.url,
             tabIsVoiceModeRequested: tab.isVoiceModeRequested,
             tabRequestsDeepLinkSurface: tab.isDuckAIDeepLinkSurfaceRequested,
+            tabRequestsNewChatInput: tab.tabModel.newChatInputRequest != nil,
             coordinatorIsAITabState: coordinator.isAITabState,
             coordinatorIsActive: coordinator.isActive,
             coordinatorIsOmnibarSession: coordinator.isOmnibarSession,
@@ -837,6 +848,7 @@ private extension MainViewController {
         }
         tab.isVoiceModeRequested = false
         tab.isDuckAIDeepLinkSurfaceRequested = false
+        applyNewChatInputRequest(of: tab, to: coordinator)
         // Before the early-return so AI→AI tab transitions (`preserveCurrentPresentation`) also
         // override the `UIView`-default-visible borders on a freshly-bound tab.
         tab.borderView.isTopVisible = false
@@ -881,6 +893,15 @@ private extension MainViewController {
             if let chatUpdatesPublisher = tab.userScripts?.duckAiNativeStorageUserScript?.chatUpdatesPublisher {
                 coordinator.observeChatUpdates(chatUpdatesPublisher)
             }
+        }
+    }
+
+    /// Consumed once the new tab's input is bound, so its tool lands on that tab.
+    func applyNewChatInputRequest(of tab: TabViewController, to coordinator: UnifiedToggleInputCoordinator) {
+        guard let request = tab.tabModel.newChatInputRequest else { return }
+        tab.tabModel.newChatInputRequest = nil
+        if let tool = request.tool {
+            coordinator.selectTool(tool, createImageEntryPoint: request.createImageEntryPoint)
         }
     }
 
@@ -943,7 +964,8 @@ private extension MainViewController {
 
     func setUpAIChatTabChatHeader() {
         let headerView = AIChatTabChatHeaderView(isFireModeEnabled: fireModeCapability.isFireModeEnabled,
-                                                 shouldShowImageGeneration: featureFlagger.isFeatureOn(.aiChatNativeSidebar))
+                                                 shouldShowImageGeneration: featureFlagger.isFeatureOn(.aiChatNativeSidebar),
+                                                 layout: AIChatTabChatHeaderView.Layout(featureFlagger: featureFlagger))
         headerView.delegate = self
         headerView.translatesAutoresizingMaskIntoConstraints = false
         viewCoordinator.aiChatTabChatHeaderContainer.addSubview(headerView)
@@ -1000,7 +1022,7 @@ extension MainViewController {
         coordinator.contentViewController.forceBottomBarLayout = coordinator.isAITabState
 
         let isAITabCollapsed = coordinator.isAITabCollapsed
-        coordinator.viewController.setAITabCollapsedFooterPoseActive(isAITabCollapsed)
+        coordinator.viewController.setFlankingAccessoriesVisible(isAITabCollapsed ? .all : [])
         viewCoordinator.setAITabCollapsedTopSeparatorVisible(isAITabCollapsed)
 
         applyTopChromeState(renderState: renderState, isOnAITab: isOnAITab, coordinator: coordinator)
@@ -1296,6 +1318,7 @@ extension MainViewController {
     }
 
     func handleUnifiedToggleInputSearchSubmission(_ query: String) {
+        onboardingPromoTab = nil
         fireUnifiedInputDuckAIDirectNavigationPixelIfNeeded(for: query)
         if let tab = tabManager.currentTabsModel.currentTab, tab.link == nil {
             ntpAfterIdleInstrumentation.barUsedFromNTP(afterIdle: tab.openedAfterIdle)
@@ -1339,6 +1362,10 @@ extension MainViewController: UnifiedToggleInputOmnibarActivating {
             coordinator.restoreOmnibarInputOnAppOpen(isRequestValid: isRequestValid, completion: completion)
             return .intercept
         }
+        let wasPresentingDirectly = isPresentingNewTabInputDirectly
+        isPresentingNewTabInputDirectly = wasPresentingDirectly
+            || (hasInlineNewTabPageInput && tabManager.currentTabsModel.currentTab?.openedAfterIdle == true)
+        defer { isPresentingNewTabInputDirectly = wasPresentingDirectly }
         revealAddressBarForEditing()
         defer { finishNewTabPageInputHandoff() }
         let position: UnifiedToggleInputCardPosition = appSettings.currentAddressBarPosition == .bottom ? .bottom : .top
@@ -1655,12 +1682,28 @@ extension MainViewController: AIChatTabChatHeaderViewDelegate {
     }
 
     func aiChatTabChatHeaderDidTapNewVoiceChat() {
-        startDuckAIVoiceMode(from: .duckAI)
+        startDuckAIVoiceMode(from: .duckAI, entrySource: .duckAINewChat)
     }
 
     func aiChatTabChatHeaderDidTapNewImage() {
         PixelKit.fire(Pixel.Event.aiChatNewImageTapped, frequency: .dailyAndCount)
+        fireAIChatEntryPointPixel(source: .duckAINewChat, opensNewTab: false, hasPrompt: false, chatState: .new)
+        reportDuckAISessionCurrentTab()
         recordDuckAISessionNewChatCreatedOnCurrentTab()
+        if featureFlagger.isFeatureOn(.aiChatTabHandoffImprovements) {
+            openNewImageChatInNewTab()
+        } else {
+            startNewImageChatInPlace()
+        }
+    }
+
+    private func openNewImageChatInNewTab() {
+        guard let tab = currentTab else { return }
+        openNewChatFromDuckAIPage(tab, source: .duckAINewChat,
+                                  inputRequest: DuckAINewChatInputRequest(tool: .imageGeneration, createImageEntryPoint: .chatHeaderNewImage))
+    }
+
+    private func startNewImageChatInPlace() {
         unifiedToggleInputCoordinator?.startNewChat()
         unifiedToggleInputCoordinator?.selectTool(.imageGeneration, createImageEntryPoint: .chatHeaderNewImage)
         unifiedToggleInputCoordinator?.showExpanded(inputMode: .aiChat)

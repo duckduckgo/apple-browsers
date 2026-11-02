@@ -64,6 +64,9 @@ extension Preferences {
 
                 if model.showSyncPromo {
                     SyncPromoView(viewModel: model.syncPromoViewModel, layout: .horizontal)
+                        .onAppear {
+                            model.syncPromoViewModel.promoDisplayed()
+                        }
                 }
 
                 // Autofill Content  Button

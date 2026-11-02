@@ -302,6 +302,11 @@ final class OnboardingPixelReporterTests: XCTestCase {
         ])
     }
 
+    func test_WhenGotItPressed_OnTryFireButtonDialog_ThenEndShownEventSent() {
+        reporter.measureGotItPressed(dialogType: .tryFireButton)
+        XCTAssertEqual(sharedPixelHandler.eventsReceived, [.end(.shown)])
+    }
+
     func test_WhenGotItPressed_OnFinalDialog_ThenEndClickedEngageEventSent() {
         reporter.measureGotItPressed(dialogType: .highFive)
         XCTAssertEqual(sharedPixelHandler.eventsReceived, [.end(.clicked(.engage))])

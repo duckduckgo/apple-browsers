@@ -504,6 +504,11 @@ final class TabViewModel: NSObject {
             }
         } else if case .newtab = tab.content, tab.burnerMode.isBurner {
             title = UserText.burnerTabHomeTitle
+        } else if #available(macOS 15.4, *),
+                  case .webExtensionUrl(let url) = tab.content,
+                  let name = NSApp.delegateTyped.webExtensionManager?.extensionContext(for: url)?.webExtension.displayName,
+                  !name.isEmpty {
+            title = name
         } else {
             title = tab.content.displayTitle(pageTitle: tab.title, pageURL: tab.url)
         }
@@ -514,9 +519,18 @@ final class TabViewModel: NSObject {
     }
 
     private func updateFavicon(_ tabFavicon: NSImage?? = .none /* provided from .sink or taken from tab.favicon (optional) if .none */) {
+        let extensionIcon: NSImage?
+        if #available(macOS 15.4, *),
+           case .webExtensionUrl(let url) = tab.content,
+           let webExtension = NSApp.delegateTyped.webExtensionManager?.extensionContext(for: url)?.webExtension {
+            let size = NSSize(width: 16, height: 16)
+            extensionIcon = webExtension.icon(for: size) ?? webExtension.actionIcon(for: size)
+        } else {
+            extensionIcon = nil
+        }
         favicon = tab.content.displayedFavicon(
             error: isShowingErrorPage ? tab.error : nil,
-            actualFavicon: tabFavicon ?? tab.favicon,
+            actualFavicon: extensionIcon ?? tabFavicon ?? tab.favicon,
             isBurner: tab.burnerMode.isBurner,
             featureFlagger: featureFlagger
         )

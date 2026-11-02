@@ -141,6 +141,8 @@ final class PromptBarPresenter: PromptBarPresenting {
 
     func toggle(source: PromptBarPresentationSource) {
         if isVisible {
+            // Like a click outside: a screenshot capture, tool menu or sheet would outlive the hidden bar.
+            guard !content.isPresentingAuxiliaryUI else { return }
             dismiss(reason: source.toggleDismissReason)
         } else {
             show(source: source)
@@ -192,6 +194,7 @@ final class PromptBarPresenter: PromptBarPresenting {
 
         let dimWindow = makeDimWindow(screen.frame)
         dimWindow.isReleasedWhenClosed = false
+        dimWindow.identifier = .promptBarDimWindow
         dimWindow.backgroundColor = .black
         dimWindow.isOpaque = false
         dimWindow.hasShadow = false
@@ -311,4 +314,9 @@ final class PromptBarPresenter: PromptBarPresenting {
         frame.origin.y = top - frame.height
         window.setFrame(frame, display: true, animate: false)
     }
+}
+
+extension NSUserInterfaceItemIdentifier {
+    /// Lets a screenshot take the prompt bar's dim layer off screen while it captures.
+    static let promptBarDimWindow = NSUserInterfaceItemIdentifier("PromptBarDimWindow")
 }

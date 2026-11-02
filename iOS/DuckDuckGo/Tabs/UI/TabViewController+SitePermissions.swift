@@ -43,6 +43,57 @@ private final class SitePermissionsManagementPresentationDelegate: NSObject, UIA
     }
 }
 
+private final class SitePermissionDialogHostingController: UIHostingController<SitePermissionDialogView> {
+
+    private let isVisible: () -> Bool
+    private var pendingImpression: (() -> Void)?
+    private var applicationActiveCancellable: AnyCancellable?
+
+    init(rootView: SitePermissionDialogView,
+         isVisible: @escaping () -> Bool,
+         onImpression: @escaping () -> Void) {
+        self.isVisible = isVisible
+        self.pendingImpression = onImpression
+        super.init(rootView: rootView)
+
+        applicationActiveCancellable = NotificationCenter.default
+            .publisher(for: UIApplication.didBecomeActiveNotification)
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in
+                self?.fireImpressionIfVisible()
+            }
+    }
+
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
+
+    override func viewDidAppear(_ animated: Bool) {
+        super.viewDidAppear(animated)
+        fireImpressionIfVisible()
+    }
+
+    override func willMove(toParent parent: UIViewController?) {
+        if parent == nil {
+            pendingImpression = nil
+            applicationActiveCancellable = nil
+        }
+        super.willMove(toParent: parent)
+    }
+
+    func fireImpressionIfVisible() {
+        guard pendingImpression != nil, isVisible() else { return }
+        fireImpression()
+    }
+
+    func fireImpression() {
+        let impression = pendingImpression
+        pendingImpression = nil
+        applicationActiveCancellable = nil
+        impression?()
+    }
+}
+
 // Keeps teardown independent of the controller's lifetime while confining permission state to this file.
 @MainActor
 final class SitePermissionsState {
@@ -56,10 +107,10 @@ final class SitePermissionsState {
     fileprivate var retiredGeolocationUserScripts = [GeolocationUserScript]()
     fileprivate var shouldRetireGeolocationOnProcessReplacement = false
     fileprivate var storeChangeCancellable: AnyCancellable?
-    fileprivate var applicationActiveCancellable: AnyCancellable?
     fileprivate var isCommittedGeolocationPolicyBlocked = false
     fileprivate var isProvisionalGeolocationPolicyBlocked = false
-    fileprivate var dialogHostingController: UIViewController?
+    fileprivate var dialogHostingController: SitePermissionDialogHostingController?
+    fileprivate var dialogVisibilityOverride: (() -> Bool)?
     fileprivate var recoveryHostingController: UIViewController?
     fileprivate var managementHostingController: UIHostingController<SitePermissionsSheetView>?
     fileprivate var managementViewModel: SitePermissionsSheetViewModel?
@@ -209,7 +260,6 @@ final class SitePermissionsState {
         geolocationProvider = nil
         geolocationUserScript = nil
         storeChangeCancellable = nil
-        applicationActiveCancellable = nil
         shouldRetireGeolocationOnProcessReplacement = false
     }
 
@@ -295,6 +345,25 @@ extension TabViewController {
     var sitePermissionsUptimeProvider: () -> TimeInterval {
         get { sitePermissionsState.uptimeProvider }
         set { sitePermissionsState.uptimeProvider = newValue }
+    }
+
+    /// Swipe previews attach the adjacent tab one screen width away, so being in the window isn't enough.
+    private var isOnScreenForSitePermissionDialog: Bool {
+        guard UIApplication.shared.applicationState == .active,
+              let view = viewIfLoaded, let window = view.window else {
+            return false
+        }
+        let frame = view.convert(view.bounds, to: window)
+        return window.bounds.contains(CGPoint(x: frame.midX, y: frame.midY))
+    }
+
+    var sitePermissionsDialogVisibilityOverride: (() -> Bool)? {
+        get { sitePermissionsState.dialogVisibilityOverride }
+        set { sitePermissionsState.dialogVisibilityOverride = newValue }
+    }
+
+    func fireSitePermissionDialogImpressionIfVisible() {
+        sitePermissionsState.dialogHostingController?.fireImpressionIfVisible()
     }
 
     static func shouldWaitForContentBlockingAssets(assetsInstalled: Bool,
@@ -562,7 +631,10 @@ extension TabViewController {
         }
         sitePermissionsState.managementPresentationDelegate = presentationDelegate
         hostingController.presentationController?.delegate = presentationDelegate
-        observeSitePermissionsManagement(coordinator: coordinator, site: site, viewModel: viewModel)
+        observeSitePermissionsManagement(coordinator: coordinator,
+                                         site: site,
+                                         viewModel: viewModel,
+                                         systemPermissionClient: dependencies.systemPermissionClient)
 
         present(hostingController, animated: true) { [weak self, weak hostingController] in
             guard let self,
@@ -577,7 +649,8 @@ extension TabViewController {
 
     private func observeSitePermissionsManagement(coordinator: SitePermissionsCoordinator,
                                                   site: SitePermissionKey,
-                                                  viewModel: SitePermissionsSheetViewModel) {
+                                                  viewModel: SitePermissionsSheetViewModel,
+                                                  systemPermissionClient: SystemPermissionClient) {
         sitePermissionsState.managementCancellables.removeAll()
 
         coordinator.$captureStates
@@ -589,9 +662,12 @@ extension TabViewController {
             }
             .store(in: &sitePermissionsState.managementCancellables)
 
+        // Core Location can report a location change from Settings after the app becomes active.
         NotificationCenter.default.publisher(for: UIApplication.didBecomeActiveNotification)
+            .map { _ in }
+            .merge(with: systemPermissionClient.locationAuthorizationChanges)
             .receive(on: DispatchQueue.main)
-            .sink { [weak self, weak coordinator, weak viewModel] _ in
+            .sink { [weak self, weak coordinator, weak viewModel] in
                 guard let self, let coordinator, let viewModel else { return }
                 self.refreshSitePermissionsManagement(coordinator: coordinator, site: site, viewModel: viewModel)
             }
@@ -875,13 +951,6 @@ extension TabViewController {
             .sink { [weak provider] _ in
                 provider?.refreshPermissionStatuses()
             }
-        sitePermissionsState.applicationActiveCancellable = notificationCenter
-            .publisher(for: UIApplication.didBecomeActiveNotification)
-            .receive(on: DispatchQueue.main)
-            .sink { [weak provider, weak systemPermissionClient = dependencies.systemPermissionClient] _ in
-                systemPermissionClient?.refreshAuthorizationStates()
-                provider?.refreshPermissionStatuses()
-            }
         sitePermissionsState.geolocationProvider = provider
         sitePermissionsState.isGeolocationBackgrounded = UIApplication.shared.applicationState == .background
         setSitePermissionsGeolocationActive(sitePermissionsState.isGeolocationActive)
@@ -1058,16 +1127,27 @@ extension TabViewController {
         sitePermissionsState.dismissDialog()
         let dialog = SitePermissionDialogView(viewModel: viewModel) { [weak self] action in
             guard let self else { return }
+            sitePermissionsState.dialogHostingController?.fireImpression()
             fireSitePermissionsEvent(.permissionDialogClick(type: pixelPermissionType,
                                                              selection: action.pixelDialogSelection))
             sitePermissionsState.dismissDialog()
             completion(action.promptDecision)
         }
-        let hostingController = UIHostingController(rootView: dialog)
+        let hostingController = SitePermissionDialogHostingController(
+            rootView: dialog,
+            isVisible: { [weak self] in
+                guard let self else { return false }
+                return sitePermissionsState.dialogVisibilityOverride?() ?? isOnScreenForSitePermissionDialog
+            },
+            onImpression: { [weak self] in
+                self?.fireSitePermissionsEvent(.permissionDialogImpression(type: pixelPermissionType))
+            }
+        )
         hostingController.view.backgroundColor = .clear
         hostingController.view.accessibilityViewIsModal = true
         hostingController.view.translatesAutoresizingMaskIntoConstraints = false
 
+        sitePermissionsState.dialogHostingController = hostingController
         addChild(hostingController)
         view.addSubview(hostingController.view)
         NSLayoutConstraint.activate([
@@ -1077,8 +1157,7 @@ extension TabViewController {
             hostingController.view.bottomAnchor.constraint(equalTo: view.bottomAnchor)
         ])
         hostingController.didMove(toParent: self)
-        sitePermissionsState.dialogHostingController = hostingController
-        fireSitePermissionsEvent(.permissionDialogImpression(type: pixelPermissionType))
+        hostingController.fireImpressionIfVisible()
     }
 
     private func presentSitePermissionRecovery(_ recovery: SitePermissionRecovery,

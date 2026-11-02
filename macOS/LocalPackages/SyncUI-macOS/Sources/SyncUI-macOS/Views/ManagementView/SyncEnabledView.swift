@@ -314,7 +314,6 @@ struct SyncEnabledView_Previews: PreviewProvider {
             }
             .frame(width: 600, height: 900)
             .background(Color(nsColor: .windowBackgroundColor))
-            .applyRebranding()
         }
     )
 }

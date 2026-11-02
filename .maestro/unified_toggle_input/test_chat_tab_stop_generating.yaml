@@ -21,7 +21,8 @@ name: test_chat_tab_stop_generating
 - tapOn:
     id: "searchEntry"
 - inputText: "Explain the life cycle of a duck in detail."
-- tapOn: "Submit"
+- tapOn:
+    id: "AIChat.Toolbar.Button.Submit"
 
 # First send on a clearState device shows the anonymous-chat consent. Accepting it dispatches
 # the pending prompt (verified on-device: no re-submit needed).

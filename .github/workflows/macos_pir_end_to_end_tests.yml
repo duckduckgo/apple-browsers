@@ -18,7 +18,9 @@ on:
     # We're also adding ready_for_review to run checks when a draft PR becomes ready for review.
     types: [opened, synchronize, reopened, ready_for_review]
     paths:
-      - '.github/**'
+      - '.github/workflows/macos_pir_end_to_end_tests.yml'
+      - '.github/workflows/should_run_pr_checks.yml'
+      - '.github/actions/**'
       - '.xcode-version'
       - 'SharedPackages/**'
       - 'macOS/**'

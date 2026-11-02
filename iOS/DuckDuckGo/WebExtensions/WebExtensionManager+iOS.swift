@@ -129,6 +129,20 @@ public enum WebExtensionManagerFactory {
                 featureFlagger.isFeatureOn(.cpmNetworkProcessRecovery)
             },
             cpmNetworkProcessRecoveryFeatureFlagUpdates: featureFlagger.updatesPublisher,
+            isCPMBackgroundLoadRecoveryEnabled: {
+                featureFlagger.isFeatureOn(.cpmBackgroundLoadRecovery)
+            },
+            isCPMBackgroundLoadRestartEnabled: {
+                featureFlagger.isFeatureOn(.cpmBackgroundLoadRestart)
+            },
+            isApplicationInBackground: { UIApplication.shared.applicationState == .background },
+            isCPMLateBackgroundDocumentRecoveryEnabled: {
+                featureFlagger.isFeatureOn(.cpmLateBackgroundDocumentRecovery)
+            },
+            isCPMStableBaseURLEnabled: {
+                featureFlagger.isFeatureOn(.cpmStableBaseURL)
+            },
+            isCPMUpgradeBeforeLoadEnabled: featureFlagger.isFeatureOn(.cpmUpgradeBeforeLoad),
             handlerProvider: WebExtensionHandlerProvider(
                 privacyConfigurationManager: privacyConfigurationManager,
                 autoconsentPreferences: preferencesAdapter,

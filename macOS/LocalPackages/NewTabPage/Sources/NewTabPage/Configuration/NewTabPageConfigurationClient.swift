@@ -307,9 +307,22 @@ public final class NewTabPageConfigurationClient: NewTabPageUserScriptClient {
                 newTabPageRebranding: .init(state: isRebrandEnabled ? .enabled : .disabled)
             ),
             customizer: customizerData,
-            tabs: tabs
+            tabs: tabs,
+            omnibar: fetchOmnibar()
         )
         return config
+    }
+
+    @MainActor
+    private func fetchOmnibar() -> NewTabPageDataModel.NewTabPageConfiguration.Omnibar? {
+        guard sectionsAvailabilityProvider.isOmnibarAvailable else {
+            return nil
+        }
+        return .init(
+            mode: omnibarConfigProvider.mode,
+            enableAi: omnibarConfigProvider.isAIChatShortcutEnabled,
+            showAiSetting: omnibarConfigProvider.isAIChatSettingVisible
+        )
     }
 
     @MainActor

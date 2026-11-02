@@ -1397,12 +1397,14 @@
     "m_mac_dbp_bundle_verification_failure": {
         "description": "Fired when a downloaded PIR broker bundle fails signature, rollback or digest verification, or when another error stops verification. The update is skipped and retried on the next check.",
         "owners": ["noisysocks", "quanganhdo"],
-        "triggers": ["other"],
+        "triggers": ["exception"],
         "suffixes": ["daily_count"],
         "parameters": [
             "appVersion",
             "pixelSource",
             "channel",
+            "errorCode",
+            "errorDomain",
             {
                 "key": "reason",
                 "description": "Why verification failed",

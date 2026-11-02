@@ -1506,6 +1506,9 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         // Wraps toolbar-height update + content-swap broadcast in one CATransaction so they animate
         // together; otherwise the content snaps while the toolbar is still growing.
         let applyModeChange = { [self] in
+            // The Duck.ai footer joins the bar before the bar resizes for the mode, so every height the
+            // content follows already includes it. The first switch builds the toolbar slowly enough to show it.
+            refreshFooterSuppression()
             if needsViewSync {
                 viewController.setInputMode(effectiveMode, animated: animated)
             }
@@ -1530,7 +1533,6 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         if didModeChange {
             attachmentController.syncValidationErrorForCurrentMode()
             recordUserChoiceToStore()
-            refreshFooterSuppression()
             syncInputOutcomeMeasurement()
         }
     }

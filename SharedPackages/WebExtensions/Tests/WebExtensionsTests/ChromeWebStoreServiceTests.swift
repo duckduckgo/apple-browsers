@@ -50,13 +50,13 @@ final class ChromeWebStoreServiceTests: XCTestCase {
                               verifier: ChromeWebStorePackageVerifier(publisherKeyHash: ChromeWebStoreFixture.publisherKeyHash))
     }
 
-    private func scheduledService(_ manager: WebExtensionManager, interval: TimeInterval = 0.01,
+    private func scheduledService(_ manager: WebExtensionManager, interval: TimeInterval = ChromeWebStoreUpdateCoordinator.defaultCheckInterval,
                                   check: @escaping @MainActor @Sendable (String, String) async -> ChromeWebStoreUpdateChecker.CheckResult) -> ChromeWebStoreService {
         ChromeWebStoreService(manager: manager, catalog: catalog,
                               downloader: StoreDownloaderMock(action: { Data() }), presenter: presenter,
                               verifier: ChromeWebStorePackageVerifier(), updateCheck: { identifier, version in
                                   await check(identifier, version)
-                              }, updateCheckInterval: interval)
+                              }, updateCheckInterval: interval, updateSchedulerFactory: { _ in ChromeWebStorePeriodicSchedulerMock() })
     }
 
     private func installed(_ identifier: String, version: String?, storeID: String? = nil) -> InstalledWebExtension {
@@ -106,6 +106,7 @@ final class ChromeWebStoreServiceTests: XCTestCase {
         }
         service.setUpdateCheckVersionOverride("0.0.0.1", forInstallationIdentifier: "old")
         defer { withExtendedLifetime((manager, service)) {} }
+        for _ in 0..<3 { await service.checkForUpdatesNow() }
         await fulfillment(of: [checked], timeout: 1)
     }
 
@@ -129,6 +130,8 @@ final class ChromeWebStoreServiceTests: XCTestCase {
         }
         service.setUpdateCheckVersionOverride("0.0.0.1", forInstallationIdentifier: "installed")
         defer { withExtendedLifetime((manager, service)) {} }
+        await service.checkForUpdatesNow()
+        await service.checkForUpdatesNow()
         await fulfillment(of: [checked], timeout: 1)
     }
 
@@ -207,7 +210,7 @@ final class ChromeWebStoreServiceTests: XCTestCase {
         XCTAssertEqual(service.updateCheckVersionOverride(forInstallationIdentifier: "store"), "0.0.0.1")
     }
 
-    func testUpdateChecksStartImmediatelyAndRepeatWithoutOverlapping() async throws {
+    func testLaunchAndManualChecksDoNotOverlap() async throws {
         let manager = try makeManager()
         installationStore.installedExtensions = [installed("installed", version: "1.0", storeID: ChromeWebStoreID.bitwarden.rawValue)]
         let checked = expectation(description: "Two completed checks")
@@ -226,6 +229,8 @@ final class ChromeWebStoreServiceTests: XCTestCase {
             return .init(outcome: .noUpdate, retryNotBefore: nil)
         }
         defer { withExtendedLifetime((manager, service)) {} }
+        await service.checkForUpdatesNow()
+        await service.checkForUpdatesNow()
         await fulfillment(of: [checked], timeout: 1)
     }
 
@@ -325,6 +330,8 @@ final class ChromeWebStoreServiceTests: XCTestCase {
             return .init(outcome: .noUpdate, retryNotBefore: nil)
         }
         defer { withExtendedLifetime((manager, service)) {} }
+        await service.checkForUpdatesNow()
+        await service.checkForUpdatesNow()
         await fulfillment(of: [refreshed], timeout: 1)
     }
 
@@ -398,6 +405,11 @@ final class ChromeWebStoreServiceTests: XCTestCase {
             return .init(outcome: .noUpdate, retryNotBefore: nil)
         }
         defer { withExtendedLifetime((manager, service)) {} }
+        await service.checkForUpdatesNow()
+        await service.checkForUpdatesNow()
+        XCTAssertEqual(count, 1)
+        try await Task.sleep(for: .milliseconds(150))
+        await service.checkForUpdatesNow()
         await fulfillment(of: [resumed], timeout: 1)
     }
 
@@ -417,6 +429,10 @@ final class ChromeWebStoreServiceTests: XCTestCase {
             return .init(outcome: .noUpdate, retryNotBefore: previousDeadline)
         }
         defer { withExtendedLifetime((manager, service)) {} }
+        for _ in identifiers {
+            await service.checkForUpdatesNow()
+            try await Task.sleep(for: .milliseconds(30))
+        }
         await fulfillment(of: [checked], timeout: 1)
         XCTAssertEqual(Array(observed.prefix(3)), identifiers)
     }
@@ -438,10 +454,12 @@ final class ChromeWebStoreServiceTests: XCTestCase {
             return .init(outcome: .noUpdate, retryNotBefore: nil)
         }
         defer { withExtendedLifetime((manager, service)) {} }
+        await service.checkForUpdatesNow()
         await fulfillment(of: [first], timeout: 1)
-        try await Task.sleep(for: .milliseconds(50))
+        await service.checkForUpdatesNow()
         XCTAssertEqual(count, 1)
         catalog.allowed = true
+        await service.checkForUpdatesNow()
         await fulfillment(of: [resumed], timeout: 1)
     }
 

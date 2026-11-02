@@ -30,53 +30,55 @@ actor ChromeWebStoreUpdateCoordinator {
     typealias Check = @Sendable (String, String) async -> ChromeWebStoreUpdateChecker.CheckResult
     typealias IdentifiersProvider = @MainActor @Sendable () async -> [String]?
     typealias VersionProvider = @MainActor @Sendable (String) async -> Version?
+    typealias SchedulerFactory = @Sendable (TimeInterval) -> any ChromeWebStorePeriodicScheduling
 
     static let defaultCheckInterval: TimeInterval = 2 * 60 * 60
 
     private let interval: TimeInterval
+    private let schedulerFactory: SchedulerFactory
     private var installedIdentifiers: IdentifiersProvider?
     private var version: VersionProvider?
     private var check: Check?
-    private var schedulerTask: Task<Void, Never>?
+    private var periodicScheduler: (any ChromeWebStorePeriodicScheduling)?
     private var batchTask: Task<Void, Never>?
     private var retryNotBefore: Date?
     private var lastCheckedIdentifier: String?
     private var isStopped = false
+    private var isStarted = false
 
     init(interval: TimeInterval = ChromeWebStoreUpdateCoordinator.defaultCheckInterval,
+         schedulerFactory: @escaping SchedulerFactory = { ChromeWebStorePeriodicScheduler(interval: $0) },
          installedIdentifiers: @escaping IdentifiersProvider,
          version: @escaping VersionProvider,
          check: @escaping Check) {
         self.interval = interval
+        self.schedulerFactory = schedulerFactory
         self.installedIdentifiers = installedIdentifiers
         self.version = version
         self.check = check
     }
 
-    func start() {
-        guard !isStopped, schedulerTask == nil else { return }
+    func start() async {
+        guard !isStopped, !isStarted else { return }
+        isStarted = true
         let interval = interval
         Logger.webExtensions.info("Extension update discovery: started (interval \(interval, privacy: .public)s)")
-        schedulerTask = Task(priority: .utility) { [weak self] in
-            while !Task.isCancelled {
-                guard self != nil else { return }
-                let batch = await self?.startBatch()
-                await batch?.value
-                do {
-                    try await Task.sleep(for: .seconds(interval))
-                } catch {
-                    return
-                }
-            }
+        let initialBatch = startBatch()
+        await initialBatch?.value
+        guard !isStopped else { return }
+        let scheduler = schedulerFactory(interval)
+        periodicScheduler = scheduler
+        scheduler.schedule { [weak self] in
+            await self?.checkForUpdatesNow()
         }
     }
 
     /// A terminal stop also prevents a delayed startup task from restarting discovery.
     func stop() {
         isStopped = true
-        schedulerTask?.cancel()
+        periodicScheduler?.invalidate()
         batchTask?.cancel()
-        schedulerTask = nil
+        periodicScheduler = nil
         installedIdentifiers = nil
         version = nil
         check = nil
@@ -96,7 +98,7 @@ actor ChromeWebStoreUpdateCoordinator {
             return nil
         }
         // Reserve the batch before any provider await can let another caller enter the actor.
-        let batch = Task<Void, Never>(priority: .utility) { [weak self] in
+        let batch = Task<Void, Never> { [weak self] in
             await self?.runBatch()
         }
         batchTask = batch

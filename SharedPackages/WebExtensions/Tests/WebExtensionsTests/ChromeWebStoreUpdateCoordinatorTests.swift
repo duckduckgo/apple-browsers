@@ -24,12 +24,14 @@ import XCTest
 @MainActor
 final class ChromeWebStoreUpdateCoordinatorTests: XCTestCase {
     private func coordinator(interval: TimeInterval = ChromeWebStoreUpdateCoordinator.defaultCheckInterval,
+                             scheduler: ChromeWebStorePeriodicSchedulerMock = ChromeWebStorePeriodicSchedulerMock(),
                              identifiers: @escaping ChromeWebStoreUpdateCoordinator.IdentifiersProvider = { ["extension"] },
                              version: @escaping ChromeWebStoreUpdateCoordinator.VersionProvider = { _ in
                                  .init(installedVersion: "2.0", reportedVersion: "1.0")
                              },
                              check: @escaping ChromeWebStoreUpdateCoordinator.Check) -> ChromeWebStoreUpdateCoordinator {
-        ChromeWebStoreUpdateCoordinator(interval: interval, installedIdentifiers: identifiers, version: version, check: check)
+        ChromeWebStoreUpdateCoordinator(interval: interval, schedulerFactory: { _ in scheduler },
+                                       installedIdentifiers: identifiers, version: version, check: check)
     }
 
     func testChecksRunOffMainAndProvidersRunOnMainActor() async {
@@ -129,25 +131,88 @@ final class ChromeWebStoreUpdateCoordinatorTests: XCTestCase {
         await coordinator.stop()
     }
 
-    func testSchedulerStaysIdleBetweenChecksAndStartIsIdempotent() async throws {
-        let firstCheck = expectation(description: "Launch check")
+    func testSchedulerStaysIdleUntilPeriodicActivityAndStartIsIdempotent() async {
         var providerCalls = 0
         let checks = CheckRecorder()
-        let coordinator = coordinator(identifiers: {
+        let scheduler = ChromeWebStorePeriodicSchedulerMock()
+        let coordinator = coordinator(scheduler: scheduler, identifiers: {
             providerCalls += 1
             return ["extension"]
         }, check: { _, _ in
-            let result = await checks.record()
-            firstCheck.fulfill()
-            return result
+            await checks.record()
         })
         await coordinator.start()
         await coordinator.start()
-        await fulfillment(of: [firstCheck], timeout: 1)
-        try await Task.sleep(for: .milliseconds(50))
+        XCTAssertEqual(scheduler.scheduleCount, 1)
         XCTAssertEqual(providerCalls, 1, "No installation polling between scheduled cycles")
         let count = await checks.count
         XCTAssertEqual(count, 1, "No network checks between scheduled cycles")
+        await scheduler.fire()
+        XCTAssertEqual(providerCalls, 2)
+        let periodicCount = await checks.count
+        XCTAssertEqual(periodicCount, 2)
+        await coordinator.stop()
+        XCTAssertEqual(scheduler.invalidationCount, 1)
+        await scheduler.fire()
+        XCTAssertEqual(providerCalls, 2, "An already-delivered callback must not read installations after stop")
+        let stoppedCount = await checks.count
+        XCTAssertEqual(stoppedCount, 2)
+    }
+
+    func testStopDuringInitialBatchPreventsPeriodicRegistration() async {
+        let entered = expectation(description: "Initial provider suspended")
+        var resume: CheckedContinuation<[String]?, Never>?
+        let scheduler = ChromeWebStorePeriodicSchedulerMock()
+        let coordinator = coordinator(scheduler: scheduler, identifiers: {
+            await withCheckedContinuation { continuation in
+                resume = continuation
+                entered.fulfill()
+            }
+        }, check: { _, _ in
+            XCTFail("Stopping the initial batch must prevent network checks")
+            return .init(outcome: .noUpdate, retryNotBefore: nil)
+        })
+        let start = Task { await coordinator.start() }
+        await fulfillment(of: [entered], timeout: 1)
+        XCTAssertEqual(scheduler.scheduleCount, 0)
+        await coordinator.stop()
+        resume?.resume(returning: ["extension"])
+        await start.value
+        XCTAssertEqual(scheduler.scheduleCount, 0, "The stopped startup must not register periodic activity")
+    }
+
+    func testPeriodicCallbacksJoinManualBatch() async throws {
+        let entered = expectation(description: "Manual batch suspended")
+        let checks = CheckRecorder()
+        var resume: CheckedContinuation<ChromeWebStoreUpdateCoordinator.Version?, Never>?
+        var suspend = false
+        var suspendedCalls = 0
+        let scheduler = ChromeWebStorePeriodicSchedulerMock()
+        let coordinator = coordinator(scheduler: scheduler, version: { _ in
+            if suspend {
+                suspendedCalls += 1
+                guard suspendedCalls == 1 else {
+                    XCTFail("Periodic callbacks must join the suspended manual batch")
+                    return .init(installedVersion: "2.0", reportedVersion: "1.0")
+                }
+                return await withCheckedContinuation { continuation in
+                    resume = continuation
+                    entered.fulfill()
+                }
+            }
+            return .init(installedVersion: "2.0", reportedVersion: "1.0")
+        }, check: { _, _ in await checks.record() })
+        await coordinator.start()
+        suspend = true
+        let manual = Task { await coordinator.checkForUpdatesNow() }
+        await fulfillment(of: [entered], timeout: 1)
+        let callbacks = (0..<3).map { _ in Task { await scheduler.fire() } }
+        try await Task.sleep(for: .milliseconds(50))
+        resume?.resume(returning: .init(installedVersion: "2.0", reportedVersion: "1.0"))
+        await manual.value
+        for callback in callbacks { await callback.value }
+        let count = await checks.count
+        XCTAssertEqual(count, 2, "Launch and the shared manual/periodic batch must be the only checks")
         await coordinator.stop()
     }
 

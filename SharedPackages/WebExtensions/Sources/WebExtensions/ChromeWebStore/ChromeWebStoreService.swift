@@ -83,14 +83,16 @@ public final class ChromeWebStoreService: ChromeWebStoreManaging {
     init(manager: WebExtensionManager, catalog: ChromeWebStoreCatalogProviding,
          downloader: ChromeWebStoreDownloading, presenter: ChromeWebStorePresenting, verifier: ChromeWebStorePackageVerifier,
          updateCheck: ChromeWebStoreUpdateCoordinator.Check? = nil,
-         updateCheckInterval: TimeInterval = ChromeWebStoreUpdateCoordinator.defaultCheckInterval) {
+         updateCheckInterval: TimeInterval = ChromeWebStoreUpdateCoordinator.defaultCheckInterval,
+         updateSchedulerFactory: @escaping ChromeWebStoreUpdateCoordinator.SchedulerFactory = { ChromeWebStorePeriodicScheduler(interval: $0) }) {
         self.manager = manager
         self.catalog = catalog
         self.downloader = downloader
         self.presenter = presenter
         self.verifier = verifier
         if let updateCheck {
-            let coordinator = ChromeWebStoreUpdateCoordinator(interval: updateCheckInterval, installedIdentifiers: { [weak self] in
+            let coordinator = ChromeWebStoreUpdateCoordinator(interval: updateCheckInterval, schedulerFactory: updateSchedulerFactory,
+                                                             installedIdentifiers: { [weak self] in
                 guard let versions = self?.eligibleInstalledVersions() else { return nil }
                 return Array(versions.keys)
             }, version: { [weak self] identifier in

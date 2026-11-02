@@ -2685,6 +2685,25 @@ final class SwipeTabBoundaryPolicyTests: XCTestCase {
     }
 }
 
+final class SwipeChromeRefinementsFlagTests: XCTestCase {
+
+    func testWhenBothFlagsAreOnThenRefinementsAreEnabled() {
+        let featureFlagger = MockFeatureFlagger(enabledFeatureFlags: [.aiChatTabHandoffImprovements, .aiChatSwipeChromeRefinements])
+        XCTAssertTrue(featureFlagger.isAIChatSwipeChromeRefinementsEnabled)
+    }
+
+    func testWhenEitherFlagIsOffThenRefinementsAreDisabled() {
+        XCTAssertFalse(MockFeatureFlagger(enabledFeatureFlags: [.aiChatSwipeChromeRefinements]).isAIChatSwipeChromeRefinementsEnabled)
+        XCTAssertFalse(MockFeatureFlagger(enabledFeatureFlags: [.aiChatTabHandoffImprovements]).isAIChatSwipeChromeRefinementsEnabled)
+    }
+
+    func testWhenFlagTurnsOffWhileRunningThenRefinementsAreDisabled() {
+        let featureFlagger = MockFeatureFlagger(enabledFeatureFlags: [.aiChatTabHandoffImprovements, .aiChatSwipeChromeRefinements])
+        featureFlagger.enabledFeatureFlags = [.aiChatTabHandoffImprovements]
+        XCTAssertFalse(featureFlagger.isAIChatSwipeChromeRefinementsEnabled)
+    }
+}
+
 final class LiveTabSwipePolicyTests: XCTestCase {
 
     func testWhenFloatingUIHasWebDestinationThenLiveDestinationIsUsed() {

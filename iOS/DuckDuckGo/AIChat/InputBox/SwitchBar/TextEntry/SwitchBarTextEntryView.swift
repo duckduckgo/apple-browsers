@@ -589,12 +589,25 @@ class SwitchBarTextEntryView: UIView {
         setPlaceholderText(placeholderText(for: currentMode))
     }
 
+    /// Fades to the placeholder a chat with or without submitted prompts shows, ahead of the state itself changing.
+    func crossfadePlaceholder(hasSubmittedPrompt: Bool) {
+        let text = placeholderText(for: currentMode, hasSubmittedPrompt: hasSubmittedPrompt)
+        guard placeholderLabel.text != text else { return }
+        UIView.transition(with: placeholderLabel, duration: 0.2, options: .transitionCrossDissolve) {
+            self.setPlaceholderText(text)
+        }
+    }
+
     private func placeholderText(for mode: TextEntryMode) -> String {
+        placeholderText(for: mode, hasSubmittedPrompt: handler.hasSubmittedPrompt)
+    }
+
+    private func placeholderText(for mode: TextEntryMode, hasSubmittedPrompt: Bool) -> String {
         switch mode {
         case .search:
             return UserText.searchDuckDuckGo
         case .aiChat:
-            if handler.hasSubmittedPrompt {
+            if hasSubmittedPrompt {
                 return UserText.aiChatFollowUpPlaceholder
             }
             return handler.isImageGenerationSelected

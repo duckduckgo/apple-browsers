@@ -218,6 +218,10 @@ final class UnifiedToggleInputView: UIView {
         textEntryView.refreshPlaceholderForCurrentMode()
     }
 
+    func crossfadePlaceholder(hasSubmittedPrompt: Bool) {
+        textEntryView.crossfadePlaceholder(hasSubmittedPrompt: hasSubmittedPrompt)
+    }
+
     var inputMode: TextEntryMode {
         handler.currentToggleState
     }

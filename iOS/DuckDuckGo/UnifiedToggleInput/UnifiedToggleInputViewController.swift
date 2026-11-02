@@ -144,6 +144,10 @@ final class UnifiedToggleInputViewController: UIViewController {
         inputBarView.refreshPlaceholderForCurrentMode()
     }
 
+    func crossfadePlaceholder(hasSubmittedPrompt: Bool) {
+        inputBarView.crossfadePlaceholder(hasSubmittedPrompt: hasSubmittedPrompt)
+    }
+
     var isInputExpanded: Bool {
         inputBarView.isExpanded
     }

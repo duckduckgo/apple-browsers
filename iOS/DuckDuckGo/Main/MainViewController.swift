@@ -1288,6 +1288,8 @@ class MainViewController: UIViewController {
                     fireAIChatEntryPointPixel(source: .tabSwipe, opensNewTab: false, hasPrompt: false)
                 }
                 selectTab(tab)
+            } else {
+                crossfadeDuckAIPlaceholder(toMatch: tab)
             }
             if shouldRestoreFocus {
                 showKeyboardIfAllowed(restoringInputFocus: true) { _ in }
@@ -1302,6 +1304,7 @@ class MainViewController: UIViewController {
             self?.rememberNewTabPageInputFocusForTabSwitch()
             self?.performCancel(animated: false)
             self?.hideKeyboard(animated: false)
+            self?.collapseDuckAIInputForTabSwipe()
             self?.updatePreviewForCurrentTab()
         }
 
@@ -8865,7 +8868,8 @@ extension MainViewController: TabSwitcherButtonDelegate {
 extension MainViewController: UIGestureRecognizerDelegate {
 
     func gestureRecognizer(_ gestureRecognizer: UIGestureRecognizer, shouldRecognizeSimultaneouslyWith otherGestureRecognizer: UIGestureRecognizer) -> Bool {
-        return true
+        // A tab swipe owns its touch, so the input it starts on can't also read it as a tap.
+        !(gestureRecognizer is UnifiedInputSwipeTabsPanGestureRecognizer && featureFlagger.isAIChatSwipeChromeRefinementsEnabled)
     }
 
     func gestureRecognizerShouldBegin(_ gestureRecognizer: UIGestureRecognizer) -> Bool {

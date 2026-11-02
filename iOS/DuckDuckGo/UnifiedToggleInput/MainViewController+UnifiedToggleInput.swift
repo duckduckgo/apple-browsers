@@ -127,6 +127,9 @@ extension MainViewController {
         coordinator.onTabMentionSuggestionsChanged = { [weak mentions] in mentions?.show($0) }
         installFloatingReturnKeyViewController()
         installSwipeTabsGesturesForUnifiedInput()
+        viewCoordinator.isAITabCollapsedBarFloatingOffsetEnabled = { [weak self] in
+            self?.featureFlagger.isAIChatSwipeChromeRefinementsEnabled == true
+        }
 
         subscribeToIntentPublisher(coordinator)
         subscribeToModeChanges(coordinator)

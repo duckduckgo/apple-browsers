@@ -575,6 +575,9 @@ public enum FeatureFlag: String {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1219970758953673?focus=true
     case aiChatTabHandoffImprovements
 
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1220115595487712
+    case aiChatSwipeChromeRefinements
+
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1215597855114749?focus=true
     case syncScopedAccessCredentials
 
@@ -1063,6 +1066,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(defaultValue: .enabled, source: .remoteReleasable(AIChatSubfeature.tabSwitcherRichCard))
         case .aiChatTabHandoffImprovements:
             Config(defaultValue: .internalOnly, source: .remoteReleasable(AIChatSubfeature.tabHandoffImprovements))
+        case .aiChatSwipeChromeRefinements:
+            Config(defaultValue: .internalOnly, source: .remoteReleasable(AIChatSubfeature.swipeChromeRefinements))
         case .syncScopedAccessCredentials:
             Config(source: .remoteReleasable(SyncSubfeature.scopedAccessCredentials))
         case .syncCanUseV2ConnectFlow:
@@ -1129,6 +1134,11 @@ extension FeatureFlagger {
         default:
             return false
         }
+    }
+
+    /// Swipe chrome refinements build on the Duck.ai tab handoff, so they need both flags.
+    public var isAIChatSwipeChromeRefinementsEnabled: Bool {
+        isFeatureOn(.aiChatTabHandoffImprovements) && isFeatureOn(.aiChatSwipeChromeRefinements)
     }
 
     public func isFeatureOn(_ featureFlag: FeatureFlag) -> Bool {

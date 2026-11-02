@@ -572,6 +572,10 @@ public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1219970758953673?focus=true
     case tabHandoffImprovements
 
+    /// iPhone: Duck.ai chrome refinements while swiping between tabs (bar position, placeholder, gestures).
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1220115595487712
+    case swipeChromeRefinements
+
     /// macOS only. When on, the onboarding Search/Duck.ai toggle choice also drives the New Tab Page
     /// search-mode toggle and seeds the duckduckgo.com homepage. Off keeps the choice address-bar only.
     case onboardingToggleAffectsNtpAndDdg

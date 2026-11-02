@@ -18,6 +18,7 @@
 //
 
 import UIKit
+import AIChat
 
 final class UnifiedInputSwipeTabsPanGestureRecognizer: UIPanGestureRecognizer {}
 
@@ -38,6 +39,9 @@ extension MainViewController {
             viewCoordinator.navigationBarCollectionView,
             viewCoordinator.toolbar,
         ]
+        swipeTabsCoordinator?.onSwipeWillLand = { [weak self] tab in
+            self?.crossfadeDuckAIPlaceholder(toMatch: tab)
+        }
     }
 
     private func makeSwipeTabsPanGesture() -> UnifiedInputSwipeTabsPanGestureRecognizer {
@@ -62,12 +66,35 @@ extension MainViewController {
         if coordinator.isOmnibarEditing {
             return false
         }
-        if coordinator.viewController.isInputFirstResponder {
+        if coordinator.viewController.isInputFirstResponder, !allowsSwipeWithFocusedInput(pan) {
             return false
         }
 
         let velocity = pan.velocity(in: pan.view)
         let allow = abs(velocity.x) > abs(velocity.y)
         return allow
+    }
+
+    /// A swipe may pass through several tabs, so the Duck.ai keyboard drops as soon as it starts.
+    func collapseDuckAIInputForTabSwipe() {
+        guard featureFlagger.isAIChatSwipeChromeRefinementsEnabled,
+              let coordinator = unifiedToggleInputCoordinator,
+              coordinator.isAITabExpanded else { return }
+        coordinator.showCollapsed()
+    }
+
+    /// Duck.ai tabs share one input, so its placeholder switches to the tab a swipe settles on before it gets there.
+    func crossfadeDuckAIPlaceholder(toMatch tab: Tab) {
+        guard featureFlagger.isAIChatSwipeChromeRefinementsEnabled,
+              tab.isAITab,
+              tabManager.currentTabsModel.currentTab?.isAITab == true,
+              let coordinator = unifiedToggleInputCoordinator else { return }
+        let tabURL = tabManager.controller(for: tab)?.url ?? tab.link?.url
+        coordinator.viewController.crossfadePlaceholder(hasSubmittedPrompt: tabURL?.duckAIChatID != nil)
+    }
+
+    /// The Duck.ai header holds no text, so swiping it can't interfere with editing the focused chat input.
+    private func allowsSwipeWithFocusedInput(_ pan: UIPanGestureRecognizer) -> Bool {
+        featureFlagger.isAIChatSwipeChromeRefinementsEnabled && pan.view === viewCoordinator.aiChatTabChatHeaderContainer
     }
 }

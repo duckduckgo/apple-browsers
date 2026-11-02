@@ -28,12 +28,16 @@ func assertSnapshotEnvironment(
     line: UInt,
     column: UInt
 ) -> Bool {
-    guard let message = SnapshotEnvironment.currentValidationMessage() else {
+    switch SnapshotEnvironment.currentComparisonMode() {
+    case .compare:
         return true
+    case .skipComparison(let reason):
+        print("⚠️ [SnapshotEnvironment] \(reason)")
+        return true
+    case .unsupported(let reason):
+        recordSnapshotIssue(reason, fileID: fileID, file: file, line: line, column: column)
+        return false
     }
-
-    recordSnapshotIssue(message, fileID: fileID, file: file, line: line, column: column)
-    return false
 }
 
 func assertSnapshotConfigurations(

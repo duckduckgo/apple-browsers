@@ -36,65 +36,81 @@ public enum SnapshotPlatform: Equatable {
     }
 }
 
+public enum SnapshotComparisonMode: Equatable {
+    case compare
+    case skipComparison(reason: String)
+    case unsupported(reason: String)
+}
+
 public enum SnapshotEnvironment {
     public static let expectedIOSVersion = OperatingSystemVersion(majorVersion: 27, minorVersion: 0, patchVersion: 0)
-    public static let expectedMacOSVersion = OperatingSystemVersion(majorVersion: 27, minorVersion: 0, patchVersion: 0)
+    public static let ciMacOSVersion = OperatingSystemVersion(majorVersion: 27, minorVersion: 0, patchVersion: 0)
     public static let expectedIOSDisplayScale = 3.0
 
-    public static func currentValidationMessage() -> String? {
+    public static func currentComparisonMode() -> SnapshotComparisonMode {
         #if os(iOS)
-        return validationMessage(
+        return comparisonMode(
             platform: .iOS,
             operatingSystemVersion: ProcessInfo.processInfo.operatingSystemVersion,
             displayScale: currentIOSDisplayScale()
         )
         #elseif os(macOS)
-        return validationMessage(
+        return comparisonMode(
             platform: .macOS,
             operatingSystemVersion: ProcessInfo.processInfo.operatingSystemVersion
         )
         #else
-        return "UI snapshots are supported only on iOS and macOS."
+        return .unsupported(reason: "UI snapshots are supported only on iOS and macOS.")
         #endif
     }
 
-    public static func validationMessage(
+    public static func comparisonMode(
         platform: SnapshotPlatform,
         operatingSystemVersion: OperatingSystemVersion,
-        displayScale: Double? = nil
-    ) -> String? {
+        displayScale: Double? = nil,
+        environment: [String: String] = ProcessInfo.processInfo.environment
+    ) -> SnapshotComparisonMode {
         switch platform {
         case .iOS:
             guard operatingSystemVersion.majorVersion == expectedIOSVersion.majorVersion,
                   operatingSystemVersion.minorVersion == expectedIOSVersion.minorVersion else {
-                return "UI snapshots must run on iOS \(expectedVersionString(for: .iOS)). Current OS is \(versionString(operatingSystemVersion))."
+                return .unsupported(reason: "UI snapshots must run on iOS \(majorMinorString(expectedIOSVersion)). Current OS is \(versionString(operatingSystemVersion)).")
             }
 
             guard let displayScale else {
-                return "iOS UI snapshots must run at @\(Int(expectedIOSDisplayScale))x scale. Current scale is unknown."
+                return .unsupported(reason: "iOS UI snapshots must run at @\(Int(expectedIOSDisplayScale))x scale. Current scale is unknown.")
             }
             guard displayScale == expectedIOSDisplayScale else {
-                return "iOS UI snapshots must run at @\(Int(expectedIOSDisplayScale))x scale. Current scale is \(displayScale)."
+                return .unsupported(reason: "iOS UI snapshots must run at @\(Int(expectedIOSDisplayScale))x scale. Current scale is \(displayScale).")
             }
-            return nil
+            return .compare
 
         case .macOS:
-            guard operatingSystemVersion.majorVersion == expectedMacOSVersion.majorVersion else {
-                return "UI snapshots must run on macOS \(expectedVersionString(for: .macOS)). Current OS is \(versionString(operatingSystemVersion))."
+            guard operatingSystemVersion.majorVersion == ciMacOSVersion.majorVersion else {
+                return .unsupported(reason: "UI snapshots must run on macOS \(ciMacOSVersion.majorVersion). Current OS is \(versionString(operatingSystemVersion)).")
             }
-            return nil
+            if operatingSystemVersion.minorVersion == ciMacOSVersion.minorVersion {
+                return .compare
+            }
+            if SnapshotRecordMode.requiresReferences(environment: environment) {
+                return .unsupported(reason: "Snapshot references are verified on macOS \(majorMinorString(ciMacOSVersion)), the CI version. Current OS is \(versionString(operatingSystemVersion)).")
+            }
+            if SnapshotRecordMode.forcesComparison(environment: environment) {
+                return .compare
+            }
+            return .skipComparison(reason: "macOS \(versionString(operatingSystemVersion)) isn't the CI version (\(majorMinorString(ciMacOSVersion))), so existing references aren't compared and CI verifies them instead. Missing references are still recorded. Set \(SnapshotRecordMode.compareEnvironmentVariableName)=1 to compare anyway.")
         }
     }
 
     public static func referenceEnvironmentSuffix(
         platform: SnapshotPlatform,
         operatingSystemVersion version: OperatingSystemVersion
-    ) -> String {
+    ) -> String? {
         switch platform {
         case .iOS:
             return "\(platform.displayName)-\(version.majorVersion)-\(version.minorVersion)"
         case .macOS:
-            return "\(platform.displayName)-\(version.majorVersion)"
+            return nil
         }
     }
 
@@ -102,11 +118,6 @@ public enum SnapshotEnvironment {
         #if os(iOS)
         return referenceEnvironmentSuffix(
             platform: .iOS,
-            operatingSystemVersion: ProcessInfo.processInfo.operatingSystemVersion
-        )
-        #elseif os(macOS)
-        return referenceEnvironmentSuffix(
-            platform: .macOS,
             operatingSystemVersion: ProcessInfo.processInfo.operatingSystemVersion
         )
         #else
@@ -118,13 +129,8 @@ public enum SnapshotEnvironment {
         "\(version.majorVersion).\(version.minorVersion).\(version.patchVersion)"
     }
 
-    private static func expectedVersionString(for platform: SnapshotPlatform) -> String {
-        switch platform {
-        case .iOS:
-            return "\(expectedIOSVersion.majorVersion).\(expectedIOSVersion.minorVersion)"
-        case .macOS:
-            return "\(expectedMacOSVersion.majorVersion)"
-        }
+    private static func majorMinorString(_ version: OperatingSystemVersion) -> String {
+        "\(version.majorVersion).\(version.minorVersion)"
     }
 
     #if os(iOS)

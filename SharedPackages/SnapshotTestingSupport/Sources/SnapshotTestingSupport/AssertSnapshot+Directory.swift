@@ -44,9 +44,21 @@ func assertSnapshot<Value, Format>(
         resolvedName = name
     }
 
+    var rendered: Format?
+    var comparing = snapshotting
+    comparing.snapshot = { value in
+        snapshotting.snapshot(value).map { format in
+            rendered = format
+            return format
+        }
+    }
+    if case .skipComparison = SnapshotEnvironment.currentComparisonMode() {
+        comparing.diffing.diffV2 = { _, _ in nil }
+    }
+
     let failure = verifySnapshot(
         of: try value(),
-        as: snapshotting,
+        as: comparing,
         named: resolvedName,
         record: record,
         snapshotDirectory: snapshotDirectory,
@@ -57,6 +69,23 @@ func assertSnapshot<Value, Format>(
         line: line,
         column: column
     )
+    if let rendered, let exportDirectory = snapshotExportDirectory(file: filePath) {
+        var exporting = snapshotting
+        exporting.snapshot = { _ in Async(value: rendered) }
+        _ = verifySnapshot(
+            of: try value(),
+            as: exporting,
+            named: resolvedName,
+            record: .all,
+            snapshotDirectory: exportDirectory,
+            fileID: fileID,
+            file: filePath,
+            testName: testName,
+            line: line,
+            column: column
+        )
+    }
+
     guard let message = failure else { return }
     recordSnapshotIssue(message, fileID: fileID, file: filePath, line: line, column: column)
 }

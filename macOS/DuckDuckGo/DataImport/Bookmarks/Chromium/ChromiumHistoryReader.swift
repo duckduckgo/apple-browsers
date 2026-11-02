@@ -65,10 +65,12 @@ final class ChromiumHistoryReader: ChromiumHistoryReaderProtocol {
     private let chromiumEpochOffset: TimeInterval = 11_644_473_600
 
     private let chromiumHistoryDatabaseURL: URL
+    private let fileManager: FileManager
     private var currentOperationType: ImportError.OperationType = .copyTemporaryFile
 
-    init(chromiumDataDirectoryURL: URL) {
+    init(chromiumDataDirectoryURL: URL, fileManager: FileManager = .default) {
         self.chromiumHistoryDatabaseURL = chromiumDataDirectoryURL.appendingPathComponent(Constants.historyDatabaseName)
+        self.fileManager = fileManager
     }
 
     func readVisits(since cutoff: Date) -> DataImportResult<HistoryImport.ParseResult> {
@@ -84,12 +86,19 @@ final class ChromiumHistoryReader: ChromiumHistoryReaderProtocol {
         currentOperationType = .copyTemporaryFile
         do {
             // Chromium keeps the database locked while it runs, so read a copy.
-            return try chromiumHistoryDatabaseURL.withTemporaryFile { temporaryDatabaseURL in
+            return try withTemporaryCopy { temporaryDatabaseURL in
                 .success(try readVisits(from: temporaryDatabaseURL, since: cutoff))
             }
         } catch {
             return .failure(ImportError(type: currentOperationType, underlyingError: error))
         }
+    }
+
+    private func withTemporaryCopy<T>(_ body: (URL) throws -> T) throws -> T {
+        let databaseCopyURL = fileManager.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        try fileManager.copyItem(at: chromiumHistoryDatabaseURL, to: databaseCopyURL)
+        defer { try? fileManager.removeItem(at: databaseCopyURL) }
+        return try body(databaseCopyURL)
     }
 
     private func isUnreadableCopy(_ error: any DataImportError) -> Bool {

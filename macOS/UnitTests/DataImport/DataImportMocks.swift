@@ -75,6 +75,20 @@ final class MockHistoryImporter: HistoryImporterProtocol {
     }
 }
 
+/// Writes unreadable data for the first file it copies, like a copy taken while the browser was writing to it.
+final class FirstCopyUnreadableFileManager: FileManager, @unchecked Sendable {
+    private var hasCopied = false
+
+    override func copyItem(at srcURL: URL, to dstURL: URL) throws {
+        guard hasCopied else {
+            hasCopied = true
+            try Data(repeating: 0x41, count: 4096).write(to: dstURL)
+            return
+        }
+        try super.copyItem(at: srcURL, to: dstURL)
+    }
+}
+
 struct MockSafariHistoryReader: SafariHistoryReaderProtocol {
     var result: DataImportResult<HistoryImport.ParseResult> = .success(.init(visits: [], skipped: 0))
     /// Results for specific History.json contents, which take precedence over `result`.

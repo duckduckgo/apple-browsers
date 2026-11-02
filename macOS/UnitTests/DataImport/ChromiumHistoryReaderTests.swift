@@ -65,6 +65,18 @@ final class ChromiumHistoryReaderTests {
         #expect(result.skipped == 5)
     }
 
+    @available(iOS 16, macOS 13, *)
+    @Test("Check if the Chromium history database is copied again when the first copy can't be read", .timeLimit(.minutes(1)))
+    func readingVisitsAfterUnreadableCopy() throws {
+        let visitDate = wholeSecondsDate(daysAgo: 1)
+        try makeHistoryDatabase(rows: [VisitRow(url: "https://duckduckgo.com/", title: "DuckDuckGo", date: visitDate, transition: link | chainStart | chainEnd)])
+        let reader = ChromiumHistoryReader(chromiumDataDirectoryURL: profileURL, fileManager: FirstCopyUnreadableFileManager())
+
+        let result = reader.readVisits(since: wholeSecondsDate(daysAgo: 30))
+
+        #expect(try result.get().visits == [HistoryImport.Visit(url: URL(string: "https://duckduckgo.com/")!, title: "DuckDuckGo", date: visitDate)])
+    }
+
     private func wholeSecondsDate(daysAgo days: Int) -> Date {
         Date(timeIntervalSince1970: (Date().timeIntervalSince1970 - TimeInterval(days * 24 * 60 * 60)).rounded())
     }

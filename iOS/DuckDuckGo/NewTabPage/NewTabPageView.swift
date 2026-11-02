@@ -151,6 +151,8 @@ private extension NewTabPageView {
             .scrollDismissesKeyboardIfAvailable()
             .modifier(NewTabPageScrollToTop(requests: viewModel.scrollToTopRequests))
         }
+        // Keep the keyboard from resizing the focused scroll view, like the other NTP layouts.
+        .ignoresSafeArea(.keyboard)
     }
 
     @ViewBuilder

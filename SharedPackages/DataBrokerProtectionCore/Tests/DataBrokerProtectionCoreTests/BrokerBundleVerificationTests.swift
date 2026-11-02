@@ -168,6 +168,26 @@ final class BrokerBundleVerificationTests: XCTestCase {
 
     // MARK: - Update flow
 
+    func testWhenRefreshFailsThenAnotherRefreshFilesArePreserved() async throws {
+        try stageExtractedBrokers(tampering: "anywho.com.json")
+        let otherArchive = Data("another refresh's archive".utf8)
+        try otherArchive.write(to: archiveURL)
+        let otherBrokerURL = extractedDirectoryURL.appendingPathComponent("json/anywho.com.json")
+        let otherBroker = try Data(contentsOf: otherBrokerURL)
+        appendFixtureResponses()
+        MockURLProtocol.requestHandlerQueue.append { _ in (HTTPURLResponse.internalServerError, nil) }
+
+        do {
+            try await makeService().checkForUpdates()
+            XCTFail("Expected the refresh to fail")
+        } catch {
+            // A failed refresh must only clean up files it owns.
+        }
+
+        XCTAssertEqual(try? Data(contentsOf: archiveURL), otherArchive, "Another refresh's archive must survive cleanup")
+        XCTAssertEqual(try? Data(contentsOf: otherBrokerURL), otherBroker, "Another refresh's extracted broker must survive cleanup")
+    }
+
     func testWhenBundleIsValidThenBrokersAreStoredAndManifestVersionIsSaved() async throws {
         try stageExtractedBrokers()
         appendFixtureResponses()

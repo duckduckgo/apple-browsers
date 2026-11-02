@@ -69,7 +69,8 @@ public struct ChromeWebStoreUpdateChecker {
 
     public func check(extensionID: String, installedVersion: String) async -> CheckResult {
         guard !Task.isCancelled else { return CheckResult(outcome: .failure(.cancelled), retryNotBefore: nil) }
-        guard let url = Self.requestURL(extensionID: extensionID, installedVersion: installedVersion) else {
+        guard Self.isValidVersion(installedVersion),
+              let url = try? ChromeWebStoreURL.updateCheckURL(for: extensionID, installedVersion: installedVersion) else {
             return CheckResult(outcome: .failure(.invalidRequest), retryNotBefore: nil)
         }
         let session = URLSession(configuration: configuration)
@@ -109,22 +110,6 @@ public struct ChromeWebStoreUpdateChecker {
             return .cancelled
         }
         return (error as? Failure) ?? .networkFailure
-    }
-
-    private static func requestURL(extensionID: String, installedVersion: String) -> URL? {
-        guard ChromeWebStoreURL.isValidExtensionID(extensionID), isValidVersion(installedVersion) else { return nil }
-        var components = URLComponents()
-        components.scheme = "https"
-        components.host = "clients2.google.com"
-        components.path = "/service/update2/crx"
-        components.queryItems = [
-            URLQueryItem(name: "response", value: "updatecheck"),
-            ChromeWebStoreURL.prodversionQueryItem,
-            URLQueryItem(name: "acceptformat", value: "crx3"),
-            // The endpoint returns noupdate for old versions without installsource=ondemand.
-            URLQueryItem(name: "x", value: "id=\(extensionID)&v=\(installedVersion)&installsource=ondemand&uc")
-        ]
-        return components.url
     }
 
     private static func isValidVersion(_ version: String) -> Bool {

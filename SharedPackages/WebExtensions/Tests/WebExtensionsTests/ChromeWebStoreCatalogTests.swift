@@ -216,6 +216,15 @@ final class ChromeWebStoreCatalogTests: XCTestCase {
         let url = try ChromeWebStoreURL.downloadURL(for: identifier)
         XCTAssertTrue(ChromeWebStoreURL.isValidDownloadURL(url, for: identifier))
         var components = try XCTUnwrap(URLComponents(url: url, resolvingAgainstBaseURL: false))
+        XCTAssertEqual(components.scheme, "https")
+        XCTAssertEqual(components.host, "clients2.google.com")
+        XCTAssertEqual(components.path, "/service/update2/crx")
+        XCTAssertEqual(Set(components.queryItems ?? []), Set([
+            URLQueryItem(name: "response", value: "redirect"),
+            ChromeWebStoreURL.prodversionQueryItem,
+            URLQueryItem(name: "acceptformat", value: "crx3"),
+            URLQueryItem(name: "x", value: "id=\(identifier)&installsource=ondemand&uc")
+        ]))
         components.queryItems = components.queryItems?.reversed()
         XCTAssertTrue(ChromeWebStoreURL.isValidDownloadURL(try XCTUnwrap(components.url), for: identifier))
         XCTAssertFalse(ChromeWebStoreURL.isValidDownloadURL(url, for: otherIdentifier))

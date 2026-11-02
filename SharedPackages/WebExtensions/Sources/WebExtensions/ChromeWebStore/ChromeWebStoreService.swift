@@ -29,6 +29,7 @@ public protocol ChromeWebStoreManaging: AnyObject {
     func status(for identifier: String) -> ChromeWebStoreStatus
     func install(identifier: String, downloadURL: URL) async -> Bool
     func remove(identifier: String) async -> Bool
+    func checkForUpdatesNow() async
     /// The catalog's entry for the extension with the Chrome Web Store `identifier`, such as `.bitwarden`,
     /// or `nil` for an extension the catalog doesn't list.
     func catalogEntry(of identifier: String) -> ExtensionsCatalogSubfeature?

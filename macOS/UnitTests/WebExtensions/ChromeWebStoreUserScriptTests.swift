@@ -231,6 +231,9 @@ private final class ChromeWebStoreServiceMock: ChromeWebStoreManaging {
         removedIdentifier = identifier
         return success
     }
+    func checkForUpdatesNow() async {
+        XCTFail("Manual update checks are not part of the store user-script contract")
+    }
     func listing(of subfeature: ExtensionsCatalogSubfeature) -> ChromeWebStoreListing? { nil }
 }
 

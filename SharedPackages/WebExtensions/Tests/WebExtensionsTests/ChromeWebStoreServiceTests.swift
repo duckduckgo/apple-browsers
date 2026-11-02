@@ -236,11 +236,12 @@ final class ChromeWebStoreServiceTests: XCTestCase {
             return .init(outcome: .noUpdate, retryNotBefore: nil)
         }
         defer { withExtendedLifetime((manager, service)) {} }
-        await service.checkForUpdatesNow()
+        let store: any ChromeWebStoreManaging = service
+        await store.checkForUpdatesNow()
         let previousCount = reportedVersions.count
         XCTAssertGreaterThan(previousCount, 0)
         service.setUpdateCheckVersionOverride("0.0.0.1", forInstallationIdentifier: "installed")
-        await service.checkForUpdatesNow()
+        await store.checkForUpdatesNow()
         XCTAssertEqual(reportedVersions.count, previousCount + 1)
         XCTAssertEqual(reportedVersions.last, "0.0.0.1")
     }

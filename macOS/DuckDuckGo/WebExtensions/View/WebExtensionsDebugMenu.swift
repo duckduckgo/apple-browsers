@@ -89,7 +89,7 @@ final class WebExtensionsDebugMenu: NSMenu {
         addItem(openExtensionsFolderMenuItem)
         addItem(extensionsPageMenuItem)
         addItem(apiCompatibilityLogMenuItem)
-        checkForUpdatesMenuItem.isEnabled = webExtensionManager.chromeWebStore is ChromeWebStoreService
+        checkForUpdatesMenuItem.isEnabled = webExtensionManager.chromeWebStore != nil
         addItem(checkForUpdatesMenuItem)
 
         if !webExtensionManager.webExtensionIdentifiers.isEmpty {
@@ -163,7 +163,7 @@ final class WebExtensionsDebugMenu: NSMenu {
     }
 
     @objc private func checkForUpdatesNow() {
-        guard let service = webExtensionManager.chromeWebStore as? ChromeWebStoreService else { return }
+        guard let service = webExtensionManager.chromeWebStore else { return }
         Task { await service.checkForUpdatesNow() }
     }
 

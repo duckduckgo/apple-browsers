@@ -216,7 +216,7 @@ final class SafariArchiveImporterTests: XCTestCase {
 
         let summary = await importer.importData(types: [.history]).task.value
 
-        XCTAssertNotNil(try summary[.history]?.get())
+        XCTAssertEqual(try summary[.history]?.get().failed, 1)
         XCTAssertEqual(historyImporter.importedParseResults, [parseResult])
     }
 

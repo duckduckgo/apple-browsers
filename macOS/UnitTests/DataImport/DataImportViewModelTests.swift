@@ -2210,6 +2210,18 @@ final class DataImportViewModelTests: XCTestCase {
         XCTAssertTrue(pixelKit.actualFireCalls.isEmpty)
     }
 
+    @MainActor
+    func testWhenHistoryImportIsTurnedOffWhileImportIsOpen_ThenImportDoesNotFireHistorySourceFileMissingPixel() throws {
+        try setHistoryImportFlag(true)
+        let pixelKit = PixelKitMock()
+        model = chromeModel(profileFiles: ["Login Data", "Bookmarks"], pixelFiring: pixelKit)
+        try setHistoryImportFlag(false)
+
+        model.importButtonPressed()
+
+        XCTAssertTrue(pixelKit.actualFireCalls.isEmpty)
+    }
+
     private func chromeModel(profileFiles: [String], pixelFiring: PixelKitMock) -> DataImportViewModel {
         DataImportViewModel(
             importSource: .chrome,

@@ -462,7 +462,8 @@ final class SafariArchiveImporter: DataImporter {
         let historyResult: DataImportResult<DataImport.DataTypeSummary>
         do {
             let importSummary = try await historyImporter.importVisits(parseResult)
-            historyResult = .success(.init(successful: importSummary.imported, duplicate: importSummary.alreadyInHistory, failed: 0))
+            // Each profile's file that couldn't be read counts as one failure, so the import is reported as partial.
+            historyResult = .success(.init(successful: importSummary.imported, duplicate: importSummary.alreadyInHistory, failed: readErrors.count))
         } catch {
             historyResult = .failure(SafariHistoryReader.ImportError(type: .importVisits, underlyingError: error))
         }

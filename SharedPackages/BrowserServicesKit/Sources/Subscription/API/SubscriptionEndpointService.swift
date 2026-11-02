@@ -27,6 +27,42 @@ public struct GetCustomerPortalURLResponse: Codable, Equatable {
     public let customerPortalUrl: String
 }
 
+public struct GetWithdrawalEligibilityResponse: Codable, Equatable {
+    public let withdrawal: WithdrawalEligibility
+
+    public init(withdrawal: WithdrawalEligibility) {
+        self.withdrawal = withdrawal
+    }
+}
+
+public struct WithdrawalEligibility: Codable, Equatable {
+    public let eligible: Bool
+    public let eligibleUntil: Date?
+    public let refundAmount: String?
+    public let refundCurrency: String?
+    public let reason: String?
+
+    public init(eligible: Bool, eligibleUntil: Date? = nil, refundAmount: String? = nil, refundCurrency: String? = nil, reason: String? = nil) {
+        self.eligible = eligible
+        self.eligibleUntil = eligibleUntil
+        self.refundAmount = refundAmount
+        self.refundCurrency = refundCurrency
+        self.reason = reason
+    }
+}
+
+public struct WithdrawSubscriptionResponse: Codable, Equatable {
+    public let refundedAmount: String
+    public let currency: String
+    public let requestedAt: Date?
+
+    public init(refundedAmount: String, currency: String, requestedAt: Date? = nil) {
+        self.refundedAmount = refundedAmount
+        self.currency = currency
+        self.requestedAt = requestedAt
+    }
+}
+
 public struct ConfirmPurchaseResponse: Codable, Equatable {
     public let email: String?
     public let subscription: DuckDuckGoSubscription
@@ -99,6 +135,16 @@ public protocol SubscriptionEndpointService {
     /// - Returns: A response containing features keyed by SKU, with tier information included
     func getSubscriptionTierFeatures(for subscriptionIDs: [String]) async throws -> GetSubscriptionTierFeaturesResponse
     func getCustomerPortalURL(accessToken: String, externalID: String) async throws -> GetCustomerPortalURLResponse
+
+    /// Fetches whether the Stripe subscription can be withdrawn from for a full refund.
+    /// - Parameter accessToken: The user's access token for authentication
+    /// - Returns: The withdrawal eligibility, with the deadline and refund amount when eligible
+    func getWithdrawalEligibility(accessToken: String) async throws -> GetWithdrawalEligibilityResponse
+
+    /// Withdraws from the Stripe subscription: ends it immediately and refunds it in full.
+    /// - Parameter accessToken: The user's access token for authentication
+    /// - Returns: The refunded amount and the time the withdrawal was first requested
+    func withdrawSubscription(accessToken: String) async throws -> WithdrawSubscriptionResponse
 
     /// Confirms a subscription purchase by validating the provided access token and signature with the backend service.
     ///
@@ -182,6 +228,41 @@ public struct DefaultSubscriptionEndpointService: SubscriptionEndpointService {
         if statusCode.isSuccess {
             Logger.subscriptionEndpointService.log("\(#function) request completed")
             return try response.decodeBody()
+        } else {
+            throw SubscriptionEndpointServiceError.invalidResponseCode(statusCode)
+        }
+    }
+
+    // MARK: - Withdrawal
+
+    public func getWithdrawalEligibility(accessToken: String) async throws -> GetWithdrawalEligibilityResponse {
+        guard let request = SubscriptionRequest.getWithdrawalEligibility(baseURL: baseURL, accessToken: accessToken) else {
+            throw SubscriptionEndpointServiceError.invalidRequest
+        }
+        let response = try await apiService.fetch(request: request.apiRequest)
+        let statusCode = response.httpResponse.httpStatus
+        if statusCode.isSuccess {
+            Logger.subscriptionEndpointService.log("\(#function) request completed")
+            return try response.decodeBody()
+        } else {
+            throw SubscriptionEndpointServiceError.invalidResponseCode(statusCode)
+        }
+    }
+
+    public func withdrawSubscription(accessToken: String) async throws -> WithdrawSubscriptionResponse {
+        guard let request = SubscriptionRequest.withdrawSubscription(baseURL: baseURL, accessToken: accessToken) else {
+            throw SubscriptionEndpointServiceError.invalidRequest
+        }
+        let response = try await apiService.fetch(request: request.apiRequest)
+        let statusCode = response.httpResponse.httpStatus
+        if statusCode.isSuccess {
+            Logger.subscriptionEndpointService.log("\(#function) request completed")
+            do {
+                return try response.decodeBody()
+            } catch {
+                Logger.subscriptionEndpointService.error("\(#function) succeeded but the response could not be decoded: \(error, privacy: .public)")
+                throw error
+            }
         } else {
             throw SubscriptionEndpointServiceError.invalidResponseCode(statusCode)
         }

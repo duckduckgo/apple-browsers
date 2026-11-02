@@ -249,6 +249,11 @@ struct SubscriptionSettingsViewV2: View {
 
                 removeFromDeviceView
 
+                SubscriptionWithdrawalRowView(flow: viewModel.withdrawalFlow,
+                                              subscription: viewModel.state.subscriptionInfo) { confirmation in
+                    settingsViewModel.triggerDeepLinkNavigation(to: .subscriptionWithdrawn(confirmation))
+                }
+
             case .activating:
                 restorePurchaseView
                 removeFromDeviceView

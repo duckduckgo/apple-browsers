@@ -41,7 +41,13 @@ enum SubscriptionPixel: PixelKit.Event {
         case .subscriptionCancellationCancelClick,
                 .subscriptionCancellationAppStoreCancelled,
                 .subscriptionCancellationFlowLoadFailure,
-                .subscriptionCancellationFeatureInfoFailure:
+                .subscriptionCancellationFeatureInfoFailure,
+                .subscriptionWithdrawalWithdrawClick,
+                .subscriptionWithdrawalDialogShown,
+                .subscriptionWithdrawalConfirmClick,
+                .subscriptionWithdrawalKeepClick,
+                .subscriptionWithdrawalFailure,
+                .subscriptionWithdrawalEligibilityFailure:
             return .standard
         default:
             return .legacyOmitted
@@ -84,6 +90,13 @@ enum SubscriptionPixel: PixelKit.Event {
     case subscriptionCancellationAppStoreCancelled
     case subscriptionCancellationFlowLoadFailure(Error)
     case subscriptionCancellationFeatureInfoFailure(entitlement: SubscriptionEntitlement)
+    // Subscription Withdrawal
+    case subscriptionWithdrawalWithdrawClick
+    case subscriptionWithdrawalDialogShown
+    case subscriptionWithdrawalConfirmClick
+    case subscriptionWithdrawalKeepClick
+    case subscriptionWithdrawalFailure(Error)
+    case subscriptionWithdrawalEligibilityFailure(Error)
 
     var name: String {
         switch self {
@@ -121,6 +134,13 @@ enum SubscriptionPixel: PixelKit.Event {
         case .subscriptionCancellationAppStoreCancelled: return "subscription_cancellation_app_store_cancelled"
         case .subscriptionCancellationFlowLoadFailure: return "subscription_cancellation_flow_load_failure"
         case .subscriptionCancellationFeatureInfoFailure: return "subscription_cancellation_feature-info_failure"
+            // Subscription Withdrawal
+        case .subscriptionWithdrawalWithdrawClick: return "subscription_withdrawal_withdraw_click"
+        case .subscriptionWithdrawalDialogShown: return "subscription_withdrawal_dialog_shown"
+        case .subscriptionWithdrawalConfirmClick: return "subscription_withdrawal_confirm_click"
+        case .subscriptionWithdrawalKeepClick: return "subscription_withdrawal_keep_click"
+        case .subscriptionWithdrawalFailure: return "subscription_withdrawal_failure"
+        case .subscriptionWithdrawalEligibilityFailure: return "subscription_withdrawal_eligibility_failure"
         }
     }
 
@@ -202,7 +222,13 @@ enum SubscriptionPixel: PixelKit.Event {
                 .subscriptionCancellationCancelClick,
                 .subscriptionCancellationAppStoreCancelled,
                 .subscriptionCancellationFlowLoadFailure,
-                .subscriptionCancellationFeatureInfoFailure:
+                .subscriptionCancellationFeatureInfoFailure,
+                .subscriptionWithdrawalWithdrawClick,
+                .subscriptionWithdrawalDialogShown,
+                .subscriptionWithdrawalConfirmClick,
+                .subscriptionWithdrawalKeepClick,
+                .subscriptionWithdrawalFailure,
+                .subscriptionWithdrawalEligibilityFailure:
             return [.pixelSource]
         }
     }

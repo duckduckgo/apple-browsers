@@ -88,6 +88,10 @@ public protocol SubscriptionManager: SubscriptionTokenProvider, SubscriptionAuth
 
     func getCustomerPortalURL() async throws -> URL
 
+    func getWithdrawalEligibility() async throws -> WithdrawalEligibility
+
+    func withdrawSubscription() async throws -> WithdrawSubscriptionResponse
+
     /// The user email
     var userEmail: String? { get }
 
@@ -558,6 +562,24 @@ public final class DefaultSubscriptionManager: SubscriptionManager {
             throw SubscriptionManagerError.invalidPortalURL
         }
         return url
+    }
+
+    public func getWithdrawalEligibility() async throws -> WithdrawalEligibility {
+        guard isUserAuthenticated else {
+            throw SubscriptionManagerError.noTokenAvailable
+        }
+
+        let tokenContainer = try await getTokenContainer(policy: .localValid)
+        return try await subscriptionEndpointService.getWithdrawalEligibility(accessToken: tokenContainer.accessToken).withdrawal
+    }
+
+    public func withdrawSubscription() async throws -> WithdrawSubscriptionResponse {
+        guard isUserAuthenticated else {
+            throw SubscriptionManagerError.noTokenAvailable
+        }
+
+        let tokenContainer = try await getTokenContainer(policy: .localValid)
+        return try await subscriptionEndpointService.withdrawSubscription(accessToken: tokenContainer.accessToken)
     }
 
     // MARK: - User

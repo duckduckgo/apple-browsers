@@ -58,6 +58,24 @@ public final class SubscriptionEndpointServiceMock: SubscriptionEndpointService 
         }
     }
 
+    // MARK: - Withdrawal
+
+    public var getWithdrawalEligibilityResult: Result<GetWithdrawalEligibilityResponse, APIRequestV2Error>?
+    public func getWithdrawalEligibility(accessToken: String) async throws -> GetWithdrawalEligibilityResponse {
+        switch getWithdrawalEligibilityResult! {
+        case .success(let result): return result
+        case .failure(let error): throw error
+        }
+    }
+
+    public var withdrawSubscriptionResult: Result<WithdrawSubscriptionResponse, APIRequestV2Error>?
+    public func withdrawSubscription(accessToken: String) async throws -> WithdrawSubscriptionResponse {
+        switch withdrawSubscriptionResult! {
+        case .success(let result): return result
+        case .failure(let error): throw error
+        }
+    }
+
     // MARK: - Purchase Confirmation
 
     public var confirmPurchaseResult: Result<ConfirmPurchaseResponse, APIRequestV2Error>?

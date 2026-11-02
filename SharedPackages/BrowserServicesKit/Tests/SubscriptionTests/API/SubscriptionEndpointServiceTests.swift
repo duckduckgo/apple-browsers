@@ -94,6 +94,95 @@ final class SubscriptionEndpointServiceTests: XCTestCase {
         XCTAssertEqual(subscription.status, .autoRenewable)
     }
 
+    // MARK: - Withdrawal Tests
+
+    func testGetWithdrawalEligibilityDecodesWrappedResponse() async throws {
+        let data = """
+        {"withdrawal": {"eligible": true, "eligibleUntil": 1760950800000, "refundAmount": "9.99", "refundCurrency": "GBP", "reason": null}}
+        """.data(using: .utf8)!
+        let request = SubscriptionRequest.getWithdrawalEligibility(baseURL: baseURL, accessToken: "token")!.apiRequest
+        apiService.set(response: createAPIResponse(statusCode: 200, data: data), forRequest: request)
+
+        let result = try await endpointService.getWithdrawalEligibility(accessToken: "token")
+
+        XCTAssertTrue(result.withdrawal.eligible)
+        XCTAssertEqual(result.withdrawal.eligibleUntil, Date(timeIntervalSince1970: 1760950800))
+        XCTAssertEqual(result.withdrawal.refundAmount, "9.99")
+        XCTAssertEqual(result.withdrawal.refundCurrency, "GBP")
+        XCTAssertNil(result.withdrawal.reason)
+    }
+
+    func testGetWithdrawalEligibilityDecodesIneligibleResponse() async throws {
+        let data = """
+        {"withdrawal": {"eligible": false, "eligibleUntil": null, "refundAmount": null, "refundCurrency": null, "reason": "trial"}}
+        """.data(using: .utf8)!
+        let request = SubscriptionRequest.getWithdrawalEligibility(baseURL: baseURL, accessToken: "token")!.apiRequest
+        apiService.set(response: createAPIResponse(statusCode: 200, data: data), forRequest: request)
+
+        let result = try await endpointService.getWithdrawalEligibility(accessToken: "token")
+
+        XCTAssertFalse(result.withdrawal.eligible)
+        XCTAssertNil(result.withdrawal.eligibleUntil)
+        XCTAssertNil(result.withdrawal.refundAmount)
+        XCTAssertNil(result.withdrawal.refundCurrency)
+        XCTAssertEqual(result.withdrawal.reason, "trial")
+    }
+
+    func testWithdrawSubscriptionDecodesResponse() async throws {
+        let data = """
+        {"refundedAmount": "9.99", "currency": "GBP", "requestedAt": 1760950800000}
+        """.data(using: .utf8)!
+        let request = SubscriptionRequest.withdrawSubscription(baseURL: baseURL, accessToken: "token")!.apiRequest
+        apiService.set(response: createAPIResponse(statusCode: 200, data: data), forRequest: request)
+
+        let result = try await endpointService.withdrawSubscription(accessToken: "token")
+
+        XCTAssertEqual(result, WithdrawSubscriptionResponse(refundedAmount: "9.99",
+                                                            currency: "GBP",
+                                                            requestedAt: Date(timeIntervalSince1970: 1760950800)))
+    }
+
+    func testWithdrawSubscriptionWithoutRequestedAtDecodesResponse() async throws {
+        let data = """
+        {"refundedAmount": "9.99", "currency": "GBP"}
+        """.data(using: .utf8)!
+        let request = SubscriptionRequest.withdrawSubscription(baseURL: baseURL, accessToken: "token")!.apiRequest
+        apiService.set(response: createAPIResponse(statusCode: 200, data: data), forRequest: request)
+
+        let result = try await endpointService.withdrawSubscription(accessToken: "token")
+
+        XCTAssertNil(result.requestedAt)
+    }
+
+    func testWithdrawSubscriptionThrowsInvalidResponseCodeOnConflict() async {
+        let request = SubscriptionRequest.withdrawSubscription(baseURL: baseURL, accessToken: "token")!.apiRequest
+        apiService.set(response: createAPIResponse(statusCode: 409, data: nil), forRequest: request)
+
+        do {
+            _ = try await endpointService.withdrawSubscription(accessToken: "token")
+            XCTFail("Expected invalidResponseCode error")
+        } catch SubscriptionEndpointServiceError.invalidResponseCode(let statusCode) {
+            XCTAssertEqual(statusCode, .conflict)
+        } catch {
+            XCTFail("Unexpected error: \(error)")
+        }
+    }
+
+    func testWithdrawSubscriptionThrowsWhenSuccessResponseCannotBeDecoded() async {
+        let data = """
+        {"refundedAmount": 999, "currency": "GBP"}
+        """.data(using: .utf8)!
+        let request = SubscriptionRequest.withdrawSubscription(baseURL: baseURL, accessToken: "token")!.apiRequest
+        apiService.set(response: createAPIResponse(statusCode: 200, data: data), forRequest: request)
+
+        do {
+            _ = try await endpointService.withdrawSubscription(accessToken: "token")
+            XCTFail("Expected a decoding error")
+        } catch SubscriptionEndpointServiceError.invalidResponseCode {
+            XCTFail("Expected a decoding error, not an invalid response code")
+        } catch {}
+    }
+
     // MARK: - getCustomerPortalURL Tests
 
     func testGetCustomerPortalURLReturnsCorrectURL() async throws {

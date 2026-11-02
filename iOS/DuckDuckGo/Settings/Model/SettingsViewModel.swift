@@ -1882,6 +1882,7 @@ extension SettingsViewModel {
         case appearance
         case general
         case cookiePopupProtection
+        case subscriptionWithdrawn(SubscriptionWithdrawalConfirmation)
         // Add other cases as needed
 
         var id: String {
@@ -1902,6 +1903,7 @@ extension SettingsViewModel {
             case .appearance: return "appearance"
             case .general: return "general"
             case .cookiePopupProtection: return "cookiePopupProtection"
+            case .subscriptionWithdrawn: return "subscriptionWithdrawn"
             // Ensure all cases are covered
             }
         }
@@ -1910,7 +1912,7 @@ extension SettingsViewModel {
         // Default to .sheet, specify .push where needed
         var type: DeepLinkType {
             switch self {
-            case .netP, .dbp, .itr, .subscriptionFlow, .subscriptionPlanChangeFlow, .restoreFlow, .duckPlayer, .aiChat, .privateSearch, .subscriptionSettings, .subscriptionWelcome, .customizeToolbarButton, .customizeAddressBarButton, .appearance, .general, .cookiePopupProtection:
+            case .netP, .dbp, .itr, .subscriptionFlow, .subscriptionPlanChangeFlow, .restoreFlow, .duckPlayer, .aiChat, .privateSearch, .subscriptionSettings, .subscriptionWelcome, .customizeToolbarButton, .customizeAddressBarButton, .appearance, .general, .cookiePopupProtection, .subscriptionWithdrawn:
                 return .navigationLink
             }
         }

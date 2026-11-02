@@ -52,6 +52,13 @@ final class SubscriptionSettingsViewModel: ObservableObject {
     private let aiChatSettings: AIChatSettingsProvider
     private let locale: Locale
     let cancellationInstrumentation: SubscriptionCancellationInstrumenting
+    private let withdrawalInstrumentation: SubscriptionWithdrawalInstrumenting
+    private(set) lazy var withdrawalFlow = SubscriptionWithdrawalFlowModel(subscriptionManager: subscriptionManager,
+                                                                         featureFlagger: featureFlagger,
+                                                                         locale: locale,
+                                                                         dateFormatter: dateFormatter,
+                                                                         instrumentation: withdrawalInstrumentation,
+                                                                         openURL: { [weak self] url in self?.openURL(url) })
 
     private var externalAllowedDomains = ["stripe.com"]
 
@@ -239,7 +246,8 @@ final class SubscriptionSettingsViewModel: ObservableObject {
          subscriptionFlowsExecuter: SubscriptionFlowsExecuting? = nil,
          aiChatSettings: AIChatSettingsProvider = AIChatSettings(),
          locale: Locale = .current,
-         cancellationInstrumentation: SubscriptionCancellationInstrumenting = SubscriptionCancellationInstrumentation()) {
+         cancellationInstrumentation: SubscriptionCancellationInstrumenting = SubscriptionCancellationInstrumentation(),
+         withdrawalInstrumentation: SubscriptionWithdrawalInstrumenting = SubscriptionWithdrawalInstrumentation()) {
         self.subscriptionManager = subscriptionManager
         self.userScriptsDependencies = userScriptsDependencies
         self.featureFlagger = featureFlagger
@@ -249,6 +257,7 @@ final class SubscriptionSettingsViewModel: ObservableObject {
         self.aiChatSettings = aiChatSettings
         self.locale = locale
         self.cancellationInstrumentation = cancellationInstrumentation
+        self.withdrawalInstrumentation = withdrawalInstrumentation
         self.subscriptionFlowsExecuter = subscriptionFlowsExecuter ?? SubscriptionContainerViewFactory.makeSubscriptionFlowsExecuter(
             subscriptionManager: subscriptionManager,
             wideEvent: wideEvent)
@@ -298,6 +307,10 @@ final class SubscriptionSettingsViewModel: ObservableObject {
     }
 
     func onFirstAppear() {
+        Task { @MainActor in
+            await self.withdrawalFlow.fetchEligibility()
+        }
+
         Task {
             // Load initial state from the cache
             async let loadedEmailFromCache = await self.fetchAndUpdateAccountEmail(forceRefresh: false)

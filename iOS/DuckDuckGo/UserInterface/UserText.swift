@@ -2149,6 +2149,43 @@ public struct UserText {
     public static let subscriptionManagePayment = NSLocalizedString("subscription.manage.payment", value: "Manage Payment or Cancel", comment: "Manage Payment or cancel action title")
     public static let subscriptionManageSubscription = NotLocalizedString("subscription.manage.subscription", value: "Manage Subscription", comment: "Action title that opens the payment platform's subscription management screen. Used for en_US locale only.")
     public static let subscriptionCancelSubscription = NotLocalizedString("subscription.cancel.subscription", value: "Cancel Subscription", comment: "Action title that starts the subscription cancellation flow. Used for en_US locale only.")
+    public static let subscriptionWithdrawFromContract = NSLocalizedString("subscription.withdraw.from.contract", value: "Withdraw from Contract", comment: "Action title that starts withdrawing from the subscription contract with a full refund")
+    static func subscriptionWithdrawFromContractSubtitle(eligibleUntil: String) -> String {
+        let localized = NSLocalizedString("subscription.withdraw.from.contract.subtitle",
+                                           value: "You can withdraw and get a full refund until %@",
+                                           comment: "Subtitle of the Withdraw from Contract action. Parameter is the last date the user can withdraw.")
+        return String(format: localized, eligibleUntil)
+    }
+    public static let subscriptionWithdrawConfirmTitle = NSLocalizedString("subscription.withdraw.confirm.title", value: "Withdraw from your subscription?", comment: "Title of the alert confirming withdrawal from the subscription contract")
+    static func subscriptionWithdrawConfirmMessage(tierName: String, refundAmount: String) -> String {
+        let localized = NSLocalizedString("subscription.withdraw.confirm.message",
+                                           value: "Your %1$@ subscription will end right away and you’ll be refunded %2$@ to your original payment method within 14 days.",
+                                           comment: "Message of the alert confirming withdrawal from the subscription contract. Parameters are the tier name (e.g. Plus) and the refund amount with currency.")
+        return String(format: localized, tierName, refundAmount)
+    }
+    static func subscriptionWithdrawConfirmFeaturesMessage(features: String) -> String {
+        let localized = NSLocalizedString("subscription.withdraw.confirm.features.message",
+                                           value: "%@ stop working once you confirm.",
+                                           comment: "Second paragraph of the alert confirming withdrawal from the subscription contract. Parameter is a localized list of features, e.g. VPN, Personal Information Removal and Duck.ai.")
+        return String(format: localized, features)
+    }
+    public static let subscriptionWithdrawConfirmButton = NSLocalizedString("subscription.withdraw.confirm.button", value: "Confirm Withdrawal", comment: "Button that confirms withdrawal from the subscription contract")
+    public static let subscriptionWithdrawKeepButton = NSLocalizedString("subscription.withdraw.keep.button", value: "Keep Subscription", comment: "Button that dismisses the withdrawal confirmation and keeps the subscription")
+    public static let subscriptionNotSubscribed = NSLocalizedString("subscription.not.subscribed", value: "Not Subscribed", comment: "Subscription status shown after the user withdrew from the subscription contract")
+    static func subscriptionWithdrawnInfo(withdrawalDate: String) -> String {
+        let localized = NSLocalizedString("subscription.withdrawn.info",
+                                           value: "You withdrew on %@.",
+                                           comment: "Confirmation shown after withdrawing from the subscription contract. Parameter is the withdrawal date.")
+        return String(format: localized, withdrawalDate)
+    }
+    static func subscriptionWithdrawnRefundInfo(refundAmount: String) -> String {
+        let localized = NSLocalizedString("subscription.withdrawn.refund.info",
+                                           value: "Your refund of %@ is being processed.",
+                                           comment: "Shown below the withdrawal confirmation. Parameter is the refunded amount with currency.")
+        return String(format: localized, refundAmount)
+    }
+    public static let subscriptionWithdrawErrorMessage = NSLocalizedString("subscription.withdraw.error.message", value: "We couldn’t process your withdrawal automatically. Please visit our help page to complete your withdrawal.", comment: "Message of the alert shown when withdrawing from the subscription contract fails")
+    public static let subscriptionWithdrawErrorButton = NSLocalizedString("subscription.withdraw.error.button", value: "Visit Help Page", comment: "Button that opens the help page to complete a failed subscription withdrawal")
     public static let subscriptionHelpAndSupport = NSLocalizedString("subscription.help", value: "Help and support", comment: "Help and support Section header")
     public static let subscriptionFAQ = NSLocalizedString("subscription.faq", value: "FAQs and Support", comment: "FAQ Button")
     public static let subscriptionFeedback = NSLocalizedString("subscription.feedback", value: "Share Feedback", comment: "Share Feedback Button")

@@ -2481,11 +2481,12 @@ final class DataImportViewModelTests: XCTestCase {
         await fulfillment(of: [importComplete], timeout: 1)
     }
 
-    func testMergeImportSummary_historyOnlySucceeds_postsImportComplete() async throws {
+    func testMergeImportSummary_historyOnlyFails_doesNotPostImportComplete() async throws {
         try await startSafariImport(selecting: [.history], returning: [
-            .history: .success(.init(successful: 100, duplicate: 0, failed: 0))
+            .history: .failure(Failure(.history, .other))
         ])
         let importComplete = expectation(forNotification: .dataImportComplete, object: nil)
+        importComplete.isInverted = true
 
         await fulfillImport()
 

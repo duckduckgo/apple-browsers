@@ -85,7 +85,8 @@ struct Foreground: ForegroundHandling {
         launchAction = LaunchAction(actionToHandle: actionToHandle,
                                     lastBackgroundDate: (try? lastBackgroundDateStorage.lastBackgroundDate) ?? nil,
                                     isFirstForeground: isFirstForeground,
-                                    hasCompletedAuthentication: sceneDependencies.authenticationService.hasCompletedAuthentication)
+                                    hasCompletedAuthentication: sceneDependencies.authenticationService.hasCompletedAuthentication,
+                                    idleReturnOutcome: appDependencies.idleReturnEvaluator.evaluateReturn())
         appReturnInstrumentation = DefaultAppReturnInstrumentation(
             eligibilityManager: appDependencies.idleReturnEligibilityManager,
             isToggleEnabled: { appDependencies.aiChatSettings.isAIChatSearchInputUserSettingsEnabled }
@@ -100,7 +101,6 @@ struct Foreground: ForegroundHandling {
             userActivityHandler: appDependencies.mainCoordinator,
             keyboardPresenter: keyboardPresenter,
             launchSourceService: appDependencies.launchSourceManager,
-            idleReturnEvaluator: appDependencies.idleReturnEvaluator,
             featureFlagger: appDependencies.featureFlagger,
             idleReturnDelegate: appDependencies.mainCoordinator
         )

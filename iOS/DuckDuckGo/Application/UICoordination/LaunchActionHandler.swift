@@ -29,9 +29,17 @@ enum LaunchAction {
     case handleShortcutItem(UIApplicationShortcutItem)
     case handleUserActivity(NSUserActivity)
     /// `hasCompletedAuthentication` is `false` while App Lock has not been unlocked since launch.
-    case standardLaunch(lastBackgroundDate: Date?, isFirstForeground: Bool, hasCompletedAuthentication: Bool = true)
+    /// `idleReturnOutcome` is decided on foreground, before a later background can overwrite the stored date.
+    case standardLaunch(lastBackgroundDate: Date?,
+                        isFirstForeground: Bool,
+                        hasCompletedAuthentication: Bool = true,
+                        idleReturnOutcome: IdleReturnOutcome = .ordinary(timeAwayMs: nil))
 
-    init(actionToHandle: AppAction?, lastBackgroundDate: Date?, isFirstForeground: Bool = false, hasCompletedAuthentication: Bool = true) {
+    init(actionToHandle: AppAction?,
+         lastBackgroundDate: Date?,
+         isFirstForeground: Bool = false,
+         hasCompletedAuthentication: Bool = true,
+         idleReturnOutcome: IdleReturnOutcome = .ordinary(timeAwayMs: nil)) {
         switch actionToHandle {
         case .openURL(let url)?:
             self = .openURL(url)
@@ -42,7 +50,8 @@ enum LaunchAction {
         case nil:
             self = .standardLaunch(lastBackgroundDate: lastBackgroundDate,
                                    isFirstForeground: isFirstForeground,
-                                   hasCompletedAuthentication: hasCompletedAuthentication)
+                                   hasCompletedAuthentication: hasCompletedAuthentication,
+                                   idleReturnOutcome: idleReturnOutcome)
         }
     }
 
@@ -93,7 +102,6 @@ final class LaunchActionHandler: LaunchActionHandling {
     private let keyboardPresenter: KeyboardPresenting
     private let pixelFiring: (any PixelKitFiring)?
     private let launchSourceManager: LaunchSourceManaging
-    private let idleReturnEvaluator: IdleReturnEvaluating
     private let featureFlagger: FeatureFlagger
     private weak var idleReturnDelegate: IdleReturnLaunchDelegate?
 
@@ -102,7 +110,6 @@ final class LaunchActionHandler: LaunchActionHandling {
          userActivityHandler: UserActivityHandling,
          keyboardPresenter: KeyboardPresenting,
          launchSourceService: LaunchSourceManaging,
-         idleReturnEvaluator: IdleReturnEvaluating,
          featureFlagger: FeatureFlagger,
          idleReturnDelegate: IdleReturnLaunchDelegate? = nil,
          pixelFiring: (any PixelKitFiring)? = PixelKit.shared) {
@@ -111,7 +118,6 @@ final class LaunchActionHandler: LaunchActionHandling {
         self.userActivityHandler = userActivityHandler
         self.keyboardPresenter = keyboardPresenter
         self.launchSourceManager = launchSourceService
-        self.idleReturnEvaluator = idleReturnEvaluator
         self.featureFlagger = featureFlagger
         self.idleReturnDelegate = idleReturnDelegate
         self.pixelFiring = pixelFiring
@@ -128,9 +134,8 @@ final class LaunchActionHandler: LaunchActionHandling {
         case .handleUserActivity(let userActivity):
             launchSourceManager.setSource(.standard)
             userActivityHandler.handleUserActivity(userActivity)
-        case .standardLaunch(let lastBackgroundDate, let isFirstForeground, let hasCompletedAuthentication):
+        case .standardLaunch(let lastBackgroundDate, let isFirstForeground, let hasCompletedAuthentication, let outcome):
             launchSourceManager.setSource(.standard)
-            let outcome = idleReturnEvaluator.evaluateReturn()
             let isAfterIdleReturn = outcome.isAfterIdle
             switch outcome {
             case .afterIdle(.ntp, let timeAwayMs):

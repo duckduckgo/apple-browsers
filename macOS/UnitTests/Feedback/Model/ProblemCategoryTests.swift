@@ -26,27 +26,27 @@ final class ProblemCategoryTests: XCTestCase {
     func testWhenInitializingProblemCategoryThenPropertiesAreSetCorrectly() {
         let category = ProblemCategory(
             id: "testId",
-            name: "Test Category",
-            subcategories: ["Sub 1", "Sub 2"]
+            text: "Test Category",
+            subcategories: [SubCategory(id: "sub1", text: "Sub 1"), SubCategory(id: "sub2", text: "Sub 2")]
         )
 
         XCTAssertEqual(category.id, "testId")
-        XCTAssertEqual(category.name, "Test Category")
-        XCTAssertEqual(category.subcategories, ["Sub 1", "Sub 2"])
+        XCTAssertEqual(category.text, "Test Category")
+        XCTAssertEqual(category.subcategories.map(\.text), ["Sub 1", "Sub 2"])
     }
 
     // MARK: - Identifiable Protocol Tests
 
     func testWhenComparingProblemCategoriesWithSameIdThenTheyAreEqual() {
-        let category1 = ProblemCategory(id: "same", name: "Name 1", subcategories: [])
-        let category2 = ProblemCategory(id: "same", name: "Name 2", subcategories: ["Different"])
+        let category1 = ProblemCategory(id: "same", text: "Name 1", subcategories: [])
+        let category2 = ProblemCategory(id: "same", text: "Name 2", subcategories: [SubCategory(id: "different", text: "Different")])
 
         XCTAssertEqual(category1, category2)
     }
 
     func testWhenComparingProblemCategoriesWithDifferentIdThenTheyAreNotEqual() {
-        let category1 = ProblemCategory(id: "id1", name: "Same Name", subcategories: [])
-        let category2 = ProblemCategory(id: "id2", name: "Same Name", subcategories: [])
+        let category1 = ProblemCategory(id: "id1", text: "Same Name", subcategories: [])
+        let category2 = ProblemCategory(id: "id2", text: "Same Name", subcategories: [])
 
         XCTAssertNotEqual(category1, category2)
     }
@@ -54,23 +54,23 @@ final class ProblemCategoryTests: XCTestCase {
     // MARK: - Hashable Protocol Tests
 
     func testWhenHashingProblemCategoriesWithSameIdThenHashesAreEqual() {
-        let category1 = ProblemCategory(id: "same", name: "Name 1", subcategories: [])
-        let category2 = ProblemCategory(id: "same", name: "Name 2", subcategories: ["Different"])
+        let category1 = ProblemCategory(id: "same", text: "Name 1", subcategories: [])
+        let category2 = ProblemCategory(id: "same", text: "Name 2", subcategories: [SubCategory(id: "different", text: "Different")])
 
         XCTAssertEqual(category1.hashValue, category2.hashValue)
     }
 
     func testWhenHashingProblemCategoriesWithDifferentIdThenHashesAreDifferent() {
-        let category1 = ProblemCategory(id: "id1", name: "Same Name", subcategories: [])
-        let category2 = ProblemCategory(id: "id2", name: "Same Name", subcategories: [])
+        let category1 = ProblemCategory(id: "id1", text: "Same Name", subcategories: [])
+        let category2 = ProblemCategory(id: "id2", text: "Same Name", subcategories: [])
 
         XCTAssertNotEqual(category1.hashValue, category2.hashValue)
     }
 
     func testWhenUsingProblemCategoriesInSetThenOnlyUniqueIdsAreKept() {
-        let category1 = ProblemCategory(id: "same", name: "Name 1", subcategories: [])
-        let category2 = ProblemCategory(id: "same", name: "Name 2", subcategories: ["Different"])
-        let category3 = ProblemCategory(id: "different", name: "Name 3", subcategories: [])
+        let category1 = ProblemCategory(id: "same", text: "Name 1", subcategories: [])
+        let category2 = ProblemCategory(id: "same", text: "Name 2", subcategories: [SubCategory(id: "different", text: "Different")])
+        let category3 = ProblemCategory(id: "different", text: "Name 3", subcategories: [])
 
         let categorySet: Set<ProblemCategory> = [category1, category2, category3]
 
@@ -86,13 +86,13 @@ final class ProblemCategoryTests: XCTestCase {
         let allCategories = ProblemCategory.allCategories
 
         let expectedIds = [
-            "browserTooSlow",
-            "browserDoesntWork",
-            "installUpdates",
-            "brokenWebsite",
-            "adsIssues",
-            "passwordIssues",
-            "somethingElse"
+            "computer-or-browser-is-too-slow",
+            "browser-doesnt-work-as-expected",
+            "browser-install-and-updates",
+            "report-broken-website",
+            "ads-causing-issues",
+            "password-issues",
+            "something-else"
         ]
 
         XCTAssertEqual(allCategories.count, expectedIds.count)
@@ -103,7 +103,7 @@ final class ProblemCategoryTests: XCTestCase {
     }
 
     func testWhenAccessingBrowserTooSlowCategoryThenSubcategoriesAreCorrect() {
-        let category = ProblemCategory.allCategories.first { $0.id == "browserTooSlow" }!
+        let category = ProblemCategory.allCategories.first { $0.id == "computer-or-browser-is-too-slow" }!
 
         let expectedSubcategories = [
             UserText.problemSubcategoryBrowserStartsSlowly,
@@ -113,11 +113,11 @@ final class ProblemCategoryTests: XCTestCase {
             UserText.problemSubcategoryWebsitesLoadSlowly
         ]
 
-        XCTAssertEqual(Set(category.subcategories), Set(expectedSubcategories))
+        XCTAssertEqual(Set(category.subcategories.map(\.text)), Set(expectedSubcategories))
     }
 
     func testWhenAccessingBrowserDoesntWorkCategoryThenSubcategoriesAreCorrect() {
-        let category = ProblemCategory.allCategories.first { $0.id == "browserDoesntWork" }!
+        let category = ProblemCategory.allCategories.first { $0.id == "browser-doesnt-work-as-expected" }!
 
         let expectedSubcategories = [
             UserText.problemSubcategoryBrowserUsesTooMuchMemory,
@@ -133,11 +133,11 @@ final class ProblemCategoryTests: XCTestCase {
             UserText.problemSubcategoryVideoDoesntPlay
         ]
 
-        XCTAssertEqual(Set(category.subcategories), Set(expectedSubcategories))
+        XCTAssertEqual(Set(category.subcategories.map(\.text)), Set(expectedSubcategories))
     }
 
     func testWhenAccessingInstallUpdatesCategoryThenSubcategoriesAreCorrect() {
-        let category = ProblemCategory.allCategories.first { $0.id == "installUpdates" }!
+        let category = ProblemCategory.allCategories.first { $0.id == "browser-install-and-updates" }!
 
         let expectedSubcategories = [
             UserText.problemSubcategoryBrowserVersionIssues,
@@ -147,11 +147,11 @@ final class ProblemCategoryTests: XCTestCase {
             UserText.problemSubcategoryTooManyUpdates
         ]
 
-        XCTAssertEqual(Set(category.subcategories), Set(expectedSubcategories))
+        XCTAssertEqual(Set(category.subcategories.map(\.text)), Set(expectedSubcategories))
     }
 
     func testWhenAccessingBrokenWebsiteCategoryThenSubcategoriesAreCorrect() {
-        let category = ProblemCategory.allCategories.first { $0.id == "brokenWebsite" }!
+        let category = ProblemCategory.allCategories.first { $0.id == "report-broken-website" }!
 
         let expectedSubcategories = [
             UserText.problemSubcategorySiteWontLoad,
@@ -160,11 +160,11 @@ final class ProblemCategoryTests: XCTestCase {
             UserText.problemSubcategorySomethingElse
         ]
 
-        XCTAssertEqual(Set(category.subcategories), Set(expectedSubcategories))
+        XCTAssertEqual(Set(category.subcategories.map(\.text)), Set(expectedSubcategories))
     }
 
     func testWhenAccessingAdsIssuesCategoryThenSubcategoriesAreCorrect() {
-        let category = ProblemCategory.allCategories.first { $0.id == "adsIssues" }!
+        let category = ProblemCategory.allCategories.first { $0.id == "ads-causing-issues" }!
 
         let expectedSubcategories = [
             UserText.problemSubcategoryBannerAdsBlockingContent,
@@ -174,11 +174,11 @@ final class ProblemCategoryTests: XCTestCase {
             UserText.problemSubcategorySiteAsksToTurnOffAdBlocker
         ]
 
-        XCTAssertEqual(Set(category.subcategories), Set(expectedSubcategories))
+        XCTAssertEqual(Set(category.subcategories.map(\.text)), Set(expectedSubcategories))
     }
 
     func testWhenAccessingPasswordIssuesCategoryThenSubcategoriesAreCorrect() {
-        let category = ProblemCategory.allCategories.first { $0.id == "passwordIssues" }!
+        let category = ProblemCategory.allCategories.first { $0.id == "password-issues" }!
 
         let expectedSubcategories = [
             UserText.problemSubcategoryCantSyncPasswords,
@@ -187,21 +187,22 @@ final class ProblemCategoryTests: XCTestCase {
             UserText.problemSubcategoryPasswordsManagement
         ]
 
-        XCTAssertEqual(Set(category.subcategories), Set(expectedSubcategories))
+        XCTAssertEqual(Set(category.subcategories.map(\.text)), Set(expectedSubcategories))
     }
 
     func testWhenAccessingSomethingElseCategoryThenSubcategoriesAreCorrect() {
-        let category = ProblemCategory.allCategories.first { $0.id == "somethingElse" }!
+        let category = ProblemCategory.allCategories.first { $0.id == "something-else" }!
 
         let expectedSubcategories = [
             UserText.problemSubcategoryCantCompleteAPurchase,
             UserText.problemSubcategoryCantRestartFailedDownloads,
             UserText.problemSubcategoryConfusingOrMissingSettings,
             UserText.problemSubcategoryNoDownloadsHistory,
-            UserText.problemSubcategoryVideoAudioPlaysAutomatically
+            UserText.problemSubcategoryVideoAudioPlaysAutomatically,
+            UserText.problemSubcategoryPromotionalMessages
         ]
 
-        XCTAssertEqual(Set(category.subcategories), Set(expectedSubcategories))
+        XCTAssertEqual(Set(category.subcategories.map(\.text)), Set(expectedSubcategories))
     }
 
     // MARK: - Category Name Tests
@@ -210,17 +211,17 @@ final class ProblemCategoryTests: XCTestCase {
         let allCategories = ProblemCategory.allCategories
 
         let nameMap = [
-            "browserTooSlow": UserText.problemCategoryBrowserTooSlow,
-            "browserDoesntWork": UserText.problemCategoryBrowserDoesntWork,
-            "installUpdates": UserText.problemCategoryInstallUpdates,
-            "brokenWebsite": UserText.problemCategoryBrokenWebsite,
-            "adsIssues": UserText.problemCategoryAdsIssues,
-            "passwordIssues": UserText.problemCategoryPasswordIssues,
-            "somethingElse": UserText.problemCategorySomethingElse
+            "computer-or-browser-is-too-slow": UserText.problemCategoryBrowserTooSlow,
+            "browser-doesnt-work-as-expected": UserText.problemCategoryBrowserDoesntWork,
+            "browser-install-and-updates": UserText.problemCategoryInstallUpdates,
+            "report-broken-website": UserText.problemCategoryBrokenWebsite,
+            "ads-causing-issues": UserText.problemCategoryAdsIssues,
+            "password-issues": UserText.problemCategoryPasswordIssues,
+            "something-else": UserText.problemCategoryOtherFeedback
         ]
 
         for category in allCategories {
-            XCTAssertEqual(category.name, nameMap[category.id], "Name mismatch for category: \(category.id)")
+            XCTAssertEqual(category.text, nameMap[category.id], "Name mismatch for category: \(category.id)")
         }
     }
 
@@ -229,7 +230,7 @@ final class ProblemCategoryTests: XCTestCase {
     func testWhenComparingNilProblemCategoriesThenEqualityWorksCorrectly() {
         let category1: ProblemCategory? = nil
         let category2: ProblemCategory? = nil
-        let category3: ProblemCategory? = ProblemCategory(id: "test", name: "Test", subcategories: [])
+        let category3: ProblemCategory? = ProblemCategory(id: "test", text: "Test", subcategories: [])
 
         XCTAssertEqual(category1, category2)
         XCTAssertNotEqual(category1, category3)
@@ -237,17 +238,17 @@ final class ProblemCategoryTests: XCTestCase {
     }
 
     func testWhenCreatingCategoryWithEmptySubcategoriesThenItWorksCorrectly() {
-        let category = ProblemCategory(id: "empty", name: "Empty Category", subcategories: [])
+        let category = ProblemCategory(id: "empty", text: "Empty Category", subcategories: [])
 
         XCTAssertEqual(category.id, "empty")
-        XCTAssertEqual(category.name, "Empty Category")
+        XCTAssertEqual(category.text, "Empty Category")
         XCTAssertTrue(category.subcategories.isEmpty)
     }
 
     func testWhenUsingCategoryInDictionaryThenHashingWorksCorrectly() {
-        let category1 = ProblemCategory(id: "key1", name: "Category 1", subcategories: [])
-        let category2 = ProblemCategory(id: "key2", name: "Category 2", subcategories: [])
-        let category3 = ProblemCategory(id: "key1", name: "Category 1 Modified", subcategories: ["Sub"])
+        let category1 = ProblemCategory(id: "key1", text: "Category 1", subcategories: [])
+        let category2 = ProblemCategory(id: "key2", text: "Category 2", subcategories: [])
+        let category3 = ProblemCategory(id: "key1", text: "Category 1 Modified", subcategories: [SubCategory(id: "sub", text: "Sub")])
 
         var categoryDict: [ProblemCategory: String] = [:]
         categoryDict[category1] = "value1"
@@ -275,7 +276,7 @@ final class ProblemCategoryTests: XCTestCase {
             XCTAssertFalse(category.subcategories.isEmpty, "Category \(category.id) has empty subcategories")
 
             for subcategory in category.subcategories {
-                XCTAssertFalse(subcategory.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
+                XCTAssertFalse(subcategory.text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
                              "Category \(category.id) has empty subcategory")
             }
         }

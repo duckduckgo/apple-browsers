@@ -74,6 +74,9 @@ class AddressBarTests: XCTestCase {
     var schemeHandler: TestSchemeHandler!
     static let testHtml = "<html><head><title>Title</title></head><body>test</body></html>"
 
+    private var savedPreferences: SavedPreferences!
+    private var savedArgumentDomain: [String: Any]!
+
     @MainActor
     private func navigationFinishedPromiseIfNeeded(for tab: Tab) -> Future<Void, Error>? {
         guard tab.webView.url == nil,
@@ -104,16 +107,53 @@ class AddressBarTests: XCTestCase {
         schemeHandler = TestSchemeHandler { _ in
             return .ok(.html(Self.testHtml))
         }
+        stubNetworkRequests()
 
         // tests return debugDescription instead of localizedDescription
         NSError.disableSwizzledDescription = true
 
+        // don‘t depend on the settings left by the test classes run earlier
+        savedArgumentDomain = UserDefaults.standard.volatileDomain(forName: UserDefaults.argumentDomain)
+        UserDefaults.standard.overrideValuesInArgumentDomain(Self.pinnedUserDefaults)
+        savedPreferences = SavedPreferences()
         NSApp.delegateTyped.startupPreferences.customHomePageURL = URL.duckDuckGo.absoluteString
         NSApp.delegateTyped.startupPreferences.launchToCustomHomePage = false
+        NSApp.delegateTyped.appearancePreferences.showFullURL = false
+        NSApp.delegateTyped.searchPreferences.showAutocompleteSuggestions = true
 
         NSApp.delegateTyped.tabsPreferences.pinnedTabsMode = .shared
 
         NSApp.activate(ignoringOtherApps: true)
+    }
+
+    /// AI Chat settings read by the Address Bar directly from `UserDefaults.standard`, pinned to their default values.
+    /// The values are set in the volatile argument domain taking precedence over the persistent user defaults,
+    /// so they apply whatever earlier tests have stored and are never persisted.
+    private static let pinnedUserDefaults: [String: Any] = [
+        "aichat.enabled": true,
+        "aichat.showSearchAndDuckAIToggle": true,
+        "aichat.showAIChatShortcutInAddressBar": true,
+        "aichat.showAIChatShortcutInAddressBarWhenTyping": true,
+        "aichat.openAIChatInSidebar": true,
+        "aichat.userDidSeeToggleOnboarding": true,
+    ]
+
+    /// The tests type into the Address Bar triggering autocomplete requests (and the connection pre-warming)
+    /// to duckduckgo.com: serve empty suggestions locally and fail any other in-process HTTP(S) request leaving the machine.
+    /// Web pages are served by `schemeHandler`.
+    private func stubNetworkRequests() {
+        stub { request in
+            guard let url = request.url, ["http", "https"].contains(url.scheme) else { return false }
+            return !["localhost", "127.0.0.1", "::1"].contains(url.host ?? "")
+        } response: { request in
+            Logger.tests.error("Blocked network request: \(request.url?.absoluteString ?? "<nil>", privacy: .public)")
+            return HTTPStubsResponse(error: URLError(.notConnectedToInternet))
+        }
+        stub {
+            $0.url?.absoluteString.hasPrefix(SuggestionLoader.remoteSuggestionsURL.absoluteString) == true
+        } response: { _ in
+            HTTPStubsResponse(data: "[]".utf8data, statusCode: 200, headers: ["Content-Type": "application/json"])
+        }
     }
 
     override var allowedNonNilVariables: Set<String> {
@@ -127,13 +167,21 @@ class AddressBarTests: XCTestCase {
         autoreleasepool {
             window?.close()
             window = nil
+            // Pinned tabs are shared by all windows: a pinned tab left behind keeps later tests' last window open,
+            // and the history the closed pinned tabs keep for the Fire button ends up in later tests' current window
+            let pinnedTabs = Application.appDelegate.pinnedTabsManager.tabCollection
+            pinnedTabs.removeAll()
+            pinnedTabs.localHistoryOfRemovedTabs = []
+            pinnedTabs.removedTabDomains = []
             schemeHandler = nil
             contentBlockingMock = nil
             privacyFeaturesMock = nil
             NSError.disableSwizzledDescription = false
-            NSApp.delegateTyped.startupPreferences.launchToCustomHomePage = false
 
-            NSApp.delegateTyped.tabsPreferences.pinnedTabsMode = .separate
+            savedPreferences?.restore()
+            savedPreferences = nil
+            UserDefaults.standard.replaceArgumentDomain(with: savedArgumentDomain ?? [:])
+            savedArgumentDomain = nil
             (NSApp.delegateTyped.featureFlagger as? MockFeatureFlagger)?.featuresStub[FeatureFlag.addressBarIMEConfirmFix.rawValue] = nil
 
             HTTPStubs.removeAllStubs()
@@ -479,8 +527,6 @@ class AddressBarTests: XCTestCase {
 
     @MainActor
     func testWhenSwitchingBetweenTabsWithTypedValue_typedValueIsPreserved() async throws {
-        throw XCTSkip("Flaky test")
-
         let viewModel = TabCollectionViewModel(tabCollection: TabCollection(tabs: [
             Tab(content: .newtab, privacyFeatures: privacyFeaturesMock, maliciousSiteDetector: MockMaliciousSiteProtectionManager()),
             Tab(content: .settings(pane: .about), privacyFeatures: privacyFeaturesMock, maliciousSiteDetector: MockMaliciousSiteProtectionManager()),
@@ -1299,6 +1345,46 @@ private extension NSWindow {
             }
 
         return expectation
+    }
+
+}
+
+/// App preferences modified by the tests, restored on tear down.
+@MainActor
+private struct SavedPreferences {
+    let customHomePageURL: String
+    let launchToCustomHomePage: Bool
+    let pinnedTabsMode: PinnedTabsMode
+    let showFullURL: Bool
+    let showAutocompleteSuggestions: Bool
+
+    init() {
+        customHomePageURL = NSApp.delegateTyped.startupPreferences.customHomePageURL
+        launchToCustomHomePage = NSApp.delegateTyped.startupPreferences.launchToCustomHomePage
+        pinnedTabsMode = NSApp.delegateTyped.tabsPreferences.pinnedTabsMode
+        showFullURL = NSApp.delegateTyped.appearancePreferences.showFullURL
+        showAutocompleteSuggestions = NSApp.delegateTyped.searchPreferences.showAutocompleteSuggestions
+    }
+
+    func restore() {
+        NSApp.delegateTyped.startupPreferences.customHomePageURL = customHomePageURL
+        NSApp.delegateTyped.startupPreferences.launchToCustomHomePage = launchToCustomHomePage
+        NSApp.delegateTyped.tabsPreferences.pinnedTabsMode = pinnedTabsMode
+        NSApp.delegateTyped.appearancePreferences.showFullURL = showFullURL
+        NSApp.delegateTyped.searchPreferences.showAutocompleteSuggestions = showAutocompleteSuggestions
+    }
+}
+
+private extension UserDefaults {
+
+    func overrideValuesInArgumentDomain(_ values: [String: Any]) {
+        replaceArgumentDomain(with: volatileDomain(forName: UserDefaults.argumentDomain).merging(values) { $1 })
+    }
+
+    func replaceArgumentDomain(with argumentDomain: [String: Any]) {
+        // `setVolatileDomain` doesn‘t replace an existing domain
+        removeVolatileDomain(forName: UserDefaults.argumentDomain)
+        setVolatileDomain(argumentDomain, forName: UserDefaults.argumentDomain)
     }
 
 }

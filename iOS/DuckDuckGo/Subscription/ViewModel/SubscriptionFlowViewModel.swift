@@ -32,11 +32,13 @@ import Persistence
 enum SubscriptionFlowType {
     case firstPurchase
     case planUpdate
+    case cancellation
 
     var navigationTitle: String {
         switch self {
         case .firstPurchase: return UserText.subscriptionTitle
         case .planUpdate: return UserText.subscriptionPlansTitle
+        case .cancellation: return UserText.subscriptionCancelSubscription
         }
     }
 
@@ -44,10 +46,14 @@ enum SubscriptionFlowType {
         self == .firstPurchase
     }
 
+    var reportsHTTPErrors: Bool {
+        self == .cancellation
+    }
+
     var impressionPixel: Pixel.Event? {
         switch self {
         case .firstPurchase: return .subscriptionOfferScreenImpression
-        case .planUpdate: return nil
+        case .planUpdate, .cancellation: return nil
         }
     }
 }
@@ -62,6 +68,7 @@ final class SubscriptionFlowViewModel: ObservableObject {
     weak var dataBrokerProtectionViewControllerProvider: DBPIOSInterface.DataBrokerProtectionViewControllerProvider?
     let initialURL: URL
     let flowType: SubscriptionFlowType
+    var navigationErrorPublisher: Published<Error?>.Publisher { webViewModel.$navigationError }
 
     private let urlOpener: URLOpener
     private let featureFlagger: FeatureFlagger
@@ -193,6 +200,8 @@ final class SubscriptionFlowViewModel: ObservableObject {
             return .purchase
         case .planUpdate:
             return .plans
+        case .cancellation:
+            return .cancellationFlow
         }
     }
 
@@ -231,6 +240,7 @@ final class SubscriptionFlowViewModel: ObservableObject {
 
         self.webViewSettings = AsyncHeadlessWebViewSettings(bounces: false,
                                                             allowedDomains: allowedDomains,
+                                                            reportsHTTPErrors: flowType.reportsHTTPErrors,
                                                             userScriptsDependencies: nil,
                                                             featureFlagger: featureFlagger)
 

@@ -76,6 +76,13 @@ protocol AIChatContextualSheetCoordinatorDelegate: AnyObject {
 
     func aiChatContextualSheetCoordinator(_ coordinator: AIChatContextualSheetCoordinator,
                                           didSubmitDuckAIPromptWithOrigin origin: AIChatEntryPointSource?)
+
+    /// The sheet or floating input left the screen; `chatDeleted` when it closed because its chat was deleted.
+    /// Handing over between the two is not a close.
+    func aiChatContextualSheetCoordinatorDidCloseSurface(_ coordinator: AIChatContextualSheetCoordinator, chatDeleted: Bool)
+
+    /// The user started a new chat from the sheet, an entry into Duck.ai like any other New Chat.
+    func aiChatContextualSheetCoordinatorDidStartNewChat(_ coordinator: AIChatContextualSheetCoordinator)
 }
 
 /// Coordinates the presentation and lifecycle of the contextual AI chat sheet.
@@ -94,6 +101,7 @@ final class AIChatContextualSheetCoordinator {
     private let featureFlagger: FeatureFlagger
     private let unifiedToggleInputFeature: UnifiedToggleInputFeatureProviding
     private let floatingInputFeature: AIChatContextualFloatingInputFeatureProviding
+    private let isPad: Bool
     private let attachMoreTabsFeature: AIChatContextualAttachMoreTabsFeatureProviding
     private let duckAiNativeStorageHandler: DuckAiNativeStorageHandling?
     private let duckAiFireModeStorageHandler: DuckAiNativeStorageHandling?
@@ -153,13 +161,17 @@ final class AIChatContextualSheetCoordinator {
     /// state-aware glyph and respond to swipe-to-dismiss.
     @Published private(set) var isSheetPresented: Bool = false
 
+    /// Set while New Chat swaps the sheet for the floating input, so the swap is not reported as a close.
+    private var isHandingOverToFloatingInput = false
+
     /// Whether the sheet is presented and actively observing page context updates.
     private var isActivelyObservingContext: Bool {
         contextUpdateCancellable != nil
     }
 
+    /// iPad keeps its inline address-bar input, but its contextual sheet and sidebar use the same UTI as iPhone.
     private var isWebUTIEnabled: Bool {
-        unifiedToggleInputFeature.isAvailable
+        unifiedToggleInputFeature.isAvailable || isPad
     }
 
     private var persistedChatIDs: Set<String> = []
@@ -256,6 +268,7 @@ final class AIChatContextualSheetCoordinator {
          unifiedToggleInputFeature: UnifiedToggleInputFeatureProviding = UnifiedToggleInputFeature(),
          floatingUIManager: FloatingUIManaging? = nil,
          floatingInputFeature: AIChatContextualFloatingInputFeatureProviding = AIChatContextualFloatingInputFeature(),
+         isPad: Bool = UIDevice.current.userInterfaceIdiom == .pad,
          pageContextHandler: AIChatPageContextHandling,
          tabURLPublishers: AIChatTabURLPublishers,
          isFireTab: Bool = false,
@@ -280,6 +293,7 @@ final class AIChatContextualSheetCoordinator {
             isFloatingUIFeatureEnabled: featureFlagger.isFloatingUIFeatureEnabled()
         )
         self.floatingInputFeature = floatingInputFeature
+        self.isPad = isPad
         self.attachMoreTabsFeature = AIChatContextualAttachMoreTabsFeature(featureFlagger: featureFlagger, aiChatSettings: aiChatSettings)
         self.pageContextHandler = pageContextHandler
         self.tabURLPublishers = tabURLPublishers
@@ -537,6 +551,7 @@ final class AIChatContextualSheetCoordinator {
         case .systemTeardown:
             controller.removeWithoutAnimation()
         }
+        delegate?.aiChatContextualSheetCoordinatorDidCloseSurface(self, chatDeleted: false)
         selectionJourneyInstrumentation.surfaceDismissed()
         stopObservingContextUpdates()
         sessionState.handleSheetDismissed()
@@ -824,6 +839,9 @@ final class AIChatContextualSheetCoordinator {
     private func handleSheetDismissed() {
         guard isSheetPresented else { return }
         isSheetPresented = false
+        if !isHandingOverToFloatingInput {
+            delegate?.aiChatContextualSheetCoordinatorDidCloseSurface(self, chatDeleted: false)
+        }
         persistentUTIHost?.endPresentation()
         selectionJourneyInstrumentation.surfaceDismissed()
         stopObservingContextUpdates()
@@ -841,6 +859,9 @@ final class AIChatContextualSheetCoordinator {
         persistentUTIHost?.discardTabAttachments()
         selectionJourneyInstrumentation.selectionsCleared(reason: reason)
         sheetViewController?.notifySheetDismissed()
+        if isSheetPresented {
+            delegate?.aiChatContextualSheetCoordinatorDidCloseSurface(self, chatDeleted: reason == .chatCleared)
+        }
         isSheetPresented = false
         sheetViewController = nil
         persistentUTIHost = nil
@@ -1503,13 +1524,16 @@ extension AIChatContextualSheetCoordinator: AIChatContextualSheetViewControllerD
 
     func aiChatContextualSheetViewControllerDidRequestNewChat(_ viewController: AIChatContextualSheetViewController) {
         resetToNativeInputState()
+        delegate?.aiChatContextualSheetCoordinatorDidStartNewChat(self)
 
         // A fresh chat starts on the floating input, not the sheet's own start surface.
         guard floatingInputFeature.isAvailable,
               let presenter = viewController.presentingViewController else { return }
+        isHandingOverToFloatingInput = true
         dismissSurface(of: viewController) { [weak self] in
             Task { @MainActor in
                 await self?.presentFloatingInput(from: presenter)
+                self?.isHandingOverToFloatingInput = false
             }
         }
     }

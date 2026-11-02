@@ -112,7 +112,9 @@ class TabsBarViewController: UIViewController {
     }
 
     lazy var fireButton: UIButton = {
-        createButton(image: DesignSystemImages.Glyphs.Size24.fireSolid)
+        let button = createButton(image: DesignSystemImages.Glyphs.Size24.fireSolid)
+        button.accessibilityIdentifier = "Browser.Toolbar.Button.Fire"
+        return button
     }()
 
     lazy var addTabButton: UIButton = {

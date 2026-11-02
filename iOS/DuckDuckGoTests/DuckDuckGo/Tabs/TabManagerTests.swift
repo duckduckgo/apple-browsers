@@ -754,7 +754,6 @@ final class TabManagerTests: XCTestCase {
                           (refresh: false, hasURL: true), (refresh: false, hasURL: false)]
         for retryCase in retryCases {
             let webViewReleased = expectation(description: "Retry web view released")
-            let contentControllerReleased = expectation(description: "Retry content controller released")
             try autoreleasepool {
                 let controller = TabViewController.fake(
                     customWebView: { InitialPromptRetryWebView(frame: .zero, configuration: $0) },
@@ -767,9 +766,7 @@ final class TabManagerTests: XCTestCase {
                 )
                 guard controller.devicePlatform.isIphone else { throw XCTSkip("Tab attachments require iPhone") }
                 let webView = try XCTUnwrap(controller.webView as? InitialPromptRetryWebView)
-                let contentController = webView.configuration.userContentController
                 webView.onDeinit { webViewReleased.fulfill() }
-                contentController.onDeinit { contentControllerReleased.fulfill() }
                 let navigationSource = WKWebView()
                 let url = URL(string: "https://duck.ai/chat")!
                 webView.currentURL = retryCase.hasURL ? url : nil
@@ -815,8 +812,47 @@ final class TabManagerTests: XCTestCase {
                 XCTAssertEqual(consumptionCount, 1)
                 XCTAssertFalse(controller.isProtectedFromCacheEviction)
             }
-            await fulfillment(of: [webViewReleased, contentControllerReleased], timeout: 3.0)
+            await fulfillment(of: [webViewReleased], timeout: 3.0)
         }
+    }
+
+    func testControllerReleaseCancelsContentBlockingSubscriptionAndRemovesUserScripts() async throws {
+        let assetsSubject = PassthroughSubject<ContentBlockingUpdating.NewContent, Never>()
+        var subscriptionCount = 0
+        var cancellationCount = 0
+        let assetsPublisher = assetsSubject.handleEvents(
+            receiveSubscription: { _ in subscriptionCount += 1 },
+            receiveCancel: { cancellationCount += 1 }
+        ).eraseToAnyPublisher()
+        let webViewReleased = expectation(description: "Closed tab web view released")
+        weak var releasedController: TabViewController?
+
+        try autoreleasepool {
+            let contentController = try autoreleasepool {
+                let controller = TabViewController.fake(
+                    customWebView: { InitialPromptRetryWebView(frame: .zero, configuration: $0) },
+                    specialErrorPageNavigationHandler: SpecialErrorPageNavigationHandler(
+                        maliciousSiteProtectionNavigationHandler: MaliciousSiteProtectionNavigationHandler(
+                            maliciousSiteProtectionManager: MockMaliciousSiteProtectionManager()
+                        )
+                    ),
+                    contentBlockingAssetsPublisher: assetsPublisher
+                )
+                releasedController = controller
+                let webView = try XCTUnwrap(controller.webView)
+                webView.onDeinit { webViewReleased.fulfill() }
+                let contentController = webView.configuration.userContentController
+                XCTAssertFalse(contentController.userScripts.isEmpty)
+                XCTAssertEqual(subscriptionCount, 1)
+                XCTAssertEqual(cancellationCount, 0)
+                return contentController
+            }
+
+            XCTAssertNil(releasedController)
+            XCTAssertEqual(cancellationCount, 1)
+            XCTAssertTrue(contentController.userScripts.isEmpty)
+        }
+        await fulfillment(of: [webViewReleased], timeout: 3.0)
     }
 
     func testControllerLeavingFailedChatDiscardsInitialPromptBeforeReturningToChat() async throws {

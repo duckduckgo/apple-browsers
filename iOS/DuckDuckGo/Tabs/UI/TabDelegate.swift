@@ -40,7 +40,7 @@ protocol TabDelegate: AnyObject {
 
     func tabDidRequestNewTab(_ tab: TabViewController)
 
-    func tabDidRequestNewVoiceChat(_ tab: TabViewController)
+    func tabDidRequestNewVoiceChat(_ tab: TabViewController, source: AIChatEntryPointSource)
 
     func newTab(reuseExisting: Bool)
 
@@ -72,6 +72,9 @@ protocol TabDelegate: AnyObject {
     func tab(_ tab: TabViewController,
              didRequestNewDuckAITabForUrl url: URL,
              entrySource: AIChatEntryPointSource?)
+
+    /// An entry into Duck.ai that the tab itself detected, reported like every other entry point.
+    func tab(_ tab: TabViewController, didReportDuckAIEntry source: AIChatEntryPointSource, opensNewTab: Bool, hasPrompt: Bool)
 
     /// A navigation the page started into Duck.ai from a page native attributes, today the DuckDuckGo homepage.
     /// Opens a page-owned tab when `opensNewTab`; either way the tab hosting the chat is stamped with `entrySource`.
@@ -233,6 +236,9 @@ protocol TabDelegate: AnyObject {
 
     func tab(_ tab: TabViewController, didSubmitDuckAIPromptWithOrigin origin: AIChatEntryPointSource?)
 
+    /// The tab's contextual sheet or floating input left the screen; `chatDeleted` when its chat was deleted.
+    func tabDidCloseContextualDuckAI(_ tab: TabViewController, chatDeleted: Bool)
+
     func tab(_ tab: TabViewController, didCommitDuckAINavigationChangingChat didChangeChat: Bool)
 }
 
@@ -258,11 +264,13 @@ extension TabDelegate {
 
     func tabDidFinishNavigation(_ tab: TabViewController) {}
 
-    func tabDidRequestNewVoiceChat(_ tab: TabViewController) {}
+    func tabDidRequestNewVoiceChat(_ tab: TabViewController, source: AIChatEntryPointSource) {}
 
     func tab(_ tab: TabViewController, didFailDuckAINavigationFor url: URL, error: Error) {}
 
     func tab(_ tab: TabViewController, didSubmitDuckAIPromptWithOrigin origin: AIChatEntryPointSource?) {}
+
+    func tabDidCloseContextualDuckAI(_ tab: TabViewController, chatDeleted: Bool) {}
 
     func tab(_ tab: TabViewController, didCommitDuckAINavigationChangingChat didChangeChat: Bool) {}
 

@@ -489,12 +489,15 @@ struct Launching: LaunchingHandling {
         )
 #endif
 
+        AppDependencyProvider.shared.mainMenuService?.requestRebuild()
+
         logAppLaunchTime()
         // Keep this init method minimal and think twice before adding anything here.
         // - Use AppConfiguration for one-time setup.
         // - Use a service for functionality that persists throughout the app's lifecycle.
         // More details: https://app.asana.com/0/1202500774821704/1209445353536498/f
         // For a broader overview: https://app.asana.com/0/1202500774821704/1209445353536490/f
+
     }
 
     private static func makeNativeStorageHandler(featureFlagger: FeatureFlagger,
@@ -662,6 +665,14 @@ struct DuckAiNativeStoragePixelAdapter: DuckAiNativeStoragePixelFiring {
         case .lastUsedReasoningModeParseError(let error):
             PixelKit.fire(Pixel.Event.duckAiNativeStorageLastUsedReasoningModeParseError.withError(error),
                           frequency: .dailyAndStandard)
+        case .invalidValue(let invalidValue):
+            PixelKit.fire(DuckAiNativeStorageInvalidValuePixel(parameters: invalidValue.parameters), frequency: .dailyAndCount)
         }
     }
+}
+
+struct DuckAiNativeStorageInvalidValuePixel: PixelKit.Event {
+    let parameters: [String: String]?
+    var name: String { DuckAiNativeStorageInvalidValue.pixelName }
+    var standardParameters: [PixelKitStandardParameter]? { nil }
 }

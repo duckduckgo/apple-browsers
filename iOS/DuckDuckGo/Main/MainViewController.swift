@@ -1282,7 +1282,7 @@ class MainViewController: UIViewController {
                 pixelFiring?.fire(Pixel.Event.swipeTabsUsedDaily, frequency: .legacyDailyNoSuffix)
                 newTabPageSessionInstrumentation.visitEnded(terminalAction: .swipeToOtherTab)
                 postIdleSessionInstrumentation.sessionEnded(reason: .tabSwiped)
-                currentTab?.aiChatContextualSheetCoordinator.tabWillLeaveScreen()
+                currentTabWillLeaveScreen(.tabSwitched)
                 if tab.isAITab {
                     // Before selecting, so the entry attaches to this tab when it is shown.
                     fireAIChatEntryPointPixel(source: .tabSwipe, opensNewTab: false, hasPrompt: false)
@@ -1296,7 +1296,7 @@ class MainViewController: UIViewController {
         } newTab: { [weak self] in
             PixelKit.fire(Pixel.Event.swipeToOpenNewTab)
             self?.postIdleSessionInstrumentation.sessionEnded(reason: .tabSwiped)
-            self?.currentTab?.aiChatContextualSheetCoordinator.tabWillLeaveScreen()
+            self?.currentTabWillLeaveScreen(.newTabOpened)
             self?.newTab()
         } onSwipeStarted: { [weak self] in
             self?.rememberNewTabPageInputFocusForTabSwitch()
@@ -4321,9 +4321,8 @@ class MainViewController: UIViewController {
         // Tear down active editing before building the new tab; non-animated so its collapse doesn't race the new tab's focus animation.
         dismissOmniBar(animated: false)
         hideNotificationBarIfBrokenSitePromptShown()
-        currentTab?.aiChatContextualSheetCoordinator.tabWillLeaveScreen()
+        currentTabWillLeaveScreen(.newTabOpened)
 
-        recordDuckAISessionPendingExit(.newTabOpened)
         let previousTab = tabManager.current()
         dismissSystemFindNavigator(for: previousTab)
         currentTab?.dismiss()

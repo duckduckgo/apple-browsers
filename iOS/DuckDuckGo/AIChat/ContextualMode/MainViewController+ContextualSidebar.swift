@@ -68,6 +68,12 @@ extension MainViewController: AIChatContextualSidebarHosting {
                                                 hiddenConstraint: hidden)
     }
 
+    /// A sidebar leaving with its tab ends the visit to Duck.ai at once, so the reason is recorded first.
+    func currentTabWillLeaveScreen(_ exitTrigger: DuckAISessionWideEventData.ExitTrigger) {
+        recordDuckAISessionPendingExit(exitTrigger)
+        currentTab?.aiChatContextualSheetCoordinator.tabWillLeaveScreen()
+    }
+
     /// The sidebar sits beside the page rather than over it, so using the page or the address bar leaves it open.
     var isContextualSurfaceInSidebar: Bool {
         currentTab?.aiChatContextualSheetCoordinator.isSheetInSidebar == true

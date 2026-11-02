@@ -64,29 +64,15 @@ extension Preferences {
                     Button(UserText.autofillViewContentButtonCreditCards) {
                         model.showAutofillPopover(.cards, source: .settings)
                     }
-                    if NSApp.isSandboxed {
-                        Button(UserText.importPasswords) {
-                            model.openImportPasswordsWindow()
-                        }
-                        Button(UserText.exportLogins) {
-                            model.openExportLogins()
-                        }
+                    Button(UserText.importPasswords) {
+                        model.openImportPasswordsWindow()
+                    }
+                    Button(UserText.exportLogins) {
+                        model.openExportLogins()
                     }
 
                     Text(UserText.autofillContentStoredSecurelyInfo)
                         .foregroundColor(Color(.textSecondary))
-                }
-
-                if !NSApp.isSandboxed && shouldShowImportExportButtons {
-                    // SECTION 1: Password Manager
-                    PreferencePaneSection(UserText.autofillPasswordManager, spacing: 12) {
-                        Button(UserText.importPasswords) {
-                            model.openImportPasswordsWindow()
-                        }
-                        Button(UserText.exportLogins) {
-                            model.openExportLogins()
-                        }
-                    }
                 }
 
                 // SECTION 2: Ask to Save:

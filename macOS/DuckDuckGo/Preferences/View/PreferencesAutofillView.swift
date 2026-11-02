@@ -21,10 +21,6 @@ import PreferencesUI_macOS
 import SwiftUI
 import SwiftUIExtensions
 
-fileprivate extension Preferences.Const {
-    static let autoLockWarningOffset: CGFloat = 18
-}
-
 extension Preferences {
 
     struct AutofillView: View {
@@ -101,6 +97,7 @@ extension Preferences {
                         ToggleMenuItem(UserText.autofillAddresses, isOn: $model.askToSaveAddresses)
                         ToggleMenuItem(UserText.autofillCreditCards, isOn: $model.askToSavePaymentMethods)
                     }
+                    .disabled(model.isManagedByExtension)
                     TextMenuItemCaption(UserText.autofillAskToSaveExplanation)
                 }
 
@@ -156,6 +153,7 @@ extension Preferences {
                     .offset(x: PreferencesUI_macOS.Const.pickerHorizontalOffset)
                     TextMenuItemCaption(UserText.autofillNeverLockWarning)
                 }
+                .disabled(model.isManagedByExtension)
 
                 if Application.appDelegate.featureFlagger.isFeatureOn(.autofillPasswordsStatusBar) {
                     // SECTION 5: Menu Bar

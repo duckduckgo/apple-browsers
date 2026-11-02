@@ -172,6 +172,11 @@ final class UnifiedToggleInputViewController: UIViewController {
         }
     }
 
+    var aiChatShortcutEmptyInputMenu: UIMenu? {
+        get { inputBarView.aiChatShortcutEmptyInputMenu }
+        set { inputBarView.aiChatShortcutEmptyInputMenu = newValue }
+    }
+
     var cardPosition: UnifiedToggleInputCardPosition {
         get { inputBarView.cardPosition }
         set {
@@ -397,6 +402,10 @@ final class UnifiedToggleInputViewController: UIViewController {
         setInputMode(config.inputMode, animated: animated)
         setInactiveCardAppearance(config.inactiveAppearance)
         applyCardLayout(config.cardLayout, animated: animated)
+        // Duck.ai tabs reveal their accessories with the chrome transition (`MainViewController`).
+        if !config.isAITab {
+            setFlankingAccessoriesVisible(config.cardLayout.flankingAccessories)
+        }
     }
 
     func applyToolsPresentation(
@@ -413,8 +422,8 @@ final class UnifiedToggleInputViewController: UIViewController {
         inputBarView.applyCardLayout(layout, animated: animated)
     }
 
-    func setAITabCollapsedFooterPoseActive(_ active: Bool) {
-        inputBarView.setAITabCollapsedFooterPoseActive(active)
+    func setFlankingAccessoriesVisible(_ accessories: UnifiedToggleInputFlankingAccessories) {
+        inputBarView.setFlankingAccessoriesVisible(accessories)
     }
 
     func prepareForOmnibarEditingShow() {

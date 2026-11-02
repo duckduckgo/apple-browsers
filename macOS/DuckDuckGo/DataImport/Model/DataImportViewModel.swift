@@ -1267,7 +1267,7 @@ extension DataImportViewModel {
                                 /* profileURL: */ $0.profileURL,
                                 /* primaryPassword: */ nil)
         }), selectedDataTypes.intersects(importer.importableTypes) else {
-            if #available(macOS 15.2, *), .safari == importSource {
+            if #available(macOS 15.2, *), [.safari, .safariTechnologyPreview].contains(importSource) {
                 screen = .archiveImport(dataTypes: filteredSupportedDataTypes)
                 return
             }

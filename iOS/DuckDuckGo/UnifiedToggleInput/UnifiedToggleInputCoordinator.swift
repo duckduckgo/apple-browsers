@@ -1603,6 +1603,12 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
     /// The collapsed AI-tab fire button. Exposed for `ViewHighlighter` targeting during onboarding.
     var aiTabFireButton: UIButton { viewController.aiTabFireButton }
 
+    func setContextualCollapsedAccessories(_ accessories: UnifiedToggleInputFlankingAccessories, animated: Bool = true) {
+        guard stateMachine.contextualCollapsedAccessories != accessories else { return }
+        stateMachine.contextualCollapsedAccessories = accessories
+        viewController.apply(computeRenderState().viewConfig, animated: animated)
+    }
+
     /// Locks or unlocks the input bar during the Duck.ai fire onboarding path.
     /// When locked the text field cannot be activated and the collapsed bar ignores taps.
     func setOnboardingControlsLocked(_ locked: Bool) {
@@ -1629,6 +1635,10 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
 
     func updateAIChatShortcutAvailability(_ available: Bool) {
         viewController.handler.isAIChatShortcutAvailable = available
+    }
+
+    func updateAIChatShortcutEmptyInputMenu(_ menu: UIMenu?) {
+        viewController.aiChatShortcutEmptyInputMenu = menu
     }
 
     func updateIsFireTab(_ isFireTab: Bool) {
@@ -1786,7 +1796,10 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
 
     private func commitCurrentToggleState() {
         committedInputMode = inputMode
-        stateStore.commitToggleMode(inputMode)
+        // Only the address bar's toggle is the user's choice; a contextual chat has none and is always Duck.ai.
+        if host == .omnibar {
+            stateStore.commitToggleMode(inputMode)
+        }
         delegate?.unifiedToggleInputDidCommitMode(inputMode)
     }
 

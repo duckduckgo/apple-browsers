@@ -30,7 +30,7 @@ struct MainMenuTests {
         let spec = MainMenuSpec(isEnabled: enabled, idiom: idiom)
         let availability = MenuCommandAvailability(state: .init(shortcutsEnabled: true, presentation: .browser))
         let commands = MainMenuBuilder().keyCommands(for: spec, from: [], availability: availability)
-        if enabled && idiom == .pad {
+        if registersInMenuBar(enabled: enabled, idiom: idiom) {
             #expect(spec.shortcutRegistration == .menu)
             #expect(commands.isEmpty)
         } else {
@@ -42,7 +42,7 @@ struct MainMenuTests {
             #expect(settings.modifierFlags == .command)
             #expect(settings.wantsPriorityOverSystemBehavior)
         }
-        #expect(spec.removedMenus == (enabled && idiom == .pad ? [.format] : []))
+        #expect(spec.removedMenus == (registersInMenuBar(enabled: enabled, idiom: idiom) ? [.format] : []))
     }
 
     @available(iOS 16, macOS 13, *)
@@ -82,8 +82,8 @@ struct MainMenuTests {
         let shared = commands.filter {
             $0.action == #selector(MainViewController.keyboardSettings) && $0.input == "," && $0.modifierFlags == .command
         }
-        #expect(shared.count == (enabled && idiom == .pad ? 0 : 1))
-        #expect(commands.count == (enabled && idiom == .pad ? 2 : 3))
+        #expect(shared.count == (registersInMenuBar(enabled: enabled, idiom: idiom) ? 0 : 1))
+        #expect(commands.count == (registersInMenuBar(enabled: enabled, idiom: idiom) ? 2 : 3))
     }
 
     @available(iOS 16, macOS 13, *)
@@ -103,7 +103,7 @@ struct MainMenuTests {
             flagger.enabledFeatureFlags = enabled ? [.ipadMenuBar] : []
             flagger.triggerUpdate()
             _ = await iterator.next()
-            #expect(service.spec.removedMenus == (enabled ? [.format] : []))
+            #expect(service.spec.removedMenus == (registersInMenuBar(enabled: enabled, idiom: .pad) ? [.format] : []))
         }
         #expect(rebuildCount == 2)
         flagger.triggerUpdate()
@@ -126,5 +126,10 @@ struct MainMenuTests {
         #expect(rebuildCount == 0)
         #expect(service.spec.removedMenus.isEmpty)
         #expect(service.spec.shortcutRegistration == .responder)
+    }
+
+    private func registersInMenuBar(enabled: Bool, idiom: UIUserInterfaceIdiom) -> Bool {
+        guard enabled, idiom == .pad, #available(iOS 26.0, *) else { return false }
+        return true
     }
 }

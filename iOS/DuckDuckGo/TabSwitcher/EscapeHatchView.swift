@@ -17,6 +17,7 @@
 //  limitations under the License.
 //
 
+import DesignResourcesKit
 import SwiftUI
 
 /// Bundles the "Return to tab" card and the tab switcher pill so callers render them as a single unit.
@@ -61,19 +62,19 @@ struct EscapeHatchView: View {
     }
 }
 
-/// Adds the redesigned module's material under a capsule control, shown only while it overlaps
-/// `backdropFrame`, so the control looks unchanged when nothing is behind it.
+/// Adds the redesigned module's material (opaque with Reduce Transparency) under a capsule control,
+/// shown only while it overlaps `backdropFrame`, so the control looks unchanged when nothing is behind it.
 struct EscapeHatchBackdropBlur: ViewModifier {
     let backdropFrame: CGRect?
     @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
     @State private var frame: CGRect = .zero
 
     func body(content: Content) -> some View {
-        let isBlurring = !reduceTransparency && backdropFrame?.intersects(frame) == true
+        let isBlurring = backdropFrame?.intersects(frame) == true
         content.background {
             GeometryReader { proxy in
                 Capsule()
-                    .fill(.ultraThinMaterial)
+                    .fill(reduceTransparency ? AnyShapeStyle(Color(designSystemColor: .surfaceSecondary)) : AnyShapeStyle(.ultraThinMaterial))
                     .opacity(isBlurring ? 1 : 0)
                     .animation(.easeInOut(duration: 0.2), value: isBlurring)
                     .onAppear { frame = proxy.frame(in: .global) }

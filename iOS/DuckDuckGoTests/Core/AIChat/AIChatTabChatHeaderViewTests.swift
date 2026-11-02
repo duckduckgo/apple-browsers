@@ -95,6 +95,40 @@ final class AIChatTabChatHeaderViewTests: XCTestCase {
         XCTAssertEqual(header.chatListButtonPill.alpha, 1, accuracy: 0.001)
     }
 
+    func testNewTabActionsLayout_hasNoCloseButton() {
+        let header = AIChatTabChatHeaderView(isFireModeEnabled: true, shouldShowImageGeneration: true, layout: .newTabActions)
+
+        XCTAssertNil(header.closeButtonPill.superview)
+        XCTAssertNotNil(header.chatListButtonPill.superview)
+    }
+
+    func testStandardLayout_keepsCloseButton() {
+        let header = AIChatTabChatHeaderView(isFireModeEnabled: true, shouldShowImageGeneration: true, layout: .standard)
+
+        XCTAssertNotNil(header.closeButtonPill.superview)
+    }
+
+    func testNewTabActionsLayout_plusMenuListsNewTabSectionThenSearch() throws {
+        let header = AIChatTabChatHeaderView(isFireModeEnabled: true, shouldShowImageGeneration: true, layout: .newTabActions)
+
+        let sections = try XCTUnwrap(header.plusMenu?.children as? [UIMenu])
+
+        XCTAssertEqual(sections.map(\.title), [UserText.aiChatHeaderNewTabSectionTitle, ""])
+        XCTAssertEqual(sections.map { $0.children.compactMap { ($0 as? UIAction)?.title } }, [
+            [UserText.aiChatHeaderNewTabChatTitle, UserText.aiChatHeaderNewTabVoiceChatTitle, UserText.aiChatHeaderNewTabImageTitle],
+            [UserText.aiChatHeaderNewTabSearchTitle],
+        ])
+    }
+
+    func testNewTabActionsLayout_plusMenuOmitsImageWhenImageGenerationIsHidden() throws {
+        let header = AIChatTabChatHeaderView(isFireModeEnabled: true, shouldShowImageGeneration: false, layout: .newTabActions)
+
+        let sections = try XCTUnwrap(header.plusMenu?.children as? [UIMenu])
+
+        XCTAssertEqual(sections.first?.children.compactMap { ($0 as? UIAction)?.title },
+                       [UserText.aiChatHeaderNewTabChatTitle, UserText.aiChatHeaderNewTabVoiceChatTitle])
+    }
+
     func testFreeIneligibleHeaderShowsNeutralTitleWithoutUpgradeImpressionOrAction() throws {
         let (header, delegate) = makeHeaderWithSpyDelegate()
         header.setContainerVisible(true)

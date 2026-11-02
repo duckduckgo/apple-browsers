@@ -977,6 +977,7 @@ final class MainMenu: NSMenu {
                 NSMenuItem(title: "Shift New Tab daily impression", action: #selector(MainViewController.debugShiftNewTabOpeningDate))
                 shiftNextStepsDaysMenuItem
                     .withAccessibilityIdentifier(AccessibilityIdentifiers.NewTabPage.shiftMaxDaysMenuItem)
+                NSMenuItem(title: "Reset Duck.ai Suggested Prompts", action: #selector(AppDelegate.debugResetSuggestedPrompts))
             }.withAccessibilityIdentifier(AccessibilityIdentifiers.NewTabPage.newTabPageDebugMenu)
             NSMenuItem(title: "CPM") {
                 NSMenuItem(title: "Opt-in dialog") {

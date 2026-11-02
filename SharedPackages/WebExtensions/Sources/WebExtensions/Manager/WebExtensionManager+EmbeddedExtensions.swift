@@ -16,6 +16,7 @@
 //  limitations under the License.
 //
 
+import DDGError
 import Foundation
 import os.log
 import WebKit
@@ -25,9 +26,25 @@ import WebKit
 @available(macOS 15.4, iOS 18.4, *)
 extension WebExtensionManager {
 
+    /// Prepares only CPM at launch. The full load starts scriptlet handling after all contexts load.
+    @MainActor
+    public func syncCPMExtensionBeforeLoad(isEnabled: Bool) async {
+        guard !isLoadingInstalledExtensions else { return }
+        connectEventsListener()
+        if isEnabled {
+            guard let descriptor = EmbeddedWebExtensionRegistry.descriptor(for: .embedded) else { return }
+            await syncEmbeddedExtension(descriptor, startScriptlets: false, beforeLoad: true)
+        } else {
+            if let installed = installedEmbeddedExtension(for: .embedded) {
+                await unloadGuard.awaitSettled(context(for: installed.uniqueIdentifier))
+            }
+            uninstallEmbeddedExtension(type: .embedded)
+        }
+    }
+
     /// Syncs embedded extensions from the registry based on the enabled types.
     /// Installs/upgrades enabled extensions and uninstalls disabled ones.
-    /// Call this after `loadInstalledExtensions()`, or use `loadAndSyncExtensions(enabledTypes:)`.
+    /// At launch, use the lifecycle coordinator so only CPM can be prepared before the full load.
     /// - Parameter enabledTypes: The set of extension types that should be installed.
     ///   Extensions not in this set will be uninstalled if previously installed.
     @MainActor
@@ -37,15 +54,15 @@ extension WebExtensionManager {
             return
         }
 
+        // Sync can create the first context at launch, so its events must already reach the controller.
+        connectEventsListener()
         Logger.webExtensions.debug("🔄 Syncing embedded extensions...")
 
         for descriptor in EmbeddedWebExtensionRegistry.all {
             if enabledTypes.contains(descriptor.type) {
                 await syncEmbeddedExtension(descriptor)
             } else {
-                // A launch loads every installed extension before this sync runs, so a type that is
-                // disabled gets unloaded seconds after loading — the same window the upgrade branch
-                // above waits out.
+                // A runtime disable may unload a context whose DNR load is still settling.
                 if let installed = installedEmbeddedExtension(for: descriptor.type) {
                     await unloadGuard.awaitSettled(context(for: installed.uniqueIdentifier))
                 }
@@ -73,9 +90,12 @@ extension WebExtensionManager {
     }
 
     @MainActor
-    private func syncEmbeddedExtension(_ descriptor: EmbeddedWebExtensionDescriptor) async {
+    private func syncEmbeddedExtension(_ descriptor: EmbeddedWebExtensionDescriptor,
+                                       startScriptlets: Bool = true,
+                                       beforeLoad: Bool = false) async {
         guard let bundledURL = bundledExtensionURL(descriptor) else {
             Logger.webExtensions.error("❌ Embedded extension not found in bundle: \(descriptor.resourceFilename)")
+            fireEmbeddedSyncError(EmbeddedSyncError.missingBundle, type: descriptor.type, beforeLoad: beforeLoad)
             return
         }
 
@@ -84,7 +104,7 @@ extension WebExtensionManager {
 
             guard bundledMetadata.type == descriptor.type else {
                 Logger.webExtensions.error("❌ Bundled extension type mismatch: expected \(descriptor.type.rawValue), got \(bundledMetadata.type?.rawValue ?? "nil")")
-                return
+                throw EmbeddedSyncError.typeMismatch
             }
 
             if let installed = installedEmbeddedExtension(for: descriptor.type) {
@@ -93,9 +113,22 @@ extension WebExtensionManager {
                     let oldVersion = installed.version
                     let oldIdentifier = installed.uniqueIdentifier
 
+                    // With upgrade-before-load enabled, launch sync replaces CPM before its old
+                    // context loads, so the replacement can keep its webkit-extension://<UUID>/ origin.
+                    // The old context may already be loaded with the flag off, or if a failed
+                    // pre-load upgrade falls back to loading it before the post-load sync retries.
+                    // Installation then loads the new context before unloading the old one; use
+                    // separate origins so their service-worker registrations do not overlap.
+                    let origin = isCPMUpgradeBeforeLoadEnabled && context(for: oldIdentifier) == nil
+                        ? cpmBaseURLPolicy.originForUpgrade(of: installed) : nil
+
                     // Install before uninstalling: the versions have distinct identifiers and can
                     // coexist, so a failed upgrade leaves the old version installed and working.
-                    try await installEmbeddedExtension(from: bundledURL, type: descriptor.type, requiresExtraction: bundledMetadata.requiresExtraction)
+                    try await installEmbeddedExtension(from: bundledURL,
+                                                       type: descriptor.type,
+                                                       requiresExtraction: bundledMetadata.requiresExtraction,
+                                                       cpmOriginIdentifier: origin,
+                                                       startScriptlets: startScriptlets)
                     cpmDiagnosticsRecorder?.extensionDidUpdate(type: descriptor.type)
 
                     // Only unload the old version once its own load has settled.
@@ -110,22 +143,42 @@ extension WebExtensionManager {
 
                     // Uninstalling the old version disabled scriptlet handling for the type (it's
                     // keyed by type, not identifier), so re-enable it for the now-current version.
-                    await scriptletCoordinator?.onExtensionEnabled(for: descriptor.type)
+                    if startScriptlets {
+                        await scriptletCoordinator?.onExtensionEnabled(for: descriptor.type)
+                    }
 
                     pixelFiring.fire(.embeddedUpgraded(type: descriptor.type, fromVersion: oldVersion, toVersion: bundledMetadata.version))
                 } else {
                     Logger.webExtensions.debug("👌 Embedded extension \(descriptor.type.rawValue) is up to date (v\(installed.version ?? "?"))")
-                    await scriptletCoordinator?.onExtensionEnabled(for: descriptor.type)
+                    if startScriptlets {
+                        await scriptletCoordinator?.onExtensionEnabled(for: descriptor.type)
+                    }
                 }
             } else {
                 Logger.webExtensions.info("📦 Installing embedded extension \(descriptor.type.rawValue) v\(bundledMetadata.version ?? "?")")
-                try await installEmbeddedExtension(from: bundledURL, type: descriptor.type, requiresExtraction: bundledMetadata.requiresExtraction)
+                try await installEmbeddedExtension(from: bundledURL,
+                                                   type: descriptor.type,
+                                                   requiresExtraction: bundledMetadata.requiresExtraction,
+                                                   startScriptlets: startScriptlets)
                 pixelFiring.fire(.embeddedInstalled(type: descriptor.type))
             }
         } catch {
             Logger.webExtensions.error("❌ Failed to sync embedded extension \(descriptor.type.rawValue): \(error.localizedDescription)")
-            pixelFiring.fire(.embeddedInstallError(type: descriptor.type, error: error))
+            fireEmbeddedSyncError(error, type: descriptor.type, beforeLoad: beforeLoad)
         }
+    }
+
+    @MainActor
+    private func fireEmbeddedSyncError(_ error: Error, type: DuckDuckGoWebExtensionType, beforeLoad: Bool) {
+        let reportedError: Error
+        if type == .embedded && beforeLoad {
+            // Mark only the telemetry copy; retain the original code, userInfo and underlying chain.
+            let original = error as NSError
+            reportedError = NSError(domain: original.domain + ".before_load", code: original.code, userInfo: original.userInfo)
+        } else {
+            reportedError = error
+        }
+        pixelFiring.fire(.embeddedInstallError(type: type, error: reportedError))
     }
 
     /// Finds an installed extension by its embedded type.
@@ -152,12 +205,18 @@ extension WebExtensionManager {
 
     /// Installs an embedded extension from the given URL.
     @MainActor
-    private func installEmbeddedExtension(from sourceURL: URL, type: DuckDuckGoWebExtensionType, requiresExtraction: Bool) async throws {
+    private func installEmbeddedExtension(from sourceURL: URL, type: DuckDuckGoWebExtensionType,
+                                          requiresExtraction: Bool, cpmOriginIdentifier: UUID? = nil,
+                                          startScriptlets: Bool = true) async throws {
         Logger.webExtensions.debug("🔄 Installing embedded extension: \(type.rawValue)")
 
         let identifier = UUID().uuidString
         cpmBaseURLPolicy.pendingInstallations[identifier] = type
-        defer { cpmBaseURLPolicy.pendingInstallations[identifier] = nil }
+        cpmBaseURLPolicy.pendingOriginIdentifiers[identifier] = cpmOriginIdentifier
+        defer {
+            cpmBaseURLPolicy.pendingInstallations[identifier] = nil
+            cpmBaseURLPolicy.pendingOriginIdentifiers[identifier] = nil
+        }
         permissionController?.trustedInstallations.insert(identifier)
         defer { permissionController?.trustedInstallations.remove(identifier) }
         if requiresExtraction {
@@ -174,12 +233,14 @@ extension WebExtensionManager {
             let loadResult = try await loader.loadWebExtension(identifier: identifier, into: controller)
             unloadGuard.recordLoad(of: identifier)
 
+            // The policy may have rotated the pending origin while loading; persist its current value.
             let installedExtension = InstalledWebExtension(
                 uniqueIdentifier: identifier,
                 filename: loadResult.filename,
                 name: loadResult.displayName,
                 version: loadResult.version,
-                embeddedType: type
+                embeddedType: type,
+                cpmOriginIdentifier: cpmBaseURLPolicy.pendingOriginIdentifiers[identifier]
             )
 
             installationStore.add(installedExtension)
@@ -194,7 +255,9 @@ extension WebExtensionManager {
             Logger.webExtensions.info("✅ Installed embedded extension \(type.rawValue) v\(loadResult.version ?? "?")")
             notifyUpdate()
 
-            await scriptletCoordinator?.onExtensionEnabled(for: type)
+            if startScriptlets {
+                await scriptletCoordinator?.onExtensionEnabled(for: type)
+            }
         } catch {
             Logger.webExtensions.error("❌ Failed to load embedded extension '\(identifier)': \(error.localizedDescription)")
             unregisterHandlers(for: identifier)
@@ -208,4 +271,19 @@ extension WebExtensionManager {
         SemanticVersionComparator().shouldUpgrade(installedVersion: installed.version, bundledVersion: bundledVersion)
     }
 
+}
+
+private enum EmbeddedSyncError: Int, DDGError {
+    case missingBundle = 1
+    case typeMismatch = 2
+
+    static var errorDomain: String { "WebExtensionEmbeddedSync" }
+    var errorCode: Int { rawValue }
+
+    var description: String {
+        switch self {
+        case .missingBundle: return "Bundled extension was not found."
+        case .typeMismatch: return "Bundled extension type does not match the expected type."
+        }
+    }
 }

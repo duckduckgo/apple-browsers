@@ -1516,6 +1516,83 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
                       "Scheduler must not be invoked when the purchase did not complete successfully")
     }
 
+    // MARK: - Cancellation flow
+
+    func testHandlerForShowFeatureInfoIsRegistered() {
+        XCTAssertNotNil(sut.handler(forMethodNamed: "showFeatureInfo"))
+    }
+
+    func testHandlerForRequestCancellationIsRegistered() {
+        XCTAssertNotNil(sut.handler(forMethodNamed: "requestCancellation"))
+    }
+
+    @MainActor
+    func testShowFeatureInfoForwardsEachKnownEntitlement() async {
+        let message = WKScriptMessage.mock(name: "showFeatureInfo", body: "")
+        let expectations: [String: SubscriptionEntitlement] = [
+            "Network Protection": .networkProtection,
+            "Identity Theft Restoration": .identityTheftRestoration,
+            "Global Identity Theft Restoration": .identityTheftRestorationGlobal,
+            "Data Broker Protection": .dataBrokerProtection,
+            "Duck.ai": .paidAIChat
+        ]
+
+        for (feature, expected) in expectations {
+            var received: SubscriptionEntitlement?
+            sut.onShowFeatureInfo = { received = $0 }
+
+            let result = await sut.showFeatureInfo(params: ["feature": feature], original: message)
+
+            XCTAssertNil(result)
+            XCTAssertEqual(received, expected, "Unexpected entitlement for \(feature)")
+        }
+    }
+
+    @MainActor
+    func testShowFeatureInfoWithUnknownFeatureForwardsUnknown() async {
+        let message = WKScriptMessage.mock(name: "showFeatureInfo", body: "")
+        var received: SubscriptionEntitlement?
+        sut.onShowFeatureInfo = { received = $0 }
+
+        _ = await sut.showFeatureInfo(params: ["feature": "Not A Feature"], original: message)
+
+        XCTAssertEqual(received, .unknown)
+    }
+
+    @MainActor
+    func testShowFeatureInfoWithMissingParamsForwardsUnknown() async {
+        let message = WKScriptMessage.mock(name: "showFeatureInfo", body: "")
+        var received: SubscriptionEntitlement?
+        sut.onShowFeatureInfo = { received = $0 }
+
+        _ = await sut.showFeatureInfo(params: [String: Any](), original: message)
+
+        XCTAssertEqual(received, .unknown)
+    }
+
+    @MainActor
+    func testRequestCancellationCallsCallback() async {
+        let message = WKScriptMessage.mock(name: "requestCancellation", body: "")
+        var callCount = 0
+        sut.onRequestCancellation = { callCount += 1 }
+
+        let result = await sut.requestCancellation(params: [String: Any](), original: message)
+
+        XCTAssertNil(result)
+        XCTAssertEqual(callCount, 1)
+    }
+
+    @MainActor
+    func testCancellationHandlersWithoutCallbacksDoNothing() async {
+        let message = WKScriptMessage.mock(name: "requestCancellation", body: "")
+
+        let showResult = await sut.showFeatureInfo(params: ["feature": "Duck.ai"], original: message)
+        let cancelResult = await sut.requestCancellation(params: [String: Any](), original: message)
+
+        XCTAssertNil(showResult)
+        XCTAssertNil(cancelResult)
+    }
+
     // MARK: - Bridge result payloads
     //
     // These tests pin the JSON shape of the `result` payloads our handlers produce.

@@ -17,6 +17,7 @@
 //
 
 import AppKit
+import AppKitExtensions
 import SwiftUIExtensions
 
 enum GradientBackground: String, Equatable, Identifiable, CaseIterable, ColorSchemeProviding, CustomBackgroundConvertible {
@@ -67,6 +68,21 @@ enum GradientBackground: String, Equatable, Identifiable, CaseIterable, ColorSch
                 .light
         case .gradient04, .gradient05, .gradient06, .gradient07:
                 .dark
+        }
+    }
+
+    /// Flat colour the New Tab Page shows until the gradient image loads. Mirrors `fallback` in content-scope-scripts
+    /// `special-pages/pages/new-tab/app/customizer/values.js`; keep the two in sync.
+    var fallbackColor: NSColor {
+        switch self {
+        case .gradient01: NSColor(hex: "f2e5d4")!
+        case .gradient02: NSColor(hex: "d5bcd1")!
+        case .gradient0201: NSColor(hex: "f4ca78")!
+        case .gradient03: NSColor(hex: "e6a356")!
+        case .gradient04: NSColor(hex: "4448ae")!
+        case .gradient05: NSColor(hex: "a55778")!
+        case .gradient06: NSColor(hex: "222566")!
+        case .gradient07: NSColor(hex: "0e0e3d")!
         }
     }
 

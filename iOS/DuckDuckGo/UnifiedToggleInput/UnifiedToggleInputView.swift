@@ -983,6 +983,8 @@ final class UnifiedToggleInputView: UIView {
                 backdrop.topAnchor.constraint(equalTo: cardView.topAnchor),
                 backdrop.bottomAnchor.constraint(equalTo: cardView.bottomAnchor)
             ])
+            // Start at the card's size, so the first animated layout doesn't grow it from a zero frame.
+            backdrop.frame = cardView.bounds
             omnibarMaterialBackdropView = backdrop
         }
 
@@ -1001,6 +1003,7 @@ final class UnifiedToggleInputView: UIView {
                 fill.topAnchor.constraint(equalTo: cardView.topAnchor),
                 fill.bottomAnchor.constraint(equalTo: cardView.bottomAnchor)
             ])
+            fill.frame = cardView.bounds
             omnibarMaterialEditingFillView = fill
         }
 

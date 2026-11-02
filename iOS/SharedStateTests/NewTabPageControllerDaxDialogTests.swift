@@ -58,7 +58,6 @@ final class NewTabPageControllerDaxDialogTests: XCTestCase {
         let homePageConfiguration = HomePageConfiguration(remoteMessagingStore: MockRemoteMessagingStore(), subscriptionDataReporter: MockSubscriptionDataReporter(), isStillOnboarding: { true }, promptExposureReporter: MockPromptExposureReporter())
         hvc = NewTabPageViewController(
             isFocussedState: false,
-            dismissKeyboardOnScroll: false,
             tab: Tab(),
             interactionModel: MockFavoritesListInteracting(),
             homePageMessagesConfiguration: homePageConfiguration,
@@ -164,7 +163,6 @@ final class NewTabPageControllerDaxDialogTests: XCTestCase {
         NewTabPageViewController(
             isFocussedState: true,
             openedAfterIdle: openedAfterIdle,
-            dismissKeyboardOnScroll: false,
             tab: Tab(),
             interactionModel: MockFavoritesListInteracting(),
             homePageMessagesConfiguration: homePageMessagesConfiguration,

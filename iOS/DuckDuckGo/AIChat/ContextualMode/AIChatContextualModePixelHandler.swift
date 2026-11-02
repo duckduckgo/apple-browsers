@@ -30,6 +30,11 @@ protocol AIChatContextualModePixelFiring {
     func fireSessionRestored()
     func fireSheetOpenedOnDeletedChat()
 
+    // MARK: - iPad Sidebar
+    func fireSidebarOpened()
+    func fireSidebarClosed()
+    func firePromptSentOnIPad(isSidebarEnabled: Bool)
+
     // MARK: - Sheet Actions
     func fireExpandButtonTapped()
     func fireHeaderTitleTapped()
@@ -167,6 +172,20 @@ final class AIChatContextualModePixelHandler: AIChatContextualModePixelFiring {
 
     func fireSheetOpenedOnDeletedChat() {
         firePixelKitEvent(AIChatContextualSessionPixel.sheetOpenedOnDeletedChat, .dailyAndCount)
+    }
+
+    // MARK: - iPad Sidebar
+
+    func fireSidebarOpened() {
+        firePixelKitEvent(AIChatContextualSidebarPixel.opened, .dailyAndCount)
+    }
+
+    func fireSidebarClosed() {
+        firePixelKitEvent(AIChatContextualSidebarPixel.closed, .dailyAndCount)
+    }
+
+    func firePromptSentOnIPad(isSidebarEnabled: Bool) {
+        firePixelKitEvent(AIChatContextualSidebarPixel.promptSent(isSidebarEnabled: isSidebarEnabled), .dailyAndCount)
     }
 
     // MARK: - Sheet Actions
@@ -518,6 +537,28 @@ enum AIChatContextualSessionPixel: PixelKit.Event {
         switch self {
         case .sheetOpenedOnDeletedChat:
             return "aichat_contextual_sheet_opened_on_deleted_chat"
+        }
+    }
+
+    var parameters: [String: String]? { nil }
+
+    var standardParameters: [PixelKitStandardParameter]? { nil }
+}
+
+enum AIChatContextualSidebarPixel: PixelKit.Event {
+    case opened
+    case closed
+    /// Every iPad contextual prompt, named for the sidebar flag's state, so both cohorts compare whatever surface they saw.
+    case promptSent(isSidebarEnabled: Bool)
+
+    var name: String {
+        switch self {
+        case .opened:
+            return "aichat_contextual_sidebar_opened"
+        case .closed:
+            return "aichat_contextual_sidebar_closed"
+        case .promptSent(let isSidebarEnabled):
+            return "aichat_contextual_prompt_sent_sidebar_\(isSidebarEnabled ? "on" : "off")"
         }
     }
 

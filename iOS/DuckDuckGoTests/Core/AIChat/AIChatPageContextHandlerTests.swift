@@ -994,6 +994,9 @@ private final class MockContextualModePixelHandler: AIChatContextualModePixelFir
     func fireSheetDismissed(hadUnsubmittedSelections: Bool) {}
     func fireSessionRestored() {}
     func fireSheetOpenedOnDeletedChat() {}
+    func fireSidebarOpened() {}
+    func fireSidebarClosed() {}
+    func firePromptSentOnIPad(isSidebarEnabled: Bool) {}
     func firePromptDepth(_ bucket: AIChatContextualPromptDepthBucket) {}
     func firePageContextOfferShown(reason: AIChatContextualPageContextOfferReason) {}
     func firePageContextOfferAccepted(reason: AIChatContextualPageContextOfferReason) {}

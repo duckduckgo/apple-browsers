@@ -5090,14 +5090,15 @@ class MainViewController: UIViewController {
                                    opensNewTab: opensNewTab,
                                    hasPrompt: hasPrompt,
                                    voice: voice)
-        let surface = DuckAIEntryWideEventData.Surface(source: source, opensNewTab: opensNewTab)
+        let surface = DuckAIEntryWideEventData.Surface(source: source, opensNewTab: opensNewTab,
+                                                       opensInSidebar: opensContextualSurfaceInSidebar)
         // A tab entry reads its chat state once its Duck.ai tab is shown.
-        let sheetChatState: DuckAIEntryWideEventData.ChatState? = surface == .contextualSheet
+        let sheetChatState: DuckAIEntryWideEventData.ChatState? = surface.isContextual
             ? (currentTab?.hasContextualChatToReopen == true ? .existing : .new)
             : nil
         duckAIEntryInstrumentation.entryStarted(source: source, hasPrompt: hasPrompt, voice: voice, surface: surface,
                                                 chatState: chatState ?? sheetChatState)
-        if surface == .contextualSheet {
+        if surface.isContextual {
             // Gives the sheet entry the page it opened on, so it can notice that page changing later.
             reportDuckAISessionCurrentTab()
         }

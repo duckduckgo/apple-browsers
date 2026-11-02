@@ -2777,6 +2777,9 @@ private final class MockContextualModePixelHandler: AIChatContextualModePixelFir
     }
     func fireSessionRestored() { sessionRestoredFired = true }
     func fireSheetOpenedOnDeletedChat() {}
+    func fireSidebarOpened() {}
+    func fireSidebarClosed() {}
+    func firePromptSentOnIPad(isSidebarEnabled: Bool) {}
     func firePageContextOfferShown(reason: AIChatContextualPageContextOfferReason) { pageContextOfferShownReasons.append(reason) }
     func firePageContextOfferAccepted(reason: AIChatContextualPageContextOfferReason) { pageContextOfferAcceptedReasons.append(reason) }
     func fireSelectionAttached() { selectionAttachedCount += 1 }

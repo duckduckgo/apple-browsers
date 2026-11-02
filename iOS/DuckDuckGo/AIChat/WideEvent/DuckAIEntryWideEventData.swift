@@ -31,7 +31,7 @@ final class DuckAIEntryWideEventData: WideEventData {
         mobileMetaType: "ios-duckai-entry",
         // API requires both; only mobileMetaType is read on iOS.
         desktopMetaType: "macos-duckai-entry",
-        version: "1.2.0"
+        version: "1.3.0"
     )
 
     enum StatusReason: String, Codable, CaseIterable {
@@ -48,10 +48,20 @@ final class DuckAIEntryWideEventData: WideEventData {
     enum Surface: String, Codable, CaseIterable {
         case duckAITab = "duck_ai_tab"
         case contextualSheet = "contextual_sheet"
+        /// The same contextual surface, beside the page on iPad.
+        case contextualSidebar = "contextual_sidebar"
 
         /// The contextual sheet and floating input report `contextual_chat` without opening a tab.
-        init(source: AIChatEntryPointSource, opensNewTab: Bool) {
-            self = source == .contextualChat && !opensNewTab ? .contextualSheet : .duckAITab
+        init(source: AIChatEntryPointSource, opensNewTab: Bool, opensInSidebar: Bool = false) {
+            guard source == .contextualChat && !opensNewTab else {
+                self = .duckAITab
+                return
+            }
+            self = opensInSidebar ? .contextualSidebar : .contextualSheet
+        }
+
+        var isContextual: Bool {
+            self != .duckAITab
         }
     }
 

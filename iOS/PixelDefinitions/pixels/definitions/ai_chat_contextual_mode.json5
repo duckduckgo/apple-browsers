@@ -422,6 +422,34 @@
         "suffixes": ["first_daily_count", "platform", "form_factor"],
         "parameters": ["appVersion"]
     },
+    "aichat_contextual_sidebar_opened": {
+        "description": "Fired when the Duck.ai contextual surface opens beside the page in the iPad sidebar. m_aichat_contextual_sheet_opened fires with it. A tab switch returning a sidebar that left with its tab, and a window resize moving the sheet into the sidebar, do not fire it",
+        "owners": ["Bunn"],
+        "triggers": ["user_interaction"],
+        "suffixes": ["first_daily_count", "platform", "form_factor"],
+        "parameters": ["appVersion"]
+    },
+    "aichat_contextual_sidebar_closed": {
+        "description": "Fired when the Duck.ai contextual surface in the iPad sidebar closes, by the user or because its tab closed while the sidebar was away with it. m_aichat_contextual_sheet_dismissed fires with it. Switching tabs, which takes the sidebar away with its tab, does not fire it",
+        "owners": ["Bunn"],
+        "triggers": ["user_interaction", "feature_lifecycle"],
+        "suffixes": ["first_daily_count", "platform", "form_factor"],
+        "parameters": ["appVersion"]
+    },
+    "aichat_contextual_prompt_sent_sidebar_on": {
+        "description": "Fired on iPad for every prompt sent from the Duck.ai contextual input while the iPad sidebar feature flag is on, whether the surface showed as the sidebar or, in a window too narrow for it, as the sheet. Compare with aichat_contextual_prompt_sent_sidebar_off",
+        "owners": ["Bunn"],
+        "triggers": ["user_interaction"],
+        "suffixes": ["first_daily_count", "platform", "form_factor"],
+        "parameters": ["appVersion"]
+    },
+    "aichat_contextual_prompt_sent_sidebar_off": {
+        "description": "Fired on iPad for every prompt sent from the Duck.ai contextual input while the iPad sidebar feature flag is off, so the surface is always the sheet. Compare with aichat_contextual_prompt_sent_sidebar_on",
+        "owners": ["Bunn"],
+        "triggers": ["user_interaction"],
+        "suffixes": ["first_daily_count", "platform", "form_factor"],
+        "parameters": ["appVersion"]
+    },
     "debug_aichat_contextual_selection_tool_delivery_timed_out": {
         "description": "Fired when a selection-scoped Summarize or Translate prompt is dropped because the frontend never became ready within the readiness timeout, so the user sees an empty chat with no error",
         "owners": ["pikorddg"],

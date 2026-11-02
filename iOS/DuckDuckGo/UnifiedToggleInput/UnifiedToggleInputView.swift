@@ -1676,6 +1676,9 @@ final class UnifiedToggleInputView: UIView {
         guard isExpanded else { return }
 
         let showToolbar = mode == .aiChat
+        // The handler's "Ask" label reaches the toolbar a run loop late; read it now, so the revealed
+        // submit button doesn't shrink to the arrow and grow back.
+        updateSubmitButtonStyle()
         toolsToolbar.prepareForToolbarVisibilityChange(showToolbar: showToolbar)
         toolbarHeightConstraint.constant = showToolbar ? Constants.toolbarHeight : 0
         if isToggleEnabled {

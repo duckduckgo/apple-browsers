@@ -5018,7 +5018,6 @@
 		B634DBE4293C944700C3C99E /* NewWindowPolicy.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NewWindowPolicy.swift; sourceTree = "<group>"; };
 		B634DBE6293C98C500C3C99E /* FutureExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FutureExtension.swift; sourceTree = "<group>"; };
 		B637273A26CBC8AF00C8CB02 /* AuthenticationAlert.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthenticationAlert.swift; sourceTree = "<group>"; };
-		B637273C26CCF0C200C8CB02 /* OptionalExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OptionalExtension.swift; sourceTree = "<group>"; };
 		B63BDF7D27FDAA640072D75B /* PrivacyDashboardWebView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PrivacyDashboardWebView.swift; sourceTree = "<group>"; };
 		B63ED0E426BB8FB900A9DAD1 /* SharingMenu.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SharingMenu.swift; sourceTree = "<group>"; };
 		B642738127B65BAC0005DFD1 /* SecureVaultReporter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SecureVaultReporter.swift; sourceTree = "<group>"; };
@@ -9093,7 +9092,6 @@
 				B643BF1327ABF772000BACEC /* NSWorkspaceExtension.swift */,
 				B6A9E46A2614618A0067D1B9 /* OperatingSystemVersionExtension.swift */,
 				EEE50C282C38249C003DD7FF /* OptionalExtension.swift */,
-				B637273C26CCF0C200C8CB02 /* OptionalExtension.swift */,
 				B68C2FB127706E6A00BF2C7D /* ProcessExtension.swift */,
 				B684592125C93BE000DC17B6 /* Publisher.asVoid.swift */,
 				B684592625C93C0500DC17B6 /* Publishers.NestedObjectChanges.swift */,

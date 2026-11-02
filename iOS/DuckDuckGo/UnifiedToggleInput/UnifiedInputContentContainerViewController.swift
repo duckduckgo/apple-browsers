@@ -948,8 +948,10 @@ final class UnifiedInputContentContainerViewController: UIViewController {
     }
 
     func cancelContentInsetDismissal() {
-        guard dismissalContentInset != nil else { return }
-        dismissalContentInset = nil
+        guard let dismissalContentInset else { return }
+        // Hold the collapsed inset until the expanding bar pushes its own, so the content does not jump to a stale one first.
+        requestedContentInset = dismissalContentInset
+        self.dismissalContentInset = nil
         applyRequestedContentInset()
     }
 

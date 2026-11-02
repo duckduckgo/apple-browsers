@@ -38,13 +38,15 @@ struct FocusedDaxLogoView: View {
     var animationSpeed: Double = 1
     /// Holds the current frame, so a logo fading out for lack of room does not morph on the way.
     var freezes = false
+    /// A logo built while it has no room has no frame to hold yet, so it only freezes once it has shown.
+    @State private var hasShown = false
 
     private var animationName: String {
         colorScheme == .dark ? Constant.darkAnimationName : Constant.animationName
     }
 
     private var playbackMode: LottiePlaybackMode {
-        if freezes { return .paused(at: .currentFrame) }
+        if freezes && hasShown { return .paused(at: .currentFrame) }
         return morph ? .playing(.toProgress(progress, loopMode: .playOnce)) : .paused(at: .progress(progress))
     }
 
@@ -54,6 +56,8 @@ struct FocusedDaxLogoView: View {
             .animationSpeed(animationSpeed)
             .frame(height: Self.size.height)
             .id(animationName)
+            .onAppear { hasShown = hasShown || !freezes }
+            .onChange(of: freezes) { hasShown = hasShown || !$0 }
     }
 
     private enum Constant {

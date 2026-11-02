@@ -1,0 +1,85 @@
+name: macOS - Record Snapshots
+
+on:
+  pull_request_target:
+    types: [labeled]
+
+concurrency:
+  group: record-snapshots-${{ github.event.pull_request.number }}
+
+jobs:
+  record-snapshots:
+    if: github.event.label.name == 'Record snapshots (macOS)' && github.event.pull_request.head.repo.full_name == github.repository
+    name: Record CI's macOS snapshot renderings
+    runs-on: ubuntu-latest
+    permissions:
+      actions: read
+      contents: read
+      pull-requests: write
+      issues: write
+    steps:
+      - name: Check out trusted automation
+        uses: actions/checkout@v6
+        with:
+          ref: ${{ github.sha }}
+          path: trusted
+          persist-credentials: false
+          sparse-checkout: scripts/record-snapshots.sh
+
+      - name: Find the latest macOS PR checks run
+        id: run
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          read -r run_id status < <(gh api "repos/$GITHUB_REPOSITORY/actions/workflows/macos_pr_checks.yml/runs?head_sha=$HEAD_SHA&event=pull_request&per_page=1" \
+            --jq '.workflow_runs[0] | "\(.id // "") \(.status // "")"')
+          if [ -z "$run_id" ]; then
+            echo "::error::No macOS PR checks run found for $HEAD_SHA."
+            exit 1
+          fi
+          if [ "$status" != "completed" ]; then
+            echo "::error::macOS PR checks run $run_id for $HEAD_SHA is $status. Re-add the label once it finishes."
+            exit 1
+          fi
+          echo "id=$run_id" >> "$GITHUB_OUTPUT"
+
+      - name: Download rendered snapshots
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          RUN_ID: ${{ steps.run.outputs.id }}
+        run: |
+          if ! gh run download "$RUN_ID" -R "$GITHUB_REPOSITORY" -n macos-rendered-snapshots -D "$RUNNER_TEMP/rendered"; then
+            echo "::error::Run $RUN_ID has no macos-rendered-snapshots artifact. Every snapshot matched its reference, or the unit tests didn't run."
+            exit 1
+          fi
+
+      - name: Check out the PR branch
+        uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event.pull_request.head.ref }}
+          path: pull-request
+          token: ${{ secrets.GHA_ELEVATED_PERMISSIONS_TOKEN }}
+
+      - name: Record rendered snapshots
+        env:
+          GH_TOKEN: ${{ secrets.SNAPSHOTS_REPO_TOKEN }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          PR_BRANCH: ${{ github.event.pull_request.head.ref }}
+        working-directory: pull-request
+        run: |
+          if [ "$(git rev-parse HEAD)" != "$HEAD_SHA" ]; then
+            echo "::error::'$PR_BRANCH' moved past $HEAD_SHA after the label was added. Re-add the label once its macOS PR checks finish."
+            exit 1
+          fi
+          ../trusted/scripts/record-snapshots.sh "$RUNNER_TEMP/rendered" "$PR_BRANCH"
+
+      - name: Remove the label
+        if: always()
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        run: gh api -X DELETE "repos/$GITHUB_REPOSITORY/issues/$PR_NUMBER/labels/Record%20snapshots%20%28macOS%29" 2>/dev/null || true

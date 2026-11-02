@@ -104,7 +104,7 @@ func verifySnapshot<Value, Format>(
         line: line,
         column: column
     )
-    if let rendered, let exportDirectory {
+    if failure != nil, let rendered, let exportDirectory {
         var exporting = snapshotting
         exporting.snapshot = { _ in Async(value: rendered) }
         _ = SnapshotTesting.verifySnapshot(

@@ -67,9 +67,13 @@ public final class ChromeWebStoreService: ChromeWebStoreManaging {
     private let downloader: ChromeWebStoreDownloading
     private let presenter: ChromeWebStorePresenting
     private let verifier: ChromeWebStorePackageVerifier
+    private let updateCheck: ((String, String) async -> ChromeWebStoreUpdateChecker.CheckResult)?
     // The service is shared by all tabs. Only one install/removal can own the browser's UI at a time.
     private var isPerformingOperation = false
     private var updateCheckTask: Task<Void, Never>?
+    private var updateBatchTask: Task<Void, Never>?
+    private var retryNotBefore: Date?
+    private var lastCheckedIdentifier: String?
     private var updateVersionOverrides: [String: UpdateVersionOverride] = [:]
 
     public convenience init(manager: WebExtensionManager, catalog: ChromeWebStoreCatalogProviding,
@@ -82,19 +86,28 @@ public final class ChromeWebStoreService: ChromeWebStoreManaging {
     init(manager: WebExtensionManager, catalog: ChromeWebStoreCatalogProviding,
          downloader: ChromeWebStoreDownloading, presenter: ChromeWebStorePresenting, verifier: ChromeWebStorePackageVerifier,
          updateCheck: ((String, String) async -> ChromeWebStoreUpdateChecker.CheckResult)? = nil,
-         updateCheckInterval: TimeInterval = 10) {
+         updateCheckInterval: TimeInterval = 2 * 60 * 60) {
         self.manager = manager
         self.catalog = catalog
         self.downloader = downloader
         self.presenter = presenter
         self.verifier = verifier
-        if let updateCheck {
-            startUpdateChecks(check: updateCheck, interval: updateCheckInterval)
+        self.updateCheck = updateCheck
+        if updateCheck != nil {
+            startUpdateChecks(interval: updateCheckInterval)
         }
     }
 
     deinit {
         updateCheckTask?.cancel()
+        updateBatchTask?.cancel()
+    }
+
+    /// Checks now, joining an active batch and honoring the server's retry deadline.
+    public func checkForUpdatesNow() async {
+        guard !Task.isCancelled else { return }
+        let batch = startUpdateCheck()
+        await batch?.value
     }
 
     public func updateCheckVersionOverride(forInstallationIdentifier identifier: String) -> String? {
@@ -118,32 +131,13 @@ public final class ChromeWebStoreService: ChromeWebStoreManaging {
                                                                   installedVersion: installedVersion, reportedVersion: version)
     }
 
-    private func startUpdateChecks(check: @escaping (String, String) async -> ChromeWebStoreUpdateChecker.CheckResult,
-                                   interval: TimeInterval) {
-        // Temporary ten-second interval for testing discovery against installed extensions.
+    private func startUpdateChecks(interval: TimeInterval) {
         Logger.webExtensions.info("Extension update discovery: started (interval \(interval, privacy: .public)s)")
         updateCheckTask = Task { [weak self] in
-            var retryNotBefore: Date?
-            var lastCheckedIdentifier: String?
             while !Task.isCancelled {
-                if retryNotBefore.map({ $0 > Date() }) != true {
-                    guard let candidates = self?.updateCandidates(after: lastCheckedIdentifier) else { return }
-                    Logger.webExtensions.info("Extension update discovery: checking \(candidates.count) installed extensions")
-                    for (identifier, _) in candidates {
-                        guard !Task.isCancelled, self != nil else { return }
-                        // Installs and removals can happen while an earlier request is suspended.
-                        guard let version = self?.eligibleInstalledVersions()?[identifier] else { continue }
-                        guard let reportedVersion = self?.reportedVersion(for: identifier, installedVersion: version) else { return }
-                        let result = await check(identifier, reportedVersion)
-                        guard !Task.isCancelled else { return }
-                        lastCheckedIdentifier = identifier
-                        self?.logUpdateCheck(result, identifier: identifier, installedVersion: version, reportedVersion: reportedVersion)
-                        if let deadline = result.retryNotBefore, deadline > Date() {
-                            retryNotBefore = deadline
-                            break
-                        }
-                    }
-                }
+                guard self?.manager != nil else { return }
+                let batch = self?.startUpdateCheck()
+                await batch?.value
                 do {
                     try await Task.sleep(for: .seconds(interval))
                 } catch {
@@ -151,6 +145,36 @@ public final class ChromeWebStoreService: ChromeWebStoreManaging {
                 }
             }
         }
+    }
+
+    private func startUpdateCheck() -> Task<Void, Never>? {
+        if let updateBatchTask { return updateBatchTask }
+        guard let check = updateCheck else { return nil }
+        if let retryNotBefore, retryNotBefore > Date() {
+            Logger.webExtensions.info("Extension update discovery: deferred until server retry deadline=\(retryNotBefore, privacy: .public)")
+            return nil
+        }
+        guard let candidates = updateCandidates(after: lastCheckedIdentifier) else { return nil }
+        let batch = Task { [weak self] in
+            defer { self?.updateBatchTask = nil }
+            Logger.webExtensions.info("Extension update discovery: checking \(candidates.count) installed extensions")
+            for (identifier, _) in candidates {
+                guard !Task.isCancelled, self != nil else { return }
+                // Installs and removals can happen while an earlier request is suspended.
+                guard let version = self?.eligibleInstalledVersions()?[identifier] else { continue }
+                guard let reportedVersion = self?.reportedVersion(for: identifier, installedVersion: version) else { return }
+                let result = await check(identifier, reportedVersion)
+                guard !Task.isCancelled else { return }
+                self?.lastCheckedIdentifier = identifier
+                self?.logUpdateCheck(result, identifier: identifier, installedVersion: version, reportedVersion: reportedVersion)
+                if let deadline = result.retryNotBefore, deadline > Date() {
+                    self?.retryNotBefore = deadline
+                    break
+                }
+            }
+        }
+        updateBatchTask = batch
+        return batch
     }
 
     private func updateCandidates(after identifier: String?) -> [(String, String)]? {

@@ -50,11 +50,11 @@ final class ChromeWebStoreServiceTests: XCTestCase {
                               verifier: ChromeWebStorePackageVerifier(publisherKeyHash: ChromeWebStoreFixture.publisherKeyHash))
     }
 
-    private func scheduledService(_ manager: WebExtensionManager,
+    private func scheduledService(_ manager: WebExtensionManager, interval: TimeInterval = 0.01,
                                   check: @escaping (String, String) async -> ChromeWebStoreUpdateChecker.CheckResult) -> ChromeWebStoreService {
         ChromeWebStoreService(manager: manager, catalog: catalog,
                               downloader: StoreDownloaderMock(action: { Data() }), presenter: presenter,
-                              verifier: ChromeWebStorePackageVerifier(), updateCheck: check, updateCheckInterval: 0.01)
+                              verifier: ChromeWebStorePackageVerifier(), updateCheck: check, updateCheckInterval: interval)
     }
 
     private func installed(_ identifier: String, version: String?, storeID: String? = nil) -> InstalledWebExtension {
@@ -225,6 +225,80 @@ final class ChromeWebStoreServiceTests: XCTestCase {
         }
         defer { withExtendedLifetime((manager, service)) {} }
         await fulfillment(of: [checked], timeout: 1)
+    }
+
+    func testManualCheckRunsDuringTwoHourIntervalAndUsesCurrentOverride() async throws {
+        let manager = try makeManager()
+        installationStore.installedExtensions = [installed("installed", version: "2.0", storeID: ChromeWebStoreID.onePassword.rawValue)]
+        var reportedVersions: [String] = []
+        let service = scheduledService(manager, interval: 2 * 60 * 60) { _, version in
+            reportedVersions.append(version)
+            return .init(outcome: .noUpdate, retryNotBefore: nil)
+        }
+        defer { withExtendedLifetime((manager, service)) {} }
+        await service.checkForUpdatesNow()
+        let previousCount = reportedVersions.count
+        XCTAssertGreaterThan(previousCount, 0)
+        service.setUpdateCheckVersionOverride("0.0.0.1", forInstallationIdentifier: "installed")
+        await service.checkForUpdatesNow()
+        XCTAssertEqual(reportedVersions.count, previousCount + 1)
+        XCTAssertEqual(reportedVersions.last, "0.0.0.1")
+    }
+
+    func testManualChecksCoalesceAndCancellingOneWaiterKeepsBatchAlive() async throws {
+        let manager = try makeManager()
+        installationStore.installedExtensions = [installed("installed", version: "2.0", storeID: ChromeWebStoreID.onePassword.rawValue)]
+        let started = expectation(description: "Shared check started")
+        let requested = expectation(description: "Both manual checks requested")
+        requested.expectedFulfillmentCount = 2
+        var resumeCheck: CheckedContinuation<Void, Never>?
+        var count = 0
+        let service = scheduledService(manager, interval: 2 * 60 * 60) { _, _ in
+            count += 1
+            if count == 1 {
+                await withCheckedContinuation { continuation in
+                    resumeCheck = continuation
+                    started.fulfill()
+                }
+                XCTAssertFalse(Task.isCancelled)
+            } else {
+                XCTFail("Manual checks must join the same active batch")
+            }
+            return .init(outcome: .noUpdate, retryNotBefore: nil)
+        }
+        defer { withExtendedLifetime((manager, service)) {} }
+        let first = Task {
+            requested.fulfill()
+            await service.checkForUpdatesNow()
+        }
+        let second = Task {
+            requested.fulfill()
+            await service.checkForUpdatesNow()
+        }
+        await fulfillment(of: [started, requested], timeout: 1)
+        first.cancel()
+        resumeCheck?.resume()
+        await first.value
+        await second.value
+        XCTAssertEqual(count, 1)
+    }
+
+    func testManualCheckHonorsServerRetryDeadline() async throws {
+        let manager = try makeManager()
+        installationStore.installedExtensions = [installed("installed", version: "2.0", storeID: ChromeWebStoreID.onePassword.rawValue)]
+        var count = 0
+        let service = scheduledService(manager, interval: 2 * 60 * 60) { _, _ in
+            count += 1
+            return .init(outcome: .failure(.httpStatus(503)), retryNotBefore: Date().addingTimeInterval(0.1))
+        }
+        defer { withExtendedLifetime((manager, service)) {} }
+        await service.checkForUpdatesNow()
+        XCTAssertEqual(count, 1)
+        await service.checkForUpdatesNow()
+        XCTAssertEqual(count, 1)
+        try await Task.sleep(for: .milliseconds(150))
+        await service.checkForUpdatesNow()
+        XCTAssertEqual(count, 2)
     }
 
     func testUpdateChecksReadFreshInstallationsEachCycle() async throws {

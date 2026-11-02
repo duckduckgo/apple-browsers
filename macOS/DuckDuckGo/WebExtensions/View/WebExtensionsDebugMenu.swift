@@ -40,6 +40,7 @@ final class WebExtensionsDebugMenu: NSMenu {
     private let openExtensionsFolderMenuItem = NSMenuItem(title: "Open Extensions Folder in Finder", action: #selector(WebExtensionsDebugMenu.openExtensionsFolderInFinder))
     private let extensionsPageMenuItem = NSMenuItem(title: "Extensions Page", action: #selector(WebExtensionsDebugMenu.showExtensionsPage))
     private let apiCompatibilityLogMenuItem = NSMenuItem(title: "Extension Compatibility Log…", action: #selector(WebExtensionsDebugMenu.showAPICompatibilityLog))
+    private let checkForUpdatesMenuItem = NSMenuItem(title: "Check for Extension Updates Now", action: #selector(WebExtensionsDebugMenu.checkForUpdatesNow))
 
     init(webExtensionManager: WebExtensionManaging,
          cpmMessagingHealthMonitor: CPMMessagingHealthMonitor,
@@ -65,6 +66,7 @@ final class WebExtensionsDebugMenu: NSMenu {
         apiCompatibilityLogMenuItem.target = self
         extensionsPageMenuItem.target = self
         apiCompatibilityLogMenuItem.isEnabled = true
+        checkForUpdatesMenuItem.target = self
 
         addItems()
     }
@@ -87,6 +89,8 @@ final class WebExtensionsDebugMenu: NSMenu {
         addItem(openExtensionsFolderMenuItem)
         addItem(extensionsPageMenuItem)
         addItem(apiCompatibilityLogMenuItem)
+        checkForUpdatesMenuItem.isEnabled = webExtensionManager.chromeWebStore is ChromeWebStoreService
+        addItem(checkForUpdatesMenuItem)
 
         if !webExtensionManager.webExtensionIdentifiers.isEmpty {
             addItem(.separator())
@@ -156,6 +160,11 @@ final class WebExtensionsDebugMenu: NSMenu {
         Task {
             try? await webExtensionManager.installExtension(from: url)
         }
+    }
+
+    @objc private func checkForUpdatesNow() {
+        guard let service = webExtensionManager.chromeWebStore as? ChromeWebStoreService else { return }
+        Task { await service.checkForUpdatesNow() }
     }
 
     /// Opens Bitwarden's Chrome Web Store page, where it can be installed.

@@ -46,9 +46,6 @@
 /* Camera View - Permission Required */
 "camera.permission.required" = "Este necesară permisiunea pentru cameră";
 
-/* No comment provided by engineer. */
-"Cancel" = "Renunță";
-
 /* Standard Buttons - Cancel Button */
 "cancel.button" = "Renunță";
 

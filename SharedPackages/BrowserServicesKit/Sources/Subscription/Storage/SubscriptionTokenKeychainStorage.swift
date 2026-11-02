@@ -90,11 +90,10 @@ public final class SubscriptionTokenKeychainStorage: AuthTokenStoring {
             let result: TokenContainer? = CodableHelper.decode(jsonData: data)
             if result == nil {
                 Logger.subscriptionKeychain.error("Failed to decode the token container: \(self.field.rawValue, privacy: .public)")
-                verifyTokenNotFoundExpectation()
+                errorEventsHandler(AccountKeychainAccessType.getAuthToken, AccountKeychainAccessError.failedToDecodeKeychainData)
             }
             return result
         } catch {
-            verifyTokenNotFoundExpectation()
             if let error = error as? AccountKeychainAccessError {
                 errorEventsHandler(AccountKeychainAccessType.getAuthToken, error)
             } else {
@@ -133,6 +132,8 @@ public final class SubscriptionTokenKeychainStorage: AuthTokenStoring {
         }
     }
 
+    /// Reports `expectedTokenNotFound` when the keychain confirms no item is stored while a token was expected,
+    /// then stops expecting one until the next save. Read errors and undecodable items don't count as missing.
     private func verifyTokenNotFoundExpectation() {
         if tokenExpected {
             Logger.subscriptionKeychain.error("Expected token container not found: \(self.field.rawValue, privacy: .public)")

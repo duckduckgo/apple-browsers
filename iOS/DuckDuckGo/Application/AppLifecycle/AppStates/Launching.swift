@@ -422,8 +422,7 @@ struct Launching: LaunchingHandling {
 
         winBackOfferService.setURLHandler(mainCoordinator)
 
-        let mainMenuService = featureFlagger.isFeatureOn(.ipadMenuBar) ? MainMenuService(featureFlagger: featureFlagger) : nil
-        mainMenuService?.registerBuildHandler()
+        let mainMenuService = MainMenuService(featureFlagger: featureFlagger)
 
         // MARK: - App Services aggregation
         // This object serves as a central hub for app-wide services that:

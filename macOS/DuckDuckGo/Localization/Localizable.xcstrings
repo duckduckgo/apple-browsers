@@ -63737,7 +63737,7 @@
     },
     "import.summary.history.imported" : {
       "comment" : "Summary text showing number of browsing history visits imported from the last 30 days",
-      "extractionState" : "stale",
+      "extractionState" : "extracted_with_value",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -63797,7 +63797,7 @@
     },
     "import.summary.history.imported.partial" : {
       "comment" : "Summary text showing number of new browsing history visits imported out of all visits found in the last 30 days",
-      "extractionState" : "stale",
+      "extractionState" : "extracted_with_value",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -67610,6 +67610,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Сохранить как…"
+          }
+        }
+      }
+    },
+    "main-menu.history.import-history" : {
+      "comment" : "Main Menu History item that opens the Import Browser Data dialog",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Import History…"
           }
         }
       }

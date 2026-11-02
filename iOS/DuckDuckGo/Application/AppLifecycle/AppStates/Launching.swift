@@ -422,13 +422,17 @@ struct Launching: LaunchingHandling {
 
         winBackOfferService.setURLHandler(mainCoordinator)
 
+        let mainMenuService = featureFlagger.isFeatureOn(.ipadMenuBar) ? MainMenuService(featureFlagger: featureFlagger) : nil
+        mainMenuService?.registerBuildHandler()
+
         // MARK: - App Services aggregation
         // This object serves as a central hub for app-wide services that:
         // 1. Respond to lifecycle events
         // 2. Persist throughout the app's runtime
         // 3. Provide core functionality across different parts of the app
 
-        services = AppServices(contentBlockingService: contentBlockingService,
+        services = AppServices(mainMenuService: mainMenuService,
+                               contentBlockingService: contentBlockingService,
                                syncService: syncService,
                                vpnService: vpnService,
                                dbpService: dbpService,
@@ -488,8 +492,6 @@ struct Launching: LaunchingHandling {
             launchTaskManager: launchTaskManager
         )
 #endif
-
-        AppDependencyProvider.shared.mainMenuService?.requestRebuild()
 
         logAppLaunchTime()
         // Keep this init method minimal and think twice before adding anything here.

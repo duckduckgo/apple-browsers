@@ -59,6 +59,13 @@ final class MainMenuService {
         MainMenuBuilder().build(spec, with: builder)
     }
 
+    func registerBuildHandler() {
+        guard #available(iOS 26.0, *) else { return }
+        UIMainMenuSystem.shared.setBuildConfiguration(UIMainMenuSystem.Configuration()) { [weak self] builder in
+            self?.buildMenu(with: builder)
+        }
+    }
+
     func requestRebuild() {
         guard idiom == .pad else { return }
         rebuildRequests.send()

@@ -16,6 +16,8 @@
 //  limitations under the License.
 //
 
+import DesignResourcesKit
+import DesignResourcesKitIcons
 import PixelKit
 import PreferencesUI_macOS
 import SwiftUI
@@ -26,6 +28,7 @@ extension Preferences {
     struct AutofillView: View {
         @ObservedObject var model: AutofillPreferencesModel
         @State private var showingResetNeverPromptSitesSheet = false
+        let showExtensions: () -> Void
 
         var isAutoLockEnabledBinding: Binding<Bool> {
             .init {
@@ -46,7 +49,9 @@ extension Preferences {
         var body: some View {
             PreferencePane(UserText.passwordManagementTitle) {
 
-                if model.showSyncPromo {
+                if model.isManagedByExtension {
+                    ManagedByExtensionNotice(onManageExtensions: showExtensions)
+                } else if model.showSyncPromo {
                     SyncPromoView(viewModel: model.syncPromoViewModel, layout: .horizontal)
                         .onAppear {
                             model.syncPromoViewModel.promoDisplayed()
@@ -157,6 +162,34 @@ extension Preferences {
             .onAppear {
                 model.viewDidAppear()
             }
+        }
+    }
+
+    private struct ManagedByExtensionNotice: View {
+        let onManageExtensions: () -> Void
+        @Environment(\.designSystemPalette) private var palette
+
+        var body: some View {
+            HStack(alignment: .top) {
+                Image(nsImage: DesignSystemImages.Glyphs.Size16.exclamationRecolorableInvert)
+                    .resizable()
+                    .frame(width: 16, height: 16)
+                    .padding(.trailing, 4)
+
+                VStack(alignment: .leading, spacing: 8) {
+                    Text(UserText.autofillManagedByExtensionTitle)
+                        .bold()
+                    Text(UserText.autofillManagedByExtensionMessage)
+                    Button(UserText.autofillManagedByExtensionManageButton, action: onManageExtensions)
+                        .padding(.top, 4)
+                }
+
+                Spacer()
+            }
+            .padding()
+            .background(Color(designSystemColor: .statusWarningFillPrimary, palette: palette))
+            .cornerRadius(20)
+            .fixedSize(horizontal: false, vertical: true)
         }
     }
 }

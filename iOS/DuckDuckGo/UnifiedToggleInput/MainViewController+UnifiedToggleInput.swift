@@ -1151,8 +1151,9 @@ extension MainViewController {
     var isEscapeHatchHandoff: Bool {
         guard isNewTabPageVisible, escapeHatchForEditingState() != nil,
               let content = unifiedToggleInputCoordinator?.contentViewController else { return false }
-        // The resting page has no list to take over, so focused recents still fade.
-        return content.isShowingEscapeHatchContent && (content.isShowingLogoContent || content.isShowingFavoritesContent)
+        // Only content the resting page also shows hands off; a logo over favorites or focused recents still fade.
+        return content.isShowingEscapeHatchContent
+            && (newTabPageViewController?.restingContentIsFavorites == true ? content.isShowingFavoritesContent : content.isShowingLogoContent)
     }
 
     func resetLegacyScrollForDismiss(coordinator: UnifiedToggleInputCoordinator?, duration: TimeInterval) {

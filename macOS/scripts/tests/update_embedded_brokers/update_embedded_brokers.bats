@@ -13,7 +13,8 @@ setup() {
 	SIGNING_KEYS="$scripts_dir/$SIGNING_KEYS_RELATIVE_PATH"
 	SIGNING_FIXTURES="$scripts_dir/../../SharedPackages/DataBrokerProtectionCore/Tests/DataBrokerProtectionCoreTests/BundleResources/BrokerBundleSigning"
 
-	# dbp-api's test staging key, which signed the fixtures. The app never ships it.
+	# Public verification key for the test fixture signer; keep aligned with Swift's dbpAPITestKeys.staging.
+	# Backend signing-key rotations do not change this test key.
 	TEST_STAGING_KEY="MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEqpP7ubErpgXf5cpp1OFghScG7tJbhUhrKyzkxFdXGErtklupZcJx078xfZRmdYoxLbnaIAt3NYs9XeOr1oJESA=="
 }
 
@@ -159,6 +160,8 @@ writeMainConfig() {
 	[[ "$output" == *"Same Name"* ]]
 }
 
+# Expected app public keys, pinned independently of the bundled JSON.
+# Update these alongside bundle-signing-keys.json when backend signing keys rotate.
 @test "bundle-signing-keys.json: holds one production and one staging key" {
 	run jq -r '.production[]' "$SIGNING_KEYS"
 	[ "$status" -eq 0 ]

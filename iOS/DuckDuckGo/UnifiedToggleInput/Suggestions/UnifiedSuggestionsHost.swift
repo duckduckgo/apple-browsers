@@ -44,6 +44,7 @@ final class UnifiedSuggestionsHost {
     private var contentInsets: UIEdgeInsets = .zero
     private var cancellables = Set<AnyCancellable>()
     private var logoKeyboardCancellable: AnyCancellable?
+    private var keyboardSettleTime: CFTimeInterval = 0
     let favoritesPresentation: FocusedFavoritesPresentation
     private var redesignedSearchPresentation: RedesignedFocusedSearchPresentation?
     private var redesignedPresentationCancellable: AnyCancellable?
@@ -169,20 +170,27 @@ final class UnifiedSuggestionsHost {
                       let end = (info?[UIResponder.keyboardFrameEndUserInfoKey] as? NSValue)?.cgRectValue else { return false }
                 return end.minY > begin.minY
             }
-            .sink { [weak self] _ in self?.deferLogoRevealUntilKeyboardSettles() }
+            .sink { [weak self] in
+                self?.deferLogoRevealUntilKeyboardSettles(duration: $0.userInfo?[UIResponder.keyboardAnimationDurationUserInfoKey] as? TimeInterval ?? 0)
+            }
             .store(in: &cancellables)
     }
 
     /// A hidden logo beside the hatch appears only once a lowering keyboard settles, never sliding in with it.
     /// A rising keyboard only takes room away, so it never reveals the logo and needs no wait.
     /// A logo that is already shown keeps the existing fit checks, which hide it when room runs out.
-    private func deferLogoRevealUntilKeyboardSettles() {
+    /// The did-hide notifications can arrive while the keyboard is still animating, so the reveal also waits out its duration.
+    private func deferLogoRevealUntilKeyboardSettles(duration: TimeInterval = 0) {
+        keyboardSettleTime = max(keyboardSettleTime, CACurrentMediaTime() + duration)
         guard viewModel.escapeHatchPlacement != .hidden, viewModel.backdropLogoFrame == nil, !viewModel.isLogoRevealDeferred else { return }
         viewModel.isLogoRevealDeferred = true
         logoKeyboardCancellable = NotificationCenter.default.publisher(for: UIResponder.keyboardDidChangeFrameNotification)
             .merge(with: NotificationCenter.default.publisher(for: UIResponder.keyboardDidShowNotification),
                    NotificationCenter.default.publisher(for: UIResponder.keyboardDidHideNotification))
             .first()
+            .flatMap { [weak self] _ in
+                Just(()).delay(for: .seconds(max(0, (self?.keyboardSettleTime ?? 0) - CACurrentMediaTime())), scheduler: DispatchQueue.main)
+            }
             .sink { [weak self] _ in self?.finishDeferredLogoReveal() }
     }
 
@@ -240,7 +248,9 @@ final class UnifiedSuggestionsHost {
                 return
             }
         }
-        finishDeferredLogoReveal()
+        // The bar settles at the new mode's height after its 0.2s resize, so check the room once it has.
+        logoKeyboardCancellable = Just(()).delay(for: .seconds(0.25), scheduler: DispatchQueue.main)
+            .sink { [weak self] _ in self?.finishDeferredLogoReveal() }
     }
 
     private func finishDeferredLogoReveal() {
@@ -408,15 +418,31 @@ private final class UnifiedSuggestionsHostingController: UIHostingController<Uni
     /// Fires when the keyboard starts lowering, which can precede its notifications during an interactive dismiss.
     var onKeyboardLowering: (() -> Void)?
     private var keyboardOverlap: CGFloat?
+    private var isRotating = false
 
-    override func viewDidLayoutSubviews() {
-        super.viewDidLayoutSubviews()
-        if view.window != nil, let containerView = view.superview {
+    override func viewWillTransition(to size: CGSize, with coordinator: UIViewControllerTransitionCoordinator) {
+        super.viewWillTransition(to: size, with: coordinator)
+        // A rotation resizes the keyboard guide without moving the keyboard or posting its notifications.
+        isRotating = true
+        coordinator.animate(alongsideTransition: nil) { [weak self] _ in
+            self?.isRotating = false
+            self?.keyboardOverlap = nil
+        }
+    }
+
+    override func viewWillLayoutSubviews() {
+        super.viewWillLayoutSubviews()
+        // Checked before SwiftUI lays out the new size, so the wait starts before the logo counts as shown.
+        if view.window != nil, !isRotating, let containerView = view.superview {
             // Measured above the safe area, so a rotation with the keyboard hidden is not a keyboard move.
             let overlap = max(0, containerView.keyboardLayoutGuide.layoutFrame.height - containerView.safeAreaInsets.bottom)
             if let keyboardOverlap, overlap < keyboardOverlap { onKeyboardLowering?() }
             keyboardOverlap = overlap
         }
+    }
+
+    override func viewDidLayoutSubviews() {
+        super.viewDidLayoutSubviews()
         guard isFloatingUIEnabled, view.window != nil, let containerView = view.superview else { return }
         // These are the native anchors used to constrain the host. The logo ignores the top
         // container safe area, but still reserves the bottom input-bar inset.

@@ -23,4 +23,12 @@ import Foundation
 /// on subscribe and re-emit whenever the underlying table changes.
 public protocol DuckAiNativeChatsRecordObserving {
     func chatsPublisher() -> AnyPublisher<[DuckAiChatRecord], Error>
+    /// The number of chats, for callers that don't need the chats themselves.
+    func chatCountPublisher() -> AnyPublisher<Int, Error>
+}
+
+public extension DuckAiNativeChatsRecordObserving {
+    func chatCountPublisher() -> AnyPublisher<Int, Error> {
+        chatsPublisher().map(\.count).eraseToAnyPublisher()
+    }
 }

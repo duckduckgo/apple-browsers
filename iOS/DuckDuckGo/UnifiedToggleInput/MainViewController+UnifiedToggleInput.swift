@@ -1318,6 +1318,7 @@ extension MainViewController {
     }
 
     func handleUnifiedToggleInputSearchSubmission(_ query: String) {
+        onboardingPromoTab = nil
         fireUnifiedInputDuckAIDirectNavigationPixelIfNeeded(for: query)
         if let tab = tabManager.currentTabsModel.currentTab, tab.link == nil {
             ntpAfterIdleInstrumentation.barUsedFromNTP(afterIdle: tab.openedAfterIdle)
@@ -1681,11 +1682,13 @@ extension MainViewController: AIChatTabChatHeaderViewDelegate {
     }
 
     func aiChatTabChatHeaderDidTapNewVoiceChat() {
-        startDuckAIVoiceMode(from: .duckAI)
+        startDuckAIVoiceMode(from: .duckAI, entrySource: .duckAINewChat)
     }
 
     func aiChatTabChatHeaderDidTapNewImage() {
         PixelKit.fire(Pixel.Event.aiChatNewImageTapped, frequency: .dailyAndCount)
+        fireAIChatEntryPointPixel(source: .duckAINewChat, opensNewTab: false, hasPrompt: false, chatState: .new)
+        reportDuckAISessionCurrentTab()
         recordDuckAISessionNewChatCreatedOnCurrentTab()
         if featureFlagger.isFeatureOn(.aiChatTabHandoffImprovements) {
             openNewImageChatInNewTab()

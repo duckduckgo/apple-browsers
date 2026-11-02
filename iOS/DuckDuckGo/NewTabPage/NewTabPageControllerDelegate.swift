@@ -43,6 +43,7 @@ protocol NewTabPageControllerDelegate: AnyObject {
     func newTabPageDidRequestSearch(_ controller: any NewTabPage, textEntryMode: TextEntryMode)
     func newTabPageDidRequestVoiceSearch(_ controller: any NewTabPage, textEntryMode: TextEntryMode)
     func newTabPageDuckAIMenu(_ controller: any NewTabPage) -> UIMenu?
+    func newTabPageDidOpenDuckAIOnboardingPromo(_ controller: any NewTabPage)
 }
 
 extension NewTabPageControllerDelegate {
@@ -55,4 +56,5 @@ extension NewTabPageControllerDelegate {
     func newTabPageDidRequestSearch(_ controller: any NewTabPage, textEntryMode: TextEntryMode) { }
     func newTabPageDidRequestVoiceSearch(_ controller: any NewTabPage, textEntryMode: TextEntryMode) { }
     func newTabPageDuckAIMenu(_ controller: any NewTabPage) -> UIMenu? { nil }
+    func newTabPageDidOpenDuckAIOnboardingPromo(_ controller: any NewTabPage) { }
 }

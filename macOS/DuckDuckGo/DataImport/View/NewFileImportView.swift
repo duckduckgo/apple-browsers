@@ -52,7 +52,7 @@ func newFileImportMultipleTypeInstructionsBuilder(
 private func safariArchiveInstructions(for dataTypes: Set<DataImport.DataType>) -> String {
     switch (dataTypes.contains(.bookmarks), dataTypes.contains(.passwords)) {
     case (true, false):
-        NotLocalizedString("import.zip.instructions.safari.bookmarks", value: """
+        NSLocalizedString("import.zip.instructions.safari.bookmarks", value: """
         %d Open %@ **Safari → File → Export Browsing Data to File...**
         %d Choose **Bookmarks** and **Credit Cards**, → **Export** and save the file
         %d Upload the exported ZIP or HTML file to DuckDuckGo
@@ -63,7 +63,7 @@ private func safariArchiveInstructions(for dataTypes: Set<DataImport.DataType>) 
         **bold text**; _italic text_
         """)
     case (false, true):
-        NotLocalizedString("import.zip.instructions.safari.passwords", value: """
+        NSLocalizedString("import.zip.instructions.safari.passwords", value: """
         %d Open %@ **Safari → File → Export Browsing Data to File...**
         %d Choose **Passwords** and **Credit Cards**, → **Export** and save the file
         %d Upload the exported ZIP or CSV file to DuckDuckGo

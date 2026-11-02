@@ -977,6 +977,7 @@ final class MainMenu: NSMenu {
                 NSMenuItem(title: "Shift New Tab daily impression", action: #selector(MainViewController.debugShiftNewTabOpeningDate))
                 shiftNextStepsDaysMenuItem
                     .withAccessibilityIdentifier(AccessibilityIdentifiers.NewTabPage.shiftMaxDaysMenuItem)
+                NSMenuItem(title: "Reset Duck.ai Suggested Prompts", action: #selector(AppDelegate.debugResetSuggestedPrompts))
             }.withAccessibilityIdentifier(AccessibilityIdentifiers.NewTabPage.newTabPageDebugMenu)
             NSMenuItem(title: "CPM") {
                 NSMenuItem(title: "Opt-in dialog") {
@@ -1231,9 +1232,7 @@ final class MainMenu: NSMenu {
             NSMenuItem(title: "Logging").submenu(setupLoggingMenu())
             NSMenuItem(title: "AI Chat").submenu(AIChatDebugMenu())
             NSMenuItem(title: "Base URL Configuration").submenu(BaseURLDebugMenu())
-            if StandardApplicationBuildType().isSparkleBuild {
-                NSMenuItem(title: "Updates").submenu(UpdatesDebugMenu(keyValueStore: UserDefaults.standard, internalUserDecider: internalUserDecider))
-            }
+            NSMenuItem(title: "Updates").submenu(UpdatesDebugMenu(keyValueStore: UserDefaults.standard, internalUserDecider: internalUserDecider))
             if AppVersion.runType.requiresEnvironment {
                 NSMenuItem(title: "Promo Queue")
                     .submenu(PromoDebugMenu())

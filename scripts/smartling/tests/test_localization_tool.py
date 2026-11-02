@@ -858,6 +858,55 @@ class PendingJobCommandTests(unittest.IsolatedAsyncioTestCase):
 
         self.assertEqual(result, {'job_id': '', 'job_name': '', 'job_url': ''})
 
+
+class SubmitCommandTests(unittest.IsolatedAsyncioTestCase):
+
+    def setUp(self):
+        work_dir = tempfile.TemporaryDirectory()
+        self.addCleanup(work_dir.cleanup)
+        self.export_file = Path(work_dir.name) / 'en.xliff'
+        self.export_file.write_text('<xliff/>', encoding='utf-8')
+        self.result_file = Path(work_dir.name) / 'submit_result.json'
+        self.original_client = LOCALIZATION_TOOL.SmartlingClient
+        self.addCleanup(setattr, LOCALIZATION_TOOL, 'SmartlingClient', self.original_client)
+        patcher = unittest.mock.patch.dict('os.environ', {
+            'SMARTLING_USER_ID': 'user', 'SMARTLING_USER_SECRET': 'secret', 'SMARTLING_PROJECT_ID': 'project-123',
+        })
+        patcher.start()
+        self.addCleanup(patcher.stop)
+
+    async def submit(self, client):
+        LOCALIZATION_TOOL.SmartlingClient = lambda _creds: client
+        args = argparse.Namespace(
+            files=[str(self.export_file)],
+            job_name='Merge macOS - 2026-10-29 12:43 202776b',
+            pending_job_prefix=['Nightly macOS - ', 'Merge macOS - '],
+            file_uri_prefix='main',
+            auto_authorize_max_usd='500.00',
+            delete_job_on_failure=False,
+            result_file=str(self.result_file)
+        )
+        with unittest.mock.patch('asyncio.sleep', no_sleep), \
+                contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(io.StringIO()):
+            await LOCALIZATION_TOOL.submit_command(args)
+        return json.loads(self.result_file.read_text(encoding='utf-8'))
+
+    async def testWhenAJobIsCreatedThenItsDashboardLinkIsWrittenToTheResultFile(self):
+        client = FakeSmartlingClient(report={
+            'totalStrings': 64,
+            'priceInformation': [
+                {'currencyCode': 'USD', 'priceMin': 60, 'priceMax': 71.17},
+            ],
+        })
+
+        result = await self.submit(client)
+
+        self.assertEqual(result['outcome'], 'authorized')
+        self.assertEqual(
+            result['job_url'],
+            'https://dashboard.smartling.com/app/projects/project-123/account-jobs/project-123:job-123'
+        )
+
 class ParserTests(unittest.TestCase):
 
     def testWhenPendingJobPrefixIsRepeatedThenEveryPrefixIsKept(self):

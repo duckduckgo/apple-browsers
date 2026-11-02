@@ -203,7 +203,11 @@ extension DataImport {
                 return false
             case .history:
                 guard let profileDirectoryContents = try? fileStore.directoryContents(at: profileURL.path) else { return false }
-                return profileDirectoryContents.contains(ChromiumHistoryReader.Constants.historyDatabaseName)
+                let historyDatabaseName = switch browser {
+                case .firefox, .tor: FirefoxHistoryReader.Constants.historyDatabaseName
+                default: ChromiumHistoryReader.Constants.historyDatabaseName
+                }
+                return profileDirectoryContents.contains(historyDatabaseName)
             case .creditCards:
                 return false
             }

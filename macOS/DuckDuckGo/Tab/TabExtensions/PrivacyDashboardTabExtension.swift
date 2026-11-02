@@ -307,6 +307,10 @@ extension Navigation {
     /// Resolves CPM attribution from the first action in a logical navigation.
     /// The current action may describe a redirect rather than the initiating restoration or history load.
     var cpmMessagingNavigationKind: CPMNavigationKind {
+        // The error page is loaded as alternate HTML for the failed URL: it reports that http(s) URL but runs no content scripts.
+        if navigationAction.navigationType == .alternateHtmlLoad {
+            return .errorPage
+        }
         let initialNavigationType = (redirectHistory.first ?? navigationAction).navigationType
         if initialNavigationType == .sessionRestoration {
             return .sessionRestoration

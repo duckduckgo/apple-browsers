@@ -117,6 +117,21 @@ final class WideEventStoringTests: XCTestCase {
         XCTAssertGreaterThanOrEqual(recordedDate, lastSent)
     }
 
+    func testWhenAStoredFlowCanNoLongerBeDecodedThenItIsRemovedAndTheOthersAreKept() throws {
+        let saved = StorageTestWideEventData()
+        try storage.save(saved)
+        let undecodableKey = "storage_test_event.\(UUID().uuidString)"
+        testDefaults.set(Data(#"{"globalData": {"id": "no longer a valid event"}}"#.utf8), forKey: undecodableKey)
+        let unrelatedKey = "another_event.\(UUID().uuidString)"
+        testDefaults.set(Data("not an event".utf8), forKey: unrelatedKey)
+
+        let events = storage.allWideEvents(for: StorageTestWideEventData.self)
+
+        XCTAssertEqual(events.map(\.globalData.id), [saved.globalData.id])
+        XCTAssertNil(testDefaults.data(forKey: undecodableKey))
+        XCTAssertNotNil(testDefaults.data(forKey: unrelatedKey))
+    }
+
     // MARK: - lastSentTimestamp Tests
 
     func testLastSentTimestampReturnsNilWhenNeverRecorded() {

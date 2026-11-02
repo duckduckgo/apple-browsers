@@ -3,7 +3,7 @@ set -euo pipefail
 
 # Submits a platform's exported strings to a new Smartling job and authorizes it
 # when the maximum USD estimate is at most --auto-authorize-max-usd.
-# Writes job_name, outcome, job_id, total_strings (strings × locales), locales, max_usd, reason and failed
+# Writes job_name, outcome, job_id, job_url, total_strings (strings × locales), locales, max_usd, reason and failed
 # (true when the submission failed, as opposed to a job left for review)
 # to GITHUB_OUTPUT.
 
@@ -64,6 +64,7 @@ RESULT_FILE="${RUNNER_TEMP:-/tmp}/smartling-submit-${PLATFORM}.json"
 outcome="$(jq -r '.outcome' "$RESULT_FILE")"
 job_id="$(jq -r '.job_id' "$RESULT_FILE")"
 job_name="$(jq -r '.job_name' "$RESULT_FILE")"
+job_url="$(jq -r '.job_url // empty' "$RESULT_FILE")"
 total_strings="$(jq -r '.total_strings // empty' "$RESULT_FILE")"
 locales="$(jq -r '.locales // empty' "$RESULT_FILE")"
 max_usd="$(jq -r '.max_usd' "$RESULT_FILE")"
@@ -75,6 +76,7 @@ if [ -n "${GITHUB_OUTPUT:-}" ]; then
 		echo "job_name=$job_name"
 		echo "outcome=$outcome"
 		echo "job_id=$job_id"
+		echo "job_url=$job_url"
 		echo "total_strings=$total_strings"
 		echo "locales=$locales"
 		echo "max_usd=$max_usd"
@@ -88,7 +90,11 @@ if [ -n "${GITHUB_STEP_SUMMARY:-}" ]; then
 		echo "## $PLATFORM Smartling job: $JOB_NAME"
 		echo
 		echo "- Outcome: \`$outcome\`"
-		echo "- Job: \`${job_name:-none}\` (\`${job_id:-none}\`)"
+		if [ -n "$job_url" ]; then
+			echo "- Job: [$job_name]($job_url) (\`$job_id\`)"
+		else
+			echo "- Job: \`${job_name:-none}\` (\`${job_id:-none}\`)"
+		fi
 		if [ -n "$total_strings" ]; then
 			echo "- String translations: \`$total_strings\` across \`$locales\` locales"
 		else

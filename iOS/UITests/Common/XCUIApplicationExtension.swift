@@ -86,7 +86,7 @@ extension XCUIApplication {
 
     func openBrowsingMenuItem(_ identifier: String, file: StaticString = #filePath, line: UInt = #line) {
         let item = openBrowsingMenu(revealing: identifier, file: file, line: line)
-        item.tapWhenHittable(file: file, line: line)
+        item.tapWhenHittable(in: self, file: file, line: line)
     }
 
     func openBrowsingMenu(revealing identifier: String, file: StaticString = #filePath, line: UInt = #line) -> XCUIElement {

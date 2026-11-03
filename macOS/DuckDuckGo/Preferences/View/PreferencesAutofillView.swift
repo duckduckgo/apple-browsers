@@ -167,7 +167,6 @@ extension Preferences {
 
     private struct ManagedByExtensionNotice: View {
         let onManageExtensions: () -> Void
-        @Environment(\.designSystemPalette) private var palette
 
         var body: some View {
             HStack(alignment: .top) {
@@ -187,7 +186,7 @@ extension Preferences {
                 Spacer()
             }
             .padding()
-            .background(Color(designSystemColor: .statusWarningFillPrimary, palette: palette))
+            .background(Color(designSystemColor: .statusWarningFillPrimary, palette: .default))
             .cornerRadius(20)
             .fixedSize(horizontal: false, vertical: true)
         }

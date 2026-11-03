@@ -350,12 +350,23 @@ final class DataBrokerProtectionDebugViewController: UITableViewController {
     }
     
     private func calculatePendingJobCounts() async -> PendingJobCounts {
-        guard let allData = try? databaseDelegate?.getAllBrokerProfileQueryData() else {
-            assertionFailure("Failed to fetch broker profile query data")
-            return PendingJobCounts(pendingScans: 0,
-                                    pendingScansDetails: nil,
-                                    pendingOptOuts: 0,
-                                    pendingOptOutsDetails: nil)
+        let emptyCounts = PendingJobCounts(pendingScans: 0,
+                                           pendingScansDetails: nil,
+                                           pendingOptOuts: 0,
+                                           pendingOptOutsDetails: nil)
+        let allData: [BrokerProfileQueryData]
+        do {
+            guard let data = try databaseDelegate?.getAllBrokerProfileQueryData() else {
+                assertionFailure("Failed to fetch broker profile query data")
+                return emptyCounts
+            }
+            allData = data
+        } catch DataBrokerProtectionError.secureVaultNotInitialized {
+            // The vault is skipped at launch when no profile is saved
+            return emptyCounts
+        } catch {
+            assertionFailure("Failed to fetch broker profile query data: \(error)")
+            return emptyCounts
         }
 
         let currentDate = Date()

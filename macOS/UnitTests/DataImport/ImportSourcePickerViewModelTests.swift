@@ -51,16 +51,35 @@ final class ImportSourcePickerViewModelTests: XCTestCase {
         XCTAssertTrue(viewModel.shouldShowTypeSelector)
     }
 
+    func testInit_allTypesWithHistory_listsHistoryLastAndNamesItInTheTypeButton() {
+        let selectedTypes: [DataImport.DataType] = [.history, .passwords, .bookmarks]
+
+        let viewModel = pickerViewModel(selectedImportTypes: selectedTypes)
+
+        XCTAssertEqual(viewModel.typeButtonTitle, UserText.importTypeSelectionTitleAllWithHistory)
+        XCTAssertEqual(viewModel.importTypeItems.map(\.dataType), [.bookmarks, .passwords, .history])
+    }
+
+    func testTypeSelectionDone_bookmarksAndHistory_namesBothInTheTypeButton() {
+        let viewModel = pickerViewModel(selectedImportTypes: [.history, .passwords, .bookmarks])
+        viewModel.importTypeItems[1].isSelected = false
+
+        viewModel.typeSelectionDone()
+
+        XCTAssertEqual(viewModel.typeButtonTitle, UserText.importTypeSelectionTitleBookmarksAndHistory)
+    }
+
     private func pickerViewModel(
-        availableSources: [DataImport.Source],
-        selectedSource: DataImport.Source,
+        availableSources: [DataImport.Source] = [.chrome],
+        selectedSource: DataImport.Source = .chrome,
+        selectedImportTypes: [DataImport.DataType] = [.bookmarks, .passwords],
         isSourceFilterEnabled: Bool = false
     ) -> ImportSourcePickerViewModel {
         ImportSourcePickerViewModel(
             availableSources: availableSources,
             selectedSource: selectedSource,
-            selectedImportTypes: [.bookmarks, .passwords],
-            selectableImportTypes: [.bookmarks, .passwords],
+            selectedImportTypes: selectedImportTypes,
+            selectableImportTypes: selectedImportTypes,
             shouldShowSyncButton: false,
             isSourceFilterEnabled: isSourceFilterEnabled,
             onSourceSelected: { _ in },

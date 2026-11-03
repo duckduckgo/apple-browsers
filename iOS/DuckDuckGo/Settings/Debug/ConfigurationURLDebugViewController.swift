@@ -22,6 +22,7 @@ import WebKit
 import Core
 import Configuration
 import DesignResourcesKit
+import DesignResourcesKitIcons
 
 final class ConfigurationURLDebugViewController: UITableViewController {
 
@@ -102,6 +103,20 @@ final class ConfigurationURLDebugViewController: UITableViewController {
     override func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         let item = configurationItems[indexPath.row]
         presentCustomURLAlert(for: item)
+    }
+
+    override func tableView(_ tableView: UITableView,
+                            contextMenuConfigurationForRowAt indexPath: IndexPath,
+                            point: CGPoint) -> UIContextMenuConfiguration? {
+        let item = configurationItems[indexPath.row]
+        guard let customURL = viewModel?.getCustomURL(for: item.configuration) else { return nil }
+
+        return UIContextMenuConfiguration(identifier: nil, previewProvider: nil) { _ in
+            let copy = UIAction(title: UserText.actionCopy, image: DesignSystemImages.Glyphs.Size24.copy) { _ in
+                UIPasteboard.general.string = customURL
+            }
+            return UIMenu(children: [copy])
+        }
     }
 
     private func presentCustomURLAlert(for item: DebugScreensViewModel.ConfigurationItem) {

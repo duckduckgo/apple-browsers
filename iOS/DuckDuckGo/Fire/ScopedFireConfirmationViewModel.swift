@@ -20,6 +20,8 @@
 import Foundation
 import Core
 import Persistence
+import FeatureFlags_iOS
+import PrivacyConfig
 
 @MainActor
 final class ScopedFireConfirmationViewModel: ObservableObject {
@@ -27,7 +29,7 @@ final class ScopedFireConfirmationViewModel: ObservableObject {
     // MARK: - Types
 
     struct FireConfirmationButton {
-        enum Style { case primary, secondary, secondaryNeutral }
+        enum Style { case primary, secondary, secondaryNeutral, slide }
 
         let title: String
         let style: Style
@@ -88,6 +90,7 @@ final class ScopedFireConfirmationViewModel: ObservableObject {
          keyValueStore: KeyValueStoring = UserDefaults.standard,
          appSettings: AppSettings = AppDependencyProvider.shared.appSettings,
          dataClearingCapability: DataClearingCapable = DataClearingCapability.create(using: AppDependencyProvider.shared.featureFlagger),
+         featureFlagger: FeatureFlagger = AppDependencyProvider.shared.featureFlagger,
          browsingMode: BrowsingMode,
          onConfirm: @escaping (FireRequest) -> Void,
          onCancel: @escaping () -> Void) {
@@ -109,7 +112,7 @@ final class ScopedFireConfirmationViewModel: ObservableObject {
                                                    browsingMode: browsingMode,
                                                    appSettings: appSettings)
         self.showAnimation = !(isRefinementsEnabled && appSettings.currentFireButtonAnimation == .none)
-        self.buttons = Self.makeButtons(fireContext: fireContext,
+        let buttons = Self.makeButtons(fireContext: fireContext,
                                         tabViewModel: tabViewModel,
                                         browsingMode: browsingMode,
                                         source: source,
@@ -118,6 +121,17 @@ final class ScopedFireConfirmationViewModel: ObservableObject {
                                         showDeleteAllOnlyForSingleTab: showDeleteAllOnlyForSingleTab,
                                         onConfirm: onConfirm,
                                         onCancel: onCancel)
+        if case .default = fireContext, featureFlagger.isFeatureOn(.slideToDelete) {
+            self.buttons = buttons.map { button in
+                guard button.accessibilityIdentifier == AccessibilityIdentifiers.deleteAll else { return button }
+                return FireConfirmationButton(title: UserText.scopedFireConfirmationSlideToDeleteAll,
+                                              style: .slide,
+                                              action: button.action,
+                                              accessibilityIdentifier: button.accessibilityIdentifier)
+            }
+        } else {
+            self.buttons = buttons
+        }
         self.subtitle = Self.computeSubtitle(fireContext: fireContext,
                                              tabViewModel: tabViewModel,
                                              browsingMode: browsingMode,

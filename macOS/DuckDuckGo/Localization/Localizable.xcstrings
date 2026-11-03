@@ -58575,6 +58575,66 @@
         }
       }
     },
+    "import.could.not.import.history" : {
+      "comment" : "Error message when browsing history could not be imported",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Verlauf konnte nicht importiert werden"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Couldn't import History"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No se ha podido importar el historial"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Impossible d’importer l’historique"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Impossibile importare la cronologia"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Geschiedenis kon niet worden geïmporteerd"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nie udało się zaimportować historii"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Não foi possível importar histórico"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Не удалось импортировать историю"
+          }
+        }
+      }
+    },
     "import.could.not.import.passwords" : {
       "comment" : "Error message when passwords could not be imported",
       "extractionState" : "extracted_with_value",
@@ -60551,6 +60611,186 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Импорт из %@"
+          }
+        }
+      }
+    },
+    "import.history" : {
+      "comment" : "Title text for the browsing History import option",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Verlauf"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "History"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Historial"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Historique"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cronologia"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Geschiedenis"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Historia"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Histórico"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "История"
+          }
+        }
+      }
+    },
+    "import.history.indefinite.progress.text" : {
+      "comment" : "Operation progress info message about an indefinite number of history visits being imported",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Verlauf wird importiert …"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Importing history…"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Importando el historial…"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Importation de l’historique…"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Importazione della cronologia in corso…"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Geschiedenis importeren …"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Importowanie historii…"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "A importar o histórico…"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Импортируется история…"
+          }
+        }
+      }
+    },
+    "import.history.number.progress.text" : {
+      "comment" : "Operation progress info message about %d number of history visits being imported",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Verlauf wird importiert (%d) …"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Importing history (%d)…"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Importando historial (%d)…"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Importation de l’historique (%d)…"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Importazione cronologia (%d) in corso…"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Geschiedenis importeren (%d) …"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Importowanie historii (%d)…"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "A importar histórico (%d)…"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "История импортируется (%d)…"
           }
         }
       }
@@ -63495,6 +63735,126 @@
         }
       }
     },
+    "import.summary.history.imported" : {
+      "comment" : "Summary text showing number of browsing history visits imported from the last 30 days",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Importierter Browserverlauf: %d (letzte 30 Tage)"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "History Imported: %d (last 30 days)"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Historial importado: %d (últimos 30 días)"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Historique importé : %d (30 derniers jours)"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cronologia importata: %d (ultimi 30 giorni)"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Geschiedenis geïmporteerd: %d (afgelopen 30 dagen)"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zaimportowana historia: %d (ostatnie 30 dni)"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Histórico importado: %d (últimos 30 dias)"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Импортировано записей истории: %d (за последние 30 дней)"
+          }
+        }
+      }
+    },
+    "import.summary.history.imported.partial" : {
+      "comment" : "Summary text showing number of new browsing history visits imported out of all visits found in the last 30 days",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Importierte Verlaufseinträge: %1$d / %2$d (letzte 30 Tage)"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "History Imported: %1$d / %2$d (last 30 days)"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Historial importado: %1$d / %2$d (últimos 30 días)"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Historique importé : %1$d / %2$d (30 derniers jours)"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cronologia importata: %1$d / %2$d (ultimi 30 giorni)"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Geschiedenis geïmporteerd: %1$d / %2$d (laatste 30 dagen)"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zaimportowana historia: %1$d z %2$d (ostatnie 30 dni)"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Histórico importado: %1$d / %2$d (últimos 30 dias)"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Импортировано записей истории: %1$d из %2$d (за последние 30 дней)"
+          }
+        }
+      }
+    },
     "import.summary.passwords.imported" : {
       "comment" : "Summary text showing number of passwords successfully imported",
       "extractionState" : "extracted_with_value",
@@ -64151,6 +64511,126 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "%1$d Откройте %2$@ **Safari → Файл → Экспортировать данные браузера в файл...**\n%3$d Выберите **Закладки, пароли** и **Кредитные карты** → **Экспортировать** и сохраните файл\n%4$d Загрузите экспортированный ZIP-архив или CSV-файл в DuckDuckGo"
+          }
+        }
+      }
+    },
+    "import.zip.instructions.safari.bookmarks" : {
+      "comment" : "Instructions to import bookmarks and credit cards exported as ZIP from Safari.\n%N$d - step number\n%2$@ - browser icon\n**bold text**; _italic text_",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$d Öffne %2$@ **Safari → Datei → Browserdaten in Datei exportieren ...**\n%3$d Wähle **Lesezeichen** und **Kreditkarten**, → **Exportieren** und speichere die Datei\n%4$d Lade die exportierte ZIP- oder HTML-Datei auf DuckDuckGo hoch"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$d Open %2$@ **Safari → File → Export Browsing Data to File...**\n%3$d Choose **Bookmarks** and **Credit Cards**, → **Export** and save the file\n%4$d Upload the exported ZIP or HTML file to DuckDuckGo"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$d Abre %2$@ **Safari → Archivo → Exportar datos de navegación a un archivo…**\n%3$d Elige **Marcadores** y **Tarjetas de crédito**, → **Exportar** y guardar el archivo\n%4$d Sube el archivo ZIP o HTML exportado a DuckDuckGo"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$d Ouvrez %2$@ **Safari → Fichier → Exporter les données de navigation vers un fichier...**\n%3$d Choisissez **Signets** et **Cartes de crédit**, puis cliquez sur **Exporter** et enregistrez le fichier\n%4$d Téléchargez le fichier ZIP ou HTML exporté sur DuckDuckGo"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$d Apri %2$@ **Safari → File → Esporta dati di navigazione su file...**\n%3$d Scegli **Preferiti** e **Carte di credito**, → **Esporta** e salva il file\n%4$d Carica il file ZIP o HTML esportato su DuckDuckGo"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$d Open %2$@ **Safari → Bestand → Exporteer browsergegevens naar bestand…**\n%3$d Kies **Bladwijzers** en **Creditcards**, → **Exporteer** en sla het bestand op\n%4$d Upload het geëxporteerde ZIP- of HTML-bestand naar DuckDuckGo"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$d Otwórz %2$@ **Safari → Plik → Eksportuj dane przeglądania do pliku...**\n%3$d Wybierz **Zakładki** i **Karty kredytowe**, → **Eksportuj** i zapisz plik\n%4$d Prześlij wyeksportowany plik ZIP lub HTML do DuckDuckGo"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$d Abre %2$@ **Safari → Ficheiro → Exportar dados de navegação para o ficheiro...**\n%3$d Escolhe **Marcadores** e **Cartões de crédito**, → **Exportar** e guarda o ficheiro\n%4$d Carrega o ficheiro ZIP ou HTML exportado para o DuckDuckGo"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$d Откройте %2$@ **Safari → Файл → Экспортировать данные браузера в файл...**\n%3$d Выберите **Закладки** и **Кредитные карты** → **Экспортировать** и сохраните файл\n%4$d Загрузите экспортированный ZIP-архив или HTML-файл в DuckDuckGo"
+          }
+        }
+      }
+    },
+    "import.zip.instructions.safari.passwords" : {
+      "comment" : "Instructions to import passwords and credit cards exported as ZIP from Safari.\n%N$d - step number\n%2$@ - browser icon\n**bold text**; _italic text_",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$d Öffne %2$@ **Safari → Datei → Browserdaten in Datei exportieren ...**\n%3$d Wähle **Passwörter** und **Kreditkarten**, → **Exportieren** und speichere die Datei\n%4$d Lade die exportierte ZIP- oder CSV-Datei auf DuckDuckGo hoch"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$d Open %2$@ **Safari → File → Export Browsing Data to File...**\n%3$d Choose **Passwords** and **Credit Cards**, → **Export** and save the file\n%4$d Upload the exported ZIP or CSV file to DuckDuckGo"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$d Abre %2$@ **Safari → Archivo → Exportar datos de navegación a un archivo…**\n%3$d Elige **Contraseñas** y **Tarjetas de crédito** → **Exportar** y guarda el archivo\n%4$d Sube el archivo ZIP o CSV exportado a DuckDuckGo"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$d Ouvre %2$@ **Safari → Fichier → Exporter les données de navigation vers un fichier...**\n%3$d Choisis **Mots de passe** et **Cartes de crédit**, puis clique sur **Exporter** et enregistre le fichier\n%4$d Télécharge le fichier ZIP ou CSV exporté sur DuckDuckGo"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$d Apri %2$@ **Safari → File → Esporta dati di navigazione su file...**\n%3$d Scegli **Password** e **Carte di credito**, → **Esporta** e salva il file\n%4$d Carica il file ZIP o CSV esportato su DuckDuckGo"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$d Open %2$@ **Safari → Bestand → Exporteer browsergegevens naar bestand…**\n%3$d Kies **Wachtwoorden** en **Creditcards**, → **Exporteer** en sla het bestand op\n%4$d Upload het geëxporteerde ZIP- of CSV-bestand naar DuckDuckGo"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$d Otwórz %2$@ **Safari → Plik → Eksportuj dane przeglądania do pliku...**\n%3$d Wybierz **Hasła** i **Karty kredytowe**, → **Eksportuj** i zapisz plik\n%4$d Prześlij wyeksportowany plik ZIP lub CSV do DuckDuckGo"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$d Abre %2$@ **Safari → Ficheiro → Exportar dados de navegação para o ficheiro...**\n%3$d Escolhe **Palavras-passe** e **Cartões de crédito**, → **Exportar** e guarda o ficheiro\n%4$d Carrega o ficheiro ZIP ou CSV exportado para o DuckDuckGo"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$d Откройте %2$@ **Safari → Файл → Экспортировать данные браузера в файл...**\n%3$d Выберите **Пароли** и **Кредитные карты** → **Экспортировать** и сохраните файл\n%4$d Загрузите экспортированный ZIP-архив или CSV-файл в DuckDuckGo"
           }
         }
       }

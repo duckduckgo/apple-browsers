@@ -56,6 +56,14 @@ struct MockChromiumHistoryReader: ChromiumHistoryReaderProtocol {
     }
 }
 
+struct MockFirefoxHistoryVisitsReader: FirefoxHistoryVisitsReaderProtocol {
+    var result: DataImportResult<HistoryImport.ParseResult> = .success(.init(visits: [], skipped: 0))
+
+    func readVisits(since cutoff: Date) -> DataImportResult<HistoryImport.ParseResult> {
+        result
+    }
+}
+
 final class MockHistoryImporter: HistoryImporterProtocol {
     var summary = HistoryImport.Summary()
     private(set) var importedParseResults: [HistoryImport.ParseResult] = []
@@ -64,5 +72,13 @@ final class MockHistoryImporter: HistoryImporterProtocol {
     func importVisits(_ parseResult: HistoryImport.ParseResult) async throws -> HistoryImport.Summary {
         importedParseResults.append(parseResult)
         return summary
+    }
+}
+
+struct MockSafariHistoryReader: SafariHistoryReaderProtocol {
+    var result: DataImportResult<HistoryImport.ParseResult> = .success(.init(visits: [], skipped: 0))
+
+    func readVisits(fromHistoryJSON historyJSON: Data, since cutoff: Date) -> DataImportResult<HistoryImport.ParseResult> {
+        result
     }
 }

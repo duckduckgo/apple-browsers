@@ -32,6 +32,8 @@ class MainViewCoordinator {
         static let contextualSidebarMaxWidth: CGFloat = 400
         /// Below this the page beside the sidebar would be narrower than a phone, so the surface is a sheet instead.
         static let contextualSidebarMinPageWidth: CGFloat = 400
+        /// How much wider than that the window must be for a sheet to move back into the sidebar mid-drag.
+        static let contextualSidebarResizeHysteresis: CGFloat = 40
     }
 
     enum StatusBackgroundPresentation: Equatable {

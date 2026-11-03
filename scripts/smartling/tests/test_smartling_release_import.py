@@ -193,10 +193,23 @@ class ReleaseImportScriptTests(unittest.TestCase):
     def body(self, index):
         return (self.stub_dir / f'body-{index}.md').read_text(encoding='utf-8')
 
-    def testWhenAPullRequestExistsThenNothingIsImported(self):
-        outputs = self.run_import(existing_pr='MERGED https://github.com/duckduckgo/apple-browsers/pull/1')
+    def testWhenAnOpenPullRequestExistsThenNothingIsImported(self):
+        outputs = self.run_import(existing_pr='OPEN https://github.com/duckduckgo/apple-browsers/pull/1')
 
         self.assertEqual(outputs['outcome'], 'skipped_existing_pr')
+        self.assertEqual(outputs['pr_url'], 'https://github.com/duckduckgo/apple-browsers/pull/1')
+        self.assertFalse(any(call.startswith('pr create') for call in self.gh_calls()))
+
+    def testWhenAClosedPullRequestExistsThenNothingIsImported(self):
+        outputs = self.run_import(existing_pr='CLOSED https://github.com/duckduckgo/apple-browsers/pull/1')
+
+        self.assertEqual(outputs['outcome'], 'skipped_existing_pr')
+        self.assertFalse(any(call.startswith('pr create') for call in self.gh_calls()))
+
+    def testWhenThePullRequestIsMergedThenTheTranslationsAreReportedReady(self):
+        outputs = self.run_import(existing_pr='MERGED https://github.com/duckduckgo/apple-browsers/pull/1')
+
+        self.assertEqual(outputs['outcome'], 'pr_merged')
         self.assertEqual(outputs['pr_url'], 'https://github.com/duckduckgo/apple-browsers/pull/1')
         self.assertFalse(any(call.startswith('pr create') for call in self.gh_calls()))
 

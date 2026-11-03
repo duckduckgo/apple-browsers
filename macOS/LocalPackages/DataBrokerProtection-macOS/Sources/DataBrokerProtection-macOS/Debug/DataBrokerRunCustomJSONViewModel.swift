@@ -213,7 +213,6 @@ final class DataBrokerRunCustomJSONViewModel: ObservableObject {
     let contentScopeProperties: ContentScopeProperties
     private let authenticationManager: DataBrokerProtectionAuthenticationManaging
     let featureFlagger: DBPFeatureFlagging
-    let applicationNameForUserAgentProvider: () -> String?
     let brokerJobExecutionConfig = BrokerJobExecutionConfig()
 
     private var isSyncingAgeFields = false
@@ -233,11 +232,9 @@ final class DataBrokerRunCustomJSONViewModel: ObservableObject {
     }
 
     init(authenticationManager: DataBrokerProtectionAuthenticationManaging,
-         featureFlagger: DBPFeatureFlagging,
-         applicationNameForUserAgentProvider: @escaping () -> String?) {
+         featureFlagger: DBPFeatureFlagging) {
         let privacyConfigurationManager = DBPPrivacyConfigurationManager()
         self.featureFlagger = featureFlagger
-        self.applicationNameForUserAgentProvider = applicationNameForUserAgentProvider
         let features = ContentScopeFeatureToggles(emailProtection: false,
                                                   emailProtectionIncontextSignup: false,
                                                   credentialsAutofill: false,
@@ -345,7 +342,6 @@ final class DataBrokerRunCustomJSONViewModel: ObservableObject {
                                 emailConfirmationDataService: self.emailConfirmationDataService,
                                 captchaService: self.captchaService,
                                 featureFlagger: self.featureFlagger,
-                                applicationNameForUserAgentProvider: self.applicationNameForUserAgentProvider,
                                 stageDurationCalculator: stageCalculator,
                                 pixelHandler: fakePixelHandler,
                                 executionConfig: self.brokerJobExecutionConfig,
@@ -445,7 +441,6 @@ final class DataBrokerRunCustomJSONViewModel: ObservableObject {
                     emailConfirmationDataService: self.emailConfirmationDataService,
                     captchaService: self.captchaService,
                     featureFlagger: self.featureFlagger,
-                    applicationNameForUserAgentProvider: self.applicationNameForUserAgentProvider,
                     stageCalculator: stageCalculator,
                     pixelHandler: fakePixelHandler,
                     executionConfig: self.brokerJobExecutionConfig,
@@ -593,10 +588,6 @@ final class DataBrokerRunCustomJSONViewModel: ObservableObject {
 
     var dbpEndpoint: String {
         DataBrokerProtectionSettings(defaults: .dbp).endpointURL.absoluteString
-    }
-
-    var applicationNameForUserAgentDisplayValue: String {
-        applicationNameForUserAgentProvider() ?? "nil"
     }
 
     func addDebugEvent(kind: DebugEventKind, summary: String, profileQueryLabel: String, details: String, progressText: String) {

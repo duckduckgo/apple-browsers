@@ -88,7 +88,7 @@ final class DataClearingPixelsReporter: DataClearingInstrumentation {
     }
 
     func fireUserActionBeforeCompletionPixel() {
-        pixelFiring?.fire(DataClearingPixels.userActionBeforeCompletion, frequency: .standard)
+        pixelFiring?.fire(DataClearingPixels.userActionBeforeCompletion, frequency: .dailyAndStandard)
     }
 
     func fireSingleTabBurnRequested(optimized: Bool, dropped: Bool) {

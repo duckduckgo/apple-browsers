@@ -52,6 +52,10 @@ final class MainMenuService {
             .sink { [weak self] _ in self?.requestRebuild() }
             .store(in: &cancellables)
 
+        notificationCenter.publisher(for: .aiChatSettingsChanged)
+            .sink { [weak self] _ in self?.requestRebuild() }
+            .store(in: &cancellables)
+
         rebuildRequests
             .debounce(for: rebuildDelay, scheduler: DispatchQueue.main)
             .sink { rebuild() }

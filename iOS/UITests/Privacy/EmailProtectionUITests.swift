@@ -34,24 +34,24 @@ final class EmailProtectionUITests: UITestCase {
         let debugList = app.descendants(matching: .any)["Debug.List"]
         XCTAssertTrue(debugList.waitForExistence(timeout: UITestTimeouts.navigation), "Debug screen did not appear.")
         let filter = app.searchFields.matching(NSPredicate(format: "placeholderValue == %@", "Filter")).firstMatch
-        filter.tapWhenHittable()
+        filter.tapWhenHittable(in: app)
         filter.typeText("Autofill")
-        app.descendants(matching: .any)["Debug.Screen.Autofill"].tapWhenHittable()
+        app.descendants(matching: .any)["Debug.Screen.Autofill"].tapWhenHittable(in: app)
 
         let clearSignInState = app.cells["Debug.Autofill.ClearEmailProtectionSignInState"]
         app.tables.firstMatch.swipeUpToReveal(clearSignInState, timeout: UITestTimeouts.navigation)
-        clearSignInState.tapWhenHittable()
+        clearSignInState.tapWhenHittable(in: app)
         app.assertActionMessage(contains: "Email Protection sign-in state cleared")
 
-        app.navigationBars["Autofill"].buttons["BackButton"].tapWhenHittable()
+        app.navigationBars["Autofill"].buttons["BackButton"].tapWhenHittable(in: app)
         XCTAssertTrue(debugList.waitForExistence(timeout: UITestTimeouts.elementExistence), "Debug screen did not reappear.")
         if app.keyboards.firstMatch.exists {
-            app.buttons.matching(NSPredicate(format: "label == %@", "close")).firstMatch.tapWhenHittable()
+            app.buttons.matching(NSPredicate(format: "label == %@", "close")).firstMatch.tapWhenHittable(in: app)
             XCTAssertTrue(
                 app.keyboards.firstMatch.waitForNonExistence(timeout: UITestTimeouts.elementExistence),
                 "Keyboard did not dismiss after clearing Email Protection sign-in state.")
         }
-        app.buttons["Debug.Close"].tapWhenHittable()
+        app.buttons["Debug.Close"].tapWhenHittable(in: app)
         XCTAssertTrue(debugList.waitForNonExistence(timeout: UITestTimeouts.elementExistence), "Debug screen did not close.")
 
         app.openSettings()
@@ -59,7 +59,7 @@ final class EmailProtectionUITests: UITestCase {
         let settingsList = app.descendants(matching: .any)["Settings.List.Main"]
         let emailProtection = settingsList.buttons["Settings.Privacy.EmailProtection"]
         settingsList.swipeUpToReveal(emailProtection, timeout: UITestTimeouts.navigation)
-        emailProtection.tapWhenHittable()
+        emailProtection.tapWhenHittable(in: app)
 
         XCTAssertTrue(
             app.descendants(matching: .any)["Settings.List.EmailProtection"]
@@ -73,7 +73,7 @@ final class EmailProtectionUITests: UITestCase {
 
     func testEnablingEmailProtectionFromSettingsOpensSignupPage() {
         let enableEmailProtection = app.buttons["Settings.EmailProtection.Enable"]
-        enableEmailProtection.tapWhenHittable()
+        enableEmailProtection.tapWhenHittable(in: app)
         app.assertPageContains("Email protection, simplified.")
 
         XCTAssertTrue(

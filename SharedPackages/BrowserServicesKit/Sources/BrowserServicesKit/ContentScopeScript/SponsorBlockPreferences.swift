@@ -33,8 +33,8 @@ public struct SponsorBlockSettings: StoringKeys {
 }
 
 enum SponsorBlockStorageKey: String, StorageKeyDescribing {
-    case isEnabled = "sponsorBlockEnabled"
-    case skipMode = "sponsorBlockSkipMode"
+    case isEnabled = "sponsorBlockMVPEnabled"
+    case skipMode = "sponsorBlockMVPSkipMode"
 }
 
 /// User settings for sponsor skipping, shared by both apps. Unset values fall back to the MVP defaults: on, manual.

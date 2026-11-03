@@ -3316,6 +3316,72 @@
 /* No comment provided by engineer. */
 "menu.button.hint" = "Optiemenu";
 
+/* iPad menu bar command */
+"menuActualSize" = "Werkelijke grootte";
+
+/* iPad menu bar command */
+"menuBack" = "Terug";
+
+/* iPad menu bar command */
+"menuClearTabsAndData" = "Tabbladen en gegevens wissen";
+
+/* iPad menu bar command */
+"menuDuplicateTab" = "Tabblad kopiëren";
+
+/* iPad menu bar command */
+"menuFeedback" = "Feedback delen";
+
+/* iPad menu bar command */
+"menuForward" = "Vooruit";
+
+/* iPad menu bar command */
+"menuHideDownloads" = "Downloads verbergen";
+
+/* iPad menu bar command */
+"menuHidePasswords" = "Wachtwoorden verbergen";
+
+/* iPad menu bar command */
+"menuHideTabs" = "Verberg tabbladen";
+
+/* iPad menu bar command */
+"menuLastTab" = "Laatste tabblad";
+
+/* iPad menu bar command */
+"menuNewTabOnRight" = "Nieuw tabblad aan de rechterkant";
+
+/* iPad menu bar command */
+"menuNextTab" = "Volgende tabblad tonen";
+
+/* iPad menu bar command */
+"menuOpenLocation" = "Locatie openen...";
+
+/* iPad menu bar command */
+"menuPreviousTab" = "Vorig tabblad tonen";
+
+/* iPad menu bar command */
+"menuPrint" = "Afdrukken ...";
+
+/* iPad menu bar command selecting a numbered tab */
+"menuSelectTab" = "Selecteer tabblad %d";
+
+/* iPad menu bar command */
+"menuSettings" = "DuckDuckGo instellingen…";
+
+/* iPad menu bar command */
+"menuShowDownloads" = "Downloads weergeven";
+
+/* iPad menu bar command */
+"menuShowPasswords" = "Wachtwoorden weergeven";
+
+/* iPad menu bar command */
+"menuShowTabs" = "Tabbladen tonen";
+
+/* iPad menu bar command */
+"menuStop" = "Stoppen";
+
+/* iPad menu bar command */
+"menuVoiceSearch" = "Private spraakzoekopdracht";
+
 /* No comment provided by engineer. */
 "Message" = "Bericht";
 

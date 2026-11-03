@@ -3316,6 +3316,72 @@
 /* No comment provided by engineer. */
 "menu.button.hint" = "Меню браузера";
 
+/* iPad menu bar command */
+"menuActualSize" = "Фактический размер";
+
+/* iPad menu bar command */
+"menuBack" = "Назад";
+
+/* iPad menu bar command */
+"menuClearTabsAndData" = "Сбросить вкладки и данные";
+
+/* iPad menu bar command */
+"menuDuplicateTab" = "Дублировать вкладку";
+
+/* iPad menu bar command */
+"menuFeedback" = "Оставить отзыв";
+
+/* iPad menu bar command */
+"menuForward" = "Вперёд";
+
+/* iPad menu bar command */
+"menuHideDownloads" = "Скрыть загрузки";
+
+/* iPad menu bar command */
+"menuHidePasswords" = "Скрыть пароли";
+
+/* iPad menu bar command */
+"menuHideTabs" = "Скрыть вкладки";
+
+/* iPad menu bar command */
+"menuLastTab" = "Последняя вкладка";
+
+/* iPad menu bar command */
+"menuNewTabOnRight" = "Новая вкладка справа";
+
+/* iPad menu bar command */
+"menuNextTab" = "Показать следующую вкладку";
+
+/* iPad menu bar command */
+"menuOpenLocation" = "Открыть адрес...";
+
+/* iPad menu bar command */
+"menuPreviousTab" = "Показать предыдущую вкладку";
+
+/* iPad menu bar command */
+"menuPrint" = "Распечатать...";
+
+/* iPad menu bar command selecting a numbered tab */
+"menuSelectTab" = "Выбрать вкладку %d";
+
+/* iPad menu bar command */
+"menuSettings" = "Настройки DuckDuckGo...";
+
+/* iPad menu bar command */
+"menuShowDownloads" = "Показать загрузки";
+
+/* iPad menu bar command */
+"menuShowPasswords" = "Показать пароли";
+
+/* iPad menu bar command */
+"menuShowTabs" = "Показать вкладки";
+
+/* iPad menu bar command */
+"menuStop" = "Остановить";
+
+/* iPad menu bar command */
+"menuVoiceSearch" = "Конфиденциальный голосовой поиск";
+
 /* No comment provided by engineer. */
 "Message" = "Сообщение";
 

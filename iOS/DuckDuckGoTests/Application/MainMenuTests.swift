@@ -30,19 +30,28 @@ struct MainMenuTests {
         let spec = MainMenuSpec(isEnabled: enabled, idiom: idiom)
         let availability = MenuCommandAvailability(state: .init(shortcutsEnabled: true, presentation: .browser))
         let commands = MainMenuBuilder().keyCommands(for: spec, from: [], availability: availability)
-        if registersInMenuBar(enabled: enabled, idiom: idiom) {
+        let inMenuBar = registersInMenuBar(enabled: enabled, idiom: idiom)
+        if inMenuBar {
             #expect(spec.shortcutRegistration == .menu)
             #expect(commands.isEmpty)
         } else {
             #expect(spec.shortcutRegistration == (enabled ? .responder : .legacy))
             let settings = try #require(commands.first)
-            #expect(commands.count == 1)
+            let expectedItems = spec.shortcutItems.filter { !enabled || availability.isEnabled($0.command) }
+            #expect(commands.count == expectedItems.count)
             #expect(settings.action == #selector(MainViewController.keyboardSettings))
             #expect(settings.input == ",")
             #expect(settings.modifierFlags == .command)
             #expect(settings.wantsPriorityOverSystemBehavior)
+            if enabled {
+                for (action, input) in [(MainMenuCommand.newTab.action, "t"), (MainMenuCommand.location.action, "l"),
+                                        (MainMenuCommand.fire.action, UIKeyCommand.inputBackspace)] {
+                    #expect(commands.contains { $0.action == action && $0.input == input })
+                }
+            }
         }
-        #expect(spec.removedMenus == (registersInMenuBar(enabled: enabled, idiom: idiom) ? [.format] : []))
+        #expect(spec.removedMenus == (inMenuBar ? [.format] : []))
+        #expect(spec.mainMenus.map(\.identifier) == (inMenuBar ? spec.menus.map(\.identifier) : [.preferences]))
     }
 
     @available(iOS 16, macOS 13, *)
@@ -57,8 +66,10 @@ struct MainMenuTests {
             let spec = MainMenuSpec(isEnabled: enabled, idiom: .phone)
             let commands = MainMenuBuilder().keyCommands(for: spec, from: [settings], availability: availability)
             let shouldRegister = !enabled || (shortcutsEnabled && presentation != .blockingModal)
-            #expect(commands.count == (shouldRegister ? 1 : 0))
-            #expect(commands.allSatisfy { $0.action == #selector(MainViewController.keyboardSettings) })
+            let sharedSettings = commands.filter { $0.action == #selector(MainViewController.keyboardSettings) }
+            #expect(sharedSettings.count == (shouldRegister ? 1 : 0))
+            let expectedItems = spec.shortcutItems.filter { !enabled || availability.isEnabled($0.command) }
+            #expect(commands.count == expectedItems.count)
             if !enabled {
                 #expect(commands.first === settings)
             }
@@ -77,13 +88,19 @@ struct MainMenuTests {
                                        input: ",", modifierFlags: .command)
         let availability = MenuCommandAvailability(state: .init(shortcutsEnabled: true, presentation: .browser))
         let commands = MainMenuBuilder().keyCommands(for: spec, from: [settings, alternate, otherAction], availability: availability)
-        #expect(commands.contains { $0 === alternate })
-        #expect(commands.contains { $0 === otherAction })
+        for original in [alternate, otherAction] {
+            let retained = commands.first { $0.action == original.action && $0.input == original.input && $0.modifierFlags == original.modifierFlags }
+            #expect(retained != nil)
+            #expect(retained?.attributes.contains(.hidden) == enabled)
+            #expect(!original.attributes.contains(.hidden))
+        }
         let shared = commands.filter {
             $0.action == #selector(MainViewController.keyboardSettings) && $0.input == "," && $0.modifierFlags == .command
         }
-        #expect(shared.count == (registersInMenuBar(enabled: enabled, idiom: idiom) ? 0 : 1))
-        #expect(commands.count == (registersInMenuBar(enabled: enabled, idiom: idiom) ? 2 : 3))
+        let inMenuBar = registersInMenuBar(enabled: enabled, idiom: idiom)
+        #expect(shared.count == (inMenuBar ? 0 : 1))
+        let sharedItems = inMenuBar ? [] : spec.shortcutItems.filter { !enabled || availability.isEnabled($0.command) }
+        #expect(commands.count == sharedItems.count + 2)
     }
 
     @available(iOS 16, macOS 13, *)
@@ -126,6 +143,49 @@ struct MainMenuTests {
         #expect(rebuildCount == 0)
         #expect(service.spec.removedMenus.isEmpty)
         #expect(service.spec.shortcutRegistration == .responder)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test(.timeLimit(.minutes(1)))
+    func menuItemsDoNotShareShortcuts() {
+        let spec = MainMenuSpec(isEnabled: true, idiom: .pad, context: .init(voiceSearchEnabled: true, fireModeEnabled: true))
+        let shortcuts = spec.allItems.compactMap(\.shortcut)
+        for shortcut in shortcuts {
+            #expect(shortcuts.filter { $0 == shortcut }.count == 1)
+        }
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test(.timeLimit(.minutes(1)))
+    func menuOwnsEquivalentsAcrossRespondersAndRetainsHiddenAlternates() {
+        let make = { (action: Selector, input: String, modifiers: UIKeyModifierFlags) in
+            UIKeyCommand(title: "", action: action, input: input, modifierFlags: modifiers)
+        }
+        let close = make(MainMenuCommand.closeTab.action, "w", .command)
+        let newTabAlternate = make(MainMenuCommand.newTab.action, "n", .command)
+        let zoomAlternate = make(MainMenuCommand.zoomIn.action, "=", .command)
+        let cursor = make(MainMenuCommand.back.action, UIKeyCommand.inputLeftArrow, .command)
+        let commands = [close, newTabAlternate, zoomAlternate, cursor]
+        for enabled in [false, true, false] {
+            let spec = MainMenuSpec(isEnabled: enabled, idiom: .pad)
+            let remaining = spec.remainingKeyCommands(from: commands)
+            #expect(remaining.map(\.input) == (enabled ? ["n", "="] : commands.map(\.input)))
+            #expect(remaining.allSatisfy { $0.attributes.contains(.hidden) } == enabled)
+        }
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test(.timeLimit(.minutes(1)), arguments: [5, 12])
+    func commandNineSelectsLastTabOnlyInNewMode(count: Int) {
+        #expect(MainMenuSpec.tabIndex(number: 9, count: count, menuEnabled: true) == count - 1)
+        #expect(MainMenuSpec.tabIndex(number: 9, count: count, menuEnabled: false) == (count >= 9 ? 8 : nil))
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test(.timeLimit(.minutes(1)))
+    func lockedAndBlockingPresentationsDisableCommands() {
+        #expect(!MenuCommandAvailability(state: .init(shortcutsEnabled: false, presentation: .browser)).isEnabled(.newTab))
+        #expect(!MenuCommandAvailability(state: .init(shortcutsEnabled: true, presentation: .blockingModal)).isEnabled(.newTab))
     }
 
     private func registersInMenuBar(enabled: Bool, idiom: UIUserInterfaceIdiom) -> Bool {

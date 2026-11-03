@@ -27,8 +27,8 @@ public func assertImageSnapshot(
     strategy: SnapshotImageStrategy = .allAppearances,
     size: SnapshotImageSize,
     record: Bool = false,
-    precision: Float = SnapshotTolerance.precision,
-    perceptualPrecision: Float = SnapshotTolerance.perceptualPrecision,
+    precision: Float = 0.9999,
+    perceptualPrecision: Float = 0.98,
     fileID: StaticString = #fileID,
     file: StaticString = #filePath,
     testName: String = #function,
@@ -71,8 +71,8 @@ public func assertImageSnapshot(
     strategy: SnapshotImageStrategy = .allAppearances,
     size: SnapshotImageSize,
     record: Bool = false,
-    precision: Float = SnapshotTolerance.precision,
-    perceptualPrecision: Float = SnapshotTolerance.perceptualPrecision,
+    precision: Float = 0.9999,
+    perceptualPrecision: Float = 0.98,
     fileID: StaticString = #fileID,
     file: StaticString = #filePath,
     testName: String = #function,
@@ -99,8 +99,8 @@ public func assertImageSnapshot<Value: SwiftUI.View>(
     strategy: SnapshotImageStrategy = .allAppearances,
     size: SnapshotImageSize,
     record: Bool = false,
-    precision: Float = SnapshotTolerance.precision,
-    perceptualPrecision: Float = SnapshotTolerance.perceptualPrecision,
+    precision: Float = 0.9999,
+    perceptualPrecision: Float = 0.98,
     fileID: StaticString = #fileID,
     file: StaticString = #filePath,
     testName: String = #function,
@@ -147,6 +147,7 @@ private func withFixedBackingScale(_ view: NSView, size: CGSize, perform body: (
         backing: .buffered,
         defer: false
     )
+    window.colorSpace = .sRGB
     window.contentView = view
     defer { window.contentView = nil }
     body()

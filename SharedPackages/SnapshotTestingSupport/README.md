@@ -182,10 +182,10 @@ When the OS rolls forward, bump `SnapshotEnvironment.expectedIOSVersion` / `ciMa
 
 Every image helper compares with two thresholds:
 
-- `perceptualPrecision` (default `0.98` on iOS, `0.9` on macOS): how close a pixel's color must be to the reference to count as matching. `0.98` allows a CIE ΔE of 2, `0.9` a ΔE of 10.
+- `perceptualPrecision` (default `0.98`): how close a pixel's color must be to the reference to count as matching.
 - `precision` (default `0.9999`): the fraction of pixels that must match. Up to 0.01% may differ — about 300 pixels on a full @3x iPhone screen.
 
-Even with an identical OS, Xcode and simulator runtime, different CI runners can anti-alias overlapping vector shapes slightly differently. The result is deterministic per runner, so test retries don't help. The `precision` budget absorbs those few edge pixels while any real layout, text or color change still fails. macOS runners also shift tint and text colors by up to a ΔE of about 10 against a local Mac on the same macOS version, so macOS allows that per pixel; a missing, moved or recolored element still differs far more. Sizes measured from the view (`.intrinsicContentSize`, or a fixed width with fitted height) round up to whole points on macOS, so a fractional text width can't produce a 1px-wider image on another machine. Override either argument on a single call only when a view needs a different budget.
+Even with an identical OS, Xcode and simulator runtime, different CI runners can anti-alias overlapping vector shapes slightly differently. The result is deterministic per runner, so test retries don't help. The `precision` budget absorbs those few edge pixels while any real layout, text or color change still fails. macOS snapshots render in sRGB whatever display the machine has, so a Mac with a P3 display and a CI VM produce the same colors. Sizes measured from the view (`.intrinsicContentSize`, or a fixed width with fitted height) round up to whole points on macOS, so a fractional text width can't produce a 1px-wider image on another machine. Override either argument on a single call only when a view needs a different budget.
 
 ## Reference storage
 

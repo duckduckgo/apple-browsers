@@ -3175,6 +3175,72 @@ https://duckduckgo.com/mac";
 /* No comment provided by engineer. */
 "menu.button.hint" = "Browsing Menu";
 
+/* iPad menu bar command */
+"menuActualSize" = "Actual Size";
+
+/* iPad menu bar command */
+"menuBack" = "Back";
+
+/* iPad menu bar command */
+"menuClearTabsAndData" = "Clear Tabs and Data";
+
+/* iPad menu bar command */
+"menuDuplicateTab" = "Duplicate Tab";
+
+/* iPad menu bar command */
+"menuFeedback" = "Share Feedback";
+
+/* iPad menu bar command */
+"menuForward" = "Forward";
+
+/* iPad menu bar command */
+"menuHideDownloads" = "Hide Downloads";
+
+/* iPad menu bar command */
+"menuHidePasswords" = "Hide Passwords";
+
+/* iPad menu bar command */
+"menuHideTabs" = "Hide Tabs";
+
+/* iPad menu bar command */
+"menuLastTab" = "Last Tab";
+
+/* iPad menu bar command */
+"menuNewTabOnRight" = "New Tab on Right";
+
+/* iPad menu bar command */
+"menuNextTab" = "Show Next Tab";
+
+/* iPad menu bar command */
+"menuOpenLocation" = "Open Location...";
+
+/* iPad menu bar command */
+"menuPreviousTab" = "Show Previous Tab";
+
+/* iPad menu bar command */
+"menuPrint" = "Print...";
+
+/* iPad menu bar command selecting a numbered tab */
+"menuSelectTab" = "Select Tab %d";
+
+/* iPad menu bar command */
+"menuSettings" = "DuckDuckGo Settings...";
+
+/* iPad menu bar command */
+"menuShowDownloads" = "Show Downloads";
+
+/* iPad menu bar command */
+"menuShowPasswords" = "Show Passwords";
+
+/* iPad menu bar command */
+"menuShowTabs" = "Show Tabs";
+
+/* iPad menu bar command */
+"menuStop" = "Stop";
+
+/* iPad menu bar command */
+"menuVoiceSearch" = "Private Voice Search";
+
 /* The name of the Address Bar button when referenced in settings. */
 "mobile.customization.addressbar.button" = "Address Bar Button";
 
@@ -5130,6 +5196,9 @@ Take back control of your personal information with the browser designed for dat
 
 /* Message for the Sync Promotion banner when user has passwords that can be synced */
 "sync.promo.passwords.message" = "No account needed. End-to-end encryption means nobody but you can see your passwords, not even us.";
+
+/* Message for the redesigned Sync Promotion banner on the Passwords screen */
+"sync.promo.passwords.redesign.message" = "End-to-end encrypted. Nobody can see your passwords, not even us.";
 
 /* Title for the Sync Promotion banner */
 "sync.promo.passwords.title" = "Sync & Back Up Your Passwords";

@@ -160,7 +160,7 @@ final class SyncPromoManager: SyncPromoManaging {
 
     func designFor(_ touchpoint: Touchpoint) -> Design {
         switch touchpoint {
-        case .bookmarks:
+        case .bookmarks, .passwords:
             guard featureFlagger.isFeatureOn(.syncPromotionRedesign),
                   let installDate = installDateProvider(),
                   let daysSinceInstall = Calendar.current.dateComponents([.day], from: installDate, to: currentDateProvider()).day,
@@ -168,7 +168,7 @@ final class SyncPromoManager: SyncPromoManaging {
                 return .standard
             }
             return .redesigned
-        case .passwords, .dataImport, .aiChat:
+        case .dataImport, .aiChat:
             return .standard
         }
     }

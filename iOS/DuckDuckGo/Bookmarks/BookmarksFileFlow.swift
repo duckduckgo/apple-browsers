@@ -35,10 +35,12 @@ final class BookmarksFileFlow: NSObject {
 
     private let bookmarksDatabase: CoreDataDatabase
     private let appSettings: AppSettings
+    private let pixelFiring: (any PixelKitFiring)?
 
-    init(bookmarksDatabase: CoreDataDatabase, appSettings: AppSettings) {
+    init(bookmarksDatabase: CoreDataDatabase, appSettings: AppSettings, pixelFiring: (any PixelKitFiring)? = PixelKit.shared) {
         self.bookmarksDatabase = bookmarksDatabase
         self.appSettings = appSettings
+        self.pixelFiring = pixelFiring
     }
 
     func presentDocumentPicker(from presenter: UIViewController) {
@@ -60,13 +62,13 @@ final class BookmarksFileFlow: NSObject {
             case .success(let summary):
                 WidgetCenter.shared.reloadAllTimelines()
                 DispatchQueue.main.async {
-                    PixelKit.fire(Pixel.Event.bookmarkImportSuccess,
-                                  options: .parameters([PixelParameters.bookmarkCount: "\(summary.successful)"]))
+                    self.pixelFiring?.fire(Pixel.Event.bookmarkImportSuccess,
+                                           options: .parameters([PixelParameters.bookmarkCount: "\(summary.successful)"]))
                     ActionMessageView.present(message: UserText.importBookmarksSuccessMessage)
                 }
             case .failure(let bookmarksImportError):
                 Logger.bookmarks.error("Bookmarks import error \(bookmarksImportError.localizedDescription, privacy: .public)")
-                PixelKit.fire(Pixel.Event.bookmarkImportFailure)
+                self.pixelFiring?.fire(Pixel.Event.bookmarkImportFailure)
                 DispatchQueue.main.async {
                     ActionMessageView.present(message: UserText.importBookmarksFailedMessage)
                 }
@@ -93,7 +95,7 @@ final class BookmarksFileFlow: NSObject {
                     return
                 }
 
-                PixelKit.fire(Pixel.Event.bookmarkExportFailure)
+                self?.pixelFiring?.fire(Pixel.Event.bookmarkExportFailure)
                 self?.presentActionMessageView(withMessage: UserText.exportBookmarksFailedMessage)
                 self?.cleanupTempFile(tempFileUrl)
                 return
@@ -105,7 +107,7 @@ final class BookmarksFileFlow: NSObject {
                 } else {
                     self?.presentActionMessageView(withMessage: UserText.exportBookmarksShareSuccessMessage)
                 }
-                PixelKit.fire(Pixel.Event.bookmarkExportSuccess)
+                self?.pixelFiring?.fire(Pixel.Event.bookmarkExportSuccess)
             }
 
             self?.cleanupTempFile(tempFileUrl)

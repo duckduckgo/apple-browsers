@@ -594,6 +594,35 @@ final class GeolocationUserScriptWebKitTests: XCTestCase {
         return (try await frameResult(in: harness.webView), delegate)
     }
 
+    func testSameOriginIframeInsideSrcdocFrameUsesDefaultSelfAllowlistWithoutPolicyAPI() async throws {
+        let delegate = WebKitTestGeolocationDelegate()
+        let script = GeolocationUserScript(delegate: delegate)
+        script.activationHandler = { _ in true }
+        let harness = try makeHarness(script: script, precedingScript: unavailablePolicyScript)
+        // The srcdoc frame inherits the top-level origin, although its URL's origin is opaque.
+        let server = try await WebKitLoopbackHTTPServer.start(
+            html: frameHostHTML(source: "/frame").replacingOccurrences(
+                of: " src=\"/frame\"",
+                with: " srcdoc=\"&lt;iframe src=&quot;/frame&quot;&gt;&lt;/iframe&gt;\""
+            ),
+            frameHTML: """
+            <html><head><script>
+                window.addEventListener("load", () => navigator.geolocation.getCurrentPosition(
+                    () => top.postMessage({ test: "geolocation-frame-result", status: "success" }, "*"),
+                    (error) => top.postMessage({ test: "geolocation-frame-result", status: "error", code: error.code }, "*")
+                ));
+            </script></head><body></body></html>
+            """
+        )
+        defer { server.stop() }
+
+        try await harness.load(try XCTUnwrap(server.url))
+        let state = try await frameResult(in: harness.webView)
+
+        XCTAssertEqual(state["status"] as? String, "success", "Page state: \(state)")
+        XCTAssertEqual(delegate.positionRequestCount, 1)
+    }
+
     func testWatchAcceptsRepeatedUpdatesUntilClearWatch() async throws {
         let delegate = WebKitTestGeolocationDelegate()
         let started = expectation(description: "Native watch started")

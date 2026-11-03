@@ -44,7 +44,7 @@ struct MenuCommandAvailability {
     func isEnabled(_ command: MainMenuCommand) -> Bool {
         guard state.shortcutsEnabled, state.presentation != .blockingModal else { return false }
         switch command {
-        case .showTabs, .showDownloads:
+        case .showTabs, .showDownloads, .showBookmarks, .importBookmarks, .exportBookmarks, .openBookmark:
             return state.presentation != .tabSwitcher || state.canHideTabs
         case .showPasswords:
             return state.passwordsEnabled && (state.presentation != .tabSwitcher || state.canHideTabs)
@@ -64,6 +64,7 @@ struct MenuCommandAvailability {
             guard state.presentation == .browser else { return false }
         }
         switch command {
+        case .addBookmark, .addFavorite: return state.hasWebsite
         case .voiceSearch: return state.voiceSearchEnabled
         case .location, .newTabOnRight: return true
         case .duplicateTab: return state.hasTab
@@ -85,6 +86,7 @@ struct MenuCommandAvailability {
         case .showTabs: return state.presentation == .tabSwitcher ? UserText.menuHideTabs : UserText.menuShowTabs
         case .showPasswords: return state.presentation == .passwords ? UserText.menuHidePasswords : UserText.menuShowPasswords
         case .showDownloads: return state.presentation == .downloads ? UserText.menuHideDownloads : UserText.menuShowDownloads
+        case .showBookmarks: return state.presentation == .bookmarks ? UserText.menuHideBookmarks : UserText.menuShowBookmarks
         default: return nil
         }
     }

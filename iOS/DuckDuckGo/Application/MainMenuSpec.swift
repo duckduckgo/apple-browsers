@@ -20,6 +20,7 @@
 import UIKit
 
 enum MainMenuCommand: CaseIterable {
+    case showBookmarks, addBookmark, addFavorite, importBookmarks, exportBookmarks, openBookmark
     case settings, newTab, newFireTab, voiceSearch, location, closeTab, share, printPage
     case find, stop, reload, showTabs, showPasswords, showDownloads, zoomIn, zoomOut, actualSize
     case newTabOnRight, duplicateTab, previousTab, nextTab, about, feedback
@@ -36,6 +37,7 @@ struct MainMenuSpec {
     struct Context: Equatable {
         var voiceSearchEnabled = false
         var fireModeEnabled = false
+        var favorites: [MainMenuBookmark] = []
     }
 
     struct Shortcut: Equatable {
@@ -96,7 +98,7 @@ struct MainMenuSpec {
 
     private static var browserSections: [MainMenuSection] {
         [SettingsMenuSection(title: UserText.menuSettings), FileMenuSection(), EditMenuSection(),
-         ViewMenuSection(), WindowMenuSection(), HelpMenuSection()]
+         ViewMenuSection(), BookmarksMenuSection(), WindowMenuSection(), HelpMenuSection()]
     }
 
     private static var baselineSections: [MainMenuSection] {
@@ -193,6 +195,12 @@ struct MainMenuSpec {
 extension MainMenuCommand {
     var action: Selector {
         switch self {
+        case .showBookmarks: return #selector(MainViewController.menuToggleBookmarks)
+        case .addBookmark: return #selector(MainViewController.keyboardAddBookmark)
+        case .addFavorite: return #selector(MainViewController.keyboardAddFavorite)
+        case .importBookmarks: return #selector(MainViewController.menuImportBookmarks)
+        case .exportBookmarks: return #selector(MainViewController.menuExportBookmarks)
+        case .openBookmark: return #selector(MainViewController.menuOpenBookmark(_:))
         case .settings: return #selector(MainViewController.keyboardSettings)
         case .newTab: return #selector(MainViewController.keyboardNewTab)
         case .newFireTab: return #selector(MainViewController.keyboardNewFireTab)

@@ -424,9 +424,12 @@ struct Launching: LaunchingHandling {
 
         let voiceSearchHelper = self.voiceSearchHelper
         let fireModeCapability = mainCoordinator.controller.fireModeCapability
+        let mainMenuBookmarks = mainCoordinator.controller.mainMenuBookmarks
+        let bookmarksMenuTree = BookmarksMenuTree(children: { mainMenuBookmarks.children(ofFolderWithID: $0) })
         let mainMenuService = MainMenuService(featureFlagger: featureFlagger, contextProvider: {
-            .init(voiceSearchEnabled: voiceSearchHelper.isVoiceSearchEnabled, fireModeEnabled: fireModeCapability.isFireModeEnabled)
-        })
+            .init(voiceSearchEnabled: voiceSearchHelper.isVoiceSearchEnabled, fireModeEnabled: fireModeCapability.isFireModeEnabled,
+                  favorites: mainMenuBookmarks.favorites)
+        }, deferredContent: [.bookmarksTree: bookmarksMenuTree], rebuildTriggers: [mainMenuBookmarks.changes])
 
         // MARK: - App Services aggregation
         // This object serves as a central hub for app-wide services that:

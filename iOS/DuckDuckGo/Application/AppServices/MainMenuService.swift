@@ -40,6 +40,7 @@ final class MainMenuService {
          idiom: UIUserInterfaceIdiom = UIDevice.current.userInterfaceIdiom,
          contextProvider: @escaping () -> MainMenuSpec.Context = { .init() },
          deferredContent: [UIMenu.Identifier: MainMenuDeferredContent] = [:],
+         rebuildTriggers: [AnyPublisher<Void, Never>] = [],
          notificationCenter: NotificationCenter = .default,
          rebuildDelay: DispatchQueue.SchedulerTimeType.Stride = .milliseconds(100),
          rebuild: @escaping () -> Void = { UIMenuSystem.main.setNeedsRebuild() }) {
@@ -50,6 +51,10 @@ final class MainMenuService {
 
         notificationCenter.publisher(for: .speechRecognizerDidChangeAvailability)
             .sink { [weak self] _ in self?.requestRebuild() }
+            .store(in: &cancellables)
+
+        Publishers.MergeMany(rebuildTriggers)
+            .sink { [weak self] in self?.requestRebuild() }
             .store(in: &cancellables)
 
         rebuildRequests

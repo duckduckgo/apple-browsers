@@ -23,9 +23,11 @@ import FeatureFlags_iOS
 extension MainViewController {
     
     override var keyCommands: [UIKeyCommand]? {
-        let menuSpec = MainMenuSpec(isEnabled: featureFlagger.isFeatureOn(.ipadMenuBar),
+        let menuEnabled = featureFlagger.isFeatureOn(.ipadMenuBar)
+        let menuSpec = MainMenuSpec(isEnabled: menuEnabled,
                                     context: .init(voiceSearchEnabled: voiceSearchHelper.isVoiceSearchEnabled,
-                                                   fireModeEnabled: fireModeCapability.isFireModeEnabled))
+                                                   fireModeEnabled: fireModeCapability.isFireModeEnabled,
+                                                   favorites: menuEnabled ? mainMenuBookmarks.favorites : []))
         let settingsCommand = UIKeyCommand(title: UserText.settingsTitle, action: #selector(keyboardSettings),
                                           input: ",", modifierFlags: .command)
         settingsCommand.wantsPriorityOverSystemBehavior = true
@@ -401,12 +403,14 @@ extension MainViewController {
 
     @objc func keyboardAddBookmark() {
         KeyboardShortcutPixel.fireUsed(with: pixelFiring)
+        guard isMenuCommandAllowed(.addBookmark) else { return }
         guard isShortcutEnabled() else { return }
         saveBookmark(favorite: false)
     }
 
     @objc func keyboardAddFavorite() {
         KeyboardShortcutPixel.fireUsed(with: pixelFiring)
+        guard isMenuCommandAllowed(.addFavorite) else { return }
         guard isShortcutEnabled() else { return }
         saveBookmark(favorite: true)
     }

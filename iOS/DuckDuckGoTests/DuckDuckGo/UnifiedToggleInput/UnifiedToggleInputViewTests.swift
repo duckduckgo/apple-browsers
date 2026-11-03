@@ -48,7 +48,10 @@ final class UnifiedToggleInputViewTests: XCTestCase {
         UIView.performWithoutAnimation {
             sut.applyOmnibarEditingShowPose()
         }
-        XCTAssertNil(glass.effect)
+        // The glass stays under the fill until the fill is opaque, then goes.
+        XCTAssertTrue(glass.effect is UIGlassEffect)
+        let glassCleared = expectation(for: NSPredicate { _, _ in glass.effect == nil }, evaluatedWith: nil)
+        wait(for: [glassCleared], timeout: 2)
         XCTAssertFalse(shadow.isHidden)
 
         UIView.performWithoutAnimation {

@@ -315,7 +315,7 @@ extension MainViewController {
             } else {
                 rootBackgroundColor = UIColor(designSystemColor: .surfaceCanvas)
                 navigationBarContainerColor = .clear
-                unifiedToggleInputContainerColor = UIColor(designSystemColor: .surfaceCanvas)
+                unifiedToggleInputContainerColor = isFloatingUIEnabled ? .clear : UIColor(designSystemColor: .surfaceCanvas)
                 webViewBackgroundColor = UIColor(designSystemColor: .surfaceCanvas)
             }
         }
@@ -947,7 +947,8 @@ private extension MainViewController {
 
     func setUpAIChatTabChatHeader() {
         let headerView = AIChatTabChatHeaderView(isFireModeEnabled: fireModeCapability.isFireModeEnabled,
-                                                 shouldShowImageGeneration: featureFlagger.isFeatureOn(.aiChatNativeSidebar))
+                                                 shouldShowImageGeneration: featureFlagger.isFeatureOn(.aiChatNativeSidebar),
+                                                 usesFloatingAIChrome: isFloatingUIEnabled)
         headerView.delegate = self
         headerView.translatesAutoresizingMaskIntoConstraints = false
         viewCoordinator.aiChatTabChatHeaderContainer.addSubview(headerView)
@@ -965,7 +966,7 @@ private extension MainViewController {
         self.aiChatTabChatHeaderView = headerView
         viewCoordinator.aiChatTabChatHeaderView = headerView
 
-        let editHeaderView = AIChatEditHeaderView()
+        let editHeaderView = AIChatEditHeaderView(usesFloatingAIChrome: isFloatingUIEnabled)
         editHeaderView.delegate = self
         editHeaderView.translatesAutoresizingMaskIntoConstraints = false
         editHeaderView.isHidden = true

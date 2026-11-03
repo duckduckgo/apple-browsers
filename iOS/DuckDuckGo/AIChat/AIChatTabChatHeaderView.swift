@@ -117,9 +117,9 @@ final class AIChatTabChatHeaderView: UIView {
         action: #selector(chatListTapped)
     )
 
-    lazy var closeButtonPill = AIChatHeaderGlassPill(cornerRadius: Constants.buttonSize / 2)
-    lazy var chatListButtonPill = AIChatHeaderGlassPill(cornerRadius: Constants.buttonSize / 2)
-    private lazy var rightPairPill = AIChatHeaderGlassPill(cornerRadius: Constants.buttonSize / 2)
+    lazy var closeButtonPill = AIChatHeaderGlassPill(cornerRadius: Constants.buttonSize / 2, usesFloatingAIChrome: usesFloatingAIChrome)
+    lazy var chatListButtonPill = AIChatHeaderGlassPill(cornerRadius: Constants.buttonSize / 2, usesFloatingAIChrome: usesFloatingAIChrome)
+    private lazy var rightPairPill = AIChatHeaderGlassPill(cornerRadius: Constants.buttonSize / 2, usesFloatingAIChrome: usesFloatingAIChrome)
 
     private var glassPills: [AIChatHeaderGlassPill] { [closeButtonPill, chatListButtonPill, rightPairPill] }
 
@@ -366,9 +366,12 @@ final class AIChatTabChatHeaderView: UIView {
         return stack
     }()
 
-    init(isFireModeEnabled: Bool, shouldShowImageGeneration: Bool) {
+    private let usesFloatingAIChrome: Bool
+
+    init(isFireModeEnabled: Bool, shouldShowImageGeneration: Bool, usesFloatingAIChrome: Bool = false) {
         self.isFireModeEnabled = isFireModeEnabled
         self.shouldShowImageGeneration = shouldShowImageGeneration
+        self.usesFloatingAIChrome = usesFloatingAIChrome
         super.init(frame: .zero)
         setupUI()
     }
@@ -376,6 +379,7 @@ final class AIChatTabChatHeaderView: UIView {
     override init(frame: CGRect) {
         self.isFireModeEnabled = false
         self.shouldShowImageGeneration = false
+        self.usesFloatingAIChrome = false
         super.init(frame: frame)
         setupUI()
     }
@@ -454,7 +458,11 @@ final class AIChatTabChatHeaderView: UIView {
         let active = backgroundColor != nil
         self.backgroundColor = backgroundColor ?? UIColor(designSystemColor: .surfaceCanvas)
         overrideUserInterfaceStyle = active ? .dark : .unspecified
-        bottomSeparator.isHidden = active
+        if #available(iOS 26, *), usesFloatingAIChrome {
+            bottomSeparator.isHidden = true
+        } else {
+            bottomSeparator.isHidden = active
+        }
     }
 
     private lazy var bottomSeparator: UIView = {

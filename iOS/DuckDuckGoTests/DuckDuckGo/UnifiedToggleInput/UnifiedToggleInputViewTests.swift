@@ -215,6 +215,32 @@ final class UnifiedToggleInputViewTests: XCTestCase {
         XCTAssertEqual(outlinedCard.layer.borderWidth, 0.5)
     }
 
+    @available(iOS 26, *)
+    func testFloatingAIChromeUsesGlassInRestAndFocusOnlyOnAITab() throws {
+        let handler = UnifiedToggleInputHandler(isVoiceSearchEnabled: false)
+        let legacy = UnifiedToggleInputView(handler: handler)
+        legacy.isAITab = true
+        legacy.applyCardLayout(.flanked, animated: false)
+        XCTAssertFalse(allDescendants(of: UIVisualEffectView.self, in: legacy).contains { $0.effect is UIGlassEffect })
+
+        let sut = UnifiedToggleInputView(handler: UnifiedToggleInputHandler(isVoiceSearchEnabled: false),
+                                         usesFloatingAIChrome: true)
+        XCTAssertFalse(allDescendants(of: UIVisualEffectView.self, in: sut).contains { $0.effect is UIGlassEffect })
+
+        sut.isAITab = true
+        sut.applyCardLayout(.flanked, animated: false)
+        let restingGlass = try XCTUnwrap(allDescendants(of: UIVisualEffectView.self, in: sut).first { $0.effect is UIGlassEffect })
+        XCTAssertEqual(restingGlass.superview?.layer.shadowOpacity, 0)
+        XCTAssertEqual(sut.aiTabFireButton.layer.shadowOpacity, 0)
+
+        sut.applyCardLayout(.expanded(showsToggle: true, showsToolbar: true), animated: false)
+        XCTAssertTrue(restingGlass.isDescendant(of: sut))
+        XCTAssertEqual(restingGlass.superview?.layer.borderWidth, 0)
+
+        sut.isAITab = false
+        XCTAssertFalse(allDescendants(of: UIVisualEffectView.self, in: sut).contains { $0.effect is UIGlassEffect })
+    }
+
     func testWhenExpandedSearchOnlyInputIsShownThenCardHasNoOutline() {
         let handler = UnifiedToggleInputHandler(isVoiceSearchEnabled: false)
         let sut = UnifiedToggleInputView(handler: handler, isToggleEnabled: false)

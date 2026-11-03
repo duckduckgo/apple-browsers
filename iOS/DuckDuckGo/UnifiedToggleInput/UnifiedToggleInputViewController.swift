@@ -67,7 +67,8 @@ final class UnifiedToggleInputViewController: UIViewController {
     private lazy var inputBarView = UnifiedToggleInputView(handler: handler,
                                                           isToggleEnabled: isToggleEnabled,
                                                           placesAttachmentsAboveInput: placesAttachmentsAboveInput,
-                                                          usesCompactAttachmentLayout: usesCompactAttachmentLayout)
+                                                          usesCompactAttachmentLayout: usesCompactAttachmentLayout,
+                                                          usesFloatingAIChrome: usesFloatingAIChrome)
 
     /// Edges of the visible input card, for aligning content sitting around the bar.
     func inputCardFrame(in view: UIView) -> CGRect {
@@ -102,14 +103,17 @@ final class UnifiedToggleInputViewController: UIViewController {
     private let placesAttachmentsAboveInput: Bool
 
     private let usesCompactAttachmentLayout: Bool
+    private let usesFloatingAIChrome: Bool
 
     init(isToggleEnabled: Bool,
          isFireTab: Bool = false,
          placesAttachmentsAboveInput: Bool = false,
-         usesCompactAttachmentLayout: Bool = false) {
+         usesCompactAttachmentLayout: Bool = false,
+         usesFloatingAIChrome: Bool = false) {
         self.isToggleEnabled = isToggleEnabled
         self.placesAttachmentsAboveInput = placesAttachmentsAboveInput
         self.usesCompactAttachmentLayout = usesCompactAttachmentLayout
+        self.usesFloatingAIChrome = usesFloatingAIChrome
         self.handler = UnifiedToggleInputHandler(isVoiceSearchEnabled: false,
                                                  isToggleEnabled: isToggleEnabled,
                                                  isFireTab: isFireTab)

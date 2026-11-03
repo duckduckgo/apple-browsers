@@ -194,7 +194,16 @@ final class UnifiedToggleInputView: UIView {
 
     /// True when hosted by a Duck.ai tab. Drives the extra 3pt above/below the text view while
     /// expanded. Set before `setInputMode`/`applyCardLayout` so the layout pass reads it.
-    var isAITab: Bool = false
+    var isAITab: Bool = false {
+        didSet {
+            guard isAITab != oldValue else { return }
+            applyCardBackgroundColor(cardBackgroundColor(isFireTab: handler.isFireTab))
+            let useCompositeShadow = isExpanded || currentLayout == .flanked
+            expandedShadowView.isHidden = !useCompositeShadow || hasFloatingAIChrome
+            cardView.layer.shadowOpacity = useCompositeShadow || hasFloatingAIChrome ? 0 : 1
+            updateExpandedBorderVisibility(isExpanded && (currentLayout.showsToggle || currentLayout.showsToolbar))
+        }
+    }
 
     var text: String {
         get { handler.currentText }
@@ -668,7 +677,9 @@ final class UnifiedToggleInputView: UIView {
     private var pageContextChipCancellables = Set<AnyCancellable>()
 
     private lazy var aiTabCollapsedFireButton: UIButton = {
-        let button = Self.makeAITabAccessoryButton(image: DesignSystemImages.Glyphs.Size24.fireSolid, traitCollection: traitCollection)
+        let button = Self.makeAITabAccessoryButton(image: DesignSystemImages.Glyphs.Size24.fireSolid,
+                                                   traitCollection: traitCollection,
+                                                   usesFloatingAIChrome: usesFloatingAIChrome)
         button.isHidden = true
         button.accessibilityLabel = UserText.actionForgetAll
         button.addTarget(self, action: #selector(fireTapped), for: .touchUpInside)
@@ -683,7 +694,9 @@ final class UnifiedToggleInputView: UIView {
     }
 
     private lazy var aiTabCollapsedMenuButton: UIButton = {
-        let button = Self.makeAITabAccessoryButton(image: DesignSystemImages.Glyphs.Size24.menuHamburger, traitCollection: traitCollection)
+        let button = Self.makeAITabAccessoryButton(image: DesignSystemImages.Glyphs.Size24.menuHamburger,
+                                                   traitCollection: traitCollection,
+                                                   usesFloatingAIChrome: usesFloatingAIChrome)
         button.isHidden = true
         button.accessibilityLabel = UserText.menuButtonHint
         button.addTarget(self, action: #selector(appMenuTapped), for: .touchUpInside)
@@ -714,6 +727,15 @@ final class UnifiedToggleInputView: UIView {
         view.isHidden = true
         return view
     }()
+    private var glassCardBackgroundView: UIVisualEffectView?
+    private let usesFloatingAIChrome: Bool
+
+    private var hasFloatingAIChrome: Bool {
+        if #available(iOS 26, *) {
+            return usesFloatingAIChrome && isAITab
+        }
+        return false
+    }
 
     // MARK: - Dynamic Colors
 
@@ -847,9 +869,11 @@ final class UnifiedToggleInputView: UIView {
     init(handler: UnifiedToggleInputHandler,
          isToggleEnabled: Bool = true,
          placesAttachmentsAboveInput: Bool = false,
-         usesCompactAttachmentLayout: Bool = false) {
+         usesCompactAttachmentLayout: Bool = false,
+         usesFloatingAIChrome: Bool = false) {
         self.handler = handler
         self.isToggleEnabled = isToggleEnabled
+        self.usesFloatingAIChrome = usesFloatingAIChrome
         self.placesAttachmentsAboveInput = placesAttachmentsAboveInput
         self.attachmentsStrip = UnifiedToggleInputAttachmentsStripView(usesCompactLayout: usesCompactAttachmentLayout)
         self.textEntryView = SwitchBarTextEntryView(handler: handler, voiceButtonAppearance: .aiVoicePlain)
@@ -869,6 +893,7 @@ final class UnifiedToggleInputView: UIView {
     override func layoutSubviews() {
         super.layoutSubviews()
         syncOmnibarMaterialTransitionCorners()
+        glassCardBackgroundView?.layer.cornerRadius = cardView.layer.cornerRadius
         frozenInputOverlay.layer.cornerRadius = cardView.layer.cornerRadius
         frozenInputOverlay.layer.maskedCorners = cardView.layer.maskedCorners
         guard !expandedShadowView.isHidden else { return }
@@ -922,8 +947,10 @@ final class UnifiedToggleInputView: UIView {
         textEntryView.isUserInteractionEnabled = !dimmed
         // Suppress the stop-generating button during onboarding — its red color is distracting even when dimmed.
         handler.isOnboardingLocked = dimmed
-        let shadowOpacity = dimmed ? Constants.aiTabCollapsedMenuButtonDisabledShadowOpacity : Constants.aiTabCollapsedMenuButtonShadowOpacity
-        Self.applyAITabAccessoryShadow(to: aiTabCollapsedMenuButton, opacity: shadowOpacity)
+        if !hasFloatingAIChrome {
+            let shadowOpacity = dimmed ? Constants.aiTabCollapsedMenuButtonDisabledShadowOpacity : Constants.aiTabCollapsedMenuButtonShadowOpacity
+            Self.applyAITabAccessoryShadow(to: aiTabCollapsedMenuButton, opacity: shadowOpacity)
+        }
     }
 
     // MARK: - Fire Mode
@@ -946,8 +973,29 @@ final class UnifiedToggleInputView: UIView {
     }
 
     private func applyCardBackgroundColor(_ color: UIColor) {
-        cardView.backgroundColor = color
-        expandedShadowView.backgroundColor = color
+        if hasFloatingAIChrome {
+            if glassCardBackgroundView == nil, #available(iOS 26, *) {
+                let glassView = UIVisualEffectView(effect: UIGlassEffect(style: .regular))
+                glassView.translatesAutoresizingMaskIntoConstraints = false
+                glassView.layer.cornerRadius = cardView.layer.cornerRadius
+                glassView.clipsToBounds = true
+                cardView.insertSubview(glassView, at: 0)
+                NSLayoutConstraint.activate([
+                    glassView.topAnchor.constraint(equalTo: cardView.topAnchor),
+                    glassView.leadingAnchor.constraint(equalTo: cardView.leadingAnchor),
+                    glassView.trailingAnchor.constraint(equalTo: cardView.trailingAnchor),
+                    glassView.bottomAnchor.constraint(equalTo: cardView.bottomAnchor)
+                ])
+                glassCardBackgroundView = glassView
+            }
+            cardView.backgroundColor = .clear
+            expandedShadowView.backgroundColor = .clear
+        } else {
+            glassCardBackgroundView?.removeFromSuperview()
+            glassCardBackgroundView = nil
+            cardView.backgroundColor = color
+            expandedShadowView.backgroundColor = color
+        }
     }
 
     private func restingMaterialColor() -> UIColor {
@@ -1286,8 +1334,8 @@ final class UnifiedToggleInputView: UIView {
         let useCompositeShadow = expanded || layout == .flanked
         // In-place mutation preserves the in-flight cornerRadius CAAnimation.
         expandedShadowView.updateShadows(layout == .flanked ? flankedShadows : expandedShadows)
-        expandedShadowView.isHidden = !useCompositeShadow
-        cardView.layer.shadowOpacity = useCompositeShadow ? 0 : 1.0
+        expandedShadowView.isHidden = !useCompositeShadow || hasFloatingAIChrome
+        cardView.layer.shadowOpacity = useCompositeShadow || hasFloatingAIChrome ? 0 : 1.0
         let dimensions = Self.cardDimensions(for: layout)
         if let pinned = dimensions.pinnedHeight {
             cardPinnedHeightConstraint.constant = pinned
@@ -1306,6 +1354,7 @@ final class UnifiedToggleInputView: UIView {
             // Bottom collapsed pose is a capsule to match the floating omnibar pill; everything
             // else uses the layout's own radius.
             self.cardView.layer.cornerRadius = (layout == .collapsed) ? self.collapsedCornerRadius : dimensions.cornerRadius
+            self.glassCardBackgroundView?.layer.cornerRadius = self.cardView.layer.cornerRadius
             self.cardTopConstraint.constant = topMargin
             self.cardLeadingConstraint.constant = hLeadingMargin
             self.cardTrailingConstraint.constant = -hTrailingMargin
@@ -1658,8 +1707,9 @@ final class UnifiedToggleInputView: UIView {
     }
 
     private func updateExpandedBorderVisibility(_ isVisible: Bool) {
-        cardView.layer.borderWidth = isVisible ? Constants.expandedBorderWidth : 0
-        cardView.layer.borderColor = isVisible ? expandedBorderColor : UIColor.clear.cgColor
+        let showBorder = isVisible && !hasFloatingAIChrome
+        cardView.layer.borderWidth = showBorder ? Constants.expandedBorderWidth : 0
+        cardView.layer.borderColor = showBorder ? expandedBorderColor : UIColor.clear.cgColor
     }
 
     private func updateAttachmentsStripLayout() {
@@ -1772,9 +1822,9 @@ private extension UnifiedToggleInputView {
 
     /// Liquid Glass on iOS 26+, raised fill on legacy. Used for the fire / voice
     /// accessories flanking the collapsed input pill on Duck.ai tabs.
-    static func makeAITabAccessoryButton(image: UIImage?, traitCollection: UITraitCollection) -> UIButton {
+    static func makeAITabAccessoryButton(image: UIImage?, traitCollection: UITraitCollection, usesFloatingAIChrome: Bool = false) -> UIButton {
         if #available(iOS 26, *) {
-            return makeGlassAITabAccessoryButton(image: image, traitCollection: traitCollection)
+            return makeGlassAITabAccessoryButton(image: image, traitCollection: traitCollection, usesFloatingAIChrome: usesFloatingAIChrome)
         }
 
         let button = makeLegacyAITabAccessoryButton(image: image)
@@ -1783,14 +1833,16 @@ private extension UnifiedToggleInputView {
     }
 
     @available(iOS 26, *)
-    private static func makeGlassAITabAccessoryButton(image: UIImage?, traitCollection: UITraitCollection) -> UIButton {
+    private static func makeGlassAITabAccessoryButton(image: UIImage?, traitCollection: UITraitCollection, usesFloatingAIChrome: Bool) -> UIButton {
         var config = glassAccessoryConfiguration(for: traitCollection)
         config.image = image
         config.cornerStyle = .capsule
 
         let button = UIButton(configuration: config)
         configureAITabAccessoryButton(button)
-        applyAITabAccessoryShadow(to: button)
+        if !usesFloatingAIChrome {
+            applyAITabAccessoryShadow(to: button)
+        }
         return button
     }
 

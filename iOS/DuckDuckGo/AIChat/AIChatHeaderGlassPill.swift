@@ -43,12 +43,14 @@ final class AIChatHeaderGlassPill: UIView {
 
     private let cornerRadius: CGFloat
     private let shadowStyle: ShadowStyle
+    private let usesFloatingAIChrome: Bool
     private let clipHost = UIView()
     private var glassEffectView: UIVisualEffectView?
 
-    init(cornerRadius: CGFloat, shadowStyle: ShadowStyle = .floating) {
+    init(cornerRadius: CGFloat, shadowStyle: ShadowStyle = .floating, usesFloatingAIChrome: Bool = false) {
         self.cornerRadius = cornerRadius
         self.shadowStyle = shadowStyle
+        self.usesFloatingAIChrome = usesFloatingAIChrome
         super.init(frame: .zero)
         translatesAutoresizingMaskIntoConstraints = false
 
@@ -116,7 +118,11 @@ final class AIChatHeaderGlassPill: UIView {
 
     func applyShadow(dimmed: Bool) {
         layer.shadowColor = UIColor.black.cgColor
-        layer.shadowOpacity = dimmed ? shadowStyle.dimmedOpacity : shadowStyle.opacity
+        if #available(iOS 26, *), usesFloatingAIChrome {
+            layer.shadowOpacity = 0
+        } else {
+            layer.shadowOpacity = dimmed ? shadowStyle.dimmedOpacity : shadowStyle.opacity
+        }
         layer.shadowOffset = shadowStyle.offset
         layer.shadowRadius = shadowStyle.radius
         layer.borderWidth = 0

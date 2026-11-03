@@ -803,7 +803,8 @@ extension SwipeTabsCoordinator: UICollectionViewDelegate {
         let state = inputStateProvider(tab)
         let header = AIChatTabChatHeaderView(
             isFireModeEnabled: true,
-            shouldShowImageGeneration: omnibarDependencies.featureFlagger.isFeatureOn(.aiChatNativeSidebar)
+            shouldShowImageGeneration: omnibarDependencies.featureFlagger.isFeatureOn(.aiChatNativeSidebar),
+            usesFloatingAIChrome: floatingUIManager.isFloatingUIEnabled
         )
         header.isUserInteractionEnabled = false
 

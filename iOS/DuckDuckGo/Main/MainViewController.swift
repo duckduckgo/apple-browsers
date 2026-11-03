@@ -2215,8 +2215,7 @@ class MainViewController: UIViewController {
         }
 
         if isAnyAITabUTIState, let currentTab {
-            // The web view is anchored to the input bar's top (.unifiedToggleInput mode),
-            // so it never extends behind the input — no bottom inset is needed.
+            // Floating Duck.ai content runs under the input; classic chrome reserves its height.
             if isFloatingUIEnabled {
                 currentTab.updateWebViewBottomAnchor(for: currentBarsVisibility)
             } else if currentTab.webView.scrollView.contentInset.bottom != 0 {

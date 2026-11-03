@@ -632,7 +632,10 @@ class MainViewCoordinator {
     /// separator is anchored to the safe area, not to `navigationBarContainer`, so hiding the
     /// chrome doesn't hide the separator transitively — we have to re-apply on either change.
     private func applyAITabCollapsedTopSeparatorVisibility() {
-        let visible = aiTabCollapsedTopSeparatorLogicallyVisible && !navigationBarContainer.isHidden
+        var visible = aiTabCollapsedTopSeparatorLogicallyVisible && !navigationBarContainer.isHidden
+        if #available(iOS 26, *), isFloatingUIEnabled {
+            visible = false
+        }
         guard aiTabCollapsedTopSeparator.isHidden == visible else { return }
         aiTabCollapsedTopSeparator.isHidden = !visible
         if visible {
@@ -1058,10 +1061,7 @@ class MainViewCoordinator {
         setContentContainerBottomAnchorMode(requesting: preferredBottomContentAnchorModeForVisibleChrome())
     }
 
-    /// Anchors the contentContainer to the UTI's top — except when the bottom chrome is hidden
-    /// (voice / FE-hidden chat input), in which case the UTI's frame still sits at the bottom of
-    /// the screen and anchoring there would leave a gap below the webview. Falls through to
-    /// `.safeArea` then, matching what `setAITabBottomChromeHidden(true)` would set.
+    /// Floating Duck.ai content runs under the input. Other visible UTI layouts reserve its height.
     func anchorContentContainerToInputTop() {
         if navigationBarContainer.isHidden {
             setContentContainerBottomAnchorMode(requesting: .safeArea)
@@ -1077,7 +1077,12 @@ class MainViewCoordinator {
     }
 
     private func setContentContainerBottomAnchorMode(requesting requestedMode: ContentContainerBottomAnchorMode) {
-        let resolvedMode: ContentContainerBottomAnchorMode = shouldUnifiedToggleInputOwnBottomAnchor ? .unifiedToggleInput : requestedMode
+        let resolvedMode: ContentContainerBottomAnchorMode
+        if #available(iOS 26, *), isFloatingUIEnabled, isNavigationChromeHidden {
+            resolvedMode = .safeArea
+        } else {
+            resolvedMode = shouldUnifiedToggleInputOwnBottomAnchor ? .unifiedToggleInput : requestedMode
+        }
         constraints.contentContainerBottomToToolbarTop.isActive = resolvedMode == .toolbar
         constraints.contentContainerBottomToUnifiedToggleInputTop.isActive = resolvedMode == .unifiedToggleInput
         constraints.contentContainerBottomToSafeArea.isActive = resolvedMode == .safeArea

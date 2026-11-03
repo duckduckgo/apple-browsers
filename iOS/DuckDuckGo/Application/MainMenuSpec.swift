@@ -21,6 +21,7 @@ import UIKit
 
 enum MainMenuCommand: CaseIterable {
     case openDuckAI, newChat, newVoiceChat, newImageChat, openRecentChat, deleteAllChats
+    case showBookmarks, addBookmark, addFavorite, importBookmarks, exportBookmarks, openBookmark
     case settings, newTab, newFireTab, voiceSearch, location, closeTab, share, printPage
     case find, stop, reload, showTabs, showPasswords, showDownloads, zoomIn, zoomOut, actualSize
     case newTabOnRight, duplicateTab, previousTab, nextTab, about, feedback
@@ -38,6 +39,7 @@ struct MainMenuSpec {
         var voiceSearchEnabled = false
         var fireModeEnabled = false
         var aiChatEnabled = false
+        var favorites: [MainMenuBookmark] = []
     }
 
     struct Shortcut: Equatable {
@@ -98,7 +100,7 @@ struct MainMenuSpec {
 
     private static var browserSections: [MainMenuSection] {
         [SettingsMenuSection(title: UserText.menuSettings), FileMenuSection(), EditMenuSection(),
-         ViewMenuSection(), DuckAIMenuSection(), WindowMenuSection(), HelpMenuSection()]
+         ViewMenuSection(), DuckAIMenuSection(), BookmarksMenuSection(), WindowMenuSection(), HelpMenuSection()]
     }
 
     private static var baselineSections: [MainMenuSection] {
@@ -201,6 +203,12 @@ extension MainMenuCommand {
         case .newImageChat: return #selector(MainViewController.menuNewImageChat)
         case .openRecentChat: return #selector(MainViewController.menuOpenRecentChat(_:))
         case .deleteAllChats: return #selector(MainViewController.menuDeleteAllChats(_:))
+        case .showBookmarks: return #selector(MainViewController.menuToggleBookmarks)
+        case .addBookmark: return #selector(MainViewController.keyboardAddBookmark)
+        case .addFavorite: return #selector(MainViewController.keyboardAddFavorite)
+        case .importBookmarks: return #selector(MainViewController.menuImportBookmarks)
+        case .exportBookmarks: return #selector(MainViewController.menuExportBookmarks)
+        case .openBookmark: return #selector(MainViewController.menuOpenBookmark(_:))
         case .settings: return #selector(MainViewController.keyboardSettings)
         case .newTab: return #selector(MainViewController.keyboardNewTab)
         case .newFireTab: return #selector(MainViewController.keyboardNewFireTab)

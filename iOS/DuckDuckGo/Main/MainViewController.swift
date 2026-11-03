@@ -485,6 +485,9 @@ class MainViewController: UIViewController {
     private lazy var browsingMenuHeaderDataSource = BrowsingMenuHeaderDataSource()
     private lazy var browsingMenuHeaderStateProvider = BrowsingMenuHeaderStateProvider()
 
+    lazy var bookmarksFileFlow = BookmarksFileFlow(bookmarksDatabase: bookmarksDatabase, appSettings: appSettings)
+    lazy var mainMenuBookmarks = MainMenuBookmarks(database: bookmarksDatabase, appSettings: appSettings)
+
     lazy var menuBookmarksViewModel: MenuBookmarksInteracting = {
         let viewModel = MenuBookmarksViewModel(bookmarksDatabase: bookmarksDatabase, syncService: syncService)
         viewModel.favoritesDisplayMode = appSettings.favoritesDisplayMode

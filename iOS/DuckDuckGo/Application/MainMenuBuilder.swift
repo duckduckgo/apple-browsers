@@ -55,7 +55,8 @@ struct MainMenuBuilder {
                     entry.section.children(of: elements, systemElements: systemElements)
                 }
             case .insert(let sibling, let position):
-                insert(entry.menu, children: elements, next: sibling, position: position, into: builder)
+                insert(entry.menu, children: entry.section.children(of: elements, systemElements: []),
+                       next: sibling, position: position, into: builder)
             }
         }
     }

@@ -75,9 +75,11 @@ extension TabSwitcherViewController {
         commands.forEach {
             $0.wantsPriorityOverSystemBehavior = true
         }
-        let spec = MainMenuSpec(isEnabled: featureFlagger.isFeatureOn(.ipadMenuBar),
+        let menuEnabled = featureFlagger.isFeatureOn(.ipadMenuBar)
+        let favorites = menuEnabled ? (presentingViewController as? MainViewController)?.mainMenuBookmarks.favorites ?? [] : []
+        let spec = MainMenuSpec(isEnabled: menuEnabled,
                                 context: .init(fireModeEnabled: fireModeCapability.isFireModeEnabled,
-                                               aiChatEnabled: aiChatSettings.isAIChatEnabled))
+                                               aiChatEnabled: aiChatSettings.isAIChatEnabled, favorites: favorites))
         guard spec.shortcutRegistration != .legacy else { return commands }
         return MainMenuBuilder().keyCommands(for: spec, from: commands, availability: switcherMenuAvailability)
     }

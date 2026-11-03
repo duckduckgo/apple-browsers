@@ -344,8 +344,13 @@ final class AIChatSettings: AIChatSettingsProvider {
     }
 
     func enableKeyboardAnimation(enable: Bool) {
+        let wasEnabled = isKeyboardAnimationEnabled
         keyValueStore.set(enable, forKey: .isKeyboardAnimationEnabledKey)
         triggerSettingsChangedNotification()
+
+        if wasEnabled && !enable {
+            PixelKit.fire(DuckAIKeyboardAnimationPixel.disabled, frequency: .dailyAndCount)
+        }
     }
 
     func setDefaultOmnibarMode(_ mode: DefaultOmnibarMode) {

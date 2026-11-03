@@ -43,7 +43,7 @@ final class FavoritesUITests: UITestCase {
 
         XCTContext.runActivity(named: "Open the favorite from the new-tab page") { _ in
             app.openNewTab()
-            app.buttons["UnifiedToggleInput.Button.Dismiss"].tapWhenHittable()
+            app.buttons["UnifiedToggleInput.Button.Dismiss"].tapWhenHittable(in: app)
             XCTAssertTrue(
                 favorite.wait(
                     for: NSPredicate(format: "isHittable == true AND isEnabled == true"),
@@ -58,7 +58,7 @@ final class FavoritesUITests: UITestCase {
             XCTAssertTrue(
                 favoriteSuggestion.waitForExistence(timeout: UITestTimeouts.elementExistence),
                 "Favorite did not appear in autocomplete suggestions.")
-            app.buttons["UnifiedToggleInput.Button.Dismiss"].tapWhenHittable()
+            app.buttons["UnifiedToggleInput.Button.Dismiss"].tapWhenHittable(in: app)
         }
 
         XCTContext.runActivity(named: "Delete the favorite from Bookmarks") { _ in
@@ -66,19 +66,19 @@ final class FavoritesUITests: UITestCase {
             XCTAssertTrue(
                 bookmark.waitForExistence(timeout: UITestTimeouts.elementExistence),
                 "Favorite did not appear in Bookmarks.")
-            app.buttons["Bookmarks.Edit"].tapWhenHittable()
+            app.buttons["Bookmarks.Edit"].tapWhenHittable(in: app)
             let removeBookmark = bookmark.buttons.matching(
                 NSPredicate(format: "label BEGINSWITH %@", "Remove")
             ).firstMatch
-            removeBookmark.tapWhenHittable()
-            app.tables["Bookmarks.List"].buttons["Delete"].tapWhenHittable()
+            removeBookmark.tapWhenHittable(in: app)
+            app.tables["Bookmarks.List"].buttons["Delete"].tapWhenHittable(in: app)
             app.assertBookmarksEmpty()
             app.closeBookmarksAfterEditing()
         }
 
         XCTContext.runActivity(named: "Verify the favorite is absent from the new-tab page") { _ in
             app.openNewTab()
-            app.buttons["UnifiedToggleInput.Button.Dismiss"].tapWhenHittable()
+            app.buttons["UnifiedToggleInput.Button.Dismiss"].tapWhenHittable(in: app)
             XCTAssertTrue(
                 favorite.wait(
                     for: NSPredicate(format: "exists == false"),

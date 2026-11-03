@@ -52,7 +52,7 @@ final class BookmarksUITests: UITestCase {
 
         XCTContext.runActivity(named: "Open the bookmark from Bookmarks") { _ in
             app.openBookmarks()
-            bookmark.tapWhenHittable()
+            bookmark.tapWhenHittable(in: app)
             app.assertPageContains("Privacy Test Pages")
         }
 
@@ -77,35 +77,35 @@ final class BookmarksUITests: UITestCase {
         }
 
         XCTContext.runActivity(named: "Move the bookmark into the first folder") { _ in
-            app.buttons["Bookmarks.Edit"].tapWhenHittable()
-            bookmark.tapWhenHittable()
+            app.buttons["Bookmarks.Edit"].tapWhenHittable(in: app)
+            bookmark.tapWhenHittable(in: app)
             app.createBookmarkFolder(named: firstFolderName)
             app.saveBookmarkEditor()
             XCTAssertFalse(
                 bookmark.exists,
                 "Bookmark remained at the root after being moved into the first folder.")
-            app.buttons["Bookmarks.Edit"].tapWhenHittable()
+            app.buttons["Bookmarks.Edit"].tapWhenHittable(in: app)
 
             XCTAssertTrue(
                 app.staticTexts[firstFolderName].waitForExistence(timeout: UITestTimeouts.elementExistence),
                 "First folder did not appear in Bookmarks.")
-            folder.tapWhenHittable()
+            folder.tapWhenHittable(in: app)
         }
 
         XCTContext.runActivity(named: "Move the bookmark into the nested folder") { _ in
-            app.buttons["Bookmarks.Edit"].tapWhenHittable()
-            bookmark.tapWhenHittable()
+            app.buttons["Bookmarks.Edit"].tapWhenHittable(in: app)
+            bookmark.tapWhenHittable(in: app)
             app.createBookmarkFolder(named: secondFolderName)
             app.saveBookmarkEditor()
             XCTAssertFalse(
                 bookmark.exists,
                 "Bookmark remained in the first folder after being moved into the nested folder.")
-            app.buttons["Bookmarks.Edit"].tapWhenHittable()
+            app.buttons["Bookmarks.Edit"].tapWhenHittable(in: app)
 
             XCTAssertTrue(
                 app.staticTexts[secondFolderName].waitForExistence(timeout: UITestTimeouts.elementExistence),
                 "Nested folder did not appear in Bookmarks.")
-            folder.tapWhenHittable()
+            folder.tapWhenHittable(in: app)
         }
 
         XCTContext.runActivity(named: "Delete the bookmark from the nested folder") { _ in
@@ -138,7 +138,7 @@ final class BookmarksUITests: UITestCase {
                     expecting: "Cannot GET /\(index)")
                 app.openNewTab()
             }
-            app.buttons["UnifiedToggleInput.Button.Dismiss"].tapWhenHittable()
+            app.buttons["UnifiedToggleInput.Button.Dismiss"].tapWhenHittable(in: app)
         }
 
         XCTContext.runActivity(named: "Bookmark all open tabs") { _ in
@@ -149,21 +149,21 @@ final class BookmarksUITests: UITestCase {
 
         XCTContext.runActivity(named: "Create a folder and move all bookmarks into it") { _ in
             app.createBookmarkFolderAtRoot(named: folderName)
-            app.buttons["Bookmarks.Edit"].tapWhenHittable()
+            app.buttons["Bookmarks.Edit"].tapWhenHittable(in: app)
 
             for remainingCount in stride(from: 3, through: 0, by: -1) {
-                bookmarks.firstMatch.tapWhenHittable()
+                bookmarks.firstMatch.tapWhenHittable(in: app)
                 let destination = app.tables["Bookmarks.Editor.List"]
                     .cells.matching(identifier: "Bookmarks.Editor.Folder")
                     .containing(.staticText, identifier: folderName)
                     .firstMatch
                 app.tables["Bookmarks.Editor.List"].swipeUpToReveal(destination)
-                destination.tapWhenHittable()
+                destination.tapWhenHittable(in: app)
                 app.saveBookmarkEditor()
                 app.assertBookmarkCount(remainingCount)
             }
 
-            app.buttons["Bookmarks.Edit"].tapWhenHittable()
+            app.buttons["Bookmarks.Edit"].tapWhenHittable(in: app)
             XCTAssertTrue(
                 folder.waitForExistence(timeout: UITestTimeouts.elementExistence),
                 "Created folder is missing after moving the bookmarks.")

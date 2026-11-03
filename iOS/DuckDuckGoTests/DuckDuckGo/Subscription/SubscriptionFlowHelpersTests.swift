@@ -27,7 +27,7 @@ import PrivacyConfig
 @testable import Subscription
 import SubscriptionTestingUtilities
 
-private struct PerformanceOptimizedPaywallsProviderStub: PerformanceOptimizedPaywallsProviding {
+struct PerformanceOptimizedPaywallsProviderStub: PerformanceOptimizedPaywallsProviding {
     let isEnabled = false
     let paths = SubscriptionURL.PerformanceOptimizedPaywallPaths.default
 }

@@ -41,6 +41,7 @@ import Networking
 import FeatureFlags_iOS
 import PixelKit
 import SitePermissions
+import WideEvent
 
 enum YouTubeAdBlockingStorageKeys: String, StorageKeyDescribing {
     case youTubeAdBlockingEnabled = "com_duckduckgo_ios_youTubeAdBlockingEnabled"
@@ -130,6 +131,9 @@ final class SettingsViewModel: ObservableObject {
     // Subscription Dependencies
     let subscriptionManager: any SubscriptionManager
     let subscriptionFeatureAvailability: SubscriptionFeatureAvailability
+    private let internalUserDecider: InternalUserDecider
+    private let wideEvent: WideEventManaging
+    private let expirationReminderScheduler: SubscriptionExpirationReminderScheduling
     private var subscriptionSignOutObserver: Any?
     var duckPlayerContingencyHandler: DuckPlayerContingencyHandler {
         DefaultDuckPlayerContingencyHandler(privacyConfigurationManager: privacyConfigurationManager)
@@ -239,10 +243,11 @@ final class SettingsViewModel: ObservableObject {
             subscriptionManager: subscriptionManager,
             subscriptionFeatureAvailability: subscriptionFeatureAvailability,
             userScriptsDependencies: userScriptsDependencies,
-            internalUserDecider: AppDependencyProvider.shared.internalUserDecider,
+            internalUserDecider: internalUserDecider,
             dataBrokerProtectionViewControllerProvider: dataBrokerProtectionViewControllerProvider,
-            wideEvent: AppDependencyProvider.shared.wideEvent,
-            featureFlagger: featureFlagger)
+            wideEvent: wideEvent,
+            featureFlagger: featureFlagger,
+            expirationReminderScheduler: expirationReminderScheduler)
     }
 
     /// Whether this customer can use PIR: the feature flag is on and the app exposes a PIR view controller.
@@ -1114,7 +1119,10 @@ final class SettingsViewModel: ObservableObject {
          autoplaySettings: AutoplaySettings = DefaultAutoplaySettings(),
          darkReaderFeatureSettings: DarkReaderFeatureSettings,
          adBlockingAvailability: AdBlockingAvailabilityProviding,
-         sitePermissionsEnabled: Bool = AppDependencyProvider.shared.isSitePermissionsEnabled
+         sitePermissionsEnabled: Bool = AppDependencyProvider.shared.isSitePermissionsEnabled,
+         internalUserDecider: InternalUserDecider = AppDependencyProvider.shared.internalUserDecider,
+         wideEvent: WideEventManaging = AppDependencyProvider.shared.wideEvent,
+         expirationReminderScheduler: SubscriptionExpirationReminderScheduling = AppDependencyProvider.shared.subscriptionExpirationReminderScheduler
     ) {
 
         self.isSitePermissionsEnabled = sitePermissionsEnabled
@@ -1125,6 +1133,9 @@ final class SettingsViewModel: ObservableObject {
         self.legacyViewProvider = legacyViewProvider
         self.subscriptionManager = subscriptionManager
         self.subscriptionFeatureAvailability = subscriptionFeatureAvailability
+        self.internalUserDecider = internalUserDecider
+        self.wideEvent = wideEvent
+        self.expirationReminderScheduler = expirationReminderScheduler
         self.voiceSearchHelper = voiceSearchHelper
         self.deepLinkTarget = deepLink
         self.historyManager = historyManager

@@ -28,11 +28,6 @@ import PrivacyConfig
 @testable import Subscription
 import SubscriptionTestingUtilities
 
-private struct PerformanceOptimizedPaywallsProviderStub: PerformanceOptimizedPaywallsProviding {
-    let isEnabled = false
-    let paths = SubscriptionURL.PerformanceOptimizedPaywallPaths.default
-}
-
 @MainActor
 @Suite("Subscription container view factory view model")
 struct SubscriptionContainerViewFactoryTests {
@@ -55,7 +50,8 @@ struct SubscriptionContainerViewFactoryTests {
                                        internalUserDecider: PrivacyConfig.MockInternalUserDecider(),
                                        dataBrokerProtectionViewControllerProvider: nil,
                                        wideEvent: WideEventMock(),
-                                       featureFlagger: PrivacyConfig.MockFeatureFlagger())
+                                       featureFlagger: PrivacyConfig.MockFeatureFlagger(),
+                                       expirationReminderScheduler: SubscriptionExpirationReminderSchedulerMock())
     }
 
     private func makeViewModel(for flow: SubscriptionFlow) -> SubscriptionContainerViewModel {

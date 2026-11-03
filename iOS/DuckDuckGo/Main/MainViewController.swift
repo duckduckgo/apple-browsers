@@ -4627,7 +4627,8 @@ class MainViewController: UIViewController {
             internalUserDecider: AppDependencyProvider.shared.internalUserDecider,
             dataBrokerProtectionViewControllerProvider: dbpIOSPublicInterface,
             wideEvent: AppDependencyProvider.shared.wideEvent,
-            featureFlagger: featureFlagger)
+            featureFlagger: featureFlagger,
+            expirationReminderScheduler: AppDependencyProvider.shared.subscriptionExpirationReminderScheduler)
         let purchaseDependencies = SubscriptionPurchaseDependencies(
             subscriptionDataReporter: subscriptionDataReporter,
             tld: AppDependencyProvider.shared.storageCache.tld,

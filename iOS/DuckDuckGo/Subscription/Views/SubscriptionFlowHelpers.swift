@@ -37,6 +37,7 @@ struct SubscriptionFlowContext {
     let dataBrokerProtectionViewControllerProvider: DBPIOSInterface.DataBrokerProtectionViewControllerProvider?
     let wideEvent: WideEventManaging
     let featureFlagger: FeatureFlagger
+    let expirationReminderScheduler: SubscriptionExpirationReminderScheduling
 }
 
 /// Dependencies only the subscribe flow needs: building the paywall URL, purchase attribution and post-checkout onboarding.

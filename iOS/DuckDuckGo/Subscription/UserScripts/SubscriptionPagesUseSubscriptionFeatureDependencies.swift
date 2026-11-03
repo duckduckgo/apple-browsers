@@ -77,7 +77,7 @@ extension DefaultSubscriptionPagesUseSubscriptionFeature {
             pendingTransactionHandler: dependencies.pendingTransactionHandler,
             subscriptionFlowsExecuter: dependencies.subscriptionFlowsExecuter,
             requestValidator: DefaultScriptRequestValidator(subscriptionManager: context.subscriptionManager),
-            expirationReminderScheduler: schedulesExpirationReminders ? AppDependencyProvider.shared.subscriptionExpirationReminderScheduler : nil,
+            expirationReminderScheduler: schedulesExpirationReminders ? context.expirationReminderScheduler : nil,
             isExpirationReminderFeatureEnabled: {
                 schedulesExpirationReminders && featureFlagger.isFeatureOn(.subscriptionExpirationReminderNotification)
             },

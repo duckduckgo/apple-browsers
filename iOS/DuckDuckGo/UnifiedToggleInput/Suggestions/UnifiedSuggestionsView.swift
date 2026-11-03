@@ -60,6 +60,8 @@ struct UnifiedSuggestionsView: View {
         if viewModel.isFireTab {
             let showsFire = !isTypingList
             FireModeEmptyStateView(type: .tab, contentTopInset: viewModel.contentTopInset)
+                // Like the other focused content, dragging the Fire screen dismisses the keyboard.
+                .scrollDismissesKeyboardIfAvailable()
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
                 .background(Color(designSystemColor: .background))
                 .opacity(showsFire ? 1 : 0)

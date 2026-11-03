@@ -191,8 +191,8 @@ extension WebExtensionManager {
                                   applicationIdentifier: String?,
                                   for extensionContext: WKWebExtensionContext) async throws -> Any? {
         guard let nativeMessagingHandler else {
-            Logger.webExtensions.error("❌ No native messaging handler, so the message is dropped")
-            return nil
+            Logger.webExtensions.error("❌ No native messaging handler, so the message fails")
+            throw WKWebExtension.MessagePort.Error(.notConnected)
         }
 
         return try await nativeMessagingHandler.sendMessage(message,

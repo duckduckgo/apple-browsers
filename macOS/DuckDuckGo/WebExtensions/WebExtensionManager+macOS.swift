@@ -173,13 +173,11 @@ enum WebExtensionManagerFactory {
         )
 
         internalSiteHandler.dataSource = manager
-        if buildType.isSparkleBuild {
-            manager.chromeWebStore = ChromeWebStoreService(
-                manager: manager,
-                catalog: ChromeWebStoreCatalog(configurationManager: privacyConfigurationManager),
-                presenter: ChromeWebStorePresenter(windowProvider: { NSApp.keyWindow ?? NSApp.mainWindow })
-            )
-        }
+        manager.chromeWebStore = ChromeWebStoreService(
+            manager: manager,
+            catalog: ChromeWebStoreCatalog(configurationManager: privacyConfigurationManager),
+            presenter: ChromeWebStorePresenter(windowProvider: { NSApp.keyWindow ?? NSApp.mainWindow })
+        )
 
         return manager
     }

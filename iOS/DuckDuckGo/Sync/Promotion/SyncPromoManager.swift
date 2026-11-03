@@ -30,10 +30,17 @@ import PixelKit
 
 protocol SyncPromoManaging {
     func shouldPresentPromoFor(_ touchpoint: SyncPromoManager.Touchpoint, count: Int) -> Bool
+    func designFor(_ touchpoint: SyncPromoManager.Touchpoint) -> SyncPromoManager.Design
     func markPromoHandledFor(_ touchpoint: SyncPromoManager.Touchpoint)
     func recordImpressionFor(_ touchpoint: SyncPromoManager.Touchpoint)
     func dismissPromoFor(_ touchpoint: SyncPromoManager.Touchpoint, reason: SyncPromoManager.DismissalReason)
     func resetPromos()
+}
+
+extension SyncPromoManaging {
+    func designFor(_ touchpoint: SyncPromoManager.Touchpoint) -> SyncPromoManager.Design {
+        .standard
+    }
 }
 
 enum SyncPromoStorageKeyNames: String, StorageKeyDescribing {
@@ -60,13 +67,21 @@ final class SyncPromoManager: SyncPromoManaging {
         case impressionCap = "impression_cap"
     }
 
+    enum Design {
+        case standard
+        case redesigned
+    }
+
     static let aiChatImpressionCap = 5
+    static let redesignMinimumDaysSinceInstall = 3
 
     private let featureFlagger: FeatureFlagger
     private let syncService: DDGSyncing
     private let privacyConfigurationManager: PrivacyConfigurationManaging
     private let storage: any KeyedStoring<SyncPromoStorageKeys>
     private let pixelFiring: (any PixelKitFiring)?
+    private let installDateProvider: () -> Date?
+    private let currentDateProvider: () -> Date
 
     @UserDefaultsWrapper(key: .syncPromoBookmarksDismissed, defaultValue: nil)
     private var syncPromoBookmarksDismissed: Date?
@@ -91,12 +106,16 @@ final class SyncPromoManager: SyncPromoManaging {
          featureFlagger: FeatureFlagger = AppDependencyProvider.shared.featureFlagger,
          privacyConfigurationManager: PrivacyConfigurationManaging = ContentBlocking.shared.privacyConfigurationManager,
          storage: (any KeyedStoring<SyncPromoStorageKeys>) = UserDefaults.app.keyedStoring(),
-         pixelFiring: (any PixelKitFiring)? = PixelKit.shared) {
+         pixelFiring: (any PixelKitFiring)? = PixelKit.shared,
+         installDateProvider: @escaping () -> Date? = { StatisticsUserDefaults().installDate },
+         currentDateProvider: @escaping () -> Date = Date.init) {
         self.featureFlagger = featureFlagger
         self.syncService = syncService
         self.privacyConfigurationManager = privacyConfigurationManager
         self.storage = storage
         self.pixelFiring = pixelFiring
+        self.installDateProvider = installDateProvider
+        self.currentDateProvider = currentDateProvider
     }
 
     func shouldPresentPromoFor(_ touchpoint: Touchpoint, count: Int) -> Bool {
@@ -137,6 +156,21 @@ final class SyncPromoManager: SyncPromoManaging {
         }
 
         return false
+    }
+
+    func designFor(_ touchpoint: Touchpoint) -> Design {
+        switch touchpoint {
+        case .bookmarks:
+            guard featureFlagger.isFeatureOn(.syncPromotionRedesign),
+                  let installDate = installDateProvider(),
+                  let daysSinceInstall = Calendar.current.dateComponents([.day], from: installDate, to: currentDateProvider()).day,
+                  daysSinceInstall > Self.redesignMinimumDaysSinceInstall else {
+                return .standard
+            }
+            return .redesigned
+        case .passwords, .dataImport, .aiChat:
+            return .standard
+        }
     }
 
     func markPromoHandledFor(_ touchpoint: Touchpoint) {

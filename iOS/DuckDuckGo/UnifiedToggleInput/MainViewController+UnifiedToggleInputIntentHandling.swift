@@ -333,6 +333,7 @@ private extension MainViewController {
             // focused SwiftUI logo; revealed again on dismiss. (Alpha is already 1 via the seamless
             // handoff above — the focused logo rests at the NTP anchor by construction, no manual swap.)
             newTabPageViewController?.setLogoHidden(true)
+            coordinator.contentViewController.showLogoForHandoff()
         }
 
         animateOmnibarEditingShow(coordinator: coordinator,

@@ -354,6 +354,11 @@ final class UnifiedInputContentContainerViewController: UIViewController {
         unifiedSuggestionsHost.performInputModeChange(changes)
     }
 
+    /// The focused logo takes over from the NTP logo in place, so it shows from the start.
+    func showLogoForHandoff() {
+        unifiedSuggestionsHost?.showLogoForHandoff()
+    }
+
     /// Fades the focused content (logo / suggestion list) out as the UTI collapses, so the NTP
     /// content takes over cleanly.
     func beginDismissFade() {

@@ -66,7 +66,7 @@ extension XCUIApplication {
     func dismissSettings(file: StaticString = #filePath, line: UInt = #line) {
         buttons["Settings.Button.Done"].tapWhenHittable(file: file, line: line)
         XCTAssertTrue(
-            searchEntry.wait(for: NSPredicate(format: "isHittable == true"), timeout: UITestTimeouts.elementExistence),
+            searchEntry.waitForHittableInAppWindow(in: self, timeout: UITestTimeouts.elementExistence),
             "Browser did not reappear after dismissing Settings.",
             file: file,
             line: line)

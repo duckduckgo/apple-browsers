@@ -104,7 +104,14 @@ extension MainViewController {
               let urlString = command.propertyList as? String, let url = URL(string: urlString) else { return }
         dismissMenuPresentation { [weak self] in
             guard let self, !selectOpenChatTab(for: url) else { return }
-            onChatHistorySelected(url: url)
+            guard currentTab?.tabModel.link != nil else {
+                onChatHistorySelected(url: url)
+                return
+            }
+            // Chat history loads in place over a chat or, without unified input, a website; the menu keeps the page like its other items.
+            postIdleSessionInstrumentation.sessionEnded(reason: .chatSelected)
+            let source = fireAIChatEntryPointPixel(source: .chatHistoryOpenChat, opensNewTab: true, hasPrompt: false)
+            loadUrlInNewTab(url, inheritedAttribution: nil) { $0.duckAIEntrySource = source }
         }
     }
 

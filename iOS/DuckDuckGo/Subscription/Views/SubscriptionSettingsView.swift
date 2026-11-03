@@ -78,19 +78,16 @@ struct SubscriptionSettingsViewV2: View {
     @State private var shouldOpenStoreCancellation = false
 
     var body: some View {
-        SubscriptionWithdrawalContainerView(withdrawal: viewModel.withdrawal,
-                                            onLeaveWithdrawn: { Task { await viewModel.completeSubscriptionWithdrawal() } }) {
-            settingsView
-        }
-    }
-
-    private var settingsView: some View {
         optionsView
             .onFirstAppear {
                 PixelKit.fire(Pixel.Event.ddgSubscriptionSettings, frequency: .debounce(seconds: 1))
             }
             .task {
                 await viewModel.refreshOnboardingState(hasActiveSubscription: hasActiveSubscription, isPIRAvailable: isPIRAvailable)
+            }
+            .onDisappear {
+                guard viewModel.withdrawal.confirmation != nil else { return }
+                Task { await viewModel.completeSubscriptionWithdrawal() }
             }
             .navigationBarTitleDisplayMode(.inline)
             .onChange(of: settingsViewModel.state.subscription.shouldDisplayRestoreSubscriptionError) { value in
@@ -113,22 +110,47 @@ struct SubscriptionSettingsViewV2: View {
     }
 
     // MARK: -
-    @ViewBuilder
-    private var headerSection: some View {
+    private func headerSection(_ header: SubscriptionSettingsHeaderView) -> some View {
         Section {
-            switch configuration {
-            case .subscribed:
-                SubscriptionSettingsHeaderView(state: .subscribed, tierBadge: viewModel.tierBadgeToDisplay)
-            case .expired:
-                SubscriptionSettingsHeaderView(state: .expired(viewModel.state.subscriptionDetails))
-            case .activating:
-                SubscriptionSettingsHeaderView(state: .activating)
-            case .trial:
-                SubscriptionSettingsHeaderView(state: .trial, tierBadge: viewModel.tierBadgeToDisplay)
-            }
+            header
         }
         .listRowBackground(Color.clear)
         .frame(maxWidth: .infinity, alignment: .center)
+        .padding(.horizontal, -20)
+        .padding(.vertical, -10)
+    }
+
+    private var configurationHeader: SubscriptionSettingsHeaderView {
+        switch configuration {
+        case .subscribed:
+            return SubscriptionSettingsHeaderView(state: .subscribed, tierBadge: viewModel.tierBadgeToDisplay)
+        case .expired:
+            return SubscriptionSettingsHeaderView(state: .expired(viewModel.state.subscriptionDetails))
+        case .activating:
+            return SubscriptionSettingsHeaderView(state: .activating)
+        case .trial:
+            return SubscriptionSettingsHeaderView(state: .trial, tierBadge: viewModel.tierBadgeToDisplay)
+        }
+    }
+
+    @ViewBuilder
+    private var subscribedSections: some View {
+        if viewModel.state.cancelPendingDowngradeDetails != nil {
+            downgradeBanner
+                .listRowBackground(Color(designSystemColor: .surfaceTertiary))
+        }
+        if case .setup(let onboardingProgress) = viewModel.onboardingSetupState {
+            onboardingSetupSection(progress: onboardingProgress)
+        }
+        if viewModel.shouldShowUpgrade {
+            upgradeSection
+        }
+        if configuration == .subscribed || configuration == .expired || configuration == .trial {
+            devicesSection
+        }
+        manageSection
+        helpSection
+        privacyPolicySection
     }
 
     private var upgradeSection: some View {
@@ -502,25 +524,13 @@ struct SubscriptionSettingsViewV2: View {
             .hidden()
 
         List {
-            headerSection
-                .padding(.horizontal, -20)
-                .padding(.vertical, -10)
-            if viewModel.state.cancelPendingDowngradeDetails != nil {
-                downgradeBanner
-                    .listRowBackground(Color(designSystemColor: .surfaceTertiary))
+            if let withdrawalConfirmation = viewModel.withdrawal.confirmation {
+                headerSection(SubscriptionSettingsHeaderView(state: .withdrawn))
+                SubscriptionWithdrawnSection(confirmation: withdrawalConfirmation)
+            } else {
+                headerSection(configurationHeader)
+                subscribedSections
             }
-            if case .setup(let onboardingProgress) = viewModel.onboardingSetupState {
-                onboardingSetupSection(progress: onboardingProgress)
-            }
-            if viewModel.shouldShowUpgrade {
-                upgradeSection
-            }
-            if configuration == .subscribed || configuration == .expired || configuration == .trial {
-                devicesSection
-            }
-            manageSection
-            helpSection
-            privacyPolicySection
         }
         .padding(.top, -20)
         .navigationTitle(UserText.settingsPProManageSubscription)

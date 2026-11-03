@@ -957,6 +957,37 @@ final class SubscriptionSettingsViewModelTests: XCTestCase {
         XCTAssertEqual(sut.state.subscriptionInfo?.status, .expired)
     }
 
+    // MARK: - Withdrawal
+
+    func testWithdrawal_WhenConfirmationIsSet_NotifiesSettingsViewModel() async {
+        mockSubscriptionManager.resultTokenContainer = OAuthTokensFactory.makeValidTokenContainer()
+        mockSubscriptionManager.withdrawSubscriptionResult = .success(WithdrawSubscriptionResponse())
+        sut = makeSUT()
+        let withdrawal = sut.withdrawal
+        var confirmationNotificationCount = 0
+        sut.objectWillChange
+            .sink { _ in
+                if withdrawal.isWithdrawing && withdrawal.confirmation == nil {
+                    confirmationNotificationCount += 1
+                }
+            }
+            .store(in: &cancellables)
+
+        await withdrawal.withdraw()
+
+        XCTAssertEqual(confirmationNotificationCount, 1)
+        XCTAssertNotNil(withdrawal.confirmation)
+    }
+
+    func testCompleteSubscriptionWithdrawal_SignsOut() async {
+        mockSubscriptionManager.resultTokenContainer = OAuthTokensFactory.makeValidTokenContainer()
+        sut = makeSUT()
+
+        await sut.completeSubscriptionWithdrawal()
+
+        XCTAssertNil(mockSubscriptionManager.resultTokenContainer)
+    }
+
     // MARK: - Helpers
 
     private func makeSUT(subscriptionFlowsExecuter: SubscriptionFlowsExecuting? = nil,

@@ -34,7 +34,7 @@ struct SubscriptionWithdrawalOffer {
     let entitlements: [SubscriptionEntitlement]
 }
 
-/// Display-ready values for the withdrawn screen shown after a successful withdrawal.
+/// Display-ready values for the withdrawn state shown in Subscription Settings after a successful withdrawal.
 struct SubscriptionWithdrawalConfirmation {
     let withdrawalDate: String
     let refundAmount: String?

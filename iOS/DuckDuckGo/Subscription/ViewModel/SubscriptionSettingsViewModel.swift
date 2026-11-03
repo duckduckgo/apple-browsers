@@ -17,6 +17,7 @@
 //  limitations under the License.
 //
 
+import Combine
 import Foundation
 import FoundationExtensions
 import SwiftUI
@@ -53,6 +54,7 @@ final class SubscriptionSettingsViewModel: ObservableObject {
     private let locale: Locale
     let cancellationInstrumentation: SubscriptionCancellationInstrumenting
     let withdrawal: SubscriptionWithdrawalModel
+    private var withdrawalCancellable: AnyCancellable?
 
     private var externalAllowedDomains = ["stripe.com"]
 
@@ -264,6 +266,8 @@ final class SubscriptionSettingsViewModel: ObservableObject {
         self.usesUnifiedFeedbackForm = subscriptionManager.isUserAuthenticated
         self.keyValueStorage = keyValueStorage
         setupNotificationObservers()
+        withdrawalCancellable = withdrawal.objectWillChange
+            .sink { [weak self] _ in self?.objectWillChange.send() }
     }
 
     private var dateFormatter = {
@@ -311,15 +315,13 @@ final class SubscriptionSettingsViewModel: ObservableObject {
                                                                                                  loadingIndicator: false)
             let (_, hasLoadedSubscriptionFromCache) = await (loadedEmailFromCache, loadedSubscriptionFromCache)
 
-            Task {
-                await self.fetchWithdrawalEligibility()
-            }
+            async let withdrawalEligibility = await self.fetchWithdrawalEligibility()
 
             // Reload remote subscription and email state
             async let reloadedEmail = await self.fetchAndUpdateAccountEmail(forceRefresh: true)
             async let reloadedSubscription = await self.fetchAndUpdateSubscriptionDetails(forceRefresh: true,
                                                                                           loadingIndicator: !hasLoadedSubscriptionFromCache)
-            _ = await (reloadedEmail, reloadedSubscription)
+            _ = await (reloadedEmail, reloadedSubscription, withdrawalEligibility)
         }
     }
 

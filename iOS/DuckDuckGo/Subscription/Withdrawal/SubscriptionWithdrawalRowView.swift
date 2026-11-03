@@ -89,3 +89,14 @@ struct SubscriptionWithdrawalRowView: View {
         )
     }
 }
+
+struct SubscriptionWithdrawalProgressView: View {
+
+    @ObservedObject var withdrawal: SubscriptionWithdrawalModel
+
+    var body: some View {
+        if withdrawal.isWithdrawing {
+            PurchaseInProgressView(status: UserText.subscriptionWithdrawInProgressTitle)
+        }
+    }
+}

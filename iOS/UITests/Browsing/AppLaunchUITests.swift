@@ -192,6 +192,10 @@ final class AppLaunchUITests: UITestCase {
         app.launchArguments.removeAll { $0 == "-clearAllDefaults" }
         app.launch()
 
+        let tabSwitcherButton = app.buttons["Browser.Toolbar.Button.TabSwitcher"]
+        XCTAssertTrue(
+            tabSwitcherButton.waitForHittableInAppWindow(in: app, timeout: UITestTimeouts.navigation),
+            "Tab switcher button did not become ready after automatic tab clearing.")
         app.openTabSwitcher()
 
         let screenshot = XCTAttachment(screenshot: app.screenshot())

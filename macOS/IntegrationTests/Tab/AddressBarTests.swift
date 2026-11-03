@@ -1276,7 +1276,7 @@ class AddressBarTests: XCTestCase {
     func testWhenWindowIsClosedWhileAskAIChatButtonContracts_windowObjectsAreDeallocated() {
         weak var addressBarButtonsViewController: AddressBarButtonsViewController?
         weak var tabCollectionViewModel: TabCollectionViewModel?
-        var suggestionWindowDeallocated: XCTestExpectation?
+        weak var suggestionWindow: NSWindow?
 
         autoreleasepool {
             // GIVEN the Ask AI Chat button is expanded because the address bar has a user-typed value
@@ -1285,7 +1285,7 @@ class AddressBarTests: XCTestCase {
             window = WindowsManager.openNewWindow(with: viewModel)!
             addressBarButtonsViewController = mainViewController.navigationBarViewController.addressBarViewController!.addressBarButtonsViewController!
             tabCollectionViewModel = viewModel
-            suggestionWindowDeallocated = expectSuggestionWindowDeallocation()
+            suggestionWindow = NSApp.windows.first(where: { $0.contentViewController is SuggestionViewController })
 
             _=window.makeFirstResponder(addressBarTextField)
             XCTAssertTrue(isAddressBarFirstResponder)
@@ -1313,19 +1313,11 @@ class AddressBarTests: XCTestCase {
 
         // Let the suggestions window finish its (asynchronous) teardown before the test ends,
         // so the app's DEBUG deallocation checks don't trip on it during the test cleanup
-        if let suggestionWindowDeallocated {
-            wait(for: [suggestionWindowDeallocated], timeout: 5)
+        let deadline = Date().addingTimeInterval(5)
+        while suggestionWindow != nil, Date() < deadline {
+            RunLoop.main.run(until: Date().addingTimeInterval(0.05))
         }
-    }
-
-    @MainActor
-    private func expectSuggestionWindowDeallocation() -> XCTestExpectation? {
-        guard let suggestionWindow = NSApp.windows.first(where: { $0.contentViewController is SuggestionViewController }) else { return nil }
-        let suggestionWindowDeallocated = expectation(description: "Suggestion window deallocated")
-        suggestionWindow.onDeinit {
-            suggestionWindowDeallocated.fulfill()
-        }
-        return suggestionWindowDeallocated
+        XCTAssertNil(suggestionWindow, "Suggestion window should be deallocated when its window closes")
     }
 }
 

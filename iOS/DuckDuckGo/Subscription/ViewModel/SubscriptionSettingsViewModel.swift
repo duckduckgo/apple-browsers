@@ -249,7 +249,7 @@ final class SubscriptionSettingsViewModel: ObservableObject {
         self.aiChatSettings = aiChatSettings
         self.locale = locale
         self.cancellationInstrumentation = cancellationInstrumentation
-        self.subscriptionFlowsExecuter = subscriptionFlowsExecuter ?? SubscriptionContainerViewFactory.makeSubscriptionFlowsExecuter(
+        self.subscriptionFlowsExecuter = subscriptionFlowsExecuter ?? DefaultSubscriptionFlowsExecuter.make(
             subscriptionManager: subscriptionManager,
             wideEvent: wideEvent)
         let subscriptionFAQURL = subscriptionManager.url(for: .faq)

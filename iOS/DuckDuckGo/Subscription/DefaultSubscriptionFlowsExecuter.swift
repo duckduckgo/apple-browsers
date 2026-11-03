@@ -21,6 +21,8 @@ import Foundation
 import Subscription
 import BrowserServicesKit
 import WideEvent
+import PixelKit
+import FoundationExtensions
 import os.log
 
 /// Protocol for performing App Store subscription tier changes (upgrade, downgrade, cancel pending downgrade).
@@ -169,5 +171,26 @@ extension SubscriptionPlanChangeWideEventData.ChangeType {
         case "crossgrade": return .crossgrade
         default: return nil
         }
+    }
+}
+
+extension DefaultSubscriptionFlowsExecuter {
+
+    static func make(subscriptionManager: SubscriptionManager, wideEvent: WideEventManaging) -> DefaultSubscriptionFlowsExecuter {
+        let userDefaults = UserDefaults(suiteName: Bundle.main.appGroup(bundle: .subs))!
+        let pendingTransactionHandler = DefaultPendingTransactionHandler(userDefaults: userDefaults,
+                                                                         pixelHandler: SubscriptionPixelHandler(source: .mainApp, pixelKit: PixelKit.shared))
+        let appStoreRestoreFlow = DefaultAppStoreRestoreFlow(subscriptionManager: subscriptionManager,
+                                                             storePurchaseManager: subscriptionManager.storePurchaseManager(),
+                                                             pendingTransactionHandler: pendingTransactionHandler)
+        let appStorePurchaseFlow = DefaultAppStorePurchaseFlow(subscriptionManager: subscriptionManager,
+                                                               storePurchaseManager: subscriptionManager.storePurchaseManager(),
+                                                               appStoreRestoreFlow: appStoreRestoreFlow,
+                                                               wideEvent: wideEvent,
+                                                               pendingTransactionHandler: pendingTransactionHandler)
+        return DefaultSubscriptionFlowsExecuter(subscriptionManager: subscriptionManager,
+                                                appStorePurchaseFlow: appStorePurchaseFlow,
+                                                wideEvent: wideEvent,
+                                                pendingTransactionHandler: pendingTransactionHandler)
     }
 }

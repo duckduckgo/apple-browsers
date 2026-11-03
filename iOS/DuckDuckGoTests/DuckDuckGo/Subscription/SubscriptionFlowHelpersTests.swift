@@ -1,5 +1,5 @@
 //
-//  SubscriptionContainerViewFactoryTests.swift
+//  SubscriptionFlowHelpersTests.swift
 //  DuckDuckGo
 //
 //  Copyright © 2026 DuckDuckGo. All rights reserved.
@@ -33,10 +33,10 @@ private struct PerformanceOptimizedPaywallsProviderStub: PerformanceOptimizedPay
 }
 
 @MainActor
-@Suite("Subscription container view factory flow configuration")
+@Suite("Subscription flow configuration")
 struct SubscriptionFlowConfigurationTests {
 
-    private typealias Configuration = SubscriptionContainerViewFactory.SubscriptionFlowConfiguration
+    private typealias Configuration = SubscriptionFlowConfiguration
 
     private let subscriptionManager = SubscriptionManagerMock()
 
@@ -124,62 +124,16 @@ struct SubscriptionFlowConfigurationTests {
 }
 
 @MainActor
-@Suite("Subscription container view factory flow dependencies")
-struct SubscriptionFlowDependenciesTests {
-
-    private let subscriptionManager = SubscriptionManagerMock()
-    private let wideEvent = WideEventMock()
-
-    private func makeDependencies() -> SubscriptionContainerViewFactory.SubscriptionFlowDependencies {
-        SubscriptionContainerViewFactory.SubscriptionFlowDependencies.make(subscriptionManager: subscriptionManager,
-                                                                           wideEvent: wideEvent)
-    }
-
-    @available(iOS 16, macOS 13, *)
-    @Test("make builds the default App Store flow chain", .timeLimit(.minutes(1)))
-    func makeBuildsDefaultChain() {
-        let dependencies = makeDependencies()
-
-        #expect(dependencies.pendingTransactionHandler is DefaultPendingTransactionHandler)
-        #expect(dependencies.appStoreRestoreFlow is DefaultAppStoreRestoreFlow)
-        #expect(dependencies.appStorePurchaseFlow is DefaultAppStorePurchaseFlow)
-    }
-
-    @available(iOS 16, macOS 13, *)
-    @Test("Each call to make builds fresh instances", .timeLimit(.minutes(1)))
-    func makeBuildsFreshInstances() {
-        let first = makeDependencies()
-        let second = makeDependencies()
-
-        #expect(first.pendingTransactionHandler as AnyObject !== second.pendingTransactionHandler as AnyObject)
-        #expect(first.appStoreRestoreFlow as AnyObject !== second.appStoreRestoreFlow as AnyObject)
-        #expect(first.appStorePurchaseFlow as AnyObject !== second.appStorePurchaseFlow as AnyObject)
-        #expect(first.subscriptionFlowsExecuter !== second.subscriptionFlowsExecuter)
-    }
-
-    @available(iOS 16, macOS 13, *)
-    @Test("makeSubscriptionFlowsExecuter builds a fresh executer per call", .timeLimit(.minutes(1)))
-    func makeSubscriptionFlowsExecuterBuildsFreshInstances() {
-        let first = SubscriptionContainerViewFactory.makeSubscriptionFlowsExecuter(subscriptionManager: subscriptionManager,
-                                                                                   wideEvent: wideEvent)
-        let second = SubscriptionContainerViewFactory.makeSubscriptionFlowsExecuter(subscriptionManager: subscriptionManager,
-                                                                                    wideEvent: wideEvent)
-
-        #expect(first !== second)
-    }
-}
-
-@MainActor
-@Suite("Subscription container view factory flows")
+@Suite("Subscription flows")
 struct SubscriptionFlowTests {
 
-    private typealias Flow = SubscriptionContainerViewFactory.SubscriptionFlow
-    private typealias Configuration = SubscriptionContainerViewFactory.SubscriptionFlowConfiguration
+    private typealias Flow = SubscriptionFlow
+    private typealias Configuration = SubscriptionFlowConfiguration
 
     private let subscriptionManager = SubscriptionManagerMock()
     private let featureFlagger = PrivacyConfig.MockFeatureFlagger()
 
-    private let options = SubscriptionContainerViewFactory.PurchaseOptions(
+    private let options = SubscriptionPurchaseOptions(
         subscriptionDataReporter: nil,
         tld: TLD(),
         isDebugOverlayEnabled: false,
@@ -196,12 +150,12 @@ struct SubscriptionFlowTests {
     }
 
     @available(iOS 16, macOS 13, *)
-    @Test("makePlanChangeOrSubscribeFlow with a plans path makes the plans flow", .timeLimit(.minutes(1)),
+    @Test("makePlanOrSubscribeFlow with a plans path makes the plans flow", .timeLimit(.minutes(1)),
           arguments: [SubscriptionPurchaseFlowPath.plans, .proPlans])
-    func planChangeOrSubscribeWithPlansPathMakesPlans(path: SubscriptionPurchaseFlowPath) {
+    func planOrSubscribeWithPlansPathMakesPlans(path: SubscriptionPurchaseFlowPath) {
         let components = redirectURLComponents(path: path.rawValue)
 
-        let flow = Flow.makePlanChangeOrSubscribeFlow(redirectURLComponents: components, options: options)
+        let flow = Flow.makePlanOrSubscribeFlow(redirectURLComponents: components, options: options)
 
         guard case .plans(let flowComponents) = flow else {
             Issue.record("Expected the plans flow")
@@ -211,12 +165,12 @@ struct SubscriptionFlowTests {
     }
 
     @available(iOS 16, macOS 13, *)
-    @Test("makePlanChangeOrSubscribeFlow without a plans path makes the subscribe flow with its purchase options", .timeLimit(.minutes(1)),
+    @Test("makePlanOrSubscribeFlow without a plans path makes the subscribe flow with its purchase options", .timeLimit(.minutes(1)),
           arguments: [Optional<String>.none, SubscriptionPurchaseFlowPath.purchase.rawValue, SubscriptionPurchaseFlowPath.pro.rawValue])
-    func planChangeOrSubscribeWithoutPlansPathMakesSubscribe(path: String?) {
+    func planOrSubscribeWithoutPlansPathMakesSubscribe(path: String?) {
         let components = path.map { redirectURLComponents(path: $0) }
 
-        let flow = Flow.makePlanChangeOrSubscribeFlow(redirectURLComponents: components, options: options)
+        let flow = Flow.makePlanOrSubscribeFlow(redirectURLComponents: components, options: options)
 
         guard case .subscribe(let flowComponents, let landingURL, let flowOptions) = flow else {
             Issue.record("Expected the subscribe flow")

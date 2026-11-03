@@ -234,8 +234,8 @@ final class SettingsViewModel: ObservableObject {
         runPrerequisitesDelegate?.meetsLocaleRequirement ?? false
     }
 
-    var subscriptionFlowContext: SubscriptionContainerViewFactory.SubscriptionFlowContext {
-        SubscriptionContainerViewFactory.SubscriptionFlowContext(
+    var subscriptionFlowContext: SubscriptionFlowContext {
+        SubscriptionFlowContext(
             subscriptionManager: subscriptionManager,
             subscriptionFeatureAvailability: subscriptionFeatureAvailability,
             userScriptsDependencies: userScriptsDependencies,

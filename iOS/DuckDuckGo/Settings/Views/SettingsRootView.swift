@@ -157,7 +157,7 @@ struct SettingsRootView: View {
             featureFlagger: featureFlagger
         )
         let subscriptionDebugSettings = SubscriptionDebugSettingsUserDefaultsPersistor(keyValueStore: viewModel.keyValueStore)
-        let options = SubscriptionContainerViewFactory.PurchaseOptions(
+        let options = SubscriptionPurchaseOptions(
             subscriptionDataReporter: viewModel.subscriptionDataReporter,
             tld: AppDependencyProvider.shared.storageCache.tld,
             isDebugOverlayEnabled: subscriptionDebugSettings.isDebugOverlayEnabled,

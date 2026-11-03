@@ -4620,7 +4620,7 @@ class MainViewController: UIViewController {
             featureFlagger: featureFlagger
         )
         let subscriptionDebugSettings = SubscriptionDebugSettingsUserDefaultsPersistor(keyValueStore: keyValueStore)
-        let context = SubscriptionContainerViewFactory.SubscriptionFlowContext(
+        let context = SubscriptionFlowContext(
             subscriptionManager: AppDependencyProvider.shared.subscriptionManager,
             subscriptionFeatureAvailability: subscriptionFeatureAvailability,
             userScriptsDependencies: userScriptsDependencies,
@@ -4628,7 +4628,7 @@ class MainViewController: UIViewController {
             dataBrokerProtectionViewControllerProvider: dbpIOSPublicInterface,
             wideEvent: AppDependencyProvider.shared.wideEvent,
             featureFlagger: featureFlagger)
-        let options = SubscriptionContainerViewFactory.PurchaseOptions(
+        let options = SubscriptionPurchaseOptions(
             subscriptionDataReporter: subscriptionDataReporter,
             tld: AppDependencyProvider.shared.storageCache.tld,
             isDebugOverlayEnabled: subscriptionDebugSettings.isDebugOverlayEnabled,
@@ -4639,7 +4639,7 @@ class MainViewController: UIViewController {
             },
             onRequestDuckAIChat: { [weak self] modelID in self?.requestOnboardingDuckAIChat(modelID: modelID) ?? false })
         let viewController = UIHostingController(rootView: SubscriptionContainerViewFactory.makeView(
-            for: .makePlanChangeOrSubscribeFlow(redirectURLComponents: redirectURLComponents, options: options),
+            for: .makePlanOrSubscribeFlow(redirectURLComponents: redirectURLComponents, options: options),
             context: context,
             navigationCoordinator: subscriptionNavigationCoordinator
         ))

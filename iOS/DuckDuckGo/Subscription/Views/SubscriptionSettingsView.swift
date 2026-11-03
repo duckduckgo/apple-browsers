@@ -724,7 +724,7 @@ extension SubscriptionSettingsViewV2 {
     func startCancellationFlow() {
         guard !isShowingCancellationFlow else { return }
         viewModel.cancelSubscriptionTapped()
-        let context = SubscriptionContainerViewFactory.SubscriptionFlowContext(
+        let context = SubscriptionFlowContext(
             subscriptionManager: settingsViewModel.subscriptionManager,
             subscriptionFeatureAvailability: settingsViewModel.subscriptionFeatureAvailability,
             userScriptsDependencies: settingsViewModel.userScriptsDependencies,

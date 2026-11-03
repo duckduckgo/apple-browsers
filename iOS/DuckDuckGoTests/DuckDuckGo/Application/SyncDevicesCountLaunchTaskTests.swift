@@ -20,38 +20,27 @@
 import XCTest
 import FeatureFlags_iOS
 @_spi(Testing) import Persistence
-@testable import Core
 @testable import DDGSync
 @testable import DuckDuckGo
 
 final class SyncDevicesCountLaunchTaskTests: XCTestCase {
 
-    private let testGroupName = "SyncDevicesCountLaunchTaskTests"
-    private var customSuite: UserDefaults!
     private var syncService: MockDDGSyncing!
     private var storage: (any KeyedStoring<SyncPromoStorageKeys>)!
 
-    private struct FetchError: Error {}
-
     override func setUpWithError() throws {
         try super.setUpWithError()
-        customSuite = UserDefaults(suiteName: testGroupName)
-        customSuite.removePersistentDomain(forName: testGroupName)
-        UserDefaults.app = customSuite
         syncService = MockDDGSyncing(authState: .active, isSyncInProgress: false)
-        syncService.registeredDevices = [RegisteredDevice(id: "1", name: "iPhone", type: "phone")]
         storage = MockKeyValueStore().keyedStoring()
     }
 
     override func tearDownWithError() throws {
-        UserDefaults.app = .standard
-        customSuite = nil
         syncService = nil
         storage = nil
         try super.tearDownWithError()
     }
 
-    func testWhenEligibleThenFetchesDevicesAndStoresCount() async {
+    func testWhenRunThenRefreshesSyncedDevicesCountAndFinishesOnce() async {
         syncService.registeredDevices = [
             RegisteredDevice(id: "1", name: "iPhone", type: "phone"),
             RegisteredDevice(id: "2", name: "Mac", type: "desktop")
@@ -59,56 +48,13 @@ final class SyncDevicesCountLaunchTaskTests: XCTestCase {
 
         let finishCount = await run(makeTask())
 
-        XCTAssertEqual(syncService.fetchDevicesCallCount, 1)
         XCTAssertEqual(storage.syncedDevicesCount, 2)
         XCTAssertEqual(finishCount, 1)
     }
 
-    func testWhenAnotherDeviceFlagOffThenDoesNotFetchDevices() async {
-        storage.syncedDevicesCount = 1
-
-        let finishCount = await run(makeTask(featureFlags: [.sync]))
-
-        XCTAssertEqual(syncService.fetchDevicesCallCount, 0)
-        XCTAssertEqual(storage.syncedDevicesCount, 1)
-        XCTAssertEqual(finishCount, 1)
-    }
-
-    func testWhenSyncInactiveThenDoesNotFetchDevices() async {
-        syncService.authState = .inactive
-
-        let finishCount = await run(makeTask())
-
-        XCTAssertEqual(syncService.fetchDevicesCallCount, 0)
-        XCTAssertNil(storage.syncedDevicesCount)
-        XCTAssertEqual(finishCount, 1)
-    }
-
-    func testWhenPromoDismissedThenDoesNotFetchDevices() async {
-        let task = makeTask()
-        task.syncPromoManager.dismissPromoFor(.bookmarksAnotherDevice, reason: .userTapped)
-
-        let finishCount = await run(task)
-
-        XCTAssertEqual(syncService.fetchDevicesCallCount, 0)
-        XCTAssertNil(storage.syncedDevicesCount)
-        XCTAssertEqual(finishCount, 1)
-    }
-
-    func testWhenFetchFailsThenKeepsPreviousCount() async {
-        storage.syncedDevicesCount = 1
-        syncService.fetchDevicesError = FetchError()
-
-        let finishCount = await run(makeTask())
-
-        XCTAssertEqual(syncService.fetchDevicesCallCount, 1)
-        XCTAssertEqual(storage.syncedDevicesCount, 1)
-        XCTAssertEqual(finishCount, 1)
-    }
-
-    private func makeTask(featureFlags: [FeatureFlag] = [.syncPromotionSyncAnotherDevice, .sync]) -> SyncDevicesCountLaunchTask {
+    private func makeTask() -> SyncDevicesCountLaunchTask {
         let manager = SyncPromoManager(syncService: syncService,
-                                       featureFlagger: MockFeatureFlagger(enabledFeatureFlags: featureFlags),
+                                       featureFlagger: MockFeatureFlagger(enabledFeatureFlags: [.syncPromotionSyncAnotherDevice, .sync]),
                                        storage: storage,
                                        pixelFiring: nil)
         return SyncDevicesCountLaunchTask(syncPromoManager: manager)

@@ -641,6 +641,66 @@ final class SyncPromoManagerTests: XCTestCase {
         XCTAssertEqual(manager.designFor(.bookmarksAnotherDevice), .standard)
     }
 
+    // MARK: - Synced Devices Count Refresh
+
+    func testWhenRefreshingSyncedDevicesCountThenFetchesDevicesAndStoresCount() async {
+        syncService.registeredDevices = twoRegisteredDevices
+        let manager = makeAnotherDeviceManager()
+
+        await manager.refreshSyncedDevicesCount()
+
+        XCTAssertEqual(syncService.fetchDevicesCallCount, 1)
+        XCTAssertEqual(anotherDeviceStorage.syncedDevicesCount, 2)
+    }
+
+    func testWhenAnotherDeviceFlagOffThenRefreshDoesNotFetchDevices() async {
+        syncService.registeredDevices = twoRegisteredDevices
+        let manager = makeAnotherDeviceManager(featureFlags: [.sync])
+
+        await manager.refreshSyncedDevicesCount()
+
+        XCTAssertEqual(syncService.fetchDevicesCallCount, 0)
+        XCTAssertEqual(anotherDeviceStorage.syncedDevicesCount, 1)
+    }
+
+    func testWhenSyncInactiveThenRefreshDoesNotFetchDevices() async {
+        syncService.registeredDevices = twoRegisteredDevices
+        let manager = makeAnotherDeviceManager(authState: .inactive)
+
+        await manager.refreshSyncedDevicesCount()
+
+        XCTAssertEqual(syncService.fetchDevicesCallCount, 0)
+        XCTAssertEqual(anotherDeviceStorage.syncedDevicesCount, 1)
+    }
+
+    func testWhenAnotherDevicePromoDismissedThenRefreshDoesNotFetchDevices() async {
+        syncService.registeredDevices = twoRegisteredDevices
+        let manager = makeAnotherDeviceManager()
+        manager.dismissPromoFor(.bookmarksAnotherDevice, reason: .userTapped)
+
+        await manager.refreshSyncedDevicesCount()
+
+        XCTAssertEqual(syncService.fetchDevicesCallCount, 0)
+        XCTAssertEqual(anotherDeviceStorage.syncedDevicesCount, 1)
+    }
+
+    func testWhenFetchingDevicesFailsThenRefreshKeepsPreviousCount() async {
+        syncService.fetchDevicesError = FetchDevicesError()
+        let manager = makeAnotherDeviceManager()
+
+        await manager.refreshSyncedDevicesCount()
+
+        XCTAssertEqual(syncService.fetchDevicesCallCount, 1)
+        XCTAssertEqual(anotherDeviceStorage.syncedDevicesCount, 1)
+    }
+
+    private struct FetchDevicesError: Error {}
+
+    private let twoRegisteredDevices = [
+        RegisteredDevice(id: "1", name: "iPhone", type: "phone"),
+        RegisteredDevice(id: "2", name: "Mac", type: "desktop")
+    ]
+
     private func makeAnotherDeviceManager(featureFlags: [FeatureFlag] = [.syncPromotionSyncAnotherDevice, .sync],
                                           authState: SyncAuthState = .active,
                                           installedDaysAgo: Int? = 8,

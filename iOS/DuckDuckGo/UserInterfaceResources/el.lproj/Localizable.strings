@@ -3316,6 +3316,72 @@
 /* No comment provided by engineer. */
 "menu.button.hint" = "Μενού περιήγησης";
 
+/* iPad menu bar command */
+"menuActualSize" = "Πραγματικό μέγεθος";
+
+/* iPad menu bar command */
+"menuBack" = "Πίσω";
+
+/* iPad menu bar command */
+"menuClearTabsAndData" = "Εκκαθάριση καρτελών και δεδομένων";
+
+/* iPad menu bar command */
+"menuDuplicateTab" = "Αντιγραφή καρτέλας";
+
+/* iPad menu bar command */
+"menuFeedback" = "Κοινοποίηση σχολίου";
+
+/* iPad menu bar command */
+"menuForward" = "Εμπρός";
+
+/* iPad menu bar command */
+"menuHideDownloads" = "Απόκρυψη λήψεων";
+
+/* iPad menu bar command */
+"menuHidePasswords" = "Απόκρυψη κωδικών πρόσβασης";
+
+/* iPad menu bar command */
+"menuHideTabs" = "Απόκρυψη καρτελών";
+
+/* iPad menu bar command */
+"menuLastTab" = "Τελευταία καρτέλα";
+
+/* iPad menu bar command */
+"menuNewTabOnRight" = "Νέα καρτέλα στα δεξιά";
+
+/* iPad menu bar command */
+"menuNextTab" = "Εμφάνιση επόμενης καρτέλας";
+
+/* iPad menu bar command */
+"menuOpenLocation" = "Άνοιγμα τοποθεσίας...";
+
+/* iPad menu bar command */
+"menuPreviousTab" = "Εμφάνιση προηγούμενης καρτέλας";
+
+/* iPad menu bar command */
+"menuPrint" = "Εκτύπωση...";
+
+/* iPad menu bar command selecting a numbered tab */
+"menuSelectTab" = "Επιλογή καρτέλας %d";
+
+/* iPad menu bar command */
+"menuSettings" = "Ρυθμίσεις DuckDuckGo...";
+
+/* iPad menu bar command */
+"menuShowDownloads" = "Εμφάνιση λήψεων";
+
+/* iPad menu bar command */
+"menuShowPasswords" = "Εμφάνιση κωδικών πρόσβασης";
+
+/* iPad menu bar command */
+"menuShowTabs" = "Προβολή καρτελών";
+
+/* iPad menu bar command */
+"menuStop" = "Διακοπή";
+
+/* iPad menu bar command */
+"menuVoiceSearch" = "Ιδιωτική φωνητική αναζήτηση";
+
 /* No comment provided by engineer. */
 "Message" = "Μήνυμα";
 

@@ -4326,7 +4326,8 @@ class MainViewController: UIViewController {
     func newTab(reuseExisting: Bool = false,
                 allowingKeyboard: Bool = true,
                 openedAfterIdle: Bool = false,
-                startsNewTabPageSessionVisit: Bool = true) {
+                startsNewTabPageSessionVisit: Bool = true,
+                placement: TabsModel.TabPlacement = .atEnd) {
         if daxDialogsManager.shouldShowFireButtonPulse {
             ViewHighlighter.hideAll()
         }
@@ -4344,7 +4345,7 @@ class MainViewController: UIViewController {
         if reuseExisting, let existing = tabManager.firstHomeTab() {
             tabManager.select(existing, dismissCurrent: false)
         } else {
-            tabManager.addHomeTab()
+            tabManager.addHomeTab(placement: placement)
         }
         attachHomeScreen(isNewTab: true,
                          allowingKeyboard: allowingKeyboard,

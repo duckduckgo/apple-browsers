@@ -3316,6 +3316,72 @@
 /* No comment provided by engineer. */
 "menu.button.hint" = "Ponuka prehliadania";
 
+/* iPad menu bar command */
+"menuActualSize" = "Skutočná veľkosť";
+
+/* iPad menu bar command */
+"menuBack" = "Späť";
+
+/* iPad menu bar command */
+"menuClearTabsAndData" = "Vymazať karty a údaje";
+
+/* iPad menu bar command */
+"menuDuplicateTab" = "Duplikovať kartu";
+
+/* iPad menu bar command */
+"menuFeedback" = "Zdieľať spätnú väzbu";
+
+/* iPad menu bar command */
+"menuForward" = "Ďalej";
+
+/* iPad menu bar command */
+"menuHideDownloads" = "Skryť sťahovania";
+
+/* iPad menu bar command */
+"menuHidePasswords" = "Skryť heslá";
+
+/* iPad menu bar command */
+"menuHideTabs" = "Skryť karty";
+
+/* iPad menu bar command */
+"menuLastTab" = "Posledná karta";
+
+/* iPad menu bar command */
+"menuNewTabOnRight" = "Nová karta napravo";
+
+/* iPad menu bar command */
+"menuNextTab" = "Zobraziť ďalšiu kartu";
+
+/* iPad menu bar command */
+"menuOpenLocation" = "Otvoriť polohu…";
+
+/* iPad menu bar command */
+"menuPreviousTab" = "Zobraziť predchádzajúcu kartu";
+
+/* iPad menu bar command */
+"menuPrint" = "Vytlačiť…";
+
+/* iPad menu bar command selecting a numbered tab */
+"menuSelectTab" = "Vybrať kartu %d";
+
+/* iPad menu bar command */
+"menuSettings" = "Nastavenia DuckDuckGo…";
+
+/* iPad menu bar command */
+"menuShowDownloads" = "Zobraziť sťahovania";
+
+/* iPad menu bar command */
+"menuShowPasswords" = "Zobraziť heslá";
+
+/* iPad menu bar command */
+"menuShowTabs" = "Zobraziť karty";
+
+/* iPad menu bar command */
+"menuStop" = "Stop";
+
+/* iPad menu bar command */
+"menuVoiceSearch" = "Súkromné hlasové vyhľadávanie";
+
 /* No comment provided by engineer. */
 "Message" = "Správa";
 

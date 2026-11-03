@@ -3316,6 +3316,72 @@
 /* No comment provided by engineer. */
 "menu.button.hint" = "Naršymo meniu";
 
+/* iPad menu bar command */
+"menuActualSize" = "Tikrasis dydis";
+
+/* iPad menu bar command */
+"menuBack" = "Atgal";
+
+/* iPad menu bar command */
+"menuClearTabsAndData" = "Valyti skirtukus ir duomenis";
+
+/* iPad menu bar command */
+"menuDuplicateTab" = "Kopijuoti skirtuką";
+
+/* iPad menu bar command */
+"menuFeedback" = "Bendrinti atsiliepimą";
+
+/* iPad menu bar command */
+"menuForward" = "Pirmyn";
+
+/* iPad menu bar command */
+"menuHideDownloads" = "Slėpti atsisiuntimus";
+
+/* iPad menu bar command */
+"menuHidePasswords" = "Slėpti slaptažodžius";
+
+/* iPad menu bar command */
+"menuHideTabs" = "Slėpti skirtukus";
+
+/* iPad menu bar command */
+"menuLastTab" = "Paskutinis skirtukas";
+
+/* iPad menu bar command */
+"menuNewTabOnRight" = "Naujas skirtukas dešinėje";
+
+/* iPad menu bar command */
+"menuNextTab" = "Rodyti paskesnį skirtuką";
+
+/* iPad menu bar command */
+"menuOpenLocation" = "Atidaryti vietą…";
+
+/* iPad menu bar command */
+"menuPreviousTab" = "Rodyti ankstesnį skirtuką";
+
+/* iPad menu bar command */
+"menuPrint" = "Spausdinti…";
+
+/* iPad menu bar command selecting a numbered tab */
+"menuSelectTab" = "Pasirinkti %d skirtuką";
+
+/* iPad menu bar command */
+"menuSettings" = "„DuckDuckGo“ nustatymai…";
+
+/* iPad menu bar command */
+"menuShowDownloads" = "Rodyti atsisiuntimus";
+
+/* iPad menu bar command */
+"menuShowPasswords" = "Rodyti slaptažodžius";
+
+/* iPad menu bar command */
+"menuShowTabs" = "Rodyti skirtukus";
+
+/* iPad menu bar command */
+"menuStop" = "Stabdyti";
+
+/* iPad menu bar command */
+"menuVoiceSearch" = "Privati paieška balsu";
+
 /* No comment provided by engineer. */
 "Message" = "Pranešimas";
 

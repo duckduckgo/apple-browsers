@@ -3316,6 +3316,72 @@
 /* No comment provided by engineer. */
 "menu.button.hint" = "Göz Atma Menüsü";
 
+/* iPad menu bar command */
+"menuActualSize" = "Gerçek Boyut";
+
+/* iPad menu bar command */
+"menuBack" = "Geri";
+
+/* iPad menu bar command */
+"menuClearTabsAndData" = "Sekmeleri ve Verileri Temizle";
+
+/* iPad menu bar command */
+"menuDuplicateTab" = "Sekmeyi Çoğalt";
+
+/* iPad menu bar command */
+"menuFeedback" = "Geri Bildirim Paylaş";
+
+/* iPad menu bar command */
+"menuForward" = "İleri";
+
+/* iPad menu bar command */
+"menuHideDownloads" = "İndirilenleri Gizle";
+
+/* iPad menu bar command */
+"menuHidePasswords" = "Parolaları gizle";
+
+/* iPad menu bar command */
+"menuHideTabs" = "Sekmeleri Gizle";
+
+/* iPad menu bar command */
+"menuLastTab" = "Son Sekme";
+
+/* iPad menu bar command */
+"menuNewTabOnRight" = "Sağda Yeni Sekme";
+
+/* iPad menu bar command */
+"menuNextTab" = "Sonraki Sekmeyi Göster";
+
+/* iPad menu bar command */
+"menuOpenLocation" = "Konumu Aç...";
+
+/* iPad menu bar command */
+"menuPreviousTab" = "Önceki Sekmeyi Göster";
+
+/* iPad menu bar command */
+"menuPrint" = "Yazdır...";
+
+/* iPad menu bar command selecting a numbered tab */
+"menuSelectTab" = "%d Sekmesini Seç";
+
+/* iPad menu bar command */
+"menuSettings" = "DuckDuckGo Ayarları...";
+
+/* iPad menu bar command */
+"menuShowDownloads" = "İndirilenleri Göster";
+
+/* iPad menu bar command */
+"menuShowPasswords" = "Parolaları göster";
+
+/* iPad menu bar command */
+"menuShowTabs" = "Sekmeleri Göster";
+
+/* iPad menu bar command */
+"menuStop" = "Durdur";
+
+/* iPad menu bar command */
+"menuVoiceSearch" = "Özel Sesli Arama";
+
 /* No comment provided by engineer. */
 "Message" = "Mesaj";
 

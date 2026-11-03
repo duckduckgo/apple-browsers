@@ -48,7 +48,7 @@ final class PasswordManagementUITests: UITestCase {
         }
 
         XCTContext.runActivity(named: "View the saved password") { _ in
-            app.passwordItem(named: "Netflix").tapWhenHittable()
+            app.passwordItem(named: "Netflix").tapWhenHittable(in: app)
 
             assertVisibleDetails(
                 name: "Netflix",
@@ -59,7 +59,7 @@ final class PasswordManagementUITests: UITestCase {
         }
 
         XCTContext.runActivity(named: "Edit every password field") { _ in
-            app.buttons["Autofill.Passwords.Details.Edit"].tapWhenHittable()
+            app.buttons["Autofill.Passwords.Details.Edit"].tapWhenHittable(in: app)
             let detailsList = app.descendants(matching: .any)["Autofill.Passwords.Details.List"]
 
             app.descendants(matching: .any)["Field_PasswordName"]
@@ -81,12 +81,12 @@ final class PasswordManagementUITests: UITestCase {
                 "A subscription site.",
                 "Notes were not replaced before saving.")
 
-            app.buttons["Autofill.Passwords.Editor.Save"].tapWhenHittable()
+            app.buttons["Autofill.Passwords.Editor.Save"].tapWhenHittable(in: app)
             XCTAssertTrue(
                 app.buttons["Autofill.Passwords.Details.Edit"]
                     .waitForExistence(timeout: UITestTimeouts.navigation),
                 "Edited password details did not reappear after saving.")
-            app.navigationBars.buttons["BackButton"].firstMatch.tapWhenHittable()
+            app.navigationBars.buttons["BackButton"].firstMatch.tapWhenHittable(in: app)
 
             assertPasswordItem(named: "Netflix Streaming", username: "test3@example.com")
             XCTAssertFalse(
@@ -96,7 +96,7 @@ final class PasswordManagementUITests: UITestCase {
 
         XCTContext.runActivity(named: "Search for the edited password") { _ in
             let searchField = app.searchFields["Autofill.Passwords.Search"]
-            searchField.tapWhenHittable()
+            searchField.tapWhenHittable(in: app)
             searchField.typeText("ZZZ")
 
             XCTAssertTrue(
@@ -112,7 +112,7 @@ final class PasswordManagementUITests: UITestCase {
         }
 
         XCTContext.runActivity(named: "Verify edited details and delete the password") { _ in
-            app.passwordItem(named: "Netflix Streaming").tapWhenHittable()
+            app.passwordItem(named: "Netflix Streaming").tapWhenHittable(in: app)
 
             assertVisibleDetails(
                 name: "Netflix Streaming",
@@ -124,14 +124,14 @@ final class PasswordManagementUITests: UITestCase {
             let detailsList = app.descendants(matching: .any)["Autofill.Passwords.Details.List"]
             let deleteButton = app.buttons["Autofill.Passwords.Details.Delete"]
             detailsList.swipeUpToReveal(deleteButton)
-            deleteButton.tapWhenHittable()
+            deleteButton.tapWhenHittable(in: app)
 
             let confirmationSheet = app.sheets.firstMatch
             XCTAssertTrue(
                 confirmationSheet.staticTexts["Are you sure you want to delete this password?"]
                     .waitForExistence(timeout: UITestTimeouts.elementExistence),
                 "Password deletion confirmation did not appear.")
-            confirmationSheet.buttons["Delete Password"].tapWhenHittable()
+            confirmationSheet.buttons["Delete Password"].tapWhenHittable(in: app)
 
             XCTAssertTrue(
                 app.passwordItem(named: "Netflix Streaming").wait(
@@ -172,12 +172,12 @@ final class PasswordManagementUITests: UITestCase {
             "Saved password was not masked.")
 
         let visibilityButton = app.buttons["Autofill.Passwords.Details.TogglePasswordVisibility"]
-        visibilityButton.tapWhenHittable()
+        visibilityButton.tapWhenHittable(in: app)
         XCTAssertTrue(
             app.staticTexts[password].waitForExistence(timeout: UITestTimeouts.elementExistence),
             "Saved password was not revealed.")
 
-        visibilityButton.tapWhenHittable()
+        visibilityButton.tapWhenHittable(in: app)
         XCTAssertTrue(
             app.staticTexts[hiddenPassword].waitForExistence(timeout: UITestTimeouts.elementExistence),
             "Saved password was not hidden again.")

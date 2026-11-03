@@ -25,7 +25,8 @@ extension MainViewController {
     override var keyCommands: [UIKeyCommand]? {
         let menuSpec = MainMenuSpec(isEnabled: featureFlagger.isFeatureOn(.ipadMenuBar),
                                     context: .init(voiceSearchEnabled: voiceSearchHelper.isVoiceSearchEnabled,
-                                                   fireModeEnabled: fireModeCapability.isFireModeEnabled))
+                                                   fireModeEnabled: fireModeCapability.isFireModeEnabled,
+                                                   aiChatEnabled: aiChatSettings.isAIChatEnabled))
         let settingsCommand = UIKeyCommand(title: UserText.settingsTitle, action: #selector(keyboardSettings),
                                           input: ",", modifierFlags: .command)
         settingsCommand.wantsPriorityOverSystemBehavior = true
@@ -160,14 +161,16 @@ extension MainViewController {
         guard featureFlagger.isFeatureOn(.ipadMenuBar), let menuCommand = MainMenuCommand(action: command.action) else { return }
         let availability = menuCommandAvailability
         command.applyMenuState(title: availability.title(for: menuCommand),
-                               isEnabled: availability.isEnabled(menuCommand) && isMenuTabSelectionAvailable(command))
+                               isEnabled: availability.isEnabled(menuCommand) && isMenuTabSelectionAvailable(command)
+                                   && isMenuChatCommandAvailable(command))
     }
 
     override func canPerformAction(_ action: Selector, withSender sender: Any?) -> Bool {
         guard featureFlagger.isFeatureOn(.ipadMenuBar), let command = MainMenuCommand(action: action) else {
             return super.canPerformAction(action, withSender: sender)
         }
-        return menuCommandAvailability.isEnabled(command) && isMenuTabSelectionAvailable(sender as? UICommand)
+        let menuCommand = sender as? UICommand
+        return menuCommandAvailability.isEnabled(command) && isMenuTabSelectionAvailable(menuCommand) && isMenuChatCommandAvailable(menuCommand)
     }
 
     @objc func keyboardMoveSelectionUp() {

@@ -339,6 +339,13 @@ public struct UserText {
     public static let menuBack = NSLocalizedString("menuBack", value: "Back", comment: "iPad menu bar command")
     public static let menuForward = NSLocalizedString("menuForward", value: "Forward", comment: "iPad menu bar command")
     public static let menuClearTabsAndData = NSLocalizedString("menuClearTabsAndData", value: "Clear Tabs and Data", comment: "iPad menu bar command")
+    public static let menuDuckAI = NotLocalizedString("menuDuckAI", value: "Duck.ai", comment: "iPad menu bar title. Feature name. Not translated")
+    public static let menuOpenDuckAI = NSLocalizedString("menuOpenDuckAI", value: "Open Duck.ai", comment: "iPad Duck.ai menu bar command")
+    public static let menuNewChat = NSLocalizedString("menuNewChat", value: "New Chat", comment: "iPad Duck.ai menu bar command")
+    public static let menuNewVoiceChat = NSLocalizedString("menuNewVoiceChat", value: "New Voice Chat", comment: "iPad Duck.ai menu bar command")
+    public static let menuNewImageChat = NSLocalizedString("menuNewImageChat", value: "New Image Chat", comment: "iPad Duck.ai menu bar command")
+    public static let menuRecentChats = NSLocalizedString("menuRecentChats", value: "Recent Chats", comment: "iPad Duck.ai menu bar section header")
+    public static let menuDeleteAllChats = NSLocalizedString("menuDeleteAllChats", value: "Delete All Chats...", comment: "iPad Duck.ai menu bar command")
     public static func menuSelectTab(_ number: Int) -> String {
         String(format: NSLocalizedString("menuSelectTab", value: "Select Tab %d", comment: "iPad menu bar command selecting a numbered tab"), number)
     }

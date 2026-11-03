@@ -3184,6 +3184,9 @@ https://duckduckgo.com/mac";
 /* iPad menu bar command */
 "menuClearTabsAndData" = "Clear Tabs and Data";
 
+/* iPad Duck.ai menu bar command */
+"menuDeleteAllChats" = "Delete All Chats...";
+
 /* iPad menu bar command */
 "menuDuplicateTab" = "Duplicate Tab";
 
@@ -3205,11 +3208,23 @@ https://duckduckgo.com/mac";
 /* iPad menu bar command */
 "menuLastTab" = "Last Tab";
 
+/* iPad Duck.ai menu bar command */
+"menuNewChat" = "New Chat";
+
+/* iPad Duck.ai menu bar command */
+"menuNewImageChat" = "New Image Chat";
+
 /* iPad menu bar command */
 "menuNewTabOnRight" = "New Tab on Right";
 
+/* iPad Duck.ai menu bar command */
+"menuNewVoiceChat" = "New Voice Chat";
+
 /* iPad menu bar command */
 "menuNextTab" = "Show Next Tab";
+
+/* iPad Duck.ai menu bar command */
+"menuOpenDuckAI" = "Open Duck.ai";
 
 /* iPad menu bar command */
 "menuOpenLocation" = "Open Location...";
@@ -3219,6 +3234,9 @@ https://duckduckgo.com/mac";
 
 /* iPad menu bar command */
 "menuPrint" = "Print...";
+
+/* iPad Duck.ai menu bar section header */
+"menuRecentChats" = "Recent Chats";
 
 /* iPad menu bar command selecting a numbered tab */
 "menuSelectTab" = "Select Tab %d";

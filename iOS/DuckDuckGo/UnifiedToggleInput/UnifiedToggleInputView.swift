@@ -199,8 +199,8 @@ final class UnifiedToggleInputView: UIView {
             guard isAITab != oldValue else { return }
             applyCardBackgroundColor(cardBackgroundColor(isFireTab: handler.isFireTab))
             let useCompositeShadow = isExpanded || currentLayout == .flanked
-            expandedShadowView.isHidden = !useCompositeShadow || hasFloatingAIChrome
-            cardView.layer.shadowOpacity = useCompositeShadow || hasFloatingAIChrome ? 0 : 1
+            expandedShadowView.isHidden = !useCompositeShadow || hasFloatingInputGlass
+            cardView.layer.shadowOpacity = useCompositeShadow || hasFloatingInputGlass ? 0 : 1
             updateExpandedBorderVisibility(isExpanded && (currentLayout.showsToggle || currentLayout.showsToolbar))
         }
     }
@@ -679,7 +679,7 @@ final class UnifiedToggleInputView: UIView {
     private lazy var aiTabCollapsedFireButton: UIButton = {
         let button = Self.makeAITabAccessoryButton(image: DesignSystemImages.Glyphs.Size24.fireSolid,
                                                    traitCollection: traitCollection,
-                                                   usesFloatingAIChrome: usesFloatingAIChrome)
+                                                   usesFloatingAIChrome: usesFloatingUI)
         button.isHidden = true
         button.accessibilityLabel = UserText.actionForgetAll
         button.addTarget(self, action: #selector(fireTapped), for: .touchUpInside)
@@ -696,7 +696,7 @@ final class UnifiedToggleInputView: UIView {
     private lazy var aiTabCollapsedMenuButton: UIButton = {
         let button = Self.makeAITabAccessoryButton(image: DesignSystemImages.Glyphs.Size24.menuHamburger,
                                                    traitCollection: traitCollection,
-                                                   usesFloatingAIChrome: usesFloatingAIChrome)
+                                                   usesFloatingAIChrome: usesFloatingUI)
         button.isHidden = true
         button.accessibilityLabel = UserText.menuButtonHint
         button.addTarget(self, action: #selector(appMenuTapped), for: .touchUpInside)
@@ -728,13 +728,17 @@ final class UnifiedToggleInputView: UIView {
         return view
     }()
     private var glassCardBackgroundView: UIVisualEffectView?
-    private let usesFloatingAIChrome: Bool
+    private let usesFloatingUI: Bool
 
-    private var hasFloatingAIChrome: Bool {
+    private var hasFloatingInputGlass: Bool {
         if #available(iOS 26, *) {
-            return usesFloatingAIChrome && isAITab
+            return usesFloatingUI
         }
         return false
+    }
+
+    private var hasFloatingAIChrome: Bool {
+        hasFloatingInputGlass && isAITab
     }
 
     // MARK: - Dynamic Colors
@@ -870,10 +874,10 @@ final class UnifiedToggleInputView: UIView {
          isToggleEnabled: Bool = true,
          placesAttachmentsAboveInput: Bool = false,
          usesCompactAttachmentLayout: Bool = false,
-         usesFloatingAIChrome: Bool = false) {
+         usesFloatingUI: Bool = false) {
         self.handler = handler
         self.isToggleEnabled = isToggleEnabled
-        self.usesFloatingAIChrome = usesFloatingAIChrome
+        self.usesFloatingUI = usesFloatingUI
         self.placesAttachmentsAboveInput = placesAttachmentsAboveInput
         self.attachmentsStrip = UnifiedToggleInputAttachmentsStripView(usesCompactLayout: usesCompactAttachmentLayout)
         self.textEntryView = SwitchBarTextEntryView(handler: handler, voiceButtonAppearance: .aiVoicePlain)
@@ -973,7 +977,7 @@ final class UnifiedToggleInputView: UIView {
     }
 
     private func applyCardBackgroundColor(_ color: UIColor) {
-        if hasFloatingAIChrome {
+        if hasFloatingInputGlass {
             if glassCardBackgroundView == nil, #available(iOS 26, *) {
                 let glassView = UIVisualEffectView(effect: UIGlassEffect(style: .regular))
                 glassView.translatesAutoresizingMaskIntoConstraints = false
@@ -1334,8 +1338,8 @@ final class UnifiedToggleInputView: UIView {
         let useCompositeShadow = expanded || layout == .flanked
         // In-place mutation preserves the in-flight cornerRadius CAAnimation.
         expandedShadowView.updateShadows(layout == .flanked ? flankedShadows : expandedShadows)
-        expandedShadowView.isHidden = !useCompositeShadow || hasFloatingAIChrome
-        cardView.layer.shadowOpacity = useCompositeShadow || hasFloatingAIChrome ? 0 : 1.0
+        expandedShadowView.isHidden = !useCompositeShadow || hasFloatingInputGlass
+        cardView.layer.shadowOpacity = useCompositeShadow || hasFloatingInputGlass ? 0 : 1.0
         let dimensions = Self.cardDimensions(for: layout)
         if let pinned = dimensions.pinnedHeight {
             cardPinnedHeightConstraint.constant = pinned
@@ -1440,7 +1444,9 @@ final class UnifiedToggleInputView: UIView {
         guard cardPosition == .bottom else { return }
         omnibarMaterialTransitionDuration = duration
         if omnibarMaterialTransitionBackgroundColor == nil {
-            omnibarMaterialTransitionBackgroundColor = cardView.backgroundColor ?? cardBackgroundColor(isFireTab: false)
+            omnibarMaterialTransitionBackgroundColor = hasFloatingInputGlass
+                ? cardBackgroundColor(isFireTab: false)
+                : (cardView.backgroundColor ?? cardBackgroundColor(isFireTab: false))
         }
         ensureOmnibarMaterialTransitionViews()
         // Start on resting grey; white fades in after the pill silhouette is established.
@@ -1470,6 +1476,13 @@ final class UnifiedToggleInputView: UIView {
         case (_, _):
             applyCardLayout(.expanded(showsToggle: isToggleEnabled, showsToolbar: isToggleEnabled && toggleView.selectedMode == .aiChat), animated: false)
         }
+    }
+
+    func finalizeOmnibarEditingShow() {
+        guard hasFloatingInputGlass, omnibarMaterialTransitionBackgroundColor != nil else { return }
+        tearDownOmnibarMaterialTransitionViews()
+        omnibarMaterialTransitionBackgroundColor = nil
+        applyCardBackgroundColor(cardBackgroundColor(isFireTab: handler.isFireTab))
     }
 
     /// Inactive editing pose. Call inside a UIView.animate block.
@@ -1530,7 +1543,7 @@ final class UnifiedToggleInputView: UIView {
         }
         cardView.layer.cornerRadius = collapsedCornerRadius
         expandedShadowView.updateShadows(omnibarMatchingShadows)
-        expandedShadowView.isHidden = false
+        expandedShadowView.isHidden = hasFloatingInputGlass
         cardView.layer.shadowOpacity = 0
         // The prior applyCardLayout committed the frame with the .collapsed margins; commit
         // again so our overrides propagate to the cardView's actual frame.
@@ -1586,7 +1599,7 @@ final class UnifiedToggleInputView: UIView {
         let needsShadowFinalize = cardPosition.isBottom || (cardPosition == .top && !isToggleEnabled)
         guard needsShadowFinalize else { return }
         expandedShadowView.isHidden = true
-        cardView.layer.shadowOpacity = 1.0
+        cardView.layer.shadowOpacity = hasFloatingInputGlass ? 0 : 1.0
     }
 
     /// The property mutations that reveal the toggle within the omnibar-editing card.
@@ -1707,7 +1720,7 @@ final class UnifiedToggleInputView: UIView {
     }
 
     private func updateExpandedBorderVisibility(_ isVisible: Bool) {
-        let showBorder = isVisible && !hasFloatingAIChrome
+        let showBorder = isVisible && !hasFloatingInputGlass
         cardView.layer.borderWidth = showBorder ? Constants.expandedBorderWidth : 0
         cardView.layer.borderColor = showBorder ? expandedBorderColor : UIColor.clear.cgColor
     }
@@ -1894,7 +1907,7 @@ private extension UnifiedToggleInputView {
         // via `applyCardLayout` and pick up the capsule radius then.
         cardView.layer.cornerRadius = Constants.cardCornerRadiusCollapsed
         cardView.layer.shadowColor = cardShadowColor
-        cardView.layer.shadowOpacity = 1.0
+        cardView.layer.shadowOpacity = hasFloatingInputGlass ? 0 : 1.0
         cardView.layer.shadowOffset = CGSize(width: 0, height: 8)
         cardView.layer.shadowRadius = 12
         cardView.isUserInteractionEnabled = false

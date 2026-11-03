@@ -83,12 +83,14 @@ extension MainViewController {
             // Automatic new-tab focus and onboarding handoffs must not fade through resting modules.
             // Stage the opaque focused pose synchronously.
             UIView.performWithoutAnimation(animations)
+            coordinator.viewController.finalizeOmnibarEditingShow()
             refreshFloatingToolbarBackdrop()
             return
         }
         let animator = UIViewPropertyAnimator(duration: duration, curve: .easeInOut, animations: animations)
         animator.addCompletion { [weak self] _ in
             restingSnapshot?.removeFromSuperview()
+            coordinator.viewController.finalizeOmnibarEditingShow()
             self?.refreshFloatingToolbarBackdrop()
         }
         animator.startAnimation()

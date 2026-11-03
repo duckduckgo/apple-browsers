@@ -256,6 +256,7 @@ private extension MainViewController {
                 coordinator.viewController.setTextHorizontalShift(0)
             },
             completion: { [weak self] _ in
+                coordinator.viewController.finalizeOmnibarEditingShow()
                 self?.refreshFloatingToolbarBackdrop()
             }
         )

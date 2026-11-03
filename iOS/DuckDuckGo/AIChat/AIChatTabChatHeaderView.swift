@@ -37,6 +37,8 @@ protocol AIChatTabChatHeaderViewDelegate: AnyObject {
 
 final class AIChatTabChatHeaderView: UIView {
 
+    static var preferredHeight: CGFloat { Constants.headerHeight }
+
     private enum Constants {
         static let headerHeight: CGFloat = 60
         static let buttonSize: CGFloat = 44
@@ -456,7 +458,11 @@ final class AIChatTabChatHeaderView: UIView {
     /// header reads as one surface with the voice background; restore standard canvas chrome when `nil`.
     private func applyVoiceSessionAppearance(_ backgroundColor: UIColor?) {
         let active = backgroundColor != nil
-        self.backgroundColor = backgroundColor ?? UIColor(designSystemColor: .surfaceCanvas)
+        if #available(iOS 26, *), usesFloatingAIChrome, !active {
+            self.backgroundColor = .clear
+        } else {
+            self.backgroundColor = backgroundColor ?? UIColor(designSystemColor: .surfaceCanvas)
+        }
         overrideUserInterfaceStyle = active ? .dark : .unspecified
         if #available(iOS 26, *), usesFloatingAIChrome {
             bottomSeparator.isHidden = true

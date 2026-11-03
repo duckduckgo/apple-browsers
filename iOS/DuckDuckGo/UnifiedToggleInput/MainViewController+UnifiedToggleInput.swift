@@ -272,6 +272,12 @@ extension MainViewController {
 
     func applyUnifiedInputChromeBackground(_ state: UnifiedInputChromeBackgroundState, updateWebView: Bool = true) {
 
+        let usesFloatingAIChrome: Bool
+        if #available(iOS 26, *) {
+            usesFloatingAIChrome = isFloatingUIEnabled
+        } else {
+            usesFloatingAIChrome = false
+        }
         let statusBackgroundPresentation: MainViewCoordinator.StatusBackgroundPresentation
         let rootBackgroundColor: UIColor
         let navigationBarContainerColor: UIColor?
@@ -304,19 +310,18 @@ extension MainViewController {
         case .aiTabChatChromeHidden:
             statusBackgroundPresentation = .aiTabChatChromeHidden
             inputContentContainerColor = .clear
-            // Only paint the chrome around the input with the contextual sheet tone while the
-            // input is engaged (first responder). In the idle/collapsed state we keep the chrome
-            // transparent so the chat surface beneath shows through unchanged.
             if unifiedToggleInputCoordinator?.isInputEditing == true {
-                rootBackgroundColor = UIColor(singleUseColor: .duckAIContextualSheetBackground)
-                navigationBarContainerColor = rootBackgroundColor
+                rootBackgroundColor = UIColor(singleUseColor: usesFloatingAIChrome ? .duckAIWebViewBackground : .duckAIContextualSheetBackground)
+                navigationBarContainerColor = usesFloatingAIChrome ? .clear : rootBackgroundColor
                 unifiedToggleInputContainerColor = .clear
                 webViewBackgroundColor = rootBackgroundColor
             } else {
-                rootBackgroundColor = UIColor(designSystemColor: .surfaceCanvas)
+                rootBackgroundColor = usesFloatingAIChrome
+                    ? UIColor(singleUseColor: .duckAIWebViewBackground)
+                    : UIColor(designSystemColor: .surfaceCanvas)
                 navigationBarContainerColor = .clear
-                unifiedToggleInputContainerColor = isFloatingUIEnabled ? .clear : UIColor(designSystemColor: .surfaceCanvas)
-                webViewBackgroundColor = UIColor(designSystemColor: .surfaceCanvas)
+                unifiedToggleInputContainerColor = usesFloatingAIChrome ? .clear : UIColor(designSystemColor: .surfaceCanvas)
+                webViewBackgroundColor = rootBackgroundColor
             }
         }
 
@@ -330,6 +335,12 @@ extension MainViewController {
         viewCoordinator.unifiedInputContentContainer?.backgroundColor = inputContentContainerColor
         viewCoordinator.unifiedToggleInputContainer.backgroundColor = unifiedToggleInputContainerColor
         unifiedToggleInputCoordinator?.viewController.view.backgroundColor = .clear
+
+        if case .aiTabChatChromeHidden = state, usesFloatingAIChrome {
+            currentTab?.pullToRefreshViewAdapter?.backgroundColorOverride = UIColor(singleUseColor: .duckAIWebViewBackground)
+        } else {
+            currentTab?.pullToRefreshViewAdapter?.backgroundColorOverride = nil
+        }
 
         guard updateWebView else { return }
         if let webView = currentTab?.webView {
@@ -895,6 +906,13 @@ private extension MainViewController {
 }
 
 extension MainViewController {
+
+    var floatingAIChatHeaderObscuredHeight: CGFloat {
+        guard #available(iOS 26, *), isFloatingUIEnabled,
+              currentTab?.isAITab == true,
+              viewCoordinator.aiChatTabChatHeaderContainer?.isHidden == false else { return 0 }
+        return AIChatTabChatHeaderView.preferredHeight
+    }
 
     func aiTabChromeBackgroundState(for renderState: UTIRenderState) -> UnifiedInputChromeBackgroundState {
         renderState.isContentVisible ? .aiTabSearchChromeHidden : .aiTabChatChromeHidden

@@ -831,7 +831,8 @@ extension SwipeTabsCoordinator: UICollectionViewDelegate {
         let inputController = UnifiedToggleInputViewController(
             isToggleEnabled: true,
             isFireTab: tab.fireTab,
-            usesCompactAttachmentLayout: attachMoreTabsFeature.usesCompactAttachmentLayout)
+            usesCompactAttachmentLayout: attachMoreTabsFeature.usesCompactAttachmentLayout,
+            usesFloatingUI: floatingUIManager.isFloatingUIEnabled)
         inputController.loadViewIfNeeded()
         inputController.view.isUserInteractionEnabled = false
 

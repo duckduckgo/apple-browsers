@@ -278,6 +278,38 @@ final class FloatingUIPullToRefreshTests: XCTestCase {
         XCTAssertEqual(webView.scrollView.backgroundColor?.resolvedColor(with: traits).cgColor.components, expectedComponents)
     }
 
+    func testFloatingRefreshBackgroundOverrideSurvivesPageUpdatesAndRestoresPageColor() throws {
+        let hostView = UIView(frame: CGRect(x: 0, y: 0, width: 390, height: 844))
+        let pullableView = UIView(frame: hostView.bounds)
+        let webView = WKWebView(frame: pullableView.bounds)
+        webView.underPageBackgroundColor = .red
+        hostView.addSubview(pullableView)
+        pullableView.addSubview(webView)
+        let adapter = PullToRefreshViewAdapter(with: webView.scrollView,
+                                               pullableView: pullableView,
+                                               webView: webView,
+                                               isFloatingUIEnabled: true,
+                                               onRefresh: {})
+        let backdrop = try XCTUnwrap(hostView.subviews.first { $0 !== pullableView && !($0 is UIScrollView) })
+
+        adapter.backgroundColorOverride = .blue
+        webView.underPageBackgroundColor = .green
+        adapter.webViewUnderPageBackgroundDidChange()
+
+        let traits = UITraitCollection(userInterfaceStyle: .light)
+        XCTAssertEqual(backdrop.backgroundColor?.resolvedColor(with: traits).cgColor.components,
+                       UIColor.blue.resolvedColor(with: traits).cgColor.components)
+        XCTAssertEqual(webView.scrollView.backgroundColor?.resolvedColor(with: traits).cgColor.components,
+                       UIColor.blue.resolvedColor(with: traits).cgColor.components)
+
+        adapter.backgroundColorOverride = nil
+
+        XCTAssertEqual(backdrop.backgroundColor?.resolvedColor(with: traits).cgColor.components,
+                       UIColor.green.resolvedColor(with: traits).cgColor.components)
+        XCTAssertEqual(webView.scrollView.backgroundColor?.resolvedColor(with: traits).cgColor.components,
+                       UIColor.green.resolvedColor(with: traits).cgColor.components)
+    }
+
     func testWhenUnderPageBackgroundChangesAtRestThenScrollViewBackgroundMatchesIt() throws {
         let hostView = UIView(frame: CGRect(x: 0, y: 0, width: 390, height: 844))
         let pullableView = UIView(frame: hostView.bounds)

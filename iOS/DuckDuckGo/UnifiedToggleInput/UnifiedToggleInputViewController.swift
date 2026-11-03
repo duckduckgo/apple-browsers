@@ -68,7 +68,7 @@ final class UnifiedToggleInputViewController: UIViewController {
                                                           isToggleEnabled: isToggleEnabled,
                                                           placesAttachmentsAboveInput: placesAttachmentsAboveInput,
                                                           usesCompactAttachmentLayout: usesCompactAttachmentLayout,
-                                                          usesFloatingAIChrome: usesFloatingAIChrome)
+                                                          usesFloatingUI: usesFloatingUI)
 
     /// Edges of the visible input card, for aligning content sitting around the bar.
     func inputCardFrame(in view: UIView) -> CGRect {
@@ -103,17 +103,17 @@ final class UnifiedToggleInputViewController: UIViewController {
     private let placesAttachmentsAboveInput: Bool
 
     private let usesCompactAttachmentLayout: Bool
-    private let usesFloatingAIChrome: Bool
+    private let usesFloatingUI: Bool
 
     init(isToggleEnabled: Bool,
          isFireTab: Bool = false,
          placesAttachmentsAboveInput: Bool = false,
          usesCompactAttachmentLayout: Bool = false,
-         usesFloatingAIChrome: Bool = false) {
+         usesFloatingUI: Bool = false) {
         self.isToggleEnabled = isToggleEnabled
         self.placesAttachmentsAboveInput = placesAttachmentsAboveInput
         self.usesCompactAttachmentLayout = usesCompactAttachmentLayout
-        self.usesFloatingAIChrome = usesFloatingAIChrome
+        self.usesFloatingUI = usesFloatingUI
         self.handler = UnifiedToggleInputHandler(isVoiceSearchEnabled: false,
                                                  isToggleEnabled: isToggleEnabled,
                                                  isFireTab: isFireTab)
@@ -431,6 +431,10 @@ final class UnifiedToggleInputViewController: UIViewController {
 
     func applyOmnibarEditingShowPose() {
         inputBarView.applyOmnibarEditingShowPose()
+    }
+
+    func finalizeOmnibarEditingShow() {
+        inputBarView.finalizeOmnibarEditingShow()
     }
 
     func applyOmnibarEditingDismissPose() {

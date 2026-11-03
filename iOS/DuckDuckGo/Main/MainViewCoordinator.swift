@@ -908,7 +908,11 @@ class MainViewCoordinator {
         aiChatTabChatHeaderContainer.isHidden = false
         aiChatTabChatHeaderView?.setContainerVisible(true)
         guard isNavigationChromeHidden else { return }
-        setContentContainerTopAnchorMode(.aiChatHeader)
+        if #available(iOS 26, *), isFloatingUIEnabled {
+            setContentContainerTopAnchorMode(.safeArea)
+        } else {
+            setContentContainerTopAnchorMode(.aiChatHeader)
+        }
     }
 
     func hideAIChatTabChatHeader() {
@@ -926,7 +930,9 @@ class MainViewCoordinator {
             isNavigationChromeHidden = true
             navigationBarCollectionView.alpha = 0
             navigationBarCollectionView.isUserInteractionEnabled = false
-            if constraints.contentContainerTopToAIChatHeader != nil, !aiChatTabChatHeaderContainer.isHidden {
+            if #available(iOS 26, *), isFloatingUIEnabled {
+                setContentContainerTopAnchorMode(.safeArea)
+            } else if constraints.contentContainerTopToAIChatHeader != nil, !aiChatTabChatHeaderContainer.isHidden {
                 setContentContainerTopAnchorMode(.aiChatHeader)
             } else {
                 setContentContainerTopAnchorMode(.safeArea)
@@ -1013,7 +1019,11 @@ class MainViewCoordinator {
     /// Voice sessions paint the top strip with the FE-provided voice colour; regular chat chrome-hidden
     /// keeps the standard canvas tone.
     private func chatChromeHiddenStatusBackgroundColor() -> UIColor {
-        voiceModeBackgroundColor ?? UIColor(designSystemColor: .surfaceCanvas)
+        if let voiceModeBackgroundColor { return voiceModeBackgroundColor }
+        if #available(iOS 26, *), isFloatingUIEnabled {
+            return UIColor(singleUseColor: .duckAIWebViewBackground)
+        }
+        return UIColor(designSystemColor: .surfaceCanvas)
     }
 
     private func showFocusedStateBackground() {

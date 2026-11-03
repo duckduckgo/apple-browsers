@@ -39,6 +39,9 @@ final class UnifiedSuggestionsViewModel: ObservableObject {
     }
 
     @Published private(set) var content: UnifiedSuggestionsContentKind = .logo
+    /// True when the last content change was a mode switch away from a logo on screen, which fades out
+    /// before the incoming content appears.
+    @Published private(set) var waitsForLogoFadeOut = false
     /// The empty-state logo's presentation (mark / morph / speed). All its transitions are pure, so
     /// the morph rules are tested in `FocusedLogoModelTests`.
     @Published private(set) var logoModel = FocusedLogoModel()
@@ -104,12 +107,15 @@ final class UnifiedSuggestionsViewModel: ObservableObject {
                 guard self.dismissBehavior == .none else { return }
                 let resolved = UnifiedSuggestionsContentResolver.resolve(inputs, previous: self.content)
                 // A logo hidden beside the hatch for lack of room has no mark on screen to morph from.
-                self.logoModel.update(wasLogo: self.content == .logo && (self.escapeHatchPlacement == .hidden || self.backdropLogoFrame != nil),
+                let wasLogoVisible = self.isLogoOnScreen
+                self.logoModel.update(wasLogo: wasLogoVisible,
                                       isLogo: resolved == .logo,
                                       isDuckAI: inputs.mode == .aiChat,
                                       isFirstSinceActivation: !self.hasResolvedSinceActivation)
+                // A focus in another mode than the last session is not a switch the user watches, so it snaps.
+                let isModeSwitch = self.hasResolvedSinceActivation && inputs.mode != self.previousMode
                 self.hasResolvedSinceActivation = true
-                self.apply(resolved, modeChanged: inputs.mode != self.previousMode)
+                self.apply(resolved, modeChanged: isModeSwitch, wasLogoVisible: wasLogoVisible)
                 self.previousMode = inputs.mode
                 self.reportDuckAISuggestionsShownIfNeeded(hasDuckAIRows: self.duckAIListViewModel?.sections.isEmpty == false)
             }
@@ -135,10 +141,12 @@ final class UnifiedSuggestionsViewModel: ObservableObject {
     /// Crossfades only when a mode switch changes the content *type* (e.g. favorites↔recents,
     /// list↔logo). List↔list keeps the mounted list, and same-mode changes (typing, deletions)
     /// stay snappy.
-    private func apply(_ newContent: UnifiedSuggestionsContentKind, modeChanged: Bool) {
+    private func apply(_ newContent: UnifiedSuggestionsContentKind, modeChanged: Bool, wasLogoVisible: Bool = false) {
         guard newContent != content else { return }
-        if modeChanged && !Self.sameCategory(content, newContent) {
-            withAnimation(.easeInOut(duration: 0.2)) { content = newContent }
+        let crossfades = modeChanged && !Self.sameCategory(content, newContent)
+        waitsForLogoFadeOut = crossfades && wasLogoVisible
+        if crossfades {
+            withAnimation(FocusedContentFade.fadeIn) { content = newContent }
         } else {
             content = newContent
         }
@@ -152,6 +160,11 @@ final class UnifiedSuggestionsViewModel: ObservableObject {
     }
 
     var isShowingLogo: Bool { content == .logo }
+
+    /// Beside a hatch, a logo is on screen only while it has a backdrop frame; without a hatch it always is.
+    var isLogoOnScreen: Bool {
+        content == .logo && (escapeHatchPlacement == .hidden || backdropLogoFrame != nil)
+    }
 
     var isShowingFavorites: Bool {
         if case .favorites = content { return true }

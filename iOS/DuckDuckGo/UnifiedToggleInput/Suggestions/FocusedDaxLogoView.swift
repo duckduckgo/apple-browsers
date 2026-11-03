@@ -111,7 +111,7 @@ struct EscapeHatchLogoLayout: AnimatableModifier {
             .offset(y: displayedCenterY)
             // Check the animated position so a growing viewport cannot reveal an overlapping logo.
             .opacity(isVisible ? 1 : 0)
-            .animation(.easeInOut(duration: 0.2), value: isVisible)
+            .animation(FocusedContentFade.fadeIn, value: isVisible)
     }
 
     /// Where the logo rests once its animation settles, or nil when it does not fit there.

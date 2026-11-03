@@ -94,17 +94,29 @@ struct UnifiedSuggestionsView: View {
                     // Keep expansion and scroll state while typing or switching modes. Only one
                     // favorites hierarchy is mounted for the selected layout.
                     .opacity(showsEmbeddedContent ? 1 : 0)
-                    .animation(nil, value: showsEmbeddedContent)
+                    .animation(favoritesAnimation, value: showsEmbeddedContent)
                     .allowsHitTesting(showsEmbeddedContent)
                     .accessibilityHidden(!showsEmbeddedContent)
                     .transition(.identity)
                     .modifier(FocusedContentDismissFade(isFadingOut: viewModel.isFadingOut))
             } else {
-                SuggestionsFavoritesView(presentation: favoritesPresentation, isVisible: showsEmbeddedContent)
+                SuggestionsFavoritesView(presentation: favoritesPresentation, isVisible: showsEmbeddedContent,
+                                         visibilityAnimation: favoritesAnimation)
                     .transition(.identity)
                     .modifier(FocusedContentDismissFade(isFadingOut: usesScrollableEscapeHatch && viewModel.isFadingOut))
             }
         }
+    }
+
+    /// Favorites wait for a logo leaving on a mode switch to fade out; otherwise they show and hide at once,
+    /// so they never linger over an incoming Duck.ai list.
+    private var favoritesAnimation: Animation? {
+        showsEmbeddedContent && fadesOutLeavingLogo ? FocusedContentFade.afterLogoFadeOut : nil
+    }
+
+    /// The redesigned page swaps the logo and the incoming content at once.
+    private var fadesOutLeavingLogo: Bool {
+        viewModel.waitsForLogoFadeOut && !usesRedesignedNewTabPageLayout
     }
 
     private var isShowingList: Bool {
@@ -189,15 +201,17 @@ struct UnifiedSuggestionsView: View {
                         .animation(animation, value: targetCenterY)
                 }
             }
-                // Show/hide is instant (matches the favorites overlay) so the logo doesn't linger over
-                // favorites/lists during a toggle. Logo→logo keeps it shown, so this never cuts a morph.
+                // Showing is instant; logo→logo keeps it shown, so this never cuts a morph.
                 // Suppressed on fire tabs (fire screen takes the slot) and in landscape (no room — matches
                 // the unfocused NTP / legacy gate).
                 .opacity(viewModel.isShowingLogo && !viewModel.isFireTab && !viewModel.isLandscape ? 1 : 0)
-                .animation(nil, value: viewModel.isShowingLogo)
+                // A mode switch fades a logo that was on screen out before the incoming content appears.
+                .animation(!viewModel.isShowingLogo && fadesOutLeavingLogo ? FocusedContentFade.fadeOut : nil,
+                           value: viewModel.isShowingLogo)
                 // A logo held back for the keyboard fades in once it settles.
                 .opacity(viewModel.isLogoRevealDeferred ? 0 : 1)
-                .animation(viewModel.isLogoRevealDeferred ? nil : animation, value: viewModel.isLogoRevealDeferred)
+                .animation(viewModel.isLogoRevealDeferred || animation == nil ? nil : FocusedContentFade.fadeIn,
+                           value: viewModel.isLogoRevealDeferred)
                 // On dismiss it fades out (the NTP content takes over) — a separate opacity so the
                 // toggle's instant show/hide above is unaffected.
                 .modifier(FocusedContentDismissFade(isFadingOut: viewModel.isFadingOut))

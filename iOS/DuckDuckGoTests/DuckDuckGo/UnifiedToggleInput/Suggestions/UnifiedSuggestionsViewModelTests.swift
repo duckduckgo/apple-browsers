@@ -43,6 +43,48 @@ final class UnifiedSuggestionsViewModelTests: XCTestCase {
         XCTAssertEqual(sut.content, .list(.search))
     }
 
+    func test_modeSwitchFromLogoToFavorites_waitsForTheLogoButTypingDoesNot() {
+        let inputs = CurrentValueSubject<UnifiedSuggestionsInputs, Never>(
+            .init(mode: .aiChat, isTyping: false, hasFavorites: true, hasMessages: false, hasRecents: false, resultsPending: false))
+        let sut = UnifiedSuggestionsViewModel(inputsPublisher: inputs.eraseToAnyPublisher(),
+                                              listViewModel: SuggestionsListViewModel(source: EmptySuggestionsSource()))
+        XCTAssertEqual(sut.content, .logo)
+
+        inputs.send(.init(mode: .search, isTyping: false, hasFavorites: true, hasMessages: false, hasRecents: false, resultsPending: false))
+        XCTAssertEqual(sut.content, .favorites)
+        XCTAssertTrue(sut.waitsForLogoFadeOut)
+
+        inputs.send(.init(mode: .search, isTyping: true, hasFavorites: true, hasMessages: false, hasRecents: false, resultsPending: false))
+        XCTAssertEqual(sut.content, .list(.search))
+        XCTAssertFalse(sut.waitsForLogoFadeOut)
+    }
+
+    func test_focusInAnotherModeThanTheLastSession_doesNotWaitForTheLogo() {
+        let inputs = CurrentValueSubject<UnifiedSuggestionsInputs, Never>(
+            .init(mode: .aiChat, isTyping: false, hasFavorites: true, hasMessages: false, hasRecents: false, resultsPending: false))
+        let sut = UnifiedSuggestionsViewModel(inputsPublisher: inputs.eraseToAnyPublisher(),
+                                              listViewModel: SuggestionsListViewModel(source: EmptySuggestionsSource()))
+        XCTAssertEqual(sut.content, .logo)
+
+        sut.prepareForActivation()
+        inputs.send(.init(mode: .search, isTyping: false, hasFavorites: true, hasMessages: false, hasRecents: false, resultsPending: false))
+        XCTAssertEqual(sut.content, .favorites)
+        XCTAssertFalse(sut.waitsForLogoFadeOut)
+    }
+
+    func test_modeSwitchFromALogoHiddenForLackOfRoom_doesNotWaitForIt() {
+        let inputs = CurrentValueSubject<UnifiedSuggestionsInputs, Never>(
+            .init(mode: .aiChat, isTyping: false, hasFavorites: true, hasMessages: false, hasRecents: false, resultsPending: false))
+        let sut = UnifiedSuggestionsViewModel(inputsPublisher: inputs.eraseToAnyPublisher(),
+                                              listViewModel: SuggestionsListViewModel(source: EmptySuggestionsSource()))
+        // Beside an embedded hatch, a logo without a backdrop frame is not on screen.
+        sut.setEscapeHatchPlacement(.embedded)
+
+        inputs.send(.init(mode: .search, isTyping: false, hasFavorites: true, hasMessages: false, hasRecents: false, resultsPending: false))
+        XCTAssertEqual(sut.content, .favorites)
+        XCTAssertFalse(sut.waitsForLogoFadeOut)
+    }
+
     func test_uneditedURLWithoutRecentChats_hidesQueryRowsUntilTyping() {
         let query = "https://example.com"
         let sections = DuckAISuggestionsSource.sections(from: .init(chats: [], urls: [], isPending: false), query: query)

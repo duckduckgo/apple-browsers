@@ -31,9 +31,12 @@ func assertSnapshotEnvironment(
     switch SnapshotEnvironment.currentComparisonMode() {
     case .compare:
         return true
-    case .skipComparison(let reason):
+    case .compareWithWarning(let reason), .skipComparison(let reason):
         print("⚠️ [SnapshotEnvironment] \(reason)")
         return true
+    case .skipAssertion(let reason):
+        print("⚠️ [SnapshotEnvironment] \(reason)")
+        return false
     case .unsupported(let reason):
         recordSnapshotIssue(reason, fileID: fileID, file: file, line: line, column: column)
         return false

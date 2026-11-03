@@ -163,16 +163,18 @@ Snapshots are pixel-strict, so the test environment is validated before each ass
 - **iOS**: must run on **iOS 27.0** at **@3x** (simulator runtime).
 - **macOS**: must run on **macOS 27**. References are compared only on the CI version, `SnapshotEnvironment.ciMacOSVersion` (**27.0**, matched on major.minor).
 
-A mismatch on the checks above makes the helper record a failure (`XCTFail` / `Issue.record`) with an explanatory message and skip the comparison.
+A mismatch on the checks above makes the helper record a failure (`XCTFail` / `Issue.record`) with an explanatory message and skip the comparison. The exception is a local Mac on another macOS major version: its snapshot assertions are skipped with a warning, so engineers who haven't upgraded can still run the suites.
 
 iOS renders in a pinnable simulator runtime, so every machine matches CI. macOS renders on the host, and engineers install point releases (27.1, 27.2…) that can render differently from CI. CI's renderings are the source of truth, so on macOS:
 
 | Where | OS | Behavior |
 |---|---|---|
 | CI (`REQUIRE_SNAPSHOT_REFERENCES=1`) | the CI version | Compares against the references. |
-| CI (`REQUIRE_SNAPSHOT_REFERENCES=1`) | another 27.x | Fails, so a silent runner update can't change the references. |
+| CI (`REQUIRE_SNAPSHOT_REFERENCES=1`) | another 27.x | Compares against the references and prints a warning to bump `ciMacOSVersion`, so a runner update fails only the snapshots whose rendering changed. |
+| CI (`REQUIRE_SNAPSHOT_REFERENCES=1`) | another major | Fails. |
 | Locally | the CI version | Compares against the references. |
 | Locally | another 27.x | Records missing references (and everything with `GENERATE_SNAPSHOTS`), but doesn't compare existing ones and prints a warning. `COMPARE_SNAPSHOTS=1` compares anyway. |
+| Locally | another major | Skips snapshot assertions and prints a warning. Nothing is compared or recorded. |
 
 If you record on another 27.x and CI fails because its renderings differ, CI's images replace yours in the snapshots PR. The macOS PR checks upload every image they render as the `macos-rendered-snapshots` artifact, laid out like `SnapshotReferences`. `SNAPSHOT_EXPORT_DIR` turns that export on.
 

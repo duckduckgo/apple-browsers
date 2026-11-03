@@ -49,11 +49,23 @@ struct SnapshotEnvironmentTests {
 
     @available(iOS 16, macOS 13, *)
     @Test(.timeLimit(.minutes(1)))
-    func macOSWrongMajorVersionIsRejected() {
+    func macOSWrongMajorVersionSkipsAssertionsLocally() {
         let mode = SnapshotEnvironment.comparisonMode(
             platform: .macOS,
             operatingSystemVersion: OperatingSystemVersion(majorVersion: 26, minorVersion: 6, patchVersion: 0),
             environment: [:]
+        )
+
+        #expect(mode == .skipAssertion(reason: "UI snapshots must run on macOS 27. Current OS is 26.6.0. Snapshot assertions are skipped."))
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test(.timeLimit(.minutes(1)))
+    func macOSWrongMajorVersionIsRejectedWhenReferencesAreRequired() {
+        let mode = SnapshotEnvironment.comparisonMode(
+            platform: .macOS,
+            operatingSystemVersion: OperatingSystemVersion(majorVersion: 26, minorVersion: 6, patchVersion: 0),
+            environment: ["REQUIRE_SNAPSHOT_REFERENCES": "1"]
         )
 
         #expect(mode == .unsupported(reason: "UI snapshots must run on macOS 27. Current OS is 26.6.0."))
@@ -87,15 +99,15 @@ struct SnapshotEnvironmentTests {
 
     @available(iOS 16, macOS 13, *)
     @Test(.timeLimit(.minutes(1)))
-    func macOSDifferentMinorVersionIsRejectedWhenReferencesAreRequired() {
+    func macOSDifferentMinorVersionIsComparedWithWarningWhenReferencesAreRequired() {
         let mode = SnapshotEnvironment.comparisonMode(
             platform: .macOS,
             operatingSystemVersion: OperatingSystemVersion(majorVersion: 27, minorVersion: 2, patchVersion: 0),
-            environment: ["REQUIRE_SNAPSHOT_REFERENCES": "1", "COMPARE_SNAPSHOTS": "1"]
+            environment: ["REQUIRE_SNAPSHOT_REFERENCES": "1"]
         )
 
-        #expect(mode == .unsupported(
-            reason: "Snapshot references are verified on macOS 27.0, the CI version. Current OS is 27.2.0."
+        #expect(mode == .compareWithWarning(
+            reason: "macOS 27.2.0 isn't the CI version (27.0), so references are compared anyway. Bump SnapshotEnvironment.ciMacOSVersion, and re-record the references that no longer match."
         ))
     }
 

@@ -38,7 +38,9 @@ public enum SnapshotPlatform: Equatable {
 
 public enum SnapshotComparisonMode: Equatable {
     case compare
+    case compareWithWarning(reason: String)
     case skipComparison(reason: String)
+    case skipAssertion(reason: String)
     case unsupported(reason: String)
 }
 
@@ -86,14 +88,19 @@ public enum SnapshotEnvironment {
             return .compare
 
         case .macOS:
+            let requiresReferences = SnapshotRecordMode.requiresReferences(environment: environment)
             guard operatingSystemVersion.majorVersion == ciMacOSVersion.majorVersion else {
-                return .unsupported(reason: "UI snapshots must run on macOS \(ciMacOSVersion.majorVersion). Current OS is \(versionString(operatingSystemVersion)).")
+                let reason = "UI snapshots must run on macOS \(ciMacOSVersion.majorVersion). Current OS is \(versionString(operatingSystemVersion))."
+                if requiresReferences {
+                    return .unsupported(reason: reason)
+                }
+                return .skipAssertion(reason: "\(reason) Snapshot assertions are skipped.")
             }
             if operatingSystemVersion.minorVersion == ciMacOSVersion.minorVersion {
                 return .compare
             }
-            if SnapshotRecordMode.requiresReferences(environment: environment) {
-                return .unsupported(reason: "Snapshot references are verified on macOS \(majorMinorString(ciMacOSVersion)), the CI version. Current OS is \(versionString(operatingSystemVersion)).")
+            if requiresReferences {
+                return .compareWithWarning(reason: "macOS \(versionString(operatingSystemVersion)) isn't the CI version (\(majorMinorString(ciMacOSVersion))), so references are compared anyway. Bump SnapshotEnvironment.ciMacOSVersion, and re-record the references that no longer match.")
             }
             if SnapshotRecordMode.forcesComparison(environment: environment) {
                 return .compare

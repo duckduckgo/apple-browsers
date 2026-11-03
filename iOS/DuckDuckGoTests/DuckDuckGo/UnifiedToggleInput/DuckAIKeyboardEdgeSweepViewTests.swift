@@ -42,16 +42,22 @@ final class DuckAIKeyboardEdgeSweepViewTests: XCTestCase {
         XCTAssertFalse(isActive(isUnifiedToggleInputAvailable: false))
     }
 
+    func test_isActive_falseWhenUserSettingDisabled() {
+        XCTAssertFalse(isActive(isUserSettingEnabled: false))
+    }
+
     // MARK: - Helper
 
     private func isActive(
         isFeatureOn: Bool = true,
+        isUserSettingEnabled: Bool = true,
         isInputEditing: Bool = true,
         inputMode: TextEntryMode = .aiChat,
         isUnifiedToggleInputAvailable: Bool = true
     ) -> Bool {
         DuckAIKeyboardEdgeSweepView.isActive(
             isFeatureOn: isFeatureOn,
+            isUserSettingEnabled: isUserSettingEnabled,
             isInputEditing: isInputEditing,
             inputMode: inputMode,
             isUnifiedToggleInputAvailable: isUnifiedToggleInputAvailable

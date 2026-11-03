@@ -786,6 +786,7 @@ private extension MainViewController {
                 let enabled = self.isAIChatSearchInputToggleEnabledForCurrentOnboardingState()
                 coordinator.updateToggleEnabled(enabled)
                 coordinator.updateAIChatShortcutAvailability(self.aiChatAddressBarExperience.shouldShowDuckAIAddressBarButton)
+                self.updateDuckAIKeyboardEdgeSweep()
             }
             .store(in: &unifiedToggleInputCancellables)
     }
@@ -1129,9 +1130,9 @@ extension MainViewController {
     /// Plays the keyboard edge sweep once whenever the keyboard belongs to the Duck.ai input.
     func updateDuckAIKeyboardEdgeSweep() {
         guard let coordinator = unifiedToggleInputCoordinator else { return }
-        // Read on every update so toggling the flag mid-session takes effect on the next keyboard.
         duckAIKeyboardEdgeSweepView?.isActive = DuckAIKeyboardEdgeSweepView.isActive(
             isFeatureOn: featureFlagger.isFeatureOn(.unifiedToggleInputKeyboardEdgeSweep),
+            isUserSettingEnabled: aiChatSettings.isKeyboardAnimationEnabled,
             isInputEditing: coordinator.isInputEditing,
             inputMode: coordinator.inputMode,
             isUnifiedToggleInputAvailable: unifiedToggleInputFeature.isAvailable

@@ -59,10 +59,11 @@ final class DuckAIKeyboardEdgeSweepView: UIView {
     }
 
     static func isActive(isFeatureOn: Bool,
+                         isUserSettingEnabled: Bool,
                          isInputEditing: Bool,
                          inputMode: TextEntryMode,
                          isUnifiedToggleInputAvailable: Bool) -> Bool {
-        isFeatureOn && isInputEditing && inputMode == .aiChat && isUnifiedToggleInputAvailable
+        isFeatureOn && isUserSettingEnabled && isInputEditing && inputMode == .aiChat && isUnifiedToggleInputAvailable
     }
 
     /// Set by the owner whenever the Duck.ai input gains or loses the keyboard.

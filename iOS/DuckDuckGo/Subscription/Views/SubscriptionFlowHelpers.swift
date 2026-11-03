@@ -28,6 +28,7 @@ import WideEvent
 import FeatureFlags_iOS
 import Persistence
 
+/// App-wide dependencies shared by every subscription flow.
 struct SubscriptionFlowContext {
     let subscriptionManager: SubscriptionManager
     let subscriptionFeatureAvailability: SubscriptionFeatureAvailability
@@ -38,6 +39,7 @@ struct SubscriptionFlowContext {
     let featureFlagger: FeatureFlagger
 }
 
+/// Dependencies only the subscribe flow needs: building the paywall URL, purchase attribution and post-checkout onboarding.
 struct SubscriptionPurchaseDependencies {
     let subscriptionDataReporter: SubscriptionDataReporting?
     let tld: TLD
@@ -48,8 +50,9 @@ struct SubscriptionPurchaseDependencies {
     let onRequestDuckAIChat: ((String?) -> Bool)?
 }
 
+/// Everything a flow decides for itself, built from its inputs. Each flow has one builder that sets every field.
 struct SubscriptionFlowConfiguration: Equatable {
-    let initialScreen: SubscriptionContainerView.CurrentViewType
+    let containerView: SubscriptionContainerView.CurrentViewType
     let emailScreenMode: SubscriptionEmailViewModel.EmailViewFlow?
     let initialURL: URL?
     let flowType: SubscriptionFlowType
@@ -73,7 +76,7 @@ struct SubscriptionFlowConfiguration: Equatable {
         if isDebugOverlayEnabled {
             initialURL = initialURL.appendingParameter(name: "debug", value: "1")
         }
-        return Self(initialScreen: .subscribe,
+        return Self(containerView: .subscriptionFlowView,
                     emailScreenMode: .restoreFlow,
                     initialURL: initialURL,
                     flowType: .firstPurchase,
@@ -93,7 +96,7 @@ struct SubscriptionFlowConfiguration: Equatable {
                 }
             }
         }
-        return Self(initialScreen: .subscribe,
+        return Self(containerView: .subscriptionFlowView,
                     emailScreenMode: nil,
                     initialURL: plansURL,
                     flowType: .planUpdate,
@@ -103,7 +106,7 @@ struct SubscriptionFlowConfiguration: Equatable {
     }
 
     static func restore() -> Self {
-        Self(initialScreen: .restore,
+        Self(containerView: .restoreView,
              emailScreenMode: .restoreFlow,
              initialURL: nil,
              flowType: .firstPurchase,
@@ -113,7 +116,7 @@ struct SubscriptionFlowConfiguration: Equatable {
     }
 
     static func email(_ emailScreenMode: SubscriptionEmailViewModel.EmailViewFlow) -> Self {
-        Self(initialScreen: .email,
+        Self(containerView: .emailView,
              emailScreenMode: emailScreenMode,
              initialURL: nil,
              flowType: .firstPurchase,
@@ -123,7 +126,7 @@ struct SubscriptionFlowConfiguration: Equatable {
     }
 
     static func cancellation(subscriptionManager: SubscriptionManager) -> Self {
-        Self(initialScreen: .subscribe,
+        Self(containerView: .subscriptionFlowView,
              emailScreenMode: nil,
              initialURL: subscriptionManager.url(for: .cancellationFlow),
              flowType: .cancellation,

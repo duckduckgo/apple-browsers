@@ -21,6 +21,7 @@ import SwiftUI
 import Subscription
 import PrivacyConfig
 
+/// The flows the container can show. Associated values are inputs only the caller knows for this call.
 enum SubscriptionFlow {
     case subscribe(redirectURLComponents: URLComponents?, landingURL: URL? = nil, dependencies: SubscriptionPurchaseDependencies)
     case plans(redirectURLComponents: URLComponents?)
@@ -63,7 +64,7 @@ enum SubscriptionContainerViewFactory {
                          context: SubscriptionFlowContext,
                          navigationCoordinator: SubscriptionNavigationCoordinator) -> some View {
         let configuration = flow.configuration(subscriptionManager: context.subscriptionManager, featureFlagger: context.featureFlagger)
-        return SubscriptionContainerView(currentView: configuration.initialScreen,
+        return SubscriptionContainerView(currentView: configuration.containerView,
                                          viewModel: makeViewModel(for: flow, configuration: configuration, context: context),
                                          featureFlagger: context.featureFlagger)
             .environmentObject(navigationCoordinator)

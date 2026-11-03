@@ -64,7 +64,7 @@ final class UnifiedToggleInputViewTests: XCTestCase {
         XCTAssertNil(glass.superview)
     }
 
-    func testTopFireMaterialTransitionPreservesGlassTintOnDismissal() throws {
+    func testTopFireInputSkipsTheGlassMorphAndKeepsItsCard() throws {
         guard #available(iOS 26.0, *) else {
             throw XCTSkip("Liquid Glass requires iOS 26")
         }
@@ -72,22 +72,15 @@ final class UnifiedToggleInputViewTests: XCTestCase {
         sut.cardPosition = .top
         sut.prepareForOmnibarEditingShow()
         let existingEffects = Set(allDescendants(of: UIVisualEffectView.self, in: sut).map(ObjectIdentifier.init))
-        sut.prepareForOmnibarMaterialTransition(duration: 0)
-        let glass = try XCTUnwrap(allDescendants(of: UIVisualEffectView.self, in: sut).first {
-            !existingEffects.contains(ObjectIdentifier($0))
-        })
-        let initialTint = try XCTUnwrap((glass.effect as? UIGlassEffect)?.tintColor)
-        let expectedTint = UIColor(singleUseColor: .fireModeBackground).resolvedColor(with: sut.traitCollection)
-        XCTAssertEqual(initialTint.resolvedColor(with: sut.traitCollection), expectedTint)
+        let fireBackground = UIColor(singleUseColor: .fireModeCardBackground).resolvedColor(with: sut.traitCollection)
 
+        sut.prepareForOmnibarMaterialTransition(duration: 0)
         UIView.performWithoutAnimation {
             sut.applyOmnibarEditingShowPose()
-            sut.applyOmnibarEditingDismissPose()
         }
 
-        let dismissedTint = try XCTUnwrap((glass.effect as? UIGlassEffect)?.tintColor)
-        XCTAssertEqual(dismissedTint.resolvedColor(with: sut.traitCollection), expectedTint)
-        sut.finalizeOmnibarEditingDismiss()
+        XCTAssertFalse(allDescendants(of: UIVisualEffectView.self, in: sut).contains { !existingEffects.contains(ObjectIdentifier($0)) })
+        XCTAssertTrue(sut.subviews.contains { $0.backgroundColor?.resolvedColor(with: sut.traitCollection) == fireBackground })
     }
 
     func testTopMaterialTransitionTakesFireAppearanceWhileEditing() throws {

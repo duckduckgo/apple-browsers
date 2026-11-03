@@ -1451,7 +1451,8 @@ final class UnifiedToggleInputView: UIView {
 
     func prepareForOmnibarMaterialTransition(duration: TimeInterval) {
         if cardPosition == .top {
-            guard #available(iOS 26.0, *) else { return }
+            // The morph starts from light glass, so the dark Fire card would turn light first: it shows at once.
+            guard #available(iOS 26.0, *), !handler.isFireTab else { return }
         }
         omnibarMaterialTransitionDuration = duration
         if omnibarMaterialTransitionBackgroundColor == nil {

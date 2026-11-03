@@ -76,7 +76,8 @@ extension TabSwitcherViewController {
             $0.wantsPriorityOverSystemBehavior = true
         }
         let spec = MainMenuSpec(isEnabled: featureFlagger.isFeatureOn(.ipadMenuBar),
-                                context: .init(fireModeEnabled: fireModeCapability.isFireModeEnabled))
+                                context: .init(fireModeEnabled: fireModeCapability.isFireModeEnabled,
+                                               aiChatEnabled: aiChatSettings.isAIChatEnabled))
         guard spec.shortcutRegistration != .legacy else { return commands }
         return MainMenuBuilder().keyCommands(for: spec, from: commands, availability: switcherMenuAvailability)
     }
@@ -101,6 +102,7 @@ extension TabSwitcherViewController {
             shortcutsEnabled: !isProcessingUpdates && ((presentingViewController as? MainViewController)?.isShortcutEnabled() ?? true),
             presentation: presentedViewController == nil ? .tabSwitcher : .blockingModal)
         state.fireModeEnabled = fireModeCapability.isFireModeEnabled
+        state.aiChatEnabled = aiChatSettings.isAIChatEnabled
         state.passwordsEnabled = featureFlagger.isFeatureOn(.autofillAccessCredentialManagement)
         state.canHideTabs = canDismissOnEmpty || !tabsModel.isEmpty
         return MenuCommandAvailability(state: state)

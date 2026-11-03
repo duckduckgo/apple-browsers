@@ -424,9 +424,15 @@ struct Launching: LaunchingHandling {
 
         let voiceSearchHelper = self.voiceSearchHelper
         let fireModeCapability = mainCoordinator.controller.fireModeCapability
+        let mainViewController = mainCoordinator.controller
         let mainMenuService = MainMenuService(featureFlagger: featureFlagger, contextProvider: {
-            .init(voiceSearchEnabled: voiceSearchHelper.isVoiceSearchEnabled, fireModeEnabled: fireModeCapability.isFireModeEnabled)
-        })
+            .init(voiceSearchEnabled: voiceSearchHelper.isVoiceSearchEnabled, fireModeEnabled: fireModeCapability.isFireModeEnabled,
+                  aiChatEnabled: aiChatSettings.isAIChatEnabled)
+        }, deferredContent: [
+            DuckAIMenuSection.recentChatsIdentifier: DuckAIRecentChatsMenuContent { [weak mainViewController] in
+                await mainViewController?.mainMenuRecentChats() ?? .init(recentChats: [], totalChatCount: 0)
+            }
+        ])
 
         // MARK: - App Services aggregation
         // This object serves as a central hub for app-wide services that:

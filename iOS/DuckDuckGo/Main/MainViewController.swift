@@ -503,7 +503,7 @@ class MainViewController: UIViewController {
 
     let gestureBookmarksButton = GestureToolbarButton()
 
-    private lazy var fireButtonAnimator: FireButtonAnimator = FireButtonAnimator(appSettings: appSettings)
+    lazy var fireButtonAnimator: FireButtonAnimator = FireButtonAnimator(appSettings: appSettings)
 
     let bookmarksCachingSearch: BookmarksCachingSearch
 
@@ -5141,20 +5141,21 @@ class MainViewController: UIViewController {
         startDuckAIVoiceMode(from: .addressBar, entrySource: isPad ? .ipadTogglePrompt : .addressBarPrompt)
     }
 
-    func startDuckAIVoiceMode(from source: VoiceEntryPointSource, entrySource: AIChatEntryPointSource) {
+    /// `opensNewTabOverContent` keeps voice from replacing the current page when Unified Input would load it in place.
+    func startDuckAIVoiceMode(from source: VoiceEntryPointSource, entrySource: AIChatEntryPointSource, opensNewTabOverContent: Bool = false) {
         pixelFiring?.fire(Pixel.Event.voiceEntryPointTapped, options: .parameters([PixelParameters.source: source.rawValue]))
         if let tab = tabManager.currentTabsModel.currentTab, tab.link == nil {
             ntpAfterIdleInstrumentation.barUsedFromNTP(afterIdle: tab.openedAfterIdle)
         }
         postIdleSessionInstrumentation.duckAIOpenedWithoutPrompt()
-        openAIChatInVoiceMode(source: entrySource, fromDeepLink: false)
+        openAIChatInVoiceMode(source: entrySource, fromDeepLink: false, opensNewTabOverContent: opensNewTabOverContent)
     }
 
     func openAIVoiceChatFromDeepLink(source: AIChatEntryPointSource) {
         openAIChatInVoiceMode(source: source, fromDeepLink: true)
     }
 
-    private func openAIChatInVoiceMode(source: AIChatEntryPointSource, fromDeepLink: Bool) {
+    private func openAIChatInVoiceMode(source: AIChatEntryPointSource, fromDeepLink: Bool, opensNewTabOverContent: Bool = false) {
         if let reminder = NoMicPermissionAlert.buildVoiceChatReminderIfNeeded(
             isSitePermissionsEnabled: tabManager.isSitePermissionsEnabled,
             microphoneAuthorization: AVCaptureDevice.authorizationStatus(for: .audio),
@@ -5170,10 +5171,10 @@ class MainViewController: UIViewController {
         }
 
         // Voice mode bypasses `openAIChat`, so fire the entry pixel directly.
-        openAIChatVoiceModeInTab(source: source, fromDeepLink: fromDeepLink)
+        openAIChatVoiceModeInTab(source: source, fromDeepLink: fromDeepLink, opensNewTabOverContent: opensNewTabOverContent)
     }
 
-    private func openAIChatVoiceModeInTab(source: AIChatEntryPointSource, fromDeepLink: Bool = false) {
+    private func openAIChatVoiceModeInTab(source: AIChatEntryPointSource, fromDeepLink: Bool = false, opensNewTabOverContent: Bool = false) {
         guard tabManager.current(createIfNeeded: true) != nil else {
             assertionFailure("openAIChatVoiceModeInTab: no current tab available")
             return
@@ -5186,7 +5187,7 @@ class MainViewController: UIViewController {
 
         // Voice always opens a new tab over existing content (chat included) — voice over a chat would replace the prior conversation. NTP stays in-place via `link != nil`.
         let hasContent = currentTab.tabModel.link != nil
-        let openInNewTab = hasContent && (unifiedToggleInputFeature.isAvailable || fromDeepLink)
+        let openInNewTab = hasContent && (unifiedToggleInputFeature.isAvailable || fromDeepLink || opensNewTabOverContent)
         let source = fireAIChatEntryPointPixel(source: source, opensNewTab: openInNewTab, hasPrompt: false, voice: true)
 
         if openInNewTab {

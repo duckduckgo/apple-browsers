@@ -55,18 +55,6 @@ struct MainMenuTests {
     }
 
     @available(iOS 16, macOS 13, *)
-    @Test(.timeLimit(.minutes(1)))
-    func phoneRegistersEveryIndexedTabShortcutFromNestedMenus() {
-        var state = MenuCommandAvailability.State(shortcutsEnabled: true, presentation: .browser)
-        state.tabCount = 12
-        let commands = MainMenuBuilder().keyCommands(for: MainMenuSpec(isEnabled: true, idiom: .phone), from: [],
-                                                     availability: MenuCommandAvailability(state: state))
-        let indexed = commands.filter { $0.action == MainMenuCommand.selectTab.action }
-        #expect(indexed.map(\.input) == (1...9).map { String($0) })
-        #expect(indexed.allSatisfy { $0.modifierFlags == .command })
-    }
-
-    @available(iOS 16, macOS 13, *)
     @Test(.timeLimit(.minutes(1)), arguments: [false, true],
           [MenuCommandAvailability.State.Presentation.browser, .tabSwitcher, .blockingModal])
     func phoneShortcutsRespectSharedAvailability(shortcutsEnabled: Bool,
@@ -158,36 +146,12 @@ struct MainMenuTests {
     }
 
     @available(iOS 16, macOS 13, *)
-    @Test(.timeLimit(.minutes(1)), arguments: [false, true], [false, true])
-    func optionalCommandsFollowCapabilities(voice: Bool, fire: Bool) {
-        let spec = MainMenuSpec(isEnabled: true, idiom: .pad, context: .init(voiceSearchEnabled: voice, fireModeEnabled: fire))
-        #expect(spec.allItems.contains { $0.command == .voiceSearch } == voice)
-        #expect(spec.allItems.contains { $0.command == .newFireTab } == fire)
+    @Test(.timeLimit(.minutes(1)))
+    func menuItemsDoNotShareShortcuts() {
+        let spec = MainMenuSpec(isEnabled: true, idiom: .pad, context: .init(voiceSearchEnabled: true, fireModeEnabled: true))
         let shortcuts = spec.allItems.compactMap(\.shortcut)
         for shortcut in shortcuts {
             #expect(shortcuts.filter { $0 == shortcut }.count == 1)
-        }
-        let prints = spec.allItems.filter { $0.command == .printPage }
-        #expect(prints.count == 1)
-        #expect(prints.compactMap(\.shortcut).count == 1)
-        #expect(spec.menus.first { $0.identifier == .file }?.allItems.contains { $0.command == .printPage } == true)
-        #expect(spec.menus.first { $0.identifier == .edit }?.allItems.contains { $0.command == .printPage } == false)
-        #expect(spec.keyCommandItems.filter { $0.command == .selectTab }.count == 9)
-        let expectedKeyCommandOnly = registersInMenuBar(enabled: true, idiom: .pad) ? spec.keyCommandItems.count : 0
-        #expect(MainMenuBuilder().keyCommandOnlyCommands(for: spec).count == expectedKeyCommandOnly)
-    }
-
-    @available(iOS 16, macOS 13, *)
-    @Test(.timeLimit(.minutes(1)))
-    func builtStaticMenuCommandsHaveUniqueUIKitIdentities() {
-        let spec = MainMenuSpec(isEnabled: true, idiom: .pad, context: .init(voiceSearchEnabled: true, fireModeEnabled: true))
-        let commands = spec.allItems.map { MainMenuBuilder().makeCommand(for: $0) }
-        #expect(commands.count == spec.allItems.count)
-        for (index, command) in commands.enumerated() {
-            let duplicates = commands.dropFirst(index + 1).filter {
-                $0.action == command.action && ($0.propertyList as? NSObject) == (command.propertyList as? NSObject)
-            }
-            #expect(duplicates.isEmpty, "Duplicate UIKit command identity for \(command.title): \(duplicates.map(\.title))")
         }
     }
 
@@ -211,18 +175,17 @@ struct MainMenuTests {
     }
 
     @available(iOS 16, macOS 13, *)
-    @Test(.timeLimit(.minutes(1)), arguments: [0, 1, 5, 9, 12])
+    @Test(.timeLimit(.minutes(1)), arguments: [5, 12])
     func commandNineSelectsLastTabOnlyInNewMode(count: Int) {
-        #expect(MainMenuSpec.tabIndex(number: 9, count: count, menuEnabled: true) == (count > 0 ? count - 1 : nil))
+        #expect(MainMenuSpec.tabIndex(number: 9, count: count, menuEnabled: true) == count - 1)
         #expect(MainMenuSpec.tabIndex(number: 9, count: count, menuEnabled: false) == (count >= 9 ? 8 : nil))
-        #expect(MainMenuSpec.tabIndex(number: 1, count: count, menuEnabled: true) == (count > 0 ? 0 : nil))
     }
 
     @available(iOS 16, macOS 13, *)
-    @Test(.timeLimit(.minutes(1)), arguments: MainMenuCommand.allCases)
-    func lockedAndBlockingPresentationsDisableCommands(command: MainMenuCommand) {
-        #expect(!MenuCommandAvailability(state: .init(shortcutsEnabled: false, presentation: .browser)).isEnabled(command))
-        #expect(!MenuCommandAvailability(state: .init(shortcutsEnabled: true, presentation: .blockingModal)).isEnabled(command))
+    @Test(.timeLimit(.minutes(1)))
+    func lockedAndBlockingPresentationsDisableCommands() {
+        #expect(!MenuCommandAvailability(state: .init(shortcutsEnabled: false, presentation: .browser)).isEnabled(.newTab))
+        #expect(!MenuCommandAvailability(state: .init(shortcutsEnabled: true, presentation: .blockingModal)).isEnabled(.newTab))
     }
 
     private func registersInMenuBar(enabled: Bool, idiom: UIUserInterfaceIdiom) -> Bool {

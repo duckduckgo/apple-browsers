@@ -241,8 +241,18 @@ extension MainViewController {
     }
 
     @objc func keyboardFire() {
+        guard featureFlagger.isFeatureOn(.ipadMenuBar) else {
+            KeyboardShortcutPixel.fireUsed(with: pixelFiring)
+            onQuickFirePressed()
+            return
+        }
+        if let tabSwitcherController {
+            tabSwitcherController.keyboardFire()
+            return
+        }
         KeyboardShortcutPixel.fireUsed(with: pixelFiring)
-        onQuickFirePressed()
+        guard isShortcutEnabled() else { return }
+        performFirePressed(prefersSheet: true)
     }
 
     @objc func keyboardSettings() {

@@ -3301,6 +3301,72 @@
 /* No comment provided by engineer. */
 "menu.button.hint" = "Bläddra-meny";
 
+/* iPad menu bar command */
+"menuActualSize" = "Faktisk storlek";
+
+/* iPad menu bar command */
+"menuBack" = "Tillbaka";
+
+/* iPad menu bar command */
+"menuClearTabsAndData" = "Rensa flikar och data";
+
+/* iPad menu bar command */
+"menuDuplicateTab" = "Duplicera flik";
+
+/* iPad menu bar command */
+"menuFeedback" = "Berätta vad du tycker";
+
+/* iPad menu bar command */
+"menuForward" = "Framåt";
+
+/* iPad menu bar command */
+"menuHideDownloads" = "Dölj hämtningar";
+
+/* iPad menu bar command */
+"menuHidePasswords" = "Dölj lösenord";
+
+/* iPad menu bar command */
+"menuHideTabs" = "Dölj flikar";
+
+/* iPad menu bar command */
+"menuLastTab" = "Senaste fliken";
+
+/* iPad menu bar command */
+"menuNewTabOnRight" = "Ny flik till höger";
+
+/* iPad menu bar command */
+"menuNextTab" = "Visa nästa flik";
+
+/* iPad menu bar command */
+"menuOpenLocation" = "Öppna plats...";
+
+/* iPad menu bar command */
+"menuPreviousTab" = "Visa föregående flik";
+
+/* iPad menu bar command */
+"menuPrint" = "Skriv ut ...";
+
+/* iPad menu bar command selecting a numbered tab */
+"menuSelectTab" = "Välj flik %d";
+
+/* iPad menu bar command */
+"menuSettings" = "DuckDuckGo-inställningar...";
+
+/* iPad menu bar command */
+"menuShowDownloads" = "Visa nerladdningar";
+
+/* iPad menu bar command */
+"menuShowPasswords" = "Visa lösenord";
+
+/* iPad menu bar command */
+"menuShowTabs" = "Visa flikar";
+
+/* iPad menu bar command */
+"menuStop" = "Stoppa";
+
+/* iPad menu bar command */
+"menuVoiceSearch" = "Privat röstsökning";
+
 /* No comment provided by engineer. */
 "Message" = "Meddelande";
 

@@ -3301,6 +3301,72 @@
 /* No comment provided by engineer. */
 "menu.button.hint" = "Brskanje po meniju";
 
+/* iPad menu bar command */
+"menuActualSize" = "Dejanska velikost";
+
+/* iPad menu bar command */
+"menuBack" = "Nazaj";
+
+/* iPad menu bar command */
+"menuClearTabsAndData" = "Počisti zavihke in podatke";
+
+/* iPad menu bar command */
+"menuDuplicateTab" = "Podvoji zavihek";
+
+/* iPad menu bar command */
+"menuFeedback" = "Deli povratne informacije";
+
+/* iPad menu bar command */
+"menuForward" = "Naprej";
+
+/* iPad menu bar command */
+"menuHideDownloads" = "Skrij prenose";
+
+/* iPad menu bar command */
+"menuHidePasswords" = "Skrij geslo";
+
+/* iPad menu bar command */
+"menuHideTabs" = "Skrij zavihke";
+
+/* iPad menu bar command */
+"menuLastTab" = "Zadnji zavihek";
+
+/* iPad menu bar command */
+"menuNewTabOnRight" = "Nov zavihek na desni";
+
+/* iPad menu bar command */
+"menuNextTab" = "Prikaži naslednji zavihek";
+
+/* iPad menu bar command */
+"menuOpenLocation" = "Odpri lokacijo …";
+
+/* iPad menu bar command */
+"menuPreviousTab" = "Pokaži prejšnji zavihek";
+
+/* iPad menu bar command */
+"menuPrint" = "Natisni …";
+
+/* iPad menu bar command selecting a numbered tab */
+"menuSelectTab" = "Izberi zavihek %d";
+
+/* iPad menu bar command */
+"menuSettings" = "Nastavitve DuckDuckGo …";
+
+/* iPad menu bar command */
+"menuShowDownloads" = "Prikaži prenose";
+
+/* iPad menu bar command */
+"menuShowPasswords" = "Prikaži gesla";
+
+/* iPad menu bar command */
+"menuShowTabs" = "Prikaži zavihke";
+
+/* iPad menu bar command */
+"menuStop" = "Ustavi";
+
+/* iPad menu bar command */
+"menuVoiceSearch" = "Zasebno glasovno iskanje";
+
 /* No comment provided by engineer. */
 "Message" = "Sporočilo";
 

@@ -3301,6 +3301,72 @@
 /* No comment provided by engineer. */
 "menu.button.hint" = "Tallózás a menüben";
 
+/* iPad menu bar command */
+"menuActualSize" = "Tényleges méret";
+
+/* iPad menu bar command */
+"menuBack" = "Vissza";
+
+/* iPad menu bar command */
+"menuClearTabsAndData" = "Lapok és adatok törlése";
+
+/* iPad menu bar command */
+"menuDuplicateTab" = "Lap megkettőzése";
+
+/* iPad menu bar command */
+"menuFeedback" = "Visszajelzés megosztása";
+
+/* iPad menu bar command */
+"menuForward" = "Előre";
+
+/* iPad menu bar command */
+"menuHideDownloads" = "Letöltések elrejtése";
+
+/* iPad menu bar command */
+"menuHidePasswords" = "Jelszavak elrejtése";
+
+/* iPad menu bar command */
+"menuHideTabs" = "Lapok elrejtése";
+
+/* iPad menu bar command */
+"menuLastTab" = "Utolsó lap";
+
+/* iPad menu bar command */
+"menuNewTabOnRight" = "Új lap jobbra";
+
+/* iPad menu bar command */
+"menuNextTab" = "Következő lap megjelenítése";
+
+/* iPad menu bar command */
+"menuOpenLocation" = "Hely megnyitása…";
+
+/* iPad menu bar command */
+"menuPreviousTab" = "Előző lap megjelenítése";
+
+/* iPad menu bar command */
+"menuPrint" = "Nyomtatás…";
+
+/* iPad menu bar command selecting a numbered tab */
+"menuSelectTab" = "%d. lap kiválasztása";
+
+/* iPad menu bar command */
+"menuSettings" = "DuckDuckGo-beállítások…";
+
+/* iPad menu bar command */
+"menuShowDownloads" = "Letöltések megjelenítése";
+
+/* iPad menu bar command */
+"menuShowPasswords" = "Jelszavak megjelenítése";
+
+/* iPad menu bar command */
+"menuShowTabs" = "Lapok megjelenítése";
+
+/* iPad menu bar command */
+"menuStop" = "Leállítás";
+
+/* iPad menu bar command */
+"menuVoiceSearch" = "Privát beszédhangalapú keresés";
+
 /* No comment provided by engineer. */
 "Message" = "Üzenet";
 

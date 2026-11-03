@@ -33,7 +33,9 @@ struct SyncAnotherDevicePromoView: View {
         static let closeButtonInset: CGFloat = 12
     }
 
-    let syncBookmarksAction: () -> Void
+    let title: String
+    let syncActionTitle: String
+    let syncAction: () -> Void
     let getDesktopAppAction: () -> Void
     let dismissAction: () -> Void
 
@@ -47,7 +49,7 @@ struct SyncAnotherDevicePromoView: View {
                         .frame(width: 56, height: 56)
                         .accessibilityHidden(true)
 
-                    Text(UserText.syncPromoBookmarksAnotherDeviceTitle)
+                    Text(title)
                         .daxHeadline()
                         .foregroundColor(Color(designSystemColor: .textPrimary))
                         .multilineTextAlignment(.leading)
@@ -61,12 +63,12 @@ struct SyncAnotherDevicePromoView: View {
 
                 HStack(spacing: 8) {
                     Button(action: getDesktopAppAction) {
-                        buttonLabel(UserText.syncPromoBookmarksAnotherDeviceGetDesktopAppAction)
+                        buttonLabel(UserText.syncPromoAnotherDeviceGetDesktopAppAction)
                     }
                     .buttonStyle(SecondaryFillButtonStyle(compact: true, fullWidth: true))
 
-                    Button(action: syncBookmarksAction) {
-                        buttonLabel(UserText.syncPromoBookmarksAnotherDeviceSyncAction)
+                    Button(action: syncAction) {
+                        buttonLabel(syncActionTitle)
                     }
                     .buttonStyle(BrandButtonStyle(compact: true, fullWidth: true))
                 }
@@ -104,9 +106,10 @@ struct SyncAnotherDevicePromoView_Previews: PreviewProvider {
     }
 
     static let snapshots = PreviewSnapshots(configurations: [
-        .init(name: "Default", state: ())
-    ]) { _ in
-        SyncAnotherDevicePromoView(syncBookmarksAction: {}, getDesktopAppAction: {}, dismissAction: {})
+        .init(name: "Bookmarks", state: (title: UserText.syncPromoBookmarksAnotherDeviceTitle, syncActionTitle: UserText.syncPromoBookmarksAnotherDeviceSyncAction)),
+        .init(name: "Passwords", state: (title: UserText.syncPromoPasswordsAnotherDeviceTitle, syncActionTitle: UserText.syncPromoPasswordsAnotherDeviceSyncAction))
+    ]) { state in
+        SyncAnotherDevicePromoView(title: state.title, syncActionTitle: state.syncActionTitle, syncAction: {}, getDesktopAppAction: {}, dismissAction: {})
             .background(Color(designSystemColor: .background))
     }
 }

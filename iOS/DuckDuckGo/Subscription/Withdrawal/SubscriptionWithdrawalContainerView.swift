@@ -1,5 +1,5 @@
 //
-//  SubscriptionWithdrawalProgressView.swift
+//  SubscriptionWithdrawalContainerView.swift
 //  DuckDuckGo
 //
 //  Copyright © 2026 DuckDuckGo. All rights reserved.
@@ -18,6 +18,22 @@
 //
 
 import SwiftUI
+
+struct SubscriptionWithdrawalContainerView<Content: View>: View {
+
+    @ObservedObject var withdrawal: SubscriptionWithdrawalModel
+    let onLeaveWithdrawn: () -> Void
+    @ViewBuilder let content: () -> Content
+
+    var body: some View {
+        if let confirmation = withdrawal.confirmation {
+            SubscriptionWithdrawnView(confirmation: confirmation)
+                .onDisappear(perform: onLeaveWithdrawn)
+        } else {
+            content()
+        }
+    }
+}
 
 struct SubscriptionWithdrawalProgressView: View {
 

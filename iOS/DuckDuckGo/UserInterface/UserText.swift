@@ -2164,6 +2164,12 @@ public struct UserText {
                                            comment: "Message of the alert confirming withdrawal from the subscription contract. Parameters are the tier name (e.g. Plus) and the refund amount with currency.")
         return String(format: localized, tierName, refundAmount)
     }
+    static func subscriptionWithdrawConfirmMessage(tierName: String) -> String {
+        let localized = NSLocalizedString("subscription.withdraw.confirm.message.no.amount",
+                                           value: "Your %@ subscription will end right away and you’ll get a full refund to your original payment method within 14 days.",
+                                           comment: "Message of the alert confirming withdrawal from the subscription contract, used when the refund amount is unknown. Parameter is the tier name (e.g. Plus).")
+        return String(format: localized, tierName)
+    }
     static func subscriptionWithdrawConfirmFeaturesMessage(features: String) -> String {
         let localized = NSLocalizedString("subscription.withdraw.confirm.features.message",
                                            value: "%@ stop working once you confirm.",

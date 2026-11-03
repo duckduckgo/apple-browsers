@@ -29,15 +29,15 @@ import UIKit
 /// Display-ready values for the "Withdraw from Contract" row and its confirmation alert.
 struct SubscriptionWithdrawalOffer {
     let eligibleUntil: String?
-    let refundAmount: String
+    let refundAmount: String?
     let tierName: String
     let entitlements: [SubscriptionEntitlement]
 }
 
 /// Display-ready values for the withdrawn screen shown after a successful withdrawal.
-struct SubscriptionWithdrawalConfirmation: Equatable {
+struct SubscriptionWithdrawalConfirmation {
     let withdrawalDate: String
-    let refundAmount: String
+    let refundAmount: String?
 }
 
 final class SubscriptionWithdrawalModel: ObservableObject {
@@ -45,6 +45,7 @@ final class SubscriptionWithdrawalModel: ObservableObject {
     @Published private(set) var eligibility: WithdrawalEligibility?
     @Published var isShowingError = false
     @Published private(set) var isWithdrawing = false
+    @Published private(set) var confirmation: SubscriptionWithdrawalConfirmation?
 
     private static let amountLocale = Locale(identifier: "en_US_POSIX")
 
@@ -98,7 +99,8 @@ final class SubscriptionWithdrawalModel: ObservableObject {
     }
 
     func confirmationMessage(for offer: SubscriptionWithdrawalOffer) -> String {
-        let message = UserText.subscriptionWithdrawConfirmMessage(tierName: offer.tierName, refundAmount: offer.refundAmount)
+        let message = offer.refundAmount.map { UserText.subscriptionWithdrawConfirmMessage(tierName: offer.tierName, refundAmount: $0) }
+            ?? UserText.subscriptionWithdrawConfirmMessage(tierName: offer.tierName)
         let features = Set(offer.entitlements.compactMap(SubscriptionOnboardingChecklistItem.init(entitlement:)))
         let featureNames = [SubscriptionOnboardingChecklistItem.vpn, .pir, .idtr, .duckAI]
             .filter(features.contains)
@@ -116,9 +118,10 @@ final class SubscriptionWithdrawalModel: ObservableObject {
     }
 
     @MainActor
-    func fetchEligibility() async {
+    func fetchEligibility(for subscription: DuckDuckGoSubscription) async {
         guard featureFlagger.isFeatureOn(.stripeInternationalSubscriptionWithdrawal),
-              subscriptionManager.isUserAuthenticated else { return }
+              subscriptionManager.isUserAuthenticated,
+              subscription.platform == .stripe else { return }
         do {
             eligibility = try await subscriptionManager.getWithdrawalEligibility()
         } catch {
@@ -128,17 +131,18 @@ final class SubscriptionWithdrawalModel: ObservableObject {
     }
 
     @MainActor
-    func withdraw() async -> SubscriptionWithdrawalConfirmation? {
-        guard !isWithdrawing else { return nil }
+    func withdraw() async {
+        guard !isWithdrawing else { return }
         isWithdrawing = true
+        defer { isWithdrawing = false }
         instrumentation.confirmClicked()
 
         do {
             let response = try await subscriptionManager.withdrawSubscription()
-            return SubscriptionWithdrawalConfirmation(withdrawalDate: dateFormatter.string(from: response.requestedAt ?? Date()),
-                                                      refundAmount: formattedAmount(response.refundedAmount, currency: response.currency))
+            confirmation = SubscriptionWithdrawalConfirmation(withdrawalDate: dateFormatter.string(from: response.requestedAt ?? Date()),
+                                                              refundAmount: formattedAmount(response.refundedAmount, currency: response.currency)
+                                                                ?? formattedAmount(eligibility?.refundAmount, currency: eligibility?.refundCurrency))
         } catch {
-            isWithdrawing = false
             instrumentation.withdrawalFailed(error)
             if case SubscriptionEndpointServiceError.invalidResponseCode(.conflict) = error {
                 eligibility = nil
@@ -146,7 +150,6 @@ final class SubscriptionWithdrawalModel: ObservableObject {
                 isShowingError = true
             }
         }
-        return nil
     }
 
     func withdrawTapped() {
@@ -168,11 +171,10 @@ final class SubscriptionWithdrawalModel: ObservableObject {
         urlOpener.open(helpURL)
     }
 
-    private func formattedAmount(_ amount: String?, currency: String?) -> String {
-        let currencyCode = currency?.uppercased()
-        guard let amount, let currencyCode,
-              let decimal = Decimal(string: amount, locale: Self.amountLocale) else {
-            return [amount, currencyCode].compactMap { $0 }.joined(separator: " ")
+    private func formattedAmount(_ amount: String?, currency: String?) -> String? {
+        guard let amount, let currencyCode = currency?.uppercased() else { return nil }
+        guard let decimal = Decimal(string: amount, locale: Self.amountLocale) else {
+            return "\(amount) \(currencyCode)"
         }
         currencyFormatter.currencyCode = currencyCode
         return currencyFormatter.string(from: decimal as NSDecimalNumber) ?? "\(amount) \(currencyCode)"

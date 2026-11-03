@@ -288,8 +288,6 @@ struct SettingsRootView: View {
                 SubscriptionSettingsViewV2(configuration: configuration, viewModel: model, settingsViewModel: viewModel)
                     .environmentObject(subscriptionNavigationCoordinator)
             }
-        case .subscriptionWithdrawn(let confirmation):
-            SubscriptionWithdrawnView(confirmation: confirmation)
         }
     }
 }

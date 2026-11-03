@@ -305,15 +305,15 @@ final class SubscriptionSettingsViewModel: ObservableObject {
 
     func onFirstAppear() {
         Task {
-            await self.withdrawal.fetchEligibility()
-        }
-
-        Task {
             // Load initial state from the cache
             async let loadedEmailFromCache = await self.fetchAndUpdateAccountEmail(forceRefresh: false)
             async let loadedSubscriptionFromCache = await self.fetchAndUpdateSubscriptionDetails(forceRefresh: false,
                                                                                                  loadingIndicator: false)
             let (_, hasLoadedSubscriptionFromCache) = await (loadedEmailFromCache, loadedSubscriptionFromCache)
+
+            Task {
+                await self.fetchWithdrawalEligibility()
+            }
 
             // Reload remote subscription and email state
             async let reloadedEmail = await self.fetchAndUpdateAccountEmail(forceRefresh: true)
@@ -321,6 +321,12 @@ final class SubscriptionSettingsViewModel: ObservableObject {
                                                                                           loadingIndicator: !hasLoadedSubscriptionFromCache)
             _ = await (reloadedEmail, reloadedSubscription)
         }
+    }
+
+    @MainActor
+    private func fetchWithdrawalEligibility() async {
+        guard let subscription = state.subscriptionInfo else { return }
+        await withdrawal.fetchEligibility(for: subscription)
     }
 
     @MainActor
@@ -553,6 +559,10 @@ final class SubscriptionSettingsViewModel: ObservableObject {
             await ActionMessageView.present(message: UserText.subscriptionRemovalConfirmation,
                                             presentationLocation: .withoutBottomBar)
         }
+    }
+
+    func completeSubscriptionWithdrawal() async {
+        await subscriptionManager.signOut(notifyUI: true, userInitiated: true)
     }
 
     func displayGoogleView(_ value: Bool) {

@@ -35,7 +35,7 @@ struct SubscriptionWithdrawnView: View {
             .padding(.horizontal, -20)
             .padding(.vertical, -10)
 
-            Section(footer: Text(UserText.subscriptionWithdrawnRefundInfo(refundAmount: confirmation.refundAmount))) {
+            Section {
                 HStack(spacing: 12) {
                     Image(uiImage: DesignSystemImages.Color.Size24.check)
                         .resizable()
@@ -43,6 +43,10 @@ struct SubscriptionWithdrawnView: View {
                     Text(UserText.subscriptionWithdrawnInfo(withdrawalDate: confirmation.withdrawalDate))
                         .daxBodyRegular()
                         .foregroundColor(Color(designSystemColor: .textPrimary))
+                }
+            } footer: {
+                if let refundAmount = confirmation.refundAmount {
+                    Text(UserText.subscriptionWithdrawnRefundInfo(refundAmount: refundAmount))
                 }
             }
         }

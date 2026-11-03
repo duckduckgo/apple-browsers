@@ -1134,7 +1134,7 @@
         "parameters": ["appVersion", "pixelSource"]
     },
     "subscription_withdrawal_failure": {
-        "description": "Fired when the withdrawal request fails for any reason: an HTTP 409 because the subscription is no longer eligible (the withdrawal option is hidden), any other HTTP 4xx/5xx or network error, or a success response that cannot be decoded (the user sees the withdrawal error alert).",
+        "description": "Fired when the withdrawal request fails: an HTTP 409 because the subscription is no longer eligible (the withdrawal option is hidden), or any other HTTP 4xx/5xx or network error (the user sees the withdrawal error alert). A success response that cannot be decoded still completes the withdrawal and does not fire this pixel.",
         "owners": ["hanyutang-sandra"],
         "triggers": ["exception"],
         "suffixes": ["first_daily_count", "platform", "form_factor"],

@@ -78,6 +78,13 @@ struct SubscriptionSettingsViewV2: View {
     @State private var shouldOpenStoreCancellation = false
 
     var body: some View {
+        SubscriptionWithdrawalContainerView(withdrawal: viewModel.withdrawal,
+                                            onLeaveWithdrawn: { Task { await viewModel.completeSubscriptionWithdrawal() } }) {
+            settingsView
+        }
+    }
+
+    private var settingsView: some View {
         optionsView
             .onFirstAppear {
                 PixelKit.fire(Pixel.Event.ddgSubscriptionSettings, frequency: .debounce(seconds: 1))
@@ -250,9 +257,7 @@ struct SubscriptionSettingsViewV2: View {
                 removeFromDeviceView
 
                 SubscriptionWithdrawalRowView(withdrawal: viewModel.withdrawal,
-                                              subscription: viewModel.state.subscriptionInfo) { confirmation in
-                    await settingsViewModel.completeSubscriptionWithdrawal(confirmation)
-                }
+                                              subscription: viewModel.state.subscriptionInfo)
 
             case .activating:
                 restorePurchaseView

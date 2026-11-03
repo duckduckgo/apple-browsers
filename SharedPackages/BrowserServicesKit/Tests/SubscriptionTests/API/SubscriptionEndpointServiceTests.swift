@@ -168,19 +168,36 @@ final class SubscriptionEndpointServiceTests: XCTestCase {
         }
     }
 
-    func testWithdrawSubscriptionThrowsWhenSuccessResponseCannotBeDecoded() async {
+    func testWithdrawSubscriptionKeepsValidFieldsWhenOthersCannotBeDecoded() async throws {
         let data = """
-        {"refundedAmount": 999, "currency": "GBP"}
+        {"refundedAmount": 999, "requestedAt": 1760950800000}
         """.data(using: .utf8)!
         let request = SubscriptionRequest.withdrawSubscription(baseURL: baseURL, accessToken: "token")!.apiRequest
         apiService.set(response: createAPIResponse(statusCode: 200, data: data), forRequest: request)
 
-        do {
-            _ = try await endpointService.withdrawSubscription(accessToken: "token")
-            XCTFail("Expected a decoding error")
-        } catch SubscriptionEndpointServiceError.invalidResponseCode {
-            XCTFail("Expected a decoding error, not an invalid response code")
-        } catch {}
+        let result = try await endpointService.withdrawSubscription(accessToken: "token")
+
+        XCTAssertNil(result.refundedAmount)
+        XCTAssertNil(result.currency)
+        XCTAssertEqual(result.requestedAt, Date(timeIntervalSince1970: 1760950800))
+    }
+
+    func testWithdrawSubscriptionReturnsEmptyResponseWhenSuccessResponseIsNotJSON() async throws {
+        let request = SubscriptionRequest.withdrawSubscription(baseURL: baseURL, accessToken: "token")!.apiRequest
+        apiService.set(response: createAPIResponse(statusCode: 200, data: "OK".data(using: .utf8)), forRequest: request)
+
+        let result = try await endpointService.withdrawSubscription(accessToken: "token")
+
+        XCTAssertEqual(result, WithdrawSubscriptionResponse())
+    }
+
+    func testWithdrawSubscriptionReturnsEmptyResponseForEmptySuccessResponse() async throws {
+        let request = SubscriptionRequest.withdrawSubscription(baseURL: baseURL, accessToken: "token")!.apiRequest
+        apiService.set(response: createAPIResponse(statusCode: 204, data: nil), forRequest: request)
+
+        let result = try await endpointService.withdrawSubscription(accessToken: "token")
+
+        XCTAssertEqual(result, WithdrawSubscriptionResponse())
     }
 
     // MARK: - getCustomerPortalURL Tests

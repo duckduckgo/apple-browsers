@@ -45,7 +45,7 @@ struct SubscriptionWithdrawalModelTests {
     func eligibleStripeSubscriberGetsOffer() async {
         let model = makeModel()
 
-        await model.fetchEligibility()
+        await model.fetchEligibility(for: stripeSubscription)
 
         let offer = model.offer(for: stripeSubscription)
         #expect(offer?.eligibleUntil != nil)
@@ -59,7 +59,7 @@ struct SubscriptionWithdrawalModelTests {
         subscriptionManager.getWithdrawalEligibilityResult = .success(Self.makeEligibility(eligibleUntil: nil))
         let model = makeModel()
 
-        await model.fetchEligibility()
+        await model.fetchEligibility(for: stripeSubscription)
 
         #expect(model.offer(for: stripeSubscription) != nil)
         #expect(model.offer(for: stripeSubscription)?.eligibleUntil == nil)
@@ -71,19 +71,24 @@ struct SubscriptionWithdrawalModelTests {
         subscriptionManager.getWithdrawalEligibilityResult = .success(WithdrawalEligibility(eligible: false, reason: "trial"))
         let model = makeModel()
 
-        await model.fetchEligibility()
+        await model.fetchEligibility(for: stripeSubscription)
 
         #expect(model.offer(for: stripeSubscription) == nil)
     }
 
     @available(iOS 16, macOS 13, *)
-    @Test("A non-Stripe subscriber gets no offer", .timeLimit(.minutes(1)))
-    func nonStripeSubscriberGetsNoOffer() async {
+    @Test("A non-Stripe subscriber does not fetch eligibility and gets no offer", .timeLimit(.minutes(1)), arguments: [
+        DuckDuckGoSubscription.Platform.apple, .google
+    ])
+    func nonStripeSubscriberDoesNotFetch(platform: DuckDuckGoSubscription.Platform) async {
+        let subscription = SubscriptionMockFactory.subscription(status: .autoRenewable, platform: platform, tier: .plus)
         let model = makeModel()
 
-        await model.fetchEligibility()
+        await model.fetchEligibility(for: subscription)
 
-        #expect(model.offer(for: SubscriptionMockFactory.subscription(status: .autoRenewable, platform: .apple, tier: .plus)) == nil)
+        #expect(model.eligibility == nil)
+        #expect(model.offer(for: subscription) == nil)
+        #expect(instrumentation.eligibilityFailures.isEmpty)
     }
 
     @available(iOS 16, macOS 13, *)
@@ -92,7 +97,7 @@ struct SubscriptionWithdrawalModelTests {
         featureFlagger.enabledFeatureFlags = []
         let model = makeModel()
 
-        await model.fetchEligibility()
+        await model.fetchEligibility(for: stripeSubscription)
 
         #expect(model.eligibility == nil)
         #expect(model.offer(for: stripeSubscription) == nil)
@@ -105,7 +110,7 @@ struct SubscriptionWithdrawalModelTests {
         subscriptionManager.resultTokenContainer = nil
         let model = makeModel()
 
-        await model.fetchEligibility()
+        await model.fetchEligibility(for: stripeSubscription)
 
         #expect(model.eligibility == nil)
         #expect(instrumentation.eligibilityFailures.isEmpty)
@@ -117,7 +122,7 @@ struct SubscriptionWithdrawalModelTests {
         subscriptionManager.getWithdrawalEligibilityResult = .failure(SubscriptionEndpointServiceError.invalidResponseCode(.internalServerError))
         let model = makeModel()
 
-        await model.fetchEligibility()
+        await model.fetchEligibility(for: stripeSubscription)
 
         #expect(model.offer(for: stripeSubscription) == nil)
         #expect(instrumentation.eligibilityFailures.count == 1)
@@ -154,6 +159,15 @@ struct SubscriptionWithdrawalModelTests {
         #expect(model.confirmationMessage(for: offer) == UserText.subscriptionWithdrawConfirmMessage(tierName: "Plus", refundAmount: "£9.99"))
     }
 
+    @available(iOS 16, macOS 13, *)
+    @Test("Without a refund amount, the confirmation message uses the full-refund copy", .timeLimit(.minutes(1)))
+    func confirmationMessageWithoutAmount() {
+        let model = makeModel()
+        let offer = SubscriptionWithdrawalOffer(eligibleUntil: nil, refundAmount: nil, tierName: "Plus", entitlements: [])
+
+        #expect(model.confirmationMessage(for: offer) == UserText.subscriptionWithdrawConfirmMessage(tierName: "Plus"))
+    }
+
     // MARK: - Withdraw
 
     @available(iOS 16, macOS 13, *)
@@ -164,10 +178,11 @@ struct SubscriptionWithdrawalModelTests {
                                                                                                requestedAt: Date(timeIntervalSince1970: 1760950800)))
         let model = makeModel()
 
-        let confirmation = await model.withdraw()
+        await model.withdraw()
+        let confirmation = model.confirmation
 
         #expect(confirmation?.refundAmount == "€9.99")
-        #expect(model.isWithdrawing)
+        #expect(!model.isWithdrawing)
         #expect(confirmation?.withdrawalDate.isEmpty == false)
         #expect(subscriptionManager.resultTokenContainer != nil)
         #expect(!model.isShowingError)
@@ -180,10 +195,11 @@ struct SubscriptionWithdrawalModelTests {
     func conflictHidesOffer() async {
         subscriptionManager.withdrawSubscriptionResult = .failure(SubscriptionEndpointServiceError.invalidResponseCode(.conflict))
         let model = makeModel()
-        await model.fetchEligibility()
+        await model.fetchEligibility(for: stripeSubscription)
         #expect(model.offer(for: stripeSubscription) != nil)
 
-        let confirmation = await model.withdraw()
+        await model.withdraw()
+        let confirmation = model.confirmation
 
         #expect(confirmation == nil)
         #expect(model.offer(for: stripeSubscription) == nil)
@@ -194,21 +210,92 @@ struct SubscriptionWithdrawalModelTests {
     }
 
     @available(iOS 16, macOS 13, *)
-    @Test("Any other failure shows the error alert and fires the failure pixel", .timeLimit(.minutes(1)), arguments: [
-        SubscriptionEndpointServiceError.invalidResponseCode(.internalServerError) as Error,
-        DecodingError.dataCorrupted(DecodingError.Context(codingPath: [], debugDescription: "Invalid refundedAmount")) as Error
-    ])
-    func otherFailureShowsError(error: Error) async {
-        subscriptionManager.withdrawSubscriptionResult = .failure(error)
+    @Test("Any other failure shows the error alert and fires the failure pixel", .timeLimit(.minutes(1)))
+    func otherFailureShowsError() async {
+        subscriptionManager.withdrawSubscriptionResult = .failure(SubscriptionEndpointServiceError.invalidResponseCode(.internalServerError))
         let model = makeModel()
 
-        let confirmation = await model.withdraw()
+        await model.withdraw()
+        let confirmation = model.confirmation
 
         #expect(confirmation == nil)
         #expect(model.isShowingError)
         #expect(!model.isWithdrawing)
         #expect(subscriptionManager.resultTokenContainer != nil)
         #expect(instrumentation.withdrawalFailures.count == 1)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("A success whose response cannot be decoded still completes, using the eligibility refund amount and today", .timeLimit(.minutes(1)))
+    func undecodableSuccessStillCompletes() async throws {
+        subscriptionManager.withdrawSubscriptionResult = .success(WithdrawSubscriptionResponse())
+        let model = makeModel()
+        await model.fetchEligibility(for: stripeSubscription)
+
+        await model.withdraw()
+        let confirmation = try #require(model.confirmation)
+
+        #expect(confirmation.refundAmount == "£9.99")
+        #expect(confirmation.withdrawalDate == Self.longDate(Date()))
+        #expect(!model.isShowingError)
+        #expect(!model.isWithdrawing)
+        #expect(instrumentation.withdrawalFailures.isEmpty)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("A response with a date but no amount shows the date and the eligibility refund amount", .timeLimit(.minutes(1)))
+    func responseWithoutAmountUsesEligibilityAmount() async throws {
+        subscriptionManager.withdrawSubscriptionResult = .success(WithdrawSubscriptionResponse(requestedAt: Date(timeIntervalSince1970: 1760950800)))
+        let model = makeModel()
+        await model.fetchEligibility(for: stripeSubscription)
+
+        await model.withdraw()
+        let confirmation = try #require(model.confirmation)
+
+        #expect(confirmation.withdrawalDate == Self.longDate(Date(timeIntervalSince1970: 1760950800)))
+        #expect(confirmation.refundAmount == "£9.99")
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Without an amount from the response or eligibility, the confirmation has no refund amount", .timeLimit(.minutes(1)))
+    func noAmountAnywhereHasNoRefundAmount() async throws {
+        subscriptionManager.getWithdrawalEligibilityResult = .success(WithdrawalEligibility(eligible: true))
+        subscriptionManager.withdrawSubscriptionResult = .success(WithdrawSubscriptionResponse())
+        let model = makeModel()
+        await model.fetchEligibility(for: stripeSubscription)
+
+        await model.withdraw()
+        let confirmation = try #require(model.confirmation)
+
+        #expect(confirmation.refundAmount == nil)
+        #expect(confirmation.withdrawalDate == Self.longDate(Date()))
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("A response amount without a currency falls back to the eligibility refund amount", .timeLimit(.minutes(1)))
+    func responseAmountWithoutCurrencyUsesEligibilityAmount() async throws {
+        subscriptionManager.withdrawSubscriptionResult = .success(WithdrawSubscriptionResponse(refundedAmount: "5.00"))
+        let model = makeModel()
+        await model.fetchEligibility(for: stripeSubscription)
+
+        await model.withdraw()
+        let confirmation = try #require(model.confirmation)
+
+        #expect(confirmation.refundAmount == "£9.99")
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Without an amount and currency from the same source, the confirmation has no refund amount", .timeLimit(.minutes(1)))
+    func missingCurrencyEverywhereHasNoRefundAmount() async throws {
+        subscriptionManager.getWithdrawalEligibilityResult = .success(WithdrawalEligibility(eligible: true, refundAmount: "9.99"))
+        subscriptionManager.withdrawSubscriptionResult = .success(WithdrawSubscriptionResponse(refundedAmount: "9.99"))
+        let model = makeModel()
+        await model.fetchEligibility(for: stripeSubscription)
+
+        await model.withdraw()
+        let confirmation = try #require(model.confirmation)
+
+        #expect(confirmation.refundAmount == nil)
     }
 
     // MARK: - Dialog
@@ -248,6 +335,13 @@ struct SubscriptionWithdrawalModelTests {
                                     locale: Locale(identifier: "en_US"),
                                     instrumentation: instrumentation,
                                     urlOpener: MockURLOpener())
+    }
+
+    private static func longDate(_ date: Date) -> String {
+        let formatter = DateFormatter()
+        formatter.dateStyle = .long
+        formatter.timeStyle = .none
+        return formatter.string(from: date)
     }
 
     private static func makeEligibility(eligibleUntil: Date? = Date(timeIntervalSince1970: 1760950800)) -> WithdrawalEligibility {

@@ -25,7 +25,6 @@ struct SubscriptionWithdrawalRowView: View {
 
     @ObservedObject var withdrawal: SubscriptionWithdrawalModel
     let subscription: DuckDuckGoSubscription?
-    let onWithdrawn: (SubscriptionWithdrawalConfirmation) async -> Void
 
     @State private var isShowingConfirmation = false
 
@@ -71,10 +70,7 @@ struct SubscriptionWithdrawalRowView: View {
             title: Text(UserText.subscriptionWithdrawConfirmTitle),
             message: Text(withdrawal.confirmationMessage(for: offer)),
             primaryButton: .destructive(Text(UserText.subscriptionWithdrawConfirmButton)) {
-                Task {
-                    guard let confirmation = await withdrawal.withdraw() else { return }
-                    await onWithdrawn(confirmation)
-                }
+                Task { await withdrawal.withdraw() }
             },
             secondaryButton: .cancel(Text(UserText.subscriptionWithdrawKeepButton)) {
                 withdrawal.keepTapped()

@@ -44,14 +44,21 @@ public struct WithdrawalEligibility: Codable, Equatable {
 }
 
 public struct WithdrawSubscriptionResponse: Codable, Equatable {
-    public let refundedAmount: String
-    public let currency: String
+    public let refundedAmount: String?
+    public let currency: String?
     public let requestedAt: Date?
 
-    public init(refundedAmount: String, currency: String, requestedAt: Date? = nil) {
+    public init(refundedAmount: String? = nil, currency: String? = nil, requestedAt: Date? = nil) {
         self.refundedAmount = refundedAmount
         self.currency = currency
         self.requestedAt = requestedAt
+    }
+
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        refundedAmount = try? container.decode(String.self, forKey: .refundedAmount)
+        currency = try? container.decode(String.self, forKey: .currency)
+        requestedAt = try? container.decode(Date.self, forKey: .requestedAt)
     }
 }
 
@@ -135,7 +142,7 @@ public protocol SubscriptionEndpointService {
 
     /// Withdraws from the Stripe subscription: ends it immediately and refunds it in full.
     /// - Parameter accessToken: The user's access token for authentication
-    /// - Returns: The refunded amount and the time the withdrawal was first requested
+    /// - Returns: The refunded amount and the time the withdrawal was first requested; fields are nil when the withdrawal succeeded but the response could not be read
     func withdrawSubscription(accessToken: String) async throws -> WithdrawSubscriptionResponse
 
     /// Confirms a subscription purchase by validating the provided access token and signature with the backend service.
@@ -253,7 +260,7 @@ public struct DefaultSubscriptionEndpointService: SubscriptionEndpointService {
                 return try response.decodeBody()
             } catch {
                 Logger.subscriptionEndpointService.error("\(#function) succeeded but the response could not be decoded: \(error, privacy: .public)")
-                throw error
+                return WithdrawSubscriptionResponse()
             }
         } else {
             throw SubscriptionEndpointServiceError.invalidResponseCode(statusCode)

@@ -5086,6 +5086,9 @@ Take back control of your personal information with the browser designed for dat
 /* Message of the alert confirming withdrawal from the subscription contract. Parameters are the tier name (e.g. Plus) and the refund amount with currency. */
 "subscription.withdraw.confirm.message" = "Your %1$@ subscription will end right away and you’ll be refunded %2$@ to your original payment method within 14 days.";
 
+/* Message of the alert confirming withdrawal from the subscription contract, used when the refund amount is unknown. Parameter is the tier name (e.g. Plus). */
+"subscription.withdraw.confirm.message.no.amount" = "Your %@ subscription will end right away and you’ll get a full refund to your original payment method within 14 days.";
+
 /* Title of the alert confirming withdrawal from the subscription contract */
 "subscription.withdraw.confirm.title" = "Withdraw from your subscription?";
 

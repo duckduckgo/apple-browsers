@@ -39,7 +39,7 @@ final class WebExtensionPermissionPrompt: WebExtensionPermissionPrompting {
             icon: webExtension.icon(for: iconSize) ?? webExtension.actionIcon(for: iconSize),
             title: String(format: UserText.webExtensionInstallTitle, webExtension.displayName ?? UserText.webExtensionUnnamedExtension),
             message: entries.isEmpty ? UserText.webExtensionNoPermissions : UserText.webExtensionPermissionExplanation,
-            details: entries.isEmpty ? nil : entries.joined(separator: "\n"),
+            details: entries,
             checkbox: UserText.webExtensionAllowFireWindows,
             checkboxToolTip: UserText.webExtensionPrivateAccessExplanation,
             confirmTitle: UserText.webExtensionInstall,
@@ -108,7 +108,7 @@ final class WebExtensionPermissionPrompt: WebExtensionPermissionPrompting {
         alert.buttons[1].keyEquivalent = "\r"
 
         let entries = permissionEntries(for: permissions)
-        let label = NSTextField(wrappingLabelWithString: entries.isEmpty ? UserText.webExtensionNoPermissions : entries.joined(separator: "\n"))
+        let label = NSTextField(wrappingLabelWithString: entries.isEmpty ? UserText.webExtensionNoPermissions : entries.map { "• \($0)" }.joined(separator: "\n"))
         label.isSelectable = true
         label.frame.size.width = 360
         label.frame.size.height = label.sizeThatFits(NSSize(width: 360, height: CGFloat.greatestFiniteMagnitude)).height
@@ -135,9 +135,9 @@ final class WebExtensionPermissionPrompt: WebExtensionPermissionPrompting {
 
     private func permissionEntries(for permissions: WebExtensionPermissionRequest) -> [String] {
         var entries = (permissions.permissions.map(\.rawValue) + permissions.appPermissions.map(\.rawValue))
-            .map { "• \(permissionDescription($0))" }.uniqued().sorted()
-        entries += permissions.matchPatterns.map { "• \(String(format: UserText.webExtensionWebsiteAccess, $0.string))" }.sorted()
-        entries += permissions.urls.map { "• \(String(format: UserText.webExtensionWebsiteAccess, $0.host ?? $0.absoluteString))" }.sorted()
+            .map { permissionDescription($0) }.uniqued().sorted()
+        entries += permissions.matchPatterns.map { String(format: UserText.webExtensionWebsiteAccess, $0.string) }.sorted()
+        entries += permissions.urls.map { String(format: UserText.webExtensionWebsiteAccess, $0.host ?? $0.absoluteString) }.sorted()
         return entries
     }
 

@@ -28,13 +28,13 @@ struct WebExtensionAlert: View {
         let icon: NSImage?
         let title: String
         let message: String?
-        let details: String?
+        let details: [String]
         let checkbox: String?
         let checkboxToolTip: String?
         let confirmTitle: String
         let cancelTitle: String
 
-        init(icon: NSImage?, title: String, message: String? = nil, details: String? = nil, checkbox: String? = nil, checkboxToolTip: String? = nil, confirmTitle: String, cancelTitle: String) {
+        init(icon: NSImage?, title: String, message: String? = nil, details: [String] = [], checkbox: String? = nil, checkboxToolTip: String? = nil, confirmTitle: String, cancelTitle: String) {
             self.icon = icon
             self.title = title
             self.message = message
@@ -64,6 +64,7 @@ struct WebExtensionAlert: View {
         static let iconInset: CGFloat = 28
         static let iconTitleSpacing: CGFloat = 28
         static let titleLeadingOffset: CGFloat = 8
+        static let bulletSpacing: CGFloat = 4
         static let buttonSpacing: CGFloat = 8
         static let buttonHeight: CGFloat = 28
     }
@@ -149,13 +150,13 @@ struct WebExtensionAlert: View {
                 messageText(message)
             }
 
-            if let details = configuration.details {
-                // A ScrollView has no height of its own here: a hidden copy of the text sizes it, and it's
+            if !configuration.details.isEmpty {
+                // A ScrollView has no height of its own here: a hidden copy of the list sizes it, and it's
                 // the only flexible part, so it shrinks when the alert reaches its maximum height.
-                messageText(details)
+                detailsList
                     .hidden()
                     .frame(minHeight: 0, alignment: .top)
-                    .overlay(ScrollView(.vertical) { messageText(details) })
+                    .overlay(ScrollView(.vertical) { detailsList })
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
@@ -171,6 +172,20 @@ struct WebExtensionAlert: View {
             .multilineTextAlignment(.leading)
             .fixMultilineScrollableText()
             .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
+    private var detailsList: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            ForEach(Array(configuration.details.enumerated()), id: \.offset) { _, detail in
+                // Wrapped lines hang under the text, not under the bullet.
+                HStack(alignment: .firstTextBaseline, spacing: Constants.bulletSpacing) {
+                    Text(verbatim: "•")
+                        .font(.system(size: 13))
+                        .foregroundColor(Color(designSystemColor: .textSecondary, palette: palette))
+                    messageText(detail)
+                }
+            }
+        }
     }
 
     private var buttons: some View {

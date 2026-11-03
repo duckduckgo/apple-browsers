@@ -177,7 +177,7 @@ enum WebExtensionManagerFactory {
         manager.chromeWebStore = ChromeWebStoreService(
             manager: manager,
             catalog: ChromeWebStoreCatalog(configurationManager: privacyConfigurationManager),
-            presenter: ChromeWebStorePresenter(windowProvider: { NSApp.keyWindow ?? NSApp.mainWindow })
+            presenter: ChromeWebStorePresenter(windowProvider: { NSApp.keyWindow ?? NSApp.mainWindow }, themeManager: themeManager)
         )
 
         return manager

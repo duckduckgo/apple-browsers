@@ -43,7 +43,7 @@ if [ "${#IMAGES[@]}" -eq 0 ]; then
 fi
 
 POINTER="$(git rev-parse "HEAD:$SUBMODULE_PATH")"
-SUBMODULE_URL="$(git config -f .gitmodules "submodule.$SUBMODULE_PATH.url")"
+SUBMODULE_URL="https://github.com/$SUBMODULE_REPO.git"
 WORK_DIR="$(mktemp -d)"
 trap 'rm -rf "$WORK_DIR"' EXIT
 

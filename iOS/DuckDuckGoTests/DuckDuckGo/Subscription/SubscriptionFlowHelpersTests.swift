@@ -50,7 +50,7 @@ struct SubscriptionFlowConfigurationTests {
     }
 
     @available(iOS 16, macOS 13, *)
-    @Test("subscribe starts on the subscribe screen, adds the debug parameter only when enabled and reads the origin", .timeLimit(.minutes(1)),
+    @Test("subscribe puts the email screen in restore mode, adds the debug parameter only when enabled and reads the origin", .timeLimit(.minutes(1)),
           arguments: [true, false])
     func subscribeConfiguration(isDebugOverlayEnabled: Bool) {
         let landingURL = URL(string: "https://duckduckgo.com/subscriptions/welcome")!
@@ -64,8 +64,7 @@ struct SubscriptionFlowConfigurationTests {
                                                     isDebugOverlayEnabled: isDebugOverlayEnabled)
 
         let expectedURL = isDebugOverlayEnabled ? landingURL.appendingParameter(name: "debug", value: "1") : landingURL
-        #expect(configuration == Configuration(containerView: .subscriptionFlowView,
-                                               emailScreenMode: .restoreFlow,
+        #expect(configuration == Configuration(emailScreenMode: .restoreFlow,
                                                initialURL: expectedURL,
                                                flowType: .firstPurchase,
                                                subscriptionAttributionOrigin: "funnel_test",
@@ -83,8 +82,7 @@ struct SubscriptionFlowConfigurationTests {
         let expectedURL = subscriptionManager.url(for: .plans)
             .appendingParameter(name: AttributionParameter.origin, value: "funnel_test")
             .appendingParameter(name: SubscriptionURL.PlanChangeParameter.entry, value: "settings")
-        #expect(configuration == Configuration(containerView: .subscriptionFlowView,
-                                               emailScreenMode: nil,
+        #expect(configuration == Configuration(emailScreenMode: nil,
                                                initialURL: expectedURL,
                                                flowType: .planUpdate,
                                                subscriptionAttributionOrigin: "funnel_test",
@@ -97,8 +95,7 @@ struct SubscriptionFlowConfigurationTests {
     func plansConfigurationWithoutRedirect() {
         let configuration = Configuration.plans(redirectURLComponents: nil, subscriptionManager: subscriptionManager)
 
-        #expect(configuration == Configuration(containerView: .subscriptionFlowView,
-                                               emailScreenMode: nil,
+        #expect(configuration == Configuration(emailScreenMode: nil,
                                                initialURL: subscriptionManager.url(for: .plans),
                                                flowType: .planUpdate,
                                                subscriptionAttributionOrigin: nil,
@@ -107,10 +104,9 @@ struct SubscriptionFlowConfigurationTests {
     }
 
     @available(iOS 16, macOS 13, *)
-    @Test("restore starts on the restore screen with the email screen in restore mode", .timeLimit(.minutes(1)))
+    @Test("restore puts the email screen in restore mode and relies on the default URL", .timeLimit(.minutes(1)))
     func restoreConfiguration() {
-        #expect(Configuration.restore() == Configuration(containerView: .restoreView,
-                                                         emailScreenMode: .restoreFlow,
+        #expect(Configuration.restore() == Configuration(emailScreenMode: .restoreFlow,
                                                          initialURL: nil,
                                                          flowType: .firstPurchase,
                                                          subscriptionAttributionOrigin: nil,
@@ -119,11 +115,10 @@ struct SubscriptionFlowConfigurationTests {
     }
 
     @available(iOS 16, macOS 13, *)
-    @Test("email starts on the email screen in the requested mode", .timeLimit(.minutes(1)),
+    @Test("email uses the requested email mode", .timeLimit(.minutes(1)),
           arguments: [SubscriptionEmailViewModel.EmailViewFlow.activationFlow, .restoreFlow, .manageEmailFlow])
     func emailConfiguration(emailScreenMode: SubscriptionEmailViewModel.EmailViewFlow) {
-        #expect(Configuration.email(emailScreenMode) == Configuration(containerView: .emailView,
-                                                                      emailScreenMode: emailScreenMode,
+        #expect(Configuration.email(emailScreenMode) == Configuration(emailScreenMode: emailScreenMode,
                                                                       initialURL: nil,
                                                                       flowType: .firstPurchase,
                                                                       subscriptionAttributionOrigin: nil,
@@ -136,8 +131,7 @@ struct SubscriptionFlowConfigurationTests {
     func cancellationConfiguration() {
         let configuration = Configuration.cancellation(subscriptionManager: subscriptionManager)
 
-        #expect(configuration == Configuration(containerView: .subscriptionFlowView,
-                                               emailScreenMode: nil,
+        #expect(configuration == Configuration(emailScreenMode: nil,
                                                initialURL: subscriptionManager.url(for: .cancellationFlow),
                                                flowType: .cancellation,
                                                subscriptionAttributionOrigin: nil,
@@ -246,8 +240,11 @@ struct SubscriptionFlowTests {
     }
 
     @available(iOS 16, macOS 13, *)
-    @Test("cancellation uses the cancellation configuration", .timeLimit(.minutes(1)))
-    func cancellationFlow() {
-        #expect(configuration(of: .cancellation) == Configuration.cancellation(subscriptionManager: subscriptionManager))
+    @Test("each flow starts on its own container screen", .timeLimit(.minutes(1)))
+    func containerView() {
+        #expect(Flow.subscribe(redirectURLComponents: nil, dependencies: dependencies).containerView == .subscriptionFlowView)
+        #expect(Flow.plans(redirectURLComponents: nil).containerView == .subscriptionFlowView)
+        #expect(Flow.restore.containerView == .restoreView)
+        #expect(Flow.email(.activationFlow).containerView == .emailView)
     }
 }

@@ -249,9 +249,9 @@ final class SubscriptionSettingsViewModel: ObservableObject {
         self.aiChatSettings = aiChatSettings
         self.locale = locale
         self.cancellationInstrumentation = cancellationInstrumentation
-        self.subscriptionFlowsExecuter = subscriptionFlowsExecuter ?? DefaultSubscriptionFlowsExecuter.make(
+        self.subscriptionFlowsExecuter = subscriptionFlowsExecuter ?? SubscriptionPagesUseSubscriptionFeatureDependencies.make(
             subscriptionManager: subscriptionManager,
-            wideEvent: wideEvent)
+            wideEvent: wideEvent).subscriptionFlowsExecuter
         let subscriptionFAQURL = subscriptionManager.url(for: .faq)
         let learnMoreURL = subscriptionFAQURL.appendingPathComponent("adding-email")
         self.state = State(faqURL: subscriptionFAQURL, learnMoreURL: learnMoreURL, userScriptsDependencies: userScriptsDependencies, featureFlagger: featureFlagger)

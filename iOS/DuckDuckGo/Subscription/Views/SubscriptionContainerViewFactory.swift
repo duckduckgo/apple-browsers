@@ -27,13 +27,20 @@ enum SubscriptionFlow {
     case plans(redirectURLComponents: URLComponents?)
     case restore
     case email(SubscriptionEmailViewModel.EmailViewFlow)
-    case cancellation
 
     static func makePlanOrSubscribeFlow(redirectURLComponents: URLComponents?, dependencies: SubscriptionPurchaseDependencies) -> SubscriptionFlow {
         if let redirectURLComponents, SubscriptionPurchaseFlowPath.isPlansPath(redirectURLComponents.path) {
             return .plans(redirectURLComponents: redirectURLComponents)
         }
         return .subscribe(redirectURLComponents: redirectURLComponents, dependencies: dependencies)
+    }
+
+    var containerView: SubscriptionContainerView.CurrentViewType {
+        switch self {
+        case .subscribe, .plans: return .subscriptionFlowView
+        case .restore: return .restoreView
+        case .email: return .emailView
+        }
     }
 
     func configuration(subscriptionManager: SubscriptionManager, featureFlagger: FeatureFlagger) -> SubscriptionFlowConfiguration {
@@ -52,8 +59,6 @@ enum SubscriptionFlow {
             return .restore()
         case let .email(emailScreenMode):
             return .email(emailScreenMode)
-        case .cancellation:
-            return .cancellation(subscriptionManager: subscriptionManager)
         }
     }
 }
@@ -63,26 +68,33 @@ enum SubscriptionContainerViewFactory {
     static func makeView(for flow: SubscriptionFlow,
                          context: SubscriptionFlowContext,
                          navigationCoordinator: SubscriptionNavigationCoordinator) -> some View {
-        let configuration = flow.configuration(subscriptionManager: context.subscriptionManager, featureFlagger: context.featureFlagger)
-        return SubscriptionContainerView(currentView: configuration.containerView,
-                                         viewModel: makeViewModel(for: flow, configuration: configuration, context: context),
-                                         featureFlagger: context.featureFlagger)
+        SubscriptionContainerView(currentView: flow.containerView,
+                                  viewModel: makeViewModel(for: flow, context: context),
+                                  featureFlagger: context.featureFlagger)
             .environmentObject(navigationCoordinator)
     }
 
     static func makeViewModel(for flow: SubscriptionFlow, context: SubscriptionFlowContext) -> SubscriptionContainerViewModel {
-        let configuration = flow.configuration(subscriptionManager: context.subscriptionManager, featureFlagger: context.featureFlagger)
-        return makeViewModel(for: flow, configuration: configuration, context: context)
-    }
-
-    private static func makeViewModel(for flow: SubscriptionFlow,
-                                      configuration: SubscriptionFlowConfiguration,
-                                      context: SubscriptionFlowContext) -> SubscriptionContainerViewModel {
         let purchaseDependencies: SubscriptionPurchaseDependencies?
         switch flow {
         case let .subscribe(_, _, dependencies): purchaseDependencies = dependencies
-        case .plans, .restore, .email, .cancellation: purchaseDependencies = nil
+        case .plans, .restore, .email: purchaseDependencies = nil
         }
+        let configuration = flow.configuration(subscriptionManager: context.subscriptionManager, featureFlagger: context.featureFlagger)
+        return makeViewModel(configuration: configuration,
+                             purchaseDependencies: purchaseDependencies,
+                             context: context)
+    }
+
+    static func makeCancellationFlowViewModel(context: SubscriptionFlowContext) -> SubscriptionContainerViewModel {
+        makeViewModel(configuration: .cancellation(subscriptionManager: context.subscriptionManager),
+                      purchaseDependencies: nil,
+                      context: context)
+    }
+
+    private static func makeViewModel(configuration: SubscriptionFlowConfiguration,
+                                      purchaseDependencies: SubscriptionPurchaseDependencies?,
+                                      context: SubscriptionFlowContext) -> SubscriptionContainerViewModel {
         let viewModel = SubscriptionContainerViewModel(
             subscriptionManager: context.subscriptionManager,
             initialURL: configuration.initialURL,

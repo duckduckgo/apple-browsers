@@ -724,8 +724,7 @@ extension SubscriptionSettingsViewV2 {
     func startCancellationFlow() {
         guard !isShowingCancellationFlow else { return }
         viewModel.cancelSubscriptionTapped()
-        let containerViewModel = SubscriptionContainerViewFactory.makeViewModel(for: .cancellation,
-                                                                                context: settingsViewModel.subscriptionFlowContext)
+        let containerViewModel = SubscriptionContainerViewFactory.makeCancellationFlowViewModel(context: settingsViewModel.subscriptionFlowContext)
         cancellationFlow = SubscriptionCancellationFlowPresentation(containerViewModel: containerViewModel,
                                                                     instrumentation: viewModel.cancellationInstrumentation) { closingFlow in
             shouldOpenStoreCancellation = true

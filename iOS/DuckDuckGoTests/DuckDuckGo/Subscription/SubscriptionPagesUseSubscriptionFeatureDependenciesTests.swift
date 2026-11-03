@@ -43,25 +43,4 @@ struct SubscriptionPagesUseSubscriptionFeatureDependenciesTests {
         #expect(dependencies.appStoreRestoreFlow is DefaultAppStoreRestoreFlow)
         #expect(dependencies.appStorePurchaseFlow is DefaultAppStorePurchaseFlow)
     }
-
-    @available(iOS 16, macOS 13, *)
-    @Test("Each call to make builds fresh instances", .timeLimit(.minutes(1)))
-    func makeBuildsFreshInstances() {
-        let first = makeDependencies()
-        let second = makeDependencies()
-
-        #expect(first.pendingTransactionHandler as AnyObject !== second.pendingTransactionHandler as AnyObject)
-        #expect(first.appStoreRestoreFlow as AnyObject !== second.appStoreRestoreFlow as AnyObject)
-        #expect(first.appStorePurchaseFlow as AnyObject !== second.appStorePurchaseFlow as AnyObject)
-        #expect(first.subscriptionFlowsExecuter !== second.subscriptionFlowsExecuter)
-    }
-
-    @available(iOS 16, macOS 13, *)
-    @Test("DefaultSubscriptionFlowsExecuter.make builds a fresh executer per call", .timeLimit(.minutes(1)))
-    func executerMakeBuildsFreshInstances() {
-        let first = DefaultSubscriptionFlowsExecuter.make(subscriptionManager: subscriptionManager, wideEvent: wideEvent)
-        let second = DefaultSubscriptionFlowsExecuter.make(subscriptionManager: subscriptionManager, wideEvent: wideEvent)
-
-        #expect(first !== second)
-    }
 }

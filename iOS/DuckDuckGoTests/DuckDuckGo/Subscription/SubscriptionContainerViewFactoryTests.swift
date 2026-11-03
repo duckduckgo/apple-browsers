@@ -121,7 +121,7 @@ struct SubscriptionContainerViewFactoryTests {
     @available(iOS 16, macOS 13, *)
     @Test("cancellation loads the cancellation URL, keeps the default email mode and gets no onboarding store", .timeLimit(.minutes(1)))
     func cancellationViewModel() {
-        let viewModel = makeViewModel(for: .cancellation)
+        let viewModel = SubscriptionContainerViewFactory.makeCancellationFlowViewModel(context: makeContext())
 
         let hasOnboardingStore = viewModel.flow.onboardingPersistor != nil
         #expect(viewModel.flow.initialURL == subscriptionManager.url(for: .cancellationFlow))

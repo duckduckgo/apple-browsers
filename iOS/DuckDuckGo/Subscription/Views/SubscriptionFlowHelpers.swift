@@ -53,7 +53,6 @@ struct SubscriptionPurchaseDependencies {
 
 /// Everything a flow decides for itself, built from its inputs. Each flow has one builder that sets every field.
 struct SubscriptionFlowConfiguration: Equatable {
-    let containerView: SubscriptionContainerView.CurrentViewType
     let emailScreenMode: SubscriptionEmailViewModel.EmailViewFlow?
     let initialURL: URL?
     let flowType: SubscriptionFlowType
@@ -77,8 +76,7 @@ struct SubscriptionFlowConfiguration: Equatable {
         if isDebugOverlayEnabled {
             initialURL = initialURL.appendingParameter(name: "debug", value: "1")
         }
-        return Self(containerView: .subscriptionFlowView,
-                    emailScreenMode: .restoreFlow,
+        return Self(emailScreenMode: .restoreFlow,
                     initialURL: initialURL,
                     flowType: .firstPurchase,
                     subscriptionAttributionOrigin: queryValue(named: AttributionParameter.origin, in: redirectURLComponents),
@@ -97,8 +95,7 @@ struct SubscriptionFlowConfiguration: Equatable {
                 }
             }
         }
-        return Self(containerView: .subscriptionFlowView,
-                    emailScreenMode: nil,
+        return Self(emailScreenMode: nil,
                     initialURL: plansURL,
                     flowType: .planUpdate,
                     subscriptionAttributionOrigin: queryValue(named: AttributionParameter.origin, in: redirectURLComponents),
@@ -107,8 +104,7 @@ struct SubscriptionFlowConfiguration: Equatable {
     }
 
     static func restore() -> Self {
-        Self(containerView: .restoreView,
-             emailScreenMode: .restoreFlow,
+        Self(emailScreenMode: .restoreFlow,
              initialURL: nil,
              flowType: .firstPurchase,
              subscriptionAttributionOrigin: nil,
@@ -117,8 +113,7 @@ struct SubscriptionFlowConfiguration: Equatable {
     }
 
     static func email(_ emailScreenMode: SubscriptionEmailViewModel.EmailViewFlow) -> Self {
-        Self(containerView: .emailView,
-             emailScreenMode: emailScreenMode,
+        Self(emailScreenMode: emailScreenMode,
              initialURL: nil,
              flowType: .firstPurchase,
              subscriptionAttributionOrigin: nil,
@@ -127,8 +122,7 @@ struct SubscriptionFlowConfiguration: Equatable {
     }
 
     static func cancellation(subscriptionManager: SubscriptionManager) -> Self {
-        Self(containerView: .subscriptionFlowView,
-             emailScreenMode: nil,
+        Self(emailScreenMode: nil,
              initialURL: subscriptionManager.url(for: .cancellationFlow),
              flowType: .cancellation,
              subscriptionAttributionOrigin: nil,

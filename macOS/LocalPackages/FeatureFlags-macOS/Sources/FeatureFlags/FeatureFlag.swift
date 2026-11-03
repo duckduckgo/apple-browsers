@@ -742,7 +742,7 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .adBlockingExtensionEnabledByDefault:
             Config(source: .remoteReleasable(AdBlockingExtensionSubfeature.featureEnabledByDefault), category: .adBlocking)
         case .sponsorBlock:
-            Config(defaultValue: .internalOnly, source: .remoteReleasable(SponsorBlockPrivacySubfeature.mvpEnabled), category: .adBlocking)
+            Config(defaultValue: .disabled, source: .remoteReleasable(SponsorBlockPrivacySubfeature.mvpEnabled), category: .adBlocking)
         case .forceDarkModeOnWebsites:
             Config(source: .remoteReleasable(ForceDarkModeOnWebsitesSubfeature.featureRollout), category: .webExtensions)
         case .syncSeamlessAccountSwitching:

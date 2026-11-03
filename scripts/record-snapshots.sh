@@ -15,6 +15,11 @@ if [ -z "$RENDERED_DIR" ] || [ -z "$BRANCH" ]; then
 	exit 1
 fi
 
+if [ "$BRANCH" = "$BASE_BRANCH" ]; then
+	echo "❌ Refusing to record from '$BRANCH'. Record from a feature branch, so the images go through a snapshots PR."
+	exit 1
+fi
+
 if [ ! -d "$RENDERED_DIR" ]; then
 	echo "❌ No rendered snapshots at '$RENDERED_DIR'."
 	exit 1

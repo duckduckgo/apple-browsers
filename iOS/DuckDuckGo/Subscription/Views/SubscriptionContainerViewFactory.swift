@@ -18,21 +18,70 @@
 //
 
 import SwiftUI
+import Subscription
+import PrivacyConfig
+
+enum SubscriptionFlow {
+    case subscribe(redirectURLComponents: URLComponents?, landingURL: URL? = nil, dependencies: SubscriptionPurchaseDependencies)
+    case plans(redirectURLComponents: URLComponents?)
+    case restore
+    case email(SubscriptionEmailViewModel.EmailViewFlow)
+    case cancellation
+
+    static func makePlanOrSubscribeFlow(redirectURLComponents: URLComponents?, dependencies: SubscriptionPurchaseDependencies) -> SubscriptionFlow {
+        if let redirectURLComponents, SubscriptionPurchaseFlowPath.isPlansPath(redirectURLComponents.path) {
+            return .plans(redirectURLComponents: redirectURLComponents)
+        }
+        return .subscribe(redirectURLComponents: redirectURLComponents, dependencies: dependencies)
+    }
+
+    func configuration(subscriptionManager: SubscriptionManager, featureFlagger: FeatureFlagger) -> SubscriptionFlowConfiguration {
+        switch self {
+        case let .subscribe(redirectURLComponents, landingURL, dependencies):
+            return .subscribe(redirectURLComponents: redirectURLComponents,
+                              landingURL: landingURL,
+                              subscriptionManager: subscriptionManager,
+                              tld: dependencies.tld,
+                              performanceOptimizedPaywalls: dependencies.performanceOptimizedPaywallsProvider,
+                              featureFlagger: featureFlagger,
+                              isDebugOverlayEnabled: dependencies.isDebugOverlayEnabled)
+        case let .plans(redirectURLComponents):
+            return .plans(redirectURLComponents: redirectURLComponents, subscriptionManager: subscriptionManager)
+        case .restore:
+            return .restore()
+        case let .email(emailScreenMode):
+            return .email(emailScreenMode)
+        case .cancellation:
+            return .cancellation(subscriptionManager: subscriptionManager)
+        }
+    }
+}
 
 enum SubscriptionContainerViewFactory {
 
     static func makeView(for flow: SubscriptionFlow,
                          context: SubscriptionFlowContext,
                          navigationCoordinator: SubscriptionNavigationCoordinator) -> some View {
-        SubscriptionContainerView(currentView: flow.currentView,
-                                  viewModel: makeViewModel(for: flow, context: context),
-                                  featureFlagger: context.featureFlagger)
+        let configuration = flow.configuration(subscriptionManager: context.subscriptionManager, featureFlagger: context.featureFlagger)
+        return SubscriptionContainerView(currentView: configuration.initialScreen,
+                                         viewModel: makeViewModel(for: flow, configuration: configuration, context: context),
+                                         featureFlagger: context.featureFlagger)
             .environmentObject(navigationCoordinator)
     }
 
     static func makeViewModel(for flow: SubscriptionFlow, context: SubscriptionFlowContext) -> SubscriptionContainerViewModel {
         let configuration = flow.configuration(subscriptionManager: context.subscriptionManager, featureFlagger: context.featureFlagger)
-        let purchaseDependencies = flow.purchaseDependencies
+        return makeViewModel(for: flow, configuration: configuration, context: context)
+    }
+
+    private static func makeViewModel(for flow: SubscriptionFlow,
+                                      configuration: SubscriptionFlowConfiguration,
+                                      context: SubscriptionFlowContext) -> SubscriptionContainerViewModel {
+        let purchaseDependencies: SubscriptionPurchaseDependencies?
+        switch flow {
+        case let .subscribe(_, _, dependencies): purchaseDependencies = dependencies
+        case .plans, .restore, .email, .cancellation: purchaseDependencies = nil
+        }
         let viewModel = SubscriptionContainerViewModel(
             subscriptionManager: context.subscriptionManager,
             initialURL: configuration.initialURL,
@@ -48,8 +97,8 @@ enum SubscriptionContainerViewFactory {
             meetsPIRLocaleRequirement: purchaseDependencies?.meetsPIRLocaleRequirement ?? { false },
             onRequestDuckAIChat: purchaseDependencies?.onRequestDuckAIChat
         )
-        if let emailFlowMode = flow.emailFlowMode {
-            viewModel.email.setEmailFlowMode(emailFlowMode)
+        if let emailScreenMode = configuration.emailScreenMode {
+            viewModel.email.setEmailFlowMode(emailScreenMode)
         }
         return viewModel
     }

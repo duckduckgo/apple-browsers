@@ -48,67 +48,14 @@ struct SubscriptionPurchaseDependencies {
     let onRequestDuckAIChat: ((String?) -> Bool)?
 }
 
-enum SubscriptionFlow {
-    case subscribe(redirectURLComponents: URLComponents?, landingURL: URL? = nil, dependencies: SubscriptionPurchaseDependencies)
-    case plans(redirectURLComponents: URLComponents?)
-    case restore
-    case email(SubscriptionEmailViewModel.EmailViewFlow)
-    case cancellation
-
-    static func makePlanOrSubscribeFlow(redirectURLComponents: URLComponents?, dependencies: SubscriptionPurchaseDependencies) -> SubscriptionFlow {
-        if let redirectURLComponents, SubscriptionPurchaseFlowPath.isPlansPath(redirectURLComponents.path) {
-            return .plans(redirectURLComponents: redirectURLComponents)
-        }
-        return .subscribe(redirectURLComponents: redirectURLComponents, dependencies: dependencies)
-    }
-
-    var currentView: SubscriptionContainerView.CurrentViewType {
-        switch self {
-        case .restore: return .restore
-        case .email: return .email
-        case .subscribe, .plans, .cancellation: return .subscribe
-        }
-    }
-
-    var emailFlowMode: SubscriptionEmailViewModel.EmailViewFlow? {
-        switch self {
-        case .subscribe, .restore: return .restoreFlow
-        case .email(let emailFlow): return emailFlow
-        case .plans, .cancellation: return nil
-        }
-    }
-
-    var purchaseDependencies: SubscriptionPurchaseDependencies? {
-        guard case let .subscribe(_, _, dependencies) = self else { return nil }
-        return dependencies
-    }
-
-    func configuration(subscriptionManager: SubscriptionManager, featureFlagger: FeatureFlagger) -> SubscriptionFlowConfiguration {
-        switch self {
-        case let .subscribe(redirectURLComponents, landingURL, dependencies):
-            return .subscribe(redirectURLComponents: redirectURLComponents,
-                              landingURL: landingURL,
-                              subscriptionManager: subscriptionManager,
-                              tld: dependencies.tld,
-                              performanceOptimizedPaywalls: dependencies.performanceOptimizedPaywallsProvider,
-                              featureFlagger: featureFlagger,
-                              isDebugOverlayEnabled: dependencies.isDebugOverlayEnabled)
-        case let .plans(redirectURLComponents):
-            return .plans(redirectURLComponents: redirectURLComponents, subscriptionManager: subscriptionManager)
-        case .cancellation:
-            return .cancellation(subscriptionManager: subscriptionManager)
-        case .restore, .email:
-            return SubscriptionFlowConfiguration()
-        }
-    }
-}
-
 struct SubscriptionFlowConfiguration: Equatable {
-    var initialURL: URL?
-    var flowType: SubscriptionFlowType = .firstPurchase
-    var subscriptionAttributionOrigin: String?
-    var planChangeEntry: String?
-    var schedulesExpirationReminders = true
+    let initialScreen: SubscriptionContainerView.CurrentViewType
+    let emailScreenMode: SubscriptionEmailViewModel.EmailViewFlow?
+    let initialURL: URL?
+    let flowType: SubscriptionFlowType
+    let subscriptionAttributionOrigin: String?
+    let planChangeEntry: String?
+    let schedulesExpirationReminders: Bool
 
     static func subscribe(redirectURLComponents: URLComponents?,
                           landingURL: URL?,
@@ -126,8 +73,13 @@ struct SubscriptionFlowConfiguration: Equatable {
         if isDebugOverlayEnabled {
             initialURL = initialURL.appendingParameter(name: "debug", value: "1")
         }
-        return Self(initialURL: initialURL,
-                    subscriptionAttributionOrigin: queryValue(named: AttributionParameter.origin, in: redirectURLComponents))
+        return Self(initialScreen: .subscribe,
+                    emailScreenMode: .restoreFlow,
+                    initialURL: initialURL,
+                    flowType: .firstPurchase,
+                    subscriptionAttributionOrigin: queryValue(named: AttributionParameter.origin, in: redirectURLComponents),
+                    planChangeEntry: nil,
+                    schedulesExpirationReminders: true)
     }
 
     static func plans(redirectURLComponents: URLComponents?, subscriptionManager: SubscriptionManager) -> Self {
@@ -141,15 +93,41 @@ struct SubscriptionFlowConfiguration: Equatable {
                 }
             }
         }
-        return Self(initialURL: plansURL,
+        return Self(initialScreen: .subscribe,
+                    emailScreenMode: nil,
+                    initialURL: plansURL,
                     flowType: .planUpdate,
                     subscriptionAttributionOrigin: queryValue(named: AttributionParameter.origin, in: redirectURLComponents),
-                    planChangeEntry: queryValue(named: SubscriptionURL.PlanChangeParameter.entry, in: redirectURLComponents))
+                    planChangeEntry: queryValue(named: SubscriptionURL.PlanChangeParameter.entry, in: redirectURLComponents),
+                    schedulesExpirationReminders: true)
+    }
+
+    static func restore() -> Self {
+        Self(initialScreen: .restore,
+             emailScreenMode: .restoreFlow,
+             initialURL: nil,
+             flowType: .firstPurchase,
+             subscriptionAttributionOrigin: nil,
+             planChangeEntry: nil,
+             schedulesExpirationReminders: true)
+    }
+
+    static func email(_ emailScreenMode: SubscriptionEmailViewModel.EmailViewFlow) -> Self {
+        Self(initialScreen: .email,
+             emailScreenMode: emailScreenMode,
+             initialURL: nil,
+             flowType: .firstPurchase,
+             subscriptionAttributionOrigin: nil,
+             planChangeEntry: nil,
+             schedulesExpirationReminders: true)
     }
 
     static func cancellation(subscriptionManager: SubscriptionManager) -> Self {
-        Self(initialURL: subscriptionManager.url(for: .cancellationFlow),
+        Self(initialScreen: .subscribe,
+             emailScreenMode: nil,
+             initialURL: subscriptionManager.url(for: .cancellationFlow),
              flowType: .cancellation,
+             subscriptionAttributionOrigin: nil,
              planChangeEntry: SubscriptionPlanChangeOrigin.cancellationFlow.rawValue,
              schedulesExpirationReminders: false)
     }

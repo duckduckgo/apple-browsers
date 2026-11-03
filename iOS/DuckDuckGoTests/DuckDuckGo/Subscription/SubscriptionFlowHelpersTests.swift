@@ -50,7 +50,7 @@ struct SubscriptionFlowConfigurationTests {
     }
 
     @available(iOS 16, macOS 13, *)
-    @Test("subscribe uses the initial URL, adds the debug parameter only when enabled and reads the origin", .timeLimit(.minutes(1)),
+    @Test("subscribe starts on the subscribe screen, adds the debug parameter only when enabled and reads the origin", .timeLimit(.minutes(1)),
           arguments: [true, false])
     func subscribeConfiguration(isDebugOverlayEnabled: Bool) {
         let landingURL = URL(string: "https://duckduckgo.com/subscriptions/welcome")!
@@ -64,7 +64,9 @@ struct SubscriptionFlowConfigurationTests {
                                                     isDebugOverlayEnabled: isDebugOverlayEnabled)
 
         let expectedURL = isDebugOverlayEnabled ? landingURL.appendingParameter(name: "debug", value: "1") : landingURL
-        #expect(configuration == Configuration(initialURL: expectedURL,
+        #expect(configuration == Configuration(initialScreen: .subscribe,
+                                               emailScreenMode: .restoreFlow,
+                                               initialURL: expectedURL,
                                                flowType: .firstPurchase,
                                                subscriptionAttributionOrigin: "funnel_test",
                                                planChangeEntry: nil,
@@ -81,7 +83,9 @@ struct SubscriptionFlowConfigurationTests {
         let expectedURL = subscriptionManager.url(for: .plans)
             .appendingParameter(name: AttributionParameter.origin, value: "funnel_test")
             .appendingParameter(name: SubscriptionURL.PlanChangeParameter.entry, value: "settings")
-        #expect(configuration == Configuration(initialURL: expectedURL,
+        #expect(configuration == Configuration(initialScreen: .subscribe,
+                                               emailScreenMode: nil,
+                                               initialURL: expectedURL,
                                                flowType: .planUpdate,
                                                subscriptionAttributionOrigin: "funnel_test",
                                                planChangeEntry: "settings",
@@ -93,7 +97,9 @@ struct SubscriptionFlowConfigurationTests {
     func plansConfigurationWithoutRedirect() {
         let configuration = Configuration.plans(redirectURLComponents: nil, subscriptionManager: subscriptionManager)
 
-        #expect(configuration == Configuration(initialURL: subscriptionManager.url(for: .plans),
+        #expect(configuration == Configuration(initialScreen: .subscribe,
+                                               emailScreenMode: nil,
+                                               initialURL: subscriptionManager.url(for: .plans),
                                                flowType: .planUpdate,
                                                subscriptionAttributionOrigin: nil,
                                                planChangeEntry: nil,
@@ -101,25 +107,42 @@ struct SubscriptionFlowConfigurationTests {
     }
 
     @available(iOS 16, macOS 13, *)
+    @Test("restore starts on the restore screen with the email screen in restore mode", .timeLimit(.minutes(1)))
+    func restoreConfiguration() {
+        #expect(Configuration.restore() == Configuration(initialScreen: .restore,
+                                                         emailScreenMode: .restoreFlow,
+                                                         initialURL: nil,
+                                                         flowType: .firstPurchase,
+                                                         subscriptionAttributionOrigin: nil,
+                                                         planChangeEntry: nil,
+                                                         schedulesExpirationReminders: true))
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("email starts on the email screen in the requested mode", .timeLimit(.minutes(1)),
+          arguments: [SubscriptionEmailViewModel.EmailViewFlow.activationFlow, .restoreFlow, .manageEmailFlow])
+    func emailConfiguration(emailScreenMode: SubscriptionEmailViewModel.EmailViewFlow) {
+        #expect(Configuration.email(emailScreenMode) == Configuration(initialScreen: .email,
+                                                                      emailScreenMode: emailScreenMode,
+                                                                      initialURL: nil,
+                                                                      flowType: .firstPurchase,
+                                                                      subscriptionAttributionOrigin: nil,
+                                                                      planChangeEntry: nil,
+                                                                      schedulesExpirationReminders: true))
+    }
+
+    @available(iOS 16, macOS 13, *)
     @Test("cancellation opens the cancellation URL with its plan change entry and no expiration reminders", .timeLimit(.minutes(1)))
     func cancellationConfiguration() {
         let configuration = Configuration.cancellation(subscriptionManager: subscriptionManager)
 
-        #expect(configuration == Configuration(initialURL: subscriptionManager.url(for: .cancellationFlow),
+        #expect(configuration == Configuration(initialScreen: .subscribe,
+                                               emailScreenMode: nil,
+                                               initialURL: subscriptionManager.url(for: .cancellationFlow),
                                                flowType: .cancellation,
                                                subscriptionAttributionOrigin: nil,
                                                planChangeEntry: SubscriptionPlanChangeOrigin.cancellationFlow.rawValue,
                                                schedulesExpirationReminders: false))
-    }
-
-    @available(iOS 16, macOS 13, *)
-    @Test("The default configuration, used by restore and email, has no URL, origin or plan change entry", .timeLimit(.minutes(1)))
-    func defaultConfiguration() {
-        #expect(Configuration() == Configuration(initialURL: nil,
-                                                 flowType: .firstPurchase,
-                                                 subscriptionAttributionOrigin: nil,
-                                                 planChangeEntry: nil,
-                                                 schedulesExpirationReminders: true))
     }
 }
 
@@ -147,6 +170,10 @@ struct SubscriptionFlowTests {
         components.path = path
         components.queryItems = [URLQueryItem(name: SubscriptionURL.PlanChangeParameter.entry, value: "settings")]
         return components
+    }
+
+    private func configuration(of flow: Flow) -> Configuration {
+        flow.configuration(subscriptionManager: subscriptionManager, featureFlagger: featureFlagger)
     }
 
     @available(iOS 16, macOS 13, *)
@@ -182,59 +209,45 @@ struct SubscriptionFlowTests {
     }
 
     @available(iOS 16, macOS 13, *)
-    @Test("subscribe shows the subscribe view in restore email mode with its purchase dependencies", .timeLimit(.minutes(1)))
+    @Test("subscribe uses the subscribe configuration built from its purchase dependencies", .timeLimit(.minutes(1)))
     func subscribeFlow() {
-        let flow = Flow.subscribe(redirectURLComponents: nil, dependencies: dependencies)
+        let landingURL = URL(string: "https://duckduckgo.com/subscriptions/welcome")!
 
-        #expect(flow.purchaseDependencies?.meetsPIRLocaleRequirement() == true)
-        #expect(flow.currentView == .subscribe)
-        #expect(flow.emailFlowMode == .restoreFlow)
+        #expect(configuration(of: .subscribe(redirectURLComponents: nil, landingURL: landingURL, dependencies: dependencies))
+                == Configuration.subscribe(redirectURLComponents: nil,
+                                           landingURL: landingURL,
+                                           subscriptionManager: subscriptionManager,
+                                           tld: TLD(),
+                                           performanceOptimizedPaywalls: PerformanceOptimizedPaywallsProviderStub(),
+                                           featureFlagger: featureFlagger,
+                                           isDebugOverlayEnabled: false))
     }
 
     @available(iOS 16, macOS 13, *)
-    @Test("plans shows the subscribe view and leaves the email mode unset", .timeLimit(.minutes(1)))
+    @Test("plans uses the plans configuration", .timeLimit(.minutes(1)))
     func plansFlow() {
         let components = redirectURLComponents(path: SubscriptionPurchaseFlowPath.plans.rawValue)
-        let flow = Flow.plans(redirectURLComponents: components)
 
-        #expect(flow.purchaseDependencies?.meetsPIRLocaleRequirement() == nil)
-        #expect(flow.currentView == .subscribe)
-        #expect(flow.emailFlowMode == nil)
-        #expect(flow.configuration(subscriptionManager: subscriptionManager, featureFlagger: featureFlagger)
+        #expect(configuration(of: .plans(redirectURLComponents: components))
                 == Configuration.plans(redirectURLComponents: components, subscriptionManager: subscriptionManager))
     }
 
     @available(iOS 16, macOS 13, *)
-    @Test("restore shows the restore view in restore email mode with the default configuration", .timeLimit(.minutes(1)))
+    @Test("restore uses the restore configuration", .timeLimit(.minutes(1)))
     func restoreFlow() {
-        let flow = Flow.restore
-
-        #expect(flow.purchaseDependencies?.meetsPIRLocaleRequirement() == nil)
-        #expect(flow.currentView == .restore)
-        #expect(flow.emailFlowMode == .restoreFlow)
-        #expect(flow.configuration(subscriptionManager: subscriptionManager, featureFlagger: featureFlagger) == Configuration())
+        #expect(configuration(of: .restore) == Configuration.restore())
     }
 
     @available(iOS 16, macOS 13, *)
-    @Test("email shows the email view in its own email mode with the default configuration", .timeLimit(.minutes(1)),
+    @Test("email uses the email configuration in its own mode", .timeLimit(.minutes(1)),
           arguments: [SubscriptionEmailViewModel.EmailViewFlow.activationFlow, .restoreFlow, .manageEmailFlow])
-    func emailFlow(emailFlow: SubscriptionEmailViewModel.EmailViewFlow) {
-        let flow = Flow.email(emailFlow)
-
-        #expect(flow.purchaseDependencies?.meetsPIRLocaleRequirement() == nil)
-        #expect(flow.currentView == .email)
-        #expect(flow.emailFlowMode == emailFlow)
-        #expect(flow.configuration(subscriptionManager: subscriptionManager, featureFlagger: featureFlagger) == Configuration())
+    func emailFlow(emailScreenMode: SubscriptionEmailViewModel.EmailViewFlow) {
+        #expect(configuration(of: .email(emailScreenMode)) == Configuration.email(emailScreenMode))
     }
 
     @available(iOS 16, macOS 13, *)
-    @Test("cancellation leaves the email mode unset and uses the cancellation configuration", .timeLimit(.minutes(1)))
+    @Test("cancellation uses the cancellation configuration", .timeLimit(.minutes(1)))
     func cancellationFlow() {
-        let flow = Flow.cancellation
-
-        #expect(flow.purchaseDependencies?.meetsPIRLocaleRequirement() == nil)
-        #expect(flow.emailFlowMode == nil)
-        #expect(flow.configuration(subscriptionManager: subscriptionManager, featureFlagger: featureFlagger)
-                == Configuration.cancellation(subscriptionManager: subscriptionManager))
+        #expect(configuration(of: .cancellation) == Configuration.cancellation(subscriptionManager: subscriptionManager))
     }
 }

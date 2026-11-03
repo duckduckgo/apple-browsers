@@ -20,6 +20,9 @@
 import UIKit
 
 struct MainMenuBuilder {
+    /// Fills the placeholders that menus mark with `Menu.deferredContent`.
+    var deferredContent: [UIMenu.Identifier: MainMenuDeferredContent] = [:]
+
     func keyCommands(for spec: MainMenuSpec, from commands: [UIKeyCommand],
                      availability: MenuCommandAvailability) -> [UIKeyCommand] {
         let remainingCommands = spec.remainingKeyCommands(from: commands)
@@ -35,38 +38,73 @@ struct MainMenuBuilder {
         return shortcuts + remainingCommands
     }
 
+    /// Titled key commands for shortcuts that have no menu item, when the menu bar owns shortcut registration.
+    func keyCommandOnlyCommands(for spec: MainMenuSpec) -> [UIKeyCommand] {
+        guard spec.shortcutRegistration == .menu else { return [] }
+        return spec.keyCommandItems.compactMap { makeCommand(for: $0) as? UIKeyCommand }
+    }
+
     func build(_ spec: MainMenuSpec, with builder: UIMenuBuilder) {
         guard builder.system == .main else { return }
-        for identifier in spec.removedMenus {
-            builder.remove(menu: identifier)
+        spec.removedMenus.forEach { builder.remove(menu: $0) }
+        for entry in spec.mainEntries {
+            let elements = makeElements(for: entry.menu)
+            switch entry.menu.placement {
+            case .replaceChildren:
+                builder.replaceChildren(ofMenu: entry.menu.identifier) { systemElements in
+                    entry.section.children(of: elements, systemElements: systemElements)
+                }
+            case .insert(let sibling, let position):
+                insert(entry.menu, children: elements, next: sibling, position: position, into: builder)
+            }
         }
-        for menu in spec.mainMenus {
-            let commands = menu.items.map(makeCommand)
-            builder.replaceChildren(ofMenu: menu.identifier) { _ in commands }
+    }
+
+    private func insert(_ menu: MainMenuSpec.Menu, children: [UIMenuElement], next sibling: UIMenu.Identifier,
+                        position: MainMenuSpec.Menu.Placement.Position, into builder: UIMenuBuilder) {
+        let newMenu = UIMenu(title: menu.title ?? "", identifier: menu.identifier, children: children)
+        switch position {
+        case .before: builder.insertSibling(newMenu, beforeMenu: sibling)
+        case .after: builder.insertSibling(newMenu, afterMenu: sibling)
         }
+    }
+
+    private func makeElements(for menu: MainMenuSpec.Menu) -> [UIMenuElement] {
+        let commands: [UIMenuElement] = menu.items.map(makeCommand)
+        return commands + makeDeferredElements(for: menu) + menu.submenus.map(makeSubmenu)
+    }
+
+    private func makeDeferredElements(for menu: MainMenuSpec.Menu) -> [UIMenuElement] {
+        guard let identifier = menu.deferredContent, let content = deferredContent[identifier] else { return [] }
+        return [content.makeElement()]
+    }
+
+    private func makeSubmenu(for menu: MainMenuSpec.Menu) -> UIMenu {
+        UIMenu(title: menu.title ?? "", identifier: menu.identifier,
+               options: menu.title == nil ? .displayInline : [], children: makeElements(for: menu))
     }
 
     func makeCommand(for item: MainMenuSpec.Item) -> UICommand {
         guard let shortcut = item.shortcut else {
-            return UICommand(title: item.title, action: item.command.action)
+            return UICommand(title: item.title, action: item.command.action, propertyList: item.argument)
         }
+        let propertyList: Any = item.argument ?? ["input": shortcut.input, "modifiers": shortcut.modifiers.rawValue]
         let command = UIKeyCommand(title: item.title, action: item.command.action,
-                                   input: shortcut.input, modifierFlags: shortcut.modifiers)
+                                   input: shortcut.input, modifierFlags: shortcut.modifiers, propertyList: propertyList)
         command.wantsPriorityOverSystemBehavior = true
         return command
     }
 }
 
-extension MainMenuCommand {
-    var action: Selector {
-        switch self {
-        case .settings:
-            return #selector(MainViewController.keyboardSettings)
+extension UICommand {
+
+    func applyMenuState(title: String?, isEnabled: Bool) {
+        if let title { self.title = title }
+        if isEnabled {
+            attributes.remove(.disabled)
+        } else {
+            attributes.insert(.disabled)
         }
     }
 
-    init?(action: Selector) {
-        guard let command = Self.allCases.first(where: { $0.action == action }) else { return nil }
-        self = command
-    }
 }

@@ -66,6 +66,17 @@ final class URLDragPreviewProviderTests {
 
     @available(macOS 13, *)
     @Test(.timeLimit(.minutes(1)))
+    func testURLPreviewWithNarrowCustomWidth() {
+        let provider = URLDragPreviewProvider(
+            url: URL(string: "https://duckduckgo.com")!,
+            favicon: NSImage(resource: .homeFavicon),
+            width: 160
+        )
+        assertImageSnapshot(matching: provider.createPreview().snapshotBackground(), size: .intrinsicContentSize)
+    }
+
+    @available(macOS 13, *)
+    @Test(.timeLimit(.minutes(1)))
     func testURLPreviewWithCustomWidthAndWithoutFavicon() {
         let provider = URLDragPreviewProvider(url: URL(string: "https://duckduckgo.com")!, favicon: nil, width: 300)
         assertImageSnapshot(matching: provider.createPreview().snapshotBackground(), size: .intrinsicContentSize)

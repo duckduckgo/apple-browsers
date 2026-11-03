@@ -37,12 +37,13 @@ jobs:
         run: |
           deadline=$((SECONDS + 180 * 60))
           while true; do
+            run_id="" status=""
             read -r run_id status < <(gh api "repos/$GITHUB_REPOSITORY/actions/workflows/macos_pr_checks.yml/runs?head_sha=$HEAD_SHA&event=pull_request&per_page=100" \
-              --jq "[.workflow_runs[] | select(any(.pull_requests[]; .number == $PR_NUMBER))][0] | \"\(.id // \"\") \(.status // \"\")\"")
+              --jq "[.workflow_runs[] | select(any(.pull_requests[]; .number == $PR_NUMBER))][0] | \"\(.id // \"\") \(.status // \"\")\"") || true
             if [ -n "$run_id" ] && [ "$status" = "completed" ]; then
               break
             fi
-            current_sha="$(gh api "repos/$GITHUB_REPOSITORY/pulls/$PR_NUMBER" --jq '.head.sha')"
+            current_sha="$(gh api "repos/$GITHUB_REPOSITORY/pulls/$PR_NUMBER" --jq '.head.sha')" || current_sha="$HEAD_SHA"
             if [ "$current_sha" != "$HEAD_SHA" ]; then
               echo "::error::The PR moved past $HEAD_SHA after the label was added. Re-add the label to record the new commit's renderings."
               exit 1
@@ -55,6 +56,25 @@ jobs:
             sleep 60
           done
           echo "id=$run_id" >> "$GITHUB_OUTPUT"
+
+      - name: Check the references CI compared against
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        run: |
+          merge_sha="$(gh api "repos/$GITHUB_REPOSITORY/pulls/$PR_NUMBER" --jq '.merge_commit_sha // ""')"
+          if [ -z "$merge_sha" ]; then
+            echo "::error::GitHub has no merge commit for this PR, so the references CI compared against are unknown. Resolve any conflicts with the base branch, then re-add the label once the macOS PR checks finish."
+            exit 1
+          fi
+          head_pointer="$(gh api "repos/$GITHUB_REPOSITORY/contents/SnapshotReferences?ref=$HEAD_SHA" --jq '.sha')"
+          merge_pointer="$(gh api "repos/$GITHUB_REPOSITORY/contents/SnapshotReferences?ref=$merge_sha" --jq '.sha')"
+          if [ "$head_pointer" != "$merge_pointer" ]; then
+            echo "::error::The base branch moved SnapshotReferences to $merge_pointer, but this PR points at $head_pointer, so CI compared against references the PR doesn't have. Merge or rebase the base branch, then re-add the label once the macOS PR checks finish."
+            exit 1
+          fi
 
       - name: Download rendered snapshots
         env:

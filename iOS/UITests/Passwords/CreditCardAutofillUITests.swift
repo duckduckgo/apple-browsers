@@ -39,34 +39,34 @@ final class CreditCardAutofillUITests: UITestCase {
         let debugList = app.descendants(matching: .any)["Debug.List"]
         XCTAssertTrue(debugList.waitForExistence(timeout: UITestTimeouts.navigation))
         let filter = app.searchFields.matching(NSPredicate(format: "placeholderValue == %@", "Filter")).firstMatch
-        filter.tapWhenHittable()
+        filter.tapWhenHittable(in: app)
         filter.typeText("Autofill")
-        app.descendants(matching: .any)["Debug.Screen.Autofill"].tapWhenHittable()
+        app.descendants(matching: .any)["Debug.Screen.Autofill"].tapWhenHittable(in: app)
 
         let table = app.tables.firstMatch
         let deleteCards = table.cells.containing(.staticText, identifier: "Delete All Credit Cards").firstMatch
         table.swipeUpToReveal(deleteCards, timeout: UITestTimeouts.navigation)
-        deleteCards.tapWhenHittable()
+        deleteCards.tapWhenHittable(in: app)
         app.assertActionMessage(contains: "All credit cards deleted")
         let addCards = table.cells.containing(.staticText, identifier: "Add Test Credit Cards").firstMatch
         table.swipeUpToReveal(addCards, timeout: UITestTimeouts.navigation)
-        addCards.tapWhenHittable()
+        addCards.tapWhenHittable(in: app)
         app.assertActionMessage(contains: "Credit Cards added")
 
-        app.navigationBars["Autofill"].buttons["BackButton"].tapWhenHittable()
+        app.navigationBars["Autofill"].buttons["BackButton"].tapWhenHittable(in: app)
         XCTAssertTrue(debugList.waitForExistence(timeout: UITestTimeouts.elementExistence))
         if app.keyboards.firstMatch.exists {
-            app.buttons.matching(NSPredicate(format: "label == %@", "close")).firstMatch.tapWhenHittable()
+            app.buttons.matching(NSPredicate(format: "label == %@", "close")).firstMatch.tapWhenHittable(in: app)
             XCTAssertTrue(app.keyboards.firstMatch.waitForNonExistence(timeout: UITestTimeouts.elementExistence))
         }
-        app.buttons["Debug.Close"].tapWhenHittable()
+        app.buttons["Debug.Close"].tapWhenHittable(in: app)
         XCTAssertTrue(debugList.waitForNonExistence(timeout: UITestTimeouts.elementExistence))
     }
 
     func testSavedCardCanBeSelectedWithoutWebInputCoveringThePrompt() {
         app.openURL("https://privacy-test-pages.site/autofill/card-form-submission.html", expecting: "Card form with click handler")
         let cardNumber = app.webViews.textFields["Card Number"]
-        cardNumber.tapWhenHittable()
+        cardNumber.tapWhenHittable(in: app)
 
         XCTAssertTrue(app.staticTexts["Use a saved card?"].waitForExistence(timeout: UITestTimeouts.navigation))
         XCTAssertTrue(
@@ -80,7 +80,7 @@ final class CreditCardAutofillUITests: UITestCase {
         screenshot.lifetime = .keepAlways
         add(screenshot)
 
-        app.buttons.matching(NSPredicate(format: "label CONTAINS %@", "4444")).firstMatch.tapWhenHittable()
+        app.buttons.matching(NSPredicate(format: "label CONTAINS %@", "4444")).firstMatch.tapWhenHittable(in: app)
         let springboard = XCUIApplication(bundleIdentifier: "com.apple.springboard")
         let authentication = springboard.staticTexts["Authenticate to fill credit card information"]
         XCTAssertTrue(authentication.waitForExistence(timeout: UITestTimeouts.navigation))

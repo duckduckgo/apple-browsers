@@ -51,7 +51,7 @@ final class PasswordAutofillUITests: UITestCase {
                     .waitForExistence(timeout: UITestTimeouts.navigation),
                 "Password-generation prompt did not appear.")
             assertWebInputDismissed()
-            app.buttons["Autofill.PasswordGeneration.UseGeneratedPassword"].tapWhenHittable()
+            app.buttons["Autofill.PasswordGeneration.UseGeneratedPassword"].tapWhenHittable(in: app)
             app.submitWebForm(buttonNamed: "Sign up")
             app.assertPageContains("Signup captured")
             signupCredentials = fixture.submittedSignupCredentials
@@ -75,13 +75,13 @@ final class PasswordAutofillUITests: UITestCase {
             XCTAssertTrue(
                 item.staticTexts[username].exists,
                 "Generated credential did not retain the signup email.")
-            item.tapWhenHittable()
-            app.buttons["Autofill.Passwords.Details.TogglePasswordVisibility"].tapWhenHittable()
+            item.tapWhenHittable(in: app)
+            app.buttons["Autofill.Passwords.Details.TogglePasswordVisibility"].tapWhenHittable(in: app)
             XCTAssertTrue(
                 app.staticTexts[signupCredentials.password].waitForExistence(timeout: UITestTimeouts.elementExistence),
                 "Saved password did not match the password submitted by the generated-password signup.")
-            app.buttons["Autofill.Passwords.Details.TogglePasswordVisibility"].tapWhenHittable()
-            app.navigationBars.buttons["BackButton"].firstMatch.tapWhenHittable()
+            app.buttons["Autofill.Passwords.Details.TogglePasswordVisibility"].tapWhenHittable(in: app)
+            app.navigationBars.buttons["BackButton"].firstMatch.tapWhenHittable(in: app)
             XCTAssertTrue(
                 app.passwordItem(named: fixture.credentialDomain).waitForExistence(timeout: UITestTimeouts.elementExistence),
                 "Passwords list did not reappear after verifying the saved credential.")
@@ -116,13 +116,13 @@ final class PasswordAutofillUITests: UITestCase {
         let prompt = app.descendants(matching: .any)["Autofill.PasswordGeneration.Prompt"]
         XCTAssertTrue(prompt.waitForExistence(timeout: UITestTimeouts.navigation), "Password-generation prompt did not appear.")
         assertWebInputDismissed()
-        app.buttons["Autofill.PasswordGeneration.UseOwnPassword"].tapWhenHittable()
+        app.buttons["Autofill.PasswordGeneration.UseOwnPassword"].tapWhenHittable(in: app)
         XCTAssertTrue(prompt.waitForNonExistence(timeout: UITestTimeouts.elementExistence), "Password-generation prompt did not dismiss.")
 
         assertWebKeyboardVisible()
         let password = app.webViews.secureTextFields["Password"]
         let valueBeforeTyping = password.value as? String
-        app.keyboards.firstMatch.keys["a"].tapWhenHittable()
+        app.keyboards.firstMatch.keys["a"].tapWhenHittable(in: app)
         let valueAfterTyping = password.value as? String
         XCTAssertNotEqual(
             valueAfterTyping,
@@ -146,12 +146,12 @@ final class PasswordAutofillUITests: UITestCase {
         let prompt = app.descendants(matching: .any)["Autofill.PasswordGeneration.Prompt"]
         XCTAssertTrue(prompt.waitForExistence(timeout: UITestTimeouts.navigation), "Password-generation prompt did not appear.")
         assertWebInputDismissed()
-        app.buttons["Autofill.PasswordGeneration.UseOwnPassword"].tapWhenHittable()
+        app.buttons["Autofill.PasswordGeneration.UseOwnPassword"].tapWhenHittable(in: app)
         XCTAssertTrue(prompt.waitForNonExistence(timeout: UITestTimeouts.elementExistence), "Password-generation prompt did not dismiss.")
         assertWebKeyboardVisible()
 
         let email = app.webViews.textFields["Email"]
-        email.tapWhenHittable()
+        email.tapWhenHittable(in: app)
         XCTAssertTrue(
             app.keyboards.firstMatch.waitForExistence(timeout: UITestTimeouts.elementExistence),
             "Tapping Email after dismissing the prompt did not open the web form keyboard.")
@@ -169,14 +169,14 @@ final class PasswordAutofillUITests: UITestCase {
         let prompt = app.descendants(matching: .any)["Autofill.PasswordGeneration.Prompt"]
         XCTAssertTrue(prompt.waitForExistence(timeout: UITestTimeouts.navigation), "Password-generation prompt did not appear.")
         assertWebInputDismissed()
-        app.buttons["Autofill.Prompt.Close"].tapWhenHittable()
+        app.buttons["Autofill.Prompt.Close"].tapWhenHittable(in: app)
         XCTAssertTrue(prompt.waitForNonExistence(timeout: UITestTimeouts.elementExistence), "Password-generation prompt did not dismiss.")
         XCTAssertTrue(
             app.keyboards.firstMatch.waitForNonExistence(timeout: UITestTimeouts.elementExistence),
             "Closing the prompt unexpectedly reopened the keyboard.")
 
         let email = app.webViews.textFields["Email"]
-        email.tapWhenHittable()
+        email.tapWhenHittable(in: app)
         XCTAssertTrue(
             app.keyboards.firstMatch.waitForExistence(timeout: UITestTimeouts.elementExistence),
             "The first Email tap after closing the prompt did not reopen the keyboard.")

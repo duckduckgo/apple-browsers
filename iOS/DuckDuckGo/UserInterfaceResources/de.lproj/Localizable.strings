@@ -341,7 +341,7 @@
 "aichat.attachment.unsupported.file.type.multiple" = "Dieser Dateityp wird nicht unterstützt. Bitte hänge eine %1$@- oder %2$@-Datei an.";
 
 /* Error message displayed when the user tries to upload an unsupported file type and we know which type is accepted. Parameter is a single accepted type. E.g. This file type is not supported, please attach a PDF. */
-"aichat.attachment.unsupported.file.type.single" = "Dieser Dateityp wird nicht unterstützt. Bitte %@ anhängen.";
+"aichat.attachment.unsupported.file.type.single" = "Dieser Dateityp wird nicht unterstützt. Bitte anhängen.";
 
 /* empty state shown when no tabs match the search query */
 "aichat.choose-tabs.no-matches" = "Keine passenden Tabs";

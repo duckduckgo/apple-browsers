@@ -380,6 +380,7 @@ struct UserText {
     static let mainMenuHistoryRecentlyClosed = NSLocalizedString("Recently Closed", comment: "Main Menu History item")
     static let mainMenuHistoryShowAllHistory = NSLocalizedString("Show All History…", comment: "Main Menu History item")
     static let mainMenuHistoryDeleteAllHistory = NSLocalizedString("Delete All History…", comment: "Main Menu History item")
+    static let mainMenuHistoryImportHistory = NSLocalizedString("main-menu.history.import-history", value: "Import History…", comment: "Main Menu History item that opens the Import Browser Data dialog")
     static let mainMenuHistoryManageBookmarks = NSLocalizedString("Manage Bookmarks", comment: "Main Menu History item")
     static let mainMenuHistoryFavoriteThisPage = NSLocalizedString("Favorite This Page…", comment: "Main Menu History item")
     static let mainMenuHistoryReopenAllWindowsFromLastSession = NSLocalizedString("Reopen All Windows and Tabs From Last Session", comment: "Main Menu History item")

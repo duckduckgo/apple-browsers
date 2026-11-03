@@ -201,6 +201,10 @@ final class AIChatSettings: AIChatSettingsProvider {
         keyValueStore.bool(.isAIChatAutomaticContextAttachmentEnabledKey, defaultValue: featureFlagger.isFeatureOn(.aiChatAutoAttachContextByDefault))
     }
 
+    var isKeyboardAnimationEnabled: Bool {
+        keyValueStore.bool(.isKeyboardAnimationEnabledKey, defaultValue: true)
+    }
+
     var defaultOmnibarMode: DefaultOmnibarMode {
         guard featureFlagger.isFeatureOn(.aiChatOmnibarDefaultPosition) else {
             return .search
@@ -339,6 +343,11 @@ final class AIChatSettings: AIChatSettingsProvider {
         }
     }
 
+    func enableKeyboardAnimation(enable: Bool) {
+        keyValueStore.set(enable, forKey: .isKeyboardAnimationEnabledKey)
+        triggerSettingsChangedNotification()
+    }
+
     func setDefaultOmnibarMode(_ mode: DefaultOmnibarMode) {
         guard featureFlagger.isFeatureOn(.aiChatOmnibarDefaultPosition) else {
             return
@@ -382,6 +391,7 @@ private extension String {
     static let showAIChatExperimentalSearchInputKey = "aichat.settings.showAIChatExperimentalSearchInput"
     static let showChatSuggestionsKey = "aichat.settings.showChatSuggestions"
     static let isAIChatAutomaticContextAttachmentEnabledKey = "aichat.settings.isAIChatAutomaticContextAttachmentEnabled"
+    static let isKeyboardAnimationEnabledKey = "aichat.settings.isKeyboardAnimationEnabled"
     static let defaultOmnibarModeKey = "aichat.settings.defaultOmnibarMode"
 }
 

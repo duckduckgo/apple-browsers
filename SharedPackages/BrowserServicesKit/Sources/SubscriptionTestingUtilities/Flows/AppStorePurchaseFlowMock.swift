@@ -41,6 +41,7 @@ public final class AppStorePurchaseFlowMock: AppStorePurchaseFlow {
     @discardableResult
     public func completeSubscriptionPurchase(
         with transactionJWS: TransactionJWS,
+        isFreeTrial: Bool?,
         experimentAttribution: PurchaseExperimentAttribution?) async -> Result<PurchaseUpdate, AppStorePurchaseFlowError> {
         completeSubscriptionExperimentAttribution = experimentAttribution
         return completeSubscriptionPurchaseResult!

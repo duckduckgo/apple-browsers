@@ -4620,25 +4620,28 @@ class MainViewController: UIViewController {
             featureFlagger: featureFlagger
         )
         let subscriptionDebugSettings = SubscriptionDebugSettingsUserDefaultsPersistor(keyValueStore: keyValueStore)
-        let viewController = UIHostingController(rootView: SubscriptionContainerViewFactory.makePurchaseFlowV2(
-            redirectURLComponents: redirectURLComponents,
-            navigationCoordinator: subscriptionNavigationCoordinator,
+        let context = SubscriptionContainerViewFactory.SubscriptionFlowContext(
             subscriptionManager: AppDependencyProvider.shared.subscriptionManager,
             subscriptionFeatureAvailability: subscriptionFeatureAvailability,
-            subscriptionDataReporter: subscriptionDataReporter,
             userScriptsDependencies: userScriptsDependencies,
-            tld: AppDependencyProvider.shared.storageCache.tld,
             internalUserDecider: AppDependencyProvider.shared.internalUserDecider,
             dataBrokerProtectionViewControllerProvider: dbpIOSPublicInterface,
             wideEvent: AppDependencyProvider.shared.wideEvent,
-            featureFlagger: featureFlagger,
+            featureFlagger: featureFlagger)
+        let options = SubscriptionContainerViewFactory.PurchaseOptions(
+            subscriptionDataReporter: subscriptionDataReporter,
+            tld: AppDependencyProvider.shared.storageCache.tld,
             isDebugOverlayEnabled: subscriptionDebugSettings.isDebugOverlayEnabled,
             performanceOptimizedPaywallsProvider: performanceOptimizedPaywallsProvider,
             onboardingKeyValueStore: keyValueStore,
             meetsPIRLocaleRequirement: { [weak dbpIOSPublicInterface] in
                 dbpIOSPublicInterface?.meetsLocaleRequirement ?? false
             },
-            onRequestDuckAIChat: { [weak self] modelID in self?.requestOnboardingDuckAIChat(modelID: modelID) ?? false }
+            onRequestDuckAIChat: { [weak self] modelID in self?.requestOnboardingDuckAIChat(modelID: modelID) ?? false })
+        let viewController = UIHostingController(rootView: SubscriptionContainerViewFactory.makeView(
+            for: .makePlanChangeOrSubscribeFlow(redirectURLComponents: redirectURLComponents, options: options),
+            context: context,
+            navigationCoordinator: subscriptionNavigationCoordinator
         ))
         viewController.view.backgroundColor = UIColor(designSystemColor: .surface)
         return viewController

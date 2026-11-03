@@ -120,259 +120,144 @@ enum SubscriptionContainerViewFactory {
         }
     }
 
+    struct SubscriptionFlowContext {
+        let subscriptionManager: SubscriptionManager
+        let subscriptionFeatureAvailability: SubscriptionFeatureAvailability
+        let userScriptsDependencies: DefaultScriptSourceProvider.Dependencies
+        let internalUserDecider: InternalUserDecider
+        let dataBrokerProtectionViewControllerProvider: DBPIOSInterface.DataBrokerProtectionViewControllerProvider?
+        let wideEvent: WideEventManaging
+        let featureFlagger: FeatureFlagger
+    }
+
+    struct PurchaseOptions {
+        let subscriptionDataReporter: SubscriptionDataReporting?
+        let tld: TLD
+        let isDebugOverlayEnabled: Bool
+        let performanceOptimizedPaywallsProvider: any PerformanceOptimizedPaywallsProviding
+        let onboardingKeyValueStore: ThrowingKeyValueStoring?
+        let meetsPIRLocaleRequirement: () -> Bool
+        let onRequestDuckAIChat: ((String?) -> Bool)?
+    }
+
+    enum SubscriptionFlow {
+        case subscribe(redirectURLComponents: URLComponents?, landingURL: URL? = nil, options: PurchaseOptions)
+        case plans(redirectURLComponents: URLComponents?)
+        case restore
+        case email(SubscriptionEmailViewModel.EmailViewFlow)
+        case cancellation
+
+        static func makePlanChangeOrSubscribeFlow(redirectURLComponents: URLComponents?, options: PurchaseOptions) -> SubscriptionFlow {
+            if let redirectURLComponents, SubscriptionPurchaseFlowPath.isPlansPath(redirectURLComponents.path) {
+                return .plans(redirectURLComponents: redirectURLComponents)
+            }
+            return .subscribe(redirectURLComponents: redirectURLComponents, options: options)
+        }
+
+        var currentView: SubscriptionContainerView.CurrentViewType {
+            switch self {
+            case .restore: return .restore
+            case .email: return .email
+            case .subscribe, .plans, .cancellation: return .subscribe
+            }
+        }
+
+        var emailFlowMode: SubscriptionEmailViewModel.EmailViewFlow? {
+            switch self {
+            case .subscribe, .restore: return .restoreFlow
+            case .email(let emailFlow): return emailFlow
+            case .plans, .cancellation: return nil
+            }
+        }
+
+        var purchaseOptions: PurchaseOptions? {
+            guard case let .subscribe(_, _, options) = self else { return nil }
+            return options
+        }
+
+        func configuration(subscriptionManager: SubscriptionManager, featureFlagger: FeatureFlagger) -> SubscriptionFlowConfiguration {
+            switch self {
+            case let .subscribe(redirectURLComponents, landingURL, options):
+                return .subscribe(redirectURLComponents: redirectURLComponents,
+                                  landingURL: landingURL,
+                                  subscriptionManager: subscriptionManager,
+                                  tld: options.tld,
+                                  performanceOptimizedPaywalls: options.performanceOptimizedPaywallsProvider,
+                                  featureFlagger: featureFlagger,
+                                  isDebugOverlayEnabled: options.isDebugOverlayEnabled)
+            case let .plans(redirectURLComponents):
+                return .plans(redirectURLComponents: redirectURLComponents, subscriptionManager: subscriptionManager)
+            case .cancellation:
+                return .cancellation(subscriptionManager: subscriptionManager)
+            case .restore, .email:
+                return SubscriptionFlowConfiguration()
+            }
+        }
+    }
+
     /// Creates a tier-change performer for native cancel-pending-downgrade (Settings). Caller owns the instance.
     static func makeSubscriptionFlowsExecuter(subscriptionManager: SubscriptionManager,
                                               wideEvent: WideEventManaging) -> DefaultSubscriptionFlowsExecuter {
         SubscriptionFlowDependencies.make(subscriptionManager: subscriptionManager, wideEvent: wideEvent).subscriptionFlowsExecuter
     }
 
+    static func makeView(for flow: SubscriptionFlow,
+                         context: SubscriptionFlowContext,
+                         navigationCoordinator: SubscriptionNavigationCoordinator) -> some View {
+        SubscriptionContainerView(currentView: flow.currentView,
+                                  viewModel: makeViewModel(for: flow, context: context),
+                                  featureFlagger: context.featureFlagger)
+            .environmentObject(navigationCoordinator)
+    }
+
+    static func makeViewModel(for flow: SubscriptionFlow, context: SubscriptionFlowContext) -> SubscriptionContainerViewModel {
+        let configuration = flow.configuration(subscriptionManager: context.subscriptionManager, featureFlagger: context.featureFlagger)
+        let purchaseOptions = flow.purchaseOptions
+        let viewModel = SubscriptionContainerViewModel(
+            subscriptionManager: context.subscriptionManager,
+            initialURL: configuration.initialURL,
+            flowType: configuration.flowType,
+            isInternalUser: context.internalUserDecider.isInternalUser,
+            userScript: SubscriptionPagesUserScript(),
+            userScriptsDependencies: context.userScriptsDependencies,
+            subFeature: makeSubscriptionFeature(configuration: configuration,
+                                                subscriptionDataReporter: purchaseOptions?.subscriptionDataReporter,
+                                                context: context),
+            dataBrokerProtectionViewControllerProvider: context.dataBrokerProtectionViewControllerProvider,
+            onboardingKeyValueStore: purchaseOptions?.onboardingKeyValueStore,
+            meetsPIRLocaleRequirement: purchaseOptions?.meetsPIRLocaleRequirement ?? { false },
+            onRequestDuckAIChat: purchaseOptions?.onRequestDuckAIChat
+        )
+        if let emailFlowMode = flow.emailFlowMode {
+            viewModel.email.setEmailFlowMode(emailFlowMode)
+        }
+        return viewModel
+    }
+
     private static func makeSubscriptionFeature(configuration: SubscriptionFlowConfiguration,
-                                                subscriptionManager: SubscriptionManager,
-                                                subscriptionFeatureAvailability: SubscriptionFeatureAvailability,
-                                                subscriptionDataReporter: SubscriptionDataReporting? = nil,
-                                                internalUserDecider: InternalUserDecider,
-                                                wideEvent: WideEventManaging,
-                                                featureFlagger: FeatureFlagger) -> DefaultSubscriptionPagesUseSubscriptionFeature {
-        let dependencies = SubscriptionFlowDependencies.make(subscriptionManager: subscriptionManager, wideEvent: wideEvent)
+                                                subscriptionDataReporter: SubscriptionDataReporting?,
+                                                context: SubscriptionFlowContext) -> DefaultSubscriptionPagesUseSubscriptionFeature {
+        let dependencies = SubscriptionFlowDependencies.make(subscriptionManager: context.subscriptionManager, wideEvent: context.wideEvent)
         let schedulesExpirationReminders = configuration.schedulesExpirationReminders
+        let featureFlagger = context.featureFlagger
         return DefaultSubscriptionPagesUseSubscriptionFeature(
-            subscriptionManager: subscriptionManager,
-            subscriptionFeatureAvailability: subscriptionFeatureAvailability,
+            subscriptionManager: context.subscriptionManager,
+            subscriptionFeatureAvailability: context.subscriptionFeatureAvailability,
             subscriptionAttributionOrigin: configuration.subscriptionAttributionOrigin,
             planChangeEntry: configuration.planChangeEntry,
             appStorePurchaseFlow: dependencies.appStorePurchaseFlow,
             appStoreRestoreFlow: dependencies.appStoreRestoreFlow,
             subscriptionDataReporter: subscriptionDataReporter,
-            internalUserDecider: internalUserDecider,
-            wideEvent: wideEvent,
+            internalUserDecider: context.internalUserDecider,
+            wideEvent: context.wideEvent,
             pendingTransactionHandler: dependencies.pendingTransactionHandler,
             subscriptionFlowsExecuter: dependencies.subscriptionFlowsExecuter,
-            requestValidator: DefaultScriptRequestValidator(subscriptionManager: subscriptionManager),
+            requestValidator: DefaultScriptRequestValidator(subscriptionManager: context.subscriptionManager),
             expirationReminderScheduler: schedulesExpirationReminders ? AppDependencyProvider.shared.subscriptionExpirationReminderScheduler : nil,
             isExpirationReminderFeatureEnabled: {
                 schedulesExpirationReminders && featureFlagger.isFeatureOn(.subscriptionExpirationReminderNotification)
             },
             subscriptionExperimentAttributionProvider: DefaultSubscriptionExperimentAttributionProvider(featureFlagger: featureFlagger))
-    }
-
-    static func makeSubscribeFlowV2(redirectURLComponents: URLComponents?,
-                                    landingURL: URL? = nil,
-                                    navigationCoordinator: SubscriptionNavigationCoordinator,
-                                    subscriptionManager: SubscriptionManager,
-                                    subscriptionFeatureAvailability: SubscriptionFeatureAvailability,
-                                    subscriptionDataReporter: SubscriptionDataReporting?,
-                                    userScriptsDependencies: DefaultScriptSourceProvider.Dependencies,
-                                    tld: TLD,
-                                    internalUserDecider: InternalUserDecider,
-                                    dataBrokerProtectionViewControllerProvider: DBPIOSInterface.DataBrokerProtectionViewControllerProvider?,
-                                    wideEvent: WideEventManaging,
-                                    featureFlagger: FeatureFlagger,
-                                    isDebugOverlayEnabled: Bool,
-                                    performanceOptimizedPaywallsProvider: any PerformanceOptimizedPaywallsProviding,
-                                    onboardingKeyValueStore: ThrowingKeyValueStoring?,
-                                    meetsPIRLocaleRequirement: @escaping () -> Bool,
-                                    onRequestDuckAIChat: ((String?) -> Bool)? = nil) -> some View {
-
-        let configuration = SubscriptionFlowConfiguration.subscribe(redirectURLComponents: redirectURLComponents,
-                                                                    landingURL: landingURL,
-                                                                    subscriptionManager: subscriptionManager,
-                                                                    tld: tld,
-                                                                    performanceOptimizedPaywalls: performanceOptimizedPaywallsProvider,
-                                                                    featureFlagger: featureFlagger,
-                                                                    isDebugOverlayEnabled: isDebugOverlayEnabled)
-
-        let viewModel = SubscriptionContainerViewModel(
-            subscriptionManager: subscriptionManager,
-            initialURL: configuration.initialURL,
-            isInternalUser: internalUserDecider.isInternalUser,
-            userScript: SubscriptionPagesUserScript(),
-            userScriptsDependencies: userScriptsDependencies,
-            subFeature: makeSubscriptionFeature(configuration: configuration,
-                                                subscriptionManager: subscriptionManager,
-                                                subscriptionFeatureAvailability: subscriptionFeatureAvailability,
-                                                subscriptionDataReporter: subscriptionDataReporter,
-                                                internalUserDecider: internalUserDecider,
-                                                wideEvent: wideEvent,
-                                                featureFlagger: featureFlagger),
-            dataBrokerProtectionViewControllerProvider: dataBrokerProtectionViewControllerProvider,
-            onboardingKeyValueStore: onboardingKeyValueStore,
-            meetsPIRLocaleRequirement: meetsPIRLocaleRequirement,
-            onRequestDuckAIChat: onRequestDuckAIChat
-        )
-        viewModel.email.setEmailFlowMode(.restoreFlow)
-        return SubscriptionContainerView(currentView: .subscribe, viewModel: viewModel, featureFlagger: featureFlagger)
-            .environmentObject(navigationCoordinator)
-    }
-
-    @ViewBuilder
-    static func makePurchaseFlowV2(redirectURLComponents: URLComponents?,
-                                   navigationCoordinator: SubscriptionNavigationCoordinator,
-                                   subscriptionManager: SubscriptionManager,
-                                   subscriptionFeatureAvailability: SubscriptionFeatureAvailability,
-                                   subscriptionDataReporter: SubscriptionDataReporting?,
-                                   userScriptsDependencies: DefaultScriptSourceProvider.Dependencies,
-                                   tld: TLD,
-                                   internalUserDecider: InternalUserDecider,
-                                   dataBrokerProtectionViewControllerProvider: DBPIOSInterface.DataBrokerProtectionViewControllerProvider?,
-                                   wideEvent: WideEventManaging,
-                                   featureFlagger: FeatureFlagger,
-                                   isDebugOverlayEnabled: Bool,
-                                   performanceOptimizedPaywallsProvider: any PerformanceOptimizedPaywallsProviding,
-                                   onboardingKeyValueStore: ThrowingKeyValueStoring?,
-                                   meetsPIRLocaleRequirement: @escaping () -> Bool,
-                                   onRequestDuckAIChat: ((String?) -> Bool)? = nil) -> some View {
-        if let redirectURLComponents,
-           SubscriptionPurchaseFlowPath.isPlansPath(redirectURLComponents.path) {
-            makePlansFlowV2(redirectURLComponents: redirectURLComponents,
-                            navigationCoordinator: navigationCoordinator,
-                            subscriptionManager: subscriptionManager,
-                            subscriptionFeatureAvailability: subscriptionFeatureAvailability,
-                            userScriptsDependencies: userScriptsDependencies,
-                            internalUserDecider: internalUserDecider,
-                            dataBrokerProtectionViewControllerProvider: dataBrokerProtectionViewControllerProvider,
-                            wideEvent: wideEvent,
-                            featureFlagger: featureFlagger)
-        } else {
-            makeSubscribeFlowV2(redirectURLComponents: redirectURLComponents,
-                                navigationCoordinator: navigationCoordinator,
-                                subscriptionManager: subscriptionManager,
-                                subscriptionFeatureAvailability: subscriptionFeatureAvailability,
-                                subscriptionDataReporter: subscriptionDataReporter,
-                                userScriptsDependencies: userScriptsDependencies,
-                                tld: tld,
-                                internalUserDecider: internalUserDecider,
-                                dataBrokerProtectionViewControllerProvider: dataBrokerProtectionViewControllerProvider,
-                                wideEvent: wideEvent,
-                                featureFlagger: featureFlagger,
-                                isDebugOverlayEnabled: isDebugOverlayEnabled,
-                                performanceOptimizedPaywallsProvider: performanceOptimizedPaywallsProvider,
-                                onboardingKeyValueStore: onboardingKeyValueStore,
-                                meetsPIRLocaleRequirement: meetsPIRLocaleRequirement,
-                                onRequestDuckAIChat: onRequestDuckAIChat)
-        }
-    }
-
-    static func makeRestoreFlowV2(navigationCoordinator: SubscriptionNavigationCoordinator,
-                                  subscriptionManager: SubscriptionManager,
-                                  subscriptionFeatureAvailability: SubscriptionFeatureAvailability,
-                                  userScriptsDependencies: DefaultScriptSourceProvider.Dependencies,
-                                  internalUserDecider: InternalUserDecider,
-                                  wideEvent: WideEventManaging,
-                                  dataBrokerProtectionViewControllerProvider: DBPIOSInterface.DataBrokerProtectionViewControllerProvider?,
-                                  featureFlagger: FeatureFlagger) -> some View {
-
-        let viewModel = SubscriptionContainerViewModel(subscriptionManager: subscriptionManager,
-                                                       isInternalUser: internalUserDecider.isInternalUser,
-                                                       userScript: SubscriptionPagesUserScript(),
-                                                       userScriptsDependencies: userScriptsDependencies,
-                                                       subFeature: makeSubscriptionFeature(configuration: SubscriptionFlowConfiguration(),
-                                                                                           subscriptionManager: subscriptionManager,
-                                                                                           subscriptionFeatureAvailability: subscriptionFeatureAvailability,
-                                                                                           internalUserDecider: internalUserDecider,
-                                                                                           wideEvent: wideEvent,
-                                                                                           featureFlagger: featureFlagger),
-                                                       dataBrokerProtectionViewControllerProvider: dataBrokerProtectionViewControllerProvider,
-                                                       onboardingKeyValueStore: nil,
-                                                       meetsPIRLocaleRequirement: { false })
-        viewModel.email.setEmailFlowMode(.restoreFlow)
-        return SubscriptionContainerView(currentView: .restore, viewModel: viewModel, featureFlagger: featureFlagger)
-            .environmentObject(navigationCoordinator)
-    }
-
-    static func makePlansFlowV2(redirectURLComponents: URLComponents?,
-                                navigationCoordinator: SubscriptionNavigationCoordinator,
-                                subscriptionManager: SubscriptionManager,
-                                subscriptionFeatureAvailability: SubscriptionFeatureAvailability,
-                                userScriptsDependencies: DefaultScriptSourceProvider.Dependencies,
-                                internalUserDecider: InternalUserDecider,
-                                dataBrokerProtectionViewControllerProvider: DBPIOSInterface.DataBrokerProtectionViewControllerProvider?,
-                                wideEvent: WideEventManaging,
-                                featureFlagger: FeatureFlagger) -> some View {
-
-        let configuration = SubscriptionFlowConfiguration.plans(redirectURLComponents: redirectURLComponents,
-                                                                subscriptionManager: subscriptionManager)
-
-        let viewModel = SubscriptionContainerViewModel(
-            subscriptionManager: subscriptionManager,
-            initialURL: configuration.initialURL,
-            flowType: configuration.flowType,
-            isInternalUser: internalUserDecider.isInternalUser,
-            userScript: SubscriptionPagesUserScript(),
-            userScriptsDependencies: userScriptsDependencies,
-            subFeature: makeSubscriptionFeature(configuration: configuration,
-                                                subscriptionManager: subscriptionManager,
-                                                subscriptionFeatureAvailability: subscriptionFeatureAvailability,
-                                                internalUserDecider: internalUserDecider,
-                                                wideEvent: wideEvent,
-                                                featureFlagger: featureFlagger),
-            dataBrokerProtectionViewControllerProvider: dataBrokerProtectionViewControllerProvider,
-            onboardingKeyValueStore: nil,
-            meetsPIRLocaleRequirement: { false }
-        )
-        return SubscriptionContainerView(currentView: .subscribe, viewModel: viewModel, featureFlagger: featureFlagger)
-            .environmentObject(navigationCoordinator)
-    }
-
-    static func makeCancellationFlowViewModel(subscriptionManager: SubscriptionManager,
-                                              subscriptionFeatureAvailability: SubscriptionFeatureAvailability,
-                                              userScriptsDependencies: DefaultScriptSourceProvider.Dependencies,
-                                              internalUserDecider: InternalUserDecider,
-                                              dataBrokerProtectionViewControllerProvider: DBPIOSInterface.DataBrokerProtectionViewControllerProvider?,
-                                              wideEvent: WideEventManaging,
-                                              featureFlagger: FeatureFlagger) -> SubscriptionContainerViewModel {
-
-        let configuration = SubscriptionFlowConfiguration.cancellation(subscriptionManager: subscriptionManager)
-
-        return SubscriptionContainerViewModel(
-            subscriptionManager: subscriptionManager,
-            initialURL: configuration.initialURL,
-            flowType: configuration.flowType,
-            isInternalUser: internalUserDecider.isInternalUser,
-            userScript: SubscriptionPagesUserScript(),
-            userScriptsDependencies: userScriptsDependencies,
-            subFeature: makeSubscriptionFeature(configuration: configuration,
-                                                subscriptionManager: subscriptionManager,
-                                                subscriptionFeatureAvailability: subscriptionFeatureAvailability,
-                                                internalUserDecider: internalUserDecider,
-                                                wideEvent: wideEvent,
-                                                featureFlagger: featureFlagger),
-            dataBrokerProtectionViewControllerProvider: dataBrokerProtectionViewControllerProvider,
-            onboardingKeyValueStore: nil,
-            meetsPIRLocaleRequirement: { false }
-        )
-    }
-
-    static func makeEmailFlowV2(navigationCoordinator: SubscriptionNavigationCoordinator,
-                                subscriptionManager: SubscriptionManager,
-                                subscriptionFeatureAvailability: SubscriptionFeatureAvailability,
-                                userScriptsDependencies: DefaultScriptSourceProvider.Dependencies,
-                                internalUserDecider: InternalUserDecider,
-                                emailFlow: SubscriptionEmailViewModel.EmailViewFlow = .activationFlow,
-                                dataBrokerProtectionViewControllerProvider: DBPIOSInterface.DataBrokerProtectionViewControllerProvider?,
-                                wideEvent: WideEventManaging,
-                                featureFlagger: FeatureFlagger,
-                                onDisappear: @escaping () -> Void) -> some View {
-        let viewModel = SubscriptionContainerViewModel(
-            subscriptionManager: subscriptionManager,
-            isInternalUser: internalUserDecider.isInternalUser,
-            userScript: SubscriptionPagesUserScript(),
-            userScriptsDependencies: userScriptsDependencies,
-            subFeature: makeSubscriptionFeature(configuration: SubscriptionFlowConfiguration(),
-                                                subscriptionManager: subscriptionManager,
-                                                subscriptionFeatureAvailability: subscriptionFeatureAvailability,
-                                                internalUserDecider: internalUserDecider,
-                                                wideEvent: wideEvent,
-                                                featureFlagger: featureFlagger),
-            dataBrokerProtectionViewControllerProvider: dataBrokerProtectionViewControllerProvider,
-            onboardingKeyValueStore: nil,
-            meetsPIRLocaleRequirement: { false }
-        )
-
-        viewModel.email.setEmailFlowMode(emailFlow)
-
-        return SubscriptionContainerView(currentView: .email, viewModel: viewModel, featureFlagger: featureFlagger)
-            .environmentObject(navigationCoordinator)
-            .onDisappear(perform: { onDisappear() })
     }
 }
 

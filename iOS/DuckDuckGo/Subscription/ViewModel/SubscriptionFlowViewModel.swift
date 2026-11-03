@@ -109,12 +109,12 @@ final class SubscriptionFlowViewModel: ObservableObject {
 
     // MARK: - Post-checkout onboarding
 
-    /// `nil` unless this flow came from `makeSubscribeFlowV2`
+    /// `nil` unless this flow came from the `.subscribe` or `.purchase` flow
     private let onboardingKeyValueStore: ThrowingKeyValueStoring?
 
     private let meetsPIRLocaleRequirement: () -> Bool
 
-    /// `nil` unless this flow came from `makePurchaseFlowV2`; falls back to `SubscriptionOnboardingDuckAIChatLauncher`.
+    /// `nil` unless this flow came from the `.subscribe` or `.purchase` flow; falls back to `SubscriptionOnboardingDuckAIChatLauncher`.
     private let onRequestDuckAIChatHandler: ((String?) -> Bool)?
 
     private var didHandOffToDuckAI = false
@@ -138,7 +138,7 @@ final class SubscriptionFlowViewModel: ObservableObject {
     /// Latched once the flow is actually presented, so a defensive re-invocation of `onPurchaseCompleted` cannot re-offer it.
     private var didRequestOnboarding = false
 
-    /// `nil` unless this flow came from `makeSubscribeFlowV2`.
+    /// `nil` unless this flow came from the `.subscribe` or `.purchase` flow.
     var onboardingPersistor: SubscriptionOnboardingProgressPersisting? {
         guard let onboardingKeyValueStore else { return nil }
         return SubscriptionOnboardingProgressPersistor(keyValueStore: onboardingKeyValueStore)

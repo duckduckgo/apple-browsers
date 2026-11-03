@@ -234,6 +234,17 @@ final class SettingsViewModel: ObservableObject {
         runPrerequisitesDelegate?.meetsLocaleRequirement ?? false
     }
 
+    var subscriptionFlowContext: SubscriptionContainerViewFactory.SubscriptionFlowContext {
+        SubscriptionContainerViewFactory.SubscriptionFlowContext(
+            subscriptionManager: subscriptionManager,
+            subscriptionFeatureAvailability: subscriptionFeatureAvailability,
+            userScriptsDependencies: userScriptsDependencies,
+            internalUserDecider: AppDependencyProvider.shared.internalUserDecider,
+            dataBrokerProtectionViewControllerProvider: dataBrokerProtectionViewControllerProvider,
+            wideEvent: AppDependencyProvider.shared.wideEvent,
+            featureFlagger: featureFlagger)
+    }
+
     /// Whether this customer can use PIR: the feature flag is on and the app exposes a PIR view controller.
     var isPIRAvailable: Bool {
         PIRAvailability.isAvailable(isPIREnabled: isPIREnabled,

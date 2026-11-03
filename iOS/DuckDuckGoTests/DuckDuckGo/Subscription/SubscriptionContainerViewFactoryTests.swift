@@ -168,3 +168,119 @@ struct SubscriptionFlowDependenciesTests {
         #expect(first !== second)
     }
 }
+
+@MainActor
+@Suite("Subscription container view factory flows")
+struct SubscriptionFlowTests {
+
+    private typealias Flow = SubscriptionContainerViewFactory.SubscriptionFlow
+    private typealias Configuration = SubscriptionContainerViewFactory.SubscriptionFlowConfiguration
+
+    private let subscriptionManager = SubscriptionManagerMock()
+    private let featureFlagger = PrivacyConfig.MockFeatureFlagger()
+
+    private let options = SubscriptionContainerViewFactory.PurchaseOptions(
+        subscriptionDataReporter: nil,
+        tld: TLD(),
+        isDebugOverlayEnabled: false,
+        performanceOptimizedPaywallsProvider: PerformanceOptimizedPaywallsProviderStub(),
+        onboardingKeyValueStore: nil,
+        meetsPIRLocaleRequirement: { true },
+        onRequestDuckAIChat: nil)
+
+    private func redirectURLComponents(path: String) -> URLComponents {
+        var components = URLComponents(string: "https://duckduckgo.com")!
+        components.path = path
+        components.queryItems = [URLQueryItem(name: SubscriptionURL.PlanChangeParameter.entry, value: "settings")]
+        return components
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("makePlanChangeOrSubscribeFlow with a plans path makes the plans flow", .timeLimit(.minutes(1)),
+          arguments: [SubscriptionPurchaseFlowPath.plans, .proPlans])
+    func planChangeOrSubscribeWithPlansPathMakesPlans(path: SubscriptionPurchaseFlowPath) {
+        let components = redirectURLComponents(path: path.rawValue)
+
+        let flow = Flow.makePlanChangeOrSubscribeFlow(redirectURLComponents: components, options: options)
+
+        guard case .plans(let flowComponents) = flow else {
+            Issue.record("Expected the plans flow")
+            return
+        }
+        #expect(flowComponents == components)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("makePlanChangeOrSubscribeFlow without a plans path makes the subscribe flow with its purchase options", .timeLimit(.minutes(1)),
+          arguments: [Optional<String>.none, SubscriptionPurchaseFlowPath.purchase.rawValue, SubscriptionPurchaseFlowPath.pro.rawValue])
+    func planChangeOrSubscribeWithoutPlansPathMakesSubscribe(path: String?) {
+        let components = path.map { redirectURLComponents(path: $0) }
+
+        let flow = Flow.makePlanChangeOrSubscribeFlow(redirectURLComponents: components, options: options)
+
+        guard case .subscribe(let flowComponents, let landingURL, let flowOptions) = flow else {
+            Issue.record("Expected the subscribe flow")
+            return
+        }
+        #expect(flowComponents == components)
+        #expect(landingURL == nil)
+        #expect(flowOptions.meetsPIRLocaleRequirement())
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("subscribe shows the subscribe view in restore email mode with its purchase options", .timeLimit(.minutes(1)))
+    func subscribeFlow() {
+        let flow = Flow.subscribe(redirectURLComponents: nil, options: options)
+
+        #expect(flow.purchaseOptions?.meetsPIRLocaleRequirement() == true)
+        #expect(flow.currentView == .subscribe)
+        #expect(flow.emailFlowMode == .restoreFlow)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("plans shows the subscribe view and leaves the email mode unset", .timeLimit(.minutes(1)))
+    func plansFlow() {
+        let components = redirectURLComponents(path: SubscriptionPurchaseFlowPath.plans.rawValue)
+        let flow = Flow.plans(redirectURLComponents: components)
+
+        #expect(flow.purchaseOptions?.meetsPIRLocaleRequirement() == nil)
+        #expect(flow.currentView == .subscribe)
+        #expect(flow.emailFlowMode == nil)
+        #expect(flow.configuration(subscriptionManager: subscriptionManager, featureFlagger: featureFlagger)
+                == Configuration.plans(redirectURLComponents: components, subscriptionManager: subscriptionManager))
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("restore shows the restore view in restore email mode with the default configuration", .timeLimit(.minutes(1)))
+    func restoreFlow() {
+        let flow = Flow.restore
+
+        #expect(flow.purchaseOptions?.meetsPIRLocaleRequirement() == nil)
+        #expect(flow.currentView == .restore)
+        #expect(flow.emailFlowMode == .restoreFlow)
+        #expect(flow.configuration(subscriptionManager: subscriptionManager, featureFlagger: featureFlagger) == Configuration())
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("email shows the email view in its own email mode with the default configuration", .timeLimit(.minutes(1)),
+          arguments: [SubscriptionEmailViewModel.EmailViewFlow.activationFlow, .restoreFlow, .manageEmailFlow])
+    func emailFlow(emailFlow: SubscriptionEmailViewModel.EmailViewFlow) {
+        let flow = Flow.email(emailFlow)
+
+        #expect(flow.purchaseOptions?.meetsPIRLocaleRequirement() == nil)
+        #expect(flow.currentView == .email)
+        #expect(flow.emailFlowMode == emailFlow)
+        #expect(flow.configuration(subscriptionManager: subscriptionManager, featureFlagger: featureFlagger) == Configuration())
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("cancellation leaves the email mode unset and uses the cancellation configuration", .timeLimit(.minutes(1)))
+    func cancellationFlow() {
+        let flow = Flow.cancellation
+
+        #expect(flow.purchaseOptions?.meetsPIRLocaleRequirement() == nil)
+        #expect(flow.emailFlowMode == nil)
+        #expect(flow.configuration(subscriptionManager: subscriptionManager, featureFlagger: featureFlagger)
+                == Configuration.cancellation(subscriptionManager: subscriptionManager))
+    }
+}

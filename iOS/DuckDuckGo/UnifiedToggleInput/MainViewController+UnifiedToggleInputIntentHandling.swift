@@ -248,7 +248,8 @@ private extension MainViewController {
                 }
                 self.viewCoordinator.focusedStateBackground.alpha = 1
                 self.viewCoordinator.superview.layoutIfNeeded()
-                coordinator.pushContentInsets()
+                // The focus keeps the main thread busy, so the content slides with the bar on the render server.
+                coordinator.contentViewController.slideContentWithCoreAnimation { coordinator.pushContentInsets() }
                 if !isSeamlessHandoff {
                     contentContainer.alpha = 1
                     contentContainer.transform = .identity

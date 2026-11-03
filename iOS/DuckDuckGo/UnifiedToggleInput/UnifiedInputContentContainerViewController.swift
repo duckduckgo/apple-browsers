@@ -346,6 +346,15 @@ final class UnifiedInputContentContainerViewController: UIViewController {
     var isShowingFavoritesContent: Bool { unifiedSuggestionsHost?.isShowingFavorites ?? false }
     var isShowingEscapeHatchContent: Bool { chromePlacement.escapeHatch != .hidden }
 
+    /// Inset changes made in `changes` move the content with Core Animation, in step with the bar.
+    func slideContentWithCoreAnimation(_ changes: () -> Void) {
+        guard let unifiedSuggestionsHost else {
+            changes()
+            return
+        }
+        unifiedSuggestionsHost.slideContentWithCoreAnimation(changes)
+    }
+
     func performInputModeChange(_ changes: () -> Void) {
         guard let unifiedSuggestionsHost else {
             changes()

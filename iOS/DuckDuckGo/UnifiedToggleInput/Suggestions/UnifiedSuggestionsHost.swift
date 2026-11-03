@@ -45,8 +45,8 @@ final class UnifiedSuggestionsHost {
     private var cancellables = Set<AnyCancellable>()
     private var logoKeyboardCancellable: AnyCancellable?
     private var keyboardSettleTime: CFTimeInterval = 0
-    /// True while a mode switch runs, so its inset changes move the content with Core Animation.
-    private var isPerformingInputModeChange = false
+    /// True while a mode switch or an expand runs, so its inset changes move the content with Core Animation.
+    private var slidesContentWithCoreAnimation = false
     private var isLogoHeldForForeground = false
     let favoritesPresentation: FocusedFavoritesPresentation
     private var redesignedSearchPresentation: RedesignedFocusedSearchPresentation?
@@ -248,9 +248,19 @@ final class UnifiedSuggestionsHost {
     var isShowingLogo: Bool { viewModel.isShowingLogo }
     var isShowingFavorites: Bool { viewModel.isShowingFavorites }
 
+    /// Inset changes made in `changes` move the content with Core Animation, in step with the bar.
+    func slideContentWithCoreAnimation(_ changes: () -> Void) {
+        let wasSliding = slidesContentWithCoreAnimation
+        slidesContentWithCoreAnimation = true
+        defer { slidesContentWithCoreAnimation = wasSliding }
+        changes()
+    }
+
     func performInputModeChange(_ changes: () -> Void) {
-        isPerformingInputModeChange = true
-        defer { isPerformingInputModeChange = false }
+        slideContentWithCoreAnimation { performInputModeChangeDeferringLogo(changes) }
+    }
+
+    private func performInputModeChangeDeferringLogo(_ changes: () -> Void) {
         // A logo on screen stays to morph; one hidden for lack of room stays hidden while the bar resizes.
         guard usesScrollableEscapeHatch, viewModel.escapeHatchPlacement != .hidden, !viewModel.isLogoOnScreen else {
             changes()
@@ -409,11 +419,12 @@ final class UnifiedSuggestionsHost {
         }
     }
 
-    /// SwiftUI animations advance on the main thread, which a mode switch keeps busy while it builds the
-    /// bar, so the content would fall behind the bar and slip under its footer. The content takes its new
-    /// inset at once and slides there with Core Animation instead, on the render server like the bar.
+    /// SwiftUI animations advance on the main thread, which a mode switch or an expand keeps busy while it
+    /// builds the bar and raises the keyboard, so the content would fall behind the bar and slip under it.
+    /// The content takes its new inset at once and slides there with Core Animation instead, on the render
+    /// server like the bar.
     private func coreAnimatedContentView(moving delta: CGFloat, duration: TimeInterval) -> UIView? {
-        guard isPerformingInputModeChange, usesScrollableEscapeHatch, delta != 0, duration > 0,
+        guard slidesContentWithCoreAnimation, usesScrollableEscapeHatch, delta != 0, duration > 0,
               !UIAccessibility.isReduceMotionEnabled else { return nil }
         // A Fire tab shows the Fire screen of this host and never the logo.
         if viewModel.isFireTab { return hostingController?.view }

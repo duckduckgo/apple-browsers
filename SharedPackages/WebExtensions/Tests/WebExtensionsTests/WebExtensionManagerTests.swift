@@ -2557,6 +2557,52 @@ final class WebExtensionManagerTests: XCTestCase {
         XCTAssertEqual(host.receivedMessages.first as? [String: String], ["cmd": "hello"])
     }
 
+    /// Without a native messaging handler, as in the App Store build, `connectNative()` must fail at once,
+    /// so an extension falls back right away instead of waiting on a port no host ever answers.
+    @MainActor
+    func testWhenThereIsNoNativeMessagingHandler_ThenConnectNativeDisconnectsWithAnError() async throws {
+        let manager = WebExtensionManager(configuration: configurationMock,
+                                          windowTabProvider: windowTabProviderMock,
+                                          storageProvider: storageProvidingMock,
+                                          installationStore: installedExtensionStoringMock,
+                                          loader: webExtensionLoadingMock,
+                                          lifecycleDelegate: lifecycleDelegateMock)
+        let directory = try makeTestExtensionDirectory(permissions: ["nativeMessaging"])
+        let manifestURL = directory.appendingPathComponent("manifest.json")
+        var manifest = try XCTUnwrap(JSONSerialization.jsonObject(with: Data(contentsOf: manifestURL)) as? [String: Any])
+        manifest["background"] = ["page": "bg.html"]
+        try JSONSerialization.data(withJSONObject: manifest).write(to: manifestURL)
+        try #"<!DOCTYPE html><html><head><meta charset="utf-8"></head><body><script src="bg.js"></script></body></html>"#
+            .write(to: directory.appendingPathComponent("bg.html"), atomically: true, encoding: .utf8)
+        // The disconnect is reported back through a message the manager routes to `disconnectReporter`.
+        // WebKit puts the failure on the port's `error`, not in `runtime.lastError`.
+        try """
+        const port = chrome.runtime.connectNative("com.example.host");
+        port.onDisconnect.addListener(function(disconnected) {
+            const error = disconnected.error ? String(disconnected.error.message) : null;
+            chrome.runtime.sendNativeMessage("com.example.host",
+                { featureName: "test", method: "disconnected", params: { error: error } });
+        });
+        """.write(to: directory.appendingPathComponent("bg.js"), atomically: true, encoding: .utf8)
+
+        let webExtension = try await WKWebExtension(resourceBaseURL: directory)
+        XCTAssertTrue(webExtension.needsChromeCompatibility)
+        let context = WKWebExtensionContext(for: webExtension)
+        context.uniqueIdentifier = "native-messaging-no-host"
+        for permission in webExtension.requestedPermissions {
+            context.setPermissionStatus(.grantedExplicitly, for: permission)
+        }
+        let disconnectReporter = ExpectingMessageHandler(featureName: "test")
+        manager.registerMessageHandler(disconnectReporter, for: context.uniqueIdentifier)
+        try manager.controller.load(context)
+        addTeardownBlock { try? manager.controller.unload(context) }
+        context.loadBackgroundContent { _ in }
+
+        await fulfillment(of: [disconnectReporter.receivedMessage], timeout: 5)
+        let error = disconnectReporter.receivedMessages.first?.params?["error"] as? String
+        XCTAssertTrue(error?.contains("runtime.connectNative()") == true, "Unexpected disconnect error: \(String(describing: error))")
+    }
+
     // MARK: - Autofill Takeover Flag
 
     /// The app's flag decides whether any extension may take over autofill, read each time, so turning it
@@ -3240,6 +3286,24 @@ private final class ApprovingPermissionPrompter: WebExtensionPermissionPrompting
 
     func confirmPermissions(_ permissions: WebExtensionPermissionRequest, for context: WKWebExtensionContext) async -> WebExtensionPermissionPromptResult {
         .granted
+    }
+}
+
+/// A message handler that records what it receives and fulfills `receivedMessage` on the first one.
+@available(macOS 15.4, iOS 18.4, *)
+private final class ExpectingMessageHandler: WebExtensionMessageHandler {
+    let handledFeatureName: String
+    let receivedMessage = XCTestExpectation(description: "The handler received a message")
+    private(set) var receivedMessages: [WebExtensionMessage] = []
+
+    init(featureName: String) {
+        handledFeatureName = featureName
+    }
+
+    func handleMessage(_ message: WebExtensionMessage) async -> WebExtensionMessageResult {
+        receivedMessages.append(message)
+        receivedMessage.fulfill()
+        return .success(nil)
     }
 }
 

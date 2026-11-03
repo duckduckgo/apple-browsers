@@ -243,7 +243,7 @@ extension WebExtensionManager {
 
         guard let nativeMessagingHandler else {
             Logger.webExtensions.error("❌ No native messaging handler, so the port of \(displayName) stays silent")
-            completionHandler(nil)
+            completionHandler(WKWebExtension.MessagePort.Error(.notConnected))
             return
         }
 

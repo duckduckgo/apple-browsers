@@ -57,17 +57,17 @@ extension XCUIApplication {
         line: UInt = #line) {
         openTabSwitcher(file: file, line: line)
         assertTabCount(expectedTabCount, file: file, line: line)
-        buttons["TabSwitcher.Button.Edit"].tapWhenHittable(file: file, line: line)
-        buttons["TabSwitcher.Menu.SelectTabs"].tapWhenHittable(file: file, line: line)
-        buttons["TabSwitcher.Button.More"].tapWhenHittable(file: file, line: line)
-        buttons["TabSwitcher.Menu.BookmarkAll"].tapWhenHittable(file: file, line: line)
+        buttons["TabSwitcher.Button.Edit"].tapWhenHittable(in: self, file: file, line: line)
+        buttons["TabSwitcher.Menu.SelectTabs"].tapWhenHittable(in: self, file: file, line: line)
+        buttons["TabSwitcher.Button.More"].tapWhenHittable(in: self, file: file, line: line)
+        buttons["TabSwitcher.Menu.BookmarkAll"].tapWhenHittable(in: self, file: file, line: line)
         assertConfirmationAlertContainsCount(expectedTabCount, file: file, line: line)
         buttons.matching(identifier: "TabSwitcher.BookmarkTabs.Confirm").firstMatch
-            .tapWhenHittable(file: file, line: line)
+            .tapWhenHittable(in: self, file: file, line: line)
 
         // First leave selection mode, then close the tab switcher.
-        buttons["TabSwitcher.Button.Done"].tapWhenHittable(file: file, line: line)
-        buttons["TabSwitcher.Button.Done"].tapWhenHittable(file: file, line: line)
+        buttons["TabSwitcher.Button.Done"].tapWhenHittable(in: self, file: file, line: line)
+        buttons["TabSwitcher.Button.Done"].tapWhenHittable(in: self, file: file, line: line)
         XCTAssertTrue(
             searchEntry.wait(
                 for: NSPredicate(format: "isHittable == true"),
@@ -81,12 +81,12 @@ extension XCUIApplication {
         named name: String,
         file: StaticString = #filePath,
         line: UInt = #line) {
-        buttons["Bookmarks.AddFolder"].tapWhenHittable(file: file, line: line)
+        buttons["Bookmarks.AddFolder"].tapWhenHittable(in: self, file: file, line: line)
 
         let title = textFields["Bookmarks.Editor.FolderTitle"]
-        title.tapWhenHittable(file: file, line: line)
+        title.tapWhenHittable(in: self, file: file, line: line)
         title.typeText(name)
-        buttons["Bookmarks.Editor.FolderSave"].tapWhenHittable(file: file, line: line)
+        buttons["Bookmarks.Editor.FolderSave"].tapWhenHittable(in: self, file: file, line: line)
 
         XCTAssertTrue(
             tables["Bookmarks.List"].wait(
@@ -120,7 +120,7 @@ extension XCUIApplication {
         folder.coordinate(withNormalizedOffset: CGVector(dx: 0.9, dy: 0.5)).tap()
         assertConfirmationAlertContainsCount(expectedChildCount, file: file, line: line)
         buttons.matching(identifier: "Bookmarks.Folder.ConfirmDelete").firstMatch
-            .tapWhenHittable(file: file, line: line)
+            .tapWhenHittable(in: self, file: file, line: line)
     }
 
     private func assertConfirmationAlertContainsCount(
@@ -145,13 +145,13 @@ extension XCUIApplication {
             let editor = tables["Bookmarks.Editor.List"]
             let addFolder = editor.cells["Bookmarks.Editor.AddFolder"]
             editor.swipeUpToReveal(addFolder, file: file, line: line)
-            addFolder.tapWhenHittable(file: file, line: line)
+            addFolder.tapWhenHittable(in: self, file: file, line: line)
 
             let title = textFields["Bookmarks.Editor.FolderTitle"]
-            title.tapWhenHittable(file: file, line: line)
+            title.tapWhenHittable(in: self, file: file, line: line)
             title.typeText(name)
             buttons["Bookmarks.Editor.FolderSave"]
-                .tapWhenHittable(file: file, line: line)
+                .tapWhenHittable(in: self, file: file, line: line)
 
             XCTAssertTrue(
                 title.wait(for: NSPredicate(format: "exists == false"), timeout: UITestTimeouts.elementExistence),
@@ -164,7 +164,7 @@ extension XCUIApplication {
 
     func saveBookmarkEditor(file: StaticString = #filePath, line: UInt = #line) {
         buttons.matching(identifier: "Bookmarks.Editor.Save").firstMatch
-            .tapWhenHittable(file: file, line: line)
+            .tapWhenHittable(in: self, file: file, line: line)
         XCTAssertTrue(
             tables["Bookmarks.List"].wait(
                 for: NSPredicate(format: "exists == true AND isHittable == true"),
@@ -174,8 +174,8 @@ extension XCUIApplication {
 
     func deleteBookmarkFromEditor(_ bookmark: XCUIElement, file: StaticString = #filePath, line: UInt = #line) {
         XCTContext.runActivity(named: "Delete bookmark from the editor") { _ in
-            buttons["Bookmarks.Edit"].tapWhenHittable(file: file, line: line)
-            bookmark.tapWhenHittable(file: file, line: line)
+            buttons["Bookmarks.Edit"].tapWhenHittable(in: self, file: file, line: line)
+            bookmark.tapWhenHittable(in: self, file: file, line: line)
 
             let editor = tables["Bookmarks.Editor.List"]
             let delete = editor.cells["Bookmarks.Editor.Delete"]
@@ -194,15 +194,15 @@ extension XCUIApplication {
                     "Bookmark editor was dismissed with the keyboard.", file: file, line: line)
             }
             editor.swipeUpToReveal(delete, file: file, line: line)
-            delete.tapWhenHittable(file: file, line: line)
+            delete.tapWhenHittable(in: self, file: file, line: line)
             buttons.matching(identifier: "Bookmarks.Editor.ConfirmDelete").firstMatch
-                .tapWhenHittable(file: file, line: line)
+                .tapWhenHittable(in: self, file: file, line: line)
         }
     }
 
     func closeBookmarksAfterEditing(file: StaticString = #filePath, line: UInt = #line) {
-        buttons["Bookmarks.Edit"].tapWhenHittable(file: file, line: line)
-        buttons["Bookmarks.Done"].tapWhenHittable(file: file, line: line)
+        buttons["Bookmarks.Edit"].tapWhenHittable(in: self, file: file, line: line)
+        buttons["Bookmarks.Done"].tapWhenHittable(in: self, file: file, line: line)
         XCTAssertTrue(
             searchEntry.wait(for: NSPredicate(format: "isHittable == true"), timeout: UITestTimeouts.elementExistence),
             "Browser did not reappear after closing Bookmarks.", file: file, line: line)
@@ -229,19 +229,19 @@ extension XCUIApplication {
             let filter = searchFields.matching(
                 NSPredicate(format: "placeholderValue == %@", "Filter")
             ).firstMatch
-            filter.tapWhenHittable(file: file, line: line)
+            filter.tapWhenHittable(in: self, file: file, line: line)
             filter.typeText("Bookmarks")
 
             let bookmarksDebug = descendants(matching: .any)["Debug.Screen.Bookmarks"]
-            bookmarksDebug.tapWhenHittable(file: file, line: line)
+            bookmarksDebug.tapWhenHittable(in: self, file: file, line: line)
 
-            buttons["Debug.Bookmarks.DeleteAll"].tapWhenHittable(file: file, line: line)
+            buttons["Debug.Bookmarks.DeleteAll"].tapWhenHittable(in: self, file: file, line: line)
             buttons.matching(identifier: "Debug.Bookmarks.ConfirmDelete").firstMatch
-                .tapWhenHittable(file: file, line: line)
+                .tapWhenHittable(in: self, file: file, line: line)
 
             // The completion button is only presented after the asynchronous reset saves successfully.
             buttons.matching(identifier: "Debug.Bookmarks.ResetComplete").firstMatch
-                .tapWhenHittable(file: file, line: line)
+                .tapWhenHittable(in: self, file: file, line: line)
             let bookmarksNavigationBar = navigationBars.containing(
                 .button,
                 identifier: "Debug.Bookmarks.DeleteAll"

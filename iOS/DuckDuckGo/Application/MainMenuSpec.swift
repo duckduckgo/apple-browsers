@@ -48,27 +48,45 @@ struct MainMenuSpec {
         let title: String
         let shortcut: Shortcut?
         let requirement: KeyPath<Context, Bool>?
+        /// Passed to the command as its property list, which also tells apart commands that share an action.
+        var argument: String?
     }
 
     struct Menu {
-        enum Placement {
-            case replaceChildren, appendChildren
+        enum Placement: Equatable {
+            enum Position {
+                case before, after
+            }
+
+            case replaceChildren
+            case insert(sibling: UIMenu.Identifier, position: Position)
         }
 
         let identifier: UIMenu.Identifier
-        let items: [Item]
+        var items: [Item]
         var placement: Placement = .replaceChildren
         var submenus: [Menu] = []
+        /// Title of a top level menu or a submenu; a submenu without one is an inline group.
+        var title: String?
+        /// Marks where the `MainMenuDeferredContent` registered for this identifier goes.
+        var deferredContent: UIMenu.Identifier?
 
         var allItems: [Item] { items + submenus.flatMap(\.allItems) }
 
         func resolved(in context: Context) -> Menu {
-            let resolvedItems = items.filter { item in
+            var menu = self
+            menu.items = items.filter { item in
                 item.requirement.map { context[keyPath: $0] } ?? true
             }
-            return Menu(identifier: identifier, items: resolvedItems, placement: placement,
-                        submenus: submenus.map { $0.resolved(in: context) })
+            menu.submenus = submenus.map { $0.resolved(in: context) }
+            return menu
         }
+    }
+
+    /// A menu together with the section that builds it.
+    struct Entry {
+        let menu: Menu
+        let section: MainMenuSection
     }
 
     private static func systemHasMenuBar(idiom: UIUserInterfaceIdiom) -> Bool {
@@ -76,30 +94,49 @@ struct MainMenuSpec {
         return true
     }
 
-    let menus: [Menu]
+    private static var browserSections: [MainMenuSection] {
+        [SettingsMenuSection(title: UserText.menuSettings), FileMenuSection(), EditMenuSection(),
+         ViewMenuSection(), WindowMenuSection(), HelpMenuSection()]
+    }
+
+    private static var baselineSections: [MainMenuSection] {
+        [SettingsMenuSection(title: UserText.settingsTitle)]
+    }
+
+    private let entries: [Entry]
+    private let baselineEntries: [Entry]
     /// Shortcuts without a menu item; iPadOS lists them in its own Help > More Keyboard Shortcuts.
     let keyCommandItems: [Item]
     let removedMenus: [UIMenu.Identifier]
-    private let baselineMenus: [Menu]
     let shortcutRegistration: ShortcutRegistration
 
     init(isEnabled: Bool, idiom: UIUserInterfaceIdiom = UIDevice.current.userInterfaceIdiom, context: Context = Context()) {
         shortcutRegistration = isEnabled ? (Self.systemHasMenuBar(idiom: idiom) ? .menu : .responder) : .legacy
-        baselineMenus = [Self.settingsMenu(title: UserText.settingsTitle)]
+        baselineEntries = Self.entries(of: Self.baselineSections, in: context)
         guard isEnabled else {
-            menus = baselineMenus
+            entries = baselineEntries
             keyCommandItems = []
             removedMenus = []
             return
         }
         removedMenus = shortcutRegistration == .menu ? [.format] : []
-        menus = Self.browserMenus.map { $0.resolved(in: context) }
+        entries = Self.entries(of: Self.browserSections, in: context)
         keyCommandItems = Self.keyCommandOnlyItems
     }
 
-    var mainMenus: [Menu] {
-        shortcutRegistration == .menu ? menus : baselineMenus
+    private static func entries(of sections: [MainMenuSection], in context: Context) -> [Entry] {
+        sections.compactMap { section in
+            section.menu(in: context).map { Entry(menu: $0.resolved(in: context), section: section) }
+        }
     }
+
+    var menus: [Menu] { entries.map(\.menu) }
+
+    var mainEntries: [Entry] {
+        shortcutRegistration == .menu ? entries : baselineEntries
+    }
+
+    var mainMenus: [Menu] { mainEntries.map(\.menu) }
 
     var shortcutItems: [Item] {
         allItems.filter { $0.shortcut != nil }
@@ -129,72 +166,15 @@ struct MainMenuSpec {
         return index < count ? index : nil
     }
 
-    private static func item(_ command: MainMenuCommand, _ title: String,
-                             _ input: String? = nil, _ modifiers: UIKeyModifierFlags = [],
-                             requires requirement: KeyPath<Context, Bool>? = nil) -> Item {
+    static func item(_ command: MainMenuCommand, _ title: String,
+                     _ input: String? = nil, _ modifiers: UIKeyModifierFlags = [],
+                     requires requirement: KeyPath<Context, Bool>? = nil) -> Item {
         Item(command: command, title: title, shortcut: input.map { Shortcut(input: $0, modifiers: modifiers) },
              requirement: requirement)
     }
 
-    private static func group(_ identifier: String, _ items: [Item]) -> Menu {
+    static func group(_ identifier: String, _ items: [Item]) -> Menu {
         Menu(identifier: UIMenu.Identifier("com.duckduckgo." + identifier), items: items)
-    }
-
-    private static var browserMenus: [Menu] {
-        [settingsMenu(title: UserText.menuSettings), fileMenu, editMenu, viewMenu, windowMenu, helpMenu]
-    }
-
-    private static func settingsMenu(title: String) -> Menu {
-        Menu(identifier: .preferences, items: [item(.settings, title, ",", .command)])
-    }
-
-    private static var fileMenu: Menu {
-        Menu(identifier: .file, items: [], submenus: [
-            group("file.new", [
-                item(.newTab, UserText.keyCommandNewTab, "t", .command),
-                item(.newFireTab, UserText.keyCommandNewFireTab, "n", [.shift, .command], requires: \.fireModeEnabled),
-                item(.voiceSearch, UserText.menuVoiceSearch, ".", [.shift, .command], requires: \.voiceSearchEnabled)
-            ]),
-            group("file.location", [item(.location, UserText.menuOpenLocation, "l", .command)]),
-            group("file.close", [item(.closeTab, UserText.keyCommandCloseTab, "w", .command)]),
-            group("file.share", [item(.share, UserText.actionShare)]),
-            group("file.print", [item(.printPage, UserText.menuPrint, "p", .command)])
-        ])
-    }
-
-    private static var editMenu: Menu {
-        Menu(identifier: .edit, items: [], placement: .appendChildren, submenus: [
-            group("edit.find", [item(.find, UserText.keyCommandFind, "f", .command)])
-        ])
-    }
-
-    private static var viewMenu: Menu {
-        Menu(identifier: .view, items: [], submenus: [
-            group("view.loading", [item(.stop, UserText.menuStop, ".", .command),
-                                   item(.reload, UserText.keyCommandReload, "r", .command)]),
-            group("view.panels", [item(.showTabs, UserText.menuShowTabs, "\\", [.shift, .command]),
-                                  item(.showPasswords, UserText.menuShowPasswords, "a", [.shift, .command]),
-                                  item(.showDownloads, UserText.menuShowDownloads, "j", [.shift, .command])]),
-            group("view.zoom", [item(.zoomIn, UserText.keyCommandZoomIn, "+", .command),
-                                item(.zoomOut, UserText.keyCommandZoomOut, "-", .command),
-                                item(.actualSize, UserText.menuActualSize, "0", .command)])
-        ])
-    }
-
-    private static var windowMenu: Menu {
-        Menu(identifier: .window, items: [], placement: .appendChildren, submenus: [
-            group("window.tabs", [item(.newTabOnRight, UserText.menuNewTabOnRight),
-                                  item(.duplicateTab, UserText.menuDuplicateTab)]),
-            group("window.select", [item(.previousTab, UserText.menuPreviousTab, "[", [.shift, .command]),
-                                    item(.nextTab, UserText.menuNextTab, "]", [.shift, .command])])
-        ])
-    }
-
-    private static var helpMenu: Menu {
-        Menu(identifier: .help, items: [], placement: .appendChildren, submenus: [
-            group("help.about", [item(.about, UserText.settingsAboutDDG),
-                                 item(.feedback, UserText.menuFeedback)])
-        ])
     }
 
     private static var keyCommandOnlyItems: [Item] {

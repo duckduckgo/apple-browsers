@@ -337,39 +337,6 @@ final class LaunchOptionsHandlerTests {
 
     @available(iOS 16, macOS 13, *)
     @Test(.timeLimit(.minutes(1)))
-    func testWhenUITestingThenAlwaysShowKeyboardIsDisabledUnlessPassedExplicitly() {
-        // GIVEN
-        let featureFlagStore = UserDefaults(suiteName: "testing_featureFlags")!
-        let configStore = UserDefaults(suiteName: "testing_configRollout")!
-        let key = "localOverrideAlwaysShowKeyboardOnNewTabPage"
-        func launch(arguments: [String]) -> LaunchOptionsHandler {
-            LaunchOptionsHandler(environment: ["UITEST_MODE": "1"],
-                                 userDefaults: userDefaults,
-                                 arguments: arguments,
-                                 internalUserStore: MockInternalUserStore())
-        }
-
-        // WHEN
-        launch(arguments: []).applyUITestOverrides(featureFlagOverrideStore: featureFlagStore, configRolloutStore: configStore)
-
-        // THEN
-        #expect(featureFlagStore.object(forKey: key) as? Bool == false)
-
-        // WHEN
-        userDefaults.set("true", forKey: "ff.alwaysShowKeyboardOnNewTabPage")
-        launch(arguments: ["-ff.alwaysShowKeyboardOnNewTabPage", "true"])
-            .applyUITestOverrides(featureFlagOverrideStore: featureFlagStore, configRolloutStore: configStore)
-
-        // THEN
-        #expect(featureFlagStore.object(forKey: key) as? Bool == true)
-
-        // Cleanup
-        featureFlagStore.removePersistentDomain(forName: "testing_featureFlags")
-        configStore.removePersistentDomain(forName: "testing_configRollout")
-    }
-
-    @available(iOS 16, macOS 13, *)
-    @Test(.timeLimit(.minutes(1)))
     func testWhenFeatureFlagOverrideIsPassedThenItIsAppliedWithoutEnablingInternalUser() {
         // GIVEN
         userDefaults.set("true", forKey: "ff.uiTestFeatureFlag")

@@ -1732,4 +1732,40 @@ final class SitePermissionsXCUITests: XCTestCase {
     </body>
     </html>
     """
+
+    private static func iframeHTML(src: String, sandbox: String? = nil) -> String {
+        let sandboxAttribute = sandbox.map { " sandbox=\"\($0)\"" } ?? ""
+        return """
+        <!doctype html>
+        <html lang="en">
+        <head><meta name="viewport" content="width=device-width, initial-scale=1"><title>Permissions fixture</title></head>
+        <body>
+          <h1>Permissions fixture</h1>
+          <p role="status">ready</p>
+          <iframe src="\(src)" allow="geolocation"\(sandboxAttribute)></iframe>
+        </body>
+        </html>
+        """
+    }
+
+    private static let geolocationFrameHTML = """
+    <!doctype html>
+    <html lang="en">
+    <body>
+      <button onclick="requestFrameLocation()">Frame location</button>
+      <p id="frameResult" role="status">Frame result: ready</p>
+      <script>
+        function requestFrameLocation() {
+          const result = document.getElementById('frameResult');
+          result.textContent = 'Frame result: pending';
+          navigator.geolocation.getCurrentPosition(
+            position => result.textContent = 'Frame result: success '
+              + position.coords.latitude.toFixed(4) + ',' + position.coords.longitude.toFixed(4),
+            error => result.textContent = 'Frame result: error ' + error.code,
+            {maximumAge: 0});
+        }
+      </script>
+    </body>
+    </html>
+    """
 }

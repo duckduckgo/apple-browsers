@@ -38,7 +38,8 @@ final class WebExtensionPermissionPrompt: WebExtensionPermissionPrompting {
         let configuration = WebExtensionAlert.Configuration(
             icon: webExtension.icon(for: iconSize) ?? webExtension.actionIcon(for: iconSize),
             title: String(format: UserText.webExtensionInstallTitle, webExtension.displayName ?? UserText.webExtensionUnnamedExtension),
-            message: entries.isEmpty ? UserText.webExtensionNoPermissions : UserText.webExtensionPermissionExplanation + "\n\n" + entries.joined(separator: "\n"),
+            message: entries.isEmpty ? UserText.webExtensionNoPermissions : UserText.webExtensionPermissionExplanation,
+            details: entries.isEmpty ? nil : entries.joined(separator: "\n"),
             checkbox: UserText.webExtensionAllowFireWindows,
             checkboxToolTip: UserText.webExtensionPrivateAccessExplanation,
             confirmTitle: UserText.webExtensionInstall,

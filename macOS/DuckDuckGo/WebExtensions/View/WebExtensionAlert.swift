@@ -28,15 +28,17 @@ struct WebExtensionAlert: View {
         let icon: NSImage?
         let title: String
         let message: String?
+        let details: String?
         let checkbox: String?
         let checkboxToolTip: String?
         let confirmTitle: String
         let cancelTitle: String
 
-        init(icon: NSImage?, title: String, message: String? = nil, checkbox: String? = nil, checkboxToolTip: String? = nil, confirmTitle: String, cancelTitle: String) {
+        init(icon: NSImage?, title: String, message: String? = nil, details: String? = nil, checkbox: String? = nil, checkboxToolTip: String? = nil, confirmTitle: String, cancelTitle: String) {
             self.icon = icon
             self.title = title
             self.message = message
+            self.details = details
             self.checkbox = checkbox
             self.checkboxToolTip = checkboxToolTip
             self.confirmTitle = confirmTitle
@@ -56,10 +58,12 @@ struct WebExtensionAlert: View {
         static let padding: CGFloat = 16
         static let sectionSpacing: CGFloat = 16
         static let contentSpacing: CGFloat = 12
-        static let contentHorizontalPadding: CGFloat = 4
+        static let contentHorizontalPadding: CGFloat = 12
         static let contentBottomPadding: CGFloat = 16
         static let iconSize: CGFloat = 48
-        static let iconPadding: CGFloat = 12
+        static let iconInset: CGFloat = 28
+        static let iconTitleSpacing: CGFloat = 28
+        static let titleLeadingOffset: CGFloat = 8
         static let buttonSpacing: CGFloat = 8
         static let buttonHeight: CGFloat = 28
     }
@@ -81,12 +85,13 @@ struct WebExtensionAlert: View {
     }
 
     var body: some View {
-        VStack(spacing: Constants.sectionSpacing) {
+        VStack(alignment: .leading, spacing: Constants.sectionSpacing) {
             if let icon = configuration.icon {
                 Image(nsImage: icon)
                     .resizable()
                     .frame(width: Constants.iconSize, height: Constants.iconSize)
-                    .padding(Constants.iconPadding)
+                    .padding([.top, .leading], Constants.iconInset - Constants.padding)
+                    .padding(.bottom, Constants.iconTitleSpacing - Constants.sectionSpacing)
             }
 
             content
@@ -120,29 +125,42 @@ struct WebExtensionAlert: View {
             }
             onResponse(response)
         }
-        sheet.contentView = NSHostingView(rootView: alert)
+        let hostingView = NSHostingView(rootView: alert)
+        hostingView.wantsLayer = true
+        hostingView.layer?.cornerRadius = Constants.cornerRadius
+        hostingView.layer?.masksToBounds = true
+        sheet.contentView = hostingView
         window.beginSheet(sheet)
+        // The shadow is computed before SwiftUI draws, which leaves it rectangular.
+        DispatchQueue.main.async { [weak sheet] in
+            sheet?.invalidateShadow()
+        }
     }
 
     private var content: some View {
-        VStack(spacing: Constants.contentSpacing) {
+        VStack(alignment: .leading, spacing: Constants.contentSpacing) {
             Text(configuration.title)
                 .font(.system(size: 15, weight: .semibold))
                 .foregroundColor(Color(designSystemColor: .textPrimary, palette: palette))
-                .multilineTextAlignment(.center)
+                .multilineTextAlignment(.leading)
                 .fixMultilineScrollableText()
 
             if let message = configuration.message {
+                messageText(message)
+            }
+
+            if let details = configuration.details {
                 // A ScrollView has no height of its own here: a hidden copy of the text sizes it, and it's
                 // the only flexible part, so it shrinks when the alert reaches its maximum height.
-                messageText(message)
+                messageText(details)
                     .hidden()
                     .frame(minHeight: 0, alignment: .top)
-                    .overlay(ScrollView(.vertical) { messageText(message) })
+                    .overlay(ScrollView(.vertical) { messageText(details) })
             }
         }
-        .frame(maxWidth: .infinity)
-        .padding(.horizontal, Constants.contentHorizontalPadding)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(.leading, Constants.contentHorizontalPadding - Constants.titleLeadingOffset)
+        .padding(.trailing, Constants.contentHorizontalPadding)
         .padding(.bottom, Constants.contentBottomPadding)
     }
 
@@ -152,7 +170,7 @@ struct WebExtensionAlert: View {
             .foregroundColor(Color(designSystemColor: .textSecondary, palette: palette))
             .multilineTextAlignment(.leading)
             .fixMultilineScrollableText()
-            .frame(maxWidth: .infinity)
+            .frame(maxWidth: .infinity, alignment: .leading)
     }
 
     private var buttons: some View {

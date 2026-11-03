@@ -39,7 +39,7 @@ extension XCUIApplication {
             timeout: UITestTimeouts.navigation,
             file: file,
             line: line)
-        general.tapWhenHittable(file: file, line: line)
+        general.tapWhenHittable(in: self, file: file, line: line)
         XCTAssertTrue(
             descendants(matching: .any)["Settings.List.General"].waitForExistence(timeout: UITestTimeouts.elementExistence),
             "General settings did not appear.",
@@ -55,7 +55,7 @@ extension XCUIApplication {
             timeout: UITestTimeouts.navigation,
             file: file,
             line: line)
-        dataClearing.tapWhenHittable(file: file, line: line)
+        dataClearing.tapWhenHittable(in: self, file: file, line: line)
         XCTAssertTrue(
             descendants(matching: .any)["Settings.List.DataClearing"].waitForExistence(timeout: UITestTimeouts.elementExistence),
             "Data Clearing settings did not appear.",
@@ -64,7 +64,7 @@ extension XCUIApplication {
     }
 
     func dismissSettings(file: StaticString = #filePath, line: UInt = #line) {
-        buttons["Settings.Button.Done"].tapWhenHittable(file: file, line: line)
+        buttons["Settings.Button.Done"].tapWhenHittable(in: self, file: file, line: line)
         XCTAssertTrue(
             searchEntry.waitForHittableInAppWindow(in: self, timeout: UITestTimeouts.elementExistence),
             "Browser did not reappear after dismissing Settings.",
@@ -92,7 +92,7 @@ extension XCUIApplication {
             currentList.waitForExistence(timeout: UITestTimeouts.elementExistence),
             "Expected Settings screen before navigating back: \(currentListIdentifier).", file: file, line: line)
         let backButton = navigationBars.element.buttons["BackButton"]
-        backButton.tapWhenHittable(file: file, line: line)
+        backButton.tapWhenHittable(in: self, file: file, line: line)
         XCTAssertTrue(
             descendants(matching: .any)[destinationListIdentifier].waitForExistence(timeout: UITestTimeouts.elementExistence),
             "Expected Settings screen after navigating back: \(destinationListIdentifier).", file: file, line: line)

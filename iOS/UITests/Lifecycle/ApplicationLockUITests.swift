@@ -86,7 +86,7 @@ final class ApplicationLockUITests: UITestCase {
             app.openGeneralSettings()
 
             let applicationLock = app.settingsToggle(withIdentifier: "Settings.General.ApplicationLock")
-            applicationLock.tapWhenHittable()
+            applicationLock.tapWhenHittable(in: app)
             XCTAssertTrue(
                 applicationLock.wait(for: \XCUIElement.value, equals: "0", timeout: UITestTimeouts.elementExistence),
                 "Application Lock did not become disabled.")
@@ -109,7 +109,7 @@ final class ApplicationLockUITests: UITestCase {
             app.openGeneralSettings()
 
             let applicationLock = app.settingsToggle(withIdentifier: "Settings.General.ApplicationLock")
-            applicationLock.tapWhenHittable()
+            applicationLock.tapWhenHittable(in: app)
             XCTAssertTrue(
                 applicationLock.wait(for: \XCUIElement.value, equals: "1", timeout: UITestTimeouts.elementExistence),
                 "Application Lock did not become enabled.")
@@ -159,7 +159,7 @@ final class ApplicationLockUITests: UITestCase {
         XCTAssertFalse(springboard.staticTexts["Unlock DuckDuckGo."].exists, "Authentication prompt is still visible.", file: file, line: line)
 
         XCTContext.runActivity(named: "Request authentication from recovery screen") { _ in
-            app.images["AuthRequired"].tapWhenHittable(file: file, line: line)
+            app.images["AuthRequired"].tapWhenHittable(in: app, file: file, line: line)
         }
     }
 }

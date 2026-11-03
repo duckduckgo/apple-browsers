@@ -43,7 +43,7 @@ final class BackgroundingUITests: UITestCase {
             app.assertPageContains("Privacy Test Pages")
             app.openBrowsingMenuItem("Browser.Menu.AddBookmark")
 
-            app.descendants(matching: .any)["privacy-icon-shield.button"].firstMatch.tapWhenHittable()
+            app.descendants(matching: .any)["privacy-icon-shield.button"].firstMatch.tapWhenHittable(in: app)
             let disableProtectionsSwitch = app.switches["Disable Protections"]
             XCTAssertTrue(
                 disableProtectionsSwitch.waitForExistence(timeout: UITestTimeouts.navigation),
@@ -53,7 +53,7 @@ final class BackgroundingUITests: UITestCase {
                     for: NSPredicate(format: "value == %@", "1"),
                     timeout: UITestTimeouts.elementExistence),
                 "Privacy protections were not enabled after backgrounding.")
-            app.buttons["Done"].tapWhenHittable()
+            app.buttons["Done"].tapWhenHittable(in: app)
         }
 
         XCTContext.runActivity(named: "Use browser surfaces after backgrounding a new tab") { _ in
@@ -72,7 +72,7 @@ final class BackgroundingUITests: UITestCase {
             XCTAssertTrue(
                 app.staticTexts["Privacy Test Pages - Home"].waitForExistence(timeout: UITestTimeouts.elementExistence),
                 "Bookmark created before backgrounding is missing.")
-            app.buttons["Bookmarks.Done"].tapWhenHittable()
+            app.buttons["Bookmarks.Done"].tapWhenHittable(in: app)
 
             app.openTabSwitcher()
             app.assertTabCount(2)

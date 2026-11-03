@@ -939,7 +939,16 @@ final class UnifiedToggleInputView: UIView {
 
     private func applyFireModeAppearance(isFireTab: Bool) {
         let background = cardBackgroundColor(isFireTab: isFireTab)
-        applyCardBackgroundColor(background)
+        if omnibarMaterialTransitionBackgroundColor != nil {
+            // Mid transition the card stays clear under the fill, which the dismiss hands back to the card.
+            omnibarMaterialTransitionBackgroundColor = background
+            omnibarMaterialEditingFillView?.backgroundColor = background
+            if #available(iOS 26.0, *), let glass = omnibarMaterialBackdropView as? UIVisualEffectView, glass.effect != nil {
+                glass.effect = omnibarGlassEffect()
+            }
+        } else {
+            applyCardBackgroundColor(background)
+        }
         // cardView keeps the OS trait so `fireModeCardBackground` picks its light variant in light OS; content subviews force `.dark` so their dynamic colors resolve against the dark surface.
         let style: UIUserInterfaceStyle = isFireTab ? .dark : .unspecified
         // Future direct content subviews inherit fire-mode appearance by default; card chrome and collapsed flanking accessories keep the OS trait.

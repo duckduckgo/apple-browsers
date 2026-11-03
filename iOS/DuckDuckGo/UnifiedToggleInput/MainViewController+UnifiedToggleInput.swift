@@ -1133,7 +1133,7 @@ extension MainViewController {
         duckAIKeyboardEdgeSweepView?.isActive = DuckAIKeyboardEdgeSweepView.isActive(
             isFeatureOn: featureFlagger.isFeatureOn(.unifiedToggleInputKeyboardEdgeSweep),
             isUserSettingEnabled: aiChatSettings.isKeyboardAnimationEnabled,
-            isInputEditing: coordinator.isInputEditing,
+            isInputEditing: coordinator.isOmnibarSession,
             inputMode: coordinator.inputMode,
             isUnifiedToggleInputAvailable: unifiedToggleInputFeature.isAvailable
         )

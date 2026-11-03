@@ -37,15 +37,11 @@ final class DuckAIKeyboardEdgeSweepView: UIView {
         /// Below this the keyboard is hidden (or a hardware keyboard is attached) and the guide
         /// only covers the bottom safe area.
         static let minimumKeyboardHeight: CGFloat = 100
-        static let duration: CFTimeInterval = 2.2
-        /// Lets the keyboard finish sliding in before the sweep starts.
-        static let startDelay: TimeInterval = 0.25
+        static let duration: CFTimeInterval = 2.5
         /// The input can drop the keyboard for a moment while it switches modes or reloads its keyboard;
         /// a gap shorter than this doesn't count as leaving, so the sweep doesn't replay.
         static let leaveGracePeriod: TimeInterval = 0.3
-        /// Ease in-out, so the head takes ~0.6 s to cross the top edge. An ease-out curve crossed it in
-        /// ~0.15 s, which read as a flash rather than a sweep.
-        static let easing = CAMediaTimingFunction(controlPoints: 0.65, 0, 0.35, 1)
+        static let easing = CAMediaTimingFunction(name: .easeOut)
         static let leadStartWidth: CGFloat = 2
         static let trailWidth: CGFloat = 1
         static let opacity: Float = 0.65
@@ -70,13 +66,15 @@ final class DuckAIKeyboardEdgeSweepView: UIView {
     var isActive = false {
         didSet {
             guard isActive != oldValue else { return }
-            scheduleUpdate()
+            setNeedsLayout()
+            layoutIfNeeded()
         }
     }
 
     private var hasPlayed = false
-    private var pendingUpdate: DispatchWorkItem?
-    private var isShowing: Bool { isActive && !isHidden }
+    private var pendingReset: DispatchWorkItem?
+    private var isShowing: Bool { isActive && bounds.width > 0 && bounds.height >= Constants.minimumKeyboardHeight }
+    private var ringBounds: CGRect { CGRect(x: 0, y: 0, width: max(0, bounds.width), height: max(0, bounds.width)) }
     private let fadeContainer = CALayer()
     private let fadeMask = CAGradientLayer()
     private let trailHost = CALayer()
@@ -126,19 +124,21 @@ final class DuckAIKeyboardEdgeSweepView: UIView {
 
     override func layoutSubviews() {
         super.layoutSubviews()
-        let wasHidden = isHidden
-        isHidden = bounds.height < Constants.minimumKeyboardHeight
+        isHidden = bounds.width <= 0 || bounds.height < Constants.minimumKeyboardHeight
+        if hasPlayed && trailHost.bounds.width != ringBounds.width {
+            removeAnimations()
+        }
         CATransaction.begin()
         CATransaction.setDisableActions(true)
-        let side = hypot(bounds.width, bounds.height) + 16
+        let side = hypot(ringBounds.width, ringBounds.height) + 16
         fadeContainer.frame = bounds
         for host in [trailHost, leadHost] {
-            host.frame = bounds
-            host.mask?.frame = bounds
+            host.frame = ringBounds
+            host.mask?.frame = ringBounds
         }
         for gradient in [trailGradient, leadGradient] {
             gradient.bounds = CGRect(x: 0, y: 0, width: side, height: side)
-            gradient.position = CGPoint(x: bounds.midX, y: bounds.midY)
+            gradient.position = CGPoint(x: ringBounds.midX, y: ringBounds.midY)
         }
         trailGradient.locations = trailLocations(length: trailLength)
         trailMask.path = ringPath(width: Constants.trailWidth)
@@ -149,39 +149,35 @@ final class DuckAIKeyboardEdgeSweepView: UIView {
         fadeMask.frame = CGRect(x: -overhang, y: -overhang, width: bounds.width + overhang * 2, height: height)
         fadeMask.locations = [0, NSNumber(value: Double((Constants.fadeStart + overhang) / height)), 1]
         CATransaction.commit()
-        if isHidden != wasHidden {
-            scheduleUpdate()
-        }
+        reconcilePlayback()
     }
 
-    /// Plays once per showing: a keyboard that goes away for longer than the grace period and comes
-    /// back for the Duck.ai input plays the sweep again.
-    private func scheduleUpdate() {
-        pendingUpdate?.cancel()
-        let isShowing = isShowing
-        guard isShowing != hasPlayed else { return }
-        let work = DispatchWorkItem { [weak self] in
-            guard let self, self.isShowing == isShowing else { return }
-            if isShowing {
-                play()
-            } else {
-                reset()
+    private func reconcilePlayback() {
+        if isShowing {
+            pendingReset?.cancel()
+            pendingReset = nil
+            guard !hasPlayed else { return }
+            play()
+        } else {
+            guard hasPlayed, pendingReset == nil else { return }
+            let work = DispatchWorkItem { [weak self] in
+                guard let self else { return }
+                self.pendingReset = nil
+                guard !self.isShowing else { return }
+                self.reset()
             }
+            pendingReset = work
+            DispatchQueue.main.asyncAfter(deadline: .now() + Constants.leaveGracePeriod, execute: work)
         }
-        pendingUpdate = work
-        DispatchQueue.main.asyncAfter(deadline: .now() + (isShowing ? Constants.startDelay : Constants.leaveGracePeriod), execute: work)
     }
 
     /// Half the angle, seen from the gradient's centre, over which the stroke shows: the top edge and
     /// the top of each side down to `fadeEnd`. Only this part of the ring is ever visible.
     private var visibleHalfAngle: CGFloat {
-        atan2(bounds.width / 2, bounds.height / 2 - Constants.fadeEnd) * 180 / .pi
+        atan2(ringBounds.width / 2, ringBounds.height / 2 - Constants.fadeEnd) * 180 / .pi
     }
 
-    /// Short enough that the whole trail hides in the rest of the ring before and after the pass, so the
-    /// stroke crosses the top edge once. A wide landscape keyboard leaves less room for it.
     private var trailLength: CGFloat {
-        // The floor only matters while the keyboard is too short to show the stroke at all.
         max(Constants.minimumTrailLength, min(Constants.maximumTrailLength, 360 - 2 * (visibleHalfAngle + Constants.clearance)))
     }
 
@@ -194,13 +190,12 @@ final class DuckAIKeyboardEdgeSweepView: UIView {
     private func ringPath(width: CGFloat) -> CGPath {
         let offset = width / 2
         let radius = Constants.keyboardCornerRadius + offset
-        return UIBezierPath(roundedRect: bounds.insetBy(dx: -offset, dy: -offset), cornerRadius: radius).cgPath
+        return UIBezierPath(roundedRect: ringBounds.insetBy(dx: -offset, dy: -offset), cornerRadius: radius).cgPath
     }
 
     private func play() {
         hasPlayed = true
         guard !UIAccessibility.isReduceMotionEnabled else { return }
-        layoutIfNeeded()
 
         let rotation = CABasicAnimation(keyPath: "transform.rotation.z")
         // The head starts just left of the visible top and stops once the tail has cleared its right side.
@@ -237,6 +232,10 @@ final class DuckAIKeyboardEdgeSweepView: UIView {
 
     private func reset() {
         hasPlayed = false
+        removeAnimations()
+    }
+
+    private func removeAnimations() {
         [trailHost, leadHost, trailGradient, leadGradient, leadMask].forEach { $0.removeAllAnimations() }
     }
 }

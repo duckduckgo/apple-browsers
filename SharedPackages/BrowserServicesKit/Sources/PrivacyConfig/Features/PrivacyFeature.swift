@@ -70,6 +70,7 @@ public enum PrivacyFeature: String {
     case contentScopeExperiments
     case macOSBrowserConfig
     case iOSBrowserConfig
+    case sponsorBlock
     // Demonstrative case for default value. Remove once a real-world feature is added
     case intentionallyLocalOnlyFeatureForTests
     case delayedWebviewPresentation
@@ -238,8 +239,6 @@ public enum MacOSBrowserConfigSubfeature: String, PrivacySubfeature {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1219073365875860
     case pageSignals
 
-    /// https://app.asana.com/1/137249556945/project/1163321984198618/task/1219201049349186
-    case sponsorBlock
 }
 
 public enum TabManagerSubfeature: String, PrivacySubfeature {
@@ -742,6 +741,16 @@ public enum DuckPlayerSubfeature: String, PrivacySubfeature {
     case customError
     case enableDuckPlayer // iOS DuckPlayer rollout feature
     case nativeUI // Use Duckplayer's native UI
+}
+
+/// Subfeatures of the top-level `sponsorBlock` feature, whose state and settings also drive the content-scope script.
+/// Named `…PrivacySubfeature` because `SponsorBlockSubfeature` is the content-scope message handler in BrowserServicesKit.
+public enum SponsorBlockPrivacySubfeature: String, PrivacySubfeature {
+    public var parent: PrivacyFeature { .sponsorBlock }
+
+    /// Native side of the internal MVP: segment lookups, config answers and the settings UI.
+    /// https://app.asana.com/1/137249556945/project/1163321984198618/task/1219201049349186
+    case mvpEnabled
 }
 
 public enum SyncPromotionSubfeature: String, PrivacySubfeature {

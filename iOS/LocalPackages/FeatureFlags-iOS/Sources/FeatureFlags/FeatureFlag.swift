@@ -938,7 +938,7 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .adBlockingExtensionEnabledByDefault:
             Config(source: .remoteReleasable(AdBlockingExtensionSubfeature.featureEnabledByDefault))
         case .sponsorBlock:
-            Config(defaultValue: .internalOnly, source: .remoteReleasable(iOSBrowserConfigSubfeature.sponsorBlock))
+            Config(defaultValue: .internalOnly, source: .remoteReleasable(SponsorBlockPrivacySubfeature.mvpEnabled))
         case .supportsSyncChatsDeletion:
             Config(source: .remoteReleasable(AIChatSubfeature.supportsSyncChatsDeletion))
         case .supportsSyncChatsUpdate:

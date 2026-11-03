@@ -30,7 +30,7 @@ extension XCUIApplication {
         line: UInt = #line
     ) {
         let field = secure ? webViews.secureTextFields[fieldName] : webViews.textFields[fieldName]
-        field.tapWhenHittable(file: file, line: line)
+        field.tapWhenHittable(in: self, file: file, line: line)
         field.typeText(text)
     }
 
@@ -39,7 +39,7 @@ extension XCUIApplication {
         file: StaticString = #filePath,
         line: UInt = #line
     ) {
-        webViews.secureTextFields[fieldName].tapWhenHittable(file: file, line: line)
+        webViews.secureTextFields[fieldName].tapWhenHittable(in: self, file: file, line: line)
     }
 
     func submitWebForm(
@@ -47,7 +47,7 @@ extension XCUIApplication {
         file: StaticString = #filePath,
         line: UInt = #line
     ) {
-        webViews.buttons[buttonName].tapWhenHittable(file: file, line: line)
+        webViews.buttons[buttonName].tapWhenHittable(in: self, file: file, line: line)
     }
 
     func selectSavedPassword(
@@ -64,6 +64,6 @@ extension XCUIApplication {
             .matching(identifier: "Autofill.LoginPrompt.Account")
             .matching(NSPredicate(format: "label == %@", username))
             .firstMatch
-        account.tapWhenHittable(file: file, line: line)
+        account.tapWhenHittable(in: self, file: file, line: line)
     }
 }

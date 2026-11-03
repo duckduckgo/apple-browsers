@@ -48,17 +48,17 @@ extension XCUIApplication {
             let filter = searchFields.matching(
                 NSPredicate(format: "placeholderValue == %@", "Filter")
             ).firstMatch
-            filter.tapWhenHittable(file: file, line: line)
+            filter.tapWhenHittable(in: self, file: file, line: line)
             filter.typeText("Autofill")
 
             descendants(matching: .any)["Debug.Screen.Autofill"]
-                .tapWhenHittable(file: file, line: line)
+                .tapWhenHittable(in: self, file: file, line: line)
             descendants(matching: .any)["Debug.Autofill.DeleteAllCredentials"]
-                .tapWhenHittable(file: file, line: line)
+                .tapWhenHittable(in: self, file: file, line: line)
             assertActionMessage(contains: "All credentials deleted", file: file, line: line)
 
             let autofillNavigationBar = navigationBars["Autofill"]
-            autofillNavigationBar.buttons["BackButton"].tapWhenHittable(file: file, line: line)
+            autofillNavigationBar.buttons["BackButton"].tapWhenHittable(in: self, file: file, line: line)
             XCTAssertTrue(
                 debugList.waitForExistence(timeout: UITestTimeouts.elementExistence),
                 "Debug screen did not reappear after resetting passwords.", file: file, line: line)
@@ -66,7 +66,7 @@ extension XCUIApplication {
             if keyboards.firstMatch.exists {
                 buttons.matching(NSPredicate(format: "label == %@", "close"))
                     .firstMatch
-                    .tapWhenHittable(file: file, line: line)
+                    .tapWhenHittable(in: self, file: file, line: line)
                 XCTAssertTrue(
                     keyboards.firstMatch.wait(
                         for: NSPredicate(format: "exists == false"),
@@ -74,7 +74,7 @@ extension XCUIApplication {
                     "Keyboard did not dismiss after resetting passwords.", file: file, line: line)
             }
 
-            buttons["Debug.Close"].tapWhenHittable(file: file, line: line)
+            buttons["Debug.Close"].tapWhenHittable(in: self, file: file, line: line)
 
             XCTAssertTrue(
                 debugList.wait(for: NSPredicate(format: "exists == false"), timeout: UITestTimeouts.elementExistence),
@@ -95,24 +95,24 @@ extension XCUIApplication {
             timeout: UITestTimeouts.navigation,
             file: file,
             line: line)
-        passwordsAndAutofill.tapWhenHittable(file: file, line: line)
+        passwordsAndAutofill.tapWhenHittable(in: self, file: file, line: line)
 
         XCTAssertTrue(
             descendants(matching: .any)["Autofill.Settings.List"]
                 .waitForExistence(timeout: UITestTimeouts.elementExistence),
             "Passwords & Autofill settings did not appear.", file: file, line: line)
         descendants(matching: .any)["Autofill.Settings.Passwords"]
-            .tapWhenHittable(file: file, line: line)
+            .tapWhenHittable(in: self, file: file, line: line)
     }
 
     func closePasswordManager(file: StaticString = #filePath, line: UInt = #line) {
-        navigationBars.buttons["BackButton"].firstMatch.tapWhenHittable(file: file, line: line)
+        navigationBars.buttons["BackButton"].firstMatch.tapWhenHittable(in: self, file: file, line: line)
         XCTAssertTrue(
             descendants(matching: .any)["Autofill.Settings.List"]
                 .waitForExistence(timeout: UITestTimeouts.elementExistence),
             "Passwords & Autofill settings did not reappear.", file: file, line: line)
 
-        navigationBars.buttons["BackButton"].firstMatch.tapWhenHittable(file: file, line: line)
+        navigationBars.buttons["BackButton"].firstMatch.tapWhenHittable(in: self, file: file, line: line)
         XCTAssertTrue(
             descendants(matching: .any)["Settings.List.Main"]
                 .waitForExistence(timeout: UITestTimeouts.elementExistence),
@@ -125,7 +125,7 @@ extension XCUIApplication {
     }
 
     func closePasswordManagerToBrowser(file: StaticString = #filePath, line: UInt = #line) {
-        navigationBars["Passwords"].buttons["Close"].tapWhenHittable(file: file, line: line)
+        navigationBars["Passwords"].buttons["Close"].tapWhenHittable(in: self, file: file, line: line)
         XCTAssertTrue(
             searchEntry.wait(
                 for: NSPredicate(format: "isHittable == true AND isEnabled == true"),
@@ -142,7 +142,7 @@ extension XCUIApplication {
         file: StaticString = #filePath,
         line: UInt = #line
     ) {
-        buttons["Autofill.Passwords.Add"].tapWhenHittable(file: file, line: line)
+        buttons["Autofill.Passwords.Add"].tapWhenHittable(in: self, file: file, line: line)
 
         let detailsList = descendants(matching: .any)["Autofill.Passwords.Details.List"]
         XCTAssertTrue(
@@ -169,12 +169,12 @@ extension XCUIApplication {
             notesField.enterText(notes, file: file, line: line)
         }
 
-        buttons["Autofill.Passwords.Editor.Save"].tapWhenHittable(file: file, line: line)
+        buttons["Autofill.Passwords.Editor.Save"].tapWhenHittable(in: self, file: file, line: line)
         XCTAssertTrue(
             buttons["Autofill.Passwords.Details.Edit"].waitForExistence(timeout: UITestTimeouts.navigation),
             "Saved password details did not appear.", file: file, line: line)
 
-        navigationBars.buttons["BackButton"].firstMatch.tapWhenHittable(file: file, line: line)
+        navigationBars.buttons["BackButton"].firstMatch.tapWhenHittable(in: self, file: file, line: line)
         XCTAssertTrue(
             passwordItem(named: name).waitForExistence(timeout: UITestTimeouts.elementExistence),
             "Saved password '\(name)' did not appear in the password list.", file: file, line: line)

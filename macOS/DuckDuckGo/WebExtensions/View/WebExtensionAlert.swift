@@ -43,7 +43,8 @@ struct WebExtensionAlert: View {
     private enum Constants {
         static let width: CGFloat = 406
         static let maxHeight: CGFloat = 340
-        static let cornerRadius: CGFloat = 24
+        // Matches the corner radius AppKit gives the sheet window.
+        static let cornerRadius: CGFloat = 16
         static let padding: CGFloat = 16
         static let sectionSpacing: CGFloat = 16
         static let contentSpacing: CGFloat = 12

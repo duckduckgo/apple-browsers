@@ -245,7 +245,7 @@ extension WhatsNewCoordinator {
     fileprivate func handleAction(_ action: RemoteAction, dismissSource: DismissSource) async {
         let presentationStyle: PresentationContext.Style
         switch action {
-        case .url:
+        case .url, .survey:
             presentationStyle = .withinCurrentContext
         case .navigation(value: .duckAISettings), .navigation(value: .personalInformationRemoval):
             presentationStyle = .dismissModalsAndPresentFromRoot

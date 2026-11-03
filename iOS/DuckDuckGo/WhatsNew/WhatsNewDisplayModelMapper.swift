@@ -136,10 +136,12 @@ struct WhatsNewDisplayModelMapper: WhatsNewDisplayModelMapping {
             nil
         }
 
-        // The coordinator dismisses redirects before opening them. Password import stays within What's New.
+        // The coordinator dismisses redirects before opening them.
+        // Embedded URLs, sharing, and password import stay within What's New.
         let dismissAfterPrimaryAction: (() -> Void)?
         switch primaryAction {
-        case .url, .navigation(value: .duckAISettings), .navigation(value: .personalInformationRemoval), .navigation(value: .importPasswords):
+        case .url, .survey, .urlInContext, .share,
+             .navigation(value: .duckAISettings), .navigation(value: .personalInformationRemoval), .navigation(value: .importPasswords):
             dismissAfterPrimaryAction = nil
         default:
             dismissAfterPrimaryAction = onDismiss

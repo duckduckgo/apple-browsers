@@ -173,7 +173,8 @@ struct MainMenuTests {
         #expect(spec.menus.first { $0.identifier == .file }?.allItems.contains { $0.command == .printPage } == true)
         #expect(spec.menus.first { $0.identifier == .edit }?.allItems.contains { $0.command == .printPage } == false)
         #expect(spec.keyCommandItems.filter { $0.command == .selectTab }.count == 9)
-        #expect(MainMenuBuilder().keyCommandOnlyCommands(for: spec).count == spec.keyCommandItems.count)
+        let expectedKeyCommandOnly = registersInMenuBar(enabled: true, idiom: .pad) ? spec.keyCommandItems.count : 0
+        #expect(MainMenuBuilder().keyCommandOnlyCommands(for: spec).count == expectedKeyCommandOnly)
     }
 
     @available(iOS 16, macOS 13, *)

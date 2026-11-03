@@ -12,6 +12,7 @@ jobs:
     if: github.event.label.name == 'Record snapshots (macOS)' && github.event.pull_request.head.repo.full_name == github.repository
     name: Record CI's macOS snapshot renderings
     runs-on: ubuntu-latest
+    timeout-minutes: 200
     permissions:
       actions: read
       contents: read
@@ -26,23 +27,33 @@ jobs:
           persist-credentials: false
           sparse-checkout: scripts/record-snapshots.sh
 
-      - name: Find the latest macOS PR checks run
+      - name: Wait for the latest macOS PR checks run
         id: run
         env:
           GH_TOKEN: ${{ github.token }}
           GITHUB_REPOSITORY: ${{ github.repository }}
           HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
         run: |
-          read -r run_id status < <(gh api "repos/$GITHUB_REPOSITORY/actions/workflows/macos_pr_checks.yml/runs?head_sha=$HEAD_SHA&event=pull_request&per_page=1" \
-            --jq '.workflow_runs[0] | "\(.id // "") \(.status // "")"')
-          if [ -z "$run_id" ]; then
-            echo "::error::No macOS PR checks run found for $HEAD_SHA."
-            exit 1
-          fi
-          if [ "$status" != "completed" ]; then
-            echo "::error::macOS PR checks run $run_id for $HEAD_SHA is $status. Re-add the label once it finishes."
-            exit 1
-          fi
+          deadline=$((SECONDS + 180 * 60))
+          while true; do
+            read -r run_id status < <(gh api "repos/$GITHUB_REPOSITORY/actions/workflows/macos_pr_checks.yml/runs?head_sha=$HEAD_SHA&event=pull_request&per_page=1" \
+              --jq '.workflow_runs[0] | "\(.id // "") \(.status // "")"')
+            if [ -n "$run_id" ] && [ "$status" = "completed" ]; then
+              break
+            fi
+            current_sha="$(gh api "repos/$GITHUB_REPOSITORY/pulls/$PR_NUMBER" --jq '.head.sha')"
+            if [ "$current_sha" != "$HEAD_SHA" ]; then
+              echo "::error::The PR moved past $HEAD_SHA after the label was added. Re-add the label to record the new commit's renderings."
+              exit 1
+            fi
+            if [ "$SECONDS" -ge "$deadline" ]; then
+              echo "::error::macOS PR checks for $HEAD_SHA didn't finish within 3 hours. Re-add the label once they finish."
+              exit 1
+            fi
+            echo "Waiting for macOS PR checks on $HEAD_SHA (run: ${run_id:-not started}, status: ${status:-none})..."
+            sleep 60
+          done
           echo "id=$run_id" >> "$GITHUB_OUTPUT"
 
       - name: Download rendered snapshots

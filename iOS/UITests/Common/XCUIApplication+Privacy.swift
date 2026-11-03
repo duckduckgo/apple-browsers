@@ -89,7 +89,7 @@ extension XCUIApplication {
         file: StaticString = #filePath,
         line: UInt = #line) {
         let refreshButton = buttons["Browser.OmniBar.Button.Refresh"]
-        refreshButton.tapWhenHittable(file: file, line: line)
+        refreshButton.tapWhenHittable(in: self, file: file, line: line)
         XCTAssertTrue(
             refreshButton.wait(
                 for: NSPredicate(format: "isHittable == true AND isEnabled == true"),
@@ -104,7 +104,7 @@ extension XCUIApplication {
         expectingProtectionState isProtected: Bool? = nil,
         file: StaticString = #filePath,
         line: UInt = #line) {
-        privacyIconButton.tapWhenHittable(file: file, line: line)
+        privacyIconButton.tapWhenHittable(in: self, file: file, line: line)
         XCTAssertTrue(
             privacyDashboard.waitForExistence(timeout: UITestTimeouts.elementExistence),
             "Privacy Dashboard did not appear.",
@@ -122,7 +122,7 @@ extension XCUIApplication {
     }
 
     func closePrivacyDashboard(file: StaticString = #filePath, line: UInt = #line) {
-        privacyDashboard.descendants(matching: .any)["Done"].firstMatch.tapWhenHittable(file: file, line: line)
+        privacyDashboard.descendants(matching: .any)["Done"].firstMatch.tapWhenHittable(in: self, file: file, line: line)
         XCTAssertTrue(
             privacyDashboard.wait(for: NSPredicate(format: "exists == false"), timeout: UITestTimeouts.elementExistence),
             "Privacy Dashboard did not close.",
@@ -167,7 +167,7 @@ extension XCUIApplication {
             "Protection feedback prompt did not appear.",
             file: file,
             line: line)
-        privacyDashboard.buttons["Don't Send"].tapWhenHittable(file: file, line: line)
+        privacyDashboard.buttons["Don't Send"].tapWhenHittable(in: self, file: file, line: line)
         XCTAssertTrue(
             privacyDashboard.wait(
                 for: NSPredicate(format: "exists == false"),

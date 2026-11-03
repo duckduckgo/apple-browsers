@@ -31,15 +31,15 @@ final class ContentBlockingUITests: UITestCase {
             app.openPrivacyDashboard(expectingProtectionState: true)
             app.assertPrivacyDashboard(isProtected: true, blockedTrackerVisible: true)
 
-            app.privacyDashboard.descendants(matching: .any)["View Tracker Companies"].firstMatch.tapWhenHittable()
+            app.privacyDashboard.descendants(matching: .any)["View Tracker Companies"].firstMatch.tapWhenHittable(in: app)
             XCTAssertTrue(
                 app.privacyDashboard.staticTexts["doubleclick.net"].waitForExistence(timeout: UITestTimeouts.elementExistence),
                 "Blocked tracker company did not appear.")
-            app.privacyDashboard.descendants(matching: .any)["Back"].firstMatch.tapWhenHittable()
+            app.privacyDashboard.descendants(matching: .any)["Back"].firstMatch.tapWhenHittable(in: app)
         }
 
         XCTContext.runActivity(named: "Disable protection from the Privacy Dashboard") { _ in
-            app.privacyDashboard.switches["Disable Protections"].tapWhenHittable()
+            app.privacyDashboard.switches["Disable Protections"].tapWhenHittable(in: app)
             app.dismissProtectionFeedback()
             app.assertPrivacyProtectionMenuState(isProtected: false)
             app.reloadCurrentPage(expecting: trackerPageTitle)
@@ -89,7 +89,7 @@ final class ContentBlockingUITests: UITestCase {
             app.assertActionMessage(
                 contains: "Privacy Protection enabled for privacy-test-pages.site",
                 waitForDismissal: false)
-            app.buttons["Browser.ActionMessage.Action"].tapWhenHittable()
+            app.buttons["Browser.ActionMessage.Action"].tapWhenHittable(in: app)
             app.assertActionMessage(contains: "Privacy Protection disabled for privacy-test-pages.site")
             app.assertPrivacyProtectionMenuState(isProtected: false)
             app.reloadCurrentPage(expecting: trackerPageTitle)

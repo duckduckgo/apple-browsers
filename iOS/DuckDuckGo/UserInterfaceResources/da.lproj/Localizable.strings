@@ -3301,6 +3301,72 @@
 /* No comment provided by engineer. */
 "menu.button.hint" = "Browsingmenu";
 
+/* iPad menu bar command */
+"menuActualSize" = "Faktisk størrelse";
+
+/* iPad menu bar command */
+"menuBack" = "Tilbage";
+
+/* iPad menu bar command */
+"menuClearTabsAndData" = "Ryd faner og data";
+
+/* iPad menu bar command */
+"menuDuplicateTab" = "Dupliker fane";
+
+/* iPad menu bar command */
+"menuFeedback" = "Del feedback";
+
+/* iPad menu bar command */
+"menuForward" = "Frem";
+
+/* iPad menu bar command */
+"menuHideDownloads" = "Skjul downloads";
+
+/* iPad menu bar command */
+"menuHidePasswords" = "Skjul adgangskoder";
+
+/* iPad menu bar command */
+"menuHideTabs" = "Skjul faner";
+
+/* iPad menu bar command */
+"menuLastTab" = "Sidste fane";
+
+/* iPad menu bar command */
+"menuNewTabOnRight" = "Ny fane til højre";
+
+/* iPad menu bar command */
+"menuNextTab" = "Vis næste fane";
+
+/* iPad menu bar command */
+"menuOpenLocation" = "Åbn placering ...";
+
+/* iPad menu bar command */
+"menuPreviousTab" = "Vis forrige fane";
+
+/* iPad menu bar command */
+"menuPrint" = "Print ...";
+
+/* iPad menu bar command selecting a numbered tab */
+"menuSelectTab" = "Vælg fane %d";
+
+/* iPad menu bar command */
+"menuSettings" = "DuckDuckGo-indstillinger ...";
+
+/* iPad menu bar command */
+"menuShowDownloads" = "Vis downloads";
+
+/* iPad menu bar command */
+"menuShowPasswords" = "Vis adgangskoder";
+
+/* iPad menu bar command */
+"menuShowTabs" = "Vis faner";
+
+/* iPad menu bar command */
+"menuStop" = "Stop";
+
+/* iPad menu bar command */
+"menuVoiceSearch" = "Privat stemmesøgning";
+
 /* No comment provided by engineer. */
 "Message" = "Besked";
 

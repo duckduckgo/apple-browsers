@@ -3301,6 +3301,72 @@
 /* No comment provided by engineer. */
 "menu.button.hint" = "Pārlūkošanas izvēlne";
 
+/* iPad menu bar command */
+"menuActualSize" = "Faktiskais izmērs";
+
+/* iPad menu bar command */
+"menuBack" = "Atpakaļ";
+
+/* iPad menu bar command */
+"menuClearTabsAndData" = "Notīrīt cilnes un datus";
+
+/* iPad menu bar command */
+"menuDuplicateTab" = "Dublēt cilni";
+
+/* iPad menu bar command */
+"menuFeedback" = "Kopīgot atsauksmi";
+
+/* iPad menu bar command */
+"menuForward" = "Uz priekšu";
+
+/* iPad menu bar command */
+"menuHideDownloads" = "Paslēpt lejupielādes";
+
+/* iPad menu bar command */
+"menuHidePasswords" = "Paslēpt paroles";
+
+/* iPad menu bar command */
+"menuHideTabs" = "Paslēpt cilnes";
+
+/* iPad menu bar command */
+"menuLastTab" = "Pēdējā cilne";
+
+/* iPad menu bar command */
+"menuNewTabOnRight" = "Jauna cilne pa labi";
+
+/* iPad menu bar command */
+"menuNextTab" = "Rādīt nākamo cilni";
+
+/* iPad menu bar command */
+"menuOpenLocation" = "Atvērt atrašanās vietu…";
+
+/* iPad menu bar command */
+"menuPreviousTab" = "Rādīt iepriekšējo cilni";
+
+/* iPad menu bar command */
+"menuPrint" = "Drukāt…";
+
+/* iPad menu bar command selecting a numbered tab */
+"menuSelectTab" = "Atlasīt cilni %d";
+
+/* iPad menu bar command */
+"menuSettings" = "DuckDuckGo iestatījumi…";
+
+/* iPad menu bar command */
+"menuShowDownloads" = "Rādīt lejupielādes";
+
+/* iPad menu bar command */
+"menuShowPasswords" = "Rādīt paroles";
+
+/* iPad menu bar command */
+"menuShowTabs" = "Rādīt cilnes";
+
+/* iPad menu bar command */
+"menuStop" = "Stop";
+
+/* iPad menu bar command */
+"menuVoiceSearch" = "Privātā balss meklēšana";
+
 /* No comment provided by engineer. */
 "Message" = "Ziņojums";
 

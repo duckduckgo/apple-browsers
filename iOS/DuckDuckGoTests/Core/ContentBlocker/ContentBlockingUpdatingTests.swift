@@ -933,8 +933,9 @@ final class ContentBlockingUpdatingTests: XCTestCase {
         let sourceProvider = makeScriptSourceProvider()
         let geolocationUserScript = GeolocationUserScript()
         let capability = try XCTUnwrap(geolocationUserScript.featureSettings["capability"] as? String)
-        // The injected configuration entry, as JSON; the bundle's own code names the feature differently.
-        let policyFeatureEntry = "\"\(GeolocationUserScript.policyFeatureName)\":{"
+        // The injected configuration entry, as it appears inside the source's JSON string literal; the bundle's own
+        // code names the feature differently.
+        let policyFeatureEntry = "\\\"\(GeolocationUserScript.policyFeatureName)\\\":{"
 
         /// Whether the content-scope scripts carry the settings that activate geolocation in each world.
         func geolocationFeatures(in scripts: UserScripts) -> (page: Bool, isolated: Bool) {

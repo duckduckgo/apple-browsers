@@ -49,6 +49,7 @@ enum SyncPromoStorageKeyNames: String, StorageKeyDescribing {
     case aiChatImpressions = "sync-promo-ai-chat-impressions"
     case syncedDevicesCount = "sync-promo-synced-devices-count"
     case setupPromoConfirmed = "sync-promo-setup-promo-confirmed"
+    case bookmarksAnotherDeviceDismissed = "sync-promo-bookmarks-another-device-dismissed"
 }
 
 struct SyncPromoStorageKeys: StoringKeys {
@@ -56,6 +57,7 @@ struct SyncPromoStorageKeys: StoringKeys {
     let aiChatImpressions = StorageKey<Int>(SyncPromoStorageKeyNames.aiChatImpressions)
     let syncedDevicesCount = StorageKey<Int>(SyncPromoStorageKeyNames.syncedDevicesCount)
     let setupPromoConfirmed = StorageKey<Date>(SyncPromoStorageKeyNames.setupPromoConfirmed)
+    let bookmarksAnotherDeviceDismissed = StorageKey<Date>(SyncPromoStorageKeyNames.bookmarksAnotherDeviceDismissed)
 }
 
 final class SyncPromoManager: SyncPromoManaging {
@@ -99,9 +101,6 @@ final class SyncPromoManager: SyncPromoManaging {
 
     @UserDefaultsWrapper(key: .syncPromoDataImportDismissed, defaultValue: nil)
     private var syncPromoDataImportDismissed: Date?
-
-    @UserDefaultsWrapper(key: .syncPromoBookmarksAnotherDeviceDismissed, defaultValue: nil)
-    private var syncPromoBookmarksAnotherDeviceDismissed: Date?
 
     private var syncPromoAIChatDismissed: Date? {
         get { storage.aiChatDismissed }
@@ -171,7 +170,8 @@ final class SyncPromoManager: SyncPromoManaging {
                daysSinceInstall > Self.syncAnotherDeviceMinimumDaysSinceInstall,
                let syncedDevicesCount = storage.syncedDevicesCount,
                syncedDevicesCount < 2,
-               isSetupPromoCooldownOver {
+               isSetupPromoCooldownOver,
+               count > 0 {
                 return true
             }
         }
@@ -190,7 +190,7 @@ final class SyncPromoManager: SyncPromoManaging {
     private var canRefreshSyncedDevicesCount: Bool {
         featureFlagger.isFeatureOn(.syncPromotionSyncAnotherDevice)
         && syncService.authState != .inactive
-        && syncPromoBookmarksAnotherDeviceDismissed == nil
+        && storage.bookmarksAnotherDeviceDismissed == nil
     }
 
     private var isSetupPromoCooldownOver: Bool {
@@ -232,7 +232,7 @@ final class SyncPromoManager: SyncPromoManaging {
         case .aiChat:
             syncPromoAIChatDismissed = Date()
         case .bookmarksAnotherDevice:
-            syncPromoBookmarksAnotherDeviceDismissed = Date()
+            storage.bookmarksAnotherDeviceDismissed = Date()
         }
     }
 
@@ -270,7 +270,7 @@ final class SyncPromoManager: SyncPromoManaging {
         syncPromoDataImportDismissed = nil
         syncPromoAIChatDismissed = nil
         syncPromoAIChatImpressions = 0
-        syncPromoBookmarksAnotherDeviceDismissed = nil
+        storage.bookmarksAnotherDeviceDismissed = nil
         storage.setupPromoConfirmed = nil
     }
 }

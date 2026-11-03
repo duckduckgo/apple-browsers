@@ -518,6 +518,12 @@ final class SyncPromoManagerTests: XCTestCase {
         XCTAssertTrue(manager.shouldPresentPromoFor(.bookmarksAnotherDevice, count: 1))
     }
 
+    func testWhenNoBookmarksThenShouldNotPresentAnotherDevicePromo() {
+        let manager = makeAnotherDeviceManager()
+
+        XCTAssertFalse(manager.shouldPresentPromoFor(.bookmarksAnotherDevice, count: 0))
+    }
+
     func testWhenAnotherDeviceFlagOffThenShouldNotPresentAnotherDevicePromo() {
         let manager = makeAnotherDeviceManager(featureFlags: [.sync])
 

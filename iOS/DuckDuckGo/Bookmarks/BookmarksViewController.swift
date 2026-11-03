@@ -67,6 +67,7 @@ class BookmarksViewController: UIViewController, UITableViewDelegate {
     private let syncDataProviders: SyncDataProviders
     private let appSettings: AppSettings
     private let keyValueStore: ThrowingKeyValueStoring
+    private let pixelFiring: (any PixelKitFiring)?
 
     // Is set to nil once used as it should only be fired once per access
     private var productSurfaceTelemetry: ProductSurfaceTelemetry?
@@ -189,7 +190,8 @@ class BookmarksViewController: UIViewController, UITableViewDelegate {
                    syncDataProviders: SyncDataProviders,
                    appSettings: AppSettings,
                    keyValueStore: ThrowingKeyValueStoring,
-                   productSurfaceTelemetry: ProductSurfaceTelemetry?
+                   productSurfaceTelemetry: ProductSurfaceTelemetry?,
+                   pixelFiring: (any PixelKitFiring)? = PixelKit.shared
     ) {
         self.bookmarksDatabase = bookmarksDatabase
         self.searchDataSource = SearchBookmarksDataSource(searchEngine: bookmarksSearch)
@@ -205,6 +207,7 @@ class BookmarksViewController: UIViewController, UITableViewDelegate {
         self.appSettings = appSettings
         self.keyValueStore = keyValueStore
         self.productSurfaceTelemetry = productSurfaceTelemetry
+        self.pixelFiring = pixelFiring
 
         super.init(coder: coder)
 
@@ -345,7 +348,8 @@ class BookmarksViewController: UIViewController, UITableViewDelegate {
                                                      syncDataProviders: self.syncDataProviders,
                                                      appSettings: self.appSettings,
                                                      keyValueStore: self.keyValueStore,
-                                                     productSurfaceTelemetry: self.productSurfaceTelemetry)
+                                                     productSurfaceTelemetry: self.productSurfaceTelemetry,
+                                                     pixelFiring: self.pixelFiring)
             controller?.delegate = self.delegate
             return controller
         })
@@ -1030,7 +1034,7 @@ class BookmarksViewController: UIViewController, UITableViewDelegate {
 
         if promo == .syncSetup, !hasFiredSyncSetupPromoDisplayedPixel {
             hasFiredSyncSetupPromoDisplayedPixel = true
-            PixelKit.fire(Pixel.Event.syncPromoDisplayed, options: .parameters(["source": SyncPromoManager.Touchpoint.bookmarks.rawValue]))
+            pixelFiring?.fire(Pixel.Event.syncPromoDisplayed, options: .parameters(["source": SyncPromoManager.Touchpoint.bookmarks.rawValue]))
         }
     }
 
@@ -1053,7 +1057,7 @@ class BookmarksViewController: UIViewController, UITableViewDelegate {
             case .redesigned:
                 self?.pushSyncSettings(source: SyncSettingsViewController.SourceConstants.bookmarksPromotion)
             }
-            PixelKit.fire(Pixel.Event.syncPromoConfirmed, options: .parameters(["source": SyncPromoManager.Touchpoint.bookmarks.rawValue]))
+            self?.pixelFiring?.fire(Pixel.Event.syncPromoConfirmed, options: .parameters(["source": SyncPromoManager.Touchpoint.bookmarks.rawValue]))
             self?.syncPromoManager.recordPromoConfirmedFor(.bookmarks)
         }, dismissButtonAction: { [weak self] in
             self?.syncPromoManager.dismissPromoFor(.bookmarks, reason: .userTapped)

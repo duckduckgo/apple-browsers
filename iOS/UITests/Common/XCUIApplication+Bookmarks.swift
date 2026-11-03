@@ -210,6 +210,7 @@ extension XCUIApplication {
 
     func resetBookmarks(file: StaticString = #filePath, line: UInt = #line) {
         XCTContext.runActivity(named: "Reset bookmarks and favorites") { _ in
+            dismissAddressBarEditing(file: file, line: line)
             let menuButton = buttons["Browser.Toolbar.Button.Menu"]
             XCTAssertTrue(
                 menuButton.wait(for: NSPredicate(format: "isHittable == true AND isEnabled == true"), timeout: UITestTimeouts.elementExistence),

@@ -37,7 +37,6 @@ class FindInPageView: UIView {
     @IBOutlet weak var searchBackground: UIView!
     @IBOutlet weak var doneButton: UIButton!
     @IBOutlet weak var inputText: UITextField!
-    @IBOutlet weak var activityView: UIActivityIndicatorView!
 
     weak var delegate: FindInPageViewDelegate?
     weak var findInPage: FindInPage?
@@ -116,7 +115,6 @@ class FindInPageView: UIView {
         doneButton.accessibilityLabel = doneLabel
         doneGlass.contentView.addSubview(doneButton)
         searchGlass.contentView.addSubview(searchBackground)
-        searchGlass.contentView.addSubview(activityView)
         navigationGlass.contentView.addSubview(previousButton)
         navigationGlass.contentView.addSubview(nextButton)
 
@@ -151,8 +149,6 @@ class FindInPageView: UIView {
             nextButton.leadingAnchor.constraint(equalTo: previousButton.trailingAnchor),
             nextButton.trailingAnchor.constraint(equalTo: navigationGlass.contentView.trailingAnchor),
             nextButton.bottomAnchor.constraint(equalTo: navigationGlass.contentView.bottomAnchor),
-            activityView.trailingAnchor.constraint(equalTo: searchGlass.contentView.trailingAnchor, constant: -8),
-            activityView.centerYAnchor.constraint(equalTo: searchGlass.contentView.centerYAnchor),
             clearButton.trailingAnchor.constraint(equalTo: searchBackground.trailingAnchor, constant: -12),
             clearButton.centerYAnchor.constraint(equalTo: searchBackground.centerYAnchor),
             clearButton.widthAnchor.constraint(equalToConstant: 28),
@@ -189,8 +185,6 @@ class FindInPageView: UIView {
     }
     
     func update(with findInPage: FindInPage?, updateTextField: Bool) {
-        activityView.stopAnimating()
-        
         self.findInPage = findInPage
         isHidden = findInPage == nil
         if updateTextField {
@@ -235,11 +229,7 @@ class FindInPageView: UIView {
         counterLabel.isHidden = true
         clearButton?.isHidden = text.isEmpty
         
-        guard let findInpage = findInPage,
-            findInpage.search(forText: text) else {
-                return
-        }
-        activityView.startAnimating()
+        _ = findInPage?.search(forText: text)
     }
 
     @objc private func clearSearch() {
@@ -274,7 +264,6 @@ extension FindInPageView {
         inputText.keyboardAppearance = theme.keyboardAppearance
         searchLoupe.tintColor = theme.barTintColor.withAlphaComponent(0.5)
         doneButton.setTitleColor(theme.barTintColor, for: .normal)
-        activityView.style = theme.activityStyle
     }
 }
 

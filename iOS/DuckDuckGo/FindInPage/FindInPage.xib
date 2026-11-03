@@ -98,18 +98,13 @@
                                 <action selector="next" destination="mpb-t3-Kh2" eventType="touchUpInside" id="EjH-8D-SGd"/>
                             </connections>
                         </button>
-                        <activityIndicatorView hidden="YES" opaque="NO" contentMode="scaleToFill" horizontalHuggingPriority="750" verticalHuggingPriority="750" hidesWhenStopped="YES" style="gray" translatesAutoresizingMaskIntoConstraints="NO" id="aZj-cx-lsc">
-                            <rect key="frame" x="324" y="14.5" width="20" height="20"/>
-                        </activityIndicatorView>
                     </subviews>
                     <constraints>
                         <constraint firstAttribute="width" relation="lessThanOrEqual" constant="768" id="17Y-Jv-Dov"/>
                         <constraint firstItem="B2y-VG-v1T" firstAttribute="leading" secondItem="Vjq-cH-I3O" secondAttribute="trailing" constant="12" id="60D-yc-Dbf"/>
                         <constraint firstItem="Vjq-cH-I3O" firstAttribute="centerY" secondItem="pWy-ms-gOl" secondAttribute="centerY" id="B2E-n6-m5I"/>
                         <constraint firstAttribute="trailing" secondItem="B2y-VG-v1T" secondAttribute="trailing" constant="12" id="EwG-Ya-Llu"/>
-                        <constraint firstAttribute="trailing" secondItem="aZj-cx-lsc" secondAttribute="trailing" constant="70" id="RUT-Ak-F0n"/>
                         <constraint firstItem="WKP-OZ-FQt" firstAttribute="leading" secondItem="pWy-ms-gOl" secondAttribute="leading" constant="8" id="Reo-Lg-QPJ"/>
-                        <constraint firstItem="aZj-cx-lsc" firstAttribute="centerY" secondItem="pWy-ms-gOl" secondAttribute="centerY" id="WBk-Wn-jAk"/>
                         <constraint firstItem="Vjq-cH-I3O" firstAttribute="leading" secondItem="E45-2U-cU4" secondAttribute="trailing" constant="12" id="bXc-Oc-Vbq"/>
                         <constraint firstItem="E45-2U-cU4" firstAttribute="leading" secondItem="WKP-OZ-FQt" secondAttribute="trailing" constant="12" id="ear-hb-VI4"/>
                         <constraint firstItem="WKP-OZ-FQt" firstAttribute="centerY" secondItem="pWy-ms-gOl" secondAttribute="centerY" id="hLQ-eP-g4O"/>
@@ -127,7 +122,6 @@
             </constraints>
             <freeformSimulatedSizeMetrics key="simulatedDestinationMetrics"/>
             <connections>
-                <outlet property="activityView" destination="aZj-cx-lsc" id="ZvQ-eq-rG3"/>
                 <outlet property="container" destination="pWy-ms-gOl" id="0n6-bd-EOj"/>
                 <outlet property="counterLabel" destination="SYf-ql-rbl" id="YNB-8j-3FU"/>
                 <outlet property="doneButton" destination="B2y-VG-v1T" id="Juo-IX-Cyo"/>

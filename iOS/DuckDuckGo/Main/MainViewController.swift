@@ -1991,7 +1991,8 @@ class MainViewController: UIViewController {
 
     private func updateFloatingDomainCapsuleVisibility(for barsVisibilityPercent: CGFloat) {
         floatingDomainCapsuleController.update(addressBarPosition: appSettings.currentAddressBarPosition,
-                                               isFloatingUIEnabled: isFloatingUIEnabled && !isBottomAddressBarHiddenForWebKeyboard,
+                                               isFloatingUIEnabled: isFloatingUIEnabled && !isBottomAddressBarHiddenForWebKeyboard
+                                                   && findInPageView?.isHidden != false,
                                                isUnifiedToggleInputActive: unifiedToggleInputCoordinator?.isActive == true,
                                                isAITab: currentTab?.isAITab == true,
                                                isMinimalChromeLayout: isInMinimalChromeLayout,
@@ -4394,6 +4395,13 @@ class MainViewController: UIViewController {
         findInPageView?.updateConstraints()
         bringFindInPageToFrontIfNeeded()
         updateFindInPagePanGesture()
+        if findInPageView?.isHidden == false {
+            if lastChromeVisibilityPercent > 0 {
+                setBarsHidden(true, animated: false, customAnimationDuration: nil)
+            } else {
+                updateFloatingDomainCapsuleVisibility(for: 0)
+            }
+        }
         scheduleCurrentFindResultVisibility()
     }
 
@@ -5513,6 +5521,7 @@ extension MainViewController: FindInPageViewDelegate {
         viewCoordinator.toolbar.accessibilityElementsHidden = false
 
         viewCoordinator.showNavigationBarWithBottomPosition()
+        chromeManager.reset(animated: false)
     }
 }
 
@@ -5563,6 +5572,12 @@ extension MainViewController: BrowserChromeDelegate {
     }
     
     func setBarsVisibility(_ percent: CGFloat, animated: Bool, animationDuration: CGFloat?) {
+        guard percent == 0 || findInPageView?.isHidden != false else { return }
+
+        applyBarsVisibility(percent, animated: animated, animationDuration: animationDuration)
+    }
+
+    private func applyBarsVisibility(_ percent: CGFloat, animated: Bool, animationDuration: CGFloat?) {
         guard isViewLoaded,
               let viewCoordinator,
               viewCoordinator.toolbar != nil,
@@ -5750,6 +5765,7 @@ extension MainViewController: BrowserChromeDelegate {
     var isChromeScrollInteractionDisabled: Bool {
         if isAddressBarMoveInProgress { return true }
         if isBottomAddressBarHiddenForWebKeyboard { return true }
+        if findInPageView?.isHidden == false { return true }
         if #available(iOS 16.0, *),
            currentTab?.webView.findInteraction?.isFindNavigatorVisible == true {
             return true

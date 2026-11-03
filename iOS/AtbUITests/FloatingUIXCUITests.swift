@@ -647,6 +647,8 @@ class FloatingUIXCUITestCase: XCTestCase {
 
         let findField = app.searchFields["Find in Page"]
         XCTAssertTrue(findField.waitForHittable(timeout: timeout))
+        let browserMenu = element(withIdentifier: AccessibilityID.toolbarMenu)
+        XCTAssertTrue(browserMenu.waitForNotHittable(timeout: timeout))
         findField.typeText("hackers")
         XCTAssertTrue(app.staticTexts["1 of 3"].waitForExistence(timeout: timeout))
         let nextButton = app.buttons["Find Next"]
@@ -680,6 +682,10 @@ class FloatingUIXCUITestCase: XCTestCase {
         XCTAssertTrue(app.keyboards.firstMatch.waitForNonExistence(timeout: timeout))
         XCTAssertTrue(findField.exists)
         XCTAssertTrue(waitUntil(timeout: timeout) { selectedMatch.frame.minY < initialMatchY - 10 })
+        XCTAssertTrue(browserMenu.waitForNotHittable(timeout: timeout))
+        if floatingUIEnabled {
+            XCTAssertTrue(element(withIdentifier: AccessibilityID.domainCapsule).waitForNotHittable(timeout: timeout))
+        }
 
         let dismissedScreenshot = XCTAttachment(screenshot: app.screenshot())
         dismissedScreenshot.name = "Find in Page - Keyboard Dismissed"
@@ -691,6 +697,9 @@ class FloatingUIXCUITestCase: XCTestCase {
             XCTAssertEqual(findField.value as? String, "")
             XCTAssertFalse(resultCount.exists)
         }
+
+        app.buttons["Done"].tap()
+        XCTAssertTrue(browserMenu.waitForHittable(timeout: timeout))
     }
 
     func verifyIPadFindInPageUsesGlassWithFloatingFlagOff() {

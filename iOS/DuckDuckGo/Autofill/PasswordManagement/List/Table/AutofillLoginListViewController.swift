@@ -1129,6 +1129,7 @@ extension AutofillLoginListViewController {
         tableView.sectionIndexColor = theme.buttonTintColor
 
         decorateNavigationBar()
+        navigationController?.navigationBar.isTranslucent = false
 
         tableView.reloadData()
     }

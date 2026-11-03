@@ -382,11 +382,6 @@ final class ContentBlockingUpdatingTests: XCTestCase {
     }
 
     @MainActor
-    func testWhenFireClearsPendingGeolocationDocumentValidationThenWebViewIsReleased() async throws {
-        try await assertPendingGeolocationEvaluationIsReleased(stage: .currentDocument) { $0.prepareForDataClearing() }
-    }
-
-    @MainActor
     func testWhenTabClosesBeforeGeolocationPolicyResumesThenDocumentValidationDoesNotStart() async throws {
         try await assertPendingGeolocationEvaluationIsReleased(stage: .completedPolicy) { $0.closeSitePermissions() }
     }
@@ -418,18 +413,15 @@ final class ContentBlockingUpdatingTests: XCTestCase {
             webView.onDeinit { released.fulfill() }
             let script = GeolocationUserScript()
             tab.configureSitePermissionsGeolocation(with: script)
-            let controller = webView.configuration.userContentController
             let frame = WKFrameInfo.mock(isMainFrame: true, securityOriginHost: "example.com", webView: webView)
             let message = MockWKScriptMessageObject(webView: webView, frameInfo: frame, body: [
-                "kind": "registerFrame",
                 "capability": GeolocationUserScript.capabilityToken,
-                "nonce": String(repeating: "a", count: 32),
                 "documentID": String(repeating: "b", count: 32)
             ]).scriptMessage
             // The message and frame mocks hold the WebView weakly; the request must not capture the tab.
             let request = Task { @MainActor in
-                let response = await script.userContentController(controller, didReceive: message)
-                XCTAssertEqual((response.0 as? [String: Any])?["code"] as? Int,
+                let response = await script.handle(.getCurrentPosition, body: message.body as? [String: Any] ?? [:], message: message)
+                XCTAssertEqual(response["code"] as? Int,
                                GeolocationPositionError.Code.permissionDenied.rawValue)
                 replies += 1
                 replied.fulfill()
@@ -454,7 +446,7 @@ final class ContentBlockingUpdatingTests: XCTestCase {
             XCTAssertEqual(decisions, [.cancel])
             XCTAssertTrue(tab.sitePermissionsState.contentBlockingWaitTasks.isEmpty)
             if stage == .completedPolicy {
-                XCTAssertEqual(evaluation.currentDocumentEvaluationCount, 0)
+                XCTAssertEqual(evaluation.laterEvaluationCount, 0)
             }
             return request
         }
@@ -556,9 +548,20 @@ final class ContentBlockingUpdatingTests: XCTestCase {
     }
 
     @MainActor
-    func testGeolocationUserScriptIsRegisteredOnlyWhenSitePermissionsIsSupported() async throws {
+    func testGeolocationUserScriptIsRegisteredOnlyWhenSitePermissionsIsSupported() throws {
         let sourceProvider = makeScriptSourceProvider()
         let geolocationUserScript = GeolocationUserScript()
+        let capability = try XCTUnwrap(geolocationUserScript.featureSettings["capability"] as? String)
+        // The injected configuration entry, as JSON; the bundle's own code names the feature differently.
+        let policyFeatureEntry = "\"\(GeolocationUserScript.policyFeatureName)\":{"
+
+        /// Whether the content-scope scripts carry the settings that activate geolocation in each world.
+        func geolocationFeatures(in scripts: UserScripts) -> (page: Bool, isolated: Bool) {
+            XCTAssertFalse(scripts.contentScopeUserScript.source.contains(policyFeatureEntry), "The policy feature runs only in the isolated world")
+            XCTAssertFalse(scripts.contentScopeUserScriptIsolated.source.contains(capability), "The page capability stays out of the isolated world")
+            return (scripts.contentScopeUserScript.source.contains(capability),
+                    scripts.contentScopeUserScriptIsolated.source.contains(policyFeatureEntry))
+        }
 
         let disabledScripts = UserScripts(
             with: sourceProvider,
@@ -568,8 +571,7 @@ final class ContentBlockingUpdatingTests: XCTestCase {
             sponsorBlockPreferences: sponsorBlockPreferences
         )
         XCTAssertNil(disabledScripts.geolocationUserScript)
-        XCTAssertFalse(disabledScripts.userScripts.contains { $0 is GeolocationUserScript })
-        XCTAssertFalse(disabledScripts.userScripts.contains { $0 is GeolocationPolicyUserScript })
+        XCTAssertTrue(geolocationFeatures(in: disabledScripts) == (false, false))
 
         let enabledScripts = UserScripts(
             with: sourceProvider,
@@ -579,16 +581,9 @@ final class ContentBlockingUpdatingTests: XCTestCase {
             sponsorBlockPreferences: sponsorBlockPreferences
         )
         XCTAssertTrue(enabledScripts.geolocationUserScript === geolocationUserScript)
-        XCTAssertTrue(enabledScripts.userScripts.contains { ($0 as? GeolocationUserScript) === geolocationUserScript })
-        let pageIndex = try XCTUnwrap(enabledScripts.userScripts.firstIndex { $0 === geolocationUserScript })
-        let policyIndex = try XCTUnwrap(enabledScripts.userScripts.firstIndex { $0 === geolocationUserScript.policyScript })
-        XCTAssertEqual(policyIndex + 1, pageIndex)
-        let wkScripts = await enabledScripts.loadWKUserScripts()
-        XCTAssertEqual(wkScripts.count, enabledScripts.userScripts.count)
-        XCTAssertEqual(wkScripts[policyIndex].source, geolocationUserScript.policyScript.makeWKUserScriptSync().source)
-        XCTAssertEqual(wkScripts[pageIndex].source, geolocationUserScript.makeWKUserScriptSync().source)
-        XCTAssertEqual(geolocationUserScript.policyScript.getContentWorld(), .defaultClient)
-        XCTAssertEqual(geolocationUserScript.getContentWorld(), .page)
+        XCTAssertTrue(geolocationFeatures(in: enabledScripts) == (true, true))
+        XCTAssertTrue(enabledScripts.contentScopeUserScript.allowedNonisolatedFeatures.contains(GeolocationUserScript.featureNameValue))
+        XCTAssertTrue(geolocationUserScript.broker === enabledScripts.contentScopeUserScript.broker)
 
         let nonTabScripts = UserScripts(
             with: sourceProvider,
@@ -596,8 +591,22 @@ final class ContentBlockingUpdatingTests: XCTestCase {
             sponsorBlockPreferences: sponsorBlockPreferences
         )
         XCTAssertNil(nonTabScripts.geolocationUserScript)
-        XCTAssertFalse(nonTabScripts.userScripts.contains { $0 is GeolocationUserScript })
-        XCTAssertFalse(nonTabScripts.userScripts.contains { $0 is GeolocationPolicyUserScript })
+        XCTAssertTrue(geolocationFeatures(in: nonTabScripts) == (false, false))
+    }
+
+    @MainActor
+    func testMediaCaptureFeatureIsConfiguredOnlyForTabScripts() throws {
+        let sourceProvider = makeScriptSourceProvider()
+        let mediaCaptureUserScript = MediaCaptureUserScript()
+        let capability = try XCTUnwrap(mediaCaptureUserScript.featureSettings["capability"] as? String)
+
+        let tabScripts = UserScripts(with: sourceProvider, mediaCaptureUserScript: mediaCaptureUserScript)
+        XCTAssertTrue(tabScripts.contentScopeUserScript.source.contains(capability))
+        XCTAssertTrue(tabScripts.contentScopeUserScript.allowedNonisolatedFeatures.contains(MediaCaptureUserScript.featureNameValue))
+        XCTAssertTrue(mediaCaptureUserScript.broker === tabScripts.contentScopeUserScript.broker)
+
+        let nonTabScripts = UserScripts(with: sourceProvider)
+        XCTAssertFalse(nonTabScripts.contentScopeUserScript.source.contains(capability))
     }
 
     /// The site permissions navigation wait has no deadline, so every bundle must carry the geolocation script
@@ -885,13 +894,13 @@ final class ContentBlockingUpdatingTests: XCTestCase {
 private final class SuspendedGeolocationEvaluation {
     enum Stage {
         case policy
-        case currentDocument
         case completedPolicy
     }
 
     let stage: Stage
     let started: XCTestExpectation
-    var currentDocumentEvaluationCount = 0
+    /// Counts evaluations after the policy, such as deliveries to the page.
+    var laterEvaluationCount = 0
     var completion: (@MainActor @Sendable (Any?, Error?) -> Void)?
 
     init(stage: Stage, started: XCTestExpectation) {
@@ -900,14 +909,14 @@ private final class SuspendedGeolocationEvaluation {
     }
 
     var policy: [String: Any] {
-        ["documentID": String(repeating: "c", count: 32),
+        ["documentID": String(repeating: "c", count: 32), "pageDocumentID": String(repeating: "b", count: 32),
          "isSecureContext": true, "isSandboxed": false, "isPolicyAllowed": true]
     }
 
     func complete() {
         let callback = completion
         completion = nil
-        callback?(stage == .currentDocument ? String(repeating: "b", count: 32) : policy, nil)
+        callback?(policy, nil)
     }
 }
 
@@ -922,25 +931,16 @@ private final class SuspendedGeolocationWebView: WKWebView {
                                         inFrame frame: WKFrameInfo?,
                                         in contentWorld: WKContentWorld,
                                         completionHandler: (@MainActor @Sendable (Any?, Error?) -> Void)?) {
-        if evaluation.stage == .currentDocument {
-            completionHandler?(evaluation.policy, nil)
-        } else {
-            evaluation.completion = completionHandler
-            evaluation.started.fulfill()
-        }
+        evaluation.completion = completionHandler
+        evaluation.started.fulfill()
     }
 
     override func __evaluateJavaScript(_ javaScriptString: String,
                                        inFrame frame: WKFrameInfo?,
                                        in contentWorld: WKContentWorld,
                                        completionHandler: (@MainActor @Sendable (Any?, Error?) -> Void)?) {
-        evaluation.currentDocumentEvaluationCount += 1
-        if evaluation.stage == .currentDocument {
-            evaluation.completion = completionHandler
-            evaluation.started.fulfill()
-        } else {
-            completionHandler?(String(repeating: "b", count: 32), nil)
-        }
+        evaluation.laterEvaluationCount += 1
+        completionHandler?(true, nil)
     }
 }
 

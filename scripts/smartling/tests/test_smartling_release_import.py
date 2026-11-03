@@ -84,11 +84,6 @@ IMPORT_STUB = """#!/bin/bash
 cp "$STUB_DIR/imported.strings" iOS/App/de.lproj/Localizable.strings
 """
 
-INTEGRITY_STUB = """#!/bin/bash
-echo "integrity $*" >> "$STUB_DIR/loc_tool.log"
-exit "$(cat "$STUB_DIR/integrity_exit_code")"
-"""
-
 
 def write_executable(path: Path, content: str):
     path.write_text(content, encoding='utf-8')
@@ -136,7 +131,6 @@ class ReleaseImportScriptTests(unittest.TestCase):
         shutil.copy(SCRIPT_PATH, smartling_dir / SCRIPT_PATH.name)
         write_executable(smartling_dir / 'loc_tool.sh', LOC_TOOL_STUB)
         write_executable(smartling_dir / 'smartling_import.sh', IMPORT_STUB)
-        write_executable(smartling_dir / 'check_translation_integrity.py', INTEGRITY_STUB)
         (self.repo / 'iOS' / 'scripts').mkdir(parents=True)
         write_executable(self.repo / 'iOS' / 'scripts' / 'loc_export.sh', EXPORT_STUB)
         (self.repo / 'iOS' / '.gitignore').write_text('scripts/assets\n', encoding='utf-8')
@@ -154,14 +148,13 @@ class ReleaseImportScriptTests(unittest.TestCase):
         git(self.repo, 'push', '-q', 'origin', 'HEAD')
 
     def run_import(self, *args, release_branch=RELEASE_BRANCH, existing_pr='', imported='"a" = "A";\n"b" = "B";\n"c" = "C";\n',
-                   integrity_passes=True, release_status=None, refresh_passes=True, task_url=TRANSLATIONS_TASK_URL,
+                   release_status=None, refresh_passes=True, task_url=TRANSLATIONS_TASK_URL,
                    expected_exit_code=0):
         (self.stub_dir / 'existing_pr').write_text(existing_pr, encoding='utf-8')
         (self.stub_dir / 'release_status.json').write_text(json.dumps(release_status or READY), encoding='utf-8')
         (self.stub_dir / 'refresh_exit_code').write_text('0' if refresh_passes else '1', encoding='utf-8')
         (self.stub_dir / 'loc_tool.log').write_text('', encoding='utf-8')
         (self.stub_dir / 'imported.strings').write_text(imported, encoding='utf-8')
-        (self.stub_dir / 'integrity_exit_code').write_text('0' if integrity_passes else '1', encoding='utf-8')
         output_file = self.stub_dir / 'github_output'
         output_file.write_text('', encoding='utf-8')
         git(self.repo, 'checkout', '-q', RELEASE_BRANCH)
@@ -219,7 +212,7 @@ class ReleaseImportScriptTests(unittest.TestCase):
         self.assertEqual(outputs['outcome'], 'pr_opened')
         self.assertEqual(outputs['job_url'], READY['job_url'])
         self.assertIn(f"[Release iOS 0.1.0]({READY['job_url']})", self.body(0))
-        self.assertIn('Integrity check: passed', self.body(0))
+        self.assertNotIn('Integrity check', self.body(0))
         self.assertEqual(git(self.repo, 'show', '--name-only', '--format=', IMPORT_BRANCH), STRINGS_PATH)
 
     def testWhenReimportFollowsAMergedPullRequestThenANewOneIsOpened(self):
@@ -228,25 +221,19 @@ class ReleaseImportScriptTests(unittest.TestCase):
         self.assertEqual(outputs['outcome'], 'pr_opened')
         self.assertEqual(outputs['pr_url'], 'https://github.com/duckduckgo/apple-browsers/pull/100')
 
-    def testWhenReimportUpdatesAnOpenPullRequestThenItsDescriptionShowsTheNewIntegrityResult(self):
+    def testWhenReimportUpdatesAnOpenPullRequestThenItsDescriptionAndTranslationsAreUpdated(self):
         first = self.run_import()
         self.assertEqual(first['outcome'], 'pr_opened')
-        self.assertIn('Integrity check: passed', self.body(0))
 
         second = self.run_import(
             '--reimport',
             existing_pr=f"OPEN {first['pr_url']}",
-            imported='"a" = "A";\n',
-            integrity_passes=False
+            imported='"a" = "A";\n'
         )
 
         self.assertEqual(second['outcome'], 'pr_updated')
-        self.assertEqual(second['integrity'], 'issues_found')
         self.assertIn(f"pr edit {first['pr_url']} --body-file", '\n'.join(self.gh_calls()))
         self.assertEqual(sum(call.startswith('pr create') for call in self.gh_calls()), 1)
-        updated_body = self.body(1)
-        self.assertIn('found deleted or much shorter translations', updated_body)
-        self.assertNotIn('Integrity check: passed', updated_body)
         self.assertEqual(
             git(self.repo, '--git-dir', str(self.origin), 'show', f'{IMPORT_BRANCH}:{STRINGS_PATH}'),
             '"a" = "A";'
@@ -263,7 +250,6 @@ class ReleaseImportScriptTests(unittest.TestCase):
             f'refresh-files --file-uri-prefix {REFRESH_PREFIX} --files {EXPORTED_XLIFF} {ENGLISH_STRINGSDICT}'
         )
         self.assertIn(f'--file-uris {REFRESH_PREFIX}/en.xliff {REFRESH_PREFIX}/Localizable.stringsdict', calls[2])
-        self.assertTrue(any(call.startswith('integrity') for call in calls))
 
     def testWhenTheExportChangesTrackedFilesThenOnlyTheImportedTranslationsAreCommitted(self):
         outputs = self.run_import()
@@ -316,7 +302,6 @@ class ReleaseImportScriptTests(unittest.TestCase):
             outputs['jobs_awaiting_authorization'],
             '- [keyChange](https://j/1) (created 2025-04-04)\n- [pau/feature](https://j/2)'
         )
-        self.assertEqual(outputs['integrity'], '')
 
     def testWhenTheDownloadFailsThenTheOutcomeIsAnError(self):
         (self.stub_dir / 'download_fails').touch()
@@ -334,7 +319,6 @@ class ReleaseImportScriptTests(unittest.TestCase):
 
         self.assertEqual(outputs['outcome'], 'error')
         self.assertIn('Failed at line', outputs['reason'])
-        self.assertEqual(outputs['integrity'], 'passed')
 
     def testWhenThePullRequestIsOpenedThenItsDescriptionLinksTheTranslationsTaskAndTheTechDesign(self):
         self.run_import()

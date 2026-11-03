@@ -416,6 +416,10 @@ public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
     /// https://app.asana.com/0/0/1219207880593588/f
     case unifiedToggleInputPastedText
 
+    /// Sweeps a stroke along the keyboard's top edge when it comes up for the native Duck.ai input.
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1220139278590013
+    case unifiedToggleInputKeyboardEdgeSweep
+
     /// Controls the attachment privacy disclosure in Duck.ai on iPad.
     case iPadAttachmentPrivacy
 
@@ -791,6 +795,8 @@ public enum SyncPromotionSubfeature: String, PrivacySubfeature {
     public var parent: PrivacyFeature { .syncPromotion }
     case bookmarks
     case passwords
+    case syncAnotherDevice
+    case redesign
 }
 
 public enum HTMLHistoryPageSubfeature: String, Equatable, PrivacySubfeature {

@@ -385,6 +385,21 @@
 /* Title for the New Tab row in the Duck.ai tab header Plus (+) menu */
 "aichat.header.plusMenu.newTab" = "Jauna cilne";
 
+/* Section header in the Duck.ai tab header Plus (+) menu; every row below it opens a new tab */
+"aichat.header.plusMenu.newTabSection" = "Jauna cilne";
+
+/* Row in the New Tab section of the Duck.ai tab header Plus (+) menu — opens a new Duck.ai chat in a new tab */
+"aichat.header.plusMenu.newTabSection.chat" = "Tērzēšana";
+
+/* Row in the New Tab section of the Duck.ai tab header Plus (+) menu — opens Duck.ai in image generation mode in a new tab */
+"aichat.header.plusMenu.newTabSection.image" = "Attēls";
+
+/* Row in the Duck.ai tab header Plus (+) menu — opens a new tab in search mode */
+"aichat.header.plusMenu.newTabSection.search" = "Meklēšana";
+
+/* Row in the New Tab section of the Duck.ai tab header Plus (+) menu — opens a new Duck.ai voice chat in a new tab */
+"aichat.header.plusMenu.newTabSection.voiceChat" = "Balss tērzēšana";
+
 /* Title for the New Voice Chat row in the Duck.ai tab header Plus (+) menu */
 "aichat.header.plusMenu.newVoiceChat" = "Jauna balss tērzēšana";
 
@@ -3300,6 +3315,72 @@
 
 /* No comment provided by engineer. */
 "menu.button.hint" = "Pārlūkošanas izvēlne";
+
+/* iPad menu bar command */
+"menuActualSize" = "Faktiskais izmērs";
+
+/* iPad menu bar command */
+"menuBack" = "Atpakaļ";
+
+/* iPad menu bar command */
+"menuClearTabsAndData" = "Notīrīt cilnes un datus";
+
+/* iPad menu bar command */
+"menuDuplicateTab" = "Dublēt cilni";
+
+/* iPad menu bar command */
+"menuFeedback" = "Kopīgot atsauksmi";
+
+/* iPad menu bar command */
+"menuForward" = "Uz priekšu";
+
+/* iPad menu bar command */
+"menuHideDownloads" = "Paslēpt lejupielādes";
+
+/* iPad menu bar command */
+"menuHidePasswords" = "Paslēpt paroles";
+
+/* iPad menu bar command */
+"menuHideTabs" = "Paslēpt cilnes";
+
+/* iPad menu bar command */
+"menuLastTab" = "Pēdējā cilne";
+
+/* iPad menu bar command */
+"menuNewTabOnRight" = "Jauna cilne pa labi";
+
+/* iPad menu bar command */
+"menuNextTab" = "Rādīt nākamo cilni";
+
+/* iPad menu bar command */
+"menuOpenLocation" = "Atvērt atrašanās vietu…";
+
+/* iPad menu bar command */
+"menuPreviousTab" = "Rādīt iepriekšējo cilni";
+
+/* iPad menu bar command */
+"menuPrint" = "Drukāt…";
+
+/* iPad menu bar command selecting a numbered tab */
+"menuSelectTab" = "Atlasīt cilni %d";
+
+/* iPad menu bar command */
+"menuSettings" = "DuckDuckGo iestatījumi…";
+
+/* iPad menu bar command */
+"menuShowDownloads" = "Rādīt lejupielādes";
+
+/* iPad menu bar command */
+"menuShowPasswords" = "Rādīt paroles";
+
+/* iPad menu bar command */
+"menuShowTabs" = "Rādīt cilnes";
+
+/* iPad menu bar command */
+"menuStop" = "Stop";
+
+/* iPad menu bar command */
+"menuVoiceSearch" = "Privātā balss meklēšana";
 
 /* No comment provided by engineer. */
 "Message" = "Ziņojums";

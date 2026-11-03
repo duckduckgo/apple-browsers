@@ -44,6 +44,9 @@ struct UserText {
     static let chromeWebStoreUnsupportedMessage = NotLocalizedString("webExtensions.store.error.unsupported", value: "This extension requires features that DuckDuckGo does not support.", comment: "Unsupported extension explanation")
     static let chromeWebStoreInvalidPackageMessage = NotLocalizedString("webExtensions.store.error.invalid", value: "The extension’s identity or downloaded package could not be verified.", comment: "Extension verification failure explanation")
     static let betaBadge = NotLocalizedString("webExtensions.settings.beta-badge", value: "Beta", comment: "Copy of badge used to indicate the Extensions settings are in beta")
+    static let autofillManagedByExtensionTitle = NotLocalizedString("webExtensions.autofill.managed-by-extension.title", value: "Extensions are managing your passwords", comment: "Title of the notice shown in Passwords & Autofill settings when a password manager extension has taken over autofill")
+    static let autofillManagedByExtensionMessage = NotLocalizedString("webExtensions.autofill.managed-by-extension.message", value: "DuckDuckGo's built-in autofill is turned off when password manager extensions are in use.", comment: "Body of the notice shown in Passwords & Autofill settings when a password manager extension has taken over autofill")
+    static let autofillManagedByExtensionManageButton = NotLocalizedString("webExtensions.autofill.managed-by-extension.manage-button", value: "Manage Extensions", comment: "Button in Passwords & Autofill settings that opens the Extensions settings pane")
     static let extensionsSettingsTitle = NotLocalizedString("webExtensions.settings.title", value: "Extensions", comment: "Title of the option to show the Extensions settings")
     static let extensionsSettingsDescription = NotLocalizedString("webExtensions.settings.description", value: "Customize your browsing experience with supported third-party extensions. %@", comment: "Description of the Extensions settings; the placeholder is a Learn more link")
     static let extensionsSettingsLearnMore = NotLocalizedString("webExtensions.settings.learn-more", value: "Learn more", comment: "Link in the Extensions settings description")
@@ -99,6 +102,8 @@ struct UserText {
     static let webExtensionInstallTitle = NotLocalizedString("webExtensions.install.title", value: "Add “%@”?", comment: "Extension installation title; placeholder is the extension name")
     static let webExtensionPermissionTitle = NotLocalizedString("webExtensions.permissions.title", value: "Allow “%@” additional access?", comment: "Extension permissions title; placeholder is the extension name")
     static let webExtensionUnnamedExtension = NotLocalizedString("webExtensions.unnamed", value: "Extension", comment: "Fallback for an unnamed web extension")
+    static let webExtensionAddedTitle = NotLocalizedString("webExtensions.added.title", value: "“%@” added!", comment: "Popover title shown by a newly installed extension's toolbar button; placeholder is the extension name")
+    static let webExtensionAddedMessage = NotLocalizedString("webExtensions.added.message", value: "You can access this extension from here. We've also turned off DuckDuckGo's built-in autofill.", comment: "Popover message shown by a newly installed extension's toolbar button")
     static let webExtensionPermissionExplanation = NotLocalizedString("webExtensions.permissions.explanation", value: "It can:", comment: "Introduction to extension permission list")
     static let webExtensionNoPermissions = NotLocalizedString("webExtensions.permissions.none", value: "No additional permissions requested.", comment: "Extension requests no permissions")
     static let webExtensionInstall = NotLocalizedString("webExtensions.install.button", value: "Add Extension", comment: "Approve extension installation")
@@ -375,6 +380,7 @@ struct UserText {
     static let mainMenuHistoryRecentlyClosed = NSLocalizedString("Recently Closed", comment: "Main Menu History item")
     static let mainMenuHistoryShowAllHistory = NSLocalizedString("Show All History…", comment: "Main Menu History item")
     static let mainMenuHistoryDeleteAllHistory = NSLocalizedString("Delete All History…", comment: "Main Menu History item")
+    static let mainMenuHistoryImportHistory = NSLocalizedString("main-menu.history.import-history", value: "Import History…", comment: "Main Menu History item that opens the Import Browser Data dialog")
     static let mainMenuHistoryManageBookmarks = NSLocalizedString("Manage Bookmarks", comment: "Main Menu History item")
     static let mainMenuHistoryFavoriteThisPage = NSLocalizedString("Favorite This Page…", comment: "Main Menu History item")
     static let mainMenuHistoryReopenAllWindowsFromLastSession = NSLocalizedString("Reopen All Windows and Tabs From Last Session", comment: "Main Menu History item")
@@ -1186,15 +1192,6 @@ struct UserText {
     static let autofillPasswordManagerBitwarden = NSLocalizedString("autofill.password-manager.bitwarden", value: "Bitwarden", comment: "Autofill password manager row title")
     static let autofillPasswordManagerBitwardenExtension = NSLocalizedString("autofill.password-manager.bitwarden.extension", value: "Bitwarden Extension", comment: "Autofill password manager row title")
     static let autofillPasswordManagerBitwardenDisclaimer = NSLocalizedString("autofill.password-manager.bitwarden.disclaimer", value: "Setup requires installing the Bitwarden app.", comment: "Autofill password manager Bitwarden disclaimer")
-    static func autofillManagedByExtension(_ extensionName: String) -> String {
-        let format = NSLocalizedString("autofill.managed-by-extension", value: "Managed by %@", comment: "Autofill settings: an installed browser extension, named in the parameter, manages the user's passwords, addresses and credit cards instead of DuckDuckGo")
-        return String(format: format, extensionName)
-    }
-    static func autofillManagedByExtensionExplanation(_ extensionName: String) -> String {
-        let format = NotLocalizedString("autofill.managed-by-extension.explanation", value: "%@ saves and fills your passwords, addresses and credit cards instead of DuckDuckGo.", comment: "Autofill settings: the parameter is the name of a browser extension that manages the user's passwords, addresses and credit cards instead of DuckDuckGo")
-        return String(format: format, extensionName)
-    }
-    static let autofillUseDuckDuckGoInstead = NSLocalizedString("autofill.use-duckduckgo-instead", value: "Use DuckDuckGo Instead", comment: "Autofill settings button: DuckDuckGo takes back saving and filling passwords, addresses and credit cards from a browser extension")
     static let restartBitwarden = NSLocalizedString("restart.bitwarden", value: "Restart Bitwarden", comment: "Button to restart Bitwarden application")
     static let restartBitwardenInfo = NSLocalizedString("restart.bitwarden.info", value: "Bitwarden is not responding. Please restart it to initiate the communication again", comment: "This string represents a message informing the user that Bitwarden is not responding and prompts them to restart the application to initiate communication again.")
 

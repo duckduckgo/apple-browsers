@@ -47,6 +47,43 @@ final class AppLaunchUITests: UITestCase {
         assertToolbarActionAfterDismissal(floating: true, editing: true)
     }
 
+    func testReadinessRejectsMissingAndDisabledControlsWithoutTapping() {
+        app.dismissAddressBarEditing()
+        let missing = app.buttons["Readiness.Test.Missing"]
+        XCTAssertFalse(missing.waitForHittableInAppWindow(in: app, timeout: 0.3))
+
+        let tabSwitcher = app.buttons["Browser.Toolbar.Button.TabSwitcher"]
+        XCTAssertTrue(tabSwitcher.waitForHittableInAppWindow(in: app, timeout: UITestTimeouts.elementExistence))
+        XCTAssertFalse(app.buttons["TabSwitcher.Button.Done"].exists, "A readiness wait must not tap its target.")
+        app.openTabSwitcher()
+        app.assertTabCount(1)
+        let edit = app.buttons["TabSwitcher.Button.Edit"]
+        XCTAssertTrue(edit.exists)
+        XCTAssertFalse(edit.isEnabled, "Editing must be disabled for the single empty tab.")
+        XCTAssertFalse(edit.waitForHittableInAppWindow(in: app, timeout: 0.3))
+        XCTAssertTrue(app.buttons["TabSwitcher.Button.Done"].exists)
+        app.assertTabCount(1)
+    }
+
+    func testReadinessInPortraitAndLandscape() {
+        defer { XCUIDevice.shared.orientation = .portrait }
+        for orientation in [UIDeviceOrientation.portrait, .landscapeLeft] {
+            XCUIDevice.shared.orientation = orientation
+            app.dismissAddressBarEditing()
+            let tabSwitcher = app.buttons["Browser.Toolbar.Button.TabSwitcher"]
+            XCTAssertTrue(tabSwitcher.waitForHittableInAppWindow(in: app, timeout: UITestTimeouts.elementExistence))
+            let applicationFrame = app.frame
+            let windowFrame = app.windows.firstMatch.frame
+            let attachment = XCTAttachment(string: "orientation=\(orientation.rawValue)\napplicationFrame=\(applicationFrame)\nselectedWindowFrame=\(windowFrame)")
+            attachment.name = "Readiness application and window geometry"
+            attachment.lifetime = .keepAlways
+            add(attachment)
+            tabSwitcher.tapWhenHittable(in: app)
+            app.assertTabCount(1)
+            app.buttons["TabSwitcher.Button.Done"].tapWhenHittable(in: app)
+        }
+    }
+
     private func assertToolbarActionAfterDismissal(floating: Bool, editing: Bool, file: StaticString = #filePath, line: UInt = #line) {
         app.terminate()
         for index in app.launchArguments.indices where ["-ff.floatingUIiOS26", "-ff.floatingUIiOS27"].contains(app.launchArguments[index]) {
@@ -55,7 +92,7 @@ final class AppLaunchUITests: UITestCase {
         app.launch()
         XCTAssertTrue(app.searchEntry.waitForExistence(timeout: UITestTimeouts.navigation), file: file, line: line)
         if editing {
-            app.searchEntry.tapWhenHittable(file: file, line: line)
+            app.searchEntry.tapWhenHittable(in: app, file: file, line: line)
             XCTAssertTrue(app.keyboards.firstMatch.waitForExistence(timeout: UITestTimeouts.elementExistence), file: file, line: line)
         } else {
             XCTAssertFalse(app.keyboards.firstMatch.exists, file: file, line: line)
@@ -63,7 +100,7 @@ final class AppLaunchUITests: UITestCase {
 
         app.dismissAddressBarEditing(file: file, line: line)
         XCTAssertFalse(app.keyboards.firstMatch.exists, file: file, line: line)
-        app.buttons["Browser.Toolbar.Button.TabSwitcher"].tapWhenHittable(file: file, line: line)
+        app.buttons["Browser.Toolbar.Button.TabSwitcher"].tapWhenHittable(in: app, file: file, line: line)
         XCTAssertTrue(
             app.buttons["TabSwitcher.Button.Done"].waitForExistence(timeout: UITestTimeouts.elementExistence),
             "Tab switcher did not open after address editing dismissal.", file: file, line: line)

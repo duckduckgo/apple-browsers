@@ -157,7 +157,7 @@ extension XCUIApplication {
 
     func openTabSwitcher(file: StaticString = #filePath, line: UInt = #line) {
         dismissAddressBarEditing(file: file, line: line)
-        buttons["Browser.Toolbar.Button.TabSwitcher"].tapWhenHittable(file: file, line: line)
+        buttons["Browser.Toolbar.Button.TabSwitcher"].tapWhenHittable(in: self, file: file, line: line)
         XCTAssertTrue(
             buttons["TabSwitcher.Button.Done"].waitForHittableInAppWindow(in: self, timeout: UITestTimeouts.elementExistence),
             "Tab switcher did not appear.", file: file, line: line)
@@ -165,7 +165,7 @@ extension XCUIApplication {
 
     func openNewTab(file: StaticString = #filePath, line: UInt = #line) {
         openTabSwitcher(file: file, line: line)
-        buttons["TabSwitcher.Button.NewTab"].tapWhenHittable(file: file, line: line)
+        buttons["TabSwitcher.Button.NewTab"].tapWhenHittable(in: self, file: file, line: line)
         XCTAssertTrue(
             searchEntry.wait(for: NSPredicate(format: "isHittable == true"), timeout: UITestTimeouts.elementExistence),
             "Search entry did not appear in the new tab.", file: file, line: line)
@@ -203,38 +203,71 @@ extension XCUIApplication {
 extension XCUIElement {
 
     func waitForHittableInAppWindow(in application: XCUIApplication, timeout: TimeInterval) -> Bool {
-        wait(for: NSPredicate { [self] _, _ in
-            isHittableInAppWindow(in: application)
-        }, timeout: timeout)
+        let observation = waitForAppWindowReadiness(in: application, timeout: timeout)
+        if !observation.ready {
+            let attachment = XCTAttachment(string: "timeout=\(timeout)s, completedPasses=\(observation.passes), lastObservation=\(observation.reason)")
+            attachment.name = "App window readiness timeout"
+            attachment.lifetime = .keepAlways
+            XCTContext.runActivity(named: "Record app window readiness timeout") { activity in
+                activity.add(attachment)
+            }
+        }
+        return observation.ready
     }
 
     func isHittableInAppWindow(in application: XCUIApplication) -> Bool {
-        guard exists else { return false }
+        appWindowReadiness(in: application).ready
+    }
+
+    private func appWindowReadiness(in application: XCUIApplication) -> (ready: Bool, reason: String) {
+        guard exists else { return (false, "not found") }
         let frame = self.frame
         guard frame.origin.x.isFinite, frame.origin.y.isFinite,
               frame.width.isFinite, frame.height.isFinite,
-              frame.width > 0, frame.height > 0 else { return false }
+              frame.width > 0, frame.height > 0 else { return (false, "invalid element geometry: \(frame)") }
 
         let window = application.windows.firstMatch
-        guard window.exists else { return false }
+        guard window.exists else { return (false, "app window not found") }
         let windowFrame = window.frame
-        guard windowFrame.width > 0, windowFrame.height > 0,
-              windowFrame.intersects(frame) else { return false }
-        return isEnabled && isHittable
+        guard windowFrame.origin.x.isFinite, windowFrame.origin.y.isFinite,
+              windowFrame.width.isFinite, windowFrame.height.isFinite,
+              windowFrame.width > 0, windowFrame.height > 0 else { return (false, "invalid app window geometry: \(windowFrame)") }
+        guard windowFrame.intersects(frame) else { return (false, "outside app window: \(frame)") }
+        guard isEnabled else { return (false, "disabled") }
+        let hittable = isHittable
+        return (hittable, hittable ? "ready" : "not hittable (frame: \(frame))")
     }
 
-    func tapWhenHittable(file: StaticString = #filePath, line: UInt = #line) {
-        let predicate = NSPredicate(format: "isHittable == true AND isEnabled == true")
+    private func waitForAppWindowReadiness(in application: XCUIApplication, timeout: TimeInterval) -> (ready: Bool, reason: String, passes: Int) {
+        let deadline = ProcessInfo.processInfo.systemUptime + timeout
+        var lastReason = "no observation before deadline"
+        var passes = 0
+        while ProcessInfo.processInfo.systemUptime < deadline {
+            let observation = appWindowReadiness(in: application)
+            passes += 1
+            lastReason = observation.reason
+            // AX queries can cross the deadline; retain a completed ready observation.
+            if observation.ready { return (true, lastReason, passes) }
+            let remaining = deadline - ProcessInfo.processInfo.systemUptime
+            if remaining > 0 {
+                RunLoop.current.run(until: Date(timeIntervalSinceNow: min(0.1, remaining)))
+            }
+        }
+        return (false, lastReason, passes)
+    }
+
+    func tapWhenHittable(in application: XCUIApplication, file: StaticString = #filePath, line: UInt = #line) {
         let timeout = UITestTimeouts.elementExistence
         let startedAt = ProcessInfo.processInfo.systemUptime
-        let becameTappable = wait(for: predicate, timeout: timeout)
+        let observation = waitForAppWindowReadiness(in: application, timeout: timeout)
         let elapsed = ProcessInfo.processInfo.systemUptime - startedAt
         let timing = """
         source=\(file):\(line)
-        predicate=\(predicate.predicateFormat)
         timeout=\(timeout)s
         elapsed=\(String(format: "%.3f", elapsed))s
-        becameTappable=\(becameTappable)
+        completedPasses=\(observation.passes)
+        becameTappable=\(observation.ready)
+        lastObservation=\(observation.reason)
         """
         let attachment = XCTAttachment(string: timing)
         attachment.name = "Tappability wait timing"
@@ -243,8 +276,9 @@ extension XCUIElement {
             activity.add(attachment)
         }
         XCTAssertTrue(
-            becameTappable,
-            "Element did not become tappable: \(self)", file: file, line: line)
+            observation.ready,
+            "Element did not become tappable: \(observation.reason)", file: file, line: line)
+        guard observation.ready else { return }
         tap()
     }
 }

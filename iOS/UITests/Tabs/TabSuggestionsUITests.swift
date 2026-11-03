@@ -30,13 +30,13 @@ final class TabSuggestionsUITests: UITestCase {
 
         XCTContext.runActivity(named: "Switch to the first tab from autocomplete") { _ in
             app.enterSearchText("privacy")
-            app.descendants(matching: .any)["Autocomplete.Suggestions.ListItem.OpenTab-privacy-test-pages.site"].tapWhenHittable()
+            app.descendants(matching: .any)["Autocomplete.Suggestions.ListItem.OpenTab-privacy-test-pages.site"].tapWhenHittable(in: app)
             app.assertPageContains("Privacy Test Pages")
         }
 
         XCTContext.runActivity(named: "Switch to the second tab from autocomplete") { _ in
             app.enterSearchText("ad click")
-            app.descendants(matching: .any)["Autocomplete.Suggestions.ListItem.OpenTab-search-company.site"].tapWhenHittable()
+            app.descendants(matching: .any)["Autocomplete.Suggestions.ListItem.OpenTab-search-company.site"].tapWhenHittable(in: app)
             app.assertPageContains("Search engine")
         }
 
@@ -54,14 +54,14 @@ final class TabSuggestionsUITests: UITestCase {
 
         XCTContext.runActivity(named: "Switch from the empty tab using autocomplete") { _ in
             app.enterSearchText("privacy")
-            app.descendants(matching: .any)["Autocomplete.Suggestions.ListItem.OpenTab-privacy-test-pages.site"].tapWhenHittable()
+            app.descendants(matching: .any)["Autocomplete.Suggestions.ListItem.OpenTab-privacy-test-pages.site"].tapWhenHittable(in: app)
             app.assertPageContains("Privacy Test Pages")
         }
 
         XCTContext.runActivity(named: "Verify the empty tab was removed") { _ in
             app.openTabSwitcher()
             app.assertTabCount(1)
-            app.tabCell(at: 0).buttons["TabSwitcher.Tab.Open"].tapWhenHittable()
+            app.tabCell(at: 0).buttons["TabSwitcher.Tab.Open"].tapWhenHittable(in: app)
             app.assertPageContains("Privacy Test Pages")
         }
     }

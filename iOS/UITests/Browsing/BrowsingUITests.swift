@@ -38,7 +38,7 @@ final class BrowsingUITests: UITestCase {
 
         XCTContext.runActivity(named: "Load and refresh the test page") { _ in
             app.openURL("https://privacy-test-pages.site", expecting: "Privacy Test Pages")
-            refreshButton.tapWhenHittable()
+            refreshButton.tapWhenHittable(in: app)
             app.assertPageContains("Privacy Test Pages")
         }
     }

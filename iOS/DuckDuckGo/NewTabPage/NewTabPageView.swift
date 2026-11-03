@@ -130,11 +130,15 @@ private extension NewTabPageView {
                                                       isAddressBarAtBottom: content.isAddressBarAtBottom)
                             }
                             .padding(.horizontal, Metrics.updatedNonGridSectionHorizontalPadding)
+                            .modifier(FocusedContentDelayedReveal(isDelayed: content.waitsForLogoFadeOut))
                         } else {
-                            messagesSectionView
-                                .padding(.horizontal, Metrics.updatedNonGridSectionHorizontalPadding)
-                            FavoritesView(model: favoritesViewModel)
-                                .fixedSize(horizontal: false, vertical: true)
+                            Group {
+                                messagesSectionView
+                                    .padding(.horizontal, Metrics.updatedNonGridSectionHorizontalPadding)
+                                FavoritesView(model: favoritesViewModel)
+                                    .fixedSize(horizontal: false, vertical: true)
+                            }
+                            .modifier(FocusedContentDelayedReveal(isDelayed: content.waitsForLogoFadeOut))
                         }
                     }
                     .animation(nil, value: content.recentChats != nil)

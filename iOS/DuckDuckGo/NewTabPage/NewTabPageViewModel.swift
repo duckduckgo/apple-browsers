@@ -29,6 +29,8 @@ struct LegacyFocusedNewTabPageContent {
     var syncPromo: AnyView?
     var isAddressBarAtBottom: Bool
     var onEscapeHatchGeometryChange: ((EmbeddedEscapeHatchGeometry?) -> Void)?
+    /// Read when favorites or recent chats appear: true when a logo leaving on a mode switch must fade out first.
+    var waitsForLogoFadeOut: () -> Bool = { false }
 }
 
 final class NewTabPageViewModel: ObservableObject {

@@ -78,7 +78,8 @@ final class UnifiedSuggestionsHost {
                 recentChats: mode == .aiChat ? viewModel.listViewModel(for: .recents) : nil,
                 syncPromo: syncPromo,
                 isAddressBarAtBottom: isAddressBarAtBottom,
-                onEscapeHatchGeometryChange: { [weak viewModel] in viewModel?.setEmbeddedEscapeHatchGeometry($0) }), escapeHatch: escapeHatch)
+                onEscapeHatchGeometryChange: { [weak viewModel] in viewModel?.setEmbeddedEscapeHatchGeometry($0) },
+                waitsForLogoFadeOut: { [weak viewModel] in viewModel?.waitsForLogoFadeOut ?? false }), escapeHatch: escapeHatch)
         } else {
             if redesignedSearchPresentation == nil {
                 favoritesPresentation.viewController?.setFocusedContent(nil)

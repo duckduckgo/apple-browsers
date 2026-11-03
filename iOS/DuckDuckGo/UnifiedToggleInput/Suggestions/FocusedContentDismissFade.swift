@@ -19,6 +19,16 @@
 
 import SwiftUI
 
+/// Content fades on a mode switch. A leaving logo fades out first and the incoming content appears
+/// once it has gone, so the two never overlap.
+enum FocusedContentFade {
+    static let duration: TimeInterval = 0.15
+    static let fadeOut = Animation.easeOut(duration: duration)
+    static let fadeIn = Animation.easeInOut(duration: duration)
+    /// Shows content at once when the logo has faded out. SwiftUI needs a duration for the delay to hold.
+    static let afterLogoFadeOut = Animation.linear(duration: 0.01).delay(duration)
+}
+
 /// Fades transient content (logo, suggestion list) out as the host collapses back to the NTP, so it
 /// hands off to the NTP content instead of snapping away. Favorites are excluded — they hand off via
 /// the embedded-copy reveal, not a fade.
@@ -31,5 +41,25 @@ struct FocusedContentDismissFade: ViewModifier {
         content
             .opacity(isFadingOut ? 0 : 1)
             .animation(isFadingOut ? .easeInOut(duration: 0.2) : nil, value: isFadingOut)
+    }
+}
+
+/// Content inserted by a mode switch appears once the leaving logo has faded out. Read when the
+/// content is inserted, after the switch has resolved, so a focus or a typing change shows it at once.
+struct FocusedContentDelayedReveal: ViewModifier {
+    @State private var isRevealed: Bool
+
+    init(isDelayed: () -> Bool) {
+        // One-time seed: the content is inserted fresh on each switch.
+        _isRevealed = State(initialValue: !isDelayed())
+    }
+
+    func body(content: Content) -> some View {
+        content
+            .opacity(isRevealed ? 1 : 0)
+            .onAppear {
+                guard !isRevealed else { return }
+                withAnimation(FocusedContentFade.afterLogoFadeOut) { isRevealed = true }
+            }
     }
 }

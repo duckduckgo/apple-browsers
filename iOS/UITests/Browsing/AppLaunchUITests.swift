@@ -31,6 +31,45 @@ final class AppLaunchUITests: UITestCase {
         )
     }
 
+    func testRegularToolbarReadyWithoutKeyboard() {
+        assertToolbarActionAfterDismissal(floating: false, editing: false)
+    }
+
+    func testRegularAddressEditingDismissesKeyboard() {
+        assertToolbarActionAfterDismissal(floating: false, editing: true)
+    }
+
+    func testFloatingToolbarReadyWithoutKeyboard() {
+        assertToolbarActionAfterDismissal(floating: true, editing: false)
+    }
+
+    func testFloatingAddressEditingDismissesKeyboard() {
+        assertToolbarActionAfterDismissal(floating: true, editing: true)
+    }
+
+    private func assertToolbarActionAfterDismissal(floating: Bool, editing: Bool, file: StaticString = #filePath, line: UInt = #line) {
+        app.terminate()
+        for index in app.launchArguments.indices where ["-ff.floatingUIiOS26", "-ff.floatingUIiOS27"].contains(app.launchArguments[index]) {
+            app.launchArguments[index + 1] = String(floating)
+        }
+        app.launch()
+        XCTAssertTrue(app.searchEntry.waitForExistence(timeout: UITestTimeouts.navigation), file: file, line: line)
+        if editing {
+            app.searchEntry.tapWhenHittable(file: file, line: line)
+            XCTAssertTrue(app.keyboards.firstMatch.waitForExistence(timeout: UITestTimeouts.elementExistence), file: file, line: line)
+        } else {
+            XCTAssertFalse(app.keyboards.firstMatch.exists, file: file, line: line)
+        }
+
+        app.dismissAddressBarEditing(file: file, line: line)
+        XCTAssertFalse(app.keyboards.firstMatch.exists, file: file, line: line)
+        app.buttons["Browser.Toolbar.Button.TabSwitcher"].tapWhenHittable(file: file, line: line)
+        XCTAssertTrue(
+            app.buttons["TabSwitcher.Button.Done"].waitForExistence(timeout: UITestTimeouts.elementExistence),
+            "Tab switcher did not open after address editing dismissal.", file: file, line: line)
+        app.assertTabCount(1, file: file, line: line)
+    }
+
     func testSlideToDeleteRequiresCompletedDrag() {
         app.terminate()
         app.launchArguments += ["-ff.slideToDelete", "true", "-ff.fireMode", "true", "-ff.fireButtonRefinements", "true"]

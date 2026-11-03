@@ -67,37 +67,92 @@ extension XCUIApplication {
     }
 
     func dismissAddressBarEditing(file: StaticString = #filePath, line: UInt = #line) {
-        let dismissButtons = buttons.matching(NSPredicate(format: "identifier IN %@", [
-            "Browser.OmniBar.Button.Dismiss", "UnifiedToggleInput.Button.Dismiss"
-        ]))
-        let activeDismissButton = {
-            dismissButtons.allElementsBoundByIndex.first { $0.isHittableInAppWindow(in: self) }
+        let timeout: TimeInterval = 20
+        let startedAt = ProcessInfo.processInfo.systemUptime
+        let deadline = startedAt + timeout
+        var completedPasses = 0
+        var passElapsed: TimeInterval = 0
+        var lastSummary = "No completed pass; keyboard/tabSwitcher/menu: not-evaluated."
+        let ready = XCTContext.runActivity(named: "Dismiss address editing and wait for browser controls") { activity -> Bool in
+            var succeeded = false
+            while ProcessInfo.processInfo.systemUptime < deadline {
+                let passStartedAt = ProcessInfo.processInfo.systemUptime
+                let observation = observeAddressBarEditing()
+                completedPasses += 1
+                passElapsed = ProcessInfo.processInfo.systemUptime - passStartedAt
+                lastSummary = observation.summary
+                // Accept a completed ready observation even if its AX queries crossed the polling deadline.
+                if observation.toolbarReady {
+                    succeeded = true
+                    break
+                }
+                guard ProcessInfo.processInfo.systemUptime < deadline else { break }
+                if let dismissButton = observation.dismissButton, dismissButton.exists {
+                    guard ProcessInfo.processInfo.systemUptime < deadline else { break }
+                    dismissButton.tap()
+                    continue
+                }
+                let remaining = deadline - ProcessInfo.processInfo.systemUptime
+                if remaining > 0 {
+                    RunLoop.current.run(until: Date(timeIntervalSinceNow: min(0.1, remaining)))
+                }
+            }
+            let elapsed = ProcessInfo.processInfo.systemUptime - startedAt
+            let timing = XCTAttachment(string: "timeout=\(timeout)s, elapsed=\(String(format: "%.3f", elapsed))s, completedPasses=\(completedPasses), ready=\(succeeded), passElapsed=\(String(format: "%.3f", passElapsed))s\n\(lastSummary)")
+            timing.name = "Address editing dismissal readiness"
+            timing.lifetime = .keepAlways
+            activity.add(timing)
+            return succeeded
         }
-        let menuButtons = buttons.matching(NSPredicate(format: "identifier IN %@", [
-            "Browser.Toolbar.Button.Menu", "Browser.OmniBar.Button.BrowsingMenu"
-        ]))
-        let tabSwitcher = buttons["Browser.Toolbar.Button.TabSwitcher"]
-        let toolbarIsReady = NSPredicate { _, _ in
-            !self.keyboards.firstMatch.exists &&
-                activeDismissButton() == nil &&
-                tabSwitcher.isHittableInAppWindow(in: self) &&
-                menuButtons.allElementsBoundByIndex.contains { $0.isHittableInAppWindow(in: self) }
+        XCTAssertTrue(ready, "Browser controls did not become ready within \(timeout)s after dismissing address-bar editing.\n\(lastSummary)", file: file, line: line)
+    }
+
+    private func observeAddressBarEditing() -> (dismissButton: XCUIElement?, toolbarReady: Bool, summary: String) {
+        let window = windows.firstMatch
+        guard window.exists else {
+            return (nil, false, "window: not found; dismiss/keyboard/tabSwitcher/menu: not-evaluated")
         }
-        // Hidden toolbar controls can remain exposed beneath the address-input overlay.
-        let inputOrToolbarIsReady = NSPredicate { _, _ in
-            activeDismissButton() != nil || toolbarIsReady.evaluate(with: self)
+        let windowFrame = window.frame
+        guard windowFrame.origin.x.isFinite, windowFrame.origin.y.isFinite,
+              windowFrame.width.isFinite, windowFrame.height.isFinite,
+              windowFrame.width > 0, windowFrame.height > 0 else {
+            return (nil, false, "window: invalid geometry \(windowFrame); dismiss/keyboard/tabSwitcher/menu: not-evaluated")
         }
-        guard wait(for: inputOrToolbarIsReady, timeout: UITestTimeouts.elementExistence) else {
-            XCTFail("Neither address-input dismissal nor browser controls became available.", file: file, line: line)
-            return
-        }
-        if let dismissButton = activeDismissButton() {
-            dismissButton.tap()
+        func readiness(of element: XCUIElement) -> (ready: Bool, reason: String) {
+            guard element.exists else { return (false, "not found") }
+            let frame = element.frame
+            guard frame.origin.x.isFinite, frame.origin.y.isFinite,
+                  frame.width.isFinite, frame.height.isFinite,
+                  frame.width > 0, frame.height > 0, windowFrame.intersects(frame) else {
+                return (false, "invalid/off-screen geometry: \(frame)")
+            }
+            guard element.isEnabled else { return (false, "disabled") }
+            let hittable = element.isHittable
+            return (hittable, hittable ? "ready" : "not hittable (frame: \(frame))")
         }
 
-        XCTAssertTrue(
-            wait(for: toolbarIsReady, timeout: UITestTimeouts.elementExistence),
-            "Browser controls did not appear after dismissing address-bar editing.", file: file, line: line)
+        var summary = "window: ready (frame: \(windowFrame))"
+        for identifier in ["Browser.OmniBar.Button.Dismiss", "UnifiedToggleInput.Button.Dismiss"] {
+            let button = buttons[identifier]
+            let result = readiness(of: button)
+            summary += "\n\(identifier): \(result.reason)"
+            if result.ready { return (button, false, summary + "\nkeyboard/tabSwitcher/menu: not-evaluated") }
+        }
+        let keyboardExists = keyboards.firstMatch.exists
+        summary += "\nkeyboardExists: \(keyboardExists)"
+        guard !keyboardExists else { return (nil, false, summary + "\ntabSwitcher/menu: not-evaluated") }
+        let tabSwitcher = readiness(of: buttons["Browser.Toolbar.Button.TabSwitcher"])
+        summary += "\ntabSwitcher: \(tabSwitcher.reason)"
+        guard tabSwitcher.ready else { return (nil, false, summary + "\nmenu: not-evaluated") }
+        let menuIdentifiers = UIDevice.current.userInterfaceIdiom == .pad
+            ? ["Browser.OmniBar.Button.BrowsingMenu", "Browser.Toolbar.Button.Menu"]
+            : ["Browser.Toolbar.Button.Menu", "Browser.OmniBar.Button.BrowsingMenu"]
+        for identifier in menuIdentifiers {
+            let result = readiness(of: buttons[identifier])
+            summary += "\n\(identifier): \(result.reason)"
+            if result.ready { return (nil, true, summary) }
+        }
+        return (nil, false, summary)
     }
 
     func openTabSwitcher(file: StaticString = #filePath, line: UInt = #line) {

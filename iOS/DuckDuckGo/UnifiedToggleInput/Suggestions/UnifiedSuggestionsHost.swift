@@ -45,6 +45,8 @@ final class UnifiedSuggestionsHost {
     private var cancellables = Set<AnyCancellable>()
     private var logoKeyboardCancellable: AnyCancellable?
     private var keyboardSettleTime: CFTimeInterval = 0
+    /// True while a mode switch runs, so its inset changes move the content with Core Animation.
+    private var isPerformingInputModeChange = false
     let favoritesPresentation: FocusedFavoritesPresentation
     private var redesignedSearchPresentation: RedesignedFocusedSearchPresentation?
     private var redesignedPresentationCancellable: AnyCancellable?
@@ -225,6 +227,8 @@ final class UnifiedSuggestionsHost {
     var isShowingFavorites: Bool { viewModel.isShowingFavorites }
 
     func performInputModeChange(_ changes: () -> Void) {
+        isPerformingInputModeChange = true
+        defer { isPerformingInputModeChange = false }
         guard usesScrollableEscapeHatch, viewModel.escapeHatchPlacement != .hidden, !viewModel.isShowingLogo else {
             changes()
             return
@@ -325,7 +329,10 @@ final class UnifiedSuggestionsHost {
         viewModel.chromeInsetTop = top
         let contentTopInset = usesScrollableEscapeHatch ? top : 0
         let duration = UIView.inheritedAnimationDuration
-        let animation: Animation? = duration > 0 && !UIAccessibility.isReduceMotionEnabled ? .easeInOut(duration: duration) : nil
+        let delta = contentTopInset - viewModel.contentTopInset
+        let coreAnimatedContentView = coreAnimatedContentView(moving: delta, duration: duration)
+        let animation: Animation? = coreAnimatedContentView == nil && duration > 0 && !UIAccessibility.isReduceMotionEnabled
+            ? .easeInOut(duration: duration) : nil
         withAnimation(animation) {
             if viewModel.contentTopInset != contentTopInset {
                 viewModel.contentTopInset = contentTopInset
@@ -342,6 +349,39 @@ final class UnifiedSuggestionsHost {
             right: contentInsets.right
         )
         hostingController?.view.layoutIfNeeded()
+        if let coreAnimatedContentView {
+            coreAnimatedContentView.layoutIfNeeded()
+            Self.slide(coreAnimatedContentView.layer, from: -delta, duration: duration)
+        }
+    }
+
+    /// SwiftUI animations advance on the main thread, which a mode switch keeps busy while it builds the
+    /// bar, so the content would fall behind the bar and slip under its footer. The content takes its new
+    /// inset at once and slides there with Core Animation instead, on the render server like the bar.
+    private func coreAnimatedContentView(moving delta: CGFloat, duration: TimeInterval) -> UIView? {
+        guard isPerformingInputModeChange, usesScrollableEscapeHatch, delta != 0, duration > 0,
+              !UIAccessibility.isReduceMotionEnabled else { return nil }
+        // A Fire tab shows the Fire screen of this host and never the logo.
+        if viewModel.isFireTab { return hostingController?.view }
+        if redesignedSearchPresentation == nil {
+            // The legacy content lives in its own view, apart from the logo.
+            guard let view = favoritesPresentation.viewController?.viewIfLoaded, view.window != nil else { return nil }
+            return view
+        }
+        // The logo shares this host and would slide too, so only while it is off screen.
+        guard viewModel.escapeHatchPlacement == .embedded, viewModel.backdropLogoFrame == nil else { return nil }
+        return hostingController?.view
+    }
+
+    /// Additive, so the several inset changes of one switch add up the way the bar's own animations do.
+    private static func slide(_ layer: CALayer, from offset: CGFloat, duration: TimeInterval) {
+        let animation = CABasicAnimation(keyPath: "transform.translation.y")
+        animation.fromValue = offset
+        animation.toValue = 0
+        animation.isAdditive = true
+        animation.duration = duration
+        animation.timingFunction = CAMediaTimingFunction(name: .easeInEaseOut)
+        layer.add(animation, forKey: nil)
     }
 
     // MARK: - Duck.ai surface (single-host path)

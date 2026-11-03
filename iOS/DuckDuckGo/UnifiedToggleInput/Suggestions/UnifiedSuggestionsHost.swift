@@ -47,6 +47,7 @@ final class UnifiedSuggestionsHost {
     private var keyboardSettleTime: CFTimeInterval = 0
     /// True while a mode switch runs, so its inset changes move the content with Core Animation.
     private var isPerformingInputModeChange = false
+    private var isLogoHeldForForeground = false
     let favoritesPresentation: FocusedFavoritesPresentation
     private var redesignedSearchPresentation: RedesignedFocusedSearchPresentation?
     private var redesignedPresentationCancellable: AnyCancellable?
@@ -177,6 +178,27 @@ final class UnifiedSuggestionsHost {
                 self?.deferLogoRevealUntilKeyboardSettles(duration: $0.userInfo?[UIResponder.keyboardAnimationDurationUserInfoKey] as? TimeInterval ?? 0)
             }
             .store(in: &cancellables)
+        // Leaving the app lowers the keyboard and returning raises it again, so a logo without room
+        // beside the keyboard would show in between. Hold it back until the keyboard is up again.
+        NotificationCenter.default.publisher(for: UIApplication.willResignActiveNotification)
+            .filter { [weak self] _ in
+                guard let self else { return false }
+                return usesScrollableEscapeHatch && hostingController?.view.window != nil && viewModel.backdropLogoFrame == nil
+                    && UIResponder.currentFirstResponder() != nil
+            }
+            .sink { [weak self] _ in
+                self?.logoKeyboardCancellable = nil
+                self?.viewModel.isLogoRevealDeferred = true
+                self?.isLogoHeldForForeground = true
+            }
+            .store(in: &cancellables)
+        NotificationCenter.default.publisher(for: UIApplication.didBecomeActiveNotification)
+            .filter { [weak self] _ in self?.isLogoHeldForForeground == true }
+            .sink { [weak self] _ in
+                self?.isLogoHeldForForeground = false
+                self?.deferLogoRevealUntilKeyboardRises()
+            }
+            .store(in: &cancellables)
     }
 
     /// A hidden logo beside the hatch appears only once a lowering keyboard settles, never sliding in with it.
@@ -229,7 +251,8 @@ final class UnifiedSuggestionsHost {
     func performInputModeChange(_ changes: () -> Void) {
         isPerformingInputModeChange = true
         defer { isPerformingInputModeChange = false }
-        guard usesScrollableEscapeHatch, viewModel.escapeHatchPlacement != .hidden, !viewModel.isShowingLogo else {
+        // A logo on screen stays to morph; one hidden for lack of room stays hidden while the bar resizes.
+        guard usesScrollableEscapeHatch, viewModel.escapeHatchPlacement != .hidden, !viewModel.isLogoOnScreen else {
             changes()
             return
         }
@@ -258,6 +281,23 @@ final class UnifiedSuggestionsHost {
             .sink { [weak self] _ in self?.finishDeferredLogoReveal() }
     }
 
+    /// A focus raises the keyboard after the content shows, so a logo that only has room without it would
+    /// flash before the keyboard hides it. The keyboard guide already holds the keyboard's end frame here,
+    /// so it cannot tell a rising keyboard from a risen one: without a keyboard on the way, the fallback reveals it.
+    private func deferLogoRevealUntilKeyboardRises() {
+        guard usesScrollableEscapeHatch else { return }
+        viewModel.isLogoRevealDeferred = true
+        logoKeyboardCancellable = NotificationCenter.default.publisher(for: UIResponder.keyboardDidShowNotification)
+            .merge(with: NotificationCenter.default.publisher(for: UIResponder.keyboardDidChangeFrameNotification))
+            .map { _ in () }
+            .merge(with: Just(()).delay(for: .seconds(Self.keyboardRiseFallback), scheduler: DispatchQueue.main))
+            .first()
+            .sink { [weak self] _ in self?.finishDeferredLogoReveal() }
+    }
+
+    /// Longer than the keyboard takes to rise.
+    private static let keyboardRiseFallback: TimeInterval = 0.6
+
     private func finishDeferredLogoReveal() {
         hostingController?.view.window?.layoutIfNeeded()
         hostingController?.view.layoutIfNeeded()
@@ -276,6 +316,18 @@ final class UnifiedSuggestionsHost {
     }
 
     /// List/logo→favorites collapse: fade the focused content out as the NTP content takes over.
+    /// A logo handed over from the NTP is already on screen, so it does not wait for the keyboard:
+    /// the fit checks hide it if the keyboard leaves no room.
+    func showLogoForHandoff() {
+        logoKeyboardCancellable = nil
+        // The activation deferred it within the same update, so it shows as it was instead of fading in.
+        var transaction = Transaction()
+        transaction.disablesAnimations = true
+        withTransaction(transaction) {
+            viewModel.isLogoRevealDeferred = false
+        }
+    }
+
     func beginDismissFade() {
         viewModel.beginDismissFade()
     }
@@ -290,6 +342,8 @@ final class UnifiedSuggestionsHost {
     func prepareForActivation(favoritesExpansionState: FavoritesExpansionState? = nil) {
         logoKeyboardCancellable = nil
         viewModel.isLogoRevealDeferred = false
+        isLogoHeldForForeground = false
+        deferLogoRevealUntilKeyboardRises()
         scrollLegacyContentToTop(duration: 0)
         if let favoritesExpansionState,
            let model = favoritesPresentation.viewController?.favoritesModel,

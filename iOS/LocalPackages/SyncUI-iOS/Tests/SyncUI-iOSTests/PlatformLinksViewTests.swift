@@ -1,7 +1,8 @@
 //
-//  ToggleableScrollView.swift
+//  PlatformLinksViewTests.swift
+//  DuckDuckGo
 //
-//  Copyright © 2022 DuckDuckGo. All rights reserved.
+//  Copyright © 2026 DuckDuckGo. All rights reserved.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -16,19 +17,20 @@
 //  limitations under the License.
 //
 
-import AppKit
+import SnapshotTestingSupport
+import Testing
+@testable import SyncUI_iOS
 
-@IBDesignable
-public class ToggleableScrollView: NSScrollView {
+@MainActor
+@Suite("Platform Links View Tests")
+final class PlatformLinksViewTests {
 
-    @IBInspectable public var isEnabled: Bool = true
-
-    public override func scrollWheel(with event: NSEvent) {
-        if isEnabled {
-            super.scrollWheel(with: event)
-        } else {
-            nextResponder?.scrollWheel(with: event)
-        }
+    @available(iOS 16, macOS 13, *)
+    @Test(.timeLimit(.minutes(1)))
+    func testPlatformLinksViewSnapshots() {
+        assertImageSnapshots(
+            PlatformLinksView_Previews.snapshots,
+            size: .screen
+        )
     }
-
 }

@@ -613,23 +613,13 @@ struct SimplifiedSyncSettingsView_Previews: PreviewProvider {
             .init(name: "Sync On – Loading Devices", state: .loadingDevices, scope: .previews)
         ],
         configure: { state in
-            navigationContainer {
+            PreviewNavigationContainer {
                 SimplifiedSyncSettingsView(model: model(for: state))
                     .navigationTitle(UserText.syncTitle)
                     .navigationBarTitleDisplayMode(.inline)
             }
         }
     )
-
-    @ViewBuilder
-    private static func navigationContainer<Content: View>(@ViewBuilder content: () -> Content) -> some View {
-        if #available(iOS 16, *) {
-            NavigationStack(root: content)
-        } else {
-            NavigationView(content: content)
-                .navigationViewStyle(.stack)
-        }
-    }
 
     private static func model(for state: State) -> SyncSettingsViewModel {
         switch state {

@@ -794,6 +794,8 @@ public enum SyncPromotionSubfeature: String, PrivacySubfeature {
     public var parent: PrivacyFeature { .syncPromotion }
     case bookmarks
     case passwords
+    case syncAnotherDevice
+    case redesign
 }
 
 public enum HTMLHistoryPageSubfeature: String, Equatable, PrivacySubfeature {

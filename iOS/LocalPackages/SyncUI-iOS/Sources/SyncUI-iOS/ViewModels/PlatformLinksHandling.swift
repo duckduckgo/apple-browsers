@@ -17,11 +17,11 @@
 //  limitations under the License.
 //
 
-import Foundation
+import UIKit
 
 public protocol PlatformLinksHandling {
     func fireOtherPlatformLinksPixel(for event: SyncSettingsViewModel.PlatformLinksPixelEvent, source: SyncSettingsViewModel.PlatformLinksPixelSource)
-    func shareLinkPressed(for url: URL, with message: String, from rect: CGRect)
+    func shareLinkPressed(for url: URL, with message: String, from sourceView: UIView)
 }
 
 extension SyncSettingsViewModel: PlatformLinksHandling {}

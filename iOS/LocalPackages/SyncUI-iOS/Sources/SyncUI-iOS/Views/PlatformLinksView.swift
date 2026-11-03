@@ -89,8 +89,8 @@ public struct PlatformLinksView: View {
             .padding(.vertical, 8)
 
             Button {
-                if let url = URL(string: Constants.downloadUrl) {
-                    model.shareLinkPressed(for: url, with: UserText.syncGetOtherDeviceShareLinkMessage, from: shareButtonAnchor.frameInWindow)
+                if let url = URL(string: Constants.downloadUrl), let sourceView = shareButtonAnchor.view {
+                    model.shareLinkPressed(for: url, with: UserText.syncGetOtherDeviceShareLinkMessage, from: sourceView)
                     model.fireOtherPlatformLinksPixel(for: .share, source: source)
                 }
             } label: {
@@ -116,11 +116,6 @@ public struct PlatformLinksView: View {
 
 private final class ShareButtonAnchor {
     weak var view: UIView?
-
-    var frameInWindow: CGRect {
-        guard let view else { return .zero }
-        return view.convert(view.bounds, to: nil)
-    }
 }
 
 private struct ShareButtonAnchorView: UIViewRepresentable {

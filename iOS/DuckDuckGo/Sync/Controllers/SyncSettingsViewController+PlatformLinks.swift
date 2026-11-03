@@ -24,8 +24,8 @@ import SyncUI_iOS
 
 extension SyncSettingsViewController {
     
-    func shareLink(for url: URL, with message: String, from rect: CGRect) {
-        PlatformLinksActions(presenter: self, pixelFiring: pixelFiring).shareLinkPressed(for: url, with: message, from: rect)
+    func shareLink(for url: URL, with message: String, from sourceView: UIView) {
+        PlatformLinksActions(presenter: self, pixelFiring: pixelFiring).shareLinkPressed(for: url, with: message, from: sourceView)
     }
 }
 
@@ -34,13 +34,13 @@ struct PlatformLinksActions: PlatformLinksHandling {
     weak var presenter: UIViewController?
     let pixelFiring: (any PixelKitFiring)?
 
-    func shareLinkPressed(for url: URL, with message: String, from rect: CGRect) {
+    func shareLinkPressed(for url: URL, with message: String, from sourceView: UIView) {
         let itemSource = ShareItemSource(url: url, message: message)
         let activityViewController = UIActivityViewController(activityItems: [itemSource], applicationActivities: nil)
 
         if UIDevice.current.userInterfaceIdiom == .pad {
-            activityViewController.popoverPresentationController?.sourceView = UIApplication.shared.firstKeyWindow
-            activityViewController.popoverPresentationController?.sourceRect = rect
+            activityViewController.popoverPresentationController?.sourceView = sourceView
+            activityViewController.popoverPresentationController?.sourceRect = sourceView.bounds
         }
 
         presenter?.present(activityViewController, animated: true, completion: nil)

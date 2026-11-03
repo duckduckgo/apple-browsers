@@ -35,21 +35,21 @@ final class AutoClearUITests: UITestCase {
             let dataClearingList = app.descendants(matching: .any)["Settings.List.DataClearing"]
             let automaticallyDelete = dataClearingList.buttons["Settings.DataClearing.AutomaticallyDelete"]
             dataClearingList.swipeUpToReveal(automaticallyDelete, timeout: UITestTimeouts.navigation)
-            automaticallyDelete.tapWhenHittable()
+            automaticallyDelete.tapWhenHittable(in: app)
 
             let autoClearList = app.descendants(matching: .any)["Settings.List.AutoClear"]
             XCTAssertTrue(
                 autoClearList.waitForExistence(timeout: UITestTimeouts.elementExistence),
                 "Auto Clear settings did not appear.")
             let autoClearToggle = app.settingsToggle(withIdentifier: "AutoclearEnabledToggle")
-            autoClearToggle.tapWhenHittable()
+            autoClearToggle.tapWhenHittable(in: app)
             XCTAssertTrue(
                 autoClearToggle.wait(for: \XCUIElement.value, equals: "1", timeout: UITestTimeouts.elementExistence),
                 "Auto Clear did not become enabled.")
 
             let fiveMinutes = app.descendants(matching: .any)["Settings.AutoClear.Timing.FiveMinutes"]
             autoClearList.swipeUpToReveal(fiveMinutes, timeout: UITestTimeouts.navigation)
-            fiveMinutes.tapWhenHittable()
+            fiveMinutes.tapWhenHittable(in: app)
             XCTAssertTrue(
                 fiveMinutes.wait(for: \XCUIElement.isSelected, equals: true, timeout: UITestTimeouts.elementExistence),
                 "Auto Clear's five-minute timing option was not selected.")
@@ -80,7 +80,7 @@ final class AutoClearUITests: UITestCase {
             app.openTabSwitcher()
             app.assertTabCount(1)
             XCTAssertFalse(app.staticTexts["Privacy Test Pages"].exists, "Cleared tab is still present in the tab switcher.")
-            app.buttons["TabSwitcher.Button.Done"].tapWhenHittable()
+            app.buttons["TabSwitcher.Button.Done"].tapWhenHittable(in: app)
 
             app.openStorageCounterPage()
             app.assertStorageCountersEmpty()

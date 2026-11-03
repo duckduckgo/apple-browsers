@@ -44,13 +44,13 @@ extension XCUIApplication {
     }
 
     func incrementStorageCounters(file: StaticString = #filePath, line: UInt = #line) {
-        webViews.descendants(matching: .any)["Manual Increment"].tapWhenHittable(file: file, line: line)
+        webViews.descendants(matching: .any)["Manual Increment"].tapWhenHittable(in: self, file: file, line: line)
         assertStorageCountersIncremented(file: file, line: line)
     }
 
     func resetStorageCounters(file: StaticString = #filePath, line: UInt = #line) {
         // A failed data-clearing test can leave this fixture populated; app-default resets do not clear WebKit storage.
-        webViews.buttons["Cleanup data"].tapWhenHittable(file: file, line: line)
+        webViews.buttons["Cleanup data"].tapWhenHittable(in: self, file: file, line: line)
         assertStorageCountersEmpty(file: file, line: line)
     }
 

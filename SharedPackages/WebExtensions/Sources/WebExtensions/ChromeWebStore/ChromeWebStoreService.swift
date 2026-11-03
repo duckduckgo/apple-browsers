@@ -46,8 +46,6 @@ public extension ChromeWebStoreManaging {
 
 @MainActor
 public protocol ChromeWebStorePresenting {
-    func showDownloadProgress(cancel: @escaping () -> Void)
-    func dismissDownloadProgress()
     func confirmRemoval(name: String) async -> Bool
     func showError(_ error: Error) async
 }
@@ -107,7 +105,6 @@ public final class ChromeWebStoreService: ChromeWebStoreManaging {
         defer { isPerformingOperation = false }
 
         let download = Task { try await downloader.download(extensionID: identifier) }
-        presenter.showDownloadProgress(cancel: { download.cancel() })
         do {
             let package = try await withTaskCancellationHandler {
                 try await download.value
@@ -133,14 +130,11 @@ public final class ChromeWebStoreService: ChromeWebStoreManaging {
 
             // The configuration can change while the network request is in flight.
             guard !download.isCancelled, catalog.contains(identifier) else {
-                presenter.dismissDownloadProgress()
                 return false
             }
-            presenter.dismissDownloadProgress()
             try await manager.installExtension(from: file, storeIdentity: .init(store: .chromeWebStore, id: identifier))
             return installedExtension(identifier, manager: manager) != nil
         } catch {
-            presenter.dismissDownloadProgress()
             if !download.isCancelled && !isCancellation(error) {
                 await presenter.showError(error)
             }

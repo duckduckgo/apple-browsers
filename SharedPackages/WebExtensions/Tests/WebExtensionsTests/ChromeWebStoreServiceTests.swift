@@ -65,7 +65,6 @@ final class ChromeWebStoreServiceTests: XCTestCase {
         XCTAssertEqual(service.status(for: fixture.identifier), .installed)
         XCTAssertEqual(prompter.installationRequests, 1)
         XCTAssertEqual(try permissionStore.settings(for: record.uniqueIdentifier)?.hasAccessToPrivateData, true)
-        XCTAssertFalse(presenter.progressVisible)
 
         manager.unloadAllExtensions()
         await manager.reloadInstalledExtensions()
@@ -93,7 +92,6 @@ final class ChromeWebStoreServiceTests: XCTestCase {
         XCTAssertTrue(installationStore.installedExtensions.isEmpty)
         XCTAssertTrue(manager.loadedExtensions.isEmpty)
         XCTAssertTrue(presenter.errors.isEmpty)
-        XCTAssertFalse(presenter.progressVisible)
     }
 
     func testRepeatedInstallDoesNotPromptOrDuplicateRecords() async throws {
@@ -166,20 +164,6 @@ final class ChromeWebStoreServiceTests: XCTestCase {
         XCTAssertEqual(service.status(for: fixture.identifier), .unsupported)
     }
 
-    func testCancelDownloadIsNotAnError() async throws {
-        let fixture = try ChromeWebStoreFixture()
-        let manager = try makeManager()
-        presenter.cancelImmediately = true
-        let service = service(manager, fixture: fixture, download: {
-            try Task.checkCancellation()
-            return fixture.package
-        })
-        let success = await service.install(identifier: fixture.identifier, downloadURL: try ChromeWebStoreURL.downloadURL(for: fixture.identifier))
-        XCTAssertFalse(success)
-        XCTAssertTrue(presenter.errors.isEmpty)
-        XCTAssertEqual(prompter.installationRequests, 0)
-    }
-
     func testUncuratedAndInvalidURLRequestsNeverDownload() async throws {
         let fixture = try ChromeWebStoreFixture()
         let manager = try makeManager()
@@ -192,7 +176,6 @@ final class ChromeWebStoreServiceTests: XCTestCase {
         catalog.allowed = false
         let uncurated = await service.install(identifier: fixture.identifier, downloadURL: try ChromeWebStoreURL.downloadURL(for: fixture.identifier))
         XCTAssertFalse(uncurated)
-        XCTAssertFalse(presenter.progressVisible)
     }
 
     func testStoreIDCodableRoundTripAndLegacyRecord() throws {
@@ -224,14 +207,7 @@ private final class StorePresenterMock: ChromeWebStorePresenting {
     var errors: [Error] = []
     var removalRequests: [String] = []
     var allowRemoval = true
-    var progressVisible = false
-    var cancelImmediately = false
 
-    func showDownloadProgress(cancel: @escaping () -> Void) {
-        progressVisible = true
-        if cancelImmediately { cancel() }
-    }
-    func dismissDownloadProgress() { progressVisible = false }
     func confirmRemoval(name: String) async -> Bool {
         removalRequests.append(name)
         return allowRemoval

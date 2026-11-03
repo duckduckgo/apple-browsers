@@ -258,6 +258,12 @@ class SwipeTabsCoordinator: NSObject {
     private let edgeFeedbackGenerator = UIImpactFeedbackGenerator(style: .rigid)
     private var lastEdgeTickOverscroll: CGFloat = 0
     private var isExternalPanDragging = false
+    private let newTabCommitFeedbackGenerator = UIImpactFeedbackGenerator(style: .medium)
+    private var newTabPull = SwipeToNewTabPull()
+    private var newTabPullStyle = SwipeToNewTabStyle.current
+    private var newTabAffordance: SwipeToNewTabAffordanceView?
+    /// Samples the pull every frame, so a finger resting past the line still commits.
+    private var newTabPullTicker: CADisplayLink?
 
     /// Swipes bounce at the first and last tab, with no new-tab page past the last one. Read once, so a flag
     /// change mid-session can't leave the strip's pages and its gestures disagreeing.
@@ -451,6 +457,7 @@ extension SwipeTabsCoordinator: UICollectionViewDelegate {
 
     func scrollViewDidScroll(_ scrollView: UIScrollView) {
         signalEdgeIfDraggedPastIt(scrollView)
+        startNewTabPullTickerIfNeeded()
 
         switch state {
         case .idle: break
@@ -1195,7 +1202,7 @@ extension SwipeTabsCoordinator: UICollectionViewDelegate {
 
     /// Ticks while a finger pulls past the first or last tab, firmer the further it pulls; none on release.
     private func signalEdgeIfDraggedPastIt(_ scrollView: UIScrollView) {
-        guard scrollView.isDragging || isExternalPanDragging, bouncesAtEdges else { return }
+        guard scrollView.isDragging || isExternalPanDragging, bouncesAtEdges, !newTabPull.isCommitted else { return }
         let maxOffsetX = scrollView.contentSize.width - scrollView.bounds.width
         let overscroll = max(-scrollView.contentOffset.x, scrollView.contentOffset.x - maxOffsetX, 0)
         guard abs(overscroll - lastEdgeTickOverscroll) >= EdgeHaptics.tickSpacing else { return }
@@ -1210,6 +1217,132 @@ extension SwipeTabsCoordinator: UICollectionViewDelegate {
         static let tickSpacing: CGFloat = 4
         static let minimumIntensity: CGFloat = 0.35
         static let tensionGain: CGFloat = 4
+    }
+
+    /// Pulling far enough past the last tab opens a new tab, where swipes otherwise bounce.
+    private var opensNewTabOnPullPastLastTab: Bool {
+        bouncesAtEdges && isSwipeChromeRefinementsEnabled && tabsModel.currentIndex == tabsModel.count - 1
+    }
+
+    private func startNewTabPullTickerIfNeeded() {
+        guard newTabPullTicker == nil, !state.isIdle, opensNewTabOnPullPastLastTab else { return }
+        newTabPullStyle = SwipeToNewTabStyle.current
+        newTabPull = SwipeToNewTabPull(requiresHold: newTabPullStyle == .hold)
+        let ticker = CADisplayLink(target: self, selector: #selector(updateNewTabPull(_:)))
+        ticker.add(to: .main, forMode: .common)
+        newTabPullTicker = ticker
+    }
+
+    private func stopNewTabPullTicker() {
+        newTabPullTicker?.invalidate()
+        newTabPullTicker = nil
+    }
+
+    @objc private func updateNewTabPull(_ ticker: CADisplayLink) {
+        let maxOffsetX = collectionView.contentSize.width - collectionView.bounds.width
+        let isDragging = collectionView.isDragging || isExternalPanDragging
+        switch newTabPull.update(distance: collectionView.contentOffset.x - maxOffsetX, isDragging: isDragging, at: ticker.timestamp) {
+        case .committed:
+            newTabCommitFeedbackGenerator.impactOccurred()
+        case .released:
+            edgeFeedbackGenerator.impactOccurred(intensity: EdgeHaptics.minimumIntensity)
+        case .none:
+            break
+        }
+        showNewTabAffordance()
+    }
+
+    /// Sits behind the page, so a pull that springs back covers it again.
+    private func showNewTabAffordance() {
+        let container = coordinator.contentContainer!
+        let affordance = newTabAffordance ?? SwipeToNewTabAffordanceView(style: newTabPullStyle)
+        if affordance.superview == nil {
+            container.insertSubview(affordance, at: 0)
+            newTabAffordance = affordance
+        }
+        affordance.layout(revealing: newTabPull.distance, progress: newTabPull.progress, in: container.bounds, centerY: container.bounds.midY)
+        affordance.setCommitted(newTabPull.isCommitted)
+        affordance.update(progress: newTabPull.progress, ringProgress: newTabPull.ringProgress, holdProgress: newTabPull.holdProgress)
+    }
+
+    /// Released past the commit line: the new tab opens straight away, and stills of the old one slide off over it.
+    private func openNewTabFromPull() {
+        // Landing is decided here; a late end-of-deceleration callback must not settle on the old last tab.
+        state = .idle
+        stopNewTabPullTicker()
+        let pageOffset = -collectionView.bounds.width - Self.tabGap
+        let affordance = liftNewTabAffordanceAboveContent()
+        let departingViews = makeDepartingSnapshots()
+        moveLiveViewsToRest(pageOffset: pageOffset)
+        UIView.animate(withDuration: SwipeToNewTabTuning.openDuration, delay: 0, options: [.curveEaseOut]) {
+            departingViews.forEach { $0.transform.tx += pageOffset }
+            affordance?.alpha = 0
+            affordance?.transform = CGAffineTransform(scaleX: SwipeToNewTabTuning.openedScale, y: SwipeToNewTabTuning.openedScale)
+        } completion: { _ in
+            departingViews.forEach { $0.removeFromSuperview() }
+            affordance?.removeFromSuperview()
+            self.collectionView.mask = nil
+        }
+        // Starts the slide before opening the tab blocks the main thread, so it plays while the tab loads.
+        CATransaction.flush()
+        settleSwipe(onPage: tabsModel.count)
+    }
+
+    /// Keeps the "+" in view above the incoming tab, which would otherwise cover it.
+    private func liftNewTabAffordanceAboveContent() -> UIView? {
+        guard let affordance = newTabAffordance, let container = coordinator.contentContainer,
+              let parent = container.superview else { return nil }
+        newTabAffordance = nil
+        affordance.center = container.convert(affordance.center, to: parent)
+        parent.insertSubview(affordance, aboveSubview: container)
+        return affordance
+    }
+
+    /// Stills of everything a swipe moves, stacked where the live views are; the live ones are free to show the new tab.
+    private func makeDepartingSnapshots() -> [UIView] {
+        var snapshots = [makeDepartingPageSnapshot(), freezeAddressBarsForOpening()].compactMap { $0 }
+        snapshots += edgePulledChromeViews.compactMap(makeDepartingChromeSnapshot(of:))
+        snapshots += auxiliarySwipeViewSnapshots
+        // Owned by the slide now, so the settle's cleanup doesn't pull them mid-slide.
+        auxiliarySwipeViewSnapshots = []
+        return snapshots
+    }
+
+    private func makeDepartingPageSnapshot() -> UIView? {
+        // With the overlay up, it is what shows the page.
+        let page: UIView? = overlayActive ? swipeOverlayView : currentView
+        let anchor: UIView? = overlayActive ? swipeOverlayView : coordinator.contentContainer
+        guard let page, let anchor, let parent = anchor.superview,
+              let snapshot = page.snapshotView(afterScreenUpdates: false) else { return nil }
+        snapshot.frame = page.superview?.convert(page.frame, to: parent) ?? page.frame
+        parent.insertSubview(snapshot, aboveSubview: anchor)
+        return snapshot
+    }
+
+    private func makeDepartingChromeSnapshot(of view: UIView) -> UIView? {
+        guard let parent = view.superview, let chromeSnapshot = makeChromeSnapshot(of: view) else { return nil }
+        let snapshot = UIImageView(image: chromeSnapshot.image)
+        snapshot.frame = view.convert(chromeSnapshot.captureRect, to: parent)
+        parent.insertSubview(snapshot, aboveSubview: view)
+        return snapshot
+    }
+
+    /// Under the stills, the live old page goes off screen and the chrome back home, ready for the new tab.
+    private func moveLiveViewsToRest(pageOffset: CGFloat) {
+        currentView?.transform.tx = pageOffset
+        edgePulledChromeViews.forEach { $0.transform.tx = 0 }
+    }
+
+    /// The strip's own bounce can't be stopped once released, so a still copy of the address bars slides off in its place.
+    private func freezeAddressBarsForOpening() -> UIView? {
+        guard let snapshot = collectionView.snapshotView(afterScreenUpdates: false), let superview = collectionView.superview else {
+            return nil
+        }
+        snapshot.frame = collectionView.frame
+        superview.insertSubview(snapshot, aboveSubview: collectionView)
+        // An empty mask hides it without touching `alpha`/`isHidden`, which the new tab's input presentation owns.
+        collectionView.mask = UIView()
+        return snapshot
     }
 
     /// Swiping past a last tab with content opens a new tab, unless the swipe should bounce there instead.
@@ -1304,6 +1437,7 @@ extension SwipeTabsCoordinator: UICollectionViewDelegate {
         lastEdgeTickOverscroll = 0
         if bouncesAtEdges {
             edgeFeedbackGenerator.prepare()
+            newTabCommitFeedbackGenerator.prepare()
         }
         switch state {
         case .idle:
@@ -1333,6 +1467,10 @@ extension SwipeTabsCoordinator: UICollectionViewDelegate {
     // never decelerates, so `scrollViewDidEndDecelerating` wouldn't fire and the swipe overlay
     // would stay up over the live UI.
     func scrollViewDidEndDragging(_ scrollView: UIScrollView, willDecelerate decelerate: Bool) {
+        if newTabPull.isCommitted {
+            openNewTabFromPull()
+            return
+        }
         guard !decelerate else { return }
         if case .swiping = state {
             pixelFiring?.fire(SwipeTabsPixel.stuckSwipeRecovered, frequency: .dailyAndCount)
@@ -1345,6 +1483,14 @@ extension SwipeTabsCoordinator: UICollectionViewDelegate {
             return
         }
 
+        let point = CGPoint(x: coordinator.navigationBarCollectionView.bounds.midX,
+                            y: coordinator.navigationBarCollectionView.bounds.midY)
+        let index = coordinator.navigationBarCollectionView.indexPathForItem(at: point)?.row
+        assert(index != nil, "invalid index")
+        settleSwipe(onPage: index)
+    }
+
+    private func settleSwipe(onPage index: Int?) {
         // Defer cleanup to the next runloop tick. `selectTab` synchronously triggers the tab
         // swap (adding the destination's webview / NTP to `contentContainer`), but the new
         // view typically needs one runloop iteration to lay out and produce its first paint.
@@ -1361,13 +1507,11 @@ extension SwipeTabsCoordinator: UICollectionViewDelegate {
         pendingSettleCleanup = cleanup
         defer { DispatchQueue.main.async(execute: cleanup) }
 
-        let point = CGPoint(x: coordinator.navigationBarCollectionView.bounds.midX,
-                            y: coordinator.navigationBarCollectionView.bounds.midY)
+        guard let index else { return }
+        landSwipe(onPage: index)
+    }
 
-        guard let index = coordinator.navigationBarCollectionView.indexPathForItem(at: point)?.row else {
-            assertionFailure("invalid index")
-            return
-        }
+    private func landSwipe(onPage index: Int) {
         let keepsLiveDestination = LiveTabSwipePolicy.shouldKeepDestinationView(
             targetIndex: index,
             currentIndex: tabsModel.currentIndex,
@@ -1396,6 +1540,10 @@ extension SwipeTabsCoordinator: UICollectionViewDelegate {
         currentView = nil
         edgePulledChromeViews.forEach { $0.transform.tx = 0 }
         edgePulledChromeViews = []
+        stopNewTabPullTicker()
+        newTabAffordance?.removeFromSuperview()
+        newTabAffordance = nil
+        newTabPull = SwipeToNewTabPull()
         preview?.removeFromSuperview()
         chromePreview?.removeFromSuperview()
         chromePreview = nil
@@ -1478,6 +1626,10 @@ extension SwipeTabsCoordinator {
 
         case .ended, .cancelled, .failed:
             isExternalPanDragging = false
+            if newTabPull.isCommitted {
+                openNewTabFromPull()
+                return
+            }
             let pageWidth = collectionView.frame.width
             guard pageWidth > 0 else {
                 scrollViewDidEndDecelerating(collectionView)

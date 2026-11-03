@@ -3017,6 +3017,120 @@ final class SwipeTabsEdgeResistanceTests: XCTestCase {
     }
 }
 
+final class SwipeToNewTabPullTests: XCTestCase {
+
+    private typealias Tuning = SwipeToNewTabTuning
+    private let commit = SwipeToNewTabTuning.commitDistance
+    private let frame: TimeInterval = 1.0 / 60
+    private var ringFillFrames: Int { Int(1 / Tuning.ringFillRate / frame) + 2 }
+
+    /// Eases out to `distance` slowly enough to count as deliberate, then rests there.
+    private func restPull(_ pull: inout SwipeToNewTabPull, at distance: CGFloat, frames: Int = 45,
+                          startingAt start: TimeInterval = 0) -> [SwipeToNewTabPull.Change] {
+        (0..<frames).map { index in pull.update(distance: distance, isDragging: true, at: start + TimeInterval(index) * frame) }
+    }
+
+    func testAPullShortOfTheLineDoesNotCommit() {
+        var pull = SwipeToNewTabPull()
+
+        XCTAssertFalse(restPull(&pull, at: commit - 1).contains(.committed))
+        XCTAssertFalse(pull.isCommitted)
+    }
+
+    func testRestingPastTheLineCommitsOnce() {
+        var pull = SwipeToNewTabPull()
+
+        XCTAssertEqual(restPull(&pull, at: commit + 10).filter { $0 == .committed }.count, 1)
+        XCTAssertTrue(pull.isCommitted)
+    }
+
+    func testAFastSwipePastTheLineDoesNotCommit() {
+        var pull = SwipeToNewTabPull()
+
+        let changes = (0..<10).map { index in
+            pull.update(distance: CGFloat(index) * 30, isDragging: true, at: TimeInterval(index) * frame)
+        }
+
+        XCTAssertFalse(changes.contains(.committed))
+    }
+
+    func testAFastSwipeFillsTheRingGradually() {
+        var pull = SwipeToNewTabPull()
+
+        _ = pull.update(distance: 0, isDragging: true, at: 0)
+        _ = pull.update(distance: commit * 2, isDragging: true, at: frame)
+
+        XCTAssertEqual(pull.progress, 1)
+        XCTAssertLessThan(pull.ringProgress, 0.1)
+    }
+
+    func testPullingBackEmptiesTheRingRightAway() {
+        var pull = SwipeToNewTabPull()
+        _ = restPull(&pull, at: commit - 1)
+
+        _ = pull.update(distance: commit / 4, isDragging: true, at: 1)
+
+        XCTAssertEqual(pull.ringProgress, 0.25, accuracy: 0.01)
+    }
+
+    func testEasingBackJustUnderTheLineStaysCommitted() {
+        var pull = SwipeToNewTabPull()
+        _ = restPull(&pull, at: commit)
+
+        XCTAssertEqual(pull.update(distance: commit - Tuning.releaseHysteresis / 2, isDragging: true, at: 1), .none)
+        XCTAssertTrue(pull.isCommitted)
+    }
+
+    func testPullingWellBackLetsGo() {
+        var pull = SwipeToNewTabPull()
+        _ = restPull(&pull, at: commit)
+
+        XCTAssertEqual(pull.update(distance: commit / 2, isDragging: true, at: 1), .released)
+        XCTAssertFalse(pull.isCommitted)
+    }
+
+    func testASettlingBounceNeverCommits() {
+        var pull = SwipeToNewTabPull()
+
+        XCTAssertEqual(pull.update(distance: commit * 2, isDragging: false, at: 0), .none)
+        XCTAssertFalse(pull.isCommitted)
+        XCTAssertEqual(pull.progress, 1)
+    }
+
+    func testAHoldPullNeedsLessDistance() {
+        XCTAssertLessThan(SwipeToNewTabPull(requiresHold: true).commitDistance, SwipeToNewTabPull().commitDistance)
+    }
+
+    func testAHoldPullCommitsOnlyAfterRestingPastTheLine() {
+        var pull = SwipeToNewTabPull(requiresHold: true)
+        let line = pull.commitDistance
+        let holdFrames = Int(Tuning.holdDuration / frame)
+
+        let restFrames = ringFillFrames + holdFrames / 2
+
+        XCTAssertFalse(restPull(&pull, at: line, frames: restFrames).contains(.committed))
+        XCTAssertGreaterThan(pull.holdProgress, 0)
+        XCTAssertTrue(restPull(&pull, at: line, frames: holdFrames * 2, startingAt: TimeInterval(restFrames) * frame).contains(.committed))
+    }
+
+    func testMovingDuringAHoldStartsItOver() {
+        var pull = SwipeToNewTabPull(requiresHold: true)
+        let line = pull.commitDistance
+        let holdFrames = Int(Tuning.holdDuration / frame)
+        let restFrames = ringFillFrames + holdFrames / 2
+        _ = restPull(&pull, at: line, frames: restFrames)
+        XCTAssertGreaterThan(pull.holdProgress, 0)
+
+        for index in 0..<6 {
+            let time = TimeInterval(restFrames + index) * frame
+            _ = pull.update(distance: line + CGFloat(index % 2) * 10, isDragging: true, at: time)
+        }
+
+        XCTAssertEqual(pull.holdProgress, 0)
+        XCTAssertFalse(pull.isCommitted)
+    }
+}
+
 @MainActor
 final class SwipeTabsNewTabDestinationTests: XCTestCase {
 

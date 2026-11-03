@@ -1299,7 +1299,11 @@ class MainViewController: UIViewController {
             PixelKit.fire(Pixel.Event.swipeToOpenNewTab)
             self?.postIdleSessionInstrumentation.sessionEnded(reason: .tabSwiped)
             self?.currentTab?.aiChatContextualSheetCoordinator.dismissSheet()
-            self?.newTab()
+            if self?.featureFlagger.isAIChatSwipeChromeRefinementsEnabled == true {
+                self?.newTabWithAnimation()
+            } else {
+                self?.newTab()
+            }
         } onSwipeStarted: { [weak self] in
             self?.rememberNewTabPageInputFocusForTabSwitch()
             self?.performCancel(animated: false)
@@ -8578,19 +8582,19 @@ extension MainViewController: TabSwitcherDelegate {
     }
 
     func tabSwitcherDidRequestNewTab(tabSwitcher: TabSwitcherViewController) {
-        tabSwitcherNewTabWithAnimation()
+        newTabWithAnimation()
     }
 
     func tabSwitcherDidRequestNewFireTab(tabSwitcher: TabSwitcherViewController, source: FireModeSwitchSource) {
         recordDuckAISessionPendingExit(.fireTabOpened)
         tabManager.setBrowsingMode(.fire, source: source)
-        tabSwitcherNewTabWithAnimation()
+        newTabWithAnimation()
     }
 
     func tabSwitcherDidRequestNewNormalTab(tabSwitcher: TabSwitcherViewController) {
         recordDuckAISessionPendingExit(.newTabOpened)
         tabManager.setBrowsingMode(.normal, source: .tabSwitcherLongPress)
-        tabSwitcherNewTabWithAnimation()
+        newTabWithAnimation()
     }
 
     func tabSwitcher(_ tabSwitcher: TabSwitcherViewController, editBookmarkForUrl url: URL) {
@@ -8764,7 +8768,8 @@ extension MainViewController: TabSwitcherDelegate {
         openAIChatHistory(source: .tabSwitcher)
     }
 
-    private func tabSwitcherNewTabWithAnimation() {
+    /// Opens a new tab the way the tab switcher's "+" does, holding the page back until the input has focused.
+    private func newTabWithAnimation() {
         // The new tab shows its own keyboard, so a pick the switcher reported just before doesn't add a second one.
         pendingTabSwitcherKeyboard = nil
         newTab()

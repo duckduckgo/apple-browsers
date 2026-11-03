@@ -85,6 +85,7 @@ extension XCUIApplication {
     }
 
     func openBrowsingMenuItem(_ identifier: String, file: StaticString = #filePath, line: UInt = #line) {
+        dismissAddressBarEditing(file: file, line: line)
         buttons["Browser.Toolbar.Button.Menu"].tapWhenHittable(file: file, line: line)
         let item = descendants(matching: .any)[identifier]
         let menu = descendants(matching: .any)["Browser.Menu.List"]

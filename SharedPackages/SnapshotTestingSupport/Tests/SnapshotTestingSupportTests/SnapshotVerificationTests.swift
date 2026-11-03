@@ -77,6 +77,16 @@ struct SnapshotVerificationTests {
 
     @available(iOS 16, macOS 13, *)
     @Test(.timeLimit(.minutes(1)))
+    func exportWritesMissingReferenceWhenRecordingIsDisabled() throws {
+        let failure = verify("rendered", comparisonMode: .compare, record: .never, exportDirectory: exportDirectory.path)
+
+        #expect(failure?.contains("No reference was found on disk. New snapshot was not recorded because recording is disabled") == true)
+        #expect(!FileManager.default.fileExists(atPath: referenceFile.path))
+        #expect(try contents(of: exportedFile) == "rendered")
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test(.timeLimit(.minutes(1)))
     func exportWritesNothingWhenComparisonPasses() throws {
         try writeReference("rendered")
 
@@ -130,13 +140,14 @@ struct SnapshotVerificationTests {
     private func verify(
         _ rendered: String,
         comparisonMode: SnapshotComparisonMode,
+        record: SnapshotTestingConfiguration.Record = .missing,
         exportDirectory: String? = nil
     ) -> String? {
         verifySnapshot(
             of: rendered,
             as: .lines,
             named: "state",
-            record: .missing,
+            record: record,
             snapshotDirectory: referenceDirectory.path,
             comparisonMode: comparisonMode,
             exportDirectory: exportDirectory,

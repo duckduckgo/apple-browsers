@@ -37,8 +37,8 @@ jobs:
         run: |
           deadline=$((SECONDS + 180 * 60))
           while true; do
-            read -r run_id status < <(gh api "repos/$GITHUB_REPOSITORY/actions/workflows/macos_pr_checks.yml/runs?head_sha=$HEAD_SHA&event=pull_request&per_page=1" \
-              --jq '.workflow_runs[0] | "\(.id // "") \(.status // "")"')
+            read -r run_id status < <(gh api "repos/$GITHUB_REPOSITORY/actions/workflows/macos_pr_checks.yml/runs?head_sha=$HEAD_SHA&event=pull_request&per_page=100" \
+              --jq "[.workflow_runs[] | select(any(.pull_requests[]; .number == $PR_NUMBER))][0] | \"\(.id // \"\") \(.status // \"\")\"")
             if [ -n "$run_id" ] && [ "$status" = "completed" ]; then
               break
             fi

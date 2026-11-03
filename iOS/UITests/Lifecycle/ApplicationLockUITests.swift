@@ -24,6 +24,10 @@ final class ApplicationLockUITests: UITestCase {
 
     private let springboard = XCUIApplication(bundleIdentifier: "com.apple.springboard")
 
+    override var additionalLaunchEnvironment: [String: String] {
+        super.additionalLaunchEnvironment.merging(["UITEST_APP_LOCK_DIAGNOSTICS": "1"]) { _, new in new }
+    }
+
     override func tearDownWithError() throws {
         if (testRun?.totalFailureCount ?? 0) > 0 {
             XCTContext.runActivity(named: "Application Lock failure diagnostics") { activity in
@@ -155,7 +159,7 @@ final class ApplicationLockUITests: UITestCase {
         let recoveryInstructions = app.staticTexts["Tap anywhere to unlock"]
         XCTAssertEqual(app.state, .runningForeground, "Application Lock recovery screen was not foregrounded.", file: file, line: line)
         XCTAssertTrue(recoveryInstructions.exists, "Application Lock recovery instructions were not visible.", file: file, line: line)
-        XCTAssertFalse(app.searchEntry.exists, "Browser controls remained accessible while Application Lock was active.", file: file, line: line)
+        XCTAssertFalse(app.descendants(matching: .any)["searchEntry"].exists, "Browser controls remained accessible while Application Lock was active.", file: file, line: line)
         XCTAssertFalse(springboard.staticTexts["Unlock DuckDuckGo."].exists, "Authentication prompt is still visible.", file: file, line: line)
 
         XCTContext.runActivity(named: "Request authentication from recovery screen") { _ in

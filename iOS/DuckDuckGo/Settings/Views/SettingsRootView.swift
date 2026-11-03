@@ -157,7 +157,7 @@ struct SettingsRootView: View {
             featureFlagger: featureFlagger
         )
         let subscriptionDebugSettings = SubscriptionDebugSettingsUserDefaultsPersistor(keyValueStore: viewModel.keyValueStore)
-        let options = SubscriptionPurchaseOptions(
+        let purchaseDependencies = SubscriptionPurchaseDependencies(
             subscriptionDataReporter: viewModel.subscriptionDataReporter,
             tld: AppDependencyProvider.shared.storageCache.tld,
             isDebugOverlayEnabled: subscriptionDebugSettings.isDebugOverlayEnabled,
@@ -165,7 +165,7 @@ struct SettingsRootView: View {
             onboardingKeyValueStore: viewModel.keyValueStore,
             meetsPIRLocaleRequirement: { viewModel.meetsLocaleRequirement },
             onRequestDuckAIChat: viewModel.onRequestOnboardingDuckAIChat)
-        SubscriptionContainerViewFactory.makeView(for: .subscribe(redirectURLComponents: redirectURLComponents, landingURL: landingURL, options: options),
+        SubscriptionContainerViewFactory.makeView(for: .subscribe(redirectURLComponents: redirectURLComponents, landingURL: landingURL, dependencies: purchaseDependencies),
                                                   context: viewModel.subscriptionFlowContext,
                                                   navigationCoordinator: subscriptionNavigationCoordinator)
     }

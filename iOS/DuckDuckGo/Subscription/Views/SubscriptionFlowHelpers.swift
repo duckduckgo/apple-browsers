@@ -38,7 +38,7 @@ struct SubscriptionFlowContext {
     let featureFlagger: FeatureFlagger
 }
 
-struct SubscriptionPurchaseOptions {
+struct SubscriptionPurchaseDependencies {
     let subscriptionDataReporter: SubscriptionDataReporting?
     let tld: TLD
     let isDebugOverlayEnabled: Bool
@@ -49,17 +49,17 @@ struct SubscriptionPurchaseOptions {
 }
 
 enum SubscriptionFlow {
-    case subscribe(redirectURLComponents: URLComponents?, landingURL: URL? = nil, options: SubscriptionPurchaseOptions)
+    case subscribe(redirectURLComponents: URLComponents?, landingURL: URL? = nil, dependencies: SubscriptionPurchaseDependencies)
     case plans(redirectURLComponents: URLComponents?)
     case restore
     case email(SubscriptionEmailViewModel.EmailViewFlow)
     case cancellation
 
-    static func makePlanOrSubscribeFlow(redirectURLComponents: URLComponents?, options: SubscriptionPurchaseOptions) -> SubscriptionFlow {
+    static func makePlanOrSubscribeFlow(redirectURLComponents: URLComponents?, dependencies: SubscriptionPurchaseDependencies) -> SubscriptionFlow {
         if let redirectURLComponents, SubscriptionPurchaseFlowPath.isPlansPath(redirectURLComponents.path) {
             return .plans(redirectURLComponents: redirectURLComponents)
         }
-        return .subscribe(redirectURLComponents: redirectURLComponents, options: options)
+        return .subscribe(redirectURLComponents: redirectURLComponents, dependencies: dependencies)
     }
 
     var currentView: SubscriptionContainerView.CurrentViewType {
@@ -78,21 +78,21 @@ enum SubscriptionFlow {
         }
     }
 
-    var purchaseOptions: SubscriptionPurchaseOptions? {
-        guard case let .subscribe(_, _, options) = self else { return nil }
-        return options
+    var purchaseDependencies: SubscriptionPurchaseDependencies? {
+        guard case let .subscribe(_, _, dependencies) = self else { return nil }
+        return dependencies
     }
 
     func configuration(subscriptionManager: SubscriptionManager, featureFlagger: FeatureFlagger) -> SubscriptionFlowConfiguration {
         switch self {
-        case let .subscribe(redirectURLComponents, landingURL, options):
+        case let .subscribe(redirectURLComponents, landingURL, dependencies):
             return .subscribe(redirectURLComponents: redirectURLComponents,
                               landingURL: landingURL,
                               subscriptionManager: subscriptionManager,
-                              tld: options.tld,
-                              performanceOptimizedPaywalls: options.performanceOptimizedPaywallsProvider,
+                              tld: dependencies.tld,
+                              performanceOptimizedPaywalls: dependencies.performanceOptimizedPaywallsProvider,
                               featureFlagger: featureFlagger,
-                              isDebugOverlayEnabled: options.isDebugOverlayEnabled)
+                              isDebugOverlayEnabled: dependencies.isDebugOverlayEnabled)
         case let .plans(redirectURLComponents):
             return .plans(redirectURLComponents: redirectURLComponents, subscriptionManager: subscriptionManager)
         case .cancellation:

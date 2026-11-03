@@ -133,7 +133,7 @@ struct SubscriptionFlowTests {
     private let subscriptionManager = SubscriptionManagerMock()
     private let featureFlagger = PrivacyConfig.MockFeatureFlagger()
 
-    private let options = SubscriptionPurchaseOptions(
+    private let dependencies = SubscriptionPurchaseDependencies(
         subscriptionDataReporter: nil,
         tld: TLD(),
         isDebugOverlayEnabled: false,
@@ -155,7 +155,7 @@ struct SubscriptionFlowTests {
     func planOrSubscribeWithPlansPathMakesPlans(path: SubscriptionPurchaseFlowPath) {
         let components = redirectURLComponents(path: path.rawValue)
 
-        let flow = Flow.makePlanOrSubscribeFlow(redirectURLComponents: components, options: options)
+        let flow = Flow.makePlanOrSubscribeFlow(redirectURLComponents: components, dependencies: dependencies)
 
         guard case .plans(let flowComponents) = flow else {
             Issue.record("Expected the plans flow")
@@ -165,28 +165,28 @@ struct SubscriptionFlowTests {
     }
 
     @available(iOS 16, macOS 13, *)
-    @Test("makePlanOrSubscribeFlow without a plans path makes the subscribe flow with its purchase options", .timeLimit(.minutes(1)),
+    @Test("makePlanOrSubscribeFlow without a plans path makes the subscribe flow with its purchase dependencies", .timeLimit(.minutes(1)),
           arguments: [Optional<String>.none, SubscriptionPurchaseFlowPath.purchase.rawValue, SubscriptionPurchaseFlowPath.pro.rawValue])
     func planOrSubscribeWithoutPlansPathMakesSubscribe(path: String?) {
         let components = path.map { redirectURLComponents(path: $0) }
 
-        let flow = Flow.makePlanOrSubscribeFlow(redirectURLComponents: components, options: options)
+        let flow = Flow.makePlanOrSubscribeFlow(redirectURLComponents: components, dependencies: dependencies)
 
-        guard case .subscribe(let flowComponents, let landingURL, let flowOptions) = flow else {
+        guard case .subscribe(let flowComponents, let landingURL, let flowDependencies) = flow else {
             Issue.record("Expected the subscribe flow")
             return
         }
         #expect(flowComponents == components)
         #expect(landingURL == nil)
-        #expect(flowOptions.meetsPIRLocaleRequirement())
+        #expect(flowDependencies.meetsPIRLocaleRequirement())
     }
 
     @available(iOS 16, macOS 13, *)
-    @Test("subscribe shows the subscribe view in restore email mode with its purchase options", .timeLimit(.minutes(1)))
+    @Test("subscribe shows the subscribe view in restore email mode with its purchase dependencies", .timeLimit(.minutes(1)))
     func subscribeFlow() {
-        let flow = Flow.subscribe(redirectURLComponents: nil, options: options)
+        let flow = Flow.subscribe(redirectURLComponents: nil, dependencies: dependencies)
 
-        #expect(flow.purchaseOptions?.meetsPIRLocaleRequirement() == true)
+        #expect(flow.purchaseDependencies?.meetsPIRLocaleRequirement() == true)
         #expect(flow.currentView == .subscribe)
         #expect(flow.emailFlowMode == .restoreFlow)
     }
@@ -197,7 +197,7 @@ struct SubscriptionFlowTests {
         let components = redirectURLComponents(path: SubscriptionPurchaseFlowPath.plans.rawValue)
         let flow = Flow.plans(redirectURLComponents: components)
 
-        #expect(flow.purchaseOptions?.meetsPIRLocaleRequirement() == nil)
+        #expect(flow.purchaseDependencies?.meetsPIRLocaleRequirement() == nil)
         #expect(flow.currentView == .subscribe)
         #expect(flow.emailFlowMode == nil)
         #expect(flow.configuration(subscriptionManager: subscriptionManager, featureFlagger: featureFlagger)
@@ -209,7 +209,7 @@ struct SubscriptionFlowTests {
     func restoreFlow() {
         let flow = Flow.restore
 
-        #expect(flow.purchaseOptions?.meetsPIRLocaleRequirement() == nil)
+        #expect(flow.purchaseDependencies?.meetsPIRLocaleRequirement() == nil)
         #expect(flow.currentView == .restore)
         #expect(flow.emailFlowMode == .restoreFlow)
         #expect(flow.configuration(subscriptionManager: subscriptionManager, featureFlagger: featureFlagger) == Configuration())
@@ -221,7 +221,7 @@ struct SubscriptionFlowTests {
     func emailFlow(emailFlow: SubscriptionEmailViewModel.EmailViewFlow) {
         let flow = Flow.email(emailFlow)
 
-        #expect(flow.purchaseOptions?.meetsPIRLocaleRequirement() == nil)
+        #expect(flow.purchaseDependencies?.meetsPIRLocaleRequirement() == nil)
         #expect(flow.currentView == .email)
         #expect(flow.emailFlowMode == emailFlow)
         #expect(flow.configuration(subscriptionManager: subscriptionManager, featureFlagger: featureFlagger) == Configuration())
@@ -232,7 +232,7 @@ struct SubscriptionFlowTests {
     func cancellationFlow() {
         let flow = Flow.cancellation
 
-        #expect(flow.purchaseOptions?.meetsPIRLocaleRequirement() == nil)
+        #expect(flow.purchaseDependencies?.meetsPIRLocaleRequirement() == nil)
         #expect(flow.emailFlowMode == nil)
         #expect(flow.configuration(subscriptionManager: subscriptionManager, featureFlagger: featureFlagger)
                 == Configuration.cancellation(subscriptionManager: subscriptionManager))

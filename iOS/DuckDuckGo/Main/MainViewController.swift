@@ -4628,7 +4628,7 @@ class MainViewController: UIViewController {
             dataBrokerProtectionViewControllerProvider: dbpIOSPublicInterface,
             wideEvent: AppDependencyProvider.shared.wideEvent,
             featureFlagger: featureFlagger)
-        let options = SubscriptionPurchaseOptions(
+        let purchaseDependencies = SubscriptionPurchaseDependencies(
             subscriptionDataReporter: subscriptionDataReporter,
             tld: AppDependencyProvider.shared.storageCache.tld,
             isDebugOverlayEnabled: subscriptionDebugSettings.isDebugOverlayEnabled,
@@ -4639,7 +4639,7 @@ class MainViewController: UIViewController {
             },
             onRequestDuckAIChat: { [weak self] modelID in self?.requestOnboardingDuckAIChat(modelID: modelID) ?? false })
         let viewController = UIHostingController(rootView: SubscriptionContainerViewFactory.makeView(
-            for: .makePlanOrSubscribeFlow(redirectURLComponents: redirectURLComponents, options: options),
+            for: .makePlanOrSubscribeFlow(redirectURLComponents: redirectURLComponents, dependencies: purchaseDependencies),
             context: context,
             navigationCoordinator: subscriptionNavigationCoordinator
         ))

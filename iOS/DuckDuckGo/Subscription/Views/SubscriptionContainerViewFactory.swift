@@ -32,7 +32,7 @@ enum SubscriptionContainerViewFactory {
 
     static func makeViewModel(for flow: SubscriptionFlow, context: SubscriptionFlowContext) -> SubscriptionContainerViewModel {
         let configuration = flow.configuration(subscriptionManager: context.subscriptionManager, featureFlagger: context.featureFlagger)
-        let purchaseOptions = flow.purchaseOptions
+        let purchaseDependencies = flow.purchaseDependencies
         let viewModel = SubscriptionContainerViewModel(
             subscriptionManager: context.subscriptionManager,
             initialURL: configuration.initialURL,
@@ -41,12 +41,12 @@ enum SubscriptionContainerViewFactory {
             userScript: SubscriptionPagesUserScript(),
             userScriptsDependencies: context.userScriptsDependencies,
             subFeature: DefaultSubscriptionPagesUseSubscriptionFeature.make(configuration: configuration,
-                                                                             subscriptionDataReporter: purchaseOptions?.subscriptionDataReporter,
+                                                                             subscriptionDataReporter: purchaseDependencies?.subscriptionDataReporter,
                                                                              context: context),
             dataBrokerProtectionViewControllerProvider: context.dataBrokerProtectionViewControllerProvider,
-            onboardingKeyValueStore: purchaseOptions?.onboardingKeyValueStore,
-            meetsPIRLocaleRequirement: purchaseOptions?.meetsPIRLocaleRequirement ?? { false },
-            onRequestDuckAIChat: purchaseOptions?.onRequestDuckAIChat
+            onboardingKeyValueStore: purchaseDependencies?.onboardingKeyValueStore,
+            meetsPIRLocaleRequirement: purchaseDependencies?.meetsPIRLocaleRequirement ?? { false },
+            onRequestDuckAIChat: purchaseDependencies?.onRequestDuckAIChat
         )
         if let emailFlowMode = flow.emailFlowMode {
             viewModel.email.setEmailFlowMode(emailFlowMode)

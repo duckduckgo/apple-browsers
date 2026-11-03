@@ -20,6 +20,9 @@
 import UIKit
 
 struct MainMenuBuilder {
+    /// Fills the placeholders that menus mark with `Menu.deferredContent`.
+    var deferredContent: [UIMenu.Identifier: MainMenuDeferredContent] = [:]
+
     func keyCommands(for spec: MainMenuSpec, from commands: [UIKeyCommand],
                      availability: MenuCommandAvailability) -> [UIKeyCommand] {
         let remainingCommands = spec.remainingKeyCommands(from: commands)
@@ -44,72 +47,48 @@ struct MainMenuBuilder {
     func build(_ spec: MainMenuSpec, with builder: UIMenuBuilder) {
         guard builder.system == .main else { return }
         spec.removedMenus.forEach { builder.remove(menu: $0) }
-        for menu in spec.mainMenus {
-            let elements = makeElements(for: menu)
-            builder.replaceChildren(ofMenu: menu.identifier) { systemElements in
-                children(of: menu, elements: elements, systemElements: systemElements)
+        for entry in spec.mainEntries {
+            let elements = makeElements(for: entry.menu)
+            switch entry.menu.placement {
+            case .replaceChildren:
+                builder.replaceChildren(ofMenu: entry.menu.identifier) { systemElements in
+                    entry.section.children(of: elements, systemElements: systemElements)
+                }
+            case .insert(let sibling, let position):
+                insert(entry.menu, children: elements, next: sibling, position: position, into: builder)
             }
         }
     }
 
-    private func children(of menu: MainMenuSpec.Menu, elements: [UIMenuElement],
-                          systemElements: [UIMenuElement]) -> [UIMenuElement] {
-        guard menu.placement == .appendChildren else { return elements }
-        switch menu.identifier {
-        case .edit:
-            return replacingSystemFind(in: systemElements, with: elements)
-        case .window:
-            return removingCloseShortcut(from: systemElements) + elements
-        default:
-            return systemElements + elements
+    private func insert(_ menu: MainMenuSpec.Menu, children: [UIMenuElement], next sibling: UIMenu.Identifier,
+                        position: MainMenuSpec.Menu.Placement.Position, into builder: UIMenuBuilder) {
+        let newMenu = UIMenu(title: menu.title ?? "", identifier: menu.identifier, children: children)
+        switch position {
+        case .before: builder.insertSibling(newMenu, beforeMenu: sibling)
+        case .after: builder.insertSibling(newMenu, afterMenu: sibling)
         }
-    }
-
-    /// Puts the first element (Find in Page) where the system Find submenu was and appends the rest.
-    private func replacingSystemFind(in systemElements: [UIMenuElement], with elements: [UIMenuElement]) -> [UIMenuElement] {
-        guard let findInPage = elements.first else { return systemElements }
-        var replacedFind = false
-        let updated = replacingFind(in: systemElements, with: findInPage, replaced: &replacedFind)
-        return replacedFind ? updated + elements.dropFirst() : systemElements + elements
     }
 
     private func makeElements(for menu: MainMenuSpec.Menu) -> [UIMenuElement] {
-        menu.items.map(makeCommand) + menu.submenus.map { submenu in
-            UIMenu(title: "", identifier: submenu.identifier, options: .displayInline, children: makeElements(for: submenu))
-        }
+        let commands: [UIMenuElement] = menu.items.map(makeCommand)
+        return commands + makeDeferredElements(for: menu) + menu.submenus.map(makeSubmenu)
     }
 
-    private func removingCloseShortcut(from elements: [UIMenuElement]) -> [UIMenuElement] {
-        elements.compactMap { element in
-            if let command = element as? UIKeyCommand, command.input == "w", command.modifierFlags == .command {
-                guard let action = command.action else { return nil }
-                return UICommand(title: command.title, image: command.image, action: action,
-                                 propertyList: command.propertyList, attributes: command.attributes, state: command.state)
-            }
-            if let menu = element as? UIMenu {
-                return menu.replacingChildren(removingCloseShortcut(from: menu.children))
-            }
-            return element
-        }
+    private func makeDeferredElements(for menu: MainMenuSpec.Menu) -> [UIMenuElement] {
+        guard let identifier = menu.deferredContent, let content = deferredContent[identifier] else { return [] }
+        return [content.makeElement()]
     }
 
-    private func replacingFind(in elements: [UIMenuElement], with replacement: UIMenuElement,
-                               replaced: inout Bool) -> [UIMenuElement] {
-        elements.map { element in
-            guard let menu = element as? UIMenu else { return element }
-            if menu.identifier == .find {
-                replaced = true
-                return replacement
-            }
-            return menu.replacingChildren(replacingFind(in: menu.children, with: replacement, replaced: &replaced))
-        }
+    private func makeSubmenu(for menu: MainMenuSpec.Menu) -> UIMenu {
+        UIMenu(title: menu.title ?? "", identifier: menu.identifier,
+               options: menu.title == nil ? .displayInline : [], children: makeElements(for: menu))
     }
 
     func makeCommand(for item: MainMenuSpec.Item) -> UICommand {
         guard let shortcut = item.shortcut else {
-            return UICommand(title: item.title, action: item.command.action)
+            return UICommand(title: item.title, action: item.command.action, propertyList: item.argument)
         }
-        let propertyList: [String: Any] = ["input": shortcut.input, "modifiers": shortcut.modifiers.rawValue]
+        let propertyList: Any = item.argument ?? ["input": shortcut.input, "modifiers": shortcut.modifiers.rawValue]
         let command = UIKeyCommand(title: item.title, action: item.command.action,
                                    input: shortcut.input, modifierFlags: shortcut.modifiers, propertyList: propertyList)
         command.wantsPriorityOverSystemBehavior = true

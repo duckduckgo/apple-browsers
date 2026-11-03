@@ -674,15 +674,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     /// The date this app instance was launched, used for computing uptime in memory pixels.
     private let appLaunchDate = Date()
 
-    /// The storage for the AuthV2 backup token, or nil when `authBackupToken` is off, so no backup token is created, renewed or restored from.
-    /// - Parameters:
-    ///   - featureFlagger: Decides whether the backup token is enabled.
-    ///   - makeStorage: Creates the backup token storage. Called only when the flag is on.
-    static func backupTokenStorageAtLaunch(featureFlagger: FeatureFlagger,
-                                           makeStorage: () -> any AuthTokenStoring) -> (any AuthTokenStoring)? {
-        featureFlagger.isFeatureOn(.authBackupToken) ? makeStorage() : nil
-    }
-
     @MainActor
     // swiftlint:disable cyclomatic_complexity
     init(dockCustomization: DockCustomization) {
@@ -958,12 +949,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                                                                                  authVersion: KeychainErrorAuthVersion.v2),
                           frequency: .legacyDailyAndCount)
         }
-        let backupTokenStorage = Self.backupTokenStorageAtLaunch(featureFlagger: featureFlagger) {
-            SubscriptionTokenKeychainStorage(keychainManager: keychainManager,
-                                             userDefaults: .subs,
-                                             field: .backupTokenContainer) { accessType, error in
-                Logger.subscriptionKeychain.error("Backup token keychain error, \(accessType.rawValue, privacy: .public): \(error.localizedDescription, privacy: .public)")
-            }
+        let backupTokenStorage = SubscriptionTokenKeychainStorage(keychainManager: keychainManager,
+                                                                  userDefaults: .subs,
+                                                                  field: .backupTokenContainer) { accessType, error in
+            Logger.subscriptionKeychain.error("Backup token keychain error, \(accessType.rawValue, privacy: .public): \(error.localizedDescription, privacy: .public)")
         }
 
         let isAuthV2WideEventEnabled = {
@@ -979,6 +968,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                                             authService: authService,
                                             refreshEventMapping: authV2RefreshInstrumentation.eventMapping,
                                             backupStorage: backupTokenStorage,
+                                            isBackupEnabled: { featureFlagger.isFeatureOn(.authBackupToken) },
                                             backupUserDefaults: subscriptionUserDefaults)
         Logger.general.log("Configuring Subscription")
         var apiServiceForSubscription = APIServiceFactory.makeAPIServiceForSubscription(withUserAgent: UserAgent.duckDuckGoUserAgent())

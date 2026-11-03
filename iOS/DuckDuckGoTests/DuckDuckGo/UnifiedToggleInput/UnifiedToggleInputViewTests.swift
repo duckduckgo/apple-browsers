@@ -90,6 +90,31 @@ final class UnifiedToggleInputViewTests: XCTestCase {
         sut.finalizeOmnibarEditingDismiss()
     }
 
+    func testTopMaterialTransitionTakesFireAppearanceWhileEditing() throws {
+        guard #available(iOS 26.0, *) else {
+            throw XCTSkip("Liquid Glass requires iOS 26")
+        }
+        let handler = UnifiedToggleInputHandler(isVoiceSearchEnabled: false)
+        let sut = UnifiedToggleInputView(handler: handler)
+        sut.cardPosition = .top
+        sut.prepareForOmnibarEditingShow()
+        sut.prepareForOmnibarMaterialTransition(duration: 0)
+        UIView.performWithoutAnimation {
+            sut.applyOmnibarEditingShowPose()
+        }
+
+        handler.isFireTab = true
+        sut.refreshFireMode(fireMode: true)
+        UIView.performWithoutAnimation {
+            sut.applyOmnibarEditingDismissPose()
+        }
+        sut.finalizeOmnibarEditingDismiss()
+
+        // The dismiss hands the card the color it held when the transition began, which must now be Fire.
+        let fireBackground = UIColor(singleUseColor: .fireModeCardBackground).resolvedColor(with: sut.traitCollection)
+        XCTAssertTrue(sut.subviews.contains { $0.backgroundColor?.resolvedColor(with: sut.traitCollection) == fireBackground })
+    }
+
     func testBottomMaterialTransitionKeepsToolbarAsTheGlassOwner() {
         let sut = UnifiedToggleInputView(handler: UnifiedToggleInputHandler(isVoiceSearchEnabled: false))
         sut.cardPosition = .bottom

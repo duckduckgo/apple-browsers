@@ -33,17 +33,7 @@ final class WebExtensionPermissionPrompt: WebExtensionPermissionPrompting {
     }
 
     func confirmInstallation(of webExtension: WKWebExtension, permissions: WebExtensionPermissionRequest) async -> WebExtensionPermissionInstallationPromptResult {
-        let iconSize = NSSize(width: 64, height: 64)
-        let entries = permissionEntries(for: permissions)
-        let configuration = WebExtensionAlert.Configuration(
-            icon: webExtension.icon(for: iconSize) ?? webExtension.actionIcon(for: iconSize),
-            title: String(format: UserText.webExtensionInstallTitle, webExtension.displayName ?? UserText.webExtensionUnnamedExtension),
-            message: entries.isEmpty ? UserText.webExtensionNoPermissions : UserText.webExtensionPermissionExplanation,
-            details: entries,
-            checkbox: UserText.webExtensionAllowFireWindows,
-            checkboxToolTip: UserText.webExtensionPrivateAccessExplanation,
-            confirmTitle: UserText.webExtensionInstall,
-            cancelTitle: UserText.cancel)
+        let configuration = WebExtensionAlert.Configuration.installation(of: webExtension, permissionEntries: permissionEntries(for: permissions))
 
         let response = await enqueue { [windowProvider, themeManager] in
             guard let window = windowProvider() else { return WebExtensionAlert.Response.cancelled }
@@ -158,4 +148,21 @@ final class WebExtensionPermissionPrompt: WebExtensionPermissionPrompting {
         }
     }
 
+}
+
+@available(macOS 15.4, *)
+private extension WebExtensionAlert.Configuration {
+
+    static func installation(of webExtension: WKWebExtension, permissionEntries entries: [String]) -> Self {
+        let iconSize = NSSize(width: 64, height: 64)
+        return Self(
+            icon: webExtension.icon(for: iconSize) ?? webExtension.actionIcon(for: iconSize),
+            title: String(format: UserText.webExtensionInstallTitle, webExtension.displayName ?? UserText.webExtensionUnnamedExtension),
+            message: entries.isEmpty ? UserText.webExtensionNoPermissions : UserText.webExtensionPermissionExplanation,
+            details: entries,
+            checkbox: UserText.webExtensionAllowFireWindows,
+            checkboxToolTip: UserText.webExtensionPrivateAccessExplanation,
+            confirmTitle: UserText.webExtensionInstall,
+            cancelTitle: UserText.cancel)
+    }
 }

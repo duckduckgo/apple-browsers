@@ -27,23 +27,12 @@ struct WebExtensionAlert: View {
     struct Configuration {
         let icon: NSImage?
         let title: String
-        let message: String?
-        let details: [String]
-        let checkbox: String?
-        let checkboxToolTip: String?
+        var message: String?
+        var details: [String] = []
+        var checkbox: String?
+        var checkboxToolTip: String?
         let confirmTitle: String
         let cancelTitle: String
-
-        init(icon: NSImage?, title: String, message: String? = nil, details: [String] = [], checkbox: String? = nil, checkboxToolTip: String? = nil, confirmTitle: String, cancelTitle: String) {
-            self.icon = icon
-            self.title = title
-            self.message = message
-            self.details = details
-            self.checkbox = checkbox
-            self.checkboxToolTip = checkboxToolTip
-            self.confirmTitle = confirmTitle
-            self.cancelTitle = cancelTitle
-        }
     }
 
     enum Response {
@@ -90,6 +79,7 @@ struct WebExtensionAlert: View {
             if let icon = configuration.icon {
                 Image(nsImage: icon)
                     .resizable()
+                    .aspectRatio(contentMode: .fit)
                     .frame(width: Constants.iconSize, height: Constants.iconSize)
                     .padding([.top, .leading], Constants.iconInset - Constants.padding)
                     .padding(.bottom, Constants.iconTitleSpacing - Constants.sectionSpacing)

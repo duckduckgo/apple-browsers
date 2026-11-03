@@ -21,7 +21,7 @@ import DesignResourcesKit
 import SwiftUI
 import SwiftUIExtensions
 
-/// Asks the user to confirm an extension action. Confirm is the default button; Cancel responds to Escape.
+/// Asks the user to confirm an extension action.
 struct WebExtensionAlert: View {
 
     struct Configuration {
@@ -105,14 +105,13 @@ struct WebExtensionAlert: View {
             .fill(Color(designSystemColor: .surfacePrimary, palette: palette)))
     }
 
-    /// Presents the alert as a sheet of `window`, and closes it once the user responds.
     @MainActor
     func show(in window: NSWindow) {
         let sheet = WebExtensionAlertWindow()
         var alert = self
-        alert.onResponse = { [weak window, weak sheet] response in
-            if let window, let sheet {
-                window.endSheet(sheet)
+        alert.onResponse = { [weak sheet] response in
+            if let sheet {
+                sheet.sheetParent?.endSheet(sheet)
             }
             onResponse(response)
         }
@@ -133,8 +132,7 @@ struct WebExtensionAlert: View {
             }
 
             if !configuration.details.isEmpty {
-                // A ScrollView has no height of its own here: a hidden copy of the list sizes it, and it's
-                // the only flexible part, so it shrinks when the alert reaches its maximum height.
+                // A hidden copy sizes the ScrollView, the only part that shrinks when the alert hits its max height.
                 detailsList
                     .hidden()
                     .frame(minHeight: 0, alignment: .top)
@@ -159,7 +157,6 @@ struct WebExtensionAlert: View {
     private var detailsList: some View {
         VStack(alignment: .leading, spacing: 0) {
             ForEach(Array(configuration.details.enumerated()), id: \.offset) { _, detail in
-                // Wrapped lines hang under the text, not under the bullet.
                 HStack(alignment: .firstTextBaseline, spacing: Constants.bulletSpacing) {
                     Text(verbatim: "•")
                         .font(.system(size: 13))

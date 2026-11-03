@@ -3953,7 +3953,7 @@ https://duckduckgo.com/mac";
 "preserveLogins.menu.confirm.message" = "%@ is now Fireproof";
 
 /* Deny fireproofing action */
-"preserveLogins.menu.defer" = "Not Now";
+"preserveLogins.menu.defer" = "Got It";
 
 /* Disable fireproofing for site */
 "preserveLogins.menu.disable" = "Remove Fireproofing";
@@ -4818,6 +4818,9 @@ Take back control of your personal information with the browser designed for dat
 
 /* No comment provided by engineer. */
 "siteFeedback.urlPlaceholder" = "Which website is broken?";
+
+/* Continue button */
+"smartling.post-freeze-test.continue" = "Continue";
 
 /* Button for adding this subscription to another device */
 "subscription.activate.add.to.device.button" = "Add to Device";

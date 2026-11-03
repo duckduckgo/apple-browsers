@@ -43,20 +43,20 @@ final class TabManagementUITests: UITestCase {
         }
 
         XCTContext.runActivity(named: "Switch to the first tab") { _ in
-            tabs.privacy.buttons["TabSwitcher.Tab.Open"].tapWhenHittable()
+            tabs.privacy.buttons["TabSwitcher.Tab.Open"].tapWhenHittable(in: app)
             app.assertPageContains("Privacy Test Pages")
             XCTAssertFalse(app.webViews.staticTexts["Search engine"].exists, "The other tab's page is still displayed.")
         }
 
         XCTContext.runActivity(named: "Close the other tab and preserve the selected tab") { _ in
             app.openTabSwitcher()
-            tabs.search.buttons["TabSwitcher.Tab.Close"].tapWhenHittable()
+            tabs.search.buttons["TabSwitcher.Tab.Close"].tapWhenHittable(in: app)
             app.assertTabCount(1)
             XCTAssertTrue(
                 tabs.search.wait(for: NSPredicate(format: "exists == false"), timeout: UITestTimeouts.elementExistence),
                 "The closed tab is still in the tab switcher.")
             XCTAssertTrue(tabs.privacy.exists, "Closing another tab removed the Privacy Test Pages tab.")
-            app.buttons["TabSwitcher.Button.Done"].tapWhenHittable()
+            app.buttons["TabSwitcher.Button.Done"].tapWhenHittable(in: app)
             app.assertPageContains("Privacy Test Pages")
         }
     }
@@ -70,7 +70,7 @@ final class TabManagementUITests: UITestCase {
             app.assertTabCount(2)
             let privacyTab = app.tabCell(at: 0)
             let searchTab = app.tabCell(at: 1)
-            privacyTab.buttons["TabSwitcher.Tab.Open"].tapWhenHittable()
+            privacyTab.buttons["TabSwitcher.Tab.Open"].tapWhenHittable(in: app)
             app.assertPageContains("Privacy Test Pages")
             return (privacy: privacyTab, search: searchTab)
         }
@@ -81,7 +81,7 @@ final class TabManagementUITests: UITestCase {
                 link.wait(for: NSPredicate(format: "isHittable == true"), timeout: UITestTimeouts.elementExistence),
                 "The link to open in a child tab is not tappable.")
             link.press(forDuration: 1)
-            app.buttons["Browser.LinkMenu.OpenInNewTab"].tapWhenHittable()
+            app.buttons["Browser.LinkMenu.OpenInNewTab"].tapWhenHittable(in: app)
             app.assertPageContains("1 major tracker loaded via script src")
 
             // Verify a child was created, rather than navigating the parent in place.
@@ -92,8 +92,8 @@ final class TabManagementUITests: UITestCase {
         }
 
         XCTContext.runActivity(named: "Go back to close the child tab and select its parent") { _ in
-            app.buttons["TabSwitcher.Button.Done"].tapWhenHittable()
-            app.buttons["Browser.Toolbar.Button.Back"].tapWhenHittable()
+            app.buttons["TabSwitcher.Button.Done"].tapWhenHittable(in: app)
+            app.buttons["Browser.Toolbar.Button.Back"].tapWhenHittable(in: app)
 
             app.assertPageContains("Privacy Test Pages")
             app.openTabSwitcher()
@@ -120,7 +120,7 @@ final class TabManagementUITests: UITestCase {
         let gridCellHeight = tab.frame.height
 
         XCTContext.runActivity(named: "Switch to list view") { _ in
-            styleButton.tapWhenHittable()
+            styleButton.tapWhenHittable(in: app)
             XCTAssertTrue(
                 styleButton.wait(for: NSPredicate(format: "label == %@", "Switch to grid view"), timeout: UITestTimeouts.elementExistence),
                 "The tab switcher did not change to list view.")
@@ -131,7 +131,7 @@ final class TabManagementUITests: UITestCase {
 
         let listCellHeight = tab.frame.height
         XCTContext.runActivity(named: "Switch back to grid view") { _ in
-            styleButton.tapWhenHittable()
+            styleButton.tapWhenHittable(in: app)
             XCTAssertTrue(
                 styleButton.wait(for: NSPredicate(format: "label == %@", "Switch to list view"), timeout: UITestTimeouts.elementExistence),
                 "The tab switcher did not change back to grid view.")
@@ -151,37 +151,37 @@ final class TabManagementUITests: UITestCase {
         }
 
         XCTContext.runActivity(named: "Enter selection mode") { _ in
-            app.buttons["TabSwitcher.Button.Edit"].tapWhenHittable()
-            app.buttons["TabSwitcher.Menu.SelectTabs"].tapWhenHittable()
+            app.buttons["TabSwitcher.Button.Edit"].tapWhenHittable(in: app)
+            app.buttons["TabSwitcher.Menu.SelectTabs"].tapWhenHittable(in: app)
             app.assertTabSwitcherTitle("2 Private Tabs")
         }
 
         XCTContext.runActivity(named: "Select and deselect all tabs") { _ in
-            app.buttons["TabSwitcher.Button.SelectAll"].tapWhenHittable()
+            app.buttons["TabSwitcher.Button.SelectAll"].tapWhenHittable(in: app)
             app.assertTabSwitcherTitle("2 Selected")
-            app.buttons["TabSwitcher.Button.DeselectAll"].tapWhenHittable()
+            app.buttons["TabSwitcher.Button.DeselectAll"].tapWhenHittable(in: app)
             app.assertTabSwitcherTitle("2 Private Tabs")
             XCTAssertTrue(app.buttons["TabSwitcher.Button.SelectAll"].exists)
         }
 
         XCTContext.runActivity(named: "Close one selected tab") { _ in
-            app.tabCell(at: 0).buttons["TabSwitcher.Tab.Open"].tapWhenHittable()
+            app.tabCell(at: 0).buttons["TabSwitcher.Tab.Open"].tapWhenHittable(in: app)
             app.assertTabSwitcherTitle("1 Selected")
 
-            app.buttons["TabSwitcher.Button.More"].tapWhenHittable()
-            app.buttons["TabSwitcher.Menu.CloseSelected"].tapWhenHittable()
+            app.buttons["TabSwitcher.Button.More"].tapWhenHittable(in: app)
+            app.buttons["TabSwitcher.Menu.CloseSelected"].tapWhenHittable(in: app)
 
             app.buttons
                 .matching(identifier: "TabSwitcher.CloseTabs.Confirm")
                 .firstMatch
-                .tapWhenHittable()
+                .tapWhenHittable(in: app)
 
             app.assertTabCount(1)
             app.assertTabSwitcherTitle("1 Private Tab")
         }
 
         XCTContext.runActivity(named: "Exit selection mode") { _ in
-            app.buttons["TabSwitcher.Button.Done"].tapWhenHittable()
+            app.buttons["TabSwitcher.Button.Done"].tapWhenHittable(in: app)
             XCTAssertTrue(app.buttons["TabSwitcher.Button.ViewStyle"].waitForExistence(timeout: UITestTimeouts.elementExistence))
         }
     }
@@ -192,12 +192,12 @@ final class TabManagementUITests: UITestCase {
             app.openTabSwitcher()
             app.assertTabCount(1)
             app.tabCell(at: 0).buttons["TabSwitcher.Tab.Open"].press(forDuration: 1)
-            app.buttons["TabSwitcher.Menu.SelectTab"].tapWhenHittable()
+            app.buttons["TabSwitcher.Menu.SelectTab"].tapWhenHittable(in: app)
         }
 
         XCTContext.runActivity(named: "Verify and exit selection mode") { _ in
             app.assertTabSwitcherTitle("1 Selected")
-            app.buttons["TabSwitcher.Button.Done"].tapWhenHittable()
+            app.buttons["TabSwitcher.Button.Done"].tapWhenHittable(in: app)
             XCTAssertTrue(app.buttons["TabSwitcher.Button.ViewStyle"].waitForExistence(timeout: UITestTimeouts.elementExistence))
         }
     }

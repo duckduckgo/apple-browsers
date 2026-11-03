@@ -75,6 +75,7 @@ else
 	BRANCH_EXISTS=false
 fi
 
+git_snapshots read-tree "$POINTER"
 for image in "${IMAGES[@]}"; do
 	blob="$(git_snapshots hash-object -w -- "$RENDERED_DIR/$image")"
 	git_snapshots update-index --add --cacheinfo "100644,$blob,$image"

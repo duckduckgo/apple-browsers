@@ -126,16 +126,8 @@ struct WebExtensionAlert: View {
             }
             onResponse(response)
         }
-        let hostingView = NSHostingView(rootView: alert)
-        hostingView.wantsLayer = true
-        hostingView.layer?.cornerRadius = Constants.cornerRadius
-        hostingView.layer?.masksToBounds = true
-        sheet.contentView = hostingView
+        sheet.contentView = NSHostingView(rootView: alert)
         window.beginSheet(sheet)
-        // The shadow is computed before SwiftUI draws, which leaves it rectangular.
-        DispatchQueue.main.async { [weak sheet] in
-            sheet?.invalidateShadow()
-        }
     }
 
     private var content: some View {

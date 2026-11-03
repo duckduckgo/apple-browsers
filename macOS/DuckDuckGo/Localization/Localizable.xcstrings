@@ -67614,6 +67614,18 @@
         }
       }
     },
+    "main-menu.history.import-history" : {
+      "comment" : "Main Menu History item that opens the Import Browser Data dialog",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Import History…"
+          }
+        }
+      }
+    },
     "main.menu.close.downloads" : {
       "comment" : "Hide Downloads Popover",
       "extractionState" : "extracted_with_value",

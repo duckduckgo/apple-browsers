@@ -563,10 +563,6 @@ final class SubscriptionSettingsViewModel: ObservableObject {
         }
     }
 
-    func completeSubscriptionWithdrawal() async {
-        await subscriptionManager.signOut(notifyUI: true, userInitiated: true)
-    }
-
     func displayGoogleView(_ value: Bool) {
         Logger.subscription.log("Show google")
         if value != state.isShowingGoogleView {

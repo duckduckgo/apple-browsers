@@ -87,7 +87,7 @@ struct SubscriptionSettingsViewV2: View {
             }
             .onDisappear {
                 guard viewModel.withdrawal.confirmation != nil else { return }
-                Task { await viewModel.completeSubscriptionWithdrawal() }
+                Task { await viewModel.withdrawal.completeWithdrawal() }
             }
             .navigationBarTitleDisplayMode(.inline)
             .onChange(of: settingsViewModel.state.subscription.shouldDisplayRestoreSubscriptionError) { value in

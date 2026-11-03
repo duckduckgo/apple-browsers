@@ -298,6 +298,14 @@ struct SubscriptionWithdrawalModelTests {
         #expect(confirmation.refundAmount == nil)
     }
 
+    @available(iOS 16, macOS 13, *)
+    @Test("Completing the withdrawal signs out", .timeLimit(.minutes(1)))
+    func completeWithdrawalSignsOut() async {
+        await makeModel().completeWithdrawal()
+
+        #expect(subscriptionManager.resultTokenContainer == nil)
+    }
+
     // MARK: - Dialog
 
     @available(iOS 16, macOS 13, *)

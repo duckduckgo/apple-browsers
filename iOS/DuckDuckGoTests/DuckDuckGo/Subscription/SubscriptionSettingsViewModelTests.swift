@@ -979,15 +979,6 @@ final class SubscriptionSettingsViewModelTests: XCTestCase {
         XCTAssertNotNil(withdrawal.confirmation)
     }
 
-    func testCompleteSubscriptionWithdrawal_SignsOut() async {
-        mockSubscriptionManager.resultTokenContainer = OAuthTokensFactory.makeValidTokenContainer()
-        sut = makeSUT()
-
-        await sut.completeSubscriptionWithdrawal()
-
-        XCTAssertNil(mockSubscriptionManager.resultTokenContainer)
-    }
-
     // MARK: - Helpers
 
     private func makeSUT(subscriptionFlowsExecuter: SubscriptionFlowsExecuting? = nil,

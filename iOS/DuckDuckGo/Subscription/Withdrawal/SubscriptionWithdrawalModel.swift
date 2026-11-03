@@ -152,6 +152,10 @@ final class SubscriptionWithdrawalModel: ObservableObject {
         }
     }
 
+    func completeWithdrawal() async {
+        await subscriptionManager.signOut(notifyUI: true, userInitiated: true)
+    }
+
     func withdrawTapped() {
         instrumentation.withdrawClicked()
     }

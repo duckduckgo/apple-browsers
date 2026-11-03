@@ -70,13 +70,91 @@ final class DuckAIKeyboardEdgeSweepViewTests: XCTestCase {
     func test_activationWaitsForUsableBoundsWithoutConsumingSweep() throws {
         try XCTSkipIf(UIAccessibility.isReduceMotionEnabled, "Sweep is disabled with Reduce Motion")
         let view = DuckAIKeyboardEdgeSweepView(frame: .zero)
-        view.isActive = true
+        view.update(isActive: true)
         XCTAssertTrue(animatedLayers(in: view).isEmpty)
 
         layout(view, width: 390, height: 300)
 
         XCTAssertFalse(animatedLayers(in: view).isEmpty)
         XCTAssertFalse(view.isHidden)
+    }
+
+    @MainActor
+    func test_softwareKeyboardTargetStartsSweepWhileGuideIsStillHidden() throws {
+        try XCTSkipIf(UIAccessibility.isReduceMotionEnabled, "Sweep is disabled with Reduce Motion")
+        let view = DuckAIKeyboardEdgeSweepView(frame: CGRect(x: 0, y: 0, width: 390, height: 34))
+
+        view.update(isActive: true, keyboardTargetHeight: 300)
+
+        XCTAssertFalse(animatedLayers(in: view).isEmpty)
+        XCTAssertTrue(view.isHidden)
+    }
+
+    @MainActor
+    func test_keyboardRevealAndRepeatedUpdatesDoNotReplayCompletedEarlySweep() throws {
+        try XCTSkipIf(UIAccessibility.isReduceMotionEnabled, "Sweep is disabled with Reduce Motion")
+        let view = DuckAIKeyboardEdgeSweepView(frame: CGRect(x: 0, y: 0, width: 390, height: 34))
+        view.update(isActive: true, keyboardTargetHeight: 300)
+        XCTAssertFalse(animatedLayers(in: view).isEmpty)
+        allLayers(in: view.layer).forEach { $0.removeAllAnimations() }
+
+        view.update(isActive: true)
+        view.update(isActive: true, keyboardTargetHeight: 300)
+        XCTAssertTrue(animatedLayers(in: view).isEmpty)
+        XCTAssertTrue(view.isHidden)
+
+        layout(view, width: 390, height: 100)
+        view.update(isActive: true)
+        view.update(isActive: true, keyboardTargetHeight: 300)
+
+        XCTAssertTrue(animatedLayers(in: view).isEmpty)
+        XCTAssertFalse(view.isHidden)
+    }
+
+    @MainActor
+    func test_inactiveAndHardwareKeyboardTargetsDoNotStartSweepOnLaterActivation() throws {
+        try XCTSkipIf(UIAccessibility.isReduceMotionEnabled, "Sweep is disabled with Reduce Motion")
+        let view = DuckAIKeyboardEdgeSweepView(frame: CGRect(x: 0, y: 0, width: 390, height: 34))
+
+        view.update(isActive: isActive(inputMode: .search), keyboardTargetHeight: 300)
+        view.update(isActive: true)
+        XCTAssertTrue(animatedLayers(in: view).isEmpty)
+        XCTAssertTrue(view.isHidden)
+
+        view.update(isActive: true, keyboardTargetHeight: 60)
+
+        XCTAssertTrue(animatedLayers(in: view).isEmpty)
+        XCTAssertTrue(view.isHidden)
+    }
+
+    @MainActor
+    func test_inactiveUpdatesLeavePendingLayoutUntouched() {
+        let view = DuckAIKeyboardEdgeSweepView(frame: CGRect(x: 0, y: 0, width: 390, height: 34))
+        view.setNeedsLayout()
+        XCTAssertTrue(view.layer.needsLayout())
+
+        view.update(isActive: false, keyboardTargetHeight: 300)
+        view.update(isActive: false)
+
+        XCTAssertTrue(view.layer.needsLayout())
+    }
+
+    @MainActor
+    func test_deactivationClearsAnticipatedRevealAndAllowsFreshReveal() throws {
+        try XCTSkipIf(UIAccessibility.isReduceMotionEnabled, "Sweep is disabled with Reduce Motion")
+        let view = DuckAIKeyboardEdgeSweepView(frame: .zero)
+        view.update(isActive: true, keyboardTargetHeight: 300)
+        XCTAssertTrue(animatedLayers(in: view).isEmpty)
+
+        view.update(isActive: false)
+        layout(view, width: 390, height: 34)
+        XCTAssertTrue(animatedLayers(in: view).isEmpty)
+
+        view.update(isActive: true)
+        XCTAssertTrue(animatedLayers(in: view).isEmpty)
+
+        view.update(isActive: true, keyboardTargetHeight: 300)
+        XCTAssertFalse(animatedLayers(in: view).isEmpty)
     }
 
     @MainActor
@@ -107,11 +185,11 @@ final class DuckAIKeyboardEdgeSweepViewTests: XCTestCase {
         let view = try makeStartedView()
         allLayers(in: view.layer).forEach { $0.removeAllAnimations() }
 
-        view.isActive = true
+        view.update(isActive: true)
         view.setNeedsLayout()
         view.layoutIfNeeded()
-        view.isActive = false
-        view.isActive = true
+        view.update(isActive: false)
+        view.update(isActive: true)
         layout(view, width: 390, height: 70)
         layout(view, width: 390, height: 300)
 
@@ -125,8 +203,8 @@ final class DuckAIKeyboardEdgeSweepViewTests: XCTestCase {
         layout(view, width: 600, height: 300)
 
         XCTAssertTrue(animatedLayers(in: view).isEmpty)
-        view.isActive = false
-        view.isActive = true
+        view.update(isActive: false)
+        view.update(isActive: true)
         layout(view, width: 390, height: 300)
         XCTAssertTrue(animatedLayers(in: view).isEmpty)
     }
@@ -137,7 +215,7 @@ final class DuckAIKeyboardEdgeSweepViewTests: XCTestCase {
     private func makeStartedView() throws -> DuckAIKeyboardEdgeSweepView {
         try XCTSkipIf(UIAccessibility.isReduceMotionEnabled, "Sweep is disabled with Reduce Motion")
         let view = DuckAIKeyboardEdgeSweepView(frame: CGRect(x: 0, y: 0, width: 390, height: 300))
-        view.isActive = true
+        view.update(isActive: true)
         XCTAssertFalse(animatedLayers(in: view).isEmpty)
         return view
     }

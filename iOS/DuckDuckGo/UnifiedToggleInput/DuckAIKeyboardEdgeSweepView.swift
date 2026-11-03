@@ -62,18 +62,26 @@ final class DuckAIKeyboardEdgeSweepView: UIView {
         isFeatureOn && isUserSettingEnabled && isInputEditing && inputMode == .aiChat && isUnifiedToggleInputAvailable
     }
 
-    /// Set by the owner whenever the Duck.ai input gains or loses the keyboard.
-    var isActive = false {
-        didSet {
-            guard isActive != oldValue else { return }
-            setNeedsLayout()
-            layoutIfNeeded()
+    func update(isActive: Bool, keyboardTargetHeight: CGFloat? = nil) {
+        guard isActive || self.isActive else { return }
+        self.isActive = isActive
+        if !isActive {
+            isAwaitingKeyboardReveal = false
+        } else if let keyboardTargetHeight {
+            isAwaitingKeyboardReveal = keyboardTargetHeight >= Constants.minimumKeyboardHeight
+                && bounds.height < Constants.minimumKeyboardHeight
         }
+        setNeedsLayout()
+        layoutIfNeeded()
     }
 
+    private var isActive = false
+    private var isAwaitingKeyboardReveal = false
     private var hasPlayed = false
     private var pendingReset: DispatchWorkItem?
-    private var isShowing: Bool { isActive && bounds.width > 0 && bounds.height >= Constants.minimumKeyboardHeight }
+    private var isPlaybackReady: Bool {
+        isActive && bounds.width > 0 && (bounds.height >= Constants.minimumKeyboardHeight || isAwaitingKeyboardReveal)
+    }
     private var ringBounds: CGRect { CGRect(x: 0, y: 0, width: max(0, bounds.width), height: max(0, bounds.width)) }
     private let fadeContainer = CALayer()
     private let fadeMask = CAGradientLayer()
@@ -125,6 +133,9 @@ final class DuckAIKeyboardEdgeSweepView: UIView {
     override func layoutSubviews() {
         super.layoutSubviews()
         isHidden = bounds.width <= 0 || bounds.height < Constants.minimumKeyboardHeight
+        if bounds.height >= Constants.minimumKeyboardHeight {
+            isAwaitingKeyboardReveal = false
+        }
         if hasPlayed && trailHost.bounds.width != ringBounds.width {
             removeAnimations()
         }
@@ -153,7 +164,7 @@ final class DuckAIKeyboardEdgeSweepView: UIView {
     }
 
     private func reconcilePlayback() {
-        if isShowing {
+        if isPlaybackReady {
             pendingReset?.cancel()
             pendingReset = nil
             guard !hasPlayed else { return }
@@ -163,7 +174,7 @@ final class DuckAIKeyboardEdgeSweepView: UIView {
             let work = DispatchWorkItem { [weak self] in
                 guard let self else { return }
                 self.pendingReset = nil
-                guard !self.isShowing else { return }
+                guard !self.isPlaybackReady else { return }
                 self.reset()
             }
             pendingReset = work

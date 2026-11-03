@@ -1128,15 +1128,24 @@ extension MainViewController {
     }
 
     /// Plays the keyboard edge sweep once whenever the keyboard belongs to the Duck.ai input.
-    func updateDuckAIKeyboardEdgeSweep() {
+    func updateDuckAIKeyboardEdgeSweep(keyboardTargetFrame: CGRect? = nil) {
         guard let coordinator = unifiedToggleInputCoordinator else { return }
-        duckAIKeyboardEdgeSweepView?.isActive = DuckAIKeyboardEdgeSweepView.isActive(
+        let isActive = DuckAIKeyboardEdgeSweepView.isActive(
             isFeatureOn: featureFlagger.isFeatureOn(.unifiedToggleInputKeyboardEdgeSweep),
             isUserSettingEnabled: aiChatSettings.isKeyboardAnimationEnabled,
             isInputEditing: coordinator.isOmnibarSession,
             inputMode: coordinator.inputMode,
             isUnifiedToggleInputAvailable: unifiedToggleInputFeature.isAvailable
         )
+        let keyboardTargetHeight: CGFloat?
+        if isActive, let keyboardTargetFrame {
+            let keyboardFrameInView = view.convert(keyboardTargetFrame, from: nil)
+            let intersection = view.bounds.intersection(keyboardFrameInView)
+            keyboardTargetHeight = intersection.isNull ? 0 : intersection.height
+        } else {
+            keyboardTargetHeight = nil
+        }
+        duckAIKeyboardEdgeSweepView?.update(isActive: isActive, keyboardTargetHeight: keyboardTargetHeight)
     }
 
     func installFloatingReturnKeyViewController() {

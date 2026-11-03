@@ -75,7 +75,6 @@ extension Preferences {
                     Button(UserText.importPasswords) {
                         model.openImportPasswordsWindow()
                     }
-                    .disabled(model.isManagedByExtension)
 
                     Button(UserText.exportLogins) {
                         model.openExportLogins()

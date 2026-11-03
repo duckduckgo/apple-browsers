@@ -439,7 +439,7 @@ extension Preferences {
                     }
                 }
                 .frame(width: tileSize, height: tileSize)
-                .background(Color(designSystemColor: .containerFillTertiary, palette: palette))
+                .background(Color(designSystemColor: .surfaceCanvas, palette: palette))
                 .clipShape(RoundedRectangle(cornerRadius: tileCornerRadius, style: .continuous))
                 .task(id: item.iconURL) {
                     guard let iconURL = item.iconURL else { return }
@@ -451,6 +451,7 @@ extension Preferences {
                         .font(.system(size: 13, weight: .semibold))
                         .foregroundColor(Color(designSystemColor: .textPrimary, palette: palette))
                     Text(item.publisher)
+                        .font(.system(size: 11))
                         .foregroundColor(Color.rebrandableLink(palette: palette))
                 }
                 .lineLimit(1)

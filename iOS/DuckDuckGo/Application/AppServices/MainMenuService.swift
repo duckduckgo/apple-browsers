@@ -27,6 +27,7 @@ final class MainMenuService {
     private let featureFlagger: FeatureFlagger
     private let idiom: UIUserInterfaceIdiom
     private let rebuildRequests = PassthroughSubject<Void, Never>()
+    private var isBuildHandlerRegistered = false
     private var cancellables = Set<AnyCancellable>()
 
     var spec: MainMenuSpec {
@@ -51,8 +52,13 @@ final class MainMenuService {
             .prepend(featureFlagger.isIPadMenuBarEnabled(idiom: idiom))
             .removeDuplicates()
             .dropFirst()
-            .sink { [weak self] _ in self?.requestRebuild() }
+            .sink { [weak self] _ in
+                self?.registerBuildHandlerIfEnabled()
+                self?.requestRebuild()
+            }
             .store(in: &cancellables)
+
+        registerBuildHandlerIfEnabled()
     }
 
     func buildMenu(with builder: UIMenuBuilder) {
@@ -62,6 +68,16 @@ final class MainMenuService {
     func requestRebuild() {
         guard idiom == .pad else { return }
         rebuildRequests.send()
+    }
+
+    /// Takes over building the main menu the first time the feature is on, so flag-off users keep the `AppDelegate` menu.
+    private func registerBuildHandlerIfEnabled() {
+        guard !isBuildHandlerRegistered, featureFlagger.isIPadMenuBarEnabled(idiom: idiom),
+              #available(iOS 26.0, *) else { return }
+        isBuildHandlerRegistered = true
+        UIMainMenuSystem.shared.setBuildConfiguration(UIMainMenuSystem.Configuration()) { [weak self] builder in
+            self?.buildMenu(with: builder)
+        }
     }
 
 }

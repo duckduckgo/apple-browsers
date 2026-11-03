@@ -12,4 +12,5 @@ appId: com.duckduckgo.mobile.ios
         currentAppVariant: ${APP_VARIANT}
         isRunningUITests: true
         "ff.alwaysShowKeyboardOnNewTabPage": "false"
+        "ff.slideToDelete": "false"
         isInternalUser: ${INTERNAL_USER_MODE}

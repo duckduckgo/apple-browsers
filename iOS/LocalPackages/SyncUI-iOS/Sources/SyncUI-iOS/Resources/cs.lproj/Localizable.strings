@@ -46,9 +46,6 @@
 /* Camera View - Permission Required */
 "camera.permission.required" = "Je potřeba přístup k fotoaparátu";
 
-/* No comment provided by engineer. */
-"Cancel" = "Zrušit";
-
 /* Standard Buttons - Cancel Button */
 "cancel.button" = "Zrušit";
 

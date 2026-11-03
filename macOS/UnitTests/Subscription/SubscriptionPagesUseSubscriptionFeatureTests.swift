@@ -824,7 +824,7 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
         subscriptionManager.resultTokenContainer = OAuthTokensFactory.makeValidTokenContainerWithEntitlements()
 
         // Set up successful purchase
-        mockStorePurchaseManager.purchaseSubscriptionResult = .success("test-transaction-jws")
+        mockStorePurchaseManager.purchaseSubscriptionResult = .success((transactionJWS: "test-transaction-jws", isFreeTrial: false))
 
         // Set up successful confirmation
         let subscription = DuckDuckGoSubscription(
@@ -1104,7 +1104,7 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
         subscriptionManager.resultSubscription = .success(existingSubscription)
 
         // Set up successful purchase
-        mockStorePurchaseManager.purchaseSubscriptionResult = .success("test-transaction-jws")
+        mockStorePurchaseManager.purchaseSubscriptionResult = .success((transactionJWS: "test-transaction-jws", isFreeTrial: false))
 
         // Set up successful confirmation
         let newSubscription = DuckDuckGoSubscription(
@@ -1246,7 +1246,7 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
         subscriptionManager.resultSubscription = .success(existingSubscription)
 
         // Set up successful purchase
-        mockStorePurchaseManager.purchaseSubscriptionResult = .success("test-transaction-jws")
+        mockStorePurchaseManager.purchaseSubscriptionResult = .success((transactionJWS: "test-transaction-jws", isFreeTrial: false))
 
         // Set up successful confirmation
         let newSubscription = DuckDuckGoSubscription(

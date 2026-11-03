@@ -46,9 +46,6 @@
 /* Camera View - Permission Required */
 "camera.permission.required" = "Būtinas leidimas naudotis kamera";
 
-/* No comment provided by engineer. */
-"Cancel" = "Atšaukti";
-
 /* Standard Buttons - Cancel Button */
 "cancel.button" = "Atšaukti";
 

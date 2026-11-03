@@ -1468,6 +1468,9 @@ public struct UserText {
     public static let syncPromoPasswordsMessage = NSLocalizedString("sync.promo.passwords.message", value: "No account needed. End-to-end encryption means nobody but you can see your passwords, not even us.", comment: "Message for the Sync Promotion banner when user has passwords that can be synced")
     public static let syncPromoConfirmAction = NSLocalizedString("sync.promo.confirm.action", value: "Set Up Sync", comment: "Title for a button in the Sync Promotion banner to set up Sync")
     public static let syncPromoDismissAction = NSLocalizedString("sync.promo.dismiss.action", value: "No Thanks", comment: "Title for a button in the Sync Promotion banner to dismiss Sync promotion banner")
+    public static let syncPromoBookmarksRedesignMessage = NSLocalizedString("sync.promo.bookmarks.redesign.message", value: "End-to-end encrypted. Nobody can see your bookmarks, not even us.", comment: "Message for the redesigned Sync Promotion banner on the Bookmarks screen")
+    public static let syncPromoCloseAccessibilityLabel = NSLocalizedString("sync.promo.close.accessibility.label", value: "Dismiss sync promotion", comment: "Accessibility label for the close button on the Sync Promotion banner")
+    public static let syncPromoToggleTitle = NSLocalizedString("sync.promo.toggle.title", value: "Sync & Backup", comment: "Label for a toggle in the Sync Promotion banner that opens Sync settings and starts setting up Sync with another device")
 
     // MARK: Sync Recovery Prompts
     public static func syncRecoveryPromptTitle(deviceName: String) -> String {
@@ -2571,6 +2574,11 @@ public struct UserText {
     public static let aiChatHeaderNewTabTitle = NSLocalizedString("aichat.header.plusMenu.newTab", value: "New Tab", comment: "Title for the New Tab row in the Duck.ai tab header Plus (+) menu")
     public static let aiChatHeaderNewSearchTitle = NSLocalizedString("aichat.header.plusMenu.newSearch", value: "New Search", comment: "Title for the New Search row in the Duck.ai tab header Plus (+) menu — opens a new tab and forces search mode for that entry")
     public static let aiChatHeaderNewFireTabTitle = NSLocalizedString("aichat.header.plusMenu.newFireTab", value: "New Fire Tab", comment: "Title for the New Fire Tab row in the Duck.ai tab header Plus (+) menu")
+    public static let aiChatHeaderNewTabSectionTitle = NSLocalizedString("aichat.header.plusMenu.newTabSection", value: "New Tab", comment: "Section header in the Duck.ai tab header Plus (+) menu; every row below it opens a new tab")
+    public static let aiChatHeaderNewTabChatTitle = NSLocalizedString("aichat.header.plusMenu.newTabSection.chat", value: "Chat", comment: "Row in the New Tab section of the Duck.ai tab header Plus (+) menu — opens a new Duck.ai chat in a new tab")
+    public static let aiChatHeaderNewTabVoiceChatTitle = NSLocalizedString("aichat.header.plusMenu.newTabSection.voiceChat", value: "Voice Chat", comment: "Row in the New Tab section of the Duck.ai tab header Plus (+) menu — opens a new Duck.ai voice chat in a new tab")
+    public static let aiChatHeaderNewTabImageTitle = NSLocalizedString("aichat.header.plusMenu.newTabSection.image", value: "Image", comment: "Row in the New Tab section of the Duck.ai tab header Plus (+) menu — opens Duck.ai in image generation mode in a new tab")
+    public static let aiChatHeaderNewTabSearchTitle = NSLocalizedString("aichat.header.plusMenu.newTabSection.search", value: "Search", comment: "Row in the Duck.ai tab header Plus (+) menu — opens a new tab in search mode")
     public static let aiChatAppMenuHeaderChatHistory = NSLocalizedString("aichat.appMenu.header.chatHistory", value: "Chat History", comment: "Header tile label in the app menu on a Duck.ai tab — opens the recent-chats sidebar")
     public static let aiChatAppMenuHeaderChatSettings = NSLocalizedString("aichat.appMenu.header.chatSettings", value: "Chat Settings", comment: "Header tile label in the app menu on a Duck.ai tab — opens the Duck.ai-specific settings screen")
     public static let aiChatAppMenuChats = NSLocalizedString("aichat.appMenu.chats", value: "Chats", comment: "List row label in the app menu on a Duck.ai tab — opens the recent Duck.ai chats sidebar")

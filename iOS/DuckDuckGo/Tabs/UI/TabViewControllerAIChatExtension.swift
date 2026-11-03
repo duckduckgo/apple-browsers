@@ -40,7 +40,7 @@ protocol AITabController {
     func submitToggleSidebarAction()
 
     /// Opens a new AI chat in a new tab.
-    func openNewChatInNewTab(source: AIChatEntryPointSource?)
+    func openNewChatInNewTab(source: AIChatEntryPointSource?, inputRequest: DuckAINewChatInputRequest?)
 }
 
 // MARK: - AITabController
@@ -97,14 +97,14 @@ extension TabViewController: AITabController {
     }
     
     /// Opens a new AI chat in a new tab.
-    func openNewChatInNewTab(source: AIChatEntryPointSource?) {
+    func openNewChatInNewTab(source: AIChatEntryPointSource?, inputRequest: DuckAINewChatInputRequest? = nil) {
         let newChatURL = aiChatContentHandler.buildQueryURL(
             query: nil,
             autoSend: false,
             flowType: .default,
             tools: nil
         )
-        delegate?.tab(self, didRequestNewDuckAITabForUrl: newChatURL, entrySource: source)
+        delegate?.tab(self, didRequestNewDuckAITabForUrl: newChatURL, entrySource: source, newChatInputRequest: inputRequest)
     }
 
     /// Opens the Duck.ai chats sidebar in a new tab. Mirrors the contextual sheet's "View all chats"

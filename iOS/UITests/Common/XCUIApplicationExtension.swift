@@ -29,7 +29,7 @@ extension XCUIApplication {
 
     func enterSearchText(_ text: String, file: StaticString = #filePath, line: UInt = #line) {
         XCTAssertTrue(
-            searchEntry.wait(for: NSPredicate(format: "isHittable == true"), timeout: UITestTimeouts.navigation),
+            searchEntry.waitForHittableInAppWindow(in: self, timeout: UITestTimeouts.navigation),
             "Search entry did not become tappable.", file: file, line: line)
         searchEntry.tap()
         // Focusing the omnibar selects the existing URL, so typing replaces it.
@@ -67,31 +67,44 @@ extension XCUIApplication {
     }
 
     func dismissAddressBarEditing(file: StaticString = #filePath, line: UInt = #line) {
-        let menuButton = buttons["Browser.Toolbar.Button.Menu"]
-        if menuButton.isHittable {
+        let dismissButtons = buttons.matching(NSPredicate(format: "identifier IN %@", [
+            "Browser.OmniBar.Button.Dismiss", "UnifiedToggleInput.Button.Dismiss"
+        ]))
+        let activeDismissButton = {
+            dismissButtons.allElementsBoundByIndex.first { $0.isHittableInAppWindow(in: self) }
+        }
+        let menuButtons = buttons.matching(NSPredicate(format: "identifier IN %@", [
+            "Browser.Toolbar.Button.Menu", "Browser.OmniBar.Button.BrowsingMenu"
+        ]))
+        let tabSwitcher = buttons["Browser.Toolbar.Button.TabSwitcher"]
+        let toolbarIsReady = NSPredicate { _, _ in
+            !self.keyboards.firstMatch.exists &&
+                activeDismissButton() == nil &&
+                tabSwitcher.isHittableInAppWindow(in: self) &&
+                menuButtons.allElementsBoundByIndex.contains { $0.isHittableInAppWindow(in: self) }
+        }
+        // Hidden toolbar controls can remain exposed beneath the address-input overlay.
+        let inputOrToolbarIsReady = NSPredicate { _, _ in
+            activeDismissButton() != nil || toolbarIsReady.evaluate(with: self)
+        }
+        guard wait(for: inputOrToolbarIsReady, timeout: UITestTimeouts.elementExistence) else {
+            XCTFail("Neither address-input dismissal nor browser controls became available.", file: file, line: line)
             return
         }
-
-        // Classic omnibar editing uses Cancel; the unified input overlay uses Back.
-        let cancelButton = buttons["Cancel"].firstMatch
-        let backButton = buttons["Back"].firstMatch
-        if cancelButton.isHittable {
-            cancelButton.tap()
-        } else {
-            backButton.tapWhenHittable(file: file, line: line)
+        if let dismissButton = activeDismissButton() {
+            dismissButton.tap()
         }
 
         XCTAssertTrue(
-            menuButton.wait(
-                for: NSPredicate(format: "isHittable == true AND isEnabled == true"),
-                timeout: UITestTimeouts.elementExistence),
+            wait(for: toolbarIsReady, timeout: UITestTimeouts.elementExistence),
             "Browser controls did not appear after dismissing address-bar editing.", file: file, line: line)
     }
 
     func openTabSwitcher(file: StaticString = #filePath, line: UInt = #line) {
+        dismissAddressBarEditing(file: file, line: line)
         buttons["Browser.Toolbar.Button.TabSwitcher"].tapWhenHittable(file: file, line: line)
         XCTAssertTrue(
-            buttons["TabSwitcher.Button.NewTab"].waitForExistence(timeout: UITestTimeouts.elementExistence),
+            buttons["TabSwitcher.Button.Done"].waitForHittableInAppWindow(in: self, timeout: UITestTimeouts.elementExistence),
             "Tab switcher did not appear.", file: file, line: line)
     }
 
@@ -133,6 +146,27 @@ extension XCUIApplication {
 }
 
 extension XCUIElement {
+
+    func waitForHittableInAppWindow(in application: XCUIApplication, timeout: TimeInterval) -> Bool {
+        wait(for: NSPredicate { [self] _, _ in
+            isHittableInAppWindow(in: application)
+        }, timeout: timeout)
+    }
+
+    func isHittableInAppWindow(in application: XCUIApplication) -> Bool {
+        guard exists else { return false }
+        let frame = self.frame
+        guard frame.origin.x.isFinite, frame.origin.y.isFinite,
+              frame.width.isFinite, frame.height.isFinite,
+              frame.width > 0, frame.height > 0 else { return false }
+
+        let window = application.windows.firstMatch
+        guard window.exists else { return false }
+        let windowFrame = window.frame
+        guard windowFrame.width > 0, windowFrame.height > 0,
+              windowFrame.intersects(frame) else { return false }
+        return isEnabled && isHittable
+    }
 
     func tapWhenHittable(file: StaticString = #filePath, line: UInt = #line) {
         let predicate = NSPredicate(format: "isHittable == true AND isEnabled == true")

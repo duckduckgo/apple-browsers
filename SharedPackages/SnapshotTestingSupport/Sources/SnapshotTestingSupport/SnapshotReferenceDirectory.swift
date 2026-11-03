@@ -18,17 +18,23 @@
 
 import Foundation
 
-func snapshotReferenceDirectory(file: StaticString) -> String? {
+func snapshotReferenceDirectory(
+    file: StaticString,
+    environment: [String: String] = ProcessInfo.processInfo.environment
+) -> String? {
     snapshotDirectory(file: file) { repoRoot in
-        if let override = ProcessInfo.processInfo.environment["SNAPSHOT_REFERENCE_DIR"], !override.isEmpty {
+        if let override = environment["SNAPSHOT_REFERENCE_DIR"], !override.isEmpty {
             return URL(fileURLWithPath: override, isDirectory: true)
         }
         return repoRoot.appendingPathComponent("SnapshotReferences", isDirectory: true)
     }
 }
 
-func snapshotExportDirectory(file: StaticString) -> String? {
-    guard let exportRoot = ProcessInfo.processInfo.environment["SNAPSHOT_EXPORT_DIR"],
+func snapshotExportDirectory(
+    file: StaticString,
+    environment: [String: String] = ProcessInfo.processInfo.environment
+) -> String? {
+    guard let exportRoot = environment["SNAPSHOT_EXPORT_DIR"],
           !exportRoot.isEmpty else {
         return nil
     }

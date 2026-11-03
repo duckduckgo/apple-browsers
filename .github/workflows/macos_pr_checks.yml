@@ -288,6 +288,7 @@ jobs:
         SPM_FORCE_DEBUG: "1"
       run: |
         echo "Runner ${RUNNER_NAME} (${RUNNER_TRACKING_ID})"
+        sw_vers
 
         set -o pipefail && xcodebuild build-for-testing \
           -scheme "${{ matrix.scheme }}" \

@@ -27,8 +27,8 @@ public func assertImageSnapshot(
     strategy: SnapshotImageStrategy = .allAppearances,
     size: SnapshotImageSize,
     record: Bool = false,
-    precision: Float = 0.9999,
-    perceptualPrecision: Float = 0.98,
+    precision: Float = SnapshotTolerance.precision,
+    perceptualPrecision: Float = SnapshotTolerance.perceptualPrecision,
     fileID: StaticString = #fileID,
     file: StaticString = #filePath,
     testName: String = #function,
@@ -71,8 +71,8 @@ public func assertImageSnapshot(
     strategy: SnapshotImageStrategy = .allAppearances,
     size: SnapshotImageSize,
     record: Bool = false,
-    precision: Float = 0.9999,
-    perceptualPrecision: Float = 0.98,
+    precision: Float = SnapshotTolerance.precision,
+    perceptualPrecision: Float = SnapshotTolerance.perceptualPrecision,
     fileID: StaticString = #fileID,
     file: StaticString = #filePath,
     testName: String = #function,
@@ -99,8 +99,8 @@ public func assertImageSnapshot<Value: SwiftUI.View>(
     strategy: SnapshotImageStrategy = .allAppearances,
     size: SnapshotImageSize,
     record: Bool = false,
-    precision: Float = 0.9999,
-    perceptualPrecision: Float = 0.98,
+    precision: Float = SnapshotTolerance.precision,
+    perceptualPrecision: Float = SnapshotTolerance.perceptualPrecision,
     fileID: StaticString = #fileID,
     file: StaticString = #filePath,
     testName: String = #function,
@@ -169,12 +169,12 @@ private func resolvedSize(
 
 private func resolvedSize(for view: NSView) -> CGSize {
     if view.frame.width > 0, view.frame.height > 0 {
-        return view.frame.size
+        return wholePointSize(view.frame.size)
     }
 
     let fittingSize = view.fittingSize
     if fittingSize.width > 0, fittingSize.height > 0 {
-        return fittingSize
+        return wholePointSize(fittingSize)
     }
 
     return SnapshotDevice.macOSDefaultSize
@@ -187,7 +187,7 @@ private func constrainedSize(for view: NSView, width: CGFloat) -> CGSize {
     view.setFrameSize(originalSize)
 
     if fittingHeight > 0 {
-        return CGSize(width: width, height: fittingHeight)
+        return wholePointSize(CGSize(width: width, height: fittingHeight))
     }
 
     return CGSize(width: width, height: SnapshotDevice.macOSDefaultSize.height)
@@ -244,7 +244,7 @@ private func swiftUISnapshotSize<Value: SwiftUI.View>(
         )
 
         if measuredSize.height > 0 {
-            return CGSize(width: width, height: measuredSize.height)
+            return wholePointSize(CGSize(width: width, height: measuredSize.height))
         }
 
         return CGSize(width: width, height: SnapshotDevice.macOSDefaultSize.height)
@@ -264,10 +264,14 @@ private func swiftUISnapshotSize<Value: SwiftUI.View>(
         )
     )
     if measuredSize.width > 0, measuredSize.height > 0 {
-        return measuredSize
+        return wholePointSize(measuredSize)
     }
 
     return resolvedSize(for: viewController.view)
+}
+
+private func wholePointSize(_ size: CGSize) -> CGSize {
+    CGSize(width: size.width.rounded(.up), height: size.height.rounded(.up))
 }
 
 private extension SnapshotAppearance {

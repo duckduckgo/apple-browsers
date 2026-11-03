@@ -44,6 +44,41 @@ func assertSnapshot<Value, Format>(
         resolvedName = name
     }
 
+    let failure = verifySnapshot(
+        of: try value(),
+        as: snapshotting,
+        named: resolvedName,
+        record: record,
+        snapshotDirectory: snapshotDirectory,
+        comparisonMode: SnapshotEnvironment.currentComparisonMode(),
+        exportDirectory: snapshotExportDirectory(file: filePath),
+        timeout: timeout,
+        fileID: fileID,
+        file: filePath,
+        testName: testName,
+        line: line,
+        column: column
+    )
+
+    guard let message = failure else { return }
+    recordSnapshotIssue(message, fileID: fileID, file: filePath, line: line, column: column)
+}
+
+func verifySnapshot<Value, Format>(
+    of value: @autoclosure () throws -> Value,
+    as snapshotting: Snapshotting<Value, Format>,
+    named name: String?,
+    record: SnapshotTestingConfiguration.Record?,
+    snapshotDirectory: String?,
+    comparisonMode: SnapshotComparisonMode,
+    exportDirectory: String?,
+    timeout: TimeInterval = 5,
+    fileID: StaticString,
+    file filePath: StaticString,
+    testName: String,
+    line: UInt,
+    column: UInt
+) -> String? {
     var rendered: Format?
     var comparing = snapshotting
     comparing.snapshot = { value in
@@ -52,14 +87,14 @@ func assertSnapshot<Value, Format>(
             return format
         }
     }
-    if case .skipComparison = SnapshotEnvironment.currentComparisonMode() {
+    if case .skipComparison = comparisonMode {
         comparing.diffing.diffV2 = { _, _ in nil }
     }
 
-    let failure = verifySnapshot(
+    let failure = SnapshotTesting.verifySnapshot(
         of: try value(),
         as: comparing,
-        named: resolvedName,
+        named: name,
         record: record,
         snapshotDirectory: snapshotDirectory,
         timeout: timeout,
@@ -69,13 +104,13 @@ func assertSnapshot<Value, Format>(
         line: line,
         column: column
     )
-    if let rendered, let exportDirectory = snapshotExportDirectory(file: filePath) {
+    if let rendered, let exportDirectory {
         var exporting = snapshotting
         exporting.snapshot = { _ in Async(value: rendered) }
-        _ = verifySnapshot(
+        _ = SnapshotTesting.verifySnapshot(
             of: try value(),
             as: exporting,
-            named: resolvedName,
+            named: name,
             record: .all,
             snapshotDirectory: exportDirectory,
             fileID: fileID,
@@ -85,7 +120,5 @@ func assertSnapshot<Value, Format>(
             column: column
         )
     }
-
-    guard let message = failure else { return }
-    recordSnapshotIssue(message, fileID: fileID, file: filePath, line: line, column: column)
+    return failure
 }

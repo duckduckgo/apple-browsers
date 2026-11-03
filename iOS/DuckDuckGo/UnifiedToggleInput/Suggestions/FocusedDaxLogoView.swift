@@ -40,6 +40,10 @@ struct FocusedDaxLogoView: View {
     var freezes = false
     /// A logo built while it has no room has no frame to hold yet, so it only freezes once it has shown.
     @State private var hasShown = false
+    /// The mark the logo rests at once a morph has finished, or once a freeze ends: a frozen logo was hidden,
+    /// so it reappears at rest instead of morphing from the held frame, which can be the other mode's mark.
+    /// Resting also keeps a finished morph from replaying when the app returns from the background.
+    @State private var restingProgress: CGFloat?
 
     private var animationName: String {
         colorScheme == .dark ? Constant.darkAnimationName : Constant.animationName
@@ -47,6 +51,7 @@ struct FocusedDaxLogoView: View {
 
     private var playbackMode: LottiePlaybackMode {
         if freezes && hasShown { return .paused(at: .currentFrame) }
+        if restingProgress == progress { return .paused(at: .progress(progress)) }
         return morph ? .playing(.toProgress(progress, loopMode: .playOnce)) : .paused(at: .progress(progress))
     }
 
@@ -54,10 +59,16 @@ struct FocusedDaxLogoView: View {
         Lottie.LottieView(animation: LottieAnimation.named(animationName))
             .playbackMode(playbackMode)
             .animationSpeed(animationSpeed)
+            .animationDidFinish { if $0 { restingProgress = progress } }
             .frame(height: Self.size.height)
             .id(animationName)
             .onAppear { hasShown = hasShown || !freezes }
-            .onChange(of: freezes) { hasShown = hasShown || !$0 }
+            .onChange(of: freezes) { freezes in
+                if !freezes && hasShown { restingProgress = progress }
+                hasShown = hasShown || !freezes
+            }
+            // A later mode switch morphs as usual.
+            .onChange(of: progress) { if $0 != restingProgress { restingProgress = nil } }
     }
 
     private enum Constant {

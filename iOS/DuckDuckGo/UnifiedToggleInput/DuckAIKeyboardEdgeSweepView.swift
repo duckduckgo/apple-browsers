@@ -46,8 +46,9 @@ final class DuckAIKeyboardEdgeSweepView: UIView {
         /// Ease in-out, so the head takes ~0.6 s to cross the top edge. An ease-out curve crossed it in
         /// ~0.15 s, which read as a flash rather than a sweep.
         static let easing = CAMediaTimingFunction(controlPoints: 0.65, 0, 0.35, 1)
-        static let leadStartWidth: CGFloat = 3
+        static let leadStartWidth: CGFloat = 2
         static let trailWidth: CGFloat = 1
+        static let opacity: Float = 0.65
         /// The stroke is opaque this far below the keyboard's top edge and gone by `fadeEnd`.
         static let fadeStart: CGFloat = 14
         static let fadeEnd: CGFloat = 46
@@ -102,6 +103,7 @@ final class DuckAIKeyboardEdgeSweepView: UIView {
 
         fadeMask.colors = [UIColor.black.cgColor, UIColor.black.cgColor, UIColor.clear.cgColor]
         fadeContainer.mask = fadeMask
+        fadeContainer.opacity = Constants.opacity
         layer.addSublayer(fadeContainer)
         for (host, mask, gradient) in [(trailHost, trailMask, trailGradient), (leadHost, leadMask, leadGradient)] {
             gradient.type = .conic

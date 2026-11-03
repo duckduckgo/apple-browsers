@@ -77,6 +77,30 @@ struct SnapshotVerificationTests {
 
     @available(iOS 16, macOS 13, *)
     @Test(.timeLimit(.minutes(1)))
+    func exportWritesNothingWhenComparisonPasses() throws {
+        try writeReference("rendered")
+
+        let failure = verify("rendered", comparisonMode: .compare, exportDirectory: exportDirectory.path)
+
+        #expect(failure == nil)
+        #expect(!FileManager.default.fileExists(atPath: exportedFile.path))
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test(.timeLimit(.minutes(1)))
+    func exportRemovesEarlierFailureWhenRetryPasses() throws {
+        try writeReference("reference")
+        _ = verify("rendered", comparisonMode: .compare, exportDirectory: exportDirectory.path)
+        #expect(FileManager.default.fileExists(atPath: exportedFile.path))
+
+        let failure = verify("reference", comparisonMode: .compare, exportDirectory: exportDirectory.path)
+
+        #expect(failure == nil)
+        #expect(!FileManager.default.fileExists(atPath: exportedFile.path))
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test(.timeLimit(.minutes(1)))
     func exportWritesNothingWithoutExportDirectory() throws {
         try writeReference("rendered")
 

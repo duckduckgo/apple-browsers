@@ -104,7 +104,11 @@ func verifySnapshot<Value, Format>(
         line: line,
         column: column
     )
-    if failure != nil, let rendered, let exportDirectory {
+    if let rendered, let exportDirectory {
+        let fileManager = FileManager.default
+        let stagingDirectory = fileManager.temporaryDirectory.appendingPathComponent(UUID().uuidString, isDirectory: true)
+        defer { try? fileManager.removeItem(at: stagingDirectory) }
+
         var exporting = snapshotting
         exporting.snapshot = { _ in Async(value: rendered) }
         _ = SnapshotTesting.verifySnapshot(
@@ -112,13 +116,24 @@ func verifySnapshot<Value, Format>(
             as: exporting,
             named: name,
             record: .all,
-            snapshotDirectory: exportDirectory,
+            snapshotDirectory: stagingDirectory.path,
             fileID: fileID,
             file: filePath,
             testName: testName,
             line: line,
             column: column
         )
+
+        let exportURL = URL(fileURLWithPath: exportDirectory, isDirectory: true)
+        let staged = (try? fileManager.contentsOfDirectory(at: stagingDirectory, includingPropertiesForKeys: nil)) ?? []
+        for stagedFile in staged {
+            let destination = exportURL.appendingPathComponent(stagedFile.lastPathComponent)
+            try? fileManager.removeItem(at: destination)
+            if failure != nil {
+                try? fileManager.createDirectory(at: exportURL, withIntermediateDirectories: true)
+                try? fileManager.moveItem(at: stagedFile, to: destination)
+            }
+        }
     }
     return failure
 }

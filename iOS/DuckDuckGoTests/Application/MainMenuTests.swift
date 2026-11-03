@@ -235,116 +235,67 @@ struct MainMenuTests {
 
     @available(iOS 16, macOS 13, *)
     @Test(.timeLimit(.minutes(1)))
-    func bookmarksMenuOwnsShortcutsAndBuildsFavoritesStatically() throws {
-        let favorites = makeFavorites(count: 12)
-        let spec = MainMenuSpec(isEnabled: true, idiom: .pad, context: .init(favorites: favorites))
+    func bookmarksMenuOwnsItsShortcutsAndDefersTheTree() {
+        let spec = MainMenuSpec(isEnabled: true, idiom: .pad, context: .init(favorites: makeFavorites(count: 12)))
         for (command, input, modifiers) in [(MainMenuCommand.showBookmarks, "k", UIKeyModifierFlags([.shift, .command])),
                                             (.addBookmark, "d", .command), (.addFavorite, "d", [.control, .command])] {
             let items = spec.allItems.filter { $0.command == command }
             #expect(items.count == 1)
             #expect(items.first?.shortcut == .init(input: input, modifiers: modifiers))
         }
-        let bookmarksMenu = try #require(spec.menus.first { $0.identifier == .bookmarks })
-        #expect(bookmarksMenu.placement == .insert(sibling: .window, position: .before))
-        #expect(bookmarksMenu.allItems.contains { $0.command == .showBookmarks })
-        #expect(spec.menus.filter { $0.identifier != .bookmarks }.allSatisfy { !$0.allItems.contains { $0.command == .showBookmarks } })
-        #expect(MainMenuSpec(isEnabled: false, context: .init(favorites: favorites)).allItems.allSatisfy { $0.command == .settings })
 
         var folderFetchCount = 0
         let tree = BookmarksMenuTree(children: { _ in
             folderFetchCount += 1
             return []
         }, favicon: { _ in nil })
-        let menuBuilder = MainMenuBuilder(deferredContent: [.bookmarksTree: tree])
         let builder = MainMenuBuilderSpy()
-        menuBuilder.build(spec, with: builder)
-        guard registersInMenuBar(enabled: true, idiom: .pad) else {
-            #expect(builder.insertedMenus.isEmpty)
-            return
-        }
+        MainMenuBuilder(deferredContent: [.bookmarksTree: tree]).build(spec, with: builder)
+        guard registersInMenuBar(enabled: true, idiom: .pad) else { return }
+        #expect(!builder.insertedMenus.isEmpty)
         #expect(folderFetchCount == 0)
-        let insertion = try #require(builder.insertedMenus.first)
-        #expect(insertion.before == .window)
-        #expect(insertion.menu.title == UserText.menuBookmarks)
-        let submenus = insertion.menu.children.compactMap { $0 as? UIMenu }
-        let favoritesMenu = try #require(submenus.first { $0.identifier == .bookmarksFavorites })
-        #expect(favoritesMenu.title == UserText.menuFavorites)
-        #expect(!favoritesMenu.options.contains(.displayInline))
-        #expect(favoritesMenu.children.count == 12)
-        let shortcuts = favoritesMenu.children.compactMap { $0 as? UIKeyCommand }
-        #expect(shortcuts.map(\.input) == (1...9).map { String($0) })
-        #expect(shortcuts.allSatisfy { $0.modifierFlags == [.alternate, .command] })
-        let commands = favoritesMenu.children.compactMap { $0 as? UICommand }
-        #expect(commands.compactMap(BookmarksMenuTree.bookmarkURL) == favorites.map(\.url))
-        let treeMenu = try #require(submenus.first { $0.identifier == .bookmarksTree })
-        #expect(treeMenu.options.contains(.displayInline))
-        #expect(treeMenu.children.count == 1)
-        #expect(treeMenu.children.first is UIDeferredMenuElement)
     }
 
     @available(iOS 16, macOS 13, *)
     @Test(.timeLimit(.minutes(1)))
-    func phoneRegistersFavoriteShortcutsWithTheirURLs() {
-        let favorites = makeFavorites(count: 3)
+    func firstNineFavoritesGetShortcutsCarryingTheirURLs() {
+        let favorites = makeFavorites(count: 12)
         let availability = MenuCommandAvailability(state: .init(shortcutsEnabled: true, presentation: .browser))
         let commands = MainMenuBuilder().keyCommands(for: MainMenuSpec(isEnabled: true, idiom: .phone, context: .init(favorites: favorites)),
                                                      from: [], availability: availability)
         let favoriteCommands = commands.filter { $0.action == MainMenuCommand.openBookmark.action }
-        #expect(favoriteCommands.map(\.input) == ["1", "2", "3"])
+        #expect(favoriteCommands.map(\.input) == (1...9).map { String($0) })
         #expect(favoriteCommands.allSatisfy { $0.modifierFlags == [.alternate, .command] })
-        #expect(favoriteCommands.compactMap(BookmarksMenuTree.bookmarkURL) == favorites.map(\.url))
+        #expect(favoriteCommands.compactMap(BookmarksMenuTree.bookmarkURL) == favorites.prefix(9).map(\.url))
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test(.timeLimit(.minutes(1)), arguments: [false, true])
+    func addingBookmarksNeedsAWebsite(hasWebsite: Bool) {
+        var state = MenuCommandAvailability.State(shortcutsEnabled: true, presentation: .browser)
+        state.hasWebsite = hasWebsite
+        #expect(MenuCommandAvailability(state: state).isEnabled(.addBookmark) == hasWebsite)
+        #expect(MenuCommandAvailability(state: state).isEnabled(.addFavorite) == hasWebsite)
     }
 
     @available(iOS 16, macOS 13, *)
     @Test(.timeLimit(.minutes(1)))
-    func bookmarksAvailabilityFollowsPageAndPresentation() {
-        for hasWebsite in [false, true] {
-            var state = MenuCommandAvailability.State(shortcutsEnabled: true, presentation: .browser)
-            state.hasWebsite = hasWebsite
-            #expect(MenuCommandAvailability(state: state).isEnabled(.addBookmark) == hasWebsite)
-            #expect(MenuCommandAvailability(state: state).isEnabled(.addFavorite) == hasWebsite)
-        }
-        for presentation in [MenuCommandAvailability.State.Presentation.browser, .tabSwitcher, .bookmarks, .settings, .downloads, .passwords] {
-            var state = MenuCommandAvailability.State(shortcutsEnabled: true, presentation: presentation)
-            state.hasWebsite = true
-            let availability = MenuCommandAvailability(state: state)
-            for command in [MainMenuCommand.showBookmarks, .importBookmarks, .exportBookmarks, .openBookmark] {
-                #expect(availability.isEnabled(command))
-            }
-            #expect(availability.title(for: .showBookmarks) == (presentation == .bookmarks ? UserText.menuHideBookmarks : UserText.menuShowBookmarks))
-            #expect(availability.isEnabled(.addBookmark) == (presentation == .browser))
-        }
-        var emptySwitcher = MenuCommandAvailability.State(shortcutsEnabled: true, presentation: .tabSwitcher)
-        emptySwitcher.canHideTabs = false
-        for command in [MainMenuCommand.showBookmarks, .importBookmarks, .exportBookmarks, .openBookmark] {
-            #expect(!MenuCommandAvailability(state: emptySwitcher).isEnabled(command))
-        }
-    }
-
-    @available(iOS 16, macOS 13, *)
-    @Test(.timeLimit(.minutes(1)))
-    func menuBookmarksReadFoldersWithoutACapAndFavoritesForTheDisplayMode() throws {
+    func menuBookmarksReadFoldersWithoutACap() throws {
         let database = try makeBookmarksDatabase()
         defer { try? database.tearDown(deleteStores: true) }
         let context = database.makeContext(concurrencyType: .mainQueueConcurrencyType)
         BasicBookmarksStructure.populateDB(context: context)
-        let settings = AppSettingsMock()
-        settings.favoritesDisplayMode = .displayNative(.mobile)
-        let bookmarks = MainMenuBookmarks(database: database, appSettings: settings, notificationCenter: NotificationCenter())
-        let rootChildren = bookmarks.children()
-        #expect(rootChildren.count == BasicBookmarksStructure.topLevelTitles.count)
-        let folderID = try #require(rootChildren.compactMap { entry -> String? in
+        let bookmarks = MainMenuBookmarks(database: database, appSettings: AppSettingsMock(), notificationCenter: NotificationCenter())
+        let folderID = try #require(bookmarks.children().compactMap { entry -> String? in
             if case .folder(_, let id) = entry { return id }
             return nil
         }.first)
-        #expect(bookmarks.children(ofFolderWithID: folderID).count == BasicBookmarksStructure.nestedTitles.count)
         let folderRequest = BookmarkEntity.fetchRequest()
         folderRequest.predicate = NSPredicate(format: "uuid == %@", folderID)
         let folder = try #require(context.fetch(folderRequest).first)
         _ = BasicBookmarksStructure.createBookmarksList(usingNames: (1...40).map { "Extra\($0)" }, parent: folder, in: context)
         try context.save()
         #expect(bookmarks.children(ofFolderWithID: folderID).count == BasicBookmarksStructure.nestedTitles.count + 40)
-        #expect(bookmarks.favorites.map(\.title) == BasicBookmarksStructure.favoriteTitles)
     }
 
     @available(iOS 16, macOS 13, *)

@@ -81,10 +81,11 @@ jobs:
           GITHUB_REPOSITORY: ${{ github.repository }}
           RUN_ID: ${{ steps.run.outputs.id }}
         run: |
-          attempt_started="$(gh api "repos/$GITHUB_REPOSITORY/actions/runs/$RUN_ID" --jq '.run_started_at')"
+          job_started="$(gh api "repos/$GITHUB_REPOSITORY/actions/runs/$RUN_ID/jobs?filter=latest&per_page=100" \
+            --jq '[.jobs[] | select(.name == "Test (Non-Sandbox)")][0].started_at // ""')"
           artifact_created="$(gh api "repos/$GITHUB_REPOSITORY/actions/runs/$RUN_ID/artifacts?name=macos-rendered-snapshots" --jq '.artifacts[0].created_at // ""')"
-          if [ -n "$artifact_created" ] && [[ "$artifact_created" < "$attempt_started" ]]; then
-            echo "::error::Run $RUN_ID's macos-rendered-snapshots artifact comes from an earlier attempt, and the latest attempt rendered no mismatches. Every snapshot matched its reference."
+          if [ -n "$artifact_created" ] && [ -n "$job_started" ] && [[ "$artifact_created" < "$job_started" ]]; then
+            echo "::error::Run $RUN_ID's macos-rendered-snapshots artifact comes from an earlier attempt of Test (Non-Sandbox), and its latest attempt rendered no mismatches. Every snapshot matched its reference."
             exit 1
           fi
           if ! gh run download "$RUN_ID" -R "$GITHUB_REPOSITORY" -n macos-rendered-snapshots -D "$RUNNER_TEMP/rendered"; then

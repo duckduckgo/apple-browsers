@@ -18,12 +18,11 @@
 //
 
 import Darwin
-import SitePermissions
-import UserScript
 import WebKit
 import XCTest
+@testable import SitePermissions
 
-/// Measures what the site-permission scripts cost on a page that creates many blank iframes.
+/// Measures what the site-permission content-scope features cost on a page that creates many blank iframes.
 ///
 /// Opt-in, so CI skips it. xcodebuild passes `TEST_RUNNER_`-prefixed variables to the test process:
 ///
@@ -32,26 +31,23 @@ import XCTest
 ///
 /// `SITE_PERMISSIONS_BENCHMARK_FRAMES` (default 200) and `SITE_PERMISSIONS_BENCHMARK_RUNS` (default 3)
 /// change the frame count and the runs per configuration. The report holds medians and asserts nothing.
-/// This file uses only the scripts' public API, so it also runs unchanged on older revisions.
 @MainActor
 final class SitePermissionsFrameBenchmarkTests: XCTestCase {
 
     private enum Configuration: String, CaseIterable {
         case noScripts = "No scripts"
-        /// Tab web views already run other scripts in both content worlds of every frame. Every configuration
-        /// below adds these empty scripts too, so its difference from the control is the site-permission
-        /// scripts' own cost.
-        case control = "Control: empty page and isolated scripts"
+        /// Tab web views run the content-scope scripts in both content worlds of every frame. Every configuration
+        /// below runs them too, so its difference from the control is the site-permission features' own cost.
+        case control = "Control: content-scope scripts without site permissions"
         case geolocation = "Control + geolocation"
         case mediaCapture = "Control + media capture"
-        case allScripts = "Control + all scripts"
+        case allFeatures = "Control + all site permissions"
     }
 
     private struct Sample {
         let creationMilliseconds: Double
         let footprintGrowthBytes: Double?
         let nativeMessages: [String: Int]
-        let registrations: Int
         let windowMessages: Int
     }
 
@@ -80,8 +76,8 @@ final class SitePermissionsFrameBenchmarkTests: XCTestCase {
             "\(frameCount) blank iframes, median of \(runs) runs",
             "",
             "| Configuration | Create frames (ms) | Footprint growth (MB) | Over control (MB) | Per frame over control (KB) "
-                + "| Native messages | Registrations | Window messages |",
-            "|---|---:|---:|---:|---:|---|---:|---:|"
+                + "| Native messages | Window messages |",
+            "|---|---:|---:|---:|---:|---|---:|"
         ]
         for configuration in configurations {
             let configurationSamples = samples[configuration] ?? []
@@ -100,7 +96,6 @@ final class SitePermissionsFrameBenchmarkTests: XCTestCase {
                 format(overControl.map { $0 / 1_048_576 }),
                 format(overControl.map { $0 / 1_024 / Double(frameCount) }),
                 messageSummary,
-                String(configurationSamples.first?.registrations ?? 0),
                 String(configurationSamples.first?.windowMessages ?? 0)
             ]
             lines.append("| \(cells.joined(separator: " | ")) |")
@@ -117,97 +112,28 @@ final class SitePermissionsFrameBenchmarkTests: XCTestCase {
         add(attachment)
     }
 
-    func testMessageSettlingWaitsForDelayedRegistrationReply() async throws {
-        let counter = NativeMessageCounter()
-        let configuration = WKWebViewConfiguration()
-        let controller = configuration.userContentController
-        controller.addUserScript(WKUserScript(
-            source: """
-            globalThis.__ddgSitePermissionsGeolocationPolicy = {
-                getConstraints: async () => {
-                    await new Promise(resolve => setTimeout(resolve, 1000));
-                    return {
-                        documentID: "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
-                        isSecureContext: true,
-                        isSandboxed: false,
-                        isPolicyAllowed: true
-                    };
-                }
-            };
-            """,
-            injectionTime: .atDocumentStart,
-            forMainFrameOnly: false,
-            in: .defaultClient
-        ))
-        let geolocation = GeolocationUserScript()
-        geolocation.activationHandler = { _ in true }
-        counter.install(geolocation, in: controller)
-        defer {
-            geolocation.cancelAllWatches()
-            controller.removeAllScriptMessageHandlers()
-        }
-        let page = BenchmarkPage(configuration: configuration)
-        try await page.load(Self.html, baseURL: XCTUnwrap(URL(string: "http://localhost/")))
-
-        _ = try await waitForMessagesToSettle(in: page.webView, counter: counter)
-
-        XCTAssertEqual(counter.counts["registerFrame"], 1)
-        XCTAssertEqual(counter.replies, 1)
-        XCTAssertEqual(counter.registrations, 1)
-    }
-
-    func testMessageSettlingThrowsWhenRegistrationNeverReplies() async throws {
-        let counter = NativeMessageCounter()
-        let configuration = WKWebViewConfiguration()
-        let controller = configuration.userContentController
-        let geolocation = GeolocationUserScript()
-        counter.install(geolocation, in: controller, handler: UnansweredMessageHandler())
-        defer {
-            geolocation.cancelAllWatches()
-            controller.removeAllScriptMessageHandlers()
-        }
-        let page = BenchmarkPage(configuration: configuration)
-        try await page.load(Self.html, baseURL: XCTUnwrap(URL(string: "http://localhost/")))
-
-        do {
-            _ = try await waitForMessagesToSettle(in: page.webView, counter: counter)
-            XCTFail("An unanswered registration must not produce a benchmark sample")
-        } catch {
-            XCTAssertEqual((error as NSError).domain, "SitePermissionsFrameBenchmark")
-        }
-        XCTAssertEqual(counter.counts["registerFrame"], 1)
-        XCTAssertEqual(counter.replies, 0)
-        XCTAssertEqual(counter.registrations, 0)
-    }
-
     private func measure(_ configuration: Configuration, frameCount: Int) async throws -> Sample {
         let counter = NativeMessageCounter()
         let webViewConfiguration = WKWebViewConfiguration()
-        let geolocation = GeolocationUserScript(installImmediately: true)
+        let geolocation = GeolocationUserScript()
         // Tab web views activate every frame with a trustworthy host; blank frames inherit the page's.
         geolocation.activationHandler = { !$0.securityOrigin.host.isEmpty }
-        let scripts: [UserScript]
+        let contentScope: SitePermissionsContentScope?
         switch configuration {
-        case .noScripts, .control:
-            scripts = []
+        case .noScripts:
+            contentScope = nil
+        case .control:
+            contentScope = try SitePermissionsContentScope()
         case .geolocation:
-            scripts = [geolocation.policyScript, geolocation]
+            contentScope = try SitePermissionsContentScope(geolocation: geolocation)
         case .mediaCapture:
-            scripts = [MediaCaptureUserScript()]
-        case .allScripts:
-            // The order that tab web views use.
-            scripts = [MediaCaptureUserScript(), geolocation.policyScript, geolocation]
+            contentScope = try SitePermissionsContentScope(mediaCapture: MediaCaptureUserScript())
+        case .allFeatures:
+            contentScope = try SitePermissionsContentScope(geolocation: geolocation, mediaCapture: MediaCaptureUserScript())
         }
-        for script in scripts {
-            counter.install(script, in: webViewConfiguration.userContentController)
-        }
-        if configuration != .noScripts {
-            // After the site-permission scripts, where tab web views install the content-scope scripts.
-            for world in [WKContentWorld.page, .defaultClient] {
-                webViewConfiguration.userContentController.addUserScript(
-                    WKUserScript(source: "void 0;", injectionTime: .atDocumentStart, forMainFrameOnly: false, in: world)
-                )
-            }
+        if let contentScope {
+            counter.forward(to: contentScope.pageScript)
+            contentScope.install(in: webViewConfiguration.userContentController, pageMessageHandler: counter)
         }
 
         let page = BenchmarkPage(configuration: webViewConfiguration)
@@ -231,7 +157,6 @@ final class SitePermissionsFrameBenchmarkTests: XCTestCase {
                           footprintAfter.map { Double($0) - Double(before) }
                       },
                       nativeMessages: counter.counts,
-                      registrations: counter.registrations,
                       windowMessages: windowMessages)
     }
 
@@ -309,54 +234,33 @@ final class SitePermissionsFrameBenchmarkTests: XCTestCase {
     """
 }
 
-/// Counts each message before forwarding it to its user script, as the app's message broker does.
+/// Counts each page-world content-scope message before forwarding it to the content-scope script.
 @MainActor
 private final class NativeMessageCounter: NSObject, WKScriptMessageHandlerWithReply {
 
     private(set) var counts = [String: Int]()
     private(set) var replies = 0
-    private(set) var registrations = 0
-    private var handlers = [String: WKScriptMessageHandlerWithReply]()
+    private var handler: WKScriptMessageHandlerWithReply?
 
-    func install(_ script: UserScript,
-                 in controller: WKUserContentController,
-                 handler: WKScriptMessageHandlerWithReply? = nil) {
-        controller.addUserScript(script.makeWKUserScriptSync())
-        for name in script.messageNames {
-            handlers[name] = handler ?? script as? WKScriptMessageHandlerWithReply
-            controller.addScriptMessageHandler(self, contentWorld: script.getContentWorld(), name: name)
-        }
+    func forward(to handler: WKScriptMessageHandlerWithReply) {
+        self.handler = handler
     }
 
     func userContentController(_ userContentController: WKUserContentController,
                                didReceive message: WKScriptMessage,
                                replyHandler: @escaping @MainActor @Sendable (Any?, String?) -> Void) {
-        let key = (message.body as? [String: Any])?["kind"] as? String ?? message.name
-        counts[key, default: 0] += 1
-        guard let handler = handlers[message.name] else {
+        let body = message.body as? [String: Any]
+        let key = [body?["featureName"] as? String, body?["method"] as? String].compactMap { $0 }.joined(separator: ".")
+        counts[key.isEmpty ? message.name : key, default: 0] += 1
+        guard let handler else {
             replies += 1
             replyHandler(nil, "Unknown message handler")
             return
         }
         handler.userContentController(userContentController, didReceive: message) { [weak self] reply, error in
             self?.replies += 1
-            if (reply as? [String: Any])?["enabled"] as? Bool == true {
-                self?.registrations += 1
-            }
             replyHandler(reply, error)
         }
-    }
-}
-
-@MainActor
-private final class UnansweredMessageHandler: NSObject, WKScriptMessageHandlerWithReply {
-
-    private var replies = [@MainActor @Sendable (Any?, String?) -> Void]()
-
-    func userContentController(_ userContentController: WKUserContentController,
-                               didReceive message: WKScriptMessage,
-                               replyHandler: @escaping @MainActor @Sendable (Any?, String?) -> Void) {
-        replies.append(replyHandler)
     }
 }
 

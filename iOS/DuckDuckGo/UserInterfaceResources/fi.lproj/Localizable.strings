@@ -3301,6 +3301,72 @@
 /* No comment provided by engineer. */
 "menu.button.hint" = "Selausvalikko";
 
+/* iPad menu bar command */
+"menuActualSize" = "Todellinen koko";
+
+/* iPad menu bar command */
+"menuBack" = "Takaisin";
+
+/* iPad menu bar command */
+"menuClearTabsAndData" = "Tyhjennä välilehdet ja tiedot";
+
+/* iPad menu bar command */
+"menuDuplicateTab" = "Monista välilehti";
+
+/* iPad menu bar command */
+"menuFeedback" = "Anna palautetta";
+
+/* iPad menu bar command */
+"menuForward" = "Eteenpäin";
+
+/* iPad menu bar command */
+"menuHideDownloads" = "Piilota lataukset";
+
+/* iPad menu bar command */
+"menuHidePasswords" = "Piilota salasanat";
+
+/* iPad menu bar command */
+"menuHideTabs" = "Piilota välilehdet";
+
+/* iPad menu bar command */
+"menuLastTab" = "Viimeinen välilehti";
+
+/* iPad menu bar command */
+"menuNewTabOnRight" = "Uusi välilehti oikealle";
+
+/* iPad menu bar command */
+"menuNextTab" = "Näytä seuraava välilehti";
+
+/* iPad menu bar command */
+"menuOpenLocation" = "Avaa sijainti...";
+
+/* iPad menu bar command */
+"menuPreviousTab" = "Näytä edellinen välilehti";
+
+/* iPad menu bar command */
+"menuPrint" = "Tulosta...";
+
+/* iPad menu bar command selecting a numbered tab */
+"menuSelectTab" = "Valitse välilehti %d";
+
+/* iPad menu bar command */
+"menuSettings" = "DuckDuckGo-asetukset...";
+
+/* iPad menu bar command */
+"menuShowDownloads" = "Näytä lataukset";
+
+/* iPad menu bar command */
+"menuShowPasswords" = "Näytä salasanat";
+
+/* iPad menu bar command */
+"menuShowTabs" = "Näytä välilehdet";
+
+/* iPad menu bar command */
+"menuStop" = "Lopeta";
+
+/* iPad menu bar command */
+"menuVoiceSearch" = "Yksityinen äänihaku";
+
 /* No comment provided by engineer. */
 "Message" = "Viesti";
 

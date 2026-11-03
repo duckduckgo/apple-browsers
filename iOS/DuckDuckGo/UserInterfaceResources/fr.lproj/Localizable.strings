@@ -3301,6 +3301,72 @@
 /* No comment provided by engineer. */
 "menu.button.hint" = "Menu de navigation";
 
+/* iPad menu bar command */
+"menuActualSize" = "Taille réelle";
+
+/* iPad menu bar command */
+"menuBack" = "Retour";
+
+/* iPad menu bar command */
+"menuClearTabsAndData" = "Effacer les onglets et données";
+
+/* iPad menu bar command */
+"menuDuplicateTab" = "Dupliquer l'onglet";
+
+/* iPad menu bar command */
+"menuFeedback" = "Partager des commentaires";
+
+/* iPad menu bar command */
+"menuForward" = "Avancer";
+
+/* iPad menu bar command */
+"menuHideDownloads" = "Masquer les téléchargements";
+
+/* iPad menu bar command */
+"menuHidePasswords" = "Masquer les mots de passe";
+
+/* iPad menu bar command */
+"menuHideTabs" = "Masquer les onglets";
+
+/* iPad menu bar command */
+"menuLastTab" = "Dernier onglet";
+
+/* iPad menu bar command */
+"menuNewTabOnRight" = "Nouvel onglet à droite";
+
+/* iPad menu bar command */
+"menuNextTab" = "Afficher l'onglet suivant";
+
+/* iPad menu bar command */
+"menuOpenLocation" = "Ouvrir l'emplacement...";
+
+/* iPad menu bar command */
+"menuPreviousTab" = "Afficher l'onglet précédent";
+
+/* iPad menu bar command */
+"menuPrint" = "Imprimer...";
+
+/* iPad menu bar command selecting a numbered tab */
+"menuSelectTab" = "Sélectionner l’onglet %d";
+
+/* iPad menu bar command */
+"menuSettings" = "Réglages DuckDuckGo...";
+
+/* iPad menu bar command */
+"menuShowDownloads" = "Afficher les téléchargements";
+
+/* iPad menu bar command */
+"menuShowPasswords" = "Afficher les mots de passe";
+
+/* iPad menu bar command */
+"menuShowTabs" = "Afficher les onglets";
+
+/* iPad menu bar command */
+"menuStop" = "Arrêter";
+
+/* iPad menu bar command */
+"menuVoiceSearch" = "Recherche vocale privée";
+
 /* No comment provided by engineer. */
 "Message" = "Message";
 

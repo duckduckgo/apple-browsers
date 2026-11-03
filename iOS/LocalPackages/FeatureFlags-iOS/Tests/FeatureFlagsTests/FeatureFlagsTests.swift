@@ -56,6 +56,22 @@ final class FeatureFlagsTests: XCTestCase {
         XCTAssertTrue(flag.supportsLocalOverriding)
     }
 
+    func testKeyboardEdgeSweepUsesItsOwnRemoteKillSwitchAndInternalOnlyDefault() {
+        let flag = FeatureFlag.unifiedToggleInputKeyboardEdgeSweep
+        guard case let .remoteReleasable(subfeature) = flag.source else {
+            XCTFail("Expected remote-releasable source")
+            return
+        }
+        XCTAssertEqual(subfeature as? AIChatSubfeature, .unifiedToggleInputKeyboardEdgeSweep)
+        XCTAssertEqual(subfeature.parent, .aiChat)
+        XCTAssertEqual(subfeature.rawValue, "unifiedToggleInputKeyboardEdgeSweep")
+        guard case .internalOnly = flag.defaultValue else {
+            XCTFail("Expected internal-only default")
+            return
+        }
+        XCTAssertTrue(flag.supportsLocalOverriding)
+    }
+
     func testIPadAttachmentPrivacyUsesItsOwnRemoteKillSwitchAndInternalOnlyDefault() {
         let flag = FeatureFlag.aiChatAttachmentPrivacyIPad
         guard case let .remoteReleasable(subfeature) = flag.source else {

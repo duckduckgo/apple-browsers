@@ -50,6 +50,56 @@ class AIChatSettingsTests: XCTestCase {
         super.tearDown()
     }
 
+    func testKeyboardAnimationDefaultsToEnabledRegardlessOfFeatureFlag() {
+        let featureFlagger = MockFeatureFlagger(enabledFeatureFlags: [])
+        let settings = makeKeyboardAnimationSettings(featureFlagger: featureFlagger)
+        XCTAssertTrue(settings.isKeyboardAnimationEnabled)
+
+        featureFlagger.enabledFeatureFlags = [.unifiedToggleInputKeyboardEdgeSweep]
+        XCTAssertTrue(settings.isKeyboardAnimationEnabled)
+    }
+
+    func testKeyboardAnimationPersistsBothChoicesAcrossInstancesAndFeatureFlagChanges() {
+        let featureFlagger = MockFeatureFlagger(enabledFeatureFlags: [.unifiedToggleInputKeyboardEdgeSweep])
+        let settings = makeKeyboardAnimationSettings(featureFlagger: featureFlagger)
+
+        for enabled in [false, true] {
+            settings.enableKeyboardAnimation(enable: enabled)
+            XCTAssertEqual(makeKeyboardAnimationSettings(featureFlagger: featureFlagger).isKeyboardAnimationEnabled, enabled)
+
+            featureFlagger.enabledFeatureFlags = []
+            XCTAssertEqual(settings.isKeyboardAnimationEnabled, enabled)
+            XCTAssertEqual(makeKeyboardAnimationSettings(featureFlagger: featureFlagger).isKeyboardAnimationEnabled, enabled)
+
+            featureFlagger.enabledFeatureFlags = [.unifiedToggleInputKeyboardEdgeSweep]
+            XCTAssertEqual(settings.isKeyboardAnimationEnabled, enabled)
+            XCTAssertEqual(makeKeyboardAnimationSettings(featureFlagger: featureFlagger).isKeyboardAnimationEnabled, enabled)
+        }
+    }
+
+    func testKeyboardAnimationChangesPostSettingsNotification() {
+        let settings = makeKeyboardAnimationSettings(featureFlagger: MockFeatureFlagger(enabledFeatureFlags: []))
+        let notification = expectation(description: "Keyboard animation setting changes are published")
+        notification.expectedFulfillmentCount = 2
+        let observer = mockNotificationCenter.addObserver(forName: .aiChatSettingsChanged, object: nil, queue: nil) { _ in
+            notification.fulfill()
+        }
+        defer { mockNotificationCenter.removeObserver(observer) }
+
+        settings.enableKeyboardAnimation(enable: false)
+        settings.enableKeyboardAnimation(enable: true)
+
+        waitForExpectations(timeout: 1)
+    }
+
+    private func makeKeyboardAnimationSettings(featureFlagger: FeatureFlagger) -> AIChatSettings {
+        AIChatSettings(privacyConfigurationManager: mockPrivacyConfigurationManager,
+                       debugSettings: mockAIChatDebugSettings,
+                       keyValueStore: mockKeyValueStore,
+                       notificationCenter: mockNotificationCenter,
+                       featureFlagger: featureFlagger)
+    }
+
     func testAIChatURLReturnsDefaultWhenRemoteSettingsMissing() {
         let settings = AIChatSettings(privacyConfigurationManager: mockPrivacyConfigurationManager,
                                       debugSettings: mockAIChatDebugSettings,

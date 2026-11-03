@@ -2203,6 +2203,20 @@ extension SettingsViewModel {
         )
     }
 
+    var isKeyboardAnimationSettingVisible: Bool {
+        UIDevice.current.userInterfaceIdiom == .phone && featureFlagger.isFeatureOn(.unifiedToggleInputKeyboardEdgeSweep)
+    }
+
+    var isKeyboardAnimationEnabledBinding: Binding<Bool> {
+        Binding<Bool>(
+            get: { self.aiChatSettings.isKeyboardAnimationEnabled },
+            set: { newValue in
+                self.objectWillChange.send()
+                self.aiChatSettings.enableKeyboardAnimation(enable: newValue)
+            }
+        )
+    }
+
     var isAutomaticContextAttachmentEnabled: Binding<Bool> {
         Binding<Bool>(
             get: { self.aiChatSettings.isAutomaticContextAttachmentEnabled },

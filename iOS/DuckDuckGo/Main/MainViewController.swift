@@ -639,6 +639,7 @@ class MainViewController: UIViewController {
     var unifiedToggleInputCancellables = Set<AnyCancellable>()
     var unifiedToggleInputFloatingReturnKeyKeyboardBottomConstraint: NSLayoutConstraint?
     var unifiedToggleInputFloatingReturnKeyInputTopConstraint: NSLayoutConstraint?
+    var duckAIKeyboardEdgeSweepView: DuckAIKeyboardEdgeSweepView?
     var aiChatTabChatHeaderView: AIChatTabChatHeaderView?
     /// Minimal header shown in place of `aiChatTabChatHeaderView` while editing a message.
     var aiChatEditHeaderView: AIChatEditHeaderView?
@@ -2107,7 +2108,10 @@ class MainViewController: UIViewController {
 
     @objc private func keyboardWillChangeFrame(_ notification: Notification) {
         guard let keyboard = BrowserKeyboardLayout(notification: notification) else { return }
-        adjustUI(withKeyboardFrame: keyboard.frame, in: keyboard.duration, animationCurve: keyboard.animationCurve)
+        adjustUI(withKeyboardFrame: keyboard.frame,
+                 in: keyboard.duration,
+                 animationCurve: keyboard.animationCurve,
+                 keyboardTargetFrame: keyboard.frame)
     }
 
     private var floatingWebInputKeyboardFrame: CGRect {
@@ -2143,7 +2147,10 @@ class MainViewController: UIViewController {
     }
 
     // swiftlint:disable:next cyclomatic_complexity
-    func adjustUI(withKeyboardFrame keyboardFrame: CGRect, in duration: TimeInterval = 0.2, animationCurve: UIView.AnimationOptions = .curveEaseInOut) {
+    func adjustUI(withKeyboardFrame keyboardFrame: CGRect,
+                  in duration: TimeInterval = 0.2,
+                  animationCurve: UIView.AnimationOptions = .curveEaseInOut,
+                  keyboardTargetFrame: CGRect? = nil) {
         latestKeyboardFrame = keyboardFrame
         var keyboardHeight = keyboardFrame.size.height
 
@@ -2155,6 +2162,7 @@ class MainViewController: UIViewController {
         isKeyboardOverlappingContent = keyboardVisible
         keyboardHeight = keyboardFrameInView.height
         updateUnifiedToggleInputKeyboardVisibility(keyboardVisible)
+        updateDuckAIKeyboardEdgeSweep(keyboardTargetFrame: keyboardTargetFrame)
         updateWebInputChromeVisibility()
         if isFloatingUIEnabled {
             currentTab?.updateWebViewLayoutForKeyboard()

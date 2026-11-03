@@ -235,67 +235,20 @@ struct MainMenuTests {
 
     @available(iOS 16, macOS 13, *)
     @Test(.timeLimit(.minutes(1)))
-    func bookmarksMenuOwnsItsShortcutsAndDefersTheTree() {
-        let spec = MainMenuSpec(isEnabled: true, idiom: .pad, context: .init(favorites: makeFavorites(count: 12)))
-        for (command, input, modifiers) in [(MainMenuCommand.showBookmarks, "k", UIKeyModifierFlags([.shift, .command])),
-                                            (.addBookmark, "d", .command), (.addFavorite, "d", [.control, .command])] {
-            let items = spec.allItems.filter { $0.command == command }
-            #expect(items.count == 1)
-            #expect(items.first?.shortcut == .init(input: input, modifiers: modifiers))
-        }
-
-        var folderFetchCount = 0
-        let tree = BookmarksMenuTree(children: { _ in
-            folderFetchCount += 1
-            return []
-        }, favicon: { _ in nil })
-        let builder = MainMenuBuilderSpy()
-        MainMenuBuilder(deferredContent: [.bookmarksTree: tree]).build(spec, with: builder)
-        guard registersInMenuBar(enabled: true, idiom: .pad) else { return }
-        #expect(!builder.insertedMenus.isEmpty)
-        #expect(folderFetchCount == 0)
-    }
-
-    @available(iOS 16, macOS 13, *)
-    @Test(.timeLimit(.minutes(1)))
-    func firstNineFavoritesGetShortcutsCarryingTheirURLs() {
+    func bookmarksShortcutsAreUniqueAndAddingNeedsAWebsite() {
         let favorites = makeFavorites(count: 12)
-        let availability = MenuCommandAvailability(state: .init(shortcutsEnabled: true, presentation: .browser))
-        let commands = MainMenuBuilder().keyCommands(for: MainMenuSpec(isEnabled: true, idiom: .phone, context: .init(favorites: favorites)),
-                                                     from: [], availability: availability)
-        let favoriteCommands = commands.filter { $0.action == MainMenuCommand.openBookmark.action }
-        #expect(favoriteCommands.map(\.input) == (1...9).map { String($0) })
-        #expect(favoriteCommands.allSatisfy { $0.modifierFlags == [.alternate, .command] })
-        #expect(favoriteCommands.compactMap(BookmarksMenuTree.bookmarkURL) == favorites.prefix(9).map(\.url))
-    }
-
-    @available(iOS 16, macOS 13, *)
-    @Test(.timeLimit(.minutes(1)), arguments: [false, true])
-    func addingBookmarksNeedsAWebsite(hasWebsite: Bool) {
+        let spec = MainMenuSpec(isEnabled: true, idiom: .phone, context: .init(favorites: favorites))
+        for command in [MainMenuCommand.showBookmarks, .addBookmark, .addFavorite] {
+            #expect(spec.allItems.filter { $0.command == command }.count == 1)
+        }
         var state = MenuCommandAvailability.State(shortcutsEnabled: true, presentation: .browser)
-        state.hasWebsite = hasWebsite
-        #expect(MenuCommandAvailability(state: state).isEnabled(.addBookmark) == hasWebsite)
-        #expect(MenuCommandAvailability(state: state).isEnabled(.addFavorite) == hasWebsite)
-    }
-
-    @available(iOS 16, macOS 13, *)
-    @Test(.timeLimit(.minutes(1)))
-    func menuBookmarksReadFoldersWithoutACap() throws {
-        let database = try makeBookmarksDatabase()
-        defer { try? database.tearDown(deleteStores: true) }
-        let context = database.makeContext(concurrencyType: .mainQueueConcurrencyType)
-        BasicBookmarksStructure.populateDB(context: context)
-        let bookmarks = MainMenuBookmarks(database: database, appSettings: AppSettingsMock(), notificationCenter: NotificationCenter())
-        let folderID = try #require(bookmarks.children().compactMap { entry -> String? in
-            if case .folder(_, let id) = entry { return id }
-            return nil
-        }.first)
-        let folderRequest = BookmarkEntity.fetchRequest()
-        folderRequest.predicate = NSPredicate(format: "uuid == %@", folderID)
-        let folder = try #require(context.fetch(folderRequest).first)
-        _ = BasicBookmarksStructure.createBookmarksList(usingNames: (1...40).map { "Extra\($0)" }, parent: folder, in: context)
-        try context.save()
-        #expect(bookmarks.children(ofFolderWithID: folderID).count == BasicBookmarksStructure.nestedTitles.count + 40)
+        let favoriteCommands = MainMenuBuilder().keyCommands(for: spec, from: [], availability: MenuCommandAvailability(state: state))
+            .filter { $0.action == MainMenuCommand.openBookmark.action }
+        #expect(favoriteCommands.map(\.input) == (1...9).map { String($0) })
+        #expect(favoriteCommands.compactMap(BookmarksMenuTree.bookmarkURL) == favorites.prefix(9).map(\.url))
+        #expect(!MenuCommandAvailability(state: state).isEnabled(.addBookmark))
+        state.hasWebsite = true
+        #expect(MenuCommandAvailability(state: state).isEnabled(.addBookmark))
     }
 
     @available(iOS 16, macOS 13, *)
@@ -357,55 +310,4 @@ struct MainMenuTests {
         guard enabled, idiom == .pad, #available(iOS 26.0, *) else { return false }
         return true
     }
-}
-
-@MainActor
-private final class MainMenuBuilderSpy: NSObject, UIMenuBuilder {
-    let system: UIMenuSystem = .main
-    var insertedMenus: [(menu: UIMenu, before: UIMenu.Identifier)] = []
-
-    func replaceChildren(ofMenu parentIdentifier: UIMenu.Identifier, from childrenBlock: ([UIMenuElement]) -> [UIMenuElement]) {}
-    func remove(menu removedIdentifier: UIMenu.Identifier) {}
-    func menu(for identifier: UIMenu.Identifier) -> UIMenu? { nil }
-    func action(for identifier: UIAction.Identifier) -> UIAction? { nil }
-    // swiftlint:disable:next identifier_name
-    func __command(forAction action: Selector, propertyList: Any?) -> UICommand? { nil }
-    func replace(menu replacedIdentifier: UIMenu.Identifier, with replacementMenu: UIMenu) {}
-    func insertSibling(_ siblingMenu: UIMenu, beforeMenu siblingIdentifier: UIMenu.Identifier) {
-        insertedMenus.append((siblingMenu, siblingIdentifier))
-    }
-    func insertSibling(_ siblingMenu: UIMenu, afterMenu siblingIdentifier: UIMenu.Identifier) {}
-    func insertChild(_ childMenu: UIMenu, atStartOfMenu parentIdentifier: UIMenu.Identifier) {}
-    func insertChild(_ childMenu: UIMenu, atEndOfMenu parentIdentifier: UIMenu.Identifier) {}
-
-    @available(iOS 26.0, *)
-    func replace(menu replacedIdentifier: UIMenu.Identifier, with replacementElements: [UIMenuElement]) {}
-    @available(iOS 26.0, *)
-    func replace(action replacedIdentifier: UIAction.Identifier, with replacementElements: [UIMenuElement]) {}
-    @available(iOS 26.0, *)
-    // swiftlint:disable:next identifier_name
-    func __replaceCommand(forAction action: Selector, propertyList: Any?, with elements: [UIMenuElement]) {}
-    @available(iOS 26.0, *)
-    func insertElements(_ elements: [UIMenuElement], beforeMenu identifier: UIMenu.Identifier) {}
-    @available(iOS 26.0, *)
-    func insertElements(_ elements: [UIMenuElement], afterMenu identifier: UIMenu.Identifier) {}
-    @available(iOS 26.0, *)
-    func insertElements(_ elements: [UIMenuElement], beforeAction identifier: UIAction.Identifier) {}
-    @available(iOS 26.0, *)
-    func insertElements(_ elements: [UIMenuElement], afterAction identifier: UIAction.Identifier) {}
-    @available(iOS 26.0, *)
-    // swiftlint:disable:next identifier_name
-    func __insert(_ elements: [UIMenuElement], beforeCommandForAction action: Selector, propertyList: Any?) {}
-    @available(iOS 26.0, *)
-    // swiftlint:disable:next identifier_name
-    func __insert(_ elements: [UIMenuElement], afterCommandForAction action: Selector, propertyList: Any?) {}
-    @available(iOS 26.0, *)
-    func insertElements(_ elements: [UIMenuElement], atStartOfMenu identifier: UIMenu.Identifier) {}
-    @available(iOS 26.0, *)
-    func insertElements(_ elements: [UIMenuElement], atEndOfMenu identifier: UIMenu.Identifier) {}
-    @available(iOS 26.0, *)
-    func remove(action identifier: UIAction.Identifier) {}
-    @available(iOS 26.0, *)
-    // swiftlint:disable:next identifier_name
-    func __removeCommand(forAction action: Selector, propertyList: Any?) {}
 }

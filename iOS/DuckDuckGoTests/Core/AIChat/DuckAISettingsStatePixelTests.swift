@@ -155,6 +155,7 @@ final class DuckAISettingsStatePixelTests: XCTestCase {
                        debugSettings: MockAIChatDebugSettings(),
                        keyValueStore: store,
                        notificationCenter: NotificationCenter(),
-                       featureFlagger: featureFlagger)
+                       featureFlagger: featureFlagger,
+                       pixelFiring: nil)
     }
 }

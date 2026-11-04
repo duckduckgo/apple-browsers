@@ -90,7 +90,7 @@ final class OnboardingAIModelAdapter: OnboardingAIModelPersonalizationStore {
 }
 
 private enum OnboardingAIModelStorageKeys: String, StorageKeyDescribing {
-    case selectedModelProvider = "com.duckduckgo.onboarding.selectedAIModelProvider"
+    case selectedModelProvider = "com-duckduckgo-onboarding-selectedAIModelProvider"
 }
 
 /// Onboarding-owned storage for the AI model picked during onboarding.

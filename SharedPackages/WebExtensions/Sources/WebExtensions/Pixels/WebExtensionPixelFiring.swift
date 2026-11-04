@@ -30,8 +30,8 @@ public enum WebExtensionReloadFailurePhase: String, Equatable, Sendable {
 }
 
 /// The extension a pixel reports: its entry in the Chrome Web Store catalog, or `other` for one the
-/// catalog doesn't list. Pixels take this instead of a string, so an extension's own identifier or
-/// name can't reach a pixel.
+/// catalog doesn't list. Installation and usage pixels take this instead of an extension's own
+/// identifier or name. Update discovery separately reports a validated Chrome Web Store identifier.
 public enum WebExtensionPixelExtension: Equatable, CaseIterable {
     case catalog(ExtensionsCatalogSubfeature)
     case other
@@ -59,9 +59,38 @@ public enum WebExtensionPixelExtension: Equatable, CaseIterable {
     }
 }
 
+/// The bounded outcomes reported by Chrome Web Store update discovery. No server text is sent.
+public enum WebExtensionUpdateCheckOutcome: String, CaseIterable, Sendable {
+    case updateFound = "update_found"
+    case googleFlagged = "google_flagged"
+    case invalidRequest = "invalid_request"
+    case invalidResponse = "invalid_response"
+    case invalidManifest = "invalid_manifest"
+    case responseTooLarge = "response_too_large"
+    case networkFailure = "network_failure"
+    case httpStatus = "http_status"
+
+    @available(macOS 15.4, iOS 18.4, *)
+    init?(checkOutcome: ChromeWebStoreUpdateChecker.Outcome) {
+        switch checkOutcome {
+        case .update: self = .updateFound
+        case .skipped: self = .googleFlagged
+        case .noUpdate, .failure(.cancelled): return nil
+        case .failure(.invalidRequest): self = .invalidRequest
+        case .failure(.invalidResponse): self = .invalidResponse
+        case .failure(.invalidManifest): self = .invalidManifest
+        case .failure(.responseTooLarge): self = .responseTooLarge
+        case .failure(.networkFailure): self = .networkFailure
+        case .failure(.httpStatus): self = .httpStatus
+        }
+    }
+}
+
 /// Events that can be fired for web extension management.
 @available(macOS 15.4, iOS 18.4, *)
 public enum WebExtensionPixelEvent {
+    /// Discovery diagnostics contain only a Chrome Web Store ID, the check step, and a bounded outcome.
+    case updateCheck(extensionID: String, outcome: WebExtensionUpdateCheckOutcome)
     case installed(extension: WebExtensionPixelExtension)
     case installError(extension: WebExtensionPixelExtension, error: Error)
     case uninstalled(extension: WebExtensionPixelExtension)
@@ -279,7 +308,7 @@ public struct CPMWebExtensionPixelMetadata: Equatable, Sendable {
             name = "web_extension_cpm_network_process_recovery_applied"
             frequency = .dailyAndCount
             parameters = [:]
-        case .installed, .installError, .uninstalled, .uninstallError, .uninstalledAll,
+        case .updateCheck, .installed, .installError, .uninstalled, .uninstallError, .uninstalledAll,
              .uninstallAllError, .loaded, .loadError, .reloadError, .stateChecked, .expectedExtensionNotLoaded,
              .adBlockingScriptletsNotFetched, .embeddedInstalled, .embeddedUpgraded,
              .embeddedInstallError, .scriptletFetchSuccess, .scriptletFetchError,

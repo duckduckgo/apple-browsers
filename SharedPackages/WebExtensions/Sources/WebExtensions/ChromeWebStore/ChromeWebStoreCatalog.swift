@@ -68,7 +68,8 @@ public enum ChromeWebStoreURL {
 
     private static func serviceURL(for identifier: String, response: String, installedVersion: String?) throws -> URL {
         guard isValidExtensionID(identifier) else { throw ChromeWebStoreError.invalidRequest }
-        let versionParameter = installedVersion.map { "&v=\($0)" } ?? ""
+        // Discovery reports the installed version; only package downloads use the on-demand source.
+        let extensionParameters = installedVersion.map { "&v=\($0)" } ?? "&installsource=ondemand"
         var components = URLComponents()
         components.scheme = "https"
         components.host = "clients2.google.com"
@@ -77,8 +78,7 @@ public enum ChromeWebStoreURL {
             URLQueryItem(name: "response", value: response),
             Self.prodversionQueryItem,
             URLQueryItem(name: "acceptformat", value: "crx3"),
-            // Both request modes need the on-demand source; discovery also reports the installed version.
-            URLQueryItem(name: "x", value: "id=\(identifier)\(versionParameter)&installsource=ondemand&uc")
+            URLQueryItem(name: "x", value: "id=\(identifier)\(extensionParameters)&uc")
         ]
         guard let url = components.url else { throw ChromeWebStoreError.invalidRequest }
         return url

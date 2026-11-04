@@ -1,4 +1,88 @@
 {
+    "web_extension_update_found_macos": {
+        "description": "Fires when a Chrome Web Store update check finds a newer version. Daily counts affected installations; count counts discoveries. No package URL, hash or version is sent.",
+        "owners": ["diegoreymendez"],
+        "triggers": ["feature_lifecycle"],
+        "suffixes": ["daily_count"],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            {
+                "key": "extension_id",
+                "type": "string",
+                "description": "The validated 32-character Chrome Web Store extension identifier"
+            },
+            {
+                "key": "step",
+                "type": "string",
+                "description": "The extension update step",
+                "enum": ["check"]
+            },
+            {
+                "key": "outcome",
+                "type": "string",
+                "description": "The bounded result of the extension update check",
+                "enum": ["update_found"]
+            },
+            "channel"
+        ]
+    },
+    "web_extension_update_check_failed_macos": {
+        "description": "Fires when a Chrome Web Store update check fails, excluding cancellation. Daily counts affected installations; count counts failures. Only a bounded failure category is sent, without server messages or HTTP status codes.",
+        "owners": ["diegoreymendez"],
+        "triggers": ["exception"],
+        "suffixes": ["daily_count"],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            {
+                "key": "extension_id",
+                "type": "string",
+                "description": "The validated 32-character Chrome Web Store extension identifier"
+            },
+            {
+                "key": "step",
+                "type": "string",
+                "description": "The extension update step",
+                "enum": ["check"]
+            },
+            {
+                "key": "outcome",
+                "type": "string",
+                "description": "The bounded result of the extension update check",
+                "enum": ["invalid_request", "invalid_response", "invalid_manifest", "response_too_large", "network_failure", "http_status"]
+            },
+            "channel"
+        ]
+    },
+    "web_extension_update_skipped_macos": {
+        "description": "Fires when Google flags an extension update as malware, unwanted software or a policy violation. The update is skipped without disabling the extension. Daily counts affected installations; count counts skips.",
+        "owners": ["diegoreymendez"],
+        "triggers": ["feature_lifecycle"],
+        "suffixes": ["daily_count"],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            {
+                "key": "extension_id",
+                "type": "string",
+                "description": "The validated 32-character Chrome Web Store extension identifier"
+            },
+            {
+                "key": "step",
+                "type": "string",
+                "description": "The extension update step",
+                "enum": ["check"]
+            },
+            {
+                "key": "outcome",
+                "type": "string",
+                "description": "The bounded result of the extension update check",
+                "enum": ["google_flagged"]
+            },
+            "channel"
+        ]
+    },
     "web_extension_cpm_network_process_recovery_applied": {
         "description": "Fires after restarting the embedded CPM background because its Network process PID changed. Measures application of the mitigation, not confirmed messaging recovery. Daily counts affected installations; count counts applications. No URL, process ID or extension identifier is sent.",
         "owners": ["mallexxx"],

@@ -27,9 +27,9 @@ import XCTest
 final class ChromeWebStorePeriodicSchedulerTests: XCTestCase {
     func testNativeSchedulerUsesBackgroundQoSAndFlexibleRepeatingInterval() {
         let activity = NativeActivityMock(identifier: "test.extension-updates")
-        let scheduler = ChromeWebStorePeriodicScheduler(interval: 2 * 60 * 60, activity: activity)
-        XCTAssertEqual(activity.interval, 7200)
-        XCTAssertEqual(activity.tolerance, 1800)
+        let scheduler = ChromeWebStorePeriodicScheduler(interval: ChromeWebStoreUpdateCoordinator.defaultCheckInterval, activity: activity)
+        XCTAssertEqual(activity.interval, 18000)
+        XCTAssertEqual(activity.tolerance, 3600)
         XCTAssertTrue(activity.repeats)
         XCTAssertEqual(activity.qualityOfService, .background)
         XCTAssertEqual(activity.scheduleCount, 0, "Creating the adapter must not schedule an activity")

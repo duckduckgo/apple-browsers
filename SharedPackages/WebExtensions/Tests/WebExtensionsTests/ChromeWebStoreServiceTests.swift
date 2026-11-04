@@ -51,12 +51,124 @@ final class ChromeWebStoreServiceTests: XCTestCase {
     }
 
     private func scheduledService(_ manager: WebExtensionManager, interval: TimeInterval = ChromeWebStoreUpdateCoordinator.defaultCheckInterval,
+                                  isUpdateDiscoveryEnabled: Bool = true,
+                                  scheduler: ChromeWebStorePeriodicSchedulerMock = ChromeWebStorePeriodicSchedulerMock(),
+                                  pixelFiring: WebExtensionPixelFiring = NoOpWebExtensionPixelFiring(),
                                   check: @escaping @MainActor @Sendable (String, String) async -> ChromeWebStoreUpdateChecker.CheckResult) -> ChromeWebStoreService {
         ChromeWebStoreService(manager: manager, catalog: catalog,
                               downloader: StoreDownloaderMock(action: { Data() }), presenter: presenter,
-                              verifier: ChromeWebStorePackageVerifier(), updateCheck: { identifier, version in
+                              verifier: ChromeWebStorePackageVerifier(), isUpdateDiscoveryEnabled: isUpdateDiscoveryEnabled,
+                              pixelFiring: pixelFiring, updateCheck: { identifier, version in
                                   await check(identifier, version)
-                              }, updateCheckInterval: interval, updateSchedulerFactory: { _ in ChromeWebStorePeriodicSchedulerMock() })
+                              }, updateCheckInterval: interval, updateSchedulerFactory: { _ in scheduler })
+    }
+
+    func testDisabledDiscoveryDoesNotScheduleCheckOrEmitPixels() async throws {
+        let manager = try makeManager()
+        installationStore.installedExtensions = [installed("installed", version: "2.0", storeID: ChromeWebStoreID.onePassword.rawValue)]
+        let scheduler = ChromeWebStorePeriodicSchedulerMock()
+        let pixels = StoreUpdatePixelFiringMock()
+        let service = scheduledService(manager, isUpdateDiscoveryEnabled: false, scheduler: scheduler, pixelFiring: pixels) { _, _ in
+            XCTFail("Disabled discovery must not reach Google")
+            return .init(outcome: .noUpdate, retryNotBefore: nil)
+        }
+        defer { withExtendedLifetime((manager, service)) {} }
+        await service.checkForUpdatesNow()
+        XCTAssertEqual(scheduler.scheduleCount, 0)
+        XCTAssertTrue(pixels.outcomes.isEmpty)
+    }
+
+    func testDiscoveryFlagChangesApplyWhenServiceIsRecreated() async throws {
+        let manager = try makeManager()
+        installationStore.installedExtensions = [installed("installed", version: "2.0", storeID: ChromeWebStoreID.onePassword.rawValue)]
+        var enabled = false
+        var checkCount = 0
+        let disabled = scheduledService(manager, isUpdateDiscoveryEnabled: enabled) { _, _ in
+            XCTFail("Changing the source flag must not start an existing disabled service")
+            return .init(outcome: .noUpdate, retryNotBefore: nil)
+        }
+        enabled = true
+        await disabled.checkForUpdatesNow()
+        let enabledService = scheduledService(manager, isUpdateDiscoveryEnabled: enabled) { _, _ in
+            checkCount += 1
+            return .init(outcome: .noUpdate, retryNotBefore: nil)
+        }
+        defer { withExtendedLifetime((manager, disabled, enabledService)) {} }
+        await enabledService.checkForUpdatesNow()
+        XCTAssertGreaterThan(checkCount, 0)
+    }
+
+    func testServiceRestoresServerBackoffBeforeLaunchOrImmediateManualCheck() async throws {
+        let manager = try makeManager()
+        installationStore.installedExtensions = [installed("installed", version: "2.0", storeID: ChromeWebStoreID.onePassword.rawValue)]
+        let now = Date(timeIntervalSince1970: 100000)
+        ChromeWebStoreUpdateStateStore(keyValueStore: keyValueStore).save(.init(lastCompletedBatch: nil,
+                                                                            retryNotBefore: now.addingTimeInterval(3600)))
+        let scheduled = expectation(description: "Periodic activity registered after deferred launch")
+        let service = ChromeWebStoreService(manager: manager, catalog: catalog, downloader: StoreDownloaderMock(action: { Data() }), presenter: presenter,
+                                           verifier: ChromeWebStorePackageVerifier(), keyValueStore: keyValueStore, now: { now }, updateCheck: { _, _ in
+            XCTFail("Restored server backoff must apply before any request can start")
+            return .init(outcome: .noUpdate, retryNotBefore: nil)
+        }, updateSchedulerFactory: { _ in
+            scheduled.fulfill()
+            return ChromeWebStorePeriodicSchedulerMock()
+        })
+        defer { withExtendedLifetime((manager, service)) {} }
+        await service.checkForUpdatesNow()
+        await fulfillment(of: [scheduled], timeout: 1)
+    }
+
+    func testServiceRestoresRecentCompletionButManualCheckStillRuns() async throws {
+        let manager = try makeManager()
+        installationStore.installedExtensions = [installed("installed", version: "2.0", storeID: ChromeWebStoreID.onePassword.rawValue)]
+        let now = Date(timeIntervalSince1970: 100000)
+        let store = ChromeWebStoreUpdateStateStore(keyValueStore: keyValueStore)
+        store.save(.init(lastCompletedBatch: now.addingTimeInterval(-3600), retryNotBefore: nil))
+        let scheduled = expectation(description: "Periodic activity registered after skipped launch")
+        var checkCount = 0
+        let service = ChromeWebStoreService(manager: manager, catalog: catalog, downloader: StoreDownloaderMock(action: { Data() }), presenter: presenter,
+                                           verifier: ChromeWebStorePackageVerifier(), keyValueStore: keyValueStore, now: { now }, updateCheck: { _, _ in
+            await MainActor.run { checkCount += 1 }
+            return .init(outcome: .noUpdate, retryNotBefore: nil)
+        }, updateSchedulerFactory: { _ in
+            scheduled.fulfill()
+            return ChromeWebStorePeriodicSchedulerMock()
+        })
+        defer { withExtendedLifetime((manager, service)) {} }
+        await fulfillment(of: [scheduled], timeout: 1)
+        XCTAssertEqual(checkCount, 0)
+        await service.checkForUpdatesNow()
+        XCTAssertEqual(checkCount, 1)
+        XCTAssertEqual(store.load().lastCompletedBatch, now)
+    }
+
+    func testCheckOutcomesEmitOnlyExpectedDiscoveryPixels() async throws {
+        let manager = try makeManager()
+        let identifier = ChromeWebStoreID.onePassword.rawValue
+        installationStore.installedExtensions = [installed("installed", version: "2.0", storeID: identifier)]
+        let update = ChromeWebStoreUpdateChecker.Update(extensionID: identifier, version: "3.0",
+                                                        downloadURL: try XCTUnwrap(URL(string: "https://clients2.googleusercontent.com/extension.crx")),
+                                                        size: 100, sha256: String(repeating: "a", count: 64))
+        let cases: [(ChromeWebStoreUpdateChecker.Outcome, WebExtensionUpdateCheckOutcome?)] = [
+            (.noUpdate, nil), (.failure(.cancelled), nil), (.skipped, .googleFlagged),
+            (.failure(.networkFailure), .networkFailure), (.update(update), .updateFound)
+        ]
+        for (outcome, expected) in cases {
+            let pixels = StoreUpdatePixelFiringMock()
+            let scheduled = expectation(description: "Initial check completed")
+            let service = ChromeWebStoreService(manager: manager, catalog: catalog, downloader: StoreDownloaderMock(action: { Data() }), presenter: presenter,
+                                               verifier: ChromeWebStorePackageVerifier(), pixelFiring: pixels, updateCheck: { _, _ in
+                .init(outcome: outcome, retryNotBefore: nil)
+            }, updateSchedulerFactory: { _ in
+                scheduled.fulfill()
+                return ChromeWebStorePeriodicSchedulerMock()
+            })
+            await fulfillment(of: [scheduled], timeout: 1)
+            XCTAssertEqual(pixels.outcomes, expected.map { [$0] } ?? [])
+            XCTAssertEqual(pixels.identifiers, expected == nil ? [] : [identifier])
+            withExtendedLifetime(service) {}
+        }
+        withExtendedLifetime(manager) {}
     }
 
     private func installed(_ identifier: String, version: String?, storeID: String? = nil) -> InstalledWebExtension {
@@ -688,5 +800,19 @@ private final class StorePermissionPrompter: WebExtensionPermissionPrompting {
     }
     func confirmPermissions(_ permissions: WebExtensionPermissionRequest, for context: WKWebExtensionContext) async -> WebExtensionPermissionPromptResult {
         return .granted
+    }
+}
+
+@available(macOS 15.4, iOS 18.4, *)
+private final class StoreUpdatePixelFiringMock: WebExtensionPixelFiring {
+    private(set) var identifiers: [String] = []
+    private(set) var outcomes: [WebExtensionUpdateCheckOutcome] = []
+
+    func fire(_ event: WebExtensionPixelEvent) {
+        guard case .updateCheck(let identifier, let outcome) = event else {
+            return XCTFail("Expected a discovery pixel")
+        }
+        identifiers.append(identifier)
+        outcomes.append(outcome)
     }
 }

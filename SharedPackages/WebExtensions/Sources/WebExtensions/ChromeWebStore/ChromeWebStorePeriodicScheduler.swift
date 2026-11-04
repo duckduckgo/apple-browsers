@@ -28,7 +28,7 @@ protocol ChromeWebStorePeriodicScheduling: AnyObject {
 final class ChromeWebStorePeriodicScheduler: ChromeWebStorePeriodicScheduling {
 #if os(macOS)
     private static let activityIdentifier = "com.duckduckgo.browser.web-extension-update-discovery"
-    private static let toleranceFraction = 0.25
+    private static let toleranceFraction = 0.2
     private let activity: NSBackgroundActivityScheduler
 
     init(interval: TimeInterval,

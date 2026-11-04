@@ -24,7 +24,7 @@ import XCTest
 final class ChromeWebStoreUpdateManifestParserTests: XCTestCase {
     private let fixture = ChromeWebStoreUpdateManifestFixture()
 
-    private func parse(_ xml: String) throws -> ChromeWebStoreUpdateChecker.Update? {
+    private func parse(_ xml: String) throws -> ChromeWebStoreUpdateManifestParser.Result {
         try ChromeWebStoreUpdateManifestParser.parse(Data(xml.utf8), extensionID: fixture.extensionID)
     }
 
@@ -35,7 +35,7 @@ final class ChromeWebStoreUpdateManifestParserTests: XCTestCase {
     }
 
     func testAvailableUpdateFromRealResponseShape() throws {
-        let update = try XCTUnwrap(parse(fixture.manifest(fixture.offer())))
+        guard case .update(let update) = try parse(fixture.manifest(fixture.offer())) else { return XCTFail("Expected an update") }
         XCTAssertEqual(update.extensionID, fixture.extensionID)
         XCTAssertEqual(update.version, "2026.10.1")
         XCTAssertEqual(update.size, 26045122)
@@ -44,7 +44,54 @@ final class ChromeWebStoreUpdateManifestParserTests: XCTestCase {
     }
 
     func testNoUpdateFromRealResponseShape() throws {
-        XCTAssertNil(try parse(fixture.manifest(#"<updatecheck status="noupdate"/>"#)))
+        XCTAssertEqual(try parse(fixture.manifest(#"<updatecheck status="noupdate"/>"#)), .noUpdate)
+    }
+
+    func testEachTrueGoogleSafetyFlagSkipsBothOffersAndNoUpdateResponses() throws {
+        for flag in ["_malware", "_potentially_uws", "_policy_violation"] {
+            for status in ["ok", "noupdate"] {
+                // Flagged responses do not need usable package metadata, because no package is offered.
+                let update = "<updatecheck status=\"\(status)\" \(flag)=\"true\"/>"
+                XCTAssertEqual(try parse(fixture.manifest(update)), .skipped, "\(flag), \(status)")
+            }
+        }
+    }
+
+    func testMissingOrNonTrueGoogleSafetyFlagsDoNotSkipOffers() throws {
+        for flag in ["_malware", "_potentially_uws", "_policy_violation"] {
+            for value in ["false", "TRUE", "1", ""] {
+                let offer = fixture.offer().replacingOccurrences(of: "<updatecheck ", with: "<updatecheck \(flag)=\"\(value)\" ")
+                guard case .update = try parse(fixture.manifest(offer)) else { return XCTFail("Unexpected skip for \(flag)=\(value)") }
+            }
+        }
+        guard case .update = try parse(fixture.manifest(fixture.offer())) else { return XCTFail("Missing flags must not skip an offer") }
+    }
+
+    func testESBAllowlistDoesNotControlUpdateDiscovery() throws {
+        for value in ["true", "false", "unknown"] {
+            let offer = fixture.offer().replacingOccurrences(of: #"_esbAllowlist="true""#, with: "_esbAllowlist=\"\(value)\"")
+            guard case .update = try parse(fixture.manifest(offer)) else { return XCTFail("The ESB allowlist must be ignored") }
+        }
+    }
+
+    func testSafetyFlagsDoNotBypassManifestStructureOrStatusValidation() {
+        let flagged = #"<updatecheck status="ok" _malware="true"/>"#
+        let body = fixture.manifest(flagged)
+        let invalid = [
+            fixture.manifest(flagged, appID: String(repeating: "a", count: 32)),
+            fixture.manifest(flagged, appStatus: "error-unknownApplication"),
+            fixture.manifest(flagged + flagged),
+            body.replacingOccurrences(of: "protocol=\"2.0\"", with: "protocol=\"3.0\""),
+            body.replacingOccurrences(of: "http://www.google.com/update2/response", with: "https://evil.example"),
+            body.replacingOccurrences(of: flagged, with: #"<updatecheck status="error" _malware="true"/>"#),
+            body.replacingOccurrences(of: flagged, with: #"<updatecheck _malware="true"/>"#),
+            body.replacingOccurrences(of: "</app>", with: "<unknown/></app>"),
+            body.replacingOccurrences(of: "</gupdate>", with: ""),
+            body.replacingOccurrences(of: "<gupdate ", with: "<!DOCTYPE gupdate><gupdate ")
+        ]
+        for xml in invalid {
+            assertInvalid(Data(xml.utf8), message: xml)
+        }
     }
 
     func testInvalidOfferMetadataIsRejected() {
@@ -119,12 +166,12 @@ final class ChromeWebStoreUpdateManifestParserTests: XCTestCase {
             .replacingOccurrences(of: "<app", with: "<g:app")
             .replacingOccurrences(of: "</app", with: "</g:app")
             .replacingOccurrences(of: "<updatecheck", with: "<g:updatecheck")
-        XCTAssertNotNil(try parse("\u{FEFF}" + xml))
+        guard case .update = try parse("\u{FEFF}" + xml) else { return XCTFail("Expected a namespaced update") }
     }
 
     func testHashIsNormalizedToLowercase() throws {
         let offer = fixture.offer().replacingOccurrences(of: fixture.packageHash, with: fixture.packageHash.uppercased())
-        let update = try XCTUnwrap(parse(fixture.manifest(offer)))
+        guard case .update(let update) = try parse(fixture.manifest(offer)) else { return XCTFail("Expected an update") }
         XCTAssertEqual(update.sha256, fixture.packageHash)
     }
 
@@ -145,7 +192,7 @@ final class ChromeWebStoreUpdateManifestParserTests: XCTestCase {
         // Root, app and updatecheck contribute three elements; the fixture also contains one daystart.
         let extraElements = String(repeating: "<daystart/>", count: 252)
         let atLimit = fixture.manifest(fixture.offer()).replacingOccurrences(of: "<app ", with: extraElements + "<app ")
-        XCTAssertNotNil(try parse(atLimit))
+        guard case .update = try parse(atLimit) else { return XCTFail("Expected an update at the element limit") }
         let overLimit = atLimit.replacingOccurrences(of: "<app ", with: "<daystart/><app ")
         assertInvalid(Data(overLimit.utf8))
     }

@@ -17,6 +17,8 @@
 //
 
 import Foundation
+import os
+@_spi(Testing) import Persistence
 import XCTest
 @testable import WebExtensions
 
@@ -25,12 +27,17 @@ import XCTest
 final class ChromeWebStoreUpdateCoordinatorTests: XCTestCase {
     private func coordinator(interval: TimeInterval = ChromeWebStoreUpdateCoordinator.defaultCheckInterval,
                              scheduler: ChromeWebStorePeriodicSchedulerMock = ChromeWebStorePeriodicSchedulerMock(),
+                             initialState: ChromeWebStoreUpdateState = .init(),
+                             now: @escaping @Sendable () -> Date = Date.init,
+                             persistState: ChromeWebStoreUpdateCoordinator.PersistState? = nil,
+                             resultHandler: ChromeWebStoreUpdateCoordinator.ResultHandler? = nil,
                              identifiers: @escaping ChromeWebStoreUpdateCoordinator.IdentifiersProvider = { ["extension"] },
                              version: @escaping ChromeWebStoreUpdateCoordinator.VersionProvider = { _ in
                                  .init(installedVersion: "2.0", reportedVersion: "1.0")
                              },
                              check: @escaping ChromeWebStoreUpdateCoordinator.Check) -> ChromeWebStoreUpdateCoordinator {
         ChromeWebStoreUpdateCoordinator(interval: interval, schedulerFactory: { _ in scheduler },
+                                       initialState: initialState, now: now, persistState: persistState, resultHandler: resultHandler,
                                        installedIdentifiers: identifiers, version: version, check: check)
     }
 
@@ -274,6 +281,158 @@ final class ChromeWebStoreUpdateCoordinatorTests: XCTestCase {
         await coordinator.start()
         await coordinator.checkForUpdatesNow()
         XCTAssertEqual(providerCalls, 1)
+    }
+
+    func testLaunchSuppressionExpiresAtExactlyFourHoursAndIgnoresFutureDates() async {
+        let now = Date(timeIntervalSince1970: 100000)
+        for (age, expectedChecks) in [(0.0, 0), (14399, 0), (14400, 1), (14401, 1), (-1, 1)] {
+            let checks = CheckRecorder()
+            let scheduler = ChromeWebStorePeriodicSchedulerMock()
+            let state = ChromeWebStoreUpdateState(lastCompletedBatch: now.addingTimeInterval(-age), retryNotBefore: nil)
+            let coordinator = coordinator(scheduler: scheduler, initialState: state, now: { now }) { _, _ in await checks.record() }
+            await coordinator.start()
+            let count = await checks.count
+            XCTAssertEqual(count, expectedChecks, "Last completed batch age: \(age)")
+            XCTAssertEqual(scheduler.scheduleCount, 1, "Skipping the launch check must still register periodic activity")
+            await coordinator.stop()
+        }
+    }
+
+    func testManualAndPeriodicChecksBypassRecentLaunchSuppression() async {
+        let now = Date(timeIntervalSince1970: 100000)
+        let checks = CheckRecorder()
+        let scheduler = ChromeWebStorePeriodicSchedulerMock()
+        let coordinator = coordinator(scheduler: scheduler,
+                                      initialState: .init(lastCompletedBatch: now, retryNotBefore: nil), now: { now }) { _, _ in
+            await checks.record()
+        }
+        await coordinator.start()
+        await coordinator.checkForUpdatesNow()
+        await scheduler.fire()
+        let count = await checks.count
+        XCTAssertEqual(count, 2)
+        await coordinator.stop()
+    }
+
+    func testCompletedBatchSuppressesLaunchAfterCoordinatorAndStoreRecreation() async {
+        let storage = InMemoryThrowingKeyValueStore()
+        let store = ChromeWebStoreUpdateStateStore(keyValueStore: storage)
+        let now = Date(timeIntervalSince1970: 100000)
+        let checks = CheckRecorder()
+        let first = coordinator(now: { now }, persistState: { store.save($0) }) { _, _ in await checks.record() }
+        await first.start()
+        await first.stop()
+        let restored = ChromeWebStoreUpdateStateStore(keyValueStore: storage).load()
+        XCTAssertEqual(restored.lastCompletedBatch, now)
+        let second = coordinator(initialState: restored, now: { now.addingTimeInterval(3600) }) { _, _ in await checks.record() }
+        await second.start()
+        let count = await checks.count
+        XCTAssertEqual(count, 1)
+        await second.stop()
+    }
+
+    func testRestoredServerBackoffBlocksEveryTriggerUntilExactDeadline() async {
+        let storage = InMemoryThrowingKeyValueStore()
+        let store = ChromeWebStoreUpdateStateStore(keyValueStore: storage)
+        let start = Date(timeIntervalSince1970: 100000)
+        let deadline = start.addingTimeInterval(60)
+        store.save(.init(lastCompletedBatch: nil, retryNotBefore: deadline))
+        let clock = OSAllocatedUnfairLock(initialState: start)
+        let checks = CheckRecorder()
+        let scheduler = ChromeWebStorePeriodicSchedulerMock()
+        let coordinator = coordinator(scheduler: scheduler, initialState: store.load(), now: { clock.withLock { $0 } },
+                                      persistState: { store.save($0) }) { _, _ in await checks.record() }
+        await coordinator.start()
+        await coordinator.checkForUpdatesNow()
+        await scheduler.fire()
+        let blockedCount = await checks.count
+        XCTAssertEqual(blockedCount, 0)
+        clock.withLock { $0 = deadline }
+        await coordinator.checkForUpdatesNow()
+        let resumedCount = await checks.count
+        XCTAssertEqual(resumedCount, 1)
+        XCTAssertEqual(store.load().lastCompletedBatch, deadline)
+        XCTAssertNil(store.load().retryNotBefore)
+        await coordinator.stop()
+    }
+
+    func testBackoffOnOnlyOrFinalCandidateRecordsCompletionAndSuppressesRecentRelaunch() async throws {
+        let identifier = ChromeWebStoreID.bitwarden.rawValue
+        let update = ChromeWebStoreUpdateChecker.Update(extensionID: identifier, version: "3.0",
+                                                        downloadURL: try XCTUnwrap(URL(string: "https://clients2.googleusercontent.com/extension.crx")),
+                                                        size: 100, sha256: String(repeating: "a", count: 64))
+        let now = Date(timeIntervalSince1970: 100000)
+        let deadline = now.addingTimeInterval(30)
+        for identifiers in [[identifier], [String(repeating: "a", count: 32), identifier]] {
+            let storage = InMemoryThrowingKeyValueStore()
+            let store = ChromeWebStoreUpdateStateStore(keyValueStore: storage)
+            let checks = CheckRecorder()
+            let first = coordinator(now: { now }, persistState: { store.save($0) }, identifiers: { identifiers }) { current, _ in
+                _ = await checks.record()
+                if current == identifier { return .init(outcome: .update(update), retryNotBefore: deadline) }
+                return .init(outcome: .noUpdate, retryNotBefore: nil)
+            }
+            await first.start()
+            await first.stop()
+            let restored = ChromeWebStoreUpdateStateStore(keyValueStore: storage).load()
+            XCTAssertEqual(restored.lastCompletedBatch, now, "Backoff on the final candidate still completes the batch")
+            XCTAssertEqual(restored.retryNotBefore, deadline, "Completion must preserve the future server deadline")
+            let second = coordinator(initialState: restored, now: { now.addingTimeInterval(60) }) { _, _ in
+                XCTFail("An expired short backoff must not bypass suppression after a recent completed batch")
+                return .init(outcome: .noUpdate, retryNotBefore: nil)
+            }
+            await second.start()
+            let count = await checks.count
+            XCTAssertEqual(count, identifiers.count)
+            await second.stop()
+        }
+    }
+
+    func testBackoffIsSavedBeforeTelemetryAndPartialBatchDoesNotRecordCompletion() async {
+        let store = ChromeWebStoreUpdateStateStore(keyValueStore: InMemoryThrowingKeyValueStore())
+        let now = Date(timeIntervalSince1970: 100000)
+        let deadline = now.addingTimeInterval(60)
+        let reported = expectation(description: "Outcome reported after persistence")
+        let coordinator = coordinator(now: { now }, persistState: { store.save($0) }, resultHandler: { _, outcome in
+            XCTAssertTrue(Thread.isMainThread)
+            XCTAssertEqual(outcome, .failure(.httpStatus(503)))
+            XCTAssertEqual(store.load().retryNotBefore, deadline)
+            XCTAssertNil(store.load().lastCompletedBatch)
+            reported.fulfill()
+        }, identifiers: { ["a", "b"] }) { identifier, _ in
+            XCTAssertEqual(identifier, "a", "Backoff must prevent the second request")
+            return .init(outcome: .failure(.httpStatus(503)), retryNotBefore: deadline)
+        }
+        await coordinator.checkForUpdatesNow()
+        await fulfillment(of: [reported], timeout: 1)
+        XCTAssertNil(store.load().lastCompletedBatch)
+        await coordinator.stop()
+    }
+
+    func testEmptyOrDisappearedCandidatesDoNotRecordCompletion() async {
+        for identifiers in [[], ["extension"]] {
+            var savedStates: [ChromeWebStoreUpdateState] = []
+            let coordinator = coordinator(persistState: { savedStates.append($0) }, identifiers: { identifiers }, version: { _ in nil }) { _, _ in
+                XCTFail("No current version means no network check")
+                return .init(outcome: .noUpdate, retryNotBefore: nil)
+            }
+            await coordinator.checkForUpdatesNow()
+            XCTAssertTrue(savedStates.isEmpty)
+            await coordinator.stop()
+        }
+    }
+
+    func testFailedRequestsRecordCompletionButCancelledChecksDoNot() async {
+        let now = Date(timeIntervalSince1970: 100000)
+        for failure in [ChromeWebStoreUpdateChecker.Failure.networkFailure, .cancelled] {
+            var savedStates: [ChromeWebStoreUpdateState] = []
+            let coordinator = coordinator(now: { now }, persistState: { savedStates.append($0) }) { _, _ in
+                .init(outcome: .failure(failure), retryNotBefore: nil)
+            }
+            await coordinator.checkForUpdatesNow()
+            XCTAssertEqual(savedStates.last?.lastCompletedBatch, failure == .cancelled ? nil : now)
+            await coordinator.stop()
+        }
     }
 
     private final class CallbackToken {}

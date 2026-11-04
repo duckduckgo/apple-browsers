@@ -212,6 +212,20 @@ final class ChromeWebStoreCatalogTests: XCTestCase {
 
     // MARK: - Store URLs
 
+    func testUpdateCheckURLReportsVersionWithoutDownloadInstallSource() throws {
+        let url = try ChromeWebStoreURL.updateCheckURL(for: identifier, installedVersion: "1.2.3.4")
+        let components = try XCTUnwrap(URLComponents(url: url, resolvingAgainstBaseURL: false))
+        XCTAssertEqual(components.scheme, "https")
+        XCTAssertEqual(components.host, "clients2.google.com")
+        XCTAssertEqual(components.path, "/service/update2/crx")
+        XCTAssertEqual(Set(components.queryItems ?? []), Set([
+            URLQueryItem(name: "response", value: "updatecheck"),
+            URLQueryItem(name: "prodversion", value: "154.0.0.0"),
+            URLQueryItem(name: "acceptformat", value: "crx3"),
+            URLQueryItem(name: "x", value: "id=\(identifier)&v=1.2.3.4&uc")
+        ]))
+    }
+
     func testDownloadURLMatchesScriptContractRegardlessOfQueryOrder() throws {
         let url = try ChromeWebStoreURL.downloadURL(for: identifier)
         XCTAssertTrue(ChromeWebStoreURL.isValidDownloadURL(url, for: identifier))

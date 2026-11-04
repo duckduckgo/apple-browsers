@@ -32,27 +32,46 @@ actor ChromeWebStoreUpdateCoordinator {
     typealias VersionProvider = @MainActor @Sendable (String) async -> Version?
     typealias SchedulerFactory = @Sendable (TimeInterval) -> any ChromeWebStorePeriodicScheduling
 
-    static let defaultCheckInterval: TimeInterval = 2 * 60 * 60
+    typealias PersistState = @MainActor @Sendable (ChromeWebStoreUpdateState) -> Void
+    typealias ResultHandler = @MainActor @Sendable (String, ChromeWebStoreUpdateChecker.Outcome) -> Void
+
+    static let defaultCheckInterval: TimeInterval = 5 * 60 * 60
+    private static let launchCheckMinimumInterval: TimeInterval = 4 * 60 * 60
+
+    private enum BatchAction {
+        case continueChecking, pause, stop
+    }
 
     private let interval: TimeInterval
     private let schedulerFactory: SchedulerFactory
+    private let now: @Sendable () -> Date
+    private var state: ChromeWebStoreUpdateState
+    private var persistState: PersistState?
+    private var resultHandler: ResultHandler?
     private var installedIdentifiers: IdentifiersProvider?
     private var version: VersionProvider?
     private var check: Check?
     private var periodicScheduler: (any ChromeWebStorePeriodicScheduling)?
     private var batchTask: Task<Void, Never>?
-    private var retryNotBefore: Date?
     private var lastCheckedIdentifier: String?
     private var isStopped = false
     private var isStarted = false
 
     init(interval: TimeInterval = ChromeWebStoreUpdateCoordinator.defaultCheckInterval,
          schedulerFactory: @escaping SchedulerFactory = { ChromeWebStorePeriodicScheduler(interval: $0) },
+         initialState: ChromeWebStoreUpdateState = .init(),
+         now: @escaping @Sendable () -> Date = Date.init,
+         persistState: PersistState? = nil,
+         resultHandler: ResultHandler? = nil,
          installedIdentifiers: @escaping IdentifiersProvider,
          version: @escaping VersionProvider,
          check: @escaping Check) {
         self.interval = interval
         self.schedulerFactory = schedulerFactory
+        self.now = now
+        self.state = initialState
+        self.persistState = persistState
+        self.resultHandler = resultHandler
         self.installedIdentifiers = installedIdentifiers
         self.version = version
         self.check = check
@@ -63,8 +82,13 @@ actor ChromeWebStoreUpdateCoordinator {
         isStarted = true
         let interval = interval
         Logger.webExtensions.info("Extension update discovery: started (interval \(interval, privacy: .public)s)")
-        let initialBatch = startBatch()
-        await initialBatch?.value
+        if let lastCompleted = state.lastCompletedBatch,
+           (0..<Self.launchCheckMinimumInterval).contains(now().timeIntervalSince(lastCompleted)) {
+            Logger.webExtensions.info("Extension update discovery: skipping launch check after recent completed batch")
+        } else {
+            let initialBatch = startBatch()
+            await initialBatch?.value
+        }
         guard !isStopped else { return }
         let scheduler = schedulerFactory(interval)
         periodicScheduler = scheduler
@@ -82,6 +106,8 @@ actor ChromeWebStoreUpdateCoordinator {
         installedIdentifiers = nil
         version = nil
         check = nil
+        persistState = nil
+        resultHandler = nil
     }
 
     func checkForUpdatesNow() async {
@@ -93,7 +119,7 @@ actor ChromeWebStoreUpdateCoordinator {
     private func startBatch() -> Task<Void, Never>? {
         guard !isStopped else { return nil }
         if let batchTask { return batchTask }
-        if let retryNotBefore, retryNotBefore > Date() {
+        if let retryNotBefore = state.retryNotBefore, retryNotBefore > now() {
             Logger.webExtensions.info("Extension update discovery: deferred until server retry deadline=\(retryNotBefore, privacy: .public)")
             return nil
         }
@@ -116,7 +142,8 @@ actor ChromeWebStoreUpdateCoordinator {
         }
         let candidates = orderedIdentifiers(identifiers)
         Logger.webExtensions.info("Extension update discovery: checking \(candidates.count) installed extensions")
-        for identifier in candidates {
+        var completedCheck = false
+        for (index, identifier) in candidates.enumerated() {
             guard !isStopped, !Task.isCancelled, let version else { return }
             // Installs and removals can happen while an earlier request is suspended.
             let currentVersion = await version(identifier)
@@ -124,13 +151,37 @@ actor ChromeWebStoreUpdateCoordinator {
             guard let currentVersion, let check else { continue }
             let result = await check(identifier, currentVersion.reportedVersion)
             guard !isStopped, !Task.isCancelled else { return }
-            lastCheckedIdentifier = identifier
-            logUpdateCheck(result, identifier: identifier, version: currentVersion)
-            if let deadline = result.retryNotBefore, deadline > Date() {
-                retryNotBefore = deadline
-                break
-            }
+            let action = await processUpdateCheck(result, identifier: identifier, version: currentVersion)
+            guard action != .stop, action != .pause || index == candidates.count - 1 else { return }
+            completedCheck = true
         }
+        if completedCheck { await recordCompletedBatch() }
+    }
+
+    private func recordCompletedBatch() async {
+        let completedAt = now()
+        state.lastCompletedBatch = completedAt
+        if let deadline = state.retryNotBefore, deadline <= completedAt {
+            state.retryNotBefore = nil
+        }
+        await persistState?(state)
+    }
+
+    /// Saves timing and reports the outcome before deciding whether more candidates may be checked.
+    private func processUpdateCheck(_ result: ChromeWebStoreUpdateChecker.CheckResult, identifier: String, version: Version) async -> BatchAction {
+        guard result.outcome != .failure(.cancelled) else { return .stop }
+        lastCheckedIdentifier = identifier
+        let shouldPause = result.retryNotBefore.map { $0 > now() } ?? false
+        if shouldPause {
+            state.retryNotBefore = result.retryNotBefore
+            // Store the server deadline before yielding to telemetry or another caller.
+            await persistState?(state)
+            guard !isStopped, !Task.isCancelled else { return .stop }
+        }
+        logUpdateCheck(result, identifier: identifier, version: version)
+        await resultHandler?(identifier, result.outcome)
+        guard !isStopped, !Task.isCancelled else { return .stop }
+        return shouldPause ? .pause : .continueChecking
     }
 
     private func orderedIdentifiers(_ identifiers: [String]) -> [String] {
@@ -145,6 +196,8 @@ actor ChromeWebStoreUpdateCoordinator {
             Logger.webExtensions.info("Extension update discovery: \(identifier, privacy: .public) installed=\(version.installedVersion, privacy: .public) reported=\(version.reportedVersion, privacy: .public) available=\(update.version, privacy: .public)")
         case .noUpdate:
             Logger.webExtensions.info("Extension update discovery: \(identifier, privacy: .public) installed=\(version.installedVersion, privacy: .public) reported=\(version.reportedVersion, privacy: .public) noUpdate")
+        case .skipped:
+            Logger.webExtensions.info("Extension update discovery: \(identifier, privacy: .public) skipped because Google flagged the extension")
         case .failure(let failure):
             Logger.webExtensions.error("Extension update discovery: \(identifier, privacy: .public) installed=\(version.installedVersion, privacy: .public) reported=\(version.reportedVersion, privacy: .public) failed=\(String(describing: failure), privacy: .public)")
         }

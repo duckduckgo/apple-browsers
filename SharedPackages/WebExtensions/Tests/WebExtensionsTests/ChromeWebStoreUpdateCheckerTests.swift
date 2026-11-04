@@ -25,8 +25,7 @@ import XCTest
 final class ChromeWebStoreUpdateCheckerTests: XCTestCase {
     private let fixture = ChromeWebStoreUpdateManifestFixture()
 
-    private func checker() -> ChromeWebStoreUpdateChecker {
-        let configuration = URLSessionConfiguration.ephemeral
+    private func checker(configuration: URLSessionConfiguration = .ephemeral) -> ChromeWebStoreUpdateChecker {
         configuration.protocolClasses = [UpdateURLProtocol.self]
         return ChromeWebStoreUpdateChecker(configuration: configuration)
     }
@@ -70,14 +69,18 @@ final class ChromeWebStoreUpdateCheckerTests: XCTestCase {
                 URLQueryItem(name: "response", value: "updatecheck"),
                 ChromeWebStoreURL.prodversionQueryItem,
                 URLQueryItem(name: "acceptformat", value: "crx3"),
-                URLQueryItem(name: "x", value: "id=\(expectedID)&v=2026.1.0&installsource=ondemand&uc")
+                URLQueryItem(name: "x", value: "id=\(expectedID)&v=2026.1.0&uc")
             ]))
+            XCTAssertEqual(request.value(forHTTPHeaderField: "User-Agent"), "Mozilla/5.0")
+            XCTAssertEqual(request.value(forHTTPHeaderField: "Accept-Language"), "en-US")
             XCTAssertNil(request.value(forHTTPHeaderField: "Cookie"))
             XCTAssertNil(request.value(forHTTPHeaderField: "Authorization"))
             return (try XCTUnwrap(HTTPURLResponse(url: url, statusCode: 200, httpVersion: nil,
                                                 headerFields: ["Set-Cookie": "update=tracking"])), data)
         }
-        let checker = checker()
+        let configuration = URLSessionConfiguration.ephemeral
+        configuration.httpAdditionalHeaders = ["User-Agent": "Browser/1.2.3", "Accept-Language": "es-AR", "Authorization": "private"]
+        let checker = checker(configuration: configuration)
         _ = await checker.check(extensionID: fixture.extensionID, installedVersion: "2026.1.0")
         _ = await checker.check(extensionID: fixture.extensionID, installedVersion: "2026.1.0")
     }
@@ -126,6 +129,7 @@ final class ChromeWebStoreUpdateCheckerTests: XCTestCase {
     func testRetryDeadlineIsRetainedOnSuccessAndFailures() async throws {
         for (status, xml, expected) in [
             (200, fixture.manifest(#"<updatecheck status="noupdate"/>"#), ChromeWebStoreUpdateChecker.Outcome.noUpdate),
+            (200, fixture.manifest(#"<updatecheck status="ok" _malware="true"/>"#), .skipped),
             (503, "unavailable", .failure(.httpStatus(503))),
             (200, "invalid XML", .failure(.invalidManifest))
         ] {

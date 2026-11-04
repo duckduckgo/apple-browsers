@@ -101,6 +101,7 @@ enum WebExtensionManagerFactory {
         privacyConfigurationManager: PrivacyConfigurationManaging,
         autoconsentPreferences: AutoconsentPreferencesProviding,
         buildType: ApplicationBuildType = StandardApplicationBuildType(),
+        featureFlagger: FeatureFlagger = Application.appDelegate.featureFlagger,
         darkReaderExcludedDomainsProvider: DarkReaderExcludedDomainsProviding? = nil,
         scriptletConfiguration: ScriptletConfiguration? = nil
     ) -> WebExtensionManager {
@@ -174,7 +175,10 @@ enum WebExtensionManagerFactory {
             manager.chromeWebStore = ChromeWebStoreService(
                 manager: manager,
                 catalog: ChromeWebStoreCatalog(configurationManager: privacyConfigurationManager),
-                presenter: ChromeWebStorePresenter(windowProvider: { NSApp.keyWindow ?? NSApp.mainWindow })
+                presenter: ChromeWebStorePresenter(windowProvider: { NSApp.keyWindow ?? NSApp.mainWindow }),
+                isUpdateDiscoveryEnabled: featureFlagger.isFeatureOn(.webExtensionUpdateDiscovery),
+                keyValueStore: keyValueStore,
+                pixelFiring: pixelFiring
             )
         }
 

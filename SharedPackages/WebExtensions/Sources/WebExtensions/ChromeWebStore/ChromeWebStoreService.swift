@@ -17,6 +17,7 @@
 //
 
 import Foundation
+import Persistence
 import PrivacyConfig
 import WebKit
 
@@ -73,15 +74,21 @@ public final class ChromeWebStoreService: ChromeWebStoreManaging {
     private var updateVersionOverrides: [String: UpdateVersionOverride] = [:]
 
     public convenience init(manager: WebExtensionManager, catalog: ChromeWebStoreCatalogProviding,
-                            downloader: ChromeWebStoreDownloading = ChromeWebStoreDownloader(), presenter: ChromeWebStorePresenting) {
+                            downloader: ChromeWebStoreDownloading = ChromeWebStoreDownloader(), presenter: ChromeWebStorePresenting,
+                            isUpdateDiscoveryEnabled: Bool = false, keyValueStore: (any ThrowingKeyValueStoring)? = nil,
+                            pixelFiring: WebExtensionPixelFiring = NoOpWebExtensionPixelFiring()) {
         self.init(manager: manager, catalog: catalog, downloader: downloader, presenter: presenter,
-                  verifier: ChromeWebStorePackageVerifier(), updateCheck: { identifier, version in
+                  verifier: ChromeWebStorePackageVerifier(), isUpdateDiscoveryEnabled: isUpdateDiscoveryEnabled,
+                  keyValueStore: keyValueStore, pixelFiring: pixelFiring, updateCheck: { identifier, version in
                       await ChromeWebStoreUpdateChecker().check(extensionID: identifier, installedVersion: version)
                   })
     }
 
     init(manager: WebExtensionManager, catalog: ChromeWebStoreCatalogProviding,
          downloader: ChromeWebStoreDownloading, presenter: ChromeWebStorePresenting, verifier: ChromeWebStorePackageVerifier,
+         isUpdateDiscoveryEnabled: Bool = true, keyValueStore: (any ThrowingKeyValueStoring)? = nil,
+         pixelFiring: WebExtensionPixelFiring = NoOpWebExtensionPixelFiring(),
+         now: @escaping @Sendable () -> Date = Date.init,
          updateCheck: ChromeWebStoreUpdateCoordinator.Check? = nil,
          updateCheckInterval: TimeInterval = ChromeWebStoreUpdateCoordinator.defaultCheckInterval,
          updateSchedulerFactory: @escaping ChromeWebStoreUpdateCoordinator.SchedulerFactory = { ChromeWebStorePeriodicScheduler(interval: $0) }) {
@@ -90,9 +97,16 @@ public final class ChromeWebStoreService: ChromeWebStoreManaging {
         self.downloader = downloader
         self.presenter = presenter
         self.verifier = verifier
-        if let updateCheck {
+        if isUpdateDiscoveryEnabled, let updateCheck {
+            let stateStore = keyValueStore.map { ChromeWebStoreUpdateStateStore(keyValueStore: $0) }
+            let initialState = stateStore?.load() ?? .init()
             let coordinator = ChromeWebStoreUpdateCoordinator(interval: updateCheckInterval, schedulerFactory: updateSchedulerFactory,
-                                                             installedIdentifiers: { [weak self] in
+                                                             initialState: initialState, now: now, persistState: { state in
+                stateStore?.save(state)
+            }, resultHandler: { identifier, outcome in
+                guard let pixelOutcome = WebExtensionUpdateCheckOutcome(checkOutcome: outcome) else { return }
+                pixelFiring.fire(.updateCheck(extensionID: identifier, outcome: pixelOutcome))
+            }, installedIdentifiers: { [weak self] in
                 guard let versions = self?.eligibleInstalledVersions() else { return nil }
                 return Array(versions.keys)
             }, version: { [weak self] identifier in

@@ -18,9 +18,15 @@
 
 import Foundation
 
-/// Validates an update manifest and extracts metadata. A nil result means the server reported no update.
+/// Validates an update manifest and separates usable offers from Google's safety flags.
 @available(macOS 15.4, iOS 18.4, *)
 final class ChromeWebStoreUpdateManifestParser: NSObject, XMLParserDelegate {
+    enum Result: Equatable, Sendable {
+        case update(ChromeWebStoreUpdateChecker.Update)
+        case noUpdate
+        case skipped
+    }
+
     private static let namespace = "http://www.google.com/update2/response"
     private static let protocolVersion = "2.0"
     private static let successStatus = "ok"
@@ -28,19 +34,20 @@ final class ChromeWebStoreUpdateManifestParser: NSObject, XMLParserDelegate {
     private static let maximumDepth = 16
     private static let maximumElementCount = 256
     private static let sha256HexLength = 64
+    private static let safetyFlags = ["_malware", "_potentially_uws", "_policy_violation"]
     private let extensionID: String
     private var path: [String] = []
     private var elementCount = 0
     private var appCount = 0
     private var updateCount = 0
     private var invalid = false
-    private var update: ChromeWebStoreUpdateChecker.Update?
+    private var result: Result = .noUpdate
 
     private init(extensionID: String) {
         self.extensionID = extensionID
     }
 
-    static func parse(_ data: Data, extensionID: String) throws -> ChromeWebStoreUpdateChecker.Update? {
+    static func parse(_ data: Data, extensionID: String) throws -> Result {
         guard let xml = String(data: data, encoding: .utf8), !xml.contains("\0"), !xml.contains("<!DOCTYPE") else {
             throw ChromeWebStoreUpdateChecker.Failure.invalidManifest
         }
@@ -61,7 +68,7 @@ final class ChromeWebStoreUpdateManifestParser: NSObject, XMLParserDelegate {
         guard parser.parse(), !delegate.invalid, delegate.appCount == 1, delegate.updateCount == 1 else {
             throw ChromeWebStoreUpdateChecker.Failure.invalidManifest
         }
-        return delegate.update
+        return delegate.result
     }
 
     func parser(_ parser: XMLParser, didStartElement elementName: String, namespaceURI: String?,
@@ -94,8 +101,16 @@ final class ChromeWebStoreUpdateManifestParser: NSObject, XMLParserDelegate {
     private func readUpdate(_ attributes: [String: String], parser: XMLParser) {
         updateCount += 1
         guard updateCount == 1 else { reject(parser); return }
+        guard attributes["status"] == Self.successStatus || attributes["status"] == Self.noUpdateStatus else {
+            reject(parser)
+            return
+        }
+        if Self.safetyFlags.contains(where: { attributes[$0] == "true" }) {
+            result = .skipped
+            return
+        }
         if attributes["status"] == Self.noUpdateStatus { return }
-        guard attributes["status"] == Self.successStatus, let version = attributes["version"], ChromeWebStoreUpdateChecker.isValidVersion(version),
+        guard let version = attributes["version"], ChromeWebStoreUpdateChecker.isValidVersion(version),
               let codebase = attributes["codebase"], let url = URL(string: codebase),
               ChromeWebStoreURL.isAllowedDownloadDestination(url), url.fragment == nil,
               let sizeValue = attributes["size"], !sizeValue.isEmpty, sizeValue.utf8.allSatisfy({ (48...57).contains($0) }),
@@ -105,7 +120,7 @@ final class ChromeWebStoreUpdateManifestParser: NSObject, XMLParserDelegate {
             reject(parser)
             return
         }
-        update = ChromeWebStoreUpdateChecker.Update(extensionID: extensionID, version: version, downloadURL: url, size: size, sha256: hash.lowercased())
+        result = .update(ChromeWebStoreUpdateChecker.Update(extensionID: extensionID, version: version, downloadURL: url, size: size, sha256: hash.lowercased()))
     }
 
     private func reject(_ parser: XMLParser) {

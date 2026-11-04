@@ -39,6 +39,8 @@ public struct ChromeWebStoreUpdateChecker {
     public enum Outcome: Equatable, Sendable {
         case update(Update)
         case noUpdate
+        /// Google flagged the extension; discovery must not offer the package.
+        case skipped
         case failure(Failure)
     }
 
@@ -52,6 +54,8 @@ public struct ChromeWebStoreUpdateChecker {
     private static let requestTimeout: TimeInterval = 30
     private static let maximumRetryDelay: TimeInterval = 24 * 60 * 60
     private static let maximumVersionComponents = 4
+    private static let genericUserAgent = "Mozilla/5.0"
+    private static let fixedAcceptLanguage = "en-US"
     private let configuration: URLSessionConfiguration
 
     public init() {
@@ -67,6 +71,7 @@ public struct ChromeWebStoreUpdateChecker {
         configuration.requestCachePolicy = .reloadIgnoringLocalCacheData
         configuration.timeoutIntervalForRequest = Self.requestTimeout
         configuration.timeoutIntervalForResource = Self.requestTimeout
+        configuration.httpAdditionalHeaders = ["User-Agent": Self.genericUserAgent, "Accept-Language": Self.fixedAcceptLanguage]
         self.configuration = configuration
     }
 
@@ -95,12 +100,15 @@ public struct ChromeWebStoreUpdateChecker {
                 data.append(byte)
             }
             try Task.checkCancellation()
-            let update = try ChromeWebStoreUpdateManifestParser.parse(data, extensionID: extensionID)
+            let manifest = try ChromeWebStoreUpdateManifestParser.parse(data, extensionID: extensionID)
             let outcome: Outcome
-            if let update, SemanticVersionComparator().isVersion(update.version, newerThan: installedVersion) {
-                outcome = .update(update)
-            } else {
+            switch manifest {
+            case .update(let update):
+                outcome = SemanticVersionComparator().isVersion(update.version, newerThan: installedVersion) ? .update(update) : .noUpdate
+            case .noUpdate:
                 outcome = .noUpdate
+            case .skipped:
+                outcome = .skipped
             }
             return CheckResult(outcome: outcome, retryNotBefore: retryNotBefore)
         } catch {

@@ -21,7 +21,7 @@ import SwiftUI
 
 final class VerticalTabsViewController: NSViewController {
     private enum Constants {
-        static let defaultWidth: CGFloat = 240
+        static let defaultWidth: CGFloat = 200
         static let minimumWidth: CGFloat = 80
         static let maximumWidth: CGFloat = 500
         static let resizeHandleWidth: CGFloat = 6
@@ -29,8 +29,16 @@ final class VerticalTabsViewController: NSViewController {
 
     private let viewModel: VerticalTabsViewModel
     private let themeManager: ThemeManager
+    private let blurView = NSVisualEffectView()
     private var widthConstraint: NSLayoutConstraint?
     private var widthAtResizeStart: CGFloat = 0
+
+    /// Shown over the page, the sidebar blurs the page beneath it rather than what is behind the window.
+    var isFloating = false {
+        didSet {
+            blurView.blendingMode = isFloating ? .withinWindow : .behindWindow
+        }
+    }
 
     init(
         tabCollectionViewModel: TabCollectionViewModel,
@@ -51,6 +59,10 @@ final class VerticalTabsViewController: NSViewController {
 
     override func loadView() {
         let view = NSView()
+        blurView.translatesAutoresizingMaskIntoConstraints = false
+        blurView.blendingMode = .behindWindow
+        blurView.material = .sidebar
+        blurView.state = .active
         let hostingView = NSHostingView(rootView: VerticalTabsView(model: viewModel, themeManager: themeManager))
         hostingView.translatesAutoresizingMaskIntoConstraints = false
         let resizeHandle = VerticalTabsResizeHandle(
@@ -63,6 +75,7 @@ final class VerticalTabsViewController: NSViewController {
         )
         resizeHandle.translatesAutoresizingMaskIntoConstraints = false
 
+        view.addSubview(blurView)
         view.addSubview(hostingView)
         view.addSubview(resizeHandle)
 
@@ -75,6 +88,11 @@ final class VerticalTabsViewController: NSViewController {
         NSLayoutConstraint.activate([
             widthConstraint,
             view.widthAnchor.constraint(greaterThanOrEqualToConstant: Constants.minimumWidth),
+
+            blurView.topAnchor.constraint(equalTo: view.topAnchor),
+            blurView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
+            blurView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            blurView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
 
             hostingView.topAnchor.constraint(equalTo: view.topAnchor),
             hostingView.bottomAnchor.constraint(equalTo: view.bottomAnchor),

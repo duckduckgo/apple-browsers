@@ -1799,6 +1799,9 @@ struct UserText {
 
     static let tabs = NSLocalizedString("preferences-tabs.title", value: "Tabs", comment: "Title for tabs section in settings")
     static let useVerticalTabs = NotLocalizedString("preferences-tabs.use.vertical.tabs", value: "Use vertical tabs", comment: "Option to show browser tabs in a vertical list on the side of the window instead of horizontally at the top")
+    static let showVerticalTabsSidebar = NotLocalizedString("main-menu.view.show-vertical-tabs-sidebar", value: "Show Tabs Sidebar", comment: "Main Menu View item that shows the sidebar listing the window's tabs")
+    static let hideVerticalTabsSidebar = NotLocalizedString("main-menu.view.hide-vertical-tabs-sidebar", value: "Hide Tabs Sidebar", comment: "Main Menu View item that hides the sidebar listing the window's tabs")
+    static let verticalTabsSidebarTooltip = NotLocalizedString("tooltip.vertical-tabs.sidebar", value: "Show or hide the tabs sidebar ⌘B", comment: "Tooltip for the button that shows or hides the sidebar listing the window's tabs")
     static let preferNewTabsToWindows = NSLocalizedString("preferences-tabs.prefer.new.tabs.to.windows", value: "Open links in new tabs instead of new windows whenever possible", comment: "Option to prefer opening new tabs instead of windows when opening links")
     static let switchToNewTabWhenOpened = NSLocalizedString("preferences-tabs.switch.tab.when.opened", value: "When opening links, switch to the new tab or window immediately", comment: "Option to switch to a new tab/window when it is opened")
     static let newTabPositionTitle = NSLocalizedString("preferences-tabs.new.tab.position.title", value: "When creating a new tab", comment: "Title for new tab positioning")

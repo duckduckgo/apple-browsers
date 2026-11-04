@@ -36,12 +36,29 @@ final class MainView: NSView {
         static let aiChatOmnibarContainerMinHeight: CGFloat = 60
         static let aiChatOmnibarContainerPadding: CGFloat = 50
         static let aiChatOmnibarContainerTopOffset: CGFloat = -20
+        static let verticalTabsRevealEdgeWidth: CGFloat = 6
+        static let peekingVerticalTabsShadowRadius: CGFloat = 16
+        static let verticalTabsAnimationDuration: TimeInterval = 0.2
+    }
+
+    enum VerticalTabsLayout {
+        /// The window shows horizontal tabs.
+        case hidden
+        /// The sidebar sits beside the toolbar and the page.
+        case docked
+        /// The sidebar is hidden until the mouse reaches the window's left edge.
+        case collapsed
+        /// The collapsed sidebar shown over the page while the mouse is on it.
+        case peeking
     }
 
     let tabBarContainerView = NSView()
     let navigationBarContainerView = NSView()
     let webContainerView = NSView()
     let verticalTabsContainerView = NSView().hidden()
+    // Always installed so their tracking areas are live; the owner decides what a hover means in each layout.
+    private let verticalTabsRevealEdgeView = HoverDetectionView(assumesMouseInside: false)
+    private let peekingVerticalTabsHoverView = HoverDetectionView(assumesMouseInside: true)
     let findInPageContainerView = NSView().hidden()
     let bookmarksBarContainerView = NSView()
     let bannerContainerView = NSView()
@@ -57,8 +74,10 @@ final class MainView: NSView {
     private var bookmarksBarHeightConstraint: NSLayoutConstraint!
     private var webContainerTopConstraint: NSLayoutConstraint!
     private var webContainerTopConstraintToNavigation: NSLayoutConstraint!
-    private var webContainerLeadingConstraint: NSLayoutConstraint!
-    private var webContainerLeadingConstraintToVerticalTabs: NSLayoutConstraint!
+    private var leadingConstraints: [NSLayoutConstraint] = []
+    private var leadingConstraintsToVerticalTabs: [NSLayoutConstraint] = []
+    private var verticalTabsShownConstraint: NSLayoutConstraint!
+    private var verticalTabsHiddenConstraint: NSLayoutConstraint!
     private var tabBarHeightConstraint: NSLayoutConstraint!
     private var bannerTopConstraint: NSLayoutConstraint!
     private var bannerHeightConstraint: NSLayoutConstraint!
@@ -77,9 +96,11 @@ final class MainView: NSView {
             divider,
             bookmarksBarContainerView,
             webContainerView,
-            verticalTabsContainerView,
             bannerContainerView,
             navigationBarContainerView,
+            verticalTabsContainerView,
+            verticalTabsRevealEdgeView,
+            peekingVerticalTabsHoverView,
             aiChatOmnibarContainerView,
             aiChatOmnibarTextContainerView,
             findInPageContainerView,
@@ -109,8 +130,11 @@ final class MainView: NSView {
 
         webContainerTopConstraint.priority = .defaultHigh
         webContainerTopConstraintToNavigation.priority = .defaultLow
-        webContainerLeadingConstraint = webContainerView.leadingAnchor.constraint(equalTo: leadingAnchor)
-        webContainerLeadingConstraintToVerticalTabs = webContainerView.leadingAnchor.constraint(equalTo: verticalTabsContainerView.trailingAnchor)
+        let viewsBesideVerticalTabs = [navigationBarContainerView, divider, bookmarksBarContainerView, bannerContainerView, webContainerView]
+        leadingConstraints = viewsBesideVerticalTabs.map { $0.leadingAnchor.constraint(equalTo: leadingAnchor) }
+        leadingConstraintsToVerticalTabs = viewsBesideVerticalTabs.map { $0.leadingAnchor.constraint(equalTo: verticalTabsContainerView.trailingAnchor) }
+        verticalTabsShownConstraint = verticalTabsContainerView.leadingAnchor.constraint(equalTo: leadingAnchor)
+        verticalTabsHiddenConstraint = verticalTabsContainerView.trailingAnchor.constraint(equalTo: leadingAnchor)
 
         bannerTopConstraint = bannerContainerView.topAnchor.constraint(equalTo: bookmarksBarContainerView.bottomAnchor)
         bannerHeightConstraint = bannerContainerView.heightAnchor.constraint(equalToConstant: 0)
@@ -122,21 +146,17 @@ final class MainView: NSView {
             tabBarHeightConstraint,
 
             divider.topAnchor.constraint(equalTo: navigationBarContainerView.bottomAnchor),
-            divider.leadingAnchor.constraint(equalTo: leadingAnchor),
             divider.trailingAnchor.constraint(equalTo: trailingAnchor),
             divider.heightAnchor.constraint(equalToConstant: 1),
 
             bookmarksBarContainerView.topAnchor.constraint(equalTo: navigationBarContainerView.bottomAnchor),
-            bookmarksBarContainerView.leadingAnchor.constraint(equalTo: leadingAnchor),
             bookmarksBarContainerView.trailingAnchor.constraint(equalTo: trailingAnchor),
             bookmarksBarHeightConstraint,
 
             navigationBarTopConstraint,
-            navigationBarContainerView.leadingAnchor.constraint(equalTo: leadingAnchor),
             navigationBarContainerView.trailingAnchor.constraint(equalTo: trailingAnchor),
 
             bannerHeightConstraint,
-            bannerContainerView.leadingAnchor.constraint(equalTo: leadingAnchor),
             bannerContainerView.trailingAnchor.constraint(equalTo: trailingAnchor),
 
             bannerTopConstraint,
@@ -145,12 +165,21 @@ final class MainView: NSView {
             webContainerTopConstraint,
             webContainerTopConstraintToNavigation,
             webContainerView.bottomAnchor.constraint(equalTo: bottomAnchor),
-            webContainerLeadingConstraint,
             webContainerView.trailingAnchor.constraint(equalTo: trailingAnchor),
 
-            verticalTabsContainerView.topAnchor.constraint(equalTo: webContainerView.topAnchor),
+            verticalTabsContainerView.topAnchor.constraint(equalTo: navigationBarContainerView.topAnchor),
             verticalTabsContainerView.bottomAnchor.constraint(equalTo: bottomAnchor),
-            verticalTabsContainerView.leadingAnchor.constraint(equalTo: leadingAnchor),
+            verticalTabsHiddenConstraint,
+
+            verticalTabsRevealEdgeView.topAnchor.constraint(equalTo: navigationBarContainerView.topAnchor),
+            verticalTabsRevealEdgeView.bottomAnchor.constraint(equalTo: bottomAnchor),
+            verticalTabsRevealEdgeView.leadingAnchor.constraint(equalTo: leadingAnchor),
+            verticalTabsRevealEdgeView.widthAnchor.constraint(equalToConstant: Constants.verticalTabsRevealEdgeWidth),
+
+            peekingVerticalTabsHoverView.topAnchor.constraint(equalTo: verticalTabsContainerView.topAnchor),
+            peekingVerticalTabsHoverView.bottomAnchor.constraint(equalTo: verticalTabsContainerView.bottomAnchor),
+            peekingVerticalTabsHoverView.leadingAnchor.constraint(equalTo: verticalTabsContainerView.leadingAnchor),
+            peekingVerticalTabsHoverView.trailingAnchor.constraint(equalTo: verticalTabsContainerView.trailingAnchor),
             webContainerView.widthAnchor.constraint(greaterThanOrEqualToConstant: Constants.webContainerMinWidth),
             webContainerView.heightAnchor.constraint(greaterThanOrEqualToConstant: Constants.webContainerMinHeight),
 
@@ -164,7 +193,7 @@ final class MainView: NSView {
             fireContainerView.bottomAnchor.constraint(equalTo: bottomAnchor),
             fireContainerView.leadingAnchor.constraint(equalTo: leadingAnchor),
             fireContainerView.trailingAnchor.constraint(equalTo: trailingAnchor),
-        ])
+        ] + leadingConstraints)
 
         aiChatOmnibarContainerWidthConstraint = aiChatOmnibarContainerView.widthAnchor.constraint(lessThanOrEqualToConstant: 832)
         aiChatOmnibarContainerHeightConstraint = aiChatOmnibarContainerView.heightAnchor.constraint(equalToConstant: Constants.aiChatOmnibarContainerMinHeight)
@@ -282,20 +311,56 @@ final class MainView: NSView {
         }
     }
 
-    var isVerticalTabsShown: Bool {
-        get {
-            !verticalTabsContainerView.isHidden
+    var verticalTabsLayout: VerticalTabsLayout = .hidden {
+        didSet {
+            guard oldValue != verticalTabsLayout else { return }
+            // Turning vertical tabs on or off swaps the whole layout; only collapsing, expanding and peeking slide.
+            applyVerticalTabsLayout(animated: oldValue != .hidden && verticalTabsLayout != .hidden)
         }
-        set {
-            verticalTabsContainerView.isHidden = !newValue
-            if newValue {
-                webContainerLeadingConstraint.isActive = false
-                webContainerLeadingConstraintToVerticalTabs.isActive = true
-            } else {
-                webContainerLeadingConstraintToVerticalTabs.isActive = false
-                webContainerLeadingConstraint.isActive = true
-            }
+    }
+
+    func observeVerticalTabsHover(onRevealEdgeEntered: @escaping () -> Void, onPeekingSidebarExited: @escaping () -> Void) {
+        verticalTabsRevealEdgeView.onMouseEntered = onRevealEdgeEntered
+        peekingVerticalTabsHoverView.onMouseExited = onPeekingSidebarExited
+    }
+
+    private func applyVerticalTabsLayout(animated: Bool) {
+        verticalTabsContainerView.isHidden = verticalTabsLayout == .hidden
+        if verticalTabsLayout == .peeking {
+            verticalTabsContainerView.shadow = peekingVerticalTabsShadow()
         }
+
+        // Collapsed, the sidebar waits just off the window's left edge, so it can slide back in.
+        let isSidebarOnScreen = [.docked, .peeking].contains(verticalTabsLayout)
+        NSLayoutConstraint.deactivate([isSidebarOnScreen ? verticalTabsHiddenConstraint : verticalTabsShownConstraint])
+        NSLayoutConstraint.activate([isSidebarOnScreen ? verticalTabsShownConstraint : verticalTabsHiddenConstraint])
+
+        // Peeking, the sidebar floats over the page instead of pushing it aside.
+        let isContentBesideSidebar = [.docked, .collapsed].contains(verticalTabsLayout)
+        NSLayoutConstraint.deactivate(isContentBesideSidebar ? leadingConstraints : leadingConstraintsToVerticalTabs)
+        NSLayoutConstraint.activate(isContentBesideSidebar ? leadingConstraintsToVerticalTabs : leadingConstraints)
+
+        let removeShadowUnlessPeeking = { [weak self] in
+            guard let self, verticalTabsLayout != .peeking else { return }
+            verticalTabsContainerView.shadow = nil
+        }
+        guard animated else {
+            removeShadowUnlessPeeking()
+            return
+        }
+        NSAnimationContext.runAnimationGroup({ context in
+            context.duration = Constants.verticalTabsAnimationDuration
+            context.timingFunction = CAMediaTimingFunction(name: .easeInEaseOut)
+            context.allowsImplicitAnimation = true
+            self.layoutSubtreeIfNeeded()
+        }, completionHandler: removeShadowUnlessPeeking)
+    }
+
+    private func peekingVerticalTabsShadow() -> NSShadow {
+        let shadow = NSShadow()
+        shadow.shadowColor = themeManager.theme.palette.shadowSecondary
+        shadow.shadowBlurRadius = Constants.peekingVerticalTabsShadowRadius
+        return shadow
     }
 
     var isBannerViewShown: Bool {
@@ -450,4 +515,48 @@ final class MainView: NSView {
 
     private var mouseAboveWebViewTrackingArea: NSTrackingArea?
 
+}
+
+/// Reports the mouse entering and leaving it, and lets clicks through to the views beneath.
+private final class HoverDetectionView: NSView {
+    var onMouseEntered: (() -> Void)?
+    var onMouseExited: (() -> Void)?
+
+    private let assumesMouseInside: Bool
+    private var trackingArea: NSTrackingArea?
+
+    init(assumesMouseInside: Bool) {
+        self.assumesMouseInside = assumesMouseInside
+        super.init(frame: .zero)
+    }
+
+    required init?(coder: NSCoder) {
+        fatalError("HoverDetectionView: Bad initializer")
+    }
+
+    override func hitTest(_ point: NSPoint) -> NSView? {
+        nil
+    }
+
+    override func updateTrackingAreas() {
+        super.updateTrackingAreas()
+        if let trackingArea {
+            removeTrackingArea(trackingArea)
+        }
+        var options: NSTrackingArea.Options = [.mouseEnteredAndExited, .activeInKeyWindow, .inVisibleRect]
+        if assumesMouseInside {
+            options.insert(.assumeInside)
+        }
+        let trackingArea = NSTrackingArea(rect: .zero, options: options, owner: self, userInfo: nil)
+        addTrackingArea(trackingArea)
+        self.trackingArea = trackingArea
+    }
+
+    override func mouseEntered(with event: NSEvent) {
+        onMouseEntered?()
+    }
+
+    override func mouseExited(with event: NSEvent) {
+        onMouseExited?()
+    }
 }

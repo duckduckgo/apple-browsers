@@ -68,6 +68,12 @@ final class MainViewController: NSViewController {
     private let appearancePreferences: AppearancePreferences
     private let duckPlayer: DuckPlayer
     private var verticalTabsViewController: VerticalTabsViewController?
+    private(set) var verticalTabsLayout: MainView.VerticalTabsLayout = .hidden {
+        didSet {
+            guard oldValue != verticalTabsLayout else { return }
+            applyVerticalTabsLayout()
+        }
+    }
 
     let tabCollectionViewModel: TabCollectionViewModel
     let bookmarkManager: BookmarkManager
@@ -518,21 +524,43 @@ final class MainViewController: NSViewController {
 
     private func subscribeToVerticalTabsVisibility() {
         guard !isInPopUpWindow else { return }
+        mainView.observeVerticalTabsHover(
+            onRevealEdgeEntered: { [weak self] in
+                guard self?.verticalTabsLayout == .collapsed else { return }
+                self?.verticalTabsLayout = .peeking
+            },
+            onPeekingSidebarExited: { [weak self] in
+                guard self?.verticalTabsLayout == .peeking else { return }
+                self?.verticalTabsLayout = .collapsed
+            }
+        )
         appearancePreferences.showsVerticalTabsPublisher
             .sink { [weak self] showsVerticalTabs in
-                self?.setVerticalTabsShown(showsVerticalTabs)
+                self?.verticalTabsLayout = showsVerticalTabs ? .docked : .hidden
             }
             .store(in: &viewEventsCancellables)
     }
 
-    private func setVerticalTabsShown(_ isShown: Bool) {
-        if isShown, verticalTabsViewController == nil {
+    @objc func toggleVerticalTabsSidebar(_ sender: Any?) {
+        switch verticalTabsLayout {
+        case .docked:
+            verticalTabsLayout = .collapsed
+        case .collapsed, .peeking:
+            verticalTabsLayout = .docked
+        case .hidden:
+            break
+        }
+    }
+
+    private func applyVerticalTabsLayout() {
+        if verticalTabsLayout != .hidden, verticalTabsViewController == nil {
             let viewController = VerticalTabsViewController(tabCollectionViewModel: tabCollectionViewModel, aiChatCoordinator: aiChatCoordinator)
             addAndLayoutChild(viewController, into: mainView.verticalTabsContainerView)
             verticalTabsViewController = viewController
         }
-        mainView.isVerticalTabsShown = isShown
-        tabBarViewController.isTabStripHidden = isShown
+        mainView.verticalTabsLayout = verticalTabsLayout
+        verticalTabsViewController?.isFloating = verticalTabsLayout == .peeking
+        tabBarViewController.isTabStripHidden = verticalTabsLayout != .hidden
     }
 
     func windowWillEnterFullScreen() {

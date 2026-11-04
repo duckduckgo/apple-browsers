@@ -72,6 +72,9 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
     private(set) var fireButtonWidthConstraint: NSLayoutConstraint!
     private(set) var fireButtonHeightConstraint: NSLayoutConstraint!
     private(set) var addTabButton: MouseOverButton!
+    private(set) var verticalTabsSidebarButton: MouseOverButton!
+    private var verticalTabsSidebarButtonLeadingConstraint: NSLayoutConstraint!
+    private var pinnedTabsLeadingSpace: CGFloat = HorizontalSpace.pinnedTabsScrollViewPadding.rawValue
     private(set) var addTabButtonWidth: NSLayoutConstraint!
     private(set) var addTabButtonHeight: NSLayoutConstraint!
     private(set) var rightScrollButtonWidth: NSLayoutConstraint!
@@ -139,13 +142,17 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
 
     var tabPreviewsEnabled: Bool = true
 
-    /// Hides the unpinned tabs and their buttons while the window lists tabs in the vertical tabs sidebar.
+    /// Hides the unpinned tabs and their buttons while the window lists tabs in the vertical tabs sidebar,
+    /// and lets the blur behind the window show through like it does in the sidebar.
     var isTabStripHidden: Bool = false {
         didSet {
             guard oldValue != isTabStripHidden else { return }
             scrollView.isHidden = isTabStripHidden
+            verticalTabsSidebarButton.isHidden = !isTabStripHidden
+            updatePinnedTabsLeadingSpace()
             displayScrollButtons()
             updateEmptyTabArea()
+            applyThemeStyle()
         }
     }
 
@@ -432,6 +439,17 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
         draggingSpace = NSView()
         draggingSpace.translatesAutoresizingMaskIntoConstraints = false
 
+        // Sent up the responder chain to the window's MainViewController.
+        verticalTabsSidebarButton = MouseOverButton(frame: .zero)
+        configureBarButton(verticalTabsSidebarButton,
+                           image: DesignSystemImages.Glyphs.Size16.sidebar,
+                           target: nil,
+                           action: #selector(MainViewController.toggleVerticalTabsSidebar(_:)))
+        verticalTabsSidebarButton.isHidden = true
+        verticalTabsSidebarButton.toolTip = UserText.verticalTabsSidebarTooltip
+        verticalTabsSidebarButton.setAccessibilityIdentifier("TabBarViewController.verticalTabsSidebarButton")
+        verticalTabsSidebarButton.setAccessibilityTitle(UserText.verticalTabsSidebarTooltip)
+
         // Sent up the responder chain rather than to this controller, which does not handle it.
         fireButton = MouseOverAnimationButton(frame: .zero)
         configureBarButton(fireButton,
@@ -472,8 +490,11 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
         view.addSubview(leftShadowImageView)
         view.addSubview(pinnedTabsWindowDraggingView)
         view.addSubview(scrollAreaWindowDraggingView)
+        view.addSubview(verticalTabsSidebarButton)
 
         pinnedTabsViewLeadingConstraint = pinnedTabsContainerView.leadingAnchor
+            .constraint(equalTo: view.leadingAnchor, constant: LayoutConstants.pinnedTabsLeading)
+        verticalTabsSidebarButtonLeadingConstraint = verticalTabsSidebarButton.leadingAnchor
             .constraint(equalTo: view.leadingAnchor, constant: LayoutConstants.pinnedTabsLeading)
         leftSideStackLeadingConstraint = leftSideStackView.leadingAnchor
             .constraint(equalTo: pinnedTabsContainerView.trailingAnchor)
@@ -538,6 +559,11 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
             fireButtonWidthConstraint,
             fireButtonHeightConstraint,
             rightSideStackView.centerYAnchor.constraint(equalTo: scrollView.centerYAnchor),
+
+            verticalTabsSidebarButtonLeadingConstraint,
+            verticalTabsSidebarButton.centerYAnchor.constraint(equalTo: scrollView.centerYAnchor),
+            verticalTabsSidebarButton.widthAnchor.constraint(equalToConstant: LayoutConstants.buttonSide),
+            verticalTabsSidebarButton.heightAnchor.constraint(equalToConstant: LayoutConstants.buttonSide),
             view.trailingAnchor.constraint(equalTo: rightSideStackView.trailingAnchor,
                                            constant: LayoutConstants.rightSideStackTrailing),
             rightSideStackView.leadingAnchor.constraint(equalTo: scrollAreaWindowDraggingView.trailingAnchor),
@@ -809,12 +835,17 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
     }
 
     private func setupConstraints() {
-        var pinnedTabsLeadingSpace: TabBarViewController.HorizontalSpace = .pinnedTabsScrollViewPadding
         if #available(macOS 26, *) {
-            pinnedTabsLeadingSpace = .pinnedTabsScrollViewPaddingMacOS26
+            pinnedTabsLeadingSpace = HorizontalSpace.pinnedTabsScrollViewPaddingMacOS26.rawValue
         }
+        verticalTabsSidebarButtonLeadingConstraint.constant = pinnedTabsLeadingSpace
+        updatePinnedTabsLeadingSpace()
+    }
 
-        pinnedTabsViewLeadingConstraint.constant = pinnedTabsLeadingSpace.rawValue
+    /// Makes room after the window buttons for the vertical tabs sidebar button while it shows.
+    private func updatePinnedTabsLeadingSpace() {
+        let sidebarButtonSpace = isTabStripHidden ? LayoutConstants.buttonSide + LayoutConstants.rightSideStackSpacing : 0
+        pinnedTabsViewLeadingConstraint.constant = pinnedTabsLeadingSpace + sidebarButtonSpace
     }
 
     private func setupFireButton() {
@@ -2221,7 +2252,9 @@ extension TabBarViewController: ThemeUpdateListening {
         let colorsProvider = theme.colorsProvider
         let isFireWindow = tabCollectionViewModel.isBurner
 
-        backgroundColorView.backgroundColor = colorsProvider.baseBackgroundColor
+        backgroundColorView.backgroundColor = isTabStripHidden
+            ? colorsProvider.baseBackgroundColor.withAlphaComponent(VerticalTabsStyle.backgroundOpacity)
+            : colorsProvider.baseBackgroundColor
 
         let fireWindowHoverColor = NSColor(designSystemColor: .accentFireGlowSecondary)
         fireButton.normalTintColor = isFireWindow ? NSColor(designSystemColor: .accentFirePrimary) : colorsProvider.iconsColor
@@ -2235,6 +2268,9 @@ extension TabBarViewController: ThemeUpdateListening {
 
         addTabButton.normalTintColor = colorsProvider.iconsColor
         addTabButton.mouseOverColor = colorsProvider.buttonMouseOverColor
+
+        verticalTabsSidebarButton.normalTintColor = colorsProvider.iconsColor
+        verticalTabsSidebarButton.mouseOverColor = colorsProvider.buttonMouseOverColor
         updateDuckAIChromeSegmentedControlAppearance()
     }
 }

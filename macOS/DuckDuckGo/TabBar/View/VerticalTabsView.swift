@@ -21,6 +21,11 @@ import SwiftUI
 import SwiftUIExtensions
 import UniformTypeIdentifiers
 
+enum VerticalTabsStyle {
+    /// The sidebar and the tab bar above it let the blur behind the window show through.
+    static let backgroundOpacity: CGFloat = 0.8
+}
+
 struct VerticalTabsView: View {
     @ObservedObject var model: VerticalTabsViewModel
     @ObservedObject var themeManager: ThemeManager
@@ -32,15 +37,18 @@ struct VerticalTabsView: View {
 }
 
 private enum Layout {
-    static let listPadding: CGFloat = 4
-    static let rowHeight: CGFloat = 32
-    static let rowVerticalSpacing: CGFloat = 2
-    static let rowHorizontalPadding: CGFloat = 8
+    static let listPadding: CGFloat = 6
+    static let rowHeight: CGFloat = 34
+    static let rowSpacing: CGFloat = 2
+    static let rowHorizontalPadding: CGFloat = 10
     static let rowContentSpacing: CGFloat = 8
-    static let cornerRadius: CGFloat = 6
+    static let cornerRadius: CGFloat = 8
     static let iconSize: CGFloat = 16
     static let closeButtonSize: CGFloat = 16
-    static let newTabButtonPadding: CGFloat = 8
+    static let selectedShadowRadius: CGFloat = 1
+    static let titleFade = LinearGradient(stops: [.init(color: .black, location: 0.8), .init(color: .clear, location: 1)],
+                                          startPoint: .leading,
+                                          endPoint: .trailing)
 }
 
 /// Only the sidebar accepts it, so a dragged tab can't land as text in the address bar or a pinned tab.
@@ -54,7 +62,7 @@ private struct VerticalTabsList: View {
         VStack(spacing: 0) {
             ScrollViewReader { proxy in
                 ScrollView(.vertical) {
-                    LazyVStack(spacing: 0) {
+                    LazyVStack(spacing: Layout.rowSpacing) {
                         ForEach(model.tabs) { tab in
                             VerticalTabRow(tab: tab, isSelected: tab.id == model.selectedTabID, isOnlyTab: model.tabs.count == 1, model: model)
                                 .id(tab.id)
@@ -73,14 +81,9 @@ private struct VerticalTabsList: View {
             }
 
             VerticalTabsNewTabButton(action: model.openNewTab)
-                .padding(Layout.newTabButtonPadding)
+                .padding(Layout.listPadding)
         }
-        .background(Color(designSystemColor: .surfaceBackdrop, palette: palette))
-        .overlay(alignment: .trailing) {
-            Rectangle()
-                .fill(Color(designSystemColor: .surfaceDecorationPrimary, palette: palette))
-                .frame(width: 1)
-        }
+        .background(Color(designSystemColor: .surfaceBackdrop, palette: palette).opacity(VerticalTabsStyle.backgroundOpacity))
     }
 }
 
@@ -99,12 +102,14 @@ private struct VerticalTabRow: View {
 
             Text(tab.title)
                 .lineLimit(1)
-                .truncationMode(.tail)
+                .fixedSize()
                 .foregroundColor(Color(designSystemColor: .textPrimary, palette: palette))
-                .frame(maxWidth: .infinity, alignment: .leading)
+                .frame(minWidth: 0, maxWidth: .infinity, alignment: .leading)
+                .clipped()
+                .mask(Layout.titleFade)
                 .help(tab.url?.absoluteString ?? tab.title)
 
-            if isSelected || isHovered {
+            if isHovered {
                 VerticalTabCloseButton {
                     model.close(tab.id)
                 }
@@ -115,9 +120,11 @@ private struct VerticalTabRow: View {
         .background(
             RoundedRectangle(cornerRadius: Layout.cornerRadius)
                 .fill(backgroundColor)
+                .shadow(color: isSelected ? Color(designSystemColor: .shadowTertiary, palette: palette) : .clear,
+                        radius: Layout.selectedShadowRadius,
+                        y: Layout.selectedShadowRadius)
         )
         .contentShape(Rectangle())
-        .padding(.vertical, Layout.rowVerticalSpacing)
         .onHover { isHovered = $0 }
         .onTapGesture {
             model.select(tab.id)
@@ -207,10 +214,11 @@ private struct VerticalTabsNewTabButton: View {
             HStack(spacing: Layout.rowContentSpacing) {
                 Image(nsImage: NSImage(resource: .add))
                     .renderingMode(.template)
-                    .foregroundColor(Color(designSystemColor: .iconsPrimary, palette: palette))
+                    .foregroundColor(Color(designSystemColor: .iconsSecondary, palette: palette))
                     .frame(width: Layout.iconSize, height: Layout.iconSize)
                 Text(UserText.plusButtonNewTabMenuItem)
-                    .foregroundColor(Color(designSystemColor: .textPrimary, palette: palette))
+                    .foregroundColor(Color(designSystemColor: .textSecondary, palette: palette))
+                Spacer(minLength: 0)
             }
             .padding(.horizontal, Layout.rowHorizontalPadding)
             .frame(height: Layout.rowHeight)
@@ -221,7 +229,6 @@ private struct VerticalTabsNewTabButton: View {
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
-        .frame(maxWidth: .infinity, alignment: .leading)
         .onHover { isHovered = $0 }
         .help(UserText.newTabTooltip)
         .accessibilityIdentifier("VerticalTabs.newTabButton")

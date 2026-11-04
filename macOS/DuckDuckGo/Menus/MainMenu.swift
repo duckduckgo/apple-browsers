@@ -167,6 +167,11 @@ final class MainMenu: NSMenu {
         keyEquivalent: [.option, .command, "l"]
     )
     private let toggleDuckAISidebarSeparatorMenuItem = NSMenuItem.separator()
+    private let toggleVerticalTabsSidebarMenuItem = NSMenuItem(
+        title: UserText.hideVerticalTabsSidebar,
+        action: #selector(MainViewController.toggleVerticalTabsSidebar(_:)),
+        keyEquivalent: "b"
+    )
 
     var homeButtonMenuItem = NSMenuItem(title: "HomeButtonPlaceholder")
     var showTabsAndBookmarksBarOnFullScreenMenuItem = NSMenuItem(title: "ShowTabsAndBookmarksBarOnFullScreenMenuItem")
@@ -482,6 +487,7 @@ final class MainMenu: NSMenu {
 
             showTabsAndBookmarksBarOnFullScreenMenuItem
 
+            toggleVerticalTabsSidebarMenuItem
             toggleBookmarksBarMenuItem
 
             NSMenuItem(title: UserText.openDownloads, action: #selector(MainViewController.toggleDownloads), keyEquivalent: "j")
@@ -661,6 +667,7 @@ final class MainMenu: NSMenu {
         updateWebExtensionsMenuItem()
         updateAlwaysShowFirstTimeQuitSurvey()
         updateDuckAIChromeButtonMenuItems()
+        toggleVerticalTabsSidebarMenuItem.isHidden = !appearancePreferences.isVerticalTabsAvailable || !appearancePreferences.useVerticalTabs
 
         alignItemTextWithIconsRecursively()
     }

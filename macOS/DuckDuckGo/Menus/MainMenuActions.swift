@@ -2034,6 +2034,11 @@ extension MainViewController: NSMenuItemValidation {
         case #selector(MainViewController.newTab(_:)):
             return allowsUserInteraction
 
+        case #selector(MainViewController.toggleVerticalTabsSidebar(_:)):
+            let isCollapsed = [.collapsed, .peeking].contains(verticalTabsLayout)
+            menuItem.title = isCollapsed ? UserText.showVerticalTabsSidebar : UserText.hideVerticalTabsSidebar
+            return verticalTabsLayout != .hidden
+
         // Duplicate Tab
         case #selector(MainViewController.duplicateTab(_:)):
             return getActiveTabAndIndex()?.tab.content.canBeDuplicated == true

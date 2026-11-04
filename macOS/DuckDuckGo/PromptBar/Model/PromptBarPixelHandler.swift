@@ -55,8 +55,11 @@ struct PromptBarPixelHandler: DuckAIPromptPixelFiring {
         case .imageGenerationDeactivated: .imageGenerationDeactivated
         case .webSearchActivated: .webSearchActivated
         case .webSearchDeactivated: .webSearchDeactivated
-        case .imageAttached: .imageAttached
-        case .imageRemoved: .imageRemoved
+        case .imageAttached(let source): .imageAttached(source: source)
+        case .imageRemoved(let source): .imageRemoved(source: source)
+        case .screenshotTaken(let kind): .screenshotTaken(kind: kind)
+        case .screenshotRemoved: .screenshotRemoved
+        case .screenshotFailed(let reason): .screenshotFailed(reason: reason)
         case .fileAttached: .fileAttached
         case .fileRemoved: .fileRemoved
         case .fileValidationFailed(let reason): .fileValidationFailed(reason: reason)

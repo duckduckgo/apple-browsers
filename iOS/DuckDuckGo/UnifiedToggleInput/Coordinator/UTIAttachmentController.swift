@@ -71,7 +71,7 @@ final class UTIAttachmentController {
         var isPastedTextEnabled: () -> Bool = { false }
         var isEditing: () -> Bool = { false }
         var isVoiceSessionActive: () -> Bool = { false }
-        var pastedTextSheetLimit: (AIChatPastedText) -> Int = { _ in 0 }
+        var pastedTextSheetMode: (AIChatPastedText) -> PastedTextSheetMode = { _ in .editable(limit: 0) }
     }
 
     /// Coordinator-owned effects an attachment mutation triggers.
@@ -723,7 +723,7 @@ extension UTIAttachmentController {
     func presentPastedTextSheet(id: UUID) {
         guard let pastedText = view.currentAttachments().first(where: { $0.id == id })?.pastedText,
               let host = environment.presenterViewController() else { return }
-        let mode: PastedTextSheetMode = environment.isEditing() ? .viewOnly : .editable(limit: environment.pastedTextSheetLimit(pastedText))
+        let mode: PastedTextSheetMode = environment.isEditing() ? .viewOnly : environment.pastedTextSheetMode(pastedText)
         pixelReporter.reportPastedText(.sheetOpened)
         PastedTextSheetPresenter.present(pastedText, mode: mode, from: host) { [weak self] outcome in
             guard let self else { return }

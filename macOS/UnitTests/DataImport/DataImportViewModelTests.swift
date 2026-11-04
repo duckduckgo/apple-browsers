@@ -490,6 +490,249 @@ final class DataImportViewModelTests: XCTestCase {
         XCTAssertEqual(model.selectedDataTypes, [.bookmarks, .passwords])
     }
 
+    // MARK: - Source Filter Tests
+
+    @MainActor
+    func testSelectDataTypes_filterOnWithPasswordsOff_hidesPasswordOnlySourcesAndImportsBookmarksOnly() {
+        model = sourceFilterModel(importSource: .chrome, isFilterOn: true)
+
+        model.selectDataTypes([.bookmarks])
+
+        XCTAssertEqual(model.visibleImportSources, [.chrome, .safari, .tor, .fileImport])
+        XCTAssertEqual(model.importSource, .chrome)
+        XCTAssertEqual(model.selectedDataTypes, [.bookmarks])
+    }
+
+    @MainActor
+    func testSelectDataTypes_filterHidesSelectedSource_selectsPreferredVisibleSource() {
+        model = sourceFilterModel(importSource: .bitwarden, isFilterOn: true)
+
+        model.selectDataTypes([.bookmarks])
+
+        XCTAssertEqual(model.importSource, .chrome)
+        XCTAssertEqual(model.dataTypeFilter?.enabledTypes, [.bookmarks])
+        XCTAssertEqual(model.selectedDataTypes, [.bookmarks])
+    }
+
+    @MainActor
+    func testWhenPasswordFilterExcludesAllChromeProfileDataThenSelectsAnotherVisibleSource() {
+        model = sourceFilterModel(importSource: .chrome, isFilterOn: true, loadProfiles: { browser in
+            let profile = BrowserProfile.test(fileStore: self.fileStore)(browser)
+            if browser == .chrome {
+                self.fileStore.directoryStorage[profile.profileURL.path] = ["Bookmarks"]
+            }
+            return .init(browser: browser, profiles: [profile])
+        })
+
+        model.selectDataTypes([.passwords])
+
+        XCTAssertFalse(model.visibleImportSources.contains(.chrome))
+        XCTAssertEqual(model.importSource, .safari)
+        XCTAssertEqual(model.selectedDataTypes, [.passwords])
+        XCTAssertEqual(model.actionButton, .initiateImport(disabled: false))
+    }
+
+    @MainActor
+    func testWhenInitialFilterExcludesPreferredBrowserDataThenSelectsVisibleSource() {
+        model = DataImportViewModel(
+            availableImportSources: [.chrome, .fileImport],
+            dataTypeFilter: .init(enabledTypes: [.passwords]),
+            isSourceFilterEnabled: true,
+            loadProfiles: { browser in
+                let profile = BrowserProfile.test(fileStore: self.fileStore)(browser)
+                self.fileStore.directoryStorage[profile.profileURL.path] = ["Bookmarks"]
+                return .init(browser: browser, profiles: [profile])
+            },
+            directoryAccessAvailability: .mockUnavailable()
+        )
+
+        XCTAssertEqual(model.visibleImportSources, [.fileImport])
+        XCTAssertEqual(model.importSource, .fileImport)
+        XCTAssertEqual(model.selectedDataTypes, [.passwords])
+    }
+
+    @MainActor
+    func testWhenAnotherChromeProfileHasFilteredDataThenChromeRemainsVisible() {
+        model = sourceFilterModel(importSource: .chrome, isFilterOn: true, loadProfiles: { browser in
+            let profile = BrowserProfile.test(fileStore: self.fileStore)(browser)
+            guard browser == .chrome else { return .init(browser: browser, profiles: [profile]) }
+            let secondProfile = BrowserProfile.test2(fileStore: self.fileStore)(browser)
+            self.fileStore.directoryStorage[profile.profileURL.path] = ["Bookmarks"]
+            self.fileStore.directoryStorage[secondProfile.profileURL.path] = ["Login Data"]
+            return .init(browser: browser, profiles: [profile, secondProfile])
+        })
+
+        model.selectDataTypes([.passwords])
+
+        XCTAssertTrue(model.visibleImportSources.contains(.chrome))
+        XCTAssertEqual(model.importSource, .chrome)
+        XCTAssertEqual(model.selectedDataTypes, [.passwords])
+    }
+
+    @MainActor
+    func testWhenChromeNeedsDirectoryPermissionThenPasswordFilterKeepsChromeVisible() {
+        model = sourceFilterModel(importSource: .chrome, isFilterOn: true, loadProfiles: { browser in
+            let profile = browser == .chrome
+                ? BrowserProfile.permissionDenied(fileStore: self.fileStore)(browser)
+                : BrowserProfile.test(fileStore: self.fileStore)(browser)
+            return .init(browser: browser, profiles: [profile])
+        })
+
+        model.selectDataTypes([.passwords])
+
+        XCTAssertTrue(model.visibleImportSources.contains(.chrome))
+        XCTAssertEqual(model.selectedDataTypes, [.passwords])
+    }
+
+    @MainActor
+    func testWhenSafariArchiveFilterSelectsPasswordsThenFilePickerAndDropAcceptOnlySelectedTypes() {
+        var offeredFileTypes: [UTType] = []
+        model = sourceFilterModel(importSource: .safari, isFilterOn: true, dataImporterFactory: { _, _, _, _ in
+            ImporterMock(importableTypes: [])
+        }, openPanelCallback: {
+            offeredFileTypes = $0
+            return nil
+        })
+        model.selectDataTypes([.passwords])
+        model.importButtonPressed()
+        guard case .archiveImport(let dataTypes, _) = model.screen else { return XCTFail("Expected archive import") }
+
+        model.selectFile()
+        let kind = NewFileImportView.Kind.archive(dataTypes: dataTypes)
+        let expectedFileTypes = Set([UTType.zip] + dataTypes.flatMap { $0.allowedFileTypes })
+
+        XCTAssertEqual(Set(offeredFileTypes), expectedFileTypes)
+        XCTAssertEqual(Set(kind.supportedFileTypes(for: .safari)), expectedFileTypes)
+        XCTAssertFalse(offeredFileTypes.contains(.html))
+    }
+
+    @MainActor
+    func testWhenArchiveAsksForEverySafariDataTypeThenAllSafariFileTypesRemainAvailable() {
+        let kind = NewFileImportView.Kind.archive(dataTypes: [.bookmarks, .passwords, .creditCards])
+
+        XCTAssertEqual(Set(kind.supportedFileTypes(for: .safari)), Source.safari.archiveImportSupportedFiles)
+    }
+
+    func testSupportedDataTypes_historyFlagTurnedOn_addsHistoryForBrowsersThatImportIt() throws {
+        try setHistoryImportFlag(false)
+        let typesWithFlagOff = [Source.chrome, .firefox, .safari].map(\.supportedDataTypes)
+
+        try setHistoryImportFlag(true)
+
+        XCTAssertTrue(typesWithFlagOff.allSatisfy { !$0.contains(.history) })
+        XCTAssertTrue([Source.chrome, .yandex, .firefox, .safari].allSatisfy { $0.supportedDataTypes.contains(.history) })
+        XCTAssertFalse(Source.tor.supportedDataTypes.contains(.history))
+    }
+
+    @MainActor
+    func testInit_historyFlagOn_selectsHistoryByDefaultForFirefoxAndSafari() throws {
+        try setHistoryImportFlag(true)
+
+        let models = [Source.firefox, .safari].map(defaultProfileModel(importSource:))
+
+        XCTAssertEqual(models.map { $0.selectedDataTypes.contains(.history) }, [true, true])
+    }
+
+    @MainActor
+    func testImportButtonPressed_safariTechnologyPreviewWithHistoryOnly_asksForArchive() throws {
+        try setHistoryImportFlag(true)
+        model = sourceFilterModel(
+            importSource: .safariTechnologyPreview,
+            isFilterOn: true,
+            availableImportSources: sourceFilterSources + [.safariTechnologyPreview],
+            dataImporterFactory: { _, _, _, _ in ImporterMock(importableTypes: [.bookmarks]) }
+        )
+        model.selectDataTypes([.history])
+
+        model.importButtonPressed()
+
+        XCTAssertEqual(model.importSource, .safariTechnologyPreview)
+        guard case .archiveImport(let dataTypes, _) = model.screen else { return XCTFail("Expected archive import") }
+        XCTAssertTrue(dataTypes.contains(.history))
+    }
+
+    @MainActor
+    func testUpdateWithSource_filterOn_keepsFilterAndImportsItsTypesTheSourceSupports() {
+        model = sourceFilterModel(importSource: .chrome, isFilterOn: true)
+
+        model.update(with: .bitwarden)
+
+        XCTAssertEqual(model.dataTypeFilter?.enabledTypes, [.bookmarks, .passwords])
+        XCTAssertEqual(model.pickerSelectableDataTypes, [.bookmarks, .passwords])
+        XCTAssertEqual(model.selectedDataTypes, [.passwords])
+    }
+
+    @MainActor
+    func testImportButtonPressed_filterOnSafariWithBookmarksOnly_asksForArchiveWithoutPasswordsButWithCreditCards() throws {
+        try enableSafariCreditCardImport()
+        model = sourceFilterModel(importSource: .safari, isFilterOn: true, dataImporterFactory: { _, _, _, _ in ImporterMock(importableTypes: []) })
+        model.selectDataTypes([.bookmarks])
+
+        model.importButtonPressed()
+
+        XCTAssertEqual(model.screen, .archiveImport(dataTypes: [.bookmarks, .creditCards]))
+    }
+
+    @MainActor
+    func testSelectFile_filterOnFileImportWithBookmarksOnly_offersOnlyHTMLFiles() {
+        var offeredFileTypes: [UTType]?
+        model = sourceFilterModel(importSource: .fileImport, isFilterOn: true, openPanelCallback: { fileTypes in
+            offeredFileTypes = fileTypes
+            return nil
+        })
+        model.selectDataTypes([.bookmarks])
+
+        model.selectFile()
+
+        XCTAssertEqual(offeredFileTypes, [.html])
+    }
+
+    @MainActor
+    func testSelectFile_filterOnWithFilteredOutFileType_showsFileScreenForFilteredType() {
+        model = sourceFilterModel(importSource: .fileImport, isFilterOn: true, openPanelCallback: { _ in .testCSV })
+        model.selectDataTypes([.bookmarks])
+
+        model.selectFile()
+
+        XCTAssertEqual(model.screen, .fileImport(dataType: .bookmarks))
+        XCTAssertEqual(model.importSource, .fileImport)
+    }
+
+    @MainActor
+    func testUpdateWithSource_flagTurnedOffWhileWindowIsOpen_keepsFiltering() {
+        let featureFlagger = MockFeatureFlagger()
+        model = sourceFilterModel(importSource: .chrome, isFilterOn: true, featureFlagger: featureFlagger)
+        model.selectDataTypes([.bookmarks])
+        featureFlagger.featuresStub[FeatureFlag.dataImportSourceFilter.rawValue] = false
+
+        model.update(with: .firefox)
+
+        XCTAssertTrue(model.isSourceFilterEnabled)
+        XCTAssertTrue(model.availableImportSources.contains(.bitwarden))
+        XCTAssertEqual(model.visibleImportSources, model.availableImportSources.filter { $0.supportedDataTypes.contains(.bookmarks) })
+        XCTAssertEqual(model.selectedDataTypes, [.bookmarks])
+    }
+
+    func testDataTypeFilter_dataTypesToImport_keepsTypesTheFilterDoesNotCover() {
+        let filter = DataImportViewModel.DataTypeFilter(enabledTypes: [.bookmarks])
+
+        let dataTypes = filter.dataTypesToImport(from: [.bookmarks, .passwords, .creditCards, .history])
+
+        XCTAssertEqual(dataTypes, [.bookmarks, .creditCards])
+    }
+
+    @MainActor
+    func testSelectDataTypes_filterOff_narrowsSelectionAndShowsAllSources() {
+        model = sourceFilterModel(importSource: .chrome, isFilterOn: false)
+
+        model.selectDataTypes([.passwords])
+
+        XCTAssertEqual(model.selectedDataTypes, [.passwords])
+        XCTAssertTrue(model.hasUserModifiedDataTypeSelection)
+        XCTAssertEqual(model.visibleImportSources, sourceFilterSources)
+        XCTAssertEqual(model.pickerSelectableDataTypes, model.selectableImportTypes)
+    }
+
     // MARK: - Button State Tests
 
     @MainActor
@@ -1395,7 +1638,7 @@ final class DataImportViewModelTests: XCTestCase {
                 capturedFileTypes = fileTypes
                 return .testZIP
             }
-            setupModel(with: .safari, screen: .archiveImport(dataTypes: [.bookmarks, .passwords]), dataImporterFactory: { _, _, _, _ in
+            setupModel(with: .safari, screen: .archiveImport(dataTypes: [.bookmarks, .passwords, .creditCards]), dataImporterFactory: { _, _, _, _ in
                 ImporterMock(importTask: { _, _ in [:] })
             })
 
@@ -1921,6 +2164,44 @@ final class DataImportViewModelTests: XCTestCase {
         XCTAssertTrue(pixelKit.actualFireCalls.isEmpty)
     }
 
+    @MainActor
+    func testWhenChromeProfileHasNoBookmarksFile_ThenImportFiresSourceFileMissingPixel() {
+        let pixelKit = PixelKitMock()
+        model = chromeModel(profileFiles: ["Login Data"], pixelFiring: pixelKit)
+
+        model.importButtonPressed()
+
+        XCTAssertEqual(pixelKit.actualFireCalls.map(\.pixel.name), ["dataimport_bookmarks_source-file-missing_macos"])
+        XCTAssertEqual(pixelKit.actualFireCalls.first?.pixel.parameters?["source"], "chrome")
+        XCTAssertEqual(pixelKit.actualFireCalls.first?.frequency, .dailyAndCount)
+    }
+
+    @MainActor
+    func testWhenChromeProfileHasAccountBookmarksFile_ThenImportDoesNotFireSourceFileMissingPixel() {
+        let pixelKit = PixelKitMock()
+        model = chromeModel(profileFiles: ["Login Data", "AccountBookmarks"], pixelFiring: pixelKit)
+
+        model.importButtonPressed()
+
+        XCTAssertTrue(pixelKit.actualFireCalls.isEmpty)
+    }
+
+    private func chromeModel(profileFiles: [String], pixelFiring: PixelKitMock) -> DataImportViewModel {
+        DataImportViewModel(
+            importSource: .chrome,
+            availableImportSources: [.chrome],
+            syncFeatureVisibility: .hide,
+            loadProfiles: { browser in
+                let profile = BrowserProfile.test(fileStore: self.fileStore)(browser)
+                self.fileStore.directoryStorage[profile.profileURL.path] = profileFiles
+                return .init(browser: browser, profiles: [profile])
+            },
+            dataImporterFactory: { _, _, _, _ in ImporterMock(importTask: { _, _ in [:] }) },
+            directoryAccessAvailability: .mockUnavailable(),
+            pixelFiring: pixelFiring
+        )
+    }
+
     // MARK: - Import Task Lifecycle Tests
 
     @MainActor
@@ -2185,6 +2466,31 @@ final class DataImportViewModelTests: XCTestCase {
         await MainActor.run {
             XCTAssertEqual(model.summary.count, 2)
         }
+    }
+
+    func testMergeImportSummary_historyFailsWhileBookmarksAndPasswordsSucceed_postsImportComplete() async throws {
+        try await startSafariImport(returning: [
+            .bookmarks: .success(.init(successful: 10, duplicate: 0, failed: 0)),
+            .passwords: .success(.init(successful: 5, duplicate: 0, failed: 0)),
+            .history: .failure(Failure(.history, .other))
+        ])
+        let importComplete = expectation(forNotification: .dataImportComplete, object: nil)
+
+        await fulfillImport()
+
+        await fulfillment(of: [importComplete], timeout: 1)
+    }
+
+    func testMergeImportSummary_historyOnlyFails_doesNotPostImportComplete() async throws {
+        try await startSafariImport(selecting: [.history], returning: [
+            .history: .failure(Failure(.history, .other))
+        ])
+        let importComplete = expectation(forNotification: .dataImportComplete, object: nil)
+        importComplete.isInverted = true
+
+        await fulfillImport()
+
+        await fulfillment(of: [importComplete], timeout: 1)
     }
 
     func testMergeImportSummary_showsFileImportForPasswords_whenBookmarksSucceedPasswordsEmpty() async {
@@ -2736,6 +3042,75 @@ final class DataImportViewModelTests: XCTestCase {
             dataImporterFactory: dataImporterFactory ?? { _, _, _, _ in ImporterMock(importTask: self.importTask) },
             requestPrimaryPasswordCallback: requestPrimaryPasswordCallback ?? { _ in nil },
             openPanelCallback: { self.openPanelCallback!($0) },
+            directoryAccessAvailability: .mockUnavailable()
+        )
+    }
+
+    private func enableSafariCreditCardImport() throws {
+        let featureFlagger = try XCTUnwrap(Application.appDelegate.featureFlagger as? MockFeatureFlagger)
+        let key = FeatureFlag.dataImportNewSafariFilePicker.rawValue
+        let originalValue = featureFlagger.featuresStub[key]
+        featureFlagger.featuresStub[key] = true
+        addTeardownBlock { featureFlagger.featuresStub[key] = originalValue }
+    }
+
+    private func setHistoryImportFlag(_ isOn: Bool) throws {
+        let featureFlagger = try XCTUnwrap(Application.appDelegate.featureFlagger as? MockFeatureFlagger)
+        let key = FeatureFlag.dataImportHistory.rawValue
+        let originalValue = featureFlagger.featuresStub[key]
+        featureFlagger.featuresStub[key] = isOn
+        addTeardownBlock { featureFlagger.featuresStub[key] = originalValue }
+    }
+
+    @MainActor
+    private func startSafariImport(
+        selecting dataTypes: Set<DataType> = [.bookmarks, .passwords, .history],
+        returning summary: DataImportSummary
+    ) throws {
+        try setHistoryImportFlag(true)
+        setupModel(with: .safari, dataImporterFactory: { _, _, _, _ in
+            ImporterMock(importTask: { _, _ in summary })
+        })
+        model.selectDataTypes(dataTypes)
+        model.initiateImport(fileURL: .testProfile)
+    }
+
+    @MainActor
+    private func defaultProfileModel(importSource: Source) -> DataImportViewModel {
+        DataImportViewModel(
+            importSource: importSource,
+            syncFeatureVisibility: .hide,
+            loadProfiles: { browser in
+                .init(browser: browser, profiles: [BrowserProfile.default(fileStore: self.fileStore)(browser)])
+            },
+            directoryAccessAvailability: .mockUnavailable()
+        )
+    }
+
+    private var sourceFilterSources: [Source] {
+        [.chrome, .safari, .tor, .fileImport, .onePassword8, .bitwarden]
+    }
+
+    private func sourceFilterModel(
+        importSource: Source,
+        isFilterOn: Bool,
+        availableImportSources: [Source]? = nil,
+        dataImporterFactory: @escaping DataImportViewModel.DataImporterFactory = { _, _, _, _ in ImporterMock() },
+        openPanelCallback: @escaping ([UTType]) -> URL? = { _ in nil },
+        featureFlagger: MockFeatureFlagger = MockFeatureFlagger(),
+        loadProfiles: ((ThirdPartyBrowser) -> BrowserProfileList)? = nil
+    ) -> DataImportViewModel {
+        featureFlagger.featuresStub[FeatureFlag.dataImportSourceFilter.rawValue] = isFilterOn
+        return DataImportViewModel(
+            importSource: importSource,
+            availableImportSources: availableImportSources ?? sourceFilterSources,
+            syncFeatureVisibility: .hide,
+            loadProfiles: loadProfiles ?? { browser in
+                .init(browser: browser, profiles: [BrowserProfile.test(fileStore: self.fileStore)(browser)])
+            },
+            dataImporterFactory: dataImporterFactory,
+            openPanelCallback: openPanelCallback,
+            featureFlagger: featureFlagger,
             directoryAccessAvailability: .mockUnavailable()
         )
     }

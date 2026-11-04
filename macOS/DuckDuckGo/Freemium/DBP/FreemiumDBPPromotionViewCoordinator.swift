@@ -40,9 +40,9 @@ final class FreemiumDBPPromotionViewCoordinator: ObservableObject {
     /// Set by the promo delegate to route results back through show().
     var onUserAction: ((PromoResult) -> Void)?
 
-    /// Callback invoked when scan results arrive, allowing the delegate
+    /// Callback invoked when the scan state changes, allowing the delegate
     /// to trigger a re-evaluation of eligibility via refreshEligibility().
-    var onScanResultsUpdated: (() -> Void)?
+    var onScanStateChanged: (() -> Void)?
 
     /// Whether the user dismissed the promotion before queue integration (legacy).
     /// Read-only — current dismissals are handled by PromoService.
@@ -53,6 +53,11 @@ final class FreemiumDBPPromotionViewCoordinator: ObservableObject {
     /// The user's first scan results, if any.
     var firstScanResults: FreemiumDBPMatchResults? {
         freemiumDBPUserStateManager.firstScanResults
+    }
+
+    /// Whether the user has saved a profile and the first scan's results haven't arrived yet.
+    var isFirstScanInProgress: Bool {
+        freemiumDBPUserStateManager.didPostFirstProfileSavedNotification && firstScanResults == nil
     }
 
     /// Whether the feature flag is enabled (synchronous — no async dependencies).
@@ -214,7 +219,7 @@ private extension FreemiumDBPPromotionViewCoordinator {
             .sink { [weak self] isCompleted in
                 guard let self, isCompleted else { return }
                 Logger.freemiumDBP.debug("[Freemium DBP] Contextual Onboarding Completed")
-                onScanResultsUpdated?()
+                onScanStateChanged?()
             }
             .store(in: &cancellables)
     }
@@ -236,13 +241,16 @@ private extension FreemiumDBPPromotionViewCoordinator {
     }
 
     func observeFreemiumDBPNotifications() {
-        notificationCenter.publisher(for: .freemiumDBPResultPollingComplete)
-            .receive(on: DispatchQueue.main)
-            .sink { [weak self] _ in
-                Logger.freemiumDBP.debug("[Freemium DBP] Received Scan Results Notification")
-                self?.onScanResultsUpdated?()
-            }
-            .store(in: &cancellables)
+        Publishers.Merge(
+            notificationCenter.publisher(for: .freemiumDBPResultPollingComplete),
+            notificationCenter.publisher(for: .pirProfileSaved)
+        )
+        .receive(on: DispatchQueue.main)
+        .sink { [weak self] notification in
+            Logger.freemiumDBP.debug("[Freemium DBP] Received \(notification.name.rawValue, privacy: .public) Notification")
+            self?.onScanStateChanged?()
+        }
+        .store(in: &cancellables)
     }
 
     /// Executes one of three possible actions based on the state of the user's first scan results.

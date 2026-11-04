@@ -58,6 +58,8 @@ final class BrowserTabViewController: NSViewController {
 
     private let activeRemoteMessageModel: ActiveRemoteMessageModel
     private let newTabPageActionsManager: () -> NewTabPageActionsManager
+    private let newTabPageCustomizationModel: NewTabPageCustomBackgroundPublishing
+    private let themeManager: ThemeManaging
 
     private var _newTabPageWebViewModel: NewTabPageWebViewModel?
     private lazy var newTabPageRemoteMessageImpressionReporter = NewTabPageRemoteMessageImpressionReporter { [weak self] messageID in
@@ -75,7 +77,9 @@ final class BrowserTabViewController: NSViewController {
         let newTabPageWebViewModel = NewTabPageWebViewModel(
             featureFlagger: featureFlagger,
             actionsManager: newTabPageActionsManager(),
-            newTabPageLoadMetrics: newTabPageLoadMetrics
+            newTabPageLoadMetrics: newTabPageLoadMetrics,
+            customizationModel: newTabPageCustomizationModel,
+            themeManager: themeManager
         )
         _newTabPageWebViewModel = newTabPageWebViewModel
         return newTabPageWebViewModel
@@ -119,6 +123,7 @@ final class BrowserTabViewController: NSViewController {
     private let permissionManager: PermissionManagerProtocol
     private let pinningManager: PinningManager
     private let adBlockingAvailability: AdBlockingAvailabilityProviding
+    private let webExtensionAvailability: WebExtensionAvailabilityProviding
 
     private let tld: TLD
     private let onContentOverlayDismissalRequested: @MainActor () -> Void
@@ -180,6 +185,8 @@ final class BrowserTabViewController: NSViewController {
          subscriptionUpsellMetrics: OnboardingSubscriptionUpsellMetricsReporting = OnboardingSubscriptionUpsellMetricsReporter(),
          featureFlagger: FeatureFlagger = NSApp.delegateTyped.featureFlagger,
          newTabPageActionsManager: @autoclosure @escaping @MainActor () -> NewTabPageActionsManager = NSApp.delegateTyped.newTabPageCoordinator.actionsManager,
+         newTabPageCustomizationModel: NewTabPageCustomBackgroundPublishing = NSApp.delegateTyped.newTabPageCustomizationModel,
+         themeManager: ThemeManaging = NSApp.delegateTyped.themeManager,
          activeRemoteMessageModel: ActiveRemoteMessageModel = NSApp.delegateTyped.activeRemoteMessageModel,
          privacyConfigurationManager: PrivacyConfigurationManaging = NSApp.delegateTyped.privacyFeatures.contentBlocking.privacyConfigurationManager,
          defaultBrowserPreferences: DefaultBrowserPreferences,
@@ -199,6 +206,7 @@ final class BrowserTabViewController: NSViewController {
          permissionManager: PermissionManagerProtocol,
          pinningManager: PinningManager,
          adBlockingAvailability: AdBlockingAvailabilityProviding = NSApp.delegateTyped.adBlockingAvailability,
+         webExtensionAvailability: WebExtensionAvailabilityProviding = NSApp.delegateTyped.webExtensionAvailability,
          tld: TLD = NSApp.delegateTyped.tld,
          onContentOverlayDismissalRequested: @escaping @MainActor () -> Void = {}
     ) {
@@ -211,6 +219,8 @@ final class BrowserTabViewController: NSViewController {
         self.subscriptionUpsellMetrics = subscriptionUpsellMetrics
         self.featureFlagger = featureFlagger
         self.newTabPageActionsManager = newTabPageActionsManager
+        self.newTabPageCustomizationModel = newTabPageCustomizationModel
+        self.themeManager = themeManager
         self.activeRemoteMessageModel = activeRemoteMessageModel
         self.privacyConfigurationManager = privacyConfigurationManager
         self.defaultBrowserPreferences = defaultBrowserPreferences
@@ -230,6 +240,7 @@ final class BrowserTabViewController: NSViewController {
         self.permissionManager = permissionManager
         self.pinningManager = pinningManager
         self.adBlockingAvailability = adBlockingAvailability
+        self.webExtensionAvailability = webExtensionAvailability
 
         self.tld = tld
         self.onContentOverlayDismissalRequested = onContentOverlayDismissalRequested
@@ -1580,7 +1591,8 @@ final class BrowserTabViewController: NSViewController {
                 subscriptionManager: subscriptionManager,
                 winBackOfferVisibilityManager: winBackOfferVisibilityManager,
                 pinningManager: pinningManager,
-                adBlockingAvailability: adBlockingAvailability
+                adBlockingAvailability: adBlockingAvailability,
+                webExtensionAvailability: webExtensionAvailability
             )
             preferencesViewController.delegate = self
             self.preferencesViewController = preferencesViewController

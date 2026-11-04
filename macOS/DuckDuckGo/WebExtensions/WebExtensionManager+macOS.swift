@@ -64,19 +64,24 @@ extension WebExtensionManager {
             manager: self,
             configurationManager: configurationManager,
             disabledExtensionIDs: { [featureFlagger] in
-                var disabledIDs: Set<String> = []
-                if !featureFlagger.isFeatureOn(.webExtensionBitwarden) {
-                    disabledIDs.insert(ChromeWebStoreID.bitwarden.rawValue)
-                }
-                if !featureFlagger.isFeatureOn(.webExtensionOnePassword) {
-                    disabledIDs.insert(ChromeWebStoreID.onePassword.rawValue)
-                }
-                return disabledIDs
+                Self.flagDisabledExtensionIDs(featureFlagger: featureFlagger)
             },
             disabledExtensionIDsDidChange: featureFlagger.updatesPublisher
         )
         remoteDisableEnforcer = enforcer
         enforcer.start()
+    }
+
+    /// Catalog extensions that a feature flag turns on or off.
+    static let flaggedCatalogExtensions: [(flag: FeatureFlag, id: ChromeWebStoreID)] = [
+        (.webExtensionBitwarden, .bitwarden),
+        (.webExtensionOnePassword, .onePassword),
+        (.webExtensionICloudPasswords, .iCloudPasswords),
+    ]
+
+    /// The catalog extensions whose feature flag is off.
+    static func flagDisabledExtensionIDs(featureFlagger: FeatureFlagger) -> Set<String> {
+        Set(flaggedCatalogExtensions.filter { !featureFlagger.isFeatureOn($0.flag) }.map(\.id.rawValue))
     }
 }
 
@@ -146,9 +151,16 @@ enum WebExtensionManagerFactory {
             isCPMBackgroundLoadRecoveryEnabled: {
                 Application.appDelegate.featureFlagger.isFeatureOn(.cpmBackgroundLoadRecovery)
             },
+            isCPMBackgroundLoadRestartEnabled: {
+                Application.appDelegate.featureFlagger.isFeatureOn(.cpmBackgroundLoadRestart)
+            },
             isCPMLateBackgroundDocumentRecoveryEnabled: {
                 Application.appDelegate.featureFlagger.isFeatureOn(.cpmLateBackgroundDocumentRecovery)
             },
+            isCPMStableBaseURLEnabled: {
+                Application.appDelegate.featureFlagger.isFeatureOn(.cpmStableBaseURL)
+            },
+            isCPMUpgradeBeforeLoadEnabled: Application.appDelegate.featureFlagger.isFeatureOn(.cpmUpgradeBeforeLoad),
             handlerProvider: WebExtensionHandlerProvider(
                 privacyConfigurationManager: privacyConfigurationManager,
                 autoconsentPreferences: autoconsentPreferences,
@@ -161,13 +173,11 @@ enum WebExtensionManagerFactory {
         )
 
         internalSiteHandler.dataSource = manager
-        if buildType.isSparkleBuild {
-            manager.chromeWebStore = ChromeWebStoreService(
-                manager: manager,
-                catalog: ChromeWebStoreCatalog(configurationManager: privacyConfigurationManager),
-                presenter: ChromeWebStorePresenter(windowProvider: { NSApp.keyWindow ?? NSApp.mainWindow })
-            )
-        }
+        manager.chromeWebStore = ChromeWebStoreService(
+            manager: manager,
+            catalog: ChromeWebStoreCatalog(configurationManager: privacyConfigurationManager),
+            presenter: ChromeWebStorePresenter(windowProvider: { NSApp.keyWindow ?? NSApp.mainWindow })
+        )
 
         return manager
     }

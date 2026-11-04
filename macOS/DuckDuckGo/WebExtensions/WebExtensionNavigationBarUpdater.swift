@@ -29,10 +29,6 @@ import WebKit
 /// unique identifier, so an extension without a button shows no popup at all.
 ///
 /// Each browser window owns its own updater, because each window has its own navigation bar.
-///
-/// The updater reads the manager through a closure on every update, because the app delegate
-/// releases the manager when the web extensions feature flag turns off and creates a new one when
-/// it turns back on. When the closure returns `nil`, the updater removes every button.
 @available(macOS 15.4, *)
 @MainActor
 final class WebExtensionNavigationBarUpdater: NSObject, ThemeUpdateListening {
@@ -246,6 +242,28 @@ final class WebExtensionNavigationBarUpdater: NSObject, ThemeUpdateListening {
     private func applyThemeStyle(theme: ThemeStyleProviding, to button: MouseOverButton) {
         button.mouseOverColor = theme.colorsProvider.buttonMouseOverColor
         button.cornerRadius = theme.toolbarButtonsCornerRadius
+    }
+
+    // MARK: - Added Popover
+
+    func showAddedPopover(forChromeWebStoreID id: String, parent: NSViewController) {
+        let storeIdentity = WebExtensionStoreIdentity(store: .chromeWebStore, id: id)
+        guard let manager = webExtensionManagerProvider(),
+              let identifier = manager.webExtensionIdentifiers.first(where: { manager.installedExtension(identifier: $0)?.storeIdentity == storeIdentity }) else { return }
+        showAddedPopover(forExtensionWithIdentifier: identifier, parent: parent)
+    }
+
+    private func showAddedPopover(forExtensionWithIdentifier identifier: String, parent: NSViewController) {
+        // The button update for this install may still be queued on the main queue.
+        updateLoadedExtensions()
+
+        guard let button = buttons.first(where: { $0.identifier?.rawValue == identifier }), !button.isHidden,
+              let context = webExtensionManagerProvider()?.loadedExtensions.first(where: { $0.uniqueIdentifier == identifier }) else { return }
+
+        let popover = WebExtensionAddedPopoverViewController(extensionName: Self.displayName(of: context),
+                                                             iconProvider: context.webExtension.icon(for:),
+                                                             themeManager: themeManager)
+        popover.show(onParent: parent, relativeTo: button)
     }
 
     // MARK: - Actions

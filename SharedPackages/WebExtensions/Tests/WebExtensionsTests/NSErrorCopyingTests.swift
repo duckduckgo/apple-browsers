@@ -105,6 +105,19 @@ final class NSErrorCopyingTests: XCTestCase {
         }
     }
 
+    @available(macOS 15.4, iOS 18.4, *)
+    func testBackgroundContentLoadFailureMatchesOnlyContextDomainAndCode() {
+        let failure = NSError(domain: WKWebExtensionContext.errorDomain,
+                              code: WKWebExtensionContext.Error.Code.backgroundContentFailedToLoad.rawValue)
+        XCTAssertTrue(failure.isBackgroundContentLoadFailure)
+        for error in [NSError(domain: "other", code: failure.code),
+                      NSError(domain: WKWebExtension.errorDomain, code: failure.code),
+                      NSError(domain: failure.domain, code: WKWebExtensionContext.Error.Code.notLoaded.rawValue),
+                      NSError(domain: "wrapper", code: 1, userInfo: [NSUnderlyingErrorKey: failure])] {
+            XCTAssertFalse(error.isBackgroundContentLoadFailure)
+        }
+    }
+
     func testWhenCopyingUnderlyingError_ThenItIsCopiedToo() {
         let underlying = NSError(domain: "underlying", code: 2)
         let userInfo = [NSUnderlyingErrorKey: underlying]

@@ -23,6 +23,22 @@ import WebExtensions
 
 @available(macOS 15.4, *)
 final class MacOSWebExtensionPixelFiringTests: XCTestCase {
+    func testBackgroundLoadRestartOutcomesUseCanonicalPixelKitContract() throws {
+        for outcome in CPMBackgroundLoadRestartOutcome.allCases {
+            let pixels = PixelKitMock()
+            MacOSWebExtensionPixelFiring(pixelFiring: pixels).fire(.cpmBackgroundLoadRestart(outcome))
+            XCTAssertEqual(pixels.actualFireCalls.count, 1)
+            let call = try XCTUnwrap(pixels.actualFireCalls.first)
+            XCTAssertEqual(call.pixel.name, "web_extension_cpm_background_load_restart")
+            XCTAssertEqual(call.pixel.namePrefix, .none)
+            XCTAssertEqual(call.frequency, .dailyAndCount)
+            XCTAssertEqual(call.pixel.parameters, ["outcome": outcome.rawValue])
+            XCTAssertEqual(call.pixel.standardParameters, [.pixelSource])
+            XCTAssertNil(call.additionalParameters)
+            XCTAssertTrue(call.includeAppVersionParameter)
+        }
+    }
+
     func testRecoveryApplicationUsesDailyAndCountWithoutCustomParameters() throws {
         let pixels = PixelKitMock()
         MacOSWebExtensionPixelFiring(pixelFiring: pixels).fire(.cpmNetworkProcessRecoveryApplied)

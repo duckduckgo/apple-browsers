@@ -125,7 +125,6 @@ class SettingsLegacyViewProvider: ObservableObject {
              sync(PairingInfo?),
              autofill,
              appIcon,
-             gpc,
              unprotectedSites,
              fireproofSites,
              keyboard,
@@ -181,12 +180,11 @@ class SettingsLegacyViewProvider: ObservableObject {
 
     // Legacy UIKit Views (Pushed unmodified)
     var addToDock: UIViewController { instantiate( "instructions", fromStoryboard: StoryboardName.homeRow) }
-    var gpc: UIViewController { instantiate("DoNotSell", fromStoryboard: StoryboardName.settings) }
     var unprotectedSites: UIViewController { UnprotectedSitesViewController() }
     var fireproofSites: UIViewController { instantiateFireproofingController() }
     var keyboard: UIViewController {
         guard AppDependencyProvider.shared.featureFlagger.isFeatureOn(.alwaysShowKeyboardOnNewTabPage) else {
-            return instantiate("Keyboard", fromStoryboard: StoryboardName.settings)
+            return KeyboardSettingsViewController()
         }
         let controller = UIHostingController(rootView: KeyboardSettingsView())
         controller.title = UserText.settingsKeyboard

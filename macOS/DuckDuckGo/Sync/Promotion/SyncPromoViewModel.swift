@@ -18,6 +18,7 @@
 
 import Foundation
 import AppKit
+import PixelKit
 
 struct SyncPromoViewModel {
 
@@ -25,6 +26,11 @@ struct SyncPromoViewModel {
 
     var primaryButtonAction: (@MainActor () -> Void)?
     var dismissButtonAction: (@MainActor () -> Void)?
+    var pixelFiring: (any PixelKitFiring)? = PixelKit.shared
+
+    func promoDisplayed() {
+        pixelFiring?.fire(SyncPromoPixelKitEvent.syncPromoDisplayed, options: .parameters(["source": touchpointType.rawValue]))
+    }
 
     var title: String {
         switch touchpointType {

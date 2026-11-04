@@ -57,6 +57,7 @@ extension NewTabPageDataModel {
         var settings: Settings?
         var customizer: NewTabPageDataModel.CustomizerData?
         var tabs: Tabs?
+        var omnibar: Omnibar?
 
         struct Widget: Encodable, Equatable {
             public var id: WidgetId
@@ -83,6 +84,14 @@ extension NewTabPageDataModel {
 
         struct Platform: Encodable, Equatable {
             var name: String
+        }
+
+        /// The subset of `omnibar_getConfig` that affects the omnibar's height,
+        /// sent up front so the page can reserve the right space while the full config loads.
+        struct Omnibar: Encodable, Equatable {
+            let mode: OmnibarMode
+            let enableAi: Bool
+            let showAiSetting: Bool
         }
 
         struct Settings: Encodable, Equatable {

@@ -1,4 +1,7 @@
 /* No comment provided by engineer. */
+" " = " ";
+
+/* No comment provided by engineer. */
 "-config.rollout.<parent>.<subfeature> true/false" = "-config.rollout.<parent>.<subfeature> true/false";
 
 /* No comment provided by engineer. */
@@ -382,6 +385,21 @@
 /* Title for the New Tab row in the Duck.ai tab header Plus (+) menu */
 "aichat.header.plusMenu.newTab" = "Nov zavihek";
 
+/* Section header in the Duck.ai tab header Plus (+) menu; every row below it opens a new tab */
+"aichat.header.plusMenu.newTabSection" = "Nov zavihek";
+
+/* Row in the New Tab section of the Duck.ai tab header Plus (+) menu — opens a new Duck.ai chat in a new tab */
+"aichat.header.plusMenu.newTabSection.chat" = "Klepet";
+
+/* Row in the New Tab section of the Duck.ai tab header Plus (+) menu — opens Duck.ai in image generation mode in a new tab */
+"aichat.header.plusMenu.newTabSection.image" = "Slika";
+
+/* Row in the Duck.ai tab header Plus (+) menu — opens a new tab in search mode */
+"aichat.header.plusMenu.newTabSection.search" = "Iskanje";
+
+/* Row in the New Tab section of the Duck.ai tab header Plus (+) menu — opens a new Duck.ai voice chat in a new tab */
+"aichat.header.plusMenu.newTabSection.voiceChat" = "Glasovni klepet";
+
 /* Title for the New Voice Chat row in the Duck.ai tab header Plus (+) menu */
 "aichat.header.plusMenu.newVoiceChat" = "Nov glasovni klepet";
 
@@ -458,7 +476,7 @@
 "aichat.model-picker.pro-plan-exclusive" = "Ekskluzivno za naročnino Pro";
 
 /* Section header for subscription models shown to users who are not eligible for a free trial */
-"aichat.model-picker.subscriber-exclusive" = "Ekskluzivno za naročnike";
+"aichat.model-picker.subscriber-exclusive" = "Odklenite z naročnino";
 
 /* Section header for subscription models shown to free users */
 "aichat.model-picker.try-free" = "Preizkusite brezplačno";
@@ -468,6 +486,27 @@
 
 /* Spoken name of the inline attachment icon in the multi-tab feature promotion, used in the VoiceOver accessibility label. */
 "aichat.multiTab.promotion.attachment" = "priloga";
+
+/* VoiceOver label of the Duck.ai attachment chip holding a long block of text the user pasted */
+"aichat.pasted.text.accessibility.label" = "Prilepljeno besedilo";
+
+/* Character counter under the title of the Duck.ai pasted-text sheet, e.g. 923/16,000. %1$d is the number of characters in the pasted text, %2$d is the most it may hold. Keep both numbers; change the slash only if your language writes this kind of counter differently. */
+"aichat.pasted.text.count" = "%1$d/%2$d";
+
+/* What VoiceOver reads for the character counter in the Duck.ai pasted-text sheet, e.g. 923 of 16,000 characters. %1$d is the number of characters in the pasted text, %2$d is the most it may hold */
+"aichat.pasted.text.count.accessibility" = "%1$d od %2$d znakov";
+
+/* Title of the sheet that edits a long block of text the user pasted into Duck.ai */
+"aichat.pasted.text.edit.sheet.title" = "Uredi besedilo";
+
+/* VoiceOver action on a Duck.ai pasted-text attachment chip that removes it from the message */
+"aichat.pasted.text.remove" = "Odstrani";
+
+/* Title of the sheet that shows a long block of text the user pasted into a Duck.ai message that was already sent */
+"aichat.pasted.text.sheet.title" = "Prilepljeno besedilo";
+
+/* Error shown below the Duck.ai input while the message is longer than allowed, e.g. Please try a shorter message. 17002/16000. %1$d is the number of characters in the message, %2$d is the most characters allowed */
+"aichat.prompt.too.long.format" = "Poskusite s krajšim sporočilom. %1$d/%2$d";
 
 /* Subtitle for the extended reasoning mode in the Duck.ai reasoning picker */
 "aichat.reasoning.extended.subtitle" = "Za analitične naloge";
@@ -1204,9 +1243,6 @@
 /* Description of autofill onboarding prompt's secure storage feature with a string describing the available biometry + passcode as a parameter */
 "autofill.onboarding.key-features.secure-storage.biometric.description" = "Gesla so šifrirana, shranjena v napravi in zaklenjena %@.";
 
-/* Description of autofill onboarding prompt's secure storage feature */
-"autofill.onboarding.key-features.secure-storage.description" = "Passwords are encrypted, stored on device, and locked with Face ID or passcode.";
-
 /* Parameter for the description of autofill onboarding prompt's secure storage feature describing Face ID biometry + passcode */
 "autofill.onboarding.key-features.secure-storage.description.parameter.face-id" = "s prepoznavanjem obraza ali geslom";
 
@@ -1661,7 +1697,7 @@
 "crash.report.dialog.title" = "Želite samodejno pošiljati poročila o zrušitvah?";
 
 /* No comment provided by engineer. */
-"Current Dismiss Count: %@" = "Current Dismiss Count: %@";
+"Current Dismiss Count: %@" = "Trenutno število opustitev: %@";
 
 /* No comment provided by engineer. */
 "Current Subscriptions" = "Trenutne naročnine";
@@ -2645,7 +2681,7 @@
 "Enter duration in seconds. Examples: 30, 60, 300" = "Enter duration in seconds. Examples: 30, 60, 300";
 
 /* No comment provided by engineer. */
-"Entry Pill" = "Entry Pill";
+"Entry Pill" = "Vstopni gumb";
 
 /* Button title to Sign In */
 "error.email-protection-sign-in.action" = "Prijavite se";
@@ -3279,6 +3315,72 @@
 
 /* No comment provided by engineer. */
 "menu.button.hint" = "Brskanje po meniju";
+
+/* iPad menu bar command */
+"menuActualSize" = "Dejanska velikost";
+
+/* iPad menu bar command */
+"menuBack" = "Nazaj";
+
+/* iPad menu bar command */
+"menuClearTabsAndData" = "Počisti zavihke in podatke";
+
+/* iPad menu bar command */
+"menuDuplicateTab" = "Podvoji zavihek";
+
+/* iPad menu bar command */
+"menuFeedback" = "Deli povratne informacije";
+
+/* iPad menu bar command */
+"menuForward" = "Naprej";
+
+/* iPad menu bar command */
+"menuHideDownloads" = "Skrij prenose";
+
+/* iPad menu bar command */
+"menuHidePasswords" = "Skrij geslo";
+
+/* iPad menu bar command */
+"menuHideTabs" = "Skrij zavihke";
+
+/* iPad menu bar command */
+"menuLastTab" = "Zadnji zavihek";
+
+/* iPad menu bar command */
+"menuNewTabOnRight" = "Nov zavihek na desni";
+
+/* iPad menu bar command */
+"menuNextTab" = "Prikaži naslednji zavihek";
+
+/* iPad menu bar command */
+"menuOpenLocation" = "Odpri lokacijo …";
+
+/* iPad menu bar command */
+"menuPreviousTab" = "Pokaži prejšnji zavihek";
+
+/* iPad menu bar command */
+"menuPrint" = "Natisni …";
+
+/* iPad menu bar command selecting a numbered tab */
+"menuSelectTab" = "Izberi zavihek %d";
+
+/* iPad menu bar command */
+"menuSettings" = "Nastavitve DuckDuckGo …";
+
+/* iPad menu bar command */
+"menuShowDownloads" = "Prikaži prenose";
+
+/* iPad menu bar command */
+"menuShowPasswords" = "Prikaži gesla";
+
+/* iPad menu bar command */
+"menuShowTabs" = "Prikaži zavihke";
+
+/* iPad menu bar command */
+"menuStop" = "Ustavi";
+
+/* iPad menu bar command */
+"menuVoiceSearch" = "Zasebno glasovno iskanje";
 
 /* No comment provided by engineer. */
 "Message" = "Sporočilo";
@@ -4121,7 +4223,7 @@
 "Primary / First Action" = "Primarni/prvi ukrep";
 
 /* No comment provided by engineer. */
-"Priming Modal" = "Priming Modal";
+"Priming Modal" = "Pripravljalno okno";
 
 /* No comment provided by engineer. */
 "Privacy Protections" = "Zaščita zasebnosti";
@@ -4184,10 +4286,10 @@
 "Reset" = "Ponastavi";
 
 /* No comment provided by engineer. */
-"Reset Pill Dismiss Count" = "Reset Pill Dismiss Count";
+"Reset Pill Dismiss Count" = "Ponastavitev števca zavrnitev gumbov";
 
 /* No comment provided by engineer. */
-"Reset Priming Modal State" = "Reset Priming Modal State";
+"Reset Priming Modal State" = "Ponastavitev stanja pripravljalnega okna";
 
 /* No comment provided by engineer. */
 "Reset to Default" = "Reset to Default";
@@ -5013,9 +5115,6 @@
 
 /* No comment provided by engineer. */
 "Status:" = "Status:";
-
-/* No comment provided by engineer. */
-"Stored Hostname: %@" = "Shranjeno ime gostitelja: %@";
 
 /* Button for adding this subscription to another device */
 "subscription.activate.add.to.device.button" = "Dodajte v napravo";

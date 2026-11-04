@@ -83,7 +83,6 @@ extension DataBrokerRunCustomJSONViewModel: DebugModeEmailConfirming {
                     emailConfirmationDataService: self.emailConfirmationDataService,
                     captchaService: self.captchaService,
                     featureFlagger: self.featureFlagger,
-                    applicationNameForUserAgentProvider: self.applicationNameForUserAgentProvider,
                     stageCalculator: stageCalculator,
                     pixelHandler: fakePixelHandler,
                     executionConfig: .init(),

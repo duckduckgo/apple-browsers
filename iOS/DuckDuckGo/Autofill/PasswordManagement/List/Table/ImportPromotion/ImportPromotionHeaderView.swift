@@ -21,20 +21,21 @@ import SwiftUI
 import DesignResourcesKit
 import DesignResourcesKitIcons
 import DuckUI
-import Lottie
 import MetricBuilder
 
 struct ImportPromotionHeaderView: View {
     var primaryButtonAction: (() -> Void)?
     var dismissButtonAction: (() -> Void)?
     
-    @State private var isAnimating = false
-    
     var body: some View {
         ZStack(alignment: .topTrailing) {
             VStack(spacing: 8) {
                 Group {
-                    AnimationView(isAnimating: $isAnimating)
+                    Image(.passwordsKeychain128)
+                        .resizable()
+                        .aspectRatio(contentMode: .fit)
+                        .frame(width: 128, height: 96)
+                        .padding(.top, 8)
                     
                     Text(UserText.importPasswordsPromoTitle)
                         .daxTitle3()
@@ -80,34 +81,8 @@ struct ImportPromotionHeaderView: View {
         .background(RoundedRectangle(cornerRadius: ContainerMetrics.cornerRadius)
             .foregroundColor(Color(designSystemColor: .surfaceTertiary))
         )
-        .onAppear {
-            isAnimating = true
-        }
         .padding([.horizontal, .top], 20)
         .padding(.bottom, 30)
-    }
-    
-    private struct AnimationView: View {
-        @Binding var isAnimating: Bool
-        
-        var body: some View {
-            if AppRebrand.isAppRebranded() {
-                Image(.passwordsKeychain128)
-                    .resizable()
-                    .aspectRatio(contentMode: .fit)
-                    .frame(width: 128, height: 96)
-                    .padding(.top, 8)
-            } else {
-                LottieView(
-                    lottieFile: "password-keys",
-                    loopMode: .mode(.repeat(2.0)),
-                    isAnimating: $isAnimating
-                )
-                .frame(width: 128, height: 96)
-                .aspectRatio(contentMode: .fit)
-                .padding(.top, 8)
-            }
-        }
     }
 }
 

@@ -288,11 +288,11 @@ final class FreemiumDBPPromotionViewCoordinatorTests: XCTestCase {
         XCTAssertNil(viewModel)
     }
 
-    // MARK: - onScanResultsUpdated / hasLegacyDismissal
+    // MARK: - onScanStateChanged / hasLegacyDismissal
 
-    func testScanResultsNotification_callsOnScanResultsUpdated() {
-        let expectation = XCTestExpectation(description: "onScanResultsUpdated called")
-        sut.onScanResultsUpdated = {
+    func testScanResultsNotification_callsOnScanStateChanged() {
+        let expectation = XCTestExpectation(description: "onScanStateChanged called")
+        sut.onScanStateChanged = {
             expectation.fulfill()
         }
 

@@ -517,8 +517,12 @@ final class DefaultOmniBarViewController: OmniBarViewController {
         let clearButtonHidden = shouldHideClearButton(for: state)
         omniBarView.isClearButtonHidden = clearButtonHidden
 
-        let hasTrailingAccessory = state.showAIChatButton || state.showAIChatModeToggle
-        let hasAdjacentButton = !clearButtonHidden || state.showVoiceSearch || state.showRefresh || state.showAbort || state.showCustomizableButton
+        let hasTrailingAccessory = !omniBarView.isAIChatButtonHidden || !omniBarView.isModeToggleHidden
+        let hasAdjacentButton = !omniBarView.isClearButtonHidden
+            || !omniBarView.isVoiceSearchButtonHidden
+            || !omniBarView.isRefreshButtonHidden
+            || !omniBarView.isAbortButtonHidden
+            || !omniBarView.isCustomizableButtonHidden
         omniBarView.isShowingSeparator = hasTrailingAccessory && hasAdjacentButton
 
         updateShadowAppearanceByApplyingLayerMask()
@@ -802,7 +806,7 @@ extension DefaultOmniBarViewController {
             }
         )
         promptLengthGate = gate
-        attachmentControllerInstance.pastedTextSheetLimit = { gate.sheetLimit(for: $0) }
+        attachmentControllerInstance.pastedTextSheetMode = { gate.sheetMode(for: $0) }
 
         controller.onModelsUpdated = { [weak self] in
             guard let self else { return }

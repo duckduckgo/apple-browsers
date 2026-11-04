@@ -38,7 +38,7 @@ struct SyncRecoveryPromptView: View {
                     }
                     .frame(height: 56)
 
-                    Image(rebrandable: "Sync-128")
+                    Image(.sync128)
                         .padding(24)
 
                     Text(UserText.syncRecoveryPromptTitle(deviceName: deviceDisplayName))

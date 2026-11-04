@@ -21,6 +21,9 @@ import Foundation
 import PrivacyConfig
 
 public enum FeatureFlag: String {
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1220050161030255?focus=true
+    case ipadMenuBar
+
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866605041091
     case sync
 
@@ -98,6 +101,12 @@ public enum FeatureFlag: String {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866468401462
     case syncPromotionPasswords
 
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1219992425728802
+    case syncPromotionSyncAnotherDevice
+
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1220046771496084
+    case syncPromotionRedesign
+
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866711364768
     case autofillSurveys
 
@@ -113,8 +122,8 @@ public enum FeatureFlag: String {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1214085808544002
     case dbpFreemiumPIR
 
-    /// https://app.asana.com/1/137249556945/task/1213609085394793
-    case dbpWebViewUserAgent
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1219955912780435
+    case dbpCustomWebViewUserAgent
 
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1212843034975366
     case dbpOptOutRetryError96Hours
@@ -161,6 +170,9 @@ public enum FeatureFlag: String {
 
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1218291758637484
     case subscriptionOnboardingPaidSubsOct2026
+
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1219907744895168
+    case subscriptionCancellationFlow
 
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866464085187
     case syncSetupBarcodeIsUrlBased
@@ -295,9 +307,6 @@ public enum FeatureFlag: String {
     /// https://app.asana.com/1/137249556945/project/72649045549333/task/1211652685709102?focus=true
     case aiChatAutoAttachContextByDefault
 
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1217856366373963?focus=true
-    case aiChatPdfPageContext
-
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1218354738310249?focus=true
     case aiChatContextualAddressBarMenu
 
@@ -319,9 +328,6 @@ public enum FeatureFlag: String {
 
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1216562593153043
     case aiChatNativeSidebar
-
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1216111312217462?focus=true
-    case contextualSuggestedPrompts
 
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1218266695612921?focus=true
     case contextualPagePlaceholder
@@ -359,6 +365,9 @@ public enum FeatureFlag: String {
 
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1219661921884283
     case unifiedToggleInputPastedText
+
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1220139278590013
+    case unifiedToggleInputKeyboardEdgeSweep
 
     /// Controls the attachment privacy disclosure in Duck.ai on iPad.
     /// https://app.asana.com/1/137249556945/task/1218992416130371
@@ -431,6 +440,10 @@ public enum FeatureFlag: String {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1219701603183698
     case cpmBackgroundLoadRecovery
 
+    /// Failsafe kill switch for restarting the embedded context when a failed background load leaves its view alive.
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1219970564251181
+    case cpmBackgroundLoadRestart
+
     /// Failsafe kill switch for reloading the embedded extension after a confirmed CPM messaging hang.
     /// https://app.asana.com/0/0/1218855001659655
     case cpmMessagingHangRecovery
@@ -438,6 +451,13 @@ public enum FeatureFlag: String {
     /// Restarts the embedded background after a confirmed Network process replacement.
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1219701603183695
     case cpmNetworkProcessRecovery
+    /// Failsafe for keeping the embedded CPM origin stable across context reloads.
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1219728649844711
+    case cpmStableBaseURL
+
+    /// Failsafe for upgrading only CPM before launch load; evaluated when the manager is created.
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1220009029295774
+    case cpmUpgradeBeforeLoad
 
     /// Remotely activated Web Extension background Web View graveyard treatment.
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1218860832428343
@@ -475,6 +495,9 @@ public enum FeatureFlag: String {
 
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213965646075290
     case fireButtonRefinements
+
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1220050958443794?focus=true
+    case slideToDelete
 
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213728968355833?focus=true
     case aiChatOmnibarDefaultPosition
@@ -521,6 +544,9 @@ public enum FeatureFlag: String {
     /// https://app.asana.com/1/137249556945/project/72649045549333/task/1218145365492985
     case duckAISessionWideEvent
 
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1219929884250361
+    case duckAIEntryWideEvent
+
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1217645779581965
     case newTabPageRedesign
 
@@ -534,6 +560,9 @@ public enum FeatureFlag: String {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1218316798217456?focus=true
     case aiChatChromeMenuButtonIPad
 
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1219711238433101?focus=true
+    case ipadAIChatContextSidebar
+
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1218934499511214?focus=true
     case utiDuckAIWarnings
 
@@ -546,8 +575,14 @@ public enum FeatureFlag: String {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1219073007936638?focus=true
     case floatingUIiOS27
 
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1219784549064543?focus=true
+    case legacyFindInPage
+
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1215556988889960?focus=true
     case aiChatTabSwitcherRichCard
+
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1219970758953673?focus=true
+    case aiChatTabHandoffImprovements
 
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1215597855114749?focus=true
     case syncScopedAccessCredentials
@@ -611,10 +646,16 @@ public enum FeatureFlag: String {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1219411804489480?focus=true
     case fastTrackingParameterFilter
 
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1219783104084617?focus=true
+    case singleTabBurnOptimization
+
     /// Duck.ai limit extension promo (Boost bonus)
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1219240727858123?focus=true
     case aiChatLimitExtensionPromo
 
+    /// Single-tab burn removes the memory cache in the background instead of waiting on every web view.
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1219780456623039?focus=true
+    case deferredMemoryCacheDelete
 }
 
 extension FeatureFlag: FeatureFlagDescribing {
@@ -681,6 +722,8 @@ extension FeatureFlag: FeatureFlagDescribing {
 
     private var config: Config {
         switch self {
+        case .ipadMenuBar:
+            Config(defaultValue: .internalOnly, source: .remoteReleasable(iOSBrowserConfigSubfeature.ipadMenuBar))
         case .sync:
             Config(source: .remoteReleasable(SyncSubfeature.level0ShowSync), supportsLocalOverriding: false)
         case .autofillCredentialInjecting:
@@ -729,6 +772,10 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(source: .remoteReleasable(SyncPromotionSubfeature.bookmarks), supportsLocalOverriding: false)
         case .syncPromotionPasswords:
             Config(source: .remoteReleasable(SyncPromotionSubfeature.passwords), supportsLocalOverriding: false)
+        case .syncPromotionSyncAnotherDevice:
+            Config(source: .remoteReleasable(SyncPromotionSubfeature.syncAnotherDevice))
+        case .syncPromotionRedesign:
+            Config(source: .remoteReleasable(SyncPromotionSubfeature.redesign))
         case .autofillSurveys:
             Config(defaultValue: .enabled, source: .remoteReleasable(AutofillSurveysSubfeature.featureEnabled), supportsLocalOverriding: false)
         case .adAttributionReporting:
@@ -739,8 +786,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(source: .remoteReleasable(DBPSubfeature.continuedProcessing))
         case .dbpFreemiumPIR:
             Config(source: .remoteReleasable(DBPSubfeature.freemiumPIR))
-        case .dbpWebViewUserAgent:
-            Config(source: .remoteReleasable(DBPSubfeature.webViewUserAgent), supportsLocalOverriding: true)
+        case .dbpCustomWebViewUserAgent:
+            Config(source: .remoteReleasable(DBPSubfeature.customWebViewUserAgent), supportsLocalOverriding: true)
         case .dbpOptOutRetryError96Hours:
             Config(source: .remoteReleasable(DBPSubfeature.optOutRetryError96Hours))
         case .dbpExtractedProfileRefresh:
@@ -771,6 +818,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(source: .remoteReleasable(PrivacyProSubfeature.subscriptionOnboardingFreeTrialsOct2026), cohortType: SubscriptionOnboardingFreeTrialsOct2026Cohort.self)
         case .subscriptionOnboardingPaidSubsOct2026:
             Config(source: .remoteReleasable(PrivacyProSubfeature.subscriptionOnboardingPaidSubsOct2026), cohortType: SubscriptionOnboardingPaidSubsOct2026Cohort.self)
+        case .subscriptionCancellationFlow:
+            Config(source: .remoteReleasable(PrivacyProSubfeature.subscriptionCancellationFlow))
         case .syncSetupBarcodeIsUrlBased:
             Config(source: .remoteReleasable(SyncSubfeature.syncSetupBarcodeIsUrlBased))
         case .canScanUrlBasedSyncSetupBarcodes:
@@ -861,8 +910,6 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(defaultValue: .enabled, source: .remoteReleasable(PageContextSubfeature.featureEnabled))
         case .aiChatAutoAttachContextByDefault:
             Config(source: .remoteReleasable(AIChatSubfeature.autoAttachContextByDefault))
-        case .aiChatPdfPageContext:
-            Config(defaultValue: .enabled, source: .remoteReleasable(AIChatSubfeature.pdfPageContext))
         case .aiChatContextualAddressBarMenu:
             Config(defaultValue: .enabled, source: .remoteReleasable(AIChatSubfeature.contextualAddressBarMenu), supportsLocalOverriding: true)
         case .aiChatSync:
@@ -877,8 +924,6 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(defaultValue: .enabled, source: .remoteReleasable(AIChatSubfeature.historyMultiselect))
         case .aiChatNativeSidebar:
             Config(defaultValue: .enabled, source: .remoteReleasable(AIChatSubfeature.nativeSidebar))
-        case .contextualSuggestedPrompts:
-            Config(source: .remoteReleasable(AIChatSubfeature.contextualSuggestedPrompts))
         case .contextualPagePlaceholder:
             Config(defaultValue: .enabled, source: .remoteReleasable(AIChatSubfeature.contextualPagePlaceholder))
         case .showWhatsNewPromptOnDemand:
@@ -901,6 +946,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(defaultValue: .internalOnly, source: .remoteReleasable(AIChatSubfeature.unifiedToggleInputAttachmentPrivacy))
         case .unifiedToggleInputPastedText:
             Config(defaultValue: .internalOnly, source: .remoteReleasable(AIChatSubfeature.unifiedToggleInputPastedText))
+        case .unifiedToggleInputKeyboardEdgeSweep:
+            Config(defaultValue: .internalOnly, source: .remoteReleasable(AIChatSubfeature.unifiedToggleInputKeyboardEdgeSweep))
         case .aiChatAttachmentPrivacyIPad:
             Config(defaultValue: .internalOnly, source: .remoteReleasable(AIChatSubfeature.iPadAttachmentPrivacy))
         case .freeTrialConversionWideEvent:
@@ -945,10 +992,16 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(defaultValue: .disabled, source: .remoteReleasable(WebExtensionsSubfeature.cpmLateBackgroundDocumentRecovery))
         case .cpmBackgroundLoadRecovery:
             Config(defaultValue: .enabled, source: .remoteReleasable(WebExtensionsSubfeature.cpmBackgroundLoadRecovery))
+        case .cpmBackgroundLoadRestart:
+            Config(defaultValue: .enabled, source: .remoteReleasable(WebExtensionsSubfeature.cpmBackgroundLoadRestart))
         case .cpmMessagingHangRecovery:
             Config(defaultValue: .enabled, source: .remoteReleasable(WebExtensionsSubfeature.cpmMessagingHangRecovery))
         case .cpmNetworkProcessRecovery:
             Config(defaultValue: .enabled, source: .remoteReleasable(WebExtensionsSubfeature.cpmNetworkProcessRecovery))
+        case .cpmStableBaseURL:
+            Config(defaultValue: .enabled, source: .remoteReleasable(WebExtensionsSubfeature.cpmStableBaseURL))
+        case .cpmUpgradeBeforeLoad:
+            Config(defaultValue: .enabled, source: .remoteReleasable(WebExtensionsSubfeature.cpmUpgradeBeforeLoad))
         case .cpmBackgroundGraveyardTreatment:
             Config(defaultValue: .disabled, source: .remoteReleasable(WebExtensionsSubfeature.cpmBackgroundGraveyardTreatment))
         case .webExtensionProtectedDataLoadGate:
@@ -969,6 +1022,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(defaultValue: .enabled, source: .remoteReleasable(AIChatSubfeature.supportsSyncChatsUpdate))
         case .fireMode:
             Config(defaultValue: .enabled, source: .remoteReleasable(iOSBrowserConfigSubfeature.fireMode))
+        case .slideToDelete:
+            Config(defaultValue: .internalOnly, source: .remoteReleasable(iOSBrowserConfigSubfeature.slideToDelete))
         case .fireButtonRefinements:
             Config(defaultValue: .enabled, source: .remoteReleasable(iOSBrowserConfigSubfeature.fireButtonRefinements))
         case .aiChatOmnibarDefaultPosition:
@@ -1001,6 +1056,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(source: .remoteReleasable(iOSBrowserConfigSubfeature.newTabPageSessionInstrumentation))
         case .duckAISessionWideEvent:
             Config(defaultValue: .enabled, source: .remoteReleasable(iOSBrowserConfigSubfeature.duckAISessionWideEvent))
+        case .duckAIEntryWideEvent:
+            Config(defaultValue: .enabled, source: .remoteReleasable(iOSBrowserConfigSubfeature.duckAIEntryWideEvent))
         case .newTabPageRedesign:
             Config(source: .remoteReleasable(iOSBrowserConfigSubfeature.newTabPageRedesign))
         case .walletPassDownload:
@@ -1009,12 +1066,18 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(defaultValue: .enabled, source: .remoteReleasable(AIChatSubfeature.iPadChromeShortcut))
         case .aiChatChromeMenuButtonIPad:
             Config(defaultValue: .internalOnly, source: .remoteReleasable(AIChatSubfeature.iPadChromeMenuButton))
+        case .ipadAIChatContextSidebar:
+            Config(defaultValue: .internalOnly, source: .remoteReleasable(AIChatSubfeature.iPadContextualSidebar))
         case .floatingUIiOS26:
             Config(defaultValue: .internalOnly, source: .remoteReleasable(iOSBrowserConfigSubfeature.floatingUIiOS26))
         case .floatingUIiOS27:
             Config(defaultValue: .internalOnly, source: .remoteReleasable(iOSBrowserConfigSubfeature.floatingUIiOS27))
+        case .legacyFindInPage:
+            Config(defaultValue: .disabled, source: .remoteReleasable(iOSBrowserConfigSubfeature.legacyFindInPage))
         case .aiChatTabSwitcherRichCard:
             Config(defaultValue: .enabled, source: .remoteReleasable(AIChatSubfeature.tabSwitcherRichCard))
+        case .aiChatTabHandoffImprovements:
+            Config(defaultValue: .internalOnly, source: .remoteReleasable(AIChatSubfeature.tabHandoffImprovements))
         case .syncScopedAccessCredentials:
             Config(source: .remoteReleasable(SyncSubfeature.scopedAccessCredentials))
         case .syncCanUseV2ConnectFlow:
@@ -1041,10 +1104,14 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(defaultValue: .internalOnly, source: .remoteReleasable(iOSBrowserConfigSubfeature.pageSignals))
         case .alwaysShowKeyboardOnNewTabPage:
             Config(source: .remoteReleasable(iOSBrowserConfigSubfeature.alwaysShowKeyboardOnNewTabPage))
+        case .singleTabBurnOptimization:
+            Config(defaultValue: .disabled, source: .remoteReleasable(iOSBrowserConfigSubfeature.singleTabBurnOptimization))
         case .fastTrackingParameterFilter:
             Config(defaultValue: .internalOnly, source: .remoteReleasable(iOSBrowserConfigSubfeature.fastTrackingParameterFilter))
         case .aiChatLimitExtensionPromo:
             Config(defaultValue: .internalOnly, source: .remoteReleasable(AIChatSubfeature.chatLimitExtensionPromo))
+        case .deferredMemoryCacheDelete:
+            Config(defaultValue: .disabled, source: .remoteReleasable(iOSBrowserConfigSubfeature.deferredMemoryCacheDelete))
         }
     }
 

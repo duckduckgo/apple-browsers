@@ -674,7 +674,7 @@ final class TabTests: XCTestCase {
         XCTAssertTrue(tab.canGoBack)
         XCTAssertFalse(tab.canGoForward)
         XCTAssertEqual(tab.webView.url, urls.url3)
-        XCTAssertEqual(tab.webView.backForwardList.currentItem?.url, urls.url3)
+        XCTAssertEqual(tab.webView.backForwardList.currentItem?.safeURL, urls.url3)
         XCTAssertEqual(tab.backHistoryItems.map(\.url), [urls.url])
         XCTAssertEqual(tab.forwardHistoryItems, [])
 

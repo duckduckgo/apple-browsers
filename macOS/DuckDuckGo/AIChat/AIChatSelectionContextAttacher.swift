@@ -21,8 +21,8 @@ import AppKit
 import Foundation
 import PixelKit
 
-/// Handles the "Attach to Duck.ai" context-menu action: appends the user's text selection to the
-/// Duck.ai sidebar's selection-context list (independent of the single page-context slot) and
+/// Handles the "Ask Duck.ai About Selected Content" action (context menu or ⌥⌘K): appends the
+/// user's text selection to the Duck.ai sidebar's selection-context list (independent of the single page-context slot) and
 /// reveals the sidebar.
 ///
 /// Mirrors `AIChatSummarizer`/`AIChatTranslator`: it owns gating + telemetry and builds the item,
@@ -32,7 +32,7 @@ import PixelKit
 protocol AIChatSelectionContextAttaching {
 
     /// Appends `text` selected on the page at `url` to the Duck.ai selection list and reveals the sidebar.
-    func attach(text: String, url: URL?)
+    func attach(text: String, url: URL?, source: AIChatSelectionActionSource)
 }
 
 @MainActor
@@ -63,12 +63,12 @@ final class AIChatSelectionContextAttacher: AIChatSelectionContextAttaching {
         self.aiChatConversationSourceHandler = aiChatConversationSourceHandler
     }
 
-    func attach(text: String, url: URL?) {
+    func attach(text: String, url: URL?, source: AIChatSelectionActionSource) {
         guard aiChatMenuConfig.shouldDisplaySelectionContextMenuItem else {
             return
         }
 
-        pixelFiring?.fire(AIChatPixel.aiChatAttachSelection, frequency: .dailyAndStandard)
+        pixelFiring?.fire(AIChatPixel.aiChatAttachSelection(source: source), frequency: .dailyAndStandard)
 
         let isChatAlreadyPresented = aiChatCoordinator.isChatPresentedForCurrentTab()
         if !isChatAlreadyPresented {

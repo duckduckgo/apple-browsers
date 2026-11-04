@@ -62,8 +62,4 @@ public struct AIChatPromptLength: Equatable, Sendable {
     }
 
     public var isOverLimit: Bool { count > limit }
-
-    public func limit(forEditing paste: AIChatPastedText) -> Int {
-        limit - (count - paste.length)
-    }
 }

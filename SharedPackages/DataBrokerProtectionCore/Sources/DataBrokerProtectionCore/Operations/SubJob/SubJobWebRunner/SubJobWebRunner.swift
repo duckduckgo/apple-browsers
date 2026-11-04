@@ -43,7 +43,6 @@ public protocol SubJobWebRunning: CCFCommunicationDelegate {
     var pixelHandler: EventMapping<DataBrokerProtectionSharedPixels> { get }
     var executionConfig: BrokerJobExecutionConfig { get }
     var featureFlagger: DBPFeatureFlagging { get }
-    var applicationNameForUserAgentProvider: () -> String? { get }
     var contentBlocking: DBPWebViewContentBlocking? { get }
 
     var webViewHandler: WebViewHandler? { get set }
@@ -390,7 +389,6 @@ public extension SubJobWebRunning {
         if let handler = handler { // This help us swapping up the WebViewHandler on tests
             self.webViewHandler = handler
         } else {
-            let applicationNameProvider: () -> String? = featureFlagger.isWebViewUserAgentOn ? applicationNameForUserAgentProvider : { nil }
             self.webViewHandler = try await DataBrokerProtectionWebViewHandler(privacyConfig: privacyConfig,
                                                                                prefs: prefs,
                                                                                delegate: self,
@@ -399,7 +397,7 @@ public extension SubJobWebRunning {
                                                                                challengePixelDataBroker: context.dataBroker.url,
                                                                                challengePixelBrokerVersion: context.dataBroker.version,
                                                                                shouldContinueActionHandler: shouldRunNextStep,
-                                                                               applicationNameForUserAgentProvider: applicationNameProvider,
+                                                                               customUserAgent: featureFlagger.isCustomWebViewUserAgentOn ? context.dataBroker.customUserAgent : nil,
                                                                                contentBlocking: contentBlocking,
                                                                                pixelHandler: pixelHandler)
         }

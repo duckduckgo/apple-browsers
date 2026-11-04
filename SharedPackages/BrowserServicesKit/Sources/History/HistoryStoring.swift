@@ -23,6 +23,10 @@ public protocol HistoryStoring {
 
     func cleanOld(until date: Date) async throws -> BrowsingHistory
     func save(entry: HistoryEntry) async throws -> [(id: Visit.ID, date: Date)]
+    /// Saves all entries in one transaction: if any of them fails, none is saved.
+    ///
+    /// Returns the stored visit IDs for each entry, keyed by the entry's identifier.
+    func save(entries: [HistoryEntry]) async throws -> [UUID: [(id: Visit.ID, date: Date)]]
     func removeEntries(_ entries: some Sequence<HistoryEntry>) async throws
     func removeVisits(_ visits: some Sequence<Visit>) async throws
     func pageVisitIDs(in tabID: String) async throws -> [Visit.ID]

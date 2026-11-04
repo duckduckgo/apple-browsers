@@ -29,7 +29,6 @@ final class WebExtensionAutofillTakeoverTests: XCTestCase {
     private var notificationCenter: NotificationCenter!
     private var preferences: AutofillPreferencesPersistorMock!
     private var managingExtension: AutofillManagingExtension?
-    private var givenBackCount = 0
 
     override func setUp() {
         super.setUp()
@@ -41,15 +40,13 @@ final class WebExtensionAutofillTakeoverTests: XCTestCase {
         notificationCenter = nil
         preferences = nil
         managingExtension = nil
-        givenBackCount = 0
         super.tearDown()
     }
 
     private func makeTakeover() -> WebExtensionAutofillTakeover {
         WebExtensionAutofillTakeover(preferences: preferences,
                                      notificationCenter: notificationCenter,
-                                     readManagingExtension: { [unowned self] in self.managingExtension },
-                                     clearSettings: { [unowned self] in self.givenBackCount += 1 })
+                                     readManagingExtension: { [unowned self] in self.managingExtension })
     }
 
     // MARK: - Refresh
@@ -108,17 +105,6 @@ final class WebExtensionAutofillTakeoverTests: XCTestCase {
         XCTAssertTrue(preferences.isManagedByExtension)
     }
 
-    func testWhenWebExtensionsBecomeUnavailable_ThenDuckDuckGoTakesAutofillBack() {
-        preferences.isManagedByExtension = true
-        let takeover = makeTakeover()
-        let rebuilt = expectation(forNotification: .autofillUserSettingsDidChange, object: nil, notificationCenter: notificationCenter)
-
-        takeover.extensionsDidBecomeUnavailable()
-
-        wait(for: [rebuilt], timeout: 1)
-        XCTAssertFalse(preferences.isManagedByExtension)
-    }
-
     /// Tabs restored at launch rely on the saved state until extensions finish loading.
     func testWhenTheTakeoverIsCreated_ThenTheSavedStateIsKept() {
         preferences.isManagedByExtension = true
@@ -126,14 +112,6 @@ final class WebExtensionAutofillTakeoverTests: XCTestCase {
         _ = makeTakeover()
 
         XCTAssertTrue(preferences.isManagedByExtension)
-    }
-
-    func testWhenAutofillIsGivenBack_ThenTheExtensionsSettingsAreCleared() {
-        let takeover = makeTakeover()
-
-        takeover.giveBackToDuckDuckGo()
-
-        XCTAssertEqual(givenBackCount, 1)
     }
 
     // MARK: - Whether DuckDuckGo Autofill Is Active

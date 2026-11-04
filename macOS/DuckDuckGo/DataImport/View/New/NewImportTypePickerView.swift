@@ -27,6 +27,7 @@ struct NewImportTypePickerView: View {
     let doneAction: () -> Void
     let cancelAction: () -> Void
     @Binding var isDoneDisabled: Bool
+    var keepsOneTypeSelected = false
 
     @Environment(\.dismiss) private var dismiss
 
@@ -44,9 +45,15 @@ struct NewImportTypePickerView: View {
                     HStack(alignment: .center) {
                         Text(item.wrappedValue.dataType.displayName)
                         Spacer()
+                        if item.wrappedValue.dataType == .history {
+                            Text(UserText.importHistoryTimeRange)
+                                .font(.system(size: 11))
+                                .foregroundColor(Color(designSystemColor: .textSecondary))
+                        }
                         Toggle(isOn: item.isSelected)
                             .toggleStyle(.switch)
                             .rebrandedControlTint()
+                            .disabled(isLastSelectedItem(item.wrappedValue))
                     }
                     .padding(.top, 10)
                     .padding(.bottom, 10)
@@ -87,5 +94,9 @@ struct NewImportTypePickerView: View {
         .background(
             Color(designSystemColor: .surfaceSecondary)
         )
+    }
+
+    private func isLastSelectedItem(_ item: ImportTypeItem) -> Bool {
+        keepsOneTypeSelected && item.isSelected && items.filter(\.isSelected).count == 1
     }
 }

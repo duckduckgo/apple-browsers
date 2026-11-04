@@ -420,8 +420,8 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
         let configuration = WKWebViewConfiguration.persistent(fireMode: tab.fireTab)
         configuration.mediaTypesRequiringUserActionForPlayback = autoplaySettings.currentAutoplayBlockingMode.mediaTypesRequiringUserAction
 
-        // iPad tabs only: iPhone's mobile YouTube enters fullscreen via `webkitEnterFullscreen()`
-        // regardless, so it gains nothing and would only lose the native player on other sites.
+        // iPad tabs always get the Fullscreen API, matching iPad Safari. iPhone tabs get it only in
+        // desktop mode (see `TabViewController.updateContentMode()`), so mobile sites keep the native player.
         // iOS 16 is the floor because the layout restore observes `fullscreenState`, which is iOS 16+.
         if #available(iOS 16.0, *), isPad, featureFlagger.isFeatureOn(.elementFullscreen) {
             configuration.preferences.isElementFullscreenEnabled = true
@@ -647,11 +647,25 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
     }
 
     @MainActor
-    func addHomeTab(in tabsModel: TabsModelManaging? = nil) {
+    func addHomeTab(in tabsModel: TabsModelManaging? = nil, placement: TabsModel.TabPlacement = .atEnd) {
         let model = tabsModel ?? currentTabsModel
         let tab = Tab(fireTab: model.shouldCreateFireTabs)
-        model.insert(tab: tab, placement: .atEnd, selectNewTab: true)
+        model.insert(tab: tab, placement: placement, selectNewTab: true)
         _ = save()
+    }
+
+    @MainActor
+    func duplicate(_ source: TabViewController) -> TabViewController {
+        let model = source.tabModel.fireTab ? fireModeTabsModel : normalTabsModel
+        let tab = Tab(link: source.tabModel.link, desktop: source.tabModel.isDesktop, fireTab: source.tabModel.fireTab)
+        let controller = buildController(forTab: tab, url: source.url, inheritedAttribution: nil,
+                                         interactionState: source.webView.interactionState as? Data)
+        current()?.dismiss()
+        model.insert(tab: tab, placement: .afterCurrentTab, selectNewTab: false)
+        tab.viewed = true
+        addToCache(controller)
+        _ = save()
+        return controller
     }
 
     func firstHomeTab(in tabsModel: TabsModelManaging? = nil) -> Tab? {
@@ -791,6 +805,7 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
         }
         tabTerminationErrorPageDetector.removeHistory(forTabID: controller.tabModel.uid)
         controller.cancelPendingAIChatTabAttachmentPrompt()
+        controller.aiChatContextualSheetCoordinator.closeSurfaceAwayWithTab()
         controller.closeSitePermissions()
         controller.dismiss()
     }

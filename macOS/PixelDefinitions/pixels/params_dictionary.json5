@@ -468,6 +468,13 @@
             "funnel_duckai_macos__unknown"
         ]
     },
+    "subscriptionPageOrigin": {
+        "key": "origin",
+        "type": "string",
+        "description": "Origin from the subscription page URL, sent as-is. Can include web-defined origins in addition to the `subscriptionFunnelOrigin` values.",
+        "pattern": "^funnel_",
+        "examples": ["funnel_appsettings_macos", "funnel_appmenu_macos", "funnel_appsettings_macos_winback"]
+    },
     "onboardingEventType": {
         "key": "event",
         "type": "string",
@@ -698,7 +705,7 @@
         "key": "reload_trigger",
         "type": "string",
         "description": "Operation that initiated the failed web extension reload.",
-        "enum": ["data_clearing", "scriptlet_update", "explicit", "cpm_messaging_hung"]
+        "enum": ["data_clearing", "scriptlet_update", "explicit", "cpm_messaging_hung", "cpm_background_load_failed"]
     },
     "web_extension_reload_phase": {
         "key": "reload_phase",

@@ -16,6 +16,7 @@
 //  limitations under the License.
 //
 
+import Common
 import DDGNavigation
 import WebKit
 
@@ -43,7 +44,7 @@ struct BackForwardListItem: Hashable {
     }
 
     init(_ wkItem: WKBackForwardListItem) {
-        self.init(kind: .url(wkItem.url), title: wkItem.tabTitle ?? wkItem.title, identity: wkItem.identity)
+        self.init(kind: .url(wkItem.safeURL ?? .empty), title: wkItem.tabTitle ?? wkItem.title, identity: wkItem.identity)
     }
 
 }

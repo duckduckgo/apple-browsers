@@ -37,7 +37,7 @@ final class NewTabPageOmnibarActionsHandler: NewTabPageOmnibarActionsHandling {
     private let isShiftPressed: () -> Bool
     private let isCommandPressed: () -> Bool
     private let firePixel: (PixelKit.Event) -> Void
-    /// Deletion-flow pixels fire at `.dailyAndCount`, matching the address-bar delete pixels.
+    /// Deletion-flow and suggested-prompt pixels fire at `.dailyAndCount`, matching the address-bar delete pixels.
     private let fireDailyCountPixel: (PixelKit.Event) -> Void
     private let presentDeleteConfirmation: @MainActor (String, NSWindow?) async -> Bool
 
@@ -233,6 +233,11 @@ final class NewTabPageOmnibarActionsHandler: NewTabPageOmnibarActionsHandling {
                                                           reasoningEffort: nativeReasoningEffort)
         // Marks an Ask click, like the address bar's input; the bridge turns it into the `termsAccepted` duck.ai reads.
         promptHandler.setData(nativePrompt.withTermsAccepted(aiTermsAccepted))
+    }
+
+    /// Fires on top of `promptSubmitted`, so the pair gives the share of NTP prompts sent from the chips.
+    func suggestedPromptSubmitted(promptId: String) {
+        fireDailyCountPixel(AIChatPixel.aiChatNtpSuggestedPromptSubmitted(promptId: promptId))
     }
 
     /// Converts a web-echoed `OmnibarPageContext` (the shape native originally returned from

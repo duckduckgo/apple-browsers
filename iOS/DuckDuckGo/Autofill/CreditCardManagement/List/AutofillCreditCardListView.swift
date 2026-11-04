@@ -65,7 +65,7 @@ private struct EmptyStateView: View {
     
     var body: some View {
         VStack(spacing: 0) {
-            Image(rebrandable: "Credit-Cards-Add-96")
+            Image(.creditCardsAdd96)
                 .resizable()
                 .aspectRatio(contentMode: .fit)
                 .frame(width: 96, height: 96)

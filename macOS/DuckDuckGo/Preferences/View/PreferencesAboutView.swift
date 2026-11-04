@@ -20,6 +20,7 @@ import AppKitExtensions
 
 import AppUpdaterShared
 import DesignResourcesKit
+import DesignResourcesKitIcons
 import PreferencesUI_macOS
 import SwiftUI
 import SwiftUIExtensions
@@ -79,8 +80,12 @@ extension Preferences {
                             }
                         }
                     } else if buildType.isAppStoreBuild {
-                        UpdateInfoMessage()
-                            .padding(.top, 4)
+                        if model.shouldShowAppStoreUpdatesCard {
+                            AppStoreUpdatesCard()
+                        } else {
+                            UpdateInfoMessage()
+                                .padding(.top, 4)
+                        }
                     }
                 }
             }.task {
@@ -398,6 +403,51 @@ extension Preferences {
                 }
             }
             return attributed
+        }
+    }
+
+    struct AppStoreUpdatesCard: View {
+        @Environment(\.colorScheme) private var colorScheme
+
+        var body: some View {
+            VStack(alignment: .leading, spacing: 20) {
+                VStack(alignment: .leading, spacing: 12) {
+                    Text(UserText.aboutAppStoreUpdatesTitle)
+                        .font(.title3.weight(.semibold))
+                        .foregroundColor(Color(designSystemColor: .textPrimary))
+                        .padding(.bottom, 2)
+                    Text(UserText.aboutAppStoreUpdatesMessage)
+                        .font(.body)
+                        .foregroundColor(Color(designSystemColor: .textSecondary))
+                        .lineSpacing(4)
+                        .padding(.vertical, 2)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+
+                Button {
+                    NSWorkspace.shared.open(.macAppStore)
+                } label: {
+                    HStack(spacing: 6) {
+                        Image(nsImage: DesignSystemImages.Glyphs.Size16.platformApple)
+                            .foregroundColor(Color(designSystemColor: .iconsPrimary))
+                            .environment(\.colorScheme, colorScheme == .dark ? .light : .dark)
+                        Text(UserText.aboutAppStoreUpdatesButton)
+                    }
+                    .padding(.horizontal, 5)
+                }
+                .buttonStyle(DefaultActionButtonStyle(enabled: true, topPadding: 8, bottomPadding: 8, stateColors: .themedActionButton, pillShape: true))
+                .accessibilityIdentifier("PreferencesAboutView.openAppStoreButton")
+            }
+            .padding(20)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(
+                RoundedRectangle(cornerRadius: 24)
+                    .fill(Color(designSystemColor: .containerFillPrimary))
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: 24)
+                    .strokeBorder(Color(designSystemColor: .surfaceDecorationPrimary), lineWidth: 1)
+            )
         }
     }
 

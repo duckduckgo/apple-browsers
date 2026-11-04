@@ -88,7 +88,9 @@ extension MainViewController {
 
     func revealAddressBarForEditing() {
         guard viewCoordinator.newTabPageInputPresentation.hidesNavigationContainer else { return }
-        if unifiedToggleInputCoordinator != nil {
+        if isPresentingNewTabInputDirectly {
+            restingNewTabPageSnapshot = nil
+        } else if unifiedToggleInputCoordinator != nil {
             captureRestingNewTabPageSnapshot()
         }
         isAddressBarHandOffInProgress = true
@@ -137,6 +139,11 @@ extension MainViewController {
 
     func newTabPageDidRequestVoiceSearch(_ controller: any NewTabPage, textEntryMode: TextEntryMode) {
         handleVoiceSearchOpenRequest(preferredTarget: textEntryMode == .aiChat ? .AIChat : .SERP)
+    }
+
+    func newTabPageDuckAIMenu(_ controller: any NewTabPage) -> UIMenu? {
+        guard duckAIAddressBarEntry == .menu else { return nil }
+        return makeDuckAIMenu(source: .addressBarIcon, type: .webPage)
     }
 
     func newTabPageDidRequestSearch(_ controller: any NewTabPage, textEntryMode: TextEntryMode) {

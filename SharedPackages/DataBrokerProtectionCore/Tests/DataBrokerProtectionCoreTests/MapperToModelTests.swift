@@ -144,6 +144,23 @@ final class MapperToModelTests: XCTestCase {
         }
     }
 
+    func testMapToModel_preservesUserAgent() throws {
+        let brokerData = """
+            {
+                "name": "TestBroker",
+                "url": "https://example.com",
+                "steps": [],
+                "version": "1.0",
+                "userAgent": { "macOS": "macOS-UA", "iOS": "iOS-UA" }
+            }
+            """.data(using: .utf8)!
+        let brokerDB = BrokerDB(id: 1, name: "TestBroker", json: brokerData, version: "1.0", url: "https://example.com", eTag: "", removedAt: nil)
+
+        let result = try sut.mapToModel(brokerDB)
+
+        XCTAssertEqual(result.userAgent, DataBrokerUserAgent(macOS: "macOS-UA", iOS: "iOS-UA"))
+    }
+
     func testMapToModel_missingUrlFallbackToName() throws {
         // Given
         let brokerData = """

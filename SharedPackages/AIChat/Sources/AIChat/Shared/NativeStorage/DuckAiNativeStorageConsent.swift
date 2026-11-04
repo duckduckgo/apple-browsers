@@ -34,4 +34,10 @@ public enum DuckAiNativeStorageConsent {
         termsOfServiceEntryKey,
         "hasVoiceModeConsent"
     ]
+
+    /// Whether `value`, as stored under `termsOfServiceEntryKey`, records an acceptance. The web app
+    /// writes `JSON.stringify(true)`; a native writer may store the Bool itself.
+    public static func isTermsOfServiceAccepted(_ value: Any?) -> Bool {
+        value as? String == "true" || value as? Bool == true
+    }
 }

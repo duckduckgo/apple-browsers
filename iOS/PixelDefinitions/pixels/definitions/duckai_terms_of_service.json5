@@ -1,0 +1,10 @@
+// Duck.ai Terms of Service acceptance, as recorded by the app.
+{
+    "aichat_terms_accepted_from_web": {
+        "description": "Fires when the app adopts a Duck.ai Terms of Service acceptance that only the web app had recorded (`duckaiHasAgreedToTerms` in native storage), such as one made before the app kept its own record. Checked at launch and on every return to the foreground, once native storage and native Terms of Service are on. Without this the native disclaimer would ask these users to accept again.",
+        "owners": ["Bunn"],
+        "triggers": ["feature_lifecycle"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": ["appVersion"]
+    }
+}

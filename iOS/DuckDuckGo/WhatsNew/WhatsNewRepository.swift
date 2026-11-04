@@ -71,8 +71,12 @@ final class DefaultWhatsNewMessageRepository: WhatsNewMessageRepository {
         await remoteMessageStore.dismissRemoteMessage(withID: message.id)
 
         // 2. Persist to local storage (for on-demand access)
-        guard let data = try? JSONEncoder().encode(message) else { return }
-        try? keyValueStore.set(data, forKey: Self.storageKey)
+        try? Self.saveLastShownMessage(message, in: keyValueStore)
+    }
+
+    static func saveLastShownMessage(_ message: RemoteMessageModel, in keyValueStore: ThrowingKeyValueStoring) throws {
+        let data = try JSONEncoder().encode(message)
+        try keyValueStore.set(data, forKey: storageKey)
     }
 
     func hasShownMessage(withID messageId: String) -> Bool {

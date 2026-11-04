@@ -422,13 +422,20 @@ struct Launching: LaunchingHandling {
 
         winBackOfferService.setURLHandler(mainCoordinator)
 
+        let voiceSearchHelper = self.voiceSearchHelper
+        let fireModeCapability = mainCoordinator.controller.fireModeCapability
+        let mainMenuService = MainMenuService(featureFlagger: featureFlagger, contextProvider: {
+            .init(voiceSearchEnabled: voiceSearchHelper.isVoiceSearchEnabled, fireModeEnabled: fireModeCapability.isFireModeEnabled)
+        })
+
         // MARK: - App Services aggregation
         // This object serves as a central hub for app-wide services that:
         // 1. Respond to lifecycle events
         // 2. Persist throughout the app's runtime
         // 3. Provide core functionality across different parts of the app
 
-        services = AppServices(contentBlockingService: contentBlockingService,
+        services = AppServices(mainMenuService: mainMenuService,
+                               contentBlockingService: contentBlockingService,
                                syncService: syncService,
                                vpnService: vpnService,
                                dbpService: dbpService,
@@ -488,8 +495,6 @@ struct Launching: LaunchingHandling {
             launchTaskManager: launchTaskManager
         )
 #endif
-
-        AppDependencyProvider.shared.mainMenuService?.requestRebuild()
 
         logAppLaunchTime()
         // Keep this init method minimal and think twice before adding anything here.

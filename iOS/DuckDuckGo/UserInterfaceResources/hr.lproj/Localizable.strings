@@ -1,4 +1,7 @@
 /* No comment provided by engineer. */
+" " = " ";
+
+/* No comment provided by engineer. */
 "-config.rollout.<parent>.<subfeature> true/false" = "-config.rollout.<parent>.<subfeature> true/false";
 
 /* No comment provided by engineer. */
@@ -381,6 +384,21 @@
 
 /* Title for the New Tab row in the Duck.ai tab header Plus (+) menu */
 "aichat.header.plusMenu.newTab" = "Nova kartica";
+
+/* Section header in the Duck.ai tab header Plus (+) menu; every row below it opens a new tab */
+"aichat.header.plusMenu.newTabSection" = "Nova kartica";
+
+/* Row in the New Tab section of the Duck.ai tab header Plus (+) menu — opens a new Duck.ai chat in a new tab */
+"aichat.header.plusMenu.newTabSection.chat" = "Čavrljanje";
+
+/* Row in the New Tab section of the Duck.ai tab header Plus (+) menu — opens Duck.ai in image generation mode in a new tab */
+"aichat.header.plusMenu.newTabSection.image" = "Slikovno";
+
+/* Row in the Duck.ai tab header Plus (+) menu — opens a new tab in search mode */
+"aichat.header.plusMenu.newTabSection.search" = "Pretraživanje";
+
+/* Row in the New Tab section of the Duck.ai tab header Plus (+) menu — opens a new Duck.ai voice chat in a new tab */
+"aichat.header.plusMenu.newTabSection.voiceChat" = "Glasovno čavrljanje";
 
 /* Title for the New Voice Chat row in the Duck.ai tab header Plus (+) menu */
 "aichat.header.plusMenu.newVoiceChat" = "Novo glasovno čavrljanje";
@@ -3297,6 +3315,72 @@
 
 /* No comment provided by engineer. */
 "menu.button.hint" = "Izbornik pregledavanja";
+
+/* iPad menu bar command */
+"menuActualSize" = "Stvarna veličina";
+
+/* iPad menu bar command */
+"menuBack" = "Natrag";
+
+/* iPad menu bar command */
+"menuClearTabsAndData" = "Obriši kartice i podatke";
+
+/* iPad menu bar command */
+"menuDuplicateTab" = "Dupliciraj karticu";
+
+/* iPad menu bar command */
+"menuFeedback" = "Podijeli povratne informacije";
+
+/* iPad menu bar command */
+"menuForward" = "Naprijed";
+
+/* iPad menu bar command */
+"menuHideDownloads" = "Sakrij preuzimanja";
+
+/* iPad menu bar command */
+"menuHidePasswords" = "Sakrij lozinke";
+
+/* iPad menu bar command */
+"menuHideTabs" = "Sakrij kartice";
+
+/* iPad menu bar command */
+"menuLastTab" = "Posljednja kartica";
+
+/* iPad menu bar command */
+"menuNewTabOnRight" = "Nova kartica desno";
+
+/* iPad menu bar command */
+"menuNextTab" = "Prikaži sljedeću karticu";
+
+/* iPad menu bar command */
+"menuOpenLocation" = "Otvori lokaciju...";
+
+/* iPad menu bar command */
+"menuPreviousTab" = "Prikaži prethodnu karticu";
+
+/* iPad menu bar command */
+"menuPrint" = "Ispis…";
+
+/* iPad menu bar command selecting a numbered tab */
+"menuSelectTab" = "Odaberi karticu %d";
+
+/* iPad menu bar command */
+"menuSettings" = "DuckDuckGo postavke...";
+
+/* iPad menu bar command */
+"menuShowDownloads" = "Prikaži preuzimanja";
+
+/* iPad menu bar command */
+"menuShowPasswords" = "Prikaži lozinke";
+
+/* iPad menu bar command */
+"menuShowTabs" = "Prikaži kartice";
+
+/* iPad menu bar command */
+"menuStop" = "Zaustavi";
+
+/* iPad menu bar command */
+"menuVoiceSearch" = "Privatno glasovno pretraživanje";
 
 /* No comment provided by engineer. */
 "Message" = "Poruka";

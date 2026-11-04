@@ -57,11 +57,18 @@ final class AutofillHeaderViewFactoryTests: XCTestCase {
     }
 
     func testWhenMakeHeaderViewForSyncPromoThenSyncPromoViewIsReturned() {
-        let viewController = factory.makeHeaderView(for: .syncPromo(.passwords))
+        let viewController = factory.makeHeaderView(for: .syncPromo(.passwords, .standard))
         XCTAssertTrue(viewController is UIHostingController<SyncPromoView>)
         if let hostingController = viewController as? UIHostingController<SyncPromoView> {
             XCTAssertNotNil(hostingController.rootView)
         }
+    }
+
+    func testWhenMakeHeaderViewForRedesignedSyncPromoThenPromoUsesRedesignedDesign() throws {
+        let viewController = try XCTUnwrap(factory.makeHeaderView(for: .syncPromo(.passwords, .redesigned)) as? UIHostingController<SyncPromoView>)
+
+        XCTAssertEqual(viewController.rootView.viewModel.design, .redesigned)
+        XCTAssertNil(viewController.rootView.viewModel.secondaryButtonTitle)
     }
 
     func testWhenMakeHeaderViewForSurveyThenAutofillSurveyViewIsReturned() {
@@ -76,13 +83,13 @@ final class AutofillHeaderViewFactoryTests: XCTestCase {
 
     func testWhenSyncPromoPrimaryButtonActionIsCalledThenDelegateHandlePrimaryActionIsCalled() throws {
         let touchpoint = SyncPromoManager.Touchpoint.passwords
-        let viewController = try XCTUnwrap(factory.makeHeaderView(for: .syncPromo(touchpoint)) as? UIHostingController<SyncPromoView>, "Expected a UIHostingController<SyncPromoView>")
+        let viewController = try XCTUnwrap(factory.makeHeaderView(for: .syncPromo(touchpoint, .standard)) as? UIHostingController<SyncPromoView>, "Expected a UIHostingController<SyncPromoView>")
 
         let primaryButtonAction = try XCTUnwrap(viewController.rootView.viewModel.primaryButtonAction, "Primary button action should not be nil")
         primaryButtonAction()
 
         XCTAssertTrue(mockDelegate.didHandlePrimaryAction)
-        if case .syncPromo(let receivedTouchpoint) = mockDelegate.lastHandledHeaderType {
+        if case .syncPromo(let receivedTouchpoint, _) = mockDelegate.lastHandledHeaderType {
             XCTAssertEqual(receivedTouchpoint, touchpoint)
         } else {
             XCTFail("Expected .syncPromo ViewType with touchpoint \(touchpoint)")
@@ -92,14 +99,14 @@ final class AutofillHeaderViewFactoryTests: XCTestCase {
     func testWhenSyncPromoDismissButtonActionIsCalledThenDelegateHandleDismissActionIsCalled() throws {
         let touchpoint = SyncPromoManager.Touchpoint.passwords
 
-        let viewController = try XCTUnwrap(factory.makeHeaderView(for: .syncPromo(touchpoint)) as? UIHostingController<SyncPromoView>, "Expected a UIHostingController<SyncPromoView>")
+        let viewController = try XCTUnwrap(factory.makeHeaderView(for: .syncPromo(touchpoint, .standard)) as? UIHostingController<SyncPromoView>, "Expected a UIHostingController<SyncPromoView>")
 
         let dismissButtonAction = try XCTUnwrap(viewController.rootView.viewModel.dismissButtonAction, "Dismiss button action should not be nil")
         dismissButtonAction()
 
         XCTAssertTrue(mockDelegate.didHandleDismissAction)
 
-        if case .syncPromo(let receivedTouchpoint) = mockDelegate.lastHandledHeaderType {
+        if case .syncPromo(let receivedTouchpoint, _) = mockDelegate.lastHandledHeaderType {
             XCTAssertEqual(receivedTouchpoint, touchpoint)
         } else {
             XCTFail("Expected .syncPromo ViewType with touchpoint \(touchpoint)")

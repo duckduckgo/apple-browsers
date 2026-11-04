@@ -96,14 +96,8 @@ final class AutofillPreferencesModel: ObservableObject {
 
     @Published private(set) var showSyncPromo: Bool = false
 
-    /// The password manager extension that has taken autofill over from DuckDuckGo, if any.
-    @Published private(set) var managingExtension: AutofillManagingExtension?
-
-    /// Gives autofill back to DuckDuckGo from the extension that took it over.
-    @MainActor
-    func useDuckDuckGoInstead() {
-        autofillTakeover.giveBackToDuckDuckGo()
-    }
+    /// Whether a password manager extension has taken autofill over from DuckDuckGo. Read-only here.
+    @Published private(set) var isManagedByExtension: Bool = false
 
     func authorizeAutoLockSettingsChange(
         isEnabled isAutoLockEnabledNewValue: Bool? = nil,
@@ -168,10 +162,9 @@ final class AutofillPreferencesModel: ObservableObject {
         bitwardenManager: BWManagement? = Application.appDelegate.bitwardenManager,
         neverPromptWebsitesManager: AutofillNeverPromptWebsitesManager = AutofillNeverPromptWebsitesManager.shared,
         syncPromoManager: SyncPromoManaging = Application.appDelegate.syncSetupAutofillPromoManager,
-        autofillTakeover: WebExtensionAutofillTakeoverManaging = Application.appDelegate.webExtensionAutofillTakeover
+        notificationCenter: NotificationCenter = .default
     ) {
         self.persistor = persistor
-        self.autofillTakeover = autofillTakeover
         self.userAuthenticator = userAuthenticator
         self.bitwardenManager = bitwardenManager
         self.neverPromptWebsitesManager = neverPromptWebsitesManager
@@ -187,6 +180,7 @@ final class AutofillPreferencesModel: ObservableObject {
         showInMenuBar = persistor.showInMenuBar
         passwordManager = persistor.passwordManager
         hasNeverPromptWebsites = !neverPromptWebsitesManager.neverPromptWebsites.isEmpty
+        isManagedByExtension = persistor.isManagedByExtension
         syncPromoCancellable = syncPromoManager.isPromoActivePublisher
             .sink { [weak self] _ in
                 MainActor.assumeMainThread {
@@ -194,24 +188,17 @@ final class AutofillPreferencesModel: ObservableObject {
                 }
             }
 
-        updateManagingExtension()
-        autofillTakeoverCancellable = NotificationCenter.default.publisher(for: .autofillUserSettingsDidChange)
+        managedByExtensionCancellable = notificationCenter.publisher(for: .autofillUserSettingsDidChange)
             .receive(on: DispatchQueue.main)
             .sink { [weak self] _ in
-                MainActor.assumeMainThread {
-                    self?.updateManagingExtension()
+                guard let self else { return }
+                let updated = persistor.isManagedByExtension
+                if updated != isManagedByExtension {
+                    isManagedByExtension = updated
                 }
             }
 
         PixelKit.fire(AutofillPixelKitEvent.autofillSettingsOpened)
-    }
-
-    @MainActor
-    private func updateManagingExtension() {
-        let updated = autofillTakeover.managingExtension
-        if updated != managingExtension {
-            managingExtension = updated
-        }
     }
 
     private var persistor: AutofillPreferencesPersistor
@@ -220,8 +207,7 @@ final class AutofillPreferencesModel: ObservableObject {
     private let neverPromptWebsitesManager: AutofillNeverPromptWebsitesManager
     private let syncPromoManager: SyncPromoManaging
     private var syncPromoCancellable: AnyCancellable?
-    private let autofillTakeover: WebExtensionAutofillTakeoverManaging
-    private var autofillTakeoverCancellable: AnyCancellable?
+    private var managedByExtensionCancellable: AnyCancellable?
     lazy var syncPromoViewModel: SyncPromoViewModel = SyncPromoViewModel(touchpointType: .autofill,
                                                                          primaryButtonAction: { [weak self] in
         self?.syncPromoManager.goToSyncSettings(for: .autofill)

@@ -115,10 +115,7 @@ public final class SponsorBlockSubfeature: NSObject, Subfeature {
     }
 
     private func pushConfigChanged() {
-        guard let broker, let webView else {
-            Logger.sponsorBlock.debug("onConfigChanged dropped: no page has asked for config yet")
-            return
-        }
+        guard let broker, let webView else { return }
         let update = ConfigUpdate(enabled: isEnabled, skipMode: preferences.skipMode.rawValue)
         Logger.sponsorBlock.debug("onConfigChanged pushed: enabled=\(update.enabled) skipMode=\(update.skipMode, privacy: .public)")
         broker.push(method: Self.onConfigChanged, params: update, for: self, into: webView)

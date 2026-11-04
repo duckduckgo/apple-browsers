@@ -216,7 +216,6 @@ extension Preferences {
     }
 }
 
-// ponytail: untranslated PoC copy; move to UserText before any external release.
 private enum SponsorBlockCopy {
     static let sectionHeader = "Sponsor Segments"
     static let toggle = "Skip sponsor segments"

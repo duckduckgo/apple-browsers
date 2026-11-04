@@ -159,7 +159,6 @@ struct SettingsYouTubeAdBlockingView: View {
     }
 }
 
-// ponytail: untranslated PoC copy; move to UserText and Localizable.strings before any external release.
 private enum SponsorBlockCopy {
     static let sectionHeader = "Sponsor Segments"
     static let toggle = "Skip Sponsor Segments"

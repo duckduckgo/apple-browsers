@@ -42,7 +42,6 @@ public actor SponsorBlockSegmentsProvider {
     }
 
     public struct Query: Hashable {
-        // ponytail: MVP scope fixed in native; read from the sponsorBlock privacy-config settings once that entry exists.
         public static let defaultCategories = ["sponsor"]
         public static let defaultActionTypes = ["skip"]
 

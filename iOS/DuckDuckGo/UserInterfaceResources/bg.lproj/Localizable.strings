@@ -1,4 +1,7 @@
 /* No comment provided by engineer. */
+" " = " ";
+
+/* No comment provided by engineer. */
 "-config.rollout.<parent>.<subfeature> true/false" = "-config.rollout.<parent>.<subfeature> true/false";
 
 /* No comment provided by engineer. */
@@ -381,6 +384,21 @@
 
 /* Title for the New Tab row in the Duck.ai tab header Plus (+) menu */
 "aichat.header.plusMenu.newTab" = "Нов раздел";
+
+/* Section header in the Duck.ai tab header Plus (+) menu; every row below it opens a new tab */
+"aichat.header.plusMenu.newTabSection" = "Нов раздел";
+
+/* Row in the New Tab section of the Duck.ai tab header Plus (+) menu — opens a new Duck.ai chat in a new tab */
+"aichat.header.plusMenu.newTabSection.chat" = "Чат";
+
+/* Row in the New Tab section of the Duck.ai tab header Plus (+) menu — opens Duck.ai in image generation mode in a new tab */
+"aichat.header.plusMenu.newTabSection.image" = "Изображение";
+
+/* Row in the Duck.ai tab header Plus (+) menu — opens a new tab in search mode */
+"aichat.header.plusMenu.newTabSection.search" = "Търсене";
+
+/* Row in the New Tab section of the Duck.ai tab header Plus (+) menu — opens a new Duck.ai voice chat in a new tab */
+"aichat.header.plusMenu.newTabSection.voiceChat" = "Гласов чат";
 
 /* Title for the New Voice Chat row in the Duck.ai tab header Plus (+) menu */
 "aichat.header.plusMenu.newVoiceChat" = "Нов гласов чат";
@@ -3297,6 +3315,72 @@
 
 /* No comment provided by engineer. */
 "menu.button.hint" = "Меню за сърфиране";
+
+/* iPad menu bar command */
+"menuActualSize" = "Действителен размер";
+
+/* iPad menu bar command */
+"menuBack" = "Обратно";
+
+/* iPad menu bar command */
+"menuClearTabsAndData" = "Изчистване на раздели и данни";
+
+/* iPad menu bar command */
+"menuDuplicateTab" = "Дублиране на раздел";
+
+/* iPad menu bar command */
+"menuFeedback" = "Споделяне на отзив";
+
+/* iPad menu bar command */
+"menuForward" = "Напред";
+
+/* iPad menu bar command */
+"menuHideDownloads" = "Скриване на изтеглянията";
+
+/* iPad menu bar command */
+"menuHidePasswords" = "Скриване на паролите";
+
+/* iPad menu bar command */
+"menuHideTabs" = "Скриване на разделите";
+
+/* iPad menu bar command */
+"menuLastTab" = "Последен раздел";
+
+/* iPad menu bar command */
+"menuNewTabOnRight" = "Нов раздел отдясно";
+
+/* iPad menu bar command */
+"menuNextTab" = "Показване на следващ раздел";
+
+/* iPad menu bar command */
+"menuOpenLocation" = "Отваряне на местоположението…";
+
+/* iPad menu bar command */
+"menuPreviousTab" = "Показване на предишен раздел";
+
+/* iPad menu bar command */
+"menuPrint" = "Печат...";
+
+/* iPad menu bar command selecting a numbered tab */
+"menuSelectTab" = "Избор на раздел %d";
+
+/* iPad menu bar command */
+"menuSettings" = "Настройки на DuckDuckGo...";
+
+/* iPad menu bar command */
+"menuShowDownloads" = "Показване на изтеглянията";
+
+/* iPad menu bar command */
+"menuShowPasswords" = "Показване на паролите";
+
+/* iPad menu bar command */
+"menuShowTabs" = "Показване на разделите";
+
+/* iPad menu bar command */
+"menuStop" = "Спиране";
+
+/* iPad menu bar command */
+"menuVoiceSearch" = "Поверително гласово търсене";
 
 /* No comment provided by engineer. */
 "Message" = "Съобщение";

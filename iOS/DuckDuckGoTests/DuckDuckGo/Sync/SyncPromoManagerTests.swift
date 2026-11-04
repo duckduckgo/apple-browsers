@@ -423,6 +423,98 @@ final class SyncPromoManagerTests: XCTestCase {
 
     // MARK: - Mock Creation
 
+    func testWhenRedesignFlagOnAndInstalledMoreThanThreeDaysAgoThenBookmarksDesignIsRedesigned() {
+        let syncPromoManager = makeManager(featureFlags: [.syncPromotionRedesign], installedDaysAgo: 4)
+
+        XCTAssertEqual(syncPromoManager.designFor(.bookmarks), .redesigned)
+    }
+
+    func testWhenRedesignFlagOnAndInstalledThreeDaysAgoThenBookmarksDesignIsStandard() {
+        let syncPromoManager = makeManager(featureFlags: [.syncPromotionRedesign], installedDaysAgo: 3)
+
+        XCTAssertEqual(syncPromoManager.designFor(.bookmarks), .standard)
+    }
+
+    func testWhenRedesignFlagOffThenBookmarksDesignIsStandard() {
+        let syncPromoManager = makeManager(featureFlags: [], installedDaysAgo: 30)
+
+        XCTAssertEqual(syncPromoManager.designFor(.bookmarks), .standard)
+    }
+
+    func testWhenInstallDateUnknownThenBookmarksDesignIsStandard() {
+        let syncPromoManager = makeManager(featureFlags: [.syncPromotionRedesign], installedDaysAgo: nil)
+
+        XCTAssertEqual(syncPromoManager.designFor(.bookmarks), .standard)
+    }
+
+    func testWhenRedesignFlagOnAndInstalledMoreThanThreeDaysAgoThenPasswordsDesignIsRedesigned() {
+        let syncPromoManager = makeManager(featureFlags: [.syncPromotionRedesign], installedDaysAgo: 4)
+
+        XCTAssertEqual(syncPromoManager.designFor(.passwords), .redesigned)
+    }
+
+    func testWhenRedesignFlagOnAndInstalledThreeDaysAgoThenPasswordsDesignIsStandard() {
+        let syncPromoManager = makeManager(featureFlags: [.syncPromotionRedesign], installedDaysAgo: 3)
+
+        XCTAssertEqual(syncPromoManager.designFor(.passwords), .standard)
+    }
+
+    func testWhenRedesignFlagOffThenPasswordsDesignIsStandard() {
+        let syncPromoManager = makeManager(featureFlags: [], installedDaysAgo: 30)
+
+        XCTAssertEqual(syncPromoManager.designFor(.passwords), .standard)
+    }
+
+    func testWhenRedesignFlagOnThenAIChatDesignIsStandard() {
+        let syncPromoManager = makeManager(featureFlags: [.syncPromotionRedesign], installedDaysAgo: 30)
+
+        XCTAssertEqual(syncPromoManager.designFor(.aiChat), .standard)
+    }
+
+    func testWhenPasswordsDesignIsRedesignedThenPromoHasRedesignedPasswordsCopy() {
+        let passwords = SyncPromoViewModel(touchpointType: .passwords, design: .redesigned)
+
+        XCTAssertNil(passwords.secondaryButtonTitle)
+        XCTAssertEqual(passwords.toggleTitle, UserText.syncPromoToggleTitle)
+        XCTAssertEqual(passwords.title, UserText.syncPromoPasswordsTitle)
+        XCTAssertEqual(passwords.subtitle, UserText.syncPromoPasswordsRedesignMessage)
+    }
+
+    func testWhenPasswordsDesignIsStandardThenPromoKeepsPasswordsCopy() {
+        let passwords = SyncPromoViewModel(touchpointType: .passwords, design: .standard)
+
+        XCTAssertEqual(passwords.secondaryButtonTitle, UserText.syncPromoDismissAction)
+        XCTAssertEqual(passwords.primaryButtonTitle, UserText.syncPromoConfirmAction)
+        XCTAssertEqual(passwords.title, UserText.syncPromoPasswordsTitle)
+        XCTAssertEqual(passwords.subtitle, UserText.syncPromoPasswordsMessage)
+    }
+
+    func testWhenDesignIsRedesignedThenPromoHasNoDismissButtonAndRedesignCopy() {
+        let viewModel = SyncPromoViewModel(touchpointType: .bookmarks, design: .redesigned)
+
+        XCTAssertNil(viewModel.secondaryButtonTitle)
+        XCTAssertEqual(viewModel.toggleTitle, UserText.syncPromoToggleTitle)
+        XCTAssertEqual(viewModel.title, UserText.syncPromoBookmarksTitle)
+        XCTAssertEqual(viewModel.subtitle, UserText.syncPromoBookmarksRedesignMessage)
+    }
+
+    func testWhenDesignIsStandardThenPromoKeepsDismissButtonAndSetUpSyncCopy() {
+        let viewModel = SyncPromoViewModel(touchpointType: .bookmarks, design: .standard)
+
+        XCTAssertEqual(viewModel.secondaryButtonTitle, UserText.syncPromoDismissAction)
+        XCTAssertEqual(viewModel.primaryButtonTitle, UserText.syncPromoConfirmAction)
+        XCTAssertEqual(viewModel.subtitle, UserText.syncPromoBookmarksMessage)
+    }
+
+    private func makeManager(featureFlags: [FeatureFlag], installedDaysAgo: Int?) -> SyncPromoManager {
+        let now = Date()
+        let installDate = installedDaysAgo.flatMap { Calendar.current.date(byAdding: .day, value: -$0, to: now) }
+        return SyncPromoManager(syncService: syncService,
+                                featureFlagger: createFeatureFlagger(withFeatureFlagsEnabled: featureFlags),
+                                installDateProvider: { installDate },
+                                currentDateProvider: { now })
+    }
+
     private func createFeatureFlagger(withFeatureFlagsEnabled featureFlags: [FeatureFlag]) -> FeatureFlagger {
         let mockFeatureFlagger = MockFeatureFlagger()
         mockFeatureFlagger.enabledFeatureFlags.append(contentsOf: featureFlags)

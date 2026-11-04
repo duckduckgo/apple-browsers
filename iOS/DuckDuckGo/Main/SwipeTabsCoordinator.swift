@@ -71,6 +71,26 @@ enum LiveTabSwipePolicy {
     }
 }
 
+/// The rubber band `UIScrollView` gives drags past its content, for drags it doesn't own.
+enum SwipeTabsEdgeResistance {
+
+    private static let coefficient: CGFloat = 0.55
+
+    static func offset(for proposed: CGFloat, limits: ClosedRange<CGFloat>, dimension: CGFloat) -> CGFloat {
+        if proposed > limits.upperBound {
+            return limits.upperBound + damped(proposed - limits.upperBound, dimension: dimension)
+        }
+        if proposed < limits.lowerBound {
+            return limits.lowerBound - damped(limits.lowerBound - proposed, dimension: dimension)
+        }
+        return proposed
+    }
+
+    private static func damped(_ overshoot: CGFloat, dimension: CGFloat) -> CGFloat {
+        (1 - 1 / (overshoot * coefficient / dimension + 1)) * dimension
+    }
+}
+
 /// How swipe chrome copies move between two tabs.
 enum SwipeChromeTransition: Equatable {
     /// Copies slide with the pages.
@@ -233,6 +253,14 @@ class SwipeTabsCoordinator: NSObject {
         generator.prepare()
         return generator
     }()
+
+    private let edgeFeedbackGenerator = UIImpactFeedbackGenerator(style: .rigid)
+    private var lastEdgeTickOverscroll: CGFloat = 0
+    private var isExternalPanDragging = false
+
+    /// Swipes bounce at the first and last tab, with no new-tab page past the last one. Read once, so a flag
+    /// change mid-session can't leave the strip's pages and its gestures disagreeing.
+    private let bouncesAtEdges: Bool
     
     var isEnabled = false {
         didSet {
@@ -279,6 +307,7 @@ class SwipeTabsCoordinator: NSObject {
         self.selectTab = selectTab
         self.newTab = newTab
         self.onSwipeStarted = onSwipeStarted
+        self.bouncesAtEdges = omnibarDependencies.featureFlagger.isFeatureOn(.aiChatTabHandoffImprovements)
                 
         super.init()
         
@@ -327,6 +356,8 @@ class SwipeTabsCoordinator: NSObject {
     /// blur and exposes nested shadow/card layers as "stacked screens." See
     /// `prepareAuxiliarySwipeSnapshots` for the snapshot path.
     var auxiliarySwipeViews: [UIView] = []
+    /// The live views of `auxiliarySwipeViews`, moved in place while a drag bounces past the first or last tab.
+    private var edgePulledChromeViews: [UIView] = []
     var liveSwipeChromeViews: [UIView] = []
 
     /// Active snapshot views of `auxiliarySwipeViews` during a swipe, parked in the superview
@@ -416,6 +447,7 @@ class SwipeTabsCoordinator: NSObject {
 extension SwipeTabsCoordinator: UICollectionViewDelegate {
 
     func scrollViewDidScroll(_ scrollView: UIScrollView) {
+        signalEdgeIfDraggedPastIt(scrollView)
 
         switch state {
         case .idle: break
@@ -423,19 +455,7 @@ extension SwipeTabsCoordinator: UICollectionViewDelegate {
         case .starting(let startPosition):
             let offset = startPosition.x - scrollView.contentOffset.x
             if floatingUIManager.isFloatingUIEnabled {
-                chromeCrossFade = makeChromeCrossFade(offset: offset)
-                prepareCurrentView()
-                let didPrepareLiveDestination = prepareLiveDestination(offset: offset)
-                if !didPrepareLiveDestination {
-                    preparePreview(offset)
-                }
-                if isCrossingChromeBoundary(offset: offset) {
-                    if !didPrepareLiveDestination {
-                        prepareLiveDestinationChrome(offset: offset)
-                    }
-                    prepareLiveOutgoingChrome()
-                }
-                prepareFloatingBottomOmnibarSwipe(offset: offset)
+                prepareFloatingSwipe(offset: offset)
             } else if !activateSwipeOverlay() {
                 // Fallback: legacy visual prep when the overlay isn't installed yet.
                 prepareCurrentView()
@@ -470,12 +490,32 @@ extension SwipeTabsCoordinator: UICollectionViewDelegate {
                 for snapshot in auxiliarySwipeViewSnapshots {
                     snapshot.transform.tx = offset
                 }
+                edgePulledChromeViews.forEach { $0.transform.tx = offset }
                 updateFloatingBottomOmnibarSwipe(offset: offset)
             } else {
                 cleanUpViews()
                 state = .starting(startPosition)
             }
         }
+    }
+
+    private func prepareFloatingSwipe(offset: CGFloat) {
+        chromeCrossFade = makeChromeCrossFade(offset: offset)
+        prepareCurrentView()
+        let didPrepareLiveDestination = prepareLiveDestination(offset: offset)
+        if !didPrepareLiveDestination {
+            preparePreview(offset)
+        }
+        if isCrossingChromeBoundary(offset: offset) {
+            if !didPrepareLiveDestination {
+                prepareLiveDestinationChrome(offset: offset)
+            }
+            prepareLiveOutgoingChrome()
+        } else if bouncesAtEdges, destinationIndex(offset: offset) == nil {
+            // Same tab, nothing to swap in: the chrome outside the strip just rides along.
+            edgePulledChromeViews = auxiliarySwipeViews.filter { !$0.isHidden }
+        }
+        prepareFloatingBottomOmnibarSwipe(offset: offset)
     }
 
     /// Sets up `swipeOverlayView` with per-tab snapshots and shows it on top of the live views.
@@ -504,7 +544,7 @@ extension SwipeTabsCoordinator: UICollectionViewDelegate {
         }
 
         // Include the trailing "new tab" cell so swiping past the last tab works.
-        let extras = tabs.last?.link != nil ? 1 : 0
+        let extras = hasNewTabDestination(after: tabs) ? 1 : 0
         let pageCount = tabs.count + extras
         // A single swipe can only reach an adjacent page, so we only need snapshots for
         // current ± 1. Non-adjacent pages stay nil — the overlay skips view creation for them.
@@ -537,14 +577,20 @@ extension SwipeTabsCoordinator: UICollectionViewDelegate {
     }
 
     func updateFullScreenSnapshotForCurrentTab() {
-        guard !floatingUIManager.isFloatingUIEnabled,
-              let tab = tabsModel.currentTab else { return }
+        guard let tab = tabsModel.currentTab else { return }
+        updateFullScreenSnapshot(forTab: tab)
+    }
+
+    /// Captures the screen as `tab`'s swipe-back snapshot; call while `tab` is still the one on screen.
+    func updateFullScreenSnapshot(forTab tab: Tab) {
+        guard !floatingUIManager.isFloatingUIEnabled else { return }
         // Tab-switcher entry can dismiss editing synchronously in the same run loop.
         // Capture the restored layout rather than the last rendered focused frame.
         coordinator.superview.layoutIfNeeded()
         guard let snapshot = makeFullScreenSnapshot(afterScreenUpdates: true) else { return }
         tabPreviewsSource.updateFullScreenSnapshot(snapshot, forTab: tab)
     }
+
 
     /// Renders the live `MainViewController.view` (`coordinator.superview`) into a `UIImage`,
     /// transiently zeroing the overlay's alpha so the overlay doesn't appear in its own
@@ -666,7 +712,7 @@ extension SwipeTabsCoordinator: UICollectionViewDelegate {
         let modifier = (offset > 0 ? -1 : 1)
         let nextIndex = index + modifier
 
-        guard tabsModel.tabs.indices.contains(nextIndex) || tabsModel.tabs.last?.link != nil else {
+        guard tabsModel.tabs.indices.contains(nextIndex) || hasNewTabDestination(after: tabsModel.tabs) else {
             return
         }
 
@@ -803,7 +849,8 @@ extension SwipeTabsCoordinator: UICollectionViewDelegate {
         let state = inputStateProvider(tab)
         let header = AIChatTabChatHeaderView(
             isFireModeEnabled: true,
-            shouldShowImageGeneration: omnibarDependencies.featureFlagger.isFeatureOn(.aiChatNativeSidebar)
+            shouldShowImageGeneration: omnibarDependencies.featureFlagger.isFeatureOn(.aiChatNativeSidebar),
+            layout: AIChatTabChatHeaderView.Layout(featureFlagger: omnibarDependencies.featureFlagger)
         )
         header.isUserInteractionEnabled = false
 
@@ -846,7 +893,7 @@ extension SwipeTabsCoordinator: UICollectionViewDelegate {
         inputController.didMove(toParent: coordinator.parentController)
         inputController.apply(
             UTIViewConfig(
-                cardLayout: .flanked,
+                cardLayout: .flanked(.all),
                 cardPosition: .bottom,
                 usesOmnibarMargins: false,
                 inactiveAppearance: false,
@@ -858,7 +905,7 @@ extension SwipeTabsCoordinator: UICollectionViewDelegate {
             animated: false
         )
         inputController.text = state.text
-        inputController.setAITabCollapsedFooterPoseActive(true)
+        inputController.setFlankingAccessoriesVisible(.all)
         liveChromeControllers.append(inputController)
     }
 
@@ -1086,9 +1133,7 @@ extension SwipeTabsCoordinator: UICollectionViewDelegate {
             return
         }
 
-        let destinationIndex = currentIndex + (offset > 0 ? -1 : 1)
-        let hasNewTabDestination = destinationIndex == tabsModel.count && tabsModel.tabs.last?.link != nil
-        guard tabsModel.tabs.indices.contains(destinationIndex) || hasNewTabDestination else { return }
+        guard let destinationIndex = destinationIndex(offset: offset) else { return }
         let currentTab = tabsModel.get(tabAt: currentIndex)
         let destinationTab = tabsModel.get(tabAt: destinationIndex)
         guard currentTab?.isAITab != true, destinationTab?.isAITab != true else { return }
@@ -1125,6 +1170,51 @@ extension SwipeTabsCoordinator: UICollectionViewDelegate {
         floatingIncomingOmnibarController = nil
     }
 
+    /// Released past the first or last tab, the strip springs back like a scroll view's bounce.
+    private func animateExternalPanSettle(to targetOffset: CGPoint, completion: @escaping (Bool) -> Void) {
+        let maxX = max(collectionView.contentSize.width - collectionView.frame.width, 0)
+        let isPastAnEdge = collectionView.contentOffset.x < 0 || collectionView.contentOffset.x > maxX
+        let animations = { self.collectionView.contentOffset = targetOffset }
+        if isPastAnEdge {
+            UIView.animate(withDuration: 0.45, delay: 0, usingSpringWithDamping: 0.82, initialSpringVelocity: 0,
+                           options: .curveEaseOut, animations: animations, completion: completion)
+        } else {
+            UIView.animate(withDuration: 0.3, delay: 0, options: .curveEaseOut, animations: animations, completion: completion)
+        }
+    }
+
+    /// Ticks while a finger pulls past the first or last tab, firmer the further it pulls; none on release.
+    private func signalEdgeIfDraggedPastIt(_ scrollView: UIScrollView) {
+        guard scrollView.isDragging || isExternalPanDragging, bouncesAtEdges else { return }
+        let maxOffsetX = scrollView.contentSize.width - scrollView.bounds.width
+        let overscroll = max(-scrollView.contentOffset.x, scrollView.contentOffset.x - maxOffsetX, 0)
+        guard abs(overscroll - lastEdgeTickOverscroll) >= EdgeHaptics.tickSpacing else { return }
+        lastEdgeTickOverscroll = overscroll
+        guard overscroll > 0 else { return }
+        let tension = min(overscroll / max(scrollView.bounds.width, 1) * EdgeHaptics.tensionGain, 1)
+        edgeFeedbackGenerator.impactOccurred(intensity: EdgeHaptics.minimumIntensity + (1 - EdgeHaptics.minimumIntensity) * tension)
+        edgeFeedbackGenerator.prepare()
+    }
+
+    private enum EdgeHaptics {
+        static let tickSpacing: CGFloat = 4
+        static let minimumIntensity: CGFloat = 0.35
+        static let tensionGain: CGFloat = 4
+    }
+
+    /// Swiping past a last tab with content opens a new tab, unless the swipe should bounce there instead.
+    private func hasNewTabDestination(after tabs: [Tab]) -> Bool {
+        tabs.last?.link != nil && !bouncesAtEdges
+    }
+
+    /// The page a swipe in this direction lands on; `nil` past the first or last tab, where it can only bounce.
+    private func destinationIndex(offset: CGFloat) -> Int? {
+        guard let currentIndex = tabsModel.currentIndex else { return nil }
+        let destinationIndex = currentIndex + (offset > 0 ? -1 : 1)
+        let isNewTabDestination = destinationIndex == tabsModel.count && hasNewTabDestination(after: tabsModel.tabs)
+        return tabsModel.tabs.indices.contains(destinationIndex) || isNewTabDestination ? destinationIndex : nil
+    }
+
     /// Returns the cross-fade for a swipe at `offset`, or nil when the chrome copies slide.
     private func makeChromeCrossFade(offset: CGFloat) -> SwipeChromeCrossFade? {
         guard isCrossingChromeBoundary(offset: offset),
@@ -1154,9 +1244,7 @@ extension SwipeTabsCoordinator: UICollectionViewDelegate {
               let currentTab = tabsModel.get(tabAt: currentIndex) else {
             return false
         }
-        let destinationIndex = currentIndex + (offset > 0 ? -1 : 1)
-        let isNewTabDestination = destinationIndex == tabsModel.count && tabsModel.tabs.last?.link != nil
-        guard tabsModel.tabs.indices.contains(destinationIndex) || isNewTabDestination else { return false }
+        guard let destinationIndex = destinationIndex(offset: offset) else { return false }
         let destinationTab = tabsModel.get(tabAt: destinationIndex)
         if hasInlineSearchInput(currentTab) != hasInlineSearchInput(destinationTab) {
             return true
@@ -1203,6 +1291,10 @@ extension SwipeTabsCoordinator: UICollectionViewDelegate {
     }
     
     func scrollViewWillBeginDragging(_ scrollView: UIScrollView) {
+        lastEdgeTickOverscroll = 0
+        if bouncesAtEdges {
+            edgeFeedbackGenerator.prepare()
+        }
         switch state {
         case .idle:
             if floatingUIManager.isFloatingUIEnabled {
@@ -1279,6 +1371,8 @@ extension SwipeTabsCoordinator: UICollectionViewDelegate {
         cleanUpFloatingBottomOmnibarSwipe()
         currentView?.transform = .identity
         currentView = nil
+        edgePulledChromeViews.forEach { $0.transform.tx = 0 }
+        edgePulledChromeViews = []
         preview?.removeFromSuperview()
         chromePreview?.removeFromSuperview()
         chromePreview = nil
@@ -1347,15 +1441,20 @@ extension SwipeTabsCoordinator {
             state = .idle
             scrollViewWillBeginDragging(collectionView)
             externalPanStartOffset = collectionView.contentOffset
+            isExternalPanDragging = true
 
         case .changed:
             let translation = gesture.translation(in: panView).x
             let pageWidth = collectionView.frame.width
             let proposedX = externalPanStartOffset.x - translation
             let maxX = max(collectionView.contentSize.width - pageWidth, 0)
-            collectionView.contentOffset = CGPoint(x: max(0, min(proposedX, maxX)), y: 0)
+            let x = bouncesAtEdges
+                ? SwipeTabsEdgeResistance.offset(for: proposedX, limits: 0...maxX, dimension: pageWidth)
+                : max(0, min(proposedX, maxX))
+            collectionView.contentOffset = CGPoint(x: x, y: 0)
 
         case .ended, .cancelled, .failed:
+            isExternalPanDragging = false
             let pageWidth = collectionView.frame.width
             guard pageWidth > 0 else {
                 scrollViewDidEndDecelerating(collectionView)
@@ -1388,9 +1487,7 @@ extension SwipeTabsCoordinator {
                 self.scrollViewDidEndDecelerating(self.collectionView)
             }
             pendingSnapCommit = commit
-            UIView.animate(withDuration: 0.3, delay: 0, options: .curveEaseOut, animations: {
-                self.collectionView.contentOffset = targetOffset
-            }, completion: { [weak self] finished in
+            animateExternalPanSettle(to: targetOffset, completion: { [weak self] finished in
                 guard let self else { return }
                 if finished {
                     commit.perform()
@@ -1456,7 +1553,7 @@ extension SwipeTabsCoordinator: UICollectionViewDataSource {
     
     func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
         guard isEnabled, let tabsModel else { return 1 }
-        let extras = tabsModel.tabs.last?.link != nil ? 1 : 0 // last tab is not a home page, so let's add one
+        let extras = hasNewTabDestination(after: tabsModel.tabs) ? 1 : 0
         let count = tabsModel.count + extras
         return count
     }

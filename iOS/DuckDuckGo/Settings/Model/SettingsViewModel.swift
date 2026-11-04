@@ -1804,10 +1804,6 @@ extension SettingsViewModel {
                                                                 showSettingsScreen: state.showSettingsScreen,
                                                                 source: state.autofillSource))
 
-        case .gpc:
-            firePixel(.settingsDoNotSellShown)
-            pushViewController(legacyViewProvider.gpc)
-        
         case .passwordsImport:
             pushViewController(legacyViewProvider.importPasswords(importScreen: .completeSetup,
                                                                   delegate: self,
@@ -1882,6 +1878,7 @@ extension SettingsViewModel {
         case appearance
         case general
         case cookiePopupProtection
+        case about
         // Add other cases as needed
 
         var id: String {
@@ -1902,6 +1899,7 @@ extension SettingsViewModel {
             case .appearance: return "appearance"
             case .general: return "general"
             case .cookiePopupProtection: return "cookiePopupProtection"
+            case .about: return "about"
             // Ensure all cases are covered
             }
         }
@@ -1910,7 +1908,7 @@ extension SettingsViewModel {
         // Default to .sheet, specify .push where needed
         var type: DeepLinkType {
             switch self {
-            case .netP, .dbp, .itr, .subscriptionFlow, .subscriptionPlanChangeFlow, .restoreFlow, .duckPlayer, .aiChat, .privateSearch, .subscriptionSettings, .subscriptionWelcome, .customizeToolbarButton, .customizeAddressBarButton, .appearance, .general, .cookiePopupProtection:
+            case .netP, .dbp, .itr, .subscriptionFlow, .subscriptionPlanChangeFlow, .restoreFlow, .duckPlayer, .aiChat, .privateSearch, .subscriptionSettings, .subscriptionWelcome, .customizeToolbarButton, .customizeAddressBarButton, .appearance, .general, .cookiePopupProtection, .about:
                 return .navigationLink
             }
         }
@@ -2203,6 +2201,20 @@ extension SettingsViewModel {
             set: { newValue in
                 self.aiChatSettings.enableAIChatTabBarUserSettings(enable: newValue)
                 PixelKit.fire(newValue ? Pixel.Event.aiChatSettingsNavigationBarTurnedOn : .aiChatSettingsNavigationBarTurnedOff, frequency: .dailyAndCount)
+            }
+        )
+    }
+
+    var isKeyboardAnimationSettingVisible: Bool {
+        UIDevice.current.userInterfaceIdiom == .phone && featureFlagger.isFeatureOn(.unifiedToggleInputKeyboardEdgeSweep)
+    }
+
+    var isKeyboardAnimationEnabledBinding: Binding<Bool> {
+        Binding<Bool>(
+            get: { self.aiChatSettings.isKeyboardAnimationEnabled },
+            set: { newValue in
+                self.objectWillChange.send()
+                self.aiChatSettings.enableKeyboardAnimation(enable: newValue)
             }
         )
     }

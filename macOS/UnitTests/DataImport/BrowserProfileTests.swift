@@ -318,6 +318,36 @@ class BrowserProfileTests: XCTestCase {
         XCTAssertTrue(hasBookmarks)
     }
 
+    func testWhenFirefoxProfileDataFilesAreEmpty_ThenNoDataTypeIsAvailable() {
+        let profileURL = profile(named: "gm867h0z.default")
+        let fileStore = fileStoreWithEmptyFiles(["places.sqlite", "signons.sqlite"], in: profileURL)
+        fileStore.directoryStorage[profileURL.absoluteString]?.append("times.json")
+        let profile = DataImport.BrowserProfile(browser: .firefox, profileURL: profileURL, fileStore: fileStore)
+
+        let availableTypes = DataImport.DataType.allCases.filter(profile.hasValidProfileData)
+
+        XCTAssertEqual(availableTypes, [])
+    }
+
+    func testWhenChromiumProfileDataFilesAreEmpty_ThenNoDataTypeIsAvailable() {
+        let profileURL = profile(named: "Default")
+        let fileStore = fileStoreWithEmptyFiles(["Bookmarks", "History", "Login Data"], in: profileURL)
+        let profile = DataImport.BrowserProfile(browser: .chrome, profileURL: profileURL, fileStore: fileStore)
+
+        let availableTypes = DataImport.DataType.allCases.filter(profile.hasValidProfileData)
+
+        XCTAssertEqual(availableTypes, [])
+    }
+
+    private func fileStoreWithEmptyFiles(_ fileNames: [String], in profileURL: URL) -> FileStoreMock {
+        let fileStore = FileStoreMock()
+        fileStore.directoryStorage[profileURL.absoluteString] = fileNames
+        for fileName in fileNames {
+            fileStore.storage[fileName] = Data()
+        }
+        return fileStore
+    }
+
     private func makeThrowingFileStoreMock() -> FileStoreMock {
         let fileStore = FileStoreMock()
         fileStore.failWithError = NSError(domain: "FileStoreMock", code: 1, userInfo: [NSLocalizedDescriptionKey: "Directory access denied"])

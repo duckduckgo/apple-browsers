@@ -204,7 +204,7 @@ extension DataImport {
             case .history:
                 // Safari's history comes from its export file, not the profile directory
                 if browser.isSafari { return true }
-                guard let profileDirectoryContents = try? fileStore.directoryContents(at: profileURL.path) else { return false }
+                guard let profileDirectoryContents = try? profileDataFileNames() else { return false }
                 let historyDatabaseName = switch browser {
                 case .firefox, .tor: FirefoxHistoryReader.Constants.historyDatabaseName
                 default: ChromiumHistoryReader.Constants.historyDatabaseName
@@ -216,7 +216,7 @@ extension DataImport {
         }
 
         func validateProfileData() -> ProfileDataValidationResult? {
-            guard let profileDirectoryContents = try? fileStore.directoryContents(at: profileURL.path) else { return nil }
+            guard let profileDirectoryContents = try? profileDataFileNames() else { return nil }
 
             let profileDirectoryContentsSet = Set(profileDirectoryContents)
             let validateLogins = validateLoginsData(profileDirectoryContents: profileDirectoryContentsSet)
@@ -224,6 +224,12 @@ extension DataImport {
 
             return .init(logins: validateLogins,
                          bookmarks: validateBookmarks)
+        }
+
+        private func profileDataFileNames() throws -> [String] {
+            try fileStore.directoryContents(at: profileURL.path).filter { fileName in
+                !fileStore.isEmptyFile(at: profileURL.appendingPathComponent(fileName))
+            }
         }
 
         private func validateLoginsData(profileDirectoryContents: Set<String>) -> ProfileDataItemValidationResult {

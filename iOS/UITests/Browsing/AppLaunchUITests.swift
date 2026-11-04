@@ -72,8 +72,9 @@ final class AppLaunchUITests: UITestCase {
             app.dismissAddressBarEditing()
             let tabSwitcher = app.buttons["Browser.Toolbar.Button.TabSwitcher"]
             XCTAssertTrue(tabSwitcher.waitForHittableInAppWindow(in: app, timeout: UITestTimeouts.elementExistence))
+            XCTAssertEqual(app.windows.matching(identifier: "Browser.Window.Main").count, 1)
             let applicationFrame = app.frame
-            let windowFrame = app.windows.firstMatch.frame
+            let windowFrame = app.browserWindow.frame
             let attachment = XCTAttachment(string: "orientation=\(orientation.rawValue)\napplicationFrame=\(applicationFrame)\nselectedWindowFrame=\(windowFrame)")
             attachment.name = "Readiness application and window geometry"
             attachment.lifetime = .keepAlways

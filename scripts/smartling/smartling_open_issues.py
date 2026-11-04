@@ -6,8 +6,8 @@ the author of the pull request that added the string. The person replies in Smar
 Runs nightly. It only looks at issues opened or reopened since this job last succeeded, so an issue gets its task
 once and later nights leave it alone. It also skips an issue that already has a task opened since, for reruns.
 
-The repository is public, so the log and the job summary never carry an issue's text or the English text: only issue
-numbers, string keys and GitHub logins. The text goes into the Asana task.
+The repository is public, so the log and the job summary never carry an issue's text, the English text or the key,
+which can be the English text: only issue numbers and GitHub logins. The rest goes into the Asana task.
 
 Copyright © 2026 DuckDuckGo. All rights reserved.
 Licensed under the Apache License, Version 2.0
@@ -42,6 +42,15 @@ LABEL_JOB_BRANCH = re.compile(r'^(?!(?:Merge|Nightly|Release) )(\S+?)(?:-\d{4}-\
 INTERFACE_BUILDER_KEY = re.compile(r'^([A-Za-z0-9]{3}-[A-Za-z0-9]{2}-[A-Za-z0-9]{3})\.')
 # Plural variants are "/<key>:dict/<rule>:dict/…".
 PLURAL_KEY = re.compile(r'^/(.+?):dict/')
+# Where an entry starts: `"key" = "…"` in a strings file, `"key" : {` in a string catalog, or NSLocalizedString("key".
+# A catalog's own fields and its locales also look like `"name" :`, so they don't count.
+KEY_DECLARATION = re.compile(r'^.\s*"([^"]+)"\s*[:=]|NSLocalizedString\(\s*"([^"]+)"')
+CATALOG_FIELDS = {
+    'comment', 'extractionState', 'localizations', 'stringUnit', 'state', 'value', 'variations', 'plural', 'device',
+    'substitutions', 'argNum', 'formatSpecifier', 'zero', 'one', 'two', 'few', 'many', 'other', 'sourceLanguage',
+    'strings', 'version', 'shouldTranslate',
+}
+LOCALE = re.compile(r'^[a-z]{2,3}(?:[-_][A-Za-z0-9]+)*$')
 PLATFORM_PATHS = {'iOS': ['iOS', 'SharedPackages'], 'macOS': ['macOS', 'SharedPackages']}
 MAX_CANDIDATE_COMMITS = 30
 
@@ -145,7 +154,11 @@ class Git:
     """The git history of the checkout, for finding the commit that added a string."""
 
     def _run(self, *args: str) -> str:
-        return subprocess.run(['git', *args], check=True, capture_output=True, text=True).stdout
+        """Run git. A failure names only the subcommand: the arguments can hold the English text."""
+        result = subprocess.run(['git', *args], check=False, capture_output=True, text=True)
+        if result.returncode != 0:
+            raise RuntimeError(f"git {args[0]} failed with exit code {result.returncode}")
+        return result.stdout
 
     def ensure_history(self):
         """Fetch main's whole history once, if the checkout is shallow, so that the search reaches older commits."""
@@ -169,7 +182,7 @@ class Git:
     def full_sha(self, short_sha: str) -> Optional[str]:
         try:
             return self._run('rev-parse', '--verify', '--quiet', f'{short_sha}^{{commit}}').strip() or None
-        except subprocess.CalledProcessError:
+        except RuntimeError:
             return None
 
 
@@ -192,13 +205,28 @@ def key_forms(key: str) -> List[str]:
     return forms
 
 
+def declared_key(line: str) -> Optional[str]:
+    """The key a line of a strings file, string catalog or Swift source starts an entry for, if any."""
+    match = KEY_DECLARATION.search(line)
+    name = match and (match[1] or match[2])
+    return None if not name or name in CATALOG_FIELDS or LOCALE.match(name) else name
+
+
 def adds_string(diff: str, texts: List[str], keys: List[str]) -> bool:
-    """Whether a hunk of the diff adds a line with the text next to the string's key, so that the same words under
-    another key, or a translation import touching the line, don't count."""
+    """Whether the diff adds a line with the text in the string's own entry: on the key's line, or below it with no
+    other key's entry in between. The same words under another key don't count."""
     for hunk in re.split(r'^@@.*$', diff, flags=re.MULTILINE)[1:]:
-        added = [line for line in hunk.splitlines() if line.startswith('+')]
-        if any(text in line for line in added for text in texts) and (not keys or any(key in hunk for key in keys)):
-            return True
+        lines = [line for line in hunk.splitlines() if not line.startswith('-')]
+        for index, line in enumerate(lines):
+            if not line.startswith('+') or not any(text in line for text in texts):
+                continue
+            if not keys:
+                return True
+            for above in reversed(lines[:index + 1]):
+                if any(key in above for key in keys):
+                    return True
+                if declared_key(above):
+                    break
     return False
 
 
@@ -252,7 +280,7 @@ def find_person(git: Git, github: GitHubClient, user_map: Dict[str, str], issue:
     for source, find_pull in lookups:
         try:
             pull = find_pull()
-        except (RuntimeError, subprocess.CalledProcessError) as error:
+        except RuntimeError as error:
             log(f"⚠️ #{issue.number}: couldn't look for the pull request ({source}): {error}")
             continue
         login = ((pull or {}).get('user') or {}).get('login')
@@ -322,11 +350,11 @@ async def run(args, smartling: SmartlingClient, asana: AsanaClient, github: GitH
         if assignee:
             body['assignee'] = assignee
         if args.dry_run:
-            log(f"🧪 #{issue.number} ({issue.key}): would open a task for {who}")
+            log(f"🧪 #{issue.number}: would open a task for {who}")
             rows.append(f"| #{issue.number} | would open a task | {who} |")
             continue
         task = create_task(asana, body, dri_gid)
-        log(f"✅ #{issue.number} ({issue.key}): opened a task for {who}: {task.get('permalink_url', task.get('gid'))}")
+        log(f"✅ #{issue.number}: opened a task for {who}: {task.get('permalink_url', task.get('gid'))}")
         rows.append(f"| #{issue.number} | opened a task | {who} |")
     return rows
 
@@ -360,7 +388,7 @@ async def main_async(args) -> int:
     async with SmartlingClient(creds) as smartling:
         try:
             rows = await run(args, smartling, AsanaClient(asana_token), GitHubClient(github_token), Git(), parse_user_map(user_map_text))
-        except (RuntimeError, subprocess.CalledProcessError) as error:
+        except RuntimeError as error:
             log(f"❌ {error}")
             return 1
     write_summary(args.platform, rows, args.dry_run)

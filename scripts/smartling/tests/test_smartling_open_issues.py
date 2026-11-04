@@ -23,7 +23,7 @@ LAST_NIGHT = '2026-11-03T03:20:00Z'
 ISSUE_TEXT = 'Is this a button or a title?'
 ENGLISH = 'Entry Pill'
 KEY = 'duckplayer.entry.pill'
-ADDING_DIFF = f'@@ -1,2 +1,3 @@\n context\n+        "{KEY}": "{ENGLISH}",\n context\n'
+ADDING_DIFF = f'@@ -1,2 +1,3 @@\n context\n+"{KEY}" = "{ENGLISH}";\n context\n'
 STRING_COMMIT = 'a' * 40
 TRIAGE_DRI = {'gid': 'dri', 'name': 'Triage DRI'}
 
@@ -64,8 +64,9 @@ def asana_task(number, created_at):
 
 class FakeSmartling:
 
-    def __init__(self, issues, jobs=None):
+    def __init__(self, issues, jobs=None, key=KEY):
         self.issues = issues
+        self.key = key
         self.jobs = jobs or {'nightly': {'translationJobUid': 'nightly', 'jobName': 'Nightly iOS - 2026-11-03', 'createdDate': '2026-11-03T03:20:00Z'}}
         self.creds = Namespace(project_id='ios-project')
 
@@ -73,7 +74,7 @@ class FakeSmartling:
         return self.issues
 
     async def get_source_string(self, _hashcode):
-        return {'stringText': ENGLISH, 'keys': [{'key': KEY, 'fileUri': 'main/en.xliff'}]}
+        return {'stringText': ENGLISH, 'keys': [{'key': self.key, 'fileUri': 'main/en.xliff'}]}
 
     async def get_job(self, job_uid):
         return self.jobs[job_uid]
@@ -270,24 +271,40 @@ class OpenIssueTaskTests(unittest.TestCase):
         self.assertEqual(asana.created, [])
         self.assertEqual(rows, ['| #3600 | would open a task | @frosty (added the string) |'])
 
-    def testWhenTasksAreOpenedThenTheLogHasNoIssueOrEnglishText(self):
-        smartling = FakeSmartling([smartling_issue()])
+    def testWhenTheKeyIsTheEnglishTextThenTheLogAndSummaryStillDontShowIt(self):
+        smartling = FakeSmartling([smartling_issue()], key=ENGLISH)
 
-        _, log = run(smartling, FakeAsana())
+        rows, log = run(smartling, FakeAsana(), git=FakeGit(diffs={STRING_COMMIT: f'@@ -1 +1 @@\n+Text("{ENGLISH}")\n'}))
 
         self.assertNotIn(ISSUE_TEXT, log)
-        self.assertNotIn(ENGLISH, log)
+        self.assertNotIn(ENGLISH, log + '\n'.join(rows))
+
+    def testWhenGitFailsThenItsErrorDoesntShowTheSearchedText(self):
+        with self.assertRaises(RuntimeError) as failure:
+            OPEN_ISSUES.Git()._run('log', '-S', ENGLISH, 'no-such-ref')  # pylint: disable=protected-access
+
+        self.assertNotIn(ENGLISH, str(failure.exception))
 
 
 class StringAttributionTests(unittest.TestCase):
 
-    def testWhenTheTextIsAddedUnderTheKeyThenTheCommitAddedTheString(self):
-        added = OPEN_ISSUES.adds_string(ADDING_DIFF, [ENGLISH], [KEY])
+    def testWhenTheTextIsAddedInTheKeysEntryThenTheCommitAddedTheString(self):
+        diffs = {
+            'strings file': f'@@ -1 +1,2 @@\n "other.key" = "Other";\n+"{KEY}" = "{ENGLISH}";\n',
+            'swift': f'@@ -1 +1,3 @@\n context\n+    NSLocalizedString("{KEY}",\n+                      value: "{ENGLISH}",\n',
+            'string catalog': (
+                f'@@ -1 +1,6 @@\n+    "{KEY}" : {{\n+      "localizations" : {{\n+        "en" : {{\n'
+                f'+          "stringUnit" : {{\n+            "state" : "translated",\n+            "value" : "{ENGLISH}"\n'
+            ),
+        }
+        for case, diff in diffs.items():
+            with self.subTest(case):
+                added = OPEN_ISSUES.adds_string(diff, [ENGLISH], [KEY])
 
-        self.assertTrue(added)
+                self.assertTrue(added)
 
-    def testWhenTheSameTextIsAddedUnderAnotherKeyThenTheCommitDidntAddTheString(self):
-        diff = f'@@ -1,2 +1,3 @@\n context\n+        "other.key": "{ENGLISH}",\n context\n'
+    def testWhenTheSameTextIsAddedUnderAnotherKeyNextToTheKeyThenTheCommitDidntAddTheString(self):
+        diff = f'@@ -1 +1,2 @@\n "{KEY}" = "{ENGLISH}";\n+"other.key" = "{ENGLISH}";\n'
 
         added = OPEN_ISSUES.adds_string(diff, [ENGLISH], [KEY])
 

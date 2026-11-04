@@ -6,7 +6,7 @@ import io
 import sys
 import unittest
 from argparse import Namespace
-from datetime import date
+from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
 
 
@@ -77,9 +77,11 @@ class PagedAsanaClient(ASANA_REVIEW_TASK.AsanaClient):
     def __init__(self):
         super().__init__('token')
         self.requested_offsets = []
+        self.requested_params = []
 
     def _send(self, method, path, params=None, body=None):  # pylint: disable=unused-argument
         self.requested_offsets.append(params.get('offset'))
+        self.requested_params.append(dict(params))
         if params.get('offset') is None:
             return {'data': ROTATION[:2], 'next_page': {'offset': 'page-2'}}
         return {'data': ROTATION[2:], 'next_page': None}
@@ -94,6 +96,15 @@ class AsanaClientTests(unittest.TestCase):
 
         self.assertEqual(tasks, ROTATION)
         self.assertEqual(client.requested_offsets, [None, 'page-2'])
+
+    def testProjectTasksAskForChangesSinceThatTimeInUTC(self):
+        client = PagedAsanaClient()
+        since = datetime(2026, 11, 3, 3, 0, tzinfo=timezone(timedelta(hours=2)))
+
+        client.project_tasks('ios-app-development', since)
+
+        self.assertEqual(client.requested_params[0]['modified_since'], '2026-11-03T01:00:00Z')
+        self.assertEqual(client.requested_params[0]['completed_since'], '2026-11-03T01:00:00Z')
 
 
 class NotesHTMLTests(unittest.TestCase):

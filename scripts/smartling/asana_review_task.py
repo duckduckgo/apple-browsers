@@ -13,7 +13,7 @@ import sys
 import html
 import json
 import argparse
-from datetime import date, datetime, timedelta
+from datetime import date, datetime, timedelta, timezone
 from typing import Dict, List, Optional
 from urllib.parse import urlencode
 from urllib.error import HTTPError
@@ -119,7 +119,7 @@ class AsanaClient:
 
     def project_tasks(self, project_id: str, since: datetime) -> List[Dict]:
         """Tasks of the project changed since then, completed ones included, wherever triage has moved them."""
-        since_iso = since.strftime('%Y-%m-%dT%H:%M:%SZ')
+        since_iso = since.astimezone(timezone.utc).strftime('%Y-%m-%dT%H:%M:%SZ')
         return self._get_all('/tasks', {
             'project': project_id,
             'modified_since': since_iso,

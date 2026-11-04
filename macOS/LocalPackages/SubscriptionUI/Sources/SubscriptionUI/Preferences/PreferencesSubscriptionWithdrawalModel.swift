@@ -20,11 +20,13 @@ import Foundation
 import Networking
 import Subscription
 
-struct SubscriptionWithdrawalOffer: Equatable {
+struct SubscriptionWithdrawalOffer: Hashable, Identifiable {
     let eligibleUntil: String?
     let refundAmount: String?
     let tierName: String
     let entitlements: [SubscriptionEntitlement]
+
+    var id: Self { self }
 }
 
 struct SubscriptionWithdrawalConfirmation: Equatable {
@@ -129,6 +131,12 @@ final class PreferencesSubscriptionWithdrawalModel: ObservableObject {
             eligibility = nil
             userEventHandler(.withdrawalEligibilityDidFail(error))
         }
+    }
+
+    @MainActor
+    func reset() {
+        subscription = nil
+        eligibility = nil
     }
 
     @MainActor

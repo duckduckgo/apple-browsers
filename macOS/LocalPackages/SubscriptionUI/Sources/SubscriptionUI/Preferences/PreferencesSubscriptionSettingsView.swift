@@ -28,7 +28,8 @@ public struct PreferencesSubscriptionSettingsView: View {
     @ObservedObject var model: PreferencesSubscriptionSettingsModel
     @State private var showingRemoveConfirmationDialog = false
     @State private var showingInternalSubscriptionAlert = false
-    @State private var showingWithdrawalConfirmation = false
+    @State private var withdrawalConfirmationOffer: SubscriptionWithdrawalOffer?
+    @State private var didConfirmWithdrawal = false
 
     @State private var manageSubscriptionSheet: ManageSubscriptionSheet?
     private var isPaidAIChatOn: () -> Bool
@@ -97,9 +98,14 @@ public struct PreferencesSubscriptionSettingsView: View {
                 manageSubscriptionGooglePlayDialog
             }
         }
-        .sheet(isPresented: $showingWithdrawalConfirmation) {
-            withdrawalConfirmationDialog
-        }
+        .sheet(item: $withdrawalConfirmationOffer, onDismiss: {
+            if !didConfirmWithdrawal {
+                model.withdrawal.keepTapped()
+            }
+            didConfirmWithdrawal = false
+        }, content: { offer in
+            withdrawalConfirmationDialog(offer)
+        })
         .sheet(isPresented: Binding(get: { model.withdrawal.isShowingError },
                                     set: { isShowing in
                                         guard model.withdrawal.isShowingError != isShowing else { return }
@@ -303,7 +309,7 @@ public struct PreferencesSubscriptionSettingsView: View {
 
                 TextButton(UserText.withdrawButton, weight: .semibold) {
                     model.withdrawal.withdrawTapped()
-                    showingWithdrawalConfirmation = true
+                    withdrawalConfirmationOffer = offer
                 }
                 .disabled(model.withdrawal.isWithdrawing)
             }
@@ -321,27 +327,24 @@ public struct PreferencesSubscriptionSettingsView: View {
         }
     }
 
-    @ViewBuilder
-    private var withdrawalConfirmationDialog: some View {
-        if let offer = model.withdrawal.offer {
-            SubscriptionDialog(imageName: "Shield-Disabled-Feature-128",
-                               title: UserText.withdrawDialogTitle,
-                               description: model.withdrawal.confirmationMessage(for: offer),
-                               buttons: {
-                Button(UserText.withdrawDialogKeepButton) {
-                    showingWithdrawalConfirmation = false
-                    model.withdrawal.keepTapped()
-                }
-                Button(UserText.withdrawDialogConfirmButton) {
-                    showingWithdrawalConfirmation = false
-                    Task { await model.withdrawal.withdraw() }
-                }
-                .buttonStyle(DestructiveActionButtonStyle(enabled: true))
-            })
-            .frame(width: 420)
-            .onAppear {
-                model.withdrawal.confirmationShown()
+    private func withdrawalConfirmationDialog(_ offer: SubscriptionWithdrawalOffer) -> some View {
+        SubscriptionDialog(imageName: "Shield-Disabled-Feature-128",
+                           title: UserText.withdrawDialogTitle,
+                           description: model.withdrawal.confirmationMessage(for: offer),
+                           buttons: {
+            Button(UserText.withdrawDialogKeepButton) {
+                withdrawalConfirmationOffer = nil
             }
+            Button(UserText.withdrawDialogConfirmButton) {
+                didConfirmWithdrawal = true
+                withdrawalConfirmationOffer = nil
+                Task { await model.withdrawal.withdraw() }
+            }
+            .buttonStyle(DestructiveActionButtonStyle(enabled: true))
+        })
+        .frame(width: 420)
+        .onAppear {
+            model.withdrawal.confirmationShown()
         }
     }
 

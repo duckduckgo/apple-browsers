@@ -165,6 +165,7 @@ public final class PreferencesSubscriptionSettingsModel: ObservableObject {
                                                                  userEventHandler: userEventHandler)
         Task {
             await self.updateSubscription(forceRefresh: false)
+            await self.fetchWithdrawalEligibility()
         }
 
         self.email = subscriptionManager.userEmail
@@ -179,6 +180,7 @@ public final class PreferencesSubscriptionSettingsModel: ObservableObject {
 
                 await self?.fetchEmail()
                 await self?.updateSubscription(forceRefresh: false)
+                await self?.fetchWithdrawalEligibility()
             }
         }
 
@@ -486,7 +488,10 @@ hasActiveTrialOffer: \(hasTrialOffer, privacy: .public)
 
     @MainActor
     private func fetchWithdrawalEligibility() async {
-        guard let subscription = try? await subscriptionManager.getSubscription(forceRefresh: false) else { return }
+        guard let subscription = try? await subscriptionManager.getSubscription(forceRefresh: false) else {
+            withdrawal.reset()
+            return
+        }
         await withdrawal.fetchEligibility(for: subscription)
     }
 

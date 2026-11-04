@@ -433,6 +433,7 @@ private final class TooltipHarness {
     let pointer = TooltipPointer()
     let scheduler = TooltipScheduler()
     let animator = TooltipAnimator()
+    let tooltipWindow = TooltipTestWindow()
     let presenter: HoveredLinkTooltipPresenter
 
     var tooltip: NSWindow? { parent.childWindows?.first }
@@ -448,15 +449,20 @@ private final class TooltipHarness {
         let pointer = pointer
         let scheduler = scheduler
         let animator = animator
+        let tooltipWindow = tooltipWindow
         presenter = HoveredLinkTooltipPresenter(hostView: hostView, backgroundColor: .windowBackgroundColor,
                                                isAccessibilityIdentifierEnabled: isAccessibilityIdentifierEnabled,
-                                               makeWindow: { TooltipTestWindow() }, mouseLocation: { pointer.location },
+                                               makeWindow: { tooltipWindow }, mouseLocation: { pointer.location },
                                                animate: animator.animate, move: animator.move, schedule: scheduler.schedule)
     }
 
     deinit {
         presenter.reset()
-        parent.orderOut(nil)
+        // Release the windows' views right away: the deallocation checks wait for them at the end of each test.
+        for window in [tooltipWindow, parent] {
+            window.contentView = nil
+            window.close()
+        }
     }
 
     func showFirstLink() {

@@ -492,6 +492,89 @@ final class OAuthClientBackupTests: XCTestCase {
         XCTAssertNil(try backupStorage.getTokenContainer())
     }
 
+    // MARK: - Backup enabled, disabled and enabled again
+
+    func testOnOffOn_signOutWhileOff_isNeverRestoredOnceBackOn() async throws {
+        try primaryStorage.saveTokenContainer(OAuthTokensFactory.makeExpiredTokenContainer())
+        await refresher.setTestingDecodedTokenContainers([newPrimary, newBackup])
+        var isEnabled = true
+        let client = makeClient(backupStorage: backupStorage, isBackupEnabled: { isEnabled })
+        _ = try await client.getTokens(policy: .localForceRefresh)
+        await client.waitForBackupRenewal()
+        XCTAssertEqual(try backupStorage.getTokenContainer(), newBackup)
+
+        isEnabled = false
+        try await client.logout()
+
+        isEnabled = true
+        let refreshCalls = mockOAuthService.refreshAccessTokenCallCount
+        do {
+            _ = try await client.restoreFromBackup(expectedExternalID: nil)
+            XCTFail("Expected error")
+        } catch {
+            XCTAssertEqual(error as? TokenBackupError, .unavailable)
+        }
+        XCTAssertEqual(mockOAuthService.refreshAccessTokenCallCount, refreshCalls)
+        XCTAssertNil(try primaryStorage.getTokenContainer())
+    }
+
+    func testOnOffOn_stillSignedIn_keepsTheBackupWhileOffAndRestoresFromItOnceBackOn() async throws {
+        try primaryStorage.saveTokenContainer(OAuthTokensFactory.makeExpiredTokenContainer())
+        await refresher.setTestingDecodedTokenContainers([newPrimary, newBackup])
+        var isEnabled = true
+        let client = makeClient(backupStorage: backupStorage, isBackupEnabled: { isEnabled })
+        _ = try await client.getTokens(policy: .localForceRefresh)
+        await client.waitForBackupRenewal()
+
+        isEnabled = false
+        try await client.removeLocalAccount()
+        do {
+            _ = try await client.restoreFromBackup(expectedExternalID: nil)
+            XCTFail("Expected error")
+        } catch {
+            XCTAssertEqual(error as? TokenBackupError, .unavailable)
+        }
+        XCTAssertEqual(try backupStorage.getTokenContainer(), newBackup)
+
+        isEnabled = true
+        let restoredBackup = OAuthTokensFactory.makeTokenContainer(accessToken: "restoredBackupA", refreshToken: "restoredBackupR")
+        let restoredPrimary = OAuthTokensFactory.makeTokenContainer(accessToken: "restoredPrimaryA", refreshToken: "restoredPrimaryR")
+        await refresher.setTestingDecodedTokenContainers([restoredBackup, restoredPrimary])
+        let result = try await client.restoreFromBackup(expectedExternalID: nil)
+
+        XCTAssertEqual(result, restoredPrimary)
+        XCTAssertEqual(try primaryStorage.getTokenContainer(), restoredPrimary)
+        XCTAssertEqual(try backupStorage.getTokenContainer(), restoredBackup)
+    }
+
+    func testOffOnOff_createsTheBackupOnlyWhileOnAndStopsRestoringFromItOnceOffAgain() async throws {
+        try primaryStorage.saveTokenContainer(OAuthTokensFactory.makeExpiredTokenContainer())
+        await refresher.setTestingDecodedTokenContainers([newPrimary])
+        var isEnabled = false
+        let client = makeClient(backupStorage: backupStorage, isBackupEnabled: { isEnabled })
+        _ = try await client.getTokens(policy: .localForceRefresh)
+        await client.waitForBackupRenewal()
+        XCTAssertNil(try backupStorage.getTokenContainer())
+
+        isEnabled = true
+        await refresher.setTestingDecodedTokenContainers([newPrimary, newBackup])
+        _ = try await client.getTokens(policy: .localForceRefresh)
+        await client.waitForBackupRenewal()
+        XCTAssertEqual(try backupStorage.getTokenContainer(), newBackup)
+
+        isEnabled = false
+        try await client.removeLocalAccount()
+        let refreshCalls = mockOAuthService.refreshAccessTokenCallCount
+        do {
+            _ = try await client.restoreFromBackup(expectedExternalID: nil)
+            XCTFail("Expected error")
+        } catch {
+            XCTAssertEqual(error as? TokenBackupError, .unavailable)
+        }
+        XCTAssertEqual(mockOAuthService.refreshAccessTokenCallCount, refreshCalls)
+        XCTAssertEqual(try backupStorage.getTokenContainer(), newBackup)
+    }
+
     // MARK: - Restore from backup
 
     func testRestore_success_storesNewPrimaryAndNewBackup() async throws {

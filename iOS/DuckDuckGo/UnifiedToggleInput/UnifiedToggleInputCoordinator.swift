@@ -364,6 +364,8 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
     private var multiTabPromotionSource: UTIFooterMultiTabPromotionSource?
     private var contextualChatHasActiveConversation: () -> Bool = { false }
     private let inputOutcomePixelFiring: UTIPixelFiring
+    /// Holds the web app's own Terms of Service record, which the disclaimer doesn't consult.
+    private let webTermsOfServiceSource: DuckAiNativeStorageHandling?
     private var isContextualInputPresented = false
     private lazy var inputOutcomeMeasurement = DuckAiInputOutcomeMeasurement(
         pixelFiring: DuckAiInputOutcomePixelAdapter(firing: inputOutcomePixelFiring)
@@ -467,6 +469,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         )
         floatingReturnKeyViewController = UnifiedToggleInputFloatingReturnKeyViewController()
         self.inputOutcomePixelFiring = pixelFiring
+        self.webTermsOfServiceSource = duckAiNativeStorageHandler
         super.init()
         viewController.delegate = self
         let isNativeTermsOfServiceAvailable = (nativeTermsOfServiceFeature
@@ -2738,7 +2741,8 @@ private extension UnifiedToggleInputCoordinator {
         }
         guard !hasSubmittedPrompt else { return }
         inputOutcomeMeasurement.inputOpened(surface: DuckAiInputSurface(pixelSurface),
-                                            isTermsOfServiceDisclaimerShown: isTermsOfServiceDisclaimerShown)
+                                            isTermsOfServiceDisclaimerShown: isTermsOfServiceDisclaimerShown,
+                                            isWebTermsOfServiceAccepted: webTermsOfServiceSource?.webTermsOfServiceAcceptance)
     }
 
     func syncTermsOfServiceSendButtonToHandler() {

@@ -34,4 +34,25 @@ public enum DuckAiNativeStorageConsent {
         termsOfServiceEntryKey,
         "hasVoiceModeConsent"
     ]
+
+    /// Whether `value`, as stored under `termsOfServiceEntryKey`, records an acceptance. The web app
+    /// writes `JSON.stringify(true)`; a native writer may store the Bool itself.
+    public static func isTermsOfServiceAccepted(_ value: Any?) -> Bool {
+        value as? String == "true" || value as? Bool == true
+    }
+}
+
+public extension DuckAiNativeStorageHandling {
+
+    /// Whether the web app's own record says the user accepted Duck.ai's Terms of Service, which the
+    /// native disclaimer doesn't consult. `nil` until the web has moved its data into native storage,
+    /// since a missing entry before then says nothing about the user, or when it can't be read.
+    var webTermsOfServiceAcceptance: Bool? {
+        do {
+            guard try isMigrationDone() else { return nil }
+            return try DuckAiNativeStorageConsent.isTermsOfServiceAccepted(getEntry(key: DuckAiNativeStorageConsent.termsOfServiceEntryKey))
+        } catch {
+            return nil
+        }
+    }
 }

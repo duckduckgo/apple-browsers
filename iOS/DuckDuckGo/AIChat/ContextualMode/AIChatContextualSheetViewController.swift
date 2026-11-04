@@ -182,6 +182,7 @@ final class AIChatContextualSheetViewController: UIViewController {
     private let featureFlagger: FeatureFlagger
     private let suggestionsReader: AIChatSuggestionsReading?
     private let persistentUTIHost: AIChatContextualUTIHost?
+    private let webTermsOfServiceSource: DuckAiNativeStorageHandling?
 
     /// Glass capsules, the Duck.ai bubble icon, and close/hand-off swapped to opposite pills.
     private let usesRedesignedHeader: Bool
@@ -192,7 +193,8 @@ final class AIChatContextualSheetViewController: UIViewController {
         showsWelcomeMessage: false,
         termsOfServiceDisclaimer: DuckAiTermsOfServiceDisclaimer(
             feature: DuckAiNativeTermsOfServiceFeature(featureFlagger: featureFlagger)
-        )
+        ),
+        webTermsOfServiceSource: webTermsOfServiceSource
     )
     private var cancellables = Set<AnyCancellable>()
     private var contentContainerBottomConstraint: NSLayoutConstraint?
@@ -451,7 +453,8 @@ final class AIChatContextualSheetViewController: UIViewController {
          persistentUTIHost: AIChatContextualUTIHost? = nil,
          suggestionsReader: AIChatSuggestionsReading? = nil,
          floatingInputFeature: AIChatContextualFloatingInputFeatureProviding = AIChatContextualFloatingInputFeature(),
-         opensOntoSubmittedChat: Bool = false) {
+         opensOntoSubmittedChat: Bool = false,
+         webTermsOfServiceSource: DuckAiNativeStorageHandling? = nil) {
         self.usesRedesignedHeader = floatingInputFeature.isAvailable
         self.sessionState = sessionState
         self.aiChatSettings = aiChatSettings
@@ -461,6 +464,7 @@ final class AIChatContextualSheetViewController: UIViewController {
         self.appSettings = appSettings
         self.featureFlagger = featureFlagger
         self.persistentUTIHost = persistentUTIHost
+        self.webTermsOfServiceSource = webTermsOfServiceSource
         self.suggestionsReader = suggestionsReader
         self.opensOntoSubmittedChat = opensOntoSubmittedChat
         self.isAwaitingSubmittedChat = opensOntoSubmittedChat

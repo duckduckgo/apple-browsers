@@ -70,6 +70,6 @@ final class DuckAiTermsOfServiceChatsObserver {
 
     private var isWebAcceptanceRecorded: Bool {
         let value = try? storageHandler.getEntry(key: DuckAiNativeStorageConsent.termsOfServiceEntryKey)
-        return value as? String == "true" || value as? Bool == true
+        return DuckAiNativeStorageConsent.isTermsOfServiceAccepted(value)
     }
 }

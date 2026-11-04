@@ -1,0 +1,73 @@
+//
+//  DuckAiNativeStorageConsentTests.swift
+//
+//  Copyright © 2026 DuckDuckGo. All rights reserved.
+//
+//  Licensed under the Apache License, Version 2.0 (the "License");
+//  you may not use this file except in compliance with the License.
+//  You may obtain a copy of the License at
+//
+//  http://www.apache.org/licenses/LICENSE-2.0
+//
+//  Unless required by applicable law or agreed to in writing, software
+//  distributed under the License is distributed on an "AS IS" BASIS,
+//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+//  See the License for the specific language governing permissions and
+//  limitations under the License.
+//
+
+import XCTest
+@testable import AIChat
+
+final class DuckAiNativeStorageConsentTests: XCTestCase {
+
+    private var storage: DuckAiNativeMemoryStorageHandler!
+
+    override func setUp() {
+        super.setUp()
+        storage = DuckAiNativeMemoryStorageHandler()
+    }
+
+    override func tearDown() {
+        storage = nil
+        super.tearDown()
+    }
+
+    func testWhenTheWebHasNotMigratedThenItsAcceptanceIsUnknown() throws {
+        try storage.putEntry(key: DuckAiNativeStorageConsent.termsOfServiceEntryKey, value: "true")
+
+        XCTAssertNil(storage.webTermsOfServiceAcceptance)
+    }
+
+    func testWhenTheWebRecordedAnAcceptanceThenItIsAccepted() throws {
+        try markMigrated()
+        try storage.putEntry(key: DuckAiNativeStorageConsent.termsOfServiceEntryKey, value: "true")
+
+        XCTAssertEqual(storage.webTermsOfServiceAcceptance, true)
+    }
+
+    func testWhenTheAcceptanceIsStoredAsABoolThenItIsAccepted() throws {
+        try markMigrated()
+        try storage.putEntry(key: DuckAiNativeStorageConsent.termsOfServiceEntryKey, value: true)
+
+        XCTAssertEqual(storage.webTermsOfServiceAcceptance, true)
+    }
+
+    func testWhenTheWebHasNoRecordThenItIsNotAccepted() throws {
+        try markMigrated()
+
+        XCTAssertEqual(storage.webTermsOfServiceAcceptance, false)
+    }
+
+    func testWhenTheRecordIsNotAnAcceptanceThenItIsNotAccepted() throws {
+        try markMigrated()
+        try storage.putEntry(key: DuckAiNativeStorageConsent.termsOfServiceEntryKey, value: "false")
+
+        XCTAssertEqual(storage.webTermsOfServiceAcceptance, false)
+    }
+
+    private func markMigrated() throws {
+        try storage.markMigrationDone(key: DuckAiMigrationKey.chats)
+        try storage.markMigrationDone(key: DuckAiMigrationKey.files)
+    }
+}

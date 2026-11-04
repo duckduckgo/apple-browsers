@@ -195,6 +195,40 @@ final class UnifiedToggleInputOutcomeMeasurementTests: XCTestCase {
         XCTAssertEqual(outcomeParameters.last?["submit_method"], "other")
     }
 
+    // MARK: - Web Terms of Service acceptance
+
+    func testWhenTheWebAlreadyRecordedAnAcceptanceThenAskingAgainIsReported() throws {
+        sut = makeCoordinator(host: .omnibar,
+                              isDisclaimerEnabled: true,
+                              duckAiNativeStorageHandler: try makeStorage(webTermsOfServiceAcceptance: "true"))
+        sut.activateFromOmnibar(inputMode: .aiChat, cardPosition: .bottom)
+        showFooter([.termsConsent])
+
+        sut.unifiedToggleInputVC(sut.viewController, didSubmitText: "how", mode: .aiChat, trigger: .sendButton)
+        sut.completeOmnibarDeactivation()
+
+        XCTAssertEqual(outcomeParameters, [[
+            "surface": "address_bar",
+            "tos_disclaimer_shown": "true",
+            "web_tos_accepted": "true",
+            "outcome": "prompt_submitted",
+            "submit_method": "button"
+        ]])
+    }
+
+    func testWhenTheWebHasNoAcceptanceThenTheDisclaimerPromptReportsNone() throws {
+        sut = makeCoordinator(host: .omnibar,
+                              isDisclaimerEnabled: true,
+                              duckAiNativeStorageHandler: try makeStorage(webTermsOfServiceAcceptance: nil))
+        sut.activateFromOmnibar(inputMode: .aiChat, cardPosition: .bottom)
+        showFooter([.termsConsent])
+
+        sut.unifiedToggleInputVC(sut.viewController, didSubmitText: "how", mode: .aiChat, trigger: .sendButton)
+        sut.completeOmnibarDeactivation()
+
+        XCTAssertEqual(outcomeParameters.map { $0["web_tos_accepted"] }, ["false"])
+    }
+
     // MARK: - Helpers
 
     private var termsOfServiceStore: DuckAiTermsOfServiceStore {
@@ -203,13 +237,26 @@ final class UnifiedToggleInputOutcomeMeasurementTests: XCTestCase {
 
     private func makeCoordinator(host: UnifiedToggleInputHost,
                                  isDisclaimerEnabled: Bool,
-                                 contextualStart: ContextualInputStart = .expandedOnExistingChat) -> UnifiedToggleInputCoordinator {
+                                 contextualStart: ContextualInputStart = .expandedOnExistingChat,
+                                 duckAiNativeStorageHandler: DuckAiNativeStorageHandling? = nil) -> UnifiedToggleInputCoordinator {
         UnifiedToggleInputCoordinator(host: host,
                                       isToggleEnabled: host == .omnibar,
+                                      duckAiNativeStorageHandler: duckAiNativeStorageHandler,
                                       pixelFiring: UTIPixelFiring(pixelKit: { [unowned self] in pixelKitMock }),
                                       contextualStart: contextualStart,
                                       nativeTermsOfServiceFeature: StubNativeTermsOfServiceFeature(isAvailable: isDisclaimerEnabled),
                                       termsOfServiceStore: termsOfServiceStore)
+    }
+
+    /// Native storage after the web moved its data in, holding the web app's Terms of Service record.
+    private func makeStorage(webTermsOfServiceAcceptance: String?) throws -> DuckAiNativeMemoryStorageHandler {
+        let storage = DuckAiNativeMemoryStorageHandler()
+        try storage.markMigrationDone(key: DuckAiMigrationKey.chats)
+        try storage.markMigrationDone(key: DuckAiMigrationKey.files)
+        if let webTermsOfServiceAcceptance {
+            try storage.putEntry(key: DuckAiNativeStorageConsent.termsOfServiceEntryKey, value: webTermsOfServiceAcceptance)
+        }
+        return storage
     }
 
     /// Stands in for the view reporting which footer rows made it on screen.

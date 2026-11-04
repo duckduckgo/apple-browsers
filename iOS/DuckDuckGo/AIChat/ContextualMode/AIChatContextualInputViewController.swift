@@ -86,6 +86,8 @@ final class AIChatContextualInputViewController: UIViewController {
     private let voiceSearchHelper: VoiceSearchHelperProtocol
     private let termsOfServiceDisclaimer: DuckAiTermsOfServiceDisclaimer
     private let inputOutcomeMeasurement: DuckAiInputOutcomeMeasurement
+    /// Holds the web app's own Terms of Service record, which the disclaimer doesn't consult.
+    private let webTermsOfServiceSource: DuckAiNativeStorageHandling?
     private lazy var basicNativeInputViewController = AIChatBasicNativeInputViewController(voiceSearchHelper: voiceSearchHelper)
     private lazy var inputSurface: AIChatContextualInputSurface = {
         if showsBasicNativeInput {
@@ -152,12 +154,14 @@ final class AIChatContextualInputViewController: UIViewController {
          showsBasicNativeInput: Bool = true,
          showsWelcomeMessage: Bool = true,
          termsOfServiceDisclaimer: DuckAiTermsOfServiceDisclaimer = DuckAiTermsOfServiceDisclaimer(),
+         webTermsOfServiceSource: DuckAiNativeStorageHandling? = nil,
          inputOutcomePixelFiring: DuckAiInputOutcomePixelFiring = DuckAiInputOutcomePixelAdapter()) {
         self.showsBasicNativeInput = showsBasicNativeInput
         self.showsWelcomeMessage = showsWelcomeMessage
         self.voiceSearchHelper = voiceSearchHelper
         self.termsOfServiceDisclaimer = termsOfServiceDisclaimer
         self.inputOutcomeMeasurement = DuckAiInputOutcomeMeasurement(pixelFiring: inputOutcomePixelFiring)
+        self.webTermsOfServiceSource = webTermsOfServiceSource
         super.init(nibName: nil, bundle: nil)
     }
 
@@ -315,7 +319,8 @@ final class AIChatContextualInputViewController: UIViewController {
     private func startInputOutcomeMeasurement() {
         guard showsBasicNativeInput, viewIfLoaded?.window != nil else { return }
         inputOutcomeMeasurement.inputOpened(surface: .contextualChat,
-                                            isTermsOfServiceDisclaimerShown: visibleTermsOfServiceMessage != nil)
+                                            isTermsOfServiceDisclaimerShown: visibleTermsOfServiceMessage != nil,
+                                            isWebTermsOfServiceAccepted: webTermsOfServiceSource?.webTermsOfServiceAcceptance)
     }
 
     private var visibleTermsOfServiceMessage: UTIFooterMessage? {

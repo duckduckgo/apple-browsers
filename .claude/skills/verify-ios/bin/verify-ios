@@ -1,0 +1,240 @@
+#!/usr/bin/env python3
+"""Command-line front end over the verify-ios library, for setup and for exploring the app by hand.
+
+usage: verify-ios [--device iphone|ipad] [--json] [--evidence DIR] <command> [args...]
+exit:  0 ok · 1 a check failed or an element wasn't found · 2 error (setup, driver, a proof rejected by check,
+       or a pass with cleanup/evidence problems) · 3 not supported · 75 device busy · 130 cancelled
+"""
+import argparse, json, os, sys, time
+
+sys.dont_write_bytecode = True   # keep __pycache__ out of the repo's skill directory
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(os.path.realpath(__file__))), "lib"))
+from verify_ios import env, harness  # noqa: E402
+from verify_ios.device import Device, fixture, info  # noqa: E402
+from verify_ios.env import Busy, Failed, Unsupported  # noqa: E402
+
+# Commands that drive or change one device: they hold its lock, so they're refused (exit 75) while a proof runs.
+DRIVING = {"setup", "launch", "reset", "terminate", "cleanup", "tap", "long-press", "type", "clear", "key", "swipe",
+           "scroll-to", "alert", "web"}
+# Commands that change what both devices use (the app build): they hold both locks.
+LOCK_BOTH = {"build"}
+
+
+def build_parser():
+    p = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
+    p.add_argument("--device", default="iphone", choices=list(env.PORT_OFFSET))
+    p.add_argument("--json", action="store_true", help="print one JSON object")
+    p.add_argument("--evidence", help="directory for artifacts and transcript.jsonl")
+    sp = p.add_subparsers(dest="cmd", required=True)
+    sp.add_parser("info", help="worktree key, state dir, sims, ports")
+    a = sp.add_parser("selftest", help="check verify-ios works here: setup, build if needed, tests, trust checks, one proof")
+    a.add_argument("--devices", default="iphone,ipad", help="iphone,ipad (default: both)")
+    a = sp.add_parser("new-proof", help="create a fresh evidence folder with a proof template; prints its path")
+    a.add_argument("name")
+    a.add_argument("--decision-log", help="decisions.tsv of an AStack show-me-your-work log: evidence goes in its proofs/")
+    a = sp.add_parser("prove", help="check, run on each device, write evidence, always clean up")
+    a.add_argument("proofs", nargs="+")
+    a.add_argument("--devices", help="iphone,ipad (default: the proof's DEVICES)")
+    a.add_argument("--keep", action="store_true", help="leave the runner and app running afterwards (for exploring)")
+    a.add_argument("--decision-log", help="decisions.tsv of an AStack show-me-your-work log: evidence goes in its proofs/")
+    a = sp.add_parser("check", help="compile and import proofs without touching a device")
+    a.add_argument("proofs", nargs="+")
+    sp.add_parser("setup", help="create/adopt and boot this worktree's simulator for --device")
+    a = sp.add_parser("build", help="build the app and the runner")
+    a.add_argument("--app-only", action="store_true")
+    a.add_argument("--runner-only", action="store_true")
+    a = sp.add_parser("launch", help="install this worktree's build, start the runner, launch, wait for ready")
+    a.add_argument("--fresh", action="store_true", help="uninstall first (clears app data)")
+    for c in ("doctor", "reset", "terminate"):
+        sp.add_parser(c)
+    a = sp.add_parser("cleanup", help="stop what this worktree started, by recorded process identity")
+    a.add_argument("--all", action="store_true", help="both devices and the fixture server")
+    a.add_argument("--fixture", action="store_true", help="also stop the fixture server")
+    a.add_argument("--shutdown", action="store_true", help="also shut the simulator down")
+    a.add_argument("--delete-sims", action="store_true", help="also delete this worktree's simulator(s)")
+    a = sp.add_parser("fixture", help="serve the skill's fixture page on this worktree's fixture port")
+    a.add_argument("sub", nargs="?", default="start", choices=["start", "stop"])
+    a = sp.add_parser("snapshot")
+    a.add_argument("--web", action="store_true")
+    a = sp.add_parser("find")
+    a.add_argument("locator")
+    a = sp.add_parser("get")
+    a.add_argument("locator")
+    a.add_argument("--attr")
+    a = sp.add_parser("wait")
+    a.add_argument("locator")
+    a.add_argument("--state", default="visible", choices=["visible", "exists", "hidden", "enabled"])
+    a.add_argument("--timeout", type=float, default=5)
+    a = sp.add_parser("tap")
+    a.add_argument("locator")
+    a = sp.add_parser("long-press")
+    a.add_argument("locator")
+    a.add_argument("--ms", type=int, default=800)
+    a = sp.add_parser("type", help="type <locator|-> <text>; - means the focused element")
+    a.add_argument("locator")
+    a.add_argument("text")
+    a.add_argument("--submit", action="store_true")
+    a = sp.add_parser("clear")
+    a.add_argument("locator")
+    a = sp.add_parser("key", help="hardware key combo: cmd+t, cmd+l, return, escape")
+    a.add_argument("combo")
+    a = sp.add_parser("swipe")
+    a.add_argument("direction", choices=["up", "down", "left", "right"])
+    a.add_argument("locator", nargs="?")
+    a = sp.add_parser("scroll-to")
+    a.add_argument("locator")
+    a = sp.add_parser("alert")
+    a.add_argument("action", choices=["accept", "dismiss"])
+    a.add_argument("--button")
+    a.add_argument("--timeout", type=float, default=5)
+    a = sp.add_parser("web", help="navigate <url> | eval <js> | url | handles | screenshot")
+    a.add_argument("sub", choices=["navigate", "eval", "url", "handles", "screenshot"])
+    a.add_argument("arg", nargs="?")
+    a = sp.add_parser("capture", help="screenshot [--name N] | logs [--since 5m]")
+    a.add_argument("what", choices=["screenshot", "logs"])
+    a.add_argument("--name")
+    a.add_argument("--since")
+    return p
+
+
+def dispatch(args):
+    if args.cmd == "info":
+        return info()
+    if args.cmd == "selftest":
+        from verify_ios import selftest
+        code, out = selftest.run(harness.check_devices(args.devices.split(",")))
+        if code:
+            raise ProveExit(code, out)
+        return out
+    if args.cmd == "new-proof":
+        return dict(proof=harness.new_proof(args.name, harness.evidence_root(args.decision_log)))
+    if args.cmd == "check":
+        checked = harness.check_only(args.proofs)
+        if not all(c["ok"] for c in checked):
+            raise ProveExit(2, dict(ok=False, code="PROOF_REJECTED", proofs=checked))
+        return dict(proofs=checked)
+    if args.cmd == "prove":
+        code, out = harness.run_proofs(args.proofs, args.devices.split(",") if args.devices else None, args.keep,
+                                       args.decision_log)
+        if code:
+            raise ProveExit(code, out)
+        return out
+    # Everything else that changes a device holds that device's lock for the whole command, so it can't overlap a
+    # proof. The fixture server, builds and cleanup --all touch both devices, so they hold both locks.
+    both = list(env.PORT_OFFSET)
+    if args.cmd in LOCK_BOTH or (args.cmd == "fixture" and args.sub == "stop") or \
+            (args.cmd == "cleanup" and (args.all or args.fixture)):
+        held = both
+    elif args.cmd in DRIVING:
+        held = [args.device]
+    else:
+        held = []
+    locks = [env.DeviceLock(dev).acquire(f"verify-ios {args.cmd}") for dev in held]
+    try:
+        return run_command(args)
+    finally:
+        for lock in locks:
+            lock.release()
+
+
+def run_command(args):
+    if args.cmd == "fixture":
+        return fixture(stop=args.sub == "stop", user=None if args.sub == "stop" else "cli")
+    devices = list(env.PORT_OFFSET) if getattr(args, "all", False) else [args.device]
+    d = Device(args.device)
+    ev = args.evidence or f"{env.EVIDENCE}/adhoc"
+    stamp = int(time.time() * 1000)
+    c = args.cmd
+    if c == "setup":
+        return d.setup()
+    if c == "build":
+        return d.build(app=not args.runner_only, runner=not args.app_only)
+    if c == "launch":
+        return d.launch(fresh=args.fresh)
+    if c in ("doctor", "reset", "terminate"):
+        return getattr(d, c)()
+    if c == "cleanup":
+        out = dict(removed=[], evidenceKept=env.EVIDENCE)
+        for dev in devices:
+            out["removed"] += Device(dev).cleanup(shutdown=args.shutdown, delete_sim=args.delete_sims)["removed"]
+        if args.all or args.fixture:
+            out["fixture"] = fixture(stop=True)
+        return out
+    if c == "snapshot":
+        return d.snapshot(web=args.web)
+    if c == "find":
+        return d.find(args.locator)
+    if c == "get":
+        return d.get(args.locator, args.attr)
+    if c == "wait":
+        return d.wait(args.locator, args.state, args.timeout)
+    if c == "tap":
+        return d.tap(args.locator)
+    if c == "long-press":
+        return d.long_press(args.locator, args.ms)
+    if c == "type":
+        return d.type(args.locator, args.text, args.submit)
+    if c == "clear":
+        return d.clear(args.locator)
+    if c == "key":
+        return d.key(args.combo)
+    if c == "swipe":
+        return d.swipe(args.direction, args.locator)
+    if c == "scroll-to":
+        return d.scroll_to(args.locator)
+    if c == "alert":
+        return d.alert(args.action, args.button, args.timeout)
+    if c == "web":
+        if args.sub == "navigate":
+            return dict(result=d.web.navigate(args.arg))
+        if args.sub == "eval":
+            return dict(result=d.web.eval(args.arg))
+        if args.sub == "url":
+            return dict(url=d.web.page_url())   # null when the tab shows no web page
+        if args.sub == "handles":
+            return dict(handles=d.web.handles())
+        os.makedirs(ev, exist_ok=True)
+        return dict(path=d.web.screenshot(os.path.join(ev, f"web-{stamp}.png")))
+    if c == "capture":
+        os.makedirs(ev, exist_ok=True)
+        if args.what == "screenshot":
+            return dict(path=d.screenshot(os.path.join(ev, f"{args.name or 'shot'}-{stamp}.png")))
+        return dict(path=d.app_logs(os.path.join(ev, f"logs-{stamp}.txt"), args.since or "5m"))
+    raise Unsupported(c)
+
+
+class ProveExit(Exception):
+    def __init__(self, code, out):
+        super().__init__(code)
+        self.code, self.out = code, out
+
+
+def main():
+    args = build_parser().parse_args()
+    t0 = time.time()
+    code, out = 0, {}
+    try:
+        out = dispatch(args) or {}
+        out["ok"] = True
+    except ProveExit as e:
+        code, out = e.code, e.out
+    except Busy as e:
+        code, out = env.EXIT_BUSY, {"ok": False, "code": "BUSY", "message": str(e)}
+    except Unsupported as e:
+        code, out = 3, {"ok": False, "code": "UNSUPPORTED", "message": str(e)}
+    except Failed as e:
+        code, out = 1, {"ok": False, "code": "FAILED", "message": str(e), **e.extra}
+    except Exception as e:
+        code, out = 2, {"ok": False, "code": "DRIVER_ERROR", "message": f"{type(e).__name__}: {e}"}
+    out["ms"] = int((time.time() - t0) * 1000)
+    if args.evidence:
+        os.makedirs(args.evidence, exist_ok=True)
+        with open(os.path.join(args.evidence, "transcript.jsonl"), "a") as f:
+            f.write(json.dumps({"t": time.strftime("%Y-%m-%dT%H:%M:%S%z"), "device": args.device, "cmd": sys.argv[1:], "exit": code,
+                                "ms": out["ms"], "result": {k: v for k, v in out.items() if k != "tree"}}) + "\n")
+    print(json.dumps(out) if args.json else (out.get("tree") or json.dumps(out, indent=1)))
+    sys.exit(code)
+
+
+if __name__ == "__main__":
+    main()

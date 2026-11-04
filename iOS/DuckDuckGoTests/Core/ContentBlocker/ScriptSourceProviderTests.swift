@@ -47,7 +47,7 @@ final class ScriptSourceProviderTests: XCTestCase {
                                                                      internalUserDecider: MockInternalUserDecider(),
                                                                      syncErrorHandler: CapturingAdapterErrorHandler(),
                                                                      webExtensionAvailability: nil,
-                                                                     aiChatBonusService: AIChatBonusService(store: MockAIChatBonusStore()))
+                                                                     aiChatBonusHandler: MockAIChatBonusHandling())
         let sourceProvider = DefaultScriptSourceProvider(dependencies: dependencies)
 
         let cohorts = try XCTUnwrap(sourceProvider.currentCohorts)

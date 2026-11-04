@@ -263,6 +263,22 @@ struct AIChatBonusHandlerTests {
         #expect(published.values == [AIChatBonusRecordPayload(record: AIChatBonusRecordMock.ended, isNewInstall: false, aiChatEnabled: false)])
     }
 
+    @Test("Check a record change builds one payload however many subscribers listen")
+    func recordChangeBuildsOnePayloadForAllSubscribers() {
+        // GIVEN
+        let first = PublishedValues(sut.recordPayloadPublisher)
+        let second = PublishedValues(sut.recordPayloadPublisher)
+        let expectedPayload = AIChatBonusRecordPayload(record: AIChatBonusRecordMock.active, isNewInstall: true, aiChatEnabled: true)
+
+        // WHEN
+        service.recordSubject.send(AIChatBonusRecordMock.active)
+
+        // THEN
+        #expect(first.values == [expectedPayload])
+        #expect(second.values == [expectedPayload])
+        #expect(factsProvider.isNewInstallReadCount == 1)
+    }
+
     // MARK: - Params that aren't JSON objects
 
     @Test("Check params that aren't a JSON object are dropped")

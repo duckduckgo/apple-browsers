@@ -74,7 +74,7 @@ final class ContentBlockingUpdatingTests: XCTestCase {
                                                                           internalUserDecider: MockInternalUserDecider(),
                                                                           syncErrorHandler: CapturingAdapterErrorHandler(),
                                                                           webExtensionAvailability: nil,
-                                                                          aiChatBonusService: AIChatBonusService(store: MockAIChatBonusStore())))
+                                                                          aiChatBonusHandler: MockAIChatBonusHandling()))
     }
 
     override static func setUp() {
@@ -1234,7 +1234,7 @@ final class ContentBlockingUpdatingTests: XCTestCase {
                                                          internalUserDecider: MockInternalUserDecider(),
                                                          syncErrorHandler: CapturingAdapterErrorHandler(),
                                                          webExtensionAvailability: nil,
-                                                         aiChatBonusService: AIChatBonusService(store: MockAIChatBonusStore())))
+                                                         aiChatBonusHandler: MockAIChatBonusHandling()))
     }
 
     static let tracker = KnownTracker(domain: "tracker.com",

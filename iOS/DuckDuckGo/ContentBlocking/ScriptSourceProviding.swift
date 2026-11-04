@@ -41,7 +41,7 @@ public protocol ScriptSourceProviding {
     var syncErrorHandler: SyncErrorHandling { get }
     var webExtensionAvailability: WebExtensionAvailabilityProviding? { get }
     var trackerProtectionDataSource: TrackerProtectionDataSource? { get }
-    var aiChatBonusService: AIChatBonusService { get }
+    var aiChatBonusHandler: AIChatBonusHandling { get }
 
 }
 
@@ -57,7 +57,7 @@ struct DefaultScriptSourceProvider: ScriptSourceProviding {
         let internalUserDecider: InternalUserDecider
         let syncErrorHandler: SyncErrorHandling
         let webExtensionAvailability: WebExtensionAvailabilityProviding?
-        let aiChatBonusService: AIChatBonusService
+        let aiChatBonusHandler: AIChatBonusHandling
     }
 
     var loginDetectionEnabled: Bool { fireproofing.loginDetectionEnabled }
@@ -78,7 +78,7 @@ struct DefaultScriptSourceProvider: ScriptSourceProviding {
     let syncErrorHandler: SyncErrorHandling
     let webExtensionAvailability: WebExtensionAvailabilityProviding?
     let trackerProtectionDataSource: TrackerProtectionDataSource?
-    let aiChatBonusService: AIChatBonusService
+    let aiChatBonusHandler: AIChatBonusHandling
 
     init(dependencies: Dependencies) {
 
@@ -95,7 +95,7 @@ struct DefaultScriptSourceProvider: ScriptSourceProviding {
         currentCohorts = Self.generateCurrentCohorts(experimentManager: contentScopeExperimentsManager)
         syncErrorHandler = dependencies.syncErrorHandler
         webExtensionAvailability = dependencies.webExtensionAvailability
-        aiChatBonusService = dependencies.aiChatBonusService
+        aiChatBonusHandler = dependencies.aiChatBonusHandler
         trackerProtectionDataSource = DefaultTrackerProtectionDataSource(
             contentBlockingManager: contentBlockingManager
         )

@@ -60,6 +60,9 @@ public final class AIChatBonusHandler {
     private let service: AIChatBonusMessageHandling
     private let factsProvider: AIChatBonusFactsProviding
 
+    /// Built once and shared, so each record change builds one payload however many Duck.ai tabs listen.
+    public let recordPayloadPublisher: AnyPublisher<AIChatBonusRecordPayload, Never>
+
     /// Initializes a new instance with the specified parameters.
     /// - Parameters:
     ///   - service: The single owner of the bonus record. Pass the app's one shared instance, never a new one per tab:
@@ -68,6 +71,10 @@ public final class AIChatBonusHandler {
     public init(service: AIChatBonusMessageHandling, factsProvider: AIChatBonusFactsProviding) {
         self.service = service
         self.factsProvider = factsProvider
+        self.recordPayloadPublisher = service.recordPublisher
+            .map { Self.payload(for: $0, factsProvider: factsProvider) }
+            .share()
+            .eraseToAnyPublisher()
     }
 }
 
@@ -107,12 +114,6 @@ extension AIChatBonusHandler: AIChatBonusHandling {
         // The service already logs and reports store errors; there's no reply to send.
         try? service.end()
     }
-
-    public var recordPayloadPublisher: AnyPublisher<AIChatBonusRecordPayload, Never> {
-        service.recordPublisher
-            .map(payload(for:))
-            .eraseToAnyPublisher()
-    }
 }
 
 // MARK: - Private
@@ -120,6 +121,10 @@ extension AIChatBonusHandler: AIChatBonusHandling {
 private extension AIChatBonusHandler {
 
     func payload(for record: AIChatBonusRecord?) -> AIChatBonusRecordPayload {
+        Self.payload(for: record, factsProvider: factsProvider)
+    }
+
+    static func payload(for record: AIChatBonusRecord?, factsProvider: AIChatBonusFactsProviding) -> AIChatBonusRecordPayload {
         AIChatBonusRecordPayload(
             record: record,
             isNewInstall: factsProvider.isNewInstall,

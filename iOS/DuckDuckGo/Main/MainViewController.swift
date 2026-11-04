@@ -4598,7 +4598,8 @@ class MainViewController: UIViewController {
             redirectURLComponents: redirectURLComponents
         )
 
-        if let settingsNavigationController = presentedViewController as? SettingsUINavigationController {
+        let presenter = topMostPresentedViewController() ?? self
+        if let settingsNavigationController = presenter as? SettingsUINavigationController {
             settingsNavigationController.pushViewController(subscriptionFlowViewController, animated: true)
             return
         }
@@ -4606,10 +4607,6 @@ class MainViewController: UIViewController {
         let navigationController = DataBrokerProtectionSubscriptionFlowNavigationController(
             rootViewController: subscriptionFlowViewController
         )
-        var presenter: UIViewController = self
-        while let presentedViewController = presenter.presentedViewController {
-            presenter = presentedViewController
-        }
         presenter.present(navigationController, animated: true)
     }
 

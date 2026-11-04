@@ -523,8 +523,7 @@ class TabViewController: UIViewController {
         return activeLink.merge(with: storedLink)
     }
     
-    /// PoC: pull up past the bottom of a Duck.ai chat to start a new chat.
-    var duckAIOverscrollNewChat: DuckAIOverscrollNewChatHandler?
+    var duckAISwipeNewChat: DuckAISwipeNewChatHandler?
 
     /// Convenience property which passes back the value of `isAITab` from the underlying `TabModel`
     var isAITab: Bool {
@@ -1825,7 +1824,7 @@ class TabViewController: UIViewController {
                 }
                 self.pullToRefreshViewAdapter?.setRefreshControlEnabled(!self.isAITab)
                 self.webView.scrollView.alwaysBounceVertical = !self.isAITab
-                self.installDuckAIOverscrollNewChatIfNeeded()
+                self.installDuckAISwipeNewChatIfNeeded()
                 (self.webView as? WebView)?.setInputAccessoryViewHidden(self.isAITab)
                 if #available(iOS 18.4, *) {
                     self.notifyWebExtensionOfPropertyChange([.URL])

@@ -1,0 +1,9 @@
+{
+    "aichat_swipe-new-chat_undo": {
+        "description": "Fires when the user taps Undo on the toast shown after pulling up past the bottom of a Duck.ai chat opened a new chat in a new tab. Undo closes the new tab and returns to the chat the pull started from. Compare with m_aichat_entry_point source=swipe_up_new_chat to see how often the pull was unintended.",
+        "owners": ["aataraxiaa"],
+        "triggers": ["user_interaction"],
+        "suffixes": ["first_daily_count", "platform", "form_factor"],
+        "parameters": ["appVersion"]
+    }
+}

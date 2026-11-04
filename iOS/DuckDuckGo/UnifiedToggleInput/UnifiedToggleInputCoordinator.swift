@@ -2493,7 +2493,7 @@ extension UnifiedToggleInputCoordinator: UnifiedToggleInputViewControllerDelegat
     }
 
     func unifiedToggleInputVC(_ vc: UnifiedToggleInputViewController, didChangeMode mode: TextEntryMode) {
-        contentViewController.performInputModeChange {
+        contentViewController.performInputModeChange(to: mode) {
             updateInputMode(mode, animated: true)
             if vc.isInputExpanded {
                 vc.activateInput()

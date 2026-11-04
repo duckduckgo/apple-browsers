@@ -85,6 +85,8 @@ struct EscapeHatchLogoLayout: AnimatableModifier {
     private let followsHatch: Bool
     private let destinationCenterY: CGFloat
     private let destinationViewport: CGRect
+    var retainedFrame: CGRect?
+    var animatesVisibility = true
 
     init(centerY: CGFloat, viewport: CGRect, hatchFrame: CGRect?, destinationHatchFrame: CGRect?, fitsMargins: Bool = true,
          followsHatch: Bool = false) {
@@ -108,10 +110,10 @@ struct EscapeHatchLogoLayout: AnimatableModifier {
 
     func body(content: Content) -> some View {
         content
-            .offset(y: displayedCenterY)
+            .offset(y: retainedFrame?.midY ?? displayedCenterY)
             // Check the animated position so a growing viewport cannot reveal an overlapping logo.
-            .opacity(isVisible ? 1 : 0)
-            .animation(FocusedContentFade.fadeIn, value: isVisible)
+            .opacity(retainedFrame != nil || isVisible ? 1 : 0)
+            .animation(animatesVisibility ? FocusedContentFade.fadeIn : nil, value: isVisible)
     }
 
     /// Where the logo rests once its animation settles, or nil when it does not fit there.
@@ -140,6 +142,54 @@ struct EscapeHatchLogoLayout: AnimatableModifier {
                                width: size.width, height: size.height).insetBy(dx: 0, dy: 0.5)
         let overlap = logoFrame.intersection(hatchFrame)
         return viewport.contains(logoFrame) && overlap.isEmpty
+    }
+}
+
+struct FocusedLogoLayout {
+    static let screenCenterOffset: CGFloat = 55
+    let centerY: CGFloat
+    let hatchLayout: EscapeHatchLogoLayout?
+    let frame: CGRect
+
+    init(viewport: CGRect, chromeInsetTop: CGFloat, placement: FocusedContentPlacement,
+         hatchFrame: CGRect?, destinationHatchFrame: CGRect?, restingCenterY: CGFloat) {
+        let chromeFrame = CGRect(x: viewport.minX, y: viewport.minY, width: viewport.width, height: chromeInsetTop)
+        let clearance = Self.logoTopClearance(chromeBottom: chromeFrame.maxY,
+                                             embeddedHatchFrame: placement == .embedded ? destinationHatchFrame : nil)
+        centerY = Self.logoCenterY(restingAt: restingCenterY, topChromeBottom: clearance, barTop: viewport.maxY)
+        let size = FocusedDaxLogoView.size
+        frame = CGRect(x: viewport.midX - size.width / 2, y: centerY - size.height / 2, width: size.width, height: size.height)
+        if placement == .hidden {
+            hatchLayout = nil
+        } else {
+            let availableViewport = CGRect(x: viewport.minX, y: chromeFrame.maxY, width: viewport.width,
+                                           height: max(0, viewport.maxY - chromeFrame.maxY))
+            let isPinned = placement == .pinned
+            hatchLayout = EscapeHatchLogoLayout(centerY: centerY, viewport: availableViewport,
+                                                hatchFrame: isPinned ? chromeFrame : hatchFrame,
+                                                destinationHatchFrame: isPinned ? chromeFrame : destinationHatchFrame,
+                                                fitsMargins: Self.logoFits(topChromeBottom: clearance, barTop: viewport.maxY),
+                                                followsHatch: !isPinned)
+        }
+    }
+
+    static func logoTopClearance(chromeBottom: CGFloat, embeddedHatchFrame: CGRect?) -> CGFloat {
+        max(chromeBottom, (embeddedHatchFrame?.maxY ?? -.infinity) - Metrics.topChromeGap)
+    }
+
+    static func logoCenterY(restingAt restCenterY: CGFloat, topChromeBottom: CGFloat, barTop: CGFloat) -> CGFloat {
+        let halfHeight = FocusedDaxLogoView.size.height / 2
+        guard logoFits(topChromeBottom: topChromeBottom, barTop: barTop) else { return (topChromeBottom + barTop) / 2 }
+        return min(max(restCenterY, topChromeBottom + Metrics.topChromeGap + halfHeight), barTop - Metrics.bottomBarGap - halfHeight)
+    }
+
+    static func logoFits(topChromeBottom: CGFloat, barTop: CGFloat) -> Bool {
+        topChromeBottom + Metrics.topChromeGap + FocusedDaxLogoView.size.height <= barTop - Metrics.bottomBarGap
+    }
+
+    private enum Metrics {
+        static let topChromeGap: CGFloat = 16
+        static let bottomBarGap: CGFloat = 56
     }
 }
 

@@ -47,6 +47,7 @@ final class UnifiedSuggestionsHost {
     private var keyboardSettleTime: CFTimeInterval = 0
     /// True while a mode switch or an expand runs, so its inset changes move the content with Core Animation.
     private var slidesContentWithCoreAnimation = false
+    private var isChangingInputMode = false
     private var isLogoHeldForForeground = false
     let favoritesPresentation: FocusedFavoritesPresentation
     private var redesignedSearchPresentation: RedesignedFocusedSearchPresentation?
@@ -76,9 +77,14 @@ final class UnifiedSuggestionsHost {
             self.escapeHatch = escapeHatch
         }
         self.syncPromo = syncPromo
+        guard !isChangingInputMode else { return }
+        updateFocusedContent()
+    }
+
+    private func updateFocusedContent() {
         if redesignedSearchPresentation == nil, usesScrollableEscapeHatch {
             favoritesPresentation.viewController?.setFocusedContent(LegacyFocusedNewTabPageContent(
-                recentChats: mode == .aiChat ? viewModel.listViewModel(for: .recents) : nil,
+                recentChats: focusedMode == .aiChat ? viewModel.listViewModel(for: .recents) : nil,
                 syncPromo: syncPromo,
                 isAddressBarAtBottom: isAddressBarAtBottom,
                 onEscapeHatchGeometryChange: { [weak viewModel] in viewModel?.setEmbeddedEscapeHatchGeometry($0) },
@@ -221,6 +227,8 @@ final class UnifiedSuggestionsHost {
 
     func setUsesRedesignedNewTabPageLayout(_ enabled: Bool) {
         guard enabled != (redesignedSearchPresentation != nil) else { return }
+        viewModel.cancelLogoModeChange()
+        viewModel.usesRedesignedNewTabPageLayout = enabled
         viewModel.setEmbeddedEscapeHatchGeometry(nil)
         redesignedPresentationCancellable = nil
         if enabled {
@@ -256,8 +264,13 @@ final class UnifiedSuggestionsHost {
         changes()
     }
 
-    func performInputModeChange(_ changes: () -> Void) {
-        slideContentWithCoreAnimation { performInputModeChangeDeferringLogo(changes) }
+    func performInputModeChange(to mode: TextEntryMode, _ changes: () -> Void) {
+        viewModel.performLogoModeChange(to: mode) {
+            isChangingInputMode = true
+            slideContentWithCoreAnimation { performInputModeChangeDeferringLogo(changes) }
+            isChangingInputMode = false
+        }
+        updateFocusedContent()
     }
 
     private func performInputModeChangeDeferringLogo(_ changes: () -> Void) {
@@ -481,6 +494,7 @@ final class UnifiedSuggestionsHost {
     }
 
     func tearDown() {
+        viewModel.cancelLogoModeChange()
         logoKeyboardCancellable = nil
         viewModel.isLogoRevealDeferred = false
         redesignedPresentationCancellable = nil
@@ -495,6 +509,7 @@ final class UnifiedSuggestionsHost {
         hostingController?.removeFromParent()
         hostingController = nil
         viewModel.logoViewportFrame = nil
+        viewModel.logoHostFrame = nil
         viewModel.setEmbeddedEscapeHatchGeometry(nil)
     }
 
@@ -549,7 +564,13 @@ private final class UnifiedSuggestionsHostingController: UIHostingController<Uni
 
     override func viewDidLayoutSubviews() {
         super.viewDidLayoutSubviews()
-        guard isFloatingUIEnabled, view.window != nil, let containerView = view.superview else { return }
+        guard view.window != nil, let containerView = view.superview else { return }
+        if !isFloatingUIEnabled {
+            var viewport = view.convert(view.bounds, to: nil)
+            viewport.size.height = max(0, viewport.height - view.safeAreaInsets.bottom)
+            if rootView.viewModel.logoHostFrame != viewport { rootView.viewModel.logoHostFrame = viewport }
+            return
+        }
         // These are the native anchors used to constrain the host. The logo ignores the top
         // container safe area, but still reserves the bottom input-bar inset.
         var viewport = containerView.convert(containerView.bounds, to: nil)

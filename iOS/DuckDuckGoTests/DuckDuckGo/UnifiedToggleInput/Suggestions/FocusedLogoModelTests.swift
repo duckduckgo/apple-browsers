@@ -127,11 +127,11 @@ final class FocusedLogoModelTests: XCTestCase {
         let chromeBottom: CGFloat = 240
         let hatch = CGRect(x: 16, y: 312, width: 408, height: 56)
         func layout(barTop: CGFloat) -> (centerY: CGFloat, layout: EscapeHatchLogoLayout) {
-            let top = UnifiedSuggestionsView.logoTopClearance(chromeBottom: chromeBottom, embeddedHatchFrame: hatch)
-            let centerY = UnifiedSuggestionsView.logoCenterY(restingAt: 423, topChromeBottom: top, barTop: barTop)
+            let top = FocusedLogoLayout.logoTopClearance(chromeBottom: chromeBottom, embeddedHatchFrame: hatch)
+            let centerY = FocusedLogoLayout.logoCenterY(restingAt: 423, topChromeBottom: top, barTop: barTop)
             let viewport = CGRect(x: 0, y: chromeBottom, width: 440, height: barTop - chromeBottom)
             return (centerY, EscapeHatchLogoLayout(centerY: centerY, viewport: viewport, hatchFrame: hatch, destinationHatchFrame: hatch,
-                                                   fitsMargins: UnifiedSuggestionsView.logoFits(topChromeBottom: top, barTop: barTop)))
+                                                   fitsMargins: FocusedLogoLayout.logoFits(topChromeBottom: top, barTop: barTop)))
         }
 
         let keyboardHidden = layout(barTop: 922)
@@ -142,19 +142,19 @@ final class FocusedLogoModelTests: XCTestCase {
         XCTAssertFalse(layout(barTop: 560).layout.isVisible, "A logo squeezed between the hatch and the keyboard must hide")
 
         let scrolledAway = CGRect(x: 16, y: -100, width: 408, height: 56)
-        XCTAssertEqual(UnifiedSuggestionsView.logoTopClearance(chromeBottom: chromeBottom, embeddedHatchFrame: scrolledAway), chromeBottom,
+        XCTAssertEqual(FocusedLogoLayout.logoTopClearance(chromeBottom: chromeBottom, embeddedHatchFrame: scrolledAway), chromeBottom,
                        "A hatch above the chrome does not move the logo")
     }
 
     func testLogoPlacedAgainstTheHatchStaysVisibleDespiteRounding() {
         // Recorded redesigned-layout geometry whose arithmetic leaves the logo a sliver above the hatch's bottom.
         let hatch = CGRect(x: 16, y: 321.866375277356, width: 408, height: 132)
-        let top = UnifiedSuggestionsView.logoTopClearance(chromeBottom: 302, embeddedHatchFrame: hatch)
-        let centerY = UnifiedSuggestionsView.logoCenterY(restingAt: 423, topChromeBottom: top, barTop: 873)
+        let top = FocusedLogoLayout.logoTopClearance(chromeBottom: 302, embeddedHatchFrame: hatch)
+        let centerY = FocusedLogoLayout.logoCenterY(restingAt: 423, topChromeBottom: top, barTop: 873)
         XCTAssertGreaterThan(hatch.maxY, centerY - FocusedDaxLogoView.size.height / 2, "Precondition: the rounding overlap is present")
         let layout = EscapeHatchLogoLayout(centerY: centerY, viewport: CGRect(x: 0, y: 302, width: 440, height: 571),
                                            hatchFrame: hatch, destinationHatchFrame: hatch,
-                                           fitsMargins: UnifiedSuggestionsView.logoFits(topChromeBottom: top, barTop: 873))
+                                           fitsMargins: FocusedLogoLayout.logoFits(topChromeBottom: top, barTop: 873))
         XCTAssertTrue(layout.isVisible)
     }
 

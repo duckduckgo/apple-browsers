@@ -355,12 +355,12 @@ final class UnifiedInputContentContainerViewController: UIViewController {
         unifiedSuggestionsHost.slideContentWithCoreAnimation(changes)
     }
 
-    func performInputModeChange(_ changes: () -> Void) {
+    func performInputModeChange(to mode: TextEntryMode, _ changes: () -> Void) {
         guard let unifiedSuggestionsHost else {
             changes()
             return
         }
-        unifiedSuggestionsHost.performInputModeChange(changes)
+        unifiedSuggestionsHost.performInputModeChange(to: mode, changes)
     }
 
     /// The focused logo takes over from the NTP logo in place, so it shows from the start.

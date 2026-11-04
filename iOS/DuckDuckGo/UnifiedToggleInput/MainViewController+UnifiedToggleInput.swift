@@ -1674,7 +1674,7 @@ extension MainViewController: UnifiedInputContentContainerViewControllerDelegate
         // Route through the same path as a toggle tap so the toggle indicator, content swap, and
         // input-height all animate together in one transaction (a swipe is a user-driven switch).
         guard let coordinator = unifiedToggleInputCoordinator else { return }
-        coordinator.contentViewController.performInputModeChange { coordinator.updateInputMode(mode, animated: true) }
+        coordinator.contentViewController.performInputModeChange(to: mode) { coordinator.updateInputMode(mode, animated: true) }
     }
 
     func unifiedInputEditingStateDidRequestSyncSetup() {

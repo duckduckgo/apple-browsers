@@ -20,6 +20,7 @@
 import Combine
 import Foundation
 import SwiftUI
+import UIKit
 
 /// Aggregates input facts, runs `UnifiedSuggestionsContentResolver`, and publishes the
 /// presentation `content` for `UnifiedSuggestionsView`. Holds the active list view model.
@@ -38,6 +39,17 @@ final class UnifiedSuggestionsViewModel: ObservableObject {
         case morphHome
     }
 
+    struct LogoModeChange: Equatable {
+        struct Source: Equatable {
+            let frame: CGRect
+            let progress: CGFloat
+        }
+
+        let mode: TextEntryMode
+        var source: Source?
+        var isFadingOut = false
+    }
+
     @Published private(set) var content: UnifiedSuggestionsContentKind = .logo
     /// True when the last content change was a mode switch away from a logo on screen, which fades out
     /// before the incoming content appears.
@@ -45,6 +57,8 @@ final class UnifiedSuggestionsViewModel: ObservableObject {
     /// The empty-state logo's presentation (mark / morph / speed). All its transitions are pure, so
     /// the morph rules are tested in `FocusedLogoModelTests`.
     @Published private(set) var logoModel = FocusedLogoModel()
+    @Published private(set) var logoModeChange: LogoModeChange?
+    var usesRedesignedNewTabPageLayout = false
     /// How the content collapses back to the omnibar. Cleared on the next focus.
     @Published private(set) var dismissBehavior: DismissBehavior = .none
     /// On a fire tab the empty state is the fire screen, not the Dax logo. Set by the container via
@@ -65,11 +79,12 @@ final class UnifiedSuggestionsViewModel: ObservableObject {
     /// Chrome bottom (bar + reserved hatch) below the host top, pushed by the container as the bar
     /// animates. The logo keeps a minimum distance from it — known *during* the resize, so the logo
     /// moves in the same pass, and only when the chrome is actually close (never in Search).
-    @Published var chromeInsetTop: CGFloat = 0
-    @Published var contentTopInset: CGFloat = 0
+    @Published var chromeInsetTop: CGFloat = 0 { didSet { updateLogoModeChange() } }
+    @Published var contentTopInset: CGFloat = 0 { didSet { updateLogoModeChange() } }
     /// Floating chrome clearance comes from UIKit's keyboard-bounded host, independently of
     /// SwiftUI's transient coordinate origins during the omnibar handoff.
-    @Published var logoViewportFrame: CGRect?
+    @Published var logoViewportFrame: CGRect? { didSet { updateLogoModeChange() } }
+    @Published var logoHostFrame: CGRect? { didSet { updateLogoModeChange() } }
     /// The search-surface list VM. On the single-host path the duck.ai surface adds its own
     /// (see `duckAIListViewModel`); the view picks between them by content kind.
     let listViewModel: SuggestionsListViewModel
@@ -87,6 +102,8 @@ final class UnifiedSuggestionsViewModel: ObservableObject {
     private var duckAISectionsCancellable: AnyCancellable?
     private var hasReportedDuckAISuggestionsShown = false
     private var previousMode: TextEntryMode?
+    private var logoModeChangeCancellable: AnyCancellable?
+    private var isPreparingLogoModeChange = false
     /// Cleared on each focus; the first resolve after that snaps the logo to its mode instead of
     /// morphing, so a refocus never replays a stale Duck.ai→search morph from the prior session.
     private var hasResolvedSinceActivation = false
@@ -106,6 +123,11 @@ final class UnifiedSuggestionsViewModel: ObservableObject {
                 // Unfreezes on the next focus.
                 guard self.dismissBehavior == .none else { return }
                 let resolved = UnifiedSuggestionsContentResolver.resolve(inputs, previous: self.content)
+                let isModeSwitch = self.hasResolvedSinceActivation && inputs.mode != self.previousMode
+                if !isModeSwitch, self.logoModeChange?.mode == inputs.mode, resolved != self.content {
+                    self.cancelLogoModeChange()
+                }
+                if isModeSwitch { self.prepareLogoModeChange(to: inputs.mode) }
                 // A logo hidden beside the hatch for lack of room has no mark on screen to morph from.
                 let wasLogoVisible = self.isLogoOnScreen
                 self.logoModel.update(wasLogo: wasLogoVisible,
@@ -113,10 +135,10 @@ final class UnifiedSuggestionsViewModel: ObservableObject {
                                       isDuckAI: inputs.mode == .aiChat,
                                       isFirstSinceActivation: !self.hasResolvedSinceActivation)
                 // A focus in another mode than the last session is not a switch the user watches, so it snaps.
-                let isModeSwitch = self.hasResolvedSinceActivation && inputs.mode != self.previousMode
                 self.hasResolvedSinceActivation = true
                 self.apply(resolved, modeChanged: isModeSwitch, wasLogoVisible: wasLogoVisible)
                 self.previousMode = inputs.mode
+                self.updateLogoModeChange()
                 self.reportDuckAISuggestionsShownIfNeeded(hasDuckAIRows: self.duckAIListViewModel?.sections.isEmpty == false)
             }
     }
@@ -144,12 +166,74 @@ final class UnifiedSuggestionsViewModel: ObservableObject {
     private func apply(_ newContent: UnifiedSuggestionsContentKind, modeChanged: Bool, wasLogoVisible: Bool = false) {
         guard newContent != content else { return }
         let crossfades = modeChanged && !Self.sameCategory(content, newContent)
-        waitsForLogoFadeOut = crossfades && wasLogoVisible
+        waitsForLogoFadeOut = crossfades && wasLogoVisible && !usesRedesignedNewTabPageLayout
         if crossfades {
             withAnimation(FocusedContentFade.fadeIn) { content = newContent }
         } else {
             content = newContent
         }
+    }
+
+    func logoLayout(in viewport: CGRect) -> FocusedLogoLayout {
+        FocusedLogoLayout(viewport: viewport, chromeInsetTop: chromeInsetTop, placement: escapeHatchPlacement,
+                          hatchFrame: embeddedEscapeHatchFrame, destinationHatchFrame: embeddedEscapeHatchDestinationFrame,
+                          restingCenterY: UIScreen.main.bounds.midY - FocusedLogoLayout.screenCenterOffset)
+    }
+
+    func prepareLogoModeChange(to mode: TextEntryMode) {
+        guard hasResolvedSinceActivation, mode != previousMode, logoModeChange?.mode != mode else { return }
+        let source: LogoModeChange.Source?
+        if let change = logoModeChange, change.isFadingOut {
+            source = change.source
+        } else if isLogoOnScreen, !isLogoRevealDeferred, !isFireTab, !isLandscape,
+                  let frame = backdropLogoFrame ?? (logoViewportFrame ?? logoHostFrame).map({ logoLayout(in: $0).frame }) {
+            source = .init(frame: frame, progress: logoModel.progress)
+        } else {
+            source = nil
+        }
+        logoModeChangeCancellable = nil
+        logoModeChange = LogoModeChange(mode: mode, source: source)
+        logoModeChangeCancellable = Just(()).delay(for: .seconds(0.25), scheduler: DispatchQueue.main)
+            .sink { [weak self] _ in
+                guard self?.logoModeChange?.isFadingOut == false else { return }
+                self?.logoModeChange?.source = nil
+            }
+    }
+
+    func performLogoModeChange(to mode: TextEntryMode, _ changes: () -> Void) {
+        prepareLogoModeChange(to: mode)
+        isPreparingLogoModeChange = true
+        changes()
+        isPreparingLogoModeChange = false
+        updateLogoModeChange()
+    }
+
+    private func updateLogoModeChange() {
+        guard !isPreparingLogoModeChange, !usesRedesignedNewTabPageLayout,
+              let change = logoModeChange, change.source != nil, !change.isFadingOut else { return }
+        let fits = (logoViewportFrame ?? logoHostFrame).map { viewport in
+            let layout = logoLayout(in: viewport)
+            return layout.hatchLayout == nil || layout.hatchLayout?.visibleFrame != nil
+        } ?? true
+        guard !isShowingLogo || !fits else { return }
+        logoModeChange?.isFadingOut = true
+        waitsForLogoFadeOut = true
+    }
+
+    func startLogoFadeOut() {
+        guard logoModeChange?.isFadingOut == true, logoModeChange?.source != nil else { return }
+        logoModeChangeCancellable = Just(()).delay(for: .seconds(FocusedContentFade.duration), scheduler: DispatchQueue.main)
+            .sink { [weak self] _ in
+                self?.logoModeChange?.source = nil
+                self?.logoModeChange?.isFadingOut = false
+                self?.waitsForLogoFadeOut = false
+            }
+    }
+
+    func cancelLogoModeChange() {
+        logoModeChangeCancellable = nil
+        logoModeChange = nil
+        waitsForLogoFadeOut = false
     }
 
     private static func sameCategory(_ lhs: UnifiedSuggestionsContentKind, _ rhs: UnifiedSuggestionsContentKind) -> Bool {
@@ -163,7 +247,8 @@ final class UnifiedSuggestionsViewModel: ObservableObject {
 
     /// Beside a hatch, a logo is on screen only while it has a backdrop frame; without a hatch it always is.
     var isLogoOnScreen: Bool {
-        content == .logo && (escapeHatchPlacement == .hidden || backdropLogoFrame != nil)
+        (logoModeChange?.isFadingOut == true && logoModeChange?.source != nil)
+            || (content == .logo && (escapeHatchPlacement == .hidden || backdropLogoFrame != nil))
     }
 
     var isShowingFavorites: Bool {
@@ -176,12 +261,14 @@ final class UnifiedSuggestionsViewModel: ObservableObject {
 
     /// List/logo→favorites (or recents) collapse: fade the focused content out.
     func beginDismissFade() {
+        cancelLogoModeChange()
         dismissBehavior = .fadeOut
     }
 
     /// Logo→logo collapse: morph the focused logo back to the Dax mark and keep it visible (no fade).
     /// `collapseDuration` is the bar's collapse time — the morph is sped up to finish within it.
     func morphLogoHomeForDismiss(matching collapseDuration: TimeInterval) {
+        cancelLogoModeChange()
         dismissBehavior = .morphHome
         logoModel.morphToDax(matching: collapseDuration)
     }
@@ -189,6 +276,7 @@ final class UnifiedSuggestionsViewModel: ObservableObject {
     /// Resets the dismiss state on each focus so the next session starts clean. The reset snaps
     /// (`FocusedContentDismissFade` only animates the fade-out), so it never replays a fade-in as the logo reappears.
     func prepareForActivation() {
+        cancelLogoModeChange()
         dismissBehavior = .none
         hasResolvedSinceActivation = false
         hasReportedDuckAISuggestionsShown = false
@@ -217,6 +305,7 @@ final class UnifiedSuggestionsViewModel: ObservableObject {
         let geometry = geometry.flatMap { $0.frame.isEmpty ? nil : $0 }
         guard embeddedEscapeHatchGeometry != geometry else { return }
         embeddedEscapeHatchGeometry = geometry
+        updateLogoModeChange()
     }
 
     func setDuckAIListViewModel(_ viewModel: SuggestionsListViewModel?) {

@@ -165,108 +165,68 @@ struct UnifiedSuggestionsView: View {
     private var logoLayer: some View {
         GeometryReader { proxy in
             let frame = proxy.frame(in: .global)
-            let nativeViewport = viewModel.logoViewportFrame
+            let nativeViewport = viewModel.logoViewportFrame ?? viewModel.logoHostFrame
             let viewport = nativeViewport ?? frame
-            let topClearance = Self.logoTopClearance(
-                chromeBottom: viewport.minY + viewModel.chromeInsetTop,
-                embeddedHatchFrame: viewModel.escapeHatchPlacement == .embedded ? viewModel.embeddedEscapeHatchDestinationFrame : nil)
-            let targetCenterY = Self.logoCenterY(
-                restingAt: UIScreen.main.bounds.midY - Metrics.logoScreenCenterOffset,
-                topChromeBottom: topClearance,
-                barTop: viewport.maxY)
-            let fitsMargins = Self.logoFits(topChromeBottom: topClearance, barTop: viewport.maxY)
+            let geometry = viewModel.logoLayout(in: viewport)
+            let destinationShowsLogo = viewModel.isShowingLogo && (geometry.hatchLayout == nil || geometry.hatchLayout?.visibleFrame != nil)
+            let source = viewModel.logoModeChange?.source
+            let retainedSource = !usesRedesignedNewTabPageLayout && (viewModel.logoModeChange?.isFadingOut == true || !destinationShowsLogo) ? source : nil
+            let targetCenterY = retainedSource?.frame.midY ?? geometry.centerY
             let offsetY = targetCenterY - frame.midY
             let animation: Animation? = UIApplication.shared.applicationState == .active ? .easeInOut(duration: 0.2) : nil
-            let hatchLayout = escapeHatchLogoLayout(centerY: targetCenterY, viewport: viewport, fitsMargins: fitsMargins)
-            let logo = FocusedDaxLogoView(progress: viewModel.logoModel.progress,
+            let hatchLayout = geometry.hatchLayout.map { layout in
+                var layout = layout
+                layout.retainedFrame = retainedSource?.frame
+                layout.animatesVisibility = !usesRedesignedNewTabPageLayout && retainedSource == nil
+                return layout
+            }
+            let logo = FocusedDaxLogoView(progress: retainedSource?.progress ?? viewModel.logoModel.progress,
                                          morph: viewModel.logoModel.morphs,
                                          animationSpeed: viewModel.logoModel.morphSpeed,
-                                         freezes: hatchLayout != nil && hatchLayout?.visibleFrame == nil)
+                                         freezes: retainedSource != nil || (hatchLayout != nil && hatchLayout?.visibleFrame == nil))
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
             let isLogoDisplayed = isShowingLogo && !viewModel.isFireTab && !viewModel.isLandscape && !viewModel.isFadingOut
-            let backdropLogoFrame = isLogoDisplayed ? hatchLayout?.visibleFrame : nil
+            let backdropLogoFrame = retainedSource?.frame ?? (isLogoDisplayed ? hatchLayout?.visibleFrame : nil)
             Group {
                 if let hatchLayout {
                     // A hidden logo moves straight to its target, so it appears at rest instead of sliding in.
                     logo.modifier(hatchLayout)
-                        .animation(viewModel.backdropLogoFrame == nil ? nil : animation, value: targetCenterY)
+                        .animation(retainedSource != nil || viewModel.backdropLogoFrame == nil ? nil : animation, value: targetCenterY)
                         .offset(y: -frame.midY)
                         .animation(nil, value: frame.midY)
                 } else if nativeViewport != nil {
                     // Animate real clearance changes; compensate transient host movement immediately.
                     logo.offset(y: targetCenterY)
-                        .animation(animation, value: targetCenterY)
+                        .animation(retainedSource == nil ? animation : nil, value: targetCenterY)
                         .offset(y: -frame.midY)
                         .animation(nil, value: frame.midY)
                 } else {
                     logo.offset(y: offsetY)
-                        .animation(animation, value: targetCenterY)
+                        .animation(retainedSource == nil ? animation : nil, value: targetCenterY)
                 }
             }
                 // Showing is instant; logo→logo keeps it shown, so this never cuts a morph.
                 // Suppressed on fire tabs (fire screen takes the slot) and in landscape (no room — matches
                 // the unfocused NTP / legacy gate).
-                .opacity(viewModel.isShowingLogo && !viewModel.isFireTab && !viewModel.isLandscape ? 1 : 0)
+                .opacity(viewModel.isShowingLogo && retainedSource == nil && !viewModel.isFireTab && !viewModel.isLandscape ? 1 : 0)
                 // A mode switch fades a logo that was on screen out before the incoming content appears.
-                .animation(!viewModel.isShowingLogo && fadesOutLeavingLogo ? FocusedContentFade.fadeOut : nil,
-                           value: viewModel.isShowingLogo)
+                .animation(retainedSource != nil || (!viewModel.isShowingLogo && fadesOutLeavingLogo) ? FocusedContentFade.fadeOut : nil,
+                           value: destinationShowsLogo)
                 // A logo held back for the keyboard fades in once it settles.
                 .opacity(viewModel.isLogoRevealDeferred ? 0 : 1)
-                .animation(viewModel.isLogoRevealDeferred || animation == nil ? nil : FocusedContentFade.fadeIn,
+                .animation(usesRedesignedNewTabPageLayout || viewModel.isLogoRevealDeferred || animation == nil ? nil : FocusedContentFade.fadeIn,
                            value: viewModel.isLogoRevealDeferred)
                 // On dismiss it fades out (the NTP content takes over) — a separate opacity so the
                 // toggle's instant show/hide above is unaffected.
                 .modifier(FocusedContentDismissFade(isFadingOut: viewModel.isFadingOut))
                 .allowsHitTesting(false)
-                .onAppear { viewModel.backdropLogoFrame = backdropLogoFrame }
+                .onAppear {
+                    viewModel.backdropLogoFrame = backdropLogoFrame
+                    viewModel.startLogoFadeOut()
+                }
                 .onChange(of: backdropLogoFrame) { viewModel.backdropLogoFrame = $0 }
+                .onChange(of: viewModel.logoModeChange) { _ in viewModel.startLogoFadeOut() }
         }
         .ignoresSafeArea(.container, edges: .top)
-    }
-
-    private func escapeHatchLogoLayout(centerY: CGFloat, viewport: CGRect, fitsMargins: Bool) -> EscapeHatchLogoLayout? {
-        guard viewModel.escapeHatchPlacement != .hidden else { return nil }
-        let chromeFrame = CGRect(x: viewport.minX, y: viewport.minY, width: viewport.width, height: viewModel.chromeInsetTop)
-        let availableViewport = CGRect(x: viewport.minX, y: chromeFrame.maxY,
-                                       width: viewport.width, height: max(0, viewport.maxY - chromeFrame.maxY))
-        let isPinned = viewModel.escapeHatchPlacement == .pinned
-        return EscapeHatchLogoLayout(centerY: centerY, viewport: availableViewport,
-                                     hatchFrame: isPinned ? chromeFrame : viewModel.embeddedEscapeHatchFrame,
-                                     destinationHatchFrame: isPinned ? chromeFrame : viewModel.embeddedEscapeHatchDestinationFrame,
-                                     fitsMargins: fitsMargins, followsHatch: !isPinned)
-    }
-
-    /// An embedded hatch below the chrome pushes the logo under it, so a hidden keyboard can make room for it.
-    /// The logo may touch the hatch, matching the resting NTP logo, so focusing never shifts a visible logo:
-    /// the hatch bottom is offset by the chrome gap that `logoCenterY` and `logoFits` add back.
-    static func logoTopClearance(chromeBottom: CGFloat, embeddedHatchFrame: CGRect?) -> CGFloat {
-        max(chromeBottom, (embeddedHatchFrame?.maxY ?? -.infinity) - Metrics.topChromeGap)
-    }
-
-    /// Clamps the resting center between the top chrome and the keyboard/input bar.
-    /// If both margins do not fit, use the center of the available space.
-    static func logoCenterY(restingAt restCenterY: CGFloat,
-                            topChromeBottom: CGFloat,
-                            barTop: CGFloat) -> CGFloat {
-        let halfHeight = Metrics.logoHeight / 2
-        guard logoFits(topChromeBottom: topChromeBottom, barTop: barTop) else { return (topChromeBottom + barTop) / 2 }
-        return min(max(restCenterY, topChromeBottom + Metrics.topChromeGap + halfHeight),
-                   barTop - Metrics.bottomBarGap - halfHeight)
-    }
-
-    static func logoFits(topChromeBottom: CGFloat, barTop: CGFloat) -> Bool {
-        topChromeBottom + Metrics.topChromeGap + Metrics.logoHeight <= barTop - Metrics.bottomBarGap
-    }
-
-    private enum Metrics {
-        /// Mirrors `NewTabPageDaxLogoView`'s screen-center offset so the focused Search logo lands exactly
-        /// where the NTP logo sits — keep in sync with that view.
-        static let logoScreenCenterOffset: CGFloat = 55
-        /// Min gap kept below the top chrome before the logo is pushed down. Tune.
-        static let topChromeGap: CGFloat = 16
-        /// Min gap kept above the bottom bar before the logo is pushed up. Larger than the top gap — the
-        /// bottom bar is tall, so the logo needs more breathing room to sit balanced above it. Tune.
-        static let bottomBarGap: CGFloat = 56
-        static let logoHeight = FocusedDaxLogoView.size.height
     }
 }

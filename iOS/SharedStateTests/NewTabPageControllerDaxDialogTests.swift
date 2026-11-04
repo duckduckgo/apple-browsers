@@ -299,7 +299,7 @@ final class NewTabPageControllerDaxDialogTests: XCTestCase {
             parent.view.layoutIfNeeded()
         }
         animator.addCompletion { _ in animated.fulfill() }
-        host.performInputModeChange {
+        host.performInputModeChange(to: .aiChat) {
             animator.startAnimation()
             XCTAssertFalse(model.isLogoRevealDeferred)
         }
@@ -327,7 +327,7 @@ final class NewTabPageControllerDaxDialogTests: XCTestCase {
             NotificationCenter.default.removeObserver(observer)
             input.resignFirstResponder()
         }
-        host.performInputModeChange {
+        host.performInputModeChange(to: .aiChat) {
             XCTAssertTrue(model.isLogoRevealDeferred)
             UIView.animate(withDuration: 0.2) {
                 inputs.send(.init(mode: .aiChat, isTyping: false, hasFavorites: true, hasMessages: false, hasRecents: false, resultsPending: false))

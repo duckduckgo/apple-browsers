@@ -318,6 +318,18 @@ class BrowserProfileTests: XCTestCase {
         XCTAssertTrue(hasBookmarks)
     }
 
+    func testWhenChromiumProfileHasOnlyHistory_ThenProfileIsImportable() {
+        let profileURL = profile(named: "Default")
+        let fileStore = FileStoreMock()
+        fileStore.directoryStorage[profileURL.absoluteString] = ["History"]
+        let profile = DataImport.BrowserProfile(browser: .chrome, profileURL: profileURL, fileStore: fileStore)
+
+        let list = DataImport.BrowserProfileList(browser: .chrome, profiles: [profile])
+
+        XCTAssertEqual(list.validImportableProfiles.map(\.profileURL), [profileURL])
+        XCTAssertTrue(profile.hasValidProfileData(for: .history))
+    }
+
     func testWhenFirefoxProfileDataFilesAreEmpty_ThenNoDataTypeIsAvailable() {
         let profileURL = profile(named: "gm867h0z.default")
         let fileStore = fileStoreWithEmptyFiles(["places.sqlite", "key4.db", "logins.json"], in: profileURL)

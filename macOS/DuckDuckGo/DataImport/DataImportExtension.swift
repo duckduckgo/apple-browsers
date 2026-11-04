@@ -178,10 +178,12 @@ extension DataImport {
         struct ProfileDataValidationResult {
             let logins: ProfileDataItemValidationResult
             let bookmarks: ProfileDataItemValidationResult
+            let history: ProfileDataItemValidationResult
 
             var containsValidData: Bool {
                 if case .available = logins { return true }
                 if case .available = bookmarks { return true }
+                if case .available = history { return true }
                 return false
             }
         }
@@ -204,12 +206,8 @@ extension DataImport {
             case .history:
                 // Safari's history comes from its export file, not the profile directory
                 if browser.isSafari { return true }
-                guard let profileDirectoryContents = try? profileDataFileNames() else { return false }
-                let historyDatabaseName = switch browser {
-                case .firefox, .tor: FirefoxHistoryReader.Constants.historyDatabaseName
-                default: ChromiumHistoryReader.Constants.historyDatabaseName
-                }
-                return profileDirectoryContents.contains(historyDatabaseName)
+                if case .available = validateProfileDataResult?.history { return true }
+                return false
             case .creditCards:
                 return false
             }
@@ -221,9 +219,11 @@ extension DataImport {
             let profileDirectoryContentsSet = Set(profileDirectoryContents)
             let validateLogins = validateLoginsData(profileDirectoryContents: profileDirectoryContentsSet)
             let validateBookmarks = validateBookmarksData(profileDirectoryContents: profileDirectoryContentsSet)
+            let validateHistory = validateHistoryData(profileDirectoryContents: profileDirectoryContentsSet)
 
             return .init(logins: validateLogins,
-                         bookmarks: validateBookmarks)
+                         bookmarks: validateBookmarks,
+                         history: validateHistory)
         }
 
         private func profileDataFileNames() throws -> [String] {
@@ -281,6 +281,26 @@ extension DataImport {
             case .bitwarden, .lastPass, .onePassword7, .onePassword8:
                 return .unsupported
             }
+        }
+
+        private func validateHistoryData(profileDirectoryContents: Set<String>) -> ProfileDataItemValidationResult {
+            let historyDatabaseName: String
+            switch browser {
+            case .brave, .chrome, .chromium, .coccoc, .edge, .opera, .operaGX, .vivaldi, .yandex:
+                historyDatabaseName = ChromiumHistoryReader.Constants.historyDatabaseName
+
+            case .firefox, .tor:
+                historyDatabaseName = FirefoxHistoryReader.Constants.historyDatabaseName
+
+            case .safari, .safariTechnologyPreview:
+                return .available
+
+            case .bitwarden, .lastPass, .onePassword7, .onePassword8:
+                return .unsupported
+            }
+
+            return profileDirectoryContents.contains(historyDatabaseName) ? .available
+                : .unavailable(path: profileURL.appendingPathComponent(historyDatabaseName).path)
         }
 
         private static func getDefaultProfileName(at profileURL: URL) -> String {

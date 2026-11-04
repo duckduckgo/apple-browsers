@@ -131,8 +131,8 @@ final class AutofillPreferencesModel: ObservableObject {
     }
 
     @MainActor
-    func passwordManagerSettingsChange(passwordManager: PasswordManager) {
-        self.passwordManager = passwordManager
+    func passwordManagerSettingsChange(passwordManager requested: PasswordManager) {
+        passwordManager = passwordManager.transitioned(to: requested, webExtensionsSupported: areWebExtensionsSupported)
     }
 
     func openImportPasswordsWindow() {
@@ -162,9 +162,11 @@ final class AutofillPreferencesModel: ObservableObject {
         bitwardenManager: BWManagement? = Application.appDelegate.bitwardenManager,
         neverPromptWebsitesManager: AutofillNeverPromptWebsitesManager = AutofillNeverPromptWebsitesManager.shared,
         syncPromoManager: SyncPromoManaging = Application.appDelegate.syncSetupAutofillPromoManager,
-        notificationCenter: NotificationCenter = .default
+        notificationCenter: NotificationCenter = .default,
+        areWebExtensionsSupported: Bool = PasswordManager.areWebExtensionsSupported
     ) {
         self.persistor = persistor
+        self.areWebExtensionsSupported = areWebExtensionsSupported
         self.userAuthenticator = userAuthenticator
         self.bitwardenManager = bitwardenManager
         self.neverPromptWebsitesManager = neverPromptWebsitesManager
@@ -188,13 +190,11 @@ final class AutofillPreferencesModel: ObservableObject {
                 }
             }
 
-        managedByExtensionCancellable = notificationCenter.publisher(for: .autofillUserSettingsDidChange)
+        userSettingsCancellable = notificationCenter.publisher(for: .autofillUserSettingsDidChange)
             .receive(on: DispatchQueue.main)
             .sink { [weak self] _ in
-                guard let self else { return }
-                let updated = persistor.isManagedByExtension
-                if updated != isManagedByExtension {
-                    isManagedByExtension = updated
+                MainActor.assumeMainThread {
+                    self?.refreshFromPersistor()
                 }
             }
 
@@ -207,7 +207,8 @@ final class AutofillPreferencesModel: ObservableObject {
     private let neverPromptWebsitesManager: AutofillNeverPromptWebsitesManager
     private let syncPromoManager: SyncPromoManaging
     private var syncPromoCancellable: AnyCancellable?
-    private var managedByExtensionCancellable: AnyCancellable?
+    private var userSettingsCancellable: AnyCancellable?
+    let areWebExtensionsSupported: Bool
     lazy var syncPromoViewModel: SyncPromoViewModel = SyncPromoViewModel(touchpointType: .autofill,
                                                                          primaryButtonAction: { [weak self] in
         self?.syncPromoManager.goToSyncSettings(for: .autofill)
@@ -250,6 +251,15 @@ final class AutofillPreferencesModel: ObservableObject {
 
     func openSettings() {
         NSWorkspace.shared.open(.fullDiskAccess)
+    }
+
+    @MainActor
+    private func refreshFromPersistor() {
+        let isManagedByExtension = persistor.isManagedByExtension
+        if isManagedByExtension != self.isManagedByExtension {
+            self.isManagedByExtension = isManagedByExtension
+        }
+        passwordManager = persistor.passwordManager
     }
 
     @MainActor

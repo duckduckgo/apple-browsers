@@ -182,10 +182,43 @@ final class AutofillPreferencesModelTests: XCTestCase {
         cancellable.cancel()
     }
 
+    // MARK: - Password Manager
+
     @MainActor
-    private func makeModel(persistor: AutofillPreferencesPersistorMock, notificationCenter: NotificationCenter) throws -> AutofillPreferencesModel {
+    func testWhenWebExtensionsAreSupportedAndDuckDuckGoUserSelectsBitwarden_ThenDuckDuckGoStaysSelected() throws {
+        let persistor = AutofillPreferencesPersistorMock()
+        let model = try makeModel(persistor: persistor, notificationCenter: NotificationCenter(), areWebExtensionsSupported: true)
+
+        model.passwordManagerSettingsChange(passwordManager: .bitwarden)
+
+        XCTAssertEqual(model.passwordManager, .duckduckgo)
+        XCTAssertEqual(persistor.passwordManager, .duckduckgo)
+    }
+
+    @MainActor
+    func testWhenPasswordManagerChangesWhileSettingsAreOpen_ThenTheModelFollows() throws {
+        let persistor = AutofillPreferencesPersistorMock()
+        persistor.passwordManager = .bitwarden
+        let notificationCenter = NotificationCenter()
+        let model = try makeModel(persistor: persistor, notificationCenter: notificationCenter)
+        XCTAssertEqual(model.passwordManager, .bitwarden)
+
+        let updated = expectation(description: "passwordManager updated")
+        let cancellable = model.$passwordManager.dropFirst().sink { _ in updated.fulfill() }
+
+        persistor.passwordManager = .duckduckgo
+        notificationCenter.post(name: .autofillUserSettingsDidChange, object: nil)
+
+        wait(for: [updated], timeout: 1)
+        XCTAssertEqual(model.passwordManager, .duckduckgo)
+        cancellable.cancel()
+    }
+
+    @MainActor
+    private func makeModel(persistor: AutofillPreferencesPersistorMock, notificationCenter: NotificationCenter,
+                           areWebExtensionsSupported: Bool = true) throws -> AutofillPreferencesModel {
         try AutofillPreferencesModel(persistor: persistor, userAuthenticator: UserAuthenticatorMock(),
                                      neverPromptWebsitesManager: neverPromptWebsitesManager(), syncPromoManager: MockSyncPromoManager(),
-                                     notificationCenter: notificationCenter)
+                                     notificationCenter: notificationCenter, areWebExtensionsSupported: areWebExtensionsSupported)
     }
 }

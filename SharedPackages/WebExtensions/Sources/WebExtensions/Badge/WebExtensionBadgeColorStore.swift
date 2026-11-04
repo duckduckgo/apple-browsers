@@ -19,7 +19,7 @@
 import Foundation
 import WebKit
 
-/// The color strings extensions set with `action.setBadgeBackgroundColor` and `action.setBadgeTextColor`.
+/// The `#rrggbb` colors extensions set with `action.setBadgeBackgroundColor` and `action.setBadgeTextColor`.
 /// A color applies on every tab, since WebKit doesn't tell which of our tabs an extension's `tabId` is.
 @available(macOS 15.4, iOS 18.4, *)
 @MainActor

@@ -22,8 +22,8 @@ import WebKit
 /// Hears the badge colors the API stub script relays on behalf of `action.setBadgeBackgroundColor` and
 /// `action.setBadgeTextColor`: WebKit accepts the first without passing the color on, and lacks the second.
 ///
-/// The script sends `{kind: "background" | "text", color}`, with the color string the extension passed,
-/// and expects no answer. Only pages of a loaded extension are heard. Without a store the colors are dropped.
+/// The script sends `{kind: "background" | "text", color: "#rrggbb"}` and expects no answer. Only pages of a
+/// loaded extension are heard. Without a store the colors are dropped.
 @available(macOS 15.4, iOS 18.4, *)
 final class WebExtensionBadgeColorMessageHandler: NSObject, WKScriptMessageHandler {
 

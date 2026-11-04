@@ -68,7 +68,7 @@ public enum WebExtensionAPIStubScript {
     public static let permissionsMessageHandlerName = "ddgWebExtensionPermissions"
 
     /// Name of the script message handler `action.setBadgeBackgroundColor` and `action.setBadgeTextColor`
-    /// relay the color to, since WebKit never passes it to the app. Without it the colors are dropped.
+    /// relay the color to as `#rrggbb`, since WebKit never passes it to the app. Without it the colors are dropped.
     public static let badgeColorMessageHandlerName = "ddgWebExtensionBadgeColor"
 
     /// Permissions WebKit doesn't know that the script implements itself. They are always granted,
@@ -1493,15 +1493,27 @@ public enum WebExtensionAPIStubScript {
         }
 
         // WebKit accepts `setBadgeBackgroundColor` but never passes the color to the app, and has no
-        // `setBadgeTextColor`, so both send the color string through `badgeColorMessageHandlerName`.
+        // `setBadgeTextColor`, so both send the color through `badgeColorMessageHandlerName` as `#rrggbb`.
         var badgeColorMessageHandlerName = "\(Self.badgeColorMessageHandlerName)";
+        var badgeColorContext;
+
+        // Normalizes Chrome's `[r, g, b, a]` array or CSS color string to `#rrggbb`, or `null` when it isn't a color:
+        // a canvas ignores an invalid color, leaving `transparent` in place.
+        function badgeColorHex(color) {
+            var context = badgeColorContext ||= new OffscreenCanvas(1, 1).getContext("2d");
+            context.fillStyle = "transparent";
+            context.fillStyle = Array.isArray(color) ? "rgb(" + color.slice(0, 3) + ")" : color;
+            var hex = context.fillStyle;
+            return hex[0] === "#" ? hex : null;
+        }
 
         function relayBadgeColor(kind, details) {
             try {
                 var handlers = globalThis.webkit && globalThis.webkit.messageHandlers;
                 var handler = handlers && handlers[badgeColorMessageHandlerName];
-                if (handler && details !== null && typeof details === "object" && typeof details.color === "string") {
-                    handler.postMessage({ kind: kind, color: details.color });
+                var color = details !== null && typeof details === "object" ? badgeColorHex(details.color) : null;
+                if (handler && color !== null) {
+                    handler.postMessage({ kind: kind, color: color });
                 }
             } catch (error) {
                 console.info("[DuckDuckGo] Could not relay the badge color: " + error);

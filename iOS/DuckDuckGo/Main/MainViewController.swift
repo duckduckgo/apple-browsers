@@ -2829,15 +2829,21 @@ class MainViewController: UIViewController {
     }
 
     @IBAction func onFirePressed() {
+        performFirePressed(prefersSheet: false)
+    }
+
+    func performFirePressed(prefersSheet: Bool) {
         recordNewTabPageSessionAction { $0.tapFireButton() }
         let wasContextualFireOnboardingDialogVisible = daxDialogsManager.isShowingFireDialog
 
         func showFireConfirmation() {
             let presenter = FireConfirmationPresenter()
-            let source: UIView = findFireButton() ?? viewCoordinator.toolbar
+            let tabsBarFireButton = viewCoordinator.tabBarContainer.isHidden ? nil : tabsBarController?.fireButton
+            let source: UIView = tabsBarFireButton ?? findFireButton() ?? viewCoordinator.toolbar
             presenter.presentFireConfirmation(
                 on: self,
                 attachPopoverTo: source,
+                prefersSheet: prefersSheet,
                 tabViewModel: tabManager.viewModelForCurrentTab(),
                 pixelSource: .browsing,
                 fireContext: .default(daxDialogsManager: daxDialogsManager),
@@ -2908,7 +2914,7 @@ class MainViewController: UIViewController {
             enterSearch()
         }
     }
-    
+
     private func wakeLazyFireButtonAnimator() {
         DispatchQueue.main.async {
             _ = self.fireButtonAnimator

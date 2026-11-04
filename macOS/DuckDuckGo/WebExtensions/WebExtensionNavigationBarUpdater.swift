@@ -17,6 +17,7 @@
 //
 
 import AppKit
+import AppKitExtensions
 import Combine
 import os.log
 import WebExtensions
@@ -114,6 +115,9 @@ final class WebExtensionNavigationBarUpdater: NSObject, ThemeUpdateListening {
         for button in buttons {
             applyThemeStyle(theme: theme, to: button)
         }
+
+        // Badges without colors of their own use the theme's.
+        refreshActions()
     }
 
     // MARK: - Buttons
@@ -203,10 +207,15 @@ final class WebExtensionNavigationBarUpdater: NSObject, ThemeUpdateListening {
         button.image = action?.icon(for: Constants.iconSize)
             ?? context.webExtension.actionIcon(for: Constants.iconSize)
             ?? context.webExtension.icon(for: Constants.iconSize)
+
         let label = action?.label ?? ""
         button.toolTip = !label.isEmpty ? label : (context.webExtension.displayActionLabel ?? context.webExtension.displayName)
         button.isEnabled = action?.isEnabled ?? true
         button.badgeText = action?.badgeText ?? ""
+
+        let badgeColorStore = webExtensionManagerProvider()?.badgeColors
+        let badgeColors = WebExtensionBadgeColors(context: context, store: badgeColorStore, palette: theme.palette)
+        button.applyBadgeColors(badgeColors)
     }
 
     private func toolbarButton(for context: WKWebExtensionContext) -> ExtensionButton {
@@ -239,7 +248,7 @@ final class WebExtensionNavigationBarUpdater: NSObject, ThemeUpdateListening {
         return button
     }
 
-    private func applyThemeStyle(theme: ThemeStyleProviding, to button: MouseOverButton) {
+    private func applyThemeStyle(theme: ThemeStyleProviding, to button: ExtensionButton) {
         button.mouseOverColor = theme.colorsProvider.buttonMouseOverColor
         button.cornerRadius = theme.toolbarButtonsCornerRadius
     }
@@ -388,9 +397,11 @@ final class WebExtensionNavigationBarUpdater: NSObject, ThemeUpdateListening {
 private final class ExtensionButton: MouseOverButton {
 
     private enum Constants {
-        static let badgeHeight: CGFloat = 12
+        static let badgeDiameter: CGFloat = 16
         static let badgeHorizontalPadding: CGFloat = 3
-        static let badgeFont = NSFont.systemFont(ofSize: 9, weight: .semibold)
+        static let badgeMaxLabelWidth: CGFloat = 22
+        static let badgeOverhang: CGFloat = 4
+        static let badgeFont = NSFont.systemFont(ofSize: 10, weight: .bold)
     }
 
     /// Builds the right-click menu when the user opens it. `nil` shows no menu.
@@ -405,16 +416,23 @@ private final class ExtensionButton: MouseOverButton {
         }
     }
 
-    private let badgeView = NSView()
+    private let badgeView = ColorView(frame: .zero, cornerRadius: Constants.badgeDiameter / 2)
     private let badgeLabel = NSTextField(labelWithString: "")
 
     override init(frame frameRect: NSRect) {
         super.init(frame: frameRect)
+        // The badge hangs past the button's bottom-right corner.
+        clipsToBounds = false
         setUpBadge()
     }
 
     required init?(coder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
+    }
+
+    func applyBadgeColors(_ colors: WebExtensionBadgeColors) {
+        badgeView.backgroundColor = colors.background
+        badgeLabel.textColor = colors.text
     }
 
     /// Only the extension's menu applies to its button, not the toolbar's.
@@ -430,16 +448,13 @@ private final class ExtensionButton: MouseOverButton {
 
     private func setUpBadge() {
         badgeLabel.font = Constants.badgeFont
-        badgeLabel.textColor = .white
         badgeLabel.alignment = .center
-        badgeLabel.lineBreakMode = .byClipping
+        badgeLabel.lineBreakMode = .byTruncatingTail
         badgeLabel.translatesAutoresizingMaskIntoConstraints = false
 
-        badgeView.wantsLayer = true
-        badgeView.layer?.backgroundColor = NSColor.systemRed.cgColor
-        badgeView.layer?.cornerRadius = Constants.badgeHeight / 2
         badgeView.isHidden = true
-        badgeView.translatesAutoresizingMaskIntoConstraints = false
+        // The hover background is a sublayer added on first hover, so lift the badge above it.
+        badgeView.layer?.zPosition = 1
         badgeView.addSubview(badgeLabel)
         addSubview(badgeView)
 
@@ -447,12 +462,46 @@ private final class ExtensionButton: MouseOverButton {
             badgeLabel.leadingAnchor.constraint(equalTo: badgeView.leadingAnchor, constant: Constants.badgeHorizontalPadding),
             badgeLabel.trailingAnchor.constraint(equalTo: badgeView.trailingAnchor, constant: -Constants.badgeHorizontalPadding),
             badgeLabel.centerYAnchor.constraint(equalTo: badgeView.centerYAnchor),
+            badgeLabel.widthAnchor.constraint(lessThanOrEqualToConstant: Constants.badgeMaxLabelWidth),
 
-            badgeView.heightAnchor.constraint(equalToConstant: Constants.badgeHeight),
-            badgeView.widthAnchor.constraint(greaterThanOrEqualToConstant: Constants.badgeHeight),
-            badgeView.widthAnchor.constraint(lessThanOrEqualTo: widthAnchor),
-            badgeView.trailingAnchor.constraint(equalTo: trailingAnchor),
-            badgeView.bottomAnchor.constraint(equalTo: bottomAnchor),
+            badgeView.widthAnchor.constraint(greaterThanOrEqualToConstant: Constants.badgeDiameter),
+            badgeView.heightAnchor.constraint(equalToConstant: Constants.badgeDiameter),
+            badgeView.trailingAnchor.constraint(equalTo: trailingAnchor, constant: Constants.badgeOverhang),
+            badgeView.bottomAnchor.constraint(equalTo: bottomAnchor, constant: Constants.badgeOverhang),
         ])
+    }
+}
+
+/// A badge's colors: the extension's own, from `WebExtensionBadgeColorStore`, else the theme's, as on Windows.
+@available(macOS 15.4, *)
+private struct WebExtensionBadgeColors {
+    let background: NSColor
+    let text: NSColor
+
+    @MainActor
+    init(context: WKWebExtensionContext, store: WebExtensionBadgeColorStore?, palette: ThemeColors) {
+        let customBackground = store?.backgroundColor(for: context).flatMap(NSColor.init(hex:))
+        let customText = store?.textColor(for: context).flatMap(NSColor.init(hex:))
+
+        background = Self.background(custom: customBackground, palette: palette)
+        text = Self.text(custom: customText, onCustomBackground: customBackground, palette: palette)
+    }
+
+    /// The extension's color, else the theme's.
+    private static func background(custom: NSColor?, palette: ThemeColors) -> NSColor {
+        custom ?? palette.accentAltPrimary
+    }
+
+    /// The extension's color, else black or white to contrast a custom background, else the theme's.
+    private static func text(custom: NSColor?, onCustomBackground customBackground: NSColor?, palette: ThemeColors) -> NSColor {
+        if let custom {
+            return custom
+        }
+
+        if let customBackground {
+            return customBackground.brightness > 0.5 ? .black : .white
+        }
+
+        return palette.accentAltContentPrimary
     }
 }

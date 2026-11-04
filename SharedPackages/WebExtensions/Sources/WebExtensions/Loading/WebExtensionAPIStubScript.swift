@@ -38,6 +38,8 @@ import Foundation
 ///
 /// In an extension page embedded in a website, `chrome.action.openPopup` is relayed to the extension's
 /// background page, since calling WebKit's own there would take the website's web process down.
+/// `action.setBadgeBackgroundColor` and `action.setBadgeTextColor` relay their color to the app through
+/// `badgeColorMessageHandlerName`.
 /// Extension pages also expose the DuckDuckGo brand through `navigator.userAgentData`.
 ///
 /// A few extensions also get a fix of their own, listed in `extensionFixes` with the problem each one
@@ -64,6 +66,10 @@ public enum WebExtensionAPIStubScript {
     /// Name of the script message handler `chrome.permissions` asks about app permissions, the ones WebKit
     /// doesn't know (see `WebExtensionAppPermission`). Without it they are never held.
     public static let permissionsMessageHandlerName = "ddgWebExtensionPermissions"
+
+    /// Name of the script message handler `action.setBadgeBackgroundColor` and `action.setBadgeTextColor`
+    /// relay the color to, since WebKit never passes it to the app. Without it the colors are dropped.
+    public static let badgeColorMessageHandlerName = "ddgWebExtensionBadgeColor"
 
     /// Permissions WebKit doesn't know that the script implements itself. They are always granted,
     /// without asking the user.
@@ -1484,6 +1490,47 @@ public enum WebExtensionAPIStubScript {
             }
         } catch (error) {
             console.info("[DuckDuckGo] Could not relay chrome.action.openPopup: " + error);
+        }
+
+        // WebKit accepts `setBadgeBackgroundColor` but never passes the color to the app, and has no
+        // `setBadgeTextColor`, so both send the color string through `badgeColorMessageHandlerName`.
+        var badgeColorMessageHandlerName = "\(Self.badgeColorMessageHandlerName)";
+
+        function relayBadgeColor(kind, details) {
+            try {
+                var handlers = globalThis.webkit && globalThis.webkit.messageHandlers;
+                var handler = handlers && handlers[badgeColorMessageHandlerName];
+                if (handler && details !== null && typeof details === "object" && typeof details.color === "string") {
+                    handler.postMessage({ kind: kind, color: details.color });
+                }
+            } catch (error) {
+                console.info("[DuckDuckGo] Could not relay the badge color: " + error);
+            }
+        }
+
+        function relayBadgeColorSetter(namespace, name, kind) {
+            var original = namespace[name];
+            return define(namespace, name, function(details) {
+                relayBadgeColor(kind, details);
+                if (typeof original === "function") {
+                    return original.apply(this, arguments);
+                }
+                var last = arguments.length > 0 ? arguments[arguments.length - 1] : undefined;
+                return answerBothStyles(Promise.resolve(), typeof last === "function" ? last : undefined);
+            });
+        }
+
+        try {
+            if (api.action && typeof api.action.setBadgeBackgroundColor === "function") {
+                if (relayBadgeColorSetter(api.action, "setBadgeBackgroundColor", "background")) {
+                    relayedMembers.push("action.setBadgeBackgroundColor");
+                }
+                if (relayBadgeColorSetter(api.action, "setBadgeTextColor", "text")) {
+                    relayedMembers.push("action.setBadgeTextColor");
+                }
+            }
+        } catch (error) {
+            console.info("[DuckDuckGo] Could not relay the badge colors: " + error);
         }
 
         if (stubbedNamespaces.length > 0 || stubbedMembers.length > 0 || wrappedNamespaces.length > 0

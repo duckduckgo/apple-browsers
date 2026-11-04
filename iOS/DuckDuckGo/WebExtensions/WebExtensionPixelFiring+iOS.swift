@@ -172,7 +172,7 @@ struct iOSWebExtensionPixelFiring: WebExtensionPixelFiring {
             pixelFiring?.fire(Pixel.Event.webExtensionAdBlockingScriptletsNotFetched,
                           frequency: .dailyAndStandard,
                           options: .parameters(["extension_loaded": extensionLoaded ? "true" : "false"]))
-        case .cpmMessagingEpisode, .cpmNetworkProcessRecoveryApplied, .cpmRecovery, .cpmStartupResponseMissing:
+        case .cpmBackgroundLoadRestart, .cpmMessagingEpisode, .cpmNetworkProcessRecoveryApplied, .cpmRecovery, .cpmStartupResponseMissing:
             fireCPMPixel(event)
         case .defaultPasswordManagerSet, .bitwardenDailyActive, .apiCompatibilityGaps:
             // Chrome extensions, and so password manager extensions, are only supported on macOS, so

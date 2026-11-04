@@ -98,7 +98,7 @@ public enum AppStorePurchaseFlowError: DDGError {
 @available(iOS 15.0, *)
 public protocol AppStorePurchaseFlow {
     typealias TransactionJWS = String
-    typealias PurchaseResult = (transactionJWS: TransactionJWS, accountCreationDuration: WideEvent.MeasuredInterval?)
+    typealias PurchaseResult = (transactionJWS: TransactionJWS, isFreeTrial: Bool, accountCreationDuration: WideEvent.MeasuredInterval?)
 
     /// Purchases a new subscription for a user who doesn't have an active subscription.
     /// This method checks for existing subscriptions and creates an account if needed.
@@ -111,10 +111,12 @@ public protocol AppStorePurchaseFlow {
     ///
     /// - Parameters:
     ///   - transactionJWS: The JWS representation of the transaction to be validated.
+    ///   - isFreeTrial: Whether the purchase started a free trial, `nil` when unknown (e.g. a tier change).
     ///   - experimentAttribution: Optional experiment attribution to send with the transaction validation request.
     /// - Returns: A `Result` containing either a `PurchaseUpdate` object on success or an `AppStorePurchaseFlowError` on failure.
     @discardableResult func completeSubscriptionPurchase(
         with transactionJWS: TransactionJWS,
+        isFreeTrial: Bool?,
         experimentAttribution: PurchaseExperimentAttribution?) async -> Result<PurchaseUpdate, AppStorePurchaseFlowError>
 
     /// Changes the subscription tier for a user who already has an active subscription.
@@ -200,8 +202,8 @@ public final class DefaultAppStorePurchaseFlow: AppStorePurchaseFlow {
 
         // Make the purchase
         switch await storePurchaseManager.purchaseSubscription(with: subscriptionIdentifier, externalID: externalID, includeProTier: includeProTier) {
-        case .success(let transactionJWS):
-            return .success((transactionJWS: transactionJWS, accountCreationDuration: accountCreationDuration))
+        case .success(let purchase):
+            return .success((transactionJWS: purchase.transactionJWS, isFreeTrial: purchase.isFreeTrial, accountCreationDuration: accountCreationDuration))
         case .failure(let error):
             Logger.subscriptionAppStorePurchaseFlow.error("purchaseSubscription error: \(String(describing: error), privacy: .public)")
 
@@ -237,9 +239,9 @@ public final class DefaultAppStorePurchaseFlow: AppStorePurchaseFlow {
         // Make the purchase with the existing account's externalID
         // Always include Pro tier - tier change UI is only visible when Pro is enabled
         switch await storePurchaseManager.purchaseSubscription(with: subscriptionIdentifier, externalID: externalID, includeProTier: true) {
-        case .success(let transactionJWS):
+        case .success(let purchase):
             NotificationCenter.default.post(name: .userDidPurchaseSubscription, object: self)
-            return .success(transactionJWS)
+            return .success(purchase.transactionJWS)
         case .failure(let error):
             Logger.subscriptionAppStorePurchaseFlow.error("Tier change purchase error: \(String(describing: error), privacy: .public)")
 
@@ -259,6 +261,7 @@ public final class DefaultAppStorePurchaseFlow: AppStorePurchaseFlow {
     @discardableResult
     public func completeSubscriptionPurchase(
         with transactionJWS: TransactionJWS,
+        isFreeTrial: Bool?,
         experimentAttribution: PurchaseExperimentAttribution?) async -> Result<PurchaseUpdate, AppStorePurchaseFlowError> {
         Logger.subscriptionAppStorePurchaseFlow.log("Completing Subscription Purchase")
         subscriptionManager.clearSubscriptionCache()
@@ -273,7 +276,8 @@ public final class DefaultAppStorePurchaseFlow: AppStorePurchaseFlow {
                     return .failure(.missingEntitlements)
                 } else {
                     pendingTransactionHandler?.handleSubscriptionActivated()
-                    NotificationCenter.default.post(name: .userDidPurchaseSubscription, object: self)
+                    let userInfo = isFreeTrial.map { [UserDidPurchaseSubscriptionUserInfoKey.isFreeTrial: $0] }
+                    NotificationCenter.default.post(name: .userDidPurchaseSubscription, object: self, userInfo: userInfo)
                     return .success(.completed)
                 }
             } else {

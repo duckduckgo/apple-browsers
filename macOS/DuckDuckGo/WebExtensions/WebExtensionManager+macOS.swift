@@ -151,12 +151,16 @@ enum WebExtensionManagerFactory {
             isCPMBackgroundLoadRecoveryEnabled: {
                 Application.appDelegate.featureFlagger.isFeatureOn(.cpmBackgroundLoadRecovery)
             },
+            isCPMBackgroundLoadRestartEnabled: {
+                Application.appDelegate.featureFlagger.isFeatureOn(.cpmBackgroundLoadRestart)
+            },
             isCPMLateBackgroundDocumentRecoveryEnabled: {
                 Application.appDelegate.featureFlagger.isFeatureOn(.cpmLateBackgroundDocumentRecovery)
             },
             isCPMStableBaseURLEnabled: {
                 Application.appDelegate.featureFlagger.isFeatureOn(.cpmStableBaseURL)
             },
+            isCPMUpgradeBeforeLoadEnabled: Application.appDelegate.featureFlagger.isFeatureOn(.cpmUpgradeBeforeLoad),
             handlerProvider: WebExtensionHandlerProvider(
                 privacyConfigurationManager: privacyConfigurationManager,
                 autoconsentPreferences: autoconsentPreferences,
@@ -169,13 +173,11 @@ enum WebExtensionManagerFactory {
         )
 
         internalSiteHandler.dataSource = manager
-        if buildType.isSparkleBuild {
-            manager.chromeWebStore = ChromeWebStoreService(
-                manager: manager,
-                catalog: ChromeWebStoreCatalog(configurationManager: privacyConfigurationManager),
-                presenter: ChromeWebStorePresenter(windowProvider: { NSApp.keyWindow ?? NSApp.mainWindow })
-            )
-        }
+        manager.chromeWebStore = ChromeWebStoreService(
+            manager: manager,
+            catalog: ChromeWebStoreCatalog(configurationManager: privacyConfigurationManager),
+            presenter: ChromeWebStorePresenter(windowProvider: { NSApp.keyWindow ?? NSApp.mainWindow })
+        )
 
         return manager
     }

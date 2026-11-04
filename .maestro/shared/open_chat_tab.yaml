@@ -13,7 +13,9 @@ appId: com.duckduckgo.mobile.ios
         isOnboardingCompleted: ${ONBOARDING_COMPLETED}
         currentAppVariant: ${APP_VARIANT}
         isRunningUITests: true
+        "ff.alwaysShowKeyboardOnNewTabPage": "false"
         ff.browsingMenuSheetEnabledByDefault: "true"
+        ff.aiChatTabHandoffImprovements: "true"
 
 - tapOn:
     id: "Browser.OmniBar.Button.AIChat"
@@ -27,4 +29,4 @@ appId: com.duckduckgo.mobile.ios
 - runFlow:
     file: dismiss_chat_open_modals.yaml
 
-- assertVisible: "Close tab"
+- assertVisible: "Recent chats"

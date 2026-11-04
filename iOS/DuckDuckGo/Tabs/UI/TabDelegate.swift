@@ -40,7 +40,7 @@ protocol TabDelegate: AnyObject {
 
     func tabDidRequestNewTab(_ tab: TabViewController)
 
-    func tabDidRequestNewVoiceChat(_ tab: TabViewController)
+    func tabDidRequestNewVoiceChat(_ tab: TabViewController, source: AIChatEntryPointSource)
 
     func newTab(reuseExisting: Bool)
 
@@ -71,7 +71,8 @@ protocol TabDelegate: AnyObject {
     /// Prompts in the new tab are attributed to `entrySource`; nil leaves them unattributed.
     func tab(_ tab: TabViewController,
              didRequestNewDuckAITabForUrl url: URL,
-             entrySource: AIChatEntryPointSource?)
+             entrySource: AIChatEntryPointSource?,
+             newChatInputRequest: DuckAINewChatInputRequest?)
 
     /// An entry into Duck.ai that the tab itself detected, reported like every other entry point.
     func tab(_ tab: TabViewController, didReportDuckAIEntry source: AIChatEntryPointSource, opensNewTab: Bool, hasPrompt: Bool)
@@ -264,7 +265,7 @@ extension TabDelegate {
 
     func tabDidFinishNavigation(_ tab: TabViewController) {}
 
-    func tabDidRequestNewVoiceChat(_ tab: TabViewController) {}
+    func tabDidRequestNewVoiceChat(_ tab: TabViewController, source: AIChatEntryPointSource) {}
 
     func tab(_ tab: TabViewController, didFailDuckAINavigationFor url: URL, error: Error) {}
 

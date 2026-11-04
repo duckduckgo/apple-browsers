@@ -149,12 +149,11 @@ public final class ChromeWebStoreService: ChromeWebStoreManaging {
     }
 
     public func remove(identifier: String) async -> Bool {
-        guard !isPerformingOperation, let manager, catalog.contains(identifier),
+        guard !isPerformingOperation, let manager,
               let installed = installedExtension(identifier, manager: manager) else { return false }
         isPerformingOperation = true
         defer { isPerformingOperation = false }
-        guard await presenter.confirmRemoval(name: installed.name ?? identifier),
-              catalog.contains(identifier) else { return false }
+        guard await presenter.confirmRemoval(name: installed.name ?? identifier) else { return false }
         // Another browser entry point (e.g. Debug) may have removed it while the sheet was open.
         guard installedExtension(identifier, manager: manager) != nil else { return true }
         do {

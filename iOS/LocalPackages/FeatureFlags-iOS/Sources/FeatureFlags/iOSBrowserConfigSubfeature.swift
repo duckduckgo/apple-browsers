@@ -24,6 +24,9 @@ public enum iOSBrowserConfigSubfeature: String, PrivacySubfeature {
         .iOSBrowserConfig
     }
 
+    /// https://app.asana.com/1/137249556945/task/1219972523893967
+    case ipadMenuBar
+
     // Demonstrative case for default value. Remove once a real-world feature is added
     case intentionallyLocalOnlySubfeatureForTests
 
@@ -99,6 +102,9 @@ public enum iOSBrowserConfigSubfeature: String, PrivacySubfeature {
 
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213965646075290
     case fireButtonRefinements
+
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1220050958443794?focus=true
+    case slideToDelete
 
     /// https://app.asana.com/1/137249556945/project/392891325557410/task/1212828713075939?focus=true
     case omniBarLongPressMenu

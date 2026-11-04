@@ -38,12 +38,12 @@ struct DuckAIEntryWideEventDataTests {
     }
 
     @available(iOS 16, *)
-    @Test("Metadata exposes the entry names and 1.1.0", .timeLimit(.minutes(1)))
+    @Test("Metadata exposes the entry names and 1.2.0", .timeLimit(.minutes(1)))
     func metadataExposesEntryNames() {
         #expect(DuckAIEntryWideEventData.metadata.pixelName == "duckai_entry")
         #expect(DuckAIEntryWideEventData.metadata.featureName == "duckai_entry")
         #expect(DuckAIEntryWideEventData.metadata.type == "ios-duckai-entry")
-        #expect(DuckAIEntryWideEventData.metadata.version == "1.1.0")
+        #expect(DuckAIEntryWideEventData.metadata.version == "1.2.0")
         #expect(DuckAIEntryWideEventData.appTerminatedReason == "app_terminated")
     }
 
@@ -58,6 +58,7 @@ struct DuckAIEntryWideEventDataTests {
 
         #expect(params["feature.data.ext.source"] as? String == "chat_history_open_chat")
         #expect(params["feature.data.ext.has_prompt"] as? Bool == false)
+        #expect(params["feature.data.ext.voice"] as? Bool == false)
         #expect(params["feature.data.ext.chat_state"] as? String == "existing")
         #expect(params["feature.data.ext.surface"] as? String == "contextual_sheet")
         #expect(params["feature.data.ext.prompt_submitted"] as? Bool == false)

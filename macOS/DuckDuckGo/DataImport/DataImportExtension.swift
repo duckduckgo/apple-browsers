@@ -202,6 +202,8 @@ extension DataImport {
                 if case .available = validateProfileDataResult?.bookmarks { return true }
                 return false
             case .history:
+                // Safari's history comes from its export file, not the profile directory
+                if browser.isSafari { return true }
                 guard let profileDirectoryContents = try? fileStore.directoryContents(at: profileURL.path) else { return false }
                 let historyDatabaseName = switch browser {
                 case .firefox, .tor: FirefoxHistoryReader.Constants.historyDatabaseName
@@ -417,13 +419,18 @@ extension DataImport.Source {
     var supportedDataTypes: Set<DataImport.DataType> {
         switch self {
         case .brave, .chrome, .chromium, .coccoc, .edge, .firefox, .opera, .operaGX, .vivaldi, .yandex:
-            return [.bookmarks, .passwords]
+            return isHistoryImportEnabled ? [.bookmarks, .passwords, .history] : [.bookmarks, .passwords]
         case .safari, .safariTechnologyPreview:
-            if #available(macOS 15.2, *), Application.appDelegate.featureFlagger.isFeatureOn(.dataImportNewSafariFilePicker) {
-                return [.bookmarks, .passwords, .creditCards]
-            } else {
-                return [.bookmarks, .passwords]
+            guard #available(macOS 15.2, *) else { return [.bookmarks, .passwords] }
+            var dataTypes: Set<DataImport.DataType> = [.bookmarks, .passwords]
+            if Application.appDelegate.featureFlagger.isFeatureOn(.dataImportNewSafariFilePicker) {
+                dataTypes.insert(.creditCards)
             }
+            // History comes from the "Export Browsing Data" archive, which needs macOS 15.2.
+            if isHistoryImportEnabled {
+                dataTypes.insert(.history)
+            }
+            return dataTypes
         case .tor:
             return [.bookmarks]
         case .onePassword8, .onePassword7, .bitwarden, .lastPass, .csv:
@@ -433,6 +440,10 @@ extension DataImport.Source {
         case .fileImport:
             return [.bookmarks, .passwords]
         }
+    }
+
+    private var isHistoryImportEnabled: Bool {
+        Application.appDelegate.featureFlagger.isFeatureOn(.dataImportHistory)
     }
 
     var archiveImportSupportedFiles: Set<UTType> {

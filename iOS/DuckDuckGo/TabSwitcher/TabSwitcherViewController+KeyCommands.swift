@@ -76,6 +76,13 @@ extension TabSwitcherViewController {
         return MainMenuBuilder().keyCommands(for: spec, from: commands, availability: switcherMenuAvailability)
     }
     
+    @objc func keyboardFire() {
+        KeyboardShortcutPixel.fireUsed(with: pixelFiring)
+        guard isFireShortcutEnabled(), !isProcessingUpdates else { return }
+        let source: AnyObject = isEditing ? view : chrome.fireButton
+        burn(sender: source, prefersSheet: true)
+    }
+
     override func validate(_ command: UICommand) {
         super.validate(command)
         guard featureFlagger.isFeatureOn(.ipadMenuBar), let menuCommand = MainMenuCommand(action: command.action) else { return }

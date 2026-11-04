@@ -21,6 +21,12 @@ import XCTest
 
 final class TabSuggestionsUITests: UITestCase {
 
+    override var additionalLaunchEnvironment: [String: String] {
+        super.additionalLaunchEnvironment.merging([
+            "UITEST_DISABLE_ANIMATIONS": "1"
+        ]) { _, new in new }
+    }
+
     func testWhenOpenTabSuggestionIsSelectedThenExistingTabIsShown() {
         XCTContext.runActivity(named: "Create two tabs") { _ in
             app.openURL("https://privacy-test-pages.site", expecting: "Privacy Test Pages")

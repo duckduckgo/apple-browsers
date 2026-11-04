@@ -2382,7 +2382,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             autoconsentPreferences: cookiePopupProtectionPreferences,
             themeManager: themeManager,
             darkReaderExcludedDomainsProvider: darkReaderSettings,
-            scriptletConfiguration: makeScriptletConfiguration()
+            scriptletConfiguration: makeScriptletConfiguration(),
+            eventHub: eventHubIntegration.eventHub
         )
         self.webExtensionManager = webExtensionManager
         webExtensionAutofillTakeover.manager = webExtensionManager

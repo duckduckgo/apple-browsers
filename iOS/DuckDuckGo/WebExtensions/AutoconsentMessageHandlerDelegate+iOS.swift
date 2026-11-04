@@ -71,11 +71,10 @@ final class IOSAutoconsentMessageHandlerDelegate: AutoconsentMessageHandlerDeleg
         Logger.webExtensions.debug("iOS: Firing pixel \(pixelInfo.name) with frequency \(pixelInfo.type)")
 
         PixelKit.fire(pixel, frequency: frequency, withAdditionalParameters: additionalParams, includeAppVersionParameter: true)
+    }
 
-        if case .summary(let events) = pixel {
-            let siteRank = (pixelInfo.params["siteRank"] as? String).flatMap(CPMSiteRank.init(rawValue:))
-            CPMCoverageReporter.report(summary: events, siteRank: siteRank) { eventHub.handleNativeEvent($0) }
-        }
+    func reportCPMCoverage(counts: CPMCoverageCounts, siteRank: CPMSiteRank?) {
+        CPMCoverageReporter.report(counts: counts, siteRank: siteRank) { eventHub.handleNativeEvent($0) }
     }
 
     private func processAdditionalParams(_ params: [String: Any], isSummary: Bool) -> [String: String] {

@@ -40,20 +40,39 @@ struct CPMCoverageReporterTests {
           ])
     func unhandledFormula(patterns: Int, both: Int, expected: Int) {
         let summary = ["detected-by-patterns": patterns, "detected-by-both": both]
-        #expect(CPMCoverageReporter.unhandledCount(in: summary) == expected)
+        #expect(CPMCoverageCounts(summary: summary).unhandled == expected)
     }
 
     @Test("Missing keys count as zero", .timeLimit(.minutes(1)))
     func missingKeys() {
-        #expect(CPMCoverageReporter.unhandledCount(in: [:]) == 0)
+        #expect(CPMCoverageCounts(summary: [:]) == CPMCoverageCounts(unhandled: 0, pages: 0))
         #expect(reportedEvents([:], siteRank: .top10k).isEmpty)
+    }
+
+    @Test("Counts are clamped so a malformed message cannot loop for long or overflow", .timeLimit(.minutes(1)))
+    func clampsCounts() {
+        let max = CPMCoverageCounts.maxCount
+        #expect(CPMCoverageCounts(unhandled: Int.max, pages: Int.max) == CPMCoverageCounts(unhandled: max, pages: max))
+        #expect(CPMCoverageCounts(unhandled: -5, pages: Int.min) == CPMCoverageCounts(unhandled: 0, pages: 0))
+        #expect(CPMCoverageCounts(summary: ["init": Int.max, "detected-by-patterns": Int.max, "detected-by-both": -1]).unhandled == max)
+        #expect(CPMCoverageCounts(summary: ["detected-by-patterns": Int.min, "detected-by-both": Int.max]).unhandled == 0)
+    }
+
+    @Test("Counts report one event per unit", .timeLimit(.minutes(1)))
+    func countsReportOneEventPerUnit() {
+        var events: [String: Int] = [:]
+        CPMCoverageReporter.report(counts: CPMCoverageCounts(unhandled: 2, pages: 3), siteRank: .top10k) { events[$0, default: 0] += 1 }
+        #expect(events == [
+            EventType.pages: 3, EventType.pagesTop10k: 3,
+            EventType.unhandled: 2, EventType.unhandledTop10k: 2,
+        ])
     }
 
     @Test("A top10k summary feeds both the total and the top10k counters", .timeLimit(.minutes(1)))
     func top10kSummary() {
         let events = reportedEvents(["init": 4, "detected-by-patterns": 3, "detected-by-both": 1], siteRank: .top10k)
         #expect(events == [
-            EventType.page: 4, EventType.pageTop10k: 4,
+            EventType.pages: 4, EventType.pagesTop10k: 4,
             EventType.unhandled: 2, EventType.unhandledTop10k: 2,
         ])
     }
@@ -62,13 +81,13 @@ struct CPMCoverageReporterTests {
           arguments: [CPMSiteRank.other, nil])
     func nonTop10kSummary(siteRank: CPMSiteRank?) {
         let events = reportedEvents(["init": 4, "detected-by-patterns": 3, "detected-by-both": 1], siteRank: siteRank)
-        #expect(events == [EventType.page: 4, EventType.unhandled: 2])
+        #expect(events == [EventType.pages: 4, EventType.unhandled: 2])
     }
 
     @Test("Patterns below both sends no unhandled events", .timeLimit(.minutes(1)))
     func patternsBelowBoth() {
         let events = reportedEvents(["init": 2, "detected-by-patterns": 1, "detected-by-both": 3], siteRank: .top10k)
-        #expect(events == [EventType.page: 2, EventType.pageTop10k: 2])
+        #expect(events == [EventType.pages: 2, EventType.pagesTop10k: 2])
     }
 
     @Test("Other summary keys are ignored", .timeLimit(.minutes(1)))

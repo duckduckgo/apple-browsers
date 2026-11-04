@@ -17,6 +17,7 @@
 //  limitations under the License.
 //
 
+import UIKit
 import XCTest
 import WebExtensions
 @testable import DuckDuckGo
@@ -75,26 +76,47 @@ final class AutoconsentManagementTests: XCTestCase {
         management.fireSummaryPixel()
 
         XCTAssertEqual(eventHub.nativeEventCounts, [
-            "autoconsent_page": 3, "autoconsent_page_top10k": 1,
+            "autoconsent_pages": 3, "autoconsent_pages_top10k": 1,
             "autoconsent_unhandled": 1, "autoconsent_unhandled_top10k": 1,
         ])
     }
 
-    func testWhenEmbeddedExtensionSendsSummaryThenCPMCoverageIsReportedToEventHub() throws {
+    @MainActor
+    func testWhenAppEntersBackgroundThenEventHubIsFlushedAfterTheSummaryIsReported() {
+        let eventHub = StubEventHub()
+        let management = AutoconsentManagement(eventHub: eventHub)
+        management.firePixel(pixel: .acInit, siteRank: .other)
+
+        NotificationCenter.default.post(name: UIApplication.didEnterBackgroundNotification, object: nil)
+
+        XCTAssertEqual(eventHub.nativeEventCounts, ["autoconsent_pages": 1])
+        XCTAssertEqual(eventHub.nativeEventsWhenAppBackgrounded, 1)
+        withExtendedLifetime(management) {}
+    }
+
+    func testWhenEmbeddedExtensionReportsCoverageThenItIsCountedInEventHub() throws {
         guard #available(iOS 18.4, *) else { throw XCTSkip("Embedded extension requires iOS 18.4") }
         let eventHub = StubEventHub()
         let delegate = IOSAutoconsentMessageHandlerDelegate(eventHub: eventHub)
 
-        delegate.sendPixel(PixelInfo(name: "autoconsent_init", type: "daily"))
+        delegate.reportCPMCoverage(counts: CPMCoverageCounts(unhandled: 3, pages: 4), siteRank: .top10k)
+        delegate.reportCPMCoverage(counts: CPMCoverageCounts(unhandled: 1, pages: 1), siteRank: nil)
+
+        XCTAssertEqual(eventHub.nativeEventCounts, [
+            "autoconsent_pages": 5, "autoconsent_pages_top10k": 4,
+            "autoconsent_unhandled": 4, "autoconsent_unhandled_top10k": 3,
+        ])
+    }
+
+    func testWhenEmbeddedExtensionSendsSummaryPixelThenNothingIsCountedInEventHub() throws {
+        guard #available(iOS 18.4, *) else { throw XCTSkip("Embedded extension requires iOS 18.4") }
+        let eventHub = StubEventHub()
+        let delegate = IOSAutoconsentMessageHandlerDelegate(eventHub: eventHub)
+
         delegate.sendPixel(PixelInfo(name: "autoconsent_summary", type: "standard", params: [
             "init": "4", "detected-by-patterns": 3, "detected-by-both": "1", "siteRank": "top10k",
         ]))
-        // Older extension versions don't send siteRank
-        delegate.sendPixel(PixelInfo(name: "autoconsent_summary", type: "standard", params: ["init": 1, "detected-by-patterns": 1]))
 
-        XCTAssertEqual(eventHub.nativeEventCounts, [
-            "autoconsent_page": 5, "autoconsent_page_top10k": 4,
-            "autoconsent_unhandled": 3, "autoconsent_unhandled_top10k": 2,
-        ])
+        XCTAssertTrue(eventHub.nativeEventCounts.isEmpty)
     }
 }

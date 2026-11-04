@@ -87,9 +87,13 @@ jobs:
             echo "::error::Run $RUN_ID has no started Test (Non-Sandbox) job, the job that renders the snapshots."
             exit 1
           fi
-          read -r artifact_id artifact_created < <(gh api "repos/$GITHUB_REPOSITORY/actions/runs/$RUN_ID/artifacts?name=macos-rendered-snapshots&per_page=100" \
-            --jq '[.artifacts[] | select(.expired | not)] | max_by(.id) // {} | "\(.id // "") \(.created_at // "")"')
-          if [ -z "$artifact_id" ]; then
+          read -r artifact_id artifact_created artifact_expired < <(gh api "repos/$GITHUB_REPOSITORY/actions/runs/$RUN_ID/artifacts?name=macos-rendered-snapshots&per_page=100" \
+            --jq '.artifacts | max_by(.id) // {} | "\(.id // "-") \(.created_at // "-") \(.expired // false)"')
+          if [ "$artifact_expired" = "true" ]; then
+            echo "::error::Run $RUN_ID's macos-rendered-snapshots artifact has expired. Re-run its Test (Non-Sandbox) job or push again, then re-add the label once the macOS PR checks finish."
+            exit 1
+          fi
+          if [ "$artifact_id" = "-" ]; then
             echo "::error::Run $RUN_ID has no macos-rendered-snapshots artifact. Every snapshot matched its reference, or the unit tests didn't run."
             exit 1
           fi

@@ -87,6 +87,7 @@ final class AppLaunchUITests: UITestCase {
                 XCTAssertTrue(newTab.waitForNonExistence(timeout: UITestTimeouts.navigation), file: file, line: line)
                 XCTAssertTrue(tabs.waitForHittableInAppWindow(in: app, timeout: UITestTimeouts.navigation), file: file, line: line)
                 XCTAssertTrue(fire.waitForHittableInAppWindow(in: app, timeout: UITestTimeouts.navigation), file: file, line: line)
+                attachContextMenuState(loadedPage: loadedPage, checkpoint: "cancelled")
                 app.openTabSwitcher(file: file, line: line)
                 app.assertTabCount(expectedTabs, file: file, line: line)
                 app.buttons["TabSwitcher.Button.Done"].tapWhenHittable(in: app, file: file, line: line)
@@ -94,8 +95,10 @@ final class AppLaunchUITests: UITestCase {
                 tabs.press(forDuration: 1)
                 newTab.tapWhenHittable(in: app, file: file, line: line)
                 XCTAssertTrue(newTab.waitForNonExistence(timeout: UITestTimeouts.navigation), file: file, line: line)
+                app.dismissAddressBarEditing(file: file, line: line)
                 XCTAssertTrue(tabs.waitForHittableInAppWindow(in: app, timeout: UITestTimeouts.navigation), file: file, line: line)
                 XCTAssertTrue(fire.waitForHittableInAppWindow(in: app, timeout: UITestTimeouts.navigation), file: file, line: line)
+                attachContextMenuState(loadedPage: loadedPage, checkpoint: "created tab")
                 expectedTabs += 1
                 app.openTabSwitcher(file: file, line: line)
                 app.assertTabCount(expectedTabs, file: file, line: line)
@@ -105,6 +108,13 @@ final class AppLaunchUITests: UITestCase {
                 app.buttons["TabSwitcher.Button.Done"].tapWhenHittable(in: app, file: file, line: line)
             }
         }
+    }
+
+    private func attachContextMenuState(loadedPage: Bool, checkpoint: String) {
+        let attachment = XCTAttachment(screenshot: app.screenshot())
+        attachment.name = "Context menu \(loadedPage ? "loaded page" : "new tab") — \(checkpoint)"
+        attachment.lifetime = .keepAlways
+        add(attachment)
     }
 
     func testReadinessRejectsMissingAndDisabledControlsWithoutTapping() {

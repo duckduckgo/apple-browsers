@@ -20,22 +20,19 @@
 import Foundation
 import PrivacyConfig
 import Core
-import FeatureFlags_iOS
 
 // MARK: - Fallback
 
 /// Supplies a curated fallback AI model list, used when the `/models` API is unavailable.
-/// Backed by the onboarding `.onboardingFlowByDownloadReasonExperiment` subfeature's `settings` payload in privacy config
+/// Backed by the `onboardingAIModelsFallback` key in `iOSBrowserConfig` settings in privacy config.
 protocol OnboardingAIModelsFallbackProviding {
     var aiModels: OnboardingAIModelResponse { get }
 }
 
-/// Reads the fallback payload from the `onboardingFlowByDownloadReasonExperiment` subfeature settings.
+/// Reads the fallback payload from the `onboardingAIModelsFallback` key in `iOSBrowserConfig` settings.
 ///
-/// Expected JSON shape (curated by us, so no access-filtering/dedup is applied .
-/// `models` is a JSON-encoded string because the privacy-config subfeature `settings` schema only permits string values:
 /// ```json
-/// { "defaultModelId": "gpt-5", "models": "[{ \"id\": \"gpt-5\", \"provider\": \"openai\", \"modelShortName\": \"GPT-5\" }]" }
+/// { "defaultModelId": "gpt-5", "models": [{ "id": "gpt-5", "provider": "openai", "modelShortName": "GPT-5" }] }
 /// ```
 struct OnboardingAIModelsFallback: OnboardingAIModelsFallbackProviding {
     /// Compiled-in last resort so the picker is never empty, even with no config and no network.
@@ -62,20 +59,22 @@ struct OnboardingAIModelsFallback: OnboardingAIModelsFallbackProviding {
     }
 
     private var remoteFallback: OnboardingAIModelResponse? {
+        let remoteSettings = privacyConfigurationManager.privacyConfig.settings(for: .iOSBrowserConfig)
+
         guard
-            let json = privacyConfigurationManager.privacyConfig.settings(for: iOSBrowserConfigSubfeature.onboardingFlowByDownloadReasonExperiment),
-            let data = json.data(using: .utf8),
+            let aiModelsFallback = remoteSettings[OnboardingAIModelsFallbackPayload.settingsKey] as? [String: Any],
+            let data = try? JSONSerialization.data(withJSONObject: aiModelsFallback),
             let payload = try? JSONDecoder().decode(OnboardingAIModelsFallbackPayload.self, from: data),
-            let response = payload.response,
-            !response.models.isEmpty // If models is empty fallback to hardcoded version
+            !payload.response.models.isEmpty // If models is empty fallback to hardcoded version
         else {
             return nil
         }
-        return response
+        return payload.response
     }
 }
 
 private struct OnboardingAIModelsFallbackPayload: Decodable {
+    static let settingsKey = "onboardingAIModelsFallback"
 
     struct Model: Decodable {
         let id: String
@@ -84,14 +83,10 @@ private struct OnboardingAIModelsFallbackPayload: Decodable {
     }
 
     let defaultModelId: String?
-    let models: String
+    let models: [Model]
 
-    /// `nil` when the encoded `models` string can't be decoded, so callers fall back to the baked default rather than surfacing an empty picker.
-    var response: OnboardingAIModelResponse? {
-        guard let decodedModels = try? JSONDecoder().decode([Model].self, from: Data(models.utf8)) else {
-            return nil
-        }
-        let options = decodedModels.compactMap { model -> OnboardingAIModelOption? in
+    var response: OnboardingAIModelResponse {
+        let options = models.compactMap { model -> OnboardingAIModelOption? in
             guard let provider = OnboardingAIProvider(rawValue: model.provider) else { return nil }
             return OnboardingAIModelOption(id: model.id, provider: provider, modelShortName: model.modelShortName)
         }

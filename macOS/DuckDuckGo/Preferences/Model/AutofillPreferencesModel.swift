@@ -229,7 +229,9 @@ final class AutofillPreferencesModel: ObservableObject {
         let connectBitwardenWindowController = connectBitwardenViewController.wrappedInWindowController()
 
         connectBitwardenViewController.setupFlowCancellationHandler = { [weak self] in
-            self?.passwordManager = .duckduckgo
+            // Where the integration can't be turned back on, cancelling setup must not take it away.
+            guard let self, !areWebExtensionsSupported else { return }
+            passwordManager = .duckduckgo
         }
 
         guard let connectBitwardenWindow = connectBitwardenWindowController.window,

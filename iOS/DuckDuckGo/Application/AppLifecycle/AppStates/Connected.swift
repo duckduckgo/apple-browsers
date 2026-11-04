@@ -76,6 +76,7 @@ struct Connected: ConnectedHandling {
                                                                    tabManager: mainCoordinator.tabManager))
         let drawsIdleReturnNewTabPage = appDependencies.idleReturnEvaluator.evaluateReturn()
             .drawsNewTabPageAtLaunch(isFeatureOn: appDependencies.featureFlagger.isFeatureOn(.idleReturnNewTabPageAtLaunch),
+                                     isBackgroundLaunch: UIApplication.shared.applicationState == .background,
                                      hasLaunchAction: actionToHandle != nil,
                                      isAppLockEnabled: PrivacyUserDefaults().authenticationEnabled,
                                      hasPageToReplace: mainCoordinator.tabManager.currentTabsModel.currentTab?.link != nil)

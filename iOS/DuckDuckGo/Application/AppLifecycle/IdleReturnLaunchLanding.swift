@@ -23,12 +23,17 @@ extension IdleReturnOutcome {
 
     /// Whether a cold start opens straight on the New Tab Page, instead of showing the restored page and replacing it after launch.
     /// Only for an after-idle New Tab Page return, and only when:
+    /// - The user is opening the app. A background launch can connect the scene long before they do, so it's left to the return.
     /// - No launch action opened the app. The action decides where the user lands.
     /// - App Lock is off. With it on, the lock screen hides the restored page anyway, so it's replaced after unlock.
     /// - There's a page to replace. If the restored tab is already a New Tab Page, the normal launch lands there.
-    func drawsNewTabPageAtLaunch(isFeatureOn: Bool, hasLaunchAction: Bool, isAppLockEnabled: Bool, hasPageToReplace: Bool) -> Bool {
+    func drawsNewTabPageAtLaunch(isFeatureOn: Bool,
+                                 isBackgroundLaunch: Bool,
+                                 hasLaunchAction: Bool,
+                                 isAppLockEnabled: Bool,
+                                 hasPageToReplace: Bool) -> Bool {
         guard isFeatureOn, case .afterIdle(.ntp, _) = self else { return false }
-        return !hasLaunchAction && !isAppLockEnabled && hasPageToReplace
+        return !isBackgroundLaunch && !hasLaunchAction && !isAppLockEnabled && hasPageToReplace
     }
 
 }

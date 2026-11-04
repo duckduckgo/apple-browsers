@@ -130,15 +130,12 @@ final class LaunchActionHandler: LaunchActionHandling {
         case .openURL(let url):
             launchSourceManager.setSource(.URL)
             openURL(url)
-            recordNewTabPageLeftUnderAction(drewNewTabPage)
         case .handleShortcutItem(let shortcutItem):
             launchSourceManager.setSource(.shortcut)
             shortcutItemHandler.handleShortcutItem(shortcutItem)
-            recordNewTabPageLeftUnderAction(drewNewTabPage)
         case .handleUserActivity(let userActivity):
             launchSourceManager.setSource(.standard)
             userActivityHandler.handleUserActivity(userActivity)
-            recordNewTabPageLeftUnderAction(drewNewTabPage)
         case .standardLaunch(let lastBackgroundDate, let isFirstForeground, let hasCompletedAuthentication):
             launchSourceManager.setSource(.standard)
             // A New Tab Page the launch drew stands; the rest is the outcome decided on foreground.
@@ -178,13 +175,6 @@ final class LaunchActionHandler: LaunchActionHandling {
         }
     }
     
-    /// A page a background launch drew stays under an action that only presents a screen, so its arrival
-    /// is recorded once seen rather than left for a later return. A page the action replaces records nothing.
-    private func recordNewTabPageLeftUnderAction(_ drewNewTabPage: Bool) {
-        guard drewNewTabPage else { return }
-        idleReturnDelegate?.recordNewTabPageDrawnAtLaunch(timeAwayMs: idleReturnOutcome.timeAwayMs) { _ in }
-    }
-
     private func openURL(_ url: URL) {
         Logger.sync.debug("App launched with url \(url.shortDescription)")
         fireAppLaunchedWithExternalLinkPixel(url: url)

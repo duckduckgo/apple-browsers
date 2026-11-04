@@ -604,9 +604,9 @@ final class LaunchActionHandlerTests {
     }
 
     @available(iOS 16, *)
-    @Test("A launch action handled first records the drawn New Tab Page without the keyboard", .timeLimit(.minutes(1)),
+    @Test("A launch action handled first doesn't record the drawn New Tab Page", .timeLimit(.minutes(1)),
           arguments: ["url", "shortcut", "activity"])
-    func launchActionRecordsTheDrawnNewTabPage(kind: String) {
+    func launchActionDoesNotRecordTheDrawnNewTabPage(kind: String) {
         let action: LaunchAction = switch kind {
         case "url": .openURL(URL(string: "https://example.com")!)
         case "shortcut": .handleShortcutItem(UIApplicationShortcutItem(type: "test", localizedTitle: "Test"))
@@ -617,8 +617,7 @@ final class LaunchActionHandlerTests {
 
         handler.handleLaunchAction(action)
 
-        #expect(idleReturnDelegate.recordNewTabPageDrawnAtLaunchCalled)
-        #expect(idleReturnDelegate.lastTimeAwayMs == 42_000)
+        #expect(!idleReturnDelegate.recordNewTabPageDrawnAtLaunchCalled)
         #expect(keyboardPresenter.showKeyboardOnNewTabPageCreatedCallCount == 0)
     }
 
@@ -627,20 +626,11 @@ final class LaunchActionHandlerTests {
     func launchActionTakesTheDrawnNewTabPage() {
         let handler = makeHandler(outcome: .ordinary(timeAwayMs: nil), landing: IdleReturnLaunchLanding(drewNewTabPage: true))
         handler.handleLaunchAction(.openURL(URL(string: "https://example.com")!))
-        idleReturnDelegate.recordNewTabPageDrawnAtLaunchCalled = false
 
         handler.handleLaunchAction(.standardLaunch(lastBackgroundDate: Date(), isFirstForeground: false))
 
         #expect(!idleReturnDelegate.recordNewTabPageDrawnAtLaunchCalled)
         #expect(idleReturnDelegate.recordOrdinaryReturnCalled)
-    }
-
-    @available(iOS 16, *)
-    @Test("A launch action records nothing when the launch didn't draw the New Tab Page", .timeLimit(.minutes(1)))
-    func launchActionWithoutDrawnNewTabPageRecordsNothing() {
-        launchActionHandler.handleLaunchAction(.openURL(URL(string: "https://example.com")!))
-
-        #expect(!idleReturnDelegate.recordNewTabPageDrawnAtLaunchCalled)
     }
 
 }

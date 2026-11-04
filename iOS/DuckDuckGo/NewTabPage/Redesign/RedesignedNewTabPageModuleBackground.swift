@@ -29,7 +29,9 @@ struct RedesignedNewTabPageModuleBackground: View {
         if reduceTransparency {
             shape.fill(Color(designSystemColor: .surfaceSecondary))
         } else {
-            shape.fill(.thinMaterial)
+            shape
+                .fill(.ultraThinMaterial)
+                .overlay(shape.fill(Color(singleUseColor: .newTabPageModuleTint)))
         }
     }
 }

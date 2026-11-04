@@ -165,7 +165,7 @@ struct SettingsAIChatShortcutsView: View {
             } header: {
                 Text(UserText.duckAIShortcutsSectionHeader)
             }
-            .listRowBackground(Color(singleUseColor: .groupedListContentBackground))
+            .listRowBackground(Color(designSystemColor: .surfaceTertiary))
         }
     }
 

@@ -48,6 +48,7 @@ let package = Package(
                 .product(name: "UserScript", package: "BrowserServicesKit"),
                 .product(name: "UserScriptActionsManager", package: "UserScriptActionsManager"),
                 .product(name: "WebKitExtensions", package: "WebKitExtensions"),
+                .product(name: "FoundationExtensions", package: "SystemFrameworksExtensions"),
             ],
             swiftSettings: [
                 .define("DEBUG", .when(configuration: .debug))

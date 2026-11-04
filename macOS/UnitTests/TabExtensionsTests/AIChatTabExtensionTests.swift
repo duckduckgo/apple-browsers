@@ -243,6 +243,101 @@ final class AIChatTabExtensionTests: XCTestCase {
         XCTAssertEqual(firedVias, [])
     }
 
+    // MARK: - Attributed sources
+
+    func testWhenDuckAIIsTypedInTheNewTabPageSearchBoxThenItIsADirectNavigation() {
+        let handler = attachChatUserScript()
+
+        content.send(.aiChat(duckAIURL, source: .attributedUI(.directNewTabPage)))
+        perform(makeNavigation(to: duckAIURL, type: .custom(.ui)))
+
+        XCTAssertEqual(firedVias, ["new_tab_page"])
+        XCTAssertEqual(handler.directNavigationFallback, .directNewTabPage)
+    }
+
+    func testWhenDuckAIOrDuckDuckGoLinksToDuckAIThenTheChatIsAttributedToTheLinkWithoutAPixel() {
+        let cases: [(sourceURL: URL, expected: AIChatConversationSource)] = [
+            (URL(string: "https://duck.ai/chat")!, .duckAILink),
+            (URL(string: "https://duckduckgo.com/?q=test&ia=chat")!, .duckAILink),
+            (URL(string: "https://duckduckgo.com/?q=test")!, .duckDuckGoLink),
+        ]
+        for (sourceURL, expected) in cases {
+            tabExtension = makeTabExtension()
+            let handler = attachChatUserScript()
+
+            perform(makeNavigation(to: duckAIURL, type: .linkActivated(isMiddleClick: false), from: sourceURL))
+
+            XCTAssertEqual(handler.directNavigationFallback, expected, "\(sourceURL)")
+        }
+        XCTAssertEqual(firedVias, [])
+    }
+
+    func testWhenDuckAIOrDuckDuckGoOpensANewTabThenTheChatIsAttributedToTheLink() {
+        let cases: [(sourceURL: URL, expected: AIChatConversationSource)] = [
+            (URL(string: "https://duck.ai/chat")!, .duckAILink),
+            (URL(string: "https://duckduckgo.com/?q=test")!, .duckDuckGoLink),
+        ]
+        for (sourceURL, expected) in cases {
+            tabExtension = makeTabExtension()
+            let handler = attachChatUserScript()
+
+            tabExtension.noteOpenedForLink(from: sourceURL)
+            perform(makeNavigation(to: duckAIURL, type: .other))
+
+            XCTAssertEqual(handler.directNavigationFallback, expected, "\(sourceURL)")
+        }
+        XCTAssertEqual(firedVias, [])
+    }
+
+    func testWhenDuckAIOpensItsOwnLinkFromNativeUIThenTheChatIsAttributedToTheLink() {
+        let handler = attachChatUserScript()
+
+        content.send(.aiChat(duckAIURL, source: .attributedUI(.duckAILink)))
+        perform(makeNavigation(to: duckAIURL, type: .custom(.ui)))
+
+        XCTAssertEqual(handler.directNavigationFallback, .duckAILink)
+        XCTAssertEqual(firedVias, [])
+    }
+
+    func testThatAThirdPartyLinkIsStillADirectLink() {
+        let handler = attachChatUserScript()
+
+        perform(makeNavigation(to: duckAIURL, type: .linkActivated(isMiddleClick: false)))
+
+        XCTAssertEqual(handler.directNavigationFallback, .directLink)
+        XCTAssertEqual(firedVias, ["link"])
+    }
+
+    func testThatALinkThroughARedirectPageKeepsItsAttribution() {
+        let handler = attachChatUserScript()
+        let redirectPage = URL(string: "https://example.com/redirect")!
+
+        perform(makeNavigation(to: redirectPage, type: .linkActivated(isMiddleClick: false), from: URL(string: "https://duckduckgo.com/?q=test")!))
+        perform(makeNavigation(to: duckAIURL, type: .redirect(.client(delay: 0))))
+
+        XCTAssertEqual(handler.directNavigationFallback, .duckDuckGoLink)
+        XCTAssertEqual(firedVias, [])
+    }
+
+    func testThatTheHomepageHandoffKeepsItsOwnSource() {
+        let handler = attachChatUserScript()
+        let homepageFunnelURL = URL(string: "https://duck.ai/chat?ia=chat&duckai=1&home=1&prompt=1&origin=funnel_home_website&t=h_")!
+
+        perform(makeNavigation(to: homepageFunnelURL, type: .linkActivated(isMiddleClick: false), from: URL(string: "https://duckduckgo.com/")!))
+
+        XCTAssertNil(handler.directNavigationFallback)
+    }
+
+    func testThatANativeSurfaceLoadWithoutAnOriginIsNotAttributed() {
+        let handler = attachChatUserScript()
+
+        content.send(.aiChat(duckAIURL, source: .ui))
+        perform(makeNavigation(to: duckAIURL, type: .custom(.ui)))
+
+        XCTAssertNil(handler.directNavigationFallback)
+        XCTAssertEqual(firedVias, [])
+    }
+
     // MARK: - No pixel
 
     func testThatLoadsTheUserDidNotStartTowardDuckAIReportNothing() {
@@ -472,6 +567,7 @@ final class AIChatTabExtensionMock: TabExtension, AIChatProtocol {
     var pageContextRequestedPublisher: AnyPublisher<Void, Never> { Empty().eraseToAnyPublisher() }
     var pageContextConsumedPublisher: AnyPublisher<Void, Never> { Empty().eraseToAnyPublisher() }
     var pageContextRemovedPublisher: AnyPublisher<Void, Never> { Empty().eraseToAnyPublisher() }
+    var pageContextAddedPublisher: AnyPublisher<Void, Never> { Empty().eraseToAnyPublisher() }
     var chatRestorationDataPublisher: AnyPublisher<AIChatRestorationData?, Never> { Empty().eraseToAnyPublisher() }
 
     func getPublicProtocol() -> AIChatProtocol { self }

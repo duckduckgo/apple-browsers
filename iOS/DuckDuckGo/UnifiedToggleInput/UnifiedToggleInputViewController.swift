@@ -172,6 +172,11 @@ final class UnifiedToggleInputViewController: UIViewController {
         }
     }
 
+    var aiChatShortcutEmptyInputMenu: UIMenu? {
+        get { inputBarView.aiChatShortcutEmptyInputMenu }
+        set { inputBarView.aiChatShortcutEmptyInputMenu = newValue }
+    }
+
     var cardPosition: UnifiedToggleInputCardPosition {
         get { inputBarView.cardPosition }
         set {
@@ -198,6 +203,32 @@ final class UnifiedToggleInputViewController: UIViewController {
     var isSubmitBlockedByRecoveryCard: Bool {
         get { inputBarView.isToolbarSubmitBlockedByRecoveryCard }
         set { inputBarView.isToolbarSubmitBlockedByRecoveryCard = newValue }
+    }
+
+    var tabAttachmentsRequirePromptText: Bool {
+        get { inputBarView.tabAttachmentsRequirePromptText }
+        set { inputBarView.tabAttachmentsRequirePromptText = newValue }
+    }
+
+    var isPreparingInitialPrompt: Bool {
+        get { inputBarView.isPreparingInitialPrompt }
+        set { inputBarView.isPreparingInitialPrompt = newValue }
+    }
+
+    var isInputFrozenForInitialPromptPreparation: Bool {
+        get { inputBarView.isInputFrozenForInitialPromptPreparation }
+        set { inputBarView.isInputFrozenForInitialPromptPreparation = newValue }
+    }
+
+    /// Greys out Send and marks the pasted-text chips in one go.
+    var isPromptOverLimit: Bool {
+        get { inputBarView.isPromptOverLimit }
+        set { inputBarView.isPromptOverLimit = newValue }
+    }
+
+    var onAttachmentTapped: ((UUID) -> Void)? {
+        get { inputBarView.onAttachmentTapped }
+        set { inputBarView.onAttachmentTapped = newValue }
     }
 
     /// The handler's copy closes the keyboard's own routes into a prompt; the view's greys out the
@@ -371,6 +402,10 @@ final class UnifiedToggleInputViewController: UIViewController {
         setInputMode(config.inputMode, animated: animated)
         setInactiveCardAppearance(config.inactiveAppearance)
         applyCardLayout(config.cardLayout, animated: animated)
+        // Duck.ai tabs reveal their accessories with the chrome transition (`MainViewController`).
+        if !config.isAITab {
+            setFlankingAccessoriesVisible(config.cardLayout.flankingAccessories)
+        }
     }
 
     func applyToolsPresentation(
@@ -387,8 +422,8 @@ final class UnifiedToggleInputViewController: UIViewController {
         inputBarView.applyCardLayout(layout, animated: animated)
     }
 
-    func setAITabCollapsedFooterPoseActive(_ active: Bool) {
-        inputBarView.setAITabCollapsedFooterPoseActive(active)
+    func setFlankingAccessoriesVisible(_ accessories: UnifiedToggleInputFlankingAccessories) {
+        inputBarView.setFlankingAccessoriesVisible(accessories)
     }
 
     func prepareForOmnibarEditingShow() {

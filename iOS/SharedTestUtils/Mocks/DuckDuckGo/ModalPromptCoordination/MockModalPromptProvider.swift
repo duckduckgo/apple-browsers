@@ -38,6 +38,7 @@ final class MockModalPromptProvider: ModalPromptProvider {
     init(shouldReturnPrompt: Bool = true) {
         if shouldReturnPrompt {
             modalConfigurationToReturn = ModalPromptConfiguration(
+                exposureID: .remoteMessageModal,
                 viewController: UIViewController(),
                 animated: true
             )

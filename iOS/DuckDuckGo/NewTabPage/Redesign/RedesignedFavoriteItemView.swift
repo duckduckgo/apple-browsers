@@ -32,9 +32,12 @@ struct RedesignedFavoriteItemView: View {
         RedesignedFavoriteTileView(title: favorite.title) {
             RedesignedFavoriteIconView(favorite: favorite, faviconLoading: faviconLoading)
                 .if(isEditable) {
-                    $0.contextMenu {
-                        // This context menu can be moved up in the hierarchy to `FavoritesView` once support for iOS 15 is removed. contextMenu with preview modifier can be used then.
+                    $0.contextMenuWithPreviewIfAvailable {
                         contextMenuItems()
+                    } preview: {
+                        RedesignedFavoriteIconView(favorite: favorite, faviconLoading: faviconLoading)
+                            .background(Color(designSystemColor: .background))
+                            .clipShape(RedesignedFavoriteTileMetrics.tileShape)
                     }
                 }
         }
@@ -75,20 +78,20 @@ extension RedesignedFavoriteItemView {
     }
 }
 
-/// Keeps the favicon inside a circular tile without cropping the site's artwork.
+/// Keeps the favicon inside a rounded rectangle tile without cropping the site's artwork.
 struct RedesignedFavoriteIconView: View {
     let favorite: Favorite
     let faviconLoading: FavoritesFaviconLoading?
 
     var body: some View {
-        FavoriteIconView(favorite: favorite, faviconLoading: faviconLoading)
+        FavoriteIconView(favorite: favorite, faviconLoading: faviconLoading, showsFaviconSurface: false)
             .frame(width: Metrics.sourceIconSize, height: Metrics.sourceIconSize)
             .scaleEffect(Metrics.faviconSize / Metrics.sourceIconSize)
             .frame(width: Metrics.faviconSize, height: Metrics.faviconSize)
             .frame(width: Metrics.tileSize, height: Metrics.tileSize)
-            .background(Circle().fill(Color(designSystemColor: .controlsFillPrimary)))
-            .contentShape(Circle())
-            .contentShape([.contextMenuPreview, .dragPreview], Circle())
+            .background(RedesignedFavoriteTileMetrics.tileShape.fill(Color(designSystemColor: .controlsFillPrimary)))
+            .contentShape(RedesignedFavoriteTileMetrics.tileShape)
+            .contentShape([.contextMenuPreview, .dragPreview], RedesignedFavoriteTileMetrics.tileShape)
     }
 }
 

@@ -125,7 +125,7 @@ struct CookiePopupProtectionOptInView: View {
             // The panel scrolls over the fixed wave when it doesn't fit; bottom inset keeps it clear of the wave.
             ScrollView {
                 VStack(spacing: 0) {
-                    Image(rebrandable: "Logo")
+                    Image(.logo)
                         .resizable()
                         .aspectRatio(contentMode: .fit)
                         .frame(width: 32, height: 32)

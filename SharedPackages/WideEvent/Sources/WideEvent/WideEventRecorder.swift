@@ -83,10 +83,7 @@ public final class WideEventRecorder<Data: WideEventDataMeasuringInterval> {
     private func completeInternal(status: WideEventStatus) {
         guard !isCompleted else { return }
         isCompleted = true
-
-        Task {
-            _ = try? await wideEvent.completeFlow(wideEventData, status: status)
-        }
+        wideEvent.completeFlow(wideEventData, status: status, onComplete: { _, _ in })
     }
 
     public func markCompleted(at date: Date, invalidIntervalReason: String? = nil) {

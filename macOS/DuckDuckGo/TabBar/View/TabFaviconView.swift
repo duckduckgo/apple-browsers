@@ -187,11 +187,21 @@ private extension TabFaviconView {
         let targetRadius = imageCornerRadius(scaleDown: scaleDown)
         let targetTransform = imageTransform(scaleDown: scaleDown)
 
-        guard let layer = imageView.animator().layer else {
+        guard let layer = imageView.layer else {
             return
         }
 
         guard layer.cornerRadius != targetRadius || CATransform3DEqualToTransform(layer.transform, targetTransform) == false else {
+            return
+        }
+
+        let work = {
+            layer.cornerRadius = targetRadius
+            layer.transform = targetTransform
+        }
+
+        guard imageView.window?.isVisible == true else {
+            work()
             return
         }
 
@@ -200,8 +210,7 @@ private extension TabFaviconView {
             context.duration = FaviconAnimation.animationDuration
             context.allowsImplicitAnimation = true
 
-            layer.cornerRadius = targetRadius
-            layer.transform = targetTransform
+            work()
         }
     }
 

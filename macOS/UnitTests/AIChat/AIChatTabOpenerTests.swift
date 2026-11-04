@@ -107,6 +107,18 @@ final class AIChatTabOpenerTests: XCTestCase {
     }
 
     @MainActor
+    func testWhenASubscriptionSurfaceOpensDuckAIThenEntryPointReportsSubscriptionPage() {
+        let mockManager = WindowControllersManagerMock()
+        sourceHandler.setData(.subscriptionPage)
+
+        makeOpener(mockManager).openAIChatTab(with: .url(URL(string: "https://duck.ai/")!), behavior: .newTab(selected: true))
+
+        XCTAssertEqual(pixelFiring.actualFireCalls, [
+            .init(pixel: AIChatPixel.aiChatEntryPoint(source: .subscriptionPage, target: .newTab), frequency: .dailyAndCount)
+        ])
+    }
+
+    @MainActor
     func testWhenOpeningInANewWindowAtAPointThenEntryPointReportsIt() {
         let mockManager = WindowControllersManagerMock()
         mockManager.aiChatEntryPointTargetToReturn = .newWindow

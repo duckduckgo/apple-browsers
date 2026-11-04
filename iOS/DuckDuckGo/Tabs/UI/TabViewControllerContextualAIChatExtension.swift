@@ -113,8 +113,12 @@ extension TabViewController: AIChatContextualSheetCoordinatorDelegate {
         delegate?.tab(self, didRequestNewTabForUrl: url, openedByPage: false, inheritingAttribution: nil)
     }
 
-    func aiChatContextualSheetCoordinator(_ coordinator: AIChatContextualSheetCoordinator, didRequestExpandWithURL url: URL) {
-        delegate?.tab(self, didRequestNewDuckAITabForUrl: url, entrySource: .contextualChat)
+    /// The sheet opens Duck.ai in a tab through no other entry point, so the entry pixel fires here.
+    func aiChatContextualSheetCoordinator(_ coordinator: AIChatContextualSheetCoordinator,
+                                          didRequestExpandWithURL url: URL,
+                                          entrySource: AIChatEntryPointSource) {
+        delegate?.tab(self, didReportDuckAIEntry: entrySource, opensNewTab: true, hasPrompt: false)
+        delegate?.tab(self, didRequestNewDuckAITabForUrl: url, entrySource: entrySource, newChatInputRequest: nil)
     }
 
     func aiChatContextualSheetCoordinatorDidRequestViewAllChats(_ coordinator: AIChatContextualSheetCoordinator) {
@@ -143,11 +147,19 @@ extension TabViewController: AIChatContextualSheetCoordinatorDelegate {
     }
 
     func aiChatContextualSheetCoordinatorDidRequestNewVoiceChat(_ coordinator: AIChatContextualSheetCoordinator) {
-        delegate?.tabDidRequestNewVoiceChat(self)
+        delegate?.tabDidRequestNewVoiceChat(self, source: .contextualChat)
     }
 
     func aiChatContextualSheetCoordinator(_ coordinator: AIChatContextualSheetCoordinator,
                                           didSubmitDuckAIPromptWithOrigin origin: AIChatEntryPointSource?) {
         delegate?.tab(self, didSubmitDuckAIPromptWithOrigin: origin)
+    }
+
+    func aiChatContextualSheetCoordinatorDidCloseSurface(_ coordinator: AIChatContextualSheetCoordinator, chatDeleted: Bool) {
+        delegate?.tabDidCloseContextualDuckAI(self, chatDeleted: chatDeleted)
+    }
+
+    func aiChatContextualSheetCoordinatorDidStartNewChat(_ coordinator: AIChatContextualSheetCoordinator) {
+        delegate?.tab(self, didReportDuckAIEntry: .contextualChat, opensNewTab: false, hasPrompt: false)
     }
 }

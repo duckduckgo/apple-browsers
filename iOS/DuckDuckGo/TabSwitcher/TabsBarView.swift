@@ -40,7 +40,7 @@ final class TabsBarView: UIView {
     }
 
     override init(frame: CGRect) {
-        let layout = UICollectionViewFlowLayout()
+        let layout = TabsBarCollectionViewLayout()
         layout.scrollDirection = .horizontal
         layout.minimumLineSpacing = 0
         layout.minimumInteritemSpacing = 0
@@ -96,5 +96,134 @@ final class TabsBarView: UIView {
             buttonsStack.topAnchor.constraint(greaterThanOrEqualTo: topAnchor),
             buttonsStack.bottomAnchor.constraint(equalTo: bottomAnchor),
         ])
+    }
+}
+
+/// Folds tabs at the strip's edges and beside the pinned selection.
+final class TabsBarCollectionViewLayout: UICollectionViewFlowLayout {
+
+    var currentIndex: (() -> Int?)?
+    var currentTabDragOffset: CGFloat = 0 {
+        didSet {
+            if currentTabDragOffset != oldValue { invalidateLayout() }
+        }
+    }
+
+    override func shouldInvalidateLayout(forBoundsChange newBounds: CGRect) -> Bool {
+        true
+    }
+
+    override func layoutAttributesForElements(in rect: CGRect) -> [UICollectionViewLayoutAttributes]? {
+        // The outgoing tab remains exposed until its neighbor finishes folding over it.
+        let expandedRect = rect.insetBy(dx: -itemSize.width / 2, dy: 0)
+        guard let originalAttributes = super.layoutAttributesForElements(in: expandedRect) else { return nil }
+        var attributes = originalAttributes.compactMap { layoutAttributesForItem(at: $0.indexPath) }
+        guard let collectionView,
+              let index = currentIndex?(),
+              index < collectionView.numberOfItems(inSection: 0) else {
+            return attributes
+        }
+        // The selected tab and its edge hints can be far outside their original positions.
+        for item in max(0, index - 1)...min(collectionView.numberOfItems(inSection: 0) - 1, index + 1) {
+            let indexPath = IndexPath(item: item, section: 0)
+            guard !attributes.contains(where: { $0.indexPath == indexPath }),
+                  let pinned = layoutAttributesForItem(at: indexPath) else { continue }
+            attributes.append(pinned)
+        }
+        return attributes
+    }
+
+    override func layoutAttributesForItem(at indexPath: IndexPath) -> UICollectionViewLayoutAttributes? {
+        attributesForItem(at: indexPath, dragOffset: currentTabDragOffset)
+    }
+
+    func frameForCurrentTabAtRest() -> CGRect? {
+        guard let index = currentIndex?(), let collectionView,
+              index >= 0, index < collectionView.numberOfItems(inSection: 0) else { return nil }
+        return attributesForItem(at: IndexPath(item: index, section: 0), dragOffset: 0)?.frame
+    }
+
+    private func attributesForItem(at indexPath: IndexPath, dragOffset: CGFloat) -> UICollectionViewLayoutAttributes? {
+        guard let attributes = super.layoutAttributesForItem(at: indexPath)?.copy() as? UICollectionViewLayoutAttributes,
+              let collectionView else {
+            return super.layoutAttributesForItem(at: indexPath)
+        }
+        let leading = collectionView.bounds.minX + collectionView.adjustedContentInset.left
+        let trailing = max(leading, collectionView.bounds.maxX - collectionView.adjustedContentInset.right - attributes.frame.width)
+        let current = currentIndex?()
+        let lastItem = collectionView.numberOfItems(inSection: indexPath.section) - 1
+        let peek = min(attributes.frame.width / 2, (trailing - leading) / 2)
+        var origin = attributes.frame.minX
+        if indexPath.item == current {
+            let minimum = leading + (indexPath.item > 0 ? peek : 0)
+            let maximum = trailing - (indexPath.item < lastItem ? peek : 0)
+            let restingOrigin = min(max(origin, minimum), maximum)
+            attributes.frame.origin.x = min(max(restingOrigin + dragOffset, leading), trailing)
+            attributes.zIndex = 2
+            return attributes
+        }
+        var foldLeading = leading
+        var foldTrailing = trailing
+        var firstFoldingItem = 0
+        var lastFoldingItem = lastItem
+        var isOuterHint = false
+        if let current,
+           let original = unpinnedFrameForItem(at: IndexPath(item: current, section: indexPath.section)),
+           let selected = attributesForItem(at: IndexPath(item: current, section: indexPath.section), dragOffset: dragOffset) {
+            let pinnedLeading = original.minX < leading + (current > 0 ? peek : 0)
+            let pinnedTrailing = original.minX > trailing - (current < lastItem ? peek : 0)
+            isOuterHint = (indexPath.item == current - 1 && pinnedLeading) || (indexPath.item == current + 1 && pinnedTrailing)
+            // The selected tab becomes the inner edge of the remaining scrollable strip.
+            if pinnedLeading, indexPath.item > current {
+                foldLeading = min(trailing, selected.frame.maxX)
+                firstFoldingItem = current + 1
+            } else if pinnedTrailing, indexPath.item < current {
+                foldTrailing = max(leading, selected.frame.minX - attributes.frame.width)
+                lastFoldingItem = current - 1
+            }
+        }
+        // Tabs nearer the middle cover the folded stack; outer hints stay directly below the flare.
+        let middle = (foldLeading + foldTrailing + attributes.frame.width) / 2
+        attributes.zIndex = isOuterHint ? 0 : -Int(abs(attributes.center.x - middle))
+        let foldRange = min(attributes.frame.width / 2, (foldTrailing - foldLeading) / 2)
+        if foldRange > 0 {
+            if indexPath.item > firstFoldingItem, origin < foldLeading + foldRange {
+                origin = foldLeading + foldedDistance(origin - foldLeading, range: foldRange)
+            } else if indexPath.item < lastFoldingItem, origin > foldTrailing - foldRange {
+                origin = foldTrailing - foldedDistance(foldTrailing - origin, range: foldRange)
+            }
+        }
+        attributes.frame.origin.x = min(max(origin, foldLeading), foldTrailing)
+        return attributes
+    }
+
+    private func foldedDistance(_ distance: CGFloat, range: CGFloat) -> CGFloat {
+        // Start easing the next tab when the outer tab is halfway covered.
+        let remaining = max(0, distance + range)
+        return remaining * remaining / (4 * range)
+    }
+
+    func unpinnedFrameForItem(at indexPath: IndexPath) -> CGRect? {
+        super.layoutAttributesForItem(at: indexPath)?.frame
+    }
+
+    func frameForRevealingItem(at indexPath: IndexPath) -> CGRect? {
+        guard let collectionView, let frame = unpinnedFrameForItem(at: indexPath) else { return nil }
+        let visibleWidth = collectionView.bounds.width - collectionView.adjustedContentInset.left - collectionView.adjustedContentInset.right
+        let current = currentIndex?()
+        let hasOuterNeighbor = current.map {
+            $0 < indexPath.item ? $0 > 0 : $0 < collectionView.numberOfItems(inSection: indexPath.section) - 1
+        } ?? false
+        let pinnedPeek = hasOuterNeighbor ? min(frame.width / 2, max(0, (visibleWidth - frame.width) / 2)) : 0
+        let pinnedWidth = current != nil && current != indexPath.item ? min(frame.width + pinnedPeek, max(0, visibleWidth - frame.width)) : 0
+        // Leave a glimpse of neighboring tabs without squeezing the selected tab on narrow strips.
+        let peek = min(frame.width / 2, max(0, (visibleWidth - frame.width - pinnedWidth) / 2))
+        var revealFrame = frame.insetBy(dx: -peek, dy: 0)
+        // A pinned current tab covers the neighbor hint unless its width is also reserved.
+        if let current, current < indexPath.item {
+            revealFrame.origin.x -= pinnedWidth
+        }
+        revealFrame.size.width += pinnedWidth
+        return revealFrame.intersection(CGRect(origin: .zero, size: collectionView.contentSize))
     }
 }

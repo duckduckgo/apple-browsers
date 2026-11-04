@@ -46,12 +46,9 @@ public actor UpdateCheckState {
             return false
         }
 
-        guard latestUpdate != nil else {
-            return true
-        }
-
         // Check if last check was less than the specified interval ago
         if let lastCheck = lastUpdateCheckTime,
+           minimumInterval > 0,
            Date().timeIntervalSince(lastCheck) < minimumInterval {
             return false
         }

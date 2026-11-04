@@ -4,6 +4,27 @@ DuckDuckGo wrapper around [Point-Free's `swift-snapshot-testing`](https://github
 
 This package gives shared UI snapshot tests one consistent home for rendering SwiftUI views, validating the simulator or host environment, naming generated images, and keeping preview states reusable between Xcode previews and automated tests. It keeps the app-facing preview helpers separate from the test-only assertion helpers, so production targets can share preview configuration without taking a dependency on snapshot testing libraries.
 
+## Quick start
+
+Reference images live in a separate repo, [`duckduckgo/apple-browsers-snapshots`](https://github.com/duckduckgo/apple-browsers-snapshots), checked out as the `SnapshotReferences` submodule. Every PR that adds or changes images therefore comes with a companion PR in that repo.
+
+1. **Write the test and run it to record the reference.**
+2. **Open the snapshots PR.** From the monorepo root, on your feature branch:
+
+   ```bash
+   ./scripts/open-snapshot-submodule-pr.sh
+   ```
+
+   It commits the new images to a branch of the same name in the snapshots repo, opens the companion PR, and stages the updated `SnapshotReferences` pointer.
+
+3. **Open your main PR.** Commit the staged `SnapshotReferences` pointer with your code, push, and add the companion PR link the script printed to the description.
+
+4. **Once the PR is approved, add the `Merge snapshots` label.** The label merges the companion PR and checks that your pointer is on the snapshots repo's `main`. If you push new images after this, re-run step 2 and re-add the label.
+
+5. **Merge your PR.** Profit.
+
+
+
 ## Why snapshot testing?
 
 Snapshot testing records the rendered output of a view, data structure, or other value as a reference artifact, then compares future test runs against that reference. For UI work, this is useful because many regressions are visual rather than purely behavioral: spacing changes, missing states, clipped text, incorrect colors, light / dark appearance differences, or unexpected layout shifts can all be caught by comparing the final rendered image.
@@ -19,7 +40,7 @@ Use snapshot tests as a focused regression safety net for stable UI states. They
 
 Keep `SnapshotTestingSupport` linked only to test targets.
 
-## Quick start
+## Writing tests
 
 ### Direct view snapshots
 
@@ -92,7 +113,7 @@ assertSnapshot(of: value, as: .json)
 | `.intrinsicContentSize` | Compact view sized by its content | none |
 | `.constrainedWidth` | Content-driven height, default iPhone width (390) | none |
 | `.screen` | Full-screen layout | iPhone + iPad on iOS |
-| `.sheet` | Sheet presentation; iPhone bottom-aligned, iPad centered with padding | iPhone + iPad on iOS |
+| `.sheet` | Sheet presentation; iPhone as a floating sheet (inset from the screen edges, rounded corners, grabber, home-indicator inset, dimmed backdrop), iPad centered with padding | iPhone + iPad on iOS |
 | `.fixed(CGSize)` | Explicit size (typical for macOS windows/panels) | none |
 
 Only `.sheet` adds a backdrop automatically (it simulates the sheet chrome). For every other mode the snapshot reflects the view as-is — call `.snapshotBackground()` on your view if you want `systemBackground` / `windowBackgroundColor` behind it.
@@ -166,6 +187,7 @@ Each image name carries the recording environment as a suffix so references are 
 - Missing references are recorded automatically (`.missing` mode).
 - `record: true` on a specific call records that assertion.
 - `GENERATE_SNAPSHOTS=1` in the test scheme's env records everything.
+- `REQUIRE_SNAPSHOT_REFERENCES=1` turns off automatic recording (`.never` mode), so a missing reference fails the assertion on every attempt. The iOS and macOS PR checks set it through `TEST_RUNNER_REQUIRE_SNAPSHOT_REFERENCES`; otherwise a missing reference recorded on the first attempt would make the `-retry-tests-on-failure` retry pass. `record: true` and `GENERATE_SNAPSHOTS` still take precedence.
 
 After re-recording, inspect every diff and commit only the intentional ones.
 
@@ -181,7 +203,6 @@ The `iOS Browser` scheme sets it to `0`, so iOS snapshots run locally and in CI.
 - Function names that start with `test` keep `#function`-derived snapshot paths consistent with the legacy XCTest convention.
 - One `@Suite` per view test file; one `@Test` per view configuration.
 - `*_PreviewMocks.swift` under `#if DEBUG` for preview-only mocks.
-- This package doesn't know about the design system. To render the **rebranded** design, apply `.applyRebranding()` (from `UIComponents`) inside the `PreviewSnapshots` closure, so both previews and snapshots pick it up.
 
 ## Examples in the repo
 
@@ -189,13 +210,13 @@ Real test sites you can crib from. References mirror each test's path inside the
 
 ### iOS — preview-backed compact view (`.constrainedWidth`)
 - View: `iOS/DuckDuckGo/AIChat/InputBox/SwitchBar/Suggestions/AIChatSyncPromoView.swift`
-- Test: `iOS/DuckDuckGoTests/AIChat/InputBox/SwitchBar/Suggestions/AIChatSyncPromoViewTests.swift`
+- Test: `iOS/DuckDuckGoTests/Core/AIChat/InputBox/SwitchBar/Suggestions/AIChatSyncPromoViewTests.swift`
 - `PreviewProvider` in the same file as the view, reused directly by the test.
 
 ### iOS — preview-backed screen with mocks (`.screen`)
 - View: `iOS/DuckDuckGo/VoiceSearchFeedbackView.swift`
 - Preview mocks: `iOS/DuckDuckGo/VoiceSearchFeedbackView_PreviewMocks.swift`
-- Test: `iOS/DuckDuckGoTests/VoiceSearchFeedbackViewTests.swift`
+- Test: `iOS/DuckDuckGoTests/DuckDuckGo/Application/VoiceSearchFeedbackViewTests.swift`
 - Keep `PreviewProvider`, `typealias State`, and `static let snapshots` in the view file; move mocks to the sibling `_PreviewMocks.swift` under `#if DEBUG`.
 
 ### iOS — package test target, several states per view (`.screen`)

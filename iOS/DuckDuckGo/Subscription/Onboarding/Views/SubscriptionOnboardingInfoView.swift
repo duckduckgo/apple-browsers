@@ -447,35 +447,25 @@ struct SubscriptionOnboardingPlatformGrid: View {
 #if DEBUG
 
 #Preview("Light") {
-    RebrandedPreview {
-        SubscriptionOnboardingInfoSheet(content: .vpn, onClose: {})
-    }
+    SubscriptionOnboardingInfoSheet(content: .vpn, onClose: {})
 }
 
 #Preview("Dark") {
-    RebrandedPreview {
-        SubscriptionOnboardingInfoSheet(content: .vpn, onClose: {})
-    }
-    .preferredColorScheme(.dark)
+    SubscriptionOnboardingInfoSheet(content: .vpn, onClose: {})
+        .preferredColorScheme(.dark)
 }
 
 #Preview("Large Text") {
-    RebrandedPreview {
-        SubscriptionOnboardingInfoSheet(content: .vpn, onClose: {})
-    }
-    .dynamicTypeSize(.accessibility5)
+    SubscriptionOnboardingInfoSheet(content: .vpn, onClose: {})
+        .dynamicTypeSize(.accessibility5)
 }
 
 #Preview("IDTR") {
-    RebrandedPreview {
-        SubscriptionOnboardingInfoSheet(content: .idtr, onClose: {})
-    }
+    SubscriptionOnboardingInfoSheet(content: .idtr, onClose: {})
 }
 
 #Preview("PIR") {
-    RebrandedPreview {
-        SubscriptionOnboardingInfoSheet(content: .pir, onClose: {})
-    }
+    SubscriptionOnboardingInfoSheet(content: .pir, onClose: {})
 }
 
 #endif

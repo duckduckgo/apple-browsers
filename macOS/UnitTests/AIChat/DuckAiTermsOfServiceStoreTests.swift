@@ -23,6 +23,7 @@ import XCTest
 final class DuckAiTermsOfServiceStoreTests: XCTestCase {
 
     private var userDefaults: UserDefaults!
+    private var notificationCenter: NotificationCenter!
     private var sut: DuckAiTermsOfServiceStore!
 
     private var suiteName: String { String(describing: self) }
@@ -31,12 +32,14 @@ final class DuckAiTermsOfServiceStoreTests: XCTestCase {
         super.setUp()
         userDefaults = UserDefaults(suiteName: suiteName)
         userDefaults.removePersistentDomain(forName: suiteName)
-        sut = DuckAiTermsOfServiceStore(keyValueStore: userDefaults)
+        notificationCenter = NotificationCenter()
+        sut = DuckAiTermsOfServiceStore(keyValueStore: userDefaults, notificationCenter: notificationCenter)
     }
 
     override func tearDown() {
         userDefaults.removePersistentDomain(forName: suiteName)
         userDefaults = nil
+        notificationCenter = nil
         sut = nil
         super.tearDown()
     }
@@ -119,5 +122,66 @@ final class DuckAiTermsOfServiceStoreTests: XCTestCase {
 
         XCTAssertFalse(sut.hasAccepted)
         XCTAssertEqual(sut.recordWebReport(), .firstAcceptance)
+    }
+
+    // MARK: - Change notifications
+
+    func testWhenAcceptedInNativeInputThenChangeIsPosted() {
+        expectChange()
+
+        sut.recordAcceptedInNativeInput()
+
+        waitForExpectations(timeout: 1)
+    }
+
+    func testWhenAcceptedFromExistingChatsThenChangeIsPosted() {
+        expectChange()
+
+        sut.recordAcceptedFromExistingChats()
+
+        waitForExpectations(timeout: 1)
+    }
+
+    func testWhenAcceptedAgainThenNoChangeIsPosted() {
+        sut.recordAcceptedInNativeInput()
+        expectNoChange()
+
+        sut.recordAcceptedInNativeInput()
+
+        waitForExpectations(timeout: 0.1)
+    }
+
+    func testWhenWebReportsAFirstAcceptanceThenChangeIsPosted() {
+        expectChange()
+
+        sut.recordWebReport()
+
+        waitForExpectations(timeout: 1)
+    }
+
+    func testWhenWebReportsAgainThenNoChangeIsPosted() {
+        sut.recordWebReport()
+        expectNoChange()
+
+        sut.recordWebReport()
+
+        waitForExpectations(timeout: 0.1)
+    }
+
+    func testWhenResetForDebuggingThenChangeIsPosted() {
+        sut.recordAcceptedInNativeInput()
+        expectChange()
+
+        sut.resetForDebugging()
+
+        waitForExpectations(timeout: 1)
+    }
+
+    private func expectChange() {
+        expectation(forNotification: .duckAiTermsOfServiceDidChange, object: nil, notificationCenter: notificationCenter)
+    }
+
+    private func expectNoChange() {
+        expectation(forNotification: .duckAiTermsOfServiceDidChange, object: nil, notificationCenter: notificationCenter).isInverted = true
     }
 }

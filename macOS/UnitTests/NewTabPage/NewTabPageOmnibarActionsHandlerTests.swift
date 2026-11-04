@@ -18,7 +18,9 @@
 
 import AppKit
 import History
+@_spi(Testing) import Persistence
 import PixelKit
+import PrivacyConfig
 import XCTest
 @testable import DuckDuckGo_Privacy_Browser
 
@@ -46,15 +48,33 @@ final class NewTabPageOmnibarActionsHandlerTests: XCTestCase {
         super.tearDown()
     }
 
-    private func makeSUT(confirmResult: Bool = true) -> NewTabPageOmnibarActionsHandler {
+    private func makeSUT(confirmResult: Bool = true,
+                         fireDailyCountPixel: ((PixelKit.Event) -> Void)? = nil) -> NewTabPageOmnibarActionsHandler {
         NewTabPageOmnibarActionsHandler(
             windowControllersManager: windowControllersManager,
             tabsPreferences: TabsPreferences(persistor: MockTabsPreferencesPersistor(), windowControllersManager: windowControllersManager),
             historyCoordinator: historyCoordinator,
             aiChatDeleter: aiChatDeleter,
-            fireDailyCountPixel: { [weak self] event in self?.firedPixels.append(event.name) },
+            termsOfServiceDisclaimer: DuckAiTermsOfServiceDisclaimer(
+                featureFlagger: MockFeatureFlagger(),
+                store: DuckAiTermsOfServiceStore(keyValueStore: MockKeyValueStore(), notificationCenter: NotificationCenter())
+            ),
+            fireDailyCountPixel: fireDailyCountPixel ?? { [weak self] event in self?.firedPixels.append(event.name) },
             presentDeleteConfirmation: { _, _ in confirmResult }
         )
+    }
+
+    // MARK: - submitSearch
+
+    func testThatDuckAITypedInTheSearchBoxLoadsAsTheWebViewReportsIt() {
+        XCTAssertEqual(NewTabPageOmnibarActionsHandler.searchBoxURL(for: "duck.ai")?.absoluteString, "https://duck.ai/")
+        XCTAssertEqual(NewTabPageOmnibarActionsHandler.searchBoxURL(for: "Duck.AI")?.absoluteString, "https://duck.ai/")
+        XCTAssertEqual(NewTabPageOmnibarActionsHandler.searchBoxURL(for: "duck.ai/chat?q=hi")?.absoluteString, "https://duck.ai/chat?q=hi")
+    }
+
+    func testThatOtherURLsTypedInTheSearchBoxKeepTheirScheme() {
+        XCTAssertEqual(NewTabPageOmnibarActionsHandler.searchBoxURL(for: "wikipedia.org")?.absoluteString, "http://wikipedia.org")
+        XCTAssertEqual(NewTabPageOmnibarActionsHandler.searchBoxURL(for: "duckduckgo")?.absoluteString, "https://duckduckgo.com/?q=duckduckgo")
     }
 
     // MARK: - viewAllAiChats
@@ -119,6 +139,33 @@ final class NewTabPageOmnibarActionsHandlerTests: XCTestCase {
 
         XCTAssertFalse(historyCoordinator.removeUrlEntryCalled)
         XCTAssertTrue(firedPixels.isEmpty)
+    }
+
+    // MARK: - openPrivacyTerms
+
+    func testOpenPrivacyTermsOpensDuckAiPrivacyTermsInNewSelectedTab() {
+        let sut = makeSUT()
+
+        sut.openPrivacyTerms()
+
+        XCTAssertEqual(windowControllersManager.showCalled, .init(
+            url: URL(string: "https://duckduckgo.com/duckai/privacy-terms")!,
+            source: .ui,
+            newTab: true,
+            selected: true
+        ))
+    }
+
+    // MARK: - suggestedPromptSubmitted
+
+    func testSuggestedPromptSubmittedFiresPixelWithPromptId() {
+        var firedEvents: [PixelKit.Event] = []
+        let sut = makeSUT(fireDailyCountPixel: { firedEvents.append($0) })
+
+        sut.suggestedPromptSubmitted(promptId: "summarize")
+
+        XCTAssertEqual(firedEvents.map(\.name), [AIChatPixel.aiChatNtpSuggestedPromptSubmitted(promptId: "summarize").name])
+        XCTAssertEqual(firedEvents.first?.parameters, ["promptId": "summarize"])
     }
 
 }

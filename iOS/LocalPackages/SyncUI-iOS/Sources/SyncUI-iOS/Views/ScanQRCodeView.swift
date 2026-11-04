@@ -21,7 +21,6 @@ import DesignResourcesKit
 import DesignResourcesKitIcons
 import DuckUI
 import SwiftUI
-import UIComponents
 
 #if DEBUG
 import PreviewSnapshots
@@ -121,7 +120,6 @@ struct ScanQRCodeView_Previews: PreviewProvider {
                 )
             }
             .navigationViewStyle(.stack)
-            .applyRebranding()
         }
     )
 }

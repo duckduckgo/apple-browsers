@@ -33,6 +33,7 @@ struct FavoriteIconView: View {
 
     let favorite: Favorite
     let faviconLoading: FavoritesFaviconLoading?
+    let showsFaviconSurface: Bool
 
     var body: some View {
         ZStack(alignment: .center) {
@@ -59,7 +60,10 @@ struct FavoriteIconView: View {
     }
 
     private func bgFillColor() -> Color {
-        favicon.isFake ? Color(UIColor.forDomain(favorite.domain)) :  Color(designSystemColor: .surface)
+        if favicon.isFake {
+            return Color(UIColor.forDomain(favorite.domain))
+        }
+        return showsFaviconSurface ? Color(designSystemColor: .surface) : .clear
     }
 
     static func itemShape() -> RoundedRectangle {
@@ -89,10 +93,10 @@ private extension Favorite {
 }
 
 extension FavoriteIconView {
-    init(favorite: Favorite, faviconLoading: FavoritesFaviconLoading? = nil) {
+    init(favorite: Favorite, faviconLoading: FavoritesFaviconLoading? = nil, showsFaviconSurface: Bool = true) {
         let favicon = faviconLoading?.existingFavicon(for: favorite, size: Constant.faviconSize)
         ?? faviconLoading?.fakeFavicon(for: favorite, size: Constant.fakeFaviconSize)
         ?? .empty
-        self.init(favicon: favicon, favorite: favorite, faviconLoading: faviconLoading)
+        self.init(favicon: favicon, favorite: favorite, faviconLoading: faviconLoading, showsFaviconSurface: showsFaviconSurface)
     }
 }

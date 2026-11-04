@@ -273,6 +273,7 @@ extension ContentOverlayViewController: SecureVaultManagerDelegate {
 
     public func secureVaultManagerIsEnabledStatus(_ manager: SecureVaultManager, forType type: AutofillType?) -> Bool {
         let prefs = AutofillPreferences()
+        guard !prefs.isManagedByExtension else { return false }
         switch type {
         case .card:
             return prefs.askToSavePaymentMethods
@@ -285,7 +286,7 @@ extension ContentOverlayViewController: SecureVaultManagerDelegate {
         }
     }
     public func secureVaultManagerShouldSaveData(_: SecureVaultManager) -> Bool {
-        return true
+        return !AutofillPreferences().isManagedByExtension
     }
 
     public func secureVaultManager(_: SecureVaultManager,

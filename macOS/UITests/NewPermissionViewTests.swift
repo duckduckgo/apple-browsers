@@ -52,9 +52,9 @@ class NewPermissionViewTests: UITestCase {
         app.resetAuthorizationStatus(for: .camera)
         app.resetAuthorizationStatus(for: .microphone)
 
-        // Now set up and launch the app, keeping the Allow / Deny prompt these tests are written for
+        // Now set up and launch the app with the Allow this visit / Always allow / Never allow prompt
         app = XCUIApplication.setUp(featureFlags: [
-            "websitePermissionsPrompts": false,
+            "websitePermissionsPrompts": true,
         ])
         addressBarTextField = app.addressBar
         app.enforceSingleWindow()
@@ -116,12 +116,10 @@ class NewPermissionViewTests: UITestCase {
         let cameraButton = app.webViews.buttons["Camera"]
         cameraButton.clickAfterExistenceTestSucceeds()
 
-        // TCC system dialog appears FIRST for camera/microphone
-        XCUIApplication.notificationCenter.dismissSystemPermissionPromptIfPresent(allow: true)
-
-        // THEN browser's SwiftUI permission authorization popover appears
-        let permissionsPopoverAllowButton = app.popovers.buttons["PermissionAuthorizationSwiftUIView.allowButton"]
-        permissionsPopoverAllowButton.clickAfterExistenceTestSucceeds() // Click system camera permissions dialog
+        // Our prompt appears first, then its System Settings step shows the TCC dialog
+        let allowThisVisitButton = app.popovers.buttons["PermissionAuthorizationView.allowThisVisitButton"]
+        allowThisVisitButton.clickAfterExistenceTestSucceeds()
+        answerSystemPermissionStepIfShown(allow: true)
 
         // Wait for website button to turn green
         var websitePermissionsColorIsGreen = false
@@ -162,7 +160,7 @@ class NewPermissionViewTests: UITestCase {
         XCTAssertEqual(
             dropdownValue,
             "Always ask",
-            "The camera permission should be set to 'Always ask' after a one-time allow."
+            "The camera permission should be set to 'Always ask' after Allow this visit."
         )
     }
 
@@ -174,15 +172,9 @@ class NewPermissionViewTests: UITestCase {
         let cameraButton = app.webViews.buttons["Camera"]
         cameraButton.clickAfterExistenceTestSucceeds()
 
-        // TCC system dialog appears FIRST for camera/microphone - deny this time
-        XCUIApplication.notificationCenter.dismissSystemPermissionPromptIfPresent(allow: false)
-
-        // Browser's permission popover should not appear when TCC is denied
-        let permissionsPopoverAllowButton = app.popovers.buttons["PermissionAuthorizationSwiftUIView.allowButton"]
-        XCTAssertFalse(
-            permissionsPopoverAllowButton.waitForExistence(timeout: UITests.Timeouts.elementExistence),
-            "The permissions popover in the browser should not appear when camera permission has been denied at system level."
-        )
+        // Our prompt appears first, then its System Settings step shows the TCC dialog - deny this time
+        app.popovers.buttons["PermissionAuthorizationView.allowThisVisitButton"].clickAfterExistenceTestSucceeds()
+        answerSystemPermissionStepIfShown(allow: false)
 
         // Wait for website button to turn red
         var websitePermissionsColorIsRed = false
@@ -198,11 +190,10 @@ class NewPermissionViewTests: UITestCase {
             "After a few attempts to wait for permissions.site to update their button animation after the TCC dialog, their button has to be red."
         )
 
-        // The permission center button should not appear when system permission is denied
-        let permissionCenterButton = app.buttons["AddressBarButtonsViewController.permissionCenterButton"]
-        XCTAssertFalse(
-            permissionCenterButton.waitForExistence(timeout: UITests.Timeouts.elementExistence),
-            "The permission center button should not appear when camera permission has been denied at system level."
+        // The prompt stays on its System Settings step, now offering to open System Settings
+        XCTAssertTrue(
+            app.popovers.buttons["PermissionAuthorizationView.systemPermissionButton"].waitForExistence(timeout: UITests.Timeouts.elementExistence),
+            "The prompt should offer to open System Settings when camera permission has been denied at system level."
         )
     }
 
@@ -214,12 +205,10 @@ class NewPermissionViewTests: UITestCase {
         let cameraButton = app.webViews.buttons["Camera"]
         cameraButton.clickAfterExistenceTestSucceeds()
 
-        // TCC system dialog appears FIRST for camera/microphone
-        XCUIApplication.notificationCenter.dismissSystemPermissionPromptIfPresent(allow: true)
-
-        // THEN browser's SwiftUI permission authorization popover appears
-        let permissionsPopoverAllowButton = app.popovers.buttons["PermissionAuthorizationSwiftUIView.allowButton"]
-        permissionsPopoverAllowButton.clickAfterExistenceTestSucceeds()
+        // Our prompt appears first, then its System Settings step shows the TCC dialog
+        let allowThisVisitButton = app.popovers.buttons["PermissionAuthorizationView.allowThisVisitButton"]
+        allowThisVisitButton.clickAfterExistenceTestSucceeds()
+        answerSystemPermissionStepIfShown(allow: true)
 
         // Wait for website button to turn green
         var websitePermissionsColorIsGreen = false
@@ -282,7 +271,7 @@ class NewPermissionViewTests: UITestCase {
 
         // Permission popover should not appear
         XCTAssertFalse(
-            permissionsPopoverAllowButton.waitForExistence(timeout: UITests.Timeouts.elementExistence),
+            allowThisVisitButton.waitForExistence(timeout: UITests.Timeouts.elementExistence),
             "Even if we click the button for the denied resource many times, when we have set 'Never allow' for the resource, the permission popover will not be on the screen"
         )
     }
@@ -297,12 +286,10 @@ class NewPermissionViewTests: UITestCase {
         let microphoneButton = app.webViews.buttons["Microphone"]
         microphoneButton.clickAfterExistenceTestSucceeds()
 
-        // TCC system dialog appears FIRST for camera/microphone
-        XCUIApplication.notificationCenter.dismissSystemPermissionPromptIfPresent(allow: true)
-
-        // THEN browser's SwiftUI permission authorization popover appears
-        let permissionsPopoverAllowButton = app.popovers.buttons["PermissionAuthorizationSwiftUIView.allowButton"]
-        permissionsPopoverAllowButton.clickAfterExistenceTestSucceeds()
+        // Our prompt appears first, then its System Settings step shows the TCC dialog
+        let allowThisVisitButton = app.popovers.buttons["PermissionAuthorizationView.allowThisVisitButton"]
+        allowThisVisitButton.clickAfterExistenceTestSucceeds()
+        answerSystemPermissionStepIfShown(allow: true)
 
         // Wait for website button to turn green
         var websitePermissionsColorIsGreen = false
@@ -340,7 +327,7 @@ class NewPermissionViewTests: UITestCase {
         XCTAssertEqual(
             dropdownValue,
             "Always ask",
-            "The microphone permission should be set to 'Always ask' after a one-time allow."
+            "The microphone permission should be set to 'Always ask' after Allow this visit."
         )
     }
 
@@ -352,15 +339,9 @@ class NewPermissionViewTests: UITestCase {
         let microphoneButton = app.webViews.buttons["Microphone"]
         microphoneButton.clickAfterExistenceTestSucceeds()
 
-        // TCC system dialog appears FIRST for camera/microphone - deny this time
-        XCUIApplication.notificationCenter.dismissSystemPermissionPromptIfPresent(allow: false)
-
-        // Browser's permission popover should not appear when TCC is denied
-        let permissionsPopoverAllowButton = app.popovers.buttons["PermissionAuthorizationSwiftUIView.allowButton"]
-        XCTAssertFalse(
-            permissionsPopoverAllowButton.waitForExistence(timeout: UITests.Timeouts.elementExistence),
-            "The permissions popover in the browser should not appear when microphone permission has been denied at system level."
-        )
+        // Our prompt appears first, then its System Settings step shows the TCC dialog - deny this time
+        app.popovers.buttons["PermissionAuthorizationView.allowThisVisitButton"].clickAfterExistenceTestSucceeds()
+        answerSystemPermissionStepIfShown(allow: false)
 
         // Wait for website button to turn red
         var websitePermissionsColorIsRed = false
@@ -376,11 +357,10 @@ class NewPermissionViewTests: UITestCase {
             "After between one and four attempts to wait for permissions.site to update their button animation after the TCC dialog, their button has to be red."
         )
 
-        // The permission center button should not appear when system permission is denied
-        let permissionCenterButton = app.buttons["AddressBarButtonsViewController.permissionCenterButton"]
-        XCTAssertFalse(
-            permissionCenterButton.waitForExistence(timeout: UITests.Timeouts.elementExistence),
-            "The permission center button should not appear when microphone permission has been denied at system level."
+        // The prompt stays on its System Settings step, now offering to open System Settings
+        XCTAssertTrue(
+            app.popovers.buttons["PermissionAuthorizationView.systemPermissionButton"].waitForExistence(timeout: UITests.Timeouts.elementExistence),
+            "The prompt should offer to open System Settings when microphone permission has been denied at system level."
         )
     }
 
@@ -392,12 +372,10 @@ class NewPermissionViewTests: UITestCase {
         let microphoneButton = app.webViews.buttons["Microphone"]
         microphoneButton.clickAfterExistenceTestSucceeds()
 
-        // TCC system dialog appears FIRST for camera/microphone
-        XCUIApplication.notificationCenter.dismissSystemPermissionPromptIfPresent(allow: true)
-
-        // THEN browser's SwiftUI permission authorization popover appears
-        let permissionsPopoverAllowButton = app.popovers.buttons["PermissionAuthorizationSwiftUIView.allowButton"]
-        permissionsPopoverAllowButton.clickAfterExistenceTestSucceeds()
+        // Our prompt appears first, then its System Settings step shows the TCC dialog
+        let allowThisVisitButton = app.popovers.buttons["PermissionAuthorizationView.allowThisVisitButton"]
+        allowThisVisitButton.clickAfterExistenceTestSucceeds()
+        answerSystemPermissionStepIfShown(allow: true)
 
         // Wait for website button to turn green
         var websitePermissionsColorIsGreen = false
@@ -460,7 +438,7 @@ class NewPermissionViewTests: UITestCase {
 
         // Permission popover should not appear
         XCTAssertFalse(
-            permissionsPopoverAllowButton.waitForExistence(timeout: UITests.Timeouts.elementExistence),
+            allowThisVisitButton.waitForExistence(timeout: UITests.Timeouts.elementExistence),
             "Even if we click the button for the denied resource many times, when we have set 'Never allow' for the resource, the permission popover will not be on the screen"
         )
     }
@@ -473,10 +451,10 @@ class NewPermissionViewTests: UITestCase {
         let locationButton = app.webViews.buttons["Location"]
         locationButton.clickAfterExistenceTestSucceeds()
 
-        // Location uses the new two-step authorization flow in the SwiftUI view
-        // Handle the permission authorization popover
-        let permissionsPopoverAllowButton = app.popovers.buttons["PermissionAuthorizationSwiftUIView.allowButton"]
-        permissionsPopoverAllowButton.clickAfterExistenceTestSucceeds()
+        // Location asks macOS only if it hasn't granted DuckDuckGo access yet
+        let allowThisVisitButton = app.popovers.buttons["PermissionAuthorizationView.allowThisVisitButton"]
+        allowThisVisitButton.clickAfterExistenceTestSucceeds()
+        answerSystemPermissionStepIfShown(allow: true)
 
         // Wait for website button to turn green (location button often doesn't turn green reliably on permission.site)
         var websitePermissionsColorIsGreen = false
@@ -512,7 +490,7 @@ class NewPermissionViewTests: UITestCase {
         XCTAssertEqual(
             dropdownValue,
             "Always ask",
-            "The location permission should be set to 'Always ask' after a one-time allow."
+            "The location permission should be set to 'Always ask' after Allow this visit."
         )
     }
 
@@ -522,9 +500,10 @@ class NewPermissionViewTests: UITestCase {
         let locationButton = app.webViews.buttons["Location"]
         locationButton.clickAfterExistenceTestSucceeds()
 
-        // Handle the permission authorization popover
-        let permissionsPopoverAllowButton = app.popovers.buttons["PermissionAuthorizationSwiftUIView.allowButton"]
-        permissionsPopoverAllowButton.clickAfterExistenceTestSucceeds()
+        // Location asks macOS only if it hasn't granted DuckDuckGo access yet
+        let allowThisVisitButton = app.popovers.buttons["PermissionAuthorizationView.allowThisVisitButton"]
+        allowThisVisitButton.clickAfterExistenceTestSucceeds()
+        answerSystemPermissionStepIfShown(allow: true)
 
         // Wait for website button to turn green
         var websitePermissionsColorIsGreen = false
@@ -579,7 +558,7 @@ class NewPermissionViewTests: UITestCase {
 
         // Permission popover should not appear
         XCTAssertFalse(
-            permissionsPopoverAllowButton.waitForExistence(timeout: UITests.Timeouts.elementExistence),
+            allowThisVisitButton.waitForExistence(timeout: UITests.Timeouts.elementExistence),
             "Even if we click the button for the denied resource many times, when we have set 'Never allow' for the resource, the permission popover will not be on the screen"
         )
     }
@@ -619,19 +598,19 @@ class NewPermissionViewTests: UITestCase {
         }
 
         // The browser's permission authorization popover should appear for external scheme (mailto:)
-        let permissionsPopoverDenyButton = app.popovers.buttons["PermissionAuthorizationSwiftUIView.denyButton"]
+        let neverAllowButton = app.popovers.buttons["PermissionAuthorizationView.neverAllowButton"]
         XCTAssertTrue(
-            permissionsPopoverDenyButton.waitForExistence(timeout: UITests.Timeouts.elementExistence),
+            neverAllowButton.waitForExistence(timeout: UITests.Timeouts.elementExistence),
             "The external scheme permission popover didn't appear after clicking mailto link."
         )
 
-        // Click Deny to prevent opening the Mail app
-        permissionsPopoverDenyButton.click()
+        // Click Never allow to prevent opening the Mail app
+        neverAllowButton.click()
 
         // Verify the popover is dismissed
         XCTAssertTrue(
-            permissionsPopoverDenyButton.waitForNonExistence(timeout: UITests.Timeouts.elementExistence),
-            "The permission popover should be dismissed after clicking Deny."
+            neverAllowButton.waitForNonExistence(timeout: UITests.Timeouts.elementExistence),
+            "The permission popover should be dismissed after clicking Never allow."
         )
 
         // The permission center button should appear (since we interacted with a permission)
@@ -650,7 +629,7 @@ class NewPermissionViewTests: UITestCase {
             "Permission center popover didn't appear in a reasonable timeframe."
         )
 
-        // Verify the external apps permission dropdown exists and shows "Always ask"
+        // Verify the external apps permission dropdown exists and shows "Never allow"
         // Query by identifier: video ads on the page can add an Autoplay row above External apps
         let externalAppsDropdown = permissionCenterPopover.popUpButtons["PermissionCenterView.externalSchemeDecisionPopUp"]
         XCTAssertTrue(
@@ -661,8 +640,8 @@ class NewPermissionViewTests: UITestCase {
         let dropdownValue = externalAppsDropdown.value as? String ?? ""
         XCTAssertEqual(
             dropdownValue,
-            "Always ask",
-            "The external apps permission should be set to 'Always ask' after denying once."
+            "Never allow",
+            "The external apps permission should be set to 'Never allow' after choosing Never allow."
         )
     }
 
@@ -691,7 +670,7 @@ final class NewPermissionViewPopupTests: UITestCase {
             ],
             featureFlags: [
                 "popupBlocking": true,
-                "websitePermissionsPrompts": false,
+                "websitePermissionsPrompts": true,
             ]
         )
 
@@ -801,6 +780,15 @@ final class NewPermissionViewPopupTests: UITestCase {
 // MARK: - Private Helpers
 
 private extension NewPermissionViewTests {
+    /// After an allow choice, the prompt shows a System Settings step while macOS hasn't granted DuckDuckGo access.
+    /// Its button shows the macOS dialog, which this answers. Does nothing when macOS has already granted access.
+    func answerSystemPermissionStepIfShown(allow: Bool) {
+        let systemPermissionButton = app.popovers.buttons["PermissionAuthorizationView.systemPermissionButton"]
+        guard systemPermissionButton.waitForExistence(timeout: UITests.Timeouts.elementExistence) else { return }
+        systemPermissionButton.click()
+        XCUIApplication.notificationCenter.dismissSystemPermissionPromptIfPresent(allow: allow)
+    }
+
     func websitePermissionsButtonIsExpectedColor(_ button: XCUIElement, is expectedColor: PredominantColor) throws -> Bool {
         let buttonScreenshot = button.screenshot().image
         let trimmedButton = buttonScreenshot.trim(to: CGRect(

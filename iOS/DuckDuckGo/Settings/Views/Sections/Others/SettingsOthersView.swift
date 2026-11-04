@@ -53,7 +53,7 @@ struct SettingsOthersView: View {
 #endif
 
                 SettingsCellView(label: UserText.settingsAboutSection,
-                                 image: Image(rebrandable: "duckduckgo-favicon-24x24"),
+                                 image: Image(.duckduckgoFavicon24X24),
                                  accessory: .rightDetail(version))
             }
 

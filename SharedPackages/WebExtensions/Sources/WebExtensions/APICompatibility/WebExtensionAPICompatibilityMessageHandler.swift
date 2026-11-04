@@ -33,6 +33,9 @@ final class WebExtensionAPICompatibilityMessageHandler: NSObject, WKScriptMessag
     /// Name and version of the loaded extension that owns the given extension page URL.
     var resolveExtension: (URL) -> (name: String, version: String)? = { _ in nil }
 
+    /// Called with each issue the log takes, and the extension page URL it came from, for the gap counts.
+    var onIssue: (WebExtensionAPICompatibilityClassifier.Issue, URL) -> Void = { _, _ in }
+
     private let reporter: WebExtensionAPICompatibilityReporter
 
     init(reporter: WebExtensionAPICompatibilityReporter = WebExtensionAPICompatibilityReporter()) {
@@ -64,7 +67,7 @@ final class WebExtensionAPICompatibilityMessageHandler: NSObject, WKScriptMessag
         if kind == Self.errorKind {
             issue = (payload["message"] as? String).flatMap(WebExtensionAPICompatibilityClassifier.classify(errorMessage:))
         } else if let kind = WebExtensionAPICompatibilityKind(rawValue: kind),
-                  kind != .invalidArgs,
+                  kind == .missing || kind == .stubbed,
                   let api = payload["api"] as? String {
             issue = WebExtensionAPICompatibilityClassifier.issue(kind: kind, reportedAPI: api)
         } else {
@@ -73,5 +76,6 @@ final class WebExtensionAPICompatibilityMessageHandler: NSObject, WKScriptMessag
 
         guard let issue else { return }
         reporter.report(kind: issue.kind, api: issue.api, extensionName: owner.name, version: owner.version)
+        onIssue(issue, url)
     }
 }

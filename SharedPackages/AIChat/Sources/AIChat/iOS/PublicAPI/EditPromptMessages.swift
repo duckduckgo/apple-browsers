@@ -21,30 +21,34 @@ import Foundation
 
 public struct EditPromptRequest: Decodable {
     public let prompt: String
-    public let images: [AIChatNativePrompt.NativePromptImage]?
-    public let files: [AIChatNativePrompt.NativePromptFile]?
+    public let attachments: AIChatPromptAttachments
     public let hasResponsesToLose: Bool
 
-    public init(prompt: String,
-                images: [AIChatNativePrompt.NativePromptImage]?,
-                files: [AIChatNativePrompt.NativePromptFile]?,
-                hasResponsesToLose: Bool) {
+    private enum CodingKeys: String, CodingKey {
+        case prompt, hasResponsesToLose
+    }
+
+    public init(prompt: String, attachments: AIChatPromptAttachments, hasResponsesToLose: Bool) {
         self.prompt = prompt
-        self.images = images
-        self.files = files
+        self.attachments = attachments
         self.hasResponsesToLose = hasResponsesToLose
+    }
+
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        prompt = try container.decode(String.self, forKey: .prompt)
+        attachments = try AIChatPromptAttachments(from: decoder)
+        hasResponsesToLose = try container.decode(Bool.self, forKey: .hasResponsesToLose)
     }
 }
 
 public enum EditPromptReply: Encodable {
-    case submit(prompt: String,
-                images: [AIChatNativePrompt.NativePromptImage]?,
-                files: [AIChatNativePrompt.NativePromptFile]?)
+    case submit(prompt: String, attachments: AIChatPromptAttachments)
 
     case cancelled
 
     private enum CodingKeys: String, CodingKey {
-        case cancelled, prompt, images, files
+        case cancelled, prompt
     }
 
     public func encode(to encoder: Encoder) throws {
@@ -52,10 +56,9 @@ public enum EditPromptReply: Encodable {
         switch self {
         case .cancelled:
             try container.encode(true, forKey: .cancelled)
-        case let .submit(prompt, images, files):
+        case let .submit(prompt, attachments):
             try container.encode(prompt, forKey: .prompt)
-            try container.encodeIfPresent(images, forKey: .images)
-            try container.encodeIfPresent(files, forKey: .files)
+            try attachments.encode(to: encoder)
         }
     }
 }

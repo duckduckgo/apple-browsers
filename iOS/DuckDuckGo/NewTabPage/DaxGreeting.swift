@@ -21,43 +21,32 @@ import Foundation
 
 enum DaxGreeting: String, CaseIterable {
     case monday
-    case wednesday
-    case fridaySearch
+    case friday
     case fridayDuck
-    case early
-    case afternoon
-    case evening
-    case late
-    case dark
-    case light
-    case firstOpen
-    case frequentHabit
-    case frequentSearch
-    case trackersQuiet
-    case cookies
-    case ads
-    case scams
-    case trackersSearch
-    case trackersAsk
-    case cookieBreakfast
-    case cookieLunch
-    case cookieDinner
-    case wingIt
-    case duckIt
-    case ready
-    case feelingDucky
-    case diveIn
-    case chatPrivately
-    case nobodyWatching
-    case justUs
-    case question
-    case searchOrChat
+    case sunday
+    case whereToToday
+    case newDayNewTabs
+    case whereShouldWeStart
+    case morning
+    case stillAwake
+    case nightOwl
+    case youreBack
+    case goodbyeAds
+    case askMe
     case duckDuckHello
+    case niceToSeeYou
+    case readyWhenYouAre
+    case readyToSearchPrivately
+    case heyThere
+    case whatsOnYourMind
+    case howCanIHelp
+    case letsExplore
+    case letsDoThis
+    case readyToDiveIn
 
     var isEnglishOnly: Bool {
         switch self {
-        case .fridayDuck, .early, .scams, .cookieBreakfast, .cookieLunch, .cookieDinner,
-             .wingIt, .duckIt, .feelingDucky, .diveIn, .duckDuckHello:
+        case .fridayDuck, .sunday, .readyToDiveIn:
             return true
         default:
             return false
@@ -65,49 +54,39 @@ enum DaxGreeting: String, CaseIterable {
     }
 
     var requiresAIChat: Bool {
-        self == .chatPrivately || self == .searchOrChat
+        self == .askMe
     }
 
     var text: String {
         switch self {
         case .monday: return UserText.daxGreetingMonday
-        case .wednesday: return UserText.daxGreetingWednesday
-        case .fridaySearch: return UserText.daxGreetingFridaySearch
+        case .friday: return UserText.daxGreetingFriday
         case .fridayDuck: return UserText.daxGreetingFridayDuck
-        case .early: return UserText.daxGreetingEarly
-        case .afternoon: return UserText.daxGreetingAfternoon
-        case .evening: return UserText.daxGreetingEvening
-        case .late: return UserText.daxGreetingLate
-        case .dark: return UserText.daxGreetingDark
-        case .light: return UserText.daxGreetingLight
-        case .firstOpen: return UserText.daxGreetingFirstOpen
-        case .frequentHabit: return UserText.daxGreetingFrequentHabit
-        case .frequentSearch: return UserText.daxGreetingFrequentSearch
-        case .trackersQuiet: return UserText.daxGreetingTrackersQuiet
-        case .cookies: return UserText.daxGreetingCookies
-        case .ads: return UserText.daxGreetingAds
-        case .scams: return UserText.daxGreetingScams
-        case .trackersSearch: return UserText.daxGreetingTrackersSearch
-        case .trackersAsk: return UserText.daxGreetingTrackersAsk
-        case .cookieBreakfast: return UserText.daxGreetingCookieBreakfast
-        case .cookieLunch: return UserText.daxGreetingCookieLunch
-        case .cookieDinner: return UserText.daxGreetingCookieDinner
-        case .wingIt: return UserText.daxGreetingWingIt
-        case .duckIt: return UserText.daxGreetingDuckIt
-        case .ready: return UserText.daxGreetingReady
-        case .feelingDucky: return UserText.daxGreetingFeelingDucky
-        case .diveIn: return UserText.daxGreetingDiveIn
-        case .chatPrivately: return UserText.daxGreetingChatPrivately
-        case .nobodyWatching: return UserText.daxGreetingNobodyWatching
-        case .justUs: return UserText.daxGreetingJustUs
-        case .question: return UserText.daxGreetingQuestion
-        case .searchOrChat: return UserText.daxGreetingSearchOrChat
+        case .sunday: return UserText.daxGreetingSunday
+        case .whereToToday: return UserText.daxGreetingWhereToToday
+        case .newDayNewTabs: return UserText.daxGreetingNewDayNewTabs
+        case .whereShouldWeStart: return UserText.daxGreetingWhereShouldWeStart
+        case .morning: return UserText.daxGreetingMorning
+        case .stillAwake: return UserText.daxGreetingStillAwake
+        case .nightOwl: return UserText.daxGreetingNightOwl
+        case .youreBack: return UserText.daxGreetingYoureBack
+        case .goodbyeAds: return UserText.daxGreetingGoodbyeAds
+        case .askMe: return UserText.daxGreetingAskMe
         case .duckDuckHello: return UserText.daxGreetingDuckDuckHello
+        case .niceToSeeYou: return UserText.daxGreetingNiceToSeeYou
+        case .readyWhenYouAre: return UserText.daxGreetingReadyWhenYouAre
+        case .readyToSearchPrivately: return UserText.daxGreetingReadyToSearchPrivately
+        case .heyThere: return UserText.daxGreetingHeyThere
+        case .whatsOnYourMind: return UserText.daxGreetingWhatsOnYourMind
+        case .howCanIHelp: return UserText.daxGreetingHowCanIHelp
+        case .letsExplore: return UserText.daxGreetingLetsExplore
+        case .letsDoThis: return UserText.daxGreetingLetsDoThis
+        case .readyToDiveIn: return UserText.daxGreetingReadyToDiveIn
         }
     }
 
     static let generic: [DaxGreeting] = [
-        .wingIt, .duckIt, .ready, .feelingDucky, .diveIn,
-        .chatPrivately, .nobodyWatching, .justUs, .question, .searchOrChat, .duckDuckHello
+        .duckDuckHello, .niceToSeeYou, .readyWhenYouAre, .readyToSearchPrivately, .heyThere,
+        .whatsOnYourMind, .howCanIHelp, .letsExplore, .letsDoThis, .readyToDiveIn
     ]
 }

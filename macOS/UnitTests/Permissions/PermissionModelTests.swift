@@ -43,6 +43,8 @@ final class PermissionModelTests: XCTestCase {
     static var processPool: WKProcessPool!
     var webView: WebViewMock!
     var model: PermissionModel!
+    /// What the page was told for requests made with `requestCameraAndMicrophone()`.
+    private var pageDecisions: [Bool] = []
     var pixelKit: PixelKit! = PixelKit(dryRun: true,
                                        appVersion: "1.0.0",
                                        defaultHeaders: [:],
@@ -97,6 +99,7 @@ final class PermissionModelTests: XCTestCase {
         pixelKit = nil
         geolocationProviderMock = nil
         model = nil
+        pageDecisions = []
     }
 
     override class func tearDown() {
@@ -1084,6 +1087,29 @@ final class PermissionModelTests: XCTestCase {
         assertSavedCameraDecisionResolvesPendingQuery(.deny, expectedGranted: false)
     }
 
+    func testWhenCameraIsRemovedWhileCameraAndMicrophonePromptWaitsForMacOSThenRequestIsDeniedAndPromptCloses() throws {
+        systemPermissionManagerMock.authorizationStates[.camera] = .denied
+        permissionManagerMock.setPermission(.allow, forDomain: URL.duckDuckGo.host!, permissionType: .camera)
+        permissionManagerMock.setPermission(.allow, forDomain: URL.duckDuckGo.host!, permissionType: .microphone)
+        let query = try requestCameraAndMicrophone()
+
+        permissionManagerMock.removePermission(forDomain: URL.duckDuckGo.host!, permissionType: .camera)
+
+        XCTAssertTrue(query.isComplete)
+        XCTAssertEqual(pageDecisions, [false])
+        XCTAssertEqual(permissionManagerMock.persistedDecision(forDomain: URL.duckDuckGo.host!, permissionType: .microphone), .allow)
+    }
+
+    func testWhenCameraIsSetToNeverAllowWhileCameraAndMicrophonePromptIsPendingThenRequestIsDeniedWithoutSavingMicrophone() throws {
+        let query = try requestCameraAndMicrophone()
+
+        saveInSettings(.deny, for: .camera)
+
+        XCTAssertTrue(query.isComplete)
+        XCTAssertEqual(pageDecisions, [false])
+        XCTAssertNil(permissionManagerMock.persistedDecision(forDomain: URL.duckDuckGo.host!, permissionType: .microphone))
+    }
+
     func testWhenDeniedPermissionIsStoredThenQueryIsDenied() {
         permissionManagerMock.setPermission(.allow, forDomain: URL.duckDuckGo.host!, permissionType: .camera)
         permissionManagerMock.setPermission(.deny, forDomain: URL.duckDuckGo.host!, permissionType: .microphone)
@@ -1934,6 +1960,22 @@ final class PermissionModelTests: XCTestCase {
         // Query should NOT be shown - user's "Never Allow" decision should be respected
         // even when system permission is disabled
         XCTAssertFalse(queryShown)
+    }
+
+    /// duckduckgo.com asks for the camera and microphone together with the new prompt on.
+    private func requestCameraAndMicrophone() throws -> PermissionAuthorizationQuery {
+        featureFlagger.featuresStub[FeatureFlag.websitePermissionsPrompts.rawValue] = true
+        webView.urlValue = URL.duckDuckGo
+        model.permissions([.camera, .microphone], requestedForDomain: URL.duckDuckGo.host!) { [weak self] (granted: Bool) in
+            self?.pageDecisions.append(granted)
+        }
+        return try XCTUnwrap(model.authorizationQuery)
+    }
+
+    /// What Settings does when the user picks a decision for duckduckgo.com.
+    private func saveInSettings(_ decision: PersistedPermissionDecision, for permission: PermissionType) {
+        permissionManagerMock.setPermission(decision, forDomain: URL.duckDuckGo.host!, permissionType: permission)
+        permissionManagerMock.permissionSubject.send((URL.duckDuckGo.host!, permission, .decisionChanged(decision)))
     }
 
     private func assertSavedCameraDecisionResolvesPendingQuery(

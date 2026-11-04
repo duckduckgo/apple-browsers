@@ -48,7 +48,7 @@ final class AIChatMentionPickerCoordinator {
     /// `mention_picker_canceled` pixel should fire: every value except `.accept` counts as
     /// a cancel.
     enum DismissReason {
-        /// The user picked a row (click or Enter). Suppresses the canceled pixel because
+        /// The user picked a row (click, Enter or Tab). Suppresses the canceled pixel because
         /// `accept(attachment:)` already fires `mention_tab_chosen` / `mention_tab_removed`.
         case accept
         /// The user pressed Esc.
@@ -89,7 +89,7 @@ final class AIChatMentionPickerCoordinator {
 
     /// `true` when the picker is on screen AND has a real selection (i.e. not the
     /// empty-state row). The text container VC checks this in `doCommandBy:` to decide
-    /// whether to swallow arrow / Enter / Esc keystrokes.
+    /// whether to swallow arrow / Enter / Tab / Esc keystrokes.
     var canHandleKeyCommands: Bool {
         guard isPresented, let vc = viewController else { return false }
         return !vc.isShowingEmptyState
@@ -212,12 +212,12 @@ final class AIChatMentionPickerCoordinator {
         viewController?.moveHighlightUp()
     }
 
-    /// Called when the user presses Enter while the picker is open.
+    /// Called when the user presses Enter or Tab while the picker is open.
     ///
-    /// - Returns: `true` if the picker consumed the Enter (i.e. it had a real row
+    /// - Returns: `true` if the picker consumed the key (i.e. it had a real row
     ///   highlighted, accepted it, and dismissed). `false` means the picker isn't able to
     ///   accept anything (empty-state mode or no highlight) and the caller should fall
-    ///   through to its normal Enter handling (e.g. the omnibar's submit).
+    ///   through to its normal handling (submit for Enter, focus cycling for Tab).
     @MainActor
     func acceptHighlighted() -> Bool {
         guard let vc = viewController, !vc.isShowingEmptyState else { return false }
@@ -227,7 +227,7 @@ final class AIChatMentionPickerCoordinator {
     }
 
     /// Core accept logic shared between click-on-row (via the VC's `onAccept` callback)
-    /// and Enter-on-highlight (via `acceptHighlighted`). Splices the `@token` substring
+    /// and Enter / Tab on the highlight (via `acceptHighlighted`). Splices the `@token` substring
     /// out of the anchored text view and toggles the corresponding tab attachment, then
     /// dismisses the picker.
     @MainActor

@@ -28,3 +28,22 @@ protocol PrivacyStatsProviding {
 }
 
 extension PrivacyStats: PrivacyStatsProviding { }
+
+/// Stands in for `PrivacyStats` when its store cannot be opened: nothing is recorded and counts read as zero.
+/// Clearing still deletes the store's files, so the Fire button removes stats left from earlier sessions.
+final class UnavailablePrivacyStats: PrivacyStatsProviding {
+
+    private let storeLocation: URL
+
+    init(storeLocation: URL) {
+        self.storeLocation = storeLocation
+    }
+
+    func recordBlockedTracker(_ name: String) async {}
+    func fetchPrivacyStatsTotalCount() async -> Int64 { 0 }
+    func handleAppTermination() async {}
+
+    func clearPrivacyStats() async -> Result<Void, Error> {
+        Result { try PrivacyStatsDatabase.deleteStoreFiles(at: storeLocation) }
+    }
+}

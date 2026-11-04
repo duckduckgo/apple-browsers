@@ -211,4 +211,18 @@ final class MockNewTabPageOmnibarConfigProvider: NewTabPageOmnibarConfigProvidin
     var isSearchSuggestionDeletionEnabledPublisher: AnyPublisher<Bool, Never> {
         $isSearchSuggestionDeletionEnabled.removeDuplicates().eraseToAnyPublisher()
     }
+
+    @Published var requiresAiTermsAcceptance: Bool = false
+
+    var requiresAiTermsAcceptancePublisher: AnyPublisher<Bool, Never> {
+        $requiresAiTermsAcceptance.dropFirst().removeDuplicates().eraseToAnyPublisher()
+    }
+
+    var showSuggestedPrompts: Bool = false
+    var suggestedPromptsPromptCount: Int = 0
+
+    let suggestedPromptsSubject = PassthroughSubject<Void, Never>()
+    var suggestedPromptsPublisher: AnyPublisher<Void, Never> {
+        suggestedPromptsSubject.eraseToAnyPublisher()
+    }
 }

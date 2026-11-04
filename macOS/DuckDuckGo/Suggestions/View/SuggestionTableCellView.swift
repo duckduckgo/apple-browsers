@@ -68,7 +68,6 @@ final class SuggestionTableCellView: NSTableCellView {
 
     var theme: ThemeStyleProviding?
     var suggestion: Suggestion?
-    var isAIChatToggleBeingDisplayed: Bool = false
     private(set) var cellStyle: CellStyle = .default
 
     static let switchToTabAttributedString: NSAttributedString = {
@@ -499,10 +498,7 @@ final class SuggestionTableCellView: NSTableCellView {
             return
         }
 
-        var iconLeadingPadding = styleProvider.suggestionIconViewLeadingPadding
-        if isAIChatToggleBeingDisplayed {
-            iconLeadingPadding += 8
-        }
+        let iconLeadingPadding = styleProvider.suggestionIconViewLeadingPadding
         iconImageViewLeadingConstraint.constant = iconLeadingPadding
         searchSuggestionTextFieldLeadingConstraint.constant = styleProvider.suggestionTextFieldLeadingPadding
 

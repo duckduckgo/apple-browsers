@@ -131,7 +131,10 @@ class FireButtonAnimator {
                                        object: nil)
     }
         
-    func animate(onAnimationStart: @escaping () async -> Void, onTransitionCompleted: @escaping () async -> Void, completion: @escaping () async -> Void) {
+    func animate(instrumentation: FireAnimationInstrumentation? = nil,
+                 onAnimationStart: @escaping () async -> Void,
+                 onTransitionCompleted: @escaping () async -> Void,
+                 completion: @escaping () async -> Void) {
         removePreBurnSnapshot()
 
         guard let window = UIApplication.shared.firstKeyWindow,
@@ -173,9 +176,12 @@ class FireButtonAnimator {
             }
         }
         
-        animationView.play(fromProgress: 0, toProgress: 1) { [weak animationView] _ in
+        animationView.play(fromProgress: 0, toProgress: 1) { [weak animationView] finished in
             animationView?.removeFromSuperview()
             Task { @MainActor in
+                if finished {
+                    instrumentation?.animationDidFinish(animation: currentAnimation)
+                }
                 await completion()
             }
         }

@@ -480,6 +480,7 @@ final class SyncConnectionControllerTests: XCTestCase {
     @MainActor
     func test_startExchangeMode_whenPairingV2PresenterCompletes_notifiesDelegate() async throws {
         dependencies.isPairingV2CodeEnabled = { true }
+        dependencies.canUseExchangeV2Point1 = { true }
         try dependencies.secureStore.persistAccount(SyncAccount.mock)
         let messageExchanger = PairingV2MessageExchangingMock()
         dependencies.createPairingV2MessageExchangerStub = messageExchanger

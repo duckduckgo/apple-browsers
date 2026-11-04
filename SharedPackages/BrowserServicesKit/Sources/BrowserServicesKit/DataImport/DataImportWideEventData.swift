@@ -28,7 +28,7 @@ public class DataImportWideEventData: WideEventData {
         featureName: "data-import",
         mobileMetaType: "ios-data-import",
         desktopMetaType: "macos-data-import",
-        version: "1.2.0"
+        version: "1.2.1"
     )
     public static let importTimeout: TimeInterval = .minutes(15)
 
@@ -46,16 +46,19 @@ public class DataImportWideEventData: WideEventData {
     public var bookmarkImporterDuration: WideEvent.MeasuredInterval?
     public var passwordImporterDuration: WideEvent.MeasuredInterval?
     public var creditCardImporterDuration: WideEvent.MeasuredInterval?
+    public var historyImporterDuration: WideEvent.MeasuredInterval?
 
     // Per-type status
     public var bookmarkImportStatus: WideEventStatus?
     public var passwordImportStatus: WideEventStatus?
     public var creditCardImportStatus: WideEventStatus?
+    public var historyImportStatus: WideEventStatus?
 
     // Per-type errors
     public var bookmarkImportError: WideEventErrorData?
     public var passwordImportError: WideEventErrorData?
     public var creditCardImportError: WideEventErrorData?
+    public var historyImportError: WideEventErrorData?
 
     public init(source: DataImport.Source,
                 overallDuration: WideEvent.MeasuredInterval? = nil,
@@ -244,6 +247,7 @@ public extension DataImport.DataType {
         case .bookmarks: return \.bookmarkImportStatus
         case .passwords: return \.passwordImportStatus
         case .creditCards: return \.creditCardImportStatus
+        case .history: return \.historyImportStatus
         }
     }
 
@@ -252,6 +256,7 @@ public extension DataImport.DataType {
         case .bookmarks: return \.bookmarkImporterDuration
         case .passwords: return \.passwordImporterDuration
         case .creditCards: return \.creditCardImporterDuration
+        case .history: return \.historyImporterDuration
         }
     }
 
@@ -260,6 +265,7 @@ public extension DataImport.DataType {
         case .bookmarks: return \.bookmarkImportError
         case .passwords: return \.passwordImportError
         case .creditCards: return \.creditCardImportError
+        case .history: return \.historyImportError
         }
     }
 }

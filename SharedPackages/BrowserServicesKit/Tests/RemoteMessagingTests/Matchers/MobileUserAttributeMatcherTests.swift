@@ -263,7 +263,11 @@ class MobileUserAttributeMatcherTests: XCTestCase {
             isFreemiumPIRActivated: isFreemiumPIRActivated,
             freemiumPIRFirstScanResult: freemiumPIRFirstScanResult,
             isCurrentPIRUser: isCurrentPIRUser,
-            ntpAfterIdleState: ntpAfterIdleState
+            ntpAfterIdleState: ntpAfterIdleState,
+            isReturningUser: nil,
+            isAIChatEnabled: false,
+            triedAIChatDuringOnboarding: false,
+            isAIChatBoostActive: nil
         )
     }
 }

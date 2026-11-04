@@ -147,8 +147,9 @@ extension AttributedMetricManager {
 
         NotificationCenter.default.publisher(for: .userDidPurchaseSubscription)
             .receive(on: workQueue)
-            .sink { [weak self] _ in
-                self?.process(trigger: .userDidSubscribe)
+            .sink { [weak self] notification in
+                let isFreeTrial = notification.userInfo?[UserDidPurchaseSubscriptionUserInfoKey.isFreeTrial] as? Bool
+                self?.process(trigger: .userDidSubscribe(isFreeTrial: isFreeTrial))
             }
             .store(in: &cancellables)
 

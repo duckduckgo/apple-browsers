@@ -195,28 +195,22 @@ private final class EmptyPreviewAIModelProvider: SubscriptionOnboardingAIModelPr
 }
 
 #Preview("Light") {
-    RebrandedPreview {
-        SubscriptionOnboardingDuckAIView(
-            viewModel: SubscriptionOnboardingDuckAIViewModel(prefetcher: SubscriptionOnboardingPrefetcher(modelProvider: PreviewAIModelProvider())))
-            .subscriptionOnboardingNavigationContainer()
-    }
+    SubscriptionOnboardingDuckAIView(
+        viewModel: SubscriptionOnboardingDuckAIViewModel(prefetcher: SubscriptionOnboardingPrefetcher(modelProvider: PreviewAIModelProvider())))
+        .subscriptionOnboardingNavigationContainer()
 }
 
 #Preview("Dark") {
-    RebrandedPreview {
-        SubscriptionOnboardingDuckAIView(
-            viewModel: SubscriptionOnboardingDuckAIViewModel(prefetcher: SubscriptionOnboardingPrefetcher(modelProvider: PreviewAIModelProvider())))
-            .subscriptionOnboardingNavigationContainer()
-    }
-    .preferredColorScheme(.dark)
+    SubscriptionOnboardingDuckAIView(
+        viewModel: SubscriptionOnboardingDuckAIViewModel(prefetcher: SubscriptionOnboardingPrefetcher(modelProvider: PreviewAIModelProvider())))
+        .subscriptionOnboardingNavigationContainer()
+        .preferredColorScheme(.dark)
 }
 
 #Preview("Empty") {
-    RebrandedPreview {
-        SubscriptionOnboardingDuckAIView(
-            viewModel: SubscriptionOnboardingDuckAIViewModel(prefetcher: SubscriptionOnboardingPrefetcher(modelProvider: EmptyPreviewAIModelProvider())))
-            .subscriptionOnboardingNavigationContainer()
-    }
+    SubscriptionOnboardingDuckAIView(
+        viewModel: SubscriptionOnboardingDuckAIViewModel(prefetcher: SubscriptionOnboardingPrefetcher(modelProvider: EmptyPreviewAIModelProvider())))
+        .subscriptionOnboardingNavigationContainer()
 }
 
 #endif

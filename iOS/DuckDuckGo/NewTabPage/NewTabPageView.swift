@@ -206,7 +206,7 @@ private extension NewTabPageView {
     }
 
     /// The unified toggle input design lets the hatch fill the same content span as favorites.
-    /// Legacy NTP keeps its existing max widths so the flag-off UI remains unchanged.
+    /// With unified toggle input disabled, the NTP keeps its existing maximum widths.
     private var escapeHatchMaxWidth: CGFloat {
         if layoutConfiguration.expandsEscapeHatchToAvailableWidth {
             return .infinity

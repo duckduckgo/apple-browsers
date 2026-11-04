@@ -58,13 +58,55 @@ final class WebExtensionLifecycleCoordinatorTests: XCTestCase {
     }
 
     @MainActor
-    func testLoadAndSyncRunsLoadThenSyncAsOneUnit() async {
+    func testLoadAndSyncPreparesOnlyCPMBeforeLoadAsOneUnit() async {
         let manager = RecordingWebExtensionManager()
+        let types: Set<DuckDuckGoWebExtensionType> = [.embedded, .darkReader, .adBlockingExtension, .searchToken]
+        let sut = WebExtensionLifecycleCoordinator(manager: manager, enabledTypesProvider: { types })
+
+        await sut.loadAndSync().value
+
+        XCTAssertEqual(manager.finished, [.syncCPM(true), .load, .sync(types)])
+        XCTAssertEqual(manager.maxConcurrent, 1)
+    }
+
+    @MainActor
+    func testDisabledCPMIsRemovedBeforeLoadWhileOtherTypesSyncAfterLoad() async {
+        let manager = RecordingWebExtensionManager()
+        let types: Set<DuckDuckGoWebExtensionType> = [.darkReader, .adBlockingExtension, .searchToken]
+        let sut = WebExtensionLifecycleCoordinator(manager: manager, enabledTypesProvider: { types })
+
+        await sut.loadAndSync().value
+
+        XCTAssertEqual(manager.finished, [.syncCPM(false), .load, .sync(types)])
+    }
+
+    @MainActor
+    func testDisabledUpgradeBeforeLoadRestoresLoadThenSyncAsOneUnit() async {
+        let manager = RecordingWebExtensionManager()
+        manager.isCPMUpgradeBeforeLoadEnabled = false
         let sut = WebExtensionLifecycleCoordinator(manager: manager, enabledTypesProvider: { [.embedded] })
 
         await sut.loadAndSync().value
 
         XCTAssertEqual(manager.finished, [.load, .sync([.embedded])])
+        XCTAssertEqual(manager.maxConcurrent, 1)
+    }
+
+    @MainActor
+    func testLaunchRepairsInstallationsRemovedByFullLoad() async {
+        let manager = RecordingWebExtensionManager()
+        manager.webExtensionIdentifiers = ["broken"]
+        manager.suspendLoad = true
+        let sut = WebExtensionLifecycleCoordinator(manager: manager, enabledTypesProvider: { [.embedded] })
+        let launch = sut.loadAndSync()
+        while !manager.isLoadSuspended { await Task.yield() }
+        manager.webExtensionIdentifiers = []
+        manager.resumeLoad()
+
+        await launch.value
+
+        XCTAssertEqual(manager.finished, [.syncCPM(true), .load, .sync([.embedded])])
+        XCTAssertEqual(manager.maxConcurrent, 1)
     }
 
     @MainActor
@@ -93,27 +135,7 @@ final class WebExtensionLifecycleCoordinatorTests: XCTestCase {
         await waiter.value
 
         XCTAssertTrue(waitCompleted)
-        XCTAssertEqual(manager.finished, [.load, .sync([.embedded])])
-        XCTAssertFalse(sut.isInitialLoadAndSyncPending)
-    }
-
-    @MainActor
-    func testInitialLoadWaiterCompletesWhenLoadAndSyncIsCancelled() async throws {
-        let manager = RecordingWebExtensionManager()
-        manager.opDelay = .seconds(1)
-        let sut = WebExtensionLifecycleCoordinator(manager: manager, enabledTypesProvider: { [.embedded] })
-
-        let loadAndSync = sut.loadAndSync()
-        let initialLoadWaiter = try XCTUnwrap(sut.initialLoadWaiter)
-        let waiter = Task { @MainActor in
-            await initialLoadWaiter()
-        }
-        sut.cancelAll()
-
-        await loadAndSync.value
-        await waiter.value
-
-        XCTAssertTrue(manager.finished.isEmpty)
+        XCTAssertEqual(manager.finished, [.syncCPM(true), .load, .sync([.embedded])])
         XCTAssertFalse(sut.isInitialLoadAndSyncPending)
     }
 
@@ -138,7 +160,7 @@ final class WebExtensionLifecycleCoordinatorTests: XCTestCase {
         await Task.yield()
 
         XCTAssertFalse(waitCompleted)
-        XCTAssertEqual(manager.finished, [.load, .sync([.embedded])])
+        XCTAssertEqual(manager.finished, [.syncCPM(true), .load, .sync([.embedded])])
 
         manager.resumeBackgroundContentLoad()
         await loadAndSync.value
@@ -184,7 +206,134 @@ final class WebExtensionLifecycleCoordinatorTests: XCTestCase {
         XCTAssertNil(sut.initialLoadWaiter)
         await loadAndSync.value
         XCTAssertEqual(manager.backgroundContentLoadCallCount, 0)
-        XCTAssertEqual(manager.finished, [.load, .sync([.embedded])])
+        XCTAssertEqual(manager.finished, [.syncCPM(true), .load, .sync([.embedded])])
+    }
+
+    @MainActor
+    func testLaunchTimeoutAlsoExpiresNavigationWaitForSameStartup() async throws {
+        let manager = RecordingWebExtensionManager()
+        manager.shareInitialBackgroundStartup = true
+        var release: CheckedContinuation<Void, Never>?
+        manager.navigationBackgroundWaiter = { await withCheckedContinuation { release = $0 } }
+        let sut = WebExtensionLifecycleCoordinator(manager: manager, initialLoadTimeout: 1, enabledTypesProvider: { [.embedded] })
+        let launch = sut.loadAndSync()
+        try await XCTUnwrap(sut.initialLoadWaiter)()
+        await launch.value
+        XCTAssertNotNil(release)
+        let released = expectation(description: "Launch already consumed the same startup deadline")
+        let waiter = try XCTUnwrap(sut.initialLoadWaiter)
+        let navigation = Task { @MainActor in await waiter(); released.fulfill() }
+        await fulfillment(of: [released], timeout: 0.2)
+        release?.resume()
+        await navigation.value
+    }
+
+    @MainActor
+    func testNavigationAfterLaunchWaitsForBackgroundWake() async throws {
+        let manager = RecordingWebExtensionManager()
+        let sut = WebExtensionLifecycleCoordinator(manager: manager, enabledTypesProvider: { [.embedded] })
+        await sut.loadAndSync().value
+        var release: CheckedContinuation<Void, Never>?
+        manager.navigationBackgroundWaiter = { await withCheckedContinuation { release = $0 } }
+        let backgroundWaiter = try XCTUnwrap(sut.initialLoadWaiter)
+        var completed = false
+        let task = Task { @MainActor in await backgroundWaiter(); completed = true }
+        while release == nil { await Task.yield() }
+        XCTAssertFalse(completed)
+        release?.resume()
+        await task.value
+        XCTAssertTrue(completed)
+    }
+
+    @MainActor
+    func testBackgroundWakeWaitIsBoundedWhenWebKitIgnoresCancellation() async throws {
+        let manager = RecordingWebExtensionManager()
+        let sut = WebExtensionLifecycleCoordinator(manager: manager, initialLoadTimeout: 0.02, enabledTypesProvider: { [.embedded] })
+        await sut.loadAndSync().value
+        var release: CheckedContinuation<Void, Never>?
+        manager.navigationBackgroundWaiter = { await withCheckedContinuation { release = $0 } }
+        let waiter = try XCTUnwrap(sut.initialLoadWaiter)
+        let released = expectation(description: "Navigation released without the WebKit callback")
+        let task = Task { @MainActor in await waiter(); released.fulfill() }
+        await fulfillment(of: [released], timeout: 1)
+        XCTAssertNotNil(release, "The background load remains pending after the navigation deadline")
+        release?.resume()
+        await task.value
+    }
+
+    @MainActor
+    func testTimedOutBackgroundStartupDoesNotDelayLaterNavigations() async throws {
+        let manager = RecordingWebExtensionManager()
+        let sut = WebExtensionLifecycleCoordinator(manager: manager, initialLoadTimeout: 2, enabledTypesProvider: { [.embedded] })
+        await sut.loadAndSync().value
+        var release: CheckedContinuation<Void, Never>?
+        let startup = Task { @MainActor in await withCheckedContinuation { release = $0 } }
+        manager.navigationBackgroundWaiter = { await startup.value }
+        let firstWaiter = try XCTUnwrap(sut.initialLoadWaiter)
+        let alreadyPreparedWaiter = try XCTUnwrap(sut.initialLoadWaiter)
+        await firstWaiter()
+        XCTAssertNotNil(release, "The shared WebKit startup is still pending after the first timeout")
+
+        let laterNavigation = expectation(description: "Later navigation bypasses the expired startup wait")
+        let preparedNavigation = expectation(description: "Already prepared navigation shares the expired deadline")
+        let waiter = try XCTUnwrap(sut.initialLoadWaiter)
+        let navigation = Task { @MainActor in await waiter(); laterNavigation.fulfill() }
+        let prepared = Task { @MainActor in await alreadyPreparedWaiter(); preparedNavigation.fulfill() }
+        await fulfillment(of: [laterNavigation, preparedNavigation], timeout: 0.5)
+        release?.resume()
+        await navigation.value
+        await prepared.value
+    }
+
+    @MainActor
+    func testNewBackgroundStartupCanWaitAfterEarlierStartupTimesOut() async throws {
+        let manager = RecordingWebExtensionManager()
+        let sut = WebExtensionLifecycleCoordinator(manager: manager, initialLoadTimeout: 0.02, enabledTypesProvider: { [.embedded] })
+        await sut.loadAndSync().value
+        var release: CheckedContinuation<Void, Never>?
+        let original = Task { @MainActor in await withCheckedContinuation { release = $0 } }
+        manager.navigationBackgroundWaiter = { await original.value }
+        try await XCTUnwrap(sut.initialLoadWaiter)()
+        release?.resume()
+        await original.value
+
+        var releaseReplacement: CheckedContinuation<Void, Never>?
+        manager.navigationBackgroundWaiter = { await withCheckedContinuation { releaseReplacement = $0 } }
+        let waiter = try XCTUnwrap(sut.initialLoadWaiter)
+        var completed = false
+        let navigation = Task { @MainActor in await waiter(); completed = true }
+        while releaseReplacement == nil { await Task.yield() }
+        XCTAssertFalse(completed, "An earlier timeout must not disable protection for a new startup")
+        releaseReplacement?.resume()
+        await navigation.value
+    }
+
+    @MainActor
+    func testCancellingNavigationDoesNotWaitForBackgroundCallback() async throws {
+        let manager = RecordingWebExtensionManager()
+        let sut = WebExtensionLifecycleCoordinator(manager: manager, enabledTypesProvider: { [.embedded] })
+        await sut.loadAndSync().value
+        var release: CheckedContinuation<Void, Never>?
+        manager.navigationBackgroundWaiter = { await withCheckedContinuation { release = $0 } }
+        let waiter = try XCTUnwrap(sut.initialLoadWaiter)
+        let cancelled = expectation(description: "Cancelled navigation releases its waiter")
+        let task = Task { @MainActor in await waiter(); cancelled.fulfill() }
+        while release == nil { await Task.yield() }
+        task.cancel()
+        await fulfillment(of: [cancelled], timeout: 1)
+        release?.resume()
+        await task.value
+    }
+
+    @MainActor
+    func testDisabledGateDoesNotPrepareIdleBackground() async {
+        let manager = RecordingWebExtensionManager()
+        let sut = WebExtensionLifecycleCoordinator(manager: manager,
+                                                   initialLoadGateEnabledProvider: { false },
+                                                   enabledTypesProvider: { [.embedded] })
+        await sut.loadAndSync().value
+        manager.navigationBackgroundWaiter = { XCTFail("Disabled navigation protection must not wake background") }
+        XCTAssertNil(sut.initialLoadWaiter)
     }
 
     @MainActor
@@ -206,14 +355,14 @@ final class WebExtensionLifecycleCoordinatorTests: XCTestCase {
 
         XCTAssertTrue(sut.isInitialLoadAndSyncPending)
         XCTAssertNil(sut.initialLoadWaiter, "A timeout must open the gate for every subsequent navigation")
-        XCTAssertEqual(manager.started, [.load])
-        XCTAssertTrue(manager.finished.isEmpty)
+        XCTAssertEqual(manager.started, [.syncCPM(true), .load])
+        XCTAssertEqual(manager.finished, [.syncCPM(true)])
 
         manager.resumeLoad()
         await loadAndSync.value
 
         XCTAssertFalse(sut.isInitialLoadAndSyncPending)
-        XCTAssertEqual(manager.finished, [.load, .sync([.embedded])])
+        XCTAssertEqual(manager.finished, [.syncCPM(true), .load, .sync([.embedded])])
     }
 
     @MainActor
@@ -238,7 +387,7 @@ final class WebExtensionLifecycleCoordinatorTests: XCTestCase {
 
         XCTAssertTrue(manager.isBackgroundContentLoadSuspended)
         XCTAssertNil(sut.initialLoadWaiter)
-        XCTAssertEqual(manager.finished, [.load, .sync([.embedded]), .unload, .reload, .sync([.embedded])])
+        XCTAssertEqual(manager.finished, [.syncCPM(true), .load, .sync([.embedded]), .unload, .reload, .sync([.embedded])])
         manager.resumeBackgroundContentLoad()
         await loadAndSync.value
         await unload.value
@@ -304,25 +453,6 @@ final class WebExtensionLifecycleCoordinatorTests: XCTestCase {
     }
 
     @MainActor
-    func testWhenCoordinatorIsCancelledBeforeLoadThenPendingNavigationIsReleased() async throws {
-        let manager = RecordingWebExtensionManager()
-        let sut = WebExtensionLifecycleCoordinator(manager: manager, enabledTypesProvider: { [.embedded] })
-        let initialLoadWaiter = try XCTUnwrap(sut.initialLoadWaiter)
-        let started = expectation(description: "Navigation started")
-        let waiter = Task { @MainActor in
-            started.fulfill()
-            await initialLoadWaiter()
-        }
-        await fulfillment(of: [started], timeout: 1)
-
-        sut.cancelAll()
-        await waiter.value
-
-        XCTAssertNil(sut.initialLoadWaiter)
-        XCTAssertTrue(manager.started.isEmpty)
-    }
-
-    @MainActor
     func testWhenLoadAndSyncIsRepeatedThenBackgroundReadinessIsOnlyCheckedOnce() async {
         let manager = RecordingWebExtensionManager()
         let sut = WebExtensionLifecycleCoordinator(manager: manager, enabledTypesProvider: { [.embedded] })
@@ -357,21 +487,6 @@ final class WebExtensionLifecycleCoordinatorTests: XCTestCase {
         await sut.sync().value
 
         XCTAssertEqual(manager.finished, [.sync([]), .sync([])], "a sync requested after the prior one started must run")
-    }
-
-    @MainActor
-    func testCancelAllPreventsQueuedOperationsFromRunning() async {
-        let manager = RecordingWebExtensionManager()
-        manager.opDelay = .milliseconds(50)
-        let sut = WebExtensionLifecycleCoordinator(manager: manager, enabledTypesProvider: { [] })
-
-        let first = sut.load()
-        let second = sut.reload()
-        sut.cancelAll()
-        await first.value
-        await second.value
-
-        XCTAssertTrue(manager.finished.isEmpty, "cancelAll must stop all queued operations before they run")
     }
 
     @MainActor
@@ -435,22 +550,6 @@ final class WebExtensionLifecycleCoordinatorTests: XCTestCase {
         await sut.verify().value
         XCTAssertEqual(spy.stateCheckedCount, 1)
         XCTAssertEqual(spy.notLoadedTypes, [.adBlockingExtension])
-    }
-
-    @MainActor
-    func testCancelAllPreventsQueuedVerifyFromReporting() async {
-        let manager = RecordingWebExtensionManager()
-        manager.opDelay = .milliseconds(50)
-        let spy = SpyWebExtensionPixelFiring()
-        let sut = WebExtensionLifecycleCoordinator(
-            manager: manager, enabledTypesProvider: { [.embedded] }, pixelFiring: spy
-        )
-        let first = sut.load()
-        let queuedVerify = sut.verify()
-        sut.cancelAll()
-        await first.value
-        await queuedVerify.value
-        XCTAssertTrue(spy.firedEvents.isEmpty, "cancelAll must stop the queued check from firing")
     }
 
     @MainActor
@@ -525,11 +624,13 @@ private final class RecordingWebExtensionManager: WebExtensionManaging {
 
     enum Operation: Equatable {
         case load
+        case syncCPM(Bool)
         case sync(Set<DuckDuckGoWebExtensionType>)
         case reload
         case unload
     }
 
+    var isCPMUpgradeBeforeLoadEnabled = true
     private(set) var started: [Operation] = []
     private(set) var finished: [Operation] = []
     private(set) var maxConcurrent = 0
@@ -574,10 +675,16 @@ private final class RecordingWebExtensionManager: WebExtensionManaging {
     func reloadInstalledExtensions() async {
         begin(.reload); try? await Task.sleep(for: opDelay); end(.reload)
     }
+    var shareInitialBackgroundStartup = false
+    var pendingEmbeddedBackgroundStartup: Task<Void, Never>? { navigationBackgroundStartup }
     func loadEmbeddedExtensionBackgroundContent() async {
+        if shareInitialBackgroundStartup { await prepareEmbeddedBackgroundForNavigation()?.value; return }
         backgroundContentLoadCallCount += 1
         guard suspendBackgroundContentLoad else { return }
         await withCheckedContinuation { backgroundContentLoadContinuation = $0 }
+    }
+    @MainActor func syncCPMExtensionBeforeLoad(isEnabled: Bool) async {
+        begin(.syncCPM(isEnabled)); try? await Task.sleep(for: opDelay); end(.syncCPM(isEnabled))
     }
     @MainActor func syncEmbeddedExtensions(enabledTypes: Set<DuckDuckGoWebExtensionType>) async {
         begin(.sync(enabledTypes)); try? await Task.sleep(for: opDelay); end(.sync(enabledTypes))
@@ -596,12 +703,24 @@ private final class RecordingWebExtensionManager: WebExtensionManaging {
         backgroundContentLoadContinuation = nil
     }
 
+    var navigationBackgroundWaiter: WebExtensionInitialLoadWaiter? {
+        didSet { navigationBackgroundStartup = nil }
+    }
+    private var navigationBackgroundStartup: Task<Void, Never>?
+    @MainActor func prepareEmbeddedBackgroundForNavigation() -> Task<Void, Never>? {
+        if let startup = navigationBackgroundStartup { return startup }
+        guard let waiter = navigationBackgroundWaiter else { return nil }
+        let startup = Task { @MainActor in await waiter() }
+        navigationBackgroundStartup = startup
+        return startup
+    }
+
     // Unused protocol requirements
     var loadedExtensions: Set<WKWebExtensionContext> { [] }
     var loadedEmbeddedExtensionTypes: Set<DuckDuckGoWebExtensionType> { stubbedLoadedTypes }
-    var webExtensionIdentifiers: [String] { [] }
-    var controller: WKWebExtensionController { WKWebExtensionController() }
+    var webExtensionIdentifiers: [String] = []
     var eventsListener: WebExtensionEventsListening { RecordingEventsListener() }
+    func attachExtensions(to configuration: WKWebViewConfiguration) {}
     var extensionsDirectory: URL { URL(fileURLWithPath: "/tmp") }
     var extensionUpdates: AsyncStream<Void> { AsyncStream { _ in } }
     var lifecycleEvents: AsyncStream<WebExtensionLifecycleEvent> { AsyncStream { _ in } }
@@ -614,8 +733,13 @@ private final class RecordingWebExtensionManager: WebExtensionManaging {
     func installedEmbeddedExtension(for type: DuckDuckGoWebExtensionType) -> InstalledWebExtension? { nil }
     func installedExtensionPath(for type: DuckDuckGoWebExtensionType) -> URL? { nil }
     @MainActor func reloadExtension(identifier: String) async throws {}
+    @MainActor func disableExtension(identifier: String) async throws {}
+    @MainActor func enableExtension(identifier: String) async throws {}
+    func installedExtension(identifier: String) -> InstalledWebExtension? { nil }
+    func isRemotelyDisabled(identifier: String) -> Bool { false }
     func extensionName(for identifier: String) -> String? { nil }
     func extensionVersion(for identifier: String) -> String? { nil }
+    func extensionPermissions(for identifier: String) -> [String] { [] }
     func extensionContext(for url: URL) -> WKWebExtensionContext? { nil }
     func context(for identifier: String) -> WKWebExtensionContext? { nil }
     @MainActor func clearCachedScriptlets() {}
@@ -628,8 +752,8 @@ private final class RecordingWebExtensionManager: WebExtensionManaging {
 
 @available(macOS 15.4, iOS 18.4, *)
 private final class RecordingEventsListener: WebExtensionEventsListening {
-    var controller: WKWebExtensionController?
     var droppedCallbacksCount = 0
+    var onBrowsingActivity: (() -> Void)?
     func didOpenWindow(_ window: WKWebExtensionWindow) {}
     func didCloseWindow(_ window: WKWebExtensionWindow) {}
     func didFocusWindow(_ window: WKWebExtensionWindow) {}

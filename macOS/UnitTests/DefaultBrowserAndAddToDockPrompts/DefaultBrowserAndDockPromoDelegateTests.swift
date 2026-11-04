@@ -242,13 +242,13 @@ final class DefaultBrowserAndDockPromoDelegateTests: XCTestCase {
             return result
         }
         await Task.yield() // Allow show() to run and set up the prompt
-        coordinator.promptDismissed.send((.active(.popover), .actioned))
+        coordinator.promptDismissed.send((.active(.popover), .actioned()))
 
         // THEN - show should still be suspended
         XCTAssertFalse(didComplete, "Banner delegate should not receive popover dismiss")
 
         // Clean up: dismiss banner so the continuation can complete
-        coordinator.promptDismissed.send((expectedType, .actioned))
+        coordinator.promptDismissed.send((expectedType, .actioned()))
         _ = await showTask.value
     }
 

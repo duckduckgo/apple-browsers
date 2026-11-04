@@ -36,6 +36,7 @@ public final class NewTabPageOmnibarClient: NewTabPageUserScriptClient {
         case openAiChat = "omnibar_openAiChat"
         case viewAllAIChats = "omnibar_viewAllAIChats"
         case openCustomizeResponses = "omnibar_openCustomizeResponses"
+        case openPrivacyTerms = "omnibar_openPrivacyTerms"
         case setCustomizeResponsesActive = "omnibar_setCustomizeResponsesActive"
         case getOpenTabs = "omnibar_getOpenTabs"
         case getTabContent = "omnibar_getTabContent"
@@ -52,6 +53,7 @@ public final class NewTabPageOmnibarClient: NewTabPageUserScriptClient {
         case launcherPromoShown = "omnibar_launcherPromoShown"
         case selectLauncherPromoCta = "omnibar_selectLauncherPromoCta"
         case dismissLauncherPromo = "omnibar_dismissLauncherPromo"
+        case captureScreenshot = "omnibar_captureScreenshot"
     }
 
     private let configProvider: NewTabPageOmnibarConfigProviding
@@ -61,6 +63,7 @@ public final class NewTabPageOmnibarClient: NewTabPageUserScriptClient {
     private let actionHandler: NewTabPageOmnibarActionsHandling
     private let tabsProvider: NewTabPageOmnibarTabsProviding
     private let subscriptionDialogPresenter: NewTabPageOmnibarSubscriptionDialogPresenting?
+    private let screenshotProvider: NewTabPageOmnibarScreenshotProviding?
     private var createImageModelSwitch: NewTabPageDataModel.OmnibarCreateImageModelSwitch?
     private var cancellables = Set<AnyCancellable>()
 
@@ -71,7 +74,8 @@ public final class NewTabPageOmnibarClient: NewTabPageUserScriptClient {
                 modelsProvider: NewTabPageOmnibarModelsProviding? = nil,
                 actionHandler: NewTabPageOmnibarActionsHandling,
                 tabsProvider: NewTabPageOmnibarTabsProviding,
-                subscriptionDialogPresenter: NewTabPageOmnibarSubscriptionDialogPresenting? = nil) {
+                subscriptionDialogPresenter: NewTabPageOmnibarSubscriptionDialogPresenting? = nil,
+                screenshotProvider: NewTabPageOmnibarScreenshotProviding? = nil) {
         self.configProvider = configProvider
         self.suggestionsProvider = suggestionsProvider
         self.aiChatsProvider = aiChatsProvider
@@ -79,6 +83,7 @@ public final class NewTabPageOmnibarClient: NewTabPageUserScriptClient {
         self.actionHandler = actionHandler
         self.tabsProvider = tabsProvider
         self.subscriptionDialogPresenter = subscriptionDialogPresenter
+        self.screenshotProvider = screenshotProvider
         super.init()
 
         Publishers.MergeMany(
@@ -95,8 +100,11 @@ public final class NewTabPageOmnibarClient: NewTabPageUserScriptClient {
             configProvider.isSearchSuggestionDeletionEnabledPublisher.map { _ in () }.eraseToAnyPublisher(),
             configProvider.customizeResponsesStatePublisher.map { _ in () }.eraseToAnyPublisher(),
             configProvider.usageLimitsPublisher.map { _ in () }.eraseToAnyPublisher(),
+            configProvider.requiresAiTermsAcceptancePublisher.map { _ in () }.eraseToAnyPublisher(),
             configProvider.attachmentPrivacyDisclaimerPublisher.eraseToAnyPublisher(),
-            configProvider.launcherPromoPublisher.eraseToAnyPublisher()
+            configProvider.launcherPromoPublisher.eraseToAnyPublisher(),
+            configProvider.suggestedPromptsPublisher.eraseToAnyPublisher(),
+            screenshotProvider?.configChangesPublisher ?? Empty<Void, Never>().eraseToAnyPublisher()
         )
         .sink { [weak self] _ in
             Task { @MainActor in
@@ -135,6 +143,7 @@ public final class NewTabPageOmnibarClient: NewTabPageUserScriptClient {
             MessageName.openAiChat.rawValue: { [weak self] in try await self?.openAiChat(params: $0, original: $1) },
             MessageName.viewAllAIChats.rawValue: { [weak self] in try await self?.viewAllAIChats(params: $0, original: $1) },
             MessageName.openCustomizeResponses.rawValue: { [weak self] in try await self?.openCustomizeResponses(params: $0, original: $1) },
+            MessageName.openPrivacyTerms.rawValue: { [weak self] in try await self?.openPrivacyTerms(params: $0, original: $1) },
             MessageName.setCustomizeResponsesActive.rawValue: { [weak self] in try await self?.setCustomizeResponsesActive(params: $0, original: $1) },
             MessageName.getOpenTabs.rawValue: { [weak self] in try await self?.getOpenTabs(params: $0, original: $1) },
             MessageName.getTabContent.rawValue: { [weak self] in try await self?.getTabContent(params: $0, original: $1) },
@@ -150,7 +159,8 @@ public final class NewTabPageOmnibarClient: NewTabPageUserScriptClient {
             MessageName.selectUsageLimitsCta.rawValue: { [weak self] in try await self?.selectUsageLimitsCta(params: $0, original: $1) },
             MessageName.launcherPromoShown.rawValue: { [weak self] in try await self?.launcherPromoShown(params: $0, original: $1) },
             MessageName.selectLauncherPromoCta.rawValue: { [weak self] in try await self?.selectLauncherPromoCta(params: $0, original: $1) },
-            MessageName.dismissLauncherPromo.rawValue: { [weak self] in try await self?.dismissLauncherPromo(params: $0, original: $1) }
+            MessageName.dismissLauncherPromo.rawValue: { [weak self] in try await self?.dismissLauncherPromo(params: $0, original: $1) },
+            MessageName.captureScreenshot.rawValue: { [weak self] in try await self?.captureScreenshot(params: $0, original: $1) }
         ])
     }
 
@@ -190,7 +200,11 @@ public final class NewTabPageOmnibarClient: NewTabPageUserScriptClient {
             enableUpdatedCreateImage: configProvider.isUpdatedCreateImageEnabled,
             createImageModelSwitch: createImageModelSwitch,
             usageLimits: configProvider.usageLimits(),
-            launcherPromo: configProvider.launcherPromo()
+            requiresAiTermsAcceptance: configProvider.requiresAiTermsAcceptance,
+            launcherPromo: configProvider.launcherPromo(),
+            showSuggestedPrompts: configProvider.showSuggestedPrompts,
+            screenshotModes: screenshotProvider?.screenshotModes,
+            enablePastedAttachments: screenshotProvider?.enablePastedAttachments
         )
     }
 
@@ -278,7 +292,11 @@ public final class NewTabPageOmnibarClient: NewTabPageUserScriptClient {
             enableUpdatedCreateImage: configProvider.isUpdatedCreateImageEnabled,
             createImageModelSwitch: createImageModelSwitch,
             usageLimits: configProvider.usageLimits(),
-            launcherPromo: configProvider.launcherPromo()
+            requiresAiTermsAcceptance: configProvider.requiresAiTermsAcceptance,
+            launcherPromo: configProvider.launcherPromo(),
+            showSuggestedPrompts: configProvider.showSuggestedPrompts,
+            screenshotModes: screenshotProvider?.screenshotModes,
+            enablePastedAttachments: screenshotProvider?.enablePastedAttachments
         )
         pushMessage(named: MessageName.onConfigUpdate.rawValue, params: config)
     }
@@ -346,8 +364,17 @@ public final class NewTabPageOmnibarClient: NewTabPageUserScriptClient {
             toolChoice: toolChoice,
             reasoningEffort: isUpdatedImageGenerationSubmission ? nil : reasoningEffortForSubmission(action: action),
             pageContexts: action.pageContext,
-            files: action.files
+            files: action.files,
+            aiTermsAccepted: action.aiTermsAccepted == true
         )
+        if let suggestedPromptId = action.suggestedPromptId {
+            actionHandler.suggestedPromptSubmitted(promptId: suggestedPromptId)
+        }
+        // Chip and typed prompts both count toward hiding the chips; voice chats don't. Only counted
+        // while the chips are on, so prompts sent with the feature off don't use them up.
+        if configProvider.showSuggestedPrompts, action.mode != AIChatNativePrompt.voiceMode {
+            configProvider.suggestedPromptsPromptCount += 1
+        }
         if action.launcherPromoVisible == true {
             configProvider.launcherPromoIgnored()
         }
@@ -460,6 +487,15 @@ public final class NewTabPageOmnibarClient: NewTabPageUserScriptClient {
         return NewTabPageDataModel.OmnibarGetTabContentResponse(pageContext: await tabsProvider.tabContent(tabId: request.tabId, requestingWebView: original.webView))
     }
 
+    @MainActor
+    private func captureScreenshot(params: Any, original: WKScriptMessage) async throws -> Encodable? {
+        guard let screenshotProvider,
+              let request: NewTabPageDataModel.OmnibarCaptureScreenshotRequest = DecodableHelper.decode(from: params) else {
+            return NewTabPageDataModel.OmnibarCaptureScreenshotResponse.cancelled
+        }
+        return await screenshotProvider.captureScreenshot(mode: request.mode, requestingWebView: original.webView)
+    }
+
     /// `nil` if the feature is off, no value was sent, the model is gated, or the value isn't
     /// supported by that model — catches stale web state from between a selection and a submission.
     @MainActor
@@ -533,6 +569,12 @@ public final class NewTabPageOmnibarClient: NewTabPageUserScriptClient {
     @MainActor
     private func openCustomizeResponses(params: Any, original: WKScriptMessage) async throws -> Encodable? {
         actionHandler.openCustomizeResponses()
+        return nil
+    }
+
+    @MainActor
+    private func openPrivacyTerms(params: Any, original: WKScriptMessage) async throws -> Encodable? {
+        actionHandler.openPrivacyTerms()
         return nil
     }
 

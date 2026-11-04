@@ -622,6 +622,33 @@ final class TabCollectionViewModelTests: XCTestCase {
     }
 
     @MainActor
+    func testWhenClosingTabsToTheLeftRemovesSelection_ThenUnloadedSurvivorIsMaterialized() throws {
+        for isSuspended in [false, true] {
+            let survivor = UnloadedTab(content: .url(.duckDuckGo, credential: nil, source: .pendingStateRestoration),
+                                       isSuspended: isSuspended)
+            let backgroundTab = UnloadedTab(content: .url(.duckDuckGoEmail, credential: nil, source: .pendingStateRestoration))
+            let tabCollection = TabCollection(tabs: [.loaded(Tab(content: .newtab)), .unloaded(survivor), .unloaded(backgroundTab)])
+            let vm = TabCollectionViewModel(tabCollection: tabCollection, pinnedTabsManagerProvider: nil)
+            let delegate = TabCollectionViewModelDelegateMock()
+            vm.delegate = delegate
+
+            XCTAssertNil(vm.tabViewModel(at: 1))
+
+            vm.removeTabs(before: 1)
+
+            XCTAssertEqual(delegate.tabCountsOnReplacement, [3], "Item reload must precede the change in tab count")
+            XCTAssertEqual(delegate.tabCountsOnMultipleChanges, [2])
+            let selectedTab = try XCTUnwrap(vm.selectedTabViewModel?.tab, "Survivor should be materialized (isSuspended: \(isSuspended))")
+            XCTAssertEqual(vm.selectionIndex, .unpinned(0))
+            XCTAssertEqual(vm.tabs.map(\.uuid), [survivor.uuid, backgroundTab.uuid])
+            XCTAssertEqual(selectedTab.uuid, survivor.uuid)
+            XCTAssertEqual(selectedTab.url, .duckDuckGo)
+            XCTAssertIdentical(vm.selectedTabViewModel, vm.tabViewModel(at: 0))
+            if case .unloaded = vm.tabs[1] {} else { XCTFail("Background tab should remain unloaded") }
+        }
+    }
+
+    @MainActor
     func testWhenTabsToTheLeftAreRemovedAndSelectionRemains_ThenSelectionIsCorrectlyUpdated() {
         let tabCollectionViewModel = TabCollectionViewModel.aTabCollectionViewModel()
 
@@ -663,6 +690,52 @@ final class TabCollectionViewModelTests: XCTestCase {
         tabCollectionViewModel.removeTabs(after: 0)
 
         XCTAssertEqual(tabCollectionViewModel.selectionIndex?.item, 0)
+    }
+
+    @MainActor
+    func testWhenClosingTabsToTheRightRemovesSelection_ThenUnloadedSurvivorIsMaterialized() throws {
+        for isSuspended in [false, true] {
+            let survivor = UnloadedTab(content: .url(.duckDuckGo, credential: nil, source: .pendingStateRestoration),
+                                       isSuspended: isSuspended)
+            let backgroundTab = UnloadedTab(content: .url(.duckDuckGoEmail, credential: nil, source: .pendingStateRestoration))
+            let tabCollection = TabCollection(tabs: [.unloaded(backgroundTab), .unloaded(survivor), .loaded(Tab(content: .newtab))])
+            let vm = TabCollectionViewModel(tabCollection: tabCollection, selectionIndex: .unpinned(2), pinnedTabsManagerProvider: nil)
+            let delegate = TabCollectionViewModelDelegateMock()
+            vm.delegate = delegate
+
+            XCTAssertNil(vm.tabViewModel(at: 1))
+
+            vm.removeTabs(after: 1)
+
+            XCTAssertEqual(delegate.tabCountsOnReplacement, [3], "Item reload must precede the change in tab count")
+            XCTAssertEqual(delegate.tabCountsOnMultipleChanges, [2])
+            let selectedTab = try XCTUnwrap(vm.selectedTabViewModel?.tab, "Survivor should be materialized (isSuspended: \(isSuspended))")
+            XCTAssertEqual(vm.selectionIndex, .unpinned(1))
+            XCTAssertEqual(vm.tabs.map(\.uuid), [backgroundTab.uuid, survivor.uuid])
+            XCTAssertEqual(selectedTab.uuid, survivor.uuid)
+            XCTAssertEqual(selectedTab.url, .duckDuckGo)
+            XCTAssertIdentical(vm.selectedTabViewModel, vm.tabViewModel(at: 1))
+            if case .unloaded = vm.tabs[0] {} else { XCTFail("Background tab should remain unloaded") }
+        }
+    }
+
+    @MainActor
+    func testWhenClosingRightTabWithSuspendedLeftTab_ThenItemReloadPrecedesRemoval() throws {
+        let survivor = UnloadedTab(content: .url(.duckDuckGo, credential: nil, source: .ui), isSuspended: true)
+        let tabCollection = TabCollection(tabs: [.unloaded(survivor), .loaded(Tab(content: .newtab))])
+        let vm = TabCollectionViewModel(tabCollection: tabCollection, selectionIndex: .unpinned(1), pinnedTabsManagerProvider: nil)
+        let delegate = TabCollectionViewModelDelegateMock()
+        vm.delegate = delegate
+
+        vm.removeTabs(after: 0)
+
+        XCTAssertEqual(delegate.tabCountsOnReplacement, [2], "Reloading an item after removal would leave the tab bar's item count out of sync")
+        XCTAssertEqual(delegate.tabCountsOnMultipleChanges, [1])
+        XCTAssertEqual(vm.tabs.map(\.uuid), [survivor.uuid])
+        XCTAssertEqual(vm.selectionIndex, .unpinned(0))
+        let selectedTab = try XCTUnwrap(vm.selectedTabViewModel?.tab)
+        XCTAssertEqual(selectedTab.uuid, survivor.uuid)
+        XCTAssertEqual(selectedTab.url, .duckDuckGo)
     }
 
     @MainActor

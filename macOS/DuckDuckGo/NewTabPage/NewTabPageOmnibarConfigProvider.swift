@@ -79,6 +79,8 @@ final class NewTabPageAIChatShortcutSettingProvider: NewTabPageAIChatShortcutSet
 final class NewTabPageOmnibarConfigProvider: NewTabPageOmnibarConfigProviding {
     private enum Key: String {
         case newTabPageOmnibarMode
+        case newTabPageSuggestedPromptsPromptCount
+        case newTabPageSuggestedPromptsHidden
     }
 
     private enum LegacyKey: String {
@@ -94,11 +96,14 @@ final class NewTabPageOmnibarConfigProvider: NewTabPageOmnibarConfigProviding {
     private let keyValueStore: ThrowingKeyValueStoring
     private let aiChatShortcutSettingProvider: NewTabPageAIChatShortcutSettingProviding
     private let featureFlagger: FeatureFlagger
+    private let remoteSettings: AIChatRemoteSettings
     private let firePixel: (PixelKit.Event) -> Void
     private var aiChatPreferencesPersistor: AIChatPreferencesPersisting
     private let searchPreferences: SearchPreferences
     private let windowControllersManager: WindowControllersManagerProtocol?
     private let duckAiStorageHandlerProvider: (BurnerMode) -> DuckAiNativeStorageHandling?
+    private let termsOfServiceDisclaimer: DuckAiTermsOfServiceDisclaimer
+    private let notificationCenter: NotificationCenter
     private let attachmentPrivacyDisclosureStore: AttachmentPrivacyDisclosureStoring?
     private let duckAiLauncherPromo: DuckAiLauncherPromo?
     private let userTierProvider: () -> AIChatUserTier
@@ -109,18 +114,23 @@ final class NewTabPageOmnibarConfigProvider: NewTabPageOmnibarConfigProviding {
     private let customizeResponsesChangedSubject = PassthroughSubject<Void, Never>()
     private let usageLimitsChangedSubject = PassthroughSubject<Void, Never>()
     private let attachmentPrivacyChangedSubject = PassthroughSubject<Void, Never>()
+    private let suggestedPromptsChangedSubject = PassthroughSubject<Void, Never>()
     @Published private var hasExcessChats = false
     private var aiChatsProviderCancellable: AnyCancellable?
+    private var chatCountCancellable: AnyCancellable?
     private var customizeResponsesChangeObserver: NSObjectProtocol?
     private var attachmentPrivacyChangeObserver: NSObjectProtocol?
 
     init(keyValueStore: ThrowingKeyValueStoring,
          aiChatShortcutSettingProvider: NewTabPageAIChatShortcutSettingProviding,
          featureFlagger: FeatureFlagger,
+         remoteSettings: AIChatRemoteSettings = AIChatRemoteSettings(),
          aiChatPreferencesPersistor: AIChatPreferencesPersisting = AIChatPreferencesPersistor(),
          searchPreferences: SearchPreferences,
          windowControllersManager: WindowControllersManagerProtocol? = nil,
          duckAiStorageHandlerProvider: @escaping (BurnerMode) -> DuckAiNativeStorageHandling? = { _ in nil },
+         termsOfServiceStore: DuckAiTermsOfServiceStore = DuckAiTermsOfServiceStore(),
+         notificationCenter: NotificationCenter = .default,
          attachmentPrivacyDisclosureStore: AttachmentPrivacyDisclosureStoring? = nil,
          duckAiLauncherPromo: DuckAiLauncherPromo? = nil,
          userTierProvider: @escaping () -> AIChatUserTier = { .free },
@@ -130,10 +140,13 @@ final class NewTabPageOmnibarConfigProvider: NewTabPageOmnibarConfigProviding {
         self.keyValueStore = keyValueStore
         self.aiChatShortcutSettingProvider = aiChatShortcutSettingProvider
         self.featureFlagger = featureFlagger
+        self.remoteSettings = remoteSettings
         self.aiChatPreferencesPersistor = aiChatPreferencesPersistor
         self.searchPreferences = searchPreferences
         self.windowControllersManager = windowControllersManager
         self.duckAiStorageHandlerProvider = duckAiStorageHandlerProvider
+        self.termsOfServiceDisclaimer = DuckAiTermsOfServiceDisclaimer(featureFlagger: featureFlagger, store: termsOfServiceStore)
+        self.notificationCenter = notificationCenter
         self.attachmentPrivacyDisclosureStore = attachmentPrivacyDisclosureStore
         self.duckAiLauncherPromo = duckAiLauncherPromo
         self.userTierProvider = userTierProvider
@@ -161,6 +174,23 @@ final class NewTabPageOmnibarConfigProvider: NewTabPageOmnibarConfigProviding {
         ) { [weak self] _ in
             self?.attachmentPrivacyChangedSubject.send(())
         }
+
+        // Observed only while the chips can show, since the chats table is written to on every streamed response chunk.
+        let chatsObserver = duckAiStorageHandlerProvider(.regular) as? DuckAiNativeChatsObserving
+        chatCountCancellable = featureFlagger.updatesPublisher
+            .map { [featureFlagger] in featureFlagger.isFeatureOn(.aiChatNtpSuggestedPrompts) }
+            .prepend(featureFlagger.isFeatureOn(.aiChatNtpSuggestedPrompts))
+            .removeDuplicates()
+            .map { isOn -> AnyPublisher<Int, Never> in
+                guard isOn, let chatsObserver else { return Empty().eraseToAnyPublisher() }
+                return chatsObserver.chatCountPublisher().replaceError(with: 0).eraseToAnyPublisher()
+            }
+            .switchToLatest()
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] chatCount in
+                guard let self, self.hideSuggestedPrompts(ifReached: chatCount) else { return }
+                self.suggestedPromptsChangedSubject.send(())
+            }
     }
 
     deinit {
@@ -630,6 +660,91 @@ final class NewTabPageOmnibarConfigProvider: NewTabPageOmnibarConfigProviding {
             .eraseToAnyPublisher()
     }
 
+    var requiresAiTermsAcceptance: Bool {
+        termsOfServiceDisclaimer.isRequired
+    }
+
+    /// The store posts on every acceptance, so open NTPs drop the disclaimer wherever the user accepted.
+    /// The chats observer records acceptance off the main thread, hence the hop.
+    var requiresAiTermsAcceptancePublisher: AnyPublisher<Bool, Never> {
+        featureFlagger.updatesPublisher
+            .merge(with: notificationCenter.publisher(for: .duckAiTermsOfServiceDidChange)
+                .receive(on: DispatchQueue.main)
+                .map { _ in () })
+            .compactMap { [weak self] in self?.requiresAiTermsAcceptance }
+            .prepend(requiresAiTermsAcceptance)
+            .removeDuplicates()
+            .eraseToAnyPublisher()
+    }
+
+    var showSuggestedPrompts: Bool {
+        featureFlagger.isFeatureOn(.aiChatNtpSuggestedPrompts)
+            && !suggestedPromptsHidden
+            && suggestedPromptsPromptCount < suggestedPromptsPromptLimit
+    }
+
+    /// Set once the prompts sent or the saved chats reach the limit, so deleting chats doesn't bring the chips back.
+    /// Each count is checked on its own rather than added up: every NTP prompt also starts a chat.
+    private var suggestedPromptsHidden: Bool {
+        (try? keyValueStore.object(forKey: Key.newTabPageSuggestedPromptsHidden.rawValue) as? Bool) ?? false
+    }
+
+    /// Only while the feature is on, so the chips aren't used up before the user could see them.
+    /// - Returns: Whether this call hid the chips.
+    @discardableResult
+    private func hideSuggestedPrompts(ifReached count: Int) -> Bool {
+        guard featureFlagger.isFeatureOn(.aiChatNtpSuggestedPrompts),
+              !suggestedPromptsHidden,
+              count >= suggestedPromptsPromptLimit else { return false }
+        do {
+            try keyValueStore.set(true, forKey: Key.newTabPageSuggestedPromptsHidden.rawValue)
+        } catch {
+            Logger.newTabPageOmnibar.error("Failed to hide suggested prompts in keyValueStore: \(error.localizedDescription)")
+        }
+        return true
+    }
+
+    var suggestedPromptsPromptLimit: Int {
+        remoteSettings.suggestedPromptsPromptLimit
+    }
+
+    var suggestedPromptsPromptCount: Int {
+        get {
+            (try? keyValueStore.object(forKey: Key.newTabPageSuggestedPromptsPromptCount.rawValue) as? Int) ?? 0
+        }
+        set {
+            do {
+                try keyValueStore.set(newValue, forKey: Key.newTabPageSuggestedPromptsPromptCount.rawValue)
+            } catch {
+                Logger.newTabPageOmnibar.error("Failed to set suggested prompts submit count in keyValueStore: \(error.localizedDescription)")
+            }
+            hideSuggestedPrompts(ifReached: newValue)
+            suggestedPromptsChangedSubject.send(())
+        }
+    }
+
+    var suggestedPromptsPublisher: AnyPublisher<Void, Never> {
+        featureFlagger.updatesPublisher
+            .map { _ in () }
+            .merge(with: suggestedPromptsChangedSubject,
+                   notificationCenter.publisher(for: .newTabPageSuggestedPromptsDidReset).map { _ in () })
+            .eraseToAnyPublisher()
+    }
+
+    /// Debug menu: brings the suggested-prompt chips back by clearing the submit count and the hidden state.
+    /// With the limit's worth of saved chats, they hide again the next time the chat count changes while still
+    /// at the limit, or on the next launch.
+    /// Static so it can run without a provider; open NTPs pick it up through the notification.
+    static func resetSuggestedPrompts(in keyValueStore: ThrowingKeyValueStoring, notificationCenter: NotificationCenter = .default) {
+        do {
+            try keyValueStore.removeObject(forKey: Key.newTabPageSuggestedPromptsPromptCount.rawValue)
+            try keyValueStore.removeObject(forKey: Key.newTabPageSuggestedPromptsHidden.rawValue)
+        } catch {
+            Logger.newTabPageOmnibar.error("Failed to reset suggested prompts in keyValueStore: \(error.localizedDescription)")
+        }
+        notificationCenter.post(name: .newTabPageSuggestedPromptsDidReset, object: nil)
+    }
+
     var showCustomizePopover: Bool {
         get {
             // We no longer present the tooltip
@@ -704,4 +819,8 @@ final class NewTabPageOmnibarConfigProvider: NewTabPageOmnibarConfigProviding {
         try? keyValueStore.removeObject(forKey: legacyKey)
     }
 
+}
+
+extension Notification.Name {
+    static let newTabPageSuggestedPromptsDidReset = Notification.Name("newTabPageSuggestedPromptsDidReset")
 }

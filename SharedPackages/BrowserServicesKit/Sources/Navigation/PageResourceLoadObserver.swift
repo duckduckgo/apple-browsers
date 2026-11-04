@@ -16,6 +16,7 @@
 //  limitations under the License.
 //
 
+import Common
 import FoundationExtensions
 import os.log
 import WebKit
@@ -30,8 +31,10 @@ public final class PageResourceLoadObserver: NSObject {
 
     private weak var observedWebView: WKWebView?
     private let listener: (URL, PageResourceLoadError) -> Void
+    private let eventMapping: EventMapping<PageSignalsEvent>?
 
-    public init(listener: @escaping (URL, PageResourceLoadError) -> Void) {
+    public init(eventMapping: EventMapping<PageSignalsEvent>? = nil, listener: @escaping (URL, PageResourceLoadError) -> Void) {
+        self.eventMapping = eventMapping
         self.listener = listener
     }
 
@@ -43,6 +46,7 @@ public final class PageResourceLoadObserver: NSObject {
 
         guard webView.resourceLoadDelegate == nil else {
             Logger.navigation.error("PageResourceLoadObserver: cannot attach, resource load delegate already set")
+            eventMapping?.fire(.resourceLoadDelegateAlreadySet)
             return
         }
 
@@ -84,7 +88,7 @@ extension PageResourceLoadObserver {
     }
 }
 
-private extension WKWebView {
+extension WKWebView {
 
     enum ResourceLoadDelegateSelector {
         static let resourceLoadDelegate = NSSelectorFromString("_resourceLoadDelegate")

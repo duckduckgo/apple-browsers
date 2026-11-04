@@ -255,9 +255,20 @@ final class SettingsViewModel: ObservableObject {
     }
 
     /// True once the user's first freemium scan has finished (results exist, even if no
-    /// matches). Used to switch the entry-point CTA from "start scan" to "show results".
+    /// matches).
     var hasCompletedFreemiumScan: Bool {
         freemiumDBPUserStateManager.firstScanResult != nil
+    }
+
+    /// True once the user has saved a profile, since the dashboard then shows results as they
+    /// arrive.
+    var hasStartedFreemiumScan: Bool {
+        Self.hasStartedFreemiumScan(profileState: profileStateManager.profileState,
+                                    firstScanResult: freemiumDBPUserStateManager.firstScanResult)
+    }
+
+    static func hasStartedFreemiumScan(profileState: DBPProfileState, firstScanResult: FreemiumFirstScanResult?) -> Bool {
+        profileState == .hasProfile || firstScanResult != nil
     }
 
     var isDefaultOmnibarModeEnabled: Bool {
@@ -1755,7 +1766,7 @@ extension SettingsViewModel {
     }
 
     func openAIChat() {
-        urlOpener.open(AppDeepLinkSchemes.openAIChat.url)
+        urlOpener.open(AIChatEntryPointSource.paidSettingsDeepLink)
     }
 
     func openAIFeaturesSettings() {
@@ -1822,10 +1833,6 @@ extension SettingsViewModel {
                                                                 showSettingsScreen: state.showSettingsScreen,
                                                                 source: state.autofillSource))
 
-        case .gpc:
-            firePixel(.settingsDoNotSellShown)
-            pushViewController(legacyViewProvider.gpc)
-        
         case .passwordsImport:
             pushViewController(legacyViewProvider.importPasswords(importScreen: .completeSetup,
                                                                   delegate: self,
@@ -1900,6 +1907,7 @@ extension SettingsViewModel {
         case appearance
         case general
         case cookiePopupProtection
+        case about
         // Add other cases as needed
 
         var id: String {
@@ -1920,6 +1928,7 @@ extension SettingsViewModel {
             case .appearance: return "appearance"
             case .general: return "general"
             case .cookiePopupProtection: return "cookiePopupProtection"
+            case .about: return "about"
             // Ensure all cases are covered
             }
         }
@@ -1928,7 +1937,7 @@ extension SettingsViewModel {
         // Default to .sheet, specify .push where needed
         var type: DeepLinkType {
             switch self {
-            case .netP, .dbp, .itr, .subscriptionFlow, .subscriptionPlanChangeFlow, .restoreFlow, .duckPlayer, .aiChat, .privateSearch, .subscriptionSettings, .subscriptionWelcome, .customizeToolbarButton, .customizeAddressBarButton, .appearance, .general, .cookiePopupProtection:
+            case .netP, .dbp, .itr, .subscriptionFlow, .subscriptionPlanChangeFlow, .restoreFlow, .duckPlayer, .aiChat, .privateSearch, .subscriptionSettings, .subscriptionWelcome, .customizeToolbarButton, .customizeAddressBarButton, .appearance, .general, .cookiePopupProtection, .about:
                 return .navigationLink
             }
         }
@@ -2221,6 +2230,20 @@ extension SettingsViewModel {
             set: { newValue in
                 self.aiChatSettings.enableAIChatTabBarUserSettings(enable: newValue)
                 PixelKit.fire(newValue ? Pixel.Event.aiChatSettingsNavigationBarTurnedOn : .aiChatSettingsNavigationBarTurnedOff, frequency: .dailyAndCount)
+            }
+        )
+    }
+
+    var isKeyboardAnimationSettingVisible: Bool {
+        UIDevice.current.userInterfaceIdiom == .phone && featureFlagger.isFeatureOn(.unifiedToggleInputKeyboardEdgeSweep)
+    }
+
+    var isKeyboardAnimationEnabledBinding: Binding<Bool> {
+        Binding<Bool>(
+            get: { self.aiChatSettings.isKeyboardAnimationEnabled },
+            set: { newValue in
+                self.objectWillChange.send()
+                self.aiChatSettings.enableKeyboardAnimation(enable: newValue)
             }
         )
     }

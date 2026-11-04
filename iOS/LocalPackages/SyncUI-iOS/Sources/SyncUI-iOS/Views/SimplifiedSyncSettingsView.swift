@@ -68,6 +68,11 @@ public struct SimplifiedSyncSettingsView: View {
             SimplifiedConnectingSheetView(model: model)
                 .interactiveDismissDisabled()
         })
+        .sheet(isPresented: $model.isTurnOffSyncSheetVisible, onDismiss: {
+            model.turnOffSyncSheetDidDismiss()
+        }, content: {
+            TurnOffSyncSheetView(model: model, isDeleteServerDataSelected: model.isDeleteServerDataSelectedByDefault)
+        })
     }
 }
 
@@ -107,13 +112,13 @@ extension SimplifiedSyncSettingsView {
         Section {
             VStack(spacing: 8) {
                 ZStack {
-                    Image(AppRebrand.isAppRebranded() ? "Desktop-Mobile-DDG-Devices-Feature-128" : "Sync-New-128-legacy", bundle: .module)
+                    Image("Desktop-Mobile-DDG-Devices-Feature-128", bundle: .module)
                         .resizable()
                         .aspectRatio(contentMode: .fit)
                         .frame(width: 128, height: 96)
                         .opacity(model.isSyncEnabled ? 0 : 1)
 
-                    Image(AppRebrand.isAppRebranded() ? "Desktop-Mobile-Sync-Feature-128" : "Sync-Pair-96-legacy", bundle: .module)
+                    Image("Desktop-Mobile-Sync-Feature-128", bundle: .module)
                         .resizable()
                         .aspectRatio(contentMode: .fit)
                         .frame(width: 128, height: 96)
@@ -216,13 +221,13 @@ extension SimplifiedSyncSettingsView {
             .animation(.easeInOut(duration: 0.3), value: model.isBusy)
             .disabled(model.isBusy || (!model.isSyncEnabled && !model.isAccountCreationAvailable))
         }
-        .listRowBackground(Color(singleUseColor: .groupedListContentBackground))
+        .listRowBackground(Color(designSystemColor: .surfaceTertiary))
 
         if !model.isSyncEnabled {
             Section {
                 syncWithAnotherDeviceButton
             }
-            .listRowBackground(Color(singleUseColor: .groupedListContentBackground))
+            .listRowBackground(Color(designSystemColor: .surfaceTertiary))
         }
     }
 
@@ -266,7 +271,7 @@ extension SimplifiedSyncSettingsView {
         } header: {
             Text(UserText.simplifiedRecoverSyncedDataSectionHeader)
         }
-        .listRowBackground(Color(singleUseColor: .groupedListContentBackground))
+        .listRowBackground(Color(designSystemColor: .surfaceTertiary))
     }
 
     @ViewBuilder
@@ -285,7 +290,7 @@ extension SimplifiedSyncSettingsView {
         } header: {
             Text(UserText.simplifiedDownloadSectionHeader)
         }
-        .listRowBackground(Color(singleUseColor: .groupedListContentBackground))
+        .listRowBackground(Color(designSystemColor: .surfaceTertiary))
     }
 }
 
@@ -412,7 +417,7 @@ extension SimplifiedSyncSettingsView {
                 model.delegate?.refreshDevices(clearDevices: false)
             }
         }
-        .listRowBackground(Color(singleUseColor: .groupedListContentBackground))
+        .listRowBackground(Color(designSystemColor: .surfaceTertiary))
     }
 
     @ViewBuilder
@@ -427,7 +432,7 @@ extension SimplifiedSyncSettingsView {
                 }
             } label: {
                 HStack {
-                    deviceTypeImage(device)
+                    SyncDeviceTypeImage(device: device)
                         .foregroundColor(.primary)
                     Text(device.name)
                         .foregroundColor(.primary)
@@ -466,22 +471,6 @@ extension SimplifiedSyncSettingsView {
         Image(systemName: "chevron.forward")
             .font(Font.system(.footnote).weight(.bold))
             .foregroundColor(Color(UIColor.tertiaryLabel))
-    }
-
-    @ViewBuilder
-    func deviceTypeImage(_ device: SyncSettingsViewModel.Device) -> some View {
-        if device.isThirdParty {
-            Image(uiImage: DesignSystemImages.Glyphs.Size24.deviceAll)
-        } else {
-            switch device.type {
-            case "desktop":
-                Image(uiImage: DesignSystemImages.Glyphs.Size24.deviceDesktop)
-            case "tablet":
-                Image(uiImage: DesignSystemImages.Glyphs.Size24.deviceTablet)
-            default:
-                Image(uiImage: DesignSystemImages.Glyphs.Size24.deviceMobile)
-            }
-        }
     }
 
     // MARK: Bookmarks
@@ -528,7 +517,7 @@ extension SimplifiedSyncSettingsView {
         .onAppear {
             model.delegate?.updateOptions()
         }
-        .listRowBackground(Color(singleUseColor: .groupedListContentBackground))
+        .listRowBackground(Color(designSystemColor: .surfaceTertiary))
     }
 
     // MARK: Recovery
@@ -582,7 +571,7 @@ extension SimplifiedSyncSettingsView {
             Text(LocalizedStringKey(String(format: UserText.simplifiedRecoverySectionFooterFormat, "ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/sync-and-backup/recovery-codes-and-troubleshooting#does-my-sync--backup-data-ever-expire")))
                 .tint(Color(designSystemColor: .accentPrimary))
         }
-        .listRowBackground(Color(singleUseColor: .groupedListContentBackground))
+        .listRowBackground(Color(designSystemColor: .surfaceTertiary))
     }
 
     // MARK: Delete
@@ -591,12 +580,12 @@ extension SimplifiedSyncSettingsView {
     var deleteSection: some View {
         Section {
             Button(role: .destructive) {
-                model.deleteAllData(requireAuthentication: true)
+                model.turnOffSyncTapped()
             } label: {
-                Text(UserText.simplifiedDeleteSyncDataButton)
+                Text(model.isImprovedPairingFlowEnabled ? UserText.simplifiedTurnOffSyncButton : UserText.simplifiedDeleteSyncDataButton)
             }
         }
-        .listRowBackground(Color(singleUseColor: .groupedListContentBackground))
+        .listRowBackground(Color(designSystemColor: .surfaceTertiary))
     }
 }
 
@@ -624,24 +613,13 @@ struct SimplifiedSyncSettingsView_Previews: PreviewProvider {
             .init(name: "Sync On – Loading Devices", state: .loadingDevices, scope: .previews)
         ],
         configure: { state in
-            navigationContainer {
+            PreviewNavigationContainer {
                 SimplifiedSyncSettingsView(model: model(for: state))
                     .navigationTitle(UserText.syncTitle)
                     .navigationBarTitleDisplayMode(.inline)
             }
-            .applyRebranding()
         }
     )
-
-    @ViewBuilder
-    private static func navigationContainer<Content: View>(@ViewBuilder content: () -> Content) -> some View {
-        if #available(iOS 16, *) {
-            NavigationStack(root: content)
-        } else {
-            NavigationView(content: content)
-                .navigationViewStyle(.stack)
-        }
-    }
 
     private static func model(for state: State) -> SyncSettingsViewModel {
         switch state {

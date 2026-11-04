@@ -29,17 +29,14 @@ public struct DuckUIDebugMenuView: View {
     public var body: some View {
         List {
             Section(header: Text(verbatim: "Buttons")) {
-                row("Button Styles (Legacy)", title: "Buttons (Legacy)") {
-                    ButtonStylesGallery(isRebranded: false)
-                }
-                row("Button Styles (Rebranded)", title: "Buttons (Rebranded)") {
-                    ButtonStylesGallery(isRebranded: true)
+                row("Button Styles", title: "Buttons") {
+                    ButtonStylesGallery()
                 }
                 row("iOS Buttons (Figma)", title: "iOS Buttons (Figma)") {
                     IOSButtonsDebugView()
                 }
             }
-            .listRowBackground(Color(singleUseColor: .groupedListContentBackground))
+            .listRowBackground(Color(designSystemColor: .surfaceTertiary))
 
             Section(header: Text(verbatim: "Typography")) {
                 row("Text Styles", title: "Text Styles") {
@@ -49,7 +46,7 @@ public struct DuckUIDebugMenuView: View {
                     AppFontGallery()
                 }
             }
-            .listRowBackground(Color(singleUseColor: .groupedListContentBackground))
+            .listRowBackground(Color(designSystemColor: .surfaceTertiary))
         }
         .navigationTitle("DuckUI")
     }

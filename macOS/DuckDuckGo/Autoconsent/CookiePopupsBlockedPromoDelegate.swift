@@ -111,7 +111,7 @@ final class CookiePopupsBlockedPromoDelegate: InternalPromoDelegate {
             let onClick: () -> Void = { [weak self] in
                 PixelKit.fire(AutoconsentPixel.popoverClicked, frequency: .daily)
                 self?.openNewTabWithSpecialAction()
-                self?.resolve(with: .actioned)
+                self?.resolve(with: .actioned())
             }
 
             let onClose: () -> Void = { [weak self] in

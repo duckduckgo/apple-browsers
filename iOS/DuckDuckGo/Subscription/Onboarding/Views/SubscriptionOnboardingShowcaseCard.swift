@@ -96,38 +96,30 @@ private struct SubscriptionOnboardingShowcaseCardPreview: View {
 }
 
 #Preview("Light") {
-    RebrandedPreview {
-        SubscriptionOnboardingShowcaseCardPreview()
-    }
+    SubscriptionOnboardingShowcaseCardPreview()
 }
 
 #Preview("Dark") {
-    RebrandedPreview {
-        SubscriptionOnboardingShowcaseCardPreview()
-    }
-    .preferredColorScheme(.dark)
+    SubscriptionOnboardingShowcaseCardPreview()
+        .preferredColorScheme(.dark)
 }
 
 #Preview("Large Text") {
-    RebrandedPreview {
-        SubscriptionOnboardingShowcaseCardPreview()
-    }
-    .dynamicTypeSize(.accessibility5)
+    SubscriptionOnboardingShowcaseCardPreview()
+        .dynamicTypeSize(.accessibility5)
 }
 
 #Preview("With footer") {
-    RebrandedPreview {
-        ScrollView {
-            SubscriptionOnboardingShowcaseCard(
-                icon: Image(systemName: "laptopcomputer.and.iphone"),
-                title: "Devices",
-                text: "Full-device coverage on up to 5 devices at once.") {
-                SubscriptionOnboardingPlatformGrid()
-            }
-            .padding()
+    ScrollView {
+        SubscriptionOnboardingShowcaseCard(
+            icon: Image(systemName: "laptopcomputer.and.iphone"),
+            title: "Devices",
+            text: "Full-device coverage on up to 5 devices at once.") {
+            SubscriptionOnboardingPlatformGrid()
         }
-        .background(Color(designSystemColor: .surfaceTertiary).ignoresSafeArea())
+        .padding()
     }
+    .background(Color(designSystemColor: .surfaceTertiary).ignoresSafeArea())
 }
 
 #endif

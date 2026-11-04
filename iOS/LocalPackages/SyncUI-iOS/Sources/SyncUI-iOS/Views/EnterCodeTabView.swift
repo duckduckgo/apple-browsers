@@ -24,7 +24,6 @@ import SwiftUI
 
 #if DEBUG
 import PreviewSnapshots
-import UIComponents
 #endif
 
 struct EnterCodeTabView: View {
@@ -159,7 +158,6 @@ struct EnterCodeTabView_Previews: PreviewProvider {
             EnterCodeTabView(model: model(for: state))
                 .background(SimplifiedSyncStyle.screenBackground)
                 .environment(\.colorScheme, .dark)
-                .applyRebranding()
         }
     )
 

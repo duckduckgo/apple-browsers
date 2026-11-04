@@ -4,7 +4,7 @@
         "owners": ["samsymons", "SabrinaTardio", "jleandroperez"],
         "meta": {
             "type": "ios-post-idle-session",
-            "version": "2.0"
+            "version": "4.0"
         },
         "feature": {
             "name": "post_idle_session",
@@ -18,7 +18,7 @@
                     },
                     "status_reason": {
                         "type": "string",
-                        "description": "Terminal reason describing how the session ended. SUCCESS uses one of the user-action reasons; CANCELLED uses app_backgrounded; UNKNOWN uses app_terminated when an in-flight session is recovered after an app crash or termination.",
+                        "description": "Terminal reason describing how the session ended. SUCCESS uses one of the user-action reasons; CANCELLED uses app_backgrounded; UNKNOWN uses app_terminated when an in-flight session is recovered after an app crash or termination. tab_selected, tab_opened, tab_closed and tab_swiped end the session once the user lands on another tab (tabs bar or keyboard shortcut, new tab, closing the current tab, swipe); data_cleared ends it when the user clears data with Fire.",
                         "enum": [
                             "bar_used",
                             "return_to_page_tapped",
@@ -26,6 +26,11 @@
                             "app_backgrounded",
                             "favorite_selected",
                             "chat_selected",
+                            "tab_selected",
+                            "tab_opened",
+                            "tab_closed",
+                            "tab_swiped",
+                            "data_cleared",
                             "app_terminated"
                         ]
                     },
@@ -51,9 +56,9 @@
                         "type": "boolean",
                         "description": "True if the user pressed back / cancel from the post-idle surface during the session"
                     },
-                    "opening_screen_changed": {
+                    "after_inactivity_settings_opened": {
                         "type": "boolean",
-                        "description": "True if the user changed the Opening Screen option from the escape hatch's settings menu during the session"
+                        "description": "True if the user opened Settings > General from the escape hatch's After Inactivity menu item during the session"
                     },
                     "close_tab_tapped": {
                         "type": "boolean",
@@ -62,7 +67,13 @@
                     "burn_tab_tapped": {
                         "type": "boolean",
                         "description": "True if the user burned the open tab from the escape hatch's menu during the session"
-                    }
+                    },
+                    "layout": {
+                        "type": "string",
+                        "description": "Layout when the event was recorded: regular is the iPad tabs-bar layout (window 678pt or wider); compact is the phone layout, on every iPhone and on narrower iPad windows.",
+                        "enum": ["regular", "compact"]
+                    },
+                    "hardware_keyboard": { "type": "boolean", "description": "True when a hardware keyboard was connected." }
                 }
             }
         }

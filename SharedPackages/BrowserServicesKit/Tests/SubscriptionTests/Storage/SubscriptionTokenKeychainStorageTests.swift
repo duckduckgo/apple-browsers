@@ -60,6 +60,70 @@ final class SubscriptionTokenKeychainStorageTests: XCTestCase {
         super.tearDown()
     }
 
+    // MARK: - Backup Field Tests
+
+    private func makeKeychainManager() -> KeychainManager {
+        KeychainManager(keychainOperations: mockKeychain,
+                        attributes: SubscriptionTokenKeychainStorage.defaultAttributes(keychainType: .dataProtection(.unspecified)),
+                        pixelHandler: MockPixelHandler())
+    }
+
+    private func makeStorage(keychainManager: KeychainManager,
+                             field: SubscriptionTokenKeychainStorage.SubscriptionKeychainField,
+                             onError: @escaping (AccountKeychainAccessError) -> Void = { _ in }) -> SubscriptionTokenKeychainStorage {
+        SubscriptionTokenKeychainStorage(keychainManager: keychainManager,
+                                         userDefaults: testUserDefaults,
+                                         field: field,
+                                         errorEventsHandler: { _, error in onError(error) })
+    }
+
+    func testBackupField_isStoredSeparatelyFromPrimary() throws {
+        let keychainManager = makeKeychainManager()
+        let primary = makeStorage(keychainManager: keychainManager, field: .tokenContainer)
+        let backup = makeStorage(keychainManager: keychainManager, field: .backupTokenContainer)
+
+        try backup.saveTokenContainer(OAuthTokensFactory.makeValidTokenContainer())
+
+        XCTAssertNotNil(try backup.getTokenContainer())
+        XCTAssertNil(try primary.getTokenContainer())
+        XCTAssertNotNil(try keychainManager.retrieveData(forKey: "com.duckduckgo.subscription.v2.tokens.backup"))
+    }
+
+    func testBackupSave_doesNotMakePrimaryExpected() throws {
+        let keychainManager = makeKeychainManager()
+        var primaryErrors: [AccountKeychainAccessError] = []
+        let primary = makeStorage(keychainManager: keychainManager, field: .tokenContainer) { primaryErrors.append($0) }
+        let backup = makeStorage(keychainManager: keychainManager, field: .backupTokenContainer)
+
+        try backup.saveTokenContainer(OAuthTokensFactory.makeValidTokenContainer())
+        XCTAssertNil(try primary.getTokenContainer())
+
+        XCTAssertTrue(primaryErrors.isEmpty)
+    }
+
+    func testBackupDelete_doesNotClearPrimaryExpected() throws {
+        let keychainManager = makeKeychainManager()
+        var primaryErrors: [AccountKeychainAccessError] = []
+        let primary = makeStorage(keychainManager: keychainManager, field: .tokenContainer) { primaryErrors.append($0) }
+        let backup = makeStorage(keychainManager: keychainManager, field: .backupTokenContainer)
+
+        try primary.saveTokenContainer(OAuthTokensFactory.makeValidTokenContainer())
+        try backup.saveTokenContainer(nil)
+        try keychainManager.deleteItem(forKey: "com.duckduckgo.subscription.v2.tokens")
+        XCTAssertNil(try primary.getTokenContainer())
+
+        XCTAssertEqual(primaryErrors.count, 1)
+        guard case .expectedTokenNotFound = primaryErrors.first else {
+            return XCTFail("Expected expectedTokenNotFound, got \(primaryErrors)")
+        }
+    }
+
+    func testPrimaryExpectedFlagKey_isUnchanged() throws {
+        try storage.saveTokenContainer(OAuthTokensFactory.makeValidTokenContainer())
+
+        XCTAssertTrue(testUserDefaults.bool(forKey: "com.duckduckgo.subscription.v2.tokens.expected"))
+    }
+
     // MARK: - Basic Functionality Tests
 
     func testGetTokenContainer_WhenNoTokenExists_ReturnsNil() throws {

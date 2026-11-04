@@ -34,7 +34,7 @@ class BookmarkDetailsCell: UITableViewCell {
 
     override func awakeFromNib() {
         super.awakeFromNib()
-        backgroundColor = UIColor(singleUseColor: .groupedListContentBackground)
+        backgroundColor = UIColor(designSystemColor: .surfaceTertiary)
         separatorView.backgroundColor = UIColor(designSystemColor: .lines)
         faviconImageView.round(corners: .allCorners, radius: Constant.faviconCornerRadius)
     }

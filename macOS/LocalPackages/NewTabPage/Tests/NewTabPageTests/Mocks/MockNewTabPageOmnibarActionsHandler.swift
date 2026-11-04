@@ -28,7 +28,10 @@ final class MockNewTabPageOmnibarActionsHandler: NewTabPageOmnibarActionsHandlin
     var removeSuggestionHandler: ((String) -> Void)?
     var openCustomizeResponsesHandler: (() -> Void)?
     var setCustomizeResponsesActiveHandler: ((Bool) -> Void)?
+    var openPrivacyTermsHandler: (() -> Void)?
+    private(set) var lastSubmitChatAiTermsAccepted: Bool?
     private(set) var openAttachmentPrivacyLearnMoreKinds: [NewTabPageDataModel.OmnibarAttachmentPrivacyKind] = []
+    private(set) var suggestedPromptSubmittedIds: [String] = []
 
     @MainActor
     func submitSearch(_ term: String, target: NewTabPageDataModel.OpenTarget) {
@@ -49,8 +52,15 @@ final class MockNewTabPageOmnibarActionsHandler: NewTabPageOmnibarActionsHandlin
                     toolChoice: [String]?,
                     reasoningEffort: String?,
                     pageContexts: [NewTabPageDataModel.OmnibarPageContext]?,
-                    files: [NewTabPageDataModel.OmnibarPromptFile]?) {
+                    files: [NewTabPageDataModel.OmnibarPromptFile]?,
+                    aiTermsAccepted: Bool) {
+        lastSubmitChatAiTermsAccepted = aiTermsAccepted
         submitChatHandler?(chat, target, modelId, images, mode, toolChoice, reasoningEffort, pageContexts, files)
+    }
+
+    @MainActor
+    func suggestedPromptSubmitted(promptId: String) {
+        suggestedPromptSubmittedIds.append(promptId)
     }
 
     @MainActor
@@ -81,6 +91,11 @@ final class MockNewTabPageOmnibarActionsHandler: NewTabPageOmnibarActionsHandlin
     @MainActor
     func setCustomizeResponsesActive(_ active: Bool) {
         setCustomizeResponsesActiveHandler?(active)
+    }
+
+    @MainActor
+    func openPrivacyTerms() {
+        openPrivacyTermsHandler?()
     }
 
     @MainActor

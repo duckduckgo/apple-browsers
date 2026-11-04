@@ -79,7 +79,6 @@ final class UserScripts: UserScriptsProvider, ReleaseNotesUserScriptProvider {
          contentScopePreferences: ContentScopePreferences,
          duckAiNativeStorageHandler: DuckAiNativeStorageHandling? = NSApp.delegateTyped.duckAiNativeStorageHandler,
          sponsorBlockPreferences: SponsorBlockPreferences = NSApp.delegateTyped.sponsorBlockPreferences,
-         buildType: ApplicationBuildType = StandardApplicationBuildType(),
          aiChatDebugURLSettings: (any KeyedStoring<AIChatDebugURLSettings>)? = nil) {
 
         self.contentScopePreferences = contentScopePreferences
@@ -89,7 +88,7 @@ final class UserScripts: UserScriptsProvider, ReleaseNotesUserScriptProvider {
         if #available(macOS 15.4, *) {
             chromeWebStoreUserScript = ChromeWebStoreUserScript(serviceProvider: {
                 NSApp.delegateTyped.webExtensionManager?.chromeWebStore
-            }, buildType: buildType)
+            })
         } else {
             chromeWebStoreUserScript = nil
         }
@@ -180,7 +179,7 @@ final class UserScripts: UserScriptsProvider, ReleaseNotesUserScriptProvider {
             let configGenerator = ContentScopePrivacyConfigurationJSONGenerator(
                 featureFlagger: sourceProvider.featureFlagger,
                 privacyConfigurationManager: sourceProvider.privacyConfigurationManager,
-                excludedFeatures: [PrivacyFeature.autoconsent.rawValue] + nativeOnlyFeatures)
+                excludedFeatures: [PrivacyFeature.autoconsent.rawValue, PrivacyFeature.eventHub.rawValue] + nativeOnlyFeatures)
             let isolatedConfigGenerator = ContentScopePrivacyConfigurationJSONGenerator(
                 featureFlagger: sourceProvider.featureFlagger,
                 privacyConfigurationManager: sourceProvider.privacyConfigurationManager,

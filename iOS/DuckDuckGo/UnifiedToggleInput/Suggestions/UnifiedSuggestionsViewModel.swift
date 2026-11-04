@@ -67,7 +67,12 @@ final class UnifiedSuggestionsViewModel: ObservableObject {
     /// (suggestions disabled / pre-attach) — keeps the list mounted without showing Search rows.
     private let emptyListViewModel = SuggestionsListViewModel(source: EmptySuggestionsSource())
 
+    /// Called once per focus, the first time the Duck.ai list is on screen with rows in it.
+    var onDuckAISuggestionsShown: (() -> Void)?
+
     private var cancellable: AnyCancellable?
+    private var duckAISectionsCancellable: AnyCancellable?
+    private var hasReportedDuckAISuggestionsShown = false
     private var previousMode: TextEntryMode?
     /// Cleared on each focus; the first resolve after that snaps the logo to its mode instead of
     /// morphing, so a refocus never replays a stale Duck.ai→search morph from the prior session.
@@ -78,6 +83,7 @@ final class UnifiedSuggestionsViewModel: ObservableObject {
          duckAIListViewModel: SuggestionsListViewModel? = nil) {
         self.listViewModel = listViewModel
         self.duckAIListViewModel = duckAIListViewModel
+        observeDuckAISections(of: duckAIListViewModel)
         cancellable = inputsPublisher
             .sink { [weak self] inputs in
                 guard let self else { return }
@@ -94,6 +100,24 @@ final class UnifiedSuggestionsViewModel: ObservableObject {
                 self.hasResolvedSinceActivation = true
                 self.apply(resolved, modeChanged: inputs.mode != self.previousMode)
                 self.previousMode = inputs.mode
+                self.reportDuckAISuggestionsShownIfNeeded(hasDuckAIRows: self.duckAIListViewModel?.sections.isEmpty == false)
+            }
+    }
+
+    private var isShowingDuckAIList: Bool {
+        content == .list(.duckAI) || content == .list(.recents)
+    }
+
+    private func reportDuckAISuggestionsShownIfNeeded(hasDuckAIRows: Bool) {
+        guard !hasReportedDuckAISuggestionsShown, dismissBehavior == .none, isShowingDuckAIList, hasDuckAIRows else { return }
+        hasReportedDuckAISuggestionsShown = true
+        onDuckAISuggestionsShown?()
+    }
+
+    private func observeDuckAISections(of viewModel: SuggestionsListViewModel?) {
+        duckAISectionsCancellable = viewModel?.$sections
+            .sink { [weak self] sections in
+                self?.reportDuckAISuggestionsShownIfNeeded(hasDuckAIRows: !sections.isEmpty)
             }
     }
 
@@ -143,6 +167,7 @@ final class UnifiedSuggestionsViewModel: ObservableObject {
     func prepareForActivation() {
         dismissBehavior = .none
         hasResolvedSinceActivation = false
+        hasReportedDuckAISuggestionsShown = false
     }
 
     /// No-ops on an unchanged value so repeated per-focus sets don't invalidate the view body.
@@ -159,6 +184,7 @@ final class UnifiedSuggestionsViewModel: ObservableObject {
 
     func setDuckAIListViewModel(_ viewModel: SuggestionsListViewModel?) {
         duckAIListViewModel = viewModel
+        observeDuckAISections(of: viewModel)
     }
 
     /// Resolves the list VM for a `.list` content kind. Duck.ai kinds fall back to a stable empty

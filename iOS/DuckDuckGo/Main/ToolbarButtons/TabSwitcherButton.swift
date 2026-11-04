@@ -25,6 +25,8 @@ protocol TabSwitcherButtonDelegate: AnyObject {
     func launchNewTabWithCurrentMode(_ button: TabSwitcherButton)
     func launchNewNormalTab(_ button: TabSwitcherButton)
     func launchNewFireTab(_ button: TabSwitcherButton)
+    func launchNewChat(_ button: TabSwitcherButton)
+    var isNewChatAvailable: Bool { get }
 
 }
 

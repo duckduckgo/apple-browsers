@@ -72,6 +72,24 @@ final class ContentScopePrivacyConfigurationJSONGeneratorTests: XCTestCase {
         XCTAssertNotNil(outputFeatures["contentBlocking"], "other features must still be present")
     }
 
+    // MARK: - eventHub exclusion
+
+    func testWhenEventHubPresentThenItIsExcludedFromOutput() {
+        let features: [String: Any] = [
+            "eventHub": ["state": "enabled", "exceptions": []],
+            "contentBlocking": ["state": "enabled", "exceptions": []]
+        ]
+        let manager = makeManager(features: features)
+
+        guard let outputFeatures = generatedFeatures(from: manager) else {
+            XCTFail("Could not generate config")
+            return
+        }
+
+        XCTAssertNil(outputFeatures["eventHub"], "eventHub is read natively only and must be excluded from C-S-S config")
+        XCTAssertNotNil(outputFeatures["contentBlocking"], "other features must still be present")
+    }
+
     // MARK: - trackerAllowlist excluded
 
     func testWhenTrackerAllowlistPresentThenItIsExcluded() {

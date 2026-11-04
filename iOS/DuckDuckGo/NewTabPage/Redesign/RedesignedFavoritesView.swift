@@ -22,15 +22,29 @@ import DesignResourcesKitIcons
 import SwiftUI
 
 struct RedesignedFavoritesView: View {
+    @ObservedObject var model: FavoritesViewModel
+    /// Shows the Add Favorite tile and empty state when set.
+    let onAddFavorite: (() -> Void)?
+
+    var body: some View {
+        RedesignedFavoritesSection(model: model, expansionState: model.expansionState, onAddFavorite: onAddFavorite)
+    }
+}
+
+/// Observes the expansion state itself, so views of the shared favorites model that don't expand
+/// are not re-rendered when it changes.
+private struct RedesignedFavoritesSection: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
     @ObservedObject var model: FavoritesViewModel
+    @ObservedObject var expansionState: FavoritesExpansionState
     /// Shows the Add Favorite tile and empty state when set.
     let onAddFavorite: (() -> Void)?
     @State private var isDraggingFavorite = false
     @State private var gridHeight: CGFloat = 0
     @State private var headerHeight: CGFloat = 0
     @State private var collapsedItemHeights: [Favorite.ID: CGFloat] = [:]
+    @State private var hasShownOverflow = false
     private let haptics = UIImpactFeedbackGenerator()
 
     private var columns: [GridItem] {
@@ -38,7 +52,7 @@ struct RedesignedFavoritesView: View {
         return Array(repeating: GridItem(.flexible(), spacing: Metrics.columnSpacing, alignment: .top), count: count)
     }
 
-    private var isExpanded: Bool { hasOverflow && model.expansionState.isExpanded }
+    private var isExpanded: Bool { hasOverflow && expansionState.isExpanded }
 
     private var collapsedCapacity: Int { columns.count }
 
@@ -80,6 +94,8 @@ struct RedesignedFavoritesView: View {
                 grid: favoritesGrid
             )
             .animation(expansionAnimation, value: isExpanded)
+            .onAppear { hasShownOverflow = hasShownOverflow || isExpanded }
+            .onChange(of: isExpanded) { hasShownOverflow = hasShownOverflow || $0 }
         }
     }
 
@@ -88,7 +104,7 @@ struct RedesignedFavoritesView: View {
             addFavoriteButton
 
             ForEach(1..<columns.count, id: \.self) { _ in
-                Circle()
+                RedesignedFavoriteTileMetrics.tileShape
                     .strokeBorder(Color(designSystemColor: .textSecondary),
                                   style: StrokeStyle(lineWidth: Metrics.placeholderStrokeWidth, dash: Metrics.placeholderDashPattern))
                     .frame(width: Metrics.tileSize, height: Metrics.tileSize)
@@ -106,7 +122,7 @@ struct RedesignedFavoritesView: View {
                     .foregroundColor(Color(designSystemColor: .icons))
                     .frame(width: Metrics.tileSize, height: Metrics.tileSize)
                     .background(Color(designSystemColor: .controlsFillPrimary))
-                    .clipShape(Circle())
+                    .clipShape(RedesignedFavoriteTileMetrics.tileShape)
             }
         }
         .buttonStyle(.plain)
@@ -115,15 +131,18 @@ struct RedesignedFavoritesView: View {
     }
 
     private var favoritesGrid: some View {
-        LazyVGrid(columns: columns, alignment: .center, spacing: Metrics.rowSpacing) {
-            favorites
-            if onAddFavorite != nil {
-                addFavoriteButton
-                    .revealed(!hasOverflow || isExpanded, animation: expansionAnimation, value: isExpanded)
-            }
-            if hasOverflow {
-                expansionButton(expands: false)
-                    .revealed(isExpanded, animation: expansionAnimation, value: isExpanded)
+        Group {
+            if #available(iOS 16.0, *) {
+                // A lazy grid estimates the height of rows it has not built yet. Here every row is
+                // built anyway, and an estimate that changes while the viewport grows would resize
+                // the reveal on every animation frame.
+                FavoritesGridLayout(columnCount: columns.count, columnSpacing: Metrics.columnSpacing, rowSpacing: Metrics.rowSpacing) {
+                    favoritesGridItems
+                }
+            } else {
+                LazyVGrid(columns: columns, alignment: .center, spacing: Metrics.rowSpacing) {
+                    favoritesGridItems
+                }
             }
         }
         // Measure the complete grid independently of the animated viewport. Cells retain
@@ -136,6 +155,19 @@ struct RedesignedFavoritesView: View {
         }
         .onPreferenceChange(FavoritesGridHeightKey.self) { height in
             if gridHeight != height { gridHeight = height }
+        }
+    }
+
+    @ViewBuilder
+    private var favoritesGridItems: some View {
+        favorites
+        if onAddFavorite != nil {
+            addFavoriteButton
+                .revealed(!hasOverflow || isExpanded, animation: expansionAnimation, value: isExpanded)
+        }
+        if hasOverflow {
+            expansionButton(expands: false)
+                .revealed(isExpanded, animation: expansionAnimation, value: isExpanded)
         }
     }
 
@@ -154,7 +186,7 @@ struct RedesignedFavoritesView: View {
             Spacer()
             Button {
                 guard !isDraggingFavorite else { return }
-                model.expansionState.isExpanded = false
+                model.changeExpansion(to: false)
             } label: {
                 Image(uiImage: DesignSystemImages.Glyphs.Size12.chevronUp)
                     .frame(width: Metrics.collapseIconSize, height: Metrics.collapseIconSize)
@@ -183,11 +215,16 @@ struct RedesignedFavoritesView: View {
         let measuredIDs = Set(allFavorites.prefix(collapsedCapacity).map(\.id))
         let overflow = hasOverflow
         let expandButtonID = overflow ? allFavorites[collapsedCapacity - 1].id : nil
-        return ReorderableForEach(allFavorites, id: \.id, isReorderingEnabled: model.canEditFavorites,
+        // Every tile hosts its own view hierarchy, so build the overflow only once the user
+        // first expands. After that, keep the tiles so collapsing can animate them out.
+        let renderedFavorites = overflow && !isExpanded && !hasShownOverflow
+            ? Array(allFavorites.prefix(collapsedCapacity))
+            : allFavorites
+        return ReorderableForEach(renderedFavorites, id: \.id, isReorderingEnabled: model.canEditFavorites,
                           onDragActivityChanged: { isDraggingFavorite = $0 },
                           itemSizeCacheKey: { AnyHashable($0) },
                           isItemReorderingEnabled: { isExpanded || !overflow || collapsedIDs.contains($0.id) },
-                          previewPath: { UIBezierPath(ovalIn: $0) }) { favorite in
+                          previewPath: { UIBezierPath(roundedRect: $0, cornerRadius: RedesignedFavoriteTileMetrics.cornerRadius) }) { favorite in
             let isVisible = isExpanded || !overflow || collapsedIDs.contains(favorite.id)
             ZStack(alignment: .top) {
                 Button {
@@ -242,18 +279,65 @@ struct RedesignedFavoritesView: View {
     private func expansionButton(expands: Bool) -> some View {
         Button {
             guard !isDraggingFavorite else { return }
-            model.expansionState.isExpanded = expands
+            model.changeExpansion(to: expands)
         } label: {
             RedesignedFavoriteTileView(title: expands ? UserText.newTabPageFavoritesSeeAll : UserText.newTabPageFavoritesSeeLess) {
                 Image(uiImage: expands ? DesignSystemImages.Glyphs.Size24.chevronDownSmall : DesignSystemImages.Glyphs.Size24.chevronUpSmall)
                     .foregroundColor(Color(designSystemColor: .icons))
                     .frame(width: Metrics.tileSize, height: Metrics.tileSize)
                     .background(Color(designSystemColor: .controlsFillPrimary))
-                    .clipShape(Circle())
+                    .clipShape(RedesignedFavoriteTileMetrics.tileShape)
             }
         }
         .buttonStyle(.plain)
         .disabled(isDraggingFavorite)
+    }
+}
+
+/// Places items in equal-width columns, rows as tall as their tallest item and items top-aligned.
+@available(iOS 16.0, *)
+private struct FavoritesGridLayout: Layout {
+    let columnCount: Int
+    let columnSpacing: CGFloat
+    let rowSpacing: CGFloat
+
+    func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) -> CGSize {
+        let columnWidth = columnWidth(forWidth: proposal.width, subviews: subviews)
+        let rowHeights = rowHeights(of: subviews, columnWidth: columnWidth)
+        let width = columnWidth * CGFloat(columnCount) + columnSpacing * CGFloat(columnCount - 1)
+        let height = rowHeights.reduce(0, +) + rowSpacing * CGFloat(max(rowHeights.count - 1, 0))
+        return CGSize(width: width, height: height)
+    }
+
+    func placeSubviews(in bounds: CGRect, proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) {
+        let columnWidth = columnWidth(forWidth: bounds.width, subviews: subviews)
+        var rowTop = bounds.minY
+        for (row, rowHeight) in rowHeights(of: subviews, columnWidth: columnWidth).enumerated() {
+            for column in 0..<columnCount {
+                let index = row * columnCount + column
+                guard index < subviews.count else { break }
+                let columnCenter = bounds.minX + CGFloat(column) * (columnWidth + columnSpacing) + columnWidth / 2
+                subviews[index].place(at: CGPoint(x: columnCenter, y: rowTop), anchor: .top,
+                                      proposal: ProposedViewSize(width: columnWidth, height: nil))
+            }
+            rowTop += rowHeight + rowSpacing
+        }
+    }
+
+    private func columnWidth(forWidth width: CGFloat?, subviews: Subviews) -> CGFloat {
+        guard let width else {
+            return subviews.map { $0.sizeThatFits(.unspecified).width }.max() ?? 0
+        }
+        return max((width - columnSpacing * CGFloat(columnCount - 1)) / CGFloat(columnCount), 0)
+    }
+
+    private func rowHeights(of subviews: Subviews, columnWidth: CGFloat) -> [CGFloat] {
+        let itemProposal = ProposedViewSize(width: columnWidth, height: nil)
+        return stride(from: 0, to: subviews.count, by: columnCount).map { rowStart in
+            subviews[rowStart..<min(rowStart + columnCount, subviews.count)]
+                .map { $0.sizeThatFits(itemProposal).height }
+                .max() ?? 0
+        }
     }
 }
 

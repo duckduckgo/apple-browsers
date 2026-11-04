@@ -81,7 +81,7 @@ final class AIChatUsageWarningCardViewTests: XCTestCase {
         card.updateForTermsOfService(sendButton: .ask, stackingAttachmentPrivacy: true)
 
         _ = card.textView(disclosureTextView(in: card), clickedOnLink: URL.aiChatPrivacyTerms, at: 0)
-        _ = card.textView(stackedDisclosureTextView(in: card), clickedOnLink: URL.aiChatPrivacy, at: 0)
+        _ = card.textView(stackedDisclosureTextView(in: card), clickedOnLink: URL.aiChatUploadFilesAndImagesPrivacy, at: 0)
 
         XCTAssertEqual(openedTermsOfService, 1)
         XCTAssertEqual(openedAttachmentPrivacy, 1)

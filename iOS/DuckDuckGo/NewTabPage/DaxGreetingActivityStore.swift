@@ -63,14 +63,13 @@ final class DaxGreetingActivityStore {
         changesSubject.send()
     }
 
-    func context(at date: Date, calendar: Calendar, appearance: DaxGreetingContext.Appearance?) -> DaxGreetingContext {
+    func context(at date: Date, calendar: Calendar) -> DaxGreetingContext {
         func happenedToday(_ eventDate: Date?) -> Bool {
             guard let eventDate, eventDate <= date else { return false }
             return calendar.isDate(eventDate, inSameDayAs: date)
         }
         let opens = happenedToday(activity.lastForegroundDate) ? activity.foregroundOpenCount : 0
-        return DaxGreetingContext(appearance: appearance,
-                                  isFirstOpenOfDay: opens > 0 && activity.isFirstOpenOfDay,
+        return DaxGreetingContext(isFirstOpenOfDay: opens > 0 && activity.isFirstOpenOfDay,
                                   foregroundOpenCount: opens)
     }
 }

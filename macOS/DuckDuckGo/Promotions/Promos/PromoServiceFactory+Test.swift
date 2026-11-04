@@ -112,7 +112,7 @@ final class TestPromoDelegate: InternalPromoDelegate {
 
         switch response.rawValue {
         case NSApplication.ModalResponse.alertFirstButtonReturn.rawValue:
-            return .actioned
+            return .actioned()
         case NSApplication.ModalResponse.alertSecondButtonReturn.rawValue:
             return .ignored(cooldown: nil)
         case NSApplication.ModalResponse.alertThirdButtonReturn.rawValue:

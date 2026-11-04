@@ -71,7 +71,7 @@ final class BrowserUpdatedPromoDelegate: InternalPromoDelegate, UpdateNotificati
 
         let notificationText: String? = {
             switch bridge.pendingApplicationUpdateStatus {
-            case .noChange: return nil
+            case .noChange: return force ? UserText.browserUpdatedNotification : nil
             case .updated: return UserText.browserUpdatedNotification
             case .downgraded: return UserText.browserDowngradedNotification
             }
@@ -82,7 +82,8 @@ final class BrowserUpdatedPromoDelegate: InternalPromoDelegate, UpdateNotificati
             resultContinuation = continuation
 
             // Always temporarily dismiss the popover with no cooldown
-            let noCooldown: PromoResult = .ignored(cooldown: 0)
+            let actioned: PromoResult = .actioned(cooldown: 0)
+            let ignored: PromoResult = .ignored(cooldown: 0)
 
             let popover = PopoverMessageViewController(
                 message: notificationText,
@@ -94,15 +95,15 @@ final class BrowserUpdatedPromoDelegate: InternalPromoDelegate, UpdateNotificati
                 buttonAction: { [weak self] in
                     self?.pixelFiring?.fire(UpdateFlowPixels.updateNotificationTapped)
                     self?.bridge.openUpdatesPage()
-                    self?.resolve(with: noCooldown)
+                    self?.resolve(with: actioned)
                 },
                 clickAction: { [weak self] in
                     self?.pixelFiring?.fire(UpdateFlowPixels.updateNotificationTapped)
                     self?.bridge.openUpdatesPage()
-                    self?.resolve(with: noCooldown)
+                    self?.resolve(with: actioned)
                 },
                 onDismiss: { [weak self] in
-                    self?.resolve(with: noCooldown)
+                    self?.resolve(with: ignored)
                 }
             )
             if #available(macOS 26.0, *) {

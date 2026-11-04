@@ -102,15 +102,23 @@ public class MockOAuthClient: OAuthClient {
         }
     }
 
+    public private(set) var logoutCallCount = 0
     public var logoutError: Error?
     public func logout() async throws {
+        logoutCallCount += 1
         if let logoutError {
             throw logoutError
         }
-        internalCurrentTokenContainer = nil
+        try removeLocalAccount()
     }
 
+    public private(set) var removeLocalAccountCallCount = 0
+    public var removeLocalAccountError: Error?
     public func removeLocalAccount() throws {
+        removeLocalAccountCallCount += 1
+        if let removeLocalAccountError {
+            throw removeLocalAccountError
+        }
         internalCurrentTokenContainer = nil
     }
 

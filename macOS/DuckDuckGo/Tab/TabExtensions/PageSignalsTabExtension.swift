@@ -36,9 +36,10 @@ final class PageSignalsTabExtension: NSObject {
         monitor.pageSignals
     }
 
-    init(webViewPublisher: some Publisher<WKWebView, Never>, featureFlagger: FeatureFlagger, tld: TLD) {
+    init(webViewPublisher: some Publisher<WKWebView, Never>, featureFlagger: FeatureFlagger, tld: TLD, eventMapping: EventMapping<PageSignalsEvent> = PageSignalsEventMapper()) {
         self.monitor = PageSignalsMonitor(tld: tld,
-                                          isEnabled: { featureFlagger.isFeatureOn(.pageSignals) })
+                                          isEnabled: { featureFlagger.isFeatureOn(.pageSignals) },
+                                          eventMapping: eventMapping)
         super.init()
 
         webViewPublisher

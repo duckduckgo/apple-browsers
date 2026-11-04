@@ -59,7 +59,8 @@ let package = Package(
                 .product(name: "UIComponents", package: "UIComponents")
             ],
             resources: [
-                .process("jsSources")
+                .process("jsSources"),
+                .copy("PrivacyInfo.xcprivacy")
             ]
         ),
         .testTarget(

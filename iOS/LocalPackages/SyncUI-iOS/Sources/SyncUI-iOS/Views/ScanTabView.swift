@@ -233,7 +233,7 @@ private struct CameraPermissionDeniedView: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            Image(rebrandable: content.imageName, bundle: .module)
+            Image(content.imageName, bundle: .module)
                 .padding(.bottom, 20)
 
             Text(content.title)
@@ -271,7 +271,7 @@ private struct CameraUnavailableView: View {
         VStack(spacing: 0) {
             Spacer()
 
-            Image(rebrandable: "SyncCameraUnavailable", bundle: .module)
+            Image("SyncCameraUnavailable", bundle: .module)
                 .padding(.bottom, 20)
 
             Text(UserText.cameraIsUnavailableTitle)
@@ -402,12 +402,10 @@ private struct ScanTabPreview: View {
     @State var showIntroAnimation = false
 
     var body: some View {
-        RebrandedPreview(isRebranded: true) {
-            NavigationView {
-                ScanTabView(model: model, showIntroAnimation: $showIntroAnimation)
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
-                    .environment(\.colorScheme, .dark)
-            }
+        NavigationView {
+            ScanTabView(model: model, showIntroAnimation: $showIntroAnimation)
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .environment(\.colorScheme, .dark)
         }
     }
 }

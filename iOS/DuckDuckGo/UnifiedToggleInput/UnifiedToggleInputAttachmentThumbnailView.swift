@@ -48,6 +48,8 @@ final class UnifiedToggleInputAttachmentThumbnailView: UIView {
 
     let attachmentId: UUID
     var onRemove: ((UUID) -> Void)?
+    var onTap: ((UUID) -> Void)?
+    private lazy var tapRecognizer = UITapGestureRecognizer(target: self, action: #selector(chipTapped))
     private let attachment: UnifiedToggleInputAttachment
     private let usesCompactLayout: Bool
     private var widthConstraint: NSLayoutConstraint!
@@ -66,10 +68,19 @@ final class UnifiedToggleInputAttachmentThumbnailView: UIView {
     }
 
     private var iconSize: CGFloat {
-        if usesCompactLayout, case .tab = attachment {
+        guard usesCompactLayout else { return iconFrameSize }
+        switch attachment {
+        case .tab:
             return Constants.faviconSize
+        case .image, .file, .invalidFile, .pastedText:
+            return iconFrameSize
         }
-        return iconFrameSize
+    }
+
+    override func accessibilityActivate() -> Bool {
+        guard attachment.pastedText != nil else { return super.accessibilityActivate() }
+        onTap?(attachmentId)
+        return true
     }
 
     var minimumContentWidth: CGFloat {
@@ -202,6 +213,9 @@ private extension UnifiedToggleInputAttachmentThumbnailView {
         chipView.addSubview(fileIconView)
         chipView.addSubview(fileNameLabel)
         chipView.addSubview(removeButton)
+        if attachment.pastedText != nil {
+            chipView.addGestureRecognizer(tapRecognizer)
+        }
 
         fileNameLabel.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
         removeButton.setContentCompressionResistancePriority(.required, for: .horizontal)
@@ -276,8 +290,38 @@ private extension UnifiedToggleInputAttachmentThumbnailView {
             configureFile(fileName: fileAttachment.fileName, validationMessage: fileAttachment.validationMessage)
         case .tab(let tabAttachment):
             configureTab(title: tabAttachment.title, favicon: tabAttachment.favicon)
+        case .pastedText(let pastedText):
+            configurePastedText(pastedText)
         }
         applyAppearance()
+    }
+
+    private static let accessibilityValueLimit = 100
+
+    private static func cappedAccessibilityValue(_ title: String) -> String {
+        title.count > accessibilityValueLimit ? String(title.prefix(accessibilityValueLimit)) + "…" : title
+    }
+
+    func configurePastedText(_ pastedText: AIChatPastedText) {
+        imageView.image = nil
+        imageView.isHidden = true
+        fileIconView.image = DesignSystemImages.Color.Size24.fileTXT
+        fileIconView.tintColor = nil
+        fileNameLabel.text = pastedText.title
+        fileNameLabel.lineBreakMode = .byTruncatingTail
+        fileIconView.isHidden = false
+        fileNameLabel.isHidden = false
+        isAccessibilityElement = true
+        accessibilityTraits = .button
+        accessibilityLabel = UserText.aiChatPastedTextAccessibilityLabel
+        accessibilityValue = Self.cappedAccessibilityValue(pastedText.title)
+        accessibilityCustomActions = [
+            UIAccessibilityCustomAction(name: UserText.aiChatPastedTextRemoveAction) { [weak self] _ in
+                guard let self else { return false }
+                onRemove?(attachmentId)
+                return true
+            }
+        ]
     }
 
     func configureTab(title: String, favicon: UIImage?) {
@@ -322,6 +366,10 @@ private extension UnifiedToggleInputAttachmentThumbnailView {
 
     @objc func removeTapped() {
         onRemove?(attachmentId)
+    }
+
+    @objc func chipTapped() {
+        onTap?(attachmentId)
     }
 }
 

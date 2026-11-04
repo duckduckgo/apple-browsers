@@ -1095,7 +1095,7 @@ extension UnifiedInputContentContainerViewController {
     }
 
     func duckAISuggestionsDidSelectURL(_ suggestion: Suggestion) {
-        fireDuckAISuggestionClickPixel(for: suggestion)
+        autocompletePixels.fireDuckAIClickPixel(for: suggestion)
         delegate?.unifiedInputEditingStateDidSelectSuggestion(suggestion)
     }
 
@@ -1118,21 +1118,6 @@ extension UnifiedInputContentContainerViewController {
             for: suggestion,
             isExperimentalAIChatExperience: aiChatSettings.isAIChatSearchInputUserSettingsEnabled,
             aiChatDiscoveryParameters: featureDiscovery.addToParams([:], forFeature: .aiChat))
-    }
-
-    private func fireDuckAISuggestionClickPixel(for suggestion: Suggestion) {
-        switch suggestion {
-        case .website:
-            PixelKit.fire(Pixel.Event.autocompleteDuckAIClickWebsite)
-        case .bookmark(_, _, let isFavorite, _):
-            PixelKit.fire(isFavorite ? Pixel.Event.autocompleteDuckAIClickFavorite : .autocompleteDuckAIClickBookmark)
-        case .historyEntry(_, let url, _):
-            PixelKit.fire(url.isDuckDuckGoSearch ? Pixel.Event.autocompleteDuckAIClickHistorySearch : .autocompleteDuckAIClickHistorySite)
-        case .openTab:
-            PixelKit.fire(Pixel.Event.autocompleteDuckAIClickSwitchToTab)
-        case .phrase, .internalPage, .unknown, .askAIChat:
-            break
-        }
     }
 }
 

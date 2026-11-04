@@ -212,6 +212,11 @@ public final class TestRunHelper: NSObject {
         // provide extra info on failures
         _=NSError.swizzleLocalizedDescriptionOnce
 
+        // integration tests run the whole app: keep them off the developer's own app settings
+        if AppVersion.runType == .integrationTests {
+            _=UserDefaults.swizzleStandardForTestRunOnce
+        }
+
         // add code to be run on Unit Tests startup here...
 
     }
@@ -231,9 +236,18 @@ public final class TestRunHelper: NSObject {
                       || window.className.contains("TUINSWindow")
                       || window.className == "NSStatusBarWindow")
                 }
+                // `NSApp.windows` returns autoreleased windows. Drain them right away: otherwise they stay
+                // retained by the outer autorelease pool (not drained until the test observation callbacks
+                // return) and the app's DEBUG deallocation checks (`ensureObjectDeallocated(do: .interrupt)`)
+                // raise SIGINT for windows (e.g. the address bar suggestion window) closed during the cleanup.
+                let containsWindow = { (predicate: (NSWindow) -> Bool) in
+                    autoreleasepool {
+                        NSApp.windows.contains(where: predicate)
+                    }
+                }
 
                 let hasIntegrationTestUI = self.loadedViews.contains(where: { $0.view != nil })
-                    || NSApp.windows.contains(where: shouldCloseWindow)
+                    || containsWindow(shouldCloseWindow)
 
                 guard hasIntegrationTestUI else { return }
 
@@ -259,7 +273,7 @@ public final class TestRunHelper: NSObject {
 
                 let deadline = Date().addingTimeInterval(2)
                 while Date() < deadline,
-                      NSApp.windows.contains(where: { shouldCloseWindow($0) && $0.isVisible }) {
+                      containsWindow({ shouldCloseWindow($0) && $0.isVisible }) {
                     RunLoop.main.run(until: Date().addingTimeInterval(0.05))
                 }
 
@@ -529,6 +543,27 @@ extension TestRunHelper: XCTestObservation {
         // Primitive types and value types can remain as they don't represent resources to clean up
         return mirror.displayStyle == .class
     }
+
+}
+
+extension UserDefaults {
+
+    /// The app reads and writes `UserDefaults.standard` directly in many places: point it at the suite
+    /// the app's `@UserDefaultsWrapper` settings use in test runs, emptied first, so every run starts
+    /// from the default settings and neither reads nor changes the developer's own app settings.
+    static var swizzleStandardForTestRunOnce: Void = {
+        UserDefaults.standard.removePersistentDomain(forName: testRunSuiteName)
+
+        let standardMethod = class_getClassMethod(UserDefaults.self, #selector(getter: UserDefaults.standard))!
+        let swizzledStandardMethod = class_getClassMethod(UserDefaults.self, #selector(getter: UserDefaults.testRunDefaults))!
+
+        method_exchangeImplementations(standardMethod, swizzledStandardMethod)
+    }()
+
+    /// See `UserDefaultsWrapper.sharedDefaults`
+    private static let testRunSuiteName = "\(Bundle.main.bundleIdentifier!).\(AppVersion.runType)"
+    private static let testRunDefaultsInstance = UserDefaults(suiteName: testRunSuiteName)!
+    @objc private class var testRunDefaults: UserDefaults { testRunDefaultsInstance }
 
 }
 

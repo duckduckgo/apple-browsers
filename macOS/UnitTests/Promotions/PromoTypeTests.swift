@@ -101,7 +101,7 @@ final class PromoTypeTests: XCTestCase {
     }
 
     func testPromoType_CustomTimeoutsOverrideDefaultTimeouts() {
-        let type = PromoType(.appModal, customTimeoutInterval: .seconds(1), customTimeoutResult: .actioned)
+        let type = PromoType(.appModal, customTimeoutInterval: .seconds(1), customTimeoutResult: .actioned())
 
         XCTAssertEqual(type.timeoutInterval, .seconds(1), "Custom timeout interval should override default")
         guard case .actioned = type.timeoutResult else {

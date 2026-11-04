@@ -150,7 +150,6 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
     private let featureFlagger: FeatureFlagger
     private let isFloatingUIFeatureEnabledForCurrentLaunch: Bool
     private let clearAppSwitcherSnapshots: @MainActor () async -> Void
-    private let tabTerminationTelemetry: any TabTerminationTelemetry
     private let tabTerminationErrorPageDetector: any TabTerminationErrorPageDetecting
     private let tabEvictionSettings: TabEvictionSettings
     private let applicationState: @MainActor () -> UIApplication.State
@@ -180,6 +179,7 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
     private let toggleModeStorage: ToggleModeStoring
     private let duckAiNativeStorageHandler: DuckAiNativeStorageHandling?
     private let duckAiFireModeStorageHandler: DuckAiNativeStorageHandling?
+    private let usageContextProvider: UsageContextProviding
     private weak var controllerPendingTerminationRecovery: TabViewController?
     let isSitePermissionsEnabled: Bool
     let sitePermissionsPixelHandler = SitePermissionsPixelHandler()
@@ -265,10 +265,10 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
          darkReaderFeatureSettings: DarkReaderFeatureSettings,
          duckAiNativeStorageHandler: DuckAiNativeStorageHandling? = nil,
          duckAiFireModeStorageHandler: DuckAiNativeStorageHandling? = nil,
+         usageContextProvider: UsageContextProviding,
          toggleModeStorage: ToggleModeStoring = ToggleModeStorage(),
          adBlockingAvailability: AdBlockingAvailabilityProviding,
          eventHub: EventHubManaging,
-         tabTerminationTelemetry: (any TabTerminationTelemetry)? = nil,
          tabTerminationErrorPageDetector: (any TabTerminationErrorPageDetecting)? = nil,
          applicationState: (@MainActor () -> UIApplication.State)? = nil,
          isPad: Bool? = nil,
@@ -278,6 +278,7 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
     ) {
         self.duckAiNativeStorageHandler = duckAiNativeStorageHandler
         self.duckAiFireModeStorageHandler = duckAiFireModeStorageHandler
+        self.usageContextProvider = usageContextProvider
         self.tabsModelProvider = tabsModelProvider
         self.previewsSource = previewsSource
         self.interactionStateSource = interactionStateSource
@@ -296,12 +297,7 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
             ?? featureFlagger.isFloatingUIFeatureEnabled()
         self.isSitePermissionsEnabled = sitePermissionsEnabled
         self.clearAppSwitcherSnapshots = clearAppSwitcherSnapshots
-        let tabEvictionSettings = TabEvictionSettings(privacyConfigurationManager: privacyConfigurationManager)
-        self.tabEvictionSettings = tabEvictionSettings
-        self.tabTerminationTelemetry = tabTerminationTelemetry ?? DefaultTabTerminationTelemetry(
-            featureFlagger: featureFlagger,
-            keyValueStore: UserDefaults.app,
-            memoryWarningTelemetryWindow: { tabEvictionSettings.memoryWarningTelemetryWindow })
+        self.tabEvictionSettings = TabEvictionSettings(privacyConfigurationManager: privacyConfigurationManager)
         self.tabTerminationErrorPageDetector = tabTerminationErrorPageDetector ?? TabTerminationErrorPageDetector(
             privacyConfigurationManager: privacyConfigurationManager)
         self.applicationState = applicationState ?? { UIApplication.shared.applicationState }
@@ -366,7 +362,7 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
     }
 
     @MainActor
-    private func makeTabAttachmentSource(for tab: Tab) -> MultiTabAttachmentSource {
+    func makeTabAttachmentSource(for tab: Tab) -> MultiTabAttachmentSource {
         let mode = tab.mode
         return MultiTabAttachmentSource(currentTabID: tab.uid, mode: mode, tabsProvider: { [weak self] in
             self?.tabsModel(for: mode).tabs ?? []
@@ -424,15 +420,15 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
         let configuration = WKWebViewConfiguration.persistent(fireMode: tab.fireTab)
         configuration.mediaTypesRequiringUserActionForPlayback = autoplaySettings.currentAutoplayBlockingMode.mediaTypesRequiringUserAction
 
-        // iPad tabs only: iPhone's mobile YouTube enters fullscreen via `webkitEnterFullscreen()`
-        // regardless, so it gains nothing and would only lose the native player on other sites.
+        // iPad tabs always get the Fullscreen API, matching iPad Safari. iPhone tabs get it only in
+        // desktop mode (see `TabViewController.updateContentMode()`), so mobile sites keep the native player.
         // iOS 16 is the floor because the layout restore observes `fullscreenState`, which is iOS 16+.
         if #available(iOS 16.0, *), isPad, featureFlagger.isFeatureOn(.elementFullscreen) {
             configuration.preferences.isElementFullscreenEnabled = true
         }
 
         if #available(iOS 18.4, *), let webExtensionManager = webExtensionManager {
-            configuration.webExtensionController = webExtensionManager.controller
+            configuration.attachWebExtensions(of: webExtensionManager)
         }
 
         let specialErrorPageNavigationHandler = SpecialErrorPageNavigationHandler(
@@ -476,6 +472,7 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
                                                               autoplaySettings: autoplaySettings,
                                                               duckAiNativeStorageHandler: duckAiNativeStorageHandler,
                                                               duckAiFireModeStorageHandler: duckAiFireModeStorageHandler,
+                                                              usageContextProvider: usageContextProvider,
                                                               adBlockingAvailability: adBlockingAvailability,
                                                               eventHub: eventHub,
                                                               webExtensionManagerProvider: { [weak self] in self?.webExtensionManager },
@@ -572,7 +569,7 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
 
         let shouldCreateFireTab = model.shouldCreateFireTabs
         if #available(iOS 18.4, *), let webExtensionManager = webExtensionManager {
-            configCopy.webExtensionController = webExtensionManager.controller
+            configCopy.attachWebExtensions(of: webExtensionManager)
         }
 
         let tab: Tab
@@ -624,6 +621,7 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
                                                               autoplaySettings: autoplaySettings,
                                                               duckAiNativeStorageHandler: duckAiNativeStorageHandler,
                                                               duckAiFireModeStorageHandler: duckAiFireModeStorageHandler,
+                                                              usageContextProvider: usageContextProvider,
                                                               adBlockingAvailability: adBlockingAvailability,
                                                               eventHub: eventHub,
                                                               webExtensionManagerProvider: { [weak self] in self?.webExtensionManager },
@@ -649,11 +647,25 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
     }
 
     @MainActor
-    func addHomeTab(in tabsModel: TabsModelManaging? = nil) {
+    func addHomeTab(in tabsModel: TabsModelManaging? = nil, placement: TabsModel.TabPlacement = .atEnd) {
         let model = tabsModel ?? currentTabsModel
         let tab = Tab(fireTab: model.shouldCreateFireTabs)
-        model.insert(tab: tab, placement: .atEnd, selectNewTab: true)
+        model.insert(tab: tab, placement: placement, selectNewTab: true)
         _ = save()
+    }
+
+    @MainActor
+    func duplicate(_ source: TabViewController) -> TabViewController {
+        let model = source.tabModel.fireTab ? fireModeTabsModel : normalTabsModel
+        let tab = Tab(link: source.tabModel.link, desktop: source.tabModel.isDesktop, fireTab: source.tabModel.fireTab)
+        let controller = buildController(forTab: tab, url: source.url, inheritedAttribution: nil,
+                                         interactionState: source.webView.interactionState as? Data)
+        current()?.dismiss()
+        model.insert(tab: tab, placement: .afterCurrentTab, selectNewTab: false)
+        tab.viewed = true
+        addToCache(controller)
+        _ = save()
+        return controller
     }
 
     func firstHomeTab(in tabsModel: TabsModelManaging? = nil) -> Tab? {
@@ -704,7 +716,8 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
     func add(url: URL?,
              inBackground: Bool = false,
              inheritedAttribution: AdClickAttributionLogic.State?,
-             in tabsModel: TabsModelManaging? = nil) -> TabViewController {
+             in tabsModel: TabsModelManaging? = nil,
+             prepareBeforeCaching: ((TabViewController) -> Void)? = nil) -> TabViewController {
 
         let model = tabsModel ?? currentTabsModel
         if !inBackground {
@@ -719,6 +732,8 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
             tab.viewed = true
         }
 
+        // Inserting the controller enforces cache capacity, so state that protects it from eviction goes first.
+        prepareBeforeCaching?(controller)
         addToCache(controller)
 
         _ = save()
@@ -789,6 +804,8 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
             tabAttachmentControllerChanges.send()
         }
         tabTerminationErrorPageDetector.removeHistory(forTabID: controller.tabModel.uid)
+        controller.cancelPendingAIChatTabAttachmentPrompt()
+        controller.aiChatContextualSheetCoordinator.closeSurfaceAwayWithTab()
         controller.closeSitePermissions()
         controller.dismiss()
     }
@@ -820,7 +837,8 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
         let effectiveMaximumCapacity = maximumCapacity + (currentControllerIsNewTabPage ? 1 : 0)
         while tabControllerCache.count > effectiveMaximumCapacity {
             let evictionCandidates = tabControllerCache.filter {
-                $0 !== currentController && tabAttachmentReservations[ObjectIdentifier($0.tabModel)] == nil
+                $0 !== currentController && !$0.isProtectedFromCacheEviction
+                    && tabAttachmentReservations[ObjectIdentifier($0.tabModel)] == nil
             }
             guard let controller = evictionCandidates.first(where: { $0.tabModel.link == nil }) ?? evictionCandidates.first else { return }
             evictFromCache(controller, reason: .lruCapacity)
@@ -838,11 +856,6 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
 
     func removeLeftoverInteractionStates() {
         _ = interactionStateSource?.removeAll(excluding: allTabsModel.tabs)
-    }
-
-    @MainActor
-    func webContentProcessDidTerminate() {
-        tabTerminationTelemetry.webContentProcessDidTerminate(activeTabCount: tabControllerCache.count)
     }
 
     @MainActor
@@ -1185,11 +1198,13 @@ extension TabManager {
     @MainActor
     @objc
     private func onMemoryWarning(_ notification: NSNotification) {
-        tabTerminationTelemetry.didReceiveMemoryWarning(activeTabCount: tabControllerCache.count)
         if featureFlagger.isFeatureOn(.tabEvictionOnMemoryWarning), applicationState() == .background {
             let currentController = current()
             tabControllerCache
-                .filter { $0 !== currentController && tabAttachmentReservations[ObjectIdentifier($0.tabModel)] == nil }
+                .filter {
+                    $0 !== currentController && !$0.isProtectedFromCacheEviction
+                        && tabAttachmentReservations[ObjectIdentifier($0.tabModel)] == nil
+                }
                 .forEach { evictFromCache($0, reason: .memoryWarning) }
         }
         flushPendingSave()

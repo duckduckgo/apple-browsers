@@ -40,11 +40,6 @@ public struct NativeCheckboxToggle: NSViewRepresentable {
         nsView.state = isOn ? .on : .off
         nsView.contentTintColor = nil
 
-        guard DesignSystemRebrand.isAppRebranded() else {
-            nsView.title = label
-            return
-        }
-
         let isEnabled = context.environment.isEnabled
         let textColor: NSColor = isEnabled ? .controlTextColor : .disabledControlTextColor
         let textFont = nsView.font ?? NSFont.systemFont(ofSize: NSFont.systemFontSize)

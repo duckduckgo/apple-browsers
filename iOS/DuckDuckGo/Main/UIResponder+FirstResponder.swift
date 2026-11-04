@@ -68,4 +68,9 @@ extension UIResponder {
         }
         return false
     }
+
+    func isInViewHierarchy(ofPresentationChainFrom viewController: UIViewController) -> Bool {
+        sequence(first: viewController, next: { $0.presentedViewController })
+            .contains { isInViewHierarchy(of: $0.view) }
+    }
 }

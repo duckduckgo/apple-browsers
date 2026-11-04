@@ -19,6 +19,7 @@ appId: com.duckduckgo.mobile.ios
         isOnboardingCompleted: ${ONBOARDING_COMPLETED}
         currentAppVariant: ${APP_VARIANT}
         isRunningUITests: true
+        "ff.alwaysShowKeyboardOnNewTabPage": "false"
         ff.browsingMenuSheetEnabledByDefault: "true"
         "ff.aiChatChromeShortcutIPad": "true"
         "ff.aiChatChromeMenuButtonIPad": "true"

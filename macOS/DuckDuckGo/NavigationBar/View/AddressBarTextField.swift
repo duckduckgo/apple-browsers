@@ -88,7 +88,6 @@ final class AddressBarTextField: NSTextField {
     weak var focusDelegate: AddressBarTextFieldFocusDelegate?
     weak var searchPreferences: SearchPreferences?
     weak var tabsPreferences: TabsPreferences?
-    var aiChatPreferences: AIChatPreferencesStorage?
 
     weak var sharedTextState: AddressBarSharedTextState? {
         didSet {
@@ -799,7 +798,6 @@ final class AddressBarTextField: NSTextField {
     private(set) lazy var suggestionViewController: SuggestionViewController = {
         let suggestionViewController = SuggestionViewController(suggestionContainerViewModel: self.suggestionContainerViewModel!,
                                                                 themeManager: self.themeManager,
-                                                                aiChatPreferencesStorage: self.aiChatPreferences ?? DefaultAIChatPreferencesStorage(),
                                                                 featureFlagger: Application.appDelegate.featureFlagger)
         suggestionViewController.delegate = self
         return suggestionViewController

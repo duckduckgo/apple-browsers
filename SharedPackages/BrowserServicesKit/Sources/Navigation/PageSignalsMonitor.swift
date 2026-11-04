@@ -34,12 +34,12 @@ public final class PageSignalsMonitor {
 
     /// - Parameters:
     ///   - isEnabled: Evaluated on attach and on every event.
-    public init(tld: TLD, isEnabled: @escaping () -> Bool) {
+    public init(tld: TLD, isEnabled: @escaping () -> Bool, eventMapping: EventMapping<PageSignalsEvent>? = nil) {
         let signalsCollector = PageSignalsCollector(tld: tld)
 
         self.signalsCollector = signalsCollector
         self.isEnabled = isEnabled
-        self.resourceObserver = PageResourceLoadObserver { [weak signalsCollector] url, error in
+        self.resourceObserver = PageResourceLoadObserver(eventMapping: eventMapping) { [weak signalsCollector] url, error in
             guard isEnabled() else {
                 return
             }

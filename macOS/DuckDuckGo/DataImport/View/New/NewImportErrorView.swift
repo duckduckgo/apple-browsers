@@ -34,7 +34,7 @@ struct NewImportErrorView: View {
         .cornerRadius(10)
         .overlay(
         RoundedRectangle(cornerRadius: 10)
-            .inset(by: 0.5).stroke(Color(designSystemColor: .lines))
+            .inset(by: 0.5).stroke(Color(designSystemColor: .surfaceDecorationPrimary))
         )
     }
 }

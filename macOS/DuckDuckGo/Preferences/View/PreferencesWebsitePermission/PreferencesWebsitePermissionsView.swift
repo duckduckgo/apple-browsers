@@ -50,6 +50,9 @@ struct PreferencesWebsitePermissionsView: View {
         .task {
             model.send(action: .onAppear)
         }
+        .onDisappear {
+            model.send(action: .onDisappear)
+        }
     }
 
     private var overview: some View {

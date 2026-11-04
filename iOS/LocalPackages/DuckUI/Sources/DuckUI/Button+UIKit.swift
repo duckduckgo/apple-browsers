@@ -20,20 +20,19 @@
 import SwiftUI
 import UIKit
 
-/// UIKit counterparts of `PrimaryButtonStyle`. These apply the **rebranded** design only.
-///
+/// UIKit counterparts of `PrimaryButtonStyle`.
 public extension UIButton {
 
     func applyPrimaryStyle(compact: Bool = false) {
-        applyFilledStyle(colors: .rebrandedPrimary, compact: compact)
+        applyFilledStyle(colors: .primary, compact: compact)
     }
 
     func applyBrandStyle(compact: Bool = false) {
-        applyFilledStyle(colors: .rebrandedBrand, compact: compact)
+        applyFilledStyle(colors: .brand, compact: compact)
     }
 
     func applyDestructiveStyle(compact: Bool = false) {
-        applyFilledStyle(colors: .rebrandedDestructive, compact: compact)
+        applyFilledStyle(colors: .destructive, compact: compact)
     }
 }
 
@@ -51,8 +50,8 @@ private extension UIButton {
             let background: UIColor
             let foreground: UIColor
             if !button.isEnabled {
-                background = UIColor(colors.disabled).withDisabledOpacity
-                foreground = UIColor(colors.textDisabled)
+                background = UIColor(colors.standard).withDisabledOpacity
+                foreground = UIColor(colors.text)
             } else if button.isHighlighted {
                 background = UIColor(colors.pressed)
                 foreground = UIColor(colors.text)

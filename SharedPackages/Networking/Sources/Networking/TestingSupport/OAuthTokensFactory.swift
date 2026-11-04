@@ -139,6 +139,51 @@ public struct OAuthTokensFactory {
                                decodedAccessToken: OAuthTokensFactory.makeExpiredAccessToken(),
                               decodedRefreshToken: OAuthTokensFactory.makeExpiredRefreshToken(scope: "refresh"))
     }
+
+    /// Builds a container with a valid access token and configurable identifiers and refresh token dates.
+    /// - Parameters:
+    ///   - accessToken: The encoded access token string.
+    ///   - refreshToken: The encoded refresh token string.
+    ///   - externalID: The account identifier (`sub`) of both tokens.
+    ///   - refreshTokenIssuedAt: The refresh token's `iat`.
+    ///   - refreshTokenExpiresAt: The refresh token's `exp`.
+    public static func makeTokenContainer(accessToken: String = "accessToken",
+                                          refreshToken: String = "refreshToken",
+                                          externalID: String = "test-subject",
+                                          refreshTokenIssuedAt: Date = Date(),
+                                          refreshTokenExpiresAt: Date = Date().addingTimeInterval(3600)) -> TokenContainer {
+        let decodedAccessToken = JWTAccessToken(exp: ExpirationClaim(value: Date().addingTimeInterval(3600)),
+                                                iat: IssuedAtClaim(value: Date()),
+                                                sub: SubjectClaim(value: externalID),
+                                                aud: AudienceClaim(value: ["test-audience"]),
+                                                iss: IssuerClaim(value: "test-issuer"),
+                                                jti: IDClaim(value: "test-id"),
+                                                scope: "privacypro",
+                                                api: "v2",
+                                                email: "test@example.com",
+                                                entitlements: [])
+        let decodedRefreshToken = JWTRefreshToken(exp: ExpirationClaim(value: refreshTokenExpiresAt),
+                                                  iat: IssuedAtClaim(value: refreshTokenIssuedAt),
+                                                  sub: SubjectClaim(value: externalID),
+                                                  aud: AudienceClaim(value: ["test-audience"]),
+                                                  iss: IssuerClaim(value: "test-issuer"),
+                                                  jti: IDClaim(value: "test-id"),
+                                                  scope: "refresh",
+                                                  api: "v2")
+        return TokenContainer(accessToken: accessToken,
+                              refreshToken: refreshToken,
+                              decodedAccessToken: decodedAccessToken,
+                              decodedRefreshToken: decodedRefreshToken)
+    }
+
+    /// Builds the error `OAuthService` throws when the auth API answers with an error body.
+    /// - Parameters:
+    ///   - errorCode: The `error` value of the response body.
+    ///   - tokenStatus: The `error_code` value of the response body, if any.
+    public static func makeAuthAPIError(_ errorCode: OAuthRequest.BodyErrorCode, tokenStatus: OAuthRequest.TokenStatus?) -> OAuthServiceError {
+        let bodyError = OAuthRequest.BodyError(errorCode: errorCode, tokenStatus: tokenStatus)
+        return OAuthServiceError.authAPIError(OAuthRequestError(from: bodyError))
+    }
 }
 
 @_spi(Testing)

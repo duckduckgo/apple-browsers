@@ -24,6 +24,7 @@ import Combine
 public protocol SyncManagementViewModelDelegate: AnyObject {
 
     func authenticateUser() async throws
+    var isUserAuthenticationPromptNeeded: Bool { get }
     func showAutoRestoreReady(for continuation: SyncSettingsViewModel.PreservedAccountContinuation)
     func isPreservedAccountPromptNeeded() -> Bool
     func continueAfterPreservedAccountRemoval(_ continuation: SyncSettingsViewModel.PreservedAccountContinuation)
@@ -32,6 +33,7 @@ public protocol SyncManagementViewModelDelegate: AnyObject {
     func showSyncWithAnotherDevice()
     func shareRecoveryPDF()
     func confirmAndDeleteAllData() async -> Bool
+    func deleteAllData() async -> Bool
     func confirmRemoveDevice(_ device: SyncSettingsViewModel.Device) async -> Bool
     func removeDevice(_ device: SyncSettingsViewModel.Device)
     func updateDeviceName(_ name: String)
@@ -45,6 +47,7 @@ public protocol SyncManagementViewModelDelegate: AnyObject {
     func fireAutoRestorePixel(event: SyncSettingsViewModel.AutoRestorePixelEvent)
     func fireSyncSetupPixel(event: SyncSettingsViewModel.SyncSetupPixelEvent)
     func fireDeviceDetailsPixel(event: SyncSettingsViewModel.DeviceDetailsPixelEvent)
+    func fireTurnOffSyncSheetPixel(event: SyncSettingsViewModel.TurnOffSyncSheetPixelEvent)
     func shareLink(for url: URL, with message: String, from rect: CGRect)
 
     // Simplified sync setup experiment
@@ -85,12 +88,19 @@ public class SyncSettingsViewModel: ObservableObject {
         public let credentialId: String?
         public let isThisDevice: Bool
 
-        // Keep these values aligned with DDGSync.SyncCredentialID without coupling SyncUI_iOS to DDGSync.
+        // Keep these values aligned with DDGSync.SyncCredentialID and the RegisteredDeviceMapper
+        // placeholder type without coupling SyncUI_iOS to DDGSync.
         public static let defaultCredentialId = "ddg"
         public static let thirdPartyCredentialId = "3party"
+        public static let unknownDeviceType = "unknown"
 
         public var isThirdParty: Bool {
             credentialId == Self.thirdPartyCredentialId
+        }
+
+        /// The device's metadata could not be decrypted, so its real type is not known.
+        public var isUnknownType: Bool {
+            type == Self.unknownDeviceType
         }
 
         public init(id: String, name: String, type: String, credentialId: String? = nil, isThisDevice: Bool) {
@@ -137,6 +147,22 @@ public class SyncSettingsViewModel: ObservableObject {
         case anotherDevicePromptShown
         case anotherDevicePromptOptionTapped(SyncAnotherDeviceOption)
         case anotherDevicePromptDismissed
+        case authenticationResult(SetupAuthenticationResult, source: SetupAuthenticationSource)
+    }
+
+    public enum SetupAuthenticationResult: String {
+        case succeeded
+        case failed
+        case unconfigured
+    }
+
+    public enum SetupAuthenticationSource: String {
+        case settingsNotSynced = "settings_not_synced"
+        case settingsSynced = "settings_synced"
+        case thisDevice = "this_device"
+        case recover
+        case deepLink = "deep_link"
+        case sessionRestore = "session_restore"
     }
 
     public enum DeviceDetailsPixelEvent: Equatable {
@@ -144,6 +170,18 @@ public class SyncSettingsViewModel: ObservableObject {
         case thisDeviceTurnOffSyncTapped
         case otherDeviceScreenShown
         case otherDeviceRemoveDeviceTapped
+    }
+
+    public enum TurnOffSyncSheetPixelEvent: Equatable {
+        case sheetShown
+        case optionSelected(TurnOffSyncOption)
+        case deleteServerDataConfirmationConfirmed
+        case deleteServerDataConfirmationDismissed
+    }
+
+    public enum TurnOffSyncOption: String {
+        case thisDevice = "this_device"
+        case allDevicesAndServerData = "all_devices_and_server_data"
     }
 
     public enum SyncAnotherDeviceOption: String {
@@ -192,11 +230,17 @@ public class SyncSettingsViewModel: ObservableObject {
     @Published public var isAppVersionNotSupported: Bool = false
     @Published public var isRecoverSyncedDataSheetVisible: Bool = false
 
+    public enum SuccessDestination: Equatable {
+        case newlySyncing
+        case alreadySyncing
+        case recovery
+    }
+
     public enum ConnectingSheetPhase: Equatable, Identifiable {
-        case connecting(isRecovery: Bool, isFinishing: Bool = false)
+        case connecting(isRecovery: Bool, successDestination: SuccessDestination? = nil)
         case syncAnotherDevice(isConnecting: Bool)
         case waitingForOtherDevice
-        case success(isRecovery: Bool)
+        case success(SuccessDestination)
 
         // Constant on purpose: `.sheet(item:)` re-presents whenever the item's identity changes, so a
         // per-case id would dismiss and re-present the sheet on every phase change. A stable id keeps
@@ -216,6 +260,7 @@ public class SyncSettingsViewModel: ObservableObject {
 
     @Published var shouldShowPasscodeRequiredAlert: Bool = false
     @Published var isThisDeviceTurnOffConfirmationVisible: Bool = false
+    @Published var isTurnOffSyncSheetVisible: Bool = false
 
     public let isAutoRestoreFeatureAvailable: Bool
     @Published public var isAutoRestoreEnabled: Bool = false
@@ -232,6 +277,7 @@ public class SyncSettingsViewModel: ObservableObject {
     private var pendingPreservedAccountContinuation: PreservedAccountContinuation?
     private var isFlowAuthenticationDeferred = false
     private var postConnectingSheetDismissAction: (() -> Void)?
+    private var postTurnOffSyncSheetDismissAction: (() -> Void)?
 
     private let autoRestoreProvider: SyncAutoRestoreProviding
     let isImprovedPairingFlowEnabled: Bool
@@ -256,21 +302,29 @@ public class SyncSettingsViewModel: ObservableObject {
     }
 
     @MainActor
-    func commonAuthenticate() async -> Bool {
+    func commonAuthenticate(setupSource: SetupAuthenticationSource? = nil) async -> Bool {
+        let isPromptNeeded = delegate?.isUserAuthenticationPromptNeeded == true
         do {
             try await delegate?.authenticateUser()
+            fireSetupAuthenticationPixel(.succeeded, source: setupSource, isPromptNeeded: isPromptNeeded)
             return true
         } catch {
             if let error = error as? SyncSettingsViewModel.UserAuthenticationError {
                 switch error {
                 case .authFailed:
-                    break
+                    fireSetupAuthenticationPixel(.failed, source: setupSource, isPromptNeeded: isPromptNeeded)
                 case .authUnavailable:
+                    fireSetupAuthenticationPixel(.unconfigured, source: setupSource, isPromptNeeded: isPromptNeeded)
                     shouldShowPasscodeRequiredAlert = true
                 }
             }
             return false
         }
+    }
+
+    private func fireSetupAuthenticationPixel(_ result: SetupAuthenticationResult, source: SetupAuthenticationSource?, isPromptNeeded: Bool) {
+        guard let source, isPromptNeeded else { return }
+        delegate?.fireSyncSetupPixel(event: .authenticationResult(result, source: source))
     }
 
     @MainActor
@@ -326,6 +380,68 @@ public class SyncSettingsViewModel: ObservableObject {
         }
     }
 
+    func turnOffSyncTapped() {
+        guard isImprovedPairingFlowEnabled else {
+            deleteAllData(requireAuthentication: true)
+            return
+        }
+        guard !isBusy else { return }
+        isBusy = true
+        Task { @MainActor in
+            defer { isBusy = false }
+            guard await commonAuthenticate() else { return }
+            isTurnOffSyncSheetVisible = true
+            delegate?.fireTurnOffSyncSheetPixel(event: .sheetShown)
+        }
+    }
+
+    func turnOffSyncSheetRemoveDeviceTapped() {
+        delegate?.fireTurnOffSyncSheetPixel(event: .optionSelected(.thisDevice))
+    }
+
+    func turnOffSyncSheetDeleteServerDataTapped() {
+        delegate?.fireTurnOffSyncSheetPixel(event: .optionSelected(.allDevicesAndServerData))
+    }
+
+    func turnOffSyncSheetRemoveDeviceConfirmed() {
+        dismissTurnOffSyncSheet { [weak self] in
+            self?.disableSync()
+        }
+    }
+
+    func turnOffSyncSheetDeleteServerDataConfirmed() {
+        delegate?.fireTurnOffSyncSheetPixel(event: .deleteServerDataConfirmationConfirmed)
+        dismissTurnOffSyncSheet { [weak self] in
+            self?.deleteServerData()
+        }
+    }
+
+    func turnOffSyncSheetDeleteServerDataCancelled() {
+        delegate?.fireTurnOffSyncSheetPixel(event: .deleteServerDataConfirmationDismissed)
+    }
+
+    func dismissTurnOffSyncSheet(then action: (() -> Void)? = nil) {
+        postTurnOffSyncSheetDismissAction = action
+        isTurnOffSyncSheetVisible = false
+    }
+
+    func turnOffSyncSheetDidDismiss() {
+        let action = postTurnOffSyncSheetDismissAction
+        postTurnOffSyncSheetDismissAction = nil
+        action?()
+    }
+
+    private func deleteServerData() {
+        guard !isBusy else { return }
+        isBusy = true
+        Task { @MainActor in
+            defer { isBusy = false }
+            if await delegate?.deleteAllData() == true {
+                isSyncEnabled = false
+            }
+        }
+    }
+
     func saveRecoveryPDF() {
         Task { @MainActor in
             if await commonAuthenticate() {
@@ -357,7 +473,7 @@ public class SyncSettingsViewModel: ObservableObject {
     private func beginFlow(for continuation: PreservedAccountContinuation) async {
         isFlowAuthenticationDeferred = shouldDeferAuthentication(for: continuation)
         if !isFlowAuthenticationDeferred {
-            guard await commonAuthenticate() else {
+            guard await commonAuthenticate(setupSource: setupAuthenticationSource(for: continuation)) else {
                 isBusy = false
                 return
             }
@@ -373,15 +489,25 @@ public class SyncSettingsViewModel: ObservableObject {
         continueWithoutPreservedAccountPrompt(for: continuation)
     }
 
+    private func setupAuthenticationSource(for continuation: PreservedAccountContinuation) -> SetupAuthenticationSource {
+        switch continuation {
+        case .setup(.pairing):
+            return isSyncEnabled ? .settingsSynced : .settingsNotSynced
+        case .setup(.simplifiedToggle):
+            return .settingsNotSynced
+        case .recover:
+            return .recover
+        }
+    }
+
     private func shouldDeferAuthentication(for continuation: PreservedAccountContinuation) -> Bool {
-        guard isImprovedPairingFlowEnabled, continuation != .setup(.pairing) else { return false }
-        return delegate?.isPreservedAccountPromptNeeded() != true
+        isImprovedPairingFlowEnabled && continuation != .setup(.pairing)
     }
 
     @MainActor
-    private func authenticateDeferredFlowIfNeeded() async -> Bool {
+    private func authenticateDeferredFlowIfNeeded(setupSource: SetupAuthenticationSource) async -> Bool {
         guard isFlowAuthenticationDeferred else { return true }
-        guard await commonAuthenticate() else { return false }
+        guard await commonAuthenticate(setupSource: setupSource) else { return false }
         isFlowAuthenticationDeferred = false
         return true
     }
@@ -429,6 +555,10 @@ public class SyncSettingsViewModel: ObservableObject {
     }
 
     func thisDeviceDetailsTurnOffSyncConfirmed() {
+        disableSync()
+    }
+
+    private func disableSync() {
         guard !isBusy else { return }
         isBusy = true
         Task { @MainActor in
@@ -480,6 +610,10 @@ public class SyncSettingsViewModel: ObservableObject {
         devices.first(where: { $0.isThisDevice })?.name
     }
 
+    var isDeleteServerDataSelectedByDefault: Bool {
+        devices.count == 1
+    }
+
     public func anotherDevicePromptAppeared() {
         delegate?.fireSyncSetupPixel(event: .anotherDevicePromptShown)
     }
@@ -489,7 +623,7 @@ public class SyncSettingsViewModel: ObservableObject {
         delegate?.fireSyncSetupPixel(event: .anotherDevicePromptOptionTapped(.syncAnotherDevice))
         guard !isBusy else { return }
         isBusy = true
-        let isAuthenticated = await authenticateDeferredFlowIfNeeded()
+        let isAuthenticated = await authenticateDeferredFlowIfNeeded(setupSource: .settingsNotSynced)
         isBusy = false
         guard isAuthenticated else { return }
         postConnectingSheetDismissAction = { [weak self] in
@@ -506,7 +640,7 @@ public class SyncSettingsViewModel: ObservableObject {
         delegate?.fireSyncSetupPixel(event: .anotherDevicePromptOptionTapped(.thisDeviceOnly))
         guard !isBusy else { return }
         isBusy = true
-        guard await authenticateDeferredFlowIfNeeded() else {
+        guard await authenticateDeferredFlowIfNeeded(setupSource: .thisDevice) else {
             isBusy = false
             return
         }
@@ -514,19 +648,20 @@ public class SyncSettingsViewModel: ObservableObject {
         beginSimplifiedSyncSetup()
     }
 
-    public func showSuccess(recoveryCode: String, isRecovery: Bool) {
+    public func showSuccess(recoveryCode: String, destination: SuccessDestination) {
         self.recoveryCode = recoveryCode
+        let isRecovery = destination == .recovery
         switch connectingSheetPhase {
         case .connecting, .waitingForOtherDevice:
-            connectingSheetPhase = .connecting(isRecovery: isRecovery, isFinishing: true)
+            connectingSheetPhase = .connecting(isRecovery: isRecovery, successDestination: destination)
         default:
-            connectingSheetPhase = .success(isRecovery: isRecovery)
+            connectingSheetPhase = .success(destination)
         }
     }
 
     public func connectingAnimationDidFinish() {
-        guard case .connecting(let isRecovery, true) = connectingSheetPhase else { return }
-        connectingSheetPhase = .success(isRecovery: isRecovery)
+        guard case .connecting(_, let successDestination?) = connectingSheetPhase else { return }
+        connectingSheetPhase = .success(successDestination)
     }
 
     public func doneFromConnectingSheet() {
@@ -598,16 +733,20 @@ public class SyncSettingsViewModel: ObservableObject {
 
     @MainActor
     public func continueRecoverFlow() async {
-        guard await authenticateDeferredFlowIfNeeded() else { return }
+        guard await authenticateDeferredFlowIfNeeded(setupSource: .recover) else { return }
         delegate?.showRecoveryCodeEntry()
     }
 
-    public func startAutoRestoreSecondaryAction() {
+    @MainActor
+    public func startAutoRestoreSecondaryAction() async {
         guard let continuation = pendingPreservedAccountContinuation else {
             assertionFailure("Secondary action fired without pending continuation")
             return
         }
         delegate?.fireAutoRestorePixel(event: .readySkipRestoreTapped)
+        if continuation == .recover {
+            guard await authenticateDeferredFlowIfNeeded(setupSource: .sessionRestore) else { return }
+        }
         clearPendingPreservedAccountContinuation()
         delegate?.continueAfterPreservedAccountRemoval(continuation)
     }
@@ -615,10 +754,18 @@ public class SyncSettingsViewModel: ObservableObject {
     public func startAutoRestore() {
         Task { @MainActor in
             delegate?.fireAutoRestorePixel(event: .readyRestoreTapped)
-            guard await commonAuthenticate() else { return }
+            guard await authenticateAutoRestore() else { return }
             clearPendingPreservedAccountContinuation()
             delegate?.showRecoveringDataAutoRestore()
         }
+    }
+
+    @MainActor
+    private func authenticateAutoRestore() async -> Bool {
+        guard isFlowAuthenticationDeferred else {
+            return await commonAuthenticate()
+        }
+        return await authenticateDeferredFlowIfNeeded(setupSource: .sessionRestore)
     }
 
     public func clearPendingPreservedAccountContinuation() {
@@ -664,5 +811,6 @@ public extension SyncManagementViewModelDelegate {
     func fireAutoRestorePixel(event _: SyncSettingsViewModel.AutoRestorePixelEvent) {}
     func fireSyncSetupPixel(event _: SyncSettingsViewModel.SyncSetupPixelEvent) {}
     func fireDeviceDetailsPixel(event _: SyncSettingsViewModel.DeviceDetailsPixelEvent) {}
+    func fireTurnOffSyncSheetPixel(event _: SyncSettingsViewModel.TurnOffSyncSheetPixelEvent) {}
     func simplifiedCopyRecoveryCode() {}
 }

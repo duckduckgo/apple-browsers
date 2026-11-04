@@ -149,7 +149,7 @@ final class AIChatOmnibarToolButton: NSView {
     }
 
     /// Stroke colour for the keyboard-focus ring. Defaults to the design-system primary
-    /// accent; the container VC re-assigns this from `theme.colorsProvider.accentPrimaryColor`
+    /// accent; the container VC re-assigns this from `theme.colorsProvider.addressBarActiveBorderColor(isBurner:)`
     /// via `applyTheme(theme:)` so the ring follows in-app theme switches (Pink, Blue, etc.).
     var focusRingColor: NSColor = NSColor(designSystemColor: .accentPrimary) {
         didSet { updateFocusRingStrokeColor() }

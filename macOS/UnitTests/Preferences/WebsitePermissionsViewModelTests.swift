@@ -147,6 +147,20 @@ final class WebsitePermissionsViewModelTests: XCTestCase {
         return model
     }
 
+    private var olderAndNewerCameraEntries: [WebsitePermissionEntry] {
+        [
+            WebsitePermissionEntry(domain: "example.com", permissionType: .camera, decision: .allow,
+                                   lastModified: Date(timeIntervalSince1970: 100)),
+            WebsitePermissionEntry(domain: "newer.com", permissionType: .camera, decision: .allow,
+                                   lastModified: Date(timeIntervalSince1970: 200)),
+        ]
+    }
+
+    private func reopenPage(_ model: WebsitePermissionsViewModel) {
+        model.send(action: .onDisappear)
+        model.send(action: .onAppear)
+    }
+
     func testWhenNoPermissionHasATimestampThenRecentsIsEmpty() {
         let permissionManager = PermissionManagerMock()
         let model = makeRecentsModel([
@@ -213,31 +227,59 @@ final class WebsitePermissionsViewModelTests: XCTestCase {
         XCTAssertEqual(model.viewState.recents.first?.availableDecisions, [.ask, .allow])
     }
 
-    func testWhenRecentDecisionIsChangedThenItMovesToTheTopWithUpdatedDecision() {
-        let entries = [
-            WebsitePermissionEntry(domain: "example.com", permissionType: .camera, decision: .allow,
-                                   lastModified: Date(timeIntervalSince1970: 100)),
-            WebsitePermissionEntry(domain: "newer.com", permissionType: .camera, decision: .allow,
-                                   lastModified: Date(timeIntervalSince1970: 200)),
-        ]
+    func testWhenRecentDecisionIsChangedThenItUpdatesInPlace() throws {
         let permissionManager = PermissionManagerMock()
-        let model = makeRecentsModel(entries, permissionManager: permissionManager)
-        guard let row = model.viewState.recents.first(where: { $0.domain == "example.com" }) else {
-            return XCTFail("Expected a recent row")
-        }
+        let model = makeRecentsModel(olderAndNewerCameraEntries, permissionManager: permissionManager)
+        let row = try XCTUnwrap(model.viewState.recents.first { $0.domain == "example.com" })
 
-        XCTAssertEqual(model.viewState.recents.first?.domain, "newer.com")
         waitForViewStateUpdate(model) {
             model.send(action: .changeRecentDecision(row, .deny))
         }
 
-        XCTAssertEqual(model.viewState.recents.map(\.domain), ["example.com", "newer.com"])
-        XCTAssertEqual(model.viewState.recents.first?.decision, .deny)
+        XCTAssertEqual(model.viewState.recents.map(\.domain), ["newer.com", "example.com"])
+        XCTAssertEqual(model.viewState.recents.last?.decision, .deny)
         XCTAssertEqual(model.viewState.rows.first { $0.category == .camera }?.count, 2)
         XCTAssertEqual(permissionManager.setPermissionCalls.count, 1)
         XCTAssertEqual(permissionManager.setPermissionCalls.first?.domain, "example.com")
         XCTAssertEqual(permissionManager.setPermissionCalls.first?.decision, .deny)
         XCTAssertEqual(permissionManager.setPermissionCalls.first?.permissionType, .camera)
+    }
+
+    func testWhenPageReopensAfterARecentDecisionChangeThenThatSiteMovesToTheTop() throws {
+        let model = makeRecentsModel(olderAndNewerCameraEntries, permissionManager: PermissionManagerMock())
+        let row = try XCTUnwrap(model.viewState.recents.first { $0.domain == "example.com" })
+        waitForViewStateUpdate(model) {
+            model.send(action: .changeRecentDecision(row, .deny))
+        }
+
+        reopenPage(model)
+
+        XCTAssertEqual(model.viewState.recents.map(\.domain), ["example.com", "newer.com"])
+        XCTAssertEqual(model.viewState.recents.first?.decision, .deny)
+    }
+
+    func testWhenEditedPermissionIsRemovedExternallyAndRecreatedThenItUsesItsNewTimestamp() throws {
+        let permissionManager = PermissionManagerMock()
+        let model = makeRecentsModel(olderAndNewerCameraEntries, permissionManager: permissionManager)
+        let row = try XCTUnwrap(model.viewState.recents.first { $0.domain == "example.com" })
+
+        waitForViewStateUpdate(model) {
+            model.send(action: .changeRecentDecision(row, .deny))
+        }
+        XCTAssertEqual(model.viewState.recents.map(\.domain), ["newer.com", "example.com"])
+
+        waitForViewStateUpdate(model) {
+            permissionManager.removePermission(forDomain: row.domain, permissionType: row.permissionType)
+        }
+        XCTAssertEqual(model.viewState.recents.map(\.domain), ["newer.com"])
+
+        waitForViewStateUpdate(model) {
+            permissionManager.setPermission(.allow, forDomain: row.domain, permissionType: row.permissionType,
+                                            lastModified: Date(timeIntervalSince1970: 300))
+        }
+
+        XCTAssertEqual(model.viewState.recents.map(\.domain), ["example.com", "newer.com"])
+        XCTAssertEqual(model.viewState.recents.first?.decision, .allow)
     }
 
     func testWhenRecentDecisionIsUnchangedThenPermissionManagerIsNotCalled() {

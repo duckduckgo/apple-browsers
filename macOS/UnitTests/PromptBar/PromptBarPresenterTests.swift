@@ -28,6 +28,8 @@ final class PromptBarPresenterTests: XCTestCase {
     private var windows: [StubPromptBarWindow] = []
     private var dimWindows: [StubPromptBarWindow] = []
     private var presentationEffectsEnabled = false
+    private var isDragEnabled = false
+    private var storedRelativePosition: CGPoint?
     private var firedPixels: [PromptBarPixel] = []
 
     override func setUp() {
@@ -48,6 +50,9 @@ final class PromptBarPresenterTests: XCTestCase {
             },
             presentationEffectsEnabled: { [weak self] in self?.presentationEffectsEnabled ?? false },
             animatesPresentationEffects: false,
+            isDragEnabled: { [weak self] in self?.isDragEnabled ?? false },
+            loadRelativePosition: { [weak self] in self?.storedRelativePosition },
+            saveRelativePosition: { [weak self] in self?.storedRelativePosition = $0 },
             firePixel: { [weak self] pixel in
                 self?.firedPixels.append(pixel)
             }
@@ -58,6 +63,8 @@ final class PromptBarPresenterTests: XCTestCase {
         windows = []
         dimWindows = []
         presentationEffectsEnabled = false
+        isDragEnabled = false
+        storedRelativePosition = nil
         firedPixels = []
         presenter = nil
         content = nil
@@ -95,6 +102,36 @@ final class PromptBarPresenterTests: XCTestCase {
         presenter.dismiss(reason: .escape)
 
         XCTAssertEqual(content.resetCount, 0)
+    }
+
+    func testWhenDragIsDisabledThenTheBarIsNotMovableAndIgnoresTheStoredPosition() {
+        storedRelativePosition = CGPoint(x: 0.1, y: 0.5)
+
+        presenter.show(source: .keyboardShortcut)
+
+        let screen = StubScreenProvider().targetVisibleFrame
+        XCTAssertEqual(windows.first?.isMovableByWindowBackground, false)
+        XCTAssertEqual(windows.first?.frame, PromptBarPlacement.frame(forContentHeight: 80, in: screen))
+    }
+
+    func testWhenDragIsEnabledThenTheBarIsMovableAndOpensAtTheStoredPosition() {
+        isDragEnabled = true
+        storedRelativePosition = CGPoint(x: 0.1, y: 0.5)
+
+        presenter.show(source: .keyboardShortcut)
+
+        XCTAssertEqual(windows.first?.isMovableByWindowBackground, true)
+        XCTAssertEqual(windows.first?.frame.minX, 144)
+        XCTAssertEqual(windows.first?.frame.maxY, 450)
+    }
+
+    func testWhenDragIsEnabledWithoutAStoredPositionThenTheBarOpensAtTheDefaultPosition() {
+        isDragEnabled = true
+
+        presenter.show(source: .keyboardShortcut)
+
+        let screen = StubScreenProvider().targetVisibleFrame
+        XCTAssertEqual(windows.first?.frame, PromptBarPlacement.frame(forContentHeight: 80, in: screen))
     }
 
     func testWhenShownWithPresentationEffectsThenTheScreenIsDimmedBehindTheBar() {
@@ -189,6 +226,17 @@ final class PromptBarPresenterTests: XCTestCase {
         presenter.toggle(source: .menuBarIcon)
 
         XCTAssertEqual(firedPixels.first?.parameters?["reason"], PromptBarCancellationReason.menuBarIcon.rawValue)
+    }
+
+    /// A screenshot capture keeps going after the bar hides, and would attach to a reset draft.
+    func testWhenToggledWhilePresentingAuxiliaryUIThenTheBarStaysAndIsNotReset() {
+        presenter.show(source: .keyboardShortcut)
+        content.isPresentingAuxiliaryUI = true
+
+        presenter.toggle(source: .keyboardShortcut)
+
+        XCTAssertTrue(presenter.isVisible)
+        XCTAssertEqual(content.resetCount, 0)
     }
 }
 

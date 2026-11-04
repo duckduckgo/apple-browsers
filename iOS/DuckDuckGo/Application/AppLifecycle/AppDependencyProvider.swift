@@ -49,6 +49,7 @@ protocol DependencyProvider {
     var internalUserDecider: InternalUserDecider { get }
     var featureFlagger: FeatureFlagger { get }
     var isSitePermissionsEnabled: Bool { get }
+    var findInPageImplementation: FindInPageImplementation { get }
     var configurationURLProvider: CustomConfigurationURLProviding { get }
     var contentScopeExperimentsManager: ContentScopeExperimentsManaging { get }
     var storageCache: StorageCache { get }
@@ -128,6 +129,7 @@ final class AppDependencyProvider: DependencyProvider {
     let internalUserDecider: InternalUserDecider = ContentBlocking.shared.privacyConfigurationManager.internalUserDecider
     let featureFlagger: FeatureFlagger
     let isSitePermissionsEnabled: Bool
+    let findInPageImplementation: FindInPageImplementation
     let configurationURLProvider: CustomConfigurationURLProviding
     let contentScopeExperimentsManager: ContentScopeExperimentsManaging
 
@@ -257,6 +259,7 @@ final class AppDependencyProvider: DependencyProvider {
 
         // Injected scripts survive in loaded and cached documents, so every entry point uses the same launch-time value.
         isSitePermissionsEnabled = Self.sitePermissionsEnabledAtLaunch(featureFlagger: featureFlagger)
+        findInPageImplementation = FindInPageImplementation(featureFlagger: featureFlagger)
 
         // Configure PixelKit Experiments
         PixelKit.configureExperimentKit(featureFlagger: featureFlagger,

@@ -40,6 +40,8 @@ struct TabSwitcherChromeActions {
     var onMultiSelectMenuRequested: (() -> UIMenu?)?
     var onCloseTabsTapped: (() -> Void)?
     var onDuckChatTapped: (() -> Void)?
+    var onNewChatTapped: (() -> Void)?
+    var isNewChatAvailable: (() -> Bool)?
 }
 
 /// Abstraction over the tab switcher's bars and layout so the view controller can swap
@@ -75,6 +77,9 @@ protocol TabSwitcherChrome: AnyObject {
     func decorate(theme: Theme)
 
     func configurePlusButtonLongPressMenu(isFireModeEnabled: Bool)
+
+    /// A menu replaces the Duck.ai button's tap action; `nil` restores it.
+    func configureDuckChatMenu(_ menu: UIMenu?)
 
     /// Applies the appropriate content insets so collection content clears the bars.
     func applyCollectionContentInset(to collectionView: UICollectionView)

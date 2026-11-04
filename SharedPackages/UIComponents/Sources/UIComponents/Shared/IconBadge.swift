@@ -21,7 +21,7 @@
 import SwiftUI
 import DesignResourcesKit
 
-/// A template glyph centered in a circle: a surface fill and a `.lines` hairline border, with the glyph
+/// A template glyph centered in a circle: a surface fill and a (iOS: `.lines`, macOS: `.surfaceDecorationPrimary`) hairline border, with the glyph
 /// tinted `.textPrimary`. The default sizing matches the design system's 16px glyph in a 32px badge. Shared
 /// by the onboarding showcase card and the feature grid so their icons stay visually identical. When `icon`
 /// is `nil` only the circle is drawn.
@@ -43,7 +43,11 @@ public struct IconBadge: View {
             .fill(fillColor)
             .frame(width: diameter, height: diameter)
             .overlay {
+#if os(iOS)
                 Circle().stroke(Color(designSystemColor: .lines), lineWidth: borderWidth)
+#else
+                Circle().stroke(Color(designSystemColor: .surfaceDecorationPrimary), lineWidth: borderWidth)
+#endif
             }
             .overlay {
                 if let icon {

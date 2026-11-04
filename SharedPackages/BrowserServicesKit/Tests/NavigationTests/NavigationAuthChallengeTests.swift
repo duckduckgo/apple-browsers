@@ -205,8 +205,6 @@ class NavigationAuthChallengeTests: DistributedNavigationDelegateTestsBase {
     }
 
     func testWhenAuthenticationChallengeReturnsCancel_responderChainReceivesFailure() throws {
-        throw XCTSkip("Failing in Bitrise CI")
-
         navigationDelegate.setResponders(
             .strong(NavigationResponderMock { _ in }),
             .strong(NavigationResponderMock { _ in }),

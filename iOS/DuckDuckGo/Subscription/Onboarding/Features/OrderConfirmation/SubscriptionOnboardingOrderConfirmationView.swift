@@ -24,6 +24,8 @@ import UIComponents
 struct SubscriptionOnboardingOrderConfirmationView: View {
     private enum Metrics {
         static let contentSpacing: CGFloat = 24
+        static let illustrationSize: CGFloat = 194
+        static let illustrationBottomInset: CGFloat = 4
     }
 
     @StateObject private var viewModel: SubscriptionOnboardingOrderConfirmationViewModel
@@ -37,19 +39,13 @@ struct SubscriptionOnboardingOrderConfirmationView: View {
     }
 
     var body: some View {
-        let state = viewModel.state
-        return SubscriptionOnboardingBaseView(
+        SubscriptionOnboardingBaseView(
             navigationButton: navigationButton,
             header: header,
             footer: .single(.init(UserText.subscriptionOnboardingOrderConfirmationNextButton) { viewModel.proceed() }),
-            scrollsContent: false,
-            backgroundPreference: SubscriptionOnboardingCalendarFrameKey.self,
-            pageBackground: { calendarFrame in
-                SubscriptionOnboardingOrderConfirmationBackgroundView(state: state, calendarFrame: calendarFrame)
-            }) {
+            scrollsContent: false) {
             content
         }
-        .coordinateSpace(name: SubscriptionOnboardingOrderConfirmationBackgroundView.coordinateSpaceName)
         .overlay { ConfettiView() }
         .task { await viewModel.load() }
     }
@@ -70,87 +66,68 @@ private extension SubscriptionOnboardingOrderConfirmationView {
         VStack(spacing: Metrics.contentSpacing) {
             if let freeTrialCard = viewModel.freeTrialCard {
                 SubscriptionOnboardingFreeTrialCalendarCard(model: freeTrialCard)
-                    .background {
-                        GeometryReader { proxy in
-                            Color.clear.preference(
-                                key: SubscriptionOnboardingCalendarFrameKey.self,
-                                value: proxy.frame(in: .named(SubscriptionOnboardingOrderConfirmationBackgroundView.coordinateSpaceName))
-                            )
-                        }
-                    }
             }
 
-            Spacer(minLength: 0)
+            illustration
+                .frame(maxWidth: .infinity, minHeight: 0, maxHeight: .infinity)
+                .padding(.bottom, Metrics.illustrationBottomInset)
+                .zIndex(-1)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
-}
 
-/// The free-trial calendar card's frame, in `SubscriptionOnboardingOrderConfirmationBackgroundView.coordinateSpaceName`.
-/// `nil` when there's no card on screen.
-private struct SubscriptionOnboardingCalendarFrameKey: PreferenceKey {
-    static let defaultValue: CGRect? = nil
-    static func reduce(value: inout CGRect?, nextValue: () -> CGRect?) {
-        value = nextValue() ?? value
+    var illustration: some View {
+        Image(.daxThumbsUpCircle)
+            .resizable()
+            .frame(width: Metrics.illustrationSize, height: Metrics.illustrationSize)
+            .accessibilityHidden(true)
     }
 }
 
 #if DEBUG
 
 #Preview("Free trial — day 1") {
-    RebrandedPreview {
-        SubscriptionOnboardingOrderConfirmationView(
-            viewModel: .preview(state: .previewFreeTrial()),
-            navigationButton: .close({}))
-            .subscriptionOnboardingNavigationContainer()
-    }
+    SubscriptionOnboardingOrderConfirmationView(
+        viewModel: .preview(state: .previewFreeTrial()),
+        navigationButton: .close({}))
+        .subscriptionOnboardingNavigationContainer()
 }
 
 #Preview("Free trial — midway") {
-    RebrandedPreview {
-        SubscriptionOnboardingOrderConfirmationView(
-            viewModel: .preview(state: .previewFreeTrial(dayOffset: 3)),
-            navigationButton: .close({}))
-            .subscriptionOnboardingNavigationContainer()
-    }
+    SubscriptionOnboardingOrderConfirmationView(
+        viewModel: .preview(state: .previewFreeTrial(dayOffset: 3)),
+        navigationButton: .close({}))
+        .subscriptionOnboardingNavigationContainer()
 }
 
 #Preview("Paid") {
-    RebrandedPreview {
-        SubscriptionOnboardingOrderConfirmationView(
-            viewModel: .preview(state: .paid),
-            navigationButton: .close({}))
-            .subscriptionOnboardingNavigationContainer()
-    }
+    SubscriptionOnboardingOrderConfirmationView(
+        viewModel: .preview(state: .paid),
+        navigationButton: .close({}))
+        .subscriptionOnboardingNavigationContainer()
 }
 
 #Preview("Loading") {
-    RebrandedPreview {
-        SubscriptionOnboardingOrderConfirmationView(
-            viewModel: .preview(state: .loading),
-            navigationButton: .close({}))
-            .subscriptionOnboardingNavigationContainer()
-    }
+    SubscriptionOnboardingOrderConfirmationView(
+        viewModel: .preview(state: .loading),
+        navigationButton: .close({}))
+        .subscriptionOnboardingNavigationContainer()
 }
 
 #Preview("Dark") {
-    RebrandedPreview {
-        SubscriptionOnboardingOrderConfirmationView(
-            viewModel: .preview(state: .previewFreeTrial()),
-            navigationButton: .close({}))
-            .subscriptionOnboardingNavigationContainer()
-    }
-    .preferredColorScheme(.dark)
+    SubscriptionOnboardingOrderConfirmationView(
+        viewModel: .preview(state: .previewFreeTrial()),
+        navigationButton: .close({}))
+        .subscriptionOnboardingNavigationContainer()
+        .preferredColorScheme(.dark)
 }
 
 #Preview("Large Text") {
-    RebrandedPreview {
-        SubscriptionOnboardingOrderConfirmationView(
-            viewModel: .preview(state: .previewFreeTrial()),
-            navigationButton: .close({}))
-            .subscriptionOnboardingNavigationContainer()
-    }
-    .dynamicTypeSize(.accessibility5)
+    SubscriptionOnboardingOrderConfirmationView(
+        viewModel: .preview(state: .previewFreeTrial()),
+        navigationButton: .close({}))
+        .subscriptionOnboardingNavigationContainer()
+        .dynamicTypeSize(.accessibility5)
 }
 
 #endif

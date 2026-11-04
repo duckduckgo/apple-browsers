@@ -26,8 +26,8 @@
                 "enum": ["camera", "microphone", "geolocation", "popups", "notification", "external-scheme"]
             },
             {
-                "description": "What the prompt resolved to. The '_once' values are choices that apply to this visit only",
-                "enum": ["always", "allow_once", "never", "deny_once", "cancel"]
+                "description": "What the prompt resolved to. The '-once' values are choices that apply to this visit only",
+                "enum": ["always", "allow-once", "never", "deny-once", "cancel"]
             },
             {
                 "description": "Platform marker",

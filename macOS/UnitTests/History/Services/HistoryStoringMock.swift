@@ -90,6 +90,14 @@ final class HistoryStoringMock: HistoryStoring {
         return entry.visits.map { ($0.identifier!, $0.date) }
     }
 
+    func save(entries: [HistoryEntry]) async throws -> [UUID: [(id: Visit.ID, date: Date)]] {
+        var result = [UUID: [(id: Visit.ID, date: Date)]]()
+        for entry in entries {
+            result[entry.identifier] = try await save(entry: entry)
+        }
+        return result
+    }
+
     var pageVisitIDsCalled = false
     var pageVisitIDsResult: [Visit.ID] = []
     func pageVisitIDs(in tabID: String) async throws -> [Visit.ID] {

@@ -19,6 +19,11 @@
 
 import PixelKit
 
+struct MultiTabPixelAttribution {
+    let surface: UnifiedToggleInputPixelSurface
+    let pageType: UnifiedToggleInputPromptPageType
+}
+
 struct MultiTabAttachmentPixel: PixelKit.Event {
     enum Action: String {
         case pickerShown = "tab_picker_shown"
@@ -29,10 +34,12 @@ struct MultiTabAttachmentPixel: PixelKit.Event {
 
     let action: Action
     let source: TabAttachmentOrigin
-    let surface: UnifiedToggleInputPixelSurface
+    let attribution: MultiTabPixelAttribution
 
     var name: String { "aichat_unified_input_\(action.rawValue)" }
-    var parameters: [String: String]? { ["surface": surface.rawValue, "source": source.pixelValue] }
+    var parameters: [String: String]? {
+        ["surface": attribution.surface.rawValue, "page_type": attribution.pageType.rawValue, "source": source.pixelValue]
+    }
     var standardParameters: [PixelKitStandardParameter]? { nil }
 }
 
@@ -48,11 +55,12 @@ private extension TabAttachmentOrigin {
 
 struct MultiTabSentPixel: PixelKit.Event {
     let count: Int
-    let surface: UnifiedToggleInputPixelSurface
+    let attribution: MultiTabPixelAttribution
 
     var name: String { "aichat_unified_input_tabs_sent" }
     var parameters: [String: String]? {
-        ["surface": surface.rawValue, "payload_tab_count": count == 1 ? "one" : count < 4 ? "some" : "many"]
+        ["surface": attribution.surface.rawValue, "page_type": attribution.pageType.rawValue,
+         "payload_tab_count": count == 1 ? "one" : count < 4 ? "some" : "many"]
     }
     var standardParameters: [PixelKitStandardParameter]? { nil }
 }
@@ -64,44 +72,46 @@ struct MultiTabSubmissionIncompletePixel: PixelKit.Event {
     }
 
     let outcome: Outcome
-    let surface: UnifiedToggleInputPixelSurface
+    let attribution: MultiTabPixelAttribution
 
     var name: String { "aichat_unified_input_tabs_submission_incomplete" }
-    var parameters: [String: String]? { ["surface": surface.rawValue, "outcome": outcome.rawValue] }
+    var parameters: [String: String]? {
+        ["surface": attribution.surface.rawValue, "page_type": attribution.pageType.rawValue, "outcome": outcome.rawValue]
+    }
     var standardParameters: [PixelKitStandardParameter]? { nil }
 }
 
 /// One visible picker session, independent of filtering updates and duplicate dismissal callbacks.
-/// Both events use the surface captured when the picker becomes visible.
+/// Both events use the attribution captured when the picker becomes visible.
 @MainActor
 final class MultiTabPickerPixelSession {
-    private let surfaceProvider: () -> UnifiedToggleInputPixelSurface?
-    private let report: (MultiTabAttachmentPixel.Action, UnifiedToggleInputPixelSurface) -> Void
+    private let attributionProvider: () -> MultiTabPixelAttribution?
+    private let report: (MultiTabAttachmentPixel.Action, MultiTabPixelAttribution) -> Void
     private var isShown = false
-    private var surface: UnifiedToggleInputPixelSurface?
+    private var attribution: MultiTabPixelAttribution?
 
-    init(surfaceProvider: @escaping () -> UnifiedToggleInputPixelSurface?,
-         report: @escaping (MultiTabAttachmentPixel.Action, UnifiedToggleInputPixelSurface) -> Void) {
-        self.surfaceProvider = surfaceProvider
+    init(attributionProvider: @escaping () -> MultiTabPixelAttribution?,
+         report: @escaping (MultiTabAttachmentPixel.Action, MultiTabPixelAttribution) -> Void) {
+        self.attributionProvider = attributionProvider
         self.report = report
     }
 
     func show() {
         guard !isShown else { return }
         isShown = true
-        surface = surfaceProvider()
-        if let surface {
-            report(.pickerShown, surface)
+        attribution = attributionProvider()
+        if let attribution {
+            report(.pickerShown, attribution)
         }
     }
 
     func finish(didChoose: Bool = false) {
         guard isShown else { return }
         isShown = false
-        let shownSurface = surface
-        surface = nil
-        if !didChoose, let shownSurface {
-            report(.pickerCanceled, shownSurface)
+        let shownAttribution = attribution
+        attribution = nil
+        if !didChoose, let shownAttribution {
+            report(.pickerCanceled, shownAttribution)
         }
     }
 }

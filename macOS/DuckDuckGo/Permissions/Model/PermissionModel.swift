@@ -336,6 +336,9 @@ final class PermissionModel {
 
         switch change {
         case .removed:
+            // The page loses access right away, so a prompt still asking for this permission is stale:
+            // close it as if the user dismissed it. The request is denied and nothing is saved.
+            dismissPendingQueries(including: permissionType)
             removePermissionFromCurrentPage(permissionType)
             if permissionType == .popups {
                 popupDecisionRemoved.send()
@@ -358,8 +361,20 @@ final class PermissionModel {
                 while let query = self.authorizationQueries.first(where: { $0.permissions == [permissionType] }) {
                     query.handleDecision(grant: decision == .allow, remember: true)
                 }
+                if decision == .deny {
+                    // A prompt that also asks for other permissions is denied too, without saving their decisions.
+                    dismissPendingQueries(including: permissionType)
+                }
             default: break
             }
+        }
+    }
+
+    /// Closes prompts that include `permission`, as if the user dismissed them.
+    private func dismissPendingQueries(including permission: PermissionType) {
+        for query in authorizationQueries where query.permissions.contains(permission) {
+            query.wasDismissed = true
+            query.cancel()
         }
     }
 

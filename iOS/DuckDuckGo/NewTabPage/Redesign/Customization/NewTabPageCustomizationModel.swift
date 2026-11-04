@@ -27,7 +27,7 @@ final class NewTabPageCustomizationModel: ObservableObject {
         didSet {
             guard oldValue != isFavoritesSectionVisible else { return }
             persistor.isFavoritesSectionVisible = isFavoritesSectionVisible
-            pixelFiring?.fire(NewTabPageCustomizationPixel.favoritesToggled, frequency: .dailyAndCount)
+            pixelFiring?.fire(NewTabPageCustomizationPixel.favoritesToggled(enabled: isFavoritesSectionVisible), frequency: .dailyAndCount)
         }
     }
 
@@ -43,7 +43,7 @@ final class NewTabPageCustomizationModel: ObservableObject {
         didSet {
             guard oldValue != isKeyboardShownOnNewTab else { return }
             keyboardSettings.onNewTab = isKeyboardShownOnNewTab
-            pixelFiring?.fire(NewTabPageCustomizationPixel.keyboardToggled, frequency: .dailyAndCount)
+            pixelFiring?.fire(NewTabPageCustomizationPixel.keyboardToggled(enabled: isKeyboardShownOnNewTab), frequency: .dailyAndCount)
         }
     }
 

@@ -21,7 +21,6 @@
 import SwiftUI
 import WidgetKit
 import DesignResourcesKit
-import DesignResourcesKitIcons
 
 struct SearchWidgetView: View {
     var entry: Provider.Entry
@@ -30,7 +29,7 @@ struct SearchWidgetView: View {
         DesignSystemWidgetContainerView {
             VStack(alignment: .center) {
 
-                ResizableTintableImage(fullColor: UIImage(rebrandable: "WidgetDaxLogo") ?? UIImage(resource: .widgetDaxLogo),
+                ResizableTintableImage(fullColor: UIImage(resource: .widgetDaxLogo),
                                        tintable: UIImage(resource: .widgetDaxLogoTinted))
                     .frame(width: 68, height: 68, alignment: .center)
 

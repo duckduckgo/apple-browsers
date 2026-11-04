@@ -44,20 +44,7 @@ public class BookmarkFormFactorFavoritesMigration: BookmarkFormFactorFavoritesMi
 
         // Before migrating to latest scheme version, read order of favorites from DB
 
-        let oldBookmarksModel: NSManagedObjectModel = {
-            var mergedModel = NSManagedObjectModel.mergedModel(from: [Bookmarks.bundle], forStoreMetadata: metadata)
-#if DEBUG && os(macOS)
-            if mergedModel == nil {
-                /// Look for individual model files in the bundle because if they have just
-                /// been added there by `ModelAccessHelper.compileModel(from:named:)` in the same run,
-                /// they wouldn't be visible to `NSManagedObjectModel.mergedModel(from:forStoreMetadata:)`.
-                let modelURLs = Bookmarks.bundle.urls(forResourcesWithExtension: "mom", subdirectory: "BookmarksModel.momd") ?? []
-                let models = modelURLs.compactMap(NSManagedObjectModel.init(contentsOf:))
-                mergedModel = NSManagedObjectModel(byMerging: models, forStoreMetadata: metadata)
-            }
-#endif
-            return mergedModel!
-        }()
+        let oldBookmarksModel = NSManagedObjectModel.mergedModel(from: [Bookmarks.bundle], forStoreMetadata: metadata)!
 
         let oldDB = CoreDataDatabase(name: dbFileURL.deletingPathExtension().lastPathComponent,
                                      containerLocation: dbContainerLocation,

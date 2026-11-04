@@ -40,7 +40,7 @@ protocol TabDelegate: AnyObject {
 
     func tabDidRequestNewTab(_ tab: TabViewController)
 
-    func tabDidRequestNewVoiceChat(_ tab: TabViewController)
+    func tabDidRequestNewVoiceChat(_ tab: TabViewController, source: AIChatEntryPointSource)
 
     func newTab(reuseExisting: Bool)
 
@@ -55,6 +55,14 @@ protocol TabDelegate: AnyObject {
                             behavior: TabClosingBehavior,
                             clearTabHistory: Bool)
 
+    /// Back on a tab opened from another one closes it and returns to the opener.
+    func tabDidRequestCloseOnBack(_ tab: TabViewController)
+
+    /// The user chose to open a link from this page in a new tab.
+    func tab(_ tab: TabViewController,
+             didRequestNewTabForFollowedLink url: URL,
+             inheritingAttribution: AdClickAttributionLogic.State?)
+
     func tab(_ tab: TabViewController,
              didRequestNewTabForUrl url: URL,
              openedByPage: Bool,
@@ -63,7 +71,11 @@ protocol TabDelegate: AnyObject {
     /// Prompts in the new tab are attributed to `entrySource`; nil leaves them unattributed.
     func tab(_ tab: TabViewController,
              didRequestNewDuckAITabForUrl url: URL,
-             entrySource: AIChatEntryPointSource?)
+             entrySource: AIChatEntryPointSource?,
+             newChatInputRequest: DuckAINewChatInputRequest?)
+
+    /// An entry into Duck.ai that the tab itself detected, reported like every other entry point.
+    func tab(_ tab: TabViewController, didReportDuckAIEntry source: AIChatEntryPointSource, opensNewTab: Bool, hasPrompt: Bool)
 
     /// A navigation the page started into Duck.ai from a page native attributes, today the DuckDuckGo homepage.
     /// Opens a page-owned tab when `opensNewTab`; either way the tab hosting the chat is stamped with `entrySource`.
@@ -175,6 +187,8 @@ protocol TabDelegate: AnyObject {
 
     /// The rating dialog was requested, consuming one of the two per-install chances.
     func tabDidRequestAppRatingPrompt(_ tab: TabViewController)
+
+    func tab(_ tab: TabViewController, didShowPrompt id: PromptExposureID)
     
     func tabDidRequestFireButtonPulse(tab: TabViewController)
 
@@ -223,6 +237,9 @@ protocol TabDelegate: AnyObject {
 
     func tab(_ tab: TabViewController, didSubmitDuckAIPromptWithOrigin origin: AIChatEntryPointSource?)
 
+    /// The tab's contextual sheet or floating input left the screen; `chatDeleted` when its chat was deleted.
+    func tabDidCloseContextualDuckAI(_ tab: TabViewController, chatDeleted: Bool)
+
     func tab(_ tab: TabViewController, didCommitDuckAINavigationChangingChat didChangeChat: Bool)
 }
 
@@ -236,13 +253,25 @@ extension TabDelegate {
         tabDidRequestClose(tab.tabModel, behavior: .onlyClose, clearTabHistory: true)
     }
 
+    func tabDidRequestCloseOnBack(_ tab: TabViewController) {
+        tabDidRequestClose(tab)
+    }
+
+    func tab(_ tab: TabViewController,
+             didRequestNewTabForFollowedLink url: URL,
+             inheritingAttribution attribution: AdClickAttributionLogic.State?) {
+        self.tab(tab, didRequestNewTabForUrl: url, openedByPage: false, inheritingAttribution: attribution)
+    }
+
     func tabDidFinishNavigation(_ tab: TabViewController) {}
 
-    func tabDidRequestNewVoiceChat(_ tab: TabViewController) {}
+    func tabDidRequestNewVoiceChat(_ tab: TabViewController, source: AIChatEntryPointSource) {}
 
     func tab(_ tab: TabViewController, didFailDuckAINavigationFor url: URL, error: Error) {}
 
     func tab(_ tab: TabViewController, didSubmitDuckAIPromptWithOrigin origin: AIChatEntryPointSource?) {}
+
+    func tabDidCloseContextualDuckAI(_ tab: TabViewController, chatDeleted: Bool) {}
 
     func tab(_ tab: TabViewController, didCommitDuckAINavigationChangingChat didChangeChat: Bool) {}
 

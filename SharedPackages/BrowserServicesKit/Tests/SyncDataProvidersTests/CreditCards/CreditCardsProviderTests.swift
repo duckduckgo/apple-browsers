@@ -343,9 +343,14 @@ final class CreditCardsProviderTests: CreditCardsProviderTestsBase {
     }
 
     func testWhenDatabaseIsLockedDuringRegularSyncThenSyncResponseHandlingIsRetried() async throws {
+        let modifiedAt = Date(timeIntervalSince1970: 1_700_000_000)
+        let clientTimestamp = modifiedAt.addingTimeInterval(60)
         try secureVault.inDatabaseTransaction { database in
-            try self.secureVault.storeSyncableCreditCard("1", cardNumber: "4111111111111111", lastModified: Date(), in: database)
+            try self.secureVault.storeSyncableCreditCard("1", cardNumber: "4111111111111111", lastModified: modifiedAt, in: database)
         }
+
+        let persistedModifiedAt = try XCTUnwrap(try fetchAllSyncableCreditCards().first?.metadata.lastModified)
+        XCTAssertLessThan(persistedModifiedAt, clientTimestamp)
 
         let sent = try await provider.fetchChangedObjects(encryptedUsing: crypter)
         let received: [Syncable] = [
@@ -363,7 +368,7 @@ final class CreditCardsProviderTests: CreditCardsProviderTestsBase {
             }
         }
 
-        try await provider.handleSyncResponse(sent: sent, received: received, clientTimestamp: Date(), serverTimestamp: "1234", crypter: crypter)
+        try await provider.handleSyncResponse(sent: sent, received: received, clientTimestamp: clientTimestamp, serverTimestamp: "1234", crypter: crypter)
 
         XCTAssertEqual(numberOfAttempts, 2)
 

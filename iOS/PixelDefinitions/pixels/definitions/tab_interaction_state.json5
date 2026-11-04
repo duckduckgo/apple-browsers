@@ -1,0 +1,9 @@
+{
+    "m_d_tab-interaction-state_failed-to-restore": {
+        "description": "Fires when WebKit interaction state is applied but does not restore a URL.",
+        "owners": ["brindy"],
+        "triggers": ["exception"],
+        "suffixes": ["daily_standard", "platform", "form_factor"],
+        "parameters": ["appVersion"]
+    }
+}

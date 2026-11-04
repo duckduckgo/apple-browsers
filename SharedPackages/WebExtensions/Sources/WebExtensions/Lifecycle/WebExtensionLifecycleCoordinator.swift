@@ -71,21 +71,53 @@ public final class WebExtensionLifecycleCoordinator {
     private let initialLoadTimeout: TimeInterval
     private var initialLoadTimeoutTask: Task<Void, Never>?
     private var initialLoadAndSyncWaiters: [UUID: CheckedContinuation<Void, Never>] = [:]
+    private var backgroundNavigationReadiness: (startup: Task<Void, Never>, wait: Task<Void, Never>)?
 
     var isInitialLoadAndSyncPending: Bool {
         initialLoadAndSync != nil
     }
 
     public var initialLoadWaiter: WebExtensionInitialLoadWaiter? {
-        guard initialLoadGateEnabledProvider(), !isInitialLoadGateOpen else { return nil }
-        return { [weak self] in
-            await self?.waitOnInitialLoadAndSync()
+        guard initialLoadGateEnabledProvider() else { return nil }
+        guard isInitialLoadGateOpen else {
+            return { [weak self] in
+                await self?.waitOnInitialLoadAndSync()
+            }
         }
+        guard let startup = manager.prepareEmbeddedBackgroundForNavigation() else { return nil }
+        if let readiness = backgroundNavigationReadiness, readiness.startup == startup {
+            return { await Self.waitForCompletion(of: readiness.wait) }
+        }
+        let timeout = initialLoadTimeout
+        // One deadline belongs to the shared startup, not to every navigation. Keep the completed
+        // wait after a timeout so later navigations bypass that same hung WebKit operation.
+        let wait = Task { @MainActor in
+            do {
+                try await withTimeout(timeout) {
+                    await Self.waitForCompletion(of: startup)
+                }
+            } catch {
+                if !Task.isCancelled {
+                    Logger.webExtensions.info("[CPM Background] Navigation wait released: \(String(describing: error), privacy: .public)")
+                }
+            }
+        }
+        backgroundNavigationReadiness = (startup, wait)
+        return { await Self.waitForCompletion(of: wait) }
     }
 
-    /// Bumped by `cancelAll()`; every queued op captures the generation at enqueue time and bails if
-    /// it changed, so a single cancel stops the whole chain (not just the tail).
-    private var generation = 0
+    private static func waitForCompletion(of task: Task<Void, Never>) async {
+        guard !Task.isCancelled else { return }
+        // Task.value ignores cancellation. The stream releases this caller without cancelling the
+        // shared startup or another navigation's wait, including when WebKit never calls back.
+        let completion = AsyncStream<Void> { continuation in
+            Task { @MainActor in
+                await task.value
+                continuation.finish()
+            }
+        }
+        for await _ in completion { }
+    }
 
     public init(manager: WebExtensionManaging,
                 initialLoadTimeout: TimeInterval = 5,
@@ -99,7 +131,7 @@ public final class WebExtensionLifecycleCoordinator {
         self.pixelFiring = pixelFiring
     }
 
-    /// Full load followed by embedded sync, as one indivisible chain entry. Launch / re-init.
+    /// Prepares CPM when enabled, loads installed extensions, then syncs all bundled types. Launch / re-init.
     @discardableResult
     public func loadAndSync() -> Task<Void, Never> {
         if let pendingLoadAndSync { return pendingLoadAndSync }
@@ -111,9 +143,7 @@ public final class WebExtensionLifecycleCoordinator {
                                self?.initialLoadAndSyncDidComplete()
                            }) { [weak self] in
             guard let self else { return }
-            await self.manager.loadInstalledExtensions()
-            guard !Task.isCancelled else { return }
-            await self.manager.syncEmbeddedExtensions(enabledTypes: self.enabledTypesProvider())
+            await self.loadAndSyncInstalledExtensions()
             guard !Task.isCancelled else { return }
             if isInitialLoadAndSync, self.initialLoadGateEnabledProvider(), !self.isInitialLoadGateOpen {
                 // WebKit's callback may never arrive. Only the bounded gate wait belongs on the
@@ -133,6 +163,18 @@ public final class WebExtensionLifecycleCoordinator {
             initialLoadAndSync = task
         }
         return task
+    }
+
+    private func loadAndSyncInstalledExtensions() async {
+        if manager.isCPMUpgradeBeforeLoadEnabled {
+            // Only CPM is updated/removed before its old context can start. Leave all other types
+            // and scriptlet downloads until after contexts load, preserving their existing startup.
+            await manager.syncCPMExtensionBeforeLoad(isEnabled: enabledTypesProvider().contains(.embedded))
+        }
+        // Failed CPM upgrades retain the previous installation for this load. The following sync
+        // also repairs any corrupt bundled installation that the full load removes.
+        await manager.loadInstalledExtensions()
+        await manager.syncEmbeddedExtensions(enabledTypes: enabledTypesProvider())
     }
 
     /// Embedded sync only. Appearance / YouTube / feature-flag triggers.
@@ -186,18 +228,6 @@ public final class WebExtensionLifecycleCoordinator {
         enqueue { [weak self] in self?.reportConsistency() }
     }
 
-    /// Cancels the in-flight tail and prevents every queued operation from running. Used on
-    /// feature-flag disable / teardown.
-    public func cancelAll() {
-        generation += 1
-        initialLoadAndSync?.cancel()
-        tail?.cancel()
-        tail = nil
-        pendingSync = nil
-        pendingLoadAndSync = nil
-        initialLoadAndSyncDidComplete()
-    }
-
     /// Compares enabled embedded types against loaded ones and fires pixels. Runs on the chain.
     private func reportConsistency() {
         let expected = enabledTypesProvider()
@@ -225,12 +255,11 @@ public final class WebExtensionLifecycleCoordinator {
                          onCompletion: (@MainActor () -> Void)? = nil,
                          _ body: @escaping @MainActor () async -> Void) -> Task<Void, Never> {
         let previous = tail
-        let enqueuedGeneration = generation
-        let task = Task { @MainActor [weak self] in
+        let task = Task { @MainActor in
             defer { onCompletion?() }
             await previous?.value
             clearPendingOnStart?()
-            guard !Task.isCancelled, self?.generation == enqueuedGeneration else { return }
+            guard !Task.isCancelled else { return }
             await body()
         }
         tail = task
@@ -243,6 +272,11 @@ public final class WebExtensionLifecycleCoordinator {
     }
 
     private func openInitialLoadGate() {
+        if !isInitialLoadGateOpen, let startup = manager.pendingEmbeddedBackgroundStartup {
+            // The launch deadline already paid for this exact startup. A later navigation must
+            // not start another timeout while the same WebKit callback remains outstanding.
+            backgroundNavigationReadiness = (startup, Task {})
+        }
         isInitialLoadGateOpen = true
         initialLoadTimeoutTask?.cancel()
         initialLoadTimeoutTask = nil

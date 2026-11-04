@@ -49,24 +49,29 @@ final class UpdatesDebugMenu: NSMenu {
                     .targetting(self)
                 NSMenuItem.separator()
             }
-            NSMenuItem(title: "Simulate New User", action: #selector(simulateNewUser))
-                .targetting(self)
-            NSMenuItem(title: "Simulate Legacy User", action: #selector(simulateLegacyUser))
-                .targetting(self)
-            NSMenuItem.separator()
-            NSMenuItem(title: "Show Browser Updated Popover", action: #selector(showBrowserUpdatedPopover))
-                .targetting(self)
-            NSMenuItem(title: "Show Critical Update Popover", action: #selector(showCriticalUpdatePopover))
-                .targetting(self)
-            NSMenuItem.separator()
-            NSMenuItem(title: "Test Update Pixels") {
-                NSMenuItem(title: "Success (Expected)", action: #selector(testUpdateSuccessOnNextLaunch))
+            if buildType.isSparkleBuild {
+                NSMenuItem(title: "Simulate New User", action: #selector(simulateNewUser))
                     .targetting(self)
-                NSMenuItem(title: "Success (Unexpected)", action: #selector(testUnexpectedUpdateSuccessOnNextLaunch))
+                NSMenuItem(title: "Simulate Legacy User", action: #selector(simulateLegacyUser))
                     .targetting(self)
-                NSMenuItem(title: "Failure", action: #selector(testUpdateFailureOnNextLaunch))
+                NSMenuItem.separator()
+                NSMenuItem(title: "Show Browser Updated Popover", action: #selector(showBrowserUpdatedPopover))
                     .targetting(self)
+                NSMenuItem(title: "Show Critical Update Popover", action: #selector(showCriticalUpdatePopover))
+                    .targetting(self)
+                NSMenuItem.separator()
+                NSMenuItem(title: "Test Update Pixels") {
+                    NSMenuItem(title: "Success (Expected)", action: #selector(testUpdateSuccessOnNextLaunch))
+                        .targetting(self)
+                    NSMenuItem(title: "Success (Unexpected)", action: #selector(testUnexpectedUpdateSuccessOnNextLaunch))
+                        .targetting(self)
+                    NSMenuItem(title: "Failure", action: #selector(testUpdateFailureOnNextLaunch))
+                        .targetting(self)
+                }
+                NSMenuItem.separator()
             }
+            NSMenuItem(title: "More Prominent Updates")
+                .submenu(MoreProminentUpdatesDebugMenu())
         }
     }
 

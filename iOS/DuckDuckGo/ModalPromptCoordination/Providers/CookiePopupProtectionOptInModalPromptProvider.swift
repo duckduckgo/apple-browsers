@@ -118,7 +118,7 @@ final class CookiePopupProtectionOptInModalPromptProvider: ModalPromptProvider {
         // The feature state stays unchanged between presentation and confirmation, so capture it now.
         let autoconsentEnabledWhenShown = AppUserDefaults().autoconsentEnabled
         let store = store
-        return ModalPromptConfiguration(viewController: Self.makeViewController(onOptionConfirmed: { preference in
+        return ModalPromptConfiguration(exposureID: .cookiePopupOptIn, viewController: Self.makeViewController(onOptionConfirmed: { preference in
             store.hasConfirmed = true
             var parameters = [
                 PixelParameters.cookiePopupPreference: preference.rawValue,

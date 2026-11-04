@@ -82,5 +82,12 @@
         "triggers": ["other"],
         "suffixes": ["daily_count", "platform", "form_factor"],
         "parameters": ["appVersion"]
+    },
+    "onboarding-intro_purchase-eligibility-unknown_u": {
+        "description": "Fires once per install when the user taps the CTA that starts onboarding on the intro dialog while subscription purchase eligibility isn't known yet: the App Store product fetch hasn't finished and no earlier launch cached purchasable products. Compare against m_ios_onboarding_welcome clicked engage for the rate.",
+        "owners": ["jozsef-vesza"],
+        "triggers": ["user_interaction"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": ["appVersion"]
     }
 }

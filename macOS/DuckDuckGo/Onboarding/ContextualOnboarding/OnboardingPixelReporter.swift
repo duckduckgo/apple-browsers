@@ -197,11 +197,12 @@ extension OnboardingPixelReporter: OnboardingDialogsReporting {
             if shouldFollowUp {
                 sharedPixelHandler.fire(.fireButton(.shown))
             }
+        case .tryFireButton:
+            sharedPixelHandler.fire(.end(.shown))
         case .highFive:
             sharedPixelHandler.fire(.end(.clicked(.engage)))
         case .tryASearch,
                 .tryASite,
-                .tryFireButton,
                 .subscriptionUpsell:
             break
         }

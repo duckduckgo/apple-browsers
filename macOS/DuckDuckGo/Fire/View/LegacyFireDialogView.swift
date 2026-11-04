@@ -213,7 +213,7 @@ struct LegacyFireDialogView: ModalView {
             containerCornerRadius: style.segmentedControlCornerRadius,
             segmentCornerRadius: style.segmentedControlItemCornerRadius,
             selectedForeground: style.selectedForeground,
-            unselectedForeground: Color(designSystemColor: .buttonsSecondaryFillText),
+            unselectedForeground: Color(designSystemColor: .textPrimary),
             selectedIconBackground: style.selectedIconBackground,
             selectedSegmentFill: Color(designSystemColor: .surfaceTertiary),
             selectedSegmentStroke: Color(designSystemColor: .containerBorderPrimary),
@@ -492,8 +492,8 @@ struct LegacyFireDialogView: ModalView {
                             topPadding: 3,
                             bottomPadding: 3,
                             horizontalPadding: 12,
-                            backgroundColor: Color(designSystemColor: .buttonsSecondaryFillDefault),
-                            backgroundPressedColor: Color(designSystemColor: .buttonsSecondaryFillPressed)
+                            backgroundColor: Color(designSystemColor: .controlsFillPrimary),
+                            backgroundPressedColor: Color(designSystemColor: .controlsFillTertiary)
                         )
                     )
                     .fixedSize(horizontal: true, vertical: true)
@@ -545,10 +545,10 @@ struct LegacyFireDialogView: ModalView {
                         Group {
                             if AppVersion.isLiquidGlassSupported {
                                 Capsule(style: .continuous)
-                                    .fill(Color(designSystemColor: .buttonsSecondaryFillDefault))
+                                    .fill(Color(designSystemColor: .controlsFillPrimary))
                             } else {
                                 RoundedRectangle(cornerRadius: 6, style: .continuous)
-                                    .fill(Color(designSystemColor: .buttonsSecondaryFillDefault))
+                                    .fill(Color(designSystemColor: .controlsFillPrimary))
                             }
                         }
                     )
@@ -606,17 +606,7 @@ private struct FireDialogStyle {
     let selectedForeground: Color
     let selectedIconBackground: Color
 
-    private static var `default`: FireDialogStyle {
-        FireDialogStyle(knobFillColor: Color(designSystemColor: .accentPrimary),
-                        individualSitesColor: NSColor(designSystemColor: .accentTextPrimary),
-                        rowCornerRadius: 12,
-                        segmentedControlCornerRadius: 12,
-                        segmentedControlItemCornerRadius: 10,
-                        selectedForeground: Color(designSystemColor: .accentPrimary),
-                        selectedIconBackground: Color(designSystemColor: .accentGlowSecondary))
-    }
-
-    private static var rebranded: FireDialogStyle {
+    static var current: FireDialogStyle {
         FireDialogStyle(knobFillColor: Color(singleUseColor: .fireModeAccent),
                         individualSitesColor: NSColor(designSystemColor: .textPrimary),
                         rowCornerRadius: 16,
@@ -624,10 +614,6 @@ private struct FireDialogStyle {
                         segmentedControlItemCornerRadius: 14,
                         selectedForeground: Color(designSystemColor: .accentFirePrimary),
                         selectedIconBackground: Color(designSystemColor: .accentFireGlowSecondary))
-    }
-
-    static var current: FireDialogStyle {
-        DesignSystemRebrand.isAppRebranded() ? .rebranded : .default
     }
 }
 

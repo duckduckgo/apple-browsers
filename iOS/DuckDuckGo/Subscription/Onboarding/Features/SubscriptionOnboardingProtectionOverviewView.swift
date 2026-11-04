@@ -65,64 +65,52 @@ struct SubscriptionOnboardingProtectionOverviewView: View {
 #if DEBUG
 
 #Preview("IDTR Light") {
-    RebrandedPreview {
-        SubscriptionOnboardingProtectionOverviewView(content: .idtr,
-                                                     title: "Step 2 of 3",
-                                                     navigationButton: .back({}),
-                                                     onNext: {})
-            .subscriptionOnboardingNavigationContainer()
-    }
+    SubscriptionOnboardingProtectionOverviewView(content: .idtr,
+                                                 title: "Step 2 of 3",
+                                                 navigationButton: .back({}),
+                                                 onNext: {})
+        .subscriptionOnboardingNavigationContainer()
 }
 
 #Preview("IDTR Dark") {
-    RebrandedPreview {
-        SubscriptionOnboardingProtectionOverviewView(content: .idtr,
-                                                     title: "Step 2 of 3",
-                                                     navigationButton: .back({}),
-                                                     onNext: {})
-            .subscriptionOnboardingNavigationContainer()
-    }
-    .preferredColorScheme(.dark)
+    SubscriptionOnboardingProtectionOverviewView(content: .idtr,
+                                                 title: "Step 2 of 3",
+                                                 navigationButton: .back({}),
+                                                 onNext: {})
+        .subscriptionOnboardingNavigationContainer()
+        .preferredColorScheme(.dark)
 }
 
 #Preview("IDTR Large Text") {
-    RebrandedPreview {
-        SubscriptionOnboardingProtectionOverviewView(content: .idtr,
-                                                     title: "Step 2 of 3",
-                                                     navigationButton: .back({}),
-                                                     onNext: {})
-            .subscriptionOnboardingNavigationContainer()
-    }
-    .dynamicTypeSize(.accessibility5)
+    SubscriptionOnboardingProtectionOverviewView(content: .idtr,
+                                                 title: "Step 2 of 3",
+                                                 navigationButton: .back({}),
+                                                 onNext: {})
+        .subscriptionOnboardingNavigationContainer()
+        .dynamicTypeSize(.accessibility5)
 }
 
 #Preview("PIR Light") {
-    RebrandedPreview {
-        SubscriptionOnboardingProtectionOverviewView(content: .pir,
-                                                     navigationButton: .back({}),
-                                                     onNext: {})
-            .subscriptionOnboardingNavigationContainer()
-    }
+    SubscriptionOnboardingProtectionOverviewView(content: .pir,
+                                                 navigationButton: .back({}),
+                                                 onNext: {})
+        .subscriptionOnboardingNavigationContainer()
 }
 
 #Preview("PIR Dark") {
-    RebrandedPreview {
-        SubscriptionOnboardingProtectionOverviewView(content: .pir,
-                                                     navigationButton: .back({}),
-                                                     onNext: {})
-            .subscriptionOnboardingNavigationContainer()
-    }
-    .preferredColorScheme(.dark)
+    SubscriptionOnboardingProtectionOverviewView(content: .pir,
+                                                 navigationButton: .back({}),
+                                                 onNext: {})
+        .subscriptionOnboardingNavigationContainer()
+        .preferredColorScheme(.dark)
 }
 
 #Preview("PIR Large Text") {
-    RebrandedPreview {
-        SubscriptionOnboardingProtectionOverviewView(content: .pir,
-                                                     navigationButton: .back({}),
-                                                     onNext: {})
-            .subscriptionOnboardingNavigationContainer()
-    }
-    .dynamicTypeSize(.accessibility5)
+    SubscriptionOnboardingProtectionOverviewView(content: .pir,
+                                                 navigationButton: .back({}),
+                                                 onNext: {})
+        .subscriptionOnboardingNavigationContainer()
+        .dynamicTypeSize(.accessibility5)
 }
 
 #endif

@@ -34,6 +34,7 @@ struct PreferencesSection: Hashable, Identifiable {
                                 includingAIChat: Bool,
                                 includingYouTubeAdBlocking: Bool,
                                 includingWebsitePermissions: Bool,
+                                includingExtensions: Bool,
                                 subscriptionState: PreferencesSidebarSubscriptionState) -> [PreferencesSection] {
         var privacyPanes: [PreferencePaneIdentifier] = [
             .defaultBrowser, .privateSearch, .webTrackingProtection, .threatProtection, .cookiePopupProtection, .emailProtection
@@ -66,6 +67,10 @@ struct PreferencesSection: Hashable, Identifiable {
                 } else {
                     sortedPanes.append(.websitePermissions)
                 }
+            }
+
+            if includingExtensions, let autofillIndex = sortedPanes.firstIndex(of: .autofill) {
+                sortedPanes.insert(.extensions, at: autofillIndex)
             }
 
             return [.general] + sortedPanes
@@ -171,6 +176,7 @@ enum PreferencePaneIdentifier: String, Equatable, Hashable, Identifiable, CaseIt
     /// selected pane. Unlike `otherPlatforms` its URL comes from remote config, so the raw value
     /// cannot be the URL itself — `PreferencesSidebarModel.openSubscriberOffers()` resolves it.
     case partnershipsHub
+    case extensions
     case autofill
     case accessibility
     case duckPlayer = "duckplayer"
@@ -243,6 +249,8 @@ enum PreferencePaneIdentifier: String, Equatable, Hashable, Identifiable, CaseIt
             return UserText.subscriptionSettings
         case .partnershipsHub:
             return UserText.subscriberOffers
+        case .extensions:
+            return UserText.extensionsSettingsTitle
         case .autofill:
             return UserText.passwordManagementTitle
         case .accessibility:
@@ -298,6 +306,8 @@ enum PreferencePaneIdentifier: String, Equatable, Hashable, Identifiable, CaseIt
             return settingsIconProvider.subscriptionIcon
         case .partnershipsHub:
             return settingsIconProvider.subscriberOffersIcon
+        case .extensions:
+            return settingsIconProvider.extensionsIcon
         case .autofill:
             return settingsIconProvider.passwordsAndAutoFillIcon
         case .accessibility:

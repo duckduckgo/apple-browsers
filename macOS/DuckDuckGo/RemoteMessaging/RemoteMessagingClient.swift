@@ -116,7 +116,8 @@ final class RemoteMessagingClient: RemoteMessagingProcessing {
         featureFlagger: FeatureFlagger,
         configurationURLProvider: ConfigurationURLProviding,
         themeManager: ThemeManaging,
-        dbpDataManagerProvider: (() -> DataBrokerProtectionDataManaging?)? = nil
+        dbpDataManagerProvider: (() -> DataBrokerProtectionDataManaging?)? = nil,
+        isReturningUser: @escaping () -> Bool?
     ) {
         let provider = RemoteMessagingConfigMatcherProvider(
             database: database,
@@ -128,7 +129,8 @@ final class RemoteMessagingClient: RemoteMessagingProcessing {
             subscriptionManager: subscriptionManager,
             featureFlagger: featureFlagger,
             themeManager: themeManager,
-            dbpDataManagerProvider: dbpDataManagerProvider
+            dbpDataManagerProvider: dbpDataManagerProvider,
+            isReturningUser: isReturningUser
         )
         self.init(
             remoteMessagingDatabase: remoteMessagingDatabase,

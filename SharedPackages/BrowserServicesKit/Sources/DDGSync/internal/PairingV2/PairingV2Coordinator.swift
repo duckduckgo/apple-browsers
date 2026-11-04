@@ -29,6 +29,7 @@ protocol PairingV2ConfirmationDelegate: AnyObject {
     func pairingV2CoordinatorDismissConfirmation() async
     /// Notifies the app that Pairing V2 created a local account before preparing a recovery code.
     func pairingV2CoordinatorDidCreateSyncAccount(credentialKind: PairingV2DeviceKind) async
+    func pairingV2CoordinatorDidSendJoinReport(_ report: PairingV2JoinReport) async
 }
 
 /// Pairing V2 timing defaults and remote configuration bounds.
@@ -36,7 +37,7 @@ enum PairingV2PollingDefaults {
     /// Give up on the pairing session after this many seconds (5 minutes).
     static let sessionTimeout: TimeInterval = 300
     /// Show the unknown join outcome after this many seconds without a status report.
-    static let joinStatusDeadline: TimeInterval = 30
+    static let joinStatusDeadline: TimeInterval = 5
     /// Wait this long between relay polls (1 second, in nanoseconds).
     static let pollIntervalNanoseconds: UInt64 = 1_000_000_000
 
@@ -80,6 +81,7 @@ final class PairingV2Coordinator {
     private var joinStatusDeadlineDate: Date?
     private var recoveryCodeWaitDeadlineDate: Date?
     private var hasRecoveryCodeWaitDeadlinePassed = false
+    private var hasReportedJoinStatus = false
     private(set) var completedRegisteredDevices: [RegisteredDevice]?
     private(set) var pendingRecoveryKey: SyncCode.RecoveryKey?
     private(set) var negotiatedVersion: PairingV2ProtocolVersion = .v2
@@ -632,8 +634,23 @@ final class PairingV2Coordinator {
         guard supportsRecoveryCodeDone else {
             return
         }
+        let report: PairingV2JoinReport?
+        if case .joinerLoggingIn(let session, _) = state, let host = session.peerStatus {
+            report = PairingV2JoinReport(hostHasAccount: host.hasAccount,
+                                        hostKind: host.kind,
+                                        joinerHasAccount: session.localClient.hasAccount,
+                                        joinerKind: session.localClient.kind,
+                                        protocolVersion: negotiatedVersion.rawValue,
+                                        didSucceed: reason == .success)
+        } else {
+            report = nil
+        }
         do {
             try await send(.recoveryCodeDone(.init(reason: reason)), failureStage: nil)
+            if !hasReportedJoinStatus, let report {
+                hasReportedJoinStatus = true
+                await confirmationDelegate?.pairingV2CoordinatorDidSendJoinReport(report)
+            }
         } catch {
             Logger.sync.debug("Pairing V2 could not report join status: \(String(reflecting: error))")
         }
@@ -777,6 +794,7 @@ final class PairingV2Coordinator {
         joinStatusDeadlineDate = nil
         recoveryCodeWaitDeadlineDate = nil
         hasRecoveryCodeWaitDeadlinePassed = false
+        hasReportedJoinStatus = false
     }
 
     private func negotiateProtocolVersion(with peerVersion: String) {

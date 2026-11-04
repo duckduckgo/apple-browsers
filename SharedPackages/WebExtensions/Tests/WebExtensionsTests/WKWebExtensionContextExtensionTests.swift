@@ -153,6 +153,36 @@ final class WKWebExtensionContextExtensionTests: XCTestCase {
         XCTAssertNil(context.duckDuckGoWebExtensionType)
     }
 
+    // MARK: - declaresPermission
+
+    @MainActor
+    func testWhenManifestAsksForPrivacy_ThenItDeclaresIt() async throws {
+        let required = try await makeContext(manifest: manifest(permissions: #"["storage", "privacy"]"#))
+        let optional = try await makeContext(manifest: manifest(optionalPermissions: #"["privacy"]"#))
+
+        XCTAssertTrue(required.webExtension.declaresPermission("privacy"))
+        XCTAssertTrue(optional.webExtension.declaresPermission("privacy"))
+    }
+
+    @MainActor
+    func testWhenManifestDoesNotAskForPrivacy_ThenItDoesNotDeclareIt() async throws {
+        let context = try await makeContext(manifest: manifest(permissions: #"["storage"]"#))
+
+        XCTAssertFalse(context.webExtension.declaresPermission("privacy"))
+    }
+
+    private func manifest(permissions: String = "[]", optionalPermissions: String = "[]") -> String {
+        """
+        {
+            "manifest_version": 3,
+            "name": "Test",
+            "version": "1.0",
+            "permissions": \(permissions),
+            "optional_permissions": \(optionalPermissions)
+        }
+        """
+    }
+
     // MARK: - declaresToolbarAction
 
     @MainActor

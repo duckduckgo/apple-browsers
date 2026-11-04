@@ -1,0 +1,104 @@
+name: Smartling - On Merge
+
+# Submits a platform's new strings to Smartling as soon as a merge into main changes its English strings, instead of
+# waiting for the nightly, so a PR's label job is less likely to take them first. The nightly still runs as a safety
+# net for merges this misses and runs that fail.
+# Each merge gets its own job and works like the nightly: it's authorized up to the same limit, and a review or a
+# failure gets the same Asana task.
+# To test the trigger and job name without writing to Smartling or Asana, run it manually with dry_run set.
+on:
+  push:
+    branches:
+      - main
+    # The committed English sources. The exported XLIFFs aren't committed, and PR checks keep these in sync with the code.
+    # Keep in sync with scripts/smartling/smartling_changed_platforms.sh, which picks the platforms.
+    paths:
+      - 'iOS/**/en.lproj/**'
+      - 'iOS/**/*.xcstrings'
+      - 'iOS/**/*.storyboard'
+      - 'iOS/**/*.xib'
+      - 'macOS/**/en.lproj/**'
+      - 'macOS/**/*.xcstrings'
+      - 'macOS/**/*.storyboard'
+      - 'macOS/**/*.xib'
+      - 'SharedPackages/**/en.lproj/**'
+      - 'SharedPackages/**/*.xcstrings'
+  workflow_dispatch:
+    inputs:
+      platform:
+        description: "Platform"
+        type: choice
+        default: both
+        options:
+          - both
+          - iOS
+          - macOS
+      auto_authorize_max_usd:
+        description: "Authorize jobs whose maximum USD estimate is at most this (0 never authorizes)"
+        type: string
+        default: "500.00"
+      dry_run:
+        description: "Export and resolve the job name without writing to Smartling or Asana"
+        type: boolean
+        default: true
+
+permissions:
+  contents: read
+
+jobs:
+  platforms:
+    name: Find platforms with string changes
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      platforms: ${{ steps.platforms.outputs.platforms }}
+    steps:
+      # Only the scripts are checked out. Both commits' string catalogs are fetched when they're compared.
+      - name: Check out the merge
+        if: github.event_name == 'push'
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 1
+          filter: blob:none
+          sparse-checkout: scripts/smartling
+
+      # The paths above trigger the run for either platform, so pick the platforms whose English strings changed.
+      # Translation imports and release merge-backs only change other languages, so they run no platform.
+      - name: Find platforms
+        id: platforms
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          PLATFORM: ${{ inputs.platform }}
+          BEFORE: ${{ github.event.before }}
+          AFTER: ${{ github.sha }}
+        run: |
+          if [[ "$EVENT_NAME" == workflow_dispatch ]]; then
+            case "$PLATFORM" in
+              both) platforms='["iOS","macOS"]' ;;
+              *) platforms="[\"$PLATFORM\"]" ;;
+            esac
+          elif [[ -z "$BEFORE" || "$BEFORE" =~ ^0+$ ]]; then
+            echo "No previous commit to compare with, so both platforms run."
+            platforms='["iOS","macOS"]'
+          else
+            git fetch --quiet --depth=1 --filter=blob:none origin "$BEFORE"
+            platforms="$(./scripts/smartling/smartling_changed_platforms.sh "$BEFORE" "$AFTER")"
+          fi
+          echo "Platforms: $platforms"
+          echo "platforms=$platforms" >> "$GITHUB_OUTPUT"
+
+  smartling:
+    name: ${{ matrix.platform }} on merge
+    needs: platforms
+    if: needs.platforms.outputs.platforms != '[]'
+    strategy:
+      fail-fast: false
+      matrix:
+        platform: ${{ fromJSON(needs.platforms.outputs.platforms) }}
+    uses: ./.github/workflows/smartling_submit.yml
+    with:
+      kind: merge
+      platform: ${{ matrix.platform }}
+      auto_authorize_max_usd: ${{ inputs.auto_authorize_max_usd || '500.00' }}
+      dry_run: ${{ inputs.dry_run || false }}
+    secrets: inherit

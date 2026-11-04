@@ -30,6 +30,19 @@ enum AppEvent {
     case willEnterForeground
     case willConnectToWindow(window: UIWindow)
 
+    /// The case name without associated values, for pixels. `String(describing:)` would include the window's
+    /// description: a memory address and the screen size.
+    var name: String {
+        switch self {
+        case .didFinishLaunching: return "didFinishLaunching"
+        case .didBecomeActive: return "didBecomeActive"
+        case .didEnterBackground: return "didEnterBackground"
+        case .willResignActive: return "willResignActive"
+        case .willEnterForeground: return "willEnterForeground"
+        case .willConnectToWindow: return "willConnectToWindow"
+        }
+    }
+
 }
 
 enum AppAction {
@@ -172,6 +185,9 @@ final class AppStateMachine {
     /// consecutive scene connections reuse the same window or receive a new one.
     private var lastConnectedWindowIdentifier: ObjectIdentifier?
 
+    /// Only the first drop carries the step launch was stuck at; later ones repeat on every app switch.
+    private var hasReportedDroppedEvent = false
+
     private let terminatingStateFactory: TerminatingStateFactory
     private let launchBreadcrumb: LaunchBreadcrumb
 
@@ -262,7 +278,7 @@ final class AppStateMachine {
             // This has been fixed on Apple side for scenes and is always called after the scene connects.
             // However, we only transition to Foreground after didBecomeActive, since both events occur in sequence.
             // We may revisit this if any UI glitches appear, as some work could potentially happen earlier in willEnterForeground.
-            break
+            launchBreadcrumb.mark(.enteringForeground)
         case .willConnectToWindow(let window):
             let windowChanged = lastConnectedWindowIdentifier != ObjectIdentifier(window)
             storeWindowIdentifier(window)
@@ -331,11 +347,19 @@ final class AppStateMachine {
     }
 
     private func handleUnexpectedEvent(_ event: AppEvent, for state: AppState) {
-        Logger.lifecycle.error("🔴 Unexpected [\(String(describing: event))] event while in [\(state.name))] state!")
+        Logger.lifecycle.error("🔴 Unexpected [\(event.name)] event while in [\(state.name)] state!")
         PixelKit.fire(Pixel.Event.appDidTransitionToUnexpectedState,
                       frequency: .dailyAndCount,
                       options: .parameters([PixelParameters.appState: state.name,
-                                                                PixelParameters.appEvent: String(describing: event)]))
+                                                                PixelParameters.appEvent: event.name]))
+        switch state {
+        case .initializing, .launching:
+            guard !hasReportedDroppedEvent else { break }
+            hasReportedDroppedEvent = true
+            launchBreadcrumb.reportDroppedEvent(event, in: state)
+        case .connected, .foreground, .background, .terminating, .simulated:
+            break
+        }
     }
 
 }
@@ -343,12 +367,19 @@ final class AppStateMachine {
 enum LaunchBreadcrumbPixel: PixelKit.Event {
 
     case previousLaunchIncomplete(breadcrumb: [String: String])
+    case eventDroppedDuringLaunch(event: String, state: String, step: String)
 
-    var name: String { "app-lifecycle_previous-launch-incomplete" }
+    var name: String {
+        switch self {
+        case .previousLaunchIncomplete: return "app-lifecycle_previous-launch-incomplete-2"
+        case .eventDroppedDuringLaunch: return "app-lifecycle_event-dropped-during-launch"
+        }
+    }
 
     var parameters: [String: String]? {
         switch self {
         case .previousLaunchIncomplete(let breadcrumb): return breadcrumb
+        case .eventDroppedDuringLaunch(let event, let state, let step): return [PixelParameters.appEvent: event, PixelParameters.appState: state, "step": step]
         }
     }
 
@@ -372,6 +403,7 @@ struct LaunchBreadcrumb {
         case launched
         case windowConnected = "window-connected"
         case uiAttached = "ui-attached"
+        case enteringForeground = "entering-foreground"
         case terminating
     }
 
@@ -433,6 +465,15 @@ struct LaunchBreadcrumb {
         guard let pendingReport else { return }
         store.removeObject(forKey: Self.pendingReportKey)
         pixelFiring()?.fire(LaunchBreadcrumbPixel.previousLaunchIncomplete(breadcrumb: pendingReport), frequency: .dailyAndCount)
+    }
+
+    /// Reports a lifecycle event the state machine dropped while launching, with the launch step reached at that
+    /// moment. An event arriving during `Launching.init` means it spun the run loop at that step; a dropped
+    /// `willConnectToWindow` leaves the app without UI.
+    func reportDroppedEvent(_ event: AppEvent, in state: AppState) {
+        let step = current?["step"] ?? "none"
+        pixelFiring()?.fire(LaunchBreadcrumbPixel.eventDroppedDuringLaunch(event: event.name, state: state.name, step: step),
+                            frequency: .dailyAndCount)
     }
 
 }

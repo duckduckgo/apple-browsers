@@ -17,8 +17,10 @@
 //
 
 import Cocoa
+import FeatureFlags_macOS
 import PrivacyConfig
 import SharedTestUtilities
+import WebKit
 import XCTest
 
 @testable import DuckDuckGo_Privacy_Browser
@@ -88,6 +90,243 @@ final class WindowsManagerPopupTests: XCTestCase {
         destinationViewModel.tabCollection.clearAfterMerge()
     }
 
+    // MARK: - WebKit window-close enumeration
+
+    @available(macOS 15.4, *)
+    @MainActor
+    func testClosingWindowExposesOnlyGenuinelyClosingTabsToWebKit() async throws {
+        let context = try await makeWindowCloseContext()
+        let retained = Tab(content: .newtab)
+        let closing = Tab(content: .newtab)
+        let fixture = makeWindowCloseFixture(tabs: [retained, closing], retainedTabs: [retained])
+        fixture.model.select(tab: retained)
+        fixture.manager.register(fixture.controller)
+        context.didOpenWindow(fixture.controller)
+        XCTAssertTrue(context.openTabs.contains { ($0.base as AnyObject) === retained })
+        XCTAssertTrue(context.openTabs.contains { ($0.base as AnyObject) === closing })
+        XCTAssertEqual(fixture.controller.tabs(for: context).count, 2)
+        XCTAssertTrue(fixture.controller.activeTab(for: context) === retained)
+
+        fixture.manager.unregister(fixture.controller)
+        context.didCloseWindow(fixture.controller)
+
+        XCTAssertTrue(context.openTabs.contains { ($0.base as AnyObject) === retained }, "Shared pinned tab must survive the window close")
+        XCTAssertFalse(context.openTabs.contains { ($0.base as AnyObject) === closing })
+        XCTAssertEqual(fixture.controller.tabs(for: context).count, 1)
+        XCTAssertTrue(fixture.controller.tabs(for: context).first === closing)
+        XCTAssertTrue(fixture.controller.activeTab(for: context) === closing)
+        XCTAssertIdentical(fixture.model.selectedTab, retained, "WebKit's active tab must not change the browser's selection")
+        XCTAssertEqual(fixture.model.loadedTabs.count, 2)
+    }
+
+    @available(macOS 15.4, *)
+    @MainActor
+    func testClosingLastWindowCanExposeAnEmptyTabListWithoutLosingSurvivors() async throws {
+        let context = try await makeWindowCloseContext()
+        let retained = Tab(content: .newtab)
+        let fixture = makeWindowCloseFixture(tabs: [retained], retainedTabs: [retained])
+        fixture.manager.register(fixture.controller)
+        context.didOpenWindow(fixture.controller)
+        XCTAssertTrue(context.openTabs.contains { ($0.base as AnyObject) === retained })
+
+        fixture.manager.unregister(fixture.controller)
+        context.didCloseWindow(fixture.controller)
+
+        XCTAssertTrue(context.openTabs.contains { ($0.base as AnyObject) === retained })
+        XCTAssertTrue(fixture.controller.tabs(for: context).isEmpty)
+        XCTAssertNil(fixture.controller.activeTab(for: context))
+        XCTAssertIdentical(fixture.model.loadedTabs.first, retained)
+    }
+
+    @available(macOS 15.4, *)
+    @MainActor
+    func testDisabledWindowCloseFlagReproducesSharedPinnedTabRegistrationLoss() async throws {
+        let context = try await makeWindowCloseContext()
+        let retained = Tab(content: .newtab)
+        let closing = Tab(content: .newtab)
+        let fixture = makeWindowCloseFixture(tabs: [retained, closing], retainedTabs: [retained], enabled: false)
+        fixture.manager.register(fixture.controller)
+        context.didOpenWindow(fixture.controller)
+        XCTAssertTrue(context.openTabs.contains { ($0.base as AnyObject) === retained })
+        XCTAssertTrue(context.openTabs.contains { ($0.base as AnyObject) === closing })
+
+        fixture.manager.unregister(fixture.controller)
+        context.didCloseWindow(fixture.controller)
+
+        XCTAssertFalse(context.openTabs.contains { ($0.base as AnyObject) === retained }, "Without the fix, WebKit forgets the surviving shared pinned tab")
+        XCTAssertFalse(context.openTabs.contains { ($0.base as AnyObject) === closing })
+        XCTAssertTrue(fixture.controller.tabs(for: context).first === retained)
+        XCTAssertTrue(fixture.controller.activeTab(for: context) === retained)
+    }
+
+    @available(macOS 15.4, *)
+    @MainActor
+    func testWindowCloseReadsRuntimeEnableOnAnExistingWindow() async throws {
+        let context = try await makeWindowCloseContext()
+        let retained = Tab(content: .newtab)
+        let fixture = makeWindowCloseFixture(tabs: [retained], retainedTabs: [retained], enabled: false)
+        fixture.manager.register(fixture.controller)
+        context.didOpenWindow(fixture.controller)
+        XCTAssertTrue(context.openTabs.contains { ($0.base as AnyObject) === retained })
+        fixture.flags.featuresStub[FeatureFlag.webExtensionSharedPinnedTabWindowClose.rawValue] = true
+
+        fixture.manager.unregister(fixture.controller)
+        context.didCloseWindow(fixture.controller)
+
+        XCTAssertTrue(context.openTabs.contains { ($0.base as AnyObject) === retained })
+        XCTAssertTrue(fixture.controller.tabs(for: context).isEmpty)
+        XCTAssertNil(fixture.controller.activeTab(for: context))
+    }
+
+    @available(macOS 15.4, *)
+    @MainActor
+    func testWindowCloseReadsRuntimeDisableOnAnExistingWindow() async throws {
+        let context = try await makeWindowCloseContext()
+        let retained = Tab(content: .newtab)
+        let fixture = makeWindowCloseFixture(tabs: [retained], retainedTabs: [retained])
+        fixture.manager.register(fixture.controller)
+        context.didOpenWindow(fixture.controller)
+        XCTAssertTrue(context.openTabs.contains { ($0.base as AnyObject) === retained })
+        fixture.flags.featuresStub[FeatureFlag.webExtensionSharedPinnedTabWindowClose.rawValue] = false
+
+        fixture.manager.unregister(fixture.controller)
+        context.didCloseWindow(fixture.controller)
+
+        XCTAssertFalse(context.openTabs.contains { ($0.base as AnyObject) === retained })
+        XCTAssertTrue(fixture.controller.tabs(for: context).first === retained)
+        XCTAssertTrue(fixture.controller.activeTab(for: context) === retained)
+    }
+
+    @available(macOS 15.4, *)
+    @MainActor
+    func testOpeningWindowBeforeAppRegistrationExposesSharedPinnedTabs() async throws {
+        let context = try await makeWindowCloseContext()
+        let retained = Tab(content: .newtab)
+        let fixture = makeWindowCloseFixture(tabs: [retained], retainedTabs: [retained])
+        XCTAssertTrue(fixture.manager.mainWindowControllers.isEmpty)
+
+        context.didOpenWindow(fixture.controller)
+
+        XCTAssertTrue(context.openWindows.contains { $0 === fixture.controller })
+        XCTAssertTrue(context.openTabs.contains { ($0.base as AnyObject) === retained })
+        XCTAssertTrue(fixture.controller.tabs(for: context).first === retained)
+        XCTAssertTrue(fixture.controller.activeTab(for: context) === retained)
+    }
+
+    @available(macOS 15.4, *)
+    @MainActor
+    func testRegisteredAppWindowExposesPinnedTabsBeforeContextKnowsIt() async throws {
+        let context = try await makeWindowCloseContext()
+        let retained = Tab(content: .newtab)
+        let fixture = makeWindowCloseFixture(tabs: [retained], retainedTabs: [retained])
+        fixture.manager.register(fixture.controller)
+        defer { fixture.manager.unregister(fixture.controller) }
+        XCTAssertTrue(context.openWindows.isEmpty)
+
+        XCTAssertTrue(fixture.controller.tabs(for: context).first === retained)
+        XCTAssertTrue(fixture.controller.activeTab(for: context) === retained)
+    }
+
+    @available(macOS 15.4, *)
+    @MainActor
+    func testWindowCloseUsesTheRequestingContextsOpenWindowState() async throws {
+        let openContext = try await makeWindowCloseContext()
+        let closingContext = try await makeWindowCloseContext()
+        let retained = Tab(content: .newtab)
+        let fixture = makeWindowCloseFixture(tabs: [retained], retainedTabs: [retained])
+        fixture.manager.register(fixture.controller)
+        openContext.didOpenWindow(fixture.controller)
+        closingContext.didOpenWindow(fixture.controller)
+        XCTAssertTrue(openContext.openTabs.contains { ($0.base as AnyObject) === retained })
+        XCTAssertTrue(closingContext.openTabs.contains { ($0.base as AnyObject) === retained })
+
+        fixture.manager.unregister(fixture.controller)
+        closingContext.didCloseWindow(fixture.controller)
+
+        XCTAssertTrue(closingContext.openTabs.contains { ($0.base as AnyObject) === retained })
+        XCTAssertTrue(openContext.openTabs.contains { ($0.base as AnyObject) === retained })
+        XCTAssertTrue(fixture.controller.tabs(for: closingContext).isEmpty)
+        XCTAssertNil(fixture.controller.activeTab(for: closingContext))
+        XCTAssertTrue(fixture.controller.tabs(for: openContext).first === retained)
+        XCTAssertTrue(fixture.controller.activeTab(for: openContext) === retained)
+    }
+
+    @available(macOS 15.4, *)
+    @MainActor
+    func testRuntimeFlagChangesKeepPinnedTabsVisibleInOpenWindows() async throws {
+        let context = try await makeWindowCloseContext()
+        let retained = Tab(content: .newtab)
+        let fixture = makeWindowCloseFixture(tabs: [retained], retainedTabs: [retained], enabled: false)
+        fixture.manager.register(fixture.controller)
+        defer { fixture.manager.unregister(fixture.controller) }
+        context.didOpenWindow(fixture.controller)
+
+        for enabled in [true, false, true] {
+            fixture.flags.featuresStub[FeatureFlag.webExtensionSharedPinnedTabWindowClose.rawValue] = enabled
+            XCTAssertTrue(context.openTabs.contains { ($0.base as AnyObject) === retained })
+            XCTAssertTrue(fixture.controller.tabs(for: context).first === retained)
+            XCTAssertTrue(fixture.controller.activeTab(for: context) === retained)
+        }
+    }
+
+    @available(macOS 15.4, *)
+    @MainActor
+    func testGenuinelyClosingActiveTabRemainsVisibleToWebKit() async throws {
+        let context = try await makeWindowCloseContext()
+        let first = Tab(content: .newtab)
+        let second = Tab(content: .newtab)
+        let fixture = makeWindowCloseFixture(tabs: [first, second])
+        fixture.model.select(tab: second)
+        fixture.manager.register(fixture.controller)
+        context.didOpenWindow(fixture.controller)
+        XCTAssertTrue(context.openTabs.contains { ($0.base as AnyObject) === first })
+        XCTAssertTrue(context.openTabs.contains { ($0.base as AnyObject) === second })
+
+        fixture.manager.unregister(fixture.controller)
+        context.didCloseWindow(fixture.controller)
+
+        XCTAssertTrue(context.openTabs.isEmpty)
+        XCTAssertEqual(fixture.controller.tabs(for: context).count, 2)
+        XCTAssertTrue(fixture.controller.tabs(for: context)[0] === first)
+        XCTAssertTrue(fixture.controller.tabs(for: context)[1] === second)
+        XCTAssertTrue(fixture.controller.activeTab(for: context) === second)
+    }
+
+    @MainActor
+    private func makeWindowCloseFixture(tabs: [Tab], retainedTabs: [Tab] = [], enabled: Bool = true) -> (
+        controller: MainWindowController, model: TabCollectionViewModel, manager: WindowControllersManager, flags: MockFeatureFlagger
+    ) {
+        let flags = MockFeatureFlagger()
+        flags.featuresStub[FeatureFlag.webExtensionSharedPinnedTabWindowClose.rawValue] = enabled
+        let provider = PinnedTabsManagerProvidingMock()
+        let pins = PinnedTabsManager()
+        for tab in retainedTabs { pins.tabCollection.append(tab: tab) }
+        provider.currentPinnedTabManagers = [pins]
+        let manager = WindowControllersManager(
+            pinnedTabsManagerProvider: provider,
+            subscriptionFeatureAvailability: SubscriptionFeatureAvailabilityMock(isSubscriptionPurchaseAllowed: true, usesUnifiedFeedbackForm: false),
+            internalUserDecider: MockInternalUserDecider(),
+            featureFlagger: flags,
+            pinningManager: MockPinningManager())
+        let (controller, model) = makeWindowController(tabs: tabs, featureFlagger: flags, windowControllersManager: manager)
+        return (controller, model, manager, flags)
+    }
+
+    @available(macOS 15.4, *)
+    @MainActor
+    private func makeWindowCloseContext() async throws -> WKWebExtensionContext {
+        let directory = URL(fileURLWithPath: NSTemporaryDirectory(), isDirectory: true)
+            .appendingPathComponent("WindowCloseTests-\(UUID().uuidString)")
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let manifest = """
+        { "manifest_version": 3, "name": "Window Close Tests", "version": "1.0.0" }
+        """
+        try manifest.write(to: directory.appendingPathComponent("manifest.json"), atomically: true, encoding: .utf8)
+        let webExtension = try await WKWebExtension(resourceBaseURL: directory)
+        return WKWebExtensionContext(for: webExtension)
+    }
+
     // MARK: - Content Size Tests
 
     @MainActor
@@ -105,7 +344,9 @@ final class WindowsManagerPopupTests: XCTestCase {
     }
 
     @MainActor
-    private func makeWindowController(tabs: [Tab]) -> (MainWindowController, TabCollectionViewModel) {
+    private func makeWindowController(tabs: [Tab],
+                                      featureFlagger: MockFeatureFlagger? = nil,
+                                      windowControllersManager: WindowControllersManager = Application.appDelegate.windowControllersManager) -> (MainWindowController, TabCollectionViewModel) {
         let tabCollectionViewModel = TabCollectionViewModel(
             tabCollection: TabCollection(tabs: tabs),
             windowControllersManager: WindowControllersManagerMock()
@@ -120,7 +361,9 @@ final class WindowsManagerPopupTests: XCTestCase {
             window: window,
             mainViewController: mainViewController,
             fireViewModel: Application.appDelegate.fireCoordinator.fireViewModel,
-            themeManager: MockThemeManager()
+            themeManager: MockThemeManager(),
+            featureFlagger: featureFlagger,
+            windowControllersManager: windowControllersManager
         )
         windowController.window = window
         return (windowController, tabCollectionViewModel)

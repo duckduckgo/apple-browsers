@@ -51,6 +51,8 @@ extension AIChatDataClearingUserScript {
             case security = "SecurityError"
             case type = "TypeError"
             case syntax = "SyntaxError"
+            /// Not a DOMException: the script's own name for a page without the IndexedDB API (Lockdown Mode).
+            case indexedDBDisabled = "IndexedDBDisabled"
 
             var code: Int {
                 switch self {
@@ -65,6 +67,7 @@ extension AIChatDataClearingUserScript {
                 case .security: return 9
                 case .type: return 10
                 case .syntax: return 11
+                case .indexedDBDisabled: return 12
                 }
             }
         }
@@ -83,6 +86,10 @@ extension AIChatDataClearingUserScript {
 
         var errorCode: Int {
             (stage?.code ?? 0) + (errorName?.code ?? 0)
+        }
+
+        var isIndexedDBDisabled: Bool {
+            errorName == .indexedDBDisabled
         }
 
         var description: String {

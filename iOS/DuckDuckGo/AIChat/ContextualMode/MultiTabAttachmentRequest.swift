@@ -23,7 +23,7 @@ import AIChat
 struct MultiTabAttachmentRequest {
     struct SubmissionResult {
         let totalTabCount: Int
-        let additionalTabCount: Int
+        let deliveredAttachmentCount: Int
     }
 
     /// Returns available contexts in attachment order. Additional tabs carry their stable `tabId`;
@@ -33,6 +33,6 @@ struct MultiTabAttachmentRequest {
     var cancel: @MainActor () -> Void = {}
     /// Rechecks source eligibility and feature availability without requiring collected pages to remain unchanged.
     var validate: @MainActor ([AIChatPageContextData]) -> [AIChatPageContextData] = { $0 }
-    /// Called after dispatch, including when none of the requested additional contexts survived.
+    /// Called after dispatch, including when none of the requested attachment contexts survived.
     var didDispatch: @MainActor (SubmissionResult) -> Void = { _ in }
 }

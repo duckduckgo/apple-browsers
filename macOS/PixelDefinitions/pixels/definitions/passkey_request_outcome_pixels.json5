@@ -1,0 +1,99 @@
+// Passkey request outcome pixels (see PasskeyRequestOutcomeReporter.swift)
+{
+    "passkey_request_success_macos": {
+        "description": "A passkey sign-in or creation started by a web page finished successfully.",
+        "owners": ["diegoreymendez"],
+        "triggers": ["feature_lifecycle"],
+        "suffixes": ["daily_count"],
+        "parameters": [
+            "appVersion",
+            {
+                "key": "style",
+                "type": "string",
+                "description": "How the request was shown: `modal` for the passkey sheet, `autofill` for passkey suggestions in a sign-in field, `unknown` if it couldn't be told.",
+                "enum": ["modal", "autofill", "unknown"]
+            },
+            {
+                "key": "type",
+                "type": "string",
+                "description": "`get` for a sign-in, `create` for a passkey creation, `other` for anything else.",
+                "enum": ["get", "create", "other"]
+            },
+            {
+                "key": "petal",
+                "description": "Routes the pixel through the PETAL timestamp-randomization pipeline",
+                "enum": ["randomize"]
+            }
+        ]
+    },
+    "passkey_request_cancel_macos": {
+        "description": "The user closed the passkey sheet of a sign-in or creation started by a web page. Cancellations by WebKit or the app don't fire.",
+        "owners": ["diegoreymendez"],
+        "triggers": ["user_interaction"],
+        "suffixes": ["daily_count"],
+        "parameters": [
+            "appVersion",
+            {
+                "key": "style",
+                "type": "string",
+                "description": "How the request was shown: `modal` for the passkey sheet, `autofill` for passkey suggestions in a sign-in field, `unknown` if it couldn't be told.",
+                "enum": ["modal", "autofill", "unknown"]
+            },
+            {
+                "key": "type",
+                "type": "string",
+                "description": "`get` for a sign-in, `create` for a passkey creation, `other` for anything else.",
+                "enum": ["get", "create", "other"]
+            },
+            {
+                "key": "petal",
+                "description": "Routes the pixel through the PETAL timestamp-randomization pipeline",
+                "enum": ["randomize"]
+            }
+        ]
+    },
+    "passkey_request_failure_macos": {
+        "description": "A passkey sign-in or creation started by a web page failed. When failures follow each other within a few seconds only the last one fires, and none fires if a request succeeds or the user cancels one in that time. Failures of requests WebKit or the app cancelled don't fire.",
+        "owners": ["diegoreymendez"],
+        "triggers": ["exception"],
+        "suffixes": ["daily_count"],
+        "parameters": [
+            "appVersion",
+            {
+                "key": "style",
+                "type": "string",
+                "description": "How the request was shown: `modal` for the passkey sheet, `autofill` for passkey suggestions in a sign-in field, `unknown` if it couldn't be told.",
+                "enum": ["modal", "autofill", "unknown"]
+            },
+            {
+                "key": "type",
+                "type": "string",
+                "description": "`get` for a sign-in, `create` for a passkey creation, `other` for anything else.",
+                "enum": ["get", "create", "other"]
+            },
+            {
+                "key": "petal",
+                "description": "Routes the pixel through the PETAL timestamp-randomization pipeline",
+                "enum": ["randomize"]
+            },
+            "errorDomain",
+            "errorCode",
+            "underlyingErrorDomain",
+            "underlyingErrorCode"
+        ]
+    },
+    "passkey_active_user_macos": {
+        "description": "A user signed in or created a passkey on a web page, or saw the passkey sheet for one, at least once today. Passkey suggestions shown in a sign-in field don't count unless the user picks one, since pages start them for every visitor.",
+        "owners": ["diegoreymendez"],
+        "triggers": ["user_interaction"],
+        "suffixes": ["daily"],
+        "parameters": ["appVersion"]
+    },
+    "passkey_stuck_macos": {
+        "description": "The user asked for the passkey sheet on a web page and the system refused it instantly because another passkey request from the app is still open, which is what passkeys being stuck looks like. Refused passkey suggestions in sign-in fields don't fire, since they also happen once in a while without being stuck.",
+        "owners": ["diegoreymendez"],
+        "triggers": ["exception"],
+        "suffixes": ["daily_count"],
+        "parameters": ["appVersion"]
+    }
+}

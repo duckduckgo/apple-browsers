@@ -34,16 +34,18 @@ public extension URL {
     ///   - filename: when provided, adds Content-Disposition; filename=...
     ///   - contentType: defaults to application/octet-stream
     ///   - disposition: e.g., "attachment" (default) or "inline"
+    ///   - throttle: optional transfer rate cap in bytes per second, e.g. "20MB", to keep a download in progress
     /// - Returns: URL ready to be loaded by the app under test
     static func testsDownload(size: String,
                               filename: String? = nil,
                               contentType: String = "application/octet-stream",
-                              disposition: String = "attachment") -> URL {
+                              disposition: String = "attachment",
+                              throttle: String? = nil) -> URL {
         var headers: [String: String] = ["Content-Type": contentType]
         if let filename, !filename.isEmpty {
             headers["Content-Disposition"] = "\(disposition); filename=\(filename)"
         }
-        return testsDownload(size: size).appendingTestParameters(headers: headers)
+        return testsDownload(size: size).appendingTestParameters(headers: headers, throttle: throttle)
     }
 
     /// used for Tests Server mock HTTP requests creation (see tests-server/main.swift)
@@ -54,6 +56,7 @@ public extension URL {
         by default the server will use the provided filename looking for it in the Integration Tests target resource file
         when no filename neither data are provided the response will be empty
      - Parameter headers: HTTP headers returned in the server response
+     - Parameter throttle: transfer rate cap for `/download/` responses, in bytes per second (e.g. "20MB")
 
      Usage:
         let url = URL.testsServer
@@ -64,8 +67,11 @@ public extension URL {
                                headers: ["Location": "/redirect-location.html"])
         Tab.setUrl(url)
      */
-    func appendingTestParameters(status: Int? = nil, reason: String? = nil, data: Data? = nil, headers: [String: String]? = nil) -> URL {
+    func appendingTestParameters(status: Int? = nil, reason: String? = nil, data: Data? = nil, headers: [String: String]? = nil, throttle: String? = nil) -> URL {
         var url = self
+        if let throttle {
+            url = url.appendingParameter(name: "throttle", value: throttle)
+        }
         if let status {
             url = url.appendingParameter(name: "status", value: String(status))
         }

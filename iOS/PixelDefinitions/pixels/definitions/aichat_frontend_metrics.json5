@@ -2,32 +2,40 @@
 // them to pixels in AIChatPixelMetricHandler. The pixels themselves predate pixel definitions.
 {
     "m_aichat_sent_prompt_ongoing_chat": {
-        "description": "Fires when the duck.ai frontend reports a prompt submission in an ongoing chat (the frontend's userDidSubmitPrompt metric). Covers submissions made directly in the page composer, which fire no native prompt-submission pixel.",
+        "description": "Fires when the duck.ai frontend reports a prompt submission in an ongoing chat (the frontend's userDidSubmitPrompt metric). Covers submissions made directly in the page composer, which fire no native prompt-submission pixel. source and surface tell page prompts from address-bar hand-overs and Ask about page prompts.",
         "owners": ["Bunn"],
         "triggers": ["other"],
         "suffixes": ["platform", "form_factor"],
         "parameters": [
             "appVersion",
             "aichat_first_prompt_new_install",
+            "aichat_prompt_source",
+            "aichat_prompt_surface",
+            "usage_layout",
+            "usage_hardware_keyboard",
             {
                 "key": "delta-timestamp-minutes",
                 "type": "integer",
-                "description": "Minutes elapsed since the Duck.ai session started. Absent when no session timer is available."
+                "description": "Minutes elapsed since the Duck.ai page loaded in the tab. Absent when no page start is known, e.g. in the Ask about page sheet."
             }
         ]
     },
     "m_aichat_start_new_conversation": {
-        "description": "Fires when the duck.ai frontend reports the first prompt of a new conversation (the frontend's userDidSubmitFirstPrompt metric). Covers submissions made directly in the page composer, which fire no native prompt-submission pixel.",
+        "description": "Fires when the duck.ai frontend reports the first prompt of a new conversation (the frontend's userDidSubmitFirstPrompt metric). Covers submissions made directly in the page composer, which fire no native prompt-submission pixel. source and surface tell page prompts from address-bar hand-overs and Ask about page prompts.",
         "owners": ["Bunn"],
         "triggers": ["other"],
         "suffixes": ["platform", "form_factor"],
         "parameters": [
             "appVersion",
             "aichat_first_prompt_new_install",
+            "aichat_prompt_source",
+            "aichat_prompt_surface",
+            "usage_layout",
+            "usage_hardware_keyboard",
             {
                 "key": "delta-timestamp-minutes",
                 "type": "integer",
-                "description": "Minutes elapsed since the Duck.ai session started. Absent when no session timer is available."
+                "description": "Minutes elapsed since the Duck.ai page loaded in the tab. Absent when no page start is known, e.g. in the Ask about page sheet."
             }
         ]
     },
@@ -41,7 +49,7 @@
             {
                 "key": "delta-timestamp-minutes",
                 "type": "integer",
-                "description": "Minutes elapsed since the Duck.ai session started. Absent when no session timer is available."
+                "description": "Minutes elapsed since the Duck.ai page loaded in the tab. Absent when no page start is known, e.g. in the Ask about page sheet."
             }
         ]
     }

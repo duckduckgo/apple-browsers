@@ -90,7 +90,7 @@ private extension ThemeManagerTests {
             aiChatMenuConfig: MockAIChatConfig()
         )
 
-        let manager = ThemeManager(appearancePreferences: preferences, featureFlagger: featureFlagger)
+        let manager = ThemeManager(appearancePreferences: preferences)
 
         return (manager, preferences, featureFlagger)
     }

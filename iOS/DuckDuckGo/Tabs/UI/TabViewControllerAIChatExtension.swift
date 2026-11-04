@@ -25,7 +25,7 @@ import WebKit
 /// Protocol for tab controllers that support full mode AIChat content loading.
 protocol AITabController {
     /// Loads AIChat with optional query, auto-submit, payload, and RAG tools.
-    func load(_ query: String?, autoSend: Bool, payload: Any?, flowType: AIChatOnboardingFlowType, tools: [AIChatRAGTool]?, modelId: String?, reasoningEffort: AIChatReasoningEffort?, images: [AIChatNativePrompt.NativePromptImage]?, files: [AIChatNativePrompt.NativePromptFile]?, termsAccepted: Bool)
+    func load(_ query: String?, autoSend: Bool, payload: Any?, flowType: AIChatOnboardingFlowType, tools: [AIChatRAGTool]?, modelId: String?, reasoningEffort: AIChatReasoningEffort?, attachments: AIChatPromptAttachments, termsAccepted: Bool)
 
     /// Loads AIChat in voice mode.
     func loadVoiceMode()
@@ -40,7 +40,7 @@ protocol AITabController {
     func submitToggleSidebarAction()
 
     /// Opens a new AI chat in a new tab.
-    func openNewChatInNewTab(source: AIChatEntryPointSource?)
+    func openNewChatInNewTab(source: AIChatEntryPointSource?, inputRequest: DuckAINewChatInputRequest?)
 }
 
 // MARK: - AITabController
@@ -54,35 +54,21 @@ extension TabViewController: AITabController {
               tools: [AIChatRAGTool]? = nil,
               modelId: String? = nil,
               reasoningEffort: AIChatReasoningEffort? = nil,
-              images: [AIChatNativePrompt.NativePromptImage]? = nil,
-              files: [AIChatNativePrompt.NativePromptFile]? = nil,
+              attachments: AIChatPromptAttachments = .none,
               termsAccepted: Bool = false) {
-        isVoiceModeRequested = false
-
-        aiChatContentHandler.setPayload(payload: payload)
-        let hasText = query?.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty == false
-        let hasAttachments = images?.isEmpty == false || files?.isEmpty == false
-        if hasText || hasAttachments {
-            let prompt = AIChatNativePrompt.queryPrompt(
-                query ?? "",
-                autoSubmit: autoSend,
-                toolChoice: tools?.map(\.rawValue),
-                images: images,
-                files: files,
-                modelId: modelId,
-                reasoningEffort: reasoningEffort
-            ).withTermsAccepted(termsAccepted)
-            AIChatPromptHandler.shared.setData(prompt)
-        }
-
-        let queryURL = aiChatContentHandler.buildQueryURL(
-            query: query,
-            autoSend: autoSend,
-            flowType: flowType,
-            tools: tools
-        )
+        let openingQuery = AIChatOpeningRequest.Query(query: query, autoSend: autoSend, flowType: flowType, tools: tools,
+                                                     modelId: modelId, reasoningEffort: reasoningEffort,
+                                                     attachments: attachments, termsAccepted: termsAccepted)
+        configureAIChatOpening(payload: payload)
+        if let prompt = openingQuery.sharedPrompt { AIChatPromptHandler.shared.setData(prompt) }
+        let queryURL = openingQuery.url(using: aiChatContentHandler)
 
         load(url: queryURL)
+    }
+
+    func configureAIChatOpening(payload: Any?) {
+        isVoiceModeRequested = false
+        aiChatContentHandler.setPayload(payload: payload)
     }
     
     /// Loads AIChat in voice mode.
@@ -94,6 +80,7 @@ extension TabViewController: AITabController {
 
     /// Submits a start chat action to initiate a new AI Chat conversation.
     func submitStartChatAction() {
+        cancelPendingAIChatTabAttachmentPrompt()
         Task { @MainActor in
             await aiChatContentHandler.submitStartChatAction()
         }
@@ -110,14 +97,14 @@ extension TabViewController: AITabController {
     }
     
     /// Opens a new AI chat in a new tab.
-    func openNewChatInNewTab(source: AIChatEntryPointSource?) {
+    func openNewChatInNewTab(source: AIChatEntryPointSource?, inputRequest: DuckAINewChatInputRequest? = nil) {
         let newChatURL = aiChatContentHandler.buildQueryURL(
             query: nil,
             autoSend: false,
             flowType: .default,
             tools: nil
         )
-        delegate?.tab(self, didRequestNewDuckAITabForUrl: newChatURL, entrySource: source)
+        delegate?.tab(self, didRequestNewDuckAITabForUrl: newChatURL, entrySource: source, newChatInputRequest: inputRequest)
     }
 
     /// Opens the Duck.ai chats sidebar in a new tab. Mirrors the contextual sheet's "View all chats"
@@ -182,6 +169,7 @@ extension TabViewController {
               targetURL != pendingNativeLoadURL else {
             return nil
         }
-        return AIChatEntryPointSource.forInPageNavigation(from: currentURL, to: targetURL)
+        return AIChatEntryPointSource.forInPageNavigation(from: currentURL, to: targetURL,
+                                                          isLinkActivation: navigationAction.navigationType == .linkActivated)
     }
 }

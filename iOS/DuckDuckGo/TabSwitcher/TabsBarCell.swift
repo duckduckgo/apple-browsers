@@ -45,6 +45,8 @@ class TabsBarCell: UICollectionViewCell {
     let removeButton = BrowserChromeButton(.tabSwitcher)
     private let faviconImage = UIImageView()
     private let separatorView = UIView()
+    private let leadingSeparatorView = UIView()
+    private let pointerHighlightView = UIView()
 
     private let titleStackView = UIStackView()
     private let faviconContainerView = UIView()
@@ -59,10 +61,13 @@ class TabsBarCell: UICollectionViewCell {
     var onRemove: (() -> Void)?
 
     private weak var model: Tab?
+    private var isCurrent = false
     private var isFireModeEnabled = false
+    private var isDragPlaceholderHidden = false
 
     private var hidesCloseButtonUntilHover = false
     private var isPointerHovering = false
+    private lazy var tabPointerInteraction = UIPointerInteraction(delegate: self)
 
     override init(frame: CGRect) {
         super.init(frame: frame)
@@ -78,6 +83,53 @@ class TabsBarCell: UICollectionViewCell {
     override func prepareForReuse() {
         super.prepareForReuse()
         isPointerHovering = false
+        pointerHighlightView.layer.removeAllAnimations()
+        pointerHighlightView.alpha = 0
+        isCurrent = false
+        layer.removeAnimation(forKey: "edgeBounce")
+        setDragPlaceholderHidden(false, animated: false)
+        leadingSeparatorView.isHidden = true
+        leadingSeparatorView.alpha = 1
+        separatorView.alpha = 1
+    }
+
+    func setDragPlaceholderHidden(_ hidden: Bool, animated: Bool) {
+        guard !animated || isDragPlaceholderHidden != hidden else { return }
+        isDragPlaceholderHidden = hidden
+        guard animated, !UIAccessibility.isReduceMotionEnabled else {
+            titleStackView.layer.removeAllAnimations()
+            titleStackView.alpha = hidden ? 0 : 1
+            contentView.isHidden = hidden
+            return
+        }
+
+        contentView.isHidden = false
+        // Keep UIKit's faded drag-placeholder alpha and the separators out of the animation.
+        UIView.animate(withDuration: 0.15, delay: 0, options: [.beginFromCurrentState, .allowUserInteraction]) {
+            self.titleStackView.alpha = hidden ? 0 : 1
+        } completion: { finished in
+            if finished, self.isDragPlaceholderHidden == hidden {
+                self.contentView.isHidden = hidden
+            }
+        }
+    }
+
+    override func apply(_ layoutAttributes: UICollectionViewLayoutAttributes) {
+        super.apply(layoutAttributes)
+        // UIKit can raise a displaced tab during reordering; keep its background below the flare.
+        updateZPosition(isCurrent ? 2 : min(CGFloat(layoutAttributes.zIndex), 0))
+        setNeedsLayout()
+        tabPointerInteraction.invalidate()
+        removeButton.interactions.compactMap { $0 as? UIPointerInteraction }.forEach { $0.invalidate() }
+    }
+
+    private func updateZPosition(_ position: CGFloat) {
+        // Interpolating from the accordion stack leaves the selected title behind the opaque flare.
+        CATransaction.begin()
+        CATransaction.setDisableActions(true)
+        layer.zPosition = position
+        layer.removeAnimation(forKey: "zPosition")
+        CATransaction.commit()
     }
 
     private func setUpSubviews() {
@@ -86,6 +138,10 @@ class TabsBarCell: UICollectionViewCell {
 
         contentView.layer.cornerRadius = Self.cornerRadius
         contentView.layer.cornerCurve = .circular
+        pointerHighlightView.translatesAutoresizingMaskIntoConstraints = false
+        pointerHighlightView.isUserInteractionEnabled = false
+        pointerHighlightView.backgroundColor = .tertiarySystemFill
+        pointerHighlightView.alpha = 0
 
         faviconContainerView.translatesAutoresizingMaskIntoConstraints = false
 
@@ -105,19 +161,25 @@ class TabsBarCell: UICollectionViewCell {
         titleStackView.addArrangedSubview(label)
 
         separatorView.translatesAutoresizingMaskIntoConstraints = false
+        leadingSeparatorView.translatesAutoresizingMaskIntoConstraints = false
 
         removeButton.translatesAutoresizingMaskIntoConstraints = false
         removeButton.type = .tabSwitcher
         removeButton.setImage(DesignSystemImages.Glyphs.Size16.close)
         removeButton.isPointerInteractionEnabled = true
+        removeButton.pointerStyleProvider = { [weak self] button, _, _ in
+            self?.pointerStyle(for: button)
+        }
         removeButton.contentHorizontalAlignment = .left
         removeButton.addTarget(self, action: #selector(onRemovePressed), for: .touchUpInside)
 
         faviconContainerView.addSubview(faviconImage)
+        contentView.addSubview(pointerHighlightView)
         contentView.addSubview(titleStackView)
         contentView.addSubview(separatorView)
+        contentView.addSubview(leadingSeparatorView)
         contentView.addSubview(removeButton)
-        contentView.addInteraction(UIPointerInteraction(delegate: self))
+        contentView.addInteraction(tabPointerInteraction)
         contentView.addGestureRecognizer(UIHoverGestureRecognizer(target: self, action: #selector(handleHover)))
 
         let titleTrailingConstraint = contentView.trailingAnchor.constraint(equalTo: titleStackView.trailingAnchor,
@@ -129,6 +191,11 @@ class TabsBarCell: UICollectionViewCell {
         labelRemoveButtonConstraint?.isActive = false
 
         NSLayoutConstraint.activate([
+            pointerHighlightView.leadingAnchor.constraint(equalTo: contentView.leadingAnchor),
+            pointerHighlightView.trailingAnchor.constraint(equalTo: contentView.trailingAnchor),
+            pointerHighlightView.topAnchor.constraint(equalTo: contentView.topAnchor),
+            pointerHighlightView.bottomAnchor.constraint(equalTo: contentView.bottomAnchor),
+
             titleStackView.leadingAnchor.constraint(equalTo: contentView.leadingAnchor,
                                                     constant: Constants.titleLeadingInset),
             titleStackView.centerYAnchor.constraint(equalTo: contentView.centerYAnchor),
@@ -149,6 +216,11 @@ class TabsBarCell: UICollectionViewCell {
             separatorView.heightAnchor.constraint(equalTo: contentView.heightAnchor,
                                                   constant: -Constants.separatorInset),
 
+            leadingSeparatorView.leadingAnchor.constraint(equalTo: contentView.leadingAnchor),
+            leadingSeparatorView.centerYAnchor.constraint(equalTo: separatorView.centerYAnchor),
+            leadingSeparatorView.widthAnchor.constraint(equalTo: separatorView.widthAnchor),
+            leadingSeparatorView.heightAnchor.constraint(equalTo: separatorView.heightAnchor),
+
             removeButton.trailingAnchor.constraint(equalTo: contentView.trailingAnchor),
             removeButton.centerYAnchor.constraint(equalTo: contentView.centerYAnchor),
             removeButton.heightAnchor.constraint(equalTo: contentView.heightAnchor),
@@ -157,19 +229,35 @@ class TabsBarCell: UICollectionViewCell {
     }
 
     @objc private func onRemovePressed() {
+        guard isFullyExposed else { return }
         onRemove?()
     }
 
+    override func hitTest(_ point: CGPoint, with event: UIEvent?) -> UIView? {
+        updateCloseButtonVisibility()
+        return super.hitTest(point, with: event)
+    }
+
     @objc private func handleHover(_ recognizer: UIHoverGestureRecognizer) {
-        let hovering = recognizer.state == .began || recognizer.state == .changed
+        let isHovering = recognizer.state == .began || recognizer.state == .changed
+        updatePointerHover(at: isHovering ? recognizer.location(in: contentView) : nil)
+    }
+
+    func updatePointerHover(at point: CGPoint?) {
+        let hovering = point.map { visiblePointerRect(in: contentView).contains($0) } ?? false
         guard hovering != isPointerHovering else { return }
         isPointerHovering = hovering
         updateCloseButtonVisibility()
-        UIView.animate(withDuration: 0.15) { self.contentView.layoutIfNeeded() }
+        UIView.animate(withDuration: 0.15, delay: 0, options: [.beginFromCurrentState, .allowUserInteraction]) {
+            self.pointerHighlightView.alpha = hovering ? 1 : 0
+            self.contentView.layoutIfNeeded()
+        }
     }
     
     override func layoutSubviews() {
         super.layoutSubviews()
+        updateSeparators()
+        updateCloseButtonVisibility()
         
         if isPressed {
             layer.masksToBounds = false
@@ -206,18 +294,68 @@ class TabsBarCell: UICollectionViewCell {
     }
 
     func applyCurrentStyle(isCurrent: Bool, isNextCurrent: Bool, hidesInactiveCloseButton: Bool, withTheme theme: Theme) {
-        if !isCurrent {
-            separatorView.backgroundColor = theme.tabsBarSeparatorColor
-        }
+        self.isCurrent = isCurrent
+        updateZPosition(isCurrent ? 2 : min(layer.zPosition, 0))
+        // Edge tabs overlap; an opaque inactive tab keeps the covered title from showing through.
+        backgroundColor = isCurrent ? .clear : theme.tabsBarBackgroundColor
+        separatorView.backgroundColor = theme.tabsBarSeparatorColor
         separatorView.isHidden = isCurrent || isNextCurrent
+        leadingSeparatorView.backgroundColor = theme.tabsBarSeparatorColor
+        updateSeparators()
 
         hidesCloseButtonUntilHover = hidesInactiveCloseButton && !isCurrent
         updateCloseButtonVisibility()
     }
 
-    /// Shows the close button unless the strip is overflowing and this inactive tab isn't hovered by a pointer.
+    private func updateSeparators() {
+        leadingSeparatorView.alpha = 1
+        separatorView.alpha = 1
+        guard !isCurrent,
+              let collectionView = superview as? UICollectionView,
+              let indexPath = collectionView.indexPath(for: self) else {
+            leadingSeparatorView.isHidden = true
+            return
+        }
+        let previous = indexPath.item > 0
+            ? collectionView.layoutAttributesForItem(at: IndexPath(item: indexPath.item - 1, section: indexPath.section)) : nil
+        let next = indexPath.item + 1 < collectionView.numberOfItems(inSection: indexPath.section)
+            ? collectionView.layoutAttributesForItem(at: IndexPath(item: indexPath.item + 1, section: indexPath.section)) : nil
+        if let previous, CGFloat(previous.zIndex) > layer.zPosition {
+            separatorView.alpha = separatorAlpha(forGap: frame.maxX - previous.frame.maxX)
+        }
+        if let next, CGFloat(next.zIndex) > layer.zPosition {
+            leadingSeparatorView.alpha = separatorAlpha(forGap: next.frame.minX - frame.minX)
+        }
+        if let layout = collectionView.collectionViewLayout as? TabsBarCollectionViewLayout,
+           let currentIndex = layout.currentIndex?(),
+           let current = layout.layoutAttributesForItem(at: IndexPath(item: currentIndex, section: indexPath.section)),
+           current.frame.minX <= frame.minX, frame.minX <= current.frame.maxX {
+            leadingSeparatorView.isHidden = true
+            return
+        }
+        let leading = collectionView.bounds.minX + collectionView.adjustedContentInset.left
+        let isPinnedAtLeadingEdge = frame.minX == leading && leading > 0
+        // A leading overlap covers the previous tab's trailing separator.
+        let coversPreviousSeparator = previous.map {
+            CGFloat($0.zIndex) < layer.zPosition && $0.frame.minX <= frame.minX && $0.frame.maxX > frame.minX
+        } ?? false
+        leadingSeparatorView.isHidden = !isPinnedAtLeadingEdge && !coversPreviousSeparator
+    }
+
+    private func separatorAlpha(forGap gap: CGFloat) -> CGFloat {
+        guard bounds.width > 0 else { return 1 }
+        // Ease the outer line away as the accordion closes its last half-tab of space.
+        let fraction = min(max(gap / (bounds.width / 2), 0), 1)
+        return fraction * fraction * (3 - 2 * fraction)
+    }
+
+    private var isFullyExposed: Bool {
+        contentView.bounds.width > 0 && visiblePointerRect(in: contentView).width >= contentView.bounds.width - 0.001
+    }
+
+    /// Partly covered tabs remain selection targets, including beneath a stationary pointer.
     private func updateCloseButtonVisibility() {
-        let showsCloseButton = !hidesCloseButtonUntilHover || isPointerHovering
+        let showsCloseButton = model != nil && isFullyExposed && (!hidesCloseButtonUntilHover || isPointerHovering)
         removeButton.isHidden = !showsCloseButton
         labelRemoveButtonConstraint?.isActive = showsCloseButton
     }
@@ -228,6 +366,7 @@ class TabsBarCell: UICollectionViewCell {
     /// longer exists in the tabs model (e.g. during a desync between the layout and the model). The
     /// cell is left visually empty and non-interactive; a subsequent refresh replaces it.
     func configurePlaceholder(withTheme theme: Theme) {
+        backgroundColor = .clear
         self.model?.removeObserver(self)
         self.model = nil
         onRemove = nil
@@ -241,6 +380,8 @@ class TabsBarCell: UICollectionViewCell {
 
         labelRemoveButtonConstraint?.isActive = false
         separatorView.isHidden = true
+        leadingSeparatorView.backgroundColor = nil
+        leadingSeparatorView.isHidden = true
         removeButton.isHidden = true
     }
 
@@ -289,16 +430,51 @@ class TabsBarCell: UICollectionViewCell {
 
 extension TabsBarCell: TabObserver {
     func didChange(tab: Tab) {
-        guard tab != self.model else { return }
+        guard tab == self.model else { return }
         applyModel(tab)
     }
 }
 
 extension TabsBarCell: UIPointerInteractionDelegate {
 
-    func pointerInteraction(_ interaction: UIPointerInteraction, styleFor region: UIPointerRegion) -> UIPointerStyle? {
+    func pointerInteraction(_ interaction: UIPointerInteraction,
+                            regionFor request: UIPointerRegionRequest,
+                            defaultRegion: UIPointerRegion) -> UIPointerRegion? {
         guard let view = interaction.view else { return nil }
-        return .init(effect: .automatic(.init(view: view)))
+        let rect = visiblePointerRect(in: view)
+        return rect.contains(request.location) ? UIPointerRegion(rect: rect) : nil
+    }
+
+    func pointerInteraction(_ interaction: UIPointerInteraction, styleFor region: UIPointerRegion) -> UIPointerStyle? {
+        // Render the highlight in the cell so UIKit never lifts a stale snapshot over its content.
+        return .system()
+    }
+
+    private func pointerStyle(for view: UIView) -> UIPointerStyle? {
+        let rect = visiblePointerRect(in: view)
+        guard !rect.isEmpty else { return nil }
+        let parameters = UIPreviewParameters()
+        parameters.backgroundColor = .clear
+        parameters.visiblePath = UIBezierPath(roundedRect: rect, cornerRadius: Self.cornerRadius)
+        let preview = UITargetedPreview(view: view, parameters: parameters)
+        return .init(effect: .hover(preview, prefersScaledContent: false))
+    }
+
+    func visiblePointerRect(in view: UIView) -> CGRect {
+        guard let collectionView = superview as? UICollectionView else { return view.bounds }
+        var rect = frame.intersection(collectionView.bounds.inset(by: collectionView.adjustedContentInset))
+        // A pointer preview is drawn above the strip, so explicitly exclude overlapping tabs.
+        for cell in collectionView.visibleCells where cell !== self && cell.layer.zPosition > layer.zPosition {
+            let overlap = rect.intersection(cell.frame)
+            guard !overlap.isEmpty else { continue }
+            if overlap.minX <= rect.minX {
+                rect = CGRect(x: overlap.maxX, y: rect.minY, width: rect.maxX - overlap.maxX, height: rect.height)
+            } else {
+                rect.size.width = overlap.minX - rect.minX
+            }
+        }
+        guard !rect.isEmpty else { return .zero }
+        return view.convert(rect, from: collectionView).intersection(view.bounds)
     }
 
 }

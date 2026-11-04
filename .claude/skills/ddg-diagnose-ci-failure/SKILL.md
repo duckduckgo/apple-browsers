@@ -187,7 +187,7 @@ If the test or its production target changed in the last few commits, that's alm
 
 **Merge-order regression (PR passed its own CI but fails on the default branch):**
 
-When the failing PR's own diff doesn't explain the failure, check whether another PR changed shared test infrastructure (helpers, fixtures, mocks - in the apple-browsers monorepo these live under `iOS/SharedTestUtils/`, `macOS/SharedTestUtils/`, etc.) between this PR's last green run and the default branch's HEAD:
+When the failing PR's own diff doesn't explain the failure, check whether another PR changed shared test infrastructure (helpers, fixtures, mocks - in the apple-browsers monorepo these live under `iOS/SharedTestUtils/`, `macOS/UnitTests/Common/`, `macOS/UITests/Common/`, etc.) between this PR's last green run and the default branch's HEAD:
 
 ```bash
 # Find this PR's last green run for the failed workflow, capture the SHA

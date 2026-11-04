@@ -24,6 +24,9 @@ public enum iOSBrowserConfigSubfeature: String, PrivacySubfeature {
         .iOSBrowserConfig
     }
 
+    /// https://app.asana.com/1/137249556945/task/1219972523893967
+    case ipadMenuBar
+
     // Demonstrative case for default value. Remove once a real-world feature is added
     case intentionallyLocalOnlySubfeatureForTests
 
@@ -59,14 +62,15 @@ public enum iOSBrowserConfigSubfeature: String, PrivacySubfeature {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213037858764805
     case crashCollectionLimitCallStackTreeDepth
 
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1217109908046478?focus=true
-    case tabTerminationTelemetry
-
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1217125840097313?focus=true
     case tabTerminationErrorPage
 
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1217244101759199?focus=true
     case tabEvictionOnMemoryWarning
+
+    /// Kill switch for the web content freeze pixels.
+    /// https://app.asana.com/1/137249556945/project/414709148257752/task/1219446662051332
+    case webContentFreezeTelemetry
 
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1217244101759205?focus=true
     case tabLRUEviction
@@ -93,14 +97,14 @@ public enum iOSBrowserConfigSubfeature: String, PrivacySubfeature {
     /// https://app.asana.com/1/137249556945/project/414709148257752/task/1217605270508341
     case elementFullscreen
 
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1214974217398704?focus=true
-    case appRebranding
-
     /// https://app.asana.com/1/137249556945/task/1213314048601761
     case fireMode
 
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213965646075290
     case fireButtonRefinements
+
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1220050958443794?focus=true
+    case slideToDelete
 
     /// https://app.asana.com/1/137249556945/project/392891325557410/task/1212828713075939?focus=true
     case omniBarLongPressMenu
@@ -126,6 +130,9 @@ public enum iOSBrowserConfigSubfeature: String, PrivacySubfeature {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1219073007936638?focus=true
     case floatingUIiOS27
 
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1219784549064543?focus=true
+    case legacyFindInPage
+
     /// NA experiment: search token to speed up SERP by combining Index/Deep responses.
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1216365830146824
     case searchTokenExperimentV4
@@ -140,6 +147,9 @@ public enum iOSBrowserConfigSubfeature: String, PrivacySubfeature {
     /// https://app.asana.com/1/137249556945/project/72649045549333/task/1218145365492985
     case duckAISessionWideEvent
 
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1219929884250361
+    case duckAIEntryWideEvent
+
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1217645779581965
     case newTabPageRedesign
 
@@ -151,4 +161,13 @@ public enum iOSBrowserConfigSubfeature: String, PrivacySubfeature {
 
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1219115104348289
     case alwaysShowKeyboardOnNewTabPage
+
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1219411804489480?focus=true
+    case fastTrackingParameterFilter
+
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1219783104084617?focus=true
+    case singleTabBurnOptimization
+
+    /// https://app.asana.com/1/137249556945/project/481882893211075/task/1219652686297425
+    case deferredMemoryCacheDelete
 }

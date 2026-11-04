@@ -16,6 +16,7 @@
 //  limitations under the License.
 //
 
+import Combine
 @_spi(Testing) import Persistence
 import PrivacyConfig
 import RemoteMessaging
@@ -102,7 +103,36 @@ final class PromoRegistryTests: XCTestCase {
             ),
             autofillImportPromoObserver: AutofillImportPromoObserver(loginImportStateProvider: MockAutofillLoginImportState()),
             syncSetupBookmarksPromoManager: .makeForTesting(content: .bookmarks),
-            syncSetupAutofillPromoManager: .makeForTesting(content: .autofill)
+            syncSetupAutofillPromoManager: .makeForTesting(content: .autofill),
+            bookmarksBarSyncPromoDelegate: BookmarksBarSyncPromoDelegate(
+                featureFlagger: MockFeatureFlagger(),
+                syncService: nil,
+                isBookmarksBarSettingOn: { true },
+                notificationCenter: NotificationCenter(),
+                legacyStorage: KeyedStorage(storage: InMemoryKeyValueStore()),
+                recordResult: { _, _ in }
+            ),
+            bookmarkAddedSyncPromoDelegate: BookmarkAddedSyncPromoDelegate(
+                featureFlagger: MockFeatureFlagger(),
+                syncService: nil,
+                storage: KeyedStorage(storage: InMemoryKeyValueStore()),
+                recordResult: { _, _ in }
+            ),
+            bookmarksEmptyStatePromoDelegate: BookmarksEmptyStatePromoDelegate(
+                featureFlagger: MockFeatureFlagger(),
+                hasTopLevelEntitiesProvider: { false },
+                bookmarksChangedPublisher: Empty().eraseToAnyPublisher(),
+                dataImportCompletedPublisher: Empty().eraseToAnyPublisher(),
+                syncService: nil,
+                recordResult: { _, _ in }
+            ),
+            autofillEmptyStatePromoDelegate: AutofillEmptyStatePromoDelegate(
+                featureFlagger: MockFeatureFlagger(),
+                isAnyCategoryEmptyProvider: { true },
+                dataImportCompletedPublisher: Empty().eraseToAnyPublisher(),
+                syncService: nil,
+                recordResult: { _, _ in }
+            )
         )
         let promoService = PromoServiceFactory.makePromoService(dependencies: dependencies)
 

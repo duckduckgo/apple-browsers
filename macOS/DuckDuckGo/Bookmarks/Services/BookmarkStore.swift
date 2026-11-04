@@ -61,6 +61,8 @@ protocol BookmarkStore {
     func handleFavoritesAfterDisablingSync()
     /// Reads the persistent store synchronously, so it's correct before the bookmark list has loaded and safe to call off the main thread.
     func bookmarksCount() -> Int
+    /// Whether the `.topLevelEntities` list is non-empty. Synchronous, like `bookmarksCount()`.
+    func hasTopLevelEntities() -> Bool
 }
 extension BookmarkStore {
 

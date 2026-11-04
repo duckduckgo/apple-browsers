@@ -23,6 +23,7 @@ import FoundationExtensions
 import DDGSync
 import Bookmarks
 import AIChat
+import BrowserServicesKit
 import PixelKit
 import WideEvent
 import Persistence
@@ -47,6 +48,11 @@ struct FireRequest {
         static let data = Options(rawValue: 1 << 1)
         static let aiChats = Options(rawValue: 1 << 2)
         static let all: Options = [.tabs, .data, .aiChats]
+    }
+
+    var deletesDuckAIChats: Bool {
+        if case .tab = scope { return true }
+        return options.contains(.aiChats)
     }
     
     enum Trigger {
@@ -134,7 +140,7 @@ class FireExecutor: FireExecuting {
     private let dataClearingCapability: DataClearingCapable
     private let appSettings: AppSettings
     private let aiChatSyncCleaner: AIChatSyncCleaning
-    let pixelsReporter: DataClearingPixelsReporter
+    let pixelsReporter: any DataClearingInstrumentation
     private let pixelFiring: (any PixelKitFiring)?
     private let dataClearingWideEventService: DataClearingWideEventService?
     private let aiChatDeleter: AIChatDeleting
@@ -173,7 +179,7 @@ class FireExecutor: FireExecuting {
          aiChatSyncCleaner: AIChatSyncCleaning,
          duckAiNativeStorageHandler: DuckAiNativeStorageHandling? = nil,
          fireModeStorageController: FireModeNativeStorageController? = nil,
-         pixelsReporter: DataClearingPixelsReporter = DataClearingPixelsReporter(),
+         pixelsReporter: any DataClearingInstrumentation = DataClearingPixelsReporter(),
          pixelFiring: (any PixelKitFiring)? = PixelKit.shared,
          wideEvent: WideEventManaging? = nil,
          idManager: DataStoreIDManaging = DataStoreIDManager.shared,
@@ -259,6 +265,18 @@ class FireExecutor: FireExecuting {
     @MainActor
     func burn(request: FireRequest,
               applicationState: DataStoreWarmup.ApplicationState) async {
+        let singleTabMeasurement: DataClearingPixelsReporter.Measurement?
+        let singleTabOptimizationEnabled: Bool
+        if case .tab = request.scope {
+            singleTabOptimizationEnabled = featureFlagger.isFeatureOn(.singleTabBurnOptimization)
+            singleTabMeasurement = pixelsReporter.beginMeasurement()
+            pixelsReporter.fireSingleTabBurnRequested(optimized: singleTabOptimizationEnabled, dropped: burnInProgress)
+        } else {
+            singleTabOptimizationEnabled = false
+            singleTabMeasurement = nil
+        }
+        var tabClosureDuration: TimeInterval?
+
         // Drops reentrant calls. Callers should gate on `burnInProgress`
         if burnInProgress {
             pixelsReporter.fireDroppedBurnPixel(request: request)
@@ -323,6 +341,7 @@ class FireExecutor: FireExecuting {
         cancelOngoingDownloadsIfNeeded(request)
         if shouldBurnTabs {
             burnTabsWithDelegateCallbacks(request: request, domains: domains)
+            tabClosureDuration = singleTabMeasurement.map { pixelsReporter.duration(of: $0) }
         }
         
         // Await async tasks
@@ -334,7 +353,7 @@ class FireExecutor: FireExecuting {
             fireModeStorageController?.syncWithCurrentFireModeID()
         }
 
-        await clearAppSwitcherSnapshots()
+        await runAsWideEventStep(.clearAppSwitcherSnapshots, clearAppSwitcherSnapshots)
 
         // Notify delegate that we finished
         await didFinishBurning(fireRequest: request)
@@ -343,10 +362,23 @@ class FireExecutor: FireExecuting {
 
         // Reset prepared state for next burn cycle
         preparedOptions = []
+        if let singleTabMeasurement {
+            pixelsReporter.fireSingleTabBurnFinished(optimized: singleTabOptimizationEnabled,
+                                                     measurement: singleTabMeasurement,
+                                                     tabClosure: tabClosureDuration)
+        }
     }
     
     // MARK: - General Helpers
-    
+
+    /// Names a step that has no outcome to report, so a Fire that stops inside it shows where.
+    @MainActor
+    private func runAsWideEventStep(_ action: DataClearingWideEventData.Action, _ work: @MainActor () async -> Void) async {
+        dataClearingWideEventService?.start(action)
+        await work()
+        dataClearingWideEventService?.finish(action)
+    }
+
     private func cancelOngoingDownloadsIfNeeded(_ request: FireRequest) {
         guard case .all = request.scope,
               request.options.contains(.tabs),
@@ -502,7 +534,9 @@ class FireExecutor: FireExecuting {
                           applicationState: DataStoreWarmup.ApplicationState,
                           domainResult: Result<[String], Error>?) async {
         await dataStoreWarmupWorker.setApplicationState(applicationState)
-        await dataStoreWarmupWorker.execute(scope: scope, domainResult: domainResult, fireModeCapability: fireModeCapability)
+        await runAsWideEventStep(.warmUpWebsiteDataStore) {
+            await dataStoreWarmupWorker.execute(scope: scope, domainResult: domainResult, fireModeCapability: fireModeCapability)
+        }
         
         let measurement = pixelsReporter.beginMeasurement()
 

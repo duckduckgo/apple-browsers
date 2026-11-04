@@ -41,6 +41,27 @@ final class InstalledWebExtensionStoreTests: XCTestCase {
         super.tearDown()
     }
 
+    func testOriginUpdatePreservesOtherInstallationsAndSurvivesStoreRecreation() {
+        let first = makeExtension(uniqueIdentifier: "first")
+        let cpm = makeExtension(uniqueIdentifier: "cpm")
+        let last = makeExtension(uniqueIdentifier: "last")
+        store.add(first)
+        store.add(cpm)
+        store.add(last)
+        let origin = UUID()
+        let updated = InstalledWebExtension(uniqueIdentifier: cpm.uniqueIdentifier, filename: cpm.filename,
+                                            name: cpm.name, version: cpm.version, cpmOriginIdentifier: origin)
+        store.update(updated)
+        let restored = InstalledWebExtensionStore(storage: storage)
+        XCTAssertEqual(restored.installedExtensions, [first, updated, last])
+        XCTAssertEqual(restored.installedExtension(withUniqueIdentifier: "cpm")?.cpmOriginIdentifier, origin)
+    }
+
+    func testUpdatingMissingInstallationDoesNotCreateARecord() {
+        store.update(makeExtension())
+        XCTAssertNil(storage.extensions)
+    }
+
     // MARK: - Test Helpers
 
     private func makeExtension(uniqueIdentifier: String = "test-extension",
@@ -178,5 +199,47 @@ final class InstalledWebExtensionStoreTests: XCTestCase {
         let customStore = InstalledWebExtensionStore(storage: customStorage)
 
         XCTAssertEqual(customStore.installedExtensions, [ext])
+    }
+
+    // MARK: - Update Tests
+
+    func testWhenExtensionIsUpdated_ThenStoredRecordIsReplaced() {
+        let ext = makeExtension()
+        storage.extensions = [ext, makeExtension(uniqueIdentifier: "other")]
+        var disabled = ext
+        disabled.isDisabled = true
+
+        store.update(disabled)
+
+        XCTAssertEqual(InstalledWebExtensionStore(storage: storage).installedExtensions, [disabled, makeExtension(uniqueIdentifier: "other")])
+    }
+
+    func testWhenUnknownExtensionIsUpdated_ThenStorageIsUnchanged() {
+        let ext = makeExtension()
+        storage.extensions = [ext]
+
+        store.update(makeExtension(uniqueIdentifier: "unknown"))
+
+        XCTAssertEqual(storage.extensions, [ext])
+    }
+
+    // MARK: - Decoding Tests
+
+    func testWhenRecordWithoutDisabledStateIsDecoded_ThenExtensionIsLoaded() throws {
+        let json = #"{"uniqueIdentifier":"test-extension","filename":"extension.zip","name":"Test Extension","version":"1.0.0"}"#
+
+        let ext = try JSONDecoder().decode(InstalledWebExtension.self, from: Data(json.utf8))
+
+        XCTAssertEqual(ext, makeExtension())
+        XCTAssertFalse(ext.isDisabled)
+    }
+
+    func testWhenDisabledRecordIsEncoded_ThenDecodedRecordIsDisabled() throws {
+        var ext = makeExtension()
+        ext.isDisabled = true
+
+        let decoded = try JSONDecoder().decode(InstalledWebExtension.self, from: JSONEncoder().encode(ext))
+
+        XCTAssertEqual(decoded, ext)
     }
 }

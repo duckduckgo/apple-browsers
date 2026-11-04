@@ -100,6 +100,7 @@ extension AutofillTabExtension: SecureVaultManagerDelegate {
 
     func secureVaultManagerIsEnabledStatus(_ manager: SecureVaultManager, forType type: AutofillType?) -> Bool {
         let prefs = AutofillPreferences()
+        guard !prefs.isManagedByExtension else { return false }
         switch type {
         case .card:
             return prefs.askToSavePaymentMethods
@@ -113,7 +114,7 @@ extension AutofillTabExtension: SecureVaultManagerDelegate {
     }
 
     func secureVaultManagerShouldSaveData(_: BrowserServicesKit.SecureVaultManager) -> Bool {
-        return !isBurner
+        return !isBurner && !AutofillPreferences().isManagedByExtension
     }
 
     func secureVaultManager(_: SecureVaultManager, promptUserToStoreAutofillData data: AutofillData, withTrigger trigger: AutofillUserScript.GetTriggerType?) {

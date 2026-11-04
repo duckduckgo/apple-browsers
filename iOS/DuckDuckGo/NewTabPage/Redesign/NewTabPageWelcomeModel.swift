@@ -27,25 +27,15 @@ final class NewTabPageWelcomeModel: ObservableObject {
 
     let contextChanges: AnyPublisher<Void, Never>
 
-    private var hasSelectedGreeting = false
     private let greetingProvider: DaxGreetingProviding
-    private let updateAppearance: (DaxGreetingContext.Appearance) -> Void
 
     init(greetingProvider: DaxGreetingProviding,
-         contextChanges: AnyPublisher<Void, Never> = Empty().eraseToAnyPublisher(),
-         updateAppearance: @escaping (DaxGreetingContext.Appearance) -> Void) {
+         contextChanges: AnyPublisher<Void, Never> = Empty().eraseToAnyPublisher()) {
         self.greetingProvider = greetingProvider
         self.contextChanges = contextChanges
-        self.updateAppearance = updateAppearance
     }
 
-    func refresh(appearance: DaxGreetingContext.Appearance) {
-        updateAppearance(appearance)
-        if hasSelectedGreeting {
-            greeting = greetingProvider.getGreeting()
-        } else {
-            greeting = greetingProvider.getNewGreeting()
-            hasSelectedGreeting = true
-        }
+    func refresh() {
+        greeting = greetingProvider.getGreeting()
     }
 }

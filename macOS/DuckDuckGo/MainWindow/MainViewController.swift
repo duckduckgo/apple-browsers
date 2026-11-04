@@ -746,6 +746,9 @@ final class MainViewController: NSViewController {
         }
     }
 
+    // `loadView()` attaches the bar before its visibility is known, so attachment alone can't tell when it first shows.
+    private var wasBookmarksBarShown = false
+
     // Can be updated via keyboard shortcut so needs to be internal visibility
     func updateBookmarksBarViewVisibility(visible showBookmarksBar: Bool) {
         if showBookmarksBar {
@@ -759,6 +762,11 @@ final class MainViewController: NSViewController {
             bookmarksBarViewController.removeFromParent()
             bookmarksBarViewController.view.removeFromSuperview()
         }
+
+        if showBookmarksBar, !wasBookmarksBarShown {
+            NotificationCenter.default.post(name: .bookmarksBarShown, object: self)
+        }
+        wasBookmarksBarShown = showBookmarksBar
 
         mainView.isBookmarksBarShown = showBookmarksBar
         mainView.layoutSubtreeIfNeeded()

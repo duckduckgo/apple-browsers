@@ -31,6 +31,13 @@ public extension NewTabPageDataModel {
         case omnibarReasoningPickerShown
         case omnibarReasoningPickerTryForFreeShown
         case omnibarReasoningPickerUpgradeShown
+        /// Image and screenshot chips in the Duck.ai omnibar. Values pass through as the page sent
+        /// them; the app drops any it doesn't know.
+        case omnibarImageAttached(source: String)
+        case omnibarImageRemoved(source: String)
+        case omnibarScreenshotTaken(kind: String)
+        case omnibarScreenshotRemoved
+        case omnibarScreenshotFailed(reason: String)
     }
 }
 
@@ -53,6 +60,11 @@ extension NewTabPageDataModel.TelemetryEvent: Decodable {
         case .omnibarReasoningPickerShown: self = .omnibarReasoningPickerShown
         case .omnibarReasoningPickerTryForFreeShown: self = .omnibarReasoningPickerTryForFreeShown
         case .omnibarReasoningPickerUpgradeShown: self = .omnibarReasoningPickerUpgradeShown
+        case .omnibarImageAttached: self = .omnibarImageAttached(source: try Self.value(.source, in: payload))
+        case .omnibarImageRemoved: self = .omnibarImageRemoved(source: try Self.value(.source, in: payload))
+        case .omnibarScreenshotTaken: self = .omnibarScreenshotTaken(kind: try Self.value(.kind, in: payload))
+        case .omnibarScreenshotRemoved: self = .omnibarScreenshotRemoved
+        case .omnibarScreenshotFailed: self = .omnibarScreenshotFailed(reason: try Self.value(.reason, in: payload))
         }
     }
 }
@@ -65,6 +77,9 @@ private extension NewTabPageDataModel.TelemetryEvent {
         case parameters = "value"
         case state
         case themeVariantPopoverWasOpen
+        case source
+        case kind
+        case reason
     }
 
     enum EventName: String, Decodable {
@@ -75,11 +90,21 @@ private extension NewTabPageDataModel.TelemetryEvent {
         case omnibarReasoningPickerShown = "omnibar_reasoning_picker_shown"
         case omnibarReasoningPickerTryForFreeShown = "omnibar_reasoning_picker_tryforfree_shown"
         case omnibarReasoningPickerUpgradeShown = "omnibar_reasoning_picker_upgrade_shown"
+        case omnibarImageAttached = "omnibar_image_attached"
+        case omnibarImageRemoved = "omnibar_image_removed"
+        case omnibarScreenshotTaken = "omnibar_screenshot_taken"
+        case omnibarScreenshotRemoved = "omnibar_screenshot_removed"
+        case omnibarScreenshotFailed = "omnibar_screenshot_failed"
     }
 
     enum CustomizerState: String, Decodable {
         case opened
         case closed
+    }
+
+    /// The one string the event carries in its `value` object.
+    static func value(_ key: CodingKeys, in payload: KeyedDecodingContainer<CodingKeys>) throws -> String {
+        try payload.nestedContainer(keyedBy: CodingKeys.self, forKey: .parameters).decode(String.self, forKey: key)
     }
 
     private static func decodeCustomizerEvent(from container: KeyedDecodingContainer<CodingKeys>) throws -> NewTabPageDataModel.TelemetryEvent {

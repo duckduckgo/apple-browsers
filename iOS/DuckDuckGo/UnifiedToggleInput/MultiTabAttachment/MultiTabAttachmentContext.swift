@@ -25,10 +25,14 @@ import Foundation
 final class MultiTabAttachmentContext {
     private let feature: AIChatContextualAttachMoreTabsFeatureProviding
     private let source: MultiTabAttachmentSource?
+    private let includesCurrentTab: Bool
 
-    init(source: MultiTabAttachmentSource? = nil, feature: AIChatContextualAttachMoreTabsFeatureProviding) {
+    init(source: MultiTabAttachmentSource? = nil,
+         feature: AIChatContextualAttachMoreTabsFeatureProviding,
+         includesCurrentTab: Bool = false) {
         self.source = source
         self.feature = feature
+        self.includesCurrentTab = includesCurrentTab
     }
 
     private var isEnabled: Bool {
@@ -38,7 +42,7 @@ final class MultiTabAttachmentContext {
 
     func prepare(_ attachment: UnifiedToggleInputTabAttachment,
                  onChange: @escaping (UnifiedToggleInputTabAttachment?) -> Void) -> MultiTabAttachmentPreparation? {
-        guard isEnabled, let source, attachment.tabId != source.currentTabID,
+        guard isEnabled, let source, includesCurrentTab || attachment.tabId != source.currentTabID,
               let tab = source.tabsProvider().first(where: { $0.uid == attachment.tabId && $0.mode == source.mode }) else { return nil }
         return MultiTabAttachmentPreparation(attachment: attachment, tab: tab, source: source,
                                              isEnabled: { [feature] in
@@ -50,13 +54,14 @@ final class MultiTabAttachmentContext {
     func makeRequest(preparations: [MultiTabAttachmentPreparation],
                      didDispatch: @escaping @MainActor (MultiTabAttachmentRequest.SubmissionResult) -> Void = { _ in }) -> MultiTabAttachmentRequest? {
         guard !preparations.isEmpty else { return nil }
+        let currentTabID = includesCurrentTab ? source?.currentTabID : nil
         return makeRequest {
             MultiTabAttachmentRequest(contexts: {
                 var results: [AIChatPageContextData] = []
                 for preparation in preparations {
                     guard !Task.isCancelled else { return [] }
                     if let context = await preparation.value() {
-                        results.append(context)
+                        results.append(context.tabId == currentTabID ? context.withTabId(nil) : context)
                     }
                 }
                 return results
@@ -66,7 +71,8 @@ final class MultiTabAttachmentContext {
                 preparations.forEach { $0.cancel() }
             }, validate: { contexts in
                 contexts.filter { context in
-                    preparations.first(where: { $0.tab.uid == context.tabId })?.canDeliverPreparedContext == true
+                    let tabID = context.tabId ?? currentTabID
+                    return preparations.first(where: { $0.tab.uid == tabID })?.canDeliverPreparedContext == true
                 }
             }, didDispatch: didDispatch)
         }

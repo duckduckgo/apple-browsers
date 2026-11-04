@@ -47,6 +47,7 @@ extension Preferences {
         let action: () -> Void
         let settingsIconProvider: SettingsIconsProviding
         let isNew: Bool
+        let isBeta: Bool
         var themeManager: ThemeManager
         let shouldShowWinBackCampaignBadge: Bool
         @ObservedObject var protectionStatus: PrivacyProtectionStatus
@@ -57,6 +58,7 @@ extension Preferences {
              status: PrivacyProtectionStatus?,
              settingsIconProvider: SettingsIconsProviding,
              isNew: Bool = false,
+             isBeta: Bool = false,
              themeManager: ThemeManager,
              shouldShowWinBackCampaignBadge: Bool = false,
              action: @escaping () -> Void) {
@@ -67,6 +69,7 @@ extension Preferences {
             self.protectionStatus = status ?? PrivacyProtectionStatus()
             self.settingsIconProvider = settingsIconProvider
             self.isNew = isNew
+            self.isBeta = isBeta
             self.themeManager = themeManager
             self.shouldShowWinBackCampaignBadge = shouldShowWinBackCampaignBadge
         }
@@ -86,11 +89,15 @@ extension Preferences {
                         }
 
                     if isNew {
-                        NewBadgeView()
+                        SidebarBadgeView(text: UserText.newBadge)
+                    }
+
+                    if isBeta {
+                        SidebarBadgeView(text: UserText.betaBadge)
                     }
 
                     if shouldShowWinBackCampaignBadge {
-                        WinBackCampaignBadgeView()
+                        SidebarBadgeView(text: UserText.winBackCampaignMenuBadgeText)
                     }
 
                     Spacer()
@@ -110,27 +117,17 @@ extension Preferences {
         }
     }
 
-    struct NewBadgeView: View {
-        var body: some View {
-            Text(UserText.newBadge.uppercased())
-                .font(.system(size: 11, weight: .bold))
-                .padding(.horizontal, 8)
-                .padding(.vertical, 2)
-                .background(Color(designSystemColor: DesignSystemRebrand.isAppRebranded() ? .statusYellowTertiary : .alertYellow))
-                .foregroundColor(.black)
-                .cornerRadius(DesignSystemRebrand.isAppRebranded() ? 9 : 4)
-        }
-    }
+    struct SidebarBadgeView: View {
+        let text: String
 
-    struct WinBackCampaignBadgeView: View {
         var body: some View {
-            Text(UserText.winBackCampaignMenuBadgeText.uppercased())
+            Text(text.uppercased())
                 .font(.system(size: 11, weight: .bold))
                 .padding(.horizontal, 8)
                 .padding(.vertical, 2)
-                .background(Color(designSystemColor: DesignSystemRebrand.isAppRebranded() ? .statusYellowTertiary : .alertYellow))
+                .background(Color(designSystemColor: .statusYellowTertiary))
                 .foregroundColor(.black)
-                .cornerRadius(DesignSystemRebrand.isAppRebranded() ? 9 : 4)
+                .cornerRadius(9)
         }
     }
 
@@ -180,6 +177,7 @@ extension Preferences {
                         }
                     }.padding(.bottom, 16)
                 }
+                .accessibilityIdentifier("PreferencesSidebar.scrollView")
 
             }
             .padding(.top, 18)
@@ -199,6 +197,7 @@ extension Preferences {
                                 status: model.protectionStatus(for: pane),
                                 settingsIconProvider: settingsIconProvider,
                                 isNew: model.isPaneNew(pane: pane),
+                                isBeta: model.isPaneBeta(pane: pane),
                                 themeManager: themeManager,
                                 shouldShowWinBackCampaignBadge: model.shouldShowWinBackCampaignBadge(pane: pane),
                                 action: {

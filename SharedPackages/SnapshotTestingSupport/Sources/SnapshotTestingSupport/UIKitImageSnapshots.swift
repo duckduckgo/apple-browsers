@@ -334,6 +334,15 @@ private func assertSwiftUIImageSnapshot<Value: SwiftUI.View>(
     }
 }
 
+private enum PhoneSheetMetrics {
+    static let screenInset: CGFloat = 8
+    static let cornerRadius: CGFloat = 40
+    static let homeIndicatorInset: CGFloat = 34
+    static let grabberSize = CGSize(width: 56, height: 4)
+    static let grabberTopOffset: CGFloat = 6
+    static let backdropDimOpacity: Double = 0.2
+}
+
 private struct SheetSnapshotContainer<Content: SwiftUI.View>: SwiftUI.View {
     let content: Content
     let snapshotSize: CGSize
@@ -344,10 +353,29 @@ private struct SheetSnapshotContainer<Content: SwiftUI.View>: SwiftUI.View {
             Color(uiColor: .systemBackground)
                 .ignoresSafeArea()
 
-            content
-                .frame(width: contentWidth)
-                .fixedSize(horizontal: false, vertical: true)
-                .clipped()
+            if isPad {
+                content
+                    .frame(width: contentWidth)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .clipped()
+            } else {
+                Color.black
+                    .opacity(PhoneSheetMetrics.backdropDimOpacity)
+                    .ignoresSafeArea()
+
+                content
+                    .frame(width: contentWidth)
+                    .bottomSafeAreaPadding(PhoneSheetMetrics.homeIndicatorInset)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .overlay(alignment: .top) {
+                        Capsule()
+                            .fill(Color(uiColor: .tertiaryLabel))
+                            .frame(width: PhoneSheetMetrics.grabberSize.width, height: PhoneSheetMetrics.grabberSize.height)
+                            .padding(.top, PhoneSheetMetrics.grabberTopOffset)
+                    }
+                    .clipShape(RoundedRectangle(cornerRadius: PhoneSheetMetrics.cornerRadius, style: .continuous))
+                    .padding(.bottom, PhoneSheetMetrics.screenInset)
+            }
         }
         .frame(width: snapshotSize.width, height: snapshotSize.height)
     }
@@ -361,7 +389,19 @@ private struct SheetSnapshotContainer<Content: SwiftUI.View>: SwiftUI.View {
     }
 
     private var horizontalPadding: CGFloat {
-        isPad ? 140 : 0
+        isPad ? 140 : PhoneSheetMetrics.screenInset
+    }
+}
+
+private extension SwiftUI.View {
+
+    @ViewBuilder
+    func bottomSafeAreaPadding(_ length: CGFloat) -> some SwiftUI.View {
+        if #available(iOS 17, *) {
+            safeAreaPadding(.bottom, length)
+        } else {
+            padding(.bottom, length)
+        }
     }
 }
 

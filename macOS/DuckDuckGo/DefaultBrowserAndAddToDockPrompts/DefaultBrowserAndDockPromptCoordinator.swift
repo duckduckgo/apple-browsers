@@ -378,7 +378,7 @@ final class DefaultBrowserAndDockPromptCoordinator: DefaultBrowserAndDockPrompt 
         setPromptSeen()
         fireConfirmActionPixel()
         setDefaultBrowserAndAddToDockIfNeeded()
-        promptDismissedSubject.send((prompt, .actioned))
+        promptDismissedSubject.send((prompt, .actioned()))
         activePrompt = nil
     }
 

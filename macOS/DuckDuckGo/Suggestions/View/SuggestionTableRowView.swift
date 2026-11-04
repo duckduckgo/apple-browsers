@@ -48,7 +48,6 @@ final class SuggestionTableRowView: NSTableRowView {
     }
 
     var isBurner: Bool = false
-    var isAppRebranded: Bool = false
 
     private func setupView() {
         selectionHighlightStyle = .none
@@ -63,14 +62,7 @@ final class SuggestionTableRowView: NSTableRowView {
         let styleProvider = theme.addressBarStyleProvider
         let colorsProvider = theme.colorsProvider
 
-        let fillColor: NSColor = {
-            if isAppRebranded {
-                return colorsProvider.suggestionsHighlightBackgroundColor
-            }
-
-            return isBurner ? NSColor(resource: .burnerAccent) : theme.palette.accentPrimary
-        }()
-
+        let fillColor: NSColor = colorsProvider.suggestionsHighlightBackgroundColor
         let cornerRadius = styleProvider.suggestionHighlightCornerRadius
         let horizontalPadding = styleProvider.suggestionHighlightHorizontalPadding
 

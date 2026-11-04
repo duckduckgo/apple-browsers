@@ -169,6 +169,10 @@
                     "state": "enabled",
                     "minSupportedVersion": "1.36.0"
                 },
+                "maxSupportedSubfeature": {
+                    "state": "enabled",
+                    "maxSupportedVersion": "2.16.0"
+                },
                 "enabledSubfeature": {
                     "state": "enabled",
                     "targets": [

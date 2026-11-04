@@ -23,6 +23,8 @@ import SwiftUI
 /// `Pollen` and `pollen30` are `public` because the Duck.ai omnibar's "Try for free"/"Upgrade"
 /// tag was explicitly reviewed against this exact token (Figma's "Pollen 300") — everything else
 /// here stays internal until it goes through the same process.
+/// `mandarin50`, `blossom70` and `pondwater60` are `public` for the Duck.ai keyboard edge sweep on iOS,
+/// which draws the Search Assist gradient from these exact tokens.
 public enum RebrandingColor {
 
     enum GrayScale {
@@ -56,13 +58,13 @@ public enum RebrandingColor {
         static let eggshell100 = Color(0x181817)
     }
 
-    enum Mandarin {
+    public enum Mandarin {
         static let mandarin0 = Color(0xFFFAF9)
         static let mandarin10 = Color(0xFFEBE5)
         static let mandarin20 = Color(0xFFDACC)
         static let mandarin30 = Color(0xFFB294)
         static let mandarin40 = Color(0xFF8D5C)
-        static let mandarin50 = Color(0xF05F2B)
+        public static let mandarin50 = Color(0xF05F2B)
         static let mandarin60 = Color(0xCC3B0A)
         static let mandarin70 = Color(0x9E2B08)
         static let mandarin80 = Color(0x671907)
@@ -77,7 +79,7 @@ public enum RebrandingColor {
         static let pondwater30 = Color(0xA1D0F7)
         static let pondwater40 = Color(0x75B6EB)
         public static let pondwater50 = Color(0x4397E0)
-        static let pondwater60 = Color(0x1074CC)
+        public static let pondwater60 = Color(0x1074CC)
         static let pondwater70 = Color(0x045EB2)
         static let pondwater80 = Color(0x034180)
         static let pondwater90 = Color(0x02254D)
@@ -98,7 +100,7 @@ public enum RebrandingColor {
         static let lilypad100 = Color(0x082119)
     }
 
-    enum Blossom {
+    public enum Blossom {
         static let blossom0 = Color(0xFBF7FF)
         static let blossom10 = Color(0xF5EDFF)
         static let blossom20 = Color(0xEADAFD)
@@ -106,7 +108,7 @@ public enum RebrandingColor {
         static let blossom40 = Color(0xC19EDB)
         static let blossom50 = Color(0x9F6EB8)
         static let blossom60 = Color(0x7D4794)
-        static let blossom70 = Color(0x682A7A)
+        public static let blossom70 = Color(0x682A7A)
         static let blossom80 = Color(0x521A61)
         static let blossom90 = Color(0x3E0E47)
         static let blossom100 = Color(0x230829)

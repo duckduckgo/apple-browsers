@@ -56,7 +56,7 @@ final class AutofillImportPromoObserver: ExternalPromoDelegate, AutofillImportPr
         defer { closedPromoStateLock.unlock() }
         switch closedPromoState {
         case .initial, .importInProgress: return .ignored(cooldown: 0)
-        case .importedLogins: return .actioned
+        case .importedLogins: return .actioned()
         case .permanentlyDismissed: return .ignored()
         }
     }

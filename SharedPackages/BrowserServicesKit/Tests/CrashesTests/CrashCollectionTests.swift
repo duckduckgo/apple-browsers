@@ -230,6 +230,43 @@ class CrashCollectionTests: XCTestCase {
         XCTAssertEqual(store.object(forKey: CRCIDManager.crcidKey) as? String, crcid)
     }
 
+    // MARK: - Termination Reason Tests
+
+    func testCrashPixelIncludesNormalizedTerminationReason() {
+        let crashCollection = CrashCollection(crashReportSender: CrashReportSender(platform: .iOS, pixelEvents: nil),
+                                              crashCollectionStorage: MockKeyValueStore())
+
+        var reportedPixelParameters: [[CrashReportPixelParameter: String]] = []
+        crashCollection.start { pixelParameters, _, _ in
+            reportedPixelParameters = pixelParameters
+        }
+
+        crashCollection.crashHandler.didReceive([
+            MockPayload(mockCrashes: [
+                MockCrashDiagnostic(terminationReason: "Namespace SPRINGBOARD, Code 0x8badf00d, scene-update watchdog transgression"),
+                MockCrashDiagnostic(terminationReason: nil)
+            ])
+        ])
+
+        XCTAssertEqual(reportedPixelParameters.map { $0[.terminationReason] }, ["springboard_0x8badf00d", "-1"])
+    }
+
+    func testPixelTerminationReason_keepsOnlyNamespaceAndCode() {
+        XCTAssertEqual(CrashCollection.pixelTerminationReason(from: "Namespace SPRINGBOARD, Code 0x8badf00d"), "springboard_0x8badf00d")
+        XCTAssertEqual(CrashCollection.pixelTerminationReason(from: "Namespace RUNNINGBOARD, Code 0xDEAD10CC"), "runningboard_0xdead10cc")
+        XCTAssertEqual(CrashCollection.pixelTerminationReason(from: "Namespace SIGNAL, Code 9"), "signal_9")
+        XCTAssertEqual(
+            CrashCollection.pixelTerminationReason(from: "Namespace FRONTBOARD, Code 0xc51bad03, process-launch watchdog transgression for user@example.com"),
+            "frontboard_0xc51bad03"
+        )
+    }
+
+    func testPixelTerminationReason_withMissingOrUnparseableReason() {
+        XCTAssertEqual(CrashCollection.pixelTerminationReason(from: nil), "-1")
+        XCTAssertEqual(CrashCollection.pixelTerminationReason(from: ""), "-1")
+        XCTAssertEqual(CrashCollection.pixelTerminationReason(from: "Something unexpected happened"), "unknown")
+    }
+
     // MARK: - limitCallStackTreeDepth Tests
 
     func testLimitCallStackTreeDepth_withZeroMaxDepth_returnsEmptyDictionary() {
@@ -387,6 +424,24 @@ class MockPayload: MXDiagnosticPayload {
 
     override var crashDiagnostics: [MXCrashDiagnostic]? {
         return mockCrashes
+    }
+}
+
+class MockCrashDiagnostic: MXCrashDiagnostic {
+
+    let mockTerminationReason: String?
+
+    init(terminationReason: String?) {
+        self.mockTerminationReason = terminationReason
+        super.init()
+    }
+
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
+
+    override var terminationReason: String? {
+        return mockTerminationReason
     }
 }
 

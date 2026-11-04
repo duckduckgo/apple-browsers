@@ -97,9 +97,9 @@ public extension OnboardingTheme {
             primaryButtonBackgroundColor: ctaButtonBackground,
             primaryButtonPressedColor: ctaButtonPressed,
             primaryButtonTextColor: ctaButtonText,
-            secondaryButtonBackgroundColor: Color(designSystemColor: .buttonsPrimaryDefault),
-            secondaryButtonPressedColor: Color(designSystemColor: .buttonsPrimaryPressed),
-            secondaryButtonTextColor: Color(designSystemColor: .buttonsPrimaryText),
+            secondaryButtonBackgroundColor: Color(designSystemColor: .accentPrimary),
+            secondaryButtonPressedColor: Color(designSystemColor: .accentTertiary),
+            secondaryButtonTextColor: Color(designSystemColor: .accentContentPrimary),
             backgroundAccent: accentPrimary
         )
 

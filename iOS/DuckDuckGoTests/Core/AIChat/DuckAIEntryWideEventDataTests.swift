@@ -38,12 +38,12 @@ struct DuckAIEntryWideEventDataTests {
     }
 
     @available(iOS 16, *)
-    @Test("Metadata exposes the entry names and 1.2.0", .timeLimit(.minutes(1)))
+    @Test("Metadata exposes the entry names and 1.3.0", .timeLimit(.minutes(1)))
     func metadataExposesEntryNames() {
         #expect(DuckAIEntryWideEventData.metadata.pixelName == "duckai_entry")
         #expect(DuckAIEntryWideEventData.metadata.featureName == "duckai_entry")
         #expect(DuckAIEntryWideEventData.metadata.type == "ios-duckai-entry")
-        #expect(DuckAIEntryWideEventData.metadata.version == "1.2.0")
+        #expect(DuckAIEntryWideEventData.metadata.version == "1.3.0")
         #expect(DuckAIEntryWideEventData.appTerminatedReason == "app_terminated")
     }
 

@@ -35,12 +35,17 @@ extension MainViewController {
 
     func mainMenuRecentChats() async -> DuckAIRecentChatsMenuContent.Chats {
         guard aiChatSettings.isAIChatEnabled else { return .init(recentChats: [], totalChatCount: 0) }
-        let chats = await mainMenuNativeChats(isFireMode: tabManager.currentBrowsingMode == .fire) ?? []
+        let chats = await mainMenuNativeChats(isFireMode: menuBrowsingMode == .fire) ?? []
         let aiChatURL = aiChatSettings.aiChatURL
         let recentChats = chats.sorted { $0.lastEdit > $1.lastEdit }
             .prefix(Self.mainMenuRecentChatsLimit)
             .map { DuckAIRecentChatsMenuContent.Chat(title: $0.title, url: aiChatURL.withChatID($0.chatId)) }
         return .init(recentChats: Array(recentChats), totalChatCount: chats.count)
+    }
+
+    /// The mode of the tab switcher's selected grid while it is open, which can differ from the current tab's.
+    private var menuBrowsingMode: BrowsingMode {
+        tabSwitcherController?.selectedBrowsingMode ?? tabManager.currentBrowsingMode
     }
 
     /// `nil` when native chat storage is unavailable for that browsing mode.
@@ -127,7 +132,9 @@ extension MainViewController {
         else { return false }
         selectChatTab(sidebarTab, source: .contextualChat)
         // An open sidebar comes back with its tab; a closed one reopens on the chat its tab kept.
-        if let controller = tabManager.controller(for: sidebarTab), !controller.aiChatContextualSheetCoordinator.hasActiveSheet {
+        if let controller = tabManager.controller(for: sidebarTab),
+           !controller.aiChatContextualSheetCoordinator.isSheetPresented,
+           !controller.aiChatContextualSheetCoordinator.hasParkedSurface {
             controller.presentContextualAIChatSheet(from: self)
         }
         return true
@@ -145,7 +152,7 @@ extension MainViewController {
 
     @objc func menuDeleteAllChats(_ command: UICommand) {
         guard menuCommandAvailability.isEnabled(.deleteAllChats) else { return }
-        let isFireMode = tabManager.currentBrowsingMode == .fire
+        let isFireMode = menuBrowsingMode == .fire
         dismissMenuPresentation { [weak self] in
             Task { @MainActor [weak self] in
                 // Recounted because chats may have changed since the menu opened.

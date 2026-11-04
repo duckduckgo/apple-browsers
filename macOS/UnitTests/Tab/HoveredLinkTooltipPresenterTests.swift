@@ -185,7 +185,7 @@ final class HoveredLinkTooltipPresenterTests: XCTestCase {
         }
     }
 
-    func testWhenGapOutlastsHideDelayThenNextLinkAppearsWithoutRevealDelay() {
+    func testWhenTooltipIsFullyHiddenThenNextLinkAppearsAfterRevealDelay() {
         let harness = TooltipHarness()
         harness.showFirstLink()
         harness.presenter.update(url: nil)
@@ -194,9 +194,12 @@ final class HoveredLinkTooltipPresenterTests: XCTestCase {
 
         let url = URL(string: "https://example.com/second")!
         harness.presenter.update(url: url)
+        XCTAssertNil(harness.tooltip, "A hidden tooltip must wait for the reveal delay")
+        XCTAssertEqual(harness.scheduler.actions.count, 3)
+
+        harness.scheduler.run(at: 2)
         XCTAssertTrue(harness.tooltip?.isVisible == true)
         XCTAssertEqual(harness.label?.stringValue, url.absoluteString)
-        XCTAssertEqual(harness.scheduler.actions.count, 2, "The next link must not schedule another initial reveal")
     }
 
     func testWhenLeavingLinkThenTextAndBackgroundRemainTogetherUntilFadeCompletes() {

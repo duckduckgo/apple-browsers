@@ -128,10 +128,8 @@ final class HoveredLinkTooltipPresenter {
         label.stringValue = url.absoluteString
         if window.isVisible {
             updatePosition()
-        } else if hasShownTooltip {
-            // Crossing a gap between links must not restart the initial reveal delay.
-            show()
         } else {
+            // A tooltip that is still fading out stays visible above; once hidden, the reveal delay applies again.
             scheduleVisibilityUpdate(after: 0.5) { $0.show() }
         }
     }

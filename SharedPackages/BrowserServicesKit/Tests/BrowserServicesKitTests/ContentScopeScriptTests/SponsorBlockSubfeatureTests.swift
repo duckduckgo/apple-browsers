@@ -158,6 +158,7 @@ final class SponsorBlockSubfeatureTests: XCTestCase {
         webView.onEvaluate = { js in
             XCTAssertTrue(js.contains("onConfigChanged"), js)
             XCTAssertTrue(js.contains(#""skipMode":"auto""#), js)
+            XCTAssertFalse(js.contains(#""version""#), js)
             pushed.fulfill()
         }
         preferences.skipMode = .auto

@@ -238,7 +238,6 @@ public enum MacOSBrowserConfigSubfeature: String, PrivacySubfeature {
     /// Page Signals: Extended Site Breakage Diagostics
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1219073365875860
     case pageSignals
-
 }
 
 public enum TabManagerSubfeature: String, PrivacySubfeature {

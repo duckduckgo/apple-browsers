@@ -85,12 +85,8 @@ public final class SponsorBlockSubfeature: NSObject, Subfeature {
     struct ConfigResponse: Encodable, Equatable {
         let enabled: Bool
         let skipMode: String
-        let version: Int
-    }
-
-    struct ConfigUpdate: Encodable, Equatable {
-        let enabled: Bool
-        let skipMode: String
+        /// Sent with `getConfig` only; `nil` is omitted, since the `onConfigChanged` schema allows no extra fields.
+        var version: Int?
     }
 
     public func handler(forMethodNamed methodName: String) -> Subfeature.Handler? {
@@ -110,13 +106,13 @@ public final class SponsorBlockSubfeature: NSObject, Subfeature {
     private func handleGetConfig(params: Any, original: WKScriptMessage) async throws -> Encodable? {
         webView = original.webView
         let response = ConfigResponse(enabled: isEnabled, skipMode: preferences.skipMode.rawValue, version: Self.contractVersion)
-        Logger.sponsorBlock.debug("getConfig answered: enabled=\(response.enabled) skipMode=\(response.skipMode, privacy: .public) version=\(response.version)")
+        Logger.sponsorBlock.debug("getConfig answered: enabled=\(response.enabled) skipMode=\(response.skipMode, privacy: .public) version=\(Self.contractVersion)")
         return response
     }
 
     private func pushConfigChanged() {
         guard let broker, let webView else { return }
-        let update = ConfigUpdate(enabled: isEnabled, skipMode: preferences.skipMode.rawValue)
+        let update = ConfigResponse(enabled: isEnabled, skipMode: preferences.skipMode.rawValue)
         Logger.sponsorBlock.debug("onConfigChanged pushed: enabled=\(update.enabled) skipMode=\(update.skipMode, privacy: .public)")
         broker.push(method: Self.onConfigChanged, params: update, for: self, into: webView)
     }

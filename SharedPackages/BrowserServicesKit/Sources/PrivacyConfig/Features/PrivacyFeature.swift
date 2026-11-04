@@ -742,13 +742,8 @@ public enum DuckPlayerSubfeature: String, PrivacySubfeature {
     case nativeUI // Use Duckplayer's native UI
 }
 
-/// Subfeatures of the top-level `sponsorBlock` feature, whose state and settings also drive the content-scope script.
-/// Named `…PrivacySubfeature` because `SponsorBlockSubfeature` is the content-scope message handler in BrowserServicesKit.
 public enum SponsorBlockPrivacySubfeature: String, PrivacySubfeature {
     public var parent: PrivacyFeature { .sponsorBlock }
-
-    /// Native side of the internal MVP: segment lookups, config answers and the settings UI.
-    /// https://app.asana.com/1/137249556945/project/1163321984198618/task/1219201049349186
     case mvpEnabled
 }
 

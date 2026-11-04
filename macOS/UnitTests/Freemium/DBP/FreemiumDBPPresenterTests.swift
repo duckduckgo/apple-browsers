@@ -38,10 +38,25 @@ final class FreemiumDBPPresenterTests: XCTestCase {
         let sut = DefaultFreemiumDBPPresenter(freemiumDBPStateManager: mockFreemiumDBPStateManager)
         XCTAssertFalse(mockFreemiumDBPStateManager.didActivate)
         // When
-        sut.showFreemiumDBPAndSetActivated(windowControllersManager: mockWindowControllerManager)
+        sut.showFreemiumDBPAndSetActivated(entryPoint: .freeScanBanner,
+                                           windowControllersManager: mockWindowControllerManager)
         // Then
         XCTAssertEqual(mockWindowControllerManager.showTabCalls.count, 1)
-        XCTAssertEqual(mockWindowControllerManager.showTabCalls.first, Tab.Content.dataBrokerProtection)
+        XCTAssertEqual(mockWindowControllerManager.showTabCalls.first,
+                       Tab.Content.dataBrokerProtection(.freemium(.freeScanBanner)))
         XCTAssertTrue(mockFreemiumDBPStateManager.didActivate)
+    }
+
+    func testFreemiumEntryPointsReportTheTokensTheWebUIExpects() {
+        XCTAssertEqual(FreemiumDBPEntryPoint.freeScanBanner.rawValue, "freescanbanner")
+        XCTAssertEqual(FreemiumDBPEntryPoint.viewResultsBanner.rawValue, "viewresultsbanner")
+        XCTAssertEqual(FreemiumDBPEntryPoint.appMenuPreScan.rawValue, "appmenuprescan")
+        XCTAssertEqual(FreemiumDBPEntryPoint.appMenuPostScan.rawValue, "appmenupostscan")
+    }
+
+    func testDataBrokerProtectionTabContextProvidesEntryPointOnlyForFreemium() {
+        XCTAssertNil(DataBrokerProtectionTabContext.subscribed.freemiumEntryPoint)
+        XCTAssertEqual(DataBrokerProtectionTabContext.freemium(.viewResultsBanner).freemiumEntryPoint,
+                       .viewResultsBanner)
     }
 }

@@ -66,6 +66,10 @@ private enum AttributesKey: String, CaseIterable {
     case ntpAfterIdleState
     case shouldShowWinBackOfferUrgencyMessage
     case daysSinceDuckAiUsed
+    case isReturningUser
+    case isDuckAiEnabled
+    case triedDuckAiDuringOnboarding
+    case isDuckAiBoostActive
 
     func matchingAttribute(jsonMatchingAttribute: AnyDecodable) -> MatchingAttribute {
         switch self {
@@ -115,6 +119,10 @@ private enum AttributesKey: String, CaseIterable {
         case .ntpAfterIdleState: return NTPAfterIdleStateMatchingAttribute(jsonMatchingAttribute: jsonMatchingAttribute)
         case .shouldShowWinBackOfferUrgencyMessage: return WinBackOfferUrgencyMatchingAttribute(jsonMatchingAttribute: jsonMatchingAttribute)
         case .daysSinceDuckAiUsed: return DaysSinceDuckAIUsedMatchingAttribute(jsonMatchingAttribute: jsonMatchingAttribute)
+        case .isReturningUser: return IsReturningUserMatchingAttribute(jsonMatchingAttribute: jsonMatchingAttribute)
+        case .isDuckAiEnabled: return IsDuckAIEnabledMatchingAttribute(jsonMatchingAttribute: jsonMatchingAttribute)
+        case .triedDuckAiDuringOnboarding: return TriedDuckAIDuringOnboardingMatchingAttribute(jsonMatchingAttribute: jsonMatchingAttribute)
+        case .isDuckAiBoostActive: return IsDuckAIBoostActiveMatchingAttribute(jsonMatchingAttribute: jsonMatchingAttribute)
         }
     }
 }

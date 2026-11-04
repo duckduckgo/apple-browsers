@@ -22,6 +22,7 @@ import Foundation
 
 public typealias DesignSystemColor = SharedDesignSystemColor
 
+/// # Important: Please use `SingleUseColor` if you're adding a color that's not mapped to a Figma Export
 public enum SharedDesignSystemColor {
 
     // Accent
@@ -62,13 +63,6 @@ public enum SharedDesignSystemColor {
     case accentAltTextSecondary
     case accentAltTextTertiary
 
-    // Alert
-    case alertGreen
-    case alertYellow
-
-    // Shield
-    case shieldPrivacy
-
     // Status
     case statusGray
     case statusGreen
@@ -84,23 +78,6 @@ public enum SharedDesignSystemColor {
     case vpnYellowForeground
     case vpnYellowForegroundPressed
 
-    // Buttons/Primary
-    case buttonsPrimaryDefault
-    case buttonsPrimaryPressed
-    case buttonsPrimaryDisabled
-    case buttonsPrimaryText
-    case buttonsPrimaryTextDisabled
-
-    // Buttons/SecondaryFill
-    case buttonsSecondaryFillDefault
-    case buttonsSecondaryFillPressed
-    case buttonsSecondaryFillDisabled
-    case buttonsSecondaryFillText
-    case buttonsSecondaryFillTextDisabled
-
-    // Buttons/Color
-    case buttonsWhite
-
     // Container
     case containerFillPrimary
     case containerFillSecondary
@@ -110,6 +87,7 @@ public enum SharedDesignSystemColor {
     case containerBorderTertiary
 
     // Controls
+    case controlsBase
     case controlsBorderPrimary
     case controlsBorderSecondary
     case controlsBorderTertiary
@@ -125,7 +103,8 @@ public enum SharedDesignSystemColor {
     case destructiveContentPrimary
     case destructiveContentSecondary
     case destructiveContentTertiary
-    case destructiveGlow
+    case destructiveGlowPrimary
+    case destructiveGlowSecondary
     case destructivePrimary
     case destructiveSecondary
     case destructiveTertiary
@@ -158,11 +137,6 @@ public enum SharedDesignSystemColor {
     case unifiedInputTextPrimary
     case unifiedInputTextSecondary
 
-    // System
-    case lines
-    case spinnerStart
-    case spinnerFinal
-
     // Shadows
     case shadowPrimary
     case shadowSecondary
@@ -176,6 +150,8 @@ public enum SharedDesignSystemColor {
     case surfaceTertiary
 
     // Status
+    case statusWarningContentPrimary
+    case statusWarningFillPrimary
     case statusYellowPrimary
     case statusYellowSecondary
     case statusYellowTertiary

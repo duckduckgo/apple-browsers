@@ -33,9 +33,9 @@ struct SystemDisabledPermissionInfoView: View {
     private var promptText: String {
         switch permissionType {
         case .notification:
-            return String(format: UserText.notificationPermissionAuthorizationFormat, domain)
+            return String(format: UserText.notificationPermissionAuthorizationFormat, domain.permissionDisplayName)
         case .geolocation:
-            return String(format: UserText.locationPermissionAuthorizationFormat, domain)
+            return String(format: UserText.locationPermissionAuthorizationFormat, domain.permissionDisplayName)
         case .microphone:
             // On duck.ai the only mic uses are voice chat and dictation, so phrase the prompt
             // around the triggering flow rather than the generic "website would like to…" form.
@@ -47,7 +47,7 @@ struct SystemDisabledPermissionInfoView: View {
                     return UserText.duckAiDictationMicrophonePrompt
                 }
             }
-            return String(format: UserText.microphonePermissionAuthorizationFormat, domain)
+            return String(format: UserText.microphonePermissionAuthorizationFormat, domain.permissionDisplayName)
         default:
             return ""
         }

@@ -113,6 +113,7 @@ final class FreemiumDBPPromoDelegate: InternalPromoDelegate {
     /// Single source of truth for eligibility logic.
     private func computeEligibility(isFeatureAvailable: Bool, historyRecord: PromoHistoryRecord?) -> Bool {
         if coordinator.hasLegacyDismissal && coordinator.firstScanResults == nil { return false }
+        if coordinator.isFirstScanInProgress { return false }
         if isFeatureAvailable { return true }
 
         // Fast-path: if the promo was shown within the last 7 days, consider
@@ -135,7 +136,7 @@ final class FreemiumDBPPromoDelegate: InternalPromoDelegate {
         self.historyProvider = historyProvider
         self.promoId = promoId
         self.dateProvider = dateProvider
-        coordinator.onScanResultsUpdated = { [weak self] in
+        coordinator.onScanStateChanged = { [weak self] in
             self?.refreshEligibility()
         }
     }

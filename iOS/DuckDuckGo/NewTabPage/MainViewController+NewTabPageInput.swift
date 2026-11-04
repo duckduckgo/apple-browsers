@@ -29,8 +29,39 @@ extension MainViewController {
             usesUnifiedInput: unifiedToggleInputCoordinator != nil,
             isLegacyInputEditing: hasInlineInput && viewCoordinator.omniBar.isTextFieldEditing,
             isUnifiedInputEditing: unifiedToggleInputCoordinator?.isOmnibarSession == true,
-            isHandingOff: isAddressBarHandOffInProgress,
-            isDismissing: viewCoordinator.isInlineInputDismissInProgress)
+            isHandingOff: isAddressBarHandOffInProgress || isPerformingOnboardingInputHandoff,
+            isDismissing: viewCoordinator.isInlineInputDismissInProgress,
+            isPresentingOnboardingDialog: newTabPageViewController?.isPresentingOnboardingDialog == true)
+    }
+
+    func newTabPageDidChangeOnboardingPresentation(_ controller: any NewTabPage) {
+        guard controller === newTabPageViewController else { return }
+        updateAddressBarSuppressionForNewTabPage()
+        controller.refreshContextualOnboardingDialogLayout()
+    }
+
+    /// Dismisses the onboarding dialog and activates inline input without the resting-to-focused animation.
+    func performOnboardingInputHandoff(for page: any NewTabPage,
+                                       dismissDialog: () -> Void,
+                                       activateInput: () -> Void) -> Bool {
+        guard page === newTabPageViewController,
+              page.parent === self,
+              page.hasInlineSearchInput,
+              let coordinator = unifiedToggleInputCoordinator,
+              !coordinator.isOmnibarSession,
+              currentTab?.isAITab != true else { return false }
+
+        // Keep editing chrome selected while dismissal restores the modules so they cannot flash before focus.
+        let wasPerformingHandoff = isPerformingOnboardingInputHandoff
+        isPerformingOnboardingInputHandoff = true
+        restingNewTabPageSnapshot = nil
+        defer {
+            isPerformingOnboardingInputHandoff = wasPerformingHandoff
+            updateAddressBarSuppressionForNewTabPage()
+        }
+        dismissDialog()
+        activateInput()
+        return true
     }
 
     func updateAddressBarSuppressionForNewTabPage() {
@@ -57,7 +88,9 @@ extension MainViewController {
 
     func revealAddressBarForEditing() {
         guard viewCoordinator.newTabPageInputPresentation.hidesNavigationContainer else { return }
-        if unifiedToggleInputCoordinator != nil {
+        if isPresentingNewTabInputDirectly {
+            restingNewTabPageSnapshot = nil
+        } else if unifiedToggleInputCoordinator != nil {
             captureRestingNewTabPageSnapshot()
         }
         isAddressBarHandOffInProgress = true
@@ -108,6 +141,11 @@ extension MainViewController {
         handleVoiceSearchOpenRequest(preferredTarget: textEntryMode == .aiChat ? .AIChat : .SERP)
     }
 
+    func newTabPageDuckAIMenu(_ controller: any NewTabPage) -> UIMenu? {
+        guard duckAIAddressBarEntry == .menu else { return nil }
+        return makeDuckAIMenu(source: .addressBarIcon, type: .webPage)
+    }
+
     func newTabPageDidRequestSearch(_ controller: any NewTabPage, textEntryMode: TextEntryMode) {
         if textEntryMode == .aiChat, !aiChatSettings.isAIChatSearchInputUserSettingsEnabled {
             // Unified input locks to search when the toggle is disabled.
@@ -119,6 +157,12 @@ extension MainViewController {
         onExperimentalAddressBarTapped()
         revealAddressBarForEditing()
         defer { finishNewTabPageInputHandoff() }
+        // The inline field must not depend on the hidden legacy text field becoming first responder.
+        if controller.hasInlineSearchInput,
+           activateFromOmnibarIfNeeded(currentText: nil, tapped: false, textEntryMode: textEntryMode,
+                                      isRequestValid: { true }, onFocus: nil) == .intercept {
+            return
+        }
         viewCoordinator.omniBar.beginEditing(animated: true, forTextEntryMode: textEntryMode)
     }
 }

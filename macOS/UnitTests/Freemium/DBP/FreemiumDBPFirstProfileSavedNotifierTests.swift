@@ -57,6 +57,24 @@ final class FreemiumDBPFirstProfileSavedNotifierTests: XCTestCase {
         XCTAssertTrue(mockFreemiumDBPUserStateManager.didPostFirstProfileSavedNotification)
     }
 
+    func testWhenNotificationIsPosted_thenObserversSeeTheFlagAlreadySet() {
+        // Given
+        subscriptionAuthenticationStateProvider.isUserAuthenticated = false
+        mockFreemiumDBPUserStateManager.didActivate = true
+        mockFreemiumDBPUserStateManager.didPostFirstProfileSavedNotification = false
+        var flagSeenByObserver: Bool?
+        let observer = mockNotificationCenter.addObserver(forName: .pirProfileSaved, object: nil, queue: nil) { [mockFreemiumDBPUserStateManager] _ in
+            flagSeenByObserver = mockFreemiumDBPUserStateManager?.didPostFirstProfileSavedNotification
+        }
+        defer { mockNotificationCenter.removeObserver(observer) }
+
+        // When
+        sut.postProfileSavedNotificationIfPermitted()
+
+        // Then
+        XCTAssertEqual(flagSeenByObserver, true)
+    }
+
     func testWhenUserIsAuthenticated_thenNotificationShouldNotBePosted() {
         // Given
         subscriptionAuthenticationStateProvider.isUserAuthenticated = true

@@ -26,12 +26,6 @@ final class KeyboardShortcutView: NSView {
         static let keyCapSize: CGFloat = 16
         static let keyCapFontSize: CGFloat = 10
         static let keyCapSpacing: CGFloat = 4
-        static let normalBackgroundColor = NSColor.black.withAlphaComponent(0.08)
-        static let selectedBackgroundColor = NSColor.white.withAlphaComponent(0.15)
-        static let normalTextColor = NSColor(resource: .suggestionText)
-        // Match the chip label and arrow next to the key caps so the whole
-        // "Ask privately" chip reads as one element when the row is highlighted.
-        static let selectedTextColor = NSColor(designSystemColor: .accentContentSecondary)
     }
 
     private let stackView: NSStackView = {
@@ -89,16 +83,8 @@ final class KeyboardShortcutView: NSView {
 
     private func updateAppearance() {
         let palette = themeManager.theme.palette
-        let bgColor: NSColor
-        let textColor: NSColor
-
-        if themeManager.isAppRebranded {
-            bgColor = isHighlighted ? palette.controlsFillSecondary : palette.controlsFillPrimary
-            textColor = isHighlighted ? palette.accentTextPrimary : palette.textPrimary
-        } else {
-            bgColor = isHighlighted ? Constants.selectedBackgroundColor : Constants.normalBackgroundColor
-            textColor = isHighlighted ? Constants.selectedTextColor : Constants.normalTextColor
-        }
+        let bgColor = isHighlighted ? palette.controlsFillSecondary : palette.controlsFillPrimary
+        let textColor = isHighlighted ? palette.accentTextPrimary : palette.textPrimary
 
         keyCapViews.forEach { keyCapView in
             keyCapView.backgroundColor = bgColor

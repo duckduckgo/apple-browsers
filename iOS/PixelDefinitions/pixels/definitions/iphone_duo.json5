@@ -1,0 +1,16 @@
+{
+    "iphone-duo-launched": {
+        "description": "Measures daily active iPhone Duo usage on devices with hardware model identifier iPhone19,4, while launch reporting is enabled. Sending is delayed randomly by 1–30 seconds to avoid the exact launch time, and PETAL randomizes recorded timestamps.",
+        "owners": ["brindy"],
+        "triggers": ["startup"],
+        "suffixes": ["daily", "platform", "form_factor"],
+        "parameters": [
+            {
+                "key": "petal",
+                "type": "string",
+                "description": "Routes the pixel through the PETAL timestamp-randomization pipeline.",
+                "enum": ["randomize"]
+            }
+        ]
+    }
+}

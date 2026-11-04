@@ -69,6 +69,7 @@ private final class MockPromptBarPresenter: PromptBarPresenting {
     private(set) var toggleSources: [PromptBarPresentationSource] = []
 
     func show(source: PromptBarPresentationSource) { isVisible = true }
+    func showForLauncherPromo(shortcut: String) { isVisible = true }
     func dismiss(reason: PromptBarDismissReason) { isVisible = false }
     func toggle(source: PromptBarPresentationSource) {
         toggleCallCount += 1

@@ -35,6 +35,8 @@ final class WebExtensionLoadingMock: WebExtensionLoading {
     var mockLoadResults: [Result<WebExtensionLoadResult, Error>] = []
     var mockError: Error?
     var mockUnloadError: Error?
+    /// Runs while `loadWebExtensions` or `reloadWebExtension` is in progress, before it returns.
+    var loadHandler: (@MainActor (String, WKWebExtensionController) async throws -> Void)?
 
     private var createdTestExtensions: [URL] = []
 
@@ -76,6 +78,9 @@ final class WebExtensionLoadingMock: WebExtensionLoading {
     func loadWebExtensions(identifiers: [String], into controller: WKWebExtensionController) async -> [Result<WebExtensionLoadResult, Error>] {
         loadWebExtensionsCalled = true
         loadedIdentifiers = identifiers
+        for identifier in identifiers {
+            try? await loadHandler?(identifier, controller)
+        }
         return mockLoadResults
     }
 
@@ -95,6 +100,7 @@ final class WebExtensionLoadingMock: WebExtensionLoading {
         if let mockError = mockError {
             throw mockError
         }
+        try await loadHandler?(identifier, controller)
     }
 
     // MARK: - Test Helper

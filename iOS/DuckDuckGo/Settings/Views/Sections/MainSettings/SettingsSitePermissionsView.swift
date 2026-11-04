@@ -247,7 +247,7 @@ struct SettingsSitePermissionsView: View {
                         .pickerStyle(.inline)
                         .labelsHidden()
                     }
-                    .listRowBackground(Color(singleUseColor: .groupedListContentBackground))
+                    .listRowBackground(Color(designSystemColor: .surfaceTertiary))
                 }
             } header: {
                 Text(UserText.sitePermissions)
@@ -280,7 +280,7 @@ struct SettingsSitePermissionsView: View {
                             }
                         }
                         .accessibilityIdentifier("Settings.SitePermissions.Site.\(site.host)")
-                        .listRowBackground(Color(singleUseColor: .groupedListContentBackground))
+                        .listRowBackground(Color(designSystemColor: .surfaceTertiary))
                         .swipeActions(edge: .trailing, allowsFullSwipe: true) {
                             Button(role: .destructive) {
                                 viewModel.removePermissions(for: site)
@@ -305,7 +305,7 @@ struct SettingsSitePermissionsView: View {
                     .daxBodyRegular()
                     .foregroundColor(Color(designSystemColor: .accentPrimary))
                     .accessibilityIdentifier("Settings.SitePermissions.RemoveAll")
-                    .listRowBackground(Color(singleUseColor: .groupedListContentBackground))
+                    .listRowBackground(Color(designSystemColor: .surfaceTertiary))
                 }
                 .sitePermissionsRowInsets()
             }
@@ -356,7 +356,7 @@ private struct SettingsSitePermissionsSiteView: View {
                         .pickerStyle(.inline)
                         .labelsHidden()
                     }
-                    .listRowBackground(Color(singleUseColor: .groupedListContentBackground))
+                    .listRowBackground(Color(designSystemColor: .surfaceTertiary))
                 }
             } header: {
                 Text(String(format: UserText.settingsSitePermissionsSiteHeaderFormat, site.host))
@@ -374,7 +374,7 @@ private struct SettingsSitePermissionsSiteView: View {
                 .daxBodyRegular()
                 .foregroundColor(Color(designSystemColor: .accentPrimary))
                 .accessibilityIdentifier("Settings.SitePermissions.RemoveSite")
-                .listRowBackground(Color(singleUseColor: .groupedListContentBackground))
+                .listRowBackground(Color(designSystemColor: .surfaceTertiary))
             }
             .sitePermissionsRowInsets()
         }

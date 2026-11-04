@@ -165,6 +165,18 @@ class DatabaseProviderTests: XCTestCase {
         XCTAssertEqual(account.username, results[0].username)
         XCTAssertNotNil(account.created)
         XCTAssertNotNil(account.lastUpdated)
+        XCTAssertNotNil(results[0].lastUsed)
+    }
+
+    func test_when_record_stored_with_last_used_then_original_date_is_preserved() throws {
+        let database = try DefaultAutofillDatabaseProvider(key: simpleL1Key) as AutofillDatabaseProvider
+        let lastUsed = Date(timeIntervalSince1970: 1_700_000_200)
+        let account = SecureVaultModels.WebsiteAccount(username: "brindy", domain: "example.com", lastUsed: lastUsed)
+        let credentials = SecureVaultModels.WebsiteCredentials(account: account, password: Data("password".utf8))
+        let accountId = try database.storeWebsiteCredentials(credentials)
+
+        let storedCredentials = try XCTUnwrap(database.websiteCredentialsForAccountId(accountId))
+        XCTAssertEqual(storedCredentials.account.lastUsed, lastUsed)
     }
 
     func test_when_database_is_new_then_no_records() throws {

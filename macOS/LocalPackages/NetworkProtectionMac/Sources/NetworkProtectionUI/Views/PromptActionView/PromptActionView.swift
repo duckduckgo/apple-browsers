@@ -38,7 +38,6 @@ struct PromptActionView: View {
 
     enum Constants {
         static let backgroundCornerRadius = 16.0
-        static let legacyBackgroundCornerRadius = 6.0
     }
 
     @Environment(\.colorScheme) var colorScheme
@@ -47,21 +46,13 @@ struct PromptActionView: View {
 
     let model: Model
 
-    /// Captured at init so it stays stable for the view's lifetime.
-    let isAppRebranded: Bool
-
     // MARK: - Initializers
 
-    init(model: Model, isAppRebranded: Bool = DesignSystemRebrand.isAppRebranded()) {
+    init(model: Model) {
         self.model = model
-        self.isAppRebranded = isAppRebranded
     }
 
     // MARK: - View
-
-    private var cornerRadius: CGFloat {
-        isAppRebranded ? Constants.backgroundCornerRadius : Constants.legacyBackgroundCornerRadius
-    }
 
     public var body: some View {
         VStack(spacing: 0) {
@@ -114,10 +105,10 @@ struct PromptActionView: View {
         }
         .cornerRadius(8)
         .background(
-            RoundedRectangle(cornerRadius: cornerRadius, style: .circular)
+            RoundedRectangle(cornerRadius: Constants.backgroundCornerRadius, style: .circular)
                 .stroke(Color(.onboardingStepBorder), lineWidth: 1)
                 .background(
-                    RoundedRectangle(cornerRadius: cornerRadius, style: .circular)
+                    RoundedRectangle(cornerRadius: Constants.backgroundCornerRadius, style: .circular)
                         .fill(Color(.onboardingStepBackground))
                 ))
     }

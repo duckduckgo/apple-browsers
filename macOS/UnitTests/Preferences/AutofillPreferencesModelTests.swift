@@ -18,6 +18,7 @@
 
 import XCTest
 import Combine
+import PrivacyConfig
 @testable import DuckDuckGo_Privacy_Browser
 
 final class AutofillPreferencesPersistorMock: AutofillPreferencesPersistor {
@@ -30,6 +31,7 @@ final class AutofillPreferencesPersistorMock: AutofillPreferencesPersistor {
     var autolockLocksFormFilling: Bool = false
     var debugScriptEnabled: Bool = false
     var showInMenuBar: Bool = false
+    var isManagedByExtension: Bool = false
 }
 
 final class UserAuthenticatorMock: UserAuthenticating {
@@ -44,6 +46,9 @@ final class UserAuthenticatorMock: UserAuthenticating {
     func authenticateUser(reason: DeviceAuthenticator.AuthenticationReason) async -> DeviceAuthenticationResult {
         didCallAuthenticate = true
         return _authenticateUser(reason)
+    }
+    func isAuthenticationPromptNeeded(reason: DeviceAuthenticator.AuthenticationReason) -> Bool {
+        true
     }
 }
 
@@ -120,5 +125,67 @@ final class AutofillPreferencesModelTests: XCTestCase {
         model.authorizeAutoLockSettingsChange(threshold: .oneHour)
         XCTAssertNotEqual(model.autoLockThreshold, .oneHour)
         XCTAssertEqual(persistor.autoLockThreshold, model.autoLockThreshold)
+    }
+
+    @MainActor
+    func testWhenDuckDuckGoIsThePasswordManagerThenActivePromoIsShown() throws {
+        let syncPromoManager = MockSyncPromoManager()
+        let model = try AutofillPreferencesModel(persistor: AutofillPreferencesPersistorMock(), userAuthenticator: UserAuthenticatorMock(),
+                                                 neverPromptWebsitesManager: neverPromptWebsitesManager(), syncPromoManager: syncPromoManager)
+        XCTAssertFalse(model.showSyncPromo)
+
+        syncPromoManager.isPromoActiveSubject.send(true)
+
+        XCTAssertTrue(model.showSyncPromo)
+    }
+
+    @MainActor
+    func testWhenBitwardenIsThePasswordManagerThenActivePromoIsNotShown() throws {
+        let persistor = AutofillPreferencesPersistorMock()
+        persistor.passwordManager = .bitwarden
+        let syncPromoManager = MockSyncPromoManager()
+        syncPromoManager.isPromoActiveSubject.send(true)
+
+        let model = try AutofillPreferencesModel(persistor: persistor, userAuthenticator: UserAuthenticatorMock(),
+                                                 neverPromptWebsitesManager: neverPromptWebsitesManager(), syncPromoManager: syncPromoManager)
+
+        XCTAssertFalse(model.showSyncPromo)
+    }
+
+    // MARK: - Extension Managing Autofill
+
+    @MainActor
+    func testWhenAnExtensionManagesAutofill_ThenTheModelReportsIt() throws {
+        let persistor = AutofillPreferencesPersistorMock()
+        persistor.isManagedByExtension = true
+
+        let model = try makeModel(persistor: persistor, notificationCenter: NotificationCenter())
+
+        XCTAssertTrue(model.isManagedByExtension)
+    }
+
+    @MainActor
+    func testWhenAnExtensionTakesOverWhileSettingsAreOpen_ThenTheModelFollows() throws {
+        let persistor = AutofillPreferencesPersistorMock()
+        let notificationCenter = NotificationCenter()
+        let model = try makeModel(persistor: persistor, notificationCenter: notificationCenter)
+        XCTAssertFalse(model.isManagedByExtension)
+
+        let updated = expectation(description: "isManagedByExtension updated")
+        let cancellable = model.$isManagedByExtension.dropFirst().sink { _ in updated.fulfill() }
+
+        persistor.isManagedByExtension = true
+        notificationCenter.post(name: .autofillUserSettingsDidChange, object: nil)
+
+        wait(for: [updated], timeout: 1)
+        XCTAssertTrue(model.isManagedByExtension)
+        cancellable.cancel()
+    }
+
+    @MainActor
+    private func makeModel(persistor: AutofillPreferencesPersistorMock, notificationCenter: NotificationCenter) throws -> AutofillPreferencesModel {
+        try AutofillPreferencesModel(persistor: persistor, userAuthenticator: UserAuthenticatorMock(),
+                                     neverPromptWebsitesManager: neverPromptWebsitesManager(), syncPromoManager: MockSyncPromoManager(),
+                                     notificationCenter: notificationCenter)
     }
 }

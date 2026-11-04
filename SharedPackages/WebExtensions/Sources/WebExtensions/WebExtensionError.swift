@@ -23,6 +23,8 @@ import Foundation
 public enum WebExtensionError: Error {
     case installationCancelled
     case updateIdentityMismatch
+    case extensionNotInstalled
+    case embeddedExtensionCannotBeDisabled
     case failedToLoadWebExtension(_ error: Error)
     case failedToUnloadWebExtension(_ error: Error)
     case failedToRemoveWebExtension(_ error: Error)

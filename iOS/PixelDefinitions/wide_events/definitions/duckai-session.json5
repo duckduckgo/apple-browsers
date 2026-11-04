@@ -4,7 +4,7 @@
         "owners": ["Bunn"],
         "meta": {
             "type": "ios-duckai-session",
-            "version": "0.0"
+            "version": "1.0"
         },
         "feature": {
             "name": "duckai_session",
@@ -18,8 +18,16 @@
                     },
                     "exit_trigger": {
                         "type": "string",
-                        "description": "The action that caused the transition away from Duck.ai. Present only when status_reason is left_duckai. back_or_close: Back or a close of the Duck.ai tab. tab_switched: the user selected another existing tab. new_tab_opened: the user opened a new tab. fire_tab_opened: the user opened a Fire tab. search_started: the user started a Search from Duck.ai. other_navigation: no mapped action explains the transition.",
-                        "enum": ["back_or_close", "tab_switched", "new_tab_opened", "fire_tab_opened", "search_started", "other_navigation"]
+                        "description": "The action that caused the transition away from Duck.ai. Present only when status_reason is left_duckai. back_or_close: Back or a close of the Duck.ai tab. tab_switched: the user selected another existing tab. new_tab_opened: the user opened a new tab. fire_tab_opened: the user opened a Fire tab. search_started: the user started a Search from Duck.ai. other_navigation: no mapped action explains the transition. chat_deleted: the user deleted the chat with Fire.",
+                        "enum": [
+                            "back_or_close",
+                            "tab_switched",
+                            "new_tab_opened",
+                            "fire_tab_opened",
+                            "search_started",
+                            "other_navigation",
+                            "chat_deleted"
+                        ]
                     },
                     "step": {
                         "type": "object",

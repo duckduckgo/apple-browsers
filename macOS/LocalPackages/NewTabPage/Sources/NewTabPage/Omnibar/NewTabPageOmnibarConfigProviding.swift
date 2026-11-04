@@ -160,4 +160,20 @@ public protocol NewTabPageOmnibarConfigProviding: AnyObject {
     /// Whether history-entry suggestions can be deleted. Published so the client can push `omnibar_onConfigUpdate`.
     var isSearchSuggestionDeletionEnabled: Bool { get }
     var isSearchSuggestionDeletionEnabledPublisher: AnyPublisher<Bool, Never> { get }
+
+    /// Whether the Duck.ai tab shows the Terms of Service disclaimer. Published so every open NTP
+    /// drops it once the user accepts, wherever they accepted.
+    var requiresAiTermsAcceptance: Bool { get }
+    var requiresAiTermsAcceptancePublisher: AnyPublisher<Bool, Never> { get }
+
+    /// Whether the Duck.ai suggested-prompt chips show: the feature is on and the user hasn't yet
+    /// sent the maximum number of Duck.ai prompts.
+    var showSuggestedPrompts: Bool { get }
+
+    /// Persisted count of Duck.ai prompts sent from the NTP while the chips were offered.
+    /// The client increments it on each non-voice `omnibar_submitChat`.
+    var suggestedPromptsPromptCount: Int { get set }
+
+    /// Fires when the flag flips or the persisted count changes, so every open NTP re-reads the config.
+    var suggestedPromptsPublisher: AnyPublisher<Void, Never> { get }
 }

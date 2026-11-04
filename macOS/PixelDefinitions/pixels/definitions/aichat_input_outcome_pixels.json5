@@ -1,0 +1,38 @@
+// Duck.ai input outcome pixel - what each opening of the Duck.ai omnibar or Prompt Bar led to, named
+// for name with iOS, so the prompt rate and the bounce rate can be read with and without the Terms of
+// Service disclaimer.
+{
+    "aichat_input_outcome_macos": {
+        "description": "Fires once per opening of the Duck.ai omnibar or Prompt Bar: on its first prompt, when it starts a voice chat, or when the input closes or switches to search without either.",
+        "owners": ["Bunn"],
+        "triggers": ["other"],
+        "suffixes": ["daily_count"],
+        "parameters": [
+            "appVersion",
+            "channel",
+            {
+                "key": "surface",
+                "description": "Which native input was opened. `promptbar` matches the Windows launcher.",
+                "type": "string",
+                "enum": ["address_bar", "promptbar"]
+            },
+            {
+                "key": "tos_disclaimer_shown",
+                "description": "Whether the Terms of Service disclaimer was on screen at any point while the input was open.",
+                "type": "boolean"
+            },
+            {
+                "key": "outcome",
+                "description": "What the input led to. While the disclaimer shows, a disabled Ask replaces the voice button, so `voice_started` needs it off screen.",
+                "type": "string",
+                "enum": ["prompt_submitted", "voice_started", "abandoned"]
+            },
+            {
+                "key": "submit_method",
+                "description": "Only with `prompt_submitted`. `button` is a click on the send button (Ask while the disclaimer shows); `enter` is Return, which sends without accepting the Terms of Service, so the web app shows its own card for that prompt.",
+                "type": "string",
+                "enum": ["button", "enter"]
+            }
+        ]
+    }
+}

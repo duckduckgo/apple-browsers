@@ -161,7 +161,7 @@ final class URLEventHandler {
         case DataBrokerProtectionNotificationCommand.showDashboard.url:
             NotificationCenter.default.post(name: DataBrokerProtectionNotifications.shouldReloadUI, object: nil)
             DispatchQueue.main.async {
-                Application.appDelegate.windowControllersManager.showTab(with: .dataBrokerProtection)
+                Application.appDelegate.windowControllersManager.showTab(with: .dataBrokerProtection(.subscribed))
             }
         default:
             return

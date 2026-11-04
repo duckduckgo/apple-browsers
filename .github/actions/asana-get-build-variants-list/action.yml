@@ -21,6 +21,9 @@ outputs:
   build-variants-2:
     description: "The list of build variants to create (batch 2)"
     value: ${{ steps.get-build-variants-task.outputs.build-variants-2 }}
+  build-variants-3:
+    description: "The list of build variants to create (batch 3)"
+    value: ${{ steps.get-build-variants-task.outputs.build-variants-3 }}
 runs:
   using: "composite"
   steps:

@@ -44,7 +44,7 @@ struct FileImportScreenView: View {
                             UserText.importBookmarksFromSourceAutomaticError(source: importSource)
                         case .passwords:
                             UserText.importPasswordsFromSourceAutomaticError(source: importSource)
-                        case .creditCards:
+                        case .creditCards, .history:
                             UserText.importBookmarksFromSourceAutomaticError(source: importSource)
                         }
                     }

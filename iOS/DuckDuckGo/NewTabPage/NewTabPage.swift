@@ -52,6 +52,8 @@ protocol NewTabPageEscapeHatchPresenting {
 /// Contextual onboarding and Duck.ai completion dialogs hosted over the New Tab Page.
 protocol NewTabPageOnboardingPresenting {
 
+    var isPresentingOnboardingDialog: Bool { get }
+
     func showNextDaxDialog()
 
     /// Advances the dialog sequence at the end of linear onboarding.
@@ -79,6 +81,9 @@ protocol NewTabPage: UIViewController,
     /// Suppresses the chrome address bar while the page is not editing.
     var hasInlineSearchInput: Bool { get }
 
+    /// The side the page's own toggle shows; nil when hidden.
+    var inlineToggleMode: TextEntryMode? { get }
+
     var delegate: NewTabPageControllerDelegate? { get set }
     var chromeDelegate: BrowserChromeDelegate? { get set }
 
@@ -90,6 +95,7 @@ protocol NewTabPage: UIViewController,
 }
 
 protocol NewTabPageInputTransitionSource: AnyObject {
+    var canAnimateSearchInput: Bool { get }
     var searchInputView: UIView? { get }
     func searchInputTransitionFrame(in view: UIView) -> CGRect?
     func setSearchInputEditing(_ isEditing: Bool)

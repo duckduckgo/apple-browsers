@@ -80,6 +80,16 @@ final class UpdateCheckStateTests: XCTestCase {
         XCTAssertFalse(canStart, "Should be rate limited when checking too soon")
     }
 
+    func testRateLimitingWithoutAnAvailableUpdate() async {
+        await updateCheckState.recordCheckTime()
+
+        let automaticCheckAllowed = await updateCheckState.canStartNewCheck(updater: mockUpdater, latestUpdate: nil)
+        XCTAssertFalse(automaticCheckAllowed, "Automatic checks should respect the cooldown when no update was found")
+
+        let manualCheckAllowed = await updateCheckState.canStartNewCheck(updater: mockUpdater, latestUpdate: nil, minimumInterval: 0)
+        XCTAssertTrue(manualCheckAllowed, "Manual checks should still bypass the cooldown")
+    }
+
     /// Tests that rate limiting can be bypassed when needed (e.g., user-initiated checks).
     func testRateLimitingCanBeBypassed() async {
         let mockUpdate = makeMockUpdate()

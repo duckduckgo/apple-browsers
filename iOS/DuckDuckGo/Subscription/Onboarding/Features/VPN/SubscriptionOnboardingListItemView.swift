@@ -85,23 +85,17 @@ private struct SubscriptionOnboardingListItemViewPreview: View {
 }
 
 #Preview("Light") {
-    RebrandedPreview {
-        SubscriptionOnboardingListItemViewPreview()
-    }
+    SubscriptionOnboardingListItemViewPreview()
 }
 
 #Preview("Dark") {
-    RebrandedPreview {
-        SubscriptionOnboardingListItemViewPreview()
-    }
-    .preferredColorScheme(.dark)
+    SubscriptionOnboardingListItemViewPreview()
+        .preferredColorScheme(.dark)
 }
 
 #Preview("Large Text") {
-    RebrandedPreview {
-        SubscriptionOnboardingListItemViewPreview()
-    }
-    .dynamicTypeSize(.accessibility5)
+    SubscriptionOnboardingListItemViewPreview()
+        .dynamicTypeSize(.accessibility5)
 }
 
 #endif

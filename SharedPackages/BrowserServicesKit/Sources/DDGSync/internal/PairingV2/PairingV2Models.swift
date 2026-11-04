@@ -27,16 +27,48 @@ enum PairingV2ApplicationMessage: Equatable {
     case recoveryCodeDenied(PairingV2RecoveryCodeTerminalMessage)
     case recoveryCodeUnavailable(PairingV2RecoveryCodeTerminalMessage)
     case recoveryCodeResponse(PairingV2RecoveryCodeResponseMessage)
+    case recoveryCodeDone(PairingV2RecoveryCodeDoneMessage)
+    case bye(PairingV2ByeMessage)
 }
 
-/// The Pairing V2 protocol version this client emits and the peer major version it accepts.
-enum PairingV2ProtocolVersion {
-    static let current = "2"
-    /// Only peers whose major version equals this are supported.
+/// A major-2 capability version, separate from the minimum version required by each message.
+struct PairingV2ProtocolVersion: Equatable, Comparable {
+    static let v2 = Self(minor: 0)
+    static let v2Point1 = Self(minor: 1)
+    /// QR codes and envelopes must require this major version.
     static let supportedMajor = 2
 
+    private let minor: Int
+
+    var rawValue: String {
+        minor == 0 ? "2" : "2.\(minor)"
+    }
+
+    private init(minor: Int) {
+        self.minor = minor
+    }
+
+    init?(rawValue: String) {
+        let components = rawValue.split(separator: ".", omittingEmptySubsequences: false)
+        guard (1...2).contains(components.count),
+              Int(components[0]) == Self.supportedMajor,
+              let minor = components.count == 2 ? Int(components[1]) : 0,
+              minor >= 0 else {
+            return nil
+        }
+        self.minor = minor
+    }
+
+    func negotiated(with peerVersion: String) -> Self {
+        min(self, Self(rawValue: peerVersion) ?? .v2)
+    }
+
+    static func < (lhs: Self, rhs: Self) -> Bool {
+        lhs.minor < rhs.minor
+    }
+
     static func supports(_ version: String) -> Bool {
-        SyncProtocolVersion.parseMajor(version) == supportedMajor
+        Self(rawValue: version) != nil
     }
 }
 
@@ -47,7 +79,7 @@ struct PairingV2QRCodePayload: Codable, Equatable {
     let channelId: String
     let publicKey: String
 
-    init(version: String = PairingV2ProtocolVersion.current, channelId: String, publicKey: String) {
+    init(version: String = PairingV2ProtocolVersion.v2.rawValue, channelId: String, publicKey: String) {
         self.version = version
         self.channelId = channelId
         self.publicKey = publicKey
@@ -123,7 +155,7 @@ struct PairingV2EncryptedMessage: Codable, Equatable {
     let version: String
     let payload: String
 
-    init(version: String = PairingV2ProtocolVersion.current, payload: String) {
+    init(version: String = PairingV2ProtocolVersion.v2.rawValue, payload: String) {
         self.version = version
         self.payload = payload
     }
@@ -149,11 +181,21 @@ struct PairingV2HelloMessage: Codable, Equatable {
     let publicKey: String
     let version: String
 
-    init(channelId: String, publicKey: String, version: String = PairingV2ProtocolVersion.current) {
+    init(channelId: String, publicKey: String, version: String = PairingV2ProtocolVersion.v2.rawValue) {
         self.type = Self.messageType
         self.channelId = channelId
         self.publicKey = publicKey
         self.version = version
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        type = try container.decode(String.self, forKey: .type)
+        channelId = try container.decode(String.self, forKey: .channelId)
+        publicKey = try container.decode(String.self, forKey: .publicKey)
+        // Hello advertises capability; an absent or blank version means the baseline V2 capability.
+        let rawVersion = try container.decodeIfPresent(String.self, forKey: .version) ?? PairingV2ProtocolVersion.v2.rawValue
+        version = rawVersion.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? PairingV2ProtocolVersion.v2.rawValue : rawVersion
     }
 }
 
@@ -189,7 +231,120 @@ struct PairingV2RecoveryCodeResponseMessage: Codable, Equatable {
     }
 }
 
+struct PairingV2RecoveryCodeDoneMessage: Codable, Equatable {
+    static let messageType = "recovery_code_done"
+
+    let type: String
+    let reason: PairingV2RecoveryCodeDoneReason
+
+    init(reason: PairingV2RecoveryCodeDoneReason) {
+        self.type = Self.messageType
+        self.reason = reason
+    }
+}
+
+enum PairingV2RecoveryCodeDoneReason: Codable, Equatable {
+    case success
+    case loginFailed
+    case scopeRejected
+    case unknown(String)
+
+    init(from decoder: Decoder) throws {
+        let rawValue = try decoder.singleValueContainer().decode(String.self)
+        switch rawValue {
+        case "success":
+            self = .success
+        case "login_failed":
+            self = .loginFailed
+        case "scope_rejected":
+            self = .scopeRejected
+        default:
+            self = .unknown(rawValue)
+        }
+    }
+
+    func encode(to encoder: Encoder) throws {
+        var container = encoder.singleValueContainer()
+        try container.encode(rawValue)
+    }
+
+    private var rawValue: String {
+        switch self {
+        case .success:
+            return "success"
+        case .loginFailed:
+            return "login_failed"
+        case .scopeRejected:
+            return "scope_rejected"
+        case .unknown(let rawValue):
+            return rawValue
+        }
+    }
+}
+
+struct PairingV2ByeMessage: Codable, Equatable {
+    static let messageType = "bye"
+
+    let type: String
+    let reason: PairingV2ByeReason
+
+    init(reason: PairingV2ByeReason) {
+        self.type = Self.messageType
+        self.reason = reason
+    }
+}
+
+enum PairingV2ByeReason: Codable, Equatable {
+    case done
+    case cancelled
+    case error
+    case unknown(String)
+
+    init(from decoder: Decoder) throws {
+        let rawValue = try decoder.singleValueContainer().decode(String.self)
+        switch rawValue {
+        case "done":
+            self = .done
+        case "cancelled":
+            self = .cancelled
+        case "error":
+            self = .error
+        default:
+            self = .unknown(rawValue)
+        }
+    }
+
+    func encode(to encoder: Encoder) throws {
+        var container = encoder.singleValueContainer()
+        try container.encode(rawValue)
+    }
+
+    private var rawValue: String {
+        switch self {
+        case .done:
+            return "done"
+        case .cancelled:
+            return "cancelled"
+        case .error:
+            return "error"
+        case .unknown(let rawValue):
+            return rawValue
+        }
+    }
+}
+
 extension PairingV2ApplicationMessage {
+
+    /// The envelope describes the message's requirements, not the sender's advertised capability.
+    var minimumProtocolVersion: PairingV2ProtocolVersion {
+        switch self {
+        case .hello, .recoveryCodeAvailable, .recoveryCodeRequest, .recoveryCodeAwaitingConfirmation,
+                .recoveryCodeConfirmed, .recoveryCodeDenied, .recoveryCodeUnavailable, .recoveryCodeResponse:
+            return .v2
+        case .recoveryCodeDone, .bye:
+            return .v2Point1
+        }
+    }
 
     enum MessageType {
         static let recoveryCodeAvailable = "recovery_code_available"
@@ -214,6 +369,10 @@ extension PairingV2ApplicationMessage {
                 .recoveryCodeUnavailable(let message):
             return message.type
         case .recoveryCodeResponse(let message):
+            return message.type
+        case .recoveryCodeDone(let message):
+            return message.type
+        case .bye(let message):
             return message.type
         }
     }

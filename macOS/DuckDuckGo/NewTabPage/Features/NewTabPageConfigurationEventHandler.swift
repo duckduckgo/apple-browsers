@@ -23,7 +23,7 @@ import PixelKit
 
 final class NewTabPageConfigurationEventHandler: EventMapping<NewTabPageConfigurationEvent> {
 
-    init() {
+    init(pixelFiring: PixelFiring? = PixelKit.shared) {
         super.init { event, _, _, _ in
             switch event {
             case .newTabPageError:
@@ -54,12 +54,37 @@ final class NewTabPageConfigurationEventHandler: EventMapping<NewTabPageConfigur
 
             case .newTabPageTelemetry(.omnibarReasoningPickerUpgradeShown):
                 Self.fireOmnibarPickerImpression(AIChatPixel.aiChatNtpReasoningPickerUpgradeShown, .newTabPageReasoningDropdown)
+
+            // Image and screenshot chips: the page owns them, so its telemetry is the only signal.
+            case .newTabPageTelemetry(.omnibarImageAttached(let rawSource)):
+                guard let source = Self.pageImageSource(rawSource) else { return }
+                pixelFiring?.fire(AIChatPixel.aiChatNtpImageAttached(source: source), frequency: .dailyAndCount)
+
+            case .newTabPageTelemetry(.omnibarImageRemoved(let rawSource)):
+                guard let source = Self.pageImageSource(rawSource) else { return }
+                pixelFiring?.fire(AIChatPixel.aiChatNtpImageRemoved(source: source), frequency: .dailyAndCount)
+
+            case .newTabPageTelemetry(.omnibarScreenshotTaken(let rawKind)):
+                guard let kind = AIChatScreenshotKind(rawValue: rawKind) else { return }
+                pixelFiring?.fire(AIChatPixel.aiChatNtpScreenshotTaken(kind: kind), frequency: .dailyAndCount)
+
+            case .newTabPageTelemetry(.omnibarScreenshotRemoved):
+                pixelFiring?.fire(AIChatPixel.aiChatNtpScreenshotRemoved, frequency: .dailyAndCount)
+
+            case .newTabPageTelemetry(.omnibarScreenshotFailed(let rawReason)):
+                guard let reason = AIChatScreenshotFailureReason(rawValue: rawReason) else { return }
+                pixelFiring?.fire(AIChatPixel.aiChatNtpScreenshotFailed(reason: reason), frequency: .dailyAndCount)
             }
         }
     }
 
     override init(mapping: @escaping EventMapping<NewTabPageConfigurationEvent>.Mapping) {
         fatalError("Use init()")
+    }
+
+    /// The page reports drag and drop as `file`, so `drop` isn't one of its values and the NTP definitions reject it.
+    private static func pageImageSource(_ rawValue: String) -> AIChatImageAttachmentSource? {
+        AIChatImageAttachmentSource(rawValue: rawValue).flatMap { $0 == .drop ? nil : $0 }
     }
 
     private static func fireOmnibarPickerImpression(_ makePixel: (String) -> AIChatPixel,

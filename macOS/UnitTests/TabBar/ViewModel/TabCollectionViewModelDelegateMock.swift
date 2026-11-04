@@ -42,9 +42,11 @@ final class TabCollectionViewModelDelegateMock: TabCollectionViewModelDelegate {
     }
 
     var didReplaceCalled = false
+    private(set) var tabCountsOnReplacement: [Int] = []
 
     func tabCollectionViewModel(_ tabCollectionViewModel: TabCollectionViewModel, didReplaceTabAt index: TabIndex) {
         didReplaceCalled = true
+        tabCountsOnReplacement.append(tabCollectionViewModel.tabs.count)
     }
 
     var didMoveCalled = false
@@ -68,8 +70,10 @@ final class TabCollectionViewModelDelegateMock: TabCollectionViewModelDelegate {
     }
 
     var didMultipleChangesCalled = false
+    private(set) var tabCountsOnMultipleChanges: [Int] = []
 
     func tabCollectionViewModelDidMultipleChanges(_ tabCollectionViewModel: TabCollectionViewModel) {
         didMultipleChangesCalled = true
+        tabCountsOnMultipleChanges.append(tabCollectionViewModel.tabs.count)
     }
 }

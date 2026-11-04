@@ -32,10 +32,13 @@ struct WebsitePermissionDetailViewState: Equatable {
         groupedByDomain(visibleSites)
     }
     var isEmpty: Bool {
-        sites.isEmpty
+        sites.isEmpty && !isSearching
     }
     var hasNoResults: Bool {
-        !sites.isEmpty && visibleSites.isEmpty
+        isSearching && visibleSites.isEmpty
+    }
+    private var isSearching: Bool {
+        !searchQuery.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
     }
 
     init(
@@ -72,7 +75,7 @@ struct WebsitePermissionDetailViewState: Equatable {
                 )
             }
             .sorted {
-                let domainComparison = $0.domain.localizedCaseInsensitiveCompare($1.domain)
+                let domainComparison = $0.displayName.localizedCaseInsensitiveCompare($1.displayName)
                 if domainComparison != .orderedSame {
                     return domainComparison == .orderedAscending
                 }
@@ -111,8 +114,12 @@ extension WebsitePermissionDetailViewState {
             "\(domain)|\(permissionType.rawValue)"
         }
 
+        var displayName: String {
+            domain.permissionDisplayName
+        }
+
         var faviconURL: URL? {
-            URL(string: "\(URL.NavigationalScheme.https.separated())\(domain)")
+            domain.permissionFaviconURL
         }
 
         /// Label for the row when it is listed under a domain heading, which already names the site.
@@ -131,6 +138,10 @@ extension WebsitePermissionDetailViewState {
 
         var id: String {
             domain
+        }
+
+        var displayName: String {
+            domain.permissionDisplayName
         }
 
         var faviconURL: URL? {

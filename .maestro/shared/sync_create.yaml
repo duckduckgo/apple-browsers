@@ -9,6 +9,11 @@ appId: com.duckduckgo.mobile.ios
 - assertVisible: Sync & Backup
 - tapOn:
     id: "SyncToggle"
+# Sync-another-device prompt shown after enabling the toggle, before authenticating.
+- extendedWaitUntil:
+    visible: Sync This Device Only
+    timeout: 30000
+- tapOn: Sync This Device Only
 # The passcode screen auto-focuses its field, so wait for the screen and type directly.
 # Its field's label differs across iOS versions, so don't match "Passcode field" by name.
 - extendedWaitUntil:
@@ -16,11 +21,6 @@ appId: com.duckduckgo.mobile.ios
     timeout: 30000
 - inputText: "0000"
 - pressKey: Enter
-# Sync-another-device prompt shown after enabling the toggle.
-- extendedWaitUntil:
-    visible: Sync This Device Only
-    timeout: 30000
-- tapOn: Sync This Device Only
 # Success screen for the new account (title carries the device name, so match by id).
 - extendedWaitUntil:
     visible:

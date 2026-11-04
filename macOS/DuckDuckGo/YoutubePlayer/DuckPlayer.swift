@@ -366,6 +366,8 @@ final class DuckPlayer {
 
     private var isFeatureEnabled: Bool = false {
         didSet {
+            // Rebinding republishes `mode`, which re-shows the YouTube overlay mid-video.
+            guard isFeatureEnabled != oldValue else { return }
             bindDuckPlayerModeIfNeeded()
         }
     }

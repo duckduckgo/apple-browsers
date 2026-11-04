@@ -42,11 +42,11 @@ for dir in "$1"/*; do
 		fi
 
 		echo "Reverting changes to stringsdict file"
-		git checkout "${base_dir}/DuckDuckGo/${targetLocale}.lproj/Localizable.stringsdict"
+		git checkout "${base_dir}/DuckDuckGo/UserInterfaceResources/${targetLocale}.lproj/Localizable.stringsdict"
 	elif test -f "${dir}/${baseName}.stringsdict"; then
     	fileName="${baseName}.stringsdict"
 		echo "Processing ${locale} stringsdict"
-		cp "${dir}/${fileName}" "${base_dir}/DuckDuckGo/${targetLocale}.lproj/Localizable.stringsdict"
+		cp "${dir}/${fileName}" "${base_dir}/DuckDuckGo/UserInterfaceResources/${targetLocale}.lproj/Localizable.stringsdict"
 	else
 		echo "ERROR: ${fileName} xliff or stringsdict not found in ${dir}"
 		echo

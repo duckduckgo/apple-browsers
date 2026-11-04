@@ -54,4 +54,39 @@ struct SnapshotRecordModeTests {
             SnapshotRecordMode.snapshotTestingRecord(record: false, environment: ["GENERATE_SNAPSHOTS": "0"]) == .missing
         )
     }
+
+    @available(iOS 16, macOS 13, *)
+    @Test(.timeLimit(.minutes(1)))
+    func requireReferencesFlagDisablesRecordingMissingSnapshots() {
+        #expect(SnapshotRecordMode.requiresReferences(environment: ["REQUIRE_SNAPSHOT_REFERENCES": "1"]))
+        #expect(SnapshotRecordMode.requiresReferences(environment: ["REQUIRE_SNAPSHOT_REFERENCES": "true"]))
+        #expect(SnapshotRecordMode.requiresReferences(environment: ["REQUIRE_SNAPSHOT_REFERENCES": "YES"]))
+        #expect(
+            SnapshotRecordMode.snapshotTestingRecord(record: false, environment: ["REQUIRE_SNAPSHOT_REFERENCES": "1"]) == .never
+        )
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test(.timeLimit(.minutes(1)))
+    func missingSnapshotsAreRecordedWhenRequireReferencesFlagIsOff() {
+        #expect(!SnapshotRecordMode.requiresReferences(environment: [:]))
+        #expect(!SnapshotRecordMode.requiresReferences(environment: ["REQUIRE_SNAPSHOT_REFERENCES": "0"]))
+        #expect(
+            SnapshotRecordMode.snapshotTestingRecord(record: false, environment: ["REQUIRE_SNAPSHOT_REFERENCES": "0"]) == .missing
+        )
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test(.timeLimit(.minutes(1)))
+    func explicitRecordingTakesPrecedenceOverRequireReferencesFlag() {
+        #expect(
+            SnapshotRecordMode.snapshotTestingRecord(record: true, environment: ["REQUIRE_SNAPSHOT_REFERENCES": "1"]) == .all
+        )
+        #expect(
+            SnapshotRecordMode.snapshotTestingRecord(
+                record: false,
+                environment: ["REQUIRE_SNAPSHOT_REFERENCES": "1", "GENERATE_SNAPSHOTS": "1"]
+            ) == .all
+        )
+    }
 }

@@ -68,6 +68,7 @@ let package = Package(
                 .product(name: "Persistence", package: "Persistence"),
                 .product(name: "DDGSync", package: "BrowserServicesKit"),
                 .product(name: "PrivacyConfig", package: "BrowserServicesKit"),
+                .product(name: "SecureStorage", package: "BrowserServicesKit"),
                 .product(name: "UserScript", package: "BrowserServicesKit"),
                 .product(name: "DuckAiDataStore", package: "BrowserServicesKit"),
                 .product(name: "WKAbstractions", package: "BrowserServicesKit"),
@@ -101,6 +102,7 @@ let package = Package(
                 .product(name: "Networking", package: "Networking"),
                 .product(name: "Persistence", package: "Persistence"),
                 .product(name: "PrivacyConfigTestsUtils", package: "BrowserServicesKit"),
+                .product(name: "SecureStorage", package: "BrowserServicesKit"),
                 .product(name: "Subscription", package: "BrowserServicesKit"),
                 .product(name: "WKAbstractions", package: "BrowserServicesKit")
             ]

@@ -394,6 +394,7 @@ public extension DesignSystemImages {
             public static var wand: DesignSystemImage { .init(resource: .wand16) }
             public static var weather: DesignSystemImage { .init(resource: .weather16) }
             public static var windowNew: DesignSystemImage { .init(resource: .windowNew16) }
+            public static var windows: DesignSystemImage { .init(resource: .windows16) }
             public static var windowsAndTabs: DesignSystemImage { .init(resource: .windowsAndTabs16) }
             public static var zoomActualSize: DesignSystemImage { .init(resource: .zoomActualSize16) }
             public static var zoomIn: DesignSystemImage { .init(resource: .zoomIn16) }
@@ -548,6 +549,7 @@ public extension DesignSystemImages {
             public static var eye: DesignSystemImage { .init(resource: .eye24) }
             public static var eyeClosed: DesignSystemImage { .init(resource: .eyeClosed24) }
             public static var exclamation: DesignSystemImage { .init(resource: .exclamation24) }
+            public static var exclamationRecolorableInvert: DesignSystemImage { .init(resource: .exclamationRecolorableInvert24) }
             public static var exclamationSolid: DesignSystemImage { .init(resource: .exclamationSolid24) }
             public static var expand: DesignSystemImage { .init(resource: .expand24) }
             public static var favorite: DesignSystemImage { .init(resource: .favorite24) }

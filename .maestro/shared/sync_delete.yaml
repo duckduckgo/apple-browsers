@@ -1,15 +1,16 @@
 appId: com.duckduckgo.mobile.ios
-# Turns off Sync and deletes server data via the
-# "Turn Off Sync and Delete Server Data" action. This action authenticates first,
-# then shows the delete confirmation alert. Ends on the logged-out Sync settings screen.
+# Turns off Sync and deletes server data via the "Turn Off Sync & Backup" action.
+# This action authenticates first, then opens the turn-off sheet, which defaults to deleting
+# server data when this is the only synced device, and confirms the final alert.
+# Ends on the logged-out Sync settings screen.
 ---
 
 - assertVisible: Sync & Backup
 - scrollUntilVisible:
     element:
-      text: Turn Off Sync and Delete Server Data
+      text: Turn Off Sync & Backup
     direction: DOWN
-- tapOn: Turn Off Sync and Delete Server Data
+- tapOn: Turn Off Sync & Backup
 # Authenticate only if prompted — the auth session may still be valid from a recent step.
 - runFlow:
     when:
@@ -17,8 +18,15 @@ appId: com.duckduckgo.mobile.ios
     commands:
       - inputText: "0000"
       - pressKey: Enter
-- assertVisible: Turn Off Sync & Backup and Delete Server Data?
-- tapOn: Delete Server Data
+# With only this device synced, the turn-off sheet opens with "delete server data" switched on.
+- extendedWaitUntil:
+    visible:
+      id: "TurnOffAndDeleteServerDataButton"
+    timeout: 30000
+- tapOn:
+    id: "TurnOffAndDeleteServerDataButton"
+- assertVisible: You Can’t Undo This Action.
+- tapOn: Permanently Delete
 - extendedWaitUntil:
     visible: I Have a Recovery Code
     timeout: 30000

@@ -20,7 +20,7 @@ import Foundation
 
 public typealias DBPFeatureFlagging = ForegroundRunningFeatureFlagging
     & ContinuedProcessingFeatureFlagging
-    & WebViewUserAgentFeatureFlagging
+    & CustomWebViewUserAgentFeatureFlagging
     & OptOutRetryErrorFeatureFlagging
     & ExtractedProfileRefreshFeatureFlagging
 
@@ -32,8 +32,8 @@ public protocol ContinuedProcessingFeatureFlagging {
     var isContinuedProcessingFeatureOn: Bool { get }
 }
 
-public protocol WebViewUserAgentFeatureFlagging {
-    var isWebViewUserAgentOn: Bool { get }
+public protocol CustomWebViewUserAgentFeatureFlagging {
+    var isCustomWebViewUserAgentOn: Bool { get }
 }
 
 public protocol OptOutRetryErrorFeatureFlagging {

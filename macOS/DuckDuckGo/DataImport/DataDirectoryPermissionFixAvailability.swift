@@ -16,10 +16,8 @@
 //  limitations under the License.
 //
 
-import FeatureFlags_macOS
 import Foundation
 import Persistence
-import PrivacyConfig
 
 /// Whether the data-directory access flow applies.
 ///
@@ -27,35 +25,28 @@ import PrivacyConfig
 /// `~/Library/Application Support/*` directories (TCC), so browser profiles can't be read until the user grants it.
 struct DataDirectoryPermissionFixAvailability {
 
-    private let featureFlagger: FeatureFlagger
     private let debugSettings: any KeyedStoring<DataImportDebugSettings>
     private let isOSSupported: Bool
 
-    init(featureFlagger: FeatureFlagger,
-         debugSettings: any KeyedStoring<DataImportDebugSettings>,
+    init(debugSettings: any KeyedStoring<DataImportDebugSettings>,
          isOSSupported: Bool = DataDirectoryPermissionFixAvailability.isRunningSupportedOS) {
-        self.featureFlagger = featureFlagger
         self.debugSettings = debugSettings
         self.isOSSupported = isOSSupported
     }
 
-    /// Debug override: run the flow regardless of the OS version, the Feature Flag, and the directory's actual access state.
+    /// Debug override: run the flow regardless of the OS version and the directory's actual access state.
     var mustForcePermissionFix: Bool {
         debugSettings.isForcingMacOS27PermissionsFix
     }
 
-    /// Returns `true` running `macOS >= 27` and the `dataImportDataDirectoryAccess` Feature Flag is enabled.
+    /// Returns `true` running `macOS >= 27`.
     /// Can also be overridden via `isForcingMacOS27PermissionsFix`
     var isAvailable: Bool {
         if mustForcePermissionFix {
             return true
         }
 
-        guard isOSSupported else {
-            return false
-        }
-
-        return featureFlagger.isFeatureOn(.dataImportDataDirectoryAccess)
+        return isOSSupported
     }
 }
 

@@ -16,6 +16,7 @@
 //  limitations under the License.
 //
 
+import AIChat
 import Foundation
 
 /// The surface a Duck.ai prompt input is presented on. Shared prompt components branch on this
@@ -85,6 +86,14 @@ extension DuckAIPromptSurface {
 
     /// Which surface the usage-warning pixels report.
     var usageWarningPixelSurface: DuckAiUsageWarningPixelSurface {
+        switch self {
+        case .addressBar: .addressBar
+        case .promptBar: .promptBar
+        }
+    }
+
+    /// Which surface the Duck.ai input outcome pixel reports.
+    var inputOutcomePixelSurface: DuckAiInputSurface {
         switch self {
         case .addressBar: .addressBar
         case .promptBar: .promptBar

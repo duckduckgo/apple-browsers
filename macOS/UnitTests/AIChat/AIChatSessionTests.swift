@@ -83,6 +83,28 @@ final class AIChatSessionTests: XCTestCase {
         XCTAssertNotNil(vc)
     }
 
+    func testMakeChatViewController_whenRestoredFromPreviousSession_labelsTheChatOnce() {
+        let aiChatExtensions = AIChatTabExtensionMock.installForAllTabs()
+        defer { TestTabExtensionsBuilder.shared = .default }
+        session.isRestoredFromPreviousSession = true
+
+        _ = session.makeChatViewController(tabID: "tab1")
+        session.tearDown(persistingState: true)
+        _ = session.makeChatViewController(tabID: "tab1")
+
+        XCTAssertEqual(aiChatExtensions.recreationSources, [.sessionRestore])
+        XCTAssertFalse(session.isRestoredFromPreviousSession)
+    }
+
+    func testMakeChatViewController_whenNotRestored_doesNotLabelTheChat() {
+        let aiChatExtensions = AIChatTabExtensionMock.installForAllTabs()
+        defer { TestTabExtensionsBuilder.shared = .default }
+
+        _ = session.makeChatViewController(tabID: "tab1")
+
+        XCTAssertEqual(aiChatExtensions.recreationSources, [])
+    }
+
     // MARK: - Snapshot Current URL
 
     func testSnapshotCurrentURL_withNoVC_doesNotCrash() {

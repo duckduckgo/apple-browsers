@@ -45,6 +45,7 @@ public final class DBPUIViewModel {
     private var communicationLayer: DBPUICommunicationLayer?
     private let webUISettings: DataBrokerProtectionWebUIURLSettingsRepresentable
     private let pixelHandler: EventMapping<DataBrokerProtectionSharedPixels>
+    private let freeScanEntryPoint: FreemiumDBPEntryPoint?
 
     private var editablePartialProfile: DBPUIEditablePartialProfile
 
@@ -55,7 +56,8 @@ public final class DBPUIViewModel {
                 webUISettings: DataBrokerProtectionWebUIURLSettingsRepresentable,
                 pixelHandler: EventMapping<DataBrokerProtectionSharedPixels>,
                 privacyConfigManager: PrivacyConfigurationManaging,
-                contentScopeProperties: ContentScopeProperties) {
+                contentScopeProperties: ContentScopeProperties,
+                freeScanEntryPoint: FreemiumDBPEntryPoint? = nil) {
         self.authenticationDelegate = authenticationDelegate
         self.databaseDelegate = databaseDelegate
         self.feedbackFormDelegate = feedbackFormDelegate
@@ -64,6 +66,7 @@ public final class DBPUIViewModel {
         self.pixelHandler = pixelHandler
         self.privacyConfigManager = privacyConfigManager
         self.contentScopeProperties = contentScopeProperties
+        self.freeScanEntryPoint = freeScanEntryPoint
 
         self.editablePartialProfile = .init()
     }
@@ -74,6 +77,7 @@ public final class DBPUIViewModel {
             try configuration.applyDBPUIConfiguration(privacyConfig: privacyConfigManager,
                                                       prefs: contentScopeProperties,
                                                       delegate: self,
+                                                      handshakeDelegate: self,
                                                       webUISettings: webUISettings,
                                                       vpnBypassService: nil)
             configuration.preferences.setValue(true, forKey: "developerExtrasEnabled")
@@ -107,12 +111,13 @@ public final class DBPUIViewModel {
     }
 }
 
-extension DBPUIViewModel: DBPUICommunicationDelegate {
+extension DBPUIViewModel: DBPUICommunicationDelegate, DBPUIHandshakeDelegate {
     public func getHandshakeUserData() async -> DBPUIHandshakeUserData? {
         let isUserAuthenticated = (await authenticationDelegate?.isUserAuthenticated()) ?? true
         let isUserEligibleForFreeTrial = authenticationDelegate?.isUserEligibleForFreeTrial() ?? false
         return DBPUIHandshakeUserData(isAuthenticatedUser: isUserAuthenticated,
-                                      isUserEligibleForFreeTrial: isUserEligibleForFreeTrial)
+                                      isUserEligibleForFreeTrial: isUserEligibleForFreeTrial,
+                                      freeScanEntryPoint: freeScanEntryPoint?.rawValue)
     }
     
     public func saveProfile() async throws {

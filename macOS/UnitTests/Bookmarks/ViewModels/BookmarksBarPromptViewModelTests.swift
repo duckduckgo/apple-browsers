@@ -51,14 +51,14 @@ final class BookmarksBarPromptViewModelTests: XCTestCase {
         sut.acceptBookmarksBar()
 
         XCTAssertTrue(prefs.showBookmarksBar)
-        XCTAssertEqual(dismissResults, [.actioned])
+        XCTAssertEqual(dismissResults, [.actioned()])
     }
 
     func testRejectBookmarksBar_turnsBarOffAndResolvesActioned() {
         sut.rejectBookmarksBar()
 
         XCTAssertFalse(prefs.showBookmarksBar)
-        XCTAssertEqual(dismissResults, [.actioned])
+        XCTAssertEqual(dismissResults, [.actioned()])
     }
 
     func testRejectBookmarksBar_whenNotExplicit_turnsBarOffAndResolvesIgnored() {

@@ -69,7 +69,7 @@ struct AutofillExtensionPromotionHeaderView: View {
         }
         .background(
             RoundedRectangle(cornerRadius: ContainerMetrics.cornerRadius)
-                .foregroundColor(Color(singleUseColor: .groupedListContentBackground))
+                .foregroundColor(Color(designSystemColor: .surfaceTertiary))
                 .shadow(color: .black.opacity(0.08), radius: 12, x: 0, y: 8)
         )
         .onAppear {
@@ -83,11 +83,7 @@ struct AutofillExtensionPromotionHeaderView: View {
         @Environment(\.colorScheme) private var colorScheme
 
         private var lottieFileName: String {
-            if AppRebrand.isAppRebranded() {
-                colorScheme == .dark ? "autofill-extension-dark" : "autofill-extension-light"
-            } else {
-                colorScheme == .dark ? "autofill-extension-dark-legacy" : "autofill-extension-light-legacy"
-            }
+            colorScheme == .dark ? "autofill-extension-dark" : "autofill-extension-light"
         }
 
         var body: some View {

@@ -2,7 +2,7 @@
 """
 Translation Integrity Checker
 
-Analyzes .strings and .stringsdict files for deleted keys and problematic replacements.
+Analyzes .strings, .stringsdict and .xcstrings files for deleted keys and problematic replacements.
 Designed for Smartling translation import safety checks.
 
 Copyright © 2025 DuckDuckGo. All rights reserved.
@@ -14,18 +14,18 @@ import subprocess
 import sys
 
 def get_changed_files():
-    """Get list of changed .strings and .stringsdict files.
+    """Get list of changed .strings, .stringsdict and .xcstrings files.
 
     Returns:
         List of file paths that have been modified.
 
     Example:
         >>> get_changed_files()
-        ['iOS/DuckDuckGo/en.lproj/Localizable.strings',
-         'iOS/DuckDuckGo/en.lproj/Localizable.stringsdict']
+        ['iOS/DuckDuckGo/UserInterfaceResources/en.lproj/Localizable.strings',
+         'iOS/DuckDuckGo/UserInterfaceResources/en.lproj/Localizable.stringsdict']
     """
     result = subprocess.run(
-        ['git', 'diff', '--name-only', '--', '*.strings', '*.stringsdict'],
+        ['git', 'diff', '--name-only', '--', '*.strings', '*.stringsdict', '*.xcstrings'],
         capture_output=True, text=True, check=False
     )
     return [f for f in result.stdout.strip().split('\n') if f]
@@ -60,6 +60,39 @@ def parse_strings_file(content):
     return {}
 
 
+def collect_string_leaves(obj, prefix=""):
+    """Recursively collect all string values from nested dict/list.
+
+    Args:
+        obj: Dictionary, list, or primitive value to traverse.
+        prefix: Current path prefix for building hierarchical keys.
+
+    Returns:
+        Dictionary mapping full paths to string values.
+
+    Example:
+        >>> data = {'key1': {'subkey': 'value1', 'list': ['item1', 'item2']}}
+        >>> collect_string_leaves(data)
+        {'key1.subkey': 'value1', 'key1.list[0]': 'item1', 'key1.list[1]': 'item2'}
+    """
+    strings = {}
+    if isinstance(obj, dict):
+        for key, value in obj.items():
+            new_prefix = f"{prefix}.{key}" if prefix else key
+            if isinstance(value, str):
+                strings[new_prefix] = value
+            elif isinstance(value, (dict, list)):
+                strings.update(collect_string_leaves(value, new_prefix))
+    elif isinstance(obj, list):
+        for i, value in enumerate(obj):
+            new_prefix = f"{prefix}[{i}]"
+            if isinstance(value, str):
+                strings[new_prefix] = value
+            elif isinstance(value, (dict, list)):
+                strings.update(collect_string_leaves(value, new_prefix))
+    return strings
+
+
 def parse_stringsdict_file(content):
     """Parse .stringsdict file and extract all string values recursively.
 
@@ -81,38 +114,6 @@ def parse_stringsdict_file(content):
     if not content:
         return {}
 
-    def collect_string_leaves(obj, prefix=""):
-        """Recursively collect all string values from nested dict/list.
-
-        Args:
-            obj: Dictionary, list, or primitive value to traverse.
-            prefix: Current path prefix for building hierarchical keys.
-
-        Returns:
-            Dictionary mapping full paths to string values.
-
-        Example:
-            >>> data = {'key1': {'subkey': 'value1', 'list': ['item1', 'item2']}}
-            >>> collect_string_leaves(data)
-            {'key1.subkey': 'value1', 'key1.list[0]': 'item1', 'key1.list[1]': 'item2'}
-        """
-        strings = {}
-        if isinstance(obj, dict):
-            for key, value in obj.items():
-                new_prefix = f"{prefix}.{key}" if prefix else key
-                if isinstance(value, str):
-                    strings[new_prefix] = value
-                elif isinstance(value, (dict, list)):
-                    strings.update(collect_string_leaves(value, new_prefix))
-        elif isinstance(obj, list):
-            for i, value in enumerate(obj):
-                new_prefix = f"{prefix}[{i}]"
-                if isinstance(value, str):
-                    strings[new_prefix] = value
-                elif isinstance(value, (dict, list)):
-                    strings.update(collect_string_leaves(value, new_prefix))
-        return strings
-
     try:
         # Convert to JSON using plutil
         result = subprocess.run(
@@ -125,6 +126,34 @@ def parse_stringsdict_file(content):
     except Exception:  # pylint: disable=broad-except
         pass
     return {}
+
+
+def parse_xcstrings_file(content):
+    """Parse .xcstrings file content and extract every translated value.
+
+    Args:
+        content: Raw .xcstrings file content as JSON string.
+
+    Returns:
+        Dictionary mapping hierarchical keys to string values, without metadata such as state.
+
+    Example:
+        >>> parse_xcstrings_file(xcstrings_json)
+        {
+            'menu.save.localizations.de.stringUnit.value': 'Speichern',
+            'items_count.localizations.de.variations.plural.one.stringUnit.value': '%d Element'
+        }
+    """
+    if not content:
+        return {}
+    try:
+        strings = json.loads(content).get('strings', {})
+    except ValueError:
+        return {}
+    return {
+        key: value for key, value in collect_string_leaves(strings).items()
+        if key.endswith('.stringUnit.value')
+    }
 
 
 def get_file_content(file_path, revision='HEAD'):
@@ -173,6 +202,9 @@ def analyze_translation_changes():
         elif file_path.endswith('.stringsdict'):
             current = parse_stringsdict_file(current_content)
             original = parse_stringsdict_file(original_content)
+        elif file_path.endswith('.xcstrings'):
+            current = parse_xcstrings_file(current_content)
+            original = parse_xcstrings_file(original_content)
         else:
             continue
 

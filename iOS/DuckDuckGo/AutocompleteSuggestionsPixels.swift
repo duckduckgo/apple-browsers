@@ -88,10 +88,37 @@ struct AutocompleteSuggestionsPixels {
         }
     }
 
+    /// The Duck.ai-mode suggestions came on screen with rows: the denominator for their click pixels.
+    func fireDuckAIShownPixel() {
+        pixelFiring?.fire(DuckAISuggestionsShownPixel(), frequency: .dailyAndCount)
+    }
+
+    /// A website, bookmark, history or open-tab row picked from the Duck.ai-mode suggestions.
+    func fireDuckAIClickPixel(for suggestion: Suggestion) {
+        switch suggestion {
+        case .website:
+            pixelFiring?.fire(Pixel.Event.autocompleteDuckAIClickWebsite)
+        case .bookmark(_, _, let isFavorite, _):
+            pixelFiring?.fire(isFavorite ? Pixel.Event.autocompleteDuckAIClickFavorite : .autocompleteDuckAIClickBookmark)
+        case .historyEntry(_, let url, _):
+            pixelFiring?.fire(url.isDuckDuckGoSearch ? Pixel.Event.autocompleteDuckAIClickHistorySearch : .autocompleteDuckAIClickHistorySite)
+        case .openTab:
+            pixelFiring?.fire(Pixel.Event.autocompleteDuckAIClickSwitchToTab)
+        case .phrase, .internalPage, .unknown, .askAIChat:
+            break
+        }
+    }
+
     /// The experimental/legacy split and feature-discovery params are resolved by the caller, which
     /// owns those dependencies.
     func fireAskAIChatClickPixel(isExperimentalExperience: Bool, additionalParameters params: [String: String]) {
         let pixel: Pixel.Event = isExperimentalExperience ? .autocompleteAskAIChatExperimentalExperience : .autocompleteAskAIChatLegacyExperience
         pixelFiring?.fire(pixel, frequency: .dailyAndCount, options: .parameters(params))
     }
+}
+
+struct DuckAISuggestionsShownPixel: PixelKit.Event {
+    var name: String { "autocomplete_duckai_shown" }
+    var parameters: [String: String]? { nil }
+    var standardParameters: [PixelKitStandardParameter]? { nil }
 }

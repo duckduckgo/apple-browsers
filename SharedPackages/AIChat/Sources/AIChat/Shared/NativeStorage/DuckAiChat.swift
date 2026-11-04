@@ -132,14 +132,33 @@ private struct ChatBlob: Decodable {
     let messages: [MessageBlob]?
     let reasoningMode: String?
 
+    private enum CodingKeys: String, CodingKey {
+        case chatId, title, model, lastEdit, pinned, fileRefs, messages, reasoningMode
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        chatId = try container.decode(String.self, forKey: .chatId)
+        title = try container.decodeIfPresent(String.self, forKey: .title)
+        model = try container.decodeIfPresent(String.self, forKey: .model)
+        lastEdit = try container.decodeIfPresent(String.self, forKey: .lastEdit)
+        pinned = try container.decodeIfPresent(Bool.self, forKey: .pinned)
+        fileRefs = try container.decodeIfPresent([String].self, forKey: .fileRefs)
+        reasoningMode = try container.decodeIfPresent(String.self, forKey: .reasoningMode)
+        // The fields above are the chat header, which the duckai-schema contract keeps stable
+        // across format versions so every client can list every chat. Message content is not:
+        // a shape this build doesn't understand costs the previews, never the chat itself.
+        messages = try? container.decodeIfPresent([MessageBlob].self, forKey: .messages)
+    }
+
     /// True when any assistant message carries a `ui-component` part named `generate-image`.
     var hasGenerateImageUiComponent: Bool {
         guard let messages else { return false }
         return messages.contains { message in
             guard message.role == "assistant" else { return false }
-            return message.parts?.contains { part in
+            return message.allParts.contains { part in
                 part.type == "ui-component" && part.name == "generate-image"
-            } ?? false
+            }
         }
     }
 }
@@ -151,54 +170,83 @@ private struct MessageBlob: Decodable {
     /// (and can inspect `parts` to detect image-gen chats) instead of failing the whole
     /// `messages` array.
     let content: MessageContent?
+    /// Legacy chats only — the canonical format folds these into `content`.
     let parts: [MessagePart]?
 
-    /// Returns the visible text of the message. Prefers `content` (used by most chats and
-    /// by all user messages); falls back to concatenating `parts[].text` of `type == "text"`
-    /// because reasoning-model assistant messages (e.g. `gpt-5-mini`) ship with `content == ""`
-    /// and carry the actual response in `parts`. Returns `nil` when neither path produces text.
+    /// Parts from either shape: legacy `parts` or the canonical `content` array.
+    var allParts: [MessagePart] {
+        (parts ?? []) + (content?.parts ?? [])
+    }
+
+    /// Returns the visible text of the message. Prefers a legacy `content` string (used by most
+    /// legacy chats and by all legacy user messages); falls back to the `text` of `type == "text"`
+    /// parts, because reasoning-model assistant messages (e.g. `gpt-5-mini`) ship with
+    /// `content == ""` and carry the actual response in `parts`, and canonical chats carry every
+    /// message's text in parts. As in the web app, consecutive text parts are streaming chunks of
+    /// one block and join as-is, while any other part between them (a tool call, search results)
+    /// starts a new block. Returns `nil` when neither path produces text.
     var effectiveTextContent: String? {
         if let direct = content?.textValue, !direct.isEmpty {
             return direct
         }
-        guard let parts else { return nil }
-        let textParts = parts.compactMap { part -> String? in
-            guard part.type == "text", let text = part.text, !text.isEmpty else { return nil }
-            return text
+        var blocks: [String] = []
+        var block = ""
+        for part in allParts {
+            if part.type == "text" {
+                block += part.text ?? ""
+            } else if !block.isEmpty {
+                blocks.append(block)
+                block = ""
+            }
         }
-        guard !textParts.isEmpty else { return nil }
-        return textParts.joined(separator: "\n\n")
+        if !block.isEmpty {
+            blocks.append(block)
+        }
+        guard !blocks.isEmpty else { return nil }
+        return blocks.joined(separator: "\n\n")
     }
 }
 
 private struct MessagePart: Decodable {
     let type: String?
     let name: String?
-    /// Visible text payload of a `type == "text"` part. Other part types (`reasoning`,
-    /// `ui-component`, `tool-invocation`) don't carry user-visible text and leave this nil.
+    /// Visible text payload of a `type == "text"` part. Most other part types (`reasoning`,
+    /// `ui-component`, `tool-call`) leave this nil; canonical `reasoning-progress` parts set it
+    /// to reasoning text, which is why readers filter on `type`.
     let text: String?
 }
 
-/// Handles polymorphic message content: either a plain string or a rich object with a `text` field.
+/// Handles polymorphic message content: a plain string or a rich object with a `text` field
+/// (legacy), or the canonical format's ordered array of typed parts.
 private enum MessageContent: Decodable {
     case text(String)
     case rich(String)
+    case parts([MessagePart])
 
     init(from decoder: Decoder) throws {
         let container = try decoder.singleValueContainer()
         if let text = try? container.decode(String.self) {
             self = .text(text)
+        } else if let parts = try? container.decode([MessagePart].self) {
+            self = .parts(parts)
         } else {
             let rich = try container.decode(RichContent.self)
             self = .rich(rich.text)
         }
     }
 
-    var textValue: String {
+    /// The legacy direct text; `nil` for canonical content, whose text is in `parts`.
+    var textValue: String? {
         switch self {
         case .text(let text): return text
         case .rich(let text): return text
+        case .parts: return nil
         }
+    }
+
+    var parts: [MessagePart]? {
+        guard case .parts(let parts) = self else { return nil }
+        return parts
     }
 }
 

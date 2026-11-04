@@ -16,6 +16,7 @@
 //  limitations under the License.
 //
 
+import AIChat
 import Bookmarks
 import BrowserServicesKit
 import Common
@@ -45,7 +46,11 @@ final class RemoteMessagingConfigMatcherProvider: RemoteMessagingConfigMatcherPr
         subscriptionManager: any SubscriptionManager,
         featureFlagger: FeatureFlagger,
         themeManager: ThemeManaging,
-        dbpDataManagerProvider: (() -> DataBrokerProtectionDataManaging?)? = nil
+        dbpDataManagerProvider: (() -> DataBrokerProtectionDataManaging?)? = nil,
+        isReturningUser: @escaping () -> Bool?,
+        aiChatPreferencesStorage: AIChatPreferencesStorage = DefaultAIChatPreferencesStorage(),
+        triedAIChatDuringOnboarding: Bool = false,
+        isAIChatBoostActive: Bool? = nil
     ) {
         self.init(
             bookmarksDatabase: bookmarksDatabase,
@@ -60,7 +65,11 @@ final class RemoteMessagingConfigMatcherProvider: RemoteMessagingConfigMatcherPr
             subscriptionManager: subscriptionManager,
             featureFlagger: featureFlagger,
             themeManager: themeManager,
-            dbpDataManagerProvider: dbpDataManagerProvider
+            dbpDataManagerProvider: dbpDataManagerProvider,
+            isReturningUser: isReturningUser,
+            aiChatPreferencesStorage: aiChatPreferencesStorage,
+            triedAIChatDuringOnboarding: triedAIChatDuringOnboarding,
+            isAIChatBoostActive: isAIChatBoostActive
         )
     }
 
@@ -77,7 +86,11 @@ final class RemoteMessagingConfigMatcherProvider: RemoteMessagingConfigMatcherPr
         subscriptionManager: any SubscriptionManager,
         featureFlagger: FeatureFlagger,
         themeManager: ThemeManaging,
-        dbpDataManagerProvider: (() -> DataBrokerProtectionDataManaging?)? = nil
+        dbpDataManagerProvider: (() -> DataBrokerProtectionDataManaging?)? = nil,
+        isReturningUser: @escaping () -> Bool?,
+        aiChatPreferencesStorage: AIChatPreferencesStorage = DefaultAIChatPreferencesStorage(),
+        triedAIChatDuringOnboarding: Bool = false, // macOS onboarding has no Duck.ai step yet
+        isAIChatBoostActive: Bool? = nil  // `nil` by default until macOS provides it, so rules using it fail.
     ) {
         self.bookmarksDatabase = bookmarksDatabase
         self.appearancePreferences = appearancePreferences
@@ -92,6 +105,10 @@ final class RemoteMessagingConfigMatcherProvider: RemoteMessagingConfigMatcherPr
         self.featureFlagger = featureFlagger
         self.themeManager = themeManager
         self.dbpDataManagerProvider = dbpDataManagerProvider
+        self.isReturningUser = isReturningUser
+        self.aiChatPreferencesStorage = aiChatPreferencesStorage
+        self.triedAIChatDuringOnboarding = triedAIChatDuringOnboarding
+        self.isAIChatBoostActive = isAIChatBoostActive
     }
 
     let bookmarksDatabase: CoreDataDatabase
@@ -107,6 +124,10 @@ final class RemoteMessagingConfigMatcherProvider: RemoteMessagingConfigMatcherPr
     let featureFlagger: FeatureFlagger
     let themeManager: ThemeManaging
     let dbpDataManagerProvider: (() -> DataBrokerProtectionDataManaging?)?
+    let isReturningUser: () -> Bool?
+    let aiChatPreferencesStorage: AIChatPreferencesStorage
+    let triedAIChatDuringOnboarding: Bool
+    let isAIChatBoostActive: Bool?
 
     func refreshConfigMatcher(using store: RemoteMessagingStoring) async -> RemoteMessagingConfigMatcher {
 
@@ -217,6 +238,8 @@ final class RemoteMessagingConfigMatcherProvider: RemoteMessagingConfigMatcherPr
         let hardwareCanUpgradeOS = SupportedOSChecker(featureFlagger: featureFlagger).osUpgradeCapability.canUpgradeOS
         let canUpgradeOS = OSUpgradeCapabilityOverridePersistor().canUpgradeOS(default: hardwareCanUpgradeOS)
 
+        let isAIChatEnabled = aiChatPreferencesStorage.isAIFeaturesEnabled
+
         return RemoteMessagingConfigMatcher(
             appAttributeMatcher: AppAttributeMatcher(statisticsStore: statisticsStore,
                                                      variantManager: variantManager(),
@@ -249,7 +272,11 @@ final class RemoteMessagingConfigMatcherProvider: RemoteMessagingConfigMatcherPr
                                                        isCurrentFreemiumPIRUser: isCurrentFreemiumDBPUser,
                                                        isCurrentPIRUser: isCurrentPIRUser,
                                                        dismissedDeprecatedMacRemoteMessageIds: deprecatedRemoteMessageStorage.dismissedMessageIDs(),
-                                                       enabledFeatureFlags: enabledFeatureFlags),
+                                                       enabledFeatureFlags: enabledFeatureFlags,
+                                                       isReturningUser: isReturningUser(),
+                                                       isAIChatEnabled: isAIChatEnabled,
+                                                       triedAIChatDuringOnboarding: triedAIChatDuringOnboarding,
+                                                       isAIChatBoostActive: isAIChatBoostActive),
             percentileStore: RemoteMessagingPercentileUserDefaultsStore(keyValueStore: UserDefaults.standard),
             surveyActionMapper: surveyActionMapper,
             dismissedMessageIds: dismissedMessageIds

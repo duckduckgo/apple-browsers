@@ -56,12 +56,9 @@ final class UTIFooterController {
     private var actedOnMessage: UTIFooterMessage?
     private var modelSwitchNotice: CreateImageModelSwitchNotice?
     private var termsOfServiceSendButton: DuckAiTermsOfServiceSendButton = .ask
-    private var visibleIDs: Set<UTIFooterItem.ID> = [] {
-        didSet {
-            guard isTermsOfServiceVisible != oldValue.contains(.termsConsent) else { return }
-            onTermsOfServiceVisibilityChanged?(isTermsOfServiceVisible)
-        }
-    }
+    private var promptOverLimit: AIChatPromptLength?
+    private var visibleIDs: Set<UTIFooterItem.ID> = []
+    private var reportedTermsOfServiceState = (isVisible: false, isInEffect: false)
     private var retainedMessageIDs: Set<UTIFooterItem.ID>?
     private var applicableIDs: Set<UTIFooterItem.ID> = []
     private var applicableHighUsageModelID: String?
@@ -70,6 +67,13 @@ final class UTIFooterController {
     private(set) var currentMessages: [UTIFooterItem] = []
     var currentMessage: UTIFooterMessage? { currentMessages.first?.message }
     var isTermsOfServiceVisible: Bool { visibleIDs.contains(.termsConsent) }
+    var isTermsOfServiceApplicable: Bool {
+        termsOfServiceStore?.hasAccepted == false && viewModel?.warning?.blocksInput != true
+    }
+    var isTermsOfServiceInEffect: Bool {
+        isTermsOfServiceVisible
+            || (isTermsOfServiceApplicable && !isEditing && visibleIDs.contains { $0.type == .error(.persistent) })
+    }
     /// Unaccepted with the feature on, so the disclaimer returns whenever the input is open in Duck.ai mode.
     var isTermsOfServicePending: Bool { termsOfServiceStore?.hasAccepted == false }
 
@@ -121,6 +125,7 @@ final class UTIFooterController {
         applicableWarning = nil
         visibleIDs = []
         updateInputBlock()
+        reportTermsOfServiceStateIfChanged()
         presenter?.clearPendingFooterMessage()
     }
 
@@ -162,13 +167,20 @@ final class UTIFooterController {
     }
 
 
+    func setPromptTooLong(_ overLimit: AIChatPromptLength?) {
+        guard promptOverLimit != overLimit else { return }
+        if (promptOverLimit == nil) != (overLimit == nil) { releaseWaitingMessages() }
+        promptOverLimit = overLimit
+        applyCurrentState()
+    }
+
     func dismiss(_ id: UTIFooterItem.ID) {
         guard visibleIDs.contains(id), currentMessages.first(where: { $0.id == id })?.message.isDismissible == true else { return }
         beginDismissal()
         defer { finishDismissal() }
         switch id {
         case .termsConsent: return
-        case .outOfUsage, .attachmentPrivacy: return
+        case .outOfUsage, .attachmentPrivacy, .promptTooLong: return
         case .modelSwitch:
             modelSwitchNotice = nil
             createImagePixelFiring.modelSwitchNoticeDismissed()
@@ -283,6 +295,7 @@ final class UTIFooterController {
     }
 
     private func applyCurrentState() {
+        defer { reportTermsOfServiceStateIfChanged() }
         attachmentPrivacyNotice?.refresh()
         updateInputBlock()
         let applicable = applicableMessages()
@@ -303,10 +316,19 @@ final class UTIFooterController {
         guard messages != currentMessages else { return }
         currentMessages = messages
         visibleIDs.formIntersection(messages.map(\.id))
-        if !messages.contains(where: { $0.id == .attachmentPrivacy }) {
+        let isPrivacyHiddenByError = nextIDs.contains(.attachmentPrivacy)
+            && messages.contains { $0.type == .error(.persistent) }
+        if !messages.contains(where: { $0.id == .attachmentPrivacy }) && !isPrivacyHiddenByError {
             attachmentPrivacyNotice?.endDisplay()
         }
         animator { [weak self] in self?.presenter?.applyFooterMessages(messages) }
+    }
+
+    private func reportTermsOfServiceStateIfChanged() {
+        let state = (isVisible: isTermsOfServiceVisible, isInEffect: isTermsOfServiceInEffect)
+        guard state != reportedTermsOfServiceState else { return }
+        reportedTermsOfServiceState = state
+        onTermsOfServiceVisibilityChanged?(state.isVisible)
     }
 
     private func updateInputBlock() {
@@ -318,11 +340,15 @@ final class UTIFooterController {
 
     private func applicableMessages() -> [UTIFooterItem] {
         var items: [UTIFooterItem] = []
-        if let termsOfServiceStore, !termsOfServiceStore.hasAccepted, viewModel?.warning?.blocksInput != true {
+        if isTermsOfServiceApplicable {
             items.append(.init(id: .termsConsent, message: mapper.termsOfServiceMessage(sendButton: termsOfServiceSendButton)))
         }
         if attachmentPrivacyNotice?.isPresented == true, viewModel?.warning?.blocksInput != true {
             items.append(.init(id: .attachmentPrivacy, message: mapper.attachmentPrivacyMessage()))
+        }
+        if let promptOverLimit {
+            items.append(.init(id: .promptTooLong,
+                               message: mapper.promptTooLongMessage(count: promptOverLimit.count, limit: promptOverLimit.limit)))
         }
         if let modelSwitchNotice { items.append(.init(id: .modelSwitch, message: mapper.message(for: modelSwitchNotice))) }
         if let warning = viewModel?.warning {

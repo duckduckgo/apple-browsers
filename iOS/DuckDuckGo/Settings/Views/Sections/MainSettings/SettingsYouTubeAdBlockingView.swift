@@ -63,7 +63,7 @@ struct SettingsYouTubeAdBlockingView: View {
                 if viewModel.isYouTubeAdBlockingRemotelyDisabled {
                     Section(header: Text(UserText.adBlockingYouTubeSectionHeader)) {
                         remotelyDisabledRow
-                            .listRowBackground(Color(singleUseColor: .groupedListContentBackground))
+                            .listRowBackground(Color(designSystemColor: .surfaceTertiary))
                     }
                 } else if viewModel.isYouTubeAdBlockingDisclosureHidden {
                     Section(header: Text(UserText.adBlockingYouTubeSectionHeader),
@@ -85,7 +85,7 @@ struct SettingsYouTubeAdBlockingView: View {
                 ) {
                     SettingsCellView(label: UserText.duckPlayerFeatureName)
                 }
-                .listRowBackground(Color(singleUseColor: .groupedListContentBackground))
+                .listRowBackground(Color(designSystemColor: .surfaceTertiary))
                 .disabled(viewModel.shouldDisplayDuckPlayerContingencyMessage)
             }
         }

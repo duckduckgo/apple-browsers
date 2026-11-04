@@ -67,6 +67,45 @@ final class FaviconTests: XCTestCase {
         XCTAssertEqual(rep.pixelsHigh, 1024)
     }
 
+    // MARK: - Transparent SVG detection
+
+    func testSVGStyledOnlyWithCSSHasNoVisiblePixels() throws {
+        let svg = """
+        <svg xmlns="http://www.w3.org/2000/svg" width="180" height="180" viewBox="0 0 180 180" fill="none">
+          <style>:root { fill: #000; }</style>
+          <rect x="10" y="10" width="160" height="160"/>
+        </svg>
+        """
+        let image = try XCTUnwrap(NSImage(dataUsingCIImage: Data(svg.utf8), maxPixelSize: nil))
+        XCTAssertFalse(image.hasVisiblePixels())
+    }
+
+    func testSVGWithFillAttributeHasVisiblePixels() throws {
+        let svg = """
+        <svg xmlns="http://www.w3.org/2000/svg" width="180" height="180" viewBox="0 0 180 180">
+          <rect x="10" y="10" width="160" height="160" fill="#000"/>
+        </svg>
+        """
+        let image = try XCTUnwrap(NSImage(dataUsingCIImage: Data(svg.utf8), maxPixelSize: nil))
+        XCTAssertTrue(image.hasVisiblePixels())
+    }
+
+    func testFullyTransparentBitmapHasNoVisiblePixels() throws {
+        let data = try makePNGData(pixelsWide: 16, pixelsHigh: 16)
+        let image = try XCTUnwrap(NSImage(dataUsingCIImage: data, maxPixelSize: nil))
+        XCTAssertFalse(image.hasVisiblePixels())
+    }
+
+    func testIsSVGImageDataDetectsSVGAfterLeadingComment() {
+        let svg = "<!-- comment -->\n<?xml version=\"1.0\"?>\n<SVG xmlns=\"http://www.w3.org/2000/svg\"></SVG>"
+        XCTAssertTrue(Data(svg.utf8).isSVGImageData)
+    }
+
+    func testIsSVGImageDataIsFalseForPNGData() throws {
+        let data = try makePNGData(pixelsWide: 16, pixelsHigh: 16)
+        XCTAssertFalse(data.isSVGImageData)
+    }
+
     // MARK: - Helpers
 
     private func makePNGData(pixelsWide: Int, pixelsHigh: Int) throws -> Data {

@@ -264,6 +264,22 @@ public final class DuckAiNativeDataStore: DuckAiNativeDataStoring, DuckAiNativeC
         }
     }
 
+    /// Counts in SQL, so a write to the chats table (each streamed response chunk, say) doesn't load every chat's data.
+    public func chatCountPublisher() -> AnyPublisher<Int, Error> {
+        let observation = ValueObservation.tracking { db in
+            try ChatRecord.fetchCount(db)
+        }.removeDuplicates()
+        do {
+            let queue = try dbQueue()
+            return observation
+                .publisher(in: queue, scheduling: .async(onQueue: .main))
+                .mapError { DuckAiNativeDataStoreError.databaseError($0) }
+                .eraseToAnyPublisher()
+        } catch {
+            return Fail(error: error).eraseToAnyPublisher()
+        }
+    }
+
     public func deleteChat(chatId: String) throws {
         let queue = try dbQueue()
         do {

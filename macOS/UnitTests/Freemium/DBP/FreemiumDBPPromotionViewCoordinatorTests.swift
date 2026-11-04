@@ -117,7 +117,7 @@ final class FreemiumDBPPromotionViewCoordinatorTests: XCTestCase {
         await viewModel.proceedAction()
 
         await fulfillment(of: [expectation], timeout: 2.0)
-        XCTAssertEqual(receivedResult, .actioned)
+        XCTAssertEqual(receivedResult, .actioned())
     }
 
     @MainActor
@@ -153,6 +153,7 @@ final class FreemiumDBPPromotionViewCoordinatorTests: XCTestCase {
 
         // Then
         XCTAssertTrue(mockPresenter.didCallShowFreemium)
+        XCTAssertEqual(mockPresenter.lastEntryPoint, .freeScanBanner)
         XCTAssertEqual(mockPixelHandler.lastFiredEvent, DataBrokerProtectionFreemiumPixels.newTabScanClick)
     }
 
@@ -190,6 +191,7 @@ final class FreemiumDBPPromotionViewCoordinatorTests: XCTestCase {
 
         // Then
         XCTAssertTrue(mockPresenter.didCallShowFreemium)
+        XCTAssertEqual(mockPresenter.lastEntryPoint, .viewResultsBanner)
         XCTAssertEqual(mockPixelHandler.lastFiredEvent, DataBrokerProtectionFreemiumPixels.newTabResultsClick)
     }
 
@@ -224,6 +226,7 @@ final class FreemiumDBPPromotionViewCoordinatorTests: XCTestCase {
 
         // Then
         XCTAssertTrue(mockPresenter.didCallShowFreemium)
+        XCTAssertEqual(mockPresenter.lastEntryPoint, .viewResultsBanner)
         XCTAssertEqual(mockPixelHandler.lastFiredEvent, DataBrokerProtectionFreemiumPixels.newTabNoResultsClick)
     }
 
@@ -285,11 +288,11 @@ final class FreemiumDBPPromotionViewCoordinatorTests: XCTestCase {
         XCTAssertNil(viewModel)
     }
 
-    // MARK: - onScanResultsUpdated / hasLegacyDismissal
+    // MARK: - onScanStateChanged / hasLegacyDismissal
 
-    func testScanResultsNotification_callsOnScanResultsUpdated() {
-        let expectation = XCTestExpectation(description: "onScanResultsUpdated called")
-        sut.onScanResultsUpdated = {
+    func testScanResultsNotification_callsOnScanStateChanged() {
+        let expectation = XCTestExpectation(description: "onScanStateChanged called")
+        sut.onScanStateChanged = {
             expectation.fulfill()
         }
 

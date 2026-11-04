@@ -50,21 +50,13 @@ enum DefaultBrowserAndDockPromptContent {
 
     var icon: NSImage {
         switch self {
-        case let .popover(content) where AppRebrand.isAppRebranded():
+        case let .popover(content):
             switch content {
             case .addToDockPrompt:
                 return NSImage(resource: .dockAddMac128)
             default:
                 return NSImage(resource: .laptopDDGInstallMac128)
             }
-        case let .popover(content):
-            switch content {
-            case .addToDockPrompt:
-                return NSImage(resource: .attIconPopoverLegacy)
-            default:
-                return NSImage(resource: .addAsDefaultPopoverIconLegacy)
-            }
-
         case .banner:
             return NSImage(resource: .daxBannerView)
         case .inactive:

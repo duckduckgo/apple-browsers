@@ -27,6 +27,7 @@ import PrivacyConfig
 import DuckPlayer
 import os.log
 import Combine
+import DDGNavigation
 import FeatureFlags_iOS
 import PixelKit
 
@@ -519,12 +520,12 @@ final class WebDuckPlayerNavigationHandler: NSObject {
         var backItems = webView.backForwardList.backList.reversed()
 
         // Ignore any previous URL that's duckPlayer or youtube-no-cookie
-        if backItems.first?.url != nil, url.isDuckPlayer {
+        if backItems.first?.safeURL != nil, url.isDuckPlayer {
             backItems = webView.backForwardList.backList.dropLast().reversed()
         }
 
         // If the current URL is DuckPlayer, use the previous history item
-        guard let referrerURL = url.isDuckPlayer ? backItems.first?.url : url else {
+        guard let referrerURL = url.isDuckPlayer ? backItems.first?.safeURL : url else {
             return
         }
 
@@ -814,7 +815,7 @@ extension WebDuckPlayerNavigationHandler: DuckPlayerNavigationHandling {
         let backList = webView.backForwardList.backList
         var nonYoutubeItem: WKBackForwardListItem?
 
-        for item in backList.reversed() where !item.url.isYoutubeVideo && !item.url.isDuckPlayer {
+        for item in backList.reversed() where item.safeURL.map({ !$0.isYoutubeVideo && !$0.isDuckPlayer }) ?? false {
             nonYoutubeItem = item
             break
         }
@@ -839,34 +840,29 @@ extension WebDuckPlayerNavigationHandler: DuckPlayerNavigationHandling {
 
     /// Handles reload actions, ensuring Duck Player settings are respected during the reload.
     ///
-    /// - Parameter webView: The `WKWebView` to reload.
+    /// - Parameter webView: The `WKWebView` about to be reloaded.
+    /// - Returns: `.handled` when Duck Player redirected instead of reloading, `.reload` otherwise.
     @MainActor
-    func handleReload(webView: WKWebView) {
+    func handleReload(webView: WKWebView) -> DuckPlayerNavigationHandlerReloadResult {
 
         // Reset DuckPlayer status
         duckPlayer.settings.allowFirstVideo = false
 
-        guard let url = webView.url else {
-            return
-        }
-
-        guard isDuckPlayerFeatureEnabled else {
-            webView.reload()
-            return
+        guard let url = webView.url, isDuckPlayerFeatureEnabled else {
+            return .reload
         }
 
         if url.isDuckPlayer, duckPlayerMode != .disabled {
             redirectToDuckPlayerVideo(url: url, webView: webView, disableNewTab: true)
-            return
+            return .handled
         }
 
         if url.isYoutubeWatch, duckPlayerMode == .alwaysAsk {
             redirectToYouTubeVideo(url: url, webView: webView, allowFirstVideo: false, disableNewTab: true)
-            return
+            return .handled
         }
 
-        webView.reload()
-
+        return .reload
     }
 
     /// Initializes settings and potentially redirects when the handler is attached to a web view.

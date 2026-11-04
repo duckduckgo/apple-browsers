@@ -60,6 +60,7 @@ enum DebugScreen: Identifiable {
         let duckAiNativeStorageHandler: DuckAiNativeStorageHandling?
         let promoCoordinationDiagnosticsProvider: PromoCoordinationDiagnosticsProviding?
         let promoCoordinationCooldownResetter: PromoCoordinationCooldownResetting?
+        let daxGreetingDebugging: DaxGreetingDebugging
 
     }
 

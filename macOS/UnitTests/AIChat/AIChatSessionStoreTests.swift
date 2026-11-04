@@ -337,6 +337,26 @@ final class AIChatSessionStoreTests: XCTestCase {
         XCTAssertIdentical(provider.sessions["new-tab2"]?.state, newState2)
     }
 
+    func testRestoreState_flagsOnlyChatsThatWereShownAsRestored() {
+        let sidebarState = AIChatState()
+        sidebarState.setSidebar()
+        let floatingState = AIChatState()
+        floatingState.setFloating()
+        let hiddenState = AIChatState()
+
+        provider.restoreState(["sidebar": sidebarState, "floating": floatingState, "hidden": hiddenState])
+
+        XCTAssertEqual(provider.sessions["sidebar"]?.isRestoredFromPreviousSession, true)
+        XCTAssertEqual(provider.sessions["floating"]?.isRestoredFromPreviousSession, true)
+        XCTAssertEqual(provider.sessions["hidden"]?.isRestoredFromPreviousSession, false)
+    }
+
+    func testGetOrCreateSession_newSessionIsNotFlaggedAsRestored() {
+        let session = provider.getOrCreateSession(for: "tab", burnerMode: .regular)
+
+        XCTAssertFalse(session.isRestoredFromPreviousSession)
+    }
+
     // MARK: - Integration Tests
 
     func testMultipleSessionOperations() {

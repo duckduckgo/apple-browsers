@@ -102,6 +102,70 @@ Unlike parameters, suffixes are **order-sensitive and all required**.
   `"key": "suffixKey"`. Do **not** specify `key` when it does not actually
   appear in the full name — `m_pixelName_value1` would then fail to match
 
+## Triggers
+
+`triggers` records what causes the pixel to fire. Choose it with this
+procedure; the full definitions and worked examples are in the
+[trigger classification guide](https://github.com/duckduckgo/pixel-schema/blob/main/docs/trigger-classification.md).
+
+```
+Classify by the EVENT THAT CAUSES THE PIXEL TO FIRE — never by dedupe cadence
+("daily"/"unique" suffixes) or the delivery mechanism.
+
+1. Deliberate user action (tap, click, toggle, menu selection, swipe, gesture,
+   prompt/query submission)?  → user_interaction
+   • A surface shown 1:1 because of a gesture (menu on tap, dialog behind a
+     button, screen entered from an explicit flow) is user_interaction.
+   • user_submitted ONLY for consent-scoped submission of the user's own data
+     (breakage report, feedback). The opener button is user_interaction.
+2. Surface displayed WITHOUT the user asking? → impression
+   • Litmus: display code has an eligibility gate (feature flag, subscription
+     state, view-count threshold, cooldown) → impression. Only gate is "user
+     navigated here" → user_interaction.
+3. Injected scripts detected page content (captcha, adwall, CMP, ads)?
+   → web_detection
+4. Automatic feature operation runs / completes / changes state (migration,
+   sync cycle, job engine, token refresh, update detection, state observer)?
+   → feature_lifecycle
+   • Async completion of a user-initiated flow that can outlive the UI or be
+     driven by a non-user party (billing observer, remote sync peer, retrying
+     backend call) → feature_lifecycle. Synchronous completion inside the
+     user's action → user_interaction.
+5. A timer or scheduled/delayed job literally fires it (rollup, sampler,
+   watchdog, absence-of-event check)? → scheduled
+   • If the timer merely DETECTS something, classify by what was detected:
+     anomaly → exception; a user toggle noticed by a poll → user_interaction.
+6. Error/crash → exception. Launch or foreground → startup. Page loaded →
+   page_load. New tab → new_tab. DDG search → search_ddg.
+7. One pixel name covering several events (e.g. an event=shown|clicked param)?
+   → list every applicable trigger; triggers is an array.
+
+Store-and-forward: when counters are recorded at event time and transmitted
+later by a worker, classify by the RECORDED event, never the flusher.
+
+Use "other" only when nothing above fits, and say why in the description.
+```
+
+Worked examples from this repo:
+
+- `m_mac_privacy-pro_toolbar_button_shown`: the upsell state machine decides to
+  show the button, so `impression`. Its `*_popover_shown` siblings are shown on
+  the user's click, so `user_interaction`
+- `webTelemetry_captcha_*`: immediate EventHub pixels for an injected-script
+  detection, so `web_detection`. The `*_day` and `*_week` rollups of the same
+  signals are fired by the period timer, so `scheduled`
+- `m_ios_dbp_optout_stage_*`: PIR job-engine stage events, so
+  `feature_lifecycle`
+- `m_mac_settings_auto-clear_on`: a daily snapshot sent from
+  `applicationDidBecomeActive`, so `startup`
+- `m_ios_onboarding_*`: one name carries `shown` and `clicked` in a parameter,
+  so `["impression", "user_interaction"]`
+
+Check triggers only on definitions the PR added or modified. Flag `["other"]`
+when the description does not say why nothing else fits, and flag a trigger
+that contradicts the firing code. A wrong trigger does not break the pipeline,
+so these are 🟡 Nit.
+
 ## Types
 
 Flag any parameter defined as `"type": "string"` whose enum contains only

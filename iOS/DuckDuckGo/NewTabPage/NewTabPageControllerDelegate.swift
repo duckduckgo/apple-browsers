@@ -19,7 +19,7 @@
 
 import AIChat
 import Bookmarks
-import Foundation
+import UIKit
 
 /// Which control of a New Tab Page message the user pressed.
 enum NewTabPageMessageInteraction {
@@ -29,24 +29,32 @@ enum NewTabPageMessageInteraction {
 
 protocol NewTabPageControllerDelegate: AnyObject {
     func newTabPageDidSelectFavorite(_ controller: any NewTabPage, favorite: BookmarkEntity)
+    func newTabPageDidRequestAddFavorite(_ controller: any NewTabPage)
     func newTabPageDidEditFavorite(_ controller: any NewTabPage, favorite: BookmarkEntity)
     func newTabPageDidRequestFaviconsFetcherOnboarding(_ controller: any NewTabPage)
     func newTabPageDidRequestSwitchToTab(_ controller: any NewTabPage, tab: Tab)
     func newTabPageDidRequestTabSwitcher(_ controller: any NewTabPage)
     func newTabPageDidDismissDuckAIFireOnboardingCompletion(_ controller: any NewTabPage)
+    func newTabPageDidChangeOnboardingPresentation(_ controller: any NewTabPage)
     func newTabPageDidScroll(_ controller: any NewTabPage)
     func newTabPage(_ controller: any NewTabPage, didInteractWithMessage interaction: NewTabPageMessageInteraction)
 
     func newTabPageDidRequestSettings(_ controller: any NewTabPage)
     func newTabPageDidRequestSearch(_ controller: any NewTabPage, textEntryMode: TextEntryMode)
     func newTabPageDidRequestVoiceSearch(_ controller: any NewTabPage, textEntryMode: TextEntryMode)
+    func newTabPageDuckAIMenu(_ controller: any NewTabPage) -> UIMenu?
+    func newTabPageDidOpenDuckAIOnboardingPromo(_ controller: any NewTabPage)
 }
 
 extension NewTabPageControllerDelegate {
+    func newTabPageDidChangeOnboardingPresentation(_ controller: any NewTabPage) { }
+    func newTabPageDidRequestAddFavorite(_ controller: any NewTabPage) { }
     func newTabPageDidDismissDuckAIFireOnboardingCompletion(_ controller: any NewTabPage) { }
     func newTabPageDidScroll(_ controller: any NewTabPage) { }
     func newTabPage(_ controller: any NewTabPage, didInteractWithMessage interaction: NewTabPageMessageInteraction) { }
     func newTabPageDidRequestSettings(_ controller: any NewTabPage) { }
     func newTabPageDidRequestSearch(_ controller: any NewTabPage, textEntryMode: TextEntryMode) { }
     func newTabPageDidRequestVoiceSearch(_ controller: any NewTabPage, textEntryMode: TextEntryMode) { }
+    func newTabPageDuckAIMenu(_ controller: any NewTabPage) -> UIMenu? { nil }
+    func newTabPageDidOpenDuckAIOnboardingPromo(_ controller: any NewTabPage) { }
 }

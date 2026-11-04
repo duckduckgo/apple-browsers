@@ -424,9 +424,11 @@ struct Logger {
         guard let context = XCTContext.perform(currentContextSelector)?.takeUnretainedValue() else {
             fatalError("Could not retrieve current XCTContext")
         }
-        // Escape any %-escaped values in the message before passing it as the format string
-        let escapedMessage = message.replacingOccurrences(of: "%", with: "%%")
-        _ = context.perform(logFormatSelector, with: escapedMessage)
+        if context.responds(to: logFormatSelector) {
+            // Escape any %-escaped values in the message before passing it as the format string
+            let escapedMessage = message.replacingOccurrences(of: "%", with: "%%")
+            _ = context.perform(logFormatSelector, with: escapedMessage)
+        }
 
         logger.log(level: .info, "\(message)")
     }

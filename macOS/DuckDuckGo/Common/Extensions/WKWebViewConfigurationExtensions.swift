@@ -23,6 +23,7 @@ import FoundationExtensions
 import Network
 import PrivacyConfig
 import UserScript
+import WebExtensions
 import WebKit
 
 extension WKWebViewConfiguration {
@@ -72,7 +73,7 @@ extension WKWebViewConfiguration {
         }
 
         if #available(macOS 15.4, *), let webExtensionManager = NSApp.delegateTyped.webExtensionManager {
-            self.webExtensionController = webExtensionManager.controller
+            attachWebExtensions(of: webExtensionManager)
         }
 
         let userContentController = UserContentController(assetsPublisher: contentBlocking.contentBlockingAssetsPublisher,

@@ -233,7 +233,11 @@ class DesktopUserAttributeMatcherTests: XCTestCase {
             isCurrentFreemiumPIRUser: false,
             isCurrentPIRUser: isCurrentPIRUser,
             dismissedDeprecatedMacRemoteMessageIds: dismissedDeprecatedMacRemoteMessageIds,
-            enabledFeatureFlags: []
+            enabledFeatureFlags: [],
+            isReturningUser: nil,
+            isAIChatEnabled: false,
+            triedAIChatDuringOnboarding: false,
+            isAIChatBoostActive: nil
         )
     }
 }

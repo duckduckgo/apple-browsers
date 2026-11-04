@@ -37,6 +37,9 @@ final class UnloadedTab: Identifiable {
     let isPersistent: Bool
     let interactionStateData: Data?
     var isSuspended: Bool
+    /// True only for a tab decoded from the previous session. A suspended tab is built from the
+    /// same restoration data, so the data alone can't tell them apart.
+    let isFromSessionRestore: Bool
 
     /// Pass-through from HistoryTabExtension — preserved so re-encoding doesn't lose extension state.
     var localHistoryIDs: [URL]?
@@ -64,9 +67,10 @@ final class UnloadedTab: Identifiable {
         self.localHistoryIDs = localHistoryIDs
         self.tabSnapshotIdentifier = tabSnapshotIdentifier
         self.isSuspended = isSuspended
+        self.isFromSessionRestore = false
     }
 
-    init(from data: TabRestorationData) {
+    init(from data: TabRestorationData, isFromSessionRestore: Bool) {
         self.uuid = data.uuid ?? UUID().uuidString
         self.content = data.content
         self.title = data.title
@@ -78,6 +82,7 @@ final class UnloadedTab: Identifiable {
         self.localHistoryIDs = data.localHistoryIDs
         self.tabSnapshotIdentifier = data.tabSnapshotIdentifier
         self.isSuspended = false
+        self.isFromSessionRestore = isFromSessionRestore
     }
 
     func clearNavigationHistory(keepingCurrent: Bool) {
@@ -113,6 +118,9 @@ final class UnloadedTab: Identifiable {
 
         if isSuspended {
             tab.tabSuspension?.lastSuspendedURL = content.urlForWebView
+        }
+        if isFromSessionRestore {
+            tab.aiChat?.noteRecreated(as: .sessionRestore)
         }
 
         return tab

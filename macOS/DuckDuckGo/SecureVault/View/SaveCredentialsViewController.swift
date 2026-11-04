@@ -50,7 +50,8 @@ extension SaveCredentialsViewController: MouseOverViewDelegate {
         }
 
         DispatchQueue.main.async { [weak self] in
-            guard let self else { return }
+            // Another hover notification may have presented one while this call was queued
+            guard let self, infoViewController == nil else { return }
             let message = autofillPreferences.isAutoLockEnabled ? UserText.pmSaveCredentialsSecurityInfo : UserText.pmSaveCredentialsSecurityInfoAutolockOff
             let infoViewController = PopoverInfoViewController(message: message) { [weak self] in
                 self?.lockImageBackgroundView.fillColor = NSColor(resource: .infoHoverButton)
@@ -86,7 +87,9 @@ final class SaveCredentialsViewController: NSViewController {
         static let bottomInset: CGFloat = 12
         static let revealButtonSize = CGSize(width: 30, height: 20)
         static let lockBoxInset: CGFloat = 6
+        static let lockBoxCornerRadius: CGFloat = 14
         static let lockBoxLeading: CGFloat = 14
+        static let tooltipInset: CGFloat = 5
     }
 
     var themeUpdateCancellable: AnyCancellable?
@@ -123,9 +126,7 @@ final class SaveCredentialsViewController: NSViewController {
     private var lockImageBackgroundView: NSBox!
 
     private var infoViewController: PopoverInfoViewController? {
-        presentedViewControllers?.first {
-            ($0 as? PopoverInfoViewController) != nil
-        } as? PopoverInfoViewController
+        presentedViewControllers?.first { $0 is PopoverInfoViewController } as? PopoverInfoViewController
     }
 
     private enum Action {
@@ -343,15 +344,16 @@ final class SaveCredentialsViewController: NSViewController {
         notNowSegmentedControl.setContentCompressionResistancePriority(.required, for: .horizontal)
 
         let lockImage = makeLogoImageView(NSImage(resource: .lockColor16))
+        lockImage.setAccessibilityIdentifier("SaveCredentialsViewController.lockImage")
         tooltipView = MouseOverView(frame: .zero)
+        tooltipView.translatesAutoresizingMaskIntoConstraints = false
         tooltipView.cornerRadius = 4
-        tooltipView.autoresizingMask = [.width, .height, .minXMargin, .maxXMargin, .minYMargin, .maxYMargin]
 
         lockImageBackgroundView = NSBox()
         lockImageBackgroundView.translatesAutoresizingMaskIntoConstraints = false
         lockImageBackgroundView.boxType = .custom
         lockImageBackgroundView.borderWidth = 0
-        lockImageBackgroundView.cornerRadius = 4
+        lockImageBackgroundView.cornerRadius = LayoutConstants.lockBoxCornerRadius
         lockImageBackgroundView.titlePosition = .noTitle
         lockImageBackgroundView.addSubview(tooltipView)
         lockImageBackgroundView.addSubview(lockImage)
@@ -538,8 +540,12 @@ final class SaveCredentialsViewController: NSViewController {
                                                             constant: LayoutConstants.lockBoxInset),
 
         ])
-
-        tooltipView.frame = lockImageBackgroundView.bounds.insetBy(dx: 5, dy: 5)
+        NSLayoutConstraint.activate([
+            tooltipView.topAnchor.constraint(equalTo: lockImageBackgroundView.topAnchor, constant: LayoutConstants.tooltipInset),
+            tooltipView.leadingAnchor.constraint(equalTo: lockImageBackgroundView.leadingAnchor, constant: LayoutConstants.tooltipInset),
+            lockImageBackgroundView.trailingAnchor.constraint(equalTo: tooltipView.trailingAnchor, constant: LayoutConstants.tooltipInset),
+            lockImageBackgroundView.bottomAnchor.constraint(equalTo: tooltipView.bottomAnchor, constant: LayoutConstants.tooltipInset),
+        ])
 
         self.view = view
     }
@@ -624,7 +630,6 @@ final class SaveCredentialsViewController: NSViewController {
 
     private func setUpSecurityInfoViews() {
         tooltipView.delegate = self
-        lockImageBackgroundView.cornerRadius = lockImageBackgroundView.bounds.height / 2
         lockImageBackgroundView.fillColor = NSColor(resource: .infoHoverButton)
         lockImageBackgroundView.boxType = .custom
     }

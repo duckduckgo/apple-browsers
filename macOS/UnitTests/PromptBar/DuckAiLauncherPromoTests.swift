@@ -29,7 +29,6 @@ final class DuckAiLauncherPromoTests: XCTestCase {
     private var preferences: PromptBarPreferences!
     private var keyValueStore: MockKeyValueFileStore!
     private var chatCount: CurrentValueSubject<Int, Never>!
-    private var openSettingsCount = 0
     private var cancellables = Set<AnyCancellable>()
 
     override func setUp() {
@@ -41,7 +40,6 @@ final class DuckAiLauncherPromoTests: XCTestCase {
                                            aiChatMenuConfiguration: configuration)
         keyValueStore = MockKeyValueFileStore()
         chatCount = CurrentValueSubject(5)
-        openSettingsCount = 0
     }
 
     override func tearDown() {
@@ -58,8 +56,7 @@ final class DuckAiLauncherPromoTests: XCTestCase {
         let promo = DuckAiLauncherPromo(featureFlagger: featureFlagger,
                                         preferences: preferences,
                                         chatCountPublisher: chatCount.eraseToAnyPublisher(),
-                                        keyValueStore: keyValueStore,
-                                        openSettings: { [weak self] in self?.openSettingsCount += 1 })
+                                        keyValueStore: keyValueStore)
         RunLoop.main.run(until: Date().addingTimeInterval(0.01))
         return promo
     }
@@ -124,7 +121,7 @@ final class DuckAiLauncherPromoTests: XCTestCase {
         preferences.isMenuBarIconVisible = true
         let promo = makePromo()
 
-        promo.tryNow()
+        promo.tryNow(on: .newTab)
 
         XCTAssertTrue(preferences.isKeyboardShortcutEnabled)
         XCTAssertTrue(preferences.isMenuBarIconVisible)
@@ -132,20 +129,20 @@ final class DuckAiLauncherPromoTests: XCTestCase {
     }
 
     @MainActor
-    func testTryNowTurnsBothEntryPointsOnAndOpensSettings() {
+    func testTryNowTurnsBothEntryPointsOnAndAsksToOpenThePromptBar() {
         let promo = makePromo()
 
-        promo.tryNow()
+        promo.tryNow(on: .newTab)
 
         XCTAssertTrue(preferences.isKeyboardShortcutEnabled)
         XCTAssertTrue(preferences.isMenuBarIconVisible)
-        XCTAssertEqual(openSettingsCount, 1)
+        XCTAssertTrue(preferences.pendingLauncherIntroduction)
         XCTAssertEqual(promo.outcome, .triedNow)
     }
 
     @MainActor
     func testTryNowEndsThePromoEvenIfTheLauncherIsTurnedOffAgain() {
-        makePromo().tryNow()
+        makePromo().tryNow(on: .newTab)
         preferences.isKeyboardShortcutEnabled = false
         preferences.isMenuBarIconVisible = false
 
@@ -154,17 +151,17 @@ final class DuckAiLauncherPromoTests: XCTestCase {
 
     @MainActor
     func testCloseAndPromptPastThePromoAreRecordedApart() {
-        makePromo().dismiss()
+        makePromo().dismiss(on: .newTab)
         XCTAssertEqual(makePromo().outcome, .closed)
 
         keyValueStore = MockKeyValueFileStore()
-        makePromo().ignore()
+        makePromo().ignore(on: .newTab)
         XCTAssertEqual(makePromo().outcome, .ignored)
     }
 
     @MainActor
     func testDismissalPersistsAcrossInstances() {
-        makePromo().dismiss()
+        makePromo().dismiss(on: .newTab)
 
         XCTAssertNil(makePromo().presentation())
     }
@@ -172,7 +169,7 @@ final class DuckAiLauncherPromoTests: XCTestCase {
     @MainActor
     func testResetOutcomeBringsThePromoBackAndPublishes() {
         let promo = makePromo()
-        promo.dismiss()
+        promo.dismiss(on: .newTab)
         let changed = expectation(description: "promo change published")
         promo.changesPublisher.sink { changed.fulfill() }.store(in: &cancellables)
         drainMainQueue()
@@ -205,7 +202,7 @@ final class DuckAiLauncherPromoTests: XCTestCase {
         promo.changesPublisher.sink { changed.fulfill() }.store(in: &cancellables)
         drainMainQueue()
 
-        promo.dismiss()
+        promo.dismiss(on: .newTab)
 
         wait(for: [changed], timeout: 1)
     }

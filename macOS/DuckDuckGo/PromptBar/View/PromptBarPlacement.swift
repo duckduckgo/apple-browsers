@@ -37,6 +37,21 @@ enum PromptBarPlacement {
 
         return NSRect(x: originX, y: top - height, width: width, height: height)
     }
+
+    static func frame(forContentHeight contentHeight: CGFloat, in visibleFrame: NSRect, relativePosition: CGPoint) -> NSRect {
+        var frame = frame(forContentHeight: contentHeight, in: visibleFrame)
+        let left = visibleFrame.minX + (relativePosition.x * visibleFrame.width).rounded()
+        let top = visibleFrame.maxY - (relativePosition.y * visibleFrame.height).rounded()
+        frame.origin.x = min(max(left, visibleFrame.minX), visibleFrame.maxX - frame.width)
+        frame.origin.y = min(max(top, visibleFrame.minY + frame.height), visibleFrame.maxY) - frame.height
+        return frame
+    }
+
+    static func relativePosition(of frame: NSRect, in visibleFrame: NSRect) -> CGPoint {
+        guard visibleFrame.width > 0, visibleFrame.height > 0 else { return .zero }
+        return CGPoint(x: (frame.minX - visibleFrame.minX) / visibleFrame.width,
+                       y: (visibleFrame.maxY - frame.maxY) / visibleFrame.height)
+    }
 }
 
 @MainActor

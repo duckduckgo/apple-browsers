@@ -44,7 +44,15 @@
                 "key": "feature.data.ext.exit_trigger",
                 "type": "string",
                 "description": "The action that caused the transition away from Duck.ai. Present only when status_reason is left_duckai.",
-                "enum": ["back_or_close", "tab_switched", "new_tab_opened", "fire_tab_opened", "search_started", "other_navigation"]
+                "enum": [
+                    "back_or_close",
+                    "tab_switched",
+                    "new_tab_opened",
+                    "fire_tab_opened",
+                    "search_started",
+                    "other_navigation",
+                    "chat_deleted"
+                ]
             },
             {
                 "key": "feature.data.ext.step.prompt_submitted",

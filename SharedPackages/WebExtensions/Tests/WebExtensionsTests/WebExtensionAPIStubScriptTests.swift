@@ -32,6 +32,7 @@ final class WebExtensionAPIStubScriptTests: XCTestCase {
     private var context: JSContext!
     private var exceptions: [String] = []
     private var scheduledTimers: [ScheduledTimer] = []
+    private var scheduledIntervals: [ScheduledTimer] = []
     /// Backs the fake `chrome.storage.local`, as JSON per key, so it outlives a context: two
     /// contexts made in one test see the same storage, like two pages of one extension.
     private var storageLocalItems: [String: String] = [:]
@@ -45,6 +46,7 @@ final class WebExtensionAPIStubScriptTests: XCTestCase {
         context = nil
         exceptions = []
         scheduledTimers = []
+        scheduledIntervals = []
         storageLocalItems = [:]
         try super.tearDownWithError()
     }
@@ -54,6 +56,7 @@ final class WebExtensionAPIStubScriptTests: XCTestCase {
     func testWhenPageIsAWebsite_ThenScriptDoesNothing() throws {
         context.evaluateScript("""
         var location = { protocol: "https:" };
+        var navigator = {};
         chrome = { runtime: {} };
         """)
         try assertNoExceptions()
@@ -63,6 +66,7 @@ final class WebExtensionAPIStubScriptTests: XCTestCase {
         try assertTrue("chrome.notifications === undefined")
         try assertTrue("globalThis['\(WebExtensionAPIStubScript.retentionPropertyName)'] === undefined")
         try assertTrue("consoleMessages.length === 0")
+        try assertTrue("navigator.userAgentData === undefined")
     }
 
     func testWhenPageIsAnExtensionPage_ThenScriptInstallsStubs() throws {
@@ -76,10 +80,239 @@ final class WebExtensionAPIStubScriptTests: XCTestCase {
         try assertTrue("chrome.notifications !== undefined")
     }
 
+    // MARK: - Client Hints
+
+    func testWhenClientHintsAreMissing_ThenExtensionsCanDetectDuckDuckGo() throws {
+        context.evaluateScript("var navigator = { userAgent: 'Mozilla/5.0 Chrome/140.0.0.0 Safari/605.1.15 Ddg/18.0' };")
+
+        try evaluateStubScript()
+
+        try assertTrue("navigator.userAgentData.brands.some(function(item) { return item.brand === 'DuckDuckGo'; })")
+        try assertTrue("navigator.userAgentData.brands[0].version === '140'")
+        try assertTrue("navigator.userAgentData.platform === 'macOS'")
+        try assertTrue("navigator.userAgentData.mobile === false")
+        try assertTrue("JSON.stringify(navigator.userAgentData) === JSON.stringify(navigator.userAgentData.toJSON())")
+        try assertTrue("navigator.userAgent.indexOf('Chrome/140.0.0.0') !== -1")
+
+        context.evaluateScript("navigator.userAgentData.brands[0].brand = 'Changed';")
+        try assertTrue("navigator.userAgentData.brands[0].brand === 'DuckDuckGo'")
+    }
+
+    func testWhenFullVersionListIsRequested_ThenItIncludesDuckDuckGo() throws {
+        context.evaluateScript("var navigator = { userAgent: 'Chrome/140.0.0.0' };")
+        try evaluateStubScript()
+
+        context.evaluateScript("""
+        var hintsResult;
+        navigator.userAgentData.getHighEntropyValues(['fullVersionList', 'architecture']).then(function(value) { hintsResult = value; });
+        """)
+        try assertTrue("hintsResult.fullVersionList[0].brand === 'DuckDuckGo'")
+        try assertTrue("hintsResult.fullVersionList[0].version === '140.0.0.0'")
+        try assertTrue("hintsResult.brands[0].version === '140'")
+        try assertTrue("hintsResult.architecture === undefined")
+
+        context.evaluateScript("navigator.userAgentData.getHighEntropyValues([]).then(function(value) { hintsResult = value; });")
+        try assertTrue("hintsResult.fullVersionList === undefined")
+    }
+
+    func testWhenHintsChangeAfterTheCall_ThenTheOriginalRequestIsUsed() throws {
+        context.evaluateScript("var navigator = { userAgent: 'Chrome/140.0.0.0' };")
+        try evaluateStubScript()
+
+        context.evaluateScript("""
+        var hints = ['fullVersionList'];
+        var hintsResult;
+        navigator.userAgentData.getHighEntropyValues(hints).then(function(value) { hintsResult = value; });
+        hints.length = 0;
+        """)
+
+        try assertTrue("hintsResult.fullVersionList !== undefined")
+        try assertTrue("hintsResult.fullVersionList[0].brand === 'DuckDuckGo'")
+    }
+
+    func testWhenHintValuesNeedStringConversion_ThenTheyAreRecognized() throws {
+        context.evaluateScript("var navigator = { userAgent: 'Chrome/140.0.0.0' };")
+        try evaluateStubScript()
+
+        context.evaluateScript("""
+        var hintsResult;
+        navigator.userAgentData.getHighEntropyValues([new String('fullVersionList')]).then(function(value) { hintsResult = value; });
+        """)
+
+        try assertTrue("hintsResult.fullVersionList !== undefined")
+        try assertTrue("hintsResult.fullVersionList[0].brand === 'DuckDuckGo'")
+    }
+
+    func testWhenHintsAreInvalid_ThenThePromiseRejectsWithTypeError() throws {
+        context.evaluateScript("var navigator = { userAgent: 'Chrome/140.0.0.0' };")
+        try evaluateStubScript()
+
+        context.evaluateScript("""
+        var invalidResults;
+        var invalidHints = [null, undefined, 42, 'fullVersionList', {}, [Symbol('hint')]];
+        Promise.all(invalidHints.map(function(hints) {
+            return navigator.userAgentData.getHighEntropyValues(hints).then(
+                function() { return false; },
+                function(error) { return error instanceof TypeError; }
+            );
+        })).then(function(values) { invalidResults = values; });
+        """)
+
+        try assertTrue("invalidResults.length === invalidHints.length")
+        try assertTrue("invalidResults.every(function(rejected) { return rejected; })")
+    }
+
+    func testWhenNativeReceivesHints_ThenTheyAreNormalizedAtCallTime() throws {
+        context.evaluateScript("""
+        var nativeRequested;
+        var navigator = { userAgent: 'Chrome/140.0.0.0', userAgentData: {
+            brands: [], mobile: false, platform: 'macOS',
+            getHighEntropyValues: function(hints) {
+                nativeRequested = hints;
+                return Promise.resolve({ fullVersionList: [] });
+            }
+        } };
+        """)
+        try evaluateStubScript()
+
+        context.evaluateScript("""
+        var hintsResult;
+        var hints = [{ toString: function() { return 'fullVersionList'; } }];
+        navigator.userAgentData.getHighEntropyValues(hints).then(function(value) { hintsResult = value; });
+        hints.length = 0;
+        """)
+
+        try assertTrue("JSON.stringify(nativeRequested) === '[\"fullVersionList\"]'")
+        try assertTrue("hintsResult.fullVersionList[0].brand === 'DuckDuckGo'")
+    }
+
+    func testWhenNativeOmitsFullVersionList_ThenItRemainsOmitted() throws {
+        context.evaluateScript("""
+        var nativeResult = { brands: [{ brand: 'AppleWebKit', version: '605' }], mobile: false, platform: 'macOS' };
+        var navigator = { userAgent: 'Chrome/140.0.0.0', userAgentData: {
+            brands: nativeResult.brands, mobile: nativeResult.mobile, platform: nativeResult.platform,
+            getHighEntropyValues: function() { return Promise.resolve(nativeResult); }
+        } };
+        """)
+        try evaluateStubScript()
+
+        context.evaluateScript("""
+        var hintsResult;
+        navigator.userAgentData.getHighEntropyValues(['fullVersionList']).then(function(value) { hintsResult = value; });
+        """)
+
+        try assertTrue("hintsResult.fullVersionList === undefined")
+        try assertTrue("hintsResult.brands.some(function(item) { return item.brand === 'DuckDuckGo'; })")
+    }
+
+    func testWhenNativeClientHintsExist_ThenTheirValuesAndReceiverArePreserved() throws {
+        context.evaluateScript("""
+        var nativeUAData = {
+            brands: [{ brand: 'AppleWebKit', version: '605' }],
+            mobile: false,
+            platform: 'native platform',
+            getHighEntropyValues: function(hints) {
+                if (this !== nativeUAData) { throw new Error('Wrong receiver'); }
+                return Promise.resolve({ architecture: 'native architecture', fullVersionList: [{ brand: 'AppleWebKit', version: '605.1.15' }] });
+            }
+        };
+        var navigator = { userAgent: 'Chrome/140.0.0.0', userAgentData: nativeUAData };
+        """)
+
+        try evaluateStubScript()
+
+        try assertTrue("navigator.userAgentData.brands.length === 2")
+        try assertTrue("navigator.userAgentData.brands[0].brand === 'AppleWebKit'")
+        try assertTrue("navigator.userAgentData.platform === 'native platform'")
+        context.evaluateScript("""
+        var hintsResult;
+        navigator.userAgentData.getHighEntropyValues(['fullVersionList', 'architecture']).then(function(value) { hintsResult = value; });
+        """)
+        try assertTrue("hintsResult.architecture === 'native architecture'")
+        try assertTrue("hintsResult.fullVersionList[0].version === '605.1.15'")
+        try assertTrue("hintsResult.fullVersionList[1].brand === 'DuckDuckGo'")
+        try assertTrue("nativeUAData.brands.length === 1")
+    }
+
+    func testWhenNativeClientHintsReject_ThenTheErrorIsPreserved() throws {
+        context.evaluateScript("""
+        var expectedError = new Error('Native failure');
+        var navigator = { userAgentData: {
+            brands: [], mobile: false, platform: 'macOS',
+            getHighEntropyValues: function() { return Promise.reject(expectedError); }
+        } };
+        """)
+
+        try evaluateStubScript()
+
+        context.evaluateScript("""
+        var hintsError;
+        navigator.userAgentData.getHighEntropyValues([]).catch(function(error) { hintsError = error; });
+        """)
+        try assertTrue("hintsError === expectedError")
+    }
+
+    func testWhenBrandingRunsTwice_ThenTheBrandAndObjectAreNotDuplicated() throws {
+        context.evaluateScript("var navigator = { userAgent: 'Chrome/140.0.0.0' };")
+        try evaluateStubScript()
+        context.evaluateScript("var firstUAData = navigator.userAgentData;")
+
+        try evaluateStubScript()
+
+        try assertTrue("navigator.userAgentData === firstUAData")
+        try assertTrue("navigator.userAgentData.brands.length === 1")
+    }
+
+    func testWhenNativeClientHintsAlreadyIdentifyDuckDuckGo_ThenTheyAreKept() throws {
+        context.evaluateScript("""
+        var nativeUAData = { brands: [{ brand: 'DuckDuckGo', version: '140' }] };
+        var navigator = { userAgentData: nativeUAData };
+        """)
+
+        try evaluateStubScript()
+
+        try assertTrue("navigator.userAgentData === nativeUAData")
+    }
+
+    // MARK: - Extension Fixes
+
+    func testWhenTheExtensionIsBitwarden_ThenItsURLsReportChromesProtocol() throws {
+        try installFakeURL()
+        try declareManifest("{ homepage_url: 'https://bitwarden.com' }")
+        try evaluateStubScript()
+
+        try assertTrue("new URL('webkit-extension://abc/overlay/menu.html').protocol === 'chrome-extension:'")
+        try assertTrue("new URL('webkit-extension://abc/overlay/menu.html').href === 'webkit-extension://abc/overlay/menu.html'")
+        try assertTrue("new URL('https://example.com/').protocol === 'https:'")
+    }
+
+    func testWhenBitwardenSetsChromesProtocol_ThenTheURLKeepsTheRealScheme() throws {
+        try installFakeURL()
+        try declareManifest("{ homepage_url: 'https://bitwarden.com' }")
+        try evaluateStubScript()
+
+        try assertTrue("""
+        (function() {
+            var url = new URL('webkit-extension://abc/');
+            url.protocol = url.protocol;
+            return url.scheme === 'webkit-extension:';
+        })()
+        """)
+    }
+
+    func testWhenTheExtensionIsAnotherOne_ThenItsURLsAreLeftAlone() throws {
+        try installFakeURL()
+        try declareManifest("{ homepage_url: 'https://example.com' }")
+        try evaluateStubScript()
+
+        try assertTrue("new URL('webkit-extension://abc/').protocol === 'webkit-extension:'")
+    }
+
     // MARK: - DuckDuckGo Extensions
 
     func testWhenManifestIsADuckDuckGoExtension_ThenScriptDoesNothing() throws {
         context.evaluateScript("""
+        var navigator = {};
         chrome.runtime.getManifest = function() {
             return { browser_specific_settings: { duckduckgo: { id: "com.duckduckgo.web-extension.embedded" } } };
         };
@@ -90,6 +323,7 @@ final class WebExtensionAPIStubScriptTests: XCTestCase {
 
         try assertTrue("chrome.notifications === undefined")
         try assertTrue("globalThis['\(WebExtensionAPIStubScript.retentionPropertyName)'] === undefined")
+        try assertTrue("navigator.userAgentData === undefined")
     }
 
     func testWhenManifestIsThirdParty_ThenScriptInstallsStubs() throws {
@@ -101,6 +335,233 @@ final class WebExtensionAPIStubScriptTests: XCTestCase {
         try evaluateStubScript()
 
         try assertTrue("chrome.notifications !== undefined")
+    }
+
+    // MARK: - Explicit Resource Management Symbols
+
+    func testWhenScriptRuns_ThenDisposeSymbolsAreDefined() throws {
+        try evaluateStubScript()
+
+        try assertTrue("typeof Symbol.dispose === 'symbol'")
+        try assertTrue("typeof Symbol.asyncDispose === 'symbol'")
+        try assertTrue("Symbol.dispose !== Symbol.asyncDispose")
+    }
+
+    func testWhenCodeUsesTypeScriptDisposeHelperPattern_ThenResourceIsDisposed() throws {
+        try evaluateStubScript()
+
+        // Mirrors what TypeScript's `__addDisposableResource` / `__disposeResources` do for `using`.
+        try assertTrue("""
+        (function() {
+            var disposed = false;
+            var resource = {};
+            resource[Symbol.dispose] = function() { disposed = true; };
+            if (!Symbol.dispose) { throw new TypeError("Symbol.dispose is not defined."); }
+            var dispose = resource[Symbol.dispose];
+            if (typeof dispose !== "function") { throw new TypeError("Object not disposable."); }
+            dispose.call(resource);
+            return disposed;
+        })()
+        """)
+    }
+
+    func testWhenDisposeSymbolAlreadyExists_ThenScriptKeepsIt() throws {
+        context.evaluateScript("""
+        var existingDispose = typeof Symbol.dispose === "symbol" ? Symbol.dispose : Symbol("existing");
+        if (typeof Symbol.dispose !== "symbol") {
+            Object.defineProperty(Symbol, "dispose", { value: existingDispose, configurable: true });
+        }
+        """)
+        try assertNoExceptions()
+
+        try evaluateStubScript()
+
+        try assertTrue("Symbol.dispose === existingDispose")
+    }
+
+    // MARK: - Embedded Frames
+
+    func testWhenAFrameInAWebsiteOpensThePopup_ThenTheCallIsRelayedToTheBackgroundPage() throws {
+        try installFakeRelaySender(reply: "{}")
+        try evaluateStubScript()
+
+        context.evaluateScript("""
+        var openPopupOutcome = 'pending';
+        chrome.action.openPopup().then(function(value) { openPopupOutcome = value; }, function(error) { openPopupOutcome = error.message; });
+        """)
+        try assertNoExceptions()
+
+        try assertTrue("openPopupOutcome === undefined")
+        try assertTrue("JSON.stringify(sentMessages) === '[{\"__ddgActionOpenPopup\":{}}]'")
+        try assertTrue("nativeOpenPopupCalls === 0")
+        try assertTrue("consoleMessages.some(function(m) { return m.indexOf('relayed: [action.openPopup]') !== -1; })")
+    }
+
+    func testWhenAFrameInAWebsitePassesOptions_ThenTheyAreRelayedAndTheCallbackSeesNoError() throws {
+        try installFakeRelaySender(reply: "{}")
+        try evaluateStubScript()
+
+        context.evaluateScript("""
+        var callbackError = 'pending';
+        chrome.action.openPopup({ windowId: 8 }, function() {
+            callbackError = chrome.runtime.lastError ? chrome.runtime.lastError.message : null;
+        });
+        """)
+        try assertNoExceptions()
+
+        try assertTrue("callbackError === null")
+        try assertTrue("JSON.stringify(sentMessages) === '[{\"__ddgActionOpenPopup\":{\"windowId\":8}}]'")
+    }
+
+    func testWhenTheBackgroundPageCannotOpenThePopup_ThenThePromiseRejectsAndTheCallbackSeesLastError() throws {
+        try installFakeRelaySender(reply: "{ error: 'Invalid call to action.openPopup(). The options value is invalid.' }")
+        try evaluateStubScript()
+
+        context.evaluateScript("""
+        var openPopupOutcome = 'pending';
+        chrome.action.openPopup().then(function() { openPopupOutcome = 'resolved'; }, function(error) { openPopupOutcome = error.message; });
+        var callbackError = 'pending';
+        chrome.action.openPopup(function() {
+            callbackError = chrome.runtime.lastError ? chrome.runtime.lastError.message : null;
+        });
+        """)
+        try assertNoExceptions()
+
+        try assertTrue("openPopupOutcome === 'Invalid call to action.openPopup(). The options value is invalid.'")
+        try assertTrue("callbackError === openPopupOutcome")
+        try assertTrue("chrome.runtime.lastError === undefined")
+    }
+
+    func testWhenNoBackgroundPageAnswers_ThenThePromiseRejects() throws {
+        try installFakeRelaySender(reply: "undefined")
+        try evaluateStubScript()
+
+        context.evaluateScript("""
+        var openPopupOutcome = 'pending';
+        chrome.action.openPopup().then(function() { openPopupOutcome = 'resolved'; }, function(error) { openPopupOutcome = error.message; });
+        """)
+        try assertNoExceptions()
+
+        try assertTrue("openPopupOutcome === \"The extension's background page did not open the popup\"")
+    }
+
+    func testWhenThePageIsTheTopFrame_ThenActionOpenPopupIsLeftAlone() throws {
+        try installFakeRelaySender(reply: "{}")
+        context.evaluateScript("""
+        top = globalThis;
+        var originalOpenPopup = chrome.action.openPopup;
+        """)
+        try evaluateStubScript()
+
+        try assertTrue("chrome.action.openPopup === originalOpenPopup")
+    }
+
+    func testWhenTheFrameIsInsideAnExtensionPage_ThenActionOpenPopupIsLeftAlone() throws {
+        try installFakeRelaySender(reply: "{}")
+        context.evaluateScript("""
+        top = { location: { protocol: "webkit-extension:" } };
+        var originalOpenPopup = chrome.action.openPopup;
+        """)
+        try evaluateStubScript()
+
+        try assertTrue("chrome.action.openPopup === originalOpenPopup")
+    }
+
+    // MARK: - Background Page Relay
+
+    func testWhenTheBackgroundPageGetsARelay_ThenWebKitsOpenPopupIsCalledWithTheOptions() throws {
+        try installFakeBackgroundPage()
+        try evaluateStubScript()
+
+        context.evaluateScript("""
+        var outcome = dispatch({ __ddgActionOpenPopup: { windowId: 8 } }, { id: 'extension' });
+        """)
+        try assertNoExceptions()
+
+        try assertTrue("outcome.keepsChannelOpen === true")
+        try assertTrue("JSON.stringify(openPopupCalls) === '[{\"windowId\":8}]'")
+        try assertTrue("JSON.stringify(outcome.responses) === '[{}]'")
+    }
+
+    func testWhenWebKitRefusesTheOptions_ThenTheErrorIsAnsweredAndReported() throws {
+        try installFakeReporting()
+        try installFakeBackgroundPage(openPopupError: "Invalid call to action.openPopup(). The 'options' value is invalid, because it is not an object.")
+        try evaluateStubScript()
+
+        context.evaluateScript("var outcome = dispatch({ __ddgActionOpenPopup: { tabId: 3 } }, { id: 'extension' });")
+        try assertNoExceptions()
+
+        let message = "Invalid call to action.openPopup(). The 'options' value is invalid, because it is not an object."
+        try assertTrue("outcome.responses.length === 1 && outcome.responses[0].error === \"\(message)\"")
+        try assertReports("[{\"kind\":\"error\",\"message\":\"\(message)\"}]")
+    }
+
+    func testWhenAnotherExtensionSendsARelay_ThenItIsIgnored() throws {
+        try installFakeBackgroundPage()
+        try evaluateStubScript()
+
+        context.evaluateScript("var outcome = dispatch({ __ddgActionOpenPopup: {} }, { id: 'someone-else' });")
+        try assertNoExceptions()
+
+        try assertTrue("outcome.keepsChannelOpen === false")
+        try assertTrue("openPopupCalls.length === 0")
+        try assertTrue("outcome.responses.length === 0")
+    }
+
+    func testWhenTheExtensionListensForMessages_ThenItSeesItsOwnButNotTheRelays() throws {
+        try installFakeBackgroundPage()
+        try evaluateStubScript()
+
+        context.evaluateScript("""
+        var seenByExtension = [];
+        function extensionListener(message) { seenByExtension.push(message); }
+        chrome.runtime.onMessage.addListener(extensionListener);
+        dispatch({ __ddgActionOpenPopup: {} }, { id: 'extension' });
+        dispatch({ subject: 'hello' }, { id: 'extension' });
+        """)
+        try assertNoExceptions()
+
+        try assertTrue("JSON.stringify(seenByExtension) === '[{\"subject\":\"hello\"}]'")
+        try assertTrue("chrome.runtime.onMessage.hasListener(extensionListener) === true")
+
+        context.evaluateScript("chrome.runtime.onMessage.removeListener(extensionListener);")
+        try assertNoExceptions()
+
+        try assertTrue("chrome.runtime.onMessage.hasListener(extensionListener) === false")
+        try assertTrue("registered.length === 1")
+    }
+
+    func testWhenAnotherExtensionPageGetsARelay_ThenItsListenersDontSeeItAndNothingAnswers() throws {
+        try installFakeBackgroundPage()
+        context.evaluateScript("location.pathname = '/popup.html';")
+        try evaluateStubScript()
+
+        context.evaluateScript("""
+        var seenByExtension = [];
+        chrome.runtime.onMessage.addListener(function(message, sender, sendResponse) {
+            seenByExtension.push(message);
+            sendResponse({ answeredBy: 'popup' });
+        });
+        var outcome = dispatch({ __ddgActionOpenPopup: {} }, { id: 'extension' });
+        """)
+        try assertNoExceptions()
+
+        try assertTrue("seenByExtension.length === 0")
+        try assertTrue("outcome.responses.length === 0")
+        try assertTrue("outcome.keepsChannelOpen === false")
+        try assertTrue("openPopupCalls.length === 0")
+    }
+
+    func testWhenTheExtensionHasNoAction_ThenItsMessageListenersAreLeftAlone() throws {
+        try installFakeBackgroundPage()
+        context.evaluateScript("""
+        delete chrome.action;
+        var originalAddListener = chrome.runtime.onMessage.addListener;
+        """)
+        try evaluateStubScript()
+
+        try assertTrue("chrome.runtime.onMessage.addListener === originalAddListener")
+        try assertTrue("registered.length === 0")
     }
 
     // MARK: - Missing Namespaces
@@ -120,7 +581,7 @@ final class WebExtensionAPIStubScriptTests: XCTestCase {
         try assertTrue("typeof chrome.notifications.create === 'function'")
         try assertTrue("typeof chrome.downloads.download === 'function'")
         try assertTrue("typeof chrome.management.getSelf === 'function'")
-        try assertTrue("typeof chrome.privacy.services.passwordSavingEnabled.get === 'function'")
+        try assertTrue("typeof chrome.sidePanel.options.nested.get === 'function'")
         try assertTrue("typeof chrome.browsingData.removeCache === 'function'")
     }
 
@@ -136,8 +597,8 @@ final class WebExtensionAPIStubScriptTests: XCTestCase {
     func testWhenStubIsCalled_ThenItReturnsAPromise() throws {
         try evaluateStubScript()
 
-        try assertTrue("typeof chrome.idle.queryState(60) === 'object'")
-        try assertTrue("typeof chrome.idle.queryState(60).then === 'function'")
+        try assertTrue("typeof chrome.downloads.download({}) === 'object'")
+        try assertTrue("typeof chrome.downloads.download({}).then === 'function'")
     }
 
     func testWhenStubIsCalledWithTrailingCallback_ThenTheCallbackIsInvokedWithUndefined() throws {
@@ -174,7 +635,531 @@ final class WebExtensionAPIStubScriptTests: XCTestCase {
         try evaluateStubScript()
 
         try assertTrue("chrome.notifications.then === undefined")
-        try assertTrue("chrome.privacy.services.then === undefined")
+        try assertTrue("chrome.downloads.state.then === undefined")
+    }
+
+    // MARK: - Idle
+
+    func testWhenIdleIsQueried_ThenTheReplyIsHandedToThePromiseAndTheCallback() throws {
+        try installFakeIdleHandler(reply: "locked")
+        try evaluateStubScript()
+
+        context.evaluateScript("""
+        var promiseState = 'pending';
+        var callbackState = 'pending';
+        chrome.idle.queryState(120, function(state) { callbackState = state; }).then(function(state) { promiseState = state; });
+        """)
+        try assertNoExceptions()
+
+        try assertTrue("promiseState === 'locked' && callbackState === 'locked'")
+        try assertTrue("idleRequests.length === 1 && idleRequests[0].detectionInterval === 120")
+    }
+
+    func testWhenIdleIsQueriedWithoutACallback_ThenTheStatesAreResolvedAsGiven() throws {
+        try installFakeIdleHandler(reply: "idle")
+        try evaluateStubScript()
+
+        context.evaluateScript("var promiseState = 'pending'; chrome.idle.queryState(60).then(function(state) { promiseState = state; });")
+        try assertNoExceptions()
+
+        try assertTrue("promiseState === 'idle'")
+    }
+
+    func testWhenTheIdleHandlerFails_ThenQueryStateAnswersActive() throws {
+        try installFakeIdleHandler(reply: "idle", fails: true)
+        try evaluateStubScript()
+
+        context.evaluateScript("var promiseState = 'pending'; chrome.idle.queryState(60).then(function(state) { promiseState = state; });")
+        try assertNoExceptions()
+
+        try assertTrue("promiseState === 'active'")
+    }
+
+    func testWhenTheIdleHandlerAnswersAnUnknownState_ThenQueryStateAnswersActive() throws {
+        try installFakeIdleHandler(reply: "asleep")
+        try evaluateStubScript()
+
+        context.evaluateScript("var promiseState = 'pending'; chrome.idle.queryState(60).then(function(state) { promiseState = state; });")
+        try assertNoExceptions()
+
+        try assertTrue("promiseState === 'active'")
+    }
+
+    func testWhenThereIsNoIdleHandler_ThenQueryStateAnswersActiveWithBothStyles() throws {
+        try evaluateStubScript()
+
+        context.evaluateScript("""
+        var promiseState = 'pending';
+        var callbackState = 'pending';
+        chrome.idle.queryState(60, function(state) { callbackState = state; }).then(function(state) { promiseState = state; });
+        """)
+        try assertNoExceptions()
+
+        try assertTrue("promiseState === 'active' && callbackState === 'active'")
+    }
+
+    func testWhenTheDetectionIntervalIsBelowChromesMinimum_ThenItIsClampedTo15() throws {
+        try installFakeIdleHandler(reply: "active")
+        try evaluateStubScript()
+
+        context.evaluateScript("""
+        chrome.idle.queryState(1);
+        chrome.idle.queryState(0);
+        chrome.idle.queryState(90.7);
+        chrome.idle.queryState('soon');
+        """)
+        try assertNoExceptions()
+
+        try assertTrue("JSON.stringify(idleRequests.map(function(r) { return r.detectionInterval; })) === '[15,15,90,60]'")
+    }
+
+    func testWhenTheDetectionIntervalIsSet_ThenPollingUsesItClampedAndTheDefaultIs60() throws {
+        try installFakeIdleHandler(reply: "active")
+        try installFakeIntervals()
+        try evaluateStubScript()
+
+        context.evaluateScript("chrome.idle.onStateChanged.addListener(function() {});")
+        firePolls()
+        try assertTrue("idleRequests[0].detectionInterval === 60")
+
+        context.evaluateScript("chrome.idle.setDetectionInterval(5);")
+        firePolls()
+        try assertTrue("idleRequests[1].detectionInterval === 15")
+
+        context.evaluateScript("chrome.idle.setDetectionInterval(300);")
+        firePolls()
+        try assertTrue("idleRequests[2].detectionInterval === 300")
+    }
+
+    func testWhenTheStateChanges_ThenListenersAreFiredOnlyOnTheChange() throws {
+        try installFakeIdleHandler(reply: "active")
+        try installFakeIntervals()
+        try evaluateStubScript()
+        context.evaluateScript("var heard = []; chrome.idle.onStateChanged.addListener(function(state) { heard.push(state); });")
+        try assertNoExceptions()
+
+        firePolls()
+        try assertTrue("heard.length === 0")
+
+        context.evaluateScript("idleReply = 'idle';")
+        firePolls()
+        firePolls()
+        try assertTrue("JSON.stringify(heard) === '[\"idle\"]'")
+
+        context.evaluateScript("idleReply = 'locked';")
+        firePolls()
+        context.evaluateScript("idleReply = 'active';")
+        firePolls()
+        try assertTrue("JSON.stringify(heard) === '[\"idle\",\"locked\",\"active\"]'")
+    }
+
+    func testWhenSeveralListenersAreAdded_ThenASingleTimerPollsEvery15Seconds() throws {
+        try installFakeIdleHandler(reply: "active")
+        try installFakeIntervals()
+        try evaluateStubScript()
+
+        context.evaluateScript("""
+        function first() {}
+        function second() {}
+        chrome.idle.onStateChanged.addListener(first);
+        chrome.idle.onStateChanged.addListener(first);
+        chrome.idle.onStateChanged.addListener(second);
+        """)
+        try assertNoExceptions()
+
+        XCTAssertEqual(scheduledIntervals.count, 1)
+        XCTAssertEqual(scheduledIntervals.first?.delay, 15000)
+        try assertTrue("chrome.idle.onStateChanged.hasListener(first) && chrome.idle.onStateChanged.hasListener(second)")
+    }
+
+    func testWhenTheLastListenerIsRemoved_ThenThePollingStops() throws {
+        try installFakeIdleHandler(reply: "active")
+        try installFakeIntervals()
+        try evaluateStubScript()
+
+        context.evaluateScript("""
+        function first() {}
+        function second() {}
+        chrome.idle.onStateChanged.addListener(first);
+        chrome.idle.onStateChanged.addListener(second);
+        chrome.idle.onStateChanged.removeListener(first);
+        """)
+        try assertNoExceptions()
+        try assertTrue("clearedIntervals.length === 0 && chrome.idle.onStateChanged.hasListeners()")
+
+        context.evaluateScript("chrome.idle.onStateChanged.removeListener(second);")
+        try assertNoExceptions()
+        try assertTrue("clearedIntervals.length === 1 && !chrome.idle.onStateChanged.hasListeners()")
+    }
+
+    func testWhenAListenerThrows_ThenTheOthersStillHearTheChange() throws {
+        try installFakeIdleHandler(reply: "idle")
+        try installFakeIntervals()
+        try evaluateStubScript()
+        context.evaluateScript("""
+        var heard = [];
+        chrome.idle.onStateChanged.addListener(function() { throw new Error('boom'); });
+        chrome.idle.onStateChanged.addListener(function(state) { heard.push(state); });
+        """)
+
+        firePolls()
+
+        try assertNoExceptions()
+        try assertTrue("JSON.stringify(heard) === '[\"idle\"]'")
+    }
+
+    func testWhenAutoLockDelayIsQueried_ThenItResolvesZero() throws {
+        try evaluateStubScript()
+
+        context.evaluateScript("var delay = 'pending'; chrome.idle.getAutoLockDelay().then(function(value) { delay = value; });")
+        try assertNoExceptions()
+
+        try assertTrue("delay === 0")
+    }
+
+    func testWhenIdleNamespaceExists_ThenItIsNotReplaced() throws {
+        context.evaluateScript("var original = { custom: true }; chrome.idle = original;")
+        try evaluateStubScript()
+
+        try assertTrue("chrome.idle === original")
+    }
+
+    func testWhenIdleIsAskedAbout_ThenTheVirtualPermissionIsGrantedWithoutAskingTheHost() throws {
+        try installFakePermissions()
+        try evaluateStubScript()
+
+        try evaluatePermissionsCall("chrome.permissions.contains({ permissions: ['idle'] })")
+
+        try assertTrue("permissionsResult === true")
+        try assertTrue("permissionsLog.contains.length === 0")
+    }
+
+    func testWhenIdleIsRequestedWithAnotherPermission_ThenOnlyTheOtherOneReachesTheHost() throws {
+        try installFakePermissions()
+        try evaluateStubScript()
+
+        try evaluatePermissionsCall("chrome.permissions.request({ permissions: ['idle', 'nativeMessaging'] })")
+
+        try assertTrue("permissionsResult === true")
+        try assertTrue("JSON.stringify(permissionsLog.request) === '[{\"permissions\":[\"nativeMessaging\"]}]'")
+    }
+
+    func testWhenOffscreenIsAskedAbout_ThenTheVirtualPermissionIsGrantedWithoutAskingTheHost() throws {
+        try installFakePermissions()
+        try evaluateStubScript()
+
+        try evaluatePermissionsCall("chrome.permissions.contains({ permissions: ['offscreen'] })")
+
+        try assertTrue("permissionsResult === true")
+        try assertTrue("permissionsLog.contains.length === 0")
+    }
+
+    // MARK: - App Permissions
+
+    func testWhenPrivacyIsAskedAbout_ThenTheAppAnswersAndTheHostIsNotAsked() throws {
+        try installFakePermissions()
+        try installFakePermissionsHandler()
+        try evaluateStubScript()
+
+        try evaluatePermissionsCall("chrome.permissions.contains({ permissions: ['privacy'] })")
+        try assertTrue("permissionsResult === false")
+
+        context.evaluateScript("appGranted.push('privacy');")
+        try evaluatePermissionsCall("chrome.permissions.contains({ permissions: ['privacy'] })")
+        try assertTrue("permissionsResult === true")
+        try assertTrue("permissionsLog.contains.length === 0")
+        try assertTrue("JSON.stringify(appRequests[0]) === '{\"action\":\"contains\",\"permissions\":[\"privacy\"]}'")
+    }
+
+    func testWhenContainsMixesPrivacyWithAHostPermission_ThenBothMustHoldIt() throws {
+        try installFakePermissions()
+        try installFakePermissionsHandler(granted: ["privacy"])
+        try evaluateStubScript()
+
+        try evaluatePermissionsCall("chrome.permissions.contains({ permissions: ['privacy', 'tabs'] })")
+        try assertTrue("permissionsResult === false")
+        try assertTrue("permissionsLog.contains[0].permissions.join(',') === 'tabs'")
+
+        try evaluatePermissionsCall("chrome.permissions.contains({ permissions: ['privacy', 'nativeMessaging'] })")
+        try assertTrue("permissionsResult === true")
+    }
+
+    func testWhenContainsMixesPrivacyWithAnUnknownPermission_ThenItResolvesFalse() throws {
+        try installFakePermissions()
+        try installFakePermissionsHandler(granted: ["privacy"])
+        try evaluateStubScript()
+
+        try evaluatePermissionsCall("chrome.permissions.contains({ permissions: ['privacy', 'downloads'] })")
+
+        try assertTrue("permissionsResult === false")
+    }
+
+    func testWhenPrivacyIsRequested_ThenTheAppDecidesWithBothStyles() throws {
+        try installFakePermissions()
+        try installFakePermissionsHandler()
+        try evaluateStubScript()
+
+        try evaluatePermissionsCall("chrome.permissions.request({ permissions: ['privacy'] })")
+        try assertTrue("permissionsResult === true")
+        try assertTrue("permissionsLog.request.length === 0")
+        try assertTrue("appGranted.indexOf('privacy') !== -1")
+
+        // Bitwarden's popup asks this way from its click handler.
+        context.evaluateScript("""
+        var requestCallbackResult = 'pending';
+        chrome.permissions.request({ permissions: ['privacy'] }, function(granted) { requestCallbackResult = granted; });
+        """)
+        try assertNoExceptions()
+        try assertTrue("requestCallbackResult === true")
+    }
+
+    func testWhenTheHostRefusesPartOfARequest_ThenTheAppIsNotAsked() throws {
+        try installFakePermissions()
+        try installFakePermissionsHandler()
+        try evaluateStubScript()
+
+        try evaluatePermissionsCall("chrome.permissions.request({ permissions: ['privacy', 'downloads'] })")
+
+        try assertTrue("permissionsResult === false")
+        try assertTrue("appRequests.length === 0")
+    }
+
+    func testWhenPrivacyIsRemoved_ThenTheAppTakesItBackAndTheHostIsNotAsked() throws {
+        try installFakePermissions()
+        try installFakePermissionsHandler(granted: ["privacy"])
+        try evaluateStubScript()
+
+        try evaluatePermissionsCall("chrome.permissions.remove({ permissions: ['privacy'] })")
+
+        try assertTrue("permissionsResult === true")
+        try assertTrue("appGranted.length === 0")
+        try assertTrue("permissionsLog.remove.length === 0")
+    }
+
+    func testWhenTheAppCannotBeAsked_ThenPrivacyIsNotHeldAndCallbacksStillRun() throws {
+        try installFakePermissions()
+        try installFakePermissionsHandler(fails: true)
+        try evaluateStubScript()
+
+        context.evaluateScript("""
+        var requestCallbackResult = 'pending';
+        chrome.permissions.request({ permissions: ['privacy'] }, function(granted) { requestCallbackResult = granted; });
+        """)
+        try assertNoExceptions()
+        try assertTrue("requestCallbackResult === false")
+    }
+
+    func testWhenThereIsNoPermissionsHandler_ThenPrivacyIsNotHeld() throws {
+        try installFakePermissions()
+        try evaluateStubScript()
+
+        try evaluatePermissionsCall("chrome.permissions.contains({ permissions: ['privacy'] })")
+        try assertTrue("permissionsResult === false")
+
+        try evaluatePermissionsCall("chrome.permissions.request({ permissions: ['privacy'] })")
+        try assertTrue("permissionsResult === false")
+    }
+
+    func testWhenTheExtensionHoldsPrivacy_ThenGetAllListsIt() throws {
+        try installFakePermissions()
+        try installFakePermissionsHandler(granted: ["privacy"])
+        try evaluateStubScript()
+
+        try evaluatePermissionsCall("chrome.permissions.getAll()")
+
+        try assertTrue("permissionsResult.permissions.join(',') === 'nativeMessaging,privacy'")
+    }
+
+    // MARK: - Privacy Settings Kept by the App
+
+    func testWhenTheAppKeepsTheSettings_ThenSetGoesToTheAppAndNotToStorage() throws {
+        try installFakePrivacyHandler()
+        try evaluateStubScript()
+
+        try disableBrowserPasswordManagerTheWayBitwardenDoes()
+
+        try assertTrue("overridden === true")
+        try assertTrue("""
+        JSON.stringify(privacyRequests.filter(function(request) { return request.action === 'set'; })) === JSON.stringify([
+            { action: 'set', setting: 'autofillAddressEnabled', value: false },
+            { action: 'set', setting: 'autofillCreditCardEnabled', value: false },
+            { action: 'set', setting: 'passwordSavingEnabled', value: false }
+        ])
+        """)
+        XCTAssertNil(storageLocalItems["__ddgPrivacySettings"])
+    }
+
+    func testWhenTheAppSaysAnotherExtensionControlsTheSetting_ThenGetReportsIt() throws {
+        try installFakePrivacyHandler()
+        try evaluateStubScript()
+        context.evaluateScript("""
+        privacyState.passwordSavingEnabled = { value: false, levelOfControl: 'controlled_by_other_extensions' };
+        var details = 'pending';
+        chrome.privacy.services.passwordSavingEnabled.get({}).then(function(result) { details = result; });
+        """)
+        try assertNoExceptions()
+
+        try assertTrue("details.levelOfControl === 'controlled_by_other_extensions' && details.value === false")
+    }
+
+    func testWhenTheAppRefusesASet_ThenSetRejects() throws {
+        try installFakePrivacyHandler(refusesSet: true)
+        try evaluateStubScript()
+        context.evaluateScript("""
+        var setOutcome = 'pending';
+        chrome.privacy.services.passwordSavingEnabled.set({ value: false })
+            .then(function() { setOutcome = 'resolved'; }, function() { setOutcome = 'rejected'; });
+        """)
+        try assertNoExceptions()
+
+        try assertTrue("setOutcome === 'rejected'")
+    }
+
+    func testWhenTheAppRefusesASetMadeWithACallback_ThenTheCallbackGetsTheErrorInLastError() throws {
+        try installFakePrivacyHandler(refusesSet: true)
+        try evaluateStubScript()
+        context.evaluateScript("""
+        var callbackError = 'pending';
+        chrome.privacy.services.passwordSavingEnabled.set({ value: false }, function() {
+            callbackError = chrome.runtime.lastError ? chrome.runtime.lastError.message : null;
+        });
+        """)
+        try assertNoExceptions()
+
+        try assertTrue("callbackError === \"The extension can't control this setting\"")
+        try assertTrue("chrome.runtime.lastError === undefined")
+    }
+
+    func testWhenTheAppAnswersNothingUsable_ThenGetReportsTheSettingAsNotControllable() throws {
+        try installFakePrivacyHandler()
+        try evaluateStubScript()
+        context.evaluateScript("""
+        privacyState.passwordSavingEnabled = { value: false, levelOfControl: 'made_up' };
+        var details = 'pending';
+        chrome.privacy.services.passwordSavingEnabled.get({}, function(result) { details = result; });
+        """)
+        try assertNoExceptions()
+
+        try assertTrue("details.levelOfControl === 'not_controllable' && details.value === true")
+    }
+
+    // MARK: - Privacy Settings
+
+    func testWhenPrivacyIsStubbed_ThenServicesIsAnObjectAndNetworkIsANestableStub() throws {
+        try evaluateStubScript()
+
+        try assertTrue("chrome.privacy.services !== null && typeof chrome.privacy.services === 'object'")
+        try assertTrue("typeof chrome.privacy.network === 'function'")
+        try assertTrue("typeof chrome.privacy.network.webRTCIPHandlingPolicy.get === 'function'")
+        try assertTrue("typeof chrome.privacy.websites.thirdPartyCookiesAllowed.set === 'function'")
+        try assertTrue("globalThis.\(WebExtensionAPIStubScript.retentionPropertyName).indexOf(chrome.privacy) !== -1")
+        try assertTrue("consoleMessages[0].indexOf('privacy') !== -1")
+    }
+
+    func testWhenEachServicesSettingIsInspected_ThenItHasTheChromeSettingShape() throws {
+        try evaluateStubScript()
+
+        for name in ["passwordSavingEnabled", "autofillAddressEnabled", "autofillCreditCardEnabled"] {
+            let setting = "chrome.privacy.services.\(name)"
+            try assertTrue("typeof \(setting).get === 'function'")
+            try assertTrue("typeof \(setting).set === 'function'")
+            try assertTrue("typeof \(setting).clear === 'function'")
+            try assertTrue("typeof \(setting).onChange.addListener === 'function'")
+        }
+    }
+
+    func testWhenNothingWasSet_ThenGetAnswersTheControllableDefaultWithBothStyles() throws {
+        try evaluateStubScript()
+
+        context.evaluateScript("""
+        var callbackResult = 'pending';
+        chrome.privacy.services.passwordSavingEnabled.get({}, function(details) { callbackResult = details; });
+        var promiseResult = 'pending';
+        chrome.privacy.services.passwordSavingEnabled.get({}).then(function(details) { promiseResult = details; });
+        """)
+        try assertNoExceptions()
+
+        try assertTrue("callbackResult.value === true && callbackResult.levelOfControl === 'controllable_by_this_extension'")
+        try assertTrue("promiseResult.value === true && promiseResult.levelOfControl === 'controllable_by_this_extension'")
+    }
+
+    func testWhenASettingIsSetToFalse_ThenGetAnswersControlledAndTheValueIsStored() throws {
+        try evaluateStubScript()
+
+        try disableBrowserPasswordManagerTheWayBitwardenDoes()
+
+        try assertTrue("setResult === undefined")
+        try assertTrue("overridden === true")
+        try assertTrue("passwordSaving.value === false && passwordSaving.levelOfControl === 'controlled_by_this_extension'")
+
+        XCTAssertEqual(try storedPrivacySettings(), [
+            "passwordSavingEnabled": false,
+            "autofillAddressEnabled": false,
+            "autofillCreditCardEnabled": false
+        ])
+    }
+
+    func testWhenAnotherPageOpens_ThenItReadsTheStoredSettingBack() throws {
+        try evaluateStubScript()
+        try disableBrowserPasswordManagerTheWayBitwardenDoes()
+
+        // A fresh popup: a new page with its own script run, sharing the extension's storage.
+        try makeExtensionPageContext()
+        try evaluateStubScript()
+
+        context.evaluateScript("""
+        var reopened = 'pending';
+        chrome.privacy.services.autofillCreditCardEnabled.get({}, function(details) { reopened = details; });
+        """)
+        try assertNoExceptions()
+
+        try assertTrue("reopened.value === false && reopened.levelOfControl === 'controlled_by_this_extension'")
+    }
+
+    func testWhenASettingIsSetBackToTrue_ThenItStaysControlledWithTheNewValue() throws {
+        try evaluateStubScript()
+        try disableBrowserPasswordManagerTheWayBitwardenDoes()
+
+        context.evaluateScript("""
+        var restored = 'pending';
+        chrome.privacy.services.passwordSavingEnabled.set({ value: true }).then(function() {
+            return chrome.privacy.services.passwordSavingEnabled.get({});
+        }).then(function(details) { restored = details; });
+        """)
+        try assertNoExceptions()
+
+        try assertTrue("restored.value === true && restored.levelOfControl === 'controlled_by_this_extension'")
+    }
+
+    func testWhenASettingIsCleared_ThenGetAnswersTheDefaultAgain() throws {
+        try evaluateStubScript()
+        try disableBrowserPasswordManagerTheWayBitwardenDoes()
+
+        context.evaluateScript("""
+        var clearCallbackResult = 'pending';
+        var cleared = 'pending';
+        chrome.privacy.services.passwordSavingEnabled.clear({}, function(result) { clearCallbackResult = result; });
+        chrome.privacy.services.passwordSavingEnabled.get({}).then(function(details) { cleared = details; });
+        """)
+        try assertNoExceptions()
+
+        try assertTrue("clearCallbackResult === undefined")
+        try assertTrue("cleared.value === true && cleared.levelOfControl === 'controllable_by_this_extension'")
+        // Only the cleared setting went back to the default.
+        let settings = try storedPrivacySettings()
+        XCTAssertNil(settings["passwordSavingEnabled"])
+        XCTAssertEqual(settings["autofillAddressEnabled"], false)
+    }
+
+    func testWhenStorageIsUnavailable_ThenSettingsLiveInMemoryAndNothingThrows() throws {
+        context.evaluateScript("delete chrome.storage;")
+        try assertNoExceptions()
+        try evaluateStubScript()
+
+        try disableBrowserPasswordManagerTheWayBitwardenDoes()
+
+        try assertTrue("overridden === true")
+        XCTAssertTrue(storageLocalItems.isEmpty)
     }
 
     // MARK: - Existing Namespaces
@@ -190,6 +1175,8 @@ final class WebExtensionAPIStubScriptTests: XCTestCase {
         try evaluateStubScript()
 
         try assertTrue("typeof chrome.webNavigation.onCreatedNavigationTarget.addListener === 'function'")
+        try assertTrue("typeof chrome.webNavigation.onHistoryStateUpdated.addListener === 'function'")
+        try assertTrue("typeof chrome.webNavigation.onTabReplaced.addListener === 'function'")
         try assertTrue("typeof chrome.runtime.onSuspend.addListener === 'function'")
 
         try assertTrue("chrome.webNavigation.onCommitted === originalOnCommitted")
@@ -229,13 +1216,213 @@ final class WebExtensionAPIStubScriptTests: XCTestCase {
         try assertTrue("typeof chrome.storage.managed.onChanged.addListener === 'function'")
     }
 
+    // MARK: - Offscreen Documents
+
+    func testWhenOffscreenIsStubbed_ThenReasonConstantsMatchTheirNames() throws {
+        try installFakeDocument()
+        try evaluateStubScript()
+
+        try assertTrue("chrome.offscreen.Reason.CLIPBOARD === 'CLIPBOARD'")
+        try assertTrue("chrome.offscreen.Reason.LOCAL_STORAGE === 'LOCAL_STORAGE'")
+        try assertTrue("chrome.offscreen.Reason.DOM_PARSER === 'DOM_PARSER'")
+        try assertTrue("Object.keys(chrome.offscreen.Reason).length === 15")
+    }
+
+    func testWhenOffscreenDocumentIsCreated_ThenAHiddenIframeIsAppendedAndTheCallResolvesOnLoad() throws {
+        try installFakeDocument()
+        try evaluateStubScript()
+
+        try createOffscreenDocument()
+
+        try assertTrue("frame.tagName === 'iframe'")
+        try assertTrue("frame.src === 'chrome-extension://abc/offscreen-document/index.html'")
+        try assertTrue("frame.attributes['hidden'] === 'hidden'")
+        try assertTrue("frame.attributes['aria-hidden'] === 'true'")
+        try assertTrue("frame.style.width === '0' && frame.style.height === '0'")
+        // Nothing resolves until the offscreen page reports itself loaded.
+        try assertTrue("createResult === 'pending'")
+
+        context.evaluateScript("frame.listeners.load();")
+        try assertNoExceptions()
+        try assertTrue("createResult === 'resolved'")
+
+        context.evaluateScript("var hasResult = 'pending'; chrome.offscreen.hasDocument().then(function(r) { hasResult = r; });")
+        try assertNoExceptions()
+        try assertTrue("hasResult === true")
+    }
+
+    func testWhenOffscreenDocumentNeverLoads_ThenTheTimeoutResolvesTheCall() throws {
+        try installFakeDocument()
+        try evaluateStubScript()
+
+        try createOffscreenDocument()
+        try assertTrue("createResult === 'pending'")
+
+        XCTAssertEqual(scheduledTimers.count, 1)
+        XCTAssertEqual(scheduledTimers.first?.delay, 5000)
+        fireScheduledTimers()
+
+        try assertTrue("createResult === 'resolved'")
+    }
+
+    func testWhenAnOffscreenDocumentIsAlreadyOpen_ThenCreatingASecondOneIsRejected() throws {
+        try installFakeDocument()
+        try evaluateStubScript()
+
+        try createOffscreenDocument()
+
+        context.evaluateScript("""
+        var secondError = 'pending';
+        chrome.offscreen.createDocument({ url: 'offscreen-document/index.html', reasons: ['CLIPBOARD'] })
+            .catch(function(error) { secondError = String(error && error.message); });
+        """)
+        try assertNoExceptions()
+
+        try assertTrue("secondError.indexOf('single offscreen document') !== -1")
+        try assertTrue("document.body.children.length === 1")
+    }
+
+    func testWhenOffscreenDocumentIsClosed_ThenTheIframeIsRemovedAndClosingAgainIsRejected() throws {
+        try installFakeDocument()
+        try evaluateStubScript()
+
+        try createOffscreenDocument()
+
+        context.evaluateScript("""
+        var closeResult = 'pending';
+        chrome.offscreen.closeDocument().then(function(result) { closeResult = result === undefined ? 'resolved' : 'unexpected'; });
+        var hasResult = 'pending';
+        chrome.offscreen.hasDocument().then(function(result) { hasResult = result; });
+        """)
+        try assertNoExceptions()
+
+        try assertTrue("closeResult === 'resolved'")
+        try assertTrue("frame.removed === true")
+        try assertTrue("document.body.children.length === 0")
+        try assertTrue("hasResult === false")
+
+        context.evaluateScript("""
+        var secondCloseError = 'pending';
+        chrome.offscreen.closeDocument().catch(function(error) { secondCloseError = String(error && error.message); });
+        """)
+        try assertNoExceptions()
+
+        try assertTrue("secondCloseError.indexOf('No current offscreen document') !== -1")
+    }
+
+    func testWhenHasDocumentIsCalledWithACallback_ThenTheCallbackReceivesTheBoolean() throws {
+        try installFakeDocument()
+        try evaluateStubScript()
+
+        context.evaluateScript("var callbackResult = 'pending'; chrome.offscreen.hasDocument(function(has) { callbackResult = has; });")
+        try assertNoExceptions()
+        try assertTrue("callbackResult === false")
+
+        try createOffscreenDocument()
+
+        context.evaluateScript("callbackResult = 'pending'; chrome.offscreen.hasDocument(function(has) { callbackResult = has; });")
+        try assertNoExceptions()
+        try assertTrue("callbackResult === true")
+    }
+
+    func testWhenOffscreenNamespaceExists_ThenItIsNotReplaced() throws {
+        try installFakeDocument()
+        context.evaluateScript("chrome.offscreen = { createDocument: function() { return 'native'; } };")
+        context.evaluateScript("var originalOffscreen = chrome.offscreen;")
+        try assertNoExceptions()
+
+        try evaluateStubScript()
+
+        try assertTrue("chrome.offscreen === originalOffscreen")
+        try assertTrue("chrome.offscreen.createDocument() === 'native'")
+        try assertTrue("chrome.offscreen.Reason === undefined")
+    }
+
+    // MARK: - Namespace Constants
+
+    func testWhenConstantsAreMissing_ThenChromesValuesAreInstalled() throws {
+        try installFakeConstantNamespaces()
+        try evaluateStubScript()
+
+        // The call site that sent us here: Bitwarden's autofill injection.
+        try assertTrue("chrome.scripting.ExecutionWorld.ISOLATED === 'ISOLATED'")
+        try assertTrue("chrome.scripting.ExecutionWorld.MAIN === 'MAIN'")
+
+        try assertTrue("chrome.tabs.TAB_ID_NONE === -1")
+
+        try assertTrue("chrome.windows.WINDOW_ID_NONE === -1")
+        try assertTrue("chrome.windows.WINDOW_ID_CURRENT === -2")
+    }
+
+    func testWhenConstantsAreInstalled_ThenTheyAreFrozenAndTheirNamespacesAreUntouched() throws {
+        try installFakeConstantNamespaces()
+        try evaluateStubScript()
+
+        try assertTrue("Object.isFrozen(chrome.scripting.ExecutionWorld)")
+
+        context.evaluateScript("try { chrome.scripting.ExecutionWorld.ISOLATED = 'tampered'; } catch (error) {}")
+        try assertTrue("chrome.scripting.ExecutionWorld.ISOLATED === 'ISOLATED'")
+
+        try assertTrue("chrome.scripting === originalScripting")
+        try assertTrue("chrome.scripting.executeScript === originalExecuteScript")
+        try assertTrue("chrome.windows === originalWindows")
+    }
+
+    func testWhenAConstantAlreadyExists_ThenItIsNotReplaced() throws {
+        try installFakeConstantNamespaces()
+        context.evaluateScript("""
+        chrome.scripting.ExecutionWorld = { ISOLATED: 'x' };
+        var originalExecutionWorld = chrome.scripting.ExecutionWorld;
+        """)
+        try assertNoExceptions()
+
+        try evaluateStubScript()
+
+        try assertTrue("chrome.scripting.ExecutionWorld === originalExecutionWorld")
+        try assertTrue("chrome.scripting.ExecutionWorld.ISOLATED === 'x'")
+        try assertTrue("chrome.scripting.ExecutionWorld.MAIN === undefined")
+    }
+
+    func testWhenNamespaceForConstantsIsMissing_ThenNothingIsInstalledAndNothingThrows() throws {
+        // The default context has neither `scripting` nor `windows`, and neither is on the
+        // stubbed-namespace list, so their constants have nowhere to go.
+        try evaluateStubScript()
+
+        try assertTrue("chrome.scripting === undefined")
+        try assertTrue("chrome.windows === undefined")
+        // Namespaces that are present still get theirs.
+        try assertTrue("chrome.tabs.TAB_ID_NONE === -1")
+    }
+
+    func testWhenConstantsAreStubbed_ThenTheyAreNamedInTheSummary() throws {
+        try installFakeConstantNamespaces()
+        try evaluateStubScript()
+
+        try assertTrue("consoleMessages.length === 1")
+        try assertTrue("consoleMessages[0].indexOf('scripting.ExecutionWorld') !== -1")
+        try assertTrue("consoleMessages[0].indexOf('tabs.TAB_ID_NONE') !== -1")
+    }
+
+    func testWhenScriptIsEvaluatedTwice_ThenConstantsAreUnchanged() throws {
+        try installFakeConstantNamespaces()
+        try evaluateStubScript()
+        context.evaluateScript("var firstRunExecutionWorld = chrome.scripting.ExecutionWorld;")
+        try assertNoExceptions()
+
+        try evaluateStubScript()
+
+        try assertTrue("chrome.scripting.ExecutionWorld === firstRunExecutionWorld")
+        try assertTrue("chrome.tabs.TAB_ID_NONE === -1")
+        try assertTrue("consoleMessages.length === 1")
+    }
+
     // MARK: - Permissions
 
     func testWhenPermissionIsUnknownToTheHost_ThenContainsResolvesFalseInsteadOfThrowing() throws {
         try installFakePermissions()
         try evaluateStubScript()
 
-        try evaluatePermissionsCall("chrome.permissions.contains({ permissions: ['idle'] })")
+        try evaluatePermissionsCall("chrome.permissions.contains({ permissions: ['downloads'] })")
 
         try assertTrue("permissionsResult === false")
     }
@@ -255,7 +1442,7 @@ final class WebExtensionAPIStubScriptTests: XCTestCase {
         try installFakePermissions()
         try evaluateStubScript()
 
-        try evaluatePermissionsCall("chrome.permissions.contains({ permissions: ['nativeMessaging', 'idle'] })")
+        try evaluatePermissionsCall("chrome.permissions.contains({ permissions: ['nativeMessaging', 'downloads'] })")
 
         try assertTrue("permissionsResult === false")
     }
@@ -276,7 +1463,7 @@ final class WebExtensionAPIStubScriptTests: XCTestCase {
         context.evaluateScript("""
         var unknownCallbackResult = 'pending';
         var grantedCallbackResult = 'pending';
-        chrome.permissions.contains({ permissions: ['idle'] }, function(result) { unknownCallbackResult = result; });
+        chrome.permissions.contains({ permissions: ['downloads'] }, function(result) { unknownCallbackResult = result; });
         chrome.permissions.contains({ permissions: ['nativeMessaging'] }, function(result) { grantedCallbackResult = result; });
         """)
         try assertNoExceptions()
@@ -289,7 +1476,7 @@ final class WebExtensionAPIStubScriptTests: XCTestCase {
         try installFakePermissions()
         try evaluateStubScript()
 
-        try evaluatePermissionsCall("(function() { var contains = chrome.permissions.contains; return contains({ permissions: ['idle'] }); })()")
+        try evaluatePermissionsCall("(function() { var contains = chrome.permissions.contains; return contains({ permissions: ['downloads'] }); })()")
 
         try assertTrue("permissionsResult === false")
     }
@@ -298,7 +1485,7 @@ final class WebExtensionAPIStubScriptTests: XCTestCase {
         try installFakePermissions()
         try evaluateStubScript()
 
-        try evaluatePermissionsCall("chrome.permissions.request({ permissions: ['idle'] })")
+        try evaluatePermissionsCall("chrome.permissions.request({ permissions: ['downloads'] })")
         try assertTrue("permissionsResult === false")
 
         try evaluatePermissionsCall("chrome.permissions.request({ permissions: ['nativeMessaging'] })")
@@ -309,7 +1496,7 @@ final class WebExtensionAPIStubScriptTests: XCTestCase {
         try installFakePermissions()
         try evaluateStubScript()
 
-        try evaluatePermissionsCall("chrome.permissions.remove({ permissions: ['idle', 'nativeMessaging'] })")
+        try evaluatePermissionsCall("chrome.permissions.remove({ permissions: ['downloads', 'nativeMessaging'] })")
 
         try assertTrue("permissionsResult === true")
         try assertTrue("permissionsLog.removed.length === 1 && permissionsLog.removed[0] === 'nativeMessaging'")
@@ -325,7 +1512,7 @@ final class WebExtensionAPIStubScriptTests: XCTestCase {
 
         context.evaluateScript("""
         var permissionsError = 'pending';
-        chrome.permissions.contains({ permissions: ['idle'] }).then(function() {
+        chrome.permissions.contains({ permissions: ['downloads'] }).then(function() {
             permissionsError = 'unexpectedly resolved';
         }, function(error) {
             permissionsError = String(error && error.message);
@@ -341,13 +1528,13 @@ final class WebExtensionAPIStubScriptTests: XCTestCase {
         context.evaluateScript("""
         chrome.permissions.contains = function(descriptor) {
             permissionsLog.contains.push(descriptor);
-            throw invalidPermissionError('contains', 'idle');
+            throw invalidPermissionError('contains', 'downloads');
         };
         """)
         try assertNoExceptions()
         try evaluateStubScript()
 
-        try evaluatePermissionsCall("chrome.permissions.contains({ permissions: ['idle'] })")
+        try evaluatePermissionsCall("chrome.permissions.contains({ permissions: ['downloads'] })")
 
         try assertTrue("permissionsResult === false")
     }
@@ -356,21 +1543,20 @@ final class WebExtensionAPIStubScriptTests: XCTestCase {
         try installFakePermissions()
         try evaluateStubScript()
 
-        try evaluatePermissionsCall("chrome.permissions.contains({ permissions: ['idle'] })")
-        try evaluatePermissionsCall("chrome.permissions.contains({ permissions: ['idle'] })")
-        try evaluatePermissionsCall("chrome.permissions.request({ permissions: ['idle'] })")
+        try evaluatePermissionsCall("chrome.permissions.contains({ permissions: ['downloads'] })")
+        try evaluatePermissionsCall("chrome.permissions.contains({ permissions: ['downloads'] })")
+        try evaluatePermissionsCall("chrome.permissions.request({ permissions: ['downloads'] })")
 
-        try assertTrue("consoleMessages.filter(function(message) { return message.indexOf(\"'idle' permission\") !== -1; }).length === 1")
+        try assertTrue("consoleMessages.filter(function(message) { return message.indexOf(\"'downloads' permission\") !== -1; }).length === 1")
     }
 
-    func testWhenPermissionsIsWrapped_ThenTheNamespaceEventsAndGetAllAreUntouched() throws {
+    func testWhenPermissionsIsWrapped_ThenTheNamespaceAndEventsAreUntouched() throws {
         try installFakePermissions()
         try evaluateStubScript()
 
         try assertTrue("chrome.permissions === originalPermissions")
         try assertTrue("chrome.permissions.onAdded === originalPermissionsOnAdded")
         try assertTrue("chrome.permissions.onRemoved === originalPermissionsOnRemoved")
-        try assertTrue("chrome.permissions.getAll === originalPermissionsGetAll")
         try assertTrue("globalThis.\(WebExtensionAPIStubScript.retentionPropertyName).indexOf(originalPermissions) !== -1")
         try assertTrue("consoleMessages[0].indexOf('wrapped: [permissions]') !== -1")
     }
@@ -465,6 +1651,19 @@ final class WebExtensionAPIStubScriptTests: XCTestCase {
         context.evaluateScript("""
         chrome.storage.managed.get();
         chrome.storage.managed.onChanged.addListener(function() {});
+        """)
+        try assertNoExceptions()
+
+        try assertReports("[]")
+    }
+
+    func testWhenOffscreenAndPrivacyAreUsed_ThenNothingIsReported() throws {
+        try installFakeReporting()
+        try evaluateStubScript()
+
+        context.evaluateScript("""
+        chrome.offscreen.hasDocument();
+        chrome.privacy.services.passwordSavingEnabled.get();
         """)
         try assertNoExceptions()
 
@@ -581,12 +1780,136 @@ final class WebExtensionAPIStubScriptTests: XCTestCase {
         try assertNoExceptions()
     }
 
-    /// A page with the report handler WebKit adds once the app registers it, and the compatibility
-    /// script the stubs report through. `reports` collects what reaches the handler.
+    /// What the stub script stored under its reserved `storage.local` key.
+    private func storedPrivacySettings(file: StaticString = #filePath, line: UInt = #line) throws -> [String: Bool] {
+        let stored = try XCTUnwrap(storageLocalItems["__ddgPrivacySettings"], file: file, line: line)
+        return try XCTUnwrap(JSONSerialization.jsonObject(with: Data(stored.utf8)) as? [String: Bool], file: file, line: line)
+    }
+
+    /// Turns the three settings off in Bitwarden's order and reads them back with its check, leaving
+    /// the last `set` result in `setResult`, the combined check in `overridden`, and the password
+    /// saving details in `passwordSaving`.
+    private func disableBrowserPasswordManagerTheWayBitwardenDoes() throws {
+        context.evaluateScript("""
+        var setResult = 'pending';
+        var overridden = 'pending';
+        var passwordSaving = 'pending';
+        (function() {
+            var services = chrome.privacy.services;
+            function isOverridden(details) {
+                return details.levelOfControl === 'controlled_by_this_extension' && !details.value;
+            }
+            function read(setting) {
+                return new Promise(function(resolve) {
+                    setting.get({}, function(details) { resolve(details); });
+                });
+            }
+            services.autofillAddressEnabled.set({ value: false }).then(function() {
+                return services.autofillCreditCardEnabled.set({ value: false });
+            }).then(function() {
+                return services.passwordSavingEnabled.set({ value: false });
+            }).then(function(result) {
+                setResult = result;
+                return Promise.all([
+                    read(services.passwordSavingEnabled),
+                    read(services.autofillAddressEnabled),
+                    read(services.autofillCreditCardEnabled)
+                ]);
+            }).then(function(details) {
+                passwordSaving = details[0];
+                overridden = details.every(isOverridden);
+            });
+        })();
+        """)
+        try assertNoExceptions()
+        try assertTrue("overridden !== 'pending'")
+    }
+
+    /// `JSContext` has no DOM, no timers and no `URL`, so the offscreen stub gets the minimum it
+    /// touches: a document that records the elements it hands out, a background page URL to resolve
+    /// against, a minimal `URL` to resolve it with, and a `setTimeout` that parks its callback for
+    /// the test to fire.
+    private func installFakeDocument() throws {
+        let scheduleTimer: @convention(block) (JSValue, Double) -> Int = { [weak self] callback, delay in
+            self?.scheduledTimers.append(ScheduledTimer(callback: callback, delay: delay))
+            return self?.scheduledTimers.count ?? 0
+        }
+        context.setObject(scheduleTimer, forKeyedSubscript: "setTimeout" as NSString)
+
+        context.evaluateScript("""
+        \(JSContextTestPolyfills.url)
+
+        var location = { href: "chrome-extension://abc/ddg-background-page.html" };
+        var document = {
+            documentElement: { children: [], appendChild: function(element) { this.children.push(element); this.lastAppended = element; } },
+            body: {
+                children: [],
+                lastAppended: null,
+                appendChild: function(element) {
+                    this.children.push(element);
+                    this.lastAppended = element;
+                    element.parentNode = this;
+                }
+            },
+            createElement: function(tagName) {
+                return {
+                    tagName: tagName,
+                    src: "",
+                    style: {},
+                    attributes: {},
+                    listeners: {},
+                    parentNode: null,
+                    removed: false,
+                    setAttribute: function(name, value) { this.attributes[name] = value; },
+                    addEventListener: function(type, listener) { this.listeners[type] = listener; },
+                    remove: function() {
+                        if (this.parentNode) {
+                            var index = this.parentNode.children.indexOf(this);
+                            if (index !== -1) { this.parentNode.children.splice(index, 1); }
+                            if (this.parentNode.lastAppended === this) { this.parentNode.lastAppended = null; }
+                            this.parentNode = null;
+                        }
+                        this.removed = true;
+                    }
+                };
+            }
+        };
+        """)
+        try assertNoExceptions()
+    }
+
+    /// Opens an offscreen document the way Bitwarden does, leaving the pending call in `createResult`
+    /// and the appended iframe in `frame`.
+    private func createOffscreenDocument() throws {
+        context.evaluateScript("""
+        var createResult = 'pending';
+        chrome.offscreen.createDocument({
+            url: 'offscreen-document/index.html',
+            reasons: [chrome.offscreen.Reason.CLIPBOARD],
+            justification: 'Copy a password to the clipboard'
+        }).then(function(result) { createResult = result === undefined ? 'resolved' : 'unexpected'; });
+        var frame = document.body.lastAppended;
+        """)
+        try assertNoExceptions()
+    }
+
+    /// Adds the namespaces WebKit implements without their constants, the way a background page sees
+    /// them: `scripting.executeScript` exists and takes the string a constant would have spelled out.
+    private func installFakeConstantNamespaces() throws {
+        context.evaluateScript("""
+        chrome.scripting = { executeScript: function() {} };
+        chrome.windows = {};
+        var originalScripting = chrome.scripting;
+        var originalExecuteScript = chrome.scripting.executeScript;
+        var originalWindows = chrome.windows;
+        """)
+        try assertNoExceptions()
+    }
+
     /// Mirrors WebKit's `chrome.permissions`: it answers for the permissions it implements and
     /// rejects the whole call with its validation error as soon as one name is not among them.
-    /// `nativeMessaging` is granted, `tabs` is implemented but not granted, and `privacy`, `idle`,
-    /// `offscreen` and `downloads` are unknown.
+    /// `nativeMessaging` is granted, `tabs` is implemented but not granted, `privacy`, `idle` and
+    /// `offscreen` are unknown but handled by the stub script, so `downloads` stands in for a truly unknown name.
     private func installFakePermissions() throws {
         context.evaluateScript("""
         var unknownPermissions = ['privacy', 'idle', 'offscreen', 'downloads'];
@@ -664,6 +1987,146 @@ final class WebExtensionAPIStubScriptTests: XCTestCase {
         try assertNoExceptions()
     }
 
+    /// A `URL` whose `protocol` is an accessor on the prototype, as in WebKit. A bare `JSContext`
+    /// has no `URL`.
+    private func installFakeURL() throws {
+        context.evaluateScript("""
+        globalThis.URL = function(href) {
+            this.href = href;
+            this.scheme = href.slice(0, href.indexOf(':') + 1);
+        };
+        Object.defineProperty(URL.prototype, 'protocol', {
+            get: function() { return this.scheme; },
+            set: function(value) { this.scheme = value; },
+            enumerable: true,
+            configurable: true
+        });
+        """)
+        try assertNoExceptions()
+    }
+
+    /// Gives the page the manifest `literal`, a JavaScript object literal.
+    private func declareManifest(_ literal: String) throws {
+        context.evaluateScript("chrome.runtime.getManifest = function() { return \(literal); };")
+        try assertNoExceptions()
+    }
+
+    /// A page whose app keeps the `chrome.privacy.services` settings: `privacyState` holds what `get`
+    /// answers per setting, `set` and `clear` update it the way the app does for the only extension, and
+    /// `privacyRequests` collects what the script posted. With `refusesSet`, every `set` is rejected.
+    private func installFakePrivacyHandler(refusesSet: Bool = false) throws {
+        context.evaluateScript("""
+        var privacyRequests = [];
+        var privacyState = {};
+        var webkit = { messageHandlers: {
+            "\(WebExtensionAPIStubScript.privacyMessageHandlerName)": {
+                postMessage: function(payload) {
+                    privacyRequests.push(payload);
+                    if (payload.action === 'get') {
+                        return Promise.resolve(privacyState[payload.setting]
+                            || { value: true, levelOfControl: 'controllable_by_this_extension' });
+                    }
+                    if (payload.action === 'set') {
+                        if (\(refusesSet)) {
+                            return Promise.reject(new Error("The extension can't control this setting"));
+                        }
+                        privacyState[payload.setting] = { value: payload.value, levelOfControl: 'controlled_by_this_extension' };
+                        return Promise.resolve(null);
+                    }
+                    delete privacyState[payload.setting];
+                    return Promise.resolve(null);
+                }
+            }
+        } };
+        """)
+        try assertNoExceptions()
+    }
+
+    /// A page whose app answers about app permissions: `appGranted` holds what the extension holds,
+    /// `request` grants, `remove` takes back, and `appRequests` collects what the script posted. With
+    /// `fails`, every message is rejected.
+    private func installFakePermissionsHandler(granted: [String] = [], fails: Bool = false) throws {
+        let grantedList = granted.map { "'\($0)'" }.joined(separator: ", ")
+        context.evaluateScript("""
+        var appRequests = [];
+        var appGranted = [\(grantedList)];
+        var webkit = { messageHandlers: {
+            "\(WebExtensionAPIStubScript.permissionsMessageHandlerName)": {
+                postMessage: function(payload) {
+                    appRequests.push(payload);
+                    if (\(fails)) {
+                        return Promise.reject(new Error('nope'));
+                    }
+                    if (payload.action === 'getAll') {
+                        return Promise.resolve(appGranted.slice());
+                    }
+                    var names = payload.permissions;
+                    if (payload.action === 'request') {
+                        names.forEach(function(name) { if (appGranted.indexOf(name) === -1) { appGranted.push(name); } });
+                        return Promise.resolve(true);
+                    }
+                    if (payload.action === 'remove') {
+                        appGranted = appGranted.filter(function(name) { return names.indexOf(name) === -1; });
+                        return Promise.resolve(true);
+                    }
+                    return Promise.resolve(names.every(function(name) { return appGranted.indexOf(name) !== -1; }));
+                }
+            }
+        } };
+        """)
+        try assertNoExceptions()
+    }
+
+    /// A frame inside a website, whose `runtime.sendMessage` collects what it sent in `sentMessages`
+    /// and answers `reply`, a JavaScript expression. `nativeOpenPopupCalls` counts calls that reach
+    /// WebKit's own `openPopup`.
+    private func installFakeRelaySender(reply: String) throws {
+        context.evaluateScript("""
+        var sentMessages = [];
+        var nativeOpenPopupCalls = 0;
+        chrome.runtime.sendMessage = function(message) {
+            sentMessages.push(message);
+            return Promise.resolve(\(reply));
+        };
+        chrome.action = { openPopup: function() { nativeOpenPopupCalls += 1; } };
+        var top = {};
+        """)
+        try assertNoExceptions()
+    }
+
+    /// The extension's background page, with WebKit's `runtime.onMessage` reduced to a listener list
+    /// in `registered`. `dispatch` delivers a message to every listener the way WebKit does and returns
+    /// their responses and whether one kept the channel open. `openPopupCalls` collects the options
+    /// WebKit's own `openPopup` was called with; with `openPopupError` it rejects with that message.
+    private func installFakeBackgroundPage(openPopupError: String? = nil) throws {
+        let openPopupResult = openPopupError.map { "Promise.reject(new Error(\"\($0)\"))" } ?? "Promise.resolve()"
+        context.evaluateScript("""
+        var location = { protocol: "webkit-extension:", pathname: "/background.html" };
+        chrome.runtime.id = "extension";
+        chrome.runtime.getManifest = function() { return { background: { page: "background.html" } }; };
+        var registered = [];
+        chrome.runtime.onMessage = {
+            addListener: function(listener) { registered.push(listener); },
+            removeListener: function(listener) {
+                var index = registered.indexOf(listener);
+                if (index !== -1) { registered.splice(index, 1); }
+            },
+            hasListener: function(listener) { return registered.indexOf(listener) !== -1; }
+        };
+        function dispatch(message, sender) {
+            var outcome = { responses: [], keepsChannelOpen: false };
+            registered.slice().forEach(function(listener) {
+                var result = listener(message, sender, function(response) { outcome.responses.push(response); });
+                if (result === true) { outcome.keepsChannelOpen = true; }
+            });
+            return outcome;
+        }
+        var openPopupCalls = [];
+        chrome.action = { openPopup: function(options) { openPopupCalls.push(options); return \(openPopupResult); } };
+        """)
+        try assertNoExceptions()
+    }
+
     /// Runs a `chrome.permissions` call and leaves its settled value in `permissionsResult`.
     private func evaluatePermissionsCall(_ script: String, file: StaticString = #filePath, line: UInt = #line) throws {
         context.evaluateScript("""
@@ -673,6 +2136,8 @@ final class WebExtensionAPIStubScriptTests: XCTestCase {
         try assertNoExceptions(file: file, line: line)
     }
 
+    /// A page with the report handler WebKit adds once the app registers it, and the compatibility
+    /// script the stubs report through. `reports` collects what reaches the handler.
     private func installFakeReporting() throws {
         context.evaluateScript("""
         var reports = [];
@@ -691,6 +2156,50 @@ final class WebExtensionAPIStubScriptTests: XCTestCase {
     private func assertReports(_ json: String, file: StaticString = #filePath, line: UInt = #line) throws {
         let escaped = json.replacingOccurrences(of: "\\", with: "\\\\").replacingOccurrences(of: "'", with: "\\'")
         try assertTrue("JSON.stringify(reports) === '\(escaped)'", file: file, line: line)
+    }
+
+    /// A page whose host answers `chrome.idle.queryState` through the idle message handler: it
+    /// resolves with `idleReply` (read at call time, so a test can change it) or rejects, and
+    /// `idleRequests` collects what the script posted.
+    private func installFakeIdleHandler(reply: String, fails: Bool = false) throws {
+        context.evaluateScript("""
+        var idleRequests = [];
+        var idleReply = "\(reply)";
+        var webkit = { messageHandlers: {
+            "\(WebExtensionAPIStubScript.idleMessageHandlerName)": {
+                postMessage: function(payload) {
+                    idleRequests.push(payload);
+                    return \(fails ? "Promise.reject(new Error('nope'))" : "Promise.resolve(idleReply)");
+                }
+            }
+        } };
+        """)
+        try assertNoExceptions()
+    }
+
+    /// `setInterval` and `clearInterval` that park the poll for the test to fire.
+    private func installFakeIntervals() throws {
+        let scheduleInterval: @convention(block) (JSValue, Double) -> Int = { [weak self] callback, delay in
+            self?.scheduledIntervals.append(ScheduledTimer(callback: callback, delay: delay))
+            return self?.scheduledIntervals.count ?? 0
+        }
+        let clearInterval: @convention(block) (JSValue) -> Void = { [weak self] _ in
+            self?.context.evaluateScript("clearedIntervals.push(true);")
+        }
+        context.setObject(scheduleInterval, forKeyedSubscript: "setInterval" as NSString)
+        context.setObject(clearInterval, forKeyedSubscript: "clearInterval" as NSString)
+        context.evaluateScript("var clearedIntervals = [];")
+        try assertNoExceptions()
+    }
+
+    private func firePolls() {
+        scheduledIntervals.forEach { $0.callback.call(withArguments: []) }
+    }
+
+    private func fireScheduledTimers() {
+        let timers = scheduledTimers
+        scheduledTimers = []
+        timers.forEach { $0.callback.call(withArguments: []) }
     }
 
     private func evaluateStubScript() throws {

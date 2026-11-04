@@ -16,9 +16,7 @@
 //  limitations under the License.
 //
 
-import FeatureFlags_macOS
 import Foundation
-import PrivacyConfig
 import XCTest
 @_spi(Testing) import Persistence
 
@@ -40,69 +38,52 @@ final class DataDirectoryPermissionFixAvailabilityTests: XCTestCase {
 
     // MARK: - isAvailable
 
-    func testWhenTheFeatureFlagIsOnAndTheOSIsSupported_ThenItIsAvailable() {
-        let availability = makeAvailability(isFeatureFlagOn: true, isOSSupported: true)
+    func testWhenTheOSIsSupported_ThenItIsAvailable() {
+        let availability = makeAvailability(isOSSupported: true)
 
         XCTAssertTrue(availability.isAvailable)
     }
 
-    func testWhenTheFeatureFlagIsOnAndTheOSIsNotSupported_ThenItIsNotAvailable() {
-        let availability = makeAvailability(isFeatureFlagOn: true, isOSSupported: false)
-
-        XCTAssertFalse(availability.isAvailable)
-    }
-
-    func testWhenTheFeatureFlagIsOffAndTheOSIsSupported_ThenItIsNotAvailable() {
-        let availability = makeAvailability(isFeatureFlagOn: false, isOSSupported: true)
-
-        XCTAssertFalse(availability.isAvailable)
-    }
-
-    func testWhenTheFeatureFlagIsOffAndTheOSIsNotSupported_ThenItIsNotAvailable() {
-        let availability = makeAvailability(isFeatureFlagOn: false, isOSSupported: false)
+    func testWhenTheOSIsNotSupported_ThenItIsNotAvailable() {
+        let availability = makeAvailability(isOSSupported: false)
 
         XCTAssertFalse(availability.isAvailable)
     }
 
     // MARK: - Debug override
 
-    func testWhenTheDebugOverrideIsOn_ThenItIsAvailableRegardlessOfTheOSVersionAndTheFeatureFlag() {
+    func testWhenTheDebugOverrideIsOn_ThenItIsAvailableRegardlessOfTheOSVersion() {
         debugSettings.isForcingMacOS27PermissionsFix = true
-        let availability = makeAvailability(isFeatureFlagOn: false, isOSSupported: false)
+        let availability = makeAvailability(isOSSupported: false)
 
         XCTAssertTrue(availability.isAvailable)
     }
 
     func testWhenTheDebugOverrideIsOn_ThenPermissionFixIsForced() {
         debugSettings.isForcingMacOS27PermissionsFix = true
-        let availability = makeAvailability(isFeatureFlagOn: false)
+        let availability = makeAvailability()
 
         XCTAssertTrue(availability.mustForcePermissionFix)
     }
 
     func testWhenTheDebugOverrideIsOff_ThenPermissionFixIsNotForced() {
         debugSettings.isForcingMacOS27PermissionsFix = false
-        let availability = makeAvailability(isFeatureFlagOn: true)
+        let availability = makeAvailability()
 
         // Available, but never *forced*: the flow still keys off the directory's actual access state.
         XCTAssertFalse(availability.mustForcePermissionFix)
     }
 
     func testWhenTheDebugOverrideWasNeverSet_ThenPermissionFixIsNotForced() {
-        let availability = makeAvailability(isFeatureFlagOn: false)
+        let availability = makeAvailability()
 
         XCTAssertFalse(availability.mustForcePermissionFix)
     }
 
     // MARK: - Helpers
 
-    private func makeAvailability(isFeatureFlagOn: Bool, isOSSupported: Bool = true) -> DataDirectoryPermissionFixAvailability {
-        let featureFlagger = MockFeatureFlagger(
-            featuresStub: [FeatureFlag.dataImportDataDirectoryAccess.rawValue: isFeatureFlagOn]
-        )
-
-        return DataDirectoryPermissionFixAvailability(
-            featureFlagger: featureFlagger,
+    private func makeAvailability(isOSSupported: Bool = true) -> DataDirectoryPermissionFixAvailability {
+        DataDirectoryPermissionFixAvailability(
             debugSettings: debugSettings,
             isOSSupported: isOSSupported
         )

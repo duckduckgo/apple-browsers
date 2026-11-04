@@ -41,11 +41,20 @@ enum PromptBarPixel: PixelKit.Event {
     /// Event Trigger: User submits a prompt that includes one or more file attachments
     case submitWithFiles(fileCount: Int)
 
-    /// Event Trigger: User attaches an image via the file picker
-    case imageAttached
+    /// Event Trigger: An image chip is added: picked, dropped, or captured with Add Screenshot
+    case imageAttached(source: AIChatImageAttachmentSource)
 
-    /// Event Trigger: User removes an attached image
-    case imageRemoved
+    /// Event Trigger: User removes an attached image with its ×
+    case imageRemoved(source: AIChatImageAttachmentSource)
+
+    /// Event Trigger: A screenshot from Add Screenshot is added to the Prompt Bar
+    case screenshotTaken(kind: AIChatScreenshotKind)
+
+    /// Event Trigger: User removes a screenshot chip with its ×
+    case screenshotRemoved
+
+    /// Event Trigger: An Add Screenshot capture failed. Never on cancel or a missing Screen Recording permission
+    case screenshotFailed(reason: AIChatScreenshotFailureReason)
 
     /// Event Trigger: User attaches a file (PDF etc.) via the file picker
     case fileAttached
@@ -133,6 +142,24 @@ enum PromptBarPixel: PixelKit.Event {
     /// The on/off pixels only cover users who touch a setting; this one sizes the enabled base.
     case state(shortcutEnabled: Bool, menuBarIconEnabled: Bool)
 
+    /// Event Trigger: The Prompt Bar is presented for the first time on this install.
+    /// `promoOutcome` attributes the activation to the launcher promo.
+    case firstUse(source: PromptBarPresentationSource, promoOutcome: DuckAiLauncherPromoOutcome?)
+
+    // MARK: - Launcher promo
+
+    /// Event Trigger: The launcher promo is revealed: once per New Tab Page load, once per address bar opening.
+    case promoShown(surface: DuckAiLauncherPromoSurface)
+
+    /// Event Trigger: User clicks Try Now on the launcher promo
+    case promoTryNow(surface: DuckAiLauncherPromoSurface)
+
+    /// Event Trigger: User closes the launcher promo (×)
+    case promoClosed(surface: DuckAiLauncherPromoSurface)
+
+    /// Event Trigger: User sends a prompt while the launcher promo is on screen
+    case promoIgnored(surface: DuckAiLauncherPromoSurface)
+
     // MARK: -
 
     var name: String {
@@ -149,6 +176,12 @@ enum PromptBarPixel: PixelKit.Event {
             return "aichat_promptbar_image_attached"
         case .imageRemoved:
             return "aichat_promptbar_image_removed"
+        case .screenshotTaken:
+            return "aichat_promptbar_screenshot_taken"
+        case .screenshotRemoved:
+            return "aichat_promptbar_screenshot_removed"
+        case .screenshotFailed:
+            return "aichat_promptbar_screenshot_failed"
         case .fileAttached:
             return "aichat_promptbar_file_attached"
         case .fileRemoved:
@@ -203,6 +236,16 @@ enum PromptBarPixel: PixelKit.Event {
             return "aichat_promptbar_settings_shortcut_changed"
         case .state:
             return "aichat_promptbar_state"
+        case .firstUse:
+            return "aichat_promptbar_first_use_u"
+        case .promoShown:
+            return "aichat_promptbar_promo_shown"
+        case .promoTryNow:
+            return "aichat_promptbar_promo_try_now"
+        case .promoClosed:
+            return "aichat_promptbar_promo_closed"
+        case .promoIgnored:
+            return "aichat_promptbar_promo_ignored"
         }
     }
 
@@ -210,8 +253,7 @@ enum PromptBarPixel: PixelKit.Event {
         switch self {
         case .submitPrompt,
                 .submitURL,
-                .imageAttached,
-                .imageRemoved,
+                .screenshotRemoved,
                 .fileAttached,
                 .fileRemoved,
                 .imageGenerationActivated,
@@ -234,6 +276,12 @@ enum PromptBarPixel: PixelKit.Event {
                 .settingsMenuBarIconTurnedOff,
                 .settingsShortcutChanged:
             return nil
+        case .imageAttached(let source), .imageRemoved(let source):
+            return ["source": source.rawValue]
+        case .screenshotTaken(let kind):
+            return ["kind": kind.rawValue]
+        case .screenshotFailed(let reason):
+            return ["reason": reason.rawValue]
         case .submitWithImage(let imageCount):
             return ["imageCount": String(imageCount)]
         case .submitWithFiles(let fileCount):
@@ -254,6 +302,10 @@ enum PromptBarPixel: PixelKit.Event {
                     "menu_bar_icon_enabled": String(menuBarIconEnabled)]
         case .modelPickerShown(let origin), .reasoningPickerShown(let origin):
             return ["origin": origin]
+        case .firstUse(let source, let promoOutcome):
+            return ["source": source.pixelValue, "promo_outcome": promoOutcome?.rawValue ?? "none"]
+        case .promoShown(let surface), .promoTryNow(let surface), .promoClosed(let surface), .promoIgnored(let surface):
+            return ["surface": surface.rawValue]
         }
     }
 

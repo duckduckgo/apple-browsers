@@ -303,11 +303,60 @@ public extension NewTabPageDataModel {
         /// Native-localized notice shown after Create Image switches away from an unsupported model.
         var createImageModelSwitch: OmnibarCreateImageModelSwitch?
         var usageLimits: OmnibarUsageLimits?
+        /// True until the user accepts Duck.ai's Terms of Service. The Duck.ai tab then shows the
+        /// disclaimer and an "Ask" button that sends `aiTermsAccepted` with `omnibar_submitChat`.
+        /// The web echoes it back in `omnibar_setConfig`, where native ignores it.
+        var requiresAiTermsAcceptance: Bool?
         var launcherPromo: OmnibarLauncherPromo?
+        /// Shows the Duck.ai suggested-prompt chips below the Duck.ai input. Driven by the
+        /// `aiChatNtpSuggestedPrompts` feature flag; false once the user sent enough Duck.ai prompts,
+        /// which native counts from `omnibar_submitChat`. The web echoes it back in `omnibar_setConfig`,
+        /// where native ignores it.
+        var showSuggestedPrompts: Bool?
+        /// Add Screenshot modes in display order (`dragToSelect`, `selectWindowOrDisplay`). Absent hides
+        /// the screenshot UI; choosing a mode sends `omnibar_captureScreenshot`.
+        var screenshotModes: [String]?
+        /// Lets the page attach pasted images and copied files; absent or `false` keeps a normal paste.
+        var enablePastedAttachments: Bool?
     }
 
     struct OmnibarSetImageGenerationActive: Codable, Equatable {
         let active: Bool
+    }
+
+    // MARK: - omnibar_captureScreenshot
+
+    struct OmnibarCaptureScreenshotRequest: Codable, Equatable {
+        let mode: String
+    }
+
+    /// `image` when a capture was taken, `error` when it failed; neither means the user cancelled,
+    /// and the page shows nothing.
+    struct OmnibarCaptureScreenshotResponse: Codable, Equatable {
+
+        public struct Image: Codable, Equatable {
+            /// Base64 without a data-URL prefix, at most 1024 px on the long side.
+            public let data: String
+            public let format: String
+            public let kind: String
+
+            public init(data: String, format: String, kind: String) {
+                self.data = data
+                self.format = format
+                self.kind = kind
+            }
+        }
+
+        public let image: Image?
+        public let error: String?
+
+        public init(image: Image? = nil, error: String? = nil) {
+            self.image = image
+            self.error = error
+        }
+
+        public static let cancelled = OmnibarCaptureScreenshotResponse()
+        public static let failed = OmnibarCaptureScreenshotResponse(error: "screenshotFailed")
     }
 
     // MARK: - Attachment privacy
@@ -534,7 +583,13 @@ public extension NewTabPageDataModel {
         let pageContext: [OmnibarPageContext]?
         /// Files (PDFs in v1) attached via the paperclip menu. Omitted when none are attached.
         let files: [OmnibarPromptFile]?
+        /// True only when the user clicked "Ask" (or "Create") with the terms disclaimer on screen.
+        /// Enter, voice and the "Ask Duck.ai" suggestion never send it, because legal requires a click.
+        var aiTermsAccepted: Bool?
         var launcherPromoVisible: Bool?
+        /// Fixed catalog ID of the suggested-prompt chip the user picked (e.g. `jobapplication`).
+        /// Omitted for typed prompts.
+        var suggestedPromptId: String?
     }
 
     // MARK: - omnibar_getOpenTabs / omnibar_getTabContent (attach tabs)

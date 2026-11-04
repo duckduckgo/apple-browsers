@@ -21,8 +21,10 @@ import Foundation
 /// Outcome of showing a promo.
 /// Determines whether the promo is eligible to be shown again on the next trigger, and if so, after what interval (cooldown).
 enum PromoResult: Equatable {
-    /// User engaged with the CTA. Permanently dismissed.
-    case actioned
+    /// User engaged with the CTA.
+    /// - `.actioned()` (default, cooldown is nil) -> permanently dismissed.
+    /// - `.actioned(cooldown: interval)` -> repeatable; may re-show after cooldown interval elapses.
+    case actioned(cooldown: TimeInterval? = nil)
 
     /// User dismissed without engaging.
     /// - `.ignored()` (default, cooldown is nil) -> permanently dismissed.

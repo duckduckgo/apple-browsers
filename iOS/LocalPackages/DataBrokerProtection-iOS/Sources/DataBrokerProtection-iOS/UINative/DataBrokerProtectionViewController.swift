@@ -46,6 +46,7 @@ final public class DataBrokerProtectionViewController: UIViewController {
     private var reloadObserver: NSObjectProtocol?
     private var cancellables = Set<AnyCancellable>()
     private let isWebViewInspectable: Bool
+    private let freeScanEntryPoint: FreemiumDBPEntryPoint?
     private var isViewVisible = false
     private var hasLoadedDashboard = false
 
@@ -69,7 +70,8 @@ final public class DataBrokerProtectionViewController: UIViewController {
                               webUISettings: webUISettings,
                               pixelHandler: sharedPixelsHandler,
                               privacyConfigManager: privacyConfigManager,
-                              contentScopeProperties: contentScopeProperties)
+                              contentScopeProperties: contentScopeProperties,
+                              freeScanEntryPoint: freeScanEntryPoint)
     }()
 
     private lazy var webView: WKWebView = {
@@ -97,7 +99,8 @@ final public class DataBrokerProtectionViewController: UIViewController {
                 webUISettings: DataBrokerProtectionWebUIURLSettingsRepresentable,
                 openURLHandler: @escaping (URL) -> Void,
                 feedbackViewCreator: @escaping () -> (any View),
-                isWebViewInspectable: Bool = false) {
+                isWebViewInspectable: Bool = false,
+                freeScanEntryPoint: FreemiumDBPEntryPoint? = nil) {
         self.openURLHandler = openURLHandler
         self.feedbackViewCreator = feedbackViewCreator
         self.webUISettings = webUISettings
@@ -108,6 +111,7 @@ final public class DataBrokerProtectionViewController: UIViewController {
         self.privacyConfigManager = privacyConfigManager
         self.contentScopeProperties = contentScopeProperties
         self.isWebViewInspectable = isWebViewInspectable
+        self.freeScanEntryPoint = freeScanEntryPoint
 
         super.init(nibName: nil, bundle: nil)
     }
@@ -317,9 +321,12 @@ extension DataBrokerProtectionViewController: WKNavigationDelegate {
 public struct DataBrokerProtectionViewControllerRepresentation: UIViewControllerRepresentable {
 
     private let dbpViewControllerProvider: DBPIOSInterface.DataBrokerProtectionViewControllerProvider
+    private let freeScanEntryPoint: FreemiumDBPEntryPoint?
 
-    public init(dbpViewControllerProvider: DBPIOSInterface.DataBrokerProtectionViewControllerProvider) {
+    public init(dbpViewControllerProvider: DBPIOSInterface.DataBrokerProtectionViewControllerProvider,
+                freeScanEntryPoint: FreemiumDBPEntryPoint? = nil) {
         self.dbpViewControllerProvider = dbpViewControllerProvider
+        self.freeScanEntryPoint = freeScanEntryPoint
     }
 
     public func updateUIViewController(_ uiViewController: UIViewControllerType, context: Context) {
@@ -328,6 +335,6 @@ public struct DataBrokerProtectionViewControllerRepresentation: UIViewController
 
     public func makeUIViewController(context: Context) -> some UIViewController {
 
-        return dbpViewControllerProvider.dataBrokerProtectionViewController()
+        return dbpViewControllerProvider.dataBrokerProtectionViewController(freeScanEntryPoint: freeScanEntryPoint)
     }
 }

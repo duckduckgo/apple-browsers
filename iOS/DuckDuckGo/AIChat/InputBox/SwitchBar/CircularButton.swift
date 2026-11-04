@@ -134,6 +134,13 @@ final class CircularButton: UIButton {
                   pressedBackground: pressedBackground)
     }
 
+    func applyPrimaryButtonStyle() {
+        setColors(foreground: UIColor(designSystemColor: .buttonsPrimaryText),
+                  background: UIColor(designSystemColor: .buttonsPrimaryDefault),
+                  pressedForeground: UIColor(designSystemColor: .buttonsPrimaryText),
+                  pressedBackground: UIColor(designSystemColor: .buttonsPrimaryPressed))
+    }
+
     func applyAIVoiceChatStyle() {
         setColors(foreground: UIColor(designSystemColor: .textPrimary),
                   background: UIColor(singleUseColor: .unifiedToggleInputStopButtonBackground))

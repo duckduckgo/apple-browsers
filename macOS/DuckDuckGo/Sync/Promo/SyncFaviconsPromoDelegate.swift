@@ -126,7 +126,7 @@ final class SyncFaviconsPromoDelegate: InternalPromoDelegate {
         guard enableFaviconsFetching else { return .ignored() }
         syncBookmarksAdapter?.isFaviconsFetchingEnabled = true
         syncService?.scheduler.notifyDataChanged()
-        return .actioned
+        return .actioned()
     }
 
     private func observeWindowClose(_ windows: [NSWindow]) {

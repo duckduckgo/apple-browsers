@@ -105,11 +105,11 @@ final class AutofillToolbarPinningPromoDelegateTests: XCTestCase {
     // MARK: - Resolution paths
 
     func testWhenShortcutAddedThenResultIsActioned() async {
-        presenter.result = .actioned
+        presenter.result = .actioned()
 
         let result = await sut.show(history: record(), force: false)
 
-        XCTAssertEqual(result, .actioned)
+        XCTAssertEqual(result, .actioned())
         XCTAssertEqual(presenter.presentCallCount, 1)
     }
 
@@ -130,12 +130,12 @@ final class AutofillToolbarPinningPromoDelegateTests: XCTestCase {
     }
 
     func testWhenHiddenAfterResolvingThenResultIsUnchanged() async {
-        presenter.result = .actioned
+        presenter.result = .actioned()
         let result = await sut.show(history: record(), force: false)
 
         sut.hide()
 
-        XCTAssertEqual(result, .actioned)
+        XCTAssertEqual(result, .actioned())
         XCTAssertEqual(presenter.retractCallCount, 1)
     }
 

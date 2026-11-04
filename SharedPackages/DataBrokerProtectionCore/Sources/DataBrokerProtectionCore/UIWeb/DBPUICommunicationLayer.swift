@@ -38,8 +38,11 @@ public struct DBPUIFeatureConfigurationResponse: Encodable {
     }
 }
 
+public protocol DBPUIHandshakeDelegate: AnyObject {
+    @MainActor func getHandshakeUserData() async -> DBPUIHandshakeUserData?
+}
+
 public protocol DBPUICommunicationDelegate: AnyObject {
-    func getHandshakeUserData() async -> DBPUIHandshakeUserData?
     func saveProfile() async throws
     func getUserProfile() -> DBPUIUserProfile?
     func deleteProfileData() throws
@@ -104,15 +107,18 @@ public struct DBPUICommunicationLayer: Subfeature {
     private let outboundBroker: UserScriptMessageBroker = UserScriptMessageBroker(context: "dbpui", requiresRunInPageContentWorld: true)
 
     weak public var delegate: DBPUICommunicationDelegate?
+    weak private var handshakeDelegate: DBPUIHandshakeDelegate?
 
     private enum Constants {
         static let version = 12
     }
 
     public init(webURLSettings: DataBrokerProtectionWebUIURLSettingsRepresentable,
+                handshakeDelegate: DBPUIHandshakeDelegate,
                 vpnBypassService: VPNBypassServiceProvider? = nil,
                 privacyConfig: PrivacyConfigurationManaging) {
         self.webURLSettings = webURLSettings
+        self.handshakeDelegate = handshakeDelegate
         self.vpnBypassService = vpnBypassService
         self.privacyConfig = privacyConfig
         self.messageOriginPolicy = .only(rules: [
@@ -160,8 +166,7 @@ public struct DBPUICommunicationLayer: Subfeature {
             throw DBPUIError.malformedRequest
         }
 
-        // Attempt to get handshake user data, but fallback to a default
-        let userData = (await delegate?.getHandshakeUserData()) ?? DBPUIHandshakeUserData(isAuthenticatedUser: true)
+        let userData = (await handshakeDelegate?.getHandshakeUserData()) ?? DBPUIHandshakeUserData(isAuthenticatedUser: true)
 
         if result.version != Constants.version {
             Logger.dataBrokerProtection.log("Incorrect protocol version presented by UI")

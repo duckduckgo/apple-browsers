@@ -56,7 +56,6 @@ final class CPMBackgroundWebViewGraveyard {
     private var retainedWebView: WKWebView?
     private var releaseWorkItem: DispatchWorkItem?
     private var retentionGeneration = UUID()
-    private var pendingTerminationTreatmentEnabled: Bool?
 
     var lifecycleEventHandler: (@MainActor (LifecycleEvent) -> Void)?
 
@@ -69,34 +68,20 @@ final class CPMBackgroundWebViewGraveyard {
         self.featureFlags = featureFlags
     }
 
-    /// Captures treatment state for attribution and retains the terminated view when treatment is enabled.
+    /// Retains the terminated view when treatment is enabled.
     func handleProcessTermination(of webView: WKWebView, reason: CPMBackgroundProcessTerminationReason?) {
-        guard let featureFlags else { return }
-        let treatmentEnabled = featureFlags.isBackgroundGraveyardTreatmentEnabled
-        if pendingTerminationTreatmentEnabled == nil {
-            pendingTerminationTreatmentEnabled = treatmentEnabled
-        }
-        guard treatmentEnabled else { return }
+        guard featureFlags?.isBackgroundGraveyardTreatmentEnabled == true else { return }
         retainTerminatedWebView(webView)
-    }
-
-    /// Returns the treatment state for the termination associated with this CPM health result.
-    func consumeTerminationTreatmentState() -> Bool? {
-        let treatmentEnabled = pendingTerminationTreatmentEnabled
-        pendingTerminationTreatmentEnabled = nil
-        return treatmentEnabled
     }
 
     /// Clears state owned by the previous context before diagnostics starts a new context timeline.
     func resetForNewContext() {
         releaseRetainedWebView(recordEvent: false)
-        pendingTerminationTreatmentEnabled = nil
     }
 
-    /// Ends retention and marks unresolved terminations when their context unloads.
+    /// Ends retention when the context unloads.
     func handleContextUnload() {
         releaseRetainedWebView()
-        pendingTerminationTreatmentEnabled = nil
     }
 
     private func retainTerminatedWebView(_ webView: WKWebView) {

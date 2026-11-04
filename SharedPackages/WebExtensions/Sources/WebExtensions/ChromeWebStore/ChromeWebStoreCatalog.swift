@@ -19,6 +19,29 @@
 import Foundation
 import PrivacyConfig
 
+public enum ChromeWebStoreID: String {
+    case bitwarden = "nngceckbapebfimnlniiiahkandclblb"
+    case onePassword = "aeblfdkhhhdcdjpifhhbdiojplfjncoa"
+    case iCloudPasswords = "pejdijmoenmkgeppbflobdenhhabjlaj"
+}
+
+public struct ChromeWebStoreListing: Equatable, Identifiable {
+    public let entry: ExtensionsCatalogSubfeature
+    public let name: String
+    public let publisher: String
+    public let iconURL: URL?
+    public let storeURL: URL
+
+    public var id: String { entry.rawValue }
+
+    public var isPasswordManager: Bool {
+        switch entry {
+        case .bitwarden, .onePassword, .lastPass, .iCloudPasswords: true
+        case .darkReader: false
+        }
+    }
+}
+
 public enum ChromeWebStoreStatus: String, Codable {
     case installable, installed, unsupported, unknown
 }
@@ -75,11 +98,25 @@ public protocol ChromeWebStoreCatalogProviding {
 
     /// Checks if the web extension with a given `identifier` is supported by the browser.
     func contains(_ identifier: String) -> Bool
+
+    /// The catalog's entry for the extension with the Chrome Web Store `identifier`, such as `.bitwarden`,
+    /// whether or not the catalog offers it right now. `nil` for an extension the catalog doesn't list.
+    func catalogEntry(of identifier: String) -> ExtensionsCatalogSubfeature?
+
+    /// The entry's store listing, or `nil` when its `name` or `cwsUri` is missing.
+    func listing(of subfeature: ExtensionsCatalogSubfeature) -> ChromeWebStoreListing?
+
+    /// The help page about adding extensions, or `nil` when the configuration doesn't set one.
+    var learnMoreURL: URL? { get }
 }
 
 public extension ChromeWebStoreCatalogProviding {
     func contains(_ identifier: String) -> Bool {
         ChromeWebStoreURL.isValidExtensionID(identifier) && extensionIDs.contains(identifier)
+    }
+
+    func catalogEntry(of identifier: String) -> ExtensionsCatalogSubfeature? {
+        nil
     }
 }
 
@@ -110,9 +147,7 @@ public final class ChromeWebStoreCatalog: ChromeWebStoreCatalogProviding {
         // rollout and minimum version. Subfeatures this build doesn't know are ignored.
         let entries: [(id: String, order: Double)] = ExtensionsCatalogSubfeature.allCases.compactMap { subfeature in
             guard config.isSubfeatureEnabled(subfeature),
-                  let settingsJSON = config.settings(for: subfeature),
-                  let data = settingsJSON.data(using: .utf8),
-                  let settings = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+                  let settings = Self.settings(of: subfeature, in: config),
                   let id = settings["id"] as? String,
                   ChromeWebStoreURL.isValidExtensionID(id), !excluded.contains(id) else { return nil }
             return (id, (settings["order"] as? NSNumber)?.doubleValue ?? .infinity)
@@ -122,5 +157,34 @@ public final class ChromeWebStoreCatalog: ChromeWebStoreCatalogProviding {
         return entries.enumerated()
             .sorted { ($0.element.order, $0.offset) < ($1.element.order, $1.offset) }
             .map(\.element.id)
+    }
+
+    public func catalogEntry(of identifier: String) -> ExtensionsCatalogSubfeature? {
+        let config = configurationManager.privacyConfig
+        return ExtensionsCatalogSubfeature.allCases.first { subfeature in
+            Self.settings(of: subfeature, in: config)?["id"] as? String == identifier
+        }
+    }
+
+    public func listing(of subfeature: ExtensionsCatalogSubfeature) -> ChromeWebStoreListing? {
+        guard let settings = Self.settings(of: subfeature, in: configurationManager.privacyConfig),
+              let name = settings["name"] as? String,
+              let storeURL = (settings["cwsUri"] as? String).flatMap(URL.init(string:)) else { return nil }
+
+        return ChromeWebStoreListing(entry: subfeature,
+                                     name: name,
+                                     publisher: settings["publisher"] as? String ?? "",
+                                     iconURL: (settings["iconUri"] as? String).flatMap(URL.init(string:)),
+                                     storeURL: storeURL)
+    }
+
+    public var learnMoreURL: URL? {
+        (configurationManager.privacyConfig.settings(for: .extensionManagement)["learnMoreUrl"] as? String).flatMap(URL.init(string:))
+    }
+
+    private static func settings(of subfeature: ExtensionsCatalogSubfeature, in config: PrivacyConfiguration) -> [String: Any]? {
+        guard let settingsJSON = config.settings(for: subfeature),
+              let data = settingsJSON.data(using: .utf8) else { return nil }
+        return try? JSONSerialization.jsonObject(with: data) as? [String: Any]
     }
 }

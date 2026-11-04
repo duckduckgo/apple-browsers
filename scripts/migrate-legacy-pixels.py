@@ -33,7 +33,7 @@ How it works
 5. `render` rebuilds the call text; `ensure_pixelkit_import` adds `import PixelKit` where the file
    lacks it.
 
-Frequency mapping (from `iOS/Core/PixelEvent+PixelKit.swift`, which is the reference)
+Frequency mapping (from `iOS/Core/Statistics/PixelEvent+PixelKit.swift`, which is the reference)
 -------------------------------------------------------------------------------------
     Pixel.fire(pixel:)                                             .standard  (omitted)
     Pixel.fire(pixel:debounce: n)                                  .debounce(seconds: n)
@@ -109,14 +109,14 @@ DEFAULT_REPORT_PATH = (
 
 # Deleted wholesale in Phase 3, so migrating their internals is wasted work.
 EXCLUDED_FILES = {
-    "iOS/Core/Pixel.swift",
+    "iOS/Core/Statistics/Pixel.swift",
     "iOS/Core/DailyPixel.swift",
     "iOS/Core/UniquePixel.swift",
     "iOS/Core/PersistentPixel.swift",
     # The adapter's file documentation deliberately names every legacy API in its mapping
     # tables. Rewriting those would corrupt the reference explaining why each migrated call
     # site chose its frequency.
-    "iOS/Core/PixelEvent+PixelKit.swift",
+    "iOS/Core/Statistics/PixelEvent+PixelKit.swift",
 }
 
 EXCLUDED_PREFIXES = (

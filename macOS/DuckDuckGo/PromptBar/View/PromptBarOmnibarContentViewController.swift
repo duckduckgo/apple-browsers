@@ -94,6 +94,9 @@ final class PromptBarOmnibarContentViewController: NSViewController {
 
         subscribeToMenuTracking()
         wireHeightUpdates()
+        containerViewController.onScreenshotCaptureEnded = { [weak self] in
+            self?.reclaimKeyIfStillVisible()
+        }
     }
 
     private func setUpUI() {
@@ -217,8 +220,15 @@ extension PromptBarOmnibarContentViewController: PromptBarContentHosting {
 
     var viewController: NSViewController { self }
 
+    func showLauncherIntroduction(shortcut: String) {
+        containerViewController.showLauncherIntroduction(shortcut: shortcut)
+    }
+
     var isPresentingAuxiliaryUI: Bool {
-        isMenuTracking || view.window?.attachedSheet != nil || NSApp.modalWindow != nil
+        isMenuTracking
+            || containerViewController.isCapturingScreenshot
+            || view.window?.attachedSheet != nil
+            || NSApp.modalWindow != nil
     }
 
     /// Attachments don't count: this reports the text field alone.
@@ -258,6 +268,8 @@ extension PromptBarOmnibarContentViewController: PromptBarContentHosting {
     }
 
     func resetAfterDismissal() {
+        // Escape and submitting hide the bar mid-capture too, and the draft is about to be reset.
+        containerViewController.cancelScreenshotCapture()
         textViewController.stopEventMonitoring()
         containerViewController.cleanup()
         draftStore.reset()

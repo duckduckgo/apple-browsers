@@ -19,6 +19,14 @@
 import Foundation
 import PixelKit
 
+/// Raw values match the `source` pixel parameter.
+enum AIChatImageAttachmentSource: String {
+    case file
+    case drop
+    case paste
+    case screenshot
+}
+
 /// Named after the action rather than the pixel, so each surface can report it under its own name.
 enum DuckAIPromptPixelEvent: Equatable {
     case promptSubmitted
@@ -33,8 +41,11 @@ enum DuckAIPromptPixelEvent: Equatable {
     case webSearchActivated
     case webSearchDeactivated
     case customizeResponsesOpened
-    case imageAttached
-    case imageRemoved
+    case imageAttached(source: AIChatImageAttachmentSource)
+    case imageRemoved(source: AIChatImageAttachmentSource)
+    case screenshotTaken(kind: AIChatScreenshotKind)
+    case screenshotRemoved
+    case screenshotFailed(reason: AIChatScreenshotFailureReason)
     case fileAttached
     case fileRemoved
     case fileValidationFailed(reason: String)
@@ -104,8 +115,11 @@ struct AddressBarPromptPixelHandler: DuckAIPromptPixelFiring {
         case .webSearchActivated: .aiChatAddressBarWebSearchActivated
         case .webSearchDeactivated: .aiChatAddressBarWebSearchDeactivated
         case .customizeResponsesOpened: .aiChatAddressBarCustomizeResponsesOpened
-        case .imageAttached: .aiChatAddressBarImageAttached
-        case .imageRemoved: .aiChatAddressBarImageRemoved
+        case .imageAttached(let source): .aiChatAddressBarImageAttached(source: source)
+        case .imageRemoved(let source): .aiChatAddressBarImageRemoved(source: source)
+        case .screenshotTaken(let kind): .aiChatAddressBarScreenshotTaken(kind: kind)
+        case .screenshotRemoved: .aiChatAddressBarScreenshotRemoved
+        case .screenshotFailed(let reason): .aiChatAddressBarScreenshotFailed(reason: reason)
         case .fileAttached: .aiChatAddressBarFileAttached
         case .fileRemoved: .aiChatAddressBarFileRemoved
         case .fileValidationFailed(let reason): .aiChatAddressBarFileValidationFailed(reason: reason)

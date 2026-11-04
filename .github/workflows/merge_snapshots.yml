@@ -7,10 +7,10 @@ on:
 jobs:
   merge-snapshots:
     if: github.event.label.name == 'Merge snapshots' && github.event.pull_request.head.repo.full_name == github.repository
-    name: Merge snapshots PR and update pointer
+    name: Merge snapshots PR and verify pointer
     runs-on: ubuntu-latest
     permissions:
-      contents: write
+      contents: read
       pull-requests: write
       issues: write
     steps:
@@ -27,10 +27,9 @@ jobs:
         with:
           ref: ${{ github.event.pull_request.head.sha }}
           path: pull-request
-          token: ${{ secrets.GHA_ELEVATED_PERMISSIONS_TOKEN }}
-          persist-credentials: true
+          persist-credentials: false
 
-      - name: Merge snapshots PR and update pointer
+      - name: Merge snapshots PR and verify pointer
         env:
           GH_TOKEN: ${{ secrets.SNAPSHOTS_REPO_TOKEN }}
           PR_BRANCH: ${{ github.event.pull_request.head.ref }}

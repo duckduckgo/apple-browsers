@@ -67,6 +67,9 @@ final class UserScripts: UserScriptsProvider, ReleaseNotesUserScriptProvider {
     let faviconScript = FaviconUserScript()
     let webTelemetryScript = WebTelemetryUserScript()
     let tabSuspensionScript = TabSuspensionUserScript()
+    /// `WebExtensionPageStubUserScript`, typed loosely because the class needs macOS 15.4.
+    /// `nil` when web extensions are unavailable or the user is not an internal user.
+    let webExtensionPageStubUserScript: UserScript?
 
     private let contentScopePreferences: ContentScopePreferences
 
@@ -74,14 +77,13 @@ final class UserScripts: UserScriptsProvider, ReleaseNotesUserScriptProvider {
     init(with sourceProvider: ScriptSourceProviding,
          contentScopePreferences: ContentScopePreferences,
          duckAiNativeStorageHandler: DuckAiNativeStorageHandling? = NSApp.delegateTyped.duckAiNativeStorageHandler,
-         buildType: ApplicationBuildType = StandardApplicationBuildType(),
          aiChatDebugURLSettings: (any KeyedStoring<AIChatDebugURLSettings>)? = nil) {
 
         self.contentScopePreferences = contentScopePreferences
         if #available(macOS 15.4, *) {
             chromeWebStoreUserScript = ChromeWebStoreUserScript(serviceProvider: {
                 NSApp.delegateTyped.webExtensionManager?.chromeWebStore
-            }, buildType: buildType)
+            })
         } else {
             chromeWebStoreUserScript = nil
         }
@@ -172,7 +174,7 @@ final class UserScripts: UserScriptsProvider, ReleaseNotesUserScriptProvider {
             let configGenerator = ContentScopePrivacyConfigurationJSONGenerator(
                 featureFlagger: sourceProvider.featureFlagger,
                 privacyConfigurationManager: sourceProvider.privacyConfigurationManager,
-                excludedFeatures: [PrivacyFeature.autoconsent.rawValue] + nativeOnlyFeatures)
+                excludedFeatures: [PrivacyFeature.autoconsent.rawValue, PrivacyFeature.eventHub.rawValue] + nativeOnlyFeatures)
             let isolatedConfigGenerator = ContentScopePrivacyConfigurationJSONGenerator(
                 featureFlagger: sourceProvider.featureFlagger,
                 privacyConfigurationManager: sourceProvider.privacyConfigurationManager,
@@ -235,8 +237,22 @@ final class UserScripts: UserScriptsProvider, ReleaseNotesUserScriptProvider {
             releaseNotesUserScript = nil
         }
 
+        // A tab opened from an extension's web view configuration (the pop-out of a popup, for
+        // instance) gets the standard user content controller, which replaces the extension
+        // controller's, so its extension pages get the API stubs from here.
+        if #available(macOS 15.4, *), WebExtensionManager.areExtensionsEnabled {
+            webExtensionPageStubUserScript = WebExtensionPageStubUserScript.make(
+                isInternalUser: sourceProvider.featureFlagger.internalUserDecider.isInternalUser)
+        } else {
+            webExtensionPageStubUserScript = nil
+        }
+
         if sourceProvider.webExtensionAvailability?.isAutoconsentExtensionAvailable != true {
             userScripts.append(autoconsentUserScript)
+        }
+
+        if let webExtensionPageStubUserScript {
+            userScripts.append(webExtensionPageStubUserScript)
         }
 
         contentScopeUserScriptIsolated.registerSubfeature(delegate: webTelemetryScript)

@@ -65,7 +65,7 @@ protocol OnboardingPresenting: AnyObject {
 @MainActor
 protocol IdleReturnLaunchDelegate: AnyObject {
     /// Completes after any screen dismissal and New Tab Page creation finish.
-    func showNewTabPageAfterIdleReturn(timeAwayMs: Int?, completion: @escaping (IdleReturnNewTabPageResult) -> Void)
+    func showNewTabPageAfterIdleReturn(timeAwayMs: Int?, isFirstForeground: Bool, completion: @escaping (IdleReturnNewTabPageResult) -> Void)
     func markLastUsedTabAsResumedAfterIdle(timeAwayMs: Int?)
     /// A standard-launch return that did not qualify for an after-idle treatment.
     func recordOrdinaryReturn(timeAwayMs: Int?)
@@ -136,13 +136,14 @@ final class LaunchActionHandler: LaunchActionHandling {
                 switch idleReturnEvaluator.treatmentForIdleReturn() {
                 case .ntp:
                     let flagOn = featureFlagger.isFeatureOn(.alwaysShowKeyboardOnNewTabPage)
-                    idleReturnDelegate?.showNewTabPageAfterIdleReturn(timeAwayMs: timeAwayMs) { [self] result in
+                    idleReturnDelegate?.showNewTabPageAfterIdleReturn(timeAwayMs: timeAwayMs, isFirstForeground: isFirstForeground) { [self] result in
                         guard flagOn, featureFlagger.isFeatureOn(.alwaysShowKeyboardOnNewTabPage) else { return }
                         switch result {
                         case .keptCurrent:
+                            // Preparation already closed the old screen; don't dismiss a newly presented launch prompt.
                             keyboardPresenter.showKeyboardOnLaunch(lastBackgroundDate: isFirstForeground ? nil : lastBackgroundDate,
                                                                    hasCompletedAuthentication: hasCompletedAuthentication,
-                                                                   isAfterIdleReturn: true)
+                                                                   isAfterIdleReturn: false)
                         case .openedNewTab:
                             keyboardPresenter.showKeyboardOnNewTabPageCreated()
                         case .suppressed:

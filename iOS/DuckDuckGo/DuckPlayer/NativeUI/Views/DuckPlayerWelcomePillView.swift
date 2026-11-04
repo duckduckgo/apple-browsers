@@ -31,15 +31,12 @@ private struct Constants {
     static let hStackSpacing: CGFloat = 20
     static let daxLogo = "DaxLogoSimple"
     static let iconSize: CGFloat = 40
-    static let horizontalPadding: CGFloat = 32
     static let verticalPadding: CGFloat = 24
-    static let cornerRadius: CGFloat = 12
     static let shadowOpacity: CGFloat = 0.1
     static let shadowRadius: CGFloat = 3
     static let floatingShadowOpacity: CGFloat = 0.16
     static let floatingShadowRadius: CGFloat = 10
     static let shadowOffset: CGSize = CGSize(width: 0, height: 4)
-    static let primingImageName: String = "DuckPlayer-PrimingAnimation"
     static let imageWidth: CGFloat = 150
     static let imageHeight: CGFloat = 150
     static let closeImage = "xmark"
@@ -50,10 +47,6 @@ private struct Constants {
     static let playButtonCornerRadius: CGFloat = 16
     static let buttonIconSpacing: CGFloat = 8
     static let buttonTopPadding: CGFloat = 10
-    static let phoneViewWidth: CGFloat = 68
-    static let phoneViewHeight: CGFloat = 120
-    static let phoneViewScaleEffect: CGFloat = 0.66
-    static let phoneViewTopPadding: CGFloat = 10
     static let mainVStackSpacing: CGFloat = 15
     static let mainHStackSpacing: CGFloat = 30
     static let textVStackSpacing: CGFloat = 8
@@ -63,7 +56,6 @@ private struct Constants {
 struct DuckPlayerWelcomePillView: View {
     @ObservedObject var viewModel: DuckPlayerWelcomePillViewModel
     var usesFloatingStyle = false
-    @State private var isAnimating: Bool = true
     @Environment(\.colorScheme) private var colorScheme
 
     // MARK: - Subviews
@@ -108,23 +100,8 @@ struct DuckPlayerWelcomePillView: View {
         .accessibilityIdentifier("duckPlayerWelcomeCloseButton")
     }
 
-    @ViewBuilder
     private var phoneView: some View {
-        if AppRebrand.isAppRebranded() {
-            Image(uiImage: DesignSystemImages.Color.Size96.youtubeClean)
-        } else {
-            LottieView(
-                lottieFile: Constants.primingImageName,
-                loopMode: .mode(.playOnce),
-                isAnimating: $isAnimating
-            )
-            .frame(width: Constants.phoneViewWidth, height: Constants.phoneViewHeight)
-            .background(Color.clear)
-            .scaleEffect(Constants.phoneViewScaleEffect)
-            .padding(.top, Constants.phoneViewTopPadding)
-            .accessibilityLabel("DuckPlayer animation")
-            .accessibilityHint("Animated illustration showing DuckPlayer functionality")
-        }
+        Image(uiImage: DesignSystemImages.Color.Size96.youtubeClean)
     }
 
     // MARK: - Body
@@ -153,16 +130,12 @@ struct DuckPlayerWelcomePillView: View {
                 }
                 mainActionButton
             }
-            .padding(.horizontal, AppRebrand.isAppRebranded() ?
-                     ButtonStackMetrics.containerPadding
-                     : Constants.horizontalPadding)
+            .padding(.horizontal, ButtonStackMetrics.containerPadding)
             .padding(.vertical, Constants.verticalPadding)
             .background(
                 Color(designSystemColor: usesFloatingStyle || colorScheme == .light ? .backgroundSheets : .controlsFillPrimary)
             )
-            .cornerRadius(AppRebrand.isAppRebranded() ?
-                          ContainerMetrics.cornerRadius
-                          : Constants.cornerRadius)
+            .cornerRadius(ContainerMetrics.cornerRadius)
             .shadow(
                 color: Color.black.opacity(usesFloatingStyle ? Constants.floatingShadowOpacity : Constants.shadowOpacity),
                 radius: usesFloatingStyle ? Constants.floatingShadowRadius : Constants.shadowRadius,

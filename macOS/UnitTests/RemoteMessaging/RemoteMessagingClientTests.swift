@@ -143,7 +143,8 @@ final class RemoteMessagingClientTests: XCTestCase {
                 variantManager: MockVariantManager(),
                 subscriptionManager: subscriptionManager,
                 featureFlagger: MockFeatureFlagger(),
-                themeManager: MockThemeManager()
+                themeManager: MockThemeManager(),
+                isReturningUser: { nil }
             ),
             remoteMessagingAvailabilityProvider: availabilityProvider,
             remoteMessagingSurfacesProvider: surfacesProvider

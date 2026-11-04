@@ -635,74 +635,15 @@ not be touched.
 
 ## Common mistakes
 
-- **Including `notes` in the bulk-fetch `opt_fields`.** macOS Feedback alone
-  returns 80+ tasks/day; the notes blob blows past the tool-result token cap.
-  Fetch `notes` only on a per-task basis in step 3.
-- **Forgetting the `.value` suffix on custom field GIDs.** Without it the API
-  returns `custom_fields.<gid>: Not a valid search parameter for custom fields`.
-- **Calling `asana_get_task` without `tags` and `tags.name` in `opt_fields`.**
-  The data protection hook requires the tag fields to be requested - without
-  them the call is denied.
-- **Treating App Store Reviews like the feedback bucket.** Different schema
-  (Rating, Store - no Sentiment, no Dealbreaker, no OS Version) and a separate
-  deep-dive table (step 7).
-- **Picking a count-only noise cluster for the Top 3 deep dive.** Quit Time
-  Survey and Miscellaneous long-tail have no narrative; skip them and pick
-  the next-highest actionable group.
-- **Using the same pagination cursor across keywords or projects.**
-  `created_at_before` is set per (project, keyword) query - resetting between
-  queries is required, otherwise pages get skipped.
-- **Overwriting an existing Asana task description without asking.** Step 8.3
-  is mandatory when `notes` is non-empty - even in auto mode. Writes to shared
-  tasks affect other people, so warn-then-confirm is not optional.
-- **Calling `asana_update_task` with raw markdown or standard HTML.** Asana
-  rejects `<p>`, `<br>`, `<b>`, `<i>` and friends with a 400 error. Always
-  route through the `asana-formatting:asana-formatting` skill before writing
-  `html_notes`.
-- **Dumping the full report inline AND writing it to Asana.** When `asana_url`
-  is provided, the inline render is replaced by a one-line confirmation. Only
-  fall back to inline output if the user declined the overwrite in step 8.3.
-- **Trying to render the HTML via `python3` or any other Bash command.** Bash
-  calls that look like report-rendering are denied after Asana access in this
-  environment. Build the HTML directly in the `asana_update_task` argument -
-  see step 8.4.
-- **Pretty-printing `html_notes` with blank lines between block tags.** Asana
-  treats `\n\n` between block elements like `</h2>` and `<ul>` as an extra
-  blank line on top of each block's natural vertical spacing, producing
-  visibly double-spaced output. Use no separator or at most a single real
-  newline between block tags. `\n\n` between purely inline content (text,
-  `<strong>`, `<a>`, etc. with no surrounding block tag) is correct and is
-  the only way to get a paragraph break since Asana forbids `<p>`. See step
-  8.4.
-- **Typing literal `\n` escape sequences inside the `html_notes` XML
-  parameter.** Claude Code does not process JSON-style escape sequences in
-  tool-call XML parameters - `\n` is two literal characters (backslash + n)
-  and Asana renders them as visible `\n` text in the HTML view. Default to
-  no separator between block tags (`</h2><ul>`); where you need a real
-  newline (paragraph break between inline content), break the parameter
-  across physical lines in the XML. See step 8.4.
-- **Hand-typing GIDs into the link list HTML from memory.** A single mistyped
-  digit gives a broken link that looks correct at a glance. Transcribe each
-  GID character-by-character from the `asana_search_tasks` / `asana_get_task`
-  tool result that's still in your context - do not retype from memory or
-  paraphrase. See step 5.
-- **Including `custom_fields` in the bulk-fetch `opt_fields` for iOS Feedback
-  or macOS Feedback.** These two projects carry 30+ custom fields per task and
-  a 100-task page with full custom fields reliably spills. Use slim `opt_fields`
-  (`name,created_at,completed`) for the bulk fetch; sample 5-10 tasks per Top-3
-  cluster via `asana_get_task` in step 6 to populate the deep dive. See step 2.
-- **Forgetting to annotate "sampled N of M" on the deep-dive output.** With the
-  slim-default for the heavy projects, the deep dive runs against a per-cluster
-  sample, not the full population. Make the sample size explicit so the reader
-  knows the limit.
-- **Writing the report HTML to a file (anywhere on disk) before posting.**
-  This skill keeps Asana data in tool-call context only. Pass the assembled
-  HTML directly as `html_notes` - no `Write` to `/tmp/`, no `Write` under
-  `.claude/`, nothing on disk. Real newlines round-trip through MCP fine.
-  See step 8.4 and the privacy section.
-- **Enumerating every task in a cluster's link list.** Cap at 5-10 representative
-  tasks by recency. The full list belongs in Asana's project filter, not the
-  snapshot. See step 5.
+The steps above are the reference; these four carry the highest cost when missed:
+
+- Overwriting a populated task description without the step 8.3 confirmation, including in
+  auto mode.
+- Writing Asana data or the rendered report to disk; build `html_notes` in the tool call.
+- Calling `asana_get_task` without `tags,tags.name` in `opt_fields`; the data protection hook
+  denies it.
+- Typing a literal `\n` inside the `html_notes` parameter; join block tags directly and use real
+  line breaks for paragraph breaks.
 
 ## What to skip
 

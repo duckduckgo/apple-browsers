@@ -156,14 +156,14 @@ final class SystemPermissionManagerTests: XCTestCase {
     // MARK: - Non-notification permission types
 
     func testWhenNonSystemPermissionTypeThenAuthorizationStateReturnsAuthorized() async {
-        let state = await sut.authorizationState(for: .camera)
+        let state = await sut.authorizationState(for: .popups)
 
         XCTAssertEqual(state, .authorized)
     }
 
     func testWhenNonSystemPermissionTypeThenAuthorizationIsNotRequired() {
-        XCTAssertFalse(sut.isAuthorizationRequired(for: .camera))
-        XCTAssertFalse(sut.isAuthorizationRequired(for: .microphone))
         XCTAssertFalse(sut.isAuthorizationRequired(for: .popups))
+        XCTAssertFalse(sut.isAuthorizationRequired(for: .externalScheme(scheme: "mailto")))
+        XCTAssertFalse(sut.isAuthorizationRequired(for: .autoplayPolicy))
     }
 }

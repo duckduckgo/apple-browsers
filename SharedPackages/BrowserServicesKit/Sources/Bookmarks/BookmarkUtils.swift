@@ -21,6 +21,12 @@ import CoreData
 
 public struct BookmarkUtils {
 
+    /// Parses a stored or manually entered bookmark URL, including relative URLs and bookmarklets.
+    public static func url(from string: String?) -> URL? {
+        guard let string else { return nil }
+        return string.isBookmarklet() ? string.toEncodedBookmarklet() : URL(string: string)
+    }
+
     public static func fetchRootFolder(_ context: NSManagedObjectContext) -> BookmarkEntity? {
         let request = BookmarkEntity.fetchRequest()
         request.predicate = NSPredicate(format: "%K == %@", #keyPath(BookmarkEntity.uuid), BookmarkEntity.Constants.rootFolderID)

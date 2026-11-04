@@ -89,6 +89,7 @@ validate_mach_o_architectures() {
 	local executable_name
 	local executable_path
 	local architectures
+	local architecture
 
 	executable_name=$(read_plist_value "${plist_path}" "CFBundleExecutable") \
 		|| die "CFBundleExecutable is missing from ${plist_path}"
@@ -96,9 +97,12 @@ validate_mach_o_architectures() {
 	architectures=$(lipo -archs "${executable_path}") \
 		|| die "Could not inspect architectures in ${executable_path}"
 
-	if ! lipo "${executable_path}" -verify_arch "${REQUIRED_ARCHITECTURES[@]}"; then
-		die "Main browser executable is missing a required architecture: found ${architectures}, expected ${REQUIRED_ARCHITECTURES[*]}"
-	fi
+	# Xcode 27's lipo rejects multiple architectures in a single -verify_arch call.
+	for architecture in "${REQUIRED_ARCHITECTURES[@]}"; do
+		if ! lipo "${executable_path}" -verify_arch "${architecture}"; then
+			die "Main browser executable is missing a required architecture: found ${architectures}, expected ${REQUIRED_ARCHITECTURES[*]}"
+		fi
+	done
 
 	echo "✅ Main browser executable contains ${architectures}"
 }

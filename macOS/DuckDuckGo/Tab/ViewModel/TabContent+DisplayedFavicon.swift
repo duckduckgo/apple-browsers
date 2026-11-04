@@ -17,7 +17,6 @@
 //
 
 import AppKit
-import DesignResourcesKit
 import DesignResourcesKitIcons
 import FeatureFlags_macOS
 import MaliciousSiteProtection
@@ -57,19 +56,19 @@ extension TabContent {
             return NSImage(resource: .homeFavicon)
 
         case .settings:
-            return DesignSystemRebrand.isAppRebranded() ? DesignSystemImages.Color.Size16.settings : NSImage(resource: .settingsMulticolor16Legacy)
+            return DesignSystemImages.Color.Size16.settings
 
         case .bookmarks:
-            return DesignSystemRebrand.isAppRebranded() ? DesignSystemImages.Color.Size16.bookmarksNew : NSImage(resource: .bookmarksFolder)
+            return DesignSystemImages.Color.Size16.bookmarksNew
 
         case .onboarding:
             return NSImage(resource: .onboardingDax)
 
         case .history:
-            return DesignSystemRebrand.isAppRebranded() ? DesignSystemImages.Color.Size16.history : NSImage(resource: .historyFaviconLegacy)
+            return DesignSystemImages.Color.Size16.history
 
         case .subscription:
-            return DesignSystemRebrand.isAppRebranded() ?  DesignSystemImages.Color.Size16.subscription : NSImage(resource: .privacyProLegacy)
+            return DesignSystemImages.Color.Size16.subscription
 
         case .identityTheftRestoration:
             return NSImage(resource: .identityTheftRestorationMulticolor16)
@@ -83,13 +82,13 @@ extension TabContent {
         case .url(let url, _, _):
             // Handle special URL types
             if url.isHistory {
-                return DesignSystemRebrand.isAppRebranded() ? DesignSystemImages.Color.Size16.history : NSImage(resource: .historyFaviconLegacy)
+                return DesignSystemImages.Color.Size16.history
             } else if url.isDuckPlayer {
                 return NSImage(resource: .duckPlayerSettings)
             } else if url.isDuckAIURL {
                 return DesignSystemImages.Color.Size16.duckAI
             } else if url.isEmailProtection {
-                return DesignSystemRebrand.isAppRebranded() ? DesignSystemImages.Color.Size16.emailProtection : NSImage(resource: .emailProtectionIconLegacy)
+                return DesignSystemImages.Color.Size16.emailProtection
             }
 
             // For regular URLs, return the actual favicon if available

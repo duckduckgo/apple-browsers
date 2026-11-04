@@ -16,6 +16,7 @@
 //  limitations under the License.
 //
 
+import BrowserServicesKit
 import Foundation
 import DDGError
 import UserScript
@@ -88,10 +89,12 @@ final class AIChatDataClearingUserScript: NSObject, Subfeature {
             }
         }
 
-        /// Everything but `notReady` (no web view or broker, i.e. misuse) can succeed on a fresh page.
+        /// Whether a fresh page can fix it. Misuse and a script that never starts fail again.
         var isTransient: Bool {
-            guard case .notReady = self else { return true }
-            return false
+            switch self {
+            case .timeout, .failedFromScript, .navigationTimeout, .webContentProcessTerminated: return true
+            case .notReady, .scriptNeverReady: return false
+            }
         }
 
         var underlyingError: Error? {
@@ -223,8 +226,14 @@ final class AIChatDataClearingUserScript: NSObject, Subfeature {
 
     @MainActor
     private func aiChatDataClearingFailed(params: Any, message: UserScriptMessage) -> Encodable? {
-        finish(result: .failure(ClearError.failedFromScript(ScriptFailure(payload: params))))
+        finish(result: Self.result(forScriptFailure: ScriptFailure(payload: params)))
         return nil
+    }
+
+    /// A page without IndexedDB (Lockdown Mode) has cleared all it can reach, so it counts as a success:
+    /// reporting it separately would single out those devices in telemetry.
+    private static func result(forScriptFailure failure: ScriptFailure) -> Result<Void, Error> {
+        failure.isIndexedDBDisabled ? .success(()) : .failure(ClearError.failedFromScript(failure))
     }
 
     @MainActor

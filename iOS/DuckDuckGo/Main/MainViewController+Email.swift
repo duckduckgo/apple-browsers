@@ -83,7 +83,7 @@ extension MainViewController: EmailManagerAliasPermissionDelegate {
     func emailManager(_ emailManager: EmailManager,
                       didRequestPermissionToProvideAliasWithCompletion: @escaping (EmailManagerPermittedAddressType, Bool) -> Void) {
 
-        currentTab?.dismissKeyboardIfPresent()
+        let tab = currentTab
 
         DispatchQueue.main.async {
             let emailAddressPromptViewController = EmailAddressPromptViewController(emailManager) { addressType, autosave in
@@ -99,6 +99,7 @@ extension MainViewController: EmailManagerAliasPermissionDelegate {
                     presentationController.detents = [.medium()]
                 }
             }
+            tab?.prepareForAutofillPrompt(emailAddressPromptViewController)
             self.present(emailAddressPromptViewController, animated: true)
         }
 
@@ -106,7 +107,7 @@ extension MainViewController: EmailManagerAliasPermissionDelegate {
 
     func emailManager(_ emailManager: EmailManager, didRequestInContextSignUp completionHandler: @escaping (_ shouldContinue: Bool) -> Void) {
 
-        currentTab?.dismissKeyboardIfPresent()
+        let tab = currentTab
 
         let emailSignupPromptViewController = EmailSignupPromptViewController { shouldContinue in
             if shouldContinue {
@@ -131,6 +132,7 @@ extension MainViewController: EmailManagerAliasPermissionDelegate {
             }
         }
 
+        tab?.prepareForAutofillPrompt(emailSignupPromptViewController)
         self.present(emailSignupPromptViewController, animated: true)
 
     }

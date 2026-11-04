@@ -87,13 +87,49 @@ public class MenuBookmarksViewModel: MenuBookmarksInteracting {
         }
     }
 
-    private func save() {
+    @discardableResult
+    private func save() -> Bool {
         do {
             try context.save()
+            return true
         } catch {
             context.rollback()
             errorEvents?.fire(.saveFailed(.menu), error: error)
+            return false
         }
+    }
+
+    /// Save without toggling an existing favorite off. A nil title preserves an existing bookmark's name.
+    /// Keep the entered URL text, matching the bookmark editor's storage behavior.
+    public func saveFavorite(title: String?, urlString: String) -> Bool {
+        guard let url = BookmarkUtils.url(from: urlString) else { return false }
+        if let bookmark = bookmarkForSavingFavorite(urlString: urlString) {
+            if let title {
+                bookmark.title = title
+            }
+            if !bookmark.isFavorite(on: favoritesDisplayMode.displayedFolder) {
+                bookmark.addToFavorites(with: favoritesDisplayMode, in: context)
+            }
+        } else {
+            guard let rootFolder else { return false }
+            let favorite = BookmarkEntity.makeBookmark(title: title ?? url.host ?? urlString,
+                                                       url: urlString,
+                                                       parent: rootFolder,
+                                                       context: context)
+            favorite.addToFavorites(with: favoritesDisplayMode, in: context)
+        }
+        return save()
+    }
+
+    private func bookmarkForSavingFavorite(urlString: String) -> BookmarkEntity? {
+        let request = BookmarkEntity.fetchRequest()
+        request.predicate = NSPredicate(format: "%K == %@ AND %K == NO AND (%K == NO OR %K == nil)",
+                                        #keyPath(BookmarkEntity.url), urlString,
+                                        #keyPath(BookmarkEntity.isPendingDeletion),
+                                        #keyPath(BookmarkEntity.isStub), #keyPath(BookmarkEntity.isStub))
+        request.returnsObjectsAsFaults = false
+        let bookmarks = (try? context.fetch(request)) ?? []
+        return bookmarks.first { $0.isFavorite(on: favoritesDisplayMode.displayedFolder) } ?? bookmarks.first
     }
 
     public func createOrToggleFavorite(title: String, url: URL) {
@@ -110,14 +146,18 @@ public class MenuBookmarksViewModel: MenuBookmarksInteracting {
                 bookmark.addToFavorites(with: favoritesDisplayMode, in: context)
             }
         } else {
-            let favorite = BookmarkEntity.makeBookmark(title: title,
-                                                       url: url.absoluteString,
-                                                       parent: rootFolder,
-                                                       context: context)
-            favorite.addToFavorites(with: favoritesDisplayMode, in: context)
+            makeFavorite(title: title, url: url, parent: rootFolder)
         }
 
         save()
+    }
+
+    private func makeFavorite(title: String, url: URL, parent: BookmarkEntity) {
+        let favorite = BookmarkEntity.makeBookmark(title: title,
+                                                   url: url.absoluteString,
+                                                   parent: parent,
+                                                   context: context)
+        favorite.addToFavorites(with: favoritesDisplayMode, in: context)
     }
 
     public func createBookmark(title: String, url: URL) {

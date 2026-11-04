@@ -35,7 +35,7 @@ final class BookmarksBarVisibilityManagerTests: XCTestCase {
         .settings(pane: nil),
         .bookmarks,
         .onboarding,
-        .dataBrokerProtection,
+        .dataBrokerProtection(.subscribed),
         .subscription(URL.duckDuckGo),
         .identityTheftRestoration(URL.duckDuckGo)
     ]

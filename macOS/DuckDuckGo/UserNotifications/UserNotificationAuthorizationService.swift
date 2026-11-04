@@ -39,12 +39,24 @@ protocol UserNotificationAuthorizationServicing: AnyObject {
 final class UserNotificationAuthorizationService: UserNotificationAuthorizationServicing {
     @PublishedAfter private var currentAuthorizationStatus: UNAuthorizationStatus = .notDetermined
 
+    private let notificationCenter: WebNotificationService
     private var appActivationCancellable: AnyCancellable?
+    /// When: request notifications from a site, click Request Permission, and choose Don't Allow in the macOS
+    /// notification banner. Dismiss the site's popover, then request notifications from the site again.
+    /// macOS can still report `.notDetermined`, even though another `requestAuthorization` call fails with
+    /// `.notificationsNotAllowed` without showing a system prompt. Checking `authorizationStatus` alone would
+    /// therefore offer Request Permission again instead of Open Settings. Remember that failed request as
+    /// `.denied` until macOS reports a status other than `.notDetermined`.
+    private var isSystemPermissionDenied = false
 
     var authorizationStatus: UNAuthorizationStatus {
         get async {
-            let settings = await UNUserNotificationCenter.current().notificationSettings()
-            return settings.authorizationStatus
+            let status = await notificationCenter.authorizationStatus()
+            guard status == .notDetermined else {
+                isSystemPermissionDenied = false
+                return status
+            }
+            return isSystemPermissionDenied ? .denied : status
         }
     }
 
@@ -56,9 +68,13 @@ final class UserNotificationAuthorizationService: UserNotificationAuthorizationS
         $currentAuthorizationStatus.eraseToAnyPublisher()
     }
 
-    init(appActivationPublisher: AnyPublisher<Notification, Never> = NotificationCenter.default
+    init(
+        notificationCenter: WebNotificationService = UNUserNotificationCenter.current(),
+        appActivationPublisher: AnyPublisher<Notification, Never> = NotificationCenter.default
             .publisher(for: NSApplication.didBecomeActiveNotification)
-            .eraseToAnyPublisher()) {
+            .eraseToAnyPublisher()
+    ) {
+        self.notificationCenter = notificationCenter
 
         Task {
             await updateAuthorizationStatus()
@@ -73,9 +89,17 @@ final class UserNotificationAuthorizationService: UserNotificationAuthorizationS
     }
 
     func requestAuthorization(options: UNAuthorizationOptions) async throws -> Bool {
-        let granted = try await UNUserNotificationCenter.current().requestAuthorization(options: options)
-        await updateAuthorizationStatus()
-        return granted
+        do {
+            let granted = try await notificationCenter.requestAuthorization(options: options)
+            await updateAuthorizationStatus()
+            return granted
+        } catch {
+            if (error as? UNError)?.code == .notificationsNotAllowed {
+                isSystemPermissionDenied = true
+            }
+            await updateAuthorizationStatus()
+            throw error
+        }
     }
 
     private func updateAuthorizationStatus() async {

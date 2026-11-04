@@ -18,6 +18,7 @@
 
 import AppKit
 import BrowserServicesKit
+import Combine
 import Common
 import FoundationExtensions
 import Foundation
@@ -246,21 +247,24 @@ final class PasswordManagementItemListModel: ObservableObject {
         }
     }
 
-    private var shouldDisplaySyncPromoRow: Bool {
-        guard emptyState == .none && filter.isEmpty else {
+    var canShowSyncPromoRow: Bool {
+        guard emptyState == .none && filter.isEmpty && !passwordManagerCoordinator.isEnabled else {
             return false
         }
 
+        let privacyConfig = privacyConfigurationManager.privacyConfig
         switch sortDescriptor.category {
-        case .allItems:
-            return syncPromoManager.shouldPresentPromoFor(.autofill)
-        case .logins:
-            return syncPromoManager.shouldPresentPromoFor(.passwords)
+        case .allItems, .logins:
+            return true
         case .cards:
-            return syncPromoManager.shouldPresentPromoFor(.creditCards)
+            return privacyConfig.isSubfeatureEnabled(SyncSubfeature.syncCreditCards)
         case .identities:
-            return syncPromoManager.shouldPresentPromoFor(.identities)
+            return privacyConfig.isSubfeatureEnabled(SyncSubfeature.syncIdentities)
         }
+    }
+
+    var shouldDisplaySyncPromoRow: Bool {
+        canShowSyncPromoRow && syncPromoManager.isPromoActive
     }
 
     private var shouldDisplayExternalPasswordManagerRow: Bool {
@@ -310,10 +314,12 @@ final class PasswordManagementItemListModel: ObservableObject {
     }
 
     @Published private(set) var selected: SecureVaultItem?
+    private var isFirstItemSelectedAutomatically = false
     @Published var externalPasswordManagerSelected: Bool = false {
         didSet {
             if externalPasswordManagerSelected {
                 selected = nil
+                isFirstItemSelectedAutomatically = false
             }
         }
     }
@@ -322,6 +328,7 @@ final class PasswordManagementItemListModel: ObservableObject {
         didSet {
             if syncPromoSelected {
                 selected = nil
+                isFirstItemSelectedAutomatically = false
             }
         }
     }
@@ -381,6 +388,8 @@ final class PasswordManagementItemListModel: ObservableObject {
     private let autofillPreferences: AutofillPreferencesPersistor
     private let urlMatcher: AutofillDomainNameUrlMatcher
     private let featureFlagger: FeatureFlagger?
+    private let privacyConfigurationManager: PrivacyConfigurationManaging
+    private var syncPromoCancellable: AnyCancellable?
     private static let randomColorsCount = 15
 
     init(passwordManagerCoordinator: PasswordManagerCoordinating,
@@ -389,6 +398,7 @@ final class PasswordManagementItemListModel: ObservableObject {
          tld: TLD = NSApp.delegateTyped.tld,
          autofillPreferences: AutofillPreferencesPersistor = AutofillPreferences(),
          featureFlagger: FeatureFlagger? = nil,
+         privacyConfigurationManager: PrivacyConfigurationManaging = NSApp.delegateTyped.privacyFeatures.contentBlocking.privacyConfigurationManager,
          onItemSelected: @escaping (_ old: SecureVaultItem?, _ new: SecureVaultItem?) -> Void,
          onAddItemSelected: @escaping (_ category: SecureVaultSorting.Category) -> Void) {
         self.onItemSelected = onItemSelected
@@ -399,6 +409,23 @@ final class PasswordManagementItemListModel: ObservableObject {
         self.tld = tld
         self.autofillPreferences = autofillPreferences
         self.featureFlagger = featureFlagger
+        self.privacyConfigurationManager = privacyConfigurationManager
+
+        syncPromoCancellable = syncPromoManager.isPromoActivePublisher
+            .dropFirst()
+            .sink { [weak self] _ in
+                self?.syncPromoActivityDidChange()
+            }
+    }
+
+    private func syncPromoActivityDidChange() {
+        objectWillChange.send()
+        let selectedPromoRowWasRemoved = syncPromoSelected && !shouldDisplaySyncPromoRow
+        let nothingIsSelected = selected == nil && !externalPasswordManagerSelected && !syncPromoSelected
+        let promoRowCanReplaceFirstItem = isFirstItemSelectedAutomatically && shouldDisplaySyncPromoRow
+        if selectedPromoRowWasRemoved || nothingIsSelected || promoRowCanReplaceFirstItem {
+            selectFirst()
+        }
     }
 
     func update(items: [SecureVaultItem]) {
@@ -413,6 +440,7 @@ final class PasswordManagementItemListModel: ObservableObject {
 
         let previous = selected
         selected = item
+        isFirstItemSelectedAutomatically = false
 
         if selected != nil {
             externalPasswordManagerSelected = false
@@ -550,6 +578,7 @@ final class PasswordManagementItemListModel: ObservableObject {
 
         if let firstSection = displayedSections.first, let selectedItem = firstSection.items.first {
             selected(item: selectedItem)
+            isFirstItemSelectedAutomatically = true
         } else {
             selected(item: nil)
         }
@@ -573,6 +602,7 @@ final class PasswordManagementItemListModel: ObservableObject {
 
     func clearSelection() {
         selected = nil
+        isFirstItemSelectedAutomatically = false
     }
 
     private func sortIntoSectionsByItemType(_ items: [SecureVaultItem]) -> [PasswordManagementListSection] {

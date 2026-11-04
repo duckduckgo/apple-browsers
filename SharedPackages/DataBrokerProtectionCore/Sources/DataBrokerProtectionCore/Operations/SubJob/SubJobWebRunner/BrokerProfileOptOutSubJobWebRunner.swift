@@ -78,7 +78,6 @@ public final class BrokerProfileOptOutSubJobWebRunner: SubJobWebRunning, BrokerP
     public var postLoadingSiteStartTime: Date?
     public let executionConfig: BrokerJobExecutionConfig
     public let featureFlagger: DBPFeatureFlagging
-    public let applicationNameForUserAgentProvider: () -> String?
     public let contentBlocking: DBPWebViewContentBlocking?
     public var fetchedEmail: String?
     public var emailData: ExtractedEmailData = [:]
@@ -92,7 +91,6 @@ public final class BrokerProfileOptOutSubJobWebRunner: SubJobWebRunning, BrokerP
                 emailConfirmationDataService: EmailConfirmationDataServiceProvider,
                 captchaService: CaptchaServiceProtocol,
                 featureFlagger: DBPFeatureFlagging,
-                applicationNameForUserAgentProvider: @escaping () -> String?,
                 cookieHandler: CookieHandler = BrokerCookieHandler(),
                 operationAwaitTime: TimeInterval = 3,
                 stageCalculator: StageDurationCalculator,
@@ -114,7 +112,6 @@ public final class BrokerProfileOptOutSubJobWebRunner: SubJobWebRunning, BrokerP
         self.executionConfig = executionConfig
         self.actionsHandlerMode = actionsHandlerMode
         self.featureFlagger = featureFlagger
-        self.applicationNameForUserAgentProvider = applicationNameForUserAgentProvider
         self.contentBlocking = contentBlocking
     }
 

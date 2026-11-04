@@ -27,11 +27,14 @@ struct ModalPromptConfiguration {
     let viewController: UIViewController
     /// Whether the presentation should be animated or not. The default value of this property is `true`.
     let animated: Bool
+    let exposureID: PromptExposureID
 
     init(
+        exposureID: PromptExposureID,
         viewController: UIViewController,
         animated: Bool = true
     ) {
+        self.exposureID = exposureID
         self.viewController = viewController
         self.animated = animated
     }

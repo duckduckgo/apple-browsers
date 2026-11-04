@@ -16,21 +16,29 @@
 //  limitations under the License.
 //
 
+import AIChat
+import AppKit
 import Combine
 import FeatureFlags_macOS
 import Foundation
 import NewTabPage
 import Persistence
+import PixelKit
 import PrivacyConfig
 
 extension Notification.Name {
-    static let duckAiLauncherPromoOutcomeDidReset = Notification.Name("duckAiLauncherPromoOutcomeDidReset")
+    static let duckAiLauncherPromoOutcomeDidChange = Notification.Name("duckAiLauncherPromoOutcomeDidChange")
 }
 
 enum DuckAiLauncherPromoOutcome: String {
     case triedNow = "tried_now"
     case closed
     case ignored
+}
+
+enum DuckAiLauncherPromoSurface: String {
+    case newTab = "new_tab"
+    case addressBar = "address_bar"
 }
 
 enum DuckAiLauncherPromoEligibility {
@@ -53,8 +61,7 @@ final class DuckAiLauncherPromo {
     private let featureFlagger: FeatureFlagger
     private let preferences: PromptBarPreferences
     private let keyValueStore: ThrowingKeyValueStoring
-    private let openSettings: @MainActor () -> Void
-    private let dismissalSubject = PassthroughSubject<Void, Never>()
+    private let firePixel: (PromptBarPixel) -> Void
     @Published private var chatCount = 0
     private var chatsCancellable: AnyCancellable?
 
@@ -62,11 +69,11 @@ final class DuckAiLauncherPromo {
          preferences: PromptBarPreferences,
          chatCountPublisher: AnyPublisher<Int, Never>,
          keyValueStore: ThrowingKeyValueStoring,
-         openSettings: @escaping @MainActor () -> Void) {
+         firePixel: @escaping (PromptBarPixel) -> Void = { PixelKit.fire($0, frequency: .dailyAndCount, includeAppVersionParameter: true) }) {
         self.featureFlagger = featureFlagger
         self.preferences = preferences
         self.keyValueStore = keyValueStore
-        self.openSettings = openSettings
+        self.firePixel = firePixel
 
         chatsCancellable = chatCountPublisher
             .receive(on: DispatchQueue.main)
@@ -82,7 +89,15 @@ final class DuckAiLauncherPromo {
     }
 
     var outcome: DuckAiLauncherPromoOutcome? {
-        ((try? keyValueStore.object(forKey: Self.outcomeKey)) as? String).flatMap(DuckAiLauncherPromoOutcome.init(rawValue:))
+        Self.storedOutcome(in: keyValueStore)
+    }
+
+    static func storedOutcome(in keyValueStore: ThrowingKeyValueStoring) -> DuckAiLauncherPromoOutcome? {
+        ((try? keyValueStore.object(forKey: outcomeKey)) as? String).flatMap(DuckAiLauncherPromoOutcome.init(rawValue:))
+    }
+
+    func shown(on surface: DuckAiLauncherPromoSurface) {
+        firePixel(.promoShown(surface: surface))
     }
 
     func presentation() -> NewTabPageDataModel.OmnibarLauncherPromo? {
@@ -102,8 +117,7 @@ final class DuckAiLauncherPromo {
             preferences.$isMenuBarIconVisible.map { _ in () }.eraseToAnyPublisher(),
             $chatCount.map { _ in () }.eraseToAnyPublisher(),
             featureFlagger.updatesPublisher,
-            dismissalSubject.eraseToAnyPublisher(),
-            NotificationCenter.default.publisher(for: .duckAiLauncherPromoOutcomeDidReset).map { _ in () }.eraseToAnyPublisher()
+            NotificationCenter.default.publisher(for: .duckAiLauncherPromoOutcomeDidChange).map { _ in () }.eraseToAnyPublisher()
         )
         .receive(on: DispatchQueue.main)
         .compactMap { [weak self] in self.map { $0.presentation() } }
@@ -113,29 +127,48 @@ final class DuckAiLauncherPromo {
         .eraseToAnyPublisher()
     }
 
-    @MainActor
-    func tryNow() {
+    func tryNow(on surface: DuckAiLauncherPromoSurface) {
         preferences.isKeyboardShortcutEnabled = true
         preferences.isMenuBarIconVisible = true
-        record(.triedNow)
-        openSettings()
+        preferences.pendingLauncherIntroduction = true
+        record(.triedNow, on: surface)
     }
 
-    func dismiss() {
-        record(.closed)
+    func dismiss(on surface: DuckAiLauncherPromoSurface) {
+        record(.closed, on: surface)
     }
 
-    func ignore() {
-        record(.ignored)
+    func ignore(on surface: DuckAiLauncherPromoSurface) {
+        record(.ignored, on: surface)
     }
 
-    private func record(_ outcome: DuckAiLauncherPromoOutcome) {
+    private func record(_ outcome: DuckAiLauncherPromoOutcome, on surface: DuckAiLauncherPromoSurface) {
         try? keyValueStore.set(outcome.rawValue, forKey: Self.outcomeKey)
-        dismissalSubject.send()
+        switch outcome {
+        case .triedNow: firePixel(.promoTryNow(surface: surface))
+        case .closed: firePixel(.promoClosed(surface: surface))
+        case .ignored: firePixel(.promoIgnored(surface: surface))
+        }
+        NotificationCenter.default.post(name: .duckAiLauncherPromoOutcomeDidChange, object: nil)
     }
 
     static func resetOutcome(in keyValueStore: ThrowingKeyValueStoring) {
         try? keyValueStore.removeObject(forKey: outcomeKey)
-        NotificationCenter.default.post(name: .duckAiLauncherPromoOutcomeDidReset, object: nil)
+        NotificationCenter.default.post(name: .duckAiLauncherPromoOutcomeDidChange, object: nil)
+    }
+}
+
+extension DuckAiLauncherPromo {
+
+    @MainActor
+    convenience init(featureFlagger: FeatureFlagger, keyValueStore: ThrowingKeyValueStoring) {
+        let chatCountPublisher = (NSApp.delegateTyped.duckAiNativeStorageHandler as? DuckAiNativeChatsObserving)?.chatsPublisher()
+            .map(\.count)
+            .replaceError(with: 0)
+            .eraseToAnyPublisher() ?? Just(0).eraseToAnyPublisher()
+        self.init(featureFlagger: featureFlagger,
+                  preferences: NSApp.delegateTyped.promptBarPreferences,
+                  chatCountPublisher: chatCountPublisher,
+                  keyValueStore: keyValueStore)
     }
 }

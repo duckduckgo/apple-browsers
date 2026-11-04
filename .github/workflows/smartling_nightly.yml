@@ -1,0 +1,42 @@
+name: Smartling - Nightly Jobs
+
+# Runs every night, weekends included, for both platforms with the default limit.
+# To test without authorizing anything or opening a review task, run it manually with auto_authorize_max_usd set to 0.
+on:
+  schedule:
+    - cron: '17 3 * * *'
+  workflow_dispatch:
+    inputs:
+      platform:
+        description: "Platform"
+        type: choice
+        default: both
+        options:
+          - both
+          - iOS
+          - macOS
+      auto_authorize_max_usd:
+        description: "Authorize jobs whose maximum USD estimate is at most this (0 never authorizes)"
+        type: string
+        default: "500.00"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: smartling-nightly
+  cancel-in-progress: false
+
+jobs:
+  smartling:
+    name: ${{ matrix.platform }} nightly
+    strategy:
+      fail-fast: false
+      matrix:
+        platform: ${{ fromJSON((github.event_name == 'schedule' || inputs.platform == 'both') && '["iOS","macOS"]' || format('["{0}"]', inputs.platform)) }}
+    uses: ./.github/workflows/smartling_submit.yml
+    with:
+      kind: nightly
+      platform: ${{ matrix.platform }}
+      auto_authorize_max_usd: ${{ inputs.auto_authorize_max_usd || '500.00' }}
+    secrets: inherit

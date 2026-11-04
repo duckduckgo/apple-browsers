@@ -99,7 +99,8 @@ enum PromoCoordinationFactory {
             providers: providers.ordered,
             cooldownManager: modalCooldownManager,
             onboardingStatusProvider: dependency.contextualOnboardingStatusProvider,
-            modalPromptScheduling: ModalPromptScheduler()
+            modalPromptScheduling: ModalPromptScheduler(),
+            promptExposureReporter: dependency.promptExposureReporter
         )
 
         return PromoCoordinationService(
@@ -108,7 +109,8 @@ enum PromoCoordinationFactory {
             mode: mode,
             promoQueueLeaseArbiter: dependency.promoQueueLeaseArbiter,
             promoQueueCooldownPolicy: promoQueueCooldownPolicy,
-            appRatingPromptCoordinator: appRatingPromptCoordinator
+            appRatingPromptCoordinator: appRatingPromptCoordinator,
+            promptExposureReporter: dependency.promptExposureReporter
         )
     }
 
@@ -171,6 +173,7 @@ extension PromoCoordinationFactory {
         let subscriptionPromoExistingUserCoordinator: SubscriptionPromoCoordinating
         let userScriptsDependencies: DefaultScriptSourceProvider.Dependencies
         let omniBarFocuser: OmniBarFocuserProvider
+        let promptExposureReporter: PromptExposureReporting
     }
 
 }

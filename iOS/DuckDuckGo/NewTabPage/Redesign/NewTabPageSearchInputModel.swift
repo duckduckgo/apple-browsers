@@ -26,13 +26,20 @@ final class NewTabPageSearchInputModel: ObservableObject {
 
     struct Settings: Equatable {
         var isModeToggleShown: Bool
-        var isAIChatEnabled: Bool
+        var isAIChatShortcutEnabled: Bool
         var isVoiceSearchEnabled: Bool
         var defaultTextEntryMode: TextEntryMode
     }
 
     @Published private(set) var settings: Settings
     @Published var textEntryMode: TextEntryMode
+
+    /// Whether the resting field shows the Duck.ai shortcut button.
+    var isAIChatButtonShown: Bool {
+        DuckAIInputShortcutVisibility.isShortcutShown(isShortcutAvailable: settings.isAIChatShortcutEnabled,
+                                                      isModeToggleEnabled: settings.isModeToggleShown,
+                                                      textEntryMode: textEntryMode)
+    }
 
     private let readSettings: () -> Settings
     private var cancellables = Set<AnyCancellable>()

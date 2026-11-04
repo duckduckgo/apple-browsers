@@ -135,3 +135,4 @@
 
 /* Body of the reminder shown when enabling Private Voice Search in Settings while iOS microphone access is blocked. */
 "sitePermissions.voice-search.settings-reminder.body" = "Ja vēlies izmantot mūsu privātās balss funkcijas, ir nepieciešamas mikrofona atļaujas.";
+

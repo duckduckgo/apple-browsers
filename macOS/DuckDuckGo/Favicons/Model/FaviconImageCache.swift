@@ -61,7 +61,7 @@ protocol FaviconImageCaching {
                      exceptHistoryDomains history: Set<String>,
                      tld: TLD) async -> Result<Void, Error>
 
-    /// Debug/admin: deletes the favicon image records with the given identifiers from memory + store and
+    /// Deletes the favicon image records with the given identifiers from memory + store and
     /// posts `.faviconCacheUpdated`. References pointing at a deleted favicon resolve to a cache miss and
     /// re-fetch on the next visit. No-op for an empty set.
     @MainActor

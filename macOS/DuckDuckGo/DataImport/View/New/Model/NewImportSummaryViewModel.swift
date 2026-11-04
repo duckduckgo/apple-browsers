@@ -55,6 +55,7 @@ final class NewImportSummaryViewModel: ObservableObject {
 
         var image: NSImage
         var primaryText: String
+        var secondaryText: String?
         var duplicateText: String?
         var failureText: String?
         var shortcut: ShortcutItem?
@@ -123,7 +124,7 @@ final class NewImportSummaryViewModel: ObservableObject {
             showBookmarksBarStatus = isOn
         case .passwords:
             showPasswordsPinnedStatus = isOn
-        case .creditCards:
+        case .creditCards, .history:
             break
         }
         updateShortcutsState()
@@ -139,7 +140,7 @@ final class NewImportSummaryViewModel: ObservableObject {
                 items[index].setShortcutState(showBookmarksBarStatus)
             case .passwords:
                 items[index].setShortcutState(showPasswordsPinnedStatus)
-            case .creditCards:
+            case .creditCards, .history:
                 break
             }
         }
@@ -154,11 +155,21 @@ final class NewImportSummaryViewModel: ObservableObject {
                 return .failure(title: UserText.importCouldNotImportPasswords)
             case .creditCards:
                 return .failure(title: UserText.importCouldNotImportCreditCards)
+            case .history:
+                return .failure(title: UserText.importCouldNotImportHistory)
             }
         }
 
         let image = image(for: dataType)
         let primaryText = primaryText(for: dataType, summary: typeSummary)
+        // History reports the visits already in history as a count, without per-item details.
+        let secondaryText: String? = if dataType != .history {
+            nil
+        } else if typeSummary.duplicate > 0 {
+            UserText.importSummaryHistoryTotal(typeSummary.successful + typeSummary.duplicate)
+        } else {
+            UserText.importSummaryHistoryTimeRange
+        }
         let duplicateText = duplicateText(from: typeSummary)
         let failureText = failureText(from: typeSummary)
         let shortcut = shortcutItem(for: dataType)
@@ -167,6 +178,7 @@ final class NewImportSummaryViewModel: ObservableObject {
             type: dataType,
             image: image,
             primaryText: primaryText,
+            secondaryText: secondaryText,
             duplicateText: duplicateText,
             failureText: failureText,
             shortcut: shortcut
@@ -183,6 +195,8 @@ final class NewImportSummaryViewModel: ObservableObject {
             return DesignSystemImages.Color.Size24.keyCheck
         case .creditCards:
             return DesignSystemImages.Color.Size24.creditCardCheck
+        case .history:
+            return DesignSystemImages.Color.Size24.history
         }
     }
 
@@ -198,6 +212,8 @@ final class NewImportSummaryViewModel: ObservableObject {
                 return UserText.importSummaryPasswordsImported(summary.successful)
             case .creditCards:
                 return UserText.importSummaryCreditCardsImported(summary.successful)
+            case .history:
+                return UserText.importSummaryHistoryImported(summary.successful)
             }
         } else {
             switch dataType {
@@ -207,6 +223,8 @@ final class NewImportSummaryViewModel: ObservableObject {
                 return UserText.importSummaryPasswordsImportedPartial(summary.successful, total)
             case .creditCards:
                 return UserText.importSummaryCreditCardsImportedPartial(summary.successful, total)
+            case .history:
+                return UserText.importSummaryHistoryImported(summary.successful)
             }
         }
     }
@@ -227,7 +245,7 @@ final class NewImportSummaryViewModel: ObservableObject {
             return ShortcutItem(title: UserText.importShortcutsBookmarksTitle, isOn: false)
         case .passwords:
             return ShortcutItem(title: UserText.importShortcutsPasswordsTitle, isOn: false)
-        case .creditCards:
+        case .creditCards, .history:
             return nil
         }
     }

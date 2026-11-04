@@ -55,6 +55,8 @@ final class BrowserTabViewController: NSViewController {
 
     private let activeRemoteMessageModel: ActiveRemoteMessageModel
     private let newTabPageActionsManager: () -> NewTabPageActionsManager
+    private let newTabPageCustomizationModel: NewTabPageCustomBackgroundPublishing
+    private let themeManager: ThemeManaging
 
     private var _newTabPageWebViewModel: NewTabPageWebViewModel?
     private lazy var newTabPageRemoteMessageImpressionReporter = NewTabPageRemoteMessageImpressionReporter { [weak self] messageID in
@@ -72,7 +74,9 @@ final class BrowserTabViewController: NSViewController {
         let newTabPageWebViewModel = NewTabPageWebViewModel(
             featureFlagger: featureFlagger,
             actionsManager: newTabPageActionsManager(),
-            newTabPageLoadMetrics: newTabPageLoadMetrics
+            newTabPageLoadMetrics: newTabPageLoadMetrics,
+            customizationModel: newTabPageCustomizationModel,
+            themeManager: themeManager
         )
         _newTabPageWebViewModel = newTabPageWebViewModel
         return newTabPageWebViewModel
@@ -116,6 +120,7 @@ final class BrowserTabViewController: NSViewController {
     private let permissionManager: PermissionManagerProtocol
     private let pinningManager: PinningManager
     private let adBlockingAvailability: AdBlockingAvailabilityProviding
+    private let webExtensionAvailability: WebExtensionAvailabilityProviding
 
     private let tld: TLD
     private let onContentOverlayDismissalRequested: @MainActor () -> Void
@@ -179,6 +184,8 @@ final class BrowserTabViewController: NSViewController {
          subscriptionUpsellMetrics: OnboardingSubscriptionUpsellMetricsReporting = OnboardingSubscriptionUpsellMetricsReporter(),
          featureFlagger: FeatureFlagger = NSApp.delegateTyped.featureFlagger,
          newTabPageActionsManager: @autoclosure @escaping @MainActor () -> NewTabPageActionsManager = NSApp.delegateTyped.newTabPageCoordinator.actionsManager,
+         newTabPageCustomizationModel: NewTabPageCustomBackgroundPublishing = NSApp.delegateTyped.newTabPageCustomizationModel,
+         themeManager: ThemeManaging = NSApp.delegateTyped.themeManager,
          activeRemoteMessageModel: ActiveRemoteMessageModel = NSApp.delegateTyped.activeRemoteMessageModel,
          privacyConfigurationManager: PrivacyConfigurationManaging = NSApp.delegateTyped.privacyFeatures.contentBlocking.privacyConfigurationManager,
          defaultBrowserPreferences: DefaultBrowserPreferences,
@@ -198,6 +205,7 @@ final class BrowserTabViewController: NSViewController {
          permissionManager: PermissionManagerProtocol,
          pinningManager: PinningManager,
          adBlockingAvailability: AdBlockingAvailabilityProviding = NSApp.delegateTyped.adBlockingAvailability,
+         webExtensionAvailability: WebExtensionAvailabilityProviding = NSApp.delegateTyped.webExtensionAvailability,
          tld: TLD = NSApp.delegateTyped.tld,
          onContentOverlayDismissalRequested: @escaping @MainActor () -> Void = {}
     ) {
@@ -210,6 +218,8 @@ final class BrowserTabViewController: NSViewController {
         self.subscriptionUpsellMetrics = subscriptionUpsellMetrics
         self.featureFlagger = featureFlagger
         self.newTabPageActionsManager = newTabPageActionsManager
+        self.newTabPageCustomizationModel = newTabPageCustomizationModel
+        self.themeManager = themeManager
         self.activeRemoteMessageModel = activeRemoteMessageModel
         self.privacyConfigurationManager = privacyConfigurationManager
         self.defaultBrowserPreferences = defaultBrowserPreferences
@@ -229,6 +239,7 @@ final class BrowserTabViewController: NSViewController {
         self.permissionManager = permissionManager
         self.pinningManager = pinningManager
         self.adBlockingAvailability = adBlockingAvailability
+        self.webExtensionAvailability = webExtensionAvailability
 
         self.tld = tld
         self.onContentOverlayDismissalRequested = onContentOverlayDismissalRequested
@@ -458,7 +469,7 @@ final class BrowserTabViewController: NSViewController {
     @objc
     private func onDBPFeatureDisabled(_ notification: Notification) {
         Task { @MainActor in
-            tabCollectionViewModel.removeAll(with: .dataBrokerProtection)
+            tabCollectionViewModel.removeAll(matching: { $0.isDataBrokerProtection })
         }
     }
 
@@ -511,7 +522,7 @@ final class BrowserTabViewController: NSViewController {
     @objc
     private func onSubscriptionUpgradeFromFreemium(_ notification: Notification) {
         Task { @MainActor in
-            tabCollectionViewModel.removeAll(with: .dataBrokerProtection)
+            tabCollectionViewModel.removeAll(matching: { $0.isDataBrokerProtection })
         }
     }
 
@@ -631,7 +642,7 @@ final class BrowserTabViewController: NSViewController {
 
     private func removeDataBrokerViewIfNecessary(for tabs: [AnyTab]) {
         if let dataBrokerProtectionHomeViewController,
-           !tabs.contains(where: { $0.content == .dataBrokerProtection }) {
+           !tabs.contains(where: { $0.content.isDataBrokerProtection }) {
             dataBrokerProtectionHomeViewController.removeCompletely()
             self.dataBrokerProtectionHomeViewController = nil
         }
@@ -1026,6 +1037,9 @@ final class BrowserTabViewController: NSViewController {
         case .newtab:
             return newTabPageWebViewModel.webView
         case .webExtensionUrl(let url):
+            if let webView = tabViewModel.tab.webExtensionPageWebView {
+                return webView
+            }
             if #available(macOS 15.4, *), let webExtensionManager = NSApp.delegateTyped.webExtensionManager,
                let context = webExtensionManager.extensionContext(for: url),
                let configuration = context.webViewConfiguration {
@@ -1034,9 +1048,18 @@ final class BrowserTabViewController: NSViewController {
                 let webView = WebView(frame: .zero,
                                       configuration: configuration,
                                       featureFlagger: featureFlagger,
-                                      privacyConfig: privacyConfigurationManager.privacyConfig)
+                                      privacyConfig: privacyConfigurationManager.privacyConfig,
+                                      sharesUserScripts: true)
+                // The tab handles the page's `window.close()`, alerts and new windows, as for its own web view.
+                webView.uiDelegate = tabViewModel.tab
+                // Route navigation out of extension pages through the browser tab.
+                if let manager = webExtensionManager as? WebExtensionManager,
+                   let handler = manager.internalSiteHandler as? WebExtensionInternalSiteHandler {
+                    webView.navigationDelegate = handler.navigationDelegate
+                }
                 let request = URLRequest(url: url)
                 webView.load(request)
+                tabViewModel.tab.webExtensionPageWebView = webView
                 return webView
             }
             return tabViewModel.tab.webView
@@ -1200,6 +1223,7 @@ final class BrowserTabViewController: NSViewController {
              .url(_, _, source: .historyEntry),
              .url(_, _, source: .bookmark),
              .url(_, _, source: .ui),
+             .url(_, _, source: .attributedUI),
              .url(_, _, source: .link),
              .url(_, _, source: .appOpenUrl),
              .url(_, _, source: .switchToOpenTab),
@@ -1373,11 +1397,8 @@ final class BrowserTabViewController: NSViewController {
         case .history:
             updateTabIfNeeded(tabViewModel: tabViewModel)
 
-        case .dataBrokerProtection:
-            removeAllTabContent()
-            let dataBrokerProtectionViewController = dataBrokerProtectionHomeViewControllerCreatingIfNeeded()
-            self.previouslySelectedTab = tabCollectionViewModel.selectedTab
-            addAndLayoutChildBesideSidebar(dataBrokerProtectionViewController)
+        case let .dataBrokerProtection(context):
+            showDataBrokerProtection(freemiumEntryPoint: context.freemiumEntryPoint)
 
         case .webExtensionUrl:
             updateTabIfNeeded(tabViewModel: tabViewModel)
@@ -1415,6 +1436,14 @@ final class BrowserTabViewController: NSViewController {
             visibleTabID,
             message: activeRemoteMessageModel.newTabPageRemoteMessage
         )
+    }
+
+    private func showDataBrokerProtection(freemiumEntryPoint: FreemiumDBPEntryPoint?) {
+        removeAllTabContent()
+        let dataBrokerProtectionViewController = dataBrokerProtectionHomeViewControllerCreatingIfNeeded()
+        dataBrokerProtectionViewController.setFreemiumEntryPointIfKnown(freemiumEntryPoint)
+        self.previouslySelectedTab = tabCollectionViewModel.selectedTab
+        addAndLayoutChildBesideSidebar(dataBrokerProtectionViewController)
     }
 
     func updateTabIfNeeded(tabViewModel: TabViewModel?) {
@@ -1593,7 +1622,8 @@ final class BrowserTabViewController: NSViewController {
                 subscriptionManager: subscriptionManager,
                 winBackOfferVisibilityManager: winBackOfferVisibilityManager,
                 pinningManager: pinningManager,
-                adBlockingAvailability: adBlockingAvailability
+                adBlockingAvailability: adBlockingAvailability,
+                webExtensionAvailability: webExtensionAvailability
             )
             preferencesViewController.delegate = self
             self.preferencesViewController = preferencesViewController

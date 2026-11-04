@@ -24,7 +24,7 @@ protocol PromptBarContentHosting: AnyObject {
 
     var viewController: NSViewController { get }
 
-    /// True while a menu, file picker or modal is up: those take key away, and must not dismiss the bar.
+    /// True while a menu, file picker, modal or screenshot capture is up: those take key away, and must not dismiss the bar.
     var isPresentingAuxiliaryUI: Bool { get }
 
     /// Whether the prompt holds anything the user typed. Read at dismissal to tell an abandoned
@@ -38,6 +38,9 @@ protocol PromptBarContentHosting: AnyObject {
 
     /// Fired just *before* the prompt is handed off, so the bar is out of the way.
     var onSubmit: (() -> Void)? { get set }
+
+    /// Shows the launcher introduction message for the current presentation only.
+    func showLauncherIntroduction(shortcut: String)
 
     func prepareForPresentation()
 

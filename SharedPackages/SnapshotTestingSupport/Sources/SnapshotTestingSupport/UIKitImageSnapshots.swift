@@ -27,6 +27,7 @@ public func assertImageSnapshot(
     strategy: SnapshotImageStrategy = .allAppearances,
     size: SnapshotImageSize,
     record: Bool = false,
+    precision: Float = 0.9999,
     perceptualPrecision: Float = 0.98,
     fileID: StaticString = #fileID,
     file: StaticString = #filePath,
@@ -48,6 +49,7 @@ public func assertImageSnapshot(
             of: view,
             as: .image(
                 drawHierarchyInKeyWindow: false,
+                precision: precision,
                 perceptualPrecision: perceptualPrecision,
                 size: snapshotSize,
                 traits: configuration.traits
@@ -69,6 +71,7 @@ public func assertImageSnapshot(
     strategy: SnapshotImageStrategy = .allAppearances,
     size: SnapshotImageSize,
     record: Bool = false,
+    precision: Float = 0.9999,
     perceptualPrecision: Float = 0.98,
     fileID: StaticString = #fileID,
     file: StaticString = #filePath,
@@ -90,6 +93,7 @@ public func assertImageSnapshot(
             of: viewController,
             as: .image(
                 drawHierarchyInKeyWindow: false,
+                precision: precision,
                 perceptualPrecision: perceptualPrecision,
                 size: snapshotSize,
                 traits: configuration.traits
@@ -111,7 +115,9 @@ public func assertImageSnapshot<Value: SwiftUI.View>(
     strategy: SnapshotImageStrategy = .allAppearances,
     size: SnapshotImageSize,
     record: Bool = false,
+    precision: Float = 0.9999,
     perceptualPrecision: Float = 0.98,
+    drawHierarchyInKeyWindow: Bool = false,
     fileID: StaticString = #fileID,
     file: StaticString = #filePath,
     testName: String = #function,
@@ -123,6 +129,7 @@ public func assertImageSnapshot<Value: SwiftUI.View>(
     let configurations = strategy.configurations(for: .iOS, size: size)
     guard assertSnapshotConfigurations(configurations, fileID: fileID, file: file, line: line, column: column) else { return }
     guard assertSnapshotEnvironment(fileID: fileID, file: file, line: line, column: column) else { return }
+    guard assertKeyWindowAvailable(if: drawHierarchyInKeyWindow, fileID: fileID, file: file, line: line, column: column) else { return }
 
     for configuration in configurations {
         let rootView = view.environment(\.colorScheme, configuration.appearance.colorScheme)
@@ -131,7 +138,9 @@ public func assertImageSnapshot<Value: SwiftUI.View>(
             configuration: configuration,
             size: size,
             record: record,
+            precision: precision,
             perceptualPrecision: perceptualPrecision,
+            drawHierarchyInKeyWindow: drawHierarchyInKeyWindow,
             fileID: fileID,
             file: file,
             testName: testName,
@@ -219,7 +228,9 @@ private func assertSwiftUIImageSnapshot<Value: SwiftUI.View>(
     configuration: SnapshotImageConfiguration,
     size: SnapshotImageSize,
     record: Bool,
+    precision: Float,
     perceptualPrecision: Float,
+    drawHierarchyInKeyWindow: Bool,
     fileID: StaticString,
     file: StaticString,
     testName: String,
@@ -231,7 +242,8 @@ private func assertSwiftUIImageSnapshot<Value: SwiftUI.View>(
         assertSnapshot(
             of: view.fixedSize(),
             as: .image(
-                drawHierarchyInKeyWindow: false,
+                drawHierarchyInKeyWindow: drawHierarchyInKeyWindow,
+                precision: precision,
                 perceptualPrecision: perceptualPrecision,
                 layout: .sizeThatFits,
                 traits: configuration.traits
@@ -250,7 +262,8 @@ private func assertSwiftUIImageSnapshot<Value: SwiftUI.View>(
         assertSnapshot(
             of: view.frame(width: SnapshotDevice.iPhoneDefault.size.width).fixedSize(),
             as: .image(
-                drawHierarchyInKeyWindow: false,
+                drawHierarchyInKeyWindow: drawHierarchyInKeyWindow,
+                precision: precision,
                 perceptualPrecision: perceptualPrecision,
                 layout: .sizeThatFits,
                 traits: configuration.traits
@@ -278,7 +291,8 @@ private func assertSwiftUIImageSnapshot<Value: SwiftUI.View>(
                 isPad: configuration.device == .iPadDefault
             ),
             as: .image(
-                drawHierarchyInKeyWindow: false,
+                drawHierarchyInKeyWindow: drawHierarchyInKeyWindow,
+                precision: precision,
                 perceptualPrecision: perceptualPrecision,
                 layout: .fixed(width: snapshotSize.width, height: snapshotSize.height),
                 traits: configuration.traits
@@ -302,7 +316,8 @@ private func assertSwiftUIImageSnapshot<Value: SwiftUI.View>(
         assertSnapshot(
             of: view,
             as: .image(
-                drawHierarchyInKeyWindow: false,
+                drawHierarchyInKeyWindow: drawHierarchyInKeyWindow,
+                precision: precision,
                 perceptualPrecision: perceptualPrecision,
                 layout: .fixed(width: snapshotSize.width, height: snapshotSize.height),
                 traits: configuration.traits
@@ -319,6 +334,15 @@ private func assertSwiftUIImageSnapshot<Value: SwiftUI.View>(
     }
 }
 
+private enum PhoneSheetMetrics {
+    static let screenInset: CGFloat = 8
+    static let cornerRadius: CGFloat = 40
+    static let homeIndicatorInset: CGFloat = 34
+    static let grabberSize = CGSize(width: 56, height: 4)
+    static let grabberTopOffset: CGFloat = 6
+    static let backdropDimOpacity: Double = 0.2
+}
+
 private struct SheetSnapshotContainer<Content: SwiftUI.View>: SwiftUI.View {
     let content: Content
     let snapshotSize: CGSize
@@ -329,10 +353,29 @@ private struct SheetSnapshotContainer<Content: SwiftUI.View>: SwiftUI.View {
             Color(uiColor: .systemBackground)
                 .ignoresSafeArea()
 
-            content
-                .frame(width: contentWidth)
-                .fixedSize(horizontal: false, vertical: true)
-                .clipped()
+            if isPad {
+                content
+                    .frame(width: contentWidth)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .clipped()
+            } else {
+                Color.black
+                    .opacity(PhoneSheetMetrics.backdropDimOpacity)
+                    .ignoresSafeArea()
+
+                content
+                    .frame(width: contentWidth)
+                    .bottomSafeAreaPadding(PhoneSheetMetrics.homeIndicatorInset)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .overlay(alignment: .top) {
+                        Capsule()
+                            .fill(Color(uiColor: .tertiaryLabel))
+                            .frame(width: PhoneSheetMetrics.grabberSize.width, height: PhoneSheetMetrics.grabberSize.height)
+                            .padding(.top, PhoneSheetMetrics.grabberTopOffset)
+                    }
+                    .clipShape(RoundedRectangle(cornerRadius: PhoneSheetMetrics.cornerRadius, style: .continuous))
+                    .padding(.bottom, PhoneSheetMetrics.screenInset)
+            }
         }
         .frame(width: snapshotSize.width, height: snapshotSize.height)
     }
@@ -346,7 +389,19 @@ private struct SheetSnapshotContainer<Content: SwiftUI.View>: SwiftUI.View {
     }
 
     private var horizontalPadding: CGFloat {
-        isPad ? 140 : 0
+        isPad ? 140 : PhoneSheetMetrics.screenInset
+    }
+}
+
+private extension SwiftUI.View {
+
+    @ViewBuilder
+    func bottomSafeAreaPadding(_ length: CGFloat) -> some SwiftUI.View {
+        if #available(iOS 17, *) {
+            safeAreaPadding(.bottom, length)
+        } else {
+            padding(.bottom, length)
+        }
     }
 }
 
@@ -373,6 +428,38 @@ private extension SnapshotDevice {
             UITraitCollection(verticalSizeClass: verticalSizeClass)
         ])
     }
+}
+
+private func assertKeyWindowAvailable(
+    if drawHierarchyInKeyWindow: Bool,
+    fileID: StaticString,
+    file: StaticString,
+    line: UInt,
+    column: UInt
+) -> Bool {
+    guard drawHierarchyInKeyWindow, !hasKeyWindow else { return true }
+
+    recordSnapshotIssue(
+        "drawHierarchyInKeyWindow requires an app-hosted test target (e.g. iOS/DuckDuckGoTests); package test targets have no key window.",
+        fileID: fileID,
+        file: file,
+        line: line,
+        column: column
+    )
+    return false
+}
+
+private var hasKeyWindow: Bool {
+    let sharedApplication = NSSelectorFromString("sharedApplication")
+    guard UIApplication.responds(to: sharedApplication),
+          let application = UIApplication.perform(sharedApplication)?.takeUnretainedValue() as? UIApplication else {
+        return false
+    }
+
+    return application.connectedScenes
+        .compactMap { $0 as? UIWindowScene }
+        .flatMap(\.windows)
+        .contains(where: \.isKeyWindow)
 }
 
 private extension SnapshotAppearance {

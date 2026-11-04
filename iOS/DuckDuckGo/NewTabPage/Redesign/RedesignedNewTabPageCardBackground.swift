@@ -27,7 +27,7 @@ struct RedesignedNewTabPageCardBackground: View {
     var body: some View {
         let shape = RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
         return shape
-            .fill(Color(designSystemColor: .surfaceSecondary))
+            .fill(Color(singleUseColor: .newTabPageSearchCardBackground))
             .overlay(shape.strokeBorder(Color(designSystemColor: .shadowPrimary), lineWidth: Metrics.borderWidth))
             .overlay(
                 shape

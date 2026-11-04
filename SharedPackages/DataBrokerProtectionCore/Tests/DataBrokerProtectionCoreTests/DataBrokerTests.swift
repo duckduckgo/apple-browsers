@@ -68,6 +68,29 @@ final class DataBrokerTests: XCTestCase {
         XCTAssertEqual(brokerResource.rawJSON, expectedRawBytes)
     }
 
+    func testDecode_userAgentForCurrentPlatform_isCustomUserAgent() throws {
+        let broker = try decodeBroker(userAgentJSON: #"{ "macOS": "macOS-UA", "iOS": "iOS-UA", "android": null }"#)
+
+#if os(macOS)
+        XCTAssertEqual(broker.customUserAgent, "macOS-UA")
+#else
+        XCTAssertEqual(broker.customUserAgent, "iOS-UA")
+#endif
+    }
+
+    func testDecode_emptyOrNullUserAgent_isNil() throws {
+        XCTAssertNil(try decodeBroker(userAgentJSON: #"{ "macOS": "", "iOS": "" }"#).customUserAgent)
+        XCTAssertNil(try decodeBroker(userAgentJSON: #"{ "macOS": null, "iOS": null }"#).customUserAgent)
+        XCTAssertNil(try decodeBroker(userAgentJSON: "null").customUserAgent)
+        XCTAssertNil(try decodeBroker(userAgentJSON: nil).customUserAgent)
+    }
+
+    private func decodeBroker(userAgentJSON: String?) throws -> DataBroker {
+        let userAgentField = userAgentJSON.map { ", \"userAgent\": \($0)" } ?? ""
+        let json = #"{ "name": "example.com", "url": "example.com", "version": "0.1.0", "steps": []"# + userAgentField + "}"
+        return try JSONDecoder().decode(DataBroker.self, from: Data(json.utf8))
+    }
+
     func testInitInvalidBrokerWithUnsupportedStep() throws {
         let jsonURL = Bundle.module.url(forResource: "invalid-broker-with-unsupported-step", withExtension: "json", subdirectory: "BundleResources")!
         let expectation = XCTestExpectation(description: "Unsupported step type")

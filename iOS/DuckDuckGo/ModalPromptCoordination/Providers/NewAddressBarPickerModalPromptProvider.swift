@@ -63,6 +63,7 @@ final class NewAddressBarPickerModalPromptProvider: ModalPromptProvider {
         pickerViewController.isModalInPresentation = true
 
         return ModalPromptConfiguration(
+            exposureID: .newAddressBarPicker,
             viewController: pickerViewController,
             animated: true
         )

@@ -101,6 +101,9 @@ final class SyncService {
                 canUseExchangeV2Point1: {
                     featureFlagger.isFeatureOn(for: FeatureFlag.syncCanUseExchangeV2Point1)
                 },
+                canSendExchangeChannelSecret: {
+                    featureFlagger.isFeatureOn(for: FeatureFlag.syncCanSendExchangeChannelSecret)
+                },
                 canWriteUnifiedDeviceList: {
                     featureFlagger.isFeatureOn(for: FeatureFlag.syncCanWriteUnifiedDeviceList)
                 },

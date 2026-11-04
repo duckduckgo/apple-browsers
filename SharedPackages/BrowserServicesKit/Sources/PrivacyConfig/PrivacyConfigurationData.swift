@@ -143,6 +143,7 @@ public struct PrivacyConfigurationData {
             case settings
             case features
             case minSupportedVersion
+            case maxSupportedVersion
             case hash
         }
 
@@ -150,6 +151,7 @@ public struct PrivacyConfigurationData {
             enum CodingKeys: String {
                 case state
                 case minSupportedVersion
+                case maxSupportedVersion
                 case rollout
                 case cohorts
                 case targets
@@ -204,6 +206,7 @@ public struct PrivacyConfigurationData {
 
             public let state: FeatureState
             public let minSupportedVersion: FeatureSupportedVersion?
+            public let maxSupportedVersion: FeatureSupportedVersion?
             public let rollout: Rollout?
             public let cohorts: [Cohort]?
             public let targets: [Target]?
@@ -216,6 +219,7 @@ public struct PrivacyConfigurationData {
 
                 self.state = state
                 self.minSupportedVersion = json[CodingKeys.minSupportedVersion.rawValue] as? String
+                self.maxSupportedVersion = json[CodingKeys.maxSupportedVersion.rawValue] as? String
 
                 if let rollout = json[CodingKeys.rollout.rawValue] as? [String: Any] {
                     self.rollout = Rollout(json: rollout)
@@ -250,6 +254,7 @@ public struct PrivacyConfigurationData {
         public let settings: FeatureSettings
         public let features: Features
         public let minSupportedVersion: FeatureSupportedVersion?
+        public let maxSupportedVersion: FeatureSupportedVersion?
         public let hash: String?
 
         public init?(json: [String: Any]) {
@@ -272,6 +277,7 @@ public struct PrivacyConfigurationData {
             }
             self.features = features
             self.minSupportedVersion = json[CodingKeys.minSupportedVersion.rawValue] as? String
+            self.maxSupportedVersion = json[CodingKeys.maxSupportedVersion.rawValue] as? String
             self.hash = json[CodingKeys.hash.rawValue] as? String
         }
 
@@ -280,11 +286,13 @@ public struct PrivacyConfigurationData {
                     settings: [String: Any] = [:],
                     features: Features = [:],
                     minSupportedVersion: String? = nil,
+                    maxSupportedVersion: String? = nil,
                     hash: String? = nil) {
             self.state = state
             self.exceptions = exceptions
             self.settings = settings
             self.minSupportedVersion = minSupportedVersion
+            self.maxSupportedVersion = maxSupportedVersion
             self.features = features
             self.hash = hash
         }
@@ -436,6 +444,9 @@ extension PrivacyConfigurationData.PrivacyFeature {
         if let minVersion = minSupportedVersion {
             dict[CodingKeys.minSupportedVersion.rawValue] = minVersion
         }
+        if let maxVersion = maxSupportedVersion {
+            dict[CodingKeys.maxSupportedVersion.rawValue] = maxVersion
+        }
         if let hash = hash {
             dict[CodingKeys.hash.rawValue] = hash
         }
@@ -449,6 +460,9 @@ extension PrivacyConfigurationData.PrivacyFeature.Feature {
         dict[CodingKeys.state.rawValue] = state
         if let minVersion = minSupportedVersion {
             dict[CodingKeys.minSupportedVersion.rawValue] = minVersion
+        }
+        if let maxVersion = maxSupportedVersion {
+            dict[CodingKeys.maxSupportedVersion.rawValue] = maxVersion
         }
         if let rollout = rollout?.toJSONDictionary() {
             dict[CodingKeys.rollout.rawValue] = rollout

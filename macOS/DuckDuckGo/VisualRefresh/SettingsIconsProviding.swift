@@ -33,6 +33,7 @@ protocol SettingsIconsProviding {
     var generalIcon: NSImage { get }
     var syncAndBackupIcon: NSImage { get }
     var appearanceIcon: NSImage { get }
+    var extensionsIcon: NSImage { get }
     var passwordsAndAutoFillIcon: NSImage { get }
     var accessibilityIcon: NSImage { get }
     var dataClearingIcon: NSImage { get }
@@ -62,12 +63,13 @@ final class CurrentSettingsIconProvider: SettingsIconsProviding {
     var generalIcon: NSImage = DesignSystemImages.Color.Size16.settings
     var syncAndBackupIcon: NSImage = DesignSystemImages.Color.Size16.sync
     var appearanceIcon: NSImage = DesignSystemImages.Color.Size16.appearance
+    var extensionsIcon: NSImage = DesignSystemImages.Color.Size16.extensions
     var passwordsAndAutoFillIcon: NSImage = DesignSystemImages.Color.Size16.key
     var accessibilityIcon: NSImage = DesignSystemImages.Color.Size16.accessibility
     var dataClearingIcon: NSImage = DesignSystemImages.Color.Size16.fire
     var duckPlayerIcon: NSImage = DesignSystemImages.Color.Size16.videoPlayer
     var youTubeAdBlockingIcon: NSImage = DesignSystemImages.Color.Size16.adsBlocked
-    var websitePermissionsIcon: NSImage = DesignSystemImages.Glyphs.Size16.permissions
+    var websitePermissionsIcon: NSImage = DesignSystemImages.Color.Size16.websitePermissions
     var duckAIIcon: NSImage = DesignSystemImages.Color.Size16.aiChat
     var paidAIChatIcon: NSImage = DesignSystemImages.Color.Size16.paidAiChat
     var aboutIcon: NSImage = DesignSystemImages.Color.Size16.duckDuckGo

@@ -115,6 +115,43 @@ struct SnapshotImageStrategyTests {
 
     @available(iOS 16, macOS 13, *)
     @Test(.timeLimit(.minutes(1)))
+    func iOSiPhoneAllAppearancesExpandsToPhoneOnlyForScreenSnapshots() {
+        let configurations = SnapshotImageStrategy.iPhoneAllAppearances.configurations(for: .iOS, size: .screen)
+
+        #expect(configurations.map(\.name) == ["iPhoneDefault_light", "iPhoneDefault_dark"])
+        #expect(configurations.map(\.device) == [.iPhoneDefault, .iPhoneDefault])
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test(.timeLimit(.minutes(1)))
+    func iOSiPhoneSingleExpandsToOnePhoneConfiguration() {
+        let configurations = SnapshotImageStrategy.iPhoneSingle(.dark).configurations(for: .iOS, size: .screen)
+
+        #expect(configurations == [SnapshotImageConfiguration(appearance: .dark, device: .iPhoneDefault)])
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test(.timeLimit(.minutes(1)))
+    func iOSiPhoneAllAppearancesKeepsPhoneDeviceForIntrinsicSnapshots() {
+        let configurations = SnapshotImageStrategy.iPhoneAllAppearances.configurations(
+            for: .iOS,
+            size: .intrinsicContentSize
+        )
+
+        #expect(configurations.map(\.device) == [.iPhoneDefault, .iPhoneDefault])
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test(.timeLimit(.minutes(1)))
+    func macOSiPhoneAllAppearancesIgnoresDevices() {
+        let configurations = SnapshotImageStrategy.iPhoneAllAppearances.configurations(for: .macOS, size: .screen)
+
+        #expect(configurations.map(\.name) == ["light", "dark"])
+        #expect(configurations.map(\.device) == [nil, nil])
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test(.timeLimit(.minutes(1)))
     func customConfigurationsArePreserved() {
         let custom = [
             SnapshotImageConfiguration(

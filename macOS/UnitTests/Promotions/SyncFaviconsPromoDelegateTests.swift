@@ -191,7 +191,7 @@ final class SyncFaviconsPromoDelegateTests: XCTestCase {
 
         let result = sut.dismissResult(enableFaviconsFetching: true)
 
-        XCTAssertEqual(result, .actioned)
+        XCTAssertEqual(result, .actioned())
         XCTAssertTrue(syncBookmarksAdapter.isFaviconsFetchingEnabled)
         XCTAssertTrue(scheduler.notifyDataChangedCalled)
     }
@@ -200,7 +200,7 @@ final class SyncFaviconsPromoDelegateTests: XCTestCase {
         sut = SyncFaviconsPromoDelegate(featureFlagger: featureFlagger, syncService: nil, syncBookmarksAdapter: nil, windowControllersManager: windowControllersManager, storage: storage)
 
         XCTAssertEqual(sut.dismissResult(enableFaviconsFetching: false), .ignored())
-        XCTAssertEqual(sut.dismissResult(enableFaviconsFetching: true), .actioned)
+        XCTAssertEqual(sut.dismissResult(enableFaviconsFetching: true), .actioned())
     }
 
     // MARK: - Trigger wiring

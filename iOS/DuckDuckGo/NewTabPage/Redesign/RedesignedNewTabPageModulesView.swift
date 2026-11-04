@@ -22,11 +22,15 @@ import SwiftUI
 /// Shared module arrangement. Each presentation owns its scrolling and supplies existing models.
 struct RedesignedNewTabPageModulesView: View {
     let favoritesModel: FavoritesViewModel?
+    let onAddFavorite: (() -> Void)?
     private let customizationStore: NewTabPageCustomizationStore
     @State private var isFavoritesSectionVisible: Bool
 
-    init(favoritesModel: FavoritesViewModel?, customizationStore: NewTabPageCustomizationStore = NewTabPageCustomizationStore()) {
+    init(favoritesModel: FavoritesViewModel?,
+         onAddFavorite: (() -> Void)? = nil,
+         customizationStore: NewTabPageCustomizationStore = NewTabPageCustomizationStore()) {
         self.favoritesModel = favoritesModel
+        self.onAddFavorite = onAddFavorite
         self.customizationStore = customizationStore
         _isFavoritesSectionVisible = State(initialValue: customizationStore.isFavoritesSectionVisible)
     }
@@ -34,7 +38,7 @@ struct RedesignedNewTabPageModulesView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: Metrics.moduleSpacing) {
             if isFavoritesSectionVisible, let favoritesModel {
-                RedesignedFavoritesView(model: favoritesModel)
+                RedesignedFavoritesView(model: favoritesModel, onAddFavorite: onAddFavorite)
                     .padding(.horizontal, Metrics.horizontalPadding)
                     .padding(.bottom, Metrics.bottomPadding)
             }

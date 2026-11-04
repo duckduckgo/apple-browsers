@@ -31,7 +31,7 @@ final class DuckAISessionWideEventData: WideEventData {
         mobileMetaType: "ios-duckai-session",
         // API requires both; only mobileMetaType is read on iOS.
         desktopMetaType: "macos-duckai-session",
-        version: "1.0.0"
+        version: "1.1.0"
     )
 
     enum StatusReason: String, Codable, CaseIterable {
@@ -46,6 +46,7 @@ final class DuckAISessionWideEventData: WideEventData {
         case fireTabOpened = "fire_tab_opened"
         case searchStarted = "search_started"
         case otherNavigation = "other_navigation"
+        case chatDeleted = "chat_deleted"
     }
 
     var globalData: WideEventGlobalData

@@ -35,6 +35,7 @@ protocol KeyboardPresenting {
 @MainActor
 protocol AppOpenKeyboardHandling: AnyObject {
     var isNewTabPageVisible: Bool { get }
+    var hasInlineNewTabPageInput: Bool { get }
     var appOpenKeyboardRequestID: UUID { get }
     func runWhenAppOpenKeyboardWindowVisible(_ handler: @escaping () -> Void)
     var presentedViewController: UIViewController? { get }
@@ -48,7 +49,7 @@ protocol AppOpenKeyboardHandling: AnyObject {
 /// Callers check the flag and onboarding, which after Fire they pass in; flag-off paths keep their own conditions.
 struct NewTabPageKeyboardPolicy {
 
-    static let appOpenBackgroundThreshold = TimeInterval(20)
+    private static let appOpenBackgroundThreshold = TimeInterval(20)
 
     let onNewTab: Bool
     let onAppLaunch: Bool
@@ -65,9 +66,18 @@ struct NewTabPageKeyboardPolicy {
         onNewTabPage ? onNewTab : onAppLaunch
     }
 
+    /// Capture before a tab switch programmatically dismisses the input; only actual focus is retained.
+    func rememberInputFocusForTabSwitch(on tab: Tab, isInputFocused: Bool) {
+        tab.wasInputFocusedBeforeTabSwitch = tab.isHomeTab && isInputFocused
+    }
+
+    /// A swipe preserves the page's previous focus without counting as a new keyboard landing.
+    func shouldRestoreInputFocusOnTabSwipe(on tab: Tab, isEnabled: Bool) -> Bool {
+        isEnabled && tab.isHomeTab && tab.wasInputFocusedBeforeTabSwitch
+    }
+
     /// After Fire, New Tab decides unless onboarding is still running. A burned Duck.ai chat reopens
-    /// as a new chat that owns its input. The Search & Duck.ai address bar no longer plays a part:
-    /// its old suppression was for onboarding, which now holds the keyboard back for everyone.
+    /// as a new chat that owns its input.
     func showsKeyboardAfterFire(onDuckAITab: Bool, stillOnboarding: Bool) -> Bool {
         onNewTab && !onDuckAITab && !stillOnboarding
     }
@@ -89,15 +99,17 @@ final class KeyboardPresenter: KeyboardPresenting {
     private let runOnceModalPromptCloses: (@escaping @MainActor () -> Bool, @escaping @MainActor () -> Void) -> Bool
     private let pixelFiring: (any PixelKitFiring)?
     private let onAppLaunch: () -> Bool
+    private let scheduleForInlinePage: (@escaping () -> Void) -> Void
     private let scheduleAfterPrompt: (@escaping () -> Void) -> Void
     private let schedule: (@escaping () -> Void) -> Void
     private var hasForegroundEnded = false
 
     init(mainViewController: any AppOpenKeyboardHandling,
          featureFlagger: FeatureFlagger,
-         runOnceModalPromptCloses: @escaping (@escaping @MainActor () -> Bool, @escaping @MainActor () -> Void) -> Bool = { _, _ in false },
+         runOnceModalPromptCloses: @escaping (@escaping @MainActor () -> Bool, @escaping @MainActor () -> Void) -> Bool,
          pixelFiring: (any PixelKitFiring)? = PixelKit.shared,
          onAppLaunch: @escaping () -> Bool = { KeyboardSettings().onAppLaunch },
+         scheduleForInlinePage: @escaping (@escaping () -> Void) -> Void = { DispatchQueue.main.async(execute: $0) },
          scheduleAfterPrompt: @escaping (@escaping () -> Void) -> Void = { DispatchQueue.main.asyncAfter(deadline: .now() + 0.3, execute: $0) },
          schedule: @escaping (@escaping () -> Void) -> Void = { DispatchQueue.main.asyncAfter(deadline: .now() + 0.1, execute: $0) }) {
         self.mainViewController = mainViewController
@@ -105,36 +117,38 @@ final class KeyboardPresenter: KeyboardPresenting {
         self.runOnceModalPromptCloses = runOnceModalPromptCloses
         self.pixelFiring = pixelFiring
         self.onAppLaunch = onAppLaunch
+        self.scheduleForInlinePage = scheduleForInlinePage
         self.scheduleAfterPrompt = scheduleAfterPrompt
         self.schedule = schedule
     }
 
     func showKeyboardOnLaunch(lastBackgroundDate: Date? = nil, hasCompletedAuthentication: Bool = true, isAfterIdleReturn: Bool = false) {
-        let flagOn = featureFlagger.isFeatureOn(.alwaysShowKeyboardOnNewTabPage)
         let onAppLaunch = onAppLaunch()
-        guard flagOn || onAppLaunch else { return }
-        let isAppOpen = NewTabPageKeyboardPolicy.isAppOpen(lastBackgroundDate: lastBackgroundDate,
-                                                           hasCompletedAuthentication: !flagOn || hasCompletedAuthentication)
-        if !flagOn && isAppOpen && onAppLaunch {
+        guard featureFlagger.isFeatureOn(.alwaysShowKeyboardOnNewTabPage) else {
+            guard !hasForegroundEnded, onAppLaunch,
+                  NewTabPageKeyboardPolicy.isAppOpen(lastBackgroundDate: lastBackgroundDate) else { return }
+            let requestID = mainViewController.appOpenKeyboardRequestID
             pixelFiring?.fire(Pixel.Event.keyboardOnAppLaunchUsedDaily, frequency: .dailyAndCount)
+            mainViewController.runWhenAppOpenKeyboardWindowVisible { [self] in
+                guard isCurrentForeground(requestID) else { return }
+                schedule { [self] in
+                    guard isCurrentForeground(requestID) else { return }
+                    mainViewController.enterSearchOnAppOpen()
+                }
+            }
+            return
         }
-
+        let isAppOpen = NewTabPageKeyboardPolicy.isAppOpen(lastBackgroundDate: lastBackgroundDate,
+                                                           hasCompletedAuthentication: hasCompletedAuthentication)
         let requestID = mainViewController.appOpenKeyboardRequestID
         // Captured before any App Lock wait, which a launch prompt can be presented during.
         let screenLeftOpen = mainViewController.presentedViewController
-        let scheduleKeyboard = { [self] in
-            guard isAppOpen else { return }
-            scheduleKeyboardFocus(requestID: requestID, flagOn: flagOn, onAppLaunch: onAppLaunch)
-        }
-
-        guard flagOn else {
-            scheduleKeyboard()
-            return
-        }
         scheduleKeyboardWhenWindowVisible(requestID: requestID,
                                           isAfterIdleReturn: isAfterIdleReturn,
-                                          screenLeftOpen: screenLeftOpen,
-                                          scheduleKeyboard: scheduleKeyboard)
+                                          screenLeftOpen: screenLeftOpen) { [self] in
+            guard isAppOpen else { return }
+            scheduleKeyboardFocus(requestID: requestID, onAppLaunch: onAppLaunch)
+        }
     }
 
     private func scheduleKeyboardWhenWindowVisible(requestID: UUID,
@@ -143,13 +157,17 @@ final class KeyboardPresenter: KeyboardPresenting {
                                                    scheduleKeyboard: @escaping () -> Void) {
         // A launch task can finish after its foreground ended; replacing the next foreground's wait would drop its keyboard.
         guard isCurrentRequest(requestID) else { return }
-        mainViewController.runWhenAppOpenKeyboardWindowVisible { [self] in
+        let waitForWindow = { [self] in
             guard isCurrentRequest(requestID) else { return }
-            if isAfterIdleReturn && mainViewController.isNewTabPageVisible {
-                mainViewController.closeScreensOverNewTabPageForIdleReturn(screenLeftOpen: screenLeftOpen, completion: scheduleKeyboard)
-            } else {
+            mainViewController.runWhenAppOpenKeyboardWindowVisible { [self] in
+                guard isCurrentRequest(requestID) else { return }
                 scheduleKeyboard()
             }
+        }
+        if isAfterIdleReturn && mainViewController.isNewTabPageVisible {
+            mainViewController.closeScreensOverNewTabPageForIdleReturn(screenLeftOpen: screenLeftOpen, completion: waitForWindow)
+        } else {
+            waitForWindow()
         }
     }
 
@@ -159,26 +177,34 @@ final class KeyboardPresenter: KeyboardPresenting {
     }
 
     /// A page created for an idle return follows New Tab behavior, without the app-open time threshold.
+    /// The page is created behind App Lock; only its keyboard waits for the unlock.
     func showKeyboardOnNewTabPageCreated() {
         guard featureFlagger.isFeatureOn(.alwaysShowKeyboardOnNewTabPage) else { return }
-        scheduleKeyboardFocus(requestID: mainViewController.appOpenKeyboardRequestID, flagOn: true, onAppLaunch: false)
+        let requestID = mainViewController.appOpenKeyboardRequestID
+        scheduleKeyboardWhenWindowVisible(requestID: requestID, isAfterIdleReturn: false, screenLeftOpen: nil) { [self] in
+            scheduleKeyboardFocus(requestID: requestID, onAppLaunch: false,
+                                  onInlinePage: mainViewController.hasInlineNewTabPageInput)
+        }
     }
 
-    private func scheduleKeyboardFocus(requestID: UUID, flagOn: Bool, onAppLaunch: Bool) {
-        if flagOn, !isCurrentRequest(requestID) { return }
-        schedule { [self] in
-            if flagOn {
-                guard isCurrentRequest(requestID) else { return }
-                let waitsForLaunchPrompt = runOnceModalPromptCloses({ [weak self] in
-                    self?.isCurrentRequest(requestID) == true
-                }, { [weak self] in
-                    self?.showKeyboardAfterLaunchPrompt(requestID: requestID, onAppLaunch: onAppLaunch)
-                })
-                guard !waitsForLaunchPrompt else { return }
-                showKeyboardOnAppOpen(requestID: requestID, onAppLaunch: onAppLaunch)
-            } else {
-                mainViewController.enterSearchOnAppOpen()
-            }
+    /// Called only from the window wait, which has just checked that the request is current.
+    private func scheduleKeyboardFocus(requestID: UUID, onAppLaunch: Bool, onInlinePage: Bool = false) {
+        let focus = { [self] in
+            guard isCurrentRequest(requestID) else { return }
+            let waitsForLaunchPrompt = runOnceModalPromptCloses({ [weak self] in
+                self?.isCurrentRequest(requestID) == true
+            }, { [weak self] in
+                self?.showKeyboardAfterLaunchPrompt(requestID: requestID, onAppLaunch: onAppLaunch)
+            })
+            guard !waitsForLaunchPrompt else { return }
+            showKeyboardOnAppOpen(requestID: requestID, onAppLaunch: onAppLaunch)
+        }
+        if onInlinePage {
+            // The launch callback registers modal prompts after creating this page. Let it finish,
+            // then prepare inline focus without the delay that exposes the resting page.
+            scheduleForInlinePage(focus)
+        } else {
+            schedule(focus)
         }
     }
 
@@ -201,9 +227,12 @@ final class KeyboardPresenter: KeyboardPresenting {
     }
 
     private func isCurrentRequest(_ requestID: UUID) -> Bool {
-        !hasForegroundEnded
-            && mainViewController.appOpenKeyboardRequestID == requestID
+        isCurrentForeground(requestID)
             && featureFlagger.isFeatureOn(.alwaysShowKeyboardOnNewTabPage)
+    }
+
+    private func isCurrentForeground(_ requestID: UUID) -> Bool {
+        !hasForegroundEnded && mainViewController.appOpenKeyboardRequestID == requestID
     }
 
 }

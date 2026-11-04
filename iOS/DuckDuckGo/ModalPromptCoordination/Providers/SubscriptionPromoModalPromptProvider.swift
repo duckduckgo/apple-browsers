@@ -35,7 +35,7 @@ final class SubscriptionPromoModalPromptProvider: ModalPromptProvider {
     func provideModalPrompt() -> ModalPromptConfiguration? {
         guard coordinator.shouldPresentLaunchPrompt() else { return nil }
         let prompt = presenter.makeSubscriptionPromoPrompt()
-        return ModalPromptConfiguration(viewController: prompt, animated: true)
+        return ModalPromptConfiguration(exposureID: .subscriptionPromoModal, viewController: prompt, animated: true)
     }
 
     func didPresentModal() {

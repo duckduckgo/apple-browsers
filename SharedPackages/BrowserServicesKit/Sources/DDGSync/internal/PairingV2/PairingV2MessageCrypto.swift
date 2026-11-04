@@ -76,6 +76,15 @@ enum PairingV2KeyPairFactory {
     }
 }
 
+enum PairingV2ChannelSecretFactory {
+
+    private static let byteCount = 32
+
+    static func makeSecret() throws -> String {
+        Base64URL.encode(try JWEA256GCMCipher.randomBytes(count: byteCount))
+    }
+}
+
 /// Encrypts/decrypts Pairing V2 application messages as RSA-OAEP-256 compact JWEs, using `kid` to carry and verify the sender channel ID.
 final class PairingV2MessageCrypto {
 
@@ -92,7 +101,7 @@ final class PairingV2MessageCrypto {
         let payload = try encode(message)
         let publicKey = try makePublicKey(fromSPKIBase64URL: recipientPublicKey)
         let compactJWE = try encrypt(payload, recipientPublicKey: publicKey, kid: senderChannelID)
-        return PairingV2EncryptedMessage(payload: compactJWE)
+        return PairingV2EncryptedMessage(version: message.minimumProtocolVersion.rawValue, payload: compactJWE)
     }
 
     /// Decrypts a message with this device's private key, verifying the sender channel ID when given; returns nil for unrecognized message types.
@@ -119,6 +128,10 @@ final class PairingV2MessageCrypto {
             return try JSONEncoder.snakeCaseKeys.encode(message)
         case .recoveryCodeResponse(let message):
             return try JSONEncoder.snakeCaseKeys.encode(message)
+        case .recoveryCodeDone(let message):
+            return try JSONEncoder.snakeCaseKeys.encode(message)
+        case .bye(let message):
+            return try JSONEncoder.snakeCaseKeys.encode(message)
         }
     }
 
@@ -141,6 +154,10 @@ final class PairingV2MessageCrypto {
             return .recoveryCodeUnavailable(try JSONDecoder.snakeCaseKeys.decode(PairingV2RecoveryCodeTerminalMessage.self, from: payload))
         case PairingV2RecoveryCodeResponseMessage.messageType:
             return .recoveryCodeResponse(try JSONDecoder.snakeCaseKeys.decode(PairingV2RecoveryCodeResponseMessage.self, from: payload))
+        case PairingV2RecoveryCodeDoneMessage.messageType:
+            return .recoveryCodeDone(try JSONDecoder.snakeCaseKeys.decode(PairingV2RecoveryCodeDoneMessage.self, from: payload))
+        case PairingV2ByeMessage.messageType:
+            return .bye(try JSONDecoder.snakeCaseKeys.decode(PairingV2ByeMessage.self, from: payload))
         default:
             return nil
         }

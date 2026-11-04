@@ -413,6 +413,10 @@ final class MainMenu: NSMenu {
 
             NSMenuItem(title: "", action: #selector(MainViewController.summarize), keyEquivalent: [.command, .shift, "\r"])
                 .hidden()
+            NSMenuItem(title: "", action: #selector(MainViewController.askAboutSelection), keyEquivalent: [.option, .command, "k"])
+                .hidden()
+            NSMenuItem(title: "", action: #selector(MainViewController.translateSelection), keyEquivalent: [.option, .command, "t"])
+                .hidden()
             NSMenuItem.separator()
 
             NSMenuItem(title: UserText.mainMenuEditFind) {
@@ -679,7 +683,10 @@ final class MainMenu: NSMenu {
                     webExtensionsMenuItem = NSMenuItem(title: "Web Extensions")
                         .submenu(WebExtensionsDebugMenu(
                             webExtensionManager: webExtensionManager,
-                            cpmMessagingHealthMonitor: cpmMessagingHealthMonitor
+                            cpmMessagingHealthMonitor: cpmMessagingHealthMonitor,
+                            isBitwardenEnabled: { [featureFlagger] in
+                                featureFlagger.isFeatureOn(.webExtensionBitwarden)
+                            }
                         ))
                 }
                 if let webExtensionsMenuItem, webExtensionsMenuItem.parent == nil {
@@ -970,6 +977,7 @@ final class MainMenu: NSMenu {
                 NSMenuItem(title: "Shift New Tab daily impression", action: #selector(MainViewController.debugShiftNewTabOpeningDate))
                 shiftNextStepsDaysMenuItem
                     .withAccessibilityIdentifier(AccessibilityIdentifiers.NewTabPage.shiftMaxDaysMenuItem)
+                NSMenuItem(title: "Reset Duck.ai Suggested Prompts", action: #selector(AppDelegate.debugResetSuggestedPrompts))
             }.withAccessibilityIdentifier(AccessibilityIdentifiers.NewTabPage.newTabPageDebugMenu)
             NSMenuItem(title: "CPM") {
                 NSMenuItem(title: "Opt-in dialog") {
@@ -1224,9 +1232,7 @@ final class MainMenu: NSMenu {
             NSMenuItem(title: "Logging").submenu(setupLoggingMenu())
             NSMenuItem(title: "AI Chat").submenu(AIChatDebugMenu())
             NSMenuItem(title: "Base URL Configuration").submenu(BaseURLDebugMenu())
-            if StandardApplicationBuildType().isSparkleBuild {
-                NSMenuItem(title: "Updates").submenu(UpdatesDebugMenu(keyValueStore: UserDefaults.standard, internalUserDecider: internalUserDecider))
-            }
+            NSMenuItem(title: "Updates").submenu(UpdatesDebugMenu(keyValueStore: UserDefaults.standard, internalUserDecider: internalUserDecider))
             if AppVersion.runType.requiresEnvironment {
                 NSMenuItem(title: "Promo Queue")
                     .submenu(PromoDebugMenu())

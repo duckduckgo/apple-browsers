@@ -27,6 +27,8 @@ public protocol AIChatInputBoxHandling {
     var didSubmitQuery: PassthroughSubject<String, Never> { get }
     var didPressStopGeneratingButton: PassthroughSubject<Void, Never> { get }
     var didPressCustomizeResponsesButton: PassthroughSubject<Void, Never> { get }
+    /// Sends `true` when the native input gains focus and `false` when it loses it.
+    var didChangeInputFocus: PassthroughSubject<Bool, Never> { get }
 
     var persistedModelId: String? { get }
     var persistedReasoningEffort: AIChatReasoningEffort? { get }

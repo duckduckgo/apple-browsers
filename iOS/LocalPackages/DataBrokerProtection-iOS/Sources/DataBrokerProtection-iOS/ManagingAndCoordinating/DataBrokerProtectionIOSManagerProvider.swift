@@ -54,7 +54,6 @@ public class DataBrokerProtectionIOSManagerProvider {
                                   quickLinkOpenURLHandler: @escaping (URL) -> Void,
                                   feedbackViewCreator: @escaping () -> (any View),
                                   eventsHandler: EventMapping<JobEvent>,
-                                  applicationNameForUserAgentProvider: @escaping () -> String?,
                                   freemiumDBPUserStateManager: FreemiumDBPUserStateManaging,
                                   profileStateManager: DBPProfileStateManaging,
                                   isWebViewInspectable: Bool = false,
@@ -92,7 +91,6 @@ public class DataBrokerProtectionIOSManagerProvider {
                 sharedPixelsHandler: sharedPixelsHandler,
                 wideEvent: wideEvent,
                 eventsHandler: eventsHandler,
-                applicationNameForUserAgentProvider: applicationNameForUserAgentProvider,
                 contentBlocking: contentBlocking,
                 dbpSettings: dbpSettings,
                 contentScopeProperties: contentScopeProperties
@@ -127,7 +125,6 @@ public class DataBrokerProtectionIOSManagerProvider {
                                            sharedPixelsHandler: EventMapping<DataBrokerProtectionSharedPixels>,
                                            wideEvent: WideEventManaging,
                                            eventsHandler: EventMapping<JobEvent>,
-                                           applicationNameForUserAgentProvider: @escaping () -> String?,
                                            contentBlocking: DBPWebViewContentBlocking,
                                            dbpSettings: DataBrokerProtectionSettings,
                                            contentScopeProperties: ContentScopeProperties) throws -> DBPVaultResources {
@@ -185,7 +182,6 @@ public class DataBrokerProtectionIOSManagerProvider {
             emailConfirmationDataService: emailConfirmationDataService,
             captchaService: captchaService,
             featureFlagger: featureFlagger,
-            applicationNameForUserAgentProvider: applicationNameForUserAgentProvider,
             vpnBypassService: nil,
             jobSortPredicate: BrokerJobDataComparators.byPriorityForBackgroundTask,
             wideEvent: wideEvent,

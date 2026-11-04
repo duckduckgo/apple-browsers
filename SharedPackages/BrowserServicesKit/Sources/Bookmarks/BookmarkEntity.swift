@@ -140,8 +140,7 @@ public class BookmarkEntity: NSManagedObject {
     }
 
     public var urlObject: URL? {
-        guard let url = url else { return nil }
-        return url.isBookmarklet() ? url.toEncodedBookmarklet() : URL(string: url)
+        BookmarkUtils.url(from: url)
     }
 
     public var isRoot: Bool {
@@ -150,7 +149,17 @@ public class BookmarkEntity: NSManagedObject {
 
     public var childrenArray: [BookmarkEntity] {
         let children = children?.array as? [BookmarkEntity] ?? []
-        return children.filter { $0.isStub == false && $0.isPendingDeletion == false }
+        return children.filter(Self.isInChildrenArray)
+    }
+
+    /// Whether `childrenArray` is non-empty, without building it.
+    public var hasVisibleChildren: Bool {
+        let children = children?.array as? [BookmarkEntity] ?? []
+        return children.contains(where: Self.isInChildrenArray)
+    }
+
+    private static func isInChildrenArray(_ child: BookmarkEntity) -> Bool {
+        child.isStub == false && child.isPendingDeletion == false
     }
 
     public var favoritesArray: [BookmarkEntity] {

@@ -31,6 +31,7 @@ import DesignResourcesKitIcons
 import Freemium
 import History
 import os.log
+import Persistence
 import PixelKit
 import PrivacyConfig
 import Subscription
@@ -190,7 +191,9 @@ final class MoreOptionsMenu: NSMenu, NSMenuDelegate {
 
     @MainActor
     private func setupMenuItems() {
-        addUpdateItem()
+        if !addMoreProminentUpdatesDebugPromptItem() {
+            addUpdateItem()
+        }
 
         let feedbackString: String = {
             guard internalUserDecider.isInternalUser else {
@@ -452,15 +455,19 @@ final class MoreOptionsMenu: NSMenu, NSMenuDelegate {
     @objc func openFreemiumDBP(_ sender: NSMenuItem) {
         PixelKit.fire(MoreOptionsMenuPixel.dataBrokerProtectionActionClicked, frequency: .dailyAndStandard)
 
+        let entryPoint: FreemiumDBPEntryPoint
         if freemiumDBPUserStateManager.didPostFirstProfileSavedNotification {
+            entryPoint = .appMenuPostScan
             dataBrokerProtectionFreemiumPixelHandler.fire(DataBrokerProtectionFreemiumPixels.overFlowResultsCount)
             dataBrokerProtectionFreemiumPixelHandler.fire(DataBrokerProtectionFreemiumPixels.overFlowResults)
         } else {
+            entryPoint = .appMenuPreScan
             dataBrokerProtectionFreemiumPixelHandler.fire(DataBrokerProtectionFreemiumPixels.overFlowScanCount)
             dataBrokerProtectionFreemiumPixelHandler.fire(DataBrokerProtectionFreemiumPixels.overFlowScan)
         }
 
-        freemiumDBPPresenter.showFreemiumDBPAndSetActivated(windowControllersManager: Application.appDelegate.windowControllersManager)
+        freemiumDBPPresenter.showFreemiumDBPAndSetActivated(entryPoint: entryPoint,
+                                                            windowControllersManager: Application.appDelegate.windowControllersManager)
         notificationCenter.post(name: .freemiumDBPEntryPointActivated, object: nil)
     }
 
@@ -504,13 +511,52 @@ final class MoreOptionsMenu: NSMenu, NSMenuDelegate {
         updateMenuItem = menuItem
         addItem(menuItem)
 
-        if StandardApplicationBuildType().isSparkleBuild,
-           let releaseNotes = NSApp.mainMenuTyped.releaseNotesMenuItem.copy() as? NSMenuItem {
-            releaseNotes.withImage(DesignSystemImages.Glyphs.Size12.note, visibleOnMacOS27: true)
-            addItem(releaseNotes)
+        addReleaseNotesItemIfNeeded()
+        addItem(NSMenuItem.separator())
+    }
+
+    private func addReleaseNotesItemIfNeeded() {
+        guard StandardApplicationBuildType().isSparkleBuild,
+              let releaseNotes = NSApp.mainMenuTyped.releaseNotesMenuItem.copy() as? NSMenuItem else {
+            return
+        }
+        releaseNotes.withImage(DesignSystemImages.Glyphs.Size12.note, visibleOnMacOS27: true)
+        addItem(releaseNotes)
+    }
+
+    /// Adds the prominent update prompt selected in `Debug → Updates → More Prominent Updates`, in place of the regular update item,
+    /// while `moreProminentUpdates` is on.
+    /// - Returns: Whether a prompt was added.
+    @MainActor
+    private func addMoreProminentUpdatesDebugPromptItem() -> Bool {
+        guard featureFlagger.isFeatureOn(.moreProminentUpdates) else { return false }
+
+        let debugSettings: any KeyedStoring<MoreProminentUpdatesDebugSettings> = UserDefaults.standard.keyedStoring()
+        let style: UpdateBannerView.Style
+        switch debugSettings.menuPromptStyle {
+        case .none:
+            return false
+        case .row:
+            style = .row
+        case .card:
+            style = .card
         }
 
+        let updateController = Application.appDelegate.updateController
+        let banner = UpdateBannerView(style: style,
+                                      version: updateController?.latestUpdate?.version ?? AppVersion.shared.versionNumber,
+                                      buttonTitle: UserText.updateBannerOpenAppStoreButton) { [weak self] in
+            self?.cancelTracking()
+            updateController?.runUpdate()
+        }
+
+        let item = NSMenuItem()
+        item.view = banner.embeddedInMenuItemView()
+        addItem(item)
+
+        addReleaseNotesItemIfNeeded()
         addItem(NSMenuItem.separator())
+        return true
     }
 
     private func addWindowItems() {

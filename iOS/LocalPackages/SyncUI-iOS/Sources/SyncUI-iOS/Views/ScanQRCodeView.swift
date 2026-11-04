@@ -21,7 +21,6 @@ import DesignResourcesKit
 import DesignResourcesKitIcons
 import DuckUI
 import SwiftUI
-import UIComponents
 
 #if DEBUG
 import PreviewSnapshots
@@ -115,12 +114,10 @@ struct ScanQRCodeView_Previews: PreviewProvider {
         ],
         configure: { tab in
             NavigationView {
-                RebrandedPreview(isRebranded: true) {
-                    ScanQRCodeView(
-                        model: ScanOrPasteCodeViewModel(codeForDisplayOrPasting: sampleCode, qrCodeString: sampleCode, source: .connect),
-                        selectedTab: tab
-                    )
-                }
+                ScanQRCodeView(
+                    model: ScanOrPasteCodeViewModel(codeForDisplayOrPasting: sampleCode, qrCodeString: sampleCode, source: .connect),
+                    selectedTab: tab
+                )
             }
             .navigationViewStyle(.stack)
         }

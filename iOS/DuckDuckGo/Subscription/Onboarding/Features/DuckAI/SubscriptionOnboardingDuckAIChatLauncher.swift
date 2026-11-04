@@ -31,7 +31,7 @@ struct SubscriptionOnboardingDuckAIChatLauncher {
             return false
         }
         mainViewController.dismiss(animated: true) {
-            mainViewController.openAIChat(source: .onboarding, flowType: .mobileAppOnboarding, modelId: modelID)
+            mainViewController.openAIChat(source: .subscriptionOnboarding, flowType: .mobileAppOnboarding, modelId: modelID)
         }
         return true
     }

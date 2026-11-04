@@ -161,14 +161,14 @@ final class BookmarksBarPromptViewModel: ObservableObject {
         userDidDismiss = true
         prefs.showBookmarksBar = false
         delegate?.dismiss()
-        onDismiss?(wasExplicit ? .actioned : .ignored())
+        onDismiss?(wasExplicit ? .actioned() : .ignored())
     }
 
     func acceptBookmarksBar() {
         userDidDismiss = true
         prefs.showBookmarksBar = true
         delegate?.dismiss()
-        onDismiss?(.actioned)
+        onDismiss?(.actioned())
     }
 
 }

@@ -9,7 +9,7 @@ base_dir="${script_dir}/.."
 # The following URLs shall match the ones in AppConfigurationURLprovider.swift.
 # Danger checks that the URLs match on every PR. If the code changes, the regex that Danger uses may need an update.
 TDS_URL="https://staticcdn.duckduckgo.com/trackerblocking/v6/current/macos-tds.json"
-CONFIG_URL="https://staticcdn.duckduckgo.com/trackerblocking/config/v4/macos-config.json"
+CONFIG_URL="https://staticcdn.duckduckgo.com/trackerblocking/config/v6/macos-config.json"
 
 # If -c is passed, then check the URLs in the Configuration files are correct.
 if [ "$1" == "-c" ]; then

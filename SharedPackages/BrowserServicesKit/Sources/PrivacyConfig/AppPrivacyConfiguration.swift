@@ -74,27 +74,39 @@ public struct AppPrivacyConfiguration: PrivacyConfiguration {
         return versionString.split(separator: ".").map { Int($0) ?? 0 }
     }
 
-    func satisfiesMinVersion(_ version: String?,
-                             versionProvider: AppVersionProvider) -> Bool {
-        if let minSupportedVersion = version,
-           let appVersion = versionProvider.appVersion() {
-            let minVersion = parse(versionString: minSupportedVersion)
-            let currentVersion = parse(versionString: appVersion)
+    func compare(appVersion: String, to versionString: String) -> ComparisonResult {
+        let version = parse(versionString: versionString)
+        let currentVersion = parse(versionString: appVersion)
 
-            for i in 0..<max(minVersion.count, currentVersion.count) {
-                let minSegment = i < minVersion.count ? minVersion[i] : 0
-                let currSegment = i < currentVersion.count ? currentVersion[i] : 0
+        for i in 0..<max(version.count, currentVersion.count) {
+            let segment = i < version.count ? version[i] : 0
+            let currSegment = i < currentVersion.count ? currentVersion[i] : 0
 
-                if currSegment > minSegment {
-                    return true
-                }
-                if currSegment < minSegment {
-                    return false
-                }
+            if currSegment > segment {
+                return .orderedDescending
+            }
+            if currSegment < segment {
+                return .orderedAscending
             }
         }
 
-        return true
+        return .orderedSame
+    }
+
+    func satisfiesMinVersion(_ version: String?,
+                             versionProvider: AppVersionProvider) -> Bool {
+        guard let minSupportedVersion = version,
+              let appVersion = versionProvider.appVersion() else { return true }
+
+        return compare(appVersion: appVersion, to: minSupportedVersion) != .orderedAscending
+    }
+
+    func satisfiesMaxVersion(_ version: String?,
+                             versionProvider: AppVersionProvider) -> Bool {
+        guard let maxSupportedVersion = version,
+              let appVersion = versionProvider.appVersion() else { return true }
+
+        return compare(appVersion: appVersion, to: maxSupportedVersion) != .orderedDescending
     }
 
     func satisfiesInstalledDays(_ featureKey: PrivacyFeature, installDate: Date?) -> Bool {
@@ -126,18 +138,19 @@ public struct AppPrivacyConfiguration: PrivacyConfiguration {
     public func stateFor(featureKey: PrivacyFeature, versionProvider: AppVersionProvider) -> PrivacyConfigurationFeatureState {
         guard let feature = data.features[featureKey.rawValue] else { return .disabled(.featureMissing) }
 
-        let satisfiesMinVersion = satisfiesMinVersion(feature.minSupportedVersion, versionProvider: versionProvider)
+        let satisfiesVersion = satisfiesMinVersion(feature.minSupportedVersion, versionProvider: versionProvider)
+            && satisfiesMaxVersion(feature.maxSupportedVersion, versionProvider: versionProvider)
         let satisfiesInstalledDays = satisfiesInstalledDays(featureKey, installDate: installDate)
 
         switch feature.state {
         case PrivacyConfigurationData.State.enabled:
-            guard satisfiesMinVersion else { return .disabled(.appVersionNotSupported) }
+            guard satisfiesVersion else { return .disabled(.appVersionNotSupported) }
             guard satisfiesInstalledDays else { return .disabled(.tooOldInstallation) }
 
             return .enabled
         case PrivacyConfigurationData.State.internal:
             guard internalUserDecider.isInternalUser else { return .disabled(.limitedToInternalUsers) }
-            guard satisfiesMinVersion else { return .disabled(.appVersionNotSupported) }
+            guard satisfiesVersion else { return .disabled(.appVersionNotSupported) }
             guard satisfiesInstalledDays else { return .disabled(.tooOldInstallation) }
 
             return .enabled
@@ -224,15 +237,16 @@ public struct AppPrivacyConfiguration: PrivacyConfiguration {
         guard case .enabled = parentState else { return parentState }
 
         // Step 2: Check  version
-        let satisfiesMinVersion = satisfiesMinVersion(subfeatureData.minSupportedVersion, versionProvider: versionProvider)
+        let satisfiesVersion = satisfiesMinVersion(subfeatureData.minSupportedVersion, versionProvider: versionProvider)
+            && satisfiesMaxVersion(subfeatureData.maxSupportedVersion, versionProvider: versionProvider)
 
         // Step 3: Check sub-feature state
         switch subfeatureData.state {
         case PrivacyConfigurationData.State.enabled:
-            guard satisfiesMinVersion else { return .disabled(.appVersionNotSupported) }
+            guard satisfiesVersion else { return .disabled(.appVersionNotSupported) }
         case PrivacyConfigurationData.State.internal:
             guard internalUserDecider.isInternalUser else { return .disabled(.limitedToInternalUsers) }
-            guard satisfiesMinVersion else { return .disabled(.appVersionNotSupported) }
+            guard satisfiesVersion else { return .disabled(.appVersionNotSupported) }
         default: return .disabled(.disabledInConfig)
         }
 

@@ -38,21 +38,33 @@ public final class SubscriptionTokenKeychainStorage: AuthTokenStoring {
     private let errorEventsHandler: (AccountKeychainAccessType, AccountKeychainAccessError) -> Void
     private let keychainManager: any KeychainManaging
     private let userDefaults: UserDefaults
+    private let field: SubscriptionKeychainField
 
+    /// - Parameters:
+    ///   - keychainManager: Reads and writes the keychain item.
+    ///   - userDefaults: Stores whether a token is expected to be found, used to report unexpected misses.
+    ///   - field: The keychain item this storage reads and writes.
+    ///   - errorEventsHandler: Receives keychain access errors, including a missing token that was expected.
     public init(keychainManager: any KeychainManaging,
                 userDefaults: UserDefaults,
+                field: SubscriptionKeychainField = .tokenContainer,
                 errorEventsHandler: @escaping (AccountKeychainAccessType, AccountKeychainAccessError) -> Void) {
         self.errorEventsHandler = errorEventsHandler
         self.keychainManager = keychainManager
         self.userDefaults = userDefaults
+        self.field = field
     }
 
     /*
      Uses just kSecAttrService as the primary key, since we don't want to store
      multiple accounts/tokens at the same time
      */
-    enum SubscriptionKeychainField: String, CaseIterable {
+    /// The keychain items a `SubscriptionTokenKeychainStorage` can target.
+    public enum SubscriptionKeychainField: String, CaseIterable {
+        /// The token container used by the app and its extensions.
         case tokenContainer = "subscription.v2.tokens"
+        /// A second, independent token container kept by the main app.
+        case backupTokenContainer = "subscription.v2.tokens.backup"
 
         var keyValue: String {
             "com.duckduckgo" + "." + rawValue
@@ -70,7 +82,7 @@ public final class SubscriptionTokenKeychainStorage: AuthTokenStoring {
 
     public func getTokenContainer() throws -> TokenContainer? {
         do {
-            guard let data = try keychainManager.retrieveData(forKey: SubscriptionKeychainField.tokenContainer.keyValue) else {
+            guard let data = try keychainManager.retrieveData(forKey: field.keyValue) else {
                 Logger.subscriptionKeychain.debug("TokenContainer not found")
                 verifyTokenNotFoundExpectation()
                 return nil
@@ -99,7 +111,7 @@ public final class SubscriptionTokenKeychainStorage: AuthTokenStoring {
         do {
             guard let tokenContainer else {
                 Logger.subscriptionKeychain.log("Remove TokenContainer")
-                try keychainManager.deleteItem(forKey: SubscriptionKeychainField.tokenContainer.keyValue)
+                try keychainManager.deleteItem(forKey: field.keyValue)
                 return
             }
 
@@ -107,7 +119,7 @@ public final class SubscriptionTokenKeychainStorage: AuthTokenStoring {
                 throw AccountKeychainAccessError.failedToEncodeKeychainData // Fixed error name
             }
 
-            try keychainManager.store(data: data, forKey: SubscriptionKeychainField.tokenContainer.keyValue)
+            try keychainManager.store(data: data, forKey: field.keyValue)
         } catch {
             Logger.subscriptionKeychain.error("Failed to set TokenContainer: \(error, privacy: .public)")
             if let error = error as? AccountKeychainAccessError {
@@ -128,7 +140,7 @@ public final class SubscriptionTokenKeychainStorage: AuthTokenStoring {
         }
     }
 
-    private let tokenExpectedKey = SubscriptionKeychainField.tokenContainer.keyValue+".expected"
+    private var tokenExpectedKey: String { field.keyValue + ".expected" }
     private var tokenExpected: Bool {
         get { userDefaults.bool(forKey: tokenExpectedKey) }
         set { userDefaults.set(newValue, forKey: tokenExpectedKey) }

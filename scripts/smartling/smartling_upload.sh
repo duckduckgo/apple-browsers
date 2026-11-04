@@ -33,7 +33,7 @@ if [ "$PLATFORM" = "iOS" ]; then
 	output=$(./scripts/smartling/loc_tool.sh upload \
 			--job-name "$JOB_NAME" \
 			--files ./iOS/scripts/assets/loc/en.xcloc/Localized\ Contents/en.xliff \
-				./iOS/DuckDuckGo/en.lproj/Localizable.stringsdict 2>&1) || upload_failed=1
+				./iOS/DuckDuckGo/UserInterfaceResources/en.lproj/Localizable.stringsdict 2>&1) || upload_failed=1
 elif [ "$PLATFORM" = "macOS" ]; then
 	# Upload macOS file (XLIFF only)
 	echo "Uploading macOS files..."

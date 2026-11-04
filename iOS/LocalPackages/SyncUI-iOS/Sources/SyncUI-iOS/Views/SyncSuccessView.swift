@@ -22,10 +22,14 @@ import DesignResourcesKitIcons
 import DuckUI
 import SwiftUI
 
+#if DEBUG
+import PreviewSnapshots
+#endif
+
 struct SyncSuccessView: View {
 
     @ObservedObject var model: SyncSettingsViewModel
-    let isRecovery: Bool
+    let destination: SyncSettingsViewModel.SuccessDestination
 
     private var autoRestoreBinding: Binding<Bool> {
         Binding {
@@ -40,7 +44,7 @@ struct SyncSuccessView: View {
             List {
                 headerSection
 
-                if !isRecovery {
+                if destination == .newlySyncing {
                     recoveryCodeSection
 
                     if model.isAutoRestoreFeatureAvailable {
@@ -61,13 +65,13 @@ struct SyncSuccessView: View {
     }
 
     private var title: String {
-        isRecovery
+        destination == .recovery
             ? UserText.simplifiedRecoveryCompleteTitle
             : UserText.simplifiedDeviceAddedTitle(model.thisDeviceName ?? UserText.simplifiedDeviceAddedFallbackDeviceName)
     }
 
     private var description: String {
-        isRecovery
+        destination == .recovery
             ? UserText.simplifiedRecoveryCompleteDescription
             : UserText.simplifiedDeviceAddedDescription
     }
@@ -94,7 +98,7 @@ struct SyncSuccessView: View {
     private var headerSection: some View {
         Section {
             VStack(spacing: 24) {
-                Image(rebrandable: "Sync-Start-128", bundle: .module)
+                Image("Sync-Start-128", bundle: .module)
                     .resizable()
                     .aspectRatio(contentMode: .fit)
                     .frame(width: 128, height: 96)
@@ -105,11 +109,13 @@ struct SyncSuccessView: View {
                     .foregroundColor(Color(designSystemColor: .textPrimary))
                     .accessibility(identifier: "SyncSuccessTitle")
 
-                Text(description)
-                    .daxBodyRegular()
-                    .foregroundColor(Color(designSystemColor: .textSecondary))
-                    .multilineTextAlignment(.center)
-                    .fixedSize(horizontal: false, vertical: true)
+                if destination != .alreadySyncing {
+                    Text(description)
+                        .daxBodyRegular()
+                        .foregroundColor(Color(designSystemColor: .textSecondary))
+                        .multilineTextAlignment(.center)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
             }
             .frame(maxWidth: .infinity)
             .padding(.bottom, 8)
@@ -152,7 +158,7 @@ struct SyncSuccessView: View {
                     .frame(maxWidth: .infinity, alignment: .leading)
             }
         }
-        .listRowBackground(Color(singleUseColor: .groupedListContentBackground))
+        .listRowBackground(Color(designSystemColor: .surfaceTertiary))
     }
 
     private var autoRestoreSection: some View {
@@ -163,7 +169,7 @@ struct SyncSuccessView: View {
                 .foregroundColor(Color(designSystemColor: .textPrimary))
                 .disabled(model.isAutoRestoreUpdating)
         }
-        .listRowBackground(Color(singleUseColor: .groupedListContentBackground))
+        .listRowBackground(Color(designSystemColor: .surfaceTertiary))
     }
 }
 
@@ -183,22 +189,41 @@ private extension SyncSettingsViewModel {
     }
 }
 
-#Preview("Device Added") {
-    RebrandedPreview(isRebranded: true) {
-        SyncSuccessView(model: .syncSuccessPreview(), isRecovery: false)
-    }
-}
+struct SyncSuccessView_Previews: PreviewProvider {
 
-#Preview("Device Added – No Auto-Restore") {
-    RebrandedPreview(isRebranded: true) {
-        SyncSuccessView(model: .syncSuccessPreview(isAutoRestoreAvailable: false), isRecovery: false)
+    enum State {
+        case deviceAdded
+        case alreadySyncing
+        case deviceAddedNoAutoRestore
+        case recoveryComplete
     }
-}
 
-#Preview("Recovery Complete") {
-    RebrandedPreview(isRebranded: true) {
-        SyncSuccessView(model: .syncSuccessPreview(), isRecovery: true)
+    static var previews: some View {
+        snapshots.previews
     }
+
+    static let snapshots = PreviewSnapshots<State>(
+        configurations: [
+            .init(name: "Device Added", state: .deviceAdded),
+            .init(name: "Already Syncing", state: .alreadySyncing, scope: .previews),
+            .init(name: "Device Added – No Auto-Restore", state: .deviceAddedNoAutoRestore, scope: .previews),
+            .init(name: "Recovery Complete", state: .recoveryComplete, scope: .previews)
+        ],
+        configure: { state in
+            Group {
+                switch state {
+                case .deviceAdded:
+                    SyncSuccessView(model: .syncSuccessPreview(), destination: .newlySyncing)
+                case .alreadySyncing:
+                    SyncSuccessView(model: .syncSuccessPreview(), destination: .alreadySyncing)
+                case .deviceAddedNoAutoRestore:
+                    SyncSuccessView(model: .syncSuccessPreview(isAutoRestoreAvailable: false), destination: .newlySyncing)
+                case .recoveryComplete:
+                    SyncSuccessView(model: .syncSuccessPreview(), destination: .recovery)
+                }
+            }
+        }
+    )
 }
 
 #endif

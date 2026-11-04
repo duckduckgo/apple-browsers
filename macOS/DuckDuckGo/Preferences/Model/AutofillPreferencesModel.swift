@@ -19,6 +19,8 @@
 import AppKit
 import BWManagementShared
 import BrowserServicesKit
+import Combine
+import ConcurrencyExtensions
 import Foundation
 import PixelKit
 
@@ -83,10 +85,8 @@ final class AutofillPreferencesModel: ObservableObject {
             Application.appDelegate.passwordManagerCoordinator.setEnabled(enabled)
             if enabled {
                 presentBitwardenSetupFlow()
-                showSyncPromo = false
-            } else {
-                setShouldShowSyncPromo()
             }
+            setShouldShowSyncPromo()
         }
     }
 
@@ -95,6 +95,9 @@ final class AutofillPreferencesModel: ObservableObject {
     @Published private(set) var hasNeverPromptWebsites: Bool = false
 
     @Published private(set) var showSyncPromo: Bool = false
+
+    /// Whether a password manager extension has taken autofill over from DuckDuckGo. Read-only here.
+    @Published private(set) var isManagedByExtension: Bool = false
 
     func authorizeAutoLockSettingsChange(
         isEnabled isAutoLockEnabledNewValue: Bool? = nil,
@@ -157,12 +160,15 @@ final class AutofillPreferencesModel: ObservableObject {
         persistor: AutofillPreferencesPersistor = AutofillPreferences(),
         userAuthenticator: UserAuthenticating = DeviceAuthenticator.shared,
         bitwardenManager: BWManagement? = Application.appDelegate.bitwardenManager,
-        neverPromptWebsitesManager: AutofillNeverPromptWebsitesManager = AutofillNeverPromptWebsitesManager.shared
+        neverPromptWebsitesManager: AutofillNeverPromptWebsitesManager = AutofillNeverPromptWebsitesManager.shared,
+        syncPromoManager: SyncPromoManaging = Application.appDelegate.syncSetupAutofillPromoManager,
+        notificationCenter: NotificationCenter = .default
     ) {
         self.persistor = persistor
         self.userAuthenticator = userAuthenticator
         self.bitwardenManager = bitwardenManager
         self.neverPromptWebsitesManager = neverPromptWebsitesManager
+        self.syncPromoManager = syncPromoManager
 
         isAutoLockEnabled = persistor.isAutoLockEnabled
         autoLockThreshold = persistor.autoLockThreshold
@@ -174,7 +180,23 @@ final class AutofillPreferencesModel: ObservableObject {
         showInMenuBar = persistor.showInMenuBar
         passwordManager = persistor.passwordManager
         hasNeverPromptWebsites = !neverPromptWebsitesManager.neverPromptWebsites.isEmpty
-        setShouldShowSyncPromo()
+        isManagedByExtension = persistor.isManagedByExtension
+        syncPromoCancellable = syncPromoManager.isPromoActivePublisher
+            .sink { [weak self] _ in
+                MainActor.assumeMainThread {
+                    self?.setShouldShowSyncPromo()
+                }
+            }
+
+        managedByExtensionCancellable = notificationCenter.publisher(for: .autofillUserSettingsDidChange)
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in
+                guard let self else { return }
+                let updated = persistor.isManagedByExtension
+                if updated != isManagedByExtension {
+                    isManagedByExtension = updated
+                }
+            }
 
         PixelKit.fire(AutofillPixelKitEvent.autofillSettingsOpened)
     }
@@ -183,15 +205,20 @@ final class AutofillPreferencesModel: ObservableObject {
     private var userAuthenticator: UserAuthenticating
     private let bitwardenManager: BWManagement?
     private let neverPromptWebsitesManager: AutofillNeverPromptWebsitesManager
-    private lazy var syncPromoManager: SyncPromoManaging = SyncPromoManager()
+    private let syncPromoManager: SyncPromoManaging
+    private var syncPromoCancellable: AnyCancellable?
+    private var managedByExtensionCancellable: AnyCancellable?
     lazy var syncPromoViewModel: SyncPromoViewModel = SyncPromoViewModel(touchpointType: .autofill,
                                                                          primaryButtonAction: { [weak self] in
         self?.syncPromoManager.goToSyncSettings(for: .autofill)
     },
                                                                          dismissButtonAction: { [weak self] in
-        self?.syncPromoManager.dismissPromoFor(.autofill)
-        self?.showSyncPromo = false
+        self?.syncPromoManager.promoDismissed()
     })
+
+    func viewDidAppear() {
+        NotificationCenter.default.post(name: .autofillSettingsOpened, object: nil)
+    }
 
     // MARK: - Password Manager
 
@@ -202,7 +229,6 @@ final class AutofillPreferencesModel: ObservableObject {
 
         connectBitwardenViewController.setupFlowCancellationHandler = { [weak self] in
             self?.passwordManager = .duckduckgo
-            self?.setShouldShowSyncPromo()
         }
 
         guard let connectBitwardenWindow = connectBitwardenWindowController.window,
@@ -226,14 +252,8 @@ final class AutofillPreferencesModel: ObservableObject {
         NSWorkspace.shared.open(.fullDiskAccess)
     }
 
+    @MainActor
     private func setShouldShowSyncPromo() {
-        guard syncPromoManager.shouldPresentPromoFor(.passwords),
-                let vault = try? AutofillSecureVaultFactory.makeVault(reporter: SecureVaultReporter.shared),
-                let accountsCount = try? vault.accountsCount() else {
-            showSyncPromo = false
-            return
-        }
-
-        showSyncPromo = accountsCount > 0
+        showSyncPromo = syncPromoManager.isPromoActive && passwordManager == .duckduckgo
     }
 }

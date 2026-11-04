@@ -17,25 +17,23 @@
 //
 
 import AVFoundation
+@testable import DuckDuckGo_Privacy_Browser
 
 final class AVCaptureDeviceMock: AVCaptureDevice {
 
     static var authorizationStatuses: [AVMediaType: AVAuthorizationStatus]? {
         didSet {
-            switch (oldValue, authorizationStatuses) {
-            case (.none, .some), (.some, .none):
-                method_exchangeImplementations(originalAuthorizationStatusForMediaType,
-                                               swizzledAuthorizationStatusForMediaType)
-            default:
-                break
-            }
+            guard (oldValue == nil) != (authorizationStatuses == nil) else { return }
+            // The app hook forwards to the system implementation, which now lives under the swizzled selector.
+            _=AVCaptureDevice.authorizationStatusSwizzle
+            method_exchangeImplementations(systemAuthorizationStatusForMediaType, mockedAuthorizationStatusForMediaType)
         }
     }
 
-    private static let originalAuthorizationStatusForMediaType = {
-        class_getClassMethod(AVCaptureDevice.self, #selector(authorizationStatus(for:)))!
+    private static let systemAuthorizationStatusForMediaType = {
+        class_getClassMethod(AVCaptureDevice.self, #selector(swizzled_authorizationStatus(for:)))!
     }()
-    private static let swizzledAuthorizationStatusForMediaType = {
+    private static let mockedAuthorizationStatusForMediaType = {
         class_getClassMethod(AVCaptureDevice.self, #selector(mocked_authorizationStatus(for:)))!
     }()
 
@@ -45,7 +43,7 @@ extension AVCaptureDevice {
 
     @objc
     static func mocked_authorizationStatus(for mediaType: AVMediaType) -> AVAuthorizationStatus {
-        (self as? AVCaptureDeviceMock.Type)!.authorizationStatuses![mediaType] ?? .notDetermined
+        AVCaptureDeviceMock.authorizationStatuses?[mediaType] ?? .notDetermined
     }
 
 }

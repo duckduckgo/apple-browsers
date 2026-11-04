@@ -126,16 +126,9 @@
         "suffixes": ["first_daily_count", "platform", "form_factor"],
         "parameters": ["appVersion"]
     },
-    "m_ntp_after_idle_escape_hatch_after_inactivity_setting_changed_to_new_tab": {
-        "description": "Fires when the user changes the after-inactivity setting to New Tab from the NTP escape hatch.",
-        "owners": ["jleandroperez"],
-        "triggers": ["other"],
-        "suffixes": ["first_daily_count", "platform", "form_factor"],
-        "parameters": ["appVersion"]
-    },
-    "m_ntp_after_idle_escape_hatch_after_inactivity_setting_changed_to_last_used_tab": {
-        "description": "Fires when the user changes the after-inactivity setting to Last Used Tab from the NTP escape hatch.",
-        "owners": ["jleandroperez"],
+    "ntp_after_idle_escape_hatch_after_inactivity_settings_tapped_from_menu": {
+        "description": "Fires when the user taps 'After Inactivity' in the NTP escape hatch card menu, which opens Settings > General. The actual option change is covered by the Settings after-inactivity pixels.",
+        "owners": ["hassaanelgarem"],
         "triggers": ["other"],
         "suffixes": ["first_daily_count", "platform", "form_factor"],
         "parameters": ["appVersion"]

@@ -90,7 +90,8 @@ final class WebExtensionPermissionPrompt: WebExtensionPermissionPrompting {
         alert.buttons[0].keyEquivalent = ""
         alert.buttons[1].keyEquivalent = "\r"
 
-        var entries = permissions.permissions.map { "• \(permissionDescription($0.rawValue))" }.uniqued().sorted()
+        var entries = (permissions.permissions.map(\.rawValue) + permissions.appPermissions.map(\.rawValue))
+            .map { "• \(permissionDescription($0))" }.uniqued().sorted()
         entries += permissions.matchPatterns.map { "• \(String(format: UserText.webExtensionWebsiteAccess, $0.string))" }.sorted()
         entries += permissions.urls.map { "• \(String(format: UserText.webExtensionWebsiteAccess, $0.host ?? $0.absoluteString))" }.sorted()
         let label = NSTextField(wrappingLabelWithString: entries.isEmpty ? UserText.webExtensionNoPermissions : entries.joined(separator: "\n"))
@@ -130,6 +131,7 @@ final class WebExtensionPermissionPrompt: WebExtensionPermissionPrompting {
         case "webNavigation": return UserText.webExtensionNavigationPermission
         case "storage", "unlimitedStorage": return UserText.webExtensionStoragePermission
         case "nativeMessaging": return UserText.webExtensionNativeMessagingPermission
+        case "privacy": return UserText.webExtensionPrivacyPermission
         default: return String(format: UserText.webExtensionOtherPermission, permission)
         }
     }

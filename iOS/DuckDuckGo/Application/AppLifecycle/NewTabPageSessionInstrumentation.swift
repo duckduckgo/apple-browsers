@@ -40,7 +40,7 @@ protocol NewTabPageSessionInstrumentation: AnyObject {
 
     /// Updates the New Tab page's recorded starting keyboard state to `.up`.
     /// Use when the app shows the keyboard after the page appears, such as when the app opens.
-    /// Does not record a user action. Ignored after user interaction or a session timeout.
+    /// Does not record a user action. Ignored after user interaction.
     func keyboardRaisedOnArrival()
 
     // MARK: - Actions
@@ -224,7 +224,7 @@ final class DefaultNewTabPageSessionInstrumentation: NewTabPageSessionInstrument
 
     func keyboardRaisedOnArrival() {
         lockTerminalIfTimedOut()
-        guard let visit = activeVisit, lockedTerminal == nil, visit.actionCount == 0 else { return }
+        guard let visit = activeVisit, visit.actionCount == 0 else { return }
         visit.launchKeyboardMode = .up
     }
 

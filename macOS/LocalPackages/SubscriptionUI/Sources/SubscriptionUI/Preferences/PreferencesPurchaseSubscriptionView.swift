@@ -54,15 +54,9 @@ public struct PreferencesPurchaseSubscriptionView: View {
     @ViewBuilder
     private var purchaseSection: some View {
         HStack(alignment: .top) {
-            if DesignSystemRebrand.isAppRebranded() {
-                Image(nsImage: DesignSystemImages.Color.Size16.subscription)
-                    .padding(4)
-                    .cornerRadius(4)
-            } else {
-                Image(.privacyPro)
-                    .padding(4)
-                    .cornerRadius(4)
-            }
+            Image(nsImage: DesignSystemImages.Color.Size16.subscription)
+                .padding(4)
+                .cornerRadius(4)
 
             VStack(alignment: .leading, spacing: 8) {
                 TextMenuItemHeader(model.purchaseSectionHeader)
@@ -70,7 +64,7 @@ public struct PreferencesPurchaseSubscriptionView: View {
 
                 HStack {
                     Button(model.purchaseButtonTitle) { model.purchaseAction() }
-                        .buttonStyle(DefaultActionButtonStyle(enabled: true, stateColors: DesignSystemRebrand.isAppRebranded() ? .themedActionButton : .legacyActionButton))
+                        .buttonStyle(DefaultActionButtonStyle(enabled: true, stateColors: .themedActionButton))
                     Button(UserText.haveSubscriptionButton) {
                         if model.shouldDirectlyLaunchActivationFlow {
                             model.sheetModel.handleEmailAction()

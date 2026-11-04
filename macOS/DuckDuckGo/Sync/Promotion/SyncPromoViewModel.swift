@@ -18,13 +18,19 @@
 
 import Foundation
 import AppKit
+import PixelKit
 
 struct SyncPromoViewModel {
 
     var touchpointType: SyncPromoManager.Touchpoint = .bookmarks
 
-    var primaryButtonAction: (() -> Void)?
-    var dismissButtonAction: (() -> Void)?
+    var primaryButtonAction: (@MainActor () -> Void)?
+    var dismissButtonAction: (@MainActor () -> Void)?
+    var pixelFiring: (any PixelKitFiring)? = PixelKit.shared
+
+    func promoDisplayed() {
+        pixelFiring?.fire(SyncPromoPixelKitEvent.syncPromoDisplayed, options: .parameters(["source": touchpointType.rawValue]))
+    }
 
     var title: String {
         switch touchpointType {

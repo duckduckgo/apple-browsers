@@ -23,6 +23,9 @@ import SwiftUI
 extension SharedColorPaletteDefinition {
 
     /// Gets dynamic color proxy for a specific semantic color based on the JSON import
+    ///
+    /// # Important: Please use `SingleUseColor` if you're adding a color that's not mapped to a Figma Export
+    ///
     static func dynamicColor(for designSystemColor: SharedDesignSystemColor) -> DynamicColor {
 
         switch designSystemColor {
@@ -98,16 +101,6 @@ extension SharedColorPaletteDefinition {
         case .accentAltTextTertiary:
             return accentAltTextTertiary
 
-        /// Alert
-        case .alertGreen:
-            return alertGreen
-        case .alertYellow:
-            return alertYellow
-
-        /// Shield
-        case .shieldPrivacy:
-            return shieldPrivacy
-
         /// Status
         case .statusGray:
             return statusGray
@@ -138,33 +131,6 @@ extension SharedColorPaletteDefinition {
         case .vpnYellowForegroundPressed:
             return DynamicColor(lightColor: RebrandingColor.Pollen.pollen90, darkColor: RebrandingColor.Pollen.pollen10)
 
-        /// Buttons/Primary
-        case .buttonsPrimaryDefault:
-            return buttonsPrimaryDefault
-        case .buttonsPrimaryPressed:
-            return buttonsPrimaryPressed
-        case .buttonsPrimaryDisabled:
-            return buttonsPrimaryDisabled
-        case .buttonsPrimaryText:
-            return buttonsPrimaryText
-        case .buttonsPrimaryTextDisabled:
-            return buttonsPrimaryTextDisabled
-
-        /// Buttons/SecondaryFill
-        case .buttonsSecondaryFillDefault:
-            return buttonsSecondaryFillDefault
-        case .buttonsSecondaryFillPressed:
-            return buttonsSecondaryFillPressed
-        case .buttonsSecondaryFillDisabled:
-            return buttonsSecondaryFillDisabled
-        case .buttonsSecondaryFillText:
-            return buttonsSecondaryFillText
-        case .buttonsSecondaryFillTextDisabled:
-            return buttonsSecondaryFillTextDisabled
-
-        case .buttonsWhite:
-            return buttonsWhite
-
         /// Container Colors
         case .containerFillPrimary:
             return containerFillPrimary
@@ -180,6 +146,8 @@ extension SharedColorPaletteDefinition {
             return containerBorderTertiary
 
         /// Controls Colors
+        case .controlsBase:
+            return controlsBase
         case .controlsBorderPrimary:
             return controlsBorderPrimary
         case .controlsBorderSecondary:
@@ -208,8 +176,10 @@ extension SharedColorPaletteDefinition {
             return destructiveContentSecondary
         case .destructiveContentTertiary:
             return destructiveContentTertiary
-        case .destructiveGlow:
-            return destructiveGlow
+        case .destructiveGlowPrimary:
+            return destructiveGlowPrimary
+        case .destructiveGlowSecondary:
+            return destructiveGlowSecondary
         case .destructivePrimary:
             return destructivePrimary
         case .destructiveSecondary:
@@ -267,16 +237,6 @@ extension SharedColorPaletteDefinition {
         case .unifiedInputTextSecondary:
             return unifiedInputTextSecondary
 
-        /// System
-        case .lines:
-            return lines
-        case .spinnerStart:
-            // Non-specialized, we'll always use the default
-            return LatestColorPalette.spinnerStart
-        case .spinnerFinal:
-            // Non-specialized, we'll always use the default
-            return LatestColorPalette.spinnerFinal
-
         /// Shadow Colors
         case .shadowPrimary:
             return shadowPrimary
@@ -286,6 +246,10 @@ extension SharedColorPaletteDefinition {
             return shadowTertiary
 
         /// Status
+        case .statusWarningContentPrimary:
+            return statusWarningContentPrimary
+        case .statusWarningFillPrimary:
+            return statusWarningFillPrimary
         case .statusYellowPrimary:
             return statusYellowPrimary
         case .statusYellowSecondary:
@@ -344,31 +308,6 @@ extension SharedColorPaletteDefinition {
             return DynamicColor(lightColor: .white, darkColor: Color(0x857A6E))
         case .permissionReloadButtonText:
             return DynamicColor(lightColor: Color(0x333333), darkColor: Color(0xE8E8E8))
-        }
-    }
-
-    static func dynamicColor(for singleUseColor: SingleUseColor) -> DynamicColor {
-        switch singleUseColor {
-        case .fireModeAccent:
-            return DynamicColor(lightColor: RebrandingColor.Mandarin.mandarin50, darkColor: RebrandingColor.Mandarin.mandarin40)
-        case .fireButtonGradientStart:
-            return DynamicColor(lightColor: RebrandingColor.Mandarin.mandarin50, darkColor: RebrandingColor.Mandarin.mandarin40)
-        case .fireButtonGradientEnd:
-            return DynamicColor(lightColor: RebrandingColor.Red.red50, darkColor: RebrandingColor.Red.red40)
-        case .fireButtonPressedGradientStart:
-            return DynamicColor(staticColor: RebrandingColor.Mandarin.mandarin60)
-        case .fireButtonPressedGradientEnd:
-            return DynamicColor(staticColor: RebrandingColor.Red.red70)
-        case .fireDialogKnobFill:
-            return DynamicColor(staticColor: Color(0xFFFFFF))
-        case .fireDialogTabBackground:
-            return DynamicColor(lightColor: Color(designSystemColor: .controlsFillPrimary), darkColor: Color(designSystemColor: .surfaceCanvas))
-        case .fireDialogTabBackgroundSelected:
-            return DynamicColor(lightColor: Color(designSystemColor: .surfaceTertiary), darkColor: Color(designSystemColor: .surfaceSecondary))
-        case .fireDialogTabShadowPrimary:
-            return DynamicColor(lightColor: Color(designSystemColor: .shadowPrimary), darkColor: .shade(0.06))
-        case .fireDialogTabShadowSecondary:
-            return DynamicColor(lightColor: Color(designSystemColor: .shadowTertiary), darkColor: .shade(0.16))
         }
     }
 }

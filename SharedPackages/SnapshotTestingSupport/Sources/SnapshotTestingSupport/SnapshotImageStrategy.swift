@@ -19,6 +19,8 @@
 public enum SnapshotImageStrategy: Equatable {
     case single(SnapshotAppearance)
     case allAppearances
+    case iPhoneSingle(SnapshotAppearance)
+    case iPhoneAllAppearances
     case custom([SnapshotImageConfiguration])
 
     public func configurations(
@@ -30,6 +32,10 @@ public enum SnapshotImageStrategy: Equatable {
             return configurations(for: platform, size: size, appearances: [appearance])
         case .allAppearances:
             return configurations(for: platform, size: size, appearances: SnapshotAppearance.allCases)
+        case .iPhoneSingle(let appearance):
+            return iPhoneConfigurations(for: platform, appearances: [appearance])
+        case .iPhoneAllAppearances:
+            return iPhoneConfigurations(for: platform, appearances: SnapshotAppearance.allCases)
         case .custom(let configurations):
             return configurations
         }
@@ -48,6 +54,22 @@ public enum SnapshotImageStrategy: Equatable {
                 }
             }
         case .iOS, .macOS:
+            return appearances.map {
+                SnapshotImageConfiguration(appearance: $0)
+            }
+        }
+    }
+
+    private func iPhoneConfigurations(
+        for platform: SnapshotPlatform,
+        appearances: [SnapshotAppearance]
+    ) -> [SnapshotImageConfiguration] {
+        switch platform {
+        case .iOS:
+            return appearances.map {
+                SnapshotImageConfiguration(appearance: $0, device: .iPhoneDefault)
+            }
+        case .macOS:
             return appearances.map {
                 SnapshotImageConfiguration(appearance: $0)
             }

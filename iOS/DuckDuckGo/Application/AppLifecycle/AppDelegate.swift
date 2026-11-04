@@ -24,6 +24,14 @@ import Common
 
     let appStateMachine: AppStateMachine = AppStateMachine(initialState: .initializing(Initializing()))
 
+    override func buildMenu(with builder: UIMenuBuilder) {
+        super.buildMenu(with: builder)
+        guard builder.system == .main else { return }
+
+        // On iOS 26 and later, once the iPad menu bar feature is on, `MainMenuService` registers its own build handler and UIKit stops calling this method.
+        MainMenuBuilder().build(MainMenuSpec(isEnabled: false), with: builder)
+    }
+
     func application(_ application: UIApplication, configurationForConnecting connectingSceneSession: UISceneSession, options: UIScene.ConnectionOptions) -> UISceneConfiguration {
         UISceneConfiguration(name: "Default Configuration", sessionRole: connectingSceneSession.role)
     }

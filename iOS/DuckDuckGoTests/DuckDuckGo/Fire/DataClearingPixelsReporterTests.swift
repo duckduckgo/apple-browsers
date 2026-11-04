@@ -1,0 +1,460 @@
+//
+//  DataClearingPixelsReporterTests.swift
+//  DuckDuckGo
+//
+//  Copyright © 2026 DuckDuckGo. All rights reserved.
+//
+//  Licensed under the Apache License, Version 2.0 (the "License");
+//  you may not use this file except in compliance with the License.
+//  You may obtain a copy of the License at
+//
+//  http://www.apache.org/licenses/LICENSE-2.0
+//
+//  Unless required by applicable law or agreed to in writing, software
+//  distributed under the License is distributed on an "AS IS" BASIS,
+//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+//  See the License for the specific language governing permissions and
+//  limitations under the License.
+//
+
+@_spi(Testing) import PixelKit
+import XCTest
+
+@testable import DuckDuckGo
+
+final class DataClearingPixelsReporterTests: XCTestCase {
+
+    private var mockPixelFiring: PixelKitMock!
+    private var sut: DataClearingPixelsReporter!
+    private var currentTime: CFTimeInterval!
+
+    override func setUp() {
+        super.setUp()
+        mockPixelFiring = PixelKitMock()
+        currentTime = 0.0
+        sut = DataClearingPixelsReporter(
+            pixelFiring: mockPixelFiring,
+            timeProvider: { [weak self] in self?.currentTime ?? 0.0 }
+        )
+    }
+
+    override func tearDown() {
+        mockPixelFiring = nil
+        sut = nil
+        currentTime = nil
+        super.tearDown()
+    }
+
+    func testSingleTabMetricsIncludeBothFlagStatesAndDroppedRequests() {
+        for optimized in [false, true] {
+            for dropped in [false, true] {
+                sut.fireSingleTabBurnRequested(optimized: optimized, dropped: dropped)
+                let call = mockPixelFiring.actualFireCalls.last
+                XCTAssertEqual(call?.pixel.name, "fire_single-tab-burn_requested")
+                XCTAssertEqual(call?.pixel.parameters, ["optimization_enabled": String(optimized), "dropped": String(dropped)])
+                XCTAssertEqual(call?.frequency, .standard)
+            }
+        }
+    }
+
+    func testSingleTabCompletionMeasuresWholeBurnAndOptionalTabClosure() {
+        for optimized in [false, true] {
+            let measurement = sut.beginMeasurement()
+            currentTime += 1.5
+            sut.fireSingleTabBurnFinished(optimized: optimized, measurement: measurement, tabClosure: 0.2)
+            let call = mockPixelFiring.actualFireCalls.last
+            XCTAssertEqual(call?.pixel.name, "fire_single-tab-burn_finished")
+            XCTAssertEqual(call?.pixel.parameters, [
+                "optimization_enabled": String(optimized), "duration_ms": "2000", "tab_closure_ms": "250"
+            ])
+            XCTAssertEqual(call?.frequency, .standard)
+        }
+        let measurement = sut.beginMeasurement()
+        sut.fireSingleTabBurnFinished(optimized: false, measurement: measurement, tabClosure: nil)
+        XCTAssertNil(mockPixelFiring.actualFireCalls.last?.pixel.parameters?["tab_closure_ms"])
+    }
+
+    func testSingleTabDurationBucketsIncludeBoundariesAndLongBurns() {
+        for bound in [100, 250, 500, 1_000, 2_000, 5_000, 10_000, 30_000, 60_000, 120_000, 300_000] {
+            XCTAssertEqual(SingleTabBurnPixels.DurationBucket(seconds: Double(bound) / 1_000).value, String(bound))
+        }
+        XCTAssertEqual(SingleTabBurnPixels.DurationBucket(seconds: 0).value, "100")
+        XCTAssertEqual(SingleTabBurnPixels.DurationBucket(seconds: 0.101).value, "250")
+        XCTAssertEqual(SingleTabBurnPixels.DurationBucket(seconds: 301).value, "more")
+    }
+
+    // MARK: - fireRetriggerPixelIfNeeded Tests
+    
+    @MainActor
+    func testWhenFirstFireThenNoRetriggerPixelIsFired() {
+        // When
+        sut.fireRetriggerPixelIfNeeded(request: FireRequest(options: .all, trigger: .manualFire, scope: .all, source: .settings))
+        
+        // Then
+        XCTAssertTrue(mockPixelFiring.actualFireCalls.isEmpty, "No pixel should fire on first call")
+    }
+    
+    @MainActor
+    func testWhenCalledTwiceWithin20SecondsThenRetriggerPixelIsFired() {
+        let request = FireRequest(options: .all, trigger: .manualFire, scope: .all, source: .settings)
+        // Given - first call sets lastFireTime
+        sut.fireRetriggerPixelIfNeeded(request: request)
+        
+        // When - second call within 20 seconds
+        currentTime += 10
+        sut.fireRetriggerPixelIfNeeded(request: request)
+        
+        // Then
+        mockPixelFiring.expectedFireCalls = [
+            .init(pixel: DataClearingPixels.retriggerIn20s, frequency: .dailyAndStandard)
+        ]
+        mockPixelFiring.verifyExpectations(file: #file, line: #line)
+    }
+    
+    @MainActor
+    func testWhenCalledExactlyAt20SecondsThenRetriggerPixelIsFired() {
+        let request = FireRequest(options: .all, trigger: .manualFire, scope: .all, source: .settings)
+        // Given
+        sut.fireRetriggerPixelIfNeeded(request: request)
+        
+        // When - exactly at 20 seconds (edge case, <= condition)
+        currentTime += 20
+        sut.fireRetriggerPixelIfNeeded(request: request)
+        
+        // Then
+        mockPixelFiring.expectedFireCalls = [
+            .init(pixel: DataClearingPixels.retriggerIn20s, frequency: .dailyAndStandard)
+        ]
+        mockPixelFiring.verifyExpectations(file: #file, line: #line)
+    }
+    
+    @MainActor
+    func testWhenCalledAfter20SecondsThenNoRetriggerPixelIsFired() {
+        let request = FireRequest(options: .all, trigger: .manualFire, scope: .all, source: .settings)
+        // Given
+        sut.fireRetriggerPixelIfNeeded(request: request)
+        
+        // When - after 20 seconds
+        currentTime += 21
+        sut.fireRetriggerPixelIfNeeded(request: request)
+        
+        // Then
+        XCTAssertTrue(mockPixelFiring.actualFireCalls.isEmpty, "No pixel should fire after window expires")
+    }
+    
+    @MainActor
+    func testWhenCalledMultipleTimesWithinWindowThenRetriggerPixelFiredEachTime() {
+        let request = FireRequest(options: .all, trigger: .manualFire, scope: .all, source: .settings)
+        // Given
+        sut.fireRetriggerPixelIfNeeded(request: request)
+
+        // When - multiple rapid calls within window
+        currentTime += 5
+        sut.fireRetriggerPixelIfNeeded(request: request)
+
+        currentTime += 5
+        sut.fireRetriggerPixelIfNeeded(request: request)
+
+        currentTime += 5
+        sut.fireRetriggerPixelIfNeeded(request: request)
+
+        // Then
+        mockPixelFiring.expectedFireCalls = [
+            .init(pixel: DataClearingPixels.retriggerIn20s, frequency: .dailyAndStandard),
+            .init(pixel: DataClearingPixels.retriggerIn20s, frequency: .dailyAndStandard),
+            .init(pixel: DataClearingPixels.retriggerIn20s, frequency: .dailyAndStandard)
+        ]
+        mockPixelFiring.verifyExpectations(file: #file, line: #line)
+    }
+
+    @MainActor
+    func testWhenTriggerIsAutoClearOnLaunchThenNoRetriggerPixelIsFired() {
+        // Given
+        let autoClearRequest = FireRequest(options: .all, trigger: .autoClearOnLaunch, scope: .all, source: .autoClear)
+        sut.fireRetriggerPixelIfNeeded(request: autoClearRequest)
+
+        // When - second call within window with auto-clear trigger
+        currentTime += 10
+        sut.fireRetriggerPixelIfNeeded(request: autoClearRequest)
+
+        // Then - no pixels should fire because trigger is not manualFire
+        XCTAssertTrue(mockPixelFiring.actualFireCalls.isEmpty, "No pixel should fire for auto-clear on launch triggers")
+    }
+
+    @MainActor
+    func testWhenTriggerIsAutoClearOnForegroundThenNoRetriggerPixelIsFired() {
+        // Given
+        let autoClearRequest = FireRequest(options: .all, trigger: .autoClearOnForeground, scope: .all, source: .autoClear)
+        sut.fireRetriggerPixelIfNeeded(request: autoClearRequest)
+
+        // When - second call within window with auto-clear foreground trigger
+        currentTime += 15
+        sut.fireRetriggerPixelIfNeeded(request: autoClearRequest)
+
+        // Then - no pixels should fire because trigger is not manualFire
+        XCTAssertTrue(mockPixelFiring.actualFireCalls.isEmpty, "No pixel should fire for auto-clear on foreground triggers")
+    }
+
+    // MARK: - fireUserActionBeforeCompletionPixel Tests
+
+    func testWhenFireUserActionBeforeCompletionPixelCalledThenPixelIsFired() {
+        // When
+        sut.fireUserActionBeforeCompletionPixel()
+
+        // Then
+        mockPixelFiring.expectedFireCalls = [
+            .init(pixel: DataClearingPixels.userActionBeforeCompletion, frequency: .dailyAndStandard)
+        ]
+        mockPixelFiring.verifyExpectations(file: #file, line: #line)
+    }
+
+    // MARK: - Data Clearing Completion Pixels
+
+    func testWhenMeasuringThenDurationComesFromTheInjectedClock() {
+        // Given
+        let measurement = sut.beginMeasurement()
+
+        // When
+        currentTime += 1.5
+
+        // Then
+        XCTAssertEqual(sut.duration(of: measurement), 1.5)
+    }
+
+    func testWhenMeasurementIsNotAdvancedThenDurationIsZero() {
+        XCTAssertEqual(sut.duration(of: sut.beginMeasurement()), 0)
+    }
+
+    func testWhenCompletionPixelIsFiredThenMeasuredDurationIsSent() {
+        // Given
+        let measurement = sut.beginMeasurement()
+        currentTime += 1.5
+
+        // When
+        sut.fireDataClearingCompletionPixel(.allDataCleared(duration: sut.duration(of: measurement), tabCount: 3))
+
+        // Then
+        mockPixelFiring.expectedFireCalls = [
+            .init(pixel: DataClearingCompletionPixels.allDataCleared(duration: 1.5, tabCount: 3), frequency: .standard)
+        ]
+        mockPixelFiring.verifyExpectations(file: #file, line: #line)
+    }
+
+    /// Pins the wire contract: `dur` carries seconds as a floating-point string, matching the
+    /// `durationSeconds` shared parameter the four definitions declare.
+    func testWhenCompletionPixelCarriesDurationThenItIsFloatingPointSeconds() {
+        let pixel = DataClearingCompletionPixels.allDataCleared(duration: 1.5, tabCount: 3)
+
+        XCTAssertEqual(pixel.parameters?["dur"], "1.5")
+    }
+
+    func testCompletionPixelNames() {
+        XCTAssertEqual(DataClearingCompletionPixels.allDataCleared(duration: 0, tabCount: 0).name, "mf_dc")
+        XCTAssertEqual(DataClearingCompletionPixels.fireModeDataCleared(duration: 0, tabCount: 0).name,
+                       "m_fire-mode_data-cleared")
+        XCTAssertEqual(DataClearingCompletionPixels.normalModeDataCleared(duration: 0, tabCount: 0).name,
+                       "m_normal-mode_data-cleared")
+        XCTAssertEqual(DataClearingCompletionPixels.singleTabDataCleared(duration: 0,
+                                                                        tabType: "web",
+                                                                        browsingMode: "normal",
+                                                                        domainsCount: 0).name,
+                       "m_single-tab-data_cleared")
+    }
+
+    func testWhenCompletionPixelIsScopedToATabThenItCarriesTheTabParameters() {
+        let pixel = DataClearingCompletionPixels.singleTabDataCleared(duration: 2,
+                                                                     tabType: "ai",
+                                                                     browsingMode: "fire",
+                                                                     domainsCount: 7)
+
+        XCTAssertEqual(pixel.parameters, [
+            "dur": "2.0",
+            "tabType": "ai",
+            "browsing_mode": "fire",
+            "domainsCount": "7"
+        ])
+    }
+
+    func testWhenCompletionPixelIsScopedToAModeThenItCarriesTheTabCount() {
+        let pixel = DataClearingCompletionPixels.fireModeDataCleared(duration: 2, tabCount: 4)
+
+        XCTAssertEqual(pixel.parameters, ["dur": "2.0", "tc": "4"])
+    }
+
+    /// The names already carry their own `m_` prefix, so `namePrefix` is `.none` only to suppress
+    /// the default one. The `_ios_phone` / `_ios_tablet` marker comes from `platformSuffixPolicy`,
+    /// not from `namePrefix`.
+    func testCompletionPixelsAddNoNamePrefix() {
+        XCTAssertEqual(DataClearingCompletionPixels.allDataCleared(duration: 0, tabCount: 0).namePrefix, .none)
+    }
+
+    /// Unlike `DataClearingPixels`, these four do not declare `pixelSource` in `forget_all.json5`.
+    func testCompletionPixelsSendNoStandardParameters() {
+        XCTAssertNil(DataClearingCompletionPixels.allDataCleared(duration: 0, tabCount: 0).standardParameters)
+    }
+
+    /// These four have carried the form-factor suffix since they were fired through `Pixel.fire`,
+    /// placed before any frequency suffix. `.legacyBeforeFrequencySuffix` keeps that ordering. Pins
+    /// the wire contract that the migration to PixelKit had to preserve.
+    func testWhenCompletionPixelIsFiredThenNameKeepsTheFormFactorSuffix() {
+        let pixel = DataClearingCompletionPixels.allDataCleared(duration: 0, tabCount: 0)
+
+        assertFiredPixelNames(pixel, source: .iOS, equal: ["mf_dc_ios_phone"])
+        assertFiredPixelNames(pixel, source: .iPadOS, equal: ["mf_dc_ios_tablet"])
+    }
+
+    /// `m_fire_retrigger_in_20s` and `m_fire_user_action_before_completion` use the `.standard`
+    /// policy, so the form-factor suffix follows the frequency suffix as declared in
+    /// `data_clearing_pixels.json5`.
+    func testWhenRetriggerPixelIsFiredThenNameCarriesTheFormFactorSuffix() {
+        assertFiredPixelNames(DataClearingPixels.retriggerIn20s,
+                              frequency: .dailyAndStandard,
+                              source: .iOS,
+                              equal: ["m_fire_retrigger_in_20s_daily_ios_phone", "m_fire_retrigger_in_20s_ios_phone"])
+        assertFiredPixelNames(DataClearingPixels.retriggerIn20s,
+                              frequency: .dailyAndStandard,
+                              source: .iPadOS,
+                              equal: ["m_fire_retrigger_in_20s_daily_ios_tablet", "m_fire_retrigger_in_20s_ios_tablet"])
+    }
+
+    func testWhenUserActionBeforeCompletionPixelIsFiredThenNameCarriesTheFormFactorSuffix() {
+        assertFiredPixelNames(DataClearingPixels.userActionBeforeCompletion,
+                              frequency: .dailyAndStandard,
+                              source: .iOS,
+                              equal: ["m_fire_user_action_before_completion_daily_ios_phone", "m_fire_user_action_before_completion_ios_phone"])
+        assertFiredPixelNames(DataClearingPixels.userActionBeforeCompletion,
+                              frequency: .dailyAndStandard,
+                              source: .iPadOS,
+                              equal: ["m_fire_user_action_before_completion_daily_ios_tablet", "m_fire_user_action_before_completion_ios_tablet"])
+    }
+
+    private func assertFiredPixelNames(_ pixel: PixelKit.Event,
+                                       frequency: PixelKit.Frequency = .standard,
+                                       source: PixelKit.Source,
+                                       equal expectedNames: Set<String>,
+                                       file: StaticString = #file,
+                                       line: UInt = #line) {
+        let suiteName = "DataClearingPixelsReporterTests.\(source.rawValue)"
+        let defaults = UserDefaults(suiteName: suiteName)!
+        defaults.removePersistentDomain(forName: suiteName)
+        defer { defaults.removePersistentDomain(forName: suiteName) }
+
+        var firedNames = Set<String>()
+        let fired = expectation(description: "pixel fired")
+        fired.expectedFulfillmentCount = expectedNames.count
+        let pixelKit = PixelKit(dryRun: false,
+                                appVersion: "1.0.0",
+                                source: source.rawValue,
+                                defaultHeaders: [:],
+                                defaults: defaults) { firedName, _, _, _, _, _ in
+            firedNames.insert(firedName)
+            fired.fulfill()
+        }
+
+        pixelKit.fire(pixel, frequency: frequency)
+
+        wait(for: [fired], timeout: 1)
+        XCTAssertEqual(firedNames, expectedNames, file: file, line: line)
+    }
+
+    // MARK: - fireDroppedBurnPixel Tests
+
+    @MainActor
+    func testWhenBurnIsDroppedThenPixelReportsTriggerScopeAndElapsedTime() {
+        // Given
+        sut.burnDidStart()
+
+        // When - the drop happens 12 seconds into the in-progress burn
+        currentTime += 12
+        sut.fireDroppedBurnPixel(request: FireRequest(options: .all,
+                                                      trigger: .manualFire,
+                                                      scope: .all,
+                                                      source: .browsing))
+
+        // Then
+        mockPixelFiring.expectedFireCalls = [
+            .init(pixel: DataClearingPixels.burnDropped(trigger: "manual_fire", scope: "all", elapsed: .lessThan30),
+                  frequency: .dailyAndCount)
+        ]
+        mockPixelFiring.verifyExpectations(file: #file, line: #line)
+    }
+
+    @MainActor
+    func testWhenBurnHasHungThenDroppedPixelReportsAHighElapsedBucket() {
+        // Given
+        sut.burnDidStart()
+
+        // When - a stuck `burnInProgress` keeps dropping presses long after the burn started
+        currentTime += 1_800
+        sut.fireDroppedBurnPixel(request: FireRequest(options: .all,
+                                                      trigger: .manualFire,
+                                                      scope: .all,
+                                                      source: .browsing))
+
+        // Then
+        mockPixelFiring.expectedFireCalls = [
+            .init(pixel: DataClearingPixels.burnDropped(trigger: "manual_fire", scope: "all", elapsed: .more),
+                  frequency: .dailyAndCount)
+        ]
+        mockPixelFiring.verifyExpectations(file: #file, line: #line)
+    }
+
+    @MainActor
+    func testWhenDroppedBurnIsAnAutoClearThenPixelReportsThatTrigger() {
+        // Given - auto-clear has no `burnInProgress` gate of its own, so it reaches the same drop path
+        sut.burnDidStart()
+
+        // When
+        currentTime += 3
+        sut.fireDroppedBurnPixel(request: FireRequest(options: .all,
+                                                      trigger: .autoClearOnForeground,
+                                                      scope: .all,
+                                                      source: .autoClear))
+
+        // Then - reported separately so auto-clear drops don't inflate the user-visible count
+        mockPixelFiring.expectedFireCalls = [
+            .init(pixel: DataClearingPixels.burnDropped(trigger: "auto_clear_on_foreground", scope: "all", elapsed: .lessThan5),
+                  frequency: .dailyAndCount)
+        ]
+        mockPixelFiring.verifyExpectations(file: #file, line: #line)
+    }
+
+    func testElapsedBucketBoundaries() {
+        XCTAssertEqual(DataClearingPixels.ElapsedBucket(seconds: 0), .lessThan1)
+        XCTAssertEqual(DataClearingPixels.ElapsedBucket(seconds: 1), .lessThan1)
+        XCTAssertEqual(DataClearingPixels.ElapsedBucket(seconds: 1.1), .lessThan5)
+        XCTAssertEqual(DataClearingPixels.ElapsedBucket(seconds: 30), .lessThan30)
+        XCTAssertEqual(DataClearingPixels.ElapsedBucket(seconds: 31), .lessThan60)
+        XCTAssertEqual(DataClearingPixels.ElapsedBucket(seconds: 300), .lessThan300)
+        XCTAssertEqual(DataClearingPixels.ElapsedBucket(seconds: 301), .more)
+    }
+
+    // MARK: - Nil PixelFiring Tests
+    
+    @MainActor
+    func testWhenPixelFiringIsNilThenNoPixelIsFiredAndNoCrash() {
+        // Given
+        sut = DataClearingPixelsReporter(pixelFiring: nil)
+
+        // When - should not crash
+        sut.fireRetriggerPixelIfNeeded(request: FireRequest(options: .all, trigger: .manualFire, scope: .all, source: .settings))
+        sut.fireUserActionBeforeCompletionPixel()
+        sut.fireDataClearingCompletionPixel(.allDataCleared(duration: 0, tabCount: 0))
+        sut.burnDidStart()
+        sut.fireDroppedBurnPixel(request: FireRequest(options: .all, trigger: .manualFire, scope: .all, source: .settings))
+
+        // Then - no crash occurred
+    }
+}
+
+// MARK: - PixelKitMock assertion helper
+
+/// Local to this test target. PixelKit's testing support deliberately does not link XCTest — a target that
+/// does cannot be built as a dynamic framework, so Xcode links it statically and absorbs PixelKit into each
+/// test bundle, giving the app and the tests separate `PixelKit.shared` values.
+private extension PixelKitMock {
+
+    func verifyExpectations(file: StaticString = #file, line: UInt = #line) {
+        XCTAssertEqual(expectedFireCalls, actualFireCalls, file: file, line: line)
+    }
+}

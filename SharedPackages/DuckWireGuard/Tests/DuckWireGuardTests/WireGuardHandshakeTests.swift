@@ -127,7 +127,7 @@ final class WireGuardHandshakeTests: XCTestCase {
             let initiator = try makeHandshake(vector, isInitiator: true)
             let initiation = try initiate(vector, using: initiator)
             let response = try bytes(vector, "response")
-            for offset in [12, 43, 44, 59] {
+            for offset in [12, 43] + Array(44..<60) {
                 var altered = response
                 altered[offset] ^= 1
                 XCTAssertThrowsError(try complete(altered, transcript: initiation.transcript, using: initiator), "offset \(offset)")

@@ -61,14 +61,25 @@ final class WireGuardCryptoTests: XCTestCase {
         }
     }
 
-    func testHmacAndWireGuardKdfAgainstIndependentVectors() throws {
+    func testHmacAgainstIndependentVectorsIncludingKeyBlockBoundaries() throws {
         // Generated with Python hmac.new(..., hashlib.blake2s), not the keyed BLAKE2s mode.
         let key = Data((0..<32).map(UInt8.init))
         let input = Data("wireguard-test".utf8)
         XCTAssertEqual(WireGuardCrypto.hmac(key: key, data: input),
                        try bytes("32dd4fa6a6240fd8b9708215287ea0a0856a109c05822ea13a3a62d1c0757b15"))
-        XCTAssertEqual(WireGuardCrypto.hmac(key: Data((0..<100).map(UInt8.init)), data: input),
-                       try bytes("32c0cc22ec6b74c0ec740ad66c02d317c3930983a1eef89959d28325154ae03d"))
+        let expected = [
+            (64, "48d1f4230affd33261ff834f889e083bd0881c76888095eee466584af59bd758"),
+            (65, "23e90fa56259b0c70f5b38a19f8c8516a85f980bfe51ae4bc0a475238f647290"),
+            (100, "32c0cc22ec6b74c0ec740ad66c02d317c3930983a1eef89959d28325154ae03d")
+        ]
+        for (length, digest) in expected {
+            XCTAssertEqual(WireGuardCrypto.hmac(key: Data((0..<length).map(UInt8.init)), data: input), try bytes(digest))
+        }
+    }
+
+    func testWireGuardKdfOutputCountsAgainstIndependentVectors() throws {
+        let key = Data((0..<32).map(UInt8.init))
+        let input = Data("wireguard-test".utf8)
         let expected = try [
             "2b624ee51163acaadc377e1d2601c8730004cb1791c8a0704bced9ba575725c0",
             "c1c02fb1ef9b836e16cf7daa308ebad4254137de5b5e328d1f45d0f7bb626c07",
@@ -76,6 +87,18 @@ final class WireGuardCryptoTests: XCTestCase {
         ].map(bytes)
         for count in 1...3 {
             XCTAssertEqual(WireGuardCrypto.kdf(key: key, input: input, count: count), Array(expected.prefix(count)))
+        }
+    }
+
+    func testWireGuardKdfWithEmptyInputAgainstIndependentVectors() throws {
+        let key = Data((0..<32).map(UInt8.init))
+        let expected = try [
+            "7a38c34bf2b8738d7374ca77c44ecb309a11d2b2528304fa86052c365e722624",
+            "1a17621f346abdc520746a9fb64d8eb03231d674fc15687537b0780fd9c060fd",
+            "4eaf02809ac4b930ef63479de62275f1c55656e61f78a3cc653c18a2223d6c5f"
+        ].map(bytes)
+        for count in 1...3 {
+            XCTAssertEqual(WireGuardCrypto.kdf(key: key, input: Data(), count: count), Array(expected.prefix(count)))
         }
     }
 

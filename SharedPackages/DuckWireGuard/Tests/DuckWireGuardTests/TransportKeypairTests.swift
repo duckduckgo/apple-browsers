@@ -87,22 +87,24 @@ final class TransportKeypairTests: XCTestCase {
 
     func testRejectedMessageCountsAndMaximumCounterRefuseWithoutOverflow() throws {
         let vector = try XCTUnwrap(WireGuardTestData.handshakeVectors().first)
-        for counter in [UInt64.max - 8192, UInt64.max] {
-            var keypair = try makeKeypair(vector, initialSendCounter: counter)
-            let datagram = try authenticatedDatagram(vector, counter: counter, plaintext: Data())
-            let incoming = try transport(datagram)
-            var forged = datagram
-            forged[forged.count - 1] ^= 1
-            for _ in 0..<3 {
-                assertError(.counterExhausted) { _ = try keypair.reserve(Data(), paddingLength: 0, at: 1000) }
-                assertError(.counterExhausted) { _ = try keypair.decrypt(incoming, at: 1000) }
-                assertError(.counterExhausted) { _ = try keypair.decrypt(transport(forged), at: 1000) }
+        for isInitiator in [true, false] {
+            for counter in [UInt64.max - 8192, UInt64.max] {
+                var keypair = try makeKeypair(vector, isInitiator: isInitiator, initialSendCounter: counter)
+                let datagram = try authenticatedDatagram(vector, counter: counter, plaintext: Data(), isInitiator: isInitiator)
+                let incoming = try transport(datagram)
+                var forged = datagram
+                forged[forged.count - 1] ^= 1
+                for _ in 0..<3 {
+                    assertError(.counterExhausted) { _ = try keypair.reserve(Data(), paddingLength: 0, at: 1000) }
+                    assertError(.counterExhausted) { _ = try keypair.decrypt(incoming, at: 1000) }
+                    assertError(.counterExhausted) { _ = try keypair.decrypt(transport(forged), at: 1000) }
+                }
             }
+            var keypair = try makeKeypair(vector, isInitiator: isInitiator)
+            let lastLegal = UInt64.max - 8193
+            let incoming = try transport(authenticatedDatagram(vector, counter: lastLegal, plaintext: Data([0x42]), isInitiator: isInitiator))
+            XCTAssertEqual(try keypair.decrypt(incoming, at: 1000), Data([0x42]))
         }
-        var keypair = try makeKeypair(vector)
-        let lastLegal = UInt64.max - 8193
-        let incoming = try transport(authenticatedDatagram(vector, counter: lastLegal, plaintext: Data([0x42])))
-        XCTAssertEqual(try keypair.decrypt(incoming, at: 1000), Data([0x42]))
     }
 
     func testSnapshotOwnershipAndAgeRemainIndependentOfCounterExhaustion() throws {
@@ -210,12 +212,12 @@ final class TransportKeypairTests: XCTestCase {
         XCTAssertEqual(try ChaChaPoly.open(box, using: SymmetricKey(data: key)), plaintext, file: file, line: line)
     }
 
-    private func authenticatedDatagram(_ vector: [String: Any], counter: UInt64, plaintext: Data) throws -> Data {
-        let receiver = try index(vector, "initiator_index")
+    private func authenticatedDatagram(_ vector: [String: Any], counter: UInt64, plaintext: Data, isInitiator: Bool = true) throws -> Data {
+        let receiver = try index(vector, isInitiator ? "initiator_index" : "responder_index")
         let receiverBytes = withUnsafeBytes(of: receiver.littleEndian) { Data($0) }
         let counterBytes = withUnsafeBytes(of: counter.littleEndian) { Data($0) }
         let nonce = try ChaChaPoly.Nonce(data: Data(repeating: 0, count: 4) + counterBytes)
-        let key = SymmetricKey(data: try bytes(vector, "receiving_key"))
+        let key = SymmetricKey(data: try bytes(vector, isInitiator ? "receiving_key" : "sending_key"))
         let sealed = try ChaChaPoly.seal(plaintext, using: key, nonce: nonce)
         return Data([4, 0, 0, 0]) + receiverBytes + counterBytes + sealed.ciphertext + sealed.tag
     }

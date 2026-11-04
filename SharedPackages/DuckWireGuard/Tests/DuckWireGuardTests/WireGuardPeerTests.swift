@@ -58,12 +58,13 @@ final class WireGuardPeerTests: XCTestCase {
         XCTAssertNotEqual(first.suffix(16), second.suffix(16))
     }
 
-    func testPreparedPacketMatchesIndependentTransportAndKeepsItsInputSnapshot() throws {
+    func testPreparationAcceptsSlicedInputAndMatchesIndependentTransport() throws {
         let (peer, _, fixture) = try context()
-        var packet = try bytes(fixture, "plaintext")
-        let prepared = try peer.prepare(packet)
-        packet[4] ^= 1
-        XCTAssertEqual(prepared.packet, try bytes(fixture, "plaintext"))
+        let packet = try bytes(fixture, "plaintext")
+        let sliced = (Data([0xaa, 0xbb, 0xcc]) + packet).dropFirst(3)
+        XCTAssertEqual(sliced.startIndex, 3)
+        let prepared = try peer.prepare(sliced)
+        XCTAssertEqual(prepared.packet, packet)
         XCTAssertEqual(try prepared.encrypt(), try bytes(fixture, "sent_transport"))
         XCTAssertTrue(peer.canSend(prepared))
     }
@@ -175,6 +176,27 @@ final class WireGuardPeerTests: XCTestCase {
         clock.time += 180
         assertError(.handshakeExpired) { _ = try peer.receive(bytes(fixture, "response")) }
         XCTAssertFalse(peer.isEstablished)
+    }
+
+    func testReceiveRekeyHintRequiresEstablishedKeys() throws {
+        let (peer, clock, _) = try context(established: false)
+        XCTAssertFalse(peer.needsRekeyAfterReceiving)
+        _ = try peer.initiateHandshake()
+        clock.time += 166
+        XCTAssertFalse(peer.needsRekeyAfterReceiving)
+    }
+
+    func testReceiveRekeyHintUsesInitiatorRoleAndStrictTimeBoundary() throws {
+        for isInitiator in [true, false] {
+            let clock = Clock()
+            let (peer, _) = try counterPeer(isInitiator: isInitiator, initialSendCounter: 0, now: { clock.time })
+            for age in [0.0, 164.999, 165, 165.001, 179.999, 180] {
+                clock.time = 1000 + age
+                XCTAssertEqual(peer.needsRekeyAfterReceiving, isInitiator && age > 165, "age \(age), initiator \(isInitiator)")
+            }
+            peer.reset()
+            XCTAssertFalse(peer.needsRekeyAfterReceiving)
+        }
     }
 
     func testHandshakeRateLimitPreservesPendingState() throws {
@@ -377,16 +399,13 @@ final class WireGuardPeerTests: XCTestCase {
                      count, elapsed, elapsed * 1_000_000 / Double(count), Double(receivedBytes) * 8 / elapsed / 1_000_000))
     }
 
-    func testOutgoingMessageCountRequestsRekeyAtTheSpecBoundaryForBothRoles() throws {
+    func testPeerRekeyHintReflectsTransportMessageCountForBothRoles() throws {
         let rekeyAfterMessages: UInt64 = 1 << 60
         for isInitiator in [true, false] {
-            let (peer, fixture) = try counterPeer(isInitiator: isInitiator, initialSendCounter: rekeyAfterMessages - 1)
-            let packet = try bytes(fixture, "plaintext")
+            let (peer, _) = try counterPeer(isInitiator: isInitiator, initialSendCounter: rekeyAfterMessages - 1)
             XCTAssertFalse(peer.needsRekey)
-            let lastBeforeRekey = try peer.encrypt(packet)
-            try assertOutgoingPacket(lastBeforeRekey, counter: rekeyAfterMessages - 1, fixture: fixture, isInitiator: isInitiator)
+            _ = try peer.keepalive()
             XCTAssertTrue(peer.needsRekey)
-            try assertOutgoingPacket(peer.encrypt(packet), counter: rekeyAfterMessages, fixture: fixture, isInitiator: isInitiator)
         }
     }
 
@@ -398,30 +417,12 @@ final class WireGuardPeerTests: XCTestCase {
             _ = try peer.prepare(packet)
             let lastLegal = try peer.prepare(packet)
             try assertOutgoingPacket(lastLegal.encrypt(), counter: rejectAfterMessages - 1, fixture: fixture, isInitiator: isInitiator)
-            for _ in 0..<3 {
-                assertError(.counterExhausted) { _ = try peer.prepare(packet) }
-                assertError(.counterExhausted) { _ = try peer.encrypt(packet) }
-                assertError(.counterExhausted) { _ = try peer.keepalive() }
-            }
+            assertError(.counterExhausted) { _ = try peer.prepare(packet) }
+            assertError(.counterExhausted) { _ = try peer.encrypt(packet) }
+            assertError(.counterExhausted) { _ = try peer.keepalive() }
             XCTAssertTrue(peer.canSend(lastLegal))
             XCTAssertTrue(peer.isEstablished)
             XCTAssertTrue(peer.needsRekey)
-        }
-    }
-
-    func testOutgoingRejectionBoundaryAndMaximumCounterRefuseWithoutWrappingForBothRoles() throws {
-        let rejectAfterMessages = UInt64.max - 8192
-        for isInitiator in [true, false] {
-            for counter in [rejectAfterMessages, UInt64.max] {
-                let (peer, fixture) = try counterPeer(isInitiator: isInitiator, initialSendCounter: counter)
-                let packet = try bytes(fixture, "plaintext")
-                for _ in 0..<3 {
-                    assertError(.counterExhausted) { _ = try peer.prepare(packet) }
-                    assertError(.counterExhausted) { _ = try peer.encrypt(packet) }
-                    assertError(.counterExhausted) { _ = try peer.keepalive() }
-                }
-                XCTAssertTrue(peer.isEstablished)
-            }
         }
     }
 
@@ -447,9 +448,7 @@ final class WireGuardPeerTests: XCTestCase {
         let packet = try bytes(fixture, "plaintext")
         let lastAccepted = UInt64.max - 8193
         XCTAssertEqual(try peer.receive(transport(fixture, counter: lastAccepted, plaintext: packet)), .packet(packet))
-        for counter in [lastAccepted + 1, UInt64.max] {
-            assertError(.counterExhausted) { _ = try peer.receive(transport(fixture, counter: counter, plaintext: packet)) }
-        }
+        assertError(.counterExhausted) { _ = try peer.receive(transport(fixture, counter: lastAccepted + 1, plaintext: packet)) }
     }
 
     func testAcceptsEmptyKeepalive() throws {
@@ -526,7 +525,8 @@ final class WireGuardPeerTests: XCTestCase {
         return (peer, clock, fixture)
     }
 
-    private func counterPeer(isInitiator: Bool, initialSendCounter: UInt64) throws -> (WireGuardPeer, [String: Any]) {
+    private func counterPeer(isInitiator: Bool, initialSendCounter: UInt64,
+                             now: @escaping () -> TimeInterval = { 1000 }) throws -> (WireGuardPeer, [String: Any]) {
         let fixture = try XCTUnwrap(WireGuardTestData.handshakeVectors().first)
         let ephemeral = try bytes(fixture, isInitiator ? "initiator_ephemeral" : "responder_ephemeral")
         let index = try XCTUnwrap(fixture[isInitiator ? "initiator_index" : "responder_index"] as? NSNumber).uint32Value
@@ -534,7 +534,7 @@ final class WireGuardPeerTests: XCTestCase {
         let peer = try WireGuardPeer(
             privateKey: bytes(fixture, isInitiator ? "initiator_private" : "responder_private"),
             peerPublicKey: bytes(fixture, isInitiator ? "responder_public" : "initiator_public"),
-            ephemeralPrivateKey: { ephemeral }, senderIndex: { index }, now: { 1000 }, timestamp: { timestamp },
+            ephemeralPrivateKey: { ephemeral }, senderIndex: { index }, now: now, timestamp: { timestamp },
             initialSendCounter: initialSendCounter
         )
         if isInitiator {

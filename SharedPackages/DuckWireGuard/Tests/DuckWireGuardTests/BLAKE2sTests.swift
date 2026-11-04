@@ -52,6 +52,19 @@ final class BLAKE2sTests: XCTestCase {
                        try bytes("508c5e8c327c14e2e1a72ba34eeb452f37458b209ed63a294d999b4c86675982"))
     }
 
+    func testCookieSizedKeysAgainstIndependentVectors() throws {
+        let key = Data((0..<16).map(UInt8.init))
+        let expected = [
+            (0, "af4e5d3bb230e9ff9096ca6f7c501f76"),
+            (64, "dd55c51c98f8ab96ed272882941f0b6a"),
+            (65, "9018c671bb7e94a6d540a91765bbecad")
+        ]
+        for (length, digest) in expected {
+            let input = Data((0..<length).map(UInt8.init))
+            XCTAssertEqual(BLAKE2s.hash(input, key: key, outputLength: 16), try bytes(digest), "length \(length)")
+        }
+    }
+
     func testKeyedEmptyMessageFinalizesTheCompleteKeyBlock() throws {
         let key = Data((0..<32).map(UInt8.init))
         XCTAssertEqual(BLAKE2s.hash(Data(), key: key),

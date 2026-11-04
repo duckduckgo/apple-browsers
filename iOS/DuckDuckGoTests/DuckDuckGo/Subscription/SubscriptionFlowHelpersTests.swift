@@ -104,26 +104,28 @@ struct SubscriptionFlowConfigurationTests {
     }
 
     @available(iOS 16, macOS 13, *)
-    @Test("restore puts the email screen in restore mode and relies on the default URL", .timeLimit(.minutes(1)))
+    @Test("restore puts the email screen in restore mode and opens the purchase URL", .timeLimit(.minutes(1)))
     func restoreConfiguration() {
-        #expect(Configuration.restore() == Configuration(emailScreenMode: .restoreFlow,
-                                                         initialURL: nil,
-                                                         flowType: .firstPurchase,
-                                                         subscriptionAttributionOrigin: nil,
-                                                         planChangeEntry: nil,
-                                                         schedulesExpirationReminders: true))
+        #expect(Configuration.restore(subscriptionManager: subscriptionManager)
+                == Configuration(emailScreenMode: .restoreFlow,
+                                 initialURL: subscriptionManager.url(for: .purchase),
+                                 flowType: .firstPurchase,
+                                 subscriptionAttributionOrigin: nil,
+                                 planChangeEntry: nil,
+                                 schedulesExpirationReminders: true))
     }
 
     @available(iOS 16, macOS 13, *)
-    @Test("email uses the requested email mode", .timeLimit(.minutes(1)),
+    @Test("email uses the requested email mode and opens the purchase URL", .timeLimit(.minutes(1)),
           arguments: [SubscriptionEmailViewModel.EmailViewFlow.activationFlow, .restoreFlow, .manageEmailFlow])
     func emailConfiguration(emailScreenMode: SubscriptionEmailViewModel.EmailViewFlow) {
-        #expect(Configuration.email(emailScreenMode) == Configuration(emailScreenMode: emailScreenMode,
-                                                                      initialURL: nil,
-                                                                      flowType: .firstPurchase,
-                                                                      subscriptionAttributionOrigin: nil,
-                                                                      planChangeEntry: nil,
-                                                                      schedulesExpirationReminders: true))
+        #expect(Configuration.email(emailScreenMode, subscriptionManager: subscriptionManager)
+                == Configuration(emailScreenMode: emailScreenMode,
+                                 initialURL: subscriptionManager.url(for: .purchase),
+                                 flowType: .firstPurchase,
+                                 subscriptionAttributionOrigin: nil,
+                                 planChangeEntry: nil,
+                                 schedulesExpirationReminders: true))
     }
 
     @available(iOS 16, macOS 13, *)
@@ -229,14 +231,14 @@ struct SubscriptionFlowTests {
     @available(iOS 16, macOS 13, *)
     @Test("restore uses the restore configuration", .timeLimit(.minutes(1)))
     func restoreFlow() {
-        #expect(configuration(of: .restore) == Configuration.restore())
+        #expect(configuration(of: .restore) == Configuration.restore(subscriptionManager: subscriptionManager))
     }
 
     @available(iOS 16, macOS 13, *)
     @Test("email uses the email configuration in its own mode", .timeLimit(.minutes(1)),
           arguments: [SubscriptionEmailViewModel.EmailViewFlow.activationFlow, .restoreFlow, .manageEmailFlow])
     func emailFlow(emailScreenMode: SubscriptionEmailViewModel.EmailViewFlow) {
-        #expect(configuration(of: .email(emailScreenMode)) == Configuration.email(emailScreenMode))
+        #expect(configuration(of: .email(emailScreenMode)) == Configuration.email(emailScreenMode, subscriptionManager: subscriptionManager))
     }
 
     @available(iOS 16, macOS 13, *)

@@ -56,9 +56,9 @@ enum SubscriptionFlow {
         case let .plans(redirectURLComponents):
             return .plans(redirectURLComponents: redirectURLComponents, subscriptionManager: subscriptionManager)
         case .restore:
-            return .restore()
+            return .restore(subscriptionManager: subscriptionManager)
         case let .email(emailScreenMode):
-            return .email(emailScreenMode)
+            return .email(emailScreenMode, subscriptionManager: subscriptionManager)
         }
     }
 }

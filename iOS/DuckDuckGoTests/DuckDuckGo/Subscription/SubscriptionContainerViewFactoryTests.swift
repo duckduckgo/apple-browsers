@@ -96,7 +96,7 @@ struct SubscriptionContainerViewFactoryTests {
     }
 
     @available(iOS 16, macOS 13, *)
-    @Test("restore falls back to the purchase URL in restore email mode and gets no onboarding store", .timeLimit(.minutes(1)))
+    @Test("restore loads the purchase URL in restore email mode and gets no onboarding store", .timeLimit(.minutes(1)))
     func restoreViewModel() {
         let viewModel = makeViewModel(for: .restore)
 

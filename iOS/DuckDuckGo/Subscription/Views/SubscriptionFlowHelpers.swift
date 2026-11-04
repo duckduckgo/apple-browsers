@@ -54,7 +54,7 @@ struct SubscriptionPurchaseDependencies {
 /// Everything a flow decides for itself, built from its inputs. Each flow has one builder that sets every field.
 struct SubscriptionFlowConfiguration: Equatable {
     let emailScreenMode: SubscriptionEmailViewModel.EmailViewFlow?
-    let initialURL: URL?
+    let initialURL: URL
     let flowType: SubscriptionFlowType
     let subscriptionAttributionOrigin: String?
     let planChangeEntry: String?
@@ -103,18 +103,18 @@ struct SubscriptionFlowConfiguration: Equatable {
                     schedulesExpirationReminders: true)
     }
 
-    static func restore() -> Self {
+    static func restore(subscriptionManager: SubscriptionManager) -> Self {
         Self(emailScreenMode: .restoreFlow,
-             initialURL: nil,
+             initialURL: subscriptionManager.url(for: .purchase),
              flowType: .firstPurchase,
              subscriptionAttributionOrigin: nil,
              planChangeEntry: nil,
              schedulesExpirationReminders: true)
     }
 
-    static func email(_ emailScreenMode: SubscriptionEmailViewModel.EmailViewFlow) -> Self {
+    static func email(_ emailScreenMode: SubscriptionEmailViewModel.EmailViewFlow, subscriptionManager: SubscriptionManager) -> Self {
         Self(emailScreenMode: emailScreenMode,
-             initialURL: nil,
+             initialURL: subscriptionManager.url(for: .purchase),
              flowType: .firstPurchase,
              subscriptionAttributionOrigin: nil,
              planChangeEntry: nil,

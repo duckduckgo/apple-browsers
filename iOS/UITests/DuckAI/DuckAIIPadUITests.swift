@@ -38,7 +38,9 @@ final class DuckAIIPadUITests: DuckAIUITestCase {
             for identifier in ["Settings.AIFeatures.Picker.SearchOnly", "Settings.AIFeatures.Picker.SearchAndDuckAI"] {
                 let option = app.aiFeaturesSettingsList.descendants(matching: .any)[identifier]
                 app.aiFeaturesSettingsList.swipeUpToReveal(option, timeout: UITestTimeouts.navigation)
-                XCTAssertTrue(option.isHittable, "The iPad search-input choice did not become visible: \(identifier).")
+                XCTAssertTrue(
+                    option.waitForHittableInAppWindow(in: app, timeout: UITestTimeouts.elementExistence),
+                    "The iPad search-input choice did not become visible: \(identifier).")
             }
             app.selectDuckAISearchInput(true)
         }
@@ -48,7 +50,9 @@ final class DuckAIIPadUITests: DuckAIUITestCase {
             let shortcuts = app.descendants(matching: .any)["Settings.List.AIChatShortcuts"]
             let tabBarShortcut = shortcuts.switches.matching(identifier: "Settings.AIChat.TabBarToggle").firstMatch
             shortcuts.swipeUpToReveal(tabBarShortcut, timeout: UITestTimeouts.navigation)
-            XCTAssertTrue(tabBarShortcut.isHittable, "The iPad Tab Bar shortcut setting did not appear.")
+            XCTAssertTrue(
+                tabBarShortcut.waitForHittableInAppWindow(in: app, timeout: UITestTimeouts.elementExistence),
+                "The iPad Tab Bar shortcut setting did not appear.")
             // With the current iPad chrome feature, Tab Bar replaces Maestro's older Address Bar shortcut row.
             XCTAssertFalse(shortcuts.switches.matching(identifier: "Settings.AIChat.AddressBarToggle").firstMatch.exists)
             app.navigateBackInSettings(from: "Settings.List.AIChatShortcuts", to: "Settings.List.AIFeatures")
@@ -57,12 +61,11 @@ final class DuckAIIPadUITests: DuckAIUITestCase {
         }
 
         XCTContext.runActivity(named: "Verify both mode controls while the iPad address bar is focused") { _ in
-            app.searchEntry.tapWhenHittable()
+            app.searchEntry.tapWhenHittable(in: app)
             for identifier in ["Browser.OmniBar.Button.ModeToggle.Search", "Browser.OmniBar.Button.ModeToggle.AIChat"] {
+                let modeControl = app.browserWindow.buttons[identifier]
                 XCTAssertTrue(
-                    app.buttons[identifier].wait(
-                        for: NSPredicate(format: "isHittable == true AND isEnabled == true"),
-                        timeout: UITestTimeouts.elementExistence),
+                    modeControl.waitForHittableInAppWindow(in: app, timeout: UITestTimeouts.elementExistence),
                     "The focused iPad address bar did not show its mode control: \(identifier).")
             }
         }
@@ -72,7 +75,7 @@ final class DuckAIIPadUITests: DuckAIUITestCase {
             app.selectDuckAISearchInput(false)
             app.navigateBackInSettings(from: "Settings.List.AIFeatures", to: "Settings.List.Main")
             app.dismissSettings()
-            app.searchEntry.tapWhenHittable()
+            app.searchEntry.tapWhenHittable(in: app)
             XCTAssertTrue(
                 app.keyboards.firstMatch.waitForExistence(timeout: UITestTimeouts.elementExistence),
                 "The address bar did not enter editing before checking Search Only controls.")

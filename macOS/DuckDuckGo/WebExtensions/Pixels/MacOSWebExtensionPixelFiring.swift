@@ -27,6 +27,9 @@ enum WebExtensionPixel: PixelKit.Event {
     // MARK: - Chrome Web Store Updates
 
     case updateCheck(extension: WebExtensionPixelExtension, outcome: WebExtensionUpdateCheckOutcome)
+    case updateDownloadFailed(extensionID: String, outcome: String)
+    case updateVerificationFailed(extensionID: String, outcome: String)
+    case updateVerified(extensionID: String)
 
     // MARK: - Installation
 
@@ -116,6 +119,12 @@ enum WebExtensionPixel: PixelKit.Event {
             case .googleFlagged: return "web_extension_update_skipped_macos"
             default: return "web_extension_update_check_failed_macos"
             }
+        case .updateDownloadFailed:
+            return "web_extension_update_download_failed_macos"
+        case .updateVerificationFailed:
+            return "web_extension_update_verification_failed_macos"
+        case .updateVerified:
+            return "web_extension_update_verified_macos"
         case .installed:
             return "m_mac_web_extension_installed"
         case .installError:
@@ -217,6 +226,12 @@ enum WebExtensionPixel: PixelKit.Event {
                 parameters["outcome"] = outcome.rawValue
             }
             return parameters
+        case .updateDownloadFailed(let extensionID, let outcome):
+            return ["extension_id": extensionID, "outcome": outcome]
+        case .updateVerificationFailed(let extensionID, let outcome):
+            return ["extension_id": extensionID, "outcome": outcome]
+        case .updateVerified(let extensionID):
+            return ["extension_id": extensionID]
         case .embeddedUpgraded(let fromVersion, let toVersion),
              .darkReaderUpgraded(let fromVersion, let toVersion),
              .adBlockingExtensionUpgraded(let fromVersion, let toVersion):
@@ -265,7 +280,8 @@ enum WebExtensionPixel: PixelKit.Event {
 
     var namePrefix: PixelKitNamePrefix {
         switch self {
-        case .updateCheck, .debugCPM, .reloadError, .cpmNetworkProcessRecoveryApplied, .bitwardenDailyActive, .defaultPasswordManagerSet, .apiCompatibilityGaps:
+        case .updateCheck, .updateDownloadFailed, .updateVerificationFailed, .updateVerified,
+             .debugCPM, .reloadError, .cpmNetworkProcessRecoveryApplied, .bitwardenDailyActive, .defaultPasswordManagerSet, .apiCompatibilityGaps:
             return .none
         default:
             return .platformDefault
@@ -334,6 +350,15 @@ struct MacOSWebExtensionPixelFiring: WebExtensionPixelFiring {
         switch event {
         case .updateCheck(let pixelExtension, let outcome):
             pixel = .updateCheck(extension: pixelExtension, outcome: outcome)
+        case .updateDownloadFailed(let extensionID, let outcome):
+            guard ChromeWebStoreURL.isValidExtensionID(extensionID) else { return }
+            pixel = .updateDownloadFailed(extensionID: extensionID, outcome: outcome.rawValue)
+        case .updateVerificationFailed(let extensionID, let outcome):
+            guard ChromeWebStoreURL.isValidExtensionID(extensionID) else { return }
+            pixel = .updateVerificationFailed(extensionID: extensionID, outcome: outcome.rawValue)
+        case .updateVerified(let extensionID):
+            guard ChromeWebStoreURL.isValidExtensionID(extensionID) else { return }
+            pixel = .updateVerified(extensionID: extensionID)
         case .installed(let pixelExtension):
             pixel = .installed(extension: pixelExtension)
         case .installError(let pixelExtension, let error):
@@ -398,7 +423,7 @@ struct MacOSWebExtensionPixelFiring: WebExtensionPixelFiring {
                                           missingAPICount: missingAPICount, unsupportedURLCount: unsupportedURLCount)
         }
         switch event {
-        case .updateCheck:
+        case .updateCheck, .updateDownloadFailed, .updateVerificationFailed, .updateVerified:
             frequency = .dailyAndCount
         case .bitwardenDailyActive, .apiCompatibilityGaps:
             frequency = .daily

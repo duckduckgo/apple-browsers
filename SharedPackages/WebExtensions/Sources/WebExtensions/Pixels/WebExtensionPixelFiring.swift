@@ -86,11 +86,35 @@ public enum WebExtensionUpdateCheckOutcome: String, CaseIterable, Sendable {
     }
 }
 
+/// Bounded download failures; package metadata and server messages are never sent.
+public enum WebExtensionUpdateDownloadFailure: String, Error, CaseIterable, Sendable {
+    case invalidRequest = "invalid_request"
+    case invalidResponse = "invalid_response"
+    case httpStatus = "http_status"
+    case networkFailure = "network_failure"
+    case sizeMismatch = "size_mismatch"
+    case packageTooLarge = "package_too_large"
+    case hashMismatch = "hash_mismatch"
+}
+
+/// Bounded verification failures, excluding cancellation.
+public enum WebExtensionUpdateVerificationFailure: String, Error, CaseIterable, Sendable {
+    case invalidPackage = "invalid_package"
+    case invalidSignature = "invalid_signature"
+    case invalidVersion = "invalid_version"
+    case versionMismatch = "version_mismatch"
+    case notNewer = "not_newer"
+    case storageFailure = "storage_failure"
+}
+
 /// Events that can be fired for web extension management.
 @available(macOS 15.4, iOS 18.4, *)
 public enum WebExtensionPixelEvent {
     /// Discovery pixels report the catalog extension and, for failures, a bounded reason.
     case updateCheck(extension: WebExtensionPixelExtension, outcome: WebExtensionUpdateCheckOutcome)
+    case updateDownloadFailed(extensionID: String, outcome: WebExtensionUpdateDownloadFailure)
+    case updateVerificationFailed(extensionID: String, outcome: WebExtensionUpdateVerificationFailure)
+    case updateVerified(extensionID: String)
     case installed(extension: WebExtensionPixelExtension)
     case installError(extension: WebExtensionPixelExtension, error: Error)
     case uninstalled(extension: WebExtensionPixelExtension)
@@ -334,7 +358,8 @@ public struct CPMWebExtensionPixelMetadata: Equatable, Sendable {
             name = "web_extension_cpm_network_process_recovery_applied"
             frequency = .dailyAndCount
             parameters = [:]
-        case .updateCheck, .installed, .installError, .uninstalled, .uninstallError, .uninstalledAll,
+        case .updateCheck, .updateDownloadFailed, .updateVerificationFailed, .updateVerified,
+             .installed, .installError, .uninstalled, .uninstallError, .uninstalledAll,
              .uninstallAllError, .loaded, .loadError, .reloadError, .stateChecked, .expectedExtensionNotLoaded,
              .adBlockingScriptletsNotFetched, .embeddedInstalled, .embeddedUpgraded,
              .embeddedInstallError, .scriptletFetchSuccess, .scriptletFetchError,

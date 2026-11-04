@@ -174,8 +174,8 @@ struct iOSWebExtensionPixelFiring: WebExtensionPixelFiring {
                           options: .parameters(["extension_loaded": extensionLoaded ? "true" : "false"]))
         case .cpmBackgroundLoadRestart, .cpmMessagingEpisode, .cpmNetworkProcessRecoveryApplied, .cpmRecovery, .cpmStartupResponseMissing:
             fireCPMPixel(event)
-        case .updateCheck:
-            // Chrome Web Store update discovery is only enabled on macOS.
+        case .updateCheck, .updateDownloadFailed, .updateVerificationFailed, .updateVerified:
+            // Chrome Web Store updates are only enabled on macOS.
             return
         case .defaultPasswordManagerSet, .bitwardenDailyActive, .apiCompatibilityGaps:
             // Chrome extensions, and so password manager extensions, are only supported on macOS, so

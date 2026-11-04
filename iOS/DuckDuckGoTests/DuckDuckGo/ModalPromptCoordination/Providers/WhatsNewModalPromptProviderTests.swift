@@ -406,12 +406,59 @@ struct WhatsNewCoordinatorPixelTrackingTests {
         )
         _ = coordinator.provideModalPrompt()
 
-        // WHEN - called after primary action completes
+        // WHEN - user taps the primary action
         await mockMapper.capturedOnPrimaryAction?(.dismiss)
 
         // THEN
         #expect(mockPixelReporter.didCallMeasureRemoteMessagePrimaryActionClicked)
         #expect(mockPixelReporter.capturedPrimaryActionClickedMessage?.id == "test-message")
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Primary actions dismiss after handling unless they stay within What's New", .timeLimit(.minutes(1)), arguments: [
+        (RemoteAction.dismiss, true),
+        (RemoteAction.navigation(value: .settings), true),
+        (RemoteAction.appStore, true),
+        (RemoteAction.urlInContext(value: "https://example.com"), false),
+        (RemoteAction.share(value: "Test", title: nil), false),
+        (RemoteAction.navigation(value: .importPasswords), false)
+    ], [true, false])
+    func actionDismissalDependsOnActionAndSource(testCase: (RemoteAction, Bool), isPrimaryAction: Bool) async throws {
+        let (action, primaryActionDismisses) = testCase
+        let message = RemoteMessageModel.makeCardsListMessage(id: "test-message")
+        let mockHandler = MockRemoteMessagingActionHandler()
+        let mockPixelReporter = MockRemoteMessagingPixelReporter()
+        let mockMapper = MockWhatsNewDisplayModelMapper()
+        mockMapper.displayModelToReturn = .mock
+        let coordinator = WhatsNewCoordinator(
+            displayContext: .scheduled,
+            repository: MockWhatsNewMessageRepository(scheduledRemoteMessage: message),
+            remoteMessageActionHandler: mockHandler,
+            isIPad: false,
+            pixelReporter: mockPixelReporter,
+            userScriptsDependencies: DefaultScriptSourceProvider.Dependencies.makeMock(),
+            imageLoader: MockRemoteMessagingImageLoader(),
+            displayModelMapper: mockMapper,
+            featureFlagger: MockFeatureFlagger()
+        )
+        _ = coordinator.provideModalPrompt()
+        mockHandler.onHandleActionCalled = {
+            #expect(!mockPixelReporter.didCallMeasureRemoteMessageDismissed)
+        }
+
+        if isPrimaryAction {
+            let callback = try #require(mockMapper.capturedOnPrimaryAction)
+            await callback(action)
+        } else {
+            let callback = try #require(mockMapper.capturedOnItemAction)
+            await callback(action, "card-123")
+        }
+
+        #expect(mockHandler.capturedRemoteAction == action)
+        #expect(mockPixelReporter.didCallMeasureRemoteMessageDismissed == (isPrimaryAction && primaryActionDismisses))
+        if isPrimaryAction && primaryActionDismisses {
+            #expect(mockPixelReporter.capturedDismissType == .primaryAction)
+        }
     }
 
     // MARK: - Card Pixel Tests
@@ -579,7 +626,7 @@ struct WhatsNewCoordinatorPixelTrackingTests {
     // MARK: - Dismiss Pixel Tests
 
     @Test("Check Primary Action Dismiss Callback Fires Dismiss Pixel with Primary Action Type")
-    func whenPrimaryActionCallbackInvokedThenDismissPixelFiresWithPrimaryActionType() {
+    func whenPrimaryActionCallbackInvokedThenDismissPixelFiresWithPrimaryActionType() async {
         // GIVEN
         let message = RemoteMessageModel.makeCardsListMessage(id: "test-message")
         let mockRepository = MockWhatsNewMessageRepository(scheduledRemoteMessage: message)
@@ -601,8 +648,8 @@ struct WhatsNewCoordinatorPixelTrackingTests {
         )
         _ = coordinator.provideModalPrompt()
 
-        // WHEN - called after primary action completes
-        mockMapper.capturedOnDismiss?()
+        // WHEN - user taps the primary action
+        await mockMapper.capturedOnPrimaryAction?(.dismiss)
 
         // THEN
         #expect(mockPixelReporter.didCallMeasureRemoteMessageDismissed)

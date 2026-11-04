@@ -21,18 +21,22 @@ import Foundation
 
 extension IdleReturnOutcome {
 
-    /// A cold start lands on the New Tab Page directly, rather than replacing the restored page after authentication.
-    /// - App Lock: nothing covers the window before authentication on a cold launch.
-    /// - No page to replace: the restored state already lands on a New Tab Page, including when tabs are cleared on launch.
-    func drawsNewTabPageAtLaunch(isAppLockEnabled: Bool, hasPageToReplace: Bool) -> Bool {
-        guard case .afterIdle(.ntp, _) = self else { return false }
-        return !isAppLockEnabled && hasPageToReplace
+    /// Whether a cold start opens straight on the New Tab Page, instead of showing the restored page and replacing it after launch.
+    /// Only for an after-idle New Tab Page return, and only when:
+    /// - No launch action opened the app. The action decides where the user lands.
+    /// - App Lock is off. With it on, the lock screen hides the restored page anyway, so it's replaced after unlock.
+    /// - There's a page to replace. If the restored tab is already a New Tab Page, the normal launch lands there.
+    func drawsNewTabPageAtLaunch(isFeatureOn: Bool, hasLaunchAction: Bool, isAppLockEnabled: Bool, hasPageToReplace: Bool) -> Bool {
+        guard isFeatureOn, case .afterIdle(.ntp, _) = self else { return false }
+        return !hasLaunchAction && !isAppLockEnabled && hasPageToReplace
     }
 
 }
 
-/// What the cold start drew, for every launch. Only a drawn New Tab Page is kept: the outcome is
-/// re-evaluated when the user arrives, since a background launch can make it hours old.
+/// Tells the launch handling that the after-idle New Tab Page is already drawn, so it records that page instead of opening one.
+/// A class so every foreground shares it: the first to take it records the page, later returns don't.
+/// Only this is kept, not the outcome: the page can be drawn long before the user arrives, so the
+/// outcome is decided again then.
 @MainActor
 final class IdleReturnLaunchLanding {
 

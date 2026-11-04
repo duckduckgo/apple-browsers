@@ -288,6 +288,8 @@ class MainViewController: UIViewController {
     private var hasLoadedInitialView = false
     private weak var burningOverlayView: UIView?
     private(set) var isStartupOnboardingPending = false
+    /// Emits when the linear onboarding becomes pending at launch or is marked as seen.
+    let onboardingStateChanges = PassthroughSubject<Void, Never>()
     private(set) lazy var startupOnboardingCover = StartupOnboardingCover(
         parentViewController: self,
         fallbackBackgroundColor: themeManager.currentTheme.onboardingBackgroundColor
@@ -1123,6 +1125,7 @@ class MainViewController: UIViewController {
 
         if isStartupOnboardingPending {
             startupOnboardingCover.attach()
+            onboardingStateChanges.send()
         }
 
         loadInitialViewIfNeeded()
@@ -9474,6 +9477,7 @@ extension MainViewController: OnboardingDelegate {
         isStartupOnboardingPending = false
         tutorialSettings.hasSeenOnboarding = true
         clearDuckAIOnboardingResumeStepIfNeeded()
+        onboardingStateChanges.send()
     }
 
     func needsToShowOnboardingIntro() -> Bool {

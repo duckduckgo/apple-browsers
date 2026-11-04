@@ -41,6 +41,7 @@ struct MainMenuSpec {
         var fireModeEnabled = false
         var aiChatEnabled = false
         var favorites: [MainMenuBookmark] = []
+        var isOnboarding = false
     }
 
     struct Shortcut: Equatable {
@@ -125,9 +126,15 @@ struct MainMenuSpec {
             removedMenus = []
             return
         }
+        keyCommandItems = Self.keyCommandOnlyItems
+        // Onboarding offers none of the browser's commands, so the menu bar shows only the system's own menus.
+        guard shortcutRegistration != .menu || !context.isOnboarding else {
+            entries = []
+            removedMenus = [.format, .file, .view]
+            return
+        }
         removedMenus = shortcutRegistration == .menu ? [.format] : []
         entries = Self.entries(of: Self.browserSections, in: context)
-        keyCommandItems = Self.keyCommandOnlyItems
     }
 
     private static func entries(of sections: [MainMenuSection], in context: Context) -> [Entry] {

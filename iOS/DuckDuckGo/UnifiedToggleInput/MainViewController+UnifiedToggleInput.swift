@@ -274,7 +274,7 @@ extension MainViewController {
 
         let usesFloatingAIChrome: Bool
         if #available(iOS 26, *) {
-            usesFloatingAIChrome = isFloatingUIEnabled
+            usesFloatingAIChrome = isDuckAIAndInputLiquidGlassEnabled
         } else {
             usesFloatingAIChrome = false
         }
@@ -883,6 +883,7 @@ private extension MainViewController {
 
         updateUnifiedInputContentVisibility(for: coordinator)
         refreshAIChatTabChatHeaderSubscriptionState()
+        updateScrollInteractionIfNeeded()
         return true
     }
 
@@ -908,10 +909,10 @@ private extension MainViewController {
 extension MainViewController {
 
     var floatingAIChatHeaderObscuredHeight: CGFloat {
-        guard #available(iOS 26, *), isFloatingUIEnabled,
+        guard #available(iOS 26, *), isDuckAIAndInputLiquidGlassEnabled,
               currentTab?.isAITab == true,
               viewCoordinator.aiChatTabChatHeaderContainer?.isHidden == false else { return 0 }
-        return AIChatTabChatHeaderView.preferredHeight
+        return view.safeAreaInsets.top + AIChatTabChatHeaderView.preferredHeight
     }
 
     func aiTabChromeBackgroundState(for renderState: UTIRenderState) -> UnifiedInputChromeBackgroundState {
@@ -961,12 +962,13 @@ private extension MainViewController {
         reconcileAIChromeForCurrentTab()
         // Snap chrome revealed — prior chat-scroll could have hidden bars under the AI header, so without this the omnibar flies in on return.
         chromeManager.reset(animated: false)
+        updateScrollInteractionIfNeeded()
     }
 
     func setUpAIChatTabChatHeader() {
         let headerView = AIChatTabChatHeaderView(isFireModeEnabled: fireModeCapability.isFireModeEnabled,
                                                  shouldShowImageGeneration: featureFlagger.isFeatureOn(.aiChatNativeSidebar),
-                                                 usesFloatingAIChrome: isFloatingUIEnabled)
+                                                 usesFloatingAIChrome: isDuckAIAndInputLiquidGlassEnabled)
         headerView.delegate = self
         headerView.translatesAutoresizingMaskIntoConstraints = false
         viewCoordinator.aiChatTabChatHeaderContainer.addSubview(headerView)
@@ -984,7 +986,7 @@ private extension MainViewController {
         self.aiChatTabChatHeaderView = headerView
         viewCoordinator.aiChatTabChatHeaderView = headerView
 
-        let editHeaderView = AIChatEditHeaderView(usesFloatingAIChrome: isFloatingUIEnabled)
+        let editHeaderView = AIChatEditHeaderView(usesFloatingAIChrome: isDuckAIAndInputLiquidGlassEnabled)
         editHeaderView.delegate = self
         editHeaderView.translatesAutoresizingMaskIntoConstraints = false
         editHeaderView.isHidden = true

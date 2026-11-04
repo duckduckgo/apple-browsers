@@ -185,6 +185,7 @@ final class AIChatContextualSheetViewController: UIViewController {
 
     /// Glass capsules, the Duck.ai bubble icon, and close/hand-off swapped to opposite pills.
     private let usesRedesignedHeader: Bool
+    private let usesLiquidGlassHeader: Bool
 
     private lazy var contextualInputViewController = AIChatContextualInputViewController(
         voiceSearchHelper: voiceSearchHelper,
@@ -399,7 +400,9 @@ final class AIChatContextualSheetViewController: UIViewController {
             pill.translatesAutoresizingMaskIntoConstraints = false
             return pill
         }
-        return AIChatHeaderGlassPill(cornerRadius: Constants.headerButtonSize / 2, shadowStyle: .restingOnChrome)
+        return AIChatHeaderGlassPill(cornerRadius: Constants.headerButtonSize / 2,
+                                     shadowStyle: .restingOnChrome,
+                                     usesFloatingAIChrome: usesLiquidGlassHeader)
     }
 
     private lazy var rightButtonStack: UIStackView = {
@@ -471,8 +474,10 @@ final class AIChatContextualSheetViewController: UIViewController {
          persistentUTIHost: AIChatContextualUTIHost? = nil,
          suggestionsReader: AIChatSuggestionsReading? = nil,
          floatingInputFeature: AIChatContextualFloatingInputFeatureProviding = AIChatContextualFloatingInputFeature(),
+         usesLiquidGlassHeader: Bool = false,
          opensOntoSubmittedChat: Bool = false) {
         self.usesRedesignedHeader = floatingInputFeature.isAvailable
+        self.usesLiquidGlassHeader = usesLiquidGlassHeader
         self.sessionState = sessionState
         self.aiChatSettings = aiChatSettings
         self.voiceSearchHelper = voiceSearchHelper

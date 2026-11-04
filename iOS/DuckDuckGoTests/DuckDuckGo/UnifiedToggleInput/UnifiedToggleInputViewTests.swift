@@ -227,10 +227,12 @@ final class UnifiedToggleInputViewTests: XCTestCase {
                                          usesFloatingUI: true)
         let glass = try XCTUnwrap(allDescendants(of: UIVisualEffectView.self, in: sut).first { $0.effect is UIGlassEffect })
         XCTAssertEqual(glass.superview?.layer.shadowOpacity, 0)
+        XCTAssertFalse(glass.clipsToBounds)
 
         sut.applyCardLayout(.expanded(showsToggle: true, showsToolbar: true), animated: false)
         XCTAssertTrue(glass.isDescendant(of: sut))
         XCTAssertEqual(glass.superview?.layer.borderWidth, 0)
+        XCTAssertFalse(glass.superview?.clipsToBounds ?? true)
 
         sut.isAITab = true
         sut.applyCardLayout(.flanked, animated: false)
@@ -252,6 +254,28 @@ final class UnifiedToggleInputViewTests: XCTestCase {
         sut.applyCardLayout(.expanded(showsToggle: false, showsToolbar: false), animated: false)
 
         XCTAssertFalse(sut.subviews.contains { $0.layer.borderWidth > 0 })
+    }
+
+    func testFloatingGlassKeepsNativeMaterialThroughFocusTransition() throws {
+        guard #available(iOS 26, *) else { return }
+        let sut = UnifiedToggleInputView(handler: UnifiedToggleInputHandler(isVoiceSearchEnabled: false), usesFloatingUI: true)
+        prepareForFitting(sut, width: 402, height: 192)
+        applyFittingHeight(to: sut, width: 402)
+        let glass = try XCTUnwrap(allDescendants(of: UIVisualEffectView.self, in: sut).first { $0.effect is UIGlassEffect })
+        let card = try XCTUnwrap(glass.superview)
+        let restingRadius = card.layer.cornerRadius
+        XCTAssertEqual(card.layer.shadowOpacity, 0)
+        XCTAssertFalse(sut.subviews.contains { $0.layer.borderWidth > 0 })
+
+        sut.applyOmnibarEditingShowPose()
+        XCTAssertTrue(glass.isDescendant(of: sut))
+        XCTAssertNotEqual(card.layer.cornerRadius, restingRadius)
+        XCTAssertEqual(card.layer.shadowOpacity, 0)
+
+        sut.applyOmnibarEditingDismissPose()
+        XCTAssertTrue(glass.isDescendant(of: sut))
+        XCTAssertEqual(card.layer.cornerRadius, restingRadius)
+        XCTAssertEqual(card.layer.shadowOpacity, 0)
     }
 
     func testWhenExpandedInputHidesToggleThenModeSyncDoesNotShowOutline() {

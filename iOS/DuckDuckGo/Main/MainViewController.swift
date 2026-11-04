@@ -1957,7 +1957,7 @@ class MainViewController: UIViewController {
     }
 
     func refreshViewsBasedOnAddressBarPosition(_ position: AddressBarPosition) {
-        viewCoordinator.setFloatingUIEnabled(isFloatingUIEnabled)
+        viewCoordinator.setFloatingUIEnabled(isFloatingUIEnabled, duckAIAndInputLiquidGlassEnabled: isDuckAIAndInputLiquidGlassEnabled)
         switch position {
         case .top:
             swipeTabsCoordinator?.addressBarPositionChanged(isTop: true)
@@ -2107,7 +2107,20 @@ class MainViewController: UIViewController {
 
     @objc private func keyboardWillChangeFrame(_ notification: Notification) {
         guard let keyboard = BrowserKeyboardLayout(notification: notification) else { return }
-        adjustUI(withKeyboardFrame: keyboard.frame, in: keyboard.duration, animationCurve: keyboard.animationCurve)
+        let animateAccessoryChange: Bool
+        if #available(iOS 26, *) {
+            animateAccessoryChange = isDuckAIAndInputLiquidGlassEnabled
+                && unifiedToggleInputCoordinator?.isInputEditing == true
+                && unifiedToggleInputCoordinator?.cardPosition == .bottom
+                && latestKeyboardFrame != .zero
+                && latestKeyboardFrame.minY != keyboard.frame.minY
+                && keyboard.duration == 0
+        } else {
+            animateAccessoryChange = false
+        }
+        adjustUI(withKeyboardFrame: keyboard.frame,
+                 in: animateAccessoryChange ? 0.25 : keyboard.duration,
+                 animationCurve: animateAccessoryChange ? .curveEaseInOut : keyboard.animationCurve)
     }
 
     private var floatingWebInputKeyboardFrame: CGRect {
@@ -3414,6 +3427,7 @@ class MainViewController: UIViewController {
     /// iOS 26 scroll-edge chrome interactions, tracked together so they can be torn down and
     /// reattached as a unit whenever the visible page changes (see `updateScrollInteractionIfNeeded`).
     private var scrollEdgeInteractions: [UIInteraction] = []
+    private weak var duckAIScrollEdgeScrollView: UIScrollView?
 
     private func addToContentContainer(controller: UIViewController) {
         viewCoordinator.contentContainer.isHidden = false
@@ -6752,12 +6766,16 @@ extension MainViewController: OmniBarDelegate {
     // otherwise the interactions keep pointing at a dismissed tab's scroll view — or, after the bar
     // moves between top and bottom, at a container that has crossed to the opposite edge, which
     // stretches the edge effect across the whole page.
-    private func updateScrollInteractionIfNeeded() {
+    func updateScrollInteractionIfNeeded() {
         guard #available(iOS 26, *) else { return }
 
         // Detach any existing interactions from whatever views they're currently installed in.
         scrollEdgeInteractions.forEach { $0.view?.removeInteraction($0) }
         scrollEdgeInteractions.removeAll()
+        duckAIScrollEdgeScrollView?.topEdgeEffect.style = .automatic
+        duckAIScrollEdgeScrollView?.bottomEdgeEffect.style = .automatic
+        duckAIScrollEdgeScrollView?.bottomEdgeEffect.isHidden = false
+        duckAIScrollEdgeScrollView = nil
 
         guard floatingUIManager.isFloatingUIEnabled else { return }
 
@@ -6772,6 +6790,18 @@ extension MainViewController: OmniBarDelegate {
             interaction.edge = edge
             view.addInteraction(interaction)
             scrollEdgeInteractions.append(interaction)
+        }
+
+        if currentTab?.isAITab == true, isDuckAIAndInputLiquidGlassEnabled {
+            if #available(iOS 27, *) {
+                scrollView.topEdgeEffect.style = .hard
+            } else {
+                scrollView.topEdgeEffect.style = .soft
+            }
+            scrollView.bottomEdgeEffect.isHidden = true
+            duckAIScrollEdgeScrollView = scrollView
+            attach(to: viewCoordinator.aiChatTabChatHeaderContainer, onEdge: .top)
+            return
         }
 
         if appSettings.currentAddressBarPosition == .top {
@@ -9283,6 +9313,10 @@ extension MainViewController {
         floatingUIManager.isFloatingUIEnabled
     }
 
+    var isDuckAIAndInputLiquidGlassEnabled: Bool {
+        featureFlagger.isDuckAIAndInputLiquidGlassEnabled(isFloatingUIEnabled: isFloatingUIEnabled)
+    }
+
     override func traitCollectionDidChange(_ previousTraitCollection: UITraitCollection?) {
         super.traitCollectionDidChange(previousTraitCollection)
 
@@ -9356,7 +9390,7 @@ extension MainViewController {
 
     func applyFloatingUIIfNeeded() {
         guard floatingUIManager.isFloatingUIEnabled else { return }
-        viewCoordinator.setFloatingUIEnabled(floatingUIManager.isFloatingUIEnabled)
+        viewCoordinator.setFloatingUIEnabled(isFloatingUIEnabled, duckAIAndInputLiquidGlassEnabled: isDuckAIAndInputLiquidGlassEnabled)
         FloatingUIChromeStyler().decorateMainViewIfNeeded(manager: floatingUIManager, coordinator: viewCoordinator)
         viewCoordinator.omniBar.adjust(for: appSettings.currentAddressBarPosition)
         viewCoordinator.updateToolbarLayoutForAddressBarPosition(appSettings.currentAddressBarPosition)

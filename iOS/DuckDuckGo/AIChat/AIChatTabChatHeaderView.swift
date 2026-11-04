@@ -369,6 +369,8 @@ final class AIChatTabChatHeaderView: UIView {
     }()
 
     private let usesFloatingAIChrome: Bool
+    private let leadingSafeAreaFill = UIView()
+    private let trailingSafeAreaFill = UIView()
 
     init(isFireModeEnabled: Bool, shouldShowImageGeneration: Bool, usesFloatingAIChrome: Bool = false) {
         self.isFireModeEnabled = isFireModeEnabled
@@ -463,6 +465,9 @@ final class AIChatTabChatHeaderView: UIView {
         } else {
             self.backgroundColor = backgroundColor ?? UIColor(designSystemColor: .surfaceCanvas)
         }
+        let safeAreaColor = backgroundColor ?? UIColor(singleUseColor: .duckAIWebViewBackground)
+        leadingSafeAreaFill.backgroundColor = safeAreaColor
+        trailingSafeAreaFill.backgroundColor = safeAreaColor
         overrideUserInterfaceStyle = active ? .dark : .unspecified
         if #available(iOS 26, *), usesFloatingAIChrome {
             bottomSeparator.isHidden = true
@@ -479,6 +484,22 @@ final class AIChatTabChatHeaderView: UIView {
     }()
 
     private func setupUI() {
+        if #available(iOS 26, *), usesFloatingAIChrome {
+            for fill in [leadingSafeAreaFill, trailingSafeAreaFill] {
+                fill.translatesAutoresizingMaskIntoConstraints = false
+                addSubview(fill)
+            }
+            NSLayoutConstraint.activate([
+                leadingSafeAreaFill.leadingAnchor.constraint(equalTo: leadingAnchor),
+                leadingSafeAreaFill.trailingAnchor.constraint(equalTo: safeAreaLayoutGuide.leadingAnchor),
+                leadingSafeAreaFill.topAnchor.constraint(equalTo: topAnchor),
+                leadingSafeAreaFill.bottomAnchor.constraint(equalTo: bottomAnchor),
+                trailingSafeAreaFill.leadingAnchor.constraint(equalTo: safeAreaLayoutGuide.trailingAnchor),
+                trailingSafeAreaFill.trailingAnchor.constraint(equalTo: trailingAnchor),
+                trailingSafeAreaFill.topAnchor.constraint(equalTo: topAnchor),
+                trailingSafeAreaFill.bottomAnchor.constraint(equalTo: bottomAnchor),
+            ])
+        }
         addSubview(leftStack)
         addSubview(rightStack)
         addSubview(titleHolder)
@@ -503,10 +524,10 @@ final class AIChatTabChatHeaderView: UIView {
         NSLayoutConstraint.activate([
             heightAnchor.constraint(equalToConstant: Constants.headerHeight),
 
-            leftStack.leadingAnchor.constraint(equalTo: leadingAnchor, constant: Constants.horizontalPadding),
+            leftStack.leadingAnchor.constraint(equalTo: usesFloatingAIChrome ? safeAreaLayoutGuide.leadingAnchor : leadingAnchor, constant: Constants.horizontalPadding),
             leftStack.centerYAnchor.constraint(equalTo: centerYAnchor),
 
-            rightStack.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -Constants.horizontalPadding),
+            rightStack.trailingAnchor.constraint(equalTo: usesFloatingAIChrome ? safeAreaLayoutGuide.trailingAnchor : trailingAnchor, constant: -Constants.horizontalPadding),
             rightStack.centerYAnchor.constraint(equalTo: centerYAnchor),
 
             titleHolder.centerXAnchor.constraint(equalTo: centerXAnchor),

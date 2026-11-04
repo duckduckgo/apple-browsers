@@ -25,6 +25,21 @@ import XCTest
 
 final class FeatureFlagsTests: XCTestCase {
 
+    func testDuckAIAndInputLiquidGlassUsesRemoteKillSwitchAndEnabledDefault() {
+        let flag = FeatureFlag.duckAIAndInputLiquidGlass
+        guard case let .remoteReleasable(subfeature) = flag.source else {
+            XCTFail("Expected remote-releasable source")
+            return
+        }
+        XCTAssertEqual(subfeature as? iOSBrowserConfigSubfeature, .duckAIAndInputLiquidGlass)
+        XCTAssertEqual(subfeature.rawValue, "duckAIAndInputLiquidGlass")
+        guard case .enabled = flag.defaultValue else {
+            XCTFail("Expected enabled default")
+            return
+        }
+        XCTAssertTrue(flag.supportsLocalOverriding)
+    }
+
     func testAttachmentPrivacyUsesRemoteKillSwitchAndInternalOnlyDefault() {
         let flag = FeatureFlag.unifiedToggleInputAttachmentPrivacy
         guard case let .remoteReleasable(subfeature) = flag.source else {

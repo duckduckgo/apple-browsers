@@ -26,6 +26,27 @@ import XCTest
 
 final class FloatingUIFeatureFlagTests: XCTestCase {
 
+    func testDuckAIAndInputLiquidGlassRequiresFloatingUIAndCanBeDisabledIndependently() {
+        let featureFlagger = MockFeatureFlagger(enabledFeatureFlags: [.floatingUIiOS27, .duckAIAndInputLiquidGlass])
+        let isEnabledOnIOS27 = {
+            featureFlagger.isDuckAIAndInputLiquidGlassEnabled(
+                isFloatingUIEnabled: featureFlagger.isFloatingUIFeatureEnabled(osMajorVersion: 27))
+        }
+
+        XCTAssertTrue(isEnabledOnIOS27())
+        XCTAssertFalse(featureFlagger.isDuckAIAndInputLiquidGlassEnabled(
+            isFloatingUIEnabled: featureFlagger.isFloatingUIFeatureEnabled(osMajorVersion: 26)))
+
+        featureFlagger.enabledFeatureFlags = [.duckAIAndInputLiquidGlass]
+        XCTAssertFalse(isEnabledOnIOS27())
+
+        featureFlagger.enabledFeatureFlags = [.floatingUIiOS27]
+        XCTAssertFalse(isEnabledOnIOS27())
+
+        featureFlagger.enabledFeatureFlags = [.floatingUIiOS27, .duckAIAndInputLiquidGlass]
+        XCTAssertTrue(isEnabledOnIOS27())
+    }
+
     func testWhenCheckingCurrentOSThenOnlyTheMatchingFlagIsUsed() {
         let featureFlagger = MockFeatureFlagger(enabledFeatureFlags: [.floatingUIiOS26])
         let isIOS26Enabled = featureFlagger.isFloatingUIFeatureEnabled()

@@ -197,6 +197,7 @@ final class UnifiedToggleInputView: UIView {
     var isAITab: Bool = false {
         didSet {
             guard isAITab != oldValue else { return }
+            textEntryView.usesFloatingAIStopButtonSpacing = hasFloatingAIChrome
             applyCardBackgroundColor(cardBackgroundColor(isFireTab: handler.isFireTab))
             let useCompositeShadow = isExpanded || currentLayout == .flanked
             expandedShadowView.isHidden = !useCompositeShadow || hasFloatingInputGlass
@@ -728,6 +729,7 @@ final class UnifiedToggleInputView: UIView {
         return view
     }()
     private var glassCardBackgroundView: UIVisualEffectView?
+    private var appliedGlassCardCornerRadius: CGFloat?
     private let usesFloatingUI: Bool
 
     private var hasFloatingInputGlass: Bool {
@@ -897,7 +899,7 @@ final class UnifiedToggleInputView: UIView {
     override func layoutSubviews() {
         super.layoutSubviews()
         syncOmnibarMaterialTransitionCorners()
-        glassCardBackgroundView?.layer.cornerRadius = cardView.layer.cornerRadius
+        updateGlassCardCorners()
         frozenInputOverlay.layer.cornerRadius = cardView.layer.cornerRadius
         frozenInputOverlay.layer.maskedCorners = cardView.layer.maskedCorners
         guard !expandedShadowView.isHidden else { return }
@@ -915,9 +917,7 @@ final class UnifiedToggleInputView: UIView {
             expandedShadowView.shadows = currentLayout == .flanked ? flankedShadows : expandedShadows
             // The disclaimer card's shadowColor is a snapshotted cgColor; re-resolve it here.
             editReplaceDisclaimerCard.layer.shadowColor = UIColor(designSystemColor: .shadowSecondary).cgColor
-            if cardView.layer.borderWidth > 0 {
-                cardView.layer.borderColor = expandedBorderColor
-            }
+            if cardView.layer.borderWidth > 0 { cardView.layer.borderColor = expandedBorderColor }
             refreshGlassAITabAccessoryConfigurations()
         }
     }
@@ -981,8 +981,7 @@ final class UnifiedToggleInputView: UIView {
             if glassCardBackgroundView == nil, #available(iOS 26, *) {
                 let glassView = UIVisualEffectView(effect: UIGlassEffect(style: .regular))
                 glassView.translatesAutoresizingMaskIntoConstraints = false
-                glassView.layer.cornerRadius = cardView.layer.cornerRadius
-                glassView.clipsToBounds = true
+                glassView.cornerConfiguration = .corners(radius: .fixed(cardView.layer.cornerRadius))
                 cardView.insertSubview(glassView, at: 0)
                 NSLayoutConstraint.activate([
                     glassView.topAnchor.constraint(equalTo: cardView.topAnchor),
@@ -991,15 +990,25 @@ final class UnifiedToggleInputView: UIView {
                     glassView.bottomAnchor.constraint(equalTo: cardView.bottomAnchor)
                 ])
                 glassCardBackgroundView = glassView
+                appliedGlassCardCornerRadius = cardView.layer.cornerRadius
             }
             cardView.backgroundColor = .clear
             expandedShadowView.backgroundColor = .clear
         } else {
             glassCardBackgroundView?.removeFromSuperview()
             glassCardBackgroundView = nil
+            appliedGlassCardCornerRadius = nil
             cardView.backgroundColor = color
             expandedShadowView.backgroundColor = color
         }
+    }
+
+    private func updateGlassCardCorners() {
+        guard #available(iOS 26, *), let glassCardBackgroundView else { return }
+        let radius = cardView.layer.cornerRadius
+        guard appliedGlassCardCornerRadius != radius else { return }
+        appliedGlassCardCornerRadius = radius
+        glassCardBackgroundView.cornerConfiguration = .corners(radius: .fixed(radius))
     }
 
     private func restingMaterialColor() -> UIColor {
@@ -1350,7 +1359,7 @@ final class UnifiedToggleInputView: UIView {
         textEntryView.trailingButtonsRowHeight = dimensions.pinnedHeight ?? Constants.collapsedCardHeight
 
         cardView.layer.maskedCorners = Constants.allCorners
-        cardView.clipsToBounds = expanded && (usesOmnibarMargins || !isToggleEnabled)
+        cardView.clipsToBounds = !hasFloatingInputGlass && expanded && (usesOmnibarMargins || !isToggleEnabled)
 
         updateExpandedBorderVisibility(expanded && (showsToggle || showToolbar))
         let changes = {
@@ -1358,7 +1367,7 @@ final class UnifiedToggleInputView: UIView {
             // Bottom collapsed pose is a capsule to match the floating omnibar pill; everything
             // else uses the layout's own radius.
             self.cardView.layer.cornerRadius = (layout == .collapsed) ? self.collapsedCornerRadius : dimensions.cornerRadius
-            self.glassCardBackgroundView?.layer.cornerRadius = self.cardView.layer.cornerRadius
+            self.updateGlassCardCorners()
             self.cardTopConstraint.constant = topMargin
             self.cardLeadingConstraint.constant = hLeadingMargin
             self.cardTrailingConstraint.constant = -hTrailingMargin
@@ -1441,8 +1450,9 @@ final class UnifiedToggleInputView: UIView {
     }
 
     func prepareForOmnibarMaterialTransition(duration: TimeInterval) {
-        guard cardPosition == .bottom else { return }
         omnibarMaterialTransitionDuration = duration
+        guard cardPosition == .bottom else { return }
+        if hasFloatingInputGlass { return }
         if omnibarMaterialTransitionBackgroundColor == nil {
             omnibarMaterialTransitionBackgroundColor = hasFloatingInputGlass
                 ? cardBackgroundColor(isFireTab: false)
@@ -1910,6 +1920,7 @@ private extension UnifiedToggleInputView {
         cardView.layer.shadowOpacity = hasFloatingInputGlass ? 0 : 1.0
         cardView.layer.shadowOffset = CGSize(width: 0, height: 8)
         cardView.layer.shadowRadius = 12
+        updateExpandedBorderVisibility(false)
         cardView.isUserInteractionEnabled = false
         addSubview(cardView)
         insertSubview(editReplaceDisclaimerCard, belowSubview: cardView)

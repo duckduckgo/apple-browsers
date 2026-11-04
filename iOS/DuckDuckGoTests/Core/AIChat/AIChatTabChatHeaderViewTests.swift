@@ -95,6 +95,19 @@ final class AIChatTabChatHeaderViewTests: XCTestCase {
         XCTAssertEqual(header.chatListButtonPill.alpha, 1, accuracy: 0.001)
     }
 
+    func testFloatingHeaderInsetsControlsToSideSafeArea() throws {
+        guard #available(iOS 26, *) else { return }
+        let header = AIChatTabChatHeaderView(isFireModeEnabled: false,
+                                             shouldShowImageGeneration: false,
+                                             usesFloatingAIChrome: true)
+        let leadingStack = try XCTUnwrap(header.subviews.compactMap { $0 as? UIStackView }.first)
+        let leadingConstraint = try XCTUnwrap(header.constraints.first {
+            $0.firstItem === leadingStack && $0.firstAttribute == .leading
+        })
+        XCTAssertTrue(leadingConstraint.secondItem === header.safeAreaLayoutGuide)
+        XCTAssertFalse(header.chatListButtonPill.subviews.first?.clipsToBounds ?? true)
+    }
+
     func testFreeIneligibleHeaderShowsNeutralTitleWithoutUpgradeImpressionOrAction() throws {
         let (header, delegate) = makeHeaderWithSpyDelegate()
         header.setContainerVisible(true)

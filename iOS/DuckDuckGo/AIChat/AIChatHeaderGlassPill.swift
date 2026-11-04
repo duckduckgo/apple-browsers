@@ -20,8 +20,7 @@
 import DesignResourcesKit
 import UIKit
 
-/// Glass capsule chrome for the Duck.ai tab headers; add controls to `contentView`. Split into an
-/// outer shadow host and an inner clipped host so the shadow renders outside while content clips.
+/// Glass capsule chrome for Duck.ai headers; add controls to `contentView`.
 final class AIChatHeaderGlassPill: UIView {
 
     let contentView = UIView()
@@ -46,6 +45,7 @@ final class AIChatHeaderGlassPill: UIView {
     private let usesFloatingAIChrome: Bool
     private let clipHost = UIView()
     private var glassEffectView: UIVisualEffectView?
+    private var reduceTransparencyObserver: NSObjectProtocol?
 
     init(cornerRadius: CGFloat, shadowStyle: ShadowStyle = .floating, usesFloatingAIChrome: Bool = false) {
         self.cornerRadius = cornerRadius
@@ -56,16 +56,20 @@ final class AIChatHeaderGlassPill: UIView {
 
         clipHost.translatesAutoresizingMaskIntoConstraints = false
         clipHost.layer.cornerRadius = cornerRadius
-        clipHost.clipsToBounds = true
+        clipHost.clipsToBounds = !usesFloatingAIChrome
         addSubview(clipHost)
 
         contentView.translatesAutoresizingMaskIntoConstraints = false
 
         if #available(iOS 26, *) {
-            let effectView = UIVisualEffectView(effect: Self.glassEffect(for: traitCollection))
+            let effectView = UIVisualEffectView(effect: glassEffect(for: traitCollection))
             effectView.translatesAutoresizingMaskIntoConstraints = false
-            effectView.layer.cornerRadius = cornerRadius
-            effectView.clipsToBounds = true
+            if usesFloatingAIChrome {
+                effectView.cornerConfiguration = .capsule()
+            } else {
+                effectView.layer.cornerRadius = cornerRadius
+                effectView.clipsToBounds = true
+            }
             clipHost.addSubview(effectView)
             effectView.contentView.addSubview(contentView)
             NSLayoutConstraint.activate([
@@ -79,6 +83,15 @@ final class AIChatHeaderGlassPill: UIView {
                 contentView.bottomAnchor.constraint(equalTo: effectView.contentView.bottomAnchor),
             ])
             glassEffectView = effectView
+            if usesFloatingAIChrome {
+                reduceTransparencyObserver = NotificationCenter.default.addObserver(
+                    forName: UIAccessibility.reduceTransparencyStatusDidChangeNotification,
+                    object: nil,
+                    queue: .main
+                ) { [weak self] _ in
+                    self?.refreshGlassForCurrentTraits()
+                }
+            }
         } else {
             clipHost.backgroundColor = UIColor(designSystemColor: .controlsRaisedFillPrimary)
             clipHost.addSubview(contentView)
@@ -105,6 +118,12 @@ final class AIChatHeaderGlassPill: UIView {
         fatalError("init(coder:) has not been implemented")
     }
 
+    deinit {
+        if let reduceTransparencyObserver {
+            NotificationCenter.default.removeObserver(reduceTransparencyObserver)
+        }
+    }
+
     override func layoutSubviews() {
         super.layoutSubviews()
         // Without a path the shadow rasterizes from the layer's alpha, on every pass.
@@ -113,7 +132,7 @@ final class AIChatHeaderGlassPill: UIView {
 
     func refreshGlassForCurrentTraits() {
         guard #available(iOS 26, *), let glassEffectView else { return }
-        glassEffectView.effect = Self.glassEffect(for: traitCollection)
+        glassEffectView.effect = glassEffect(for: traitCollection)
     }
 
     func applyShadow(dimmed: Bool) {
@@ -131,8 +150,13 @@ final class AIChatHeaderGlassPill: UIView {
     }
 
     @available(iOS 26, *)
-    private static func glassEffect(for traitCollection: UITraitCollection) -> UIGlassEffect {
-        let glassStyle: UIGlassEffect.Style = traitCollection.userInterfaceStyle == .dark ? .clear : .regular
+    private func glassEffect(for traitCollection: UITraitCollection) -> UIGlassEffect {
+        let glassStyle: UIGlassEffect.Style
+        if usesFloatingAIChrome {
+            glassStyle = .regular
+        } else {
+            glassStyle = traitCollection.userInterfaceStyle == .dark ? .clear : .regular
+        }
         let effect = UIGlassEffect(style: glassStyle)
         effect.isInteractive = true
         return effect

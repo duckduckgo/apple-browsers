@@ -103,6 +103,7 @@ class MainViewCoordinator {
     private var isNavBarContainerBottomKeyboardBased = false
     private(set) var isOmnibarInToolbar = false
     private var isFloatingUIEnabled = false
+    private var isDuckAIAndInputLiquidGlassEnabled = false
     private(set) var isWebInputEditing = false
     private(set) var isInMinimalChromeLayout = false
 
@@ -114,8 +115,9 @@ class MainViewCoordinator {
         !(unifiedToggleInputContainer?.isHidden ?? true) && (unifiedToggleInputContainer?.alpha ?? 0) > 0.01
     }
 
-    func setFloatingUIEnabled(_ enabled: Bool) {
+    func setFloatingUIEnabled(_ enabled: Bool, duckAIAndInputLiquidGlassEnabled: Bool = false) {
         isFloatingUIEnabled = enabled
+        isDuckAIAndInputLiquidGlassEnabled = enabled && duckAIAndInputLiquidGlassEnabled
         if !enabled {
             setWebInputEditing(false)
         }
@@ -633,7 +635,7 @@ class MainViewCoordinator {
     /// chrome doesn't hide the separator transitively — we have to re-apply on either change.
     private func applyAITabCollapsedTopSeparatorVisibility() {
         var visible = aiTabCollapsedTopSeparatorLogicallyVisible && !navigationBarContainer.isHidden
-        if #available(iOS 26, *), isFloatingUIEnabled {
+        if #available(iOS 26, *), isDuckAIAndInputLiquidGlassEnabled {
             visible = false
         }
         guard aiTabCollapsedTopSeparator.isHidden == visible else { return }
@@ -908,8 +910,8 @@ class MainViewCoordinator {
         aiChatTabChatHeaderContainer.isHidden = false
         aiChatTabChatHeaderView?.setContainerVisible(true)
         guard isNavigationChromeHidden else { return }
-        if #available(iOS 26, *), isFloatingUIEnabled {
-            setContentContainerTopAnchorMode(.safeArea)
+        if #available(iOS 26, *), isDuckAIAndInputLiquidGlassEnabled {
+            setContentContainerTopAnchorMode(.floatingBehindBar)
         } else {
             setContentContainerTopAnchorMode(.aiChatHeader)
         }
@@ -930,8 +932,8 @@ class MainViewCoordinator {
             isNavigationChromeHidden = true
             navigationBarCollectionView.alpha = 0
             navigationBarCollectionView.isUserInteractionEnabled = false
-            if #available(iOS 26, *), isFloatingUIEnabled {
-                setContentContainerTopAnchorMode(.safeArea)
+            if #available(iOS 26, *), isDuckAIAndInputLiquidGlassEnabled {
+                setContentContainerTopAnchorMode(.floatingBehindBar)
             } else if constraints.contentContainerTopToAIChatHeader != nil, !aiChatTabChatHeaderContainer.isHidden {
                 setContentContainerTopAnchorMode(.aiChatHeader)
             } else {
@@ -1020,8 +1022,8 @@ class MainViewCoordinator {
     /// keeps the standard canvas tone.
     private func chatChromeHiddenStatusBackgroundColor() -> UIColor {
         if let voiceModeBackgroundColor { return voiceModeBackgroundColor }
-        if #available(iOS 26, *), isFloatingUIEnabled {
-            return UIColor(singleUseColor: .duckAIWebViewBackground)
+        if #available(iOS 26, *), isDuckAIAndInputLiquidGlassEnabled {
+            return .clear
         }
         return UIColor(designSystemColor: .surfaceCanvas)
     }
@@ -1088,7 +1090,7 @@ class MainViewCoordinator {
 
     private func setContentContainerBottomAnchorMode(requesting requestedMode: ContentContainerBottomAnchorMode) {
         let resolvedMode: ContentContainerBottomAnchorMode
-        if #available(iOS 26, *), isFloatingUIEnabled, isNavigationChromeHidden {
+        if #available(iOS 26, *), isDuckAIAndInputLiquidGlassEnabled, isNavigationChromeHidden {
             resolvedMode = .safeArea
         } else {
             resolvedMode = shouldUnifiedToggleInputOwnBottomAnchor ? .unifiedToggleInput : requestedMode

@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 """
-Opens the Asana task for a Smartling job that needs review, assigned to the platform's triage DRI, or for a failed
-submission.
+Opens the Asana task for a Smartling job that needs review, assigned to the platform's triage DRI.
 
 Copyright © 2026 DuckDuckGo. All rights reserved.
 Licensed under the Apache License, Version 2.0
@@ -180,10 +179,6 @@ def review_task(client: AsanaClient, args, today: date) -> Dict:
         body['assignee'] = args.assignee
         log(f"👤 Assigning to {args.assignee} instead (--assignee)")
 
-    followers = [follower for follower in args.followers if follower != body.get('assignee')]
-    if followers:
-        body['followers'] = followers
-
     return body
 
 
@@ -211,8 +206,6 @@ def main():
     parser.add_argument('--name', required=True)
     parser.add_argument('--notes', required=True, help='Plain text; "Label: value" lines get a bold label, URLs become links')
     parser.add_argument('--assignee', help='Assign to this user (GID, email or "me") instead of the triage DRI')
-    parser.add_argument('--fallback-assignee', help='Assign to this user (GID) instead if Asana rejects the assignee')
-    parser.add_argument('--follower', dest='followers', action='append', default=[], help='Add this user (GID) as a follower; repeatable')
     parser.add_argument('--dry-run', action='store_true', help='Look everything up and print the task instead of creating it')
     args = parser.parse_args()
 
@@ -228,7 +221,7 @@ def main():
         print(json.dumps(body, indent=2, ensure_ascii=False))
         return
     try:
-        task = create_task(client, body, args.fallback_assignee)
+        task = client.create_task(body)
     except RuntimeError as error:
         log(f"❌ {error}")
         sys.exit(1)

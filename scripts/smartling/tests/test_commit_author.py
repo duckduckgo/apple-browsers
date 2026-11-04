@@ -28,26 +28,26 @@ class FakeGitHub:
         return self.pulls
 
 
-class PullRequestAuthorTests(unittest.TestCase):
+class PullRequestTests(unittest.TestCase):
 
-    def testWhenACommitWasSquashMergedThenItsPullRequestsAuthorIsReturned(self):
+    def testWhenACommitWasSquashMergedThenThePullRequestItWasMergedFromIsReturned(self):
         github = FakeGitHub([pull('frosty', merge_commit_sha='d' * 40), pull('brindy')])
 
-        login = COMMIT_AUTHOR.pull_request_author(github, MERGE_COMMIT)
+        found = COMMIT_AUTHOR.pull_request(github, MERGE_COMMIT)
 
-        self.assertEqual(login, 'brindy')
+        self.assertEqual(found['user']['login'], 'brindy')
 
-    def testWhenTheAuthorIsABotOrThereIsNoPullRequestThenNoOneIsReturned(self):
-        cases = {
-            'daxmobile': [pull('daxmobile')],
-            'app bot': [pull('dependabot[bot]', user_type='Bot')],
-            'no pull request': [],
-        }
-        for case, pulls in cases.items():
-            with self.subTest(case):
-                login = COMMIT_AUTHOR.pull_request_author(FakeGitHub(pulls), MERGE_COMMIT)
+    def testWhenThereIsNoPullRequestThenNoneIsReturned(self):
+        found = COMMIT_AUTHOR.pull_request(FakeGitHub([]), MERGE_COMMIT)
 
-                self.assertIsNone(login)
+        self.assertIsNone(found)
+
+    def testAppBotsAndDaxmobileAreBots(self):
+        users = [{'login': 'dependabot[bot]', 'type': 'Bot'}, {'login': 'daxmobile', 'type': 'User'}, {'login': 'brindy', 'type': 'User'}]
+
+        bots = [COMMIT_AUTHOR.is_bot(user) for user in users]
+
+        self.assertEqual(bots, [True, True, False])
 
 
 class UserMapTests(unittest.TestCase):

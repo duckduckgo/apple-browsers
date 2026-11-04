@@ -30,8 +30,7 @@ def review_task_args(rotation_section='apple-ios-triage'):
         rotation_section=rotation_section,
         name='Smartling job needs review: Nightly iOS - 2026-10-21',
         notes='Details',
-        assignee=None,
-        followers=[]
+        assignee=None
     )
 
 
@@ -180,17 +179,6 @@ class ReviewTaskTests(unittest.TestCase):
         task = self.review_task(client, args)
 
         self.assertNotIn('assignee', task)
-
-    def testWhenTheOwnerFollowsTheMergeAuthorsTaskThenTheyAreAFollowerUnlessTheyAreTheAssignee(self):
-        cases = {'author assigned': ('author', ['owner']), 'owner assigned': ('owner', None)}
-        for case, (assignee, followers) in cases.items():
-            with self.subTest(case):
-                args = review_task_args(rotation_section=None)
-                args.assignee, args.followers = assignee, ['owner']
-
-                task = self.review_task(FakeAsanaClient(), args)
-
-                self.assertEqual(task.get('followers'), followers)
 
 
 class RejectingAsanaClient:

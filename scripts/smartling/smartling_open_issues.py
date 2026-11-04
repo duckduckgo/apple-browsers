@@ -28,7 +28,7 @@ from typing import Dict, List, Optional
 sys.path.insert(0, str(Path(__file__).parent))
 
 from asana_review_task import AsanaClient, create_task, find_section, notes_html, pick_dri  # noqa: E402
-from commit_author import GitHubClient, asana_user, is_bot, parse_user_map, pull_request, write_outputs  # noqa: E402
+from commit_author import GitHubClient, asana_user, is_bot, parse_user_map, pull_request  # noqa: E402
 from localization_tool import Credentials, SmartlingClient, job_url  # noqa: E402
 
 TASK_NAME_PREFIX = "Smartling open issue"
@@ -408,7 +408,6 @@ async def main_async(args) -> int:
             log(f"❌ {error}")
             return 1
     write_summary(args.platform, rows, args.dry_run)
-    write_outputs(tasks=str(sum('opened a task' in row for row in rows)))
     return 0
 
 

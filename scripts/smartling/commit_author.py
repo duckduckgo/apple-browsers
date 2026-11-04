@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """
 Finds who to ask about a commit on main: the author of the pull request it was squash-merged from, and their Asana user.
 
@@ -6,11 +5,8 @@ Copyright © 2026 DuckDuckGo. All rights reserved.
 Licensed under the Apache License, Version 2.0
 """
 
-import os
 import re
-import sys
 import json
-import argparse
 from typing import Dict, List, Optional
 from urllib.parse import urlencode
 from urllib.error import HTTPError
@@ -71,13 +67,6 @@ def pull_request(github: GitHubClient, sha: str) -> Optional[Dict]:
     return next((pull for pull in pulls if pull.get('merge_commit_sha') == sha), pulls[0] if pulls else None)
 
 
-def pull_request_author(github: GitHubClient, sha: str) -> Optional[str]:
-    """The login of the person whose pull request the commit came from. None for a bot or a commit without one."""
-    pull = pull_request(github, sha)
-    user = (pull or {}).get('user') or {}
-    return None if not user or is_bot(user) else user.get('login')
-
-
 def parse_user_map(text: str) -> Dict[str, str]:
     """GitHub login → Asana user GID, from internal-github-asana-utils' flat user_map.yml."""
     user_map = {}
@@ -90,35 +79,3 @@ def parse_user_map(text: str) -> Dict[str, str]:
 
 def asana_user(user_map: Dict[str, str], login: Optional[str]) -> Optional[str]:
     return user_map.get(login.lower()) if login else None
-
-
-def write_outputs(**outputs: str):
-    output_path = os.environ.get('GITHUB_OUTPUT')
-    if not output_path:
-        return
-    with open(output_path, 'a', encoding='utf-8') as output:
-        for name, value in outputs.items():
-            output.write(f"{name}={value}\n")
-
-
-def main():
-    parser = argparse.ArgumentParser(description="Print the GitHub login of the pull request author of a commit on main")
-    parser.add_argument('--sha', required=True)
-    args = parser.parse_args()
-
-    token = os.environ.get('GITHUB_TOKEN')
-    if not token:
-        print("❌ Missing GITHUB_TOKEN")
-        sys.exit(1)
-
-    try:
-        login = pull_request_author(GitHubClient(token), args.sha)
-    except RuntimeError as error:
-        print(f"[smartling] ⚠️ {error}", flush=True)
-        login = None
-    print(f"[smartling] 👤 {args.sha[:7]}: {login or 'no pull request author to ask (bot, or no pull request)'}", flush=True)
-    write_outputs(login=login or '')
-
-
-if __name__ == '__main__':
-    main()

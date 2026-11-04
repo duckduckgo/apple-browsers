@@ -16,6 +16,7 @@
 //  limitations under the License.
 //
 
+import DDGError
 import Foundation
 
 public struct ClientToolCapability: Codable, Equatable, Sendable {
@@ -194,8 +195,14 @@ private enum ClientToolWireValidation {
     static let maximumPermissionMessageLength = 4096
     static let maximumPermissionChoices = 3
 
-    struct InvalidField: Error {
+    struct InvalidField: DDGError {
+        static let errorDomain = "com.duckduckgo.aiChat.clientTools.validation"
+
         let name: String
+
+        var errorCode: Int { 1 }
+
+        var description: String { "Invalid client-tools field: \(name)" }
     }
 
     static func validateIdentifier(_ value: String, maximumLength: Int, field: String) throws {

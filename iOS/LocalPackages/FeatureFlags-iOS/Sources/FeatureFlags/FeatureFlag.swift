@@ -1062,7 +1062,7 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .aiChatTabSwitcherRichCard:
             Config(defaultValue: .enabled, source: .remoteReleasable(AIChatSubfeature.tabSwitcherRichCard))
         case .aiChatTabHandoffImprovements:
-            Config(defaultValue: .internalOnly, source: .remoteReleasable(AIChatSubfeature.tabHandoffImprovements))
+            Config(defaultValue: .enabled, source: .remoteReleasable(AIChatSubfeature.tabHandoffImprovements))
         case .syncScopedAccessCredentials:
             Config(source: .remoteReleasable(SyncSubfeature.scopedAccessCredentials))
         case .syncCanUseV2ConnectFlow:

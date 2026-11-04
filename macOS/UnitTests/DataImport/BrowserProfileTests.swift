@@ -320,7 +320,7 @@ class BrowserProfileTests: XCTestCase {
 
     func testWhenFirefoxProfileDataFilesAreEmpty_ThenNoDataTypeIsAvailable() {
         let profileURL = profile(named: "gm867h0z.default")
-        let fileStore = fileStoreWithEmptyFiles(["places.sqlite", "signons.sqlite"], in: profileURL)
+        let fileStore = fileStoreWithEmptyFiles(["places.sqlite", "key4.db", "logins.json"], in: profileURL)
         fileStore.directoryStorage[profileURL.absoluteString]?.append("times.json")
         let profile = DataImport.BrowserProfile(browser: .firefox, profileURL: profileURL, fileStore: fileStore)
 

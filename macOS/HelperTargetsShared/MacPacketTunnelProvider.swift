@@ -31,6 +31,9 @@ import PrivacyConfig
 import Subscription
 import VPN
 import WireGuard
+#if DEBUG && DUCK_WIREGUARD_POC && NETP_SYSTEM_EXTENSION
+import VPNDebug
+#endif
 
 final class MacPacketTunnelProvider: PacketTunnelProvider {
 
@@ -607,6 +610,15 @@ final class MacPacketTunnelProvider: PacketTunnelProvider {
         let tunnelHealthStore = NetworkProtectionTunnelHealthStore(notificationCenter: notificationCenter)
         let notificationsPresenter = NetworkProtectionNotificationsPresenterFactory().make(settings: settings, defaults: defaults)
 
+#if DEBUG && DUCK_WIREGUARD_POC && NETP_SYSTEM_EXTENSION
+        let nativeAdapter = NativeWireGuardAdapter { message in
+            Logger.networkProtection.log("[DuckWireGuard debug] \(message, privacy: .public)")
+        }
+        let debugAdapter: WireGuardAdapterProtocol? = nativeAdapter
+#else
+        let debugAdapter: WireGuardAdapterProtocol? = nil
+#endif
+
         super.init(notificationsPresenter: notificationsPresenter,
                    tunnelHealthStore: tunnelHealthStore,
                    controllerErrorStore: controllerErrorStore,
@@ -619,10 +631,15 @@ final class MacPacketTunnelProvider: PacketTunnelProvider {
                    settings: settings,
                    defaults: defaults,
                    wideEvent: wideEvent,
+                   adapter: debugAdapter,
                    entitlementCheck: entitlementsCheck,
                    loopDetector: loopDetector,
                    heartbeatStore: heartbeatStore,
                    sessionHealth: sessionHealth)
+
+#if DEBUG && DUCK_WIREGUARD_POC && NETP_SYSTEM_EXTENSION
+        nativeAdapter.attach(to: self)
+#endif
 
         setupPixels()
         Logger.networkProtection.log("[+] MacPacketTunnelProvider Initialised")

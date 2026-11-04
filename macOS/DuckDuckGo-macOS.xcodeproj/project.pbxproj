@@ -2569,6 +2569,8 @@
 		BB6EE52D2F33C74F009420FA /* MemoryUsagePixel.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB6EE52B2F33C74F009420FA /* MemoryUsagePixel.swift */; };
 		BB6EE52F2F33DB6D009420FA /* MemoryUsageThresholdReporter.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB6EE52E2F33DB6D009420FA /* MemoryUsageThresholdReporter.swift */; };
 		BB6EE5302F33DB6D009420FA /* MemoryUsageThresholdReporter.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB6EE52E2F33DB6D009420FA /* MemoryUsageThresholdReporter.swift */; };
+		E06AC8DB557B681BE56A7146 /* DefaultBrowserAndDockPromptModal.swift in Sources */ = {isa = PBXBuildFile; fileRef = 84336AD166E7D1271ACDA243 /* DefaultBrowserAndDockPromptModal.swift */; };
+		AABE7D9724FF0DB5A486C88D /* DefaultBrowserAndDockPromptModal.swift in Sources */ = {isa = PBXBuildFile; fileRef = 84336AD166E7D1271ACDA243 /* DefaultBrowserAndDockPromptModal.swift */; };
 		BB7696C52D6E333B00AD8DAB /* DefaultBrowserAndDockPromptPresenting.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB7696C42D6E333300AD8DAB /* DefaultBrowserAndDockPromptPresenting.swift */; };
 		BB7696C62D6E333B00AD8DAB /* DefaultBrowserAndDockPromptPresenting.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB7696C42D6E333300AD8DAB /* DefaultBrowserAndDockPromptPresenting.swift */; };
 		BB7B5F982C4ED73800BA4AF8 /* BookmarksSearchAndSortMetrics.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB7B5F972C4ED73800BA4AF8 /* BookmarksSearchAndSortMetrics.swift */; };
@@ -4773,6 +4775,7 @@
 		BB6B4EE52EE7483D00FE23E2 /* QuitSurveyViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QuitSurveyViewModel.swift; sourceTree = "<group>"; };
 		BB6EE52B2F33C74F009420FA /* MemoryUsagePixel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MemoryUsagePixel.swift; sourceTree = "<group>"; };
 		BB6EE52E2F33DB6D009420FA /* MemoryUsageThresholdReporter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MemoryUsageThresholdReporter.swift; sourceTree = "<group>"; };
+		84336AD166E7D1271ACDA243 /* DefaultBrowserAndDockPromptModal.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DefaultBrowserAndDockPromptModal.swift; sourceTree = "<group>"; };
 		BB7696C42D6E333300AD8DAB /* DefaultBrowserAndDockPromptPresenting.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DefaultBrowserAndDockPromptPresenting.swift; sourceTree = "<group>"; };
 		BB7B5F972C4ED73800BA4AF8 /* BookmarksSearchAndSortMetrics.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BookmarksSearchAndSortMetrics.swift; sourceTree = "<group>"; };
 		BB7BA64B2D11FC150020B47E /* TabBarRemoteMessagePresenting.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TabBarRemoteMessagePresenting.swift; sourceTree = "<group>"; };
@@ -9022,6 +9025,7 @@
 				9FFBEE752DDEDE770058B11A /* DefaultBrowserAndDockPromptStoreMigrator.swift */,
 				BBE948CF2D6FD10C00FAC581 /* DefaultBrowserAndDockPromptStoring.swift */,
 				BB7696C42D6E333300AD8DAB /* DefaultBrowserAndDockPromptPresenting.swift */,
+				84336AD166E7D1271ACDA243 /* DefaultBrowserAndDockPromptModal.swift */,
 				BBDE001E2D6DE6EE00109F88 /* DefaultBrowserAndDockPromptContent.swift */,
 				BBDE001B2D6DE6A000109F88 /* DefaultBrowserAndDockPromptPopover.swift */,
 				BBC7BDA82D5B82A20037A4AE /* DefaultBrowserAndDockPromptCoordinator.swift */,
@@ -11948,6 +11952,7 @@
 				3706FBAF293F65D500E42796 /* FireproofDomains.xcdatamodeld in Sources */,
 				B626A7552991413000053070 /* SerpHeadersNavigationResponder.swift in Sources */,
 				BB7696C62D6E333B00AD8DAB /* DefaultBrowserAndDockPromptPresenting.swift in Sources */,
+				E06AC8DB557B681BE56A7146 /* DefaultBrowserAndDockPromptModal.swift in Sources */,
 				B68D21C42ACBC917002DA3C2 /* ContentBlockingMock.swift in Sources */,
 				1DD6A7B82D804B60006AE043 /* PinnedTabsDiscoveryPopover.swift in Sources */,
 				EEE11C5F2C7F54AD000ABD7E /* AutofillLoginImportState.swift in Sources */,
@@ -13568,6 +13573,7 @@
 				379E4D612D4383D200A901B1 /* NewTabPageCoordinator.swift in Sources */,
 				BB5789722B2CA70F0009DFE2 /* DataBrokerProtectionSubscriptionEventHandler.swift in Sources */,
 				BB7696C52D6E333B00AD8DAB /* DefaultBrowserAndDockPromptPresenting.swift in Sources */,
+				AABE7D9724FF0DB5A486C88D /* DefaultBrowserAndDockPromptModal.swift in Sources */,
 				1DF78E102CE6197B00AB898E /* Tab+WKWebExtensionTab.swift in Sources */,
 				C13909FB2B861039001626ED /* AutofillActionPresenter.swift in Sources */,
 				B684592F25C93FBF00DC17B6 /* AppStateRestorationManager.swift in Sources */,

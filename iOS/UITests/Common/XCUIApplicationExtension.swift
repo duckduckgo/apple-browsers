@@ -22,9 +22,14 @@ import UITestingSupport
 
 extension XCUIApplication {
 
+    var browserWindow: XCUIElement {
+        windows["Browser.Window.Main"]
+    }
+
+    // Background snapshot overlays can expose another omnibar with the same identifier.
     // The omnibar can be exposed as either a search field or a text field while editing.
     var searchEntry: XCUIElement {
-        descendants(matching: .any)["searchEntry"]
+        browserWindow.descendants(matching: .any)["searchEntry"]
     }
 
     func enterSearchText(_ text: String, file: StaticString = #filePath, line: UInt = #line) {
@@ -108,7 +113,7 @@ extension XCUIApplication {
     }
 
     private func observeAddressBarEditing() -> (dismissButton: XCUIElement?, toolbarReady: Bool, summary: String) {
-        let window = windows.firstMatch
+        let window = browserWindow
         guard window.exists else {
             return (nil, false, "window: not found; dismiss/keyboard/tabSwitcher/menu: not-evaluated")
         }
@@ -133,7 +138,7 @@ extension XCUIApplication {
 
         var summary = "window: ready (frame: \(windowFrame))"
         for identifier in ["Browser.OmniBar.Button.Dismiss", "UnifiedToggleInput.Button.Dismiss"] {
-            let button = buttons[identifier]
+            let button = window.buttons[identifier]
             let result = readiness(of: button)
             summary += "\n\(identifier): \(result.reason)"
             if result.ready { return (button, false, summary + "\nkeyboard/tabSwitcher/menu: not-evaluated") }
@@ -141,14 +146,14 @@ extension XCUIApplication {
         let keyboardExists = keyboards.firstMatch.exists
         summary += "\nkeyboardExists: \(keyboardExists)"
         guard !keyboardExists else { return (nil, false, summary + "\ntabSwitcher/menu: not-evaluated") }
-        let tabSwitcher = readiness(of: buttons["Browser.Toolbar.Button.TabSwitcher"])
+        let tabSwitcher = readiness(of: window.buttons["Browser.Toolbar.Button.TabSwitcher"])
         summary += "\ntabSwitcher: \(tabSwitcher.reason)"
         guard tabSwitcher.ready else { return (nil, false, summary + "\nmenu: not-evaluated") }
         let menuIdentifiers = UIDevice.current.userInterfaceIdiom == .pad
             ? ["Browser.OmniBar.Button.BrowsingMenu", "Browser.Toolbar.Button.Menu"]
             : ["Browser.Toolbar.Button.Menu", "Browser.OmniBar.Button.BrowsingMenu"]
         for identifier in menuIdentifiers {
-            let result = readiness(of: buttons[identifier])
+            let result = readiness(of: window.buttons[identifier])
             summary += "\n\(identifier): \(result.reason)"
             if result.ready { return (nil, true, summary) }
         }
@@ -157,15 +162,15 @@ extension XCUIApplication {
 
     func openTabSwitcher(file: StaticString = #filePath, line: UInt = #line) {
         dismissAddressBarEditing(file: file, line: line)
-        buttons["Browser.Toolbar.Button.TabSwitcher"].tapWhenHittable(in: self, file: file, line: line)
+        browserWindow.buttons["Browser.Toolbar.Button.TabSwitcher"].tapWhenHittable(in: self, file: file, line: line)
         XCTAssertTrue(
-            buttons["TabSwitcher.Button.Done"].waitForHittableInAppWindow(in: self, timeout: UITestTimeouts.elementExistence),
+            browserWindow.buttons["TabSwitcher.Button.Done"].waitForHittableInAppWindow(in: self, timeout: UITestTimeouts.elementExistence),
             "Tab switcher did not appear.", file: file, line: line)
     }
 
     func openNewTab(file: StaticString = #filePath, line: UInt = #line) {
         openTabSwitcher(file: file, line: line)
-        buttons["TabSwitcher.Button.NewTab"].tapWhenHittable(in: self, file: file, line: line)
+        browserWindow.buttons["TabSwitcher.Button.NewTab"].tapWhenHittable(in: self, file: file, line: line)
         XCTAssertTrue(
             searchEntry.wait(for: NSPredicate(format: "isHittable == true"), timeout: UITestTimeouts.elementExistence),
             "Search entry did not appear in the new tab.", file: file, line: line)

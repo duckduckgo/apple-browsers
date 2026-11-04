@@ -1279,7 +1279,7 @@ class AIChatUserScriptHandlerTests: XCTestCase {
         XCTAssertEqual(mockBonusHandler.endCallCount, 1)
     }
 
-    func testWhenBonusOfferFlagIsOffThenNotificationsAreIgnored() {
+    func testWhenBonusOfferFlagIsOffThenNotificationsStillReachTheHandler() {
         // Given
         mockFeatureFlagger.enabledFeatureFlags = []
         let message = MockUserScriptMessage(name: "test", body: [:])
@@ -1290,9 +1290,10 @@ class AIChatUserScriptHandlerTests: XCTestCase {
         _ = aiChatUserScriptHandler.aiChatBonusEnd(params: [], message: message)
 
         // Then
-        XCTAssertEqual(mockBonusHandler.redeemOutcomeCallCount, 0)
-        XCTAssertEqual(mockBonusHandler.dismissCallCount, 0)
-        XCTAssertEqual(mockBonusHandler.endCallCount, 0)
+        XCTAssertEqual(mockBonusHandler.redeemOutcomeCallCount, 1)
+        XCTAssertEqual(mockBonusHandler.dismissCallCount, 1)
+        XCTAssertEqual(mockBonusHandler.dismissParams.first as? [String: String], ["campaignName": "launch"])
+        XCTAssertEqual(mockBonusHandler.endCallCount, 1)
     }
 
     func testWhenBonusOfferFlagIsOnThenARecordChangeIsForwarded() {

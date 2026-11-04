@@ -3839,8 +3839,10 @@
 		BBB3F1F22E302143009E77AF /* ReportProblemFormView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBB3F1F02E302143009E77AF /* ReportProblemFormView.swift */; };
 		BBB819132EC493750064977E /* PreferencesPurchaseSubscriptionModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBB819102EC493750064977E /* PreferencesPurchaseSubscriptionModelTests.swift */; };
 		BBB819152EC493750064977E /* PreferencesSubscriptionSettingsModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBB819122EC493750064977E /* PreferencesSubscriptionSettingsModelTests.swift */; };
+		C9A96D191B40347D7B2FDDA9 /* PreferencesSubscriptionWithdrawalModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA80186C7FF2868A58533C7A /* PreferencesSubscriptionWithdrawalModelTests.swift */; };
 		BBB819162EC493750064977E /* PreferencesPurchaseSubscriptionModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBB819102EC493750064977E /* PreferencesPurchaseSubscriptionModelTests.swift */; };
 		BBB819182EC493750064977E /* PreferencesSubscriptionSettingsModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBB819122EC493750064977E /* PreferencesSubscriptionSettingsModelTests.swift */; };
+		9787175DA8729135098CE8BB /* PreferencesSubscriptionWithdrawalModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA80186C7FF2868A58533C7A /* PreferencesSubscriptionWithdrawalModelTests.swift */; };
 		BBB8191A2EC493DD0064977E /* MockBlackFridayCampaignProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBB819192EC493DD0064977E /* MockBlackFridayCampaignProvider.swift */; };
 		BBB8191B2EC493DD0064977E /* MockBlackFridayCampaignProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBB819192EC493DD0064977E /* MockBlackFridayCampaignProvider.swift */; };
 		BBB881882C4029BA001247C6 /* BookmarkListTreeControllerSearchDataSource.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBB881872C4029BA001247C6 /* BookmarkListTreeControllerSearchDataSource.swift */; };
@@ -6978,6 +6980,7 @@
 		BBB3F1F02E302143009E77AF /* ReportProblemFormView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReportProblemFormView.swift; sourceTree = "<group>"; };
 		BBB819102EC493750064977E /* PreferencesPurchaseSubscriptionModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PreferencesPurchaseSubscriptionModelTests.swift; sourceTree = "<group>"; };
 		BBB819122EC493750064977E /* PreferencesSubscriptionSettingsModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PreferencesSubscriptionSettingsModelTests.swift; sourceTree = "<group>"; };
+		FA80186C7FF2868A58533C7A /* PreferencesSubscriptionWithdrawalModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PreferencesSubscriptionWithdrawalModelTests.swift; sourceTree = "<group>"; };
 		BBB819192EC493DD0064977E /* MockBlackFridayCampaignProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MockBlackFridayCampaignProvider.swift; sourceTree = "<group>"; };
 		BBB881872C4029BA001247C6 /* BookmarkListTreeControllerSearchDataSource.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BookmarkListTreeControllerSearchDataSource.swift; sourceTree = "<group>"; };
 		BBB891E52DAEC1B6001A42DF /* MoreOptionsMenuIconsProviding.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MoreOptionsMenuIconsProviding.swift; sourceTree = "<group>"; };
@@ -10910,6 +10913,7 @@
 				F14B813E2F323C5200C39E26 /* SubscriptionPixelHandlerTests.swift */,
 				BBB819102EC493750064977E /* PreferencesPurchaseSubscriptionModelTests.swift */,
 				BBB819122EC493750064977E /* PreferencesSubscriptionSettingsModelTests.swift */,
+				FA80186C7FF2868A58533C7A /* PreferencesSubscriptionWithdrawalModelTests.swift */,
 				F16F92812C2AC0080007C93E /* Mocks */,
 				9F64346F2BECBA2800D2D8A0 /* SubscriptionRedirectManagerTests.swift */,
 				9F0660722BECC71200B8EEF1 /* SubscriptionAttributionPixelHandlerTests.swift */,
@@ -17403,6 +17407,7 @@
 				BB32A87E2E3CF75700E0C2AF /* VPNUpsellPopoverViewModelTests.swift in Sources */,
 				BBB819132EC493750064977E /* PreferencesPurchaseSubscriptionModelTests.swift in Sources */,
 				BBB819152EC493750064977E /* PreferencesSubscriptionSettingsModelTests.swift in Sources */,
+				C9A96D191B40347D7B2FDDA9 /* PreferencesSubscriptionWithdrawalModelTests.swift in Sources */,
 				CC00A0902E1D52A700750ED3 /* FirefoxPreferencesTests.swift in Sources */,
 				EE76B5952E5F249E00600C14 /* DismissableSyncDeviceButtonModelTests.swift in Sources */,
 				BB8E05872EE1C1AF006CD2E6 /* HomePageSubscriptionCardVisibilityManagerTests.swift in Sources */,
@@ -19381,6 +19386,7 @@
 				37D23780287EFEE200BCE03B /* PinnedTabsManagerTests.swift in Sources */,
 				BBB819162EC493750064977E /* PreferencesPurchaseSubscriptionModelTests.swift in Sources */,
 				BBB819182EC493750064977E /* PreferencesSubscriptionSettingsModelTests.swift in Sources */,
+				9787175DA8729135098CE8BB /* PreferencesSubscriptionWithdrawalModelTests.swift in Sources */,
 				AA0877BA26D5161D00B05660 /* WebKitVersionProviderTests.swift in Sources */,
 				9FA75A3E2BA00E1400DA5FA6 /* BookmarksBarMenuFactoryTests.swift in Sources */,
 				3790E2F62F6D5F70003EACD2 /* TabCollectionViewModelTests.swift in Sources */,

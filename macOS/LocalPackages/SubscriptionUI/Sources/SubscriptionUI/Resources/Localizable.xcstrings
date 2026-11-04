@@ -1916,6 +1916,90 @@
         }
       }
     },
+    "subscription.dialog.withdraw.confirm.button" : {
+      "comment" : "Button that confirms withdrawal from the subscription contract",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Confirm Withdrawal"
+          }
+        }
+      }
+    },
+    "subscription.dialog.withdraw.error.message" : {
+      "comment" : "Message of the dialog shown when withdrawing from the subscription contract fails. The text in square brackets is a link; keep the square brackets and the (%@) right after them. Parameter is the help page URL.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "We couldn’t process your withdrawal automatically. Please visit our [help page](%@) to complete your withdrawal."
+          }
+        }
+      }
+    },
+    "subscription.dialog.withdraw.features.message" : {
+      "comment" : "Second paragraph of the dialog confirming withdrawal from the subscription contract. Parameter is a localized list of features, e.g. VPN, Personal Information Removal and Duck.ai.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%@ stop working once you confirm."
+          }
+        }
+      }
+    },
+    "subscription.dialog.withdraw.keep.button" : {
+      "comment" : "Button that dismisses the withdrawal confirmation and keeps the subscription",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Keep Subscription"
+          }
+        }
+      }
+    },
+    "subscription.dialog.withdraw.message" : {
+      "comment" : "Message of the dialog confirming withdrawal from the subscription contract. Parameters are the tier name (e.g. Plus) and the refund amount with currency.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Your %1$@ subscription will end right away and you’ll be refunded %2$@ to your original payment method within 14 days."
+          }
+        }
+      }
+    },
+    "subscription.dialog.withdraw.message.no.amount" : {
+      "comment" : "Message of the dialog confirming withdrawal from the subscription contract, used when the refund amount is unknown. Parameter is the tier name (e.g. Plus).",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Your %@ subscription will end right away and you’ll get a full refund to your original payment method within 14 days."
+          }
+        }
+      }
+    },
+    "subscription.dialog.withdraw.title" : {
+      "comment" : "Title of the dialog confirming withdrawal from the subscription contract",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Withdraw from your subscription?"
+          }
+        }
+      }
+    },
     "subscription.modal.restore.purchase.button" : {
       "comment" : "Button for restoring past subscription purchase",
       "extractionState" : "extracted_with_value",
@@ -6002,6 +6086,18 @@
         }
       }
     },
+    "subscription.preferences.subscription.settings.not.subscribed" : {
+      "comment" : "Title for the status indicator shown after the user withdrew from the subscription contract",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Not Subscribed"
+          }
+        }
+      }
+    },
     "subscription.preferences.subscription.settings.section.title" : {
       "comment" : "Title for the subscription preferences settings section",
       "extractionState" : "extracted_with_value",
@@ -6298,6 +6394,66 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "ЧаВо и поддержка"
+          }
+        }
+      }
+    },
+    "subscription.preferences.withdraw.button" : {
+      "comment" : "Button that starts withdrawing from the subscription contract with a full refund",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Withdraw from contract"
+          }
+        }
+      }
+    },
+    "subscription.preferences.withdraw.section.caption" : {
+      "comment" : "Caption of the withdraw from contract section. Parameter is the last date the user can withdraw.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "You can withdraw and get a full refund until %@"
+          }
+        }
+      }
+    },
+    "subscription.preferences.withdraw.section.title" : {
+      "comment" : "Header of the subscription settings section that lets the user withdraw from the subscription contract with a full refund",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Withdraw from contract"
+          }
+        }
+      }
+    },
+    "subscription.preferences.withdrawn.info" : {
+      "comment" : "Confirmation shown after withdrawing from the subscription contract. Parameter is the withdrawal date.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "You withdrew on %@."
+          }
+        }
+      }
+    },
+    "subscription.preferences.withdrawn.refund.info" : {
+      "comment" : "Shown below the withdrawal confirmation. Parameter is the refunded amount with currency.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Your refund of %@ is being processed."
           }
         }
       }

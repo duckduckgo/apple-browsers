@@ -113,6 +113,7 @@ public final class PreferencesSubscriptionSettingsModel: ObservableObject {
     private let isProTierPurchaseEnabled: () -> Bool
     private let cancelPendingDowngradeHandler: ((String) async -> Void)?
     private var fetchSubscriptionDetailsTask: Task<(), Never>?
+    let withdrawal: PreferencesSubscriptionWithdrawalModel
 
     private var subscriptionChangeObserver: Any?
 
@@ -132,7 +133,15 @@ public final class PreferencesSubscriptionSettingsModel: ObservableObject {
              openWinBackOfferLandingPage,
              didClickViewAllPlans,
              didClickUpgradeToPro,
-             didClickCancelPendingDowngrade
+             didClickCancelPendingDowngrade,
+             didClickWithdraw,
+             didShowWithdrawalDialog,
+             didClickConfirmWithdrawal,
+             didClickKeepSubscription,
+             withdrawalDidStart,
+             withdrawalDidFinish,
+             withdrawalDidFail(Error),
+             withdrawalEligibilityDidFail(Error)
     }
 
     public init(userEventHandler: @escaping (PreferencesSubscriptionSettingsModel.UserEvent) -> Void,
@@ -142,7 +151,8 @@ public final class PreferencesSubscriptionSettingsModel: ObservableObject {
                 winBackOfferVisibilityManager: WinBackOfferVisibilityManaging,
                 blackFridayCampaignProvider: BlackFridayCampaignProviding,
                 isProTierPurchaseEnabled: @escaping () -> Bool,
-                cancelPendingDowngradeHandler: ((String) async -> Void)? = nil) {
+                cancelPendingDowngradeHandler: ((String) async -> Void)? = nil,
+                isWithdrawalEnabled: @escaping () -> Bool = { false }) {
         self.subscriptionManager = subscriptionManager
         self.userEventHandler = userEventHandler
         self.keyValueStore = keyValueStore
@@ -150,6 +160,9 @@ public final class PreferencesSubscriptionSettingsModel: ObservableObject {
         self.blackFridayCampaignProvider = blackFridayCampaignProvider
         self.isProTierPurchaseEnabled = isProTierPurchaseEnabled
         self.cancelPendingDowngradeHandler = cancelPendingDowngradeHandler
+        self.withdrawal = PreferencesSubscriptionWithdrawalModel(subscriptionManager: subscriptionManager,
+                                                                 isFeatureEnabled: isWithdrawalEnabled,
+                                                                 userEventHandler: userEventHandler)
         Task {
             await self.updateSubscription(forceRefresh: false)
         }
@@ -196,6 +209,10 @@ hasActiveTrialOffer: \(hasTrialOffer, privacy: .public)
             }
             .removeDuplicates()
             .assign(to: \.settingsState, onWeaklyHeld: self)
+            .store(in: &cancellables)
+
+        withdrawal.objectWillChange
+            .sink { [weak self] _ in self?.objectWillChange.send() }
             .store(in: &cancellables)
     }
 
@@ -463,7 +480,14 @@ hasActiveTrialOffer: \(hasTrialOffer, privacy: .public)
 
             await self?.fetchEmail()
             await self?.updateSubscription(forceRefresh: true)
+            await self?.fetchWithdrawalEligibility()
         }
+    }
+
+    @MainActor
+    private func fetchWithdrawalEligibility() async {
+        guard let subscription = try? await subscriptionManager.getSubscription(forceRefresh: false) else { return }
+        await withdrawal.fetchEligibility(for: subscription)
     }
 
     @MainActor func fetchEmail() async {

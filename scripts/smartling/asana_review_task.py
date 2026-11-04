@@ -46,7 +46,7 @@ def notes_html(notes: str) -> str:
     for line in notes.strip().split('\n'):
         line = html.escape(line, quote=False)  # Asana shows &#x27; and &quot; literally in text.
         line = re.sub(
-            r'\[([^\]]+)\]\((https?://[^)\s]+)\)|(https?://\S+)',
+            r'\[([^\]]+)\]\((https?://[^)\s"]+)\)|(https?://[^\s"]+)',  # A quote would end the href attribute.
             lambda match: f'<a href="{match[2]}">{match[1]}</a>' if match[2] else f'<a href="{match[3]}">{match[3]}</a>',
             line
         )

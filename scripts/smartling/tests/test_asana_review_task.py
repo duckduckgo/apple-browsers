@@ -132,6 +132,12 @@ class NotesHTMLTests(unittest.TestCase):
         ))
 
 
+    def testWhenAURLIsQuotedThenTheQuoteStaysOutOfTheLink(self):
+        html_notes = ASANA_REVIEW_TASK.notes_html('Should "https://example.com" be translated?')
+
+        self.assertEqual(html_notes, '<body>Should "<a href="https://example.com">https://example.com</a>" be translated?</body>')
+
+
 class ReviewTaskTests(unittest.TestCase):
 
     def review_task(self, client, args=None):

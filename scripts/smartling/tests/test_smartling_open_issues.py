@@ -304,11 +304,23 @@ class StringAttributionTests(unittest.TestCase):
                 self.assertTrue(added)
 
     def testWhenTheSameTextIsAddedUnderAnotherKeyNextToTheKeyThenTheCommitDidntAddTheString(self):
-        diff = f'@@ -1 +1,2 @@\n "{KEY}" = "{ENGLISH}";\n+"other.key" = "{ENGLISH}";\n'
+        diffs = {
+            'another key': f'@@ -1 +1,2 @@\n "{KEY}" = "{ENGLISH}";\n+"other.key" = "{ENGLISH}";\n',
+            'a longer key': f'@@ -1 +1,2 @@\n "{KEY}" = "{ENGLISH}";\n+"{KEY}.tooltip" = "{ENGLISH}";\n',
+        }
+        for case, diff in diffs.items():
+            with self.subTest(case):
+                added = OPEN_ISSUES.adds_string(diff, [ENGLISH], [KEY])
 
-        added = OPEN_ISSUES.adds_string(diff, [ENGLISH], [KEY])
+                self.assertFalse(added)
 
-        self.assertFalse(added)
+    def testWhenOnlyTheKeyIsSearchedThenALongerKeyDoesntCount(self):
+        diffs = {f'"{KEY}" = "Other text";': True, f'"{KEY}.tooltip" = "Other text";': False}
+        for line, expected in diffs.items():
+            with self.subTest(line):
+                added = OPEN_ISSUES.adds_string(f'@@ -1 +1,2 @@\n context\n+{line}\n', [], [KEY])
+
+                self.assertEqual(added, expected)
 
     def testWhenTheNewestCommitIsATranslationImportThenTheOlderAuthorGetsIt(self):
         import_commit = 'b' * 40

@@ -212,18 +212,30 @@ def declared_key(line: str) -> Optional[str]:
     return None if not name or name in CATALOG_FIELDS or LOCALE.match(name) else name
 
 
+def mentions_key(line: str, keys: List[str]) -> bool:
+    """Whether the line has one of the keys as a whole, so that "target.key" doesn't match "target.key.tooltip"."""
+    return any(re.search(rf'(?<![\w.-]){re.escape(key)}(?![\w.-])', line) for key in keys)
+
+
 def adds_string(diff: str, texts: List[str], keys: List[str]) -> bool:
     """Whether the diff adds a line with the text in the string's own entry: on the key's line, or below it with no
-    other key's entry in between. The same words under another key don't count."""
+    other key's entry in between. The same words under another key don't count. With no text, whether it adds a line
+    with the key."""
     for hunk in re.split(r'^@@.*$', diff, flags=re.MULTILINE)[1:]:
         lines = [line for line in hunk.splitlines() if not line.startswith('-')]
         for index, line in enumerate(lines):
-            if not line.startswith('+') or not any(text in line for text in texts):
+            if not line.startswith('+'):
+                continue
+            if not texts:
+                if mentions_key(line, keys):
+                    return True
+                continue
+            if not any(text in line for text in texts):
                 continue
             if not keys:
                 return True
             for above in reversed(lines[:index + 1]):
-                if any(key in above for key in keys):
+                if mentions_key(above, keys):
                     return True
                 if declared_key(above):
                     break
@@ -236,15 +248,15 @@ def string_commit(git: Git, github: GitHubClient, issue: OpenIssue, platform: st
     paths = PLATFORM_PATHS[platform]
     texts = text_forms(issue.english) if issue.english else []
     keys = key_forms(issue.key)
-    searches = [(texts, keys)] if texts else []
-    searches += [(keys, [])] if keys else []
+    searches = [(texts, texts, keys)] if texts else []  # What to search the history for, then what to check in the diff
+    searches += [(keys, [], keys)] if keys else []
     shallow = git.shallow_commits()
-    for terms, context in searches:
+    for terms, search_texts, search_keys in searches:
         candidates = list(dict.fromkeys(
             sha for term in terms for sha in git.commits_changing(term, paths, issue.created_at)
         ))
         for sha in candidates[:MAX_CANDIDATE_COMMITS]:
-            if sha in shallow or not adds_string(git.diff(sha, paths), terms, context):
+            if sha in shallow or not adds_string(git.diff(sha, paths), search_texts, search_keys):
                 continue
             pull = human(pull_request(github, sha))
             if pull:

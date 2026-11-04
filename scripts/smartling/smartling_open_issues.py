@@ -43,8 +43,8 @@ INTERFACE_BUILDER_KEY = re.compile(r'^([A-Za-z0-9]{3}-[A-Za-z0-9]{2}-[A-Za-z0-9]
 # Plural variants are "/<key>:dict/<rule>:dict/…".
 PLURAL_KEY = re.compile(r'^/(.+?):dict/')
 # Where an entry starts: `"key" = "…"` in a strings file, `"key" : {` in a string catalog, or NSLocalizedString("key".
-# A catalog's own fields and its locales also look like `"name" :`, so they don't count.
-KEY_DECLARATION = re.compile(r'^.\s*"([^"]+)"\s*[:=]|NSLocalizedString\(\s*"([^"]+)"')
+# In a catalog, its own fields and its locales also look like `"name" :`, so they don't count there.
+KEY_DECLARATION = re.compile(r'^.\s*"([^"]+)"\s*([:=])|NSLocalizedString\(\s*"([^"]+)"')
 CATALOG_FIELDS = {
     'comment', 'extractionState', 'localizations', 'stringUnit', 'state', 'value', 'variations', 'plural', 'device',
     'substitutions', 'argNum', 'formatSpecifier', 'zero', 'one', 'two', 'few', 'many', 'other', 'sourceLanguage',
@@ -208,8 +208,12 @@ def key_forms(key: str) -> List[str]:
 def declared_key(line: str) -> Optional[str]:
     """The key a line of a strings file, string catalog or Swift source starts an entry for, if any."""
     match = KEY_DECLARATION.search(line)
-    name = match and (match[1] or match[2])
-    return None if not name or name in CATALOG_FIELDS or LOCALE.match(name) else name
+    if not match:
+        return None
+    if match[3]:
+        return match[3]
+    in_catalog = match[2] == ':'
+    return None if in_catalog and (match[1] in CATALOG_FIELDS or LOCALE.match(match[1])) else match[1]
 
 
 def mentions_key(line: str, keys: List[str]) -> bool:

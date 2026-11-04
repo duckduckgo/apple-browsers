@@ -189,11 +189,12 @@ def review_task(client: AsanaClient, args, today: date) -> Dict:
 
 def create_task(client: AsanaClient, body: Dict, fallback_assignee: Optional[str] = None) -> Dict:
     """Create the task. If Asana rejects its assignee, for example someone who has left, create it for the fallback
-    assignee instead, or unassigned."""
+    assignee instead, or unassigned. Any other failure is raised, so a valid assignee is never replaced."""
     try:
         return client.create_task(body)
     except RuntimeError as error:
-        if not body.get('assignee') or body['assignee'] == fallback_assignee:
+        rejected_assignee = 'HTTP 400' in str(error) and 'assignee' in str(error).lower()
+        if not rejected_assignee or not body.get('assignee') or body['assignee'] == fallback_assignee:
             raise
         log(f"⚠️ {error}. Creating the task for {fallback_assignee or 'no one'} instead")
     body = {key: value for key, value in body.items() if key != 'assignee'}

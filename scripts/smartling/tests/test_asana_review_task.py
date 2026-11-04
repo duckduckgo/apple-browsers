@@ -196,13 +196,14 @@ class ReviewTaskTests(unittest.TestCase):
 class RejectingAsanaClient:
     """Rejects tasks for some assignees, as Asana does for deactivated users."""
 
-    def __init__(self, rejected):
+    def __init__(self, rejected, error='Asana POST /tasks failed with HTTP 400: assignee: Not a recognized ID'):
         self.rejected = rejected
+        self.error = error
         self.created = []
 
     def create_task(self, body):
         if body.get('assignee') in self.rejected:
-            raise RuntimeError('Asana POST /tasks failed with HTTP 400: assignee: Not a recognized ID')
+            raise RuntimeError(self.error)
         self.created.append(body)
         return {'gid': '1'}
 
@@ -222,11 +223,17 @@ class CreateTaskTests(unittest.TestCase):
 
                 self.assertEqual(client.created, [expected])
 
-    def testWhenAsanaRejectsTheFallbackTooThenTheErrorIsRaised(self):
-        client = RejectingAsanaClient(rejected={'author', 'owner'})
+    def testWhenAsanaFailsForAnotherReasonOrRejectsTheFallbackTooThenTheErrorIsRaised(self):
+        clients = {
+            'server error': RejectingAsanaClient(rejected={'author'}, error='Asana POST /tasks failed with HTTP 500: Server Error'),
+            'fallback rejected': RejectingAsanaClient(rejected={'author', 'owner'}),
+        }
+        for case, client in clients.items():
+            with self.subTest(case):
+                with self.assertRaises(RuntimeError):
+                    self.create_task(client, 'owner')
 
-        with self.assertRaises(RuntimeError):
-            self.create_task(client, 'owner')
+                self.assertEqual(client.created, [])
 
 
 if __name__ == '__main__':

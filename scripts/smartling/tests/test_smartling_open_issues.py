@@ -307,6 +307,7 @@ class StringAttributionTests(unittest.TestCase):
         diffs = {
             'another key': f'@@ -1 +1,2 @@\n "{KEY}" = "{ENGLISH}";\n+"other.key" = "{ENGLISH}";\n',
             'a longer key': f'@@ -1 +1,2 @@\n "{KEY}" = "{ENGLISH}";\n+"{KEY}.tooltip" = "{ENGLISH}";\n',
+            'a key like a catalog field': f'@@ -1 +1,2 @@\n "{KEY}" = "{ENGLISH}";\n+"value" = "{ENGLISH}";\n',
         }
         for case, diff in diffs.items():
             with self.subTest(case):

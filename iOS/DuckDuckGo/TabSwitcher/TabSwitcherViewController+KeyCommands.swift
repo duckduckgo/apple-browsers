@@ -67,12 +67,22 @@ extension TabSwitcherViewController {
         commands.forEach {
             $0.wantsPriorityOverSystemBehavior = true
         }
-        let spec = MainMenuSpec(isEnabled: featureFlagger.isFeatureOn(.ipadMenuBar),
-                                context: .init(fireModeEnabled: fireModeCapability.isFireModeEnabled))
+        let menuEnabled = featureFlagger.isFeatureOn(.ipadMenuBar)
+        let favorites = menuEnabled ? (presentingViewController as? MainViewController)?.mainMenuBookmarks.favorites ?? [] : []
+        let spec = MainMenuSpec(isEnabled: menuEnabled,
+                                context: .init(fireModeEnabled: fireModeCapability.isFireModeEnabled,
+                                               aiChatEnabled: aiChatSettings.isAIChatEnabled, favorites: favorites))
         guard spec.shortcutRegistration != .legacy else { return commands }
         return MainMenuBuilder().keyCommands(for: spec, from: commands, availability: switcherMenuAvailability)
     }
     
+    @objc func keyboardFire() {
+        KeyboardShortcutPixel.fireUsed(with: pixelFiring)
+        guard isFireShortcutEnabled(), !isProcessingUpdates else { return }
+        let source: AnyObject = isEditing ? view : chrome.fireButton
+        burn(sender: source, prefersSheet: true)
+    }
+
     override func validate(_ command: UICommand) {
         super.validate(command)
         guard featureFlagger.isFeatureOn(.ipadMenuBar), let menuCommand = MainMenuCommand(action: command.action) else { return }
@@ -93,6 +103,7 @@ extension TabSwitcherViewController {
             shortcutsEnabled: !isProcessingUpdates && ((presentingViewController as? MainViewController)?.isShortcutEnabled() ?? true),
             presentation: presentedViewController == nil ? .tabSwitcher : .blockingModal)
         state.fireModeEnabled = fireModeCapability.isFireModeEnabled
+        state.aiChatEnabled = aiChatSettings.isAIChatEnabled
         state.passwordsEnabled = featureFlagger.isFeatureOn(.autofillAccessCredentialManagement)
         state.canHideTabs = canDismissOnEmpty || !tabsModel.isEmpty
         return MenuCommandAvailability(state: state)

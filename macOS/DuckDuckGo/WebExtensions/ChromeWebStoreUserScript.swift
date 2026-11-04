@@ -38,7 +38,9 @@ final class ChromeWebStoreUserScript: NSObject, Subfeature {
 
     private let notificationCenter: NotificationCenter
     private var changeCancellable: AnyCancellable?
-    @MainActor private weak var webView: WKWebView?
+    /// The tab's web view, set by `ChromeWebStoreTabExtension`. The tab sets it on every new instance,
+    /// because changes such as an extension's autofill takeover rebuild the tab's user scripts.
+    @MainActor weak var webView: WKWebView?
 
     init(serviceProvider: @escaping @MainActor () -> ChromeWebStoreManaging?,
          notificationCenter: NotificationCenter = .default) {
@@ -59,7 +61,7 @@ final class ChromeWebStoreUserScript: NSObject, Subfeature {
 
     @MainActor
     private func extensionChanged(_ extensionId: String) {
-        // A tab may have navigated away since its last validated store request.
+        // The tab may show a page other than the store.
         guard ChromeWebStoreURL.isValidExtensionID(extensionId),
               let webView, let url = webView.url,
               url.scheme == "https", url.host == ChromeWebStoreURL.host,
@@ -133,8 +135,6 @@ final class ChromeWebStoreUserScript: NSObject, Subfeature {
         guard let request: ExtensionRequest = DecodableHelper.decode(from: params),
               ChromeWebStoreURL.isValidExtensionID(request.extensionId) else { throw ChromeWebStoreError.invalidRequest }
 
-        // Retain only a weak reference, and only after validating the main frame.
-        webView = message.webView
         let service = serviceProvider()
         switch method {
         case .getExtensionStatus:
@@ -145,7 +145,7 @@ final class ChromeWebStoreUserScript: NSObject, Subfeature {
                 throw ChromeWebStoreError.invalidRequest
             }
             // Captured before the install: while loading, the extension may open and select a tab of its own.
-            let window = webView?.window
+            let window = message.webView?.window
             let success = await service?.install(identifier: request.extensionId, downloadURL: request.versionedCrxUrl) ?? false
             if success, let window {
                 notificationCenter.post(name: .chromeWebStoreExtensionInstalled, object: window, userInfo: [UserInfoKeys.extensionID: request.extensionId])

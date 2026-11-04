@@ -424,9 +424,18 @@ struct Launching: LaunchingHandling {
 
         let voiceSearchHelper = self.voiceSearchHelper
         let fireModeCapability = mainCoordinator.controller.fireModeCapability
+        let mainViewController = mainCoordinator.controller
+        let mainMenuBookmarks = mainViewController.mainMenuBookmarks
+        let bookmarksMenuTree = BookmarksMenuTree(children: { mainMenuBookmarks.children(ofFolderWithID: $0) })
         let mainMenuService = MainMenuService(featureFlagger: featureFlagger, contextProvider: {
-            .init(voiceSearchEnabled: voiceSearchHelper.isVoiceSearchEnabled, fireModeEnabled: fireModeCapability.isFireModeEnabled)
-        })
+            .init(voiceSearchEnabled: voiceSearchHelper.isVoiceSearchEnabled, fireModeEnabled: fireModeCapability.isFireModeEnabled,
+                  aiChatEnabled: aiChatSettings.isAIChatEnabled, favorites: mainMenuBookmarks.favorites)
+        }, deferredContent: [
+            DuckAIMenuSection.recentChatsIdentifier: DuckAIRecentChatsMenuContent { [weak mainViewController] in
+                await mainViewController?.mainMenuRecentChats() ?? .init(recentChats: [], totalChatCount: 0)
+            },
+            .bookmarksTree: bookmarksMenuTree
+        ], rebuildTriggers: [mainMenuBookmarks.changes])
 
         // MARK: - App Services aggregation
         // This object serves as a central hub for app-wide services that:

@@ -87,15 +87,19 @@ jobs:
             echo "::error::Run $RUN_ID has no started Test (Non-Sandbox) job, the job that renders the snapshots."
             exit 1
           fi
-          artifact_created="$(gh api "repos/$GITHUB_REPOSITORY/actions/runs/$RUN_ID/artifacts?name=macos-rendered-snapshots" --jq '.artifacts[0].created_at // ""')"
-          if [ -n "$artifact_created" ] && [[ "$artifact_created" < "$job_started" ]]; then
-            echo "::error::Run $RUN_ID's macos-rendered-snapshots artifact comes from an earlier attempt of Test (Non-Sandbox), and its latest attempt rendered no mismatches. Every snapshot matched its reference."
-            exit 1
-          fi
-          if ! gh run download "$RUN_ID" -R "$GITHUB_REPOSITORY" -n macos-rendered-snapshots -D "$RUNNER_TEMP/rendered"; then
+          read -r artifact_id artifact_created < <(gh api "repos/$GITHUB_REPOSITORY/actions/runs/$RUN_ID/artifacts?name=macos-rendered-snapshots&per_page=100" \
+            --jq '[.artifacts[] | select(.expired | not)] | max_by(.id) // {} | "\(.id // "") \(.created_at // "")"')
+          if [ -z "$artifact_id" ]; then
             echo "::error::Run $RUN_ID has no macos-rendered-snapshots artifact. Every snapshot matched its reference, or the unit tests didn't run."
             exit 1
           fi
+          if [[ "$artifact_created" < "$job_started" ]]; then
+            echo "::error::Run $RUN_ID's macos-rendered-snapshots artifact comes from an earlier attempt of Test (Non-Sandbox), and its latest attempt rendered no mismatches. Every snapshot matched its reference."
+            exit 1
+          fi
+          gh api "repos/$GITHUB_REPOSITORY/actions/artifacts/$artifact_id/zip" > "$RUNNER_TEMP/rendered.zip"
+          mkdir -p "$RUNNER_TEMP/rendered"
+          unzip -q "$RUNNER_TEMP/rendered.zip" -d "$RUNNER_TEMP/rendered"
 
       - name: Check out the PR branch
         uses: actions/checkout@v6

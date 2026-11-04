@@ -86,13 +86,15 @@ final class UserScripts: UserScriptsProvider {
          geolocationUserScript: GeolocationUserScript? = nil,
          duckAiNativeStorageHandler: DuckAiNativeStorageHandling? = nil,
          sponsorBlockPreferences: SponsorBlockPreferences,
+         sponsorBlockSegmentsProvider: SponsorBlockSegmentsProvider = AppDependencyProvider.shared.sponsorBlockSegmentsProvider,
          aiChatDebugSettings: AIChatDebugSettingsHandling = AIChatDebugSettings()) {
 
         isAutoconsentExtensionAvailable = sourceProvider.webExtensionAvailability?.isAutoconsentExtensionAvailable ?? false
         findInPageScript = findInPageImplementation == .legacy ? FindInPageUserScript() : nil
 
         selectionFrameScript = SelectionFrameUserScript()
-        sponsorBlockSubfeature = SponsorBlockSubfeature(preferences: sponsorBlockPreferences,
+        sponsorBlockSubfeature = SponsorBlockSubfeature(segmentsProvider: sponsorBlockSegmentsProvider,
+                                                        preferences: sponsorBlockPreferences,
                                                         isFeatureFlagOn: { featureFlagger.isFeatureOn(.sponsorBlock) })
         self.mediaCaptureUserScript = mediaCaptureUserScript
         self.geolocationUserScript = sitePermissionsEnabled ? geolocationUserScript : nil

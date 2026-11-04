@@ -80,6 +80,7 @@ let package = Package(
             name: "BrowserServicesKit",
             dependencies: [
                 .product(name: "WideEvent", package: "WideEvent"),
+                .product(name: "DDGError", package: "DDGError"),
                 .product(name: "Autofill", package: "duckduckgo-autofill"),
                 .product(name: "ContentScopeScripts", package: "content-scope-scripts"),
                 .product(name: "Persistence", package: "Persistence"),

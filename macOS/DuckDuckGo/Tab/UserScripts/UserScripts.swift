@@ -79,11 +79,13 @@ final class UserScripts: UserScriptsProvider, ReleaseNotesUserScriptProvider {
          contentScopePreferences: ContentScopePreferences,
          duckAiNativeStorageHandler: DuckAiNativeStorageHandling? = NSApp.delegateTyped.duckAiNativeStorageHandler,
          sponsorBlockPreferences: SponsorBlockPreferences = NSApp.delegateTyped.sponsorBlockPreferences,
+         sponsorBlockSegmentsProvider: SponsorBlockSegmentsProvider = NSApp.delegateTyped.sponsorBlockSegmentsProvider,
          aiChatDebugURLSettings: (any KeyedStoring<AIChatDebugURLSettings>)? = nil) {
 
         self.contentScopePreferences = contentScopePreferences
         let featureFlagger = sourceProvider.featureFlagger
-        sponsorBlockSubfeature = SponsorBlockSubfeature(preferences: sponsorBlockPreferences,
+        sponsorBlockSubfeature = SponsorBlockSubfeature(segmentsProvider: sponsorBlockSegmentsProvider,
+                                                        preferences: sponsorBlockPreferences,
                                                         isFeatureFlagOn: { featureFlagger.isFeatureOn(.sponsorBlock) })
         if #available(macOS 15.4, *) {
             chromeWebStoreUserScript = ChromeWebStoreUserScript(serviceProvider: {

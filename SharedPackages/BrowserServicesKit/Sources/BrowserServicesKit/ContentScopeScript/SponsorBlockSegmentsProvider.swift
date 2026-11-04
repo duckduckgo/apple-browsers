@@ -17,18 +17,18 @@
 //
 
 import CryptoKit
+import DDGError
 import Foundation
 import os.log
 
 /// Fetches skip segments from the SponsorBlock API (https://wiki.sponsor.ajay.app/w/API_Docs).
 ///
 /// Lookups use a SHA-256 hash prefix of the video ID, so the server never sees the exact video.
-/// Results are cached in memory and shared across tabs through `shared`.
+/// Results are cached in memory; the app keeps one instance so every tab shares the cache.
 public actor SponsorBlockSegmentsProvider {
 
     // Segments endpoint; the request URL is `<apiBaseURL>/<hash prefix>?categories=…&actionTypes=…`.
     public static let apiBaseURL = URL(string: "https://web-dew-1.duckduckgo.com/sponsorblock/v1/segments")!
-    public static let shared = SponsorBlockSegmentsProvider()
 
     public typealias DataLoader = (URLRequest) async throws -> (Data, URLResponse)
 
@@ -78,12 +78,22 @@ public actor SponsorBlockSegmentsProvider {
         }
     }
 
-    public enum ProviderError: LocalizedError {
+    public enum ProviderError: DDGError {
         case invalidParams(String)
         case invalidResponse
         case httpStatus(Int)
 
-        public var errorDescription: String? {
+        public static var errorDomain: String { "com.duckduckgo.sponsorBlock.SegmentsProvider" }
+
+        public var errorCode: Int {
+            switch self {
+            case .invalidParams: return 1
+            case .invalidResponse: return 2
+            case .httpStatus: return 3
+            }
+        }
+
+        public var description: String {
             switch self {
             case .invalidParams(let name): return "Invalid getSegments param: \(name)"
             case .invalidResponse: return "Invalid SponsorBlock response"

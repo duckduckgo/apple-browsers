@@ -52,7 +52,7 @@ public final class SponsorBlockSubfeature: NSObject, Subfeature {
     private weak var webView: WKWebView?
     private var preferencesCancellable: AnyCancellable?
 
-    public init(segmentsProvider: SponsorBlockSegmentsProvider = .shared,
+    public init(segmentsProvider: SponsorBlockSegmentsProvider,
                 preferences: SponsorBlockPreferences,
                 isFeatureFlagOn: @escaping () -> Bool) {
         self.segmentsProvider = segmentsProvider

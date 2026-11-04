@@ -68,6 +68,7 @@ struct DuckPlayerWebView: UIViewRepresentable {
         contentController: WKUserContentController = WKUserContentController(),
         scriptSourceProviderDependencies: DefaultScriptSourceProvider.Dependencies,
         sponsorBlockPreferences: SponsorBlockPreferences,
+        sponsorBlockSegmentsProvider: SponsorBlockSegmentsProvider = AppDependencyProvider.shared.sponsorBlockSegmentsProvider,
         duckPlayerUserScript: DuckPlayerUserScriptPlayer? = nil,
         featureFlagger: FeatureFlagger = AppDependencyProvider.shared.featureFlagger,
         privacyConfigurationJSONGenerator: ContentScopePrivacyConfigurationJSONGenerator? = nil,
@@ -79,7 +80,8 @@ struct DuckPlayerWebView: UIViewRepresentable {
               
        self.duckPlayerUserScript = duckPlayerUserScript ?? DuckPlayerUserScriptPlayer(viewModel: viewModel)
        // Duck Player loads youtube-nocookie.com in its own web view, so the tab's SponsorBlock subfeature never sees it.
-       self.sponsorBlockSubfeature = SponsorBlockSubfeature(preferences: sponsorBlockPreferences,
+       self.sponsorBlockSubfeature = SponsorBlockSubfeature(segmentsProvider: sponsorBlockSegmentsProvider,
+                                                            preferences: sponsorBlockPreferences,
                                                             isFeatureFlagOn: { featureFlagger.isFeatureOn(.sponsorBlock) })
 
        let jsonGenerator = privacyConfigurationJSONGenerator ??

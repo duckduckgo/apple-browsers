@@ -617,6 +617,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private(set) var webExtensionManager: WebExtensionManaging?
     /// Whether a password manager extension has taken autofill over from DuckDuckGo.
     let webExtensionAutofillTakeover: WebExtensionAutofillTakeover
+    private var nativeBitwardenRetirement: NativeBitwardenRetirement?
     private(set) var webExtensionAvailability: WebExtensionAvailabilityProviding
     private let webExtensionManagerHolder = WebExtensionManagerHolder()
     private var webExtensionFeatureFlagHandler: AnyObject?
@@ -2375,6 +2376,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         )
         self.webExtensionManager = webExtensionManager
         webExtensionAutofillTakeover.manager = webExtensionManager
+        nativeBitwardenRetirement = NativeBitwardenRetirement(
+            isBitwardenExtensionInstalled: { [weak webExtensionManager] in
+                webExtensionManager?.isBitwardenExtensionInstalled ?? false
+            },
+            disableNativeIntegration: { [passwordManagerCoordinator] in
+                passwordManagerCoordinator.setEnabled(false)
+            }
+        )
 
         let coordinator = WebExtensionLifecycleCoordinator(
             manager: webExtensionManager,
@@ -2392,6 +2401,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         Task { @MainActor [weak self] in
             await initialLoad.value
             self?.startRemoteDisableEnforcer(for: webExtensionManager)
+            self?.nativeBitwardenRetirement?.retireIfNeeded()
         }
     }
 

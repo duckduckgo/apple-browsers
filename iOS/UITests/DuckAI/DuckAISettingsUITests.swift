@@ -35,7 +35,9 @@ final class DuckAISettingsUITests: DuckAIUITestCase {
             // The always-present row below Duck.ai establishes the collapsed section's viewport.
             let disableAllAI = app.aiFeaturesSettingsList.buttons["Settings.AIFeatures.DisableAllAIOptions"]
             app.aiFeaturesSettingsList.swipeUpToReveal(disableAllAI, timeout: UITestTimeouts.navigation)
-            XCTAssertTrue(disableAllAI.isHittable, "The end of AI Features settings did not become visible.")
+            XCTAssertTrue(
+                disableAllAI.waitForHittableInAppWindow(in: app, timeout: UITestTimeouts.elementExistence),
+                "The end of AI Features settings did not become visible.")
             XCTAssertTrue(
                 duckAISettings.wait(for: NSPredicate(format: "exists == false"), timeout: UITestTimeouts.elementExistence),
                 "Duck.ai Settings remained after Duck.ai was disabled.")
@@ -47,7 +49,7 @@ final class DuckAISettingsUITests: DuckAIUITestCase {
         }
 
         XCTContext.runActivity(named: "Open Duck.ai Settings in a new tab") { _ in
-            duckAISettings.tapWhenHittable()
+            duckAISettings.tapWhenHittable(in: app)
             XCTAssertTrue(
                 app.aiFeaturesSettingsList.wait(for: NSPredicate(format: "exists == false"), timeout: UITestTimeouts.elementExistence),
                 "AI Features settings remained visible after opening Duck.ai Settings.")
@@ -58,7 +60,7 @@ final class DuckAISettingsUITests: DuckAIUITestCase {
             XCTAssertTrue(
                 settingsHeading.waitForExistence(timeout: UITestTimeouts.navigation),
                 "The Duck.ai Settings destination did not load.")
-            app.buttons["AIChat.Header.TabSwitcher"].tapWhenHittable()
+            app.buttons["AIChat.Header.TabSwitcher"].tapWhenHittable(in: app)
             app.assertTabCount(2)
         }
     }
@@ -121,7 +123,7 @@ final class DuckAIIPhoneIPadFlagsUITests: DuckAIUITestCase {
             "The iPhone Duck.ai address-bar button did not appear.",
             file: file,
             line: line)
-        app.searchEntry.tapWhenHittable(file: file, line: line)
+        app.searchEntry.tapWhenHittable(in: app, file: file, line: line)
         XCTAssertFalse(
             app.buttons["Browser.OmniBar.Button.ModeToggle.Search"].exists,
             "The iPad Search mode toggle appeared on iPhone.",

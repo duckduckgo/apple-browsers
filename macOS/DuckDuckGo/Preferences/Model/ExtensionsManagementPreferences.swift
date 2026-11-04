@@ -18,6 +18,7 @@
 
 import Combine
 import Foundation
+import PixelKit
 import PrivacyConfig
 import WebExtensions
 
@@ -38,22 +39,29 @@ final class ExtensionsManagementPreferences: ObservableObject {
 
     private let webExtensionManager: WebExtensionManaging?
     private let windowControllersManager: WindowControllersManagerProtocol
+    private let pixelFiring: (any PixelKitFiring)?
     private var cancellables = Set<AnyCancellable>()
     private var enabledStateTasks: [String: Task<Void, Never>] = [:]
 
-    init(configurationManager: PrivacyConfigurationManaging, webExtensionManager: WebExtensionManaging? = nil, windowControllersManager: WindowControllersManagerProtocol) {
+    init(configurationManager: PrivacyConfigurationManaging,
+         webExtensionManager: WebExtensionManaging? = nil,
+         windowControllersManager: WindowControllersManagerProtocol,
+         pixelFiring: (any PixelKitFiring)? = PixelKit.shared) {
         self.webExtensionManager = webExtensionManager
         self.windowControllersManager = windowControllersManager
+        self.pixelFiring = pixelFiring
 
         reloadExtensions()
         startObservingChanges(configurationManager: configurationManager)
     }
 
     func openStorePage(for item: ChromeWebStoreListing) {
+        pixelFiring?.fire(WebExtensionPixel.getClicked(extension: .catalog(item.entry)), frequency: .dailyAndCount)
         windowControllersManager.show(url: item.storeURL, source: .ui, newTab: true, selected: true)
     }
 
     func showDetails(for entry: InstalledExtensionEntry) {
+        pixelFiring?.fire(WebExtensionPixel.detailsOpened(extension: .catalog(entry.listing.entry)), frequency: .dailyAndCount)
         detailsListingID = entry.listing.id
     }
 

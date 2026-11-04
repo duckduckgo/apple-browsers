@@ -54,6 +54,37 @@ final class MacOSWebExtensionPixelFiringTests: XCTestCase {
         XCTAssertTrue(call.includeAppVersionParameter)
     }
 
+    func testStoreExtensionEventsAreSentDailyAndCounted() throws {
+        let events: [(WebExtensionPixelEvent, String)] = [
+            (.enabled(extension: .catalog(.onePassword)), "web_extension_enabled_macos"),
+            (.disabled(extension: .catalog(.onePassword)), "web_extension_disabled_macos"),
+            (.remotelyDisabled(extension: .catalog(.onePassword)), "web_extension_remotely_disabled_macos"),
+            (.retained14Days(extension: .catalog(.onePassword)), "web_extension_retained_14d_macos"),
+            (.churned14Days(extension: .catalog(.onePassword)), "web_extension_churned_14d_macos"),
+        ]
+
+        for (event, name) in events {
+            let pixels = PixelKitMock()
+            MacOSWebExtensionPixelFiring(pixelFiring: pixels).fire(event)
+
+            let call = try XCTUnwrap(pixels.actualFireCalls.first)
+            XCTAssertEqual(pixels.actualFireCalls.count, 1, name)
+            XCTAssertEqual(call.pixel.name, name)
+            XCTAssertEqual(call.frequency, .dailyAndCount, name)
+            XCTAssertEqual(call.pixel.parameters, ["extension": "onePassword"], name)
+        }
+    }
+
+    func testInstalledCountIsSentOnceADay() throws {
+        let pixels = PixelKitMock()
+        MacOSWebExtensionPixelFiring(pixelFiring: pixels).fire(.installedCount(installed: 0, enabled: 0))
+
+        let call = try XCTUnwrap(pixels.actualFireCalls.first)
+        XCTAssertEqual(call.pixel.name, "web_extension_installed_count_macos")
+        XCTAssertEqual(call.frequency, .daily)
+        XCTAssertEqual(call.pixel.parameters, ["count": "0", "enabled_count": "0"])
+    }
+
     func testRecoveryApplicationWireNamesMatchDefinitions() throws {
         let sources: [PixelKit.Source] = [.macDMG, .macStore]
         for source in sources {

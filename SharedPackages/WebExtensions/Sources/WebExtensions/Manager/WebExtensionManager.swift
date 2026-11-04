@@ -170,6 +170,8 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
 
     /// Pixel firing for analytics.
     let pixelFiring: WebExtensionPixelFiring
+    /// Install dates of store extensions waiting for their 14-day retention pixel, or `nil` to not track retention.
+    private let retentionStore: WebExtensionRetentionStore?
     /// Shared monitor because all tabs communicate through the same embedded-extension process.
     public let cpmMessagingHealthMonitor: CPMMessagingHealthMonitoring
     /// Passive state recorder used to attribute CPM failures without changing recovery behavior.
@@ -245,6 +247,7 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
                 lifecycleDelegate: WebExtensionLifecycleDelegate? = nil,
                 internalSiteHandler: (any WebExtensionInternalSiteHandling)? = nil,
                 pixelFiring: WebExtensionPixelFiring = NoOpWebExtensionPixelFiring(),
+                retentionStore: WebExtensionRetentionStore? = nil,
                 cpmMessagingHealthMonitor: CPMMessagingHealthMonitoring? = nil,
                 cpmDiagnosticsRecorder: CPMMessagingDiagnosticsRecorder? = nil,
                 isCPMMessagingHangRecoveryEnabled: @escaping @MainActor () -> Bool = { true },
@@ -304,6 +307,7 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
         self.lifecycleDelegate = lifecycleDelegate
         self.internalSiteHandler = internalSiteHandler
         self.pixelFiring = pixelFiring
+        self.retentionStore = retentionStore
         self.now = now
         self.cpmMessagingHealthMonitor = cpmMessagingHealthMonitor ?? CPMMessagingHealthMonitor(pixelFiring: pixelFiring)
         (self.cpmMessagingHealthMonitor as? CPMMessagingHealthMonitor)?.backgroundReadinessRecovery = CPMBackgroundReadinessRecovery(
@@ -368,6 +372,7 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
             MainActor.assumeIsolated {
                 self?.fireBitwardenDailyActiveIfLoaded()
                 self?.fireAPICompatibilityGapsIfDue()
+                self?.fireStoreExtensionPixelsIfDue()
             }
         }
         apiCompatibilityHandler.onIssue = { [weak self] issue, url in
@@ -585,6 +590,10 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
 
             Logger.webExtensions.info("✅ Successfully installed extension \(installedExtension.filename) v\(installedExtension.version ?? "unknown") (\(identifier))")
             pixelFiring.fire(.installed(extension: pixelExtension(for: storeIdentity)))
+            // An update keeps the original installation's wait.
+            if oldIdentifier == nil, let storeIdentity, storeIdentity.store == .chromeWebStore {
+                retentionStore?.recordInstallation(of: storeIdentity.id, at: now())
+            }
 
             if let type = embeddedType {
                 await scriptletCoordinator?.onExtensionEnabled(for: type)
@@ -895,6 +904,10 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
         var disabledExtension = installedExtension
         disabledExtension.isDisabled = true
         installationStore.update(disabledExtension)
+        // Unloading an extension that was disabled while loading doesn't change its state.
+        if !installedExtension.isDisabled {
+            pixelFiring.fire(.disabled(extension: pixelExtension(for: installedExtension.storeIdentity)))
+        }
 
         Logger.webExtensions.info("✅ Disabled extension '\(identifier)'")
         notifyUpdate()
@@ -946,6 +959,7 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
         enabledExtension.isDisabled = false
         installationStore.update(enabledExtension)
         reportLifecycleEvent(.loaded(identifier: identifier, type: nil))
+        pixelFiring.fire(.enabled(extension: pixelExtension(for: installedExtension.storeIdentity)))
 
         Logger.webExtensions.info("✅ Enabled extension '\(identifier)'")
         notifyUpdate()
@@ -1592,6 +1606,41 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
         let isDefault = privacySettings?.identifierTurningOff(.passwordSavingEnabled) == bitwarden.uniqueIdentifier
         pixelFiring.fire(.bitwardenDailyActive(isDefault: isDefault))
         lastBitwardenDailyActiveDate = now()
+    }
+
+    /// When store extensions were last counted and checked for retention, to skip doing it again within the hour.
+    private var lastStoreExtensionPixelsDate: Date?
+
+    /// Reports how many store extensions are installed and enabled, and judges the installations that reached
+    /// 14 days: retained when still installed and enabled, churned otherwise. It runs on browsing activity at
+    /// most once an hour, and only while the store catalog is available, so the count's denominator is devices
+    /// that can install store extensions. The count pixel is daily, so each device reports once a day.
+    @MainActor
+    func fireStoreExtensionPixelsIfDue() {
+        let date = now()
+        if let lastStoreExtensionPixelsDate, date.timeIntervalSince(lastStoreExtensionPixelsDate) < 60 * 60 {
+            return
+        }
+        guard let chromeWebStore, !chromeWebStore.catalogExtensionIDs.isEmpty else { return }
+        lastStoreExtensionPixelsDate = date
+
+        // Old and new versions coexist during an update, so each store ID counts once.
+        var isEnabledByStoreID: [String: Bool] = [:]
+        for installedExtension in installationStore.installedExtensions {
+            guard let storeIdentity = installedExtension.storeIdentity, storeIdentity.store == .chromeWebStore else { continue }
+            isEnabledByStoreID[storeIdentity.id] = (isEnabledByStoreID[storeIdentity.id] ?? false) || !installedExtension.isDisabled
+        }
+        pixelFiring.fire(.installedCount(installed: isEnabledByStoreID.count,
+                                         enabled: isEnabledByStoreID.values.filter { $0 }.count))
+
+        for storeID in retentionStore?.takeDue(at: date) ?? [] {
+            let reported = pixelExtension(for: WebExtensionStoreIdentity(store: .chromeWebStore, id: storeID))
+            if isEnabledByStoreID[storeID] == true {
+                pixelFiring.fire(.retained14Days(extension: reported))
+            } else {
+                pixelFiring.fire(.churned14Days(extension: reported))
+            }
+        }
     }
 #endif
 

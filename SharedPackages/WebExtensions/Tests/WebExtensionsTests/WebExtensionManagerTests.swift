@@ -1864,6 +1864,42 @@ final class WebExtensionManagerTests: XCTestCase {
         XCTAssertTrue(lifecycleDelegateMock.didUpdateExtensionsCalled)
     }
 
+    /// Like the Windows browser, the pixels report state changes: disabling a disabled extension or enabling
+    /// an enabled one sends nothing.
+    @MainActor
+    func testWhenStoreExtensionIsDisabledAndEnabled_ThenEachStateChangeFiresItsPixelOnce() async throws {
+        let bitwardenStoreID = String(repeating: "n", count: 32)
+        let pixels = EventCapturingPixelFiring()
+        let manager = makeManager(pixelFiring: pixels)
+        manager.chromeWebStore = CatalogNamingWebStore(entries: [bitwardenStoreID: .bitwarden])
+        let identifier = "bitwarden"
+        installedExtensionStoringMock.installedExtensions = [
+            InstalledWebExtension(uniqueIdentifier: identifier, filename: "extension.zip", name: nil, version: nil,
+                                  storeIdentity: WebExtensionStoreIdentity(store: .chromeWebStore, id: bitwardenStoreID))
+        ]
+
+        try await manager.disableExtension(identifier: identifier)
+        try await manager.disableExtension(identifier: identifier)
+        try await manager.enableExtension(identifier: identifier)
+        try await manager.enableExtension(identifier: identifier)
+
+        XCTAssertEqual(pixels.events, ["disabled: bitwarden", "enabled: bitwarden"])
+    }
+
+    @MainActor
+    func testWhenDisablingFails_ThenNoDisabledPixelFires() async throws {
+        let pixels = EventCapturingPixelFiring()
+        let manager = makeManager(pixelFiring: pixels)
+        let identifier = "extension1"
+        installedExtensionStoringMock.installedExtensions = [makeInstalledWebExtension(uniqueIdentifier: identifier)]
+        try await loadRealContext(identifier: identifier, into: manager.controller)
+        webExtensionLoadingMock.mockUnloadError = NSError(domain: "test", code: 1)
+
+        try? await manager.disableExtension(identifier: identifier)
+
+        XCTAssertEqual(pixels.events, [])
+    }
+
     @MainActor
     func testWhenLoadingFails_ThenExtensionStaysDisabled() async {
         let manager = makeManager()
@@ -2467,6 +2503,97 @@ final class WebExtensionManagerTests: XCTestCase {
         manager.eventsListener.onBrowsingActivity?()
         XCTAssertEqual(Set(pixels.events.filter { $0.hasPrefix("gaps") }),
                        ["gaps bitwarden 1.0.0: 2 apis, 1 urls", "gaps lastPass 1.0.0: 0 apis, 0 urls"])
+    }
+
+    // MARK: - Store Extension Count and Retention Pixels
+
+    /// While the store catalog is available, browsing counts the installed and enabled store extensions at most
+    /// once an hour, each store ID once, and judges every installation that reached 14 days exactly once:
+    /// retained when still installed and enabled, churned when turned off or removed.
+    @MainActor
+    func testWhenBrowsingWithTheCatalogAvailable_ThenStoreExtensionsAreCountedAndJudgedAfterFourteenDays() async throws {
+        let bitwardenStoreID = String(repeating: "n", count: 32)
+        let onePasswordStoreID = String(repeating: "o", count: 32)
+        let lastPassStoreID = String(repeating: "l", count: 32)
+        let day: TimeInterval = 24 * 60 * 60
+        let installDate = Date(timeIntervalSince1970: 0)
+        var date = installDate
+        let pixels = EventCapturingPixelFiring()
+        let retentionStore = WebExtensionRetentionStore(storage: InMemoryKeyValueStore().keyedStoring())
+        for storeID in [bitwardenStoreID, onePasswordStoreID, lastPassStoreID] {
+            retentionStore.recordInstallation(of: storeID, at: installDate)
+        }
+        installedExtensionStoringMock.installedExtensions = [
+            // Old and new versions coexist during an update.
+            InstalledWebExtension(uniqueIdentifier: "bitwarden-old", filename: "bitwarden", name: nil, version: "1",
+                                  storeIdentity: WebExtensionStoreIdentity(store: .chromeWebStore, id: bitwardenStoreID)),
+            InstalledWebExtension(uniqueIdentifier: "bitwarden-new", filename: "bitwarden", name: nil, version: "2",
+                                  storeIdentity: WebExtensionStoreIdentity(store: .chromeWebStore, id: bitwardenStoreID)),
+            InstalledWebExtension(uniqueIdentifier: "onePassword", filename: "onePassword", name: nil, version: "1",
+                                  storeIdentity: WebExtensionStoreIdentity(store: .chromeWebStore, id: onePasswordStoreID),
+                                  isDisabled: true),
+            InstalledWebExtension(uniqueIdentifier: "sideloaded", filename: "sideloaded", name: nil, version: "1", storeIdentity: nil),
+            InstalledWebExtension(uniqueIdentifier: "embedded", filename: "embedded", name: nil, version: "1", embeddedType: .embedded)
+        ]
+        let manager = WebExtensionManager(configuration: configurationMock,
+                                          windowTabProvider: windowTabProviderMock,
+                                          storageProvider: storageProvidingMock,
+                                          installationStore: installedExtensionStoringMock,
+                                          loader: webExtensionLoadingMock,
+                                          lifecycleDelegate: lifecycleDelegateMock,
+                                          pixelFiring: pixels,
+                                          retentionStore: retentionStore,
+                                          keyValueStore: InMemoryThrowingKeyValueStore(),
+                                          now: { date })
+        manager.chromeWebStore = CatalogNamingWebStore(entries: [bitwardenStoreID: .bitwarden,
+                                                                 onePasswordStoreID: .onePassword,
+                                                                 lastPassStoreID: .lastPass],
+                                                       isCatalogAvailable: true)
+
+        date += 13 * day
+        manager.eventsListener.onBrowsingActivity?()
+        XCTAssertEqual(pixels.events, ["installed count: 2, enabled: 1"], "Nothing is due before 14 days")
+
+        date += day
+        manager.eventsListener.onBrowsingActivity?()
+        XCTAssertEqual(Array(pixels.events.dropFirst()),
+                       ["installed count: 2, enabled: 1", "churned: lastPass", "retained: bitwarden", "churned: onePassword"])
+
+        date += 59 * 60
+        manager.eventsListener.onBrowsingActivity?()
+        XCTAssertEqual(pixels.events.count, 5, "Activity within the hour isn't checked again")
+
+        date += 2 * 60
+        manager.eventsListener.onBrowsingActivity?()
+        XCTAssertEqual(Array(pixels.events.dropFirst(5)), ["installed count: 2, enabled: 1"], "Each installation is judged once")
+    }
+
+    /// Without the store catalog, as before extension management launches, nothing is counted or judged.
+    @MainActor
+    func testWhenTheCatalogIsUnavailable_ThenBrowsingSendsNoStoreExtensionPixels() async throws {
+        let bitwardenStoreID = String(repeating: "n", count: 32)
+        let pixels = EventCapturingPixelFiring()
+        let retentionStore = WebExtensionRetentionStore(storage: InMemoryKeyValueStore().keyedStoring())
+        retentionStore.recordInstallation(of: bitwardenStoreID, at: .distantPast)
+        installedExtensionStoringMock.installedExtensions = [
+            InstalledWebExtension(uniqueIdentifier: "bitwarden", filename: "bitwarden", name: nil, version: "1",
+                                  storeIdentity: WebExtensionStoreIdentity(store: .chromeWebStore, id: bitwardenStoreID))
+        ]
+        let manager = WebExtensionManager(configuration: configurationMock,
+                                          windowTabProvider: windowTabProviderMock,
+                                          storageProvider: storageProvidingMock,
+                                          installationStore: installedExtensionStoringMock,
+                                          loader: webExtensionLoadingMock,
+                                          lifecycleDelegate: lifecycleDelegateMock,
+                                          pixelFiring: pixels,
+                                          retentionStore: retentionStore,
+                                          keyValueStore: InMemoryThrowingKeyValueStore())
+        manager.chromeWebStore = CatalogNamingWebStore(entries: [bitwardenStoreID: .bitwarden])
+
+        manager.eventsListener.onBrowsingActivity?()
+
+        XCTAssertEqual(pixels.events, [])
+        XCTAssertEqual(retentionStore.takeDue(at: Date()), [bitwardenStoreID], "The installation keeps waiting")
     }
 
     @MainActor
@@ -3281,6 +3408,16 @@ private final class EventCapturingPixelFiring: WebExtensionPixelFiring {
             events.append("default set: \(pixelExtension.parameterValue)")
         case .apiCompatibilityGaps(let catalogEntry, let version, let missingAPICount, let unsupportedURLCount):
             events.append("gaps \(catalogEntry.rawValue) \(version): \(missingAPICount) apis, \(unsupportedURLCount) urls")
+        case .enabled(let pixelExtension):
+            events.append("enabled: \(pixelExtension.parameterValue)")
+        case .disabled(let pixelExtension):
+            events.append("disabled: \(pixelExtension.parameterValue)")
+        case .installedCount(let installed, let enabled):
+            events.append("installed count: \(installed), enabled: \(enabled)")
+        case .retained14Days(let pixelExtension):
+            events.append("retained: \(pixelExtension.parameterValue)")
+        case .churned14Days(let pixelExtension):
+            events.append("churned: \(pixelExtension.parameterValue)")
         default:
             break
         }
@@ -3291,12 +3428,15 @@ private final class EventCapturingPixelFiring: WebExtensionPixelFiring {
 @MainActor
 private final class CatalogNamingWebStore: ChromeWebStoreManaging {
     let entries: [String: ExtensionsCatalogSubfeature]
+    /// Whether the store offers its entries, as when extension management is launched.
+    let isCatalogAvailable: Bool
 
-    init(entries: [String: ExtensionsCatalogSubfeature]) {
+    init(entries: [String: ExtensionsCatalogSubfeature], isCatalogAvailable: Bool = false) {
         self.entries = entries
+        self.isCatalogAvailable = isCatalogAvailable
     }
 
-    var catalogExtensionIDs: [String] { [] }
+    var catalogExtensionIDs: [String] { isCatalogAvailable ? entries.keys.sorted() : [] }
     var learnMoreURL: URL? { nil }
     func status(for identifier: String) -> ChromeWebStoreStatus { .unknown }
     func install(identifier: String, downloadURL: URL) async -> Bool { false }

@@ -62,4 +62,39 @@ final class WebExtensionPixelTests: XCTestCase {
         XCTAssertEqual(pixel.parameters, ["extension_version": "2026.10.1", "missing_api_count": "31", "unsupported_url_count": "2"])
         XCTAssertEqual(pixel.namePrefix, .none)
     }
+
+    func testStoreExtensionPixelsNameTheirCatalogEntryWithoutThePlatformPrefix() {
+        let expectedNames: [(WebExtensionPixel, String)] = [
+            (.enabled(extension: .catalog(.bitwarden)), "web_extension_enabled_macos"),
+            (.disabled(extension: .catalog(.bitwarden)), "web_extension_disabled_macos"),
+            (.remotelyDisabled(extension: .catalog(.bitwarden)), "web_extension_remotely_disabled_macos"),
+            (.retained14Days(extension: .catalog(.bitwarden)), "web_extension_retained_14d_macos"),
+            (.churned14Days(extension: .catalog(.bitwarden)), "web_extension_churned_14d_macos"),
+            (.getClicked(extension: .catalog(.bitwarden)), "web_extension_get_clicked_macos"),
+            (.detailsOpened(extension: .catalog(.bitwarden)), "web_extension_details_opened_macos"),
+            (.toolbarClicked(extension: .catalog(.bitwarden)), "web_extension_toolbar_clicked_macos"),
+        ]
+
+        for (pixel, name) in expectedNames {
+            XCTAssertEqual(pixel.name, name)
+            XCTAssertEqual(pixel.parameters, ["extension": "bitwarden"], name)
+            XCTAssertEqual(pixel.namePrefix, .none, name)
+        }
+        XCTAssertEqual(WebExtensionPixel.toolbarClicked(extension: .other).parameters, ["extension": "other"])
+        XCTAssertEqual(WebExtensionPixel.getClicked(extension: .catalog(.iCloudPasswords)).parameters, ["extension": "iCloudPasswords"])
+    }
+
+    func testInstalledCountPixelBucketsBothCounts() {
+        let pixel = WebExtensionPixel.installedCount(installed: 5, enabled: 3)
+
+        XCTAssertEqual(pixel.name, "web_extension_installed_count_macos")
+        XCTAssertEqual(pixel.parameters, ["count": "4", "enabled_count": "2"])
+        XCTAssertEqual(pixel.namePrefix, .none)
+    }
+
+    func testCountBucketsMatchTheWindowsBrowser() {
+        let buckets = [0, 1, 2, 3, 4, 5, 6, 7, 40].map(WebExtensionPixel.countBucket)
+
+        XCTAssertEqual(buckets, ["0", "1", "2", "2", "4", "4", "6", "6", "6"])
+    }
 }

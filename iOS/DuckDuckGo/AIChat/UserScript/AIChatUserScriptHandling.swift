@@ -212,7 +212,7 @@ protocol AIChatUserScriptHandling: AnyObject {
     func setAIChatHistoryEnabled(params: Any, message: UserScriptMessage) -> Encodable?
 
     // Bonus offer
-    func setBonusRecordChangedHandler(_ handler: ((AIChatBonusRecordPayload) -> Void)?)
+    func setBonusRecordChangedHandler(_ handler: (@MainActor (AIChatBonusRecordPayload) -> Void)?)
     func getAIChatBonusRecord(params: Any, message: UserScriptMessage) -> Encodable?
     func getAIChatNewBonusRecord(params: Any, message: UserScriptMessage) -> Encodable?
     func aiChatBonusRedeemOutcome(params: Any, message: UserScriptMessage) -> Encodable?
@@ -237,7 +237,7 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
     private let unifiedToggleInputFeature: UnifiedToggleInputFeatureProviding
     private let iPadDuckAIControlsFeature: IPadDuckAIControlsFeatureProviding
     private var syncStatusChangedHandler: ((AIChatSyncHandler.SyncStatus) -> Void)?
-    private var bonusRecordChangedHandler: ((AIChatBonusRecordPayload) -> Void)?
+    private var bonusRecordChangedHandler: (@MainActor (AIChatBonusRecordPayload) -> Void)?
     private var cancellables = Set<AnyCancellable>()
     private let migrationStore = AIChatMigrationStore()
     private let devicePlatform: DevicePlatformProviding.Type
@@ -823,7 +823,7 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
 
     // MARK: - Bonus offer
 
-    func setBonusRecordChangedHandler(_ handler: ((AIChatBonusRecordPayload) -> Void)?) {
+    func setBonusRecordChangedHandler(_ handler: (@MainActor (AIChatBonusRecordPayload) -> Void)?) {
         self.bonusRecordChangedHandler = handler
     }
 
@@ -858,11 +858,13 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
     }
 
     private func setUpBonusRecordObserver() {
-        // Already delivered on the main queue
+        // Already delivered on the main queue, so the push runs right away and keeps the order of the changes.
         bonusHandler.recordPayloadPublisher
             .sink { [weak self] payload in
-                guard let self, self.isBonusOfferEnabled else { return }
-                self.bonusRecordChangedHandler?(payload)
+                MainActor.assumeIsolated {
+                    guard let self, self.isBonusOfferEnabled else { return }
+                    self.bonusRecordChangedHandler?(payload)
+                }
             }
             .store(in: &cancellables)
     }

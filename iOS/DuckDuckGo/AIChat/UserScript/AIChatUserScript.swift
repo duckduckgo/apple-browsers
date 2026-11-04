@@ -176,9 +176,7 @@ final class AIChatUserScript: NSObject, Subfeature {
             }
         }
         handler.setBonusRecordChangedHandler { [weak self] payload in
-            Task { @MainActor [weak self] in
-                self?.submitBonusRecord(payload)
-            }
+            self?.submitBonusRecord(payload)
         }
     }
 

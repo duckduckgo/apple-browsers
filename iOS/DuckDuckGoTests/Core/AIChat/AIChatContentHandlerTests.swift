@@ -1192,7 +1192,7 @@ final class MockAIChatUserScriptHandling: AIChatUserScriptHandling {
     func setAIChatInputBoxHandler(_ inputBoxHandler: (any AIChatInputBoxHandling)?) {}
     func setMetricReportingHandler(_ metricHandler: (any AIChatMetricReportingHandling)?) {}
     func setSyncStatusChangedHandler(_ handler: ((AIChatSyncHandler.SyncStatus) -> Void)?) {}
-    func setBonusRecordChangedHandler(_ handler: ((AIChatBonusRecordPayload) -> Void)?) {}
+    func setBonusRecordChangedHandler(_ handler: (@MainActor (AIChatBonusRecordPayload) -> Void)?) {}
     func getAIChatBonusRecord(params: Any, message: UserScriptMessage) -> Encodable? { nil }
     func getAIChatNewBonusRecord(params: Any, message: UserScriptMessage) -> Encodable? { nil }
     func aiChatBonusRedeemOutcome(params: Any, message: UserScriptMessage) -> Encodable? { nil }

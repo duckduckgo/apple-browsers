@@ -68,10 +68,10 @@ final class AppStoreUpdateControllerPromptStageTests {
                                         now: { [unowned self] in now })
     }
 
-    private func publish(latest: String, available: String, availableIsCritical: Bool = false) {
+    private func publish(latest: String, available: String, latestIsCritical: Bool = false, availableIsCritical: Bool = false) {
         StubURLProtocol.json = """
         {
-            "latest_appstore_version": {"latest_version": "\(latest)", "build_number": 1, "release_date": "2026-10-01T17:00:00Z", "is_critical": false},
+            "latest_appstore_version": {"latest_version": "\(latest)", "build_number": 1, "release_date": "2026-10-01T17:00:00Z", "is_critical": \(latestIsCritical)},
             "available_appstore_version": {"latest_version": "\(available)", "build_number": 1, "release_date": "2026-10-28T17:05:00Z", "is_critical": \(availableIsCritical)}
         }
         """
@@ -119,6 +119,23 @@ final class AppStoreUpdateControllerPromptStageTests {
         now = releaseDate + .hours(24)
         await controller.performUpdateCheck(dismissRateLimiting: true)
         #expect(tracker.stage == .secondPrompt)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("A rolling-out release stays critical while the user is below a critical latest release", .timeLimit(.minutes(1)), arguments: [
+        ("2.0.0", true),
+        ("1.0.0", false)
+    ])
+    func rollingOutReleaseKeepsUninstalledCriticalLatest(criticalLatestVersion: String, isOfferCritical: Bool) async {
+        publish(latest: criticalLatestVersion, available: Self.newerVersion, latestIsCritical: true)
+        now = releaseDate + .hours(24)
+        let controller = makeController()
+
+        await controller.performUpdateCheck(dismissRateLimiting: true)
+
+        #expect(controller.latestUpdate?.version == Self.newerVersion)
+        #expect(controller.latestUpdate?.type == (isOfferCritical ? .critical : .regular))
+        #expect(tracker.stage == (isOfferCritical ? .secondPrompt : .available))
     }
 
     @available(iOS 16, macOS 13, *)

@@ -231,11 +231,12 @@ extension UpdateControllerFactory: AppStoreUpdateControllerFactory {
             updateProgress = .updateCycleDidStart
             let releases = try await releaseChecker.getAppStoreReleases()
             let isMoreProminentUpdatesOn = isMoreProminentUpdatesOn
-            let releaseMetadata = isMoreProminentUpdatesOn
-                ? releases.releaseToOffer(availableAfter: promptSettings().appStoreUpdateAvailableDelay, now: now())
-                : releases.latest
             let currentVersion = getCurrentAppVersion()
             let currentBuild = getCurrentAppBuild()
+            let releaseMetadata = await releaseToOffer(from: releases,
+                                                       isMoreProminentUpdatesOn: isMoreProminentUpdatesOn,
+                                                       currentVersion: currentVersion,
+                                                       currentBuild: currentBuild)
 
             Logger.updates.log("Checking App Store update: current=\(currentVersion ?? "unknown"), remote=\(releaseMetadata.latestVersion)")
 
@@ -298,6 +299,31 @@ extension UpdateControllerFactory: AppStoreUpdateControllerFactory {
     }
 
     // MARK: - Private Methods
+
+    /// The rolling-out release once it's past the buffer, otherwise the latest release.
+    /// The offer is critical if the user hasn't installed a critical latest release yet,
+    /// so offering a newer release doesn't hide it.
+    private func releaseToOffer(from releases: AppStoreReleases,
+                                isMoreProminentUpdatesOn: Bool,
+                                currentVersion: String?,
+                                currentBuild: String?) async -> ReleaseMetadata {
+        let offered = isMoreProminentUpdatesOn
+            ? releases.releaseToOffer(availableAfter: promptSettings().appStoreUpdateAvailableDelay, now: now())
+            : releases.latest
+
+        guard !offered.isCritical, releases.latest.isCritical,
+              await isUpdateAvailable(currentVersion: currentVersion,
+                                      currentBuild: currentBuild,
+                                      remoteVersion: releases.latest.latestVersion,
+                                      remoteBuild: String(releases.latest.buildNumber)) else {
+            return offered
+        }
+
+        return ReleaseMetadata(latestVersion: offered.latestVersion,
+                               buildNumber: offered.buildNumber,
+                               releaseDate: offered.releaseDate,
+                               isCritical: true)
+    }
 
     private func getCurrentAppVersion() -> String? {
         return appVersion.versionNumber.isEmpty ? nil : appVersion.versionNumber

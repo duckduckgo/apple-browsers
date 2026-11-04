@@ -114,6 +114,34 @@ class FaviconsHelperTests: XCTestCase {
     }
 
     @MainActor
+    func testLoadFaviconIntoImageView_WhenMemoryUpdatedDuringDiskRead_UsesNewerImage() throws {
+        let domain = "example.com"
+        let cache = Favicons.Constants.caches[.fireproof]!
+        let resource = Favicons().defaultResource(forDomain: domain)!
+        let oldImage = UIImage(named: "duckduckgo-favicon-128x128")!
+        let newImage = UIImage(named: "DuckPlayerURLIcon")!
+
+        let stored = expectation(description: "Stored on disk")
+        cache.storeToDisk(oldImage.pngData()!, forKey: resource.cacheKey) { _ in stored.fulfill() }
+        wait(for: [stored], timeout: 5)
+        // Kingfisher uses the modification date as the cache expiry.
+        let url = cache.diskStorage.cacheFileURL(forKey: resource.cacheKey)
+        try FileManager.default.setAttributes([.modificationDate: Date(timeIntervalSinceNow: -60)], ofItemAtPath: url.path)
+        cache.clearMemoryCache()
+
+        let loaded = expectation(description: "Loaded")
+        let imageView = UIImageView()
+        imageView.loadFavicon(forDomain: domain, usingCache: .fireproof, useFakeFavicon: false) { _, _ in
+            loaded.fulfill()
+        }
+        cache.store(newImage, forKey: resource.cacheKey, toDisk: false)
+        wait(for: [loaded], timeout: 5)
+
+        XCTAssertIdentical(cache.retrieveImageInMemoryCache(forKey: resource.cacheKey), newImage)
+        XCTAssertIdentical(imageView.image, newImage)
+    }
+
+    @MainActor
     func testLoadFaviconIntoImageView_WhenSameDomainReloadsOverlap_KeepsCurrentImage() {
         let domain = "example.com"
         let cache = Favicons.Constants.caches[.fireproof]!

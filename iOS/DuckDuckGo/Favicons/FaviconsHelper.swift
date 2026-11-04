@@ -101,7 +101,7 @@ struct FaviconsHelper {
         diskQueue.async {
             let image = loadFaviconFromDisk(cache: cache, cacheKey: resource.cacheKey, domain: domain)
             DispatchQueue.main.async {
-                if let image {
+                if let image = cache.retrieveImageInMemoryCache(forKey: resource.cacheKey) ?? image {
                     completion(image, false)
                 } else {
                     // Fake favicons are drawn with UIKit, so they have to be created on the main thread.

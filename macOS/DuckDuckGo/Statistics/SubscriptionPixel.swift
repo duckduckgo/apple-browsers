@@ -88,6 +88,13 @@ enum SubscriptionPixel: PixelKit.Event {
     case subscriptionViewAllPlansClick
     case subscriptionUpgradeClick
     case subscriptionCancelPendingDowngradeClick
+    // Withdrawal
+    case subscriptionWithdrawalWithdrawClick
+    case subscriptionWithdrawalDialogShown
+    case subscriptionWithdrawalConfirmClick
+    case subscriptionWithdrawalKeepClick
+    case subscriptionWithdrawalFailure(Error)
+    case subscriptionWithdrawalEligibilityFailure(Error)
     // Auth
     case subscriptionInvalidRefreshTokenDetected(SubscriptionPixelHandler.Source)
     case subscriptionAutomaticSignOut(SubscriptionAutomaticSignOutPixelData, SubscriptionPixelHandler.Source, Error)
@@ -210,6 +217,12 @@ enum SubscriptionPixel: PixelKit.Event {
         case .subscriptionViewAllPlansClick: return "m_mac_\(appDistribution)_subscription_settings_view-all-plans_click"
         case .subscriptionUpgradeClick: return "m_mac_\(appDistribution)_subscription_settings_upgrade_click"
         case .subscriptionCancelPendingDowngradeClick: return "m_mac_\(appDistribution)_subscription_settings_cancel-pending-downgrade_click"
+        case .subscriptionWithdrawalWithdrawClick: return "subscription_withdrawal_withdraw_click"
+        case .subscriptionWithdrawalDialogShown: return "subscription_withdrawal_dialog_shown"
+        case .subscriptionWithdrawalConfirmClick: return "subscription_withdrawal_confirm_click"
+        case .subscriptionWithdrawalKeepClick: return "subscription_withdrawal_keep_click"
+        case .subscriptionWithdrawalFailure: return "subscription_withdrawal_failure"
+        case .subscriptionWithdrawalEligibilityFailure: return "subscription_withdrawal_eligibility_failure"
             // Auth
         case .subscriptionInvalidRefreshTokenDetected: return "m_mac_\(appDistribution)_privacy-pro_auth_invalid_refresh_token_detected"
         case .subscriptionAutomaticSignOut: return "m_mac_\(appDistribution)_privacy-pro_auth_account_automatically_signed_out"
@@ -412,11 +425,31 @@ enum SubscriptionPixel: PixelKit.Event {
                 .subscriptionViewAllPlansClick,
                 .subscriptionUpgradeClick,
                 .subscriptionCancelPendingDowngradeClick,
+                .subscriptionWithdrawalWithdrawClick,
+                .subscriptionWithdrawalDialogShown,
+                .subscriptionWithdrawalConfirmClick,
+                .subscriptionWithdrawalKeepClick,
+                .subscriptionWithdrawalFailure,
+                .subscriptionWithdrawalEligibilityFailure,
                 .freeTrialStart,
                 .freeTrialVPNActivation,
                 .freeTrialPIRActivation,
                 .freeTrialDuckAIActivation:
             return [.pixelSource]
+        }
+    }
+
+    var namePrefix: PixelKitNamePrefix {
+        switch self {
+        case .subscriptionWithdrawalWithdrawClick,
+                .subscriptionWithdrawalDialogShown,
+                .subscriptionWithdrawalConfirmClick,
+                .subscriptionWithdrawalKeepClick,
+                .subscriptionWithdrawalFailure,
+                .subscriptionWithdrawalEligibilityFailure:
+            return .none
+        default:
+            return .platformDefault
         }
     }
 

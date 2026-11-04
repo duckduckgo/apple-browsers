@@ -28,6 +28,7 @@ public struct PreferencesSubscriptionSettingsView: View {
     @ObservedObject var model: PreferencesSubscriptionSettingsModel
     @State private var showingRemoveConfirmationDialog = false
     @State private var showingInternalSubscriptionAlert = false
+    @State private var showingWithdrawalConfirmation = false
 
     @State private var manageSubscriptionSheet: ManageSubscriptionSheet?
     private var isPaidAIChatOn: () -> Bool
@@ -43,34 +44,43 @@ public struct PreferencesSubscriptionSettingsView: View {
             VStack(alignment: .leading, spacing: 4) {
                 TextMenuTitle(UserText.preferencesSubscriptionSettingsTitle)
 
-                switch model.settingsState {
-                case .subscriptionActive:
-                    subscriptionActiveHeader
-                case .subscriptionExpired:
-                    expiredHeaderView
-                case .subscriptionPendingActivation:
-                    pendingActivationHeaderView
-                case .subscriptionFreeTrialActive:
-                    subscriptionFreeTrialActiveHeader
+                if model.withdrawal.confirmation != nil {
+                    StatusIndicatorView(status: .custom(UserText.notSubscribedStatusIndicator, Color.secondary.opacity(0.33)), isLarge: true)
+                } else {
+                    switch model.settingsState {
+                    case .subscriptionActive:
+                        subscriptionActiveHeader
+                    case .subscriptionExpired:
+                        expiredHeaderView
+                    case .subscriptionPendingActivation:
+                        pendingActivationHeaderView
+                    case .subscriptionFreeTrialActive:
+                        subscriptionFreeTrialActiveHeader
+                    }
                 }
             }
             .padding(.bottom, 16)
 
             // Sections
-            switch model.settingsState {
-            case .subscriptionActive, .subscriptionFreeTrialActive:
-                downgradeBanner
-                upgradeSection
-                activateSection
-                settingsSection
-                helpSection
+            if let confirmation = model.withdrawal.confirmation {
+                withdrawnSection(confirmation)
+            } else {
+                switch model.settingsState {
+                case .subscriptionActive, .subscriptionFreeTrialActive:
+                    downgradeBanner
+                    upgradeSection
+                    activateSection
+                    settingsSection
+                    withdrawalSection
+                    helpSection
 
-            case .subscriptionExpired:
-                activateSection
-                helpSection
+                case .subscriptionExpired:
+                    activateSection
+                    helpSection
 
-            case .subscriptionPendingActivation:
-                helpSection
+                case .subscriptionPendingActivation:
+                    helpSection
+                }
             }
         }
         .sheet(isPresented: $showingRemoveConfirmationDialog) {
@@ -87,9 +97,22 @@ public struct PreferencesSubscriptionSettingsView: View {
                 manageSubscriptionGooglePlayDialog
             }
         }
+        .sheet(isPresented: $showingWithdrawalConfirmation) {
+            withdrawalConfirmationDialog
+        }
+        .sheet(isPresented: Binding(get: { model.withdrawal.isShowingError },
+                                    set: { isShowing in
+                                        guard model.withdrawal.isShowingError != isShowing else { return }
+                                        model.withdrawal.isShowingError = isShowing
+                                    })) {
+            withdrawalErrorDialog
+        }
         .onAppear(perform: {
             model.didAppear()
         })
+        .onDisappear {
+            Task { await model.withdrawal.completeWithdrawalIfNeeded() }
+        }
     }
 
     @ViewBuilder
@@ -265,6 +288,79 @@ public struct PreferencesSubscriptionSettingsView: View {
                 TextButton(UserText.preferencesPrivacyPolicyButton, weight: .semibold) { model.openPrivacyPolicy() }
             }
         }
+    }
+
+    @ViewBuilder
+    private var withdrawalSection: some View {
+        if let offer = model.withdrawal.offer {
+            PreferencePaneSection {
+                TextMenuItemHeader(UserText.withdrawSectionTitle, bottomPadding: 0)
+
+                if let eligibleUntil = offer.eligibleUntil {
+                    TextMenuItemCaption(UserText.withdrawSectionCaption(eligibleUntil: eligibleUntil))
+                        .padding(.bottom, 8)
+                }
+
+                TextButton(UserText.withdrawButton, weight: .semibold) {
+                    model.withdrawal.withdrawTapped()
+                    showingWithdrawalConfirmation = true
+                }
+                .disabled(model.withdrawal.isWithdrawing)
+            }
+        }
+    }
+
+    @ViewBuilder
+    private func withdrawnSection(_ confirmation: SubscriptionWithdrawalConfirmation) -> some View {
+        PreferencePaneSection {
+            TextMenuItemHeader(UserText.withdrawnInfo(withdrawalDate: confirmation.withdrawalDate), bottomPadding: 0)
+
+            if let refundAmount = confirmation.refundAmount {
+                TextMenuItemCaption(UserText.withdrawnRefundInfo(refundAmount: refundAmount))
+            }
+        }
+    }
+
+    @ViewBuilder
+    private var withdrawalConfirmationDialog: some View {
+        if let offer = model.withdrawal.offer {
+            SubscriptionDialog(imageName: "Shield-Disabled-Feature-128",
+                               title: UserText.withdrawDialogTitle,
+                               description: model.withdrawal.confirmationMessage(for: offer),
+                               buttons: {
+                Button(UserText.withdrawDialogKeepButton) {
+                    showingWithdrawalConfirmation = false
+                    model.withdrawal.keepTapped()
+                }
+                Button(UserText.withdrawDialogConfirmButton) {
+                    showingWithdrawalConfirmation = false
+                    Task { await model.withdrawal.withdraw() }
+                }
+                .buttonStyle(DestructiveActionButtonStyle(enabled: true))
+            })
+            .frame(width: 420)
+            .onAppear {
+                model.withdrawal.confirmationShown()
+            }
+        }
+    }
+
+    @ViewBuilder
+    private var withdrawalErrorDialog: some View {
+        let message = UserText.withdrawErrorMessage(helpPageURL: model.withdrawal.helpPageURL.absoluteString)
+        SubscriptionDialog(imageName: "Privacy-Pro-128",
+                           title: UserText.somethingWentWrongAlertTitle,
+                           description: (try? AttributedString(markdown: message)) ?? AttributedString(message),
+                           buttons: {
+            Button(UserText.okButtonTitle) { model.withdrawal.isShowingError = false }
+                .buttonStyle(DefaultActionButtonStyle(enabled: true))
+        })
+        .environment(\.openURL, OpenURLAction { _ in
+            model.withdrawal.isShowingError = false
+            model.withdrawal.openHelpPage()
+            return .handled
+        })
+        .frame(width: 420)
     }
 
     @ViewBuilder

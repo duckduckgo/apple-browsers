@@ -83,8 +83,12 @@ jobs:
         run: |
           job_started="$(gh api "repos/$GITHUB_REPOSITORY/actions/runs/$RUN_ID/jobs?filter=latest&per_page=100" \
             --jq '[.jobs[] | select(.name == "Test (Non-Sandbox)")][0].started_at // ""')"
+          if [ -z "$job_started" ]; then
+            echo "::error::Run $RUN_ID has no started Test (Non-Sandbox) job, the job that renders the snapshots."
+            exit 1
+          fi
           artifact_created="$(gh api "repos/$GITHUB_REPOSITORY/actions/runs/$RUN_ID/artifacts?name=macos-rendered-snapshots" --jq '.artifacts[0].created_at // ""')"
-          if [ -n "$artifact_created" ] && [ -n "$job_started" ] && [[ "$artifact_created" < "$job_started" ]]; then
+          if [ -n "$artifact_created" ] && [[ "$artifact_created" < "$job_started" ]]; then
             echo "::error::Run $RUN_ID's macos-rendered-snapshots artifact comes from an earlier attempt of Test (Non-Sandbox), and its latest attempt rendered no mismatches. Every snapshot matched its reference."
             exit 1
           fi

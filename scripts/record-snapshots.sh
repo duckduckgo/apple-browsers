@@ -24,6 +24,7 @@ if [ ! -d "$RENDERED_DIR" ]; then
 	echo "❌ No rendered snapshots at '$RENDERED_DIR'."
 	exit 1
 fi
+RENDERED_DIR="$(cd "$RENDERED_DIR" && pwd)"
 
 UNEXPECTED="$(find "$RENDERED_DIR" ! -type f ! -type d)"
 if [ -n "$UNEXPECTED" ]; then
@@ -74,12 +75,12 @@ else
 	BRANCH_EXISTS=false
 fi
 
+git_snapshots read-tree "$POINTER"
 for image in "${IMAGES[@]}"; do
-	mkdir -p "$WORK_DIR/$(dirname "$image")"
-	cp "$RENDERED_DIR/$image" "$WORK_DIR/$image"
+	blob="$(git_snapshots hash-object -w -- "$RENDERED_DIR/$image")"
+	git_snapshots update-index --add --cacheinfo "100644,$blob,$image"
 done
 
-git_snapshots add -A
 if git_snapshots diff --cached --quiet; then
 	echo "ℹ️  $SUBMODULE_REPO@$BRANCH already has CI's renderings."
 	if [ "$BRANCH_EXISTS" = false ]; then

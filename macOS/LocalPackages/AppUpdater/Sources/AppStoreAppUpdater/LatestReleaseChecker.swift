@@ -22,10 +22,6 @@ import DDGError
 import FoundationExtensions
 import Foundation
 
-public enum LatestReleaseMetadataType {
-    case macOSAppStore
-}
-
 public enum LatestReleaseError: DDGError {
     case invalidURL
     case networkError(Error)
@@ -71,11 +67,38 @@ public enum LatestReleaseError: DDGError {
     }
 }
 
-private struct ReleaseMetadataCollector: Codable {
-    let latestAppStoreVersion: ReleaseMetadata
+/// The App Store entries in the release metadata file.
+public struct AppStoreReleases: Decodable {
+    /// The release that has finished rolling out.
+    public let latest: ReleaseMetadata
+
+    /// The release that is rolling out, published when its rollout starts.
+    public let available: ReleaseMetadata?
 
     enum CodingKeys: String, CodingKey {
-        case latestAppStoreVersion = "latest_appstore_version"
+        case latest = "latest_appstore_version"
+        case available = "available_appstore_version"
+    }
+
+    public init(latest: ReleaseMetadata, available: ReleaseMetadata?) {
+        self.latest = latest
+        self.available = available
+    }
+
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        latest = try container.decode(ReleaseMetadata.self, forKey: .latest)
+        available = try? container.decodeIfPresent(ReleaseMetadata.self, forKey: .available)
+    }
+
+    /// The available release once `delay` has passed since its release date, otherwise the latest release.
+    public func releaseToOffer(availableAfter delay: TimeInterval, now: Date) -> ReleaseMetadata {
+        guard let available,
+              let releaseDate = ISO8601DateFormatter().date(from: available.releaseDate),
+              now >= releaseDate.addingTimeInterval(delay) else {
+            return latest
+        }
+        return available
     }
 }
 
@@ -93,9 +116,7 @@ public final class LatestReleaseChecker {
         return baseURL + "release_metadata.json"
     }
 
-    public func getLatestReleaseAvailable(
-        for metadataType: LatestReleaseMetadataType
-    ) async throws -> ReleaseMetadata {
+    public func getAppStoreReleases() async throws -> AppStoreReleases {
         guard let url = URL(string: releaseMetadataURL) else {
             throw LatestReleaseError.invalidURL
         }
@@ -109,13 +130,7 @@ public final class LatestReleaseChecker {
                 throw LatestReleaseError.networkError(URLError(.badServerResponse))
             }
 
-            let decoder = JSONDecoder()
-            let metadata = try decoder.decode(ReleaseMetadataCollector.self, from: data)
-
-            switch metadataType {
-            case .macOSAppStore:
-                return metadata.latestAppStoreVersion
-            }
+            return try JSONDecoder().decode(AppStoreReleases.self, from: data)
         } catch let error as DecodingError {
             throw LatestReleaseError.decodingError(error)
         } catch let error as LatestReleaseError {

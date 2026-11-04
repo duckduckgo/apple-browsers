@@ -33,8 +33,11 @@ import WebKit
 
 public protocol AppStoreUpdateControllerFactory {
     static func instantiate(internalUserDecider: InternalUserDecider,
+                            featureFlagger: FeatureFlagger,
+                            privacyConfigurationManager: PrivacyConfigurationManaging,
                             pixelFiring: PixelFiring?,
                             notificationPresenter: any UpdateNotificationPresenting,
+                            keyValueStore: any ThrowingKeyValueStoring,
                             isOnboardingFinished: @escaping () -> Bool) -> any UpdateController
 }
 
@@ -103,7 +106,7 @@ public protocol UpdateController: UpdateControllerObjC {
     /// Whether the notification dot should be cleared when the menu opens.
     ///
     /// **App Store vs Sparkle Behavior:**
-    /// - **App Store**: Always `true` - clears dot on menu open
+    /// - **App Store**: `true` - clears dot on menu open, unless `moreProminentUpdates` is on
     /// - **Sparkle**: Always `false` - dot is only cleared by explicit user action
     ///
     /// **Usage**: Controls whether the notification dot is automatically cleared when user opens the menu.
@@ -139,6 +142,10 @@ public protocol UpdateController: UpdateControllerObjC {
     /// **Usage**: Drives UI state in Settings, shows progress bars, enables/disables buttons.
     var updateProgress: UpdateCycleProgress { get }
     var updateProgressPublisher: Published<UpdateCycleProgress>.Publisher { get }
+
+    /// Tracks how prominent the update prompts should be while `moreProminentUpdates` is on.
+    /// `nil` for controllers that don't track prompt stages.
+    var updatePromptStageTracker: UpdatePromptStageTracker? { get }
 
     // MARK: - Update Configuration
 
@@ -276,6 +283,8 @@ public protocol SparkleUpdateControlling: UpdateController, SparkleUpdateControl
 }
 
 extension UpdateController {
+
+    public var updatePromptStageTracker: UpdatePromptStageTracker? { nil }
 
     /// Whether release notes need a fresh update check to populate data.
     ///

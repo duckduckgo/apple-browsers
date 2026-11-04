@@ -71,6 +71,15 @@ final class DuckAIIPadUITests: DuckAIUITestCase {
         }
 
         XCTContext.runActivity(named: "Select Search Only and verify both mode controls stay hidden when focused") { _ in
+            let hideKeyboardButton = app.keyboards.buttons.matching(NSPredicate(format: "label == %@", "Hide keyboard")).firstMatch
+            XCTAssertTrue(
+                hideKeyboardButton.waitForHittableInAppWindow(in: app, timeout: UITestTimeouts.elementExistence),
+                "The iPad keyboard did not expose its Hide keyboard control.")
+            hideKeyboardButton.tapWhenHittable(in: app)
+            XCTAssertTrue(
+                app.keyboards.firstMatch.waitForNonExistence(timeout: UITestTimeouts.elementExistence),
+                "The iPad address bar remained in editing after dismissing the keyboard.")
+
             app.openAIFeaturesSettings()
             app.selectDuckAISearchInput(false)
             app.navigateBackInSettings(from: "Settings.List.AIFeatures", to: "Settings.List.Main")

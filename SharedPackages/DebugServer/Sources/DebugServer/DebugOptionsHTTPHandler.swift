@@ -37,7 +37,7 @@ public struct DebugOptionsHTTPHandler: Sendable {
 
     public func register(on server: DebugHTTPServer) {
         server.addAsyncRoute(Self.root, method: .GET) { request in await handle(request) }
-        server.addAsyncRoute(Self.root + "/execute", method: .POST) { request in await handle(request) }
+        server.addAsyncRoute(Self.root + "/modify", method: .POST) { request in await handle(request) }
     }
 
     public func handle(_ request: HTTPRequest) async -> HTTPResponse {
@@ -67,7 +67,7 @@ public struct DebugOptionsHTTPHandler: Sendable {
                 let options = await registry.discover()
                 return try encodedResponse(Discovery(options: options))
             }
-            guard request.path == Self.root + "/execute", request.method == .POST else {
+            guard request.path == Self.root + "/modify", request.method == .POST else {
                 Self.logger.warning("[DebugOptions API] [\(requestID, privacy: .public)] Rejected: unsupportedRequest")
                 return response(.object(["error": .object(["code": .string("unsupportedRequest")])]), status: .methodNotAllowed)
             }

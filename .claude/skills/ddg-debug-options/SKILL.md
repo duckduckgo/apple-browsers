@@ -27,7 +27,7 @@ Use this skill only when the user explicitly asks for it.
    curl --fail-with-body -H "Authorization: Bearer ${DEBUG_OPTIONS_TOKEN}" \
      -H 'Content-Type: application/json' \
      --data '{"id":"featureFlags.sitePermissions","action":"get","parameters":{}}' \
-     http://127.0.0.1:8475/api/v1/debug-options/execute
+     http://127.0.0.1:8475/api/v1/debug-options/modify
    ```
 
 Read the current value before changing it. Follow the discovered action schema;

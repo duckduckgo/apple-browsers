@@ -47,6 +47,66 @@ final class AppLaunchUITests: UITestCase {
         assertToolbarActionAfterDismissal(floating: true, editing: true)
     }
 
+    func testRegularContextMenusKeepBrowserControlsVisible() {
+        assertContextMenusKeepBrowserControlsVisible(floating: false)
+    }
+
+    func testFloatingContextMenusKeepBrowserControlsVisible() {
+        assertContextMenusKeepBrowserControlsVisible(floating: true)
+    }
+
+    private func assertContextMenusKeepBrowserControlsVisible(floating: Bool, file: StaticString = #filePath, line: UInt = #line) {
+        app.terminate()
+        for index in app.launchArguments.indices where ["-ff.floatingUIiOS26", "-ff.floatingUIiOS27"].contains(app.launchArguments[index]) {
+            app.launchArguments[index + 1] = String(floating)
+        }
+        app.launchArguments += ["-ff.fireMode", "true", "-ff.fireButtonRefinements", "true", "-ff.slideToDelete", "false"]
+        app.launchEnvironment["UITEST_DISABLE_ANIMATIONS"] = "1"
+        app.launch()
+        app.dismissAddressBarEditing(file: file, line: line)
+
+        let tabs = app.buttons["Browser.Toolbar.Button.TabSwitcher"]
+        let fire = app.buttons["Browser.Toolbar.Button.Fire"]
+        let newTab = app.buttons["Browser.NewTabMenu.NewTab"]
+        var expectedTabs = 1
+        for loadedPage in [false, true] {
+            XCTContext.runActivity(named: loadedPage ? "Context menus on a loaded page" : "Context menus on a new tab") { _ in
+                if loadedPage {
+                    app.openURL("https://privacy-test-pages.site", expecting: "Privacy Test Pages", file: file, line: line)
+                    fire.tapWhenHittable(in: app, file: file, line: line)
+                    let close = app.buttons["Fire.Confirmation.Button.Close"]
+                    close.tapWhenHittable(in: app, file: file, line: line)
+                    XCTAssertTrue(close.waitForNonExistence(timeout: UITestTimeouts.navigation), file: file, line: line)
+                    app.assertPageContains("Privacy Test Pages", file: file, line: line)
+                }
+
+                XCTAssertTrue(tabs.waitForHittableInAppWindow(in: app, timeout: UITestTimeouts.navigation), file: file, line: line)
+                tabs.press(forDuration: 1)
+                XCTAssertTrue(newTab.waitForExistence(timeout: UITestTimeouts.navigation), file: file, line: line)
+                app.browserWindow.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.25)).tap()
+                XCTAssertTrue(newTab.waitForNonExistence(timeout: UITestTimeouts.navigation), file: file, line: line)
+                XCTAssertTrue(tabs.waitForHittableInAppWindow(in: app, timeout: UITestTimeouts.navigation), file: file, line: line)
+                XCTAssertTrue(fire.waitForHittableInAppWindow(in: app, timeout: UITestTimeouts.navigation), file: file, line: line)
+                app.openTabSwitcher(file: file, line: line)
+                app.assertTabCount(expectedTabs, file: file, line: line)
+                app.buttons["TabSwitcher.Button.Done"].tapWhenHittable(in: app, file: file, line: line)
+
+                tabs.press(forDuration: 1)
+                newTab.tapWhenHittable(in: app, file: file, line: line)
+                XCTAssertTrue(newTab.waitForNonExistence(timeout: UITestTimeouts.navigation), file: file, line: line)
+                XCTAssertTrue(tabs.waitForHittableInAppWindow(in: app, timeout: UITestTimeouts.navigation), file: file, line: line)
+                XCTAssertTrue(fire.waitForHittableInAppWindow(in: app, timeout: UITestTimeouts.navigation), file: file, line: line)
+                expectedTabs += 1
+                app.openTabSwitcher(file: file, line: line)
+                app.assertTabCount(expectedTabs, file: file, line: line)
+                if loadedPage {
+                    XCTAssertTrue(app.staticTexts["Privacy Test Pages"].exists, "Creating a tab removed the loaded tab.", file: file, line: line)
+                }
+                app.buttons["TabSwitcher.Button.Done"].tapWhenHittable(in: app, file: file, line: line)
+            }
+        }
+    }
+
     func testReadinessRejectsMissingAndDisabledControlsWithoutTapping() {
         app.dismissAddressBarEditing()
         let missing = app.buttons["Readiness.Test.Missing"]

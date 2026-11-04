@@ -45,6 +45,7 @@ final class AIChatContextualUTIHost: UnifiedToggleInputDelegate, AIChatContextua
     private var hasKeyboardAppeared = false
     /// Launch-time snapshot: re-reading the feature costs a privacy-config evaluation each time.
     private let usesFloatingInput: Bool
+    private let usesLiquidGlass: Bool
     private var cancellables = Set<AnyCancellable>()
     private let duckAIWideEventInstrumentation: DuckAIWideEventInstrumentation
     private let duckAIWideEventFlowScope = DuckAIWideEventFlowScope.contextual(UUID())
@@ -98,6 +99,13 @@ final class AIChatContextualUTIHost: UnifiedToggleInputDelegate, AIChatContextua
         self.attachMoreTabsFeature = attachMoreTabsFeature
         self.startsPreSubmit = start.isPreSubmit
         self.usesFloatingInput = isFloatingInputAvailable
+        if #available(iOS 26, *) {
+            self.usesLiquidGlass = AppDependencyProvider.shared.featureFlagger.isDuckAIAndInputLiquidGlassEnabled(
+                isFloatingUIEnabled: floatingUIManager.isFloatingUIEnabled
+            )
+        } else {
+            self.usesLiquidGlass = false
+        }
         self.hasDeliveredFirstPrompt = !start.isPreSubmit
         let wideEventInstrumentation = duckAIWideEventInstrumentation ?? DefaultDuckAIWideEventInstrumentation(
             wideEvent: AppDependencyProvider.shared.wideEvent
@@ -305,7 +313,11 @@ final class AIChatContextualUTIHost: UnifiedToggleInputDelegate, AIChatContextua
                 viewController.view.trailingAnchor.constraint(equalTo: contextualChatViewController.view.trailingAnchor),
                 viewController.view.bottomAnchor.constraint(equalTo: contextualChatViewController.view.keyboardLayoutGuide.topAnchor),
             ])
-            contextualChatViewController.anchorWebViewBottom(to: viewController.view.topAnchor)
+            if usesLiquidGlass {
+                contextualChatViewController.setFloatingInputView(viewController.view)
+            } else {
+                contextualChatViewController.anchorWebViewBottom(to: viewController.view.topAnchor)
+            }
             viewController.didMove(toParent: contextualChatViewController)
             applyHostedExpansion(activatesInput: true)
             applyCurrentRenderState()

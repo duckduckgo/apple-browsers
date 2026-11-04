@@ -1683,11 +1683,15 @@ private extension AIChatContextualSheetViewController {
             }
             self.contextualInputViewController.view.isHidden = isVisible
         }
-        // The previous constraint died with the old mount — its two views no longer share an ancestor.
-        contentContainerBottomConstraint?.isActive = false
-        let bottomConstraint = contentContainerView.bottomAnchor.constraint(equalTo: utiView.topAnchor)
-        contentContainerBottomConstraint = bottomConstraint
-        bottomConstraint.isActive = true
+        if #available(iOS 26, *), usesLiquidGlassHeader {
+            contentContainerBottomConstraint?.isActive = true
+        } else {
+            // The previous constraint died with the old mount — its two views no longer share an ancestor.
+            contentContainerBottomConstraint?.isActive = false
+            let bottomConstraint = contentContainerView.bottomAnchor.constraint(equalTo: utiView.topAnchor)
+            contentContainerBottomConstraint = bottomConstraint
+            bottomConstraint.isActive = true
+        }
         if contentDragKeyboardDismissRecognizer.view == nil {
             contentContainerView.addGestureRecognizer(contentDragKeyboardDismissRecognizer)
         }

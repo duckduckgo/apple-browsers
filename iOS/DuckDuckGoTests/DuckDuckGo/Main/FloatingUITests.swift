@@ -2456,6 +2456,37 @@ final class BrowserKeyboardLayoutTests: XCTestCase {
 final class WebViewScrollViewInsetUpdaterTests: XCTestCase {
 
     @available(iOS 26, *)
+    func testFloatingAIChatKeepsBothScrollEndsClearOfNativeControls() {
+        for isLiquidGlassEnabled in [false, true] {
+            let flags: [FeatureFlag] = isLiquidGlassEnabled ? [.duckAIAndInputLiquidGlass] : []
+            let tab = TabViewController.fake(featureFlagger: MockFeatureFlagger(enabledFeatureFlags: flags),
+                                             link: Link(title: "Duck.ai", url: URL(string: "https://duck.ai/chat")!))
+            tab.floatingUIManager = FloatingUIManager(
+                isFloatingUIFeatureEnabled: true,
+                isPadProvider: { false },
+                unifiedToggleInputFeature: MockUnifiedToggleInputFeatureProvider(isAvailable: true)
+            )
+            tab.loadViewIfNeeded()
+            let chrome = DuckPlayerBrowserChromeDelegateMock()
+            chrome.floatingAIChatHeaderObscuredHeight = 112
+            chrome.floatingBottomObscuredHeight = 148
+            tab.chromeDelegate = chrome
+
+            tab.updateWebViewBottomAnchor(for: 1)
+
+            let expected = UIEdgeInsets(top: 112, left: 0, bottom: isLiquidGlassEnabled ? 148 : 0, right: 0)
+            XCTAssertEqual(tab.webView.scrollView.contentInset, expected)
+            XCTAssertEqual(tab.webView.obscuredContentInsets, expected)
+
+            if isLiquidGlassEnabled {
+                chrome.floatingBottomObscuredHeight = 190
+                tab.updateWebViewBottomAnchor(for: 0.5)
+                XCTAssertEqual(tab.webView.scrollView.contentInset.bottom, 190)
+            }
+        }
+    }
+
+    @available(iOS 26, *)
     func testKeyboardLayoutUpdatesInsetsDuringChromeTransitionOnlyWithFloatingUIEnabled() {
         for isEnabled in [false, true] {
             let tab = TabViewController.fake(featureFlagger: MockFeatureFlagger())

@@ -25,6 +25,80 @@ import AIChat
 import WebKit
 import Combine
 
+@MainActor
+enum DuckAIChatScrollInsetStyler {
+
+    static func apply(_ insets: UIEdgeInsets, to webView: WKWebView) {
+        let top = max(0, insets.top)
+        let bottom = max(0, insets.bottom)
+        let script = """
+        (() => {
+            if (location.hostname !== 'duck.ai' && !location.hostname.endsWith('.duck.ai')) return;
+            const key = '__ddgNativeScrollInsets';
+            let state = window[key];
+            if (!state) {
+                state = { top: 0, bottom: 0, target: null, scheduled: false };
+                state.find = () => {
+                    let best = null;
+                    for (const element of document.querySelectorAll('div')) {
+                        const overflow = getComputedStyle(element).overflowY;
+                        if (overflow !== 'auto' && overflow !== 'scroll') continue;
+                        if (element.scrollHeight <= element.clientHeight + 1) continue;
+                        const rect = element.getBoundingClientRect();
+                        if (rect.height < innerHeight * 0.65 || rect.top > innerHeight * 0.25) continue;
+                        if (!best || element.clientHeight > best.clientHeight) best = element;
+                    }
+                    return best;
+                };
+                state.apply = () => {
+                    if (!state.target?.isConnected) {
+                        state.target = state.find();
+                        if (state.target) {
+                            const style = state.target.style;
+                            state.original = {
+                                scrollTop: style.scrollPaddingTop,
+                                scrollBottom: style.scrollPaddingBottom
+                            };
+                        }
+                    }
+                    if (!state.target) return;
+                    const style = state.target.style;
+                    const scrollTop = state.top ? `${state.top}px` : state.original.scrollTop;
+                    const scrollBottom = state.bottom ? `${state.bottom}px` : state.original.scrollBottom;
+                    if (state.bottom > 0) {
+                        if (state.spacer?.parentElement !== state.target) {
+                            state.spacer = document.createElement('div');
+                            state.spacer.setAttribute('aria-hidden', 'true');
+                            state.spacer.style.cssText = 'flex: 0 0 auto; width: 100%; pointer-events: none;';
+                            state.target.appendChild(state.spacer);
+                        }
+                        state.spacer.style.height = `${state.bottom + 44}px`;
+                    } else if (state.spacer?.parentElement === state.target) {
+                        state.spacer.remove();
+                    }
+                    if (style.scrollPaddingTop !== scrollTop) style.scrollPaddingTop = scrollTop;
+                    if (style.scrollPaddingBottom !== scrollBottom) style.scrollPaddingBottom = scrollBottom;
+                };
+                state.schedule = () => {
+                    if (state.scheduled) return;
+                    state.scheduled = true;
+                    requestAnimationFrame(() => {
+                        state.scheduled = false;
+                        state.apply();
+                    });
+                };
+                new MutationObserver(state.schedule).observe(document.documentElement, { childList: true, subtree: true });
+                window[key] = state;
+            }
+            state.top = \(top);
+            state.bottom = \(bottom);
+            state.apply();
+        })();
+        """
+        webView.evaluateJavaScript(script)
+    }
+}
+
 // MARK: - Delegate Protocol
 
 protocol AIChatUserScriptDelegate: AnyObject {

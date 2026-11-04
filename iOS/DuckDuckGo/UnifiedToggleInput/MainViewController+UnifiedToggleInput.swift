@@ -347,6 +347,12 @@ extension MainViewController {
             webView.backgroundColor = webViewBackgroundColor
             webView.scrollView.backgroundColor = webViewBackgroundColor
             webView.underPageBackgroundColor = webViewBackgroundColor
+            currentTab?.view.backgroundColor = usesFloatingAIChrome && currentTab?.isAITab == true
+                ? rootBackgroundColor
+                : ThemeManager.shared.currentTheme.backgroundColor
+            currentTab?.outerContainer.backgroundColor = currentTab?.view.backgroundColor
+            currentTab?.webViewContainer.backgroundColor = currentTab?.view.backgroundColor
+            webView.isOpaque = !(usesFloatingAIChrome && currentTab?.isAITab == true)
             currentTab?.pullToRefreshViewAdapter?.webViewBackgroundDidChange()
         }
     }
@@ -862,6 +868,9 @@ private extension MainViewController {
 
         if case .preserveCurrentPresentation(let allowsEarlyReturn) = behavior, allowsEarlyReturn {
             syncPreservedAITabPresentation(coordinator: coordinator)
+            if isDuckAIAndInputLiquidGlassEnabled {
+                tab.updateWebViewBottomAnchor(for: currentBarsVisibility)
+            }
             return false
         }
         ensureStandardChromeVisibleForAITabRefresh()

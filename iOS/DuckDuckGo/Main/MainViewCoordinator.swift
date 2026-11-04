@@ -118,6 +118,12 @@ class MainViewCoordinator {
     func setFloatingUIEnabled(_ enabled: Bool, duckAIAndInputLiquidGlassEnabled: Bool = false) {
         isFloatingUIEnabled = enabled
         isDuckAIAndInputLiquidGlassEnabled = enabled && duckAIAndInputLiquidGlassEnabled
+        if let bottomToToolbar = constraints.unifiedInputContentBottomToToolbar,
+           let bottomToSuperview = constraints.unifiedInputContentBottomToSuperview,
+           bottomToSuperview.isActive != isDuckAIAndInputLiquidGlassEnabled {
+            NSLayoutConstraint.deactivate([bottomToToolbar, bottomToSuperview])
+            (isDuckAIAndInputLiquidGlassEnabled ? bottomToSuperview : bottomToToolbar).isActive = true
+        }
         if !enabled {
             setWebInputEditing(false)
         }
@@ -250,6 +256,8 @@ class MainViewCoordinator {
         var statusBackgroundBottomToSafeAreaTop: NSLayoutConstraint!
         var contentContainerBottomToToolbarTop: NSLayoutConstraint!
         var contentContainerBottomToSafeArea: NSLayoutConstraint!
+        var unifiedInputContentBottomToToolbar: NSLayoutConstraint!
+        var unifiedInputContentBottomToSuperview: NSLayoutConstraint!
         var topSlideContainerBottomToNavigationBarBottom: NSLayoutConstraint!
         var topSlideContainerBottomToStatusBackgroundBottom: NSLayoutConstraint!
         var topSlideContainerTopToNavigationBar: NSLayoutConstraint!

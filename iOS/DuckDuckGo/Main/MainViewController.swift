@@ -3403,7 +3403,17 @@ class MainViewController: UIViewController {
         hideNotificationBarIfBrokenSitePromptShown()
         currentTab?.progressWorker.progressBar = nil
         currentTab?.chromeDelegate = nil
-            
+
+        if #available(iOS 26, *), isDuckAIAndInputLiquidGlassEnabled, tab.isAITab {
+            let color = UIColor(singleUseColor: .duckAIWebViewBackground)
+            tab.view.backgroundColor = color
+            tab.outerContainer.backgroundColor = color
+            tab.webViewContainer.backgroundColor = color
+            tab.webView.backgroundColor = color
+            tab.webView.scrollView.backgroundColor = color
+            tab.webView.underPageBackgroundColor = color
+            tab.webView.isOpaque = false
+        }
         addToContentContainer(controller: tab)
 
         viewCoordinator.logoContainer.isHidden = true
@@ -3799,6 +3809,10 @@ class MainViewController: UIViewController {
             currentTab?.updateWebViewBottomAnchor(for: currentBarsVisibility)
             view.layoutIfNeeded()
         }
+        if #available(iOS 26, *), isDuckAIAndInputLiquidGlassEnabled, currentTab?.isAITab == true {
+            view.layoutIfNeeded()
+            updateScrollInteractionIfNeeded()
+        }
 
         let sharesRow = WindowControlsRowLayout.sharesRow(in: view, for: targetSize, isEnabled: isWindowControlsRowEnabled)
         updateWindowControlsRowMetricsIfNeeded(sharesRow: sharesRow, force: true)
@@ -4137,6 +4151,15 @@ class MainViewController: UIViewController {
             // Guide and selection settle after layout.
             DispatchQueue.main.async { [weak self] in
                 self?.updateWebInputChromeVisibility()
+            }
+        }
+        if #available(iOS 26, *), isDuckAIAndInputLiquidGlassEnabled,
+           let tab = currentTab, tab.isAITab {
+            let insets = tab.webView.scrollView.contentInset
+            let top = floatingAIChatHeaderObscuredHeight
+            let bottom = floatingWebViewBottomObscuredHeight(for: currentBarsVisibility)
+            if insets.top != top || insets.bottom != bottom {
+                tab.updateWebViewBottomAnchor(for: currentBarsVisibility)
             }
         }
         updateAddressBarSuppressionForNewTabPage()
@@ -5873,6 +5896,13 @@ extension MainViewController: BrowserChromeDelegate {
     }
 
     func floatingWebViewBottomObscuredHeight(for barsVisibilityPercent: CGFloat) -> CGFloat {
+        if #available(iOS 26, *), isDuckAIAndInputLiquidGlassEnabled, currentTab?.isAITab == true {
+            let navigationBar = viewCoordinator.navigationBarContainer!
+            guard !navigationBar.isHidden,
+                  viewCoordinator.unifiedToggleInputContainer?.isHidden == false,
+                  navigationBar.bounds.height > 0 else { return view.safeAreaInsets.bottom }
+            return max(view.safeAreaInsets.bottom, view.bounds.maxY - navigationBar.frame.minY)
+        }
         if viewCoordinator.isWebInputEditing {
             return view.safeAreaInsets.bottom
         }
@@ -6793,11 +6823,7 @@ extension MainViewController: OmniBarDelegate {
         }
 
         if currentTab?.isAITab == true, isDuckAIAndInputLiquidGlassEnabled {
-            if #available(iOS 27, *) {
-                scrollView.topEdgeEffect.style = .hard
-            } else {
-                scrollView.topEdgeEffect.style = .soft
-            }
+            scrollView.topEdgeEffect.style = .soft
             scrollView.bottomEdgeEffect.isHidden = true
             duckAIScrollEdgeScrollView = scrollView
             attach(to: viewCoordinator.aiChatTabChatHeaderContainer, onEdge: .top)
@@ -8570,6 +8596,10 @@ extension MainViewController: TabSwitcherDelegate {
                     && pendingTabSwitcherKeyboard?.requestID == appOpenKeyboardRequestID))
             && !isDismissingTabSwitcherForFire && !isClearingNavigationForAppOpen
         transitionTo(tab: newTab, from: previousTab)
+        if #available(iOS 26, *), isDuckAIAndInputLiquidGlassEnabled, newTab.isAITab {
+            view.layoutIfNeeded()
+            updateScrollInteractionIfNeeded()
+        }
         // Transitioning invalidates the previous request; only this tab can receive focus after dismissal.
         pendingTabSwitcherKeyboard = shouldFocusKeyboard ? (newTab.tabModel, appOpenKeyboardRequestID) : nil
     }

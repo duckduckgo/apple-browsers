@@ -72,6 +72,10 @@ final class AutoClearUITests: UITestCase {
             // The existing UI-test launch argument shortens the five-minute interval to five seconds.
             app.backgroundAndActivate(minimumBackgroundDuration: 6)
 
+            XCTAssertEqual(
+                app.windows.matching(identifier: "Browser.Window.Main").count, 1,
+                "Auto Clear did not restore one main browser window.")
+
             XCTAssertTrue(
                 app.searchEntry.waitForHittableInAppWindow(in: app, timeout: UITestTimeouts.fireAnimation),
                 "Browser did not become available after Auto Clear.")

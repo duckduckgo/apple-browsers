@@ -91,14 +91,28 @@ public struct AppStoreReleases: Decodable {
         available = try? container.decodeIfPresent(ReleaseMetadata.self, forKey: .available)
     }
 
-    /// The available release once `delay` has passed since its release date, otherwise the latest release.
+    /// The release to offer the user.
+    ///
+    /// Returns the available release if it was released at least `delay` ago and is newer than the latest
+    /// release. Otherwise returns the latest release. The available release in the metadata shouldn't
+    /// ever be older than the latest one, but if that were to happen this version check would prevent
+    ///  users from being told there's no update.
     public func releaseToOffer(availableAfter delay: TimeInterval, now: Date) -> ReleaseMetadata {
         guard let available,
+              Self.isRelease(available, newerThan: latest),
               let releaseDate = ISO8601DateFormatter().date(from: available.releaseDate),
               now >= releaseDate.addingTimeInterval(delay) else {
             return latest
         }
         return available
+    }
+
+    private static func isRelease(_ release: ReleaseMetadata, newerThan other: ReleaseMetadata) -> Bool {
+        switch release.latestVersion.compare(other.latestVersion, options: .numeric) {
+        case .orderedDescending: true
+        case .orderedAscending: false
+        case .orderedSame: release.buildNumber > other.buildNumber
+        }
     }
 }
 

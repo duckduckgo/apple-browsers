@@ -111,6 +111,9 @@ final class HoveredLinkTooltipPresenter {
             window.alphaValue = 0
             window.parent?.removeChildWindow(window)
             window.orderOut(nil)
+            // Release the window's views: a hidden, never closed window keeps them alive.
+            window.contentView = nil
+            window.close()
         }
     }
 

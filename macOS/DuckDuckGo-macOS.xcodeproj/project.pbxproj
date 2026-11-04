@@ -2630,6 +2630,8 @@
 		BBC386842DE5E6EA0004583A /* SuggestionsIconsProviding.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBC386822DE5E6E70004583A /* SuggestionsIconsProviding.swift */; };
 		BBC7BDA92D5B82BD0037A4AE /* DefaultBrowserAndDockPromptCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBC7BDA82D5B82A20037A4AE /* DefaultBrowserAndDockPromptCoordinator.swift */; };
 		BBC7BDAA2D5B82BD0037A4AE /* DefaultBrowserAndDockPromptCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBC7BDA82D5B82A20037A4AE /* DefaultBrowserAndDockPromptCoordinator.swift */; };
+		BA038FEE53E296533D13C64A /* DefaultBrowserAndDockActionPerformer.swift in Sources */ = {isa = PBXBuildFile; fileRef = DB12ADC1D6BD72B826060657 /* DefaultBrowserAndDockActionPerformer.swift */; };
+		CE7FCD0757016BC18285CA8D /* DefaultBrowserAndDockActionPerformer.swift in Sources */ = {isa = PBXBuildFile; fileRef = DB12ADC1D6BD72B826060657 /* DefaultBrowserAndDockActionPerformer.swift */; };
 		BBC90A2B2E3265D50013E52C /* ReportProblemFormViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBC90A2A2E3265D50013E52C /* ReportProblemFormViewModel.swift */; };
 		BBC90A2C2E3265D50013E52C /* ReportProblemFormViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBC90A2A2E3265D50013E52C /* ReportProblemFormViewModel.swift */; };
 		BBD798AD2DF213B100575051 /* AddressBarPermissionButtonsIconsProviding.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBD798AC2DF213AF00575051 /* AddressBarPermissionButtonsIconsProviding.swift */; };
@@ -4802,6 +4804,7 @@
 		BBC2779A2FBF000100756A85 /* DuckAiVoiceChatLegacyConsentCleanup.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DuckAiVoiceChatLegacyConsentCleanup.swift; sourceTree = "<group>"; };
 		BBC386822DE5E6E70004583A /* SuggestionsIconsProviding.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SuggestionsIconsProviding.swift; sourceTree = "<group>"; };
 		BBC7BDA82D5B82A20037A4AE /* DefaultBrowserAndDockPromptCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DefaultBrowserAndDockPromptCoordinator.swift; sourceTree = "<group>"; };
+		DB12ADC1D6BD72B826060657 /* DefaultBrowserAndDockActionPerformer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DefaultBrowserAndDockActionPerformer.swift; sourceTree = "<group>"; };
 		BBC90A2A2E3265D50013E52C /* ReportProblemFormViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReportProblemFormViewModel.swift; sourceTree = "<group>"; };
 		BBD798AC2DF213AF00575051 /* AddressBarPermissionButtonsIconsProviding.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddressBarPermissionButtonsIconsProviding.swift; sourceTree = "<group>"; };
 		BBD7A1CF2F97F0FF00D6AF54 /* AIChatReasoningEffort.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIChatReasoningEffort.swift; sourceTree = "<group>"; };
@@ -9030,6 +9033,7 @@
 				CC4B39BE2ECB4E7000A3C9EF /* DefaultBrowserAndDockPromptNotificationPresenter.swift */,
 				CCAA80322F5B290400BB58F4 /* DefaultBrowserAndDockPromptUIHosting.swift */,
 				CCAA80332F5B290400BB58F4 /* DefaultBrowserAndDockPromoDelegate.swift */,
+				DB12ADC1D6BD72B826060657 /* DefaultBrowserAndDockActionPerformer.swift */,
 			);
 			path = DefaultBrowserAndAddToDockPrompts;
 			sourceTree = "<group>";
@@ -11832,6 +11836,7 @@
 				BBBD2A032E2FE458005E7664 /* ThankYouView.swift in Sources */,
 				F18826812BBEB58100D9AC4F /* SubscriptionPixel.swift in Sources */,
 				BBC7BDA92D5B82BD0037A4AE /* DefaultBrowserAndDockPromptCoordinator.swift in Sources */,
+				BA038FEE53E296533D13C64A /* DefaultBrowserAndDockActionPerformer.swift in Sources */,
 				31521AC42CC01BC700248E6F /* AIChatTabOpener.swift in Sources */,
 				1A77VST00000000000000004 /* VoiceSessionTracker.swift in Sources */,
 				3706FB88293F65D500E42796 /* PermissionAuthorizationQuery.swift in Sources */,
@@ -13207,6 +13212,7 @@
 				7BBD45B12A691AB500C83CA9 /* NetworkProtectionDebugUtilities.swift in Sources */,
 				4BE65481271FCD4D008D1D63 /* PasswordManagementNoteModel.swift in Sources */,
 				BBC7BDAA2D5B82BD0037A4AE /* DefaultBrowserAndDockPromptCoordinator.swift in Sources */,
+				CE7FCD0757016BC18285CA8D /* DefaultBrowserAndDockActionPerformer.swift in Sources */,
 				C124AC232D4257BE009FBFD0 /* DataImportExtension.swift in Sources */,
 				DD27DA7B0000000000000001 /* DataImportDebugMenu.swift in Sources */,
 				DD27DA7C0000000000000001 /* DataDirectoryPermissionFixAvailability.swift in Sources */,

@@ -95,8 +95,12 @@ extension XCUIApplication {
         let menuIdentifiers = UIDevice.current.userInterfaceIdiom == .pad
             ? ["Browser.OmniBar.Button.BrowsingMenu", "Browser.Toolbar.Button.Menu"]
             : ["Browser.Toolbar.Button.Menu", "Browser.OmniBar.Button.BrowsingMenu"]
-        buttons.matching(NSPredicate(format: "identifier IN %@", menuIdentifiers))
-            .firstMatch.tapWhenHittable(in: self, file: file, line: line)
+        let preferredMenuButton = browserWindow.buttons[menuIdentifiers[0]]
+        let fallbackMenuButton = browserWindow.buttons[menuIdentifiers[1]]
+        let menuButton = preferredMenuButton.isHittableInAppWindow(in: self)
+            ? preferredMenuButton
+            : fallbackMenuButton.isHittableInAppWindow(in: self) ? fallbackMenuButton : preferredMenuButton
+        menuButton.tapWhenHittable(in: self, file: file, line: line)
         let menu = descendants(matching: .any)["Browser.Menu.List"]
         let item = descendants(matching: .any)[identifier]
         let deadline = Date().addingTimeInterval(UITestTimeouts.navigation)

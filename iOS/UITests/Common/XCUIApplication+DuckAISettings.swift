@@ -36,7 +36,7 @@ extension XCUIApplication {
             timeout: UITestTimeouts.navigation,
             file: file,
             line: line)
-        aiFeatures.tapWhenHittable(file: file, line: line)
+        aiFeatures.tapWhenHittable(in: self, file: file, line: line)
 
         XCTAssertTrue(
             aiFeaturesSettingsList.waitForExistence(timeout: UITestTimeouts.elementExistence),
@@ -50,7 +50,7 @@ extension XCUIApplication {
         let expectedValue = enabled ? "1" : "0"
 
         if toggle.value as? String != expectedValue {
-            toggle.tapWhenHittable(file: file, line: line)
+            toggle.tapWhenHittable(in: self, file: file, line: line)
         }
 
         XCTAssertTrue(
@@ -66,15 +66,12 @@ extension XCUIApplication {
         let deadline = Date().addingTimeInterval(UITestTimeouts.navigation)
 
         while Date() < deadline {
-            if toggle.exists && toggle.isHittable {
+            let remaining = deadline.timeIntervalSinceNow
+            guard remaining > 0 else { break }
+            if toggle.waitForHittableInAppWindow(in: self, timeout: min(1, remaining)) {
                 return
             }
             aiFeaturesSettingsList.swipeDown()
-            let remaining = deadline.timeIntervalSinceNow
-            if remaining > 0,
-               toggle.wait(for: NSPredicate(format: "isHittable == true"), timeout: min(1, remaining)) {
-                return
-            }
         }
 
         XCTFail("Duck.ai enable toggle did not become tappable.", file: file, line: line)
@@ -90,7 +87,7 @@ extension XCUIApplication {
             timeout: UITestTimeouts.navigation,
             file: file,
             line: line)
-        option.tapWhenHittable(file: file, line: line)
+        option.tapWhenHittable(in: self, file: file, line: line)
     }
 
     func openDuckAIShortcutsSettings(file: StaticString = #filePath, line: UInt = #line) {
@@ -100,7 +97,7 @@ extension XCUIApplication {
             timeout: UITestTimeouts.navigation,
             file: file,
             line: line)
-        manageShortcuts.tapWhenHittable(file: file, line: line)
+        manageShortcuts.tapWhenHittable(in: self, file: file, line: line)
 
         XCTAssertTrue(
             descendants(matching: .any)["Settings.List.AIChatShortcuts"]

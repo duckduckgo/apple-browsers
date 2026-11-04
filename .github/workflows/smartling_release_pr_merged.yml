@@ -3,6 +3,9 @@ name: Smartling - Complete Translations Subtask on Merge
 on:
   pull_request_target:
     types: [closed]
+    branches:
+      - 'release/**'
+      - 'test/smartling-release-**'
 
 permissions: {}
 

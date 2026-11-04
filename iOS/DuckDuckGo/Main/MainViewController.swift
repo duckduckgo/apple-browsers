@@ -1677,7 +1677,7 @@ class MainViewController: UIViewController {
     }
 
     private func collapseExpandedUTIOnKeyboardDismiss() {
-        guard unifiedToggleInputFeature.isAvailable,
+        guard unifiedToggleInputFeature.isFullTabChatInputAvailable,
               currentTab?.isAITab == true,
               let coordinator = unifiedToggleInputCoordinator,
               coordinator.isAITabExpanded,

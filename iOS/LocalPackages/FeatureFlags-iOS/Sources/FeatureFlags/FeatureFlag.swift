@@ -563,6 +563,10 @@ public enum FeatureFlag: String {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1219711238433101?focus=true
     case ipadAIChatContextSidebar
 
+    /// Full-tab Duck.ai chat on iPad uses the native chat input shared with iPhone.
+    /// https://app.asana.com/1/137249556945/project/1211654189969294/task/1220224098931743?focus=true
+    case aiChatNativeInputIPad
+
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1218934499511214?focus=true
     case utiDuckAIWarnings
 
@@ -1068,6 +1072,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(defaultValue: .internalOnly, source: .remoteReleasable(AIChatSubfeature.iPadChromeMenuButton))
         case .ipadAIChatContextSidebar:
             Config(defaultValue: .internalOnly, source: .remoteReleasable(AIChatSubfeature.iPadContextualSidebar))
+        case .aiChatNativeInputIPad:
+            Config(defaultValue: .internalOnly, source: .remoteReleasable(AIChatSubfeature.iPadNativeChatInput))
         case .floatingUIiOS26:
             Config(defaultValue: .internalOnly, source: .remoteReleasable(iOSBrowserConfigSubfeature.floatingUIiOS26))
         case .floatingUIiOS27:

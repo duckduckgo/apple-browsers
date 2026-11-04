@@ -618,6 +618,48 @@ class AIChatUserScriptHandlerTests: XCTestCase {
         XCTAssertEqual(configValues?.supportsNativeChatInput, false)
     }
 
+    func testWhenFullTabOnIPadWithNativeInputThenConfigHandsTheInputToNative() {
+        MockDevicePlatform.isIphone = false
+        mockUnifiedToggleInputFeature.isAvailable = false
+        mockUnifiedToggleInputFeature.isFullTabChatInputAvailable = true
+        aiChatUserScriptHandler.displayMode = .fullTab
+
+        let configValues = aiChatUserScriptHandler.getAIChatNativeConfigValues(params: [], message: MockUserScriptMessage(name: "test", body: [:])) as? AIChatNativeConfigValues
+
+        XCTAssertEqual(configValues?.supportsNativeChatInput, true)
+        XCTAssertEqual(configValues?.supportsPromoCards, true)
+        // iPad has no native chat header, so the FE keeps its own.
+        XCTAssertEqual(configValues?.supportsAIChatFullMode, false)
+    }
+
+    func testWhenFullTabOnIPadWithNativeInputThenUsageWarningsMoveToTheNativeInput() {
+        mockFeatureFlagger.enabledFeatureFlags = [.utiDuckAIWarnings]
+        MockDevicePlatform.isIphone = false
+        mockUnifiedToggleInputFeature.isAvailable = false
+        mockUnifiedToggleInputFeature.isFullTabChatInputAvailable = true
+        aiChatUserScriptHandler = makeAIChatUserScriptHandler(isNativeStorageBridgeAvailable: true)
+        aiChatUserScriptHandler.displayMode = .fullTab
+
+        let configValues = aiChatUserScriptHandler.getAIChatNativeConfigValues(params: [], message: MockUserScriptMessage(name: "test", body: [:])) as? AIChatNativeConfigValues
+
+        XCTAssertEqual(configValues?.supportsNativeUsageWarnings, true)
+    }
+
+    /// The iPad contextual sheet's input has no warning card, so its FE keeps the banner.
+    func testWhenContextualOnIPadWithFullTabNativeInputThenUsageWarningsStayOnTheWeb() {
+        mockFeatureFlagger.enabledFeatureFlags = [.utiDuckAIWarnings]
+        MockDevicePlatform.isIphone = false
+        mockAIChatContextualModeFeature.isAvailable = true
+        mockUnifiedToggleInputFeature.isFullTabChatInputAvailable = true
+        aiChatUserScriptHandler = makeAIChatUserScriptHandler(isNativeStorageBridgeAvailable: true)
+        aiChatUserScriptHandler.displayMode = .contextual
+
+        let configValues = aiChatUserScriptHandler.getAIChatNativeConfigValues(params: [], message: MockUserScriptMessage(name: "test", body: [:])) as? AIChatNativeConfigValues
+
+        XCTAssertEqual(configValues?.supportsNativeChatInput, true)
+        XCTAssertEqual(configValues?.supportsNativeUsageWarnings, false)
+    }
+
     func testSuggestionsSupportFollowsContextualModeAvailabilityWhileRunning() {
         aiChatUserScriptHandler.displayMode = .contextual
 

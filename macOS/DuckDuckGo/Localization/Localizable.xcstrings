@@ -17216,6 +17216,18 @@
         }
       }
     },
+    "autofill.password-manager.bitwarden.retirement" : {
+      "comment" : "Autofill settings caption under the password manager choice: the integration with the Bitwarden app is going away, switching to the DuckDuckGo password manager is permanent, and the Bitwarden browser extension replaces the integration",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "The Bitwarden app integration is being retired. If you switch to DuckDuckGo, you can't turn it back on. Install the Bitwarden extension to keep using Bitwarden."
+          }
+        }
+      }
+    },
     "autofill.password-manager.duckduckgo" : {
       "comment" : "Autofill password manager row title",
       "extractionState" : "extracted_with_value",

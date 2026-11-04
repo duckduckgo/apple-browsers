@@ -20,7 +20,6 @@ import Foundation
 import Testing
 @testable import EventHub
 
-@available(iOS 16, macOS 13, *)
 @Suite("Distinct parameter")
 struct DistinctParameterTests {
     static let pixelName = "distinct_day"

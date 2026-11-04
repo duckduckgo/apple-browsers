@@ -41,19 +41,23 @@ public final class WebExtensionBadgeColorStore {
         textColors.object(forKey: context) as String?
     }
 
-    /// Returns whether the color changed.
-    func setBackgroundColor(_ color: String, for context: WKWebExtensionContext) -> Bool {
+    /// `nil` restores the app's default. Returns whether the color changed.
+    func setBackgroundColor(_ color: String?, for context: WKWebExtensionContext) -> Bool {
         set(color, for: context, in: backgroundColors)
     }
 
-    /// Returns whether the color changed.
-    func setTextColor(_ color: String, for context: WKWebExtensionContext) -> Bool {
+    /// `nil` restores the app's default. Returns whether the color changed.
+    func setTextColor(_ color: String?, for context: WKWebExtensionContext) -> Bool {
         set(color, for: context, in: textColors)
     }
 
-    private func set(_ color: String, for context: WKWebExtensionContext, in colors: NSMapTable<WKWebExtensionContext, NSString>) -> Bool {
+    private func set(_ color: String?, for context: WKWebExtensionContext, in colors: NSMapTable<WKWebExtensionContext, NSString>) -> Bool {
         guard colors.object(forKey: context) as String? != color else { return false }
-        colors.setObject(color as NSString, forKey: context)
+        if let color {
+            colors.setObject(color as NSString, forKey: context)
+        } else {
+            colors.removeObject(forKey: context)
+        }
         return true
     }
 }

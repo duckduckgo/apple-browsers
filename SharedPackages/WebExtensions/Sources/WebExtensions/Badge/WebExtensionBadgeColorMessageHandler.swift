@@ -22,8 +22,8 @@ import WebKit
 /// Hears the badge colors the API stub script relays on behalf of `action.setBadgeBackgroundColor` and
 /// `action.setBadgeTextColor`: WebKit accepts the first without passing the color on, and lacks the second.
 ///
-/// The script sends `{kind: "background" | "text", color: "#rrggbb"}` and expects no answer. Only pages of a
-/// loaded extension are heard. Without a store the colors are dropped.
+/// The script sends `{kind: "background" | "text", color: "#rrggbb"}` and expects no answer. An empty color
+/// restores the default. Only pages of a loaded extension are heard. Without a store the colors are dropped.
 @available(macOS 15.4, iOS 18.4, *)
 final class WebExtensionBadgeColorMessageHandler: NSObject, WKScriptMessageHandler {
 
@@ -63,9 +63,10 @@ final class WebExtensionBadgeColorMessageHandler: NSObject, WKScriptMessageHandl
               let request = body as? [String: Any],
               let kindName = request[Self.kindKey] as? String,
               let kind = Kind(rawValue: kindName),
-              let color = request[Self.colorKey] as? String else {
+              let hex = request[Self.colorKey] as? String else {
             return
         }
+        let color = hex.isEmpty ? nil : hex
 
         let didChange = switch kind {
         case .background:

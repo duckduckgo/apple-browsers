@@ -1497,14 +1497,23 @@ public enum WebExtensionAPIStubScript {
         var badgeColorMessageHandlerName = "\(Self.badgeColorMessageHandlerName)";
         var badgeColorContext;
 
-        // Normalizes Chrome's `[r, g, b, a]` array or CSS color string to `#rrggbb`, or `null` when it isn't a color:
-        // a canvas ignores an invalid color, leaving `transparent` in place.
+        // Normalizes Chrome's `[r, g, b, a]` array or CSS color string to an opaque `#rrggbb`, or to `""` when it's
+        // fully transparent or not a color, which restores the default color.
         function badgeColorHex(color) {
             var context = badgeColorContext ||= new OffscreenCanvas(1, 1).getContext("2d");
             context.fillStyle = "transparent";
-            context.fillStyle = Array.isArray(color) ? "rgb(" + color.slice(0, 3) + ")" : color;
+            context.fillStyle = Array.isArray(color) ? "rgb(" + color.map(function(c, i) { return i === 3 ? c / 255 : c; }) + ")" : color;
             var hex = context.fillStyle;
-            return hex[0] === "#" ? hex : null;
+            if (hex[0] === "#") {
+                return hex;
+            }
+            // A translucent color (or an invalid one, which leaves `transparent` in place) reads back as `rgba(r, g, b, a)`.
+            var channels = hex.match(/[\\d.]+/g);
+            if (channels[3] === "0") {
+                return "";
+            }
+            context.fillStyle = "rgb(" + channels.slice(0, 3) + ")";
+            return context.fillStyle;
         }
 
         function relayBadgeColor(kind, details) {

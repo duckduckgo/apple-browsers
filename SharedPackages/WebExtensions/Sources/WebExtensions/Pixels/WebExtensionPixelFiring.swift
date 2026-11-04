@@ -89,7 +89,7 @@ public enum WebExtensionUpdateCheckOutcome: String, CaseIterable, Sendable {
 /// Events that can be fired for web extension management.
 @available(macOS 15.4, iOS 18.4, *)
 public enum WebExtensionPixelEvent {
-    /// Discovery diagnostics contain only a Chrome Web Store ID, the check step, and a bounded outcome.
+    /// Discovery pixels report the Chrome Web Store ID and, for failures, a bounded reason.
     case updateCheck(extensionID: String, outcome: WebExtensionUpdateCheckOutcome)
     case installed(extension: WebExtensionPixelExtension)
     case installError(extension: WebExtensionPixelExtension, error: Error)

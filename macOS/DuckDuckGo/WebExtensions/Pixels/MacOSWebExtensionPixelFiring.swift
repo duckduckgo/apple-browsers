@@ -210,7 +210,11 @@ enum WebExtensionPixel: PixelKit.Event {
     var parameters: [String: String]? {
         switch self {
         case .updateCheck(let extensionID, let outcome):
-            return ["extension_id": extensionID, "step": "check", "outcome": outcome.rawValue]
+            var parameters = ["extension_id": extensionID]
+            if outcome != .updateFound && outcome != .googleFlagged {
+                parameters["outcome"] = outcome.rawValue
+            }
+            return parameters
         case .embeddedUpgraded(let fromVersion, let toVersion),
              .darkReaderUpgraded(let fromVersion, let toVersion),
              .adBlockingExtensionUpgraded(let fromVersion, let toVersion):

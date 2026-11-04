@@ -12,18 +12,6 @@
                 "type": "string",
                 "description": "The validated 32-character Chrome Web Store extension identifier"
             },
-            {
-                "key": "step",
-                "type": "string",
-                "description": "The extension update step",
-                "enum": ["check"]
-            },
-            {
-                "key": "outcome",
-                "type": "string",
-                "description": "The bounded result of the extension update check",
-                "enum": ["update_found"]
-            },
             "channel"
         ]
     },
@@ -39,12 +27,6 @@
                 "key": "extension_id",
                 "type": "string",
                 "description": "The validated 32-character Chrome Web Store extension identifier"
-            },
-            {
-                "key": "step",
-                "type": "string",
-                "description": "The extension update step",
-                "enum": ["check"]
             },
             {
                 "key": "outcome",
@@ -67,18 +49,6 @@
                 "key": "extension_id",
                 "type": "string",
                 "description": "The validated 32-character Chrome Web Store extension identifier"
-            },
-            {
-                "key": "step",
-                "type": "string",
-                "description": "The extension update step",
-                "enum": ["check"]
-            },
-            {
-                "key": "outcome",
-                "type": "string",
-                "description": "The bounded result of the extension update check",
-                "enum": ["google_flagged"]
             },
             "channel"
         ]

@@ -32,13 +32,20 @@ final class MacOSWebExtensionPixelFiringTests: XCTestCase {
             XCTAssertEqual(pixels.actualFireCalls.count, 1)
             let call = try XCTUnwrap(pixels.actualFireCalls.first)
             let expectedName: String
+            let expectedParameters: [String: String]
             switch outcome {
-            case .updateFound: expectedName = "web_extension_update_found_macos"
-            case .googleFlagged: expectedName = "web_extension_update_skipped_macos"
-            default: expectedName = "web_extension_update_check_failed_macos"
+            case .updateFound:
+                expectedName = "web_extension_update_found_macos"
+                expectedParameters = ["extension_id": identifier]
+            case .googleFlagged:
+                expectedName = "web_extension_update_skipped_macos"
+                expectedParameters = ["extension_id": identifier]
+            default:
+                expectedName = "web_extension_update_check_failed_macos"
+                expectedParameters = ["extension_id": identifier, "outcome": outcome.rawValue]
             }
             XCTAssertEqual(call.pixel.name, expectedName)
-            XCTAssertEqual(call.pixel.parameters, ["extension_id": identifier, "step": "check", "outcome": outcome.rawValue])
+            XCTAssertEqual(call.pixel.parameters, expectedParameters)
             XCTAssertEqual(call.frequency, .dailyAndCount)
             XCTAssertEqual(call.pixel.namePrefix, .none)
             XCTAssertEqual(call.pixel.standardParameters, [.pixelSource])

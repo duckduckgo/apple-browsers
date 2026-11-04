@@ -368,6 +368,7 @@ final class StubEventHub: EventHubManaging {
     private(set) var navigationStarts: [(tabID: EventHubTabID, url: String)] = []
     private(set) var closedTabIDs: [EventHubTabID] = []
     private(set) var nativeEventCounts: [String: Int] = [:]
+    private(set) var nativeEventsWhenAppBackgrounded: Int?
 
     func handleWebEvent(_ webEventData: [String: Any], tabID: EventHubTabID) {}
     func handleNativeEvent(_ type: String, data: Encodable?) {
@@ -384,5 +385,7 @@ final class StubEventHub: EventHubManaging {
 
     func onConfigChanged() {}
     func onAppForegrounded() {}
-    func onAppBackgrounded() {}
+    func onAppBackgrounded() {
+        nativeEventsWhenAppBackgrounded = nativeEventCounts.values.reduce(0, +)
+    }
 }

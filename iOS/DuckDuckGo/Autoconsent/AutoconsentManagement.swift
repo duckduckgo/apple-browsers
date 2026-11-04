@@ -94,6 +94,9 @@ final class AutoconsentManagement: AutoconsentManaging {
 
         // Fire summary immediately if there are events
         fireSummaryPixel()
+
+        // The app-wide Event Hub flush on backgrounding has already run, so persist the counts just added
+        eventHub.onAppBackgrounded()
     }
 
     func firePixel(pixel: AutoconsentPixel, siteRank: CPMSiteRank?, additionalParameters: [String: String] = [:]) {

@@ -43,8 +43,8 @@ struct CPMCoverageTelemetryTests {
         "parameters": {
             "unhandled": { "template": "counter", "source": "autoconsent_unhandled", "buckets": \(unhandledBuckets) },
             "unhandled_top10k": { "template": "counter", "source": "autoconsent_unhandled_top10k", "buckets": \(unhandledBuckets) },
-            "pages": { "template": "counter", "source": "autoconsent_page", "buckets": \(pagesBuckets) },
-            "pages_top10k": { "template": "counter", "source": "autoconsent_page_top10k", "buckets": \(pagesBuckets) }
+            "pages": { "template": "counter", "source": "autoconsent_pages", "buckets": \(pagesBuckets) },
+            "pages_top10k": { "template": "counter", "source": "autoconsent_pages_top10k", "buckets": \(pagesBuckets) }
         }
     } } }
     """
@@ -77,8 +77,8 @@ struct CPMCoverageTelemetryTests {
     @Test("A day with pages but no unhandled popups sends the 0 unhandled bucket", .timeLimit(.minutes(1)))
     func dayWithZeroUnhandledSendsZeroBucket() throws {
         let f = EventHubFixture.active(Self.config)
-        send("autoconsent_page", times: 30, to: f)
-        send("autoconsent_page_top10k", times: 12, to: f)
+        send("autoconsent_pages", times: 30, to: f)
+        send("autoconsent_pages_top10k", times: 12, to: f)
 
         f.advance(by: 86400)
 
@@ -94,8 +94,8 @@ struct CPMCoverageTelemetryTests {
         let f = EventHubFixture.active(Self.config)
         send("autoconsent_unhandled", times: 7, to: f)
         send("autoconsent_unhandled_top10k", times: 2, to: f)
-        send("autoconsent_page", times: 250, to: f)
-        send("autoconsent_page_top10k", times: 100, to: f)
+        send("autoconsent_pages", times: 250, to: f)
+        send("autoconsent_pages_top10k", times: 100, to: f)
 
         f.advance(by: 86400)
 
@@ -110,7 +110,7 @@ struct CPMCoverageTelemetryTests {
     func withoutDefinitionNothingIsCountedOrSent() {
         let f = EventHubFixture.active(Self.otherTelemetryConfig)
         send("autoconsent_unhandled", times: 3, to: f)
-        send("autoconsent_page", times: 3, to: f)
+        send("autoconsent_pages", times: 3, to: f)
 
         #expect(f.state(of: Self.pixelName) == nil)
         #expect(f.count(of: "webTelemetry_other_day") == 0)

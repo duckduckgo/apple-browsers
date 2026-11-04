@@ -19,6 +19,7 @@
 import AppKit
 import AppKitExtensions
 import Combine
+import EventHub
 import FeatureFlags_macOS
 import Persistence
 import PrivacyConfig
@@ -102,7 +103,8 @@ enum WebExtensionManagerFactory {
         autoconsentPreferences: AutoconsentPreferencesProviding,
         buildType: ApplicationBuildType = StandardApplicationBuildType(),
         darkReaderExcludedDomainsProvider: DarkReaderExcludedDomainsProviding? = nil,
-        scriptletConfiguration: ScriptletConfiguration? = nil
+        scriptletConfiguration: ScriptletConfiguration? = nil,
+        eventHub: EventHubManaging
     ) -> WebExtensionManager {
         let internalSiteHandler = WebExtensionInternalSiteHandler()
         let pixelFiring = MacOSWebExtensionPixelFiring()
@@ -166,7 +168,7 @@ enum WebExtensionManagerFactory {
                 autoconsentPreferences: autoconsentPreferences,
                 cpmMessagingHealthMonitor: cpmMessagingHealthMonitor,
                 darkReaderExcludedDomainsProvider: darkReaderExcludedDomainsProvider,
-                eventHub: Application.appDelegate.eventHubIntegration.eventHub
+                eventHub: eventHub
             ),
             nativeMessagingHandler: nativeMessagingHandler,
             keyValueStore: keyValueStore,

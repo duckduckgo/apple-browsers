@@ -160,28 +160,36 @@ class AutoconsentMessageProtocolTests: XCTestCase {
         management.fireSummaryPixels(additionalParameters: [:])
 
         XCTAssertEqual(eventHub.nativeEventCounts, [
-            "autoconsent_page": 5, "autoconsent_page_top10k": 2,
+            "autoconsent_pages": 5, "autoconsent_pages_top10k": 2,
             "autoconsent_unhandled": 1, "autoconsent_unhandled_top10k": 1,
         ])
         XCTAssertTrue(management.pixelCounter.isEmpty)
     }
 
-    func testWhenEmbeddedExtensionSendsSummaryThenCPMCoverageIsReportedToEventHub() throws {
+    func testWhenEmbeddedExtensionReportsCoverageThenItIsCountedInEventHub() throws {
         guard #available(macOS 15.4, *) else { throw XCTSkip("Embedded extension requires macOS 15.4") }
         let eventHub = RecordingEventHub()
         let delegate = MacOSAutoconsentMessageHandlerDelegate(eventHub: eventHub)
 
-        delegate.sendPixel(PixelInfo(name: "autoconsent_init", type: "daily"))
+        delegate.reportCPMCoverage(counts: CPMCoverageCounts(unhandled: 3, pages: 4), siteRank: .top10k)
+        delegate.reportCPMCoverage(counts: CPMCoverageCounts(unhandled: 1, pages: 1), siteRank: nil)
+
+        XCTAssertEqual(eventHub.nativeEventCounts, [
+            "autoconsent_pages": 5, "autoconsent_pages_top10k": 4,
+            "autoconsent_unhandled": 4, "autoconsent_unhandled_top10k": 3,
+        ])
+    }
+
+    func testWhenEmbeddedExtensionSendsSummaryPixelThenNothingIsCountedInEventHub() throws {
+        guard #available(macOS 15.4, *) else { throw XCTSkip("Embedded extension requires macOS 15.4") }
+        let eventHub = RecordingEventHub()
+        let delegate = MacOSAutoconsentMessageHandlerDelegate(eventHub: eventHub)
+
         delegate.sendPixel(PixelInfo(name: "autoconsent_summary", type: "standard", params: [
             "init": "4", "detected-by-patterns": 3, "detected-by-both": "1", "siteRank": "top10k",
         ]))
-        // Older extension versions don't send siteRank
-        delegate.sendPixel(PixelInfo(name: "autoconsent_summary", type: "standard", params: ["init": 1, "detected-by-patterns": 1]))
 
-        XCTAssertEqual(eventHub.nativeEventCounts, [
-            "autoconsent_page": 5, "autoconsent_page_top10k": 4,
-            "autoconsent_unhandled": 3, "autoconsent_unhandled_top10k": 2,
-        ])
+        XCTAssertTrue(eventHub.nativeEventCounts.isEmpty)
     }
 
     @MainActor

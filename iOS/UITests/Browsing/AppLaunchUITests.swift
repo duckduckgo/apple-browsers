@@ -83,6 +83,7 @@ final class AppLaunchUITests: UITestCase {
                 XCTAssertTrue(tabs.waitForHittableInAppWindow(in: app, timeout: UITestTimeouts.navigation), file: file, line: line)
                 tabs.press(forDuration: 1)
                 XCTAssertTrue(newTab.waitForExistence(timeout: UITestTimeouts.navigation), file: file, line: line)
+                attachContextMenuState(loadedPage: loadedPage, checkpoint: "open menu")
                 app.browserWindow.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.25)).tap()
                 XCTAssertTrue(newTab.waitForNonExistence(timeout: UITestTimeouts.navigation), file: file, line: line)
                 XCTAssertTrue(tabs.waitForHittableInAppWindow(in: app, timeout: UITestTimeouts.navigation), file: file, line: line)

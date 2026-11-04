@@ -584,6 +584,10 @@ public enum FeatureFlag: String {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1219970758953673?focus=true
     case aiChatTabHandoffImprovements
 
+    /// Pulling up past the bottom of a Duck.ai chat starts a new chat in a new tab.
+    /// https://app.asana.com/1/137249556945/project/1206488453854252/task/1220098815607998
+    case aiChatSwipeUpNewChat
+
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1215597855114749?focus=true
     case syncScopedAccessCredentials
 
@@ -1078,6 +1082,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(defaultValue: .enabled, source: .remoteReleasable(AIChatSubfeature.tabSwitcherRichCard))
         case .aiChatTabHandoffImprovements:
             Config(defaultValue: .internalOnly, source: .remoteReleasable(AIChatSubfeature.tabHandoffImprovements))
+        case .aiChatSwipeUpNewChat:
+            Config(defaultValue: .internalOnly, source: .remoteReleasable(AIChatSubfeature.swipeUpNewChat))
         case .syncScopedAccessCredentials:
             Config(source: .remoteReleasable(SyncSubfeature.scopedAccessCredentials))
         case .syncCanUseV2ConnectFlow:

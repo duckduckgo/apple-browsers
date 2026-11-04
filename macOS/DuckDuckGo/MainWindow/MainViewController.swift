@@ -65,7 +65,9 @@ final class MainViewController: NSViewController {
     private let vpnUpsellPopoverPresenter: VPNUpsellPopoverPresenter
     private let winBackOfferPromptPresenting: WinBackOfferPromptPresenting
     let tabsPreferences: TabsPreferences
+    private let appearancePreferences: AppearancePreferences
     private let duckPlayer: DuckPlayer
+    private var verticalTabsViewController: VerticalTabsViewController?
 
     let tabCollectionViewModel: TabCollectionViewModel
     let bookmarkManager: BookmarkManager
@@ -137,6 +139,7 @@ final class MainViewController: NSViewController {
          downloadListCoordinator: DownloadListCoordinator = NSApp.delegateTyped.downloadListCoordinator,
          downloadsPreferences: DownloadsPreferences = NSApp.delegateTyped.downloadsPreferences,
          tabsPreferences: TabsPreferences = NSApp.delegateTyped.tabsPreferences,
+         appearancePreferences: AppearancePreferences = NSApp.delegateTyped.appearancePreferences,
          webTrackingProtectionPreferences: WebTrackingProtectionPreferences = NSApp.delegateTyped.webTrackingProtectionPreferences,
          cookiePopupProtectionPreferences: CookiePopupProtectionPreferences = NSApp.delegateTyped.cookiePopupProtectionPreferences,
          aiChatPreferences: AIChatPreferences = NSApp.delegateTyped.aiChatPreferences,
@@ -173,6 +176,7 @@ final class MainViewController: NSViewController {
         self.fireCoordinator = fireCoordinator
         self.winBackOfferPromptPresenting = winBackOfferPromptPresenting
         self.tabsPreferences = tabsPreferences
+        self.appearancePreferences = appearancePreferences
         self.duckPlayer = duckPlayer
         self.pinningManager = pinningManager
         self.duckAIChromeButtonsVisibilityManager = duckAIChromeButtonsVisibilityManager
@@ -397,6 +401,7 @@ final class MainViewController: NSViewController {
         subscribeToBookmarkBarVisibility()
         subscribeToSetAsDefaultAndAddToDockPromptsNotifications()
         subscribeToThemeChanges()
+        subscribeToVerticalTabsVisibility()
         mainView.findInPageContainerView.applyDropShadow()
 
         view.registerForDraggedTypes([.URL, .fileURL])
@@ -509,6 +514,25 @@ final class MainViewController: NSViewController {
 
     func windowWillMiniaturize() {
         tabBarViewController.hideTabPreview()
+    }
+
+    private func subscribeToVerticalTabsVisibility() {
+        guard !isInPopUpWindow else { return }
+        appearancePreferences.showsVerticalTabsPublisher
+            .sink { [weak self] showsVerticalTabs in
+                self?.setVerticalTabsShown(showsVerticalTabs)
+            }
+            .store(in: &viewEventsCancellables)
+    }
+
+    private func setVerticalTabsShown(_ isShown: Bool) {
+        if isShown, verticalTabsViewController == nil {
+            let viewController = VerticalTabsViewController(tabCollectionViewModel: tabCollectionViewModel, aiChatCoordinator: aiChatCoordinator)
+            addAndLayoutChild(viewController, into: mainView.verticalTabsContainerView)
+            verticalTabsViewController = viewController
+        }
+        mainView.isVerticalTabsShown = isShown
+        tabBarViewController.isTabStripHidden = isShown
     }
 
     func windowWillEnterFullScreen() {

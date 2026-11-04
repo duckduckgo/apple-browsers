@@ -43,6 +43,7 @@ final class AppearancePreferencesPersistorMock: AppearancePreferencesPersistor {
     var showTabsAndBookmarksBarOnFullScreen: Bool
     var syncAppIconWithTheme: Bool
     var didChangeAnyNewTabPageCustomizationSetting: Bool
+    var useVerticalTabs: Bool
 
     init(
         showFullURL: Bool = false,
@@ -65,7 +66,8 @@ final class AppearancePreferencesPersistorMock: AppearancePreferencesPersistor {
         didDismissHomePagePromotion: Bool = true,
         showTabsAndBookmarksBarOnFullScreen: Bool = false,
         syncAppIconWithTheme: Bool = false,
-        didChangeAnyNewTabPageCustomizationSetting: Bool = false
+        didChangeAnyNewTabPageCustomizationSetting: Bool = false,
+        useVerticalTabs: Bool = false
     ) {
         self.showFullURL = showFullURL
         self.themeAppearance = themeAppearance
@@ -88,6 +90,7 @@ final class AppearancePreferencesPersistorMock: AppearancePreferencesPersistor {
         self.showTabsAndBookmarksBarOnFullScreen = showTabsAndBookmarksBarOnFullScreen
         self.syncAppIconWithTheme = syncAppIconWithTheme
         self.didChangeAnyNewTabPageCustomizationSetting = didChangeAnyNewTabPageCustomizationSetting
+        self.useVerticalTabs = useVerticalTabs
     }
 }
 #endif

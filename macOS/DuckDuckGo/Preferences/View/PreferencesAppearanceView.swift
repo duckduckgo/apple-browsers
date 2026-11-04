@@ -298,6 +298,14 @@ extension Preferences {
                         }
                     }
                 }
+
+                // SECTION 5: Tabs
+                if model.isVerticalTabsAvailable {
+                    PreferencePaneSection(UserText.tabs) {
+                        ToggleMenuItem(UserText.useVerticalTabs, isOn: $model.useVerticalTabs)
+                            .accessibilityIdentifier("Preferences.AppearanceView.useVerticalTabsToggle")
+                    }
+                }
             }
         }
     }

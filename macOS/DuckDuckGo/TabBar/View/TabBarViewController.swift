@@ -139,13 +139,23 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
 
     var tabPreviewsEnabled: Bool = true
 
+    /// Hides the unpinned tabs and their buttons while the window lists tabs in the vertical tabs sidebar.
+    var isTabStripHidden: Bool = false {
+        didSet {
+            guard oldValue != isTabStripHidden else { return }
+            scrollView.isHidden = isTabStripHidden
+            displayScrollButtons()
+            updateEmptyTabArea()
+        }
+    }
+
     /// Are tab previews enabled, is window key, is mouse over a tab
     private var shouldDisplayTabPreviews: Bool {
         guard tabPreviewsEnabled,
               let mouseLocation = mouseLocationInKeyWindow() else { return false }
 
         let isMouseOverTab = pinnedTabsContainerView.isMouseLocationInsideBounds(mouseLocation)
-        || collectionView.withMouseLocationInViewCoordinates(mouseLocation, convert: collectionView.indexPathForItem(at:)) != nil
+        || (!isTabStripHidden && collectionView.withMouseLocationInViewCoordinates(mouseLocation, convert: collectionView.indexPathForItem(at:)) != nil)
 
         return isMouseOverTab
     }
@@ -1747,7 +1757,7 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
     private func selectTab(with event: NSEvent) {
         let locationInWindow = event.locationInWindow
 
-        if let indexPath = collectionView.indexPathForItemAtMouseLocation(locationInWindow) {
+        if !isTabStripHidden, let indexPath = collectionView.indexPathForItemAtMouseLocation(locationInWindow) {
             // When clicking a tab in an inactive window, the selection change bypasses
             // the normal layout update path, so we flag for an explicit layout invalidation.
             selectionNeedsLayoutInvalidation = true
@@ -1773,7 +1783,7 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
         let plusButtonWidth: CGFloat = 44
 
         // Window dragging
-        let leadingSpace = min(totalTabWidth + plusButtonWidth, scrollView.frame.size.width)
+        let leadingSpace = isTabStripHidden ? 0 : min(totalTabWidth + plusButtonWidth, scrollView.frame.size.width)
         windowDraggingViewLeadingConstraint.constant = leadingSpace
     }
 
@@ -1993,7 +2003,7 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
     }
 
     private func displayScrollButtons() {
-        let scrollViewsAreHidden = tabMode == .divided
+        let scrollViewsAreHidden = tabMode == .divided || isTabStripHidden
         rightScrollButton.isHidden = scrollViewsAreHidden
         leftScrollButton.isHidden = scrollViewsAreHidden
         addTabButton.isHidden = scrollViewsAreHidden
@@ -2003,7 +2013,7 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
     }
 
     private func refreshScrollShadowsVisibility() {
-        let isOverflowing = tabMode == .overflow
+        let isOverflowing = tabMode == .overflow && !isTabStripHidden
         leftShadowImageView.isHidden = !isOverflowing || collectionView.isAtStartScrollPosition
         rightShadowImageView.isHidden = !isOverflowing || collectionView.isAtEndScrollPosition
     }

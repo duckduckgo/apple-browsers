@@ -244,6 +244,10 @@ public enum MacOSBrowserConfigSubfeature: String, PrivacySubfeature {
     /// Page Signals: Extended Site Breakage Diagostics
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1219073365875860
     case pageSignals
+
+    /// Shows tabs in a sidebar on the left of the window instead of the tab bar
+    /// https://app.asana.com/1/137249556945/project/42792087274227/task/1212989970304039
+    case verticalTabs
 }
 
 public enum TabManagerSubfeature: String, PrivacySubfeature {

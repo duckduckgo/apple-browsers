@@ -18,6 +18,7 @@
 
 import Bookmarks
 import Combine
+import FeatureFlags_macOS
 @_spi(Testing) import Persistence
 @_spi(Testing) import PixelKit
 import PrivacyConfig
@@ -776,6 +777,57 @@ final class AppearancePreferencesTests: XCTestCase {
 
         model.themeAppearance = .light
         XCTAssertFalse(model.isForceDarkModeVisible)
+    }
+
+    // MARK: - Vertical Tabs
+
+    func testWhenVerticalTabsFlagTurnsOnWhileTheSettingIsOnThenWindowsShowVerticalTabs() {
+        let featureFlagger = MockFeatureFlagger()
+        let model = verticalTabsModel(persistor: AppearancePreferencesPersistorMock(useVerticalTabs: true), featureFlagger: featureFlagger)
+        let recorder = VerticalTabsVisibilityRecorder(model.showsVerticalTabsPublisher, expectedCount: 2)
+        featureFlagger.featuresStub[FeatureFlag.verticalTabs.rawValue] = true
+
+        featureFlagger.triggerUpdate()
+
+        wait(for: [recorder.expectation], timeout: 1)
+        XCTAssertEqual(recorder.values, [false, true])
+    }
+
+    func testWhenVerticalTabsSettingIsTurnedOffThenWindowsStopShowingVerticalTabsAndTheSettingIsSaved() {
+        let persistor = AppearancePreferencesPersistorMock(useVerticalTabs: true)
+        let featureFlagger = MockFeatureFlagger(featuresStub: [FeatureFlag.verticalTabs.rawValue: true])
+        let model = verticalTabsModel(persistor: persistor, featureFlagger: featureFlagger)
+        let recorder = VerticalTabsVisibilityRecorder(model.showsVerticalTabsPublisher, expectedCount: 2)
+
+        model.useVerticalTabs = false
+
+        wait(for: [recorder.expectation], timeout: 1)
+        XCTAssertEqual(recorder.values, [true, false])
+        XCTAssertFalse(persistor.useVerticalTabs)
+    }
+
+    private func verticalTabsModel(persistor: AppearancePreferencesPersistorMock, featureFlagger: MockFeatureFlagger) -> AppearancePreferences {
+        AppearancePreferences(
+            persistor: persistor,
+            privacyConfigurationManager: MockPrivacyConfigurationManager(),
+            featureFlagger: featureFlagger,
+            aiChatMenuConfig: MockAIChatConfig()
+        )
+    }
+}
+
+private final class VerticalTabsVisibilityRecorder {
+    let expectation: XCTestExpectation
+    private(set) var values: [Bool] = []
+    private var cancellable: AnyCancellable?
+
+    init(_ publisher: AnyPublisher<Bool, Never>, expectedCount: Int) {
+        expectation = XCTestExpectation(description: "Received \(expectedCount) values")
+        expectation.expectedFulfillmentCount = expectedCount
+        cancellable = publisher.sink { [weak self] value in
+            self?.values.append(value)
+            self?.expectation.fulfill()
+        }
     }
 }
 

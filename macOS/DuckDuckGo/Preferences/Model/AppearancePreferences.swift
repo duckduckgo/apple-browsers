@@ -50,6 +50,7 @@ protocol AppearancePreferencesPersistor {
     var centerAlignedBookmarksBar: Bool { get set }
     var showTabsAndBookmarksBarOnFullScreen: Bool { get set }
     var didChangeAnyNewTabPageCustomizationSetting: Bool { get set }
+    var useVerticalTabs: Bool { get set }
 }
 
 struct AppearancePreferencesUserDefaultsPersistor: AppearancePreferencesPersistor {
@@ -58,6 +59,12 @@ struct AppearancePreferencesUserDefaultsPersistor: AppearancePreferencesPersisto
         case newTabPageIsOmnibarVisible = "new-tab-page.omnibar.is-visible"
         case newTabPageIsProtectionsReportVisible = "new-tab-page.protections-report.is-visible"
         case newTabPageDidChangeAnyCustomizationSetting = "new-tab-page.did-change-any-customization-setting"
+        case useVerticalTabs = "tabs.use-vertical-tabs"
+    }
+
+    var useVerticalTabs: Bool {
+        get { (try? keyValueStore.object(forKey: Key.useVerticalTabs.rawValue) as? Bool) ?? false }
+        set { try? keyValueStore.set(newValue, forKey: Key.useVerticalTabs.rawValue) }
     }
 
     var didChangeAnyNewTabPageCustomizationSetting: Bool {
@@ -426,6 +433,36 @@ final class AppearancePreferences: ObservableObject {
         }
     }
 
+    @Published var useVerticalTabs: Bool {
+        didSet {
+            persistor.useVerticalTabs = useVerticalTabs
+        }
+    }
+
+    var isVerticalTabsAvailable: Bool {
+        featureFlagger?.isFeatureOn(.verticalTabs) ?? false
+    }
+
+    /// Whether windows show vertical tabs: the setting is on and the feature is available.
+    /// Emits the current value on subscription, then every change of either.
+    var showsVerticalTabsPublisher: AnyPublisher<Bool, Never> {
+        $useVerticalTabs
+            .combineLatest(verticalTabsAvailabilityPublisher)
+            .map { $0 && $1 }
+            .removeDuplicates()
+            .eraseToAnyPublisher()
+    }
+
+    private var verticalTabsAvailabilityPublisher: AnyPublisher<Bool, Never> {
+        let updates = featureFlagger?.updatesPublisher ?? Empty().eraseToAnyPublisher()
+        return updates
+            .receive(on: DispatchQueue.main)
+            .map { [weak self] in self?.isVerticalTabsAvailable ?? false }
+            .prepend(isVerticalTabsAvailable)
+            .removeDuplicates()
+            .eraseToAnyPublisher()
+    }
+
     var darkReaderFeatureSettings: DarkReaderFeatureSettings?
 
     var isForceDarkModeVisible: Bool {
@@ -509,9 +546,11 @@ final class AppearancePreferences: ObservableObject {
         centerAlignedBookmarksBarBool = persistor.centerAlignedBookmarksBar
         showTabsAndBookmarksBarOnFullScreen = persistor.showTabsAndBookmarksBarOnFullScreen
         didChangeAnyNewTabPageCustomizationSetting = persistor.didChangeAnyNewTabPageCustomizationSetting
+        useVerticalTabs = persistor.useVerticalTabs
 
         isContinueSetUpCardsViewOutdated = shouldHideNextStepsCards
         subscribeToOmnibarFeatureFlagChanges()
+        subscribeToVerticalTabsAvailabilityChanges()
         subscribeToNewTabPageCustomizationSettingChanges()
     }
 
@@ -536,6 +575,7 @@ final class AppearancePreferences: ObservableObject {
         centerAlignedBookmarksBarBool = persistor.centerAlignedBookmarksBar
         showTabsAndBookmarksBarOnFullScreen = persistor.showTabsAndBookmarksBarOnFullScreen
         didChangeAnyNewTabPageCustomizationSetting = persistor.didChangeAnyNewTabPageCustomizationSetting
+        useVerticalTabs = persistor.useVerticalTabs
     }
 
     private var persistor: AppearancePreferencesPersistor
@@ -564,6 +604,15 @@ final class AppearancePreferences: ObservableObject {
             .filter { $0.0 == .newTabPageOmnibar }
             .sink { _ in
                 self.objectWillChange.send()
+            }
+            .store(in: &cancellables)
+    }
+
+    private func subscribeToVerticalTabsAvailabilityChanges() {
+        verticalTabsAvailabilityPublisher
+            .dropFirst()
+            .sink { [weak self] _ in
+                self?.objectWillChange.send()
             }
             .store(in: &cancellables)
     }

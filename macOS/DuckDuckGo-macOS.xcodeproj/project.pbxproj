@@ -42,6 +42,7 @@
 		0F2D07CBC5636188DAF0BD3E /* WebNotificationPixel.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5A7430C39C716A6A3A1F654 /* WebNotificationPixel.swift */; };
 		107A632E6D7CE1080997B485 /* ChromiumHistoryReader.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00F33F77DBE9F9B7609E7050 /* ChromiumHistoryReader.swift */; };
 		109992D9325DA6243CD6ADE5 /* TabSuspensionService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 43A7F6C124DA119D76D5AC50 /* TabSuspensionService.swift */; };
+		B8D7F78AEA7ED19409B7BF80 /* VerticalTabsViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0CEE2AA8B6978BB09539D2DE /* VerticalTabsViewModel.swift */; };
 		1222238CCD1D2149036D6651 /* QuickFeedbackWindowController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6323C46A8F7693E56A2AD5F8 /* QuickFeedbackWindowController.swift */; };
 		1335CC7FAF8E9433F1048426 /* SafariHistoryReader.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1B3A8568E1D39FF37D77C9D9 /* SafariHistoryReader.swift */; };
 		1430DFF524D0580F00B8978C /* TabBarViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1430DFF424D0580F00B8978C /* TabBarViewController.swift */; };
@@ -611,6 +612,8 @@
 		3706FC16293F65D500E42796 /* PasswordManagementLoginModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4BE6547C271FCD4D008D1D63 /* PasswordManagementLoginModel.swift */; };
 		3706FC17293F65D500E42796 /* TabViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA9FF95A24A1EFC20039E328 /* TabViewModel.swift */; };
 		3706FC18293F65D500E42796 /* TabDragAndDropManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA9E9A5D25A4867200D1959D /* TabDragAndDropManager.swift */; };
+		9480E1251F781C84C8B8E96E /* VerticalTabsViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 910855DFEB4B58C61470AA70 /* VerticalTabsViewController.swift */; };
+		7FD8AC116075189C110B7CF8 /* VerticalTabsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E89C8ECEF6EC5012A4E5D978 /* VerticalTabsView.swift */; };
 		3706FC19293F65D500E42796 /* NSNotificationName+Favicons.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4BBD3BFF285ACE090047A89D /* NSNotificationName+Favicons.swift */; };
 		3706FC1A293F65D500E42796 /* PinningManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4B0DB5E428BD9D08007DD239 /* PinningManager.swift */; };
 		3706FC1B293F65D500E42796 /* TabCollectionViewModel+NSSecureCoding.swift in Sources */ = {isa = PBXBuildFile; fileRef = B68458BF25C7E9E000DC17B6 /* TabCollectionViewModel+NSSecureCoding.swift */; };
@@ -1419,6 +1422,7 @@
 		574F5C439525F9EC0AA193EC /* DuckAiUsageWarningPixel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8019208853E1EDABC2E2EBD7 /* DuckAiUsageWarningPixel.swift */; };
 		578DF7B126699CF740CE35B5 /* AIChatScreenRecordingPermissionDialog.swift in Sources */ = {isa = PBXBuildFile; fileRef = 83EE53F7B34DCDE5FB7BAFD7 /* AIChatScreenRecordingPermissionDialog.swift */; };
 		58407D61235669B6AEEFB850 /* TabSuspensionService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 43A7F6C124DA119D76D5AC50 /* TabSuspensionService.swift */; };
+		712CF08FC182F25AACC8DC8A /* VerticalTabsViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0CEE2AA8B6978BB09539D2DE /* VerticalTabsViewModel.swift */; };
 		5A539014386749A5BA664BFD /* FadeInView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6D9982D6BB85483191A03D2D /* FadeInView.swift */; };
 		5A6E1D102F8A4C1100C0FFEE /* PageSignalsTabExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5A6E1D0F2F8A4C1100C0FFEE /* PageSignalsTabExtension.swift */; };
 		5A6E1D112F8A4C1100C0FFEE /* PageSignalsTabExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5A6E1D0F2F8A4C1100C0FFEE /* PageSignalsTabExtension.swift */; };
@@ -2185,6 +2189,8 @@
 		AA7E919F287872EA00AB6B62 /* VisitViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA7E919E287872EA00AB6B62 /* VisitViewModel.swift */; };
 		AA97BF4625135DD30014931A /* ApplicationDockMenu.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA97BF4525135DD30014931A /* ApplicationDockMenu.swift */; };
 		AA9E9A5E25A4867200D1959D /* TabDragAndDropManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA9E9A5D25A4867200D1959D /* TabDragAndDropManager.swift */; };
+		91E5EC90DBBB8592571E7220 /* VerticalTabsViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 910855DFEB4B58C61470AA70 /* VerticalTabsViewController.swift */; };
+		1B796749465FF67F343F57DD /* VerticalTabsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E89C8ECEF6EC5012A4E5D978 /* VerticalTabsView.swift */; };
 		AA9FF95924A1ECF20039E328 /* Tab.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA9FF95824A1ECF20039E328 /* Tab.swift */; };
 		AA9FF95B24A1EFC20039E328 /* TabViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA9FF95A24A1EFC20039E328 /* TabViewModel.swift */; };
 		AA9FF95D24A1FA1C0039E328 /* TabCollection.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA9FF95C24A1FA1C0039E328 /* TabCollection.swift */; };
@@ -3953,6 +3959,7 @@
 		40E090D60EAB41E8BB22CA88 /* DuckAIChromeButtonsPreferences.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DuckAIChromeButtonsPreferences.swift; sourceTree = "<group>"; };
 		43452C4A8781E1C0A9AB70CF /* AutofillImportPromoObserver.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AutofillImportPromoObserver.swift; sourceTree = "<group>"; };
 		43A7F6C124DA119D76D5AC50 /* TabSuspensionService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TabSuspensionService.swift; sourceTree = "<group>"; };
+		0CEE2AA8B6978BB09539D2DE /* VerticalTabsViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VerticalTabsViewModel.swift; sourceTree = "<group>"; };
 		467D16662D0C98D5007C020A /* CrashReportSenderExtensions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CrashReportSenderExtensions.swift; sourceTree = "<group>"; };
 		46C69DB2B1B8FFE0FAAA520B /* QuitSurveyPromoObserver.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QuitSurveyPromoObserver.swift; sourceTree = "<group>"; };
 		4835460F78D2AEE612C7628E /* AIChatScreenshotCapture.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIChatScreenshotCapture.swift; sourceTree = "<group>"; };
@@ -4522,6 +4529,8 @@
 		AA7E919E287872EA00AB6B62 /* VisitViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VisitViewModel.swift; sourceTree = "<group>"; };
 		AA97BF4525135DD30014931A /* ApplicationDockMenu.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ApplicationDockMenu.swift; sourceTree = "<group>"; };
 		AA9E9A5D25A4867200D1959D /* TabDragAndDropManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TabDragAndDropManager.swift; sourceTree = "<group>"; };
+		910855DFEB4B58C61470AA70 /* VerticalTabsViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VerticalTabsViewController.swift; sourceTree = "<group>"; };
+		E89C8ECEF6EC5012A4E5D978 /* VerticalTabsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VerticalTabsView.swift; sourceTree = "<group>"; };
 		AA9FF95824A1ECF20039E328 /* Tab.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Tab.swift; sourceTree = "<group>"; };
 		AA9FF95A24A1EFC20039E328 /* TabViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TabViewModel.swift; sourceTree = "<group>"; };
 		AA9FF95C24A1FA1C0039E328 /* TabCollection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TabCollection.swift; sourceTree = "<group>"; };
@@ -8131,6 +8140,8 @@
 				B5CCC06C2F649BAF003EB0A2 /* TabBackgroundView.swift */,
 				B5CCC06F2F649BB9003EB0A2 /* TabBackgroundShapeView.swift */,
 				AA9E9A5D25A4867200D1959D /* TabDragAndDropManager.swift */,
+				910855DFEB4B58C61470AA70 /* VerticalTabsViewController.swift */,
+				E89C8ECEF6EC5012A4E5D978 /* VerticalTabsView.swift */,
 				B574243A2EBA8CDF002E5460 /* TabFaviconView.swift */,
 				311B262628E73E0A00FD181A /* TabShadowConfig.swift */,
 				3154FD1328E6011A00909769 /* TabShadowView.swift */,
@@ -8226,6 +8237,7 @@
 				BB9BDD482D09BA9D0069E9EF /* TabBarRemoteMessageViewModel.swift */,
 				AA9FF95E24A1FB680039E328 /* TabCollectionViewModel.swift */,
 				43A7F6C124DA119D76D5AC50 /* TabSuspensionService.swift */,
+				0CEE2AA8B6978BB09539D2DE /* VerticalTabsViewModel.swift */,
 				37D23779287EB8CA00BCE03B /* TabIndex.swift */,
 				37CFD4342F85544900AB8AE6 /* TabSuspensionUserScript.swift */,
 				376325C02F86964C00B6B0DB /* TabSuspensionDebugMenu.swift */,
@@ -11882,6 +11894,7 @@
 				C0DE0071E018E1FA30000000 /* CookiePopupProtectionOptInPixel.swift in Sources */,
 				0DE0003CB1E0041EDE1E6A00 /* CookiePopupProtectionOptInPromoDelegate.swift in Sources */,
 				58407D61235669B6AEEFB850 /* TabSuspensionService.swift in Sources */,
+				712CF08FC182F25AACC8DC8A /* VerticalTabsViewModel.swift in Sources */,
 				B6AFE6BD29A5D621002FF962 /* HTTPSUpgradeTabExtension.swift in Sources */,
 				846F4CD22E04829D00266DB7 /* TabContent+DisplayedFavicon.swift in Sources */,
 				3706FB9A293F65D500E42796 /* FireproofDomainsStore.swift in Sources */,
@@ -12191,6 +12204,8 @@
 				7B11B3062EF304B6005F0687 /* AutomationServer.swift in Sources */,
 				7B11B3072EF304B6005F0687 /* LaunchOptionsHandler.swift in Sources */,
 				3706FC18293F65D500E42796 /* TabDragAndDropManager.swift in Sources */,
+				9480E1251F781C84C8B8E96E /* VerticalTabsViewController.swift in Sources */,
+				7FD8AC116075189C110B7CF8 /* VerticalTabsView.swift in Sources */,
 				1D532BE52EDC3E6D00D219FA /* PermissionCenterViewModel.swift in Sources */,
 				A5B001010000000000000035 /* PermissionAuthorizationViewModel.swift in Sources */,
 				A5B00101000000000000003E /* PermissionAuthorizationViewState.swift in Sources */,
@@ -13725,6 +13740,8 @@
 				AA9FF95B24A1EFC20039E328 /* TabViewModel.swift in Sources */,
 				1D26EBB02B74DB600002A93F /* TabSnapshotCleanupService.swift in Sources */,
 				AA9E9A5E25A4867200D1959D /* TabDragAndDropManager.swift in Sources */,
+				91E5EC90DBBB8592571E7220 /* VerticalTabsViewController.swift in Sources */,
+				1B796749465FF67F343F57DD /* VerticalTabsView.swift in Sources */,
 				37EE562F2D5F197700D53C7C /* BackForwardListItem.swift in Sources */,
 				37EE56302D5F197700D53C7C /* BackForwardListItemViewModel.swift in Sources */,
 				37EE56312D5F197700D53C7C /* PrivacyIconViewModel.swift in Sources */,
@@ -13770,6 +13787,7 @@
 				F89306773FE37E10EE24A19B /* YouTubeAdBlockingTelemetryConsentRequirement.swift in Sources */,
 				3646AC412F88EC880093AEA7 /* PromoServiceFactory+SubscriptionPromo.swift in Sources */,
 				109992D9325DA6243CD6ADE5 /* TabSuspensionService.swift in Sources */,
+				B8D7F78AEA7ED19409B7BF80 /* VerticalTabsViewModel.swift in Sources */,
 				4B379C1527BD91E3008A968E /* QuartzIdleStateProvider.swift in Sources */,
 				7B17AA882F757C350087A9ED /* UnloadedTab.swift in Sources */,
 				7B7821BD2E84440A00E0359A /* ErrorPagePixel.swift in Sources */,

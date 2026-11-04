@@ -41,6 +41,7 @@ final class MainView: NSView {
     let tabBarContainerView = NSView()
     let navigationBarContainerView = NSView()
     let webContainerView = NSView()
+    let verticalTabsContainerView = NSView().hidden()
     let findInPageContainerView = NSView().hidden()
     let bookmarksBarContainerView = NSView()
     let bannerContainerView = NSView()
@@ -56,6 +57,8 @@ final class MainView: NSView {
     private var bookmarksBarHeightConstraint: NSLayoutConstraint!
     private var webContainerTopConstraint: NSLayoutConstraint!
     private var webContainerTopConstraintToNavigation: NSLayoutConstraint!
+    private var webContainerLeadingConstraint: NSLayoutConstraint!
+    private var webContainerLeadingConstraintToVerticalTabs: NSLayoutConstraint!
     private var tabBarHeightConstraint: NSLayoutConstraint!
     private var bannerTopConstraint: NSLayoutConstraint!
     private var bannerHeightConstraint: NSLayoutConstraint!
@@ -74,6 +77,7 @@ final class MainView: NSView {
             divider,
             bookmarksBarContainerView,
             webContainerView,
+            verticalTabsContainerView,
             bannerContainerView,
             navigationBarContainerView,
             aiChatOmnibarContainerView,
@@ -105,6 +109,8 @@ final class MainView: NSView {
 
         webContainerTopConstraint.priority = .defaultHigh
         webContainerTopConstraintToNavigation.priority = .defaultLow
+        webContainerLeadingConstraint = webContainerView.leadingAnchor.constraint(equalTo: leadingAnchor)
+        webContainerLeadingConstraintToVerticalTabs = webContainerView.leadingAnchor.constraint(equalTo: verticalTabsContainerView.trailingAnchor)
 
         bannerTopConstraint = bannerContainerView.topAnchor.constraint(equalTo: bookmarksBarContainerView.bottomAnchor)
         bannerHeightConstraint = bannerContainerView.heightAnchor.constraint(equalToConstant: 0)
@@ -139,8 +145,12 @@ final class MainView: NSView {
             webContainerTopConstraint,
             webContainerTopConstraintToNavigation,
             webContainerView.bottomAnchor.constraint(equalTo: bottomAnchor),
-            webContainerView.leadingAnchor.constraint(equalTo: leadingAnchor),
+            webContainerLeadingConstraint,
             webContainerView.trailingAnchor.constraint(equalTo: trailingAnchor),
+
+            verticalTabsContainerView.topAnchor.constraint(equalTo: webContainerView.topAnchor),
+            verticalTabsContainerView.bottomAnchor.constraint(equalTo: bottomAnchor),
+            verticalTabsContainerView.leadingAnchor.constraint(equalTo: leadingAnchor),
             webContainerView.widthAnchor.constraint(greaterThanOrEqualToConstant: Constants.webContainerMinWidth),
             webContainerView.heightAnchor.constraint(greaterThanOrEqualToConstant: Constants.webContainerMinHeight),
 
@@ -269,6 +279,22 @@ final class MainView: NSView {
         set {
             webContainerTopConstraintToNavigation.priority = newValue == .navigationBar ? .defaultHigh : .defaultLow
             webContainerTopConstraint.priority = newValue == .navigationBar ? .defaultLow : .defaultHigh
+        }
+    }
+
+    var isVerticalTabsShown: Bool {
+        get {
+            !verticalTabsContainerView.isHidden
+        }
+        set {
+            verticalTabsContainerView.isHidden = !newValue
+            if newValue {
+                webContainerLeadingConstraint.isActive = false
+                webContainerLeadingConstraintToVerticalTabs.isActive = true
+            } else {
+                webContainerLeadingConstraintToVerticalTabs.isActive = false
+                webContainerLeadingConstraint.isActive = true
+            }
         }
     }
 

@@ -298,7 +298,6 @@ extension Preferences {
                     .menuIndicator(.hidden)
                     .fixedSize()
                     .accessibilityLabel(UserText.extensionsSettingsMoreOptions)
-                    .disabled(isLocked)
 
                     Toggle(isOn: $isEnabled) {
                         EmptyView()

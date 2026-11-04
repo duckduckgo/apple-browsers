@@ -20,11 +20,6 @@
                 "type": "boolean"
             },
             {
-                "key": "web_tos_accepted",
-                "description": "Only with `tos_disclaimer_shown=true`, and only once the web app has moved its data into native storage. Whether the web app had already recorded the user's Terms of Service acceptance (`duckaiHasAgreedToTerms`) when the input opened. `true` means the disclaimer asked someone who had already accepted on the web.",
-                "type": "boolean"
-            },
-            {
                 "key": "outcome",
                 "description": "What the input led to. `suggested_prompt` is a suggested prompt tapped in the contextual sheet. While the disclaimer shows, a disabled Ask replaces the voice button, so `voice_started` needs it off screen.",
                 "type": "string",

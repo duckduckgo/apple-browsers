@@ -1020,8 +1020,7 @@ private extension AIChatContextualSheetCoordinator {
             persistentUTIHost: persistentUTIHost,
             suggestionsReader: suggestionsReader,
             floatingInputFeature: floatingInputFeature,
-            opensOntoSubmittedChat: opensOntoSubmittedChat,
-            webTermsOfServiceSource: duckAiNativeStorageHandler
+            opensOntoSubmittedChat: opensOntoSubmittedChat
         )
         sheetVC.delegate = self
         sheetViewController = sheetVC

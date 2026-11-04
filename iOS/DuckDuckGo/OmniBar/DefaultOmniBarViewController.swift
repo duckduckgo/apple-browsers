@@ -910,9 +910,7 @@ extension DefaultOmniBarViewController {
             inputOutcomeMeasurement.inputClosed()
             return
         }
-        inputOutcomeMeasurement.inputOpened(surface: .addressBar,
-                                            isTermsOfServiceDisclaimerShown: isTermsOfServiceDisclaimerShown,
-                                            isWebTermsOfServiceAccepted: dependencies.duckAiNativeStorageHandler?.webTermsOfServiceAcceptance)
+        inputOutcomeMeasurement.inputOpened(surface: .addressBar, isTermsOfServiceDisclaimerShown: isTermsOfServiceDisclaimerShown)
     }
 
     /// Only tapping Ask with the disclaimer on screen accepts the terms, so Return adds a new line instead of sending.

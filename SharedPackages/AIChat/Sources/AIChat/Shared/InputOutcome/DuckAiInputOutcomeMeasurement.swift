@@ -48,18 +48,13 @@ public struct DuckAiInputOutcomeEvent: Equatable {
 
     public let surface: DuckAiInputSurface
     public let isTermsOfServiceDisclaimerShown: Bool
-    /// Whether the web app had already recorded a Terms of Service acceptance when the input opened, so a
-    /// disclaimer shown anyway asked someone who had accepted before. `nil` where it can't be known.
-    public let isWebTermsOfServiceAccepted: Bool?
     public let outcome: DuckAiInputOutcome
 
     public init(surface: DuckAiInputSurface,
                 isTermsOfServiceDisclaimerShown: Bool,
-                isWebTermsOfServiceAccepted: Bool? = nil,
                 outcome: DuckAiInputOutcome) {
         self.surface = surface
         self.isTermsOfServiceDisclaimerShown = isTermsOfServiceDisclaimerShown
-        self.isWebTermsOfServiceAccepted = isWebTermsOfServiceAccepted
         self.outcome = outcome
     }
 
@@ -68,9 +63,6 @@ public struct DuckAiInputOutcomeEvent: Equatable {
             "surface": surface.rawValue,
             "tos_disclaimer_shown": String(isTermsOfServiceDisclaimerShown)
         ]
-        if isTermsOfServiceDisclaimerShown, let isWebTermsOfServiceAccepted {
-            parameters["web_tos_accepted"] = String(isWebTermsOfServiceAccepted)
-        }
         switch outcome {
         case .promptSubmitted(let submitMethod):
             parameters["outcome"] = "prompt_submitted"
@@ -97,7 +89,6 @@ public final class DuckAiInputOutcomeMeasurement {
     private struct OpenInput {
         let surface: DuckAiInputSurface
         var isTermsOfServiceDisclaimerShown: Bool
-        let isWebTermsOfServiceAccepted: Bool?
         var hasReported = false
     }
 
@@ -109,14 +100,9 @@ public final class DuckAiInputOutcomeMeasurement {
     }
 
     /// Ignored while the input is already open, so callers can re-sync on every state change.
-    /// `isWebTermsOfServiceAccepted` is read once, when the input opens, since it reads storage.
-    public func inputOpened(surface: DuckAiInputSurface,
-                            isTermsOfServiceDisclaimerShown: Bool,
-                            isWebTermsOfServiceAccepted: @autoclosure () -> Bool? = nil) {
+    public func inputOpened(surface: DuckAiInputSurface, isTermsOfServiceDisclaimerShown: Bool) {
         guard openInput == nil else { return }
-        openInput = OpenInput(surface: surface,
-                              isTermsOfServiceDisclaimerShown: isTermsOfServiceDisclaimerShown,
-                              isWebTermsOfServiceAccepted: isWebTermsOfServiceAccepted())
+        openInput = OpenInput(surface: surface, isTermsOfServiceDisclaimerShown: isTermsOfServiceDisclaimerShown)
     }
 
     /// The disclaimer is on screen, not just resolved.
@@ -143,7 +129,6 @@ public final class DuckAiInputOutcomeMeasurement {
     private func fire(_ openInput: OpenInput, outcome: DuckAiInputOutcome) {
         pixelFiring.fire(DuckAiInputOutcomeEvent(surface: openInput.surface,
                                                  isTermsOfServiceDisclaimerShown: openInput.isTermsOfServiceDisclaimerShown,
-                                                 isWebTermsOfServiceAccepted: openInput.isWebTermsOfServiceAccepted,
                                                  outcome: outcome))
     }
 }

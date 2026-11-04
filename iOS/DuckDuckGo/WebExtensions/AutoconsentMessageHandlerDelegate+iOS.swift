@@ -73,8 +73,9 @@ final class IOSAutoconsentMessageHandlerDelegate: AutoconsentMessageHandlerDeleg
         PixelKit.fire(pixel, frequency: frequency, withAdditionalParameters: additionalParams, includeAppVersionParameter: true)
     }
 
-    func reportCPMCoverage(counts: CPMCoverageCounts, siteRank: CPMSiteRank?) {
+    func reportCPMCoverage(counts: CPMCoverageCounts, siteRank: CPMSiteRank?, unhandledHosts: [String]) {
         CPMCoverageReporter.report(counts: counts, siteRank: siteRank) { eventHub.handleNativeEvent($0) }
+        CPMCoverageReporter.report(unhandledHosts: unhandledHosts, siteRank: siteRank) { eventHub.handleNativeEvent($0, data: $1) }
     }
 
     private func processAdditionalParams(_ params: [String: Any], isSummary: Bool) -> [String: String] {

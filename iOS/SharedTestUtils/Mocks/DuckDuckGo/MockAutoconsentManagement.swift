@@ -28,6 +28,7 @@ final class MockAutoconsentManagement: AutoconsentManaging {
     var detectedByPatternsCache = Set<String>()
     var detectedByBothCache = Set<String>()
     var detectedOnlyRulesCache = Set<String>()
+    var patternSites = [String: CPMDetectedSite]()
 
     private(set) var firePixelCallCount = 0
     private(set) var lastFiredPixel: AutoconsentPixel?
@@ -49,6 +50,7 @@ final class MockAutoconsentManagement: AutoconsentManaging {
         detectedByPatternsCache.removeAll()
         detectedByBothCache.removeAll()
         detectedOnlyRulesCache.removeAll()
+        patternSites.removeAll()
         return .success(())
     }
 

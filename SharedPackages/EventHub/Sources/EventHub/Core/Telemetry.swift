@@ -93,7 +93,7 @@ final class Telemetry {
     /// never these exact numbers.
     var rawCounterValues: [String: Int] {
         var result: [String: Int] = [:]
-        for (paramName, paramConfig) in config.parameters where paramConfig.template == .counter {
+        for (paramName, paramConfig) in config.parameters where paramConfig.template == .counter || paramConfig.template == .distinct {
             if let parameter = parameters[paramName] { result[paramName] = parameter.state.value }
         }
         return result
@@ -107,7 +107,7 @@ final class Telemetry {
         for (paramName, parameter) in parameters {
             guard let value = parameter.queryValue() else { continue }
             result[paramName] = value
-            if config.parameters[paramName]?.template == .counter { counterMatched = true }
+            if let template = config.parameters[paramName]?.template, template == .counter || template == .distinct { counterMatched = true }
         }
         return counterMatched ? result : nil
     }

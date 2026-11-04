@@ -644,6 +644,9 @@ extension AutoconsentUserScript {
         let heuristicMatch = report.state.heuristicPatterns.count > 0 || report.state.heuristicSnippets.count > 0
         if message.frameInfo.isMainFrame && heuristicMatch && !management.detectedByPatternsCache.contains(report.instanceId) {
                     management.detectedByPatternsCache.insert(report.instanceId)
+            if let host = topUrl?.host {
+                management.patternSites[report.instanceId] = CPMDetectedSite(host: host, siteRank: siteRank)
+            }
             firePixel(pixel: .detectedByPatterns)
         }
 

@@ -30,6 +30,7 @@ protocol AutoconsentManaging: AnyObject {
     var detectedByPatternsCache: Set<String> { get set }
     var detectedByBothCache: Set<String> { get set }
     var detectedOnlyRulesCache: Set<String> { get set }
+    var patternSites: [String: CPMDetectedSite] { get set }
     func firePixel(pixel: AutoconsentPixel, siteRank: CPMSiteRank?, additionalParameters: [String: String])
     func clearCache() -> Result<Void, Error>
     func clearCache(forDomains domains: [String]) -> Result<Void, Error>
@@ -45,6 +46,7 @@ final class AutoconsentManagement: AutoconsentManaging {
     var detectedByPatternsCache = Set<String>()
     var detectedByBothCache = Set<String>()
     var detectedOnlyRulesCache = Set<String>()
+    var patternSites = [String: CPMDetectedSite]()
 
     // Task scheduling for pixel summary
     private var pendingSummaryTask: DispatchWorkItem?
@@ -131,17 +133,20 @@ final class AutoconsentManagement: AutoconsentManaging {
 
     func fireSummaryPixel() {
         if !pixelCounter.isEmpty {
+            let unhandledHosts = CPMCoverageReporter.unhandledHosts(of: patternSites, detectedByBoth: detectedByBothCache)
             for (siteRank, events) in pixelCounter {
                 var parameters = pendingAdditionalParams
                 parameters["siteRank"] = siteRank?.rawValue
                 PixelKit.fire(AutoconsentPixel.summary(events: events), frequency: .standard, withAdditionalParameters: parameters, includeAppVersionParameter: true)
                 CPMCoverageReporter.report(summary: events, siteRank: siteRank) { eventHub.handleNativeEvent($0) }
+                CPMCoverageReporter.report(unhandledHosts: Array(unhandledHosts[siteRank] ?? []), siteRank: siteRank) { eventHub.handleNativeEvent($0, data: $1) }
             }
             pixelCounter = [:]
             pendingAdditionalParams = [:]
             detectedByPatternsCache.removeAll()
             detectedByBothCache.removeAll()
             detectedOnlyRulesCache.removeAll()
+            patternSites.removeAll()
         }
     }
 
@@ -151,6 +156,7 @@ final class AutoconsentManagement: AutoconsentManaging {
         detectedByPatternsCache.removeAll()
         detectedByBothCache.removeAll()
         detectedOnlyRulesCache.removeAll()
+        patternSites.removeAll()
         return .success(())
     }
     

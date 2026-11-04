@@ -16,6 +16,7 @@
 //  limitations under the License.
 //
 
+import CryptoKit
 import Foundation
 import os.log
 
@@ -44,6 +45,9 @@ enum ParameterFactory {
         }
         if config.template == .data {
             return DataParameter(dataKey: config.dataKey)
+        }
+        if config.template == .distinct, let buckets = config.buckets, let dataKey = config.dataKey {
+            return DistinctCounterParameter(buckets: buckets, dataKey: dataKey)
         }
         return nil
     }
@@ -76,6 +80,49 @@ final class CounterParameter: Parameter {
     func restoreState(_ state: ParamState) { value = state.value; stopCounting = state.stopCounting }
 
     func queryValue() -> String? { BucketCounter.bucketCount(value, buckets: buckets) }
+}
+
+/// Counts the distinct string values that events carry under `dataKey`, so a value that arrives many times in
+/// a period counts once.
+///
+/// Only a short hash of each value is kept, in memory and in the persisted state, so a stored period does not
+/// contain the values themselves. Like `CounterParameter`, it stops once the count reaches the top bucket, which
+/// also caps the number of hashes held.
+final class DistinctCounterParameter: Parameter {
+    private let buckets: BucketList
+    private let dataKey: String
+    private var seen: Set<String>
+    private var stopCounting: Bool
+
+    init(buckets: BucketList, dataKey: String, initialState: ParamState = ParamState(value: 0)) {
+        self.buckets = buckets
+        self.dataKey = dataKey
+        self.seen = Set(initialState.seenValues ?? [])
+        self.stopCounting = initialState.stopCounting
+    }
+
+    @discardableResult
+    func handle(data: [String: Any]?) -> Bool {
+        guard !stopCounting, let value = data?[dataKey] as? String, !value.isEmpty else { return false }
+        guard seen.insert(Self.hash(value)).inserted else { return false }
+        if BucketCounter.shouldStopCounting(seen.count, buckets: buckets) {
+            stopCounting = true
+        }
+        return true
+    }
+
+    var state: ParamState { ParamState(value: seen.count, stopCounting: stopCounting, seenValues: seen.sorted()) }
+
+    func restoreState(_ state: ParamState) {
+        seen = Set(state.seenValues ?? [])
+        stopCounting = state.stopCounting
+    }
+
+    func queryValue() -> String? { BucketCounter.bucketCount(seen.count, buckets: buckets) }
+
+    private static func hash(_ value: String) -> String {
+        SHA256.hash(data: Data(value.utf8)).prefix(8).map { String(format: "%02x", $0) }.joined()
+    }
 }
 
 /// Carries a value forwarded from an event payload, as compact JSON (`overlay` → `"overlay"`,

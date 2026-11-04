@@ -184,5 +184,6 @@ public protocol AutoconsentMessageHandlerDelegate: AnyObject {
     /// - Parameters:
     ///   - counts: Unhandled popups and pages of the window
     ///   - siteRank: Popularity bucket of the sites the counts belong to, `nil` when the extension could not tell
-    func reportCPMCoverage(counts: CPMCoverageCounts, siteRank: CPMSiteRank?)
+    ///   - unhandledHosts: Hostnames of the pages whose popup was detected by heuristic patterns but by no rule
+    func reportCPMCoverage(counts: CPMCoverageCounts, siteRank: CPMSiteRank?, unhandledHosts: [String])
 }

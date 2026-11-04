@@ -39,6 +39,8 @@ public enum TelemetryParameterTemplate: String, Equatable, Sendable {
     case counter
     /// A value forwarded from `webEvent.data` under `dataKey`.
     case data
+    /// Bucketed number of distinct string values the events of `source` carry under `dataKey`, using `buckets`.
+    case distinct
 }
 
 /// Describes when a pixel fires. Period triggers carry a `periodSeconds`; immediate triggers carry a
@@ -124,11 +126,14 @@ public struct ParamState: Codable, Equatable, Sendable {
     public var value: Int
     public var stopCounting: Bool
     public var lastDataValue: String?
+    /// Hashes of the distinct values seen so far by a `distinct` parameter. Absent in state saved before the template existed.
+    public var seenValues: [String]?
 
-    public init(value: Int, stopCounting: Bool = false, lastDataValue: String? = nil) {
+    public init(value: Int, stopCounting: Bool = false, lastDataValue: String? = nil, seenValues: [String]? = nil) {
         self.value = value
         self.stopCounting = stopCounting
         self.lastDataValue = lastDataValue
+        self.seenValues = seenValues
     }
 }
 

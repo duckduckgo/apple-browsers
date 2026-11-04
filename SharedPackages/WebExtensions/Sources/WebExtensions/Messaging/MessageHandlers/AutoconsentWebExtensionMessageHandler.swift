@@ -122,10 +122,11 @@ public final class AutoconsentWebExtensionMessageHandler: WebExtensionMessageHan
         }
 
         let siteRank = (params?["siteRank"] as? String).flatMap(CPMSiteRank.init(rawValue:))
+        let unhandledHosts = params?["unhandledHosts"] as? [String] ?? []
 
-        Logger.webExtensions.debug("📊 Report CPM Coverage - unhandled: \(unhandled), pages: \(pages), siteRank: \(siteRank?.rawValue ?? "none")")
+        Logger.webExtensions.debug("📊 Report CPM Coverage - unhandled: \(unhandled), pages: \(pages), siteRank: \(siteRank?.rawValue ?? "none"), hosts: \(unhandledHosts.count)")
 
-        delegate?.reportCPMCoverage(counts: CPMCoverageCounts(unhandled: unhandled, pages: pages), siteRank: siteRank)
+        delegate?.reportCPMCoverage(counts: CPMCoverageCounts(unhandled: unhandled, pages: pages), siteRank: siteRank, unhandledHosts: unhandledHosts)
 
         return .success(Self.successResponse)
     }

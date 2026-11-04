@@ -166,17 +166,42 @@ class AutoconsentMessageProtocolTests: XCTestCase {
         XCTAssertTrue(management.pixelCounter.isEmpty)
     }
 
+    @MainActor
+    func testWhenSummaryPixelsFireThenUnhandledDomainsAreReportedToEventHub() {
+        let eventHub = RecordingEventHub()
+        let management = AutoconsentManagement()
+        management.eventHub = eventHub
+        management.pixelCounter = [
+            CPMSiteRank.top10k: ["detected-by-patterns": 1],
+            CPMSiteRank.other: ["detected-by-patterns": 2],
+        ]
+        management.patternSites = [
+            "a": CPMDetectedSite(host: "www.example.com", siteRank: .top10k),
+            "b": CPMDetectedSite(host: "shop.example.org", siteRank: .other),
+            "c": CPMDetectedSite(host: "example.net", siteRank: .other),
+        ]
+        management.detectedByBothCache = ["c"]
+
+        management.fireSummaryPixels(additionalParameters: [:])
+
+        XCTAssertEqual(eventHub.nativeEventCounts["autoconsent_unhandled_domain"], 2)
+        XCTAssertEqual(eventHub.nativeEventCounts["autoconsent_unhandled_domain_top10k"], 1)
+        XCTAssertTrue(management.patternSites.isEmpty)
+    }
+
     func testWhenEmbeddedExtensionReportsCoverageThenItIsCountedInEventHub() throws {
         guard #available(macOS 15.4, *) else { throw XCTSkip("Embedded extension requires macOS 15.4") }
         let eventHub = RecordingEventHub()
         let delegate = MacOSAutoconsentMessageHandlerDelegate(eventHub: eventHub)
 
-        delegate.reportCPMCoverage(counts: CPMCoverageCounts(unhandled: 3, pages: 4), siteRank: .top10k)
-        delegate.reportCPMCoverage(counts: CPMCoverageCounts(unhandled: 1, pages: 1), siteRank: nil)
+        delegate.reportCPMCoverage(counts: CPMCoverageCounts(unhandled: 3, pages: 4), siteRank: .top10k,
+                                   unhandledHosts: ["www.example.com", "shop.example.com", "example.org"])
+        delegate.reportCPMCoverage(counts: CPMCoverageCounts(unhandled: 1, pages: 1), siteRank: nil, unhandledHosts: ["example.net"])
 
         XCTAssertEqual(eventHub.nativeEventCounts, [
             "autoconsent_pages": 5, "autoconsent_pages_top10k": 4,
             "autoconsent_unhandled": 4, "autoconsent_unhandled_top10k": 3,
+            "autoconsent_unhandled_domain": 3, "autoconsent_unhandled_domain_top10k": 2,
         ])
     }
 

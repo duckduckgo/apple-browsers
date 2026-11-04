@@ -94,4 +94,57 @@ struct CPMCoverageReporterTests {
         let events = reportedEvents(["popup-found": 7, "done": 5, "detected-only-rules": 2], siteRank: .other)
         #expect(events.isEmpty)
     }
+
+    private func reportedDomains(_ hosts: [String], siteRank: CPMSiteRank?) -> [(type: String, domain: String)] {
+        var events: [(type: String, domain: String)] = []
+        CPMCoverageReporter.report(unhandledHosts: hosts, siteRank: siteRank) { type, data in
+            events.append((type, data[CPMCoverageReporter.domainKey] ?? ""))
+        }
+        return events
+    }
+
+    @Test("Hosts are reduced to their registrable domain and sent once", .timeLimit(.minutes(1)))
+    func hostsAreReducedToRegistrableDomains() {
+        let events = reportedDomains(["www.example.com", "shop.example.com", "News.Example.co.uk", "example.co.uk"], siteRank: .other)
+        #expect(events.map(\.type) == [EventType.unhandledDomain, EventType.unhandledDomain])
+        #expect(events.map(\.domain) == ["example.co.uk", "example.com"])
+    }
+
+    @Test("A top10k host feeds both the total and the top10k domain event", .timeLimit(.minutes(1)))
+    func top10kDomain() {
+        let events = reportedDomains(["www.example.com"], siteRank: .top10k)
+        #expect(events.map(\.type) == [EventType.unhandledDomain, EventType.unhandledDomainTop10k])
+        #expect(events.allSatisfy { $0.domain == "example.com" })
+    }
+
+    @Test("Hosts without a registrable domain send nothing", .timeLimit(.minutes(1)))
+    func hostsWithoutRegistrableDomain() {
+        #expect(reportedDomains(["127.0.0.1", "com", "", "localhost"], siteRank: .other).isEmpty)
+    }
+
+    @Test("Only the first hosts of a report are used", .timeLimit(.minutes(1)))
+    func hostsAreCapped() {
+        let hosts = (0..<(CPMCoverageReporter.maxHostsPerReport + 50)).map { "site\($0).example.com" } + (0..<10).map { "other\($0).example.org" }
+        #expect(reportedDomains(hosts, siteRank: .other).count == 1)
+    }
+
+    @Test("Unhandled hosts are the detected sites no rule detected, by site rank", .timeLimit(.minutes(1)))
+    func unhandledHostsOfSites() {
+        let sites = [
+            "a": CPMDetectedSite(host: "www.example.com", siteRank: .top10k),
+            "b": CPMDetectedSite(host: "shop.example.org", siteRank: .other),
+            "c": CPMDetectedSite(host: "example.net", siteRank: .other),
+            "d": CPMDetectedSite(host: "example.org", siteRank: nil),
+            "e": CPMDetectedSite(host: "shop.example.org", siteRank: .other),
+        ]
+
+        let hosts = CPMCoverageReporter.unhandledHosts(of: sites, detectedByBoth: ["c"])
+
+        let expected: [CPMSiteRank?: Set<String>] = [
+            CPMSiteRank.top10k: ["www.example.com"],
+            CPMSiteRank.other: ["shop.example.org"],
+            nil: ["example.org"],
+        ]
+        #expect(hosts == expected)
+    }
 }

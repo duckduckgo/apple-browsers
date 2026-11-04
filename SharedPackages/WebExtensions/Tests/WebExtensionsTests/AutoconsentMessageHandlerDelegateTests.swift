@@ -225,7 +225,7 @@ final class AutoconsentMessageHandlerDelegateTests: XCTestCase {
             featureName: Self.testFeatureName,
             method: "reportCpmCoverage",
             id: nil,
-            params: ["unhandled": 3, "pages": 7, "siteRank": "top10k"],
+            params: ["unhandled": 3, "pages": 7, "siteRank": "top10k", "unhandledHosts": ["a.example.com", "shop.example.co.uk"]],
             context: nil,
             extensionIdentifier: Self.testExtensionIdentifier
         )
@@ -236,6 +236,7 @@ final class AutoconsentMessageHandlerDelegateTests: XCTestCase {
         XCTAssertEqual((response as? [String: Any])?["response"] as? String, "ok")
         XCTAssertEqual(mockDelegate.coverageReported?.counts, CPMCoverageCounts(unhandled: 3, pages: 7))
         XCTAssertEqual(mockDelegate.coverageReported?.siteRank, .top10k)
+        XCTAssertEqual(mockDelegate.coverageReported?.unhandledHosts, ["a.example.com", "shop.example.co.uk"])
     }
 
     func testReportCpmCoverageWithoutSiteRankOrWithUnknownSiteRank() async {
@@ -255,6 +256,7 @@ final class AutoconsentMessageHandlerDelegateTests: XCTestCase {
 
             XCTAssertEqual(mockDelegate.coverageReported?.counts, CPMCoverageCounts(unhandled: 0, pages: 1))
             XCTAssertNil(mockDelegate.coverageReported?.siteRank)
+            XCTAssertEqual(mockDelegate.coverageReported?.unhandledHosts, [])
             mockDelegate.coverageReported = nil
         }
     }
@@ -316,7 +318,7 @@ final class MockAutoconsentDelegate: AutoconsentMessageHandlerDelegate {
     var dashboardRefreshed: (URL, ConsentStatusInfo)?
     var popupHandled: CookiePopupHandledInfo?
     var pixelSent: PixelInfo?
-    var coverageReported: (counts: CPMCoverageCounts, siteRank: CPMSiteRank?)?
+    var coverageReported: (counts: CPMCoverageCounts, siteRank: CPMSiteRank?, unhandledHosts: [String])?
 
     func showCookiePopupAnimation(topUrl: URL, isCosmetic: Bool) {
         animationShown = (topUrl, isCosmetic)
@@ -334,7 +336,7 @@ final class MockAutoconsentDelegate: AutoconsentMessageHandlerDelegate {
         pixelSent = pixelInfo
     }
 
-    func reportCPMCoverage(counts: CPMCoverageCounts, siteRank: CPMSiteRank?) {
-        coverageReported = (counts, siteRank)
+    func reportCPMCoverage(counts: CPMCoverageCounts, siteRank: CPMSiteRank?, unhandledHosts: [String]) {
+        coverageReported = (counts, siteRank, unhandledHosts)
     }
 }

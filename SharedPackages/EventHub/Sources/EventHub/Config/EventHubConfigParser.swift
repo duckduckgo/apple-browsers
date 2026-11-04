@@ -191,6 +191,14 @@ public final class EventHubConfigParser {
                 return nil
             }
             return TelemetryParameterConfig(template: .data, source: parameter.source, dataKey: dataKey)
+        case .distinct:
+            guard let source = parameter.source, !source.isEmpty,
+                  let dataKey = parameter.dataKey, !dataKey.isEmpty,
+                  let buckets = parameter.buckets, !buckets.ordered.isEmpty else {
+                Logger.eventHub.error("config: distinct parameter \(pixelName, privacy: .public)/\(parameterName, privacy: .public) dropped, missing source, dataKey and/or usable buckets")
+                return nil
+            }
+            return TelemetryParameterConfig(template: .distinct, source: source, dataKey: dataKey, buckets: buckets.ordered)
         case nil:
             Logger.eventHub.error("config: parameter \(pixelName, privacy: .public)/\(parameterName, privacy: .public) dropped, unknown template \(parameter.template ?? "<none>", privacy: .public)")
             return nil

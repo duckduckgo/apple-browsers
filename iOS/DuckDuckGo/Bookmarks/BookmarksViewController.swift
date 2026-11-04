@@ -872,7 +872,7 @@ class BookmarksViewController: UIViewController, UITableViewDelegate {
     }
 
     private func headerPromoToShow() -> HeaderPromo {
-        guard !tableView.isEditing, !isSearching, !isNested else {
+        guard !isEditingBookmarks, !isSearching, !isNested else {
             return .none
         }
         if syncPromoManager.shouldPresentPromoFor(.bookmarks, count: viewModel.totalBookmarksCount) {

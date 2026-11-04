@@ -152,6 +152,9 @@ enum WebExtensionManagerFactory {
             isCPMBackgroundLoadRecoveryEnabled: {
                 Application.appDelegate.featureFlagger.isFeatureOn(.cpmBackgroundLoadRecovery)
             },
+            isCPMBackgroundLoadRestartEnabled: {
+                Application.appDelegate.featureFlagger.isFeatureOn(.cpmBackgroundLoadRestart)
+            },
             isCPMLateBackgroundDocumentRecoveryEnabled: {
                 Application.appDelegate.featureFlagger.isFeatureOn(.cpmLateBackgroundDocumentRecovery)
             },
@@ -171,16 +174,14 @@ enum WebExtensionManagerFactory {
         )
 
         internalSiteHandler.dataSource = manager
-        if buildType.isSparkleBuild {
-            manager.chromeWebStore = ChromeWebStoreService(
-                manager: manager,
-                catalog: ChromeWebStoreCatalog(configurationManager: privacyConfigurationManager),
-                presenter: ChromeWebStorePresenter(windowProvider: { NSApp.keyWindow ?? NSApp.mainWindow }),
-                isUpdateDiscoveryEnabled: featureFlagger.isFeatureOn(.webExtensionUpdateDiscovery),
-                keyValueStore: keyValueStore,
-                pixelFiring: pixelFiring
-            )
-        }
+        manager.chromeWebStore = ChromeWebStoreService(
+            manager: manager,
+            catalog: ChromeWebStoreCatalog(configurationManager: privacyConfigurationManager),
+            presenter: ChromeWebStorePresenter(windowProvider: { NSApp.keyWindow ?? NSApp.mainWindow }),
+            isUpdateDiscoveryEnabled: buildType.isSparkleBuild && featureFlagger.isFeatureOn(.webExtensionUpdateDiscovery),
+            keyValueStore: keyValueStore,
+            pixelFiring: pixelFiring
+        )
 
         return manager
     }

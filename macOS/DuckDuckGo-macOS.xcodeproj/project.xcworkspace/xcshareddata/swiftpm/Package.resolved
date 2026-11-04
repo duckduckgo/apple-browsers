@@ -1,5 +1,5 @@
 {
-  "originHash" : "b5e18ceff56c7832ffc449ee8cba6f7d4222e601fb218c48403f990294629471",
+  "originHash" : "39a9774e36d02c7af6780c8c5893010215a144f67ba373264af714340f767b7f",
   "pins" : [
     {
       "identity" : "apple-toolbox",
@@ -87,8 +87,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/duckduckgo/OpenSSL-XCFramework",
       "state" : {
-        "revision" : "263f0422b0b516838bc4f8cf5f4b5aac4df144c1",
-        "version" : "3.3.2000"
+        "revision" : "b63b86fddcfa6d1f10ca237c6dd40827cc939072",
+        "version" : "3.6.5000"
       }
     },
     {
@@ -204,8 +204,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/pointfreeco/swift-snapshot-testing",
       "state" : {
-        "revision" : "28e5de025e3fd98991791bfbf83023ab3708da03",
-        "version" : "1.19.6"
+        "revision" : "1488390b0735e726564b948bf08b384398bdab5c",
+        "version" : "1.19.7"
       }
     },
     {

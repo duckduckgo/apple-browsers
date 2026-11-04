@@ -46,11 +46,12 @@ final class WebExtensionManagerFactoryTests: XCTestCase {
         }
     }
 
-    func testAppStoreBuildDoesNotCreateChromeWebStoreServiceWhenDiscoveryFlagIsOn() throws {
+    func testAppStoreBuildDoesNotStartUpdateDiscoveryWhenFlagIsOn() async throws {
         let flags = MockFeatureFlagger(featuresStub: [FeatureFlag.webExtensionUpdateDiscovery.rawValue: true])
         let storage = try DiscoveryStateStorage()
         let manager = makeManager(storage: storage, flags: flags, isAppStore: true)
-        XCTAssertNil(manager.chromeWebStore)
+        let store = try XCTUnwrap(manager.chromeWebStore)
+        await store.checkForUpdatesNow()
         XCTAssertEqual(storage.discoveryReads, 0)
     }
 

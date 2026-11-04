@@ -132,6 +132,9 @@ public enum WebExtensionManagerFactory {
             isCPMBackgroundLoadRecoveryEnabled: {
                 featureFlagger.isFeatureOn(.cpmBackgroundLoadRecovery)
             },
+            isCPMBackgroundLoadRestartEnabled: {
+                featureFlagger.isFeatureOn(.cpmBackgroundLoadRestart)
+            },
             isApplicationInBackground: { UIApplication.shared.applicationState == .background },
             isCPMLateBackgroundDocumentRecoveryEnabled: {
                 featureFlagger.isFeatureOn(.cpmLateBackgroundDocumentRecovery)

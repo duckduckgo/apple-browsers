@@ -14,7 +14,9 @@ tags:
         isOnboardingCompleted: ${ONBOARDING_COMPLETED}
         currentAppVariant: ${APP_VARIANT}
         isRunningUITests: true
+        "ff.alwaysShowKeyboardOnNewTabPage": "false"
         ff.browsingMenuSheetEnabledByDefault: "true"
+        ff.aiChatTabHandoffImprovements: "true"
 
 # NTP: open a chat through the Duck.ai menu when available
 - assertVisible:
@@ -47,14 +49,15 @@ tags:
 # Verify chat tab header
 - assertVisible: "Free Plan"
 - assertVisible: "Upgrade"
-- assertVisible: "Close tab"
+- assertNotVisible: "Close tab"
 - assertVisible: "Recent chats"
 - assertVisible: "New"
 - assertVisible:
     id: "AIChat.Toolbar.Button.ModelChip"
 
-# Close tab to return to NTP
-- tapOn: "Close tab"
+# Open a new tab from the tab switcher to get back to the NTP
+- tapOn: "Tab Switcher"
+- tapOn: "New Tab"
 - assertVisible:
     id: "searchEntry"
 
@@ -70,23 +73,24 @@ tags:
 - assertVisible: "Duck.ai"
 - tapOn: "Duck.ai"
 - assertVisible: "Free Plan"
-- assertVisible: "Close tab"
 
-# Close tab to return to web page
-- tapOn: "Close tab"
+# Return to the web page through the tab switcher
+- tapOn: "Tab Switcher"
+- tapOn: "Open \"Privacy Test Pages - Home\" at privacy-test-pages.site"
 - assertVisible: ".*Privacy Test Pages.*"
 
-# Tab Switcher: verify Duck.ai tab shortcut is accessible
+# Tab Switcher: the Duck.ai button opens a menu that starts a new chat
 - tapOn: "Tab Switcher"
 - assertVisible:
     id: "TabSwitcher.Button.DuckChat"
 - tapOn:
     id: "TabSwitcher.Button.DuckChat"
+- tapOn: "New Chat"
 - assertVisible: "Free Plan"
-- assertVisible: "Close tab"
 
-# Close tab to prepare for AI Features off test
-- tapOn: "Close tab"
+# Return to the web page to prepare for AI Features off test
+- tapOn: "Tab Switcher"
+- tapOn: "Open \"Privacy Test Pages - Home\" at privacy-test-pages.site"
 
 # Turn Duck.ai OFF entirely via the master toggle in AI Features.
 # (The "Search Only" picker only hides the unified Search/Duck.ai toggle — it does NOT

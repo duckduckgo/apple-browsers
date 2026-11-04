@@ -39,6 +39,13 @@ struct DuckAISettingsStatePixel: PixelKit.Event {
         }
     }
 
+    enum KeyboardAnimationState: String {
+        case enabled
+        case disabled
+        case unavailable
+    }
+
+    let keyboardAnimation: KeyboardAnimationState
     let duckAIEnabled: Bool
     let addressBarToggle: Bool
     let tabBarButton: Bool
@@ -49,6 +56,7 @@ struct DuckAISettingsStatePixel: PixelKit.Event {
 
     var parameters: [String: String]? {
         [
+            "keyboard_animation": keyboardAnimation.rawValue,
             "duckai_enabled": String(duckAIEnabled),
             "addressbar_toggle": String(addressBarToggle),
             "tabbar_button": String(tabBarButton),
@@ -87,12 +95,22 @@ struct DuckAISettingsStatePixelReporter {
 
     var currentState: DuckAISettingsStatePixel {
         DuckAISettingsStatePixel(
+            keyboardAnimation: keyboardAnimationState,
             duckAIEnabled: settings.isAIChatEnabled,
             addressBarToggle: settings.isAIChatSearchInputUserSettingsEnabled,
             tabBarButton: isTabBarDuckAIButtonAvailable,
             defaultMode: settings.defaultOmnibarMode,
             openDuckAITabs: DuckAISettingsStatePixel.OpenDuckAITabs(count: openDuckAITabCount())
         )
+    }
+
+    private var keyboardAnimationState: DuckAISettingsStatePixel.KeyboardAnimationState {
+        guard !isPad,
+              settings.isAIChatEnabled,
+              featureFlagger.isFeatureOn(.unifiedToggleInputKeyboardEdgeSweep) else {
+            return .unavailable
+        }
+        return settings.isKeyboardAnimationEnabled ? .enabled : .disabled
     }
 
     /// The same rule the tabs bar uses to show its Duck.ai menu button or chip.

@@ -25,6 +25,202 @@ import XCTest
 @MainActor
 final class CPMMessagingHealthMonitorTests: XCTestCase {
 
+    func testError6RestartReportsPageResponseBeforeAnyFailureEpisode() {
+        let pixels = CapturingWebExtensionPixelFiring()
+        let monitor = CPMMessagingHealthMonitor(pixelFiring: pixels)
+        startError6Restart(on: monitor)
+        monitor.handle(.navigationStarted(tabIdentifier: "tab", navigationKind: .other))
+        monitor.handle(.navigationCommitted(tabIdentifier: "tab", url: URL(string: "https://example.com")!))
+        // A response can precede didFinish and therefore have no measurement yet.
+        monitor.handle(.dashboardResponse(extensionTabIdentifier: 1, url: URL(string: "https://example.com")!))
+        monitor.handle(.dashboardResponse(extensionTabIdentifier: 1, url: URL(string: "https://example.com")!))
+
+        XCTAssertEqual(pixels.restartOutcomes, [.restartStarted, .responseReceived])
+        XCTAssertTrue(pixels.reports.isEmpty)
+    }
+
+    func testError6RestartDoesNotCreditOldGenerationOrUnmatchedResponse() {
+        let pixels = CapturingWebExtensionPixelFiring()
+        let monitor = CPMMessagingHealthMonitor(pixelFiring: pixels)
+        let old = monitor.beginMeasurement(tabIdentifier: "old", navigationKind: .other)
+        startError6Restart(on: monitor)
+        monitor.reportSuccess(old)
+        monitor.handle(.dashboardResponse(extensionTabIdentifier: nil, url: URL(string: "https://stale.example")!))
+        XCTAssertEqual(pixels.restartOutcomes, [.restartStarted])
+
+        let current = monitor.beginMeasurement(tabIdentifier: "new", navigationKind: .other)
+        monitor.reportSuccess(current)
+        XCTAssertEqual(pixels.restartOutcomes, [.restartStarted, .responseReceived])
+    }
+
+    func testError6RestartReportsNoResponseOnlyAfterMeasuredFailureAndDeadline() {
+        var date = Date()
+        let pixels = CapturingWebExtensionPixelFiring()
+        let monitor = CPMMessagingHealthMonitor(pixelFiring: pixels, episodeLifetime: 300, now: { date })
+        startError6Restart(on: monitor)
+        let measurement = monitor.beginMeasurement(tabIdentifier: "tab", navigationKind: .other)
+        monitor.reportFailure(measurement)
+        XCTAssertEqual(pixels.restartOutcomes, [.restartStarted])
+        date += 301
+        monitor.handle(.navigationStarted(tabIdentifier: "other", navigationKind: .other))
+        monitor.handle(.navigationStarted(tabIdentifier: "other", navigationKind: .other))
+        XCTAssertEqual(pixels.restartOutcomes, [.restartStarted, .noResponseBeforeDeadline])
+    }
+
+    func testError6RestartWithoutMeasurableNavigationIsUnobserved() {
+        var date = Date()
+        let pixels = CapturingWebExtensionPixelFiring()
+        let monitor = CPMMessagingHealthMonitor(pixelFiring: pixels, episodeLifetime: 300, now: { date })
+        startError6Restart(on: monitor)
+        let cancelled = monitor.beginMeasurement(tabIdentifier: "tab", navigationKind: .other)
+        monitor.cancel(cancelled)
+        monitor.reportFailure(cancelled)
+        date += 301
+        monitor.handle(.tabClosed(tabIdentifier: "tab"))
+        XCTAssertEqual(pixels.restartOutcomes, [.restartStarted, .unobserved])
+    }
+
+    func testError6RestartDeadlineExcludesSuspensionAndAcceptsResponseAfterResume() {
+        var date = Date()
+        let pixels = CapturingWebExtensionPixelFiring()
+        let monitor = CPMMessagingHealthMonitor(pixelFiring: pixels, episodeLifetime: 300, now: { date })
+        startError6Restart(on: monitor)
+        let measurement = monitor.beginMeasurement(tabIdentifier: "tab", navigationKind: .other)
+        monitor.reportFailure(measurement)
+        date += 290
+        monitor.handle(.interruptionBegan)
+        date += 3600
+        monitor.handle(.interruptionEnded)
+        date += 15
+        // Resume grants at least 30 active seconds, even with only 10 left before suspension.
+        monitor.reportSuccess(measurement)
+        XCTAssertEqual(pixels.restartOutcomes, [.restartStarted, .responseReceived])
+    }
+
+    func testAnotherReloadSupersedesError6RestartWithoutClaimingFailureOrRecovery() {
+        let pixels = CapturingWebExtensionPixelFiring()
+        let monitor = CPMMessagingHealthMonitor(pixelFiring: pixels)
+        startError6Restart(on: monitor)
+        monitor.handle(.willReload(identifier: "embedded", type: .embedded, trigger: .cpmMessagingHang))
+        monitor.handle(.reloaded(identifier: "embedded", type: .embedded, trigger: .cpmMessagingHang))
+        monitor.reportSuccess(monitor.beginMeasurement(tabIdentifier: "tab", navigationKind: .other))
+        XCTAssertEqual(pixels.restartOutcomes, [.restartStarted, .superseded])
+    }
+
+    func testEmbeddedUpgradeSupersedesError6RestartObservation() {
+        let pixels = CapturingWebExtensionPixelFiring()
+        let monitor = CPMMessagingHealthMonitor(pixelFiring: pixels)
+        startError6Restart(on: monitor)
+        // Embedded upgrades install the new identifier before removing the old version.
+        monitor.handle(.loaded(identifier: "upgraded-embedded", type: .embedded))
+        XCTAssertEqual(pixels.restartOutcomes, [.restartStarted, .superseded])
+
+        monitor.handle(.navigationStarted(tabIdentifier: "tab", navigationKind: .other))
+        monitor.handle(.navigationCommitted(tabIdentifier: "tab", url: URL(string: "https://example.com")!))
+        monitor.handle(.dashboardResponse(extensionTabIdentifier: 1, url: URL(string: "https://example.com")!))
+        monitor.handle(.loaded(identifier: "upgraded-embedded", type: .embedded))
+        XCTAssertEqual(pixels.restartOutcomes, [.restartStarted, .superseded],
+                       "A replacement version's response must not count as recovery by the original restart")
+    }
+
+    func testOldExtensionResponseCannotValidateNewNavigationWithSameURL() {
+        let pixels = CapturingWebExtensionPixelFiring()
+        let monitor = CPMMessagingHealthMonitor(pixelFiring: pixels)
+        var currentIdentifier = "embedded"
+        var healthyResponses = 0
+        monitor.isCurrentEmbeddedExtension = { $0 == currentIdentifier }
+        monitor.onHealthyResponse = { healthyResponses += 1 }
+        startError6Restart(on: monitor)
+        let url = URL(string: "https://example.com")!
+        monitor.handle(.navigationStarted(tabIdentifier: "tab", navigationKind: .other))
+        monitor.handle(.navigationCommitted(tabIdentifier: "tab", url: url))
+        currentIdentifier = "upgraded"
+        monitor.handle(.loaded(identifier: currentIdentifier, type: .embedded))
+        monitor.handle(.navigationStarted(tabIdentifier: "tab", navigationKind: .other))
+        monitor.handle(.navigationCommitted(tabIdentifier: "tab", url: url))
+
+        monitor.handle(.dashboardResponse(extensionTabIdentifier: 1, url: url, extensionIdentifier: "embedded"))
+        XCTAssertEqual(healthyResponses, 0, "Even a matching document URL cannot make an old sender current")
+        monitor.handle(.dashboardResponse(extensionTabIdentifier: 1, url: url, extensionIdentifier: "upgraded"))
+        XCTAssertEqual(healthyResponses, 1)
+        XCTAssertEqual(pixels.restartOutcomes, [.restartStarted, .superseded], "The old pixel observation stays closed")
+    }
+
+    func testLoadedSameIdentifierPreservesError6RestartObservation() {
+        let pixels = CapturingWebExtensionPixelFiring()
+        let monitor = CPMMessagingHealthMonitor(pixelFiring: pixels)
+        startError6Restart(on: monitor)
+        monitor.handle(.loaded(identifier: "embedded", type: .embedded))
+        XCTAssertEqual(pixels.restartOutcomes, [.restartStarted])
+
+        monitor.reportSuccess(monitor.beginMeasurement(tabIdentifier: "tab", navigationKind: .other))
+        XCTAssertEqual(pixels.restartOutcomes, [.restartStarted, .responseReceived])
+    }
+
+    func testLoadingOtherExtensionPreservesError6RestartObservation() {
+        let pixels = CapturingWebExtensionPixelFiring()
+        let monitor = CPMMessagingHealthMonitor(pixelFiring: pixels)
+        startError6Restart(on: monitor)
+        monitor.handle(.loaded(identifier: "other", type: .adBlockingExtension))
+        XCTAssertEqual(pixels.restartOutcomes, [.restartStarted])
+
+        monitor.reportSuccess(monitor.beginMeasurement(tabIdentifier: "tab", navigationKind: .other))
+        XCTAssertEqual(pixels.restartOutcomes, [.restartStarted, .responseReceived])
+    }
+
+    func testError6RestartReportsReloadFailureOnce() {
+        let pixels = CapturingWebExtensionPixelFiring()
+        let monitor = CPMMessagingHealthMonitor(pixelFiring: pixels)
+        monitor.handle(.willReload(identifier: "embedded", type: .embedded, trigger: .cpmBackgroundLoadFailure))
+        monitor.handle(.reloadFailed(identifier: "embedded", type: .embedded, trigger: .cpmBackgroundLoadFailure))
+        monitor.handle(.reloadFailed(identifier: "embedded", type: .embedded, trigger: .cpmBackgroundLoadFailure))
+        XCTAssertEqual(pixels.restartOutcomes, [.restartStarted, .reloadFailed])
+    }
+
+    func testError6RestartWithNoReloadCompletionReportsReloadTimeout() {
+        var date = Date()
+        let pixels = CapturingWebExtensionPixelFiring()
+        let monitor = CPMMessagingHealthMonitor(pixelFiring: pixels, episodeLifetime: 300, now: { date })
+        monitor.handle(.willReload(identifier: "embedded", type: .embedded, trigger: .cpmBackgroundLoadFailure))
+        date += 301
+        monitor.handle(.navigationStarted(tabIdentifier: "tab", navigationKind: .other))
+        XCTAssertEqual(pixels.restartOutcomes, [.restartStarted, .reloadTimedOut])
+    }
+
+    func testOtherExtensionAndOrdinaryReloadDoNotReportError6Restart() {
+        let pixels = CapturingWebExtensionPixelFiring()
+        let monitor = CPMMessagingHealthMonitor(pixelFiring: pixels)
+        monitor.handle(.willReload(identifier: "other", type: .adBlockingExtension, trigger: .cpmBackgroundLoadFailure))
+        monitor.handle(.willReload(identifier: "embedded", type: .embedded, trigger: .explicit))
+        monitor.handle(.reloaded(identifier: "embedded", type: .embedded, trigger: .explicit))
+        monitor.reportSuccess(monitor.beginMeasurement(tabIdentifier: "tab", navigationKind: .other))
+        XCTAssertTrue(pixels.restartOutcomes.isEmpty)
+    }
+
+    func testError6RestartDeadlineFiresWithoutAnotherNavigation() async {
+        let pixels = CapturingWebExtensionPixelFiring()
+        let monitor = CPMMessagingHealthMonitor(pixelFiring: pixels, episodeLifetime: 0.05, now: Date.init)
+        let completed = expectation(description: "Quiet restart observation reaches its deadline")
+        pixels.onRestartOutcome = { if $0 == .unobserved { completed.fulfill() } }
+        startError6Restart(on: monitor)
+        await fulfillment(of: [completed], timeout: 1)
+        XCTAssertEqual(pixels.restartOutcomes, [.restartStarted, .unobserved])
+    }
+
+    func testError6RestartPixelMetadataContainsOnlyAllowlistedOutcome() throws {
+        for outcome in CPMBackgroundLoadRestartOutcome.allCases {
+            let metadata = try XCTUnwrap(CPMWebExtensionPixelMetadata(event: .cpmBackgroundLoadRestart(outcome)))
+            XCTAssertEqual(metadata.name, "web_extension_cpm_background_load_restart")
+            XCTAssertEqual(metadata.frequency, .dailyAndCount)
+            XCTAssertEqual(metadata.parameters, ["outcome": outcome.rawValue])
+        }
+    }
+
+    private func startError6Restart(on monitor: CPMMessagingHealthMonitor) {
+        monitor.handle(.willReload(identifier: "embedded", type: .embedded, trigger: .cpmBackgroundLoadFailure))
+        monitor.handle(.reloaded(identifier: "embedded", type: .embedded, trigger: .cpmBackgroundLoadFailure))
+    }
+
     func testFirstFailureStaysLocalUntilEpisodeCompletion() {
         let pixelFiring = CapturingWebExtensionPixelFiring()
         let monitor = CPMMessagingHealthMonitor(pixelFiring: pixelFiring)
@@ -1840,11 +2036,17 @@ private final class StubDiagnosticsProvider: CPMMessagingDiagnosticsProviding {
 private final class CapturingWebExtensionPixelFiring: WebExtensionPixelFiring {
     private(set) var metadata: [CPMWebExtensionPixelMetadata] = []
     private(set) var reports: [CPMMessagingEpisodeReport] = []
+    private(set) var restartOutcomes: [CPMBackgroundLoadRestartOutcome] = []
+    var onRestartOutcome: ((CPMBackgroundLoadRestartOutcome) -> Void)?
     var confirmedHangCount = 0
     var onReport: (() -> Void)?
     var diagnostics: [CPMMessagingDiagnostics?] { reports.map(\.diagnostics) }
 
     func fire(_ event: WebExtensionPixelEvent) {
+        if case .cpmBackgroundLoadRestart(let outcome) = event {
+            restartOutcomes.append(outcome)
+            onRestartOutcome?(outcome)
+        }
         if let metadata = CPMWebExtensionPixelMetadata(event: event) {
             self.metadata.append(metadata)
         }

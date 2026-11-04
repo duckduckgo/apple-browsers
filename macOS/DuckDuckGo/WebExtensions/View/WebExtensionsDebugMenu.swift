@@ -92,6 +92,11 @@ final class WebExtensionsDebugMenu: NSMenu {
         checkForUpdatesMenuItem.isEnabled = webExtensionManager.chromeWebStore != nil
         addItem(checkForUpdatesMenuItem)
 
+        let addedPopoverMenuItems = makeShowAddedPopoverMenuItems()
+        if !addedPopoverMenuItems.isEmpty {
+            addItem(NSMenuItem(title: "Show Extension Added Popover", items: addedPopoverMenuItems))
+        }
+
         if !webExtensionManager.webExtensionIdentifiers.isEmpty {
             addItem(.separator())
             for identifier in webExtensionManager.webExtensionIdentifiers {
@@ -110,6 +115,17 @@ final class WebExtensionsDebugMenu: NSMenu {
                                                     isRemotelyDisabled: isRemotelyDisabled)
                 self.addItem(menuItem)
             }
+        }
+    }
+
+    private func makeShowAddedPopoverMenuItems() -> [NSMenuItem] {
+        webExtensionManager.webExtensionIdentifiers.compactMap { identifier in
+            guard let storeIdentity = webExtensionManager.installedExtension(identifier: identifier)?.storeIdentity,
+                  storeIdentity.store == .chromeWebStore else { return nil }
+            return NSMenuItem(title: webExtensionManager.extensionName(for: identifier) ?? identifier,
+                              action: #selector(showExtensionAddedPopover),
+                              target: self,
+                              representedObject: storeIdentity.id)
         }
     }
 
@@ -165,6 +181,13 @@ final class WebExtensionsDebugMenu: NSMenu {
     @objc private func checkForUpdatesNow() {
         guard let service = webExtensionManager.chromeWebStore else { return }
         Task { await service.checkForUpdatesNow() }
+    }
+
+    /// Replays the notification a Chrome Web Store install posts, for the key window.
+    @objc func showExtensionAddedPopover(_ sender: NSMenuItem) {
+        guard let storeID = sender.representedObject as? String,
+              let window = Application.appDelegate.windowControllersManager.lastKeyMainWindowController?.window else { return }
+        NotificationCenter.default.post(name: .chromeWebStoreExtensionInstalled, object: window, userInfo: [ChromeWebStoreUserScript.UserInfoKeys.extensionID: storeID])
     }
 
     /// Opens Bitwarden's Chrome Web Store page, where it can be installed.

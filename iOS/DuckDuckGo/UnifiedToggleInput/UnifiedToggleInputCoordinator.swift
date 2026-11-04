@@ -172,6 +172,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         set { textModel.omnibarPrefilledText = newValue }
     }
     private(set) var inputMode: TextEntryMode = .aiChat
+    private var inputGeometryGeneration = 0
     private let stateStore: UnifiedInputStateStoring
     private let switchBarSubmissionMetrics: SwitchBarSubmissionMetricsProviding
     private let featureDiscovery: FeatureDiscovery
@@ -1487,6 +1488,15 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         let didModeChange = inputMode != effectiveMode
         let needsViewSync = viewController.inputMode != effectiveMode
         guard didModeChange || needsViewSync else { return }
+        inputGeometryGeneration += 1
+        let geometryGeneration = inputGeometryGeneration
+        logInputGeometry("mode.begin")
+        print("[UTI_LOGO_TIMING] \(String(format: "%.6f", ProcessInfo.processInfo.systemUptime)) uti.mode.begin from=\(inputMode) to=\(effectiveMode) animated=\(animated)")
+        defer {
+            print("[UTI_LOGO_TIMING] \(String(format: "%.6f", ProcessInfo.processInfo.systemUptime)) uti.mode.end mode=\(inputMode)")
+            logInputGeometry("mode.end")
+            scheduleInputGeometryTrace(geometryGeneration)
+        }
 
         let isDismissingOmnibarNewPromptToolbar = isOmnibarNewAIChatPrompt && effectiveMode == .search
         if isDismissingOmnibarNewPromptToolbar {
@@ -1506,23 +1516,28 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         // Wraps toolbar-height update + content-swap broadcast in one CATransaction so they animate
         // together; otherwise the content snaps while the toolbar is still growing.
         let applyModeChange = { [self] in
-            // The Duck.ai footer joins the bar before the bar resizes for the mode, so every height the
-            // content follows already includes it. The first switch builds the toolbar slowly enough to show it.
-            refreshFooterSuppression()
-            if needsViewSync {
-                viewController.setInputMode(effectiveMode, animated: animated)
+            viewController.performInputModeChanges {
+                // The Duck.ai footer joins the bar before the bar resizes for the mode, so every height the
+                // content follows already includes it. The first switch builds the toolbar slowly enough to show it.
+                refreshFooterSuppression()
+                if needsViewSync {
+                    viewController.setInputMode(effectiveMode, animated: animated)
+                }
             }
             if didModeChange {
                 modeChangeSubject.send(effectiveMode)
             }
         }
 
-        if animated {
+        if animated && UIView.inheritedAnimationDuration == 0 {
             UIView.animate(withDuration: 0.2, delay: 0, options: [.curveEaseInOut, .beginFromCurrentState]) {
+                print("[UTI_LOGO_TIMING] \(String(format: "%.6f", ProcessInfo.processInfo.systemUptime)) uti.animation.configured mode=\(effectiveMode)")
                 applyModeChange()
                 // Push the new mode's content inset here (target height) so the suggestions content and
                 // the logo move in the same pass as the bar — not reactively after the height callback.
                 if didModeChange { self.pushContentInsets() }
+            } completion: { finished in
+                print("[UTI_LOGO_TIMING] \(String(format: "%.6f", ProcessInfo.processInfo.systemUptime)) uti.animation.completed mode=\(effectiveMode) finished=\(finished)")
             }
         } else {
             applyModeChange()
@@ -1752,11 +1767,45 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
 
     // MARK: - Content & Layout
 
+    private func scheduleInputGeometryTrace(_ generation: Int) {
+        for delay in [0.1, 0.25, 0.35] {
+            DispatchQueue.main.asyncAfter(deadline: .now() + delay) { [weak self] in
+                guard let self, inputGeometryGeneration == generation else { return }
+                logInputGeometry("mode.after.\(delay)")
+            }
+        }
+    }
+
+    private func logInputGeometry(_ phase: String) {
+        guard let view = viewController.viewIfLoaded else { return }
+        let presentation = view.layer.presentation()
+        let parents = [view.superview, view.superview?.superview, view.superview?.superview?.superview].compactMap { $0 }
+            .map { "\(type(of: $0)) frame=\($0.frame) presentation=\(String(describing: $0.layer.presentation()?.frame)) \(Self.inputLayerGeometryDescription($0.layer))" }
+        print("[UTI_LOGO_TIMING] \(String(format: "%.6f", ProcessInfo.processInfo.systemUptime)) uti.geometry phase=\(phase) generation=\(inputGeometryGeneration) mode=\(inputMode) top=\(cardPosition == .top) frame=\(view.frame) bounds=\(view.bounds) global=\(view.convert(view.bounds, to: nil)) presentation=\(String(describing: presentation?.frame)) presentationGlobal=\(String(describing: presentation.map { $0.convert($0.bounds, to: nil) })) card=\(viewController.inputCardFrame(in: view)) cardGlobal=\(viewController.inputCardFrame(in: view.window ?? view)) safeArea=\(view.safeAreaInsets) layer={\(Self.inputLayerGeometryDescription(view.layer))} parents=\(parents) duration=\(UIView.inheritedAnimationDuration)")
+    }
+
+    private static func inputLayerGeometryDescription(_ layer: CALayer) -> String {
+        let presentation = layer.presentation()
+        func describe(_ animation: CAAnimation) -> String {
+            let property = animation as? CAPropertyAnimation
+            let basic = animation as? CABasicAnimation
+            let keyframe = animation as? CAKeyframeAnimation
+            let children = (animation as? CAAnimationGroup)?.animations?.prefix(6).map(describe) ?? []
+            return "path=\(property?.keyPath ?? "nil") from=\(String(describing: basic?.fromValue)) to=\(String(describing: basic?.toValue)) by=\(String(describing: basic?.byValue)) first=\(String(describing: keyframe?.values?.first)) last=\(String(describing: keyframe?.values?.last)) keyTimes=\(String(describing: keyframe?.keyTimes)) additive=\(property?.isAdditive == true) duration=\(animation.duration) begin=\(animation.beginTime) offset=\(animation.timeOffset) speed=\(animation.speed) children=\(children)"
+        }
+        let animations = (layer.animationKeys() ?? []).prefix(6).compactMap { key -> String? in
+            guard let animation = layer.animation(forKey: key) else { return nil }
+            return "\(key){\(describe(animation))}"
+        }
+        return "id=\(ObjectIdentifier(layer)) position=\(layer.position) bounds=\(layer.bounds) anchor=\(layer.anchorPoint) transform=\(layer.transform) presentationPosition=\(String(describing: presentation?.position)) presentationBounds=\(String(describing: presentation?.bounds)) presentationAnchor=\(String(describing: presentation?.anchorPoint)) presentationTransform=\(String(describing: presentation?.transform)) speed=\(layer.speed) offset=\(layer.timeOffset) begin=\(layer.beginTime) animations=\(animations)"
+    }
+
     func pushContentInsets() {
         // Use the deterministic target height (same source adjustUI uses for the navbar
         // constraint) while editing, so the content inset animates in lockstep with the
         // input instead of chasing transient frame values mid-animation.
         let utiHeight = isInputEditing ? editingHeight() : viewController.view.frame.height
+        print("[UTI_LOGO_TIMING] \(String(format: "%.6f", ProcessInfo.processInfo.systemUptime)) uti.pushInsets mode=\(inputMode) targetHeight=\(utiHeight) top=\(cardPosition == .top) card=\(viewController.inputCardFrame(in: viewController.view)) presentation=\(String(describing: viewController.view.layer.presentation()?.frame)) duration=\(UIView.inheritedAnimationDuration)")
         if cardPosition == .top {
             contentViewController.setContentInset(top: utiHeight, bottom: 0)
         } else {
@@ -2493,11 +2542,13 @@ extension UnifiedToggleInputCoordinator: UnifiedToggleInputViewControllerDelegat
     }
 
     func unifiedToggleInputVC(_ vc: UnifiedToggleInputViewController, didChangeMode mode: TextEntryMode) {
-        contentViewController.performInputModeChange(to: mode) {
-            updateInputMode(mode, animated: true)
+        contentViewController.performInputModeChange(to: mode, onResizeStarted: { [weak vc] in
+            guard let vc else { return }
             if vc.isInputExpanded {
                 vc.activateInput()
             }
+        }) { [self] in
+            updateInputMode(mode, animated: true)
         }
     }
 

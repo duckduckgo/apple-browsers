@@ -35,6 +35,7 @@ struct ReturnToTabCard: View {
     /// anchor when the Fire-button flag is on; the menu button is the anchor for the legacy in-menu action.
     @State private var fireButtonFrameInWindow: CGRect = .zero
     @State private var menuFrameInWindow: CGRect = .zero
+    @State private var frameTraceID = UUID()
 
     var body: some View {
         GeometryReader { proxy in
@@ -136,7 +137,10 @@ struct ReturnToTabCard: View {
         .buttonStyle(.plain)
         .accessibilityLabel(Text(UserText.escapeHatchMenuDeleteTab))
         .accessibilityIdentifier("NewTabPage.escapeHatch.fireButton")
-        .onFrameUpdate(in: .global, using: FireButtonFrameInWindowKey.self) { fireButtonFrameInWindow = $0 }
+        .onFrameUpdate(in: .global, using: FireButtonFrameInWindowKey.self) { frame in
+            logFrameChange("fire", old: fireButtonFrameInWindow, new: frame)
+            fireButtonFrameInWindow = frame
+        }
     }
 
     private func deleteTab() {
@@ -157,7 +161,15 @@ struct ReturnToTabCard: View {
         }
         .accessibilityLabel(Text(UserText.escapeHatchMoreButtonAccessibilityLabel))
         .accessibilityIdentifier("NewTabPage.escapeHatch.moreButton")
-        .onFrameUpdate(in: .global, using: MenuFrameInWindowKey.self) { menuFrameInWindow = $0 }
+        .onFrameUpdate(in: .global, using: MenuFrameInWindowKey.self) { frame in
+            logFrameChange("menu", old: menuFrameInWindow, new: frame)
+            menuFrameInWindow = frame
+        }
+    }
+
+    private func logFrameChange(_ control: String, old: CGRect, new: CGRect) {
+        guard old != new else { return }
+        print("[UTI_LOGO_TIMING] \(String(format: "%.6f", ProcessInfo.processInfo.systemUptime)) hatch.button control=\(control) instance=\(frameTraceID) hatch=\(ObjectIdentifier(model)) old=\(old) new=\(new)")
     }
 
     @ViewBuilder

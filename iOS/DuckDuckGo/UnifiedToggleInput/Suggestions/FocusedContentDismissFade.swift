@@ -22,7 +22,7 @@ import SwiftUI
 /// Content fades on a mode switch. A leaving logo fades out first and the incoming content appears
 /// once it has gone, so the two never overlap.
 enum FocusedContentFade {
-    static let duration: TimeInterval = 0.15
+    static let duration: TimeInterval = 0.1
     static let fadeOut = Animation.easeOut(duration: duration)
     static let fadeIn = Animation.easeInOut(duration: duration)
     /// Shows content at once when the logo has faded out. SwiftUI needs a duration for the delay to hold.
@@ -37,10 +37,11 @@ enum FocusedContentFade {
 /// focus) snaps, so the logo reappears instantly instead of replaying a fade-in.
 struct FocusedContentDismissFade: ViewModifier {
     let isFadingOut: Bool
+    var duration: TimeInterval = 0.2
     func body(content: Content) -> some View {
         content
             .opacity(isFadingOut ? 0 : 1)
-            .animation(isFadingOut ? .easeInOut(duration: 0.2) : nil, value: isFadingOut)
+            .animation(isFadingOut ? .easeInOut(duration: duration) : nil, value: isFadingOut)
     }
 }
 

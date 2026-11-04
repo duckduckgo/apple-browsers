@@ -102,7 +102,8 @@ struct UnifiedSuggestionsView: View {
                     .transition(.identity)
                     .modifier(FocusedContentDismissFade(isFadingOut: viewModel.isFadingOut))
             } else {
-                SuggestionsFavoritesView(presentation: favoritesPresentation, isVisible: showsEmbeddedContent,
+                SuggestionsFavoritesView(presentation: favoritesPresentation,
+                                         isVisible: showsEmbeddedContent && (usesScrollableEscapeHatch || !isWaitingForLeavingLogo),
                                          visibilityAnimation: favoritesAnimation)
                     .transition(.identity)
                     .modifier(FocusedContentDismissFade(isFadingOut: usesScrollableEscapeHatch && viewModel.isFadingOut))
@@ -121,8 +122,13 @@ struct UnifiedSuggestionsView: View {
         viewModel.waitsForLogoFadeOut && !usesRedesignedNewTabPageLayout
     }
 
+    private var isWaitingForLeavingLogo: Bool {
+        !usesRedesignedNewTabPageLayout && viewModel.logoModeChange?.source != nil
+            && (viewModel.isPreparingLogoModeChange || fadesOutLeavingLogo)
+    }
+
     private var isShowingList: Bool {
-        guard !showsEmbeddedContent else { return false }
+        guard !showsEmbeddedContent, !isWaitingForLeavingLogo else { return false }
         if case .list = viewModel.content { return true }
         return false
     }
@@ -170,7 +176,10 @@ struct UnifiedSuggestionsView: View {
             let geometry = viewModel.logoLayout(in: viewport)
             let destinationShowsLogo = viewModel.isShowingLogo && (geometry.hatchLayout == nil || geometry.hatchLayout?.visibleFrame != nil)
             let source = viewModel.logoModeChange?.source
-            let retainedSource = !usesRedesignedNewTabPageLayout && (viewModel.logoModeChange?.isFadingOut == true || !destinationShowsLogo) ? source : nil
+            let isPreparingLogo = !usesRedesignedNewTabPageLayout && viewModel.isPreparingLogoModeChange && source != nil
+            let isFadingLogo = viewModel.logoModeChange?.isFadingOut == true
+            let retainedSource = !usesRedesignedNewTabPageLayout && (isPreparingLogo || isFadingLogo || !destinationShowsLogo) ? source : nil
+            let showsLogo = (isPreparingLogo || (viewModel.isShowingLogo && !isFadingLogo)) && !viewModel.isFireTab && !viewModel.isLandscape
             let targetCenterY = retainedSource?.frame.midY ?? geometry.centerY
             let offsetY = targetCenterY - frame.midY
             let animation: Animation? = UIApplication.shared.applicationState == .active ? .easeInOut(duration: 0.2) : nil
@@ -183,7 +192,7 @@ struct UnifiedSuggestionsView: View {
             let logo = FocusedDaxLogoView(progress: retainedSource?.progress ?? viewModel.logoModel.progress,
                                          morph: viewModel.logoModel.morphs,
                                          animationSpeed: viewModel.logoModel.morphSpeed,
-                                         freezes: retainedSource != nil || (hatchLayout != nil && hatchLayout?.visibleFrame == nil))
+                                         freezes: !isPreparingLogo && (retainedSource != nil || (hatchLayout != nil && hatchLayout?.visibleFrame == nil)))
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
             let isLogoDisplayed = isShowingLogo && !viewModel.isFireTab && !viewModel.isLandscape && !viewModel.isFadingOut
             let backdropLogoFrame = retainedSource?.frame ?? (isLogoDisplayed ? hatchLayout?.visibleFrame : nil)
@@ -208,24 +217,33 @@ struct UnifiedSuggestionsView: View {
                 // Showing is instant; logo→logo keeps it shown, so this never cuts a morph.
                 // Suppressed on fire tabs (fire screen takes the slot) and in landscape (no room — matches
                 // the unfocused NTP / legacy gate).
-                .opacity(viewModel.isShowingLogo && retainedSource == nil && !viewModel.isFireTab && !viewModel.isLandscape ? 1 : 0)
+                .opacity(showsLogo ? 1 : 0)
                 // A mode switch fades a logo that was on screen out before the incoming content appears.
-                .animation(retainedSource != nil || (!viewModel.isShowingLogo && fadesOutLeavingLogo) ? FocusedContentFade.fadeOut : nil,
-                           value: destinationShowsLogo)
+                .animation(!showsLogo && fadesOutLeavingLogo ? FocusedContentFade.fadeOut : nil, value: showsLogo)
                 // A logo held back for the keyboard fades in once it settles.
                 .opacity(viewModel.isLogoRevealDeferred ? 0 : 1)
                 .animation(usesRedesignedNewTabPageLayout || viewModel.isLogoRevealDeferred || animation == nil ? nil : FocusedContentFade.fadeIn,
                            value: viewModel.isLogoRevealDeferred)
                 // On dismiss it fades out (the NTP content takes over) — a separate opacity so the
                 // toggle's instant show/hide above is unaffected.
-                .modifier(FocusedContentDismissFade(isFadingOut: viewModel.isFadingOut))
+                .modifier(FocusedContentDismissFade(isFadingOut: viewModel.isFadingOut, duration: FocusedContentFade.duration))
                 .allowsHitTesting(false)
                 .onAppear {
+                    viewModel.logLogoTransition("focused.appear destinationVisible=\(destinationShowsLogo) retained=\(retainedSource != nil) centerY=\(targetCenterY)")
                     viewModel.backdropLogoFrame = backdropLogoFrame
                     viewModel.startLogoFadeOut()
                 }
-                .onChange(of: backdropLogoFrame) { viewModel.backdropLogoFrame = $0 }
-                .onChange(of: viewModel.logoModeChange) { _ in viewModel.startLogoFadeOut() }
+                .onChange(of: backdropLogoFrame) {
+                    viewModel.logLogoTransition("focused.backdrop newFrame=\(String(describing: $0)) retained=\(retainedSource != nil) centerY=\(targetCenterY)")
+                    viewModel.backdropLogoFrame = $0
+                }
+                .onChange(of: destinationShowsLogo) {
+                    viewModel.logLogoTransition("focused.destinationVisible=\($0) retained=\(retainedSource != nil) centerY=\(targetCenterY)")
+                }
+                .onChange(of: viewModel.logoModeChange) { _ in
+                    viewModel.logLogoTransition("focused.modeChange.observed retained=\(retainedSource != nil)")
+                    viewModel.startLogoFadeOut()
+                }
         }
         .ignoresSafeArea(.container, edges: .top)
     }

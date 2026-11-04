@@ -276,7 +276,7 @@ private extension NewTabPageView {
         if let escapeHatch = viewModel.escapeHatch {
             EscapeHatchView(model: escapeHatch, backdropFrame: viewModel.focusedContent == nil ? nil : viewModel.focusedLogoFrame)
                 .frame(maxWidth: escapeHatchMaxWidth)
-                .modifier(EmbeddedEscapeHatchGeometryReader())
+                .modifier(EmbeddedEscapeHatchGeometryReader(traceContext: "ntp=\(ObjectIdentifier(viewModel)) hatch=\(ObjectIdentifier(escapeHatch)) focusedContent=\(viewModel.focusedContent != nil) focusedState=\(isFocussedState)"))
                 .onPreferenceChange(EmbeddedEscapeHatchGeometryKey.self) { geometry in
                     if viewModel.focusedContent == nil {
                         escapeHatchFrame = geometry?.frame

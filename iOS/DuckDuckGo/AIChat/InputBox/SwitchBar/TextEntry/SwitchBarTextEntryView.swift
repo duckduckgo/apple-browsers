@@ -222,8 +222,12 @@ class SwitchBarTextEntryView: UIView {
         handler.isUsingExpandedBottomBarHeight
     }
 
+    private var usesExpandedTopPlaceholderLayout: Bool {
+        isExpandable && handler.isTopBarPosition && handler.usesExpandedAIChatTextEntryLayout && !handler.usesLegacyLayoutMetrics
+    }
+
     private var usesTopAlignedPlaceholder: Bool {
-        currentPose.usesTopAlignedPlaceholder
+        currentPose.usesTopAlignedPlaceholder || usesExpandedTopPlaceholderLayout
     }
 
     private var cancellables = Set<AnyCancellable>()
@@ -231,6 +235,7 @@ class SwitchBarTextEntryView: UIView {
     private var heightConstraint: NSLayoutConstraint?
     private var buttonsTrailingConstraint: NSLayoutConstraint?
     private var buttonsCenterYConstraint: NSLayoutConstraint?
+    private var preferredButtonsWidthConstraint: NSLayoutConstraint?
     private var placeholderTopConstraint: NSLayoutConstraint?
     private var placeholderCenterYConstraint: NSLayoutConstraint?
     private var placeholderLeadingConstraint: NSLayoutConstraint?
@@ -270,7 +275,7 @@ class SwitchBarTextEntryView: UIView {
     }
 
     func updatePoseForCurrentState() {
-        updatePlaceholderVerticalAlignment()
+        updatePlaceholderLayout()
         updateTextViewHeight()
     }
 
@@ -500,6 +505,10 @@ class SwitchBarTextEntryView: UIView {
 
         buttonsTrailingConstraint = buttonsView.trailingAnchor.constraint(equalTo: trailingAnchor)
         buttonsTrailingConstraint?.isActive = true
+        // Let the placeholder fill available width while required button widths still reserve their space.
+        let preferredButtonsWidth = buttonsView.widthAnchor.constraint(equalToConstant: 0)
+        preferredButtonsWidth.priority = .defaultHigh
+        preferredButtonsWidthConstraint = preferredButtonsWidth
         let buttonsCenterY = buttonsView.centerYAnchor.constraint(equalTo: topAnchor, constant: trailingButtonsRowHeight / 2)
         buttonsCenterYConstraint = buttonsCenterY
         let placeholderTopConstraint = placeholderLabel.topAnchor.constraint(equalTo: textView.topAnchor, constant: Constants.placeholderTopOffset)
@@ -713,7 +722,8 @@ class SwitchBarTextEntryView: UIView {
         placeholderLabel.textAlignment = currentButtonState.showsAnyButton ? .natural : placeholderTextAlignment
     }
 
-    private func updatePlaceholderVerticalAlignment() {
+    private func updatePlaceholderLayout() {
+        preferredButtonsWidthConstraint?.isActive = usesExpandedTopPlaceholderLayout
         guard placeholderTopConstraint?.isActive != usesTopAlignedPlaceholder else { return }
 
         if usesTopAlignedPlaceholder {

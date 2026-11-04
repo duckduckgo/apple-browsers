@@ -23,8 +23,8 @@ import UIKit
 /// mirroring a toggle tap. A quick flick triggers it; slow horizontal drags (e.g. row
 /// swipe-to-delete) don't. The recognizers don't retain this controller — the owner must.
 ///
-/// Recognizes simultaneously with descendant scroll views (favorites collection view, suggestion
-/// list) so a horizontal flick still switches mode even when it lands on scrollable content.
+/// A horizontal flick takes priority over descendant scroll pans so the outgoing page cannot keep
+/// scrolling while its viewport changes.
 @MainActor
 final class ModeSwitchSwipeGestureController: NSObject {
 
@@ -57,15 +57,29 @@ final class ModeSwitchSwipeGestureController: NSObject {
     }
 
     @objc private func handleSwipe(_ gesture: UISwipeGestureRecognizer) {
-        onSwitch(gesture.direction == .left ? .aiChat : .search)
+        let mode: TextEntryMode = gesture.direction == .left ? .aiChat : .search
+        print("[UTI_LOGO_TIMING] \(String(format: "%.6f", ProcessInfo.processInfo.systemUptime)) swipe.recognized mode=\(mode) state=\(gesture.state.rawValue)")
+        onSwitch(mode)
+    }
+
+    private func isScrollPan(_ gesture: UIGestureRecognizer) -> Bool {
+        guard let scrollView = gesture.view as? UIScrollView else { return false }
+        return gesture === scrollView.panGestureRecognizer
     }
 }
 
 extension ModeSwitchSwipeGestureController: UIGestureRecognizerDelegate {
-    /// Coexist with every other recognizer (scroll pans AND the SwiftUI/favorites content gesture)
-    /// so a horizontal flick is always recognized; `cancelsTouchesInView` then stops it co-firing a tap.
     func gestureRecognizer(_ gestureRecognizer: UIGestureRecognizer,
                            shouldRecognizeSimultaneouslyWith other: UIGestureRecognizer) -> Bool {
-        true
+        !isScrollPan(other)
+    }
+
+    func gestureRecognizer(_ gestureRecognizer: UIGestureRecognizer,
+                           shouldBeRequiredToFailBy other: UIGestureRecognizer) -> Bool {
+        let requiresSwipeFailure = isScrollPan(other)
+        if requiresSwipeFailure {
+            print("[UTI_LOGO_TIMING] \(String(format: "%.6f", ProcessInfo.processInfo.systemUptime)) swipe.priority scrollPan=\(ObjectIdentifier(other)) state=\(other.state.rawValue)")
+        }
+        return requiresSwipeFailure
     }
 }

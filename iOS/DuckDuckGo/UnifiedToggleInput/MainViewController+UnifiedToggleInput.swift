@@ -349,9 +349,16 @@ extension MainViewController {
         updateLandscapeEditingCap()
         var height = coordinator.editingHeight()
         if let cap = landscapeEditingHeightCap {
+            let measuredHeight = height
             height = min(height, cap)
+            print("[UTI_LOGO_TIMING] \(String(format: "%.6f", ProcessInfo.processInfo.systemUptime)) uti.landscape.cap measured=\(measuredHeight) cap=\(cap) target=\(height) constraint=\(viewCoordinator.constraints.navigationBarContainerHeight.constant) presentation=\(String(describing: viewCoordinator.navigationBarContainer.layer.presentation()?.frame)) duration=\(UIView.inheritedAnimationDuration)")
         }
-        guard viewCoordinator.constraints.navigationBarContainerHeight.constant != height else { return }
+        guard viewCoordinator.constraints.navigationBarContainerHeight.constant != height else {
+            // Keyboard layout may have resized the bar while focused content still has the old inset.
+            viewCoordinator.navigationBarContainer.superview?.layoutIfNeeded()
+            coordinator.pushContentInsets()
+            return
+        }
         viewCoordinator.constraints.navigationBarContainerHeight.constant = height
         viewCoordinator.navigationBarContainer.superview?.layoutIfNeeded()
         coordinator.pushContentInsets()
@@ -1671,10 +1678,11 @@ extension MainViewController: UnifiedInputContentContainerViewControllerDelegate
     }
 
     func unifiedInputEditingStateDidChangeMode(_ mode: TextEntryMode) {
-        // Route through the same path as a toggle tap so the toggle indicator, content swap, and
-        // input-height all animate together in one transaction (a swipe is a user-driven switch).
         guard let coordinator = unifiedToggleInputCoordinator else { return }
-        coordinator.contentViewController.performInputModeChange(to: mode) { coordinator.updateInputMode(mode, animated: true) }
+        coordinator.viewController.setSelectedInputMode(mode, animated: true)
+        coordinator.contentViewController.performInputModeChange(to: mode) {
+            coordinator.updateInputMode(mode, animated: true)
+        }
     }
 
     func unifiedInputEditingStateDidRequestSyncSetup() {

@@ -355,12 +355,15 @@ final class UnifiedInputContentContainerViewController: UIViewController {
         unifiedSuggestionsHost.slideContentWithCoreAnimation(changes)
     }
 
-    func performInputModeChange(to mode: TextEntryMode, _ changes: () -> Void) {
+    func performInputModeChange(to mode: TextEntryMode, onResizeStarted: (() -> Void)? = nil, _ changes: @escaping () -> Void) {
         guard let unifiedSuggestionsHost else {
             changes()
+            onResizeStarted?()
             return
         }
-        unifiedSuggestionsHost.performInputModeChange(to: mode, changes)
+        var layers: [CALayer] = []
+        if let chromeLayer = chromeHostingController?.viewIfLoaded?.layer { layers.append(chromeLayer) }
+        unifiedSuggestionsHost.performInputModeChange(to: mode, contentLayers: layers, onResizeStarted: onResizeStarted, changes)
     }
 
     /// The focused logo takes over from the NTP logo in place, so it shows from the start.

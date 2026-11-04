@@ -1,5 +1,5 @@
 //
-//  ChromeWebStoreUpdatePreparer.swift
+//  ChromeWebStoreUpdater.swift
 //
 //  Copyright © 2026 DuckDuckGo. All rights reserved.
 //
@@ -19,9 +19,9 @@
 import Foundation
 import os.log
 
-/// Prepares background updates without entering the UI installation flow.
+/// Downloads and verifies background updates for installation.
 @available(macOS 15.4, iOS 18.4, *)
-actor ChromeWebStoreUpdatePreparer {
+actor ChromeWebStoreUpdater {
     struct Installation: Equatable, Sendable {
         let identifiers: Set<String>
         let version: String

@@ -78,7 +78,7 @@ public final class ChromeWebStoreService: ChromeWebStoreManaging {
     private let isUpdateDiscoveryEnabled: @MainActor @Sendable () -> Bool
     private var updateDiscoverySubscription: AnyCancellable?
     private var updateDiscoveryRevision: UInt64 = 0
-    private var updatePreparer: ChromeWebStoreUpdatePreparer?
+    private var updater: ChromeWebStoreUpdater?
     public let pendingUpdates: any ChromeWebStorePendingUpdateStoring
     private var updateVersionOverrides: [String: UpdateVersionOverride] = [:]
 
@@ -106,7 +106,7 @@ public final class ChromeWebStoreService: ChromeWebStoreManaging {
          keyValueStore: (any ThrowingKeyValueStoring)? = nil,
          pixelFiring: WebExtensionPixelFiring = NoOpWebExtensionPixelFiring(),
          pendingUpdates: any ChromeWebStorePendingUpdateStoring = ChromeWebStorePendingUpdateStore(),
-         updateDownload: @escaping ChromeWebStoreUpdatePreparer.Download = { try await ChromeWebStoreUpdateDownloader().download($0) },
+         updateDownload: @escaping ChromeWebStoreUpdater.Download = { try await ChromeWebStoreUpdateDownloader().download($0) },
          now: @escaping @Sendable () -> Date = Date.init,
          updateCheck: ChromeWebStoreUpdateCoordinator.Check? = nil,
          updateCheckInterval: TimeInterval = ChromeWebStoreUpdateCoordinator.defaultCheckInterval,
@@ -119,12 +119,12 @@ public final class ChromeWebStoreService: ChromeWebStoreManaging {
         self.isUpdateDiscoveryEnabled = isUpdateDiscoveryEnabled
         self.pendingUpdates = pendingUpdates
         if supportsUpdateDiscovery, let updateCheck {
-            let preparer = ChromeWebStoreUpdatePreparer(pendingUpdates: pendingUpdates, verifier: verifier, download: updateDownload,
-                                                       installation: { [weak self] identifier in
+            let updater = ChromeWebStoreUpdater(pendingUpdates: pendingUpdates, verifier: verifier, download: updateDownload,
+                                                 installation: { [weak self] identifier in
                 guard let self, self.isUpdateDiscoveryEnabled(), let version = self.eligibleInstalledVersions()?[identifier] else { return nil }
                 return .init(identifiers: self.installationIdentifiers(for: identifier), version: version)
             }, report: { pixelFiring.fire($0) })
-            updatePreparer = preparer
+            self.updater = updater
             let stateStore = keyValueStore.map { ChromeWebStoreUpdateStateStore(keyValueStore: $0) }
             let initialState = stateStore?.load() ?? .init()
             let coordinator = ChromeWebStoreUpdateCoordinator(interval: updateCheckInterval, schedulerFactory: updateSchedulerFactory,
@@ -135,7 +135,7 @@ public final class ChromeWebStoreService: ChromeWebStoreManaging {
                 let pixelExtension = catalog.catalogEntry(of: identifier).map(WebExtensionPixelExtension.catalog) ?? .other
                 pixelFiring.fire(.updateCheck(extension: pixelExtension, outcome: pixelOutcome))
                 if case .update(let update) = outcome, update.extensionID == identifier {
-                    await preparer.prepare(update)
+                    await updater.prepare(update)
                 }
             }, installedIdentifiers: { [weak self] in
                 guard let self, self.manager != nil else { return nil }
@@ -162,8 +162,8 @@ public final class ChromeWebStoreService: ChromeWebStoreManaging {
         if let updateCoordinator {
             Task { await updateCoordinator.stop() }
         }
-        if let updatePreparer {
-            Task { await updatePreparer.stop() }
+        if let updater {
+            Task { await updater.stop() }
         }
     }
 

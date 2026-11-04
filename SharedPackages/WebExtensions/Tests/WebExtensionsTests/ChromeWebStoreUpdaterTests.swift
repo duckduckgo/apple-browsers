@@ -1,5 +1,5 @@
 //
-//  ChromeWebStoreUpdatePreparerTests.swift
+//  ChromeWebStoreUpdaterTests.swift
 //
 //  Copyright © 2026 DuckDuckGo. All rights reserved.
 //
@@ -22,7 +22,7 @@ import XCTest
 
 @available(macOS 15.4, iOS 18.4, *)
 @MainActor
-final class ChromeWebStoreUpdatePreparerTests: XCTestCase {
+final class ChromeWebStoreUpdaterTests: XCTestCase {
     private var events: [WebExtensionPixelEvent] = []
     private var installedVersion = "0.9"
     private var installationIDs: Set<String> = ["installed"]
@@ -35,11 +35,11 @@ final class ChromeWebStoreUpdatePreparerTests: XCTestCase {
                      size: data.count, sha256: hash ?? SHA256.hash(data: data).map { String(format: "%02x", $0) }.joined())
     }
 
-    private func preparer(store: any ChromeWebStorePendingUpdateStoring = ChromeWebStorePendingUpdateStore(),
-                          download: @escaping ChromeWebStoreUpdatePreparer.Download) -> ChromeWebStoreUpdatePreparer {
-        ChromeWebStoreUpdatePreparer(pendingUpdates: store,
-                                    verifier: ChromeWebStorePackageVerifier(publisherKeyHash: ChromeWebStoreFixture.publisherKeyHash),
-                                    download: download, installation: { [weak self] _ in
+    private func updater(store: any ChromeWebStorePendingUpdateStoring = ChromeWebStorePendingUpdateStore(),
+                         download: @escaping ChromeWebStoreUpdater.Download) -> ChromeWebStoreUpdater {
+        ChromeWebStoreUpdater(pendingUpdates: store,
+                              verifier: ChromeWebStorePackageVerifier(publisherKeyHash: ChromeWebStoreFixture.publisherKeyHash),
+                              download: download, installation: { [weak self] _ in
             guard let self else { return nil }
             return .init(identifiers: self.installationIDs, version: self.installedVersion)
         }, report: { [weak self] in self?.events.append($0) })
@@ -49,15 +49,15 @@ final class ChromeWebStoreUpdatePreparerTests: XCTestCase {
         let fixture = try ChromeWebStoreFixture()
         let store = ChromeWebStorePendingUpdateStore()
         let counter = PreparationCounter()
-        let preparer = preparer(store: store) { update in
+        let updater = updater(store: store) { update in
             XCTAssertFalse(Thread.isMainThread)
             XCTAssertEqual(update.extensionID, fixture.identifier)
             await counter.increment()
             return fixture.package
         }
         let update = try offer(fixture)
-        await preparer.prepare(update)
-        await preparer.prepare(update)
+        await updater.prepare(update)
+        await updater.prepare(update)
         let pending = await store.pendingUpdate(for: fixture.identifier)
         let verified = try XCTUnwrap(pending)
         XCTAssertEqual(verified.extensionID, fixture.identifier)
@@ -73,8 +73,8 @@ final class ChromeWebStoreUpdatePreparerTests: XCTestCase {
     func testReceiverCanTakeOwnershipWithoutMovingTheVerifiedFile() async throws {
         let fixture = try ChromeWebStoreFixture()
         let receiver = AcceptingPendingUpdateReceiver()
-        let preparer = preparer(store: receiver) { _ in fixture.package }
-        await preparer.prepare(try offer(fixture))
+        let updater = updater(store: receiver) { _ in fixture.package }
+        await updater.prepare(try offer(fixture))
         let pending = await receiver.pendingUpdate(for: fixture.identifier)
         let update = try XCTUnwrap(pending)
         defer { try? FileManager.default.removeItem(at: update.fileURL) }
@@ -84,26 +84,26 @@ final class ChromeWebStoreUpdatePreparerTests: XCTestCase {
     func testHashAndSizeAreCheckedBeforeParsingAnInvalidCRX() async throws {
         let fixture = try ChromeWebStoreFixture()
         let invalid = Data("not a CRX".utf8)
-        let preparer = preparer { _ in invalid }
+        let updater = updater { _ in invalid }
         let hashMismatch = try offer(fixture, package: invalid, hash: String(repeating: "0", count: 64))
-        await preparer.prepare(hashMismatch)
+        await updater.prepare(hashMismatch)
         assertDownloadFailure(.hashMismatch)
         events.removeAll()
-        await preparer.prepare(try offer(fixture))
+        await updater.prepare(try offer(fixture))
         assertDownloadFailure(.sizeMismatch)
     }
 
     func testInvalidSignatureMissingPublisherAndWrongDeveloperIdentityAreRejected() async throws {
         for fixture in [try ChromeWebStoreFixture(publisher: .invalidSignature), try ChromeWebStoreFixture(publisher: nil)] {
             events.removeAll()
-            let preparer = preparer { _ in fixture.package }
-            await preparer.prepare(try offer(fixture))
+            let updater = updater { _ in fixture.package }
+            await updater.prepare(try offer(fixture))
             assertVerificationFailure(.invalidSignature)
         }
         events.removeAll()
         let fixture = try ChromeWebStoreFixture()
-        let preparer = preparer { _ in fixture.package }
-        await preparer.prepare(try offer(fixture, identifier: String(repeating: "a", count: 32)))
+        let updater = updater { _ in fixture.package }
+        await updater.prepare(try offer(fixture, identifier: String(repeating: "a", count: 32)))
         assertVerificationFailure(.invalidPackage)
     }
 
@@ -112,8 +112,8 @@ final class ChromeWebStoreUpdatePreparerTests: XCTestCase {
         var corrupted = fixture.package
         corrupted[corrupted.count - 1] ^= 1
         let package = corrupted
-        let preparer = preparer { _ in package }
-        await preparer.prepare(try offer(fixture, package: package))
+        let updater = updater { _ in package }
+        await updater.prepare(try offer(fixture, package: package))
         assertVerificationFailure(.invalidSignature)
     }
 
@@ -126,8 +126,8 @@ final class ChromeWebStoreUpdatePreparerTests: XCTestCase {
         for (index, manifest) in manifests.enumerated() {
             events.removeAll()
             let fixture = try ChromeWebStoreFixture(manifest: manifest)
-            let preparer = preparer { _ in fixture.package }
-            await preparer.prepare(try offer(fixture))
+            let updater = updater { _ in fixture.package }
+            await updater.prepare(try offer(fixture))
             assertVerificationFailure(index == 2 ? .versionMismatch : .invalidVersion)
         }
     }
@@ -137,8 +137,8 @@ final class ChromeWebStoreUpdatePreparerTests: XCTestCase {
         for version in ["1.0", "1.1", "4.10"] {
             installedVersion = version
             events.removeAll()
-            let preparer = preparer { _ in fixture.package }
-            await preparer.prepare(try offer(fixture))
+            let updater = updater { _ in fixture.package }
+            await updater.prepare(try offer(fixture))
             assertVerificationFailure(.notNewer)
         }
     }
@@ -146,8 +146,8 @@ final class ChromeWebStoreUpdatePreparerTests: XCTestCase {
     func testVersionsAreComparedNumerically() async throws {
         installedVersion = "4.9"
         let fixture = try ChromeWebStoreFixture(manifest: ["manifest_version": 3, "name": "Test", "version": "4.10"])
-        let preparer = preparer { _ in fixture.package }
-        await preparer.prepare(try offer(fixture, version: "4.10"))
+        let updater = updater { _ in fixture.package }
+        await updater.prepare(try offer(fixture, version: "4.10"))
         guard case .updateVerified = events.first else { return XCTFail("4.10 must be newer than 4.9") }
     }
 
@@ -157,11 +157,11 @@ final class ChromeWebStoreUpdatePreparerTests: XCTestCase {
             installationIDs = ["installed"]
             events.removeAll()
             let store = ChromeWebStorePendingUpdateStore()
-            let preparer = preparer(store: store) { _ in
+            let updater = updater(store: store) { _ in
                 await MainActor.run { self.installationIDs = replacement }
                 return fixture.package
             }
-            await preparer.prepare(try offer(fixture))
+            await updater.prepare(try offer(fixture))
             let pending = await store.pendingUpdate(for: fixture.identifier)
             XCTAssertNil(pending)
             XCTAssertTrue(events.isEmpty)
@@ -171,19 +171,19 @@ final class ChromeWebStoreUpdatePreparerTests: XCTestCase {
     func testNonInstalledOfferNeverDownloads() async throws {
         installationIDs = []
         let fixture = try ChromeWebStoreFixture()
-        let preparer = preparer { _ in
+        let updater = updater { _ in
             XCTFail("Uninstalled extensions must not download")
             return fixture.package
         }
-        await preparer.prepare(try offer(fixture))
+        await updater.prepare(try offer(fixture))
         XCTAssertTrue(events.isEmpty)
     }
 
     func testFailedDownloadCanRetryOnNextOffer() async throws {
         let fixture = try ChromeWebStoreFixture()
-        let preparer = preparer { _ in throw WebExtensionUpdateDownloadFailure.networkFailure }
-        await preparer.prepare(try offer(fixture))
-        await preparer.prepare(try offer(fixture))
+        let updater = updater { _ in throw WebExtensionUpdateDownloadFailure.networkFailure }
+        await updater.prepare(try offer(fixture))
+        await updater.prepare(try offer(fixture))
         XCTAssertEqual(events.count, 2)
         assertDownloadFailure(.networkFailure)
     }
@@ -193,17 +193,17 @@ final class ChromeWebStoreUpdatePreparerTests: XCTestCase {
         let started = expectation(description: "Transfer started")
         let gate = PreparationGate()
         let store = ChromeWebStorePendingUpdateStore()
-        let preparer = preparer(store: store) { _ in
+        let updater = updater(store: store) { _ in
             started.fulfill()
             await gate.wait()
             return fixture.package
         }
-        let task = Task { await preparer.prepare(try offer(fixture)) }
+        let task = Task { await updater.prepare(try offer(fixture)) }
         await fulfillment(of: [started], timeout: 2)
-        await preparer.stop()
+        await updater.stop()
         await gate.resume()
         try await task.value
-        await preparer.prepare(try offer(fixture))
+        await updater.prepare(try offer(fixture))
         XCTAssertTrue(events.isEmpty)
         let pending = await store.pendingUpdate(for: fixture.identifier)
         XCTAssertNil(pending)
@@ -214,16 +214,16 @@ final class ChromeWebStoreUpdatePreparerTests: XCTestCase {
         let started = expectation(description: "Transfer started")
         let gate = PreparationGate()
         let counter = PreparationCounter()
-        let preparer = preparer { _ in
+        let updater = updater { _ in
             await counter.increment()
             started.fulfill()
             await gate.wait()
             return fixture.package
         }
         let update = try offer(fixture)
-        let first = Task { await preparer.prepare(update) }
+        let first = Task { await updater.prepare(update) }
         await fulfillment(of: [started], timeout: 2)
-        let second = Task { await preparer.prepare(update) }
+        let second = Task { await updater.prepare(update) }
         await gate.resume()
         await first.value
         await second.value
@@ -235,8 +235,8 @@ final class ChromeWebStoreUpdatePreparerTests: XCTestCase {
     func testStorageFailureEmitsBoundedReasonAndRemovesUnacceptedTemporaryFile() async throws {
         let fixture = try ChromeWebStoreFixture()
         let store = RejectingPendingUpdateStore()
-        let preparer = preparer(store: store) { _ in fixture.package }
-        await preparer.prepare(try offer(fixture))
+        let updater = updater(store: store) { _ in fixture.package }
+        await updater.prepare(try offer(fixture))
         assertVerificationFailure(.storageFailure)
         let file = await store.offeredFile
         XCTAssertFalse(FileManager.default.fileExists(atPath: try XCTUnwrap(file).path))

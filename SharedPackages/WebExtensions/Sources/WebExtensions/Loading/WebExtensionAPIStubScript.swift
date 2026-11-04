@@ -1532,18 +1532,24 @@ public enum WebExtensionAPIStubScript {
             });
         }
 
-        try {
-            if (api.action && typeof api.action.setBadgeBackgroundColor === "function") {
-                if (relayBadgeColorSetter(api.action, "setBadgeBackgroundColor", "background")) {
-                    relayedMembers.push("action.setBadgeBackgroundColor");
+        // Manifest V2 extensions set badge colors through `browserAction` or `pageAction` instead of `action`.
+        var badgeActionNamespaces = ["action", "browserAction", "pageAction"];
+
+        badgeActionNamespaces.forEach(function(name) {
+            try {
+                var namespace = api[name];
+                if (namespace && typeof namespace.setBadgeBackgroundColor === "function") {
+                    if (relayBadgeColorSetter(namespace, "setBadgeBackgroundColor", "background")) {
+                        relayedMembers.push(name + ".setBadgeBackgroundColor");
+                    }
+                    if (relayBadgeColorSetter(namespace, "setBadgeTextColor", "text")) {
+                        relayedMembers.push(name + ".setBadgeTextColor");
+                    }
                 }
-                if (relayBadgeColorSetter(api.action, "setBadgeTextColor", "text")) {
-                    relayedMembers.push("action.setBadgeTextColor");
-                }
+            } catch (error) {
+                console.info("[DuckDuckGo] Could not relay the " + name + " badge colors: " + error);
             }
-        } catch (error) {
-            console.info("[DuckDuckGo] Could not relay the badge colors: " + error);
-        }
+        });
 
         if (stubbedNamespaces.length > 0 || stubbedMembers.length > 0 || wrappedNamespaces.length > 0
             || relayedMembers.length > 0) {

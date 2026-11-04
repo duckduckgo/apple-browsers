@@ -17,6 +17,7 @@
 //  limitations under the License.
 //
 
+import DesignResourcesKitIcons
 import UIKit
 
 /// The Duck.ai menu, shown only while Duck.ai is enabled.
@@ -66,10 +67,11 @@ struct DuckAIRecentChatsMenuContent: MainMenuDeferredContent {
         let builder = MainMenuBuilder()
         let recentChatCommands = chats.recentChats.map {
             builder.makeCommand(for: .init(command: .openRecentChat, title: $0.title, shortcut: nil, requirement: nil,
-                                           argument: $0.url.absoluteString))
+                                           argument: $0.url.absoluteString, image: DesignSystemImages.Glyphs.Size16.chat))
         }
         let deleteAllChats = builder.makeCommand(for: .init(command: .deleteAllChats, title: UserText.menuDeleteAllChats, shortcut: nil,
-                                                            requirement: nil, argument: String(chats.totalChatCount)))
+                                                            requirement: nil, argument: String(chats.totalChatCount),
+                                                            image: DesignSystemImages.Glyphs.Size16.fire))
         var elements: [UIMenuElement] = []
         if !recentChatCommands.isEmpty {
             elements.append(UIMenu(title: UserText.menuRecentChats, identifier: UIMenu.Identifier("com.duckduckgo.duckai.recent"),

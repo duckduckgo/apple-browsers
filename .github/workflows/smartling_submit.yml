@@ -1,11 +1,12 @@
 name: Smartling - Submit
 
-# Submits one platform's strings to Smartling and authorizes the job up to a limit. Above it, the maintenance DRI
+# Submits one platform's strings to Smartling and authorizes the job up to a limit. Above it, the platform's owner
 # gets a review task.
 #   nightly: main, as "Nightly <platform> - <date>", called by smartling_nightly.yml. A failure also gets a task for
 #            the platform's owner.
 #   merge:   main, as "Merge <platform> - <date> <time> <commit>", called by smartling_on_merge.yml when a merge changes
-#            the platform's strings. A failure also gets a task for the platform's owner, as for a nightly.
+#            the platform's strings. A failure also gets a task for the author of the merge that started the run,
+#            followed by the platform's owner.
 #   release: a release branch, as "Release <platform> <version>", called at code freeze, where nothing depends on it,
 #            so a failure doesn't stop the release. A failure, or a review task that couldn't be opened, comments on
 #            the release task, when one is given.
@@ -332,9 +333,30 @@ jobs:
             echo "kind=review" >> "$GITHUB_OUTPUT"
           fi
 
-      # The platform's owner gets failure tasks. For now they get review tasks too while the automation beds in;
-      # remove --assignee below for review tasks to assign the platform's triage DRI instead.
-      # TODO: assign a merge run's failure task to the author of the merged commit instead of the platform's owner.
+      # A merge run's failure task goes to the author of the pull request whose merge started the run, which is the one
+      # that failed, even when the run exported later merges too. A bot, a manual run, or an author missing from the
+      # GitHub to Asana user map falls back to the platform's owner.
+      - name: Find the author of the merge
+        id: merge-author
+        if: ${{ !cancelled() && steps.task.outputs.kind == 'failure' && inputs.kind == 'merge' && github.event_name == 'push' }}
+        continue-on-error: true
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: python3 ./scripts/smartling/commit_author.py --sha "$GITHUB_SHA"
+
+      - name: Resolve the merge author's Asana user
+        id: author-asana-user
+        if: ${{ !cancelled() && steps.merge-author.outputs.login != '' }}
+        continue-on-error: true
+        uses: duckduckgo/native-github-asana-sync@v2.5.1
+        with:
+          action: get-asana-user-id
+          github-username: ${{ steps.merge-author.outputs.login }}
+          github-pat: ${{ secrets.APPLE_GH_RO_PAT }}
+
+      # The platform's owner gets failure tasks, or follows them when they go to the merge's author. For now they get
+      # review tasks too while the automation beds in; remove --assignee below for review tasks to assign the
+      # platform's triage DRI instead.
       - name: Resolve ${{ inputs.platform }} task assignee
         id: task-assignee
         if: ${{ !cancelled() && steps.task.outputs.kind != '' }}
@@ -354,7 +376,8 @@ jobs:
         env:
           ASANA_ACCESS_TOKEN: ${{ secrets.ASANA_ACCESS_TOKEN }}
           TASK_KIND: ${{ steps.task.outputs.kind }}
-          ASSIGNEE: ${{ steps.task-assignee.outputs.asanaUserId }}
+          AUTHOR: ${{ steps.author-asana-user.outputs.asanaUserId }}
+          OWNER: ${{ steps.task-assignee.outputs.asanaUserId }}
           TASK_NAME: "${{ steps.task.outputs.kind == 'review' && 'Smartling job needs review' || 'Smartling submission failed' }}: ${{ steps.submit.outputs.job_name || format('{0} (no job created)', steps.name.outputs.job_name || steps.job.outputs.job_name) }}"
           TASK_NOTES: |
             ${{ steps.task.outputs.kind == 'review' && format('🌍 The {0} {1} Smartling job is over the limit for automatic authorization.{2}', inputs.platform, inputs.kind, inputs.kind == 'release' && ' The release''s translations are imported once it''s authorized and completed.' || '') || format('❌ Submitting the {0} {1} strings to Smartling failed, so nothing was authorized.{2}', inputs.platform, inputs.kind, steps.submit.outputs.job_id && ' The job created before the failure is left in Smartling.' || '') }}
@@ -366,10 +389,17 @@ jobs:
             🌿 Branch: ${{ steps.job.outputs.ref }}
             🔖 Commit: ${{ steps.checkout.outputs.commit || 'unavailable' }}
             ⚙️ Workflow: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          STARTED_BY: "${{ steps.merge-author.outputs.login && format('🔀 Started by: https://github.com/{0}/commit/{1} from @{2}', github.repository, github.sha, steps.merge-author.outputs.login) || '' }}"
         run: |
+          [ -z "$STARTED_BY" ] || TASK_NOTES="${TASK_NOTES%$'\n'}"$'\n'"$STARTED_BY"
           task_args=()
           [ "$TASK_KIND" != review ] || task_args+=(--rotation-section "$ASANA_TRIAGE_ROTATION_SECTION_ID")
-          [ -z "$ASSIGNEE" ] || task_args+=(--assignee "$ASSIGNEE")
+          if [ -n "$AUTHOR" ]; then
+            task_args+=(--assignee "$AUTHOR")
+            [ -z "$OWNER" ] || task_args+=(--follower "$OWNER" --fallback-assignee "$OWNER")
+          elif [ -n "$OWNER" ]; then
+            task_args+=(--assignee "$OWNER")
+          fi
           python3 ./scripts/smartling/asana_review_task.py \
             --project "$ASANA_PROJECT_ID" \
             --section-name "$ASANA_INCOMING_SECTION_NAME" \

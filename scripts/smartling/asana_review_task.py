@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """
-Opens the Asana task for a Smartling job that needs review, assigned to the platform's triage DRI.
+Opens the Asana task for a Smartling job that needs review, assigned to the platform's triage DRI, or for a failed
+submission.
 
 Copyright © 2026 DuckDuckGo. All rights reserved.
 Licensed under the Apache License, Version 2.0
@@ -12,7 +13,7 @@ import sys
 import html
 import json
 import argparse
-from datetime import date, timedelta
+from datetime import date, datetime, timedelta
 from typing import Dict, List, Optional
 from urllib.parse import urlencode
 from urllib.error import HTTPError
@@ -116,6 +117,16 @@ class AsanaClient:
             'opt_fields': 'name',
         })
 
+    def project_tasks(self, project_id: str, since: datetime) -> List[Dict]:
+        """Tasks of the project changed since then, completed ones included, wherever triage has moved them."""
+        since_iso = since.strftime('%Y-%m-%dT%H:%M:%SZ')
+        return self._get_all('/tasks', {
+            'project': project_id,
+            'modified_since': since_iso,
+            'completed_since': since_iso,
+            'opt_fields': 'name,created_at',
+        }, max_pages=50)
+
     def subtasks(self, task_id: str) -> List[Dict]:
         return self._get_all(f'/tasks/{task_id}/subtasks', {'opt_fields': 'name'})
 
@@ -169,7 +180,26 @@ def review_task(client: AsanaClient, args, today: date) -> Dict:
         body['assignee'] = args.assignee
         log(f"👤 Assigning to {args.assignee} instead (--assignee)")
 
+    followers = [follower for follower in args.followers if follower != body.get('assignee')]
+    if followers:
+        body['followers'] = followers
+
     return body
+
+
+def create_task(client: AsanaClient, body: Dict, fallback_assignee: Optional[str] = None) -> Dict:
+    """Create the task. If Asana rejects its assignee, for example someone who has left, create it for the fallback
+    assignee instead, or unassigned."""
+    try:
+        return client.create_task(body)
+    except RuntimeError as error:
+        if not body.get('assignee') or body['assignee'] == fallback_assignee:
+            raise
+        log(f"⚠️ {error}. Creating the task for {fallback_assignee or 'no one'} instead")
+    body = {key: value for key, value in body.items() if key != 'assignee'}
+    if fallback_assignee:
+        body['assignee'] = fallback_assignee
+    return client.create_task(body)
 
 
 def main():
@@ -180,6 +210,8 @@ def main():
     parser.add_argument('--name', required=True)
     parser.add_argument('--notes', required=True, help='Plain text; "Label: value" lines get a bold label, URLs become links')
     parser.add_argument('--assignee', help='Assign to this user (GID, email or "me") instead of the triage DRI')
+    parser.add_argument('--fallback-assignee', help='Assign to this user (GID) instead if Asana rejects the assignee')
+    parser.add_argument('--follower', dest='followers', action='append', default=[], help='Add this user (GID) as a follower; repeatable')
     parser.add_argument('--dry-run', action='store_true', help='Look everything up and print the task instead of creating it')
     args = parser.parse_args()
 
@@ -195,7 +227,7 @@ def main():
         print(json.dumps(body, indent=2, ensure_ascii=False))
         return
     try:
-        task = client.create_task(body)
+        task = create_task(client, body, args.fallback_assignee)
     except RuntimeError as error:
         log(f"❌ {error}")
         sys.exit(1)

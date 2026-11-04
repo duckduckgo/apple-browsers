@@ -30,7 +30,8 @@ def review_task_args(rotation_section='apple-ios-triage'):
         rotation_section=rotation_section,
         name='Smartling job needs review: Nightly iOS - 2026-10-21',
         notes='Details',
-        assignee=None
+        assignee=None,
+        followers=[]
     )
 
 
@@ -162,6 +163,53 @@ class ReviewTaskTests(unittest.TestCase):
         task = self.review_task(client, args)
 
         self.assertNotIn('assignee', task)
+
+    def testWhenTheOwnerFollowsTheMergeAuthorsTaskThenTheyAreAFollowerUnlessTheyAreTheAssignee(self):
+        cases = {'author assigned': ('author', ['owner']), 'owner assigned': ('owner', None)}
+        for case, (assignee, followers) in cases.items():
+            with self.subTest(case):
+                args = review_task_args(rotation_section=None)
+                args.assignee, args.followers = assignee, ['owner']
+
+                task = self.review_task(FakeAsanaClient(), args)
+
+                self.assertEqual(task.get('followers'), followers)
+
+
+class RejectingAsanaClient:
+    """Rejects tasks for some assignees, as Asana does for deactivated users."""
+
+    def __init__(self, rejected):
+        self.rejected = rejected
+        self.created = []
+
+    def create_task(self, body):
+        if body.get('assignee') in self.rejected:
+            raise RuntimeError('Asana POST /tasks failed with HTTP 400: assignee: Not a recognized ID')
+        self.created.append(body)
+        return {'gid': '1'}
+
+
+class CreateTaskTests(unittest.TestCase):
+
+    def create_task(self, client, fallback_assignee):
+        with contextlib.redirect_stdout(io.StringIO()):
+            return ASANA_REVIEW_TASK.create_task(client, {'name': 'Task', 'assignee': 'author'}, fallback_assignee)
+
+    def testWhenAsanaRejectsTheAssigneeThenTheTaskGoesToTheFallbackOrNoOne(self):
+        for fallback, expected in (('owner', {'name': 'Task', 'assignee': 'owner'}), (None, {'name': 'Task'})):
+            with self.subTest(fallback=fallback):
+                client = RejectingAsanaClient(rejected={'author'})
+
+                self.create_task(client, fallback)
+
+                self.assertEqual(client.created, [expected])
+
+    def testWhenAsanaRejectsTheFallbackTooThenTheErrorIsRaised(self):
+        client = RejectingAsanaClient(rejected={'author', 'owner'})
+
+        with self.assertRaises(RuntimeError):
+            self.create_task(client, 'owner')
 
 
 if __name__ == '__main__':

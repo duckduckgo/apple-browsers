@@ -318,6 +318,36 @@ class SmartlingClient:
             if not items or len(jobs) >= page.get('totalCount', 0):
                 return jobs
 
+    async def list_open_source_issues(self) -> List[Dict]:
+        """List the project's open issues on English strings, page by page: the Issues API returns at most 30 at a time."""
+        issues = []
+        while True:
+            data = await self._request(
+                'POST',
+                f'/issues-api/v2/projects/{self.creds.project_id}/issues/list',
+                json={
+                    'issueStateCodes': ['OPENED'],
+                    'issueTypeCodes': ['SOURCE'],
+                    'limit': 30,
+                    'offset': len(issues),
+                }
+            )
+            page = data['response']['data']
+            items = page.get('items', [])
+            issues.extend(items)
+            if not items or len(issues) >= page.get('totalCount', 0):
+                return issues
+
+    async def get_source_string(self, hashcode: str) -> Optional[Dict]:
+        """Get a string's English text and keys."""
+        data = await self._request(
+            'GET',
+            f'/strings-api/v2/projects/{self.creds.project_id}/source-strings',
+            params={'hashcodes': hashcode}
+        )
+        items = data['response']['data'].get('items', [])
+        return items[0] if items else None
+
     async def get_file_status(self, file_uri: str) -> Dict:
         """Get a file's string counts, in total and per locale."""
         data = await self._request(

@@ -21,6 +21,7 @@ import AppUpdaterShared
 import Common
 import FoundationExtensions
 
+@MainActor
 final class AppStoreUpdatesDebugMenu: NSMenu {
     private let debugSettings = UpdatesDebugSettings()
     private let forceUpdateMenuItem = NSMenuItem(title: "")

@@ -1,4 +1,7 @@
 /* No comment provided by engineer. */
+" " = " ";
+
+/* No comment provided by engineer. */
 "-config.rollout.<parent>.<subfeature> true/false" = "-config.rollout.<parent>.<subfeature> true/false";
 
 /* No comment provided by engineer. */
@@ -381,6 +384,21 @@
 
 /* Title for the New Tab row in the Duck.ai tab header Plus (+) menu */
 "aichat.header.plusMenu.newTab" = "Naujas skirtukas";
+
+/* Section header in the Duck.ai tab header Plus (+) menu; every row below it opens a new tab */
+"aichat.header.plusMenu.newTabSection" = "Naujas skirtukas";
+
+/* Row in the New Tab section of the Duck.ai tab header Plus (+) menu — opens a new Duck.ai chat in a new tab */
+"aichat.header.plusMenu.newTabSection.chat" = "Pokalbis";
+
+/* Row in the New Tab section of the Duck.ai tab header Plus (+) menu — opens Duck.ai in image generation mode in a new tab */
+"aichat.header.plusMenu.newTabSection.image" = "Vaizdas";
+
+/* Row in the Duck.ai tab header Plus (+) menu — opens a new tab in search mode */
+"aichat.header.plusMenu.newTabSection.search" = "Paieška";
+
+/* Row in the New Tab section of the Duck.ai tab header Plus (+) menu — opens a new Duck.ai voice chat in a new tab */
+"aichat.header.plusMenu.newTabSection.voiceChat" = "Balso pokalbis";
 
 /* Title for the New Voice Chat row in the Duck.ai tab header Plus (+) menu */
 "aichat.header.plusMenu.newVoiceChat" = "Naujas balso pokalbis";
@@ -3297,6 +3315,72 @@
 
 /* No comment provided by engineer. */
 "menu.button.hint" = "Naršymo meniu";
+
+/* iPad menu bar command */
+"menuActualSize" = "Tikrasis dydis";
+
+/* iPad menu bar command */
+"menuBack" = "Atgal";
+
+/* iPad menu bar command */
+"menuClearTabsAndData" = "Valyti skirtukus ir duomenis";
+
+/* iPad menu bar command */
+"menuDuplicateTab" = "Kopijuoti skirtuką";
+
+/* iPad menu bar command */
+"menuFeedback" = "Bendrinti atsiliepimą";
+
+/* iPad menu bar command */
+"menuForward" = "Pirmyn";
+
+/* iPad menu bar command */
+"menuHideDownloads" = "Slėpti atsisiuntimus";
+
+/* iPad menu bar command */
+"menuHidePasswords" = "Slėpti slaptažodžius";
+
+/* iPad menu bar command */
+"menuHideTabs" = "Slėpti skirtukus";
+
+/* iPad menu bar command */
+"menuLastTab" = "Paskutinis skirtukas";
+
+/* iPad menu bar command */
+"menuNewTabOnRight" = "Naujas skirtukas dešinėje";
+
+/* iPad menu bar command */
+"menuNextTab" = "Rodyti paskesnį skirtuką";
+
+/* iPad menu bar command */
+"menuOpenLocation" = "Atidaryti vietą…";
+
+/* iPad menu bar command */
+"menuPreviousTab" = "Rodyti ankstesnį skirtuką";
+
+/* iPad menu bar command */
+"menuPrint" = "Spausdinti…";
+
+/* iPad menu bar command selecting a numbered tab */
+"menuSelectTab" = "Pasirinkti %d skirtuką";
+
+/* iPad menu bar command */
+"menuSettings" = "„DuckDuckGo“ nustatymai…";
+
+/* iPad menu bar command */
+"menuShowDownloads" = "Rodyti atsisiuntimus";
+
+/* iPad menu bar command */
+"menuShowPasswords" = "Rodyti slaptažodžius";
+
+/* iPad menu bar command */
+"menuShowTabs" = "Rodyti skirtukus";
+
+/* iPad menu bar command */
+"menuStop" = "Stabdyti";
+
+/* iPad menu bar command */
+"menuVoiceSearch" = "Privati paieška balsu";
 
 /* No comment provided by engineer. */
 "Message" = "Pranešimas";

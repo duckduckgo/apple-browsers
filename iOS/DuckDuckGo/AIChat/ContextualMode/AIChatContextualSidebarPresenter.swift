@@ -27,10 +27,18 @@ protocol AIChatContextualSidebarHosting: AnyObject {
     /// When false the surface is presented as a sheet instead.
     var canPresentContextualSidebar: Bool { get }
 
-    func presentContextualSidebar(_ viewController: UIViewController)
+    /// - Parameter coversPage: False when the window is resizing, which reflows the page anyway; an image of it at
+    ///   its old size would show as a second copy.
+    func presentContextualSidebar(_ viewController: UIViewController, animated: Bool, coversPage: Bool)
+
+    /// False once `viewController` starts sliding out, though it stays in the column until it is gone.
+    func isContextualSidebarShowing(_ viewController: UIViewController) -> Bool
 
     /// `completion` runs once `viewController` has left the sidebar, or straight away when it isn't in it.
     func dismissContextualSidebar(_ viewController: UIViewController, animated: Bool, completion: (() -> Void)?)
+
+    /// Takes `viewController` out of the sidebar at once, so it can be presented elsewhere while the column closes.
+    func detachContextualSidebar(_ viewController: UIViewController, animated: Bool)
 }
 
 /// Slides a child view controller in and out of the iPad sidebar column. The page's trailing edge is pinned to the
@@ -69,6 +77,8 @@ final class AIChatContextualSidebarPresenter {
     }()
 
     private var animator: UIViewPropertyAnimator?
+    /// An image of a detached view controller, closing the column in its place.
+    private var standIn: UIView?
     private var pageSnapshot: UIView?
     private var pageDissolveAnimator: UIViewPropertyAnimator?
     private var dismissalCompletions: [() -> Void] = []
@@ -93,19 +103,29 @@ final class AIChatContextualSidebarPresenter {
         self.hiddenConstraint = hiddenConstraint
     }
 
-    func present(_ viewController: UIViewController, animated: Bool = true) {
+    func present(_ viewController: UIViewController, animated: Bool = true, coversPage: Bool = true) {
         guard let parent, !(isPresenting && hostedViewController === viewController) else { return }
+        if hostedViewController === viewController {
+            reverseDismissal(of: viewController, animated: animated)
+            return
+        }
         // A different surface already filling the column is swapped in place rather than slid out and back.
         let isReplacingShownSurface = isPresenting
+        removeStandIn()
         removeHostedViewController()
         embed(viewController, in: parent)
         isPresenting = true
-        move(toShown: true, animated: animated && !isReplacingShownSurface) { [weak viewController] in
+        move(toShown: true, animated: animated && !isReplacingShownSurface, coversPage: coversPage) { [weak viewController] in
             UIAccessibility.post(notification: .screenChanged, argument: viewController?.view)
         }
     }
 
-    func dismiss(_ viewController: UIViewController, animated: Bool, completion: (() -> Void)?) {
+    /// - Parameter coversPage: False when the page has already changed under the column, as when its tab closed,
+    ///   so a snapshot would show the old page.
+    func dismiss(_ viewController: UIViewController,
+                 animated: Bool,
+                 coversPage: Bool = true,
+                 completion: (() -> Void)?) {
         guard hostedViewController === viewController else {
             completion?()
             return
@@ -121,12 +141,48 @@ final class AIChatContextualSidebarPresenter {
             return
         }
         isPresenting = false
-        // The keyboard leaves with the column rather than after it.
+        // The keyboard leaves with the column rather than after it, and nothing in it takes a tap on the way out.
         viewController.view.endEditing(true)
-        move(toShown: false, animated: animated) { [weak self] in
+        viewController.view.isUserInteractionEnabled = false
+        move(toShown: false, animated: animated, coversPage: coversPage) { [weak self] in
             self?.finishDismissal()
             UIAccessibility.post(notification: .layoutChanged, argument: nil)
         }
+    }
+
+    /// The column slides out as usual, but with an image of `viewController` in it, so the view controller itself is
+    /// free straight away, for example to carry on as a sheet when a window shrinks past the sidebar.
+    func detach(_ viewController: UIViewController, animated: Bool) {
+        guard hostedViewController === viewController else { return }
+        guard animated, isPresenting, let image = container.snapshotView(afterScreenUpdates: false) else {
+            dismiss(viewController, animated: false, completion: nil)
+            return
+        }
+        image.frame = container.bounds
+        image.isUserInteractionEnabled = false
+        container.addSubview(image)
+        standIn = image
+        removeHostedViewController()
+        isPresenting = false
+        // Detaching is for a resizing window, which reflows the page anyway: an image of it would show as a second copy.
+        move(toShown: false, animated: true, coversPage: false) { [weak self] in
+            self?.finishDismissal()
+        }
+    }
+
+    /// A view controller asked back while it slides out turns around, and what was waiting on its exit is dropped.
+    private func reverseDismissal(of viewController: UIViewController, animated: Bool) {
+        dismissalCompletions.removeAll()
+        isPresenting = true
+        viewController.view.isUserInteractionEnabled = true
+        move(toShown: true, animated: animated) { [weak viewController] in
+            UIAccessibility.post(notification: .screenChanged, argument: viewController?.view)
+        }
+    }
+
+    private func removeStandIn() {
+        standIn?.removeFromSuperview()
+        standIn = nil
     }
 
     private func embed(_ viewController: UIViewController, in parent: UIViewController) {
@@ -160,14 +216,14 @@ final class AIChatContextualSidebarPresenter {
         viewController.didMove(toParent: parent)
     }
 
-    private func move(toShown shown: Bool, animated: Bool, completion: @escaping () -> Void) {
+    private func move(toShown shown: Bool, animated: Bool, coversPage: Bool = true, completion: @escaping () -> Void) {
         guard let parentView = parent?.view else { return }
         // Stopping leaves the column wherever it is, so a reversal carries on from there.
         animator?.stopAnimation(true)
         animator = nil
 
         let isAnimated = animated && parentView.window != nil
-        if isAnimated {
+        if isAnimated && coversPage {
             coverPageWithSnapshot()
         } else {
             removePageSnapshot()
@@ -249,6 +305,7 @@ final class AIChatContextualSidebarPresenter {
         NSLayoutConstraint.activate([hiddenConstraint])
         parent?.view.layoutIfNeeded()
         container.isHidden = true
+        removeStandIn()
         removeHostedViewController()
     }
 
@@ -258,6 +315,9 @@ final class AIChatContextualSidebarPresenter {
             viewController.willMove(toParent: nil)
             viewController.view.removeFromSuperview()
             viewController.removeFromParent()
+            // The same view controller can be presented as a sheet next, which positions its view by frame.
+            viewController.view.translatesAutoresizingMaskIntoConstraints = true
+            viewController.view.isUserInteractionEnabled = true
         }
         let completions = dismissalCompletions
         dismissalCompletions.removeAll()

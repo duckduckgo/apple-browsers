@@ -19,6 +19,7 @@
 import AppKit
 import Common
 import FoundationExtensions
+import History
 import UniformTypeIdentifiers
 import PixelKit
 import WideEvent
@@ -464,7 +465,7 @@ struct DataImportViewModel {
             completeAndCleanupWideEvent(with: summary)
         }
 
-        if self.areAllSelectedDataTypesSuccessfullyImported {
+        if self.areRequiredSelectedDataTypesSuccessfullyImported {
             successfulImportHappened = true
             NotificationCenter.default.post(name: .dataImportComplete, object: nil)
         }
@@ -698,6 +699,7 @@ private func dataImporter(for source: DataImport.Source, fileDataType: DataImpor
                                   bookmarkImporter: CoreDataBookmarkImporter(bookmarkManager: NSApp.delegateTyped.bookmarkManager),
                                   loginImporter: SecureVaultLoginImporter(loginImportState: AutofillLoginImportState()),
                                   faviconManager: NSApp.delegateTyped.faviconManager,
+                                  historyImporter: HistoryImporter(historyCoordinator: NSApp.delegateTyped.historyCoordinator),
                                   featureFlagger: Application.appDelegate.featureFlagger,
                                   secureVaultReporter: SecureVaultReporter.shared,
                                   tld: Application.appDelegate.tld)
@@ -770,8 +772,11 @@ extension DataImportViewModel {
         return availablePreviousTypes.isEmpty ? availableTypes : availablePreviousTypes
     }
 
-    private var areAllSelectedDataTypesSuccessfullyImported: Bool {
-        selectedDataTypes.allSatisfy(isDataTypeSuccessfullyImported)
+    /// A History failure shows no error, so it doesn't count against the import when other selected types were imported.
+    private var areRequiredSelectedDataTypesSuccessfullyImported: Bool {
+        let nonHistoryDataTypes = selectedDataTypes.subtracting([.history])
+        let requiredDataTypes = nonHistoryDataTypes.isEmpty ? selectedDataTypes : nonHistoryDataTypes
+        return requiredDataTypes.allSatisfy(isDataTypeSuccessfullyImported)
     }
 
     func summary(for dataType: DataType) -> DataTypeSummary? {
@@ -1265,7 +1270,7 @@ extension DataImportViewModel {
                                 /* profileURL: */ $0.profileURL,
                                 /* primaryPassword: */ nil)
         }), selectedDataTypes.intersects(importer.importableTypes) else {
-            if #available(macOS 15.2, *), .safari == importSource {
+            if #available(macOS 15.2, *), [.safari, .safariTechnologyPreview].contains(importSource) {
                 screen = .archiveImport(dataTypes: filteredSupportedDataTypes)
                 return
             }

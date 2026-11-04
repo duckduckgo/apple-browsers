@@ -141,6 +141,11 @@ extension MainViewController {
         handleVoiceSearchOpenRequest(preferredTarget: textEntryMode == .aiChat ? .AIChat : .SERP)
     }
 
+    func newTabPageDuckAIMenu(_ controller: any NewTabPage) -> UIMenu? {
+        guard duckAIAddressBarEntry == .menu else { return nil }
+        return makeDuckAIMenu(source: .addressBarIcon, type: .webPage)
+    }
+
     func newTabPageDidRequestSearch(_ controller: any NewTabPage, textEntryMode: TextEntryMode) {
         if textEntryMode == .aiChat, !aiChatSettings.isAIChatSearchInputUserSettingsEnabled {
             // Unified input locks to search when the toggle is disabled.

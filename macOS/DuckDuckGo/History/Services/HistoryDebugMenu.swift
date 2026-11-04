@@ -66,6 +66,11 @@ final class HistoryDebugMenu: NSMenu {
                 action: #selector(importFromFirefox),
                 target: self
             ).withAccessibilityIdentifier("HistoryDebugMenu.importFromFirefox")
+            NSMenuItem(
+                title: "Import from Safari…",
+                action: #selector(importFromSafari),
+                target: self
+            ).withAccessibilityIdentifier("HistoryDebugMenu.importFromSafari")
         }
     }
 
@@ -115,6 +120,23 @@ final class HistoryDebugMenu: NSMenu {
                                            historyReader: FirefoxHistoryVisitsReader(firefoxDataDirectoryURL: profile.profileURL),
                                            historyImporter: HistoryImporter(historyCoordinator: historyCoordinator))
         importHistory(with: importer, browserName: "Firefox")
+    }
+
+    /// Imports the last month of history from a Safari "Export Browsing Data" archive through the importer the data import flow uses.
+    @MainActor
+    @objc func importFromSafari(_ sender: NSMenuItem) {
+        let panel = NSOpenPanel(allowedFileTypes: [.zip])
+        guard case .OK = panel.runModal(), let archiveURL = panel.url else { return }
+
+        let importer = SafariArchiveImporter(archiveURL: archiveURL,
+                                             bookmarkImporter: CoreDataBookmarkImporter(bookmarkManager: NSApp.delegateTyped.bookmarkManager),
+                                             loginImporter: SecureVaultLoginImporter(loginImportState: AutofillLoginImportState()),
+                                             faviconManager: NSApp.delegateTyped.faviconManager,
+                                             historyImporter: HistoryImporter(historyCoordinator: historyCoordinator),
+                                             featureFlagger: featureFlagger,
+                                             secureVaultReporter: SecureVaultReporter.shared,
+                                             tld: Application.appDelegate.tld)
+        importHistory(with: importer, browserName: "Safari")
     }
 
     @MainActor

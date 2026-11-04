@@ -32,6 +32,7 @@ import UserScript
 import WebKit
 
 public protocol AppStoreUpdateControllerFactory {
+    @MainActor
     static func instantiate(internalUserDecider: InternalUserDecider,
                             featureFlagger: FeatureFlagger,
                             privacyConfigurationManager: PrivacyConfigurationManaging,

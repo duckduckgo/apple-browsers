@@ -24,15 +24,24 @@ extension MainViewController: AIChatContextualSidebarHosting {
     /// The iPad layout with the tabs bar, in a window wide enough to leave the page a phone's width beside it.
     /// Reads the width the window is resizing to, so a rotation can be judged before it lands.
     var canPresentContextualSidebar: Bool {
+        canPresentContextualSidebar(withMargin: 0)
+    }
+
+    private func canPresentContextualSidebar(withMargin margin: CGFloat) -> Bool {
         typealias Constants = MainViewCoordinator.Constants
         let minimumWindowWidth = Constants.contextualSidebarMinWidth + Constants.contextualSidebarMinPageWidth
         return contextualSidebarPresenter != nil
             && AppWidthObserver.shared.isLargeWidth
-            && AppWidthObserver.shared.currentWidth >= minimumWindowWidth
+            && AppWidthObserver.shared.currentWidth >= minimumWindowWidth + margin
     }
 
-    func presentContextualSidebar(_ viewController: UIViewController) {
-        contextualSidebarPresenter?.present(viewController)
+    func presentContextualSidebar(_ viewController: UIViewController, animated: Bool, coversPage: Bool) {
+        contextualSidebarPresenter?.present(viewController, animated: animated, coversPage: coversPage)
+    }
+
+    func isContextualSidebarShowing(_ viewController: UIViewController) -> Bool {
+        guard let contextualSidebarPresenter else { return false }
+        return contextualSidebarPresenter.isPresenting && contextualSidebarPresenter.hostedViewController === viewController
     }
 
     func dismissContextualSidebar(_ viewController: UIViewController, animated: Bool, completion: (() -> Void)?) {
@@ -41,6 +50,10 @@ extension MainViewController: AIChatContextualSidebarHosting {
             return
         }
         contextualSidebarPresenter.dismiss(viewController, animated: animated, completion: completion)
+    }
+
+    func detachContextualSidebar(_ viewController: UIViewController, animated: Bool) {
+        contextualSidebarPresenter?.detach(viewController, animated: animated)
     }
 
     func makeContextualSidebarPresenter() -> AIChatContextualSidebarPresenter? {
@@ -55,6 +68,12 @@ extension MainViewController: AIChatContextualSidebarHosting {
                                                 hiddenConstraint: hidden)
     }
 
+    /// A sidebar leaving with its tab ends the visit to Duck.ai at once, so the reason is recorded first.
+    func currentTabWillLeaveScreen(_ exitTrigger: DuckAISessionWideEventData.ExitTrigger) {
+        recordDuckAISessionPendingExit(exitTrigger)
+        currentTab?.aiChatContextualSheetCoordinator.tabWillLeaveScreen()
+    }
+
     /// The sidebar sits beside the page rather than over it, so using the page or the address bar leaves it open.
     var isContextualSurfaceInSidebar: Bool {
         currentTab?.aiChatContextualSheetCoordinator.isSheetInSidebar == true
@@ -66,14 +85,47 @@ extension MainViewController: AIChatContextualSidebarHosting {
         guard let presenter = contextualSidebarPresenter,
               let hostedViewController = presenter.hostedViewController,
               hostedViewController !== currentTab?.aiChatContextualSheetCoordinator.sheetViewController else { return }
-        presenter.dismiss(hostedViewController, animated: true, completion: nil)
+        // The new tab is already on screen, so a snapshot of the page would show the closed one.
+        presenter.dismiss(hostedViewController, animated: true, coversPage: false, completion: nil)
     }
 
-    /// A window narrowed out of the iPad layout has no room for the sidebar, so the page takes the width back.
-    func closeContextualSidebarIfItNoLongerFits() {
-        guard !canPresentContextualSidebar,
-              let coordinator = currentTab?.aiChatContextualSheetCoordinator,
-              coordinator.isSheetInSidebar else { return }
-        coordinator.dismissSheet(animated: false)
+    /// Runs on every step of a window resize, and on rotation, before the new size lands. The chat follows the window
+    /// both ways mid-drag: a sidebar that stops fitting hands it to a sheet, and a sheet moves back once it clearly fits
+    /// again, or when the drag ends.
+    func contextualSurfaceWillTransition(with transitionCoordinator: UIViewControllerTransitionCoordinator) {
+        guard let coordinator = currentTab?.aiChatContextualSheetCoordinator else { return }
+        // A rotation animates its own change, which covers the column leaving at once.
+        if transitionCoordinator.isAnimated, coordinator.isSheetInSidebar, !canPresentContextualSidebar {
+            coordinator.parkSurfaceForResize(animated: false)
+        }
+        let isLiveResizeStep = !transitionCoordinator.isAnimated
+        transitionCoordinator.animate(alongsideTransition: nil) { [weak self, weak coordinator] _ in
+            guard let self, let coordinator else { return }
+            // A live resize step runs with animations off, so the column's exit starts here, once the step is done.
+            if coordinator.isSheetInSidebar, !self.canPresentContextualSidebar {
+                coordinator.parkSurfaceForResize(animated: true)
+            }
+            // A drag hovering around the sidebar's width would otherwise flip the chat back and forth on every step.
+            let margin = isLiveResizeStep ? MainViewCoordinator.Constants.contextualSidebarResizeHysteresis : 0
+            if coordinator.hasParkedSurface || self.canPresentContextualSidebar(withMargin: margin) {
+                coordinator.adaptSurface(toPresenter: self)
+            }
+            self.adaptContextualSurfaceWhenResizeEnds()
+        }
+    }
+
+    /// A step that lands while the sheet is still sliding in can't move it, so the end of the drag settles it.
+    private func adaptContextualSurfaceWhenResizeEnds() {
+        guard #available(iOS 26, *),
+              let scene = view.window?.windowScene,
+              scene.effectiveGeometry.isInteractivelyResizing,
+              contextualSurfaceResizeEndObservation == nil else { return }
+        contextualSurfaceResizeEndObservation = scene.observe(\.effectiveGeometry) { [weak self] scene, _ in
+            MainActor.assumeIsolated {
+                guard let self, !scene.effectiveGeometry.isInteractivelyResizing else { return }
+                self.contextualSurfaceResizeEndObservation = nil
+                self.currentTab?.aiChatContextualSheetCoordinator.adaptSurface(toPresenter: self)
+            }
+        }
     }
 }

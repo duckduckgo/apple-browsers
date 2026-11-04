@@ -46,9 +46,6 @@
 /* Camera View - Permission Required */
 "camera.permission.required" = "カメラの許可が必要です";
 
-/* No comment provided by engineer. */
-"Cancel" = "キャンセル";
-
 /* Standard Buttons - Cancel Button */
 "cancel.button" = "キャンセル";
 

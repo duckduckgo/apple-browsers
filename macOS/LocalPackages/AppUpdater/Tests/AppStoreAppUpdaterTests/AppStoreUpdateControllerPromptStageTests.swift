@@ -29,6 +29,7 @@ import Testing
 
 @testable import AppStoreAppUpdater
 
+@MainActor
 @Suite("AppStoreUpdateController prompt stages", .serialized)
 final class AppStoreUpdateControllerPromptStageTests {
 

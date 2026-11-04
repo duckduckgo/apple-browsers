@@ -72,6 +72,9 @@ public protocol AIChatSettingsProvider {
     /// The user settings state for automatically attaching page context
     var isAutomaticContextAttachmentEnabled: Bool { get }
 
+    /// The saved preference for the Duck.ai keyboard animation, independent of feature availability.
+    var isKeyboardAnimationEnabled: Bool { get }
+
     /// The user settings state for chat suggestions
     var isChatSuggestionsEnabled: Bool { get }
 
@@ -102,6 +105,9 @@ public protocol AIChatSettingsProvider {
 
     /// Updates the user settings state for the AI Chat automatic page context
     func enableAutomaticContextAttachment(enable: Bool)
+
+    /// Updates the saved preference for the Duck.ai keyboard animation.
+    func enableKeyboardAnimation(enable: Bool)
 
     /// Updates the user settings state for chat suggestions
     func enableChatSuggestions(enable: Bool)

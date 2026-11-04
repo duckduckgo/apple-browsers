@@ -25,6 +25,7 @@ final class NavigationBarOverflowTests: XCTestCase {
 
     var window: NSWindow!
     var originallyPinnedViews: [PinnableView]!
+    var originalHasInteractedWithSearchDuckAIToggle: Bool!
 
     var navigationBar: NavigationBarViewController {
         (window.contentViewController as! MainViewController).navigationBarViewController
@@ -38,6 +39,9 @@ final class NavigationBarOverflowTests: XCTestCase {
     override func setUp() {
         originallyPinnedViews = PinnableView.allCases.filter(pinningManager.isPinned)
         PinnableView.allCases.forEach(pinningManager.pin)
+        // Until the user interacts with it, the Search/Duck.ai toggle shows expanded in an empty address bar
+        originalHasInteractedWithSearchDuckAIToggle = UserDefaults.standard.hasInteractedWithSearchDuckAIToggle
+        UserDefaults.standard.hasInteractedWithSearchDuckAIToggle = true
     }
 
     @MainActor
@@ -58,6 +62,7 @@ final class NavigationBarOverflowTests: XCTestCase {
             }
         }
         originallyPinnedViews = nil
+        UserDefaults.standard.hasInteractedWithSearchDuckAIToggle = originalHasInteractedWithSearchDuckAIToggle
     }
 
     @MainActor

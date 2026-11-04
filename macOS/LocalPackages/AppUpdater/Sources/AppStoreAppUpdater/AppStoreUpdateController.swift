@@ -38,6 +38,7 @@ import Subscription
 /// how `instantiate` is consumed.
 extension UpdateControllerFactory: AppStoreUpdateControllerFactory {
     /// Instantiates the App Store update controller.
+    @MainActor
     public static func instantiate(internalUserDecider: InternalUserDecider,
                                    featureFlagger: FeatureFlagger,
                                    privacyConfigurationManager: PrivacyConfigurationManaging,
@@ -104,6 +105,7 @@ extension UpdateControllerFactory: AppStoreUpdateControllerFactory {
     // MARK: - Initialization
 
     /// Protocol-conforming initializer for production use.
+    @MainActor
     public convenience init(internalUserDecider: InternalUserDecider,
                             featureFlagger: FeatureFlagger,
                             privacyConfigurationManager: PrivacyConfigurationManaging,
@@ -117,7 +119,6 @@ extension UpdateControllerFactory: AppStoreUpdateControllerFactory {
         }
         let reevaluationTriggers = UpdatePromptStageTracker.didBecomeActive
             .merge(with: internalUserDecider.isInternalUserPublisher.map { _ in }, featureFlagger.updatesPublisher)
-            .receive(on: DispatchQueue.main)
             .eraseToAnyPublisher()
         let tracker = UpdatePromptStageTracker(
             store: keyValueStore.throwingKeyedStoring(),

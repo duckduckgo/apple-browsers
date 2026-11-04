@@ -18,13 +18,16 @@
 //
 
 import XCTest
+import UIKit
 import Core
 import Persistence
+import FeatureFlags_iOS
 @testable import DuckDuckGo
 
 @MainActor
 final class ScopedFireConfirmationViewModelTests: XCTestCase {
     
+    private var mockFeatureFlagger: MockFeatureFlagger!
     private var mockDownloadManager: SpyDownloadManager!
     private var mockKeyValueStore: MockKeyValueStore!
     private var mockHistoryManager: MockHistoryManager!
@@ -33,6 +36,7 @@ final class ScopedFireConfirmationViewModelTests: XCTestCase {
 
     override func setUp() {
         super.setUp()
+        mockFeatureFlagger = MockFeatureFlagger()
         mockDownloadManager = SpyDownloadManager()
         mockKeyValueStore = MockKeyValueStore()
         mockHistoryManager = MockHistoryManager()
@@ -41,6 +45,7 @@ final class ScopedFireConfirmationViewModelTests: XCTestCase {
     }
     
     override func tearDown() {
+        mockFeatureFlagger = nil
         mockDownloadManager = nil
         mockKeyValueStore = nil
         mockHistoryManager = nil
@@ -599,6 +604,165 @@ final class ScopedFireConfirmationViewModelTests: XCTestCase {
         }
     }
 
+    func testSlideToDeleteFlagChangesOnNextPresentation() {
+        let tab = createTabViewModel()
+        let disabled = makeSUT(tabViewModel: tab)
+        XCTAssertFalse(disabled.buttons.contains { $0.style == .slide })
+
+        mockFeatureFlagger.enabledFeatureFlags = [.slideToDelete]
+        let enabled = makeSUT(tabViewModel: tab)
+        let slider = enabled.buttons.first { $0.style == .slide }
+        XCTAssertEqual(slider?.title, UserText.scopedFireConfirmationSlideToDeleteAll)
+        XCTAssertEqual(slider?.accessibilityIdentifier, "alert.forget-data.confirm")
+        XCTAssertFalse(disabled.buttons.contains { $0.style == .slide })
+
+        mockFeatureFlagger.enabledFeatureFlags = []
+        XCTAssertFalse(makeSUT(tabViewModel: tab).buttons.contains { $0.style == .slide })
+    }
+
+    func testSliderPreservesDeleteAllScopeInBothBrowsingModes() {
+        mockFeatureFlagger.enabledFeatureFlags = [.slideToDelete]
+        for mode: BrowsingMode in [.normal, .fire] {
+            var request: FireRequest?
+            let sut = makeSUT(tabViewModel: nil, isSingleTab: true, browsingMode: mode, onConfirm: { request = $0 })
+            let slider = sut.buttons.first { $0.style == .slide }
+            XCTAssertNotNil(slider)
+            slider?.action()
+            XCTAssertEqual(request?.options, .all)
+            XCTAssertEqual(request?.trigger, .manualFire)
+            switch (mode, request?.scope) {
+            case (.normal, .all), (.fire, .fireMode): break
+            default: XCTFail("Unexpected delete-all scope")
+            }
+        }
+    }
+
+    func testSlideToDeleteDoesNotChangeScopedConfirmations() {
+        mockFeatureFlagger.enabledFeatureFlags = [.slideToDelete]
+        let contexts: [ScopedFireConfirmationViewModel.FireContext] = [
+            .singleTab, .contextualChat(onDelete: {}), .duckAIOnboarding,
+            .custom(title: "History", subtitle: "", action: "Delete"),
+            .deleteChats(count: 2, onDelete: {})
+        ]
+        for context in contexts {
+            let sut = makeSUT(tabViewModel: createAITabViewModel(), fireContext: context)
+            XCTAssertFalse(sut.buttons.contains { $0.style == .slide })
+        }
+    }
+
+    func testSlideRequiresFullForwardDragAndCompletesOnlyOnce() {
+        var state = SlideToDeleteState()
+        XCTAssertEqual(state.progress(translation: -20, travel: 200), 0)
+        XCTAssertEqual(state.progress(translation: 100, travel: 200), 0.5)
+        XCTAssertEqual(state.progress(translation: 300, travel: 200), 1)
+        XCTAssertFalse(state.complete(translation: 0, travel: 200))
+        XCTAssertFalse(state.complete(translation: -200, travel: 200))
+        XCTAssertFalse(state.complete(translation: 188, travel: 200))
+        XCTAssertFalse(state.complete(translation: 200, travel: 0))
+        XCTAssertFalse(state.isComplete)
+        XCTAssertTrue(state.complete(translation: 190, travel: 200))
+        XCTAssertTrue(state.isComplete)
+        XCTAssertFalse(state.complete(translation: 200, travel: 200))
+    }
+
+    func testSlideHapticRearmsWhenMovingBelowCompletionThreshold() {
+        var state = SlideToDeleteState()
+        XCTAssertFalse(state.updateDrag(translation: -200, travel: 200))
+        XCTAssertFalse(state.updateDrag(translation: 200, travel: 0))
+        XCTAssertFalse(state.updateDrag(translation: 188, travel: 200))
+        XCTAssertTrue(state.updateDrag(translation: 190, travel: 200))
+        XCTAssertFalse(state.isComplete)
+        XCTAssertFalse(state.updateDrag(translation: 200, travel: 200))
+        XCTAssertFalse(state.updateDrag(translation: 189, travel: 200))
+        XCTAssertTrue(state.updateDrag(translation: 191, travel: 200))
+        XCTAssertFalse(state.updateDrag(translation: 200, travel: 200))
+        XCTAssertFalse(state.complete(translation: 100, travel: 200))
+        XCTAssertFalse(state.isComplete)
+    }
+
+    func testSlideHapticResetsAfterCancelledDrag() {
+        var state = SlideToDeleteState()
+        XCTAssertTrue(state.updateDrag(translation: 190, travel: 200))
+        XCTAssertFalse(state.complete(translation: 100, travel: 200))
+        state.resetDrag()
+        XCTAssertFalse(state.updateDrag(translation: 188, travel: 200))
+        XCTAssertTrue(state.updateDrag(translation: 190, travel: 200))
+    }
+
+    func testCompletedSlideDoesNotProvideMoreHaptics() {
+        var state = SlideToDeleteState()
+        XCTAssertTrue(state.updateDrag(translation: 190, travel: 200))
+        XCTAssertTrue(state.complete(translation: 200, travel: 200))
+        state.resetDrag()
+        XCTAssertFalse(state.updateDrag(translation: 200, travel: 200))
+    }
+
+    func testFastSlideRequestsHapticWhenOnlyReleaseReachesThreshold() {
+        var state = SlideToDeleteState()
+        XCTAssertFalse(state.updateDrag(translation: 150, travel: 200))
+        XCTAssertTrue(state.endDrag(translation: 200, travel: 200))
+        XCTAssertTrue(state.isComplete)
+        XCTAssertFalse(state.shouldShowCompletionLabel)
+        XCTAssertFalse(state.endDrag(translation: 200, travel: 200))
+    }
+
+    func testReleaseDoesNotRepeatThresholdHaptic() {
+        var state = SlideToDeleteState()
+        XCTAssertTrue(state.updateDrag(translation: 195, travel: 200))
+        XCTAssertFalse(state.endDrag(translation: 200, travel: 200))
+        XCTAssertTrue(state.isComplete)
+    }
+
+    func testLabelRequiresCurrentHoldAndHidesOnRelease() {
+        var state = SlideToDeleteState()
+        XCTAssertFalse(state.revealCompletionLabel(for: state.thresholdEntryCount))
+        XCTAssertTrue(state.updateDrag(translation: 200, travel: 200))
+        let entry = state.thresholdEntryCount
+        XCTAssertFalse(state.shouldShowCompletionLabel)
+        XCTAssertTrue(state.revealCompletionLabel(for: entry))
+        XCTAssertTrue(state.shouldShowCompletionLabel)
+        XCTAssertFalse(state.revealCompletionLabel(for: entry))
+        XCTAssertFalse(state.endDrag(translation: 200, travel: 200))
+        XCTAssertTrue(state.isComplete)
+        XCTAssertFalse(state.shouldShowCompletionLabel)
+        XCTAssertFalse(state.revealCompletionLabel(for: entry))
+    }
+
+    func testMovingBackCancelsLabelAndInvalidatesEarlierHold() {
+        var state = SlideToDeleteState()
+        XCTAssertTrue(state.updateDrag(translation: 200, travel: 200))
+        let firstEntry = state.thresholdEntryCount
+        XCTAssertTrue(state.revealCompletionLabel(for: firstEntry))
+        XCTAssertFalse(state.updateDrag(translation: 100, travel: 200))
+        XCTAssertFalse(state.shouldShowCompletionLabel)
+        XCTAssertFalse(state.revealCompletionLabel(for: firstEntry))
+        XCTAssertTrue(state.updateDrag(translation: 200, travel: 200))
+        XCTAssertFalse(state.revealCompletionLabel(for: firstEntry))
+        XCTAssertTrue(state.revealCompletionLabel(for: state.thresholdEntryCount))
+        state.resetDrag()
+        XCTAssertFalse(state.shouldShowCompletionLabel)
+        XCTAssertFalse(state.revealCompletionLabel(for: state.thresholdEntryCount))
+    }
+
+    func testSlideTouchFeedbackFiresOncePerTouchAndRearmsAfterRelease() {
+        let feedback = SlideToDeleteFeedback()
+        let view = UIView()
+        feedback.attach(to: view)
+        XCTAssertTrue(feedback.beginTouch())
+        XCTAssertFalse(feedback.beginTouch())
+        feedback.endTouch()
+        XCTAssertTrue(feedback.beginTouch())
+        XCTAssertFalse(feedback.beginTouch())
+        feedback.endTouch()
+    }
+
+    func testSlideStyleHonorsOriginalAndFallsBackForUnsupportedGlass() {
+        XCTAssertEqual(SlideToDeleteStyle.original.resolved(isGlassAvailable: true), .original)
+        XCTAssertEqual(SlideToDeleteStyle.original.resolved(isGlassAvailable: false), .original)
+        XCTAssertEqual(SlideToDeleteStyle.glass.resolved(isGlassAvailable: true), .glass)
+        XCTAssertEqual(SlideToDeleteStyle.glass.resolved(isGlassAvailable: false), .original)
+    }
+
     // MARK: - Helpers
 
     private func makeSUT(tabViewModel: TabViewModel?,
@@ -616,6 +780,7 @@ final class ScopedFireConfirmationViewModelTests: XCTestCase {
                                                keyValueStore: mockKeyValueStore,
                                                appSettings: mockAppSettings,
                                                dataClearingCapability: mockDataClearingCapability,
+                                               featureFlagger: mockFeatureFlagger,
                                                browsingMode: browsingMode,
                                                onConfirm: onConfirm,
                                                onCancel: onCancel)

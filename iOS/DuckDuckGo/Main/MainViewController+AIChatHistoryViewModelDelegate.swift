@@ -24,18 +24,33 @@ extension MainViewController: AIChatHistoryViewModelDelegate {
 
     func viewModelDidRequestOpenNewChat() {
         if let tab = currentTab, tab.isAITab {
-            fireAIChatEntryPointPixel(source: .chatHistoryNewChat, opensNewTab: false, hasPrompt: false)
-            stampDuckAIEntrySourceOnCurrentTab(.chatHistoryNewChat)
-            recordDuckAISessionNewChatCreatedOnCurrentTab()
-            unifiedToggleInputCoordinator?.startNewChat()
-            tab.submitStartChatAction()
-            dismiss(animated: true) { [weak self] in
-                self?.unifiedToggleInputCoordinator?.showExpanded(inputMode: .aiChat)
+            if featureFlagger.isFeatureOn(.aiChatTabHandoffImprovements) {
+                openNewChatFromHistoryInNewTab(from: tab)
+            } else {
+                startNewChatFromHistoryInPlace(in: tab)
             }
         } else {
             dismiss(animated: true) { [weak self] in
                 self?.openAIChat(source: .chatHistoryNewChat)
             }
+        }
+    }
+
+    private func openNewChatFromHistoryInNewTab(from tab: TabViewController) {
+        recordDuckAISessionNewChatCreatedOnCurrentTab()
+        dismiss(animated: true) { [weak self] in
+            self?.openNewChatFromDuckAIPage(tab, source: .chatHistoryNewChat)
+        }
+    }
+
+    private func startNewChatFromHistoryInPlace(in tab: TabViewController) {
+        fireAIChatEntryPointPixel(source: .chatHistoryNewChat, opensNewTab: false, hasPrompt: false)
+        stampDuckAIEntrySourceOnCurrentTab(.chatHistoryNewChat)
+        recordDuckAISessionNewChatCreatedOnCurrentTab()
+        unifiedToggleInputCoordinator?.startNewChat()
+        tab.submitStartChatAction()
+        dismiss(animated: true) { [weak self] in
+            self?.unifiedToggleInputCoordinator?.showExpanded(inputMode: .aiChat)
         }
     }
 

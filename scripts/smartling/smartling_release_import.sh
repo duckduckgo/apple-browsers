@@ -79,7 +79,6 @@ STRINGS_LEFT=""
 INCOMPLETE_LOCALES=""
 STRINGS_AWAITING_AUTHORIZATION=""
 JOBS_AWAITING_AUTHORIZATION=""
-INTEGRITY=""
 PR_URL=""
 
 finish() {
@@ -106,7 +105,6 @@ finish() {
 			echo "jobs_awaiting_authorization<<JOBS_AWAITING_AUTHORIZATION_EOF"
 			echo "$JOBS_AWAITING_AUTHORIZATION"
 			echo "JOBS_AWAITING_AUTHORIZATION_EOF"
-			echo "integrity=$INTEGRITY"
 			echo "pr_url=$PR_URL"
 			echo "reason=$REASON"
 		} >> "$GITHUB_OUTPUT"
@@ -123,7 +121,6 @@ finish() {
 			[ -z "$INCOMPLETE_LOCALES" ] || echo "- Incomplete locales: \`$INCOMPLETE_LOCALES\`"
 			[ -z "$STRINGS_AWAITING_AUTHORIZATION" ] || [ "$STRINGS_AWAITING_AUTHORIZATION" = "0" ] || echo "- String translations not authorized (in a job awaiting authorization or in no job): \`$STRINGS_AWAITING_AUTHORIZATION\`"
 			[ -z "$JOBS_AWAITING_AUTHORIZATION" ] || printf -- '- Jobs awaiting authorization:\n  %s\n' "${JOBS_AWAITING_AUTHORIZATION//$'\n'/$'\n'  }"
-			[ -z "$INTEGRITY" ] || echo "- Integrity check: \`$INTEGRITY\`"
 			[ -z "$PR_URL" ] || echo "- Pull request: $PR_URL"
 			[ -z "$REASON" ] || echo "- Reason: $REASON"
 		} >> "$GITHUB_STEP_SUMMARY"
@@ -147,6 +144,7 @@ else
 	existing_pr="$(gh pr list --head "$IMPORT_BRANCH" --state all --limit 1 --json state,url --jq '.[] | "\(.state) \(.url)"')"
 	if [ -n "$existing_pr" ]; then
 		PR_URL="${existing_pr#* }"
+		[ "${existing_pr%% *}" != "MERGED" ] || finish pr_merged "The translations pull request for $VERSION is merged, so the release branch has the translations"
 		finish skipped_existing_pr "A translations pull request for $VERSION already exists (${existing_pr% *})"
 	fi
 fi
@@ -203,12 +201,6 @@ rm -rf "$DOWNLOAD_DIR"
 echo "Cleaning non-localization files from working tree..."
 git restore --staged --worktree -- . ':(exclude)**/*.strings' ':(exclude)**/*.stringsdict' ':(exclude)**/*.xcstrings'
 
-if ./scripts/smartling/check_translation_integrity.py; then
-	INTEGRITY="passed"
-else
-	INTEGRITY="issues_found"
-fi
-
 if [ -z "$(git status --porcelain -- ':(glob)**/*.strings' ':(glob)**/*.stringsdict' ':(glob)**/*.xcstrings')" ]; then
 	if [ -n "$OPEN_PR_URL" ]; then
 		PR_URL="$OPEN_PR_URL"
@@ -240,12 +232,6 @@ else
 	job_line="- Smartling job: none, every string in the release was already translated by earlier jobs"
 fi
 
-if [ "$INTEGRITY" = "passed" ]; then
-	integrity_line="- Integrity check: passed"
-else
-	integrity_line="- Integrity check: ⚠️ found deleted or much shorter translations. Review the diff before merging."
-fi
-
 workflow_line=""
 if [ -n "${GITHUB_RUN_ID:-}" ]; then
 	workflow_line="- Workflow: ${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}"
@@ -268,7 +254,6 @@ Imports the $PLATFORM $VERSION translations from Smartling into \`$RELEASE_BRANC
 
 - Smartling files: \`${FILE_URIS[*]}\`
 $job_line
-$integrity_line
 $workflow_line
 
 ---

@@ -19,7 +19,6 @@
 import DesignResourcesKit
 import SwiftUI
 import SwiftUIExtensions
-import UniformTypeIdentifiers
 
 enum VerticalTabsStyle {
     /// The sidebar and the tab bar above it let the blur behind the window show through.
@@ -47,28 +46,46 @@ private enum Layout {
     static let closeButtonSize: CGFloat = 16
     static let selectedShadowRadius: CGFloat = 1
     static let reorderAnimation = Animation.easeInOut(duration: 0.2)
+    static let reorderDragThreshold: CGFloat = 3
+    static let listCoordinateSpace = "VerticalTabsList"
     static let titleFade = LinearGradient(stops: [.init(color: .black, location: 0.8), .init(color: .clear, location: 1)],
                                           startPoint: .leading,
                                           endPoint: .trailing)
 }
 
-/// Only the sidebar accepts it, so a dragged tab can't land as text in the address bar or a pinned tab.
-private let verticalTabDragType = UTType(exportedAs: "com.duckduckgo.macos.vertical-tab")
-
 private struct VerticalTabsList: View {
+    /// A tab being dragged to a new place: its row follows the pointer while the other rows make room.
+    private struct TabDrag {
+        let tabID: TabIdentifier
+        /// How far below the row's top the pointer grabbed it.
+        let grabOffset: CGFloat
+        var pointerY: CGFloat
+    }
+
     @ObservedObject var model: VerticalTabsViewModel
     @Environment(\.designSystemPalette) private var palette
+    @State private var drag: TabDrag?
 
     var body: some View {
         VStack(spacing: 0) {
             ScrollViewReader { proxy in
                 ScrollView(.vertical) {
                     LazyVStack(spacing: Layout.rowSpacing) {
-                        ForEach(model.tabs) { tab in
+                        ForEach(Array(model.tabs.enumerated()), id: \.element.id) { index, tab in
                             VerticalTabRow(tab: tab, isSelected: tab.id == model.selectedTabID, isOnlyTab: model.tabs.count == 1, model: model)
                                 .id(tab.id)
+                                .offset(y: dragOffset(of: tab.id, at: index))
+                                .zIndex(drag?.tabID == tab.id ? 1 : 0)
+                                .transaction { transaction in
+                                    // The dragged row stays under the pointer; only the rows making room for it slide.
+                                    if drag?.tabID == tab.id {
+                                        transaction.animation = nil
+                                    }
+                                }
+                                .simultaneousGesture(reorderGesture(for: tab.id))
                         }
                     }
+                    .coordinateSpace(name: Layout.listCoordinateSpace)
                     .animation(Layout.reorderAnimation, value: model.tabs.map(\.id))
                     .padding(Layout.listPadding)
                 }
@@ -86,6 +103,45 @@ private struct VerticalTabsList: View {
                 .padding(Layout.listPadding)
         }
         .background(Color(designSystemColor: .surfaceBackdrop, palette: palette).opacity(VerticalTabsStyle.backgroundOpacity))
+    }
+
+    private func reorderGesture(for tabID: TabIdentifier) -> some Gesture {
+        DragGesture(minimumDistance: Layout.reorderDragThreshold, coordinateSpace: .named(Layout.listCoordinateSpace))
+            .onChanged { value in
+                if drag == nil, let startIndex = index(of: tabID) {
+                    drag = TabDrag(tabID: tabID, grabOffset: value.startLocation.y - rowTop(at: startIndex), pointerY: value.location.y)
+                    model.select(tabID)
+                }
+                guard var currentDrag = drag else { return }
+                currentDrag.pointerY = value.location.y
+                drag = currentDrag
+                model.moveTab(tabID, to: targetIndex(of: currentDrag))
+            }
+            .onEnded { _ in
+                withAnimation(Layout.reorderAnimation) {
+                    drag = nil
+                }
+            }
+    }
+
+    private func index(of tabID: TabIdentifier) -> Int? {
+        model.tabs.firstIndex { $0.id == tabID }
+    }
+
+    private func rowTop(at index: Int) -> CGFloat {
+        CGFloat(index) * (Layout.rowHeight + Layout.rowSpacing)
+    }
+
+    /// The place of the row that the middle of the dragged row is over.
+    private func targetIndex(of drag: TabDrag) -> Int {
+        let draggedRowMiddle = drag.pointerY - drag.grabOffset + Layout.rowHeight / 2
+        let index = Int((draggedRowMiddle / (Layout.rowHeight + Layout.rowSpacing)).rounded(.down))
+        return min(max(index, 0), model.tabs.count - 1)
+    }
+
+    private func dragOffset(of tabID: TabIdentifier, at index: Int) -> CGFloat {
+        guard let drag, drag.tabID == tabID else { return 0 }
+        return drag.pointerY - drag.grabOffset - rowTop(at: index)
     }
 }
 
@@ -141,16 +197,6 @@ private struct VerticalTabRow: View {
             Button(UserText.closeOtherTabs) { model.closeOtherTabs(except: tab.id) }
                 .disabled(isOnlyTab)
         }
-        .onDrag {
-            model.startDragging(tab.id)
-            let itemProvider = NSItemProvider()
-            itemProvider.registerDataRepresentation(forTypeIdentifier: verticalTabDragType.identifier, visibility: .ownProcess) { completion in
-                completion(Data(tab.id.utf8), nil)
-                return nil
-            }
-            return itemProvider
-        }
-        .onDrop(of: [verticalTabDragType], delegate: VerticalTabDropDelegate(targetID: tab.id, model: model))
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(tab.title)
         .accessibilityAddTraits(isSelected ? [.isButton, .isSelected] : .isButton)
@@ -234,23 +280,5 @@ private struct VerticalTabsNewTabButton: View {
         .onHover { isHovered = $0 }
         .help(UserText.newTabTooltip)
         .accessibilityIdentifier("VerticalTabs.newTabButton")
-    }
-}
-
-private struct VerticalTabDropDelegate: DropDelegate {
-    let targetID: TabIdentifier
-    let model: VerticalTabsViewModel
-
-    func dropEntered(info: DropInfo) {
-        model.moveDraggedTab(to: targetID)
-    }
-
-    func dropUpdated(info: DropInfo) -> DropProposal? {
-        DropProposal(operation: .move)
-    }
-
-    func performDrop(info: DropInfo) -> Bool {
-        model.dropDraggedTab(on: targetID)
-        return true
     }
 }

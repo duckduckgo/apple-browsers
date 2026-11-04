@@ -560,19 +560,6 @@
 	<string>$(SPARKLE_PUBLIC_EDKEY)</string>
 	<key>SUScheduledCheckInterval</key>
 	<integer>10800</integer>
-	<key>UTExportedTypeDeclarations</key>
-	<array>
-		<dict>
-			<key>UTTypeConformsTo</key>
-			<array>
-				<string>public.data</string>
-			</array>
-			<key>UTTypeDescription</key>
-			<string>DuckDuckGo Vertical Tab</string>
-			<key>UTTypeIdentifier</key>
-			<string>com.duckduckgo.macos.vertical-tab</string>
-		</dict>
-	</array>
 	<key>ViewBridgeService</key>
 	<false/>
 	<key>APP_CONFIGURATION_APP_GROUP</key>

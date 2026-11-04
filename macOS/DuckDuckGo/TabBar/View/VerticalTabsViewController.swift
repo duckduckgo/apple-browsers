@@ -43,12 +43,9 @@ final class VerticalTabsViewController: NSViewController {
     init(
         tabCollectionViewModel: TabCollectionViewModel,
         aiChatCoordinator: AIChatCoordinating?,
-        tabDragAndDropManager: TabDragAndDropManager = NSApp.delegateTyped.tabDragAndDropManager,
         themeManager: ThemeManager = NSApp.delegateTyped.themeManager
     ) {
-        self.viewModel = VerticalTabsViewModel(tabCollectionViewModel: tabCollectionViewModel,
-                                               aiChatCoordinator: aiChatCoordinator,
-                                               tabDragAndDropManager: tabDragAndDropManager)
+        self.viewModel = VerticalTabsViewModel(tabCollectionViewModel: tabCollectionViewModel, aiChatCoordinator: aiChatCoordinator)
         self.themeManager = themeManager
         super.init(nibName: nil, bundle: nil)
     }

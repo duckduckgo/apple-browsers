@@ -51,46 +51,17 @@ final class VerticalTabsViewModelTests: XCTestCase {
         XCTAssertFalse(model.tabs.map(\.id).contains(closedTabID))
     }
 
-    func testWhenDragStartsThenTheDraggedTabIsSelected() {
-        let tabCollectionViewModel = tabCollectionViewModel(tabCount: 3, selectedIndex: 0)
-        let model = verticalTabsViewModel(for: tabCollectionViewModel)
-        let draggedTabID = model.tabs[2].id
-
-        model.startDragging(draggedTabID)
-
-        XCTAssertEqual(tabCollectionViewModel.selectionIndex, .unpinned(2))
-    }
-
-    func testWhenDraggedTabMovesOverAnotherTabThenItTakesThatTabsPlace() {
+    func testWhenTabMovesToAnotherPlaceThenTheListFollows() {
         let tabCollectionViewModel = tabCollectionViewModel(tabCount: 3, selectedIndex: 0)
         let model = verticalTabsViewModel(for: tabCollectionViewModel)
         let originalIDs = model.tabs.map(\.id)
-        model.startDragging(originalIDs[0])
         let tabsUpdated = expectTabsUpdate(of: model)
 
-        model.moveDraggedTab(to: originalIDs[2])
+        model.moveTab(originalIDs[0], to: 2)
 
         wait(for: [tabsUpdated], timeout: 1)
         XCTAssertEqual(tabIDs(of: tabCollectionViewModel), [originalIDs[1], originalIDs[2], originalIDs[0]])
         XCTAssertEqual(model.tabs.map(\.id), [originalIDs[1], originalIDs[2], originalIDs[0]])
-        XCTAssertEqual(model.selectedTabID, originalIDs[0])
-    }
-
-    func testWhenTabFromAnotherWindowIsDroppedOnATabThenItMovesToThisWindow() {
-        let tabDragAndDropManager = TabDragAndDropManager()
-        let sourceWindow = tabCollectionViewModel(tabCount: 2, selectedIndex: 0)
-        let destinationWindow = tabCollectionViewModel(tabCount: 2, selectedIndex: 0)
-        let sourceModel = verticalTabsViewModel(for: sourceWindow, tabDragAndDropManager: tabDragAndDropManager)
-        let destinationModel = verticalTabsViewModel(for: destinationWindow, tabDragAndDropManager: tabDragAndDropManager)
-        let draggedTabID = sourceModel.tabs[1].id
-        sourceModel.startDragging(draggedTabID)
-
-        destinationModel.dropDraggedTab(on: destinationModel.tabs[0].id)
-
-        XCTAssertFalse(tabIDs(of: sourceWindow).contains(draggedTabID))
-        XCTAssertEqual(tabIDs(of: destinationWindow).first, draggedTabID)
-        XCTAssertEqual(tabIDs(of: destinationWindow).count, 3)
-        XCTAssertNil(tabDragAndDropManager.sourceUnit)
     }
 
     private func tabCollectionViewModel(tabCount: Int, selectedIndex: Int) -> TabCollectionViewModel {
@@ -100,13 +71,8 @@ final class VerticalTabsViewModelTests: XCTestCase {
                                       pinnedTabsManagerProvider: PinnedTabsManagerProvidingMock())
     }
 
-    private func verticalTabsViewModel(
-        for tabCollectionViewModel: TabCollectionViewModel,
-        tabDragAndDropManager: TabDragAndDropManager? = nil
-    ) -> VerticalTabsViewModel {
-        VerticalTabsViewModel(tabCollectionViewModel: tabCollectionViewModel,
-                              aiChatCoordinator: nil,
-                              tabDragAndDropManager: tabDragAndDropManager ?? TabDragAndDropManager())
+    private func verticalTabsViewModel(for tabCollectionViewModel: TabCollectionViewModel) -> VerticalTabsViewModel {
+        VerticalTabsViewModel(tabCollectionViewModel: tabCollectionViewModel, aiChatCoordinator: nil)
     }
 
     private func tabIDs(of tabCollectionViewModel: TabCollectionViewModel) -> [TabIdentifier] {

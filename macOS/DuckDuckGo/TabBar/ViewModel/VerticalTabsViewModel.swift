@@ -40,18 +40,12 @@ final class VerticalTabsViewModel: ObservableObject {
 
     private let tabCollectionViewModel: TabCollectionViewModel
     private let aiChatCoordinator: AIChatCoordinating?
-    private let tabDragAndDropManager: TabDragAndDropManager
     private var cancellables = Set<AnyCancellable>()
     private var tabCancellables = Set<AnyCancellable>()
 
-    init(
-        tabCollectionViewModel: TabCollectionViewModel,
-        aiChatCoordinator: AIChatCoordinating?,
-        tabDragAndDropManager: TabDragAndDropManager
-    ) {
+    init(tabCollectionViewModel: TabCollectionViewModel, aiChatCoordinator: AIChatCoordinating?) {
         self.tabCollectionViewModel = tabCollectionViewModel
         self.aiChatCoordinator = aiChatCoordinator
-        self.tabDragAndDropManager = tabDragAndDropManager
 
         reloadTabs()
         updateSelectedTabID()
@@ -88,31 +82,11 @@ final class VerticalTabsViewModel: ObservableObject {
         tabCollectionViewModel.insertOrAppendNewTab()
     }
 
-    /// Selects the dragged tab up front, like the tab bar: moving a tab selects it, and doing that mid-drag would switch the page.
-    func startDragging(_ id: TabIdentifier) {
-        guard let index = unpinnedIndex(of: id) else { return }
-        tabCollectionViewModel.select(at: .unpinned(index))
-        tabDragAndDropManager.setSource(tabCollectionViewModel: tabCollectionViewModel, index: .unpinned(index))
-    }
-
-    /// Moves a tab dragged within this window into the place of the tab it is dragged over.
-    func moveDraggedTab(to targetID: TabIdentifier) {
-        guard let source = tabDragAndDropManager.sourceUnit,
-              source.tabCollectionViewModel === tabCollectionViewModel,
-              source.index.isUnpinnedTab,
-              let targetIndex = unpinnedIndex(of: targetID),
-              targetIndex != source.index.item else { return }
-        let newIndex = TabIndex.unpinned(targetIndex)
-        tabCollectionViewModel.moveTab(at: source.index, to: newIndex)
-        tabDragAndDropManager.setSource(tabCollectionViewModel: tabCollectionViewModel, index: newIndex)
-    }
-
-    /// Ends the drag on the tab it was dropped on. A tab dragged from another window moves to this one.
-    func dropDraggedTab(on targetID: TabIdentifier) {
-        defer { tabDragAndDropManager.clear() }
-        guard let targetIndex = unpinnedIndex(of: targetID) else { return }
-        tabDragAndDropManager.setDestination(tabCollectionViewModel: tabCollectionViewModel, index: .unpinned(targetIndex))
-        tabDragAndDropManager.performDragAndDropIfNeeded()
+    /// Moves a tab to another place in the list, as when it is dragged there.
+    func moveTab(_ id: TabIdentifier, to index: Int) {
+        guard let currentIndex = unpinnedIndex(of: id), currentIndex != index,
+              tabCollectionViewModel.tabCollection.tabs.indices.contains(index) else { return }
+        tabCollectionViewModel.moveTab(at: .unpinned(currentIndex), to: .unpinned(index))
     }
 
     private func unpinnedIndex(of id: TabIdentifier) -> Int? {

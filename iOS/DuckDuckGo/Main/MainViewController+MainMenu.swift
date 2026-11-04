@@ -51,6 +51,7 @@ extension MainViewController {
         state.omnibarEditing = viewCoordinator.omniBar.isTextFieldEditing
         state.fireModeEnabled = fireModeCapability.isFireModeEnabled
         state.voiceSearchEnabled = voiceSearchHelper.isVoiceSearchEnabled
+        state.aiChatEnabled = aiChatSettings.isAIChatEnabled
         state.passwordsEnabled = featureFlagger.isFeatureOn(.autofillAccessCredentialManagement)
         state.canHideTabs = tabSwitcherController.map { $0.canDismissOnEmpty || !$0.tabsModel.isEmpty } ?? true
         state.tabCount = tabManager.currentTabsModel.count

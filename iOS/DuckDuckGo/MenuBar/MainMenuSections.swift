@@ -24,7 +24,7 @@ protocol MainMenuSection {
     /// The menu to show in the given context, or `nil` to hide the whole menu.
     func menu(in context: MainMenuSpec.Context) -> MainMenuSpec.Menu?
 
-    /// The children to install into the system menu, given the elements built from `menu(in:)`.
+    /// The children to install, given the elements built from `menu(in:)` and the system menu's own, which an inserted menu has none of.
     func children(of elements: [UIMenuElement], systemElements: [UIMenuElement]) -> [UIMenuElement]
 }
 

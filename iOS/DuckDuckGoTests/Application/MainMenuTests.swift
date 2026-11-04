@@ -17,7 +17,11 @@
 //  limitations under the License.
 //
 
+import Bookmarks
+import Core
+import CoreData
 import FeatureFlags_iOS
+import Persistence
 import Testing
 import UIKit
 @testable import DuckDuckGo
@@ -227,6 +231,79 @@ struct MainMenuTests {
         notificationCenter.post(name: .aiChatSettingsChanged, object: nil)
         _ = await iterator.next()
         withExtendedLifetime(service) {}
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test(.timeLimit(.minutes(1)))
+    func bookmarksShortcutsAreUniqueAndAddingNeedsAWebsite() {
+        let favorites = makeFavorites(count: 12)
+        let spec = MainMenuSpec(isEnabled: true, idiom: .phone, context: .init(favorites: favorites))
+        for command in [MainMenuCommand.showBookmarks, .addBookmark, .addFavorite] {
+            #expect(spec.allItems.filter { $0.command == command }.count == 1)
+        }
+        var state = MenuCommandAvailability.State(shortcutsEnabled: true, presentation: .browser)
+        let favoriteCommands = MainMenuBuilder().keyCommands(for: spec, from: [], availability: MenuCommandAvailability(state: state))
+            .filter { $0.action == MainMenuCommand.openBookmark.action }
+        #expect(favoriteCommands.map(\.input) == (1...9).map { String($0) })
+        #expect(favoriteCommands.compactMap(BookmarksMenuTree.bookmarkURL) == favorites.prefix(9).map(\.url))
+        #expect(!MenuCommandAvailability(state: state).isEnabled(.addBookmark))
+        state.hasWebsite = true
+        #expect(MenuCommandAvailability(state: state).isEnabled(.addBookmark))
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test(.timeLimit(.minutes(1)))
+    func bookmarkSavesAndDisplayModeChangesRebuildAndRefreshFavorites() async throws {
+        let database = try makeBookmarksDatabase()
+        defer { try? database.tearDown(deleteStores: true) }
+        let mainContext = database.makeContext(concurrencyType: .mainQueueConcurrencyType)
+        BasicBookmarksStructure.populateDB(context: mainContext)
+        let notifications = NotificationCenter()
+        let settings = AppSettingsMock()
+        settings.favoritesDisplayMode = .displayNative(.mobile)
+        let bookmarks = MainMenuBookmarks(database: database, appSettings: settings, notificationCenter: notifications)
+        let flagger = MockFeatureFlagger()
+        flagger.enabledFeatureFlags = [.ipadMenuBar]
+        var rebuildCount = 0
+        let (rebuilds, continuation) = AsyncStream<Void>.makeStream()
+        var iterator = rebuilds.makeAsyncIterator()
+        let service = MainMenuService(featureFlagger: flagger, idiom: .pad, contextProvider: { .init(favorites: bookmarks.favorites) },
+                                      rebuildTriggers: [bookmarks.changes], notificationCenter: notifications, rebuildDelay: .milliseconds(1)) {
+            rebuildCount += 1
+            continuation.yield(())
+        }
+        #expect(bookmarks.favorites.count == BasicBookmarksStructure.favoriteTitles.count)
+
+        notifications.post(name: NSManagedObjectContext.didSaveObjectsNotification,
+                           object: NSManagedObjectContext(concurrencyType: .mainQueueConcurrencyType))
+        try await Task.sleep(for: .milliseconds(30))
+        #expect(rebuildCount == 0)
+
+        let syncContext = database.makeContext(concurrencyType: .privateQueueConcurrencyType)
+        await syncContext.perform {
+            notifications.post(name: NSManagedObjectContext.didSaveObjectsNotification, object: syncContext)
+        }
+        _ = await iterator.next()
+        #expect(rebuildCount == 1)
+
+        settings.favoritesDisplayMode = .displayNative(.desktop)
+        notifications.post(name: AppUserDefaults.Notifications.favoritesDisplayModeChange, object: nil)
+        _ = await iterator.next()
+        #expect(rebuildCount == 2)
+        #expect(service.spec.allItems.filter { $0.command == .openBookmark }.isEmpty)
+    }
+
+    private func makeFavorites(count: Int) -> [MainMenuBookmark] {
+        (1...count).compactMap { index in
+            URL(string: "https://example.com/\(index)").map { MainMenuBookmark(id: "favorite-\(index)", title: "Favorite \(index)", url: $0) }
+        }
+    }
+
+    private func makeBookmarksDatabase() throws -> CoreDataDatabase {
+        let model = try #require(CoreDataDatabase.loadModel(from: Bookmarks.bundle, named: "BookmarksModel"))
+        let database = CoreDataDatabase(name: "MainMenuBookmarks", containerLocation: tempDBDir(), model: model)
+        database.loadStore()
+        return database
     }
 
     private func registersInMenuBar(enabled: Bool, idiom: UIUserInterfaceIdiom) -> Bool {

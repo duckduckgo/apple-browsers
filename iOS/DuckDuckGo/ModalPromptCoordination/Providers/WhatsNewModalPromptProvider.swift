@@ -187,9 +187,6 @@ private extension WhatsNewCoordinator {
                 onPrimaryAction: { [weak self] action in
                     self?.measurePrimaryActionTapped()
                     await self?.handleAction(action, dismissSource: .mainAction)
-                },
-                onDismiss: { [weak self] in
-                    self?.dismiss(source: .mainAction)
                 }
             )
         }
@@ -249,8 +246,14 @@ extension WhatsNewCoordinator {
             presentationStyle = .withinCurrentContext
         case .navigation(value: .duckAISettings), .navigation(value: .personalInformationRemoval):
             presentationStyle = .dismissModalsAndPresentFromRoot
+        case .urlInContext, .share, .navigation(value: .importPasswords):
+            await handleAction(action)
+            return
         default:
             await handleAction(action)
+            if dismissSource == .mainAction {
+                dismiss(source: dismissSource)
+            }
             return
         }
 

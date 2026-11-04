@@ -27,8 +27,7 @@ protocol WhatsNewDisplayModelMapping {
         onMessageAppear: @escaping () -> Void,
         onItemAppear: @escaping (_ itemId: String) -> Void,
         onItemAction: @escaping (_ action: RemoteAction, _ itemId: String) async -> Void,
-        onPrimaryAction: @escaping (RemoteAction) async -> Void,
-        onDismiss: @escaping () -> Void
+        onPrimaryAction: @escaping (RemoteAction) async -> Void
     ) -> RemoteMessagingUI.CardsListDisplayModel?
 }
 
@@ -48,15 +47,13 @@ struct WhatsNewDisplayModelMapper: WhatsNewDisplayModelMapping {
     ///   - message: The remote message to map
     ///   - onItemAction: Closure called when an item action is tapped
     ///   - onPrimaryAction: Closure called when the primary action is tapped
-    ///   - onDismiss: Closure called after primary action completes
     /// - Returns: CardsListDisplayModel if message is cardsList, nil otherwise
     func makeDisplayModel(
         from message: RemoteMessageModel,
         onMessageAppear: @escaping () -> Void,
         onItemAppear: @escaping (_ itemId: String) -> Void,
         onItemAction: @escaping (_ action: RemoteAction, _ itemId: String) async -> Void,
-        onPrimaryAction: @escaping (RemoteAction) async -> Void,
-        onDismiss: @escaping () -> Void
+        onPrimaryAction: @escaping (RemoteAction) async -> Void
     ) -> RemoteMessagingUI.CardsListDisplayModel? {
 
         func mapRemoteListItems(_ remoteListItems: [RemoteMessageModelType.ListItem]) -> [RemoteMessagingUI.CardsListDisplayModel.Item] {
@@ -136,17 +133,6 @@ struct WhatsNewDisplayModelMapper: WhatsNewDisplayModelMapping {
             nil
         }
 
-        // The coordinator dismisses redirects before opening them.
-        // Embedded URLs, sharing, and password import stay within What's New.
-        let dismissAfterPrimaryAction: (() -> Void)?
-        switch primaryAction {
-        case .url, .survey, .urlInContext, .share,
-             .navigation(value: .duckAISettings), .navigation(value: .personalInformationRemoval), .navigation(value: .importPasswords):
-            dismissAfterPrimaryAction = nil
-        default:
-            dismissAfterPrimaryAction = onDismiss
-        }
-
         return RemoteMessagingUI.CardsListDisplayModel(
             screenTitle: mainTitleText,
             icon: placeholder?.rawValue,
@@ -163,7 +149,7 @@ struct WhatsNewDisplayModelMapper: WhatsNewDisplayModelMapping {
             onAppear: onMessageAppear,
             primaryAction: (
                 title: primaryActionText,
-                action: makeAction(for: primaryAction, handler: onPrimaryAction, andDismiss: dismissAfterPrimaryAction)
+                action: makeAction(for: primaryAction, handler: onPrimaryAction)
             )
         )
     }
@@ -217,13 +203,11 @@ struct WhatsNewDisplayModelMapper: WhatsNewDisplayModelMapping {
     // For actions without ID (primary action)
     private func makeAction(
         for remoteAction: RemoteAction,
-        handler: @escaping (RemoteAction) async -> Void,
-        andDismiss dismissAction: (() -> Void)? = nil
+        handler: @escaping (RemoteAction) async -> Void
     ) -> () -> Void {
         return {
             Task { @MainActor in
                 await handler(remoteAction)
-                dismissAction?()
             }
         }
     }

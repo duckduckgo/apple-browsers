@@ -32,6 +32,7 @@ struct MenuCommandAvailability {
         var omnibarEditing = false
         var fireModeEnabled = false
         var voiceSearchEnabled = false
+        var aiChatEnabled = false
         var passwordsEnabled = false
         var canHideTabs = true
         var tabCount = 0
@@ -46,6 +47,8 @@ struct MenuCommandAvailability {
         switch command {
         case .showTabs, .showDownloads:
             return state.presentation != .tabSwitcher || state.canHideTabs
+        case .openDuckAI, .newChat, .newVoiceChat, .newImageChat, .openRecentChat, .deleteAllChats:
+            return state.aiChatEnabled && (state.presentation != .tabSwitcher || state.canHideTabs)
         case .showPasswords:
             return state.passwordsEnabled && (state.presentation != .tabSwitcher || state.canHideTabs)
         case .about:

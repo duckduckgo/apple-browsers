@@ -20,6 +20,7 @@
 import UIKit
 
 enum MainMenuCommand: CaseIterable {
+    case openDuckAI, newChat, newVoiceChat, newImageChat, openRecentChat, deleteAllChats
     case settings, newTab, newFireTab, voiceSearch, location, closeTab, share, printPage
     case find, stop, reload, showTabs, showPasswords, showDownloads, zoomIn, zoomOut, actualSize
     case newTabOnRight, duplicateTab, previousTab, nextTab, about, feedback
@@ -36,6 +37,7 @@ struct MainMenuSpec {
     struct Context: Equatable {
         var voiceSearchEnabled = false
         var fireModeEnabled = false
+        var aiChatEnabled = false
     }
 
     struct Shortcut: Equatable {
@@ -96,7 +98,7 @@ struct MainMenuSpec {
 
     private static var browserSections: [MainMenuSection] {
         [SettingsMenuSection(title: UserText.menuSettings), FileMenuSection(), EditMenuSection(),
-         ViewMenuSection(), WindowMenuSection(), HelpMenuSection()]
+         ViewMenuSection(), DuckAIMenuSection(), WindowMenuSection(), HelpMenuSection()]
     }
 
     private static var baselineSections: [MainMenuSection] {
@@ -193,6 +195,12 @@ struct MainMenuSpec {
 extension MainMenuCommand {
     var action: Selector {
         switch self {
+        case .openDuckAI: return #selector(MainViewController.menuOpenDuckAI)
+        case .newChat: return #selector(MainViewController.menuNewChat)
+        case .newVoiceChat: return #selector(MainViewController.menuNewVoiceChat)
+        case .newImageChat: return #selector(MainViewController.menuNewImageChat)
+        case .openRecentChat: return #selector(MainViewController.menuOpenRecentChat(_:))
+        case .deleteAllChats: return #selector(MainViewController.menuDeleteAllChats(_:))
         case .settings: return #selector(MainViewController.keyboardSettings)
         case .newTab: return #selector(MainViewController.keyboardNewTab)
         case .newFireTab: return #selector(MainViewController.keyboardNewFireTab)

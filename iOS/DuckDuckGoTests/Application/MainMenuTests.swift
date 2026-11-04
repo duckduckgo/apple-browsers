@@ -148,7 +148,8 @@ struct MainMenuTests {
     @available(iOS 16, macOS 13, *)
     @Test(.timeLimit(.minutes(1)))
     func menuItemsDoNotShareShortcuts() {
-        let spec = MainMenuSpec(isEnabled: true, idiom: .pad, context: .init(voiceSearchEnabled: true, fireModeEnabled: true))
+        let spec = MainMenuSpec(isEnabled: true, idiom: .pad,
+                                context: .init(voiceSearchEnabled: true, fireModeEnabled: true, aiChatEnabled: true))
         let shortcuts = spec.allItems.compactMap(\.shortcut)
         for shortcut in shortcuts {
             #expect(shortcuts.filter { $0 == shortcut }.count == 1)
@@ -186,6 +187,46 @@ struct MainMenuTests {
     func lockedAndBlockingPresentationsDisableCommands() {
         #expect(!MenuCommandAvailability(state: .init(shortcutsEnabled: false, presentation: .browser)).isEnabled(.newTab))
         #expect(!MenuCommandAvailability(state: .init(shortcutsEnabled: true, presentation: .blockingModal)).isEnabled(.newTab))
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test(.timeLimit(.minutes(1)), arguments: [false, true])
+    func duckAIMenuFollowsDuckAISetting(aiChatEnabled: Bool) {
+        let spec = MainMenuSpec(isEnabled: true, idiom: .pad, context: .init(aiChatEnabled: aiChatEnabled))
+        #expect(spec.menus.contains { $0.identifier == DuckAIMenuSection.identifier } == aiChatEnabled)
+        #expect(spec.allItems.contains { $0.command == .newChat } == aiChatEnabled)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test(.timeLimit(.minutes(1)))
+    func duckAICommandsAreDisabledWhenDuckAIIsOff() {
+        let state = MenuCommandAvailability.State(shortcutsEnabled: true, presentation: .browser)
+        #expect(!MenuCommandAvailability(state: state).isEnabled(.newChat))
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test(.timeLimit(.minutes(1)))
+    func deleteAllChatsStaysVisibleWithoutChats() throws {
+        let elements = DuckAIRecentChatsMenuContent.elements(for: .init(recentChats: [], totalChatCount: 0))
+        let commands = elements.compactMap { $0 as? UIMenu }.flatMap(\.children).compactMap { $0 as? UICommand }
+        #expect(commands.map(\.action) == [MainMenuCommand.deleteAllChats.action])
+        let deleteAll = try #require(commands.first)
+        #expect(deleteAll.propertyList as? String == "0")
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test(.timeLimit(.minutes(1)))
+    func duckAISettingsChangeRebuildsMenu() async {
+        let flagger = MockFeatureFlagger()
+        flagger.enabledFeatureFlags = [.ipadMenuBar]
+        let notificationCenter = NotificationCenter()
+        let (rebuilds, continuation) = AsyncStream<Void>.makeStream()
+        var iterator = rebuilds.makeAsyncIterator()
+        let service = MainMenuService(featureFlagger: flagger, idiom: .pad, notificationCenter: notificationCenter,
+                                      rebuildDelay: .milliseconds(1)) { continuation.yield(()) }
+        notificationCenter.post(name: .aiChatSettingsChanged, object: nil)
+        _ = await iterator.next()
+        withExtendedLifetime(service) {}
     }
 
     private func registersInMenuBar(enabled: Bool, idiom: UIUserInterfaceIdiom) -> Bool {

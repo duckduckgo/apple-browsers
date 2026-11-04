@@ -112,8 +112,8 @@ extension DebugScreensViewModel {
             .view(title: "Data Audit", { _ in
                 DataAuditDebugScreen()
             }),
-            .view(title: "Feature Flags", { _ in
-                FeatureFlagsMenuView()
+            .controller(title: "Feature Flags", { _ in
+                UIHostingController(rootView: FeatureFlagsMenuView())
             }),
             .view(title: "UI Test Overrides", { _ in
                 UITestOverridesDebugView()

@@ -27,6 +27,7 @@ let package = Package(
         .library(name: "PrivacyConfigTestsUtils", targets: ["PrivacyConfigTestsUtils"]),
         .library(name: "PrivacyDashboard", targets: ["PrivacyDashboard"]),
         .library(name: "Configuration", targets: ["Configuration"]),
+        .library(name: "BrowserDebugOptions", targets: ["BrowserDebugOptions"]),
         .library(name: "RemoteMessaging", targets: ["RemoteMessaging"]),
         .library(name: "RemoteMessagingTestsUtils", targets: ["RemoteMessagingTestsUtils"]),
         .library(name: "DDGNavigation", targets: ["DDGNavigation"]),
@@ -48,6 +49,7 @@ let package = Package(
         .library(name: "WKAbstractions", targets: ["WKAbstractions"]),
     ],
     dependencies: [
+        .package(path: "../DebugServer"),
         .package(path: "../WideEvent"),
         .package(url: "https://github.com/duckduckgo/duckduckgo-autofill.git", exact: "19.2.1"),
         .package(url: "https://github.com/duckduckgo/TrackerRadarKit.git", exact: "4.0.0"),
@@ -340,6 +342,10 @@ let package = Package(
             swiftSettings: [
                 .define("DEBUG", .when(configuration: .debug))
             ]
+        ),
+        .target(
+            name: "BrowserDebugOptions",
+            dependencies: ["PrivacyConfig", "Configuration", .product(name: "DebugOptions", package: "DebugServer")]
         ),
         .target(
             name: "Configuration",

@@ -24,6 +24,11 @@ public enum HTTPStatusCode: Int, Sendable, Hashable {
     case created = 201
     case noContent = 204
     case badRequest = 400
+    case unauthorized = 401
+    case forbidden = 403
+    case conflict = 409
+    case payloadTooLarge = 413
+    case unprocessableEntity = 422
     case notFound = 404
     case methodNotAllowed = 405
     case internalServerError = 500
@@ -34,6 +39,11 @@ public enum HTTPStatusCode: Int, Sendable, Hashable {
         case .created: return "Created"
         case .noContent: return "No Content"
         case .badRequest: return "Bad Request"
+        case .unauthorized: return "Unauthorized"
+        case .forbidden: return "Forbidden"
+        case .conflict: return "Conflict"
+        case .payloadTooLarge: return "Payload Too Large"
+        case .unprocessableEntity: return "Unprocessable Entity"
         case .notFound: return "Not Found"
         case .methodNotAllowed: return "Method Not Allowed"
         case .internalServerError: return "Internal Server Error"

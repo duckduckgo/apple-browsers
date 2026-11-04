@@ -147,7 +147,7 @@ public final class ConfigurationFetcher: ConfigurationFetching {
 
     private func etag(for configuration: Configuration) -> String? {
         if let etag = store.loadEtag(for: configuration), store.loadData(for: configuration) != nil {
-            return etag
+            return etag.isEmpty ? nil : etag
         }
         return store.loadEmbeddedEtag(for: configuration)
     }

@@ -186,6 +186,9 @@ public protocol FeatureFlagLocalOverriding: AnyObject {
     ///
     func toggleOverride<Flag: FeatureFlagDescribing>(for featureFlag: Flag)
 
+    /// Sets or clears only the Boolean override. Repeated writes preserve the requested value.
+    func setOverride<Flag: FeatureFlagDescribing>(_ value: Bool?, for featureFlag: Flag)
+
     /// Sets the cohort override for a feature flag.
     ///
     /// If override is not currently present, it sets the override to the opposite of the current flag value.
@@ -251,37 +254,35 @@ public final class FeatureFlagLocalOverrides: FeatureFlagLocalOverriding {
     }
 
     public func toggleOverride<Flag: FeatureFlagDescribing>(for featureFlag: Flag) {
-        guard featureFlag.supportsLocalOverriding else {
-            return
+        let value = override(for: featureFlag) ?? currentValue(for: featureFlag) ?? false
+        setOverride(!value, for: featureFlag)
+    }
+
+    public func setOverride<Flag: FeatureFlagDescribing>(_ value: Bool?, for featureFlag: Flag) {
+        guard featureFlag.supportsLocalOverriding, override(for: featureFlag) != value else { return }
+        let previous = override(for: featureFlag)
+        persistor.set(value, for: featureFlag)
+        if let value {
+            actionHandler.flagDidChange(featureFlag, isEnabled: value)
+        } else if let defaultValue = currentValue(for: featureFlag), defaultValue != previous {
+            actionHandler.flagDidChange(featureFlag, isEnabled: defaultValue)
         }
-        let currentValue = persistor.value(for: featureFlag) ?? currentValue(for: featureFlag) ?? false
-        let newValue = !currentValue
-        persistor.set(newValue, for: featureFlag)
-        actionHandler.flagDidChange(featureFlag, isEnabled: newValue)
     }
 
     public func setExperimentCohortOverride<Flag: FeatureFlagDescribing>(for featureFlag: Flag, cohort: CohortID) {
         guard featureFlag.supportsLocalOverriding else {
             return
         }
-        let newValue = cohort
-        persistor.setExperiment(newValue, for: featureFlag)
+        guard experimentOverride(for: featureFlag) != cohort else { return }
+        persistor.setExperiment(cohort, for: featureFlag)
         actionHandler.experimentFlagDidChange(featureFlag, cohort: cohort)
     }
 
     public func clearOverride<Flag: FeatureFlagDescribing>(for featureFlag: Flag) {
-        // Clear the regular override
-        if let override = override(for: featureFlag) {
-            persistor.set(nil, for: featureFlag)
-            if let defaultValue = currentValue(for: featureFlag), defaultValue != override {
-                actionHandler.flagDidChange(featureFlag, isEnabled: defaultValue)
-            }
-        }
-
-        // Clear the experiment cohort override
-        if let experimentOverride = experimentOverride(for: featureFlag) {
+        setOverride(nil, for: featureFlag)
+        if let previous = experimentOverride(for: featureFlag) {
             persistor.setExperiment(nil, for: featureFlag)
-            if let defaultValue = currentExperimentCohort(for: featureFlag)?.rawValue, defaultValue != experimentOverride {
+            if let defaultValue = currentExperimentCohort(for: featureFlag)?.rawValue, defaultValue != previous {
                 actionHandler.experimentFlagDidChange(featureFlag, cohort: defaultValue)
             }
         }

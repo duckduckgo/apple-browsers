@@ -17,6 +17,7 @@
 //  limitations under the License.
 //
 
+import Combine
 import UIKit
 import WebKit
 import Core
@@ -37,6 +38,15 @@ final class ConfigurationURLDebugViewController: UITableViewController {
         return formatter
     }()
 
+    private var optionsSubscription: AnyCancellable?
+
+    override func viewDidLoad() {
+        super.viewDidLoad()
+        optionsSubscription = IOSDebugOptions.shared.objectWillChange.sink { [weak self] in
+            self?.tableView.reloadData()
+        }
+    }
+
     weak var viewModel: DebugScreensViewModel?
     
     private var configurationItems: [DebugScreensViewModel.ConfigurationItem] {
@@ -45,7 +55,6 @@ final class ConfigurationURLDebugViewController: UITableViewController {
 
     @IBAction func resetAll() {
         viewModel?.resetAllCustomURLs()
-        tableView.reloadData()
     }
 
     override func numberOfSections(in tableView: UITableView) -> Int {
@@ -65,39 +74,30 @@ final class ConfigurationURLDebugViewController: UITableViewController {
             fatalError("Failed to dequeue cell")
         }
         
-        configureCell(cell, for: item, at: indexPath)
+        configureCell(cell, for: item)
         return cell
     }
     
-    private func configureCell(_ cell: ConfigurationURLTableViewCell, for item: DebugScreensViewModel.ConfigurationItem, at indexPath: IndexPath) {
+    private func configureCell(_ cell: ConfigurationURLTableViewCell, for item: DebugScreensViewModel.ConfigurationItem) {
         cell.title.text = item.title
         cell.subtitle.text = viewModel?.getURL(for: item.configuration) ?? ""
-        cell.subtitle.textColor = viewModel?.getCustomURL(for: item.configuration) != nil ? UIColor(designSystemColor: .accentPrimary) : .label
+        let state = AppDependencyProvider.shared.configurationURLProvider.state(for: item.configuration)
+        cell.subtitle.textColor = state.overridesEnabled && (state.savedOverrideURL != nil || state.sessionOverrideURL != nil)
+            ? UIColor(designSystemColor: .accentPrimary) : .label
         
-        if let lastUpdate = viewModel?.getLastConfigurationUpdateDate() {
+        if let lastUpdate = viewModel?.getLastConfigurationUpdateDate(for: item.configuration) {
             cell.ternary.text = dateFormatter.string(from: lastUpdate)
         } else {
             cell.ternary.text = "-"
         }
 
-        cell.refresh.addAction(UIAction { [weak self] _ in
-            self?.fetchConfiguration(for: item, at: indexPath)
+        cell.refresh.addAction(UIAction(identifier: .init("refreshConfiguration")) { [weak self] _ in
+            self?.viewModel?.fetchConfiguration(for: item.configuration)
         }, for: .primaryActionTriggered)
 
-        cell.trash.addAction(UIAction { [weak self] _ in
-            self?.resetCustomURL(for: item, at: indexPath)
+        cell.trash.addAction(UIAction(identifier: .init("resetConfiguration")) { [weak self] _ in
+            self?.viewModel?.setCustomURL(nil, for: item.configuration)
         }, for: .primaryActionTriggered)
-    }
-    
-    private func fetchConfiguration(for item: DebugScreensViewModel.ConfigurationItem, at indexPath: IndexPath) {
-        viewModel?.fetchConfiguration(for: item.configuration) { [weak self] _ in
-            self?.tableView.reloadRows(at: [indexPath], with: .automatic)
-        }
-    }
-    
-    private func resetCustomURL(for item: DebugScreensViewModel.ConfigurationItem, at indexPath: IndexPath) {
-        viewModel?.setCustomURL(nil, for: item.configuration)
-        tableView.reloadRows(at: [indexPath], with: .automatic)
     }
 
     override func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
@@ -133,20 +133,13 @@ final class ConfigurationURLDebugViewController: UITableViewController {
         if viewModel?.getCustomURL(for: item.configuration) != nil {
             let resetAction = UIAlertAction(title: "Reset to default URL", style: .default) { _ in
                 self.viewModel?.setCustomURL(nil, for: item.configuration)
-                self.tableView?.reloadData()
             }
             alert.addAction(resetAction)
         }
 
         let submitAction = UIAlertAction(title: "Override", style: .default) { _ in
-            let urlString = alert.textFields?.first?.text
-            let customURL = urlString.flatMap { URL(string: $0) }
-            self.viewModel?.setCustomURL(customURL, for: item.configuration)
-            
-            // Trigger fetch for the updated configuration
-            self.viewModel?.fetchConfiguration(for: item.configuration) { _ in
-                self.tableView.reloadData()
-            }
+            guard let urlString = alert.textFields?.first?.text else { return }
+            self.viewModel?.setCustomURL(urlString, for: item.configuration)
         }
         alert.addAction(submitAction)
         

@@ -152,6 +152,16 @@ final class RemoteMessagingService: RemoteMessagingDebugHandling {
         }
     }
 
+    /// Await processing so debug callers can distinguish a completed refresh from a scheduled task.
+    func refreshRemoteMessagesForDebug() async throws {
+        guard remoteMessagingClient.remoteMessagingAvailabilityProvider.isRemoteMessagingAvailable else {
+            throw NSError(domain: "DebugOptions.RemoteMessaging", code: 1,
+                          userInfo: [NSLocalizedDescriptionKey: "Remote messaging is disabled in privacy configuration; no refresh was performed."])
+        }
+        try await remoteMessagingClient.fetchAndProcess(using: remoteMessagingClient.store)
+        prefetchRemoteMessageImages()
+    }
+
     private func prefetchRemoteMessageImages() {
         guard let message = remoteMessagingClient.store.fetchScheduledRemoteMessage(surfaces: .allCases, triggerFilter: .any) else {
             return

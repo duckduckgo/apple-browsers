@@ -10,6 +10,7 @@
 		0172BD2A820F46B28DA45F6D /* SitePermissions in Frameworks */ = {isa = PBXBuildFile; productRef = B6214F4A9307461DB49E02EC /* SitePermissions */; };
 		02025664298818B200E694E7 /* NetworkExtension.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 02025663298818B100E694E7 /* NetworkExtension.framework */; };
 		0238E44F29C0FAA100615E30 /* FindInPageIOSJSSupport in Frameworks */ = {isa = PBXBuildFile; productRef = 0238E44E29C0FAA100615E30 /* FindInPageIOSJSSupport */; };
+		02AEB3FAEA1BA086B680ABD7 /* Configuration in Frameworks */ = {isa = PBXBuildFile; productRef = 1CDE99D476D6CDEC342834C9 /* Configuration */; };
 		0CEF7424DF47598D800EB920 /* WideEvent in Frameworks */ = {isa = PBXBuildFile; productRef = 3E0D167D2CFCE3C99849696D /* WideEvent */; };
 		1E1D8B632995143200C96994 /* OHHTTPStubs in Frameworks */ = {isa = PBXBuildFile; productRef = 1E1D8B622995143200C96994 /* OHHTTPStubs */; };
 		1E1D8B652995143200C96994 /* OHHTTPStubsSwift in Frameworks */ = {isa = PBXBuildFile; productRef = 1E1D8B642995143200C96994 /* OHHTTPStubsSwift */; };
@@ -72,6 +73,7 @@
 		4BC95EBF2D7417FC002FAB32 /* Persistence in Frameworks */ = {isa = PBXBuildFile; productRef = 4BC95EBE2D7417FC002FAB32 /* Persistence */; };
 		4BD96E062C4DBC93003BC32C /* NetworkExtension.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 02025663298818B100E694E7 /* NetworkExtension.framework */; };
 		4BF557F02DF79393008E16A8 /* WebKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 4BF557EF2DF79393008E16A8 /* WebKit.framework */; };
+		5226B2A1FB968B25CA2943FD /* BrowserDebugOptions in Frameworks */ = {isa = PBXBuildFile; productRef = 7AAF9B2AB97E4995725EEE4B /* BrowserDebugOptions */; };
 		5654CF572E22A9820074E806 /* BrowserServicesKitTestsUtils in Frameworks */ = {isa = PBXBuildFile; productRef = 5654CF562E22A9820074E806 /* BrowserServicesKitTestsUtils */; };
 		56D7792C2CFF476800B619EF /* StoreKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D664C7DC2B28A02800CBFA76 /* StoreKit.framework */; };
 		5B6D65152FB39FA000BDCF4D /* EventKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 5B6D65132FB39FA000BDCF4D /* EventKit.framework */; };
@@ -194,6 +196,7 @@
 		EE7B0000000000000000000A /* EventHub in Frameworks */ = {isa = PBXBuildFile; productRef = EE7B00000000000000000005 /* EventHub */; };
 		EE7B0000000000000000000B /* EventHub in Frameworks */ = {isa = PBXBuildFile; productRef = EE7B00000000000000000006 /* EventHub */; };
 		EE9EEFAE2B804DF8AEDC9A6F /* SitePermissions in Frameworks */ = {isa = PBXBuildFile; productRef = 07CAD3291BFA44269AD3CA0F /* SitePermissions */; };
+		EFDBBC95497C8AB04CBA9FD3 /* DebugOptions in Frameworks */ = {isa = PBXBuildFile; productRef = 1541F7D92E19AE1A56BDD504 /* DebugOptions */; };
 		F11595D12E854C7400CC0481 /* AttributedMetric in Frameworks */ = {isa = PBXBuildFile; productRef = F11595D02E854C7400CC0481 /* AttributedMetric */; };
 		F11595D72E8570AF00CC0481 /* AttributedMetric in Frameworks */ = {isa = PBXBuildFile; productRef = F11595D62E8570AF00CC0481 /* AttributedMetric */; };
 		F11595D92E8570B500CC0481 /* AttributedMetric in Frameworks */ = {isa = PBXBuildFile; productRef = F11595D82E8570B500CC0481 /* AttributedMetric */; };
@@ -677,6 +680,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				02AEB3FAEA1BA086B680ABD7 /* Configuration in Frameworks */,
 				97C2107CB4A1ADE8A0F4947D /* WideEvent in Frameworks */,
 				FCFC00031F00000000020001 /* DDGError in Frameworks */,
 				ED4B3F3D2F191E5F006C5FE4 /* PrivacyConfig in Frameworks */,
@@ -741,6 +745,8 @@
 				4BC95E7B2D7416AD002FAB32 /* DDGNavigation in Frameworks */,
 				4BC95E7F2D7416C1002FAB32 /* PrivacyDashboard in Frameworks */,
 				315E39652F86ABEE00D2289D /* DebugServer in Frameworks */,
+				EFDBBC95497C8AB04CBA9FD3 /* DebugOptions in Frameworks */,
+				5226B2A1FB968B25CA2943FD /* BrowserDebugOptions in Frameworks */,
 				31E69A63280F4CB600478327 /* DuckUI in Frameworks */,
 				1EC8B18A2F29145C00F18679 /* WebExtensions in Frameworks */,
 				9F454D242E05489200B8CC5A /* SetDefaultBrowserCore in Frameworks */,
@@ -1104,6 +1110,7 @@
 			);
 			name = PacketTunnelProvider;
 			packageProductDependencies = (
+				1CDE99D476D6CDEC342834C9 /* Configuration */,
 				F8A1A79EDA7B2B3CD82BA1B0 /* WideEvent */,
 				FCFC00021F00000000020001 /* DDGError */,
 				4BC8948B2C7902E6009AA141 /* WireGuard */,
@@ -1232,6 +1239,8 @@
 				9FADFC492F5FC56400CA16F7 /* DuckSansFont */,
 				854D67922F6DDFCA008707A3 /* ScreenTimeDataCleaner */,
 				315E39642F86ABEE00D2289D /* DebugServer */,
+				1541F7D92E19AE1A56BDD504 /* DebugOptions */,
+				7AAF9B2AB97E4995725EEE4B /* BrowserDebugOptions */,
 				3C12C8760D7AF6C888DAD36A /* AIChatDebugServer */,
 				5B7CA46A2FAE693000D69C83 /* ICSParser */,
 				EE7B00000000000000000002 /* EventHub */,
@@ -5033,6 +5042,14 @@
 			isa = XCSwiftPackageProductDependency;
 			productName = WideEvent;
 		};
+		1541F7D92E19AE1A56BDD504 /* DebugOptions */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = DebugOptions;
+		};
+		1CDE99D476D6CDEC342834C9 /* Configuration */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = Configuration;
+		};
 		1E1D8B622995143200C96994 /* OHHTTPStubs */ = {
 			isa = XCSwiftPackageProductDependency;
 			package = F486D2FD25069744002D07D7 /* XCRemoteSwiftPackageReference "OHHTTPStubs" */;
@@ -5299,6 +5316,10 @@
 		5B7CA46A2FAE693000D69C83 /* ICSParser */ = {
 			isa = XCSwiftPackageProductDependency;
 			productName = ICSParser;
+		};
+		7AAF9B2AB97E4995725EEE4B /* BrowserDebugOptions */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = BrowserDebugOptions;
 		};
 		7B0752D82F21BFDB00ACA559 /* AutomationServer */ = {
 			isa = XCSwiftPackageProductDependency;

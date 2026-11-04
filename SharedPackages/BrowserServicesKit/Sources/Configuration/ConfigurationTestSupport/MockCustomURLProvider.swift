@@ -34,6 +34,11 @@ final class MockCustomURLProvider: CustomConfigurationURLProviding {
         return url
     }
 
+    func state(for configuration: Configuration) -> ConfigurationURLState {
+        ConfigurationURLState(defaultURL: url, savedOverrideURL: capturedURL, sessionOverrideURL: nil,
+                              resolvedURL: url, overridesEnabled: isCustomURLEnabled)
+    }
+
     func setCustomURL(_ url: URL?, for configuration: Configuration) {
         capturedConfiguration = configuration
         capturedConfigurations.append(configuration)

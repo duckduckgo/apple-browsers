@@ -24,6 +24,7 @@ import Core
 import ContentScopeScripts
 import FeatureFlags_iOS
 
+@MainActor
 class FeatureFlagsSettingViewModel: ObservableObject {
 
     enum StateFilter: String, CaseIterable {
@@ -32,6 +33,8 @@ class FeatureFlagsSettingViewModel: ObservableObject {
         case disabled = "Disabled"
     }
 
+    private var cancellables = Set<AnyCancellable>()
+    private let options = IOSDebugOptions.shared
     private let featureFlagger: FeatureFlagger = AppDependencyProvider.shared.featureFlagger
 
     @Published var featureFlags: [FeatureFlag] = []
@@ -58,12 +61,18 @@ class FeatureFlagsSettingViewModel: ObservableObject {
         self.isInternalUser = featureFlagger.internalUserDecider.isInternalUser
         self.featureFlags = FeatureFlag.allCases.filter { $0.supportsLocalOverriding && $0.cohortType == nil }.sorted(by: { $0.rawValue < $1.rawValue })
         self.experiments = FeatureFlag.allCases.filter { $0.supportsLocalOverriding && $0.cohortType != nil }.sorted(by: { $0.rawValue < $1.rawValue })
+        options.objectWillChange.sink { [weak self] in
+            guard let self else { return }
+            if isInternalUser != options.isInternalUser {
+                isInternalUser = options.isInternalUser
+            }
+            objectWillChange.send()
+        }.store(in: &cancellables)
     }
 
     @Published var isInternalUser: Bool {
         didSet {
-            (featureFlagger.internalUserDecider as? DefaultInternalUserDecider)?
-                .debugSetInternalUserState(isInternalUser)
+            options.setInternalUser(isInternalUser)
         }
     }
 
@@ -72,8 +81,7 @@ class FeatureFlagsSettingViewModel: ObservableObject {
     }
 
     func toggleFeatureFlag(_ flag: FeatureFlag, enabled: Bool) {
-        featureFlagger.localOverrides?.toggleOverride(for: flag)
-        objectWillChange.send()
+        do { try options.featureFlags.setEnabled(enabled, for: flag) } catch { options.report(error) }
     }
 
     func getCohorts(for experiment: any FeatureFlagDescribing) -> [String] {
@@ -81,8 +89,7 @@ class FeatureFlagsSettingViewModel: ObservableObject {
     }
 
     func setExperimentCohort(for experiment: any FeatureFlagDescribing, cohort: String) {
-        featureFlagger.localOverrides?.setExperimentCohortOverride(for: experiment, cohort: cohort)
-        objectWillChange.send()
+        do { try options.featureFlags.setCohort(cohort, for: experiment) } catch { options.report(error) }
     }
 
     func getCurrentCohort(for experiment: any FeatureFlagDescribing) -> String? {
@@ -90,13 +97,15 @@ class FeatureFlagsSettingViewModel: ObservableObject {
     }
 
     func resetOverride(for flag: any FeatureFlagDescribing) {
-        featureFlagger.localOverrides?.clearOverride(for: flag)
-        objectWillChange.send()
+        do { try options.featureFlags.reset(flag) } catch { options.report(error) }
     }
 
     func resetAllOverrides() {
-        featureFlagger.localOverrides?.clearAllOverrides(for: FeatureFlag.self)
-        objectWillChange.send()
+        do { try options.featureFlags.resetAll() } catch { options.report(error) }
+    }
+
+    func requiresRelaunch(_ flag: FeatureFlag) -> Bool {
+        options.featureFlags.activation(for: flag) == "nextLaunch"
     }
 
     func defaultValue(for flag: any FeatureFlagDescribing) -> Bool {
@@ -104,6 +113,6 @@ class FeatureFlagsSettingViewModel: ObservableObject {
     }
 
     func defaultExperimentCohort(for flag: any FeatureFlagDescribing) -> CohortID? {
-        return featureFlagger.localOverrides?.currentExperimentCohort(for: flag)?.rawValue
+        return featureFlagger.assignedCohort(for: flag, allowOverride: false)?.rawValue
     }
 }

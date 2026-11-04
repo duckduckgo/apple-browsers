@@ -28,6 +28,7 @@ import FeatureFlags_iOS
 
 /// The view mode for the debug view.  You shouldn't have to add or change anything here.
 ///  Please add new views/controllers to DebugScreensViewModel+Screens.swift.
+@MainActor
 class DebugScreensViewModel: ObservableObject {
 
     @Published var isInternalUser = false {
@@ -76,11 +77,13 @@ class DebugScreensViewModel: ObservableObject {
     var pinnedTitles: [String]
 
     let dependencies: DebugScreen.Dependencies
+    private let options = IOSDebugOptions.shared
     private let featureFlagger: FeatureFlagger = AppDependencyProvider.shared.featureFlagger
 
     var pushController: ((UIViewController) -> Void)?
 
     var cancellables = Set<AnyCancellable>()
+    private var isVisible = false
 
     lazy var debugStoryboard = {
         UIStoryboard(name: "Debug", bundle: nil)
@@ -90,11 +93,29 @@ class DebugScreensViewModel: ObservableObject {
         self.dependencies = dependencies
         refreshFilter()
         refreshToggles()
+        options.objectWillChange.sink { [weak self] in
+            guard let self, isVisible else { return }
+            if isInternalUser != options.isInternalUser {
+                isInternalUser = options.isInternalUser
+                refreshFilter()
+            } else if isSearching {
+                objectWillChange.send()
+            }
+        }.store(in: &cancellables)
+    }
+
+    func didAppear() {
+        isVisible = true
+        refreshToggles()
+        refreshFilter()
+    }
+
+    func didDisappear() {
+        isVisible = false
     }
 
     func persisteInternalUserState() {
-        (dependencies.internalUserDecider as? DefaultInternalUserDecider)?
-            .debugSetInternalUserState(isInternalUser)
+        options.setInternalUser(isInternalUser)
     }
 
     func persistInspectibleWebViewsState() {
@@ -143,7 +164,7 @@ class DebugScreensViewModel: ObservableObject {
                 $0.title.lowercased().contains(filter.lowercased())
             }.sorted(by: sorter)
             self.filteredFeatureFlags = isInternalUser ? FeatureFlag.allCases.filter {
-                $0.supportsLocalOverriding && $0.rawValue.localizedCaseInsensitiveContains(trimmedFilter)
+                $0.supportsLocalOverriding && $0.cohortType == nil && $0.rawValue.localizedCaseInsensitiveContains(trimmedFilter)
             }.sorted(by: { $0.rawValue < $1.rawValue }) : []
         }
     }
@@ -198,34 +219,32 @@ class DebugScreensViewModel: ObservableObject {
         featureFlagger.isFeatureOn(for: flag)
     }
 
-    func toggleFeatureFlag(_ flag: FeatureFlag) {
-        featureFlagger.localOverrides?.toggleOverride(for: flag)
-        objectWillChange.send()
+    func setFeatureFlag(_ flag: FeatureFlag, enabled: Bool) {
+        do { try options.featureFlags.setEnabled(enabled, for: flag) } catch { options.report(error) }
+    }
+
+    func requiresRelaunch(_ flag: FeatureFlag) -> Bool {
+        options.featureFlags.activation(for: flag) == "nextLaunch"
     }
 
     func resetFeatureFlagOverride(_ flag: FeatureFlag) {
-        featureFlagger.localOverrides?.clearOverride(for: flag)
-        objectWillChange.send()
+        do { try options.featureFlags.reset(flag) } catch { options.report(error) }
     }
 
     func featureFlagDefaultValue(_ flag: FeatureFlag) -> Bool {
         featureFlagger.isFeatureOn(for: flag, allowOverride: false)
     }
 
-    func setCustomURL(_ url: URL?, for configuration: Configuration) {
-        do {
-            try dependencies.customConfigurationURLProvider.setCustomURL(url, for: configuration)
-        } catch {
-            ActionMessageView.present(message: "Failed to set custom URL: \(error.localizedDescription)")
+    func setCustomURL(_ url: String?, for configuration: Configuration) {
+        Task {
+            do {
+                if let url {
+                    _ = try await options.configurations.setURL(url, for: configuration)
+                } else {
+                    _ = try await options.configurations.reset(configuration)
+                }
+            } catch { options.report(error) }
         }
-    }
-
-    func urlString(for configuration: Configuration) -> String {
-        dependencies.customConfigurationURLProvider.url(for: configuration).absoluteString
-    }
-
-    private func isURLOverridden(for configuration: Configuration) -> Bool {
-        dependencies.customConfigurationURLProvider.isURLOverridden(for: configuration)
     }
 
     // MARK: - Configuration Management
@@ -233,85 +252,32 @@ class DebugScreensViewModel: ObservableObject {
     struct ConfigurationItem {
         let configuration: Configuration
         let title: String
-        let fetchAction: () -> Void
-
-        static func privacyConfiguration(fetchAction: @escaping () -> Void) -> ConfigurationItem {
-            return ConfigurationItem(
-                configuration: .privacyConfiguration,
-                title: "Privacy Config",
-                fetchAction: fetchAction
-            )
-        }
-
-        static func remoteMessagingConfiguration(fetchAction: @escaping () -> Void) -> ConfigurationItem {
-            return ConfigurationItem(
-                configuration: .remoteMessagingConfig,
-                title: "Remote Message Framework Config",
-                fetchAction: fetchAction
-            )
-        }
     }
 
-    @UserDefaultsWrapper(key: .lastConfigurationUpdateDate, defaultValue: nil)
-    private var lastConfigurationUpdateDate: Date?
-    
-    func getLastConfigurationUpdateDate() -> Date? {
-        return lastConfigurationUpdateDate
+    func getLastConfigurationUpdateDate(for configuration: Configuration) -> Date? {
+        options.configurations.lastRefreshDate(for: configuration)
     }
 
     func getConfigurationItems() -> [ConfigurationItem] {
-        return [
-            .privacyConfiguration { [weak self] in
-                self?.fetchPrivacyConfiguration { _ in }
-            },
-            .remoteMessagingConfiguration { [weak self] in
-                self?.fetchRemoteMessagingConfiguration()
-            }
+        [
+            .init(configuration: .privacyConfiguration, title: "Privacy Config"),
+            .init(configuration: .remoteMessagingConfig, title: "Remote Message Framework Config")
         ]
     }
 
     func getURL(for configuration: Configuration) -> String {
-        return urlString(for: configuration)
+        dependencies.customConfigurationURLProvider.url(for: configuration).absoluteString
     }
 
     func getCustomURL(for configuration: Configuration) -> String? {
-        guard isURLOverridden(for: configuration) else { return nil }
-        return urlString(for: configuration)
+        dependencies.customConfigurationURLProvider.state(for: configuration).savedOverrideURL?.absoluteString
     }
 
-    func fetchPrivacyConfiguration(completion: @escaping (Bool) -> Void) {
-        AppConfigurationFetch().start(isDebug: true, forceRefresh: true) { [weak self] result in
-            switch result {
-            case .assetsUpdated(let protectionsUpdated):
-                if protectionsUpdated {
-                    ContentBlocking.shared.contentBlockingManager.scheduleCompilation()
-                    self?.lastConfigurationUpdateDate = Date()
-                }
-                DispatchQueue.main.async {
-                    completion(true)
-                }
-            case .noData:
-                DispatchQueue.main.async {
-                    completion(false)
-                }
-            }
-        }
-    }
-
-    func fetchRemoteMessagingConfiguration() {
-        dependencies.remoteMessagingDebugHandler.refreshRemoteMessages()
-    }
-
-    func fetchConfiguration(for configuration: Configuration, completion: @escaping (Bool) -> Void = { _ in }) {
-        switch configuration {
-        case .privacyConfiguration:
-            fetchPrivacyConfiguration(completion: completion)
-        case .remoteMessagingConfig:
-            fetchRemoteMessagingConfiguration()
-            completion(true)
-        default:
-            // For other configurations, just trigger a general fetch
-            fetchPrivacyConfiguration(completion: completion)
+    func fetchConfiguration(for configuration: Configuration) {
+        Task {
+            do {
+                _ = try await options.configurations.refresh(configuration)
+            } catch { options.report(error) }
         }
     }
 

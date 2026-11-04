@@ -21,6 +21,9 @@ import Foundation
 /// A closure that handles an HTTP request and returns a response.
 public typealias RouteHandler = @Sendable (HTTPRequest) throws -> HTTPResponse
 
+/// An asynchronous handler. The server keeps its connection queue free while awaiting the response.
+public typealias AsyncRouteHandler = @Sendable (HTTPRequest) async throws -> HTTPResponse
+
 /// Provides route registration capabilities.
 public protocol RouteRegistrable: AnyObject {
 

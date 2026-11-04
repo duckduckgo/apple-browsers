@@ -27,10 +27,13 @@ let package = Package(
     ],
     products: [
         .library(name: "DebugServer", targets: ["DebugServer"]),
+        .library(name: "DebugOptions", targets: ["DebugOptions"]),
     ],
     targets: [
+        .target(name: "DebugOptions"),
         .target(
             name: "DebugServer",
+            dependencies: ["DebugOptions"],
             swiftSettings: [
                 .define("DEBUG", .when(configuration: .debug))
             ]

@@ -31,7 +31,12 @@ class DebugScreensViewController: UIHostingController<DebugScreensView> {
 
     override func viewDidAppear(_ animated: Bool) {
         super.viewDidAppear(animated)
-        rootView.model.refreshToggles()
+        rootView.model.didAppear()
+    }
+
+    override func viewDidDisappear(_ animated: Bool) {
+        super.viewDidDisappear(animated)
+        rootView.model.didDisappear()
     }
 
     @objc func dismissSelf() {
@@ -112,7 +117,7 @@ struct DebugScreensView: View {
                                 Toggle(
                                     isOn: Binding(
                                         get: { model.isFeatureFlagEnabled(flag) },
-                                        set: { _ in model.toggleFeatureFlag(flag) }
+                                        set: { model.setFeatureFlag(flag, enabled: $0) }
                                     )
                                 ) {
                                     VStack(alignment: .leading) {
@@ -121,7 +126,7 @@ struct DebugScreensView: View {
                                         Text(verbatim: "Default: \(model.featureFlagDefaultValue(flag))")
                                             .font(.caption)
                                             .foregroundColor(.gray)
-                                        if flag == .promoPresentationCoordination || flag == .sitePermissions {
+                                        if model.requiresRelaunch(flag) {
                                             Text(verbatim: "Relaunch required for changes to take effect.")
                                                 .font(.caption)
                                                 .foregroundColor(.gray)

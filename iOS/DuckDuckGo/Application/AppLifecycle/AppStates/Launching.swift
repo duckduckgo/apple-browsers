@@ -246,6 +246,7 @@ struct Launching: LaunchingHandling {
                                                             idleReturnEligibilityManager: idleReturnEligibilityManager,
                                                             aiChatBonusStateProvider: aiChatBonusService,
                                                             dbpRunPrerequisitesDelegate: dbpService.dbpIOSPublicInterface)
+        IOSDebugOptions.configure(remoteMessagingService: remoteMessagingService)
         let subscriptionService = SubscriptionService(privacyConfigurationManager: contentBlockingService.common.privacyConfigurationManager, featureFlagger: featureFlagger)
         let maliciousSiteProtectionService = MaliciousSiteProtectionService(featureFlagger: featureFlagger,
                                                                             privacyConfigurationManager: contentBlockingService.common.privacyConfigurationManager)

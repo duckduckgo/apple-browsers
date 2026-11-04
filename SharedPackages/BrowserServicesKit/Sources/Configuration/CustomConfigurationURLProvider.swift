@@ -29,6 +29,7 @@ public protocol CustomConfigurationURLSetting {
     func setSessionURL(_ url: URL, for configuration: Configuration)
     var isCustomURLEnabled: Bool { get }
     func isURLOverridden(for configuration: Configuration) -> Bool
+    func state(for configuration: Configuration) -> ConfigurationURLState
 }
 
 public enum URLSettingError: LocalizedError {
@@ -43,6 +44,23 @@ public enum URLSettingError: LocalizedError {
 }
 
 public typealias CustomConfigurationURLProviding = ConfigurationURLProviding & CustomConfigurationURLSetting
+
+/// Separates saved and session overrides from the URL actually used by configuration fetches.
+public struct ConfigurationURLState: Sendable {
+    public let defaultURL: URL
+    public let savedOverrideURL: URL?
+    public let sessionOverrideURL: URL?
+    public let resolvedURL: URL
+    public let overridesEnabled: Bool
+
+    public init(defaultURL: URL, savedOverrideURL: URL?, sessionOverrideURL: URL?, resolvedURL: URL, overridesEnabled: Bool) {
+        self.defaultURL = defaultURL
+        self.savedOverrideURL = savedOverrideURL
+        self.sessionOverrideURL = sessionOverrideURL
+        self.resolvedURL = resolvedURL
+        self.overridesEnabled = overridesEnabled
+    }
+}
 
 public class ConfigurationURLProvider: CustomConfigurationURLProviding {
 
@@ -62,21 +80,28 @@ public class ConfigurationURLProvider: CustomConfigurationURLProviding {
     }
 
     public func url(for configuration: Configuration) -> URL {
-        let defaultURL = defaultProvider.url(for: configuration)
-        guard isCustomURLEnabled else { return defaultURL }
-        if let sessionURL = sessionURLs[configuration] { return sessionURL }
+        state(for: configuration).resolvedURL
+    }
 
-        let customURL: URL?
+    public func state(for configuration: Configuration) -> ConfigurationURLState {
+        let defaultURL = defaultProvider.url(for: configuration)
+        let savedURL = savedOverrideURL(for: configuration)
+        let sessionURL = sessionURLs[configuration]
+        let resolvedURL = isCustomURLEnabled ? (sessionURL ?? savedURL ?? defaultURL) : defaultURL
+        return ConfigurationURLState(defaultURL: defaultURL, savedOverrideURL: savedURL, sessionOverrideURL: sessionURL,
+                                     resolvedURL: resolvedURL, overridesEnabled: isCustomURLEnabled)
+    }
+
+    private func savedOverrideURL(for configuration: Configuration) -> URL? {
         switch configuration {
-        case .bloomFilterSpec: customURL = store.customBloomFilterSpecURL
-        case .bloomFilterBinary: customURL = store.customBloomFilterBinaryURL
-        case .bloomFilterExcludedDomains: customURL = store.customBloomFilterExcludedDomainsURL
-        case .privacyConfiguration: customURL = store.customPrivacyConfigurationURL
-        case .trackerDataSet: customURL = store.customTrackerDataSetURL
-        case .surrogates: customURL = store.customSurrogatesURL
-        case .remoteMessagingConfig: customURL = store.customRemoteMessagingConfigURL
+        case .bloomFilterSpec: return store.customBloomFilterSpecURL
+        case .bloomFilterBinary: return store.customBloomFilterBinaryURL
+        case .bloomFilterExcludedDomains: return store.customBloomFilterExcludedDomainsURL
+        case .privacyConfiguration: return store.customPrivacyConfigurationURL
+        case .trackerDataSet: return store.customTrackerDataSetURL
+        case .surrogates: return store.customSurrogatesURL
+        case .remoteMessagingConfig: return store.customRemoteMessagingConfigURL
         }
-        return customURL ?? defaultURL
     }
 
     public func setCustomURL(_ url: URL?, for configuration: Configuration) throws {
@@ -104,22 +129,6 @@ public class ConfigurationURLProvider: CustomConfigurationURLProviding {
     }
 
     public func isURLOverridden(for configuration: Configuration) -> Bool {
-        if sessionURLs[configuration] != nil { return true }
-        switch configuration {
-        case .bloomFilterSpec:
-            return store.customBloomFilterSpecURL != nil
-        case .bloomFilterBinary:
-            return store.customBloomFilterBinaryURL != nil
-        case .bloomFilterExcludedDomains:
-            return store.customBloomFilterExcludedDomainsURL != nil
-        case .privacyConfiguration:
-            return store.customPrivacyConfigurationURL != nil
-        case .surrogates:
-            return store.customSurrogatesURL != nil
-        case .trackerDataSet:
-            return store.customTrackerDataSetURL != nil
-        case .remoteMessagingConfig:
-            return store.customRemoteMessagingConfigURL != nil
-        }
+        sessionURLs[configuration] != nil || savedOverrideURL(for: configuration) != nil
     }
 }

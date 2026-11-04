@@ -31,17 +31,36 @@ import os
 /// }
 /// try server.start()
 /// ```
-public final class DebugHTTPServer: HTTPServerProtocol {
+/// All mutable state is confined to queue, including public accessors and route registration.
+/// Async handlers transfer only Sendable request/response values; completion returns to queue.
+public final class DebugHTTPServer: HTTPServerProtocol, @unchecked Sendable {
 
     // MARK: - Properties
 
-    public private(set) var state: ServerState = .stopped {
-        didSet { stateDidChange?(state) }
+    private var storedState: ServerState = .stopped
+    private var storedStateDidChange: (@Sendable (ServerState) -> Void)?
+    private let queueKey = DispatchSpecificKey<UInt8>()
+
+    public private(set) var state: ServerState {
+        get { withQueue { storedState } }
+        set {
+            withQueue {
+                storedState = newValue
+                storedStateDidChange?(newValue)
+            }
+        }
     }
 
-    public var stateDidChange: (@Sendable (ServerState) -> Void)?
+    public var stateDidChange: (@Sendable (ServerState) -> Void)? {
+        get { withQueue { storedStateDidChange } }
+        set { withQueue { storedStateDidChange = newValue } }
+    }
 
     private let port: UInt16
+    private let loopbackOnly: Bool
+    private let maximumRequestBytes = 1_048_576
+    private var asyncRoutes: [RouteKey: AsyncRouteHandler] = [:]
+    private var requestTasks: [ObjectIdentifier: Task<Void, Never>] = [:]
     private let queue: DispatchQueue
     private var listener: NWListener?
     private var activeConnections: [NWConnection] = []
@@ -56,16 +75,25 @@ public final class DebugHTTPServer: HTTPServerProtocol {
 
     /// Creates a new debug server.
     ///
-    /// - Parameter port: The TCP port to listen on. Defaults to `8473`.
-    public init(port: UInt16 = 8473) {
+    /// - Parameters:
+    ///   - port: The TCP port to listen on. Defaults to `8473`.
+    ///   - loopbackOnly: Restrict the listener to IPv4 loopback for local tooling.
+    public init(port: UInt16 = 8473, loopbackOnly: Bool = false) {
         self.port = port
+        self.loopbackOnly = loopbackOnly
         self.queue = DispatchQueue(label: "com.debugserver.listener", qos: .userInitiated)
+        self.queue.setSpecific(key: queueKey, value: 1)
+    }
+
+    private func withQueue<Value>(_ operation: () throws -> Value) rethrows -> Value {
+        if DispatchQueue.getSpecific(key: queueKey) != nil { return try operation() }
+        return try queue.sync(execute: operation)
     }
 
     // MARK: - HTTPServerProtocol
 
     public func start() throws {
-        try queue.sync {
+        try withQueue {
             guard case .stopped = state else { return }
 
             state = .starting
@@ -73,7 +101,13 @@ public final class DebugHTTPServer: HTTPServerProtocol {
 
             let parameters = NWParameters.tcp
             let nwPort = NWEndpoint.Port(rawValue: port)!
-            let listener = try NWListener(using: parameters, on: nwPort)
+            let listener: NWListener
+            if loopbackOnly {
+                parameters.requiredLocalEndpoint = .hostPort(host: .ipv4(.loopback), port: nwPort)
+                listener = try NWListener(using: parameters)
+            } else {
+                listener = try NWListener(using: parameters, on: nwPort)
+            }
 
             listener.stateUpdateHandler = { [weak self] listenerState in
                 self?.handleListenerStateChange(listenerState)
@@ -102,6 +136,8 @@ public final class DebugHTTPServer: HTTPServerProtocol {
         listener?.cancel()
         listener = nil
 
+        requestTasks.values.forEach { $0.cancel() }
+        requestTasks.removeAll()
         for connection in activeConnections {
             connection.cancel()
         }
@@ -113,12 +149,17 @@ public final class DebugHTTPServer: HTTPServerProtocol {
 
     public func addRoute(_ path: String, method: HTTPMethod, handler: @escaping RouteHandler) {
         let key = RouteKey(method: method, path: path)
-        routes[key] = handler
+        withQueue { routes[key] = handler }
     }
 
     public func addPrefixRoute(_ pathPrefix: String, method: HTTPMethod, handler: @escaping RouteHandler) {
         let key = RouteKey(method: method, path: pathPrefix)
-        prefixRoutes[key] = handler
+        withQueue { prefixRoutes[key] = handler }
+    }
+
+    /// Register before starting the server, as with synchronous routes.
+    public func addAsyncRoute(_ path: String, method: HTTPMethod, handler: @escaping AsyncRouteHandler) {
+        withQueue { asyncRoutes[RouteKey(method: method, path: path)] = handler }
     }
 
     public func addStaticRoute(_ path: String, htmlString: String) {
@@ -132,7 +173,7 @@ public final class DebugHTTPServer: HTTPServerProtocol {
     private func handleListenerStateChange(_ listenerState: NWListener.State) {
         switch listenerState {
         case .ready:
-            state = .running(port: port)
+            state = .running(port: listener?.port?.rawValue ?? port)
             logger.info("DebugServer listening on port \(self.port)")
         case .failed(let error):
             state = .failed(error.localizedDescription)
@@ -149,7 +190,15 @@ public final class DebugHTTPServer: HTTPServerProtocol {
     }
 
     private func handleNewConnection(_ connection: NWConnection) {
+        guard activeConnections.count < 64 else {
+            connection.cancel()
+            return
+        }
         activeConnections.append(connection)
+        queue.asyncAfter(deadline: .now() + 30) { [weak self, weak connection] in
+            guard let connection, self?.activeConnections.contains(where: { $0 === connection }) == true else { return }
+            self?.removeConnection(connection)
+        }
 
         connection.stateUpdateHandler = { [weak self] connectionState in
             if case .failed = connectionState {
@@ -176,8 +225,7 @@ public final class DebugHTTPServer: HTTPServerProtocol {
             guard let chunk = content, !chunk.isEmpty else {
                 if isComplete {
                     if !accumulated.isEmpty {
-                        let response = processRequest(accumulated)
-                        sendResponse(response, on: connection)
+                        respond(to: accumulated, on: connection)
                     } else {
                         removeConnection(connection)
                     }
@@ -188,14 +236,17 @@ public final class DebugHTTPServer: HTTPServerProtocol {
             var data = accumulated
             data.append(chunk)
 
+            guard data.count <= maximumRequestBytes else {
+                sendResponse(.text("Request too large", status: .payloadTooLarge), on: connection)
+                return
+            }
             let remaining = self.remainingBodyBytes(in: data)
             if remaining == nil || remaining! > 0 {
                 receiveData(on: connection, accumulated: data)
                 return
             }
 
-            let response = processRequest(data)
-            sendResponse(response, on: connection)
+            respond(to: data, on: connection)
         }
     }
 
@@ -222,6 +273,29 @@ public final class DebugHTTPServer: HTTPServerProtocol {
         }
 
         return 0
+    }
+
+    private func respond(to data: Data, on connection: NWConnection) {
+        guard let request = try? parser.parse(data),
+              let handler = asyncRoutes[RouteKey(method: request.method, path: request.path)] else {
+            sendResponse(processRequest(data), on: connection)
+            return
+        }
+        let identifier = ObjectIdentifier(connection)
+        requestTasks[identifier] = Task { [weak self] in
+            let response: HTTPResponse
+            do {
+                response = try await handler(request)
+            } catch {
+                response = .text("Internal Server Error", status: .internalServerError)
+            }
+            guard !Task.isCancelled else { return }
+            self?.queue.async { [weak self] in
+                guard let self, activeConnections.contains(where: { $0 === connection }) else { return }
+                requestTasks[identifier] = nil
+                sendResponse(response, on: connection)
+            }
+        }
     }
 
     private func processRequest(_ data: Data) -> HTTPResponse {
@@ -271,6 +345,7 @@ public final class DebugHTTPServer: HTTPServerProtocol {
     }
 
     private func removeConnection(_ connection: NWConnection) {
+        requestTasks.removeValue(forKey: ObjectIdentifier(connection))?.cancel()
         connection.cancel()
         activeConnections.removeAll { $0 === connection }
     }

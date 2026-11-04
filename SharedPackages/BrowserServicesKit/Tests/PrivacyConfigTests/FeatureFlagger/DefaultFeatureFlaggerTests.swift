@@ -43,6 +43,8 @@ final class CapturingFeatureFlagOverriding: FeatureFlagLocalOverriding {
         toggleOverrideCalls.append(featureFlag)
     }
 
+    func setOverride<Flag: FeatureFlagDescribing>(_ value: Bool?, for featureFlag: Flag) {}
+
     func clearOverride<Flag: FeatureFlagDescribing>(for featureFlag: Flag) {
         clearOverrideCalls.append(featureFlag)
     }

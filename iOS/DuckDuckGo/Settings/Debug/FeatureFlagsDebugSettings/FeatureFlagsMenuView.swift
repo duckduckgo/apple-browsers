@@ -24,7 +24,7 @@ import PrivacyConfig
 import FeatureFlags_iOS
 
 struct FeatureFlagsMenuView: View {
-    @ObservedObject var viewModel: FeatureFlagsSettingViewModel = FeatureFlagsSettingViewModel()
+    @StateObject private var viewModel = FeatureFlagsSettingViewModel()
 
     var body: some View {
         List {
@@ -81,7 +81,7 @@ struct FeatureFlagsMenuView: View {
                     Text(verbatim: "Default: \(viewModel.defaultValue(for: flag))")
                         .font(.caption)
                         .foregroundColor(.gray)
-                    if flag == .promoPresentationCoordination || flag == .sitePermissions {
+                    if viewModel.requiresRelaunch(flag) {
                         Text(verbatim: "Relaunch required for changes to take effect.")
                             .font(.caption)
                             .foregroundColor(.gray)

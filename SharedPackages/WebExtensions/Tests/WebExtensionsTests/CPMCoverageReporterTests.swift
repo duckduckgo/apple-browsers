@@ -19,7 +19,6 @@
 import Testing
 @testable import WebExtensions
 
-@available(iOS 16, macOS 13, *)
 @Suite("CPM coverage reporter")
 struct CPMCoverageReporterTests {
 

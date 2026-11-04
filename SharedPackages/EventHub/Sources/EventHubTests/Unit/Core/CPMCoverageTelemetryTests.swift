@@ -22,7 +22,6 @@ import Testing
 
 /// The CPM coverage telemetry as defined in the iOS and macOS privacy-configuration overrides (after the build turns
 /// `days: 1` into seconds), fed by the native events that `CPMCoverageReporter` sends.
-@available(iOS 16, macOS 13, *)
 @Suite("CPM coverage telemetry")
 struct CPMCoverageTelemetryTests {
     static let pixelName = "autoconsent_cpmCoverage_day"

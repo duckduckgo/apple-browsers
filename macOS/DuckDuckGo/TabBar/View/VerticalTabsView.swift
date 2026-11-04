@@ -46,6 +46,7 @@ private enum Layout {
     static let iconSize: CGFloat = 16
     static let closeButtonSize: CGFloat = 16
     static let selectedShadowRadius: CGFloat = 1
+    static let reorderAnimation = Animation.easeInOut(duration: 0.2)
     static let titleFade = LinearGradient(stops: [.init(color: .black, location: 0.8), .init(color: .clear, location: 1)],
                                           startPoint: .leading,
                                           endPoint: .trailing)
@@ -68,6 +69,7 @@ private struct VerticalTabsList: View {
                                 .id(tab.id)
                         }
                     }
+                    .animation(Layout.reorderAnimation, value: model.tabs.map(\.id))
                     .padding(Layout.listPadding)
                 }
                 .onAppear {

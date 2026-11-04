@@ -88,8 +88,10 @@ final class VerticalTabsViewModel: ObservableObject {
         tabCollectionViewModel.insertOrAppendNewTab()
     }
 
+    /// Selects the dragged tab up front, like the tab bar: moving a tab selects it, and doing that mid-drag would switch the page.
     func startDragging(_ id: TabIdentifier) {
         guard let index = unpinnedIndex(of: id) else { return }
+        tabCollectionViewModel.select(at: .unpinned(index))
         tabDragAndDropManager.setSource(tabCollectionViewModel: tabCollectionViewModel, index: .unpinned(index))
     }
 

@@ -51,6 +51,16 @@ final class VerticalTabsViewModelTests: XCTestCase {
         XCTAssertFalse(model.tabs.map(\.id).contains(closedTabID))
     }
 
+    func testWhenDragStartsThenTheDraggedTabIsSelected() {
+        let tabCollectionViewModel = tabCollectionViewModel(tabCount: 3, selectedIndex: 0)
+        let model = verticalTabsViewModel(for: tabCollectionViewModel)
+        let draggedTabID = model.tabs[2].id
+
+        model.startDragging(draggedTabID)
+
+        XCTAssertEqual(tabCollectionViewModel.selectionIndex, .unpinned(2))
+    }
+
     func testWhenDraggedTabMovesOverAnotherTabThenItTakesThatTabsPlace() {
         let tabCollectionViewModel = tabCollectionViewModel(tabCount: 3, selectedIndex: 0)
         let model = verticalTabsViewModel(for: tabCollectionViewModel)

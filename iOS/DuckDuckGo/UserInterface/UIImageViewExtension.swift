@@ -59,6 +59,7 @@ extension UIImageView {
                     image = FaviconsHelper.cachedFakeFavicon(forDomain: domain, preferredFakeFaviconLetters: preferredFakeFaviconLetters)
                 }
             }
+            request.appliedImage = isShowingThisDomainsFavicon ? image : nil
             faviconLoadRequest = request
             let placeholder = image
             FaviconsHelper.loadFavicon(forDomain: domain,

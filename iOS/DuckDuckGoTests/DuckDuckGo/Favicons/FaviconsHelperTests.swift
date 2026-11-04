@@ -113,6 +113,28 @@ class FaviconsHelperTests: XCTestCase {
         XCTAssertFalse(result.isFake)
     }
 
+    @MainActor
+    func testLoadFaviconIntoImageView_WhenSameDomainReloadsOverlap_KeepsCurrentImage() {
+        let domain = "example.com"
+        let cache = Favicons.Constants.caches[.fireproof]!
+        let resource = Favicons().defaultResource(forDomain: domain)!
+        let image = UIImage(named: "duckduckgo-favicon-128x128")!
+        cache.store(image, forKey: resource.cacheKey, toDisk: false)
+
+        let imageView = UIImageView()
+        imageView.loadFavicon(forDomain: domain, usingCache: .fireproof, useFakeFavicon: false)
+        cache.clearMemoryCache()
+
+        imageView.loadFavicon(forDomain: domain, usingCache: .fireproof, useFakeFavicon: false)
+        let loaded = expectation(description: "Loaded")
+        imageView.loadFavicon(forDomain: domain, usingCache: .fireproof, useFakeFavicon: false) { _, _ in
+            loaded.fulfill()
+        }
+
+        XCTAssertTrue(imageView.image === image)
+        wait(for: [loaded], timeout: 5)
+    }
+
     func testLoadFaviconIntoImageView_WhenImageSetDuringDiskRead_KeepsThatImage() {
         let cache = Favicons.Constants.caches[.fireproof]!
         let testImageData = UIImage(named: "duckduckgo-favicon-128x128")!.pngData()!

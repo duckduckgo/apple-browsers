@@ -82,7 +82,7 @@ jobs:
           RUN_ID: ${{ steps.run.outputs.id }}
         run: |
           job_started="$(gh api "repos/$GITHUB_REPOSITORY/actions/runs/$RUN_ID/jobs?filter=latest&per_page=100" \
-            --jq '[.jobs[] | select(.name == "Test (Non-Sandbox)")][0].started_at // ""')"
+            --jq '[.jobs[] | select(.name | startswith("Test (Non-Sandbox"))][0].started_at // ""')"
           if [ -z "$job_started" ]; then
             echo "::error::Run $RUN_ID has no started Test (Non-Sandbox) job, the job that renders the snapshots."
             exit 1

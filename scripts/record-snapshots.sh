@@ -61,21 +61,19 @@ git_snapshots init -q
 git_snapshots remote add origin "$SUBMODULE_URL"
 
 if git_snapshots fetch -q origin "refs/heads/$BRANCH:refs/remotes/origin/$BRANCH" 2>/dev/null; then
-	git_snapshots fetch -q origin "$POINTER" 2>/dev/null || true
-	if ! git_snapshots merge-base --is-ancestor "$POINTER" "origin/$BRANCH" 2>/dev/null; then
-		echo "❌ $SUBMODULE_PATH points at $POINTER, which is not on $SUBMODULE_REPO@$BRANCH."
-		echo "   Run ./scripts/open-snapshot-submodule-pr.sh on '$BRANCH' and push, then re-add the label."
+	BRANCH_HEAD="$(git_snapshots rev-parse "origin/$BRANCH")"
+	if [ "$BRANCH_HEAD" != "$POINTER" ]; then
+		echo "❌ $SUBMODULE_REPO@$BRANCH is at $BRANCH_HEAD, but $SUBMODULE_PATH points at $POINTER, the references CI compared against."
+		echo "   Point $SUBMODULE_PATH at the snapshots branch, push, wait for the macOS PR checks, then re-add the label."
 		exit 1
 	fi
-	git_snapshots checkout -q -b "$BRANCH" "origin/$BRANCH"
 	BRANCH_EXISTS=true
 else
-	git_snapshots fetch -q origin "$POINTER"
-	git_snapshots checkout -q -b "$BRANCH" "$POINTER"
 	BRANCH_EXISTS=false
 fi
+git_snapshots fetch -q origin "$POINTER"
+git_snapshots checkout -q -b "$BRANCH" "$POINTER"
 
-git_snapshots read-tree "$POINTER"
 for image in "${IMAGES[@]}"; do
 	blob="$(git_snapshots hash-object -w -- "$RENDERED_DIR/$image")"
 	git_snapshots update-index --add --cacheinfo "100644,$blob,$image"

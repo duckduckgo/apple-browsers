@@ -19,6 +19,7 @@
 import AppKit
 import Combine
 import os.log
+import PixelKit
 import WebExtensions
 import WebKit
 
@@ -46,6 +47,7 @@ final class WebExtensionNavigationBarUpdater: NSObject, ThemeUpdateListening {
     private let webExtensionManagerProvider: () -> WebExtensionManaging?
     private let isPrivateWindow: Bool
     private let selectedTabProvider: () -> WKWebExtensionTab?
+    private let pixelFiring: (any PixelKitFiring)?
     private var buttons = Set<ExtensionButton>()
     private var updateCancellable: AnyCancellable?
     private var actionCancellable: AnyCancellable?
@@ -65,9 +67,11 @@ final class WebExtensionNavigationBarUpdater: NSObject, ThemeUpdateListening {
          themeManager: ThemeManaging,
          container: NSStackView,
          isPrivateWindow: Bool = false,
-         selectedTabProvider: @escaping () -> WKWebExtensionTab? = { nil }) {
+         selectedTabProvider: @escaping () -> WKWebExtensionTab? = { nil },
+         pixelFiring: (any PixelKitFiring)? = PixelKit.shared) {
          self.webExtensionManagerProvider = webExtensionManagerProvider
         self.selectedTabProvider = selectedTabProvider
+        self.pixelFiring = pixelFiring
         self.themeManager = themeManager
         self.container = container
         self.isPrivateWindow = isPrivateWindow
@@ -300,7 +304,23 @@ final class WebExtensionNavigationBarUpdater: NSObject, ThemeUpdateListening {
         webView=\(action?.popupWebView == nil ? "nil" : "non-nil", privacy: .public)
         """)
 
+        if action?.isEnabled != false {
+            fireToolbarClickedPixel(identifier: identifier)
+        }
         context.performAction(for: selectedTab)
+    }
+
+    private func fireToolbarClickedPixel(identifier: String) {
+        let manager = webExtensionManagerProvider()
+        let pixelExtension: WebExtensionPixelExtension
+        if let storeIdentity = manager?.installedExtension(identifier: identifier)?.storeIdentity,
+           storeIdentity.store == .chromeWebStore,
+           let entry = manager?.chromeWebStore?.catalogEntry(of: storeIdentity.id) {
+            pixelExtension = .catalog(entry)
+        } else {
+            pixelExtension = .other
+        }
+        pixelFiring?.fire(WebExtensionPixel.toolbarClicked(extension: pixelExtension), frequency: .dailyAndCount)
     }
 
     @objc private func showAPICompatibilityLog(sender: NSMenuItem) {

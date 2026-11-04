@@ -66,7 +66,8 @@ extension WebExtensionManager {
             disabledExtensionIDs: { [featureFlagger] in
                 Self.flagDisabledExtensionIDs(featureFlagger: featureFlagger)
             },
-            disabledExtensionIDsDidChange: featureFlagger.updatesPublisher
+            disabledExtensionIDsDidChange: featureFlagger.updatesPublisher,
+            pixelFiring: MacOSWebExtensionPixelFiring()
         )
         remoteDisableEnforcer = enforcer
         enforcer.start()
@@ -140,6 +141,7 @@ enum WebExtensionManagerFactory {
             permissionController: permissionController,
             internalSiteHandler: internalSiteHandler,
             pixelFiring: pixelFiring,
+            retentionStore: WebExtensionRetentionStore(),
             cpmMessagingHealthMonitor: cpmMessagingHealthMonitor,
             cpmDiagnosticsRecorder: cpmDiagnosticsRecorder,
             isCPMMessagingHangRecoveryEnabled: {

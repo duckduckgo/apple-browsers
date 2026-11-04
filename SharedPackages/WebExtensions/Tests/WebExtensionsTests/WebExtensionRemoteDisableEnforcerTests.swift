@@ -47,6 +47,40 @@ final class WebExtensionRemoteDisableEnforcerTests: XCTestCase {
         try await super.tearDown()
     }
 
+    // MARK: - Pixels
+
+    func testWhenListedExtensionIsDisabled_ThenRemotelyDisabledPixelFires() async {
+        let pixels = RemoteDisablePixelRecorder()
+        install(storeExtension("listed", storeID: listedStoreID), storeExtension("other", storeID: otherStoreID))
+
+        let enforcer = makeEnforcer(pixelFiring: pixels)
+        await enforcer.scheduleEnforcement().value
+
+        // The mock manager has no store catalog, so the extension is reported as other.
+        XCTAssertEqual(pixels.remotelyDisabled, ["other"])
+    }
+
+    func testWhenListedExtensionIsAlreadyDisabled_ThenNoPixelFires() async {
+        let pixels = RemoteDisablePixelRecorder()
+        install(storeExtension("listed", storeID: listedStoreID, isDisabled: true))
+
+        let enforcer = makeEnforcer(pixelFiring: pixels)
+        await enforcer.scheduleEnforcement().value
+
+        XCTAssertEqual(pixels.remotelyDisabled, [])
+    }
+
+    func testWhenDisablingFails_ThenNoPixelFires() async {
+        let pixels = RemoteDisablePixelRecorder()
+        manager.disableExtensionError = NSError(domain: "test", code: 1)
+        install(storeExtension("listed", storeID: listedStoreID))
+
+        let enforcer = makeEnforcer(pixelFiring: pixels)
+        await enforcer.scheduleEnforcement().value
+
+        XCTAssertEqual(pixels.remotelyDisabled, [])
+    }
+
     // MARK: - Enforcement
 
     func testWhenListedExtensionIsEnabled_ThenItIsDisabled() async {
@@ -223,11 +257,12 @@ final class WebExtensionRemoteDisableEnforcerTests: XCTestCase {
 
     // MARK: - Helpers
 
-    private func makeEnforcer() -> WebExtensionRemoteDisableEnforcer {
+    private func makeEnforcer(pixelFiring: WebExtensionPixelFiring = NoOpWebExtensionPixelFiring()) -> WebExtensionRemoteDisableEnforcer {
         WebExtensionRemoteDisableEnforcer(manager: manager,
                                           configurationManager: configurationManager,
                                           disabledExtensionIDs: { [unowned self] in appDisabledIDs },
-                                          disabledExtensionIDsDidChange: appDisabledIDsDidChange.eraseToAnyPublisher())
+                                          disabledExtensionIDsDidChange: appDisabledIDsDidChange.eraseToAnyPublisher(),
+                                          pixelFiring: pixelFiring)
     }
 
     private func install(_ extensions: InstalledWebExtension...) {
@@ -259,5 +294,16 @@ final class WebExtensionRemoteDisableEnforcerTests: XCTestCase {
         let data = try PrivacyConfigurationData(data: JSONSerialization.data(withJSONObject: json))
         return AppPrivacyConfiguration(data: data, identifier: "test", localProtection: MockDomainsProtectionStore(),
                                        internalUserDecider: MockInternalUserDecider())
+    }
+}
+
+@available(macOS 15.4, iOS 18.4, *)
+private final class RemoteDisablePixelRecorder: WebExtensionPixelFiring {
+    private(set) var remotelyDisabled: [String] = []
+
+    func fire(_ event: WebExtensionPixelEvent) {
+        if case .remotelyDisabled(let pixelExtension) = event {
+            remotelyDisabled.append(pixelExtension.parameterValue)
+        }
     }
 }

@@ -1,6 +1,15 @@
 {
-  "originHash" : "31983a1ee03bb14bc5ad596edc338e6e7696a4f3b142919a65fd4652500fe91b",
+  "originHash" : "3e8b5088869f7e035038ed46b18fe47e0726ecf435d9200ae4bcfd97e3104f9a",
   "pins" : [
+    {
+      "identity" : "content-scope-scripts",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/duckduckgo/content-scope-scripts.git",
+      "state" : {
+        "branch" : "pr-releases/michal/mvp-block-sponsors",
+        "revision" : "e3f1c134bbb4a6cb2fa1261d7dffdf801a33441b"
+      }
+    },
     {
       "identity" : "duckduckgo-autofill",
       "kind" : "remoteSourceControl",

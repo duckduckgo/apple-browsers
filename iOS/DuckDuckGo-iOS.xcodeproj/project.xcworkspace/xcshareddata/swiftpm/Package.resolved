@@ -1,5 +1,5 @@
 {
-  "originHash" : "692691ff20a6a419916ba18a65c1295406c6a826fbeeef0e1447526cbc632e78",
+  "originHash" : "c01e8fec8241c594941a1403528b1bbd76cd98741d551b54454a3717a64ee2a9",
   "pins" : [
     {
       "identity" : "apple-toolbox",
@@ -26,6 +26,15 @@
       "state" : {
         "revision" : "114354e8c1667a2edc4993700fb9fa4f90157b56",
         "version" : "1.2.2"
+      }
+    },
+    {
+      "identity" : "content-scope-scripts",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/duckduckgo/content-scope-scripts.git",
+      "state" : {
+        "branch" : "pr-releases/michal/mvp-block-sponsors",
+        "revision" : "e3f1c134bbb4a6cb2fa1261d7dffdf801a33441b"
       }
     },
     {

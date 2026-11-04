@@ -1,4 +1,7 @@
 /* No comment provided by engineer. */
+" " = " ";
+
+/* No comment provided by engineer. */
 "-config.rollout.<parent>.<subfeature> true/false" = "-config.rollout.<parent>.<subfeature> true/false";
 
 /* No comment provided by engineer. */
@@ -381,6 +384,21 @@
 
 /* Title for the New Tab row in the Duck.ai tab header Plus (+) menu */
 "aichat.header.plusMenu.newTab" = "Filă nouă";
+
+/* Section header in the Duck.ai tab header Plus (+) menu; every row below it opens a new tab */
+"aichat.header.plusMenu.newTabSection" = "Filă nouă";
+
+/* Row in the New Tab section of the Duck.ai tab header Plus (+) menu — opens a new Duck.ai chat in a new tab */
+"aichat.header.plusMenu.newTabSection.chat" = "Chat";
+
+/* Row in the New Tab section of the Duck.ai tab header Plus (+) menu — opens Duck.ai in image generation mode in a new tab */
+"aichat.header.plusMenu.newTabSection.image" = "Imagine";
+
+/* Row in the Duck.ai tab header Plus (+) menu — opens a new tab in search mode */
+"aichat.header.plusMenu.newTabSection.search" = "Caută";
+
+/* Row in the New Tab section of the Duck.ai tab header Plus (+) menu — opens a new Duck.ai voice chat in a new tab */
+"aichat.header.plusMenu.newTabSection.voiceChat" = "Chat vocal";
 
 /* Title for the New Voice Chat row in the Duck.ai tab header Plus (+) menu */
 "aichat.header.plusMenu.newVoiceChat" = "Chat vocal nou";
@@ -3297,6 +3315,72 @@
 
 /* No comment provided by engineer. */
 "menu.button.hint" = "Meniul de navigare";
+
+/* iPad menu bar command */
+"menuActualSize" = "Dimensiune reală";
+
+/* iPad menu bar command */
+"menuBack" = "Înapoi";
+
+/* iPad menu bar command */
+"menuClearTabsAndData" = "Șterge filele și datele";
+
+/* iPad menu bar command */
+"menuDuplicateTab" = "Duplică fila";
+
+/* iPad menu bar command */
+"menuFeedback" = "Partajează feedback";
+
+/* iPad menu bar command */
+"menuForward" = "Înainte";
+
+/* iPad menu bar command */
+"menuHideDownloads" = "Ascunde descărcările";
+
+/* iPad menu bar command */
+"menuHidePasswords" = "Ascunde parolele";
+
+/* iPad menu bar command */
+"menuHideTabs" = "Ascunde filele";
+
+/* iPad menu bar command */
+"menuLastTab" = "Ultima filă";
+
+/* iPad menu bar command */
+"menuNewTabOnRight" = "Filă nouă la dreapta";
+
+/* iPad menu bar command */
+"menuNextTab" = "Afișează fila următoare";
+
+/* iPad menu bar command */
+"menuOpenLocation" = "Deschide locația…";
+
+/* iPad menu bar command */
+"menuPreviousTab" = "Afișează fila anterioară";
+
+/* iPad menu bar command */
+"menuPrint" = "Tipărește…";
+
+/* iPad menu bar command selecting a numbered tab */
+"menuSelectTab" = "Selectează fila %d";
+
+/* iPad menu bar command */
+"menuSettings" = "Setări DuckDuckGo…";
+
+/* iPad menu bar command */
+"menuShowDownloads" = "Afișează descărcările";
+
+/* iPad menu bar command */
+"menuShowPasswords" = "Arată parolele";
+
+/* iPad menu bar command */
+"menuShowTabs" = "Afișează filele";
+
+/* iPad menu bar command */
+"menuStop" = "Stop";
+
+/* iPad menu bar command */
+"menuVoiceSearch" = "Căutare vocală privată";
 
 /* No comment provided by engineer. */
 "Message" = "Mesaj";

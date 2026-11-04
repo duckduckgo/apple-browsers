@@ -27,7 +27,7 @@ final class AddressBarButtonsAnimationStateTests: XCTestCase {
     var animator: NavigationBarBadgeAnimator!
     var buttonsContainer: NSView!
     var notificationBadgeContainer: NavigationBarBadgeAnimationView!
-    var mockDelegate: MockAnimatorDelegate!
+    private var mockDelegate: MockAnimatorDelegate!
 
     override func setUp() {
         super.setUp()
@@ -49,6 +49,9 @@ final class AddressBarButtonsAnimationStateTests: XCTestCase {
     // MARK: - Animation State During Badge Animation
 
     func testAnimationQueue_isNotEmptyWhenAnimationEnqueued() {
+        // Given - shield animation in progress, so the queue is held
+        animator.isShieldAnimationInProgress = true
+
         // When
         animator.enqueueAnimation(
             .trackersBlocked(count: 5),
@@ -128,6 +131,7 @@ final class AddressBarButtonsAnimationStateTests: XCTestCase {
 
     func testAnimationState_queueClearsAfterCancel() {
         // Given
+        animator.isShieldAnimationInProgress = true
         animator.enqueueAnimation(.trackersBlocked(count: 5), priority: .high, buttonsContainer: buttonsContainer, notificationBadgeContainer: notificationBadgeContainer)
         animator.enqueueAnimation(.cookiePopupManaged, priority: .low, buttonsContainer: buttonsContainer, notificationBadgeContainer: notificationBadgeContainer)
         XCTAssertEqual(animator.animationQueue.count, 2)
@@ -154,16 +158,10 @@ final class AddressBarButtonsAnimationStateTests: XCTestCase {
         animator.setAutoProcessNextAnimation(false)
         animator.processNextAnimation()
 
-        let expectation = expectation(description: "Animation should complete")
-
-        // Wait for animation to complete naturally
-        DispatchQueue.main.asyncAfter(deadline: .now() + 3.0) {
-            expectation.fulfill()
-        }
-
-        wait(for: [expectation], timeout: 4.0)
-
-        // Then
+        // Then - wait for the animation to complete naturally
+        let delegate = mockDelegate!
+        let finished = XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in delegate.didFinishAnimatingCallCount > 0 }, object: nil)
+        wait(for: [finished], timeout: 10.0)
         XCTAssertGreaterThan(mockDelegate.didFinishAnimatingCallCount, 0, "Delegate should receive didFinishAnimating callback")
     }
 

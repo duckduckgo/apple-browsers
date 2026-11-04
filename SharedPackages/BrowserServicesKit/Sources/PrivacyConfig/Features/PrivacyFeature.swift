@@ -415,6 +415,10 @@ public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
     /// https://app.asana.com/0/0/1219207880593588/f
     case unifiedToggleInputPastedText
 
+    /// Sweeps a stroke along the keyboard's top edge when it comes up for the native Duck.ai input.
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1220139278590013
+    case unifiedToggleInputKeyboardEdgeSweep
+
     /// Controls the attachment privacy disclosure in Duck.ai on iPad.
     case iPadAttachmentPrivacy
 
@@ -567,6 +571,10 @@ public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
     /// native-storage chat data). When off, Duck.ai tabs fall back to the standard
     /// screenshot preview.
     case tabSwitcherRichCard
+
+    /// iPhone: Duck.ai tab ↔ browser handoff improvements (new-tab menus, tab switcher recent chats).
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1219970758953673?focus=true
+    case tabHandoffImprovements
 
     /// macOS only. When on, the onboarding Search/Duck.ai toggle choice also drives the New Tab Page
     /// search-mode toggle and seeds the duckduckgo.com homepage. Off keeps the choice address-bar only.
@@ -786,6 +794,8 @@ public enum SyncPromotionSubfeature: String, PrivacySubfeature {
     public var parent: PrivacyFeature { .syncPromotion }
     case bookmarks
     case passwords
+    case syncAnotherDevice
+    case redesign
 }
 
 public enum HTMLHistoryPageSubfeature: String, Equatable, PrivacySubfeature {

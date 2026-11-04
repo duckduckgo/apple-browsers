@@ -101,7 +101,7 @@ final class DuckDuckGoSubscriptionIntegrationTests: XCTestCase {
         await tokenRefresher.setTestingDecodedTokenContainers([OAuthTokensFactory.makeValidTokenContainerWithEntitlements()])
 
         // configure mock store purchase manager responses
-        storePurchaseManager.purchaseSubscriptionResult = .success("purchaseTransactionJWS")
+        storePurchaseManager.purchaseSubscriptionResult = .success((transactionJWS: "purchaseTransactionJWS", isFreeTrial: false))
 
         // Buy subscription
 
@@ -114,7 +114,7 @@ final class DuckDuckGoSubscriptionIntegrationTests: XCTestCase {
         }
         XCTAssertNotNil(purchaseTransactionJWS)
 
-        switch await appStorePurchaseFlow.completeSubscriptionPurchase(with: purchaseTransactionJWS!, experimentAttribution: nil) {
+        switch await appStorePurchaseFlow.completeSubscriptionPurchase(with: purchaseTransactionJWS!, isFreeTrial: nil, experimentAttribution: nil) {
         case .success:
             break
         case .failure(let error):
@@ -203,7 +203,7 @@ final class DuckDuckGoSubscriptionIntegrationTests: XCTestCase {
         APIMockResponseFactory.mockGetJWKS(destinationMockAPIService: apiService, success: true)
 
         await tokenRefresher.setTestingDecodedTokenContainers([OAuthTokensFactory.makeValidTokenContainerWithEntitlements()])
-        storePurchaseManager.purchaseSubscriptionResult = .success("purchaseTransactionJWS")
+        storePurchaseManager.purchaseSubscriptionResult = .success((transactionJWS: "purchaseTransactionJWS", isFreeTrial: false))
 
         SubscriptionAPIMockResponseFactory.mockConfirmPurchase(destinationMockAPIService: apiService, success: false)
 
@@ -216,7 +216,7 @@ final class DuckDuckGoSubscriptionIntegrationTests: XCTestCase {
         }
         XCTAssertNotNil(purchaseTransactionJWS)
 
-        switch await appStorePurchaseFlow.completeSubscriptionPurchase(with: purchaseTransactionJWS!, experimentAttribution: nil) {
+        switch await appStorePurchaseFlow.completeSubscriptionPurchase(with: purchaseTransactionJWS!, isFreeTrial: nil, experimentAttribution: nil) {
         case .success:
             XCTFail("Unexpected success")
         case .failure(let error):
@@ -231,7 +231,7 @@ final class DuckDuckGoSubscriptionIntegrationTests: XCTestCase {
         APIMockResponseFactory.mockGetJWKS(destinationMockAPIService: apiService, success: true)
 
         await tokenRefresher.setTestingDecodedTokenContainers([OAuthTokensFactory.makeValidTokenContainerWithEntitlements()])
-        storePurchaseManager.purchaseSubscriptionResult = .success("purchaseTransactionJWS")
+        storePurchaseManager.purchaseSubscriptionResult = .success((transactionJWS: "purchaseTransactionJWS", isFreeTrial: false))
 
         SubscriptionAPIMockResponseFactory.mockConfirmPurchase(destinationMockAPIService: apiService, success: true)
         SubscriptionAPIMockResponseFactory.mockGetTierFeatures(destinationMockAPIService: apiService, success: false, subscriptionIDs: ["ios.subscription.1month"])
@@ -245,7 +245,7 @@ final class DuckDuckGoSubscriptionIntegrationTests: XCTestCase {
         }
         XCTAssertNotNil(purchaseTransactionJWS)
 
-        switch await appStorePurchaseFlow.completeSubscriptionPurchase(with: purchaseTransactionJWS!, experimentAttribution: nil) {
+        switch await appStorePurchaseFlow.completeSubscriptionPurchase(with: purchaseTransactionJWS!, isFreeTrial: nil, experimentAttribution: nil) {
         case .success:
             XCTFail("Unexpected success")
         case .failure(let error):
@@ -268,7 +268,7 @@ final class DuckDuckGoSubscriptionIntegrationTests: XCTestCase {
         APIMockResponseFactory.mockGetJWKS(destinationMockAPIService: apiService, success: true)
 
         // Configure mock store purchase manager to succeed
-        storePurchaseManager.purchaseSubscriptionResult = .success("tierChangeTransactionJWS")
+        storePurchaseManager.purchaseSubscriptionResult = .success((transactionJWS: "tierChangeTransactionJWS", isFreeTrial: false))
 
         // Change tier
         let newTierSubscriptionID = "ios.subscription.1year"
@@ -359,7 +359,7 @@ final class DuckDuckGoSubscriptionIntegrationTests: XCTestCase {
         APIMockResponseFactory.mockGetJWKS(destinationMockAPIService: apiService, success: true)
 
         // Configure store purchase manager to succeed
-        storePurchaseManager.purchaseSubscriptionResult = .success("tierChangeTransactionJWS")
+        storePurchaseManager.purchaseSubscriptionResult = .success((transactionJWS: "tierChangeTransactionJWS", isFreeTrial: false))
 
         // Configure confirm purchase to fail
         SubscriptionAPIMockResponseFactory.mockConfirmPurchase(destinationMockAPIService: apiService, success: false)
@@ -372,7 +372,7 @@ final class DuckDuckGoSubscriptionIntegrationTests: XCTestCase {
         }
 
         // But completing the purchase fails
-        switch await appStorePurchaseFlow.completeSubscriptionPurchase(with: transactionJWS, experimentAttribution: nil) {
+        switch await appStorePurchaseFlow.completeSubscriptionPurchase(with: transactionJWS, isFreeTrial: nil, experimentAttribution: nil) {
         case .success:
             XCTFail("Unexpected success")
         case .failure(let error):

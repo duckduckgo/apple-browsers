@@ -1,5 +1,5 @@
 //
-//  MenuCommandAvailability.swift
+//  PlatformLinksViewTests.swift
 //  DuckDuckGo
 //
 //  Copyright © 2026 DuckDuckGo. All rights reserved.
@@ -17,25 +17,20 @@
 //  limitations under the License.
 //
 
-struct MenuCommandAvailability {
-    struct State {
-        enum Presentation {
-            case browser
-            case tabSwitcher
-            case blockingModal
-        }
+import SnapshotTestingSupport
+import Testing
+@testable import SyncUI_iOS
 
-        let shortcutsEnabled: Bool
-        let presentation: Presentation
-    }
+@MainActor
+@Suite("Platform Links View Tests")
+final class PlatformLinksViewTests {
 
-    let state: State
-
-    func isEnabled(_ command: MainMenuCommand) -> Bool {
-        guard state.shortcutsEnabled else { return false }
-        switch command {
-        case .settings:
-            return state.presentation != .blockingModal
-        }
+    @available(iOS 16, macOS 13, *)
+    @Test(.timeLimit(.minutes(1)))
+    func testPlatformLinksViewSnapshots() {
+        assertImageSnapshots(
+            PlatformLinksView_Previews.snapshots,
+            size: .screen
+        )
     }
 }

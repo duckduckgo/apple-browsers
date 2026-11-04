@@ -91,6 +91,7 @@ final class AppLaunchUITests: UITestCase {
                 attachContextMenuState(loadedPage: loadedPage, checkpoint: "cancelled")
                 app.openTabSwitcher(file: file, line: line)
                 app.assertTabCount(expectedTabs, file: file, line: line)
+                let originalTab = app.tabCell(at: expectedTabs - 1)
                 app.buttons["TabSwitcher.Button.Done"].tapWhenHittable(in: app, file: file, line: line)
 
                 tabs.press(forDuration: 1)
@@ -103,10 +104,13 @@ final class AppLaunchUITests: UITestCase {
                 expectedTabs += 1
                 app.openTabSwitcher(file: file, line: line)
                 app.assertTabCount(expectedTabs, file: file, line: line)
+                XCTAssertTrue(originalTab.exists, "Creating a tab removed an existing tab.", file: file, line: line)
                 if loadedPage {
-                    XCTAssertTrue(app.staticTexts["Privacy Test Pages"].exists, "Creating a tab removed the loaded tab.", file: file, line: line)
+                    originalTab.buttons["TabSwitcher.Tab.Open"].tapWhenHittable(in: app, file: file, line: line)
+                    app.assertPageContains("Privacy Test Pages", file: file, line: line)
+                } else {
+                    app.buttons["TabSwitcher.Button.Done"].tapWhenHittable(in: app, file: file, line: line)
                 }
-                app.buttons["TabSwitcher.Button.Done"].tapWhenHittable(in: app, file: file, line: line)
             }
         }
     }

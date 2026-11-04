@@ -239,17 +239,8 @@ final class WireGuardResponderTests: XCTestCase {
         let vector = try XCTUnwrap(vectors().first)
         let clock = try Clock(vector)
         let peer = try responder(vector, clock: clock)
-        let response = try bytes(vector, "response")
         _ = try peer.receive(bytes(vector, "initiation"))
-        let nonce = Data(repeating: 0x88, count: 24)
-        let cookie = Data(repeating: 0x99, count: 16)
-        let key = WireGuardCrypto.hash(Data("cookie--".utf8) + (try bytes(vector, "initiator_public")))
-        let subkey = try WireGuardCrypto.hchacha20(key: key, nonce: Data(nonce.prefix(16)))
-        let shortNonce = try ChaChaPoly.Nonce(data: Data(repeating: 0, count: 4) + nonce.suffix(8))
-        let sealed = try ChaChaPoly.seal(cookie, using: SymmetricKey(data: subkey), nonce: shortNonce,
-                                       authenticating: Data(response[60..<76]))
-        let reply = little(UInt32(3)) + little(clock.index) + nonce + sealed.ciphertext + sealed.tag
-        XCTAssertEqual(try peer.receive(reply), .cookieReceived)
+        XCTAssertEqual(try peer.receive(bytes(vector, "response_cookie_reply")), .cookieReceived)
         XCTAssertFalse(peer.isEstablished)
         clock.time += 5
         let rekey = try XCTUnwrap(vector["rekey"] as? [String: Any])
@@ -257,8 +248,7 @@ final class WireGuardResponderTests: XCTestCase {
         guard case .handshakeResponse(let nextResponse) = try peer.receive(bytes(rekey, "initiation")) else {
             return XCTFail("Expected a response using the cached cookie")
         }
-        XCTAssertEqual(Data(nextResponse.prefix(76)), Data(try bytes(rekey, "response").prefix(76)))
-        XCTAssertEqual(Data(nextResponse.suffix(16)), WireGuardCrypto.mac(key: cookie, data: Data(nextResponse.prefix(76))))
+        XCTAssertEqual(nextResponse, try bytes(rekey, "response_cookie_retry"))
     }
 
     func testResponderIndexCollisionCannotReplaceLiveStateOrConsumeTheFreshTimestamp() throws {

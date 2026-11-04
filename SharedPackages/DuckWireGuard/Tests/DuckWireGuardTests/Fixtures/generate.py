@@ -166,6 +166,13 @@ def hchacha20(key, nonce):
     return struct.pack("<8I", *(state[0:4] + state[12:16]))
 
 
+def make_cookie_reply(crypto, public_key, receiver_index, mac1, cookie, nonce):
+    key = hash_data(b"cookie--" + public_key)
+    subkey = hchacha20(key, nonce[:16])
+    encrypted = crypto.encrypt_nonce(subkey, bytes(4) + nonce[16:], cookie, mac1)
+    return struct.pack("<II", 3, receiver_index) + nonce + encrypted
+
+
 def fixture(crypto, preshared_key, rekey=False):
     local_private = bytes([0x11]) * 32
     remote_private = bytes([0x22]) * 32
@@ -212,11 +219,13 @@ def fixture(crypto, preshared_key, rekey=False):
     received_transport_next = struct.pack("<IIQ", 4, local_index, 1) + crypto.encrypt(receiving_key, 1, padded)
     cookie_nonce = bytes([0x88]) * 24
     cookie = bytes([0x99]) * 16
-    cookie_key = hash_data(b"cookie--" + remote_public)
-    cookie_subkey = hchacha20(cookie_key, cookie_nonce[:16])
-    encrypted_cookie = crypto.encrypt_nonce(cookie_subkey, bytes(4) + cookie_nonce[16:], cookie, initiation[116:132])
-    cookie_reply = struct.pack("<II", 3, local_index) + cookie_nonce + encrypted_cookie
+    cookie_reply = make_cookie_reply(crypto, remote_public, local_index, initiation[116:132], cookie, cookie_nonce)
     cookie_retry = initiation[:132] + mac(cookie, initiation[:132])
+    replacement_cookie = bytes([0xAA]) * 16
+    replacement_reply = make_cookie_reply(
+        crypto, remote_public, local_index, initiation[116:132], replacement_cookie, bytes([0x89]) * 24
+    )
+    response_cookie_reply = make_cookie_reply(crypto, local_public, remote_index, response[60:76], cookie, cookie_nonce)
     values = {
         "name": "no-psk" if preshared_key == bytes(32) else "with-psk",
         "initiator_private": local_private,
@@ -239,6 +248,10 @@ def fixture(crypto, preshared_key, rekey=False):
         "received_transport_next": received_transport_next,
         "cookie_reply": cookie_reply,
         "cookie_retry": cookie_retry,
+        "replacement_cookie_reply": replacement_reply,
+        "replacement_cookie_retry": initiation[:132] + mac(replacement_cookie, initiation[:132]),
+        "response_cookie_reply": response_cookie_reply,
+        "response_cookie_retry": response[:76] + mac(cookie, response[:76]),
     }
     return {name: value.hex() if isinstance(value, bytes) else value for name, value in values.items()}
 

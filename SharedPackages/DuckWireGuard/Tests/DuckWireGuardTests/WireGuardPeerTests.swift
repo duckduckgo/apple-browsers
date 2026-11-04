@@ -157,17 +157,35 @@ final class WireGuardPeerTests: XCTestCase {
         XCTAssertEqual(try peer.keepalive()[8], 64)
     }
 
-    func testSessionRekeyHintAndExpiryUseMonotonicTime() throws {
-        let (peer, clock, fixture) = try context()
-        XCTAssertFalse(peer.needsRekey)
-        clock.time += 120
-        XCTAssertTrue(peer.needsRekey)
-        XCTAssertTrue(peer.isEstablished)
-        XCTAssertNoThrow(try peer.keepalive())
-        clock.time += 60
-        XCTAssertFalse(peer.isEstablished)
-        assertError(.sessionExpired) { _ = try peer.keepalive() }
-        assertError(.sessionExpired) { _ = try peer.receive(bytes(fixture, "received_transport")) }
+    func testTimestampEncodingMatchesTAI64NByteLayout() throws {
+        let cases: [(TimeInterval, String)] = [
+            (0, "400000000000000a00000000"),
+            (1, "400000000000000b00000000"),
+            (0.5, "400000000000000a1dcd6500"),
+            (4_294_967_296.25, "400000010000000a0ee6b280")
+        ]
+        for (time, expected) in cases {
+            XCTAssertEqual(WireGuardPeer.makeTimestamp(at: time), try WireGuardTestData.hexBytes(expected), "Unix time \(time)")
+        }
+    }
+
+    func testSessionRekeyHintAndExpiryUseRoleAndMonotonicTime() throws {
+        for isInitiator in [true, false] {
+            let clock = Clock()
+            let (peer, fixture) = try counterPeer(isInitiator: isInitiator, initialSendCounter: 0, now: { clock.time })
+            for age in [0.0, 119.999, 120, 179.999] {
+                clock.time = 1000 + age
+                XCTAssertEqual(peer.needsRekey, isInitiator && age >= 120, "age \(age), initiator \(isInitiator)")
+                XCTAssertTrue(peer.isEstablished)
+                XCTAssertNoThrow(try peer.keepalive())
+            }
+            clock.time = 1180
+            XCTAssertTrue(peer.needsRekey)
+            XCTAssertFalse(peer.isEstablished)
+            assertError(.sessionExpired) { _ = try peer.keepalive() }
+            let incoming = try bytes(fixture, isInitiator ? "received_transport" : "sent_transport")
+            assertError(.sessionExpired) { _ = try peer.receive(incoming) }
+        }
     }
 
     func testExpiredResponseDoesNotEstablishSession() throws {

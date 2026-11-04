@@ -142,7 +142,7 @@ public final class WireGuardPeer {
             ephemeralPrivateKey: Self.generatePrivateKey,
             senderIndex: { UInt32.random(in: 1...UInt32.max) },
             now: { Double(mach_continuous_time()) * Self.secondsPerTick },
-            timestamp: Self.makeTimestamp,
+            timestamp: { Self.makeTimestamp(at: Date().timeIntervalSince1970) },
             initialSendCounter: 0
         )
     }
@@ -393,8 +393,9 @@ public final class WireGuardPeer {
         return .packet(Data(plaintext.prefix(length)))
     }
 
-    private static func makeTimestamp() -> Data {
-        let unixTime = Date().timeIntervalSince1970
+    /// Big-endian TAI64N preserves timestamp ordering for replay rejection
+    /// ([WireGuard §5.4.2](https://www.wireguard.com/papers/wireguard.pdf)).
+    static func makeTimestamp(at unixTime: TimeInterval) -> Data {
         let seconds = UInt64(unixTime) + tai64nBase
         let nanoseconds = UInt32((unixTime - floor(unixTime)) * nanosecondsPerSecond)
         return withUnsafeBytes(of: seconds.bigEndian) { Data($0) }

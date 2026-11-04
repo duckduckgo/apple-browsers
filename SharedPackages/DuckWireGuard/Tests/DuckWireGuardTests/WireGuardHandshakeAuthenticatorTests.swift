@@ -80,6 +80,38 @@ final class WireGuardHandshakeAuthenticatorTests: XCTestCase {
         }
     }
 
+    func testResponseCookieUsesTheRespondersIdentityAndResponseMAC1() throws {
+        for vector in try WireGuardTestData.handshakeVectors() {
+            var authenticator = try makeAuthenticator(vector, isInitiator: false)
+            let response = try bytes(vector, "response")
+            let body = Data(response.dropLast(32))
+            let authenticated = authenticator.authenticate(body, at: 1_000)
+            let reply = try cookieReply(bytes(vector, "response_cookie_reply"))
+            let initiationMAC1 = Data(try bytes(vector, "initiation").suffix(32).prefix(16))
+            assertAuthenticationFailure { try authenticator.cacheCookie(reply, authenticating: initiationMAC1, at: 1_000) }
+            XCTAssertEqual(authenticator.authenticate(body, at: 1_000).message, response)
+            try authenticator.cacheCookie(reply, authenticating: authenticated.mac1, at: 1_000)
+            XCTAssertEqual(authenticator.authenticate(body, at: 1_005).message, try bytes(vector, "response_cookie_retry"))
+        }
+    }
+
+    func testNewCookieReplacesBothTheCachedValueAndItsExpiry() throws {
+        for vector in try WireGuardTestData.handshakeVectors() {
+            var authenticator = try makeAuthenticator(vector)
+            let initiation = try bytes(vector, "initiation")
+            let body = Data(initiation.dropLast(32))
+            let mac1 = authenticator.authenticate(body, at: 1_000).mac1
+            try authenticator.cacheCookie(cookieReply(bytes(vector, "cookie_reply")), authenticating: mac1, at: 1_000)
+            XCTAssertEqual(authenticator.authenticate(body, at: 1_005).message, try bytes(vector, "cookie_retry"))
+            try authenticator.cacheCookie(cookieReply(bytes(vector, "replacement_cookie_reply")), authenticating: mac1, at: 1_100)
+            let replacement = try bytes(vector, "replacement_cookie_retry")
+            for time: TimeInterval in [1_105, 1_120, 1_219.999] {
+                XCTAssertEqual(authenticator.authenticate(body, at: time).message, replacement)
+            }
+            XCTAssertEqual(authenticator.authenticate(body, at: 1_220).message, initiation)
+        }
+    }
+
     func testCachedCookieExpiresAtTheRefreshBoundary() throws {
         let vector = try XCTUnwrap(WireGuardTestData.handshakeVectors().first)
         var authenticator = try makeAuthenticator(vector)

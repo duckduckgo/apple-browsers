@@ -263,6 +263,32 @@ final class UnifiedToggleInputViewTests: XCTestCase {
         XCTAssertFalse(card.clipsToBounds)
     }
 
+    @available(iOS 26, *)
+    func testFloatingGlassKeepsFireModeTintThroughFocusAndModeChanges() throws {
+        let handler = UnifiedToggleInputHandler(isVoiceSearchEnabled: false, isFireTab: true)
+        let sut = UnifiedToggleInputView(handler: handler, usesFloatingUI: true)
+        sut.overrideUserInterfaceStyle = .light
+        prepareForFitting(sut, width: 402, height: 192)
+        let glass = try XCTUnwrap(allDescendants(of: UIVisualEffectView.self, in: sut).first { $0.effect is UIGlassEffect })
+
+        for isFireTab in [true, false, true] {
+            handler.isFireTab = isFireTab
+            sut.refreshFireMode(fireMode: isFireTab)
+            for isAITab in [false, true] {
+                sut.isAITab = isAITab
+                for layout in [UnifiedToggleInputCardLayout.flanked, .expanded(showsToggle: true, showsToolbar: true)] {
+                    sut.applyCardLayout(layout, animated: false)
+                    sut.refreshFireMode(fireMode: isFireTab)
+                    let effect = try XCTUnwrap(glass.effect as? UIGlassEffect)
+                    let expectedTint = isFireTab ? UIColor(singleUseColor: .fireModeBackground) : nil
+                    XCTAssertEqual(effect.tintColor?.resolvedColor(with: sut.traitCollection),
+                                   expectedTint?.resolvedColor(with: sut.traitCollection))
+                    XCTAssertEqual(glass.overrideUserInterfaceStyle, .unspecified)
+                }
+            }
+        }
+    }
+
     func testWhenExpandedInputHidesToggleThenModeSyncDoesNotShowOutline() {
         let handler = UnifiedToggleInputHandler(isVoiceSearchEnabled: false)
         let sut = UnifiedToggleInputView(handler: handler)

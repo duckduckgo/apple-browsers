@@ -723,6 +723,7 @@ final class UnifiedToggleInputView: UIView {
         return view
     }()
     private var glassCardBackgroundView: UIVisualEffectView?
+    private var glassCardFireMode = false
     private var appliedGlassCardCornerRadius: CGFloat?
     private let usesFloatingUI: Bool
 
@@ -960,6 +961,12 @@ final class UnifiedToggleInputView: UIView {
     private func applyFireModeAppearance(isFireTab: Bool) {
         let background = cardBackgroundColor(isFireTab: isFireTab)
         applyCardBackgroundColor(background)
+        if #available(iOS 26, *), let glassCardBackgroundView, glassCardFireMode != isFireTab {
+            let effect = UIGlassEffect(style: .regular)
+            effect.tintColor = isFireTab ? UIColor(singleUseColor: .fireModeBackground) : nil
+            glassCardBackgroundView.effect = effect
+            glassCardFireMode = isFireTab
+        }
         // cardView keeps the OS trait so `fireModeCardBackground` picks its light variant in light OS; content subviews force `.dark` so their dynamic colors resolve against the dark surface.
         let style: UIUserInterfaceStyle = isFireTab ? .dark : .unspecified
         // Future direct content subviews inherit fire-mode appearance by default; card chrome and collapsed flanking accessories keep the OS trait.

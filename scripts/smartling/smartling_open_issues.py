@@ -413,12 +413,15 @@ def assignee_name(assignee: Optional[str], person: Optional[Person]) -> str:
 
 
 def window(args, github: GitHubClient) -> datetime:
-    """Where this run starts. --since moves it, but only a dry run may start before --not-before."""
+    """Where this run starts. A dry run starts at --since. Otherwise --since can only start it earlier than the last
+    successful job, never later, since this run's success becomes the next night's start, and never before
+    --not-before."""
     not_before = parse_time(args.not_before)
-    if not args.since:
-        return window_start(github, args.workflow, args.job_name, not_before)
-    since = parse_time(args.since)
-    return since if args.dry_run else max(since, not_before)
+    since = parse_time(args.since) if args.since else None
+    if since and args.dry_run:
+        return since
+    checkpoint = window_start(github, args.workflow, args.job_name, not_before)
+    return max(min(since, checkpoint), not_before) if since else checkpoint
 
 
 async def run(args, smartling: SmartlingClient, asana: AsanaClient, github: GitHubClient, git: Git, user_map: Dict[str, str]) -> Tuple[List[str], bool]:
@@ -526,7 +529,7 @@ def main():
     parser.add_argument('--workflow', default='smartling_nightly.yml', help='Workflow file whose last successful job starts the window')
     parser.add_argument('--job-name', required=True, help='Name of this job in that workflow')
     parser.add_argument('--not-before', required=True, help='Never look at issues opened before this ISO time (go-live), even with --since unless it is a dry run')
-    parser.add_argument('--since', help='Look at issues opened since this ISO time instead of since the last successful job, but not before --not-before')
+    parser.add_argument('--since', help='Look at issues opened since this ISO time if it is before the last successful job, but not before --not-before, except in a dry run')
     parser.add_argument('--workflow-url', default='')
     parser.add_argument('--dry-run', action='store_true', help='Look everything up, but open no task')
     sys.exit(asyncio.run(main_async(parser.parse_args())))

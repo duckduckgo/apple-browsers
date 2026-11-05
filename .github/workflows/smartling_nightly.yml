@@ -31,7 +31,7 @@ on:
         type: boolean
         default: false
       open_issues_since:
-        description: "Look at Smartling issues opened since this ISO time instead of since the last successful night (not before go-live, except in a dry run)"
+        description: "Look at Smartling issues opened since this ISO time if it is before the last successful night (a dry run starts there; otherwise not before go-live)"
         type: string
         default: ""
 

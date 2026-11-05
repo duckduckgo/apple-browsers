@@ -177,12 +177,12 @@ def args(dry_run=False, since=None):
     )
 
 
-def run(smartling, asana, github=None, git=None, user_map=None, dry_run=False):
+def run(smartling, asana, github=None, git=None, user_map=None, dry_run=False, since=None):
     """Run the job with the given clients, returning the summary rows, whether it failed, and the log."""
     output = io.StringIO()
     with contextlib.redirect_stdout(output):
         rows, failed = asyncio.run(OPEN_ISSUES.run(
-            args(dry_run=dry_run), smartling, asana, github or FakeGitHub(runs=[nightly_run(1, 'success')]),
+            args(dry_run=dry_run, since=since), smartling, asana, github or FakeGitHub(runs=[nightly_run(1, 'success')]),
             git or FakeGit(), {'frosty': 'frosty-gid'} if user_map is None else user_map
         ))
     return rows, failed, output.getvalue()
@@ -222,6 +222,25 @@ class WindowStartTests(unittest.TestCase):
 
 
 class OpenIssueTaskTests(unittest.TestCase):
+
+    def testWhenARunStartsAfterThePendingWindowThenNeitherItNorTheNextNightSkipsTheIssue(self):
+        override_started = '2026-11-04T03:00:00Z'
+        first_asana = FakeAsana()
+
+        first_rows, _, _ = run(FakeSmartling([smartling_issue()]), first_asana, since='2026-11-04T00:00:00Z')
+
+        next_night = FakeGitHub(runs=[nightly_run(2, 'success', override_started), nightly_run(1, 'success')])
+        second_asana = FakeAsana(tasks=[asana_task(3600, override_started)])
+        second_rows, _, _ = run(FakeSmartling([smartling_issue()]), second_asana, github=next_night)
+
+        self.assertEqual(first_rows, ['| #3600 | opened a task | @frosty (added the string) |'])
+        self.assertEqual(len(first_asana.created) + len(second_asana.created), 1)
+        self.assertEqual(second_rows, [])
+
+    def testWhenARunStartsBeforeThePendingWindowThenItLooksFromThere(self):
+        start = OPEN_ISSUES.window(args(since='2026-11-02T00:00:00Z'), FakeGitHub(runs=[nightly_run(1, 'success')]))
+
+        self.assertEqual(start, utc('2026-11-02T00:00:00Z'))
 
     def testWhenAnIssueIsNewThenItsTaskGoesToWhoeverAddedTheString(self):
         asana = FakeAsana()

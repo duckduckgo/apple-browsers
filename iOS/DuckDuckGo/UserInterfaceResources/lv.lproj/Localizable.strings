@@ -385,6 +385,21 @@
 /* Title for the New Tab row in the Duck.ai tab header Plus (+) menu */
 "aichat.header.plusMenu.newTab" = "Jauna cilne";
 
+/* Section header in the Duck.ai tab header Plus (+) menu; every row below it opens a new tab */
+"aichat.header.plusMenu.newTabSection" = "Jauna cilne";
+
+/* Row in the New Tab section of the Duck.ai tab header Plus (+) menu — opens a new Duck.ai chat in a new tab */
+"aichat.header.plusMenu.newTabSection.chat" = "Tērzēšana";
+
+/* Row in the New Tab section of the Duck.ai tab header Plus (+) menu — opens Duck.ai in image generation mode in a new tab */
+"aichat.header.plusMenu.newTabSection.image" = "Attēls";
+
+/* Row in the Duck.ai tab header Plus (+) menu — opens a new tab in search mode */
+"aichat.header.plusMenu.newTabSection.search" = "Meklēšana";
+
+/* Row in the New Tab section of the Duck.ai tab header Plus (+) menu — opens a new Duck.ai voice chat in a new tab */
+"aichat.header.plusMenu.newTabSection.voiceChat" = "Balss tērzēšana";
+
 /* Title for the New Voice Chat row in the Duck.ai tab header Plus (+) menu */
 "aichat.header.plusMenu.newVoiceChat" = "Jauna balss tērzēšana";
 
@@ -4118,7 +4133,7 @@
 "preserveLogins.menu.confirm.message" = "%@ tagad ir ugunsdroša";
 
 /* Deny fireproofing action */
-"preserveLogins.menu.defer" = "Ne tagad";
+"preserveLogins.menu.defer" = "Sapratu";
 
 /* Disable fireproofing for site */
 "preserveLogins.menu.disable" = "Noņemt ugunsdrošību";
@@ -5025,6 +5040,9 @@
 
 /* No comment provided by engineer. */
 "siteFeedback.urlPlaceholder" = "Kura vietne ir bojāta?";
+
+/* Continue button */
+"smartling.post-freeze-test.continue" = "Turpināt";
 
 /* No comment provided by engineer. */
 "State:" = "State:";

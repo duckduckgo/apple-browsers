@@ -385,6 +385,21 @@
 /* Title for the New Tab row in the Duck.ai tab header Plus (+) menu */
 "aichat.header.plusMenu.newTab" = "Ny fane";
 
+/* Section header in the Duck.ai tab header Plus (+) menu; every row below it opens a new tab */
+"aichat.header.plusMenu.newTabSection" = "Ny fane";
+
+/* Row in the New Tab section of the Duck.ai tab header Plus (+) menu — opens a new Duck.ai chat in a new tab */
+"aichat.header.plusMenu.newTabSection.chat" = "Chat";
+
+/* Row in the New Tab section of the Duck.ai tab header Plus (+) menu — opens Duck.ai in image generation mode in a new tab */
+"aichat.header.plusMenu.newTabSection.image" = "Bilde";
+
+/* Row in the Duck.ai tab header Plus (+) menu — opens a new tab in search mode */
+"aichat.header.plusMenu.newTabSection.search" = "Søk";
+
+/* Row in the New Tab section of the Duck.ai tab header Plus (+) menu — opens a new Duck.ai voice chat in a new tab */
+"aichat.header.plusMenu.newTabSection.voiceChat" = "Talechat";
+
 /* Title for the New Voice Chat row in the Duck.ai tab header Plus (+) menu */
 "aichat.header.plusMenu.newVoiceChat" = "Ny talechat";
 
@@ -4118,7 +4133,7 @@
 "preserveLogins.menu.confirm.message" = "%@ er nå brannsikret";
 
 /* Deny fireproofing action */
-"preserveLogins.menu.defer" = "Ikke nå";
+"preserveLogins.menu.defer" = "Den er grei";
 
 /* Disable fireproofing for site */
 "preserveLogins.menu.disable" = "Fjern brannsikring";
@@ -5025,6 +5040,9 @@
 
 /* No comment provided by engineer. */
 "siteFeedback.urlPlaceholder" = "Hvilket nettsted fungerer ikke?";
+
+/* Continue button */
+"smartling.post-freeze-test.continue" = "Fortsett";
 
 /* No comment provided by engineer. */
 "State:" = "State:";

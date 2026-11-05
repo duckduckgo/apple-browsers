@@ -385,6 +385,21 @@
 /* Title for the New Tab row in the Duck.ai tab header Plus (+) menu */
 "aichat.header.plusMenu.newTab" = "Nová karta";
 
+/* Section header in the Duck.ai tab header Plus (+) menu; every row below it opens a new tab */
+"aichat.header.plusMenu.newTabSection" = "Nová karta";
+
+/* Row in the New Tab section of the Duck.ai tab header Plus (+) menu — opens a new Duck.ai chat in a new tab */
+"aichat.header.plusMenu.newTabSection.chat" = "Čet";
+
+/* Row in the New Tab section of the Duck.ai tab header Plus (+) menu — opens Duck.ai in image generation mode in a new tab */
+"aichat.header.plusMenu.newTabSection.image" = "Obrázok";
+
+/* Row in the Duck.ai tab header Plus (+) menu — opens a new tab in search mode */
+"aichat.header.plusMenu.newTabSection.search" = "Vyhľadávať";
+
+/* Row in the New Tab section of the Duck.ai tab header Plus (+) menu — opens a new Duck.ai voice chat in a new tab */
+"aichat.header.plusMenu.newTabSection.voiceChat" = "Hlasový čet";
+
 /* Title for the New Voice Chat row in the Duck.ai tab header Plus (+) menu */
 "aichat.header.plusMenu.newVoiceChat" = "Nový hlasový čet";
 
@@ -4118,7 +4133,7 @@
 "preserveLogins.menu.confirm.message" = "Lokalita %@ je teraz zabezpečená!";
 
 /* Deny fireproofing action */
-"preserveLogins.menu.defer" = "Teraz nie";
+"preserveLogins.menu.defer" = "Rozumiem";
 
 /* Disable fireproofing for site */
 "preserveLogins.menu.disable" = "Odstrániť zabezpečenie";
@@ -5025,6 +5040,9 @@
 
 /* No comment provided by engineer. */
 "siteFeedback.urlPlaceholder" = "Ktorá webová stránka je nefunkčná?";
+
+/* Continue button */
+"smartling.post-freeze-test.continue" = "Pokračovať";
 
 /* No comment provided by engineer. */
 "State:" = "State:";

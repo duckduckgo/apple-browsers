@@ -191,7 +191,7 @@ final class DataBrokerProtectionDebugMenu: NSMenu {
 
                 NSMenuItem.separator()
 
-                NSMenuItem(title: "Install Test Brokers (BeenVerified, Fake Assisted Broker)",
+                NSMenuItem(title: "Install BeenVerified",
                            action: #selector(DataBrokerProtectionDebugMenu.installUserAssistanceTestBrokers))
                     .targetting(self)
             }

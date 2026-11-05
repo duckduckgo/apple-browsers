@@ -58,8 +58,8 @@ final class UserAssistanceTests: XCTestCase {
         privacyConfig.isSubfeatureEnabledCheck = { _ in true }
         privacyConfig.subfeatureSettings = { _ in #"{ "enabledBrokers": ["beenverified.com"] }"# }
 
-        settings.userAssistanceEnabledBrokersOverride = ["fakeassistedbroker.com"]
-        XCTAssertEqual(UserAssistanceConfig.current(privacyConfig: privacyConfig, settings: settings).enabledBrokers, ["fakeassistedbroker.com"])
+        settings.userAssistanceEnabledBrokersOverride = ["example.com"]
+        XCTAssertEqual(UserAssistanceConfig.current(privacyConfig: privacyConfig, settings: settings).enabledBrokers, ["example.com"])
 
         settings.userAssistanceEnabledBrokersOverride = []
         XCTAssertFalse(UserAssistanceConfig.current(privacyConfig: privacyConfig, settings: settings).isEnabled)
@@ -98,7 +98,7 @@ final class UserAssistanceTests: XCTestCase {
 
     func testTestBrokersUseUserAssistAndInstallAsActive() throws {
         let resources = try UserAssistanceTestBrokers.files.map(UserAssistanceTestBrokers.resource(from:))
-        XCTAssertEqual(resources.map(\.broker.url), ["beenverified.com", "fakeassistedbroker.com"])
+        XCTAssertEqual(resources.map(\.broker.url), ["beenverified.com"])
 
         for broker in resources.map(\.broker) {
             let actions = try XCTUnwrap(broker.optOutStep()?.actions)

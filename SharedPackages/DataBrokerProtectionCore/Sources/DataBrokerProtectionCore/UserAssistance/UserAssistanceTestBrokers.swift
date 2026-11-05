@@ -18,13 +18,12 @@
 
 import Foundation
 
-/// Debug-menu helper for trying user assistance locally: installs the bundled BeenVerified JSON (which is marked removed,
-/// so `removedAt` is dropped) and the fake assisted broker served from `FakeAssistedBroker/serve.sh`.
+/// Debug-menu helper for trying user assistance locally: installs the bundled BeenVerified JSON, dropping `removedAt`
+/// because the broker is marked removed in production.
 public enum UserAssistanceTestBrokers {
     static var files: [URL] {
         guard let resourceURL = Bundle.module.resourceURL?.appendingPathComponent("BundleResources") else { return [] }
-        return [resourceURL.appendingPathComponent("JSON/beenverified.com.json"),
-                resourceURL.appendingPathComponent("UserAssistanceTesting/fakeassistedbroker.com.json")]
+        return [resourceURL.appendingPathComponent("JSON/beenverified.com.json")]
     }
 
     public static func install(into store: BrokerStoring) throws {

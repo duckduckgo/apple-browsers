@@ -60,7 +60,7 @@ public extension BrokerProfileJobDependencyProviding {
 }
 
 public extension DataBrokerProtectionSettings {
-    static let userAssistanceTestBrokers = ["beenverified.com", "fakeassistedbroker.com"]
+    static let userAssistanceTestBrokers = ["beenverified.com"]
 
     /// Set from the PIR debug menu; nil follows remote config.
     var userAssistanceEnabledBrokersOverride: [String]? {

@@ -25,7 +25,7 @@ import PixelKit
 protocol PromptExposureReporting: AnyObject {
     func reportPromptShown(_ id: PromptExposureID)
     func reportRemoteMessageCardShown(messageID: String)
-    func recordCoordinatedPromptFinished(_ type: PromptExposurePromptType)
+    func recordCoordinatedPromptShown(_ type: PromptExposurePromptType)
     func appDidEnterForeground()
     func reset()
 }
@@ -44,6 +44,7 @@ struct PromptExposureState: Codable, Equatable {
     var nthInWeek = 0
     var reportedRemoteMessageIDs: Set<String> = []
     var userWeekReportedIndex: Int?
+    /// When the last coordinated prompt was shown. The name predates that meaning and is kept as the stored key.
     var lastCoordinatedPromptFinishedAt: Date?
     var sessionPromptShown = false
     var lastProcessedBackgroundDate: Date?
@@ -101,7 +102,7 @@ final class PromptExposureReporter: PromptExposureReporting {
         }
     }
 
-    func recordCoordinatedPromptFinished(_ type: PromptExposurePromptType) {
+    func recordCoordinatedPromptShown(_ type: PromptExposurePromptType) {
         update { state, days, now in
             let elapsed = state.lastCoordinatedPromptFinishedAt.map { now.timeIntervalSince($0) }
             state.lastCoordinatedPromptFinishedAt = now

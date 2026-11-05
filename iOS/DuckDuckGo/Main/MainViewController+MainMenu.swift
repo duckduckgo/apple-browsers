@@ -60,7 +60,7 @@ extension MainViewController {
         state.tabCount = tabManager.currentTabsModel.count
         state.canGoBack = currentTab?.canGoBack == true
         state.canGoForward = currentTab?.canGoForward == true
-        return MenuCommandAvailability(state: state)
+        return MenuCommandAvailability(state: state, nextStepsItems: NextStepsItemsVisibility(keyValueStore: keyValueStore))
     }
 
     func isMenuTabSelectionAvailable(_ command: UICommand?) -> Bool {
@@ -168,6 +168,7 @@ extension MainViewController {
 
     @objc func menuSetDefaultBrowser() {
         guard menuCommandAvailability.isEnabled(.setDefaultBrowser) else { return }
+        NextStepsItemsVisibility(keyValueStore: keyValueStore).recordSetAsDefaultTapped()
         dismissMenuPresentation { [weak self] in
             self?.systemSettingsPiPTutorialManager.playPiPTutorialAndNavigateTo(destination: .defaultBrowser)
         }
@@ -175,6 +176,7 @@ extension MainViewController {
 
     @objc func menuAddToDock() {
         guard menuCommandAvailability.isEnabled(.addToDock) else { return }
+        NextStepsItemsVisibility(keyValueStore: keyValueStore).recordAddToDockTapped()
         dismissMenuPresentation { [weak self] in
             let instructions = UIStoryboard(name: "HomeRow", bundle: nil).instantiateViewController(withIdentifier: "instructions")
             instructions.modalPresentationStyle = .fullScreen
@@ -184,6 +186,7 @@ extension MainViewController {
 
     @objc func menuAddWidget() {
         guard menuCommandAvailability.isEnabled(.addWidget) else { return }
+        NextStepsItemsVisibility(keyValueStore: keyValueStore).recordAddWidgetTapped()
         dismissMenuPresentation { [weak self] in
             guard let self else { return }
             let widgetEducation = WidgetEducationViewController()

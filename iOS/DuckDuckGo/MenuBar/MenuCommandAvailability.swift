@@ -43,6 +43,7 @@ struct MenuCommandAvailability {
     }
 
     let state: State
+    var nextStepsItems: NextStepsItemsVisibility?
 
     func isEnabled(_ command: MainMenuCommand) -> Bool {
         guard state.shortcutsEnabled, state.presentation != .blockingModal else { return false }
@@ -84,6 +85,16 @@ struct MenuCommandAvailability {
         case .selectTab: return state.tabCount > 0
         case .back: return state.canGoBack && !state.omnibarEditing
         case .forward: return state.canGoForward && !state.omnibarEditing
+        default: return false
+        }
+    }
+
+    func isHidden(_ command: MainMenuCommand) -> Bool {
+        guard let nextStepsItems else { return false }
+        switch command {
+        case .setDefaultBrowser: return !nextStepsItems.isSetAsDefaultVisibleAfterCheck()
+        case .addToDock: return !nextStepsItems.isAddToDockVisible
+        case .addWidget: return !nextStepsItems.isAddWidgetVisible
         default: return false
         }
     }

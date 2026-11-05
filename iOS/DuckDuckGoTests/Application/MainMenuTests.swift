@@ -23,7 +23,7 @@ import Core
 import CoreData
 import DesignResourcesKitIcons
 import FeatureFlags_iOS
-import Persistence
+@_spi(Testing) import Persistence
 import Testing
 import UIKit
 @testable import DuckDuckGo
@@ -302,6 +302,20 @@ struct MainMenuTests {
         #expect(MainMenuCommand.addToDock.action == #selector(MainViewController.menuAddToDock))
         #expect(MainMenuCommand.addWidget.action == #selector(MainViewController.menuAddWidget))
         #expect(!MainMenuSpec(isEnabled: false, idiom: .pad).allItems.contains { $0.command == .addToDock })
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test(.timeLimit(.minutes(1)))
+    func completedAppItemsLeaveTheDuckDuckGoMenu() {
+        let store = MockThrowingKeyValueStore()
+        try? store.set(true, forKey: SettingsViewModel.Constants.didDismissSetAsDefaultBrowserKey)
+        try? store.set(true, forKey: SettingsViewModel.Constants.nextStepsSectionHiddenKey)
+        let state = MenuCommandAvailability.State(shortcutsEnabled: true, presentation: .browser)
+        let availability = MenuCommandAvailability(state: state, nextStepsItems: NextStepsItemsVisibility(keyValueStore: store))
+        #expect(availability.isHidden(.setDefaultBrowser))
+        #expect(availability.isHidden(.addToDock))
+        #expect(availability.isHidden(.addWidget))
+        #expect(!availability.isHidden(.settings))
     }
 
     @available(iOS 16, macOS 13, *)

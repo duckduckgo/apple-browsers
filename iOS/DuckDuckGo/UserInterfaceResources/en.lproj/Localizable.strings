@@ -5207,7 +5207,7 @@ Take back control of your personal information with the browser designed for dat
 "sync.pairing-v2.unknown-peer-name" = "the other device";
 
 /* Title for a button in the Sync Promotion banner on the Bookmarks or Passwords screen that opens a screen with links to get DuckDuckGo on other platforms */
-"sync.promo.bookmarks.another-device.get-desktop-app.action" = "Get Desktop App";
+"sync.promo.bookmarks.another-device.get-desktop-app.action" = "Get App";
 
 /* Title for a button in the Sync Promotion banner on the Bookmarks screen that opens Sync settings to connect another device */
 "sync.promo.bookmarks.another-device.sync.action" = "Sync Bookmarks";

@@ -22,6 +22,11 @@ import UITestingSupport
 
 final class ContentBlockingUITests: UITestCase {
 
+    override var additionalLaunchArguments: [String] {
+        // Initial defaults reset clears ToggleReportingStore's standard-defaults throttle.
+        super.additionalLaunchArguments + ["-uiTestProtectionFeedback"]
+    }
+
     private let trackerPageURL = "https://privacy-test-pages.site/tracker-reporting/1major-via-script.html"
     private let trackerPageTitle = "1 major tracker loaded via script src"
 
@@ -66,7 +71,12 @@ final class ContentBlockingUITests: UITestCase {
 
         XCTContext.runActivity(named: "Enable protection from the browsing menu") { _ in
             app.openBrowsingMenuItem("Browser.Menu.PrivacyProtection.Toggle")
-            app.assertActionMessage(contains: "Privacy Protection enabled for privacy-test-pages.site")
+            app.assertActionMessage(contains: "Privacy Protection enabled for privacy-test-pages.site", waitForDismissal: false)
+            assertUndoIsAvailable()
+            XCTAssertTrue(
+                app.descendants(matching: .any)["Browser.ActionMessage"]
+                    .wait(for: NSPredicate(format: "exists == false"), timeout: UITestTimeouts.navigation),
+                "Action message did not dismiss.")
             app.reloadCurrentPage(expecting: trackerPageTitle)
 
             app.openPrivacyDashboard(expectingProtectionState: true)
@@ -76,7 +86,12 @@ final class ContentBlockingUITests: UITestCase {
 
         XCTContext.runActivity(named: "Disable protection again") { _ in
             app.openBrowsingMenuItem("Browser.Menu.PrivacyProtection.Toggle")
-            app.assertActionMessage(contains: "Privacy Protection disabled for privacy-test-pages.site")
+            app.assertActionMessage(contains: "Privacy Protection disabled for privacy-test-pages.site", waitForDismissal: false)
+            assertUndoIsAvailable()
+            XCTAssertTrue(
+                app.descendants(matching: .any)["Browser.ActionMessage"]
+                    .wait(for: NSPredicate(format: "exists == false"), timeout: UITestTimeouts.navigation),
+                "Action message did not dismiss.")
             app.reloadCurrentPage(expecting: trackerPageTitle)
 
             app.openPrivacyDashboard(expectingProtectionState: false)
@@ -98,4 +113,10 @@ final class ContentBlockingUITests: UITestCase {
             app.assertPrivacyDashboard(isProtected: false, blockedTrackerVisible: false)
         }
     }
+    private func assertUndoIsAvailable(file: StaticString = #filePath, line: UInt = #line) {
+        let undo = app.descendants(matching: .any)["Browser.ActionMessage"].buttons["Browser.ActionMessage.Action"]
+        XCTAssertTrue(undo.waitForExistence(timeout: UITestTimeouts.elementExistence), file: file, line: line)
+        XCTAssertEqual(undo.label, "Undo", file: file, line: line)
+    }
+
 }

@@ -54,12 +54,12 @@ final class WebExtensionStorePixelsReporter {
             return
         }
 
+        let date = markRetainedWasReported()
+
         // Checked after the hourly check, since it evaluates the whole catalog configuration.
         guard let chromeWebStore, !chromeWebStore.catalogExtensionIDs.isEmpty else {
             return
         }
-
-        let date = markRetainedWasReported()
 
         // Old and new versions coexist during an update, so each store ID counts once.
         var isEnabledByStoreID: [String: Bool] = [:]

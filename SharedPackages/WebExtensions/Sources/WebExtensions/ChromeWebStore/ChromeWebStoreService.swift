@@ -105,7 +105,8 @@ public final class ChromeWebStoreService: ChromeWebStoreManaging {
                 stateStore?.save(state)
             }, resultHandler: { identifier, outcome in
                 guard let pixelOutcome = WebExtensionUpdateCheckOutcome(checkOutcome: outcome) else { return }
-                pixelFiring.fire(.updateCheck(extensionID: identifier, outcome: pixelOutcome))
+                let pixelExtension = catalog.catalogEntry(of: identifier).map(WebExtensionPixelExtension.catalog) ?? .other
+                pixelFiring.fire(.updateCheck(extension: pixelExtension, outcome: pixelOutcome))
             }, installedIdentifiers: { [weak self] in
                 guard let versions = self?.eligibleInstalledVersions() else { return nil }
                 return Array(versions.keys)

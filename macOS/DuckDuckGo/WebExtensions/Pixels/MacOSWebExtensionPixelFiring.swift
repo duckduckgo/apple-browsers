@@ -24,7 +24,7 @@ enum WebExtensionPixel: PixelKit.Event {
 
     // MARK: - Chrome Web Store Updates
 
-    case updateCheck(extensionID: String, outcome: WebExtensionUpdateCheckOutcome)
+    case updateCheck(extension: WebExtensionPixelExtension, outcome: WebExtensionUpdateCheckOutcome)
 
     // MARK: - Installation
 
@@ -209,8 +209,8 @@ enum WebExtensionPixel: PixelKit.Event {
 
     var parameters: [String: String]? {
         switch self {
-        case .updateCheck(let extensionID, let outcome):
-            var parameters = ["extension_id": extensionID]
+        case .updateCheck(let pixelExtension, let outcome):
+            var parameters = ["extension": pixelExtension.parameterValue]
             if outcome != .updateFound && outcome != .googleFlagged {
                 parameters["outcome"] = outcome.rawValue
             }
@@ -330,9 +330,8 @@ struct MacOSWebExtensionPixelFiring: WebExtensionPixelFiring {
         let pixel: WebExtensionPixel
         let frequency: PixelKit.Frequency
         switch event {
-        case .updateCheck(let extensionID, let outcome):
-            guard ChromeWebStoreURL.isValidExtensionID(extensionID) else { return }
-            pixel = .updateCheck(extensionID: extensionID, outcome: outcome)
+        case .updateCheck(let pixelExtension, let outcome):
+            pixel = .updateCheck(extension: pixelExtension, outcome: outcome)
         case .installed(let pixelExtension):
             pixel = .installed(extension: pixelExtension)
         case .installError(let pixelExtension, let error):

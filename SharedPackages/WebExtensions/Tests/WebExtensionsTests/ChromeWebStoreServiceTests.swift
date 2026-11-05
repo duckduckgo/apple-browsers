@@ -145,6 +145,7 @@ final class ChromeWebStoreServiceTests: XCTestCase {
     func testCheckOutcomesEmitOnlyExpectedDiscoveryPixels() async throws {
         let manager = try makeManager()
         let identifier = ChromeWebStoreID.onePassword.rawValue
+        catalog.catalogEntries[identifier] = .onePassword
         installationStore.installedExtensions = [installed("installed", version: "2.0", storeID: identifier)]
         let update = ChromeWebStoreUpdateChecker.Update(extensionID: identifier, version: "3.0",
                                                         downloadURL: try XCTUnwrap(URL(string: "https://clients2.googleusercontent.com/extension.crx")),
@@ -165,10 +166,23 @@ final class ChromeWebStoreServiceTests: XCTestCase {
             })
             await fulfillment(of: [scheduled], timeout: 1)
             XCTAssertEqual(pixels.outcomes, expected.map { [$0] } ?? [])
-            XCTAssertEqual(pixels.identifiers, expected == nil ? [] : [identifier])
+            XCTAssertEqual(pixels.extensions, expected == nil ? [] : [.catalog(.onePassword)])
             withExtendedLifetime(service) {}
         }
         withExtendedLifetime(manager) {}
+    }
+
+    func testDiscoveryPixelsUseOtherWhenTheCatalogHasNoEntry() async throws {
+        let manager = try makeManager()
+        installationStore.installedExtensions = [installed("installed", version: "2.0", storeID: ChromeWebStoreID.onePassword.rawValue)]
+        let pixels = StoreUpdatePixelFiringMock()
+        let service = scheduledService(manager, pixelFiring: pixels) { _, _ in
+            .init(outcome: .skipped, retryNotBefore: nil)
+        }
+        await service.checkForUpdatesNow()
+        XCTAssertFalse(pixels.extensions.isEmpty)
+        XCTAssertTrue(pixels.extensions.allSatisfy { $0 == .other })
+        withExtendedLifetime((manager, service)) {}
     }
 
     private func installed(_ identifier: String, version: String?, storeID: String? = nil) -> InstalledWebExtension {
@@ -762,8 +776,10 @@ private struct StoreDownloaderMock: ChromeWebStoreDownloading {
 private final class StoreCatalogMock: ChromeWebStoreCatalogProviding {
     var allowed = true
     var extensionIDs: [String] = []
+    var catalogEntries: [String: ExtensionsCatalogSubfeature] = [:]
     var learnMoreURL: URL?
     func contains(_ identifier: String) -> Bool { allowed }
+    func catalogEntry(of identifier: String) -> ExtensionsCatalogSubfeature? { catalogEntries[identifier] }
     func listing(of subfeature: ExtensionsCatalogSubfeature) -> ChromeWebStoreListing? { nil }
 }
 
@@ -805,14 +821,14 @@ private final class StorePermissionPrompter: WebExtensionPermissionPrompting {
 
 @available(macOS 15.4, iOS 18.4, *)
 private final class StoreUpdatePixelFiringMock: WebExtensionPixelFiring {
-    private(set) var identifiers: [String] = []
+    private(set) var extensions: [WebExtensionPixelExtension] = []
     private(set) var outcomes: [WebExtensionUpdateCheckOutcome] = []
 
     func fire(_ event: WebExtensionPixelEvent) {
-        guard case .updateCheck(let identifier, let outcome) = event else {
+        guard case .updateCheck(let pixelExtension, let outcome) = event else {
             return XCTFail("Expected a discovery pixel")
         }
-        identifiers.append(identifier)
+        extensions.append(pixelExtension)
         outcomes.append(outcome)
     }
 }

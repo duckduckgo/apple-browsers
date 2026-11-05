@@ -30,8 +30,8 @@ public enum WebExtensionReloadFailurePhase: String, Equatable, Sendable {
 }
 
 /// The extension a pixel reports: its entry in the Chrome Web Store catalog, or `other` for one the
-/// catalog doesn't list. Installation and usage pixels take this instead of an extension's own
-/// identifier or name. Update discovery separately reports a validated Chrome Web Store identifier.
+/// catalog doesn't list. Extension pixels use this bounded value instead of an extension's own
+/// identifier or name.
 public enum WebExtensionPixelExtension: Equatable, CaseIterable {
     case catalog(ExtensionsCatalogSubfeature)
     case other
@@ -89,8 +89,8 @@ public enum WebExtensionUpdateCheckOutcome: String, CaseIterable, Sendable {
 /// Events that can be fired for web extension management.
 @available(macOS 15.4, iOS 18.4, *)
 public enum WebExtensionPixelEvent {
-    /// Discovery pixels report the Chrome Web Store ID and, for failures, a bounded reason.
-    case updateCheck(extensionID: String, outcome: WebExtensionUpdateCheckOutcome)
+    /// Discovery pixels report the catalog extension and, for failures, a bounded reason.
+    case updateCheck(extension: WebExtensionPixelExtension, outcome: WebExtensionUpdateCheckOutcome)
     case installed(extension: WebExtensionPixelExtension)
     case installError(extension: WebExtensionPixelExtension, error: Error)
     case uninstalled(extension: WebExtensionPixelExtension)

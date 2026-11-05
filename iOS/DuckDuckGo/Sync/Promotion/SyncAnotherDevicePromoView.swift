@@ -33,7 +33,6 @@ struct SyncAnotherDevicePromoView: View {
         static let closeButtonInset: CGFloat = 12
         static let closeButtonReserve: CGFloat = 52
         static let imageSize: CGFloat = 56
-        static let iconSize: CGFloat = 16
         static let buttonSpacing: CGFloat = 8
     }
 
@@ -118,10 +117,7 @@ struct SyncAnotherDevicePromoView: View {
 
         Button(action: syncAction) {
             HStack(spacing: 8) {
-                Image(uiImage: DesignSystemImages.Glyphs.Size24.qrScan)
-                    .resizable()
-                    .renderingMode(.template)
-                    .frame(width: Metrics.iconSize, height: Metrics.iconSize)
+                Image(uiImage: DesignSystemImages.Glyphs.Size16.qrScan)
                     .accessibilityHidden(true)
                 buttonText(connectTitle, singleLine: singleLine)
             }

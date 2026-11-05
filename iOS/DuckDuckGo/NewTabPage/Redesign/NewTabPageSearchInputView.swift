@@ -35,7 +35,8 @@ struct NewTabPageSearchInputView: View {
             if model.settings.isModeToggleShown {
                 NewTabPageModeToggle(textEntryMode: model.textEntryMode) { mode in
                     if model.select(mode) {
-                        onActivate(mode)
+                        // The handoff snapshots the resting field, so let SwiftUI apply the new mode first.
+                        DispatchQueue.main.async { onActivate(mode) }
                     }
                 }
                 .frame(height: Metrics.toggleHeight)

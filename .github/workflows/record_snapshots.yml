@@ -113,6 +113,7 @@ jobs:
           token: ${{ secrets.GHA_ELEVATED_PERMISSIONS_TOKEN }}
 
       - name: Record rendered snapshots
+        id: record
         env:
           GH_TOKEN: ${{ secrets.SNAPSHOTS_REPO_TOKEN }}
           HEAD_SHA: ${{ github.event.pull_request.head.sha }}
@@ -124,6 +125,30 @@ jobs:
             exit 1
           fi
           ../trusted/scripts/record-snapshots.sh "$RUNNER_TEMP/rendered" "$PR_BRANCH"
+
+      - name: Comment on the PR
+        if: ${{ !cancelled() }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          OUTCOME: ${{ steps.record.outcome }}
+          COUNT: ${{ steps.record.outputs.count }}
+          SNAPSHOTS_PR: ${{ steps.record.outputs.snapshots_pr }}
+          POINTER_COMMIT: ${{ steps.record.outputs.pointer_commit }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          if [ "$OUTCOME" != "success" ]; then
+            body="### ❌ Couldn't record the macOS snapshots"$'\n\n'"See [the workflow run]($RUN_URL) for why."
+          elif [ "$COUNT" = "0" ]; then
+            body="### ℹ️ No macOS snapshots to record"$'\n\n'"CI's renderings already match \`SnapshotReferences\`. [Workflow run]($RUN_URL)"
+          else
+            body="### 📸 Recorded $COUNT macOS snapshot rendering(s)"$'\n\n'"Review them in $SNAPSHOTS_PR before adding the \`Merge snapshots\` label."
+            if [ -n "$POINTER_COMMIT" ]; then
+              body+=$'\n\n'"$POINTER_COMMIT points \`SnapshotReferences\` at them and re-runs the macOS PR checks."
+            fi
+          fi
+          gh pr comment "$PR_NUMBER" --repo "$GITHUB_REPOSITORY" --body "$body"
 
       - name: Remove the label
         if: always()

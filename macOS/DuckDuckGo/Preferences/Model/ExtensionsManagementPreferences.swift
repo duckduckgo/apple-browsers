@@ -18,6 +18,7 @@
 
 import Combine
 import Foundation
+import PixelKit
 import PrivacyConfig
 import WebExtensions
 
@@ -42,13 +43,15 @@ final class ExtensionsManagementPreferences: ObservableObject {
     private let configurationManager: PrivacyConfigurationManaging
     private let webExtensionManager: WebExtensionManaging?
     private let windowControllersManager: WindowControllersManagerProtocol
+    private let pixelFiring: (any PixelKitFiring)?
     private var cancellables = Set<AnyCancellable>()
     private var enabledStateTasks: [String: Task<Void, Never>] = [:]
 
-    init(configurationManager: PrivacyConfigurationManaging, webExtensionManager: WebExtensionManaging? = nil, windowControllersManager: WindowControllersManagerProtocol) {
+    init(configurationManager: PrivacyConfigurationManaging, webExtensionManager: WebExtensionManaging? = nil, windowControllersManager: WindowControllersManagerProtocol, pixelFiring: (any PixelKitFiring)? = PixelKit.shared) {
         self.configurationManager = configurationManager
         self.webExtensionManager = webExtensionManager
         self.windowControllersManager = windowControllersManager
+        self.pixelFiring = pixelFiring
 
         reloadExtensions()
         startObservingChanges(configurationManager: configurationManager)
@@ -56,10 +59,36 @@ final class ExtensionsManagementPreferences: ObservableObject {
 
     func openStorePage(for item: ChromeWebStoreListing) {
         windowControllersManager.show(url: item.storeURL, source: .ui, newTab: true, selected: true)
+
+        guard let storeID = item.storeID else {
+            return
+        }
+
+        fire(.getClicked(extensionID: storeID, category: item.category))
+    }
+
+    func openPublisherPage(for item: ChromeWebStoreListing) {
+        guard let url = item.publisherURL else {
+            return
+        }
+
+        windowControllersManager.show(url: url, source: .ui, newTab: true, selected: true)
+
+        guard let storeID = item.storeID else {
+            return
+        }
+
+        fire(.publisherLinkClicked(extensionID: storeID, category: item.category))
     }
 
     func showDetails(for entry: InstalledExtensionEntry) {
         detailsListingID = entry.listing.id
+
+        guard let storeID = entry.listing.storeID else {
+            return
+        }
+
+        fire(.detailsOpened(extensionID: storeID, category: entry.listing.category))
     }
 
     func hideDetails() {
@@ -200,6 +229,10 @@ private extension ExtensionsManagementPreferences {
         if detailsEntry == nil {
             detailsListingID = nil
         }
+    }
+
+    func fire(_ pixel: WebExtensionPixel) {
+        pixelFiring?.fire(pixel, frequency: .dailyAndStandard)
     }
 
     func resetExtensions() {

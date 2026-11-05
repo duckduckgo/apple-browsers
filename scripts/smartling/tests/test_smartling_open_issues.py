@@ -4,11 +4,16 @@ import asyncio
 import contextlib
 import importlib.util
 import io
+import json
 import sys
 import unittest
+from unittest import mock
+from urllib.error import URLError
 from argparse import Namespace
 from datetime import datetime, timezone
 from pathlib import Path
+
+import aiohttp
 
 
 SCRIPTS_DIR = Path(__file__).parents[1]
@@ -341,6 +346,91 @@ class OpenIssueTaskTests(unittest.TestCase):
             OPEN_ISSUES.Git()._run('log', '-S', ENGLISH, 'no-such-ref')  # pylint: disable=protected-access
 
         self.assertNotIn(ENGLISH, str(failure.exception))
+
+
+class TransportFailureTests(unittest.TestCase):
+    """Use the real client boundaries so transport errors are not hidden by RuntimeError-only fakes."""
+
+    def testSmartlingTimeoutOrDisconnectLeavesOtherIssuesProcessable(self):
+        for stage in ('string', 'job'):
+            for error in (asyncio.TimeoutError(), aiohttp.ServerDisconnectedError('private response detail')):
+                with self.subTest(stage=stage, error=type(error).__name__):
+                    client = OPEN_ISSUES.SmartlingClient(OPEN_ISSUES.Credentials('user', 'secret', 'project'))
+                    client.token = 'token'
+                    client.token_expiry = datetime.max
+                    client.session = mock.Mock()
+                    response = mock.MagicMock()
+                    response.__aenter__.side_effect = error
+                    client.session.request.return_value = response
+                    smartling = FakeSmartling([smartling_issue(3600, job_uid='broken'), smartling_issue(3601)])
+                    if stage == 'string':
+                        normal_lookup = smartling.get_source_string
+
+                        async def get_string(hashcode):
+                            if hashcode == 'hash-3600':
+                                return await client.get_source_string(hashcode)
+                            return await normal_lookup(hashcode)
+
+                        smartling.get_source_string = get_string
+                    else:
+                        normal_lookup = smartling.get_job
+
+                        async def get_job(uid):
+                            if uid == 'broken':
+                                return await client.get_job(uid)
+                            return await normal_lookup(uid)
+
+                        smartling.get_job = get_job
+                    asana = FakeAsana()
+
+                    rows, failed, log = run(smartling, asana)
+
+                    self.assertTrue(failed)
+                    self.assertEqual(len(asana.created), 1)
+                    self.assertIn('#3601 ', asana.created[0]['name'])
+                    self.assertIn('| #3600 | failed, retried next night | |', rows)
+                    self.assertNotIn('private response detail', log)
+
+    def testGitHubTransportFailureDoesNotAssignAFallbackOrStopOtherIssues(self):
+        for error in (TimeoutError(), URLError('private request detail')):
+            with self.subTest(error=type(error).__name__):
+                github = FakeGitHub(runs=[nightly_run(1, 'success')])
+                client = OPEN_ISSUES.GitHubClient('token')
+                github.commit_pulls = client.commit_pulls
+                response = mock.MagicMock()
+                response.__enter__.return_value.read.return_value = json.dumps([pull('frosty')]).encode()
+                opener = mock.Mock(side_effect=[error, response])
+                asana = FakeAsana()
+
+                with mock.patch.dict(client._get.__globals__, urlopen=opener):
+                    rows, failed, log = run(FakeSmartling([smartling_issue(3600), smartling_issue(3601)]), asana, github=github)
+
+                self.assertTrue(failed)
+                self.assertEqual([task['assignee'] for task in asana.created], ['frosty-gid'])
+                self.assertIn('| #3600 | failed, retried next night | |', rows)
+                self.assertIn('#3601 ', asana.created[0]['name'])
+                self.assertNotIn('private request detail', log)
+
+    def testAsanaTransportFailureDoesNotRetryThePostWithAFallbackAssignee(self):
+        for error in (TimeoutError(), URLError('private request detail')):
+            with self.subTest(error=type(error).__name__):
+                client = OPEN_ISSUES.AsanaClient('token')
+                asana = FakeAsana()
+                asana.create_task = client.create_task
+                response = mock.MagicMock()
+                response.__enter__.return_value.read.return_value = json.dumps({
+                    'data': {'gid': 'task', 'assignee': {'gid': 'frosty-gid'}},
+                }).encode()
+                opener = mock.Mock(side_effect=[error, response])
+
+                with mock.patch.dict(client._send.__globals__, urlopen=opener):
+                    rows, failed, log = run(FakeSmartling([smartling_issue(3600), smartling_issue(3601)]), asana)
+
+                self.assertTrue(failed)
+                self.assertEqual(opener.call_count, 2)
+                self.assertIn('| #3600 | failed, retried next night | @frosty (added the string) |', rows)
+                self.assertIn('| #3601 | opened a task | @frosty (added the string) |', rows)
+                self.assertNotIn('private request detail', log)
 
 
 class StringAttributionTests(unittest.TestCase):

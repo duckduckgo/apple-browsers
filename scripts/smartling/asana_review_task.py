@@ -15,7 +15,8 @@ import argparse
 from datetime import date, datetime, timedelta, timezone
 from typing import Dict, List, Optional
 from urllib.parse import urlencode
-from urllib.error import HTTPError
+from http.client import HTTPException
+from urllib.error import HTTPError, URLError
 from urllib.request import Request, urlopen
 
 ASANA_API = "https://app.asana.com/api/1.0"
@@ -100,6 +101,8 @@ class AsanaClient:
             except ValueError:
                 messages = []
             raise RuntimeError(f"Asana {method} {path} failed with HTTP {error.code}: {'; '.join(messages) or error.reason}") from error
+        except (URLError, TimeoutError, ConnectionError, HTTPException) as error:
+            raise RuntimeError(f"Asana {method} {path} failed: {type(error).__name__}") from error
 
     def rotation_tasks(self, section_id: str, since: date) -> List[Dict]:
         return self._get_all(f'/sections/{section_id}/tasks', {

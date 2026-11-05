@@ -9,7 +9,8 @@ import re
 import json
 from typing import Dict, List, Optional
 from urllib.parse import urlencode
-from urllib.error import HTTPError
+from http.client import HTTPException
+from urllib.error import HTTPError, URLError
 from urllib.request import Request, urlopen
 
 GITHUB_API = "https://api.github.com"
@@ -40,6 +41,8 @@ class GitHubClient:
                 return json.loads(response.read())
         except HTTPError as error:
             raise RuntimeError(f"GitHub GET {path} failed with HTTP {error.code}: {error.reason}") from error
+        except (URLError, TimeoutError, ConnectionError, HTTPException) as error:
+            raise RuntimeError(f"GitHub GET {path} failed: {type(error).__name__}") from error
 
     def commit_pulls(self, sha: str) -> List[Dict]:
         return self._get(f'/commits/{sha}/pulls')

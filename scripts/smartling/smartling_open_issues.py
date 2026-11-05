@@ -199,13 +199,49 @@ class Git:
         ).split()
 
     def diff(self, sha: str, paths: List[str]) -> str:
-        return self._run('show', '-M', '-U6', '--format=', sha, '--', *paths)
+        # Catalog keys can be hundreds of lines above the changed value. Compare their complete source entries,
+        # represented like .strings entries, instead of trying to recover ownership from a small diff hunk.
+        diff = self._run('show', '-M', '-U6', '--format=', sha, '--', *paths, ':(exclude)*.xcstrings')
+        changes = iter(self._run(
+            'diff-tree', '--root', '--no-commit-id', '--name-status', '--no-renames', '-r', '-z', sha, '--', *paths
+        ).rstrip('\0').split('\0'))
+        for status, path in zip(changes, changes):
+            if not path.endswith('.xcstrings'):
+                continue
+            before = json.loads(self._run('show', f'{sha}^:{path}')) if status != 'A' else {}
+            after = json.loads(self._run('show', f'{sha}:{path}')) if status != 'D' else {}
+            diff += catalog_diff(before, after)
+        return diff
 
     def full_sha(self, short_sha: str) -> Optional[str]:
         try:
             return self._run('rev-parse', '--verify', '--quiet', f'{short_sha}^{{commit}}').strip() or None
         except RuntimeError:
             return None
+
+
+def catalog_diff(before: Dict, after: Dict) -> str:
+    """A diff of complete English entries, including plural/device variants and implicit key-as-source values.
+    Keep removals as well as additions so moving a string between catalogs does not change its author."""
+    def values(node: Dict) -> set:
+        if 'stringUnit' in node:
+            return {node['stringUnit']['value']}
+        return set().union(*(values(child) for child in node.values() if isinstance(child, dict)))
+
+    def entries(catalog: Dict) -> set:
+        result = set()
+        for key, entry in catalog.get('strings', {}).items():
+            source = entry.get('localizations', {}).get(catalog.get('sourceLanguage', 'en'))
+            for text in values(source) if source is not None else {key}:
+                result.add(f'{json.dumps(key, ensure_ascii=False)} = {json.dumps(text, ensure_ascii=False)};')
+        return result
+
+    old, new = entries(before), entries(after)
+    if old == new:
+        return ''
+    return '\n@@ source entries @@\n' + '\n'.join(
+        ['-' + line for line in sorted(old - new)] + ['+' + line for line in sorted(new - old)]
+    ) + '\n'
 
 
 def text_forms(text: str) -> List[str]:

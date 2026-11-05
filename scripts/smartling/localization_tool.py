@@ -98,6 +98,14 @@ class SmartlingClient:
 
     async def _request(self, method: str, path: str, **kwargs) -> Dict:
         """Make authenticated API request."""
+        try:
+            return await self._send_request(method, path, **kwargs)
+        except (aiohttp.ClientError, asyncio.TimeoutError) as error:
+            # Expose the same failure type as HTTP errors to callers that isolate failures per issue. Do not include
+            # the exception text: it can contain request/response details that must not reach public workflow logs.
+            raise RuntimeError(f"Smartling {method} request failed: {type(error).__name__}") from error
+
+    async def _send_request(self, method: str, path: str, **kwargs) -> Dict:
         if not self.token or datetime.now() >= self.token_expiry:
             await self._authenticate()
 

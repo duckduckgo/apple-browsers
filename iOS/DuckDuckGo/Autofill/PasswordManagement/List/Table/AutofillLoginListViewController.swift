@@ -31,6 +31,7 @@ import os.log
 import Persistence
 import Bookmarks
 import PixelKit
+import SyncUI_iOS
 
 protocol AutofillLoginListViewControllerDelegate: AnyObject {
     func autofillLoginListViewControllerDidFinish(_ controller: AutofillLoginListViewController)
@@ -163,7 +164,7 @@ final class AutofillLoginListViewController: UIViewController {
     private var importPromoPresented: Bool = false
     private var syncPromoPresented: Bool = false
     private var extensionPromoPresented: Bool = false
-    private var isReturningFromSyncSettings = false
+    private var isReturningFromSyncFlow = false
 
     private lazy var emptySearchViewCenterYConstraint: NSLayoutConstraint = {
         NSLayoutConstraint(item: emptySearchView,
@@ -260,8 +261,8 @@ final class AutofillLoginListViewController: UIViewController {
     override func viewDidAppear(_ animated: Bool) {
         super.viewDidAppear(animated)
         productSurfaceTelemetry.passwordsPageUsed()
-        guard isReturningFromSyncSettings else { return }
-        isReturningFromSyncSettings = false
+        guard isReturningFromSyncFlow else { return }
+        isReturningFromSyncFlow = false
         if viewModel.viewState == .authLocked {
             authenticate()
         } else {
@@ -385,7 +386,7 @@ final class AutofillLoginListViewController: UIViewController {
     @objc private func appDidBecomeActiveCallback() {
         // New hub import flow requires app switching to source apps (e.g. Chrome/Safari).
         // Avoid intrusive re-auth while user remains in that flow.
-        guard !isInNewImportFlow, !isInSyncSettingsFlow else { return }
+        guard !isInNewImportFlow, !isInSyncFlow else { return }
 
         // AutofillLoginDetailsViewController will handle calling authenticate() if it is the top view controller
         guard navigationController?.topViewController is AutofillLoginDetailsViewController else {
@@ -408,8 +409,10 @@ final class AutofillLoginListViewController: UIViewController {
         }
     }
 
-    private var isInSyncSettingsFlow: Bool {
-        navigationController?.viewControllers.contains { $0 is SyncSettingsViewController } ?? false
+    private var isInSyncFlow: Bool {
+        navigationController?.viewControllers.contains {
+            $0 is SyncSettingsViewController || $0 is UIHostingController<PlatformLinksView>
+        } ?? false
     }
 
     @objc private func authenticatorInvalidateContext() {
@@ -498,8 +501,14 @@ final class AutofillLoginListViewController: UIViewController {
             segueToSync(source: source)
             return
         }
-        isReturningFromSyncSettings = true
+        isReturningFromSyncFlow = true
         navigationController?.pushViewController(mainVC.makeSyncSettingsViewController(source: source), animated: true)
+    }
+
+    private func pushPlatformLinks() {
+        let actions = PlatformLinksActions(presenter: self, pixelFiring: nil)
+        isReturningFromSyncFlow = true
+        navigationController?.pushViewController(UIHostingController(rootView: PlatformLinksView(model: actions, source: .activated)), animated: true)
     }
 
     func segueToSync(source: String? = nil) {
@@ -801,6 +810,14 @@ final class AutofillLoginListViewController: UIViewController {
             return
         }
 
+        if viewModel.shouldShowSyncAnotherDevicePromo(), !surveyPromptPresented, !importPromoPresented {
+            if shouldUpdateHeaderView(for: .syncAnotherDevicePromo) {
+                configureTableHeaderView(for: .syncAnotherDevicePromo)
+                syncPromoPresented = true
+            }
+            return
+        }
+
         // Extension promo is lowest priority - only check if no other promos shown this session
         if importPromoPresented || surveyPromptPresented || syncPromoPresented {
             clearTableHeaderView()
@@ -841,6 +858,11 @@ final class AutofillLoginListViewController: UIViewController {
         case .syncPromo:
             currentHeaderHostingController = headerViewFactory.makeHeaderView(for: type)
             if let hostingController = currentHeaderHostingController as? UIHostingController<SyncPromoView> {
+                setupTableHeaderView(with: hostingController)
+            }
+        case .syncAnotherDevicePromo:
+            currentHeaderHostingController = headerViewFactory.makeHeaderView(for: .syncAnotherDevicePromo)
+            if let hostingController = currentHeaderHostingController as? UIHostingController<SyncAnotherDevicePromoView> {
                 setupTableHeaderView(with: hostingController)
             }
         case .importPromo:
@@ -1226,12 +1248,19 @@ extension AutofillLoginListViewController: AutofillHeaderViewDelegate {
             }
             PixelKit.fire(Pixel.Event.syncPromoConfirmed, options: .parameters(["source": touchpoint.rawValue]))
             viewModel.recordSyncPromoConfirmed()
+        case .syncAnotherDevicePromo:
+            pushSyncSettings(source: SyncSettingsViewController.SourceConstants.passwordsAnotherDevicePromotion)
         case .importPromo:
             segueToFileImport(source: DataImportViewModel.ImportScreen.promo)
         case .extensionPromo:
             segueToExtensionManagement()
             PixelKit.fire(Pixel.Event.autofillExtensionPasswordsPromoConfirmed)
         }
+    }
+
+    func handleSecondaryAction(for headerType: AutofillHeaderViewFactory.ViewType) {
+        guard case .syncAnotherDevicePromo = headerType else { return }
+        pushPlatformLinks()
     }
 
     func handleDismissAction(for headerType: AutofillHeaderViewFactory.ViewType) {
@@ -1244,6 +1273,8 @@ extension AutofillLoginListViewController: AutofillHeaderViewDelegate {
             viewModel.dismissSurvey(id: survey.id)
         case .syncPromo:
             viewModel.dismissSyncPromo()
+        case .syncAnotherDevicePromo:
+            viewModel.dismissSyncAnotherDevicePromo()
         case .importPromo:
             viewModel.dismissImportPromo()
         case .extensionPromo:

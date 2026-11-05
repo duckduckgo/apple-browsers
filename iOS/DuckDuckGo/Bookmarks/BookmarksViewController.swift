@@ -872,7 +872,7 @@ class BookmarksViewController: UIViewController, UITableViewDelegate {
     }
 
     private func headerPromoToShow() -> HeaderPromo {
-        guard !tableView.isEditing, !isSearching, !isNested else {
+        guard !isEditingBookmarks, !isSearching, !isNested else {
             return .none
         }
         if syncPromoManager.shouldPresentPromoFor(.bookmarks, count: viewModel.totalBookmarksCount) {
@@ -984,7 +984,9 @@ class BookmarksViewController: UIViewController, UITableViewDelegate {
     }
 
     private func makeSyncAnotherDevicePromoHostingController() -> UIViewController {
-        let promoView = SyncAnotherDevicePromoView(syncBookmarksAction: { [weak self] in
+        let promoView = SyncAnotherDevicePromoView(title: UserText.syncPromoBookmarksAnotherDeviceTitle,
+                                                   syncActionTitle: UserText.syncPromoBookmarksAnotherDeviceSyncAction,
+                                                   syncAction: { [weak self] in
             self?.pushSyncSettings(source: SyncSettingsViewController.SourceConstants.bookmarksAnotherDevicePromotion)
         }, getDesktopAppAction: { [weak self] in
             self?.pushPlatformLinks()

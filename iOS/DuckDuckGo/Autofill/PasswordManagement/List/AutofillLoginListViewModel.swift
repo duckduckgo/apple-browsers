@@ -351,6 +351,16 @@ class AutofillLoginListViewModel: ObservableObject {
         syncPromoManager.recordPromoConfirmedFor(.passwords)
     }
 
+    func shouldShowSyncAnotherDevicePromo() -> Bool {
+        return viewState == .showItems
+               && !isEditing
+               && syncPromoManager.shouldPresentPromoFor(.passwordsAnotherDevice, count: accountsCount)
+    }
+
+    func dismissSyncAnotherDevicePromo() {
+        syncPromoManager.markPromoHandledFor(.passwordsAnotherDevice)
+    }
+
     func getSurveyToPresent() -> AutofillSurveyManager.AutofillSurvey? {
         guard locale.isEnglishLanguage,
               viewState == .showItems || viewState == .empty,

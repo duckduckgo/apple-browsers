@@ -941,6 +941,20 @@ final class SyncSettingsViewControllerErrorTests: XCTestCase {
     }
 
     @MainActor
+    func testWhenOpenedFromPasswordsAnotherDevicePromoAndUserAuthenticatesThenStartsSyncWithAnotherDevice() async {
+        let vc = makeAuthStubVC(source: SyncSettingsViewController.SourceConstants.passwordsAnotherDevicePromotion,
+                                syncService: MockDDGSyncing(authState: .active, isSyncInProgress: false))
+        vc.loadViewIfNeeded()
+        XCTAssertNil(vc.codeCollectionIntent)
+
+        vc.viewDidAppear(false)
+
+        await waitUntil { vc.codeCollectionIntent == .syncAnotherDevice }
+        XCTAssertEqual(vc.authenticationRequestCount, 1)
+        XCTAssertEqual(vc.codeCollectionIntent, .syncAnotherDevice)
+    }
+
+    @MainActor
     func testWhenOpenedFromBookmarksAnotherDevicePromoAndAuthenticationFailsThenDoesNotStartSyncWithAnotherDevice() async {
         let vc = makeAuthStubVC(source: SyncSettingsViewController.SourceConstants.bookmarksAnotherDevicePromotion,
                                 syncService: MockDDGSyncing(authState: .active, isSyncInProgress: false))

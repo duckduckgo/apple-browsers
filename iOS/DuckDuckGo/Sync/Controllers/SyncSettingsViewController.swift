@@ -43,6 +43,7 @@ class SyncSettingsViewController: UIHostingController<SimplifiedSyncSettingsView
         static let passwordsPromotion = "promotion_passwords"
         static let aiChatPromotion = "promotion_ai_chat"
         static let bookmarksAnotherDevicePromotion = "promotion_bookmarks_another_device"
+        static let passwordsAnotherDevicePromotion = "promotion_passwords_another_device"
     }
 
     enum AutoRestorePromptSource: String {
@@ -474,7 +475,8 @@ class SyncSettingsViewController: UIHostingController<SimplifiedSyncSettingsView
     }
 
     private func startSyncWithAnotherDeviceFromPromoIfNecessary() {
-        guard source == SourceConstants.bookmarksAnotherDevicePromotion, syncService.authState != .inactive else {
+        let anotherDevicePromotionSources = [SourceConstants.bookmarksAnotherDevicePromotion, SourceConstants.passwordsAnotherDevicePromotion]
+        guard let source, anotherDevicePromotionSources.contains(source), syncService.authState != .inactive else {
             return
         }
         viewModel.beginPairingFlow()

@@ -50,6 +50,7 @@ enum SyncPromoStorageKeyNames: String, StorageKeyDescribing {
     case syncedDevicesCount = "sync-promo-synced-devices-count"
     case setupPromoConfirmed = "sync-promo-setup-promo-confirmed"
     case bookmarksAnotherDeviceDismissed = "sync-promo-bookmarks-another-device-dismissed"
+    case passwordsAnotherDeviceDismissed = "sync-promo-passwords-another-device-dismissed"
 }
 
 struct SyncPromoStorageKeys: StoringKeys {
@@ -58,6 +59,7 @@ struct SyncPromoStorageKeys: StoringKeys {
     let syncedDevicesCount = StorageKey<Int>(SyncPromoStorageKeyNames.syncedDevicesCount)
     let setupPromoConfirmed = StorageKey<Date>(SyncPromoStorageKeyNames.setupPromoConfirmed)
     let bookmarksAnotherDeviceDismissed = StorageKey<Date>(SyncPromoStorageKeyNames.bookmarksAnotherDeviceDismissed)
+    let passwordsAnotherDeviceDismissed = StorageKey<Date>(SyncPromoStorageKeyNames.passwordsAnotherDeviceDismissed)
 }
 
 final class SyncPromoManager: SyncPromoManaging {
@@ -68,6 +70,7 @@ final class SyncPromoManager: SyncPromoManaging {
         case dataImport = "data_import"
         case aiChat = "ai_chat"
         case bookmarksAnotherDevice = "bookmarks_another_device"
+        case passwordsAnotherDevice = "passwords_another_device"
     }
 
     enum DismissalReason: String {
@@ -163,8 +166,9 @@ final class SyncPromoManager: SyncPromoManaging {
                count > 0 {
                 return true
             }
-        case .bookmarksAnotherDevice:
-            if canRefreshSyncedDevicesCount,
+        case .bookmarksAnotherDevice, .passwordsAnotherDevice:
+            if isSyncAnotherDeviceAvailable,
+               anotherDeviceDismissedDate(for: touchpoint) == nil,
                featureFlagger.isFeatureOn(.sync),
                let daysSinceInstall,
                daysSinceInstall > Self.syncAnotherDeviceMinimumDaysSinceInstall,
@@ -188,9 +192,24 @@ final class SyncPromoManager: SyncPromoManaging {
     }
 
     private var canRefreshSyncedDevicesCount: Bool {
+        isSyncAnotherDeviceAvailable
+        && (storage.bookmarksAnotherDeviceDismissed == nil || storage.passwordsAnotherDeviceDismissed == nil)
+    }
+
+    private var isSyncAnotherDeviceAvailable: Bool {
         featureFlagger.isFeatureOn(.syncPromotionSyncAnotherDevice)
         && syncService.authState != .inactive
-        && storage.bookmarksAnotherDeviceDismissed == nil
+    }
+
+    private func anotherDeviceDismissedDate(for touchpoint: Touchpoint) -> Date? {
+        switch touchpoint {
+        case .bookmarksAnotherDevice:
+            storage.bookmarksAnotherDeviceDismissed
+        case .passwordsAnotherDevice:
+            storage.passwordsAnotherDeviceDismissed
+        case .bookmarks, .passwords, .dataImport, .aiChat:
+            nil
+        }
     }
 
     private var isSetupPromoCooldownOver: Bool {
@@ -216,7 +235,7 @@ final class SyncPromoManager: SyncPromoManaging {
                 return .standard
             }
             return .redesigned
-        case .dataImport, .aiChat, .bookmarksAnotherDevice:
+        case .dataImport, .aiChat, .bookmarksAnotherDevice, .passwordsAnotherDevice:
             return .standard
         }
     }
@@ -233,12 +252,14 @@ final class SyncPromoManager: SyncPromoManaging {
             syncPromoAIChatDismissed = Date()
         case .bookmarksAnotherDevice:
             storage.bookmarksAnotherDeviceDismissed = Date()
+        case .passwordsAnotherDevice:
+            storage.passwordsAnotherDeviceDismissed = Date()
         }
     }
 
     func recordImpressionFor(_ touchpoint: Touchpoint) {
         switch touchpoint {
-        case .bookmarks, .passwords, .dataImport, .bookmarksAnotherDevice:
+        case .bookmarks, .passwords, .dataImport, .bookmarksAnotherDevice, .passwordsAnotherDevice:
             break
         case .aiChat:
             syncPromoAIChatImpressions += 1
@@ -252,7 +273,7 @@ final class SyncPromoManager: SyncPromoManaging {
         switch touchpoint {
         case .bookmarks, .passwords:
             storage.setupPromoConfirmed = currentDateProvider()
-        case .dataImport, .aiChat, .bookmarksAnotherDevice:
+        case .dataImport, .aiChat, .bookmarksAnotherDevice, .passwordsAnotherDevice:
             break
         }
     }
@@ -271,6 +292,7 @@ final class SyncPromoManager: SyncPromoManaging {
         syncPromoAIChatDismissed = nil
         syncPromoAIChatImpressions = 0
         storage.bookmarksAnotherDeviceDismissed = nil
+        storage.passwordsAnotherDeviceDismissed = nil
         storage.setupPromoConfirmed = nil
     }
 }

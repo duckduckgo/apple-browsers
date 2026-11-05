@@ -59,6 +59,7 @@ final class AutoClearUITests: UITestCase {
             app.dismissSettings()
         }
 
+        var clearedTabs: [XCUIElement] = []
         XCTContext.runActivity(named: "Create tabs and website data") { _ in
             app.openStorageCounterPage()
             app.resetStorageCounters()
@@ -66,6 +67,10 @@ final class AutoClearUITests: UITestCase {
 
             app.openNewTab()
             app.openURL("https://privacy-test-pages.site", expecting: "Privacy Test Pages")
+            app.openTabSwitcher()
+            app.assertTabCount(2)
+            clearedTabs = [app.tabCell(at: 0), app.tabCell(at: 1)]
+            app.buttons["TabSwitcher.Button.Done"].tapWhenHittable(in: app)
         }
 
         XCTContext.runActivity(named: "Clear tabs and website data after backgrounding") { _ in
@@ -83,7 +88,9 @@ final class AutoClearUITests: UITestCase {
 
             app.openTabSwitcher()
             app.assertTabCount(1)
-            XCTAssertFalse(app.staticTexts["Privacy Test Pages"].exists, "Cleared tab is still present in the tab switcher.")
+            for tab in clearedTabs {
+                XCTAssertFalse(tab.exists, "A captured pre-clear tab remained in the tab switcher.")
+            }
             app.buttons["TabSwitcher.Button.Done"].tapWhenHittable(in: app)
 
             app.openStorageCounterPage()

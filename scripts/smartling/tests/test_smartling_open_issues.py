@@ -80,6 +80,8 @@ class FakeSmartling:
         return {'stringText': ENGLISH, 'keys': [{'key': self.key, 'fileUri': 'main/en.xliff'}]}
 
     async def get_job(self, job_uid):
+        if job_uid == 'unavailable':
+            raise RuntimeError('HTTP 503: Service Unavailable')
         if job_uid not in self.jobs:
             raise RuntimeError('HTTP 404: Not Found')
         return self.jobs[job_uid]
@@ -108,13 +110,14 @@ class FakeAsana:
         if any(f'#{number} ' in body['name'] for number in self.failing_issues):
             raise RuntimeError('Asana POST /tasks failed with HTTP 500: Server Error')
         self.created.append(body)
-        return {'gid': str(len(self.created))}
+        return {'gid': str(len(self.created)), 'assignee': {'gid': body['assignee']} if body.get('assignee') else None}
 
 
 class FakeGitHub:
 
-    def __init__(self, runs=None, commit_pulls=None, branch_pulls=None):
+    def __init__(self, runs=None, commit_pulls=None, branch_pulls=None, failing=False):
         self.runs = runs or []
+        self.failing = failing
         self.pulls_by_commit = commit_pulls if commit_pulls is not None else {STRING_COMMIT: [pull('frosty')]}
         self.pulls_by_branch = branch_pulls or {}
 
@@ -125,6 +128,8 @@ class FakeGitHub:
         return next(run['jobs'] for run in self.runs if run['id'] == run_id)
 
     def commit_pulls(self, sha):
+        if self.failing:
+            raise RuntimeError('GitHub GET /commits/sha/pulls failed with HTTP 403: rate limit exceeded')
         return self.pulls_by_commit.get(sha, [])
 
     def branch_pulls(self, branch):
@@ -271,24 +276,38 @@ class OpenIssueTaskTests(unittest.TestCase):
     def testWhenAsanaRejectsTheAuthorThenTheTriageDRIGetsTheTask(self):
         asana = FakeAsana(rejected_assignees={'frosty-gid'})
 
-        run(FakeSmartling([smartling_issue()]), asana)
+        rows, _, _ = run(FakeSmartling([smartling_issue()]), asana)
 
         self.assertEqual([task['assignee'] for task in asana.created], ['dri'])
+        self.assertEqual(rows, ['| #3600 | opened a task | the triage DRI |'])
 
     def testWhenOneIssueFailsThenTheOthersStillGetTasksAndTheRunFails(self):
-        issues = [smartling_issue(3600), smartling_issue(3601), smartling_issue(3602, job_uid='deleted')]
+        issues = [
+            smartling_issue(3600), smartling_issue(3601, job_uid='unavailable'), smartling_issue(3602), smartling_issue(3603, job_uid='deleted'),
+        ]
         smartling = FakeSmartling(issues, missing_strings={'hash-3600'})
-        asana = FakeAsana(failing_issues={3601})
+        asana = FakeAsana(failing_issues={3602})
 
         rows, failed, _ = run(smartling, asana)
 
         self.assertTrue(failed)
-        self.assertEqual([task['name'] for task in asana.created], [f'Smartling open issue #3602 (iOS): {KEY}'])
+        self.assertEqual([task['name'] for task in asana.created], [f'Smartling open issue #3603 (iOS): {KEY}'])
         self.assertEqual(rows, [
             '| #3600 | failed, retried next night | |',
-            '| #3601 | failed, retried next night | @frosty (added the string) |',
-            '| #3602 | opened a task | @frosty (added the string) |',
+            '| #3601 | failed, retried next night | |',
+            '| #3602 | failed, retried next night | @frosty (added the string) |',
+            '| #3603 | opened a task | @frosty (added the string) |',
         ])
+
+    def testWhenGitHubFailsThenTheIssueIsRetriedInsteadOfGoingToTheTriageDRI(self):
+        asana = FakeAsana()
+        github = FakeGitHub(runs=[nightly_run(1, 'success')], failing=True)
+
+        rows, failed, _ = run(FakeSmartling([smartling_issue()]), asana, github=github)
+
+        self.assertTrue(failed)
+        self.assertEqual(asana.created, [])
+        self.assertEqual(rows, ['| #3600 | failed, retried next night | |'])
 
     def testWhenTheIssueWasRaisedInATranslateJobThenItsPullRequestsAuthorGetsTheTask(self):
         smartling = FakeSmartling([smartling_issue(job_uid='label')], jobs={
@@ -341,11 +360,22 @@ class StringAttributionTests(unittest.TestCase):
 
                 self.assertTrue(added)
 
+    def testWhenTheTextIsShortenedThenTheCommitAddedTheString(self):
+        diff = f'@@ -1 +1 @@\n-"{KEY}" = "{ENGLISH} now";\n+"{KEY}" = "{ENGLISH}";\n'
+
+        added = OPEN_ISSUES.adds_string(diff, [ENGLISH], [KEY])
+
+        self.assertTrue(added)
+
     def testWhenTheSameTextIsAddedUnderAnotherKeyNextToTheKeyThenTheCommitDidntAddTheString(self):
         diffs = {
             'another key': f'@@ -1 +1,2 @@\n "{KEY}" = "{ENGLISH}";\n+"other.key" = "{ENGLISH}";\n',
             'a longer key': f'@@ -1 +1,2 @@\n "{KEY}" = "{ENGLISH}";\n+"{KEY}.tooltip" = "{ENGLISH}";\n',
             'a key like a catalog field': f'@@ -1 +1,2 @@\n "{KEY}" = "{ENGLISH}";\n+"value" = "{ENGLISH}";\n',
+            'a catalog key that starts with the key': f'@@ -1 +1,2 @@\n+    "{KEY}, longer" : {{\n+      "value" : "{ENGLISH}"\n',
+            'an entry moved to another file': (
+                f'@@ -1,2 +1 @@\n context\n-"{KEY}" = "{ENGLISH}";\n@@ -1 +1,2 @@\n context\n+"{KEY}" = "{ENGLISH}";\n'
+            ),
         }
         for case, diff in diffs.items():
             with self.subTest(case):
@@ -386,6 +416,13 @@ class StringAttributionTests(unittest.TestCase):
         job = OPEN_ISSUES.issue_job(jobs, utc('2026-10-22T08:53:39Z'))
 
         self.assertEqual(job['translationJobUid'], 'nightly')
+
+    def testWhenNoJobExistedByTheIssueThenItHasNoJob(self):
+        jobs = [{'translationJobUid': 'label', 'createdDate': '2026-10-30T12:00:00Z'}]
+
+        job = OPEN_ISSUES.issue_job(jobs, utc('2026-10-22T08:53:39Z'))
+
+        self.assertEqual(job, {})
 
 
 if __name__ == '__main__':

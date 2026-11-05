@@ -130,7 +130,7 @@ class AsanaClient:
         return self._get_all(f'/tasks/{task_id}/subtasks', {'opt_fields': 'name'})
 
     def create_task(self, body: Dict) -> Dict:
-        return self._request('POST', '/tasks', {'opt_fields': 'permalink_url'}, body)
+        return self._request('POST', '/tasks', {'opt_fields': 'permalink_url,assignee'}, body)
 
     def task(self, task_id: str) -> Dict:
         return self._request('GET', f'/tasks/{task_id}', {'opt_fields': 'completed,assignee,parent.assignee'})

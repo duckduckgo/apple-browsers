@@ -37,7 +37,7 @@ TASK_NUMBER = re.compile(rf'^{TASK_NAME_PREFIX} #(\d+) ')
 MERGE_JOB_COMMIT = re.compile(r'^Merge \S+ - \S+ \S+ ([0-9a-f]{7,40})$')
 # "pikor/project-11/ump-translations-2026-08-19": a pull request's /translate job, named after its branch. Its strings
 # are submitted before they're merged. Older jobs were named by hand, often after the branch without a date.
-LABEL_JOB_BRANCH = re.compile(r'^(?!(?:Merge|Nightly|Release) )(\S+?)(?:-\d{4}-\d{2}-\d{2})?$')
+LABEL_JOB_BRANCH = re.compile(r'^(\S+?)(?:-\d{4}-\d{2}-\d{2})?$')
 # Storyboard and XIB keys are "<object id>.<property>", and the file has the id on the text's line.
 INTERFACE_BUILDER_KEY = re.compile(r'^([A-Za-z0-9]{3}-[A-Za-z0-9]{2}-[A-Za-z0-9]{3})\.')
 # Plural variants are "/<key>:dict/<rule>:dict/…".
@@ -112,37 +112,42 @@ def main_key(source_string: Dict) -> str:
 
 
 def issue_job(jobs: List[Dict], created_at: datetime) -> Dict:
-    """The job the issue was raised in: the newest of the string's jobs that existed by then. The string may have been
-    in older jobs, such as a pull request's /translate job, and in newer ones since."""
+    """The job the issue was raised in: the newest of the string's jobs that existed by then, or none if Smartling no
+    longer has it. The string may have been in older jobs, such as a pull request's /translate job, and in newer ones
+    since, which never count: a later /translate job would send the task to the wrong person."""
     existing = [job for job in jobs if job.get('createdDate') and parse_time(job['createdDate']) <= created_at]
-    return max(existing or jobs, key=lambda job: job.get('createdDate') or '', default={})
+    return max(existing, key=lambda job: job['createdDate'], default={})
 
 
 async def issue_jobs(smartling: SmartlingClient, issue: Dict) -> List[Dict]:
-    """The string's jobs that Smartling still has. A deleted job is skipped for good, so it can't fail every night."""
+    """The string's jobs that Smartling still has. A deleted job is skipped for good, so it can't fail every night;
+    any other error is raised, so that a transient one doesn't send the task to the wrong person."""
     jobs = []
     for job_uid in issue.get('jobUids') or []:
         try:
             jobs.append(await smartling.get_job(job_uid))
         except RuntimeError as error:
-            log(f"⚠️ #{issue['issueNumber']}: couldn't load one of its jobs, leaving it out: {error}")
+            if not str(error).startswith('HTTP 404'):
+                raise
+            log(f"⚠️ #{issue['issueNumber']}: one of its jobs no longer exists, leaving it out")
     return jobs
 
 
 async def load_issues(smartling: SmartlingClient, since: datetime) -> Tuple[List[OpenIssue], List[int]]:
     """The open issues on English strings that were opened or reopened since then, oldest first, and the numbers of
-    those whose string couldn't be loaded."""
+    those whose string or jobs couldn't be loaded."""
     issues, failed = [], []
     for issue in await smartling.list_open_source_issues():
         if opened_at(issue) < since:
             continue
         try:
             source_string = await smartling.get_source_string(issue['string']['hashcode']) or {}
+            jobs = await issue_jobs(smartling, issue)
         except RuntimeError as error:
-            log(f"❌ #{issue['issueNumber']}: couldn't load its string: {error}")
+            log(f"❌ #{issue['issueNumber']}: couldn't load its string or jobs: {error}")
             failed.append(issue['issueNumber'])
             continue
-        job = issue_job(await issue_jobs(smartling, issue), parse_time(issue['createdDate']))
+        job = issue_job(jobs, parse_time(issue['createdDate']))
         issues.append(OpenIssue(
             number=issue['issueNumber'],
             created_at=parse_time(issue['createdDate']),
@@ -234,33 +239,51 @@ def declared_key(line: str) -> Optional[str]:
 
 
 def mentions_key(line: str, keys: List[str]) -> bool:
-    """Whether the line has one of the keys as a whole, so that "target.key" doesn't match "target.key.tooltip"."""
+    """Whether the line has one of the keys. A line that starts an entry must be the key's own, so that "OK" doesn't
+    match `"OK, got it" : {`, and a catalog entry's field or locale never has it. Any other line, such as a Swift
+    call, must have it as a whole, so that "target.key" doesn't match "target.key.tooltip"."""
+    if KEY_DECLARATION.search(line):
+        return declared_key(line) in keys
     return any(re.search(rf'(?<![\w.-]){re.escape(key)}(?![\w.-])', line) for key in keys)
 
 
-def adds_string(diff: str, texts: List[str], keys: List[str]) -> bool:
-    """Whether the diff adds a line with the text in the string's own entry: on the key's line, or below it with no
-    other key's entry in between. The same words under another key don't count. With no text, whether it adds a line
-    with the key."""
-    for hunk in re.split(r'^@@.*$', diff, flags=re.MULTILINE)[1:]:
-        lines = [line for line in hunk.splitlines() if not line.startswith('-')]
-        for index, line in enumerate(lines):
-            if not line.startswith('+'):
-                continue
-            if not texts:
-                if mentions_key(line, keys):
-                    return True
-                continue
-            if not any(text in line for text in texts):
-                continue
-            if not keys:
-                return True
-            for above in reversed(lines[:index + 1]):
-                if mentions_key(above, keys):
-                    return True
-                if declared_key(above):
-                    break
+def in_entry(lines: List[str], keys: List[str]) -> bool:
+    """Whether the last line is in the key's entry: on the key's line, or below it with no other key's entry between."""
+    for line in reversed(lines):
+        if mentions_key(line, keys):
+            return True
+        if declared_key(line):
+            return False
     return False
+
+
+def entry_texts(hunk: str, side: str, texts: List[str], keys: List[str]) -> set:
+    """The texts that the hunk's added ('+') or removed ('-') lines have in the string's own entry. A removed line
+    must have the text as a whole literal, so that an edit that shortens the text still adds it. With no text, {''}
+    if a line on that side has the key."""
+    other = '-' if side == '+' else '+'
+    lines = [line for line in hunk.splitlines() if not line.startswith(other)]
+    found = set()
+    for index, line in enumerate(lines):
+        if not line.startswith(side):
+            continue
+        if not texts:
+            found |= {''} if mentions_key(line, keys) else set()
+            continue
+        in_line = {text for text in texts if (text if side == '+' else f'"{text}"') in line}
+        if in_line and (not keys or in_entry(lines[:index + 1], keys)):
+            found |= in_line
+    return found
+
+
+def adds_string(diff: str, texts: List[str], keys: List[str]) -> bool:
+    """Whether the diff adds a line with the text in the string's own entry, and doesn't remove it from the key's
+    entry elsewhere, as a commit that moves the entry to another file does. The same words under another key don't
+    count. With no text, whether it adds a line with the key without removing one."""
+    hunks = re.split(r'^@@.*$', diff, flags=re.MULTILINE)[1:]
+    added = set().union(*(entry_texts(hunk, '+', texts, keys) for hunk in hunks))
+    removed = set().union(*(entry_texts(hunk, '-', texts, keys) for hunk in hunks))
+    return bool(added - removed)
 
 
 def string_commit(git: Git, github: GitHubClient, issue: OpenIssue, platform: str) -> Optional[Dict]:
@@ -305,18 +328,15 @@ def merge_job_pull(git: Git, github: GitHubClient, issue: OpenIssue) -> Optional
 def find_person(git: Git, github: GitHubClient, user_map: Dict[str, str], issue: OpenIssue, platform: str) -> Optional[Person]:
     """Who to ask: the pull request the string's /translate job came from, or whoever added the string, or else the
     author of the merge job's commit. Once someone is found who isn't in the user map, no one: the later lookups are
-    less sure, so the triage DRI is a better guess than them."""
+    less sure, so the triage DRI is a better guess than them. A GitHub or git error is raised, so that the issue is
+    retried instead of going to someone less sure."""
     lookups = (
         ('translate job', lambda: label_job_pull(github, issue)),
         ('added the string', lambda: string_commit(git, github, issue, platform)),
         ('merge job commit', lambda: merge_job_pull(git, github, issue)),
     )
     for source, find_pull in lookups:
-        try:
-            pull = find_pull()
-        except RuntimeError as error:
-            log(f"⚠️ #{issue.number}: couldn't look for the pull request ({source}): {error}")
-            continue
+        pull = find_pull()
         login = ((pull or {}).get('user') or {}).get('login')
         gid = asana_user(user_map, login)
         if gid:
@@ -347,6 +367,13 @@ def task_notes(issue: OpenIssue, platform: str, smartling: SmartlingClient, pers
     lines.append(f"🔀 Pull request: {person.pull_url if person else 'not found'}")
     lines.append(f"⚙️ Workflow: {workflow_url}")
     return '\n'.join(lines)
+
+
+def assignee_name(assignee: Optional[str], person: Optional[Person]) -> str:
+    """Who the task is for, for the log and the summary: never a name or email, only a GitHub login."""
+    if person and assignee == person.asana_gid:
+        return f"@{person.login} ({person.source})"
+    return 'the triage DRI' if assignee else 'no one'
 
 
 def window(args, github: GitHubClient) -> datetime:
@@ -381,9 +408,15 @@ async def run(args, smartling: SmartlingClient, asana: AsanaClient, github: GitH
             log(f"⏭️ #{issue.number} already has a task")
             rows.append(f"| #{issue.number} | already has a task | |")
             continue
-        person = find_person(git, github, user_map, issue, args.platform)
+        try:
+            person = find_person(git, github, user_map, issue, args.platform)
+        except RuntimeError as error:
+            log(f"❌ #{issue.number}: couldn't look for who added its string: {error}")
+            rows.append(f"| #{issue.number} | failed, retried next night | |")
+            failed.append(issue.number)
+            continue
         assignee = person.asana_gid if person else dri_gid
-        who = f"@{person.login} ({person.source})" if person else ('the triage DRI' if dri_gid else 'no one')
+        who = assignee_name(assignee, person)
         body = {
             'name': task_name(issue, args.platform),
             'html_notes': notes_html(task_notes(issue, args.platform, smartling, person, args.workflow_url)),
@@ -405,6 +438,7 @@ async def run(args, smartling: SmartlingClient, asana: AsanaClient, github: GitH
             rows.append(f"| #{issue.number} | failed, retried next night | {who} |")
             failed.append(issue.number)
             continue
+        who = assignee_name((task.get('assignee') or {}).get('gid'), person)
         log(f"✅ #{issue.number}: opened a task for {who}: {task.get('permalink_url', task.get('gid'))}")
         rows.append(f"| #{issue.number} | opened a task | {who} |")
     return rows, bool(failed)

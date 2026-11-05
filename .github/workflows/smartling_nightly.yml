@@ -130,6 +130,7 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.APPLE_GH_RO_PAT }}
         run: |
+          set -o pipefail
           if gh api repos/duckduckgo/internal-github-asana-utils/contents/user_map.yml --jq .content 2>/dev/null \
               | base64 -d > "$RUNNER_TEMP/user_map.yml"; then
             echo "Fetched user_map.yml"

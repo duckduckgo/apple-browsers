@@ -62,9 +62,12 @@ public enum WebExtensionPixelExtension: Equatable, CaseIterable {
 /// Events that can be fired for web extension management.
 @available(macOS 15.4, iOS 18.4, *)
 public enum WebExtensionPixelEvent {
-    case installed(extension: WebExtensionPixelExtension)
+    /// A fresh install; updates aren't reported. `extensionID` is the Chrome Web Store ID and `category`
+    /// the catalog's `categoryId`, both `nil` when unknown.
+    case installed(extension: WebExtensionPixelExtension, extensionID: String?, category: String?)
     case installError(extension: WebExtensionPixelExtension, error: Error)
-    case uninstalled(extension: WebExtensionPixelExtension)
+    /// A store extension was removed; updates and embedded extensions aren't reported.
+    case uninstalled(extension: WebExtensionPixelExtension, extensionID: String?, category: String?)
     case uninstallError(error: Error)
     case uninstalledAll
     case uninstallAllError(error: Error)
@@ -114,6 +117,15 @@ public enum WebExtensionPixelEvent {
     /// How many distinct missing APIs a catalog extension used, and Chrome pages it tried to open,
     /// since launch, with its version. Fired once a day.
     case apiCompatibilityGaps(extension: ExtensionsCatalogSubfeature, version: String, missingAPICount: Int, unsupportedURLCount: Int)
+
+    /// A store extension was enabled, from any surface.
+    case enabled(extensionID: String, category: String?)
+    /// A store extension was disabled, from any surface, remote disable included.
+    case disabled(extensionID: String, category: String?)
+    /// A store extension installed 14 days ago is still installed and enabled.
+    case retained(extensionID: String, category: String?)
+    /// A store extension installed 14 days ago was uninstalled or disabled.
+    case churned(extensionID: String, category: String?)
 }
 
 /// A bounded summary of existing health-monitor evidence, not proof of document initialization or all-tab recovery.
@@ -310,7 +322,8 @@ public struct CPMWebExtensionPixelMetadata: Equatable, Sendable {
              .adBlockingScriptletsNotFetched, .embeddedInstalled, .embeddedUpgraded,
              .embeddedInstallError, .scriptletFetchSuccess, .scriptletFetchError,
              .scriptletValidationError, .scriptletInstalled, .scriptletInstallError,
-             .defaultPasswordManagerSet, .bitwardenDailyActive, .apiCompatibilityGaps:
+             .defaultPasswordManagerSet, .bitwardenDailyActive, .apiCompatibilityGaps,
+             .enabled, .disabled, .retained, .churned:
             return nil
         }
     }

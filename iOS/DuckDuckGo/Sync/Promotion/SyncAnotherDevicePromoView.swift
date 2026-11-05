@@ -34,9 +34,11 @@ struct SyncAnotherDevicePromoView: View {
         static let closeButtonReserve: CGFloat = 52
         static let imageSize: CGFloat = 56
         static let iconSize: CGFloat = 16
+        static let buttonSpacing: CGFloat = 8
     }
 
     let title: String
+    var connectTitle: String = UserText.syncPromoAnotherDeviceConnectAction
     let syncAction: () -> Void
     let getDesktopAppAction: () -> Void
     let dismissAction: () -> Void
@@ -90,70 +92,89 @@ struct SyncAnotherDevicePromoView: View {
             RoundedRectangle(cornerRadius: ContainerMetrics.cornerRadius)
                 .foregroundColor(Color(designSystemColor: .surfaceSecondary))
         )
-        .padding(.horizontal, 20)
+        .padding(.horizontal, 16)
         .padding(.bottom, 12)
     }
 
     @ViewBuilder
     private var buttons: some View {
-        if #available(iOS 16, *) {
-            ViewThatFits(in: .horizontal) {
-                HStack(spacing: 8) {
-                    getDesktopAppButton(widestLabel: true)
-                    connectButton(widestLabel: true)
-                }
-                VStack(spacing: 8) {
-                    connectButton(widestLabel: false)
-                    getDesktopAppButton(widestLabel: false)
-                }
+        if #available(iOS 16.0, *) {
+            PromoButtonsLayout(spacing: Metrics.buttonSpacing) {
+                buttonViews(singleLine: false)
             }
         } else {
-            VStack(spacing: 8) {
-                connectButton(widestLabel: false)
-                getDesktopAppButton(widestLabel: false)
+            HStack(spacing: Metrics.buttonSpacing) {
+                buttonViews(singleLine: true)
             }
         }
     }
 
-    private func getDesktopAppButton(widestLabel: Bool) -> some View {
+    @ViewBuilder
+    private func buttonViews(singleLine: Bool) -> some View {
         Button(action: getDesktopAppAction) {
-            equalWidthLabel(getDesktopAppLabel, widestLabel: widestLabel)
+            buttonText(UserText.syncPromoAnotherDeviceGetDesktopAppAction, singleLine: singleLine)
         }
         .buttonStyle(SecondaryFillButtonStyle(compact: true, fullWidth: true))
-    }
 
-    private func connectButton(widestLabel: Bool) -> some View {
         Button(action: syncAction) {
-            equalWidthLabel(connectLabel, widestLabel: widestLabel)
+            HStack(spacing: 8) {
+                Image(uiImage: DesignSystemImages.Glyphs.Size24.qrScan)
+                    .resizable()
+                    .renderingMode(.template)
+                    .frame(width: Metrics.iconSize, height: Metrics.iconSize)
+                    .accessibilityHidden(true)
+                buttonText(connectTitle, singleLine: singleLine)
+            }
         }
         .buttonStyle(PrimaryButtonStyle(compact: true, fullWidth: true))
     }
 
-    private func equalWidthLabel(_ label: some View, widestLabel: Bool) -> some View {
-        ZStack {
-            if widestLabel {
-                getDesktopAppLabel.hidden()
-                connectLabel.hidden()
-            }
-            label
+    private func buttonText(_ title: String, singleLine: Bool) -> some View {
+        Text(title)
+            .lineLimit(singleLine ? 1 : nil)
+            .minimumScaleFactor(singleLine ? 0.8 : 1)
+    }
+}
+
+/// Places the buttons side by side in equal-width columns when each whole button fits its column on one line.
+/// Otherwise stacks them full width with the last, primary, button on top, letting long labels wrap.
+@available(iOS 16.0, *)
+private struct PromoButtonsLayout: Layout {
+    let spacing: CGFloat
+
+    func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) -> CGSize {
+        let idealWidths = subviews.map { $0.sizeThatFits(.unspecified).width }
+        let width = proposal.width ?? (idealWidths.max() ?? 0) * CGFloat(subviews.count) + totalSpacing(subviews)
+        return CGSize(width: width, height: frames(in: width, subviews: subviews).map(\.maxY).max() ?? 0)
+    }
+
+    func placeSubviews(in bounds: CGRect, proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) {
+        for (subview, frame) in zip(subviews, frames(in: bounds.width, subviews: subviews)) {
+            subview.place(at: CGPoint(x: bounds.minX + frame.minX, y: bounds.minY + frame.minY), proposal: ProposedViewSize(frame.size))
         }
     }
 
-    private var getDesktopAppLabel: some View {
-        Text(UserText.syncPromoAnotherDeviceGetDesktopAppAction)
-            .lineLimit(1)
+    private func totalSpacing(_ subviews: Subviews) -> CGFloat {
+        CGFloat(max(subviews.count - 1, 0)) * spacing
     }
 
-    private var connectLabel: some View {
-        HStack(spacing: 8) {
-            Image(uiImage: DesignSystemImages.Glyphs.Size24.qrScan)
-                .resizable()
-                .renderingMode(.template)
-                .frame(width: Metrics.iconSize, height: Metrics.iconSize)
-                .accessibilityHidden(true)
-            Text(UserText.syncPromoAnotherDeviceConnectAction)
-                .lineLimit(1)
+    private func frames(in width: CGFloat, subviews: Subviews) -> [CGRect] {
+        guard !subviews.isEmpty else { return [] }
+
+        let columnWidth = (width - totalSpacing(subviews)) / CGFloat(subviews.count)
+        if subviews.allSatisfy({ $0.sizeThatFits(.unspecified).width <= columnWidth }) {
+            let height = subviews.map { $0.sizeThatFits(ProposedViewSize(width: columnWidth, height: nil)).height }.max() ?? 0
+            return subviews.indices.map { CGRect(x: CGFloat($0) * (columnWidth + spacing), y: 0, width: columnWidth, height: height) }
         }
+
+        var frames = [CGRect](repeating: .zero, count: subviews.count)
+        var y: CGFloat = 0
+        for index in subviews.indices.reversed() {
+            let height = subviews[index].sizeThatFits(ProposedViewSize(width: width, height: nil)).height
+            frames[index] = CGRect(x: 0, y: y, width: width, height: height)
+            y += height + spacing
+        }
+        return frames
     }
 }
 
@@ -165,10 +186,11 @@ struct SyncAnotherDevicePromoView_Previews: PreviewProvider {
     }
 
     static let snapshots = PreviewSnapshots(configurations: [
-        .init(name: "Bookmarks", state: UserText.syncPromoBookmarksAnotherDeviceTitle),
-        .init(name: "Passwords", state: UserText.syncPromoPasswordsAnotherDeviceTitle)
-    ]) { title in
-        SyncAnotherDevicePromoView(title: title, syncAction: {}, getDesktopAppAction: {}, dismissAction: {})
+        .init(name: "Bookmarks", state: (title: UserText.syncPromoBookmarksAnotherDeviceTitle, connectTitle: UserText.syncPromoAnotherDeviceConnectAction)),
+        .init(name: "Passwords", state: (title: UserText.syncPromoPasswordsAnotherDeviceTitle, connectTitle: UserText.syncPromoAnotherDeviceConnectAction)),
+        .init(name: "Long Action", state: (title: UserText.syncPromoPasswordsAnotherDeviceTitle, connectTitle: "Passwörter mit einem anderen Gerät synchronisieren und sichern"))
+    ]) { state in
+        SyncAnotherDevicePromoView(title: state.title, connectTitle: state.connectTitle, syncAction: {}, getDesktopAppAction: {}, dismissAction: {})
             .background(Color(designSystemColor: .background))
     }
 }

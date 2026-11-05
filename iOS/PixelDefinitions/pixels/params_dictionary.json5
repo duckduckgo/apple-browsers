@@ -93,13 +93,13 @@
     "resubmit_of_search": {
         "key": "resubmit_of_search",
         "type": "string",
-        "description": "Seconds since a Search from the iPhone address bar with the same text (ignoring case and punctuation; 1 typo allowed at 4-7 characters, 2 at 8 or more). Compared on the device; no text is sent, and it is dropped when the app goes to the background or on Fire. Never set in fire tabs. Absent when it isn't a resubmit. Mostly a baseline for resubmit_of_prompt.",
+        "description": "Seconds since a Search from the iPhone address bar with the same text (ignoring case and punctuation; 1 typo allowed at 4-7 characters, 2 at 8-1,000). Compared on the device; no text is sent, and it is dropped when the app goes to the background or on Fire. Never set in fire tabs. Texts over 1,000 characters must match exactly. Absent when it isn't a resubmit. Mostly a baseline for resubmit_of_prompt.",
         "enum": ["0-15", "16-30", "31-45", "46-60"]
     },
     "resubmit_of_prompt": {
         "key": "resubmit_of_prompt",
         "type": "string",
-        "description": "Seconds since a Duck.ai prompt from the iPhone address bar with the same text (ignoring case and punctuation; 1 typo allowed at 4-7 characters, 2 at 8 or more), a proxy for a search sent to Duck.ai by mistake. Compared on the device; no text is sent, and it is dropped when the app goes to the background or on Fire. Never set in fire tabs. Absent when it isn't a resubmit, including when no prompt was sent first. Each prompt is matched at most once.",
+        "description": "Seconds since a Duck.ai prompt from the iPhone address bar with the same text (ignoring case and punctuation; 1 typo allowed at 4-7 characters, 2 at 8-1,000), a proxy for a search sent to Duck.ai by mistake. Compared on the device; no text is sent, and it is dropped when the app goes to the background or on Fire. Never set in fire tabs. Texts over 1,000 characters must match exactly. Absent when it isn't a resubmit, including when no prompt was sent first. Each prompt is matched at most once.",
         "enum": ["0-15", "16-30", "31-45", "46-60"]
     },
     "usage_layout": {

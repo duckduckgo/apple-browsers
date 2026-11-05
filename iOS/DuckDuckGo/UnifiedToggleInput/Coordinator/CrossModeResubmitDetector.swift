@@ -83,8 +83,10 @@ final class CrossModeResubmitDetector {
 }
 
 /// Matches texts that differ only in case, punctuation, spacing or a typo or two. Short texts must match exactly,
-/// so that "hi" and "ii" don't count as the same.
+/// so that "hi" and "ii" don't count as the same; long texts are usually pasted, so they must match exactly too.
 enum ResubmitTextMatcher {
+
+    static let maxTypoTolerantLength = 1_000
 
     static func matches(_ lhs: String, _ rhs: String) -> Bool {
         matches(normalized(lhs), normalized(rhs))
@@ -93,6 +95,7 @@ enum ResubmitTextMatcher {
     static func matches(_ lhs: [Character], _ rhs: [Character]) -> Bool {
         guard !lhs.isEmpty, !rhs.isEmpty else { return false }
         guard lhs != rhs else { return true }
+        guard max(lhs.count, rhs.count) <= maxTypoTolerantLength else { return false }
         let allowedTypos = allowedTypoCount(forLength: min(lhs.count, rhs.count))
         return editDistance(lhs, rhs, atMost: allowedTypos) <= allowedTypos
     }

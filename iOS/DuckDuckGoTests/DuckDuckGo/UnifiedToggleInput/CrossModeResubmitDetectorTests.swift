@@ -46,6 +46,12 @@ final class ResubmitTextMatcherTests: XCTestCase {
         XCTAssertFalse(ResubmitTextMatcher.matches("best pizza in warsaw", "best pasta in warsaw"))
     }
 
+    func testLongTextsMatchOnlyWhenIdentical() {
+        let pasted = String(repeating: "stack trace line ", count: 100)
+        XCTAssertTrue(ResubmitTextMatcher.matches(pasted, pasted.uppercased()))
+        XCTAssertFalse(ResubmitTextMatcher.matches(pasted, pasted + "x"))
+    }
+
     func testEmptyTextNeverMatches() {
         XCTAssertFalse(ResubmitTextMatcher.matches("", ""))
         XCTAssertFalse(ResubmitTextMatcher.matches("?!", "..."))

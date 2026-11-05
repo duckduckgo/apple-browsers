@@ -414,26 +414,24 @@ public final class SparkleUpdateController: NSObject, SparkleUpdateControlling {
     /// For automatic updates, regular notifications and the blue dot are delayed.
     /// to reduce noise - users who quit within that time get the update silently.
     /// Critical updates show immediately. Manual updates show immediately (unchanged behavior).
-    /// Whenever the flag is on and automatic updates are enabled, the persisted prompt stage replaces the in-memory delay.
+    /// With more prominent updates on, the persisted prompt stage replaces the delay and the popover: the menu item
+    /// shows as soon as the update is ready, and the dot only at the first prompt.
     private func handleUpdateNotification() {
         guard let latestUpdate, hasPendingUpdate else {
             hideUpdateIndicators()
             return
         }
 
-        if isMoreProminentUpdatesOn && areAutomaticUpdatesEnabled {
-            if promptStage < .firstPrompt {
-                hideUpdateIndicators()
-            } else if !mustShowUpdateIndicators {
-                pendingNotificationTask?.cancel()
-                pendingNotificationTask = nil
-                showUpdateIndicators()
-            }
+        if isMoreProminentUpdatesOn {
+            pendingNotificationTask?.cancel()
+            pendingNotificationTask = nil
+            mustShowUpdateIndicators = true
+            needsNotificationDot = promptStage == .firstPrompt
             return
         }
 
         // Already scheduled or shown - don't restart the timer
-        guard pendingNotificationTask == nil, !mustShowUpdateIndicators else { return }
+        guard pendingNotificationTask == nil, !needsNotificationDot else { return }
 
         // Manual updates: show immediately (unchanged behavior)
         guard areAutomaticUpdatesEnabled else {
@@ -447,6 +445,8 @@ public final class SparkleUpdateController: NSObject, SparkleUpdateControlling {
         if delay == 0 {
             showUpdateIndicators()
         } else {
+            // Turning the flag off can leave the menu item showing, but here it waits for the delay too.
+            mustShowUpdateIndicators = false
             scheduleDelayedNotification(delay: delay)
         }
     }

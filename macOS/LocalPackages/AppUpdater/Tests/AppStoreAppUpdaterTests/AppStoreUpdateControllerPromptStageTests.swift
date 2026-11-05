@@ -37,6 +37,7 @@ final class AppStoreUpdateControllerPromptStageTests {
     private static let olderVersion = "0.0.1"
 
     private let featureFlagger = MockFeatureFlagger()
+    private let notificationPresenter = MockNotificationPresenter()
     private let releaseDate = Date(timeIntervalSince1970: 1_793_207_100)
     private lazy var now = releaseDate
     private lazy var tracker = UpdatePromptStageTracker(
@@ -64,7 +65,7 @@ final class AppStoreUpdateControllerPromptStageTests {
                                         updatePromptStageTracker: tracker,
                                         releaseChecker: LatestReleaseChecker(baseURL: "https://test.example.com/",
                                                                              urlSession: URLSession(configuration: configuration)),
-                                        notificationPresenter: MockNotificationPresenter(),
+                                        notificationPresenter: notificationPresenter,
                                         appVersion: AppVersion(bundle: InstalledVersionBundle()),
                                         now: { [unowned self] in now })
     }
@@ -173,6 +174,43 @@ final class AppStoreUpdateControllerPromptStageTests {
         await controller.performUpdateCheck(dismissRateLimiting: true)
         #expect(tracker.stage == .available)
         #expect(tracker.clockStartDate == now)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("With the flag on, the dot shows only at the first prompt, with no popover", .timeLimit(.minutes(1)))
+    func dotFollowsThePromptStage() async {
+        publish(latest: Self.olderVersion, available: Self.newerVersion)
+        now = releaseDate + .hours(24)
+        let controller = makeController()
+        var shownStages: [UpdatePromptStage] = []
+        let cancellable = controller.pendingUpdatePromptStagePublisher.sink { shownStages.append($0) }
+
+        await controller.performUpdateCheck(dismissRateLimiting: true)
+        #expect(controller.hasPendingUpdate)
+        #expect(!controller.needsNotificationDot)
+
+        tracker.moveClock(to: .firstPrompt)
+        #expect(controller.needsNotificationDot)
+
+        tracker.moveClock(to: .secondPrompt)
+        #expect(!controller.needsNotificationDot, "the toolbar button takes over from the dot")
+
+        #expect(shownStages == [.none, .available, .firstPrompt, .secondPrompt])
+        #expect(notificationPresenter.shownUpdateTypes.isEmpty)
+        cancellable.cancel()
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("With the flag off, finding an update shows the dot and the popover straight away", .timeLimit(.minutes(1)))
+    func flagOffShowsDotAndPopover() async {
+        featureFlagger.featuresStub[FeatureFlag.moreProminentUpdates.rawValue] = false
+        publish(latest: Self.newerVersion, available: Self.newerVersion)
+        let controller = makeController()
+
+        await controller.performUpdateCheck(dismissRateLimiting: true)
+
+        #expect(controller.needsNotificationDot)
+        #expect(notificationPresenter.shownUpdateTypes == [.regular])
     }
 
     @available(iOS 16, macOS 13, *)

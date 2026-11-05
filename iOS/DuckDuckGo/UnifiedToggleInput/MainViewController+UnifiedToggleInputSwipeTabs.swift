@@ -90,7 +90,7 @@ extension MainViewController {
               tabManager.currentTabsModel.currentTab?.isAITab == true,
               let coordinator = unifiedToggleInputCoordinator else { return }
         let tabURL = tabManager.controller(for: tab)?.url ?? tab.link?.url
-        coordinator.viewController.crossfadePlaceholder(hasSubmittedPrompt: tabURL?.duckAIChatID != nil)
+        coordinator.crossfadePlaceholder(toMatch: tab.uid, hasSubmittedPrompt: tabURL?.duckAIChatID != nil)
     }
 
     /// The Duck.ai header holds no text, so swiping it can't interfere with editing the focused chat input.

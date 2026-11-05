@@ -2702,6 +2702,21 @@ final class SwipeChromeRefinementsFlagTests: XCTestCase {
         featureFlagger.enabledFeatureFlags = [.aiChatTabHandoffImprovements]
         XCTAssertFalse(featureFlagger.isAIChatSwipeChromeRefinementsEnabled)
     }
+
+    func testWhenFlagTurnsOffWhileRunningThenCollapsedBarDropsItsFloatingOffset() {
+        let coordinator = MainViewCoordinator(parentController: UIViewController())
+        coordinator.unifiedToggleInputContainer = UIView()
+        coordinator.aiTabCollapsedTopSeparator = UIView()
+        coordinator.unifiedToggleInputContainer.transform = CGAffineTransform(translationX: 12, y: 20)
+        coordinator.aiTabCollapsedTopSeparator.transform.ty = 20
+        coordinator.isAITabCollapsedBarFloatingOffsetEnabled = { false }
+
+        coordinator.applyAITabCollapsedBarFloatingOffset()
+
+        XCTAssertEqual(coordinator.unifiedToggleInputContainer.transform.ty, 0)
+        XCTAssertEqual(coordinator.unifiedToggleInputContainer.transform.tx, 12)
+        XCTAssertEqual(coordinator.aiTabCollapsedTopSeparator.transform.ty, 0)
+    }
 }
 
 final class LiveTabSwipePolicyTests: XCTestCase {

@@ -645,8 +645,8 @@ class MainViewCoordinator {
         return max(0, BrowserToolbarView.standaloneFloatingBottomOffset(in: superview))
     }
 
-    private func applyAITabCollapsedBarFloatingOffset() {
-        guard isAITabCollapsedBarFloatingOffsetEnabled() else { return }
+    /// Applied even with the flag off, so a flag turned off mid-session drops the offset it left behind.
+    func applyAITabCollapsedBarFloatingOffset() {
         let offset = aiTabCollapsedTopSeparatorLogicallyVisible ? aiTabCollapsedBarFloatingOffset : 0
         // Only the vertical part, so a swipe's horizontal shift of the same views survives.
         unifiedToggleInputContainer?.transform.ty = offset

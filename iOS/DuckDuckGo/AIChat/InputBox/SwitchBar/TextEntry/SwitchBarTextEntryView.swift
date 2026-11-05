@@ -589,9 +589,11 @@ class SwitchBarTextEntryView: UIView {
         setPlaceholderText(placeholderText(for: currentMode))
     }
 
-    /// Fades to the placeholder a chat with or without submitted prompts shows, ahead of the state itself changing.
-    func crossfadePlaceholder(hasSubmittedPrompt: Bool) {
-        let text = placeholderText(for: currentMode, hasSubmittedPrompt: hasSubmittedPrompt)
+    /// Fades to the placeholder another chat shows, ahead of the input switching to that chat's state.
+    func crossfadePlaceholder(hasSubmittedPrompt: Bool, isImageGenerationSelected: Bool) {
+        let text = placeholderText(for: currentMode,
+                                   hasSubmittedPrompt: hasSubmittedPrompt,
+                                   isImageGenerationSelected: isImageGenerationSelected)
         guard placeholderLabel.text != text else { return }
         UIView.transition(with: placeholderLabel, duration: 0.2, options: .transitionCrossDissolve) {
             self.setPlaceholderText(text)
@@ -599,10 +601,12 @@ class SwitchBarTextEntryView: UIView {
     }
 
     private func placeholderText(for mode: TextEntryMode) -> String {
-        placeholderText(for: mode, hasSubmittedPrompt: handler.hasSubmittedPrompt)
+        placeholderText(for: mode,
+                        hasSubmittedPrompt: handler.hasSubmittedPrompt,
+                        isImageGenerationSelected: handler.isImageGenerationSelected)
     }
 
-    private func placeholderText(for mode: TextEntryMode, hasSubmittedPrompt: Bool) -> String {
+    private func placeholderText(for mode: TextEntryMode, hasSubmittedPrompt: Bool, isImageGenerationSelected: Bool) -> String {
         switch mode {
         case .search:
             return UserText.searchDuckDuckGo
@@ -610,7 +614,7 @@ class SwitchBarTextEntryView: UIView {
             if hasSubmittedPrompt {
                 return UserText.aiChatFollowUpPlaceholder
             }
-            return handler.isImageGenerationSelected
+            return isImageGenerationSelected
                 ? UserText.aiChatImageGenerationPlaceholder
                 : UserText.searchInputFieldPlaceholderDuckAI
         }

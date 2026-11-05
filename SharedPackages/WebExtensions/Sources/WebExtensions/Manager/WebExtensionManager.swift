@@ -902,7 +902,10 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
         disabledExtension.isDisabled = true
         installationStore.update(disabledExtension)
 
-        reportEnabledStateChange(isEnabled: false, storeIdentity: installedExtension.storeIdentity)
+        // Unloading an extension that was disabled while loading doesn't change its state.
+        if !installedExtension.isDisabled {
+            reportEnabledStateChange(isEnabled: false, storeIdentity: installedExtension.storeIdentity)
+        }
 
         Logger.webExtensions.info("✅ Disabled extension '\(identifier)'")
         notifyUpdate()

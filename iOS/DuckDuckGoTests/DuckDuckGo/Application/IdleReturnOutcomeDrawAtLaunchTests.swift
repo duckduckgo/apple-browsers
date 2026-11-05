@@ -1,5 +1,5 @@
 //
-//  IdleReturnLaunchLandingTests.swift
+//  IdleReturnOutcomeDrawAtLaunchTests.swift
 //  DuckDuckGo
 //
 //  Copyright © 2026 DuckDuckGo. All rights reserved.
@@ -20,7 +20,7 @@
 import Testing
 @testable import DuckDuckGo
 
-struct IdleReturnLaunchLandingTests {
+struct IdleReturnOutcomeDrawAtLaunchTests {
 
     private let ntp = IdleReturnOutcome.afterIdle(treatment: .ntp, timeAwayMs: 61_000)
 
@@ -71,23 +71,6 @@ struct IdleReturnLaunchLandingTests {
           arguments: [IdleReturnOutcome.afterIdle(treatment: .lut, timeAwayMs: 61_000), .ordinary(timeAwayMs: 5_000)])
     func otherOutcomesAreNotDrawnAtLaunch(outcome: IdleReturnOutcome) {
         #expect(!draws(outcome))
-    }
-
-    @MainActor
-    @available(iOS 16, macOS 13, *)
-    @Test("A drawn New Tab Page is taken once", .timeLimit(.minutes(1)))
-    func drawnNewTabPageIsTakenOnce() {
-        let landing = IdleReturnLaunchLanding(drewNewTabPage: true)
-        #expect(landing.takeDrawnNewTabPage())
-        #expect(!landing.takeDrawnNewTabPage())
-    }
-
-    @MainActor
-    @available(iOS 16, macOS 13, *)
-    @Test("Nothing is taken when the launch didn't draw the New Tab Page", .timeLimit(.minutes(1)))
-    func nothingIsTakenWhenNotDrawn() {
-        let landing = IdleReturnLaunchLanding(drewNewTabPage: false)
-        #expect(!landing.takeDrawnNewTabPage())
     }
 
 }

@@ -1,5 +1,5 @@
 //
-//  IdleReturnLaunchLanding.swift
+//  IdleReturnOutcome+DrawAtLaunch.swift
 //  DuckDuckGo
 //
 //  Copyright © 2026 DuckDuckGo. All rights reserved.
@@ -29,27 +29,6 @@ extension IdleReturnOutcome {
     func drawsNewTabPageAtLaunch(isFeatureOn: Bool, hasLaunchAction: Bool, isAppLockEnabled: Bool, hasPageToReplace: Bool) -> Bool {
         guard isFeatureOn, case .afterIdle(.ntp, _) = self else { return false }
         return !hasLaunchAction && !isAppLockEnabled && hasPageToReplace
-    }
-
-}
-
-/// Tells the launch handling that the after-idle New Tab Page is already drawn, so it records that page instead of opening one.
-/// A class so every foreground shares it: the first to take it records the page, later returns don't.
-/// Only this is kept, not the outcome: the page can be drawn long before the user arrives, so the
-/// outcome is decided again then.
-@MainActor
-final class IdleReturnLaunchLanding {
-
-    private var drewNewTabPage: Bool
-
-    init(drewNewTabPage: Bool) {
-        self.drewNewTabPage = drewNewTabPage
-    }
-
-    /// True for the first caller only, so the arrival is recorded once however many foregrounds try.
-    func takeDrawnNewTabPage() -> Bool {
-        defer { drewNewTabPage = false }
-        return drewNewTabPage
     }
 
 }

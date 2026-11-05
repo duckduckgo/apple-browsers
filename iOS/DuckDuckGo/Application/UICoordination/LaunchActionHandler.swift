@@ -97,7 +97,8 @@ final class LaunchActionHandler: LaunchActionHandling {
     private let launchSourceManager: LaunchSourceManaging
     /// Decided when the app comes to the foreground, so a background during the auth wait can't change it.
     private let idleReturnOutcome: IdleReturnOutcome
-    private let idleReturnLaunchLanding: IdleReturnLaunchLanding
+    /// Whether the launch already drew the after-idle New Tab Page; used by the first action only.
+    private var drewNewTabPage: Bool
     private let featureFlagger: FeatureFlagger
     private weak var idleReturnDelegate: IdleReturnLaunchDelegate?
 
@@ -107,7 +108,7 @@ final class LaunchActionHandler: LaunchActionHandling {
          keyboardPresenter: KeyboardPresenting,
          launchSourceService: LaunchSourceManaging,
          idleReturnOutcome: IdleReturnOutcome,
-         idleReturnLaunchLanding: IdleReturnLaunchLanding,
+         drewNewTabPage: Bool = false,
          featureFlagger: FeatureFlagger,
          idleReturnDelegate: IdleReturnLaunchDelegate? = nil,
          pixelFiring: (any PixelKitFiring)? = PixelKit.shared) {
@@ -117,15 +118,16 @@ final class LaunchActionHandler: LaunchActionHandling {
         self.keyboardPresenter = keyboardPresenter
         self.launchSourceManager = launchSourceService
         self.idleReturnOutcome = idleReturnOutcome
-        self.idleReturnLaunchLanding = idleReturnLaunchLanding
+        self.drewNewTabPage = drewNewTabPage
         self.featureFlagger = featureFlagger
         self.idleReturnDelegate = idleReturnDelegate
         self.pixelFiring = pixelFiring
     }
 
     func handleLaunchAction(_ action: LaunchAction) {
-        // Taken by whichever action comes first, so a link can't leave it behind for a later return.
-        let drewNewTabPage = idleReturnLaunchLanding.takeDrawnNewTabPage()
+        // Only the first action finds the drawn page; a link opened later while active doesn't.
+        let drewNewTabPage = self.drewNewTabPage
+        self.drewNewTabPage = false
         switch action {
         case .openURL(let url):
             launchSourceManager.setSource(.URL)

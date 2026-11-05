@@ -70,6 +70,5 @@ struct SceneDependencies {
     let screenshotService: ScreenshotService
     let authenticationService: AuthenticationService
     let autoClearService: AutoClearService
-    let idleReturnLaunchLanding: IdleReturnLaunchLanding
 
 }

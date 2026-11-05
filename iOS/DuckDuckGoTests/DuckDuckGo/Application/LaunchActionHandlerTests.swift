@@ -144,7 +144,7 @@ final class LaunchActionHandlerTests {
     lazy var launchActionHandler = makeHandler()
 
     func makeHandler(outcome: IdleReturnOutcome = .ordinary(timeAwayMs: nil),
-                     landing: IdleReturnLaunchLanding? = nil) -> LaunchActionHandler {
+                     drewNewTabPage: Bool = false) -> LaunchActionHandler {
         LaunchActionHandler(
             urlHandler: urlHandler,
             shortcutItemHandler: shortcutItemHandler,
@@ -152,7 +152,7 @@ final class LaunchActionHandlerTests {
             keyboardPresenter: keyboardPresenter,
             launchSourceService: launchSourceManager,
             idleReturnOutcome: outcome,
-            idleReturnLaunchLanding: landing ?? IdleReturnLaunchLanding(drewNewTabPage: false),
+            drewNewTabPage: drewNewTabPage,
             featureFlagger: featureFlagger,
             idleReturnDelegate: idleReturnDelegate,
             pixelFiring: pixelKitMock
@@ -568,7 +568,7 @@ final class LaunchActionHandlerTests {
     @available(iOS 16, *)
     @Test("A New Tab Page drawn at launch records its arrival, even when the return now evaluates as ordinary", .timeLimit(.minutes(1)))
     func drawnNewTabPageRecordsItsArrival() {
-        let handler = makeHandler(outcome: .ordinary(timeAwayMs: 42_000), landing: IdleReturnLaunchLanding(drewNewTabPage: true))
+        let handler = makeHandler(outcome: .ordinary(timeAwayMs: 42_000), drewNewTabPage: true)
 
         handler.handleLaunchAction(.standardLaunch(lastBackgroundDate: Date(), isFirstForeground: true))
 
@@ -582,7 +582,7 @@ final class LaunchActionHandlerTests {
     @Test("The keyboard follows a drawn New Tab Page like one opened after idle", .timeLimit(.minutes(1)))
     func drawnNewTabPageRaisesTheKeyboard() {
         featureFlagger.enabledFeatureFlags = [.alwaysShowKeyboardOnNewTabPage]
-        let handler = makeHandler(landing: IdleReturnLaunchLanding(drewNewTabPage: true))
+        let handler = makeHandler(drewNewTabPage: true)
 
         handler.handleLaunchAction(.standardLaunch(lastBackgroundDate: Date(), isFirstForeground: true))
 
@@ -593,7 +593,7 @@ final class LaunchActionHandlerTests {
     @available(iOS 16, *)
     @Test("A drawn New Tab Page is recorded once, then returns are evaluated again", .timeLimit(.minutes(1)))
     func drawnNewTabPageIsRecordedOnce() {
-        let handler = makeHandler(outcome: .ordinary(timeAwayMs: nil), landing: IdleReturnLaunchLanding(drewNewTabPage: true))
+        let handler = makeHandler(outcome: .ordinary(timeAwayMs: nil), drewNewTabPage: true)
         handler.handleLaunchAction(.standardLaunch(lastBackgroundDate: Date(), isFirstForeground: true))
         idleReturnDelegate.recordNewTabPageDrawnAtLaunchCalled = false
 
@@ -613,7 +613,7 @@ final class LaunchActionHandlerTests {
         default: .handleUserActivity(NSUserActivity(activityType: "test"))
         }
         featureFlagger.enabledFeatureFlags = [.alwaysShowKeyboardOnNewTabPage]
-        let handler = makeHandler(outcome: .ordinary(timeAwayMs: 42_000), landing: IdleReturnLaunchLanding(drewNewTabPage: true))
+        let handler = makeHandler(outcome: .ordinary(timeAwayMs: 42_000), drewNewTabPage: true)
 
         handler.handleLaunchAction(action)
 
@@ -625,7 +625,7 @@ final class LaunchActionHandlerTests {
     @available(iOS 16, *)
     @Test("A launch action handled first leaves no drawn New Tab Page for a later return", .timeLimit(.minutes(1)))
     func launchActionTakesTheDrawnNewTabPage() {
-        let handler = makeHandler(outcome: .ordinary(timeAwayMs: nil), landing: IdleReturnLaunchLanding(drewNewTabPage: true))
+        let handler = makeHandler(outcome: .ordinary(timeAwayMs: nil), drewNewTabPage: true)
         handler.handleLaunchAction(.openURL(URL(string: "https://example.com")!))
         idleReturnDelegate.recordNewTabPageDrawnAtLaunchCalled = false
 

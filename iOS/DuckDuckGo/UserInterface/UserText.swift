@@ -318,6 +318,16 @@ public struct UserText {
     public static let findInPage = NSLocalizedString("findinpage.title", value: "Find in Page", comment: "")
     public static let findInPageCount = NSLocalizedString("findinpage.count", value: "%1$d of %2$d", comment: "Used to indicate number of entries found and position of the currently viewed one: e.g. 1 of 10")
 
+    public static let menuBookmarks = NSLocalizedString("menuBookmarks", value: "Bookmarks", comment: "iPad menu bar title")
+    public static let menuFavorites = NSLocalizedString("menuFavorites", value: "Favorites", comment: "iPad menu bar submenu")
+    public static let menuShowBookmarks = NSLocalizedString("menuShowBookmarks", value: "Show Bookmarks", comment: "iPad menu bar command")
+    public static let menuHideBookmarks = NSLocalizedString("menuHideBookmarks", value: "Hide Bookmarks", comment: "iPad menu bar command")
+    public static let menuImportBookmarks = NSLocalizedString("menuImportBookmarks", value: "Import Bookmarks...", comment: "iPad menu bar command")
+    public static let menuExportBookmarks = NSLocalizedString("menuExportBookmarks", value: "Export Bookmarks...", comment: "iPad menu bar command")
+    public static let menuImportBookmarksAndPasswords = NSLocalizedString("menuImportBookmarksAndPasswords", value: "Import Bookmarks and Passwords...", comment: "iPad menu bar command")
+    public static let menuSetDefaultBrowser = NSLocalizedString("menuSetDefaultBrowser", value: "Set DuckDuckGo As Default Browser...", comment: "iPad menu bar command")
+    public static let menuAddToDock = NSLocalizedString("menuAddToDock", value: "Add DuckDuckGo to Dock...", comment: "iPad menu bar command")
+    public static let menuAddWidget = NSLocalizedString("menuAddWidget", value: "Add Widget to Home Screen...", comment: "iPad menu bar command")
     public static let menuSettings = NSLocalizedString("menuSettings", value: "DuckDuckGo Settings...", comment: "iPad menu bar command")
     public static let menuVoiceSearch = NSLocalizedString("menuVoiceSearch", value: "Private Voice Search", comment: "iPad menu bar command")
     public static let menuOpenLocation = NSLocalizedString("menuOpenLocation", value: "Open Location...", comment: "iPad menu bar command")
@@ -328,6 +338,8 @@ public struct UserText {
     public static let menuShowPasswords = NSLocalizedString("menuShowPasswords", value: "Show Passwords", comment: "iPad menu bar command")
     public static let menuHidePasswords = NSLocalizedString("menuHidePasswords", value: "Hide Passwords", comment: "iPad menu bar command")
     public static let menuShowDownloads = NSLocalizedString("menuShowDownloads", value: "Show Downloads", comment: "iPad menu bar command")
+    public static let menuShowDuckAIButton = NSLocalizedString("menuShowDuckAIButton", value: "Show Duck.ai Button", comment: "iPad menu bar command")
+    public static let menuHideDuckAIButton = NSLocalizedString("menuHideDuckAIButton", value: "Hide Duck.ai Button", comment: "iPad menu bar command")
     public static let menuHideDownloads = NSLocalizedString("menuHideDownloads", value: "Hide Downloads", comment: "iPad menu bar command")
     public static let menuActualSize = NSLocalizedString("menuActualSize", value: "Actual Size", comment: "iPad menu bar command")
     public static let menuNewTabOnRight = NSLocalizedString("menuNewTabOnRight", value: "New Tab on Right", comment: "iPad menu bar command")
@@ -339,6 +351,13 @@ public struct UserText {
     public static let menuBack = NSLocalizedString("menuBack", value: "Back", comment: "iPad menu bar command")
     public static let menuForward = NSLocalizedString("menuForward", value: "Forward", comment: "iPad menu bar command")
     public static let menuClearTabsAndData = NSLocalizedString("menuClearTabsAndData", value: "Clear Tabs and Data", comment: "iPad menu bar command")
+    public static let menuDuckAI = NotLocalizedString("menuDuckAI", value: "Duck.ai", comment: "iPad menu bar title. Feature name. Not translated")
+    public static let menuOpenDuckAI = NSLocalizedString("menuOpenDuckAI", value: "Open Duck.ai", comment: "iPad Duck.ai menu bar command")
+    public static let menuNewChat = NSLocalizedString("menuNewChat", value: "New Chat", comment: "iPad Duck.ai menu bar command")
+    public static let menuNewVoiceChat = NSLocalizedString("menuNewVoiceChat", value: "New Voice Chat", comment: "iPad Duck.ai menu bar command")
+    public static let menuNewImageChat = NSLocalizedString("menuNewImageChat", value: "New Image Chat", comment: "iPad Duck.ai menu bar command")
+    public static let menuRecentChats = NSLocalizedString("menuRecentChats", value: "Recent Chats", comment: "iPad Duck.ai menu bar section header")
+    public static let menuDeleteAllChats = NSLocalizedString("menuDeleteAllChats", value: "Delete All Chats...", comment: "iPad Duck.ai menu bar command")
     public static func menuSelectTab(_ number: Int) -> String {
         String(format: NSLocalizedString("menuSelectTab", value: "Select Tab %d", comment: "iPad menu bar command selecting a numbered tab"), number)
     }
@@ -530,6 +549,9 @@ public struct UserText {
     public static let onboardingDefaultBrowserMaybeLater = NSLocalizedString("onboardingDefaultBrowserMaybeLater", value: "Maybe Later", comment: "")
 
     public static let fireproofingListTitle = NSLocalizedString("preserveLogins.domain.list.title", value: "Fireproof Sites", comment: "Section header above Fireproofed websites list")
+    public static let fireproofingAskOnSignIn = NSLocalizedString("preserveLogins.askOnSignIn", value: "Ask to Fireproof sites on sign-in", comment: "Fireproofing setting toggle label")
+    public static let fireproofingEmptyState = NSLocalizedString("preserveLogins.emptyState", value: "No Fireproof sites yet", comment: "Empty Fireproof sites list")
+    public static let fireproofingRemoveAllSites = NSLocalizedString("preserveLogins.removeAllSites", value: "Remove All Fireproof Sites", comment: "Button to remove all Fireproof sites")
     public static let fireproofingListFooter = NSLocalizedString("preserveLogins.domain.list.footer", value: "Websites rely on cookies to keep you signed in. When you Fireproof a site, cookies won’t be erased and you’ll stay signed in, even after using the Fire Button. We still block third-party trackers found on Fireproof websites.", comment: "")
     public static let fireproofingRemoveAllTitle = NSLocalizedString("preserveLogins.remove.all", value: "Remove All", comment: "Alert title")
     public static let fireproofingRemoveAllOk = NSLocalizedString("preserveLogins.remove.all.ok", value: "OK", comment: "Confirmation button in alert")
@@ -1497,6 +1519,11 @@ public struct UserText {
     public static let syncPromoCloseAccessibilityLabel = NSLocalizedString("sync.promo.close.accessibility.label", value: "Dismiss sync promotion", comment: "Accessibility label for the close button on the Sync Promotion banner")
     public static let syncPromoToggleTitle = NSLocalizedString("sync.promo.toggle.title", value: "Sync & Backup", comment: "Label for a toggle in the Sync Promotion banner that opens Sync settings and starts setting up Sync with another device")
     public static let syncPromoPasswordsRedesignMessage = NSLocalizedString("sync.promo.passwords.redesign.message", value: "End-to-end encrypted. Nobody can see your passwords, not even us.", comment: "Message for the redesigned Sync Promotion banner on the Passwords screen")
+    public static let syncPromoBookmarksAnotherDeviceTitle = NSLocalizedString("sync.promo.bookmarks.another-device.title", value: "Sync bookmarks with your Desktop app.", comment: "Title for the Sync Promotion banner on the Bookmarks screen, shown when Sync is on but only this device is connected")
+    public static let syncPromoAnotherDeviceGetDesktopAppAction = NSLocalizedString("sync.promo.bookmarks.another-device.get-desktop-app.action", value: "Get App", comment: "Title for a button in the Sync Promotion banner on the Bookmarks or Passwords screen that opens a screen with links to get DuckDuckGo on other platforms")
+    public static let syncPromoBookmarksAnotherDeviceSyncAction = NSLocalizedString("sync.promo.bookmarks.another-device.sync.action", value: "Sync Bookmarks", comment: "Title for a button in the Sync Promotion banner on the Bookmarks screen that opens Sync settings to connect another device")
+    public static let syncPromoPasswordsAnotherDeviceTitle = NSLocalizedString("sync.promo.passwords.another-device.title", value: "Sync passwords with your Desktop app.", comment: "Title for the Sync Promotion banner on the Passwords screen, shown when Sync is on but only this device is connected")
+    public static let syncPromoPasswordsAnotherDeviceSyncAction = NSLocalizedString("sync.promo.passwords.another-device.sync.action", value: "Sync Passwords", comment: "Title for a button in the Sync Promotion banner on the Passwords screen that opens Sync settings to connect another device")
 
     // MARK: Sync Recovery Prompts
     public static func syncRecoveryPromptTitle(deviceName: String) -> String {

@@ -23,9 +23,12 @@ import FeatureFlags_iOS
 extension MainViewController {
     
     override var keyCommands: [UIKeyCommand]? {
-        let menuSpec = MainMenuSpec(isEnabled: featureFlagger.isFeatureOn(.ipadMenuBar),
+        let menuEnabled = featureFlagger.isFeatureOn(.ipadMenuBar)
+        let menuSpec = MainMenuSpec(isEnabled: menuEnabled,
                                     context: .init(voiceSearchEnabled: voiceSearchHelper.isVoiceSearchEnabled,
-                                                   fireModeEnabled: fireModeCapability.isFireModeEnabled))
+                                                   fireModeEnabled: fireModeCapability.isFireModeEnabled,
+                                                   aiChatEnabled: aiChatSettings.isAIChatEnabled,
+                                                   favorites: menuEnabled ? mainMenuBookmarks.favorites : []))
         let settingsCommand = UIKeyCommand(title: UserText.settingsTitle, action: #selector(keyboardSettings),
                                           input: ",", modifierFlags: .command)
         settingsCommand.wantsPriorityOverSystemBehavior = true
@@ -160,14 +163,17 @@ extension MainViewController {
         guard featureFlagger.isFeatureOn(.ipadMenuBar), let menuCommand = MainMenuCommand(action: command.action) else { return }
         let availability = menuCommandAvailability
         command.applyMenuState(title: availability.title(for: menuCommand),
-                               isEnabled: availability.isEnabled(menuCommand) && isMenuTabSelectionAvailable(command))
+                               isEnabled: availability.isEnabled(menuCommand) && isMenuTabSelectionAvailable(command)
+                                   && isMenuChatCommandAvailable(command),
+                               isHidden: availability.isHidden(menuCommand))
     }
 
     override func canPerformAction(_ action: Selector, withSender sender: Any?) -> Bool {
         guard featureFlagger.isFeatureOn(.ipadMenuBar), let command = MainMenuCommand(action: action) else {
             return super.canPerformAction(action, withSender: sender)
         }
-        return menuCommandAvailability.isEnabled(command) && isMenuTabSelectionAvailable(sender as? UICommand)
+        let menuCommand = sender as? UICommand
+        return menuCommandAvailability.isEnabled(command) && isMenuTabSelectionAvailable(menuCommand) && isMenuChatCommandAvailable(menuCommand)
     }
 
     @objc func keyboardMoveSelectionUp() {
@@ -241,8 +247,18 @@ extension MainViewController {
     }
 
     @objc func keyboardFire() {
+        guard featureFlagger.isFeatureOn(.ipadMenuBar) else {
+            KeyboardShortcutPixel.fireUsed(with: pixelFiring)
+            onQuickFirePressed()
+            return
+        }
+        if let tabSwitcherController {
+            tabSwitcherController.keyboardFire()
+            return
+        }
         KeyboardShortcutPixel.fireUsed(with: pixelFiring)
-        onQuickFirePressed()
+        guard isShortcutEnabled() else { return }
+        performFirePressed(prefersSheet: true)
     }
 
     @objc func keyboardSettings() {
@@ -401,12 +417,14 @@ extension MainViewController {
 
     @objc func keyboardAddBookmark() {
         KeyboardShortcutPixel.fireUsed(with: pixelFiring)
+        guard isMenuCommandAllowed(.addBookmark) else { return }
         guard isShortcutEnabled() else { return }
         saveBookmark(favorite: false)
     }
 
     @objc func keyboardAddFavorite() {
         KeyboardShortcutPixel.fireUsed(with: pixelFiring)
+        guard isMenuCommandAllowed(.addFavorite) else { return }
         guard isShortcutEnabled() else { return }
         saveBookmark(favorite: true)
     }

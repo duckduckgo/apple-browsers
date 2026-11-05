@@ -17,13 +17,17 @@
 //  limitations under the License.
 //
 
+import DesignResourcesKitIcons
 import UIKit
 
 enum MainMenuCommand: CaseIterable {
+    case openDuckAI, newChat, newVoiceChat, newImageChat, openRecentChat, deleteAllChats
+    case showBookmarks, addBookmark, addFavorite, importBookmarks, exportBookmarks, openBookmark
     case settings, newTab, newFireTab, voiceSearch, location, closeTab, share, printPage
     case find, stop, reload, showTabs, showPasswords, showDownloads, zoomIn, zoomOut, actualSize
     case newTabOnRight, duplicateTab, previousTab, nextTab, about, feedback
     case selectTab, back, forward, findNext, findPrevious, fire
+    case importData, setDefaultBrowser, addToDock, addWidget, toggleDuckAIButton
 }
 
 struct MainMenuSpec {
@@ -36,6 +40,9 @@ struct MainMenuSpec {
     struct Context: Equatable {
         var voiceSearchEnabled = false
         var fireModeEnabled = false
+        var aiChatEnabled = false
+        var favorites: [MainMenuBookmark] = []
+        var isOnboarding = false
     }
 
     struct Shortcut: Equatable {
@@ -50,6 +57,7 @@ struct MainMenuSpec {
         let requirement: KeyPath<Context, Bool>?
         /// Passed to the command as its property list, which also tells apart commands that share an action.
         var argument: String?
+        var image: UIImage?
     }
 
     struct Menu {
@@ -95,8 +103,8 @@ struct MainMenuSpec {
     }
 
     private static var browserSections: [MainMenuSection] {
-        [SettingsMenuSection(title: UserText.menuSettings), FileMenuSection(), EditMenuSection(),
-         ViewMenuSection(), WindowMenuSection(), HelpMenuSection()]
+        [SettingsMenuSection(title: UserText.menuSettings, image: DesignSystemImages.Glyphs.Size16.settings, includesAppItems: true), FileMenuSection(), EditMenuSection(),
+         ViewMenuSection(), DuckAIMenuSection(), BookmarksMenuSection(), WindowMenuSection(), HelpMenuSection()]
     }
 
     private static var baselineSections: [MainMenuSection] {
@@ -119,9 +127,15 @@ struct MainMenuSpec {
             removedMenus = []
             return
         }
+        keyCommandItems = Self.keyCommandOnlyItems
+        // Onboarding offers none of the browser's commands, so the menu bar shows only the system's own menus.
+        guard shortcutRegistration != .menu || !context.isOnboarding else {
+            entries = []
+            removedMenus = [.format, .file, .view]
+            return
+        }
         removedMenus = shortcutRegistration == .menu ? [.format] : []
         entries = Self.entries(of: Self.browserSections, in: context)
-        keyCommandItems = Self.keyCommandOnlyItems
     }
 
     private static func entries(of sections: [MainMenuSection], in context: Context) -> [Entry] {
@@ -168,9 +182,9 @@ struct MainMenuSpec {
 
     static func item(_ command: MainMenuCommand, _ title: String,
                      _ input: String? = nil, _ modifiers: UIKeyModifierFlags = [],
-                     requires requirement: KeyPath<Context, Bool>? = nil) -> Item {
+                     requires requirement: KeyPath<Context, Bool>? = nil, image: UIImage? = nil) -> Item {
         Item(command: command, title: title, shortcut: input.map { Shortcut(input: $0, modifiers: modifiers) },
-             requirement: requirement)
+             requirement: requirement, image: image)
     }
 
     static func group(_ identifier: String, _ items: [Item]) -> Menu {
@@ -193,6 +207,18 @@ struct MainMenuSpec {
 extension MainMenuCommand {
     var action: Selector {
         switch self {
+        case .openDuckAI: return #selector(MainViewController.menuOpenDuckAI)
+        case .newChat: return #selector(MainViewController.menuNewChat)
+        case .newVoiceChat: return #selector(MainViewController.menuNewVoiceChat)
+        case .newImageChat: return #selector(MainViewController.menuNewImageChat)
+        case .openRecentChat: return #selector(MainViewController.menuOpenRecentChat(_:))
+        case .deleteAllChats: return #selector(MainViewController.menuDeleteAllChats(_:))
+        case .showBookmarks: return #selector(MainViewController.menuToggleBookmarks)
+        case .addBookmark: return #selector(MainViewController.keyboardAddBookmark)
+        case .addFavorite: return #selector(MainViewController.keyboardAddFavorite)
+        case .importBookmarks: return #selector(MainViewController.menuImportBookmarks)
+        case .exportBookmarks: return #selector(MainViewController.menuExportBookmarks)
+        case .openBookmark: return #selector(MainViewController.menuOpenBookmark(_:))
         case .settings: return #selector(MainViewController.keyboardSettings)
         case .newTab: return #selector(MainViewController.keyboardNewTab)
         case .newFireTab: return #selector(MainViewController.keyboardNewFireTab)
@@ -207,6 +233,7 @@ extension MainMenuCommand {
         case .showTabs: return #selector(MainViewController.keyboardShowAllTabs)
         case .showPasswords: return #selector(MainViewController.menuTogglePasswords)
         case .showDownloads: return #selector(MainViewController.menuToggleDownloads)
+        case .toggleDuckAIButton: return #selector(MainViewController.menuToggleDuckAIButton)
         case .zoomIn: return #selector(MainViewController.keyboardZoomIn)
         case .zoomOut: return #selector(MainViewController.keyboardZoomOut)
         case .actualSize: return #selector(MainViewController.keyboardZoomReset)
@@ -222,6 +249,10 @@ extension MainMenuCommand {
         case .findNext: return #selector(MainViewController.keyboardFindNext)
         case .findPrevious: return #selector(MainViewController.keyboardFindPrevious)
         case .fire: return #selector(MainViewController.keyboardFire)
+        case .importData: return #selector(MainViewController.menuImportData)
+        case .setDefaultBrowser: return #selector(MainViewController.menuSetDefaultBrowser)
+        case .addToDock: return #selector(MainViewController.menuAddToDock)
+        case .addWidget: return #selector(MainViewController.menuAddWidget)
         }
     }
 

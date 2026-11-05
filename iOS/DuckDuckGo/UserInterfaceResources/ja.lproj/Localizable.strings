@@ -6016,3 +6016,12 @@
 /* Title for screen to screen confirming what data to import from a zip file (bookmarks and /or passwords) */
 "zip.content.import.types.title" = "何をインポートしますか？";
 
+
+/* Fireproofing setting toggle label */
+"preserveLogins.askOnSignIn" = "サインイン時にサイトをFireproof設定するか尋ねる";
+
+/* Empty Fireproof sites list */
+"preserveLogins.emptyState" = "まだFireproofサイトはありません";
+
+/* Button to remove all Fireproof sites */
+"preserveLogins.removeAllSites" = "すべてのFireproofサイトを削除";

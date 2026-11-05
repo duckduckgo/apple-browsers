@@ -48,7 +48,7 @@ public protocol SyncManagementViewModelDelegate: AnyObject {
     func fireSyncSetupPixel(event: SyncSettingsViewModel.SyncSetupPixelEvent)
     func fireDeviceDetailsPixel(event: SyncSettingsViewModel.DeviceDetailsPixelEvent)
     func fireTurnOffSyncSheetPixel(event: SyncSettingsViewModel.TurnOffSyncSheetPixelEvent)
-    func shareLink(for url: URL, with message: String, from rect: CGRect)
+    func shareLink(for url: URL, with message: String, from sourceView: UIView)
 
     // Simplified sync setup experiment
     func simplifiedCreateAccountAndStartSyncing(optionsViewModel: SyncSettingsViewModel)
@@ -712,8 +712,8 @@ public class SyncSettingsViewModel: ObservableObject {
         delegate?.launchAutofillCreditCardsViewController()
     }
 
-    public func shareLinkPressed(for url: URL, with message: String, from rect: CGRect) {
-        delegate?.shareLink(for: url, with: message, from: rect)
+    public func shareLinkPressed(for url: URL, with message: String, from sourceView: UIView) {
+        delegate?.shareLink(for: url, with: message, from: sourceView)
     }
 
     public func showOtherPlatformsPressed() {

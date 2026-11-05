@@ -836,6 +836,8 @@
 		3779F74D6E235E2EB699C52A /* AIChatSubmitButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = E72BC1E92F152DE47CC62638 /* AIChatSubmitButton.swift */; };
 		377D801C2AB47FBB002AF251 /* FavoritesDisplayModeSyncHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = 377D801B2AB47FBB002AF251 /* FavoritesDisplayModeSyncHandler.swift */; };
 		377D801F2AB48191002AF251 /* FavoritesDisplayModeSyncHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = 377D801B2AB47FBB002AF251 /* FavoritesDisplayModeSyncHandler.swift */; };
+		3883EE065AE0D2EF3B15A40E /* ChromeWebStoreTabExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5453FDE1C19851597973A1F6 /* ChromeWebStoreTabExtension.swift */; };
+		A62C6838C779E31F1AAF5170 /* ChromeWebStoreTabExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5453FDE1C19851597973A1F6 /* ChromeWebStoreTabExtension.swift */; };
 		377DF17C306D480F00CDD6A7 /* ChromeWebStoreUserScript.swift in Sources */ = {isa = PBXBuildFile; fileRef = 377DF17B306D480F00CDD6A7 /* ChromeWebStoreUserScript.swift */; };
 		377DF17D306D480F00CDD6A7 /* ChromeWebStoreUserScript.swift in Sources */ = {isa = PBXBuildFile; fileRef = 377DF17B306D480F00CDD6A7 /* ChromeWebStoreUserScript.swift */; };
 		378CA39F2FBC79290043CF38 /* AppIcon.icon in Resources */ = {isa = PBXBuildFile; fileRef = 378CA39E2FBC79290043CF38 /* AppIcon.icon */; };
@@ -3809,6 +3811,7 @@
 		3775913529AB9A1C00E26367 /* SyncManagementDialogViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyncManagementDialogViewController.swift; sourceTree = "<group>"; };
 		3776582E27F82E62009A6B35 /* AutofillPreferences.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = AutofillPreferences.swift; sourceTree = "<group>"; };
 		377D801B2AB47FBB002AF251 /* FavoritesDisplayModeSyncHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FavoritesDisplayModeSyncHandler.swift; sourceTree = "<group>"; };
+		5453FDE1C19851597973A1F6 /* ChromeWebStoreTabExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChromeWebStoreTabExtension.swift; sourceTree = "<group>"; };
 		377DF17B306D480F00CDD6A7 /* ChromeWebStoreUserScript.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChromeWebStoreUserScript.swift; sourceTree = "<group>"; };
 		377E54382937B7C400780A0A /* DuckDuckGoAppStoreCI.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = DuckDuckGoAppStoreCI.entitlements; sourceTree = "<group>"; };
 		378B5887295CF2A4002C0CC0 /* Version.xcconfig */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.xcconfig; path = Version.xcconfig; sourceTree = "<group>"; };
@@ -5798,6 +5801,7 @@
 				7BE33DCC2DC12C0300A96502 /* WebExtensionNavigationBarUpdater.swift */,
 				1EC320932F23F12A00A38D09 /* WebExtensionWindowTabProvider+macOS.swift */,
 				1E1B24AD2F4729C100D239CE /* WebExtensionAvailability+macOS.swift */,
+				5453FDE1C19851597973A1F6 /* ChromeWebStoreTabExtension.swift */,
 				377DF17B306D480F00CDD6A7 /* ChromeWebStoreUserScript.swift */,
 				7BD5A0112F0A0C0100000011 /* WebExtensionPageStubUserScript.swift */,
 				23F8D1AE2C4110F89B161808 /* WebExtensionAutofillTakeover.swift */,
@@ -11300,6 +11304,7 @@
 				3706FA91293F65D500E42796 /* PasswordManagementLoginItemView.swift in Sources */,
 				31224EF12F9F9922008E0118 /* BurnerDuckAiStorageRegistry.swift in Sources */,
 				3706FA93293F65D500E42796 /* WKWebView+Download.swift in Sources */,
+				A62C6838C779E31F1AAF5170 /* ChromeWebStoreTabExtension.swift in Sources */,
 				377DF17D306D480F00CDD6A7 /* ChromeWebStoreUserScript.swift in Sources */,
 				7BD5A0132F0A0C0100000013 /* WebExtensionPageStubUserScript.swift in Sources */,
 				F6BF0B5355B30B2DD7AA2DCE /* WebExtensionAutofillTakeover.swift in Sources */,
@@ -12890,6 +12895,7 @@
 				37ABFE7C2DED901200DE39F2 /* SettingsPixel.swift in Sources */,
 				9FFBEE642DDD7A100058B11A /* DefaultBrowserAndDockPromptDebugEventMapper.swift in Sources */,
 				379E877629E98729001C8BB0 /* BookmarksCleanupErrorHandling.swift in Sources */,
+				3883EE065AE0D2EF3B15A40E /* ChromeWebStoreTabExtension.swift in Sources */,
 				377DF17C306D480F00CDD6A7 /* ChromeWebStoreUserScript.swift in Sources */,
 				7BD5A0122F0A0C0100000012 /* WebExtensionPageStubUserScript.swift in Sources */,
 				B73BDC758E413DFF0D2B8186 /* WebExtensionAutofillTakeover.swift in Sources */,

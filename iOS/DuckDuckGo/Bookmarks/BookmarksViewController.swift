@@ -448,11 +448,15 @@ class BookmarksViewController: UIViewController, UITableViewDelegate {
                                           _ indexPath: IndexPath,
                                           _ completion: @escaping (Bool) -> Void) {
         func delete() {
-            let oldCount = viewModel.bookmarks.count
+            let oldCount = tableView.numberOfRows(inSection: indexPath.section)
             viewModel.softDeleteBookmark(bookmark)
-            let newCount = viewModel.bookmarks.count
 
-            // Make sure we are animating only single removal
+            if let dataSource = tableView.dataSource as? SearchBookmarksDataSource {
+                dataSource.results.remove(at: indexPath.row)
+            }
+            let newCount = tableView.dataSource?.tableView(tableView, numberOfRowsInSection: indexPath.section) ?? 0
+
+            // The last search result is replaced by the No Results row, so its row count does not change.
             if newCount > 0 && newCount + 1 == oldCount {
                 tableView.deleteRows(at: [indexPath], with: .fade)
             } else {
@@ -473,9 +477,9 @@ class BookmarksViewController: UIViewController, UITableViewDelegate {
             delete()
         }
 
-        if let dataSource = tableView.dataSource as? SearchBookmarksDataSource {
-            dataSource.results.remove(at: indexPath.row)
+        if tableView.dataSource is SearchBookmarksDataSource {
             delete()
+            completion(true)
             return
         }
 

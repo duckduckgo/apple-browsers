@@ -57,6 +57,7 @@ public final class LaunchOptionsHandler {
     private let userDefaults: UserDefaults
     private let arguments: [String]
     private var internalUserStore: InternalUserStoring
+    private let clearAllDefaultsOverride: ((String) -> Void)?
 
     private let isIpad: Bool
     private let systemVersion: String
@@ -67,7 +68,8 @@ public final class LaunchOptionsHandler {
         arguments: [String] = ProcessInfo.processInfo.arguments,
         internalUserStore: InternalUserStoring = InternalUserStore(),
         isIpad: Bool = DevicePlatform.isIpad,
-        systemVersion: String = UIDevice.current.systemVersion
+        systemVersion: String = UIDevice.current.systemVersion,
+        clearAllDefaultsOverride: ((String) -> Void)? = nil
     ) {
         self.environment = environment
         self.userDefaults = userDefaults
@@ -75,6 +77,7 @@ public final class LaunchOptionsHandler {
         self.internalUserStore = internalUserStore
         self.isIpad = isIpad
         self.systemVersion = systemVersion
+        self.clearAllDefaultsOverride = clearAllDefaultsOverride
     }
 
     public var onboardingStatus: OnboardingStatus {
@@ -243,13 +246,17 @@ extension LaunchOptionsHandler {
             UIView.setAnimationsEnabled(false)
         }
 
-        let shouldClearAllDefaults = arguments.contains("-clearAllDefaults")
+        let shouldClearAllDefaults = isUITesting && arguments.contains("-clearAllDefaults")
         let shouldBackdateInstallDate = arguments.contains("-backdateInstallDate")
         if shouldClearAllDefaults || shouldBackdateInstallDate {
             let statisticsGroupName = Bundle.main.appGroup(bundle: .statistics)
 
             if shouldClearAllDefaults {
-                clearAllDefaults(statisticsGroupName: statisticsGroupName)
+                if let clearAllDefaultsOverride {
+                    clearAllDefaultsOverride(statisticsGroupName)
+                } else {
+                    clearAllDefaults(statisticsGroupName: statisticsGroupName)
+                }
             }
 
             if shouldBackdateInstallDate {

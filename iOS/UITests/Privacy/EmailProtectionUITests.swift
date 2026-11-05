@@ -25,34 +25,7 @@ final class EmailProtectionUITests: UITestCase {
     override func setUpWithError() throws {
         try super.setUpWithError()
 
-        let menuButton = app.buttons["Browser.Toolbar.Button.Menu"]
-        XCTAssertTrue(
-            menuButton.wait(for: NSPredicate(format: "isHittable == true AND isEnabled == true"), timeout: UITestTimeouts.navigation),
-            "Toolbar menu button did not become available.")
-        menuButton.press(forDuration: 1)
-
-        let debugList = app.descendants(matching: .any)["Debug.List"]
-        XCTAssertTrue(debugList.waitForExistence(timeout: UITestTimeouts.navigation), "Debug screen did not appear.")
-        let filter = app.searchFields.matching(NSPredicate(format: "placeholderValue == %@", "Filter")).firstMatch
-        filter.tapWhenHittable(in: app)
-        filter.typeText("Autofill")
-        app.descendants(matching: .any)["Debug.Screen.Autofill"].tapWhenHittable(in: app)
-
-        let clearSignInState = app.cells["Debug.Autofill.ClearEmailProtectionSignInState"]
-        app.tables.firstMatch.swipeUpToReveal(clearSignInState, timeout: UITestTimeouts.navigation)
-        clearSignInState.tapWhenHittable(in: app)
-        app.assertActionMessage(contains: "Email Protection sign-in state cleared")
-
-        app.navigationBars["Autofill"].buttons["BackButton"].tapWhenHittable(in: app)
-        XCTAssertTrue(debugList.waitForExistence(timeout: UITestTimeouts.elementExistence), "Debug screen did not reappear.")
-        if app.keyboards.firstMatch.exists {
-            app.buttons.matching(NSPredicate(format: "label == %@", "close")).firstMatch.tapWhenHittable(in: app)
-            XCTAssertTrue(
-                app.keyboards.firstMatch.waitForNonExistence(timeout: UITestTimeouts.elementExistence),
-                "Keyboard did not dismiss after clearing Email Protection sign-in state.")
-        }
-        app.buttons["Debug.Close"].tapWhenHittable(in: app)
-        XCTAssertTrue(debugList.waitForNonExistence(timeout: UITestTimeouts.elementExistence), "Debug screen did not close.")
+        resetEmailProtectionSignInState()
 
         app.openSettings()
 
@@ -84,4 +57,40 @@ final class EmailProtectionUITests: UITestCase {
             app.searchEntry.wait(for: \.value, contains: "duckduckgo.com/email/", timeout: UITestTimeouts.elementExistence),
             "Email Protection signup URL did not appear in the address bar.")
     }
+    private func resetEmailProtectionSignInState() {
+        app.dismissAddressBarEditing()
+        let menuButton = app.buttons["Browser.Toolbar.Button.Menu"]
+        XCTAssertTrue(
+            menuButton.wait(for: NSPredicate(format: "isHittable == true AND isEnabled == true"), timeout: UITestTimeouts.navigation),
+            "Toolbar menu button did not become available.")
+        menuButton.press(forDuration: 1)
+
+        let debugList = app.descendants(matching: .any)["Debug.List"]
+        XCTAssertTrue(debugList.waitForExistence(timeout: UITestTimeouts.navigation), "Debug screen did not appear.")
+        let filter = app.toolbars.searchFields.matching(NSPredicate(format: "placeholderValue == %@", "Filter")).firstMatch
+        filter.tapWhenHittable(in: app)
+        filter.typeText("Autofill")
+        app.descendants(matching: .any)["Debug.Screen.Autofill"].tapWhenHittable(in: app)
+
+        let clearSignInState = app.cells["Debug.Autofill.ClearEmailProtectionSignInState"]
+        app.tables.firstMatch.swipeUpToReveal(clearSignInState, timeout: UITestTimeouts.navigation)
+        clearSignInState.tapWhenHittable(in: app)
+        app.assertActionMessage(contains: "Email Protection sign-in state cleared")
+
+        app.navigationBars["Autofill"].buttons["BackButton"].tapWhenHittable(in: app)
+        XCTAssertTrue(debugList.waitForExistence(timeout: UITestTimeouts.elementExistence), "Debug screen did not reappear.")
+        if app.keyboards.firstMatch.exists {
+            app.toolbars.buttons.matching(NSPredicate(format: "label == %@", "close")).firstMatch.tapWhenHittable(in: app)
+            XCTAssertTrue(
+                app.keyboards.firstMatch.waitForNonExistence(timeout: UITestTimeouts.elementExistence),
+                "Keyboard did not dismiss after closing the Debug search.")
+        }
+        app.navigationBars["Debug"].buttons["Debug.Close"].tapWhenHittable(in: app)
+        XCTAssertTrue(
+            app.keyboards.firstMatch.waitForNonExistence(timeout: UITestTimeouts.elementExistence),
+            "Keyboard did not dismiss after closing Debug following the Email Protection reset.")
+        XCTAssertTrue(debugList.waitForNonExistence(timeout: UITestTimeouts.elementExistence), "Debug screen did not close.")
+
+    }
+
 }

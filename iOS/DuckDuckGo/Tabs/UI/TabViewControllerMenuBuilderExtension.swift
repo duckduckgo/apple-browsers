@@ -931,7 +931,7 @@ extension TabViewController {
     }
 
     private func onToggleProtectionAction(forDomain domain: String, isProtected: Bool) {
-        let toggleReportingConfig = ToggleReportingConfiguration(privacyConfigurationManager: ContentBlocking.shared.privacyConfigurationManager)
+        let toggleReportingConfig = ToggleReportingConfiguration.forApp(privacyConfigurationManager: ContentBlocking.shared.privacyConfigurationManager)
         let toggleReportingFeature = ToggleReportingFeature(toggleReportingConfiguration: toggleReportingConfig)
         let toggleReportingManager = ToggleReportingManager(feature: toggleReportingFeature)
         if isProtected && toggleReportingManager.shouldShowToggleReport {

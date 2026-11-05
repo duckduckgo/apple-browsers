@@ -403,7 +403,6 @@ final class UnifiedSuggestionsHost {
     /// flash before the keyboard hides it. The keyboard guide already holds the keyboard's end frame here,
     /// so it cannot tell a rising keyboard from a risen one: without a keyboard on the way, the fallback reveals it.
     private func deferLogoRevealUntilKeyboardRises() {
-        guard usesScrollableEscapeHatch else { return }
         viewModel.isLogoRevealDeferred = true
         logoKeyboardCancellable = NotificationCenter.default.publisher(for: UIResponder.keyboardDidShowNotification)
             .merge(with: NotificationCenter.default.publisher(for: UIResponder.keyboardDidChangeFrameNotification))
@@ -681,9 +680,9 @@ private final class UnifiedSuggestionsHostingController: UIHostingController<Uni
             if rootView.viewModel.logoHostFrame != viewport { rootView.viewModel.logoHostFrame = viewport }
             return
         }
-        // These are the native anchors used to constrain the host. The logo ignores the top
-        // container safe area, but still reserves the bottom input-bar inset.
+        // Measure chrome clearance from below the system safe area, retaining the keyboard and bottom input anchors.
         var viewport = containerView.convert(containerView.bounds, to: nil)
+        viewport.origin.y += containerView.safeAreaInsets.top
         let keyboardTop = containerView.convert(containerView.keyboardLayoutGuide.layoutFrame, to: nil).minY
         viewport.size.height = max(0, keyboardTop - viewport.minY - view.safeAreaInsets.bottom)
         guard rootView.viewModel.logoViewportFrame != viewport else { return }

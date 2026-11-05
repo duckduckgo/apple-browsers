@@ -18,6 +18,7 @@
 //
 
 import SwiftUI
+import UIComponents
 import UIKit
 
 /// The single unified suggestions surface for both Search and Duck.ai. Switches on the
@@ -105,6 +106,9 @@ struct UnifiedSuggestionsView: View {
                 SuggestionsFavoritesView(presentation: favoritesPresentation,
                                          isVisible: showsEmbeddedContent && (usesScrollableEscapeHatch || !isWaitingForLeavingLogo),
                                          visibilityAnimation: favoritesAnimation)
+                    .if(usesScrollableEscapeHatch) {
+                        $0.ignoresSafeArea(.container, edges: .bottom)
+                    }
                     .transition(.identity)
                     .modifier(FocusedContentDismissFade(isFadingOut: usesScrollableEscapeHatch && viewModel.isFadingOut))
             }
@@ -146,8 +150,10 @@ struct UnifiedSuggestionsView: View {
                                isVisible: isShowingList,
                                isFadingOut: viewModel.isFadingOut,
                                animatesAppearance: !usesScrollableEscapeHatch || usesRedesignedNewTabPageLayout)
-            .safeAreaInset(edge: .top, spacing: 0) {
-                Color.clear.frame(height: viewModel.contentTopInset)
+            .if(usesScrollableEscapeHatch) {
+                $0.safeAreaInset(edge: .top, spacing: 0) {
+                    Color.clear.frame(height: viewModel.contentTopInset)
+                }
             }
     }
 

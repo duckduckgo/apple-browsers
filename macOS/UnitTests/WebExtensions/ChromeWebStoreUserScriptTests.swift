@@ -206,6 +206,7 @@ private final class ChromeWebStoreServiceMock: ChromeWebStoreManaging {
         return success
     }
     func listing(of subfeature: ExtensionsCatalogSubfeature) -> ChromeWebStoreListing? { nil }
+    func category(for extensionID: String) -> String? { nil }
 }
 
 private final class StoreURLWebView: WKWebView {

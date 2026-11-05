@@ -25,6 +25,234 @@ import XCTest
 @MainActor
 final class GeolocationUserScriptWebKitTests: XCTestCase {
 
+    func testPermissionShimsFollowDocumentTypeRatherThanURLSuffix() async throws {
+        let svg = "<svg xmlns=\"http://www.w3.org/2000/svg\"></svg>"
+        let html = "<html><body><svg xmlns=\"http://www.w3.org/2000/svg\"></svg></body></html>"
+        let cases = [
+            (path: "permissions.svg", contentType: "image/svg+xml", body: svg, expectsShims: true),
+            (path: "permissions", contentType: "image/svg+xml", body: svg, expectsShims: true),
+            (path: "permissions.svg", contentType: "text/html", body: html, expectsShims: true),
+            (path: "permissions.xml", contentType: "application/xml", body: "<document></document>", expectsShims: false),
+            (path: "permissions.svg", contentType: "application/xml", body: "<document>\(svg)</document>", expectsShims: false)
+        ]
+
+        for testCase in cases {
+            let geolocation = GeolocationUserScript()
+            geolocation.activationHandler = { _ in true }
+            let contentScope = try SitePermissionsContentScope(geolocation: geolocation, mediaCapture: MediaCaptureUserScript())
+            let configuration = WKWebViewConfiguration()
+            contentScope.install(in: configuration.userContentController)
+            let harness = WebKitTestHarness(configuration: configuration, contentScope: contentScope)
+            let server = try await WebKitLoopbackHTTPServer.start(html: testCase.body, contentType: testCase.contentType)
+            defer { server.stop() }
+            let url = try XCTUnwrap(server.url).appendingPathComponent(testCase.path)
+            try await harness.load(url)
+
+            let state = try await javaScriptDictionary(in: harness.webView, body: """
+            return {
+                contentType: document.contentType,
+                geolocationWrapped: \(SitePermissionsContentScope.geolocationShimInstalled),
+                mediaWrapped: !navigator.mediaDevices.getUserMedia.toString().includes('[native code]')
+            };
+            """)
+
+            let diagnostic = "\(url.absoluteString) \(state)"
+            // WebKit can classify application/xml at a .svg URL as image/svg+xml.
+            if testCase.contentType == "application/xml" && url.pathExtension == "svg" {
+                XCTAssertTrue(["application/xml", "image/svg+xml"].contains(state["contentType"] as? String ?? ""), diagnostic)
+            } else {
+                XCTAssertEqual(state["contentType"] as? String, testCase.contentType, diagnostic)
+            }
+            XCTAssertEqual(state["geolocationWrapped"] as? Bool, testCase.expectsShims, diagnostic)
+            XCTAssertEqual(state["mediaWrapped"] as? Bool, testCase.expectsShims, diagnostic)
+        }
+    }
+
+    func testSVGGeolocationRequestsAndQueriesRoundTripThroughBothContentWorlds() async throws {
+        for path in ["permissions.svg", "permissions"] {
+            for permissionState in [GeolocationPermissionState.granted, .denied] {
+                let delegate = WebKitTestGeolocationDelegate()
+                delegate.permissionState = permissionState
+                let script = GeolocationUserScript(delegate: delegate)
+                script.activationHandler = { _ in true }
+                let harness = try makeHarness(script: script)
+                let server = try await WebKitLoopbackHTTPServer.start(html: svgDocument(), contentType: "image/svg+xml")
+                defer { server.stop() }
+                try await harness.load(try XCTUnwrap(server.url).appendingPathComponent(path))
+
+                let state = try await exerciseGeolocation(in: harness.webView)
+
+                if permissionState == .granted {
+                    assertAllowed(state)
+                } else {
+                    assertDenied(state)
+                }
+                XCTAssertEqual(delegate.positionRequestCount, 1)
+                XCTAssertEqual(delegate.permissionQueryCount, 1)
+                try await assertSVGPolicyFrame(try XCTUnwrap(delegate.positionFrames.first), in: harness.webView, isMainFrame: true)
+                if permissionState == .granted {
+                    try await assertSVGPermissionStatusDelivery(script: script, delegate: delegate, in: harness.webView, isFrame: false)
+                }
+            }
+        }
+    }
+
+    func testSameOriginSVGFrameGeolocationRoundTripsThroughBothContentWorlds() async throws {
+        for permissionState in [GeolocationPermissionState.granted, .denied] {
+            let delegate = WebKitTestGeolocationDelegate()
+            delegate.permissionState = permissionState
+            let script = GeolocationUserScript(delegate: delegate)
+            script.activationHandler = { _ in true }
+            let harness = try makeHarness(script: script, precedingScript: unavailablePolicyScript)
+            let server = try await WebKitLoopbackHTTPServer.start(html: frameHostHTML(source: "/frame.svg"),
+                                                                  frameHTML: frameExerciseSVG,
+                                                                  frameContentType: "image/svg+xml")
+            defer { server.stop() }
+            try await harness.load(try XCTUnwrap(server.url))
+
+            let state = try await frameResult(in: harness.webView)
+
+            if permissionState == .granted {
+                assertAllowed(state)
+            } else {
+                assertDenied(state)
+            }
+            XCTAssertEqual(state["contentType"] as? String, "image/svg+xml")
+            XCTAssertEqual(delegate.positionRequestCount, 1)
+            XCTAssertEqual(delegate.permissionQueryCount, 1)
+            try await assertSVGPolicyFrame(try XCTUnwrap(delegate.positionFrames.first), in: harness.webView, isMainFrame: false)
+            if permissionState == .granted {
+                try await assertSVGPermissionStatusDelivery(script: script, delegate: delegate, in: harness.webView, isFrame: true)
+            }
+        }
+    }
+
+    func testSVGFramesKeepOriginSandboxAndAllowRestrictions() async throws {
+        for scenario in ["allowNone", "opaqueSandbox", "crossOrigin", "policyDenied"] {
+            let delegate = WebKitTestGeolocationDelegate()
+            let script = GeolocationUserScript(delegate: delegate)
+            script.activationHandler = { _ in true }
+            let harness = try makeHarness(script: script,
+                                          precedingScript: scenario == "policyDenied" ? deniedPolicyScript : unavailablePolicyScript)
+            let frameServer = try await WebKitLoopbackHTTPServer.start(html: frameExerciseSVG, contentType: "image/svg+xml")
+            defer { frameServer.stop() }
+            let frameURL = try XCTUnwrap(frameServer.url)
+            let source = scenario == "crossOrigin" ? frameURL.absoluteString : "/frame.svg"
+            let server = try await WebKitLoopbackHTTPServer.start(
+                html: frameHostHTML(source: source,
+                                    allow: scenario == "allowNone" ? "geolocation 'none'" : "geolocation",
+                                    sandbox: scenario == "opaqueSandbox" ? "allow-scripts" : nil),
+                frameHTML: frameExerciseSVG,
+                frameContentType: "image/svg+xml"
+            )
+            defer { server.stop() }
+            try await harness.load(try XCTUnwrap(server.url))
+
+            assertDenied(try await frameResult(in: harness.webView), scenario)
+            XCTAssertEqual(delegate.positionRequestCount, 0, scenario)
+            XCTAssertEqual(delegate.permissionQueryCount, 0, scenario)
+        }
+    }
+
+    func testSVGWithoutIsolatedPolicyFailsClosed() async throws {
+        let delegate = WebKitTestGeolocationDelegate()
+        let script = GeolocationUserScript(delegate: delegate)
+        script.activationHandler = { _ in true }
+        let harness = try makeHarness(script: script, includePolicyScript: false)
+        let server = try await WebKitLoopbackHTTPServer.start(html: svgDocument(), contentType: "image/svg+xml")
+        defer { server.stop() }
+        try await harness.load(try XCTUnwrap(server.url))
+
+        assertDenied(try await exerciseGeolocation(in: harness.webView))
+        XCTAssertEqual(delegate.positionRequestCount, 0)
+        XCTAssertEqual(delegate.permissionQueryCount, 0)
+    }
+
+    func testSVGMediaRequestsUseNativeBrokerBeforeCallingSavedNativeFunction() async throws {
+        for isFrame in [false, true] {
+            for decision in [MediaCaptureBridgeDecision.allow, .deny] {
+                let delegate = WebKitTestMediaCaptureDelegate(decision: decision)
+                let mediaCapture = MediaCaptureUserScript()
+                mediaCapture.delegate = delegate
+                let harness = try makeHarness(script: GeolocationUserScript(),
+                                              precedingScript: unavailablePolicyScript + fakeMediaDevicesScript,
+                                              mediaCapture: mediaCapture)
+                let server = try await WebKitLoopbackHTTPServer.start(
+                    html: isFrame ? frameHostHTML(source: "/frame.svg", allow: "camera; microphone") : mediaExerciseSVG,
+                    frameHTML: isFrame ? mediaExerciseSVG : nil,
+                    contentType: isFrame ? "text/html" : "image/svg+xml",
+                    frameContentType: "image/svg+xml"
+                )
+                defer { server.stop() }
+                try await harness.load(try XCTUnwrap(server.url))
+                let state = try await mediaResult(in: harness.webView, isFrame: isFrame)
+
+                XCTAssertEqual(state["contentType"] as? String, "image/svg+xml")
+                XCTAssertEqual(state["nativeCallCount"] as? Int, decision == .allow ? 1 : 0)
+                XCTAssertEqual(state["result"] as? String, decision == .allow ? "native-result" : "NotAllowedError")
+                let request = try XCTUnwrap(delegate.requests.first)
+                XCTAssertEqual(delegate.requests.count, 1)
+                XCTAssertEqual(request.permissionTypes, [.camera, .microphone])
+                XCTAssertTrue(MediaCaptureUserScript.isValidRequestID(request.requestID))
+                XCTAssertEqual(request.frame.isMainFrame, !isFrame)
+                XCTAssertEqual(request.frame.securityOrigin.host, "localhost")
+                XCTAssertTrue(request.frame.webView === harness.webView)
+                XCTAssertTrue(request.webView === harness.webView)
+            }
+        }
+    }
+
+    func testSVGMediaFramesKeepOriginSandboxAndAllowRestrictions() async throws {
+        for scenario in ["allowNone", "opaqueSandbox", "crossOrigin"] {
+            let delegate = WebKitTestMediaCaptureDelegate(decision: .allow)
+            let mediaCapture = MediaCaptureUserScript()
+            mediaCapture.delegate = delegate
+            let harness = try makeHarness(script: GeolocationUserScript(),
+                                          precedingScript: unavailablePolicyScript + fakeMediaDevicesScript,
+                                          mediaCapture: mediaCapture)
+            let frameServer = try await WebKitLoopbackHTTPServer.start(html: mediaExerciseSVG, contentType: "image/svg+xml")
+            defer { frameServer.stop() }
+            let frameURL = try XCTUnwrap(frameServer.url)
+            let source = scenario == "crossOrigin" ? frameURL.absoluteString : "/frame.svg"
+            let server = try await WebKitLoopbackHTTPServer.start(
+                html: frameHostHTML(source: source,
+                                    allow: scenario == "allowNone" ? "camera 'none'; microphone 'none'" : "camera; microphone",
+                                    sandbox: scenario == "opaqueSandbox" ? "allow-scripts" : nil),
+                frameHTML: mediaExerciseSVG,
+                frameContentType: "image/svg+xml"
+            )
+            defer { server.stop() }
+            try await harness.load(try XCTUnwrap(server.url))
+
+            let state = try await mediaResult(in: harness.webView, isFrame: true)
+
+            XCTAssertEqual(state["result"] as? String, "NotAllowedError", scenario)
+            XCTAssertEqual(state["nativeCallCount"] as? Int, 0, scenario)
+            XCTAssertTrue(delegate.requests.isEmpty, scenario)
+        }
+    }
+
+    func testPageCannotSpoofDocumentTypeInTheIsolatedWorld() async throws {
+        let script = GeolocationUserScript()
+        script.activationHandler = { _ in true }
+        let harness = try makeHarness(script: script)
+        let server = try await WebKitLoopbackHTTPServer.start(html: "<html><body></body></html>")
+        defer { server.stop() }
+        try await harness.load(try XCTUnwrap(server.url).appendingPathComponent("permissions.svg"))
+
+        let pageContentType = try await harness.webView.callAsyncJavaScript("""
+        Object.defineProperty(document, 'contentType', { value: 'image/svg+xml' });
+        return document.contentType;
+        """, arguments: [:], in: nil, contentWorld: .page)
+        let isolatedContentType = try await harness.webView.callAsyncJavaScript("return document.contentType;",
+                                                                               arguments: [:],
+                                                                               in: nil,
+                                                                               contentWorld: .defaultClient)
+
+        XCTAssertEqual(pageContentType as? String, "image/svg+xml")
+        XCTAssertEqual(isolatedContentType as? String, "text/html")
+    }
+
     func testWithoutActivationRequestsAreDeniedWithoutReachingTheDelegate() async throws {
         let delegate = WebKitTestGeolocationDelegate()
         let script = GeolocationUserScript(delegate: delegate)
@@ -962,6 +1190,90 @@ final class GeolocationUserScriptWebKitTests: XCTestCase {
         XCTAssertEqual(delegate.positionRequestCount, 1)
     }
 
+    private func assertSVGPolicyFrame(_ frame: GeolocationFrame, in webView: WKWebView, isMainFrame: Bool) async throws {
+        XCTAssertEqual(frame.isMainFrame, isMainFrame)
+        XCTAssertEqual(frame.securityOrigin.host, "localhost")
+        XCTAssertTrue(frame.isAssociated(with: webView))
+        let value = try await withCheckedThrowingContinuation { continuation in
+            frame.evaluateJavaScript("""
+            ({contentType: document.contentType, hasPolicy: \(SitePermissionsContentScope.geolocationPolicyInstalled)})
+            """, in: webView) { result in
+                continuation.resume(with: result)
+            }
+        }
+        let state = try XCTUnwrap(value as? [String: Any])
+        XCTAssertEqual(state["contentType"] as? String, "image/svg+xml")
+        XCTAssertEqual(state["hasPolicy"] as? Bool, true)
+    }
+
+    private func assertSVGPermissionStatusDelivery(script: GeolocationUserScript,
+                                                   delegate: WebKitTestGeolocationDelegate,
+                                                   in webView: WKWebView,
+                                                   isFrame: Bool) async throws {
+        let scope = isFrame ? "document.getElementById('test-frame').contentWindow" : "globalThis"
+        _ = try await javaScriptDictionary(in: webView, body: """
+        const scope = \(scope);
+        scope.svgPermissionStatus = await scope.navigator.permissions.query({name: 'geolocation'});
+        return {state: scope.svgPermissionStatus.state};
+        """)
+        let statusID = try XCTUnwrap(delegate.permissionStatusIDs.last)
+
+        XCTAssertTrue(script.send(.denied, toPermissionStatusWithID: statusID))
+        try await waitUntil(in: webView, expression: "\(scope).svgPermissionStatus.state === 'denied'")
+    }
+
+    private func svgDocument(script: String = "") -> String {
+        """
+        <svg xmlns="http://www.w3.org/2000/svg"><script><![CDATA[
+        \(script)
+        ]]></script></svg>
+        """
+    }
+
+    private var frameExerciseSVG: String {
+        frameExerciseHTML
+            .replacingOccurrences(of: "<html><head><script>", with: "<svg xmlns=\"http://www.w3.org/2000/svg\"><script><![CDATA[")
+            .replacingOccurrences(of: "</script></head><body></body></html>", with: "]]></script></svg>")
+    }
+
+    private var fakeMediaDevicesScript: String {
+        """
+        class FakeMediaDevices {
+            getUserMedia() {
+                globalThis.nativeMediaCallCount += 1;
+                return Promise.resolve('native-result');
+            }
+        }
+        globalThis.nativeMediaCallCount = 0;
+        Object.defineProperty(navigator, 'mediaDevices', { value: new FakeMediaDevices(), configurable: true });
+        """
+    }
+
+    private var mediaExerciseSVG: String {
+        svgDocument(script: """
+        addEventListener('load', async () => {
+            let result;
+            try {
+                result = await navigator.mediaDevices.getUserMedia({video: true, audio: true});
+            } catch (error) {
+                result = error.name;
+            }
+            globalThis.mediaResult = {result, nativeCallCount: globalThis.nativeMediaCallCount, contentType: document.contentType};
+            if (parent !== window) {
+                parent.postMessage({test: 'geolocation-frame-result', ...globalThis.mediaResult}, '*');
+            }
+        });
+        """)
+    }
+
+    private func mediaResult(in webView: WKWebView, isFrame: Bool) async throws -> [String: Any] {
+        if isFrame {
+            return try await frameResult(in: webView)
+        }
+        try await waitUntil(in: webView, expression: "window.mediaResult !== undefined")
+        return try await javaScriptDictionary(in: webView, body: "return window.mediaResult;")
+    }
+
     private func exerciseGeolocation(in webView: WKWebView) async throws -> [String: Any] {
         try await javaScriptDictionary(in: webView, body: """
         const policy = document.permissionsPolicy ?? document.featurePolicy;
@@ -1045,6 +1357,7 @@ final class GeolocationUserScriptWebKitTests: XCTestCase {
                 });
                 parent.postMessage({
                     test: "geolocation-frame-result",
+                    contentType: document.contentType,
                     hasPolicyAPI: typeof policy?.allowsFeature === "function",
                     isSecureContext: globalThis.isSecureContext,
                     permissionState: permission.state,
@@ -1078,7 +1391,8 @@ final class GeolocationUserScriptWebKitTests: XCTestCase {
 
     private func makeHarness(script: GeolocationUserScript,
                              precedingScript: String? = nil,
-                             includePolicyScript: Bool = true) throws -> WebKitTestHarness {
+                             includePolicyScript: Bool = true,
+                             mediaCapture: MediaCaptureUserScript? = nil) throws -> WebKitTestHarness {
         let configuration = WKWebViewConfiguration()
         if let precedingScript {
             for world in [WKContentWorld.page, .defaultClient] {
@@ -1088,7 +1402,9 @@ final class GeolocationUserScriptWebKitTests: XCTestCase {
                                                                                 in: world))
             }
         }
-        let contentScope = try SitePermissionsContentScope(geolocation: script, includesGeolocationPolicy: includePolicyScript)
+        let contentScope = try SitePermissionsContentScope(geolocation: script,
+                                                          mediaCapture: mediaCapture,
+                                                          includesGeolocationPolicy: includePolicyScript)
         contentScope.install(in: configuration.userContentController)
         return WebKitTestHarness(configuration: configuration, contentScope: contentScope)
     }
@@ -1180,20 +1496,20 @@ private final class WebKitLoopbackHTTPServer: @unchecked Sendable {
     private(set) var url: URL?
     private var startContinuation: CheckedContinuation<Void, Swift.Error>?
 
-    private init(html: String, frameHTML: String?, permissionsPolicy: String) throws {
+    private init(html: String, frameHTML: String?, permissionsPolicy: String, contentType: String, frameContentType: String) throws {
         let parameters = NWParameters.tcp
         parameters.requiredLocalEndpoint = .hostPort(host: .ipv4(.loopback), port: .any)
         listener = try NWListener(using: parameters)
 
-        response = Self.response(html: html, permissionsPolicy: permissionsPolicy)
-        frameResponse = frameHTML.map { Self.response(html: $0, permissionsPolicy: permissionsPolicy) }
+        response = Self.response(html: html, permissionsPolicy: permissionsPolicy, contentType: contentType)
+        frameResponse = frameHTML.map { Self.response(html: $0, permissionsPolicy: permissionsPolicy, contentType: frameContentType) }
     }
 
-    private static func response(html: String, permissionsPolicy: String) -> Data {
+    private static func response(html: String, permissionsPolicy: String, contentType: String = "text/html; charset=utf-8") -> Data {
         let body = Data(html.utf8)
         let header = """
         HTTP/1.1 200 OK\r
-        Content-Type: text/html; charset=utf-8\r
+        Content-Type: \(contentType)\r
         Permissions-Policy: \(permissionsPolicy)\r
         Content-Length: \(body.count)\r
         Connection: close\r
@@ -1205,10 +1521,14 @@ private final class WebKitLoopbackHTTPServer: @unchecked Sendable {
 
     static func start(html: String,
                       frameHTML: String? = nil,
-                      permissionsPolicy: String = "geolocation=*") async throws -> WebKitLoopbackHTTPServer {
+                      permissionsPolicy: String = "geolocation=*",
+                      contentType: String = "text/html; charset=utf-8",
+                      frameContentType: String = "text/html; charset=utf-8") async throws -> WebKitLoopbackHTTPServer {
         let server = try WebKitLoopbackHTTPServer(html: html,
                                                   frameHTML: frameHTML,
-                                                  permissionsPolicy: permissionsPolicy)
+                                                  permissionsPolicy: permissionsPolicy,
+                                                  contentType: contentType,
+                                                  frameContentType: frameContentType)
         try await server.start()
         return server
     }
@@ -1266,6 +1586,7 @@ private final class WebKitLoopbackHTTPServer: @unchecked Sendable {
 private final class WebKitTestGeolocationDelegate: GeolocationUserScriptDelegate {
 
     private(set) var positionRequestCount = 0
+    private(set) var positionFrames = [GeolocationFrame]()
     private(set) var permissionQueryCount = 0
     private(set) var permissionStatusIDs = [String]()
     private(set) var watchIDs = [String]()
@@ -1281,6 +1602,7 @@ private final class WebKitTestGeolocationDelegate: GeolocationUserScriptDelegate
                                constraints: GeolocationRequestConstraints,
                                in frame: GeolocationFrame) async -> GeolocationPositionResult {
         positionRequestCount += 1
+        positionFrames.append(frame)
         if permissionState == .denied {
             return .failure(.init(code: .permissionDenied, message: "Denied by native permission checks"))
         }
@@ -1326,5 +1648,33 @@ private final class WebKitTestGeolocationDelegate: GeolocationUserScriptDelegate
                                didCancelPermissionStatusWithID statusID: String) {
         cancelledPermissionStatusIDs.append(statusID)
         permissionStatusCancelled?.fulfill()
+    }
+}
+
+@MainActor
+private final class WebKitTestMediaCaptureDelegate: MediaCaptureUserScriptDelegate {
+
+    struct Request {
+        let permissionTypes: Set<SitePermissionType>
+        let requestID: String
+        let frame: WKFrameInfo
+        let webView: WKWebView
+    }
+
+    let isMediaCapturePermissionHandlingEnabled = true
+    private let decision: MediaCaptureBridgeDecision
+    private(set) var requests = [Request]()
+
+    init(decision: MediaCaptureBridgeDecision) {
+        self.decision = decision
+    }
+
+    func mediaCaptureUserScript(_ userScript: MediaCaptureUserScript,
+                                requestPermissionFor permissionTypes: Set<SitePermissionType>,
+                                requestID: String,
+                                in frame: WKFrameInfo,
+                                webView: WKWebView) async -> MediaCaptureBridgeDecision {
+        requests.append(Request(permissionTypes: permissionTypes, requestID: requestID, frame: frame, webView: webView))
+        return decision
     }
 }

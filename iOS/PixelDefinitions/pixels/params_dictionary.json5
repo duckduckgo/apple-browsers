@@ -84,6 +84,24 @@
         "description": "Where the tab was originally selected, including when it is later removed through another control.",
         "enum": ["recent_tabs", "tab_picker", "mention"]
     },
+    "address_bar_position": {
+        "key": "address_bar_position",
+        "type": "string",
+        "description": "The iPhone address bar position setting when the pixel fired. Absent on iPad and in the contextual chat sheet.",
+        "enum": ["top", "bottom"]
+    },
+    "resubmit_of_search": {
+        "key": "resubmit_of_search",
+        "type": "string",
+        "description": "Seconds since a Search from the iPhone address bar with the same text (ignoring case and punctuation; 1 typo allowed at 4-7 characters, 2 at 8 or more). Compared on the device; no text is sent, and it is dropped when the app goes to the background or on Fire. Never set in fire tabs. Absent when it isn't a resubmit. Mostly a baseline for resubmit_of_prompt.",
+        "enum": ["0-15", "16-30", "31-45", "46-60"]
+    },
+    "resubmit_of_prompt": {
+        "key": "resubmit_of_prompt",
+        "type": "string",
+        "description": "Seconds since a Duck.ai prompt from the iPhone address bar with the same text (ignoring case and punctuation; 1 typo allowed at 4-7 characters, 2 at 8 or more), a proxy for a search sent to Duck.ai by mistake. Compared on the device; no text is sent, and it is dropped when the app goes to the background or on Fire. Never set in fire tabs. Absent when it isn't a resubmit, including when no prompt was sent first. Each prompt is matched at most once.",
+        "enum": ["0-15", "16-30", "31-45", "46-60"]
+    },
     "usage_layout": {
         "key": "layout",
         "type": "string",

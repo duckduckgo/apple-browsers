@@ -45,6 +45,7 @@ private final class MockUnifiedInputContentContainerDelegate: UnifiedInputConten
     private(set) var syncSetupRequestCount = 0
 
     func unifiedInputEditingStateDidSubmitQuery(_ query: String) {}
+    func unifiedInputEditingStateDidSelectSearchDuckDuckGo(query: String) {}
     func unifiedInputEditingStateDidSubmitPrompt(_ query: String, tools: [AIChatRAGTool]?) {}
     func unifiedInputEditingStateDidSelectFavorite(_ favorite: BookmarkEntity) {}
     func unifiedInputEditingStateDidEditFavorite(_ favorite: BookmarkEntity) {}

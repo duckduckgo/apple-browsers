@@ -176,7 +176,9 @@ iOS renders in a pinnable simulator runtime, so every machine matches CI. macOS 
 | Locally | another 27.x | Records missing references (and everything with `GENERATE_SNAPSHOTS`), but doesn't compare existing ones and prints a warning. `COMPARE_SNAPSHOTS=1` compares anyway. |
 | Locally | another major | Skips snapshot assertions and prints a warning. Nothing is compared or recorded. |
 
-If you record on another 27.x and CI fails because its renderings differ, CI's images replace yours in the snapshots PR. The macOS PR checks upload every image they render as the `macos-rendered-snapshots` artifact, laid out like `SnapshotReferences`. `SNAPSHOT_EXPORT_DIR` turns that export on.
+If CI fails because a reference is missing or its renderings differ (for example, you recorded on another 27.x or didn't record at all), add the `Record snapshots (macOS)` label to the monorepo PR. It commits the images CI rendered for the failing snapshots to the snapshots PR (opening one if needed) and points the monorepo PR's `SnapshotReferences` at them, so the checks run again. It doesn't run the tests again: it takes the images from the latest macOS PR checks run on the PR's head commit, waiting for that run to finish if you add the label early. Review the new images in the snapshots PR before using `Merge snapshots`.
+
+The images come from that run's `macos-rendered-snapshots` artifact. The Non-Sandbox unit test job uploads every image that didn't match its reference or had none, laid out like `SnapshotReferences`. `SNAPSHOT_EXPORT_DIR` turns that export on.
 
 When the OS rolls forward, bump `SnapshotEnvironment.expectedIOSVersion` / `ciMacOSVersion` and re-record affected references.
 

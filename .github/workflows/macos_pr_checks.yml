@@ -529,6 +529,7 @@ jobs:
         name: macos-rendered-snapshots
         path: macOS/DerivedData/RenderedSnapshots
         if-no-files-found: ignore
+        overwrite: true
         retention-days: 7
 
     - name: Report snapshot failures

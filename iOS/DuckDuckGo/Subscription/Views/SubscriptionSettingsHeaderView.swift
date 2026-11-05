@@ -18,11 +18,13 @@
 //
 
 import SwiftUI
+import Subscription
 
 struct SubscriptionSettingsHeaderView: View {
 
     enum HeaderState: Equatable {
         case subscribed
+        case expiring
         case expired(_ details: String)
         case activating
         case trial
@@ -49,13 +51,13 @@ struct SubscriptionSettingsHeaderView: View {
                 .foregroundColor(Color(designSystemColor: .textPrimary))
 
             switch state {
-            case .subscribed, .trial:
+            case .subscribed, .trial, .expiring:
                 HStack(alignment: .lastTextBaseline, spacing: 6) {
                     HStack(alignment: .center, spacing: 4) {
                         Circle()
-                            .fill(Color(designSystemColor: .alertGreen))
+                            .fill(Color(designSystemColor: state == .expiring ? .alertYellow : .alertGreen))
                             .frame(width: 8, height: 8)
-                        Text(state == .subscribed ? UserText.subscriptionSubscribed : UserText.trialSubscription)
+                        Text(statusText)
                             .daxBodyRegular()
                             .foregroundColor(Color(designSystemColor: .textSecondary))
                     }
@@ -87,12 +89,34 @@ struct SubscriptionSettingsHeaderView: View {
             }
         }
     }
+
+    private var statusText: String {
+        switch state {
+        case .expiring:
+            return UserText.subscriptionExpiring
+        case .trial:
+            return UserText.trialSubscription
+        default:
+            return UserText.subscriptionSubscribed
+        }
+    }
+}
+
+extension SubscriptionSettingsHeaderView.HeaderState {
+
+    static func active(isTrial: Bool, status: DuckDuckGoSubscription.Status?) -> Self {
+        if status == .notAutoRenewable {
+            return .expiring
+        }
+        return isTrial ? .trial : .subscribed
+    }
 }
 
 #Preview {
     VStack(spacing: 8) {
         SubscriptionSettingsHeaderView(state: .subscribed, tierBadge: .plus)
         SubscriptionSettingsHeaderView(state: .subscribed, tierBadge: .pro)
+        SubscriptionSettingsHeaderView(state: .expiring, tierBadge: .plus)
         SubscriptionSettingsHeaderView(state: .expired("Your subscription expired on April 20, 2027"))
         SubscriptionSettingsHeaderView(state: .activating)
     }

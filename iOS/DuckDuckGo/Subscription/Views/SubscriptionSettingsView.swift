@@ -110,14 +110,14 @@ struct SubscriptionSettingsViewV2: View {
     private var headerSection: some View {
         Section {
             switch configuration {
-            case .subscribed:
-                SubscriptionSettingsHeaderView(state: .subscribed, tierBadge: viewModel.tierBadgeToDisplay)
+            case .subscribed, .trial:
+                SubscriptionSettingsHeaderView(state: .active(isTrial: configuration == .trial,
+                                                              status: viewModel.state.subscriptionInfo?.status),
+                                               tierBadge: viewModel.tierBadgeToDisplay)
             case .expired:
                 SubscriptionSettingsHeaderView(state: .expired(viewModel.state.subscriptionDetails))
             case .activating:
                 SubscriptionSettingsHeaderView(state: .activating)
-            case .trial:
-                SubscriptionSettingsHeaderView(state: .trial, tierBadge: viewModel.tierBadgeToDisplay)
             }
         }
         .listRowBackground(Color.clear)

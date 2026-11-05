@@ -852,18 +852,10 @@
 		37EACB162EF54224002C06F9 /* PrivacyConfigTestsUtils in Frameworks */ = {isa = PBXBuildFile; productRef = 37EACB152EF54224002C06F9 /* PrivacyConfigTestsUtils */; };
 		37EACB182EF5422C002C06F9 /* PrivacyConfigTestsUtils in Frameworks */ = {isa = PBXBuildFile; productRef = 37EACB172EF5422C002C06F9 /* PrivacyConfigTestsUtils */; };
 		37EE55D82D5F197300D53C7C /* dark-flame-mouse-over.json in Resources */ = {isa = PBXBuildFile; fileRef = 37EE55B42D5F197300D53C7C /* dark-flame-mouse-over.json */; };
-		37EE55D92D5F197300D53C7C /* dark-shield.json in Resources */ = {isa = PBXBuildFile; fileRef = 37EE55B52D5F197300D53C7C /* dark-shield.json */; };
-		37EE55DA2D5F197300D53C7C /* dark-shield-dot.json in Resources */ = {isa = PBXBuildFile; fileRef = 37EE55B62D5F197300D53C7C /* dark-shield-dot.json */; };
-		37EE55DB2D5F197300D53C7C /* dark-shield-dot-mouse-over.json in Resources */ = {isa = PBXBuildFile; fileRef = 37EE55B72D5F197300D53C7C /* dark-shield-dot-mouse-over.json */; };
-		37EE55DC2D5F197300D53C7C /* dark-shield-mouse-over.json in Resources */ = {isa = PBXBuildFile; fileRef = 37EE55B82D5F197300D53C7C /* dark-shield-mouse-over.json */; };
 		37EE55DD2D5F197300D53C7C /* dark-trackers-1.json in Resources */ = {isa = PBXBuildFile; fileRef = 37EE55B92D5F197300D53C7C /* dark-trackers-1.json */; };
 		37EE55DE2D5F197300D53C7C /* dark-trackers-2.json in Resources */ = {isa = PBXBuildFile; fileRef = 37EE55BA2D5F197300D53C7C /* dark-trackers-2.json */; };
 		37EE55DF2D5F197300D53C7C /* dark-trackers-3.json in Resources */ = {isa = PBXBuildFile; fileRef = 37EE55BB2D5F197300D53C7C /* dark-trackers-3.json */; };
 		37EE55E02D5F197300D53C7C /* flame-mouse-over.json in Resources */ = {isa = PBXBuildFile; fileRef = 37EE55BC2D5F197300D53C7C /* flame-mouse-over.json */; };
-		37EE55E12D5F197300D53C7C /* shield.json in Resources */ = {isa = PBXBuildFile; fileRef = 37EE55BD2D5F197300D53C7C /* shield.json */; };
-		37EE55E22D5F197300D53C7C /* shield-dot.json in Resources */ = {isa = PBXBuildFile; fileRef = 37EE55BE2D5F197300D53C7C /* shield-dot.json */; };
-		37EE55E32D5F197300D53C7C /* shield-dot-mouse-over.json in Resources */ = {isa = PBXBuildFile; fileRef = 37EE55BF2D5F197300D53C7C /* shield-dot-mouse-over.json */; };
-		37EE55E42D5F197300D53C7C /* shield-mouse-over.json in Resources */ = {isa = PBXBuildFile; fileRef = 37EE55C02D5F197300D53C7C /* shield-mouse-over.json */; };
 		37EE55E52D5F197300D53C7C /* trackers-1.json in Resources */ = {isa = PBXBuildFile; fileRef = 37EE55C12D5F197300D53C7C /* trackers-1.json */; };
 		37EE55E62D5F197300D53C7C /* trackers-2.json in Resources */ = {isa = PBXBuildFile; fileRef = 37EE55C22D5F197300D53C7C /* trackers-2.json */; };
 		37EE55E72D5F197300D53C7C /* trackers-3.json in Resources */ = {isa = PBXBuildFile; fileRef = 37EE55C32D5F197300D53C7C /* trackers-3.json */; };
@@ -892,18 +884,10 @@
 		37EE55FF2D5F197300D53C7C /* ZoomPopover.swift in Sources */ = {isa = PBXBuildFile; fileRef = 37EE55D52D5F197300D53C7C /* ZoomPopover.swift */; };
 		37EE56002D5F197300D53C7C /* ZoomPopoverViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 37EE55D62D5F197300D53C7C /* ZoomPopoverViewController.swift */; };
 		37EE56012D5F197300D53C7C /* dark-flame-mouse-over.json in Resources */ = {isa = PBXBuildFile; fileRef = 37EE55B42D5F197300D53C7C /* dark-flame-mouse-over.json */; };
-		37EE56022D5F197300D53C7C /* dark-shield.json in Resources */ = {isa = PBXBuildFile; fileRef = 37EE55B52D5F197300D53C7C /* dark-shield.json */; };
-		37EE56032D5F197300D53C7C /* dark-shield-dot.json in Resources */ = {isa = PBXBuildFile; fileRef = 37EE55B62D5F197300D53C7C /* dark-shield-dot.json */; };
-		37EE56042D5F197300D53C7C /* dark-shield-dot-mouse-over.json in Resources */ = {isa = PBXBuildFile; fileRef = 37EE55B72D5F197300D53C7C /* dark-shield-dot-mouse-over.json */; };
-		37EE56052D5F197300D53C7C /* dark-shield-mouse-over.json in Resources */ = {isa = PBXBuildFile; fileRef = 37EE55B82D5F197300D53C7C /* dark-shield-mouse-over.json */; };
 		37EE56062D5F197300D53C7C /* dark-trackers-1.json in Resources */ = {isa = PBXBuildFile; fileRef = 37EE55B92D5F197300D53C7C /* dark-trackers-1.json */; };
 		37EE56072D5F197300D53C7C /* dark-trackers-2.json in Resources */ = {isa = PBXBuildFile; fileRef = 37EE55BA2D5F197300D53C7C /* dark-trackers-2.json */; };
 		37EE56082D5F197300D53C7C /* dark-trackers-3.json in Resources */ = {isa = PBXBuildFile; fileRef = 37EE55BB2D5F197300D53C7C /* dark-trackers-3.json */; };
 		37EE56092D5F197300D53C7C /* flame-mouse-over.json in Resources */ = {isa = PBXBuildFile; fileRef = 37EE55BC2D5F197300D53C7C /* flame-mouse-over.json */; };
-		37EE560A2D5F197300D53C7C /* shield.json in Resources */ = {isa = PBXBuildFile; fileRef = 37EE55BD2D5F197300D53C7C /* shield.json */; };
-		37EE560B2D5F197300D53C7C /* shield-dot.json in Resources */ = {isa = PBXBuildFile; fileRef = 37EE55BE2D5F197300D53C7C /* shield-dot.json */; };
-		37EE560C2D5F197300D53C7C /* shield-dot-mouse-over.json in Resources */ = {isa = PBXBuildFile; fileRef = 37EE55BF2D5F197300D53C7C /* shield-dot-mouse-over.json */; };
-		37EE560D2D5F197300D53C7C /* shield-mouse-over.json in Resources */ = {isa = PBXBuildFile; fileRef = 37EE55C02D5F197300D53C7C /* shield-mouse-over.json */; };
 		37EE560E2D5F197300D53C7C /* trackers-1.json in Resources */ = {isa = PBXBuildFile; fileRef = 37EE55C12D5F197300D53C7C /* trackers-1.json */; };
 		37EE560F2D5F197300D53C7C /* trackers-2.json in Resources */ = {isa = PBXBuildFile; fileRef = 37EE55C22D5F197300D53C7C /* trackers-2.json */; };
 		37EE56102D5F197300D53C7C /* trackers-3.json in Resources */ = {isa = PBXBuildFile; fileRef = 37EE55C32D5F197300D53C7C /* trackers-3.json */; };
@@ -2143,12 +2127,6 @@
 		BB046FF72F6D873B007F7107 /* PromoServiceFactory+FreemiumDBP.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB046FF62F6D873B007F7107 /* PromoServiceFactory+FreemiumDBP.swift */; };
 		BB046FF82F6D873B007F7107 /* PromoServiceFactory+FreemiumDBP.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB046FF62F6D873B007F7107 /* PromoServiceFactory+FreemiumDBP.swift */; };
 		BB0B4EA22E7B131F005A2F57 /* AppStoreUpdateMenuItemFactory.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB0B4EA12E7B1318005A2F57 /* AppStoreUpdateMenuItemFactory.swift */; };
-		BB0DA4D92DB17F2100AB9C29 /* shield-dot-new.json in Resources */ = {isa = PBXBuildFile; fileRef = BB0DA4D72DB17F2100AB9C29 /* shield-dot-new.json */; };
-		BB0DA4DB2DB17F2100AB9C29 /* shield-dot-new.json in Resources */ = {isa = PBXBuildFile; fileRef = BB0DA4D72DB17F2100AB9C29 /* shield-dot-new.json */; };
-		BB0DA4DE2DB1806000AB9C29 /* dark-shield-new.json in Resources */ = {isa = PBXBuildFile; fileRef = BB0DA4DC2DB1806000AB9C29 /* dark-shield-new.json */; };
-		BB0DA4DF2DB1806000AB9C29 /* dark-shield-dot-new.json in Resources */ = {isa = PBXBuildFile; fileRef = BB0DA4DD2DB1806000AB9C29 /* dark-shield-dot-new.json */; };
-		BB0DA4E02DB1806000AB9C29 /* dark-shield-new.json in Resources */ = {isa = PBXBuildFile; fileRef = BB0DA4DC2DB1806000AB9C29 /* dark-shield-new.json */; };
-		BB0DA4E12DB1806000AB9C29 /* dark-shield-dot-new.json in Resources */ = {isa = PBXBuildFile; fileRef = BB0DA4DD2DB1806000AB9C29 /* dark-shield-dot-new.json */; };
 		BB25827A2E9EC778002B8DB5 /* SERPSettingsProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB2582792E9EC770002B8DB5 /* SERPSettingsProvider.swift */; };
 		BB25827B2E9EC778002B8DB5 /* SERPSettingsProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB2582792E9EC770002B8DB5 /* SERPSettingsProvider.swift */; };
 		BB32C5942DCCF77F00775E80 /* RampView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB32C5932DCCF77C00775E80 /* RampView.swift */; };
@@ -2479,8 +2457,6 @@
 		D58E0D3347CE56BF74436970 /* PromoServiceFactory+SyncFavicons.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5051C994F24DF4A1A742BE09 /* PromoServiceFactory+SyncFavicons.swift */; };
 		D5F051229ECCC1FAD13DB793 /* AIChatScreenshotRegionCapturer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 35B80ADE0E7D7817A23554CE /* AIChatScreenshotRegionCapturer.swift */; };
 		D5F106663497E18BACD4E3AA /* DuckAIFirstPromptNewInstallCohort.swift in Sources */ = {isa = PBXBuildFile; fileRef = D59D21E17986E9359FE3449C /* DuckAIFirstPromptNewInstallCohort.swift */; };
-		D6229C302ED0E213001DAE71 /* shield.new.json in Resources */ = {isa = PBXBuildFile; fileRef = D6229C2F2ED0E213001DAE71 /* shield.new.json */; };
-		D6229C312ED0E213001DAE71 /* shield.new.json in Resources */ = {isa = PBXBuildFile; fileRef = D6229C2F2ED0E213001DAE71 /* shield.new.json */; };
 		D65D0F9F2E7239680075A784 /* NetworkQualityMonitor in Frameworks */ = {isa = PBXBuildFile; productRef = D65D0F9E2E7239680075A784 /* NetworkQualityMonitor */; };
 		D65D0FA12E7239730075A784 /* NetworkQualityMonitor in Frameworks */ = {isa = PBXBuildFile; productRef = D65D0FA02E7239730075A784 /* NetworkQualityMonitor */; };
 		D65D0FA32E7239750075A784 /* PerformanceTest in Frameworks */ = {isa = PBXBuildFile; productRef = D65D0FA42E7239750075A784 /* PerformanceTest */; };
@@ -3292,18 +3268,10 @@
 		37EE55B12D5F197300D53C7C /* NavigationBarBadgeAnimationView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NavigationBarBadgeAnimationView.swift; sourceTree = "<group>"; };
 		37EE55B22D5F197300D53C7C /* NavigationBarBadgeAnimator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NavigationBarBadgeAnimator.swift; sourceTree = "<group>"; };
 		37EE55B42D5F197300D53C7C /* dark-flame-mouse-over.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "dark-flame-mouse-over.json"; sourceTree = "<group>"; };
-		37EE55B52D5F197300D53C7C /* dark-shield.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "dark-shield.json"; sourceTree = "<group>"; };
-		37EE55B62D5F197300D53C7C /* dark-shield-dot.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "dark-shield-dot.json"; sourceTree = "<group>"; };
-		37EE55B72D5F197300D53C7C /* dark-shield-dot-mouse-over.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "dark-shield-dot-mouse-over.json"; sourceTree = "<group>"; };
-		37EE55B82D5F197300D53C7C /* dark-shield-mouse-over.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "dark-shield-mouse-over.json"; sourceTree = "<group>"; };
 		37EE55B92D5F197300D53C7C /* dark-trackers-1.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "dark-trackers-1.json"; sourceTree = "<group>"; };
 		37EE55BA2D5F197300D53C7C /* dark-trackers-2.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "dark-trackers-2.json"; sourceTree = "<group>"; };
 		37EE55BB2D5F197300D53C7C /* dark-trackers-3.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "dark-trackers-3.json"; sourceTree = "<group>"; };
 		37EE55BC2D5F197300D53C7C /* flame-mouse-over.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "flame-mouse-over.json"; sourceTree = "<group>"; };
-		37EE55BD2D5F197300D53C7C /* shield.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = shield.json; sourceTree = "<group>"; };
-		37EE55BE2D5F197300D53C7C /* shield-dot.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "shield-dot.json"; sourceTree = "<group>"; };
-		37EE55BF2D5F197300D53C7C /* shield-dot-mouse-over.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "shield-dot-mouse-over.json"; sourceTree = "<group>"; };
-		37EE55C02D5F197300D53C7C /* shield-mouse-over.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "shield-mouse-over.json"; sourceTree = "<group>"; };
 		37EE55C12D5F197300D53C7C /* trackers-1.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "trackers-1.json"; sourceTree = "<group>"; };
 		37EE55C22D5F197300D53C7C /* trackers-2.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "trackers-2.json"; sourceTree = "<group>"; };
 		37EE55C32D5F197300D53C7C /* trackers-3.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "trackers-3.json"; sourceTree = "<group>"; };
@@ -4000,9 +3968,6 @@
 		BB027E882FBB4D30009B4FE4 /* DuckAiVoiceChatShieldScope.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DuckAiVoiceChatShieldScope.swift; sourceTree = "<group>"; };
 		BB046FF62F6D873B007F7107 /* PromoServiceFactory+FreemiumDBP.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "PromoServiceFactory+FreemiumDBP.swift"; sourceTree = "<group>"; };
 		BB0B4EA12E7B1318005A2F57 /* AppStoreUpdateMenuItemFactory.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppStoreUpdateMenuItemFactory.swift; sourceTree = "<group>"; };
-		BB0DA4D72DB17F2100AB9C29 /* shield-dot-new.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "shield-dot-new.json"; sourceTree = "<group>"; };
-		BB0DA4DC2DB1806000AB9C29 /* dark-shield-new.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "dark-shield-new.json"; sourceTree = "<group>"; };
-		BB0DA4DD2DB1806000AB9C29 /* dark-shield-dot-new.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "dark-shield-dot-new.json"; sourceTree = "<group>"; };
 		BB2582792E9EC770002B8DB5 /* SERPSettingsProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SERPSettingsProvider.swift; sourceTree = "<group>"; };
 		BB32C5932DCCF77C00775E80 /* RampView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RampView.swift; sourceTree = "<group>"; };
 		BB32C5962DCCF79D00775E80 /* PinnedTabRampView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PinnedTabRampView.swift; sourceTree = "<group>"; };
@@ -4154,7 +4119,6 @@
 		D2AF962B212922FE0198E1A4 /* NewTabPageOmnibarScreenshotProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NewTabPageOmnibarScreenshotProvider.swift; sourceTree = "<group>"; };
 		D4912774B0E942D597229E05 /* AutoplayPreferences.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AutoplayPreferences.swift; sourceTree = "<group>"; };
 		D59D21E17986E9359FE3449C /* DuckAIFirstPromptNewInstallCohort.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DuckAIFirstPromptNewInstallCohort.swift; sourceTree = "<group>"; };
-		D6229C2F2ED0E213001DAE71 /* shield.new.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = shield.new.json; sourceTree = "<group>"; };
 		D65D0F9D2E7236D80075A784 /* NetworkQualityMonitor */ = {isa = PBXFileReference; lastKnownFileType = wrapper; path = NetworkQualityMonitor; sourceTree = "<group>"; };
 		D65D0FA22E7239740075A784 /* PerformanceTest */ = {isa = PBXFileReference; lastKnownFileType = wrapper; path = PerformanceTest; sourceTree = "<group>"; };
 		D6E0ACB02CE36DC4005D3486 /* DuckPlayerOverlayPixels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DuckPlayerOverlayPixels.swift; sourceTree = "<group>"; };
@@ -6441,23 +6405,11 @@
 		84DD63E22E9784400043A25E /* Resources */ = {
 			isa = PBXGroup;
 			children = (
-				D6229C2F2ED0E213001DAE71 /* shield.new.json */,
-				BB0DA4DC2DB1806000AB9C29 /* dark-shield-new.json */,
-				BB0DA4DD2DB1806000AB9C29 /* dark-shield-dot-new.json */,
-				BB0DA4D72DB17F2100AB9C29 /* shield-dot-new.json */,
 				37EE55B42D5F197300D53C7C /* dark-flame-mouse-over.json */,
-				37EE55B52D5F197300D53C7C /* dark-shield.json */,
-				37EE55B62D5F197300D53C7C /* dark-shield-dot.json */,
-				37EE55B72D5F197300D53C7C /* dark-shield-dot-mouse-over.json */,
-				37EE55B82D5F197300D53C7C /* dark-shield-mouse-over.json */,
 				37EE55B92D5F197300D53C7C /* dark-trackers-1.json */,
 				37EE55BA2D5F197300D53C7C /* dark-trackers-2.json */,
 				37EE55BB2D5F197300D53C7C /* dark-trackers-3.json */,
 				37EE55BC2D5F197300D53C7C /* flame-mouse-over.json */,
-				37EE55BD2D5F197300D53C7C /* shield.json */,
-				37EE55BE2D5F197300D53C7C /* shield-dot.json */,
-				37EE55BF2D5F197300D53C7C /* shield-dot-mouse-over.json */,
-				37EE55C02D5F197300D53C7C /* shield-mouse-over.json */,
 				37EE55C12D5F197300D53C7C /* trackers-1.json */,
 				37EE55C22D5F197300D53C7C /* trackers-2.json */,
 				37EE55C32D5F197300D53C7C /* trackers-3.json */,
@@ -9359,7 +9311,6 @@
 				CD2AB5C82C8223040019EB49 /* phishingHashPrefixes.json in Resources */,
 				BBBD29952E2EB70A005E7664 /* pictogramDaxHeart.json in Resources */,
 				3706FCB7293F65D500E42796 /* 01_Fire_really_small.json in Resources */,
-				BB0DA4DB2DB17F2100AB9C29 /* shield-dot-new.json in Resources */,
 				854DAAAE2A72B613001E2E24 /* BookmarksBarPromptAssets.xcassets in Resources */,
 				B599B5EE2FFE9DF700B5E877 /* Flame-24.json in Resources */,
 				378CA3A02FBC79290043CF38 /* AppIcon.icon in Resources */,
@@ -9368,22 +9319,13 @@
 				ED314ECA301CC10E00D1A0A0 /* AppIcon-Review.icon in Resources */,
 				B5EA14AB2FFFDB8000FC2512 /* Shield-Color-24.json in Resources */,
 				37EE56012D5F197300D53C7C /* dark-flame-mouse-over.json in Resources */,
-				37EE56022D5F197300D53C7C /* dark-shield.json in Resources */,
-				37EE56032D5F197300D53C7C /* dark-shield-dot.json in Resources */,
 				567311292D71DDDB002DAF62 /* scamFilterSet.json in Resources */,
 				7B307A752DCCE19100A07FB0 /* AppStore.xcstrings in Resources */,
 				5673112A2D71DDDB002DAF62 /* scamHashPrefixes.json in Resources */,
-				37EE56042D5F197300D53C7C /* dark-shield-dot-mouse-over.json in Resources */,
-				37EE56052D5F197300D53C7C /* dark-shield-mouse-over.json in Resources */,
 				37EE56062D5F197300D53C7C /* dark-trackers-1.json in Resources */,
 				37EE56072D5F197300D53C7C /* dark-trackers-2.json in Resources */,
 				37EE56082D5F197300D53C7C /* dark-trackers-3.json in Resources */,
 				37EE56092D5F197300D53C7C /* flame-mouse-over.json in Resources */,
-				37EE560A2D5F197300D53C7C /* shield.json in Resources */,
-				37EE560B2D5F197300D53C7C /* shield-dot.json in Resources */,
-				37EE560C2D5F197300D53C7C /* shield-dot-mouse-over.json in Resources */,
-				D6229C312ED0E213001DAE71 /* shield.new.json in Resources */,
-				37EE560D2D5F197300D53C7C /* shield-mouse-over.json in Resources */,
 				37EE560E2D5F197300D53C7C /* trackers-1.json in Resources */,
 				37EE560F2D5F197300D53C7C /* trackers-2.json in Resources */,
 				37EE56102D5F197300D53C7C /* trackers-3.json in Resources */,
@@ -9398,8 +9340,6 @@
 				B658BAB72B0F848D00D1F2C7 /* Localizable.xcstrings in Resources */,
 				CD2AB5C62C8222FE0019EB49 /* phishingFilterSet.json in Resources */,
 				7B122A992DE4717400B84F63 /* AppStoreInfoPlist.xcstrings in Resources */,
-				BB0DA4DE2DB1806000AB9C29 /* dark-shield-new.json in Resources */,
-				BB0DA4DF2DB1806000AB9C29 /* dark-shield-dot-new.json in Resources */,
 				B531B7FA30112DB60087A2DE /* Shield-Off-Gray.json in Resources */,
 				3706FCED293F65D500E42796 /* httpsMobileV2Bloom.bin in Resources */,
 				3706FCF0293F65D500E42796 /* httpsMobileV2BloomSpec.json in Resources */,
@@ -9542,7 +9482,6 @@
 				CD2AB5C72C8223030019EB49 /* phishingHashPrefixes.json in Resources */,
 				BBBD29942E2EB70A005E7664 /* pictogramDaxHeart.json in Resources */,
 				8511E18425F82B34002F516B /* 01_Fire_really_small.json in Resources */,
-				BB0DA4D92DB17F2100AB9C29 /* shield-dot-new.json in Resources */,
 				859F30672A72B38500C20372 /* BookmarksBarPromptAssets.xcassets in Resources */,
 				B599B5ED2FFE9DF700B5E877 /* Flame-24.json in Resources */,
 				378CA39F2FBC79290043CF38 /* AppIcon.icon in Resources */,
@@ -9551,22 +9490,13 @@
 				ED314ECB301CC10E00D1A0A0 /* AppIcon-Review.icon in Resources */,
 				B5EA14AA2FFFDB8000FC2512 /* Shield-Color-24.json in Resources */,
 				37EE55D82D5F197300D53C7C /* dark-flame-mouse-over.json in Resources */,
-				37EE55D92D5F197300D53C7C /* dark-shield.json in Resources */,
-				37EE55DA2D5F197300D53C7C /* dark-shield-dot.json in Resources */,
 				567311272D71DDDB002DAF62 /* scamFilterSet.json in Resources */,
 				567311282D71DDDB002DAF62 /* scamHashPrefixes.json in Resources */,
-				37EE55DB2D5F197300D53C7C /* dark-shield-dot-mouse-over.json in Resources */,
-				37EE55DC2D5F197300D53C7C /* dark-shield-mouse-over.json in Resources */,
 				37EE55DD2D5F197300D53C7C /* dark-trackers-1.json in Resources */,
 				37EE55DE2D5F197300D53C7C /* dark-trackers-2.json in Resources */,
 				37EE55DF2D5F197300D53C7C /* dark-trackers-3.json in Resources */,
 				37EE55E02D5F197300D53C7C /* flame-mouse-over.json in Resources */,
 				7BE2073A2DCCC4230037394C /* DeveloperID.xcstrings in Resources */,
-				37EE55E12D5F197300D53C7C /* shield.json in Resources */,
-				37EE55E22D5F197300D53C7C /* shield-dot.json in Resources */,
-				37EE55E32D5F197300D53C7C /* shield-dot-mouse-over.json in Resources */,
-				D6229C302ED0E213001DAE71 /* shield.new.json in Resources */,
-				37EE55E42D5F197300D53C7C /* shield-mouse-over.json in Resources */,
 				37EE55E52D5F197300D53C7C /* trackers-1.json in Resources */,
 				37EE55E62D5F197300D53C7C /* trackers-2.json in Resources */,
 				37EE55E72D5F197300D53C7C /* trackers-3.json in Resources */,
@@ -9580,8 +9510,6 @@
 				4B677435255DBEB800025BD8 /* httpsMobileV2FalsePositives.json in Resources */,
 				B658BAB62B0F845D00D1F2C7 /* Localizable.xcstrings in Resources */,
 				CD2AB5C52C8222FE0019EB49 /* phishingFilterSet.json in Resources */,
-				BB0DA4E02DB1806000AB9C29 /* dark-shield-new.json in Resources */,
-				BB0DA4E12DB1806000AB9C29 /* dark-shield-dot-new.json in Resources */,
 				B531B7F930112DB60087A2DE /* Shield-Off-Gray.json in Resources */,
 				4B677433255DBEB800025BD8 /* httpsMobileV2Bloom.bin in Resources */,
 				4B677432255DBEB800025BD8 /* httpsMobileV2BloomSpec.json in Resources */,

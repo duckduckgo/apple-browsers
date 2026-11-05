@@ -36,12 +36,17 @@ final class ExtensionsManagementPreferences: ObservableObject {
         }
     }
 
+    /// Opened when the configuration doesn't set `learnMoreUrlRemoteDisable`, matching Windows.
+    private static let remoteDisableLearnMoreFallbackURL = URL(string: "https://duckduckgo.com/duckduckgo-help-pages")!
+
+    private let configurationManager: PrivacyConfigurationManaging
     private let webExtensionManager: WebExtensionManaging?
     private let windowControllersManager: WindowControllersManagerProtocol
     private var cancellables = Set<AnyCancellable>()
     private var enabledStateTasks: [String: Task<Void, Never>] = [:]
 
     init(configurationManager: PrivacyConfigurationManaging, webExtensionManager: WebExtensionManaging? = nil, windowControllersManager: WindowControllersManagerProtocol) {
+        self.configurationManager = configurationManager
         self.webExtensionManager = webExtensionManager
         self.windowControllersManager = windowControllersManager
 
@@ -83,6 +88,13 @@ final class ExtensionsManagementPreferences: ObservableObject {
         guard let url = webExtensionManager?.chromeWebStore?.learnMoreURL else {
             return
         }
+
+        windowControllersManager.show(url: url, source: .ui, newTab: true, selected: true)
+    }
+
+    func openRemoteDisableLearnMore() {
+        let configuredURL = configurationManager.privacyConfig.settings(for: .extensionManagement)["learnMoreUrlRemoteDisable"] as? String
+        let url = configuredURL.flatMap(URL.init(string:)) ?? Self.remoteDisableLearnMoreFallbackURL
 
         windowControllersManager.show(url: url, source: .ui, newTab: true, selected: true)
     }

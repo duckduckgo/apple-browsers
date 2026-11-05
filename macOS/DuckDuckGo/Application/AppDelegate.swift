@@ -2376,6 +2376,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         )
         self.webExtensionManager = webExtensionManager
         webExtensionAutofillTakeover.manager = webExtensionManager
+        webExtensionManager.installRemoteDisableEnforcer(
+            configurationManager: privacyFeatures.contentBlocking.privacyConfigurationManager,
+            featureFlagger: featureFlagger
+        )
 
         let coordinator = WebExtensionLifecycleCoordinator(
             manager: webExtensionManager,
@@ -2401,10 +2405,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     @MainActor
     private func startRemoteDisableEnforcer(for webExtensionManager: WebExtensionManager) {
         guard self.webExtensionManager === webExtensionManager else { return }
-        webExtensionManager.startRemoteDisableEnforcer(
-            configurationManager: privacyFeatures.contentBlocking.privacyConfigurationManager,
-            featureFlagger: featureFlagger
-        )
+        webExtensionManager.startRemoteDisableEnforcer()
     }
 
     @available(macOS 15.4, *)

@@ -26,8 +26,9 @@ import XCTest
 @MainActor
 final class UnifiedToggleInputCoordinatorResubmitTests: XCTestCase {
 
-    private func makeCoordinator(enabledFlags: [FeatureFlag]) -> UnifiedToggleInputCoordinator {
-        UnifiedToggleInputCoordinator(host: .omnibar, isToggleEnabled: true, preferences: ResubmitStubAIChatPreferences(),
+    private func makeCoordinator(enabledFlags: [FeatureFlag] = [.unifiedToggleInputResubmitDetection],
+                                 host: UnifiedToggleInputHost = .omnibar) -> UnifiedToggleInputCoordinator {
+        UnifiedToggleInputCoordinator(host: host, isToggleEnabled: host == .omnibar, preferences: ResubmitStubAIChatPreferences(),
                                       featureFlagger: MockFeatureFlagger(enabledFeatureFlags: enabledFlags))
     }
 
@@ -42,6 +43,34 @@ final class UnifiedToggleInputCoordinatorResubmitTests: XCTestCase {
         let sut = makeCoordinator(enabledFlags: [])
 
         XCTAssertNil(sut.resubmitDelay(of: "weather warsaw", mode: .aiChat))
+        XCTAssertNil(sut.resubmitDelay(of: "weather warsaw", mode: .search))
+    }
+
+    func testWhenInAFireTabThenNothingIsReported() {
+        let sut = makeCoordinator()
+        sut.updateIsFireTab(true)
+
+        XCTAssertNil(sut.resubmitDelay(of: "weather warsaw", mode: .aiChat))
+        XCTAssertNil(sut.resubmitDelay(of: "weather warsaw", mode: .search))
+    }
+
+    func testWhenFirstSubmitIsOutsideTheAddressBarThenItStartsNoComparison() {
+        let sut = makeCoordinator(host: .contextualChat)
+        XCTAssertNotEqual(sut.pixelSurface, .addressBar)
+
+        XCTAssertNil(sut.resubmitDelay(of: "weather warsaw", mode: .aiChat))
+        XCTAssertNil(sut.resubmitDelay(of: "weather warsaw", mode: .search))
+    }
+
+    func testWhenAppGoesToBackgroundThenEarlierSubmitIsForgotten() {
+        let sut = makeCoordinator()
+        XCTAssertNil(sut.resubmitDelay(of: "weather warsaw", mode: .aiChat))
+
+        NotificationCenter.default.post(name: UIApplication.didEnterBackgroundNotification, object: nil)
+        let mainQueueDrained = expectation(description: "main queue drained")
+        DispatchQueue.main.async { mainQueueDrained.fulfill() }
+        wait(for: [mainQueueDrained], timeout: 1)
+
         XCTAssertNil(sut.resubmitDelay(of: "weather warsaw", mode: .search))
     }
 }

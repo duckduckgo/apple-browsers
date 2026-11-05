@@ -144,7 +144,7 @@ final class LaunchActionHandlerTests {
     lazy var launchActionHandler = makeHandler()
 
     func makeHandler(outcome: IdleReturnOutcome = .ordinary(timeAwayMs: nil),
-                     landing: IdleReturnLaunchLanding = IdleReturnLaunchLanding(drewNewTabPage: false)) -> LaunchActionHandler {
+                     landing: IdleReturnLaunchLanding? = nil) -> LaunchActionHandler {
         LaunchActionHandler(
             urlHandler: urlHandler,
             shortcutItemHandler: shortcutItemHandler,
@@ -152,7 +152,7 @@ final class LaunchActionHandlerTests {
             keyboardPresenter: keyboardPresenter,
             launchSourceService: launchSourceManager,
             idleReturnOutcome: outcome,
-            idleReturnLaunchLanding: landing,
+            idleReturnLaunchLanding: landing ?? IdleReturnLaunchLanding(drewNewTabPage: false),
             featureFlagger: featureFlagger,
             idleReturnDelegate: idleReturnDelegate,
             pixelFiring: pixelKitMock

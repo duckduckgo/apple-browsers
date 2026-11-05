@@ -21,7 +21,7 @@ import Bookmarks
 import Common
 import CoreData
 import FoundationExtensions
-import Persistence
+@_spi(Testing) import Persistence
 import UIKit
 import XCTest
 @testable import Core
@@ -44,7 +44,11 @@ final class BookmarksViewControllerTests: XCTestCase {
         try context.save()
     }
 
+    @MainActor
     override func tearDownWithError() throws {
+        UIView.performWithoutAnimation {
+            ActionMessageView.dismissAllMessages()
+        }
         controller = nil
         root = nil
         context.reset()

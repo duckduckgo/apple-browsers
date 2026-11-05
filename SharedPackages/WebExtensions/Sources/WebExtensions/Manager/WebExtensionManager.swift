@@ -790,6 +790,12 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
         scriptletConfiguration?.provider.clearCachedScriptlets()
     }
 
+    /// Debug: moves pending store installs `interval` earlier, so the next browsing activity reports their retention.
+    @MainActor
+    public func backdateStoreInstalls(by interval: TimeInterval) {
+        storePixelsReporter?.backdateInstalls(by: interval)
+    }
+
     @MainActor
     public func scriptletDebugInfo() -> [ScriptletDebugInfo] {
         guard let config = scriptletConfiguration else { return [] }

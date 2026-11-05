@@ -63,4 +63,9 @@ public final class WebExtensionRetentionStore {
         storage.installDates = installDates.filter { !due.contains($0.key) }
         return due
     }
+
+    /// Moves every pending installation `interval` earlier, so a debug build can reach the check without waiting.
+    public func backdateInstallations(by interval: TimeInterval) {
+        storage.installDates = storage.installDates?.mapValues { $0 - interval }
+    }
 }

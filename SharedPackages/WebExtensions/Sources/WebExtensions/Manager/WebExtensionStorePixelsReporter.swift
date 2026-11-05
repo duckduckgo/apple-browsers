@@ -44,30 +44,68 @@ final class WebExtensionStorePixelsReporter {
         store.recordInstallation(of: extensionID, at: now())
     }
 
+    /// Moves pending installs `interval` earlier and lets the next browsing activity check right away, for debugging.
+    func backdateInstalls(by interval: TimeInterval) {
+        store.backdateInstallations(by: interval)
+        lastCheckDate = nil
+    }
+
     /// Reports how many store extensions are installed and enabled, then each install that is 14 days old as retained
     /// when it's still installed and enabled, or as churned. It checks at most once an hour, so a gap in use makes a
     /// report late, not lost. The count pixel is daily, so each device reports it once a day. Nothing is reported while
     /// the catalog offers no extensions, so the count's denominator is devices that can install store extensions.
     func reportIfDue(chromeWebStore: ChromeWebStoreManaging?) {
-        let date = now()
-        if let lastCheckDate, date.timeIntervalSince(lastCheckDate) < Self.checkInterval {
+        guard shouldReportChurnAndRetained() else {
             return
         }
-        lastCheckDate = date
+
+        let date = markRetainedWasReported()
+
         // Checked after the hourly check, since it evaluates the whole catalog configuration.
-        guard let chromeWebStore, !chromeWebStore.catalogExtensionIDs.isEmpty else { return }
+        guard let chromeWebStore, !chromeWebStore.catalogExtensionIDs.isEmpty else {
+            return
+        }
 
         // Old and new versions coexist during an update, so each store ID counts once.
         var isEnabledByStoreID: [String: Bool] = [:]
         for installedExtension in installationStore.installedExtensions {
-            guard let storeID = installedExtension.storeIdentity?.id else { continue }
+            guard let storeID = installedExtension.storeIdentity?.id else {
+                continue
+            }
+
             isEnabledByStoreID[storeID] = (isEnabledByStoreID[storeID] ?? false) || !installedExtension.isDisabled
         }
+
         pixelFiring.fire(.installedCount(installed: isEnabledByStoreID.count, enabled: isEnabledByStoreID.values.filter { $0 }.count))
 
         for storeID in store.takeDue(at: date) {
-            let reported: WebExtensionPixelExtension = chromeWebStore.catalogEntry(of: storeID).map { .catalog($0) } ?? .other
-            pixelFiring.fire(isEnabledByStoreID[storeID] == true ? .retained14Days(extension: reported) : .churned14Days(extension: reported))
+            let reported: WebExtensionPixelExtension = chromeWebStore.catalogEntry(of: storeID)
+                .map {
+                    .catalog($0)
+                } ?? .other
+
+            let enabled = isEnabledByStoreID[storeID] == true
+
+            pixelFiring.fire(enabled ? .retained14Days(extension: reported) : .churned14Days(extension: reported))
         }
+    }
+}
+
+@available(macOS 15.4, iOS 18.4, *)
+private extension WebExtensionStorePixelsReporter {
+
+    func shouldReportChurnAndRetained() -> Bool {
+        let date = now()
+        guard let lastCheckDate, date.timeIntervalSince(lastCheckDate) < Self.checkInterval else {
+            return true
+        }
+
+        return false
+    }
+
+    func markRetainedWasReported() -> Date {
+        let output = now()
+        lastCheckDate = output
+        return output
     }
 }

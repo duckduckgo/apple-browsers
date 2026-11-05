@@ -40,6 +40,7 @@ final class WebExtensionsDebugMenu: NSMenu {
     private let openExtensionsFolderMenuItem = NSMenuItem(title: "Open Extensions Folder in Finder", action: #selector(WebExtensionsDebugMenu.openExtensionsFolderInFinder))
     private let extensionsPageMenuItem = NSMenuItem(title: "Extensions Page", action: #selector(WebExtensionsDebugMenu.showExtensionsPage))
     private let apiCompatibilityLogMenuItem = NSMenuItem(title: "Extension Compatibility Log…", action: #selector(WebExtensionsDebugMenu.showAPICompatibilityLog))
+    private let backdateInstallDatesMenuItem = NSMenuItem(title: "Backdate Install Dates by a Month", action: #selector(WebExtensionsDebugMenu.backdateInstallDates))
 
     init(webExtensionManager: WebExtensionManaging,
          cpmMessagingHealthMonitor: CPMMessagingHealthMonitor,
@@ -65,6 +66,8 @@ final class WebExtensionsDebugMenu: NSMenu {
         apiCompatibilityLogMenuItem.target = self
         extensionsPageMenuItem.target = self
         apiCompatibilityLogMenuItem.isEnabled = true
+        backdateInstallDatesMenuItem.target = self
+        backdateInstallDatesMenuItem.isEnabled = true
 
         addItems()
     }
@@ -87,6 +90,7 @@ final class WebExtensionsDebugMenu: NSMenu {
         addItem(openExtensionsFolderMenuItem)
         addItem(extensionsPageMenuItem)
         addItem(apiCompatibilityLogMenuItem)
+        addItem(backdateInstallDatesMenuItem)
 
         let addedPopoverMenuItems = makeShowAddedPopoverMenuItems()
         if !addedPopoverMenuItems.isEmpty {
@@ -234,6 +238,11 @@ final class WebExtensionsDebugMenu: NSMenu {
 
     @objc func showExtensionsPage() {
         Application.appDelegate.windowControllersManager.show(url: .webExtensions, source: .ui, newTab: true)
+    }
+
+    /// Lets the next page load report 14-day retention for every pending store install.
+    @objc func backdateInstallDates() {
+        (webExtensionManager as? WebExtensionManager)?.backdateStoreInstalls(by: 30 * 24 * 60 * 60)
     }
 
     @objc func showAPICompatibilityLog() {

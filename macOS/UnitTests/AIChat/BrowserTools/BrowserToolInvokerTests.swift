@@ -337,7 +337,8 @@ final class BrowserToolInvokerTests: XCTestCase {
         return BrowserToolInvoker(catalog: BrowserToolCatalog(tools: tools, configuration: configuration),
                                   configuration: configuration,
                                   permissions: permissions,
-                                  elicitations: elicitations)
+                                  elicitations: elicitations,
+                                  clientToolPermissions: ClientToolPermissionCoordinator(permissions: permissions))
     }
 
     private func context(isBurner: Bool = false, supportsElicitationForm: Bool = true) -> BrowserToolCallContext {

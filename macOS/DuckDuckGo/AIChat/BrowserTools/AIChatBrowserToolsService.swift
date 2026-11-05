@@ -39,6 +39,7 @@ final class AIChatBrowserToolsService {
     let invoker: BrowserToolInvoker
     let permissions: BrowserToolPermissionStoring
     let elicitations: AIChatElicitationCoordinator
+    let clientToolPermissions: ClientToolPermissionCoordinator
 
     private let configuration: AIChatBrowserToolsConfiguration
     private let windowControllersManager: WindowControllersManagerProtocol
@@ -61,15 +62,18 @@ final class AIChatBrowserToolsService {
                                          configuration: configuration)
         let permissions = BrowserToolPermissionStore(storage: permissionStorage)
         let elicitations = AIChatElicitationCoordinator()
+        let clientToolPermissions = ClientToolPermissionCoordinator(permissions: permissions)
         self.configuration = configuration
         self.windowControllersManager = windowControllersManager
         self.catalog = catalog
         self.permissions = permissions
         self.elicitations = elicitations
+        self.clientToolPermissions = clientToolPermissions
         self.invoker = BrowserToolInvoker(catalog: catalog,
                                           configuration: configuration,
                                           permissions: permissions,
-                                          elicitations: elicitations)
+                                          elicitations: elicitations,
+                                          clientToolPermissions: clientToolPermissions)
         self.catalogChangeNotifier = BrowserToolCatalogChangeNotifier(
             changes: featureFlagger.updatesPublisher,
             signature: { [configuration, catalog] in configuration.isEnabled ? catalog.enabledTools.map(\.name) : [] },

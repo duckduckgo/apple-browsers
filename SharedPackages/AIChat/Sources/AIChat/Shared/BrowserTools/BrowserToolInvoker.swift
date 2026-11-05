@@ -27,15 +27,18 @@ public final class BrowserToolInvoker {
     private let configuration: BrowserToolsConfiguration
     private let permissions: BrowserToolPermissionStoring
     private let elicitations: AIChatElicitationCoordinator
+    private let clientToolPermissions: any ClientToolPermissionCoordinating
 
     public init(catalog: BrowserToolCatalog,
                 configuration: BrowserToolsConfiguration,
                 permissions: BrowserToolPermissionStoring,
-                elicitations: AIChatElicitationCoordinator) {
+                elicitations: AIChatElicitationCoordinator,
+                clientToolPermissions: any ClientToolPermissionCoordinating) {
         self.catalog = catalog
         self.configuration = configuration
         self.permissions = permissions
         self.elicitations = elicitations
+        self.clientToolPermissions = clientToolPermissions
     }
 
     /// - Parameter elicitationPusher: where a permission prompt for this call is delivered. `nil`
@@ -98,6 +101,52 @@ public final class BrowserToolInvoker {
             case .none:
                 return .invalidPermissionChoice
             }
+        }
+    }
+}
+
+// MARK: - Client Tools, new API
+
+public extension BrowserToolInvoker {
+
+    func invokeClientTool(_ request: ExecuteClientToolRequest,
+                          context: BrowserToolCallContext,
+                          permissionPusher: (any ClientToolPermissionPushing)?) async -> ExecuteClientToolResponse {
+        guard !context.isBurner,
+              let tool = catalog.tool(for: request.capability) else {
+            return .failure(callId: request.callId, error: .unavailable)
+        }
+        let authorization = await clientToolPermissions.authorize(callID: request.callId, tool: tool, source: permissionPusher)
+        switch authorization {
+        case .refused(.cancelled):
+            return .failure(callId: request.callId, error: .cancelled)
+        case .refused:
+            guard !Task.isCancelled else { return .failure(callId: request.callId, error: .cancelled) }
+        case .granted(let confirmPermissionForExecution):
+            guard confirmPermissionForExecution() else { return .failure(callId: request.callId, error: .cancelled) }
+        }
+        guard !context.isBurner,
+              let currentTool = catalog.tool(for: request.capability) else {
+            return .failure(callId: request.callId, error: .unavailable)
+        }
+        if case .refused(let error) = authorization {
+            return .failure(callId: request.callId, error: error)
+        }
+        switch await currentTool.execute(arguments: request.input, context: context) {
+        case .success(let value):
+            return .success(callId: request.callId, value: value)
+        case .failure(let error):
+            return .failure(callId: request.callId, error: Self.clientToolError(error))
+        }
+    }
+
+    private static func clientToolError(_ error: BrowserToolFailure) -> ClientToolError {
+        switch error {
+        case .invalidArguments, .invalidPermissionChoice, .invalidRequest: .invalidArguments
+        case .unavailable, .elicitationUnsupported, .notInitialized: .unavailable
+        case .notFound: .notFound
+        case .denied: .denied
+        case .cancelled: .cancelled
         }
     }
 }

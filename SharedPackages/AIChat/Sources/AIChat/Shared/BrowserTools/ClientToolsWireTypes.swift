@@ -23,12 +23,14 @@ public struct ClientToolCapability: Codable, Equatable, Sendable {
     public let name: String
     public let version: Int
 
-    public static let listOpenTabs = Self(canonicalName: "listOpenTabs")
-    public static let switchToTab = Self(canonicalName: "switchToTab")
-    public static let searchHistory = Self(canonicalName: "searchHistory")
-    public static let readTabContent = Self(canonicalName: "readTabContent")
-    public static let findInPage = Self(canonicalName: "findInPage")
-    public static let highlightInPage = Self(canonicalName: "highlightInPage")
+    public static let listOpenTabs = Self(canonicalName: "listOpenTabs", version: 1)
+    public static let switchToTab = Self(canonicalName: "switchToTab", version: 1)
+    public static let searchHistory = Self(canonicalName: "searchHistory", version: 1)
+    public static let readTabContent = Self(canonicalName: "readTabContent", version: 1)
+    public static let findInPage = Self(canonicalName: "findInPage", version: 1)
+    public static let highlightInPage = Self(canonicalName: "highlightInPage", version: 1)
+
+    public static let browserTools: [Self] = [.listOpenTabs, .switchToTab, .searchHistory, .readTabContent, .findInPage, .highlightInPage]
 
     public init(name: String, version: Int) throws {
         try ClientToolWireValidation.validateIdentifier(name, maximumLength: ClientToolWireValidation.maximumCapabilityNameLength, field: "name")
@@ -39,9 +41,9 @@ public struct ClientToolCapability: Codable, Equatable, Sendable {
         self.version = version
     }
 
-    private init(canonicalName: String) {
+    private init(canonicalName: String, version: Int) {
         name = canonicalName
-        version = 1
+        self.version = version
     }
 
     private enum CodingKeys: String, CodingKey, CaseIterable {

@@ -54,7 +54,9 @@ extension MainViewController {
     }
 
     private func prepareFirstPaintCover(forSubmitting url: URL) {
+        // Other schemes, such as mailto:, never load in the tab.
         guard featureFlagger.isFeatureOn(.searchSubmitPageCover),
+              let scheme = url.scheme?.lowercased(), scheme == "http" || scheme == "https",
               let tab = currentTab, tab.link != nil, !tab.isAITab,
               aiBoundaryDecision(for: url) == .loadInPlace else { return }
 

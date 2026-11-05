@@ -37,6 +37,8 @@ struct FirstPaintCoverTests {
         var handoffs: [(snapshot: UIView?, destinationColor: UIColor?)] = []
         let container = UIView(frame: CGRect(x: 0, y: 0, width: 400, height: 800))
         let webView = UIView()
+        /// Stands in for the WKNavigation of the covered load.
+        let navigation = NSObject()
         lazy var cover = FirstPaintCover(
             scheduler: { [unowned self] delay, action in
                 let index = self.timeouts.count
@@ -58,6 +60,11 @@ struct FirstPaintCoverTests {
 
         var isCoverInHierarchy: Bool { cover.coverView?.superview === container }
 
+        func startAndCommit() {
+            cover.didStartNavigation(navigation)
+            cover.didCommit(navigation)
+        }
+
         func fireLatestTimeout() {
             guard let timeout = timeouts.last, !timeout.isCancelled else { return }
             timeout.action()
@@ -70,7 +77,8 @@ struct FirstPaintCoverTests {
         }
     }
 
-    @Test("Arming covers the web view straight away")
+    @available(iOS 16, macOS 13, *)
+    @Test("Arming covers the web view straight away", .timeLimit(.minutes(1)))
     func armingCoversWebView() {
         let harness = Harness()
 
@@ -83,7 +91,8 @@ struct FirstPaintCoverTests {
         #expect(harness.cover.coverView?.alpha == 1)
     }
 
-    @Test("Paint milestones before commit belong to the old page and are ignored")
+    @available(iOS 16, macOS 13, *)
+    @Test("Paint milestones before commit belong to the old page and are ignored", .timeLimit(.minutes(1)))
     func paintBeforeCommitIsIgnored() {
         let harness = Harness()
         harness.cover.arm(in: harness.container, above: harness.webView)
@@ -94,12 +103,13 @@ struct FirstPaintCoverTests {
         #expect(harness.pendingFades.isEmpty)
     }
 
-    @Test("First visually non-empty layout starts a short wait for real content",
+    @available(iOS 16, macOS 13, *)
+    @Test("First visually non-empty layout starts a short wait for real content", .timeLimit(.minutes(1)),
           arguments: [firstVisuallyNonEmptyLayout, firstLayout | firstVisuallyNonEmptyLayout])
     func firstLayoutStartsGrace(events: UInt) {
         let harness = Harness()
         harness.cover.arm(in: harness.container, above: harness.webView)
-        harness.cover.didCommit()
+        harness.startAndCommit()
 
         harness.cover.renderingProgressDidChange(events)
 
@@ -108,12 +118,13 @@ struct FirstPaintCoverTests {
         #expect(harness.pendingFades.isEmpty)
     }
 
-    @Test("Meaningful content after first layout reveals the page",
+    @available(iOS 16, macOS 13, *)
+    @Test("Meaningful content after first layout reveals the page", .timeLimit(.minutes(1)),
           arguments: [firstMeaningfulPaint, didRenderSignificantAmountOfText])
     func meaningfulContentAfterFirstLayoutReveals(events: UInt) {
         let harness = Harness()
         harness.cover.arm(in: harness.container, above: harness.webView)
-        harness.cover.didCommit()
+        harness.startAndCommit()
         harness.cover.renderingProgressDidChange(Self.firstVisuallyNonEmptyLayout)
 
         harness.cover.renderingProgressDidChange(events)
@@ -126,23 +137,25 @@ struct FirstPaintCoverTests {
         #expect(!harness.isCoverInHierarchy)
     }
 
-    @Test("Meaningful content without a first-layout event still reveals",
+    @available(iOS 16, macOS 13, *)
+    @Test("Meaningful content without a first-layout event still reveals", .timeLimit(.minutes(1)),
           arguments: [firstMeaningfulPaint, firstVisuallyNonEmptyLayout | firstMeaningfulPaint])
     func meaningfulContentAloneReveals(events: UInt) {
         let harness = Harness()
         harness.cover.arm(in: harness.container, above: harness.webView)
-        harness.cover.didCommit()
+        harness.startAndCommit()
 
         harness.cover.renderingProgressDidChange(events)
 
         #expect(harness.cover.phase == .idle)
     }
 
-    @Test("The grace window reveals when meaningful paint never arrives")
+    @available(iOS 16, macOS 13, *)
+    @Test("The grace window reveals when meaningful paint never arrives", .timeLimit(.minutes(1)))
     func graceWindowReveals() {
         let harness = Harness()
         harness.cover.arm(in: harness.container, above: harness.webView)
-        harness.cover.didCommit()
+        harness.startAndCommit()
         harness.cover.renderingProgressDidChange(Self.firstVisuallyNonEmptyLayout)
 
         harness.fireLatestTimeout()
@@ -151,41 +164,47 @@ struct FirstPaintCoverTests {
         #expect(harness.pendingFades.count == 1)
     }
 
-    @Test("First layout alone keeps the cover", arguments: [firstLayout])
+    @available(iOS 16, macOS 13, *)
+    @Test("First layout alone keeps the cover", .timeLimit(.minutes(1)), arguments: [firstLayout])
     func firstLayoutKeepsCover(events: UInt) {
         let harness = Harness()
         harness.cover.arm(in: harness.container, above: harness.webView)
-        harness.cover.didCommit()
+        harness.startAndCommit()
 
         harness.cover.renderingProgressDidChange(events)
 
         #expect(harness.cover.phase == .awaitingPaint)
     }
 
-    @Test("A cancelled navigation keeps the cover for the load that replaces it")
+    @available(iOS 16, macOS 13, *)
+    @Test("A cancelled navigation keeps the cover for the load that replaces it", .timeLimit(.minutes(1)))
     func cancelledNavigationKeepsCover() {
         let harness = Harness()
         harness.cover.arm(in: harness.container, above: harness.webView)
+        harness.cover.didStartNavigation(harness.navigation)
 
-        harness.cover.navigationDidFail(NSError(domain: NSURLErrorDomain, code: NSURLErrorCancelled))
+        harness.cover.navigationDidFail(NSError(domain: NSURLErrorDomain, code: NSURLErrorCancelled), navigation: harness.navigation)
 
         #expect(harness.cover.phase == .awaitingCommit)
     }
 
-    @Test("A failed navigation reveals so the error page can show",
+    @available(iOS 16, macOS 13, *)
+    @Test("A failed navigation reveals so the error page can show", .timeLimit(.minutes(1)),
           arguments: [NSError(domain: NSURLErrorDomain, code: NSURLErrorNotConnectedToInternet),
                       NSError(domain: "WebKitErrorDomain", code: 102)])
     func failedNavigationReveals(error: NSError) {
         let harness = Harness()
         harness.cover.arm(in: harness.container, above: harness.webView)
+        harness.cover.didStartNavigation(harness.navigation)
 
-        harness.cover.navigationDidFail(error)
+        harness.cover.navigationDidFail(error, navigation: harness.navigation)
 
         #expect(harness.cover.phase == .idle)
         #expect(harness.pendingFades.count == 1)
     }
 
-    @Test("The timeout reveals when no paint arrives")
+    @available(iOS 16, macOS 13, *)
+    @Test("The timeout reveals when no paint arrives", .timeLimit(.minutes(1)))
     func timeoutReveals() {
         let harness = Harness()
         harness.cover.arm(in: harness.container, above: harness.webView)
@@ -193,26 +212,57 @@ struct FirstPaintCoverTests {
         harness.fireLatestTimeout()
 
         #expect(harness.cover.phase == .idle)
-        #expect(harness.timeouts.last?.delay == FirstPaintCover.Constants.timeout)
+        #expect(harness.timeouts.last?.delay == FirstPaintCover.Constants.commitTimeout)
     }
 
-    @Test("Commit restarts the timeout and cancels the earlier one")
+    @available(iOS 16, macOS 13, *)
+    @Test("Commit swaps the long commit wait for the shorter paint wait", .timeLimit(.minutes(1)))
     func commitRestartsTimeout() {
         let harness = Harness()
         harness.cover.arm(in: harness.container, above: harness.webView)
 
-        harness.cover.didCommit()
+        harness.startAndCommit()
 
-        #expect(harness.timeouts.count == 2)
-        #expect(harness.timeouts[0].isCancelled)
-        #expect(!harness.timeouts[1].isCancelled)
+        #expect(harness.timeouts.count == 3)
+        let earlierCancelled = harness.timeouts.dropLast().allSatisfy { $0.isCancelled }
+        #expect(earlierCancelled)
+        #expect(harness.timeouts.last?.isCancelled == false)
+        #expect(harness.timeouts.last?.delay == FirstPaintCover.Constants.paintTimeout)
     }
 
-    @Test("Revealing cancels the pending timeout")
+    @available(iOS 16, macOS 13, *)
+    @Test("A load that hasn't committed gets longer than the paint wait, since revealing would show the old page", .timeLimit(.minutes(1)))
+    func commitWaitOutlastsPaintWait() {
+        let harness = Harness()
+
+        harness.cover.arm(in: harness.container, above: harness.webView)
+
+        #expect(harness.timeouts.last?.delay == FirstPaintCover.Constants.commitTimeout)
+        #expect(FirstPaintCover.Constants.commitTimeout > FirstPaintCover.Constants.paintTimeout)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Each start, including a re-issued request, restarts the commit wait", .timeLimit(.minutes(1)))
+    func startRestartsCommitWait() {
+        let harness = Harness()
+        harness.cover.arm(in: harness.container, above: harness.webView)
+
+        harness.cover.didStartNavigation(harness.navigation)
+        harness.cover.didStartNavigation(NSObject())
+
+        #expect(harness.timeouts.count == 3)
+        let earlierCancelled = harness.timeouts.dropLast().allSatisfy { $0.isCancelled }
+        #expect(earlierCancelled)
+        #expect(harness.timeouts.last?.delay == FirstPaintCover.Constants.commitTimeout)
+        #expect(harness.cover.phase == .awaitingCommit)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Revealing cancels the pending timeout", .timeLimit(.minutes(1)))
     func revealCancelsTimeout() {
         let harness = Harness()
         harness.cover.arm(in: harness.container, above: harness.webView)
-        harness.cover.didCommit()
+        harness.startAndCommit()
 
         harness.cover.renderingProgressDidChange(Self.firstMeaningfulPaint)
 
@@ -220,11 +270,12 @@ struct FirstPaintCoverTests {
         #expect(allCancelled)
     }
 
-    @Test("Re-arming mid-fade keeps the cover up at full opacity")
+    @available(iOS 16, macOS 13, *)
+    @Test("Re-arming mid-fade keeps the cover up at full opacity", .timeLimit(.minutes(1)))
     func rearmDuringFadeKeepsCover() {
         let harness = Harness()
         harness.cover.arm(in: harness.container, above: harness.webView)
-        harness.cover.didCommit()
+        harness.startAndCommit()
         harness.cover.renderingProgressDidChange(Self.firstMeaningfulPaint)
         harness.cover.coverView?.alpha = 0.4
 
@@ -236,7 +287,8 @@ struct FirstPaintCoverTests {
         #expect(harness.cover.coverView?.alpha == 1)
     }
 
-    @Test("Cancel removes the cover at once")
+    @available(iOS 16, macOS 13, *)
+    @Test("Cancel removes the cover at once", .timeLimit(.minutes(1)))
     func cancelRemovesImmediately() {
         let harness = Harness()
         harness.cover.arm(in: harness.container, above: harness.webView)
@@ -248,7 +300,8 @@ struct FirstPaintCoverTests {
         #expect(harness.pendingFades.isEmpty)
     }
 
-    @Test("The exit snapshot sits on the cover where the panel was, and the hand-off gets the page colour")
+    @available(iOS 16, macOS 13, *)
+    @Test("The exit snapshot sits on the cover where the panel was, and the hand-off gets the page colour", .timeLimit(.minutes(1)))
     func handoffPlacesSnapshotAndPassesColor() {
         let harness = Harness()
         let window = UIWindow(frame: CGRect(x: 0, y: 0, width: 400, height: 900))
@@ -267,7 +320,8 @@ struct FirstPaintCoverTests {
         #expect(harness.handoffs.first?.destinationColor == .red)
     }
 
-    @Test("Arming starts from the panel colour so the hand-off is invisible")
+    @available(iOS 16, macOS 13, *)
+    @Test("Arming starts from the panel colour so the hand-off is invisible", .timeLimit(.minutes(1)))
     func armStartsFromPanelColor() {
         let harness = Harness()
         harness.cover.arm(in: harness.container, above: harness.webView)
@@ -278,7 +332,8 @@ struct FirstPaintCoverTests {
         #expect(harness.cover.coverView?.backgroundColor == FirstPaintCover.Constants.baseColor)
     }
 
-    @Test("Re-arming replaces the previous exit snapshot")
+    @available(iOS 16, macOS 13, *)
+    @Test("Re-arming replaces the previous exit snapshot", .timeLimit(.minutes(1)))
     func rearmReplacesSnapshot() {
         let harness = Harness()
         let first = UIView()
@@ -291,7 +346,8 @@ struct FirstPaintCoverTests {
         #expect(second.superview === harness.cover.coverView)
     }
 
-    @Test("Revealing removes the exit snapshot with the cover",
+    @available(iOS 16, macOS 13, *)
+    @Test("Revealing removes the exit snapshot with the cover", .timeLimit(.minutes(1)),
           arguments: [true, false])
     func revealRemovesSnapshot(animated: Bool) {
         let harness = Harness()
@@ -299,7 +355,7 @@ struct FirstPaintCoverTests {
         harness.cover.arm(in: harness.container, above: harness.webView, handoff: .init(exitSnapshot: snapshot))
 
         if animated {
-            harness.cover.didCommit()
+            harness.startAndCommit()
             harness.cover.renderingProgressDidChange(Self.firstMeaningfulPaint)
             harness.finishFades()
         } else {
@@ -310,13 +366,105 @@ struct FirstPaintCoverTests {
         #expect(harness.cover.exitSnapshotView == nil)
     }
 
-    @Test("Callbacks without an armed cover do nothing")
+    @available(iOS 16, macOS 13, *)
+    @Test("A commit from the previous page's navigation is ignored", .timeLimit(.minutes(1)))
+    func previousNavigationCommitIsIgnored() {
+        let harness = Harness()
+        let previous = NSObject()
+        harness.cover.arm(in: harness.container, above: harness.webView)
+
+        harness.cover.didCommit(previous)
+        #expect(harness.cover.phase == .awaitingCommit, "before the covered load starts")
+
+        harness.cover.didStartNavigation(harness.navigation)
+        harness.cover.didCommit(previous)
+        #expect(harness.cover.phase == .awaitingCommit, "after the covered load starts")
+
+        harness.cover.didCommit(harness.navigation)
+        #expect(harness.cover.phase == .awaitingPaint)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("The previous page's paint can't reveal when its commit lands after arming", .timeLimit(.minutes(1)))
+    func previousPageCannotReveal() {
+        let harness = Harness()
+        let previous = NSObject()
+        harness.cover.arm(in: harness.container, above: harness.webView)
+        harness.cover.didStartNavigation(harness.navigation)
+
+        harness.cover.didCommit(previous)
+        harness.cover.renderingProgressDidChange(Self.firstVisuallyNonEmptyLayout | Self.firstMeaningfulPaint)
+
+        #expect(harness.cover.phase == .awaitingCommit)
+        #expect(harness.pendingFades.isEmpty)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Failures from the previous page's navigation keep the cover", .timeLimit(.minutes(1)))
+    func previousNavigationFailureKeepsCover() {
+        let harness = Harness()
+        let previous = NSObject()
+        let error = NSError(domain: NSURLErrorDomain, code: NSURLErrorNotConnectedToInternet)
+        harness.cover.arm(in: harness.container, above: harness.webView)
+
+        harness.cover.navigationDidFail(error, navigation: previous)
+        harness.cover.didStartNavigation(harness.navigation)
+        harness.cover.navigationDidFail(error, navigation: previous)
+
+        #expect(harness.cover.phase == .awaitingCommit)
+        #expect(harness.pendingFades.isEmpty)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("A re-issued request takes over from the cancelled one", .timeLimit(.minutes(1)))
+    func reissuedRequestTakesOver() {
+        let harness = Harness()
+        let reissued = NSObject()
+        harness.cover.arm(in: harness.container, above: harness.webView)
+        harness.cover.didStartNavigation(harness.navigation)
+        harness.cover.navigationDidFail(NSError(domain: NSURLErrorDomain, code: NSURLErrorCancelled), navigation: harness.navigation)
+
+        harness.cover.didStartNavigation(reissued)
+        harness.cover.didCommit(harness.navigation)
+        #expect(harness.cover.phase == .awaitingCommit, "the cancelled request no longer counts")
+
+        harness.cover.didCommit(reissued)
+        #expect(harness.cover.phase == .awaitingPaint)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Navigations WebKit reports without an object still count", .timeLimit(.minutes(1)))
+    func nilNavigationsCount() {
+        let harness = Harness()
+        harness.cover.arm(in: harness.container, above: harness.webView)
+
+        harness.cover.didStartNavigation(nil)
+        harness.cover.didCommit(nil)
+
+        #expect(harness.cover.phase == .awaitingPaint)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Re-arming forgets the previous load's navigation", .timeLimit(.minutes(1)))
+    func rearmForgetsNavigation() {
+        let harness = Harness()
+        harness.cover.arm(in: harness.container, above: harness.webView)
+        harness.cover.didStartNavigation(harness.navigation)
+
+        harness.cover.arm(in: harness.container, above: harness.webView)
+        harness.cover.didCommit(harness.navigation)
+
+        #expect(harness.cover.phase == .awaitingCommit)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Callbacks without an armed cover do nothing", .timeLimit(.minutes(1)))
     func idleCallbacksDoNothing() {
         let harness = Harness()
 
-        harness.cover.didCommit()
+        harness.startAndCommit()
         harness.cover.renderingProgressDidChange(Self.firstVisuallyNonEmptyLayout)
-        harness.cover.navigationDidFail(NSError(domain: NSURLErrorDomain, code: NSURLErrorTimedOut))
+        harness.cover.navigationDidFail(NSError(domain: NSURLErrorDomain, code: NSURLErrorTimedOut), navigation: harness.navigation)
         harness.cover.cancel()
 
         #expect(harness.cover.phase == .idle)

@@ -51,8 +51,10 @@ final class FirstPaintCover {
 
     enum Constants {
         static let baseColor = UIColor(designSystemColor: .panel)
-        /// Long enough for slow networks; failure callbacks clear sooner.
-        static let timeout: TimeInterval = 5
+        /// Last resort before commit, when revealing can only show the old page; the app may still be re-issuing the request.
+        static let commitTimeout: TimeInterval = 15
+        /// After commit, while waiting for the new page to paint.
+        static let paintTimeout: TimeInterval = 5
         /// Caps the wait after first layout; meaningful paint can be late or never fire.
         static let meaningfulPaintGrace: TimeInterval = 0.3
 
@@ -78,6 +80,14 @@ final class FirstPaintCover {
     private var cancelTimeout: (() -> Void)?
     private var fadeAnimator: UIViewPropertyAnimator?
     private var handoffAnimators: [UIViewPropertyAnimator] = []
+    private var coveredNavigation: CoveredNavigation = .notStarted
+
+    /// The navigation the cover waits for; anything else belongs to the previous page.
+    private enum CoveredNavigation {
+        case notStarted
+        /// Nil when WebKit didn't hand over a navigation object.
+        case started(ObjectIdentifier?)
+    }
 
     init(scheduler: @escaping Scheduler = FirstPaintCover.mainQueueScheduler,
          fadeOut: @escaping FadeOut = FirstPaintCover.defaultFadeOut,
@@ -113,13 +123,21 @@ final class FirstPaintCover {
         handoffAnimators = animateHandoff(view, handoff.exitSnapshot, handoff.destinationColor)
 
         phase = .awaitingCommit
-        restartTimeout()
+        coveredNavigation = .notStarted
+        restartTimeout(after: Constants.commitTimeout)
     }
 
-    func didCommit() {
+    /// The first navigation after arming is the covered one; a later start, such as a re-issued SERP request, replaces it.
+    func didStartNavigation(_ navigation: AnyObject?) {
         guard phase == .awaitingCommit else { return }
+        coveredNavigation = .started(navigation.map(ObjectIdentifier.init))
+        restartTimeout(after: Constants.commitTimeout)
+    }
+
+    func didCommit(_ navigation: AnyObject?) {
+        guard phase == .awaitingCommit, isCovered(navigation) else { return }
         phase = .awaitingPaint
-        restartTimeout()
+        restartTimeout(after: Constants.paintTimeout)
     }
 
     func renderingProgressDidChange(_ events: UInt) {
@@ -137,8 +155,8 @@ final class FirstPaintCover {
         }
     }
 
-    func navigationDidFail(_ error: Error) {
-        guard isCovering else { return }
+    func navigationDidFail(_ error: Error, navigation: AnyObject?) {
+        guard isCovering, isCovered(navigation) else { return }
         let nsError = error as NSError
         // Cancelled covers re-issued SERP requests and replaced navigations; a newer load will follow.
         if nsError.domain == NSURLErrorDomain && nsError.code == NSURLErrorCancelled { return }
@@ -151,8 +169,15 @@ final class FirstPaintCover {
         reveal(animated: false)
     }
 
+    private func isCovered(_ navigation: AnyObject?) -> Bool {
+        guard case .started(let coveredID) = coveredNavigation else { return false }
+        guard let coveredID, let navigation else { return true }
+        return coveredID == ObjectIdentifier(navigation)
+    }
+
     private func reveal(animated: Bool) {
         phase = .idle
+        coveredNavigation = .notStarted
         cancelTimeout?()
         cancelTimeout = nil
 
@@ -184,7 +209,7 @@ final class FirstPaintCover {
         view.alpha = 1
     }
 
-    private func restartTimeout(after delay: TimeInterval = Constants.timeout) {
+    private func restartTimeout(after delay: TimeInterval) {
         cancelTimeout?()
         cancelTimeout = scheduler(delay) { [weak self] in
             self?.reveal(animated: true)

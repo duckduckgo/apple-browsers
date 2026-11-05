@@ -51,21 +51,24 @@ struct SearchPageColorMemoryTests {
         return String(format: "#%02X%02X%02X", Int(round(red * 255)), Int(round(green * 255)), Int(round(blue * 255)))
     }
 
-    @Test("Reads the page background from the margins, even when a card fills most of the screen")
+    @available(iOS 16, macOS 13, *)
+    @Test("Reads the page background from the margins, even when a card fills most of the screen", .timeLimit(.minutes(1)))
     func readsPageBehindCards() throws {
         let image = try #require(Self.makePage().cgImage)
 
         #expect(Self.hex(SearchPageColorMemory.marginColor(in: image)) == "#171717")
     }
 
-    @Test("Ignores the header strip")
+    @available(iOS 16, macOS 13, *)
+    @Test("Ignores the header strip", .timeLimit(.minutes(1)))
     func ignoresHeader() throws {
         let image = try #require(Self.makePage(headerHeight: 140).cgImage)
 
         #expect(Self.hex(SearchPageColorMemory.marginColor(in: image)) == "#171717")
     }
 
-    @Test("Remembers a colour per appearance and only asks for one sample each")
+    @available(iOS 16, macOS 13, *)
+    @Test("Remembers a colour per appearance and only asks for one sample each", .timeLimit(.minutes(1)))
     func remembersPerAppearance() {
         let memory = SearchPageColorMemory()
         #expect(memory.needsSample(for: .dark))

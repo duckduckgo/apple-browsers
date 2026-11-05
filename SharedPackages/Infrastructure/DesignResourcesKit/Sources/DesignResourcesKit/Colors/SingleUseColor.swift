@@ -56,6 +56,16 @@ public enum SingleUseColor {
     /// Stop-generating button background in the unified toggle input bar: translucent overlay on the card (6% black in light, 12% white in dark).
     case unifiedToggleInputStopButtonBackground
 
+    /// The light that circles the unified toggle input card while speech is transcribed into it, matching
+    /// Duck.ai on the web: it blends from blue to green to violet. The halo behind the card uses its own green in dark mode.
+    case unifiedToggleInputListeningGlowBlue
+    case unifiedToggleInputListeningGlowGreen
+    case unifiedToggleInputListeningGlowHaloGreen
+    case unifiedToggleInputListeningGlowViolet
+    /// The static ring and halo that stand in for the moving light when Reduce Motion is on.
+    case unifiedToggleInputListeningGlowReducedMotionRing
+    case unifiedToggleInputListeningGlowReducedMotionHalo
+
     /// Colors introduced for the 2026 rebrand. Some have the same value as a `DesignSystemColor` (e.g. `accentPrimary`,
     /// `destructivePrimary`) – for new code, prefer using the `DesignSystemColor` instead.
     case rebranding(Rebranding)

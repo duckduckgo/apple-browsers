@@ -48,6 +48,13 @@ final class SwitchBarTextField: UITextField {
         bounds.inset(by: UIEdgeInsets(top: 0, left: textLeftInset, bottom: 0, right: textRightInset))
     }
 
+    var onAnyTouchBegan: (() -> Void)?
+
+    override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
+        super.touchesBegan(touches, with: event)
+        onAnyTouchBegan?()
+    }
+
     override var canBecomeFirstResponder: Bool {
         !hasHiddenAncestor && super.canBecomeFirstResponder
     }

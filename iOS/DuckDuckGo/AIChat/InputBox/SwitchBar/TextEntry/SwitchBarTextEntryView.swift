@@ -137,6 +137,43 @@ class SwitchBarTextEntryView: UIView {
 
     private let textView = SwitchBarTextView()
     private let textField = SwitchBarTextField()
+
+    /// Whether the field shows the software keyboard while it has focus.
+    enum SoftwareKeyboardSuppression {
+        case none
+        /// The field keeps its focus and caret but shows no keyboard, e.g. while speech is transcribed into it.
+        case suppressed
+        /// As `.suppressed`, until the user touches the field to edit it.
+        case suppressedUntilTouch
+
+        var suppressesKeyboard: Bool { self != .none }
+    }
+
+    var softwareKeyboardSuppression: SoftwareKeyboardSuppression = .none {
+        didSet {
+            guard softwareKeyboardSuppression.suppressesKeyboard != oldValue.suppressesKeyboard else { return }
+            // An empty input view stands in for the keyboard, so the field stays first responder.
+            let suppresses = softwareKeyboardSuppression.suppressesKeyboard
+            textView.inputView = suppresses ? UIView(frame: .zero) : nil
+            textField.inputView = suppresses ? UIView(frame: .zero) : nil
+            if textView.isFirstResponder { textView.reloadInputViews() }
+            if textField.isFirstResponder { textField.reloadInputViews() }
+        }
+    }
+
+    /// Speech is being transcribed into the field, so Search mode's placeholder asks for speech rather than typing.
+    var isListeningForSpeech = false {
+        didSet {
+            guard isListeningForSpeech != oldValue else { return }
+            setPlaceholderText(placeholderText(for: currentMode))
+        }
+    }
+
+    private func restoreSoftwareKeyboardOnTouchIfNeeded() {
+        guard softwareKeyboardSuppression == .suppressedUntilTouch else { return }
+        softwareKeyboardSuppression = .none
+    }
+
     var isInputFrozen = false {
         didSet {
             textView.isInputFrozen = isInputFrozen
@@ -385,6 +422,8 @@ class SwitchBarTextEntryView: UIView {
         updateButtonsPadding()
 
         textView.onTouchesBeganHandler = self.onTextViewTouchesBegan
+        textView.onAnyTouchBegan = { [weak self] in self?.restoreSoftwareKeyboardOnTouchIfNeeded() }
+        textField.onAnyTouchBegan = { [weak self] in self?.restoreSoftwareKeyboardOnTouchIfNeeded() }
 
         let tintColor: UIColor = handler.isFireTab
             ? UIColor(singleUseColor: .fireModeAccent)
@@ -606,7 +645,7 @@ class SwitchBarTextEntryView: UIView {
     private func placeholderText(for mode: TextEntryMode) -> String {
         switch mode {
         case .search:
-            return UserText.searchDuckDuckGo
+            return isListeningForSpeech ? UserText.inlineVoiceToTextSearchPlaceholder : UserText.searchDuckDuckGo
         case .aiChat:
             if handler.hasSubmittedPrompt {
                 return UserText.aiChatFollowUpPlaceholder
@@ -1193,6 +1232,7 @@ extension SwitchBarTextEntryView: UITextViewDelegate {
 
     func textViewDidEndEditing(_ textView: UITextView) {
         mentionHandler?.dismiss()
+        restoreSoftwareKeyboardOnTouchIfNeeded()
         onTextInputFocusChanged?(false)
     }
 
@@ -1269,6 +1309,7 @@ extension SwitchBarTextEntryView: UITextFieldDelegate {
     }
 
     func textFieldDidEndEditing(_ textField: UITextField) {
+        restoreSoftwareKeyboardOnTouchIfNeeded()
         onTextInputFocusChanged?(false)
     }
 

@@ -54,7 +54,7 @@ struct MenuCommandAvailability {
         case .about:
             guard state.presentation != .tabSwitcher || state.canHideTabs else { return false }
             return state.presentation == .browser || state.presentation == .tabSwitcher || state.presentation == .settings
-        case .settings, .feedback:
+        case .settings, .feedback, .importData, .setDefaultBrowser, .addToDock, .addWidget:
             guard state.presentation != .tabSwitcher || state.canHideTabs else { return false }
             return state.presentation == .browser || state.presentation == .tabSwitcher
         case .newTab, .fire:

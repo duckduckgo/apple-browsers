@@ -274,6 +274,24 @@ struct MainMenuTests {
 
     @available(iOS 16, macOS 13, *)
     @Test(.timeLimit(.minutes(1)))
+    func appItemsAppearInFileAndDuckDuckGoMenus() throws {
+        let spec = MainMenuSpec(isEnabled: true, idiom: .pad)
+        let fileMenu = try #require(spec.menus.first { $0.identifier == .file })
+        let duckDuckGoMenu = try #require(spec.menus.first { $0.identifier == .preferences })
+        let fileImport = try #require(fileMenu.submenus.first { $0.items.map(\.command) == [.importData] })
+        let appSetup = try #require(duckDuckGoMenu.submenus.first)
+
+        #expect(fileMenu.submenus.firstIndex { $0.identifier == fileImport.identifier } == 1)
+        #expect(appSetup.items.map(\.command) == [.setDefaultBrowser, .addToDock, .addWidget])
+        #expect(MainMenuCommand.importData.action == #selector(MainViewController.menuImportData))
+        #expect(MainMenuCommand.setDefaultBrowser.action == #selector(MainViewController.menuSetDefaultBrowser))
+        #expect(MainMenuCommand.addToDock.action == #selector(MainViewController.menuAddToDock))
+        #expect(MainMenuCommand.addWidget.action == #selector(MainViewController.menuAddWidget))
+        #expect(!MainMenuSpec(isEnabled: false, idiom: .pad).allItems.contains { $0.command == .addToDock })
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test(.timeLimit(.minutes(1)))
     func bookmarksShortcutsAreUniqueAndAddingNeedsAWebsite() {
         let favorites = makeFavorites(count: 12)
         let spec = MainMenuSpec(isEnabled: true, idiom: .phone, context: .init(favorites: favorites))

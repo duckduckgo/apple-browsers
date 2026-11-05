@@ -3179,6 +3179,12 @@ https://duckduckgo.com/mac";
 "menuActualSize" = "Actual Size";
 
 /* iPad menu bar command */
+"menuAddToDock" = "Add DuckDuckGo to Dock...";
+
+/* iPad menu bar command */
+"menuAddWidget" = "Add Widget to Home Screen...";
+
+/* iPad menu bar command */
 "menuBack" = "Back";
 
 /* iPad menu bar title */
@@ -3221,6 +3227,9 @@ https://duckduckgo.com/mac";
 "menuImportBookmarks" = "Import Bookmarks...";
 
 /* iPad menu bar command */
+"menuImportBookmarksAndPasswords" = "Import Bookmarks and Passwords...";
+
+/* iPad menu bar command */
 "menuLastTab" = "Last Tab";
 
 /* iPad Duck.ai menu bar command */
@@ -3255,6 +3264,9 @@ https://duckduckgo.com/mac";
 
 /* iPad menu bar command selecting a numbered tab */
 "menuSelectTab" = "Select Tab %d";
+
+/* iPad menu bar command */
+"menuSetDefaultBrowser" = "Set DuckDuckGo As Default Browser...";
 
 /* iPad menu bar command */
 "menuSettings" = "DuckDuckGo Settings...";

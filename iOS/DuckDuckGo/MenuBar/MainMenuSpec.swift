@@ -27,6 +27,7 @@ enum MainMenuCommand: CaseIterable {
     case find, stop, reload, showTabs, showPasswords, showDownloads, zoomIn, zoomOut, actualSize
     case newTabOnRight, duplicateTab, previousTab, nextTab, about, feedback
     case selectTab, back, forward, findNext, findPrevious, fire
+    case importData, setDefaultBrowser, addToDock, addWidget
 }
 
 struct MainMenuSpec {
@@ -102,7 +103,7 @@ struct MainMenuSpec {
     }
 
     private static var browserSections: [MainMenuSection] {
-        [SettingsMenuSection(title: UserText.menuSettings, image: DesignSystemImages.Glyphs.Size16.settings), FileMenuSection(), EditMenuSection(),
+        [SettingsMenuSection(title: UserText.menuSettings, image: DesignSystemImages.Glyphs.Size16.settings, includesAppItems: true), FileMenuSection(), EditMenuSection(),
          ViewMenuSection(), DuckAIMenuSection(), BookmarksMenuSection(), WindowMenuSection(), HelpMenuSection()]
     }
 
@@ -247,6 +248,10 @@ extension MainMenuCommand {
         case .findNext: return #selector(MainViewController.keyboardFindNext)
         case .findPrevious: return #selector(MainViewController.keyboardFindPrevious)
         case .fire: return #selector(MainViewController.keyboardFire)
+        case .importData: return #selector(MainViewController.menuImportData)
+        case .setDefaultBrowser: return #selector(MainViewController.menuSetDefaultBrowser)
+        case .addToDock: return #selector(MainViewController.menuAddToDock)
+        case .addWidget: return #selector(MainViewController.menuAddWidget)
         }
     }
 

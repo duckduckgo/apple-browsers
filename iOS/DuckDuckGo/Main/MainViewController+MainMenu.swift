@@ -134,6 +134,45 @@ extension MainViewController {
         dismissMenuPresentation { [weak self] in self?.segueToFeedback() }
     }
 
+    @objc func menuImportData() {
+        guard menuCommandAvailability.isEnabled(.importData) else { return }
+        dismissMenuPresentation { [weak self] in
+            self?.launchDataImport(source: .settings, onFinished: {}, onCancelled: {})
+        }
+    }
+
+    @objc func menuSetDefaultBrowser() {
+        guard menuCommandAvailability.isEnabled(.setDefaultBrowser) else { return }
+        dismissMenuPresentation { [weak self] in
+            self?.systemSettingsPiPTutorialManager.playPiPTutorialAndNavigateTo(destination: .defaultBrowser)
+        }
+    }
+
+    @objc func menuAddToDock() {
+        guard menuCommandAvailability.isEnabled(.addToDock) else { return }
+        dismissMenuPresentation { [weak self] in
+            let instructions = UIStoryboard(name: "HomeRow", bundle: nil).instantiateViewController(withIdentifier: "instructions")
+            instructions.modalPresentationStyle = .fullScreen
+            self?.present(instructions, animated: true)
+        }
+    }
+
+    @objc func menuAddWidget() {
+        guard menuCommandAvailability.isEnabled(.addWidget) else { return }
+        dismissMenuPresentation { [weak self] in
+            guard let self else { return }
+            let widgetEducation = WidgetEducationViewController()
+            let navigationController = UINavigationController(rootViewController: widgetEducation)
+            widgetEducation.navigationItem.leftBarButtonItem = UIBarButtonItem(
+                title: UserText.autofillNavigationButtonItemTitleClose, style: .plain, target: self, action: #selector(menuDismissPresentedScreen))
+            self.present(navigationController, animated: true)
+        }
+    }
+
+    @objc private func menuDismissPresentedScreen() {
+        dismiss(animated: true)
+    }
+
     func dismissMenuPresentation(completion: @escaping () -> Void) {
         if let tabSwitcherController {
             guard tabSwitcherController.canDismissOnEmpty || !tabSwitcherController.tabsModel.isEmpty else { return }

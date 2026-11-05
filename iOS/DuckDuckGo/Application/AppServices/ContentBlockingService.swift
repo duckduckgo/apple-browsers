@@ -48,7 +48,8 @@ final class ContentBlockingService {
          webExtensionAvailability: WebExtensionAvailabilityProviding? = nil,
          duckAiNativeStorageHandler: DuckAiNativeStorageHandling? = nil,
          fireModeStorageController: FireModeNativeStorageController? = nil,
-         adBlockingAvailability: AdBlockingAvailabilityProviding) {
+         adBlockingAvailability: AdBlockingAvailabilityProviding,
+         aiChatBonusOffer: AIChatBonusOfferDependencies) {
 
         self.duckAiNativeStorageHandler = duckAiNativeStorageHandler
         self.fireModeStorageController = fireModeStorageController
@@ -63,7 +64,8 @@ final class ContentBlockingService {
                                                                            contentScopeExperimentsManager: contentScopeExperimentsManager,
                                                                            internalUserDecider: internalUserDecider,
                                                                            syncErrorHandler: syncErrorHandler,
-                                                                           webExtensionAvailability: webExtensionAvailability)
+                                                                           webExtensionAvailability: webExtensionAvailability,
+                                                                           aiChatBonusOffer: aiChatBonusOffer)
 
         sponsorBlockPreferences = SponsorBlockPreferences(store: keyValueStore)
         updating = ContentBlockingUpdating(userScriptsDependencies: userScriptsDependencies,

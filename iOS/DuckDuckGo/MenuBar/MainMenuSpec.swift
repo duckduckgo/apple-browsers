@@ -17,6 +17,7 @@
 //  limitations under the License.
 //
 
+import DesignResourcesKitIcons
 import UIKit
 
 enum MainMenuCommand: CaseIterable {
@@ -40,6 +41,7 @@ struct MainMenuSpec {
         var fireModeEnabled = false
         var aiChatEnabled = false
         var favorites: [MainMenuBookmark] = []
+        var isOnboarding = false
     }
 
     struct Shortcut: Equatable {
@@ -54,6 +56,7 @@ struct MainMenuSpec {
         let requirement: KeyPath<Context, Bool>?
         /// Passed to the command as its property list, which also tells apart commands that share an action.
         var argument: String?
+        var image: UIImage?
     }
 
     struct Menu {
@@ -99,7 +102,7 @@ struct MainMenuSpec {
     }
 
     private static var browserSections: [MainMenuSection] {
-        [SettingsMenuSection(title: UserText.menuSettings), FileMenuSection(), EditMenuSection(),
+        [SettingsMenuSection(title: UserText.menuSettings, image: DesignSystemImages.Glyphs.Size16.settings), FileMenuSection(), EditMenuSection(),
          ViewMenuSection(), DuckAIMenuSection(), BookmarksMenuSection(), WindowMenuSection(), HelpMenuSection()]
     }
 
@@ -123,9 +126,15 @@ struct MainMenuSpec {
             removedMenus = []
             return
         }
+        keyCommandItems = Self.keyCommandOnlyItems
+        // Onboarding offers none of the browser's commands, so the menu bar shows only the system's own menus.
+        guard shortcutRegistration != .menu || !context.isOnboarding else {
+            entries = []
+            removedMenus = [.format, .file, .view]
+            return
+        }
         removedMenus = shortcutRegistration == .menu ? [.format] : []
         entries = Self.entries(of: Self.browserSections, in: context)
-        keyCommandItems = Self.keyCommandOnlyItems
     }
 
     private static func entries(of sections: [MainMenuSection], in context: Context) -> [Entry] {
@@ -172,9 +181,9 @@ struct MainMenuSpec {
 
     static func item(_ command: MainMenuCommand, _ title: String,
                      _ input: String? = nil, _ modifiers: UIKeyModifierFlags = [],
-                     requires requirement: KeyPath<Context, Bool>? = nil) -> Item {
+                     requires requirement: KeyPath<Context, Bool>? = nil, image: UIImage? = nil) -> Item {
         Item(command: command, title: title, shortcut: input.map { Shortcut(input: $0, modifiers: modifiers) },
-             requirement: requirement)
+             requirement: requirement, image: image)
     }
 
     static func group(_ identifier: String, _ items: [Item]) -> Menu {

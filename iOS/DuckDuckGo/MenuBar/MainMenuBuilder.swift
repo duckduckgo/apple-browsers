@@ -87,14 +87,28 @@ struct MainMenuBuilder {
 
     func makeCommand(for item: MainMenuSpec.Item) -> UICommand {
         guard let shortcut = item.shortcut else {
-            return UICommand(title: item.title, action: item.command.action, propertyList: item.argument)
+            return UICommand(title: item.title, image: item.image, action: item.command.action, propertyList: item.argument)
+                .showingImage()
         }
         let propertyList: Any = item.argument ?? ["input": shortcut.input, "modifiers": shortcut.modifiers.rawValue]
-        let command = UIKeyCommand(title: item.title, action: item.command.action,
+        let command = UIKeyCommand(title: item.title, image: item.image, action: item.command.action,
                                    input: shortcut.input, modifierFlags: shortcut.modifiers, propertyList: propertyList)
         command.wantsPriorityOverSystemBehavior = true
-        return command
+        return command.showingImage()
     }
+}
+
+extension UIMenuElement {
+
+    /// Makes the element's image show on iOS 27, which hides menu images unless an element asks for them.
+    @discardableResult
+    func showingImage() -> Self {
+        if #available(iOS 27.0, *), image != nil {
+            preferredImageVisibility = .visible
+        }
+        return self
+    }
+
 }
 
 extension UICommand {

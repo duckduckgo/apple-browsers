@@ -18,8 +18,10 @@
 //
 
 import Bookmarks
+import Combine
 import Core
 import CoreData
+import DesignResourcesKitIcons
 import FeatureFlags_iOS
 import Persistence
 import Testing
@@ -219,6 +221,43 @@ struct MainMenuTests {
     }
 
     @available(iOS 16, macOS 13, *)
+    @Test(.timeLimit(.minutes(1)), arguments: [UIUserInterfaceIdiom.phone, .pad])
+    func onboardingHidesBrowserMenusFromMenuBar(idiom: UIUserInterfaceIdiom) {
+        let onboarding = MainMenuSpec(isEnabled: true, idiom: idiom, context: .init(aiChatEnabled: true, isOnboarding: true))
+        let browsing = MainMenuSpec(isEnabled: true, idiom: idiom, context: .init(aiChatEnabled: true))
+        if registersInMenuBar(enabled: true, idiom: idiom) {
+            #expect(onboarding.mainMenus.isEmpty)
+            #expect(onboarding.removedMenus == [.format, .file, .view])
+        } else {
+            #expect(onboarding.mainMenus.map(\.identifier) == browsing.mainMenus.map(\.identifier))
+            #expect(onboarding.removedMenus == browsing.removedMenus)
+        }
+        #expect(!browsing.mainMenus.isEmpty)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test(.timeLimit(.minutes(1)))
+    func firstValueIsNilWhenPublisherSendsNothingInTime() async {
+        let silentPublisher = PassthroughSubject<Int, Error>()
+        #expect(await silentPublisher.firstValue(within: .milliseconds(10)) == nil)
+        withExtendedLifetime(silentPublisher) {}
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test(.timeLimit(.minutes(1)))
+    func firstValueReturnsTheFirstValueSentInTime() async {
+        let publisher = [1, 2].publisher.setFailureType(to: Error.self)
+        #expect(await publisher.firstValue(within: .seconds(1)) == 1)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test(.timeLimit(.minutes(1)))
+    func firstValueIsNilWhenPublisherFails() async {
+        let failingPublisher = Fail<Int, Error>(error: CancellationError())
+        #expect(await failingPublisher.firstValue(within: .seconds(1)) == nil)
+    }
+
+    @available(iOS 16, macOS 13, *)
     @Test(.timeLimit(.minutes(1)))
     func duckAISettingsChangeRebuildsMenu() async {
         let flagger = MockFeatureFlagger()
@@ -291,6 +330,43 @@ struct MainMenuTests {
         _ = await iterator.next()
         #expect(rebuildCount == 2)
         #expect(service.spec.allItems.filter { $0.command == .openBookmark }.isEmpty)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test(.timeLimit(.minutes(1)))
+    func menuCommandsShowOnlyTheirDesignIcons() {
+        typealias Glyphs = DesignSystemImages.Glyphs.Size16
+        let expectedImages: [MainMenuCommand: UIImage] = [
+            .settings: Glyphs.settings, .newTab: Glyphs.add, .newFireTab: Glyphs.fireWindow,
+            .voiceSearch: Glyphs.permissionMicrophone, .share: Glyphs.shareApple, .printPage: Glyphs.print,
+            .find: Glyphs.findInPage, .about: Glyphs.info, .feedback: Glyphs.feedback
+        ]
+        let spec = MainMenuSpec(isEnabled: true, idiom: .pad,
+                                context: .init(voiceSearchEnabled: true, fireModeEnabled: true, aiChatEnabled: true))
+        for item in spec.allItems {
+            #expect(MainMenuBuilder().makeCommand(for: item).image == expectedImages[item.command], "\(item.command)")
+        }
+        #expect(MainMenuSpec(isEnabled: false, idiom: .pad).allItems.allSatisfy { $0.image == nil })
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test(.timeLimit(.minutes(1)))
+    func recentChatsShowChatIconsAndDeleteAllShowsFire() throws {
+        let url = try #require(URL(string: "https://duck.ai/chat/1"))
+        let elements = DuckAIRecentChatsMenuContent.elements(for: .init(recentChats: [.init(title: "Chat", url: url)], totalChatCount: 1))
+        let commands = elements.compactMap { $0 as? UIMenu }.flatMap(\.children).compactMap { $0 as? UICommand }
+        #expect(commands.map(\.image) == [DesignSystemImages.Glyphs.Size16.chat, DesignSystemImages.Glyphs.Size16.fire])
+    }
+
+    @available(iOS 27, macOS 13, *)
+    @Test(.timeLimit(.minutes(1)))
+    func menuItemsWithImagesAskToShowThemOnIOS27() {
+        let spec = MainMenuSpec(isEnabled: true, idiom: .pad,
+                                context: .init(voiceSearchEnabled: true, fireModeEnabled: true, aiChatEnabled: true))
+        for item in spec.allItems {
+            let expected: UIMenuElement.ImageVisibility = item.image == nil ? .automatic : .visible
+            #expect(MainMenuBuilder().makeCommand(for: item).preferredImageVisibility == expected, "\(item.command)")
+        }
     }
 
     private func makeFavorites(count: Int) -> [MainMenuBookmark] {

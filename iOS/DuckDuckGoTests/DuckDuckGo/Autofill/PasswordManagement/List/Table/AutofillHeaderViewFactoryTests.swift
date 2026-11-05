@@ -23,11 +23,17 @@ import SwiftUI
 
 class MockAutofillHeaderViewDelegate: AutofillHeaderViewDelegate {
     var didHandlePrimaryAction = false
+    var didHandleSecondaryAction = false
     var didHandleDismissAction = false
     var lastHandledHeaderType: AutofillHeaderViewFactory.ViewType?
 
     func handlePrimaryAction(for headerType: AutofillHeaderViewFactory.ViewType) {
         didHandlePrimaryAction = true
+        lastHandledHeaderType = headerType
+    }
+
+    func handleSecondaryAction(for headerType: AutofillHeaderViewFactory.ViewType) {
+        didHandleSecondaryAction = true
         lastHandledHeaderType = headerType
     }
 
@@ -69,6 +75,30 @@ final class AutofillHeaderViewFactoryTests: XCTestCase {
 
         XCTAssertEqual(viewController.rootView.viewModel.design, .redesigned)
         XCTAssertNil(viewController.rootView.viewModel.secondaryButtonTitle)
+    }
+
+    func testWhenMakeHeaderViewForSyncAnotherDevicePromoThenPromoHasPasswordsCopy() throws {
+        let viewController = try XCTUnwrap(factory.makeHeaderView(for: .syncAnotherDevicePromo) as? UIHostingController<SyncAnotherDevicePromoView>)
+
+        XCTAssertEqual(viewController.rootView.title, UserText.syncPromoPasswordsAnotherDeviceTitle)
+        XCTAssertEqual(viewController.rootView.syncActionTitle, UserText.syncPromoPasswordsAnotherDeviceSyncAction)
+    }
+
+    func testWhenSyncAnotherDevicePromoButtonsAreTappedThenDelegateHandlesEachAction() throws {
+        let viewController = try XCTUnwrap(factory.makeHeaderView(for: .syncAnotherDevicePromo) as? UIHostingController<SyncAnotherDevicePromoView>)
+
+        viewController.rootView.syncAction()
+        XCTAssertTrue(mockDelegate.didHandlePrimaryAction)
+
+        viewController.rootView.getDesktopAppAction()
+        XCTAssertTrue(mockDelegate.didHandleSecondaryAction)
+
+        viewController.rootView.dismissAction()
+        XCTAssertTrue(mockDelegate.didHandleDismissAction)
+
+        guard case .syncAnotherDevicePromo = mockDelegate.lastHandledHeaderType else {
+            return XCTFail("Expected .syncAnotherDevicePromo ViewType")
+        }
     }
 
     func testWhenMakeHeaderViewForSurveyThenAutofillSurveyViewIsReturned() {

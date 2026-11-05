@@ -34,7 +34,7 @@ jobs:
 
     name: Set Up Variants
 
-    runs-on: macos-26
+    runs-on: ubuntu-latest
     timeout-minutes: 15
 
     outputs:
@@ -45,9 +45,6 @@ jobs:
     steps:
       - name: Check out repository
         uses: actions/checkout@v6
-
-      - name: Print macOS version
-        run: sw_vers
 
       - name: Fetch Build Variants
         id: get-build-variants
@@ -61,7 +58,7 @@ jobs:
 
     name: Download Release App and upload artifact
 
-    runs-on: macos-26
+    runs-on: ubuntu-latest
     timeout-minutes: 15
 
     steps:
@@ -75,9 +72,6 @@ jobs:
             macOS/Gemfile.lock
             macOS/fastlane
             macOS/scripts
-
-      - name: Print macOS version
-        run: sw_vers
 
       - name: Download release app
         env:
@@ -138,7 +132,7 @@ jobs:
 
     name: Send Mattermost message
     needs: [create-variants-1, create-variants-2, create-variants-3]
-    runs-on: macos-26
+    runs-on: ubuntu-latest
 
     env:
       success: ${{ needs.create-variants-1.result == 'success' && needs.create-variants-2.result == 'success' }}
@@ -155,10 +149,6 @@ jobs:
             macOS/Gemfile.lock
             macOS/fastlane
             macOS/scripts
-
-      - name: Print macOS version
-        if: ${{ env.success || env.failure }} # Don't execute when cancelled
-        run: sw_vers
 
       - name: Setup Ruby and dependencies
         if: ${{ env.success || env.failure }} # Don't execute when cancelled

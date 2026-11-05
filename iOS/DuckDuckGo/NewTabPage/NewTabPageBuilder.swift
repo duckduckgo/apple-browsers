@@ -91,6 +91,9 @@ struct NewTabPageBuilder {
             },
             onVoiceSearch: { textEntryMode in
                 newTabPage?.beginVoiceSearch(textEntryMode: textEntryMode)
+            },
+            aiChatMenu: {
+                newTabPage?.duckAIMenu()
             })
 
         let pageModel = NewTabPageViewModel(fireTab: false)
@@ -158,7 +161,6 @@ struct NewTabPageBuilder {
                                        daxDialogFactory: any NewTabDaxDialogProviding) -> any NewTabPage {
         NewTabPageViewController(isFocussedState: false,
                                  openedAfterIdle: openedAfterIdle,
-                                 dismissKeyboardOnScroll: true,
                                  tab: tab,
                                  interactionModel: favoritesInteractionModel,
                                  homePageMessagesConfiguration: homePageMessagesConfiguration,

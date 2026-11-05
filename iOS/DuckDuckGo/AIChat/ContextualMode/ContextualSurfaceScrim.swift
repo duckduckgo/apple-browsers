@@ -19,8 +19,8 @@
 
 import CoreGraphics
 
-/// How far the page behind a contextual surface is dimmed. Shared by the sheet and the floating
-/// input: they are alternating presentations of the same chat, so a drift between them is visible.
+/// How far the page behind a contextual surface is dimmed. Shared by the sheet, the floating input and the
+/// sidebar's floating suggestions: they are presentations of the same chat, so a drift between them is visible.
 enum ContextualSurfaceScrim {
     static let alpha: CGFloat = 0.3
 }

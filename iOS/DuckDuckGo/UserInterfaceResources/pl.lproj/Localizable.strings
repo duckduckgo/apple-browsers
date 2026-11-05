@@ -1,4 +1,7 @@
 /* No comment provided by engineer. */
+" " = " ";
+
+/* No comment provided by engineer. */
 "-config.rollout.<parent>.<subfeature> true/false" = "-config.rollout.<parent>.<subfeature> true/false";
 
 /* No comment provided by engineer. */
@@ -381,6 +384,21 @@
 
 /* Title for the New Tab row in the Duck.ai tab header Plus (+) menu */
 "aichat.header.plusMenu.newTab" = "Nowa karta";
+
+/* Section header in the Duck.ai tab header Plus (+) menu; every row below it opens a new tab */
+"aichat.header.plusMenu.newTabSection" = "Nowa karta";
+
+/* Row in the New Tab section of the Duck.ai tab header Plus (+) menu — opens a new Duck.ai chat in a new tab */
+"aichat.header.plusMenu.newTabSection.chat" = "Czat";
+
+/* Row in the New Tab section of the Duck.ai tab header Plus (+) menu — opens Duck.ai in image generation mode in a new tab */
+"aichat.header.plusMenu.newTabSection.image" = "Obraz";
+
+/* Row in the Duck.ai tab header Plus (+) menu — opens a new tab in search mode */
+"aichat.header.plusMenu.newTabSection.search" = "Wyszukiwanie";
+
+/* Row in the New Tab section of the Duck.ai tab header Plus (+) menu — opens a new Duck.ai voice chat in a new tab */
+"aichat.header.plusMenu.newTabSection.voiceChat" = "Czat głosowy";
 
 /* Title for the New Voice Chat row in the Duck.ai tab header Plus (+) menu */
 "aichat.header.plusMenu.newVoiceChat" = "Nowy czat głosowy";
@@ -3298,6 +3316,72 @@
 /* No comment provided by engineer. */
 "menu.button.hint" = "Dostępne opcje";
 
+/* iPad menu bar command */
+"menuActualSize" = "Rzeczywisty rozmiar";
+
+/* iPad menu bar command */
+"menuBack" = "Wstecz";
+
+/* iPad menu bar command */
+"menuClearTabsAndData" = "Wyczyść karty i dane";
+
+/* iPad menu bar command */
+"menuDuplicateTab" = "Zduplikuj kartę";
+
+/* iPad menu bar command */
+"menuFeedback" = "Podziel się opinią";
+
+/* iPad menu bar command */
+"menuForward" = "Dalej";
+
+/* iPad menu bar command */
+"menuHideDownloads" = "Ukryj pobrane";
+
+/* iPad menu bar command */
+"menuHidePasswords" = "Ukryj hasła";
+
+/* iPad menu bar command */
+"menuHideTabs" = "Ukryj karty";
+
+/* iPad menu bar command */
+"menuLastTab" = "Ostatnia karta";
+
+/* iPad menu bar command */
+"menuNewTabOnRight" = "Nowa karta po prawej stronie";
+
+/* iPad menu bar command */
+"menuNextTab" = "Pokaż następną kartę";
+
+/* iPad menu bar command */
+"menuOpenLocation" = "Otwórz lokalizację…";
+
+/* iPad menu bar command */
+"menuPreviousTab" = "Pokaż poprzednią kartę";
+
+/* iPad menu bar command */
+"menuPrint" = "Drukuj…";
+
+/* iPad menu bar command selecting a numbered tab */
+"menuSelectTab" = "Wybierz kartę %d";
+
+/* iPad menu bar command */
+"menuSettings" = "Ustawienia DuckDuckGo…";
+
+/* iPad menu bar command */
+"menuShowDownloads" = "Pokaż pobrane";
+
+/* iPad menu bar command */
+"menuShowPasswords" = "Pokaż hasła";
+
+/* iPad menu bar command */
+"menuShowTabs" = "Pokaż karty";
+
+/* iPad menu bar command */
+"menuStop" = "Zatrzymaj";
+
+/* iPad menu bar command */
+"menuVoiceSearch" = "Prywatne wyszukiwanie głosowe";
+
 /* No comment provided by engineer. */
 "Message" = "Wiadomość";
 
@@ -5932,3 +6016,12 @@
 /* Title for screen to screen confirming what data to import from a zip file (bookmarks and /or passwords) */
 "zip.content.import.types.title" = "Co chcesz importować?";
 
+
+/* Fireproofing setting toggle label */
+"preserveLogins.askOnSignIn" = "Proś o zabezpieczanie witryn internetowych podczas logowania";
+
+/* Empty Fireproof sites list */
+"preserveLogins.emptyState" = "Brak zabezpieczonych witryn internetowych";
+
+/* Button to remove all Fireproof sites */
+"preserveLogins.removeAllSites" = "Usuń wszystkie zabezpieczone strony";

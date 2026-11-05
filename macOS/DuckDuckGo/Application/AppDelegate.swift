@@ -792,6 +792,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
         // When TEST_PRIVACY_CONFIG_PATH is set, skip cached config to use the test config from embedded data provider
         let useTestConfig = (buildType.isDebugBuild || buildType.isReviewBuild) && ProcessInfo.processInfo.environment[AppPrivacyConfigurationDataProvider.EnvironmentKeys.testPrivacyConfigPath] != nil
+
+        // Clear cached config before loading it when the override source changes or is no longer eligible.
+        let overrideMarker = PrivacyConfigurationOverrideMarker(defaults: UserDefaults.appConfiguration)
+        overrideMarker.resetIfNeeded(userDefaults: .standard, isInternalUser: internalUserDecider.isInternalUser) { [configurationStore] in
+            configurationStore.removeStoredPrivacyConfiguration()
+        }
+
         let fetchedEtag: String? = useTestConfig ? nil : configurationStore.loadEtag(for: .privacyConfiguration)
         let fetchedData: Data? = useTestConfig ? nil : configurationStore.loadData(for: .privacyConfiguration)
 
@@ -1653,7 +1660,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             WebKitPasskeyRequestCanceller.install()
         }
 
-        configurationManager.start()
+        startConfigurationManager()
 
         let isFirstLaunch = LocalStatisticsStore().atb == nil
 
@@ -1839,6 +1846,28 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
     }
 
+    /// Handles `-privacyConfigURL` before starting scheduled refreshes, so they use the override URL.
+    private func startConfigurationManager() {
+        let handler = PrivacyConfigurationOverrideHandler(
+            privacyConfigurationManager: privacyFeatures.contentBlocking.privacyConfigurationManager,
+            urlProvider: configurationURLProvider,
+            overrideMarker: PrivacyConfigurationOverrideMarker(defaults: UserDefaults.appConfiguration)
+        )
+        let configurationManager = configurationManager
+        let argument = UserDefaults.standard.string(forKey: PrivacyConfigurationOverrideArgument.launchArgumentKey)
+        let overrideTask = handler.handle(argument: argument) {
+            try await configurationManager.fetchPrivacyConfiguration(isDebug: true)
+        }
+        if let overrideTask {
+            Task { @MainActor in
+                await overrideTask.value
+                configurationManager.start()
+            }
+        } else {
+            configurationManager.start()
+        }
+    }
+
     private func fireFailedCompilationsPixelIfNeeded() {
         let store = FailedCompilationsStore()
         if store.hasAnyFailures {
@@ -2017,8 +2046,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
             self.updateController = appStoreFactory.instantiate(
                 internalUserDecider: internalUserDecider,
+                featureFlagger: featureFlagger,
+                privacyConfigurationManager: privacyFeatures.contentBlocking.privacyConfigurationManager,
                 pixelFiring: PixelKit.shared,
                 notificationPresenter: notificationPresenter,
+                keyValueStore: UserDefaults.standard,
                 isOnboardingFinished: { [weak self, featureFlagger] in
                     if NonBlockingOnboarding(featureFlagger: featureFlagger).isNonBlocking {
                         return self?.isOnboardingReadyForPrompts == true
@@ -2348,11 +2380,16 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             keyValueStore: keyValueStore,
             privacyConfigurationManager: privacyFeatures.contentBlocking.privacyConfigurationManager,
             autoconsentPreferences: cookiePopupProtectionPreferences,
+            themeManager: themeManager,
             darkReaderExcludedDomainsProvider: darkReaderSettings,
             scriptletConfiguration: makeScriptletConfiguration()
         )
         self.webExtensionManager = webExtensionManager
         webExtensionAutofillTakeover.manager = webExtensionManager
+        webExtensionManager.installRemoteDisableEnforcer(
+            configurationManager: privacyFeatures.contentBlocking.privacyConfigurationManager,
+            featureFlagger: featureFlagger
+        )
 
         let coordinator = WebExtensionLifecycleCoordinator(
             manager: webExtensionManager,
@@ -2378,10 +2415,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     @MainActor
     private func startRemoteDisableEnforcer(for webExtensionManager: WebExtensionManager) {
         guard self.webExtensionManager === webExtensionManager else { return }
-        webExtensionManager.startRemoteDisableEnforcer(
-            configurationManager: privacyFeatures.contentBlocking.privacyConfigurationManager,
-            featureFlagger: featureFlagger
-        )
+        webExtensionManager.startRemoteDisableEnforcer()
     }
 
     @available(macOS 15.4, *)

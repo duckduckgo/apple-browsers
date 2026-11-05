@@ -785,7 +785,7 @@ final class AttributedMetricManagerTests: XCTestCase {
         fixture.installDateProvider.installDate = fixture.timeMachine.now()
 
         // Test: Process subscription (free trial)
-        fixture.attributionManager.process(trigger: .userDidSubscribe)
+        fixture.attributionManager.process(trigger: .userDidSubscribe(isFreeTrial: nil))
 
         await fulfillment(of: [pixelExpectation], timeout: 5.0)
         XCTAssertEqual(capturedLength, 0, "Should send bucketed month 0 for free trial")
@@ -837,11 +837,56 @@ final class AttributedMetricManagerTests: XCTestCase {
         fixture.installDateProvider.installDate = fixture.timeMachine.now()
 
         // Test: Process subscription (paid)
-        fixture.attributionManager.process(trigger: .userDidSubscribe)
+        fixture.attributionManager.process(trigger: .userDidSubscribe(isFreeTrial: nil))
 
         await fulfillment(of: [pixelExpectation], timeout: 5.0)
         XCTAssertEqual(capturedMonth, 1, "Should send bucketed month 1 for paid subscription")
         XCTAssertTrue(fixture.dataStorage.subscriptionMonth1Fired, "Should mark month 1 as fired")
+    }
+
+    /// The trial flag from the purchase wins over `SubscriptionStateProviding.isFreeTrial()`, which can report a trial as paid right after purchase.
+    func testProcessSubscriptionDay_purchaseSaysFreeTrial_firesMonth0EvenIfProviderSaysPaid() async {
+        let (month, fixture) = await processSubscriptionDay(purchaseIsFreeTrial: true, providerIsFreeTrial: false)
+        defer { fixture.cleanup() }
+
+        XCTAssertEqual(month, 0)
+        XCTAssertTrue(fixture.dataStorage.subscriptionFreeTrialFired)
+        XCTAssertFalse(fixture.dataStorage.subscriptionMonth1Fired)
+    }
+
+    func testProcessSubscriptionDay_purchaseSaysPaid_firesMonth1EvenIfProviderSaysFreeTrial() async {
+        let (month, fixture) = await processSubscriptionDay(purchaseIsFreeTrial: false, providerIsFreeTrial: true)
+        defer { fixture.cleanup() }
+
+        XCTAssertEqual(month, 1)
+        XCTAssertTrue(fixture.dataStorage.subscriptionMonth1Fired)
+        XCTAssertFalse(fixture.dataStorage.subscriptionFreeTrialFired)
+    }
+
+    private func processSubscriptionDay(purchaseIsFreeTrial: Bool, providerIsFreeTrial: Bool) async -> (month: Int?, fixture: TestFixture) {
+        let pixelExpectation = XCTestExpectation(description: "Subscription pixel fired")
+        var capturedMonth: Int?
+
+        let fixture = createTestFixture(
+            pixelHandler: { pixelName, _, parameters, _, _, _ in
+                switch pixelName {
+                case "attributed_metric_subscribed":
+                    capturedMonth = self.extractIntParameter(parameters, key: "month")
+                    pixelExpectation.fulfill()
+                case "attributed_metric_data_store_error":
+                    break
+                default:
+                    XCTFail("Unexpected pixel fired: \(pixelName)")
+                }
+            },
+            subscriptionStateProvider: SubscriptionStateProviderMock(isFreeTrial: providerIsFreeTrial, isActive: true)
+        )
+        fixture.installDateProvider.installDate = fixture.timeMachine.now()
+
+        fixture.attributionManager.process(trigger: .userDidSubscribe(isFreeTrial: purchaseIsFreeTrial))
+
+        await fulfillment(of: [pixelExpectation], timeout: 5.0)
+        return (capturedMonth, fixture)
     }
 
     /// Tests that processSubscriptionCheck sends month 1 pixel on app start after free trial ends
@@ -1479,7 +1524,7 @@ final class AttributedMetricManagerTests: XCTestCase {
         fixture.attributionManager.process(trigger: .userDidSearch)
         fixture.attributionManager.process(trigger: .userDidSelectAD)
         fixture.attributionManager.process(trigger: .userDidDuckAIChat)
-        fixture.attributionManager.process(trigger: .userDidSubscribe)
+        fixture.attributionManager.process(trigger: .userDidSubscribe(isFreeTrial: nil))
         fixture.attributionManager.process(trigger: .userDidSync(devicesCount: 1))
 
         XCTAssertFalse(pixelFired, "No pixels should fire for a returning user")

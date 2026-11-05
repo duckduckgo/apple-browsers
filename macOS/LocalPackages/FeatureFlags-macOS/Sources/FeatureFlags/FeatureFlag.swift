@@ -204,6 +204,9 @@ public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1218160728553684
     case dbpSchedulerDeferralHandling
 
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1219522935831328
+    case dbpChallengeSolver
+
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866717382557
     case syncSetupBarcodeIsUrlBased
 
@@ -576,10 +579,6 @@ public enum FeatureFlag: String, CaseIterable {
     /// Defers menu population to NSMenuDelegate.menuNeedsUpdate(_:) to avoid expensive eager rebuilds
     case lazyMenuRebuild
 
-    /// Enables removing individual AI chat suggestions from the omnibar
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213761882751264?focus=true
-    case aiChatRemoveSuggestion
-
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213813585476250?focus=true
     case screenTimeCleaning
 
@@ -883,6 +882,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(defaultValue: .enabled, source: .remoteReleasable(DBPSubfeature.extractedProfileRefresh), supportsLocalOverriding: true, category: .dbp)
         case .dbpSchedulerDeferralHandling:
             Config(defaultValue: .enabled, source: .remoteReleasable(DBPSubfeature.schedulerDeferralHandling), supportsLocalOverriding: true, category: .dbp)
+        case .dbpChallengeSolver:
+            Config(source: .remoteReleasable(DBPSubfeature.challengeSolver), category: .dbp)
         case .syncSetupBarcodeIsUrlBased:
             Config(source: .remoteReleasable(SyncSubfeature.syncSetupBarcodeIsUrlBased), category: .sync)
         case .exchangeKeysToSyncWithAnotherDevice:
@@ -1097,8 +1098,6 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(defaultValue: .enabled, source: .remoteReleasable(MacOSBrowserConfigSubfeature.websitesHistoryFirstTimeQuitSurvey))
         case .lazyMenuRebuild:
             Config(defaultValue: .enabled, source: .remoteReleasable(MacOSBrowserConfigSubfeature.lazyMenuRebuild))
-        case .aiChatRemoveSuggestion:
-            Config(defaultValue: .internalOnly, source: .remoteReleasable(AIChatSubfeature.removeSuggestion), category: .duckAI)
         case .screenTimeCleaning:
             Config(defaultValue: .enabled, source: .remoteReleasable(MacOSBrowserConfigSubfeature.screenTimeCleaning))
         case .tabSuspension:

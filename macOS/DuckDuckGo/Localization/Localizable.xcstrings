@@ -16952,66 +16952,6 @@
         }
       }
     },
-    "autofill.managed-by-extension" : {
-      "comment" : "Autofill settings: an installed browser extension, named in the parameter, manages the user's passwords, addresses and credit cards instead of DuckDuckGo",
-      "extractionState" : "extracted_with_value",
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Verwaltet von %@"
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "Managed by %@"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Gestionado por %@"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Géré par %@"
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Gestite da %@"
-          }
-        },
-        "nl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Beheerd door %@"
-          }
-        },
-        "pl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Zarządzane przez %@"
-          }
-        },
-        "pt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Gerido por %@"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Управляется %@"
-          }
-        }
-      }
-    },
     "autofill.management.credit-cards.unknown.card" : {
       "comment" : "Used as placeholder when user iserts a credit card of unknown type (e.g. not Visa, Mastercard)",
       "extractionState" : "extracted_with_value",
@@ -18628,66 +18568,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Показать пароль"
-          }
-        }
-      }
-    },
-    "autofill.use-duckduckgo-instead" : {
-      "comment" : "Autofill settings button: DuckDuckGo takes back saving and filling passwords, addresses and credit cards from a browser extension",
-      "extractionState" : "extracted_with_value",
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "DuckDuckGo stattdessen verwenden"
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "Use DuckDuckGo Instead"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Usar DuckDuckGo en su lugar"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Utiliser plutôt DuckDuckGo"
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Usa invece DuckDuckGo"
-          }
-        },
-        "nl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Gebruik in plaats daarvan DuckDuckGo"
-          }
-        },
-        "pl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Zamiast tego użyj DuckDuckGo"
-          }
-        },
-        "pt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Usa o DuckDuckGo em vez disso"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Вместо этого используй DuckDuckGo"
           }
         }
       }
@@ -64673,7 +64553,7 @@
     },
     "import.summary.history.imported" : {
       "comment" : "Summary text showing number of browsing history visits imported from the last 30 days",
-      "extractionState" : "extracted_with_value",
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -64733,7 +64613,7 @@
     },
     "import.summary.history.imported.partial" : {
       "comment" : "Summary text showing number of new browsing history visits imported out of all visits found in the last 30 days",
-      "extractionState" : "extracted_with_value",
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -68546,6 +68426,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Сохранить как…"
+          }
+        }
+      }
+    },
+    "main-menu.history.import-history" : {
+      "comment" : "Main Menu History item that opens the Import Browser Data dialog",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Import History…"
           }
         }
       }

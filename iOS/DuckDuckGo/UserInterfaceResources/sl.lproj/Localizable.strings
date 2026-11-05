@@ -1,4 +1,7 @@
 /* No comment provided by engineer. */
+" " = " ";
+
+/* No comment provided by engineer. */
 "-config.rollout.<parent>.<subfeature> true/false" = "-config.rollout.<parent>.<subfeature> true/false";
 
 /* No comment provided by engineer. */
@@ -381,6 +384,21 @@
 
 /* Title for the New Tab row in the Duck.ai tab header Plus (+) menu */
 "aichat.header.plusMenu.newTab" = "Nov zavihek";
+
+/* Section header in the Duck.ai tab header Plus (+) menu; every row below it opens a new tab */
+"aichat.header.plusMenu.newTabSection" = "Nov zavihek";
+
+/* Row in the New Tab section of the Duck.ai tab header Plus (+) menu — opens a new Duck.ai chat in a new tab */
+"aichat.header.plusMenu.newTabSection.chat" = "Klepet";
+
+/* Row in the New Tab section of the Duck.ai tab header Plus (+) menu — opens Duck.ai in image generation mode in a new tab */
+"aichat.header.plusMenu.newTabSection.image" = "Slika";
+
+/* Row in the Duck.ai tab header Plus (+) menu — opens a new tab in search mode */
+"aichat.header.plusMenu.newTabSection.search" = "Iskanje";
+
+/* Row in the New Tab section of the Duck.ai tab header Plus (+) menu — opens a new Duck.ai voice chat in a new tab */
+"aichat.header.plusMenu.newTabSection.voiceChat" = "Glasovni klepet";
 
 /* Title for the New Voice Chat row in the Duck.ai tab header Plus (+) menu */
 "aichat.header.plusMenu.newVoiceChat" = "Nov glasovni klepet";
@@ -3298,6 +3316,72 @@
 /* No comment provided by engineer. */
 "menu.button.hint" = "Brskanje po meniju";
 
+/* iPad menu bar command */
+"menuActualSize" = "Dejanska velikost";
+
+/* iPad menu bar command */
+"menuBack" = "Nazaj";
+
+/* iPad menu bar command */
+"menuClearTabsAndData" = "Počisti zavihke in podatke";
+
+/* iPad menu bar command */
+"menuDuplicateTab" = "Podvoji zavihek";
+
+/* iPad menu bar command */
+"menuFeedback" = "Deli povratne informacije";
+
+/* iPad menu bar command */
+"menuForward" = "Naprej";
+
+/* iPad menu bar command */
+"menuHideDownloads" = "Skrij prenose";
+
+/* iPad menu bar command */
+"menuHidePasswords" = "Skrij geslo";
+
+/* iPad menu bar command */
+"menuHideTabs" = "Skrij zavihke";
+
+/* iPad menu bar command */
+"menuLastTab" = "Zadnji zavihek";
+
+/* iPad menu bar command */
+"menuNewTabOnRight" = "Nov zavihek na desni";
+
+/* iPad menu bar command */
+"menuNextTab" = "Prikaži naslednji zavihek";
+
+/* iPad menu bar command */
+"menuOpenLocation" = "Odpri lokacijo …";
+
+/* iPad menu bar command */
+"menuPreviousTab" = "Pokaži prejšnji zavihek";
+
+/* iPad menu bar command */
+"menuPrint" = "Natisni …";
+
+/* iPad menu bar command selecting a numbered tab */
+"menuSelectTab" = "Izberi zavihek %d";
+
+/* iPad menu bar command */
+"menuSettings" = "Nastavitve DuckDuckGo …";
+
+/* iPad menu bar command */
+"menuShowDownloads" = "Prikaži prenose";
+
+/* iPad menu bar command */
+"menuShowPasswords" = "Prikaži gesla";
+
+/* iPad menu bar command */
+"menuShowTabs" = "Prikaži zavihke";
+
+/* iPad menu bar command */
+"menuStop" = "Ustavi";
+
+/* iPad menu bar command */
+"menuVoiceSearch" = "Zasebno glasovno iskanje";
+
 /* No comment provided by engineer. */
 "Message" = "Sporočilo";
 
@@ -5932,3 +6016,12 @@
 /* Title for screen to screen confirming what data to import from a zip file (bookmarks and /or passwords) */
 "zip.content.import.types.title" = "Kaj želite uvoziti?";
 
+
+/* Fireproofing setting toggle label */
+"preserveLogins.askOnSignIn" = "Vprašaj za požarno zaščito spletnih mest ob vpisu";
+
+/* Empty Fireproof sites list */
+"preserveLogins.emptyState" = "Ni spletnih mest s požarno zaščito";
+
+/* Button to remove all Fireproof sites */
+"preserveLogins.removeAllSites" = "Odstrani vse spletne strani s požarno zaščito";

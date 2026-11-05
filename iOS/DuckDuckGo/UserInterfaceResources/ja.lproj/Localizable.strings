@@ -1,4 +1,7 @@
 /* No comment provided by engineer. */
+" " = " ";
+
+/* No comment provided by engineer. */
 "-config.rollout.<parent>.<subfeature> true/false" = "-config.rollout.<parent>.<subfeature> true/false";
 
 /* No comment provided by engineer. */
@@ -381,6 +384,21 @@
 
 /* Title for the New Tab row in the Duck.ai tab header Plus (+) menu */
 "aichat.header.plusMenu.newTab" = "新しいタブ";
+
+/* Section header in the Duck.ai tab header Plus (+) menu; every row below it opens a new tab */
+"aichat.header.plusMenu.newTabSection" = "新しいタブ";
+
+/* Row in the New Tab section of the Duck.ai tab header Plus (+) menu — opens a new Duck.ai chat in a new tab */
+"aichat.header.plusMenu.newTabSection.chat" = "チャット";
+
+/* Row in the New Tab section of the Duck.ai tab header Plus (+) menu — opens Duck.ai in image generation mode in a new tab */
+"aichat.header.plusMenu.newTabSection.image" = "画像";
+
+/* Row in the Duck.ai tab header Plus (+) menu — opens a new tab in search mode */
+"aichat.header.plusMenu.newTabSection.search" = "検索";
+
+/* Row in the New Tab section of the Duck.ai tab header Plus (+) menu — opens a new Duck.ai voice chat in a new tab */
+"aichat.header.plusMenu.newTabSection.voiceChat" = "ボイスチャット";
 
 /* Title for the New Voice Chat row in the Duck.ai tab header Plus (+) menu */
 "aichat.header.plusMenu.newVoiceChat" = "新しいボイスチャット";
@@ -3298,6 +3316,72 @@
 /* No comment provided by engineer. */
 "menu.button.hint" = "ブラウジングメニュー";
 
+/* iPad menu bar command */
+"menuActualSize" = "原寸大";
+
+/* iPad menu bar command */
+"menuBack" = "戻る";
+
+/* iPad menu bar command */
+"menuClearTabsAndData" = "タブとデータをクリア";
+
+/* iPad menu bar command */
+"menuDuplicateTab" = "タブを複製";
+
+/* iPad menu bar command */
+"menuFeedback" = "フィードバックを共有";
+
+/* iPad menu bar command */
+"menuForward" = "次へ進む";
+
+/* iPad menu bar command */
+"menuHideDownloads" = "ダウンロードを非表示";
+
+/* iPad menu bar command */
+"menuHidePasswords" = "パスワードを非表示";
+
+/* iPad menu bar command */
+"menuHideTabs" = "タブを非表示";
+
+/* iPad menu bar command */
+"menuLastTab" = "最後のタブ";
+
+/* iPad menu bar command */
+"menuNewTabOnRight" = "右側に新しいタブを作成";
+
+/* iPad menu bar command */
+"menuNextTab" = "次のタブを表示";
+
+/* iPad menu bar command */
+"menuOpenLocation" = "場所を開く...";
+
+/* iPad menu bar command */
+"menuPreviousTab" = "前のタブを表示";
+
+/* iPad menu bar command */
+"menuPrint" = "印刷...";
+
+/* iPad menu bar command selecting a numbered tab */
+"menuSelectTab" = "タブ%dを選択";
+
+/* iPad menu bar command */
+"menuSettings" = "DuckDuckGoの設定...";
+
+/* iPad menu bar command */
+"menuShowDownloads" = "ダウンロードを表示";
+
+/* iPad menu bar command */
+"menuShowPasswords" = "パスワードを表示";
+
+/* iPad menu bar command */
+"menuShowTabs" = "タブを表示";
+
+/* iPad menu bar command */
+"menuStop" = "停止";
+
+/* iPad menu bar command */
+"menuVoiceSearch" = "プライベート音声検索";
+
 /* No comment provided by engineer. */
 "Message" = "メッセージ";
 
@@ -5932,3 +6016,12 @@
 /* Title for screen to screen confirming what data to import from a zip file (bookmarks and /or passwords) */
 "zip.content.import.types.title" = "何をインポートしますか？";
 
+
+/* Fireproofing setting toggle label */
+"preserveLogins.askOnSignIn" = "サインイン時にサイトをFireproof設定するか尋ねる";
+
+/* Empty Fireproof sites list */
+"preserveLogins.emptyState" = "まだFireproofサイトはありません";
+
+/* Button to remove all Fireproof sites */
+"preserveLogins.removeAllSites" = "すべてのFireproofサイトを削除";

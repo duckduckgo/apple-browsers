@@ -167,15 +167,24 @@ final class SponsorBlockSubfeatureTests: XCTestCase {
     }
 
     @MainActor
-    func testPreferenceChangeBeforeGetConfigPushesNothing() async throws {
+    func testGetSegmentsDoesNotSubscribeToPreferenceUpdates() async throws {
         let webView = PushCapturingWebView()
-        webView.onEvaluate = { js in XCTFail("Unexpected push: \(js)") }
-        let subfeature = makeSubfeature()
-        subfeature.with(broker: UserScriptMessageBroker(context: "test"))
+        let broker = UserScriptMessageBroker(context: "test")
+        let provider = SponsorBlockSegmentsProvider(load: { _ in throw URLError(.notConnectedToInternet) })
+        let subfeature = makeSubfeature(provider: provider)
+        subfeature.with(broker: broker)
+        defer { withExtendedLifetime((subfeature, broker, webView)) {} }
+
+        let unexpectedPush = expectation(description: "No update before getConfig")
+        unexpectedPush.isInverted = true
+        webView.onEvaluate = { _ in unexpectedPush.fulfill() }
+
+        let handler = try XCTUnwrap(subfeature.handler(forMethodNamed: "getSegments"))
+        _ = try await handler(["videoID": "dQw4w9WgXcQ"], WKScriptMessage.mock(name: "getSegments", body: [:], webView: webView))
 
         preferences.skipMode = .auto
-        await Task.yield()
-        withExtendedLifetime((subfeature, webView)) {}
+
+        await fulfillment(of: [unexpectedPush], timeout: 1)
     }
 }
 

@@ -102,6 +102,10 @@ final class PasswordAutofillUITests: UITestCase {
             app.selectSavedPassword(username: username)
             app.authenticateForSavedPasswordFill(using: springboard)
 
+            // Autofill must invoke the fixture's Continue handler; a manual tap would hide a regression.
+            XCTAssertTrue(
+                app.webViews.secureTextFields["Password"].waitForExistence(timeout: UITestTimeouts.navigation),
+                "Autofill did not advance the multistep form to the Password step.")
             app.focusSecureWebFormField(named: "Password")
             app.selectSavedPassword(username: username)
             app.assertPageContains("Multistep credentials match")
@@ -123,15 +127,16 @@ final class PasswordAutofillUITests: UITestCase {
         let password = app.webViews.secureTextFields["Password"]
         let valueBeforeTyping = password.value as? String
         app.keyboards.firstMatch.keys["a"].tapWhenHittable(in: app)
-        let valueAfterTyping = password.value as? String
-        XCTAssertNotEqual(
-            valueAfterTyping,
-            valueBeforeTyping,
+        XCTAssertTrue(
+            password.wait(for: NSPredicate { _, _ in
+                guard let value = password.value as? String, !value.isEmpty else { return false }
+                return value != valueBeforeTyping
+            }, timeout: UITestTimeouts.elementExistence),
             "Tapping the restored software keyboard did not change the Password field.")
         app.typeText("Own-password-2026!")
         let screenshot = XCTAttachment(screenshot: XCUIScreen.main.screenshot())
         screenshot.name = "Own-password editing after native prompt dismissal"
-        screenshot.lifetime = .keepAlways
+        screenshot.lifetime = .deleteOnSuccess
         add(screenshot)
         app.enterWebFormText("aOwn-password-2026!", inFieldNamed: "Password Confirmation", secure: true)
         app.submitWebForm(buttonNamed: "Sign up")
@@ -161,9 +166,12 @@ final class PasswordAutofillUITests: UITestCase {
             "Typing after the first Email tap did not update the field.")
     }
 
-    func testClosingPasswordGenerationPromptKeepsKeyboardHiddenUntilNextFieldTap() {
+    func testCancellingPasswordGenerationDoesNotFillPasswordAndAllowsEditingADifferentField() {
         app.openURL(TestPage.signup, expecting: "Password generation during signup")
         app.enterWebFormText(username, inFieldNamed: "Email")
+        let password = app.webViews.secureTextFields["Password"]
+        XCTAssertTrue(password.waitForExistence(timeout: UITestTimeouts.elementExistence), "Password field did not appear.")
+        XCTAssertEqual(password.value as? String, "", "Fixture password was not empty before offering generation.")
         app.focusSecureWebFormField(named: "Password")
 
         let prompt = app.descendants(matching: .any)["Autofill.PasswordGeneration.Prompt"]
@@ -171,15 +179,11 @@ final class PasswordAutofillUITests: UITestCase {
         assertWebInputDismissed()
         app.buttons["Autofill.Prompt.Close"].tapWhenHittable(in: app)
         XCTAssertTrue(prompt.waitForNonExistence(timeout: UITestTimeouts.elementExistence), "Password-generation prompt did not dismiss.")
-        XCTAssertTrue(
-            app.keyboards.firstMatch.waitForNonExistence(timeout: UITestTimeouts.elementExistence),
-            "Closing the prompt unexpectedly reopened the keyboard.")
+        XCTAssertEqual(password.value as? String, "", "Cancelling generation inserted a password.")
 
         let email = app.webViews.textFields["Email"]
         email.tapWhenHittable(in: app)
-        XCTAssertTrue(
-            app.keyboards.firstMatch.waitForExistence(timeout: UITestTimeouts.elementExistence),
-            "The first Email tap after closing the prompt did not reopen the keyboard.")
+        assertWebKeyboardVisible()
         email.typeText(".edited")
         XCTAssertTrue(
             email.wait(for: NSPredicate(format: "value CONTAINS %@", ".edited"), timeout: UITestTimeouts.elementExistence),
@@ -200,7 +204,7 @@ final class PasswordAutofillUITests: UITestCase {
             line: line)
         let screenshot = XCTAttachment(screenshot: XCUIScreen.main.screenshot())
         screenshot.name = "Web keyboard restored before typing"
-        screenshot.lifetime = .keepAlways
+        screenshot.lifetime = .deleteOnSuccess
         add(screenshot)
     }
 
@@ -247,7 +251,7 @@ final class PasswordAutofillUITests: UITestCase {
             "Web form input accessory remained above the native prompt.", file: file, line: line)
         let screenshot = XCTAttachment(screenshot: XCUIScreen.main.screenshot())
         screenshot.name = "Password-generation prompt with web input dismissed"
-        screenshot.lifetime = .keepAlways
+        screenshot.lifetime = .deleteOnSuccess
         add(screenshot)
     }
 

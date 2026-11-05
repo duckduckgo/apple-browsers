@@ -26,7 +26,7 @@ private enum SimulatorDeviceAuthentication {
 
 extension XCUIApplication {
 
-    /// Call on the SpringBoard application to enter the passcode configured on the UI-test simulator.
+    /// Call on the SpringBoard application to submit the UI-test simulator authentication fixture value.
     func enterSimulatorPasscode(file: StaticString = #filePath, line: UInt = #line) {
         let passcodeField = secureTextFields.firstMatch
         guard passcodeField.waitForExistence(timeout: UITestTimeouts.elementExistence) else {

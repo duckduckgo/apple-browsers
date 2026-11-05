@@ -77,7 +77,7 @@ final class CreditCardAutofillUITests: UITestCase {
             "Web form input accessory remained above the credit-card prompt.")
         let screenshot = XCTAttachment(screenshot: XCUIScreen.main.screenshot())
         screenshot.name = "Credit-card prompt with web input dismissed"
-        screenshot.lifetime = .keepAlways
+        screenshot.lifetime = .deleteOnSuccess
         add(screenshot)
 
         app.buttons.matching(NSPredicate(format: "label CONTAINS %@", "4444")).firstMatch.tapWhenHittable(in: app)

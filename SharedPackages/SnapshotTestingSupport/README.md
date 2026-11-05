@@ -113,12 +113,13 @@ assertSnapshot(of: value, as: .json)
 | `.intrinsicContentSize` | Compact view sized by its content | none |
 | `.constrainedWidth` | Content-driven height, default iPhone width (390) | none |
 | `.screen` | Full-screen layout | iPhone + iPad on iOS |
+| `.tallScreen(height:)` | Full-screen layout at the device width with a taller canvas (default `1600`), for scrolling content such as settings lists | iPhone + iPad on iOS |
 | `.sheet` | Sheet presentation; iPhone as a floating sheet (inset from the screen edges, rounded corners, grabber, home-indicator inset, dimmed backdrop), iPad centered with padding | iPhone + iPad on iOS |
 | `.fixed(CGSize)` | Explicit size (typical for macOS windows/panels) | none |
 
 Only `.sheet` adds a backdrop automatically (it simulates the sheet chrome). For every other mode the snapshot reflects the view as-is — call `.snapshotBackground()` on your view if you want `systemBackground` / `windowBackgroundColor` behind it.
 
-On macOS, device variants don't apply — `.screen`/`.sheet`/`.fixed` all resolve to the configuration's size (default `800x600` if unspecified).
+On macOS, device variants don't apply — `.screen`/`.sheet`/`.fixed` all resolve to the configuration's size (default `800x600` if unspecified), and `.tallScreen` keeps that width with its own height.
 
 Default appearance strategy is `.allAppearances` (light + dark). Use `.single(.light)` or `.single(.dark)` to scope, `.iPhoneAllAppearances` or `.iPhoneSingle(.dark)` to skip the iPad variants of `.screen` / `.sheet` (iPhone device on iOS regardless of size mode; plain appearances on macOS), or `.custom([...])` for full control.
 
@@ -126,7 +127,7 @@ Default appearance strategy is `.allAppearances` (light + dark). Use `.single(.l
 
 ### `List` needs a fixed-size mode
 
-A SwiftUI `List` has no intrinsic content size, so it needs a fixed size to render: snapshot it with `.screen` or `.fixed(CGSize)`.
+A SwiftUI `List` has no intrinsic content size, so it needs a fixed size to render: snapshot it with `.screen`, `.tallScreen()` (when it scrolls past the screen height) or `.fixed(CGSize)`.
 
 ### Effects and iPad navigation
 

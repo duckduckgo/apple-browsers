@@ -391,42 +391,28 @@ struct SubscriptionSettingsViewV2: View {
     @ViewBuilder
     private var optionsView: some View {
         NavigationLink(
-            destination: SubscriptionContainerViewFactory.makeEmailFlowV2(
-                navigationCoordinator: subscriptionNavigationCoordinator,
-                subscriptionManager: AppDependencyProvider.shared.subscriptionManager,
-                subscriptionFeatureAvailability: settingsViewModel.subscriptionFeatureAvailability,
-                userScriptsDependencies: settingsViewModel.userScriptsDependencies,
-                internalUserDecider: AppDependencyProvider.shared.internalUserDecider,
-                emailFlow: .manageEmailFlow,
-                dataBrokerProtectionViewControllerProvider: settingsViewModel.dataBrokerProtectionViewControllerProvider,
-                wideEvent: AppDependencyProvider.shared.wideEvent,
-                featureFlagger: settingsViewModel.featureFlagger,
-                onDisappear: {
+            destination: SubscriptionContainerViewFactory.makeView(for: .email(.manageEmailFlow),
+                                                                   context: settingsViewModel.subscriptionFlowContext,
+                                                                   navigationCoordinator: subscriptionNavigationCoordinator)
+                .onDisappear {
                     Task {
                         await viewModel.fetchAndUpdateAccountEmail(forceRefresh: true)
                     }
-                }),
+                },
             isActive: $isShowingManageEmailView
         ) { EmptyView() }
             .isDetailLink(false)
             .hidden()
 
         NavigationLink(
-            destination: SubscriptionContainerViewFactory.makeEmailFlowV2(
-                navigationCoordinator: subscriptionNavigationCoordinator,
-                subscriptionManager: AppDependencyProvider.shared.subscriptionManager,
-                subscriptionFeatureAvailability: settingsViewModel.subscriptionFeatureAvailability,
-                userScriptsDependencies: settingsViewModel.userScriptsDependencies,
-                internalUserDecider: AppDependencyProvider.shared.internalUserDecider,
-                emailFlow: .activationFlow,
-                dataBrokerProtectionViewControllerProvider: settingsViewModel.dataBrokerProtectionViewControllerProvider,
-                wideEvent: AppDependencyProvider.shared.wideEvent,
-                featureFlagger: settingsViewModel.featureFlagger,
-                onDisappear: {
+            destination: SubscriptionContainerViewFactory.makeView(for: .email(.activationFlow),
+                                                                   context: settingsViewModel.subscriptionFlowContext,
+                                                                   navigationCoordinator: subscriptionNavigationCoordinator)
+                .onDisappear {
                     Task {
                         await viewModel.fetchAndUpdateAccountEmail(forceRefresh: true)
                     }
-                }),
+                },
             isActive: $isShowingActivationView
         ) { EmptyView() }
             .isDetailLink(false)
@@ -448,34 +434,23 @@ struct SubscriptionSettingsViewV2: View {
 
         // View All Plans navigation
         NavigationLink(
-            destination: SubscriptionContainerViewFactory.makePlansFlowV2(
+            destination: SubscriptionContainerViewFactory.makeView(
                 // Plan changes must not send origin to the page; planChangeEntry is read natively for wide events only.
-                redirectURLComponents: SubscriptionURL.plansURLComponents(planChangeEntry: SubscriptionFunnelOrigin.appSettings.rawValue),
-                navigationCoordinator: subscriptionNavigationCoordinator,
-                subscriptionManager: AppDependencyProvider.shared.subscriptionManager,
-                subscriptionFeatureAvailability: settingsViewModel.subscriptionFeatureAvailability,
-                userScriptsDependencies: settingsViewModel.userScriptsDependencies,
-                internalUserDecider: AppDependencyProvider.shared.internalUserDecider,
-                dataBrokerProtectionViewControllerProvider: settingsViewModel.dataBrokerProtectionViewControllerProvider,
-                wideEvent: AppDependencyProvider.shared.wideEvent,
-                featureFlagger: settingsViewModel.featureFlagger),
+                for: .plans(redirectURLComponents: SubscriptionURL.plansURLComponents(planChangeEntry: SubscriptionFunnelOrigin.appSettings.rawValue)),
+                context: settingsViewModel.subscriptionFlowContext,
+                navigationCoordinator: subscriptionNavigationCoordinator),
             isActive: $isShowingPlansView
         ) { EmptyView() }
             .hidden()
 
         // Upgrade navigation - uses pendingUpgradeTier captured at button click to avoid race conditions
         NavigationLink(
-            destination: SubscriptionContainerViewFactory.makePlansFlowV2(
+            destination: SubscriptionContainerViewFactory.makeView(
                 // Plan changes must not send origin to the page; planChangeEntry is read natively for wide events only.
-                redirectURLComponents: SubscriptionURL.plansURLComponents(planChangeEntry: SubscriptionFunnelOrigin.appSettings.rawValue, tier: viewModel.state.pendingUpgradeTier),
-                navigationCoordinator: subscriptionNavigationCoordinator,
-                subscriptionManager: AppDependencyProvider.shared.subscriptionManager,
-                subscriptionFeatureAvailability: settingsViewModel.subscriptionFeatureAvailability,
-                userScriptsDependencies: settingsViewModel.userScriptsDependencies,
-                internalUserDecider: AppDependencyProvider.shared.internalUserDecider,
-                dataBrokerProtectionViewControllerProvider: settingsViewModel.dataBrokerProtectionViewControllerProvider,
-                wideEvent: AppDependencyProvider.shared.wideEvent,
-                featureFlagger: settingsViewModel.featureFlagger),
+                for: .plans(redirectURLComponents: SubscriptionURL.plansURLComponents(planChangeEntry: SubscriptionFunnelOrigin.appSettings.rawValue,
+                                                                                      tier: viewModel.state.pendingUpgradeTier)),
+                context: settingsViewModel.subscriptionFlowContext,
+                navigationCoordinator: subscriptionNavigationCoordinator),
             isActive: $isShowingUpgradeView
         ) { EmptyView() }
             .hidden()
@@ -749,14 +724,7 @@ extension SubscriptionSettingsViewV2 {
     func startCancellationFlow() {
         guard !isShowingCancellationFlow else { return }
         viewModel.cancelSubscriptionTapped()
-        let containerViewModel = SubscriptionContainerViewFactory.makeCancellationFlowViewModel(
-            subscriptionManager: settingsViewModel.subscriptionManager,
-            subscriptionFeatureAvailability: settingsViewModel.subscriptionFeatureAvailability,
-            userScriptsDependencies: settingsViewModel.userScriptsDependencies,
-            internalUserDecider: viewModel.internalUserDecider,
-            dataBrokerProtectionViewControllerProvider: settingsViewModel.dataBrokerProtectionViewControllerProvider,
-            wideEvent: viewModel.wideEvent,
-            featureFlagger: settingsViewModel.featureFlagger)
+        let containerViewModel = SubscriptionContainerViewFactory.makeCancellationFlowViewModel(context: settingsViewModel.subscriptionFlowContext)
         cancellationFlow = SubscriptionCancellationFlowPresentation(containerViewModel: containerViewModel,
                                                                     instrumentation: viewModel.cancellationInstrumentation) { closingFlow in
             shouldOpenStoreCancellation = true

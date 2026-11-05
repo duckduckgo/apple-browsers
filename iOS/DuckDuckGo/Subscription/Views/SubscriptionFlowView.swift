@@ -147,7 +147,7 @@ struct SubscriptionFlowView: View {
         .onChange(of: viewModel.state.shouldActivateSubscription) { result in
             if result {
                 withAnimation {
-                    currentView = .restore
+                    currentView = .restoreView
                 }
             }
         }

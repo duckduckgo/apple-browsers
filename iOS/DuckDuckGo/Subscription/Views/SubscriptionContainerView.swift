@@ -24,7 +24,7 @@ import PrivacyConfig
 struct SubscriptionContainerView: View {
     
     enum CurrentViewType {
-        case subscribe, restore, email
+        case subscriptionFlowView, restoreView, emailView
     }
     
     @Environment(\.dismiss) var dismiss
@@ -50,18 +50,18 @@ struct SubscriptionContainerView: View {
     var body: some View {
         VStack(spacing: 0) {
             switch currentViewType {
-            case .subscribe:
+            case .subscriptionFlowView:
                 SubscriptionFlowView(viewModel: flowViewModel,
                                      currentView: $currentViewType,
                                      featureFlagger: featureFlagger)
                 .environmentObject(subscriptionNavigationCoordinator)
-            case .restore:
+            case .restoreView:
                 SubscriptionRestoreView(viewModel: restoreViewModel,
                                         emailViewModel: emailViewModel,
                                         currentView: $currentViewType,
                                         featureFlagger: featureFlagger)
                 .environmentObject(subscriptionNavigationCoordinator)
-            case .email:
+            case .emailView:
                 SubscriptionEmailView(viewModel: emailViewModel,
                                       featureFlagger: featureFlagger)
             }

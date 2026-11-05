@@ -4633,25 +4633,29 @@ class MainViewController: UIViewController {
             featureFlagger: featureFlagger
         )
         let subscriptionDebugSettings = SubscriptionDebugSettingsUserDefaultsPersistor(keyValueStore: keyValueStore)
-        let viewController = UIHostingController(rootView: SubscriptionContainerViewFactory.makePurchaseFlowV2(
-            redirectURLComponents: redirectURLComponents,
-            navigationCoordinator: subscriptionNavigationCoordinator,
+        let context = SubscriptionFlowContext(
             subscriptionManager: AppDependencyProvider.shared.subscriptionManager,
             subscriptionFeatureAvailability: subscriptionFeatureAvailability,
-            subscriptionDataReporter: subscriptionDataReporter,
             userScriptsDependencies: userScriptsDependencies,
-            tld: AppDependencyProvider.shared.storageCache.tld,
             internalUserDecider: AppDependencyProvider.shared.internalUserDecider,
             dataBrokerProtectionViewControllerProvider: dbpIOSPublicInterface,
             wideEvent: AppDependencyProvider.shared.wideEvent,
             featureFlagger: featureFlagger,
+            expirationReminderScheduler: AppDependencyProvider.shared.subscriptionExpirationReminderScheduler)
+        let purchaseDependencies = SubscriptionPurchaseDependencies(
+            subscriptionDataReporter: subscriptionDataReporter,
+            tld: AppDependencyProvider.shared.storageCache.tld,
             isDebugOverlayEnabled: subscriptionDebugSettings.isDebugOverlayEnabled,
             performanceOptimizedPaywallsProvider: performanceOptimizedPaywallsProvider,
             onboardingKeyValueStore: keyValueStore,
             meetsPIRLocaleRequirement: { [weak dbpIOSPublicInterface] in
                 dbpIOSPublicInterface?.meetsLocaleRequirement ?? false
             },
-            onRequestDuckAIChat: { [weak self] modelID in self?.requestOnboardingDuckAIChat(modelID: modelID) ?? false }
+            onRequestDuckAIChat: { [weak self] modelID in self?.requestOnboardingDuckAIChat(modelID: modelID) ?? false })
+        let viewController = UIHostingController(rootView: SubscriptionContainerViewFactory.makeView(
+            for: .makePlanOrSubscribeFlow(redirectURLComponents: redirectURLComponents, dependencies: purchaseDependencies),
+            context: context,
+            navigationCoordinator: subscriptionNavigationCoordinator
         ))
         viewController.view.backgroundColor = UIColor(designSystemColor: .surface)
         return viewController

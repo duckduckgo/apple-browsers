@@ -1264,7 +1264,8 @@ final class BookmarksSubMenu: NSMenu, NSMenuDelegate {
 
         addItem(NSMenuItem.separator())
 
-        addItem(withTitle: UserText.importBookmarks, action: #selector(MoreOptionsMenu.openBookmarkImportInterface(_:)), keyEquivalent: "")
+        let importBookmarksTitle = featureFlagger.isFeatureOn(.dataImportHistory) ? UserText.importBookmarksMenuItem : UserText.importBookmarks
+        addItem(withTitle: importBookmarksTitle, action: #selector(MoreOptionsMenu.openBookmarkImportInterface(_:)), keyEquivalent: "")
             .targetting(target)
             .withImage(DesignSystemImages.Glyphs.Size12.import, visibleOnMacOS27: true)
 

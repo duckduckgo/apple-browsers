@@ -26,6 +26,7 @@ import PrivacyConfig
 import UIKit
 import PixelKit
 import BrowserServicesKit
+import Combine
 import Subscription
 import RemoteMessaging
 import ScreenTimeDataCleaner
@@ -81,6 +82,14 @@ struct Launching: LaunchingHandling {
 
         // The app's single owner of the Duck.ai bonus record, shared by every consumer.
         let aiChatBonusService = AIChatBonusService()
+        // One bridge handler for every Duck.ai tab: it holds no per-tab state and builds one payload per record change.
+        let aiChatBonusOffer = AIChatBonusOfferDependencies(
+            handler: AIChatBonusHandler(
+                service: aiChatBonusService,
+                factsProvider: AIChatBonusFactsProvider(statisticsStore: StatisticsUserDefaults(), aiChatSettings: AIChatSettings())
+            ),
+            messageLog: AIChatBonusMessageLog()
+        )
 
         // Initialize configuration with the key-value store
         configuration = AppConfiguration(
@@ -170,7 +179,8 @@ struct Launching: LaunchingHandling {
                                                             webExtensionAvailability: webExtensionAvailability,
                                                             duckAiNativeStorageHandler: duckAiNativeStorageHandler,
                                                             fireModeStorageController: fireModeStorageController,
-                                                            adBlockingAvailability: adBlockingAvailability)
+                                                            adBlockingAvailability: adBlockingAvailability,
+                                                            aiChatBonusOffer: aiChatBonusOffer)
         launchBreadcrumb.mark(.contentBlocking)
 
         // Constructed before MainCoordinator: its `eventHub` is threaded down to every tab.
@@ -422,7 +432,21 @@ struct Launching: LaunchingHandling {
 
         winBackOfferService.setURLHandler(mainCoordinator)
 
-        let mainMenuService = MainMenuService(featureFlagger: featureFlagger)
+        let voiceSearchHelper = self.voiceSearchHelper
+        let fireModeCapability = mainCoordinator.controller.fireModeCapability
+        let mainViewController = mainCoordinator.controller
+        let mainMenuBookmarks = mainViewController.mainMenuBookmarks
+        let bookmarksMenuTree = BookmarksMenuTree(children: { mainMenuBookmarks.children(ofFolderWithID: $0) })
+        let mainMenuService = MainMenuService(featureFlagger: featureFlagger, contextProvider: { [weak mainViewController] in
+            .init(voiceSearchEnabled: voiceSearchHelper.isVoiceSearchEnabled, fireModeEnabled: fireModeCapability.isFireModeEnabled,
+                  aiChatEnabled: aiChatSettings.isAIChatEnabled, favorites: mainMenuBookmarks.favorites,
+                  isOnboarding: mainViewController?.needsToShowOnboardingIntro() ?? false)
+        }, deferredContent: [
+            DuckAIMenuSection.recentChatsIdentifier: DuckAIRecentChatsMenuContent { [weak mainViewController] in
+                await mainViewController?.mainMenuRecentChats() ?? .init(recentChats: [], totalChatCount: 0)
+            },
+            .bookmarksTree: bookmarksMenuTree
+        ], rebuildTriggers: [mainMenuBookmarks.changes, mainViewController.menuRebuildRequests.eraseToAnyPublisher()])
 
         // MARK: - App Services aggregation
         // This object serves as a central hub for app-wide services that:
@@ -464,6 +488,7 @@ struct Launching: LaunchingHandling {
                 taskContext.finish()
             }
         })
+        launchTaskManager.register(task: SyncDevicesCountLaunchTask(syncPromoManager: SyncPromoManager(syncService: syncService.sync)))
         if #available(iOS 26, *) {
             launchTaskManager.register(task: BlockLaunchTask(name: "Report Screen Time Data") { taskContext in
                 Task { @MainActor in

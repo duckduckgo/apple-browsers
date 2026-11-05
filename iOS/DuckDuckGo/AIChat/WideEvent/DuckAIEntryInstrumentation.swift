@@ -131,7 +131,7 @@ final class DefaultDuckAIEntryInstrumentation: DuckAIEntryInstrumentation {
 
     func recordPendingExit(_ trigger: DuckAISessionWideEventData.ExitTrigger, tabUID: TabUID?) {
         guard let entry = activeEntry, pendingExit == nil else { return }
-        guard entry.data.surface == .contextualSheet || (entry.tabUID != nil && entry.tabUID == tabUID) else { return }
+        guard entry.data.surface.isContextual || (entry.tabUID != nil && entry.tabUID == tabUID) else { return }
         pendingExit = trigger
     }
 
@@ -141,12 +141,12 @@ final class DefaultDuckAIEntryInstrumentation: DuckAIEntryInstrumentation {
     }
 
     func sheetPromptSubmitted() {
-        guard let entry = activeEntry, entry.data.surface == .contextualSheet else { return }
+        guard let entry = activeEntry, entry.data.surface.isContextual else { return }
         recordPrompt(entry)
     }
 
     func sheetDismissed(exitTrigger: DuckAISessionWideEventData.ExitTrigger?) {
-        guard let entry = activeEntry, entry.data.surface == .contextualSheet else { return }
+        guard let entry = activeEntry, entry.data.surface.isContextual else { return }
         if let exitTrigger {
             pendingExit = exitTrigger
         }

@@ -330,6 +330,7 @@ final class SubscriptionPagesUseSubscriptionFeature: Subfeature {
 
             // 5: No existing subscription was found, so proceed with the remaining purchase flow
             let purchaseTransactionJWS: String
+            let purchaseIsFreeTrial: Bool
             let appStoreRestoreFlow = DefaultAppStoreRestoreFlow(subscriptionManager: subscriptionManager,
                                                                    storePurchaseManager: subscriptionManager.storePurchaseManager())
             let appStorePurchaseFlow = DefaultAppStorePurchaseFlow(subscriptionManager: subscriptionManager,
@@ -343,6 +344,7 @@ final class SubscriptionPagesUseSubscriptionFeature: Subfeature {
             switch purchaseResult {
             case .success(let result):
                 purchaseTransactionJWS = result.transactionJWS
+                purchaseIsFreeTrial = result.isFreeTrial
 
                 // Account creation is only one piece of the purchase function's job, so we extract the creation
                 // duration from the result rather than time the execution of the entire call.
@@ -395,7 +397,7 @@ final class SubscriptionPagesUseSubscriptionFeature: Subfeature {
             data.activateAccountDuration = accountActivationDuration
             wideEvent.updateFlow(data)
 
-            let completePurchaseResult = await appStorePurchaseFlow.completeSubscriptionPurchase(with: purchaseTransactionJWS, experimentAttribution: nil)
+            let completePurchaseResult = await appStorePurchaseFlow.completeSubscriptionPurchase(with: purchaseTransactionJWS, isFreeTrial: purchaseIsFreeTrial, experimentAttribution: nil)
 
             func completeWideEventFlow(with error: Error) {
                 guard let purchaseWideEventData = self.purchaseWideEventData else { return }

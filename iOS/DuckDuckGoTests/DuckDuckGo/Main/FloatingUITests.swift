@@ -3051,10 +3051,10 @@ final class SwipeTabsNewTabDestinationTests: XCTestCase {
         XCTAssertEqual(sut.collectionView(collection, numberOfItemsInSection: 0), 2)
     }
 
-    func testWhenHandoffFlagIsOnThenTheLastTabIsTheLastPage() {
+    func testWhenHandoffFlagIsOnThenSwipingPastTheLastWebTabStillOffersANewTab() {
         let (sut, collection) = makeSUT(isHandoffEnabled: true)
 
-        XCTAssertEqual(sut.collectionView(collection, numberOfItemsInSection: 0), 1)
+        XCTAssertEqual(sut.collectionView(collection, numberOfItemsInSection: 0), 2)
     }
 
     private func makeSUT(isHandoffEnabled: Bool) -> (SwipeTabsCoordinator, UICollectionView) {

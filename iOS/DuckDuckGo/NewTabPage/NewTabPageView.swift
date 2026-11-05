@@ -32,12 +32,10 @@ struct NewTabPageView: View {
 
     let isFocussedState: Bool
     let narrowLayoutInLandscape: Bool
-    let dismissKeyboardOnScroll: Bool
     let layoutConfiguration: NewTabPageLayoutConfiguration
 
     init(isFocussedState: Bool = false,
          narrowLayoutInLandscape: Bool = false,
-         dismissKeyboardOnScroll: Bool = true,
          layoutConfiguration: NewTabPageLayoutConfiguration = .standard,
          viewModel: NewTabPageViewModel,
          messagesModel: NewTabPageMessagesModel,
@@ -47,7 +45,6 @@ struct NewTabPageView: View {
         self.messagesModel = messagesModel
         self.favoritesViewModel = favoritesViewModel
         self.narrowLayoutInLandscape = narrowLayoutInLandscape
-        self.dismissKeyboardOnScroll = dismissKeyboardOnScroll
         self.layoutConfiguration = layoutConfiguration
 
         self.messagesModel.load()
@@ -142,14 +139,10 @@ private extension NewTabPageView {
                 .padding(.horizontal, sectionsViewHorizontalPadding(in: proxy))
                 .background(Color(designSystemColor: .background))
             }
-            .if(dismissKeyboardOnScroll, transform: {
-                $0.scrollDismissesKeyboardIfAvailable()
-            })
+            .scrollDismissesKeyboardIfAvailable()
         }
-        .if(dismissKeyboardOnScroll, transform: {
-            // Prevent recreating geometry reader when keyboard is shown/hidden.
-            $0.ignoresSafeArea(.keyboard)
-        })
+        // Prevent recreating geometry reader when keyboard is shown/hidden.
+        .ignoresSafeArea(.keyboard)
     }
 
     @ViewBuilder
@@ -187,14 +180,10 @@ private extension NewTabPageView {
                     .padding(.bottom, sectionsViewPadding(in: proxy))
                     .padding(.horizontal, sectionsViewHorizontalPadding(in: proxy))
                 }
-                .if(dismissKeyboardOnScroll, transform: {
-                    $0.scrollDismissesKeyboardIfAvailable()
-                })
+                .scrollDismissesKeyboardIfAvailable()
             }
         }
-        .if(dismissKeyboardOnScroll, transform: {
-            $0.ignoresSafeArea(.keyboard)
-        })
+        .ignoresSafeArea(.keyboard)
     }
 
     private var shouldShowLogoInEmptyState: Bool {

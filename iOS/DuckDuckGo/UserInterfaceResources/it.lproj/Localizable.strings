@@ -385,6 +385,21 @@
 /* Title for the New Tab row in the Duck.ai tab header Plus (+) menu */
 "aichat.header.plusMenu.newTab" = "Nuova scheda";
 
+/* Section header in the Duck.ai tab header Plus (+) menu; every row below it opens a new tab */
+"aichat.header.plusMenu.newTabSection" = "Nuova scheda";
+
+/* Row in the New Tab section of the Duck.ai tab header Plus (+) menu — opens a new Duck.ai chat in a new tab */
+"aichat.header.plusMenu.newTabSection.chat" = "Chat";
+
+/* Row in the New Tab section of the Duck.ai tab header Plus (+) menu — opens Duck.ai in image generation mode in a new tab */
+"aichat.header.plusMenu.newTabSection.image" = "Immagine";
+
+/* Row in the Duck.ai tab header Plus (+) menu — opens a new tab in search mode */
+"aichat.header.plusMenu.newTabSection.search" = "Cerca";
+
+/* Row in the New Tab section of the Duck.ai tab header Plus (+) menu — opens a new Duck.ai voice chat in a new tab */
+"aichat.header.plusMenu.newTabSection.voiceChat" = "Chat vocale";
+
 /* Title for the New Voice Chat row in the Duck.ai tab header Plus (+) menu */
 "aichat.header.plusMenu.newVoiceChat" = "Nuova chat vocale";
 
@@ -3301,6 +3316,72 @@
 /* No comment provided by engineer. */
 "menu.button.hint" = "Menu di navigazione";
 
+/* iPad menu bar command */
+"menuActualSize" = "Dimensione effettiva";
+
+/* iPad menu bar command */
+"menuBack" = "Indietro";
+
+/* iPad menu bar command */
+"menuClearTabsAndData" = "Cancella schede e dati";
+
+/* iPad menu bar command */
+"menuDuplicateTab" = "Duplica scheda";
+
+/* iPad menu bar command */
+"menuFeedback" = "Condividi feedback";
+
+/* iPad menu bar command */
+"menuForward" = "Avanti";
+
+/* iPad menu bar command */
+"menuHideDownloads" = "Nascondi download";
+
+/* iPad menu bar command */
+"menuHidePasswords" = "Nascondi password";
+
+/* iPad menu bar command */
+"menuHideTabs" = "Nascondi schede";
+
+/* iPad menu bar command */
+"menuLastTab" = "Ultima scheda";
+
+/* iPad menu bar command */
+"menuNewTabOnRight" = "Nuova scheda a destra";
+
+/* iPad menu bar command */
+"menuNextTab" = "Mostra scheda successiva";
+
+/* iPad menu bar command */
+"menuOpenLocation" = "Apri la località...";
+
+/* iPad menu bar command */
+"menuPreviousTab" = "Mostra scheda precedente";
+
+/* iPad menu bar command */
+"menuPrint" = "Stampa...";
+
+/* iPad menu bar command selecting a numbered tab */
+"menuSelectTab" = "Seleziona scheda %d";
+
+/* iPad menu bar command */
+"menuSettings" = "Impostazioni DuckDuckGo...";
+
+/* iPad menu bar command */
+"menuShowDownloads" = "Mostra Download";
+
+/* iPad menu bar command */
+"menuShowPasswords" = "Mostra password";
+
+/* iPad menu bar command */
+"menuShowTabs" = "Mostra schede";
+
+/* iPad menu bar command */
+"menuStop" = "Interrompi";
+
+/* iPad menu bar command */
+"menuVoiceSearch" = "Ricerca vocale privata";
+
 /* No comment provided by engineer. */
 "Message" = "Messaggio";
 
@@ -5935,3 +6016,12 @@
 /* Title for screen to screen confirming what data to import from a zip file (bookmarks and /or passwords) */
 "zip.content.import.types.title" = "Cosa vuoi importare?";
 
+
+/* Fireproofing setting toggle label */
+"preserveLogins.askOnSignIn" = "Chiedi di proteggere dal fuoco quando accedi a un sito";
+
+/* Empty Fireproof sites list */
+"preserveLogins.emptyState" = "Non hai ancora aggiunto siti resistenti al fuoco";
+
+/* Button to remove all Fireproof sites */
+"preserveLogins.removeAllSites" = "Rimuovi tutti i siti ignifughi";

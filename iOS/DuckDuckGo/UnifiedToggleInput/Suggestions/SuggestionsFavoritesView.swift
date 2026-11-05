@@ -37,6 +37,7 @@ struct SuggestionsFavoritesView: View {
                 .opacity(isVisible ? 1 : 0)
                 .animation(nil, value: isVisible)
                 .allowsHitTesting(isVisible)
+                .accessibilityHidden(!isVisible)
         }
     }
 }

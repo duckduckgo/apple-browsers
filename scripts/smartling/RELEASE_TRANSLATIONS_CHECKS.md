@@ -1,10 +1,9 @@
 # Release translations checks
 
-Two scripts check the translations that the **Smartling - Release Import** workflow brings into a release branch:
+One script checks the translations that the **Smartling - Release Import** workflow brings into a release branch:
 
 | Script | Runs | Compares | Outcome |
 | --- | --- | --- | --- |
-| [`check_translation_integrity.py`](check_translation_integrity.py) | In `smartling_release_import.sh`, before the pull request is opened | The downloaded files with the release branch | One pass/fail line in the pull request description |
 | [`check_release_translations.py`](check_release_translations.py) | In [`smartling_release_translations_check.yml`](../../.github/workflows/smartling_release_translations_check.yml), on every push to a `smartling/release-*` pull request into `release/**` | Each translation the pull request changes with the release branch's English | A pull request comment with a verdict, an Asana comment when the verdict changes, and a failed run when something needs a fix |
 
 ## `check_release_translations.py`
@@ -51,16 +50,6 @@ Only values the pull request adds or changes are checked. The import shouldn't c
 ### Release DRI notifications
 
 The pull request comment starts with `<!-- smartling-release-translations-check verdict=… notified=… -->`. When the script fails, the comment says the check couldn't run and not to merge, with `verdict=error`, so an earlier verdict never stands for an unchecked commit. Each push updates the same comment. The workflow comments on the Translations subtask linked in the pull request's `Task/Issue URL` whenever the verdict differs from the last one posted there, and records the new verdict only once Asana accepts the comment. A failed Asana post is therefore retried on the next run.
-
-## `check_translation_integrity.py`
-
-| Check | Result |
-| --- | --- |
-| No key was deleted | Fails the integrity check |
-| No value became empty | Fails the integrity check |
-| No value shrank by more than half | Fails the integrity check |
-
-A failed integrity check doesn't stop the import. The pull request description says `Integrity check: ⚠️ found deleted or much shorter translations` instead of `passed`.
 
 ## Running the tests
 

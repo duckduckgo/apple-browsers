@@ -806,7 +806,6 @@ final class UnifiedInputContentContainerViewController: UIViewController {
         let controller = NewTabPageViewController(
             isFocussedState: true,
             openedAfterIdle: sessionOpenedAfterIdle,
-            dismissKeyboardOnScroll: aiChatSettings.isAIChatSearchInputUserSettingsEnabled,
             tab: Tab(fireTab: dependencies.tabsModelProvider().shouldCreateFireTabs),
             interactionModel: ntpDeps.favoritesModel,
             homePageMessagesConfiguration: ntpDeps.homePageMessagesConfiguration,

@@ -35,8 +35,13 @@ extension MainViewController: AIChatContextualSidebarHosting {
             && AppWidthObserver.shared.currentWidth >= minimumWindowWidth + margin
     }
 
-    func presentContextualSidebar(_ viewController: UIViewController, coversPage: Bool) {
-        contextualSidebarPresenter?.present(viewController, coversPage: coversPage)
+    func presentContextualSidebar(_ viewController: UIViewController, animated: Bool, coversPage: Bool) {
+        contextualSidebarPresenter?.present(viewController, animated: animated, coversPage: coversPage)
+    }
+
+    func isContextualSidebarShowing(_ viewController: UIViewController) -> Bool {
+        guard let contextualSidebarPresenter else { return false }
+        return contextualSidebarPresenter.isPresenting && contextualSidebarPresenter.hostedViewController === viewController
     }
 
     func dismissContextualSidebar(_ viewController: UIViewController, animated: Bool, completion: (() -> Void)?) {
@@ -63,9 +68,20 @@ extension MainViewController: AIChatContextualSidebarHosting {
                                                 hiddenConstraint: hidden)
     }
 
+    /// A sidebar leaving with its tab ends the visit to Duck.ai at once, so the reason is recorded first.
+    func currentTabWillLeaveScreen(_ exitTrigger: DuckAISessionWideEventData.ExitTrigger) {
+        recordDuckAISessionPendingExit(exitTrigger)
+        currentTab?.aiChatContextualSheetCoordinator.tabWillLeaveScreen()
+    }
+
     /// The sidebar sits beside the page rather than over it, so using the page or the address bar leaves it open.
     var isContextualSurfaceInSidebar: Bool {
         currentTab?.aiChatContextualSheetCoordinator.isSheetInSidebar == true
+    }
+
+    /// Whether the contextual surface opening now goes beside the page, as the coordinator decides when it shows it.
+    var opensContextualSurfaceInSidebar: Bool {
+        currentTab?.aiChatContextualSheetCoordinator.showsSurfaceInSidebar(from: self) == true
     }
 
     /// The sidebar only ever shows the current tab's chat. Closing a tab attaches the next one without

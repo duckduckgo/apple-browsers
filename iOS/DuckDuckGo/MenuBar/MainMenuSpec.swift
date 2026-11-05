@@ -17,6 +17,7 @@
 //  limitations under the License.
 //
 
+import DesignResourcesKitIcons
 import UIKit
 
 enum MainMenuCommand: CaseIterable {
@@ -54,6 +55,7 @@ struct MainMenuSpec {
         let requirement: KeyPath<Context, Bool>?
         /// Passed to the command as its property list, which also tells apart commands that share an action.
         var argument: String?
+        var image: UIImage?
     }
 
     struct Menu {
@@ -99,7 +101,7 @@ struct MainMenuSpec {
     }
 
     private static var browserSections: [MainMenuSection] {
-        [SettingsMenuSection(title: UserText.menuSettings), FileMenuSection(), EditMenuSection(),
+        [SettingsMenuSection(title: UserText.menuSettings, image: DesignSystemImages.Glyphs.Size16.settings), FileMenuSection(), EditMenuSection(),
          ViewMenuSection(), DuckAIMenuSection(), BookmarksMenuSection(), WindowMenuSection(), HelpMenuSection()]
     }
 
@@ -172,9 +174,9 @@ struct MainMenuSpec {
 
     static func item(_ command: MainMenuCommand, _ title: String,
                      _ input: String? = nil, _ modifiers: UIKeyModifierFlags = [],
-                     requires requirement: KeyPath<Context, Bool>? = nil) -> Item {
+                     requires requirement: KeyPath<Context, Bool>? = nil, image: UIImage? = nil) -> Item {
         Item(command: command, title: title, shortcut: input.map { Shortcut(input: $0, modifiers: modifiers) },
-             requirement: requirement)
+             requirement: requirement, image: image)
     }
 
     static func group(_ identifier: String, _ items: [Item]) -> Menu {

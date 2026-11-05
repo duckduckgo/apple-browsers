@@ -17,8 +17,6 @@
 //
 
 import Foundation
-import os.log
-import Persistence
 
 /// Reports whether store installs are retained or churned 14 days later, matching Windows.
 /// Install dates outlive an uninstall, so removing an extension still reports it as churned.
@@ -26,26 +24,22 @@ import Persistence
 @MainActor
 final class WebExtensionRetentionReporter {
 
-    private static let key = "web-extension-retention-install-dates"
-    private static let window: TimeInterval = 14 * 24 * 60 * 60
     private static let checkInterval: TimeInterval = 60 * 60
 
-    private let keyValueStore: any ThrowingKeyValueStoring
+    private let store: WebExtensionRetentionStore
     private let pixelFiring: WebExtensionPixelFiring
     private let now: () -> Date
     private var lastCheckDate: Date?
 
-    init(keyValueStore: any ThrowingKeyValueStoring, pixelFiring: WebExtensionPixelFiring, now: @escaping () -> Date) {
-        self.keyValueStore = keyValueStore
+    init(store: WebExtensionRetentionStore, pixelFiring: WebExtensionPixelFiring, now: @escaping () -> Date) {
+        self.store = store
         self.pixelFiring = pixelFiring
         self.now = now
     }
 
     /// Starts an install's 14-day window. A reinstall restarts it, matching Windows.
     func recordInstall(_ extensionID: String) {
-        var installDates = read()
-        installDates[extensionID] = now()
-        write(installDates)
+        store.recordInstallation(of: extensionID, at: now())
     }
 
     /// Reports each install that is 14 days old as retained when it's still installed and enabled, or as churned.
@@ -57,46 +51,12 @@ final class WebExtensionRetentionReporter {
         }
         lastCheckDate = date
 
-        for extensionID in takeDue(at: date) {
+        for extensionID in store.takeDue(at: date) {
+            // Old and new versions coexist during an update, so any enabled copy counts.
             let isEnabled = installedExtensions.contains { $0.storeIdentity?.id == extensionID && !$0.isDisabled }
             let category = category(extensionID)
             pixelFiring.fire(isEnabled ? .retained(extensionID: extensionID, category: category)
                                        : .churned(extensionID: extensionID, category: category))
-        }
-    }
-
-    /// Removes the due installs as it returns them, so each is judged once.
-    private func takeDue(at date: Date) -> [String] {
-        var installDates = read()
-        let due = installDates.filter { date.timeIntervalSince($0.value) >= Self.window }.keys.sorted()
-        guard !due.isEmpty else { return [] }
-
-        for extensionID in due {
-            installDates.removeValue(forKey: extensionID)
-        }
-        write(installDates)
-        return due
-    }
-
-    private func read() -> [String: Date] {
-        do {
-            guard let data = try keyValueStore.object(forKey: Self.key) as? Data else { return [:] }
-            return try JSONDecoder().decode([String: Date].self, from: data)
-        } catch {
-            Logger.webExtensions.error("Could not read extension install dates: \(error.localizedDescription)")
-            return [:]
-        }
-    }
-
-    private func write(_ installDates: [String: Date]) {
-        do {
-            if installDates.isEmpty {
-                try keyValueStore.removeObject(forKey: Self.key)
-            } else {
-                try keyValueStore.set(JSONEncoder().encode(installDates), forKey: Self.key)
-            }
-        } catch {
-            Logger.webExtensions.error("Could not save extension install dates: \(error.localizedDescription)")
         }
     }
 }

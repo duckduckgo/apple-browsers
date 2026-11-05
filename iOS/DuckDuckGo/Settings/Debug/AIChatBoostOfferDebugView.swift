@@ -29,7 +29,7 @@ import SwiftUI
 /// Shows what Duck.ai receives for the bonus offer and changes the inputs, to test each state without waiting.
 struct AIChatBoostOfferDebugView: View {
     @StateObject private var viewModel: AIChatBoostOfferDebugViewModel
-    @ObservedObject private var serverState = AIChatBonusDebugServerState.shared
+    @ObservedObject private var serverState = AIChatBonusDebugServerState.instance
     private let featureFlagger: FeatureFlagger?
     private let messageLog: AIChatBonusMessageLog?
 
@@ -303,7 +303,7 @@ enum AIChatBoostOfferDebugState {
 /// Owns the bonus offer debug server for the app session.
 @MainActor
 private final class AIChatBonusDebugServerState: ObservableObject {
-    static let shared = AIChatBonusDebugServerState()
+    static let instance = AIChatBonusDebugServerState()
     static let port: UInt16 = 8474
 
     @Published private(set) var errorMessage: String?

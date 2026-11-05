@@ -4201,7 +4201,6 @@
 		7B8DB3192B504D7500EC16DA /* VPNAppEventsHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VPNAppEventsHandler.swift; sourceTree = "<group>"; };
 		7B8FDD1E2CDD877000720907 /* FeatureFlags-macOS */ = {isa = PBXFileReference; lastKnownFileType = wrapper; path = "FeatureFlags-macOS"; sourceTree = "<group>"; };
 		7B9167A82C09E88800322310 /* AppLauncher */ = {isa = PBXFileReference; lastKnownFileType = wrapper; path = AppLauncher; sourceTree = "<group>"; };
-		7B934C3D2A866CFF00FC8F9C /* NetworkProtectionOnboardingMenu.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = NetworkProtectionOnboardingMenu.swift; sourceTree = "<group>"; };
 		7B934C402A866DD400FC8F9C /* UserDefaults+NetworkProtectionShared.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = "UserDefaults+NetworkProtectionShared.swift"; sourceTree = "<group>"; };
 		7B93A68A2D4A5AEC00E9FFC1 /* ExcludedAppsModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExcludedAppsModel.swift; sourceTree = "<group>"; };
 		7B969B3C2D52A818004AE4E8 /* VPNUIPresenting.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VPNUIPresenting.swift; sourceTree = "<group>"; };
@@ -6828,7 +6827,6 @@
 				7B05829D2A812AC000AC3F7C /* NetworkProtectionOnboardingMenu.swift */,
 				7B430EA02A71411A00BAC4A1 /* NetworkProtectionSimulateFailureMenu.swift */,
 				EEA3EEAF2B24EB5100E8333A /* VPNLocation */,
-				7B934C3D2A866CFF00FC8F9C /* NetworkProtectionOnboardingMenu.swift */,
 				B6F1B02D2BCE6B47005E863C /* TunnelControllerProvider.swift */,
 				7B60B0002C514541008E32A3 /* VPNUIActionHandler.swift */,
 				7B969B3C2D52A818004AE4E8 /* VPNUIPresenting.swift */,

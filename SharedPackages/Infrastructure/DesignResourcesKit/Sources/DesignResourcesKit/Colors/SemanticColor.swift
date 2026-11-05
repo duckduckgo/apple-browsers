@@ -68,6 +68,7 @@ public enum DesignSystemColor {
     case accentTertiary
 
     // Brand Alt
+    case accentAltPrimary
     case accentAltGlowPrimary
     case accentAltContentPrimary
 
@@ -86,6 +87,9 @@ public enum DesignSystemColor {
     // Alert
     case alertGreen
     case alertYellow
+
+    // Status
+    case statusRed
 
     // Shield
     case shieldPrivacy

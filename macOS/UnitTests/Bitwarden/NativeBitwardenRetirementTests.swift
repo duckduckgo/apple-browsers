@@ -20,6 +20,7 @@ import XCTest
 import WebExtensions
 @testable import DuckDuckGo_Privacy_Browser
 
+@available(macOS 15.4, *)
 @MainActor
 final class NativeBitwardenRetirementTests: XCTestCase {
 

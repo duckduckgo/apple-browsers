@@ -22,7 +22,8 @@ import Foundation
 import WebExtensions
 
 /// Switches a native Bitwarden integration user to DuckDuckGo once they install the Bitwarden extension,
-/// which replaces the integration. Only created where web extensions are supported, so the switch is permanent.
+/// which replaces the integration. Web extensions need macOS 15.4, and there the switch is permanent.
+@available(macOS 15.4, *)
 @MainActor
 final class NativeBitwardenRetirement {
 

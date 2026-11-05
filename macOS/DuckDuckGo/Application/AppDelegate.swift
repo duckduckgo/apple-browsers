@@ -617,7 +617,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private(set) var webExtensionManager: WebExtensionManaging?
     /// Whether a password manager extension has taken autofill over from DuckDuckGo.
     let webExtensionAutofillTakeover: WebExtensionAutofillTakeover
-    private var nativeBitwardenRetirement: NativeBitwardenRetirement?
+    private var nativeBitwardenRetirement: AnyObject?
     private(set) var webExtensionAvailability: WebExtensionAvailabilityProviding
     private let webExtensionManagerHolder = WebExtensionManagerHolder()
     private var webExtensionFeatureFlagHandler: AnyObject?
@@ -2376,7 +2376,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         )
         self.webExtensionManager = webExtensionManager
         webExtensionAutofillTakeover.manager = webExtensionManager
-        nativeBitwardenRetirement = NativeBitwardenRetirement(
+        let nativeBitwardenRetirement = NativeBitwardenRetirement(
             isBitwardenExtensionInstalled: { [weak webExtensionManager] in
                 webExtensionManager?.isBitwardenExtensionInstalled ?? false
             },
@@ -2384,6 +2384,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 passwordManagerCoordinator.setEnabled(false)
             }
         )
+        self.nativeBitwardenRetirement = nativeBitwardenRetirement
 
         let coordinator = WebExtensionLifecycleCoordinator(
             manager: webExtensionManager,
@@ -2398,10 +2399,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
         // Load extensions asynchronously - the controller is already attached to tabs
         let initialLoad = coordinator.loadAndSync()
-        Task { @MainActor [weak self] in
+        Task { @MainActor [weak self, weak nativeBitwardenRetirement] in
             await initialLoad.value
             self?.startRemoteDisableEnforcer(for: webExtensionManager)
-            self?.nativeBitwardenRetirement?.retireIfNeeded()
+            nativeBitwardenRetirement?.retireIfNeeded()
         }
     }
 

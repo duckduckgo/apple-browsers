@@ -1,5 +1,5 @@
 //
-//  MenuCommandAvailability.swift
+//  DuckAiTermsOfServicePixel.swift
 //  DuckDuckGo
 //
 //  Copyright © 2026 DuckDuckGo. All rights reserved.
@@ -17,25 +17,21 @@
 //  limitations under the License.
 //
 
-struct MenuCommandAvailability {
-    struct State {
-        enum Presentation {
-            case browser
-            case tabSwitcher
-            case blockingModal
-        }
+import Foundation
+import PixelKit
 
-        let shortcutsEnabled: Bool
-        let presentation: Presentation
-    }
+enum DuckAiTermsOfServicePixel: PixelKit.Event {
 
-    let state: State
+    /// The web app's record held an acceptance the app didn't have, so the app adopted it.
+    case acceptedFromWeb
 
-    func isEnabled(_ command: MainMenuCommand) -> Bool {
-        guard state.shortcutsEnabled else { return false }
-        switch command {
-        case .settings:
-            return state.presentation != .blockingModal
+    var name: String {
+        switch self {
+        case .acceptedFromWeb: return "aichat_terms_accepted_from_web"
         }
     }
+
+    var parameters: [String: String]? { nil }
+
+    var standardParameters: [PixelKitStandardParameter]? { nil }
 }

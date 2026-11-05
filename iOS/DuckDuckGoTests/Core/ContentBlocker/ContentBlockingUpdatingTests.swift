@@ -30,6 +30,8 @@ import PrivacyConfig
 import PrivacyConfigTestsUtils
 import UserScript
 import Network
+import AIChat
+import AIChatTestingUtilities
 @_spi(Testing) import PixelKit
 @_spi(Testing) import Persistence
 @testable import SitePermissions
@@ -71,7 +73,8 @@ final class ContentBlockingUpdatingTests: XCTestCase {
                                                                           contentScopeExperimentsManager: MockContentScopeExperimentManager(),
                                                                           internalUserDecider: MockInternalUserDecider(),
                                                                           syncErrorHandler: CapturingAdapterErrorHandler(),
-                                                                          webExtensionAvailability: nil))
+                                                                          webExtensionAvailability: nil,
+                                                                          aiChatBonusOffer: AIChatBonusOfferDependencies(handler: MockAIChatBonusHandling(), messageLog: AIChatBonusMessageLog())))
     }
 
     override static func setUp() {
@@ -1230,7 +1233,8 @@ final class ContentBlockingUpdatingTests: XCTestCase {
                                                          contentScopeExperimentsManager: MockContentScopeExperimentManager(),
                                                          internalUserDecider: MockInternalUserDecider(),
                                                          syncErrorHandler: CapturingAdapterErrorHandler(),
-                                                         webExtensionAvailability: nil))
+                                                         webExtensionAvailability: nil,
+                                                         aiChatBonusOffer: AIChatBonusOfferDependencies(handler: MockAIChatBonusHandling(), messageLog: AIChatBonusMessageLog())))
     }
 
     static let tracker = KnownTracker(domain: "tracker.com",

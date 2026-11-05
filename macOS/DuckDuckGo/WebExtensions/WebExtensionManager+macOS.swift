@@ -100,6 +100,7 @@ enum WebExtensionManagerFactory {
         keyValueStore: any ThrowingKeyValueStoring,
         privacyConfigurationManager: PrivacyConfigurationManaging,
         autoconsentPreferences: AutoconsentPreferencesProviding,
+        themeManager: ThemeManager,
         buildType: ApplicationBuildType = StandardApplicationBuildType(),
         darkReaderExcludedDomainsProvider: DarkReaderExcludedDomainsProviding? = nil,
         scriptletConfiguration: ScriptletConfiguration? = nil
@@ -125,7 +126,7 @@ enum WebExtensionManagerFactory {
         let permissionController = Application.appDelegate.featureFlagger.isFeatureOn(.webExtensionsPermissions) ? WebExtensionPermissionController(
             store: WebExtensionPermissionStore(keyValueStore: keyValueStore),
             installationStore: installationStore,
-            prompter: WebExtensionPermissionPrompt(windowProvider: { NSApp.keyWindow ?? NSApp.mainWindow })
+            prompter: WebExtensionPermissionPrompt(windowProvider: { Application.appDelegate.windowControllersManager.lastKeyMainWindowController?.window }, themeManager: themeManager)
         ) : nil
         // The App Store sandbox cannot launch another app's host, so only Sparkle builds offer native messaging.
         let nativeMessagingHandler = buildType.isSparkleBuild && Application.appDelegate.featureFlagger.isFeatureOn(.webExtensionNativeMessaging)
@@ -173,13 +174,11 @@ enum WebExtensionManagerFactory {
         )
 
         internalSiteHandler.dataSource = manager
-        if buildType.isSparkleBuild {
-            manager.chromeWebStore = ChromeWebStoreService(
-                manager: manager,
-                catalog: ChromeWebStoreCatalog(configurationManager: privacyConfigurationManager),
-                presenter: ChromeWebStorePresenter(windowProvider: { NSApp.keyWindow ?? NSApp.mainWindow })
-            )
-        }
+        manager.chromeWebStore = ChromeWebStoreService(
+            manager: manager,
+            catalog: ChromeWebStoreCatalog(configurationManager: privacyConfigurationManager),
+            presenter: ChromeWebStorePresenter(windowProvider: { NSApp.keyWindow ?? NSApp.mainWindow })
+        )
 
         return manager
     }

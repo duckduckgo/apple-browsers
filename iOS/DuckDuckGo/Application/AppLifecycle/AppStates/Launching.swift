@@ -81,6 +81,14 @@ struct Launching: LaunchingHandling {
 
         // The app's single owner of the Duck.ai bonus record, shared by every consumer.
         let aiChatBonusService = AIChatBonusService()
+        // One bridge handler for every Duck.ai tab: it holds no per-tab state and builds one payload per record change.
+        let aiChatBonusOffer = AIChatBonusOfferDependencies(
+            handler: AIChatBonusHandler(
+                service: aiChatBonusService,
+                factsProvider: AIChatBonusFactsProvider(statisticsStore: StatisticsUserDefaults(), aiChatSettings: AIChatSettings())
+            ),
+            messageLog: AIChatBonusMessageLog()
+        )
 
         // Initialize configuration with the key-value store
         configuration = AppConfiguration(
@@ -170,7 +178,8 @@ struct Launching: LaunchingHandling {
                                                             webExtensionAvailability: webExtensionAvailability,
                                                             duckAiNativeStorageHandler: duckAiNativeStorageHandler,
                                                             fireModeStorageController: fireModeStorageController,
-                                                            adBlockingAvailability: adBlockingAvailability)
+                                                            adBlockingAvailability: adBlockingAvailability,
+                                                            aiChatBonusOffer: aiChatBonusOffer)
         launchBreadcrumb.mark(.contentBlocking)
 
         // Constructed before MainCoordinator: its `eventHub` is threaded down to every tab.
@@ -422,7 +431,20 @@ struct Launching: LaunchingHandling {
 
         winBackOfferService.setURLHandler(mainCoordinator)
 
-        let mainMenuService = MainMenuService(featureFlagger: featureFlagger)
+        let voiceSearchHelper = self.voiceSearchHelper
+        let fireModeCapability = mainCoordinator.controller.fireModeCapability
+        let mainViewController = mainCoordinator.controller
+        let mainMenuBookmarks = mainViewController.mainMenuBookmarks
+        let bookmarksMenuTree = BookmarksMenuTree(children: { mainMenuBookmarks.children(ofFolderWithID: $0) })
+        let mainMenuService = MainMenuService(featureFlagger: featureFlagger, contextProvider: {
+            .init(voiceSearchEnabled: voiceSearchHelper.isVoiceSearchEnabled, fireModeEnabled: fireModeCapability.isFireModeEnabled,
+                  aiChatEnabled: aiChatSettings.isAIChatEnabled, favorites: mainMenuBookmarks.favorites)
+        }, deferredContent: [
+            DuckAIMenuSection.recentChatsIdentifier: DuckAIRecentChatsMenuContent { [weak mainViewController] in
+                await mainViewController?.mainMenuRecentChats() ?? .init(recentChats: [], totalChatCount: 0)
+            },
+            .bookmarksTree: bookmarksMenuTree
+        ], rebuildTriggers: [mainMenuBookmarks.changes])
 
         // MARK: - App Services aggregation
         // This object serves as a central hub for app-wide services that:

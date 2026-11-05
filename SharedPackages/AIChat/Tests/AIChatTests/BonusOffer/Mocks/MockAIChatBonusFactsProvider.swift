@@ -20,6 +20,17 @@ import Foundation
 @testable import AIChat
 
 final class MockAIChatBonusFactsProvider: AIChatBonusFactsProviding {
-    var isNewInstall = true
+    var isNewInstallValue = true
     var isAIChatEnabled = true
+    private(set) var isNewInstallReadCount = 0
+
+    var isNewInstall: Bool {
+        get {
+            isNewInstallReadCount += 1
+            return isNewInstallValue
+        }
+        set {
+            isNewInstallValue = newValue
+        }
+    }
 }

@@ -40,8 +40,8 @@ struct AIChatBonusRecordRulesTests {
         #expect(result == AIChatBonusRecord(campaignName: campaignName, bonusId: bonusId))
     }
 
-    @Test("Check a claim after a dismiss mints and keeps dismissed")
-    func claimAfterDismissKeepsDismissed() {
+    @Test("Check a claim after a dismiss mints and keeps the dismissed campaign")
+    func claimAfterDismissKeepsTheDismissedCampaign() {
         // GIVEN
         let record = AIChatBonusRecordMock.dismissedOnly
         let campaignName = AIChatBonusRecordMock.campaignName
@@ -200,13 +200,13 @@ struct AIChatBonusRecordRulesTests {
     @Test("Check a dismiss with no record creates a dismissed record")
     func dismissWithNoRecordCreatesOne() {
         // WHEN
-        let result = AIChatBonusRecordRules.dismiss(nil)
+        let result = AIChatBonusRecordRules.dismiss(nil, campaignName: AIChatBonusRecordMock.campaignName)
 
         // THEN
-        #expect(result == .write(AIChatBonusRecord(dismissed: true)))
+        #expect(result == .write(AIChatBonusRecordMock.dismissedOnly))
     }
 
-    @Test("Check a dismiss sets dismissed and keeps everything else", arguments: [
+    @Test("Check a dismiss sets the dismissed campaign and keeps everything else", arguments: [
         AIChatBonusRecordMock.pending,
         AIChatBonusRecordMock.active,
         AIChatBonusRecordMock.ended
@@ -214,11 +214,11 @@ struct AIChatBonusRecordRulesTests {
     func dismissKeepsEverythingElse(_ record: AIChatBonusRecord) {
         // GIVEN
         let expectedRecord = record.with {
-            $0.dismissed = true
+            $0.dismissedCampaignName = AIChatBonusRecordMock.campaignName
         }
 
         // WHEN
-        let result = AIChatBonusRecordRules.dismiss(record)
+        let result = AIChatBonusRecordRules.dismiss(record, campaignName: AIChatBonusRecordMock.campaignName)
 
         // THEN
         #expect(result == .write(expectedRecord))
@@ -230,10 +230,22 @@ struct AIChatBonusRecordRulesTests {
         let record = AIChatBonusRecordMock.dismissedOnly
 
         // WHEN
-        let result = AIChatBonusRecordRules.dismiss(record)
+        let result = AIChatBonusRecordRules.dismiss(record, campaignName: AIChatBonusRecordMock.campaignName)
 
         // THEN
         #expect(result == .write(record))
+    }
+
+    @Test("Check a dismiss for another campaign replaces the dismissed campaign")
+    func dismissForAnotherCampaignReplacesTheDismissedCampaign() {
+        // GIVEN
+        let record = AIChatBonusRecordMock.dismissedOnly
+
+        // WHEN
+        let result = AIChatBonusRecordRules.dismiss(record, campaignName: "next-campaign")
+
+        // THEN
+        #expect(result == .write(AIChatBonusRecord(dismissedCampaignName: "next-campaign")))
     }
 
     // MARK: - End
@@ -241,7 +253,7 @@ struct AIChatBonusRecordRulesTests {
     @Test("Check an end keeps only the campaign", arguments: [
         AIChatBonusRecordMock.pending,
         AIChatBonusRecordMock.active,
-        AIChatBonusRecordMock.active.with { $0.dismissed = true }
+        AIChatBonusRecordMock.active.with { $0.dismissedCampaignName = AIChatBonusRecordMock.campaignName }
     ])
     func endKeepsOnlyTheCampaign(_ record: AIChatBonusRecord) {
         // WHEN

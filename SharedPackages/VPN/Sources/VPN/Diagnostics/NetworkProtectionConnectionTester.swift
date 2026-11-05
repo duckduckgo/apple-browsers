@@ -81,6 +81,7 @@ final class NetworkProtectionConnectionTester: ConnectionTesting {
 
     private var failureCount = 0
     var resultHandler: (@MainActor (Result) -> Void)?
+    var connectivityResultHandler: (@MainActor (Bool, Bool, Date) -> Void)?
 
     private var simulateFailure = false
 
@@ -191,6 +192,7 @@ final class NetworkProtectionConnectionTester: ConnectionTesting {
         }
 
         Logger.networkProtectionConnectionTester.debug("Testing connection...")
+        let startedAt = Date()
 
         let vpnParameters = NWParameters.tcp
         vpnParameters.requiredInterface = tunnelInterface
@@ -213,6 +215,8 @@ final class NetworkProtectionConnectionTester: ConnectionTesting {
             Logger.networkProtectionConnectionTester.log("Tester skipped returning results as it was stopped while running the tests")
             return
         }
+
+        connectivityResultHandler?(vpnIsConnected, localIsConnected, startedAt)
 
         if onlyVPNIsDown {
             Logger.networkProtectionConnectionTester.log("👎 VPN is DOWN")

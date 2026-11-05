@@ -27,8 +27,12 @@ public enum ChromeWebStoreID: String {
 
 public struct ChromeWebStoreListing: Equatable, Identifiable {
     public let entry: ExtensionsCatalogSubfeature
+    /// The Chrome Web Store ID, or `nil` when the catalog entry doesn't set one.
+    public let storeID: String?
     public let name: String
     public let publisher: String
+    public let publisherURL: URL?
+    public let category: String?
     public let iconURL: URL?
     public let storeURL: URL
 
@@ -172,8 +176,11 @@ public final class ChromeWebStoreCatalog: ChromeWebStoreCatalogProviding {
               let storeURL = (settings["cwsUri"] as? String).flatMap(URL.init(string:)) else { return nil }
 
         return ChromeWebStoreListing(entry: subfeature,
+                                     storeID: settings["id"] as? String,
                                      name: name,
                                      publisher: settings["publisher"] as? String ?? "",
+                                     publisherURL: (settings["publisherUri"] as? String).flatMap(URL.init(string:)),
+                                     category: settings["categoryId"] as? String,
                                      iconURL: (settings["iconUri"] as? String).flatMap(URL.init(string:)),
                                      storeURL: storeURL)
     }

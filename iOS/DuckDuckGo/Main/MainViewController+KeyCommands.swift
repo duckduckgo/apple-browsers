@@ -74,7 +74,7 @@ extension MainViewController {
         }
         
         var findInPageCommands = [UIKeyCommand]()
-        if findInPageView?.findInPage != nil {
+        if findInPageView?.isHidden == false, currentTab?.customFindInPage != nil {
             findInPageCommands = [
                 UIKeyCommand(title: "", action: #selector(keyboardFindNext), input: "g", modifierFlags: .command,
                              discoverabilityTitle: UserText.keyCommandFindNext),
@@ -181,12 +181,12 @@ extension MainViewController {
 
     @objc func keyboardFindNext() {
         KeyboardShortcutPixel.fireUsed(with: pixelFiring)
-        self.findInPageView?.findInPage?.next()
+        currentTab?.customFindInPage?.next()
     }
 
     @objc func keyboardFindPrevious() {
         KeyboardShortcutPixel.fireUsed(with: pixelFiring)
-        self.findInPageView?.findInPage?.previous()
+        currentTab?.customFindInPage?.previous()
     }
 
     @objc func keyboardLocation() {

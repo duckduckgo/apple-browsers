@@ -38,6 +38,7 @@ import Combine
 @testable import Core
 
 final class MockTabDelegate: TabDelegate {
+    private(set) var contentProcessTerminationCount = 0
     var shouldRequestAppRatingPrompt = false
     private(set) var grantedSitePermissions = [Set<SitePermissionType>]()
     private(set) var sitePermissionAnimationCancellationCount = 0
@@ -158,7 +159,9 @@ final class MockTabDelegate: TabDelegate {
 
     func closeFindInPage(tab: DuckDuckGo.TabViewController) {}
 
-    func tabContentProcessDidTerminate(tab: DuckDuckGo.TabViewController) {}
+    func tabContentProcessDidTerminate(tab: DuckDuckGo.TabViewController) {
+        contentProcessTerminationCount += 1
+    }
 
     func tabDidEngageWithPage(_ tab: DuckDuckGo.TabViewController) {}
 

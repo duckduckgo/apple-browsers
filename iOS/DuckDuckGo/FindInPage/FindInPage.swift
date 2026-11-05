@@ -26,8 +26,25 @@ import PrivacyConfig
 enum FindInPageImplementation {
     case system
     case legacy
+    #if DEBUG
+    case delegateSessionExperiment
+    #endif
 
-    init(featureFlagger: FeatureFlagger) {
+    var isDelegateSessionExperiment: Bool {
+        #if DEBUG
+        self == .delegateSessionExperiment
+        #else
+        false
+        #endif
+    }
+
+    init(featureFlagger: FeatureFlagger, arguments: [String] = ProcessInfo.processInfo.arguments) {
+        #if DEBUG
+        if #available(iOS 27.0, *), arguments.contains("-findInPageDelegateSession") {
+            self = .delegateSessionExperiment
+            return
+        }
+        #endif
         if #available(iOS 16.0, *), !featureFlagger.isFeatureOn(.legacyFindInPage) {
             self = .system
         } else {
@@ -38,11 +55,29 @@ enum FindInPageImplementation {
 
 protocol FindInPageDelegate: NSObjectProtocol {
     
-    func updated(findInPage: FindInPage)
+    func updated(findInPage: any FindInPageSearching)
 
 }
 
-class FindInPage: NSObject {
+protocol FindInPageSearching: AnyObject {
+    var delegate: FindInPageDelegate? { get set }
+    var searchTerm: String { get }
+    var current: Int { get }
+    var total: Int { get }
+    var diagnosticStatus: String? { get }
+    func search(forText text: String) -> Bool
+    func next()
+    func previous()
+    func done()
+    func keepCurrentResultVisible(visibleBottomFraction: CGFloat)
+}
+
+extension FindInPageSearching {
+    var diagnosticStatus: String? { nil }
+    func keepCurrentResultVisible(visibleBottomFraction: CGFloat) {}
+}
+
+class FindInPage: NSObject, FindInPageSearching {
 
     weak var delegate: FindInPageDelegate?
     weak var webView: WKWebView?

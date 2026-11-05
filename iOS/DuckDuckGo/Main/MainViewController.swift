@@ -141,6 +141,7 @@ class MainViewController: UIViewController {
     private var findInPageDismissalTimer: Timer?
     private var findResultVisibilityWorkItem: DispatchWorkItem?
     private weak var findInPagePanGestureRecognizer: UIPanGestureRecognizer?
+    private var delegateFindViewport: CGRect?
 
     weak var notificationView: UIView?
 
@@ -916,6 +917,9 @@ class MainViewController: UIViewController {
     }
 
     deinit {
+        if currentTab?.customFindInPage?.diagnosticStatus != nil {
+            currentTab?.endCustomFindInPage()
+        }
         chromeMorphAnimator.cancel()
         findInPageDismissalTimer?.invalidate()
         findResultVisibilityWorkItem?.cancel()
@@ -3810,6 +3814,10 @@ class MainViewController: UIViewController {
     }
 
     private func resetBarsAfterTransitionAnimationIfNeeded(wasKeyboardShowing: Bool) {
+        if findInPageView?.isHidden == false {
+            applyBarsVisibilityState(0, postChromeVisibilityNotification: false)
+            return
+        }
         if shouldKeepChromeHiddenForFindInPage {
             setBarsHidden(true, animated: false, customAnimationDuration: nil)
             return
@@ -4140,6 +4148,7 @@ class MainViewController: UIViewController {
         updateWindowedAddressBarCorners()
         newTabPageViewController?.refreshContextualOnboardingDialogLayout()
         bringFindInPageToFrontIfNeeded()
+        updateDelegateFindViewportIfNeeded()
     }
 
     // True while the address-bar move animation runs; it owns the container background. See `onMoveAddressBar`.
@@ -4390,8 +4399,8 @@ class MainViewController: UIViewController {
     }
     
     func updateFindInPage() {
-        currentTab?.findInPage?.delegate = self
-        findInPageView?.update(with: currentTab?.findInPage, updateTextField: true)
+        currentTab?.customFindInPage?.delegate = self
+        findInPageView?.update(with: currentTab?.customFindInPage, updateTextField: true)
         findInPageView?.updateConstraints()
         bringFindInPageToFrontIfNeeded()
         updateFindInPagePanGesture()
@@ -4406,7 +4415,7 @@ class MainViewController: UIViewController {
     }
 
     private func updateFindInPagePanGesture() {
-        let gesture = currentTab?.findInPage != nil ? currentTab?.webView.scrollView.panGestureRecognizer : nil
+        let gesture = currentTab?.customFindInPage != nil ? currentTab?.webView.scrollView.panGestureRecognizer : nil
         guard gesture !== findInPagePanGestureRecognizer else { return }
         findInPagePanGestureRecognizer?.removeTarget(self, action: #selector(findInPageWebViewDidPan))
         gesture?.addTarget(self, action: #selector(findInPageWebViewDidPan))
@@ -4449,7 +4458,8 @@ class MainViewController: UIViewController {
 
     @available(iOS 16.0, *)
     private func hideChromeForConfirmedFindInPage() {
-        guard currentTab?.webView.findInteraction?.isFindNavigatorVisible == true,
+        guard currentTab?.findInPageImplementation == .system,
+              currentTab?.webView.findInteraction?.isFindNavigatorVisible == true,
               !AppWidthObserver.shared.isPad || !AppWidthObserver.shared.isLargeWidth,
               !isFindInPageChromeLockActive else { return }
 
@@ -5505,7 +5515,8 @@ class MainViewController: UIViewController {
 
 extension MainViewController: FindInPageDelegate {
     
-    func updated(findInPage: FindInPage) {
+    func updated(findInPage: any FindInPageSearching) {
+        guard currentTab?.customFindInPage === findInPage else { return }
         findInPageView?.update(with: findInPage, updateTextField: false)
         scheduleCurrentFindResultVisibility()
     }
@@ -5516,7 +5527,10 @@ extension MainViewController: FindInPageViewDelegate {
     
     func done(findInPageView: FindInPageView) {
         findResultVisibilityWorkItem?.cancel()
-        currentTab?.findInPage = nil
+        if currentTab?.customFindInPage === findInPageView.findInPage {
+            currentTab?.releaseCustomFindInPage()
+        }
+        delegateFindViewport = nil
         updateFindInPagePanGesture()
         viewCoordinator.toolbar.accessibilityElementsHidden = false
 
@@ -5904,6 +5918,7 @@ extension MainViewController: BrowserChromeDelegate {
     }
 
     func floatingWebViewObscuredInsets(for barsVisibilityPercent: CGFloat) -> UIEdgeInsets {
+        if let insets = delegateFindObscuredInsets { return insets }
         let chromeInsets = UIEdgeInsets(top: floatingWebViewTopObscuredHeight(for: barsVisibilityPercent),
                                        left: 0,
                                        bottom: floatingWebViewBottomObscuredHeight(for: barsVisibilityPercent),
@@ -5914,6 +5929,26 @@ extension MainViewController: BrowserChromeDelegate {
                                                         ? floatingWebInputKeyboardFrame
                                                         : view.convert(latestKeyboardFrame, from: nil),
                                                     viewBounds: view.bounds)
+    }
+
+    private var delegateFindObscuredInsets: UIEdgeInsets? {
+        guard currentTab?.customFindInPage?.diagnosticStatus != nil,
+              let findInPageView, !findInPageView.isHidden else { return nil }
+        let controls = findInPageView.container.convert(findInPageView.container.bounds, to: view)
+        return UIEdgeInsets(top: view.safeAreaInsets.top, left: 0,
+                            bottom: max(view.safeAreaInsets.bottom, view.bounds.maxY - controls.minY + 24), right: 0)
+    }
+
+    private func updateDelegateFindViewportIfNeeded() {
+        guard currentTab?.customFindInPage?.diagnosticStatus != nil,
+              let findInPageView, !findInPageView.isHidden else {
+            delegateFindViewport = nil
+            return
+        }
+        let rect = findInPageView.container.convert(findInPageView.container.bounds, to: view)
+        guard delegateFindViewport != rect else { return }
+        delegateFindViewport = rect
+        currentTab?.updateWebViewLayoutForKeyboard()
     }
 
     /// Read off the card's applied constraints, so it honours the landscape cap and the hidden-chrome
@@ -8342,12 +8377,10 @@ extension MainViewController: TabDelegate {
             return
         }
 
-        if tab === currentTab {
+        if let backend = tab.customFindInPage, findInPageView?.findInPage === backend {
             findInPageView?.done()
-        } else {
-            tab.findInPage?.done()
-            tab.findInPage = nil
         }
+        tab.endCustomFindInPage()
     }
     
     func tabDidRequestFireButtonPulse(tab: TabViewController) {

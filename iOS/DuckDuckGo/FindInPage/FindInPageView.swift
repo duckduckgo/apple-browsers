@@ -39,9 +39,10 @@ class FindInPageView: UIView {
     @IBOutlet weak var inputText: UITextField!
 
     weak var delegate: FindInPageViewDelegate?
-    weak var findInPage: FindInPage?
+    weak var findInPage: (any FindInPageSearching)?
     private var usesFloatingUI = false
     private var clearButton: UIButton?
+    private var diagnosticLabel: UILabel?
 
     override func awakeFromNib() {
         super.awakeFromNib()
@@ -63,6 +64,9 @@ class FindInPageView: UIView {
         doneButton.isPointerInteractionEnabled = true
 
         inputText.accessibilityLabel = UserText.findInPage
+        inputText.accessibilityIdentifier = "FindInPage.Query"
+        (inputText as? FindInPageTextField)?.findControls = self
+        counterLabel.accessibilityIdentifier = "FindInPage.ResultCount"
 
         decorate()
     }
@@ -184,18 +188,41 @@ class FindInPageView: UIView {
         return inputText.resignFirstResponder()
     }
     
-    func update(with findInPage: FindInPage?, updateTextField: Bool) {
+    func update(with findInPage: (any FindInPageSearching)?, updateTextField: Bool) {
         self.findInPage = findInPage
         isHidden = findInPage == nil
         if updateTextField {
             inputText?.text = findInPage?.searchTerm
         }
-        counterLabel.isHidden = findInPage?.total ?? 0 == 0
+        counterLabel.isHidden = findInPage?.diagnosticStatus == nil && (findInPage?.total ?? 0) == 0
 
         let current = findInPage?.current ?? 0
         let total = findInPage?.total ?? 0
         counterLabel.text = UserText.findInPageCount.format(arguments: current, total)
         clearButton?.isHidden = inputText.text?.isEmpty ?? true
+        updateDiagnostics(findInPage?.diagnosticStatus)
+    }
+
+    private func updateDiagnostics(_ status: String?) {
+        if status != nil, diagnosticLabel == nil {
+            let label = UILabel()
+            label.accessibilityIdentifier = "FindInPage.ExperimentStatus"
+            label.font = .systemFont(ofSize: 11, weight: .medium)
+            label.textColor = .label
+            label.backgroundColor = .secondarySystemBackground
+            label.numberOfLines = 0
+            label.textAlignment = .center
+            label.translatesAutoresizingMaskIntoConstraints = false
+            addSubview(label)
+            NSLayoutConstraint.activate([
+                label.bottomAnchor.constraint(equalTo: container.topAnchor, constant: -6),
+                label.centerXAnchor.constraint(equalTo: container.centerXAnchor),
+                label.widthAnchor.constraint(lessThanOrEqualTo: container.widthAnchor)
+            ])
+            diagnosticLabel = label
+        }
+        diagnosticLabel?.text = status
+        diagnosticLabel?.isHidden = status == nil
     }
 
     override func becomeFirstResponder() -> Bool {
@@ -211,6 +238,7 @@ class FindInPageView: UIView {
         isHidden = true
         findInPage?.done()
         delegate?.done(findInPageView: self)
+        findInPage = nil
         inputText.resignFirstResponder()
     }
 
@@ -271,4 +299,34 @@ extension FindInPageView: NibLoading {
     static func loadFromXib() -> FindInPageView {
         return FindInPageView.load(nibName: "FindInPage")
     }
+}
+
+final class FindInPageTextField: UITextField {
+    weak var findControls: FindInPageView?
+
+    override var keyCommands: [UIKeyCommand]? {
+        guard findControls?.findInPage?.diagnosticStatus != nil else { return super.keyCommands }
+        let commands = [
+            UIKeyCommand(input: "g", modifierFlags: .command, action: #selector(nextExperimentResult)),
+            UIKeyCommand(input: "g", modifierFlags: [.command, .shift], action: #selector(previousExperimentResult)),
+            UIKeyCommand(input: "f", modifierFlags: .command, action: #selector(focusExperiment))
+        ]
+        commands.forEach { $0.wantsPriorityOverSystemBehavior = true }
+        return commands + (super.keyCommands ?? []).filter { candidate in
+            !commands.contains { $0.input == candidate.input && $0.modifierFlags == candidate.modifierFlags }
+        }
+    }
+
+    override func pressesBegan(_ presses: Set<UIPress>, with event: UIPressesEvent?) {
+        if findControls?.findInPage?.diagnosticStatus != nil,
+           presses.contains(where: { $0.key?.keyCode == .keyboardEscape }) {
+            findControls?.done()
+            return
+        }
+        super.pressesBegan(presses, with: event)
+    }
+
+    @objc private func nextExperimentResult() { findControls?.next() }
+    @objc private func previousExperimentResult() { findControls?.previous() }
+    @objc private func focusExperiment() { becomeFirstResponder() }
 }

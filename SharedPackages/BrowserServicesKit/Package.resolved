@@ -1,13 +1,13 @@
 {
-  "originHash" : "ecb47fb976a548b67b84581831aaad2da2568e5d82011c53b57fd21a7231d53d",
+  "originHash" : "cce3525c3f67af35604c2e0ec203715148da7bcc48071ccf8394659ce61ef69b",
   "pins" : [
     {
       "identity" : "content-scope-scripts",
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/duckduckgo/content-scope-scripts.git",
       "state" : {
-        "revision" : "6b608f032c26fb34e5ab27aff6bc606b9f79bbe4",
-        "version" : "21.4.0"
+        "branch" : "pr-releases/bartosz/ios-site-permissions-features",
+        "revision" : "9c367de1fc8702ae4d645d688e6d3e9933a17cec"
       }
     },
     {
@@ -51,8 +51,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/gumob/PunycodeSwift.git",
       "state" : {
-        "revision" : "01d1465a1ab47d7ba43ae573ba277a13538f852f",
-        "version" : "4.0.4"
+        "revision" : "de703481cf48b859a04bac8ef1d98217b9c97aa9",
+        "version" : "4.0.3"
       }
     },
     {

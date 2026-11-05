@@ -65,7 +65,7 @@ extension XCUIApplication {
             line: line)
 
         // Expanded browsing menus report this visible Close button as non-hittable, though its semantic tap dismisses the menu.
-        let closeButton = buttons["Close"]
+        let closeButton = browserWindow.buttons["Browser.Menu.Close"]
         XCTAssertTrue(
             closeButton.waitForExistence(timeout: UITestTimeouts.elementExistence),
             "Browsing menu Close button did not appear.",
@@ -88,6 +88,18 @@ extension XCUIApplication {
         expecting pageText: String,
         file: StaticString = #filePath,
         line: UInt = #line) {
+        let stopLoadingButton = browserWindow.buttons["Browser.OmniBar.Button.StopLoading"]
+        if stopLoadingButton.exists {
+            let automaticNavigationFinished = XCTContext.runActivity(named: "Wait for automatic navigation before explicit reload") { _ in
+                stopLoadingButton.waitForNonExistence(timeout: UITestTimeouts.navigation)
+            }
+            XCTAssertTrue(
+                automaticNavigationFinished,
+                "Automatic navigation did not finish before the explicit reload.",
+                file: file,
+                line: line)
+            guard automaticNavigationFinished else { return }
+        }
         let refreshButton = buttons["Browser.OmniBar.Button.Refresh"]
         refreshButton.tapWhenHittable(in: self, file: file, line: line)
         XCTAssertTrue(

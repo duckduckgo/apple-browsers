@@ -62,7 +62,7 @@
     "m_mac_store_privacy-pro_auth_invalid_refresh_token_recovered": {
         "description": "Fired when the main app recovers the session after the auth server rejected the refresh token, so the user stays signed in (App Store distribution)",
         "owners": ["federicocappelli"],
-        "triggers": ["other"],
+        "triggers": ["feature_lifecycle"],
         "suffixes": ["daily_count"],
         "parameters": ["appVersion", "pixelSource", "channel", "subscriptionTokenRecoveryMethod"]
     },
@@ -70,7 +70,7 @@
     "m_mac_direct_privacy-pro_auth_invalid_refresh_token_recovered": {
         "description": "Fired when the main app recovers the session after the auth server rejected the refresh token, so the user stays signed in (direct distribution)",
         "owners": ["federicocappelli"],
-        "triggers": ["other"],
+        "triggers": ["feature_lifecycle"],
         "suffixes": ["daily_count"],
         "parameters": ["appVersion", "pixelSource", "channel", "subscriptionTokenRecoveryMethod"]
     }

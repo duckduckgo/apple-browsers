@@ -92,7 +92,7 @@
     "m_privacy-pro_auth_invalid_refresh_token_recovered": {
         "description": "Fired when the main app recovers the session after the auth server rejected the refresh token, so the user stays signed in",
         "owners": ["federicocappelli"],
-        "triggers": ["other"],
+        "triggers": ["feature_lifecycle"],
         "suffixes": ["daily_count"],
         "parameters": [
             "appVersion",

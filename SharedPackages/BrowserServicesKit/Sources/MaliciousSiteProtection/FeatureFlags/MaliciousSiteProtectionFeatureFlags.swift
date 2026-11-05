@@ -46,8 +46,14 @@ public enum MaliciousSiteProtectionFeatureSettings: String {
 
     public var defaultValue: Int {
         switch self {
-        case .hashPrefixUpdateFrequency: return 20 // Default frequency for hash prefix updates is 20 minutes.
-        case .filterSetUpdateFrequency: return 720 // Default frequency for filter set updates is 720 minutes (12 hours).
+        case .hashPrefixUpdateFrequency:
+            #if os(macOS)
+            return 20 // Default frequency for hash prefix updates on macOS is 20 minutes.
+            #else
+            return 480 // Default frequency for hash prefix updates on iOS is 480 minutes (8 hours).
+            #endif
+        case .filterSetUpdateFrequency:
+            return 720 // Default frequency for filter set updates is 720 minutes (12 hours).
         }
     }
 }

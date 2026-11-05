@@ -126,7 +126,11 @@ class MaliciousSiteProtectionFeatureFlagsTests: XCTestCase {
         let filterSetUpdateFrequency = sut.filterSetUpdateFrequency
 
         // THEN
+        #if os(macOS)
         XCTAssertEqual(hashPrefixUpdateFrequency, 20)
+        #else
+        XCTAssertEqual(hashPrefixUpdateFrequency, 480)
+        #endif
         XCTAssertEqual(filterSetUpdateFrequency, 720)
     }
 

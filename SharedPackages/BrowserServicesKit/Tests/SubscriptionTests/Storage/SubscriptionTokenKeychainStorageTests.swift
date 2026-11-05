@@ -543,6 +543,26 @@ final class SubscriptionTokenKeychainStorageTests: XCTestCase {
         XCTAssertTrue(testUserDefaults.bool(forKey: "com.duckduckgo.subscription.v2.tokens.expected"))
     }
 
+    func testUndecodableItem_isReportedOncePerSave() throws {
+        let keychainManager = makeKeychainManager()
+        var errors: [AccountKeychainAccessError] = []
+        let storage = makeStorage(keychainManager: keychainManager, field: .tokenContainer) { errors.append($0) }
+        let undecodable = Data("not a token container".utf8)
+
+        try storage.saveTokenContainer(OAuthTokensFactory.makeValidTokenContainer())
+        try keychainManager.store(data: undecodable, forKey: "com.duckduckgo.subscription.v2.tokens")
+        XCTAssertNil(try storage.getTokenContainer())
+        XCTAssertNil(try storage.getTokenContainer())
+        XCTAssertEqual(errors.count, 1)
+
+        try storage.saveTokenContainer(OAuthTokensFactory.makeValidTokenContainer())
+        try keychainManager.store(data: undecodable, forKey: "com.duckduckgo.subscription.v2.tokens")
+        XCTAssertNil(try storage.getTokenContainer())
+
+        XCTAssertEqual(errors.count, 2)
+        XCTAssertTrue(errors.allSatisfy { if case .failedToDecodeKeychainData = $0 { return true } else { return false } })
+    }
+
     func testKeychainUpdateFailure() throws {
         // First add a token successfully
         let tokenContainer = OAuthTokensFactory.makeValidTokenContainer()

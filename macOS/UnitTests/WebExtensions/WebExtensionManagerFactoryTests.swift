@@ -62,6 +62,7 @@ final class WebExtensionManagerFactoryTests: XCTestCase {
         return WebExtensionManagerFactory.makeManager(keyValueStore: storage,
                                                      privacyConfigurationManager: MockPrivacyConfigurationManaging(),
                                                      autoconsentPreferences: Preferences(),
+                                                     themeManager: ThemeManager(appearancePreferences: .mock),
                                                      buildType: buildType, featureFlagger: flags)
     }
 

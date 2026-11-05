@@ -35,7 +35,7 @@ extension DefaultScriptSourceProvider.Dependencies {
              internalUserDecider: MockInternalUserDecider(),
              syncErrorHandler: CapturingAdapterErrorHandler(),
              webExtensionAvailability: nil,
-             aiChatBonusHandler: MockAIChatBonusHandling())
+             aiChatBonusOffer: AIChatBonusOfferDependencies(handler: MockAIChatBonusHandling(), messageLog: AIChatBonusMessageLog()))
     }
 
     static func makeMock(privacyConfig: PrivacyConfigurationManaging) -> Self {
@@ -48,6 +48,6 @@ extension DefaultScriptSourceProvider.Dependencies {
              internalUserDecider: MockInternalUserDecider(),
              syncErrorHandler: CapturingAdapterErrorHandler(),
              webExtensionAvailability: nil,
-             aiChatBonusHandler: MockAIChatBonusHandling())
+             aiChatBonusOffer: AIChatBonusOfferDependencies(handler: MockAIChatBonusHandling(), messageLog: AIChatBonusMessageLog()))
     }
 }

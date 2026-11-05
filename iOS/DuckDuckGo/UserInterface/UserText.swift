@@ -543,6 +543,9 @@ public struct UserText {
     public static let onboardingDefaultBrowserMaybeLater = NSLocalizedString("onboardingDefaultBrowserMaybeLater", value: "Maybe Later", comment: "")
 
     public static let fireproofingListTitle = NSLocalizedString("preserveLogins.domain.list.title", value: "Fireproof Sites", comment: "Section header above Fireproofed websites list")
+    public static let fireproofingAskOnSignIn = NSLocalizedString("preserveLogins.askOnSignIn", value: "Ask to Fireproof sites on sign-in", comment: "Fireproofing setting toggle label")
+    public static let fireproofingEmptyState = NSLocalizedString("preserveLogins.emptyState", value: "No Fireproof sites yet", comment: "Empty Fireproof sites list")
+    public static let fireproofingRemoveAllSites = NSLocalizedString("preserveLogins.removeAllSites", value: "Remove All Fireproof Sites", comment: "Button to remove all Fireproof sites")
     public static let fireproofingListFooter = NSLocalizedString("preserveLogins.domain.list.footer", value: "Websites rely on cookies to keep you signed in. When you Fireproof a site, cookies won’t be erased and you’ll stay signed in, even after using the Fire Button. We still block third-party trackers found on Fireproof websites.", comment: "")
     public static let fireproofingRemoveAllTitle = NSLocalizedString("preserveLogins.remove.all", value: "Remove All", comment: "Alert title")
     public static let fireproofingRemoveAllOk = NSLocalizedString("preserveLogins.remove.all.ok", value: "OK", comment: "Confirmation button in alert")

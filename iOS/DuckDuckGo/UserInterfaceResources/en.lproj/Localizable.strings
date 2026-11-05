@@ -4036,11 +4036,17 @@ https://duckduckgo.com/mac";
 /* Description of too many requests error when syncing. */
 "prefrences.sync.too-many-requests.description" = "Sync & Backup is temporarily unavailable.";
 
+/* Fireproofing setting toggle label */
+"preserveLogins.askOnSignIn" = "Ask to Fireproof sites on sign-in";
+
 /* No comment provided by engineer. */
 "preserveLogins.domain.list.footer" = "Websites rely on cookies to keep you signed in. When you Fireproof a site, cookies won’t be erased and you’ll stay signed in, even after using the Fire Button. We still block third-party trackers found on Fireproof websites.";
 
 /* Section header above Fireproofed websites list */
 "preserveLogins.domain.list.title" = "Fireproof Sites";
+
+/* Empty Fireproof sites list */
+"preserveLogins.emptyState" = "No Fireproof sites yet";
 
 /* Alert message explaining to users that the benefit of fireproofing a site is that they will be kept signed in */
 "preserveLogins.fireproof.message" = "Fireproofing this site will keep you signed in after using the Fire Button.";
@@ -4071,6 +4077,9 @@ https://duckduckgo.com/mac";
 
 /* Confirmation button in alert */
 "preserveLogins.remove.all.ok" = "OK";
+
+/* Button to remove all Fireproof sites */
+"preserveLogins.removeAllSites" = "Remove All Fireproof Sites";
 
 /* Privacy Icon accessibility title */
 "privacy.icon.dax" = "DuckDuckGo logo";

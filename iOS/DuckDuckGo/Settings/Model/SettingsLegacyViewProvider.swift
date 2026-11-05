@@ -37,7 +37,6 @@ import PixelKit
 class SettingsLegacyViewProvider: ObservableObject {
 
     enum StoryboardName {
-        static let settings = "Settings"
         static let homeRow = "HomeRow"
         static let feedback = "Feedback"
     }
@@ -148,10 +147,7 @@ class SettingsLegacyViewProvider: ObservableObject {
     }
 
     private func instantiateFireproofingController() -> UIViewController {
-        let storyboard = UIStoryboard(name: StoryboardName.settings, bundle: nil)
-        return storyboard.instantiateViewController(identifier: "FireProofSites") { coder in
-            return FireproofingSettingsViewController(coder: coder, fireproofing: self.fireproofing, favicons: self.favicons, websiteDataManager: self.websiteDataManager)
-        }
+        return FireproofingSettingsViewController(fireproofing: fireproofing, favicons: favicons, websiteDataManager: websiteDataManager)
     }
 
     private func instantiateDebugController() -> UIViewController {

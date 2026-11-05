@@ -24,12 +24,38 @@ import XCTest
 
 final class WebExtensionPixelTests: XCTestCase {
 
+    private let bitwardenStoreID = "nngceckbapebfimnlniiiahkandclblb"
+
     func testWhenAnExtensionIsInstalledOrUninstalled_ThenThePixelNamesItsCatalogEntry() {
-        XCTAssertEqual(WebExtensionPixel.installed(extension: .catalog(.bitwarden)).parameters, ["extension": "bitwarden"])
-        XCTAssertEqual(WebExtensionPixel.uninstalled(extension: .other).parameters, ["extension": "other"])
+        let installed = WebExtensionPixel.installed(extension: .catalog(.bitwarden), extensionID: bitwardenStoreID, category: "password-manager")
+
+        XCTAssertEqual(installed.parameters, ["extension": "bitwarden", "extension_id": bitwardenStoreID, "category": "password-manager"])
+        XCTAssertEqual(WebExtensionPixel.uninstalled(extension: .other, extensionID: nil, category: nil).parameters, ["extension": "other"])
         XCTAssertEqual(WebExtensionPixel.installError(extension: .catalog(.lastPass), error: URLError(.badURL)).parameters,
                        ["extension": "lastPass"])
-        XCTAssertEqual(WebExtensionPixel.installed(extension: .catalog(.bitwarden)).name, "m_mac_web_extension_installed")
+        XCTAssertEqual(installed.name, "m_mac_web_extension_installed")
+    }
+
+    func testExtensionManagementPixels() {
+        let pixels: [(WebExtensionPixel, String)] = [
+            (.enabled(extensionID: bitwardenStoreID, category: "password-manager"), "web_extension_enabled_macos"),
+            (.disabled(extensionID: bitwardenStoreID, category: "password-manager"), "web_extension_disabled_macos"),
+            (.detailsOpened(extensionID: bitwardenStoreID, category: "password-manager"), "web_extension_details_opened_macos"),
+            (.getClicked(extensionID: bitwardenStoreID, category: "password-manager"), "web_extension_get_clicked_macos"),
+            (.publisherLinkClicked(extensionID: bitwardenStoreID, category: "password-manager"), "web_extension_publisher_link_clicked_macos"),
+            (.retained(extensionID: bitwardenStoreID, category: "password-manager"), "web_extension_retained_14d_macos"),
+            (.churned(extensionID: bitwardenStoreID, category: "password-manager"), "web_extension_churned_14d_macos")
+        ]
+
+        for (pixel, name) in pixels {
+            XCTAssertEqual(pixel.name, name)
+            XCTAssertEqual(pixel.parameters, ["extension_id": bitwardenStoreID, "category": "password-manager"])
+            XCTAssertEqual(pixel.namePrefix, .none)
+        }
+    }
+
+    func testWhenTheCategoryIsUnknown_ThenExtensionManagementPixelsOmitIt() {
+        XCTAssertEqual(WebExtensionPixel.enabled(extensionID: bitwardenStoreID, category: nil).parameters, ["extension_id": bitwardenStoreID])
     }
 
     func testBitwardenDailyActivePixel() {

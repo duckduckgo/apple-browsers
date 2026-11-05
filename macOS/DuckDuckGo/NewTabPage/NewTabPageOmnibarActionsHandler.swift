@@ -174,7 +174,7 @@ final class NewTabPageOmnibarActionsHandler: NewTabPageOmnibarActionsHandling {
                     files: [NewTabPage.NewTabPageDataModel.OmnibarPromptFile]?,
                     textPasted: [NewTabPage.NewTabPageDataModel.OmnibarPromptPastedText]?,
                     aiTermsAccepted: Bool) {
-        firePixel(NewTabPagePixel.promptSubmitted)
+        firePixel(NewTabPagePixel.promptSubmitted(hasPastedText: textPasted?.isEmpty == false))
 
         // The NTP sends `aiTermsAccepted` only for an Ask click with its disclaimer on screen.
         termsOfServiceDisclaimer.acceptIfShown(aiTermsAccepted)

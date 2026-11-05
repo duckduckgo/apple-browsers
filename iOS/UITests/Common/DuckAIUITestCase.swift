@@ -24,13 +24,15 @@ class DuckAIUITestCase: UITestCase {
     var duckAIFeatureFlagLaunchArguments: [String] {
         [
             "-ff.aiChatChromeShortcutIPad", "false",
+            "-ff.aiChatChromeMenuButtonIPad", "false",
         ]
     }
 
     override var additionalLaunchArguments: [String] {
         super.additionalLaunchArguments + [
-            // Keep the NTP shortcut a direct entry point, independent of remote history-menu rollout.
-            "-ff.aiChatAddressBarRecentChats", "false",
+            "-ff.aiChatTabHandoffImprovements", "true",
+            "-ff.aiChatAddressBarRecentChats", "true",
+            "-ff.aiChatNativeChatHistory", "true",
         ] + duckAIFeatureFlagLaunchArguments
     }
 }

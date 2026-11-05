@@ -22,34 +22,38 @@ import UITestingSupport
 
 final class DuckAIUITests: DuckAIUITestCase {
 
-    func testWhenOpeningDuckAIFromBrowserShortcutsThenClosingReturnsToPreviousTab() {
+    func testWhenOpeningDuckAIFromBrowserShortcutsThenTabSwitcherReturnsToPreviousTab() {
+        app.openURL("https://privacy-test-pages.site", expecting: "Privacy Test Pages")
+        app.openTabSwitcher()
+        app.assertTabCount(1)
+        let websiteTab = app.tabCell(at: 0)
+        app.buttons["TabSwitcher.Button.NewTab"].tapWhenHittable(in: app)
+        XCTAssertTrue(app.searchEntry.waitForExistence(timeout: UITestTimeouts.elementExistence))
+
         XCTContext.runActivity(named: "Open Duck.ai from the new-tab page and verify native controls") { _ in
             app.buttons["Browser.OmniBar.Button.AIChat"].tapWhenHittable(in: app)
+            app.buttons["New Chat"].tapWhenHittable(in: app)
             assertDuckAIHeader()
             for identifier in ["AIChat.Header.RecentChats", "AIChat.Header.New", "AIChat.Toolbar.Button.ModelChip"] {
                 XCTAssertTrue(
                     app.buttons[identifier].waitForExistence(timeout: UITestTimeouts.navigation),
                     "Duck.ai control did not appear: \(identifier).")
             }
-            closeDuckAITab()
-            XCTAssertTrue(app.searchEntry.waitForExistence(timeout: UITestTimeouts.elementExistence))
+            returnToWebsiteTab(websiteTab)
         }
 
-        app.openURL("https://privacy-test-pages.site", expecting: "Privacy Test Pages")
-
-        XCTContext.runActivity(named: "Open Duck.ai from the browsing menu and return to the webpage") { _ in
+        XCTContext.runActivity(named: "Open Duck.ai from the browsing menu and return to the captured webpage tab") { _ in
             app.openBrowsingMenuItem("Browser.Menu.DuckAI")
             assertDuckAIHeader()
-            closeDuckAITab()
-            app.assertPageContains("Privacy Test Pages")
+            returnToWebsiteTab(websiteTab)
         }
 
-        XCTContext.runActivity(named: "Open Duck.ai from the tab switcher and return to the webpage") { _ in
+        XCTContext.runActivity(named: "Open New Chat from the tab-switcher menu and return to the captured webpage tab") { _ in
             app.openTabSwitcher()
             app.buttons["TabSwitcher.Button.DuckChat"].tapWhenHittable(in: app)
+            app.buttons["New Chat"].tapWhenHittable(in: app)
             assertDuckAIHeader()
-            closeDuckAITab()
-            app.assertPageContains("Privacy Test Pages")
+            returnToWebsiteTab(websiteTab)
         }
     }
 
@@ -69,7 +73,11 @@ final class DuckAIUITests: DuckAIUITestCase {
             app.buttons["Browser.Toolbar.Button.Menu"].tapWhenHittable(in: app)
             let menu = app.descendants(matching: .any)["Browser.Menu.List"]
             XCTAssertTrue(menu.waitForExistence(timeout: UITestTimeouts.elementExistence))
-            // Check the header before scrolling; an off-screen tile must not satisfy this negative assertion.
+            // The visible header's Close control proves the unscrolled header is ready.
+            let headerClose = app.browserWindow.buttons["Browser.Menu.Close"]
+            XCTAssertTrue(headerClose.waitForExistence(timeout: UITestTimeouts.elementExistence))
+            XCTAssertFalse(headerClose.frame.isEmpty, "The menu header had no visible geometry.")
+            XCTAssertTrue(app.browserWindow.frame.intersects(headerClose.frame), "The menu header was outside the browser window.")
             XCTAssertFalse(app.descendants(matching: .any)["Browser.Menu.DuckAI"].exists)
             let settings = menu.buttons["Browser.Menu.Settings"]
             menu.swipeUpToReveal(settings, timeout: UITestTimeouts.navigation)
@@ -91,17 +99,14 @@ final class DuckAIUITests: DuckAIUITestCase {
                 app.staticTexts[identifier].waitForExistence(timeout: UITestTimeouts.navigation),
                 "Duck.ai header did not appear: \(identifier).", file: file, line: line)
         }
-        XCTAssertTrue(
-            app.browserWindow.buttons["AIChat.Header.Close"].waitForHittableInAppWindow(
-                in: app,
-                timeout: UITestTimeouts.elementExistence),
-            "Duck.ai close control did not become available.", file: file, line: line)
+        XCTAssertFalse(
+            app.browserWindow.buttons["AIChat.Header.Close"].exists,
+            "The handoff-enabled Duck.ai tab unexpectedly exposed Close tab.", file: file, line: line)
     }
 
-    private func closeDuckAITab(file: StaticString = #filePath, line: UInt = #line) {
-        app.buttons["AIChat.Header.Close"].tapWhenHittable(in: app, file: file, line: line)
-        XCTAssertTrue(
-            app.buttons["AIChat.Header.Close"].waitForNonExistence(timeout: UITestTimeouts.elementExistence),
-            "Duck.ai tab did not close.", file: file, line: line)
+    private func returnToWebsiteTab(_ tab: XCUIElement, file: StaticString = #filePath, line: UInt = #line) {
+        app.buttons["AIChat.Header.TabSwitcher"].tapWhenHittable(in: app, file: file, line: line)
+        tab.buttons["TabSwitcher.Tab.Open"].tapWhenHittable(in: app, file: file, line: line)
+        app.assertPageContains("Privacy Test Pages", file: file, line: line)
     }
 }

@@ -1685,6 +1685,7 @@ class TabViewController: UIViewController {
     /// Hides the current page until the next navigation first paints, so it doesn't flash after a submit.
     func coverPageUntilFirstPaint(handoff: FirstPaintCover.Handoff = .init()) {
         guard isViewLoaded, let webView, webView.superview === webViewContainer else { return }
+        webView.observeRenderingProgressEvents(FirstPaintCover.Constants.observedEvents)
         firstPaintCover.arm(in: webViewContainer, above: webView, handoff: handoff)
     }
 
@@ -2961,6 +2962,9 @@ extension TabViewController: WKNavigationDelegate {
     }
 
     func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
+        if webView === self.webView {
+            firstPaintCover.didFinish(navigation)
+        }
         terminationReloadMonitor.didFinish()
         updateFloatingPageBackgroundColor(in: webView)
         navigationPixelResponder.didFinish(navigation)
@@ -3620,6 +3624,7 @@ extension TabViewController: WKNavigationDelegate {
         if webView === self.webView, navigationAction.isTargetingMainFrame {
             cancelWebExtensionNavigationWait()
             sitePermissionsState.cancelContentBlockingWaits()
+            firstPaintCover.willDecidePolicy()
         }
 
         // Capture the site-loading navigation type only at the moment the navigation is actually allowed.
@@ -3630,6 +3635,11 @@ extension TabViewController: WKNavigationDelegate {
         // main queue, so firing from inside the allow branches guarantees the next event is the matching
         // `didStartProvisional` — no other `decidePolicyFor` can interleave between them.
         let wrappedHandler: (TabNavigationDecision) -> Void = { [weak self] decision in
+            if let self, webView === self.webView, navigationAction.isTargetingMainFrame {
+                var allowed = false
+                if case .allow = decision { allowed = true }
+                self.firstPaintCover.didDecidePolicy(allowed: allowed, isSameDocument: navigationAction.isSameDocumentNavigation)
+            }
             if case .allow = decision {
                 if navigationAction.isTargetingMainFrame {
                     self?.cpmReadinessDocumentIsGET = navigationAction.request.httpMethod == "GET"

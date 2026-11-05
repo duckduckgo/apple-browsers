@@ -18,6 +18,7 @@
 //
 
 import UIKit
+import WebKit
 import DesignResourcesKit
 
 /// Hides the previous page after a typed search or URL until the new page first paints.
@@ -53,6 +54,8 @@ final class FirstPaintCover {
         static let baseColor = UIColor(designSystemColor: .panel)
         /// Last resort before commit, when revealing can only show the old page; the app may still be re-issuing the request.
         static let commitTimeout: TimeInterval = 15
+        /// After a main-frame policy decision that starts no provisional load, such as a cancel with nothing re-issued.
+        static let noNavigationGrace: TimeInterval = 1
         /// After commit, while waiting for the new page to paint.
         static let paintTimeout: TimeInterval = 5
         /// Caps the wait after first layout; meaningful paint can be late or never fire.
@@ -68,6 +71,8 @@ final class FirstPaintCover {
         static let didRenderSignificantAmountOfText: UInt = 1 << 7
         static let firstMeaningfulPaint: UInt = 1 << 8
         static let meaningfulContent = didRenderSignificantAmountOfText | firstMeaningfulPaint
+        /// WebKit only reports the first layouts unless the web view opts into the rest.
+        static let observedEvents = firstVisuallyNonEmptyLayout | meaningfulContent
     }
 
     private(set) var phase: Phase = .idle
@@ -127,6 +132,23 @@ final class FirstPaintCover {
         restartTimeout(after: Constants.commitTimeout)
     }
 
+    /// A main-frame policy check can wait on content blocking or a re-issued request, so it gets the full commit window.
+    func willDecidePolicy() {
+        guard isAwaitingStart else { return }
+        restartTimeout(after: Constants.commitTimeout)
+    }
+
+    /// Cancelled and same-document navigations never start a provisional load, so nothing else would lift the cover.
+    /// A cancel that re-issues the request re-enters `willDecidePolicy` well within the grace.
+    func didDecidePolicy(allowed: Bool, isSameDocument: Bool) {
+        guard isAwaitingStart else { return }
+        if allowed && isSameDocument {
+            reveal(animated: true)
+        } else {
+            restartTimeout(after: Constants.noNavigationGrace)
+        }
+    }
+
     /// The first navigation after arming is the covered one; a later start, such as a re-issued SERP request, replaces it.
     func didStartNavigation(_ navigation: AnyObject?) {
         guard phase == .awaitingCommit else { return }
@@ -155,6 +177,12 @@ final class FirstPaintCover {
         }
     }
 
+    /// The covered page finished loading; whatever it shows now is as good as it gets.
+    func didFinish(_ navigation: AnyObject?) {
+        guard phase == .awaitingPaint || phase == .awaitingMeaningfulPaint, isCovered(navigation) else { return }
+        reveal(animated: true)
+    }
+
     func navigationDidFail(_ error: Error, navigation: AnyObject?) {
         guard isCovering, isCovered(navigation) else { return }
         let nsError = error as NSError
@@ -167,6 +195,11 @@ final class FirstPaintCover {
     func cancel() {
         guard isCovering || fadeAnimator != nil else { return }
         reveal(animated: false)
+    }
+
+    private var isAwaitingStart: Bool {
+        guard phase == .awaitingCommit, case .notStarted = coveredNavigation else { return false }
+        return true
     }
 
     private func isCovered(_ navigation: AnyObject?) -> Bool {
@@ -279,5 +312,22 @@ extension FirstPaintCover {
             animators.append(color)
         }
         return animators
+    }
+}
+
+extension WKWebView {
+
+    /// Adds `events` to the rendering milestones WebKit reports to the navigation delegate.
+    func observeRenderingProgressEvents(_ events: UInt) {
+        let getter = NSSelectorFromString("_observedRenderingProgressEvents")
+        let setter = NSSelectorFromString("_setObservedRenderingProgressEvents:")
+        guard let getMethod = class_getInstanceMethod(object_getClass(self), getter),
+              let setMethod = class_getInstanceMethod(object_getClass(self), setter) else { return }
+
+        typealias Getter = @convention(c) (WKWebView, Selector) -> UInt
+        typealias Setter = @convention(c) (WKWebView, Selector, UInt) -> Void
+        let current = unsafeBitCast(method_getImplementation(getMethod), to: Getter.self)(self, getter)
+        guard current & events != events else { return }
+        unsafeBitCast(method_getImplementation(setMethod), to: Setter.self)(self, setter, current | events)
     }
 }

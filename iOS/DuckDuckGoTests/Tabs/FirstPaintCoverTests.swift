@@ -458,12 +458,112 @@ struct FirstPaintCoverTests {
     }
 
     @available(iOS 16, macOS 13, *)
+    @Test("A policy cancel with nothing re-issued reveals after a short grace", .timeLimit(.minutes(1)))
+    func policyCancelWithoutReissueReveals() {
+        let harness = Harness()
+        harness.cover.arm(in: harness.container, above: harness.webView)
+
+        harness.cover.willDecidePolicy()
+        harness.cover.didDecidePolicy(allowed: false, isSameDocument: false)
+
+        #expect(harness.timeouts.last?.delay == FirstPaintCover.Constants.noNavigationGrace)
+        #expect(FirstPaintCover.Constants.noNavigationGrace < FirstPaintCover.Constants.paintTimeout)
+        harness.fireLatestTimeout()
+        #expect(harness.cover.phase == .idle)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("A policy cancel that re-issues the request keeps the cover for the new load", .timeLimit(.minutes(1)))
+    func policyCancelWithReissueKeepsCover() {
+        let harness = Harness()
+        harness.cover.arm(in: harness.container, above: harness.webView)
+        harness.cover.willDecidePolicy()
+        harness.cover.didDecidePolicy(allowed: false, isSameDocument: false)
+
+        harness.cover.willDecidePolicy()
+
+        #expect(harness.timeouts.last?.delay == FirstPaintCover.Constants.commitTimeout)
+        harness.cover.didDecidePolicy(allowed: true, isSameDocument: false)
+        harness.cover.didStartNavigation(harness.navigation)
+        #expect(harness.cover.phase == .awaitingCommit)
+        #expect(harness.timeouts.last?.delay == FirstPaintCover.Constants.commitTimeout)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("A same-document navigation reveals straight away", .timeLimit(.minutes(1)))
+    func sameDocumentNavigationReveals() {
+        let harness = Harness()
+        harness.cover.arm(in: harness.container, above: harness.webView)
+
+        harness.cover.willDecidePolicy()
+        harness.cover.didDecidePolicy(allowed: true, isSameDocument: true)
+
+        #expect(harness.cover.phase == .idle)
+        #expect(harness.pendingFades.count == 1)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Policy decisions after the covered load starts don't shorten its wait", .timeLimit(.minutes(1)))
+    func policyDecisionsAfterStartAreIgnored() {
+        let harness = Harness()
+        harness.cover.arm(in: harness.container, above: harness.webView)
+        harness.cover.didStartNavigation(harness.navigation)
+        let timeoutCount = harness.timeouts.count
+
+        harness.cover.willDecidePolicy()
+        harness.cover.didDecidePolicy(allowed: false, isSameDocument: false)
+        harness.cover.didDecidePolicy(allowed: true, isSameDocument: true)
+
+        #expect(harness.cover.phase == .awaitingCommit)
+        #expect(harness.timeouts.count == timeoutCount)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Finishing the covered load reveals while still waiting for paint", .timeLimit(.minutes(1)))
+    func finishRevealsCoveredLoad() {
+        let harness = Harness()
+        harness.cover.arm(in: harness.container, above: harness.webView)
+        harness.startAndCommit()
+
+        harness.cover.didFinish(NSObject())
+        #expect(harness.cover.phase == .awaitingPaint, "another navigation's finish is ignored")
+
+        harness.cover.didFinish(harness.navigation)
+        #expect(harness.cover.phase == .idle)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Finishing before commit keeps the cover", .timeLimit(.minutes(1)))
+    func finishBeforeCommitKeepsCover() {
+        let harness = Harness()
+        harness.cover.arm(in: harness.container, above: harness.webView)
+        harness.cover.didStartNavigation(harness.navigation)
+
+        harness.cover.didFinish(harness.navigation)
+
+        #expect(harness.cover.phase == .awaitingCommit)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("The cover asks WebKit for every milestone it reacts to", .timeLimit(.minutes(1)))
+    func observedEventsIncludeMilestones() {
+        let observed = FirstPaintCover.Constants.observedEvents
+
+        #expect(observed & Self.firstVisuallyNonEmptyLayout != 0)
+        #expect(observed & Self.didRenderSignificantAmountOfText != 0)
+        #expect(observed & Self.firstMeaningfulPaint != 0)
+    }
+
+    @available(iOS 16, macOS 13, *)
     @Test("Callbacks without an armed cover do nothing", .timeLimit(.minutes(1)))
     func idleCallbacksDoNothing() {
         let harness = Harness()
 
         harness.startAndCommit()
         harness.cover.renderingProgressDidChange(Self.firstVisuallyNonEmptyLayout)
+        harness.cover.willDecidePolicy()
+        harness.cover.didDecidePolicy(allowed: true, isSameDocument: true)
+        harness.cover.didFinish(harness.navigation)
         harness.cover.navigationDidFail(NSError(domain: NSURLErrorDomain, code: NSURLErrorTimedOut), navigation: harness.navigation)
         harness.cover.cancel()
 

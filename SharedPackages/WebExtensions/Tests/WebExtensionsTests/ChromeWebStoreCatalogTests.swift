@@ -67,13 +67,21 @@ final class ChromeWebStoreCatalogTests: XCTestCase {
     func testCatalogReadsAnEntrysListing() throws {
         let iconURL = "https://staticcdn.duckduckgo.com/extensions/bitwarden-80.png"
         let storeURL = "https://chromewebstore.google.com/detail/\(identifier)"
+        let publisherURL = "https://bitwarden.com"
         let catalog = try makeCatalog(extensions: [
-            "bitwarden": entry(identifier, iconUri: iconURL, cwsUri: storeURL),
+            "bitwarden": entry(identifier, iconUri: iconURL, cwsUri: storeURL, publisherUri: publisherURL, categoryId: "password-manager"),
             "onePassword": entry(otherIdentifier)
         ])
 
         XCTAssertEqual(catalog.listing(of: .bitwarden),
-                       ChromeWebStoreListing(entry: .bitwarden, name: "Extension", publisher: "", iconURL: URL(string: iconURL), storeURL: try XCTUnwrap(URL(string: storeURL))))
+                       ChromeWebStoreListing(entry: .bitwarden,
+                                             storeID: identifier,
+                                             name: "Extension",
+                                             publisher: "",
+                                             publisherURL: URL(string: publisherURL),
+                                             category: "password-manager",
+                                             iconURL: URL(string: iconURL),
+                                             storeURL: try XCTUnwrap(URL(string: storeURL))))
         XCTAssertNil(catalog.listing(of: .onePassword))
         XCTAssertNil(catalog.listing(of: .darkReader))
     }
@@ -157,11 +165,14 @@ final class ChromeWebStoreCatalogTests: XCTestCase {
 
     // MARK: - Helpers
 
-    private func entry(_ id: String, state: String = "enabled", order: Int? = nil, iconUri: String? = nil, cwsUri: String? = nil) -> [String: Any] {
+    private func entry(_ id: String, state: String = "enabled", order: Int? = nil, iconUri: String? = nil, cwsUri: String? = nil,
+                       publisherUri: String? = nil, categoryId: String? = nil) -> [String: Any] {
         var settings: [String: Any] = ["id": id, "name": "Extension"]
         settings["order"] = order
         settings["iconUri"] = iconUri
         settings["cwsUri"] = cwsUri
+        settings["publisherUri"] = publisherUri
+        settings["categoryId"] = categoryId
         return ["state": state, "settings": settings]
     }
 

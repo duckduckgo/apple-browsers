@@ -204,7 +204,9 @@ public final class NewTabPageOmnibarClient: NewTabPageUserScriptClient {
             launcherPromo: configProvider.launcherPromo(),
             showSuggestedPrompts: configProvider.showSuggestedPrompts,
             screenshotModes: screenshotProvider?.screenshotModes,
-            enablePastedAttachments: screenshotProvider?.enablePastedAttachments
+            enablePastedAttachments: screenshotProvider?.enablePastedAttachments,
+            enablePastedText: screenshotProvider?.enablePastedText,
+            promptLimits: screenshotProvider?.promptLimits
         )
     }
 
@@ -296,7 +298,9 @@ public final class NewTabPageOmnibarClient: NewTabPageUserScriptClient {
             launcherPromo: configProvider.launcherPromo(),
             showSuggestedPrompts: configProvider.showSuggestedPrompts,
             screenshotModes: screenshotProvider?.screenshotModes,
-            enablePastedAttachments: screenshotProvider?.enablePastedAttachments
+            enablePastedAttachments: screenshotProvider?.enablePastedAttachments,
+            enablePastedText: screenshotProvider?.enablePastedText,
+            promptLimits: screenshotProvider?.promptLimits
         )
         pushMessage(named: MessageName.onConfigUpdate.rawValue, params: config)
     }
@@ -365,6 +369,7 @@ public final class NewTabPageOmnibarClient: NewTabPageUserScriptClient {
             reasoningEffort: isUpdatedImageGenerationSubmission ? nil : reasoningEffortForSubmission(action: action),
             pageContexts: action.pageContext,
             files: action.files,
+            textPasted: screenshotProvider?.enablePastedText == true ? action.textPasted : nil,
             aiTermsAccepted: action.aiTermsAccepted == true
         )
         if let suggestedPromptId = action.suggestedPromptId {

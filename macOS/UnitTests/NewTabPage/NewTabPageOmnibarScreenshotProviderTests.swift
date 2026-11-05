@@ -21,6 +21,7 @@ import FeatureFlags_macOS
 import NewTabPage
 @_spi(Testing) import PixelKit
 import PrivacyConfig
+import PrivacyConfigTestsUtils
 import Testing
 @testable import DuckDuckGo_Privacy_Browser
 
@@ -79,6 +80,39 @@ struct NewTabPageOmnibarScreenshotProviderTests {
         #expect(provider.screenshotModes == nil)
         #expect(changes == 1)
         cancellable.cancel()
+    }
+
+    @available(macOS 13, *)
+    @Test("Pasted text follows its flag, and prompt limits are sent only while it is on", .timeLimit(.minutes(1)))
+    func pastedTextFollowsItsFlag() {
+        let featureFlagger = MockFeatureFlagger()
+        let provider = NewTabPageOmnibarScreenshotProvider(featureFlagger: featureFlagger, pixelFiring: nil)
+        var changes = 0
+        let cancellable = provider.configChangesPublisher.sink { changes += 1 }
+        #expect(provider.enablePastedText == false)
+        #expect(provider.promptLimits == nil)
+
+        featureFlagger.enabledFeatureFlags = [.aiChatNtpPastedText]
+        featureFlagger.triggerUpdate()
+        #expect(provider.enablePastedText == true)
+        #expect(provider.promptLimits == .init(pasteConversionThreshold: 4_000, maxCharacters: 16_000))
+        #expect(changes == 1)
+        cancellable.cancel()
+    }
+
+    @available(macOS 13, *)
+    @Test("Prompt limits come from the ntpPastedText settings", .timeLimit(.minutes(1)))
+    func promptLimitsComeFromPrivacyConfig() {
+        let featureFlagger = MockFeatureFlagger()
+        featureFlagger.enabledFeatureFlags = [.aiChatNtpPastedText]
+        let config = MockPrivacyConfiguration()
+        config.subfeatureSettings = #"{"pasteConversionThreshold": 2000, "maxCharacters": 8000}"#
+        let manager = MockPrivacyConfigurationManager(privacyConfig: config)
+        let provider = NewTabPageOmnibarScreenshotProvider(featureFlagger: featureFlagger,
+                                                           privacyConfigurationManager: manager,
+                                                           pixelFiring: nil)
+
+        #expect(provider.promptLimits == .init(pasteConversionThreshold: 2_000, maxCharacters: 8_000))
     }
 
     @available(macOS 13, *)

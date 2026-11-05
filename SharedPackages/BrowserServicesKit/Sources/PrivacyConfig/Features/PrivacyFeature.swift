@@ -492,6 +492,10 @@ public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
     /// https://app.asana.com/1/137249556945/task/1215994572643392
     case ntpPasteImages
 
+    /// Turns long pastes in the New Tab Page omnibar into pasted-text attachments (`enablePastedText`).
+    /// Settings: `pasteConversionThreshold` and `maxCharacters` override `AIChatPromptLimits.current`.
+    case ntpPastedText
+
     /// Enables the cap on how many open tabs can be attached (native omnibar and NTP). Kill switch.
     case tabAttachmentLimit
 

@@ -10,7 +10,7 @@ from types import SimpleNamespace
 from unittest import mock
 
 sys.path.insert(0, str(Path(__file__).parents[1]))
-from smartling_open_issues import Git, OpenIssue, adds_string, parse_time, string_commit, text_forms
+from smartling_open_issues import Git, OpenIssue, adds_string, catalog_diff, parse_time, string_commit, text_forms
 
 
 class RepositoryGit(Git):
@@ -74,6 +74,22 @@ class CatalogAttributionTests(unittest.TestCase):
         self.assertEqual(found['user']['login'], 'editor')
         self.assertNotEqual(found['merge_commit_sha'], original)
 
+    def testShortenedCatalogTextFindsTheEditor(self):
+        self.write_catalog('Continue now')
+        original = self.commit()
+        self.write_catalog('Continue')
+        editor = self.commit()
+        github = SimpleNamespace(commit_pulls=lambda sha: [{
+            'merge_commit_sha': sha, 'user': {'login': 'editor' if sha == editor else 'original-author'},
+        }])
+        timestamp = parse_time('2026-11-05')
+        issue = OpenIssue(1, timestamp, timestamp, False, '', '', 'Continue', 'continue.button', '', '')
+
+        found = string_commit(self.git, github, issue, 'macOS')
+
+        self.assertEqual(found['user']['login'], 'editor')
+        self.assertNotEqual(found['merge_commit_sha'], original)
+
     def testPluralEditKeepsItsOwningKey(self):
         self.write_catalog('One item', plural=True)
         self.commit()
@@ -96,6 +112,20 @@ class CatalogAttributionTests(unittest.TestCase):
         self.assertFalse(adds_string(self.git.diff(translation, ['macOS']), ['Continue now'], ['continue.button']))
         self.assertFalse(adds_string(self.git.diff(moved, ['macOS']), ['Continue'], ['continue.button']))
         self.assertFalse(adds_string(self.git.diff(moved, ['macOS']), [], ['continue.button']))
+
+    def testSubstitutionVariantEditAddsTheEnglishVariant(self):
+        def catalog(one):
+            unit = {'stringUnit': {'state': 'translated', 'value': '%#@count@'}, 'substitutions': {'count': {
+                'argNum': 1, 'formatSpecifier': 'lld', 'variations': {'plural': {
+                    'one': {'stringUnit': {'state': 'translated', 'value': one}},
+                    'other': {'stringUnit': {'state': 'translated', 'value': '%arg cookies'}},
+                }},
+            }}}
+            return {'sourceLanguage': 'en', 'strings': {'cookies.count': {'localizations': {'en': unit}}}}
+
+        diff = catalog_diff(catalog('%arg cookie'), catalog('%arg saved cookie'))
+
+        self.assertTrue(adds_string(diff, text_forms('%arg saved cookie'), ['cookies.count']))
 
 
 if __name__ == '__main__':

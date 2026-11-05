@@ -7,7 +7,8 @@ Licensed under the Apache License, Version 2.0
 
 import re
 import json
-from typing import Dict, List, Optional
+from datetime import datetime, timezone
+from typing import Dict, Iterator, List, Optional
 from urllib.parse import urlencode
 from http.client import HTTPException
 from urllib.error import HTTPError, URLError
@@ -41,7 +42,7 @@ class GitHubClient:
                 return json.loads(response.read())
         except HTTPError as error:
             raise RuntimeError(f"GitHub GET {path} failed with HTTP {error.code}: {error.reason}") from error
-        except (URLError, TimeoutError, ConnectionError, HTTPException) as error:
+        except (URLError, TimeoutError, ConnectionError, HTTPException, ValueError) as error:
             raise RuntimeError(f"GitHub GET {path} failed: {type(error).__name__}") from error
 
     def commit_pulls(self, sha: str) -> List[Dict]:
@@ -51,10 +52,17 @@ class GitHubClient:
         owner = self.repository.split('/')[0]
         return self._get('/pulls', {'head': f'{owner}:{branch}', 'state': 'all', 'per_page': 10})
 
-    def workflow_runs(self, workflow: str, branch: str) -> List[Dict]:
-        return self._get(f'/actions/workflows/{workflow}/runs', {
-            'branch': branch, 'status': 'completed', 'per_page': 30
-        })['workflow_runs']
+    def workflow_runs(self, workflow: str, branch: str, created_since: datetime) -> Iterator[Dict]:
+        created = created_since.astimezone(timezone.utc).strftime('%Y-%m-%dT%H:%M:%SZ')
+        page = 1
+        while True:
+            runs = self._get(f'/actions/workflows/{workflow}/runs', {
+                'branch': branch, 'status': 'completed', 'created': f'>={created}', 'per_page': 100, 'page': page
+            })['workflow_runs']
+            yield from runs
+            if len(runs) < 100:
+                return
+            page += 1
 
     def run_jobs(self, run_id: int) -> List[Dict]:
         return self._get(f'/actions/runs/{run_id}/jobs', {'per_page': 100})['jobs']

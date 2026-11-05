@@ -97,7 +97,7 @@ def opened_at(issue: Dict) -> datetime:
 def window_start(github: GitHubClient, workflow: str, job_name: str, not_before: datetime) -> datetime:
     """When this platform's job last succeeded on main, so this run picks up where it left off. A failed or skipped
     night widens the window instead of losing issues. Dry runs have another job name, so they never count."""
-    for run in github.workflow_runs(workflow, 'main'):
+    for run in github.workflow_runs(workflow, 'main', not_before):
         job = next((job for job in github.run_jobs(run['id']) if job.get('name') == job_name), None)
         if job and job.get('conclusion') == 'success' and job.get('started_at'):
             return max(parse_time(job['started_at']), not_before)
@@ -136,10 +136,11 @@ async def issue_jobs(smartling: SmartlingClient, issue: Dict) -> List[Dict]:
 async def load_issues(smartling: SmartlingClient, since: datetime) -> Tuple[List[OpenIssue], List[int]]:
     """The open issues on English strings that were opened or reopened since then, oldest first, and the numbers of
     those whose string or jobs couldn't be loaded."""
-    issues, failed = [], []
+    issues, failed, seen = [], [], set()
     for issue in await smartling.list_open_source_issues():
-        if opened_at(issue) < since:
+        if opened_at(issue) < since or issue['issueNumber'] in seen:
             continue
+        seen.add(issue['issueNumber'])
         try:
             source_string = await smartling.get_source_string(issue['string']['hashcode']) or {}
             jobs = await issue_jobs(smartling, issue)
@@ -224,9 +225,8 @@ def catalog_diff(before: Dict, after: Dict) -> str:
     """A diff of complete English entries, including plural/device variants and implicit key-as-source values.
     Keep removals as well as additions so moving a string between catalogs does not change its author."""
     def values(node: Dict) -> set:
-        if 'stringUnit' in node:
-            return {node['stringUnit']['value']}
-        return set().union(*(values(child) for child in node.values() if isinstance(child, dict)))
+        found = {node['stringUnit']['value']} if 'stringUnit' in node else set()
+        return found.union(*(values(child) for name, child in node.items() if name != 'stringUnit' and isinstance(child, dict)))
 
     def entries(catalog: Dict) -> set:
         result = set()
@@ -328,7 +328,7 @@ def string_commit(git: Git, github: GitHubClient, issue: OpenIssue, platform: st
     paths = PLATFORM_PATHS[platform]
     texts = text_forms(issue.english) if issue.english else []
     keys = key_forms(issue.key)
-    searches = [(texts, texts, keys)] if texts else []  # What to search the history for, then what to check in the diff
+    searches = [([f'"{text}"' for text in texts], texts, keys)] if texts else []  # What to search the history for, then what to check in the diff
     searches += [(keys, [], keys)] if keys else []
     shallow = git.shallow_commits()
     for terms, search_texts, search_keys in searches:

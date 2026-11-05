@@ -3,6 +3,7 @@
 import importlib.util
 import sys
 import unittest
+from datetime import datetime, timezone
 from pathlib import Path
 
 
@@ -48,6 +49,31 @@ class PullRequestTests(unittest.TestCase):
         bots = [COMMIT_AUTHOR.is_bot(user) for user in users]
 
         self.assertEqual(bots, [True, True, False])
+
+
+class PagedGitHubClient(COMMIT_AUTHOR.GitHubClient):
+
+    def __init__(self, pages):
+        super().__init__('token')
+        self.pages = pages
+        self.requests = []
+
+    def _get(self, path, params=None):
+        self.requests.append((path, params))
+        return {'workflow_runs': self.pages[params['page'] - 1]}
+
+
+class WorkflowRunsTests(unittest.TestCase):
+
+    def testWhenThereAreMoreRunsThanAPageThenEveryPageSinceGoLiveIsRead(self):
+        github = PagedGitHubClient([[{'id': run_id} for run_id in range(100)], [{'id': 100}]])
+
+        runs = list(github.workflow_runs('smartling_nightly.yml', 'main', datetime(2026, 11, 5, tzinfo=timezone.utc)))
+
+        self.assertEqual(len(runs), 101)
+        self.assertEqual([params['page'] for _, params in github.requests], [1, 2])
+        self.assertEqual(github.requests[0][1]['created'], '>=2026-11-05T00:00:00Z')
+        self.assertEqual(github.requests[0][1]['branch'], 'main')
 
 
 class UserMapTests(unittest.TestCase):

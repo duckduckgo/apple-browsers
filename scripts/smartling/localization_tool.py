@@ -100,7 +100,7 @@ class SmartlingClient:
         """Make authenticated API request."""
         try:
             return await self._send_request(method, path, **kwargs)
-        except (aiohttp.ClientError, asyncio.TimeoutError) as error:
+        except (aiohttp.ClientError, asyncio.TimeoutError, ValueError) as error:
             # Expose the same failure type as HTTP errors to callers that isolate failures per issue. Do not include
             # the exception text: it can contain request/response details that must not reach public workflow logs.
             raise RuntimeError(f"Smartling {method} request failed: {type(error).__name__}") from error
@@ -119,10 +119,15 @@ class SmartlingClient:
             if resp.status == 204 or not text:
                 return {}
 
-            data = json.loads(text) if text else {}
+            try:
+                data = json.loads(text)
+            except ValueError:
+                if resp.status >= 400:
+                    raise RuntimeError(f"HTTP {resp.status}: {resp.reason or 'API Error'}") from None
+                raise
 
             if resp.status >= 400:
-                error = data.get('response', {}).get('errors', [{}])[0].get('message', 'API Error')
+                error = (data.get('response', {}).get('errors') or [{}])[0].get('message', 'API Error')
                 raise RuntimeError(f"HTTP {resp.status}: {error}")
 
             return data

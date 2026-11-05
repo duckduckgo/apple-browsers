@@ -126,7 +126,7 @@ class FakeGitHub:
         self.pulls_by_commit = commit_pulls if commit_pulls is not None else {STRING_COMMIT: [pull('frosty')]}
         self.pulls_by_branch = branch_pulls or {}
 
-    def workflow_runs(self, _workflow, _branch):
+    def workflow_runs(self, _workflow, _branch, _created_since):
         return [{'id': run['id']} for run in self.runs]
 
     def run_jobs(self, run_id):
@@ -233,6 +233,14 @@ class OpenIssueTaskTests(unittest.TestCase):
         self.assertEqual(asana.created[0]['assignee'], 'frosty-gid')
         self.assertEqual(asana.created[0]['memberships'], [{'project': 'ios-app-development', 'section': 'incoming'}])
         self.assertIn(ISSUE_TEXT, asana.created[0]['html_notes'])
+        self.assertEqual(rows, ['| #3600 | opened a task | @frosty (added the string) |'])
+
+    def testWhenSmartlingListsAnIssueTwiceThenOneTaskIsOpened(self):
+        asana = FakeAsana()
+
+        rows, _, _ = run(FakeSmartling([smartling_issue(), smartling_issue()]), asana)
+
+        self.assertEqual(len(asana.created), 1)
         self.assertEqual(rows, ['| #3600 | opened a task | @frosty (added the string) |'])
 
     def testWhenAnIssueWasOpenedBeforeTheLastSuccessfulNightThenNoTaskIsOpened(self):
@@ -390,6 +398,49 @@ class TransportFailureTests(unittest.TestCase):
                     self.assertIn('#3601 ', asana.created[0]['name'])
                     self.assertIn('| #3600 | failed, retried next night | |', rows)
                     self.assertNotIn('private response detail', log)
+
+    def testSmartlingNonJSONErrorLeavesOtherIssuesProcessable(self):
+        client = OPEN_ISSUES.SmartlingClient(OPEN_ISSUES.Credentials('user', 'secret', 'project'))
+        client.token = 'token'
+        client.token_expiry = datetime.max
+        client.session = mock.Mock()
+        html = mock.MagicMock(status=503, reason='Service Unavailable')
+        html.text = mock.AsyncMock(return_value='<html>private response detail</html>')
+        response = mock.MagicMock()
+        response.__aenter__.return_value = html
+        client.session.request.return_value = response
+        smartling = FakeSmartling([smartling_issue(3600), smartling_issue(3601)])
+        normal_lookup = smartling.get_source_string
+
+        async def get_string(hashcode):
+            if hashcode == 'hash-3600':
+                return await client.get_source_string(hashcode)
+            return await normal_lookup(hashcode)
+
+        smartling.get_source_string = get_string
+        asana = FakeAsana()
+
+        rows, failed, log = run(smartling, asana)
+
+        self.assertTrue(failed)
+        self.assertEqual(len(asana.created), 1)
+        self.assertIn('#3601 ', asana.created[0]['name'])
+        self.assertIn('| #3600 | failed, retried next night | |', rows)
+        self.assertIn('HTTP 503: Service Unavailable', log)
+        self.assertNotIn('private response detail', log)
+
+    def testNonJSONSuccessResponsesBecomeSanitizedRuntimeErrors(self):
+        response = mock.MagicMock()
+        response.__enter__.return_value.read.return_value = b'<html>private response detail</html>'
+        github = OPEN_ISSUES.GitHubClient('token')
+        asana = OPEN_ISSUES.AsanaClient('token')
+
+        for call, module_globals in ((lambda: github.commit_pulls('sha'), github._get.__globals__),
+                                     (lambda: asana.create_task({}), asana._send.__globals__)):
+            with self.subTest(client=call), mock.patch.dict(module_globals, urlopen=mock.Mock(return_value=response)):
+                with self.assertRaises(RuntimeError) as failure:
+                    call()
+                self.assertNotIn('private response detail', str(failure.exception))
 
     def testGitHubTransportFailureDoesNotAssignAFallbackOrStopOtherIssues(self):
         for error in (TimeoutError(), URLError('private request detail')):

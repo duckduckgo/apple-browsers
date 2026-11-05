@@ -101,7 +101,7 @@ class AsanaClient:
             except ValueError:
                 messages = []
             raise RuntimeError(f"Asana {method} {path} failed with HTTP {error.code}: {'; '.join(messages) or error.reason}") from error
-        except (URLError, TimeoutError, ConnectionError, HTTPException) as error:
+        except (URLError, TimeoutError, ConnectionError, HTTPException, ValueError) as error:
             raise RuntimeError(f"Asana {method} {path} failed: {type(error).__name__}") from error
 
     def rotation_tasks(self, section_id: str, since: date) -> List[Dict]:

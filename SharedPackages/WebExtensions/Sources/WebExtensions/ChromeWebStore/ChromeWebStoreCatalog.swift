@@ -27,8 +27,8 @@ public enum ChromeWebStoreID: String {
 
 public struct ChromeWebStoreListing: Equatable, Identifiable {
     public let entry: ExtensionsCatalogSubfeature
-    /// The Chrome Web Store ID, or `nil` when the catalog entry doesn't set one.
-    public let storeID: String?
+    /// The Chrome Web Store ID.
+    public let storeID: String
     public let name: String
     public let publisher: String
     public let publisherURL: URL?
@@ -107,7 +107,7 @@ public protocol ChromeWebStoreCatalogProviding {
     /// whether or not the catalog offers it right now. `nil` for an extension the catalog doesn't list.
     func catalogEntry(of identifier: String) -> ExtensionsCatalogSubfeature?
 
-    /// The entry's store listing, or `nil` when its `name` or `cwsUri` is missing.
+    /// The entry's store listing, or `nil` when its `id`, `name` or `cwsUri` is missing.
     func listing(of subfeature: ExtensionsCatalogSubfeature) -> ChromeWebStoreListing?
 
     /// The help page about adding extensions, or `nil` when the configuration doesn't set one.
@@ -172,11 +172,12 @@ public final class ChromeWebStoreCatalog: ChromeWebStoreCatalogProviding {
 
     public func listing(of subfeature: ExtensionsCatalogSubfeature) -> ChromeWebStoreListing? {
         guard let settings = Self.settings(of: subfeature, in: configurationManager.privacyConfig),
+              let storeID = settings["id"] as? String,
               let name = settings["name"] as? String,
               let storeURL = (settings["cwsUri"] as? String).flatMap(URL.init(string:)) else { return nil }
 
         return ChromeWebStoreListing(entry: subfeature,
-                                     storeID: settings["id"] as? String,
+                                     storeID: storeID,
                                      name: name,
                                      publisher: settings["publisher"] as? String ?? "",
                                      publisherURL: (settings["publisherUri"] as? String).flatMap(URL.init(string:)),

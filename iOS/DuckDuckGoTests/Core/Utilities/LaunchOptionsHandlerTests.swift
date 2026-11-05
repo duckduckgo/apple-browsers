@@ -18,6 +18,7 @@
 //
 
 import Foundation
+import UIKit
 import Testing
 @testable import Core
 import Persistence
@@ -276,6 +277,25 @@ final class LaunchOptionsHandlerTests {
 
         // THEN
         #expect(result == .notOverridden)
+    }
+
+    @MainActor
+    @available(iOS 16, macOS 13, *)
+    @Test(.timeLimit(.minutes(1)))
+    func testAnimationOverrideRequiresUITestingAndExplicitOptIn() {
+        let original = UIView.areAnimationsEnabled
+        defer { UIView.setAnimationsEnabled(original) }
+        for initiallyEnabled in [false, true] {
+            for (testing, optIn) in [(false, false), (false, true), (true, false), (true, true)] {
+                UIView.setAnimationsEnabled(initiallyEnabled)
+                var environment: [String: String] = [:]
+                if testing { environment["UITEST_MODE"] = "1" }
+                if optIn { environment["UITEST_DISABLE_ANIMATIONS"] = "1" }
+                let sut = LaunchOptionsHandler(environment: environment, userDefaults: userDefaults, arguments: [])
+                sut.applyUITestOverrides(featureFlagOverrideStore: userDefaults, configRolloutStore: userDefaults)
+                #expect(UIView.areAnimationsEnabled == (initiallyEnabled && !(testing && optIn)))
+            }
+        }
     }
 
     // MARK: - UI Test Overrides

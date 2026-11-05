@@ -60,11 +60,13 @@ extension XCUIApplication {
         exists=\(exists)
         exceedsOriginalThirtySecondNavigationTimeout=\(elapsed > 30.0)
         """
-        let attachment = XCTAttachment(string: timing)
-        attachment.name = "Page content wait timing"
-        attachment.lifetime = .keepAlways
-        XCTContext.runActivity(named: "Record page content wait timing") { activity in
-            activity.add(attachment)
+        if !exists || ProcessInfo.processInfo.environment["UITEST_HELPER_DIAGNOSTICS"] == "1" {
+            let attachment = XCTAttachment(string: timing)
+            attachment.name = "Page content wait timing"
+            attachment.lifetime = .keepAlways
+            XCTContext.runActivity(named: "Record page content wait timing") { activity in
+                activity.add(attachment)
+            }
         }
         XCTAssertTrue(
             exists,
@@ -103,10 +105,12 @@ extension XCUIApplication {
                 }
             }
             let elapsed = ProcessInfo.processInfo.systemUptime - startedAt
-            let timing = XCTAttachment(string: "timeout=\(timeout)s, elapsed=\(String(format: "%.3f", elapsed))s, completedPasses=\(completedPasses), ready=\(succeeded), passElapsed=\(String(format: "%.3f", passElapsed))s\n\(lastSummary)")
-            timing.name = "Address editing dismissal readiness"
-            timing.lifetime = .keepAlways
-            activity.add(timing)
+            if !succeeded || ProcessInfo.processInfo.environment["UITEST_HELPER_DIAGNOSTICS"] == "1" {
+                let timing = XCTAttachment(string: "timeout=\(timeout)s, elapsed=\(String(format: "%.3f", elapsed))s, completedPasses=\(completedPasses), ready=\(succeeded), passElapsed=\(String(format: "%.3f", passElapsed))s\n\(lastSummary)")
+                timing.name = "Address editing dismissal readiness"
+                timing.lifetime = .keepAlways
+                activity.add(timing)
+            }
             return succeeded
         }
         XCTAssertTrue(ready, "Browser controls did not become ready within \(timeout)s after dismissing address-bar editing.\n\(lastSummary)", file: file, line: line)
@@ -274,11 +278,13 @@ extension XCUIElement {
         becameTappable=\(observation.ready)
         lastObservation=\(observation.reason)
         """
-        let attachment = XCTAttachment(string: timing)
-        attachment.name = "Tappability wait timing"
-        attachment.lifetime = .keepAlways
-        XCTContext.runActivity(named: "Record tappability wait timing") { activity in
-            activity.add(attachment)
+        if !observation.ready || ProcessInfo.processInfo.environment["UITEST_HELPER_DIAGNOSTICS"] == "1" {
+            let attachment = XCTAttachment(string: timing)
+            attachment.name = "Tappability wait timing"
+            attachment.lifetime = .keepAlways
+            XCTContext.runActivity(named: "Record tappability wait timing") { activity in
+                activity.add(attachment)
+            }
         }
         XCTAssertTrue(
             observation.ready,

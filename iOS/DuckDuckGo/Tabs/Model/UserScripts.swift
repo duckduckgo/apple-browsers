@@ -137,6 +137,7 @@ final class UserScripts: UserScriptsProvider {
         let aiChatScriptHandler = AIChatUserScriptHandler(experimentalAIChatManager: experimentalManager,
                                                           syncHandler: AIChatSyncHandler(sync: sourceProvider.sync,
                                                                                          httpRequestErrorHandler: sourceProvider.syncErrorHandler.handleAiChatsError),
+                                                          bonusHandler: sourceProvider.aiChatBonusHandler,
                                                           featureFlagger: featureFlagger,
                                                           isNativeStorageBridgeAvailable: isNativeStorageBridgeAvailable,
                                                           attachmentPrivacyWebKeySource: duckAiNativeStorageHandler,

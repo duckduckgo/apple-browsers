@@ -634,7 +634,7 @@ class FloatingUIXCUITestCase: XCTestCase {
     func verifyDelegateSessionLifecycle() throws {
         guard #available(iOS 27.0, *) else { throw XCTSkip("Experiment targets iOS 27") }
         app.terminate()
-        launchApp(additionalArguments: ["-findInPageDelegateSession", "-ff.legacyFindInPage", "false"])
+        launchApp(additionalArguments: ["-ff.legacyFindInPage", "true", "-ff.legacyFindInPageUIWithSystemFindEngine", "true"])
         openPage(path: "/delegate-find", heading: "Delegate Find Fixture")
         webView.buttons["Expand all sections"].tap()
         XCTAssertTrue(webView.staticTexts["Expanded content stays open"].waitForExistence(timeout: timeout))
@@ -721,7 +721,7 @@ class FloatingUIXCUITestCase: XCTestCase {
     func verifyDelegateSessionTabAndNavigation() throws {
         guard #available(iOS 27.0, *) else { throw XCTSkip("Experiment targets iOS 27") }
         app.terminate()
-        launchApp(additionalArguments: ["-findInPageDelegateSession", "-ff.legacyFindInPage", "true"])
+        launchApp(additionalArguments: ["-ff.legacyFindInPage", "true", "-ff.legacyFindInPageUIWithSystemFindEngine", "true"])
         openPage(path: "/delegate-find", heading: "Delegate Find Fixture")
         webView.buttons["Expand all sections"].tap()
         openFindFromMenu()
@@ -760,7 +760,7 @@ class FloatingUIXCUITestCase: XCTestCase {
 
     func verifyNativeFindWithoutExperiment() {
         app.terminate()
-        launchApp(additionalArguments: ["-ff.legacyFindInPage", "false"])
+        launchApp(additionalArguments: ["-ff.legacyFindInPage", "false", "-ff.legacyFindInPageUIWithSystemFindEngine", "true"])
         openPage(path: "/delegate-find", heading: "Delegate Find Fixture")
         webView.buttons["Expand all sections"].tap()
         openFindFromMenu()
@@ -780,8 +780,10 @@ class FloatingUIXCUITestCase: XCTestCase {
         }
         guard #available(iOS 27.0, *) else { throw XCTSkip("Experiment targets iOS 27") }
         app.terminate()
-        var arguments = ["-ff.legacyFindInPage", "false"]
-        if delegateSession { arguments.append("-findInPageDelegateSession") }
+        let arguments = [
+            "-ff.legacyFindInPage", String(delegateSession),
+            "-ff.legacyFindInPageUIWithSystemFindEngine", String(delegateSession)
+        ]
         launchApp(additionalArguments: arguments)
         app.typeKey("t", modifierFlags: .command)
         XCTAssertTrue(searchField.waitForHittable(timeout: timeout))
@@ -1079,6 +1081,9 @@ class FloatingUIXCUITestCase: XCTestCase {
                 "-aichat.settings.isEnabled", "true",
                 "-aichat.settings.showAIChatExperimentalSearchInput", String(toggleEnabled),
             ]
+        }
+        for flag in ["-ff.legacyFindInPage", "-ff.legacyFindInPageUIWithSystemFindEngine"] where !additionalArguments.contains(flag) {
+            app.launchArguments += [flag, "false"]
         }
         app.launchArguments += additionalArguments
         app.launchEnvironment = [

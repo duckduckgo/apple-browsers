@@ -17,7 +17,6 @@
 //  limitations under the License.
 //
 
-#if DEBUG
 import WebKit
 import XCTest
 @testable import DuckDuckGo
@@ -148,4 +147,3 @@ private final class SessionSpy: DelegateFindSession {
     func invalidate() { invalidations += 1 }
     func end() { ends += 1 }
 }
-#endif

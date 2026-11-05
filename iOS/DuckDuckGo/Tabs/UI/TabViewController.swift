@@ -4962,7 +4962,6 @@ extension TabViewController: UIGestureRecognizerDelegate {
     func requestFindInPage() {
         pixelFiring?.fire(FindInPagePixel.opened, frequency: .daily)
 
-        #if DEBUG
         if #available(iOS 27.0, *), findInPageImplementation == .delegateSessionExperiment {
             if delegateSessionFindInPage == nil {
                 delegateSessionFindInPage = DelegateSessionFindInPage(webView: webView, query: delegateSessionFindInPageQuery) { [weak self] query in
@@ -4972,8 +4971,6 @@ extension TabViewController: UIGestureRecognizerDelegate {
             delegate?.tabDidRequestFindInPage(tab: self)
             return
         }
-        #endif
-
         if #available(iOS 16.0, *), findInPageImplementation == .system {
             webView.isFindInteractionEnabled = true
             let findInteraction = webView.findInteraction

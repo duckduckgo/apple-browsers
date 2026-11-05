@@ -114,13 +114,31 @@ final class TabViewControllerFindInPageTests: XCTestCase {
         }
     }
 
-    #if DEBUG
-    func testDelegateExperimentRequiresExplicitLaunchArgumentAndOverridesEitherFlagState() throws {
-        guard #available(iOS 27.0, *) else { throw XCTSkip("Experiment targets iOS 27") }
-        for legacyEnabled in [false, true] {
-            let flagger = MockFeatureFlagger(enabledFeatureFlags: legacyEnabled ? [.legacyFindInPage] : [])
-            XCTAssertEqual(FindInPageImplementation(featureFlagger: flagger, arguments: []), legacyEnabled ? .legacy : .system)
-            XCTAssertEqual(FindInPageImplementation(featureFlagger: flagger, arguments: ["-findInPageDelegateSession"]), .delegateSessionExperiment)
+    func testFindFlagsAreDefaultDisabledAndRemotelyConfigurable() {
+        for flag in [FeatureFlag.legacyFindInPage, .legacyFindInPageUIWithSystemFindEngine] {
+            guard case .disabled = flag.defaultValue else {
+                XCTFail("Expected disabled default for \(flag.rawValue)")
+                continue
+            }
+            guard case let .remoteReleasable(subfeature) = flag.source else {
+                XCTFail("Expected remote source for \(flag.rawValue)")
+                continue
+            }
+            XCTAssertEqual(subfeature.parent, .iOSBrowserConfig)
+            XCTAssertEqual(subfeature.rawValue, flag.rawValue)
+        }
+    }
+
+    func testSystemEngineRequiresBothFlags() {
+        for flags in findFlagStates {
+            let flagger = MockFeatureFlagger(enabledFeatureFlags: flags)
+            let expected: FindInPageImplementation
+            if #available(iOS 27.0, *), flags.count == 2 {
+                expected = .delegateSessionExperiment
+            } else {
+                expected = flags.contains(.legacyFindInPage) ? .legacy : .system
+            }
+            XCTAssertEqual(FindInPageImplementation(featureFlagger: flagger), expected, "Flags: \(flags)")
         }
     }
 
@@ -156,27 +174,33 @@ final class TabViewControllerFindInPageTests: XCTestCase {
         XCTAssertEqual(second.delegateSessionFindInPageQuery, "second query")
     }
 
-    func testDelegateExperimentDoesNotInstallLegacyScriptsAfterFlagChanges() async throws {
+    func testFindFlagChangesKeepLaunchImplementationAndScripts() async throws {
         guard #available(iOS 27.0, *) else { throw XCTSkip("Experiment targets iOS 27") }
-        let flagger = MockFeatureFlagger(enabledFeatureFlags: [])
-        let content = PassthroughSubject<ContentBlockingUpdating.NewContent, Never>()
-        let tab = try await makeTabWithUserScripts(featureFlagger: flagger, content: content, implementation: .delegateSessionExperiment)
-        defer { tab.prepareForDataClearing() }
-        let controller = try XCTUnwrap(tab.webView.configuration.userContentController as? UserContentController)
-        let updated = expectation(description: "Experiment scripts updated")
-        let subscription = controller.$contentBlockingAssets.dropFirst().compactMap { $0 }.first().sink { _ in updated.fulfill() }
-        defer { subscription.cancel() }
+        for initialFlags in findFlagStates {
+            for updatedFlags in findFlagStates {
+                let flagger = MockFeatureFlagger(enabledFeatureFlags: initialFlags)
+                let implementation = FindInPageImplementation(featureFlagger: flagger)
+                let content = PassthroughSubject<ContentBlockingUpdating.NewContent, Never>()
+                let tab = try await makeTabWithUserScripts(featureFlagger: flagger, content: content)
+                defer { tab.prepareForDataClearing() }
+                let controller = try XCTUnwrap(tab.webView.configuration.userContentController as? UserContentController)
+                let updated = expectation(description: "Scripts updated after Find flags change")
+                let subscription = controller.$contentBlockingAssets.dropFirst().compactMap { $0 }.first().sink { _ in updated.fulfill() }
+                defer { subscription.cancel() }
 
-        flagger.enabledFeatureFlags = [.legacyFindInPage]
-        flagger.triggerUpdate()
-        content.send(makeContent())
-        await fulfillment(of: [updated], timeout: 10)
+                flagger.enabledFeatureFlags = updatedFlags
+                flagger.triggerUpdate()
+                content.send(makeContent())
+                await fulfillment(of: [updated], timeout: 10)
 
-        XCTAssertNil(tab.userScripts?.findInPageScript)
-        XCTAssertEqual(tab.findInPageImplementation, .delegateSessionExperiment)
-        tab.requestFindInPage()
-        XCTAssertTrue(tab.customFindInPage is DelegateSessionFindInPage)
-        XCTAssertNil(tab.findInPage)
+                XCTAssertEqual(tab.findInPageImplementation, implementation)
+                XCTAssertEqual(tab.userScripts?.findInPageScript != nil, implementation == .legacy)
+                tab.requestFindInPage()
+                XCTAssertEqual(tab.customFindInPage is DelegateSessionFindInPage, implementation == .delegateSessionExperiment)
+                XCTAssertEqual(tab.findInPage != nil, implementation == .legacy)
+                XCTAssertEqual(tab.webView.isFindInteractionEnabled, implementation != .legacy)
+            }
+        }
     }
 
     func testDelegateExperimentEndsOnReloadAndTabDetachAndCanRestart() async throws {
@@ -227,7 +251,10 @@ final class TabViewControllerFindInPageTests: XCTestCase {
         XCTAssertEqual(delegate.contentProcessTerminationCount, 1)
         XCTAssertEqual(tab.delegateSessionFindInPageQuery, "retained")
     }
-    #endif
+
+    private var findFlagStates: [[FeatureFlag]] {
+        [[], [.legacyFindInPage], [.legacyFindInPageUIWithSystemFindEngine], [.legacyFindInPage, .legacyFindInPageUIWithSystemFindEngine]]
+    }
 
     private func makeTabWithUserScripts(
         featureFlagger: MockFeatureFlagger,

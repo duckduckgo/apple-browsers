@@ -552,6 +552,9 @@ public enum FeatureFlag: String {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1219784549064543?focus=true
     case legacyFindInPage
 
+    /// https://app.asana.com/REPLACE_WITH_TASK_URL
+    case legacyFindInPageUIWithSystemFindEngine
+
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1215556988889960?focus=true
     case aiChatTabSwitcherRichCard
 
@@ -1029,6 +1032,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(defaultValue: .internalOnly, source: .remoteReleasable(iOSBrowserConfigSubfeature.floatingUIiOS27))
         case .legacyFindInPage:
             Config(defaultValue: .disabled, source: .remoteReleasable(iOSBrowserConfigSubfeature.legacyFindInPage))
+        case .legacyFindInPageUIWithSystemFindEngine:
+            Config(defaultValue: .disabled, source: .remoteReleasable(iOSBrowserConfigSubfeature.legacyFindInPageUIWithSystemFindEngine))
         case .aiChatTabSwitcherRichCard:
             Config(defaultValue: .enabled, source: .remoteReleasable(AIChatSubfeature.tabSwitcherRichCard))
         case .syncScopedAccessCredentials:

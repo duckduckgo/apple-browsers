@@ -17,7 +17,6 @@
 //  limitations under the License.
 //
 
-#if DEBUG
 import UIKit
 import WebKit
 
@@ -194,4 +193,3 @@ final class DelegateSessionFindInPage: FindInPageSearching {
 
     deinit { done() }
 }
-#endif

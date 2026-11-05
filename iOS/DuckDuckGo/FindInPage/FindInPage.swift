@@ -26,25 +26,18 @@ import PrivacyConfig
 enum FindInPageImplementation {
     case system
     case legacy
-    #if DEBUG
     case delegateSessionExperiment
-    #endif
 
     var isDelegateSessionExperiment: Bool {
-        #if DEBUG
         self == .delegateSessionExperiment
-        #else
-        false
-        #endif
     }
 
-    init(featureFlagger: FeatureFlagger, arguments: [String] = ProcessInfo.processInfo.arguments) {
-        #if DEBUG
-        if #available(iOS 27.0, *), arguments.contains("-findInPageDelegateSession") {
+    init(featureFlagger: FeatureFlagger) {
+        if #available(iOS 27.0, *), featureFlagger.isFeatureOn(.legacyFindInPage),
+           featureFlagger.isFeatureOn(.legacyFindInPageUIWithSystemFindEngine) {
             self = .delegateSessionExperiment
             return
         }
-        #endif
         if #available(iOS 16.0, *), !featureFlagger.isFeatureOn(.legacyFindInPage) {
             self = .system
         } else {

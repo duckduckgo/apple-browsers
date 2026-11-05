@@ -32,44 +32,6 @@ public class ActionsHandler {
         self.actions = actions
     }
 
-#if os(macOS) && DEBUG
-    /// Runs the rest of an opt-out after the broker's confirmation email arrived.
-    var isEmailConfirmationContinuation = false
-    /// The opt-out stops before the broker's confirmation email, which a later job follows.
-    var haltsForEmailConfirmation = false
-    var assistActions: [Action] { actions }
-    var assistCurrentIndex: Int? { lastExecutedActionIndex }
-
-    /// The user submitted the form themselves, so only the checks that it went through are left to run.
-    /// Returns false when there's nothing left to check.
-    func keepOnlyRemainingExpectations() -> Bool {
-        let next = min((lastExecutedActionIndex ?? -1) + 1, actions.count)
-        let expectations = actions[next...].compactMap { ($0 as? ExpectationAction)?.checkingOnce() }
-        actions = Array(actions[..<next]) + expectations
-        checksOnlyOnce = true
-        return !expectations.isEmpty
-    }
-
-    /// The page has already loaded after the user's turn, so waiting or retrying would only delay a failure.
-    private(set) var checksOnlyOnce = false
-
-    /// Set while the opt-out's final check runs ahead of `deferred`, to see whether the user already submitted the form.
-    var pendingSubmissionCheck: (check: Action, deferred: Action, afterUserNavigation: Bool)?
-
-    /// The final check to run before `action`, if it would click or fill on the opt-out page.
-    func submissionCheck(before action: Action) -> Action? {
-        guard action is ClickAction || action is FillFormAction else { return nil }
-        return finalCheck()
-    }
-
-    /// The opt-out's last remaining check, looking at the page once.
-    func finalCheck() -> Action? {
-        guard stepType == .optOut, let index = lastExecutedActionIndex, index < actions.count,
-              let check = actions[(index + 1)...].last(where: { $0 is ExpectationAction }) as? ExpectationAction else { return nil }
-        return check.checkingOnce()
-    }
-#endif
-
     public func currentAction() -> Action? {
         guard let lastExecutedActionIndex = self.lastExecutedActionIndex else { return nil }
 
@@ -131,11 +93,7 @@ public class ActionsHandler {
             actions = step.actions
         }
 
-        let handler = ActionsHandler(stepType: .optOut, actions: actions)
-#if os(macOS) && DEBUG
-        handler.haltsForEmailConfirmation = actions.count < step.actions.count
-#endif
-        return handler
+        return ActionsHandler(stepType: .optOut, actions: actions)
     }
 
     /// Creates an ActionsHandler for email confirmation continuation - starts at email confirmation action,
@@ -156,12 +114,8 @@ public class ActionsHandler {
         var actions: [Action] = [NavigateAction(id: emailConfirmationAction.id, actionType: .navigate, url: confirmationURL.absoluteString)]
         actions.append(contentsOf: Array(step.actions.suffix(from: afterIndex)))
 
-        let handler = ActionsHandler(stepType: .optOut,
-                                     actions: actions)
-#if os(macOS) && DEBUG
-        handler.isEmailConfirmationContinuation = true
-#endif
-        return handler
+        return ActionsHandler(stepType: .optOut,
+                              actions: actions)
     }
 
 }

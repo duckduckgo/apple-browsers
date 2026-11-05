@@ -17,7 +17,6 @@
 //
 
 import Foundation
-import DataBrokerProtectionCore
 import DataBrokerProtection_macOS
 import Common
 import FoundationExtensions
@@ -127,16 +126,6 @@ extension DefaultDataBrokerProtectionLoginItemInterface: DataBrokerProtectionLog
     func runEmailConfirmationOperations(showWebView: Bool) {
         ipcClient.runEmailConfirmationOperations(showWebView: showWebView)
     }
-
-#if DEBUG
-    func getNeedsYou() async throws -> DBPUINeedsYouList {
-        try await ipcClient.getNeedsYou()
-    }
-
-    func openNeedsYouItem(id: String) async throws -> Bool {
-        try await ipcClient.openNeedsYouItem(id: id)
-    }
-#endif
 
     func getDebugMetadata() async -> DBPBackgroundAgentMetadata? {
         return await ipcClient.getDebugMetadata()

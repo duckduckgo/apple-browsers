@@ -239,16 +239,6 @@ final class MockIPCServer: DataBrokerProtectionIPCServer {
             await serverDelegate?.runEmailConfirmationOperations(showWebView: showWebView)
         }
     }
-
-#if DEBUG
-    func getNeedsYou(completion: @escaping (Data?, Error?) -> Void) {
-        completion(nil, nil)
-    }
-
-    func openNeedsYouItem(id: String, completion: @escaping (Bool, Error?) -> Void) {
-        completion(false, nil)
-    }
-#endif
 }
 
 final class MockAgentStopper: DataBrokerProtectionAgentStopper {

@@ -24,31 +24,28 @@ import DataBrokerProtectionCoreTestsUtils
 final class DataBrokerExecutionConfigTests: XCTestCase {
 
     private let sut = BrokerJobExecutionConfig()
-    #if os(macOS) && DEBUG
-    private let expectedManualScanConcurrency = 1
-    private let expectedScheduledConcurrency = 1
-    #else
-    private let expectedManualScanConcurrency = 6
-    private let expectedScheduledConcurrency = 2
-    #endif
 
-    func testWhenOperationIsManualScans_thenUsesManualScanConcurrencyLimit() {
+    func testWhenOperationIsManualScans_thenConcurrentJobsBetweenBrokersIsSix() {
         let value = sut.concurrentJobsFor(.manualScan)
-        XCTAssertEqual(value, expectedManualScanConcurrency)
+        let expectedValue = 6
+        XCTAssertEqual(value, expectedValue)
     }
 
-    func testWhenOperationIsScheduledScans_thenUsesScheduledConcurrencyLimit() {
+    func testWhenOperationIsScheduledScans_thenConcurrentJobsBetweenBrokersIsTwo() {
         let value = sut.concurrentJobsFor(.scheduledScan)
-        XCTAssertEqual(value, expectedScheduledConcurrency)
+        let expectedValue = 2
+        XCTAssertEqual(value, expectedValue)
     }
 
-    func testWhenOperationIsAll_thenUsesScheduledConcurrencyLimit() {
+    func testWhenOperationIsAll_thenConcurrentJobsBetweenBrokersIsTwo() {
         let value = sut.concurrentJobsFor(.all)
-        XCTAssertEqual(value, expectedScheduledConcurrency)
+        let expectedValue = 2
+        XCTAssertEqual(value, expectedValue)
     }
 
-    func testWhenOperationIsOptOut_thenUsesScheduledConcurrencyLimit() {
+    func testWhenOperationIsOptOut_thenConcurrentJobsBetweenBrokersIsTwo() {
         let value = sut.concurrentJobsFor(.optOut)
-        XCTAssertEqual(value, expectedScheduledConcurrency)
+        let expectedValue = 2
+        XCTAssertEqual(value, expectedValue)
     }
 }

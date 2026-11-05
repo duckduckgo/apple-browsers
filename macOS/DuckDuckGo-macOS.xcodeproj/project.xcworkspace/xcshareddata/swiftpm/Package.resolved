@@ -34,7 +34,7 @@
       "location" : "https://github.com/duckduckgo/content-scope-scripts.git",
       "state" : {
         "branch" : "pr-releases/michal/mvp-block-sponsors",
-        "revision" : "e3f1c134bbb4a6cb2fa1261d7dffdf801a33441b"
+        "revision" : "29d2f79e3aa0d83925fdc8de1ed3f233ff7bfaaa"
       }
     },
     {

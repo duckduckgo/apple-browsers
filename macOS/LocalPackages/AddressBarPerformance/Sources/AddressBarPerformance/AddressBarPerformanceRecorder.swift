@@ -63,8 +63,7 @@ final class AddressBarPerformanceRecorder {
         return t
     }
 
-    /// Appends `time` to the char pending list. Called at `controlTextDidChange` once the buffer
-    /// has actually committed, with the original keystroke's arrival time.
+    /// Queues a committed keystroke's original timestamp for the next character sample.
     func appendCharStartTime(at time: TimeInterval? = nil) {
         let t = time ?? clock()
         pendingCharStartTimes.append(t)

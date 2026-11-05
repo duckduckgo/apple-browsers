@@ -80,7 +80,7 @@ final class AddressBarTextField: NSTextField {
     private var windowFrameCancellable: AnyCancellable?
     private var sharedTextStateCancellable: AnyCancellable?
 
-    private var performanceCoordinator: AddressBarPerformanceCoordinator?
+    private(set) var performanceCoordinator: AddressBarPerformanceCoordinator?
     private var perfTerminatorCancellables: Set<AnyCancellable> = []
     private var perfAIModeTerminatorCancellable: AnyCancellable?
 
@@ -1243,7 +1243,7 @@ extension AddressBarTextField: NSTextFieldDelegate {
     }
 
     func controlTextDidChange(_ obj: Notification) {
-        performanceCoordinator?.armCharRenderIfPending()
+        performanceCoordinator?.markTextChanged()
         handleTextDidChange()
         onboardingDelegate?.measureAddressBarTypedIn()
     }

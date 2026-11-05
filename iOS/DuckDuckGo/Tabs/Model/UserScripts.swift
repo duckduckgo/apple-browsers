@@ -139,6 +139,7 @@ final class UserScripts: UserScriptsProvider {
                                                           featureFlagger: featureFlagger,
                                                           isNativeStorageBridgeAvailable: isNativeStorageBridgeAvailable,
                                                           attachmentPrivacyWebKeySource: duckAiNativeStorageHandler,
+                                                          termsOfServiceWebRecordSource: duckAiNativeStorageHandler,
                                                           homepageAiChatsProvider: homepageAiChatsProvider)
         aiChatUserScript = AIChatUserScript(handler: aiChatScriptHandler,
                                             debugSettings: aiChatDebugSettings)

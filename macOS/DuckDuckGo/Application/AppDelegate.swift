@@ -2039,8 +2039,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
             self.updateController = appStoreFactory.instantiate(
                 internalUserDecider: internalUserDecider,
+                featureFlagger: featureFlagger,
+                privacyConfigurationManager: privacyFeatures.contentBlocking.privacyConfigurationManager,
                 pixelFiring: PixelKit.shared,
                 notificationPresenter: notificationPresenter,
+                keyValueStore: UserDefaults.standard,
                 isOnboardingFinished: { [weak self, featureFlagger] in
                     if NonBlockingOnboarding(featureFlagger: featureFlagger).isNonBlocking {
                         return self?.isOnboardingReadyForPrompts == true
@@ -2370,11 +2373,16 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             keyValueStore: keyValueStore,
             privacyConfigurationManager: privacyFeatures.contentBlocking.privacyConfigurationManager,
             autoconsentPreferences: cookiePopupProtectionPreferences,
+            themeManager: themeManager,
             darkReaderExcludedDomainsProvider: darkReaderSettings,
             scriptletConfiguration: makeScriptletConfiguration()
         )
         self.webExtensionManager = webExtensionManager
         webExtensionAutofillTakeover.manager = webExtensionManager
+        webExtensionManager.installRemoteDisableEnforcer(
+            configurationManager: privacyFeatures.contentBlocking.privacyConfigurationManager,
+            featureFlagger: featureFlagger
+        )
 
         let coordinator = WebExtensionLifecycleCoordinator(
             manager: webExtensionManager,
@@ -2400,10 +2408,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     @MainActor
     private func startRemoteDisableEnforcer(for webExtensionManager: WebExtensionManager) {
         guard self.webExtensionManager === webExtensionManager else { return }
-        webExtensionManager.startRemoteDisableEnforcer(
-            configurationManager: privacyFeatures.contentBlocking.privacyConfigurationManager,
-            featureFlagger: featureFlagger
-        )
+        webExtensionManager.startRemoteDisableEnforcer()
     }
 
     @available(macOS 15.4, *)

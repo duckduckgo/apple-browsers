@@ -6016,3 +6016,12 @@
 /* Title for screen to screen confirming what data to import from a zip file (bookmarks and /or passwords) */
 "zip.content.import.types.title" = "Mit szeretnél importálni?";
 
+
+/* Fireproofing setting toggle label */
+"preserveLogins.askOnSignIn" = "Bejelentkezéskor kérdezzen rá a weboldalak tűzállóvá tételére";
+
+/* Empty Fireproof sites list */
+"preserveLogins.emptyState" = "Még nincsenek tűzálló weboldalak";
+
+/* Button to remove all Fireproof sites */
+"preserveLogins.removeAllSites" = "Összes tűzálló weboldal eltávolítása";

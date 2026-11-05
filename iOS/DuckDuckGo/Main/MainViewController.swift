@@ -288,6 +288,9 @@ class MainViewController: UIViewController {
     private var hasLoadedInitialView = false
     private weak var burningOverlayView: UIView?
     private(set) var isStartupOnboardingPending = false
+    /// Emits when the onboarding state changes or the browser first appears, so the main menu is rebuilt with the state it can now read.
+    let menuRebuildRequests = PassthroughSubject<Void, Never>()
+    private var hasRequestedMenuRebuildOnFirstAppearance = false
     private(set) lazy var startupOnboardingCover = StartupOnboardingCover(
         parentViewController: self,
         fallbackBackgroundColor: themeManager.currentTheme.onboardingBackgroundColor
@@ -1123,6 +1126,7 @@ class MainViewController: UIViewController {
 
         if isStartupOnboardingPending {
             startupOnboardingCover.attach()
+            menuRebuildRequests.send()
         }
 
         loadInitialViewIfNeeded()
@@ -1130,6 +1134,10 @@ class MainViewController: UIViewController {
 
     override func viewDidAppear(_ animated: Bool) {
         super.viewDidAppear(animated)
+        if !hasRequestedMenuRebuildOnFirstAppearance {
+            hasRequestedMenuRebuildOnFirstAppearance = true
+            menuRebuildRequests.send()
+        }
         recordPendingNewTabPagePresentationIfVisible()
         remoteMessageImpressionReporter.browserDidAppear()
 
@@ -1622,7 +1630,6 @@ class MainViewController: UIViewController {
     private func duckAIAddressBarMenuType(for tab: TabViewController?) -> DuckAIAddressBarMenuType {
         guard let tab else { return .webPage }
         return DuckAIAddressBarMenuType.resolve(
-            isFeatureEnabled: featureFlagger.isFeatureOn(.aiChatContextualAddressBarMenu),
             isShowingDocument: tab.isShowingDocument,
             tabType: tab.tabType,
             searchQuery: tab.url?.searchQuery
@@ -5103,14 +5110,15 @@ class MainViewController: UIViewController {
                                    opensNewTab: opensNewTab,
                                    hasPrompt: hasPrompt,
                                    voice: voice)
-        let surface = DuckAIEntryWideEventData.Surface(source: source, opensNewTab: opensNewTab)
+        let surface = DuckAIEntryWideEventData.Surface(source: source, opensNewTab: opensNewTab,
+                                                       opensInSidebar: opensContextualSurfaceInSidebar)
         // A tab entry reads its chat state once its Duck.ai tab is shown.
-        let sheetChatState: DuckAIEntryWideEventData.ChatState? = surface == .contextualSheet
+        let sheetChatState: DuckAIEntryWideEventData.ChatState? = surface.isContextual
             ? (currentTab?.hasContextualChatToReopen == true ? .existing : .new)
             : nil
         duckAIEntryInstrumentation.entryStarted(source: source, hasPrompt: hasPrompt, voice: voice, surface: surface,
                                                 chatState: chatState ?? sheetChatState)
-        if surface == .contextualSheet {
+        if surface.isContextual {
             // Gives the sheet entry the page it opened on, so it can notice that page changing later.
             reportDuckAISessionCurrentTab()
         }
@@ -9502,6 +9510,7 @@ extension MainViewController: OnboardingDelegate {
         isStartupOnboardingPending = false
         tutorialSettings.hasSeenOnboarding = true
         clearDuckAIOnboardingResumeStepIfNeeded()
+        menuRebuildRequests.send()
     }
 
     func needsToShowOnboardingIntro() -> Bool {

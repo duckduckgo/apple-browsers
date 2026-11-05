@@ -122,7 +122,7 @@
                 "key": "feature.data.ext.surface",
                 "type": "string",
                 "description": "Where Duck.ai is shown.",
-                "enum": ["duck_ai_tab", "contextual_sheet"]
+                "enum": ["duck_ai_tab", "contextual_sheet", "contextual_sidebar"]
             },
             {
                 "key": "feature.data.ext.prompt_submitted",

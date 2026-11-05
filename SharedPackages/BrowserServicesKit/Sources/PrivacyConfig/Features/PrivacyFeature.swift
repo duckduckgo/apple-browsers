@@ -303,6 +303,7 @@ public enum DBPSubfeature: String, Equatable, PrivacySubfeature {
     case performanceMetrics
     case extractedProfileRefresh
     case schedulerDeferralHandling
+    case challengeSolver
 }
 
 public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
@@ -341,9 +342,6 @@ public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
     case selectionContext
 
     case sidebarSuggestedPrompts
-
-    /// Offers the page navigated to as an attachment, in an active contextual chat with auto-attach off
-    case contextualPagePlaceholder
 
     /// Enables updated AI features settings screen
     case aiFeaturesSettingsUpdate
@@ -401,9 +399,6 @@ public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
 
     /// Enables Chats in the iOS address-bar and macOS tab-bar Duck.ai menus.
     case addressBarRecentChats
-
-    /// Makes the address-bar Duck.ai menu page-aware
-    case contextualAddressBarMenu
 
     /// Kill switch for routing native image/file paste into the unified input attachment strip.
     case unifiedToggleInputAttachmentPaste

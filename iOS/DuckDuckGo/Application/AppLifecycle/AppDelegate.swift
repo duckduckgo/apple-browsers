@@ -19,6 +19,8 @@
 
 import UIKit
 import Common
+import FeatureFlags_iOS
+import PrivacyConfig
 
 @UIApplicationMain class AppDelegate: UIResponder, UIApplicationDelegate {
 
@@ -42,8 +44,28 @@ import Common
         guard AppVersion.runType != .xcPreviews else { return true }
 
         let isTesting: Bool = ProcessInfo().arguments.contains("testing")
-        appStateMachine.handle(.didFinishLaunching(isTesting: isTesting))
+        Self.runHoldingLaunchBackgroundTask(featureFlagger: AppDependencyProvider.shared.featureFlagger) {
+            appStateMachine.handle(.didFinishLaunching(isTesting: isTesting))
+        }
         return true
+    }
+
+    /// Launch opens databases in the App Group container (e.g. the Autofill secure vault). If iOS suspends the app while
+    /// it holds one of their locks, it kills it with 0xdead10cc. A background task assertion keeps it running until launch ends.
+    /// https://developer.apple.com/documentation/xcode/sigkill
+    static func runHoldingLaunchBackgroundTask(featureFlagger: FeatureFlagger,
+                                               runner: BackgroundTaskRunning = ApplicationBackgroundTaskRunner(),
+                                               _ launch: () -> Void) {
+        guard featureFlagger.isFeatureOn(.launchBackgroundTask) else {
+            launch()
+            return
+        }
+        // No expiration work: the handler runs on the main thread, which `launch` keeps busy until the task ends below.
+        let task = runner.beginBackgroundTask(withName: "Launch") {}
+        defer {
+            if task != .invalid { runner.endBackgroundTask(task) }
+        }
+        launch()
     }
 
 }

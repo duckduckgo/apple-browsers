@@ -21,13 +21,25 @@ import XCTest
 
 final class BackupRestoreFailureTests: XCTestCase {
 
-    func testNetworkServerAndReadFailures_areTemporary() {
+    func testNetworkServerAndLockedKeychainFailures_areTemporary() {
+        let locked = NSError(domain: NSOSStatusErrorDomain, code: Int(errSecInteractionNotAllowed))
+        let wrappedLocked = NSError(domain: "keychain", code: 1, userInfo: [NSUnderlyingErrorKey: locked])
+
         XCTAssertEqual(BackupRestoreFailure(URLError(.timedOut)), .temporary)
         XCTAssertEqual(BackupRestoreFailure(APIRequestV2Error.urlSession(URLError(.notConnectedToInternet))), .temporary)
         XCTAssertEqual(BackupRestoreFailure(OAuthServiceError.invalidResponseCode(.internalServerError)), .temporary)
         XCTAssertEqual(BackupRestoreFailure(OAuthServiceError.invalidResponseCode(.requestTimeout)), .temporary)
         XCTAssertEqual(BackupRestoreFailure(OAuthServiceError.invalidResponseCode(.tooManyRequests)), .temporary)
-        XCTAssertEqual(BackupRestoreFailure(TokenBackupError.readFailed(underlying: NSError(domain: "keychain", code: 1))), .temporary)
+        XCTAssertEqual(BackupRestoreFailure(TokenBackupError.readFailed(underlying: locked)), .temporary)
+        XCTAssertEqual(BackupRestoreFailure(TokenBackupError.readFailed(underlying: wrappedLocked)), .temporary)
+    }
+
+    func testOtherReadFailures_areUnknown() {
+        let lookupFailed = NSError(domain: "keychain", code: 1,
+                                   userInfo: [NSUnderlyingErrorKey: NSError(domain: NSOSStatusErrorDomain, code: Int(errSecMissingEntitlement))])
+
+        XCTAssertEqual(BackupRestoreFailure(TokenBackupError.readFailed(underlying: NSError(domain: "keychain", code: 1))), .unknown)
+        XCTAssertEqual(BackupRestoreFailure(TokenBackupError.readFailed(underlying: lookupFailed)), .unknown)
     }
 
     func testRejectedBackupsAndRefreshes_arePermanent() {

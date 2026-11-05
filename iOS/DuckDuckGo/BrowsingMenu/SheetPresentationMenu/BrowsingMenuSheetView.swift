@@ -464,6 +464,7 @@ private struct BrowsingMenuHeaderView: View {
         }
         .buttonStyle(CloseButtonStyle())
         .accessibilityLabel(UserText.keyCommandClose)
+        .accessibilityIdentifier("Browser.Menu.Close")
     }
 
     @ViewBuilder

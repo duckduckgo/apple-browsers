@@ -101,12 +101,7 @@ extension XCUIApplication {
         }
 
         let targetIsInteractive = NSPredicate { _, _ in
-            guard item.exists else { return false }
-            let frame = item.frame
-            // SwiftUI can expose an off-screen row with an empty or null frame;
-            // asking XCTest for its hit point in that state can raise an error.
-            guard !frame.isEmpty, !frame.isNull, !frame.isInfinite else { return false }
-            return item.isEnabled && item.isHittable
+            item.isHittableInAppWindow(in: self)
         }
 
         // Scrolling can expand the sheet before moving its contents. Wait for the target

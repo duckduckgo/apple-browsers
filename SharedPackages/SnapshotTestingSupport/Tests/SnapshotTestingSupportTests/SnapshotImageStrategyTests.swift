@@ -80,6 +80,21 @@ struct SnapshotImageStrategyTests {
 
     @available(iOS 16, macOS 13, *)
     @Test(.timeLimit(.minutes(1)))
+    func iOSAllAppearancesExpandsToPhoneAndPadForTallScreenSnapshots() {
+        let configurations = SnapshotImageStrategy.allAppearances.configurations(for: .iOS, size: .tallScreen())
+
+        #expect(
+            configurations.map(\.name) == [
+                "iPhoneDefault_light",
+                "iPhoneDefault_dark",
+                "iPadDefault_light",
+                "iPadDefault_dark"
+            ]
+        )
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test(.timeLimit(.minutes(1)))
     func macOSSingleAppearanceExpandsToOneConfiguration() {
         let configurations = SnapshotImageStrategy.single(.dark).configurations(
             for: .macOS,

@@ -71,8 +71,8 @@ final class UpdatesDebugMenu: NSMenu {
                 }
                 NSMenuItem.separator()
             }
-            NSMenuItem(title: "More Prominent Updates")
-                .submenu(MoreProminentUpdatesDebugMenu())
+            NSMenuItem(title: "Prompt Stage")
+                .submenu(UpdatePromptStageDebugMenu())
         }
     }
 

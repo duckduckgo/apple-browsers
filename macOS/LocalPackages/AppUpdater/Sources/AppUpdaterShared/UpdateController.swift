@@ -285,6 +285,25 @@ public protocol SparkleUpdateControlling: UpdateController, SparkleUpdateControl
     func handleAppTermination()
 }
 
+@MainActor
+public extension UpdateController {
+
+    /// The prompt stage to show for the pending update, or `.none` until there's an update ready to install or open.
+    var pendingUpdatePromptStage: UpdatePromptStage {
+        hasPendingUpdate ? updatePromptStageTracker?.stage ?? .none : .none
+    }
+
+    var pendingUpdatePromptStagePublisher: AnyPublisher<UpdatePromptStage, Never> {
+        guard let tracker = updatePromptStageTracker else {
+            return Just(.none).eraseToAnyPublisher()
+        }
+        return hasPendingUpdatePublisher.combineLatest(tracker.$stage)
+            .map { hasPendingUpdate, stage in hasPendingUpdate ? stage : .none }
+            .removeDuplicates()
+            .eraseToAnyPublisher()
+    }
+}
+
 extension UpdateController {
 
     public var updatePromptStageTracker: UpdatePromptStageTracker? { nil }

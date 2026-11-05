@@ -17,6 +17,7 @@
 //
 
 import AppKit
+import AppUpdaterShared
 import DesignResourcesKit
 import SwiftUI
 
@@ -210,8 +211,21 @@ extension UpdateBannerView {
     }
 }
 
+extension UpdateController {
+
+    /// "Restart now" when an automatic Sparkle update has downloaded, otherwise "Update now".
+    var updatePromptButtonTitle: String {
+        self is any SparkleUpdateControlling && areAutomaticUpdatesEnabled ? UserText.updatePromptRestartButton : UserText.updatePromptUpdateButton
+    }
+
+    /// The menu banner names the App Store because its button leaves the browser, unlike the toolbar button.
+    var updateBannerButtonTitle: String {
+        self is any SparkleUpdateControlling ? updatePromptButtonTitle : UserText.updateBannerOpenAppStoreButton
+    }
+}
+
 #Preview("Row") {
-    UpdateBannerView(style: .row, version: "1.301.2", buttonTitle: UserText.updateBannerOpenAppStoreButton) {}
+    UpdateBannerView(style: .row, version: "1.301.2", buttonTitle: UserText.updatePromptRestartButton) {}
         .frame(width: 334)
         .padding()
 }

@@ -358,7 +358,11 @@ class AutofillLoginListViewModel: ObservableObject {
     }
 
     func dismissSyncAnotherDevicePromo() {
-        syncPromoManager.markPromoHandledFor(.passwordsAnotherDevice)
+        syncPromoManager.dismissPromoFor(.passwordsAnotherDevice, reason: .userTapped)
+    }
+
+    func recordSyncAnotherDevicePromoConfirmed() {
+        syncPromoManager.recordPromoConfirmedFor(.passwordsAnotherDevice)
     }
 
     func getSurveyToPresent() -> AutofillSurveyManager.AutofillSurvey? {

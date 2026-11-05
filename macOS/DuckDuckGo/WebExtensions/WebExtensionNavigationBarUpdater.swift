@@ -244,6 +244,28 @@ final class WebExtensionNavigationBarUpdater: NSObject, ThemeUpdateListening {
         button.cornerRadius = theme.toolbarButtonsCornerRadius
     }
 
+    // MARK: - Added Popover
+
+    func showAddedPopover(forChromeWebStoreID id: String, parent: NSViewController) {
+        let storeIdentity = WebExtensionStoreIdentity(store: .chromeWebStore, id: id)
+        guard let manager = webExtensionManagerProvider(),
+              let identifier = manager.webExtensionIdentifiers.first(where: { manager.installedExtension(identifier: $0)?.storeIdentity == storeIdentity }) else { return }
+        showAddedPopover(forExtensionWithIdentifier: identifier, parent: parent)
+    }
+
+    private func showAddedPopover(forExtensionWithIdentifier identifier: String, parent: NSViewController) {
+        // The button update for this install may still be queued on the main queue.
+        updateLoadedExtensions()
+
+        guard let button = buttons.first(where: { $0.identifier?.rawValue == identifier }), !button.isHidden,
+              let context = webExtensionManagerProvider()?.loadedExtensions.first(where: { $0.uniqueIdentifier == identifier }) else { return }
+
+        let popover = WebExtensionAddedPopoverViewController(extensionName: Self.displayName(of: context),
+                                                             iconProvider: context.webExtension.icon(for:),
+                                                             themeManager: themeManager)
+        popover.show(onParent: parent, relativeTo: button)
+    }
+
     // MARK: - Actions
 
     @objc private func toolbarButtonClicked(sender: NSButton) {

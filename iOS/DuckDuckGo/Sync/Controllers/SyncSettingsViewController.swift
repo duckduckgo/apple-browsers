@@ -203,16 +203,18 @@ class SyncSettingsViewController: UIHostingController<SimplifiedSyncSettingsView
     }
 
     private func setUpSyncFeatureFlags(_ viewModel: SyncSettingsViewModel) {
+        let applyFeatureFlags: (SyncFeatureFlags) -> Void = { featureFlags in
+            viewModel.isDataSyncingAvailable = featureFlags.contains(.dataSyncing)
+            viewModel.isConnectingDevicesAvailable = featureFlags.contains(.connectFlows)
+            viewModel.isAccountCreationAvailable = featureFlags.contains(.accountCreation)
+            viewModel.isAccountRecoveryAvailable = featureFlags.contains(.accountRecovery)
+            viewModel.isAppVersionNotSupported = featureFlags.unavailableReason == .appVersionNotSupported
+        }
+        applyFeatureFlags(syncService.featureFlags)
         syncService.featureFlagsPublisher.prepend(syncService.featureFlags)
             .removeDuplicates()
             .receive(on: DispatchQueue.main)
-            .sink { featureFlags in
-                viewModel.isDataSyncingAvailable = featureFlags.contains(.dataSyncing)
-                viewModel.isConnectingDevicesAvailable = featureFlags.contains(.connectFlows)
-                viewModel.isAccountCreationAvailable = featureFlags.contains(.accountCreation)
-                viewModel.isAccountRecoveryAvailable = featureFlags.contains(.accountRecovery)
-                viewModel.isAppVersionNotSupported = featureFlags.unavailableReason == .appVersionNotSupported
-            }
+            .sink(receiveValue: applyFeatureFlags)
             .store(in: &cancellables)
     }
 
@@ -447,12 +449,16 @@ class SyncSettingsViewController: UIHostingController<SimplifiedSyncSettingsView
     }
 
     private func startSyncWithAnotherDeviceIfNecessary() {
-        let autoStartPairingSources = [SourceConstants.startSyncFlow, SourceConstants.aiChatPromotion]
-        guard let source, autoStartPairingSources.contains(source),
-              syncService.authState == .inactive else {
+        guard let source, syncService.authState == .inactive else {
             return
         }
-        viewModel.beginPairingFlow()
+        let autoStartPairingSources = [SourceConstants.startSyncFlow, SourceConstants.aiChatPromotion]
+        let autoStartSetupSources = [SourceConstants.bookmarksPromotion, SourceConstants.passwordsPromotion]
+        if autoStartPairingSources.contains(source) {
+            viewModel.beginPairingFlow()
+        } else if autoStartSetupSources.contains(source), featureFlagger.isFeatureOn(.syncPromotionRedesign) {
+            viewModel.enableSyncToggleTapped()
+        }
     }
 
     private func askForAuthThenStartPairing() {

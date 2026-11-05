@@ -454,7 +454,7 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
         mockSubscriptionManager.resultStorePurchaseManager = storeManager
 
         let purchaseFlow = AppStorePurchaseFlowMock()
-        purchaseFlow.purchaseSubscriptionResult = .success((transactionJWS: "jws", accountCreationDuration: nil))
+        purchaseFlow.purchaseSubscriptionResult = .success((transactionJWS: "jws", isFreeTrial: false, accountCreationDuration: nil))
         purchaseFlow.completeSubscriptionPurchaseResult = .success(.completed)
 
         let subscriptionFlowsExecuter = DefaultSubscriptionFlowsExecuter(
@@ -1448,7 +1448,7 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
         let storeManager = StorePurchaseManagerMock()
         mockSubscriptionManager.resultStorePurchaseManager = storeManager
         let purchaseFlow = AppStorePurchaseFlowMock()
-        purchaseFlow.purchaseSubscriptionResult = .success((transactionJWS: "jws", accountCreationDuration: nil))
+        purchaseFlow.purchaseSubscriptionResult = .success((transactionJWS: "jws", isFreeTrial: false, accountCreationDuration: nil))
         purchaseFlow.completeSubscriptionPurchaseResult = .success(.completed)
 
         let sut = makeFeature(notificationCenter: center, scheduler: scheduler, appStorePurchaseFlow: purchaseFlow)
@@ -1475,7 +1475,7 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
         let storeManager = StorePurchaseManagerMock()
         mockSubscriptionManager.resultStorePurchaseManager = storeManager
         let purchaseFlow = AppStorePurchaseFlowMock()
-        purchaseFlow.purchaseSubscriptionResult = .success((transactionJWS: "jws", accountCreationDuration: nil))
+        purchaseFlow.purchaseSubscriptionResult = .success((transactionJWS: "jws", isFreeTrial: false, accountCreationDuration: nil))
         purchaseFlow.completeSubscriptionPurchaseResult = .success(.completed)
 
         let sut = makeFeature(notificationCenter: center, scheduler: scheduler, appStorePurchaseFlow: purchaseFlow)

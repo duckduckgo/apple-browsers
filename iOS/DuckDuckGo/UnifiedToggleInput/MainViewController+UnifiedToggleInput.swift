@@ -126,6 +126,7 @@ extension MainViewController {
         browserTabMentionSuggestionsController = mentions
         coordinator.onTabMentionSuggestionsChanged = { [weak mentions] in mentions?.show($0) }
         installFloatingReturnKeyViewController()
+        installDuckAIKeyboardEdgeSweep()
         installSwipeTabsGesturesForUnifiedInput()
 
         subscribeToIntentPublisher(coordinator)
@@ -586,6 +587,7 @@ private extension MainViewController {
 
     func handleModeChange(_ mode: TextEntryMode) {
         guard let coordinator = unifiedToggleInputCoordinator else { return }
+        updateDuckAIKeyboardEdgeSweep()
 
         if let tab = tabManager.currentTabsModel.currentTab, tab.link == nil {
             ntpAfterIdleInstrumentation.toggleUsedFromNTP(afterIdle: tab.openedAfterIdle)
@@ -784,6 +786,7 @@ private extension MainViewController {
                 let enabled = self.isAIChatSearchInputToggleEnabledForCurrentOnboardingState()
                 coordinator.updateToggleEnabled(enabled)
                 coordinator.updateAIChatShortcutAvailability(self.aiChatAddressBarExperience.shouldShowDuckAIAddressBarButton)
+                self.updateDuckAIKeyboardEdgeSweep()
             }
             .store(in: &unifiedToggleInputCancellables)
     }
@@ -1109,6 +1112,40 @@ extension MainViewController {
     func updateUnifiedInputContentPresentation(presentation: NewTabPageInputPresentation, isOnAITab: Bool) {
         unifiedToggleInputCoordinator?.contentViewController.usesRedesignedNewTabPageLayout =
             presentation.usesRedesignedFocusedLayout(isOnAITab: isOnAITab)
+    }
+
+    func installDuckAIKeyboardEdgeSweep() {
+        let sweepView = DuckAIKeyboardEdgeSweepView()
+        sweepView.translatesAutoresizingMaskIntoConstraints = false
+        view.addSubview(sweepView)
+        NSLayoutConstraint.activate([
+            sweepView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            sweepView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            sweepView.topAnchor.constraint(equalTo: view.keyboardLayoutGuide.topAnchor),
+            sweepView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
+        ])
+        duckAIKeyboardEdgeSweepView = sweepView
+    }
+
+    /// Plays the keyboard edge sweep once whenever the keyboard belongs to the Duck.ai input.
+    func updateDuckAIKeyboardEdgeSweep(keyboardTargetFrame: CGRect? = nil) {
+        guard let coordinator = unifiedToggleInputCoordinator else { return }
+        let isActive = DuckAIKeyboardEdgeSweepView.isActive(
+            isFeatureOn: featureFlagger.isFeatureOn(.unifiedToggleInputKeyboardEdgeSweep),
+            isUserSettingEnabled: aiChatSettings.isKeyboardAnimationEnabled,
+            isInputEditing: coordinator.isOmnibarSession,
+            inputMode: coordinator.inputMode,
+            isUnifiedToggleInputAvailable: unifiedToggleInputFeature.isAvailable
+        )
+        let keyboardTargetHeight: CGFloat?
+        if isActive, let keyboardTargetFrame {
+            let keyboardFrameInView = view.convert(keyboardTargetFrame, from: nil)
+            let intersection = view.bounds.intersection(keyboardFrameInView)
+            keyboardTargetHeight = intersection.isNull ? 0 : intersection.height
+        } else {
+            keyboardTargetHeight = nil
+        }
+        duckAIKeyboardEdgeSweepView?.update(isActive: isActive, keyboardTargetHeight: keyboardTargetHeight)
     }
 
     func installFloatingReturnKeyViewController() {

@@ -91,7 +91,7 @@ final class SubscriptionPagesUseSubscriptionFeatureSimplifiedPaywallTests: XCTes
 
         // Given
         mockSubscriptionManager.hasAppStoreProductsAvailable = true
-        mockAppStorePurchaseFlow.purchaseSubscriptionResult = .success((transactionJWS: "jws", accountCreationDuration: nil))
+        mockAppStorePurchaseFlow.purchaseSubscriptionResult = .success((transactionJWS: "jws", isFreeTrial: false, accountCreationDuration: nil))
         mockAppStorePurchaseFlow.completeSubscriptionPurchaseResult = .success(.completed)
 
         let params: [String: Any] = [
@@ -115,7 +115,7 @@ final class SubscriptionPagesUseSubscriptionFeatureSimplifiedPaywallTests: XCTes
 
         // Given
         mockSubscriptionManager.hasAppStoreProductsAvailable = true
-        mockAppStorePurchaseFlow.purchaseSubscriptionResult = .success((transactionJWS: "jws", accountCreationDuration: nil))
+        mockAppStorePurchaseFlow.purchaseSubscriptionResult = .success((transactionJWS: "jws", isFreeTrial: false, accountCreationDuration: nil))
         mockAppStorePurchaseFlow.completeSubscriptionPurchaseResult = .success(.completed)
 
         let params: [String: Any] = [
@@ -261,7 +261,7 @@ final class SubscriptionPagesUseSubscriptionFeatureSimplifiedPaywallTests: XCTes
 
     private func prepareSuccessfulPurchase() {
         mockSubscriptionManager.hasAppStoreProductsAvailable = true
-        mockAppStorePurchaseFlow.purchaseSubscriptionResult = .success((transactionJWS: "jws", accountCreationDuration: nil))
+        mockAppStorePurchaseFlow.purchaseSubscriptionResult = .success((transactionJWS: "jws", isFreeTrial: false, accountCreationDuration: nil))
         mockAppStorePurchaseFlow.completeSubscriptionPurchaseResult = .success(.completed)
     }
 

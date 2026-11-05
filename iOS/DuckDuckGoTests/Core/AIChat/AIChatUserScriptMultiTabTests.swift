@@ -18,6 +18,7 @@
 //
 
 import AIChat
+import AIChatTestingUtilities
 import BrowserServicesKitTestsUtils
 import Combine
 import FeatureFlags_iOS
@@ -954,7 +955,7 @@ final class AIChatUserScriptMultiTabTests: XCTestCase {
     private func makeScript() -> AIChatUserScript {
         let handler = AIChatUserScriptHandler(
             experimentalAIChatManager: ExperimentalAIChatManager(featureFlagger: featureFlagger),
-            syncHandler: MockAIChatSyncHandling(), featureFlagger: featureFlagger)
+            syncHandler: MockAIChatSyncHandling(), bonusHandler: MockAIChatBonusHandling(), featureFlagger: featureFlagger)
         let script = AIChatUserScript(handler: handler, debugSettings: MockAIChatDebugSettingsForTests())
         script.connectInitialPromptSession(initialPromptSession)
         let feature = AIChatContextualAttachMoreTabsFeature(

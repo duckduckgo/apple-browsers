@@ -70,6 +70,7 @@ final class UserScripts: UserScriptsProvider {
     private(set) var geolocationUserScript: GeolocationUserScript?
     private(set) var printingSubfeature = PrintingSubfeature()
     private(set) var trackerProtectionSubfeature = TrackerProtectionSubfeature()
+    private(set) var browserUiLockSubfeature = BrowserUiLockSubfeature()
 
     private let isAutoconsentExtensionAvailable: Bool
 
@@ -136,12 +137,15 @@ final class UserScripts: UserScriptsProvider {
         let aiChatScriptHandler = AIChatUserScriptHandler(experimentalAIChatManager: experimentalManager,
                                                           syncHandler: AIChatSyncHandler(sync: sourceProvider.sync,
                                                                                          httpRequestErrorHandler: sourceProvider.syncErrorHandler.handleAiChatsError),
+                                                          bonusHandler: sourceProvider.aiChatBonusOffer.handler,
                                                           featureFlagger: featureFlagger,
                                                           isNativeStorageBridgeAvailable: isNativeStorageBridgeAvailable,
                                                           attachmentPrivacyWebKeySource: duckAiNativeStorageHandler,
-                                                          homepageAiChatsProvider: homepageAiChatsProvider)
+                                                          homepageAiChatsProvider: homepageAiChatsProvider,
+                                                          bonusMessageLog: sourceProvider.aiChatBonusOffer.messageLog)
         aiChatUserScript = AIChatUserScript(handler: aiChatScriptHandler,
-                                            debugSettings: aiChatDebugSettings)
+                                            debugSettings: aiChatDebugSettings,
+                                            bonusMessageLog: sourceProvider.aiChatBonusOffer.messageLog)
         serpSettingsUserScript = SERPSettingsUserScript(serpSettingsProviding: SERPSettingsProvider(aiChatProvider: aiChatSettings))
 
         if isNativeStorageBridgeAvailable,
@@ -182,6 +186,7 @@ final class UserScripts: UserScriptsProvider {
         contentScopeUserScriptIsolated.registerSubfeature(delegate: subscriptionUserScript)
         contentScopeUserScriptIsolated.registerSubfeature(delegate: serpSettingsUserScript)
         contentScopeUserScriptIsolated.registerSubfeature(delegate: internalFeedbackUserScript)
+        contentScopeUserScriptIsolated.registerSubfeature(delegate: browserUiLockSubfeature)
         if let duckAiNativeStorageUserScript {
             contentScopeUserScriptIsolated.registerSubfeature(delegate: duckAiNativeStorageUserScript)
         }

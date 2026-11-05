@@ -318,6 +318,44 @@ public struct UserText {
     public static let findInPage = NSLocalizedString("findinpage.title", value: "Find in Page", comment: "")
     public static let findInPageCount = NSLocalizedString("findinpage.count", value: "%1$d of %2$d", comment: "Used to indicate number of entries found and position of the currently viewed one: e.g. 1 of 10")
 
+    public static let menuBookmarks = NSLocalizedString("menuBookmarks", value: "Bookmarks", comment: "iPad menu bar title")
+    public static let menuFavorites = NSLocalizedString("menuFavorites", value: "Favorites", comment: "iPad menu bar submenu")
+    public static let menuShowBookmarks = NSLocalizedString("menuShowBookmarks", value: "Show Bookmarks", comment: "iPad menu bar command")
+    public static let menuHideBookmarks = NSLocalizedString("menuHideBookmarks", value: "Hide Bookmarks", comment: "iPad menu bar command")
+    public static let menuImportBookmarks = NSLocalizedString("menuImportBookmarks", value: "Import Bookmarks...", comment: "iPad menu bar command")
+    public static let menuExportBookmarks = NSLocalizedString("menuExportBookmarks", value: "Export Bookmarks...", comment: "iPad menu bar command")
+    public static let menuSettings = NSLocalizedString("menuSettings", value: "DuckDuckGo Settings...", comment: "iPad menu bar command")
+    public static let menuVoiceSearch = NSLocalizedString("menuVoiceSearch", value: "Private Voice Search", comment: "iPad menu bar command")
+    public static let menuOpenLocation = NSLocalizedString("menuOpenLocation", value: "Open Location...", comment: "iPad menu bar command")
+    public static let menuPrint = NSLocalizedString("menuPrint", value: "Print...", comment: "iPad menu bar command")
+    public static let menuStop = NSLocalizedString("menuStop", value: "Stop", comment: "iPad menu bar command")
+    public static let menuShowTabs = NSLocalizedString("menuShowTabs", value: "Show Tabs", comment: "iPad menu bar command")
+    public static let menuHideTabs = NSLocalizedString("menuHideTabs", value: "Hide Tabs", comment: "iPad menu bar command")
+    public static let menuShowPasswords = NSLocalizedString("menuShowPasswords", value: "Show Passwords", comment: "iPad menu bar command")
+    public static let menuHidePasswords = NSLocalizedString("menuHidePasswords", value: "Hide Passwords", comment: "iPad menu bar command")
+    public static let menuShowDownloads = NSLocalizedString("menuShowDownloads", value: "Show Downloads", comment: "iPad menu bar command")
+    public static let menuHideDownloads = NSLocalizedString("menuHideDownloads", value: "Hide Downloads", comment: "iPad menu bar command")
+    public static let menuActualSize = NSLocalizedString("menuActualSize", value: "Actual Size", comment: "iPad menu bar command")
+    public static let menuNewTabOnRight = NSLocalizedString("menuNewTabOnRight", value: "New Tab on Right", comment: "iPad menu bar command")
+    public static let menuDuplicateTab = NSLocalizedString("menuDuplicateTab", value: "Duplicate Tab", comment: "iPad menu bar command")
+    public static let menuPreviousTab = NSLocalizedString("menuPreviousTab", value: "Show Previous Tab", comment: "iPad menu bar command")
+    public static let menuNextTab = NSLocalizedString("menuNextTab", value: "Show Next Tab", comment: "iPad menu bar command")
+    public static let menuFeedback = NSLocalizedString("menuFeedback", value: "Share Feedback", comment: "iPad menu bar command")
+    public static let menuLastTab = NSLocalizedString("menuLastTab", value: "Last Tab", comment: "iPad menu bar command")
+    public static let menuBack = NSLocalizedString("menuBack", value: "Back", comment: "iPad menu bar command")
+    public static let menuForward = NSLocalizedString("menuForward", value: "Forward", comment: "iPad menu bar command")
+    public static let menuClearTabsAndData = NSLocalizedString("menuClearTabsAndData", value: "Clear Tabs and Data", comment: "iPad menu bar command")
+    public static let menuDuckAI = NotLocalizedString("menuDuckAI", value: "Duck.ai", comment: "iPad menu bar title. Feature name. Not translated")
+    public static let menuOpenDuckAI = NSLocalizedString("menuOpenDuckAI", value: "Open Duck.ai", comment: "iPad Duck.ai menu bar command")
+    public static let menuNewChat = NSLocalizedString("menuNewChat", value: "New Chat", comment: "iPad Duck.ai menu bar command")
+    public static let menuNewVoiceChat = NSLocalizedString("menuNewVoiceChat", value: "New Voice Chat", comment: "iPad Duck.ai menu bar command")
+    public static let menuNewImageChat = NSLocalizedString("menuNewImageChat", value: "New Image Chat", comment: "iPad Duck.ai menu bar command")
+    public static let menuRecentChats = NSLocalizedString("menuRecentChats", value: "Recent Chats", comment: "iPad Duck.ai menu bar section header")
+    public static let menuDeleteAllChats = NSLocalizedString("menuDeleteAllChats", value: "Delete All Chats...", comment: "iPad Duck.ai menu bar command")
+    public static func menuSelectTab(_ number: Int) -> String {
+        String(format: NSLocalizedString("menuSelectTab", value: "Select Tab %d", comment: "iPad menu bar command selecting a numbered tab"), number)
+    }
+
     public static let keyCommandShowAllTabs = NSLocalizedString("keyCommandShowAllTabs", value: "Show All Tabs", comment: "")
     public static let keyCommandNewTab = NSLocalizedString("keyCommandNewTab", value: "New Tab", comment: "")
     public static let keyCommandNewFireTab = NSLocalizedString("keyCommandNewFireTab", value: "New Fire Tab", comment: "Discoverability title for the keyboard command that opens a new Fire Tab")
@@ -1471,6 +1509,10 @@ public struct UserText {
     public static let syncPromoPasswordsMessage = NSLocalizedString("sync.promo.passwords.message", value: "No account needed. End-to-end encryption means nobody but you can see your passwords, not even us.", comment: "Message for the Sync Promotion banner when user has passwords that can be synced")
     public static let syncPromoConfirmAction = NSLocalizedString("sync.promo.confirm.action", value: "Set Up Sync", comment: "Title for a button in the Sync Promotion banner to set up Sync")
     public static let syncPromoDismissAction = NSLocalizedString("sync.promo.dismiss.action", value: "No Thanks", comment: "Title for a button in the Sync Promotion banner to dismiss Sync promotion banner")
+    public static let syncPromoBookmarksRedesignMessage = NSLocalizedString("sync.promo.bookmarks.redesign.message", value: "End-to-end encrypted. Nobody can see your bookmarks, not even us.", comment: "Message for the redesigned Sync Promotion banner on the Bookmarks screen")
+    public static let syncPromoCloseAccessibilityLabel = NSLocalizedString("sync.promo.close.accessibility.label", value: "Dismiss sync promotion", comment: "Accessibility label for the close button on the Sync Promotion banner")
+    public static let syncPromoToggleTitle = NSLocalizedString("sync.promo.toggle.title", value: "Sync & Backup", comment: "Label for a toggle in the Sync Promotion banner that opens Sync settings and starts setting up Sync with another device")
+    public static let syncPromoPasswordsRedesignMessage = NSLocalizedString("sync.promo.passwords.redesign.message", value: "End-to-end encrypted. Nobody can see your passwords, not even us.", comment: "Message for the redesigned Sync Promotion banner on the Passwords screen")
 
     // MARK: Sync Recovery Prompts
     public static func syncRecoveryPromptTitle(deviceName: String) -> String {
@@ -2597,6 +2639,9 @@ public struct UserText {
     public static let settingsEnableAiChat = NSLocalizedString("settings.enable.aichat", value: "Duck.ai", comment: "Settings screen cell text for enabling AI chat")
 
     public static let settingsEnableAiChatSubtitle = NSLocalizedString("settings.enable.aichat.subtitle", value: "Chat privately with popular 3rd-party AI models", comment: "A description of what the AI Chat toggle does")
+
+    public static let settingsKeyboardAnimationTitle = NotLocalizedString("settings.aifeatures.keyboard.animation.title", value: "Duck.ai Keyboard Animation", comment: "Settings screen toggle title for the Duck.ai keyboard animation")
+    public static let settingsKeyboardAnimationSubtitle = NotLocalizedString("settings.aifeatures.keyboard.animation.subtitle", value: "Show an animation around the keyboard when you switch to or type in Duck.ai.", comment: "Settings screen description for the Duck.ai keyboard animation toggle")
 
     public static let settingsAutomaticPageContextTitle = NSLocalizedString("settings.aifeatures.automatic.context.title", value: "Automatically Send Content", comment: "Settings screen cell title for enabling automatic page content attachment")
 

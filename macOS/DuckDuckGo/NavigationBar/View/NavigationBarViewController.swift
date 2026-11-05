@@ -191,7 +191,8 @@ final class NavigationBarViewController: NSViewController {
     private let pixelFiring: (any PixelKitFiring)?
     private let pinningManager: PinningManager
 
-    let themeManager: ThemeManaging
+    var themeManager: ThemeManaging { appThemeManager }
+    private let appThemeManager: ThemeManager
     var themeUpdateCancellable: AnyCancellable?
 
     private var daxFadeInAnimation: DispatchWorkItem?
@@ -250,7 +251,7 @@ final class NavigationBarViewController: NSViewController {
                        adBlockingAvailability: AdBlockingAvailabilityProviding = NSApp.delegateTyped.adBlockingAvailability,
                        searchPreferences: SearchPreferences,
                        webTrackingProtectionPreferences: WebTrackingProtectionPreferences,
-                       themeManager: ThemeManaging = NSApp.delegateTyped.themeManager,
+                       themeManager: ThemeManager = NSApp.delegateTyped.themeManager,
                        aiChatMenuConfig: AIChatMenuVisibilityConfigurable,
                        aiChatCoordinator: AIChatCoordinating,
                        vpnUpsellToolbarButtonPromoDelegate: VPNUpsellToolbarButtonPromoDelegate = NSApp.delegateTyped.vpnUpsellToolbarButtonPromoDelegate,
@@ -325,7 +326,7 @@ final class NavigationBarViewController: NSViewController {
          adBlockingAvailability: AdBlockingAvailabilityProviding,
          searchPreferences: SearchPreferences,
          webTrackingProtectionPreferences: WebTrackingProtectionPreferences,
-         themeManager: ThemeManaging,
+         themeManager: ThemeManager,
          aiChatMenuConfig: AIChatMenuVisibilityConfigurable,
          aiChatCoordinator: AIChatCoordinating,
          vpnUpsellToolbarButtonPromoDelegate: VPNUpsellToolbarButtonPromoDelegate,
@@ -384,7 +385,7 @@ final class NavigationBarViewController: NSViewController {
         self.featureFlagger = featureFlagger
         self.adBlockingAvailability = adBlockingAvailability
         self.searchPreferences = searchPreferences
-        self.themeManager = themeManager
+        self.appThemeManager = themeManager
         self.aiChatMenuConfig = aiChatMenuConfig
         self.aiChatCoordinator = aiChatCoordinator
         self.defaultBrowserPreferences = defaultBrowserPreferences
@@ -801,7 +802,7 @@ final class NavigationBarViewController: NSViewController {
     private func setupWebExtensionButtons() {
         if #available(macOS 15.4, *) {
             let updater = WebExtensionNavigationBarUpdater(webExtensionManagerProvider: { NSApp.delegateTyped.webExtensionManager },
-                                                           themeManager: themeManager,
+                                                           themeManager: appThemeManager,
                                                            container: menuButtons,
                                                            isPrivateWindow: tabCollectionViewModel.isBurner,
                                                            selectedTabProvider: { [weak self] in self?.tabCollectionViewModel.selectedTabViewModel?.tab })

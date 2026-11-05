@@ -87,7 +87,8 @@ extension TabSwitcherViewController {
         super.validate(command)
         guard featureFlagger.isFeatureOn(.ipadMenuBar), let menuCommand = MainMenuCommand(action: command.action) else { return }
         let availability = switcherMenuAvailability
-        command.applyMenuState(title: availability.title(for: menuCommand), isEnabled: availability.isEnabled(menuCommand))
+        command.applyMenuState(title: availability.title(for: menuCommand), isEnabled: availability.isEnabled(menuCommand),
+                               isHidden: availability.isHidden(menuCommand))
     }
 
     override func canPerformAction(_ action: Selector, withSender sender: Any?) -> Bool {
@@ -106,7 +107,7 @@ extension TabSwitcherViewController {
         state.aiChatEnabled = aiChatSettings.isAIChatEnabled
         state.passwordsEnabled = featureFlagger.isFeatureOn(.autofillAccessCredentialManagement)
         state.canHideTabs = canDismissOnEmpty || !tabsModel.isEmpty
-        return MenuCommandAvailability(state: state)
+        return MenuCommandAvailability(state: state, nextStepsItems: NextStepsItemsVisibility(keyValueStore: keyValueStore))
     }
 
     @objc func keyboardCloseTab() {

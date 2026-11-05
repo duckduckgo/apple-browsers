@@ -59,12 +59,7 @@ final class ExtensionsManagementPreferences: ObservableObject {
 
     func openStorePage(for item: ChromeWebStoreListing) {
         windowControllersManager.show(url: item.storeURL, source: .ui, newTab: true, selected: true)
-
-        guard let storeID = item.storeID else {
-            return
-        }
-
-        fire(.getClicked(extensionID: storeID, category: item.category))
+        fire(.getClicked(extensionID: item.storeID, category: item.category))
     }
 
     func openPublisherPage(for item: ChromeWebStoreListing) {
@@ -73,22 +68,12 @@ final class ExtensionsManagementPreferences: ObservableObject {
         }
 
         windowControllersManager.show(url: url, source: .ui, newTab: true, selected: true)
-
-        guard let storeID = item.storeID else {
-            return
-        }
-
-        fire(.publisherLinkClicked(extensionID: storeID, category: item.category))
+        fire(.publisherLinkClicked(extensionID: item.storeID, category: item.category))
     }
 
     func showDetails(for entry: InstalledExtensionEntry) {
         detailsListingID = entry.listing.id
-
-        guard let storeID = entry.listing.storeID else {
-            return
-        }
-
-        fire(.detailsOpened(extensionID: storeID, category: entry.listing.category))
+        fire(.detailsOpened(extensionID: entry.listing.storeID, category: entry.listing.category))
     }
 
     func hideDetails() {
@@ -232,7 +217,7 @@ private extension ExtensionsManagementPreferences {
     }
 
     func fire(_ pixel: WebExtensionPixel) {
-        pixelFiring?.fire(pixel, frequency: .dailyAndStandard)
+        pixelFiring?.fire(pixel, frequency: .dailyAndCount)
     }
 
     func resetExtensions() {

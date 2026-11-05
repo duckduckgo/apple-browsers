@@ -70,12 +70,12 @@ final class ModalPromptCoordinationManagerTests {
             manager.presentModalPromptIfNeeded(from: presenter)
         }
         #expect(reporter.shownPrompts.isEmpty)
-        #expect(reporter.finishedPrompts.isEmpty)
+        #expect(reporter.shownCoordinatedPrompts.isEmpty)
 
         schedulerMock.executeScheduledBlock()
 
         #expect(reporter.shownPrompts == (completesPresentation ? [.subscriptionWinBackOffer] : []))
-        #expect(reporter.finishedPrompts == (coordinated && completesPresentation ? [.modal] : []))
+        #expect(reporter.shownCoordinatedPrompts == (coordinated && completesPresentation ? [.modal] : []))
     }
 
     // MARK: - Cooldown Period Tests

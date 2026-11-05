@@ -115,6 +115,9 @@ public protocol OAuthClient {
     /// - `.localForceRefresh`: Returns what's in the storage but forces a refresh first. throws an error if no refresh token is available.
     /// - `.createIfNeeded`: Returns what's in the storage, if the stored token is expired refreshes it, if not token is available creates a new account/token
     /// All options store new or refreshed tokens via the tokensStorage
+    /// When the session changes while a refresh is in progress (sign-out, adoption, activation or another stored token), the refreshed
+    /// tokens are discarded: the token container stored at that point is returned, or `OAuthClientError.missingTokenContainer` is thrown
+    /// when none is stored.
     /// - Parameter trigger: What initiated this token request, surfaced on the refresh wide event.
     func getTokens(policy: AuthTokensCachePolicy, trigger: TokenRefreshTrigger) async throws -> TokenContainer
 
@@ -401,6 +404,7 @@ final public actor DefaultOAuthClient: @preconcurrency OAuthClient {
                 throw error
             }
 
+            let generationBeforeRefresh = sessionGeneration.current
             let task = Task {
                 defer {
                     self.refreshOngoingTask = nil
@@ -410,6 +414,12 @@ final public actor DefaultOAuthClient: @preconcurrency OAuthClient {
 
                 do {
                     let refreshedTokens = try await tokenRefresher.refresh(localTokenContainer, refreshID: refreshID)
+
+                    guard sessionGeneration.current == generationBeforeRefresh else {
+                        let current = try tokensStoredAfterSessionChange()
+                        refreshEventMapping?.fire(.tokenRefreshSucceeded(refreshID: refreshID))
+                        return current
+                    }
 
                     refreshEventMapping?.fire(.tokenRefreshSavingTokens(refreshID: refreshID))
                     try saveRefreshedTokens(refreshedTokens)
@@ -477,6 +487,16 @@ final public actor DefaultOAuthClient: @preconcurrency OAuthClient {
             Logger.OAuthClient.error("Failed to save the refreshed tokens: \(String(describing: error), privacy: .public)")
             throw error
         }
+    }
+
+    /// Returns the current token container stored after the session changed during a refresh, whose refreshed tokens are discarded.
+    /// - Throws: `OAuthClientError.missingTokenContainer` when none is stored, or the storage error when reading it fails.
+    private func tokensStoredAfterSessionChange() throws -> TokenContainer {
+        Logger.OAuthClient.log("The session changed while refreshing the token, discarding the refreshed tokens")
+        guard let current = try tokenStorage.getTokenContainer() else {
+            throw OAuthClientError.missingTokenContainer
+        }
+        return current
     }
 
     /// Starts minting a new backup in the background when the backup needs renewal and no renewal is running.

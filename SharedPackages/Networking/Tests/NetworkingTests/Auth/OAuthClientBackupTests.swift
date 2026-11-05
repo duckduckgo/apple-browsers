@@ -135,6 +135,50 @@ final class OAuthClientBackupTests: XCTestCase {
         XCTAssertNil(try backupStorage.getTokenContainer())
     }
 
+    func testRefresh_signOutDuringTheRefresh_storesNeitherTheRefreshedTokensNorABackup() async throws {
+        try primaryStorage.saveTokenContainer(OAuthTokensFactory.makeExpiredTokenContainer())
+        let gated = GatedPrimaryRefresher(primary: newPrimary, backup: newBackup)
+        let client = makeClient(backupStorage: backupStorage, tokenRefresher: gated)
+
+        let refresh = Task { try await client.getTokens(policy: .localForceRefresh) }
+        await gated.waitUntilRefreshStarted()
+        try await client.logout()
+        await gated.openGate()
+
+        do {
+            _ = try await refresh.value
+            XCTFail("Expected error")
+        } catch {
+            XCTAssertEqual(error as? OAuthClientError, .missingTokenContainer)
+        }
+        await client.waitForBackupRenewal()
+        XCTAssertNil(try primaryStorage.getTokenContainer())
+        XCTAssertNil(try backupStorage.getTokenContainer())
+        let renewalCalls = await gated.renewalCalls
+        XCTAssertEqual(renewalCalls, 0)
+    }
+
+    func testRefresh_anotherAccountAdoptedDuringTheRefresh_returnsAndKeepsTheAdoptedTokens() async throws {
+        try primaryStorage.saveTokenContainer(OAuthTokensFactory.makeExpiredTokenContainer())
+        let adopted = OAuthTokensFactory.makeTokenContainer(refreshToken: "adoptedR", externalID: "adopted-account")
+        let gated = GatedPrimaryRefresher(primary: newPrimary, backup: newBackup)
+        let client = makeClient(backupStorage: backupStorage, tokenRefresher: gated)
+
+        let refresh = Task { try await client.getTokens(policy: .localForceRefresh) }
+        await gated.waitUntilRefreshStarted()
+        try await client.adopt(tokenContainer: adopted)
+        await gated.openGate()
+
+        let result = try await refresh.value
+        await client.waitForBackupRenewal()
+
+        XCTAssertEqual(result, adopted)
+        XCTAssertEqual(try primaryStorage.getTokenContainer(), adopted)
+        XCTAssertNil(try backupStorage.getTokenContainer())
+        let renewalCalls = await gated.renewalCalls
+        XCTAssertEqual(renewalCalls, 0)
+    }
+
     func testRefresh_anotherAccountStoredDuringBackupRenewal_storesNoBackup() async throws {
         try primaryStorage.saveTokenContainer(OAuthTokensFactory.makeExpiredTokenContainer())
         let otherAccount = OAuthTokensFactory.makeTokenContainer(refreshToken: "otherR", externalID: "other")
@@ -1136,6 +1180,52 @@ private final class FailingTokenStorage: AuthTokenStoring {
 /// A refresher whose `fork` breaks its contract by returning a single pair whatever `count` is.
 /// Returns `primary` for a refresh that reports under a refresh ID, the user-facing one, and holds every other refresh,
 /// the background backup renewal, until `openGate()` is called, then returns `backup`.
+/// Holds the primary refresh until `openGate()` is called, and returns the backup from a renewal right away.
+private actor GatedPrimaryRefresher: TokenRefreshing {
+    private let primary: TokenContainer
+    private let backup: TokenContainer
+    private var gate: CheckedContinuation<Void, Never>?
+    private var hasStarted = false
+    private var startWaiters: [CheckedContinuation<Void, Never>] = []
+    private(set) var renewalCalls = 0
+
+    init(primary: TokenContainer, backup: TokenContainer) {
+        self.primary = primary
+        self.backup = backup
+    }
+
+    func decode(accessToken: String, refreshToken: String, refreshID: String?) async throws -> TokenContainer {
+        primary
+    }
+
+    func refresh(_ tokenContainer: TokenContainer, refreshID: String?) async throws -> TokenContainer {
+        guard refreshID != nil else {
+            renewalCalls += 1
+            return backup
+        }
+        hasStarted = true
+        startWaiters.forEach { $0.resume() }
+        startWaiters = []
+        await withCheckedContinuation { gate = $0 }
+        return primary
+    }
+
+    func fork(_ tokenContainer: TokenContainer, count: Int, refreshID: String?) async throws(TokenForkError) -> [TokenContainer] {
+        []
+    }
+
+    /// Returns once the primary refresh is waiting at the gate.
+    func waitUntilRefreshStarted() async {
+        guard !hasStarted else { return }
+        await withCheckedContinuation { startWaiters.append($0) }
+    }
+
+    func openGate() {
+        gate?.resume()
+        gate = nil
+    }
+}
+
 private actor GatedRenewalRefresher: TokenRefreshing {
     private let primary: TokenContainer
     private let backup: TokenContainer

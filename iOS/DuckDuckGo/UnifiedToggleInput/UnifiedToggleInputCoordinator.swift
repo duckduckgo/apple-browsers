@@ -217,6 +217,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
     private var isOmnibarFocusPending = false
     private var pendingOmnibarFocusRequests: [(isValid: () -> Bool, completion: ((Bool) -> Void)?, allowsInactive: Bool)] = []
     private var pixelReporter: UTIPixelReporter!
+    private let resubmitDetector = CrossModeResubmitDetector()
     private var wideEventReporter: UTIWideEventReporter!
     private var modelSelector: UTIModelSelector!
     private var attachmentController: UTIAttachmentController!
@@ -258,6 +259,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
 
     var pageTypeProvider: (() -> UnifiedToggleInputPromptPageType?)?
     var duckAIEntrySourceProvider: (() -> AIChatEntryPointSource?)?
+    var addressBarPositionProvider: (() -> AddressBarPosition?)?
 
     private var resolvedPromptPageType: UnifiedToggleInputPromptPageType {
         if host == .contextualChat { return .contextual }
@@ -490,6 +492,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
             isInputFirstResponder: { [weak self] in self?.viewController.isInputFirstResponder ?? false }
         ))
         keyboardMonitor.onTimeoutRequiresInactive = { [weak self] in self?.transitionOmnibarToInactive() }
+        contentViewController.resubmitDelayOfSearch = { [weak self] in self?.resubmitDelay(of: $0, mode: .search) }
         pixelReporter = UTIPixelReporter(firing: pixelFiring, context: { [weak self] in
             guard let self else { return nil }
             return UTIPixelContext(
@@ -498,7 +501,8 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
                 inputMode: self.inputMode,
                 isToggleVisible: self.isToggleVisible,
                 pageType: self.resolvedPromptPageType,
-                duckAIEntrySource: self.duckAIEntrySourceProvider?()
+                duckAIEntrySource: self.duckAIEntrySourceProvider?(),
+                addressBarPosition: self.addressBarPositionProvider?()
             )
         })
         wideEventReporter = UTIWideEventReporter(
@@ -1705,6 +1709,20 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         return (configuration.modelId, configuration.reasoningEffort)
     }
 
+    func reportSearchDuckDuckGoRowSelected(query: String) {
+        pixelReporter.reportSearchDuckDuckGoRowSelected(resubmitDelay: resubmitDelay(of: query, mode: .search))
+    }
+
+    func clearResubmitHistory() {
+        resubmitDetector.clear()
+    }
+
+    /// Fire tabs never take part, so their submissions can't be linked to normal-tab ones.
+    func resubmitDelay(of text: String, mode: TextEntryMode) -> CrossModeResubmitDetector.DelayBucket? {
+        guard featureFlagger.isFeatureOn(.unifiedToggleInputResubmitDetection), !viewController.handler.isFireTab else { return nil }
+        return resubmitDetector.registerSubmission(text, mode: mode, canStartComparison: pixelSurface == .addressBar)
+    }
+
     func handleExternalSubmission(_ type: ExternalSubmissionType) {
         commitCurrentToggleState()
         // External submissions (suggestion taps, voice, intent dispatch) bypass
@@ -2267,7 +2285,8 @@ extension UnifiedToggleInputCoordinator: UnifiedToggleInputViewControllerDelegat
             }
             sessionMonitor.recordActivity(mode: .search)
             pixelReporter.reportQuerySubmitted(defaultOmnibarMode: aiChatSettings.defaultOmnibarMode,
-                                               queryType: UnifiedToggleInputQueryType(query: text))
+                                               queryType: UnifiedToggleInputQueryType(query: text),
+                                               resubmitDelay: resubmitDelay(of: text, mode: .search))
             clearStoreEntryAfterSubmission()
             if isAITabState {
                 hide()
@@ -2329,7 +2348,8 @@ extension UnifiedToggleInputCoordinator: UnifiedToggleInputViewControllerDelegat
             reasoningMode: reasoningModeForSubmitPixel,
             modelId: modelStore.persistedModelId,
             defaultOmnibarMode: aiChatSettings.defaultOmnibarMode,
-            isFirstPromptNewInstall: featureDiscovery.isFirstDuckAIPromptNewInstall
+            isFirstPromptNewInstall: featureDiscovery.isFirstDuckAIPromptNewInstall,
+            resubmitDelay: resubmitDelay(of: text, mode: .aiChat)
         )
         pixelReporter.reportToolSubmittedIfNeeded(
             selectedTool: toolsController.selectedTool,
@@ -2982,6 +3002,7 @@ private extension UnifiedToggleInputCoordinator {
             .sink { [weak self] _ in
                 self?.endEditMode()
                 self?.inputOutcomeMeasurement.inputClosed()
+                self?.resubmitDetector.clear()
             }
             .store(in: &cancellables)
         // An input still open on return counts as a new opening.

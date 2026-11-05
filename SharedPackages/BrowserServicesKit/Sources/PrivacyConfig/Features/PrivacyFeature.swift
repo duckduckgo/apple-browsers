@@ -408,6 +408,10 @@ public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
     /// Kill switch for routing native image/file paste into the unified input attachment strip.
     case unifiedToggleInputAttachmentPaste
 
+    /// Kill switch for the on-device check that adds a delay bucket when input is resubmitted in the other mode.
+    /// https://app.asana.com/1/137249556945/project/1201392122292466/task/1220262429487643
+    case unifiedToggleInputResubmitDetection
+
     /// Kill switch for the native input attachment privacy disclosure.
     case unifiedToggleInputAttachmentPrivacy
 

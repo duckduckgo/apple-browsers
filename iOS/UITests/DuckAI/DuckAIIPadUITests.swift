@@ -71,16 +71,26 @@ final class DuckAIIPadUITests: DuckAIUITestCase {
         }
 
         XCTContext.runActivity(named: "Select Search Only and verify both mode controls stay hidden when focused") { _ in
-            let hideKeyboardButton = app.keyboards.buttons.matching(NSPredicate(format: "label == %@", "Hide keyboard")).firstMatch
-            XCTAssertTrue(
-                hideKeyboardButton.waitForHittableInAppWindow(in: app, timeout: UITestTimeouts.elementExistence),
-                "The iPad keyboard did not expose its Hide keyboard control.")
-            hideKeyboardButton.tapWhenHittable(in: app)
+            app.browserWindow.buttons["Browser.OmniBar.Button.BrowsingMenu"].tapWhenHittable(in: app)
             XCTAssertTrue(
                 app.keyboards.firstMatch.waitForNonExistence(timeout: UITestTimeouts.elementExistence),
-                "The iPad address bar remained in editing after dismissing the keyboard.")
+                "The iPad keyboard remained visible after opening the browsing menu.")
 
-            app.openAIFeaturesSettings()
+            let menu = app.descendants(matching: .any)["Browser.Menu.List"]
+            XCTAssertTrue(menu.waitForExistence(timeout: UITestTimeouts.elementExistence), "Browsing menu did not appear.")
+            let settings = app.descendants(matching: .any)["Browser.Menu.Settings"]
+            menu.swipeUpToReveal(settings, timeout: UITestTimeouts.navigation)
+            settings.tapWhenHittable(in: app)
+
+            let settingsList = app.descendants(matching: .any)["Settings.List.Main"]
+            XCTAssertTrue(settingsList.waitForExistence(timeout: UITestTimeouts.elementExistence), "Settings did not appear.")
+            let aiFeatures = settingsList.buttons["Settings.Main.AIFeatures"]
+            settingsList.swipeUpToReveal(aiFeatures, timeout: UITestTimeouts.navigation)
+            aiFeatures.tapWhenHittable(in: app)
+            XCTAssertTrue(
+                app.aiFeaturesSettingsList.waitForExistence(timeout: UITestTimeouts.elementExistence),
+                "AI Features settings did not appear.")
+
             app.selectDuckAISearchInput(false)
             app.navigateBackInSettings(from: "Settings.List.AIFeatures", to: "Settings.List.Main")
             app.dismissSettings()

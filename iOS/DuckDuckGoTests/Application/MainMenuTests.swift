@@ -211,6 +211,20 @@ struct MainMenuTests {
     }
 
     @available(iOS 16, macOS 13, *)
+    @Test(.timeLimit(.minutes(1)), arguments: [false, true])
+    func duckAIButtonToggleFollowsButtonVisibility(isVisible: Bool) {
+        let spec = MainMenuSpec(isEnabled: true, idiom: .pad)
+        #expect(spec.allItems.contains { $0.command == .toggleDuckAIButton })
+        var state = MenuCommandAvailability.State(shortcutsEnabled: true, presentation: .browser)
+        #expect(!MenuCommandAvailability(state: state).isEnabled(.toggleDuckAIButton))
+        state.duckAIShortcutAvailable = true
+        state.duckAIButtonVisible = isVisible
+        let availability = MenuCommandAvailability(state: state)
+        #expect(availability.isEnabled(.toggleDuckAIButton))
+        #expect(availability.title(for: .toggleDuckAIButton) == (isVisible ? UserText.menuHideDuckAIButton : UserText.menuShowDuckAIButton))
+    }
+
+    @available(iOS 16, macOS 13, *)
     @Test(.timeLimit(.minutes(1)))
     func deleteAllChatsStaysVisibleWithoutChats() throws {
         let elements = DuckAIRecentChatsMenuContent.elements(for: .init(recentChats: [], totalChatCount: 0))

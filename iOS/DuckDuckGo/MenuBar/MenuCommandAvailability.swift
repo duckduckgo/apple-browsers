@@ -33,6 +33,8 @@ struct MenuCommandAvailability {
         var fireModeEnabled = false
         var voiceSearchEnabled = false
         var aiChatEnabled = false
+        var duckAIShortcutAvailable = false
+        var duckAIButtonVisible = true
         var passwordsEnabled = false
         var canHideTabs = true
         var tabCount = 0
@@ -49,6 +51,8 @@ struct MenuCommandAvailability {
             return state.presentation != .tabSwitcher || state.canHideTabs
         case .openDuckAI, .newChat, .newVoiceChat, .newImageChat, .openRecentChat, .deleteAllChats:
             return state.aiChatEnabled && (state.presentation != .tabSwitcher || state.canHideTabs)
+        case .toggleDuckAIButton:
+            return state.duckAIShortcutAvailable && (state.presentation == .browser || (state.presentation == .tabSwitcher && state.canHideTabs))
         case .showPasswords:
             return state.passwordsEnabled && (state.presentation != .tabSwitcher || state.canHideTabs)
         case .about:
@@ -89,6 +93,7 @@ struct MenuCommandAvailability {
         case .showTabs: return state.presentation == .tabSwitcher ? UserText.menuHideTabs : UserText.menuShowTabs
         case .showPasswords: return state.presentation == .passwords ? UserText.menuHidePasswords : UserText.menuShowPasswords
         case .showDownloads: return state.presentation == .downloads ? UserText.menuHideDownloads : UserText.menuShowDownloads
+        case .toggleDuckAIButton: return state.duckAIButtonVisible ? UserText.menuHideDuckAIButton : UserText.menuShowDuckAIButton
         case .showBookmarks: return state.presentation == .bookmarks ? UserText.menuHideBookmarks : UserText.menuShowBookmarks
         default: return nil
         }

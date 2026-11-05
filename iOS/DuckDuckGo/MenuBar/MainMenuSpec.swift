@@ -27,7 +27,7 @@ enum MainMenuCommand: CaseIterable {
     case find, stop, reload, showTabs, showPasswords, showDownloads, zoomIn, zoomOut, actualSize
     case newTabOnRight, duplicateTab, previousTab, nextTab, about, feedback
     case selectTab, back, forward, findNext, findPrevious, fire
-    case importData, setDefaultBrowser, addToDock, addWidget
+    case importData, setDefaultBrowser, addToDock, addWidget, toggleDuckAIButton
 }
 
 struct MainMenuSpec {
@@ -233,6 +233,7 @@ extension MainMenuCommand {
         case .showTabs: return #selector(MainViewController.keyboardShowAllTabs)
         case .showPasswords: return #selector(MainViewController.menuTogglePasswords)
         case .showDownloads: return #selector(MainViewController.menuToggleDownloads)
+        case .toggleDuckAIButton: return #selector(MainViewController.menuToggleDuckAIButton)
         case .zoomIn: return #selector(MainViewController.keyboardZoomIn)
         case .zoomOut: return #selector(MainViewController.keyboardZoomOut)
         case .actualSize: return #selector(MainViewController.keyboardZoomReset)

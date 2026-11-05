@@ -17,6 +17,7 @@
 //  limitations under the License.
 //
 
+import FeatureFlags_iOS
 import UIKit
 
 extension MainViewController {
@@ -52,6 +53,8 @@ extension MainViewController {
         state.fireModeEnabled = fireModeCapability.isFireModeEnabled
         state.voiceSearchEnabled = voiceSearchHelper.isVoiceSearchEnabled
         state.aiChatEnabled = aiChatSettings.isAIChatEnabled
+        state.duckAIShortcutAvailable = aiChatSettings.isAIChatEnabled && featureFlagger.isFeatureOn(.aiChatChromeShortcutIPad)
+        state.duckAIButtonVisible = isDuckAIChromeButtonVisible
         state.passwordsEnabled = featureFlagger.isFeatureOn(.autofillAccessCredentialManagement)
         state.canHideTabs = tabSwitcherController.map { $0.canDismissOnEmpty || !$0.tabsModel.isEmpty } ?? true
         state.tabCount = tabManager.currentTabsModel.count
@@ -102,6 +105,28 @@ extension MainViewController {
         dismissMenuPresentation { [weak self] in
             guard !hide else { return }
             self?.segueToDownloads()
+        }
+    }
+
+    @objc func menuToggleDuckAIButton() {
+        guard menuCommandAvailability.isEnabled(.toggleDuckAIButton) else { return }
+        setDuckAIChromeButtonVisible(!isDuckAIChromeButtonVisible)
+    }
+
+    private var duckAIButtonFollowsTabBarShortcutSetting: Bool {
+        featureFlagger.isFeatureOn(.aiChatChromeMenuButtonIPad)
+    }
+
+    private var isDuckAIChromeButtonVisible: Bool {
+        guard aiChatSettings.isAIChatTabBarUserSettingsEnabled else { return false }
+        return duckAIButtonFollowsTabBarShortcutSetting || aiChatSettings.isAIChatTabBarDuckAIButtonVisible
+    }
+
+    private func setDuckAIChromeButtonVisible(_ isVisible: Bool) {
+        if duckAIButtonFollowsTabBarShortcutSetting || !aiChatSettings.isAIChatTabBarUserSettingsEnabled {
+            aiChatSettings.enableAIChatTabBarUserSettings(enable: isVisible)
+        } else {
+            aiChatSettings.setAIChatTabBarDuckAIButtonVisible(isVisible)
         }
     }
 

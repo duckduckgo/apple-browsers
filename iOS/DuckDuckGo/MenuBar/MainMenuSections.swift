@@ -125,6 +125,7 @@ struct ViewMenuSection: MainMenuSection {
             group("view.panels", [item(.showTabs, UserText.menuShowTabs, "\\", [.shift, .command]),
                                   item(.showPasswords, UserText.menuShowPasswords, "a", [.shift, .command]),
                                   item(.showDownloads, UserText.menuShowDownloads, "j", [.shift, .command])]),
+            group("view.duckai", [item(.toggleDuckAIButton, UserText.menuHideDuckAIButton, "y", [.shift, .command])]),
             group("view.zoom", [item(.zoomIn, UserText.keyCommandZoomIn, "+", .command),
                                 item(.zoomOut, UserText.keyCommandZoomOut, "-", .command),
                                 item(.actualSize, UserText.menuActualSize, "0", .command)])

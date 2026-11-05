@@ -3218,6 +3218,9 @@ https://duckduckgo.com/mac";
 "menuHideDownloads" = "Hide Downloads";
 
 /* iPad menu bar command */
+"menuHideDuckAIButton" = "Hide Duck.ai Button";
+
+/* iPad menu bar command */
 "menuHidePasswords" = "Hide Passwords";
 
 /* iPad menu bar command */
@@ -3276,6 +3279,9 @@ https://duckduckgo.com/mac";
 
 /* iPad menu bar command */
 "menuShowDownloads" = "Show Downloads";
+
+/* iPad menu bar command */
+"menuShowDuckAIButton" = "Show Duck.ai Button";
 
 /* iPad menu bar command */
 "menuShowPasswords" = "Show Passwords";

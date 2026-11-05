@@ -303,6 +303,79 @@ struct ClientToolsWireTypesTests {
         }
     }
 
+    // MARK: - Bridge payloads
+
+    @Test(.timeLimit(.minutes(1)))
+    func rawParamsParseIntoTheRequest() throws {
+        let params: [String: Any] = ["callId": "call-1", "capability": ["name": "listOpenTabs", "version": 1], "input": ["limit": 5]]
+
+        let request = try #require(ExecuteClientToolRequest.parse(rawParams: params))
+
+        #expect(request.callId == "call-1")
+        #expect(request.capability == .listOpenTabs)
+        #expect(request.input == ["limit": 5])
+    }
+
+    /// An invalid request still settles the call: the reply echoes whatever `callId` is readable.
+    @Test(.timeLimit(.minutes(1)), arguments: [
+        (#"{"callId":"call-1","capability":{"name":"listOpenTabs","version":1},"input":{},"extra":true}"#, "call-1"),
+        (#"{"callId":"call-1","input":{}}"#, "call-1"),
+        (#"{"callId":"bad id!","capability":{"name":"listOpenTabs","version":1},"input":{}}"#, "bad id!"),
+        (#"{"callId":7,"capability":{"name":"listOpenTabs","version":1},"input":{}}"#, "")
+    ])
+    func invalidRawParamsAreRejectedEchoingReadableCallID(json: String, expectedCallID: String) throws {
+        let params = try JSONSerialization.jsonObject(with: Data(json.utf8))
+
+        #expect(ExecuteClientToolRequest.parse(rawParams: params) == nil)
+        #expect(ExecuteClientToolResponse.invalidRequest(rawParams: params) == .failure(callId: expectedCallID, error: .invalidArguments))
+    }
+
+    @Test(.timeLimit(.minutes(1)))
+    func rawParamsOverInputByteLimitAreRejected() {
+        let params: [String: Any] = ["callId": "call-1", "capability": ["name": "searchHistory", "version": 1],
+                                     "input": ["query": String(repeating: "a", count: ClientToolPayloadLimits.inputBytes)]]
+
+        #expect(ExecuteClientToolRequest.parse(rawParams: params) == nil)
+        #expect(ExecuteClientToolResponse.invalidRequest(rawParams: params) == .failure(callId: "call-1", error: .invalidArguments))
+    }
+
+    /// Echoing an oversized id would push the reply itself over the result limit.
+    @Test(.timeLimit(.minutes(1)))
+    func invalidRequestDropsAnOversizedCallID() {
+        let params: [String: Any] = ["callId": String(repeating: "a", count: 129)]
+
+        #expect(ExecuteClientToolResponse.invalidRequest(rawParams: params) == .failure(callId: "", error: .invalidArguments))
+    }
+
+    @Test(.timeLimit(.minutes(1)))
+    func nonObjectRawParamsAreRejectedWithoutCallID() {
+        #expect(ExecuteClientToolRequest.parse(rawParams: "call-1") == nil)
+        #expect(ExecuteClientToolResponse.invalidRequest(rawParams: "call-1") == .failure(callId: "", error: .invalidArguments))
+    }
+
+    @Test(.timeLimit(.minutes(1)))
+    func resultOverByteLimitBecomesExecutionFailed() {
+        let oversized = ExecuteClientToolResponse.success(callId: "call-1", value: .string(String(repeating: "a", count: ClientToolPayloadLimits.resultBytes)))
+        let small = ExecuteClientToolResponse.success(callId: "call-1", value: ["tabs": []])
+        let failure = ExecuteClientToolResponse.failure(callId: "call-1", error: .denied)
+
+        #expect(oversized.limitedToResultBytes() == .failure(callId: "call-1", error: .executionFailed))
+        #expect(small.limitedToResultBytes() == small)
+        #expect(failure.limitedToResultBytes() == failure)
+    }
+
+    @Test(.timeLimit(.minutes(1)))
+    func configurationRoundTripsAndRejectsUnknownProtocolVersion() throws {
+        let configuration = try ClientToolsConfiguration(capabilities: [.listOpenTabs, .readTabContent])
+
+        let decoded = try JSONDecoder().decode(ClientToolsConfiguration.self, from: JSONEncoder().encode(configuration))
+
+        #expect(decoded == configuration)
+        #expect(throws: (any Error).self) {
+            try decode(ClientToolsConfiguration.self, from: ["protocolVersion": 2, "capabilities": []])
+        }
+    }
+
     private func decode<T: Decodable>(_ type: T.Type, from value: JSONValue) throws -> T {
         try JSONDecoder().decode(type, from: JSONEncoder().encode(value))
     }

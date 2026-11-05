@@ -44,7 +44,7 @@ final class ClientToolTestHarness {
     }
 
     func request(callID: String = "call", name: String = "readTabContent", version: Int = 1,
-                 input: JSONValue = .null) throws -> ExecuteClientToolRequest {
+                 input: JSONValue = [:]) throws -> ExecuteClientToolRequest {
         let data = try JSONEncoder().encode(JSONValue.object([
             "callId": .string(callID), "capability": .object(["name": .string(name), "version": .int(version)]), "input": input
         ]))
@@ -92,8 +92,9 @@ final class ClientToolTestTool: BrowserTool {
     var description: String { name }
     var permissionMode: BrowserToolPermissionMode = .ask
     var permissionReason = "Read this page?"
-    var inputSchema: JSONValue { [:] }
+    var inputSchema: JSONValue { ["type": "object", "properties": ["key": ["type": "array"]]] }
     var result: BrowserToolResult = .success(["content": "page"])
+    var clientResult: ((JSONValue) -> BrowserToolResult)?
     var calls: [(JSONValue?, BrowserToolCallContext)] = []
     var onExecute: (() async -> Void)?
     init(name: String) { self.name = name }
@@ -101,6 +102,9 @@ final class ClientToolTestTool: BrowserTool {
         calls.append((arguments, context))
         await onExecute?()
         return result
+    }
+    func clientToolResult(from value: JSONValue) -> BrowserToolResult {
+        clientResult?(value) ?? .success(value)
     }
 }
 

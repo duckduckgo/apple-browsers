@@ -99,7 +99,9 @@ final class SearchHistoryBrowserTool: BrowserTool {
         var query: String?
         switch arguments?["query"] {
         case .none, .some(.null): break
-        case .some(.string(let value)): query = value.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? nil : value
+        case .some(.string(let value)):
+            guard BrowserToolOutputLimits.fits(value, within: BrowserToolOutputLimits.query) else { return .failure(.invalidArguments) }
+            query = value.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? nil : value
         default: return .failure(.invalidArguments)
         }
 
@@ -209,4 +211,14 @@ final class SearchHistoryBrowserTool: BrowserTool {
         formatter.formatOptions = [.withInternetDateTime]
         return formatter
     }()
+
+    func clientToolResult(from value: JSONValue) -> BrowserToolResult {
+        guard let results = value["results"]?.arrayValue else { return .failure(.unavailable) }
+        return .success(["results": .array(results.map { result in
+            var fields = result.objectValue ?? [:]
+            fields["title"] = BrowserToolOutputLimits.clip(fields["title"], to: BrowserToolOutputLimits.title)
+            fields["url"] = BrowserToolOutputLimits.clip(fields["url"], to: BrowserToolOutputLimits.url)
+            return .object(fields)
+        })])
+    }
 }

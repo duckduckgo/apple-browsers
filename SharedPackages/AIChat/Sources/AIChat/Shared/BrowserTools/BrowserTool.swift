@@ -50,12 +50,17 @@ public protocol BrowserTool: AnyObject {
     /// Runs the tool. Callers go through the invoker so gating runs first, but a tool still
     /// re-checks the Fire boundary so a direct call cannot bypass it.
     func execute(arguments: JSONValue?, context: BrowserToolCallContext) async -> BrowserToolResult
+
+    /// Shapes a successful `execute` value into this capability's client-tools result: only the
+    /// contract's fields, within its limits. The legacy MCP path sends `execute`'s value unchanged.
+    func clientToolResult(from value: JSONValue) -> BrowserToolResult
 }
 
 public extension BrowserTool {
     var outputSchema: JSONValue? { nil }
     var permissionReason: String { "Duck.ai wants to use a browser tool." }
     var annotations: MCPToolAnnotations? { nil }
+    func clientToolResult(from value: JSONValue) -> BrowserToolResult { .success(value) }
 
     /// This tool's `tools/list` descriptor. DEBUG builds also advertise the permission mode and
     /// current decision; release builds keep the wire MCP-clean.

@@ -183,7 +183,13 @@ final class AIChatUserScript: NSObject, Subfeature {
         case .openAIChatSettings:
             return handler.openAIChatSettings
         case .getAIChatNativeConfigValues:
-            return handler.getAIChatNativeConfigValues
+            return { @MainActor [weak self] params, message in
+                guard let self else { return nil }
+                let response = await self.handler.getAIChatNativeConfigValues(params: params, message: message)
+                guard var configValues = response as? AIChatNativeConfigValues else { return response }
+                configValues.clientTools = self.clientToolsConfiguration(for: message)
+                return configValues
+            }
         case .attachmentPrivacyShouldDisplay:
             return handler.attachmentPrivacyShouldDisplay
         case .closeAIChat:
@@ -231,6 +237,20 @@ final class AIChatUserScript: NSObject, Subfeature {
             }
         case .elicitationResponse:
             return handler.mcpElicitationResponse
+
+        // Client tools. The script is the permission source, so a prompt goes back to the page
+        // that made the call and only that page can answer it.
+        case .executeClientTool:
+            return { @MainActor [weak self] params, message in
+                guard let self else { return nil }
+                let pusher = self.isClientToolsPage(message.messageWebView?.url) ? self : nil
+                return await self.handler.executeClientTool(params: params, message: message, permissionPusher: pusher)
+            }
+        case .respondToClientToolPermission:
+            return { @MainActor [weak self] params, message in
+                guard let self else { return nil }
+                return await self.handler.respondToClientToolPermission(params: params, message: message, source: self)
+            }
 
         case .reportMetric:
             return handler.reportMetric
@@ -283,6 +303,43 @@ extension AIChatUserScript: AIChatElicitationPushing {
         guard let webView, let broker else { return false }
         broker.push(method: AIChatUserScriptMessages.elicitationCreate.rawValue, params: params, for: self, into: webView)
         return true
+    }
+}
+
+// MARK: - Client tools
+
+extension AIChatUserScript: ClientToolPermissionPushing {
+
+    @MainActor
+    func pushClientToolPermissionRequested(_ prompt: ClientToolPermissionRequested) -> Bool {
+        guard let webView, let broker,
+              isClientToolsPage(webView.url),
+              ClientToolPayloadLimits.fits(prompt, within: ClientToolPayloadLimits.permissionBytes) else { return false }
+        broker.push(method: AIChatUserScriptMessages.clientToolPermissionRequested.rawValue, params: prompt, for: self, into: webView)
+        return true
+    }
+
+    /// The chat document is gone (navigated, reloaded or closed), so its pending calls finish as
+    /// `cancelled`. Hiding the sidebar keeps the document, so it does not come here.
+    @MainActor
+    func cancelClientToolPermissionRequests() {
+        browserTools?.clientToolPermissions.cancelRequests(from: self)
+    }
+
+    /// Client tools are offered only to a Duck.ai chat outside Fire.
+    @MainActor
+    fileprivate func clientToolsConfiguration(for message: UserScriptMessage) -> ClientToolsConfiguration? {
+        guard isClientToolsPage(message.messageWebView?.url),
+              handler.isFireWindowProvider?() != true else { return nil }
+        return browserTools?.clientToolsConfiguration
+    }
+
+    @MainActor
+    fileprivate func isClientToolsPage(_ url: URL?) -> Bool {
+        guard let url else { return false }
+        if url.isDuckAIURL { return true }
+        guard let host = url.host else { return false }
+        return messageDestinationPolicy.isAllowed(host)
     }
 }
 

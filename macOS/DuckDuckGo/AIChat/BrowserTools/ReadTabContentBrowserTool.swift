@@ -111,4 +111,26 @@ final class ReadTabContentBrowserTool: BrowserTool {
               let string = String(data: data, encoding: .utf8) else { return nil }
         return try? JSONValue(jsonString: string)
     }
+
+    /// Only the contract's fields. Content is cut here, at the browser-tools boundary, so page
+    /// attachments keep their own longer limit. Reading never attaches the page.
+    func clientToolResult(from value: JSONValue) -> BrowserToolResult {
+        guard let tabID = value["tabId"]?.stringValue, let content = value["content"]?.stringValue else { return .failure(.unavailable) }
+        // Documents (PDF) carry bytes, which the contract has no field for.
+        if let mimeType = value["mimeType"]?.stringValue, mimeType != AIChatPageContextData.htmlMIMEType {
+            return .failure(.unavailable)
+        }
+        let clippedContent = BrowserToolOutputLimits.clip(content, to: BrowserToolOutputLimits.content)
+        let fullContentLength = value["fullContentLength"]?.intValue ?? 0
+        return .success([
+            "title": .string(BrowserToolOutputLimits.clip(value["title"]?.stringValue ?? "", to: BrowserToolOutputLimits.title)),
+            "url": .string(BrowserToolOutputLimits.clip(value["url"]?.stringValue ?? "", to: BrowserToolOutputLimits.url)),
+            "content": .string(clippedContent),
+            "truncated": .bool(value["truncated"]?.boolValue == true || clippedContent != content),
+            "fullContentLength": .int(max(fullContentLength, content.unicodeScalars.count)),
+            "tabId": .string(tabID),
+            "attachable": .bool(value["attachable"]?.boolValue ?? true),
+            "attached": .bool(false)
+        ])
+    }
 }

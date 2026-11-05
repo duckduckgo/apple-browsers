@@ -84,4 +84,9 @@ final class SwitchToTabBrowserTool: BrowserTool {
             "url": .string(tab.content.userEditableUrl?.absoluteString ?? "")
         ])
     }
+
+    func clientToolResult(from value: JSONValue) -> BrowserToolResult {
+        guard let tabID = value["tabId"] else { return .failure(.unavailable) }
+        return .success(["tabId": tabID])
+    }
 }

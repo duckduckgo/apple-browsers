@@ -106,7 +106,8 @@ final class FindInPageBrowserTool: BrowserTool {
 
         guard case .some(.object) = arguments,
               let query = arguments?["query"]?.stringValue,
-              !query.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
+              !query.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
+              BrowserToolOutputLimits.fits(query, within: BrowserToolOutputLimits.query) else {
             return .failure(.invalidArguments)
         }
 
@@ -183,5 +184,17 @@ final class FindInPageBrowserTool: BrowserTool {
         return content[start..<end]
             .split(whereSeparator: \.isWhitespace)
             .joined(separator: " ")
+    }
+
+    func clientToolResult(from value: JSONValue) -> BrowserToolResult {
+        guard var fields = value.objectValue, let matches = fields["matches"]?.arrayValue else { return .failure(.unavailable) }
+        fields["title"] = BrowserToolOutputLimits.clip(fields["title"], to: BrowserToolOutputLimits.title)
+        fields["url"] = BrowserToolOutputLimits.clip(fields["url"], to: BrowserToolOutputLimits.url)
+        fields["matches"] = .array(matches.map { match in
+            var matchFields = match.objectValue ?? [:]
+            matchFields["snippet"] = BrowserToolOutputLimits.clip(matchFields["snippet"], to: BrowserToolOutputLimits.snippet)
+            return .object(matchFields)
+        })
+        return .success(.object(fields))
     }
 }

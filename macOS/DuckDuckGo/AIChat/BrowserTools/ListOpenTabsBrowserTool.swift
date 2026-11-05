@@ -106,4 +106,14 @@ final class ListOpenTabsBrowserTool: BrowserTool {
 
         return .success(["tabs": .array(Array(pages.prefix(limit)))])
     }
+
+    func clientToolResult(from value: JSONValue) -> BrowserToolResult {
+        guard let tabs = value["tabs"]?.arrayValue else { return .failure(.unavailable) }
+        return .success(["tabs": .array(tabs.map { tab in
+            var fields = tab.objectValue ?? [:]
+            fields["title"] = BrowserToolOutputLimits.clip(fields["title"], to: BrowserToolOutputLimits.title)
+            fields["url"] = BrowserToolOutputLimits.clip(fields["url"], to: BrowserToolOutputLimits.url)
+            return .object(fields)
+        })])
+    }
 }

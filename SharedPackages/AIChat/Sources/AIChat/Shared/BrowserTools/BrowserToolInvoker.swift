@@ -116,6 +116,10 @@ public extension BrowserToolInvoker {
               let tool = catalog.tool(for: request.capability) else {
             return .failure(callId: request.callId, error: .unavailable)
         }
+        // Malformed inputs are rejected before asking. Each tool still validates its values after permission.
+        guard Self.isAcceptedInput(request.input, for: tool) else {
+            return .failure(callId: request.callId, error: .invalidArguments)
+        }
         let authorization = await clientToolPermissions.authorize(callID: request.callId, tool: tool, source: permissionPusher)
         switch authorization {
         case .refused(.cancelled):
@@ -132,12 +136,24 @@ public extension BrowserToolInvoker {
         if case .refused(let error) = authorization {
             return .failure(callId: request.callId, error: error)
         }
+        let result: BrowserToolResult
         switch await currentTool.execute(arguments: request.input, context: context) {
+        case .success(let value): result = currentTool.clientToolResult(from: value)
+        case .failure(let error): result = .failure(error)
+        }
+        switch result {
         case .success(let value):
             return .success(callId: request.callId, value: value)
         case .failure(let error):
             return .failure(callId: request.callId, error: Self.clientToolError(error))
         }
+    }
+
+    /// Every contract input is an object without additional properties; each tool validates its own values.
+    private static func isAcceptedInput(_ input: JSONValue, for tool: any BrowserTool) -> Bool {
+        guard let fields = input.objectValue else { return false }
+        let declared = tool.inputSchema["properties"]?.objectValue ?? [:]
+        return fields.keys.allSatisfy { declared[$0] != nil }
     }
 
     private static func clientToolError(_ error: BrowserToolFailure) -> ClientToolError {

@@ -159,6 +159,17 @@ public enum AIChatUserScriptMessages: String, CaseIterable {
     /// Pushed (native→FE) when the chat's owner tab navigates, so the FE can refresh its view of the page.
     case aiChatTabChanged
 
+    // MARK: - Client tools
+
+    /// FE→native: runs one advertised `clientTools` capability. The reply carries the tool result.
+    case executeClientTool
+
+    /// Pushed (native→FE) when a pending `executeClientTool` needs the user's permission.
+    case clientToolPermissionRequested
+
+    /// FE→native: the user's answer to `clientToolPermissionRequested`. Always acknowledged with `{}`.
+    case respondToClientToolPermission
+
     // MARK: - Bonus offer
 
     /// Requested (FE→native) when Duck.ai loads. Native replies with the stored bonus record (if any stored) and the install facts.

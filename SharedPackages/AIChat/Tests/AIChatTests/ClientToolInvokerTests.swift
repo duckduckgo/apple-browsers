@@ -35,7 +35,7 @@ struct ClientToolInvokerTests {
                                          configuration: configuration, permissions: permissions,
                                          elicitations: AIChatElicitationCoordinator(), clientToolPermissions: coordinator)
         let requestData = try JSONEncoder().encode(JSONValue.object([
-            "callId": "injected-call", "capability": ["name": "readTabContent", "version": 1], "input": .null
+            "callId": "injected-call", "capability": ["name": "readTabContent", "version": 1], "input": [:]
         ]))
         let request = try JSONDecoder().decode(ExecuteClientToolRequest.self, from: requestData)
         let context = BrowserToolCallContext(ownerTabID: "owner", isBurner: false, supportsElicitationForm: false)
@@ -176,7 +176,7 @@ struct ClientToolInvokerTests {
         #expect(harness.permissions.writes == 0)
     }
 
-    @Test(.timeLimit(.minutes(1)), arguments: [JSONValue.null, .object(["key": .array([.int(7), .bool(true), .null])])])
+    @Test(.timeLimit(.minutes(1)), arguments: [JSONValue.object([:]), .object(["key": .array([.int(7), .bool(true), .null])])])
     func preservesInputContextResultAndCallID(input: JSONValue) async throws {
         let harness = ClientToolTestHarness()
         harness.tool.permissionMode = .auto
@@ -242,6 +242,41 @@ struct ClientToolInvokerTests {
         #expect(harness.tool.calls.count == 2)
         releaseFirst?.resume()
         #expect(await first.value == .success(callId: "first", value: ["content": "page"]))
+    }
+}
+
+@available(iOS 16, macOS 13, *)
+extension ClientToolInvokerTests {
+
+    /// Client tools send the tool's contract-shaped result; the legacy path keeps the raw value.
+    @Test(.timeLimit(.minutes(1)), arguments: [BrowserToolResult.success(["shaped": true]), .failure(.unavailable)])
+    func clientCallsUseTheToolsClientResult(clientResult: BrowserToolResult) async throws {
+        let harness = ClientToolTestHarness()
+        harness.tool.permissionMode = .auto
+        harness.tool.clientResult = { _ in clientResult }
+
+        let response = await harness.invoker.invokeClientTool(try harness.request(), context: harness.context, permissionPusher: nil)
+        let legacy = await harness.invoker.invoke(toolNamed: harness.tool.name, arguments: nil, context: harness.context, elicitationPusher: nil)
+
+        switch clientResult {
+        case .success(let value): #expect(response == .success(callId: "call", value: value))
+        case .failure: #expect(response == .failure(callId: "call", error: .unavailable))
+        }
+        #expect(legacy == .success(["content": "page"]))
+    }
+
+    /// The contract's inputs are objects without additional properties; a call that breaks that is
+    /// refused before the user is asked.
+    @Test(.timeLimit(.minutes(1)), arguments: [JSONValue.null, .string("x"), .array([]), .object(["unknown": .bool(true)])])
+    func invalidInputIsRefusedBeforeAsking(input: JSONValue) async throws {
+        let harness = ClientToolTestHarness()
+        let request = try harness.request(input: input)
+
+        let response = await harness.invoker.invokeClientTool(request, context: harness.context, permissionPusher: harness.source)
+
+        #expect(response == .failure(callId: "call", error: .invalidArguments))
+        #expect(harness.source.prompts.isEmpty)
+        #expect(harness.tool.calls.isEmpty)
     }
 }
 

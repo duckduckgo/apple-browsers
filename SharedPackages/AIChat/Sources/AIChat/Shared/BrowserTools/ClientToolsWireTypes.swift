@@ -58,7 +58,7 @@ public struct ClientToolCapability: Codable, Equatable, Sendable {
     }
 }
 
-public struct ClientToolsConfiguration: Encodable, Equatable, Sendable {
+public struct ClientToolsConfiguration: Codable, Equatable, Sendable {
     public let protocolVersion = 1
     public let capabilities: [ClientToolCapability]
 
@@ -67,6 +67,32 @@ public struct ClientToolsConfiguration: Encodable, Equatable, Sendable {
             throw ClientToolWireValidation.InvalidField(name: "capabilities")
         }
         self.capabilities = capabilities
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case protocolVersion, capabilities
+    }
+
+    // Decodable only because `AIChatNativeConfigValues` is Codable; native never receives this.
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        guard try container.decode(Int.self, forKey: .protocolVersion) == 1 else {
+            throw ClientToolWireValidation.InvalidField(name: "protocolVersion")
+        }
+        try self.init(capabilities: container.decode([ClientToolCapability].self, forKey: .capabilities))
+    }
+}
+
+/// Byte limits apply to the UTF-8 encoded JSON of the whole payload, separately from field limits.
+public enum ClientToolPayloadLimits {
+    public static let configBytes = 4096
+    public static let inputBytes = 262_144
+    public static let resultBytes = 524_288
+    public static let permissionBytes = 8192
+
+    public static func fits(_ value: some Encodable, within limit: Int) -> Bool {
+        guard let data = try? JSONEncoder().encode(value) else { return false }
+        return data.count <= limit
     }
 }
 
@@ -86,6 +112,14 @@ public struct ExecuteClientToolRequest: Decodable, Equatable, Sendable {
         try ClientToolWireValidation.validateIdentifier(callId, maximumLength: ClientToolWireValidation.maximumIdentifierLength, field: "callId")
         capability = try container.decode(ClientToolCapability.self, forKey: .capability)
         input = try container.decode(JSONValue.self, forKey: .input)
+    }
+
+    /// Reads a bridge payload; nil when it is oversized or invalid.
+    public static func parse(rawParams params: Any) -> ExecuteClientToolRequest? {
+        guard JSONSerialization.isValidJSONObject(params),
+              let data = try? JSONSerialization.data(withJSONObject: params),
+              data.count <= ClientToolPayloadLimits.inputBytes else { return nil }
+        return try? JSONDecoder().decode(ExecuteClientToolRequest.self, from: data)
     }
 }
 
@@ -115,6 +149,22 @@ public enum ExecuteClientToolResponse: Encodable, Equatable, Sendable {
             var errorContainer = container.nestedContainer(keyedBy: ErrorCodingKeys.self, forKey: .error)
             try errorContainer.encode(error, forKey: .code)
         }
+    }
+
+    /// The reply to a payload `ExecuteClientToolRequest.parse` rejected. It echoes whatever `callId`
+    /// is readable, even an invalid one, so Duck.ai can still settle the call.
+    public static func invalidRequest(rawParams params: Any) -> ExecuteClientToolResponse {
+        let callId = (params as? [String: Any])?["callId"] as? String ?? ""
+        // An oversized id is dropped so the reply itself stays within the result limit.
+        return .failure(callId: callId.utf8.count <= ClientToolWireValidation.maximumIdentifierLength ? callId : "",
+                        error: .invalidArguments)
+    }
+
+    /// A success over the result byte limit is reported as `execution_failed` rather than sent.
+    public func limitedToResultBytes() -> ExecuteClientToolResponse {
+        guard case .success(let callId, _) = self,
+              !ClientToolPayloadLimits.fits(self, within: ClientToolPayloadLimits.resultBytes) else { return self }
+        return .failure(callId: callId, error: .executionFailed)
     }
 }
 

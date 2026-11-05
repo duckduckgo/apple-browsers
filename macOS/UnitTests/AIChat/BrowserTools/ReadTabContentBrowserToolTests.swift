@@ -50,6 +50,41 @@ final class ReadTabContentBrowserToolTests: XCTestCase {
         XCTAssertEqual(payload["fullContentLength"], 4)
     }
 
+    /// Client tools get only the contract's fields; the legacy MCP result keeps the full page context.
+    func testWhenContentExceedsTheClientToolLimitThenOnlyTheClientResultIsCut() async throws {
+        let (tool, context, _) = make()
+        let content = String(repeating: "a", count: BrowserToolOutputLimits.content + 10)
+        reader.pageContext = AIChatPageContextData(title: "t", favicon: [AIChatPageContextData.PageContextFavicon(href: "https://a.example/f.ico", rel: "icon")],
+                                                   url: "https://a.example", content: content, truncated: false,
+                                                   fullContentLength: content.count, attachable: false)
+
+        let result = await tool.execute(arguments: nil, context: context)
+        guard case .success(let legacyPayload) = result else { return XCTFail("expected success, got \(result)") }
+        let clientResult = tool.clientToolResult(from: legacyPayload)
+
+        XCTAssertEqual(legacyPayload["content"]?.stringValue, content)
+        XCTAssertNotNil(legacyPayload["favicon"])
+        guard case .success(let payload) = clientResult else { return XCTFail("expected success, got \(clientResult)") }
+        XCTAssertEqual(payload.objectValue?.keys.sorted(),
+                       ["attachable", "attached", "content", "fullContentLength", "tabId", "title", "truncated", "url"])
+        XCTAssertEqual(payload["content"]?.stringValue?.count, BrowserToolOutputLimits.content)
+        XCTAssertEqual(payload["truncated"], true)
+        XCTAssertEqual(payload["fullContentLength"], .int(content.count))
+        XCTAssertEqual(payload["attachable"], false)
+        XCTAssertEqual(payload["attached"], false)
+    }
+
+    /// The contract has no field for document bytes, so client tools refuse a PDF the legacy path still returns.
+    func testWhenThePageIsADocumentThenTheClientResultIsUnavailable() async throws {
+        let (tool, context, _) = make()
+        reader.pageContext = .document(title: "t", url: "https://a.example/doc.pdf", mimeType: AIChatPageContextData.pdfMIMEType, data: "JVBERi0=")
+
+        let result = await tool.execute(arguments: nil, context: context)
+        guard case .success(let legacyPayload) = result else { return XCTFail("expected success, got \(result)") }
+
+        XCTAssertEqual(tool.clientToolResult(from: legacyPayload), .failure(.unavailable))
+    }
+
     func testWhenTabIdNamesAnotherTabInTheWindowThenThatTabIsRead() async {
         let (tool, context, other) = make()
 

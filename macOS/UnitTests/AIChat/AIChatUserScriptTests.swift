@@ -182,6 +182,23 @@ final class AIChatUserScriptTests: XCTestCase {
         XCTAssertTrue(mockHandler.receivedElicitationPusher === userScript)
     }
 
+    /// Client tools are only for a Duck.ai chat; a call from any other page gets no permission source.
+    @MainActor func testWhenExecuteClientToolComesFromAPageOutsideDuckAIThenThereIsNoPermissionPusher() async throws {
+        let handler = try XCTUnwrap(userScript.handler(forMethodNamed: AIChatUserScriptMessages.executeClientTool.rawValue))
+        _ = try await handler([""], WKScriptMessage.mock())
+
+        XCTAssertTrue(mockHandler.didCallExecuteClientTool)
+        XCTAssertNil(mockHandler.receivedClientToolPermissionPusher)
+    }
+
+    /// Only the page that was asked can answer, so the script hands itself over as the source.
+    @MainActor func testWhenPermissionResponseIsReceivedThenTheScriptIsTheSource() async throws {
+        let handler = try XCTUnwrap(userScript.handler(forMethodNamed: AIChatUserScriptMessages.respondToClientToolPermission.rawValue))
+        _ = try await handler([""], WKScriptMessage.mock())
+
+        XCTAssertTrue(mockHandler.receivedClientToolPermissionSource === userScript)
+    }
+
     @MainActor func testWhenElicitationResponseIsReceivedThenItRoutesToTheMCPHandler() async throws {
         let handler = try XCTUnwrap(userScript.handler(forMethodNamed: AIChatUserScriptMessages.elicitationResponse.rawValue))
         _ = try await handler([""], WKScriptMessage.mock())
@@ -465,6 +482,21 @@ final class MockAIChatUserScriptHandler: AIChatUserScriptHandling {
 
     func mcpElicitationResponse(params: Any, message: UserScriptMessage) async -> Encodable? {
         didCallMCPElicitationResponse = true
+        return nil
+    }
+
+    var receivedClientToolPermissionPusher: (any ClientToolPermissionPushing)?
+    var didCallExecuteClientTool = false
+    var receivedClientToolPermissionSource: (any ClientToolPermissionPushing)?
+
+    func executeClientTool(params: Any, message: UserScriptMessage, permissionPusher: (any ClientToolPermissionPushing)?) async -> Encodable? {
+        didCallExecuteClientTool = true
+        receivedClientToolPermissionPusher = permissionPusher
+        return nil
+    }
+
+    func respondToClientToolPermission(params: Any, message: UserScriptMessage, source: any ClientToolPermissionPushing) async -> Encodable? {
+        receivedClientToolPermissionSource = source
         return nil
     }
 

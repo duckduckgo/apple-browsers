@@ -102,6 +102,43 @@ final class HighlightInPageBrowserToolTests: XCTestCase {
 
     // MARK: - Painting
 
+    func testClientResultDropsTitleAndURL() {
+        let tool = HighlightInPageBrowserTool(windowControllersManager: WindowControllersManagerMock(), highlighter: highlighter)
+
+        let result = tool.clientToolResult(from: ["tabId": "t", "title": "T", "url": "https://a.example", "highlightedCount": 1, "truncated": false])
+
+        XCTAssertEqual(result, .success(["tabId": "t", "highlightedCount": 1, "truncated": false]))
+    }
+
+    func testWhenOptionalFieldsBreakTheContractThenArgumentsAreInvalid() async {
+        let (tool, context, _) = make(urls: ["https://a.example"])
+        let invalid: [JSONValue] = [
+            ["quotes": ["x"], "matchIndexes": []],
+            ["quotes": ["x"], "matchIndexes": "0"],
+            ["quotes": ["x"], "caseSensitive": "yes"],
+            ["quotes": ["x"], "query": .string(String(repeating: "q", count: BrowserToolOutputLimits.query + 1))]
+        ]
+
+        for arguments in invalid {
+            let result = await tool.execute(arguments: arguments, context: context)
+            XCTAssertEqual(result, .failure(.invalidArguments), "\(arguments)")
+        }
+        XCTAssertTrue(highlighter.requests.isEmpty)
+    }
+
+    func testWhenQuotesExceedTheContractLimitsThenArgumentsAreInvalid() async {
+        let (tool, context, _) = make(urls: ["https://a.example"])
+        let tooMany = JSONValue.array(Array(repeating: "x", count: HighlightInPageBrowserTool.maxQuotes + 1))
+        let tooLong = JSONValue.array([.string(String(repeating: "x", count: HighlightInPageBrowserTool.maxQuoteLength + 1))])
+
+        let manyResult = await tool.execute(arguments: ["quotes": tooMany], context: context)
+        let longResult = await tool.execute(arguments: ["quotes": tooLong], context: context)
+
+        XCTAssertEqual(manyResult, .failure(.invalidArguments))
+        XCTAssertEqual(longResult, .failure(.invalidArguments))
+        XCTAssertTrue(highlighter.requests.isEmpty)
+    }
+
     /// The overlay is shared with Cmd+F; a search the user is in the middle of is not ours to take.
     func testWhenTheFindBarIsOpenThenCallIsUnavailable() async {
         let (tool, context, _) = make(urls: ["https://a.example"])

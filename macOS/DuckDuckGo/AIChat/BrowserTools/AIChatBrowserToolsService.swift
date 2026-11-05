@@ -95,6 +95,15 @@ final class AIChatBrowserToolsService {
         ]
     }
 
+    /// Advertised to Duck.ai in `getAIChatNativeConfigValues`. Nil when no tool is enabled.
+    var clientToolsConfiguration: ClientToolsConfiguration? {
+        let capabilities = catalog.enabledClientToolCapabilities
+        guard !capabilities.isEmpty,
+              let configuration = try? ClientToolsConfiguration(capabilities: capabilities),
+              ClientToolPayloadLimits.fits(configuration, within: ClientToolPayloadLimits.configBytes) else { return nil }
+        return configuration
+    }
+
     // MARK: - Pushes
 
     /// Live chats that can receive native→FE pushes. Held weakly; a chat unregisters by going away.

@@ -16,7 +16,6 @@
 //  limitations under the License.
 //
 
-import FeatureFlags_macOS
 import PrivacyConfig
 import XCTest
 @testable import DuckDuckGo_Privacy_Browser
@@ -34,35 +33,6 @@ final class MoreOptionsMenu_BookmarksTests: XCTestCase {
         // THEN
         XCTAssertEqual(result.keyEquivalent, "d")
         XCTAssertEqual(result.keyEquivalentModifierMask, [.command, .shift])
-    }
-
-    @MainActor
-    func testWhenDataImportHistoryIsOn_ThenImportBookmarksMenuItemHasEllipsis() {
-        let featureFlagger = MockFeatureFlagger()
-        featureFlagger.featuresStub = [FeatureFlag.dataImportHistory.rawValue: true]
-
-        let sut = makeBookmarksSubMenu(featureFlagger: featureFlagger)
-
-        XCTAssertNotNil(sut.item(withTitle: "Import Bookmarks…"))
-        XCTAssertNil(sut.item(withTitle: UserText.importBookmarks))
-    }
-
-    @MainActor
-    func testWhenDataImportHistoryIsOff_ThenImportBookmarksMenuItemHasNoEllipsis() {
-        let sut = makeBookmarksSubMenu(featureFlagger: MockFeatureFlagger())
-
-        XCTAssertNotNil(sut.item(withTitle: UserText.importBookmarks))
-    }
-
-    @MainActor
-    private func makeBookmarksSubMenu(featureFlagger: FeatureFlagger) -> BookmarksSubMenu {
-        BookmarksSubMenu(
-            targetting: self,
-            tabCollectionViewModel: .init(isPopup: false),
-            bookmarkManager: MockBookmarkManager(list: BookmarkList()),
-            moreOptionsMenuIconsProvider: MockMoreOpationsMenuIconProvider(),
-            featureFlagger: featureFlagger
-        )
     }
 
     @MainActor

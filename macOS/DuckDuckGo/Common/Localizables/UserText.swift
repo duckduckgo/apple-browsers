@@ -1263,7 +1263,6 @@ struct UserText {
     static let passwordManagerAlertRemoveNoteConfirmation = NSLocalizedString("passsword.manager.alert.remove-note.confirmation", value: "Are you sure you want to delete this note?", comment: "Text of the alert that asks the user to confirm they want to delete a note")
 
     static let importBookmarks = NSLocalizedString("import.browser.data.bookmarks", value: "Import Bookmarks", comment: "Opens Import Browser Data dialog")
-    static let importBookmarksMenuItem = NotLocalizedString("import.browser.data.bookmarks.menu-item", value: "Import Bookmarks…", comment: "Menu item that opens the Import Browser Data dialog for bookmarks")
     static let importPasswords = NSLocalizedString("import.browser.data.passwords", value: "Import Passwords…", comment: "Opens Import Browser Data dialog")
 
     static let importDataSummaryTitle = NSLocalizedString("import.browser.data.summary.title", value:"Import Summary", comment: "Title for screen shown after importing data (passwords / bookmarks)")

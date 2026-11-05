@@ -649,7 +649,6 @@ final class MainMenu: NSMenu {
         updateAppAboutDDGMenuItem()
         updateHomeButtonMenuItem()
         updateBookmarksBarMenuItem()
-        updateImportBookmarksMenuItem()
         updateShortcutMenuItems()
         updateInternalUserItem()
         updateRemoteConfigurationInfo()
@@ -879,10 +878,6 @@ final class MainMenu: NSMenu {
 
         self.bookmarksMenuToggleBookmarksBarMenuItem = bookmarksMenuToggleBookmarksBarMenuItem
         bookmarksMenuToggleBookmarksBarMenuItem.action = #selector(MainViewController.toggleBookmarksBarFromMenu)
-    }
-
-    private func updateImportBookmarksMenuItem() {
-        importBookmarksMenuItem.title = featureFlagger.isFeatureOn(.dataImportHistory) ? UserText.importBookmarksMenuItem : UserText.importBookmarks
     }
 
     private func updateHomeButtonMenuItem() {

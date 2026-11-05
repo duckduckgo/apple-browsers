@@ -82,9 +82,9 @@ jobs:
           GITHUB_REPOSITORY: ${{ github.repository }}
           RUN_ID: ${{ steps.run.outputs.id }}
         run: |
-          job_started="$(gh api "repos/$GITHUB_REPOSITORY/actions/runs/$RUN_ID/jobs?filter=latest&per_page=100" \
-            --jq '[.jobs[] | select(.name | startswith("Test (Non-Sandbox"))][0].started_at // ""')"
-          if [ -z "$job_started" ]; then
+          read -r job_started tests_conclusion < <(gh api "repos/$GITHUB_REPOSITORY/actions/runs/$RUN_ID/jobs?filter=latest&per_page=100" \
+            --jq '[.jobs[] | select(.name | startswith("Test (Non-Sandbox"))][0] // {} | "\(.started_at // "-") \([.steps[]? | select(.name == "Run unit tests")][0].conclusion // "-")"')
+          if [ "$job_started" = "-" ]; then
             echo "::error::Run $RUN_ID has no started Test (Non-Sandbox) job, the job that renders the snapshots."
             exit 1
           fi
@@ -94,13 +94,18 @@ jobs:
             echo "::error::Run $RUN_ID's macos-rendered-snapshots artifact has expired. Re-run its Test (Non-Sandbox) job or push again, then re-add the label once the macOS PR checks finish."
             exit 1
           fi
-          if [ "$artifact_id" = "-" ]; then
+          if [ "$artifact_id" = "-" ] || [[ "$artifact_created" < "$job_started" ]]; then
+            if [ "$tests_conclusion" != "success" ] && [ "$tests_conclusion" != "failure" ]; then
+              echo "::error::Run $RUN_ID's latest Test (Non-Sandbox) attempt didn't run the unit tests, so it rendered no snapshots. Fix the job, then re-add the label once the macOS PR checks finish."
+              exit 1
+            fi
             echo "no_mismatches=true" >> "$GITHUB_OUTPUT"
-            echo "::error::Run $RUN_ID has no macos-rendered-snapshots artifact. Every snapshot matched its reference, or the unit tests didn't run."
+          fi
+          if [ "$artifact_id" = "-" ]; then
+            echo "::error::Run $RUN_ID has no macos-rendered-snapshots artifact. Every snapshot matched its reference."
             exit 1
           fi
           if [[ "$artifact_created" < "$job_started" ]]; then
-            echo "no_mismatches=true" >> "$GITHUB_OUTPUT"
             echo "::error::Run $RUN_ID's macos-rendered-snapshots artifact comes from an earlier attempt of Test (Non-Sandbox), and its latest attempt rendered no mismatches. Every snapshot matched its reference."
             exit 1
           fi

@@ -35,8 +35,8 @@ final class UserAssistanceTests: XCTestCase {
 
     // MARK: - Config
 
-    func testWhenSubfeatureIsEnabled_thenEnabledBrokersComeFromItsSettings() {
-        let privacyConfig = PrivacyConfigurationManagingMock().privacyConfig as! PrivacyConfigurationMock
+    func testWhenSubfeatureIsEnabled_thenEnabledBrokersComeFromItsSettings() throws {
+        let privacyConfig = try makePrivacyConfig()
         privacyConfig.isSubfeatureEnabledCheck = { ($0 as? DBPSubfeature) == .userAssistance }
         privacyConfig.subfeatureSettings = { _ in #"{ "enabledBrokers": ["beenverified.com"] }"# }
 
@@ -46,15 +46,15 @@ final class UserAssistanceTests: XCTestCase {
         XCTAssertFalse(config.isEnabled(forBrokerURL: "spokeo.com"))
     }
 
-    func testWhenSubfeatureIsDisabled_thenNoBrokerIsEnabled() {
-        let privacyConfig = PrivacyConfigurationManagingMock().privacyConfig as! PrivacyConfigurationMock
+    func testWhenSubfeatureIsDisabled_thenNoBrokerIsEnabled() throws {
+        let privacyConfig = try makePrivacyConfig()
         privacyConfig.subfeatureSettings = { _ in #"{ "enabledBrokers": ["beenverified.com"] }"# }
 
         XCTAssertFalse(UserAssistanceConfig.current(privacyConfig: privacyConfig, settings: settings).isEnabled)
     }
 
-    func testWhenDebugOverrideIsSet_thenItReplacesRemoteConfig() {
-        let privacyConfig = PrivacyConfigurationManagingMock().privacyConfig as! PrivacyConfigurationMock
+    func testWhenDebugOverrideIsSet_thenItReplacesRemoteConfig() throws {
+        let privacyConfig = try makePrivacyConfig()
         privacyConfig.isSubfeatureEnabledCheck = { _ in true }
         privacyConfig.subfeatureSettings = { _ in #"{ "enabledBrokers": ["beenverified.com"] }"# }
 
@@ -294,6 +294,10 @@ final class UserAssistanceTests: XCTestCase {
     }
 
     // MARK: - Helpers
+
+    private func makePrivacyConfig() throws -> PrivacyConfigurationMock {
+        try XCTUnwrap(PrivacyConfigurationManagingMock().privacyConfig as? PrivacyConfigurationMock)
+    }
 
     private func makeDependencies(optOutEvents: [HistoryEvent.EventType],
                                   preferredRunDate: Date = Date().addingTimeInterval(-3600)) -> (MockBrokerProfileJobDependencies, MockDatabase) {

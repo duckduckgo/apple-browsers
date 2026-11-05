@@ -2409,15 +2409,19 @@ class MainViewController: UIViewController {
 
     /// The previous tab stays in the model; the launch handling records the arrival and raises the keyboard.
     private func attachNewTabPageForIdleReturnAtLaunch() {
-        if let existingHomeTab = tabManager.firstHomeTab() {
-            tabManager.select(existingHomeTab, dismissCurrent: false)
-        } else {
-            tabManager.addHomeTab()
-        }
+        selectOrAddHomeTab(reuseExisting: true)
         // Without the deferred keyboard, the held focus raises it as `newTab` would after idle.
         attachHomeScreen(isNewTab: true,
                          allowingKeyboard: !featureFlagger.isFeatureOn(.alwaysShowKeyboardOnNewTabPage),
                          openedAfterIdle: true)
+    }
+
+    private func selectOrAddHomeTab(reuseExisting: Bool) {
+        if reuseExisting, let existing = tabManager.firstHomeTab() {
+            tabManager.select(existing, dismissCurrent: false)
+        } else {
+            tabManager.addHomeTab()
+        }
     }
 
     /// Call before the view loads; a cold start after idle can land on the New Tab Page directly.
@@ -4359,11 +4363,7 @@ class MainViewController: UIViewController {
         captureForSwipeBack(tabManager.currentTabsModel.currentTab)
         currentTab?.dismiss()
 
-        if reuseExisting, let existing = tabManager.firstHomeTab() {
-            tabManager.select(existing, dismissCurrent: false)
-        } else {
-            tabManager.addHomeTab()
-        }
+        selectOrAddHomeTab(reuseExisting: reuseExisting)
         attachHomeScreen(isNewTab: true,
                          allowingKeyboard: allowingKeyboard,
                          previousTab: previousTab,

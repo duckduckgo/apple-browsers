@@ -46,7 +46,7 @@ struct AuditLogEntryDecoderTests {
                                             deviceInfoCodec: deviceInfoCodec,
                                             isScopedAccessCredentialsEnabled: { false },
                                             canReadUnifiedDeviceList: { true })
-        let decoder = AuditLogEntryDecoder(accountInfoKeys: fixture.keyManager, deviceMapper: mapper)
+        let decoder = AuditLogEntryDecoder(accountInfoKey: fixture.key, deviceMapper: mapper)
         let payload = """
         {"type":"logout","occurred_at":"2026-09-02T14:03:11.123Z","device":{"id":"logged-out","info":"\(encryptedInfo)"},"actor":{"id":"actor","name":"encrypted_Actor iPhone","type":"encrypted_mobile"}}
         """
@@ -174,47 +174,11 @@ struct AuditLogEntryDecoderTests {
     }
 
     @available(iOS 16, macOS 13, *)
-    @Test("A refresh keeps both newer and older audit-log keys available", .timeLimit(.minutes(1)), arguments: [false, true])
-    func testWhenAccountInfoKeyRefreshesThenBothKeyGenerationsRemainDecoded(newestKeyFirst: Bool) async throws {
+    @Test("Device and actor snapshots use the page key without refreshing", .timeLimit(.minutes(1)))
+    func testWhenActorInfoUsesDifferentKeyThenKeepsDeviceAndUsesActorPlaceholder() async throws {
         let firstFixture = try makeFixture()
         let secondFixture = try AuditLogTestFixture.make(accountSecretKey: Data(repeating: 0x07, count: 32))
-        firstFixture.keyManager.refreshKeyStub = secondFixture.key
-        let codec = DeviceInfoCodec()
-        let firstInfo = try codec.encrypt(DeviceInfo(name: "First key device", type: "desktop"), using: firstFixture.protectedKey)
-        let secondInfo = try codec.encrypt(DeviceInfo(name: "Second key device", type: "desktop"), using: secondFixture.protectedKey)
-        let newestPayload = try auditPayload(device: ["id": "newest", "info": secondInfo])
-        let olderPayload = try auditPayload(device: ["id": "older", "info": firstInfo])
-        let olderEntry = try encryptedAuditEntry(id: "older", payload: olderPayload, key: firstFixture.key)
-        let newestEntry = try encryptedAuditEntry(id: "newest", payload: newestPayload, key: secondFixture.key)
-        let entries = newestKeyFirst ? [newestEntry, olderEntry] : [olderEntry, newestEntry]
-        let mapper = RegisteredDeviceMapper(crypter: CryptingMock(),
-                                            accountInfoKeys: firstFixture.keyManager,
-                                            deviceInfoCodec: codec,
-                                            isScopedAccessCredentialsEnabled: { false },
-                                            canReadUnifiedDeviceList: { true })
-        let (accountManager, api, endpoint) = makeAccountManager(fixture: firstFixture, mapper: mapper)
-        api.fakeRequests[endpoint] = try makeAuditLogRequest(entries)
-
-        let page = try await accountManager.fetchAuditLog(for: account, cursor: nil)
-
-        #expect(firstFixture.keyManager.loadKeyCalls.count == 1)
-        #expect(firstFixture.keyManager.refreshKeyCalls.count == 1)
-        guard page.entries.count == 2,
-              case .decoded(let first) = page.entries[0],
-              case .decoded(let second) = page.entries[1] else {
-            Issue.record("Expected both account-info key generations to decode")
-            return
-        }
-        #expect(first.device.name == (newestKeyFirst ? "Second key device" : "First key device"))
-        #expect(second.device.name == (newestKeyFirst ? "First key device" : "Second key device"))
-    }
-
-    @available(iOS 16, macOS 13, *)
-    @Test("Device and actor snapshots use their retained account-info keys", .timeLimit(.minutes(1)))
-    func testWhenActorSnapshotRefreshesAccountInfoKeyThenDeviceSnapshotRemainsDecoded() async throws {
-        let firstFixture = try makeFixture()
-        let secondFixture = try AuditLogTestFixture.make(accountSecretKey: Data(repeating: 0x07, count: 32))
-        firstFixture.keyManager.refreshKeyStub = secondFixture.key
+        firstFixture.keyManager.refreshKeyError = AccountInfoKeyManagerError.missingProtectedKey
         let codec = DeviceInfoCodec()
         let deviceInfo = try codec.encrypt(DeviceInfo(name: "K1 device", type: "desktop"), using: firstFixture.protectedKey)
         let actorInfo = try codec.encrypt(DeviceInfo(name: "K2 actor", type: "mobile"), using: secondFixture.protectedKey)
@@ -236,23 +200,46 @@ struct AuditLogEntryDecoderTests {
         let page = try await accountManager.fetchAuditLog(for: account, cursor: nil)
 
         #expect(firstFixture.keyManager.loadKeyCalls.count == 1)
-        #expect(firstFixture.keyManager.refreshKeyCalls.count == 1)
+        #expect(firstFixture.keyManager.refreshKeyCalls.isEmpty)
         guard page.entries.count == 1,
               case .decoded(let event) = page.entries[0] else {
-            Issue.record("Expected an audit event with both snapshots decoded")
+            Issue.record("Expected the event to remain readable with a placeholder for the actor")
             return
         }
         #expect(event.device.name == "K1 device")
         #expect(event.device.type == "desktop")
-        #expect(event.actor?.name == "K2 actor")
-        #expect(event.actor?.type == "mobile")
+        #expect(event.actor?.name == "Unknown")
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("device_info_added decodes and preserves readable device-info provenance", .timeLimit(.minutes(1)))
+    func testWhenDeviceInfoIsAddedThenDecodesDeviceInfoEvent() async throws {
+        let fixture = try makeFixture()
+        let codec = DeviceInfoCodec()
+        let info = try codec.encrypt(DeviceInfo(name: "Added info", type: "desktop"), using: fixture.protectedKey)
+        let payload = Data(#"{"type":"device_info_added","occurred_at":"2026-09-02T14:03:11Z","device":{"id":"device","info":"\#(info)"}}"#.utf8)
+        let mapper = RegisteredDeviceMapper(crypter: CryptingMock(),
+                                            deviceInfoCodec: codec,
+                                            isScopedAccessCredentialsEnabled: { false },
+                                            canReadUnifiedDeviceList: { true })
+        let decoder = AuditLogEntryDecoder(accountInfoKey: fixture.key, deviceMapper: mapper)
+
+        let result = try await decoder.decode(try fixture.entry(payload: payload), for: account)
+
+        guard case .decoded(let event) = result else {
+            Issue.record("Expected a readable device_info_added event")
+            return
+        }
+        #expect(event.type == .deviceInfoAdded)
+        #expect(event.device.name == "Added info")
+        #expect(event.hasDeviceInfo)
     }
 
     @available(iOS 16, macOS 13, *)
     @Test("Unknown event types remain skippable with future schemas", .timeLimit(.minutes(1)))
     func testWhenEventTypeIsUnknownThenReturnsUnknownEvenIfSchemaHasChanged() async throws {
         let fixture = try makeFixture()
-        let decoder = AuditLogEntryDecoder(accountInfoKeys: fixture.keyManager,
+        let decoder = AuditLogEntryDecoder(accountInfoKey: fixture.key,
                                            deviceMapper: RegisteredDeviceMappingTestDouble())
 
         let result = try await decoder.decode(try fixture.entry(payload: Data(#"{"type":"future_event"}"#.utf8)), for: account)
@@ -264,10 +251,9 @@ struct AuditLogEntryDecoderTests {
     }
 
     @available(iOS 16, macOS 13, *)
-    @Test("Unsupported versions do not load the account key", .timeLimit(.minutes(1)))
-    func testWhenVersionIsUnsupportedThenDoesNotLoadKey() async throws {
-        let fixture = try makeFixture()
-        let decoder = AuditLogEntryDecoder(accountInfoKeys: fixture.keyManager,
+    @Test("Unsupported versions do not need the account key", .timeLimit(.minutes(1)))
+    func testWhenVersionIsUnsupportedThenDoesNotNeedKey() async throws {
+        let decoder = AuditLogEntryDecoder(accountInfoKey: nil,
                                            deviceMapper: RegisteredDeviceMappingTestDouble())
         let entry = AuditLogEntry(id: "audit-entry", version: "2", payload: "unused")
 
@@ -277,97 +263,33 @@ struct AuditLogEntryDecoderTests {
             Issue.record("Expected unsupported version outcome")
             return
         }
-        #expect(fixture.keyManager.loadKeyCalls.isEmpty)
     }
 
     @available(iOS 16, macOS 13, *)
-    @Test("Unavailable account keys produce an unreadable outcome", .timeLimit(.minutes(1)))
-    func testWhenKeyIsUnavailableThenReturnsUnreadableOutcome() async throws {
-        let fixture = try makeFixture()
-        fixture.keyManager.loadKeyError = AccountInfoKeyManagerError.missingProtectedKey
-        let decoder = AuditLogEntryDecoder(accountInfoKeys: fixture.keyManager,
-                                           deviceMapper: RegisteredDeviceMappingTestDouble())
-
-        let result = try await decoder.decode(try fixture.entry(payload: Data("{}".utf8)), for: account)
-
-        guard case .unreadable(id: "audit-entry", reason: .keyUnavailable) = result else {
-            Issue.record("Expected key unavailable outcome")
-            return
-        }
-    }
-
-    @available(iOS 16, macOS 13, *)
-    @Test("Key loading cancellation propagates", .timeLimit(.minutes(1)))
-    func testWhenLoadingKeyIsCancelledThenPropagatesCancellation() async throws {
-        let fixture = try makeFixture()
-        fixture.keyManager.loadKeyError = CancellationError()
-        let decoder = AuditLogEntryDecoder(accountInfoKeys: fixture.keyManager,
-                                           deviceMapper: RegisteredDeviceMappingTestDouble())
-
-        await #expect(throws: CancellationError.self) {
-            try await decoder.decode(try fixture.entry(payload: Data("{}".utf8)), for: account)
-        }
-    }
-
-    @available(iOS 16, macOS 13, *)
-    @Test("Page key refresh limit bridges to a safe error", .timeLimit(.minutes(1)))
-    func testWhenPageKeyRefreshLimitIsReachedThenBridgesToSafeNSError() {
-        let error = PageScopedAccountInfoKeys.RefreshLimitError.forcedRefreshAlreadyAttempted as NSError
-
-        #expect(error.domain == "com.duckduckgo.sync.audit-log.account-info-keys")
-        #expect(error.code == 1)
-        #expect(error.localizedDescription == "The account-info key refresh was already attempted for this audit-log page.")
-        #expect(error.userInfo[NSUnderlyingErrorKey] == nil)
-    }
-
-    @available(iOS 16, macOS 13, *)
-    @Test("A stale key refreshes before decrypting", .timeLimit(.minutes(1)))
-    func testWhenCachedKeyDoesNotMatchThenRefreshesAndDecrypts() async throws {
+    @Test("An entry referencing a different key ID remains unreadable", .timeLimit(.minutes(1)))
+    func testWhenEntryUsesDifferentKeyIDThenReturnsMismatch() async throws {
         let fixture = try makeFixture()
         let otherKey = try makeFixture()
-        fixture.keyManager.loadKeyStub = otherKey.key
-        fixture.keyManager.refreshKeyStub = fixture.key
-        let decoder = AuditLogEntryDecoder(accountInfoKeys: fixture.keyManager,
-                                           deviceMapper: RegisteredDeviceMappingTestDouble())
-        let payload = Data(#"{"type":"login","occurred_at":"2026-09-02T14:03:11Z","device":{"id":"device"}}"#.utf8)
-
-        let result = try await decoder.decode(try fixture.entry(payload: payload), for: account)
-
-        guard case .decoded(let event) = result else {
-            Issue.record("Expected refreshed key to decrypt the entry")
-            return
-        }
-        #expect(event.type == .login)
-        #expect(fixture.keyManager.refreshKeyCalls.count == 1)
-    }
-
-    @available(iOS 16, macOS 13, *)
-    @Test("A refreshed key with the wrong ID remains a mismatch", .timeLimit(.minutes(1)))
-    func testWhenRefreshedKeyStillHasWrongKidThenPreservesMismatchOutcome() async throws {
-        let fixture = try makeFixture()
-        let otherKey = try makeFixture()
-        fixture.keyManager.loadKeyStub = otherKey.key
-        fixture.keyManager.refreshKeyStub = otherKey.key
-        let decoder = AuditLogEntryDecoder(accountInfoKeys: fixture.keyManager,
+        let decoder = AuditLogEntryDecoder(accountInfoKey: otherKey.key,
                                            deviceMapper: RegisteredDeviceMappingTestDouble())
 
         let result = try await decoder.decode(try fixture.entry(payload: Data("{}".utf8)), for: account)
 
         guard case .unreadable(id: "audit-entry", reason: .keyIDMismatch) = result else {
-            Issue.record("Expected key ID mismatch after refresh")
+            Issue.record("Expected the entry key ID mismatch to remain explicit")
             return
         }
     }
 
     @available(iOS 16, macOS 13, *)
-    @Test("A JWE without a key ID does not refresh keys", .timeLimit(.minutes(1)))
-    func testWhenAuditLogJWEHasNoKeyIDThenDoesNotRefresh() async throws {
+    @Test("A JWE without a key ID has an explicit unreadable reason", .timeLimit(.minutes(1)))
+    func testWhenAuditLogJWEHasNoKeyIDThenReturnsMissingKeyID() async throws {
         let fixture = try makeFixture()
         let keyedToken = try fixture.entry(payload: Data("{}".utf8)).payload
         let components = keyedToken.split(separator: ".", omittingEmptySubsequences: false).map(String.init)
         let header = Base64URL.encode(Data(#"{"alg":"RSA-OAEP-256","enc":"A256GCM"}"#.utf8))
         let tokenWithoutKeyID = ([header] + components.dropFirst()).joined(separator: ".")
-        let decoder = AuditLogEntryDecoder(accountInfoKeys: fixture.keyManager,
+        let decoder = AuditLogEntryDecoder(accountInfoKey: fixture.key,
                                            deviceMapper: RegisteredDeviceMappingTestDouble())
 
         let result = try await decoder.decode(AuditLogEntry(id: "no-kid", version: "1", payload: tokenWithoutKeyID), for: account)
@@ -376,16 +298,13 @@ struct AuditLogEntryDecoderTests {
             Issue.record("Expected missing key ID to remain explicitly unreadable")
             return
         }
-        #expect(fixture.keyManager.loadKeyCalls.isEmpty)
-        #expect(fixture.keyManager.refreshKeyCalls.isEmpty)
     }
 
     @available(iOS 16, macOS 13, *)
-    @Test("Malformed JWE is rejected before checking key availability", .timeLimit(.minutes(1)))
-    func testWhenAuditLogJWEIsMalformedThenRejectsBeforeCheckingKeyAvailability() async throws {
+    @Test("Malformed JWE remains a decryption failure", .timeLimit(.minutes(1)))
+    func testWhenAuditLogJWEIsMalformedThenReturnsDecryptionFailure() async throws {
         let fixture = try makeFixture()
-        fixture.keyManager.loadKeyError = AccountInfoKeyManagerError.missingProtectedKey
-        let decoder = AuditLogEntryDecoder(accountInfoKeys: fixture.keyManager,
+        let decoder = AuditLogEntryDecoder(accountInfoKey: fixture.key,
                                            deviceMapper: RegisteredDeviceMappingTestDouble())
 
         let result = try await decoder.decode(AuditLogEntry(id: "malformed", version: "1", payload: "not-a-jwe"), for: account)
@@ -394,14 +313,12 @@ struct AuditLogEntryDecoderTests {
             Issue.record("Expected malformed JWE to remain a decryption failure")
             return
         }
-        #expect(fixture.keyManager.loadKeyCalls.isEmpty)
-        #expect(fixture.keyManager.refreshKeyCalls.isEmpty)
     }
 
     @available(iOS 16, macOS 13, *)
-    @Test("Malformed JWE is rejected without a key provider", .timeLimit(.minutes(1)))
-    func testWhenAuditLogJWEIsMalformedWithoutKeyProviderThenReturnsDecryptionFailure() async throws {
-        let decoder = AuditLogEntryDecoder(accountInfoKeys: nil,
+    @Test("Malformed JWE is rejected without a resolved key", .timeLimit(.minutes(1)))
+    func testWhenAuditLogJWEIsMalformedWithoutKeyThenReturnsDecryptionFailure() async throws {
+        let decoder = AuditLogEntryDecoder(accountInfoKey: nil,
                                            deviceMapper: RegisteredDeviceMappingTestDouble())
 
         let result = try await decoder.decode(AuditLogEntry(id: "malformed", version: "1", payload: "not-a-jwe"), for: account)
@@ -413,34 +330,14 @@ struct AuditLogEntryDecoderTests {
     }
 
     @available(iOS 16, macOS 13, *)
-    @Test("A matching refreshed key ID with the wrong key fails decryption", .timeLimit(.minutes(1)))
-    func testWhenRefreshedKidMatchesButPrivateKeyIsWrongThenReportsDecryptionFailure() async throws {
-        let fixture = try makeFixture()
-        let otherKey = try makeFixture()
-        fixture.keyManager.loadKeyStub = otherKey.key
-        fixture.keyManager.refreshKeyStub = AccountInfoKey(kid: fixture.key.kid,
-                                                           publicKey: otherKey.key.publicKey,
-                                                           privateKey: otherKey.key.privateKey)
-        let decoder = AuditLogEntryDecoder(accountInfoKeys: fixture.keyManager,
-                                           deviceMapper: RegisteredDeviceMappingTestDouble())
-
-        let result = try await decoder.decode(try fixture.entry(payload: Data("{}".utf8)), for: account)
-
-        guard case .unreadable(id: "audit-entry", reason: .decryptionFailed) = result else {
-            Issue.record("Expected decryption failure when refreshed key id matches but private key does not")
-            return
-        }
-    }
-
-    @available(iOS 16, macOS 13, *)
     @Test("A matching key ID with the wrong private key fails decryption", .timeLimit(.minutes(1)))
     func testWhenJWEKidMatchesButPrivateKeyIsWrongThenReportsDecryptionFailure() async throws {
         let fixture = try makeFixture()
         let otherKey = try makeFixture()
-        fixture.keyManager.loadKeyStub = AccountInfoKey(kid: fixture.key.kid,
-                                                        publicKey: fixture.key.publicKey,
-                                                        privateKey: otherKey.key.privateKey)
-        let decoder = AuditLogEntryDecoder(accountInfoKeys: fixture.keyManager,
+        let wrongKey = AccountInfoKey(kid: fixture.key.kid,
+                                      publicKey: fixture.key.publicKey,
+                                      privateKey: otherKey.key.privateKey)
+        let decoder = AuditLogEntryDecoder(accountInfoKey: wrongKey,
                                            deviceMapper: RegisteredDeviceMappingTestDouble())
 
         let result = try await decoder.decode(try fixture.entry(payload: Data("{}".utf8)), for: account)
@@ -449,7 +346,6 @@ struct AuditLogEntryDecoderTests {
             Issue.record("Expected decryption failure when the matching kid has the wrong private key")
             return
         }
-        #expect(fixture.keyManager.refreshKeyCalls.isEmpty)
     }
 
     @available(iOS 16, macOS 13, *)
@@ -460,7 +356,7 @@ struct AuditLogEntryDecoderTests {
                                             accountInfoKeys: fixture.keyManager,
                                             isScopedAccessCredentialsEnabled: { false },
                                             canReadUnifiedDeviceList: { true })
-        let decoder = AuditLogEntryDecoder(accountInfoKeys: fixture.keyManager, deviceMapper: mapper)
+        let decoder = AuditLogEntryDecoder(accountInfoKey: fixture.key, deviceMapper: mapper)
         let payload = Data(#"{"type":"login","occurred_at":"2026-09-02T14:03:11Z","device":{"id":"lost-device"}}"#.utf8)
 
         let result = try await decoder.decode(try fixture.entry(payload: payload), for: account)
@@ -479,7 +375,7 @@ struct AuditLogEntryDecoderTests {
     @Test("Malformed JWE and known payloads remain unreadable", .timeLimit(.minutes(1)))
     func testWhenJWEOrKnownPayloadIsMalformedThenReturnsUnreadableOutcome() async throws {
         let fixture = try makeFixture()
-        let decoder = AuditLogEntryDecoder(accountInfoKeys: fixture.keyManager,
+        let decoder = AuditLogEntryDecoder(accountInfoKey: fixture.key,
                                            deviceMapper: RegisteredDeviceMappingTestDouble())
 
         let malformedJWE = try await decoder.decode(AuditLogEntry(id: "bad-jwe", version: "1", payload: "not-a-jwe"), for: account)
@@ -569,7 +465,7 @@ private struct RegisteredDeviceMappingTestDouble: RegisteredDeviceMapping {
     func registeredDevicesWithRepairState(from entries: [RegisteredDeviceEntry],
                                           account: SyncAccount,
                                           isUnifiedReadEnabled: Bool,
-                                          accountInfoKeyProvider: (any AccountInfoKeyProviding)?,
+                                          accountInfoKey: AccountInfoKey?,
                                           thirdPartyPasswordRecoveryCache: ThirdPartyPasswordRecoveryCache?) async -> RegisteredDeviceMappingResult {
         let devices = entries.map { RegisteredDevice(id: $0.id, name: $0.name ?? "Unknown", type: $0.type ?? "unknown") }
         return RegisteredDeviceMappingResult(devices: devices, needsCurrentDeviceInfoRepair: false)

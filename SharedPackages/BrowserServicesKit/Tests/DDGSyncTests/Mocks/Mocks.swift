@@ -120,8 +120,12 @@ class AccountManagingMock: AccountManaging {
     var fetchAuditLogCalls: [(SyncAccount, AuditLogCursor?, Int?)] = []
     var fetchAuditLogStub = AuditLogPage(entries: [], after: "cursor", before: nil)
     var fetchAuditLogError: Error?
+    var fetchAuditLogHandler: ((SyncAccount, AuditLogCursor?, Int?) async throws -> AuditLogPage)?
     func fetchAuditLog(for account: SyncAccount, cursor: AuditLogCursor?, limit: Int?) async throws -> AuditLogPage {
         fetchAuditLogCalls.append((account, cursor, limit))
+        if let fetchAuditLogHandler {
+            return try await fetchAuditLogHandler(account, cursor, limit)
+        }
         if let fetchAuditLogError {
             throw fetchAuditLogError
         }

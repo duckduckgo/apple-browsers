@@ -17,6 +17,7 @@
 //
 
 import Foundation
+import Networking
 import XCTest
 
 @testable import DDGSync
@@ -1195,6 +1196,7 @@ final class AccountManagerTests: XCTestCase {
         let api = RemoteAPIRequestCreatingMock()
         let endpoints = Endpoints(baseURL: Self.baseURL)
         let accountManager = AccountManager(endpoints: endpoints, api: api, crypter: CryptingMock(),
+                                            accountInfoKeys: fixture.keyManager,
                                             isScopedAccessCredentialsEnabled: { true })
         api.fakeRequests[endpoints.auditLog] = try makeAuditLogRequest(entries: [
             AuditLogEntry(id: "historical-event", version: "1", payload: validJWE),
@@ -1211,7 +1213,7 @@ final class AccountManagerTests: XCTestCase {
         XCTAssertEqual(request.parameters, [:])
         XCTAssertNil(request.body)
         XCTAssertEqual(page.entries.count, 2)
-        guard case .unreadable(id: "historical-event", reason: .keyUnavailable) = page.entries[0],
+        guard case .unreadable(id: "historical-event", reason: .invalidPayload) = page.entries[0],
               case .unsupportedVersion(id: "current-event", version: "2") = page.entries[1] else {
             return XCTFail("Expected decoded entry outcomes, including unsupported versions")
         }
@@ -1294,6 +1296,12 @@ final class AccountManagerTests: XCTestCase {
         XCTAssertEqual(missingCursorError.code, 2)
         XCTAssertEqual(missingCursorError.localizedDescription, "Audit log response is missing the required after cursor.")
         XCTAssertNil(missingCursorError.userInfo[NSUnderlyingErrorKey])
+
+        let missingKeyManagerError = AuditLogError.accountInfoKeyUnavailable as NSError
+        XCTAssertEqual(missingKeyManagerError.domain, decodingError.domain)
+        XCTAssertEqual(missingKeyManagerError.code, 3)
+        XCTAssertEqual(missingKeyManagerError.localizedDescription, "The account-info key manager is unavailable for reading the audit log.")
+        XCTAssertNil(missingKeyManagerError.userInfo[NSUnderlyingErrorKey])
     }
 
     func testWhenFetchingAuditLogThenDecryptsEntryWithConfiguredDeviceMapper() async throws {
@@ -1327,7 +1335,7 @@ final class AccountManagerTests: XCTestCase {
         XCTAssertEqual(event.device.name, "Decoded Mac")
     }
 
-    func testWhenFetchingAuditLogWithoutKeyManagerThenReturnsKeyUnavailableOutcome() async throws {
+    func testWhenFetchingAuditLogWithoutKeyManagerThenFailsPage() async throws {
         let fixture = try AuditLogTestFixture.make(accountSecretKey: Data(repeating: 0x01, count: 32))
         let endpoints = Endpoints(baseURL: Self.baseURL)
         let api = RemoteAPIRequestCreatingMock()
@@ -1338,81 +1346,12 @@ final class AccountManagerTests: XCTestCase {
                                             crypter: CryptingMock(),
                                             isScopedAccessCredentialsEnabled: { false })
 
-        let page = try await accountManager.fetchAuditLog(for: makeAccount(primaryKey: Data()), cursor: nil)
-
-        guard case .unreadable(id: "audit-entry", reason: .keyUnavailable) = try XCTUnwrap(page.entries.first) else {
-            return XCTFail("Expected missing key manager to be reported as unreadable")
+        await assertThrowsError(AuditLogError.accountInfoKeyUnavailable) {
+            _ = try await accountManager.fetchAuditLog(for: makeAccount(primaryKey: Data()), cursor: nil)
         }
     }
 
-    func testWhenAuditLogPageHasRepeatedUnknownKeyIDsThenRefreshesOnlyOnce() async throws {
-        let initialKey = try AuditLogTestFixture.make(accountSecretKey: Data(repeating: 0x01, count: 32))
-        let otherKey = try AuditLogTestFixture.make(accountSecretKey: Data(repeating: 0x04, count: 32))
-        let payload = Data(#"{"type":"login","occurred_at":"2026-09-02T14:03:11Z","device":{"id":"device"}}"#.utf8)
-        let codec = JWECompactCodec()
-        let entries = try (0..<3).map { index in
-            let encrypted = try codec.encryptRSAOAEP256(payload: payload,
-                                                         recipientPublicKey: otherKey.key.publicKey,
-                                                         kid: otherKey.key.kid)
-            return AuditLogEntry(id: "entry-\(index)", version: "1", payload: encrypted)
-        }
-        initialKey.keyManager.refreshKeyError = AccountInfoKeyManagerError.missingProtectedKey
-        let endpoints = Endpoints(baseURL: Self.baseURL)
-        let api = RemoteAPIRequestCreatingMock()
-        api.fakeRequests[endpoints.auditLog] = try makeAuditLogRequest(entries: entries)
-        let accountManager = AccountManager(endpoints: endpoints,
-                                            api: api,
-                                            crypter: CryptingMock(),
-                                            accountInfoKeys: initialKey.keyManager,
-                                            isScopedAccessCredentialsEnabled: { false })
-
-        let page = try await accountManager.fetchAuditLog(for: makeAccount(primaryKey: Data()), cursor: nil)
-
-        XCTAssertEqual(page.entries.count, 3)
-        XCTAssertEqual(initialKey.keyManager.loadKeyCalls.count, 1)
-        XCTAssertEqual(initialKey.keyManager.refreshKeyCalls.count, 1)
-        for entry in page.entries {
-            guard case .unreadable(_, reason: .keyIDMismatch) = entry else {
-                return XCTFail("Expected each unknown key ID to remain unreadable")
-            }
-        }
-    }
-
-    func testWhenForcedAuditLogRefreshStillHasDifferentKeyThenDoesNotRepeat() async throws {
-        let initialKey = try AuditLogTestFixture.make(accountSecretKey: Data(repeating: 0x01, count: 32))
-        let refreshedKey = try AuditLogTestFixture.make(accountSecretKey: Data(repeating: 0x04, count: 32))
-        let payloadKey = try AuditLogTestFixture.make(accountSecretKey: Data(repeating: 0x07, count: 32))
-        let payload = Data("{}".utf8)
-        let codec = JWECompactCodec()
-        let entries = try (0..<2).map { index in
-            AuditLogEntry(id: "entry-\(index)",
-                          version: "1",
-                          payload: try codec.encryptRSAOAEP256(payload: payload,
-                                                               recipientPublicKey: payloadKey.key.publicKey,
-                                                               kid: payloadKey.key.kid))
-        }
-        initialKey.keyManager.refreshKeyStub = refreshedKey.key
-        let endpoints = Endpoints(baseURL: Self.baseURL)
-        let api = RemoteAPIRequestCreatingMock()
-        api.fakeRequests[endpoints.auditLog] = try makeAuditLogRequest(entries: entries)
-        let accountManager = AccountManager(endpoints: endpoints,
-                                            api: api,
-                                            crypter: CryptingMock(),
-                                            accountInfoKeys: initialKey.keyManager,
-                                            isScopedAccessCredentialsEnabled: { false })
-
-        let page = try await accountManager.fetchAuditLog(for: makeAccount(primaryKey: Data()), cursor: nil)
-
-        XCTAssertEqual(initialKey.keyManager.loadKeyCalls.count, 1)
-        XCTAssertEqual(initialKey.keyManager.refreshKeyCalls.count, 1)
-        for entry in page.entries {
-            guard case .unreadable(_, reason: .keyIDMismatch) = entry else {
-                return XCTFail("Expected refreshed key mismatch to remain unreadable")
-            }
-        }
-    }
-
-    func testWhenInitialAuditLogKeyLoadFailsThenAttemptsOnlyOncePerPage() async throws {
+    func testWhenAccountKeyIsMissingThenFailsPageAfterOneLoadAttempt() async throws {
         let fixture = try AuditLogTestFixture.make(accountSecretKey: Data(repeating: 0x01, count: 32))
         fixture.keyManager.loadKeyError = AccountInfoKeyManagerError.missingProtectedKey
         let entries = try (0..<3).map { index in
@@ -1427,206 +1366,129 @@ final class AccountManagerTests: XCTestCase {
                                             accountInfoKeys: fixture.keyManager,
                                             isScopedAccessCredentialsEnabled: { false })
 
-        let page = try await accountManager.fetchAuditLog(for: makeAccount(primaryKey: Data()), cursor: nil)
+        await assertThrowsError(AccountInfoKeyManagerError.missingProtectedKey) {
+            _ = try await accountManager.fetchAuditLog(for: makeAccount(primaryKey: Data()), cursor: nil)
+        }
 
-        XCTAssertEqual(page.entries.count, 3)
         XCTAssertEqual(fixture.keyManager.loadKeyCalls.count, 1)
         XCTAssertTrue(fixture.keyManager.refreshKeyCalls.isEmpty)
-        for entry in page.entries {
-            guard case .unreadable(_, reason: .keyUnavailable) = entry else {
-                return XCTFail("Expected unavailable-key outcomes")
+    }
+
+    func testWhenAuditLogKeyRequestFailsThenThrowsInsteadOfReturningUnreadableHistory() async throws {
+        let fixture = try AuditLogTestFixture.make(accountSecretKey: Data(repeating: 0x01, count: 32))
+        let entries = try (0..<3).map { try fixture.entry(payload: Data("{}".utf8), id: "entry-\($0)") }
+        let endpoints = Endpoints(baseURL: Self.baseURL)
+        let api = RemoteAPIRequestCreatingMock()
+        api.fakeRequests[endpoints.auditLog] = try makeAuditLogRequest(entries: entries, before: "older-history")
+        let accountManager = AccountManager(endpoints: endpoints,
+                                            api: api,
+                                            crypter: CryptingMock(),
+                                            accountInfoKeys: fixture.keyManager,
+                                            isScopedAccessCredentialsEnabled: { false })
+        let failures: [Error] = [
+            URLError(.notConnectedToInternet),
+            APIRequest.Error.urlSession(URLError(.timedOut)),
+            SyncError.unexpectedStatusCode(401),
+            SyncError.unexpectedStatusCode(418),
+            SyncError.noResponseBody,
+            SyncError.failedToReadSecureStore(status: errSecInteractionNotAllowed),
+            DecodingError.dataCorrupted(.init(codingPath: [], debugDescription: "Invalid key response"))
+        ]
+
+        for (index, failure) in failures.enumerated() {
+            fixture.keyManager.loadKeyError = failure
+            do {
+                _ = try await accountManager.fetchAuditLog(for: makeAccount(primaryKey: Data()), cursor: nil)
+                XCTFail("Expected the original key-request failure")
+            } catch {
+                XCTAssertEqual(error as NSError, failure as NSError)
             }
+            XCTAssertEqual(fixture.keyManager.loadKeyCalls.count, index + 1)
+            XCTAssertTrue(fixture.keyManager.refreshKeyCalls.isEmpty)
         }
     }
 
-    func testWhenAuditLogOuterAndDeviceKeysMismatchThenTheyShareRefreshBudget() async throws {
-        let initialKey = try AuditLogTestFixture.make(accountSecretKey: Data(repeating: 0x01, count: 32))
-        let refreshedKey = try AuditLogTestFixture.make(accountSecretKey: Data(repeating: 0x04, count: 32))
-        let nestedKey = try AuditLogTestFixture.make(accountSecretKey: Data(repeating: 0x07, count: 32))
-        let deviceInfo = try DeviceInfoCodec().encrypt(DeviceInfo(name: "Nested name", type: "desktop"),
-                                                       using: nestedKey.protectedKey)
-        let payload = Data(#"{"type":"login","occurred_at":"2026-09-02T14:03:11Z","device":{"id":"device","info":"\#(deviceInfo)"}}"#.utf8)
-        let codec = JWECompactCodec()
-        let first = AuditLogEntry(id: "outer-and-nested-mismatch",
-                                  version: "1",
-                                  payload: try codec.encryptRSAOAEP256(payload: payload,
-                                                                       recipientPublicKey: refreshedKey.key.publicKey,
-                                                                       kid: refreshedKey.key.kid))
-        let second = AuditLogEntry(id: "second-outer-mismatch",
-                                   version: "1",
-                                   payload: try codec.encryptRSAOAEP256(payload: payload,
-                                                                        recipientPublicKey: nestedKey.key.publicKey,
-                                                                        kid: nestedKey.key.kid))
-        let third = AuditLogEntry(id: "refreshed-key-reuse",
-                                  version: "1",
-                                  payload: try codec.encryptRSAOAEP256(payload: payload,
-                                                                       recipientPublicKey: refreshedKey.key.publicKey,
-                                                                       kid: refreshedKey.key.kid))
-        let fourth = AuditLogEntry(id: "initial-key-reuse",
-                                   version: "1",
-                                   payload: try codec.encryptRSAOAEP256(payload: payload,
-                                                                        recipientPublicKey: initialKey.key.publicKey,
-                                                                        kid: initialKey.key.kid))
-        initialKey.keyManager.refreshKeyStub = refreshedKey.key
-        let mapper = RegisteredDeviceMapper(crypter: CryptingMock(),
-                                            accountInfoKeys: initialKey.keyManager,
-                                            isScopedAccessCredentialsEnabled: { false },
-                                            canReadUnifiedDeviceList: { true })
+    func testWhenAuditLogKeyLoadingIsCancelledThenCancellationPropagates() async throws {
+        let fixture = try AuditLogTestFixture.make(accountSecretKey: Data(repeating: 0x01, count: 32))
+        fixture.keyManager.loadKeyError = CancellationError()
         let endpoints = Endpoints(baseURL: Self.baseURL)
         let api = RemoteAPIRequestCreatingMock()
-        api.fakeRequests[endpoints.auditLog] = try makeAuditLogRequest(entries: [first, second, third, fourth])
+        api.fakeRequests[endpoints.auditLog] = try makeAuditLogRequest(entry: fixture.entry(payload: Data("{}".utf8)))
         let accountManager = AccountManager(endpoints: endpoints,
                                             api: api,
                                             crypter: CryptingMock(),
-                                            registeredDeviceMapper: mapper,
-                                            accountInfoKeys: initialKey.keyManager,
-                                            isScopedAccessCredentialsEnabled: { false })
-
-        let page = try await accountManager.fetchAuditLog(for: makeAccount(primaryKey: Data()), cursor: nil)
-
-        XCTAssertEqual(initialKey.keyManager.loadKeyCalls.count, 1)
-        XCTAssertEqual(initialKey.keyManager.refreshKeyCalls.count, 1)
-        guard case .decoded(let event) = page.entries[0] else {
-            return XCTFail("Expected event payload to decrypt with refreshed key")
-        }
-        XCTAssertEqual(event.device.name, "Unknown")
-        guard case .unreadable(id: "second-outer-mismatch", reason: .keyIDMismatch) = page.entries[1] else {
-            return XCTFail("Expected second outer mismatch to respect page refresh budget")
-        }
-        guard case .decoded(let reusedKeyEvent) = page.entries[2] else {
-            return XCTFail("Expected refreshed key to be reused for later entries")
-        }
-        XCTAssertEqual(reusedKeyEvent.id, "refreshed-key-reuse")
-        guard case .decoded(let initialKeyEvent) = page.entries[3] else {
-            return XCTFail("Expected initial key to remain available after refresh")
-        }
-        XCTAssertEqual(initialKeyEvent.id, "initial-key-reuse")
-    }
-
-    func testWhenAuditLogRefreshFailsThenRetainsLoadedKeyWithoutRetrying() async throws {
-        let initialKey = try AuditLogTestFixture.make(accountSecretKey: Data(repeating: 0x01, count: 32))
-        let unknownKey = try AuditLogTestFixture.make(accountSecretKey: Data(repeating: 0x07, count: 32))
-        let payload = Data(#"{"type":"login","occurred_at":"2026-09-02T14:03:11Z","device":{"id":"device"}}"#.utf8)
-        let codec = JWECompactCodec()
-        let initialEntry = AuditLogEntry(id: "initial-before-failure",
-                                         version: "1",
-                                         payload: try codec.encryptRSAOAEP256(payload: payload,
-                                                                              recipientPublicKey: initialKey.key.publicKey,
-                                                                              kid: initialKey.key.kid))
-        let unknownEntries = try (0..<2).map { index in
-            AuditLogEntry(id: "unknown-\(index)",
-                          version: "1",
-                          payload: try codec.encryptRSAOAEP256(payload: payload,
-                                                               recipientPublicKey: unknownKey.key.publicKey,
-                                                               kid: unknownKey.key.kid))
-        }
-        let initialKeyAfterFailure = AuditLogEntry(id: "initial-after-failure",
-                                                   version: "1",
-                                                   payload: try codec.encryptRSAOAEP256(payload: payload,
-                                                                                        recipientPublicKey: initialKey.key.publicKey,
-                                                                                        kid: initialKey.key.kid))
-        initialKey.keyManager.refreshKeyError = AccountInfoKeyManagerError.missingProtectedKey
-        let endpoints = Endpoints(baseURL: Self.baseURL)
-        let api = RemoteAPIRequestCreatingMock()
-        api.fakeRequests[endpoints.auditLog] = try makeAuditLogRequest(entries: [initialEntry] + unknownEntries + [initialKeyAfterFailure])
-        let accountManager = AccountManager(endpoints: endpoints,
-                                            api: api,
-                                            crypter: CryptingMock(),
-                                            accountInfoKeys: initialKey.keyManager,
-                                            isScopedAccessCredentialsEnabled: { false })
-
-        let page = try await accountManager.fetchAuditLog(for: makeAccount(primaryKey: Data()), cursor: nil)
-
-        XCTAssertEqual(initialKey.keyManager.loadKeyCalls.count, 1)
-        XCTAssertEqual(initialKey.keyManager.refreshKeyCalls.count, 1)
-        guard page.entries.count == 4,
-              case .decoded(let beforeFailure) = page.entries[0],
-              case .unreadable(_, reason: .keyIDMismatch) = page.entries[1],
-              case .unreadable(_, reason: .keyIDMismatch) = page.entries[2],
-              case .decoded(let afterFailure) = page.entries[3] else {
-            return XCTFail("Expected failed refreshes to preserve the loaded key and remain unreadable")
-        }
-        XCTAssertEqual(beforeFailure.id, "initial-before-failure")
-        XCTAssertEqual(afterFailure.id, "initial-after-failure")
-    }
-
-    func testWhenAuditLogRefreshIsCancelledThenCancellationPropagates() async throws {
-        let initialKey = try AuditLogTestFixture.make(accountSecretKey: Data(repeating: 0x01, count: 32))
-        let otherKey = try AuditLogTestFixture.make(accountSecretKey: Data(repeating: 0x07, count: 32))
-        let payload = Data(#"{"type":"login","occurred_at":"2026-09-02T14:03:11Z","device":{"id":"device"}}"#.utf8)
-        let encryptedPayload = try JWECompactCodec().encryptRSAOAEP256(payload: payload,
-                                                                       recipientPublicKey: otherKey.key.publicKey,
-                                                                       kid: otherKey.key.kid)
-        let entry = AuditLogEntry(id: "cancelled-refresh", version: "1", payload: encryptedPayload)
-        initialKey.keyManager.refreshKeyError = CancellationError()
-        let endpoints = Endpoints(baseURL: Self.baseURL)
-        let api = RemoteAPIRequestCreatingMock()
-        api.fakeRequests[endpoints.auditLog] = try makeAuditLogRequest(entry: entry)
-        let accountManager = AccountManager(endpoints: endpoints,
-                                            api: api,
-                                            crypter: CryptingMock(),
-                                            accountInfoKeys: initialKey.keyManager,
+                                            accountInfoKeys: fixture.keyManager,
                                             isScopedAccessCredentialsEnabled: { false })
 
         do {
             _ = try await accountManager.fetchAuditLog(for: makeAccount(primaryKey: Data()), cursor: nil)
-            XCTFail("Expected key refresh cancellation to propagate")
+            XCTFail("Expected key loading cancellation to propagate")
         } catch is CancellationError {
             // Expected.
-        } catch {
-            XCTFail("Expected cancellation, got \(error)")
         }
-        XCTAssertEqual(initialKey.keyManager.loadKeyCalls.count, 1)
-        XCTAssertEqual(initialKey.keyManager.refreshKeyCalls.count, 1)
+        XCTAssertEqual(fixture.keyManager.loadKeyCalls.count, 1)
+        XCTAssertTrue(fixture.keyManager.refreshKeyCalls.isEmpty)
     }
 
-    func testWhenNestedDeviceRefreshHappensFirstThenOuterEntryUsesSameBudget() async throws {
-        let initialKey = try AuditLogTestFixture.make(accountSecretKey: Data(repeating: 0x01, count: 32))
-        let refreshedKey = try AuditLogTestFixture.make(accountSecretKey: Data(repeating: 0x04, count: 32))
-        let nestedKey = try AuditLogTestFixture.make(accountSecretKey: Data(repeating: 0x07, count: 32))
-        let encryptedInfo = try DeviceInfoCodec().encrypt(DeviceInfo(name: "Nested name", type: "desktop"),
-                                                          using: nestedKey.protectedKey)
-        let payloadWithStaleDevice = Data(#"{"type":"login","occurred_at":"2026-09-02T14:03:11Z","device":{"id":"device","info":"\#(encryptedInfo)"}}"#.utf8)
-        let payload = Data(#"{"type":"login","occurred_at":"2026-09-02T14:03:11Z","device":{"id":"second-device"}}"#.utf8)
-        let codec = JWECompactCodec()
-        let entries = [
-            AuditLogEntry(id: "nested-refresh-first",
-                          version: "1",
-                          payload: try codec.encryptRSAOAEP256(payload: payloadWithStaleDevice,
-                                                               recipientPublicKey: initialKey.key.publicKey,
-                                                               kid: initialKey.key.kid)),
-            AuditLogEntry(id: "outer-refresh-after-nested",
-                          version: "1",
-                          payload: try codec.encryptRSAOAEP256(payload: payload,
-                                                               recipientPublicKey: nestedKey.key.publicKey,
-                                                               kid: nestedKey.key.kid))
-        ]
-        initialKey.keyManager.refreshKeyStub = refreshedKey.key
-        let mapper = RegisteredDeviceMapper(crypter: CryptingMock(),
-                                            accountInfoKeys: initialKey.keyManager,
-                                            isScopedAccessCredentialsEnabled: { false },
-                                            canReadUnifiedDeviceList: { true })
+    func testWhenAuditLogEntriesHaveOtherKeyIDsThenSkipsThemWithoutRefreshing() async throws {
+        let fixture = try AuditLogTestFixture.make(accountSecretKey: Data(repeating: 0x01, count: 32))
+        let payload = Data(#"{"type":"login","occurred_at":"2026-09-02T14:03:11Z","device":{"id":"device"}}"#.utf8)
+        let mismatchedEntries = try (2...4).map { value in
+            let otherKey = try AuditLogTestFixture.make(accountSecretKey: Data(repeating: UInt8(value), count: 32))
+            return try otherKey.entry(payload: payload, id: "other-key-\(value)")
+        }
+        let entries = mismatchedEntries + [try fixture.entry(payload: payload, id: "first"),
+                                          try fixture.entry(payload: payload, id: "last")]
+        fixture.keyManager.refreshKeyError = AccountInfoKeyManagerError.missingProtectedKey
         let endpoints = Endpoints(baseURL: Self.baseURL)
         let api = RemoteAPIRequestCreatingMock()
-        api.fakeRequests[endpoints.auditLog] = try makeAuditLogRequest(entries: entries)
         let accountManager = AccountManager(endpoints: endpoints,
                                             api: api,
                                             crypter: CryptingMock(),
-                                            registeredDeviceMapper: mapper,
-                                            accountInfoKeys: initialKey.keyManager,
+                                            accountInfoKeys: fixture.keyManager,
                                             isScopedAccessCredentialsEnabled: { false })
 
-        let page = try await accountManager.fetchAuditLog(for: makeAccount(primaryKey: Data()), cursor: nil)
+        let scenarios: [(entries: [AuditLogEntry], decodedIDs: [String])] = [(entries, ["first", "last"]), (mismatchedEntries, [])]
+        for scenario in scenarios {
+            api.fakeRequests[endpoints.auditLog] = try makeAuditLogRequest(entries: scenario.entries)
 
-        XCTAssertEqual(initialKey.keyManager.loadKeyCalls.count, 1)
-        XCTAssertEqual(initialKey.keyManager.refreshKeyCalls.count, 1)
-        guard case .decoded(let event) = page.entries[0] else {
-            return XCTFail("Expected the first outer entry to decode")
+            let page = try await accountManager.fetchAuditLog(for: makeAccount(primaryKey: Data()), cursor: nil)
+
+            XCTAssertEqual(page.entries.count, scenario.entries.count)
+            let decodedIDs = page.entries.compactMap { result -> String? in
+                guard case .decoded(let event) = result else { return nil }
+                return event.id
+            }
+            XCTAssertEqual(decodedIDs, scenario.decodedIDs)
+            for entry in page.entries[0...2] {
+                guard case .unreadable(_, reason: .keyIDMismatch) = entry else {
+                    return XCTFail("Expected entries referencing other keys to remain individual mismatches")
+                }
+            }
         }
-        XCTAssertEqual(event.device.name, "Unknown")
-        guard case .unreadable(id: "outer-refresh-after-nested", reason: .keyIDMismatch) = page.entries[1] else {
-            return XCTFail("Expected nested key refresh to consume the page refresh budget")
+        XCTAssertEqual(fixture.keyManager.loadKeyCalls.count, scenarios.count)
+        XCTAssertTrue(fixture.keyManager.refreshKeyCalls.isEmpty)
+    }
+
+    func testWhenAuditLogPageIsEmptyOrOnlyUnsupportedThenDoesNotLoadKey() async throws {
+        let fixture = try AuditLogTestFixture.make(accountSecretKey: Data(repeating: 0x01, count: 32))
+        fixture.keyManager.loadKeyError = AccountInfoKeyManagerError.missingProtectedKey
+        let endpoints = Endpoints(baseURL: Self.baseURL)
+        let api = RemoteAPIRequestCreatingMock()
+        let accountManager = AccountManager(endpoints: endpoints,
+                                            api: api,
+                                            crypter: CryptingMock(),
+                                            accountInfoKeys: fixture.keyManager,
+                                            isScopedAccessCredentialsEnabled: { false })
+        let pages: [[AuditLogEntry]] = [[], [AuditLogEntry(id: "future", version: "2", payload: "unreadable")]]
+
+        for entries in pages {
+            api.fakeRequests[endpoints.auditLog] = try makeAuditLogRequest(entries: entries)
+            let page = try await accountManager.fetchAuditLog(for: makeAccount(primaryKey: Data()), cursor: nil)
+            XCTAssertEqual(page.entries.count, entries.count)
         }
+        XCTAssertTrue(fixture.keyManager.loadKeyCalls.isEmpty)
+        XCTAssertTrue(fixture.keyManager.refreshKeyCalls.isEmpty)
     }
 
     private func makeAuditLogRequest(entry: AuditLogEntry) throws -> HTTPRequestingMock {
@@ -1804,7 +1666,7 @@ private final class RegisteredDeviceMappingMock: RegisteredDeviceMapping {
     func registeredDevicesWithRepairState(from entries: [RegisteredDeviceEntry],
                                           account: SyncAccount,
                                           isUnifiedReadEnabled: Bool,
-                                          accountInfoKeyProvider: (any AccountInfoKeyProviding)?,
+                                          accountInfoKey: AccountInfoKey?,
                                           thirdPartyPasswordRecoveryCache: ThirdPartyPasswordRecoveryCache?) async -> RegisteredDeviceMappingResult {
         registeredDevicesHandler?()
         registeredDevicesCallEntryIDs = entries.map(\.id)

@@ -202,13 +202,14 @@ private final class StoreCatalogMock: ChromeWebStoreCatalogProviding {
     func listing(of subfeature: ExtensionsCatalogSubfeature) -> ChromeWebStoreListing? { nil }
 }
 
+@available(macOS 15.4, iOS 18.4, *)
 @MainActor
 private final class StorePresenterMock: ChromeWebStorePresenting {
     var errors: [Error] = []
     var removalRequests: [String] = []
     var allowRemoval = true
 
-    func confirmRemoval(name: String) async -> Bool {
+    func confirmRemoval(name: String, webExtension: WKWebExtension?) async -> Bool {
         removalRequests.append(name)
         return allowRemoval
     }

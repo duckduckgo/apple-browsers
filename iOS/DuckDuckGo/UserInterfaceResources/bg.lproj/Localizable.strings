@@ -6016,3 +6016,12 @@
 /* Title for screen to screen confirming what data to import from a zip file (bookmarks and /or passwords) */
 "zip.content.import.types.title" = "Какво искате да импортирате?";
 
+
+/* Fireproofing setting toggle label */
+"preserveLogins.askOnSignIn" = "Питай дали да направиш сайтовете огнеустойчиви при вписване";
+
+/* Empty Fireproof sites list */
+"preserveLogins.emptyState" = "Все още няма огнеустойчиви уебсайтове";
+
+/* Button to remove all Fireproof sites */
+"preserveLogins.removeAllSites" = "Премахване на всички огнеустойчиви сайтове";

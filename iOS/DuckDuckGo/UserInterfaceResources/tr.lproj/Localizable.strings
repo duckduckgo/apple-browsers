@@ -6016,3 +6016,12 @@
 /* Title for screen to screen confirming what data to import from a zip file (bookmarks and /or passwords) */
 "zip.content.import.types.title" = "Neyi içe aktarmak istiyorsunuz?";
 
+
+/* Fireproofing setting toggle label */
+"preserveLogins.askOnSignIn" = "Oturum açıldığında sitelerin Korumalı hâle getirilip getirilmeyeceğini sor";
+
+/* Empty Fireproof sites list */
+"preserveLogins.emptyState" = "Henüz Korumalı site yok";
+
+/* Button to remove all Fireproof sites */
+"preserveLogins.removeAllSites" = "Tüm Korumalı Web Sitelerini Kaldır";

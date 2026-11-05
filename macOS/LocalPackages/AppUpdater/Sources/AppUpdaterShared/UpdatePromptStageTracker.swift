@@ -50,6 +50,7 @@ public final class UpdatePromptStageTracker {
     private let installedVersion: String
     private let now: () -> Date
     private let schedule: Scheduler
+    private let forcedStage: () -> UpdatePromptStage?
 
     private var isUpdateAvailable = false
     private var isCriticalUpdate = false
@@ -60,18 +61,21 @@ public final class UpdatePromptStageTracker {
     ///   - installedVersion: Identifies the running build. Only compared with the value stored when the clock
     ///     started, so any string that changes when the app updates will do. A different value means the user
     ///     updated, so the clock is cleared.
+    ///   - forcedStage: A debug override for the stage while an update is available.
     ///   - reevaluationTriggers: Extra points at which to re-evaluate the stage, besides check results and thresholds.
     public init(store: any ThrowingKeyedStoring<UpdateControllerSettings>,
                 settings: @escaping () -> MoreProminentUpdatesSettings,
                 installedVersion: String,
                 now: @escaping () -> Date = Date.init,
                 schedule: @escaping Scheduler = UpdatePromptStageTracker.scheduleOnMainRunLoop,
+                forcedStage: @escaping () -> UpdatePromptStage? = { nil },
                 reevaluationTriggers: AnyPublisher<Void, Never> = UpdatePromptStageTracker.didBecomeActive) {
         self.store = store
         self.settings = settings
         self.installedVersion = installedVersion
         self.now = now
         self.schedule = schedule
+        self.forcedStage = forcedStage
 
         if storedInstalledVersion != installedVersion {
             clearClock()
@@ -118,10 +122,11 @@ public final class UpdatePromptStageTracker {
 
         let settings = settings()
         let elapsed = currentDate.timeIntervalSince(startDate)
-        stage = isCriticalUpdate ? .secondPrompt : Self.stage(afterElapsed: elapsed, settings: settings)
+        let computedStage = isCriticalUpdate ? .secondPrompt : Self.stage(afterElapsed: elapsed, settings: settings)
+        stage = forcedStage() ?? computedStage
 
-        guard stage < .secondPrompt else { return }
-        let nextThreshold = stage == .available ? settings.firstPromptDelay : settings.secondPromptDelay
+        guard computedStage < .secondPrompt else { return }
+        let nextThreshold = computedStage == .available ? settings.firstPromptDelay : settings.secondPromptDelay
         pendingReevaluation = schedule(nextThreshold - elapsed) { [weak self] in
             self?.reevaluate()
         }
@@ -135,6 +140,24 @@ public final class UpdatePromptStageTracker {
         } else {
             return .available
         }
+    }
+
+    /// Moves day 0 so that `stage` starts after `timeRemaining`, for testing the prompts without waiting.
+    public func moveClock(to stage: UpdatePromptStage, timeRemaining: TimeInterval = 0) {
+        let settings = settings()
+        let threshold: TimeInterval = switch stage {
+        case .none, .available: 0
+        case .firstPrompt: settings.firstPromptDelay
+        case .secondPrompt: settings.secondPromptDelay
+        }
+        startClock(at: now() - max(threshold - timeRemaining, 0))
+        reevaluate()
+    }
+
+    /// Clears the clock, so it starts again from now if an update is available.
+    public func resetClock() {
+        clearClock()
+        reevaluate()
     }
 
     // MARK: - Clock storage

@@ -71,6 +71,7 @@ final class DuckAIIPhoneIPadFlagsUITests: DuckAIUITestCase {
     override var duckAIFeatureFlagLaunchArguments: [String] {
         [
             "-ff.aiChatChromeShortcutIPad", "true",
+            "-ff.aiChatChromeMenuButtonIPad", "false",
         ]
     }
 
@@ -100,7 +101,7 @@ final class DuckAIIPhoneIPadFlagsUITests: DuckAIUITestCase {
             app.selectDuckAISearchInput(true)
             app.navigateBackInSettings(from: "Settings.List.AIFeatures", to: "Settings.List.Main")
             app.dismissSettings()
-            assertIPhoneBrowserControls()
+            assertIPhoneBrowserControls(assertEditingDuckAI: true)
         }
 
         XCTContext.runActivity(named: "Select Search Only without exposing iPad controls") { _ in
@@ -112,7 +113,7 @@ final class DuckAIIPhoneIPadFlagsUITests: DuckAIUITestCase {
         }
     }
 
-    private func assertIPhoneBrowserControls(file: StaticString = #filePath, line: UInt = #line) {
+    private func assertIPhoneBrowserControls(assertEditingDuckAI: Bool = false, file: StaticString = #filePath, line: UInt = #line) {
         XCTAssertTrue(
             app.searchEntry.waitForExistence(timeout: UITestTimeouts.navigation),
             "The iPhone address bar did not appear.",
@@ -124,6 +125,14 @@ final class DuckAIIPhoneIPadFlagsUITests: DuckAIUITestCase {
             file: file,
             line: line)
         app.searchEntry.tapWhenHittable(in: app, file: file, line: line)
+        XCTAssertTrue(
+            app.keyboards.firstMatch.waitForExistence(timeout: UITestTimeouts.elementExistence),
+            "The iPhone address bar did not enter editing before checking its controls.", file: file, line: line)
+        if assertEditingDuckAI {
+            XCTAssertTrue(
+                app.buttons["AddressBar.Button.DuckAI"].waitForExistence(timeout: UITestTimeouts.elementExistence),
+                "The editing iPhone address bar did not show Duck.ai.", file: file, line: line)
+        }
         XCTAssertFalse(
             app.buttons["Browser.OmniBar.Button.ModeToggle.Search"].exists,
             "The iPad Search mode toggle appeared on iPhone.",

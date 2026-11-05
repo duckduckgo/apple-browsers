@@ -66,6 +66,7 @@ public extension DesignSystemImages {
             public static var exclamation: DesignSystemImage { .init(resource: .exclamationColor16) }
             public static var exclamationHigh: DesignSystemImage { .init(resource: .exclamationHighColor16) }
             public static var exclamationMedium: DesignSystemImage { .init(resource: .exclamationMediumColor16) }
+            public static var extensions: DesignSystemImage { .init(resource: .extensionsColor16) }
             public static var favorite: DesignSystemImage { .init(resource: .favoriteColor16) }
             public static var favoriteGrey: DesignSystemImage { .init(resource: .favoriteGreyColor16) }
             public static var feedback: DesignSystemImage { .init(resource: .feedbackColor16) }

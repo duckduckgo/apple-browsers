@@ -149,6 +149,20 @@ final class AIChatContextualSheetCoordinatorTests: XCTestCase {
                                               didSubmitDuckAIPromptWithOrigin origin: AIChatEntryPointSource?) {
             submittedPromptOrigins.append(origin)
         }
+
+        var closedSurfaceCount = 0
+        var closedWithDeletedChat: [Bool] = []
+
+        func aiChatContextualSheetCoordinatorDidCloseSurface(_ coordinator: AIChatContextualSheetCoordinator, chatDeleted: Bool) {
+            closedSurfaceCount += 1
+            closedWithDeletedChat.append(chatDeleted)
+        }
+
+        var newChatCount = 0
+
+        func aiChatContextualSheetCoordinatorDidStartNewChat(_ coordinator: AIChatContextualSheetCoordinator) {
+            newChatCount += 1
+        }
     }
 
     private final class MockPresentingViewController: UIViewController {
@@ -171,26 +185,54 @@ final class AIChatContextualSheetCoordinatorTests: XCTestCase {
     /// Takes the sheet in as a child without loading its view, the way the iPad sidebar adopts it.
     private final class RecordingSidebarHost: UIViewController, AIChatContextualSidebarHosting {
         var canPresentContextualSidebar = true
+        /// Off, modal presentations are only counted. On, they really happen, which needs the host in a window.
+        var presentsModally = false
+        /// On, an animated dismissal leaves the child in place, as the column does while it slides out.
+        var holdsDismissals = false
         var sidebarPresentations: [UIViewController] = []
+        var sidebarPresentationsAnimated: [Bool] = []
         var sidebarDismissals: [UIViewController] = []
+        var sidebarDetachments: [UIViewController] = []
         var modalPresentationCount = 0
+        private weak var slidingOutViewController: UIViewController?
 
-        func presentContextualSidebar(_ viewController: UIViewController) {
+        func presentContextualSidebar(_ viewController: UIViewController, animated: Bool, coversPage: Bool) {
             sidebarPresentations.append(viewController)
+            sidebarPresentationsAnimated.append(animated)
+            slidingOutViewController = nil
+            guard viewController.parent !== self else { return }
             addChild(viewController)
             viewController.didMove(toParent: self)
         }
 
+        func isContextualSidebarShowing(_ viewController: UIViewController) -> Bool {
+            viewController.parent === self && viewController !== slidingOutViewController
+        }
+
         func dismissContextualSidebar(_ viewController: UIViewController, animated: Bool, completion: (() -> Void)?) {
             sidebarDismissals.append(viewController)
+            guard !holdsDismissals || !animated else {
+                slidingOutViewController = viewController
+                return
+            }
             viewController.willMove(toParent: nil)
             viewController.removeFromParent()
             completion?()
         }
 
+        func detachContextualSidebar(_ viewController: UIViewController, animated: Bool) {
+            sidebarDetachments.append(viewController)
+            viewController.willMove(toParent: nil)
+            viewController.removeFromParent()
+        }
+
         override func present(_ viewControllerToPresent: UIViewController, animated flag: Bool, completion: (() -> Void)? = nil) {
             modalPresentationCount += 1
-            completion?()
+            guard presentsModally else {
+                completion?()
+                return
+            }
+            super.present(viewControllerToPresent, animated: false, completion: completion)
         }
     }
 
@@ -228,6 +270,7 @@ final class AIChatContextualSheetCoordinatorTests: XCTestCase {
     private var mockUnifiedToggleInputFeature: MockUnifiedToggleInputFeatureProvider!
     private var mockFloatingInputFeature: MockFloatingInputFeature!
     private var mockSelectionJourneyInstrumentation: MockSelectionJourneyInstrumentation!
+    private var pixelHandler: AIChatContextualModePixelHandler!
     private var mockPageContextHandler: MockPageContextHandler!
     private var contentBlockingSubject: PassthroughSubject<ContentBlockingUpdating.NewContent, Never>!
     private var originatingTabURLSubject: CurrentValueSubject<URL?, Never>!
@@ -253,12 +296,21 @@ final class AIChatContextualSheetCoordinatorTests: XCTestCase {
         didFinishTabURLSubject = CurrentValueSubject<URL?, Never>(nil)
         firedPixelEvents = []
         firedPixelKitEventNames = []
-        let pixelHandler = AIChatContextualModePixelHandler(
+        pixelHandler = AIChatContextualModePixelHandler(
             firePixel: { [weak self] event in self?.firedPixelEvents.append(event) },
             firePixelWithParameters: { [weak self] event, _ in self?.firedPixelEvents.append(event) },
             firePixelKitEvent: { [weak self] event, _ in self?.firedPixelKitEventNames.append(event.name) }
         )
-        sut = AIChatContextualSheetCoordinator(
+        sut = makeSUT()
+        mockDelegate = MockDelegate()
+        mockPresentingVC = MockPresentingViewController()
+        sut.delegate = mockDelegate
+        cancellables = []
+    }
+
+    @MainActor
+    private func makeSUT(isPad: Bool = false) -> AIChatContextualSheetCoordinator {
+        AIChatContextualSheetCoordinator(
             voiceSearchHelper: MockVoiceSearchHelper(),
             aiChatSettings: mockSettings,
             privacyConfigurationManager: MockPrivacyConfigurationManager(),
@@ -267,6 +319,7 @@ final class AIChatContextualSheetCoordinatorTests: XCTestCase {
             featureFlagger: mockFeatureFlagger,
             unifiedToggleInputFeature: mockUnifiedToggleInputFeature,
             floatingInputFeature: mockFloatingInputFeature,
+            isPad: isPad,
             pageContextHandler: mockPageContextHandler,
             tabURLPublishers: AIChatTabURLPublishers(
                 originating: originatingTabURLSubject.eraseToAnyPublisher(),
@@ -278,13 +331,8 @@ final class AIChatContextualSheetCoordinatorTests: XCTestCase {
             pixelHandler: pixelHandler,
             selectionJourneyInstrumentation: mockSelectionJourneyInstrumentation
         )
-        mockDelegate = MockDelegate()
-        mockPresentingVC = MockPresentingViewController()
-        sut.delegate = mockDelegate
-        cancellables = []
     }
 
-    @MainActor
     override func tearDown() {
         sut = nil
         mockDelegate = nil
@@ -294,12 +342,28 @@ final class AIChatContextualSheetCoordinatorTests: XCTestCase {
         mockUnifiedToggleInputFeature = nil
         mockFloatingInputFeature = nil
         mockSelectionJourneyInstrumentation = nil
+        pixelHandler = nil
         mockPageContextHandler = nil
         contentBlockingSubject = nil
         originatingTabURLSubject = nil
         didFinishTabURLSubject = nil
         cancellables = nil
         super.tearDown()
+    }
+
+    // MARK: - iPad
+
+    @MainActor
+    func testWhenOnIPadThenTheContextualSheetBuildsTheUnifiedToggleInput() async {
+        mockUnifiedToggleInputFeature.isAvailable = false
+        mockFeatureFlagger.enabledFeatureFlags = [.aiChatContextualUnifiedToggleInput]
+        let iPadSUT = makeSUT(isPad: true)
+
+        await sut.presentSheet(from: mockPresentingVC)
+        await iPadSUT.presentSheet(from: MockPresentingViewController())
+
+        XCTAssertNil(sut.persistentUTIHost)
+        XCTAssertNotNil(iPadSUT.persistentUTIHost)
     }
 
     // MARK: - handleSelectionAction Tests
@@ -646,6 +710,76 @@ final class AIChatContextualSheetCoordinatorTests: XCTestCase {
         XCTAssertEqual(sut.sessionState.viewState.quickActions, [.askAboutPage])
     }
     
+    // MARK: - Surface close
+
+    @MainActor
+    func testDismissingTheSheetReportsOneClose() async throws {
+        await sut.presentSheet(from: mockPresentingVC)
+        let sheet = try XCTUnwrap(sut.sheetViewController)
+
+        sut.aiChatContextualSheetViewControllerDidDismiss(sheet)
+        sut.aiChatContextualSheetViewControllerDidDismiss(sheet)
+
+        XCTAssertEqual(mockDelegate.closedSurfaceCount, 1)
+    }
+
+    @MainActor
+    func testDismissingTheFloatingInputReportsAClose() async {
+        mockFloatingInputFeature.isAvailable = true
+        mockUnifiedToggleInputFeature.isAvailable = true
+        await sut.handleSelectionAction(.ask, selection: .init(text: "selected text", url: nil, faviconBase64: nil), from: mockPresentingVC)
+        XCTAssertTrue(sut.isFloatingInputPresented)
+
+        sut.dismissFloatingInput()
+
+        XCTAssertEqual(mockDelegate.closedSurfaceCount, 1)
+    }
+
+    @MainActor
+    func testPromotingTheFloatingInputToTheSheetIsNotAClose() async {
+        mockFloatingInputFeature.isAvailable = true
+        mockUnifiedToggleInputFeature.isAvailable = true
+        await sut.handleSelectionAction(.ask, selection: .init(text: "selected text", url: nil, faviconBase64: nil), from: mockPresentingVC)
+        XCTAssertTrue(sut.isFloatingInputPresented)
+
+        sut.promoteFloatingInputToSheet()
+
+        XCTAssertFalse(sut.isFloatingInputPresented)
+        XCTAssertEqual(mockDelegate.closedSurfaceCount, 0)
+    }
+
+    @MainActor
+    func testClearingTheChatReportsACloseOnlyWhenTheSheetWasShowing() async {
+        sut.clearActiveChat()
+        XCTAssertEqual(mockDelegate.closedSurfaceCount, 0)
+
+        await sut.presentSheet(from: mockPresentingVC)
+        sut.clearActiveChat()
+
+        XCTAssertEqual(mockDelegate.closedSurfaceCount, 1)
+    }
+
+    @MainActor
+    func testClearingTheChatTellsWhetherItWasDeleted() async {
+        await sut.presentSheet(from: mockPresentingVC)
+        sut.clearActiveChat()
+        await sut.presentSheet(from: mockPresentingVC)
+        sut.clearActiveChat(reason: .movedToTab)
+
+        XCTAssertEqual(mockDelegate.closedWithDeletedChat, [true, false])
+    }
+
+    @MainActor
+    func testNewChatFromTheSheetReportsANewEntryWithoutAClose() async throws {
+        await sut.presentSheet(from: mockPresentingVC)
+        let sheet = try XCTUnwrap(sut.sheetViewController)
+
+        sut.aiChatContextualSheetViewControllerDidRequestNewChat(sheet)
+
+        XCTAssertEqual(mockDelegate.newChatCount, 1)
+        XCTAssertEqual(mockDelegate.closedSurfaceCount, 0)
+    }
+
     // MARK: - clearActiveChat Tests
 
     @MainActor
@@ -892,6 +1026,44 @@ final class AIChatContextualSheetCoordinatorTests: XCTestCase {
         // Then
         XCTAssertEqual(mockPageContextHandler.triggerContextCollectionCallCount, 0)
         XCTAssertEqual(sut.sessionState.suggestionsLoadState, .loaded)
+    }
+
+    @MainActor
+    func testWhenPageNavigatesBesideTheSidebarThenAManuallyAttachedPageThatNoLongerMatchesIsCleared() async {
+        let pageAURL = URL(string: "https://example.com/page-a")!
+        let pageBURL = URL(string: "https://example.com/page-b")!
+        mockSettings.isAutomaticContextAttachmentEnabled = false
+        let host = makeSidebarHost()
+        await sut.presentSheet(from: host)
+        originatingTabURLSubject.send(pageAURL)
+        sut.sessionState.beginManualAttach()
+        mockPageContextHandler.sendContext(makeTestContext(title: "Page A", url: pageAURL.absoluteString))
+        await waitForAttachedChip()
+        originatingTabURLSubject.send(pageBURL)
+
+        await sut.notifyPageChanged()
+
+        XCTAssertTrue(sut.isSheetInSidebar)
+        XCTAssertEqual(sut.sessionState.chipState, .placeholder)
+    }
+
+    @MainActor
+    func testWhenPageNavigatesUnderTheSheetThenTheManuallyAttachedPageStaysUntilItReopens() async {
+        let pageAURL = URL(string: "https://example.com/page-a")!
+        let pageBURL = URL(string: "https://example.com/page-b")!
+        mockSettings.isAutomaticContextAttachmentEnabled = false
+        await sut.presentSheet(from: mockPresentingVC)
+        originatingTabURLSubject.send(pageAURL)
+        sut.sessionState.beginManualAttach()
+        mockPageContextHandler.sendContext(makeTestContext(title: "Page A", url: pageAURL.absoluteString))
+        await waitForAttachedChip()
+        originatingTabURLSubject.send(pageBURL)
+
+        await sut.notifyPageChanged()
+
+        guard case .attached = sut.sessionState.chipState else {
+            return XCTFail("Expected the attached page to stay, got \(sut.sessionState.chipState)")
+        }
     }
 
     @MainActor
@@ -1354,6 +1526,275 @@ final class AIChatContextualSheetCoordinatorTests: XCTestCase {
         XCTAssertEqual(sut.sheetViewController?.surfaceStyle, .sheet)
     }
 
+    // MARK: - Window Resize Tests
+
+    @MainActor
+    func testWhenDuckAIIsTappedWhileTheSidebarSlidesOutThenTheSameChatStaysInIt() async {
+        let host = makeSidebarHost()
+        await sut.presentSheet(from: host)
+        let sheet = sut.sheetViewController
+        host.holdsDismissals = true
+        sut.dismissSheet()
+
+        await sut.presentSheet(from: host)
+
+        XCTAssertEqual(host.sidebarPresentations.count, 2)
+        XCTAssertTrue(host.sidebarPresentations.last === sheet)
+        XCTAssertTrue(sut.sheetViewController === sheet)
+        XCTAssertTrue(sut.isSheetPresented)
+        XCTAssertEqual(host.modalPresentationCount, 0)
+    }
+
+    @MainActor
+    func testWhenWindowShrinksPastTheSidebarThenTheChatLeavesItWithoutClosing() async {
+        let host = makeSidebarHost()
+        await sut.presentSheet(from: host)
+        let sheet = sut.sheetViewController
+        host.canPresentContextualSidebar = false
+
+        sut.parkSurfaceForResize(animated: true)
+
+        XCTAssertTrue(host.sidebarDetachments.first === sheet)
+        XCTAssertTrue(sut.hasParkedSurface)
+        XCTAssertTrue(sut.isSheetPresented)
+        XCTAssertEqual(mockSelectionJourneyInstrumentation.dismissalCount, 0)
+    }
+
+    @MainActor
+    func testWhenParkedChatHasNoRoomForTheSidebarThenItCarriesOnAsASheet() async {
+        let host = makeSidebarHost()
+        await sut.presentSheet(from: host)
+        let sheet = sut.sheetViewController
+        host.canPresentContextualSidebar = false
+        sut.parkSurfaceForResize(animated: true)
+
+        sut.adaptSurface(toPresenter: host)
+
+        XCTAssertEqual(host.modalPresentationCount, 1)
+        XCTAssertTrue(sut.sheetViewController === sheet)
+        XCTAssertEqual(sheet?.surfaceStyle, .sheet)
+        XCTAssertFalse(sut.hasParkedSurface)
+        XCTAssertTrue(sut.isSheetPresented)
+    }
+
+    @MainActor
+    func testWhenAConversationMovesFromTheSidebarToASheetThenItKeepsItsFullHeight() async throws {
+        let host = makeSidebarHost()
+        await sut.presentSheet(from: host, restoreURL: savedChatURL)
+        host.canPresentContextualSidebar = false
+        sut.parkSurfaceForResize(animated: true)
+
+        sut.adaptSurface(toPresenter: host)
+
+        let sheet = try XCTUnwrap(sut.sheetViewController)
+        XCTAssertEqual(sheet.sheetPresentationController?.selectedDetentIdentifier, .large)
+    }
+
+    @MainActor
+    func testWhenAChatYetToStartMovesFromTheSidebarToASheetThenItOpensAtHalfHeight() async throws {
+        let host = makeSidebarHost()
+        await sut.presentSheet(from: host)
+        host.canPresentContextualSidebar = false
+        sut.parkSurfaceForResize(animated: true)
+
+        sut.adaptSurface(toPresenter: host)
+
+        let sheet = try XCTUnwrap(sut.sheetViewController)
+        XCTAssertEqual(sheet.sheetPresentationController?.selectedDetentIdentifier, .medium)
+    }
+
+    @MainActor
+    func testWhenParkedChatIsDismissedThenItClosesAsIfItHadLeftTheScreen() async {
+        let host = makeSidebarHost()
+        await sut.presentSheet(from: host)
+        host.canPresentContextualSidebar = false
+        sut.parkSurfaceForResize(animated: true)
+        var didComplete = false
+
+        sut.dismissSheet { didComplete = true }
+
+        XCTAssertTrue(didComplete)
+        XCTAssertFalse(sut.isSheetPresented)
+        XCTAssertFalse(sut.hasParkedSurface)
+        XCTAssertEqual(mockSelectionJourneyInstrumentation.dismissalCount, 1)
+    }
+
+    @MainActor
+    func testWhenChatIsClearedWhileParkedThenNothingIsLeftToPlace() async {
+        let host = makeSidebarHost()
+        await sut.presentSheet(from: host)
+        host.canPresentContextualSidebar = false
+        sut.parkSurfaceForResize(animated: true)
+
+        sut.clearActiveChat()
+        sut.adaptSurface(toPresenter: host)
+
+        XCTAssertNil(sut.sheetViewController)
+        XCTAssertFalse(sut.hasParkedSurface)
+        XCTAssertEqual(host.modalPresentationCount, 0)
+    }
+
+    @MainActor
+    func testWhenWindowGrowsRoomForTheSidebarThenTheSheetMovesIntoIt() async throws {
+        // A real window loads the chat's web view, and any page outside Duck.ai would close the sheet as a link.
+        mockSettings.aiChatURL = URL(string: "https://duck.ai")!
+        let host = makeSidebarHost()
+        host.presentsModally = true
+        host.canPresentContextualSidebar = false
+        let window = UIWindow(frame: CGRect(x: 0, y: 0, width: 1180, height: 820))
+        window.rootViewController = host
+        window.makeKeyAndVisible()
+        defer { window.isHidden = true }
+        await sut.presentSheet(from: host)
+        let sheet = try XCTUnwrap(sut.sheetViewController)
+        let presented = XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in
+            sheet.presentingViewController != nil && !sheet.isBeingPresented
+        }, object: nil)
+        await fulfillment(of: [presented], timeout: 5)
+        host.canPresentContextualSidebar = true
+
+        sut.adaptSurface(toPresenter: host)
+
+        let movedIntoSidebar = XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in
+            host.sidebarPresentations.contains { $0 === sheet }
+        }, object: nil)
+        await fulfillment(of: [movedIntoSidebar], timeout: 5)
+        XCTAssertNil(sheet.presentingViewController)
+        XCTAssertEqual(sheet.surfaceStyle, .sidebar)
+        XCTAssertTrue(sut.isSheetPresented)
+        XCTAssertEqual(mockSelectionJourneyInstrumentation.dismissalCount, 0)
+    }
+
+    // MARK: - Sidebar Per Tab Tests
+
+    @MainActor
+    func testWhenTheTabLeavesTheScreenThenItsSidebarChatLeavesWithItStillOpen() async {
+        let host = makeSidebarHost()
+        await sut.presentSheet(from: host)
+        let sheet = sut.sheetViewController
+
+        sut.tabWillLeaveScreen()
+
+        XCTAssertTrue(host.sidebarDetachments.first === sheet)
+        XCTAssertFalse(sut.isSheetInSidebar)
+        XCTAssertTrue(sut.isSheetPresented)
+        XCTAssertTrue(sut.sheetViewController === sheet)
+        XCTAssertEqual(mockSelectionJourneyInstrumentation.dismissalCount, 0)
+    }
+
+    @MainActor
+    func testWhenTheTabComesBackThenTheSameChatReturnsToTheSidebarAtOnce() async {
+        let host = makeSidebarHost()
+        await sut.presentSheet(from: host)
+        let sheet = sut.sheetViewController
+        sut.tabWillLeaveScreen()
+
+        sut.tabDidReturnToScreen(presentedFrom: host)
+
+        XCTAssertEqual(host.sidebarPresentations.count, 2)
+        XCTAssertTrue(host.sidebarPresentations.last === sheet)
+        XCTAssertEqual(host.sidebarPresentationsAnimated.last, false)
+        XCTAssertTrue(sut.isSheetInSidebar)
+        XCTAssertFalse(sut.hasParkedSurface)
+        XCTAssertEqual(host.modalPresentationCount, 0)
+    }
+
+    @MainActor
+    func testWhenATabWithoutAnOpenSidebarComesBackThenNothingOpens() async {
+        let host = makeSidebarHost()
+        await sut.presentSheet(from: host)
+        sut.dismissSheet()
+        sut.tabWillLeaveScreen()
+
+        sut.tabDidReturnToScreen(presentedFrom: host)
+
+        XCTAssertEqual(host.sidebarPresentations.count, 1)
+        XCTAssertFalse(sut.isSheetPresented)
+    }
+
+    @MainActor
+    func testWhenTheTabLeavesThenTheVisitToDuckAIEndsOnceEvenIfAskedAgain() async {
+        let host = makeSidebarHost()
+        await sut.presentSheet(from: host)
+
+        // The tabs bar asks before switching, and the switch asks again.
+        sut.tabWillLeaveScreen()
+        sut.tabWillLeaveScreen()
+
+        XCTAssertEqual(host.sidebarDetachments.count, 1)
+        XCTAssertEqual(mockDelegate.closedSurfaceCount, 1)
+    }
+
+    @MainActor
+    func testWhenTheSidebarIsSlidingOutAsTheTabLeavesThenItStaysClosedWhenTheTabComesBack() async {
+        let host = makeSidebarHost()
+        host.holdsDismissals = true
+        await sut.presentSheet(from: host)
+        sut.dismissSheet()
+
+        sut.tabWillLeaveScreen()
+        sut.tabDidReturnToScreen(presentedFrom: host)
+
+        XCTAssertTrue(host.sidebarDetachments.isEmpty)
+        XCTAssertEqual(host.sidebarPresentations.count, 1)
+        XCTAssertFalse(sut.isSheetPresented)
+    }
+
+    @MainActor
+    func testWhenTheWindowNarrowedWhileTheTabWasAwayThenTheChatComesBackAsASheet() async {
+        let host = makeSidebarHost()
+        await sut.presentSheet(from: host)
+        let sheet = sut.sheetViewController
+        sut.tabWillLeaveScreen()
+        host.canPresentContextualSidebar = false
+
+        sut.tabDidReturnToScreen(presentedFrom: host)
+
+        XCTAssertEqual(host.modalPresentationCount, 1)
+        XCTAssertTrue(sut.sheetViewController === sheet)
+        XCTAssertEqual(sheet?.surfaceStyle, .sheet)
+        XCTAssertTrue(sut.isSheetPresented)
+    }
+
+    @MainActor
+    func testWhenATabAwayWithItsSidebarClosesThenTheChatClosesWithoutEndingTheVisitAgain() async {
+        let host = makeSidebarHost()
+        await sut.presentSheet(from: host)
+        sut.tabWillLeaveScreen()
+
+        sut.closeSurfaceAwayWithTab()
+
+        XCTAssertFalse(sut.isSheetPresented)
+        XCTAssertFalse(sut.hasParkedSurface)
+        XCTAssertEqual(mockSelectionJourneyInstrumentation.dismissalCount, 1)
+        XCTAssertEqual(mockDelegate.closedSurfaceCount, 1)
+    }
+
+    @MainActor
+    func testWhenTheChatIsNotAwayWithItsTabThenClosingAwayChatsLeavesItOnScreen() async {
+        let host = makeSidebarHost()
+        await sut.presentSheet(from: host)
+
+        sut.closeSurfaceAwayWithTab()
+
+        XCTAssertTrue(sut.isSheetInSidebar)
+        XCTAssertTrue(sut.isSheetPresented)
+    }
+
+    @MainActor
+    func testWhenChatIsClearedWhileAwayWithItsTabThenNothingComesBackWithTheTab() async {
+        let host = makeSidebarHost()
+        await sut.presentSheet(from: host)
+        sut.tabWillLeaveScreen()
+
+        sut.clearActiveChat()
+        sut.tabDidReturnToScreen(presentedFrom: host)
+
+        XCTAssertNil(sut.sheetViewController)
+        XCTAssertEqual(host.sidebarPresentations.count, 1)
+        XCTAssertEqual(mockDelegate.closedSurfaceCount, 1)
+    }
+
     // MARK: - originatingURLPublisher Tests
 
     @MainActor
@@ -1572,7 +2013,7 @@ final class AIChatContextualSheetCoordinatorTests: XCTestCase {
     func testNavigatingWithAnActiveChatAndAutoAttachOffOffersTheNewPage() async throws {
         // Given
         mockUnifiedToggleInputFeature.isAvailable = true
-        mockFeatureFlagger.enabledFeatureFlags = [.aiChatContextualUnifiedToggleInput, .contextualPagePlaceholder]
+        mockFeatureFlagger.enabledFeatureFlags = [.aiChatContextualUnifiedToggleInput]
         mockSettings.isAutomaticContextAttachmentEnabled = false
         await sut.presentSheet(from: mockPresentingVC)
         let host = try XCTUnwrap(sut.persistentUTIHost)
@@ -1598,7 +2039,7 @@ final class AIChatContextualSheetCoordinatorTests: XCTestCase {
     func testAcceptingTheOfferAttachesThePageWithoutCollectingItAgain() async throws {
         // Given
         mockUnifiedToggleInputFeature.isAvailable = true
-        mockFeatureFlagger.enabledFeatureFlags = [.aiChatContextualUnifiedToggleInput, .contextualPagePlaceholder]
+        mockFeatureFlagger.enabledFeatureFlags = [.aiChatContextualUnifiedToggleInput]
         mockSettings.isAutomaticContextAttachmentEnabled = false
         await sut.presentSheet(from: mockPresentingVC)
         let host = try XCTUnwrap(sut.persistentUTIHost)
@@ -1621,25 +2062,49 @@ final class AIChatContextualSheetCoordinatorTests: XCTestCase {
         XCTAssertNotNil(host.chipViewModel.attachedContext)
     }
 
+    // MARK: - Recent chats storage
+
     @MainActor
-    func testNavigatingWithThePlaceholderFlagOffOffersNothing() async throws {
-        // Given
-        mockUnifiedToggleInputFeature.isAvailable = true
-        mockFeatureFlagger.enabledFeatureFlags = [.aiChatContextualUnifiedToggleInput]
-        mockSettings.isAutomaticContextAttachmentEnabled = false
-        await sut.presentSheet(from: mockPresentingVC)
-        let host = try XCTUnwrap(sut.persistentUTIHost)
-        sut.sessionState.beginChatForUTISubmission()
-        sut.sessionState.updateUnifiedToggleInputActive(true)
-        originatingTabURLSubject.send(URL(string: "https://en.wikipedia.org/wiki/Tokamak")!)
-        mockPageContextHandler.triggerContextCollectionCallCount = 0
+    func testRecentChatsInFireModeComeFromFireStorageOnly() async throws {
+        let fireStorage = MockDuckAiChatStorage()
+        try mockNativeStorage.putChat(chatId: "regular", data: makeChatData(chatId: "regular"))
+        try fireStorage.putChat(chatId: "fire", data: makeChatData(chatId: "fire"))
 
-        // When
-        await sut.notifyPageChanged()
+        let reader = makeRecentChatsReader(isFireMode: true, fireModeStorage: fireStorage)
+        let result = await reader.fetchSuggestions(query: nil, maxChats: 5)
 
-        // Then
-        XCTAssertEqual(mockPageContextHandler.triggerContextCollectionCallCount, 0, "The page must not be read at all")
-        XCTAssertNil(host.chipViewModel.suggestedContext)
+        XCTAssertEqual((result.pinned + result.recent).map { $0.chatId }, ["fire"])
+    }
+
+    @MainActor
+    func testRecentChatsInFireModeWithoutFireStorageAreEmpty() async throws {
+        try mockNativeStorage.putChat(chatId: "regular", data: makeChatData(chatId: "regular"))
+
+        let reader = makeRecentChatsReader(isFireMode: true, fireModeStorage: nil)
+        let result = await reader.fetchSuggestions(query: nil, maxChats: 5)
+
+        XCTAssertTrue((result.pinned + result.recent).isEmpty)
+    }
+
+    @MainActor
+    private func makeRecentChatsReader(isFireMode: Bool, fireModeStorage: DuckAiNativeStorageHandling?) -> AIChatSuggestionsReading {
+        AIChatSuggestionsReader.makeRecentChatsReader(isFireMode: isFireMode,
+                                                      nativeStorageHandler: mockNativeStorage,
+                                                      fireModeStorageHandler: fireModeStorage,
+                                                      featureFlagger: mockFeatureFlagger,
+                                                      privacyConfig: MockPrivacyConfigurationManager())
+    }
+
+    private func makeChatData(chatId: String) throws -> Data {
+        let lastEdit = AIChatSuggestion.formatISO8601Date(Date()) ?? ""
+        return try JSONSerialization.data(withJSONObject: [
+            "chatId": chatId,
+            "title": chatId,
+            "model": "gpt-4o-mini",
+            "lastEdit": lastEdit,
+            "pinned": false,
+            "messages": [["role": "user", "content": "Hello"]]
+        ] as [String: Any])
     }
 
     // MARK: - Open Duck.ai

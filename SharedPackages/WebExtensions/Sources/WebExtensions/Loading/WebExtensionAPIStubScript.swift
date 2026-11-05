@@ -38,6 +38,7 @@ import Foundation
 ///
 /// In an extension page embedded in a website, `chrome.action.openPopup` is relayed to the extension's
 /// background page, since calling WebKit's own there would take the website's web process down.
+/// Extension pages also expose the DuckDuckGo brand through `navigator.userAgentData`.
 ///
 /// A few extensions also get a fix of their own, listed in `extensionFixes` with the problem each one
 /// solves, for Chrome-only code no generic stub can cover.
@@ -115,6 +116,65 @@ public enum WebExtensionAPIStubScript {
             }
         } catch (error) {
             // A page that cannot read its manifest is treated like any other extension page.
+        }
+
+        // Match the DuckDuckGo client-hint brand extensions can detect on Windows. Keep native
+        // values when available; WebKit versions without this API get its low-entropy surface.
+        // This changes JavaScript detection only, not HTTP client-hint headers.
+        try {
+            var navigator = globalThis.navigator;
+            if (navigator) {
+                var originalUAData = navigator.userAgentData;
+                var existingBrands = originalUAData ? originalUAData.brands : [];
+                var hasDuckDuckGoBrand = existingBrands.some(function(item) { return item.brand === "DuckDuckGo"; });
+                if (!hasDuckDuckGoBrand) {
+                    var chromeVersion = /Chrome[/]([0-9.]+)/.exec(navigator.userAgent || "");
+                    var fullBrandVersion = chromeVersion ? chromeVersion[1] : "0.0.0.0";
+                    var brandVersion = fullBrandVersion.split(".")[0];
+
+                    function brandedList(list, version) {
+                        var result = (list || []).map(function(item) { return { brand: item.brand, version: item.version }; });
+                        if (!result.some(function(item) { return item.brand === "DuckDuckGo"; })) {
+                            result.push({ brand: "DuckDuckGo", version: version });
+                        }
+                        return result;
+                    }
+
+                    var uaData = {
+                        get brands() { return brandedList(existingBrands, brandVersion); },
+                        get mobile() { return originalUAData ? originalUAData.mobile : false; },
+                        get platform() { return originalUAData ? originalUAData.platform : "macOS"; },
+                        toJSON: function() {
+                            return { brands: this.brands, mobile: this.mobile, platform: this.platform };
+                        },
+                        getHighEntropyValues: async function(hints) {
+                            if (hints === null || (typeof hints !== "object" && typeof hints !== "function")) {
+                                throw new TypeError("Client hints must be an iterable object");
+                            }
+                            // Snapshot and convert the sequence before yielding, as native argument conversion does.
+                            var requested = [];
+                            for (var hint of hints) {
+                                requested.push(`${hint}`);
+                            }
+                            var values = originalUAData && typeof originalUAData.getHighEntropyValues === "function"
+                                ? await originalUAData.getHighEntropyValues(requested) : {};
+                            var result = Object.assign({}, values, uaData.toJSON());
+                            // A native implementation may deliberately withhold high-entropy values.
+                            if (requested.indexOf("fullVersionList") !== -1 && (!originalUAData || values.fullVersionList !== undefined)) {
+                                result.fullVersionList = brandedList(values.fullVersionList, fullBrandVersion);
+                            }
+                            return result;
+                        }
+                    };
+                    Object.defineProperty(navigator, "userAgentData", {
+                        configurable: true,
+                        enumerable: true,
+                        get: function() { return uaData; }
+                    });
+                }
+            }
+        } catch (error) {
+            console.info("[DuckDuckGo] Could not expose the DuckDuckGo client-hint brand: " + error);
         }
 
         // `Symbol.dispose` and `Symbol.asyncDispose` (explicit resource management, `using`

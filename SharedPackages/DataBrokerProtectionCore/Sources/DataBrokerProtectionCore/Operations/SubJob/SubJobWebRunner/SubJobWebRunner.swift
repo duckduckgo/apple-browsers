@@ -77,9 +77,6 @@ public protocol SubJobWebRunning: CCFCommunicationDelegate {
     func evaluateActionAndHaltIfNeeded(_ action: Action) async -> Bool
 
     func executeNextStep() async
-    #if os(macOS) && DEBUG
-    @MainActor
-    #endif
     func executeCurrentAction() async
 
     func resetRetriesCount()
@@ -104,126 +101,20 @@ public extension SubJobWebRunning {
         await webViewHandler?.finish()
     }
 
-    #if os(macOS) && DEBUG
-    /// The held item this run belongs to, when its broker needs the user.
-    var assistItemID: PIRAssistItemID? {
-        guard let brokerId = context.dataBroker.id, let profileQueryId = context.profileQuery.id else { return nil }
-        let url = context.dataBroker.url
-        if let extractedProfileId = extractedProfile?.id, executionConfig.needsUser(forBrokerAt: url) {
-            return PIRAssistItemID(brokerId: brokerId, profileQueryId: profileQueryId, extractedProfileId: extractedProfileId)
-        }
-        if extractedProfile == nil, executionConfig.holdsScan(forBrokerAt: url) {
-            return PIRAssistItemID(brokerId: brokerId, profileQueryId: profileQueryId, extractedProfileId: nil)
-        }
-        return nil
-    }
-
-    func automationEpoch() async -> UUID? {
-        await (webViewHandler as? DataBrokerProtectionWebViewHandler)?.manualControl.epoch
-    }
-
-    func permitsAutomation(_ epoch: UUID?) async -> Bool {
-        guard let handler = webViewHandler as? DataBrokerProtectionWebViewHandler, let epoch else { return true }
-        return await handler.manualControl.waitForAutomation(epoch)
-    }
-
-    @MainActor
-    func configureManualControl(for action: Action) {
-        guard let handler = webViewHandler as? DataBrokerProtectionWebViewHandler else { return }
-        handler.manualControl.resume = { [weak self] in
-            guard let self else { return }
-            switch action.actionType {
-            case .extract, .expectation, .condition, .getCaptchaInfo, .solveCaptcha:
-                // Re-evaluate the interrupted read/CAPTCHA work on the actual broker page.
-                await self.runNextAction(action)
-            default:
-                // A challenge or manual navigation replaced this action's page. Do not replay its submission.
-                await self.executeNextStep()
-            }
-        }
-        handler.manualControl.resumeAfterUserNavigation = { [weak self] in
-            guard let self else { return }
-            // Checking the page is the only way to tell whether the user's own submission went through.
-            guard let check = self.actionsHandler?.finalCheck() else {
-                await self.failAfterUserNavigation(during: action)
-                return
-            }
-            self.actionsHandler?.pendingSubmissionCheck = (check, action, true)
-            await self.executeSubmissionCheck(check)
-        }
-        handler.manualControl.cancel = { [weak self] in
-            guard let self else { return }
-            self.failed(with: DataBrokerProtectionError.jobTimeout)
-            _ = self.runnerCancellation.markCancelled()
-            await self.webViewHandler?.finish()
-        }
-    }
-
-    func executeSubmissionCheck(_ check: Action) async {
-        await webViewHandler?.execute(action: check, ofType: actionsHandler?.stepType,
-                                      data: .userData(context.profileQuery, extractedProfile,
-                                                      fetchedEmail.map { FetchedEmail(email: $0) }, emailData))
-    }
-
-    func failAfterUserNavigation(during action: Action) async {
-        failed(with: DataBrokerProtectionError.actionFailed(actionID: action.id, message: "The page moved on during the user's turn"))
-        _ = runnerCancellation.markCancelled()
-        await webViewHandler?.finish()
-    }
-    #endif
-
     // MARK: - Shared functions
 
     func evaluateActionAndHaltIfNeeded(_ action: Action) async -> Bool {
         if !stageCalculator.isRetrying {
             // Scripts are not idempotent, so a failed one is never re-run. Authors handle their own retries.
             retriesCountOnError = action is ExecuteScriptAction ? 0 : 1
-            #if os(macOS) && DEBUG
-            if actionsHandler?.checksOnlyOnce == true {
-                retriesCountOnError = 0
-            }
-            #endif
         }
 
         return false
     }
 
-    #if os(macOS) && DEBUG
-    @MainActor
-    #endif
     // swiftlint:disable:next cyclomatic_complexity
     func runNextAction(_ action: Action) async {
-        #if os(macOS) && DEBUG
-        let epoch = await automationEpoch()
-        guard await permitsAutomation(epoch) else { return }
-        await configureManualControl(for: action)
-        #endif
         let stepType = actionsHandler?.stepType
-
-        #if os(macOS) && DEBUG
-        if let handler = webViewHandler as? DataBrokerProtectionWebViewHandler {
-            await handler.watchForEmbeddedChallenge(during: action)
-            if let actionsHandler {
-                await handler.updateAssistChecklist(actionsHandler, profileQuery: context.profileQuery)
-            }
-            if let check = actionsHandler?.submissionCheck(before: action), await handler.consumeUserTurnEnded() {
-                // The user may have pressed the page's own submit during their turn; clicking again could send a duplicate.
-                actionsHandler?.pendingSubmissionCheck = (check, action, false)
-                Logger.action.log("Checking whether the user already submitted before running \(action.actionType.rawValue, privacy: .public)")
-                await executeSubmissionCheck(check)
-                return
-            }
-        }
-        if executionConfig.userSolvesCaptcha(forBrokerAt: context.dataBroker.url),
-           action is GetCaptchaInfoAction || action is SolveCaptchaAction {
-            // The user solves this broker's captcha; skip the backend solver's two steps.
-            if action is GetCaptchaInfoAction, let handler = webViewHandler as? DataBrokerProtectionWebViewHandler {
-                guard await handler.askUserToSolveCaptcha() else { return }
-            }
-            await executeNextStep()
-            return
-        }
-        #endif
 
         stageCalculator.setLastAction(action)
 
@@ -247,14 +138,8 @@ public extension SubJobWebRunning {
             do {
                 stageCalculator.fireOptOutSubmit()
                 try await runEmailConfirmationAction(action: emailConfirmationAction)
-                #if os(macOS) && DEBUG
-                guard await permitsAutomation(epoch) else { return }
-                #endif
                 await executeNextStep()
             } catch {
-                #if os(macOS) && DEBUG
-                guard await permitsAutomation(epoch) else { return }
-                #endif
                 recordDebugEvent(kind: .actionResponse,
                                  actionType: emailConfirmationAction.actionType,
                                  details: errorDetails(error))
@@ -297,22 +182,13 @@ public extension SubJobWebRunning {
                 recordDebugEvent(kind: .wait,
                                  actionType: generateEmailAction.actionType,
                                  details: "Email address received")
-                #if os(macOS) && DEBUG
-                guard await permitsAutomation(epoch) else { return }
-                #endif
                 fetchedEmail = emailData.emailAddress
                 stageCalculator.setEmailPattern(emailData.pattern)
                 if stepType == .optOut {
                     stageCalculator.fireOptOutEmailGenerate()
                 }
-                #if os(macOS) && DEBUG
-                guard await permitsAutomation(epoch) else { return }
-                #endif
                 await executeNextStep()
             } catch {
-                #if os(macOS) && DEBUG
-                guard await permitsAutomation(epoch) else { return }
-                #endif
                 recordDebugEvent(kind: .actionResponse,
                                  actionType: generateEmailAction.actionType,
                                  details: errorDetails(error))
@@ -341,9 +217,6 @@ public extension SubJobWebRunning {
                 recordDebugEvent(kind: .wait,
                                  actionType: action.actionType,
                                  details: "Captcha resolution received")
-                #if os(macOS) && DEBUG
-                guard await permitsAutomation(epoch) else { return }
-                #endif
                 stageCalculator.fireOptOutCaptchaSolve()
                 let request: CCFRequestData = .solveCaptcha(CaptchaToken(token: captchaData))
                 recordDebugEvent(kind: .actionPayload,
@@ -353,9 +226,6 @@ public extension SubJobWebRunning {
                                               ofType: stepType,
                                               data: request)
             } else {
-                #if os(macOS) && DEBUG
-                guard await permitsAutomation(epoch) else { return }
-                #endif
                 await onError(error: DataBrokerProtectionError.captchaServiceError(CaptchaServiceError.nilDataWhenFetchingCaptchaResult))
             }
 
@@ -378,18 +248,12 @@ public extension SubJobWebRunning {
                 recordDebugEvent(kind: .wait,
                                  actionType: action.actionType,
                                  details: "Email address received")
-                #if os(macOS) && DEBUG
-                guard await permitsAutomation(epoch) else { return }
-                #endif
                 extractedProfile?.email = emailData.emailAddress
                 stageCalculator.setEmailPattern(emailData.pattern)
                 if stepType == .optOut {
                     stageCalculator.fireOptOutEmailGenerate()
                 }
             } catch {
-                #if os(macOS) && DEBUG
-                guard await permitsAutomation(epoch) else { return }
-                #endif
                 await onEmailError(error: error)
                 return
             }
@@ -407,9 +271,6 @@ public extension SubJobWebRunning {
             try? await Task.sleep(nanoseconds: UInt64(clickAwaitTime) * 1_000_000_000)
         }
 
-        #if os(macOS) && DEBUG
-        guard await permitsAutomation(epoch) else { return }
-        #endif
         let request: CCFRequestData = .userData(
             context.profileQuery,
             self.extractedProfile,
@@ -528,19 +389,22 @@ public extension SubJobWebRunning {
         if let handler = handler { // This help us swapping up the WebViewHandler on tests
             self.webViewHandler = handler
         } else {
+            let debugEventReporter = stageCalculator as? DebugEventReporting
             self.webViewHandler = try await DataBrokerProtectionWebViewHandler(privacyConfig: privacyConfig,
                                                                                prefs: prefs,
                                                                                delegate: self,
                                                                                isFakeBroker: isFakeBroker,
                                                                                executionConfig: executionConfig,
-                                                                               challengePixelDataBroker: context.dataBroker.url,
-                                                                               challengePixelBrokerVersion: context.dataBroker.version,
+                                                                               dataBroker: context.dataBroker,
+                                                                               isChallengeSolverEnabled: featureFlagger.isChallengeSolverOn,
                                                                                shouldContinueActionHandler: shouldRunNextStep,
                                                                                customUserAgent: featureFlagger.isCustomWebViewUserAgentOn ? context.dataBroker.customUserAgent : nil,
                                                                                contentBlocking: contentBlocking,
-                                                                               assistItemID: assistItemID,
-                                                                               assistBrokerName: context.dataBroker.name,
-                                                                               pixelHandler: pixelHandler)
+                                                                               pixelHandler: pixelHandler,
+                                                                               actionLogContext: loggerContext(),
+                                                                               challengeEventHandler: { message in
+                                                                                   debugEventReporter?.recordDebugEvent(kind: .challenge, actionType: nil, details: message)
+                                                                               })
         }
 
         await webViewHandler?.initializeWebView(showWebView: showWebView)
@@ -548,14 +412,7 @@ public extension SubJobWebRunning {
 
     // MARK: - CSSCommunicationDelegate
 
-    #if os(macOS) && DEBUG
-    @MainActor
-    #endif
     func loadURL(url: URL) async {
-        #if os(macOS) && DEBUG
-        let epoch = await automationEpoch()
-        guard await permitsAutomation(epoch) else { return }
-        #endif
         let webSiteStartLoadingTime = Date()
 
         do {
@@ -567,9 +424,6 @@ public extension SubJobWebRunning {
             }
 
             let successNextSteps = {
-                #if os(macOS) && DEBUG
-                guard await self.permitsAutomation(epoch) else { return }
-                #endif
                 self.fireSiteLoadingPixel(startTime: webSiteStartLoadingTime, hasError: false)
                 self.postLoadingSiteStartTime = Date()
                 await self.executeNextStep()
@@ -595,9 +449,6 @@ public extension SubJobWebRunning {
             }
 
         } catch {
-            #if os(macOS) && DEBUG
-            guard await permitsAutomation(epoch) else { return }
-            #endif
             fireSiteLoadingPixel(startTime: webSiteStartLoadingTime, hasError: true)
             await onError(error: error)
         }
@@ -619,26 +470,10 @@ public extension SubJobWebRunning {
         }
     }
 
-    #if os(macOS) && DEBUG
-    @MainActor
-    #endif
     func success(actionId: String, actionType: ActionType) async {
-        #if os(macOS) && DEBUG
-        let epoch = await automationEpoch()
-        guard await permitsAutomation(epoch) else { return }
-        #endif
         recordDebugEvent(kind: .actionResponse,
                          actionType: actionType,
                          details: DebugHelper.prettyPrintedJSON(from: ["actionId": actionId, "actionType": actionType.rawValue]))
-        #if os(macOS) && DEBUG
-        if let pending = actionsHandler?.pendingSubmissionCheck, pending.check.id == actionId {
-            actionsHandler?.pendingSubmissionCheck = nil
-            Logger.action.log("The user already submitted; skipping to the remaining checks")
-            _ = actionsHandler?.keepOnlyRemainingExpectations()
-            await executeNextStep()
-            return
-        }
-        #endif
         let isForOptOut = actionsHandler?.isForOptOut == true
 
         switch actionType {
@@ -656,14 +491,7 @@ public extension SubJobWebRunning {
         }
     }
 
-    #if os(macOS) && DEBUG
-    @MainActor
-    #endif
     func conditionSuccess(actions: [Action]) async {
-        #if os(macOS) && DEBUG
-        let epoch = await automationEpoch()
-        guard await permitsAutomation(epoch) else { return }
-        #endif
         recordDebugEvent(kind: .actionResponse,
                          details: DebugHelper.prettyPrintedJSON(from: actions))
         if actions.isEmpty {
@@ -683,14 +511,7 @@ public extension SubJobWebRunning {
         await self.executeNextStep()
     }
 
-    #if os(macOS) && DEBUG
-    @MainActor
-    #endif
     func captchaInformation(captchaInfo: GetCaptchaInfoResponse) async {
-        #if os(macOS) && DEBUG
-        let epoch = await automationEpoch()
-        guard await permitsAutomation(epoch) else { return }
-        #endif
         recordDebugEvent(kind: .actionResponse,
                          actionType: .getCaptchaInfo,
                          details: DebugHelper.prettyPrintedJSON(from: captchaInfo))
@@ -700,25 +521,18 @@ public extension SubJobWebRunning {
             recordDebugEvent(kind: .wait,
                              actionType: .getCaptchaInfo,
                              details: "Submitting captcha information")
-            let transactionID = try await captchaService.submitCaptchaInformation(
+            actionsHandler?.captchaTransactionId = try await captchaService.submitCaptchaInformation(
                 captchaInfo,
                 dataBrokerURL: context.dataBroker.url,
                 dataBrokerVersion: context.dataBroker.version,
                 attemptId: stageCalculator.attemptId,
                 shouldRunNextStep: shouldRunNextStep)
-            #if os(macOS) && DEBUG
-            guard await permitsAutomation(epoch) else { return }
-            #endif
-            actionsHandler?.captchaTransactionId = transactionID
             recordDebugEvent(kind: .wait,
                              actionType: .getCaptchaInfo,
                              details: "Captcha information submitted")
             stageCalculator.fireOptOutCaptchaSend()
             await executeNextStep()
         } catch {
-            #if os(macOS) && DEBUG
-            guard await permitsAutomation(epoch) else { return }
-            #endif
             if let captchaError = error as? CaptchaServiceError {
                 await onError(error: DataBrokerProtectionError.captchaServiceError(captchaError))
             } else {
@@ -727,40 +541,20 @@ public extension SubJobWebRunning {
         }
     }
 
-    #if os(macOS) && DEBUG
-    @MainActor
-    #endif
     func solveCaptcha(with response: SolveCaptchaResponse) async {
-        #if os(macOS) && DEBUG
-        let epoch = await automationEpoch()
-        guard await permitsAutomation(epoch) else { return }
-        #endif
         recordDebugEvent(kind: .actionResponse,
                          actionType: .solveCaptcha,
                          details: DebugHelper.prettyPrintedJSON(from: response))
         do {
             try await webViewHandler?.evaluateJavaScript(response.callback.eval)
 
-            #if os(macOS) && DEBUG
-            guard await permitsAutomation(epoch) else { return }
-            #endif
             await executeNextStep()
         } catch {
-            #if os(macOS) && DEBUG
-            guard await permitsAutomation(epoch) else { return }
-            #endif
             await onError(error: DataBrokerProtectionError.solvingCaptchaWithCallbackError)
         }
     }
 
-    #if os(macOS) && DEBUG
-    @MainActor
-    #endif
     func onError(error: Error) async {
-        #if os(macOS) && DEBUG
-        let epoch = await automationEpoch()
-        if shouldRunNextStep(), !(await permitsAutomation(epoch)) { return }
-        #endif
         recordDebugEvent(kind: .actionResponse,
                          actionType: actionsHandler?.currentAction()?.actionType,
                          details: errorDetails(error))
@@ -770,19 +564,6 @@ public extension SubJobWebRunning {
             await failAsCancelledAndTearDown()
             return
         }
-
-        #if os(macOS) && DEBUG
-        if let pending = actionsHandler?.pendingSubmissionCheck {
-            actionsHandler?.pendingSubmissionCheck = nil
-            if pending.afterUserNavigation, let handler = webViewHandler as? DataBrokerProtectionWebViewHandler,
-               await !handler.hasChallengeFromLastUserTurn() {
-                await failAfterUserNavigation(during: pending.deferred)
-                return
-            }
-            await runNextAction(pending.deferred)
-            return
-        }
-        #endif
 
         if let currentAction = actionsHandler?.currentAction(), currentAction is ConditionAction {
             Logger.action.log(loggerContext(for: currentAction),
@@ -826,19 +607,12 @@ public extension SubJobWebRunning {
     }
 
     func executeCurrentAction() async {
-        #if os(macOS) && DEBUG
-        let epoch = await automationEpoch()
-        guard await permitsAutomation(epoch) else { return }
-        #endif
-        let waitTimeUntilRunningTheActionAgain = BrokerJobExecutionConfig.Constants.defaultOperationAwaitTime
+        let waitTimeUntilRunningTheActionAgain: TimeInterval = 3
         recordDebugEvent(kind: .wait,
                          actionType: actionsHandler?.currentAction()?.actionType,
                          details: "Waiting \(waitTimeUntilRunningTheActionAgain)s (retry)")
         try? await Task.sleep(nanoseconds: UInt64(waitTimeUntilRunningTheActionAgain) * 1_000_000_000)
 
-        #if os(macOS) && DEBUG
-        guard await permitsAutomation(epoch) else { return }
-        #endif
         if let currentAction = self.actionsHandler?.currentAction() {
             decrementRetriesCountOnError()
             Logger.dataBrokerProtection.log("Retrying current action")

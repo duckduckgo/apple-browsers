@@ -4,7 +4,7 @@
         "owners": ["hanyutang-sandra"],
         "meta": {
             "type": "ios-data-clearing",
-            "version": "1.5"
+            "version": "1.6"
         },
         "feature": {
             "name": "data-clearing",
@@ -71,8 +71,8 @@
                     "clear_all_history_error": "dataClearingActionError",
                     "clear_aiChat_history_status": {
                         "type": "string",
-                        "description": "Final status of the clear_aiChat_history action. SKIPPED = the page has IndexedDB turned off (Lockdown Mode), so it could not be cleared; the error says why.",
-                        "enum": ["SUCCESS", "FAILURE", "SKIPPED"]
+                        "description": "Final status of the clear_aiChat_history action.",
+                        "enum": ["SUCCESS", "FAILURE"]
                     },
                     "clear_aiChat_history_latency_ms": {
                         "type": "integer",

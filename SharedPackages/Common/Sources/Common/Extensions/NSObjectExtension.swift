@@ -94,10 +94,12 @@ extension NSObject {
             }
             return
         }
-        let assertion = DispatchWorkItem { [unowned self] in
+        let assertion = DispatchWorkItem { [weak self] in
+            guard let self else /* already being deallocated */ { return }
             action.perform(self)
         }
         DispatchQueue.main.asyncAfter(deadline: .now() + timeout, execute: assertion)
+        // Called _after_ object's deinit
         self.onDeinit {
             assertion.cancel()
         }

@@ -1,4 +1,7 @@
 /* No comment provided by engineer. */
+" " = " ";
+
+/* No comment provided by engineer. */
 "-config.rollout.<parent>.<subfeature> true/false" = "-config.rollout.<parent>.<subfeature> true/false";
 
 /* No comment provided by engineer. */
@@ -381,6 +384,21 @@
 
 /* Title for the New Tab row in the Duck.ai tab header Plus (+) menu */
 "aichat.header.plusMenu.newTab" = "Ny fane";
+
+/* Section header in the Duck.ai tab header Plus (+) menu; every row below it opens a new tab */
+"aichat.header.plusMenu.newTabSection" = "Ny fane";
+
+/* Row in the New Tab section of the Duck.ai tab header Plus (+) menu — opens a new Duck.ai chat in a new tab */
+"aichat.header.plusMenu.newTabSection.chat" = "Chat";
+
+/* Row in the New Tab section of the Duck.ai tab header Plus (+) menu — opens Duck.ai in image generation mode in a new tab */
+"aichat.header.plusMenu.newTabSection.image" = "Billede";
+
+/* Row in the Duck.ai tab header Plus (+) menu — opens a new tab in search mode */
+"aichat.header.plusMenu.newTabSection.search" = "Søg";
+
+/* Row in the New Tab section of the Duck.ai tab header Plus (+) menu — opens a new Duck.ai voice chat in a new tab */
+"aichat.header.plusMenu.newTabSection.voiceChat" = "Stemmechat";
 
 /* Title for the New Voice Chat row in the Duck.ai tab header Plus (+) menu */
 "aichat.header.plusMenu.newVoiceChat" = "Ny stemmechat";
@@ -3298,6 +3316,72 @@
 /* No comment provided by engineer. */
 "menu.button.hint" = "Browsingmenu";
 
+/* iPad menu bar command */
+"menuActualSize" = "Faktisk størrelse";
+
+/* iPad menu bar command */
+"menuBack" = "Tilbage";
+
+/* iPad menu bar command */
+"menuClearTabsAndData" = "Ryd faner og data";
+
+/* iPad menu bar command */
+"menuDuplicateTab" = "Dupliker fane";
+
+/* iPad menu bar command */
+"menuFeedback" = "Del feedback";
+
+/* iPad menu bar command */
+"menuForward" = "Frem";
+
+/* iPad menu bar command */
+"menuHideDownloads" = "Skjul downloads";
+
+/* iPad menu bar command */
+"menuHidePasswords" = "Skjul adgangskoder";
+
+/* iPad menu bar command */
+"menuHideTabs" = "Skjul faner";
+
+/* iPad menu bar command */
+"menuLastTab" = "Sidste fane";
+
+/* iPad menu bar command */
+"menuNewTabOnRight" = "Ny fane til højre";
+
+/* iPad menu bar command */
+"menuNextTab" = "Vis næste fane";
+
+/* iPad menu bar command */
+"menuOpenLocation" = "Åbn placering ...";
+
+/* iPad menu bar command */
+"menuPreviousTab" = "Vis forrige fane";
+
+/* iPad menu bar command */
+"menuPrint" = "Print ...";
+
+/* iPad menu bar command selecting a numbered tab */
+"menuSelectTab" = "Vælg fane %d";
+
+/* iPad menu bar command */
+"menuSettings" = "DuckDuckGo-indstillinger ...";
+
+/* iPad menu bar command */
+"menuShowDownloads" = "Vis downloads";
+
+/* iPad menu bar command */
+"menuShowPasswords" = "Vis adgangskoder";
+
+/* iPad menu bar command */
+"menuShowTabs" = "Vis faner";
+
+/* iPad menu bar command */
+"menuStop" = "Stop";
+
+/* iPad menu bar command */
+"menuVoiceSearch" = "Privat stemmesøgning";
+
 /* No comment provided by engineer. */
 "Message" = "Besked";
 
@@ -5932,3 +6016,12 @@
 /* Title for screen to screen confirming what data to import from a zip file (bookmarks and /or passwords) */
 "zip.content.import.types.title" = "Hvad vil du importere?";
 
+
+/* Fireproofing setting toggle label */
+"preserveLogins.askOnSignIn" = "Anmod om at brandsikre websteder ved login";
+
+/* Empty Fireproof sites list */
+"preserveLogins.emptyState" = "Ingen brandsikre websteder endnu";
+
+/* Button to remove all Fireproof sites */
+"preserveLogins.removeAllSites" = "Fjern alle brandsikre websteder";

@@ -613,6 +613,44 @@ final class DataImportViewModelTests: XCTestCase {
         XCTAssertEqual(Set(kind.supportedFileTypes(for: .safari)), Source.safari.archiveImportSupportedFiles)
     }
 
+    func testSupportedDataTypes_historyFlagTurnedOn_addsHistoryForBrowsersThatImportIt() throws {
+        try setHistoryImportFlag(false)
+        let typesWithFlagOff = [Source.chrome, .firefox, .safari].map(\.supportedDataTypes)
+
+        try setHistoryImportFlag(true)
+
+        XCTAssertTrue(typesWithFlagOff.allSatisfy { !$0.contains(.history) })
+        XCTAssertTrue([Source.chrome, .yandex, .firefox, .safari].allSatisfy { $0.supportedDataTypes.contains(.history) })
+        XCTAssertFalse(Source.tor.supportedDataTypes.contains(.history))
+    }
+
+    @MainActor
+    func testInit_historyFlagOn_selectsHistoryByDefaultForFirefoxAndSafari() throws {
+        try setHistoryImportFlag(true)
+
+        let models = [Source.firefox, .safari].map(defaultProfileModel(importSource:))
+
+        XCTAssertEqual(models.map { $0.selectedDataTypes.contains(.history) }, [true, true])
+    }
+
+    @MainActor
+    func testImportButtonPressed_safariTechnologyPreviewWithHistoryOnly_asksForArchive() throws {
+        try setHistoryImportFlag(true)
+        model = sourceFilterModel(
+            importSource: .safariTechnologyPreview,
+            isFilterOn: true,
+            availableImportSources: sourceFilterSources + [.safariTechnologyPreview],
+            dataImporterFactory: { _, _, _, _ in ImporterMock(importableTypes: [.bookmarks]) }
+        )
+        model.selectDataTypes([.history])
+
+        model.importButtonPressed()
+
+        XCTAssertEqual(model.importSource, .safariTechnologyPreview)
+        guard case .archiveImport(let dataTypes, _) = model.screen else { return XCTFail("Expected archive import") }
+        XCTAssertTrue(dataTypes.contains(.history))
+    }
+
     @MainActor
     func testUpdateWithSource_filterOn_keepsFilterAndImportsItsTypesTheSourceSupports() {
         model = sourceFilterModel(importSource: .chrome, isFilterOn: true)
@@ -2430,6 +2468,31 @@ final class DataImportViewModelTests: XCTestCase {
         }
     }
 
+    func testMergeImportSummary_historyFailsWhileBookmarksAndPasswordsSucceed_postsImportComplete() async throws {
+        try await startSafariImport(returning: [
+            .bookmarks: .success(.init(successful: 10, duplicate: 0, failed: 0)),
+            .passwords: .success(.init(successful: 5, duplicate: 0, failed: 0)),
+            .history: .failure(Failure(.history, .other))
+        ])
+        let importComplete = expectation(forNotification: .dataImportComplete, object: nil)
+
+        await fulfillImport()
+
+        await fulfillment(of: [importComplete], timeout: 1)
+    }
+
+    func testMergeImportSummary_historyOnlyFails_doesNotPostImportComplete() async throws {
+        try await startSafariImport(selecting: [.history], returning: [
+            .history: .failure(Failure(.history, .other))
+        ])
+        let importComplete = expectation(forNotification: .dataImportComplete, object: nil)
+        importComplete.isInverted = true
+
+        await fulfillImport()
+
+        await fulfillment(of: [importComplete], timeout: 1)
+    }
+
     func testMergeImportSummary_showsFileImportForPasswords_whenBookmarksSucceedPasswordsEmpty() async {
         // GIVEN
         await MainActor.run {
@@ -2991,6 +3054,39 @@ final class DataImportViewModelTests: XCTestCase {
         addTeardownBlock { featureFlagger.featuresStub[key] = originalValue }
     }
 
+    private func setHistoryImportFlag(_ isOn: Bool) throws {
+        let featureFlagger = try XCTUnwrap(Application.appDelegate.featureFlagger as? MockFeatureFlagger)
+        let key = FeatureFlag.dataImportHistory.rawValue
+        let originalValue = featureFlagger.featuresStub[key]
+        featureFlagger.featuresStub[key] = isOn
+        addTeardownBlock { featureFlagger.featuresStub[key] = originalValue }
+    }
+
+    @MainActor
+    private func startSafariImport(
+        selecting dataTypes: Set<DataType> = [.bookmarks, .passwords, .history],
+        returning summary: DataImportSummary
+    ) throws {
+        try setHistoryImportFlag(true)
+        setupModel(with: .safari, dataImporterFactory: { _, _, _, _ in
+            ImporterMock(importTask: { _, _ in summary })
+        })
+        model.selectDataTypes(dataTypes)
+        model.initiateImport(fileURL: .testProfile)
+    }
+
+    @MainActor
+    private func defaultProfileModel(importSource: Source) -> DataImportViewModel {
+        DataImportViewModel(
+            importSource: importSource,
+            syncFeatureVisibility: .hide,
+            loadProfiles: { browser in
+                .init(browser: browser, profiles: [BrowserProfile.default(fileStore: self.fileStore)(browser)])
+            },
+            directoryAccessAvailability: .mockUnavailable()
+        )
+    }
+
     private var sourceFilterSources: [Source] {
         [.chrome, .safari, .tor, .fileImport, .onePassword8, .bitwarden]
     }
@@ -2998,6 +3094,7 @@ final class DataImportViewModelTests: XCTestCase {
     private func sourceFilterModel(
         importSource: Source,
         isFilterOn: Bool,
+        availableImportSources: [Source]? = nil,
         dataImporterFactory: @escaping DataImportViewModel.DataImporterFactory = { _, _, _, _ in ImporterMock() },
         openPanelCallback: @escaping ([UTType]) -> URL? = { _ in nil },
         featureFlagger: MockFeatureFlagger = MockFeatureFlagger(),
@@ -3006,7 +3103,7 @@ final class DataImportViewModelTests: XCTestCase {
         featureFlagger.featuresStub[FeatureFlag.dataImportSourceFilter.rawValue] = isFilterOn
         return DataImportViewModel(
             importSource: importSource,
-            availableImportSources: sourceFilterSources,
+            availableImportSources: availableImportSources ?? sourceFilterSources,
             syncFeatureVisibility: .hide,
             loadProfiles: loadProfiles ?? { browser in
                 .init(browser: browser, profiles: [BrowserProfile.test(fileStore: self.fileStore)(browser)])

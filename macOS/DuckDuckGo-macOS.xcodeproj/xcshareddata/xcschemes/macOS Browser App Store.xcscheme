@@ -172,9 +172,6 @@
                   Identifier = "CoreDataEncryptionTests/testSavingIncorrectValueTypes()">
                </Test>
                <Test
-                  Identifier = "EncryptionKeyStoreTests">
-               </Test>
-               <Test
                   Identifier = "PinnedTabsManagerProviderTests/test_WhenMigratingFromSharedToPerWindow_ThenTabsAreMigratedToFirstNewPerWindowManager()">
                </Test>
             </SkippedTests>
@@ -359,7 +356,7 @@
          </EnvironmentVariable>
          <EnvironmentVariable
             key = "SKIP_SNAPSHOT_TESTS"
-            value = "1"
+            value = "0"
             isEnabled = "YES">
          </EnvironmentVariable>
       </EnvironmentVariables>

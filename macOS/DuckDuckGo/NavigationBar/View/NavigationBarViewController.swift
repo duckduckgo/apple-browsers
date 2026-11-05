@@ -31,10 +31,12 @@ import NetworkProtectionIPC
 import NetworkProtectionUI
 import os.log
 import PageRefreshMonitor
+import Persistence
 import PixelKit
 import PrivacyConfig
 import Subscription
 import SubscriptionUI
+import SwiftUI
 import VPN
 import WebExtensions
 
@@ -83,10 +85,12 @@ final class NavigationBarViewController: NSViewController {
 
     private var feedbackButton: MouseOverButton?
     private var feedbackButtonSpacer: NSView?
+    private var addressBarUpdateButton: NSView?
     private var feedbackTipController: QuickFeedbackTipController?
     private var internalUserCancellable: AnyCancellable?
     /// Owns the toolbar buttons of the loaded web extensions. `nil` when web extensions are unavailable.
     private var webExtensionNavigationBarUpdater: AnyObject?
+    private var webExtensionInstalledCancellable: AnyCancellable?
     private var fireWindowBackgroundView: NSImageView?
     private(set) var goBackButtonWidthConstraint: NSLayoutConstraint!
     private(set) var goBackButtonHeightConstraint: NSLayoutConstraint!
@@ -187,7 +191,8 @@ final class NavigationBarViewController: NSViewController {
     private let pixelFiring: (any PixelKitFiring)?
     private let pinningManager: PinningManager
 
-    let themeManager: ThemeManaging
+    var themeManager: ThemeManaging { appThemeManager }
+    private let appThemeManager: ThemeManager
     var themeUpdateCancellable: AnyCancellable?
 
     private var daxFadeInAnimation: DispatchWorkItem?
@@ -246,7 +251,7 @@ final class NavigationBarViewController: NSViewController {
                        adBlockingAvailability: AdBlockingAvailabilityProviding = NSApp.delegateTyped.adBlockingAvailability,
                        searchPreferences: SearchPreferences,
                        webTrackingProtectionPreferences: WebTrackingProtectionPreferences,
-                       themeManager: ThemeManaging = NSApp.delegateTyped.themeManager,
+                       themeManager: ThemeManager = NSApp.delegateTyped.themeManager,
                        aiChatMenuConfig: AIChatMenuVisibilityConfigurable,
                        aiChatCoordinator: AIChatCoordinating,
                        vpnUpsellToolbarButtonPromoDelegate: VPNUpsellToolbarButtonPromoDelegate = NSApp.delegateTyped.vpnUpsellToolbarButtonPromoDelegate,
@@ -321,7 +326,7 @@ final class NavigationBarViewController: NSViewController {
          adBlockingAvailability: AdBlockingAvailabilityProviding,
          searchPreferences: SearchPreferences,
          webTrackingProtectionPreferences: WebTrackingProtectionPreferences,
-         themeManager: ThemeManaging,
+         themeManager: ThemeManager,
          aiChatMenuConfig: AIChatMenuVisibilityConfigurable,
          aiChatCoordinator: AIChatCoordinating,
          vpnUpsellToolbarButtonPromoDelegate: VPNUpsellToolbarButtonPromoDelegate,
@@ -380,7 +385,7 @@ final class NavigationBarViewController: NSViewController {
         self.featureFlagger = featureFlagger
         self.adBlockingAvailability = adBlockingAvailability
         self.searchPreferences = searchPreferences
-        self.themeManager = themeManager
+        self.appThemeManager = themeManager
         self.aiChatMenuConfig = aiChatMenuConfig
         self.aiChatCoordinator = aiChatCoordinator
         self.defaultBrowserPreferences = defaultBrowserPreferences
@@ -737,6 +742,7 @@ final class NavigationBarViewController: NSViewController {
         setupOverflowMenu()
         setupNetworkProtectionButton()
         setupQuickFeedbackButton()
+        setupAddressBarUpdateButton()
 
         subscribeToThemeChanges()
         listenToPasswordManagerNotifications()
@@ -796,13 +802,26 @@ final class NavigationBarViewController: NSViewController {
     private func setupWebExtensionButtons() {
         if #available(macOS 15.4, *) {
             let updater = WebExtensionNavigationBarUpdater(webExtensionManagerProvider: { NSApp.delegateTyped.webExtensionManager },
-                                                           themeManager: themeManager,
+                                                           themeManager: appThemeManager,
                                                            container: menuButtons,
                                                            isPrivateWindow: tabCollectionViewModel.isBurner,
                                                            selectedTabProvider: { [weak self] in self?.tabCollectionViewModel.selectedTabViewModel?.tab })
             updater.startUpdating()
             webExtensionNavigationBarUpdater = updater
+            subscribeToWebExtensionInstalls(updater: updater)
         }
+    }
+
+    /// Only the window the install started from shows the popover.
+    @available(macOS 15.4, *)
+    private func subscribeToWebExtensionInstalls(updater: WebExtensionNavigationBarUpdater) {
+        webExtensionInstalledCancellable = NotificationCenter.default.publisher(for: .chromeWebStoreExtensionInstalled)
+            .sink { [weak self, weak updater] notification in
+                guard let self, let updater,
+                      let window = notification.object as? NSWindow, window === view.window,
+                      let extensionId = notification.userInfo?[ChromeWebStoreUserScript.UserInfoKeys.extensionID] as? String else { return }
+                updater.showAddedPopover(forChromeWebStoreID: extensionId, parent: self)
+            }
     }
 
     override func viewWillAppear() {
@@ -2317,6 +2336,48 @@ extension NavigationBarViewController: NSMenuDelegate {
     func showNetworkProtectionStatus() {
         popovers.showNetworkProtectionPopover(positionedBelow: networkProtectionButton,
                                               withDelegate: networkProtectionButtonModel)
+    }
+
+    // MARK: - Address Bar Update Button
+
+    /// Shows the prominent update button to the left of the browser menu button while `moreProminentUpdates` is on
+    /// and `Debug → Updates → More Prominent Updates` enables it.
+    private func setupAddressBarUpdateButton() {
+        guard !isInPopUpWindow else { return }
+
+        updateAddressBarUpdateButton()
+        NotificationCenter.default.publisher(for: .moreProminentUpdatesDebugSettingsDidChange)
+            .map { _ in }
+            .merge(with: featureFlagger.updatesPublisher)
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] in
+                self?.updateAddressBarUpdateButton()
+            }
+            .store(in: &cancellables)
+    }
+
+    private func updateAddressBarUpdateButton() {
+        let debugSettings: any KeyedStoring<MoreProminentUpdatesDebugSettings> = UserDefaults.standard.keyedStoring()
+        if featureFlagger.isFeatureOn(.moreProminentUpdates) && debugSettings.isShowingAddressBarButton {
+            addAddressBarUpdateButton()
+        } else {
+            addressBarUpdateButton?.removeFromSuperview()
+            addressBarUpdateButton = nil
+        }
+    }
+
+    private func addAddressBarUpdateButton() {
+        guard addressBarUpdateButton == nil else { return }
+
+        let button = AddressBarUpdateButton(title: UserText.addressBarUpdateButton) {
+            Application.appDelegate.updateController?.runUpdate()
+        }.embeddedInHostingView()
+
+        let index = menuButtons.arrangedSubviews.firstIndex(of: optionsButton) ?? menuButtons.arrangedSubviews.count
+        menuButtons.insertArrangedSubview(button, at: index)
+        menuButtons.setCustomSpacing(8, after: button)
+
+        addressBarUpdateButton = button
     }
 
     // MARK: - Quick Feedback Button

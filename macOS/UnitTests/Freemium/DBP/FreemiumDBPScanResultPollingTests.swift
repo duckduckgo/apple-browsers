@@ -44,6 +44,42 @@ final class FreemiumDBPScanResultPollingTests: XCTestCase {
         mockNotificationCenter = nil
     }
 
+#if DEBUG
+    func testDebugResetAfterCompletedScanObservesReplacementProfile() {
+        mockFreemiumDBPUserStateManager.didPostResultsNotification = true
+        let poller = DefaultFreemiumDBPScanResultPolling(
+            dataManager: mockDataManager,
+            freemiumDBPUserStateManager: mockFreemiumDBPUserStateManager,
+            notificationCenter: mockNotificationCenter
+        )
+        poller.startPollingOrObserving()
+        mockFreemiumDBPUserStateManager.didPostResultsNotification = false
+        mockFreemiumDBPUserStateManager.firstProfileSavedTimestamp = nil
+        mockNotificationCenter.post(name: .freemiumDBPResetForDebugLaunch, object: nil)
+        mockNotificationCenter.post(name: .pirProfileSaved, object: nil)
+        XCTAssertNotNil(mockFreemiumDBPUserStateManager.firstProfileSavedTimestamp)
+        XCTAssertNotNil(poller.timer)
+    }
+
+    func testDebugResetAfterPendingScanReplacesTimerAndRecordsNewSave() {
+        mockFreemiumDBPUserStateManager.firstProfileSavedTimestamp = Date()
+        let poller = DefaultFreemiumDBPScanResultPolling(
+            dataManager: mockDataManager,
+            freemiumDBPUserStateManager: mockFreemiumDBPUserStateManager,
+            notificationCenter: mockNotificationCenter
+        )
+        poller.startPollingOrObserving()
+        let previousTimer = poller.timer
+        mockFreemiumDBPUserStateManager.firstProfileSavedTimestamp = nil
+        mockNotificationCenter.post(name: .freemiumDBPResetForDebugLaunch, object: nil)
+        mockNotificationCenter.post(name: .pirProfileSaved, object: nil)
+        XCTAssertFalse(previousTimer?.isValid ?? true)
+        XCTAssertFalse(poller.timer === previousTimer)
+        XCTAssertNotNil(mockFreemiumDBPUserStateManager.firstProfileSavedTimestamp)
+        XCTAssertNotNil(poller.timer)
+    }
+#endif
+
     func testWhenResultsAlreadyPosted_thenNoPollingOrObserving() {
         // Given
         mockFreemiumDBPUserStateManager.didPostResultsNotification = true
@@ -58,7 +94,7 @@ final class FreemiumDBPScanResultPollingTests: XCTestCase {
 
         // Then
         XCTAssertFalse(mockDataManager.didCallMatchesFoundCount)
-        XCTAssertFalse(mockNotificationCenter.didCallAddObserver)
+        XCTAssertFalse(mockNotificationCenter.observedNames.contains(.pirProfileSaved))
         XCTAssertNil(sut.timer)
     }
 
@@ -76,7 +112,7 @@ final class FreemiumDBPScanResultPollingTests: XCTestCase {
 
         // Then
         XCTAssertTrue(mockDataManager.didCallMatchesFoundCount)
-        XCTAssertFalse(mockNotificationCenter.didCallAddObserver)
+        XCTAssertFalse(mockNotificationCenter.observedNames.contains(.pirProfileSaved))
         XCTAssertNotNil(sut.timer)
     }
 
@@ -93,7 +129,7 @@ final class FreemiumDBPScanResultPollingTests: XCTestCase {
 
         // Then
         XCTAssertFalse(mockDataManager.didCallMatchesFoundCount)
-        XCTAssertTrue(mockNotificationCenter.didCallAddObserver)
+        XCTAssertTrue(mockNotificationCenter.observedNames.contains(.pirProfileSaved))
         XCTAssertNil(sut.timer)
     }
 
@@ -111,7 +147,7 @@ final class FreemiumDBPScanResultPollingTests: XCTestCase {
 
         // Then
         XCTAssertNotNil(mockFreemiumDBPUserStateManager.firstProfileSavedTimestamp)
-        XCTAssertTrue(mockNotificationCenter.didCallAddObserver)
+        XCTAssertTrue(mockNotificationCenter.observedNames.contains(.pirProfileSaved))
         XCTAssertFalse(mockDataManager.didCallMatchesFoundCount)
         XCTAssertNotNil(sut.timer)
     }
@@ -130,7 +166,7 @@ final class FreemiumDBPScanResultPollingTests: XCTestCase {
         sut.startPollingOrObserving()
 
         // Then
-        XCTAssertFalse(mockNotificationCenter.didCallAddObserver)
+        XCTAssertFalse(mockNotificationCenter.observedNames.contains(.pirProfileSaved))
         XCTAssertTrue(mockDataManager.didCallMatchesFoundCount)
         XCTAssertEqual(mockNotificationCenter.lastPostedNotification, .freemiumDBPResultPollingComplete)
         XCTAssertEqual(mockFreemiumDBPUserStateManager.firstScanResults, FreemiumDBPMatchResults(matchesCount: 3, brokerCount: 2))
@@ -153,7 +189,7 @@ final class FreemiumDBPScanResultPollingTests: XCTestCase {
         // Then
         XCTAssertEqual(mockNotificationCenter.lastPostedNotification, .freemiumDBPResultPollingComplete)
         XCTAssertEqual(mockFreemiumDBPUserStateManager.firstScanResults, FreemiumDBPMatchResults(matchesCount: 4, brokerCount: 2))
-        XCTAssertFalse(mockNotificationCenter.didCallAddObserver)
+        XCTAssertFalse(mockNotificationCenter.observedNames.contains(.pirProfileSaved))
         XCTAssertTrue(mockDataManager.didCallMatchesFoundCount)
         XCTAssertNil(sut.timer)
     }
@@ -174,7 +210,7 @@ final class FreemiumDBPScanResultPollingTests: XCTestCase {
         // Then
         XCTAssertEqual(mockNotificationCenter.lastPostedNotification, .freemiumDBPResultPollingComplete)
         XCTAssertEqual(mockFreemiumDBPUserStateManager.firstScanResults, FreemiumDBPMatchResults(matchesCount: 0, brokerCount: 0))
-        XCTAssertFalse(mockNotificationCenter.didCallAddObserver)
+        XCTAssertFalse(mockNotificationCenter.observedNames.contains(.pirProfileSaved))
         XCTAssertTrue(mockDataManager.didCallMatchesFoundCount)
         XCTAssertNil(sut.timer)
     }
@@ -264,12 +300,14 @@ private extension Date {
 
 final class MockNotificationCenter: NotificationCenter {
 
+    var observedNames = Set<Notification.Name>()
     var didCallAddObserver = false
     var didCallPostNotification = false
     var lastPostedNotification: Notification.Name?
 
     override func addObserver(forName name: NSNotification.Name?, object obj: Any?, queue: OperationQueue?, using block: @escaping (Notification) -> Void) -> any NSObjectProtocol {
         didCallAddObserver = true
+        if let name { observedNames.insert(name) }
         return super.addObserver(forName: name, object: obj, queue: queue, using: block)
     }
 

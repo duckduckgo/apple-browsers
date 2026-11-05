@@ -94,7 +94,9 @@ final class MockTabDelegate: TabDelegate {
 
     func tab(_ tab: DuckDuckGo.TabViewController, didRequestNewTabForUrl url: URL, openedByPage: Bool, inheritingAttribution: BrowserServicesKit.AdClickAttributionLogic.State?) {}
 
-    func tab(_ tab: DuckDuckGo.TabViewController, didRequestNewDuckAITabForUrl url: URL, entrySource: DuckDuckGo.AIChatEntryPointSource?) {}
+    func tab(_ tab: DuckDuckGo.TabViewController, didRequestNewDuckAITabForUrl url: URL, entrySource: DuckDuckGo.AIChatEntryPointSource?, newChatInputRequest: DuckDuckGo.DuckAINewChatInputRequest?) {}
+
+    func tab(_ tab: DuckDuckGo.TabViewController, didReportDuckAIEntry source: DuckDuckGo.AIChatEntryPointSource, opensNewTab: Bool, hasPrompt: Bool) {}
 
     func tab(_ tab: DuckDuckGo.TabViewController, didStartDuckAINavigationTo url: URL, entrySource: DuckDuckGo.AIChatEntryPointSource, opensNewTab: Bool, inheritingAttribution: BrowserServicesKit.AdClickAttributionLogic.State?) {}
 

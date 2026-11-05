@@ -101,7 +101,9 @@ extension DebugScreensViewModel {
                 AdBlockingDebugView(keyValueStore: d.keyValueStore)
             }),
             .view(title: "AI Chat", { dependencies in
-                AIChatDebugView(duckAiNativeStorageHandler: dependencies.duckAiNativeStorageHandler)
+                AIChatDebugView(duckAiNativeStorageHandler: dependencies.duckAiNativeStorageHandler,
+                                aiChatBonusMessageLog: dependencies.aiChatBonusMessageLog,
+                                featureFlagger: AppDependencyProvider.shared.featureFlagger)
             }),
             .view(title: "Duck.ai Toggle Prompt", { _ in
                 DuckAIToggleDebugView()
@@ -139,6 +141,10 @@ extension DebugScreensViewModel {
             .view(title: "Bookmarks", { _ in
                 BookmarksDebugRootView()
             }),
+            .view(title: "Favorites", { d in
+                FavoritesDebugView(bookmarksDatabase: d.bookmarksDatabase,
+                                   favoritesDisplayMode: AppDependencyProvider.shared.appSettings.favoritesDisplayMode)
+            }),
             .view(title: "Remote Messaging", { dependencies in
                 RemoteMessagingDebugRootView(remoteMessagingDebugHandler: dependencies.remoteMessagingDebugHandler)
             }),
@@ -159,6 +165,9 @@ extension DebugScreensViewModel {
                                             configuration: configuration,
                                             userAgent: DefaultUserAgentManager.duckDuckGoUserAgent)
 
+            }),
+            .view(title: "Slide to Delete", { _ in
+                SlideToDeleteDebugView()
             }),
             .view(title: "Alert Playground", { _ in
                 AlertPlaygroundView()
@@ -188,6 +197,7 @@ extension DebugScreensViewModel {
                 WhatsNewDebugView(
                     diagnosticsProvider: dependencies.promoCoordinationDiagnosticsProvider,
                     cooldownResetter: dependencies.promoCoordinationCooldownResetter,
+                    keyValueStore: dependencies.keyValueStore,
                     remoteMessagingDebugHandler: dependencies.remoteMessagingDebugHandler
                 )
             }),

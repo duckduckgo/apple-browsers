@@ -52,4 +52,8 @@ final class WebExtensionAvailability: WebExtensionAvailabilityProviding {
         }
         return false
     }
+
+    var isExtensionManagementAvailable: Bool {
+        isAvailable && featureFlagger.isFeatureOn(.webExtensions)
+    }
 }

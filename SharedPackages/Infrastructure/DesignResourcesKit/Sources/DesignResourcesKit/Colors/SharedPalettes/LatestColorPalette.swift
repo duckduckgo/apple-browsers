@@ -155,11 +155,6 @@ struct LatestColorPalette: SharedColorPaletteDefinition {
     static let unifiedInputIconsSecondary = DynamicColor(lightHex: 0x000000, lightOpacityHex: 0x99, darkHex: 0xffffff, darkOpacityHex: 0x7a)
     static let unifiedInputTextPrimary = DynamicColor(lightHex: 0x000000, lightOpacityHex: 0xf4, darkHex: 0xffffff)
     static let unifiedInputTextSecondary = DynamicColor(lightHex: 0x000000, lightOpacityHex: 0x99, darkHex: 0xffffff, darkOpacityHex: 0xb2)
-
-    // MARK: - Not Specialized
-
-    static let spinnerStart = DynamicColor(lightHex: 0x000000, lightOpacity: 0.42, darkHex: 0xffffff, darkOpacity: 0.6)
-    static let spinnerFinal = DynamicColor(lightColor: .green60, darkColor: .green30)
 }
 
 #endif

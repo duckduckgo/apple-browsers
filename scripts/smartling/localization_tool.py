@@ -43,6 +43,7 @@ class SubmitResult:
     outcome: str
     job_id: str = ""
     job_name: str = ""
+    job_url: str = ""
     total_strings: Optional[int] = None  # Smartling's totalStrings: each string counted once per locale
     locales: Optional[int] = None
     max_usd: str = ""
@@ -97,6 +98,14 @@ class SmartlingClient:
 
     async def _request(self, method: str, path: str, **kwargs) -> Dict:
         """Make authenticated API request."""
+        try:
+            return await self._send_request(method, path, **kwargs)
+        except (aiohttp.ClientError, asyncio.TimeoutError, ValueError) as error:
+            # Expose the same failure type as HTTP errors to callers that isolate failures per issue. Do not include
+            # the exception text: it can contain request/response details that must not reach public workflow logs.
+            raise RuntimeError(f"Smartling {method} request failed: {type(error).__name__}") from error
+
+    async def _send_request(self, method: str, path: str, **kwargs) -> Dict:
         if not self.token or datetime.now() >= self.token_expiry:
             await self._authenticate()
 
@@ -110,10 +119,15 @@ class SmartlingClient:
             if resp.status == 204 or not text:
                 return {}
 
-            data = json.loads(text) if text else {}
+            try:
+                data = json.loads(text)
+            except ValueError:
+                if resp.status >= 400:
+                    raise RuntimeError(f"HTTP {resp.status}: {resp.reason or 'API Error'}") from None
+                raise
 
             if resp.status >= 400:
-                error = data.get('response', {}).get('errors', [{}])[0].get('message', 'API Error')
+                error = (data.get('response', {}).get('errors') or [{}])[0].get('message', 'API Error')
                 raise RuntimeError(f"HTTP {resp.status}: {error}")
 
             return data
@@ -316,6 +330,36 @@ class SmartlingClient:
             jobs.extend(items)
             if not items or len(jobs) >= page.get('totalCount', 0):
                 return jobs
+
+    async def list_open_source_issues(self) -> List[Dict]:
+        """List the project's open issues on English strings, page by page: the Issues API returns at most 30 at a time."""
+        issues = []
+        while True:
+            data = await self._request(
+                'POST',
+                f'/issues-api/v2/projects/{self.creds.project_id}/issues/list',
+                json={
+                    'issueStateCodes': ['OPENED'],
+                    'issueTypeCodes': ['SOURCE'],
+                    'limit': 30,
+                    'offset': len(issues),
+                }
+            )
+            page = data['response']['data']
+            items = page.get('items', [])
+            issues.extend(items)
+            if not items or len(issues) >= page.get('totalCount', 0):
+                return issues
+
+    async def get_source_string(self, hashcode: str) -> Optional[Dict]:
+        """Get a string's English text and keys."""
+        data = await self._request(
+            'GET',
+            f'/strings-api/v2/projects/{self.creds.project_id}/source-strings',
+            params={'hashcodes': hashcode}
+        )
+        items = data['response']['data'].get('items', [])
+        return items[0] if items else None
 
     async def get_file_status(self, file_uri: str) -> Dict:
         """Get a file's string counts, in total and per locale."""
@@ -918,6 +962,8 @@ async def submit_command(args):
                 auto_authorize_max_usd,
                 args.delete_job_on_failure
             )
+            if result.job_id:
+                result.job_url = job_url(client, result.job_id)
     except Exception as error:  # pylint: disable=broad-except
         log(f"❌ {error}")
         traceback.print_exc()

@@ -1,4 +1,7 @@
 /* No comment provided by engineer. */
+" " = " ";
+
+/* No comment provided by engineer. */
 "-config.rollout.<parent>.<subfeature> true/false" = "-config.rollout.<parent>.<subfeature> true/false";
 
 /* No comment provided by engineer. */
@@ -381,6 +384,21 @@
 
 /* Title for the New Tab row in the Duck.ai tab header Plus (+) menu */
 "aichat.header.plusMenu.newTab" = "Nouvel onglet";
+
+/* Section header in the Duck.ai tab header Plus (+) menu; every row below it opens a new tab */
+"aichat.header.plusMenu.newTabSection" = "Nouvel onglet";
+
+/* Row in the New Tab section of the Duck.ai tab header Plus (+) menu — opens a new Duck.ai chat in a new tab */
+"aichat.header.plusMenu.newTabSection.chat" = "Discussion";
+
+/* Row in the New Tab section of the Duck.ai tab header Plus (+) menu — opens Duck.ai in image generation mode in a new tab */
+"aichat.header.plusMenu.newTabSection.image" = "Image";
+
+/* Row in the Duck.ai tab header Plus (+) menu — opens a new tab in search mode */
+"aichat.header.plusMenu.newTabSection.search" = "Recherche";
+
+/* Row in the New Tab section of the Duck.ai tab header Plus (+) menu — opens a new Duck.ai voice chat in a new tab */
+"aichat.header.plusMenu.newTabSection.voiceChat" = "Chat vocal";
 
 /* Title for the New Voice Chat row in the Duck.ai tab header Plus (+) menu */
 "aichat.header.plusMenu.newVoiceChat" = "Nouveau chat vocal";
@@ -3298,6 +3316,72 @@
 /* No comment provided by engineer. */
 "menu.button.hint" = "Menu de navigation";
 
+/* iPad menu bar command */
+"menuActualSize" = "Taille réelle";
+
+/* iPad menu bar command */
+"menuBack" = "Retour";
+
+/* iPad menu bar command */
+"menuClearTabsAndData" = "Effacer les onglets et données";
+
+/* iPad menu bar command */
+"menuDuplicateTab" = "Dupliquer l'onglet";
+
+/* iPad menu bar command */
+"menuFeedback" = "Partager des commentaires";
+
+/* iPad menu bar command */
+"menuForward" = "Avancer";
+
+/* iPad menu bar command */
+"menuHideDownloads" = "Masquer les téléchargements";
+
+/* iPad menu bar command */
+"menuHidePasswords" = "Masquer les mots de passe";
+
+/* iPad menu bar command */
+"menuHideTabs" = "Masquer les onglets";
+
+/* iPad menu bar command */
+"menuLastTab" = "Dernier onglet";
+
+/* iPad menu bar command */
+"menuNewTabOnRight" = "Nouvel onglet à droite";
+
+/* iPad menu bar command */
+"menuNextTab" = "Afficher l'onglet suivant";
+
+/* iPad menu bar command */
+"menuOpenLocation" = "Ouvrir l'emplacement...";
+
+/* iPad menu bar command */
+"menuPreviousTab" = "Afficher l'onglet précédent";
+
+/* iPad menu bar command */
+"menuPrint" = "Imprimer...";
+
+/* iPad menu bar command selecting a numbered tab */
+"menuSelectTab" = "Sélectionner l’onglet %d";
+
+/* iPad menu bar command */
+"menuSettings" = "Réglages DuckDuckGo...";
+
+/* iPad menu bar command */
+"menuShowDownloads" = "Afficher les téléchargements";
+
+/* iPad menu bar command */
+"menuShowPasswords" = "Afficher les mots de passe";
+
+/* iPad menu bar command */
+"menuShowTabs" = "Afficher les onglets";
+
+/* iPad menu bar command */
+"menuStop" = "Arrêter";
+
+/* iPad menu bar command */
+"menuVoiceSearch" = "Recherche vocale privée";
+
 /* No comment provided by engineer. */
 "Message" = "Message";
 
@@ -5932,3 +6016,12 @@
 /* Title for screen to screen confirming what data to import from a zip file (bookmarks and /or passwords) */
 "zip.content.import.types.title" = "Que voulez-vous importer ?";
 
+
+/* Fireproofing setting toggle label */
+"preserveLogins.askOnSignIn" = "Demander à placer des sites en mode coupe-feu lors de la connexion";
+
+/* Empty Fireproof sites list */
+"preserveLogins.emptyState" = "Pas encore de sites en mode coupe-feu";
+
+/* Button to remove all Fireproof sites */
+"preserveLogins.removeAllSites" = "Supprimer tous les sites coupe-feu";

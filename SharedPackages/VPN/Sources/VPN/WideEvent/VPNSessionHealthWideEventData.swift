@@ -30,7 +30,7 @@ public struct VPNSessionHealthWideEventData: WideEventData {
         featureName: "vpn-session-health",
         mobileMetaType: "ios-vpn-session-health",
         desktopMetaType: "macos-vpn-session-health",
-        version: "1.0.1")
+        version: "1.0.2")
 
     // MARK: - Wide event
 
@@ -50,6 +50,12 @@ public struct VPNSessionHealthWideEventData: WideEventData {
 
     /// Persisted locally for comparison at completion; never included in the pixel payload.
     public var sessionStartPID: Int32?
+
+    /// Persisted locally for comparison at completion; never included in the pixel payload.
+    public var sessionStartOSVersion: String?
+
+    /// Persisted locally for comparison at completion; never included in the pixel payload.
+    public var sessionStartBootTime: Date?
 
     public var endedAt: Date?
     public var endReason: EventEndReason?
@@ -95,6 +101,12 @@ public struct VPNSessionHealthWideEventData: WideEventData {
     /// Set only when the completing or recovering process runs a different app version than `appData.version`; otherwise omitted.
     public var appVersionChanged: Bool?
 
+    /// Set only when the completing or recovering process runs a different OS version than `sessionStartOSVersion`; otherwise omitted.
+    public var osVersionChanged: Bool?
+
+    /// Set only when the completing or recovering process observes a boot time later than `sessionStartBootTime`, beyond clock-adjustment tolerance; otherwise omitted.
+    public var systemRebooted: Bool?
+
     /// From `NetworkProtectionTunnelFailureMonitor`; routing outages come from the tester.
     public var staleHandshakeDetected = false
     public var staleHandshakeRecovered = false
@@ -111,6 +123,8 @@ public struct VPNSessionHealthWideEventData: WideEventData {
                 startedAt: Date,
                 extensionType: VPNConnectionWideEventData.ExtensionType,
                 sessionStartPID: Int32? = nil,
+                sessionStartOSVersion: String? = nil,
+                sessionStartBootTime: Date? = nil,
                 contextData: WideEventContextData = WideEventContextData(),
                 appData: WideEventAppData = WideEventAppData(),
                 globalData: WideEventGlobalData = WideEventGlobalData()) {
@@ -119,6 +133,8 @@ public struct VPNSessionHealthWideEventData: WideEventData {
         self.lastObservedAt = startedAt
         self.extensionType = extensionType
         self.sessionStartPID = sessionStartPID
+        self.sessionStartOSVersion = sessionStartOSVersion
+        self.sessionStartBootTime = sessionStartBootTime
         self.contextData = contextData
         self.appData = appData
         self.globalData = globalData
@@ -145,6 +161,8 @@ public struct VPNSessionHealthWideEventData: WideEventData {
             (Key.processRestartGap, processRestartGap.map(Self.processRestartGapBucket)),
             (Key.processIDChanged, processIDChanged),
             (Key.appVersionChanged, appVersionChanged),
+            (Key.osVersionChanged, osVersionChanged),
+            (Key.systemRebooted, systemRebooted),
         ])
 
         params[Key.startReason] = startReason.rawValue
@@ -392,6 +410,8 @@ extension WideEventParameter {
         static let processRestartGap = "feature.data.ext.process_restart_gap_seconds_bucketed"
         static let processIDChanged = "feature.data.ext.process_id_changed"
         static let appVersionChanged = "feature.data.ext.app_version_changed"
+        static let osVersionChanged = "feature.data.ext.os_version_changed"
+        static let systemRebooted = "feature.data.ext.system_rebooted"
         static let connectionTestFailureSeen = "feature.data.ext.connection_tester_failure_seen"
         static let extendedRoutingOutageDetected = "feature.data.ext.connection_tester_extended_failure_seen"
         static let connectionTestFailureActiveAtEnd = "feature.data.ext.connection_tester_failure_active_at_end"

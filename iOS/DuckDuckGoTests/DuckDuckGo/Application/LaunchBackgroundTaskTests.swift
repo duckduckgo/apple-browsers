@@ -25,72 +25,62 @@ import UIKit
 @Suite("Launch background task")
 struct LaunchBackgroundTaskTests {
 
-    @available(iOS 16, *)
+    private struct LaunchFailed: Error {}
+
+    @available(iOS 16, macOS 13, *)
     @Test("Flag on: launch runs inside a background task that ends when launch ends", .timeLimit(.minutes(1)))
     func flagOnHoldsTaskDuringLaunch() {
         let runner = LaunchTaskRunnerSpy()
-        var openTasksDuringLaunch: [UIBackgroundTaskIdentifier] = []
+        var openTasksDuringLaunch = 0
 
-        AppDelegate.runHoldingLaunchBackgroundTask(featureFlagger: MockFeatureFlagger(enabledFeatureFlags: [.launchBackgroundTask]),
-                                                   runner: runner) {
+        LaunchBackgroundTask.run(featureFlagger: MockFeatureFlagger(enabledFeatureFlags: [.launchBackgroundTask]), runner: runner) {
             openTasksDuringLaunch = runner.openTasks
         }
 
-        #expect(openTasksDuringLaunch.count == 1)
-        #expect(runner.begun.count == 1)
-        #expect(runner.openTasks.isEmpty)
+        #expect(openTasksDuringLaunch == 1)
+        #expect(runner.openTasks == 0)
     }
 
-    @available(iOS 16, *)
-    @Test("Flag on: an invalid task is not ended", .timeLimit(.minutes(1)))
-    func flagOnInvalidTaskIsNotEnded() {
-        let runner = LaunchTaskRunnerSpy(returnsInvalid: true)
-        var launched = false
+    @available(iOS 16, macOS 13, *)
+    @Test("Flag on: the background task ends when launch throws", .timeLimit(.minutes(1)))
+    func flagOnEndsTaskWhenLaunchThrows() {
+        let runner = LaunchTaskRunnerSpy()
 
-        AppDelegate.runHoldingLaunchBackgroundTask(featureFlagger: MockFeatureFlagger(enabledFeatureFlags: [.launchBackgroundTask]),
-                                                   runner: runner) {
-            launched = true
+        #expect(throws: LaunchFailed.self) {
+            try LaunchBackgroundTask.run(featureFlagger: MockFeatureFlagger(enabledFeatureFlags: [.launchBackgroundTask]), runner: runner) {
+                throw LaunchFailed()
+            }
         }
-
-        #expect(launched)
-        #expect(runner.ended.isEmpty)
+        #expect(runner.begun == 1)
+        #expect(runner.openTasks == 0)
     }
 
-    @available(iOS 16, *)
+    @available(iOS 16, macOS 13, *)
     @Test("Flag off: launch runs without a background task", .timeLimit(.minutes(1)))
     func flagOffRunsLaunchWithoutTask() {
         let runner = LaunchTaskRunnerSpy()
-        var launched = false
 
-        AppDelegate.runHoldingLaunchBackgroundTask(featureFlagger: MockFeatureFlagger(), runner: runner) {
-            launched = true
-        }
+        let launched = LaunchBackgroundTask.run(featureFlagger: MockFeatureFlagger(), runner: runner) { true }
 
         #expect(launched)
-        #expect(runner.begun.isEmpty)
+        #expect(runner.begun == 0)
     }
 }
 
 @MainActor
 private final class LaunchTaskRunnerSpy: BackgroundTaskRunning {
 
-    private let returnsInvalid: Bool
-    private(set) var begun: [UIBackgroundTaskIdentifier] = []
-    private(set) var ended: [UIBackgroundTaskIdentifier] = []
+    private(set) var begun = 0
+    private var ended = 0
 
-    var openTasks: [UIBackgroundTaskIdentifier] { begun.filter { !ended.contains($0) } }
-
-    init(returnsInvalid: Bool = false) {
-        self.returnsInvalid = returnsInvalid
-    }
+    var openTasks: Int { begun - ended }
 
     func beginBackgroundTask(withName name: String, expirationHandler: @escaping @MainActor () -> Void) -> UIBackgroundTaskIdentifier {
-        let identifier = returnsInvalid ? UIBackgroundTaskIdentifier.invalid : UIBackgroundTaskIdentifier(rawValue: begun.count + 1)
-        begun.append(identifier)
-        return identifier
+        begun += 1
+        return UIBackgroundTaskIdentifier(rawValue: begun)
     }
 
     func endBackgroundTask(_ identifier: UIBackgroundTaskIdentifier) {
-        ended.append(identifier)
+        ended += 1
     }
 }

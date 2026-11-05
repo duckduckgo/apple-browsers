@@ -666,7 +666,7 @@ public enum FeatureFlag: String {
 
     /// Holds a background task assertion during `didFinishLaunching`, so iOS doesn't suspend the app mid-launch
     /// while it holds a lock on a shared App Group database (0xdead10cc).
-    /// https://app.asana.com/1/137249556945/project/1214294661819890/task/1219887974931350
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1220262683074513
     case launchBackgroundTask
 }
 
@@ -1129,7 +1129,7 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .idleReturnNewTabPageAtLaunch:
             Config(defaultValue: .internalOnly, source: .remoteReleasable(iOSBrowserConfigSubfeature.idleReturnNewTabPageAtLaunch))
         case .launchBackgroundTask:
-            Config(defaultValue: .internalOnly, source: .remoteReleasable(iOSBrowserConfigSubfeature.launchBackgroundTask))
+            Config(defaultValue: .disabled, source: .remoteReleasable(iOSBrowserConfigSubfeature.launchBackgroundTask))
         }
     }
 

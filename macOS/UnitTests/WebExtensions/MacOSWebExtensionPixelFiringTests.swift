@@ -79,12 +79,11 @@ final class MacOSWebExtensionPixelFiringTests: XCTestCase {
     }
 
     func testExtensionManagementEventsUseDailyAndCount() throws {
-        let storeID = "nngceckbapebfimnlniiiahkandclblb"
         let events: [WebExtensionPixelEvent] = [
-            .enabled(extensionID: storeID, category: nil),
-            .disabled(extensionID: storeID, category: nil),
-            .retained(extensionID: storeID, category: nil),
-            .churned(extensionID: storeID, category: nil)
+            .enabled(extension: .catalog(.bitwarden)),
+            .disabled(extension: .catalog(.bitwarden)),
+            .retained14Days(extension: .catalog(.bitwarden)),
+            .churned14Days(extension: .catalog(.bitwarden))
         ]
         for event in events {
             let pixels = PixelKitMock()

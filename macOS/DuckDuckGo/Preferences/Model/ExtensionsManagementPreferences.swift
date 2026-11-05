@@ -59,7 +59,7 @@ final class ExtensionsManagementPreferences: ObservableObject {
 
     func openStorePage(for item: ChromeWebStoreListing) {
         windowControllersManager.show(url: item.storeURL, source: .ui, newTab: true, selected: true)
-        fire(.getClicked(extensionID: item.storeID, category: item.category))
+        fire(.getClicked(extension: .catalog(item.entry)))
     }
 
     func openPublisherPage(for item: ChromeWebStoreListing) {
@@ -68,12 +68,12 @@ final class ExtensionsManagementPreferences: ObservableObject {
         }
 
         windowControllersManager.show(url: url, source: .ui, newTab: true, selected: true)
-        fire(.publisherLinkClicked(extensionID: item.storeID, category: item.category))
+        fire(.publisherLinkClicked(extension: .catalog(item.entry)))
     }
 
     func showDetails(for entry: InstalledExtensionEntry) {
         detailsListingID = entry.listing.id
-        fire(.detailsOpened(extensionID: entry.listing.storeID, category: entry.listing.category))
+        fire(.detailsOpened(extension: .catalog(entry.listing.entry)))
     }
 
     func hideDetails() {

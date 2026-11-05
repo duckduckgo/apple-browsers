@@ -31,10 +31,8 @@ public protocol ChromeWebStoreManaging: AnyObject {
     /// The catalog's entry for the extension with the Chrome Web Store `identifier`, such as `.bitwarden`,
     /// or `nil` for an extension the catalog doesn't list.
     func catalogEntry(of identifier: String) -> ExtensionsCatalogSubfeature?
-    /// The entry's store listing, or `nil` when its `id`, `name` or `cwsUri` is missing.
+    /// The entry's store listing, or `nil` when its `name` or `cwsUri` is missing.
     func listing(of subfeature: ExtensionsCatalogSubfeature) -> ChromeWebStoreListing?
-    /// The catalog's `categoryId` for the extension with the Chrome Web Store `extensionID`, or `nil` when the catalog doesn't list it.
-    func category(for extensionID: String) -> String?
     /// The help page about adding extensions, or `nil` when the configuration doesn't set one.
     var learnMoreURL: URL? { get }
 }
@@ -89,10 +87,6 @@ public final class ChromeWebStoreService: ChromeWebStoreManaging {
 
     public func listing(of subfeature: ExtensionsCatalogSubfeature) -> ChromeWebStoreListing? {
         catalog.listing(of: subfeature)
-    }
-
-    public func category(for extensionID: String) -> String? {
-        catalog.catalogEntry(of: extensionID).flatMap(catalog.listing(of:))?.category
     }
 
     public var learnMoreURL: URL? {

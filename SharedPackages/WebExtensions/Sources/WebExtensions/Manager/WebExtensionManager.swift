@@ -1768,35 +1768,19 @@ private extension WebExtensionManager {
     /// An update isn't an install, matching Windows, and keeps the original installation's retention wait.
     func reportInstalled(storeIdentity: WebExtensionStoreIdentity?, replacing oldIdentifier: String?) {
         guard oldIdentifier == nil else { return }
-        pixelFiring.fire(.installed(extension: pixelExtension(for: storeIdentity),
-                                    extensionID: pixelExtensionID(for: storeIdentity),
-                                    category: pixelCategory(for: storeIdentity)))
+        pixelFiring.fire(.installed(extension: pixelExtension(for: storeIdentity)))
         if let storeIdentity {
             retentionReporter?.recordInstall(storeIdentity.id)
         }
     }
 
     func reportUninstalled(_ installedExtension: InstalledWebExtension?) {
-        let storeIdentity = installedExtension?.storeIdentity
-        pixelFiring.fire(.uninstalled(extension: pixelExtension(for: storeIdentity),
-                                      extensionID: pixelExtensionID(for: storeIdentity),
-                                      category: pixelCategory(for: storeIdentity)))
+        pixelFiring.fire(.uninstalled(extension: pixelExtension(for: installedExtension?.storeIdentity)))
     }
 
     func reportEnabledStateChange(isEnabled: Bool, storeIdentity: WebExtensionStoreIdentity?) {
-        let extensionID = pixelExtensionID(for: storeIdentity)
-        let category = pixelCategory(for: storeIdentity)
-        pixelFiring.fire(isEnabled ? .enabled(extensionID: extensionID, category: category)
-                                   : .disabled(extensionID: extensionID, category: category))
-    }
-
-    /// The Chrome Web Store ID pixels send, or `other` for an extension that didn't come from the store.
-    func pixelExtensionID(for storeIdentity: WebExtensionStoreIdentity?) -> String {
-        storeIdentity?.id ?? WebExtensionPixelExtension.other.parameterValue
-    }
-
-    func pixelCategory(for storeIdentity: WebExtensionStoreIdentity?) -> String? {
-        storeIdentity.flatMap { chromeWebStore?.category(for: $0.id) }
+        let reported = pixelExtension(for: storeIdentity)
+        pixelFiring.fire(isEnabled ? .enabled(extension: reported) : .disabled(extension: reported))
     }
 }
 
@@ -1810,7 +1794,9 @@ private extension WebExtensionManager {
     /// Retention is judged only while the store catalog is available.
     func fireRetentionPixelsIfDue() {
         guard let chromeWebStore, !chromeWebStore.catalogExtensionIDs.isEmpty else { return }
-        retentionReporter?.reportIfDue(installedExtensions: installationStore.installedExtensions) { chromeWebStore.category(for: $0) }
+        retentionReporter?.reportIfDue(installedExtensions: installationStore.installedExtensions) { storeID in
+            pixelExtension(for: WebExtensionStoreIdentity(store: .chromeWebStore, id: storeID))
+        }
     }
 }
 #endif

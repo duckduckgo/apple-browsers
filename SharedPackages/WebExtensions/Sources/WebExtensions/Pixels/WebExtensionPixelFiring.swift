@@ -62,11 +62,10 @@ public enum WebExtensionPixelExtension: Equatable, CaseIterable {
 /// Events that can be fired for web extension management.
 @available(macOS 15.4, iOS 18.4, *)
 public enum WebExtensionPixelEvent {
-    /// A fresh install; updates aren't reported. `extensionID` is the Chrome Web Store ID, or `other` for an extension
-    /// that didn't come from the store, and `category` the catalog's `categoryId`, `nil` when unknown.
-    case installed(extension: WebExtensionPixelExtension, extensionID: String, category: String?)
+    /// A fresh install; updates aren't reported.
+    case installed(extension: WebExtensionPixelExtension)
     case installError(extension: WebExtensionPixelExtension, error: Error)
-    case uninstalled(extension: WebExtensionPixelExtension, extensionID: String, category: String?)
+    case uninstalled(extension: WebExtensionPixelExtension)
     case uninstallError(error: Error)
     case uninstalledAll
     case uninstallAllError(error: Error)
@@ -117,14 +116,14 @@ public enum WebExtensionPixelEvent {
     /// since launch, with its version. Fired once a day.
     case apiCompatibilityGaps(extension: ExtensionsCatalogSubfeature, version: String, missingAPICount: Int, unsupportedURLCount: Int)
 
-    /// An extension was enabled, from any surface.
-    case enabled(extensionID: String, category: String?)
-    /// An extension was disabled, from any surface, remote disable included.
-    case disabled(extensionID: String, category: String?)
+    /// A disabled extension was turned back on.
+    case enabled(extension: WebExtensionPixelExtension)
+    /// An enabled extension was turned off, by the user or by remote configuration.
+    case disabled(extension: WebExtensionPixelExtension)
     /// A store extension installed 14 days ago is still installed and enabled.
-    case retained(extensionID: String, category: String?)
-    /// A store extension installed 14 days ago was uninstalled or disabled.
-    case churned(extensionID: String, category: String?)
+    case retained14Days(extension: WebExtensionPixelExtension)
+    /// A store extension installed 14 days ago was removed or turned off since.
+    case churned14Days(extension: WebExtensionPixelExtension)
 }
 
 /// A bounded summary of existing health-monitor evidence, not proof of document initialization or all-tab recovery.
@@ -322,7 +321,7 @@ public struct CPMWebExtensionPixelMetadata: Equatable, Sendable {
              .embeddedInstallError, .scriptletFetchSuccess, .scriptletFetchError,
              .scriptletValidationError, .scriptletInstalled, .scriptletInstallError,
              .defaultPasswordManagerSet, .bitwardenDailyActive, .apiCompatibilityGaps,
-             .enabled, .disabled, .retained, .churned:
+             .enabled, .disabled, .retained14Days, .churned14Days:
             return nil
         }
     }

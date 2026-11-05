@@ -44,7 +44,7 @@ final class WebExtensionRetentionReporter {
 
     /// Reports each install that is 14 days old as retained when it's still installed and enabled, or as churned.
     /// It checks at most once an hour, so a gap in use makes a report late, not lost.
-    func reportIfDue(installedExtensions: [InstalledWebExtension], category: (String) -> String?) {
+    func reportIfDue(installedExtensions: [InstalledWebExtension], pixelExtension: (String) -> WebExtensionPixelExtension) {
         let date = now()
         if let lastCheckDate, date.timeIntervalSince(lastCheckDate) < Self.checkInterval {
             return
@@ -54,9 +54,8 @@ final class WebExtensionRetentionReporter {
         for extensionID in store.takeDue(at: date) {
             // Old and new versions coexist during an update, so any enabled copy counts.
             let isEnabled = installedExtensions.contains { $0.storeIdentity?.id == extensionID && !$0.isDisabled }
-            let category = category(extensionID)
-            pixelFiring.fire(isEnabled ? .retained(extensionID: extensionID, category: category)
-                                       : .churned(extensionID: extensionID, category: category))
+            let reported = pixelExtension(extensionID)
+            pixelFiring.fire(isEnabled ? .retained14Days(extension: reported) : .churned14Days(extension: reported))
         }
     }
 }

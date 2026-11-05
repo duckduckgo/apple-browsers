@@ -1537,13 +1537,13 @@ final class WebExtensionManagerTests: XCTestCase {
     // MARK: - Extension Management Pixel Tests
 
     @MainActor
-    func testWhenAStoreExtensionIsInstalled_ThenInstalledFiresWithItsStoreIDAndCategory() async throws {
+    func testWhenAStoreExtensionIsInstalled_ThenInstalledFiresWithItsCatalogEntry() async throws {
         let pixels = EventCapturingPixelFiring()
         let manager = makeManagementPixelManager(pixels: pixels)
 
         try await manager.installExtension(from: try createTestWebExtension(), storeIdentity: storeIdentity(managementStoreID))
 
-        XCTAssertEqual(pixels.events, ["installed \(managementStoreID) password-manager"])
+        XCTAssertEqual(pixels.events, ["installed bitwarden"])
     }
 
     @MainActor
@@ -1558,14 +1558,14 @@ final class WebExtensionManagerTests: XCTestCase {
     }
 
     @MainActor
-    func testWhenAStoreExtensionIsUninstalled_ThenUninstalledFiresWithItsStoreIDAndCategory() throws {
+    func testWhenAStoreExtensionIsUninstalled_ThenUninstalledFiresWithItsCatalogEntry() throws {
         let pixels = EventCapturingPixelFiring()
         let manager = makeManagementPixelManager(pixels: pixels)
         installedExtensionStoringMock.installedExtensions = [storeRecord("bitwarden", managementStoreID)]
 
         try manager.uninstallExtension(identifier: "bitwarden")
 
-        XCTAssertEqual(pixels.events, ["uninstalled \(managementStoreID) password-manager"])
+        XCTAssertEqual(pixels.events, ["uninstalled bitwarden"])
     }
 
     @MainActor
@@ -1578,7 +1578,7 @@ final class WebExtensionManagerTests: XCTestCase {
 
         try await manager.disableExtension(identifier: "manual")
 
-        XCTAssertEqual(pixels.events, ["disabled other nil"])
+        XCTAssertEqual(pixels.events, ["disabled other"])
     }
 
     @MainActor
@@ -1592,7 +1592,7 @@ final class WebExtensionManagerTests: XCTestCase {
         try await manager.enableExtension(identifier: "bitwarden")
         try await manager.enableExtension(identifier: "bitwarden")
 
-        XCTAssertEqual(pixels.events, ["disabled \(managementStoreID) password-manager", "enabled \(managementStoreID) password-manager"])
+        XCTAssertEqual(pixels.events, ["disabled bitwarden", "enabled bitwarden"])
     }
 
 #if os(macOS)
@@ -1627,9 +1627,9 @@ final class WebExtensionManagerTests: XCTestCase {
         date += 60 * 60
         manager.eventsListener.onBrowsingActivity?()
         XCTAssertEqual(newEvents(), [
-            "retained \(retainedID) nil",
-            "churned \(disabledID) nil",
-            "churned \(removedID) nil"
+            "retained other",
+            "churned other",
+            "churned other"
         ])
 
         date += 2 * 60 * 60
@@ -3261,7 +3261,6 @@ final class WebExtensionManagerTests: XCTestCase {
                                           retentionStore: WebExtensionRetentionStore(storage: InMemoryKeyValueStore().keyedStoring()),
                                           now: now)
         manager.chromeWebStore = CatalogNamingWebStore(entries: [managementStoreID: .bitwarden],
-                                                       categories: [managementStoreID: "password-manager"],
                                                        catalogExtensionIDs: isCatalogAvailable ? [managementStoreID] : [])
         return manager
     }
@@ -3429,18 +3428,18 @@ private final class EventCapturingPixelFiring: WebExtensionPixelFiring {
             events.append("default set: \(pixelExtension.parameterValue)")
         case .apiCompatibilityGaps(let catalogEntry, let version, let missingAPICount, let unsupportedURLCount):
             events.append("gaps \(catalogEntry.rawValue) \(version): \(missingAPICount) apis, \(unsupportedURLCount) urls")
-        case .installed(_, let extensionID, let category):
-            events.append("installed \(extensionID) \(category ?? "nil")")
-        case .uninstalled(_, let extensionID, let category):
-            events.append("uninstalled \(extensionID) \(category ?? "nil")")
-        case .enabled(let extensionID, let category):
-            events.append("enabled \(extensionID) \(category ?? "nil")")
-        case .disabled(let extensionID, let category):
-            events.append("disabled \(extensionID) \(category ?? "nil")")
-        case .retained(let extensionID, let category):
-            events.append("retained \(extensionID) \(category ?? "nil")")
-        case .churned(let extensionID, let category):
-            events.append("churned \(extensionID) \(category ?? "nil")")
+        case .installed(let pixelExtension):
+            events.append("installed \(pixelExtension.parameterValue)")
+        case .uninstalled(let pixelExtension):
+            events.append("uninstalled \(pixelExtension.parameterValue)")
+        case .enabled(let pixelExtension):
+            events.append("enabled \(pixelExtension.parameterValue)")
+        case .disabled(let pixelExtension):
+            events.append("disabled \(pixelExtension.parameterValue)")
+        case .retained14Days(let pixelExtension):
+            events.append("retained \(pixelExtension.parameterValue)")
+        case .churned14Days(let pixelExtension):
+            events.append("churned \(pixelExtension.parameterValue)")
         default:
             break
         }
@@ -3451,12 +3450,10 @@ private final class EventCapturingPixelFiring: WebExtensionPixelFiring {
 @MainActor
 private final class CatalogNamingWebStore: ChromeWebStoreManaging {
     let entries: [String: ExtensionsCatalogSubfeature]
-    let categories: [String: String]
     let catalogExtensionIDs: [String]
 
-    init(entries: [String: ExtensionsCatalogSubfeature], categories: [String: String] = [:], catalogExtensionIDs: [String] = []) {
+    init(entries: [String: ExtensionsCatalogSubfeature], catalogExtensionIDs: [String] = []) {
         self.entries = entries
-        self.categories = categories
         self.catalogExtensionIDs = catalogExtensionIDs
     }
 
@@ -3466,7 +3463,6 @@ private final class CatalogNamingWebStore: ChromeWebStoreManaging {
     func remove(identifier: String) async -> Bool { false }
     func catalogEntry(of identifier: String) -> ExtensionsCatalogSubfeature? { entries[identifier] }
     func listing(of subfeature: ExtensionsCatalogSubfeature) -> ChromeWebStoreListing? { nil }
-    func category(for extensionID: String) -> String? { categories[extensionID] }
 }
 
 @available(macOS 15.4, iOS 18.4, *)

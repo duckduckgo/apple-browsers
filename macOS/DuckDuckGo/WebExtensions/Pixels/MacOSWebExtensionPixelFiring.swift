@@ -24,12 +24,12 @@ enum WebExtensionPixel: PixelKit.Event {
 
     // MARK: - Installation
 
-    case installed(extension: WebExtensionPixelExtension, extensionID: String, category: String?)
+    case installed(extension: WebExtensionPixelExtension)
     case installError(extension: WebExtensionPixelExtension, error: Error)
 
     // MARK: - Uninstallation
 
-    case uninstalled(extension: WebExtensionPixelExtension, extensionID: String, category: String?)
+    case uninstalled(extension: WebExtensionPixelExtension)
     case uninstallError(error: Error)
     case uninstalledAll
     case uninstallAllError(error: Error)
@@ -98,13 +98,13 @@ enum WebExtensionPixel: PixelKit.Event {
 
     // MARK: - Extension Management
 
-    case enabled(extensionID: String, category: String?)
-    case disabled(extensionID: String, category: String?)
-    case detailsOpened(extensionID: String, category: String?)
-    case getClicked(extensionID: String, category: String?)
-    case publisherLinkClicked(extensionID: String, category: String?)
-    case retained(extensionID: String, category: String?)
-    case churned(extensionID: String, category: String?)
+    case enabled(extension: WebExtensionPixelExtension)
+    case disabled(extension: WebExtensionPixelExtension)
+    case retained14Days(extension: WebExtensionPixelExtension)
+    case churned14Days(extension: WebExtensionPixelExtension)
+    case getClicked(extension: WebExtensionPixelExtension)
+    case detailsOpened(extension: WebExtensionPixelExtension)
+    case publisherLinkClicked(extension: WebExtensionPixelExtension)
 
     // MARK: - Debug
 
@@ -214,9 +214,9 @@ enum WebExtensionPixel: PixelKit.Event {
             return "web_extension_get_clicked_macos"
         case .publisherLinkClicked:
             return "web_extension_publisher_link_clicked_macos"
-        case .retained:
+        case .retained14Days:
             return "web_extension_retained_14d_macos"
-        case .churned:
+        case .churned14Days:
             return "web_extension_churned_14d_macos"
         }
     }
@@ -249,24 +249,18 @@ enum WebExtensionPixel: PixelKit.Event {
             ]
         case .adBlockingScriptletsNotFetched(let extensionLoaded):
             return ["extension_loaded": extensionLoaded ? "true" : "false"]
-        case .installed(let pixelExtension, let extensionID, let category),
-             .uninstalled(let pixelExtension, let extensionID, let category):
-            var params = ["extension": pixelExtension.parameterValue, "extension_id": extensionID]
-            params["category"] = category
-            return params
-        case .installError(let pixelExtension, _),
-             .defaultPasswordManagerSet(let pixelExtension):
+        case .installed(let pixelExtension),
+             .installError(let pixelExtension, _),
+             .uninstalled(let pixelExtension),
+             .defaultPasswordManagerSet(let pixelExtension),
+             .enabled(let pixelExtension),
+             .disabled(let pixelExtension),
+             .retained14Days(let pixelExtension),
+             .churned14Days(let pixelExtension),
+             .getClicked(let pixelExtension),
+             .detailsOpened(let pixelExtension),
+             .publisherLinkClicked(let pixelExtension):
             return ["extension": pixelExtension.parameterValue]
-        case .enabled(let extensionID, let category),
-             .disabled(let extensionID, let category),
-             .detailsOpened(let extensionID, let category),
-             .getClicked(let extensionID, let category),
-             .publisherLinkClicked(let extensionID, let category),
-             .retained(let extensionID, let category),
-             .churned(let extensionID, let category):
-            var params = ["extension_id": extensionID]
-            params["category"] = category
-            return params
         case .apiCompatibilityGaps(_, let version, let missingAPICount, let unsupportedURLCount):
             return ["extension_version": version,
                     "missing_api_count": String(missingAPICount),
@@ -285,7 +279,7 @@ enum WebExtensionPixel: PixelKit.Event {
     var namePrefix: PixelKitNamePrefix {
         switch self {
         case .debugCPM, .reloadError, .cpmNetworkProcessRecoveryApplied, .bitwardenDailyActive, .defaultPasswordManagerSet, .apiCompatibilityGaps,
-             .enabled, .disabled, .detailsOpened, .getClicked, .publisherLinkClicked, .retained, .churned:
+             .enabled, .disabled, .retained14Days, .churned14Days, .getClicked, .detailsOpened, .publisherLinkClicked:
             return .none
         default:
             return .platformDefault
@@ -352,12 +346,12 @@ struct MacOSWebExtensionPixelFiring: WebExtensionPixelFiring {
         let pixel: WebExtensionPixel
         let frequency: PixelKit.Frequency
         switch event {
-        case .installed(let pixelExtension, let extensionID, let category):
-            pixel = .installed(extension: pixelExtension, extensionID: extensionID, category: category)
+        case .installed(let pixelExtension):
+            pixel = .installed(extension: pixelExtension)
         case .installError(let pixelExtension, let error):
             pixel = .installError(extension: pixelExtension, error: error)
-        case .uninstalled(let pixelExtension, let extensionID, let category):
-            pixel = .uninstalled(extension: pixelExtension, extensionID: extensionID, category: category)
+        case .uninstalled(let pixelExtension):
+            pixel = .uninstalled(extension: pixelExtension)
         case .uninstallError(let error):
             pixel = .uninstallError(error: error)
         case .uninstalledAll:
@@ -414,19 +408,19 @@ struct MacOSWebExtensionPixelFiring: WebExtensionPixelFiring {
         case .apiCompatibilityGaps(let catalogEntry, let version, let missingAPICount, let unsupportedURLCount):
             pixel = .apiCompatibilityGaps(extension: catalogEntry, version: version,
                                           missingAPICount: missingAPICount, unsupportedURLCount: unsupportedURLCount)
-        case .enabled(let extensionID, let category):
-            pixel = .enabled(extensionID: extensionID, category: category)
-        case .disabled(let extensionID, let category):
-            pixel = .disabled(extensionID: extensionID, category: category)
-        case .retained(let extensionID, let category):
-            pixel = .retained(extensionID: extensionID, category: category)
-        case .churned(let extensionID, let category):
-            pixel = .churned(extensionID: extensionID, category: category)
+        case .enabled(let pixelExtension):
+            pixel = .enabled(extension: pixelExtension)
+        case .disabled(let pixelExtension):
+            pixel = .disabled(extension: pixelExtension)
+        case .retained14Days(let pixelExtension):
+            pixel = .retained14Days(extension: pixelExtension)
+        case .churned14Days(let pixelExtension):
+            pixel = .churned14Days(extension: pixelExtension)
         }
         switch event {
         case .bitwardenDailyActive, .apiCompatibilityGaps:
             frequency = .daily
-        case .enabled, .disabled, .retained, .churned:
+        case .enabled, .disabled, .retained14Days, .churned14Days:
             frequency = .dailyAndCount
         case .defaultPasswordManagerSet:
             frequency = .standard

@@ -92,7 +92,6 @@ final class ExtensionsManagementPreferencesTests: XCTestCase {
             "id": storeID,
             "name": "Bitwarden",
             "publisher": "Bitwarden Inc.",
-            "categoryId": "password-manager",
             "cwsUri": "https://chromewebstore.google.com/detail/\(self.storeID)"
         ]
         settings["publisherUri"] = publisherURL
@@ -106,7 +105,7 @@ final class ExtensionsManagementPreferencesTests: XCTestCase {
         XCTAssertEqual(pixels.actualFireCalls.count, 1, file: file, line: line)
         let call = try XCTUnwrap(pixels.actualFireCalls.first, file: file, line: line)
         XCTAssertEqual(call.pixel.name, name, file: file, line: line)
-        XCTAssertEqual(call.pixel.parameters, ["extension_id": storeID, "category": "password-manager"], file: file, line: line)
+        XCTAssertEqual(call.pixel.parameters, ["extension": "bitwarden"], file: file, line: line)
         XCTAssertEqual(call.frequency, .dailyAndCount, file: file, line: line)
     }
 }

@@ -30,17 +30,17 @@ final class WebExtensionRetentionReporterTests: XCTestCase {
     private let hour: TimeInterval = 60 * 60
     private var date = Date(timeIntervalSince1970: 1_000_000)
 
-    func testWhenAnEnabledInstallIs14DaysOld_ThenItIsReportedAsRetainedWithItsCategory() {
+    func testWhenAnEnabledInstallIs14DaysOld_ThenItIsReportedAsRetained() {
         let reporter = makeReporter()
         reporter.recordInstall("a")
 
         date += window - 1
-        reporter.reportIfDue(installedExtensions: [record("a")], category: category)
+        reporter.reportIfDue(installedExtensions: [record("a")], pixelExtension: pixelExtension)
         XCTAssertEqual(pixels.events, [])
 
         date += hour
-        reporter.reportIfDue(installedExtensions: [record("a")], category: category)
-        XCTAssertEqual(pixels.events, ["retained a category-a"])
+        reporter.reportIfDue(installedExtensions: [record("a")], pixelExtension: pixelExtension)
+        XCTAssertEqual(pixels.events, ["retained bitwarden"])
     }
 
     func testWhenAnInstallIsDisabledOrRemoved_ThenItIsReportedAsChurned() {
@@ -49,19 +49,19 @@ final class WebExtensionRetentionReporterTests: XCTestCase {
         reporter.recordInstall("b")
 
         date += window
-        reporter.reportIfDue(installedExtensions: [record("a", isDisabled: true)], category: category)
+        reporter.reportIfDue(installedExtensions: [record("a", isDisabled: true)], pixelExtension: pixelExtension)
 
-        XCTAssertEqual(pixels.events, ["churned a category-a", "churned b category-b"])
+        XCTAssertEqual(pixels.events, ["churned bitwarden", "churned onePassword"])
     }
 
     func testWhenReportsAreChecked_ThenEachInstallIsReportedOnceAcrossReporters() {
         makeReporter().recordInstall("a")
 
         date += window
-        makeReporter().reportIfDue(installedExtensions: [record("a")], category: category)
-        makeReporter().reportIfDue(installedExtensions: [record("a")], category: category)
+        makeReporter().reportIfDue(installedExtensions: [record("a")], pixelExtension: pixelExtension)
+        makeReporter().reportIfDue(installedExtensions: [record("a")], pixelExtension: pixelExtension)
 
-        XCTAssertEqual(pixels.events, ["retained a category-a"])
+        XCTAssertEqual(pixels.events, ["retained bitwarden"])
     }
 
     func testWhenCheckedAgainWithinTheHour_ThenTheCheckIsSkipped() {
@@ -69,14 +69,14 @@ final class WebExtensionRetentionReporterTests: XCTestCase {
         reporter.recordInstall("a")
 
         date += window - hour / 2
-        reporter.reportIfDue(installedExtensions: [], category: category)
+        reporter.reportIfDue(installedExtensions: [], pixelExtension: pixelExtension)
         date += hour / 2
-        reporter.reportIfDue(installedExtensions: [], category: category)
+        reporter.reportIfDue(installedExtensions: [], pixelExtension: pixelExtension)
         XCTAssertEqual(pixels.events, [], "The install is due, but the last check was within the hour")
 
         date += hour / 2
-        reporter.reportIfDue(installedExtensions: [], category: category)
-        XCTAssertEqual(pixels.events, ["churned a category-a"])
+        reporter.reportIfDue(installedExtensions: [], pixelExtension: pixelExtension)
+        XCTAssertEqual(pixels.events, ["churned bitwarden"])
     }
 
     func testWhenAnExtensionIsReinstalled_ThenItsWindowRestarts() {
@@ -86,12 +86,12 @@ final class WebExtensionRetentionReporterTests: XCTestCase {
         reporter.recordInstall("a")
 
         date += window / 2
-        reporter.reportIfDue(installedExtensions: [record("a")], category: category)
+        reporter.reportIfDue(installedExtensions: [record("a")], pixelExtension: pixelExtension)
         XCTAssertEqual(pixels.events, [])
 
         date += window / 2
-        reporter.reportIfDue(installedExtensions: [record("a")], category: category)
-        XCTAssertEqual(pixels.events, ["retained a category-a"])
+        reporter.reportIfDue(installedExtensions: [record("a")], pixelExtension: pixelExtension)
+        XCTAssertEqual(pixels.events, ["retained bitwarden"])
     }
 
     // MARK: - Helpers
@@ -100,8 +100,8 @@ final class WebExtensionRetentionReporterTests: XCTestCase {
         WebExtensionRetentionReporter(store: WebExtensionRetentionStore(storage: storage.keyedStoring()), pixelFiring: pixels, now: { [unowned self] in date })
     }
 
-    private func category(_ extensionID: String) -> String? {
-        "category-\(extensionID)"
+    private func pixelExtension(_ extensionID: String) -> WebExtensionPixelExtension {
+        ["a": .catalog(.bitwarden), "b": .catalog(.onePassword)][extensionID] ?? .other
     }
 
     private func record(_ extensionID: String, isDisabled: Bool = false) -> InstalledWebExtension {
@@ -117,10 +117,10 @@ private final class RetentionCapturingPixelFiring: WebExtensionPixelFiring {
 
     func fire(_ event: WebExtensionPixelEvent) {
         switch event {
-        case .retained(let extensionID, let category):
-            events.append("retained \(extensionID) \(category ?? "nil")")
-        case .churned(let extensionID, let category):
-            events.append("churned \(extensionID) \(category ?? "nil")")
+        case .retained14Days(let pixelExtension):
+            events.append("retained \(pixelExtension.parameterValue)")
+        case .churned14Days(let pixelExtension):
+            events.append("churned \(pixelExtension.parameterValue)")
         default:
             break
         }

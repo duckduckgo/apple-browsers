@@ -8,11 +8,11 @@
         "parameters": ["appVersion", "pixelSource", "channel"]
     },
     "m_mac_web_extension_installed": {
-        "description": "Fires when a web extension is successfully installed.",
+        "description": "Fires when a web extension is successfully installed. Updates of an installed extension don't fire it.",
         "owners": ["tomasstrba"],
         "triggers": ["other"],
         "suffixes": ["daily_standard"],
-        "parameters": ["appVersion", "pixelSource", "channel", "web_extension"]
+        "parameters": ["appVersion", "pixelSource", "channel", "web_extension", "web_extension_id", "web_extension_category"]
     },
     "m_mac_web_extension_install_error": {
         "description": "Fires when a web extension installation fails.",
@@ -31,11 +31,11 @@
         ]
     },
     "m_mac_web_extension_uninstalled": {
-        "description": "Fires when a web extension is successfully uninstalled.",
+        "description": "Fires when a web extension is successfully uninstalled, including each one removed by uninstalling all. Removing the previous version after an update, and removing a built-in extension, don't fire it.",
         "owners": ["tomasstrba"],
         "triggers": ["other"],
         "suffixes": ["daily_standard"],
-        "parameters": ["appVersion", "pixelSource", "channel", "web_extension"]
+        "parameters": ["appVersion", "pixelSource", "channel", "web_extension", "web_extension_id", "web_extension_category"]
     },
     "m_mac_web_extension_uninstall_error": {
         "description": "Fires when a web extension uninstallation fails.",
@@ -701,5 +701,54 @@
             "background_load_error_after",
             "background_load_error_app_state"
         ]
+    },
+    "web_extension_enabled_macos": {
+        "description": "Fires when a Chrome Web Store extension is enabled, from Settings or the debug menu.",
+        "owners": ["jleandroperez"],
+        "triggers": ["user_interaction"],
+        "suffixes": ["daily_standard"],
+        "parameters": ["appVersion", "pixelSource", "channel", "web_extension_id", "web_extension_category"]
+    },
+    "web_extension_disabled_macos": {
+        "description": "Fires when a Chrome Web Store extension is disabled, by the user in Settings or the debug menu, or because remote configuration lists it as disabled.",
+        "owners": ["jleandroperez"],
+        "triggers": ["user_interaction", "feature_lifecycle"],
+        "suffixes": ["daily_standard"],
+        "parameters": ["appVersion", "pixelSource", "channel", "web_extension_id", "web_extension_category"]
+    },
+    "web_extension_details_opened_macos": {
+        "description": "Fires when the user opens the details of an installed extension in Settings > Extensions.",
+        "owners": ["jleandroperez"],
+        "triggers": ["user_interaction"],
+        "suffixes": ["daily_standard"],
+        "parameters": ["appVersion", "pixelSource", "channel", "web_extension_id", "web_extension_category"]
+    },
+    "web_extension_get_clicked_macos": {
+        "description": "Fires when the user clicks Get on an extension in Settings > Extensions, which opens its Chrome Web Store page.",
+        "owners": ["jleandroperez"],
+        "triggers": ["user_interaction"],
+        "suffixes": ["daily_standard"],
+        "parameters": ["appVersion", "pixelSource", "channel", "web_extension_id", "web_extension_category"]
+    },
+    "web_extension_publisher_link_clicked_macos": {
+        "description": "Fires when the user clicks an extension's publisher link in Settings > Extensions, which opens the publisher's site.",
+        "owners": ["jleandroperez"],
+        "triggers": ["user_interaction"],
+        "suffixes": ["daily_standard"],
+        "parameters": ["appVersion", "pixelSource", "channel", "web_extension_id", "web_extension_category"]
+    },
+    "web_extension_retained_14d_macos": {
+        "description": "Fires on the first check, at most once an hour on browsing activity, after a Chrome Web Store extension has been installed for 14 days, when it is still installed and enabled.",
+        "owners": ["jleandroperez"],
+        "triggers": ["scheduled"],
+        "suffixes": ["daily_standard"],
+        "parameters": ["appVersion", "pixelSource", "channel", "web_extension_id", "web_extension_category"]
+    },
+    "web_extension_churned_14d_macos": {
+        "description": "Fires on the first check, at most once an hour on browsing activity, after a Chrome Web Store extension has been installed for 14 days, when it has been uninstalled or disabled since.",
+        "owners": ["jleandroperez"],
+        "triggers": ["scheduled"],
+        "suffixes": ["daily_standard"],
+        "parameters": ["appVersion", "pixelSource", "channel", "web_extension_id", "web_extension_category"]
     }
 }

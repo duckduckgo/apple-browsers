@@ -681,7 +681,18 @@
         "key": "extension",
         "type": "string",
         "description": "The extension's name in the Chrome Web Store catalog, or other for an extension the catalog doesn't list. Keep in sync with ExtensionsCatalogSubfeature.",
-        "enum": ["bitwarden", "onePassword", "lastPass", "other"]
+        "enum": ["bitwarden", "onePassword", "lastPass", "iCloudPasswords", "darkReader", "other"]
+    },
+    "web_extension_id": {
+        "key": "extension_id",
+        "type": "string",
+        "description": "The extension's Chrome Web Store ID. Omitted for an extension that didn't come from the store.",
+        "pattern": "^[a-p]{32}$"
+    },
+    "web_extension_category": {
+        "key": "category",
+        "type": "string",
+        "description": "The extension's categoryId in the extensions catalog, such as password-manager or accessibility. Omitted when the catalog doesn't list the extension."
     },
     "web_extension_version": {
         "key": "extension_version",

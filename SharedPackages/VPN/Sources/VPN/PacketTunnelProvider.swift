@@ -263,30 +263,6 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
         }
     }
 
-    /// Persists the failed-shutdown guard independently of subscription credentials.
-    struct ReconnectGuard {
-        private static let blockedKey = "com.duckduckgo.vpn.reconnectBlocked"
-        let defaults: UserDefaults
-
-        var isBlocked: Bool {
-            get { defaults.bool(forKey: Self.blockedKey) }
-            nonmutating set { defaults.set(newValue, forKey: Self.blockedKey) }
-        }
-
-        func validate(startupMethod: StartupOptions.StartupMethod) throws {
-            // A system restart can arrive without options and look like a system-initiated start.
-            guard !isBlocked || startupMethod == .manualByMainApp else {
-                throw TunnelError.reconnectBlocked
-            }
-        }
-
-        func startSucceeded(startupMethod: StartupOptions.StartupMethod) {
-            if startupMethod == .manualByMainApp {
-                isBlocked = false
-            }
-        }
-    }
-
     // MARK: - WireGuard
 
     private let wireGuardAdapterEventHandler: WireGuardAdapterEventHandling
@@ -1617,7 +1593,7 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
             // shut it down even if the process keeps running.
 
             // Subscription recovery must not undo this guard if the extension process restarts.
-            ReconnectGuard(defaults: defaults).isBlocked = true
+            ReconnectGuard(defaults: defaults).canReconnect = false
 
             // We don't want to be firing monitoring pixels for failures from this point onward...
             await stopMonitors()

@@ -53,7 +53,7 @@
             "appVersion",
             {
                 "key": "reason",
-                "description": "Pending source-page collection, another cross-tab collection, or both blocking the last wait.",
+                "description": "Pending source-page collection, another cross-tab collection, or both blocking the last wait (test edit).",
                 "type": "string",
                 "enum": ["source_collection", "cross_tab_collection", "both"]
             }

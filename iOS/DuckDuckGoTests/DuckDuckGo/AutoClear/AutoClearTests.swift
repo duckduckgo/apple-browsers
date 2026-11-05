@@ -109,6 +109,24 @@ class AutoClearTests: XCTestCase {
         }
     }
 
+    func testUITestAccelerationRequiresOptInAndOnlyShortensFiveMinuteDelay() {
+        for (testing, optIn) in [(false, true), (true, false), (true, true)] {
+            let launchOptions = LaunchOptionsHandler(environment: testing ? ["UITEST_MODE": "1"] : [:], arguments: [])
+            let logic = AutoClear(worker: mockFireExecutor, appSettings: appSettings,
+                                  launchOptions: launchOptions, arguments: optIn ? ["autoclear-ui-test"] : [])
+            appSettings.autoClearAction = .data
+            for timing in [AutoClearSettingsModel.Timing.termination, .delay5min, .delay15min, .delay30min, .delay60min] {
+                appSettings.autoClearTiming = timing
+                logic.startClearingTimer(Date().timeIntervalSince1970 - 6)
+                XCTAssertEqual(logic.isClearingDue, testing && optIn && timing == .delay5min)
+            }
+            appSettings.autoClearAction = []
+            appSettings.autoClearTiming = .delay5min
+            logic.startClearingTimer(Date().timeIntervalSince1970 - 6)
+            XCTAssertFalse(logic.isClearingDue)
+        }
+    }
+
     // MARK: - clearDataIfEnabled Tests
     
     func testClearDataIfEnabledCallsWorkerBurn() async {

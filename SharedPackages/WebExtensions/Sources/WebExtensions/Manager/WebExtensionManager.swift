@@ -156,8 +156,8 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
     public let privacySettings: WebExtensionPrivacySettingsStore?
 #endif
 
-    /// Reports store installs as retained or churned 14 days later, or `nil` to not track retention.
-    private let retentionReporter: WebExtensionRetentionReporter?
+    /// Reports the installed count and 14-day retention of store extensions, or `nil` to not report them.
+    private let storePixelsReporter: WebExtensionStorePixelsReporter?
 
     /// Deduplicates compatibility issues reported by JavaScript and native extension APIs.
     private let compatibilityReporter: WebExtensionAPICompatibilityReporter
@@ -330,7 +330,7 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
         self.messageRouter = messageRouter ?? WebExtensionMessageRouter()
         self.handlerProvider = handlerProvider
         self.nativeMessagingHandler = nativeMessagingHandler
-        self.retentionReporter = retentionStore.map { WebExtensionRetentionReporter(store: $0, pixelFiring: pixelFiring, now: now) }
+        self.storePixelsReporter = retentionStore.map { WebExtensionStorePixelsReporter(store: $0, pixelFiring: pixelFiring, now: now) }
 #if os(macOS)
         self.commandShortcuts = keyValueStore.map { WebExtensionCommandShortcutStore(keyValueStore: $0) }
         self.privacySettings = keyValueStore.map { WebExtensionPrivacySettingsStore(keyValueStore: $0) }
@@ -373,7 +373,7 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
             MainActor.assumeIsolated {
                 self?.fireBitwardenDailyActiveIfLoaded()
                 self?.fireAPICompatibilityGapsIfDue()
-                self?.fireRetentionPixelsIfDue()
+                self?.fireStorePixelsIfDue()
             }
         }
         apiCompatibilityHandler.onIssue = { [weak self] issue, url in
@@ -1770,7 +1770,7 @@ private extension WebExtensionManager {
         guard oldIdentifier == nil else { return }
         pixelFiring.fire(.installed(extension: pixelExtension(for: storeIdentity)))
         if let storeIdentity {
-            retentionReporter?.recordInstall(storeIdentity.id)
+            storePixelsReporter?.recordInstall(storeIdentity.id)
         }
     }
 
@@ -1785,16 +1785,16 @@ private extension WebExtensionManager {
 }
 
 #if os(macOS)
-// MARK: - Retention Pixels
+// MARK: - Store Extension Pixels
 
 @available(macOS 15.4, *)
 @MainActor
 private extension WebExtensionManager {
 
-    /// Retention is judged only while the store catalog is available.
-    func fireRetentionPixelsIfDue() {
+    /// Reported only while the store catalog is available, so the count's denominator is devices that can install store extensions.
+    func fireStorePixelsIfDue() {
         guard let chromeWebStore, !chromeWebStore.catalogExtensionIDs.isEmpty else { return }
-        retentionReporter?.reportIfDue(installedExtensions: installationStore.installedExtensions) { storeID in
+        storePixelsReporter?.reportIfDue(installedExtensions: installationStore.installedExtensions) { storeID in
             pixelExtension(for: WebExtensionStoreIdentity(store: .chromeWebStore, id: storeID))
         }
     }

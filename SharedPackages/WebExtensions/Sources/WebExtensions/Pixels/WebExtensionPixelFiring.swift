@@ -120,10 +120,14 @@ public enum WebExtensionPixelEvent {
     case enabled(extension: WebExtensionPixelExtension)
     /// An enabled extension was turned off, by the user or by remote configuration.
     case disabled(extension: WebExtensionPixelExtension)
+    /// Remote configuration turned off an installed store extension, so the user can't turn it back on.
+    case remotelyDisabled(extension: WebExtensionPixelExtension)
     /// A store extension installed 14 days ago is still installed and enabled.
     case retained14Days(extension: WebExtensionPixelExtension)
     /// A store extension installed 14 days ago was removed or turned off since.
     case churned14Days(extension: WebExtensionPixelExtension)
+    /// How many store extensions are installed, and how many of those are enabled. Fired once a day.
+    case installedCount(installed: Int, enabled: Int)
 }
 
 /// A bounded summary of existing health-monitor evidence, not proof of document initialization or all-tab recovery.
@@ -321,7 +325,7 @@ public struct CPMWebExtensionPixelMetadata: Equatable, Sendable {
              .embeddedInstallError, .scriptletFetchSuccess, .scriptletFetchError,
              .scriptletValidationError, .scriptletInstalled, .scriptletInstallError,
              .defaultPasswordManagerSet, .bitwardenDailyActive, .apiCompatibilityGaps,
-             .enabled, .disabled, .retained14Days, .churned14Days:
+             .enabled, .disabled, .remotelyDisabled, .retained14Days, .churned14Days, .installedCount:
             return nil
         }
     }

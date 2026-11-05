@@ -82,6 +82,7 @@ final class MacOSWebExtensionPixelFiringTests: XCTestCase {
         let events: [WebExtensionPixelEvent] = [
             .enabled(extension: .catalog(.bitwarden)),
             .disabled(extension: .catalog(.bitwarden)),
+            .remotelyDisabled(extension: .catalog(.bitwarden)),
             .retained14Days(extension: .catalog(.bitwarden)),
             .churned14Days(extension: .catalog(.bitwarden))
         ]
@@ -90,5 +91,14 @@ final class MacOSWebExtensionPixelFiringTests: XCTestCase {
             MacOSWebExtensionPixelFiring(pixelFiring: pixels).fire(event)
             XCTAssertEqual(try XCTUnwrap(pixels.actualFireCalls.first).frequency, .dailyAndCount, "\(event)")
         }
+    }
+
+    func testInstalledCountIsDaily() throws {
+        let pixels = PixelKitMock()
+        MacOSWebExtensionPixelFiring(pixelFiring: pixels).fire(.installedCount(installed: 1, enabled: 0))
+
+        let call = try XCTUnwrap(pixels.actualFireCalls.first)
+        XCTAssertEqual(call.frequency, .daily)
+        XCTAssertEqual(call.pixel.parameters, ["count": "1", "enabled_count": "0"])
     }
 }

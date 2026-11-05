@@ -1,5 +1,5 @@
 //
-//  WebExtensionRetentionReporterTests.swift
+//  WebExtensionStorePixelsReporterTests.swift
 //
 //  Copyright © 2026 DuckDuckGo. All rights reserved.
 //
@@ -22,10 +22,10 @@ import XCTest
 
 @available(macOS 15.4, iOS 18.4, *)
 @MainActor
-final class WebExtensionRetentionReporterTests: XCTestCase {
+final class WebExtensionStorePixelsReporterTests: XCTestCase {
 
     private let storage = InMemoryKeyValueStore()
-    private let pixels = RetentionCapturingPixelFiring()
+    private let pixels = StorePixelsCapturingPixelFiring()
     private let window: TimeInterval = 14 * 24 * 60 * 60
     private let hour: TimeInterval = 60 * 60
     private var date = Date(timeIntervalSince1970: 1_000_000)
@@ -94,10 +94,33 @@ final class WebExtensionRetentionReporterTests: XCTestCase {
         XCTAssertEqual(pixels.events, ["retained bitwarden"])
     }
 
+    func testWhenChecked_ThenStoreExtensionsAreCountedOncePerStoreID() {
+        let reporter = makeReporter()
+        let manual = InstalledWebExtension(uniqueIdentifier: "manual", filename: "manual", name: nil, version: "1")
+
+        // An update's old and new copies count once, enabled if either is.
+        reporter.reportIfDue(installedExtensions: [record("a", isDisabled: true), record("a"), record("b", isDisabled: true), manual],
+                             pixelExtension: pixelExtension)
+
+        XCTAssertEqual(pixels.installedCounts, ["2 installed, 1 enabled"])
+    }
+
+    func testWhenCheckedAgainWithinTheHour_ThenTheCountIsNotSentAgain() {
+        let reporter = makeReporter()
+
+        reporter.reportIfDue(installedExtensions: [], pixelExtension: pixelExtension)
+        date += hour - 1
+        reporter.reportIfDue(installedExtensions: [], pixelExtension: pixelExtension)
+        date += 1
+        reporter.reportIfDue(installedExtensions: [], pixelExtension: pixelExtension)
+
+        XCTAssertEqual(pixels.installedCounts, ["0 installed, 0 enabled", "0 installed, 0 enabled"])
+    }
+
     // MARK: - Helpers
 
-    private func makeReporter() -> WebExtensionRetentionReporter {
-        WebExtensionRetentionReporter(store: WebExtensionRetentionStore(storage: storage.keyedStoring()), pixelFiring: pixels, now: { [unowned self] in date })
+    private func makeReporter() -> WebExtensionStorePixelsReporter {
+        WebExtensionStorePixelsReporter(store: WebExtensionRetentionStore(storage: storage.keyedStoring()), pixelFiring: pixels, now: { [unowned self] in date })
     }
 
     private func pixelExtension(_ extensionID: String) -> WebExtensionPixelExtension {
@@ -112,11 +135,14 @@ final class WebExtensionRetentionReporterTests: XCTestCase {
 }
 
 @available(macOS 15.4, iOS 18.4, *)
-private final class RetentionCapturingPixelFiring: WebExtensionPixelFiring {
+private final class StorePixelsCapturingPixelFiring: WebExtensionPixelFiring {
     private(set) var events: [String] = []
+    private(set) var installedCounts: [String] = []
 
     func fire(_ event: WebExtensionPixelEvent) {
         switch event {
+        case .installedCount(let installed, let enabled):
+            installedCounts.append("\(installed) installed, \(enabled) enabled")
         case .retained14Days(let pixelExtension):
             events.append("retained \(pixelExtension.parameterValue)")
         case .churned14Days(let pixelExtension):

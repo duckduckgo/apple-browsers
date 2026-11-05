@@ -1635,10 +1635,11 @@ final class WebExtensionManagerTests: XCTestCase {
         date += 2 * 60 * 60
         manager.eventsListener.onBrowsingActivity?()
         XCTAssertEqual(newEvents(), [], "Each install is judged once")
+        XCTAssertEqual(pixels.installedCountCount, 3, "The count is sent on each hourly check")
     }
 
     @MainActor
-    func testWhenTheStoreCatalogIsUnavailable_ThenRetentionIsNotReported() async throws {
+    func testWhenTheStoreCatalogIsUnavailable_ThenNeitherCountNorRetentionIsReported() async throws {
         var date = Date(timeIntervalSince1970: 0)
         let pixels = EventCapturingPixelFiring()
         let manager = makeManagementPixelManager(pixels: pixels, now: { date }, isCatalogAvailable: false)
@@ -1649,6 +1650,7 @@ final class WebExtensionManagerTests: XCTestCase {
         manager.eventsListener.onBrowsingActivity?()
 
         XCTAssertEqual(pixels.events.count, installEvents)
+        XCTAssertEqual(pixels.installedCountCount, 0)
     }
 #endif
 
@@ -3416,9 +3418,13 @@ private final class CapturingReloadErrorPixelFiring: WebExtensionPixelFiring {
 @available(macOS 15.4, iOS 18.4, *)
 private final class EventCapturingPixelFiring: WebExtensionPixelFiring {
     private(set) var events: [String] = []
+    private(set) var installedCountCount = 0
     private(set) var cpmInstallErrors: [NSError] = []
 
     func fire(_ event: WebExtensionPixelEvent) {
+        if case .installedCount = event {
+            installedCountCount += 1
+        }
         switch event {
         case .embeddedInstallError(let type, let error) where type == .embedded:
             cpmInstallErrors.append(error as NSError)

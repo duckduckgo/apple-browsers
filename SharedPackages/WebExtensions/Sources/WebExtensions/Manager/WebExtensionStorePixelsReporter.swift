@@ -1,5 +1,5 @@
 //
-//  WebExtensionRetentionReporter.swift
+//  WebExtensionStorePixelsReporter.swift
 //
 //  Copyright © 2026 DuckDuckGo. All rights reserved.
 //
@@ -18,11 +18,11 @@
 
 import Foundation
 
-/// Reports whether store installs are retained or churned 14 days later, matching Windows.
-/// Install dates outlive an uninstall, so removing an extension still reports it as churned.
+/// Reports how many store extensions are installed and enabled, and whether store installs are retained or
+/// churned 14 days later. Install dates outlive an uninstall, so removing an extension still reports it as churned.
 @available(macOS 15.4, iOS 18.4, *)
 @MainActor
-final class WebExtensionRetentionReporter {
+final class WebExtensionStorePixelsReporter {
 
     private static let checkInterval: TimeInterval = 60 * 60
 
@@ -42,8 +42,9 @@ final class WebExtensionRetentionReporter {
         store.recordInstallation(of: extensionID, at: now())
     }
 
-    /// Reports each install that is 14 days old as retained when it's still installed and enabled, or as churned.
-    /// It checks at most once an hour, so a gap in use makes a report late, not lost.
+    /// Reports how many store extensions are installed and enabled, then each install that is 14 days old as retained
+    /// when it's still installed and enabled, or as churned. It checks at most once an hour, so a gap in use makes a
+    /// report late, not lost. The count pixel is daily, so each device reports it once a day.
     func reportIfDue(installedExtensions: [InstalledWebExtension], pixelExtension: (String) -> WebExtensionPixelExtension) {
         let date = now()
         if let lastCheckDate, date.timeIntervalSince(lastCheckDate) < Self.checkInterval {
@@ -51,11 +52,17 @@ final class WebExtensionRetentionReporter {
         }
         lastCheckDate = date
 
-        for extensionID in store.takeDue(at: date) {
-            // Old and new versions coexist during an update, so any enabled copy counts.
-            let isEnabled = installedExtensions.contains { $0.storeIdentity?.id == extensionID && !$0.isDisabled }
-            let reported = pixelExtension(extensionID)
-            pixelFiring.fire(isEnabled ? .retained14Days(extension: reported) : .churned14Days(extension: reported))
+        // Old and new versions coexist during an update, so each store ID counts once.
+        var isEnabledByStoreID: [String: Bool] = [:]
+        for installedExtension in installedExtensions {
+            guard let storeID = installedExtension.storeIdentity?.id else { continue }
+            isEnabledByStoreID[storeID] = (isEnabledByStoreID[storeID] ?? false) || !installedExtension.isDisabled
+        }
+        pixelFiring.fire(.installedCount(installed: isEnabledByStoreID.count, enabled: isEnabledByStoreID.values.filter { $0 }.count))
+
+        for storeID in store.takeDue(at: date) {
+            let reported = pixelExtension(storeID)
+            pixelFiring.fire(isEnabledByStoreID[storeID] == true ? .retained14Days(extension: reported) : .churned14Days(extension: reported))
         }
     }
 }

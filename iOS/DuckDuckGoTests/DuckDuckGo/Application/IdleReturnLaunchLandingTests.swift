@@ -27,12 +27,10 @@ struct IdleReturnLaunchLandingTests {
     /// Defaults are the case that draws; each test changes one input.
     private func draws(_ outcome: IdleReturnOutcome? = nil,
                        isFeatureOn: Bool = true,
-                       isBackgroundLaunch: Bool = false,
                        hasLaunchAction: Bool = false,
                        isAppLockEnabled: Bool = false,
                        hasPageToReplace: Bool = true) -> Bool {
         (outcome ?? ntp).drawsNewTabPageAtLaunch(isFeatureOn: isFeatureOn,
-                                                 isBackgroundLaunch: isBackgroundLaunch,
                                                  hasLaunchAction: hasLaunchAction,
                                                  isAppLockEnabled: isAppLockEnabled,
                                                  hasPageToReplace: hasPageToReplace)
@@ -48,12 +46,6 @@ struct IdleReturnLaunchLandingTests {
     @Test("With the feature off the New Tab Page is not drawn at launch", .timeLimit(.minutes(1)))
     func featureOffIsNotDrawnAtLaunch() {
         #expect(!draws(isFeatureOn: false))
-    }
-
-    @available(iOS 16, macOS 13, *)
-    @Test("On a background launch the New Tab Page is not drawn at launch", .timeLimit(.minutes(1)))
-    func backgroundLaunchIsNotDrawnAtLaunch() {
-        #expect(!draws(isBackgroundLaunch: true))
     }
 
     @available(iOS 16, macOS 13, *)

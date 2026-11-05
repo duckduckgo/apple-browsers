@@ -101,7 +101,7 @@ extension Preferences {
                         .foregroundColor(Color(.textSecondary))
                 }
 
-                if !NSApp.isSandboxed && (model.passwordManager == .bitwarden || !model.areWebExtensionsSupported) {
+                if model.isPasswordManagerChoiceVisible {
                     // SECTION 1: Password Manager
                     PreferencePaneSection(UserText.autofillPasswordManager) {
                         passwordManagerPicker(passwordManagerBinding) {

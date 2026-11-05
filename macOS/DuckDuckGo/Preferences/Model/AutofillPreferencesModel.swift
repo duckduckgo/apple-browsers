@@ -130,6 +130,12 @@ final class AutofillPreferencesModel: ObservableObject {
         }
     }
 
+    /// Where web extensions are supported, only users who still have the native Bitwarden integration get a choice.
+    @MainActor
+    var isPasswordManagerChoiceVisible: Bool {
+        !isSandboxed && (passwordManager == .bitwarden || !areWebExtensionsSupported)
+    }
+
     @MainActor
     func passwordManagerSettingsChange(passwordManager requested: PasswordManager) {
         passwordManager = passwordManager.transitioned(to: requested, webExtensionsSupported: areWebExtensionsSupported)
@@ -163,10 +169,12 @@ final class AutofillPreferencesModel: ObservableObject {
         neverPromptWebsitesManager: AutofillNeverPromptWebsitesManager = AutofillNeverPromptWebsitesManager.shared,
         syncPromoManager: SyncPromoManaging = Application.appDelegate.syncSetupAutofillPromoManager,
         notificationCenter: NotificationCenter = .default,
-        areWebExtensionsSupported: Bool = PasswordManager.areWebExtensionsSupported
+        areWebExtensionsSupported: Bool = PasswordManager.areWebExtensionsSupported,
+        isSandboxed: Bool = NSApp.isSandboxed
     ) {
         self.persistor = persistor
         self.areWebExtensionsSupported = areWebExtensionsSupported
+        self.isSandboxed = isSandboxed
         self.userAuthenticator = userAuthenticator
         self.bitwardenManager = bitwardenManager
         self.neverPromptWebsitesManager = neverPromptWebsitesManager
@@ -209,6 +217,7 @@ final class AutofillPreferencesModel: ObservableObject {
     private var syncPromoCancellable: AnyCancellable?
     private var userSettingsCancellable: AnyCancellable?
     let areWebExtensionsSupported: Bool
+    private let isSandboxed: Bool
     lazy var syncPromoViewModel: SyncPromoViewModel = SyncPromoViewModel(touchpointType: .autofill,
                                                                          primaryButtonAction: { [weak self] in
         self?.syncPromoManager.goToSyncSettings(for: .autofill)

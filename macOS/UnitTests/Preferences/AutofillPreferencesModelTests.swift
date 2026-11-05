@@ -215,10 +215,32 @@ final class AutofillPreferencesModelTests: XCTestCase {
     }
 
     @MainActor
+    func testPasswordManagerChoiceVisibility() throws {
+        let cases: [(selected: PasswordManager, webExtensionsSupported: Bool, sandboxed: Bool, visible: Bool)] = [
+            (.bitwarden, true, false, true),
+            (.duckduckgo, true, false, false),
+            (.duckduckgo, false, false, true),
+            (.bitwarden, false, false, true),
+            (.bitwarden, true, true, false),
+            (.duckduckgo, false, true, false),
+        ]
+
+        for testCase in cases {
+            let persistor = AutofillPreferencesPersistorMock()
+            persistor.passwordManager = testCase.selected
+            let model = try makeModel(persistor: persistor, notificationCenter: NotificationCenter(),
+                                      areWebExtensionsSupported: testCase.webExtensionsSupported, isSandboxed: testCase.sandboxed)
+
+            XCTAssertEqual(model.isPasswordManagerChoiceVisible, testCase.visible, "\(testCase)")
+        }
+    }
+
+    @MainActor
     private func makeModel(persistor: AutofillPreferencesPersistorMock, notificationCenter: NotificationCenter,
-                           areWebExtensionsSupported: Bool = true) throws -> AutofillPreferencesModel {
+                           areWebExtensionsSupported: Bool = true, isSandboxed: Bool = false) throws -> AutofillPreferencesModel {
         try AutofillPreferencesModel(persistor: persistor, userAuthenticator: UserAuthenticatorMock(),
                                      neverPromptWebsitesManager: neverPromptWebsitesManager(), syncPromoManager: MockSyncPromoManager(),
-                                     notificationCenter: notificationCenter, areWebExtensionsSupported: areWebExtensionsSupported)
+                                     notificationCenter: notificationCenter, areWebExtensionsSupported: areWebExtensionsSupported,
+                                     isSandboxed: isSandboxed)
     }
 }

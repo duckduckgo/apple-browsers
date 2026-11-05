@@ -33,6 +33,7 @@ protocol SyncPromoManaging {
     func designFor(_ touchpoint: SyncPromoManager.Touchpoint) -> SyncPromoManager.Design
     func markPromoHandledFor(_ touchpoint: SyncPromoManager.Touchpoint)
     func recordImpressionFor(_ touchpoint: SyncPromoManager.Touchpoint)
+    func recordPromoConfirmedFor(_ touchpoint: SyncPromoManager.Touchpoint)
     func dismissPromoFor(_ touchpoint: SyncPromoManager.Touchpoint, reason: SyncPromoManager.DismissalReason)
     func resetPromos()
 }
@@ -46,11 +47,17 @@ extension SyncPromoManaging {
 enum SyncPromoStorageKeyNames: String, StorageKeyDescribing {
     case aiChatDismissed = "sync-promo-ai-chat-dismissed"
     case aiChatImpressions = "sync-promo-ai-chat-impressions"
+    case syncedDevicesCount = "sync-promo-synced-devices-count"
+    case setupPromoConfirmed = "sync-promo-setup-promo-confirmed"
+    case bookmarksAnotherDeviceDismissed = "sync-promo-bookmarks-another-device-dismissed"
 }
 
 struct SyncPromoStorageKeys: StoringKeys {
     let aiChatDismissed = StorageKey<Date>(SyncPromoStorageKeyNames.aiChatDismissed)
     let aiChatImpressions = StorageKey<Int>(SyncPromoStorageKeyNames.aiChatImpressions)
+    let syncedDevicesCount = StorageKey<Int>(SyncPromoStorageKeyNames.syncedDevicesCount)
+    let setupPromoConfirmed = StorageKey<Date>(SyncPromoStorageKeyNames.setupPromoConfirmed)
+    let bookmarksAnotherDeviceDismissed = StorageKey<Date>(SyncPromoStorageKeyNames.bookmarksAnotherDeviceDismissed)
 }
 
 final class SyncPromoManager: SyncPromoManaging {
@@ -60,6 +67,7 @@ final class SyncPromoManager: SyncPromoManaging {
         case passwords
         case dataImport = "data_import"
         case aiChat = "ai_chat"
+        case bookmarksAnotherDevice = "bookmarks_another_device"
     }
 
     enum DismissalReason: String {
@@ -74,6 +82,8 @@ final class SyncPromoManager: SyncPromoManaging {
 
     static let aiChatImpressionCap = 5
     static let redesignMinimumDaysSinceInstall = 3
+    static let syncAnotherDeviceMinimumDaysSinceInstall = 7
+    static let syncAnotherDeviceSetupPromoCooldown: TimeInterval = 24 * 60 * 60
 
     private let featureFlagger: FeatureFlagger
     private let syncService: DDGSyncing
@@ -153,22 +163,60 @@ final class SyncPromoManager: SyncPromoManaging {
                count > 0 {
                 return true
             }
+        case .bookmarksAnotherDevice:
+            if canRefreshSyncedDevicesCount,
+               featureFlagger.isFeatureOn(.sync),
+               let daysSinceInstall,
+               daysSinceInstall > Self.syncAnotherDeviceMinimumDaysSinceInstall,
+               let syncedDevicesCount = storage.syncedDevicesCount,
+               syncedDevicesCount < 2,
+               isSetupPromoCooldownOver,
+               count > 0 {
+                return true
+            }
         }
 
         return false
+    }
+
+    func refreshSyncedDevicesCount() async {
+        guard canRefreshSyncedDevicesCount,
+              let devices = try? await syncService.fetchDevices() else {
+            return
+        }
+        storage.syncedDevicesCount = devices.count
+    }
+
+    private var canRefreshSyncedDevicesCount: Bool {
+        featureFlagger.isFeatureOn(.syncPromotionSyncAnotherDevice)
+        && syncService.authState != .inactive
+        && storage.bookmarksAnotherDeviceDismissed == nil
+    }
+
+    private var isSetupPromoCooldownOver: Bool {
+        guard let setupPromoConfirmed = storage.setupPromoConfirmed else {
+            return true
+        }
+        return currentDateProvider().timeIntervalSince(setupPromoConfirmed) >= Self.syncAnotherDeviceSetupPromoCooldown
+    }
+
+    private var daysSinceInstall: Int? {
+        guard let installDate = installDateProvider() else {
+            return nil
+        }
+        return Calendar.current.dateComponents([.day], from: installDate, to: currentDateProvider()).day
     }
 
     func designFor(_ touchpoint: Touchpoint) -> Design {
         switch touchpoint {
         case .bookmarks, .passwords:
             guard featureFlagger.isFeatureOn(.syncPromotionRedesign),
-                  let installDate = installDateProvider(),
-                  let daysSinceInstall = Calendar.current.dateComponents([.day], from: installDate, to: currentDateProvider()).day,
+                  let daysSinceInstall,
                   daysSinceInstall > Self.redesignMinimumDaysSinceInstall else {
                 return .standard
             }
             return .redesigned
-        case .dataImport, .aiChat:
+        case .dataImport, .aiChat, .bookmarksAnotherDevice:
             return .standard
         }
     }
@@ -183,18 +231,29 @@ final class SyncPromoManager: SyncPromoManaging {
             syncPromoDataImportDismissed = Date()
         case .aiChat:
             syncPromoAIChatDismissed = Date()
+        case .bookmarksAnotherDevice:
+            storage.bookmarksAnotherDeviceDismissed = Date()
         }
     }
 
     func recordImpressionFor(_ touchpoint: Touchpoint) {
         switch touchpoint {
-        case .bookmarks, .passwords, .dataImport:
+        case .bookmarks, .passwords, .dataImport, .bookmarksAnotherDevice:
             break
         case .aiChat:
             syncPromoAIChatImpressions += 1
             if syncPromoAIChatImpressions >= Self.aiChatImpressionCap {
                 dismissPromoFor(.aiChat, reason: .impressionCap)
             }
+        }
+    }
+
+    func recordPromoConfirmedFor(_ touchpoint: Touchpoint) {
+        switch touchpoint {
+        case .bookmarks, .passwords:
+            storage.setupPromoConfirmed = currentDateProvider()
+        case .dataImport, .aiChat, .bookmarksAnotherDevice:
+            break
         }
     }
 
@@ -211,5 +270,7 @@ final class SyncPromoManager: SyncPromoManaging {
         syncPromoDataImportDismissed = nil
         syncPromoAIChatDismissed = nil
         syncPromoAIChatImpressions = 0
+        storage.bookmarksAnotherDeviceDismissed = nil
+        storage.setupPromoConfirmed = nil
     }
 }

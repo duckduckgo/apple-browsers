@@ -18,7 +18,8 @@
                     "promotion_data_import_summary",
                     "promotion_bookmarks",
                     "promotion_passwords",
-                    "promotion_ai_chat"
+                    "promotion_ai_chat",
+                    "promotion_bookmarks_another_device"
                 ]
             }
         ]
@@ -43,6 +44,7 @@
                     "promotion_bookmarks",
                     "promotion_passwords",
                     "promotion_ai_chat",
+                    "promotion_bookmarks_another_device",
                     "recovery",
                     "exchange",
                     "connect",
@@ -83,6 +85,7 @@
                     "promotion_bookmarks",
                     "promotion_passwords",
                     "promotion_ai_chat",
+                    "promotion_bookmarks_another_device",
                     "recovery",
                     "exchange",
                     "connect",

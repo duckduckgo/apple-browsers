@@ -1225,6 +1225,7 @@ extension AutofillLoginListViewController: AutofillHeaderViewDelegate {
                 pushSyncSettings(source: SyncSettingsViewController.SourceConstants.passwordsPromotion)
             }
             PixelKit.fire(Pixel.Event.syncPromoConfirmed, options: .parameters(["source": touchpoint.rawValue]))
+            viewModel.recordSyncPromoConfirmed()
         case .importPromo:
             segueToFileImport(source: DataImportViewModel.ImportScreen.promo)
         case .extensionPromo:

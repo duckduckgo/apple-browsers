@@ -1719,7 +1719,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
 
     /// Fire tabs never take part, so their submissions can't be linked to normal-tab ones.
     func resubmitDelay(of text: String, mode: TextEntryMode) -> CrossModeResubmitDetector.DelayBucket? {
-        guard !viewController.handler.isFireTab else { return nil }
+        guard featureFlagger.isFeatureOn(.unifiedToggleInputResubmitDetection), !viewController.handler.isFireTab else { return nil }
         return resubmitDetector.registerSubmission(text, mode: mode, canStartComparison: pixelSurface == .addressBar)
     }
 

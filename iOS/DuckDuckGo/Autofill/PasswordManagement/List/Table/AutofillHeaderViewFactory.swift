@@ -88,7 +88,6 @@ final class AutofillHeaderViewFactory: AutofillHeaderViewFactoryProtocol {
     private func makeSyncAnotherDevicePromoView() -> UIHostingController<SyncAnotherDevicePromoView> {
         let headerView = SyncAnotherDevicePromoView(
             title: UserText.syncPromoPasswordsAnotherDeviceTitle,
-            syncActionTitle: UserText.syncPromoPasswordsAnotherDeviceSyncAction,
             syncAction: { [weak delegate] in
                 delegate?.handlePrimaryAction(for: .syncAnotherDevicePromo)
             },

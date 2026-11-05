@@ -493,7 +493,7 @@ final class SyncPromoManagerTests: XCTestCase {
         let passwords = SyncPromoViewModel(touchpointType: .passwords, design: .redesigned)
 
         XCTAssertNil(passwords.secondaryButtonTitle)
-        XCTAssertEqual(passwords.toggleTitle, UserText.syncPromoToggleTitle)
+        XCTAssertEqual(passwords.primaryButtonTitle, UserText.syncPromoRedesignConfirmAction)
         XCTAssertEqual(passwords.title, UserText.syncPromoPasswordsTitle)
         XCTAssertEqual(passwords.subtitle, UserText.syncPromoPasswordsRedesignMessage)
     }
@@ -511,7 +511,7 @@ final class SyncPromoManagerTests: XCTestCase {
         let viewModel = SyncPromoViewModel(touchpointType: .bookmarks, design: .redesigned)
 
         XCTAssertNil(viewModel.secondaryButtonTitle)
-        XCTAssertEqual(viewModel.toggleTitle, UserText.syncPromoToggleTitle)
+        XCTAssertEqual(viewModel.primaryButtonTitle, UserText.syncPromoRedesignConfirmAction)
         XCTAssertEqual(viewModel.title, UserText.syncPromoBookmarksTitle)
         XCTAssertEqual(viewModel.subtitle, UserText.syncPromoBookmarksRedesignMessage)
     }

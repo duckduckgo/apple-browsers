@@ -81,7 +81,6 @@ final class AutofillHeaderViewFactoryTests: XCTestCase {
         let viewController = try XCTUnwrap(factory.makeHeaderView(for: .syncAnotherDevicePromo) as? UIHostingController<SyncAnotherDevicePromoView>)
 
         XCTAssertEqual(viewController.rootView.title, UserText.syncPromoPasswordsAnotherDeviceTitle)
-        XCTAssertEqual(viewController.rootView.syncActionTitle, UserText.syncPromoPasswordsAnotherDeviceSyncAction)
     }
 
     func testWhenSyncAnotherDevicePromoButtonsAreTappedThenDelegateHandlesEachAction() throws {

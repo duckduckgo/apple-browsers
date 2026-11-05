@@ -243,6 +243,7 @@ private final class PreviewAIChatSettings: AIChatSettingsProvider {
     var isAIChatTabBarDuckAIButtonVisible: Bool { true }
     var isAIChatTabBarContextualSheetButtonVisible: Bool { true }
     var isAutomaticContextAttachmentEnabled: Bool { false }
+    var isKeyboardAnimationEnabled = true
     var isChatSuggestionsEnabled: Bool { false }
     func enableAIChat(enable: Bool) {}
     func enableAIChatBrowsingMenuUserSettings(enable: Bool) {}
@@ -253,6 +254,9 @@ private final class PreviewAIChatSettings: AIChatSettingsProvider {
     func setAIChatTabBarDuckAIButtonVisible(_ visible: Bool) {}
     func setAIChatTabBarContextualSheetButtonVisible(_ visible: Bool) {}
     func enableAIChatSearchInputUserSettings(enable: Bool) {}
+    func enableKeyboardAnimation(enable: Bool) {
+        isKeyboardAnimationEnabled = enable
+    }
     func enableAutomaticContextAttachment(enable: Bool) {}
     func enableChatSuggestions(enable: Bool) {}
     var defaultOmnibarMode: DefaultOmnibarMode { .search }

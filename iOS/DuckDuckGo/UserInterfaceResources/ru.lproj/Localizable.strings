@@ -385,6 +385,21 @@
 /* Title for the New Tab row in the Duck.ai tab header Plus (+) menu */
 "aichat.header.plusMenu.newTab" = "Новая вкладка";
 
+/* Section header in the Duck.ai tab header Plus (+) menu; every row below it opens a new tab */
+"aichat.header.plusMenu.newTabSection" = "Новая вкладка";
+
+/* Row in the New Tab section of the Duck.ai tab header Plus (+) menu — opens a new Duck.ai chat in a new tab */
+"aichat.header.plusMenu.newTabSection.chat" = "Чат";
+
+/* Row in the New Tab section of the Duck.ai tab header Plus (+) menu — opens Duck.ai in image generation mode in a new tab */
+"aichat.header.plusMenu.newTabSection.image" = "Изображение";
+
+/* Row in the Duck.ai tab header Plus (+) menu — opens a new tab in search mode */
+"aichat.header.plusMenu.newTabSection.search" = "Поиск";
+
+/* Row in the New Tab section of the Duck.ai tab header Plus (+) menu — opens a new Duck.ai voice chat in a new tab */
+"aichat.header.plusMenu.newTabSection.voiceChat" = "Голосовой чат";
+
 /* Title for the New Voice Chat row in the Duck.ai tab header Plus (+) menu */
 "aichat.header.plusMenu.newVoiceChat" = "Новый голосовой чат";
 
@@ -3301,6 +3316,72 @@
 /* No comment provided by engineer. */
 "menu.button.hint" = "Меню браузера";
 
+/* iPad menu bar command */
+"menuActualSize" = "Фактический размер";
+
+/* iPad menu bar command */
+"menuBack" = "Назад";
+
+/* iPad menu bar command */
+"menuClearTabsAndData" = "Сбросить вкладки и данные";
+
+/* iPad menu bar command */
+"menuDuplicateTab" = "Дублировать вкладку";
+
+/* iPad menu bar command */
+"menuFeedback" = "Оставить отзыв";
+
+/* iPad menu bar command */
+"menuForward" = "Вперёд";
+
+/* iPad menu bar command */
+"menuHideDownloads" = "Скрыть загрузки";
+
+/* iPad menu bar command */
+"menuHidePasswords" = "Скрыть пароли";
+
+/* iPad menu bar command */
+"menuHideTabs" = "Скрыть вкладки";
+
+/* iPad menu bar command */
+"menuLastTab" = "Последняя вкладка";
+
+/* iPad menu bar command */
+"menuNewTabOnRight" = "Новая вкладка справа";
+
+/* iPad menu bar command */
+"menuNextTab" = "Показать следующую вкладку";
+
+/* iPad menu bar command */
+"menuOpenLocation" = "Открыть адрес...";
+
+/* iPad menu bar command */
+"menuPreviousTab" = "Показать предыдущую вкладку";
+
+/* iPad menu bar command */
+"menuPrint" = "Распечатать...";
+
+/* iPad menu bar command selecting a numbered tab */
+"menuSelectTab" = "Выбрать вкладку %d";
+
+/* iPad menu bar command */
+"menuSettings" = "Настройки DuckDuckGo...";
+
+/* iPad menu bar command */
+"menuShowDownloads" = "Показать загрузки";
+
+/* iPad menu bar command */
+"menuShowPasswords" = "Показать пароли";
+
+/* iPad menu bar command */
+"menuShowTabs" = "Показать вкладки";
+
+/* iPad menu bar command */
+"menuStop" = "Остановить";
+
+/* iPad menu bar command */
+"menuVoiceSearch" = "Конфиденциальный голосовой поиск";
+
 /* No comment provided by engineer. */
 "Message" = "Сообщение";
 
@@ -5935,3 +6016,12 @@
 /* Title for screen to screen confirming what data to import from a zip file (bookmarks and /or passwords) */
 "zip.content.import.types.title" = "Что будем импортировать?";
 
+
+/* Fireproofing setting toggle label */
+"preserveLogins.askOnSignIn" = "Предлагать сделать сайты огнеупорными при входе";
+
+/* Empty Fireproof sites list */
+"preserveLogins.emptyState" = "Огнеупорных сайтов нет";
+
+/* Button to remove all Fireproof sites */
+"preserveLogins.removeAllSites" = "Удалить все огнеупорные сайты";

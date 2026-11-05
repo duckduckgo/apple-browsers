@@ -112,4 +112,85 @@ class FaviconsHelperTests: XCTestCase {
         XCTAssertNotNil(result.image)
         XCTAssertFalse(result.isFake)
     }
+
+    @MainActor
+    func testLoadFaviconIntoImageView_WhenMemoryUpdatedDuringDiskRead_UsesNewerImage() throws {
+        let domain = "example.com"
+        let cache = Favicons.Constants.caches[.fireproof]!
+        let resource = Favicons().defaultResource(forDomain: domain)!
+        let oldImage = UIImage(named: "duckduckgo-favicon-128x128")!
+        let newImage = UIImage(named: "DuckPlayerURLIcon")!
+
+        let stored = expectation(description: "Stored on disk")
+        cache.storeToDisk(oldImage.pngData()!, forKey: resource.cacheKey) { _ in stored.fulfill() }
+        wait(for: [stored], timeout: 5)
+        // Kingfisher uses the modification date as the cache expiry.
+        let url = cache.diskStorage.cacheFileURL(forKey: resource.cacheKey)
+        try FileManager.default.setAttributes([.modificationDate: Date(timeIntervalSinceNow: -60)], ofItemAtPath: url.path)
+        cache.clearMemoryCache()
+
+        let loaded = expectation(description: "Loaded")
+        let imageView = UIImageView()
+        imageView.loadFavicon(forDomain: domain, usingCache: .fireproof, useFakeFavicon: false) { _, _ in
+            loaded.fulfill()
+        }
+        cache.store(newImage, forKey: resource.cacheKey, toDisk: false)
+        wait(for: [loaded], timeout: 5)
+
+        XCTAssertIdentical(cache.retrieveImageInMemoryCache(forKey: resource.cacheKey), newImage)
+        XCTAssertIdentical(imageView.image, newImage)
+    }
+
+    @MainActor
+    func testLoadFaviconIntoImageView_WhenSameDomainReloadsOverlap_KeepsCurrentImage() {
+        let domain = "example.com"
+        let cache = Favicons.Constants.caches[.fireproof]!
+        let resource = Favicons().defaultResource(forDomain: domain)!
+        let image = UIImage(named: "duckduckgo-favicon-128x128")!
+        cache.store(image, forKey: resource.cacheKey, toDisk: false)
+
+        let imageView = UIImageView()
+        imageView.loadFavicon(forDomain: domain, usingCache: .fireproof, useFakeFavicon: false)
+        cache.clearMemoryCache()
+
+        imageView.loadFavicon(forDomain: domain, usingCache: .fireproof, useFakeFavicon: false)
+        let loaded = expectation(description: "Loaded")
+        imageView.loadFavicon(forDomain: domain, usingCache: .fireproof, useFakeFavicon: false) { _, _ in
+            loaded.fulfill()
+        }
+
+        XCTAssertTrue(imageView.image === image)
+        wait(for: [loaded], timeout: 5)
+    }
+
+    func testLoadFaviconIntoImageView_WhenImageSetDuringDiskRead_KeepsThatImage() {
+        let cache = Favicons.Constants.caches[.fireproof]!
+        let testImageData = UIImage(named: "duckduckgo-favicon-128x128")!.pngData()!
+
+        let stored = expectation(description: "Stored on disk")
+        stored.expectedFulfillmentCount = 2
+        for domain in ["example.com", "example.org"] {
+            let resource = Favicons().defaultResource(forDomain: domain)!
+            cache.storeToDisk(testImageData, forKey: resource.cacheKey) { _ in stored.fulfill() }
+        }
+        wait(for: [stored], timeout: 5)
+        cache.clearMemoryCache()
+
+        let staleImageView = UIImageView()
+        staleImageView.loadFavicon(forDomain: "example.com", usingCache: .fireproof)
+        let sentinel = UIImage()
+        staleImageView.image = sentinel
+
+        // Disk reads are serial, so this load completes after the first one has delivered its result.
+        let loaded = expectation(description: "Loaded")
+        let imageView = UIImageView()
+        imageView.loadFavicon(forDomain: "example.org", usingCache: .fireproof) { _, isFake in
+            XCTAssertFalse(isFake)
+            loaded.fulfill()
+        }
+        wait(for: [loaded], timeout: 5)
+
+        XCTAssertNotNil(imageView.image)
+        XCTAssertTrue(staleImageView.image === sentinel)
+    }
 }

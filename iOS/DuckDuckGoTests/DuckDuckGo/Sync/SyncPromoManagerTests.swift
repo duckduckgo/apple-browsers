@@ -20,6 +20,7 @@
 import XCTest
 import PrivacyConfig
 import FeatureFlags_iOS
+@_spi(Testing) import Persistence
 @testable import Core
 @testable import DDGSync
 @testable import DuckDuckGo
@@ -31,11 +32,13 @@ final class SyncPromoManagerTests: XCTestCase {
     var customSuite: UserDefaults!
     var syncService: MockDDGSyncing!
     var pixelKitMock: PixelKitMock!
+    var anotherDeviceStorage: (any KeyedStoring<SyncPromoStorageKeys>)!
 
     override func setUpWithError() throws {
         try super.setUpWithError()
 
         pixelKitMock = PixelKitMock()
+        anotherDeviceStorage = MockKeyValueStore().keyedStoring()
         customSuite = UserDefaults(suiteName: testGroupName)
         customSuite.removePersistentDomain(forName: testGroupName)
         syncService = MockDDGSyncing(authState: .inactive, scheduler: CapturingScheduler(), isSyncInProgress: false)
@@ -44,6 +47,7 @@ final class SyncPromoManagerTests: XCTestCase {
 
     override func tearDownWithError() throws {
         pixelKitMock = nil
+        anotherDeviceStorage = nil
         UserDefaults.app = .standard
         syncService = nil
 
@@ -385,7 +389,7 @@ final class SyncPromoManagerTests: XCTestCase {
         let syncPromoManager = SyncPromoManager(syncService: syncService,
                                                 pixelFiring: pixelKitMock)
 
-        for touchpoint in [SyncPromoManager.Touchpoint.bookmarks, .passwords, .dataImport, .aiChat] {
+        for touchpoint in [SyncPromoManager.Touchpoint.bookmarks, .passwords, .dataImport, .aiChat, .bookmarksAnotherDevice, .passwordsAnotherDevice] {
             let countBefore = pixelKitMock.actualFireCalls.count
 
             syncPromoManager.dismissPromoFor(touchpoint, reason: .userTapped)
@@ -447,10 +451,46 @@ final class SyncPromoManagerTests: XCTestCase {
         XCTAssertEqual(syncPromoManager.designFor(.bookmarks), .standard)
     }
 
-    func testWhenRedesignFlagOnThenPasswordsDesignIsStandard() {
-        let syncPromoManager = makeManager(featureFlags: [.syncPromotionRedesign], installedDaysAgo: 30)
+    func testWhenRedesignFlagOnAndInstalledMoreThanThreeDaysAgoThenPasswordsDesignIsRedesigned() {
+        let syncPromoManager = makeManager(featureFlags: [.syncPromotionRedesign], installedDaysAgo: 4)
+
+        XCTAssertEqual(syncPromoManager.designFor(.passwords), .redesigned)
+    }
+
+    func testWhenRedesignFlagOnAndInstalledThreeDaysAgoThenPasswordsDesignIsStandard() {
+        let syncPromoManager = makeManager(featureFlags: [.syncPromotionRedesign], installedDaysAgo: 3)
 
         XCTAssertEqual(syncPromoManager.designFor(.passwords), .standard)
+    }
+
+    func testWhenRedesignFlagOffThenPasswordsDesignIsStandard() {
+        let syncPromoManager = makeManager(featureFlags: [], installedDaysAgo: 30)
+
+        XCTAssertEqual(syncPromoManager.designFor(.passwords), .standard)
+    }
+
+    func testWhenRedesignFlagOnThenAIChatDesignIsStandard() {
+        let syncPromoManager = makeManager(featureFlags: [.syncPromotionRedesign], installedDaysAgo: 30)
+
+        XCTAssertEqual(syncPromoManager.designFor(.aiChat), .standard)
+    }
+
+    func testWhenPasswordsDesignIsRedesignedThenPromoHasRedesignedPasswordsCopy() {
+        let passwords = SyncPromoViewModel(touchpointType: .passwords, design: .redesigned)
+
+        XCTAssertNil(passwords.secondaryButtonTitle)
+        XCTAssertEqual(passwords.toggleTitle, UserText.syncPromoToggleTitle)
+        XCTAssertEqual(passwords.title, UserText.syncPromoPasswordsTitle)
+        XCTAssertEqual(passwords.subtitle, UserText.syncPromoPasswordsRedesignMessage)
+    }
+
+    func testWhenPasswordsDesignIsStandardThenPromoKeepsPasswordsCopy() {
+        let passwords = SyncPromoViewModel(touchpointType: .passwords, design: .standard)
+
+        XCTAssertEqual(passwords.secondaryButtonTitle, UserText.syncPromoDismissAction)
+        XCTAssertEqual(passwords.primaryButtonTitle, UserText.syncPromoConfirmAction)
+        XCTAssertEqual(passwords.title, UserText.syncPromoPasswordsTitle)
+        XCTAssertEqual(passwords.subtitle, UserText.syncPromoPasswordsMessage)
     }
 
     func testWhenDesignIsRedesignedThenPromoHasNoDismissButtonAndRedesignCopy() {
@@ -468,6 +508,293 @@ final class SyncPromoManagerTests: XCTestCase {
         XCTAssertEqual(viewModel.secondaryButtonTitle, UserText.syncPromoDismissAction)
         XCTAssertEqual(viewModel.primaryButtonTitle, UserText.syncPromoConfirmAction)
         XCTAssertEqual(viewModel.subtitle, UserText.syncPromoBookmarksMessage)
+    }
+
+    // MARK: - Bookmarks Another Device
+
+    func testWhenAllConditionsMetThenShouldPresentAnotherDevicePromo() {
+        let manager = makeAnotherDeviceManager()
+
+        XCTAssertTrue(manager.shouldPresentPromoFor(.bookmarksAnotherDevice, count: 1))
+    }
+
+    func testWhenNoBookmarksThenShouldNotPresentAnotherDevicePromo() {
+        let manager = makeAnotherDeviceManager()
+
+        XCTAssertFalse(manager.shouldPresentPromoFor(.bookmarksAnotherDevice, count: 0))
+    }
+
+    func testWhenAnotherDeviceFlagOffThenShouldNotPresentAnotherDevicePromo() {
+        let manager = makeAnotherDeviceManager(featureFlags: [.sync])
+
+        XCTAssertFalse(manager.shouldPresentPromoFor(.bookmarksAnotherDevice, count: 1))
+    }
+
+    func testWhenSyncFlagOffThenShouldNotPresentAnotherDevicePromo() {
+        let manager = makeAnotherDeviceManager(featureFlags: [.syncPromotionSyncAnotherDevice])
+
+        XCTAssertFalse(manager.shouldPresentPromoFor(.bookmarksAnotherDevice, count: 1))
+    }
+
+    func testWhenSyncInactiveThenShouldNotPresentAnotherDevicePromo() {
+        let manager = makeAnotherDeviceManager(authState: .inactive)
+
+        XCTAssertFalse(manager.shouldPresentPromoFor(.bookmarksAnotherDevice, count: 1))
+    }
+
+    func testWhenAnotherDevicePromoDismissedThenShouldNotPresentIt() {
+        let manager = makeAnotherDeviceManager()
+
+        manager.dismissPromoFor(.bookmarksAnotherDevice, reason: .userTapped)
+
+        XCTAssertFalse(manager.shouldPresentPromoFor(.bookmarksAnotherDevice, count: 1))
+    }
+
+    func testWhenInstalledExactlySevenDaysAgoThenShouldNotPresentAnotherDevicePromo() {
+        let manager = makeAnotherDeviceManager(installedDaysAgo: 7)
+
+        XCTAssertFalse(manager.shouldPresentPromoFor(.bookmarksAnotherDevice, count: 1))
+    }
+
+    func testWhenInstalledEightDaysAgoThenShouldPresentAnotherDevicePromo() {
+        let manager = makeAnotherDeviceManager(installedDaysAgo: 8)
+
+        XCTAssertTrue(manager.shouldPresentPromoFor(.bookmarksAnotherDevice, count: 1))
+    }
+
+    func testWhenInstallDateUnknownThenShouldNotPresentAnotherDevicePromo() {
+        let manager = makeAnotherDeviceManager(installedDaysAgo: nil)
+
+        XCTAssertFalse(manager.shouldPresentPromoFor(.bookmarksAnotherDevice, count: 1))
+    }
+
+    func testWhenDevicesCountNeverStoredThenShouldNotPresentAnotherDevicePromo() {
+        let manager = makeAnotherDeviceManager(syncedDevicesCount: nil)
+
+        XCTAssertFalse(manager.shouldPresentPromoFor(.bookmarksAnotherDevice, count: 1))
+    }
+
+    func testWhenOneDeviceStoredThenShouldPresentAnotherDevicePromo() {
+        let manager = makeAnotherDeviceManager(syncedDevicesCount: 1)
+
+        XCTAssertTrue(manager.shouldPresentPromoFor(.bookmarksAnotherDevice, count: 1))
+    }
+
+    func testWhenTwoDevicesStoredThenShouldNotPresentAnotherDevicePromo() {
+        let manager = makeAnotherDeviceManager(syncedDevicesCount: 2)
+
+        XCTAssertFalse(manager.shouldPresentPromoFor(.bookmarksAnotherDevice, count: 1))
+    }
+
+    func testWhenSetupPromoConfirmed23HoursAgoThenShouldNotPresentAnotherDevicePromo() {
+        let manager = makeAnotherDeviceManager(setupPromoConfirmedHoursAgo: 23)
+
+        XCTAssertFalse(manager.shouldPresentPromoFor(.bookmarksAnotherDevice, count: 1))
+    }
+
+    func testWhenSetupPromoConfirmed25HoursAgoThenShouldPresentAnotherDevicePromo() {
+        let manager = makeAnotherDeviceManager(setupPromoConfirmedHoursAgo: 25)
+
+        XCTAssertTrue(manager.shouldPresentPromoFor(.bookmarksAnotherDevice, count: 1))
+    }
+
+    func testWhenBookmarksSetupPromoConfirmedThenAnotherDevicePromoWaitsForCooldown() {
+        let manager = makeAnotherDeviceManager()
+
+        manager.recordPromoConfirmedFor(.bookmarks)
+
+        XCTAssertFalse(manager.shouldPresentPromoFor(.bookmarksAnotherDevice, count: 1))
+    }
+
+    func testWhenPasswordsSetupPromoConfirmedThenAnotherDevicePromoWaitsForCooldown() {
+        let manager = makeAnotherDeviceManager()
+
+        manager.recordPromoConfirmedFor(.passwords)
+
+        XCTAssertFalse(manager.shouldPresentPromoFor(.bookmarksAnotherDevice, count: 1))
+    }
+
+    func testWhenOtherPromosConfirmedThenAnotherDevicePromoIsNotDelayed() {
+        let manager = makeAnotherDeviceManager()
+
+        manager.recordPromoConfirmedFor(.aiChat)
+        manager.recordPromoConfirmedFor(.dataImport)
+        manager.recordPromoConfirmedFor(.bookmarksAnotherDevice)
+
+        XCTAssertTrue(manager.shouldPresentPromoFor(.bookmarksAnotherDevice, count: 1))
+    }
+
+    func testWhenResetPromosThenAnotherDeviceDismissalAndCooldownClearButDevicesCountStays() {
+        let manager = makeAnotherDeviceManager(syncedDevicesCount: 1)
+        manager.dismissPromoFor(.bookmarksAnotherDevice, reason: .userTapped)
+        manager.recordPromoConfirmedFor(.bookmarks)
+
+        manager.resetPromos()
+
+        XCTAssertEqual(anotherDeviceStorage.syncedDevicesCount, 1)
+        XCTAssertTrue(manager.shouldPresentPromoFor(.bookmarksAnotherDevice, count: 1))
+    }
+
+    func testAnotherDevicePromoDesignIsStandard() {
+        let manager = makeAnotherDeviceManager(featureFlags: [.syncPromotionSyncAnotherDevice, .sync, .syncPromotionRedesign])
+
+        XCTAssertEqual(manager.designFor(.bookmarksAnotherDevice), .standard)
+        XCTAssertEqual(manager.designFor(.passwordsAnotherDevice), .standard)
+    }
+
+    // MARK: - Passwords Another Device
+
+    func testWhenAllConditionsMetThenShouldPresentPasswordsAnotherDevicePromo() {
+        let manager = makeAnotherDeviceManager()
+
+        XCTAssertTrue(manager.shouldPresentPromoFor(.passwordsAnotherDevice, count: 1))
+    }
+
+    func testWhenNoPasswordsThenShouldNotPresentPasswordsAnotherDevicePromo() {
+        let manager = makeAnotherDeviceManager()
+
+        XCTAssertFalse(manager.shouldPresentPromoFor(.passwordsAnotherDevice, count: 0))
+    }
+
+    func testWhenTwoDevicesStoredThenShouldNotPresentPasswordsAnotherDevicePromo() {
+        let manager = makeAnotherDeviceManager(syncedDevicesCount: 2)
+
+        XCTAssertFalse(manager.shouldPresentPromoFor(.passwordsAnotherDevice, count: 1))
+    }
+
+    func testWhenSyncInactiveThenShouldNotPresentPasswordsAnotherDevicePromo() {
+        let manager = makeAnotherDeviceManager(authState: .inactive)
+
+        XCTAssertFalse(manager.shouldPresentPromoFor(.passwordsAnotherDevice, count: 1))
+    }
+
+    func testWhenInstalledExactlySevenDaysAgoThenShouldNotPresentPasswordsAnotherDevicePromo() {
+        let manager = makeAnotherDeviceManager(installedDaysAgo: 7)
+
+        XCTAssertFalse(manager.shouldPresentPromoFor(.passwordsAnotherDevice, count: 1))
+    }
+
+    func testWhenSetupPromoConfirmed23HoursAgoThenShouldNotPresentPasswordsAnotherDevicePromo() {
+        let manager = makeAnotherDeviceManager(setupPromoConfirmedHoursAgo: 23)
+
+        XCTAssertFalse(manager.shouldPresentPromoFor(.passwordsAnotherDevice, count: 1))
+    }
+
+    func testWhenPasswordsAnotherDevicePromoDismissedThenOnlyBookmarksAnotherDevicePromoShows() {
+        let manager = makeAnotherDeviceManager()
+
+        manager.markPromoHandledFor(.passwordsAnotherDevice)
+
+        XCTAssertFalse(manager.shouldPresentPromoFor(.passwordsAnotherDevice, count: 1))
+        XCTAssertTrue(manager.shouldPresentPromoFor(.bookmarksAnotherDevice, count: 1))
+    }
+
+    func testWhenBookmarksAnotherDevicePromoDismissedThenOnlyPasswordsAnotherDevicePromoShows() {
+        let manager = makeAnotherDeviceManager()
+
+        manager.markPromoHandledFor(.bookmarksAnotherDevice)
+
+        XCTAssertFalse(manager.shouldPresentPromoFor(.bookmarksAnotherDevice, count: 1))
+        XCTAssertTrue(manager.shouldPresentPromoFor(.passwordsAnotherDevice, count: 1))
+    }
+
+    func testWhenResetPromosThenPasswordsAnotherDeviceDismissalClears() {
+        let manager = makeAnotherDeviceManager()
+        manager.markPromoHandledFor(.passwordsAnotherDevice)
+
+        manager.resetPromos()
+
+        XCTAssertTrue(manager.shouldPresentPromoFor(.passwordsAnotherDevice, count: 1))
+    }
+
+    // MARK: - Synced Devices Count Refresh
+
+    func testWhenRefreshingSyncedDevicesCountThenFetchesDevicesAndStoresCount() async {
+        syncService.registeredDevices = twoRegisteredDevices
+        let manager = makeAnotherDeviceManager()
+
+        await manager.refreshSyncedDevicesCount()
+
+        XCTAssertEqual(syncService.fetchDevicesCallCount, 1)
+        XCTAssertEqual(anotherDeviceStorage.syncedDevicesCount, 2)
+    }
+
+    func testWhenAnotherDeviceFlagOffThenRefreshDoesNotFetchDevices() async {
+        syncService.registeredDevices = twoRegisteredDevices
+        let manager = makeAnotherDeviceManager(featureFlags: [.sync])
+
+        await manager.refreshSyncedDevicesCount()
+
+        XCTAssertEqual(syncService.fetchDevicesCallCount, 0)
+        XCTAssertEqual(anotherDeviceStorage.syncedDevicesCount, 1)
+    }
+
+    func testWhenSyncInactiveThenRefreshDoesNotFetchDevices() async {
+        syncService.registeredDevices = twoRegisteredDevices
+        let manager = makeAnotherDeviceManager(authState: .inactive)
+
+        await manager.refreshSyncedDevicesCount()
+
+        XCTAssertEqual(syncService.fetchDevicesCallCount, 0)
+        XCTAssertEqual(anotherDeviceStorage.syncedDevicesCount, 1)
+    }
+
+    func testWhenOnlyOneAnotherDevicePromoDismissedThenRefreshStillFetchesDevices() async {
+        syncService.registeredDevices = twoRegisteredDevices
+        let manager = makeAnotherDeviceManager()
+        manager.markPromoHandledFor(.bookmarksAnotherDevice)
+
+        await manager.refreshSyncedDevicesCount()
+
+        XCTAssertEqual(syncService.fetchDevicesCallCount, 1)
+        XCTAssertEqual(anotherDeviceStorage.syncedDevicesCount, 2)
+    }
+
+    func testWhenBothAnotherDevicePromosDismissedThenRefreshDoesNotFetchDevices() async {
+        syncService.registeredDevices = twoRegisteredDevices
+        let manager = makeAnotherDeviceManager()
+        manager.markPromoHandledFor(.bookmarksAnotherDevice)
+        manager.markPromoHandledFor(.passwordsAnotherDevice)
+
+        await manager.refreshSyncedDevicesCount()
+
+        XCTAssertEqual(syncService.fetchDevicesCallCount, 0)
+        XCTAssertEqual(anotherDeviceStorage.syncedDevicesCount, 1)
+    }
+
+    func testWhenFetchingDevicesFailsThenRefreshKeepsPreviousCount() async {
+        syncService.fetchDevicesError = FetchDevicesError()
+        let manager = makeAnotherDeviceManager()
+
+        await manager.refreshSyncedDevicesCount()
+
+        XCTAssertEqual(syncService.fetchDevicesCallCount, 1)
+        XCTAssertEqual(anotherDeviceStorage.syncedDevicesCount, 1)
+    }
+
+    private struct FetchDevicesError: Error {}
+
+    private let twoRegisteredDevices = [
+        RegisteredDevice(id: "1", name: "iPhone", type: "phone"),
+        RegisteredDevice(id: "2", name: "Mac", type: "desktop")
+    ]
+
+    private func makeAnotherDeviceManager(featureFlags: [FeatureFlag] = [.syncPromotionSyncAnotherDevice, .sync],
+                                          authState: SyncAuthState = .active,
+                                          installedDaysAgo: Int? = 8,
+                                          syncedDevicesCount: Int? = 1,
+                                          setupPromoConfirmedHoursAgo: Int? = nil) -> SyncPromoManager {
+        let now = Date()
+        let installDate = installedDaysAgo.flatMap { Calendar.current.date(byAdding: .day, value: -$0, to: now) }
+        syncService.authState = authState
+        anotherDeviceStorage.syncedDevicesCount = syncedDevicesCount
+        anotherDeviceStorage.setupPromoConfirmed = setupPromoConfirmedHoursAgo.map { now.addingTimeInterval(-Double($0) * 60 * 60) }
+        return SyncPromoManager(syncService: syncService,
+                                featureFlagger: createFeatureFlagger(withFeatureFlagsEnabled: featureFlags),
+                                storage: anotherDeviceStorage,
+                                pixelFiring: nil,
+                                installDateProvider: { installDate },
+                                currentDateProvider: { now })
     }
 
     private func makeManager(featureFlags: [FeatureFlag], installedDaysAgo: Int?) -> SyncPromoManager {

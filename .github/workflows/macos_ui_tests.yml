@@ -262,6 +262,40 @@ jobs:
           echo "test=${test}" >> $GITHUB_OUTPUT
           echo "test-plan=${test_plan}" >> $GITHUB_OUTPUT
 
+  # Build once per existing runner/Xcode configuration; every class and user mode shares it.
+  build-ui-tests:
+    name: Build shared UI test bundle
+    needs: [create-notarized-app, setup-tests]
+    strategy:
+      fail-fast: false
+      matrix:
+        config: ${{ fromJSON(needs.setup-tests.outputs.config) }}
+    uses: ./.github/workflows/macos_build_ui_test_bundle.yml
+    with:
+      runner: ${{ toJSON(matrix.config.runner) }}
+      os-version: ${{ matrix.config.os-version }}
+      xcode-version: ${{ matrix.config.xcode-version }}
+      build-type: ${{ inputs.build-type || 'dmg' }}
+      test-plan: ${{ needs.setup-tests.outputs.test-plan }}
+      branch: ${{ inputs.branch || github.sha }}
+    secrets: inherit
+
+  build-appstore-ui-tests:
+    name: Build shared App Store UI test bundle
+    needs: [create-notarized-appstore-app, setup-tests]
+    strategy:
+      fail-fast: false
+      matrix:
+        config: ${{ fromJSON(needs.setup-tests.outputs.config) }}
+    uses: ./.github/workflows/macos_build_ui_test_bundle.yml
+    with:
+      runner: ${{ toJSON(matrix.config.runner) }}
+      os-version: ${{ matrix.config.os-version }}
+      xcode-version: ${{ matrix.config.xcode-version }}
+      build-type: appstore
+      branch: ${{ inputs.branch || github.sha }}
+    secrets: inherit
+
   # UI Tests run as two jobs, one per user mode, each calling the reusable macos_run_ui_test.yml
   # helper once per (runner x test) combination. Both modes in a single matrix would exceed GitHub's
   # 256-configuration limit.
@@ -270,7 +304,7 @@ jobs:
   # continue-on-error inside the helper's job.
   ui-tests-production:
     name: UI Tests
-    needs: [create-notarized-app, setup-tests]
+    needs: [build-ui-tests, setup-tests]
     if: needs.setup-tests.outputs.run-production == 'true'
     strategy:
       fail-fast: false
@@ -295,7 +329,7 @@ jobs:
 
   ui-tests-internal:
     name: UI Tests
-    needs: [create-notarized-app, setup-tests]
+    needs: [build-ui-tests, setup-tests]
     if: needs.setup-tests.outputs.run-internal == 'true'
     strategy:
       fail-fast: false
@@ -319,7 +353,7 @@ jobs:
   # App Store only test case, run along the full DMG run on the same runner configurations (production mode).
   ui-tests-appstore:
     name: UI Tests App Store
-    needs: [create-notarized-appstore-app, setup-tests]
+    needs: [build-appstore-ui-tests, setup-tests]
     strategy:
       fail-fast: false
       # See the note on ui-tests-production for why the configurations are a matrix key.

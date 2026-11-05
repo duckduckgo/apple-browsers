@@ -2426,6 +2426,7 @@ class MainViewController: UIViewController {
 
     /// Call before the view loads; a cold start after idle can land on the New Tab Page directly.
     func prepareInitialScreen(drawsIdleReturnNewTabPage: Bool) {
+        assert(!isViewLoaded, "The first screen is chosen when the view loads")
         drawsIdleReturnNewTabPageAtLaunch = drawsIdleReturnNewTabPage
     }
 

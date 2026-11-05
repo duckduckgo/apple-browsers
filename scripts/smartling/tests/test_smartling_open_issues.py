@@ -341,6 +341,30 @@ class OpenIssueTaskTests(unittest.TestCase):
         self.assertEqual(asana.created, [])
         self.assertEqual(rows, ['| #3600 | failed, retried next night | |'])
 
+    def testWhenAnIssuesLookupRaisesAnUnexpectedErrorThenTheOthersStillGetTasks(self):
+        class BrokenOnceGit(FakeGit):
+            def __init__(self):
+                super().__init__()
+                self.calls = 0
+
+            def diff(self, sha, paths):
+                self.calls += 1
+                if self.calls == 1:
+                    raise json.JSONDecodeError('Expecting value', '', 0)
+                return super().diff(sha, paths)
+
+        issues = [smartling_issue(3600, created='2026-11-03T10:00:00Z'), smartling_issue(3601, created='2026-11-03T11:00:00Z')]
+        asana = FakeAsana()
+
+        rows, failed, _ = run(FakeSmartling(issues), asana, git=BrokenOnceGit())
+
+        self.assertTrue(failed)
+        self.assertEqual([task['name'] for task in asana.created], [f'Smartling open issue #3601 (iOS): {KEY}'])
+        self.assertEqual(rows, [
+            '| #3600 | failed, retried next night | |',
+            '| #3601 | opened a task | @frosty (added the string) |',
+        ])
+
     def testWhenTheIssueWasRaisedInATranslateJobThenItsPullRequestsAuthorGetsTheTask(self):
         smartling = FakeSmartling([smartling_issue(job_uid='label')], jobs={
             'label': {'translationJobUid': 'label', 'jobName': 'anya/sync-restore-2026-11-03', 'createdDate': '2026-11-03T09:00:00Z'},

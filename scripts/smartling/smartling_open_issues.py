@@ -178,7 +178,7 @@ class Git:
 
     def _run(self, *args: str) -> str:
         """Run git. A failure names only the subcommand: the arguments can hold the English text."""
-        result = subprocess.run(['git', *args], check=False, capture_output=True, text=True)
+        result = subprocess.run(['git', *args], check=False, capture_output=True, encoding='utf-8', errors='replace')
         if result.returncode != 0:
             raise RuntimeError(f"git {args[0]} failed with exit code {result.returncode}")
         return result.stdout
@@ -449,8 +449,9 @@ async def run(args, smartling: SmartlingClient, asana: AsanaClient, github: GitH
             continue
         try:
             person = find_person(git, github, user_map, issue, args.platform)
-        except RuntimeError as error:
-            log(f"❌ #{issue.number}: couldn't look for who added its string: {error}")
+        except (RuntimeError, ValueError, KeyError) as error:
+            detail = error if isinstance(error, RuntimeError) else type(error).__name__
+            log(f"❌ #{issue.number}: couldn't look for who added its string: {detail}")
             rows.append(f"| #{issue.number} | failed, retried next night | |")
             failed.append(issue.number)
             continue

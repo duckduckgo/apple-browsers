@@ -113,6 +113,23 @@ class CatalogAttributionTests(unittest.TestCase):
         self.assertFalse(adds_string(self.git.diff(moved, ['macOS']), ['Continue'], ['continue.button']))
         self.assertFalse(adds_string(self.git.diff(moved, ['macOS']), [], ['continue.button']))
 
+    def testANewerCommitWithANonUTF8TextFileDoesNotStopTheSearch(self):
+        strings = self.path.parent / 'en.lproj' / 'Localizable.strings'
+        strings.parent.mkdir()
+        strings.write_text('"onboarding.done" = "Got It";\n')
+        author = self.commit()
+        (self.path.parent / 'Legacy.pdf').write_bytes(b'%PDF-1.3 caf\xe9 title="Got It"\n')
+        self.commit()
+        github = SimpleNamespace(commit_pulls=lambda sha: [{
+            'merge_commit_sha': sha, 'user': {'login': 'author' if sha == author else 'asset-remover'},
+        }])
+        timestamp = parse_time('2026-11-05')
+        issue = OpenIssue(1, timestamp, timestamp, False, '', '', 'Got It', 'onboarding.done', '', '')
+
+        found = string_commit(self.git, github, issue, 'macOS')
+
+        self.assertEqual(found['user']['login'], 'author')
+
     def testSubstitutionVariantEditAddsTheEnglishVariant(self):
         def catalog(one):
             unit = {'stringUnit': {'state': 'translated', 'value': '%#@count@'}, 'substitutions': {'count': {

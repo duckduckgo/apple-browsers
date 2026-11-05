@@ -76,6 +76,7 @@ jobs:
           fi
 
       - name: Download rendered snapshots
+        id: download
         env:
           GH_TOKEN: ${{ github.token }}
           GITHUB_REPOSITORY: ${{ github.repository }}
@@ -94,10 +95,12 @@ jobs:
             exit 1
           fi
           if [ "$artifact_id" = "-" ]; then
+            echo "no_mismatches=true" >> "$GITHUB_OUTPUT"
             echo "::error::Run $RUN_ID has no macos-rendered-snapshots artifact. Every snapshot matched its reference, or the unit tests didn't run."
             exit 1
           fi
           if [[ "$artifact_created" < "$job_started" ]]; then
+            echo "no_mismatches=true" >> "$GITHUB_OUTPUT"
             echo "::error::Run $RUN_ID's macos-rendered-snapshots artifact comes from an earlier attempt of Test (Non-Sandbox), and its latest attempt rendered no mismatches. Every snapshot matched its reference."
             exit 1
           fi
@@ -133,15 +136,16 @@ jobs:
           GITHUB_REPOSITORY: ${{ github.repository }}
           PR_NUMBER: ${{ github.event.pull_request.number }}
           OUTCOME: ${{ steps.record.outcome }}
+          NO_MISMATCHES: ${{ steps.download.outputs.no_mismatches }}
           COUNT: ${{ steps.record.outputs.count }}
           SNAPSHOTS_PR: ${{ steps.record.outputs.snapshots_pr }}
           POINTER_COMMIT: ${{ steps.record.outputs.pointer_commit }}
           RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
         run: |
-          if [ "$OUTCOME" != "success" ]; then
+          if [ "$NO_MISMATCHES" = "true" ] || { [ "$OUTCOME" = "success" ] && [ "$COUNT" = "0" ]; }; then
+            body="### ℹ️ No macOS snapshots to record"$'\n\n'"Every snapshot CI rendered already matches its reference. [Workflow run]($RUN_URL)"
+          elif [ "$OUTCOME" != "success" ]; then
             body="### ❌ Couldn't record the macOS snapshots"$'\n\n'"See [the workflow run]($RUN_URL) for why."
-          elif [ "$COUNT" = "0" ]; then
-            body="### ℹ️ No macOS snapshots to record"$'\n\n'"CI's renderings already match \`SnapshotReferences\`. [Workflow run]($RUN_URL)"
           else
             body="### 📸 Recorded $COUNT macOS snapshot rendering(s)"$'\n\n'"Review them in $SNAPSHOTS_PR before adding the \`Merge snapshots\` label."
             if [ -n "$POINTER_COMMIT" ]; then

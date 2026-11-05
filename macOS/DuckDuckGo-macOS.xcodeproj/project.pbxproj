@@ -3356,7 +3356,6 @@
 		4B59023B26B35F3600489384 /* ChromiumDataImporter.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ChromiumDataImporter.swift; sourceTree = "<group>"; };
 		4B59024726B3673600489384 /* ThirdPartyBrowser.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ThirdPartyBrowser.swift; sourceTree = "<group>"; };
 		4B5A4F4B27F3A5AA008FBD88 /* NSNotificationName+DataImport.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "NSNotificationName+DataImport.swift"; sourceTree = "<group>"; };
-		4B5F14C42A145D6A0060320F /* NetworkProtectionVPNController.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = NetworkProtectionVPNController.entitlements; sourceTree = "<group>"; };
 		4B5F15032A1570F10060320F /* DuckDuckGoDebug.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = DuckDuckGoDebug.entitlements; sourceTree = "<group>"; };
 		4B5FF67726B602B100D42879 /* FirefoxDataImporter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FirefoxDataImporter.swift; sourceTree = "<group>"; };
 		4B65143D263924B5005B46EB /* EmailUrlExtensions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EmailUrlExtensions.swift; sourceTree = "<group>"; };
@@ -6947,7 +6946,6 @@
 				AA86491524D83384001BABEE /* NavigationBar */,
 				96F032AE309CDD1C005F0A27 /* NetworkProtection */,
 				4B2D06642A132F3A00DE1F49 /* NetworkProtectionAppExtension.entitlements */,
-				4B5F14C42A145D6A0060320F /* NetworkProtectionVPNController.entitlements */,
 				376788092CECCAD900F59D83 /* NewTabPage */,
 				85B7184727677A7D00B4277F /* Onboarding */,
 				CBECDB7B2CD9824B005B8B87 /* PageRefreshMonitor */,

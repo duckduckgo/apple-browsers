@@ -22,6 +22,8 @@ import WebExtensions
 
 enum WebExtensionPixel: PixelKit.Event {
 
+    private static let extensionParameterKey = "extension"
+
     // MARK: - Chrome Web Store Updates
 
     case updateCheck(extension: WebExtensionPixelExtension, outcome: WebExtensionUpdateCheckOutcome)
@@ -210,7 +212,7 @@ enum WebExtensionPixel: PixelKit.Event {
     var parameters: [String: String]? {
         switch self {
         case .updateCheck(let pixelExtension, let outcome):
-            var parameters = ["extension": pixelExtension.parameterValue]
+            var parameters = [Self.extensionParameterKey: pixelExtension.parameterValue]
             if outcome != .updateFound && outcome != .googleFlagged {
                 parameters["outcome"] = outcome.rawValue
             }
@@ -245,7 +247,7 @@ enum WebExtensionPixel: PixelKit.Event {
              .installError(let pixelExtension, _),
              .uninstalled(let pixelExtension),
              .defaultPasswordManagerSet(let pixelExtension):
-            return ["extension": pixelExtension.parameterValue]
+            return [Self.extensionParameterKey: pixelExtension.parameterValue]
         case .apiCompatibilityGaps(_, let version, let missingAPICount, let unsupportedURLCount):
             return ["extension_version": version,
                     "missing_api_count": String(missingAPICount),

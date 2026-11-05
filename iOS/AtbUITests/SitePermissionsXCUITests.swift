@@ -41,6 +41,8 @@ final class SitePermissionsXCUITests: XCTestCase {
         app.resetAuthorizationStatus(for: .microphone)
         app.resetAuthorizationStatus(for: .location)
         server["/camera"] = { _ in .ok(.html(Self.permissionsHTML)) }
+        server["/history"] = { _ in .ok(.html(Self.historyHTML)) }
+        server["/history-next"] = { _ in .ok(.html(Self.historyHTML)) }
         server["/atb.js"] = { _ in .ok(.json(["version": "v1-1", "majorVersion": 1, "minorVersion": 1])) }
         server["/exti/"] = { _ in .accepted }
         server["/t/:pixelName"] = { _ in .accepted }
@@ -1183,12 +1185,12 @@ final class SitePermissionsXCUITests: XCTestCase {
         openPermissionsSheet()
     }
 
-    private func openNewPermissionTab(fireMode: Bool) {
+    private func openNewPermissionTab(fireMode: Bool, path: String = "/camera") {
         let tabSwitcher = element("Browser.Toolbar.Button.TabSwitcher")
         XCTAssertTrue(tabSwitcher.waitForHittable(timeout: timeout), app.debugDescription)
         tabSwitcher.press(forDuration: 0.8)
         tap(app.buttons[fireMode ? "New Fire Tab" : "New Tab"])
-        openPermissionPage()
+        openPermissionPage(path: path)
     }
 
     private func assertReloadCaptionAfterResettingPermission(_ permission: String, row: String) {
@@ -1277,9 +1279,9 @@ final class SitePermissionsXCUITests: XCTestCase {
         try simulateLocation(latitude: 37.3317, longitude: -122.0301)
         launchApp(additionalArguments: ["-ff.fireMode", String(fireMode)])
         if fireMode {
-            openNewPermissionTab(fireMode: true)
+            openNewPermissionTab(fireMode: true, path: "/history")
         } else {
-            openPermissionPage()
+            openPermissionPage(path: "/history")
         }
         request("location")
         assertSiteDialog(permission: "location", fireMode: fireMode)
@@ -1290,6 +1292,16 @@ final class SitePermissionsXCUITests: XCTestCase {
         // Each one-shot completes before the next request; no active capture keeps the grant alive.
         request("location")
         try assertLocationResult("location success 2", latitude: 37.3317, longitude: -122.0301)
+        assertNoPermissionPrompt()
+        tap(app.webViews.buttons["Change hash"])
+        assertResult("history hash")
+        request("location")
+        try assertLocationResult("location success 3", latitude: 37.3317, longitude: -122.0301)
+        assertNoPermissionPrompt()
+        tap(app.webViews.buttons["Push history state"])
+        assertResult("history pushState")
+        request("location")
+        try assertLocationResult("location success 4", latitude: 37.3317, longitude: -122.0301)
         assertNoPermissionPrompt()
         tap(app.webViews.buttons["Watch location"])
         try assertLocationResult("watch success", latitude: 37.3317, longitude: -122.0301)
@@ -1306,13 +1318,23 @@ final class SitePermissionsXCUITests: XCTestCase {
         tap(element("SitePermissions.Dialog.AllowOnce"))
         try assertLocationResult("location success 1", latitude: 37.3317, longitude: -122.0301)
 
-        // A different document on the same site must also need a new temporary grant.
-        openPermissionPage(path: "/camera?next")
+        tap(app.webViews.links["Leave document"])
+        assertResult("Next permissions document")
         assertResult("location ready")
         request("location")
         assertSiteDialog(permission: "location", fireMode: fireMode)
+        tap(element("SitePermissions.Dialog.AllowOnce"))
+        try assertLocationResult("location success 1", latitude: 37.3317, longitude: -122.0301)
+
+        tap(element("Browser.Toolbar.Button.Back"))
+        assertResult("Original permissions document")
+        request("location")
+        assertSiteDialog(permission: "location", fireMode: fireMode)
         tap(element("SitePermissions.Dialog.NeverAllow"))
-        assertResult("location error 1 1")
+        // Back may restore the old counter or load a fresh document; both must complete the denial.
+        let denied = app.webViews.staticTexts.matching(NSPredicate(format: "label MATCHES %@", "location error [0-9]+ 1")).firstMatch
+        XCTAssertTrue(denied.waitForExistence(timeout: timeout), app.debugDescription)
+        assertNoPermissionPrompt()
     }
 
     private func assertIframeIsDeniedWithoutSiteOrSystemPrompt(path: String,
@@ -1649,6 +1671,21 @@ final class SitePermissionsXCUITests: XCTestCase {
     </body>
     </html>
     """
+
+    private static let historyHTML = permissionsHTML.replacingOccurrences(of: "<h1>Permissions fixture</h1>", with: """
+      <h1>Permissions fixture</h1>
+      <button onclick="location.hash = 'same-document';
+        document.getElementById('historyResult').textContent = 'history hash'">Change hash</button>
+      <button onclick="history.pushState({}, '', '?history=same-document#same-document');
+        document.getElementById('historyResult').textContent = 'history pushState'">Push history state</button>
+      <a href="/history-next">Leave document</a>
+      <p id="documentResult" role="status"></p>
+      <p id="historyResult" role="status">history ready</p>
+      <script>
+        document.getElementById('documentResult').textContent = location.pathname === '/history-next'
+          ? 'Next permissions document' : 'Original permissions document';
+      </script>
+    """)
 
     private static func iframeHTML(src: String, allow: String = "geolocation", sandbox: String? = nil) -> String {
         let sandboxAttribute = sandbox.map { " sandbox=\"\($0)\"" } ?? ""

@@ -26,6 +26,7 @@ final class HoveredLinkTooltipPresenter {
     private let label = NSTextField(labelWithString: "")
     private let schedule: (TimeInterval, @escaping () -> Void) -> DispatchWorkItem
     private let mouseLocation: () -> NSPoint
+    private let trailingInset: () -> CGFloat
     private let animate: (NSWindow, CGFloat, TimeInterval, @escaping () -> Void) -> Void
     private let move: (NSWindow, NSRect, TimeInterval) -> Void
     private var targetFrame: NSRect?
@@ -43,6 +44,7 @@ final class HoveredLinkTooltipPresenter {
     init(hostView: NSView, backgroundColor: NSColor, isAccessibilityIdentifierEnabled: Bool = false,
          makeWindow: () -> NSWindow = { HoveredLinkTooltipWindow(contentRect: .zero, styleMask: .borderless, backing: .buffered, defer: true) },
          mouseLocation: @escaping () -> NSPoint = { NSEvent.mouseLocation },
+         trailingInset: @escaping () -> CGFloat = { 0 },
          animate: @escaping (NSWindow, CGFloat, TimeInterval, @escaping () -> Void) -> Void = { window, opacity, duration, completion in
              NSAnimationContext.runAnimationGroup { context in
                  context.duration = duration
@@ -70,6 +72,7 @@ final class HoveredLinkTooltipPresenter {
         self.hostView = hostView
         self.window = makeWindow()
         self.mouseLocation = mouseLocation
+        self.trailingInset = trailingInset
         self.animate = animate
         self.move = move
         self.schedule = schedule
@@ -118,8 +121,10 @@ final class HoveredLinkTooltipPresenter {
     }
 
     func update(url: URL?) {
-        cancelPendingUpdates()
         hoveredURL = url
+        // A tooltip that is already fading out keeps fading instead of popping back and fading again.
+        if url == nil, isFadingOut { return }
+        cancelPendingUpdates()
         guard isMouseInside else { return }
 
         guard let url else {
@@ -147,7 +152,10 @@ final class HoveredLinkTooltipPresenter {
     private func hide() {
         isFadingOut = false
         window.alphaValue = 0
-        move(window, window.frame, 0)
+        // Only a window that was positioned can still be moving.
+        if targetFrame != nil {
+            move(window, window.frame, 0)
+        }
         targetFrame = nil
         appearanceObservation = nil
         window.orderOut(nil)
@@ -251,7 +259,9 @@ final class HoveredLinkTooltipPresenter {
 
     private func layout(animated: Bool = false) {
         guard let hostView, let parent = hostView.window else { return }
-        let hostFrame = parent.convertToScreen(hostView.convert(hostView.bounds, to: nil))
+        var hostFrame = parent.convertToScreen(hostView.convert(hostView.bounds, to: nil))
+        // Keep the tooltip out of a sidebar that overlaps the host's trailing edge.
+        hostFrame.size.width = max(0, hostFrame.width - trailingInset())
         let screenFrame = parent.screen?.visibleFrame ?? hostFrame
         // NSTextField's intrinsic width omits the cell's horizontal drawing insets.
         // Include them and round up so the last glyph fits without partial clipping.

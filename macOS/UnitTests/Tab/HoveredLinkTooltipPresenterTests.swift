@@ -250,6 +250,22 @@ final class HoveredLinkTooltipPresenterTests: XCTestCase {
         XCTAssertNil(harness.tooltip)
     }
 
+    func testWhenNoLinkArrivesAgainDuringFadeThenFadeIsNotRestarted() {
+        let harness = TooltipHarness()
+        harness.animator.completesImmediately = false
+        harness.showFirstLink()
+        harness.presenter.update(url: nil)
+        harness.scheduler.run(at: 1)
+        let animationCount = harness.animator.animations.count
+
+        harness.presenter.update(url: nil)
+
+        XCTAssertEqual(harness.animator.animations.count, animationCount)
+        XCTAssertEqual(harness.scheduler.actions.count, 2)
+        harness.animator.complete(at: 0)
+        XCTAssertNil(harness.tooltip)
+    }
+
     func testWhenResetDuringFadeThenCompletionCannotAffectNextTooltip() {
         let harness = TooltipHarness()
         harness.animator.completesImmediately = false
@@ -421,6 +437,29 @@ final class HoveredLinkTooltipPresenterTests: XCTestCase {
         parent.orderOut(nil)
     }
 
+    func testWhenSidebarOverlapsHostThenTooltipStaysOutOfIt() {
+        _ = NSApplication.shared
+        let parent = TooltipParentWindow(contentRect: NSRect(x: 100, y: 200, width: 700, height: 400),
+                                         styleMask: .borderless, backing: .buffered, defer: false)
+        parent.isReleasedWhenClosed = false
+        let hostView = NSView(frame: NSRect(x: 0, y: 0, width: 700, height: 400))
+        parent.contentView = hostView
+        let scheduler = TooltipScheduler()
+        let presenter = HoveredLinkTooltipPresenter(hostView: hostView, backgroundColor: .windowBackgroundColor,
+                                                    makeWindow: { TooltipTestWindow() }, trailingInset: { 300 },
+                                                    schedule: scheduler.schedule)
+        let longURL = URL(string: "https://example.com/" + String(repeating: "a", count: 200))!
+        presenter.update(url: longURL)
+        scheduler.run(at: 0)
+
+        let tooltip = parent.childWindows?.first
+        XCTAssertNotNil(tooltip)
+        XCTAssertLessThanOrEqual(tooltip?.frame.maxX ?? .infinity, parent.frame.minX + 400)
+        presenter.reset()
+        parent.contentView = nil
+        parent.close()
+    }
+
     private func tooltipFrame(mouse: NSPoint, host: NSRect? = nil, screen: NSRect? = nil) -> NSRect {
         let host = host ?? self.host
         return HoveredLinkTooltipPresenter.frame(size: size, hostFrame: host, parentFrame: host,
@@ -458,11 +497,9 @@ private final class TooltipHarness {
 
     deinit {
         presenter.reset()
-        // Release the windows' views right away: the deallocation checks wait for them at the end of each test.
-        for window in [tooltipWindow, parent] {
-            window.contentView = nil
-            window.close()
-        }
+        // Release the parent's views right away: the deallocation checks wait for them at the end of each test.
+        parent.contentView = nil
+        parent.close()
     }
 
     func showFirstLink() {

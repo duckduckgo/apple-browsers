@@ -377,4 +377,146 @@ final class UserChurnServiceTests: XCTestCase {
         // Then
         XCTAssertEqual(mockPixelFiring.actualFireCalls.count, 1, "Pixel should be fired when new default has no bundle ID")
     }
+
+    // MARK: - Tests: Churned-from-default flag
+
+    private let wasDefaultKey = "user-churn.was-default-browser"
+    private let churnedKey = "user-churn.churned-from-default"
+
+    private var unsetPixelCalls: [ExpectedFireCall] {
+        mockPixelFiring.actualFireCalls.filter { $0.pixel.name == "m_mac_unset-as-default" }
+    }
+
+    func testWhenCheckDetectsChurn_ThenChurnedFlagIsSet() throws {
+        setDefaultBrowserAsNonDuckDuckGo(path: "/Applications/Safari.app", bundleId: "com.apple.Safari")
+        try mockKeyValueStore.set(true, forKey: wasDefaultKey)
+
+        sut.checkForDefaultBrowserChange()
+
+        XCTAssertTrue(sut.hasChurnedFromDefault)
+        XCTAssertEqual(try mockKeyValueStore.object(forKey: churnedKey) as? Bool, true)
+        XCTAssertEqual(unsetPixelCalls.count, 1)
+    }
+
+    func testWhenCheckSeesDuckDuckGoDefault_ThenChurnedFlagIsCleared() throws {
+        setDefaultBrowserAsDuckDuckGo()
+        try mockKeyValueStore.set(false, forKey: wasDefaultKey)
+        try mockKeyValueStore.set(true, forKey: churnedKey)
+
+        sut.checkForDefaultBrowserChange()
+
+        XCTAssertFalse(sut.hasChurnedFromDefault)
+        XCTAssertEqual(try mockKeyValueStore.object(forKey: churnedKey) as? Bool, false)
+    }
+
+    func testWhenNotDefaultAndWasNotDefault_ThenChurnedFlagStaysTrue() throws {
+        setDefaultBrowserAsNonDuckDuckGo(path: "/Applications/Safari.app", bundleId: "com.apple.Safari")
+        try mockKeyValueStore.set(false, forKey: wasDefaultKey)
+        try mockKeyValueStore.set(true, forKey: churnedKey)
+
+        sut.checkForDefaultBrowserChange()
+
+        XCTAssertTrue(sut.hasChurnedFromDefault)
+        XCTAssertTrue(mockPixelFiring.actualFireCalls.isEmpty)
+    }
+
+    func testWhenFirstRun_ThenChurnedFlagIsNotSet() {
+        setDefaultBrowserAsNonDuckDuckGo(path: "/Applications/Safari.app", bundleId: "com.apple.Safari")
+
+        sut.checkForDefaultBrowserChange()
+
+        XCTAssertFalse(sut.hasChurnedFromDefault)
+        XCTAssertTrue(mockPixelFiring.actualFireCalls.isEmpty)
+    }
+
+    func testWhenChecksRunConcurrently_ThenOnePixelFires() throws {
+        setDefaultBrowserAsNonDuckDuckGo(path: "/Applications/Safari.app", bundleId: "com.apple.Safari")
+        try mockKeyValueStore.set(true, forKey: wasDefaultKey)
+
+        DispatchQueue.concurrentPerform(iterations: 50) { _ in
+            sut.checkForDefaultBrowserChange()
+        }
+
+        XCTAssertEqual(unsetPixelCalls.count, 1)
+    }
+
+    func testWhenDuckDuckGoIsDefaultAndChurned_ThenChurnedFlagIsClearedAndWasDefaultNotRewritten() throws {
+        let store = RecordingKeyValueStore()
+        let service = makeService(store: store)
+        setDefaultBrowserAsDuckDuckGo()
+        try store.set(true, forKey: wasDefaultKey)
+        try store.set(true, forKey: churnedKey)
+        store.writtenKeys = []
+
+        service.checkForDefaultBrowserChange()
+
+        XCTAssertFalse(service.hasChurnedFromDefault)
+        XCTAssertEqual(store.writtenKeys, [churnedKey])
+        XCTAssertEqual(try store.object(forKey: wasDefaultKey) as? Bool, true)
+    }
+
+    func testWhenReadFails_ThenReadFailedPixelFires() {
+        let store = RecordingKeyValueStore()
+        store.failingGetKeys = [wasDefaultKey]
+        let service = makeService(store: store)
+        setDefaultBrowserAsNonDuckDuckGo(path: "/Applications/Safari.app", bundleId: "com.apple.Safari")
+
+        service.checkForDefaultBrowserChange()
+
+        assertSingleFailurePixel(named: "user-churn_was-default-browser_read-failed_macos")
+    }
+
+    func testWhenWriteFails_ThenWriteFailedPixelFires() throws {
+        let store = RecordingKeyValueStore()
+        let service = makeService(store: store)
+        setDefaultBrowserAsNonDuckDuckGo(path: "/Applications/Safari.app", bundleId: "com.apple.Safari")
+        try store.set(true, forKey: wasDefaultKey)
+        store.failingSetKeys = [churnedKey]
+
+        service.checkForDefaultBrowserChange()
+
+        assertSingleFailurePixel(named: "user-churn_churned-from-default_write-failed_macos")
+    }
+
+    private func assertSingleFailurePixel(named name: String, file: StaticString = #filePath, line: UInt = #line) {
+        let calls = mockPixelFiring.actualFireCalls.filter { $0.pixel.name == name }
+        XCTAssertEqual(calls.count, 1, file: file, line: line)
+        XCTAssertEqual(calls.first?.pixel.namePrefix, PixelKitNamePrefix.none, file: file, line: line)
+        XCTAssertNotNil(calls.first?.pixel.error, file: file, line: line)
+        XCTAssertEqual(calls.first?.frequency, .dailyAndCount, file: file, line: line)
+    }
+
+    private func makeService(store: ThrowingKeyValueStoring) -> UserChurnService {
+        UserChurnService(
+            defaultBrowserProvider: mockDefaultBrowserProvider,
+            keyValueStore: store,
+            pixelFiring: mockPixelFiring,
+            atbProvider: { "v123-4" },
+            bundleIdentifierProvider: { [weak self] url in
+                self?.mockBundleIdentifiers[url]
+            }
+        )
+    }
+}
+
+private final class RecordingKeyValueStore: ThrowingKeyValueStoring {
+    private let store = MockThrowingKeyValueStore()
+    var failingGetKeys: Set<String> = []
+    var failingSetKeys: Set<String> = []
+    var writtenKeys: [String] = []
+
+    func object(forKey defaultName: String) throws -> Any? {
+        if failingGetKeys.contains(defaultName) { throw MockThrowingKeyValueStore.MockError.getError }
+        return try store.object(forKey: defaultName)
+    }
+
+    func set(_ value: Any?, forKey defaultName: String) throws {
+        if failingSetKeys.contains(defaultName) { throw MockThrowingKeyValueStore.MockError.setError }
+        try store.set(value, forKey: defaultName)
+        writtenKeys.append(defaultName)
+    }
+
+    func removeObject(forKey defaultName: String) throws {
+        try store.removeObject(forKey: defaultName)
+    }
 }

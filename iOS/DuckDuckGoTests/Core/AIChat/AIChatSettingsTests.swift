@@ -24,6 +24,7 @@ import PrivacyConfig
 import Combine
 import AIChat
 @_spi(Testing) import Persistence
+@_spi(Testing) import PixelKit
 
 class AIChatSettingsTests: XCTestCase {
 
@@ -92,12 +93,49 @@ class AIChatSettingsTests: XCTestCase {
         waitForExpectations(timeout: 1)
     }
 
-    private func makeKeyboardAnimationSettings(featureFlagger: FeatureFlagger) -> AIChatSettings {
+    func testDisablingKeyboardAnimationFiresDailyAndCountPixel() throws {
+        let pixelFiring = PixelKitMock()
+        let settings = makeKeyboardAnimationSettings(featureFlagger: mockFeatureFlagger, pixelFiring: pixelFiring)
+
+        settings.enableKeyboardAnimation(enable: false)
+
+        XCTAssertEqual(pixelFiring.actualFireCalls.count, 1)
+        let call = try XCTUnwrap(pixelFiring.actualFireCalls.first)
+        XCTAssertEqual(call.pixel as? DuckAIKeyboardAnimationPixel, .disabled)
+        XCTAssertEqual(call.pixel.name, "aichat_settings_keyboard_animation_disabled")
+        XCTAssertNil(call.pixel.parameters)
+        XCTAssertEqual(call.frequency, .dailyAndCount)
+        XCTAssertNil(call.additionalParameters)
+    }
+
+    func testEnablingKeyboardAnimationAndRepeatedDisablingDoNotFirePixels() {
+        let pixelFiring = PixelKitMock()
+        let settings = makeKeyboardAnimationSettings(featureFlagger: mockFeatureFlagger, pixelFiring: pixelFiring)
+
+        settings.enableKeyboardAnimation(enable: true)
+        XCTAssertTrue(pixelFiring.actualFireCalls.isEmpty)
+
+        settings.enableKeyboardAnimation(enable: false)
+        settings.enableKeyboardAnimation(enable: false)
+        XCTAssertEqual(pixelFiring.actualFireCalls.count, 1)
+
+        settings.enableKeyboardAnimation(enable: true)
+        XCTAssertEqual(pixelFiring.actualFireCalls.count, 1)
+
+        settings.enableKeyboardAnimation(enable: false)
+        XCTAssertEqual(pixelFiring.actualFireCalls, [
+            ExpectedFireCall(pixel: DuckAIKeyboardAnimationPixel.disabled, frequency: .dailyAndCount),
+            ExpectedFireCall(pixel: DuckAIKeyboardAnimationPixel.disabled, frequency: .dailyAndCount)
+        ])
+    }
+
+    private func makeKeyboardAnimationSettings(featureFlagger: FeatureFlagger, pixelFiring: (any PixelKitFiring)? = nil) -> AIChatSettings {
         AIChatSettings(privacyConfigurationManager: mockPrivacyConfigurationManager,
                        debugSettings: mockAIChatDebugSettings,
                        keyValueStore: mockKeyValueStore,
                        notificationCenter: mockNotificationCenter,
-                       featureFlagger: featureFlagger)
+                       featureFlagger: featureFlagger,
+                       pixelFiring: pixelFiring)
     }
 
     func testAIChatURLReturnsDefaultWhenRemoteSettingsMissing() {

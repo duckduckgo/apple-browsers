@@ -752,6 +752,11 @@ final class AIChatContextualSheetCoordinator {
         sheetViewController?.parent != nil
     }
 
+    /// Whether the surface is beside the page now, or would open there from `presentingVC`.
+    func showsSurfaceInSidebar(from presentingVC: UIViewController) -> Bool {
+        isSheetInSidebar || sidebarHost(for: presentingVC) != nil
+    }
+
     /// A window shrinking past the sidebar can't wait for the resize to end, or the column would squeeze the page to
     /// nothing. The sheet steps out of it now and comes back in whatever presentation the settled window calls for.
     func parkSurfaceForResize(animated: Bool) {

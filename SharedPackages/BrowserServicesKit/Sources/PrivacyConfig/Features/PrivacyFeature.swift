@@ -303,6 +303,7 @@ public enum DBPSubfeature: String, Equatable, PrivacySubfeature {
     case performanceMetrics
     case extractedProfileRefresh
     case schedulerDeferralHandling
+    case challengeSolver
 }
 
 public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
@@ -505,9 +506,6 @@ public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
 
     /// Enables the Duck.ai suggested-prompt chips below the New Tab Page omnibar's Duck.ai input
     case ntpSuggestedPrompts
-
-    /// Enables removing individual AI chat suggestions
-    case removeSuggestion
 
     /// Enables the Duck.ai top-level main menu shortcut (macOS only)
     case mainMenuShortcut

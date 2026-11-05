@@ -630,6 +630,21 @@ class AutofillLoginListViewModelTests: XCTestCase {
         XCTAssertEqual(syncPromoManager.dismissalReason, .userTapped)
     }
 
+    func testDismissSyncAnotherDevicePromo_MarksPasswordsAnotherDevicePromoHandled() {
+        let syncPromoManager = MockSyncPromoManager()
+        let model = MockAutofillLoginListViewModel(appSettings: appSettings,
+                                                   tld: tld,
+                                                   secureVault: vault,
+                                                   syncService: syncService,
+                                                   keyValueStore: mockStore,
+                                                   syncPromoManager: syncPromoManager)
+
+        model.dismissSyncAnotherDevicePromo()
+
+        XCTAssertEqual(syncPromoManager.handledTouchpoint, .passwordsAnotherDevice)
+        XCTAssertNil(syncPromoManager.dismissedTouchpoint)
+    }
+
     func testWhenAllConditionsAreMetThenSurveyIsReturnedAndWhenDismissedNotSurveyIsReturned() {
         let model = MockAutofillLoginListViewModel(appSettings: appSettings,
                                                    tld: tld,
@@ -995,14 +1010,19 @@ class MockAutofillLoginListViewModel: AutofillLoginListViewModel {
 private final class MockSyncPromoManager: SyncPromoManaging {
     private(set) var dismissedTouchpoint: SyncPromoManager.Touchpoint?
     private(set) var dismissalReason: SyncPromoManager.DismissalReason?
+    private(set) var handledTouchpoint: SyncPromoManager.Touchpoint?
 
     func shouldPresentPromoFor(_ touchpoint: SyncPromoManager.Touchpoint, count: Int) -> Bool {
         false
     }
 
-    func markPromoHandledFor(_ touchpoint: SyncPromoManager.Touchpoint) {}
+    func markPromoHandledFor(_ touchpoint: SyncPromoManager.Touchpoint) {
+        handledTouchpoint = touchpoint
+    }
 
     func recordImpressionFor(_ touchpoint: SyncPromoManager.Touchpoint) {}
+
+    func recordPromoConfirmedFor(_ touchpoint: SyncPromoManager.Touchpoint) {}
 
     func dismissPromoFor(_ touchpoint: SyncPromoManager.Touchpoint, reason: SyncPromoManager.DismissalReason) {
         dismissedTouchpoint = touchpoint

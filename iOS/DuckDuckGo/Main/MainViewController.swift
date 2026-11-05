@@ -483,6 +483,9 @@ class MainViewController: UIViewController {
     private lazy var browsingMenuHeaderDataSource = BrowsingMenuHeaderDataSource()
     private lazy var browsingMenuHeaderStateProvider = BrowsingMenuHeaderStateProvider()
 
+    lazy var bookmarksFileFlow = BookmarksFileFlow(bookmarksDatabase: bookmarksDatabase, appSettings: appSettings)
+    lazy var mainMenuBookmarks = MainMenuBookmarks(database: bookmarksDatabase, appSettings: appSettings)
+
     lazy var menuBookmarksViewModel: MenuBookmarksInteracting = {
         let viewModel = MenuBookmarksViewModel(bookmarksDatabase: bookmarksDatabase, syncService: syncService)
         viewModel.favoritesDisplayMode = appSettings.favoritesDisplayMode
@@ -501,7 +504,7 @@ class MainViewController: UIViewController {
 
     let gestureBookmarksButton = GestureToolbarButton()
 
-    private lazy var fireButtonAnimator: FireButtonAnimator = FireButtonAnimator(appSettings: appSettings)
+    lazy var fireButtonAnimator: FireButtonAnimator = FireButtonAnimator(appSettings: appSettings)
 
     let bookmarksCachingSearch: BookmarksCachingSearch
 
@@ -2826,15 +2829,21 @@ class MainViewController: UIViewController {
     }
 
     @IBAction func onFirePressed() {
+        performFirePressed(prefersSheet: false)
+    }
+
+    func performFirePressed(prefersSheet: Bool) {
         recordNewTabPageSessionAction { $0.tapFireButton() }
         let wasContextualFireOnboardingDialogVisible = daxDialogsManager.isShowingFireDialog
 
         func showFireConfirmation() {
             let presenter = FireConfirmationPresenter()
-            let source: UIView = findFireButton() ?? viewCoordinator.toolbar
+            let tabsBarFireButton = viewCoordinator.tabBarContainer.isHidden ? nil : tabsBarController?.fireButton
+            let source: UIView = tabsBarFireButton ?? findFireButton() ?? viewCoordinator.toolbar
             presenter.presentFireConfirmation(
                 on: self,
                 attachPopoverTo: source,
+                prefersSheet: prefersSheet,
                 tabViewModel: tabManager.viewModelForCurrentTab(),
                 pixelSource: .browsing,
                 fireContext: .default(daxDialogsManager: daxDialogsManager),
@@ -2905,7 +2914,7 @@ class MainViewController: UIViewController {
             enterSearch()
         }
     }
-    
+
     private func wakeLazyFireButtonAnimator() {
         DispatchQueue.main.async {
             _ = self.fireButtonAnimator
@@ -5094,14 +5103,15 @@ class MainViewController: UIViewController {
                                    opensNewTab: opensNewTab,
                                    hasPrompt: hasPrompt,
                                    voice: voice)
-        let surface = DuckAIEntryWideEventData.Surface(source: source, opensNewTab: opensNewTab)
+        let surface = DuckAIEntryWideEventData.Surface(source: source, opensNewTab: opensNewTab,
+                                                       opensInSidebar: opensContextualSurfaceInSidebar)
         // A tab entry reads its chat state once its Duck.ai tab is shown.
-        let sheetChatState: DuckAIEntryWideEventData.ChatState? = surface == .contextualSheet
+        let sheetChatState: DuckAIEntryWideEventData.ChatState? = surface.isContextual
             ? (currentTab?.hasContextualChatToReopen == true ? .existing : .new)
             : nil
         duckAIEntryInstrumentation.entryStarted(source: source, hasPrompt: hasPrompt, voice: voice, surface: surface,
                                                 chatState: chatState ?? sheetChatState)
-        if surface == .contextualSheet {
+        if surface.isContextual {
             // Gives the sheet entry the page it opened on, so it can notice that page changing later.
             reportDuckAISessionCurrentTab()
         }
@@ -5138,20 +5148,21 @@ class MainViewController: UIViewController {
         startDuckAIVoiceMode(from: .addressBar, entrySource: isPad ? .ipadTogglePrompt : .addressBarPrompt)
     }
 
-    func startDuckAIVoiceMode(from source: VoiceEntryPointSource, entrySource: AIChatEntryPointSource) {
+    /// `opensNewTabOverContent` keeps voice from replacing the current page when Unified Input would load it in place.
+    func startDuckAIVoiceMode(from source: VoiceEntryPointSource, entrySource: AIChatEntryPointSource, opensNewTabOverContent: Bool = false) {
         pixelFiring?.fire(Pixel.Event.voiceEntryPointTapped, options: .parameters([PixelParameters.source: source.rawValue]))
         if let tab = tabManager.currentTabsModel.currentTab, tab.link == nil {
             ntpAfterIdleInstrumentation.barUsedFromNTP(afterIdle: tab.openedAfterIdle)
         }
         postIdleSessionInstrumentation.duckAIOpenedWithoutPrompt()
-        openAIChatInVoiceMode(source: entrySource, fromDeepLink: false)
+        openAIChatInVoiceMode(source: entrySource, fromDeepLink: false, opensNewTabOverContent: opensNewTabOverContent)
     }
 
     func openAIVoiceChatFromDeepLink(source: AIChatEntryPointSource) {
         openAIChatInVoiceMode(source: source, fromDeepLink: true)
     }
 
-    private func openAIChatInVoiceMode(source: AIChatEntryPointSource, fromDeepLink: Bool) {
+    private func openAIChatInVoiceMode(source: AIChatEntryPointSource, fromDeepLink: Bool, opensNewTabOverContent: Bool = false) {
         if let reminder = NoMicPermissionAlert.buildVoiceChatReminderIfNeeded(
             isSitePermissionsEnabled: tabManager.isSitePermissionsEnabled,
             microphoneAuthorization: AVCaptureDevice.authorizationStatus(for: .audio),
@@ -5167,10 +5178,10 @@ class MainViewController: UIViewController {
         }
 
         // Voice mode bypasses `openAIChat`, so fire the entry pixel directly.
-        openAIChatVoiceModeInTab(source: source, fromDeepLink: fromDeepLink)
+        openAIChatVoiceModeInTab(source: source, fromDeepLink: fromDeepLink, opensNewTabOverContent: opensNewTabOverContent)
     }
 
-    private func openAIChatVoiceModeInTab(source: AIChatEntryPointSource, fromDeepLink: Bool = false) {
+    private func openAIChatVoiceModeInTab(source: AIChatEntryPointSource, fromDeepLink: Bool = false, opensNewTabOverContent: Bool = false) {
         guard tabManager.current(createIfNeeded: true) != nil else {
             assertionFailure("openAIChatVoiceModeInTab: no current tab available")
             return
@@ -5183,7 +5194,7 @@ class MainViewController: UIViewController {
 
         // Voice always opens a new tab over existing content (chat included) — voice over a chat would replace the prior conversation. NTP stays in-place via `link != nil`.
         let hasContent = currentTab.tabModel.link != nil
-        let openInNewTab = hasContent && (unifiedToggleInputFeature.isAvailable || fromDeepLink)
+        let openInNewTab = hasContent && (unifiedToggleInputFeature.isAvailable || fromDeepLink || opensNewTabOverContent)
         let source = fireAIChatEntryPointPixel(source: source, opensNewTab: openInNewTab, hasPrompt: false, voice: true)
 
         if openInNewTab {

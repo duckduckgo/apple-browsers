@@ -93,6 +93,7 @@ extension MainViewController {
         coordinator.delegate = self
         coordinator.pageTypeProvider = { [weak self] in self?.currentPromptPageType() }
         coordinator.duckAIEntrySourceProvider = { [weak self] in self?.tabManager.currentTabsModel.currentTab?.duckAIEntrySource }
+        coordinator.addressBarPositionProvider = { [weak self] in self?.appSettings.iPhoneAddressBarPosition }
         coordinator.updateVoiceSearchAvailability(voiceSearchHelper.isVoiceSearchEnabled)
         coordinator.updateAIChatShortcutAvailability(aiChatAddressBarExperience.shouldShowDuckAIAddressBarButton)
         coordinator.onAnimatedDismissToOmnibar = { [weak self] completion in
@@ -1621,6 +1622,10 @@ extension MainViewController: UnifiedToggleInputDelegate {
 // MARK: - UnifiedInputContentContainerViewControllerDelegate
 
 extension MainViewController: UnifiedInputContentContainerViewControllerDelegate {
+
+    func unifiedInputEditingStateDidSelectSearchDuckDuckGo(query: String) {
+        unifiedToggleInputCoordinator?.reportSearchDuckDuckGoRowSelected(query: query)
+    }
 
     func unifiedInputEditingStateDidSubmitQuery(_ query: String) {
         unifiedToggleInputCoordinator?.clearText()

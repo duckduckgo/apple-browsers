@@ -36,6 +36,7 @@ import PixelKit
 
 protocol UnifiedInputContentContainerViewControllerDelegate: AnyObject {
     func unifiedInputEditingStateDidSubmitQuery(_ query: String)
+    func unifiedInputEditingStateDidSelectSearchDuckDuckGo(query: String)
     func unifiedInputEditingStateDidSubmitPrompt(_ query: String, tools: [AIChatRAGTool]?)
     func unifiedInputEditingStateDidSelectFavorite(_ favorite: BookmarkEntity)
     func unifiedInputEditingStateDidEditFavorite(_ favorite: BookmarkEntity)
@@ -99,6 +100,8 @@ final class UnifiedInputContentContainerViewController: UIViewController {
     private let recentModalPromptStatusProvider: RecentModalPromptStatusProviding?
     private let featureDiscovery: FeatureDiscovery
     private let autocompletePixels = AutocompleteSuggestionsPixels()
+    /// Set by the owning coordinator so a tapped search suggestion can be matched against a recent prompt.
+    var resubmitDelayOfSearch: ((String) -> CrossModeResubmitDetector.DelayBucket?)?
 
     // MARK: - Manager Components
 
@@ -1132,7 +1135,7 @@ extension UnifiedInputContentContainerViewController {
     }
 
     func duckAISuggestionsDidSelectSearchDuckDuckGo(query: String) {
-        PixelKit.fire(Pixel.Event.autocompleteDuckAIClickSearchDuckDuckGo)
+        delegate?.unifiedInputEditingStateDidSelectSearchDuckDuckGo(query: query)
         // Symmetric with Search-side "Ask privately" (which calls openAIChat with autoSend:true):
         // flip toggle to Search and submit the query in one step.
         switchBarHandler.setToggleState(.search)
@@ -1149,7 +1152,8 @@ extension UnifiedInputContentContainerViewController {
         autocompletePixels.fireClickPixels(
             for: suggestion,
             isExperimentalAIChatExperience: aiChatSettings.isAIChatSearchInputUserSettingsEnabled,
-            aiChatDiscoveryParameters: featureDiscovery.addToParams([:], forFeature: .aiChat))
+            aiChatDiscoveryParameters: featureDiscovery.addToParams([:], forFeature: .aiChat),
+            resubmitOfPrompt: suggestion.searchQueryText.flatMap { resubmitDelayOfSearch?($0) })
     }
 }
 

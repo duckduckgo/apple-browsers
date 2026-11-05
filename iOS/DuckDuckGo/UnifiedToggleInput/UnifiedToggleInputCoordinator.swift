@@ -1506,15 +1506,20 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         // Wraps toolbar-height update + content-swap broadcast in one CATransaction so they animate
         // together; otherwise the content snaps while the toolbar is still growing.
         let applyModeChange = { [self] in
-            if needsViewSync {
-                viewController.setInputMode(effectiveMode, animated: animated)
+            viewController.performInputModeChanges {
+                // The Duck.ai footer joins the bar before the bar resizes for the mode, so every height the
+                // content follows already includes it. The first switch builds the toolbar slowly enough to show it.
+                refreshFooterSuppression()
+                if needsViewSync {
+                    viewController.setInputMode(effectiveMode, animated: animated)
+                }
             }
             if didModeChange {
                 modeChangeSubject.send(effectiveMode)
             }
         }
 
-        if animated {
+        if animated && UIView.inheritedAnimationDuration == 0 {
             UIView.animate(withDuration: 0.2, delay: 0, options: [.curveEaseInOut, .beginFromCurrentState]) {
                 applyModeChange()
                 // Push the new mode's content inset here (target height) so the suggestions content and
@@ -1530,7 +1535,6 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         if didModeChange {
             attachmentController.syncValidationErrorForCurrentMode()
             recordUserChoiceToStore()
-            refreshFooterSuppression()
             syncInputOutcomeMeasurement()
         }
     }
@@ -2491,7 +2495,14 @@ extension UnifiedToggleInputCoordinator: UnifiedToggleInputViewControllerDelegat
     }
 
     func unifiedToggleInputVC(_ vc: UnifiedToggleInputViewController, didChangeMode mode: TextEntryMode) {
-        updateInputMode(mode, animated: true)
+        contentViewController.performInputModeChange(to: mode, onResizeStarted: { [weak vc] in
+            guard let vc else { return }
+            if vc.isInputExpanded {
+                vc.activateInput()
+            }
+        }) { [self] in
+            updateInputMode(mode, animated: true)
+        }
     }
 
     func unifiedToggleInputVC(_ vc: UnifiedToggleInputViewController, isDraggingToggle isDragging: Bool) {

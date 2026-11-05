@@ -17,6 +17,7 @@
 //  limitations under the License.
 //
 
+import Combine
 import DuckUI
 import RemoteMessaging
 import SwiftUI
@@ -29,6 +30,7 @@ struct NewTabPageView: View {
     @ObservedObject private var viewModel: NewTabPageViewModel
     @ObservedObject private var messagesModel: NewTabPageMessagesModel
     @ObservedObject private var favoritesViewModel: FavoritesViewModel
+    @State private var escapeHatchFrame: CGRect?
 
     let isFocussedState: Bool
     let narrowLayoutInLandscape: Bool
@@ -57,7 +59,7 @@ struct NewTabPageView: View {
     var body: some View {
         if !viewModel.isOnboarding {
             mainView
-                .background(Color(designSystemColor: .background))
+                .background(viewModel.focusedContent == nil ? Color(designSystemColor: .background) : .clear)
                 .simultaneousGesture(
                     DragGesture()
                         .onChanged({ value in
@@ -72,7 +74,9 @@ struct NewTabPageView: View {
 
     @ViewBuilder
     private var mainView: some View {
-        if isShowingSections {
+        if let focusedContent = viewModel.focusedContent {
+            focusedScrollView(content: focusedContent)
+        } else if isShowingSections {
             sectionsView
         } else {
             emptyStateView
@@ -110,6 +114,51 @@ struct NewTabPageLayoutConfiguration {
 
 private extension NewTabPageView {
     // MARK: - Views
+    func focusedScrollView(content: LegacyFocusedNewTabPageContent) -> some View {
+        GeometryReader { geometry in
+            ScrollView {
+                VStack(spacing: 0) {
+                    Color.clear.frame(height: 0).id(NewTabPageScrollToTop.topAnchor)
+                    VStack(spacing: layoutConfiguration.interSectionSpacing) {
+                        escapeHatchSectionView
+                        if let recentChats = content.recentChats {
+                            VStack(spacing: FocusedChromeView.Metrics.bottomInset) {
+                                if let syncPromo = content.syncPromo {
+                                    syncPromo
+                                }
+                                LegacyRecentChatsView(viewModel: recentChats,
+                                                      isAddressBarAtBottom: content.isAddressBarAtBottom)
+                            }
+                            .padding(.horizontal, Metrics.updatedNonGridSectionHorizontalPadding)
+                            .modifier(FocusedContentDelayedReveal(isDelayed: content.waitsForLogoFadeOut))
+                        } else {
+                            Group {
+                                messagesSectionView
+                                    .padding(.horizontal, Metrics.updatedNonGridSectionHorizontalPadding)
+                                FavoritesView(model: favoritesViewModel)
+                                    .fixedSize(horizontal: false, vertical: true)
+                            }
+                            .modifier(FocusedContentDelayedReveal(isDelayed: content.waitsForLogoFadeOut))
+                        }
+                    }
+                    .animation(nil, value: content.recentChats != nil)
+                    .modifier(FocusedContentGeometryGroup())
+                    .modifier(FocusedContentTopInset(topInset: viewModel.focusedContentTopInset,
+                                                     fixedTopInset: contentTopInset(in: geometry),
+                                                     onEscapeHatchGeometryChange: { viewModel.onFocusedEscapeHatchGeometryChange?($0) }))
+                    .padding(.bottom, sectionsViewPadding(in: geometry))
+                    .padding(.horizontal, sectionsViewHorizontalPadding(in: geometry))
+                }
+            }
+            .coordinateSpace(name: EmbeddedEscapeHatchGeometryReader.scrollSpace)
+            .modifier(FocusedContentVerticalBounce())
+            .scrollDismissesKeyboardIfAvailable()
+            .modifier(NewTabPageScrollToTop(requests: viewModel.scrollToTopRequests))
+        }
+        // Keep the keyboard from resizing the focused scroll view, like the other NTP layouts.
+        .ignoresSafeArea(.keyboard)
+    }
+
     @ViewBuilder
     private var sectionsView: some View {
         GeometryReader { proxy in
@@ -138,7 +187,9 @@ private extension NewTabPageView {
                 .padding(.bottom, sectionsViewPadding(in: proxy))
                 .padding(.horizontal, sectionsViewHorizontalPadding(in: proxy))
                 .background(Color(designSystemColor: .background))
+                .id(NewTabPageScrollToTop.topAnchor)
             }
+            .modifier(NewTabPageScrollToTop(requests: viewModel.scrollToTopRequests))
             .scrollDismissesKeyboardIfAvailable()
         }
         // Prevent recreating geometry reader when keyboard is shown/hidden.
@@ -162,8 +213,18 @@ private extension NewTabPageView {
                 // lands at screen.midY - 72 — the splash storyboard's resting position. The
                 // dynamic offset compensates for the NTP body's centerY shifting based on top vs
                 // bottom omnibar chrome.
-                NewTabPageDaxLogoView()
-                    .offset(y: (UIScreen.main.bounds.midY - 55) - proxy.frame(in: .global).midY)
+                Group {
+                    if viewModel.escapeHatch != nil {
+                        NewTabPageDaxLogoView()
+                            .modifier(EscapeHatchLogoLayout(centerY: UIScreen.main.bounds.midY - 55,
+                                                           viewport: proxy.frame(in: .global), hatchFrame: escapeHatchFrame,
+                                                           destinationHatchFrame: escapeHatchFrame))
+                            .offset(y: -proxy.frame(in: .global).midY)
+                    } else {
+                        NewTabPageDaxLogoView()
+                            .offset(y: (UIScreen.main.bounds.midY - 55) - proxy.frame(in: .global).midY)
+                    }
+                }
                     .opacity(shouldShowLogoInEmptyState ? 1 : 0)
                     .allowsHitTesting(false)
 
@@ -179,7 +240,11 @@ private extension NewTabPageView {
                     .padding(.top, contentTopInset(in: proxy))
                     .padding(.bottom, sectionsViewPadding(in: proxy))
                     .padding(.horizontal, sectionsViewHorizontalPadding(in: proxy))
+                    .coordinateSpace(name: EmbeddedEscapeHatchGeometryReader.contentSpace)
+                    .id(NewTabPageScrollToTop.topAnchor)
                 }
+                .coordinateSpace(name: EmbeddedEscapeHatchGeometryReader.scrollSpace)
+                .modifier(NewTabPageScrollToTop(requests: viewModel.scrollToTopRequests))
                 .scrollDismissesKeyboardIfAvailable()
             }
         }
@@ -189,8 +254,8 @@ private extension NewTabPageView {
     private var shouldShowLogoInEmptyState: Bool {
         guard !viewModel.isLogoHidden else { return false }
         guard messagesModel.homeMessageViewModels.isEmpty else { return false }
+        // Matches `restingContentIsLogo`, so focus transitions agree with what the page shows.
         if viewModel.escapeHatch != nil && isLandscapeOrientation { return false }
-        if viewModel.escapeHatch != nil && isFocussedState { return false }
         return true
     }
 
@@ -209,8 +274,14 @@ private extension NewTabPageView {
     @ViewBuilder
     private var escapeHatchSectionView: some View {
         if let escapeHatch = viewModel.escapeHatch {
-            EscapeHatchView(model: escapeHatch)
+            EscapeHatchView(model: escapeHatch, backdropFrame: viewModel.focusedContent == nil ? nil : viewModel.focusedLogoFrame)
                 .frame(maxWidth: escapeHatchMaxWidth)
+                .modifier(EmbeddedEscapeHatchGeometryReader())
+                .onPreferenceChange(EmbeddedEscapeHatchGeometryKey.self) { geometry in
+                    if viewModel.focusedContent == nil {
+                        escapeHatchFrame = geometry?.frame
+                    }
+                }
                 .padding(.top, sectionTopNudge)
                 .padding(.horizontal, layoutConfiguration.escapeHatchHorizontalPadding)
         }
@@ -253,6 +324,48 @@ private extension NewTabPageView {
     }
 }
 
+/// Short focused content still bounces, so the hatch can scroll and a drag can dismiss the keyboard.
+/// The scrollable escape hatch requires iOS 16.4, where this API is available.
+struct FocusedContentVerticalBounce: ViewModifier {
+    var isEnabled = true
+
+    @ViewBuilder
+    func body(content: Content) -> some View {
+        if #available(iOS 16.4, *), isEnabled {
+            content.scrollBounceBehavior(.always, axes: .vertical)
+        } else {
+            content
+        }
+    }
+}
+
+struct FocusedContentGeometryGroup: ViewModifier {
+    var isEnabled = true
+
+    @ViewBuilder
+    func body(content: Content) -> some View {
+        if #available(iOS 17, *), isEnabled {
+            content.geometryGroup()
+        } else {
+            content
+        }
+    }
+}
+
+private struct NewTabPageScrollToTop: ViewModifier {
+    static let topAnchor = "new-tab-page-top"
+    let requests: PassthroughSubject<TimeInterval, Never>
+
+    func body(content: Content) -> some View {
+        ScrollViewReader { proxy in
+            content.onReceive(requests) { duration in
+                withAnimation(duration > 0 && !UIAccessibility.isReduceMotionEnabled ? .easeInOut(duration: duration) : nil) {
+                    proxy.scrollTo(Self.topAnchor, anchor: .top)
+                }
+            }
+        }
+    }
+}
 
 private struct Metrics {
 

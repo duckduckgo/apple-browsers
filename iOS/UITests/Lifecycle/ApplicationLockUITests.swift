@@ -68,9 +68,13 @@ final class ApplicationLockUITests: UITestCase {
             try relaunchAppPreservingState()
 
             let authenticationReason = springboard.staticTexts["Unlock DuckDuckGo."]
-            if waitForAuthenticationPromptOrRecovery(authenticationReason) {
-                requestAuthenticationFromRecoveryScreen()
-                waitForAuthenticationPrompt(authenticationReason)
+            let needsRecovery = waitForAuthenticationPromptOrRecovery(authenticationReason)
+            let route = needsRecovery ? "Authentication route: foreground recovery" : "Authentication route: automatic system prompt"
+            XCTContext.runActivity(named: route) { _ in
+                if needsRecovery {
+                    requestAuthenticationFromRecoveryScreen()
+                    waitForAuthenticationPrompt(authenticationReason)
+                }
             }
 
             let passcodeField = springboard.secureTextFields.firstMatch
@@ -99,6 +103,9 @@ final class ApplicationLockUITests: UITestCase {
         try XCTContext.runActivity(named: "Restore the page without authentication") { _ in
             try relaunchAppPreservingState()
 
+            XCTAssertTrue(
+                app.searchEntry.waitForHittableInAppWindow(in: app, timeout: UITestTimeouts.navigation),
+                "Browser did not become interactive after disabling Application Lock and relaunching.")
             app.assertPageContains("Privacy Test Pages")
             XCTAssertFalse(
                 springboard.staticTexts["Unlock DuckDuckGo."].exists,

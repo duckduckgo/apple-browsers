@@ -38,8 +38,10 @@ public class DDGSync: DDGSyncing {
 
     public enum Constants {
         public static let syncEnabledKey = "com.duckduckgo.sync.enabled"
+        static let auditLogReviewStateKey = "com.duckduckgo.sync.audit-log.review-state"
         public static let keychainAttrMigratedKey = "com.duckduckgo.sync.keychain.attr.migrated"
         static let aiChatHistoryEnabledKey = "com.duckduckgo.aichat.sync.chatHistoryEnabled"
+        static let auditLogPageSize = 100
     }
 
     private enum UnauthenticatedHandling {
@@ -371,6 +373,74 @@ public class DDGSync: DDGSyncing {
         } catch {
             throw handleUnauthenticatedAndMap(error)
         }
+    }
+
+    @MainActor
+    public func makeAuditLogReader() throws -> any SyncAuditLogReading {
+        guard let account = try dependencies.secureStore.account() else { throw SyncError.accountNotFound }
+        return SyncAuditLogReader(account: account) { [self] readerAccount, cursor in
+            guard isCurrent(readerAccount) else {
+                throw CancellationError()
+            }
+            do {
+                let page = try await dependencies.account.fetchAuditLog(for: readerAccount,
+                                                                        cursor: cursor.map(AuditLogCursor.before),
+                                                                        limit: Constants.auditLogPageSize)
+                guard isCurrent(readerAccount) else {
+                    throw CancellationError()
+                }
+                return page
+            } catch {
+                guard isCurrent(readerAccount) else {
+                    throw CancellationError()
+                }
+                throw handleUnauthenticatedAndMap(error)
+            }
+        }
+    }
+
+    private func isCurrent(_ account: SyncAccount) -> Bool {
+        guard let currentAccount = self.account else { return false }
+        return currentAccount.userId == account.userId && currentAccount.deviceId == account.deviceId
+    }
+
+    public func auditLogReviewState(for accountID: String) throws -> SyncAuditLogReviewState? {
+        guard let data = try dependencies.keyValueStore.object(forKey: auditLogReviewStateKey(for: accountID)) as? Data else {
+            return nil
+        }
+        return try JSONDecoder().decode(SyncAuditLogReviewState.self, from: data)
+    }
+
+    public func setAuditLogReviewState(_ reviewState: SyncAuditLogReviewState, for accountID: String) throws {
+        if let current = try auditLogReviewState(for: accountID), !canAdvanceReviewState(from: current, to: reviewState) {
+            return
+        }
+        try persistAuditLogReviewState(reviewState, for: accountID)
+    }
+
+    public func resetAuditLogReviewStateForDebug(to date: Date) throws {
+        guard let account = try dependencies.secureStore.account() else {
+            throw SyncError.accountNotFound
+        }
+        // Debug resets intentionally bypass the forward-only rule used by setAuditLogReviewState.
+        try persistAuditLogReviewState(SyncAuditLogReviewState(reviewedThrough: date, isInitialized: true), for: account.userId)
+    }
+
+    private func persistAuditLogReviewState(_ reviewState: SyncAuditLogReviewState, for accountID: String) throws {
+        let data = try JSONEncoder().encode(reviewState)
+        try dependencies.keyValueStore.set(data, forKey: auditLogReviewStateKey(for: accountID))
+    }
+
+    private func canAdvanceReviewState(from current: SyncAuditLogReviewState, to next: SyncAuditLogReviewState) -> Bool {
+        guard current.isInitialized else { return true }
+        guard next.isInitialized else { return false }
+        guard let currentDate = current.reviewedThrough else { return true }
+        guard let nextDate = next.reviewedThrough else { return false }
+        return nextDate >= currentDate
+    }
+
+    private func auditLogReviewStateKey(for accountID: String) -> String {
+        "\(Constants.auditLogReviewStateKey).\(accountID)"
     }
 
     public func isDeviceInfoMigrationCompleteForDebug() throws -> Bool {
@@ -839,6 +909,13 @@ public class DDGSync: DDGSyncing {
 
     private func removeAccount(reason: SyncError.AccountRemovedReason) throws {
         let account = try? dependencies.secureStore.account()
+        if let account {
+            do {
+                try dependencies.keyValueStore.removeObject(forKey: auditLogReviewStateKey(for: account.userId))
+            } catch {
+                Logger.sync.error("Failed to clear Device Activity review state during account removal: \(String(reflecting: error), privacy: .private)")
+            }
+        }
         deviceInfoUpdateState.cancelAll()
         dependencies.scheduler.isEnabled = false
         startSyncCancellable?.cancel()

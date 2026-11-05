@@ -120,6 +120,7 @@ struct DefaultColorPalette: ColorPaletteDefinition {
     private static let accentPrimary = DynamicColor(lightColor: RebrandingColor.Pondwater.pondwater60, darkColor: RebrandingColor.Pondwater.pondwater40)
     private static let accentGlowSecondary = DynamicColor(lightColor: RebrandingColor.Pondwater.pondwater60.opacity(0.12), darkColor: RebrandingColor.Pondwater.pondwater40.opacity(0.12))
     private static let accentGlowPrimary = DynamicColor(lightColor: RebrandingColor.Pondwater.pondwater60.opacity(0.2), darkColor: RebrandingColor.Pondwater.pondwater40.opacity(0.2))
+    private static let accentAltPrimary = DynamicColor(lightHex: 0xD6EEFF, darkHex: 0x184775)
     private static let accentAltGlowPrimary = DynamicColor(lightColor: Color(0xA1CFF7).opacity(0.16), darkColor: Color(0xA1CFF7).opacity(0.12))
     private static let accentAltContentPrimary = DynamicColor(lightColor: RebrandingColor.Pondwater.pondwater90, darkColor: RebrandingColor.Pondwater.pondwater0)
 
@@ -134,6 +135,9 @@ struct DefaultColorPalette: ColorPaletteDefinition {
     private static let alertGreen = DynamicColor(staticColor: RebrandingColor.Green.green40)
     private static let alertYellow = DynamicColor(staticColor: RebrandingColor.Pollen.pollen50)
     private static let shieldPrivacy = DynamicColor(lightColor: RebrandingColor.Lilypad.lilypad70, darkColor: RebrandingColor.Lilypad.lilypad50)
+
+    // Status
+    private static let statusRed = DynamicColor(lightHex: 0xD83544, darkHex: 0xFF5359)
 
     // Destructive
     private static let destructivePrimary = DynamicColor(lightColor: RebrandingColor.Red.red50, darkColor: RebrandingColor.Red.red40)
@@ -221,6 +225,7 @@ struct DefaultColorPalette: ColorPaletteDefinition {
         case .accentPrimary: return accentPrimary
         case .accentGlowPrimary: return accentGlowPrimary
         case .accentGlowSecondary: return accentGlowSecondary
+        case .accentAltPrimary: return accentAltPrimary
         case .accentAltGlowPrimary: return accentAltGlowPrimary
         case .accentAltContentPrimary: return accentAltContentPrimary
         case .accentBrandPrimary: return accentBrandPrimary
@@ -228,6 +233,7 @@ struct DefaultColorPalette: ColorPaletteDefinition {
         case .accentBrandContentPrimary: return accentBrandContentPrimary
         case .alertGreen: return alertGreen
         case .alertYellow: return alertYellow
+        case .statusRed: return statusRed
         case .shieldPrivacy: return shieldPrivacy
         // VPN pill + header animation, per the Figma spec. Backgrounds and foregrounds (text/icon)
         // vary by light/dark mode, with a darker interaction (hover/press) variant of each.

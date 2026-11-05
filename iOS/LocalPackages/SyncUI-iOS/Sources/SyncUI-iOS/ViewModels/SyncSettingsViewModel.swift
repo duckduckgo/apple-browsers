@@ -263,6 +263,8 @@ public class SyncSettingsViewModel: ObservableObject {
     @Published var isThisDeviceTurnOffConfirmationVisible: Bool = false
     @Published var isTurnOffSyncSheetVisible: Bool = false
 
+    public let deviceActivityViewModel: DeviceActivityViewModel?
+
     public let isAutoRestoreFeatureAvailable: Bool
     @Published public var isAutoRestoreEnabled: Bool = false
     @Published var isAutoRestoreUpdating: Bool = false
@@ -287,11 +289,13 @@ public class SyncSettingsViewModel: ObservableObject {
         isOnDevEnvironment: @escaping () -> Bool,
         switchToProdEnvironment: @escaping () -> Void,
         autoRestoreProvider: SyncAutoRestoreProviding,
-        isImprovedPairingFlowEnabled: Bool = false
+        isImprovedPairingFlowEnabled: Bool = false,
+        deviceActivityViewModel: DeviceActivityViewModel? = nil
     ) {
         self.isOnDevEnvironment = isOnDevEnvironment()
         self.autoRestoreProvider = autoRestoreProvider
         self.isImprovedPairingFlowEnabled = isImprovedPairingFlowEnabled
+        self.deviceActivityViewModel = deviceActivityViewModel
         self.isAutoRestoreFeatureAvailable = autoRestoreProvider.isAutoRestoreFeatureEnabled
         if isAutoRestoreFeatureAvailable {
             self.isAutoRestoreEnabled = autoRestoreProvider.existingDecision() ?? false

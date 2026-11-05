@@ -164,7 +164,8 @@ class SyncSettingsViewController: UIHostingController<SimplifiedSyncSettingsView
                 UserDefaults.standard.set(ServerEnvironment.production.description, forKey: UserDefaultsWrapper<String>.Key.syncEnvironment.rawValue)
             },
             autoRestoreProvider: syncAutoRestoreHandler,
-            isImprovedPairingFlowEnabled: featureFlagger.isFeatureOn(.syncImprovedPairingFlow)
+            isImprovedPairingFlowEnabled: featureFlagger.isFeatureOn(.syncImprovedPairingFlow),
+            deviceActivityViewModel: DeviceActivityViewModel.make(syncService: syncService)
         )
         self.viewModel = viewModel
 
@@ -243,7 +244,9 @@ class SyncSettingsViewController: UIHostingController<SimplifiedSyncSettingsView
             .receive(on: DispatchQueue.main)
             .sink { [weak self] in
                 guard let self else { return }
-                viewModel.isDeviceActivityAvailable = self.featureFlagger.isFeatureOn(.syncLoginAuditLog)
+                let isAvailable = self.featureFlagger.isFeatureOn(.syncLoginAuditLog)
+                viewModel.isDeviceActivityAvailable = isAvailable
+                if !isAvailable { viewModel.deviceActivityViewModel?.cancelAndClear() }
             }
             .store(in: &cancellables)
     }

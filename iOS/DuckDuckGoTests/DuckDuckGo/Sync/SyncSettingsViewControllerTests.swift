@@ -1,5 +1,5 @@
 //
-//  SyncSettingsViewControllerErrorTests.swift
+//  SyncSettingsViewControllerTests.swift
 //  DuckDuckGo
 //
 //  Copyright © 2024 DuckDuckGo. All rights reserved.
@@ -27,10 +27,12 @@ import FeatureFlags_iOS
 import PixelKit
 import Common
 import FoundationExtensions
-import SyncUI_iOS
+@testable import SyncUI_iOS
 import SecureStorage
+import SwiftUI
+import UIKit
 
-final class SyncSettingsViewControllerErrorTests: XCTestCase {
+final class SyncSettingsViewControllerTests: XCTestCase {
 
     var cancellables: Set<AnyCancellable>!
     var vc: SyncSettingsViewController!
@@ -106,6 +108,8 @@ final class SyncSettingsViewControllerErrorTests: XCTestCase {
 
     @MainActor
     func testDeviceActivityAvailabilityTracksAuditLogFeatureFlagUpdates() async {
+        XCTAssertNotNil(vc.viewModel.deviceActivityViewModel)
+        XCTAssertTrue(vc.rootView.model === vc.viewModel)
         featureFlagger.enabledFeatureFlags = []
         featureFlagger.triggerUpdate()
         XCTAssertFalse(vc.viewModel.isDeviceActivityAvailable)
@@ -134,6 +138,120 @@ final class SyncSettingsViewControllerErrorTests: XCTestCase {
         featureFlagger.triggerUpdate()
         await fulfillment(of: [disabled], timeout: 1.0)
         XCTAssertFalse(vc.viewModel.isDeviceActivityAvailable)
+    }
+
+    @MainActor
+    func testDeviceActivityViewReviewsHistoryAfterThreeSeconds() async throws {
+        let activeScene = try XCTUnwrap(UIApplication.shared.connectedScenes
+            .compactMap { $0 as? UIWindowScene }
+            .first { $0.activationState == .foregroundActive })
+        let accountID = UUID().uuidString
+        let entries = (0..<40).map { index in
+            DeviceActivityEntry(id: "\(accountID)-event-\(index)",
+                                action: .synced,
+                                date: Date(timeIntervalSince1970: 1_000 - Double(index)),
+                                deviceName: "Device \(index)",
+                                deviceType: "phone")
+        }
+        var isBaselineFetch = true
+        var reviewState: DeviceActivityReviewState?
+        let model = DeviceActivityViewModel(accountIdentifier: { accountID }, makePageFetcher: {
+            {
+                if isBaselineFetch {
+                    return DeviceActivityPage(entries: [DeviceActivityEntry(id: "baseline",
+                                                                           action: .synced,
+                                                                           date: Date(timeIntervalSince1970: 100),
+                                                                           deviceName: "Baseline",
+                                                                           deviceType: "phone")], hasMore: false)
+                }
+                return DeviceActivityPage(entries: entries, hasMore: false)
+            }
+        }, loadReviewState: { _ in reviewState }, saveReviewState: { _, value in reviewState = value })
+        await model.loadIfNeeded()
+        isBaselineFetch = false
+        model.cancelAndClear()
+
+        let previousKeyWindow = activeScene.windows.first(where: \.isKeyWindow)
+        let window = UIWindow(windowScene: activeScene)
+        window.rootViewController = UIHostingController(rootView: NavigationView {
+            DeviceActivityView(model: model)
+        })
+        window.makeKeyAndVisible()
+        defer {
+            window.isHidden = true
+            previousKeyWindow?.makeKey()
+        }
+        try await Task.sleep(nanoseconds: 300_000_000)
+        attachScreenshot(of: window, named: "Device Activity unseen highlight")
+
+        let firstEntry = try XCTUnwrap(entries.first)
+        XCTAssertFalse(model.isSeen(firstEntry))
+        let deadline = Date().addingTimeInterval(8)
+        while !model.isSeen(firstEntry), Date() < deadline {
+            try await Task.sleep(nanoseconds: 100_000_000)
+        }
+
+        XCTAssertTrue(model.isSeen(firstEntry))
+        XCTAssertTrue(entries.allSatisfy { model.isSeen($0) })
+        XCTAssertEqual(reviewState?.reviewedThrough, entries.first?.date)
+        attachScreenshot(of: window, named: "Device Activity after three seconds on screen")
+    }
+
+    @MainActor
+    func testDeviceActivityViewReviewsHistoryAfterEmptyPages() async throws {
+        let activeScene = try XCTUnwrap(UIApplication.shared.connectedScenes
+            .compactMap { $0 as? UIWindowScene }
+            .first { $0.activationState == .foregroundActive })
+        let entry = DeviceActivityEntry(id: "event", action: .synced, date: Date(timeIntervalSince1970: 101),
+                                        deviceName: "iPhone", deviceType: "phone")
+        var requests = 0
+        var reviewState = DeviceActivityReviewState(reviewedThrough: Date(timeIntervalSince1970: 100), isInitialized: true)
+        let model = DeviceActivityViewModel(accountIdentifier: { "account" }, makePageFetcher: {
+            {
+                requests += 1
+                if requests <= 5 { return DeviceActivityPage(entries: [], hasMore: true) }
+                return DeviceActivityPage(entries: [entry], hasMore: false)
+            }
+        }, loadReviewState: { _ in reviewState }, saveReviewState: { _, value in reviewState = value }, sleep: { duration in
+            // Skip only empty-page pacing; keep the real review delay in this hosted view test.
+            if duration == 2_000_000_000 { return }
+            try await Task.sleep(nanoseconds: duration)
+        })
+        let previousKeyWindow = activeScene.windows.first(where: \.isKeyWindow)
+        let window = UIWindow(windowScene: activeScene)
+        window.rootViewController = UIHostingController(rootView: NavigationView {
+            DeviceActivityView(model: model)
+        })
+        window.makeKeyAndVisible()
+        defer {
+            window.isHidden = true
+            previousKeyWindow?.makeKey()
+        }
+
+        try await Task.sleep(nanoseconds: 300_000_000)
+        XCTAssertEqual(requests, 6)
+        XCTAssertEqual(model.entries, [entry])
+        XCTAssertFalse(model.isLoading)
+        XCTAssertNil(model.error)
+        attachScreenshot(of: window, named: "Device Activity loaded automatically after empty pages")
+        XCTAssertFalse(model.isSeen(entry))
+        let deadline = Date().addingTimeInterval(8)
+        while !model.isSeen(entry), Date() < deadline {
+            try await Task.sleep(nanoseconds: 100_000_000)
+        }
+        XCTAssertTrue(model.isSeen(entry))
+        XCTAssertEqual(reviewState.reviewedThrough, entry.date)
+    }
+
+    @MainActor
+    private func attachScreenshot(of window: UIWindow, named name: String) {
+        let image = UIGraphicsImageRenderer(bounds: window.bounds).image { _ in
+            window.drawHierarchy(in: window.bounds, afterScreenUpdates: true)
+        }
+        let attachment = XCTAttachment(image: image)
+        attachment.name = name
+        attachment.lifetime = .keepAlways
+        add(attachment)
     }
 
     @MainActor

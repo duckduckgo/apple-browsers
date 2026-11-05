@@ -591,9 +591,10 @@ extension SimplifiedSyncSettingsView {
 
     @ViewBuilder
     var deviceActivitySection: some View {
-        if model.isDeviceActivityAvailable {
+        if model.isDeviceActivityAvailable,
+           let deviceActivityViewModel = model.deviceActivityViewModel {
             Section {
-                NavigationLink(destination: DeviceActivityView()) {
+                NavigationLink(destination: DeviceActivityView(model: deviceActivityViewModel)) {
                     Label(title: {
                         Text(UserText.deviceActivityTitle)
                             .daxBodyRegular()

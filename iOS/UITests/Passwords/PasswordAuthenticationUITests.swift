@@ -31,19 +31,45 @@ final class PasswordAuthenticationUITests: UITestCase {
         app.resetPasswords()
     }
 
+    override func tearDownWithError() throws {
+        if (testRun?.totalFailureCount ?? 0) > 0 {
+            let hierarchy = XCTAttachment(string: springboard.debugDescription)
+            hierarchy.name = "Password authentication SpringBoard hierarchy"
+            hierarchy.lifetime = .keepAlways
+            add(hierarchy)
+        }
+        try super.tearDownWithError()
+    }
+
     func testWhenPasswordVaultIsReopenedThenDeviceAuthenticationIsRequired() {
         createPassword()
         app.closePasswordManager()
 
         app.openPasswordManager()
         let authenticationReason = springboard.staticTexts["Unlock device to access passwords"]
-        let passcodeField = springboard.secureTextFields.firstMatch
+        let passcodeField = springboard.secureTextFields["Passcode field"]
         XCTAssertTrue(
             authenticationReason.waitForExistence(timeout: UITestTimeouts.navigation),
             "Password access did not request device authentication.")
         XCTAssertFalse(app.passwordList.exists, "Password list was accessible before authentication.")
 
+        XCTAssertTrue(
+            passcodeField.waitForExistence(timeout: UITestTimeouts.elementExistence),
+            "System passcode field did not appear before empty submission.")
+        XCTAssertEqual(passcodeField.placeholderValue, "Passcode", "System passcode placeholder changed.")
+        // No passcode characters have been entered into this fresh prompt. Submit only Return;
+        // SpringBoard's opaque accessibility value does not reliably report the empty contents.
         passcodeField.typeText("\n")
+        XCTAssertTrue(passcodeField.exists, "System passcode field disappeared after empty submission.")
+        XCTAssertEqual(passcodeField.placeholderValue, "Passcode", "System passcode placeholder changed after empty submission.")
+
+        // Observe the simulator UI for a bounded interval; this is not a physical-device security claim.
+        let unexpectedUnlock = XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in
+            self.app.passwordList.exists || !authenticationReason.exists
+        }, object: app)
+        unexpectedUnlock.isInverted = true
+        XCTAssertEqual(XCTWaiter.wait(for: [unexpectedUnlock], timeout: 2), .completed,
+                       "Empty passcode submission exposed the vault or dismissed authentication.")
 
         XCTAssertTrue(
             authenticationReason.waitForExistence(timeout: UITestTimeouts.elementExistence),

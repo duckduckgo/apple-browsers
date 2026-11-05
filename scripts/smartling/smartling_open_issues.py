@@ -23,7 +23,7 @@ import subprocess
 from dataclasses import dataclass
 from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Tuple
 
 sys.path.insert(0, str(Path(__file__).parent))
 
@@ -118,14 +118,31 @@ def issue_job(jobs: List[Dict], created_at: datetime) -> Dict:
     return max(existing or jobs, key=lambda job: job.get('createdDate') or '', default={})
 
 
-async def load_issues(smartling: SmartlingClient, since: datetime) -> List[OpenIssue]:
-    """The open issues on English strings that were opened or reopened since then, oldest first."""
-    issues = []
+async def issue_jobs(smartling: SmartlingClient, issue: Dict) -> List[Dict]:
+    """The string's jobs that Smartling still has. A deleted job is skipped for good, so it can't fail every night."""
+    jobs = []
+    for job_uid in issue.get('jobUids') or []:
+        try:
+            jobs.append(await smartling.get_job(job_uid))
+        except RuntimeError as error:
+            log(f"⚠️ #{issue['issueNumber']}: couldn't load one of its jobs, leaving it out: {error}")
+    return jobs
+
+
+async def load_issues(smartling: SmartlingClient, since: datetime) -> Tuple[List[OpenIssue], List[int]]:
+    """The open issues on English strings that were opened or reopened since then, oldest first, and the numbers of
+    those whose string couldn't be loaded."""
+    issues, failed = [], []
     for issue in await smartling.list_open_source_issues():
         if opened_at(issue) < since:
             continue
-        source_string = await smartling.get_source_string(issue['string']['hashcode']) or {}
-        job = issue_job([await smartling.get_job(job_uid) for job_uid in issue.get('jobUids') or []], parse_time(issue['createdDate']))
+        try:
+            source_string = await smartling.get_source_string(issue['string']['hashcode']) or {}
+        except RuntimeError as error:
+            log(f"❌ #{issue['issueNumber']}: couldn't load its string: {error}")
+            failed.append(issue['issueNumber'])
+            continue
+        job = issue_job(await issue_jobs(smartling, issue), parse_time(issue['createdDate']))
         issues.append(OpenIssue(
             number=issue['issueNumber'],
             created_at=parse_time(issue['createdDate']),
@@ -138,7 +155,7 @@ async def load_issues(smartling: SmartlingClient, since: datetime) -> List[OpenI
             job_uid=job.get('translationJobUid', ''),
             job_name=job.get('jobName', ''),
         ))
-    return sorted(issues, key=lambda issue: issue.opened_at)
+    return sorted(issues, key=lambda issue: issue.opened_at), failed
 
 
 def has_task(tasks: List[Dict], issue: OpenIssue) -> bool:
@@ -287,7 +304,8 @@ def merge_job_pull(git: Git, github: GitHubClient, issue: OpenIssue) -> Optional
 
 def find_person(git: Git, github: GitHubClient, user_map: Dict[str, str], issue: OpenIssue, platform: str) -> Optional[Person]:
     """Who to ask: the pull request the string's /translate job came from, or whoever added the string, or else the
-    author of the merge job's commit."""
+    author of the merge job's commit. Once someone is found who isn't in the user map, no one: the later lookups are
+    less sure, so the triage DRI is a better guess than them."""
     lookups = (
         ('translate job', lambda: label_job_pull(github, issue)),
         ('added the string', lambda: string_commit(git, github, issue, platform)),
@@ -305,6 +323,7 @@ def find_person(git: Git, github: GitHubClient, user_map: Dict[str, str], issue:
             return Person(login=login, asana_gid=gid, pull_url=pull.get('html_url', ''), source=source)
         if login:
             log(f"⚠️ #{issue.number}: @{login} ({source}) isn't in the GitHub to Asana user map")
+            return None
     return None
 
 
@@ -330,15 +349,26 @@ def task_notes(issue: OpenIssue, platform: str, smartling: SmartlingClient, pers
     return '\n'.join(lines)
 
 
-async def run(args, smartling: SmartlingClient, asana: AsanaClient, github: GitHubClient, git: Git, user_map: Dict[str, str]) -> List[str]:
-    """Open the tasks and return the job summary's rows."""
+def window(args, github: GitHubClient) -> datetime:
+    """Where this run starts. --since moves it, but only a dry run may start before --not-before."""
+    not_before = parse_time(args.not_before)
+    if not args.since:
+        return window_start(github, args.workflow, args.job_name, not_before)
+    since = parse_time(args.since)
+    return since if args.dry_run else max(since, not_before)
+
+
+async def run(args, smartling: SmartlingClient, asana: AsanaClient, github: GitHubClient, git: Git, user_map: Dict[str, str]) -> Tuple[List[str], bool]:
+    """Open the tasks and return the job summary's rows, and whether any issue failed. One issue failing doesn't stop
+    the others; the run then fails, so the next night looks at the same window again."""
     today = date.today()
-    since = parse_time(args.since) if args.since else window_start(github, args.workflow, args.job_name, parse_time(args.not_before))
+    since = window(args, github)
     log(f"🔎 {args.platform} issues opened or reopened since {since.isoformat()}")
-    issues = await load_issues(smartling, since)
+    issues, failed = await load_issues(smartling, since)
+    rows = [f"| #{number} | failed, retried next night | |" for number in failed]
     if not issues:
-        log("✅ No new issues")
-        return []
+        log("✅ No new issues" if not failed else "❌ No issue could be loaded")
+        return rows, bool(failed)
 
     existing = asana.project_tasks(args.asana_project, since)
     git.ensure_history()
@@ -346,7 +376,6 @@ async def run(args, smartling: SmartlingClient, asana: AsanaClient, github: GitH
     dri = pick_dri(asana.rotation_tasks(args.rotation_section, today - timedelta(days=14)), today) if args.rotation_section else None
     dri_gid = (dri or {}).get('gid')
 
-    rows = []
     for issue in issues:
         if has_task(existing, issue):
             log(f"⏭️ #{issue.number} already has a task")
@@ -369,10 +398,16 @@ async def run(args, smartling: SmartlingClient, asana: AsanaClient, github: GitH
             log(f"🧪 #{issue.number}: would open a task for {who}")
             rows.append(f"| #{issue.number} | would open a task | {who} |")
             continue
-        task = create_task(asana, body, dri_gid)
+        try:
+            task = create_task(asana, body, dri_gid)
+        except RuntimeError as error:
+            log(f"❌ #{issue.number}: couldn't open its task: {error}")
+            rows.append(f"| #{issue.number} | failed, retried next night | {who} |")
+            failed.append(issue.number)
+            continue
         log(f"✅ #{issue.number}: opened a task for {who}: {task.get('permalink_url', task.get('gid'))}")
         rows.append(f"| #{issue.number} | opened a task | {who} |")
-    return rows
+    return rows, bool(failed)
 
 
 def write_summary(platform: str, rows: List[str], dry_run: bool):
@@ -403,12 +438,12 @@ async def main_async(args) -> int:
 
     async with SmartlingClient(creds) as smartling:
         try:
-            rows = await run(args, smartling, AsanaClient(asana_token), GitHubClient(github_token), Git(), parse_user_map(user_map_text))
+            rows, failed = await run(args, smartling, AsanaClient(asana_token), GitHubClient(github_token), Git(), parse_user_map(user_map_text))
         except RuntimeError as error:
             log(f"❌ {error}")
             return 1
     write_summary(args.platform, rows, args.dry_run)
-    return 0
+    return 1 if failed else 0
 
 
 def main():
@@ -420,8 +455,8 @@ def main():
     parser.add_argument('--user-map', help='Path to the GitHub to Asana user_map.yml')
     parser.add_argument('--workflow', default='smartling_nightly.yml', help='Workflow file whose last successful job starts the window')
     parser.add_argument('--job-name', required=True, help='Name of this job in that workflow')
-    parser.add_argument('--not-before', required=True, help='Never look at issues opened before this ISO time (go-live)')
-    parser.add_argument('--since', help='Look at issues opened since this ISO time instead of since the last successful job')
+    parser.add_argument('--not-before', required=True, help='Never look at issues opened before this ISO time (go-live), even with --since unless it is a dry run')
+    parser.add_argument('--since', help='Look at issues opened since this ISO time instead of since the last successful job, but not before --not-before')
     parser.add_argument('--workflow-url', default='')
     parser.add_argument('--dry-run', action='store_true', help='Look everything up, but open no task')
     sys.exit(asyncio.run(main_async(parser.parse_args())))

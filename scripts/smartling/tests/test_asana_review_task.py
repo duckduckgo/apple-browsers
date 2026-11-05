@@ -203,9 +203,15 @@ class CreateTaskTests(unittest.TestCase):
             return ASANA_REVIEW_TASK.create_task(client, {'name': 'Task', 'assignee': 'author'}, fallback_assignee)
 
     def testWhenAsanaRejectsTheAssigneeThenTheTaskGoesToTheFallbackOrNoOne(self):
-        for fallback, expected in (('owner', {'name': 'Task', 'assignee': 'owner'}), (None, {'name': 'Task'})):
-            with self.subTest(fallback=fallback):
-                client = RejectingAsanaClient(rejected={'author'})
+        forbidden = 'Asana POST /tasks failed with HTTP 403: Forbidden'
+        cases = (
+            ('owner', None, {'name': 'Task', 'assignee': 'owner'}),
+            (None, None, {'name': 'Task'}),
+            ('owner', forbidden, {'name': 'Task', 'assignee': 'owner'}),
+        )
+        for fallback, error, expected in cases:
+            with self.subTest(fallback=fallback, error=error):
+                client = RejectingAsanaClient(rejected={'author'}, **({'error': error} if error else {}))
 
                 self.create_task(client, fallback)
 
@@ -214,6 +220,7 @@ class CreateTaskTests(unittest.TestCase):
     def testWhenAsanaFailsForAnotherReasonOrRejectsTheFallbackTooThenTheErrorIsRaised(self):
         clients = {
             'server error': RejectingAsanaClient(rejected={'author'}, error='Asana POST /tasks failed with HTTP 500: Server Error'),
+            'rate limit': RejectingAsanaClient(rejected={'author'}, error='Asana POST /tasks failed with HTTP 429: Too Many Requests'),
             'fallback rejected': RejectingAsanaClient(rejected={'author', 'owner'}),
         }
         for case, client in clients.items():

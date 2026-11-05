@@ -31,15 +31,16 @@ on:
         type: boolean
         default: false
       open_issues_since:
-        description: "Look at Smartling issues opened since this ISO time instead of since the last successful night"
+        description: "Look at Smartling issues opened since this ISO time instead of since the last successful night (not before go-live, except in a dry run)"
         type: string
         default: ""
 
 permissions:
   contents: read
 
+# A read-only run gets a group of its own: queued in the shared group, it would replace a pending nightly.
 concurrency:
-  group: smartling-nightly
+  group: smartling-nightly${{ inputs.open_issues_only && inputs.open_issues_dry_run && format('-dry-run-{0}', github.run_id) || '' }}
   cancel-in-progress: false
 
 jobs:
@@ -73,7 +74,8 @@ jobs:
         platform: ${{ fromJSON((github.event_name == 'schedule' || inputs.platform == 'both') && '["iOS","macOS"]' || format('["{0}"]', inputs.platform)) }}
     env:
       PLATFORM: ${{ matrix.platform }}
-      # Issues opened before the automation went live are left alone.
+      # Issues opened before the automation went live are left alone, even with open_issues_since, except in a dry
+      # run. Until the first successful night on main, the window starts here.
       NOT_BEFORE: '2026-11-05T00:00:00Z'
 
     steps:

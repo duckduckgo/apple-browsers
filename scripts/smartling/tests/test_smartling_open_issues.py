@@ -64,27 +64,33 @@ def asana_task(number, created_at):
 
 class FakeSmartling:
 
-    def __init__(self, issues, jobs=None, key=KEY):
+    def __init__(self, issues, jobs=None, key=KEY, missing_strings=()):
         self.issues = issues
         self.key = key
+        self.missing_strings = set(missing_strings)
         self.jobs = jobs or {'nightly': {'translationJobUid': 'nightly', 'jobName': 'Nightly iOS - 2026-11-03', 'createdDate': '2026-11-03T03:20:00Z'}}
         self.creds = Namespace(project_id='ios-project')
 
     async def list_open_source_issues(self):
         return self.issues
 
-    async def get_source_string(self, _hashcode):
+    async def get_source_string(self, hashcode):
+        if hashcode in self.missing_strings:
+            raise RuntimeError('HTTP 500: Internal Server Error')
         return {'stringText': ENGLISH, 'keys': [{'key': self.key, 'fileUri': 'main/en.xliff'}]}
 
     async def get_job(self, job_uid):
+        if job_uid not in self.jobs:
+            raise RuntimeError('HTTP 404: Not Found')
         return self.jobs[job_uid]
 
 
 class FakeAsana:
 
-    def __init__(self, tasks=None, rejected_assignees=()):
+    def __init__(self, tasks=None, rejected_assignees=(), failing_issues=()):
         self.tasks = tasks or []
         self.rejected_assignees = set(rejected_assignees)
+        self.failing_issues = set(failing_issues)
         self.created = []
 
     def project_tasks(self, _project_id, _since):
@@ -99,6 +105,8 @@ class FakeAsana:
     def create_task(self, body):
         if body.get('assignee') in self.rejected_assignees:
             raise RuntimeError('Asana POST /tasks failed with HTTP 400: assignee: Not a recognized ID')
+        if any(f'#{number} ' in body['name'] for number in self.failing_issues):
+            raise RuntimeError('Asana POST /tasks failed with HTTP 500: Server Error')
         self.created.append(body)
         return {'gid': str(len(self.created))}
 
@@ -160,14 +168,14 @@ def args(dry_run=False, since=None):
 
 
 def run(smartling, asana, github=None, git=None, user_map=None, dry_run=False):
-    """Run the job with the given clients, returning the summary rows and the log."""
+    """Run the job with the given clients, returning the summary rows, whether it failed, and the log."""
     output = io.StringIO()
     with contextlib.redirect_stdout(output):
-        rows = asyncio.run(OPEN_ISSUES.run(
+        rows, failed = asyncio.run(OPEN_ISSUES.run(
             args(dry_run=dry_run), smartling, asana, github or FakeGitHub(runs=[nightly_run(1, 'success')]),
             git or FakeGit(), {'frosty': 'frosty-gid'} if user_map is None else user_map
         ))
-    return rows, output.getvalue()
+    return rows, failed, output.getvalue()
 
 
 class WindowStartTests(unittest.TestCase):
@@ -193,13 +201,22 @@ class WindowStartTests(unittest.TestCase):
 
         self.assertEqual(start, utc(NOT_BEFORE))
 
+    def testWhenSinceIsBeforeGoLiveThenOnlyADryRunStartsThere(self):
+        for dry_run, expected in ((False, NOT_BEFORE), (True, '2026-10-01T00:00:00Z')):
+            with self.subTest(dry_run=dry_run):
+                run_args = args(dry_run=dry_run, since='2026-10-01T00:00:00Z')
+
+                start = OPEN_ISSUES.window(run_args, FakeGitHub())
+
+                self.assertEqual(start, utc(expected))
+
 
 class OpenIssueTaskTests(unittest.TestCase):
 
     def testWhenAnIssueIsNewThenItsTaskGoesToWhoeverAddedTheString(self):
         asana = FakeAsana()
 
-        rows, _ = run(FakeSmartling([smartling_issue()]), asana)
+        rows, _, _ = run(FakeSmartling([smartling_issue()]), asana)
 
         self.assertEqual(len(asana.created), 1)
         self.assertEqual(asana.created[0]['name'], f'Smartling open issue #3600 (iOS): {KEY}')
@@ -211,7 +228,7 @@ class OpenIssueTaskTests(unittest.TestCase):
     def testWhenAnIssueWasOpenedBeforeTheLastSuccessfulNightThenNoTaskIsOpened(self):
         asana = FakeAsana()
 
-        rows, _ = run(FakeSmartling([smartling_issue(created='2026-11-02T10:00:00Z')]), asana)
+        rows, _, _ = run(FakeSmartling([smartling_issue(created='2026-11-02T10:00:00Z')]), asana)
 
         self.assertEqual(asana.created, [])
         self.assertEqual(rows, [])
@@ -219,7 +236,7 @@ class OpenIssueTaskTests(unittest.TestCase):
     def testWhenARerunFindsTheIssuesTaskThenNoSecondTaskIsOpened(self):
         asana = FakeAsana(tasks=[asana_task(3600, '2026-11-04T03:21:00Z')])
 
-        rows, _ = run(FakeSmartling([smartling_issue()]), asana)
+        rows, _, _ = run(FakeSmartling([smartling_issue()]), asana)
 
         self.assertEqual(asana.created, [])
         self.assertEqual(rows, ['| #3600 | already has a task | |'])
@@ -233,15 +250,21 @@ class OpenIssueTaskTests(unittest.TestCase):
         self.assertEqual(len(asana.created), 1)
 
     def testWhenTheStringsAuthorIsABotOrUnmappedThenTheTriageDRIGetsTheTask(self):
+        translate_job = {'label': {'translationJobUid': 'label', 'jobName': 'anya/sync-restore', 'createdDate': '2026-11-03T09:00:00Z'}}
         cases = {
-            'bot': (FakeGitHub(runs=[nightly_run(1, 'success')], commit_pulls={STRING_COMMIT: [pull('daxmobile')]}), None),
-            'unmapped': (None, {}),
+            'bot': (FakeSmartling([smartling_issue()]), FakeGitHub(runs=[nightly_run(1, 'success')], commit_pulls={STRING_COMMIT: [pull('daxmobile')]}), None),
+            'unmapped': (FakeSmartling([smartling_issue()]), None, {}),
+            'unmapped before a mapped author': (
+                FakeSmartling([smartling_issue(job_uid='label')], jobs=translate_job),
+                FakeGitHub(runs=[nightly_run(1, 'success')], branch_pulls={'anya/sync-restore': [pull('anya', 7100)]}),
+                None,
+            ),
         }
-        for case, (github, user_map) in cases.items():
+        for case, (smartling, github, user_map) in cases.items():
             with self.subTest(case):
                 asana = FakeAsana()
 
-                run(FakeSmartling([smartling_issue()]), asana, github=github, user_map=user_map)
+                run(smartling, asana, github=github, user_map=user_map)
 
                 self.assertEqual(asana.created[0]['assignee'], 'dri')
 
@@ -251,6 +274,21 @@ class OpenIssueTaskTests(unittest.TestCase):
         run(FakeSmartling([smartling_issue()]), asana)
 
         self.assertEqual([task['assignee'] for task in asana.created], ['dri'])
+
+    def testWhenOneIssueFailsThenTheOthersStillGetTasksAndTheRunFails(self):
+        issues = [smartling_issue(3600), smartling_issue(3601), smartling_issue(3602, job_uid='deleted')]
+        smartling = FakeSmartling(issues, missing_strings={'hash-3600'})
+        asana = FakeAsana(failing_issues={3601})
+
+        rows, failed, _ = run(smartling, asana)
+
+        self.assertTrue(failed)
+        self.assertEqual([task['name'] for task in asana.created], [f'Smartling open issue #3602 (iOS): {KEY}'])
+        self.assertEqual(rows, [
+            '| #3600 | failed, retried next night | |',
+            '| #3601 | failed, retried next night | @frosty (added the string) |',
+            '| #3602 | opened a task | @frosty (added the string) |',
+        ])
 
     def testWhenTheIssueWasRaisedInATranslateJobThenItsPullRequestsAuthorGetsTheTask(self):
         smartling = FakeSmartling([smartling_issue(job_uid='label')], jobs={
@@ -266,7 +304,7 @@ class OpenIssueTaskTests(unittest.TestCase):
     def testWhenItIsADryRunThenNoTaskIsOpened(self):
         asana = FakeAsana()
 
-        rows, _ = run(FakeSmartling([smartling_issue()]), asana, dry_run=True)
+        rows, _, _ = run(FakeSmartling([smartling_issue()]), asana, dry_run=True)
 
         self.assertEqual(asana.created, [])
         self.assertEqual(rows, ['| #3600 | would open a task | @frosty (added the string) |'])
@@ -274,7 +312,7 @@ class OpenIssueTaskTests(unittest.TestCase):
     def testWhenTheKeyIsTheEnglishTextThenTheLogAndSummaryStillDontShowIt(self):
         smartling = FakeSmartling([smartling_issue()], key=ENGLISH)
 
-        rows, log = run(smartling, FakeAsana(), git=FakeGit(diffs={STRING_COMMIT: f'@@ -1 +1 @@\n+Text("{ENGLISH}")\n'}))
+        rows, _, log = run(smartling, FakeAsana(), git=FakeGit(diffs={STRING_COMMIT: f'@@ -1 +1 @@\n+Text("{ENGLISH}")\n'}))
 
         self.assertNotIn(ISSUE_TEXT, log)
         self.assertNotIn(ENGLISH, log + '\n'.join(rows))

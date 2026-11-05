@@ -154,10 +154,10 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
     /// The `chrome.privacy.services` values extensions set, which let one take over DuckDuckGo autofill.
     /// `nil` without a key-value store.
     public let privacySettings: WebExtensionPrivacySettingsStore?
-
-    /// Reports store installs as retained or churned 14 days later. `nil` without a key-value store.
-    private let retentionReporter: WebExtensionRetentionReporter?
 #endif
+
+    /// Reports store installs as retained or churned 14 days later, or `nil` to not track retention.
+    private let retentionReporter: WebExtensionRetentionReporter?
 
     /// Deduplicates compatibility issues reported by JavaScript and native extension APIs.
     private let compatibilityReporter: WebExtensionAPICompatibilityReporter
@@ -264,6 +264,7 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
                 handlerProvider: WebExtensionHandlerProviding? = nil,
                 nativeMessagingHandler: WebExtensionNativeMessagingHandling? = nil,
                 keyValueStore: (any ThrowingKeyValueStoring)? = nil,
+                retentionStore: WebExtensionRetentionStore? = nil,
                 isAutofillTakeoverEnabled: @escaping @MainActor () -> Bool = { true },
                 scriptletConfiguration: ScriptletConfiguration? = nil,
                 bundledExtensionURL: @escaping (EmbeddedWebExtensionDescriptor) -> URL? = { $0.bundledURL },
@@ -329,10 +330,10 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
         self.messageRouter = messageRouter ?? WebExtensionMessageRouter()
         self.handlerProvider = handlerProvider
         self.nativeMessagingHandler = nativeMessagingHandler
+        self.retentionReporter = retentionStore.map { WebExtensionRetentionReporter(store: $0, pixelFiring: pixelFiring, now: now) }
 #if os(macOS)
         self.commandShortcuts = keyValueStore.map { WebExtensionCommandShortcutStore(keyValueStore: $0) }
         self.privacySettings = keyValueStore.map { WebExtensionPrivacySettingsStore(keyValueStore: $0) }
-        self.retentionReporter = keyValueStore.map { WebExtensionRetentionReporter(keyValueStore: $0, pixelFiring: pixelFiring, now: now) }
 #endif
         self.scriptletConfiguration = scriptletConfiguration
         self.unloadGuard = WebExtensionUnloadGuard()
@@ -372,7 +373,7 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
             MainActor.assumeIsolated {
                 self?.fireBitwardenDailyActiveIfLoaded()
                 self?.fireAPICompatibilityGapsIfDue()
-                self?.fireRetentionIfDue()
+                self?.fireRetentionPixelsIfDue()
             }
         }
         apiCompatibilityHandler.onIssue = { [weak self] issue, url in
@@ -1764,27 +1765,38 @@ public enum WebExtensionControllerDelegateError: Error {
 @MainActor
 private extension WebExtensionManager {
 
-    /// An update isn't an install, matching Windows.
+    /// An update isn't an install, matching Windows, and keeps the original installation's retention wait.
     func reportInstalled(storeIdentity: WebExtensionStoreIdentity?, replacing oldIdentifier: String?) {
         guard oldIdentifier == nil else { return }
-        let extensionID = storeIdentity?.id
-        pixelFiring.fire(.installed(extension: pixelExtension(for: storeIdentity), extensionID: extensionID, category: extensionID.flatMap { chromeWebStore?.category(for: $0) }))
-#if os(macOS)
-        startRetentionWindow(for: extensionID)
-#endif
+        pixelFiring.fire(.installed(extension: pixelExtension(for: storeIdentity),
+                                    extensionID: pixelExtensionID(for: storeIdentity),
+                                    category: pixelCategory(for: storeIdentity)))
+        if let storeIdentity {
+            retentionReporter?.recordInstall(storeIdentity.id)
+        }
     }
 
     func reportUninstalled(_ installedExtension: InstalledWebExtension?) {
         let storeIdentity = installedExtension?.storeIdentity
-        let extensionID = storeIdentity?.id
-        pixelFiring.fire(.uninstalled(extension: pixelExtension(for: storeIdentity), extensionID: extensionID, category: extensionID.flatMap { chromeWebStore?.category(for: $0) }))
+        pixelFiring.fire(.uninstalled(extension: pixelExtension(for: storeIdentity),
+                                      extensionID: pixelExtensionID(for: storeIdentity),
+                                      category: pixelCategory(for: storeIdentity)))
     }
 
     func reportEnabledStateChange(isEnabled: Bool, storeIdentity: WebExtensionStoreIdentity?) {
-        guard let extensionID = storeIdentity?.id else { return }
-        let category = chromeWebStore?.category(for: extensionID)
+        let extensionID = pixelExtensionID(for: storeIdentity)
+        let category = pixelCategory(for: storeIdentity)
         pixelFiring.fire(isEnabled ? .enabled(extensionID: extensionID, category: category)
                                    : .disabled(extensionID: extensionID, category: category))
+    }
+
+    /// The Chrome Web Store ID pixels send, or `other` for an extension that didn't come from the store.
+    func pixelExtensionID(for storeIdentity: WebExtensionStoreIdentity?) -> String {
+        storeIdentity?.id ?? WebExtensionPixelExtension.other.parameterValue
+    }
+
+    func pixelCategory(for storeIdentity: WebExtensionStoreIdentity?) -> String? {
+        storeIdentity.flatMap { chromeWebStore?.category(for: $0.id) }
     }
 }
 
@@ -1795,14 +1807,10 @@ private extension WebExtensionManager {
 @MainActor
 private extension WebExtensionManager {
 
-    /// Starts a store install's 14-day retention window.
-    func startRetentionWindow(for extensionID: String?) {
-        guard let extensionID else { return }
-        retentionReporter?.recordInstall(extensionID)
-    }
-
-    func fireRetentionIfDue() {
-        retentionReporter?.reportIfDue(installedExtensions: installationStore.installedExtensions) { chromeWebStore?.category(for: $0) }
+    /// Retention is judged only while the store catalog is available.
+    func fireRetentionPixelsIfDue() {
+        guard let chromeWebStore, !chromeWebStore.catalogExtensionIDs.isEmpty else { return }
+        retentionReporter?.reportIfDue(installedExtensions: installationStore.installedExtensions) { chromeWebStore.category(for: $0) }
     }
 }
 #endif

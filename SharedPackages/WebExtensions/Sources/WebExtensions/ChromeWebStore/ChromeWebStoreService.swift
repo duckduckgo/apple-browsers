@@ -31,7 +31,7 @@ public protocol ChromeWebStoreManaging: AnyObject {
     /// The catalog's entry for the extension with the Chrome Web Store `identifier`, such as `.bitwarden`,
     /// or `nil` for an extension the catalog doesn't list.
     func catalogEntry(of identifier: String) -> ExtensionsCatalogSubfeature?
-    /// The entry's store listing, or `nil` when its `name` or `cwsUri` is missing.
+    /// The entry's store listing, or `nil` when its `id`, `name` or `cwsUri` is missing.
     func listing(of subfeature: ExtensionsCatalogSubfeature) -> ChromeWebStoreListing?
     /// The catalog's `categoryId` for the extension with the Chrome Web Store `extensionID`, or `nil` when the catalog doesn't list it.
     func category(for extensionID: String) -> String?

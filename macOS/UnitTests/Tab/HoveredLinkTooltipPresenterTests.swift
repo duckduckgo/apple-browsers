@@ -144,6 +144,14 @@ final class HoveredLinkTooltipPresenterTests: XCTestCase {
                        NSWorkspace.shared.accessibilityDisplayShouldReduceMotion ? 0 : 0.12)
     }
 
+    func testWhenTooltipAppearsThenItFadesIn() {
+        let harness = TooltipHarness()
+        harness.presenter.update(url: URL(string: "https://example.com/first")!)
+        harness.scheduler.run(at: 0)
+        XCTAssertEqual(harness.animator.animations.last?.opacity, 1)
+        XCTAssertGreaterThan(harness.animator.animations.last?.duration ?? 0, 0)
+    }
+
     func testWhenTooltipAppearsThenInitialPlacementIsImmediate() {
         let harness = TooltipHarness()
         harness.showFirstLink()
@@ -506,6 +514,8 @@ private final class TooltipHarness {
         presenter.update(url: URL(string: "https://example.com/first")!)
         scheduler.run(at: 0)
         XCTAssertTrue(tooltip?.isVisible == true)
+        // Tests below index fade-out animations from zero.
+        animator.forgetAnimations()
     }
 }
 
@@ -568,6 +578,10 @@ private final class TooltipAnimator {
         if completesImmediately {
             completion()
         }
+    }
+
+    func forgetAnimations() {
+        animations.removeAll()
     }
 
     func complete(at index: Int) {

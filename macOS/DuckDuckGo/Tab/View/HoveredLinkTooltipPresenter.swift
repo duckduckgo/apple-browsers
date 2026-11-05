@@ -231,9 +231,10 @@ final class HoveredLinkTooltipPresenter {
         guard let hostView, let parent = hostView.window, parent.isKeyWindow, parent.isVisible else { return }
         label.stringValue = hoveredURL.absoluteString
         layout()
-        window.alphaValue = 1
+        window.alphaValue = 0
         parent.addChildWindow(window, ordered: .above)
         window.orderFront(nil)
+        animate(window, 1, 0.25) {}
         hasShownTooltip = true
         appearanceObservation = hostView.observe(\.effectiveAppearance, options: [.new]) { [weak self] hostView, _ in
             self?.window.appearance = hostView.effectiveAppearance

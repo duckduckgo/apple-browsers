@@ -161,11 +161,24 @@ Example: `iOS/DuckDuckGoTests/SyncUI/SyncSuccessViewTests.swift`.
 Snapshots are pixel-strict, so the test environment is validated before each assertion:
 
 - **iOS**: must run on **iOS 27.0** at **@3x** (simulator runtime).
-- **macOS**: must run on **macOS 27** — major version only; minor and patch are ignored.
+- **macOS**: must run on **macOS 27**. References are compared only on the CI version, `SnapshotEnvironment.ciMacOSVersion` (**27.0**, matched on major.minor).
 
-iOS renders in a pinnable simulator runtime, so it validates major.minor. macOS renders on the uncontrolled host and CI can't guarantee an exact point release, so the macOS guard only checks the major version — we accept the small flakiness risk from minor/patch rendering differences rather than fail every time CI rolls forward. A mismatch → the helper records a failure (`XCTFail` / `Issue.record`) with an explanatory message and skips the comparison — the same in CI and locally; a developer on a different OS opts out by not running the snapshot suite.
+A mismatch on the checks above makes the helper record a failure (`XCTFail` / `Issue.record`) with an explanatory message and skip the comparison. The exception is a local Mac on another macOS major version: its snapshot assertions are skipped with a warning, so engineers who haven't upgraded can still run the suites.
 
-When the OS rolls forward, bump `SnapshotEnvironment.expectedIOSVersion` / `expectedMacOSVersion` and re-record affected references.
+iOS renders in a pinnable simulator runtime, so every machine matches CI. macOS renders on the host, and engineers install point releases (27.1, 27.2…) that can render differently from CI. CI's renderings are the source of truth, so on macOS:
+
+| Where | OS | Behavior |
+|---|---|---|
+| CI (`REQUIRE_SNAPSHOT_REFERENCES=1`) | the CI version | Compares against the references. |
+| CI (`REQUIRE_SNAPSHOT_REFERENCES=1`) | another 27.x | Compares against the references and prints a warning to bump `ciMacOSVersion`, so a runner update fails only the snapshots whose rendering changed. |
+| CI (`REQUIRE_SNAPSHOT_REFERENCES=1`) | another major | Fails. |
+| Locally | the CI version | Compares against the references. |
+| Locally | another 27.x | Records missing references (and everything with `GENERATE_SNAPSHOTS`), but doesn't compare existing ones and prints a warning. `COMPARE_SNAPSHOTS=1` compares anyway. |
+| Locally | another major | Skips snapshot assertions and prints a warning. Nothing is compared or recorded. |
+
+If you record on another 27.x and CI fails because its renderings differ, CI's images replace yours in the snapshots PR. The macOS PR checks upload every image they render as the `macos-rendered-snapshots` artifact, laid out like `SnapshotReferences`. `SNAPSHOT_EXPORT_DIR` turns that export on.
+
+When the OS rolls forward, bump `SnapshotEnvironment.expectedIOSVersion` / `ciMacOSVersion` and re-record affected references.
 
 ## Comparison tolerance
 
@@ -174,13 +187,13 @@ Every image helper compares with two thresholds:
 - `perceptualPrecision` (default `0.98`): how close a pixel's color must be to the reference to count as matching.
 - `precision` (default `0.9999`): the fraction of pixels that must match. Up to 0.01% may differ — about 300 pixels on a full @3x iPhone screen.
 
-Even with an identical OS, Xcode and simulator runtime, different CI runners can anti-alias overlapping vector shapes slightly differently. The result is deterministic per runner, so test retries don't help. The `precision` budget absorbs those few edge pixels while any real layout, text or color change still fails. Override either argument on a single call only when a view needs a different budget.
+Even with an identical OS, Xcode and simulator runtime, different CI runners can anti-alias overlapping vector shapes slightly differently. The result is deterministic per runner, so test retries don't help. The `precision` budget absorbs those few edge pixels while any real layout, text or color change still fails. macOS snapshots render in sRGB whatever display the machine has, so a Mac with a P3 display and a CI VM produce the same colors. Sizes measured from the view (`.intrinsicContentSize`, or a fixed width with fitted height) round up to whole points on macOS, so a fractional text width can't produce a 1px-wider image on another machine. Override either argument on a single call only when a view needs a different budget.
 
 ## Reference storage
 
 Reference images live in the `SnapshotReferences` git submodule at the repo root, mirroring each test's repo-relative path (`<platform>/…/__Snapshots__/<TestClass>/`). The wrapper redirects the library's `snapshotDirectory` there automatically, so references stay out of the app trees.
 
-Each image name carries the recording environment as a suffix so references are unambiguous across OSes: iOS uses `…_iOS-27-0` (major.minor), macOS uses `…_macOS-27` (major only, matching the guard granularity).
+iOS image names carry the recording environment as a suffix (`…_iOS-27-0`). macOS names carry none, so recordings from any 27.x and CI's renderings write the same file, and moving CI to a new macOS needs no rename.
 
 ## Recording
 
@@ -195,7 +208,7 @@ After re-recording, inspect every diff and commit only the intentional ones.
 
 `SKIP_SNAPSHOT_TESTS=1` in the test scheme's env turns off **every** image-snapshot assertion. Skipped assertions return silently and go **green** — no `XCTFail` / `Issue.record` — so the suites still run but stop comparing images. Use it as a global kill switch when a rendering or environment change would otherwise turn snapshot suites red across the board, while you investigate. Accepts `1` / `true` / `yes` (case-insensitive) and takes precedence over `GENERATE_SNAPSHOTS`.
 
-The `iOS Browser` scheme sets it to `0`, so iOS snapshots run locally and in CI. The macOS schemes (`macOS Browser`, `macOS Browser App Store`, `macOS Unit Tests`) set it to `1` because the CI runners are still on macOS 26, while macOS references are pinned to macOS 27. To pause or resume snapshots for a platform, change the value in that platform's schemes.
+The `iOS Browser` scheme and the macOS schemes (`macOS Browser`, `macOS Browser CI`, `macOS Browser App Store`, `macOS Unit Tests`) set it to `0`, so snapshots run locally and in CI. To pause or resume snapshots for a platform, change the value in that platform's schemes.
 
 ## Conventions
 

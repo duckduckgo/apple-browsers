@@ -50,6 +50,8 @@ func assertSnapshot<Value, Format>(
         named: resolvedName,
         record: record,
         snapshotDirectory: snapshotDirectory,
+        comparisonMode: SnapshotEnvironment.currentComparisonMode(),
+        exportDirectory: snapshotExportDirectory(file: filePath),
         timeout: timeout,
         fileID: fileID,
         file: filePath,
@@ -57,6 +59,66 @@ func assertSnapshot<Value, Format>(
         line: line,
         column: column
     )
+
     guard let message = failure else { return }
     recordSnapshotIssue(message, fileID: fileID, file: filePath, line: line, column: column)
+}
+
+func verifySnapshot<Value, Format>(
+    of value: @autoclosure () throws -> Value,
+    as snapshotting: Snapshotting<Value, Format>,
+    named name: String?,
+    record: SnapshotTestingConfiguration.Record?,
+    snapshotDirectory: String?,
+    comparisonMode: SnapshotComparisonMode,
+    exportDirectory: String?,
+    timeout: TimeInterval = 5,
+    fileID: StaticString,
+    file filePath: StaticString,
+    testName: String,
+    line: UInt,
+    column: UInt
+) -> String? {
+    var rendered: Format?
+    var comparing = snapshotting
+    comparing.snapshot = { value in
+        snapshotting.snapshot(value).map { format in
+            rendered = format
+            return format
+        }
+    }
+    if case .skipComparison = comparisonMode {
+        comparing.diffing.diffV2 = { _, _ in nil }
+    }
+
+    let failure = SnapshotTesting.verifySnapshot(
+        of: try value(),
+        as: comparing,
+        named: name,
+        record: record,
+        snapshotDirectory: snapshotDirectory,
+        timeout: timeout,
+        fileID: fileID,
+        file: filePath,
+        testName: testName,
+        line: line,
+        column: column
+    )
+    if let rendered, let exportDirectory {
+        var exporting = snapshotting
+        exporting.snapshot = { _ in Async(value: rendered) }
+        _ = SnapshotTesting.verifySnapshot(
+            of: try value(),
+            as: exporting,
+            named: name,
+            record: .all,
+            snapshotDirectory: exportDirectory,
+            fileID: fileID,
+            file: filePath,
+            testName: testName,
+            line: line,
+            column: column
+        )
+    }
+    return failure
 }

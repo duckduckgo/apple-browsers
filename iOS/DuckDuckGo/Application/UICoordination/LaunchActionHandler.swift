@@ -131,9 +131,8 @@ final class LaunchActionHandler: LaunchActionHandling {
             userActivityHandler.handleUserActivity(userActivity)
         case .standardLaunch(let lastBackgroundDate, let isFirstForeground, let hasCompletedAuthentication):
             launchSourceManager.setSource(.standard)
-            let outcome = idleReturnOutcome
-            let isAfterIdleReturn = outcome.isAfterIdle
-            switch outcome {
+            let isAfterIdleReturn = idleReturnOutcome.isAfterIdle
+            switch idleReturnOutcome {
             case .afterIdle(.ntp, let timeAwayMs):
                 let flagOn = featureFlagger.isFeatureOn(.alwaysShowKeyboardOnNewTabPage)
                 idleReturnDelegate?.showNewTabPageAfterIdleReturn(timeAwayMs: timeAwayMs, isFirstForeground: isFirstForeground) { [self] result in

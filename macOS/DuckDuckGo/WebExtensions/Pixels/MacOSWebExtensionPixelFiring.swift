@@ -24,12 +24,12 @@ enum WebExtensionPixel: PixelKit.Event {
 
     // MARK: - Installation
 
-    case installed(extension: WebExtensionPixelExtension, extensionID: String?, category: String?)
+    case installed(extension: WebExtensionPixelExtension, extensionID: String, category: String?)
     case installError(extension: WebExtensionPixelExtension, error: Error)
 
     // MARK: - Uninstallation
 
-    case uninstalled(extension: WebExtensionPixelExtension, extensionID: String?, category: String?)
+    case uninstalled(extension: WebExtensionPixelExtension, extensionID: String, category: String?)
     case uninstallError(error: Error)
     case uninstalledAll
     case uninstallAllError(error: Error)
@@ -251,8 +251,7 @@ enum WebExtensionPixel: PixelKit.Event {
             return ["extension_loaded": extensionLoaded ? "true" : "false"]
         case .installed(let pixelExtension, let extensionID, let category),
              .uninstalled(let pixelExtension, let extensionID, let category):
-            var params = ["extension": pixelExtension.parameterValue]
-            params["extension_id"] = extensionID
+            var params = ["extension": pixelExtension.parameterValue, "extension_id": extensionID]
             params["category"] = category
             return params
         case .installError(let pixelExtension, _),
@@ -427,6 +426,8 @@ struct MacOSWebExtensionPixelFiring: WebExtensionPixelFiring {
         switch event {
         case .bitwardenDailyActive, .apiCompatibilityGaps:
             frequency = .daily
+        case .enabled, .disabled, .retained, .churned:
+            frequency = .dailyAndCount
         case .defaultPasswordManagerSet:
             frequency = .standard
         default:

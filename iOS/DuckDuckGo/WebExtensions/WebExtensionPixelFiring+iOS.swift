@@ -174,7 +174,11 @@ struct iOSWebExtensionPixelFiring: WebExtensionPixelFiring {
                           options: .parameters(["extension_loaded": extensionLoaded ? "true" : "false"]))
         case .cpmBackgroundLoadRestart, .cpmMessagingEpisode, .cpmNetworkProcessRecoveryApplied, .cpmRecovery, .cpmStartupResponseMissing:
             fireCPMPixel(event)
-        case .defaultPasswordManagerSet, .bitwardenDailyActive, .apiCompatibilityGaps, .enabled, .disabled, .retained, .churned:
+        case .enabled, .disabled:
+            // Store extension pixels are measured on macOS only. iOS can still turn a debug-menu
+            // extension on or off, so these are dropped rather than asserted.
+            break
+        case .defaultPasswordManagerSet, .bitwardenDailyActive, .apiCompatibilityGaps, .retained, .churned:
             // Chrome extensions, and so password manager extensions, are only supported on macOS, so
             // these are only sent there.
             assertionFailure("\(event) is only sent on macOS")

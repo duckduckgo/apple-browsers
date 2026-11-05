@@ -6016,3 +6016,12 @@
 /* Title for screen to screen confirming what data to import from a zip file (bookmarks and /or passwords) */
 "zip.content.import.types.title" = "Ko tu gribi importēt?";
 
+
+/* Fireproofing setting toggle label */
+"preserveLogins.askOnSignIn" = "Pierakstoties prasīt padarīt vietnes ugunsdrošas";
+
+/* Empty Fireproof sites list */
+"preserveLogins.emptyState" = "Vēl nav ugunsdrošu vietņu";
+
+/* Button to remove all Fireproof sites */
+"preserveLogins.removeAllSites" = "Noņemt visas ugunsdrošās vietnes";

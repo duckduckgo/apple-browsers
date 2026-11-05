@@ -6016,3 +6016,12 @@
 /* Title for screen to screen confirming what data to import from a zip file (bookmarks and /or passwords) */
 "zip.content.import.types.title" = "Τι θέλετε να εισαγάγετε;";
 
+
+/* Fireproofing setting toggle label */
+"preserveLogins.askOnSignIn" = "Ζητήστε διαγραφή δραστηριότητας στους ιστότοπους κατά τη σύνδεση";
+
+/* Empty Fireproof sites list */
+"preserveLogins.emptyState" = "Δεν υπάρχουν ακόμα ιστότοποι στη λίστα διαγραφής δραστηριότητας";
+
+/* Button to remove all Fireproof sites */
+"preserveLogins.removeAllSites" = "Κατάργηση όλων των ασφαλών ιστότοπων";

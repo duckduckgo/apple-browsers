@@ -288,6 +288,9 @@ class MainViewController: UIViewController {
     private var hasLoadedInitialView = false
     private weak var burningOverlayView: UIView?
     private(set) var isStartupOnboardingPending = false
+    /// Emits when the onboarding state changes or the browser first appears, so the main menu is rebuilt with the state it can now read.
+    let menuRebuildRequests = PassthroughSubject<Void, Never>()
+    private var hasRequestedMenuRebuildOnFirstAppearance = false
     private(set) lazy var startupOnboardingCover = StartupOnboardingCover(
         parentViewController: self,
         fallbackBackgroundColor: themeManager.currentTheme.onboardingBackgroundColor
@@ -1123,6 +1126,7 @@ class MainViewController: UIViewController {
 
         if isStartupOnboardingPending {
             startupOnboardingCover.attach()
+            menuRebuildRequests.send()
         }
 
         loadInitialViewIfNeeded()
@@ -1130,6 +1134,10 @@ class MainViewController: UIViewController {
 
     override func viewDidAppear(_ animated: Bool) {
         super.viewDidAppear(animated)
+        if !hasRequestedMenuRebuildOnFirstAppearance {
+            hasRequestedMenuRebuildOnFirstAppearance = true
+            menuRebuildRequests.send()
+        }
         recordPendingNewTabPagePresentationIfVisible()
         remoteMessageImpressionReporter.browserDidAppear()
 
@@ -9474,6 +9482,7 @@ extension MainViewController: OnboardingDelegate {
         isStartupOnboardingPending = false
         tutorialSettings.hasSeenOnboarding = true
         clearDuckAIOnboardingResumeStepIfNeeded()
+        menuRebuildRequests.send()
     }
 
     func needsToShowOnboardingIntro() -> Bool {

@@ -26,6 +26,88 @@ final class PacketTunnelProviderTests: XCTestCase {
 
     typealias TunnelError = PacketTunnelProvider.TunnelError
 
+    private var reconnectDefaults: UserDefaults!
+    private var reconnectDefaultsSuiteName: String!
+
+    override func setUp() {
+        super.setUp()
+        reconnectDefaultsSuiteName = "PacketTunnelProviderTests.\(UUID().uuidString)"
+        reconnectDefaults = UserDefaults(suiteName: reconnectDefaultsSuiteName)
+    }
+
+    override func tearDown() {
+        reconnectDefaults.removePersistentDomain(forName: reconnectDefaultsSuiteName)
+        reconnectDefaults = nil
+        reconnectDefaultsSuiteName = nil
+        super.tearDown()
+    }
+
+    func testReconnectIsAllowedByDefaultForEveryStartupMethod() {
+        let reconnectGuard = PacketTunnelProvider.ReconnectGuard(defaults: reconnectDefaults)
+
+        XCTAssertNoThrow(try reconnectGuard.validate(startupMethod: .automaticOnDemand))
+        XCTAssertNoThrow(try reconnectGuard.validate(startupMethod: .manualByTheSystem))
+        XCTAssertNoThrow(try reconnectGuard.validate(startupMethod: .manualByMainApp))
+    }
+
+    func testBlockedReconnectPersistsAcrossGuardAndDefaultsInstances() throws {
+        PacketTunnelProvider.ReconnectGuard(defaults: reconnectDefaults).isBlocked = true
+        let restartedDefaults = try XCTUnwrap(UserDefaults(suiteName: reconnectDefaultsSuiteName))
+        let restartedGuard = PacketTunnelProvider.ReconnectGuard(defaults: restartedDefaults)
+
+        XCTAssertThrowsError(try restartedGuard.validate(startupMethod: .automaticOnDemand)) { error in
+            XCTAssertEqual((error as? TunnelError)?.code, .reconnectBlocked)
+        }
+    }
+
+    func testBlockedReconnectRejectsSystemStartsWithoutMainAppOptions() {
+        let reconnectGuard = PacketTunnelProvider.ReconnectGuard(defaults: reconnectDefaults)
+        reconnectGuard.isBlocked = true
+        let options = StartupOptions(options: [:])
+
+        XCTAssertThrowsError(try reconnectGuard.validate(startupMethod: options.startupMethod)) { error in
+            XCTAssertEqual((error as? TunnelError)?.code, .reconnectBlocked)
+        }
+        XCTAssertTrue(reconnectGuard.isBlocked)
+    }
+
+    func testManualAppStartCanRetryWithoutClearingTheGuardBeforeSuccess() {
+        let reconnectGuard = PacketTunnelProvider.ReconnectGuard(defaults: reconnectDefaults)
+        reconnectGuard.isBlocked = true
+
+        XCTAssertNoThrow(try reconnectGuard.validate(startupMethod: .manualByMainApp))
+        XCTAssertTrue(reconnectGuard.isBlocked)
+        XCTAssertThrowsError(try reconnectGuard.validate(startupMethod: .automaticOnDemand))
+    }
+
+    func testSuccessfulManualAppStartAllowsSubsequentAutomaticReconnect() {
+        let reconnectGuard = PacketTunnelProvider.ReconnectGuard(defaults: reconnectDefaults)
+        reconnectGuard.isBlocked = true
+
+        reconnectGuard.startSucceeded(startupMethod: .manualByMainApp)
+
+        XCTAssertFalse(reconnectGuard.isBlocked)
+        XCTAssertNoThrow(try reconnectGuard.validate(startupMethod: .automaticOnDemand))
+    }
+
+    func testOtherStartSourcesCannotClearTheReconnectGuard() {
+        let reconnectGuard = PacketTunnelProvider.ReconnectGuard(defaults: reconnectDefaults)
+        reconnectGuard.isBlocked = true
+
+        reconnectGuard.startSucceeded(startupMethod: .automaticOnDemand)
+        reconnectGuard.startSucceeded(startupMethod: .manualByTheSystem)
+
+        XCTAssertThrowsError(try reconnectGuard.validate(startupMethod: .automaticOnDemand))
+    }
+
+    func testReconnectBlockedErrorHasItsOwnCodeForProcessBoundaries() {
+        let error = TunnelError.reconnectBlocked as NSError
+
+        XCTAssertEqual(error.domain, TunnelError.errorDomain)
+        XCTAssertEqual(TunnelError.Code(rawValue: error.code), .reconnectBlocked)
+        XCTAssertEqual(error.localizedDescription, TunnelError.reconnectBlocked.errorDescription)
+    }
+
     func testPostWakeCounterReportsOnlyTheThirdFailure() {
         let date = Date()
         var counter = PacketTunnelProvider.PostWakeConnectivityFailures(wakeDate: date)

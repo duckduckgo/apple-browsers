@@ -38,12 +38,12 @@ struct DuckAIEntryWideEventDataTests {
     }
 
     @available(iOS 16, *)
-    @Test("Metadata exposes the entry names and 1.2.0", .timeLimit(.minutes(1)))
+    @Test("Metadata exposes the entry names and 1.3.0", .timeLimit(.minutes(1)))
     func metadataExposesEntryNames() {
         #expect(DuckAIEntryWideEventData.metadata.pixelName == "duckai_entry")
         #expect(DuckAIEntryWideEventData.metadata.featureName == "duckai_entry")
         #expect(DuckAIEntryWideEventData.metadata.type == "ios-duckai-entry")
-        #expect(DuckAIEntryWideEventData.metadata.version == "1.2.0")
+        #expect(DuckAIEntryWideEventData.metadata.version == "1.3.0")
         #expect(DuckAIEntryWideEventData.appTerminatedReason == "app_terminated")
     }
 
@@ -86,6 +86,20 @@ struct DuckAIEntryWideEventDataTests {
           ] as [(AIChatEntryPointSource, Bool, DuckAIEntryWideEventData.Surface)])
     func surfaceFollowsSourceAndNewTab(source: AIChatEntryPointSource, opensNewTab: Bool, expected: DuckAIEntryWideEventData.Surface) {
         #expect(DuckAIEntryWideEventData.Surface(source: source, opensNewTab: opensNewTab) == expected)
+    }
+
+    @available(iOS 16, *)
+    @Test("A contextual entry opening beside the page is the contextual sidebar",
+          .timeLimit(.minutes(1)),
+          arguments: [
+            (AIChatEntryPointSource.contextualChat, false, DuckAIEntryWideEventData.Surface.contextualSidebar),
+            (.contextualChat, true, .duckAITab),
+            (.addressBarPrompt, false, .duckAITab),
+          ] as [(AIChatEntryPointSource, Bool, DuckAIEntryWideEventData.Surface)])
+    func sidebarSurfaceIsOnlyContextual(source: AIChatEntryPointSource, opensNewTab: Bool, expected: DuckAIEntryWideEventData.Surface) {
+        let surface = DuckAIEntryWideEventData.Surface(source: source, opensNewTab: opensNewTab, opensInSidebar: true)
+        #expect(surface == expected)
+        #expect(surface.isContextual == (expected != .duckAITab))
     }
 
     @available(iOS 16, *)
@@ -141,7 +155,7 @@ struct DuckAIEntryWideEventDataTests {
     func enumRawValuesMatchDefinition() {
         #expect(Set(DuckAIEntryWideEventData.StatusReason.allCases.map(\.rawValue)) == ["left_duckai", "new_entry", "app_backgrounded"])
         #expect(Set(DuckAIEntryWideEventData.ChatState.allCases.map(\.rawValue)) == ["new", "existing"])
-        #expect(Set(DuckAIEntryWideEventData.Surface.allCases.map(\.rawValue)) == ["duck_ai_tab", "contextual_sheet"])
+        #expect(Set(DuckAIEntryWideEventData.Surface.allCases.map(\.rawValue)) == ["duck_ai_tab", "contextual_sheet", "contextual_sidebar"])
     }
 
     @available(iOS 16, *)

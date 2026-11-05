@@ -28,7 +28,8 @@ import Testing
 final class UpdatePromptStageTrackerTests {
 
     private let store = InMemoryThrowingKeyValueStore().throwingKeyedStoring() as any ThrowingKeyedStoring<UpdateControllerSettings>
-    private let settings = MoreProminentUpdatesSettings(hoursUntilFirstPrompt: 48, hoursUntilSecondPrompt: 96, hoursUntilAppStoreUpdateAvailable: 24)
+    private var settings = MoreProminentUpdatesSettings(hoursUntilFirstPrompt: 48, hoursUntilSecondPrompt: 96, hoursUntilAppStoreUpdateAvailable: 24)
+    private var forcedStage: UpdatePromptStage?
     private let day0 = Date(timeIntervalSince1970: 1_800_000_000)
     private lazy var now = day0
     private var scheduled: (delay: TimeInterval, action: () -> Void)?
@@ -36,13 +37,14 @@ final class UpdatePromptStageTrackerTests {
 
     private func makeTracker(installedVersion: String = "1.0.0 (100)", reevaluationTriggers: AnyPublisher<Void, Never>? = nil) -> UpdatePromptStageTracker {
         UpdatePromptStageTracker(store: store,
-                                 settings: { [settings] in settings },
+                                 settings: { [unowned self] in settings },
                                  installedVersion: installedVersion,
                                  now: { [unowned self] in now },
                                  schedule: { [unowned self] delay, action in
                                      scheduled = (delay, action)
                                      return AnyCancellable { [unowned self] in scheduled = nil }
                                  },
+                                 forcedStage: { [unowned self] in forcedStage },
                                  reevaluationTriggers: reevaluationTriggers ?? becomeActive.eraseToAnyPublisher())
     }
 
@@ -209,6 +211,58 @@ final class UpdatePromptStageTrackerTests {
         for await _ in reachedSecondPrompt {}
 
         #expect(tracker.stage == .secondPrompt)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("New settings apply at the next re-evaluation, rescheduling the pending threshold", .timeLimit(.minutes(1)))
+    func settingsChangesApplyOnReevaluation() {
+        let tracker = makeTracker()
+        tracker.updateCheckDidFinish(isUpdateAvailable: true, isCritical: false)
+        advance(by: .hours(3))
+
+        settings = MoreProminentUpdatesSettings(.internal)
+        becomeActive.send()
+
+        #expect(tracker.stage == .firstPrompt)
+        #expect(scheduled?.delay == .hours(1))
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("A forced stage applies only while an update is available, and the ramp keeps running underneath", .timeLimit(.minutes(1)))
+    func forcedStageOverridesWhileUpdateIsAvailable() {
+        forcedStage = .secondPrompt
+        let tracker = makeTracker()
+
+        tracker.updateCheckDidFinish(isUpdateAvailable: false, isCritical: false)
+        #expect(tracker.stage == .none)
+
+        tracker.updateCheckDidFinish(isUpdateAvailable: true, isCritical: false)
+        #expect(tracker.stage == .secondPrompt)
+        #expect(scheduled?.delay == .hours(48))
+
+        forcedStage = nil
+        tracker.reevaluate()
+        #expect(tracker.stage == .available)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Moving the clock to a stage starts it now or after the time remaining, and resetting starts again from now", .timeLimit(.minutes(1)))
+    func movingAndResettingTheClock() {
+        let tracker = makeTracker()
+        tracker.updateCheckDidFinish(isUpdateAvailable: true, isCritical: false)
+
+        tracker.moveClock(to: .secondPrompt, timeRemaining: .minutes(1))
+        #expect(tracker.stage == .firstPrompt)
+        #expect(scheduled?.delay == .minutes(1))
+
+        tracker.moveClock(to: .firstPrompt)
+        #expect(tracker.clockStartDate == now - .hours(48))
+        #expect(tracker.stage == .firstPrompt)
+        #expect(scheduled?.delay == .hours(48))
+
+        tracker.resetClock()
+        #expect(tracker.clockStartDate == now)
+        #expect(tracker.stage == .available)
     }
 
     @available(iOS 16, macOS 13, *)

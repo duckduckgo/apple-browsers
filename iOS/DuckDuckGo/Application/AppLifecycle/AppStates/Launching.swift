@@ -446,7 +446,7 @@ struct Launching: LaunchingHandling {
                 await mainViewController?.mainMenuRecentChats() ?? .init(recentChats: [], totalChatCount: 0)
             },
             .bookmarksTree: bookmarksMenuTree
-        ], rebuildTriggers: [mainMenuBookmarks.changes, mainViewController.onboardingStateChanges.eraseToAnyPublisher()])
+        ], rebuildTriggers: [mainMenuBookmarks.changes, mainViewController.menuRebuildRequests.eraseToAnyPublisher()])
 
         // MARK: - App Services aggregation
         // This object serves as a central hub for app-wide services that:

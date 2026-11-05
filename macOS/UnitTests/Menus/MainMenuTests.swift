@@ -397,6 +397,20 @@ class MainMenuTests: XCTestCase {
         XCTAssertEqual(result.keyEquivalentModifierMask, [.command, .shift])
     }
 
+    @MainActor
+    func testWhenDataImportHistoryTurnsOnWhileRunning_ThenImportBookmarksMenuItemGetsEllipsisOnNextUpdate() {
+        let featureFlagger = MockFeatureFlagger()
+        let sut = makeMainMenu(aiChatConfig: DummyAIChatConfig(), featureFlagger: featureFlagger)
+        sut.update()
+        let titleWithFlagOff = sut.importBookmarksMenuItem.title
+        featureFlagger.featuresStub = [FeatureFlag.dataImportHistory.rawValue: true]
+
+        sut.update()
+
+        XCTAssertEqual(titleWithFlagOff, UserText.importBookmarks)
+        XCTAssertEqual(sut.importBookmarksMenuItem.title, "Import Bookmarks…")
+    }
+
     // MARK: - AI Chat
 
     @MainActor
@@ -413,9 +427,9 @@ class MainMenuTests: XCTestCase {
         XCTAssertTrue(aiChatMenu?.isHidden == true, "Duck.ai menu item should be hidden when the AI chat flag is false.")
     }
 
-    @MainActor private func makeMainMenu(aiChatConfig: AIChatMenuVisibilityConfigurable) -> MainMenu {
+    @MainActor private func makeMainMenu(aiChatConfig: AIChatMenuVisibilityConfigurable, featureFlagger: FeatureFlagger = MockFeatureFlagger()) -> MainMenu {
         MainMenu(
-            featureFlagger: MockFeatureFlagger(),
+            featureFlagger: featureFlagger,
             bookmarkManager: MockBookmarkManager(),
             historyCoordinator: HistoryCoordinatingMock(),
             recentlyClosedCoordinator: RecentlyClosedCoordinatorMock(),

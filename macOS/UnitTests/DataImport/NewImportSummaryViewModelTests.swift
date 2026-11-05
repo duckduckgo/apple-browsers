@@ -314,13 +314,13 @@ final class NewImportSummaryViewModelTests: XCTestCase {
     func testInitWithHistoryImportEnabledLeavesImportedOutOfTheRows() {
         let summary: DataImportSummary = [
             .bookmarks: .success(DataImport.DataTypeSummary(successful: 32, duplicate: 0, failed: 0)),
-            .passwords: .success(DataImport.DataTypeSummary(successful: 23, duplicate: 0, failed: 0)),
+            .passwords: .success(DataImport.DataTypeSummary(successful: 23, duplicateItems: [duplicatePassword()])),
             .history: .success(DataImport.DataTypeSummary(successful: 1, duplicate: 0, failed: 0))
         ]
 
         let viewModel = makeViewModel(summary: summary)
 
-        XCTAssertEqual(primaryTexts(of: viewModel), ["Bookmarks: 32", "Passwords: 23", "History: 1 visit"])
+        XCTAssertEqual(primaryTexts(of: viewModel), ["Bookmarks: 32", "Passwords: 23 / 24", "History: 1 visit"])
     }
 
     func testInitWithHistoryFailureShowsHistoryFailureTitle() {
@@ -499,6 +499,10 @@ final class NewImportSummaryViewModelTests: XCTestCase {
 
     private func makeViewModel(summary: DataImportSummary) -> NewImportSummaryViewModel {
         NewImportSummaryViewModel(summary: summary, isHistoryImportEnabled: true, prefs: mockPreferences, pinningManager: mockPinningManager)
+    }
+
+    private func duplicatePassword() -> DataImport.DataImportItem {
+        .password(title: nil, domain: "example.com", username: "dax")
     }
 
     private func primaryTexts(of viewModel: NewImportSummaryViewModel) -> [String] {

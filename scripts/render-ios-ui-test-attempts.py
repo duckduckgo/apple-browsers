@@ -80,7 +80,7 @@ for stem in expected:
         message = failure.get("message", "") or (failure.text or "").strip()
         test = ".".join(part for part in key if part)
         rows.append(
-            f"| `{clean(test)}` | {clean(root.get('name', stem))} | {occurrences[key]} | "
+            f"| `{clean(test)}` | {clean(stem)} | {occurrences[key]} | "
             f"{attempt or 'unknown'} | {outcome} | {clean(message)} | {links} |"
         )
     if not any(case.find("skipped") is None for case in cases):

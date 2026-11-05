@@ -26,12 +26,14 @@ import WebKit
 struct DuckAISwipeNewChatChromeState {
     let isKeyboardVisible: Bool
     let isGenerating: Bool
+    let isVoiceSessionActive: Bool
+    let isInputHidden: Bool
     /// Top of the bottom chrome (the Duck.ai input bar), in window coordinates; nil when none is showing.
     let bottomChromeMinY: CGFloat?
 }
 
 /// Duck.ai scrolls an inner container, not the web view's scroll view, so the native scroll view never
-/// reports overscroll. Instead a simultaneous pan asks the page whether the container under the finger is
+/// reports overscroll. Instead a simultaneous pan asks the page whether the chat under the finger is
 /// at its bottom, then measures how far the finger keeps pulling up from there.
 @MainActor
 final class DuckAISwipeNewChatHandler: NSObject, UIGestureRecognizerDelegate {
@@ -43,16 +45,26 @@ final class DuckAISwipeNewChatHandler: NSObject, UIGestureRecognizerDelegate {
     private let onStartNewChat: () -> Void
 
     private let pan = UIPanGestureRecognizer()
-    private let haptic = UIImpactFeedbackGenerator(style: .medium)
-    private lazy var hint = DuckAISwipeNewChatHintView()
-    private var hintBottomConstraint: NSLayoutConstraint?
+    private let tickHaptic = UIImpactFeedbackGenerator(style: .light)
+    private let armHaptic = UIImpactFeedbackGenerator(style: .medium)
+    private let indicator: DuckAISwipeNewChatIndicatorView
+    private var indicatorBottomConstraint: NSLayoutConstraint?
+    private let backdrop = UIView()
 
     private var pull = DuckAISwipeNewChat.Pull.idle
-    private var panID = 0
+    /// Where the current pan started, to re-check eligibility as the chrome changes during the pull.
+    private var panStart: (velocity: CGPoint, y: CGFloat, bottomInsetMinY: CGFloat)?
+    /// Bumped by each eligible pan and by `cancel()`, so late page replies and animation completions
+    /// from an earlier interaction do nothing.
+    private var generation = 0
     private var isCheckInFlight = false
+    private var commitState = DuckAISwipeNewChat.Commit.idle
+
+    private var movesContent: Bool { !UIAccessibility.isReduceMotionEnabled }
 
     init(webView: WKWebView,
          hostView: UIView,
+         isFireTab: Bool,
          isFeatureEnabled: @escaping () -> Bool,
          chromeState: @escaping () -> DuckAISwipeNewChatChromeState?,
          onStartNewChat: @escaping () -> Void) {
@@ -61,7 +73,9 @@ final class DuckAISwipeNewChatHandler: NSObject, UIGestureRecognizerDelegate {
         self.isFeatureEnabled = isFeatureEnabled
         self.chromeState = chromeState
         self.onStartNewChat = onStartNewChat
+        indicator = DuckAISwipeNewChatIndicatorView(isFireTab: isFireTab)
         super.init()
+        backdrop.isHidden = true
         pan.addTarget(self, action: #selector(handlePan(_:)))
         pan.delegate = self
         pan.cancelsTouchesInView = false
@@ -69,17 +83,30 @@ final class DuckAISwipeNewChatHandler: NSObject, UIGestureRecognizerDelegate {
         webView.addGestureRecognizer(pan)
     }
 
+    /// Puts the chat back as it was, mid-pull or mid-commit; for when the tab goes off screen.
+    /// With nothing in progress it leaves the web view alone.
+    func cancel() {
+        guard pull != .idle || commitState != .idle || !backdrop.isHidden else { return }
+        pull = .idle
+        panStart = nil
+        commitState = .idle
+        restore()
+    }
+
+    func webViewURLDidChange() {
+        apply(commitState.handle(.urlChanged(chatID: webView?.url?.duckAIChatID)))
+    }
+
     @objc private func handlePan(_ gesture: UIPanGestureRecognizer) {
         guard let hostView else { return }
         let event: DuckAISwipeNewChat.Event
         switch gesture.state {
         case .began:
-            panID += 1
             event = .began(isEligible: beginIfEligible(gesture, in: hostView))
         case .changed:
-            event = .moved(translation: gesture.translation(in: hostView).y)
+            event = pull == .idle || isStillEligible() ? .moved(translation: gesture.translation(in: hostView).y) : .cancelled
         case .ended:
-            event = .ended
+            event = pull == .idle || isStillEligible() ? .ended : .cancelled
         case .cancelled, .failed:
             event = .cancelled
         default:
@@ -88,20 +115,37 @@ final class DuckAISwipeNewChatHandler: NSObject, UIGestureRecognizerDelegate {
         apply(pull.handle(event))
     }
 
-    private func beginIfEligible(_ gesture: UIPanGestureRecognizer, in hostView: UIView) -> Bool {
-        guard let window = hostView.window, let chrome = chromeState() else { return false }
-        let homeIndicatorTop = hostView.convert(CGPoint(x: 0, y: window.bounds.maxY - window.safeAreaInsets.bottom), from: nil).y
+    private func eligibility() -> (eligibility: DuckAISwipeNewChat.Eligibility, chrome: DuckAISwipeNewChatChromeState)? {
+        guard let panStart, let chrome = chromeState() else { return nil }
         let eligibility = DuckAISwipeNewChat.Eligibility(isFeatureEnabled: isFeatureEnabled(),
                                                          isPhone: UIDevice.current.userInterfaceIdiom == .phone,
                                                          hasChat: webView?.url?.duckAIChatID != nil,
                                                          isKeyboardVisible: chrome.isKeyboardVisible,
                                                          isGenerating: chrome.isGenerating,
-                                                         panVelocity: gesture.velocity(in: hostView),
-                                                         startY: gesture.location(in: hostView).y,
-                                                         bottomInsetMinY: homeIndicatorTop)
-        guard eligibility.isEligible else { return false }
-        haptic.prepare()
-        placeHint(in: hostView, above: chrome.bottomChromeMinY ?? window.bounds.maxY - window.safeAreaInsets.bottom)
+                                                         isVoiceSessionActive: chrome.isVoiceSessionActive,
+                                                         isInputHidden: chrome.isInputHidden,
+                                                         panVelocity: panStart.velocity,
+                                                         startY: panStart.y,
+                                                         bottomInsetMinY: panStart.bottomInsetMinY)
+        return (eligibility, chrome)
+    }
+
+    private func isStillEligible() -> Bool {
+        eligibility()?.eligibility.isEligible == true
+    }
+
+    private func beginIfEligible(_ gesture: UIPanGestureRecognizer, in hostView: UIView) -> Bool {
+        guard let window = hostView.window else { return false }
+        let homeIndicatorTop = window.bounds.maxY - window.safeAreaInsets.bottom
+        panStart = (gesture.velocity(in: hostView),
+                    gesture.location(in: hostView).y,
+                    hostView.convert(CGPoint(x: 0, y: homeIndicatorTop), from: nil).y)
+        guard let current = eligibility(), current.eligibility.isEligible else { return false }
+        generation += 1
+        tickHaptic.prepare()
+        armHaptic.prepare()
+        indicator.reset()
+        placeIndicator(in: hostView, above: current.chrome.bottomChromeMinY ?? homeIndicatorTop)
         return true
     }
 
@@ -110,66 +154,186 @@ final class DuckAISwipeNewChatHandler: NSObject, UIGestureRecognizerDelegate {
             switch effect {
             case .checkAtBottom:
                 checkAtBottom()
-            case .showHint(let progress, let isArmed):
-                hint.update(progress: progress, isArmed: isArmed)
-            case .hideHint:
-                hint.hide()
-            case .haptic:
-                haptic.impactOccurred()
+            case .pull(let distance, let progress, let isArmed):
+                followPull(distance: distance, progress: progress, isArmed: isArmed)
+            case .tick(let step):
+                let intensity = 0.4 + 0.5 * CGFloat(step) / CGFloat(DuckAISwipeNewChat.Constants.hapticSteps)
+                tickHaptic.impactOccurred(intensity: intensity)
+                tickHaptic.prepare()
+            case .arm:
+                armHaptic.impactOccurred()
+                armHaptic.prepare()
+            case .springBack:
+                springBack()
             case .startNewChat:
-                onStartNewChat()
+                apply(commitState.handle(.released(chatID: webView?.url?.duckAIChatID)))
             }
         }
     }
 
-    /// The bottom chrome doesn't move during a pull, so the hint is placed once per pan.
-    private func placeHint(in hostView: UIView, above chromeMinYInWindow: CGFloat) {
-        if hint.superview !== hostView {
-            hint.removeFromSuperview()
-            hostView.addSubview(hint)
-            let bottom = hint.bottomAnchor.constraint(equalTo: hostView.bottomAnchor)
-            NSLayoutConstraint.activate([
-                hint.centerXAnchor.constraint(equalTo: hostView.centerXAnchor),
-                hint.leadingAnchor.constraint(greaterThanOrEqualTo: hostView.leadingAnchor, constant: DuckAISwipeNewChat.Constants.hintSpacing),
-                bottom
-            ])
-            hintBottomConstraint = bottom
+    private func apply(_ effects: [DuckAISwipeNewChat.Commit.Effect]) {
+        for effect in effects {
+            switch effect {
+            case .fadeOut:
+                fadeOut()
+            case .requestNewChat:
+                webView?.transform = .identity
+                indicator.transform = .identity
+                indicator.reset()
+                onStartNewChat()
+            case .scheduleTimeout:
+                let generation = generation
+                DispatchQueue.main.asyncAfter(deadline: .now() + DuckAISwipeNewChat.Constants.newChatRevealTimeout) { [weak self] in
+                    guard let self, generation == self.generation else { return }
+                    self.apply(self.commitState.handle(.timedOut))
+                }
+            case .reveal:
+                reveal()
+            case .restore:
+                restore()
+            }
         }
-        hostView.bringSubviewToFront(hint)
+    }
+
+    /// The chat follows the finger up to the trigger, then resists; the indicator rises at a fraction of that.
+    private func followPull(distance: CGFloat, progress: CGFloat, isArmed: Bool) {
+        let constants = DuckAISwipeNewChat.Constants.self
+        let offset = min(distance, constants.triggerDistance)
+            + max(distance - constants.triggerDistance, 0) * constants.overpullResistance
+        indicator.update(progress: progress, isArmed: isArmed)
+        guard movesContent else { return }
+        webView?.transform = CGAffineTransform(translationX: 0, y: -offset)
+        indicator.transform = CGAffineTransform(translationX: 0, y: -offset * constants.indicatorFollow)
+    }
+
+    private func springBack() {
+        let generation = generation
+        UIView.animate(withDuration: DuckAISwipeNewChat.Constants.springBackDuration, delay: 0,
+                       usingSpringWithDamping: 0.85, initialSpringVelocity: 0,
+                       options: [.beginFromCurrentState, .allowUserInteraction]) {
+            self.webView?.transform = .identity
+            self.indicator.transform = .identity
+            self.indicator.alpha = 0
+        } completion: { _ in
+            guard generation == self.generation else { return }
+            self.hideBackdrop()
+        }
+    }
+
+    /// The old chat carries on up and fades out before the page is asked for a new one.
+    private func fadeOut() {
+        let constants = DuckAISwipeNewChat.Constants.self
+        let generation = generation
+        UIView.animate(withDuration: constants.commitDuration, delay: 0, options: [.beginFromCurrentState, .curveEaseIn]) {
+            if self.movesContent, let webView = self.webView {
+                webView.transform = webView.transform.translatedBy(x: 0, y: -constants.triggerDistance)
+            }
+            self.webView?.alpha = 0
+            self.indicator.alpha = 0
+        } completion: { _ in
+            guard generation == self.generation else { return }
+            self.apply(self.commitState.handle(.fadedOut(chatID: self.webView?.url?.duckAIChatID,
+                                                         isEligible: self.isStillEligible())))
+        }
+    }
+
+    /// Puts the chat back in place at once, and makes any animation or reply still in flight do nothing.
+    private func restore() {
+        generation += 1
+        webView?.transform = .identity
+        webView?.alpha = 1
+        indicator.transform = .identity
+        indicator.alpha = 0
+        indicator.reset()
+        hideBackdrop()
+    }
+
+    private func reveal() {
+        let generation = generation
+        UIView.animate(withDuration: DuckAISwipeNewChat.Constants.commitDuration, delay: 0, options: [.curveEaseOut]) {
+            self.webView?.alpha = 1
+        } completion: { _ in
+            guard generation == self.generation else { return }
+            self.hideBackdrop()
+        }
+    }
+
+    /// The bottom chrome doesn't move during a pull, so the indicator is placed once per pan.
+    private func placeIndicator(in hostView: UIView, above chromeMinYInWindow: CGFloat) {
+        if indicator.superview !== hostView {
+            indicator.removeFromSuperview()
+            hostView.addSubview(indicator)
+            let bottom = indicator.bottomAnchor.constraint(equalTo: hostView.bottomAnchor)
+            NSLayoutConstraint.activate([indicator.centerXAnchor.constraint(equalTo: hostView.centerXAnchor), bottom])
+            indicatorBottomConstraint = bottom
+        }
+        hostView.bringSubviewToFront(indicator)
         let chromeTop = min(hostView.convert(CGPoint(x: 0, y: chromeMinYInWindow), from: nil).y, hostView.bounds.maxY)
-        hintBottomConstraint?.constant = chromeTop - hostView.bounds.maxY - DuckAISwipeNewChat.Constants.hintSpacing
+        indicatorBottomConstraint?.constant = chromeTop - hostView.bounds.maxY - DuckAISwipeNewChat.Constants.indicatorSpacing
     }
 
     private func checkAtBottom() {
-        guard let webView, !isCheckInFlight else { return }
+        guard let webView, !isCheckInFlight, webView.bounds.width > 0, webView.bounds.height > 0 else { return }
         isCheckInFlight = true
-        let checkedPanID = panID
+        let generation = generation
         let point = pan.location(in: webView)
-        webView.evaluateJavaScript(Self.atBottomScript(at: point)) { [weak self] result, _ in
+        let fraction = CGPoint(x: point.x / webView.bounds.width, y: point.y / webView.bounds.height)
+        webView.evaluateJavaScript(Self.atBottomScript(atFractionOfViewport: fraction)) { [weak self] result, _ in
             guard let self else { return }
             self.isCheckInFlight = false
-            guard checkedPanID == self.panID, result as? Bool == true, let hostView = self.hostView else { return }
+            guard generation == self.generation, self.pull == .tracking,
+                  result as? Bool == true, let hostView = self.hostView else { return }
+            self.showBackdrop()
             self.apply(self.pull.handle(.reachedBottom(translation: self.pan.translation(in: hostView).y)))
         }
     }
 
-    /// Whether the nearest vertical scroller under `point` is at its bottom. When nothing overflows, the
-    /// whole chat fits on screen and so is already at its bottom.
-    private static func atBottomScript(at point: CGPoint) -> String {
+    /// Whether the chat under the finger is at its bottom. The finger is given as a fraction of the web view, which
+    /// the page scales to its own viewport, so text zoom doesn't shift it. The chat is the nearest vertical
+    /// scroller at least half the viewport tall, so a code block or menu under the finger doesn't count; a chat
+    /// too short to scroll is already at its bottom. Anything else, including no element at all, is not.
+    private static func atBottomScript(atFractionOfViewport fraction: CGPoint) -> String {
         """
-        (function(x, y) {
-          let el = document.elementFromPoint(x, y);
-          while (el && el !== document.documentElement) {
-            const style = getComputedStyle(el);
-            if (/(auto|scroll)/.test(style.overflowY) && el.scrollHeight > el.clientHeight + 1) {
+        (function(fx, fy) {
+          const hit = document.elementFromPoint(fx * innerWidth, fy * innerHeight);
+          for (let el = hit; el && el !== document.documentElement; el = el.parentElement) {
+            if (/(auto|scroll)/.test(getComputedStyle(el).overflowY) && el.clientHeight >= innerHeight / 2) {
               return el.scrollTop + el.clientHeight >= el.scrollHeight - 4;
             }
-            el = el.parentElement;
           }
-          const root = document.scrollingElement;
-          return !root || root.scrollTop + innerHeight >= root.scrollHeight - 4;
-        })(\(point.x), \(point.y))
+          return false;
+        })(\(fraction.x), \(fraction.y))
         """
+    }
+
+    /// The chat uncovers what is behind the web view as it slides up and fades; this fills that with the
+    /// chat's own background, as the unified input chrome sets it on the web view. It is the handler's own
+    /// view, so no shared background changes.
+    private func showBackdrop() {
+        guard let webView, let container = webView.superview else { return }
+        if backdrop.superview !== container {
+            backdrop.removeFromSuperview()
+            backdrop.translatesAutoresizingMaskIntoConstraints = false
+            backdrop.isUserInteractionEnabled = false
+            container.insertSubview(backdrop, belowSubview: webView)
+            NSLayoutConstraint.activate([
+                backdrop.topAnchor.constraint(equalTo: webView.topAnchor),
+                backdrop.bottomAnchor.constraint(equalTo: webView.bottomAnchor),
+                backdrop.leadingAnchor.constraint(equalTo: webView.leadingAnchor),
+                backdrop.trailingAnchor.constraint(equalTo: webView.trailingAnchor),
+            ])
+        }
+        container.insertSubview(backdrop, belowSubview: webView)
+        backdrop.backgroundColor = webView.underPageBackgroundColor
+        backdrop.isHidden = false
+    }
+
+    private func hideBackdrop() {
+        backdrop.isHidden = true
+    }
+
+    func gestureRecognizerShouldBegin(_ gestureRecognizer: UIGestureRecognizer) -> Bool {
+        isFeatureEnabled() && commitState == .idle
     }
 
     func gestureRecognizer(_ gestureRecognizer: UIGestureRecognizer,
@@ -178,78 +342,126 @@ final class DuckAISwipeNewChatHandler: NSObject, UIGestureRecognizerDelegate {
     }
 }
 
-/// Reuses the Duck.ai header's floating glass pill, which already sits over chat content.
-private final class DuckAISwipeNewChatHintView: UIView {
+/// A ring that fills as the pull nears the trigger, then becomes a button styled like the Duck.ai input's send button.
+private final class DuckAISwipeNewChatIndicatorView: UIView {
 
     private enum Metrics {
-        static let height: CGFloat = 44
-        static let horizontalPadding: CGFloat = 16
-        static let iconSpacing: CGFloat = 6
+        static let diameter: CGFloat = 32
+        static let lineWidth: CGFloat = 2.5
+        static let labelSpacing: CGFloat = 6
+        /// The fraction of the pull over which the indicator fades in.
+        static let fadeInProgress: CGFloat = 0.3
+        static let collapsed = CGAffineTransform(scaleX: 0.01, y: 0.01)
     }
 
-    private let pill = AIChatHeaderGlassPill(cornerRadius: Metrics.height / 2)
-    private let arrow = UIImageView(image: DesignSystemImages.Glyphs.Size16.arrowUp)
+    private let circle = UIView()
+    private let ring = CAShapeLayer()
+    private let button = CircularButton()
     private let label = UILabel()
+    private var isArmed = false
 
-    init() {
+    init(isFireTab: Bool) {
         super.init(frame: .zero)
         translatesAutoresizingMaskIntoConstraints = false
         isUserInteractionEnabled = false
         alpha = 0
 
-        arrow.tintColor = UIColor(designSystemColor: .icons)
-        arrow.setContentHuggingPriority(.required, for: .horizontal)
-        label.font = .daxSubheadSemibold()
+        circle.translatesAutoresizingMaskIntoConstraints = false
+        ring.fillColor = UIColor.clear.cgColor
+        ring.lineWidth = Metrics.lineWidth
+        ring.lineCap = .round
+        ring.strokeEnd = 0
+        circle.layer.addSublayer(ring)
+
+        button.translatesAutoresizingMaskIntoConstraints = false
+        button.isShadowHidden = true
+        button.setIcon(DesignSystemImages.Glyphs.Size16.compose)
+        button.applySubmitStyle(isActive: true, isFireTab: isFireTab, activeForeground: .white)
+        circle.addSubview(button)
+
+        label.translatesAutoresizingMaskIntoConstraints = false
+        label.font = .daxCaption()
         label.adjustsFontForContentSizeCategory = true
-        label.textColor = UIColor(designSystemColor: .textPrimary)
-        label.text = UserText.aiChatSwipeNewChatPullHint
+        label.textColor = UIColor(designSystemColor: .textSecondary)
+        label.text = UserText.actionNewAIChat
 
-        let stack = UIStackView(arrangedSubviews: [arrow, label])
-        stack.translatesAutoresizingMaskIntoConstraints = false
-        stack.axis = .horizontal
-        stack.alignment = .center
-        stack.spacing = Metrics.iconSpacing
-
-        addSubview(pill)
-        pill.contentView.addSubview(stack)
+        addSubview(circle)
+        addSubview(label)
         NSLayoutConstraint.activate([
-            pill.topAnchor.constraint(equalTo: topAnchor),
-            pill.leadingAnchor.constraint(equalTo: leadingAnchor),
-            pill.trailingAnchor.constraint(equalTo: trailingAnchor),
-            pill.bottomAnchor.constraint(equalTo: bottomAnchor),
-            pill.heightAnchor.constraint(greaterThanOrEqualToConstant: Metrics.height),
-            stack.leadingAnchor.constraint(equalTo: pill.contentView.leadingAnchor, constant: Metrics.horizontalPadding),
-            stack.trailingAnchor.constraint(equalTo: pill.contentView.trailingAnchor, constant: -Metrics.horizontalPadding),
-            stack.centerYAnchor.constraint(equalTo: pill.contentView.centerYAnchor),
-            stack.topAnchor.constraint(greaterThanOrEqualTo: pill.contentView.topAnchor, constant: Metrics.iconSpacing),
+            circle.topAnchor.constraint(equalTo: topAnchor),
+            circle.centerXAnchor.constraint(equalTo: centerXAnchor),
+            circle.widthAnchor.constraint(equalToConstant: Metrics.diameter),
+            circle.heightAnchor.constraint(equalToConstant: Metrics.diameter),
+            button.topAnchor.constraint(equalTo: circle.topAnchor),
+            button.bottomAnchor.constraint(equalTo: circle.bottomAnchor),
+            button.leadingAnchor.constraint(equalTo: circle.leadingAnchor),
+            button.trailingAnchor.constraint(equalTo: circle.trailingAnchor),
+            label.topAnchor.constraint(equalTo: circle.bottomAnchor, constant: Metrics.labelSpacing),
+            label.leadingAnchor.constraint(greaterThanOrEqualTo: leadingAnchor),
+            label.centerXAnchor.constraint(equalTo: centerXAnchor),
+            label.bottomAnchor.constraint(equalTo: bottomAnchor),
         ])
+        reset()
+        applyRingColor()
     }
 
     required init?(coder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
     }
 
+    override func layoutSubviews() {
+        super.layoutSubviews()
+        let radius = (Metrics.diameter - Metrics.lineWidth) / 2
+        let center = CGPoint(x: Metrics.diameter / 2, y: Metrics.diameter / 2)
+        ring.path = UIBezierPath(arcCenter: center, radius: radius, startAngle: -.pi / 2, endAngle: 1.5 * .pi, clockwise: true).cgPath
+    }
+
     override func traitCollectionDidChange(_ previousTraitCollection: UITraitCollection?) {
         super.traitCollectionDidChange(previousTraitCollection)
         if traitCollection.hasDifferentColorAppearance(comparedTo: previousTraitCollection) {
-            pill.refreshGlassForCurrentTraits()
+            applyRingColor()
         }
+    }
+
+    /// The ring takes the button's own colour, so the two always match.
+    private func applyRingColor() {
+        ring.strokeColor = button.backgroundColor?.resolvedColor(with: traitCollection).cgColor
+    }
+
+    func reset() {
+        isArmed = false
+        showButton(false)
+        ring.strokeEnd = 0
     }
 
     func update(progress: CGFloat, isArmed: Bool) {
         layer.removeAllAnimations()
-        label.text = isArmed ? UserText.aiChatSwipeNewChatReleaseHint : UserText.aiChatSwipeNewChatPullHint
-        arrow.isHidden = isArmed
-        alpha = progress
-        transform = UIAccessibility.isReduceMotionEnabled
-            ? .identity
-            : CGAffineTransform(translationX: 0, y: (1 - progress) * DuckAISwipeNewChat.Constants.hintSlideDistance)
+        alpha = min(progress / Metrics.fadeInProgress, 1)
+        CATransaction.begin()
+        CATransaction.setDisableActions(true)
+        ring.strokeEnd = progress
+        CATransaction.commit()
+
+        guard isArmed != self.isArmed else { return }
+        self.isArmed = isArmed
+        if UIAccessibility.isReduceMotionEnabled {
+            UIView.animate(withDuration: 0.15) { self.showButton(isArmed) }
+        } else {
+            UIView.animate(withDuration: 0.25, delay: 0, usingSpringWithDamping: 0.6, initialSpringVelocity: 0,
+                           options: [.beginFromCurrentState, .allowUserInteraction]) {
+                self.showButton(isArmed)
+            }
+        }
     }
 
-    func hide() {
-        UIView.animate(withDuration: DuckAISwipeNewChat.Constants.hintHideDuration) {
-            self.alpha = 0
-            self.transform = .identity
+    /// Under Reduce Motion the button fades in place; otherwise it grows out of the ring.
+    private func showButton(_ isShown: Bool) {
+        if UIAccessibility.isReduceMotionEnabled {
+            button.transform = .identity
+            button.alpha = isShown ? 1 : 0
+        } else {
+            button.alpha = 1
+            button.transform = isShown ? .identity : Metrics.collapsed
         }
     }
 }

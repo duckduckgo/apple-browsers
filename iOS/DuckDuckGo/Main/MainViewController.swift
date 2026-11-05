@@ -8046,19 +8046,10 @@ extension MainViewController: TabDelegate {
              didRequestNewDuckAITabForUrl url: URL,
              entrySource: AIChatEntryPointSource?,
              newChatInputRequest: DuckAINewChatInputRequest?) {
-        openNewDuckAITab(from: tab, url: url, entrySource: entrySource, newChatInputRequest: newChatInputRequest)
-    }
-
-    private func openNewDuckAITab(from tab: TabViewController,
-                                  url: URL,
-                                  entrySource: AIChatEntryPointSource?,
-                                  newChatInputRequest: DuckAINewChatInputRequest?,
-                                  onOpened: ((Tab) -> Void)? = nil) {
         recordUserOpenedTab()
         openNewTab(from: tab, url: url, openedByPage: false, inheritedAttribution: nil) {
             $0.duckAIEntrySource = entrySource
             $0.newChatInputRequest = newChatInputRequest
-            onOpened?($0)
         }
     }
 
@@ -8207,28 +8198,27 @@ extension MainViewController: TabDelegate {
     /// `source` names only the control, on the entry pixel.
     func openNewChatFromDuckAIPage(_ tab: TabViewController,
                                    source: AIChatEntryPointSource,
-                                   inputRequest: DuckAINewChatInputRequest = DuckAINewChatInputRequest(),
-                                   onOpened: ((Tab) -> Void)? = nil) {
+                                   inputRequest: DuckAINewChatInputRequest = DuckAINewChatInputRequest()) {
         fireAIChatEntryPointPixel(source: source, opensNewTab: true, hasPrompt: false)
         let focusRequest = featureFlagger.isFeatureOn(.aiChatTabHandoffImprovements) ? inputRequest : nil
-        openNewDuckAITab(from: tab, url: tab.newChatURL, entrySource: tab.tabModel.duckAIEntrySource,
-                         newChatInputRequest: focusRequest, onOpened: onOpened)
+        tab.openNewChatInNewTab(source: tab.tabModel.duckAIEntrySource, inputRequest: focusRequest)
     }
 
     func duckAISwipeNewChatChromeState(for tab: TabViewController) -> DuckAISwipeNewChatChromeState? {
         guard tab === currentTab else { return nil }
+        let aiTabChrome = aiTabChromeDecision()
         return DuckAISwipeNewChatChromeState(isKeyboardVisible: keyboardShowing || isKeyboardOverlappingContent,
                                              isGenerating: unifiedToggleInputCoordinator?.viewController.isGenerating ?? false,
+                                             isVoiceSessionActive: aiTabChrome.voiceChromeActive,
+                                             isInputHidden: aiTabChrome.hidesInputBar,
                                              bottomChromeMinY: bottomChromeMinYInWindow())
     }
 
+    /// Starts the new chat in place, like the chat history's New Chat, with the input focused to type.
     func tabDidRequestNewChatBySwipe(_ tab: TabViewController) {
         guard tab === currentTab else { return }
-        recordDuckAISessionNewChatCreatedOnCurrentTab()
-        let origin = tab.tabModel
-        openNewChatFromDuckAIPage(tab, source: .swipeUpNewChat) { [weak self] newTab in
-            self?.presentDuckAISwipeNewChatUndo(newTab: newTab, origin: origin)
-        }
+        startNewChatInPlace(in: tab, source: .swipeUpNewChat, chatState: .new)
+        unifiedToggleInputCoordinator?.showExpanded(inputMode: .aiChat)
     }
 
     /// The topmost visible bar in the lower half of the window: the Duck.ai input on an AI tab.
@@ -8241,31 +8231,6 @@ extension MainViewController: TabDelegate {
             .filter { $0.midY > window.bounds.midY }
             .map(\.minY)
             .min()
-    }
-
-    private func presentDuckAISwipeNewChatUndo(newTab: Tab, origin: Tab) {
-        // A new chat that focuses its input raises the keyboard, which would cover a bottom toast.
-        let location: ActionMessageView.PresentationLocation = newTab.newChatInputRequest != nil
-            ? .top
-            : .withBottomBar(andAddressBarBottom: true)
-        ActionMessageView.present(message: UserText.aiChatSwipeNewChatStartedMessage,
-                                  actionTitle: UserText.actionGenericUndo,
-                                  presentationLocation: location,
-                                  duration: DuckAISwipeNewChat.Constants.undoToastDuration,
-                                  onAction: { [weak self, weak newTab, weak origin] in
-            guard let self, let newTab, let origin else { return }
-            self.undoDuckAISwipeNewChat(newTab: newTab, origin: origin)
-        })
-    }
-
-    /// Only while the new chat is still in front and the chat it came from is still open; otherwise
-    /// undo would close a tab the user has moved on from, or land them somewhere arbitrary.
-    private func undoDuckAISwipeNewChat(newTab: Tab, origin: Tab) {
-        let tabs = tabManager.currentTabsModel
-        guard tabs.currentTab === newTab, tabs.indexOf(tab: origin) != nil else { return }
-        PixelKit.fire(DuckAISwipeNewChatPixel.undo, frequency: .dailyAndCount)
-        selectTab(origin)
-        closeTab(newTab, behavior: .onlyClose, allowingKeyboard: false)
     }
 
     func tab(_ tab: TabViewController, didRequestAIChatForSelectedText text: String) {

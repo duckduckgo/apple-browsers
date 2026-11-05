@@ -1097,6 +1097,7 @@ class TabViewController: UIViewController {
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
         setSitePermissionsGeolocationActive(true)
+        installDuckAISwipeNewChatIfNeeded()
         
         registerForResignActive()
         registerForCreditCardAutofillKeyboardNotifications()
@@ -1105,6 +1106,7 @@ class TabViewController: UIViewController {
     override func viewWillDisappear(_ animated: Bool) {
         super.viewWillDisappear(animated)
         setSitePermissionsGeolocationActive(false)
+        duckAISwipeNewChat?.cancel()
 
         duckPlayerNavigationHandler.updateDuckPlayerForWebViewDisappearance(self)
 
@@ -1824,7 +1826,7 @@ class TabViewController: UIViewController {
                 }
                 self.pullToRefreshViewAdapter?.setRefreshControlEnabled(!self.isAITab)
                 self.webView.scrollView.alwaysBounceVertical = !self.isAITab
-                self.installDuckAISwipeNewChatIfNeeded()
+                self.duckAISwipeNewChatURLDidChange()
                 (self.webView as? WebView)?.setInputAccessoryViewHidden(self.isAITab)
                 if #available(iOS 18.4, *) {
                     self.notifyWebExtensionOfPropertyChange([.URL])

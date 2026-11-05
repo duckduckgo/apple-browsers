@@ -161,9 +161,6 @@ public struct UserText {
         return String.localizedStringWithFormat(format, count)
     }
     public static let aiChatHistoryDownloadFailedMessage = NSLocalizedString("aiChat.history.download.failed.message", value: "Couldn't download. Please try again.", comment: "Error toast shown when a Duck.ai chat download fails and nothing was saved.")
-    public static let aiChatSwipeNewChatPullHint = NSLocalizedString("aiChat.swipeNewChat.hint.pull", value: "Pull up for new chat", comment: "Hint shown above the Duck.ai input while the user pulls up past the bottom of a chat. Keep short: it sits in a small pill next to an up arrow.")
-    public static let aiChatSwipeNewChatReleaseHint = NSLocalizedString("aiChat.swipeNewChat.hint.release", value: "Release for new chat", comment: "Hint shown above the Duck.ai input once the user has pulled up far enough past the bottom of a chat; letting go starts a new chat in a new tab. Keep short: it sits in a small pill.")
-    public static let aiChatSwipeNewChatStartedMessage = NSLocalizedString("aiChat.swipeNewChat.started.message", value: "New chat started", comment: "Toast shown after pulling up past the bottom of a Duck.ai chat opened a new chat in a new tab. Shown next to an Undo button that closes the new tab and returns to the previous chat.")
     public static let actionAIChatSettings = NSLocalizedString("action.title.aiChat.settings", value: "Duck.ai Settings", comment: "Open AI Chat settings action in the menu list")
     public static let sectionTitleSuggestions = NotLocalizedString("section.title.suggestions", value: "Suggestions", comment: "Section header title above search suggestions")
     public static let aiChatSuggestedChatsTitle = NotLocalizedString("aiChat.suggestedChats.title", value: "Chats", comment: "Section header title above suggested Duck.ai chats")

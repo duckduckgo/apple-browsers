@@ -96,12 +96,14 @@ extension TabViewController: AITabController {
         aiChatContentHandler.submitToggleSidebarAction()
     }
     
-    var newChatURL: URL {
-        aiChatContentHandler.buildQueryURL(query: nil, autoSend: false, flowType: .default, tools: nil)
-    }
-
     /// Opens a new AI chat in a new tab.
     func openNewChatInNewTab(source: AIChatEntryPointSource?, inputRequest: DuckAINewChatInputRequest? = nil) {
+        let newChatURL = aiChatContentHandler.buildQueryURL(
+            query: nil,
+            autoSend: false,
+            flowType: .default,
+            tools: nil
+        )
         delegate?.tab(self, didRequestNewDuckAITabForUrl: newChatURL, entrySource: source, newChatInputRequest: inputRequest)
     }
 
@@ -176,6 +178,12 @@ extension TabViewController {
 
 extension TabViewController {
 
+    func duckAISwipeNewChatURLDidChange() {
+        installDuckAISwipeNewChatIfNeeded()
+        duckAISwipeNewChat?.webViewURLDidChange()
+    }
+
+    /// Also called as the tab appears, so the flag turning on reaches a chat that is already open.
     func installDuckAISwipeNewChatIfNeeded() {
         guard isAITab,
               duckAISwipeNewChat == nil,
@@ -184,6 +192,7 @@ extension TabViewController {
         duckAISwipeNewChat = DuckAISwipeNewChatHandler(
             webView: webView,
             hostView: view,
+            isFireTab: tabModel.fireTab,
             isFeatureEnabled: { [featureFlagger] in featureFlagger.isFeatureOn(.aiChatSwipeUpNewChat) },
             chromeState: { [weak self] in
                 guard let self else { return nil }

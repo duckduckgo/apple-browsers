@@ -55,6 +55,10 @@ public final class DBPFeatureFlagger: DBPMacOSFeatureFlagging {
         featureFlagger.isFeatureOn(.dbpChallengeSolver)
     }
 
+    public var isUserAssistanceOn: Bool {
+        featureFlagger.isFeatureOn(.dbpUserAssistance)
+    }
+
     public var isSchedulerDeferralHandlingEnabled: Bool {
         featureFlagger.isFeatureOn(.dbpSchedulerDeferralHandling)
     }
@@ -63,8 +67,12 @@ public final class DBPFeatureFlagger: DBPMacOSFeatureFlagging {
         self.featureFlagger = featureFlagger
     }
 
-    public init(configurationManager: ConfigurationManager,
-                privacyConfigurationManager: PrivacyConfigurationManaging) {
+    public convenience init(configurationManager: ConfigurationManager,
+                            privacyConfigurationManager: PrivacyConfigurationManaging) {
+        self.init(privacyConfigurationManager: privacyConfigurationManager)
+    }
+
+    public init(privacyConfigurationManager: PrivacyConfigurationManaging) {
         let featureFlagger = DefaultFeatureFlagger(
             internalUserDecider: privacyConfigurationManager.internalUserDecider,
             privacyConfigManager: privacyConfigurationManager,

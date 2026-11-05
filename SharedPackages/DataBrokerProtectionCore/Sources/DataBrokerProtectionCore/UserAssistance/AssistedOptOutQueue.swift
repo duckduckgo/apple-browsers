@@ -31,7 +31,7 @@ public protocol AssistedOptOutPresenting: AnyObject {
 /// Runs the opt-outs users start from Needs you, one attempt at a time and apart from the regular queue.
 @MainActor
 public final class AssistedOptOutQueue {
-    public static let defaultAttemptTimeout: TimeInterval = .minutes(20)
+    public static let defaultAttemptTimeout: TimeInterval = .minutes(10)
 
     private let dependencies: BrokerProfileJobDependencyProviding
     private let attemptTimeout: TimeInterval
@@ -113,12 +113,17 @@ public final class AssistedOptOutQueue {
 
     // MARK: - Attempts
 
-    /// Starts the attempt, or shows it if it's already queued or running. Repeated starts never add a second attempt.
+    /// Starts the attempt, or shows it if it's already running. Only one attempt runs at a time, so starting another
+    /// opt-out while one is running does nothing.
     public func start(id: AssistedOptOutID) {
         if let session = sessions[id] {
             if session.webView != nil {
                 presenter?.present(session)
             }
+            return
+        }
+        guard runningID == nil, queuedIDs.isEmpty else {
+            Logger.dataBrokerProtection.log("Ignoring assisted opt-out start while another attempt runs")
             return
         }
         let config = self.config

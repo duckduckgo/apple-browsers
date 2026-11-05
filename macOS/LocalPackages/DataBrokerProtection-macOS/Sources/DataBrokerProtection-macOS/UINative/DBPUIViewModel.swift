@@ -144,7 +144,8 @@ extension DBPUIViewModel: DBPUIAssistedOptOutsDelegate {
 
     public var isUserAssistanceEnabled: Bool {
         guard let privacyConfig else { return false }
-        return UserAssistanceConfig.current(privacyConfig: privacyConfig.privacyConfig,
+        return UserAssistanceConfig.current(isFeatureOn: DBPFeatureFlagger(privacyConfigurationManager: privacyConfig).isUserAssistanceOn,
+                                            privacyConfig: privacyConfig.privacyConfig,
                                             settings: DataBrokerProtectionSettings(defaults: .dbp)).isEnabled
     }
 

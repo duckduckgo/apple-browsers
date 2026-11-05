@@ -204,6 +204,10 @@ final class DBPFeatureFlagger: DBPFeatureFlagging, FreemiumPIRFeatureFlagging {
         false
     }
 
+    var isUserAssistanceOn: Bool {
+        false
+    }
+
     var isFreemiumPIREnabled: Bool {
         freemiumPIRDebugSettings.isEligibilityForced
             || appDependencies.featureFlagger.isFeatureOn(.dbpFreemiumPIR)

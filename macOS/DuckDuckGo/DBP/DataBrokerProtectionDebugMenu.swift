@@ -61,10 +61,11 @@ final class DataBrokerProtectionDebugMenu: NSMenu {
     private let subscriptionEnvironmentMenuItem = NSMenuItem(title: "Subscription Environment:")
     private let statusMenuIconMenu = NSMenuItem(title: "Show Status Menu Icon", action: #selector(DataBrokerProtectionDebugMenu.toggleShowStatusMenuItem))
 
-    private let userAssistanceRemoteMenuItem = NSMenuItem(title: "Use Remote Config", action: #selector(DataBrokerProtectionDebugMenu.useRemoteUserAssistanceConfig))
-    private let userAssistanceOnMenuItem = NSMenuItem(title: "Enable for \(DataBrokerProtectionSettings.userAssistanceTestBrokers.joined(separator: ", "))",
-                                                      action: #selector(DataBrokerProtectionDebugMenu.enableUserAssistanceOverride))
-    private let userAssistanceOffMenuItem = NSMenuItem(title: "Disable", action: #selector(DataBrokerProtectionDebugMenu.disableUserAssistanceOverride))
+    private let userAssistanceBrokersMenuItem = NSMenuItem(title: "Enabled brokers:")
+    private let userAssistanceOverrideMenuItem = NSMenuItem(title: "Override Enabled Brokers…",
+                                                            action: #selector(DataBrokerProtectionDebugMenu.overrideUserAssistanceBrokers))
+    private let userAssistanceRemoteMenuItem = NSMenuItem(title: "Use Remote Config Brokers",
+                                                          action: #selector(DataBrokerProtectionDebugMenu.useRemoteUserAssistanceBrokers))
 
     private let webUISettings = DataBrokerProtectionWebUIURLSettings(.dbp)
     private let settings = DataBrokerProtectionSettings(defaults: .dbp)
@@ -185,15 +186,10 @@ final class DataBrokerProtectionDebugMenu: NSMenu {
             }
 
             NSMenuItem(title: "User Assistance") {
+                userAssistanceBrokersMenuItem.isEnabled = false
+                userAssistanceBrokersMenuItem
+                userAssistanceOverrideMenuItem.targetting(self)
                 userAssistanceRemoteMenuItem.targetting(self)
-                userAssistanceOnMenuItem.targetting(self)
-                userAssistanceOffMenuItem.targetting(self)
-
-                NSMenuItem.separator()
-
-                NSMenuItem(title: "Install BeenVerified",
-                           action: #selector(DataBrokerProtectionDebugMenu.installUserAssistanceTestBrokers))
-                    .targetting(self)
             }
 
             NSMenuItem(title: "DBP API") {
@@ -547,23 +543,30 @@ final class DataBrokerProtectionDebugMenu: NSMenu {
         settings.showInMenuBar.toggle()
     }
 
-    @objc private func useRemoteUserAssistanceConfig() {
+    @objc private func useRemoteUserAssistanceBrokers() {
         settings.userAssistanceEnabledBrokersOverride = nil
     }
 
-    @objc private func enableUserAssistanceOverride() {
-        settings.userAssistanceEnabledBrokersOverride = DataBrokerProtectionSettings.userAssistanceTestBrokers
-    }
+    @objc private func overrideUserAssistanceBrokers() {
+        let sheet = CustomTextEntrySheet(
+            title: "User Assistance Brokers",
+            fieldLabel: "Broker URLs",
+            placeholder: "beenverified.com, example.com",
+            content: { _, _ in
+                Text(verbatim: "Comma-separated broker URLs, as in the broker JSON's url field. Replaces remote config's enabledBrokers. The dbpUserAssistance feature flag must also be on.")
+                    .dbpSecondaryTextStyle()
+            },
+            onApply: { [weak self] value in
+                self?.settings.userAssistanceEnabledBrokersOverride = value
+                    .split(separator: ",")
+                    .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
+                    .filter { !$0.isEmpty }
+                return true
+            }
+        )
 
-    @objc private func disableUserAssistanceOverride() {
-        settings.userAssistanceEnabledBrokersOverride = []
-    }
-
-    @objc private func installUserAssistanceTestBrokers() {
-        do {
-            try UserAssistanceTestBrokers.install(into: brokerUpdater)
-        } catch {
-            Logger.dataBrokerProtection.error("Failed to install user assistance test brokers: \(error.localizedDescription, privacy: .public)")
+        Task { @MainActor in
+            sheet.show()
         }
     }
 
@@ -615,10 +618,15 @@ final class DataBrokerProtectionDebugMenu: NSMenu {
     }
 
     private func updateUserAssistanceMenuItems() {
-        let override = settings.userAssistanceEnabledBrokersOverride
-        userAssistanceRemoteMenuItem.state = override == nil ? .on : .off
-        userAssistanceOnMenuItem.state = override?.isEmpty == false ? .on : .off
-        userAssistanceOffMenuItem.state = override?.isEmpty == true ? .on : .off
+        if let override = settings.userAssistanceEnabledBrokersOverride {
+            userAssistanceBrokersMenuItem.title = "Enabled brokers (override): \(override.isEmpty ? "none" : override.joined(separator: ", "))"
+            userAssistanceOverrideMenuItem.state = .on
+            userAssistanceRemoteMenuItem.state = .off
+        } else {
+            userAssistanceBrokersMenuItem.title = "Enabled brokers: remote config"
+            userAssistanceOverrideMenuItem.state = .off
+            userAssistanceRemoteMenuItem.state = .on
+        }
     }
 }
 

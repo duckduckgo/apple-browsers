@@ -19,7 +19,8 @@
 import Foundation
 import PrivacyConfig
 
-/// Which brokers' opt-outs wait for the user to start them, from the `dbp.userAssistance` subfeature or a local debug override.
+/// Which brokers' opt-outs wait for the user to start them: none unless the `dbpUserAssistance` flag is on, then the
+/// `dbp.userAssistance` subfeature's `enabledBrokers`, or the PIR debug menu's override of that list.
 public struct UserAssistanceConfig: Equatable, Sendable {
     public let enabledBrokers: Set<String>
 
@@ -35,11 +36,13 @@ public struct UserAssistanceConfig: Equatable, Sendable {
         enabledBrokers.contains(url)
     }
 
-    public static func current(privacyConfig: PrivacyConfiguration, settings: DataBrokerProtectionSettings) -> UserAssistanceConfig {
+    public static func current(isFeatureOn: Bool,
+                               privacyConfig: PrivacyConfiguration,
+                               settings: DataBrokerProtectionSettings) -> UserAssistanceConfig {
+        guard isFeatureOn else { return .disabled }
         if let override = settings.userAssistanceEnabledBrokersOverride {
             return UserAssistanceConfig(enabledBrokers: Set(override))
         }
-        guard privacyConfig.isSubfeatureEnabled(DBPSubfeature.userAssistance) else { return .disabled }
         return UserAssistanceConfig(enabledBrokers: Set(enabledBrokers(fromSettings: privacyConfig.settings(for: DBPSubfeature.userAssistance))))
     }
 
@@ -55,14 +58,14 @@ public struct UserAssistanceConfig: Equatable, Sendable {
 
 public extension BrokerProfileJobDependencyProviding {
     var userAssistanceConfig: UserAssistanceConfig {
-        .current(privacyConfig: privacyConfig.privacyConfig, settings: dataBrokerProtectionSettings)
+        .current(isFeatureOn: featureFlagger.isUserAssistanceOn,
+                 privacyConfig: privacyConfig.privacyConfig,
+                 settings: dataBrokerProtectionSettings)
     }
 }
 
 public extension DataBrokerProtectionSettings {
-    static let userAssistanceTestBrokers = ["beenverified.com"]
-
-    /// Set from the PIR debug menu; nil follows remote config.
+    /// Broker URLs set from the PIR debug menu, replacing remote config's `enabledBrokers`; nil follows remote config.
     var userAssistanceEnabledBrokersOverride: [String]? {
         get { defaults.stringArray(forKey: Keys.userAssistanceEnabledBrokersOverride) }
         set { defaults.set(newValue, forKey: Keys.userAssistanceEnabledBrokersOverride) }

@@ -35,34 +35,33 @@ final class UserAssistanceTests: XCTestCase {
 
     // MARK: - Config
 
-    func testWhenSubfeatureIsEnabled_thenEnabledBrokersComeFromItsSettings() throws {
+    func testWhenFlagIsOn_thenEnabledBrokersComeFromSubfeatureSettings() throws {
         let privacyConfig = try makePrivacyConfig()
-        privacyConfig.isSubfeatureEnabledCheck = { ($0 as? DBPSubfeature) == .userAssistance }
         privacyConfig.subfeatureSettings = { _ in #"{ "enabledBrokers": ["beenverified.com"] }"# }
 
-        let config = UserAssistanceConfig.current(privacyConfig: privacyConfig, settings: settings)
+        let config = UserAssistanceConfig.current(isFeatureOn: true, privacyConfig: privacyConfig, settings: settings)
 
         XCTAssertTrue(config.isEnabled(forBrokerURL: "beenverified.com"))
         XCTAssertFalse(config.isEnabled(forBrokerURL: "spokeo.com"))
     }
 
-    func testWhenSubfeatureIsDisabled_thenNoBrokerIsEnabled() throws {
+    func testWhenFlagIsOff_thenNoBrokerIsEnabledEvenWithAnOverride() throws {
         let privacyConfig = try makePrivacyConfig()
         privacyConfig.subfeatureSettings = { _ in #"{ "enabledBrokers": ["beenverified.com"] }"# }
+        settings.userAssistanceEnabledBrokersOverride = ["example.com"]
 
-        XCTAssertFalse(UserAssistanceConfig.current(privacyConfig: privacyConfig, settings: settings).isEnabled)
+        XCTAssertFalse(UserAssistanceConfig.current(isFeatureOn: false, privacyConfig: privacyConfig, settings: settings).isEnabled)
     }
 
     func testWhenDebugOverrideIsSet_thenItReplacesRemoteConfig() throws {
         let privacyConfig = try makePrivacyConfig()
-        privacyConfig.isSubfeatureEnabledCheck = { _ in true }
         privacyConfig.subfeatureSettings = { _ in #"{ "enabledBrokers": ["beenverified.com"] }"# }
 
         settings.userAssistanceEnabledBrokersOverride = ["example.com"]
-        XCTAssertEqual(UserAssistanceConfig.current(privacyConfig: privacyConfig, settings: settings).enabledBrokers, ["example.com"])
+        XCTAssertEqual(UserAssistanceConfig.current(isFeatureOn: true, privacyConfig: privacyConfig, settings: settings).enabledBrokers, ["example.com"])
 
         settings.userAssistanceEnabledBrokersOverride = []
-        XCTAssertFalse(UserAssistanceConfig.current(privacyConfig: privacyConfig, settings: settings).isEnabled)
+        XCTAssertFalse(UserAssistanceConfig.current(isFeatureOn: true, privacyConfig: privacyConfig, settings: settings).isEnabled)
     }
 
     // MARK: - Broker JSON
@@ -96,13 +95,16 @@ final class UserAssistanceTests: XCTestCase {
         XCTAssertEqual(DataBrokerProtectionFeature.actionID(inCompletedParams: try JSONSerialization.jsonObject(with: Data(json.utf8))), "2")
     }
 
-    func testTestBrokersUseUserAssistAndInstallAsActive() throws {
-        let resources = try UserAssistanceTestBrokers.files.map(UserAssistanceTestBrokers.resource(from:))
-        XCTAssertEqual(resources.map(\.broker.url), ["beenverified.com"])
+    func testBundledBeenVerifiedUsesUserAssist() throws {
+        let file = URL(fileURLWithPath: #filePath)
+            .deletingLastPathComponent().deletingLastPathComponent().deletingLastPathComponent()
+            .appendingPathComponent("Sources/DataBrokerProtectionCore/BundleResources/JSON/beenverified.com.json")
+        let decoder = JSONDecoder()
+        decoder.dateDecodingStrategy = .millisecondsSince1970
+        let broker = try decoder.decode(DataBroker.self, from: Data(contentsOf: file))
 
-        for broker in resources.map(\.broker) {
+        do {
             let actions = try XCTUnwrap(broker.optOutStep()?.actions)
-            XCTAssertNil(broker.removedAt)
             XCTAssertEqual(actions.filter { $0 is UserAssistAction }.count, 3)
             XCTAssertFalse(actions.contains { $0 is GetCaptchaInfoAction || $0 is SolveCaptchaAction })
             XCTAssertEqual(AssistedOptOutSteps(actions: actions).titles,
@@ -274,6 +276,31 @@ final class UserAssistanceTests: XCTestCase {
 
         settings.userAssistanceEnabledBrokersOverride = nil
         XCTAssertEqual(queue.assistedOptOuts(), [])
+    }
+
+    @MainActor
+    func testStartingAnotherOptOutWhileOneRunsIsIgnored() throws {
+        let (dependencies, database) = makeDependencies(optOutEvents: [.optOutAwaitingUserAssistance])
+        settings.userAssistanceEnabledBrokersOverride = ["broker.com"]
+        var data = try XCTUnwrap(database.brokerProfileQueryDataToReturn.first)
+        let broker = DataBroker(id: 1, name: "Broker", url: "broker.com", steps: [Step(type: .optOut, actions: [])], version: "1.0",
+                                schedulingConfig: .mock, optOutUrl: "", eTag: "", removedAt: nil)
+        let first = try XCTUnwrap(data.optOutJobData.first)
+        let second = OptOutJobData(brokerId: 1, profileQueryId: 1, createdDate: Date(), preferredRunDate: first.preferredRunDate,
+                                   historyEvents: first.historyEvents.map {
+                                       HistoryEvent(extractedProfileId: 2, brokerId: 1, profileQueryId: 1, type: $0.type, date: $0.date)
+                                   },
+                                   attemptCount: 0, extractedProfile: ExtractedProfile(id: 2, name: "Other", profileUrl: "def"))
+        data = BrokerProfileQueryData(dataBroker: broker, profileQuery: data.profileQuery, scanJobData: data.scanJobData,
+                                      optOutJobData: [first, second])
+        database.brokerProfileQueryDataToReturn = [data]
+        let queue = AssistedOptOutQueue(dependencies: dependencies)
+
+        queue.start(id: AssistedOptOutID(brokerId: 1, profileQueryId: 1, extractedProfileId: 1))
+        queue.start(id: AssistedOptOutID(brokerId: 1, profileQueryId: 1, extractedProfileId: 2))
+
+        XCTAssertEqual(queue.activeSessions.map(\.id.description), ["1-1-1"])
+        queue.cancelAll()
     }
 
     @MainActor

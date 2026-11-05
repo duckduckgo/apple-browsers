@@ -62,11 +62,11 @@ public enum WebExtensionPixelExtension: Equatable, CaseIterable {
 /// Events that can be fired for web extension management.
 @available(macOS 15.4, iOS 18.4, *)
 public enum WebExtensionPixelEvent {
-    /// A fresh install; updates aren't reported. `extensionID` is the Chrome Web Store ID and `category`
-    /// the catalog's `categoryId`, both `nil` when unknown.
-    case installed(extension: WebExtensionPixelExtension, extensionID: String?, category: String?)
+    /// A fresh install; updates aren't reported. `extensionID` is the Chrome Web Store ID, or `other` for an extension
+    /// that didn't come from the store, and `category` the catalog's `categoryId`, `nil` when unknown.
+    case installed(extension: WebExtensionPixelExtension, extensionID: String, category: String?)
     case installError(extension: WebExtensionPixelExtension, error: Error)
-    case uninstalled(extension: WebExtensionPixelExtension, extensionID: String?, category: String?)
+    case uninstalled(extension: WebExtensionPixelExtension, extensionID: String, category: String?)
     case uninstallError(error: Error)
     case uninstalledAll
     case uninstallAllError(error: Error)
@@ -117,9 +117,9 @@ public enum WebExtensionPixelEvent {
     /// since launch, with its version. Fired once a day.
     case apiCompatibilityGaps(extension: ExtensionsCatalogSubfeature, version: String, missingAPICount: Int, unsupportedURLCount: Int)
 
-    /// A store extension was enabled, from any surface.
+    /// An extension was enabled, from any surface.
     case enabled(extensionID: String, category: String?)
-    /// A store extension was disabled, from any surface, remote disable included.
+    /// An extension was disabled, from any surface, remote disable included.
     case disabled(extensionID: String, category: String?)
     /// A store extension installed 14 days ago is still installed and enabled.
     case retained(extensionID: String, category: String?)

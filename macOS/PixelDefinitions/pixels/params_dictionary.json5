@@ -686,8 +686,8 @@
     "web_extension_id": {
         "key": "extension_id",
         "type": "string",
-        "description": "The extension's Chrome Web Store ID. Omitted for an extension that didn't come from the store.",
-        "pattern": "^[a-p]{32}$"
+        "description": "The extension's Chrome Web Store ID, or other for an extension that didn't come from the store.",
+        "pattern": "^([a-p]{32}|other)$"
     },
     "web_extension_category": {
         "key": "category",

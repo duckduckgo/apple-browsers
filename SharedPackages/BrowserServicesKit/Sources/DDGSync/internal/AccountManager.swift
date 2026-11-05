@@ -258,9 +258,17 @@ struct AccountManager: AccountManaging {
                 throw AuditLogError.missingRequiredAfterCursor
             }
         }
-        let pageKeyProvider = accountInfoKeys.map { PageScopedAccountInfoKeys(manager: $0) }
+        try Task.checkCancellation()
+        let accountInfoKey: AccountInfoKey?
+        if response.auditLog.entries.contains(where: { $0.version == AuditLogEntry.supportedVersion }) {
+            guard let accountInfoKeys else { throw AuditLogError.accountInfoKeyUnavailable }
+            // Load once for the page; key-ID mismatches remain per-entry unreadable outcomes.
+            accountInfoKey = try await accountInfoKeys.loadKey(for: account)
+        } else {
+            accountInfoKey = nil
+        }
         let pagePasswordRecoveryCache = ThirdPartyPasswordRecoveryCache()
-        let decoder = AuditLogEntryDecoder(accountInfoKeys: pageKeyProvider,
+        let decoder = AuditLogEntryDecoder(accountInfoKey: accountInfoKey,
                                            deviceMapper: registeredDeviceMapper,
                                            thirdPartyPasswordRecoveryCache: pagePasswordRecoveryCache)
         var entries = [AuditLogEntryDecodingResult]()
@@ -543,6 +551,7 @@ enum AuditLogCursor {
 enum AuditLogError: DDGError {
     case responseDecodingFailed
     case missingRequiredAfterCursor
+    case accountInfoKeyUnavailable
 
     static var errorDomain: String { "com.duckduckgo.sync.audit-log" }
 
@@ -550,6 +559,7 @@ enum AuditLogError: DDGError {
         switch self {
         case .responseDecodingFailed: 1
         case .missingRequiredAfterCursor: 2
+        case .accountInfoKeyUnavailable: 3
         }
     }
 
@@ -557,6 +567,7 @@ enum AuditLogError: DDGError {
         switch self {
         case .responseDecodingFailed: "Failed to decode the audit log response."
         case .missingRequiredAfterCursor: "Audit log response is missing the required after cursor."
+        case .accountInfoKeyUnavailable: "The account-info key manager is unavailable for reading the audit log."
         }
     }
 }
@@ -574,6 +585,8 @@ struct AuditLogPage {
 }
 
 struct AuditLogEntry: Decodable {
+    static let supportedVersion = "1"
+
     let id: String
     let version: String
     let payload: String

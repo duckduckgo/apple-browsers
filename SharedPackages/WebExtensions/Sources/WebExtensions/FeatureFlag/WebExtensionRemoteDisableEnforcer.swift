@@ -138,7 +138,6 @@ public final class WebExtensionRemoteDisableEnforcer {
         }
     }
 
-    /// The extension's catalog entry, or `other`, matching the manager's pixels.
     private func pixelExtension(for installedExtension: InstalledWebExtension) -> WebExtensionPixelExtension {
         guard let storeIdentity = installedExtension.storeIdentity,
               let entry = manager?.chromeWebStore?.catalogEntry(of: storeIdentity.id) else {

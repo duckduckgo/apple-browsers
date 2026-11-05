@@ -86,7 +86,6 @@ final class ExtensionsManagementPreferencesTests: XCTestCase {
 
     // MARK: - Helpers
 
-    /// Built by the real catalog from a Bitwarden catalog entry, as the app does.
     private func listing(publisherURL: String? = "https://bitwarden.com") throws -> ChromeWebStoreListing {
         var settings: [String: String] = [
             "id": storeID,

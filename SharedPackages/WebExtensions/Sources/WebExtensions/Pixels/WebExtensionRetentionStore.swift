@@ -21,20 +21,15 @@ import Persistence
 
 @available(macOS 15.4, iOS 18.4, *)
 public struct WebExtensionRetentionSettings: StoringKeys {
-    /// When each Chrome Web Store extension waiting for its retention check was installed, by store ID.
     let installDates = StorageKey<[String: Date]>(WebExtensionStorageKeys.retentionInstallDates)
 
     public init() {}
 }
 
-/// Remembers when store extensions were installed until their 14-day retention check.
-///
-/// An entry outlives the installation it records, so an extension removed before the check is still
-/// judged, as churned. Installing again restarts its wait.
+/// Install dates outlive an uninstall, so an extension removed before its check is still judged, as churned.
 @available(macOS 15.4, iOS 18.4, *)
 public final class WebExtensionRetentionStore {
 
-    /// How long after installation an extension is judged retained or churned.
     public static let retentionPeriod: TimeInterval = 14 * 24 * 60 * 60
 
     private let storage: any KeyedStoring<WebExtensionRetentionSettings>
@@ -43,15 +38,13 @@ public final class WebExtensionRetentionStore {
         self.storage = if let storage { storage } else { UserDefaults.standard.keyedStoring() }
     }
 
-    /// Starts, or restarts, the wait for the extension with the Chrome Web Store ID `storeID`.
     public func recordInstallation(of storeID: String, at date: Date) {
         var installDates = storage.installDates ?? [:]
         installDates[storeID] = date
         storage.installDates = installDates
     }
 
-    /// Removes and returns the store IDs installed at least `retentionPeriod` before `date`,
-    /// so each installation is judged once.
+    /// Removes the due store IDs as it returns them, so each installation is judged once.
     public func takeDue(at date: Date) -> [String] {
         let installDates = storage.installDates ?? [:]
         let due = installDates

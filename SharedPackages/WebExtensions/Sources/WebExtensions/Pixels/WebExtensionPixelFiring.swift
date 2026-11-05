@@ -116,17 +116,11 @@ public enum WebExtensionPixelEvent {
     /// since launch, with its version. Fired once a day.
     case apiCompatibilityGaps(extension: ExtensionsCatalogSubfeature, version: String, missingAPICount: Int, unsupportedURLCount: Int)
 
-    /// A disabled extension was turned back on.
     case enabled(extension: WebExtensionPixelExtension)
-    /// An enabled extension was turned off, by the user or by remote configuration.
     case disabled(extension: WebExtensionPixelExtension)
-    /// Remote configuration turned off an installed store extension, so the user can't turn it back on.
     case remotelyDisabled(extension: WebExtensionPixelExtension)
-    /// A store extension installed 14 days ago is still installed and enabled.
     case retained14Days(extension: WebExtensionPixelExtension)
-    /// A store extension installed 14 days ago was removed or turned off since.
     case churned14Days(extension: WebExtensionPixelExtension)
-    /// How many store extensions are installed, and how many of those are enabled. Fired once a day.
     case installedCount(installed: Int, enabled: Int)
 }
 

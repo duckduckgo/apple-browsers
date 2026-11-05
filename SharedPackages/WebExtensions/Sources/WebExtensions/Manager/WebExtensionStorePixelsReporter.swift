@@ -18,8 +18,6 @@
 
 import Foundation
 
-/// Reports how many store extensions are installed and enabled, and whether store installs are retained or
-/// churned 14 days later. Install dates outlive an uninstall, so removing an extension still reports it as churned.
 @available(macOS 15.4, iOS 18.4, *)
 @MainActor
 final class WebExtensionStorePixelsReporter {
@@ -50,21 +48,18 @@ final class WebExtensionStorePixelsReporter {
         lastCheckDate = nil
     }
 
-    /// Reports how many store extensions are installed and enabled, then each install that is 14 days old as retained
-    /// when it's still installed and enabled, or as churned. It checks at most once an hour, so a gap in use makes a
-    /// report late, not lost. The count pixel is daily, so each device reports it once a day. Nothing is reported while
-    /// the catalog offers no extensions, so the count's denominator is devices that can install store extensions.
+    /// Skips while the catalog is empty, so the count's denominator is devices that can install store extensions.
     func reportIfDue(chromeWebStore: ChromeWebStoreManaging?) {
         guard shouldReportChurnAndRetained() else {
             return
         }
 
-        let date = markRetainedWasReported()
-
         // Checked after the hourly check, since it evaluates the whole catalog configuration.
         guard let chromeWebStore, !chromeWebStore.catalogExtensionIDs.isEmpty else {
             return
         }
+
+        let date = markRetainedWasReported()
 
         // Old and new versions coexist during an update, so each store ID counts once.
         var isEnabledByStoreID: [String: Bool] = [:]

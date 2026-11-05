@@ -1596,8 +1596,7 @@ final class WebExtensionManagerTests: XCTestCase {
     }
 
 #if os(macOS)
-    /// An install is judged once, on the first check 14 days later: retained while installed and enabled,
-    /// churned once disabled or uninstalled.
+    /// Each install is judged once, 14 days later: retained while installed and enabled, churned otherwise.
     @MainActor
     func testWhenAStoreExtensionHasBeenInstalledFor14Days_ThenRetentionIsReportedOnce() async throws {
         let retainedID = String(repeating: "a", count: 32)

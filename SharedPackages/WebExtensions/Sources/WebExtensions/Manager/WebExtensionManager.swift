@@ -156,7 +156,6 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
     public let privacySettings: WebExtensionPrivacySettingsStore?
 #endif
 
-    /// Reports the installed count and 14-day retention of store extensions, or `nil` to not report them.
     private let storePixelsReporter: WebExtensionStorePixelsReporter?
 
     /// Deduplicates compatibility issues reported by JavaScript and native extension APIs.

@@ -343,9 +343,6 @@ public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
 
     case sidebarSuggestedPrompts
 
-    /// Offers the page navigated to as an attachment, in an active contextual chat with auto-attach off
-    case contextualPagePlaceholder
-
     /// Enables updated AI features settings screen
     case aiFeaturesSettingsUpdate
 

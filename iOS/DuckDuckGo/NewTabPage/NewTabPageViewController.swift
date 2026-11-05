@@ -86,7 +86,6 @@ final class NewTabPageViewController: UIViewController, NewTabPage, RemoteMessag
 
     init(isFocussedState: Bool,
          openedAfterIdle: Bool = false,
-         dismissKeyboardOnScroll: Bool,
          tab: Tab,
          interactionModel: FavoritesListInteracting,
          homePageMessagesConfiguration: HomePageMessagesConfiguration,
@@ -142,7 +141,6 @@ final class NewTabPageViewController: UIViewController, NewTabPage, RemoteMessag
 
         let pageView = NewTabPageView(isFocussedState: isFocussedState,
                                      narrowLayoutInLandscape: narrowLayoutInLandscape,
-                                     dismissKeyboardOnScroll: dismissKeyboardOnScroll,
                                      layoutConfiguration: unifiedToggleInputFeature.isAvailable ? .unifiedToggleInput : .standard,
                                      viewModel: newTabPageViewModel,
                                      messagesModel: messagesModel,

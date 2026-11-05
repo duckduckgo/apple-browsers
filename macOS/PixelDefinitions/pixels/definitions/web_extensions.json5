@@ -31,7 +31,7 @@
         ]
     },
     "m_mac_web_extension_uninstalled": {
-        "description": "Fires when a web extension is successfully uninstalled, including each one removed by uninstalling all. Removing the previous version after an update, and removing a built-in extension, don't fire it.",
+        "description": "Fires when a web extension is successfully uninstalled.",
         "owners": ["tomasstrba"],
         "triggers": ["other"],
         "suffixes": ["daily_standard"],

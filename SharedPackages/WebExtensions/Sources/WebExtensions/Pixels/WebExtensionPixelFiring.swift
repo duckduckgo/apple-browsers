@@ -66,7 +66,6 @@ public enum WebExtensionPixelEvent {
     /// the catalog's `categoryId`, both `nil` when unknown.
     case installed(extension: WebExtensionPixelExtension, extensionID: String?, category: String?)
     case installError(extension: WebExtensionPixelExtension, error: Error)
-    /// A store extension was removed; updates and embedded extensions aren't reported.
     case uninstalled(extension: WebExtensionPixelExtension, extensionID: String?, category: String?)
     case uninstallError(error: Error)
     case uninstalledAll

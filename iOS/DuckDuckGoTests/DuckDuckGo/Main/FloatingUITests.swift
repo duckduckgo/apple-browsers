@@ -3081,6 +3081,7 @@ final class SwipeTabsNewTabDestinationTests: XCTestCase {
             ),
             liveTabControllerProvider: { _ in nil },
             inputStateProvider: { _ in TabInputState() },
+            placeholderStateProvider: { _ in .newChat },
             isPaidAIChatEnabledProvider: { false },
             allowsSubscriptionUpsellProvider: { false },
             pixelFiring: nil,

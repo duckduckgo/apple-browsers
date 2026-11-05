@@ -89,8 +89,18 @@ extension MainViewController {
               tab.isAITab,
               tabManager.currentTabsModel.currentTab?.isAITab == true,
               let coordinator = unifiedToggleInputCoordinator else { return }
+        coordinator.viewController.crossfadePlaceholder(to: duckAIPlaceholderState(for: tab))
+    }
+
+    /// The input's own state for the tab it shows, since the stored state is only written when leaving a tab.
+    func duckAIPlaceholderState(for tab: Tab) -> AIChatPlaceholderState {
+        if let coordinator = unifiedToggleInputCoordinator, coordinator.currentTabUID == tab.uid {
+            return coordinator.viewController.placeholderState
+        }
         let tabURL = tabManager.controller(for: tab)?.url ?? tab.link?.url
-        coordinator.crossfadePlaceholder(toMatch: tab.uid, hasSubmittedPrompt: tabURL?.duckAIChatID != nil)
+        let selectedTool = unifiedInputStateStore?.state(for: tab.uid).selectedTool
+        return AIChatPlaceholderState(hasSubmittedPrompt: tabURL?.duckAIChatID != nil,
+                                      isImageGenerationSelected: selectedTool == .imageGeneration)
     }
 
     /// The Duck.ai header holds no text, so swiping it can't interfere with editing the focused chat input.

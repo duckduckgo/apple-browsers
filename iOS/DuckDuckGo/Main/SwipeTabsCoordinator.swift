@@ -239,6 +239,7 @@ class SwipeTabsCoordinator: NSObject {
     private let floatingUIManager: FloatingUIManaging
     private let liveTabControllerProvider: (Tab) -> TabViewController?
     private let inputStateProvider: (Tab) -> TabInputState
+    private let placeholderStateProvider: (Tab) -> AIChatPlaceholderState
     private let isPaidAIChatEnabledProvider: () -> Bool
     private let allowsSubscriptionUpsellProvider: () -> Bool
     private let hasInlineSearchInput: (Tab?) -> Bool
@@ -284,6 +285,7 @@ class SwipeTabsCoordinator: NSObject {
          floatingUIManager: FloatingUIManaging,
          liveTabControllerProvider: @escaping (Tab) -> TabViewController?,
          inputStateProvider: @escaping (Tab) -> TabInputState,
+         placeholderStateProvider: @escaping (Tab) -> AIChatPlaceholderState,
          isPaidAIChatEnabledProvider: @escaping () -> Bool,
          allowsSubscriptionUpsellProvider: @escaping () -> Bool,
          hasInlineSearchInput: @escaping (Tab?) -> Bool = { _ in false },
@@ -300,6 +302,7 @@ class SwipeTabsCoordinator: NSObject {
         self.floatingUIManager = floatingUIManager
         self.liveTabControllerProvider = liveTabControllerProvider
         self.inputStateProvider = inputStateProvider
+        self.placeholderStateProvider = placeholderStateProvider
         self.isPaidAIChatEnabledProvider = isPaidAIChatEnabledProvider
         self.allowsSubscriptionUpsellProvider = allowsSubscriptionUpsellProvider
         self.hasInlineSearchInput = hasInlineSearchInput
@@ -895,6 +898,9 @@ extension SwipeTabsCoordinator: UICollectionViewDelegate {
         coordinator.parentController?.addChild(inputController)
         container.addSubview(inputController.view)
         inputController.didMove(toParent: coordinator.parentController)
+        let placeholderState = placeholderStateProvider(tab)
+        inputController.handler.hasSubmittedPrompt = placeholderState.hasSubmittedPrompt
+        inputController.handler.isImageGenerationSelected = placeholderState.isImageGenerationSelected
         inputController.apply(
             UTIViewConfig(
                 cardLayout: .flanked(.all),
@@ -909,6 +915,7 @@ extension SwipeTabsCoordinator: UICollectionViewDelegate {
             animated: false
         )
         inputController.text = state.text
+        inputController.refreshPlaceholderForCurrentMode()
         inputController.setFlankingAccessoriesVisible(.all)
         liveChromeControllers.append(inputController)
     }

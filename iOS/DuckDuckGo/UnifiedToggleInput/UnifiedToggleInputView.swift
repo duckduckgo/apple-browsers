@@ -218,8 +218,8 @@ final class UnifiedToggleInputView: UIView {
         textEntryView.refreshPlaceholderForCurrentMode()
     }
 
-    func crossfadePlaceholder(hasSubmittedPrompt: Bool, isImageGenerationSelected: Bool) {
-        textEntryView.crossfadePlaceholder(hasSubmittedPrompt: hasSubmittedPrompt, isImageGenerationSelected: isImageGenerationSelected)
+    func crossfadePlaceholder(to state: AIChatPlaceholderState) {
+        textEntryView.crossfadePlaceholder(to: state)
     }
 
     var inputMode: TextEntryMode {

@@ -847,13 +847,6 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         refreshToolsPresentation()
     }
 
-    /// Fades the placeholder to the one the given tab's chat shows, before the input switches to that tab.
-    func crossfadePlaceholder(toMatch uid: TabUID, hasSubmittedPrompt: Bool) {
-        let isImageGenerationSelected = stateStore.state(for: uid).selectedTool == .imageGeneration
-        viewController.crossfadePlaceholder(hasSubmittedPrompt: hasSubmittedPrompt,
-                                            isImageGenerationSelected: isImageGenerationSelected)
-    }
-
     func snapshotCurrentState() -> TabInputState {
         TabInputState(
             text: currentText,

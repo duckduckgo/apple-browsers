@@ -1251,6 +1251,9 @@ class MainViewController: UIViewController {
                                                     inputStateProvider: { [weak self] tab in
                                                         self?.unifiedInputStateStore?.state(for: tab.uid) ?? TabInputState()
                                                     },
+                                                    placeholderStateProvider: { [weak self] tab in
+                                                        self?.duckAIPlaceholderState(for: tab) ?? .newChat
+                                                    },
                                                     isPaidAIChatEnabledProvider: { [weak self] in
                                                         self?.isPaidAIChatEnabledForSwipe ?? false
                                                     },

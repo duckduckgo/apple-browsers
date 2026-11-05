@@ -165,6 +165,7 @@ class TabViewController: UIViewController {
     var containerStackViewTopConstraint: NSLayoutConstraint?
     var outerContainer: UIView!
     var webViewContainer: UIView!
+    private lazy var firstPaintCover = FirstPaintCover()
     var webViewTopAnchorConstraint: NSLayoutConstraint?
     var webViewBottomAnchorConstraint: NSLayoutConstraint?
     private var webViewLayoutConstraints: [NSLayoutConstraint] = []
@@ -1681,6 +1682,12 @@ class TabViewController: UIViewController {
         load(url: url, shouldCancelPendingAIChatTabAttachmentPrompt: true)
     }
 
+    /// Hides the current page until the next navigation first paints, so it doesn't flash after a submit.
+    func coverPageUntilFirstPaint(handoff: FirstPaintCover.Handoff = .init()) {
+        guard isViewLoaded, let webView, webView.superview === webViewContainer else { return }
+        firstPaintCover.arm(in: webViewContainer, above: webView, handoff: handoff)
+    }
+
     private func load(url: URL, shouldCancelPendingAIChatTabAttachmentPrompt: Bool) {
         if case .available = aiChatContextualAttachMoreTabsFeature.state {
             if initialAIChatPromptSession.willLoad(isInternalRetry: !shouldCancelPendingAIChatTabAttachmentPrompt) {
@@ -2548,6 +2555,7 @@ class TabViewController: UIViewController {
     }
 
     func stopLoading() {
+        firstPaintCover.cancel()
         cancelPendingAIChatTabAttachmentPrompt()
         cancelWebExtensionNavigationWait()
         sitePermissionsState.cancelContentBlockingWaits()
@@ -2669,7 +2677,17 @@ extension TabViewController: WKNavigationDelegate {
         delegate?.tab(self, didRequestPresentingAlert: alert)
     }
 
+    // Private WebKit callback (also used on macOS via DistributedNavigationDelegate).
+    @objc(_webView:renderingProgressDidChange:)
+    public func webView(_ webView: WKWebView, renderingProgressDidChange progressEvents: UInt) {
+        guard webView === self.webView else { return }
+        firstPaintCover.renderingProgressDidChange(progressEvents)
+    }
+
     func webView(_ webView: WKWebView, didCommit navigation: WKNavigation!) {
+        if webView === self.webView {
+            firstPaintCover.didCommit()
+        }
         pageSignalsDidCommitNavigation(to: webView.url)
         pendingNativeLoadURL = nil
         sitePermissionsDidCommit(webView, navigation: navigation)
@@ -3420,6 +3438,9 @@ extension TabViewController: WKNavigationDelegate {
     }
 
     func webView(_ webView: WKWebView, didFail navigation: WKNavigation!, withError error: Error) {
+        if webView === self.webView {
+            firstPaintCover.navigationDidFail(error)
+        }
         terminationReloadMonitor.didFail(with: error)
         if webView === self.webView, initialAIChatPromptSession.didFailNavigation(navigation) {
             userScripts?.aiChatUserScript.cancelQueuedTabContextSubmissions()
@@ -3478,6 +3499,9 @@ extension TabViewController: WKNavigationDelegate {
     }
     
     func webView(_ webView: WKWebView, didFailProvisionalNavigation navigation: WKNavigation!, withError error: Error) {
+        if webView === self.webView {
+            firstPaintCover.navigationDidFail(error)
+        }
         terminationReloadMonitor.didFail(with: error)
         if webView === self.webView, initialAIChatPromptSession.didFailNavigation(navigation) {
             userScripts?.aiChatUserScript.cancelQueuedTabContextSubmissions()
@@ -4736,6 +4760,7 @@ extension TabViewController: WKUIDelegate {
         terminationReloadMonitor.didTerminate()
 
         if webView === self.webView {
+            firstPaintCover.cancel()
             cancelPendingAIChatTabAttachmentPrompt()
             cancelWebExtensionNavigationWait()
             freezeMonitor.end(.terminated)

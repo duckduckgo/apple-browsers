@@ -2272,6 +2272,7 @@ extension UnifiedToggleInputCoordinator: UnifiedToggleInputViewControllerDelegat
             pixelReporter.reportQuerySubmitted(defaultOmnibarMode: aiChatSettings.defaultOmnibarMode,
                                                queryType: UnifiedToggleInputQueryType(query: text))
             clearStoreEntryAfterSubmission()
+            delegate?.unifiedToggleInputWillSubmitQuery(text)
             if isAITabState {
                 hide()
             } else if isContextualChatState {

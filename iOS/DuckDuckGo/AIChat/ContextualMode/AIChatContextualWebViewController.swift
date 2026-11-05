@@ -365,6 +365,10 @@ final class AIChatContextualWebViewController: UIViewController {
     }
 
     func setFloatingInputView(_ inputView: UIView) {
+        if floatingInputView === inputView {
+            updateFloatingInputInset()
+            return
+        }
         floatingInputView = inputView
         if #available(iOS 26, *) {
             let color = UIColor(singleUseColor: .duckAIWebViewBackground)

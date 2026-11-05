@@ -433,10 +433,6 @@ final class UnifiedToggleInputViewController: UIViewController {
         inputBarView.applyOmnibarEditingShowPose()
     }
 
-    func finalizeOmnibarEditingShow() {
-        inputBarView.finalizeOmnibarEditingShow()
-    }
-
     func applyOmnibarEditingDismissPose() {
         inputBarView.applyOmnibarEditingDismissPose()
     }

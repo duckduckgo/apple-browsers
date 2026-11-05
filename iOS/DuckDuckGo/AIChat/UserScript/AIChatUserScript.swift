@@ -54,10 +54,12 @@ enum DuckAIChatScrollInsetStyler {
                     if (!state.target?.isConnected) {
                         state.target = state.find();
                         if (state.target) {
+                            state.lastMessage = null;
                             const style = state.target.style;
                             state.original = {
                                 scrollTop: style.scrollPaddingTop,
-                                scrollBottom: style.scrollPaddingBottom
+                                scrollBottom: style.scrollPaddingBottom,
+                                overscroll: style.overscrollBehaviorY
                             };
                         }
                     }
@@ -72,12 +74,32 @@ enum DuckAIChatScrollInsetStyler {
                             state.spacer.style.cssText = 'flex: 0 0 auto; width: 100%; pointer-events: none;';
                             state.target.appendChild(state.spacer);
                         }
-                        state.spacer.style.height = `${state.bottom + 44}px`;
+                        if (state.target.lastElementChild !== state.spacer) {
+                            state.target.appendChild(state.spacer);
+                        }
+                        const lastMessage = state.spacer.previousElementSibling;
+                        const content = lastMessage?.lastElementChild || lastMessage;
+                        if (state.lastMessage !== lastMessage || state.content !== content) {
+                            state.resizeObserver.disconnect();
+                            state.resizeObserver.observe(state.target);
+                            if (content) state.resizeObserver.observe(content);
+                            state.lastMessage = lastMessage;
+                            state.content = content;
+                        }
+                        state.spacer.style.marginTop = `${-(parseFloat(getComputedStyle(state.target).rowGap) || 0)}px`;
+                        const targetRect = state.target.getBoundingClientRect();
+                        const contentEnd = content
+                            ? content.getBoundingClientRect().bottom - targetRect.top - state.target.clientTop + state.target.scrollTop
+                            : 0;
+                        const existingClearance = Math.max(0, state.target.scrollHeight - contentEnd - state.spacer.getBoundingClientRect().height);
+                        const overlap = Math.max(state.bottom, targetRect.bottom + scrollY - innerHeight);
+                        state.spacer.style.height = `${Math.max(0, overlap - existingClearance)}px`;
                     } else if (state.spacer?.parentElement === state.target) {
                         state.spacer.remove();
                     }
                     if (style.scrollPaddingTop !== scrollTop) style.scrollPaddingTop = scrollTop;
                     if (style.scrollPaddingBottom !== scrollBottom) style.scrollPaddingBottom = scrollBottom;
+                    style.overscrollBehaviorY = state.top || state.bottom ? 'contain' : state.original.overscroll;
                 };
                 state.schedule = () => {
                     if (state.scheduled) return;
@@ -87,6 +109,9 @@ enum DuckAIChatScrollInsetStyler {
                         state.apply();
                     });
                 };
+                state.resizeObserver = new ResizeObserver(state.schedule);
+                window.addEventListener('resize', state.schedule);
+                window.visualViewport?.addEventListener('resize', state.schedule);
                 new MutationObserver(state.schedule).observe(document.documentElement, { childList: true, subtree: true });
                 window[key] = state;
             }

@@ -196,13 +196,7 @@ final class UnifiedToggleInputView: UIView {
     /// expanded. Set before `setInputMode`/`applyCardLayout` so the layout pass reads it.
     var isAITab: Bool = false {
         didSet {
-            guard isAITab != oldValue else { return }
-            textEntryView.usesFloatingAIStopButtonSpacing = hasFloatingAIChrome
-            applyCardBackgroundColor(cardBackgroundColor(isFireTab: handler.isFireTab))
-            let useCompositeShadow = isExpanded || currentLayout == .flanked
-            expandedShadowView.isHidden = !useCompositeShadow || hasFloatingInputGlass
-            cardView.layer.shadowOpacity = useCompositeShadow || hasFloatingInputGlass ? 0 : 1
-            updateExpandedBorderVisibility(isExpanded && (currentLayout.showsToggle || currentLayout.showsToolbar))
+            textEntryView.usesFloatingAIStopButtonSpacing = hasFloatingInputGlass && isAITab
         }
     }
 
@@ -739,10 +733,6 @@ final class UnifiedToggleInputView: UIView {
         return false
     }
 
-    private var hasFloatingAIChrome: Bool {
-        hasFloatingInputGlass && isAITab
-    }
-
     // MARK: - Dynamic Colors
 
     private var cardShadowColor: CGColor {
@@ -884,7 +874,8 @@ final class UnifiedToggleInputView: UIView {
         self.attachmentsStrip = UnifiedToggleInputAttachmentsStripView(usesCompactLayout: usesCompactAttachmentLayout)
         self.textEntryView = SwitchBarTextEntryView(handler: handler, voiceButtonAppearance: .aiVoicePlain)
         super.init(frame: .zero)
-        toolsToolbar.usesFloatingUI = usesFloatingUI
+        toolsToolbar.usesFloatingUI = hasFloatingInputGlass
+        textEntryView.hidesStopButtonBackground = hasFloatingInputGlass
         textEntryView.style = isToggleEnabled ? .multiLine : .singleLine
         setupUI()
         setupSubscriptions()
@@ -952,7 +943,7 @@ final class UnifiedToggleInputView: UIView {
         textEntryView.isUserInteractionEnabled = !dimmed
         // Suppress the stop-generating button during onboarding — its red color is distracting even when dimmed.
         handler.isOnboardingLocked = dimmed
-        if !hasFloatingAIChrome {
+        if !hasFloatingInputGlass {
             let shadowOpacity = dimmed ? Constants.aiTabCollapsedMenuButtonDisabledShadowOpacity : Constants.aiTabCollapsedMenuButtonShadowOpacity
             Self.applyAITabAccessoryShadow(to: aiTabCollapsedMenuButton, opacity: shadowOpacity)
         }
@@ -996,9 +987,6 @@ final class UnifiedToggleInputView: UIView {
             cardView.backgroundColor = .clear
             expandedShadowView.backgroundColor = .clear
         } else {
-            glassCardBackgroundView?.removeFromSuperview()
-            glassCardBackgroundView = nil
-            appliedGlassCardCornerRadius = nil
             cardView.backgroundColor = color
             expandedShadowView.backgroundColor = color
         }
@@ -1451,13 +1439,10 @@ final class UnifiedToggleInputView: UIView {
     }
 
     func prepareForOmnibarMaterialTransition(duration: TimeInterval) {
+        guard cardPosition == .bottom, !hasFloatingInputGlass else { return }
         omnibarMaterialTransitionDuration = duration
-        guard cardPosition == .bottom else { return }
-        if hasFloatingInputGlass { return }
         if omnibarMaterialTransitionBackgroundColor == nil {
-            omnibarMaterialTransitionBackgroundColor = hasFloatingInputGlass
-                ? cardBackgroundColor(isFireTab: false)
-                : (cardView.backgroundColor ?? cardBackgroundColor(isFireTab: false))
+            omnibarMaterialTransitionBackgroundColor = cardView.backgroundColor ?? cardBackgroundColor(isFireTab: false)
         }
         ensureOmnibarMaterialTransitionViews()
         // Start on resting grey; white fades in after the pill silhouette is established.
@@ -1487,13 +1472,6 @@ final class UnifiedToggleInputView: UIView {
         case (_, _):
             applyCardLayout(.expanded(showsToggle: isToggleEnabled, showsToolbar: isToggleEnabled && toggleView.selectedMode == .aiChat), animated: false)
         }
-    }
-
-    func finalizeOmnibarEditingShow() {
-        guard hasFloatingInputGlass, omnibarMaterialTransitionBackgroundColor != nil else { return }
-        tearDownOmnibarMaterialTransitionViews()
-        omnibarMaterialTransitionBackgroundColor = nil
-        applyCardBackgroundColor(cardBackgroundColor(isFireTab: handler.isFireTab))
     }
 
     /// Inactive editing pose. Call inside a UIView.animate block.

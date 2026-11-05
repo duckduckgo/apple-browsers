@@ -310,19 +310,20 @@ extension MainViewController {
         case .aiTabChatChromeHidden:
             statusBackgroundPresentation = .aiTabChatChromeHidden
             inputContentContainerColor = .clear
-            if unifiedToggleInputCoordinator?.isInputEditing == true {
-                rootBackgroundColor = UIColor(singleUseColor: usesFloatingAIChrome ? .duckAIWebViewBackground : .duckAIContextualSheetBackground)
-                navigationBarContainerColor = usesFloatingAIChrome ? .clear : rootBackgroundColor
-                unifiedToggleInputContainerColor = .clear
-                webViewBackgroundColor = rootBackgroundColor
-            } else {
-                rootBackgroundColor = usesFloatingAIChrome
-                    ? UIColor(singleUseColor: .duckAIWebViewBackground)
-                    : UIColor(designSystemColor: .surfaceCanvas)
+            if usesFloatingAIChrome {
+                rootBackgroundColor = UIColor(singleUseColor: .duckAIWebViewBackground)
                 navigationBarContainerColor = .clear
-                unifiedToggleInputContainerColor = usesFloatingAIChrome ? .clear : UIColor(designSystemColor: .surfaceCanvas)
-                webViewBackgroundColor = rootBackgroundColor
+                unifiedToggleInputContainerColor = .clear
+            } else if unifiedToggleInputCoordinator?.isInputEditing == true {
+                rootBackgroundColor = UIColor(singleUseColor: .duckAIContextualSheetBackground)
+                navigationBarContainerColor = rootBackgroundColor
+                unifiedToggleInputContainerColor = .clear
+            } else {
+                rootBackgroundColor = UIColor(designSystemColor: .surfaceCanvas)
+                navigationBarContainerColor = .clear
+                unifiedToggleInputContainerColor = rootBackgroundColor
             }
+            webViewBackgroundColor = rootBackgroundColor
         }
 
         viewCoordinator.setStatusBackgroundPresentation(statusBackgroundPresentation)

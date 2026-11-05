@@ -2457,24 +2457,27 @@ final class WebViewScrollViewInsetUpdaterTests: XCTestCase {
 
     @available(iOS 26, *)
     func testFloatingAIChatKeepsBothScrollEndsClearOfNativeControls() {
-        for isLiquidGlassEnabled in [false, true] {
-            let flags: [FeatureFlag] = isLiquidGlassEnabled ? [.duckAIAndInputLiquidGlass] : []
-            let tab = TabViewController.fake(featureFlagger: MockFeatureFlagger(enabledFeatureFlags: flags),
-                                             link: Link(title: "Duck.ai", url: URL(string: "https://duck.ai/chat")!))
-            tab.floatingUIManager = FloatingUIManager(
-                isFloatingUIFeatureEnabled: true,
-                isPadProvider: { false },
-                unifiedToggleInputFeature: MockUnifiedToggleInputFeatureProvider(isAvailable: true)
-            )
-            tab.loadViewIfNeeded()
-            let chrome = DuckPlayerBrowserChromeDelegateMock()
-            chrome.floatingAIChatHeaderObscuredHeight = 112
-            chrome.floatingBottomObscuredHeight = 148
-            tab.chromeDelegate = chrome
+        let featureFlagger = MockFeatureFlagger()
+        let tab = TabViewController.fake(featureFlagger: featureFlagger,
+                                         link: Link(title: "Duck.ai", url: URL(string: "https://duck.ai/chat")!))
+        tab.floatingUIManager = FloatingUIManager(
+            isFloatingUIFeatureEnabled: true,
+            isPadProvider: { false },
+            unifiedToggleInputFeature: MockUnifiedToggleInputFeatureProvider(isAvailable: true)
+        )
+        tab.loadViewIfNeeded()
+        let chrome = DuckPlayerBrowserChromeDelegateMock()
+        chrome.floatingAIChatHeaderObscuredHeight = 112
+        chrome.floatingBottomObscuredHeight = 148
+        tab.chromeDelegate = chrome
 
+        for isLiquidGlassEnabled in [false, true, false, true] {
+            featureFlagger.enabledFeatureFlags = isLiquidGlassEnabled ? [.duckAIAndInputLiquidGlass] : []
             tab.updateWebViewBottomAnchor(for: 1)
 
-            let expected = UIEdgeInsets(top: 112, left: 0, bottom: isLiquidGlassEnabled ? 148 : 0, right: 0)
+            let expected = isLiquidGlassEnabled
+                ? UIEdgeInsets(top: 112, left: 0, bottom: chrome.floatingBottomObscuredHeight, right: 0)
+                : .zero
             XCTAssertEqual(tab.webView.scrollView.contentInset, expected)
             XCTAssertEqual(tab.webView.obscuredContentInsets, expected)
 

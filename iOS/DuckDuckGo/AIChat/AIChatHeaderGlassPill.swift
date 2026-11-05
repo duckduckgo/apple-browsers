@@ -45,7 +45,6 @@ final class AIChatHeaderGlassPill: UIView {
     private let usesFloatingAIChrome: Bool
     private let clipHost = UIView()
     private var glassEffectView: UIVisualEffectView?
-    private var reduceTransparencyObserver: NSObjectProtocol?
 
     init(cornerRadius: CGFloat, shadowStyle: ShadowStyle = .floating, usesFloatingAIChrome: Bool = false) {
         self.cornerRadius = cornerRadius
@@ -83,15 +82,6 @@ final class AIChatHeaderGlassPill: UIView {
                 contentView.bottomAnchor.constraint(equalTo: effectView.contentView.bottomAnchor),
             ])
             glassEffectView = effectView
-            if usesFloatingAIChrome {
-                reduceTransparencyObserver = NotificationCenter.default.addObserver(
-                    forName: UIAccessibility.reduceTransparencyStatusDidChangeNotification,
-                    object: nil,
-                    queue: .main
-                ) { [weak self] _ in
-                    self?.refreshGlassForCurrentTraits()
-                }
-            }
         } else {
             clipHost.backgroundColor = UIColor(designSystemColor: .controlsRaisedFillPrimary)
             clipHost.addSubview(contentView)
@@ -116,12 +106,6 @@ final class AIChatHeaderGlassPill: UIView {
 
     required init?(coder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
-    }
-
-    deinit {
-        if let reduceTransparencyObserver {
-            NotificationCenter.default.removeObserver(reduceTransparencyObserver)
-        }
     }
 
     override func layoutSubviews() {

@@ -1274,11 +1274,9 @@ class TabViewController: UIViewController {
         var obscuredInsets: UIEdgeInsets = isUnifiedToggleInputAffectingLayout
             ? .zero
             : (chromeDelegate?.floatingWebViewObscuredInsets(for: barsVisibilityPercent) ?? .zero)
-        if isUnifiedToggleInputAffectingLayout {
+        if usesFloatingAIChrome {
             obscuredInsets.top = chromeDelegate?.floatingAIChatHeaderObscuredHeight ?? 0
-            if usesFloatingAIChrome {
-                obscuredInsets.bottom = chromeDelegate?.floatingWebViewBottomObscuredHeight(for: barsVisibilityPercent) ?? 0
-            }
+            obscuredInsets.bottom = chromeDelegate?.floatingWebViewBottomObscuredHeight(for: barsVisibilityPercent) ?? 0
         }
 
         // While a dialog is up the obscured top region offsets the stack instead of the web view, or

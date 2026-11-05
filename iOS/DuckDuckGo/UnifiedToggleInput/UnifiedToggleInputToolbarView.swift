@@ -118,7 +118,13 @@ final class UnifiedToggleInputToolbarView: UIView {
 
     private var isFireTab: Bool = false
     var usesFloatingUI = false {
-        didSet { updateTrailingPadding() }
+        didSet {
+            updateTrailingPadding()
+            stopButton.setColors(
+                foreground: UIColor(designSystemColor: .textPrimary),
+                background: usesFloatingUI ? .clear : UIColor(singleUseColor: .unifiedToggleInputStopButtonBackground)
+            )
+        }
     }
     private var outerStackTrailingConstraint: NSLayoutConstraint?
     private var preservesSubmitStyleDuringDismissal = false

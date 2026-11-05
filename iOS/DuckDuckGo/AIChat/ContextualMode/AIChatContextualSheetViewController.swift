@@ -197,6 +197,7 @@ final class AIChatContextualSheetViewController: UIViewController {
     )
     private var cancellables = Set<AnyCancellable>()
     private var contentContainerBottomConstraint: NSLayoutConstraint?
+    private weak var floatingInputView: UIView?
     private var headerTopConstraint: NSLayoutConstraint?
 
     /// The single web view controller for this sheet, created once and reused
@@ -669,6 +670,10 @@ final class AIChatContextualSheetViewController: UIViewController {
     override func viewDidLayoutSubviews() {
         super.viewDidLayoutSubviews()
         updateShadowPath()
+        if #available(iOS 26, *), usesLiquidGlassHeader, isWebViewVisible,
+           let floatingInputView, floatingInputView.superview === view {
+            webViewController?.setFloatingInputView(floatingInputView)
+        }
     }
 
     override func traitCollectionDidChange(_ previousTraitCollection: UITraitCollection?) {
@@ -1684,6 +1689,7 @@ private extension AIChatContextualSheetViewController {
             self.contextualInputViewController.view.isHidden = isVisible
         }
         if #available(iOS 26, *), usesLiquidGlassHeader {
+            floatingInputView = utiView
             contentContainerBottomConstraint?.isActive = true
         } else {
             // The previous constraint died with the old mount — its two views no longer share an ancestor.

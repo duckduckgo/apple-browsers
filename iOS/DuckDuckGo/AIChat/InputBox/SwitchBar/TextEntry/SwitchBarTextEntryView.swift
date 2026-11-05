@@ -147,6 +147,9 @@ class SwitchBarTextEntryView: UIView {
     var usesFloatingAIStopButtonSpacing: Bool = false {
         didSet { buttonsView.usesFloatingAIStopButtonSpacing = usesFloatingAIStopButtonSpacing }
     }
+    var hidesStopButtonBackground: Bool = false {
+        didSet { buttonsView.hidesStopButtonBackground = hidesStopButtonBackground }
+    }
     private var currentButtonState: SwitchBarButtonState {
         get { buttonsView.buttonState }
         set { buttonsView.buttonState = newValue }

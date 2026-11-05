@@ -773,9 +773,9 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .syncPromotionPasswords:
             Config(source: .remoteReleasable(SyncPromotionSubfeature.passwords), supportsLocalOverriding: false)
         case .syncPromotionSyncAnotherDevice:
-            Config(source: .remoteReleasable(SyncPromotionSubfeature.syncAnotherDevice))
+            Config(defaultValue: .internalOnly, source: .remoteReleasable(SyncPromotionSubfeature.syncAnotherDevice))
         case .syncPromotionRedesign:
-            Config(source: .remoteReleasable(SyncPromotionSubfeature.redesign))
+            Config(defaultValue: .internalOnly, source: .remoteReleasable(SyncPromotionSubfeature.redesign))
         case .autofillSurveys:
             Config(defaultValue: .enabled, source: .remoteReleasable(AutofillSurveysSubfeature.featureEnabled), supportsLocalOverriding: false)
         case .adAttributionReporting:
@@ -1109,7 +1109,7 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .fastTrackingParameterFilter:
             Config(defaultValue: .internalOnly, source: .remoteReleasable(iOSBrowserConfigSubfeature.fastTrackingParameterFilter))
         case .aiChatLimitExtensionPromo:
-            Config(defaultValue: .internalOnly, source: .remoteReleasable(AIChatSubfeature.chatLimitExtensionPromo))
+            Config(defaultValue: .internalOnly, source: .remoteReleasable(AIChatSubfeature.chatLimitExtensionPromo), supportsLocalOverriding: true)
         case .deferredMemoryCacheDelete:
             Config(defaultValue: .disabled, source: .remoteReleasable(iOSBrowserConfigSubfeature.deferredMemoryCacheDelete))
         }

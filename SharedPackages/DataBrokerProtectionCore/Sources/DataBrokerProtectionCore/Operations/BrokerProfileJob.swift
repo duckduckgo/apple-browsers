@@ -266,10 +266,12 @@ public class BrokerProfileJob: Operation, @unchecked Sendable {
 
     private func makeFilteredAndSortedJobData(_ brokerProfileQueriesData: [BrokerProfileQueryData], isFreeScan: Bool) -> [BrokerJobData] {
         var didFireFreemiumMaintenanceScanSkippedPixel = false
+        let userAssistance = jobDependencies.userAssistanceConfig
         return Self.sortedEligibleJobs(brokerProfileQueriesData: brokerProfileQueriesData,
                                        jobType: jobType,
                                        priorityDate: priorityDate,
                                        sortPredicate: jobDependencies.jobSortPredicate)
+            .excludingOptOutsLeftToUserAssistance(userAssistance, brokerProfileQueriesData: brokerProfileQueriesData)
             .filter { jobData in
                 guard isFreeScan, let scanJobData = jobData as? ScanJobData else {
                     return true
@@ -323,6 +325,16 @@ private extension Array where Element == BrokerJobData {
             }
 
             return preferredRunDate <= priorityDate
+        }
+    }
+
+    /// Opt-outs for brokers enabled for user assistance only run from the assisted queue.
+    func excludingOptOutsLeftToUserAssistance(_ config: UserAssistanceConfig, brokerProfileQueriesData: [BrokerProfileQueryData]) -> [BrokerJobData] {
+        guard config.isEnabled else { return self }
+        return filter { jobData in
+            guard jobData is OptOutJobData,
+                  let url = brokerProfileQueriesData.first(where: { $0.dataBroker.id == jobData.brokerId })?.dataBroker.url else { return true }
+            return !config.isEnabled(forBrokerURL: url)
         }
     }
 

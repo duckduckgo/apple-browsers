@@ -211,6 +211,10 @@ public final class DataBrokerProtectionAgentManager {
 
     private var debugServer: DataBrokerProtectionDebugHTTPServer?
 
+    @MainActor private var assistedOptOutQueue: AssistedOptOutQueue?
+    @MainActor private var assistedOptOutPresenter: AssistedOptOutWindowPresenter?
+    @MainActor private var assistedOptOutRefreshTimer: Timer?
+
     private var didStartActivityScheduler = false
     private var currentRunIsFreeScan: Bool?
 
@@ -284,6 +288,8 @@ public final class DataBrokerProtectionAgentManager {
 
             await activityScheduler.startScheduler()
             didStartActivityScheduler = true
+
+            setUpAssistedOptOuts()
 
             await fireMonitoringPixels()
             Logger.dataBrokerProtection.debug("PIR wide event sweep requested (agent launch)")
@@ -373,6 +379,7 @@ extension DataBrokerProtectionAgentManager: DataBrokerProtectionBackgroundActivi
             Logger.dataBrokerProtection.error("Email confirmation data check failed: \(error, privacy: .public)")
         }
 
+        await refreshAssistedOptOuts()
         await startScheduledOperations()
     }
 
@@ -616,6 +623,56 @@ extension DataBrokerProtectionAgentManager: DataBrokerProtectionAgentDebugComman
 
 extension DataBrokerProtectionAgentManager: DataBrokerProtectionAppToAgentInterface {
 
+}
+
+// MARK: - Assisted opt-outs
+
+extension DataBrokerProtectionAgentManager: DataBrokerProtectionAgentAssistedOptOutCommands {
+
+    /// How often the agent re-reads the user assistance config, which can change remotely or from the debug menu.
+    private static let assistedOptOutRefreshInterval: TimeInterval = 30
+
+    @MainActor
+    func setUpAssistedOptOuts() {
+        guard assistedOptOutQueue == nil else { return }
+        let presenter = AssistedOptOutWindowPresenter()
+        let queue = AssistedOptOutQueue(dependencies: jobDependencies)
+        queue.presenter = presenter
+        assistedOptOutPresenter = presenter
+        assistedOptOutQueue = queue
+
+        let timer = Timer(timeInterval: Self.assistedOptOutRefreshInterval, repeats: true) { [weak self] _ in
+            Task { await self?.refreshAssistedOptOuts() }
+        }
+        RunLoop.main.add(timer, forMode: .common)
+        assistedOptOutRefreshTimer = timer
+        Task { await refreshAssistedOptOuts() }
+    }
+
+    func refreshAssistedOptOuts() async {
+        let isAuthenticated = await authenticationManager.isUserAuthenticated
+        await MainActor.run {
+            if isAuthenticated {
+                assistedOptOutQueue?.refresh()
+            } else {
+                assistedOptOutQueue?.cancelAll()
+            }
+        }
+    }
+
+    public func getAssistedOptOuts(droppingSubmitted: Bool) async -> AssistedOptOutList {
+        guard await authenticationManager.isUserAuthenticated else { return AssistedOptOutList(optOuts: []) }
+        return await MainActor.run {
+            AssistedOptOutList(optOuts: assistedOptOutQueue?.assistedOptOuts(droppingSubmitted: droppingSubmitted) ?? [])
+        }
+    }
+
+    public func startAssistedOptOut(id: String) {
+        Task { @MainActor in
+            guard await authenticationManager.isUserAuthenticated, let id = AssistedOptOutID(id) else { return }
+            assistedOptOutQueue?.start(id: id)
+        }
+    }
 }
 
 // MARK: - Debug HTTP server read access

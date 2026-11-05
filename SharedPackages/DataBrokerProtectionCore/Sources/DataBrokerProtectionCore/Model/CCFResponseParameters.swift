@@ -88,6 +88,7 @@ enum CCFSuccessData {
     case getCaptchaInfo(GetCaptchaInfoResponse)
     case solveCaptcha(SolveCaptchaResponse)
     case conditionSuccess(ConditionSuccessResponse)
+    case userAssist
 }
 
 struct CCFSuccessResponse: Decodable {
@@ -134,6 +135,8 @@ struct CCFSuccessResponse: Decodable {
             self.response = .solveCaptcha(try container.decode(SolveCaptchaResponse.self, forKey: .response))
         case .condition:
             self.response = .conditionSuccess(try container.decode(ConditionSuccessResponse.self, forKey: .response))
+        case .userAssist:
+            self.response = .userAssist
         }
     }
 }

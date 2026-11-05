@@ -1,5 +1,5 @@
 //
-//  PIRAssistStepsPanel.swift
+//  AssistedOptOutStepsPanel.swift
 //
 //  Copyright © 2026 DuckDuckGo. All rights reserved.
 //
@@ -16,26 +16,38 @@
 //  limitations under the License.
 //
 
-#if DEBUG
 import DataBrokerProtectionCore
 import DesignResourcesKit
 import DesignResourcesKitIcons
 import SwiftUI
 
-/// The right-hand side of the "Removing you from…" window: where the request is, and what the user needs to do.
-struct PIRAssistStepsPanel: View {
-    @ObservedObject var session: PIRAssistSession
+enum AssistedOptOutStepState: Equatable {
+    case done
+    case running
+    case userTurn
+    case upcoming
+}
+
+extension AssistedOptOutSession {
+    var stepStates: [AssistedOptOutStepState] {
+        steps.titles.indices.map { index in
+            if phase == .submitted || index < currentStepIndex { return .done }
+            if index > currentStepIndex || phase == .queued { return .upcoming }
+            return phase == .userTurn ? .userTurn : .running
+        }
+    }
+}
+
+/// The right-hand side of the assisted opt-out window: the broker's steps, and what the user needs to do.
+struct AssistedOptOutStepsPanel: View {
+    @ObservedObject var session: AssistedOptOutSession
     let close: () -> Void
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
-            topRow
-                .padding(.top, -4)
-                .padding(.trailing, -4)
             header
-                .padding(.top, 8)
-            if let submission = session.submission {
-                whatHappensNext(submission)
+            if session.phase == .submitted {
+                whatHappensNext
                     .padding(.top, 24)
             } else {
                 steps
@@ -49,154 +61,85 @@ struct PIRAssistStepsPanel: View {
         .background(Color(designSystemColor: .surfaceTertiary))
     }
 
-    private var topRow: some View {
-        HStack(spacing: 8) {
-            Spacer()
-            if session.submission == nil {
-                Text("Keeps running if you close")
-                    .font(.system(size: 13))
-                    .foregroundColor(Color(designSystemColor: .textSecondary))
-            }
-            Button(action: close) {
-                Image(nsImage: DesignSystemImages.Glyphs.Size16.close)
-                    .renderingMode(.template)
-                    .foregroundColor(Color(designSystemColor: .iconsPrimary))
-                    .frame(width: 40, height: 40)
-                    .background(Circle().fill(Color(designSystemColor: .controlsFillPrimary)))
-            }
-            .buttonStyle(.plain)
-            .accessibilityLabel("Close, the removal keeps running")
-        }
-    }
-
-    private var isCompact: Bool { session.userTurn != nil }
-
     private var header: some View {
-        VStack(spacing: isCompact ? 8 : 12) {
-            PIRAssistBrokerAvatar(name: session.brokerName, size: isCompact ? 40 : 56)
-            Text(title)
-                .font(.system(size: 22))
+        VStack(spacing: 12) {
+            AssistedOptOutBrokerAvatar(name: session.broker.name, size: 48)
+            Text(session.phase == .submitted ? "Request submitted to \(session.broker.name)" : "Removing you from \(session.broker.name)")
+                .font(.system(size: 20))
                 .foregroundColor(Color(designSystemColor: .textPrimary))
             Text(subtitle)
-                .font(.system(size: 15))
-                .lineSpacing(3)
+                .font(.system(size: 14))
                 .foregroundColor(Color(designSystemColor: .textSecondary))
         }
         .multilineTextAlignment(.center)
         .frame(maxWidth: .infinity)
-        .padding(.vertical, isCompact ? 18 : 24)
-        .padding(.horizontal, isCompact ? 20 : 24)
+        .padding(20)
         .background(RoundedRectangle(cornerRadius: 20).fill(Color(designSystemColor: .containerFillPrimary)))
     }
 
-    private var title: String {
-        session.submission == nil ? "Removing you from \(session.brokerName)" : "Request submitted to \(session.brokerName)"
-    }
-
     private var subtitle: String {
-        if session.submission != nil {
-            return "Nice work. That\u{2019}s the hard part done."
+        switch session.phase {
+        case .submitted: return "Nice work. That\u{2019}s the hard part done."
+        case .userTurn: return "We\u{2019}ve paused. \(session.broker.name) needs a person for this step."
+        case .queued: return "Waiting for another removal to finish."
+        case .agentInControl: return "Filling in your details."
         }
-        if session.userTurn != nil {
-            return "We\u{2019}ve paused. \(session.brokerName) needs a person for the next step."
-        }
-        return "Filling in your details."
     }
 
     private var steps: some View {
-        let steps = session.steps
+        let states = session.stepStates
         return ScrollView {
-            VStack(alignment: .leading, spacing: PIRAssistStepRow.spacing) {
-                ForEach(Array(steps.enumerated()), id: \.offset) { index, step in
-                    PIRAssistStepRow(step: step, isLast: index == steps.count - 1,
-                                     showsNeedsUserNote: session.userTurn == nil,
-                                     userTurnMessage: userTurnMessage,
-                                     userConfirmedDone: session.userConfirmedDone)
+            VStack(alignment: .leading, spacing: AssistedOptOutStepRow.spacing) {
+                ForEach(Array(session.steps.titles.enumerated()), id: \.offset) { index, title in
+                    AssistedOptOutStepRow(title: title, state: states[index], isLast: index == states.count - 1)
                 }
             }
             .padding(.horizontal, 12)
         }
     }
 
-    private var userTurnMessage: String {
-        switch session.userTurn {
-        case .recaptcha:
-            return "Check \u{201C}I\u{2019}m not a robot\u{201D} in the form and we\u{2019}ll fill in the rest."
-        case .managedChallenge:
-            return "Complete \(session.brokerName)\u{2019}s security check on the page and we\u{2019}ll carry on."
-        case .turnstile, .generic, .none:
-            return "Complete the security check in the form and we\u{2019}ll fill in the rest."
-        }
-    }
-
-    private func whatHappensNext(_ submission: PIRAssistSubmission) -> some View {
+    private var whatHappensNext: some View {
         VStack(alignment: .leading, spacing: 16) {
             Text("What happens next")
                 .font(.system(size: 14, weight: .medium))
                 .foregroundColor(Color(designSystemColor: .textPrimary))
-            if submission.awaitsEmailConfirmation {
-                nextStep(DesignSystemImages.Glyphs.Size16.email,
-                         "We\u{2019}ll follow the link \(session.brokerName) emails to confirm the request.")
+            HStack(alignment: .top, spacing: 12) {
+                Image(nsImage: DesignSystemImages.Glyphs.Size16.clock)
+                    .renderingMode(.template)
+                    .foregroundColor(Color(designSystemColor: .iconsPrimary))
+                Text("We\u{2019}ll follow up on the request and check your info is gone on our next scan.")
+                    .font(.system(size: 14))
+                    .foregroundColor(Color(designSystemColor: .textPrimary))
+                    .fixedSize(horizontal: false, vertical: true)
             }
-            nextStep(DesignSystemImages.Glyphs.Size16.clock, "We\u{2019}ll check your info is gone on our next scan.")
         }
         .padding(.horizontal, 12)
     }
 
-    private func nextStep(_ icon: DesignSystemImage, _ text: String) -> some View {
-        HStack(alignment: .top, spacing: 12) {
-            Image(nsImage: icon)
-                .renderingMode(.template)
-                .foregroundColor(Color(designSystemColor: .iconsPrimary))
-                .padding(.top, 1)
-            Text(text)
-                .font(.system(size: 14))
-                .foregroundColor(Color(designSystemColor: .textPrimary))
-                .fixedSize(horizontal: false, vertical: true)
-        }
-    }
-
-    @ViewBuilder
     private var footer: some View {
-        if session.submission != nil {
-            HStack {
-                Spacer()
-                Button(action: close) {
-                    Text("Back to dashboard")
-                        .font(.system(size: 14, weight: .medium))
-                        .foregroundColor(Color(designSystemColor: .surfaceTertiary))
-                        .padding(.horizontal, 18)
-                        .frame(height: 40)
-                        .background(Capsule().fill(Color(designSystemColor: .controlsBase)))
-                }
-                .buttonStyle(.plain)
+        VStack(alignment: .trailing, spacing: 8) {
+            if session.phase != .submitted {
+                Text("Closing this window stops the removal. You can start it again from Personal Information Removal.")
+                    .font(.system(size: 12))
+                    .foregroundColor(Color(designSystemColor: .textSecondary))
+                    .fixedSize(horizontal: false, vertical: true)
             }
-        } else {
-            stopButton
-        }
-    }
-
-    private var stopButton: some View {
-        HStack {
-            Spacer()
-            Button(action: session.stop) {
-                HStack(spacing: 8) {
-                    RoundedRectangle(cornerRadius: 2).frame(width: 10, height: 10)
-                    Text("Stop")
-                }
-                .font(.system(size: 14, weight: .medium))
-                .foregroundColor(Color(designSystemColor: .textPrimary))
-                .padding(.horizontal, 18)
-                .padding(.vertical, 10)
-                .background(Capsule().fill(Color(designSystemColor: .controlsFillPrimary)))
+            Button(action: close) {
+                Text(session.phase == .submitted ? "Done" : "Stop and close")
+                    .font(.system(size: 14, weight: .medium))
+                    .foregroundColor(Color(designSystemColor: .textPrimary))
+                    .padding(.horizontal, 18)
+                    .frame(height: 36)
+                    .background(Capsule().fill(Color(designSystemColor: .controlsFillPrimary)))
             }
             .buttonStyle(.plain)
         }
+        .frame(maxWidth: .infinity, alignment: .trailing)
     }
 }
 
 /// Stands in for the broker's logo, which the agent doesn't have.
-private struct PIRAssistBrokerAvatar: View {
+private struct AssistedOptOutBrokerAvatar: View {
     let name: String
     let size: CGFloat
 
@@ -209,38 +152,36 @@ private struct PIRAssistBrokerAvatar: View {
     }
 }
 
-private struct PIRAssistStepRow: View {
+private struct AssistedOptOutStepRow: View {
     static let spacing: CGFloat = 14
     private static let markerSize: CGFloat = 18
-    private static let connectorInset: CGFloat = 4
 
-    let step: PIRAssistStep
+    let title: String
+    let state: AssistedOptOutStepState
     let isLast: Bool
-    let showsNeedsUserNote: Bool
-    let userTurnMessage: String
-    let userConfirmedDone: () -> Void
 
     var body: some View {
         HStack(alignment: .top, spacing: 12) {
             VStack(spacing: 0) {
-                PIRAssistStepMarker(state: step.state)
+                AssistedOptOutStepMarker(state: state)
                     .frame(width: Self.markerSize, height: Self.markerSize)
                 if !isLast {
-                    connector
+                    RoundedRectangle(cornerRadius: 1)
+                        .fill(Color(designSystemColor: state == .done ? .statusGreen : .containerBorderPrimary))
+                        .frame(width: 2)
+                        .frame(maxHeight: .infinity)
+                        .padding(.top, 4)
                 }
             }
-            // The connector runs on through the gap between rows, so it ends exactly at the next row's marker.
+            // The connector runs on through the gap between rows, so it ends at the next row's marker.
             .padding(.bottom, isLast ? 0 : -Self.spacing)
             .frame(maxHeight: .infinity, alignment: .top)
             VStack(alignment: .leading, spacing: 8) {
-                Text(step.title)
-                    .font(.system(size: 14, weight: isEmphasized ? .medium : .regular))
-                    .foregroundColor(Color(designSystemColor: step.state == .upcoming ? .textSecondary : .textPrimary))
+                Text(title)
+                    .font(.system(size: 14, weight: state == .running || state == .userTurn ? .medium : .regular))
+                    .foregroundColor(Color(designSystemColor: state == .upcoming ? .textSecondary : .textPrimary))
                     .frame(minHeight: Self.markerSize)
-                if step.state == .needsUserLater && showsNeedsUserNote {
-                    needsUserNote
-                }
-                if step.state == .userTurn {
+                if state == .userTurn {
                     yourTurnCard
                 }
             }
@@ -248,52 +189,15 @@ private struct PIRAssistStepRow: View {
         .fixedSize(horizontal: false, vertical: true)
     }
 
-    private var connector: some View {
-        RoundedRectangle(cornerRadius: 1)
-            .fill(Color(designSystemColor: step.state == .done ? .statusGreen : .containerBorderPrimary))
-            .frame(width: 2)
-            .frame(maxHeight: .infinity)
-            .padding(.top, Self.connectorInset)
-    }
-
-    private var isEmphasized: Bool {
-        step.state != .done && step.state != .upcoming
-    }
-
-    private var needsUserNote: some View {
-        HStack(spacing: 6) {
-            Image(nsImage: DesignSystemImages.Glyphs.Size12.profile)
-                .renderingMode(.template)
-            Text("You\u{2019}ll prove you\u{2019}re human here")
-                .font(.system(size: 12))
-        }
-        .foregroundColor(Color(designSystemColor: .textPrimary))
-        .padding(.horizontal, 10)
-        .padding(.vertical, 6)
-        .background(RoundedRectangle(cornerRadius: 8).fill(Color(designSystemColor: .statusWarningFillPrimary)))
-        .overlay(RoundedRectangle(cornerRadius: 8).strokeBorder(Color(designSystemColor: .statusYellowPrimary), lineWidth: 1))
-    }
-
     private var yourTurnCard: some View {
         VStack(alignment: .leading, spacing: 8) {
             Text("Your turn")
                 .font(.system(size: 16))
                 .foregroundColor(Color(designSystemColor: .textPrimary))
-            Text(userTurnMessage)
+            Text("Complete the highlighted part of the page. We\u{2019}ll carry on as soon as it\u{2019}s done.")
                 .font(.system(size: 12))
-                .lineSpacing(3)
-                // The design sits between textPrimary and textSecondary, and no token matches it.
-                .foregroundColor(Color(designSystemColor: .textPrimary).opacity(0.875))
+                .foregroundColor(Color(designSystemColor: .textPrimary))
                 .fixedSize(horizontal: false, vertical: true)
-            Button(action: userConfirmedDone) {
-                Text("I\u{2019}ve done it")
-                    .font(.system(size: 14, weight: .medium))
-                    .foregroundColor(Color(designSystemColor: .surfaceTertiary))
-                    .padding(.horizontal, 16)
-                    .frame(height: 36)
-                    .background(Capsule().fill(Color(designSystemColor: .controlsBase)))
-            }
-            .buttonStyle(.plain)
         }
         .padding(.horizontal, 16)
         .padding(.vertical, 14)
@@ -304,8 +208,8 @@ private struct PIRAssistStepRow: View {
 }
 
 /// Markers are filled with the panel background, so the connector from the row above never shows through them.
-private struct PIRAssistStepMarker: View {
-    let state: PIRAssistStepState
+private struct AssistedOptOutStepMarker: View {
+    let state: AssistedOptOutStepState
     @State private var isSpinning = false
 
     var body: some View {
@@ -332,8 +236,6 @@ private struct PIRAssistStepMarker: View {
                 }
         case .upcoming:
             ring(.containerBorderSecondary)
-        case .needsUserLater:
-            ring(.statusYellowPrimary)
         case .userTurn:
             ring(.statusYellowPrimary)
                 .overlay(Circle().fill(Color(designSystemColor: .statusYellowPrimary)).frame(width: 8, height: 8))
@@ -346,4 +248,3 @@ private struct PIRAssistStepMarker: View {
             .overlay(Circle().strokeBorder(Color(designSystemColor: color), lineWidth: 2))
     }
 }
-#endif

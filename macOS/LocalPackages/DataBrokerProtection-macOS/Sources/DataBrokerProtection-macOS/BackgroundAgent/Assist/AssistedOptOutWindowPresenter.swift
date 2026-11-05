@@ -1,5 +1,5 @@
 //
-//  PIRAssistWindowPresenter.swift
+//  AssistedOptOutWindowPresenter.swift
 //
 //  Copyright © 2026 DuckDuckGo. All rights reserved.
 //
@@ -16,79 +16,114 @@
 //  limitations under the License.
 //
 
-#if DEBUG
 import AppKit
 import DataBrokerProtectionCore
 import DesignResourcesKit
-import DesignResourcesKitIcons
 import SwiftUI
 import WebKit
 
-/// Owns one "Removing you from…" window per running assisted job. Closing a window only hides it, until the
-/// request is sent: then the window stays on the done screen until the user closes it.
+/// Owns one window per assisted attempt, kept until the attempt ends so repeated starts bring the same window back.
 @MainActor
-final class PIRAssistWindowPresenter: PIRAssistPresenting {
-    private var windows: [PIRAssistItemID: NSWindow] = [:]
-    private var closeDelegates: [PIRAssistItemID: HideOnCloseDelegate] = [:]
+final class AssistedOptOutWindowPresenter: AssistedOptOutPresenting {
+    private var controllers: [AssistedOptOutID: AssistedOptOutWindowController] = [:]
 
-    func present(_ session: PIRAssistSession) {
-        let window = windows[session.id] ?? makeWindow(for: session)
-        windows[session.id] = window
-        if !window.isVisible {
-            window.center()
-        }
+    func present(_ session: AssistedOptOutSession) {
+        guard let controller = controller(for: session) else { return }
         NSApp.activate(ignoringOtherApps: true)
-        window.makeKeyAndOrderFront(nil)
+        controller.window?.deminiaturize(nil)
+        controller.showWindow(nil)
+        controller.window?.makeKeyAndOrderFront(nil)
     }
 
-    func dismiss(_ session: PIRAssistSession) {
-        if session.submission != nil, windows[session.id]?.isVisible == true {
-            closeDelegates[session.id]?.onClose = { [weak self] in self?.remove(session) }
-            return
+    func userTurnStarted(in session: AssistedOptOutSession) {
+        guard let controller = controller(for: session) else { return }
+        if NSApp.isActive {
+            controller.showWindow(nil)
+        } else {
+            controller.window?.orderFront(nil)
+            NSApp.requestUserAttention(.criticalRequest)
         }
-        remove(session)
     }
 
-    private func remove(_ session: PIRAssistSession) {
-        guard let window = windows.removeValue(forKey: session.id) else { return }
-        closeDelegates[session.id] = nil
-        session.webView.removeFromSuperview()
-        window.orderOut(nil)
-        window.contentView = nil
+    func dismiss(_ session: AssistedOptOutSession) {
+        controllers.removeValue(forKey: session.id)?.closeWithoutCancelling()
     }
 
-    private func makeWindow(for session: PIRAssistSession) -> NSWindow {
+    private func controller(for session: AssistedOptOutSession) -> AssistedOptOutWindowController? {
+        if let controller = controllers[session.id] { return controller }
+        guard let webView = session.webView else { return nil }
+        let controller = AssistedOptOutWindowController(session: session, webView: webView) { [weak self] in
+            self?.controllers[session.id] = nil
+        }
+        controllers[session.id] = controller
+        return controller
+    }
+}
+
+/// The attempt's web view on the left under a read-only address field, and its steps on the right.
+/// Closing the window cancels the attempt; minimizing leaves it running.
+@MainActor
+final class AssistedOptOutWindowController: NSWindowController, NSWindowDelegate {
+    private let session: AssistedOptOutSession
+    private let onClose: () -> Void
+    private var urlObservation: NSKeyValueObservation?
+    private var isClosingWithoutCancelling = false
+
+    init(session: AssistedOptOutSession, webView: WKWebView, onClose: @escaping () -> Void) {
+        self.session = session
+        self.onClose = onClose
         let window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 1280, height: 820),
                               styleMask: [.titled, .closable, .miniaturizable, .resizable],
                               backing: .buffered, defer: false)
-        window.title = "Removing you from \(session.brokerName)"
+        window.title = "Removing you from \(session.broker.name)"
         window.isReleasedWhenClosed = false
         window.minSize = NSSize(width: 960, height: 600)
-        let delegate = HideOnCloseDelegate()
-        closeDelegates[session.id] = delegate
-        window.delegate = delegate
+        super.init(window: window)
+        window.delegate = self
+        window.contentView = makeContentView(webView: webView)
+        window.center()
+    }
 
+    @available(*, unavailable)
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
+
+    func closeWithoutCancelling() {
+        isClosingWithoutCancelling = true
+        close()
+    }
+
+    private func makeContentView(webView: WKWebView) -> NSView {
         let content = NSView()
-        let bar = NSHostingView(rootView: PIRAssistAddressBar(session: session))
-        let panel = NSHostingView(rootView: PIRAssistStepsPanel(session: session, close: { [weak window] in window?.performClose(nil) }))
-        let divider = NSHostingView(rootView: Color(designSystemColor: .containerBorderPrimary))
+        let addressField = NSTextField(labelWithString: "")
+        addressField.isSelectable = true
+        addressField.lineBreakMode = .byTruncatingMiddle
+        addressField.textColor = .secondaryLabelColor
+        urlObservation = webView.observe(\.url, options: [.initial, .new]) { [weak addressField] webView, _ in
+            let url = webView.url
+            MainActor.assumeIsolated {
+                addressField?.stringValue = ["http", "https"].contains(url?.scheme) ? url?.absoluteString ?? "" : ""
+            }
+        }
+
+        let panel = NSHostingView(rootView: AssistedOptOutStepsPanel(session: session) { [weak self] in self?.window?.performClose(nil) })
         if #available(macOS 13.0, *) {
-            // The window keeps the size the user gave it, whatever the panel shows.
-            bar.sizingOptions = []
             panel.sizingOptions = []
         }
-        let webView = session.webView
+        let divider = NSBox()
+        divider.boxType = .separator
+
         webView.removeFromSuperview()
-        for view in [bar, webView, divider, panel] as [NSView] {
+        for view in [addressField, webView, divider, panel] as [NSView] {
             view.translatesAutoresizingMaskIntoConstraints = false
             content.addSubview(view)
         }
         NSLayoutConstraint.activate([
-            bar.topAnchor.constraint(equalTo: content.topAnchor),
-            bar.leadingAnchor.constraint(equalTo: content.leadingAnchor),
-            bar.heightAnchor.constraint(equalToConstant: 46),
-            bar.trailingAnchor.constraint(equalTo: webView.trailingAnchor),
-            webView.topAnchor.constraint(equalTo: bar.bottomAnchor),
+            addressField.topAnchor.constraint(equalTo: content.topAnchor, constant: 12),
+            addressField.leadingAnchor.constraint(equalTo: content.leadingAnchor, constant: 16),
+            addressField.trailingAnchor.constraint(equalTo: webView.trailingAnchor, constant: -16),
+            webView.topAnchor.constraint(equalTo: addressField.bottomAnchor, constant: 12),
             webView.leadingAnchor.constraint(equalTo: content.leadingAnchor),
             webView.bottomAnchor.constraint(equalTo: content.bottomAnchor),
             divider.leadingAnchor.constraint(equalTo: webView.trailingAnchor),
@@ -101,64 +136,25 @@ final class PIRAssistWindowPresenter: PIRAssistPresenting {
             panel.trailingAnchor.constraint(equalTo: content.trailingAnchor),
             panel.widthAnchor.constraint(equalToConstant: 380)
         ])
-        window.contentView = content
-        return window
+        return content
     }
-}
 
-private final class HideOnCloseDelegate: NSObject, NSWindowDelegate {
-    var onClose: (() -> Void)?
+    // MARK: - NSWindowDelegate
 
-    func windowShouldClose(_ sender: NSWindow) -> Bool {
-        sender.orderOut(nil)
-        onClose?()
-        return false
-    }
-}
-
-/// Shows where the page is and whose turn it is. The address can't be changed.
-private struct PIRAssistAddressBar: View {
-    @ObservedObject var session: PIRAssistSession
-    @State private var url: URL?
-
-    var body: some View {
-        HStack(spacing: 8) {
-            Image(nsImage: DesignSystemImages.Glyphs.Size16.lock)
-                .renderingMode(.template)
-                .foregroundColor(Color(designSystemColor: .iconsSecondary))
-            (Text(host).foregroundColor(Color(designSystemColor: .textPrimary))
-             + Text(path).foregroundColor(Color(designSystemColor: .textSecondary)))
-                .font(.system(size: 13))
-                .lineLimit(1)
-                .truncationMode(.middle)
-            Spacer(minLength: 16)
-            Text(status)
-                .font(.system(size: 13))
-                .foregroundColor(Color(designSystemColor: .textSecondary))
+    func windowWillClose(_ notification: Notification) {
+        urlObservation?.invalidate()
+        session.isWindowKey = false
+        if !isClosingWithoutCancelling {
+            session.requestCancel()
         }
-        .padding(.horizontal, 20)
-        .frame(height: 46)
-        .background(Color(designSystemColor: .surfaceTertiary))
-        .overlay(alignment: .bottom) {
-            Color(designSystemColor: .containerBorderPrimary).frame(height: 1)
-        }
-        // The agent's own placeholder page isn't somewhere the user is.
-        .onReceive(session.webView.publisher(for: \.url)) { url = ["http", "https"].contains($0?.scheme) ? $0 : nil }
+        onClose()
     }
 
-    private var status: String {
-        if session.submission != nil { return "Done" }
-        return session.userTurn == nil ? "Filling in" : "Waiting for you"
+    func windowDidBecomeKey(_ notification: Notification) {
+        session.isWindowKey = true
     }
 
-    private var host: String {
-        guard let host = url?.host else { return "" }
-        return host.hasPrefix("www.") ? String(host.dropFirst(4)) : host
-    }
-
-    private var path: String {
-        guard let path = url?.path, path.count > 1 else { return "" }
-        return " / " + path.dropFirst().replacingOccurrences(of: "/", with: " / ")
+    func windowDidResignKey(_ notification: Notification) {
+        session.isWindowKey = false
     }
 }
-#endif

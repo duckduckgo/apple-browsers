@@ -32,6 +32,11 @@ public protocol CCFCommunicationDelegate: AnyObject {
     func success(actionId: String, actionType: ActionType) async
     func conditionSuccess(actions: [Action]) async
     func onError(error: Error) async
+    func userTurnNeeded(actionID: String) async
+}
+
+public extension CCFCommunicationDelegate {
+    func userTurnNeeded(actionID: String) async {}
 }
 
 public enum CCFSubscribeActionName: String {
@@ -41,6 +46,11 @@ public enum CCFSubscribeActionName: String {
 public enum CCFReceivedMethodName: String {
     case actionCompleted
     case actionError
+    case userTurnNeeded
+}
+
+private struct UserTurnNeededParams: Decodable {
+    let actionID: String
 }
 
 public class DataBrokerProtectionFeature: Subfeature {
@@ -54,6 +64,12 @@ public class DataBrokerProtectionFeature: Subfeature {
     private var taskCancellationTimer: Timer?
 
     private var shouldContinueAction: () -> Bool
+
+    /// The action last pushed to the page. Responses for older actions, such as a userAssist C-S-S abandoned, are ignored.
+    private var currentActionID: String?
+
+    /// Called on the main actor whenever the page answers an action.
+    var onActionResponse: (() -> Void)?
 
     private let executionConfig: BrokerJobExecutionConfig
 
@@ -82,6 +98,7 @@ public class DataBrokerProtectionFeature: Subfeature {
             switch actionResult {
             case .actionCompleted: return onActionCompleted
             case .actionError: return onActionError
+            case .userTurnNeeded: return onUserTurnNeeded
             }
         } else {
             Logger.action.log("Cant parse method: \(methodName, privacy: .public)")
@@ -90,7 +107,12 @@ public class DataBrokerProtectionFeature: Subfeature {
     }
 
     func onActionCompleted(params: Any, original: WKScriptMessage) async throws -> Encodable? {
+        if let actionID = Self.actionID(inCompletedParams: params), await isStale(actionID: actionID) {
+            Logger.action.log("Ignoring a response for a superseded action: \(actionID, privacy: .public)")
+            return nil
+        }
         await removeTimers()
+        await notifyActionResponse()
 
         Logger.action.log("Action completed")
 
@@ -132,7 +154,7 @@ public class DataBrokerProtectionFeature: Subfeature {
             await delegate?.captchaInformation(captchaInfo: captchaInfo)
         case .solveCaptcha(let response):
             await delegate?.solveCaptcha(with: response)
-        case .fillForm, .click, .expectation, .executeScript:
+        case .fillForm, .click, .expectation, .executeScript, .userAssist:
             await delegate?.success(actionId: success.actionID, actionType: success.actionType)
         case .conditionSuccess(let response):
             await delegate?.conditionSuccess(actions: response.actions)
@@ -143,12 +165,38 @@ public class DataBrokerProtectionFeature: Subfeature {
 
     func onActionError(params: Any, original: WKScriptMessage) async throws -> Encodable? {
         await removeTimers()
+        await notifyActionResponse()
 
         let error = DataBrokerProtectionError.parse(params: params)
         Logger.action.log("Action Error: \(String(describing: error.localizedDescription), privacy: .public)")
 
         await delegate?.onError(error: error)
         return nil
+    }
+
+    func onUserTurnNeeded(params: Any, original: WKScriptMessage) async throws -> Encodable? {
+        guard let data = try? JSONSerialization.data(withJSONObject: params),
+              let request = try? JSONDecoder().decode(UserTurnNeededParams.self, from: data),
+              !(await isStale(actionID: request.actionID)) else { return nil }
+        await delegate?.userTurnNeeded(actionID: request.actionID)
+        return nil
+    }
+
+    static func actionID(inCompletedParams params: Any) -> String? {
+        guard let result = (params as? [String: Any])?["result"] as? [String: Any] else { return nil }
+        let response = (result["success"] ?? result["error"]) as? [String: Any]
+        return response?["actionID"] as? String
+    }
+
+    @MainActor
+    private func isStale(actionID: String) -> Bool {
+        guard let currentActionID else { return false }
+        return actionID != currentActionID
+    }
+
+    @MainActor
+    private func notifyActionResponse() {
+        onActionResponse?()
     }
 
     public func with(broker: UserScriptMessageBroker) {
@@ -171,9 +219,12 @@ public class DataBrokerProtectionFeature: Subfeature {
 
         Logger.action.log("Pushing into WebView: \(method.rawValue) params \(DebugHelper.prettyPrintedJSON(from: params), privacy: .public)")
 
+        let action = (params as? Params)?.state.action
+        currentActionID = action?.id
         broker.push(method: method.rawValue, params: params, for: self, into: webView)
 
-        installActionTimer(for: (params as? Params)?.state.action)
+        // C-S-S has no timeout for userAssist; the assisted attempt owns it.
+        installActionTimer(for: action is UserAssistAction ? nil : action)
     }
 
     @MainActor

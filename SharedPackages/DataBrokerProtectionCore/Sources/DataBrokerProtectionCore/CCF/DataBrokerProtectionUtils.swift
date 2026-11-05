@@ -34,7 +34,8 @@ final class DataBrokerUserContentController: WKUserContentController {
          delegate: CCFCommunicationDelegate,
          executionConfig: BrokerJobExecutionConfig,
          shouldContinueActionHandler: @escaping () -> Bool,
-         contentBlocking: DBPWebViewContentBlocking?) throws {
+         contentBlocking: DBPWebViewContentBlocking?,
+         visualizeActions: Bool = false) throws {
         super.init()
 
         dataBrokerUserScripts = try DataBrokerUserScript(privacyConfig: privacyConfigurationManager,
@@ -42,7 +43,8 @@ final class DataBrokerUserContentController: WKUserContentController {
                                                          delegate: delegate,
                                                          executionConfig: executionConfig,
                                                          shouldContinueActionHandler: shouldContinueActionHandler,
-                                                         contentBlocking: contentBlocking)
+                                                         contentBlocking: contentBlocking,
+                                                         visualizeActions: visualizeActions)
         dataBrokerUserScripts?.userScripts.forEach {
             let userScript = $0.makeWKUserScriptSync()
             self.installUserScripts([userScript], handlers: [$0])
@@ -100,8 +102,9 @@ final class DataBrokerUserScript: UserScriptsProvider {
          delegate: CCFCommunicationDelegate,
          executionConfig: BrokerJobExecutionConfig,
          shouldContinueActionHandler: @escaping () -> Bool,
-         contentBlocking: DBPWebViewContentBlocking?) throws {
-        contentScopeUserScriptIsolated = try ContentScopeUserScript(privacyConfig.withDataBrokerProtectionFeatureOverride,
+         contentBlocking: DBPWebViewContentBlocking?,
+         visualizeActions: Bool = false) throws {
+        contentScopeUserScriptIsolated = try ContentScopeUserScript(privacyConfig.withDataBrokerProtectionFeatureOverride(visualizeActions: visualizeActions),
                                                                     properties: prefs,
                                                                     scriptContext: .contentScopeIsolated,
                                                                     privacyConfigurationJSONGenerator: nil)
@@ -179,7 +182,8 @@ extension WKWebViewConfiguration {
                                       delegate: CCFCommunicationDelegate,
                                       executionConfig: BrokerJobExecutionConfig,
                                       shouldContinueActionHandler: @escaping () -> Bool,
-                                      contentBlocking: DBPWebViewContentBlocking?) throws {
+                                      contentBlocking: DBPWebViewContentBlocking?,
+                                      visualizeActions: Bool = false) throws {
         setURLSchemeHandler(WebViewSchemeHandler(), forURLScheme: WebViewSchemeHandler.dataBrokerProtectionScheme)
         preferences.isFraudulentWebsiteWarningEnabled = false
         let userContentController = try DataBrokerUserContentController(with: privacyConfig,
@@ -187,7 +191,8 @@ extension WKWebViewConfiguration {
                                                                         delegate: delegate,
                                                                         executionConfig: executionConfig,
                                                                         shouldContinueActionHandler: shouldContinueActionHandler,
-                                                                        contentBlocking: contentBlocking)
+                                                                        contentBlocking: contentBlocking,
+                                                                        visualizeActions: visualizeActions)
         self.userContentController = userContentController
     }
 }
@@ -208,8 +213,8 @@ public extension WKWebView {
 /// The override is necessary because we only want to inject the DBP feature into detached webViews.
 /// These detached webviews are the ones that run the DBP code inside, and we don't want to enable this feature in standard webViews inside the browser.
 private extension PrivacyConfigurationManaging {
-    var withDataBrokerProtectionFeatureOverride: PrivacyConfigurationManaging {
-        return PrivacyConfigurationDataBrokerProtectionConfigOverride(manager: self)
+    func withDataBrokerProtectionFeatureOverride(visualizeActions: Bool) -> PrivacyConfigurationManaging {
+        return PrivacyConfigurationDataBrokerProtectionConfigOverride(manager: self, visualizeActions: visualizeActions)
     }
 }
 
@@ -218,6 +223,7 @@ private class PrivacyConfigurationDataBrokerProtectionConfigOverride: PrivacyCon
     var updatesPublisher: AnyPublisher<(), Never>
     var privacyConfig: PrivacyConfiguration
     var internalUserDecider: InternalUserDecider
+    private let visualizeActions: Bool
 
     var currentConfig: Data {
         return updateConfigWithBrokerProtection()
@@ -227,7 +233,8 @@ private class PrivacyConfigurationDataBrokerProtectionConfigOverride: PrivacyCon
         fatalError("reload(etag:data:) has not been implemented")
     }
 
-    init(manager: PrivacyConfigurationManaging) {
+    init(manager: PrivacyConfigurationManaging, visualizeActions: Bool) {
+        self.visualizeActions = visualizeActions
         base = manager.currentConfig
         updatesPublisher = manager.updatesPublisher
         privacyConfig = manager.privacyConfig
@@ -251,11 +258,12 @@ private class PrivacyConfigurationDataBrokerProtectionConfigOverride: PrivacyCon
     }
 
     private func getJsonOverride() -> Data {
+        let settings = visualizeActions ? #"{ "visualizeActions": "enabled" }"# : "{}"
         return """
         {
           "exceptions": [],
           "state": "enabled",
-          "settings": {}
+          "settings": \(settings)
         }
         """.data(using: .utf8)!
     }

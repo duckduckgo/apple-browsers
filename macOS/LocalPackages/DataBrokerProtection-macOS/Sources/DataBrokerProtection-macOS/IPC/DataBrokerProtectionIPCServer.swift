@@ -16,6 +16,7 @@
 //  limitations under the License.
 //
 
+import DataBrokerProtectionCore
 import Foundation
 import XPCHelper
 
@@ -75,7 +76,7 @@ public final class DBPBackgroundAgentMetadata: NSObject, NSSecureCoding {
 
 /// This protocol describes the server-side IPC interface for controlling the tunnel
 ///
-public protocol IPCServerInterface: AnyObject, DataBrokerProtectionAgentDebugCommands {
+public protocol IPCServerInterface: AnyObject, DataBrokerProtectionAgentDebugCommands, DataBrokerProtectionAgentAssistedOptOutCommands {
     /// Registers a connection with the server.
     ///
     /// This is the point where the server will start sending status updates to the client.
@@ -120,6 +121,12 @@ protocol XPCServerInterface {
     func getDebugMetadata(completion: @escaping (DBPBackgroundAgentMetadata?) -> Void)
     func startDebugServer(completion: @escaping (Bool) -> Void)
     func stopDebugServer()
+
+    // MARK: - Assisted opt-outs
+
+    /// Replies with a JSON-encoded `AssistedOptOutList`.
+    func getAssistedOptOuts(droppingSubmitted: Bool, completion: @escaping (Data?) -> Void)
+    func startAssistedOptOut(id: String)
 }
 
 protocol DataBrokerProtectionIPCServer: IPCClientInterface, XPCServerInterface {
@@ -229,5 +236,16 @@ extension DefaultDataBrokerProtectionIPCServer: XPCServerInterface {
 
     func stopDebugServer() {
         serverDelegate?.stopDebugServer()
+    }
+
+    func getAssistedOptOuts(droppingSubmitted: Bool, completion: @escaping (Data?) -> Void) {
+        Task {
+            let list = await serverDelegate?.getAssistedOptOuts(droppingSubmitted: droppingSubmitted) ?? AssistedOptOutList(optOuts: [])
+            completion(try? JSONEncoder().encode(list))
+        }
+    }
+
+    func startAssistedOptOut(id: String) {
+        serverDelegate?.startAssistedOptOut(id: id)
     }
 }

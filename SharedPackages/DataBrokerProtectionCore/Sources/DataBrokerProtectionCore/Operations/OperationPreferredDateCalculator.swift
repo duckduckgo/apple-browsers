@@ -85,7 +85,7 @@ struct OperationPreferredDateCalculator {
             }
         case .error:
             return date.now.addingTimeInterval(calculateNextRunDateOnError(schedulingConfig: schedulingConfig, historyEvents: optOutHistoryEvents))
-        case .optOutStarted, .scanStarted, .noMatchFound:
+        case .optOutStarted, .scanStarted, .noMatchFound, .optOutAwaitingUserAssistance:
             return currentPreferredRunDate
         case .optOutConfirmed, .matchRemovedByUser:
             return nil

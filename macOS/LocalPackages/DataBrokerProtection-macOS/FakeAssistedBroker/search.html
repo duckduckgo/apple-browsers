@@ -1,0 +1,17 @@
+<!doctype html>
+<html>
+<head><meta charset="utf-8"><title>Fake Assisted Broker – Search</title><link rel="stylesheet" href="style.css"></head>
+<body>
+<h1>Search results</h1>
+<div id="results"></div>
+<script>
+  // Canned scan result: echoes the searched person so PIR records a match.
+  const q = new URLSearchParams(location.search);
+  const name = [q.get('fname'), q.get('lname')].filter(Boolean).join(' ');
+  document.getElementById('results').innerHTML = name
+    ? `<div class="profile-card"><h2 class="profile-card__name">${name}, ${q.get('age') || ''}</h2>
+       <p class="profile-card__address">${q.get('city') || ''}, ${q.get('state') || ''}</p></div>`
+    : '<p>No Results Found</p>';
+</script>
+</body>
+</html>

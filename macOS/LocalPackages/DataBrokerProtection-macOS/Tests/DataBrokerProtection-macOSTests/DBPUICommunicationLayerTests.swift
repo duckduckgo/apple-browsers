@@ -238,6 +238,32 @@ final class DBPUICommunicationLayerTests: XCTestCase {
         XCTAssertEqual(featureConfig.excludeVpnTraffic, true)
     }
 
+    func testWhenHandshakeDelegateDoesNotSupportAssistance_thenUserAssistanceIsDisabled() async throws {
+        let sut = DBPUICommunicationLayer(webURLSettings: MockWebSettings(), handshakeDelegate: MockDelegate(),
+                                          privacyConfig: PrivacyConfigurationManagingMock())
+
+        let result = try await sut.handler(forMethodNamed: DBPUIReceivedMethodName.getFeatureConfig.rawValue)?([:], WKScriptMessage.mock())
+
+        XCTAssertEqual((result as? DBPUIFeatureConfigurationResponse)?.userAssistanceEnabled, false)
+    }
+
+    func testWhenUserAssistanceIsEnabled_thenFeatureConfigSaysSoAndAssistedMessagesReachTheDelegate() async throws {
+        let delegate = MockAssistedOptOutsDelegate()
+        delegate.isUserAssistanceEnabled = true
+        delegate.list = AssistedOptOutList(optOuts: [AssistedOptOut(id: "1-2-3", dataBroker: .init(name: "BeenVerified", url: "beenverified.com"),
+                                                                    state: .waiting)])
+        let sut = DBPUICommunicationLayer(webURLSettings: MockWebSettings(), handshakeDelegate: delegate,
+                                          privacyConfig: PrivacyConfigurationManagingMock())
+
+        let config = try await sut.handler(forMethodNamed: DBPUIReceivedMethodName.getFeatureConfig.rawValue)?([:], WKScriptMessage.mock())
+        let list = try await sut.handler(forMethodNamed: DBPUIReceivedMethodName.getAssistedOptOuts.rawValue)?([:], WKScriptMessage.mock())
+        _ = try await sut.handler(forMethodNamed: DBPUIReceivedMethodName.startAssistedOptOut.rawValue)?(["id": "1-2-3"], WKScriptMessage.mock())
+
+        XCTAssertEqual((config as? DBPUIFeatureConfigurationResponse)?.userAssistanceEnabled, true)
+        XCTAssertEqual(list as? AssistedOptOutList, delegate.list)
+        XCTAssertEqual(delegate.startedIDs, ["1-2-3"])
+    }
+
     @MainActor
     private func makeViewModel(dataManager: DataBrokerProtectionDataManaging) -> DBPUIViewModel {
         DBPUIViewModel(dataManager: dataManager,
@@ -286,6 +312,18 @@ private final class HandshakeAgentInterface: DataBrokerProtectionAppToAgentInter
     func getDebugMetadata() async -> DBPBackgroundAgentMetadata? { nil }
     func startDebugServer() async -> Bool { false }
     func stopDebugServer() {}
+    func getAssistedOptOuts(droppingSubmitted: Bool) async -> AssistedOptOutList { AssistedOptOutList(optOuts: []) }
+    func startAssistedOptOut(id: String) {}
+}
+
+private final class MockAssistedOptOutsDelegate: DBPUIHandshakeDelegate, DBPUIAssistedOptOutsDelegate {
+    var isUserAssistanceEnabled = false
+    var list = AssistedOptOutList(optOuts: [])
+    var startedIDs: [String] = []
+
+    func getHandshakeUserData() async -> DBPUIHandshakeUserData? { nil }
+    func getAssistedOptOuts() async -> AssistedOptOutList { list }
+    func startAssistedOptOut(id: String) async { startedIDs.append(id) }
 }
 
 private final class MockDelegate: DBPUICommunicationDelegate, DBPUIHandshakeDelegate {

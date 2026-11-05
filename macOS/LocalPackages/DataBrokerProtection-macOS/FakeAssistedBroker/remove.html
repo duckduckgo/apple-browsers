@@ -1,0 +1,30 @@
+<!doctype html>
+<html>
+<head><meta charset="utf-8"><title>Fake Assisted Broker – Remove</title><link rel="stylesheet" href="style.css"></head>
+<body>
+<h1>Confirm removal</h1>
+<form id="additional-fields-form" action="confirm.html" method="get">
+  <!-- Stands in for hCaptcha: solving it sets data-hcaptcha-response on the widget's iframe. -->
+  <div id="captcha-widget" class="captcha">
+    <iframe class="captcha-frame" title="fake hCaptcha" srcdoc="&lt;p&gt;captcha&lt;/p&gt;"></iframe>
+    <button type="button" id="fake-hcaptcha">I am human</button>
+  </div>
+  <div class="additional-footer">
+    <label><input type="checkbox" name="agree" required> I confirm this is my record</label>
+    <button type="submit" id="remove-button">Remove my Info</button>
+  </div>
+</form>
+<script>
+  document.getElementById('fake-hcaptcha').addEventListener('click', () => {
+    document.querySelector('iframe.captcha-frame').setAttribute('data-hcaptcha-response', 'fake-hcaptcha-' + Date.now());
+    document.getElementById('captcha-widget').classList.add('solved');
+  });
+  document.getElementById('additional-fields-form').addEventListener('submit', (event) => {
+    if (!document.querySelector('iframe.captcha-frame').getAttribute('data-hcaptcha-response')) {
+      event.preventDefault();
+      alert('Please complete the captcha');
+    }
+  });
+</script>
+</body>
+</html>

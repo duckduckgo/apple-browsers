@@ -1,0 +1,17 @@
+<!doctype html>
+<html>
+<head><meta charset="utf-8"><title>Fake Assisted Broker – Results</title><link rel="stylesheet" href="style.css"></head>
+<body>
+<h1>Select your record</h1>
+<div id="result-filter">
+  <div class="card">
+    <h2 id="name"></h2>
+    <button onclick="location.href='remove.html'">Opt Out</button>
+  </div>
+</div>
+<script>
+  const q = new URLSearchParams(location.search);
+  document.getElementById('name').textContent = [q.get('fname'), q.get('ln')].filter(Boolean).join(' ');
+</script>
+</body>
+</html>

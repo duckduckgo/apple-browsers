@@ -41,6 +41,13 @@ public protocol DataBrokerProtectionAgentDebugCommands {
     func stopDebugServer()
 }
 
-public protocol DataBrokerProtectionAppToAgentInterface: AnyObject, DataBrokerProtectionAgentAppEvents, DataBrokerProtectionAgentDebugCommands {
+public protocol DataBrokerProtectionAgentAssistedOptOutCommands {
+    /// `droppingSubmitted` clears submitted attempts first; the dashboard passes it when it (re)loads the list.
+    func getAssistedOptOuts(droppingSubmitted: Bool) async -> AssistedOptOutList
+    func startAssistedOptOut(id: String)
+}
+
+public protocol DataBrokerProtectionAppToAgentInterface: AnyObject, DataBrokerProtectionAgentAppEvents, DataBrokerProtectionAgentDebugCommands,
+                                                         DataBrokerProtectionAgentAssistedOptOutCommands {
 
 }

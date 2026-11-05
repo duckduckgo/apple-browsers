@@ -61,6 +61,11 @@ final class DataBrokerProtectionDebugMenu: NSMenu {
     private let subscriptionEnvironmentMenuItem = NSMenuItem(title: "Subscription Environment:")
     private let statusMenuIconMenu = NSMenuItem(title: "Show Status Menu Icon", action: #selector(DataBrokerProtectionDebugMenu.toggleShowStatusMenuItem))
 
+    private let userAssistanceRemoteMenuItem = NSMenuItem(title: "Use Remote Config", action: #selector(DataBrokerProtectionDebugMenu.useRemoteUserAssistanceConfig))
+    private let userAssistanceOnMenuItem = NSMenuItem(title: "Enable for \(DataBrokerProtectionSettings.userAssistanceTestBrokers.joined(separator: ", "))",
+                                                      action: #selector(DataBrokerProtectionDebugMenu.enableUserAssistanceOverride))
+    private let userAssistanceOffMenuItem = NSMenuItem(title: "Disable", action: #selector(DataBrokerProtectionDebugMenu.disableUserAssistanceOverride))
+
     private let webUISettings = DataBrokerProtectionWebUIURLSettings(.dbp)
     private let settings = DataBrokerProtectionSettings(defaults: .dbp)
 
@@ -179,6 +184,18 @@ final class DataBrokerProtectionDebugMenu: NSMenu {
                 customURLMenuItem.targetting(self)
             }
 
+            NSMenuItem(title: "User Assistance") {
+                userAssistanceRemoteMenuItem.targetting(self)
+                userAssistanceOnMenuItem.targetting(self)
+                userAssistanceOffMenuItem.targetting(self)
+
+                NSMenuItem.separator()
+
+                NSMenuItem(title: "Install Test Brokers (BeenVerified, Fake Assisted Broker)",
+                           action: #selector(DataBrokerProtectionDebugMenu.installUserAssistanceTestBrokers))
+                    .targetting(self)
+            }
+
             NSMenuItem(title: "DBP API") {
                 currentEndpointMenuItem.isEnabled = false
                 currentEndpointMenuItem
@@ -230,6 +247,7 @@ final class DataBrokerProtectionDebugMenu: NSMenu {
         updateServiceRootMenuItemState()
         updateSubscriptionEnvironmentMenuItem()
         updateShowStatusMenuIconMenu()
+        updateUserAssistanceMenuItems()
     }
 
     // MARK: - Menu functions
@@ -529,6 +547,26 @@ final class DataBrokerProtectionDebugMenu: NSMenu {
         settings.showInMenuBar.toggle()
     }
 
+    @objc private func useRemoteUserAssistanceConfig() {
+        settings.userAssistanceEnabledBrokersOverride = nil
+    }
+
+    @objc private func enableUserAssistanceOverride() {
+        settings.userAssistanceEnabledBrokersOverride = DataBrokerProtectionSettings.userAssistanceTestBrokers
+    }
+
+    @objc private func disableUserAssistanceOverride() {
+        settings.userAssistanceEnabledBrokersOverride = []
+    }
+
+    @objc private func installUserAssistanceTestBrokers() {
+        do {
+            try UserAssistanceTestBrokers.install(into: brokerUpdater)
+        } catch {
+            Logger.dataBrokerProtection.error("Failed to install user assistance test brokers: \(error.localizedDescription, privacy: .public)")
+        }
+    }
+
     // MARK: - Utility Functions
 
     private func updateWebUIMenuItemsState() {
@@ -574,6 +612,13 @@ final class DataBrokerProtectionDebugMenu: NSMenu {
 
     private func updateShowStatusMenuIconMenu() {
         statusMenuIconMenu.state = settings.showInMenuBar ? .on : .off
+    }
+
+    private func updateUserAssistanceMenuItems() {
+        let override = settings.userAssistanceEnabledBrokersOverride
+        userAssistanceRemoteMenuItem.state = override == nil ? .on : .off
+        userAssistanceOnMenuItem.state = override?.isEmpty == false ? .on : .off
+        userAssistanceOffMenuItem.state = override?.isEmpty == true ? .on : .off
     }
 }
 

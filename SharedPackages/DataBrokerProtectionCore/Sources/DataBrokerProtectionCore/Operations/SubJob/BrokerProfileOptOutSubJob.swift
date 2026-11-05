@@ -58,6 +58,42 @@ struct BrokerProfileOptOutSubJob {
                           brokerProfileQueryData: BrokerProfileQueryData,
                           showWebView: Bool,
                           shouldRunNextStep: @escaping () -> Bool) async throws -> Bool {
+        try await performOptOut(for: extractedProfile,
+                                brokerProfileQueryData: brokerProfileQueryData,
+                                showWebView: showWebView,
+                                shouldRunNextStep: shouldRunNextStep,
+                                runnerFactory: dependencies.createOptOutRunner,
+                                recordFailure: recordOptOutFailure)
+    }
+
+    /// Runs an opt-out the user started for a broker enabled for user assistance. If it ends without a submission
+    /// it waits for the user again, keeping its preferred run date instead of going through error and retry backoff.
+    public func runAssistedOptOut(for extractedProfile: ExtractedProfile,
+                                  brokerProfileQueryData: BrokerProfileQueryData,
+                                  observer: OptOutAssistanceObserving,
+                                  shouldRunNextStep: @escaping () -> Bool) async throws -> Bool {
+        try await performOptOut(for: extractedProfile,
+                                brokerProfileQueryData: brokerProfileQueryData,
+                                showWebView: false,
+                                shouldRunNextStep: shouldRunNextStep,
+                                runnerFactory: { context, calculator, shouldRunNextStep in
+                                    dependencies.createAssistedOptOutRunner(profileQuery: context,
+                                                                            stageDurationCalculator: calculator,
+                                                                            observer: observer,
+                                                                            shouldRunNextStep: shouldRunNextStep)
+                                },
+                                recordFailure: recordAssistedOptOutEnd)
+    }
+
+    private typealias FailureRecorder = (Error, BrokerProfileQueryData, DataBrokerProtectionRepository, DataBrokerScheduleConfig,
+                                         OptOutRetryErrorFeatureFlagging, OptOutIdentifiers, DataBrokerProtectionStageDurationCalculator) -> Void
+
+    private func performOptOut(for extractedProfile: ExtractedProfile,
+                               brokerProfileQueryData: BrokerProfileQueryData,
+                               showWebView: Bool,
+                               shouldRunNextStep: @escaping () -> Bool,
+                               runnerFactory: (BrokerProfileQueryData, StageDurationCalculator, @escaping () -> Bool) -> BrokerProfileOptOutSubJobWebRunning,
+                               recordFailure: FailureRecorder) async throws -> Bool {
         guard let identifiers = try validateOptOutPreconditions(for: extractedProfile,
                                                                 brokerProfileQueryData: brokerProfileQueryData,
                                                                 database: dependencies.database) else {
@@ -91,7 +127,7 @@ struct BrokerProfileOptOutSubJob {
             let runner = makeOptOutRunner(brokerProfileQueryData: brokerProfileQueryData,
                                           stageDurationCalculator: stageDurationContext.stageDurationCalculator,
                                           shouldRunNextStep: shouldRunNextStep,
-                                          runnerFactory: dependencies.createOptOutRunner)
+                                          runnerFactory: runnerFactory)
 
             startWideEventRecorders(brokerProfileQueryData: brokerProfileQueryData,
                                     repository: dependencies.database,
@@ -116,13 +152,13 @@ struct BrokerProfileOptOutSubJob {
                                    stageDurationCalculator: stageDurationContext.stageDurationCalculator)
             }
         } catch {
-            recordOptOutFailure(error: error,
-                                brokerProfileQueryData: brokerProfileQueryData,
-                                database: dependencies.database,
-                                schedulingConfig: brokerProfileQueryData.dataBroker.schedulingConfig,
-                                featureFlagger: dependencies.featureFlagger,
-                                identifiers: identifiers,
-                                stageDurationCalculator: stageDurationContext.stageDurationCalculator)
+            recordFailure(error,
+                          brokerProfileQueryData,
+                          dependencies.database,
+                          brokerProfileQueryData.dataBroker.schedulingConfig,
+                          dependencies.featureFlagger,
+                          identifiers,
+                          stageDurationContext.stageDurationCalculator)
 
             throw error
         }
@@ -364,6 +400,25 @@ struct BrokerProfileOptOutSubJob {
             schedulingConfig: schedulingConfig,
             featureFlagger: featureFlagger
         )
+    }
+
+    internal func recordAssistedOptOutEnd(error: Error,
+                                          brokerProfileQueryData: BrokerProfileQueryData,
+                                          database: DataBrokerProtectionRepository,
+                                          schedulingConfig: DataBrokerScheduleConfig,
+                                          featureFlagger: OptOutRetryErrorFeatureFlagging,
+                                          identifiers: OptOutIdentifiers,
+                                          stageDurationCalculator: DataBrokerProtectionStageDurationCalculator) {
+        let tries = try? fetchTotalNumberOfOptOutAttempts(database: database,
+                                                          brokerId: identifiers.brokerId,
+                                                          profileQueryId: identifiers.profileQueryId,
+                                                          extractedProfileId: identifiers.extractedProfileId)
+        stageDurationCalculator.fireOptOutFailure(tries: tries ?? -1, error: error)
+        Logger.dataBrokerProtection.log("Assisted opt-out ended without a submission: \(error.localizedDescription, privacy: .public)")
+        try? database.add(.init(extractedProfileId: identifiers.extractedProfileId,
+                                brokerId: identifiers.brokerId,
+                                profileQueryId: identifiers.profileQueryId,
+                                type: .optOutAwaitingUserAssistance))
     }
 
     private func reportOptOutJobCompletion(brokerProfileQueryData: BrokerProfileQueryData,

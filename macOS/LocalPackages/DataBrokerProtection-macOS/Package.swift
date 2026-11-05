@@ -34,6 +34,8 @@ let package = Package(
         .package(path: "../../../SharedPackages/PixelKit"),
         .package(path: "../../../SharedPackages/BrowserServicesKit"),
         .package(path: "../../../SharedPackages/Infrastructure/SystemFrameworksExtensions"),
+        .package(path: "../../../SharedPackages/Infrastructure/DesignResourcesKit"),
+        .package(path: "../../../SharedPackages/Infrastructure/DesignResourcesKitIcons"),
         .package(path: "../../../SharedPackages/DataBrokerProtectionCore"),
         .package(path: "../SwiftUIExtensions"),
         .package(path: "../AppKitExtensions"),
@@ -68,6 +70,8 @@ let package = Package(
                 .product(name: "PrivacyConfig", package: "BrowserServicesKit"),
                 .product(name: "FoundationExtensions", package: "SystemFrameworksExtensions"),
                 .product(name: "ConcurrencyExtensions", package: "SystemFrameworksExtensions"),
+                .product(name: "DesignResourcesKit", package: "DesignResourcesKit"),
+                .product(name: "DesignResourcesKitIcons", package: "DesignResourcesKitIcons"),
             ],
             swiftSettings: [
                 .define("DEBUG", .when(configuration: .debug))

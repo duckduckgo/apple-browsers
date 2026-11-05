@@ -24,7 +24,7 @@ import XCTest
 @MainActor
 final class WebExtensionRetentionReporterTests: XCTestCase {
 
-    private let keyValueStore = InMemoryThrowingKeyValueStore()
+    private let storage = InMemoryKeyValueStore()
     private let pixels = RetentionCapturingPixelFiring()
     private let window: TimeInterval = 14 * 24 * 60 * 60
     private let hour: TimeInterval = 60 * 60
@@ -97,7 +97,7 @@ final class WebExtensionRetentionReporterTests: XCTestCase {
     // MARK: - Helpers
 
     private func makeReporter() -> WebExtensionRetentionReporter {
-        WebExtensionRetentionReporter(keyValueStore: keyValueStore, pixelFiring: pixels, now: { [unowned self] in date })
+        WebExtensionRetentionReporter(store: WebExtensionRetentionStore(storage: storage.keyedStoring()), pixelFiring: pixels, now: { [unowned self] in date })
     }
 
     private func category(_ extensionID: String) -> String? {

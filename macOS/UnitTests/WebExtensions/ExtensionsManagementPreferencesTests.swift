@@ -84,24 +84,17 @@ final class ExtensionsManagementPreferencesTests: XCTestCase {
         try assertSingleFire("web_extension_details_opened_macos")
     }
 
-    func testWhenAListingHasNoStoreID_ThenNoPixelFires() throws {
-        model.openStorePage(for: try listing(storeID: nil))
-
-        XCTAssertTrue(pixels.actualFireCalls.isEmpty)
-    }
-
     // MARK: - Helpers
 
     /// Built by the real catalog from a Bitwarden catalog entry, as the app does.
-    private func listing(storeID: String? = "nngceckbapebfimnlniiiahkandclblb",
-                         publisherURL: String? = "https://bitwarden.com") throws -> ChromeWebStoreListing {
+    private func listing(publisherURL: String? = "https://bitwarden.com") throws -> ChromeWebStoreListing {
         var settings: [String: String] = [
+            "id": storeID,
             "name": "Bitwarden",
             "publisher": "Bitwarden Inc.",
             "categoryId": "password-manager",
             "cwsUri": "https://chromewebstore.google.com/detail/\(self.storeID)"
         ]
-        settings["id"] = storeID
         settings["publisherUri"] = publisherURL
         let configuration = MockPrivacyConfiguration()
         configuration.subfeatureSettings = String(data: try JSONEncoder().encode(settings), encoding: .utf8)
@@ -114,6 +107,6 @@ final class ExtensionsManagementPreferencesTests: XCTestCase {
         let call = try XCTUnwrap(pixels.actualFireCalls.first, file: file, line: line)
         XCTAssertEqual(call.pixel.name, name, file: file, line: line)
         XCTAssertEqual(call.pixel.parameters, ["extension_id": storeID, "category": "password-manager"], file: file, line: line)
-        XCTAssertEqual(call.frequency, .dailyAndStandard, file: file, line: line)
+        XCTAssertEqual(call.frequency, .dailyAndCount, file: file, line: line)
     }
 }

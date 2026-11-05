@@ -77,4 +77,19 @@ final class MacOSWebExtensionPixelFiringTests: XCTestCase {
             XCTAssertEqual(names, ["web_extension_cpm_network_process_recovery_applied_daily", "web_extension_cpm_network_process_recovery_applied_count"])
         }
     }
+
+    func testExtensionManagementEventsUseDailyAndCount() throws {
+        let storeID = "nngceckbapebfimnlniiiahkandclblb"
+        let events: [WebExtensionPixelEvent] = [
+            .enabled(extensionID: storeID, category: nil),
+            .disabled(extensionID: storeID, category: nil),
+            .retained(extensionID: storeID, category: nil),
+            .churned(extensionID: storeID, category: nil)
+        ]
+        for event in events {
+            let pixels = PixelKitMock()
+            MacOSWebExtensionPixelFiring(pixelFiring: pixels).fire(event)
+            XCTAssertEqual(try XCTUnwrap(pixels.actualFireCalls.first).frequency, .dailyAndCount, "\(event)")
+        }
+    }
 }

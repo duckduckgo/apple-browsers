@@ -30,7 +30,8 @@ final class WebExtensionPixelTests: XCTestCase {
         let installed = WebExtensionPixel.installed(extension: .catalog(.bitwarden), extensionID: bitwardenStoreID, category: "password-manager")
 
         XCTAssertEqual(installed.parameters, ["extension": "bitwarden", "extension_id": bitwardenStoreID, "category": "password-manager"])
-        XCTAssertEqual(WebExtensionPixel.uninstalled(extension: .other, extensionID: nil, category: nil).parameters, ["extension": "other"])
+        XCTAssertEqual(WebExtensionPixel.uninstalled(extension: .other, extensionID: "other", category: nil).parameters,
+                       ["extension": "other", "extension_id": "other"])
         XCTAssertEqual(WebExtensionPixel.installError(extension: .catalog(.lastPass), error: URLError(.badURL)).parameters,
                        ["extension": "lastPass"])
         XCTAssertEqual(installed.name, "m_mac_web_extension_installed")

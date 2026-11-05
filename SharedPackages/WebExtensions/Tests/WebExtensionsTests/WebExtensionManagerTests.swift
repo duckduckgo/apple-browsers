@@ -1569,6 +1569,19 @@ final class WebExtensionManagerTests: XCTestCase {
     }
 
     @MainActor
+    func testWhenAnExtensionFromOutsideTheStoreIsDisabled_ThenItIsReportedAsOther() async throws {
+        let pixels = EventCapturingPixelFiring()
+        let manager = makeManagementPixelManager(pixels: pixels)
+        installedExtensionStoringMock.installedExtensions = [
+            InstalledWebExtension(uniqueIdentifier: "manual", filename: "manual", name: nil, version: "1")
+        ]
+
+        try await manager.disableExtension(identifier: "manual")
+
+        XCTAssertEqual(pixels.events, ["disabled other nil"])
+    }
+
+    @MainActor
     func testWhenAStoreExtensionIsDisabledAndEnabled_ThenEachFiresOnce() async throws {
         let pixels = EventCapturingPixelFiring()
         let manager = makeManagementPixelManager(pixels: pixels)
@@ -1601,15 +1614,19 @@ final class WebExtensionManagerTests: XCTestCase {
         }
         try await manager.disableExtension(identifier: identifier(disabledID))
         try manager.uninstallExtension(identifier: identifier(removedID))
-        let installAndChangeEvents = pixels.events.count
+        var checkedEvents = pixels.events.count
+        let newEvents = {
+            defer { checkedEvents = pixels.events.count }
+            return Array(pixels.events.dropFirst(checkedEvents))
+        }
 
         date += 14 * 24 * 60 * 60 - 1
         manager.eventsListener.onBrowsingActivity?()
-        XCTAssertEqual(pixels.events.count, installAndChangeEvents, "Nothing is due before 14 days")
+        XCTAssertEqual(newEvents(), [], "Nothing is due before 14 days")
 
         date += 60 * 60
         manager.eventsListener.onBrowsingActivity?()
-        XCTAssertEqual(Array(pixels.events.dropFirst(installAndChangeEvents)), [
+        XCTAssertEqual(newEvents(), [
             "retained \(retainedID) nil",
             "churned \(disabledID) nil",
             "churned \(removedID) nil"
@@ -1617,7 +1634,21 @@ final class WebExtensionManagerTests: XCTestCase {
 
         date += 2 * 60 * 60
         manager.eventsListener.onBrowsingActivity?()
-        XCTAssertEqual(pixels.events.count, installAndChangeEvents + 3, "Each install is judged once")
+        XCTAssertEqual(newEvents(), [], "Each install is judged once")
+    }
+
+    @MainActor
+    func testWhenTheStoreCatalogIsUnavailable_ThenRetentionIsNotReported() async throws {
+        var date = Date(timeIntervalSince1970: 0)
+        let pixels = EventCapturingPixelFiring()
+        let manager = makeManagementPixelManager(pixels: pixels, now: { date }, isCatalogAvailable: false)
+        try await manager.installExtension(from: try createTestWebExtension(), storeIdentity: storeIdentity(managementStoreID))
+        let installEvents = pixels.events.count
+
+        date += 14 * 24 * 60 * 60
+        manager.eventsListener.onBrowsingActivity?()
+
+        XCTAssertEqual(pixels.events.count, installEvents)
     }
 #endif
 
@@ -3217,7 +3248,9 @@ final class WebExtensionManagerTests: XCTestCase {
     }
 
     @MainActor
-    private func makeManagementPixelManager(pixels: EventCapturingPixelFiring, now: @escaping () -> Date = Date.init) -> WebExtensionManager {
+    private func makeManagementPixelManager(pixels: EventCapturingPixelFiring,
+                                            now: @escaping () -> Date = Date.init,
+                                            isCatalogAvailable: Bool = true) -> WebExtensionManager {
         let manager = WebExtensionManager(configuration: configurationMock,
                                           windowTabProvider: windowTabProviderMock,
                                           storageProvider: storageProvidingMock,
@@ -3225,10 +3258,11 @@ final class WebExtensionManagerTests: XCTestCase {
                                           loader: webExtensionLoadingMock,
                                           lifecycleDelegate: lifecycleDelegateMock,
                                           pixelFiring: pixels,
-                                          keyValueStore: InMemoryThrowingKeyValueStore(),
+                                          retentionStore: WebExtensionRetentionStore(storage: InMemoryKeyValueStore().keyedStoring()),
                                           now: now)
         manager.chromeWebStore = CatalogNamingWebStore(entries: [managementStoreID: .bitwarden],
-                                                       categories: [managementStoreID: "password-manager"])
+                                                       categories: [managementStoreID: "password-manager"],
+                                                       catalogExtensionIDs: isCatalogAvailable ? [managementStoreID] : [])
         return manager
     }
 
@@ -3396,9 +3430,9 @@ private final class EventCapturingPixelFiring: WebExtensionPixelFiring {
         case .apiCompatibilityGaps(let catalogEntry, let version, let missingAPICount, let unsupportedURLCount):
             events.append("gaps \(catalogEntry.rawValue) \(version): \(missingAPICount) apis, \(unsupportedURLCount) urls")
         case .installed(_, let extensionID, let category):
-            events.append("installed \(extensionID ?? "nil") \(category ?? "nil")")
+            events.append("installed \(extensionID) \(category ?? "nil")")
         case .uninstalled(_, let extensionID, let category):
-            events.append("uninstalled \(extensionID ?? "nil") \(category ?? "nil")")
+            events.append("uninstalled \(extensionID) \(category ?? "nil")")
         case .enabled(let extensionID, let category):
             events.append("enabled \(extensionID) \(category ?? "nil")")
         case .disabled(let extensionID, let category):
@@ -3418,13 +3452,14 @@ private final class EventCapturingPixelFiring: WebExtensionPixelFiring {
 private final class CatalogNamingWebStore: ChromeWebStoreManaging {
     let entries: [String: ExtensionsCatalogSubfeature]
     let categories: [String: String]
+    let catalogExtensionIDs: [String]
 
-    init(entries: [String: ExtensionsCatalogSubfeature], categories: [String: String] = [:]) {
+    init(entries: [String: ExtensionsCatalogSubfeature], categories: [String: String] = [:], catalogExtensionIDs: [String] = []) {
         self.entries = entries
         self.categories = categories
+        self.catalogExtensionIDs = catalogExtensionIDs
     }
 
-    var catalogExtensionIDs: [String] { [] }
     var learnMoreURL: URL? { nil }
     func status(for identifier: String) -> ChromeWebStoreStatus { .unknown }
     func install(identifier: String, downloadURL: URL) async -> Bool { false }

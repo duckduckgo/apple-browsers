@@ -306,9 +306,9 @@ final class DuckAISwipeNewChatHandler: NSObject, UIGestureRecognizerDelegate {
         """
     }
 
-    /// The chat uncovers what is behind the web view as it slides up and fades; this fills that with the
-    /// chat's own background, as the unified input chrome sets it on the web view. It is the handler's own
-    /// view, so no shared background changes.
+    /// The chat uncovers what is behind the web view as it slides up and fades; this fills that with the Duck.ai
+    /// page's own colour token. It doesn't read the web view's background colours, which the chrome, site
+    /// theming and pull-to-refresh each overwrite. It is the handler's own view, so no shared background changes.
     private func showBackdrop() {
         guard let webView, let container = webView.superview else { return }
         if backdrop.superview !== container {
@@ -324,7 +324,7 @@ final class DuckAISwipeNewChatHandler: NSObject, UIGestureRecognizerDelegate {
             ])
         }
         container.insertSubview(backdrop, belowSubview: webView)
-        backdrop.backgroundColor = webView.underPageBackgroundColor
+        backdrop.backgroundColor = UIColor(singleUseColor: .duckAIWebViewBackground)
         backdrop.isHidden = false
     }
 

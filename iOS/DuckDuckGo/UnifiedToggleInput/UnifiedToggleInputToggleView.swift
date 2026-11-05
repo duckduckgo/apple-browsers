@@ -228,7 +228,6 @@ final class UnifiedToggleInputToggleView: UIView {
     @objc private func segmentTapped(_ sender: UIButton) {
         let mode: TextEntryMode = sender.tag == 0 ? .search : .aiChat
         guard mode != selectedMode else { return }
-        print("[UTI_LOGO_TIMING] \(String(format: "%.6f", ProcessInfo.processInfo.systemUptime)) toggle.tap from=\(selectedMode) to=\(mode)")
         selectedMode = mode
         updateIndicator(animated: true)
         updateButtonAppearance()
@@ -292,9 +291,6 @@ final class UnifiedToggleInputToggleView: UIView {
 
     private func commitDrag(to target: TextEntryMode) {
         let modeChanged = target != selectedMode
-        if modeChanged {
-            print("[UTI_LOGO_TIMING] \(String(format: "%.6f", ProcessInfo.processInfo.systemUptime)) toggle.drag from=\(selectedMode) to=\(target)")
-        }
         selectedMode = target
         updateIndicator(animated: true)
         guard modeChanged else { return }
@@ -315,7 +311,6 @@ final class UnifiedToggleInputToggleView: UIView {
             return
         }
 
-        print("[UTI_LOGO_TIMING] \(String(format: "%.6f", ProcessInfo.processInfo.systemUptime)) toggle.animation.configured mode=\(selectedMode)")
         UIView.animate(withDuration: Constants.animationDuration, delay: 0, options: .curveEaseInOut) {
             self.indicator.transform = .identity
             self.layoutIfNeeded()

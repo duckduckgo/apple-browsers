@@ -54,7 +54,6 @@ final class NewTabPageViewController: UIViewController, NewTabPage, RemoteMessag
     }
 
     func setLogoHidden(_ hidden: Bool) {
-        print("[UTI_LOGO_TIMING] \(String(format: "%.6f", ProcessInfo.processInfo.systemUptime)) ntp.logo.hidden=\(hidden) controller=\(ObjectIdentifier(self))")
         newTabPageViewModel.isLogoHidden = hidden
     }
 

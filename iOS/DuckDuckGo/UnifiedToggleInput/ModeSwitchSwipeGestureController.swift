@@ -58,7 +58,6 @@ final class ModeSwitchSwipeGestureController: NSObject {
 
     @objc private func handleSwipe(_ gesture: UISwipeGestureRecognizer) {
         let mode: TextEntryMode = gesture.direction == .left ? .aiChat : .search
-        print("[UTI_LOGO_TIMING] \(String(format: "%.6f", ProcessInfo.processInfo.systemUptime)) swipe.recognized mode=\(mode) state=\(gesture.state.rawValue)")
         onSwitch(mode)
     }
 
@@ -77,9 +76,6 @@ extension ModeSwitchSwipeGestureController: UIGestureRecognizerDelegate {
     func gestureRecognizer(_ gestureRecognizer: UIGestureRecognizer,
                            shouldBeRequiredToFailBy other: UIGestureRecognizer) -> Bool {
         let requiresSwipeFailure = isScrollPan(other)
-        if requiresSwipeFailure {
-            print("[UTI_LOGO_TIMING] \(String(format: "%.6f", ProcessInfo.processInfo.systemUptime)) swipe.priority scrollPan=\(ObjectIdentifier(other)) state=\(other.state.rawValue)")
-        }
         return requiresSwipeFailure
     }
 }

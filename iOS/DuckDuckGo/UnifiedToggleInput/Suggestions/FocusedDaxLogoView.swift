@@ -215,33 +215,14 @@ struct EmbeddedEscapeHatchGeometryReader: ViewModifier {
     static let scrollSpace = "EmbeddedEscapeHatchScroll"
     /// Set on the focused scroll content, which rests at the top of `scrollSpace`.
     static let contentSpace = "EmbeddedEscapeHatchContent"
-    var traceContext: String?
-
-    private struct TraceFrames: Equatable {
-        let global: CGRect
-        let scroll: CGRect
-        let content: CGRect
-        let resting: CGRect
-    }
 
     func body(content: Content) -> some View {
         content.background {
             GeometryReader { geometry in
-                let frames = TraceFrames(global: geometry.frame(in: .global),
-                                         scroll: geometry.frame(in: .named(Self.scrollSpace)),
-                                         content: geometry.frame(in: .named(Self.contentSpace)),
-                                         resting: Self.restingFrame(of: geometry))
                 Color.clear.preference(key: EmbeddedEscapeHatchGeometryKey.self,
                                        value: EmbeddedEscapeHatchGeometry(frame: Self.restingFrame(of: geometry)))
-                    .onAppear { logTrace("appear", frames: frames) }
-                    .onChange(of: frames) { logTrace("changed", frames: $0) }
             }
         }
-    }
-
-    private func logTrace(_ event: String, frames: TraceFrames) {
-        guard let traceContext else { return }
-        print("[UTI_LOGO_TIMING] \(String(format: "%.6f", ProcessInfo.processInfo.systemUptime)) hatch.geometry event=\(event) \(traceContext) rawGlobal=\(frames.global) namedScroll=\(frames.scroll) namedContent=\(frames.content) resting=\(frames.resting)")
     }
 
     /// The hatch frame with scrolling removed, so the logo neither follows nor reacts to a scroll.

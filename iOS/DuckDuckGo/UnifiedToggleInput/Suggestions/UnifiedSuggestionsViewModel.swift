@@ -126,7 +126,6 @@ final class UnifiedSuggestionsViewModel: ObservableObject {
                 guard self.dismissBehavior == .none else { return }
                 let resolved = UnifiedSuggestionsContentResolver.resolve(inputs, previous: self.content)
                 let isModeSwitch = self.hasResolvedSinceActivation && inputs.mode != self.previousMode
-                self.logLogoTransition("resolve target=\(inputs.mode) resolved=\(resolved) modeSwitch=\(isModeSwitch)")
                 if !isModeSwitch, !self.isPreparingLogoModeChange, self.logoModeChange?.mode == inputs.mode, resolved != self.content {
                     self.cancelLogoModeChange()
                 }
@@ -200,12 +199,10 @@ final class UnifiedSuggestionsViewModel: ObservableObject {
         onLogoFadeOutCompleted = nil
         completion?()
         logoModeChange = LogoModeChange(mode: mode, source: source)
-        logLogoTransition("source.captured target=\(mode)")
         let generation = logoModeChangeGeneration
         logoModeChangeCancellable = Just(()).delay(for: .seconds(0.25), scheduler: DispatchQueue.main)
             .sink { [weak self] _ in
                 guard self?.logoModeChangeGeneration == generation, self?.logoModeChange?.isFadingOut == false else { return }
-                self?.logLogoTransition("source.settleTimeout")
                 self?.logoModeChange?.source = nil
             }
     }
@@ -213,9 +210,7 @@ final class UnifiedSuggestionsViewModel: ObservableObject {
     func performLogoModeChange(to mode: TextEntryMode, _ changes: () -> Void) {
         prepareLogoModeChange(to: mode)
         isPreparingLogoModeChange = true
-        logLogoTransition("model.changes.begin target=\(mode)")
         changes()
-        logLogoTransition("model.changes.end target=\(mode)")
         updateLogoModeChange(finishingPreparation: true)
     }
 
@@ -230,13 +225,11 @@ final class UnifiedSuggestionsViewModel: ObservableObject {
             let layout = logoLayout(in: viewport)
             return layout.hatchLayout == nil || layout.hatchLayout?.visibleFrame != nil
         } ?? true
-        logLogoTransition("destination.checked fits=\(fits)")
         guard !isShowingLogo || !fits else { return }
         let updates = {
             self.logoModeChange?.isFadingOut = true
             self.waitsForLogoFadeOut = true
             if finishingPreparation { self.isPreparingLogoModeChange = false }
-            self.logLogoTransition("fade.requested duration=\(FocusedContentFade.duration)")
         }
         guard onLogoFadeOutCompleted != nil else {
             updates()
@@ -254,18 +247,15 @@ final class UnifiedSuggestionsViewModel: ObservableObject {
     func startLogoFadeOut() {
         if #available(iOS 17, *), onLogoFadeOutCompleted != nil { return }
         guard logoModeChange?.isFadingOut == true, logoModeChange?.source != nil else { return }
-        logLogoTransition("fade.timerStarted")
         let generation = logoModeChangeGeneration
         logoModeChangeCancellable = Just(()).delay(for: .seconds(FocusedContentFade.duration), scheduler: DispatchQueue.main)
             .sink { [weak self] _ in
-                self?.logLogoTransition("fade.timerFired")
                 self?.finishLogoFadeOut(generation: generation)
             }
     }
 
     private func finishLogoFadeOut(generation: Int) {
         guard generation == logoModeChangeGeneration else { return }
-        logLogoTransition("fade.completed")
         let completion = onLogoFadeOutCompleted
         onLogoFadeOutCompleted = nil
         logoModeChangeCancellable = nil
@@ -280,7 +270,6 @@ final class UnifiedSuggestionsViewModel: ObservableObject {
     }
 
     func cancelLogoModeChange() {
-        if logoModeChange != nil { logLogoTransition("modeChange.cancelled") }
         logoModeChangeGeneration += 1
         logoModeChangeCancellable = nil
         let completion = onLogoFadeOutCompleted
@@ -288,11 +277,6 @@ final class UnifiedSuggestionsViewModel: ObservableObject {
         logoModeChange = nil
         waitsForLogoFadeOut = false
         completion?()
-    }
-
-    func logLogoTransition(_ event: String) {
-        let timestamp = String(format: "%.6f", ProcessInfo.processInfo.systemUptime)
-        print("[UTI_LOGO_TIMING] \(timestamp) \(event) previous=\(String(describing: previousMode)) target=\(String(describing: logoModeChange?.mode)) content=\(content) redesigned=\(usesRedesignedNewTabPageLayout) placement=\(escapeHatchPlacement) visible=\(isLogoOnScreen) deferred=\(isLogoRevealDeferred) waiting=\(waitsForLogoFadeOut) fading=\(logoModeChange?.isFadingOut == true) source=\(String(describing: logoModeChange?.source?.frame)) sourceMark=\(logoModeChange?.source?.progress ?? -1) backdrop=\(String(describing: backdropLogoFrame)) viewport=\(String(describing: logoViewportFrame ?? logoHostFrame)) insets=\(chromeInsetTop),\(contentTopInset)")
     }
 
     private static func sameCategory(_ lhs: UnifiedSuggestionsContentKind, _ rhs: UnifiedSuggestionsContentKind) -> Bool {

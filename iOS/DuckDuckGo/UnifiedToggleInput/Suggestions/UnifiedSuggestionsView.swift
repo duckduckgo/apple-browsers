@@ -229,19 +229,13 @@ struct UnifiedSuggestionsView: View {
                 .modifier(FocusedContentDismissFade(isFadingOut: viewModel.isFadingOut, duration: FocusedContentFade.duration))
                 .allowsHitTesting(false)
                 .onAppear {
-                    viewModel.logLogoTransition("focused.appear destinationVisible=\(destinationShowsLogo) retained=\(retainedSource != nil) centerY=\(targetCenterY)")
                     viewModel.backdropLogoFrame = backdropLogoFrame
                     viewModel.startLogoFadeOut()
                 }
                 .onChange(of: backdropLogoFrame) {
-                    viewModel.logLogoTransition("focused.backdrop newFrame=\(String(describing: $0)) retained=\(retainedSource != nil) centerY=\(targetCenterY)")
                     viewModel.backdropLogoFrame = $0
                 }
-                .onChange(of: destinationShowsLogo) {
-                    viewModel.logLogoTransition("focused.destinationVisible=\($0) retained=\(retainedSource != nil) centerY=\(targetCenterY)")
-                }
                 .onChange(of: viewModel.logoModeChange) { _ in
-                    viewModel.logLogoTransition("focused.modeChange.observed retained=\(retainedSource != nil)")
                     viewModel.startLogoFadeOut()
                 }
         }

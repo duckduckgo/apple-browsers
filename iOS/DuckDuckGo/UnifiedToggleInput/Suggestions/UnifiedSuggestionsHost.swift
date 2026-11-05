@@ -51,11 +51,6 @@ final class UnifiedSuggestionsHost {
     private var heldModeChangeLayers: [HeldLayerAnimation] = []
     private var modeChangeAnimator: UIViewPropertyAnimator?
     private var pendingModeChangeResizeStarted: (() -> Void)?
-    private var contentMovementGeneration = 0
-    private var contentMovementLayers: [CALayer] = []
-    private var contentOffsetObservations: [NSKeyValueObservation] = []
-    private var contentOffsetTracePhase = "idle"
-    private var contentOffsetTraceEventCount = 0
     private var isLogoHeldForForeground = false
     let favoritesPresentation: FocusedFavoritesPresentation
     private var redesignedSearchPresentation: RedesignedFocusedSearchPresentation?
@@ -90,9 +85,6 @@ final class UnifiedSuggestionsHost {
     }
 
     private func updateFocusedContent() {
-        let previousPhase = contentOffsetTracePhase
-        setContentOffsetTracePhase("content.update")
-        defer { setContentOffsetTracePhase(previousPhase) }
         if redesignedSearchPresentation == nil, usesScrollableEscapeHatch {
             favoritesPresentation.viewController?.setFocusedContent(LegacyFocusedNewTabPageContent(
                 recentChats: focusedMode == .aiChat ? viewModel.listViewModel(for: .recents) : nil,
@@ -281,12 +273,7 @@ final class UnifiedSuggestionsHost {
     }
 
     func performInputModeChange(to mode: TextEntryMode, contentLayers: [CALayer] = [], onResizeStarted: (() -> Void)? = nil, _ changes: @escaping () -> Void) {
-        viewModel.logLogoTransition("host.switch.begin target=\(mode) scrollable=\(usesScrollableEscapeHatch) floating=\((hostingController as? UnifiedSuggestionsHostingController)?.isFloatingUIEnabled == true)")
         stopModeChangeAnimator()
-        contentMovementLayers = contentLayers
-        let generation = contentMovementGeneration
-        startContentOffsetTrace()
-        logContentMovement("begin")
         viewModel.prepareLogoModeChange(to: mode)
         pendingModeChangeResizeStarted = onResizeStarted
         if !viewModel.usesRedesignedNewTabPageLayout,
@@ -304,14 +291,11 @@ final class UnifiedSuggestionsHost {
                 return true
             }.map(HeldLayerAnimation.init)
             viewModel.onLogoFadeOutCompleted = { [weak self] in self?.resumeModeChangeAnimations() }
-            viewModel.logLogoTransition("host.layers.paused count=\(heldModeChangeLayers.count)")
         }
         let applyChanges = { [self] in
-            setContentOffsetTracePhase("mode.changes")
             isChangingInputMode = true
             slideContentWithCoreAnimation { performInputModeChangeDeferringLogo(changes) }
             isChangingInputMode = false
-            setContentOffsetTracePhase("mode.changes.done")
         }
         viewModel.performLogoModeChange(to: mode) {
             // Only a visible legacy logo can hold the resize for a fade.
@@ -319,31 +303,20 @@ final class UnifiedSuggestionsHost {
                 applyChanges()
                 return
             }
-            let animator = UIViewPropertyAnimator(duration: 0.2, curve: .easeInOut) { [self] in
-                viewModel.logLogoTransition("host.resize.preparing duration=\(UIView.inheritedAnimationDuration)")
+            let animator = UIViewPropertyAnimator(duration: 0.2, curve: .easeInOut) {
                 applyChanges()
             }
             modeChangeAnimator = animator
-            animator.addCompletion { [weak self, weak animator] position in
-                self?.viewModel.logLogoTransition("host.resize.completed position=\(position)")
-                self?.logContentMovement("completed")
+            animator.addCompletion { [weak self, weak animator] _ in
                 if self?.modeChangeAnimator === animator { self?.modeChangeAnimator = nil }
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.03) { [weak self] in
-                    guard let self, contentMovementGeneration == generation else { return }
-                    logContentMovement("completed.30ms")
-                }
             }
             animator.pauseAnimation()
-            setContentOffsetTracePhase("mode.prepared")
-            viewModel.logLogoTransition("host.resize.prepared state=\(animator.state) fraction=\(animator.fractionComplete)")
-            logContentMovement("prepared")
         }
         updateFocusedContent()
         if viewModel.logoModeChange?.isFadingOut != true {
             viewModel.onLogoFadeOutCompleted = nil
             resumeModeChangeAnimations()
         }
-        viewModel.logLogoTransition("host.switch.end target=\(mode)")
     }
 
     private func resumeModeChangeAnimations() {
@@ -355,143 +328,16 @@ final class UnifiedSuggestionsHost {
         CATransaction.setDisableActions(true)
         for layer in layers { layer.resume() }
         CATransaction.commit()
-        viewModel.logLogoTransition("host.layers.resumed count=\(layers.count)")
         if let animator = modeChangeAnimator, animator.state == .active, !animator.isRunning {
-            viewModel.logLogoTransition("host.resize.started")
             animator.startAnimation()
-            logContentMovement("started")
-            let generation = contentMovementGeneration
-            for (delay, phase) in [(0.15, "running.150ms"), (1.0, "settled.1s"), (2.5, "settled.2.5s")] {
-                DispatchQueue.main.asyncAfter(deadline: .now() + delay) { [weak self] in
-                    guard let self, contentMovementGeneration == generation else { return }
-                    logContentMovement(phase)
-                }
-            }
         }
         onResizeStarted?()
     }
 
     private func stopModeChangeAnimator() {
         pendingModeChangeResizeStarted = nil
-        stopContentOffsetTrace()
-        contentMovementGeneration += 1
-        contentMovementLayers.removeAll()
         if let animator = modeChangeAnimator, animator.state == .active { animator.stopAnimation(true) }
         modeChangeAnimator = nil
-    }
-
-    private func startContentOffsetTrace() {
-        guard let root = favoritesPresentation.viewController?.viewIfLoaded else { return }
-        let generation = contentMovementGeneration
-        contentOffsetTracePhase = "mode.begin"
-        contentOffsetTraceEventCount = 0
-        var pending = [root]
-        while let view = pending.popLast() {
-            pending.append(contentsOf: view.subviews)
-            guard let scroll = view as? UIScrollView else { continue }
-            print("[UTI_LOGO_TIMING] \(String(format: "%.6f", ProcessInfo.processInfo.systemUptime)) offset.observe generation=\(generation) id=\(ObjectIdentifier(scroll)) layer=\(ObjectIdentifier(scroll.layer)) type=\(type(of: scroll)) offset=\(scroll.contentOffset) bounds=\(scroll.layer.bounds)")
-            contentOffsetObservations.append(scroll.observe(\.contentOffset, options: [.old, .new]) { [weak self, weak scroll] _, change in
-                guard let self, let scroll else { return }
-                logContentOffsetChange("contentOffset", old: change.oldValue, new: change.newValue, scroll: scroll, generation: generation)
-            })
-            contentOffsetObservations.append(scroll.layer.observe(\.bounds, options: [.old, .new]) { [weak self, weak scroll] _, change in
-                guard let self, let scroll else { return }
-                logContentOffsetChange("boundsOrigin", old: change.oldValue?.origin, new: change.newValue?.origin, scroll: scroll, generation: generation)
-            })
-        }
-        print("[UTI_LOGO_TIMING] \(String(format: "%.6f", ProcessInfo.processInfo.systemUptime)) offset.observe.started generation=\(generation) scrolls=\(contentOffsetObservations.count / 2)")
-        DispatchQueue.main.asyncAfter(deadline: .now() + 3) { [weak self] in
-            guard let self, contentMovementGeneration == generation else { return }
-            stopContentOffsetTrace()
-        }
-    }
-
-    private func stopContentOffsetTrace() {
-        for observation in contentOffsetObservations { observation.invalidate() }
-        contentOffsetObservations.removeAll()
-        contentOffsetTracePhase = "idle"
-    }
-
-    private func setContentOffsetTracePhase(_ phase: String) {
-        guard !contentOffsetObservations.isEmpty else { return }
-        contentOffsetTracePhase = phase
-        print("[UTI_LOGO_TIMING] \(String(format: "%.6f", ProcessInfo.processInfo.systemUptime)) offset.phase generation=\(contentMovementGeneration) phase=\(phase) nativeFrame=\(String(describing: favoritesPresentation.viewController?.viewIfLoaded?.frame)) animations=\(UIView.areAnimationsEnabled) duration=\(UIView.inheritedAnimationDuration)")
-    }
-
-    private func logContentOffsetChange(_ kind: String, old: CGPoint?, new: CGPoint?, scroll: UIScrollView, generation: Int) {
-        guard generation == contentMovementGeneration, let old, let new, old != new, contentOffsetTraceEventCount < 12 else { return }
-        contentOffsetTraceEventCount += 1
-        let prefix = "[UTI_LOGO_TIMING] \(String(format: "%.6f", ProcessInfo.processInfo.systemUptime)) offset.changed generation=\(generation) event=\(contentOffsetTraceEventCount) kind=\(kind) phase=\(contentOffsetTracePhase)"
-        print("\(prefix) id=\(ObjectIdentifier(scroll)) layer=\(ObjectIdentifier(scroll.layer)) type=\(type(of: scroll)) old=\(old) new=\(new) frame=\(scroll.frame) nativeFrame=\(String(describing: favoritesPresentation.viewController?.viewIfLoaded?.frame)) safeArea=\(scroll.safeAreaInsets) adjusted=\(scroll.adjustedContentInset) size=\(scroll.contentSize) dragging=\(scroll.isDragging) tracking=\(scroll.isTracking) panState=\(scroll.panGestureRecognizer.state.rawValue) animations=\(UIView.areAnimationsEnabled) duration=\(UIView.inheritedAnimationDuration)")
-        print("\(prefix) stack=\(Thread.callStackSymbols.prefix(32).joined(separator: " <- "))")
-    }
-
-    private func logContentMovement(_ phase: String) {
-        let time = String(format: "%.6f", ProcessInfo.processInfo.systemUptime)
-        let prefix = "[UTI_LOGO_TIMING] \(time) content.\(phase) generation=\(contentMovementGeneration)"
-        print("\(prefix) state mode=\(focusedMode) redesigned=\(viewModel.usesRedesignedNewTabPageLayout) inset=\(viewModel.contentTopInset) hatch=\(String(describing: viewModel.embeddedEscapeHatchGeometry)) fraction=\(String(describing: modeChangeAnimator?.fractionComplete))")
-        let views = [hostingController?.viewIfLoaded, favoritesPresentation.viewController?.viewIfLoaded].compactMap { $0 }
-        var layers = views.map(\.layer) + contentMovementLayers
-        var seen = Set<ObjectIdentifier>()
-        layers = layers.filter { seen.insert(ObjectIdentifier($0)).inserted }
-        var remainingAnimations = 8
-        var remainingScrollViews = 2
-        for layer in layers {
-            let view = layer.delegate as? UIView
-            print("\(prefix) root \(Self.contentLayerDescription(layer)) safeArea=\(String(describing: view?.safeAreaInsets)) alpha=\(String(describing: view?.alpha)) hidden=\(String(describing: view?.isHidden)) window=\(view?.window != nil)")
-            var remainingHatchLayers = 12
-            var pending = layer.sublayers ?? []
-            while !pending.isEmpty {
-                let child = pending.removeFirst()
-                let global = child.convert(child.bounds, to: nil)
-                let matchesHatchBounds = (52...74).contains(child.bounds.height) && child.bounds.width >= 40
-                let matchesHatchFrame = (52...74).contains(global.height) && global.width >= 40
-                if remainingHatchLayers > 0, matchesHatchBounds || matchesHatchFrame {
-                    print("\(prefix) hatchCandidate owner=\(ObjectIdentifier(layer)) \(Self.contentLayerDescription(child))")
-                    remainingHatchLayers -= 1
-                }
-                if remainingAnimations > 0, child.animationKeys()?.isEmpty == false {
-                    print("\(prefix) animated \(Self.contentLayerDescription(child))")
-                    remainingAnimations -= 1
-                }
-                if remainingScrollViews > 0, let scroll = child.delegate as? UIScrollView {
-                    let content = scroll.subviews.prefix(3).map { Self.contentLayerDescription($0.layer) }
-                    print("\(prefix) scroll \(Self.contentLayerDescription(child)) offset=\(scroll.contentOffset) inset=\(scroll.contentInset) adjusted=\(scroll.adjustedContentInset) size=\(scroll.contentSize) content={\(content)}")
-                    remainingScrollViews -= 1
-                }
-                if remainingAnimations > 0 || remainingScrollViews > 0 || remainingHatchLayers > 0 {
-                    pending.append(contentsOf: child.sublayers ?? [])
-                }
-            }
-            print("\(prefix) hatchCandidates owner=\(ObjectIdentifier(layer)) count=\(12 - remainingHatchLayers)")
-        }
-    }
-
-    private static func contentLayerDescription(_ layer: CALayer) -> String {
-        let presentation = layer.presentation()
-        let view = layer.delegate as? UIView
-        var effectiveOpacity: Float = 1
-        var effectivePresentationOpacity: Float = 1
-        var isInWindow = false
-        var ancestor: CALayer? = layer
-        while let current = ancestor {
-            effectiveOpacity *= current.isHidden ? 0 : current.opacity
-            let presented = current.presentation() ?? current
-            effectivePresentationOpacity *= presented.isHidden ? 0 : presented.opacity
-            if let currentView = current.delegate as? UIView, currentView.window != nil { isInWindow = true }
-            ancestor = current.superlayer
-        }
-        func describe(_ animation: CAAnimation) -> String {
-            let property = animation as? CAPropertyAnimation
-            let basic = animation as? CABasicAnimation
-            let children = (animation as? CAAnimationGroup)?.animations?.map(describe) ?? []
-            return "path=\(property?.keyPath ?? "nil") from=\(String(describing: basic?.fromValue)) to=\(String(describing: basic?.toValue)) duration=\(animation.duration) begin=\(animation.beginTime) offset=\(animation.timeOffset) speed=\(animation.speed) additive=\(property?.isAdditive == true) removed=\(animation.isRemovedOnCompletion) children=\(children)"
-        }
-        let animations = (layer.animationKeys() ?? []).compactMap { key -> String? in
-            guard let animation = layer.animation(forKey: key) else { return nil }
-            return "\(key){\(describe(animation))}"
-        }
-        return "id=\(ObjectIdentifier(layer)) view=\(String(describing: view.map { ObjectIdentifier($0) })) name=\(layer.name ?? "nil") type=\(String(describing: layer.delegate.map { type(of: $0) })) hidden=\(layer.isHidden) opacity=\(layer.opacity) effectiveOpacity=\(effectiveOpacity) effectivePresentationOpacity=\(effectivePresentationOpacity) window=\(isInWindow) frame=\(layer.frame) global=\(layer.convert(layer.bounds, to: nil)) position=\(layer.position) bounds=\(layer.bounds) translation=\(layer.transform.m42) presentationFrame=\(String(describing: presentation?.frame)) presentationGlobal=\(String(describing: presentation.map { $0.convert($0.bounds, to: nil) })) presentationPosition=\(String(describing: presentation?.position)) presentationBounds=\(String(describing: presentation?.bounds)) presentationTranslation=\(String(describing: presentation?.transform.m42)) speed=\(layer.speed) offset=\(layer.timeOffset) begin=\(layer.beginTime) localTime=\(layer.convertTime(CACurrentMediaTime(), from: nil)) animations=\(animations)"
     }
 
     private struct HeldLayerAnimation {
@@ -524,7 +370,7 @@ final class UnifiedSuggestionsHost {
 
     private func performInputModeChangeDeferringLogo(_ changes: () -> Void) {
         // A logo on screen stays to morph; one hidden for lack of room stays hidden while the bar resizes.
-        guard usesScrollableEscapeHatch, viewModel.escapeHatchPlacement != .hidden, !viewModel.isLogoOnScreen else {
+        guard viewModel.escapeHatchPlacement != .hidden, !viewModel.isLogoOnScreen else {
             changes()
             return
         }
@@ -571,12 +417,10 @@ final class UnifiedSuggestionsHost {
     private static let keyboardRiseFallback: TimeInterval = 0.6
 
     private func finishDeferredLogoReveal() {
-        viewModel.logLogoTransition("reveal.finish.begin")
         hostingController?.view.window?.layoutIfNeeded()
         hostingController?.view.layoutIfNeeded()
         viewModel.isLogoRevealDeferred = false
         logoKeyboardCancellable = nil
-        viewModel.logLogoTransition("reveal.finish.end")
     }
 
     /// Fire tabs render the fire empty state instead of the Dax logo for the empty (`.logo`) state.
@@ -656,8 +500,6 @@ final class UnifiedSuggestionsHost {
     }
 
     private func applyCombinedInsets() {
-        let previousPhase = contentOffsetTracePhase
-        defer { setContentOffsetTracePhase(previousPhase) }
         let top = escapeHatchTopInset + contentInsets.top
         let contentTopInset = usesScrollableEscapeHatch ? top : 0
         let duration = UIView.inheritedAnimationDuration
@@ -668,9 +510,6 @@ final class UnifiedSuggestionsHost {
             ? .easeInOut(duration: duration) : nil
         let updateLayout = { [self] in
             viewModel.chromeInsetTop = top
-            if isChangingInputMode || modeChangeAnimator != nil || viewModel.logoModeChange?.source != nil {
-                viewModel.logLogoTransition("host.insets top=\(top) bottom=\(contentInsets.bottom) delta=\(delta) duration=\(duration) coreAnimation=\(coreAnimatedContentView != nil) suppressesUIKitAnimations=\(suppressesUIKitAnimations)")
-            }
             withAnimation(animation) {
                 if viewModel.contentTopInset != contentTopInset {
                     viewModel.contentTopInset = contentTopInset
@@ -680,21 +519,15 @@ final class UnifiedSuggestionsHost {
                 }
             }
             // Nested SwiftUI hosts can apply a changing UIKit top inset twice. Keep the input clearance in their content.
-            setContentOffsetTracePhase("insets.safeArea")
             hostingController?.additionalSafeAreaInsets = UIEdgeInsets(
                 top: usesScrollableEscapeHatch ? 0 : top,
                 left: contentInsets.left,
                 bottom: contentInsets.bottom,
                 right: contentInsets.right
             )
-            setContentOffsetTracePhase("insets.safeArea.done")
-            setContentOffsetTracePhase("insets.outerLayout")
             hostingController?.view.layoutIfNeeded()
-            setContentOffsetTracePhase("insets.outerLayout.done")
             if let coreAnimatedContentView {
-                setContentOffsetTracePhase("insets.contentLayout")
                 coreAnimatedContentView.layoutIfNeeded()
-                setContentOffsetTracePhase("insets.contentLayout.done")
             }
         }
         if suppressesUIKitAnimations {
@@ -736,7 +569,6 @@ final class UnifiedSuggestionsHost {
         animation.duration = duration
         animation.timingFunction = CAMediaTimingFunction(name: .easeInEaseOut)
         layer.add(animation, forKey: nil)
-        print("[UTI_LOGO_TIMING] \(String(format: "%.6f", ProcessInfo.processInfo.systemUptime)) content.slide offset=\(offset) duration=\(duration) \(contentLayerDescription(layer))")
     }
 
     // MARK: - Duck.ai surface (single-host path)

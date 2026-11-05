@@ -458,7 +458,6 @@ final class UnifiedToggleInputView: UIView {
     private var renderedFooterMessages: [UTIFooterItem] = []
     private var reportedFooterIDs: [UTIFooterItem.ID] = []
     private var isFooterPresentationActive = false
-    private var footerGeometryGeneration = 0
 
     func setFooterPresentationActive(_ active: Bool) {
         isFooterPresentationActive = active
@@ -495,15 +494,21 @@ final class UnifiedToggleInputView: UIView {
     private func renderFooterMessages(expanded: Bool) -> Bool {
         let messages = expanded ? pendingFooterMessages : []
         let messagesChanged = messages != renderedFooterMessages
-        footerGeometryGeneration += messagesChanged ? 1 : 0
-        let geometryGeneration = footerGeometryGeneration
         let wasVisible = bottomCardSlot == .footer
         if messagesChanged {
             let existingRows = Dictionary(uniqueKeysWithValues: zip(renderedFooterMessages.map(\.id), footerCard.arrangedSubviews))
             let previousMessages = renderedFooterMessages
-            for item in previousMessages where !messages.contains(where: { $0.id == item.id }) {
-                if let row = existingRows[item.id] {
-                    footerCard.removeArrangedSubview(row)
+            for (id, row) in existingRows where !messages.contains(where: { $0.id == id }) {
+                footerCard.removeArrangedSubview(row)
+                let duration = UIView.inheritedAnimationDuration
+                if isApplyingInputMode && UIView.areAnimationsEnabled && duration > 0 {
+                    row.translatesAutoresizingMaskIntoConstraints = true
+                    UIView.animate(withDuration: duration) {
+                        row.alpha = 0
+                    } completion: { _ in
+                        row.removeFromSuperview()
+                    }
+                } else {
                     row.removeFromSuperview()
                 }
             }
@@ -529,7 +534,6 @@ final class UnifiedToggleInputView: UIView {
                         row.layoutIfNeeded()
                     }
                 }
-                logFooterGeometry("beforePlacement", extraRow: row)
                 if footerCard.arrangedSubviews.firstIndex(of: row) != index {
                     footerCard.removeArrangedSubview(row)
                     footerCard.insertArrangedSubview(row, at: index)
@@ -553,8 +557,6 @@ final class UnifiedToggleInputView: UIView {
         if !isApplyingInputMode {
             footerCard.layoutIfNeeded()
         }
-        logFooterGeometry("afterLayout")
-        scheduleFooterGeometryTrace(geometryGeneration, ifNeeded: messagesChanged && !messages.isEmpty)
         return wasVisible || !messages.isEmpty
     }
 
@@ -565,63 +567,6 @@ final class UnifiedToggleInputView: UIView {
         let row = UTIFooterCardView()
         row.configure(with: message, animateIcon: false)
         return row
-    }
-
-    private func scheduleFooterGeometryTrace(_ generation: Int, ifNeeded: Bool) {
-        guard ifNeeded else { return }
-        for delay in [0.1, 0.25, 0.35, 0.5, 0.9] {
-            DispatchQueue.main.asyncAfter(deadline: .now() + delay) { [weak self] in
-                guard let self, footerGeometryGeneration == generation else { return }
-                logFooterGeometry("after.\(delay)")
-            }
-        }
-    }
-
-    private func logFooterGeometry(_ phase: String, extraRow: UTIFooterCardView? = nil) {
-        let prefix = "[UTI_LOGO_TIMING] \(String(format: "%.6f", ProcessInfo.processInfo.systemUptime)) footer.geometry phase=\(phase) generation=\(footerGeometryGeneration) duration=\(UIView.inheritedAnimationDuration) animations=\(UIView.areAnimationsEnabled)"
-        var views: [(String, UIView)] = [("bar", self), ("card", cardView), ("toggle", toggleView),
-                                       ("dismiss", inlineDismissButton), ("entry", textEntryView),
-                                       ("toolbar", toolsToolbar), ("stack", footerCard)]
-        for (index, view) in toggleView.subviews.prefix(3).enumerated() {
-            views.append(("toggle.\(index)", view))
-        }
-        let rows = extraRow.map { [$0] } ?? Array(footerCard.arrangedSubviews.compactMap { $0 as? UTIFooterCardView }.prefix(3))
-        for (index, row) in rows.enumerated() {
-            views.append(("row.\(index)", row))
-            views.append(("row.\(index).content", row.contentView))
-            if let stack = row.contentView.subviews.compactMap({ $0 as? UIStackView }).first {
-                views.append(("row.\(index).textStack", stack))
-                for (textIndex, textView) in stack.arrangedSubviews.prefix(3).enumerated() {
-                    views.append(("row.\(index).text.\(textIndex)", textView))
-                    for (subviewIndex, subview) in textView.subviews.prefix(3).enumerated() {
-                        let role = "row.\(index).text.\(textIndex).subview.\(subviewIndex)"
-                        views.append((role, subview))
-                        for (childIndex, child) in subview.subviews.prefix(3).enumerated() {
-                            views.append(("\(role).subview.\(childIndex)", child))
-                        }
-                    }
-                }
-            }
-        }
-        for (role, view) in views {
-            print("\(prefix) role=\(role) \(Self.footerGeometryDescription(view))")
-        }
-    }
-
-    private static func footerGeometryDescription(_ view: UIView) -> String {
-        let layer = view.layer
-        let presentation = layer.presentation()
-        func describe(_ animation: CAAnimation) -> String {
-            let property = animation as? CAPropertyAnimation
-            let basic = animation as? CABasicAnimation
-            let children = (animation as? CAAnimationGroup)?.animations?.map(describe) ?? []
-            return "path=\(property?.keyPath ?? "nil") from=\(String(describing: basic?.fromValue)) to=\(String(describing: basic?.toValue)) begin=\(animation.beginTime) duration=\(animation.duration) additive=\(property?.isAdditive == true) children=\(children)"
-        }
-        let animations = (layer.animationKeys() ?? []).compactMap { key -> String? in
-            guard let animation = layer.animation(forKey: key) else { return nil }
-            return "\(key){\(describe(animation))}"
-        }
-        return "id=\(ObjectIdentifier(view)) type=\(type(of: view)) frame=\(view.frame) global=\(String(describing: view.window.map { _ in view.convert(view.bounds, to: nil) })) position=\(layer.position) bounds=\(layer.bounds) alpha=\(view.alpha) hidden=\(view.isHidden) window=\(view.window != nil) presentationFrame=\(String(describing: presentation?.frame)) presentationGlobal=\(String(describing: presentation.map { $0.convert($0.bounds, to: nil) })) presentationPosition=\(String(describing: presentation?.position)) presentationBounds=\(String(describing: presentation?.bounds)) animations=\(animations)"
     }
 
     private func applyBottomSlot(_ slot: BottomCardSlot) {
@@ -1261,7 +1206,6 @@ final class UnifiedToggleInputView: UIView {
     }
 
     func setInputMode(_ mode: TextEntryMode, animated: Bool) {
-        logFooterGeometry("mode.begin")
         if handler.currentToggleState != mode {
             handler.setToggleState(mode)
         }
@@ -1272,10 +1216,8 @@ final class UnifiedToggleInputView: UIView {
         // placeholder constraint switch animates rather than snapping when the publisher
         // subscriber fires after the animation transaction has already committed.
         textEntryView.updatePoseForCurrentState()
-        logFooterGeometry("mode.afterPose")
         updateToolbarVisibility(for: mode, animated: animated)
         updateToggleDisabledSearchPadding(for: mode)
-        logFooterGeometry("mode.afterToolbar")
     }
 
     func setSelectedInputMode(_ mode: TextEntryMode, animated: Bool) {
@@ -1322,6 +1264,7 @@ final class UnifiedToggleInputView: UIView {
     }
 
     func setFlankingAccessoriesVisible(_ accessories: UnifiedToggleInputFlankingAccessories) {
+        textEntryView.placeholderTextAlignment = accessories.isEmpty ? .natural : .center
         let previous = visibleFlankingAccessories
         guard previous != accessories else { return }
         let appearing = accessories.subtracting(previous)
@@ -1331,7 +1274,6 @@ final class UnifiedToggleInputView: UIView {
             if appearing.contains(accessory) { button.alpha = 0 }
             button.isHidden = !accessories.contains(accessory)
         }
-        textEntryView.placeholderTextAlignment = accessories.isEmpty ? .natural : .center
 
         guard !appearing.isEmpty else { return }
         // Clear transient state left by the omnibar dismiss (color + horizontal shift).
@@ -1799,7 +1741,6 @@ final class UnifiedToggleInputView: UIView {
         }
         updateAttachmentsStripLayout()
 
-        print("[UTI_LOGO_TIMING] \(String(format: "%.6f", ProcessInfo.processInfo.systemUptime)) toolbar.layout mode=\(mode) animated=\(animated) inheritedDuration=\(UIView.inheritedAnimationDuration)")
         // The enclosing mode animator may be paused while the logo fades.
         guard animated, UIView.inheritedAnimationDuration == 0 else {
             toolsToolbar.alpha = showToolbar ? 1 : 0
@@ -2272,7 +2213,6 @@ private extension UnifiedToggleInputView {
                 guard let self else { return }
                 toggleView.setMode(mode, animated: true)
                 let needsToolbarLayout = currentLayout.showsToolbar != (mode == .aiChat)
-                print("[UTI_LOGO_TIMING] \(String(format: "%.6f", ProcessInfo.processInfo.systemUptime)) toolbar.publisher mode=\(mode) needsLayout=\(needsToolbarLayout) duration=\(UIView.inheritedAnimationDuration)")
                 if needsToolbarLayout {
                     updateToolbarVisibility(for: mode, animated: true)
                 }

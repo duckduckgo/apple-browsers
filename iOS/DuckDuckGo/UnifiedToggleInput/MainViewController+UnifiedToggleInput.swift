@@ -349,9 +349,7 @@ extension MainViewController {
         updateLandscapeEditingCap()
         var height = coordinator.editingHeight()
         if let cap = landscapeEditingHeightCap {
-            let measuredHeight = height
             height = min(height, cap)
-            print("[UTI_LOGO_TIMING] \(String(format: "%.6f", ProcessInfo.processInfo.systemUptime)) uti.landscape.cap measured=\(measuredHeight) cap=\(cap) target=\(height) constraint=\(viewCoordinator.constraints.navigationBarContainerHeight.constant) presentation=\(String(describing: viewCoordinator.navigationBarContainer.layer.presentation()?.frame)) duration=\(UIView.inheritedAnimationDuration)")
         }
         guard viewCoordinator.constraints.navigationBarContainerHeight.constant != height else {
             // Keyboard layout may have resized the bar while focused content still has the old inset.
@@ -434,9 +432,9 @@ extension MainViewController {
         // During a fresh navigation (e.g. opening a chat in a new tab), `tabModel.link` is briefly
         // set to nil before WebView reports the new URL. `tab.isAITab` is link-derived, so it would
         // momentarily report false and route us through `refreshNonAITab` → `coordinator.hide()`,
-        // tearing down the UTI we just set up. Preserve the current AI presentation through that
+        // tearing down the UTI we just set up. Preserve the same tab's AI presentation through that
         // window — the next refresh, after WebView reports the URL, resolves correctly.
-        if inputs.tabLinkURL == nil && inputs.coordinatorIsAITabState {
+        if inputs.tabLinkURL == nil && inputs.coordinatorIsAITabState && inputs.isRefreshingCurrentTab {
             return .refreshAITab(.preserveCurrentPresentation(allowsEarlyReturn: true))
         }
 

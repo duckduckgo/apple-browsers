@@ -385,6 +385,21 @@
 /* Title for the New Tab row in the Duck.ai tab header Plus (+) menu */
 "aichat.header.plusMenu.newTab" = "Nova kartica";
 
+/* Section header in the Duck.ai tab header Plus (+) menu; every row below it opens a new tab */
+"aichat.header.plusMenu.newTabSection" = "Nova kartica";
+
+/* Row in the New Tab section of the Duck.ai tab header Plus (+) menu — opens a new Duck.ai chat in a new tab */
+"aichat.header.plusMenu.newTabSection.chat" = "Čavrljanje";
+
+/* Row in the New Tab section of the Duck.ai tab header Plus (+) menu — opens Duck.ai in image generation mode in a new tab */
+"aichat.header.plusMenu.newTabSection.image" = "Slikovno";
+
+/* Row in the Duck.ai tab header Plus (+) menu — opens a new tab in search mode */
+"aichat.header.plusMenu.newTabSection.search" = "Pretraživanje";
+
+/* Row in the New Tab section of the Duck.ai tab header Plus (+) menu — opens a new Duck.ai voice chat in a new tab */
+"aichat.header.plusMenu.newTabSection.voiceChat" = "Glasovno čavrljanje";
+
 /* Title for the New Voice Chat row in the Duck.ai tab header Plus (+) menu */
 "aichat.header.plusMenu.newVoiceChat" = "Novo glasovno čavrljanje";
 
@@ -4118,7 +4133,7 @@
 "preserveLogins.menu.confirm.message" = "%@ je sada sigurno web-mjesto!";
 
 /* Deny fireproofing action */
-"preserveLogins.menu.defer" = "Ne sada";
+"preserveLogins.menu.defer" = "Shvatio sam";
 
 /* Disable fireproofing for site */
 "preserveLogins.menu.disable" = "Ukloni oznaku sigurnog web-mjesta";
@@ -5025,6 +5040,9 @@
 
 /* No comment provided by engineer. */
 "siteFeedback.urlPlaceholder" = "Koje je web-mjesto neispravno?";
+
+/* Continue button */
+"smartling.post-freeze-test.continue" = "Nastavi";
 
 /* No comment provided by engineer. */
 "State:" = "State:";

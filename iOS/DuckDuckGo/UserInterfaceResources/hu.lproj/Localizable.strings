@@ -385,6 +385,21 @@
 /* Title for the New Tab row in the Duck.ai tab header Plus (+) menu */
 "aichat.header.plusMenu.newTab" = "Új lap";
 
+/* Section header in the Duck.ai tab header Plus (+) menu; every row below it opens a new tab */
+"aichat.header.plusMenu.newTabSection" = "Új lap";
+
+/* Row in the New Tab section of the Duck.ai tab header Plus (+) menu — opens a new Duck.ai chat in a new tab */
+"aichat.header.plusMenu.newTabSection.chat" = "Csevegés";
+
+/* Row in the New Tab section of the Duck.ai tab header Plus (+) menu — opens Duck.ai in image generation mode in a new tab */
+"aichat.header.plusMenu.newTabSection.image" = "Kép";
+
+/* Row in the Duck.ai tab header Plus (+) menu — opens a new tab in search mode */
+"aichat.header.plusMenu.newTabSection.search" = "Keresés";
+
+/* Row in the New Tab section of the Duck.ai tab header Plus (+) menu — opens a new Duck.ai voice chat in a new tab */
+"aichat.header.plusMenu.newTabSection.voiceChat" = "Hangcsevegés";
+
 /* Title for the New Voice Chat row in the Duck.ai tab header Plus (+) menu */
 "aichat.header.plusMenu.newVoiceChat" = "Új hangcsevegés";
 
@@ -4118,7 +4133,7 @@
 "preserveLogins.menu.confirm.message" = "A(z) %@ most már tűzálló!";
 
 /* Deny fireproofing action */
-"preserveLogins.menu.defer" = "Most nem";
+"preserveLogins.menu.defer" = "Értem";
 
 /* Disable fireproofing for site */
 "preserveLogins.menu.disable" = "Tűzállóság eltávolítása";
@@ -5025,6 +5040,9 @@
 
 /* No comment provided by engineer. */
 "siteFeedback.urlPlaceholder" = "Melyik weboldal nem működik?”";
+
+/* Continue button */
+"smartling.post-freeze-test.continue" = "Folytatás";
 
 /* No comment provided by engineer. */
 "State:" = "State:";

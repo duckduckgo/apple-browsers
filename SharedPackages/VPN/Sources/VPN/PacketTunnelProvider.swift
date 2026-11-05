@@ -162,6 +162,7 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
         case settingsMissing
         case simulateSubscriptionExpiration
         case tokenReset
+        case reconnectBlocked
 
         // Subscription Errors - 100+
         case vpnAccessRevoked(_ underlyingError: Error)
@@ -180,6 +181,7 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
             case settingsMissing = 3
             case simulateSubscriptionExpiration = 4
             case tokenReset = 5
+            case reconnectBlocked = 6
             // Subscription Errors - 100+
             case vpnAccessRevoked = 100
             case vpnAccessRevokedDetectedByMonitorCheck = 101
@@ -203,6 +205,8 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
                 return nil
             case .tokenReset:
                 return "Abnormal situation caused the token to be reset"
+            case .reconnectBlocked:
+                return "Automatic reconnection is disabled. Connect again from the DuckDuckGo app."
             case .appRequestedCancellation:
                 return nil
             }
@@ -217,6 +221,7 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
             case .settingsMissing: return .settingsMissing
             case .simulateSubscriptionExpiration: return .simulateSubscriptionExpiration
             case .tokenReset: return .tokenReset
+            case .reconnectBlocked: return .reconnectBlocked
             case .vpnAccessRevoked: return .vpnAccessRevoked
             case .vpnAccessRevokedDetectedByMonitorCheck: return .vpnAccessRevokedDetectedByMonitorCheck
             case .appRequestedCancellation: return .appRequestedCancellation
@@ -232,6 +237,7 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
                     .vpnAccessRevokedDetectedByMonitorCheck,
                     .simulateSubscriptionExpiration,
                     .tokenReset,
+                    .reconnectBlocked,
                     .appRequestedCancellation:
                 return [:]
             case .couldNotGenerateTunnelConfiguration(let underlyingError),
@@ -883,6 +889,7 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
         self.snoozeTimingStore.reset()
 
         do {
+            try ReconnectGuard(defaults: defaults).validate(startupMethod: startupOptions.startupMethod)
             try await load(options: startupOptions)
             Logger.networkProtection.log("🟢 Startup options loaded correctly")
 
@@ -923,7 +930,7 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
                 providerEvents.fire(.reportConnectionAttempt(attempt: .failure, source: .start))
             }
 
-            Logger.networkProtection.error("🔴 Stopping VPN due to no auth token")
+            Logger.networkProtection.error("🔴 Stopping VPN because startup prerequisites were not met")
             completeAndCleanupConnectionWideEvent(with: error, description: error.contextualizedDescription())
             throw error
         }
@@ -938,6 +945,7 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
 
             let reason: AdapterStartReason = startupOptions.startupMethod == .automaticOnDemand ? .onDemand : .manual
             try await startTunnel(reason: reason)
+            ReconnectGuard(defaults: defaults).startSucceeded(startupMethod: startupOptions.startupMethod)
 
             providerEvents.fire(.tunnelStartAttempt(.success))
             providerEvents.fire(.reportConnectionAttempt(attempt: .success, source: .start))
@@ -1584,11 +1592,11 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
             // If we can't cleanly shut the tunneldown, we'll do our best to
             // shut it down even if the process keeps running.
 
+            // Subscription recovery must not undo this guard if the extension process restarts.
+            ReconnectGuard(defaults: defaults).canReconnect = false
+
             // We don't want to be firing monitoring pixels for failures from this point onward...
             await stopMonitors()
-
-            // If the extension process restarts we don't want it to attempt to reconnect
-            try? await self.tokenHandlerProvider.removeToken()
 
             // We show some visual indication that something's off, so the user can chose to
             // manually stop the VPN.

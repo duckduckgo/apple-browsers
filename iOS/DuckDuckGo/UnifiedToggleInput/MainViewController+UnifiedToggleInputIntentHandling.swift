@@ -42,6 +42,10 @@ extension MainViewController {
     }
 
     func handleUnifiedToggleInputIntent(_ intent: UnifiedToggleInputIntent) {
+        if isIPadFullTabChatInput {
+            handleIPadFullTabChatInputIntent(intent)
+            return
+        }
         defer { updateAddressBarSuppressionForNewTabPage() }
 
         switch intent {

@@ -155,12 +155,11 @@ struct Connected: ConnectedHandling {
 
     private func configure(_ window: UIWindow, with mainCoordinator: MainCoordinator, drawsIdleReturnNewTabPage: Bool = false) {
         ThemeManager.shared.updateUserInterfaceStyle(window: window)
-        // Before the root is set: setting it loads the view, which draws the first screen.
-        mainCoordinator.prepareInitialScreen(drawsIdleReturnNewTabPage: drawsIdleReturnNewTabPage)
         window.rootViewController = mainCoordinator.controller
+        // Before the window shows, so the first frame is this screen.
+        mainCoordinator.start(drawsIdleReturnNewTabPage: drawsIdleReturnNewTabPage)
         sceneDependencies.authenticationService.suspend()
         window.makeKeyAndVisible()
-        mainCoordinator.start()
     }
 
 }

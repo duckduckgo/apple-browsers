@@ -316,8 +316,6 @@ class MainViewController: UIViewController {
     let featureFlagger: FeatureFlagger
     private let longPressBarMenuBuilder = LongPressBarMenuBuilder()
     let idleReturnEligibilityManager: IdleReturnEligibilityManaging
-    /// Read once by `loadInitialView`, which `viewDidLoad` runs without arguments.
-    private var drawsIdleReturnNewTabPageAtLaunch = false
     let afterInactivityOptionAdapter: AfterInactivityOptionAdapter
     let lastTabShortcutAdapter: LastTabShortcutAdapter
     let ntpAfterIdleInstrumentation: NTPAfterIdleInstrumentation
@@ -1124,8 +1122,6 @@ class MainViewController: UIViewController {
         if isStartupOnboardingPending {
             startupOnboardingCover.attach()
         }
-
-        loadInitialViewIfNeeded()
     }
 
     override func viewDidAppear(_ animated: Bool) {
@@ -2386,13 +2382,13 @@ class MainViewController: UIViewController {
         })
     }
 
-    private func loadInitialView() {
+    private func loadInitialView(drawsIdleReturnNewTabPage: Bool) {
         if tabManager.currentTabsModel.tabs.isEmpty && tabManager.currentTabsModel.allowsEmpty {
             showTabSwitcher()
             return
         }
 
-        if drawsIdleReturnNewTabPageAtLaunch {
+        if drawsIdleReturnNewTabPage {
             attachNewTabPageForIdleReturnAtLaunch()
             return
         }
@@ -2424,16 +2420,12 @@ class MainViewController: UIViewController {
         }
     }
 
-    /// Call before the view loads; a cold start after idle can land on the New Tab Page directly.
-    func prepareInitialScreen(drawsIdleReturnNewTabPage: Bool) {
-        assert(!isViewLoaded, "The first screen is chosen when the view loads")
-        drawsIdleReturnNewTabPageAtLaunch = drawsIdleReturnNewTabPage
-    }
-
-    private func loadInitialViewIfNeeded() {
+    /// Draws the first screen; a cold start after idle can land on the New Tab Page directly.
+    func loadInitialViewIfNeeded(drawsIdleReturnNewTabPage: Bool) {
+        loadViewIfNeeded()
         guard !hasLoadedInitialView else { return }
         hasLoadedInitialView = true
-        loadInitialView()
+        loadInitialView(drawsIdleReturnNewTabPage: drawsIdleReturnNewTabPage)
         hasCompletedInitialLoad = true
     }
 

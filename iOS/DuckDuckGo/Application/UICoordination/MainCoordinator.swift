@@ -357,12 +357,8 @@ final class MainCoordinator {
 
     }
 
-    func prepareInitialScreen(drawsIdleReturnNewTabPage: Bool) {
-        controller.prepareInitialScreen(drawsIdleReturnNewTabPage: drawsIdleReturnNewTabPage)
-    }
-
-    func start() {
-        controller.loadViewIfNeeded()
+    func start(drawsIdleReturnNewTabPage: Bool) {
+        controller.loadInitialViewIfNeeded(drawsIdleReturnNewTabPage: drawsIdleReturnNewTabPage)
     }
 
     private func subscribeToDarkReaderChanges() {

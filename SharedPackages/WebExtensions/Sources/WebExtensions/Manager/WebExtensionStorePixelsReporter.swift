@@ -27,12 +27,14 @@ final class WebExtensionStorePixelsReporter {
     private static let checkInterval: TimeInterval = 60 * 60
 
     private let store: WebExtensionRetentionStore
+    private let installationStore: InstalledWebExtensionStoring
     private let pixelFiring: WebExtensionPixelFiring
     private let now: () -> Date
     private var lastCheckDate: Date?
 
-    init(store: WebExtensionRetentionStore, pixelFiring: WebExtensionPixelFiring, now: @escaping () -> Date) {
+    init(store: WebExtensionRetentionStore, installationStore: InstalledWebExtensionStoring, pixelFiring: WebExtensionPixelFiring, now: @escaping () -> Date) {
         self.store = store
+        self.installationStore = installationStore
         self.pixelFiring = pixelFiring
         self.now = now
     }
@@ -44,24 +46,27 @@ final class WebExtensionStorePixelsReporter {
 
     /// Reports how many store extensions are installed and enabled, then each install that is 14 days old as retained
     /// when it's still installed and enabled, or as churned. It checks at most once an hour, so a gap in use makes a
-    /// report late, not lost. The count pixel is daily, so each device reports it once a day.
-    func reportIfDue(installedExtensions: [InstalledWebExtension], pixelExtension: (String) -> WebExtensionPixelExtension) {
+    /// report late, not lost. The count pixel is daily, so each device reports it once a day. Nothing is reported while
+    /// the catalog offers no extensions, so the count's denominator is devices that can install store extensions.
+    func reportIfDue(chromeWebStore: ChromeWebStoreManaging?) {
         let date = now()
         if let lastCheckDate, date.timeIntervalSince(lastCheckDate) < Self.checkInterval {
             return
         }
         lastCheckDate = date
+        // Checked after the hourly check, since it evaluates the whole catalog configuration.
+        guard let chromeWebStore, !chromeWebStore.catalogExtensionIDs.isEmpty else { return }
 
         // Old and new versions coexist during an update, so each store ID counts once.
         var isEnabledByStoreID: [String: Bool] = [:]
-        for installedExtension in installedExtensions {
+        for installedExtension in installationStore.installedExtensions {
             guard let storeID = installedExtension.storeIdentity?.id else { continue }
             isEnabledByStoreID[storeID] = (isEnabledByStoreID[storeID] ?? false) || !installedExtension.isDisabled
         }
         pixelFiring.fire(.installedCount(installed: isEnabledByStoreID.count, enabled: isEnabledByStoreID.values.filter { $0 }.count))
 
         for storeID in store.takeDue(at: date) {
-            let reported = pixelExtension(storeID)
+            let reported: WebExtensionPixelExtension = chromeWebStore.catalogEntry(of: storeID).map { .catalog($0) } ?? .other
             pixelFiring.fire(isEnabledByStoreID[storeID] == true ? .retained14Days(extension: reported) : .churned14Days(extension: reported))
         }
     }

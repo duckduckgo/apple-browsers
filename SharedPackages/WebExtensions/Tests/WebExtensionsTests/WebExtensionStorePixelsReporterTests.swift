@@ -25,6 +25,8 @@ import XCTest
 final class WebExtensionStorePixelsReporterTests: XCTestCase {
 
     private let storage = InMemoryKeyValueStore()
+    private let installationStore = InstalledWebExtensionStoringMock()
+    private let webStore = CatalogNamingWebStore(entries: ["a": .bitwarden, "b": .onePassword], catalogExtensionIDs: ["a", "b"])
     private let pixels = StorePixelsCapturingPixelFiring()
     private let window: TimeInterval = 14 * 24 * 60 * 60
     private let hour: TimeInterval = 60 * 60
@@ -35,11 +37,12 @@ final class WebExtensionStorePixelsReporterTests: XCTestCase {
         reporter.recordInstall("a")
 
         date += window - 1
-        reporter.reportIfDue(installedExtensions: [record("a")], pixelExtension: pixelExtension)
+        installationStore.installedExtensions = [record("a")]
+        reporter.reportIfDue(chromeWebStore: webStore)
         XCTAssertEqual(pixels.events, [])
 
         date += hour
-        reporter.reportIfDue(installedExtensions: [record("a")], pixelExtension: pixelExtension)
+        reporter.reportIfDue(chromeWebStore: webStore)
         XCTAssertEqual(pixels.events, ["retained bitwarden"])
     }
 
@@ -49,7 +52,8 @@ final class WebExtensionStorePixelsReporterTests: XCTestCase {
         reporter.recordInstall("b")
 
         date += window
-        reporter.reportIfDue(installedExtensions: [record("a", isDisabled: true)], pixelExtension: pixelExtension)
+        installationStore.installedExtensions = [record("a", isDisabled: true)]
+        reporter.reportIfDue(chromeWebStore: webStore)
 
         XCTAssertEqual(pixels.events, ["churned bitwarden", "churned onePassword"])
     }
@@ -58,8 +62,9 @@ final class WebExtensionStorePixelsReporterTests: XCTestCase {
         makeReporter().recordInstall("a")
 
         date += window
-        makeReporter().reportIfDue(installedExtensions: [record("a")], pixelExtension: pixelExtension)
-        makeReporter().reportIfDue(installedExtensions: [record("a")], pixelExtension: pixelExtension)
+        installationStore.installedExtensions = [record("a")]
+        makeReporter().reportIfDue(chromeWebStore: webStore)
+        makeReporter().reportIfDue(chromeWebStore: webStore)
 
         XCTAssertEqual(pixels.events, ["retained bitwarden"])
     }
@@ -69,13 +74,13 @@ final class WebExtensionStorePixelsReporterTests: XCTestCase {
         reporter.recordInstall("a")
 
         date += window - hour / 2
-        reporter.reportIfDue(installedExtensions: [], pixelExtension: pixelExtension)
+        reporter.reportIfDue(chromeWebStore: webStore)
         date += hour / 2
-        reporter.reportIfDue(installedExtensions: [], pixelExtension: pixelExtension)
+        reporter.reportIfDue(chromeWebStore: webStore)
         XCTAssertEqual(pixels.events, [], "The install is due, but the last check was within the hour")
 
         date += hour / 2
-        reporter.reportIfDue(installedExtensions: [], pixelExtension: pixelExtension)
+        reporter.reportIfDue(chromeWebStore: webStore)
         XCTAssertEqual(pixels.events, ["churned bitwarden"])
     }
 
@@ -86,11 +91,12 @@ final class WebExtensionStorePixelsReporterTests: XCTestCase {
         reporter.recordInstall("a")
 
         date += window / 2
-        reporter.reportIfDue(installedExtensions: [record("a")], pixelExtension: pixelExtension)
+        installationStore.installedExtensions = [record("a")]
+        reporter.reportIfDue(chromeWebStore: webStore)
         XCTAssertEqual(pixels.events, [])
 
         date += window / 2
-        reporter.reportIfDue(installedExtensions: [record("a")], pixelExtension: pixelExtension)
+        reporter.reportIfDue(chromeWebStore: webStore)
         XCTAssertEqual(pixels.events, ["retained bitwarden"])
     }
 
@@ -99,8 +105,8 @@ final class WebExtensionStorePixelsReporterTests: XCTestCase {
         let manual = InstalledWebExtension(uniqueIdentifier: "manual", filename: "manual", name: nil, version: "1")
 
         // An update's old and new copies count once, enabled if either is.
-        reporter.reportIfDue(installedExtensions: [record("a", isDisabled: true), record("a"), record("b", isDisabled: true), manual],
-                             pixelExtension: pixelExtension)
+        installationStore.installedExtensions = [record("a", isDisabled: true), record("a"), record("b", isDisabled: true), manual]
+        reporter.reportIfDue(chromeWebStore: webStore)
 
         XCTAssertEqual(pixels.installedCounts, ["2 installed, 1 enabled"])
     }
@@ -108,11 +114,11 @@ final class WebExtensionStorePixelsReporterTests: XCTestCase {
     func testWhenCheckedAgainWithinTheHour_ThenTheCountIsNotSentAgain() {
         let reporter = makeReporter()
 
-        reporter.reportIfDue(installedExtensions: [], pixelExtension: pixelExtension)
+        reporter.reportIfDue(chromeWebStore: webStore)
         date += hour - 1
-        reporter.reportIfDue(installedExtensions: [], pixelExtension: pixelExtension)
+        reporter.reportIfDue(chromeWebStore: webStore)
         date += 1
-        reporter.reportIfDue(installedExtensions: [], pixelExtension: pixelExtension)
+        reporter.reportIfDue(chromeWebStore: webStore)
 
         XCTAssertEqual(pixels.installedCounts, ["0 installed, 0 enabled", "0 installed, 0 enabled"])
     }
@@ -120,11 +126,10 @@ final class WebExtensionStorePixelsReporterTests: XCTestCase {
     // MARK: - Helpers
 
     private func makeReporter() -> WebExtensionStorePixelsReporter {
-        WebExtensionStorePixelsReporter(store: WebExtensionRetentionStore(storage: storage.keyedStoring()), pixelFiring: pixels, now: { [unowned self] in date })
-    }
-
-    private func pixelExtension(_ extensionID: String) -> WebExtensionPixelExtension {
-        ["a": .catalog(.bitwarden), "b": .catalog(.onePassword)][extensionID] ?? .other
+        WebExtensionStorePixelsReporter(store: WebExtensionRetentionStore(storage: storage.keyedStoring()),
+                                        installationStore: installationStore,
+                                        pixelFiring: pixels,
+                                        now: { [unowned self] in date })
     }
 
     private func record(_ extensionID: String, isDisabled: Bool = false) -> InstalledWebExtension {

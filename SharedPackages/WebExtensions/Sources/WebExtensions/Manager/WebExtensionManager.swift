@@ -330,7 +330,7 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
         self.messageRouter = messageRouter ?? WebExtensionMessageRouter()
         self.handlerProvider = handlerProvider
         self.nativeMessagingHandler = nativeMessagingHandler
-        self.storePixelsReporter = retentionStore.map { WebExtensionStorePixelsReporter(store: $0, pixelFiring: pixelFiring, now: now) }
+        self.storePixelsReporter = retentionStore.map { WebExtensionStorePixelsReporter(store: $0, installationStore: installationStore, pixelFiring: pixelFiring, now: now) }
 #if os(macOS)
         self.commandShortcuts = keyValueStore.map { WebExtensionCommandShortcutStore(keyValueStore: $0) }
         self.privacySettings = keyValueStore.map { WebExtensionPrivacySettingsStore(keyValueStore: $0) }
@@ -373,7 +373,7 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
             MainActor.assumeIsolated {
                 self?.fireBitwardenDailyActiveIfLoaded()
                 self?.fireAPICompatibilityGapsIfDue()
-                self?.fireStorePixelsIfDue()
+                self?.storePixelsReporter?.reportIfDue(chromeWebStore: self?.chromeWebStore)
             }
         }
         apiCompatibilityHandler.onIssue = { [weak self] issue, url in
@@ -1786,20 +1786,3 @@ private extension WebExtensionManager {
         pixelFiring.fire(isEnabled ? .enabled(extension: reported) : .disabled(extension: reported))
     }
 }
-
-#if os(macOS)
-// MARK: - Store Extension Pixels
-
-@available(macOS 15.4, *)
-@MainActor
-private extension WebExtensionManager {
-
-    /// Reported only while the store catalog is available, so the count's denominator is devices that can install store extensions.
-    func fireStorePixelsIfDue() {
-        guard let chromeWebStore, !chromeWebStore.catalogExtensionIDs.isEmpty else { return }
-        storePixelsReporter?.reportIfDue(installedExtensions: installationStore.installedExtensions) { storeID in
-            pixelExtension(for: WebExtensionStoreIdentity(store: .chromeWebStore, id: storeID))
-        }
-    }
-}
-#endif

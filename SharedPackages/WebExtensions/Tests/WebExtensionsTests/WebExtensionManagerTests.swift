@@ -1652,6 +1652,7 @@ final class WebExtensionManagerTests: XCTestCase {
         XCTAssertEqual(pixels.events.count, installEvents)
         XCTAssertEqual(pixels.installedCountCount, 0)
     }
+
 #endif
 
     // MARK: - Install Extension Tests
@@ -3454,7 +3455,7 @@ private final class EventCapturingPixelFiring: WebExtensionPixelFiring {
 
 @available(macOS 15.4, iOS 18.4, *)
 @MainActor
-private final class CatalogNamingWebStore: ChromeWebStoreManaging {
+final class CatalogNamingWebStore: ChromeWebStoreManaging {
     let entries: [String: ExtensionsCatalogSubfeature]
     let catalogExtensionIDs: [String]
 

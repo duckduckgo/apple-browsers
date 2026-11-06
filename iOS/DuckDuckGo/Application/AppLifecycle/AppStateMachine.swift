@@ -19,9 +19,7 @@
 
 import UIKit
 import Core
-import FeatureFlags_iOS
 import PixelKit
-import PrivacyConfig
 
 enum AppEvent {
 
@@ -239,10 +237,7 @@ final class AppStateMachine {
         } else {
             launchBreadcrumb.startLaunch()
             do {
-                // After `startLaunch()`, so a launch that hangs while `AppDependencyProvider` sets up is still reported.
-                let launching = try LaunchBackgroundTask.run(featureFlagger: AppDependencyProvider.shared.featureFlagger) {
-                    try initializing.makeLaunchingState()
-                }
+                let launching = try initializing.makeLaunchingState()
                 launchBreadcrumb.mark(.launched)
                 currentState = .launching(launching)
             } catch {
@@ -481,26 +476,4 @@ struct LaunchBreadcrumb {
                             frequency: .dailyAndCount)
     }
 
-}
-
-/// Launch opens databases in the App Group container (e.g. the Autofill secure vault). If iOS suspends the app while
-/// it holds one of their locks, it kills it with 0xdead10cc. A background task assertion keeps it running until launch
-/// ends, up to the background time limit.
-/// https://developer.apple.com/documentation/xcode/sigkill
-@MainActor
-enum LaunchBackgroundTask {
-
-    static func run<T>(featureFlagger: FeatureFlagger,
-                       runner: BackgroundTaskRunning = ApplicationBackgroundTaskRunner(),
-                       _ launch: () throws -> T) rethrows -> T {
-        guard featureFlagger.isFeatureOn(.launchBackgroundTask) else {
-            return try launch()
-        }
-        // No expiration work: ending the task here would let iOS suspend the app mid-launch, holding the lock.
-        let task = runner.beginBackgroundTask(withName: "Launch") {}
-        defer {
-            if task != .invalid { runner.endBackgroundTask(task) }
-        }
-        return try launch()
-    }
 }

@@ -69,6 +69,9 @@ struct Launching: LaunchingHandling {
     // MARK: - Handle application(_:didFinishLaunchingWithOptions:) logic here
 
     init() throws {
+        let launchBackgroundTask = LaunchBackgroundTask(featureFlagger: featureFlagger)
+        defer { launchBackgroundTask.end() }
+
         Logger.lifecycle.info("Launching: \(#function)")
 
         // First thing after PixelKit is set up (by the `AppDependencyProvider.shared` properties above), so a launch
@@ -710,4 +713,29 @@ struct DuckAiNativeStorageInvalidValuePixel: PixelKit.Event {
     let parameters: [String: String]?
     var name: String { DuckAiNativeStorageInvalidValue.pixelName }
     var standardParameters: [PixelKitStandardParameter]? { nil }
+}
+
+/// Launch opens shared App Group databases. iOS kills apps suspended while holding their locks with 0xdead10cc.
+/// https://developer.apple.com/documentation/xcode/sigkill
+@MainActor
+struct LaunchBackgroundTask {
+
+    private let runner: BackgroundTaskRunning
+    private let identifier: UIBackgroundTaskIdentifier
+
+    init(featureFlagger: FeatureFlagger,
+         runner: BackgroundTaskRunning = ApplicationBackgroundTaskRunner()) {
+        self.runner = runner
+        if featureFlagger.isFeatureOn(.launchBackgroundTask) {
+            // Ending on expiration would let iOS suspend the app mid-launch while it holds a database lock.
+            identifier = runner.beginBackgroundTask(withName: "Launch") {}
+        } else {
+            identifier = .invalid
+        }
+    }
+
+    func end() {
+        guard identifier != .invalid else { return }
+        runner.endBackgroundTask(identifier)
+    }
 }

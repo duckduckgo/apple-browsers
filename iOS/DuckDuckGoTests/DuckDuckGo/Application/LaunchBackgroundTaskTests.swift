@@ -33,7 +33,9 @@ struct LaunchBackgroundTaskTests {
         let runner = LaunchTaskRunnerSpy()
         var openTasksDuringLaunch = 0
 
-        LaunchBackgroundTask.run(featureFlagger: MockFeatureFlagger(enabledFeatureFlags: [.launchBackgroundTask]), runner: runner) {
+        do {
+            let task = LaunchBackgroundTask(featureFlagger: MockFeatureFlagger(enabledFeatureFlags: [.launchBackgroundTask]), runner: runner)
+            defer { task.end() }
             openTasksDuringLaunch = runner.openTasks
         }
 
@@ -47,9 +49,9 @@ struct LaunchBackgroundTaskTests {
         let runner = LaunchTaskRunnerSpy()
 
         #expect(throws: LaunchFailed.self) {
-            try LaunchBackgroundTask.run(featureFlagger: MockFeatureFlagger(enabledFeatureFlags: [.launchBackgroundTask]), runner: runner) {
-                throw LaunchFailed()
-            }
+            let task = LaunchBackgroundTask(featureFlagger: MockFeatureFlagger(enabledFeatureFlags: [.launchBackgroundTask]), runner: runner)
+            defer { task.end() }
+            throw LaunchFailed()
         }
         #expect(runner.begun == 1)
         #expect(runner.openTasks == 0)
@@ -60,10 +62,69 @@ struct LaunchBackgroundTaskTests {
     func flagOffRunsLaunchWithoutTask() {
         let runner = LaunchTaskRunnerSpy()
 
-        let launched = LaunchBackgroundTask.run(featureFlagger: MockFeatureFlagger(), runner: runner) { true }
+        do {
+            let task = LaunchBackgroundTask(featureFlagger: MockFeatureFlagger(), runner: runner)
+            defer { task.end() }
+            #expect(runner.openTasks == 0)
+        }
 
-        #expect(launched)
         #expect(runner.begun == 0)
+        #expect(runner.ended == 0)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("An invalid background task identifier is not ended", .timeLimit(.minutes(1)))
+    func invalidTaskIsNotEnded() {
+        let runner = LaunchTaskRunnerSpy()
+        runner.returnsInvalidIdentifier = true
+
+        let task = LaunchBackgroundTask(featureFlagger: MockFeatureFlagger(enabledFeatureFlags: [.launchBackgroundTask]), runner: runner)
+        task.end()
+
+        #expect(runner.begun == 1)
+        #expect(runner.ended == 0)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Expiration keeps the task open until launch ends", .timeLimit(.minutes(1)))
+    func expirationDoesNotEndTaskDuringLaunch() {
+        let runner = LaunchTaskRunnerSpy()
+
+        do {
+            let task = LaunchBackgroundTask(featureFlagger: MockFeatureFlagger(enabledFeatureFlags: [.launchBackgroundTask]), runner: runner)
+            defer { task.end() }
+            #expect(runner.expirationHandler != nil)
+            runner.expirationHandler?()
+            #expect(runner.openTasks == 1)
+        }
+
+        #expect(runner.openTasks == 0)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Flag changes affect the next launch without changing the current task", .timeLimit(.minutes(1)), arguments: [false, true])
+    func flagChangesDuringLaunch(initiallyEnabled: Bool) {
+        let runner = LaunchTaskRunnerSpy()
+        let flagger = MockFeatureFlagger(enabledFeatureFlags: initiallyEnabled ? [.launchBackgroundTask] : [])
+
+        do {
+            let task = LaunchBackgroundTask(featureFlagger: flagger, runner: runner)
+            defer { task.end() }
+            flagger.enabledFeatureFlags = initiallyEnabled ? [] : [.launchBackgroundTask]
+            #expect(runner.openTasks == (initiallyEnabled ? 1 : 0))
+        }
+
+        #expect(runner.openTasks == 0)
+        #expect(runner.ended == (initiallyEnabled ? 1 : 0))
+
+        do {
+            let task = LaunchBackgroundTask(featureFlagger: flagger, runner: runner)
+            defer { task.end() }
+            #expect(runner.openTasks == (initiallyEnabled ? 0 : 1))
+        }
+
+        #expect(runner.begun == 1)
+        #expect(runner.ended == 1)
     }
 }
 
@@ -71,13 +132,16 @@ struct LaunchBackgroundTaskTests {
 private final class LaunchTaskRunnerSpy: BackgroundTaskRunning {
 
     private(set) var begun = 0
-    private var ended = 0
+    private(set) var ended = 0
+    private(set) var expirationHandler: (@MainActor () -> Void)?
+    var returnsInvalidIdentifier = false
 
     var openTasks: Int { begun - ended }
 
     func beginBackgroundTask(withName name: String, expirationHandler: @escaping @MainActor () -> Void) -> UIBackgroundTaskIdentifier {
         begun += 1
-        return UIBackgroundTaskIdentifier(rawValue: begun)
+        self.expirationHandler = expirationHandler
+        return returnsInvalidIdentifier ? .invalid : UIBackgroundTaskIdentifier(rawValue: begun)
     }
 
     func endBackgroundTask(_ identifier: UIBackgroundTaskIdentifier) {

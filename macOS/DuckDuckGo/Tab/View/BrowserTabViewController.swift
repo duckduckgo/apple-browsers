@@ -1169,14 +1169,11 @@ final class BrowserTabViewController: NSViewController {
     }
 
     private func makeHoveredLinkTooltip() -> HoveredLinkTooltipPresenter {
-        let isIdentifierEnabled = [.uiTests, .uiTestsOnboarding].contains(AppVersion.runType)
-            && featureFlagger.isFeatureOn(.hoveredLinkTooltipAccessibilityIdentifier)
         let sidebarWidth: () -> CGFloat = { [weak self] in
             max(0, -(self?.sidebarContainerLeadingConstraint?.constant ?? 0))
         }
         let currentLink: () -> URL? = { [weak self] in self?.tabViewModel?.tab.currentHoveredLink }
         return HoveredLinkTooltipPresenter(hostView: view, backgroundColor: NSColor(resource: .browserTabBackground),
-                                           isAccessibilityIdentifierEnabled: isIdentifierEnabled,
                                            trailingInset: sidebarWidth,
                                            currentHoveredURL: currentLink)
     }
@@ -1823,7 +1820,7 @@ extension BrowserTabViewController: TabDelegate {
 
     func windowDidResignKey() {
         pinnedTabsDelegatesCancellable = nil
-        hoveredLinkTooltip?.reset()
+        hoveredLinkTooltip?.windowDidResignKey()
         subscribeToTabSelectedInCurrentKeyWindow()
     }
 
@@ -2051,11 +2048,12 @@ extension BrowserTabViewController {
     func addMouseMonitors() {
         // Assigning replaces (and cancels) the monitor from an earlier appearance.
         hoveredLinkMouseMonitor = NSEvent.addLocalCancellableMonitor(forEventsMatching: [.mouseMoved, .leftMouseDragged]) { [weak self] event in
-            guard let self, event.window === self.view.window else { return event }
+            // Hit testing is needed only once a link was hovered and a tooltip exists.
+            guard let self, event.window === self.view.window, let tooltip = self.hoveredLinkTooltip else { return event }
             if self.isPointerOverWebView(event) {
-                self.hoveredLinkTooltip?.mouseDidMove()
+                tooltip.mouseDidMove()
             } else {
-                self.hoveredLinkTooltip?.mouseDidExit()
+                tooltip.mouseDidExit()
             }
             return event
         }

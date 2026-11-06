@@ -35,6 +35,7 @@ final class HoveredLinkTooltipPresenter {
     private var isMouseInside = true
     private var hasShownTooltip = false
     private var isFadingOut = false
+    private var shouldRestoreOnNextMove = false
     private var visibilityUpdateID = UUID()
     private var positionUpdateID = UUID()
     private var workItem: DispatchWorkItem?
@@ -42,7 +43,7 @@ final class HoveredLinkTooltipPresenter {
     private var windowObservers = [NSObjectProtocol]()
     private var appearanceObservation: NSKeyValueObservation?
 
-    init(hostView: NSView, backgroundColor: NSColor, isAccessibilityIdentifierEnabled: Bool = false,
+    init(hostView: NSView, backgroundColor: NSColor,
          makeWindow: () -> NSWindow = { HoveredLinkTooltipWindow(contentRect: .zero, styleMask: .borderless, backing: .buffered, defer: true) },
          mouseLocation: @escaping () -> NSPoint = { NSEvent.mouseLocation },
          trailingInset: @escaping () -> CGFloat = { 0 },
@@ -103,9 +104,6 @@ final class HoveredLinkTooltipPresenter {
         window.isReleasedWhenClosed = false
         window.animationBehavior = .none
         window.collectionBehavior = [.transient, .ignoresCycle, .fullScreenAuxiliary]
-        if isAccessibilityIdentifierEnabled {
-            window.setAccessibilityIdentifier("HoveredLinkTooltip.window")
-        }
     }
 
     deinit {
@@ -143,6 +141,13 @@ final class HoveredLinkTooltipPresenter {
             // A tooltip that is still fading out stays visible above; once hidden, the reveal delay applies again.
             scheduleVisibilityUpdate(after: 0.5) { $0.show() }
         }
+    }
+
+    /// The window was deactivated: hide and forget the link. The page reports link changes only, so when the pointer
+    /// is still on the same link after the window becomes active again, the next move takes it from the page.
+    func windowDidResignKey() {
+        reset()
+        shouldRestoreOnNextMove = true
     }
 
     func reset() {
@@ -202,7 +207,8 @@ final class HoveredLinkTooltipPresenter {
     }
 
     func mouseDidMove() {
-        let isReturning = !isMouseInside
+        let isReturning = !isMouseInside || shouldRestoreOnNextMove
+        shouldRestoreOnNextMove = false
         isMouseInside = true
         // The page reports only link changes. After the URL was forgotten (window deactivated) or the pointer came
         // back from a view that doesn't belong to the page (inspector) onto the same link, nothing will report it again.
@@ -242,7 +248,7 @@ final class HoveredLinkTooltipPresenter {
         window.alphaValue = 0
         parent.addChildWindow(window, ordered: .above)
         window.orderFront(nil)
-        animate(window, 1, 0.25) {}
+        animate(window, 1, NSWorkspace.shared.accessibilityDisplayShouldReduceMotion ? 0 : 0.25) {}
         hasShownTooltip = true
         appearanceObservation = hostView.observe(\.effectiveAppearance, options: [.new]) { [weak self] hostView, _ in
             self?.window.appearance = hostView.effectiveAppearance
@@ -254,7 +260,10 @@ final class HoveredLinkTooltipPresenter {
                 self?.updatePosition()
             })
         }
-        for name in [NSWindow.didResignKeyNotification, NSWindow.willCloseNotification, NSWindow.willMiniaturizeNotification] {
+        windowObservers.append(center.addObserver(forName: NSWindow.didResignKeyNotification, object: parent, queue: .main) { [weak self] _ in
+            self?.windowDidResignKey()
+        })
+        for name in [NSWindow.willCloseNotification, NSWindow.willMiniaturizeNotification] {
             windowObservers.append(center.addObserver(forName: name, object: parent, queue: .main) { [weak self] _ in
                 self?.reset()
             })

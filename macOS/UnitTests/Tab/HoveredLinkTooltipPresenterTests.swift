@@ -149,7 +149,8 @@ final class HoveredLinkTooltipPresenterTests: XCTestCase {
         harness.presenter.update(url: URL(string: "https://example.com/first")!)
         harness.scheduler.run(at: 0)
         XCTAssertEqual(harness.animator.animations.last?.opacity, 1)
-        XCTAssertGreaterThan(harness.animator.animations.last?.duration ?? 0, 0)
+        XCTAssertEqual(harness.animator.animations.last?.duration,
+                       NSWorkspace.shared.accessibilityDisplayShouldReduceMotion ? 0 : 0.25)
     }
 
     func testWhenTooltipAppearsThenInitialPlacementIsImmediate() {
@@ -315,18 +316,6 @@ final class HoveredLinkTooltipPresenterTests: XCTestCase {
         }
     }
 
-    func testWhenAccessibilityIdentifierIsNotEnabledThenWindowHasNoTestIdentifier() {
-        let harness = TooltipHarness()
-        harness.showFirstLink()
-        XCTAssertEqual(harness.tooltip?.accessibilityIdentifier(), "")
-    }
-
-    func testWhenAccessibilityIdentifierIsEnabledThenWindowExposesTestIdentifier() {
-        let harness = TooltipHarness(isAccessibilityIdentifierEnabled: true)
-        harness.showFirstLink()
-        XCTAssertEqual(harness.tooltip?.accessibilityIdentifier(), "HoveredLinkTooltip.window")
-    }
-
     func testWhenReturningToNonLinkThenWebKitExitCancelsRestoration() {
         let harness = TooltipHarness()
         harness.showFirstLink()
@@ -464,6 +453,21 @@ final class HoveredLinkTooltipPresenterTests: XCTestCase {
         XCTAssertEqual(harness.label?.stringValue, url.absoluteString)
     }
 
+    func testWhenWindowBecomesActiveAgainWithPointerStillOnLinkThenTooltipIsRestoredOnNextMove() {
+        let harness = TooltipHarness()
+        let url = URL(string: "https://example.com/first")!
+        harness.hoveredLink.url = url
+        harness.showFirstLink()
+
+        harness.presenter.windowDidResignKey()
+        XCTAssertNil(harness.tooltip)
+        harness.presenter.mouseDidMove()
+        harness.scheduler.run(at: harness.scheduler.actions.count - 1)
+
+        XCTAssertTrue(harness.tooltip?.isVisible == true)
+        XCTAssertEqual(harness.label?.stringValue, url.absoluteString)
+    }
+
     func testWhenSidebarOverlapsHostThenTooltipStaysOutOfIt() {
         _ = NSApplication.shared
         let parent = TooltipParentWindow(contentRect: NSRect(x: 100, y: 200, width: 700, height: 400),
@@ -506,7 +510,7 @@ private final class TooltipHarness {
     var tooltip: NSWindow? { parent.childWindows?.first }
     var label: NSTextField? { (tooltip?.contentView as? NSBox)?.contentView?.subviews.first as? NSTextField }
 
-    init(isAccessibilityIdentifierEnabled: Bool = false) {
+    init() {
         _ = NSApplication.shared
         parent = TooltipParentWindow(contentRect: NSRect(x: 100, y: 200, width: 700, height: 400),
                                      styleMask: .borderless, backing: .buffered, defer: false)
@@ -519,7 +523,6 @@ private final class TooltipHarness {
         let tooltipWindow = tooltipWindow
         let hoveredLink = hoveredLink
         presenter = HoveredLinkTooltipPresenter(hostView: hostView, backgroundColor: .windowBackgroundColor,
-                                               isAccessibilityIdentifierEnabled: isAccessibilityIdentifierEnabled,
                                                makeWindow: { tooltipWindow }, mouseLocation: { pointer.location },
                                                currentHoveredURL: { hoveredLink.url },
                                                animate: animator.animate, move: animator.move, schedule: scheduler.schedule)

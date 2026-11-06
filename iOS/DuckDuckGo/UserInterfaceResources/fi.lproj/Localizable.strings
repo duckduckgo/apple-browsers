@@ -4519,6 +4519,12 @@
 /* Footnote for the hide AI-generated images setting; ends with a Learn more link to the help page (do not remove the link) */
 "settings.aifeatures.hide.ai.generated.images.subtitle" = "Suodattaa pois tunnetut tekoälyroskapostisivustot kuvahaun tuloksista. [Lue lisää](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/results/how-to-filter-out-ai-images-in-duckduckgo-search-results)";
 
+/* Settings screen description for the Duck.ai keyboard animation toggle */
+"settings.aifeatures.keyboard.animation.subtitle" = "Näytä animaatio näppäimistön ympärillä, kun siirryt Duck.ai-palveluun tai kirjoitat palvelussa.";
+
+/* Settings screen toggle title for the Duck.ai keyboard animation */
+"settings.aifeatures.keyboard.animation.title" = "Duck.ai-näppäimistöanimaatio";
+
 /* Label describing a feature which is turned on always */
 "settings.always.on" = "Aina käytössä";
 
@@ -6016,3 +6022,12 @@
 /* Title for screen to screen confirming what data to import from a zip file (bookmarks and /or passwords) */
 "zip.content.import.types.title" = "Mitä haluat tuoda?";
 
+
+/* Fireproofing setting toggle label */
+"preserveLogins.askOnSignIn" = "Kysy, tehdäänkö sivustoista palonkestäviä sisäänkirjautumisen yhteydessä";
+
+/* Empty Fireproof sites list */
+"preserveLogins.emptyState" = "Ei vielä palonkestäviä sivustoja";
+
+/* Button to remove all Fireproof sites */
+"preserveLogins.removeAllSites" = "Poista kaikki palonkestävät sivustot";

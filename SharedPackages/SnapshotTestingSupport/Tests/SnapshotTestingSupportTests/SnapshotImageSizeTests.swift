@@ -80,6 +80,35 @@ struct SnapshotImageSizeTests {
 
     @available(iOS 16, macOS 13, *)
     @Test(.timeLimit(.minutes(1)))
+    func tallScreenKeepsDeviceWidthWithDefaultHeight() {
+        let configuration = SnapshotImageConfiguration(
+            appearance: .light,
+            device: .iPadDefault
+        )
+
+        #expect(
+            SnapshotImageSize.tallScreen().resolvedSize(
+                for: configuration,
+                defaultSize: SnapshotDevice.iPhoneDefault.size
+            ) == CGSize(width: SnapshotDevice.iPadDefault.size.width, height: 1600)
+        )
+        #expect(SnapshotImageSize.tallScreen().usesDefaultIOSDevices)
+        #expect(SnapshotImageSize.tallScreen().fixedConstrainedWidth == nil)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test(.timeLimit(.minutes(1)))
+    func tallScreenUsesCustomHeightAndDefaultWidthWithoutDevice() {
+        #expect(
+            SnapshotImageSize.tallScreen(height: 2400).resolvedSize(
+                for: SnapshotImageConfiguration(appearance: .dark),
+                defaultSize: SnapshotDevice.macOSDefaultSize
+            ) == CGSize(width: SnapshotDevice.macOSDefaultSize.width, height: 2400)
+        )
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test(.timeLimit(.minutes(1)))
     func landscapeOrientationSwapsDeviceDimensions() {
         let device = SnapshotDevice.iPhoneDefault.oriented(for: .landscapeRight)
 

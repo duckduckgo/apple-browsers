@@ -61,9 +61,9 @@ final class HistoryMenu: NSMenu {
         .withImage(DesignSystemImages.Glyphs.Size12.trash, visibleOnMacOS27: location == .moreOptionsMenu)
     private let clearAllHistorySeparator = NSMenuItem.separator()
     private let importHistorySeparator = NSMenuItem.separator()
-    private let importHistoryMenuItem = NSMenuItem(title: UserText.mainMenuHistoryImportHistory, action: #selector(AppDelegate.openImportBrowserDataWindow))
+    private lazy var importHistoryMenuItem = NSMenuItem(title: UserText.mainMenuHistoryImportHistory, action: #selector(AppDelegate.openImportBrowserDataWindow))
         .withAccessibilityIdentifier("HistoryMenu.importHistory")
-        .withImage(DesignSystemImages.Glyphs.Size12.import)
+        .withImage(DesignSystemImages.Glyphs.Size12.import, visibleOnMacOS27: location == .moreOptionsMenu)
 
     private let historyGroupingProvider: HistoryGroupingProvider
     private let recentlyClosedCoordinator: RecentlyClosedCoordinating
@@ -98,6 +98,7 @@ final class HistoryMenu: NSMenu {
                 forwardMenuItem
             case .moreOptionsMenu:
                 showHistoryMenuItem
+                importHistoryMenuItem
             }
 
             NSMenuItem.separator()

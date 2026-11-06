@@ -34,7 +34,7 @@ struct SyncPromoViewModel {
             UserText.syncPromoBookmarksTitle
         case .passwords:
             UserText.syncPromoPasswordsTitle
-        case .dataImport, .aiChat:
+        case .dataImport, .aiChat, .bookmarksAnotherDevice, .passwordsAnotherDevice:
             ""
         }
     }
@@ -49,7 +49,7 @@ struct SyncPromoViewModel {
             UserText.syncPromoPasswordsRedesignMessage
         case (.passwords, .standard):
             UserText.syncPromoPasswordsMessage
-        case (.dataImport, _), (.aiChat, _):
+        case (.dataImport, _), (.aiChat, _), (.bookmarksAnotherDevice, _), (.passwordsAnotherDevice, _):
             ""
         }
     }
@@ -59,11 +59,12 @@ struct SyncPromoViewModel {
     }
 
     var primaryButtonTitle: String {
-        UserText.syncPromoConfirmAction
-    }
-
-    var toggleTitle: String {
-        UserText.syncPromoToggleTitle
+        switch design {
+        case .standard:
+            UserText.syncPromoConfirmAction
+        case .redesigned:
+            UserText.syncPromoRedesignConfirmAction
+        }
     }
 
     var secondaryButtonTitle: String? {

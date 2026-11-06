@@ -20,6 +20,7 @@
 import UIKit
 import Core
 import Persistence
+import FeatureFlags_iOS
 
 /// Represents the state where the scene has been connected and is ready for initial setup.
 /// - Usage:
@@ -44,6 +45,9 @@ struct Connected: ConnectedHandling {
     let sceneDependencies: SceneDependencies
     let actionToHandle: AppAction?
     let didFinishLaunchingStartTime: CFAbsoluteTime
+    /// Handed to the first foreground only. Only whether the page was drawn is passed on, not the outcome:
+    /// a background launch can draw long before the user arrives, so the foreground decides the outcome then.
+    private let drewIdleReturnNewTabPage: Bool
     private let lastBackgroundDateStorage: any ThrowingKeyedStoring<IdleReturnLastBackgroundDateKeys>
 
     init(stateContext: Launching.StateContext, actionToHandle: AppAction?, window: UIWindow,
@@ -73,11 +77,16 @@ struct Connected: ConnectedHandling {
         launchTaskManager.register(task: ClearInteractionStateTask(autoClearService: autoClearService,
                                                                    interactionStateSource: mainCoordinator.interactionStateSource,
                                                                    tabManager: mainCoordinator.tabManager))
+        drewIdleReturnNewTabPage = appDependencies.idleReturnEvaluator.evaluateReturn()
+            .drawsNewTabPageAtLaunch(isFeatureOn: appDependencies.featureFlagger.isFeatureOn(.idleReturnNewTabPageAtLaunch),
+                                     hasLaunchAction: actionToHandle != nil,
+                                     isAppLockEnabled: PrivacyUserDefaults().authenticationEnabled,
+                                     hasPageToReplace: mainCoordinator.tabManager.currentTabsModel.currentTab?.link != nil)
         sceneDependencies = SceneDependencies(screenshotService: screenshotService,
                                               authenticationService: authenticationService,
                                               autoClearService: autoClearService)
 
-        configure(window, with: mainCoordinator)
+        configure(window, with: mainCoordinator, drawsIdleReturnNewTabPage: drewIdleReturnNewTabPage)
     }
 
     /// Temporary logic to handle cases where the window is disconnected and later reconnected.
@@ -87,6 +96,7 @@ struct Connected: ConnectedHandling {
          lastBackgroundDateStorage: any ThrowingKeyedStoring<IdleReturnLastBackgroundDateKeys>) {
         appDependencies = stateContext.appDependencies
         didFinishLaunchingStartTime = 0
+        drewIdleReturnNewTabPage = false
         self.actionToHandle = actionToHandle
         self.lastBackgroundDateStorage = lastBackgroundDateStorage
 
@@ -118,6 +128,7 @@ struct Connected: ConnectedHandling {
          lastBackgroundDateStorage: any ThrowingKeyedStoring<IdleReturnLastBackgroundDateKeys>) {
         appDependencies = stateContext.appDependencies
         didFinishLaunchingStartTime = 0
+        drewIdleReturnNewTabPage = false
         self.actionToHandle = actionToHandle
         self.lastBackgroundDateStorage = lastBackgroundDateStorage
 
@@ -142,12 +153,13 @@ struct Connected: ConnectedHandling {
         configure(window, with: mainCoordinator)
     }
 
-    private func configure(_ window: UIWindow, with mainCoordinator: MainCoordinator) {
+    private func configure(_ window: UIWindow, with mainCoordinator: MainCoordinator, drawsIdleReturnNewTabPage: Bool = false) {
         ThemeManager.shared.updateUserInterfaceStyle(window: window)
         window.rootViewController = mainCoordinator.controller
+        // Before the window shows, so the first frame is this screen.
+        mainCoordinator.start(drawsIdleReturnNewTabPage: drawsIdleReturnNewTabPage)
         sceneDependencies.authenticationService.suspend()
         window.makeKeyAndVisible()
-        mainCoordinator.start()
     }
 
 }
@@ -159,13 +171,15 @@ extension Connected {
         let didFinishLaunchingStartTime: CFAbsoluteTime
         let appDependencies: AppDependencies
         let sceneDependencies: SceneDependencies
+        let drewIdleReturnNewTabPage: Bool
 
     }
 
     func makeStateContext(sceneDependencies: SceneDependencies) -> StateContext {
         .init(didFinishLaunchingStartTime: didFinishLaunchingStartTime,
               appDependencies: appDependencies,
-              sceneDependencies: sceneDependencies)
+              sceneDependencies: sceneDependencies,
+              drewIdleReturnNewTabPage: drewIdleReturnNewTabPage)
     }
 
     func makeBackgroundState() -> any BackgroundHandling {

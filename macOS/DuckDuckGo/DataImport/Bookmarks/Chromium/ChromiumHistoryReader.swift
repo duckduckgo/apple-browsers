@@ -29,6 +29,8 @@ protocol ChromiumHistoryReaderProtocol {
 final class ChromiumHistoryReader: ChromiumHistoryReaderProtocol {
     enum Constants {
         static let historyDatabaseName = "History"
+        /// Seconds between 1601-01-01, where Chromium times start, and 1970-01-01.
+        static let chromiumEpochOffset: TimeInterval = 11_644_473_600
     }
 
     struct ImportError: DataImportError {
@@ -53,16 +55,13 @@ final class ChromiumHistoryReader: ChromiumHistoryReaderProtocol {
     }
 
     /// Values from Chromium's `ui/base/page_transition_types.h`.
-    private enum Transition {
+    enum Transition {
         static let coreMask: Int64 = 0xFF
         static let autoSubframe: Int64 = 3
         static let manualSubframe: Int64 = 4
         static let keywordGenerated: Int64 = 10
         static let chainEnd: Int64 = 0x20000000
     }
-
-    /// Seconds between 1601-01-01, where Chromium times start, and 1970-01-01.
-    private let chromiumEpochOffset: TimeInterval = 11_644_473_600
 
     private let chromiumHistoryDatabaseURL: URL
     private var currentOperationType: ImportError.OperationType = .copyTemporaryFile
@@ -135,10 +134,10 @@ final class ChromiumHistoryReader: ChromiumHistoryReaderProtocol {
     }
 
     private func chromiumTime(for date: Date) -> Int64 {
-        Int64((date.timeIntervalSince1970 + chromiumEpochOffset) * 1_000_000)
+        Int64((date.timeIntervalSince1970 + Constants.chromiumEpochOffset) * 1_000_000)
     }
 
     private func date(fromChromiumTime time: Int64) -> Date {
-        Date(timeIntervalSince1970: TimeInterval(time) / 1_000_000 - chromiumEpochOffset)
+        Date(timeIntervalSince1970: TimeInterval(time) / 1_000_000 - Constants.chromiumEpochOffset)
     }
 }

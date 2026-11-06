@@ -32,6 +32,28 @@ import UserNotifications
 
 open class PacketTunnelProvider: NEPacketTunnelProvider {
 
+    struct PostWakeConnectivityFailures {
+        private let wakeDate: Date
+        private var failureCount: Int? = 0
+
+        init(wakeDate: Date) { self.wakeDate = wakeDate }
+
+        mutating func record(isConnected: Bool, localIsConnected: Bool, startedAt: Date) -> Bool {
+            guard let failureCount, startedAt >= wakeDate else { return false }
+            if isConnected {
+                self.failureCount = nil
+            } else if !localIsConnected {
+                return false
+            } else if failureCount + 1 == 3 {
+                self.failureCount = nil
+                return true
+            } else {
+                self.failureCount = failureCount + 1
+            }
+            return false
+        }
+    }
+
     public enum Event {
         case userBecameActive
         case connectionTesterStatusChange(_ status: ConnectionTesterStatus, server: String)
@@ -270,6 +292,11 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
                 return
             }
 
+            switch connectionStatus {
+            case .connected, .reasserting: break
+            default: wakeConnectivityFailures = nil
+            }
+
             if case .connected = connectionStatus {
                 self.notificationsPresenter.showConnectedNotification(
                     serverLocation: lastSelectedServerInfo?.serverLocation,
@@ -436,6 +463,8 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
     public let loopDetector: ConnectionFailureLoopDetector
     private let heartbeatStore: TunnelHeartbeatStore?
     private let sessionHealth: VPNSessionHealthInstrumentation
+    private let reportWakeConnectivityFailure: (() -> Void)?
+    @MainActor private var wakeConnectivityFailures: PostWakeConnectivityFailures?
     private var sessionHealthStartAttemptID: UUID?
     private var heartbeatTask: Task<Never, Error>? {
         willSet { heartbeatTask?.cancel() }
@@ -471,6 +500,7 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
                 entitlementCheck: (() async -> Result<Bool, Error>)?,
                 loopDetector: ConnectionFailureLoopDetector,
                 heartbeatStore: TunnelHeartbeatStore? = nil,
+                reportWakeConnectivityFailure: (() -> Void)? = nil,
                 sessionHealth: VPNSessionHealthInstrumentation) {
         Logger.networkProtectionMemory.log("[+] PacketTunnelProvider")
 
@@ -495,6 +525,7 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
         self.loopDetector = loopDetector
         self.heartbeatStore = heartbeatStore
         self.sessionHealth = sessionHealth
+        self.reportWakeConnectivityFailure = reportWakeConnectivityFailure
 
         self.wideEvent = wideEvent ?? WideEvent(featureFlagProvider: WideEventFeatureFlagProvider(settings: settings))
 
@@ -534,6 +565,12 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
         self.connectionTester = connectionTester ?? NetworkProtectionConnectionTester(timerQueue: timerQueue)
 
         super.init()
+
+        (self.connectionTester as? NetworkProtectionConnectionTester)?.connectivityResultHandler = { [weak self] connected, localConnected, startedAt in
+            if self?.wakeConnectivityFailures?.record(isConnected: connected, localIsConnected: localConnected, startedAt: startedAt) == true {
+                self?.reportWakeConnectivityFailure?()
+            }
+        }
 
         self.adapter = adapter ?? WireGuardAdapter(
             with: self,
@@ -1630,6 +1667,7 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
 
     @MainActor
     public override func sleep() async {
+        wakeConnectivityFailures = nil
         Logger.networkProtectionSleep.log("Sleep")
         stopHeartbeat()
         sessionHealth.deviceWentToSleep()
@@ -1638,6 +1676,13 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
 
     @MainActor
     public override func wake() {
+        switch connectionStatus {
+        case .connected, .reasserting:
+            if reportWakeConnectivityFailure != nil, wakeConnectivityFailures == nil {
+                wakeConnectivityFailures = PostWakeConnectivityFailures(wakeDate: Date())
+            }
+        default: wakeConnectivityFailures = nil
+        }
         Logger.networkProtectionSleep.log("Wake up")
 
         // macOS can launch the extension due to calls to `sendProviderMessage`, so there's
@@ -1695,6 +1740,7 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
         }
 
         snoozeRequestProcessing = true
+        wakeConnectivityFailures = nil
         Logger.networkProtection.log("Starting snooze mode with duration: \(duration, privacy: .public)")
 
         await stopMonitors(isIntentional: true)

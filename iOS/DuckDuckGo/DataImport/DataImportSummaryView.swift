@@ -446,7 +446,7 @@ struct DataImportSummaryView: View {
                     Button(UserText.syncPromoDismissAction, action: viewModel.dismissSyncPromo)
                         .buttonStyle(SecondaryFillButtonStyle(compact: true))
 
-                    Button(UserText.syncPromoConfirmAction, action: onSyncTapped)
+                    Button(UserText.syncPromoRedesignConfirmAction, action: onSyncTapped)
                         .buttonStyle(DuckUI.PrimaryButtonStyle(compact: true))
                         .onFirstAppear {
                             viewModel.fireSyncButtonShownPixel()

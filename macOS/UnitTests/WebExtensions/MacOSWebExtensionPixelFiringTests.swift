@@ -39,6 +39,69 @@ final class MacOSWebExtensionPixelFiringTests: XCTestCase {
         }
     }
 
+    func testUpdateCheckOutcomesUseBoundedParametersAndDailyAndCount() throws {
+        let pixelExtension: WebExtensionPixelExtension = .catalog(.bitwarden)
+        for outcome in WebExtensionUpdateCheckOutcome.allCases {
+            let pixels = PixelKitMock()
+            MacOSWebExtensionPixelFiring(pixelFiring: pixels).fire(.updateCheck(extension: pixelExtension, outcome: outcome))
+
+            XCTAssertEqual(pixels.actualFireCalls.count, 1)
+            let call = try XCTUnwrap(pixels.actualFireCalls.first)
+            let expectedName: String
+            let expectedParameters: [String: String]
+            switch outcome {
+            case .updateFound:
+                expectedName = "web_extension_update_found_macos"
+                expectedParameters = ["extension": "bitwarden"]
+            case .googleFlagged:
+                expectedName = "web_extension_update_skipped_macos"
+                expectedParameters = ["extension": "bitwarden"]
+            default:
+                expectedName = "web_extension_update_check_failed_macos"
+                expectedParameters = ["extension": "bitwarden", "outcome": outcome.rawValue]
+            }
+            XCTAssertEqual(call.pixel.name, expectedName)
+            XCTAssertEqual(call.pixel.parameters, expectedParameters)
+            XCTAssertEqual(call.frequency, .dailyAndCount)
+            XCTAssertEqual(call.pixel.namePrefix, .none)
+            XCTAssertEqual(call.pixel.standardParameters, [.pixelSource])
+            XCTAssertNil(call.pixel.error)
+            XCTAssertNil(call.additionalParameters)
+            XCTAssertTrue(call.includeAppVersionParameter)
+        }
+    }
+
+    func testUpdateCheckUsesEveryCatalogValueAndOther() throws {
+        for pixelExtension in WebExtensionPixelExtension.allCases {
+            let pixels = PixelKitMock()
+            MacOSWebExtensionPixelFiring(pixelFiring: pixels).fire(.updateCheck(extension: pixelExtension, outcome: .networkFailure))
+            let call = try XCTUnwrap(pixels.actualFireCalls.first)
+            XCTAssertEqual(call.pixel.parameters, ["extension": pixelExtension.parameterValue, "outcome": "network_failure"])
+        }
+    }
+
+    func testUpdateCheckWireNamesMatchDefinitions() throws {
+        for (outcome, expectedName) in [(WebExtensionUpdateCheckOutcome.updateFound, "web_extension_update_found_macos"),
+                                        (.googleFlagged, "web_extension_update_skipped_macos"),
+                                        (.networkFailure, "web_extension_update_check_failed_macos")] {
+            let suite = "\(#function)-\(UUID().uuidString)"
+            let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))
+            defer { defaults.removePersistentDomain(forName: suite) }
+            var names: [String] = []
+            let pixelExtension: WebExtensionPixelExtension = .catalog(.bitwarden)
+            let pixelKit = PixelKit(dryRun: false, appVersion: "1.0.0", source: PixelKit.Source.macDMG.rawValue,
+                                    defaultHeaders: [:], pixelCalendar: nil, defaults: defaults) { name, _, _, _, _, completion in
+                names.append(name)
+                completion(true, nil)
+            }
+            let pixels = PixelKitMock()
+            MacOSWebExtensionPixelFiring(pixelFiring: pixels).fire(.updateCheck(extension: pixelExtension, outcome: outcome))
+            let call = try XCTUnwrap(pixels.actualFireCalls.first)
+            pixelKit.fire(call.pixel, frequency: call.frequency)
+            XCTAssertEqual(names, [expectedName + "_daily", expectedName + "_count"])
+        }
+    }
+
     func testRecoveryApplicationUsesDailyAndCountWithoutCustomParameters() throws {
         let pixels = PixelKitMock()
         MacOSWebExtensionPixelFiring(pixelFiring: pixels).fire(.cpmNetworkProcessRecoveryApplied)

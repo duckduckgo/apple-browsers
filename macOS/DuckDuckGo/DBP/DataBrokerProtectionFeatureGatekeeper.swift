@@ -23,6 +23,7 @@ import FoundationExtensions
 import DataBrokerProtection_macOS
 import Foundation
 import Freemium
+import Networking
 import os.log
 import PrivacyConfig
 import Subscription
@@ -88,13 +89,21 @@ struct DefaultDataBrokerProtectionFeatureGatekeeper: DataBrokerProtectionFeature
     /// 2. The user has a subscription with valid entitlements
     ///
     /// - Returns: Bool indicating prerequisites are satisfied
+    /// Whether PIR can run: an activated freemium user without a token, or a token with the PIR entitlement. The token is read through
+    /// `getTokenContainer(policy: .localValid)`, so a missing one is restored first when it can be.
+    /// - Throws: The error reading the token, other than `SubscriptionManagerError.noTokenAvailable`.
     func arePrerequisitesSatisfied() async throws -> Bool {
-
-        let isAuthenticated = subscriptionManager.isUserAuthenticated
-        if !isAuthenticated && freemiumDBPUserStateManager.didActivate { return true }
-        let hasEntitlements = try await subscriptionManager.isFeatureEnabled(.dataBrokerProtection)
-        firePrerequisitePixelsAndLogIfNecessary(hasEntitlements: hasEntitlements, isAuthenticatedResult: isAuthenticated)
-        return hasEntitlements && isAuthenticated
+        let tokenContainer: TokenContainer
+        do {
+            tokenContainer = try await subscriptionManager.getTokenContainer(policy: .localValid)
+        } catch SubscriptionManagerError.noTokenAvailable {
+            if freemiumDBPUserStateManager.didActivate { return true }
+            firePrerequisitePixelsAndLogIfNecessary(hasEntitlements: false, isAuthenticatedResult: false)
+            return false
+        }
+        let hasEntitlements = tokenContainer.decodedAccessToken.hasEntitlement(.dataBrokerProtection)
+        firePrerequisitePixelsAndLogIfNecessary(hasEntitlements: hasEntitlements, isAuthenticatedResult: true)
+        return hasEntitlements
     }
 }
 

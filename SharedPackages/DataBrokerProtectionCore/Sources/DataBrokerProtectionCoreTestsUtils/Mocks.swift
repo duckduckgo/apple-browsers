@@ -2458,11 +2458,8 @@ public final class MockAuthenticationManager: DataBrokerProtectionAuthentication
     public var isUserAuthenticatedValue = false
     public var isUserEligibleForFreeTrialValue = false
     public var accessTokenValue: String? = "fake token"
-    public var shouldAskForInviteCodeValue = false
-    public var redeemCodeCalled = false
     public var authHeaderValue: String? = "fake auth header"
-    public var hasValidEntitlementValue = false
-    public var shouldThrowEntitlementError = false
+    public var entitlementStatusValue: DataBrokerProtectionEntitlementStatus = .disabled
 
     public var isUserAuthenticated: Bool { isUserAuthenticatedValue }
 
@@ -2470,29 +2467,15 @@ public final class MockAuthenticationManager: DataBrokerProtectionAuthentication
 
     public func accessToken() async -> String? { accessTokenValue }
 
-    public func hasValidEntitlement() async throws -> Bool {
-        if shouldThrowEntitlementError {
-            throw NSError(domain: "duck.com", code: 0, userInfo: [NSLocalizedDescriptionKey: "Error"])
-        }
-        return hasValidEntitlementValue
-    }
-
-    func shouldAskForInviteCode() -> Bool { shouldAskForInviteCodeValue }
-
-    func redeem(inviteCode: String) async throws {
-        redeemCodeCalled = true
-    }
+    public func entitlementStatus() async -> DataBrokerProtectionEntitlementStatus { entitlementStatusValue }
 
     public func getAuthHeader() -> String? { authHeaderValue }
 
     public func reset() {
         isUserAuthenticatedValue = false
         accessTokenValue = "fake token"
-        shouldAskForInviteCodeValue = false
-        redeemCodeCalled = false
         authHeaderValue = "fake auth header"
-        hasValidEntitlementValue = false
-        shouldThrowEntitlementError = false
+        entitlementStatusValue = .disabled
     }
 }
 

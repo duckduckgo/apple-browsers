@@ -71,7 +71,7 @@ final class DataBrokerProtectionFeatureGatekeeperTests: XCTestCase {
     func testWhenAccessTokenIsFound_butNoEntitlementIs_andIsNotActiveFreemiumUser_thenFeatureIsDisabled() async {
         // Given
 
-        mockSubscriptionManager.resultTokenContainer = OAuthTokensFactory.makeValidTokenContainerWithEntitlements()
+        mockSubscriptionManager.resultTokenContainer = OAuthTokensFactory.makeTokenContainer()
         mockFreemiumDBPUserStateManager.didActivate = false
         sut = DefaultDataBrokerProtectionFeatureGatekeeper(privacyConfigurationManager: MockPrivacyConfigurationManaging(),
                                                            featureDisabler: mockFeatureDisabler,
@@ -89,7 +89,7 @@ final class DataBrokerProtectionFeatureGatekeeperTests: XCTestCase {
 
     func testWhenAccessTokenIsFound_butNoEntitlementIs_andIsActiveFreemiumUser_thenFeatureIsDisabled() async {
         // Given
-        mockSubscriptionManager.resultTokenContainer = OAuthTokensFactory.makeValidTokenContainerWithEntitlements()
+        mockSubscriptionManager.resultTokenContainer = OAuthTokensFactory.makeTokenContainer()
         mockFreemiumDBPUserStateManager.didActivate = true
         sut = DefaultDataBrokerProtectionFeatureGatekeeper(privacyConfigurationManager: MockPrivacyConfigurationManaging(),
                                                            featureDisabler: mockFeatureDisabler,
@@ -156,6 +156,21 @@ final class DataBrokerProtectionFeatureGatekeeperTests: XCTestCase {
 
         // Then
         XCTAssertTrue(result)
+    }
+
+    func testPrerequisites_readTheTokenThroughGetTokenContainer() async throws {
+        mockSubscriptionManager.resultTokenContainer = OAuthTokensFactory.makeValidTokenContainerWithEntitlements()
+        sut = DefaultDataBrokerProtectionFeatureGatekeeper(privacyConfigurationManager: MockPrivacyConfigurationManaging(),
+                                                           featureDisabler: mockFeatureDisabler,
+                                                           userDefaults: userDefaults(),
+                                                           subscriptionAvailability: mockFeatureAvailability,
+                                                           subscriptionManager: mockSubscriptionManager,
+                                                           freemiumDBPUserStateManager: mockFreemiumDBPUserStateManager)
+
+        let result = try await sut.arePrerequisitesSatisfied()
+
+        XCTAssertTrue(result)
+        XCTAssertEqual(mockSubscriptionManager.getTokenContainerPolicies, [.localValid])
     }
 }
 

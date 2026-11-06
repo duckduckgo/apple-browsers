@@ -23,7 +23,7 @@ import WebExtensions
 
 @available(macOS 15.4, *)
 @MainActor
-final class WebExtensionsDebugMenu: NSMenu {
+final class WebExtensionsDebugMenu: NSMenu, NSMenuItemValidation {
 
     private let webExtensionManager: WebExtensionManaging
     private let cpmMessagingHealthMonitor: CPMMessagingHealthMonitor
@@ -89,7 +89,7 @@ final class WebExtensionsDebugMenu: NSMenu {
         addItem(openExtensionsFolderMenuItem)
         addItem(extensionsPageMenuItem)
         addItem(apiCompatibilityLogMenuItem)
-        checkForUpdatesMenuItem.isEnabled = webExtensionManager.chromeWebStore != nil
+        checkForUpdatesMenuItem.isEnabled = webExtensionManager.chromeWebStore?.canCheckForUpdates == true
         addItem(checkForUpdatesMenuItem)
 
         let addedPopoverMenuItems = makeShowAddedPopoverMenuItems()
@@ -159,6 +159,11 @@ final class WebExtensionsDebugMenu: NSMenu {
         updateInstallBitwardenMenuItem()
     }
 
+    func validateMenuItem(_ menuItem: NSMenuItem) -> Bool {
+        guard menuItem.action == #selector(checkForUpdatesNow) else { return true }
+        return webExtensionManager.chromeWebStore?.canCheckForUpdates == true
+    }
+
     /// The shortcut only opens Bitwarden's Web Store page, which offers no install while Bitwarden is off.
     private func updateInstallBitwardenMenuItem() {
         let isHidden = !isBitwardenEnabled()
@@ -179,8 +184,11 @@ final class WebExtensionsDebugMenu: NSMenu {
     }
 
     @objc private func checkForUpdatesNow() {
-        guard let service = webExtensionManager.chromeWebStore else { return }
-        Task { await service.checkForUpdatesNow() }
+        guard let service = webExtensionManager.chromeWebStore, service.canCheckForUpdates else { return }
+        Task { @MainActor in
+            guard service.canCheckForUpdates else { return }
+            await service.checkForUpdatesNow()
+        }
     }
 
     /// Replays the notification a Chrome Web Store install posts, for the key window.

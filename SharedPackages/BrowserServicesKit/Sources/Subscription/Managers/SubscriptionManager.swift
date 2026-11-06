@@ -676,9 +676,7 @@ public final class DefaultSubscriptionManager: SubscriptionManager {
             return resultTokenContainer
         } catch OAuthClientError.missingTokenContainer {
             // No token stored: restore it from the backup if possible
-            if tokenRecoveryCoordinator != nil, let restored = try? await recoverToken(trigger: .missingToken, deadPrimary: nil) {
-                updateCachedUserEntitlements(restored.decodedAccessToken.subscriptionEntitlements)
-                updateCachedIsUserAuthenticated(true)
+            if let restored = await restoreMissingToken() {
                 return restored
             }
             // Expected when no tokens are available

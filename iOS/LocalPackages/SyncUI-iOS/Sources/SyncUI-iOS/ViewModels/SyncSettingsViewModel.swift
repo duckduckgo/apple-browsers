@@ -262,6 +262,7 @@ public class SyncSettingsViewModel: ObservableObject {
     @Published var isThisDeviceTurnOffConfirmationVisible: Bool = false
     @Published var isTurnOffSyncSheetVisible: Bool = false
 
+    @Published public var isDeviceActivityPresented = false
     public let deviceActivityViewModel: DeviceActivityViewModel?
 
     public let isAutoRestoreFeatureAvailable: Bool

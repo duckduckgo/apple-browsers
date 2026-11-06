@@ -31,17 +31,21 @@ final class NotificationServiceManager: NSObject, NotificationServiceManaging {
 
     private let mainCoordinator: MainCoordinator
     private let inactivityStateStore: InactivityNotificationStateStoring
+    private let handleAppAction: @MainActor (AppAction) -> Void
 
     static let notificationCategories: Set<UNNotificationCategory> = [
         DefaultSubscriptionExpirationReminderScheduler.notificationCategory,
-        InactivityNotificationSchedulerService.Constants.notificationCategory
+        InactivityNotificationSchedulerService.Constants.notificationCategory,
+        SyncLoginNotificationService.notificationCategory
     ]
 
     init(mainCoordinator: MainCoordinator,
          inactivityStateStore: InactivityNotificationStateStoring,
+         handleAppAction: @escaping @MainActor (AppAction) -> Void,
          notificationCenter: UNUserNotificationCenterRepresentable = UNUserNotificationCenter.current()) {
         self.mainCoordinator = mainCoordinator
         self.inactivityStateStore = inactivityStateStore
+        self.handleAppAction = handleAppAction
         super.init()
         Self.registerNotificationCategories(on: notificationCenter)
     }
@@ -77,6 +81,8 @@ final class NotificationServiceManager: NSObject, NotificationServiceManaging {
 
         guard response.actionIdentifier == UNNotificationDefaultActionIdentifier else { return }
 
+        if Self.handleSyncNotification(request: response.notification.request, handleAppAction: handleAppAction) { return }
+
         switch id {
         case let raw where NetworkProtectionNotificationIdentifier(rawValue: raw) != nil:
             if let identifier = NetworkProtectionNotificationIdentifier(rawValue: raw) {
@@ -96,6 +102,14 @@ final class NotificationServiceManager: NSObject, NotificationServiceManaging {
 // MARK: - Testability
 
 extension NotificationServiceManager {
+
+    @MainActor
+    static func handleSyncNotification(request: UNNotificationRequest, handleAppAction: (AppAction) -> Void) -> Bool {
+        guard let activity = SyncLoginNotificationService.activity(for: request) else { return false }
+        // AppStateMachine retains actions received before the foreground/scene is ready.
+        handleAppAction(.handleUserActivity(activity))
+        return true
+    }
 
     static func handleInactivityNotification(actionIdentifier: String,
                                              userInfo: [AnyHashable: Any],

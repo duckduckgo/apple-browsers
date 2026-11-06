@@ -144,6 +144,11 @@ final class SyncService {
                 })
             }
 
+        sync.loginNotificationHandler = { [weak sync] notification in
+            guard let sync else { return }
+            let presenter = await SyncLoginNotificationService(syncService: sync, featureFlagger: featureFlagger)
+            await presenter.deliver(notification)
+        }
         sync.initializeIfNeeded()
     }
 

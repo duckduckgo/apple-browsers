@@ -133,31 +133,19 @@ public enum AIChatUserScriptMessages: String, CaseIterable {
 
     // MARK: - Browser tools
 
-    /// MCP `initialize` — negotiates protocol version and capabilities for browser tools.
-    /// Opens the session that `toolsList` and `toolsCall` require.
-    case initialize
-
-    /// MCP `notifications/initialized` — the FE is ready for tools traffic. Sent without an
-    /// envelope `id`, so it is answered only when the FE asks for a reply.
-    case notificationsInitialized = "notifications/initialized"
-
-    /// MCP `tools/list` — the browser tools this FE may discover, after remote-config gating.
-    case toolsList = "tools/list"
-
-    /// MCP `tools/call` — invoke a registered browser tool.
-    case toolsCall = "tools/call"
-
-    /// MCP `elicitation/create` — pushed (native→FE) to ask the user for tool permission mid-call.
-    case elicitationCreate = "elicitation/create"
-
-    /// MCP `elicitation/response` — the FE's answer to a pending `elicitationCreate`.
-    case elicitationResponse = "elicitation/response"
-
-    /// MCP `notifications/tools/list_changed` — pushed (native→FE) when the tool catalogue changes.
-    case toolsListChanged = "notifications/tools/list_changed"
-
     /// Pushed (native→FE) when the chat's owner tab navigates, so the FE can refresh its view of the page.
     case aiChatTabChanged
+
+    // MARK: - Client tools
+
+    /// FE→native: runs one advertised `clientTools` capability. The reply carries the tool result.
+    case executeClientTool
+
+    /// Pushed (native→FE) when a pending `executeClientTool` needs the user's permission.
+    case clientToolPermissionRequested
+
+    /// FE→native: the user's answer to `clientToolPermissionRequested`. Always acknowledged with `{}`.
+    case respondToClientToolPermission
 
     // MARK: - Bonus offer
 

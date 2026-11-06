@@ -19,6 +19,8 @@
 import AIChat
 import BrowserServicesKitTestsUtils
 import Combine
+import FeatureFlags_macOS
+import PrivacyConfig
 import UserScript
 import WebKit
 @_spi(Testing) import Persistence
@@ -55,6 +57,206 @@ final class AIChatUserScriptTests: XCTestCase {
 
         XCTAssertTrue(mockHandler.didGetConfigValues, "getAIChatNativeConfigValues should be called")
         XCTAssertNil(result, "Expected result to be nil")
+    }
+
+    @MainActor func testNativeConfigDispatcherAddsEnabledClientToolsAndPreservesOtherValues() async throws {
+        let service = makeBrowserToolsService()
+        userScript = AIChatUserScript(handler: mockHandler, urlSettings: AIChatMockDebugSettings(), browserTools: service)
+        var baseConfig = AIChatNativeConfigValues.defaultValues
+        baseConfig.supportsResponseStateReporting = true
+        mockHandler.configResponse = baseConfig
+        let webView = ClientToolsDocumentWebView()
+        webView.documentURL = URL(string: "https://duck.ai/chat")
+
+        let config = try await nativeConfig(from: webView)
+
+        let clientTools = try XCTUnwrap(config.clientTools)
+        XCTAssertEqual(clientTools.protocolVersion, 1)
+        XCTAssertEqual(clientTools.capabilities.map(\.name), ["listOpenTabs"])
+        XCTAssertEqual(clientTools.capabilities.map(\.version), [1])
+        var remainingConfig = config
+        remainingConfig.clientTools = nil
+        let encoder = JSONEncoder()
+        encoder.outputFormatting = .sortedKeys
+        XCTAssertEqual(try encoder.encode(remainingConfig), try encoder.encode(baseConfig))
+    }
+
+    @MainActor func testNativeConfigOmitsClientToolsInFireAndOutsideChat() async throws {
+        let service = makeBrowserToolsService()
+        userScript = AIChatUserScript(handler: mockHandler, urlSettings: AIChatMockDebugSettings(), browserTools: service)
+        var baseConfig = AIChatNativeConfigValues.defaultValues
+        baseConfig.clientTools = try ClientToolsConfiguration(capabilities: [.listOpenTabs])
+        mockHandler.configResponse = baseConfig
+        let webView = ClientToolsDocumentWebView()
+        webView.documentURL = URL(string: "https://duck.ai/chat")
+        mockHandler.isFireWindowProvider = { true }
+
+        let fireConfig = try await nativeConfig(from: webView)
+        XCTAssertNil(fireConfig.clientTools)
+
+        mockHandler.isFireWindowProvider = { false }
+        webView.documentURL = URL(string: "https://example.com")
+        let unrelatedPageConfig = try await nativeConfig(from: webView)
+        XCTAssertNil(unrelatedPageConfig.clientTools)
+
+        webView.documentURL = nil
+        let missingURLConfig = try await nativeConfig(from: webView)
+        XCTAssertNil(missingURLConfig.clientTools)
+    }
+
+    @MainActor func testNativeConfigIncludesClientToolsForCustomChatHost() async throws {
+        let service = makeBrowserToolsService()
+        let settings = AIChatMockDebugSettings()
+        settings.customURL = "https://chat.example.com"
+        userScript = AIChatUserScript(handler: mockHandler, urlSettings: settings, browserTools: service)
+        mockHandler.configResponse = AIChatNativeConfigValues.defaultValues
+        let webView = ClientToolsDocumentWebView()
+        webView.documentURL = URL(string: "https://chat.example.com/conversation")
+
+        let config = try await nativeConfig(from: webView)
+
+        XCTAssertEqual(config.clientTools?.capabilities, [.listOpenTabs])
+    }
+
+    @MainActor func testNativeConfigReflectsParentAndIndividualFlagChanges() async throws {
+        let flags = browserToolsFlags()
+        let service = makeBrowserToolsService(featureFlagger: flags)
+        userScript = AIChatUserScript(handler: mockHandler, urlSettings: AIChatMockDebugSettings(), browserTools: service)
+        mockHandler.configResponse = AIChatNativeConfigValues.defaultValues
+        let webView = ClientToolsDocumentWebView()
+        webView.documentURL = URL(string: "https://duck.ai/chat")
+
+        let enabledConfig = try await nativeConfig(from: webView)
+        XCTAssertEqual(enabledConfig.clientTools?.capabilities, [.listOpenTabs])
+
+        flags.featuresStub[FeatureFlag.aiChatBrowserTools.rawValue] = false
+        let parentDisabledConfig = try await nativeConfig(from: webView)
+        XCTAssertNil(parentDisabledConfig.clientTools)
+
+        flags.featuresStub[FeatureFlag.aiChatBrowserTools.rawValue] = true
+        flags.featuresStub[FeatureFlag.aiChatBrowserToolListOpenTabs.rawValue] = false
+        let toolDisabledConfig = try await nativeConfig(from: webView)
+        XCTAssertNil(toolDisabledConfig.clientTools)
+
+        flags.featuresStub[FeatureFlag.aiChatBrowserToolListOpenTabs.rawValue] = true
+        let reenabledConfig = try await nativeConfig(from: webView)
+        XCTAssertEqual(reenabledConfig.clientTools?.capabilities, [.listOpenTabs])
+    }
+
+    @MainActor func testNativeConfigDispatcherPreservesNonConfigResponse() async throws {
+        mockHandler.configResponse = ["message": "unchanged"]
+        let handler = try XCTUnwrap(userScript.handler(forMethodNamed: AIChatUserScriptMessages.getAIChatNativeConfigValues.rawValue))
+
+        let result = try await handler(["request": "config"], WKScriptMessage.mock())
+
+        XCTAssertEqual(result as? [String: String], ["message": "unchanged"])
+    }
+
+    @MainActor func testCancellationInvokesAllRegisteredSourcesOnceAndAllowsNextCycle() {
+        let firstSource = ClientToolCancellationSpy()
+        let secondSource = ClientToolCancellationSpy()
+        userScript.registerClientToolPermissionCancellation(firstSource)
+        userScript.registerClientToolPermissionCancellation(secondSource)
+        userScript.registerClientToolPermissionCancellation(firstSource)
+
+        userScript.cancelClientToolPermissionRequests()
+        XCTAssertEqual(firstSource.cancellationCount, 1)
+        XCTAssertEqual(secondSource.cancellationCount, 1)
+
+        userScript.cancelClientToolPermissionRequests()
+        XCTAssertEqual(firstSource.cancellationCount, 1)
+        XCTAssertEqual(secondSource.cancellationCount, 1)
+
+        userScript.registerClientToolPermissionCancellation(firstSource)
+        userScript.cancelClientToolPermissionRequests()
+        XCTAssertEqual(firstSource.cancellationCount, 2)
+        XCTAssertEqual(secondSource.cancellationCount, 1)
+    }
+
+    @MainActor func testRegisteredCancellationSourceIsNotRetained() throws {
+        var source: ClientToolCancellationSpy? = ClientToolCancellationSpy()
+        weak var weakSource = source
+        userScript.registerClientToolPermissionCancellation(try XCTUnwrap(source))
+
+        source = nil
+
+        XCTAssertNil(weakSource)
+        userScript.cancelClientToolPermissionRequests()
+    }
+
+    @MainActor func testCancellationRevokesScriptAuthorizationAndCancelsAdditionalSource() async throws {
+        let service = makeBrowserToolsService()
+        userScript = AIChatUserScript(handler: mockHandler, urlSettings: AIChatMockDebugSettings(), browserTools: service)
+        let tool = try XCTUnwrap(service.catalog.tool(named: "listOpenTabs"))
+        service.permissions.setState(.allow, forToolNamed: tool.name)
+        let control = await service.clientToolPermissions.authorize(callID: "control", tool: tool, source: userScript)
+        guard case .granted(let confirmControl) = control else {
+            return XCTFail("Stored permission should authorize script source")
+        }
+        XCTAssertTrue(confirmControl())
+        let authorization = await service.clientToolPermissions.authorize(callID: "cancelled", tool: tool, source: userScript)
+        guard case .granted(let confirmExecution) = authorization else {
+            return XCTFail("Stored permission should authorize script source")
+        }
+        let additionalSource = ClientToolCancellationSpy()
+        userScript.registerClientToolPermissionCancellation(additionalSource)
+
+        userScript.cancelClientToolPermissionRequests()
+
+        XCTAssertFalse(confirmExecution())
+        XCTAssertEqual(additionalSource.cancellationCount, 1)
+        XCTAssertEqual(service.permissions.state(forToolNamed: tool.name), .allow)
+    }
+
+    @MainActor func testClientToolsDocumentReadinessRequiresCurrentLoadedAllowedDocument() {
+        let settings = AIChatMockDebugSettings()
+        settings.customURL = "https://chat.example.com"
+        userScript = AIChatUserScript(handler: mockHandler, urlSettings: settings, browserTools: nil)
+        let webView = ClientToolsDocumentWebView()
+        webView.documentURL = URL(string: "https://duck.ai/chat")
+        userScript.webView = webView
+        XCTAssertTrue(userScript.isClientToolsDocumentReady(webView))
+
+        webView.documentIsLoading = true
+        XCTAssertFalse(userScript.isClientToolsDocumentReady(webView))
+        webView.documentIsLoading = false
+        webView.documentURL = nil
+        XCTAssertFalse(userScript.isClientToolsDocumentReady(webView))
+        webView.documentURL = URL(string: "https://example.com")
+        XCTAssertFalse(userScript.isClientToolsDocumentReady(webView))
+        webView.documentURL = URL(string: "https://chat.example.com/conversation")
+        XCTAssertTrue(userScript.isClientToolsDocumentReady(webView))
+
+        let otherWebView = ClientToolsDocumentWebView()
+        otherWebView.documentURL = webView.documentURL
+        XCTAssertFalse(userScript.isClientToolsDocumentReady(otherWebView))
+        userScript.webView = nil
+        XCTAssertFalse(userScript.isClientToolsDocumentReady(webView))
+    }
+
+    @MainActor private func nativeConfig(from webView: WKWebView) async throws -> AIChatNativeConfigValues {
+        let handler = try XCTUnwrap(userScript.handler(forMethodNamed: AIChatUserScriptMessages.getAIChatNativeConfigValues.rawValue))
+        let response = try await handler([""], WKScriptMessage.mock(webView: webView))
+        return try XCTUnwrap(response as? AIChatNativeConfigValues)
+    }
+
+    @MainActor private func browserToolsFlags() -> MockFeatureFlagger {
+        MockFeatureFlagger(featuresStub: [
+            FeatureFlag.aiChatBrowserTools.rawValue: true,
+            FeatureFlag.aiChatBrowserToolListOpenTabs.rawValue: true,
+            FeatureFlag.aiChatBrowserToolSearchHistory.rawValue: false,
+            FeatureFlag.aiChatBrowserToolSwitchToTab.rawValue: false,
+            FeatureFlag.aiChatBrowserToolReadTabContent.rawValue: false,
+            FeatureFlag.aiChatBrowserToolFindInPage.rawValue: false,
+            FeatureFlag.aiChatBrowserToolHighlightInPage.rawValue: false
+        ])
+    }
+
+    @MainActor private func makeBrowserToolsService(featureFlagger: MockFeatureFlagger? = nil) -> AIChatBrowserToolsService {
+        AIChatBrowserToolsService(featureFlagger: featureFlagger ?? browserToolsFlags(),
+                                 windowControllersManager: WindowControllersManagerMock(),
+                                 historyCoordinator: HistoryCoordinatingMock(),
+                                 permissionStorage: MockKeyValueStore().keyedStoring())
     }
 
     @MainActor func testCloseAIChat() async throws {
@@ -145,48 +347,29 @@ final class AIChatUserScriptTests: XCTestCase {
 
     // MARK: - Browser tools
 
-    @MainActor func testWhenInitializeIsReceivedThenItRoutesToTheMCPHandler() async throws {
-        let handler = try XCTUnwrap(userScript.handler(forMethodNamed: AIChatUserScriptMessages.initialize.rawValue))
-        _ = try await handler([""], WKScriptMessage.mock())
+    @MainActor func testWhenLegacyBrowserToolMethodIsRequestedThenNoHandlerIsReturned() {
+        let methods = ["initialize", "notifications/initialized", "tools/list", "tools/call", "elicitation/response"]
 
-        XCTAssertTrue(mockHandler.didCallMCPInitialize)
+        for method in methods {
+            XCTAssertNil(userScript.handler(forMethodNamed: method), method)
+        }
     }
 
-    @MainActor func testWhenInitializedNotificationIsReceivedThenItRoutesToTheMCPHandler() async throws {
-        let handler = try XCTUnwrap(userScript.handler(forMethodNamed: AIChatUserScriptMessages.notificationsInitialized.rawValue))
+    /// Client tools are only for a Duck.ai chat; a call from any other page gets no permission source.
+    @MainActor func testWhenExecuteClientToolComesFromAPageOutsideDuckAIThenThereIsNoPermissionPusher() async throws {
+        let handler = try XCTUnwrap(userScript.handler(forMethodNamed: AIChatUserScriptMessages.executeClientTool.rawValue))
         _ = try await handler([""], WKScriptMessage.mock())
 
-        XCTAssertTrue(mockHandler.didCallMCPNotificationsInitialized)
+        XCTAssertTrue(mockHandler.didCallExecuteClientTool)
+        XCTAssertNil(mockHandler.receivedClientToolPermissionPusher)
     }
 
-    @MainActor func testWhenToolsListIsReceivedThenItRoutesToTheMCPHandler() async throws {
-        let handler = try XCTUnwrap(userScript.handler(forMethodNamed: AIChatUserScriptMessages.toolsList.rawValue))
+    /// Only the page that was asked can answer, so the script hands itself over as the source.
+    @MainActor func testWhenPermissionResponseIsReceivedThenTheScriptIsTheSource() async throws {
+        let handler = try XCTUnwrap(userScript.handler(forMethodNamed: AIChatUserScriptMessages.respondToClientToolPermission.rawValue))
         _ = try await handler([""], WKScriptMessage.mock())
 
-        XCTAssertTrue(mockHandler.didCallMCPToolsList)
-    }
-
-    @MainActor func testWhenToolsCallIsReceivedThenItRoutesToTheMCPHandler() async throws {
-        let handler = try XCTUnwrap(userScript.handler(forMethodNamed: AIChatUserScriptMessages.toolsCall.rawValue))
-        _ = try await handler([""], WKScriptMessage.mock())
-
-        XCTAssertTrue(mockHandler.didCallMCPToolsCall)
-    }
-
-    /// A prompt raised by the call must go back to the page that made it, so the script hands
-    /// itself over as the pusher.
-    @MainActor func testWhenToolsCallIsReceivedThenTheScriptIsTheElicitationPusher() async throws {
-        let handler = try XCTUnwrap(userScript.handler(forMethodNamed: AIChatUserScriptMessages.toolsCall.rawValue))
-        _ = try await handler([""], WKScriptMessage.mock())
-
-        XCTAssertTrue(mockHandler.receivedElicitationPusher === userScript)
-    }
-
-    @MainActor func testWhenElicitationResponseIsReceivedThenItRoutesToTheMCPHandler() async throws {
-        let handler = try XCTUnwrap(userScript.handler(forMethodNamed: AIChatUserScriptMessages.elicitationResponse.rawValue))
-        _ = try await handler([""], WKScriptMessage.mock())
-
-        XCTAssertTrue(mockHandler.didCallMCPElicitationResponse)
+        XCTAssertTrue(mockHandler.receivedClientToolPermissionSource === userScript)
     }
 
     // MARK: - Open Settings handshake
@@ -263,6 +446,7 @@ final class AIChatUserScriptTests: XCTestCase {
 final class MockAIChatUserScriptHandler: AIChatUserScriptHandling {
     var didOpenSettings = false
     var didGetConfigValues = false
+    var configResponse: (any Encodable)?
     var didCloseChat = false
     var didGetPrompt = false
     var didOpenChat = false
@@ -327,7 +511,7 @@ final class MockAIChatUserScriptHandler: AIChatUserScriptHandling {
 
     func getAIChatNativeConfigValues(params: Any, message: UserScriptMessage) -> (any Encodable)? {
         didGetConfigValues = true
-        return nil
+        return configResponse
     }
 
     func closeAIChat(params: Any, message: UserScriptMessage) -> (any Encodable)? {
@@ -435,36 +619,18 @@ final class MockAIChatUserScriptHandler: AIChatUserScriptHandling {
         return nil
     }
 
-    var didCallMCPInitialize = false
-    var didCallMCPNotificationsInitialized = false
-    var didCallMCPToolsList = false
-    var didCallMCPToolsCall = false
-    var didCallMCPElicitationResponse = false
-    var receivedElicitationPusher: (any AIChatElicitationPushing)?
+    var receivedClientToolPermissionPusher: (any ClientToolPermissionPushing)?
+    var didCallExecuteClientTool = false
+    var receivedClientToolPermissionSource: (any ClientToolPermissionPushing)?
 
-    func mcpInitialize(params: Any, message: UserScriptMessage) async -> Encodable? {
-        didCallMCPInitialize = true
+    func executeClientTool(params: Any, message: UserScriptMessage, permissionPusher: (any ClientToolPermissionPushing)?) async -> Encodable? {
+        didCallExecuteClientTool = true
+        receivedClientToolPermissionPusher = permissionPusher
         return nil
     }
 
-    func mcpNotificationsInitialized(params: Any, message: UserScriptMessage) async -> Encodable? {
-        didCallMCPNotificationsInitialized = true
-        return nil
-    }
-
-    func mcpToolsList(params: Any, message: UserScriptMessage) async -> Encodable? {
-        didCallMCPToolsList = true
-        return nil
-    }
-
-    func mcpToolsCall(params: Any, message: UserScriptMessage, elicitationPusher: (any AIChatElicitationPushing)?) async -> Encodable? {
-        didCallMCPToolsCall = true
-        receivedElicitationPusher = elicitationPusher
-        return nil
-    }
-
-    func mcpElicitationResponse(params: Any, message: UserScriptMessage) async -> Encodable? {
-        didCallMCPElicitationResponse = true
+    func respondToClientToolPermission(params: Any, message: UserScriptMessage, source: any ClientToolPermissionPushing) async -> Encodable? {
+        receivedClientToolPermissionSource = source
         return nil
     }
 
@@ -595,4 +761,22 @@ private final class MockAIChatMessageHandling: AIChatMessageHandling {
     func appendSelectionContext(_ selection: AIChatSelectionContextData) {}
     func getSelectionContexts() -> [AIChatSelectionContextData] { [] }
     func clearSelectionContexts() {}
+}
+
+@MainActor
+private final class ClientToolCancellationSpy: AIChatClientToolPermissionCancellation {
+    private(set) var cancellationCount = 0
+
+    func cancelClientToolPermissionRequests() {
+        cancellationCount += 1
+    }
+}
+
+@MainActor
+private final class ClientToolsDocumentWebView: WKWebView {
+    var documentURL: URL?
+    var documentIsLoading = false
+
+    override var url: URL? { documentURL }
+    override var isLoading: Bool { documentIsLoading }
 }

@@ -24,10 +24,11 @@ import Foundation
 @MainActor
 final class HighlightInPageBrowserTool: BrowserTool {
 
+    static let maxQuotes = 20
+    static let maxQuoteLength = 2000
+
     /// Matches `AIChatBrowserToolsSubfeature.highlightInPage`, which is how the catalog gates it.
     let name = "highlightInPage"
-    let title = "Highlight in page"
-    let description = "Highlight text ranges on the current page."
     let permissionMode = BrowserToolPermissionMode.auto
 
     let inputSchema: JSONValue = [
@@ -58,23 +59,6 @@ final class HighlightInPageBrowserTool: BrowserTool {
         ]
     ]
 
-    let outputSchema: JSONValue? = [
-        "type": "object",
-        "properties": [
-            "tabId": ["type": "string"],
-            "title": ["type": "string"],
-            "url": ["type": "string"],
-            "highlightedCount": ["type": "integer"],
-            "truncated": ["type": "boolean"]
-        ],
-        "required": ["tabId", "title", "url", "highlightedCount", "truncated"]
-    ]
-
-    let annotations: MCPToolAnnotations? = MCPToolAnnotations(readOnlyHint: false,
-                                                              destructiveHint: false,
-                                                              idempotentHint: true,
-                                                              openWorldHint: false)
-
     private let windowControllersManager: WindowControllersManagerProtocol
     private let highlighter: BrowserToolPageHighlighting
 
@@ -85,22 +69,7 @@ final class HighlightInPageBrowserTool: BrowserTool {
 
     func execute(arguments: JSONValue?, context: BrowserToolCallContext) async -> BrowserToolResult {
         guard !context.isBurner else { return .failure(.unavailable) }
-        guard case .some(.object) = arguments else { return .failure(.invalidArguments) }
-
-        // macOS never issues reliable match indexes, so receiving them means the flag was ignored.
-        if let indexes = arguments?["matchIndexes"]?.arrayValue, !indexes.isEmpty {
-            return .failure(.invalidArguments)
-        }
-        guard let quoteValues = arguments?["quotes"]?.arrayValue, !quoteValues.isEmpty else {
-            return .failure(.invalidArguments)
-        }
-        var quotes: [String] = []
-        for value in quoteValues {
-            guard let quote = value.stringValue, !quote.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
-                return .failure(.invalidArguments)
-            }
-            quotes.append(quote)
-        }
+        guard let quotes = Self.quotes(from: arguments) else { return .failure(.invalidArguments) }
 
         let tab: Tab
         let tabID: TabIdentifier
@@ -141,5 +110,35 @@ final class HighlightInPageBrowserTool: BrowserTool {
             "highlightedCount": .int(highlightedCount),
             "truncated": .bool(truncated)
         ])
+    }
+
+    /// The quotes to paint, or nil when any argument breaks the contract.
+    private static func quotes(from arguments: JSONValue?) -> [String]? {
+        guard case .some(.object) = arguments,
+              // macOS never issues reliable match indexes, so receiving them means the flag was ignored.
+              arguments?["matchIndexes"] == nil,
+              arguments?["caseSensitive"].map({ $0.boolValue != nil }) ?? true,
+              arguments?["query"].map({ isValidQuery($0) }) ?? true,
+              let quoteValues = arguments?["quotes"]?.arrayValue,
+              (1...maxQuotes).contains(quoteValues.count) else { return nil }
+        let quotes = quoteValues.compactMap { value -> String? in
+            guard let quote = value.stringValue,
+                  !quote.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
+                  BrowserToolOutputLimits.fits(quote, within: maxQuoteLength) else { return nil }
+            return quote
+        }
+        return quotes.count == quoteValues.count ? quotes : nil
+    }
+
+    private static func isValidQuery(_ value: JSONValue) -> Bool {
+        guard let query = value.stringValue else { return false }
+        return !query.isEmpty && BrowserToolOutputLimits.fits(query, within: BrowserToolOutputLimits.query)
+    }
+
+    func clientToolResult(from value: JSONValue) -> BrowserToolResult {
+        guard var fields = value.objectValue else { return .failure(.unavailable) }
+        fields["title"] = nil
+        fields["url"] = nil
+        return .success(.object(fields))
     }
 }

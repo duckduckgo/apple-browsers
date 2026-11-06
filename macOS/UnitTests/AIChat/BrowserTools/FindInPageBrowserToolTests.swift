@@ -149,8 +149,7 @@ final class FindInPageBrowserToolTests: XCTestCase {
         let (tool, ownerContext) = make()
         let context = BrowserToolCallContext(ownerTabID: ownerContext.ownerTabID,
                                              ownerWindowToken: ownerContext.ownerWindowToken,
-                                             isBurner: true,
-                                             supportsElicitationForm: true)
+                                             isBurner: true)
 
         let result = await tool.execute(arguments: ["query": "a"], context: context)
 
@@ -170,8 +169,7 @@ final class FindInPageBrowserToolTests: XCTestCase {
         let tool = FindInPageBrowserTool(windowControllersManager: manager, reader: reader)
         let context = BrowserToolCallContext(ownerTabID: tab.uuid,
                                              ownerWindowToken: AIChatTabPickerSource.windowToken(forCollection: collection),
-                                             isBurner: false,
-                                             supportsElicitationForm: true)
+                                             isBurner: false)
         return (tool, context)
     }
 }

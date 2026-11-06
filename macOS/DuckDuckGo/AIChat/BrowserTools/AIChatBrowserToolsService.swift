@@ -17,7 +17,6 @@
 //
 
 import AIChat
-import Combine
 import FeatureFlags_macOS
 import Foundation
 import History
@@ -25,28 +24,20 @@ import Persistence
 import PrivacyConfig
 import WebKit
 
-/// Owns the MCP sessions, the tool catalog and their gating. App-wide rather than per web view,
-/// because a session belongs to the owner tab while each web view gets its own user script.
+/// Owns the tool catalog, invocation and permissions shared by all chat surfaces.
 @MainActor
 final class AIChatBrowserToolsService {
 
-    /// Identifies this browser in the MCP `initialize` result. The Windows browser reports
-    /// `windows-browser`.
-    static let serverName = "macos-browser"
-
-    let sessions = AIChatMCPSessionStore()
     let catalog: BrowserToolCatalog
     let invoker: BrowserToolInvoker
     let permissions: BrowserToolPermissionStoring
-    let elicitations: AIChatElicitationCoordinator
+    let clientToolPermissions: ClientToolPermissionCoordinator
 
     private let configuration: AIChatBrowserToolsConfiguration
     private let windowControllersManager: WindowControllersManagerProtocol
     private let pushers = NSHashTable<AnyObject>.weakObjects()
-    private var catalogChangeNotifier: BrowserToolCatalogChangeNotifier?
 
-    /// Reported to the front end as `supportsBrowserTools`. The front end must not open a session
-    /// when this is false, which also protects against version skew.
+    /// Whether browser tools are enabled by the parent feature flag.
     var isEnabled: Bool { configuration.isEnabled }
 
     /// - Parameter tools: overridable so tests can register their own catalog.
@@ -60,24 +51,17 @@ final class AIChatBrowserToolsService {
                                                                            historyCoordinator: historyCoordinator),
                                          configuration: configuration)
         let permissions = BrowserToolPermissionStore(storage: permissionStorage)
-        let elicitations = AIChatElicitationCoordinator()
+        let clientToolPermissions = ClientToolPermissionCoordinator(permissions: permissions)
         self.configuration = configuration
         self.windowControllersManager = windowControllersManager
         self.catalog = catalog
         self.permissions = permissions
-        self.elicitations = elicitations
+        self.clientToolPermissions = clientToolPermissions
         self.invoker = BrowserToolInvoker(catalog: catalog,
-                                          configuration: configuration,
-                                          permissions: permissions,
-                                          elicitations: elicitations)
-        self.catalogChangeNotifier = BrowserToolCatalogChangeNotifier(
-            changes: featureFlagger.updatesPublisher,
-            signature: { [configuration, catalog] in configuration.isEnabled ? catalog.enabledTools.map(\.name) : [] },
-            onChange: { [weak self] in self?.pushToolsListChanged() }
-        )
+                                          clientToolPermissions: clientToolPermissions)
     }
 
-    /// Registration order is the order the front end sees in `tools/list`.
+    /// Registration order determines the order of the advertised capabilities.
     private static func defaultTools(windowControllersManager: WindowControllersManagerProtocol,
                                      historyCoordinator: HistoryCoordinating) -> [any BrowserTool] {
         let reader = BrowserToolPageContentReader(windowControllersManager: windowControllersManager)
@@ -89,6 +73,15 @@ final class AIChatBrowserToolsService {
             FindInPageBrowserTool(windowControllersManager: windowControllersManager, reader: reader),
             HighlightInPageBrowserTool(windowControllersManager: windowControllersManager, highlighter: WebViewPageHighlighter())
         ]
+    }
+
+    /// Advertised to Duck.ai in `getAIChatNativeConfigValues`. Nil when no tool is enabled.
+    var clientToolsConfiguration: ClientToolsConfiguration? {
+        let capabilities = catalog.enabledClientToolCapabilities
+        guard !capabilities.isEmpty,
+              let configuration = try? ClientToolsConfiguration(capabilities: capabilities),
+              ClientToolPayloadLimits.fits(configuration, within: ClientToolPayloadLimits.configBytes) else { return nil }
+        return configuration
     }
 
     // MARK: - Pushes
@@ -110,12 +103,6 @@ final class AIChatBrowserToolsService {
         }
     }
 
-    private func pushToolsListChanged() {
-        for pusher in livePushers {
-            pusher.pushToolsListChanged()
-        }
-    }
-
     private var livePushers: [AIChatBrowserToolsPushing] {
         pushers.allObjects.compactMap { $0 as? AIChatBrowserToolsPushing }
     }
@@ -128,7 +115,6 @@ protocol AIChatBrowserToolsPushing: AnyObject {
     /// The web view showing the chat; resolves which owner tab the surface belongs to.
     var pushTargetWebView: WKWebView? { get }
 
-    func pushToolsListChanged()
     func pushTabChanged(_ data: AIChatTabChangedData)
 }
 

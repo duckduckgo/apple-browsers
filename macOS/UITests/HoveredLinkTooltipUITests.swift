@@ -22,6 +22,7 @@ final class HoveredLinkTooltipUITests: UITestCase {
 
     private let pageTitle = "Hovered Link Page"
     private let linkTitle = "Hovered link"
+    private let destinationTitle = "Destination Page"
 
     override func setUpWithError() throws {
         try super.setUpWithError()
@@ -37,23 +38,65 @@ final class HoveredLinkTooltipUITests: UITestCase {
     func testWhenHoveringLinkThenTooltipAppears() {
         let link = openPageWithLink()
         link.hover()
-        XCTAssertTrue(tooltipLabel.waitForExistence(timeout: UITests.Timeouts.elementExistence))
+        assertTooltipAppears()
     }
 
-    func testWhenPointerMovesFromInspectorToLinkThenTooltipAppears() {
+    func testWhenAppIsReactivatedWithPointerStillOnLinkThenTooltipReappears() {
         let link = openPageWithLink()
-        showInspector()
-        deactivateApp()
-
-        // Activate the window by clicking into the inspector, then move to the link across the page.
-        inspector.click()
-        XCTAssertTrue(app.wait(for: .runningForeground, timeout: UITests.Timeouts.elementExistence))
-        let page = app.windows.firstMatch.webViews[pageTitle]
-        page.coordinate(withNormalizedOffset: CGVector(dx: 0.8, dy: 0.1)).hover()
         link.hover()
+        assertTooltipAppears()
 
-        XCTAssertTrue(tooltipLabel.waitForExistence(timeout: UITests.Timeouts.elementExistence),
-                      "The tooltip should appear after the pointer moves from the inspector to a link")
+        deactivateApp()
+        assertTooltipDisappears("The tooltip must hide when the window is deactivated")
+
+        app.activate()
+        XCTAssertTrue(app.wait(for: .runningForeground, timeout: UITests.Timeouts.elementExistence))
+        moveWithinLink(link)
+
+        assertTooltipAppears("The tooltip must come back for the link under the pointer")
+    }
+
+    func testWhenSwitchingTabsWithCtrlTabThenTooltipIsDismissedAndComesBack() {
+        let link = openPageWithLink()
+        openSecondTab()
+        app.typeKey("\t", modifierFlags: .control) // back to the first tab (wraps around)
+        XCTAssertTrue(link.waitForExistence(timeout: UITests.Timeouts.elementExistence))
+        link.hover()
+        assertTooltipAppears()
+
+        app.typeKey("\t", modifierFlags: .control)
+        assertTooltipDisappears("The tooltip must not stay when another tab is selected")
+
+        app.typeKey("\t", modifierFlags: .control)
+        XCTAssertTrue(link.waitForExistence(timeout: UITests.Timeouts.elementExistence))
+        moveWithinLink(link)
+        assertTooltipAppears("The tooltip must come back for the link under the pointer in the re-selected tab")
+    }
+
+    func testWhenClickingLinkWithPointerStayingPutThenTooltipDisappearsOnTheNewPage() {
+        let link = openPageWithLink()
+        link.hover()
+        assertTooltipAppears()
+
+        link.click()
+
+        XCTAssertTrue(app.windows.firstMatch.webViews[destinationTitle].waitForExistence(timeout: UITests.Timeouts.localTestServer))
+        assertTooltipDisappears("The destination page has no link under the pointer")
+    }
+
+    func testWhenSwitchingWindowsWithCmdBacktickThenTooltipIsDismissedAndComesBack() {
+        let link = openPageWithLink()
+        link.hover()
+        assertTooltipAppears()
+
+        app.openNewWindow()
+        XCTAssertEqual(app.windows.count, 2)
+        assertTooltipDisappears("The tooltip must not stay when another window becomes key")
+
+        app.typeKey("`", modifierFlags: .command)
+        XCTAssertTrue(link.waitForExistence(timeout: UITests.Timeouts.elementExistence))
+        moveWithinLink(link)
+        assertTooltipAppears("The tooltip must come back after the first window becomes key again")
     }
 
     // MARK: - Helpers
@@ -62,8 +105,24 @@ final class HoveredLinkTooltipUITests: UITestCase {
         app.staticTexts["HoveredLinkTooltip.label"]
     }
 
+    private func assertTooltipAppears(_ message: String = "The tooltip should appear",
+                                      file: StaticString = #filePath, line: UInt = #line) {
+        XCTAssertTrue(tooltipLabel.waitForExistence(timeout: UITests.Timeouts.elementExistence), message, file: file, line: line)
+    }
+
+    private func assertTooltipDisappears(_ message: String, file: StaticString = #filePath, line: UInt = #line) {
+        XCTAssertTrue(tooltipLabel.waitForNonExistence(timeout: UITests.Timeouts.elementExistence), message, file: file, line: line)
+    }
+
+    /// Moves the pointer to another point of the same link.
+    private func moveWithinLink(_ link: XCUIElement) {
+        link.coordinate(withNormalizedOffset: CGVector(dx: 0.3, dy: 0.5)).hover()
+    }
+
     private func openPageWithLink() -> XCUIElement {
-        let body = "<a href=\"https://example.com/hovered\" style=\"position:absolute;left:20px;top:20px;font-size:24px\">\(linkTitle)</a>"
+        let destination = UITests.simpleServedPage(titled: destinationTitle)
+        let linkStyle = "position:absolute;left:20px;top:20px;font-size:24px"
+        let body = "<a href=\"\(destination.absoluteString)\" style=\"\(linkStyle)\">\(linkTitle)</a>"
         let url = UITests.simpleServedPage(titled: pageTitle, body: body)
         let addressBar = app.addressBar
         XCTAssertTrue(addressBar.waitForExistence(timeout: UITests.Timeouts.elementExistence))
@@ -76,13 +135,12 @@ final class HoveredLinkTooltipUITests: UITestCase {
         return link
     }
 
-    private var inspector: XCUIElement {
-        app.windows.firstMatch.webViews.matching(NSPredicate(format: "title != %@", pageTitle)).firstMatch
-    }
-
-    private func showInspector() {
-        app.typeKey("i", modifierFlags: [.command, .option])
-        XCTAssertTrue(inspector.waitForExistence(timeout: UITests.Timeouts.elementExistence), "The web inspector should be shown")
+    private func openSecondTab() {
+        app.openNewTab()
+        let addressBar = app.addressBar
+        XCTAssertTrue(addressBar.waitForExistence(timeout: UITests.Timeouts.elementExistence))
+        addressBar.pasteURL(UITests.simpleServedPage(titled: "Second Tab Page"), pressingEnter: true)
+        XCTAssertTrue(app.windows.firstMatch.webViews["Second Tab Page"].waitForExistence(timeout: UITests.Timeouts.localTestServer))
     }
 
     private func deactivateApp() {

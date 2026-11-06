@@ -115,6 +115,7 @@ extension DataImport {
 
         let browser: ThirdPartyBrowser
         private let fileStore: FileStore
+        private let databaseInspector: ChromiumProfileDatabaseInspectorProtocol
         private let fallbackProfileName: String
 
         let accessState: AccessState
@@ -150,9 +151,16 @@ extension DataImport {
             profilePreferences?.appVersion
         }
 
-        init(browser: ThirdPartyBrowser, profileURL: URL, fileStore: FileStore = FileManager.default, accessState: AccessState = .readable) {
+        init(
+            browser: ThirdPartyBrowser,
+            profileURL: URL,
+            fileStore: FileStore = FileManager.default,
+            databaseInspector: ChromiumProfileDatabaseInspectorProtocol = ChromiumProfileDatabaseInspector(),
+            accessState: AccessState = .readable
+        ) {
             self.browser = browser
             self.fileStore = fileStore
+            self.databaseInspector = databaseInspector
             self.profileURL = profileURL
             self.accessState = accessState
 
@@ -236,7 +244,8 @@ extension DataImport {
             switch browser {
             case .brave, .chrome, .chromium, .coccoc, .edge, .opera, .operaGX, .vivaldi:
                 let hasChromiumLogins = ChromiumLoginReader.LoginDataFileName.allCases.contains { loginFileName in
-                    return profileDirectoryContents.contains(loginFileName.rawValue)
+                    profileDirectoryContents.contains(loginFileName.rawValue)
+                        && databaseInspector.hasLogins(inDatabaseAt: profileURL.appendingPathComponent(loginFileName.rawValue))
                 }
 
                 return hasChromiumLogins ? .available
@@ -287,7 +296,10 @@ extension DataImport {
             let historyDatabaseName: String
             switch browser {
             case .brave, .chrome, .chromium, .coccoc, .edge, .opera, .operaGX, .vivaldi, .yandex:
-                historyDatabaseName = ChromiumHistoryReader.Constants.historyDatabaseName
+                let historyDatabaseURL = profileURL.appendingPathComponent(ChromiumHistoryReader.Constants.historyDatabaseName)
+                let hasRecentVisits = profileDirectoryContents.contains(ChromiumHistoryReader.Constants.historyDatabaseName)
+                    && databaseInspector.hasVisits(inDatabaseAt: historyDatabaseURL, since: .monthAgo)
+                return hasRecentVisits ? .available : .unavailable(path: historyDatabaseURL.path)
 
             case .firefox, .tor:
                 historyDatabaseName = FirefoxHistoryReader.Constants.historyDatabaseName

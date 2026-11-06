@@ -18,6 +18,7 @@
 
 import BrowserServicesKit
 import Foundation
+import GRDB
 import SharedTestUtilities
 import XCTest
 
@@ -349,6 +350,35 @@ class BrowserProfileTests: XCTestCase {
         let availableTypes = DataImport.DataType.allCases.filter(profile.hasValidProfileData)
 
         XCTAssertEqual(availableTypes, [])
+    }
+
+    func testWhenChromiumProfileDatabasesHaveNothingToImport_ThenNoDataTypeIsAvailable() throws {
+        let profileURL = try chromiumProfileWithEmptyDatabases()
+        let profile = DataImport.BrowserProfile(browser: .chrome, profileURL: profileURL)
+
+        let availableTypes = DataImport.DataType.allCases.filter(profile.hasValidProfileData)
+
+        XCTAssertNotNil(profile.validateProfileData())
+        XCTAssertEqual(availableTypes, [])
+    }
+
+    /// Like a new Chrome profile: no saved logins, and only visits the importer skips, such as Chrome's own pages.
+    private func chromiumProfileWithEmptyDatabases() throws -> URL {
+        let profileURL = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        try FileManager.default.createDirectory(at: profileURL, withIntermediateDirectories: true)
+        addTeardownBlock { try? FileManager.default.removeItem(at: profileURL) }
+
+        try DatabaseQueue(path: profileURL.appendingPathComponent("Login Data").path).write { database in
+            try database.execute(sql: "CREATE TABLE logins (signon_realm TEXT, blacklisted_by_user INTEGER)")
+        }
+        let now = Int64((Date().timeIntervalSince1970 + ChromiumHistoryReader.Constants.chromiumEpochOffset) * 1_000_000)
+        try DatabaseQueue(path: profileURL.appendingPathComponent("History").path).write { database in
+            try database.execute(sql: "CREATE TABLE urls (id INTEGER PRIMARY KEY, url TEXT)")
+            try database.execute(sql: "CREATE TABLE visits (url INTEGER, visit_time INTEGER, transition INTEGER)")
+            try database.execute(sql: "INSERT INTO urls VALUES (1, 'chrome://newtab/')")
+            try database.execute(sql: "INSERT INTO visits VALUES (1, ?, ?)", arguments: [now, ChromiumHistoryReader.Transition.chainEnd])
+        }
+        return profileURL
     }
 
     private func fileStoreWithEmptyFiles(_ fileNames: [String], in profileURL: URL) -> FileStoreMock {

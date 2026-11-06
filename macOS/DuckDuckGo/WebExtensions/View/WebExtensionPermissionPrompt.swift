@@ -33,7 +33,7 @@ final class WebExtensionPermissionPrompt: WebExtensionPermissionPrompting {
     }
 
     func confirmInstallation(of webExtension: WKWebExtension, permissions: WebExtensionPermissionRequest) async -> WebExtensionPermissionInstallationPromptResult {
-        let configuration = WebExtensionAlert.Configuration.installation(of: webExtension, permissionEntries: permissionEntries(for: permissions))
+        let configuration = WebExtensionAlert.Configuration.installation(of: webExtension, permissionEntries: permissionMessages(for: permissions))
 
         let response = await enqueue { [windowProvider, themeManager] in
             guard let window = windowProvider() else { return WebExtensionAlert.Response.cancelled }
@@ -97,7 +97,7 @@ final class WebExtensionPermissionPrompt: WebExtensionPermissionPrompting {
         alert.buttons[0].keyEquivalent = ""
         alert.buttons[1].keyEquivalent = "\r"
 
-        let entries = permissionEntries(for: permissions)
+        let entries = permissionMessages(for: permissions)
         let label = NSTextField(wrappingLabelWithString: entries.isEmpty ? UserText.webExtensionNoPermissions : entries.map { "• \($0)" }.joined(separator: "\n"))
         label.isSelectable = true
         label.frame.size.width = 360
@@ -123,25 +123,31 @@ final class WebExtensionPermissionPrompt: WebExtensionPermissionPrompting {
         return alert
     }
 
-    private func permissionEntries(for permissions: WebExtensionPermissionRequest) -> [String] {
-        var entries = [String]()
-        if let websiteEntry = websiteAccessEntry(for: permissions) {
-            entries.append(websiteEntry)
-        }
+}
 
-        let descriptions = Set((permissions.permissions.map(\.rawValue) + permissions.appPermissions.map(\.rawValue)).map { permissionDescription($0) })
-        entries.append(contentsOf: descriptions.sorted())
+// MARK: - Permission messages
 
-        return entries
+@available(macOS 15.4, *)
+private extension WebExtensionPermissionPrompt {
+
+    /// The lines the prompt lists for a request: website access first, then one message per permission group.
+    func permissionMessages(for request: WebExtensionPermissionRequest) -> [String] {
+        let siteMessages = [websiteAccessMessage(for: request)]
+            .compactMap { $0 }
+
+        let apiMessages = apiPermissionMessages(for: request)
+        let appMessages = appPermissionMessages(for: request)
+
+        return siteMessages + apiMessages + appMessages
     }
 
-    /// Groups website access like Chrome: all websites, up to three named hosts, or "a number of websites".
-    private func websiteAccessEntry(for permissions: WebExtensionPermissionRequest) -> String? {
-        if permissions.matchPatterns.contains(where: { $0.matchesAllHosts || $0.matchesAllURLs }) {
+    /// Website access as one line: all websites, up to three named hosts, or "a number of websites".
+    private func websiteAccessMessage(for request: WebExtensionPermissionRequest) -> String? {
+        if request.hasAllWebsitesAccess {
             return UserText.webExtensionAllWebsitesAccess
         }
 
-        let hosts = Set(permissions.matchPatterns.compactMap(\.host) + permissions.urls.compactMap(\.host)).sorted()
+        let hosts = Set(request.matchPatterns.compactMap(\.host) + request.urls.compactMap(\.host)).sorted()
         switch hosts.count {
         case 0:
             return nil
@@ -152,18 +158,43 @@ final class WebExtensionPermissionPrompt: WebExtensionPermissionPrompting {
         }
     }
 
-    private func permissionDescription(_ permission: String) -> String {
-        switch permission {
-        case "tabs", "webNavigation", "history": return UserText.webExtensionHistoryPermission
-        case "activeTab": return UserText.webExtensionActiveTabPermission
-        case "clipboardRead", "clipboardWrite": return UserText.webExtensionClipboardPermission
-        case "cookies": return UserText.webExtensionCookiesPermission
-        case "downloads": return UserText.webExtensionDownloadsPermission
-        case "storage", "unlimitedStorage": return UserText.webExtensionStoragePermission
-        case "nativeMessaging": return UserText.webExtensionNativeMessagingPermission
-        case "privacy": return UserText.webExtensionPrivacyPermission
-        default: return String(format: UserText.webExtensionOtherPermission, permission)
-        }
+    /// One message per permission group, in `permissionsByMessage` order. Permissions without a message aren't listed.
+    private func apiPermissionMessages(for request: WebExtensionPermissionRequest) -> [String] {
+        let permissions = request.permissionsBeyondWebsiteAccess
+
+        return permissionsByMessage
+            .filter {
+                $0.value.isDisjoint(with: permissions) == false
+            }
+            .map(\.key)
     }
 
+    private func appPermissionMessages(for request: WebExtensionPermissionRequest) -> [String] {
+        request.appPermissions.contains(.privacy) ? [UserText.webExtensionPrivacyPermission] : []
+    }
+
+    private var permissionsByMessage: KeyValuePairs<String, Set<WKWebExtension.Permission>> {
+        [
+            UserText.webExtensionHistoryPermission: [.tabs, .webNavigation, .declarativeNetRequestFeedback],
+            UserText.webExtensionDeclarativeNetRequestPermission: [.declarativeNetRequest],
+            UserText.webExtensionClipboardPermission: [.clipboardWrite],
+            UserText.webExtensionNativeMessagingPermission: [.nativeMessaging]
+        ]
+    }
+
+}
+
+@available(macOS 15.4, *)
+private extension WebExtensionPermissionRequest {
+
+    var hasAllWebsitesAccess: Bool {
+        matchPatterns.contains { $0.matchesAllHosts || $0.matchesAllURLs }
+    }
+
+    /// Access to all websites already implies some permissions, so they aren't listed beside it.
+    var permissionsBeyondWebsiteAccess: Set<WKWebExtension.Permission> {
+        hasAllWebsitesAccess
+            ? permissions.subtracting([.tabs, .webNavigation, .declarativeNetRequest, .declarativeNetRequestFeedback])
+            : permissions
+    }
 }

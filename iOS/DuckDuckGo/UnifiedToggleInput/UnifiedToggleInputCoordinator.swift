@@ -2540,6 +2540,10 @@ extension UnifiedToggleInputCoordinator: UnifiedToggleInputViewControllerDelegat
         pixelReporter.reportReasoningPickerShown()
     }
 
+    func unifiedToggleInputVCDidShowAttachMenu(_ vc: UnifiedToggleInputViewController) {
+        pixelReporter.reportAttachMenuShown()
+    }
+
     func unifiedToggleInputVCDidClearSelectedTool(_ vc: UnifiedToggleInputViewController) {
         let previousTool = toolsController.selectedTool
         clearSelectedTool()

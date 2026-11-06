@@ -1002,12 +1002,14 @@ final class ContentBlockingUpdatingTests: XCTestCase {
         let mediaCaptureUserScript = MediaCaptureUserScript()
         let capability = try XCTUnwrap(mediaCaptureUserScript.featureSettings["capability"] as? String)
 
-        let tabScripts = UserScripts(with: sourceProvider, mediaCaptureUserScript: mediaCaptureUserScript)
+        let tabScripts = UserScripts(with: sourceProvider,
+                                     mediaCaptureUserScript: mediaCaptureUserScript,
+                                     sponsorBlockPreferences: sponsorBlockPreferences)
         XCTAssertTrue(tabScripts.contentScopeUserScript.source.contains(capability))
         XCTAssertTrue(tabScripts.contentScopeUserScript.allowedNonisolatedFeatures.contains(MediaCaptureUserScript.featureNameValue))
         XCTAssertTrue(mediaCaptureUserScript.broker === tabScripts.contentScopeUserScript.broker)
 
-        let nonTabScripts = UserScripts(with: sourceProvider)
+        let nonTabScripts = UserScripts(with: sourceProvider, sponsorBlockPreferences: sponsorBlockPreferences)
         XCTAssertFalse(nonTabScripts.contentScopeUserScript.source.contains(capability))
     }
 

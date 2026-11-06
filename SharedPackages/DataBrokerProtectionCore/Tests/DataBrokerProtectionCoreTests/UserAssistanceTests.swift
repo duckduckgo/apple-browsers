@@ -95,23 +95,6 @@ final class UserAssistanceTests: XCTestCase {
         XCTAssertEqual(DataBrokerProtectionFeature.actionID(inCompletedParams: try JSONSerialization.jsonObject(with: Data(json.utf8))), "2")
     }
 
-    func testBundledBeenVerifiedUsesUserAssist() throws {
-        let file = URL(fileURLWithPath: #filePath)
-            .deletingLastPathComponent().deletingLastPathComponent().deletingLastPathComponent()
-            .appendingPathComponent("Sources/DataBrokerProtectionCore/BundleResources/JSON/beenverified.com.json")
-        let decoder = JSONDecoder()
-        decoder.dateDecodingStrategy = .millisecondsSince1970
-        let broker = try decoder.decode(DataBroker.self, from: Data(contentsOf: file))
-
-        do {
-            let actions = try XCTUnwrap(broker.optOutStep()?.actions)
-            XCTAssertEqual(actions.filter { $0 is UserAssistAction }.count, 3)
-            XCTAssertFalse(actions.contains { $0 is GetCaptchaInfoAction || $0 is SolveCaptchaAction })
-            XCTAssertEqual(AssistedOptOutSteps(actions: actions).titles,
-                           ["Entering your name", "Searching for your record", "Selecting your record", "Prove you’re human", "Review and submit"])
-        }
-    }
-
     // MARK: - Steps
 
     func testStepTitlesAreDistinctLabelsInOrderIncludingConditions() throws {

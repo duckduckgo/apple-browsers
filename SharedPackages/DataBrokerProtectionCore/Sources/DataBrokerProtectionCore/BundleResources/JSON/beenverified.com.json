@@ -1,7 +1,7 @@
 {
   "name": "BeenVerified",
   "url": "beenverified.com",
-  "version": "0.12.0",
+  "version": "0.11.0",
   "optOutUrl": "https://www.beenverified.com/svc/optout/search/optouts",
   "mirrorSites": [
     {
@@ -114,7 +114,7 @@
             },
             {
               "type": "state",
-              "selector": "//*[@name='state']"
+              "selector": "//input[@name='state']"
             }
           ],
           "id": "444a01d9-630f-42e4-a8b8-4c87ddab91e3"
@@ -146,7 +146,7 @@
           "expectations": [
             {
               "type": "element",
-              "selector": "//*[@id='comprehensive-form'] | //*[contains(@class, 'results-main')]"
+              "selector": "//*[@id='comprehensive-form'] | //*[@id='result-filter']"
             }
           ],
           "id": "ba896158-77d6-4769-b373-2b5226c6d870"
@@ -162,12 +162,6 @@
             }
           ],
           "actions": [
-            {
-              "_comment": "fillForm can't pick a fixed option. The form requires an answer to 'Do you have an account with us?'.",
-              "actionType": "executeScript",
-              "script": "var el = root.querySelector('#account_type_select'); if (!el) throw new Error('account_type_select not found'); Object.getOwnPropertyDescriptor(HTMLSelectElement.prototype, 'value').set.call(el, 'guest'); el.dispatchEvent(new Event('input', { bubbles: true })); el.dispatchEvent(new Event('change', { bubbles: true }));",
-              "id": "5e0c2a7b-9d41-4f86-b3e2-1a6c8d9f0e35"
-            },
             {
               "actionType": "fillForm",
               "selector": "#comprehensive-form",
@@ -197,27 +191,13 @@
               "id": "37326759-daef-46e8-9aad-95a3ce26b2c2"
             },
             {
-              "_comment": "Scans have no extracted profile, so the required email comes from generateEmail.",
-              "actionType": "generateEmail",
-              "id": "3a7e9c15-48b2-4d6f-a0c3-9e2b5f71d864"
-            },
-            {
               "actionType": "fillForm",
-              "dataSource": "fetchedEmail",
               "selector": "#comprehensive-form",
               "elements": [
                 {
                   "type": "email",
                   "selector": "#requestor_email"
-                }
-              ],
-              "id": "84550c23-55d6-4bd4-9e3f-f588d5635a41"
-            },
-            {
-              "actionType": "fillForm",
-              "dataSource": "userProfile",
-              "selector": "#comprehensive-form",
-              "elements": [
+                },
                 {
                   "type": "$generated_street_address$",
                   "selector": "#street"
@@ -227,7 +207,7 @@
                   "selector": "#zip"
                 }
               ],
-              "id": "c81f4e2d-6a9b-4357-8d0e-2b4f7a1c9e53"
+              "id": "84550c23-55d6-4bd4-9e3f-f588d5635a41"
             },
             {
               "_comment": "Turnstile auto-completes. Wait for the hidden token before submitting.",
@@ -259,38 +239,26 @@
           "expectations": [
             {
               "type": "element",
-              "selector": "//*[contains(@class, 'results-main')]"
+              "selector": "#result-filter"
             }
           ],
           "id": "e773731e-f9c7-40d6-b996-21c1e6ac617a"
         },
         {
           "actionType": "extract",
-          "selector": "//form[contains(@class, 'person-result-card')]",
+          "selector": ".MuiGrid-root.MuiGrid-container.MuiGrid-spacing-xs-2 > div:nth-child(2) > .MuiPaper-root.MuiPaper-elevation.MuiPaper-rounded.MuiPaper-elevation1.MuiCard-root",
           "noResultsSelector": "img[alt='Search Logo']",
           "profile": {
             "name": {
-              "selector": ".//h2[contains(@class, 'result-card-name')]",
-              "beforeText": ","
+              "selector": "h2",
+              "beforeText": ", "
             },
             "age": {
-              "selector": ".//h2[contains(@class, 'result-card-name')]",
-              "afterText": ","
-            },
-            "alternativeNamesList": {
-              "selector": ".//span[@class='result-entry-label' and normalize-space()='Aliases']/following-sibling::span",
-              "separator": ","
+              "selector": "h2",
+              "afterText": ", "
             },
             "addressCityState": {
-              "selector": ".//p[contains(@class, 'result-card-location')]"
-            },
-            "addressCityStateList": {
-              "selector": ".//span[@class='result-entry-label' and normalize-space()='Locations']/following-sibling::span",
-              "separator": "•"
-            },
-            "relativesList": {
-              "selector": ".//span[@class='result-entry-label' and normalize-space()='Relatives']/following-sibling::span",
-              "separator": ","
+              "selector": ".MuiGrid-item.MuiGrid-grid-xs-12 > p.MuiTypography-body1"
             },
             "profileUrl": {
               "identifierType": "hash"
@@ -306,13 +274,11 @@
       "actions": [
         {
           "actionType": "navigate",
-          "step": "Entering your name",
           "url": "https://www.beenverified.com/svc/optout/search/optouts",
           "id": "86a38770-0484-4066-9a79-9c2edcc506ab"
         },
         {
           "actionType": "expectation",
-          "step": "Entering your name",
           "expectations": [
             {
               "type": "element",
@@ -323,7 +289,6 @@
         },
         {
           "actionType": "fillForm",
-          "step": "Entering your name",
           "selector": "#optout-form",
           "dataSource": "userProfile",
           "elements": [
@@ -337,27 +302,25 @@
             },
             {
               "type": "state",
-              "selector": "//*[@name='state']"
+              "selector": "//input[@name='state']"
             }
           ],
           "id": "374a01d9-630f-42e4-a8b8-4c87ddab91e3"
         },
         {
-          "actionType": "userAssist",
-          "step": "Searching for your record",
-          "handOffAfterMs": 10000,
-          "highlight": "#captcha-widget",
-          "completeWhen": [
-            {
-              "type": "element",
-              "selector": "//form[@id='optout-form']//input[@name='cf-turnstile-response' and @value != '']"
-            }
-          ],
-          "id": "ua-7e2b4c91-0d3a-4f6e-8b15-6a9c2d4e8f30"
+          "actionType": "getCaptchaInfo",
+          "captchaType": "cloudFlareTurnstile",
+          "selector": "#captcha-widget",
+          "id": "2b6892a3-bb39-4552-8e57-cb4493fd4d70"
+        },
+        {
+          "actionType": "solveCaptcha",
+          "captchaType": "cloudFlareTurnstile",
+          "selector": "#captcha-widget",
+          "id": "48a1bd9a-0d92-44f8-9de2-89f1b10056b1"
         },
         {
           "actionType": "click",
-          "step": "Searching for your record",
           "elements": [
             {
               "type": "button",
@@ -369,11 +332,10 @@
         {
           "_comment": "Wait for either form to appear before branching. The condition below runs once without retries.",
           "actionType": "expectation",
-          "step": "Searching for your record",
           "expectations": [
             {
               "type": "element",
-              "selector": "//*[@id='comprehensive-form'] | //*[contains(@class, 'results-main')]"
+              "selector": "//*[@id='comprehensive-form'] | //*[@id='result-filter']"
             }
           ],
           "id": "d275c4c7-cd31-44c3-93e4-f94ffbea600e"
@@ -381,7 +343,6 @@
         {
           "_comment": "Highly populated states show a different form.",
           "actionType": "condition",
-          "step": "Searching for your record",
           "expectations": [
             {
               "type": "element",
@@ -391,15 +352,7 @@
           ],
           "actions": [
             {
-              "_comment": "fillForm can't pick a fixed option. The form requires an answer to 'Do you have an account with us?'.",
-              "actionType": "executeScript",
-              "script": "var el = root.querySelector('#account_type_select'); if (!el) throw new Error('account_type_select not found'); Object.getOwnPropertyDescriptor(HTMLSelectElement.prototype, 'value').set.call(el, 'guest'); el.dispatchEvent(new Event('input', { bubbles: true })); el.dispatchEvent(new Event('change', { bubbles: true }));",
-              "id": "7b3f1d9e-2c84-4a5b-9e60-4d1f8a2c3b71",
-              "step": "Searching for your record"
-            },
-            {
               "actionType": "fillForm",
-              "step": "Searching for your record",
               "selector": "#comprehensive-form",
               "dataSource": "userProfile",
               "elements": [
@@ -428,7 +381,6 @@
             },
             {
               "actionType": "fillForm",
-              "step": "Searching for your record",
               "selector": "#comprehensive-form",
               "elements": [
                 {
@@ -447,21 +399,19 @@
               "id": "b2c34e54-f67a-4bc8-9d0e-1f2a3bc5d6e2"
             },
             {
-              "actionType": "userAssist",
-              "step": "Searching for your record",
-              "handOffAfterMs": 10000,
-              "highlight": "#comprehensive-form #captcha-widget",
-              "completeWhen": [
+              "_comment": "Turnstile auto-completes. Wait for the hidden token before submitting.",
+              "actionType": "expectation",
+              "expectations": [
                 {
                   "type": "element",
-                  "selector": "//*[@id='comprehensive-form']//input[@name='cf-turnstile-response' and @value != '']"
+                  "selector": "//input[@name='cf-turnstile-response' and @value and @value != '']",
+                  "parent": "//*[@id='comprehensive-form']"
                 }
               ],
-              "id": "ua-5c1f0e2a-3b7d-4c55-9a61-2f0d8e9b7c14"
+              "id": "e5d37b9a-d7ae-42aa-80a8-cafc5dd5defd"
             },
             {
               "actionType": "click",
-              "step": "Searching for your record",
               "elements": [
                 {
                   "type": "button",
@@ -476,47 +426,43 @@
         {
           "_comment": "Results page. Low-pop lands here directly, high-pop after the comprehensive form.",
           "actionType": "expectation",
-          "step": "Selecting your record",
           "expectations": [
             {
               "type": "element",
-              "selector": "//*[contains(@class, 'results-main')]"
+              "selector": "#result-filter"
             }
           ],
           "id": "088d8233-ce87-4a49-bfe2-38d386764f1b"
         },
         {
           "actionType": "click",
-          "step": "Selecting your record",
           "elements": [
             {
               "type": "button",
-              "selector": ".//button[contains(@class, 'optout-button')]",
+              "selector": "//button[contains(text(), 'Opt Out')]",
               "parent": {
                 "profileMatch": {
-                  "selector": "//form[contains(@class, 'person-result-card')]",
+                  "selector": "//div[contains(@class, 'MuiPaper-elevation') and .//button[contains(text(), 'Opt Out')]]",
                   "profile": {
                     "name": {
-                      "selector": ".//h2[contains(@class, 'result-card-name')]",
+                      "selector": ".//h2",
                       "beforeText": ","
                     },
+                    "alternativeNamesList": {
+                      "selector": ".//div[contains(., 'Aliases')]/following-sibling::div"
+                    },
                     "age": {
-                      "selector": ".//h2[contains(@class, 'result-card-name')]",
+                      "selector": ".//h2",
                       "afterText": ","
                     },
-                    "alternativeNamesList": {
-                      "selector": ".//span[@class='result-entry-label' and normalize-space()='Aliases']/following-sibling::span",
-                      "separator": ","
-                    },
                     "addressCityState": {
-                      "selector": ".//p[contains(@class, 'result-card-location')]"
+                      "selector": ".//div[h2]/following-sibling::div[p]"
                     },
                     "addressCityStateList": {
-                      "selector": ".//span[@class='result-entry-label' and normalize-space()='Locations']/following-sibling::span",
-                      "separator": "•"
+                      "selector": ".//div[contains(., 'Locations')]/following-sibling::div/p"
                     },
                     "relativesList": {
-                      "selector": ".//span[@class='result-entry-label' and normalize-space()='Relatives']/following-sibling::span",
+                      "selector": ".//div[contains(., 'Relatives')]/following-sibling::div/p",
                       "separator": ","
                     }
                   }
@@ -528,7 +474,6 @@
         },
         {
           "actionType": "expectation",
-          "step": "Selecting your record",
           "expectations": [
             {
               "type": "element",
@@ -538,20 +483,7 @@
           "id": "8afd175a-9c31-46c8-8a37-eab78c3c37e5"
         },
         {
-          "actionType": "userAssist",
-          "step": "Prove you’re human",
-          "highlight": "#captcha-widget",
-          "completeWhen": [
-            {
-              "type": "element",
-              "selector": "//iframe[@data-hcaptcha-response != '']"
-            }
-          ],
-          "id": "ua-3f9d6a28-81c4-4e0b-a7d2-5b6e9c1f4a07"
-        },
-        {
           "actionType": "click",
-          "step": "Review and submit",
           "elements": [
             {
               "type": "button",
@@ -561,20 +493,17 @@
           "id": "013eb5ef-b479-41a6-af92-da9056c00781"
         },
         {
-          "actionType": "userAssist",
-          "step": "Review and submit",
-          "highlight": "#additional-fields-form .additional-footer",
-          "completeWhen": [
+          "actionType": "click",
+          "elements": [
             {
-              "type": "element",
-              "selector": "//h1[contains(@class, 'comprehensive-confirm-title')]"
+              "type": "button",
+              "selector": "//button[contains(text(), 'Remove my Info')]"
             }
           ],
-          "id": "ua-c84e1b5d-2a6f-4d93-b0e7-9f3a1c5d2e68"
+          "id": "129eb5ff-b469-41a6-af92-da9056c00781"
         },
         {
           "actionType": "expectation",
-          "step": "Review and submit",
           "expectations": [
             {
               "type": "text",

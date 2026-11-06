@@ -129,7 +129,7 @@ extension AIChatMessageHandler {
     func getNativeConfigValues(isFireWindow: Bool) -> AIChatNativeConfigValues {
         let appVersion = AppVersion.shared.versionAndBuildNumber
         let defaults = AIChatNativeConfigValues.defaultValues
-        return AIChatNativeConfigValues(
+        var config = AIChatNativeConfigValues(
             isAIChatHandoffEnabled: true,
             supportsClosingAIChat: true,
             supportsOpeningSettings: true,
@@ -162,6 +162,9 @@ extension AIChatMessageHandler {
             supportsHomePageChatSuggestions: homepageAiChatsProvider?.isSupported == true,
             supportsCanonicalChatFormat: true
         )
+        // Dax, the desktop companion, keeps thinking until the answer is in.
+        config.supportsResponseStateReporting = featureFlagger.isFeatureOn(.aiChatDaxPet)
+        return config
     }
 
     private func getNativeHandoffData() -> Encodable? {

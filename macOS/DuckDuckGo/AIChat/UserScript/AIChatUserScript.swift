@@ -270,6 +270,8 @@ final class AIChatUserScript: NSObject, Subfeature {
             return handler.customizeResponsesModalClosed
         case .getAIChats:
             return handler.getAIChats
+        case .responseState:
+            return handler.getResponseState
         default:
             return nil
         }

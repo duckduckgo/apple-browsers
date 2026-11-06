@@ -195,6 +195,8 @@ extension Preferences {
                     }
 
                     PromptBarPreferencesView(preferences: model.promptBarPreferences)
+
+                    DaxPetPreferencesView(preferences: model.daxPetPreferences)
                 }
                                       .visibility(model.shouldShowAIFeatures ? .visible : .gone)
 

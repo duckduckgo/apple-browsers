@@ -57,6 +57,13 @@ final class AIChatUserScriptTests: XCTestCase {
         XCTAssertNil(result, "Expected result to be nil")
     }
 
+    @MainActor func testResponseStateIsHandled() async throws {
+        let handler = try XCTUnwrap(userScript.handler(forMethodNamed: AIChatUserScriptMessages.responseState.rawValue))
+        _ = try await handler(["status": "ready"], WKScriptMessage.mock())
+
+        XCTAssertTrue(mockHandler.didGetResponseState)
+    }
+
     @MainActor func testCloseAIChat() async throws {
         let handler = try XCTUnwrap(userScript.handler(forMethodNamed: AIChatUserScriptMessages.closeAIChat.rawValue))
         let result = try await handler([""], WKScriptMessage.mock())
@@ -539,6 +546,12 @@ final class MockAIChatUserScriptHandler: AIChatUserScriptHandling {
     }
 
     func voiceSessionEnded(params: Any, message: any UserScriptMessage) async -> (any Encodable)? {
+        return nil
+    }
+
+    var didGetResponseState = false
+    func getResponseState(params: Any, message: any UserScriptMessage) async -> (any Encodable)? {
+        didGetResponseState = true
         return nil
     }
 

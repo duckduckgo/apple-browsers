@@ -194,19 +194,37 @@ final class HoveredLinkTooltipPresenterTests: XCTestCase {
         }
     }
 
-    func testWhenTooltipIsFullyHiddenThenNextLinkAppearsAfterRevealDelay() {
+    func testWhenLinkArrivesRightAfterTooltipHidThenItAppearsInstantly() {
         let harness = TooltipHarness()
         harness.showFirstLink()
         harness.presenter.update(url: nil)
         harness.scheduler.run(at: 1)
         XCTAssertNil(harness.tooltip)
+        let animationCount = harness.animator.animations.count
+
+        let url = URL(string: "https://example.com/second")!
+        harness.presenter.update(url: url)
+
+        XCTAssertTrue(harness.tooltip?.isVisible == true, "No reveal delay within the grace period")
+        XCTAssertEqual(harness.tooltip?.alphaValue, 1)
+        XCTAssertEqual(harness.animator.animations.count, animationCount, "No fade-in within the grace period")
+        XCTAssertEqual(harness.label?.stringValue, url.absoluteString)
+    }
+
+    func testWhenGracePeriodAfterHideExpiredThenNextLinkAppearsAfterRevealDelay() {
+        let harness = TooltipHarness()
+        harness.showFirstLink()
+        harness.presenter.update(url: nil)
+        harness.scheduler.run(at: 1)
+        harness.scheduler.run(at: 2) // the grace period ends
+        XCTAssertNil(harness.tooltip)
 
         let url = URL(string: "https://example.com/second")!
         harness.presenter.update(url: url)
         XCTAssertNil(harness.tooltip, "A hidden tooltip must wait for the reveal delay")
-        XCTAssertEqual(harness.scheduler.actions.count, 3)
+        XCTAssertEqual(harness.scheduler.actions.count, 4)
 
-        harness.scheduler.run(at: 2)
+        harness.scheduler.run(at: 3)
         XCTAssertTrue(harness.tooltip?.isVisible == true)
         XCTAssertEqual(harness.label?.stringValue, url.absoluteString)
     }

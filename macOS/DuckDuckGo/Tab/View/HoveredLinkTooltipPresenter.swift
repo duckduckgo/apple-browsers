@@ -36,6 +36,8 @@ final class HoveredLinkTooltipPresenter {
     private var hasShownTooltip = false
     private var isFadingOut = false
     private var shouldRestoreOnNextMove = false
+    private var isInstantShowAllowed = false
+    private var instantShowWorkItem: DispatchWorkItem?
     private var visibilityUpdateID = UUID()
     private var positionUpdateID = UUID()
     private var workItem: DispatchWorkItem?
@@ -109,6 +111,7 @@ final class HoveredLinkTooltipPresenter {
     deinit {
         workItem?.cancel()
         positionWorkItem?.cancel()
+        instantShowWorkItem?.cancel()
         windowObservers.forEach(NotificationCenter.default.removeObserver)
         let window = window
         DispatchQueue.main.async {
@@ -137,8 +140,10 @@ final class HoveredLinkTooltipPresenter {
         label.stringValue = url.absoluteString
         if window.isVisible {
             updatePosition()
+        } else if isInstantShowAllowed {
+            // Right after the tooltip faded out, the next link appears at once, without the reveal delay or fade-in.
+            show(animated: false)
         } else {
-            // A tooltip that is still fading out stays visible above; once hidden, the reveal delay applies again.
             scheduleVisibilityUpdate(after: 0.5) { $0.show() }
         }
     }
@@ -152,6 +157,9 @@ final class HoveredLinkTooltipPresenter {
 
     func reset() {
         cancelPendingUpdates()
+        isInstantShowAllowed = false
+        instantShowWorkItem?.cancel()
+        instantShowWorkItem = nil
         hoveredURL = nil
         hasShownTooltip = false
         hide()
@@ -179,6 +187,16 @@ final class HoveredLinkTooltipPresenter {
         animate(window, 0, 0.1) { [weak self] in
             guard let self, self.visibilityUpdateID == updateID else { return }
             self.hide()
+            self.allowInstantShow()
+        }
+    }
+
+    private func allowInstantShow() {
+        isInstantShowAllowed = true
+        instantShowWorkItem?.cancel()
+        instantShowWorkItem = schedule(0.5) { [weak self] in
+            self?.isInstantShowAllowed = false
+            self?.instantShowWorkItem = nil
         }
     }
 
@@ -239,16 +257,18 @@ final class HoveredLinkTooltipPresenter {
         hide()
     }
 
-    private func show() {
+    private func show(animated: Bool = true) {
         guard let hoveredURL, isMouseInside else { return }
         hide()
         guard let hostView, let parent = hostView.window, parent.isKeyWindow, parent.isVisible else { return }
         label.stringValue = hoveredURL.absoluteString
         layout()
-        window.alphaValue = 0
+        window.alphaValue = animated ? 0 : 1
         parent.addChildWindow(window, ordered: .above)
         window.orderFront(nil)
-        animate(window, 1, NSWorkspace.shared.accessibilityDisplayShouldReduceMotion ? 0 : 0.25) {}
+        if animated {
+            animate(window, 1, NSWorkspace.shared.accessibilityDisplayShouldReduceMotion ? 0 : 0.25) {}
+        }
         hasShownTooltip = true
         appearanceObservation = hostView.observe(\.effectiveAppearance, options: [.new]) { [weak self] hostView, _ in
             self?.window.appearance = hostView.effectiveAppearance

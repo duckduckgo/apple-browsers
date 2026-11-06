@@ -124,12 +124,13 @@ final class WebExtensionPermissionPrompt: WebExtensionPermissionPrompting {
     }
 
     private func permissionEntries(for permissions: WebExtensionPermissionRequest) -> [String] {
-        let descriptions = Set((permissions.permissions.map(\.rawValue) + permissions.appPermissions.map(\.rawValue)).map { permissionDescription($0) })
-        var entries = descriptions.sorted()
-
+        var entries = [String]()
         if let websiteEntry = websiteAccessEntry(for: permissions) {
             entries.append(websiteEntry)
         }
+
+        let descriptions = Set((permissions.permissions.map(\.rawValue) + permissions.appPermissions.map(\.rawValue)).map { permissionDescription($0) })
+        entries.append(contentsOf: descriptions.sorted())
 
         return entries
     }

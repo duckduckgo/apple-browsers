@@ -48,6 +48,10 @@ public final class DataBrokerProtectionWebViewHandler: NSObject, WebViewHandler 
 
     private var webView: WebView?
     var webViewForTesting: WKWebView? { webView }
+    public var currentWebView: WKWebView? { webView }
+
+    /// The userAssist in flight. A navigation drops it from the page, so it's sent again once the new page loads.
+    private var pendingUserAssist: (action: Action, stepType: StepType?, data: CCFRequestData)?
 
 #if os(macOS)
     private var urlObservation: NSKeyValueObservation?
@@ -73,7 +77,8 @@ public final class DataBrokerProtectionWebViewHandler: NSObject, WebViewHandler 
                 contentBlocking: DBPWebViewContentBlocking? = nil,
                 pixelHandler: EventMapping<DataBrokerProtectionSharedPixels>? = nil,
                 actionLogContext: PIRActionLogContext? = nil,
-                challengeEventHandler: ((String) -> Void)? = nil) throws {
+                challengeEventHandler: ((String) -> Void)? = nil,
+                visualizeActions: Bool = false) throws {
         self.isFakeBroker = isFakeBroker
         self.executionConfig = executionConfig
         self.customUserAgent = customUserAgent
@@ -94,7 +99,8 @@ public final class DataBrokerProtectionWebViewHandler: NSObject, WebViewHandler 
                                                        delegate: delegate,
                                                        executionConfig: executionConfig,
                                                        shouldContinueActionHandler: shouldContinueActionHandler,
-                                                       contentBlocking: contentBlocking)
+                                                       contentBlocking: contentBlocking,
+                                                       visualizeActions: visualizeActions)
         configuration.preferences.setValue(true, forKey: "developerExtrasEnabled")
         configuration.websiteDataStore = WKWebsiteDataStore.nonPersistent()
 
@@ -104,6 +110,9 @@ public final class DataBrokerProtectionWebViewHandler: NSObject, WebViewHandler 
         assert(userContentController != nil)
         self.userContentController = userContentController
         super.init()
+        userContentController?.dataBrokerUserScripts?.dataBrokerFeature.onActionResponse = { [weak self] in
+            self?.pendingUserAssist = nil
+        }
 #if os(macOS)
         challengeSolver.onFailure = { [weak self] error in
             self?.resumeActiveContinuation(with: .failure(error))
@@ -195,6 +204,7 @@ public final class DataBrokerProtectionWebViewHandler: NSObject, WebViewHandler 
 
     public func finish() {
         Logger.action.log("WebViewHandler finished")
+        pendingUserAssist = nil
         webView?.stopLoading()
         userContentController?.cleanUpBeforeClosing()
         WKWebsiteDataStore.default().removeData(ofTypes: [WKWebsiteDataTypeDiskCache, WKWebsiteDataTypeMemoryCache], modifiedSince: Date(timeIntervalSince1970: 0)) {
@@ -244,6 +254,7 @@ public final class DataBrokerProtectionWebViewHandler: NSObject, WebViewHandler 
 
     public func execute(action: Action, ofType stepType: StepType?, data: CCFRequestData) {
         Logger.action.log("Executing action: \(String(describing: action.actionType.rawValue), privacy: .public)")
+        pendingUserAssist = action is UserAssistAction ? (action, stepType, data) : nil
 
         userContentController?.dataBrokerUserScripts?.dataBrokerFeature.pushAction(
             method: .onActionReceived,
@@ -479,6 +490,12 @@ extension DataBrokerProtectionWebViewHandler: WKNavigationDelegate {
             return
         }
 #endif
+
+        if activeContinuation == nil, let pendingUserAssist {
+            Logger.action.log("Re-sending userAssist after navigation")
+            execute(action: pendingUserAssist.action, ofType: pendingUserAssist.stepType, data: pendingUserAssist.data)
+            return
+        }
 
         resumeActiveContinuation(with: .success(()))
     }

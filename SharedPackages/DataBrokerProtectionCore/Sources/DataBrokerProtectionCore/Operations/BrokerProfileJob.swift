@@ -266,10 +266,12 @@ public class BrokerProfileJob: Operation, @unchecked Sendable {
 
     private func makeFilteredAndSortedJobData(_ brokerProfileQueriesData: [BrokerProfileQueryData], isFreeScan: Bool) -> [BrokerJobData] {
         var didFireFreemiumMaintenanceScanSkippedPixel = false
+        let userAssistance = jobDependencies.userAssistanceConfig
         return Self.sortedEligibleJobs(brokerProfileQueriesData: brokerProfileQueriesData,
                                        jobType: jobType,
                                        priorityDate: priorityDate,
                                        sortPredicate: jobDependencies.jobSortPredicate)
+            .excludingOptOutsLeftToUserAssistance(userAssistance, brokerProfileQueriesData: brokerProfileQueriesData)
             .filter { jobData in
                 guard isFreeScan, let scanJobData = jobData as? ScanJobData else {
                     return true
@@ -323,6 +325,20 @@ private extension Array where Element == BrokerJobData {
             }
 
             return preferredRunDate <= priorityDate
+        }
+    }
+
+    /// Opt-outs for brokers enabled for user assistance only run from the assisted queue, and an opt-out with an assisted
+    /// attempt still running is left to it even after its broker stops being enabled, until that attempt has ended.
+    func excludingOptOutsLeftToUserAssistance(_ config: UserAssistanceConfig,
+                                              brokerProfileQueriesData: [BrokerProfileQueryData],
+                                              runningAttempts: RunningAssistedOptOuts = .shared) -> [BrokerJobData] {
+        filter { jobData in
+            guard let optOut = jobData as? OptOutJobData else { return true }
+            if let id = AssistedOptOutQueue.id(for: optOut), runningAttempts.contains(id) { return false }
+            guard config.isEnabled,
+                  let url = brokerProfileQueriesData.first(where: { $0.dataBroker.id == jobData.brokerId })?.dataBroker.url else { return true }
+            return !config.isEnabled(forBrokerURL: url)
         }
     }
 

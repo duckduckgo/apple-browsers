@@ -34,6 +34,7 @@ public final class DataBrokerProtectionSettings {
         static let serviceRootKey = "dbp.serviceRoot"
         static let lastBrokerJSONUpdateCheckTimestampKey = "dbp.lastBrokerJSONUpdateCheckTimestamp"
         static let preferredRunDateMigrationKey = "dbp.preferredRunDateMigration"
+        static let userAssistanceEnabledBrokersOverride = "dbp.userAssistance.enabledBrokersOverride"
     }
 
     public enum SelectedEnvironment: String, Codable {

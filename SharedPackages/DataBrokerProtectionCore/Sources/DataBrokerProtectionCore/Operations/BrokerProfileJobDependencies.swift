@@ -145,3 +145,26 @@ public struct BrokerProfileJobDependencies: BrokerProfileJobDependencyProviding 
         await isAuthenticatedUserProvider()
     }
 }
+
+public extension BrokerProfileJobDependencyProviding {
+    func createAssistedOptOutRunner(profileQuery: SubJobContextProviding,
+                                    stageDurationCalculator: StageDurationCalculator,
+                                    observer: OptOutAssistanceObserving,
+                                    shouldRunNextStep: @escaping () -> Bool) -> BrokerProfileOptOutSubJobWebRunning {
+        BrokerProfileOptOutSubJobWebRunner(
+            privacyConfig: privacyConfig,
+            prefs: contentScopeProperties,
+            context: profileQuery,
+            emailConfirmationDataService: emailConfirmationDataService,
+            captchaService: captchaService,
+            featureFlagger: featureFlagger,
+            stageCalculator: stageDurationCalculator,
+            pixelHandler: pixelHandler,
+            executionConfig: executionConfig,
+            actionsHandlerMode: .optOut,
+            contentBlocking: contentBlocking,
+            assistanceObserver: observer,
+            shouldRunNextStep: shouldRunNextStep
+        )
+    }
+}

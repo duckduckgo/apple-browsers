@@ -257,8 +257,10 @@ public final class PrivacyConfigurationMock: PrivacyConfiguration {
         [String: Any]()
     }
 
+    public var subfeatureSettings: ((any PrivacySubfeature) -> String?)?
+
     public func settings(for subfeature: any PrivacySubfeature) -> PrivacyConfigurationData.PrivacyFeature.SubfeatureSettings? {
-        return nil
+        return subfeatureSettings?(subfeature)
     }
 
     public func allSubfeatureSettings(for feature: PrivacyFeature) -> [SubfeatureID: PrivacyConfigurationData.PrivacyFeature.SubfeatureSettings] {
@@ -2214,6 +2216,7 @@ public final class MockDBPFeatureFlagger: DBPFeatureFlagging, FreemiumPIRFeature
     public let isFreemiumPIREnabled: Bool
     public let isExtractedProfileRefreshOn: Bool
     public let isChallengeSolverOn: Bool
+    public let isUserAssistanceOn: Bool
 
     public init(isForegroundRunningOnAppActiveFeatureOn: Bool = true,
                 isContinuedProcessingFeatureOn: Bool = true,
@@ -2221,7 +2224,8 @@ public final class MockDBPFeatureFlagger: DBPFeatureFlagging, FreemiumPIRFeature
                 isOptOutRetryErrorFrequencyExperimentOn: Bool = false,
                 isFreemiumPIREnabled: Bool = false,
                 isExtractedProfileRefreshOn: Bool = true,
-                isChallengeSolverOn: Bool = false) {
+                isChallengeSolverOn: Bool = false,
+                isUserAssistanceOn: Bool = true) {
         self.isForegroundRunningOnAppActiveFeatureOn = isForegroundRunningOnAppActiveFeatureOn
         self.isContinuedProcessingFeatureOn = isContinuedProcessingFeatureOn
         self.isCustomWebViewUserAgentOn = isCustomWebViewUserAgentOn
@@ -2229,6 +2233,7 @@ public final class MockDBPFeatureFlagger: DBPFeatureFlagging, FreemiumPIRFeature
         self.isFreemiumPIREnabled = isFreemiumPIREnabled
         self.isExtractedProfileRefreshOn = isExtractedProfileRefreshOn
         self.isChallengeSolverOn = isChallengeSolverOn
+        self.isUserAssistanceOn = isUserAssistanceOn
     }
 }
 

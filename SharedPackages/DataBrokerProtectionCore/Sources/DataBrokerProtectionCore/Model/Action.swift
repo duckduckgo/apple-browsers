@@ -31,6 +31,7 @@ public enum ActionType: String, Codable, Sendable {
     case getCaptchaInfo
     case solveCaptcha
     case condition
+    case userAssist
 }
 
 public protocol Action: Codable, Sendable {
@@ -44,4 +45,10 @@ public protocol Action: Codable, Sendable {
 extension Action {
     public var needsEmail: Bool { false }
     public var json: Data? { nil }
+
+    /// The user-facing step this action belongs to, from the broker JSON's optional `step` label.
+    public var step: String? {
+        guard let json, let object = try? JSONSerialization.jsonObject(with: json) as? [String: Any] else { return nil }
+        return object["step"] as? String
+    }
 }

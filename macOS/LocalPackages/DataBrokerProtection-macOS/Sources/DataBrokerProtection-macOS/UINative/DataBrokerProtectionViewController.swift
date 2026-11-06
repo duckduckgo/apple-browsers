@@ -102,6 +102,7 @@ final public class DataBrokerProtectionViewController: NSViewController {
         webView?.uiDelegate = self
         webView?.navigationDelegate = self
         view = webView!
+        webUIViewModel.startAssistedOptOutsPolling(in: webView!)
 
         addLoadingIndicator()
 

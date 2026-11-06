@@ -45,6 +45,8 @@ public final class DBPUIViewModel {
     private let pixelHandler: EventMapping<DataBrokerProtectionSharedPixels>
     @MainActor private var freeScanEntryPoint: String?
     @MainActor private var lastHandshakeFreeScanEntryPoint: String?
+    @MainActor private var assistedOptOutsPolling: Task<Void, Never>?
+    @MainActor private var lastAssistedOptOuts: AssistedOptOutList?
 
     public init(dataManager: DataBrokerProtectionDataManaging?,
                 agentInterface: DataBrokerProtectionAppToAgentInterface,
@@ -134,5 +136,42 @@ extension DBPUIViewModel: DBPUIScanOps {
 
     func getBackgroundAgentMetadata() async -> DBPBackgroundAgentMetadata? {
         return await agentInterface.getDebugMetadata()
+    }
+}
+
+extension DBPUIViewModel: DBPUIAssistedOptOutsDelegate {
+    private static let assistedOptOutsPollInterval: UInt64 = 2_000_000_000
+
+    public var isUserAssistanceEnabled: Bool {
+        guard let privacyConfig else { return false }
+        return UserAssistanceConfig.current(isFeatureOn: DBPFeatureFlagger(privacyConfigurationManager: privacyConfig).isUserAssistanceOn,
+                                            privacyConfig: privacyConfig.privacyConfig,
+                                            settings: DataBrokerProtectionSettings(defaults: .dbp)).isEnabled
+    }
+
+    public func getAssistedOptOuts() async -> AssistedOptOutList {
+        let list = await agentInterface.getAssistedOptOuts(droppingSubmitted: true)
+        await MainActor.run { lastAssistedOptOuts = list }
+        return list
+    }
+
+    public func startAssistedOptOut(id: String) async {
+        agentInterface.startAssistedOptOut(id: id)
+    }
+
+    /// The agent can't message the app, so while the dashboard is visible poll it and push the list when it changes.
+    @MainActor func startAssistedOptOutsPolling(in webView: WKWebView) {
+        assistedOptOutsPolling?.cancel()
+        assistedOptOutsPolling = Task { @MainActor [weak self, weak webView] in
+            while !Task.isCancelled {
+                try? await Task.sleep(nanoseconds: Self.assistedOptOutsPollInterval)
+                guard let self, let webView else { return }
+                guard self.isUserAssistanceEnabled, webView.window?.occlusionState.contains(.visible) == true else { continue }
+                let list = await self.agentInterface.getAssistedOptOuts(droppingSubmitted: false)
+                guard list != self.lastAssistedOptOuts else { continue }
+                self.lastAssistedOptOuts = list
+                self.communicationLayer?.sendAssistedOptOutsDidChange(list, into: webView)
+            }
+        }
     }
 }

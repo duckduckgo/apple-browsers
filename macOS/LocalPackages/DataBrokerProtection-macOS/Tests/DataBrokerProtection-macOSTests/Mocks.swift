@@ -239,6 +239,14 @@ final class MockIPCServer: DataBrokerProtectionIPCServer {
             await serverDelegate?.runEmailConfirmationOperations(showWebView: showWebView)
         }
     }
+
+    func getAssistedOptOuts(droppingSubmitted: Bool, completion: @escaping (Data?) -> Void) {
+        completion(nil)
+    }
+
+    func startAssistedOptOut(id: String) {
+        serverDelegate?.startAssistedOptOut(id: id)
+    }
 }
 
 final class MockAgentStopper: DataBrokerProtectionAgentStopper {

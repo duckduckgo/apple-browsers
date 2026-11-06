@@ -6,8 +6,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/duckduckgo/content-scope-scripts.git",
       "state" : {
-        "revision" : "22bfc22f43a4e13cad055bcad96d6f024092db07",
-        "version" : "16.13.0"
+        "branch" : "pr-releases/randerson/pir-user-assist-affordances",
+        "revision" : "c74fdf956e6e2b230eff7cd28a20f7412243ccd8"
       }
     },
     {

@@ -220,6 +220,7 @@ public struct DataBrokerProtectionDebugReadService {
         case .matchesFound: return "matchesFound"
         case .error: return "error"
         case .optOutStarted: return "optOutStarted"
+        case .optOutAwaitingUserAssistance: return "optOutAwaitingUserAssistance"
         case .optOutRequested: return "optOutRequested"
         case .optOutSubmittedAndAwaitingEmailConfirmation: return "optOutSubmittedAndAwaitingEmailConfirmation"
         case .optOutConfirmed: return "optOutConfirmed"

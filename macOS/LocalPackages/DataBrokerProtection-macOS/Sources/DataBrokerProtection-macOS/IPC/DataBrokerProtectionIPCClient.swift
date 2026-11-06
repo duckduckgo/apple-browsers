@@ -19,6 +19,7 @@
 import Combine
 import Common
 import ConcurrencyExtensions
+import DataBrokerProtectionCore
 import Foundation
 import FoundationExtensions
 import os.log
@@ -197,6 +198,26 @@ extension DataBrokerProtectionIPCClient: IPCServerInterface {
     public func stopDebugServer() {
         xpc.execute(call: { server in
             server.stopDebugServer()
+        }, xpcReplyErrorHandler: { error in
+            Logger.dataBrokerProtection.error("Error \(error.localizedDescription)")
+        })
+    }
+
+    public func getAssistedOptOuts(droppingSubmitted: Bool) async -> AssistedOptOutList {
+        let data: Data? = await withCheckedContinuation { continuation in
+            xpc.execute(call: { server in
+                server.getAssistedOptOuts(droppingSubmitted: droppingSubmitted) { continuation.resume(returning: $0) }
+            }, xpcReplyErrorHandler: { error in
+                Logger.dataBrokerProtection.error("Error \(error.localizedDescription)")
+                continuation.resume(returning: nil)
+            })
+        }
+        return data.flatMap { try? JSONDecoder().decode(AssistedOptOutList.self, from: $0) } ?? AssistedOptOutList(optOuts: [])
+    }
+
+    public func startAssistedOptOut(id: String) {
+        xpc.execute(call: { server in
+            server.startAssistedOptOut(id: id)
         }, xpcReplyErrorHandler: { error in
             Logger.dataBrokerProtection.error("Error \(error.localizedDescription)")
         })

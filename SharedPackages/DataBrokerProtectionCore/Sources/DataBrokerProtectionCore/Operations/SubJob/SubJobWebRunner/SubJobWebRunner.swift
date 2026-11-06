@@ -63,6 +63,9 @@ public protocol SubJobWebRunning: CCFCommunicationDelegate {
     /// downstream actions can reference keys by name.
     var emailData: ExtractedEmailData { get set }
 
+    /// Set for assisted opt-outs: shows the page to the user and visualizes actions.
+    var assistanceObserver: OptOutAssistanceObserving? { get }
+
     func run(inputValue: InputValue,
              webViewHandler: WebViewHandler?,
              actionsHandler: ActionsHandler?,
@@ -83,6 +86,8 @@ public protocol SubJobWebRunning: CCFCommunicationDelegate {
 }
 
 public extension SubJobWebRunning {
+
+    var assistanceObserver: OptOutAssistanceObserving? { nil }
 
     // MARK: - Cancellation
 
@@ -115,6 +120,9 @@ public extension SubJobWebRunning {
     // swiftlint:disable:next cyclomatic_complexity
     func runNextAction(_ action: Action) async {
         let stepType = actionsHandler?.stepType
+        if let assistanceObserver {
+            await assistanceObserver.attemptWillRun(action)
+        }
 
         stageCalculator.setLastAction(action)
 
@@ -404,10 +412,14 @@ public extension SubJobWebRunning {
                                                                                actionLogContext: loggerContext(),
                                                                                challengeEventHandler: { message in
                                                                                    debugEventReporter?.recordDebugEvent(kind: .challenge, actionType: nil, details: message)
-                                                                               })
+                                                                               },
+                                                                               visualizeActions: assistanceObserver != nil)
         }
 
-        await webViewHandler?.initializeWebView(showWebView: showWebView)
+        await webViewHandler?.initializeWebView(showWebView: showWebView && assistanceObserver == nil)
+        if let assistanceObserver, let webView = await (webViewHandler as? DataBrokerProtectionWebViewHandler)?.currentWebView {
+            await assistanceObserver.attemptDidCreate(webView: webView)
+        }
     }
 
     // MARK: - CSSCommunicationDelegate
@@ -489,6 +501,11 @@ public extension SubJobWebRunning {
             await executeNextStep()
         default: await executeNextStep()
         }
+    }
+
+    func userTurnNeeded(actionID: String) async {
+        recordDebugEvent(kind: .actionResponse, actionType: .userAssist, details: "User turn needed for \(actionID)")
+        await assistanceObserver?.attemptNeedsUser(actionID: actionID)
     }
 
     func conditionSuccess(actions: [Action]) async {

@@ -83,6 +83,7 @@ extension DataBrokerRunCustomJSONViewModel {
         case .matchesFound(let count): return "Matches (\(count))"
         case .error(let error): return "Error: \(error.name) - \(error.localizedDescription)"
         case .optOutStarted: return "Opt-out Started"
+        case .optOutAwaitingUserAssistance: return "Opt-out Awaiting User Assistance"
         case .optOutRequested: return "Opt-out Requested"
         case .optOutSubmittedAndAwaitingEmailConfirmation: return "Opt-out Awaiting Email"
         case .optOutConfirmed: return "Opt-out Confirmed"

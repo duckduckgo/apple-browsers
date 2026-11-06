@@ -47,10 +47,16 @@ extension MainViewController: NewTabTransitionHost {
     func closePresentedScreenUnseen(then completion: @escaping () -> Void) {
         presentedViewController?.presentationController?.containerView?.isHidden = true
         let startedAt = CACurrentMediaTime()
-        dismiss(animated: false) {
+        dismiss(animated: false) { [weak self] in
             Self.transitionLogger.debug("Presented screen closed after \(Int((CACurrentMediaTime() - startedAt) * 1000), privacy: .public) ms")
+            self?.newTabPageWasUncovered()
             completion()
         }
+    }
+
+    /// The new tab page waits for nothing to cover it before it asks for its keyboard; a sheet closing tells no one else.
+    private func newTabPageWasUncovered() {
+        recordPendingNewTabPagePresentationIfVisible()
     }
 
     func dismissPresentedScreen(then completion: @escaping () -> Void) {
@@ -92,7 +98,10 @@ extension MainViewController: NewTabTransitionHost {
     /// The new tab's keyboard waits for it, since focus asked for while a screen is still presented is refused.
     func dismissPresentedSheetInstantly() {
         let releaseKeyboard = newTabTransitions.current?.keyboardGate.hold()
-        presentedViewController?.dismiss(animated: false) { releaseKeyboard?() }
+        presentedViewController?.dismiss(animated: false) { [weak self] in
+            self?.newTabPageWasUncovered()
+            releaseKeyboard?()
+        }
     }
 
     func installNewTabTouchLocationRecorderIfNeeded() {

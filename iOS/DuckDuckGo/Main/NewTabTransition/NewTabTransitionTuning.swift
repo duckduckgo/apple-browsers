@@ -38,7 +38,7 @@ enum NewTabTransitionTuning {
 
         /// A new page without its own keyboard has nothing to keep the old one up for.
         func forNewPage(raisingKeyboard: Bool) -> Self {
-            self == .staysUp && !raisingKeyboard ? .leavesInstantly : self
+            self == .staysUp && !raisingKeyboard ? .slidesDown : self
         }
     }
 

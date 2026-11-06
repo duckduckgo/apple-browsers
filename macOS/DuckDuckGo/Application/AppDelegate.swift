@@ -1066,7 +1066,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
         aiChatBrowserToolsService = AIChatBrowserToolsService(featureFlagger: featureFlagger,
                                                               windowControllersManager: windowControllersManager,
-                                                              historyCoordinator: historyCoordinator)
+                                                              historyCoordinator: historyCoordinator,
+                                                              bookmarkManager: bookmarkManager)
 
         contentScopePreferences = ContentScopePreferences(windowControllersManager: windowControllersManager)
         webTrackingProtectionPreferences = WebTrackingProtectionPreferences(persistor: WebTrackingProtectionPreferencesUserDefaultsPersistor(), windowControllersManager: windowControllersManager)

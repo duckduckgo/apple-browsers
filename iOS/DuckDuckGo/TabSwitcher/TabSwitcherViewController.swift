@@ -607,7 +607,7 @@ class TabSwitcherViewController: UIViewController {
         PixelKit.fire(Pixel.Event.tabSwitcherNewTab, options: .parameters([
             PixelParameters.browsingMode: selectedBrowsingMode.pixelParamValue
         ]))
-        dismissIfPossible(forceDismissOnEmpty: true)
+        dismissForNewTab()
         delegate.tabSwitcherDidRequestNewTab(tabSwitcher: self)
     }
 
@@ -618,7 +618,7 @@ class TabSwitcherViewController: UIViewController {
         PixelKit.fire(Pixel.Event.tabSwitcherNewTab, options: .parameters([
             PixelParameters.browsingMode: BrowsingMode.fire.pixelParamValue
         ]))
-        dismissIfPossible(forceDismissOnEmpty: true)
+        dismissForNewTab()
         delegate.tabSwitcherDidRequestNewFireTab(tabSwitcher: self, source: source)
     }
 
@@ -629,7 +629,7 @@ class TabSwitcherViewController: UIViewController {
         PixelKit.fire(Pixel.Event.tabSwitcherNewTab, options: .parameters([
             PixelParameters.browsingMode: BrowsingMode.normal.pixelParamValue
         ]))
-        dismissIfPossible(forceDismissOnEmpty: true)
+        dismissForNewTab()
         delegate.tabSwitcherDidRequestNewNormalTab(tabSwitcher: self)
     }
     
@@ -637,7 +637,7 @@ class TabSwitcherViewController: UIViewController {
         guard !isProcessingUpdates else { return }
         canUpdateCollection = false
         
-        dismissIfPossible(forceDismissOnEmpty: true)
+        dismissForNewTab()
 
         self.delegate.tabSwitcherDidRequestAIChatTab(tabSwitcher: self)
     }
@@ -646,7 +646,7 @@ class TabSwitcherViewController: UIViewController {
         guard !isProcessingUpdates else { return }
         canUpdateCollection = false
 
-        dismissIfPossible(forceDismissOnEmpty: true)
+        dismissForNewTab()
 
         delegate.tabSwitcherDidRequestNewChatFromLongPressMenu(tabSwitcher: self)
     }
@@ -689,6 +689,12 @@ class TabSwitcherViewController: UIViewController {
     /// - `forceDismissOnEmpty`: caller explicitly wants dismiss (e.g. after creating a new tab)
     /// - `canDismissOnEmpty`: normal mode — always safe to dismiss
     /// - `!tabsModel.isEmpty`: fire mode still has tabs, so the user picked one
+    /// Dismisses without animation when the delegate carries the new tab in with its own transition.
+    private func dismissForNewTab() {
+        let beganTransition = delegate.tabSwitcherBeginsNewTabTransition(self)
+        dismissIfPossible(animated: !beganTransition, forceDismissOnEmpty: true)
+    }
+
     func dismissIfPossible(animated: Bool = true, forceDismissOnEmpty: Bool = false) {
         guard forceDismissOnEmpty
                 || canDismissOnEmpty

@@ -31,6 +31,13 @@ final class MainViewControllerRefreshActionTests: XCTestCase {
         XCTAssertEqual(MainViewController.decideRefreshAction(for: inputs), .refreshAITab(.showCollapsed(expandAfterRefresh: true)))
     }
 
+    func test_newChatInputRequest_fromExpandedInput_staysExpanded() {
+        let inputs = makeInputs(tabIsAITab: true, tabURL: URL(string: "https://duck.ai/"), tabLinkURL: URL(string: "https://duck.ai/"),
+                                tabRequestsNewChatInput: true, coordinatorIsAITabState: true, coordinatorIsAITabExpanded: true)
+
+        XCTAssertEqual(MainViewController.decideRefreshAction(for: inputs), .refreshAITab(.showExpanded))
+    }
+
     func test_newChatInputRequest_onAITabFromAnotherAITab_expandsInsteadOfPreserving() {
         let inputs = makeInputs(tabIsAITab: true, tabURL: URL(string: "https://duck.ai/"), tabLinkURL: URL(string: "https://duck.ai/"),
                                 tabRequestsNewChatInput: true, coordinatorIsAITabState: true)
@@ -99,16 +106,29 @@ final class MainViewControllerRefreshActionTests: XCTestCase {
 
     // MARK: - AI tab paths
 
-    func test_nilLink_coordinatorInAITabState_preservesAIPresentation() {
+    func test_nilLink_whileLoading_coordinatorInAITabState_preservesAIPresentation() {
         let inputs = makeInputs(
             tabIsAITab: false,
             tabLinkURL: nil,
+            tabIsLoading: true,
             coordinatorIsAITabState: true
         )
         XCTAssertEqual(
             MainViewController.decideRefreshAction(for: inputs),
             .refreshAITab(.preserveCurrentPresentation(allowsEarlyReturn: true))
         )
+    }
+
+    func test_blankNewTabPage_coordinatorInAITabState_refreshesAsNonAITab() {
+        let inputs = makeInputs(
+            tabIsAITab: false,
+            tabURL: nil,
+            tabLinkURL: nil,
+            tabIsLoading: false,
+            coordinatorIsAITabState: true,
+            coordinatorIsActive: true
+        )
+        XCTAssertEqual(MainViewController.decideRefreshAction(for: inputs), .refreshNonAITab)
     }
 
     func test_aiTab_coordinatorInAITabState_chromeHidden_preservesWithEarlyReturn() {
@@ -183,10 +203,12 @@ final class MainViewControllerRefreshActionTests: XCTestCase {
         tabIsAITab: Bool = false,
         tabURL: URL? = URL(string: "https://example.com/"),
         tabLinkURL: URL? = URL(string: "https://example.com/"),
+        tabIsLoading: Bool = false,
         tabIsVoiceModeRequested: Bool = false,
         tabRequestsDeepLinkSurface: Bool = false,
         tabRequestsNewChatInput: Bool = false,
         coordinatorIsAITabState: Bool = false,
+        coordinatorIsAITabExpanded: Bool = false,
         coordinatorIsActive: Bool = false,
         coordinatorIsOmnibarSession: Bool = false,
         coordinatorHasSubmittedPrompt: Bool = false,
@@ -200,10 +222,12 @@ final class MainViewControllerRefreshActionTests: XCTestCase {
             tabIsAITab: tabIsAITab,
             tabURL: tabURL,
             tabLinkURL: tabLinkURL,
+            tabIsLoading: tabIsLoading,
             tabIsVoiceModeRequested: tabIsVoiceModeRequested,
             tabRequestsDeepLinkSurface: tabRequestsDeepLinkSurface,
             tabRequestsNewChatInput: tabRequestsNewChatInput,
             coordinatorIsAITabState: coordinatorIsAITabState,
+            coordinatorIsAITabExpanded: coordinatorIsAITabExpanded,
             coordinatorIsActive: coordinatorIsActive,
             coordinatorIsOmnibarSession: coordinatorIsOmnibarSession,
             coordinatorHasSubmittedPrompt: coordinatorHasSubmittedPrompt,

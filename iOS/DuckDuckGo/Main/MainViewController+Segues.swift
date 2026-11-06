@@ -297,6 +297,8 @@ extension MainViewController {
 
         tabSwitcherController = controller
 
+        // Released as the tab manager starts covering the page, so the keyboard leaves with it and stays down on Done.
+        duckAIInputFocus.release()
         present(controller, animated: true)
     }
 

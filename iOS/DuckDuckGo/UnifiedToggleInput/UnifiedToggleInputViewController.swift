@@ -144,6 +144,15 @@ final class UnifiedToggleInputViewController: UIViewController {
         inputBarView.refreshPlaceholderForCurrentMode()
     }
 
+    var placeholderState: AIChatPlaceholderState {
+        AIChatPlaceholderState(hasSubmittedPrompt: handler.hasSubmittedPrompt,
+                               isImageGenerationSelected: handler.isImageGenerationSelected)
+    }
+
+    func crossfadePlaceholder(to state: AIChatPlaceholderState) {
+        inputBarView.crossfadePlaceholder(to: state)
+    }
+
     var isInputExpanded: Bool {
         inputBarView.isExpanded
     }

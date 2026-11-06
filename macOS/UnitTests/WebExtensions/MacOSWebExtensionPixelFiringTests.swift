@@ -140,4 +140,38 @@ final class MacOSWebExtensionPixelFiringTests: XCTestCase {
             XCTAssertEqual(names, ["web_extension_cpm_network_process_recovery_applied_daily", "web_extension_cpm_network_process_recovery_applied_count"])
         }
     }
+
+    func testExtensionManagementEventsUseDailyAndCount() throws {
+        let events: [WebExtensionPixelEvent] = [
+            .enabled(extension: .catalog(.bitwarden)),
+            .disabled(extension: .catalog(.bitwarden)),
+            .remotelyDisabled(extension: .catalog(.bitwarden))
+        ]
+        for event in events {
+            let pixels = PixelKitMock()
+            MacOSWebExtensionPixelFiring(pixelFiring: pixels).fire(event)
+            XCTAssertEqual(try XCTUnwrap(pixels.actualFireCalls.first).frequency, .dailyAndCount, "\(event)")
+        }
+    }
+
+    func testRetentionEventsUseStandard() throws {
+        let events: [WebExtensionPixelEvent] = [
+            .retained14Days(extension: .catalog(.bitwarden)),
+            .churned14Days(extension: .catalog(.bitwarden))
+        ]
+        for event in events {
+            let pixels = PixelKitMock()
+            MacOSWebExtensionPixelFiring(pixelFiring: pixels).fire(event)
+            XCTAssertEqual(try XCTUnwrap(pixels.actualFireCalls.first).frequency, .standard, "\(event)")
+        }
+    }
+
+    func testInstalledCountIsDaily() throws {
+        let pixels = PixelKitMock()
+        MacOSWebExtensionPixelFiring(pixelFiring: pixels).fire(.installedCount(installed: 1, enabled: 0))
+
+        let call = try XCTUnwrap(pixels.actualFireCalls.first)
+        XCTAssertEqual(call.frequency, .daily)
+        XCTAssertEqual(call.pixel.parameters, ["count": "1", "enabled_count": "0"])
+    }
 }

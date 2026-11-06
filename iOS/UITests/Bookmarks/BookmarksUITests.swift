@@ -175,6 +175,53 @@ final class BookmarksUITests: UITestCase {
         }
     }
 
+    func testWhenFolderIsRemovedFromBookmarksEditThenItCanBeDeleted() {
+        let folderName = "Removable Folder"
+        let bookmarksList = app.tables["Bookmarks.List"]
+        let bookmark = bookmarksList.cells["Bookmarks.Item"].firstMatch
+        let folder = bookmarksList.cells["Bookmarks.Folder"].firstMatch
+
+        XCTContext.runActivity(named: "Create a bookmark inside a folder") { _ in
+            app.openURL("https://privacy-test-pages.site", expecting: "Privacy Test Pages")
+            app.openBrowsingMenuItem("Browser.Menu.AddBookmark")
+            app.openBookmarks()
+            app.createBookmarkFolderAtRoot(named: folderName)
+
+            app.buttons["Bookmarks.Edit"].tapWhenHittable(in: app)
+            bookmark.tapWhenHittable(in: app)
+            let destination = app.tables["Bookmarks.Editor.List"].cells
+                .matching(identifier: "Bookmarks.Editor.Folder")
+                .containing(.staticText, identifier: folderName)
+                .firstMatch
+            app.tables["Bookmarks.Editor.List"].swipeUpToReveal(destination)
+            destination.tapWhenHittable(in: app)
+            app.saveBookmarkEditor()
+            app.buttons["Bookmarks.Edit"].tapWhenHittable(in: app)
+            XCTAssertTrue(folder.waitForExistence(timeout: UITestTimeouts.elementExistence))
+            app.assertBookmarkCount(0)
+        }
+
+        XCTContext.runActivity(named: "Remove the folder from Bookmarks Edit") { _ in
+            app.buttons["Bookmarks.Edit"].tapWhenHittable(in: app)
+            XCTAssertTrue(folder.waitForExistence(timeout: UITestTimeouts.elementExistence))
+            app.buttons["Remove \(folderName)"].tapWhenHittable(in: app)
+            app.tables["Bookmarks.List"].buttons["Delete"].tapWhenHittable(in: app)
+
+            let confirmation = app.alerts.firstMatch
+            XCTAssertTrue(confirmation.waitForExistence(timeout: UITestTimeouts.elementExistence))
+            XCTAssertTrue(confirmation.staticTexts["Delete \(folderName)?"].exists)
+            let countText = confirmation.staticTexts.matching(
+                NSPredicate(format: "label MATCHES %@", ".*\\b1\\b.*")
+            ).firstMatch
+            XCTAssertTrue(countText.exists, "Folder deletion warning did not show its one child.")
+            app.buttons.matching(identifier: "Bookmarks.Folder.ConfirmDelete").firstMatch.tapWhenHittable(in: app)
+            XCTAssertTrue(
+                folder.wait(for: NSPredicate(format: "exists == false"), timeout: UITestTimeouts.elementExistence),
+                "Removed folder is still present in Bookmarks.")
+            app.assertBookmarksEmpty()
+        }
+    }
+
     func testWhenTwoTabsAreBookmarkedThenBothAppearInBookmarks() {
         let expectedTitles = ["Privacy Test Pages - Home", "Ad Click Flow"]
 

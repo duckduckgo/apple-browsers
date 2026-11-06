@@ -174,6 +174,9 @@ public enum iOSBrowserConfigSubfeature: String, PrivacySubfeature {
     /// https://app.asana.com/1/137249556945/project/481882893211075/task/1219652686297425
     case deferredMemoryCacheDelete
 
+    /// https://app.asana.com/1/137249556945/project/715106103902962/task/1218197249861911
+    case searchSubmitPageCover
+
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1220203462696863
     case idleReturnNewTabPageAtLaunch
 }

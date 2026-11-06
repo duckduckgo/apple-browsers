@@ -661,6 +661,10 @@ public enum FeatureFlag: String {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1219780456623039?focus=true
     case deferredMemoryCacheDelete
 
+    /// Covers the previous page after a search or typed URL until the new page first paints.
+    /// https://app.asana.com/1/137249556945/project/715106103902962/task/1218197249861911
+    case searchSubmitPageCover
+
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1220203462696863
     case idleReturnNewTabPageAtLaunch
 }
@@ -1121,6 +1125,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(defaultValue: .internalOnly, source: .remoteReleasable(AIChatSubfeature.chatLimitExtensionPromo), supportsLocalOverriding: true)
         case .deferredMemoryCacheDelete:
             Config(defaultValue: .disabled, source: .remoteReleasable(iOSBrowserConfigSubfeature.deferredMemoryCacheDelete))
+        case .searchSubmitPageCover:
+            Config(defaultValue: .internalOnly, source: .remoteReleasable(iOSBrowserConfigSubfeature.searchSubmitPageCover))
         case .idleReturnNewTabPageAtLaunch:
             Config(defaultValue: .internalOnly, source: .remoteReleasable(iOSBrowserConfigSubfeature.idleReturnNewTabPageAtLaunch))
         }

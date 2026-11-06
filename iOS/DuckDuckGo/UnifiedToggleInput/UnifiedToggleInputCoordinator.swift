@@ -2295,6 +2295,7 @@ extension UnifiedToggleInputCoordinator: UnifiedToggleInputViewControllerDelegat
                                                queryType: UnifiedToggleInputQueryType(query: text),
                                                resubmitDelay: resubmitDelay(of: text, mode: .search))
             clearStoreEntryAfterSubmission()
+            delegate?.unifiedToggleInputWillSubmitQuery(text)
             if isAITabState {
                 hide()
             } else if isContextualChatState {

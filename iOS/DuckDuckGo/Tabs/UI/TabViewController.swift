@@ -165,6 +165,7 @@ class TabViewController: UIViewController {
     var containerStackViewTopConstraint: NSLayoutConstraint?
     var outerContainer: UIView!
     var webViewContainer: UIView!
+    private lazy var firstPaintCover = FirstPaintCover()
     var webViewTopAnchorConstraint: NSLayoutConstraint?
     var webViewBottomAnchorConstraint: NSLayoutConstraint?
     private var webViewLayoutConstraints: [NSLayoutConstraint] = []
@@ -1683,6 +1684,13 @@ class TabViewController: UIViewController {
         load(url: url, shouldCancelPendingAIChatTabAttachmentPrompt: true)
     }
 
+    /// Hides the current page until the next navigation first paints, so it doesn't flash after a submit.
+    func coverPageUntilFirstPaint(handoff: FirstPaintCover.Handoff = .init()) {
+        guard isViewLoaded, let webView, webView.superview === webViewContainer else { return }
+        webView.observeRenderingProgressEvents(FirstPaintCover.Constants.observedEvents)
+        firstPaintCover.arm(in: webViewContainer, above: webView, handoff: handoff)
+    }
+
     private func load(url: URL, shouldCancelPendingAIChatTabAttachmentPrompt: Bool) {
         if case .available = aiChatContextualAttachMoreTabsFeature.state {
             if initialAIChatPromptSession.willLoad(isInternalRetry: !shouldCancelPendingAIChatTabAttachmentPrompt) {
@@ -2550,6 +2558,7 @@ class TabViewController: UIViewController {
     }
 
     func stopLoading() {
+        firstPaintCover.cancel()
         cancelPendingAIChatTabAttachmentPrompt()
         cancelWebExtensionNavigationWait()
         sitePermissionsState.cancelContentBlockingWaits()
@@ -2671,7 +2680,17 @@ extension TabViewController: WKNavigationDelegate {
         delegate?.tab(self, didRequestPresentingAlert: alert)
     }
 
+    // Private WebKit callback (also used on macOS via DistributedNavigationDelegate).
+    @objc(_webView:renderingProgressDidChange:)
+    public func webView(_ webView: WKWebView, renderingProgressDidChange progressEvents: UInt) {
+        guard webView === self.webView else { return }
+        firstPaintCover.renderingProgressDidChange(progressEvents)
+    }
+
     func webView(_ webView: WKWebView, didCommit navigation: WKNavigation!) {
+        if webView === self.webView {
+            firstPaintCover.didCommit(navigation)
+        }
         pageSignalsDidCommitNavigation(to: webView.url)
         pendingNativeLoadURL = nil
         sitePermissionsDidCommit(webView, navigation: navigation)
@@ -2882,6 +2901,9 @@ extension TabViewController: WKNavigationDelegate {
     }
 
     func webView(_ webView: WKWebView, didStartProvisionalNavigation navigation: WKNavigation!) {
+        if webView === self.webView {
+            firstPaintCover.didStartNavigation(navigation)
+        }
         if webView === self.webView, case .available = aiChatContextualAttachMoreTabsFeature.state {
             if initialAIChatPromptSession.didStartNavigation(navigation) {
                 userScripts?.aiChatUserScript.cancelPendingTabContextSubmission()
@@ -2942,6 +2964,9 @@ extension TabViewController: WKNavigationDelegate {
     }
 
     func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
+        if webView === self.webView {
+            firstPaintCover.didFinish(navigation)
+        }
         terminationReloadMonitor.didFinish()
         updateFloatingPageBackgroundColor(in: webView)
         navigationPixelResponder.didFinish(navigation)
@@ -3422,6 +3447,9 @@ extension TabViewController: WKNavigationDelegate {
     }
 
     func webView(_ webView: WKWebView, didFail navigation: WKNavigation!, withError error: Error) {
+        if webView === self.webView {
+            firstPaintCover.navigationDidFail(error, navigation: navigation)
+        }
         terminationReloadMonitor.didFail(with: error)
         if webView === self.webView, initialAIChatPromptSession.didFailNavigation(navigation) {
             userScripts?.aiChatUserScript.cancelQueuedTabContextSubmissions()
@@ -3480,6 +3508,9 @@ extension TabViewController: WKNavigationDelegate {
     }
     
     func webView(_ webView: WKWebView, didFailProvisionalNavigation navigation: WKNavigation!, withError error: Error) {
+        if webView === self.webView {
+            firstPaintCover.navigationDidFail(error, navigation: navigation)
+        }
         terminationReloadMonitor.didFail(with: error)
         if webView === self.webView, initialAIChatPromptSession.didFailNavigation(navigation) {
             userScripts?.aiChatUserScript.cancelQueuedTabContextSubmissions()
@@ -3595,6 +3626,7 @@ extension TabViewController: WKNavigationDelegate {
         if webView === self.webView, navigationAction.isTargetingMainFrame {
             cancelWebExtensionNavigationWait()
             sitePermissionsState.cancelContentBlockingWaits()
+            firstPaintCover.willDecidePolicy()
         }
 
         // Capture the site-loading navigation type only at the moment the navigation is actually allowed.
@@ -3605,6 +3637,11 @@ extension TabViewController: WKNavigationDelegate {
         // main queue, so firing from inside the allow branches guarantees the next event is the matching
         // `didStartProvisional` — no other `decidePolicyFor` can interleave between them.
         let wrappedHandler: (TabNavigationDecision) -> Void = { [weak self] decision in
+            if let self, webView === self.webView, navigationAction.isTargetingMainFrame {
+                var allowed = false
+                if case .allow = decision { allowed = true }
+                self.firstPaintCover.didDecidePolicy(allowed: allowed, isSameDocument: navigationAction.isSameDocumentNavigation)
+            }
             if case .allow = decision {
                 if navigationAction.isTargetingMainFrame {
                     self?.cpmReadinessDocumentIsGET = navigationAction.request.httpMethod == "GET"
@@ -4738,6 +4775,7 @@ extension TabViewController: WKUIDelegate {
         terminationReloadMonitor.didTerminate()
 
         if webView === self.webView {
+            firstPaintCover.cancel()
             cancelPendingAIChatTabAttachmentPrompt()
             cancelWebExtensionNavigationWait()
             freezeMonitor.end(.terminated)

@@ -56,9 +56,7 @@ enum DuckAIChromeShortcutVisibility {
     }
 
     static func isChromeMenuButtonAvailable(isIPad: Bool, featureFlagger: FeatureFlagger) -> Bool {
-        isIPad
-            && featureFlagger.isFeatureOn(.aiChatChromeShortcutIPad)
-            && featureFlagger.isFeatureOn(.aiChatChromeMenuButtonIPad)
+        isIPad && featureFlagger.isFeatureOn(.aiChatChromeShortcutIPad)
     }
 
     static func isChromeMenuButtonVisible(featureFlagger: FeatureFlagger, isTabBarShortcutEnabled: Bool) -> Bool {

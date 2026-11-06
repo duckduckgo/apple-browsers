@@ -1,5 +1,5 @@
 {
-  "originHash" : "474048b982a711586dba39c51122b9ba04684cb27424d5d0ee4625170748dae1",
+  "originHash" : "0ee943bc4f458edc4007a1177ded24e73b758cfbb1a60da94f687fbccb4029b0",
   "pins" : [
     {
       "identity" : "apple-toolbox",
@@ -33,8 +33,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/duckduckgo/content-scope-scripts.git",
       "state" : {
-        "branch" : "pr-releases/bartosz/ios-site-permissions-features",
-        "revision" : "9c367de1fc8702ae4d645d688e6d3e9933a17cec"
+        "branch" : "pr-releases/bartosz/ios-site-permissions-svg",
+        "revision" : "3bd5777a1e5d3454d84d1258c9379b1d3812ab94"
       }
     },
     {

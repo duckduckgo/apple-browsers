@@ -151,6 +151,11 @@ private extension ContextualDaxDialogFactory {
         let gotItAction: () -> Void = if shouldFollowUpToWebsiteSearch {
             { [weak delegate, weak self] in
                 self?.contextualOnboardingPixelReporter.measureSearchResultsDialogGotItAction()
+                self?.contextualOnboardingLogic.checkTimeLimit()
+                guard self?.contextualOnboardingLogic.endedByTimeLimit != true else {
+                    delegate?.didTapDismissContextualOnboardingAction()
+                    return
+                }
                 onSizeUpdate()
                 delegate?.didAcknowledgeContextualOnboardingSearch()
                 self?.contextualOnboardingLogic.setTryVisitSiteMessageSeen()
@@ -257,6 +262,7 @@ private extension ContextualDaxDialogFactory {
             message: attributedMessage,
             blockedTrackersCTAAction: { [weak self, weak delegate] in
                 self?.contextualOnboardingPixelReporter.measureTrackersDialogGotItAction()
+                self?.contextualOnboardingLogic.checkTimeLimit()
 
                 if self?.contextualOnboardingLogic.endedByTimeLimit == true || self?.contextualOnboardingSettings.userHasSeenFireDialog == true {
                     delegate?.didTapDismissContextualOnboardingAction()

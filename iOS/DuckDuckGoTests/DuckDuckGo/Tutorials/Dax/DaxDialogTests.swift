@@ -25,6 +25,7 @@ import Onboarding
 @_spi(Testing) import Persistence
 import PrivacyConfig
 import PrivacyDashboard
+import SwiftUI
 import TrackerRadarKit
 import XCTest
 
@@ -1270,7 +1271,7 @@ func makeDisabledContextualOnboardingTimeLimit() -> ContextualOnboardingTimeLimi
 }
 
 final class ContextualOnboardingTimeLimitTests: XCTestCase {
-    private let now = Date(timeIntervalSince1970: 1_800_000_000)
+    private var now = Date(timeIntervalSince1970: 1_800_000_000)
     private var store: InMemoryKeyValueStore!
     private var flagger: MockFeatureFlagger!
     private var configuration: MockPrivacyConfiguration!
@@ -1598,6 +1599,43 @@ final class ContextualOnboardingTimeLimitTests: XCTestCase {
             XCTAssertEqual(limit.appOpens, 0)
             XCTAssertEqual(reporter.reasons, [.days])
         }
+    }
+
+    func testTrackersCTACrossingDeadlineEndsWithoutFireFollowUp() throws {
+        let settings = MockDaxDialogsSettings()
+        let limit = makeLimit()
+        limit.startDate = now.addingTimeInterval(-7 * 86_400 + 1)
+        let reporter = TimeLimitReporter()
+        let dialogs = makeDialogs(settings: settings, limit: limit, reporter: reporter)
+        let pixels = OnboardingPixelReporterMock()
+        let delegate = ContextualOnboardingDelegateMock()
+        let factory = ContextualDaxDialogFactory(contextualOnboardingLogic: dialogs,
+                                                contextualOnboardingSettings: UnseenDialogSettings(),
+                                                contextualOnboardingPixelReporter: pixels,
+                                                onboardingManager: OnboardingManagerMock())
+        let host = factory.makeView(for: .withOneTracker, delegate: delegate, onSizeUpdate: { XCTFail("Expired dialog must not advance") })
+        let view = try XCTUnwrap(find(OnboardingRebranding.OnboardingTrackersBlockedDialogScreen.self, in: host.rootView))
+        XCTAssertTrue(view.shouldFollowUp)
+        XCTAssertTrue(dialogs.isEnabled)
+
+        now = now.addingTimeInterval(1)
+        view.blockedTrackersCTAAction()
+
+        XCTAssertTrue(dialogs.endedByTimeLimit)
+        XCTAssertFalse(dialogs.isEnabled)
+        XCTAssertEqual(limit.appOpens, 0)
+        XCTAssertEqual(reporter.reasons, [.days])
+        XCTAssertTrue(delegate.didCallDidTapDismissContextualOnboardingAction)
+        XCTAssertFalse(delegate.didCallDidAcknowledgeContextualOnboardingTrackersDialog)
+        XCTAssertFalse(pixels.didCallMeasureScreenImpressionCalled)
+        XCTAssertFalse(pixels.didCallMeasureSharedOnboardingScreenImpression)
+    }
+
+    private struct UnseenDialogSettings: ContextualOnboardingSettings {
+        let userHasSeenTrackersDialog = false
+        let userHasSeenFireDialog = false
+        let userHasSeenTryVisitSiteDialog = false
+        let chatPathPhase: DaxDialogs.ChatPathPhase = .none
     }
 
     private func makeLimit(launchOptionsHandler: LaunchOptionsHandler = LaunchOptionsHandler(environment: [:], arguments: [])) -> ContextualOnboardingTimeLimit {

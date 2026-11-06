@@ -40,8 +40,13 @@ final class ContextualOnboardingPresenterMock: ContextualOnboardingPresenting {
 
 final class ContextualOnboardingLogicMock: ContextualOnboardingLogic, SubscriptionPromotionCoordinating, ContextualDaxDialogDisabling {
 
-    func checkTimeLimit() -> Bool { false }
     var endedByTimeLimit: Bool = false
+    var onCheckTimeLimit: (() -> Void)?
+
+    func checkTimeLimit() -> Bool {
+        onCheckTimeLimit?()
+        return endedByTimeLimit
+    }
     
     var expectation: XCTestExpectation?
     private(set) var didCallSetTryAnonymousSearchMessageSeen = false
@@ -167,9 +172,11 @@ final class ContextualOnboardingLogicMock: ContextualOnboardingLogic, Subscripti
 }
 
 class MockDaxDialogsManager: DaxDialogsManaging {
-    func checkTimeLimit() -> Bool { false }
 
     var endedByTimeLimit: Bool = false
+
+    func checkTimeLimit() -> Bool { false }
+
     var hasSeenOnboarding: Bool = false
 
     var isShowingContextualOnboardingDialog: Bool = false

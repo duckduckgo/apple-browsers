@@ -1,8 +1,8 @@
 {
     "m_ios_onboarding_time-limit": {
-        "description": "Fired once per install when contextual onboarding ends at its days or app-opens limit, checked on foreground, page load, or opening a new tab.",
+        "description": "Fired once per install when contextual onboarding ends at its days or app-opens limit, checked on foreground, page load, opening a new tab, or a dialog action.",
         "owners": ["rachelmcr"],
-        "triggers": ["startup", "page_load", "new_tab"],
+        "triggers": ["startup", "page_load", "new_tab", "user_interaction"],
         "parameters": [
             "appVersion",
             "pixelSource",

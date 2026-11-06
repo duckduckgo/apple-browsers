@@ -47,6 +47,11 @@ final class WebExtensionPermissionPrompt: WebExtensionPermissionPrompting {
     }
 
     func confirmPermissions(_ permissions: WebExtensionPermissionRequest, for context: WKWebExtensionContext) async -> WebExtensionPermissionPromptResult {
+        // Nothing to warn the user about, so nothing to ask: the alert would list no permissions above an Allow button.
+        if permissionMessages(for: permissions).isEmpty {
+            return .granted
+        }
+
         let alert = makeAlert(for: context.webExtension, permissions: permissions)
         return await present(alert) == .alertFirstButtonReturn ? .granted : .denied
     }

@@ -59,6 +59,7 @@ protocol ContextualOnboardingLogic {
     /// Ends contextual onboarding when its time limit is reached. Returns whether it has ended by the time limit.
     @discardableResult
     func checkTimeLimit() -> Bool
+    var endedByTimeLimit: Bool { get }
 
     var isShowingFireDialog: Bool { get }
     var isShowingSearchSuggestions: Bool { get }
@@ -379,6 +380,10 @@ final class DaxDialogs: NewTabDialogSpecProvider, ContextualOnboardingLogic, Con
         !isEnabled
     }
 
+    var endedByTimeLimit: Bool {
+        timeLimit.endedByTimeLimit
+    }
+
     var isShowingSearchSuggestions: Bool {
         return currentHomeSpec == .initial
     }
@@ -639,7 +644,9 @@ final class DaxDialogs: NewTabDialogSpecProvider, ContextualOnboardingLogic, Con
 
     func nextBrowsingMessageIfShouldShow(for privacyInfo: PrivacyInfo) -> BrowsingSpec? {
         checkTimeLimit()
-        let message = nextBrowsingMessageExperiment(privacyInfo: privacyInfo)
+        let message = endedByTimeLimit
+            ? nextBrowsingMessageAfterTimeLimit(privacyInfo: privacyInfo)
+            : nextBrowsingMessageExperiment(privacyInfo: privacyInfo)
         if message != nil {
             lastURLDaxDialogReturnedFor = privacyInfo.url
         }
@@ -700,6 +707,28 @@ final class DaxDialogs: NewTabDialogSpecProvider, ContextualOnboardingLogic, Con
             clearOnboardingBrowsingData()
         }
 
+        return spec
+    }
+
+    private func nextBrowsingMessageAfterTimeLimit(privacyInfo: PrivacyInfo) -> BrowsingSpec? {
+        currentHomeSpec = nil
+        guard !tutorialSettings.hasSkippedOnboarding else { return nil }
+
+        if let lastVisitedOnboardingWebsiteURL,
+           compareUrls(url1: lastVisitedOnboardingWebsiteURL, url2: privacyInfo.url),
+           lastShownDaxDialogType == .withOneTracker || lastShownDaxDialogType == .withMultipleTrackers {
+            return lastShownDaxDialog(privacyInfo: privacyInfo)
+        }
+
+        guard shouldShowNetworkTrackerDialog,
+              !privacyInfo.url.isDuckDuckGoSearch,
+              let entityNames = blockedEntityNames(privacyInfo.trackerInfo),
+              let spec = trackersBlockedMessage(entityNames, isReloadingDialog: false) else {
+            clearOnboardingBrowsingData()
+            return nil
+        }
+        lastShownDaxDialogType = spec.type
+        lastVisitedOnboardingWebsiteURL = privacyInfo.url
         return spec
     }
 

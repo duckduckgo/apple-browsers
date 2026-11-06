@@ -228,6 +228,24 @@ final class TabViewControllerDaxDialogTests: XCTestCase {
 
 }
 
+final class TabViewControllerTimeLimitTests: XCTestCase {
+    func testTrackersAcknowledgementAfterTimeLimitDismissesWithoutFirePulse() {
+        let logic = ContextualOnboardingLogicMock()
+        logic.endedByTimeLimit = true
+        let presenter = ContextualOnboardingPresenterMock()
+        let delegate = MockTabDelegate()
+        let sut = TabViewController.fake(contextualOnboardingPresenter: presenter, contextualOnboardingLogic: logic)
+        sut.delegate = delegate
+
+        sut.didAcknowledgeContextualOnboardingTrackersDialog()
+
+        XCTAssertFalse(delegate.didRequestFireButtonPulseCalled)
+        XCTAssertFalse(logic.didCallSetFireEducationMessageSeen)
+        XCTAssertTrue(logic.didCallSetDaxDialogDismiss)
+        XCTAssertTrue(presenter.didCallDismissContextualOnboardingIfNeeded)
+    }
+}
+
 extension WKNavigation {
     private static var isSwizzled = false
     private static let originalDealloc = { class_getInstanceMethod(WKNavigation.self, NSSelectorFromString("dealloc"))! }()

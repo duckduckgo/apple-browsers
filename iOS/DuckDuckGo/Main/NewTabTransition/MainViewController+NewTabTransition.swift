@@ -38,7 +38,6 @@ extension MainViewController: NewTabTransitionHost {
         return NewTabTransition.begin(over: oldScreen,
                                       dimmedBy: dimmingOverOldScreen(for: start),
                                       newPageRaisesKeyboard: raisesKeyboard,
-                                      keyboardRidingView: isInputFocused ? viewCoordinator.navigationBarContainer : nil,
                                       from: start == .tabManager ? .tabManager : .inTab,
                                       tapLocation: newTabTouchLocationRecorder.lastTouchLocation,
                                       configuration: NewTabTransitionConfigurationStore.shared.configuration)

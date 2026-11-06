@@ -440,42 +440,24 @@ final class UserChurnServiceTests: XCTestCase {
         XCTAssertEqual(unsetPixelCalls.count, 1)
     }
 
-    func testWhenDuckDuckGoIsDefaultAndChurned_ThenChurnedFlagIsClearedAndWasDefaultNotRewritten() throws {
-        let store = RecordingKeyValueStore()
-        let service = makeService(store: store)
-        setDefaultBrowserAsDuckDuckGo()
-        try store.set(true, forKey: wasDefaultKey)
-        try store.set(true, forKey: churnedKey)
-        store.writtenKeys = []
-
-        service.checkForDefaultBrowserChange()
-
-        XCTAssertFalse(service.hasChurnedFromDefault)
-        XCTAssertEqual(store.writtenKeys, [churnedKey])
-        XCTAssertEqual(try store.object(forKey: wasDefaultKey) as? Bool, true)
-    }
-
     func testWhenReadFails_ThenReadFailedPixelFires() {
-        let store = RecordingKeyValueStore()
-        store.failingGetKeys = [wasDefaultKey]
-        let service = makeService(store: store)
         setDefaultBrowserAsNonDuckDuckGo(path: "/Applications/Safari.app", bundleId: "com.apple.Safari")
+        mockKeyValueStore.shouldThrowOnGet = true
 
-        service.checkForDefaultBrowserChange()
+        sut.checkForDefaultBrowserChange()
 
         assertSingleFailurePixel(named: "user-churn_was-default-browser_read-failed_macos")
     }
 
-    func testWhenWriteFails_ThenWriteFailedPixelFires() throws {
-        let store = RecordingKeyValueStore()
-        let service = makeService(store: store)
+    func testWhenWritesFail_ThenWriteFailedPixelsFire() throws {
         setDefaultBrowserAsNonDuckDuckGo(path: "/Applications/Safari.app", bundleId: "com.apple.Safari")
-        try store.set(true, forKey: wasDefaultKey)
-        store.failingSetKeys = [churnedKey]
+        try mockKeyValueStore.set(true, forKey: wasDefaultKey)
+        mockKeyValueStore.shouldThrowOnSet = true
 
-        service.checkForDefaultBrowserChange()
+        sut.checkForDefaultBrowserChange()
 
         assertSingleFailurePixel(named: "user-churn_churned-from-default_write-failed_macos")
+        assertSingleFailurePixel(named: "user-churn_was-default-browser_write-failed_macos")
     }
 
     private func assertSingleFailurePixel(named name: String, file: StaticString = #filePath, line: UInt = #line) {
@@ -484,39 +466,5 @@ final class UserChurnServiceTests: XCTestCase {
         XCTAssertEqual(calls.first?.pixel.namePrefix, PixelKitNamePrefix.none, file: file, line: line)
         XCTAssertNotNil(calls.first?.pixel.error, file: file, line: line)
         XCTAssertEqual(calls.first?.frequency, .dailyAndCount, file: file, line: line)
-    }
-
-    private func makeService(store: ThrowingKeyValueStoring) -> UserChurnService {
-        UserChurnService(
-            defaultBrowserProvider: mockDefaultBrowserProvider,
-            keyValueStore: store,
-            pixelFiring: mockPixelFiring,
-            atbProvider: { "v123-4" },
-            bundleIdentifierProvider: { [weak self] url in
-                self?.mockBundleIdentifiers[url]
-            }
-        )
-    }
-}
-
-private final class RecordingKeyValueStore: ThrowingKeyValueStoring {
-    private let store = MockThrowingKeyValueStore()
-    var failingGetKeys: Set<String> = []
-    var failingSetKeys: Set<String> = []
-    var writtenKeys: [String] = []
-
-    func object(forKey defaultName: String) throws -> Any? {
-        if failingGetKeys.contains(defaultName) { throw MockThrowingKeyValueStore.MockError.getError }
-        return try store.object(forKey: defaultName)
-    }
-
-    func set(_ value: Any?, forKey defaultName: String) throws {
-        if failingSetKeys.contains(defaultName) { throw MockThrowingKeyValueStore.MockError.setError }
-        try store.set(value, forKey: defaultName)
-        writtenKeys.append(defaultName)
-    }
-
-    func removeObject(forKey defaultName: String) throws {
-        try store.removeObject(forKey: defaultName)
     }
 }

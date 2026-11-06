@@ -88,24 +88,15 @@ final class DefaultBrowserWinBackPromoDelegate: InternalPromoDelegate {
         guard let uiHosting = uiHosting(),
               !uiHosting.isInPopUpWindow,
               let type = actionPerformer.pendingPromptType,
-              isEligible || force,
               let anchor = uiHosting.provideModalAnchor() else {
             return .noChange
         }
 
         return await withCheckedContinuation { continuation in
             showContinuation = continuation
-
-            let modal = modalFactory(type, { [weak self] in
-                guard let self else { return }
-                recordModalSeen()
-                actionPerformer.performPendingActions()
-                resume(with: .actioned())
-            }, { [weak self] in
-                guard let self else { return }
-                recordModalSeen()
-                resume(with: .ignored())
-            })
+            let onConfirm: () -> Void = { [weak self] in self?.handleConfirm(isForceShow: force) }
+            let onDismiss: () -> Void = { [weak self] in self?.handleDismiss(isForceShow: force) }
+            let modal = modalFactory(type, onConfirm, onDismiss)
             self.modal = modal
             modal.present(over: anchor)
         }
@@ -113,15 +104,30 @@ final class DefaultBrowserWinBackPromoDelegate: InternalPromoDelegate {
 
     @MainActor
     func hide() {
-        let modal = self.modal
-        self.modal = nil
         if let modal {
             Task { await modal.dismiss() }
         }
+        modal = nil
         resume(with: .noChange)
     }
 
-    private func recordModalSeen() {
+    private func handleConfirm(isForceShow: Bool) {
+        guard showContinuation != nil else { return }
+        markInactiveUserModalSeen(isForceShow: isForceShow)
+        actionPerformer.performPendingActions()
+        resume(with: .actioned())
+    }
+
+    private func handleDismiss(isForceShow: Bool) {
+        guard showContinuation != nil else { return }
+        markInactiveUserModalSeen(isForceShow: isForceShow)
+        resume(with: .ignored())
+    }
+
+    // The win-back and the legacy inactive-user modal are mutually exclusive: once the win-back
+    // is resolved, the inactive-user modal must never show. Force Show leaves no history.
+    private func markInactiveUserModalSeen(isForceShow: Bool) {
+        guard !isForceShow else { return }
         promptStore.inactiveUserModalShownDate = dateProvider().timeIntervalSince1970
     }
 

@@ -20,14 +20,18 @@ import AppKit
 @testable import DuckDuckGo_Privacy_Browser
 
 final class MockDefaultBrowserAndDockPromptModal: DefaultBrowserAndDockPromptModalPresenting {
-    private(set) var presentedWindows: [NSWindow] = []
+    private(set) var presentedWindow: NSWindow?
     private(set) var dismissCallCount = 0
+    var didPresent: (() -> Void)?
+    var didDismiss: (() -> Void)?
 
     func present(over window: NSWindow) {
-        presentedWindows.append(window)
+        presentedWindow = window
+        didPresent?()
     }
 
     func dismiss() async {
         dismissCallCount += 1
+        didDismiss?()
     }
 }

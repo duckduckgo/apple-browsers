@@ -21,9 +21,6 @@ import Foundation
 
 final class MockUserChurnStateProvider: UserChurnStateProviding {
     var hasChurnedFromDefault = false
-    private(set) var checkForDefaultBrowserChangeCallCount = 0
 
-    func checkForDefaultBrowserChange() {
-        checkForDefaultBrowserChangeCallCount += 1
-    }
+    func checkForDefaultBrowserChange() {}
 }

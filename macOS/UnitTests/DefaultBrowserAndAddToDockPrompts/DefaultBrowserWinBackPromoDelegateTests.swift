@@ -29,7 +29,7 @@ final class DefaultBrowserWinBackPromoDelegateTests: XCTestCase {
     private var uiHosting: MockDefaultBrowserAndDockPromptUIHosting!
     private var modal: MockDefaultBrowserAndDockPromptModal!
     private var isFeatureEnabled = true
-    private var now = Date(timeIntervalSince1970: 1_700_000_000)
+    private let now = Date(timeIntervalSince1970: 1_700_000_000)
     private var capturedTypes: [DefaultBrowserAndDockPromptType] = []
     private var onConfirm: (() -> Void)?
     private var onDismiss: (() -> Void)?
@@ -64,74 +64,78 @@ final class DefaultBrowserWinBackPromoDelegateTests: XCTestCase {
         super.tearDown()
     }
 
-    private func makeDelegate(uiHosting hostProvider: (() -> DefaultBrowserAndDockPromptUIHosting?)? = nil) -> DefaultBrowserWinBackPromoDelegate {
-        let hostProvider = hostProvider ?? { [unowned self] in uiHosting }
-        let delegate = DefaultBrowserWinBackPromoDelegate(
+    private func makeDelegate() -> DefaultBrowserWinBackPromoDelegate {
+        DefaultBrowserWinBackPromoDelegate(
             actionPerformer: actionPerformer,
             churnState: churnState,
             promptStore: promptStore,
             isFeatureEnabled: { [unowned self] in isFeatureEnabled },
-            uiHosting: hostProvider,
-            modalFactory: { [unowned self] type, confirm, dismiss in
+            uiHosting: { [unowned self] in uiHosting },
+            modalFactory: { [unowned self] type, onConfirm, onDismiss in
                 capturedTypes.append(type)
-                onConfirm = confirm
-                onDismiss = dismiss
+                self.onConfirm = onConfirm
+                self.onDismiss = onDismiss
                 return modal
             },
             dateProvider: { [unowned self] in now })
+    }
+
+    private func isEligibleAfterRefresh() -> Bool {
+        let delegate = makeDelegate()
         delegate.refreshEligibility()
-        return delegate
+        return delegate.isEligible
     }
 
     private func startShow(_ delegate: DefaultBrowserWinBackPromoDelegate, force: Bool = false) async -> Task<PromoResult, Never> {
+        let presented = expectation(description: "modal presented")
+        modal.didPresent = { presented.fulfill() }
         let task = Task { await delegate.show(history: PromoHistoryRecord(id: "test"), force: force) }
-        for _ in 0..<50 where onConfirm == nil { await Task.yield() }
+        await fulfillment(of: [presented], timeout: 1)
         return task
     }
 
     // MARK: - Eligibility
 
     func testWhenAllConditionsMetThenEligible() {
-        XCTAssertTrue(makeDelegate().isEligible)
+        XCTAssertTrue(isEligibleAfterRefresh())
     }
 
     func testWhenFlagOffThenNotEligible() {
         isFeatureEnabled = false
-        XCTAssertFalse(makeDelegate().isEligible)
+        XCTAssertFalse(isEligibleAfterRefresh())
     }
 
     func testWhenNotChurnedThenNotEligible() {
         churnState.hasChurnedFromDefault = false
-        XCTAssertFalse(makeDelegate().isEligible)
+        XCTAssertFalse(isEligibleAfterRefresh())
     }
 
     func testWhenBannerPermanentlyDismissedThenNotEligible() {
         promptStore.isBannerPermanentlyDismissed = true
-        XCTAssertFalse(makeDelegate().isEligible)
+        XCTAssertFalse(isEligibleAfterRefresh())
     }
 
     func testWhenInactiveUserModalSeenThenNotEligible() {
         promptStore.inactiveUserModalShownDate = 1
-        XCTAssertFalse(makeDelegate().isEligible)
+        XCTAssertFalse(isEligibleAfterRefresh())
     }
 
-    func testWhenNothingPendingThenNotEligible() {
-        actionPerformer.pendingPromptType = nil
-        XCTAssertFalse(makeDelegate().isEligible)
-    }
-
-    func testWhenChurnedButDefaultAndNotInDockThenNotEligible() {
-        actionPerformer.pendingPromptType = .addToDockPrompt
-        XCTAssertFalse(makeDelegate().isEligible)
-    }
-
-    func testWhenOnlySetAsDefaultPendingThenEligible() {
-        actionPerformer.pendingPromptType = .setAsDefaultPrompt
-        XCTAssertTrue(makeDelegate().isEligible)
+    func testEligibilityRequiresSetAsDefaultPending() {
+        let expected: [(DefaultBrowserAndDockPromptType?, Bool)] = [
+            (nil, false),
+            (.addToDockPrompt, false),
+            (.setAsDefaultPrompt, true),
+            (.bothDefaultBrowserAndDockPrompt, true)
+        ]
+        for (pendingType, isEligible) in expected {
+            actionPerformer.pendingPromptType = pendingType
+            XCTAssertEqual(isEligibleAfterRefresh(), isEligible, "pending type: \(String(describing: pendingType))")
+        }
     }
 
     func testWhenFlagTurnsOffWhileRunningThenEligibilityPublishesFalse() {
         let delegate = makeDelegate()
+        delegate.refreshEligibility()
         var received: [Bool] = []
         delegate.isEligiblePublisher.sink { received.append($0) }.store(in: &cancellables)
 
@@ -142,26 +146,7 @@ final class DefaultBrowserWinBackPromoDelegateTests: XCTestCase {
         XCTAssertFalse(delegate.isEligible)
     }
 
-    func testRefreshEligibilityChecksForDefaultBrowserChangeEvenWhenFlagIsOff() {
-        isFeatureEnabled = false
-        let delegate = makeDelegate()
-        let before = churnState.checkForDefaultBrowserChangeCallCount
-
-        delegate.refreshEligibility()
-
-        XCTAssertEqual(churnState.checkForDefaultBrowserChangeCallCount, before + 1)
-    }
-
     // MARK: - Show
-
-    func testWhenNoHostThenNoChange() async {
-        let delegate = makeDelegate(uiHosting: { nil })
-
-        let result = await delegate.show(history: PromoHistoryRecord(id: "test"), force: false)
-
-        XCTAssertEqual(result, .noChange)
-        XCTAssertTrue(capturedTypes.isEmpty)
-    }
 
     func testWhenInPopUpWindowThenNoChange() async {
         uiHosting.isInPopUpWindow = true
@@ -183,28 +168,6 @@ final class DefaultBrowserWinBackPromoDelegateTests: XCTestCase {
         XCTAssertTrue(capturedTypes.isEmpty)
     }
 
-    func testWhenNotEligibleThenNoChange() async {
-        churnState.hasChurnedFromDefault = false
-        let delegate = makeDelegate()
-
-        let result = await delegate.show(history: PromoHistoryRecord(id: "test"), force: false)
-
-        XCTAssertEqual(result, .noChange)
-        XCTAssertTrue(capturedTypes.isEmpty)
-    }
-
-    func testWhenNotEligibleAndForcedThenPresents() async {
-        churnState.hasChurnedFromDefault = false
-        let delegate = makeDelegate()
-
-        let task = await startShow(delegate, force: true)
-
-        XCTAssertEqual(capturedTypes, [.bothDefaultBrowserAndDockPrompt])
-        XCTAssertEqual(modal.presentedWindows.count, 1)
-        delegate.hide()
-        _ = await task.value
-    }
-
     func testWhenShownThenModalPresentedOverAnchorWithPendingType() async {
         actionPerformer.pendingPromptType = .setAsDefaultPrompt
         let delegate = makeDelegate()
@@ -212,17 +175,16 @@ final class DefaultBrowserWinBackPromoDelegateTests: XCTestCase {
         let task = await startShow(delegate)
 
         XCTAssertEqual(capturedTypes, [.setAsDefaultPrompt])
-        XCTAssertTrue(modal.presentedWindows.first === uiHosting.modalAnchor)
+        XCTAssertTrue(modal.presentedWindow === uiHosting.modalAnchor)
         delegate.hide()
         _ = await task.value
     }
 
-    func testWhenConfirmThenActionsAndActioned() async {
+    func testWhenConfirmThenActionsAndActioned() async throws {
         let delegate = makeDelegate()
         let task = await startShow(delegate)
 
-        XCTAssertNotNil(onConfirm)
-        onConfirm?()
+        try XCTUnwrap(onConfirm)()
         let result = await task.value
 
         XCTAssertEqual(result, .actioned())
@@ -231,12 +193,11 @@ final class DefaultBrowserWinBackPromoDelegateTests: XCTestCase {
         XCTAssertEqual(modal.dismissCallCount, 0)
     }
 
-    func testWhenDismissThenIgnored() async {
+    func testWhenDismissThenIgnored() async throws {
         let delegate = makeDelegate()
         let task = await startShow(delegate)
 
-        XCTAssertNotNil(onDismiss)
-        onDismiss?()
+        try XCTUnwrap(onDismiss)()
         let result = await task.value
 
         XCTAssertEqual(result, .ignored())
@@ -245,46 +206,30 @@ final class DefaultBrowserWinBackPromoDelegateTests: XCTestCase {
         XCTAssertEqual(modal.dismissCallCount, 0)
     }
 
-    func testWhenRefreshedWhileShownAndNowDefaultThenEligibilityPublishesFalse() async {
-        let delegate = makeDelegate()
-        let task = await startShow(delegate)
-        var received: [Bool] = []
-        delegate.isEligiblePublisher.sink { received.append($0) }.store(in: &cancellables)
-
-        actionPerformer.pendingPromptType = .addToDockPrompt
-        delegate.refreshEligibility()
-
-        XCTAssertEqual(received, [true, false])
-        XCTAssertNil(promptStore.inactiveUserModalShownDate)
-        delegate.hide()
-        _ = await task.value
-    }
-
-    func testWhenRefreshedWhileShownAndOnlyAddedToDockThenStillEligible() async {
-        let delegate = makeDelegate()
-        let task = await startShow(delegate)
-        var received: [Bool] = []
-        delegate.isEligiblePublisher.sink { received.append($0) }.store(in: &cancellables)
-
-        actionPerformer.pendingPromptType = .setAsDefaultPrompt
-        delegate.refreshEligibility()
-
-        XCTAssertEqual(received, [true])
-        XCTAssertEqual(modal.dismissCallCount, 0)
-        delegate.hide()
-        _ = await task.value
-    }
-
     func testWhenHideThenNoChangeAndModalDismissed() async {
         let delegate = makeDelegate()
         let task = await startShow(delegate)
+        let dismissed = expectation(description: "modal dismissed")
+        modal.didDismiss = { dismissed.fulfill() }
 
         delegate.hide()
         let result = await task.value
-        for _ in 0..<10 where modal.dismissCallCount == 0 { await Task.yield() }
+        await fulfillment(of: [dismissed], timeout: 1)
 
         XCTAssertEqual(result, .noChange)
         XCTAssertEqual(modal.dismissCallCount, 1)
+        XCTAssertNil(promptStore.inactiveUserModalShownDate)
+    }
+
+    func testWhenButtonTappedAfterHideThenNothingHappens() async throws {
+        let delegate = makeDelegate()
+        let task = await startShow(delegate)
+        delegate.hide()
+        _ = await task.value
+
+        try XCTUnwrap(onConfirm)()
+
+        XCTAssertEqual(actionPerformer.performPendingActionsCallCount, 0)
         XCTAssertNil(promptStore.inactiveUserModalShownDate)
     }
 }

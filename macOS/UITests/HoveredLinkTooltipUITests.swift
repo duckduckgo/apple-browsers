@@ -51,9 +51,8 @@ final class HoveredLinkTooltipUITests: UITestCase {
 
         app.activate()
         XCTAssertTrue(app.wait(for: .runningForeground, timeout: UITests.Timeouts.elementExistence))
-        moveWithinLink(link)
 
-        assertTooltipAppears("The tooltip must come back for the link under the pointer")
+        assertTooltipAppears("The tooltip must come back for the link under the unmoved pointer")
     }
 
     func testWhenSwitchingTabsWithCtrlTabThenTooltipIsDismissedAndComesBack() {
@@ -69,8 +68,7 @@ final class HoveredLinkTooltipUITests: UITestCase {
 
         app.typeKey("\t", modifierFlags: .control)
         XCTAssertTrue(link.waitForExistence(timeout: UITests.Timeouts.elementExistence))
-        moveWithinLink(link)
-        assertTooltipAppears("The tooltip must come back for the link under the pointer in the re-selected tab")
+        assertTooltipAppears("The tooltip must come back for the link under the unmoved pointer in the re-selected tab")
     }
 
     func testWhenClickingLinkWithPointerStayingPutThenTooltipDisappearsOnTheNewPage() {
@@ -95,8 +93,7 @@ final class HoveredLinkTooltipUITests: UITestCase {
 
         app.typeKey("`", modifierFlags: .command)
         XCTAssertTrue(link.waitForExistence(timeout: UITests.Timeouts.elementExistence))
-        moveWithinLink(link)
-        assertTooltipAppears("The tooltip must come back after the first window becomes key again")
+        assertTooltipAppears("The tooltip must come back for the link under the unmoved pointer after the first window becomes key again")
     }
 
     // MARK: - Helpers
@@ -112,11 +109,6 @@ final class HoveredLinkTooltipUITests: UITestCase {
 
     private func assertTooltipDisappears(_ message: String, file: StaticString = #filePath, line: UInt = #line) {
         XCTAssertTrue(tooltipLabel.waitForNonExistence(timeout: UITests.Timeouts.elementExistence), message, file: file, line: line)
-    }
-
-    /// Moves the pointer to another point of the same link.
-    private func moveWithinLink(_ link: XCUIElement) {
-        link.coordinate(withNormalizedOffset: CGVector(dx: 0.3, dy: 0.5)).hover()
     }
 
     private func openPageWithLink() -> XCUIElement {

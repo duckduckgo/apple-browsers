@@ -174,6 +174,8 @@ final class HoveredLinkTooltipPresenter {
             return
         }
 
+        // A link is known: nothing is left to take from the page when the pointer moves.
+        shouldRestoreOnNextMove = false
         label.stringValue = url.absoluteString
         if window.isVisible {
             updatePosition()

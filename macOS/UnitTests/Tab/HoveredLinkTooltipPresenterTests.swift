@@ -503,6 +503,20 @@ final class HoveredLinkTooltipPresenterTests: XCTestCase {
         XCTAssertNil(harness.tooltip)
     }
 
+    func testWhenLinkIsRestoredAfterWindowDeactivationThenNextMoveDoesNotScheduleAnotherRestore() {
+        let harness = TooltipHarness()
+        harness.showFirstLink()
+        harness.presenter.windowDidResignKey()
+        harness.presenter.update(url: URL(string: "https://example.com/restored")!)
+        let scheduledCount = harness.scheduler.scheduledCount
+
+        harness.presenter.mouseDidMove()
+
+        XCTAssertEqual(harness.scheduler.scheduledCount, scheduledCount, "The known link is already on its way to the screen")
+        harness.scheduler.run(delay: Timing.revealDelay)
+        XCTAssertEqual(harness.label?.stringValue, "https://example.com/restored")
+    }
+
     func testWhenNothingToShowHideOrRestoreThenPresenterIsIdle() {
         let harness = TooltipHarness()
         XCTAssertTrue(harness.presenter.isIdle)

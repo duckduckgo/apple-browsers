@@ -1340,6 +1340,7 @@ final class BrowserTabViewController: NSViewController {
         hoveredLinkTooltip?.reset()
         defer {
             adjustFirstResponderAfterAddingContentViewIfNeeded()
+            restoreHoveredLinkTooltipIfPointerIsOverPage()
         }
 
         if let tabID = tabViewModel?.tab.uuid {
@@ -1797,6 +1798,7 @@ extension BrowserTabViewController: TabDelegate {
         keyWindowSelectedTabCancellable = nil
         subscribeToPinnedTabs()
         hideWebViewSnapshotIfNeeded()
+        restoreHoveredLinkTooltipIfPointerIsOverPage()
 
         // When a window becomes key it will reload the last contextual onboarding dialog if needed
         // This helps keep dialogs consistent when moving between Windows
@@ -2071,9 +2073,26 @@ extension BrowserTabViewController {
 
     /// Views stacked above the web view (find bar, overlays) take the pointer away from it.
     private func isPointerOverWebView(_ event: NSEvent) -> Bool {
-        guard let webView, let contentView = event.window?.contentView else { return false }
-        let point = contentView.superview?.convert(event.locationInWindow, from: nil) ?? event.locationInWindow
+        guard let window = event.window else { return false }
+        return isPointerOverWebView(atWindowPoint: event.locationInWindow, in: window)
+    }
+
+    private func isPointerOverWebView(atWindowPoint windowPoint: NSPoint, in window: NSWindow) -> Bool {
+        guard let webView, let contentView = window.contentView else { return false }
+        let point = contentView.superview?.convert(windowPoint, from: nil) ?? windowPoint
         return contentView.hitTest(point)?.isDescendant(of: webView) == true
+    }
+
+    /// Switching tabs or windows hides the tooltip, and the page reports nothing while the pointer stays still.
+    /// So once the page is on screen, show the link it last reported if the pointer is over it.
+    private func restoreHoveredLinkTooltipIfPointerIsOverPage() {
+        DispatchQueue.main.async { [weak self] in
+            guard let self, let window = self.view.window, let url = self.tabViewModel?.tab.currentHoveredLink else { return }
+            // A just added web view has no frame until layout runs, and hit testing would miss it.
+            window.contentView?.layoutSubtreeIfNeeded()
+            guard self.isPointerOverWebView(atWindowPoint: window.mouseLocationOutsideOfEventStream, in: window) else { return }
+            self.updateHoveredLinkTooltip(url: url)
+        }
     }
 
     func mouseDown(with event: NSEvent) -> NSEvent? {

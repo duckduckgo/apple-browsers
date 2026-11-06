@@ -89,6 +89,9 @@ extension Tab: NavigationResponder {
             // Find In Page
             .weak(nullable: self.findInPage),
 
+            // Hovered link: forget it when a new document is committed
+            .weak(nullable: self.hoveredLinks),
+
             // Tab Snapshots
             .weak(nullable: self.tabSnapshots),
 

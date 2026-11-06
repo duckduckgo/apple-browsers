@@ -18,16 +18,26 @@
 
 import Combine
 import Foundation
+import DDGNavigation
 
 final class HoveredLinkTabExtension: TabExtension {
 
     private var cancellable: AnyCancellable?
-    fileprivate var hoveredLinkSubject = PassthroughSubject<URL?, Never>()
+    private weak var hoverUserScript: HoverUserScript?
+    fileprivate var hoveredLinkSubject = CurrentValueSubject<URL?, Never>(nil)
 
     init(hoverUserScriptPublisher: some Publisher<HoverUserScript?, Never>) {
         cancellable = hoverUserScriptPublisher.sink { [weak self] hoverUserScript in
+            self?.hoverUserScript = hoverUserScript
             hoverUserScript?.delegate = self
         }
+    }
+
+    /// The page the link was hovered on is gone: neither the script nor consumers may keep reporting it.
+    func resetForNewDocument() {
+        hoverUserScript?.resetForNewDocument()
+        guard hoveredLinkSubject.value != nil else { return }
+        hoveredLinkSubject.send(nil)
     }
 
 }
@@ -39,15 +49,31 @@ extension HoveredLinkTabExtension: HoverUserScriptDelegate {
     }
 }
 
-protocol HoveredLinksProtocol {
+extension HoveredLinkTabExtension: NavigationResponder {
+
+    func didCommit(_ navigation: Navigation) {
+        resetForNewDocument()
+    }
+
+}
+
+protocol HoveredLinksProtocol: AnyObject, NavigationResponder {
     var hoveredLinkPublisher: AnyPublisher<URL?, Never> { get }
+    /// The link under the pointer as last reported by the page. The page reports only changes,
+    /// so this is the only way to learn it again after a consumer has forgotten it.
+    var currentHoveredLink: URL? { get }
 }
 
 extension HoveredLinkTabExtension: HoveredLinksProtocol {
     func getPublicProtocol() -> HoveredLinksProtocol { self }
 
+    /// Reports link changes only: the current value, which a new subscriber would get first, is read from `currentHoveredLink`.
     var hoveredLinkPublisher: AnyPublisher<URL?, Never> {
-        hoveredLinkSubject.eraseToAnyPublisher()
+        hoveredLinkSubject.dropFirst().eraseToAnyPublisher()
+    }
+
+    var currentHoveredLink: URL? {
+        hoveredLinkSubject.value
     }
 }
 
@@ -58,6 +84,10 @@ extension TabExtensions {
 }
 
 extension Tab {
+    var currentHoveredLink: URL? {
+        self.hoveredLinks?.currentHoveredLink
+    }
+
     var hoveredLinkPublisher: AnyPublisher<URL?, Never> {
         self.hoveredLinks?.hoveredLinkPublisher ?? Just(nil).eraseToAnyPublisher()
     }

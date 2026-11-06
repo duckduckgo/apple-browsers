@@ -32,8 +32,15 @@ extension AssistedOptOutSession {
     var stepStates: [AssistedOptOutStepState] {
         steps.titles.indices.map { index in
             if phase == .submitted || index < currentStepIndex { return .done }
-            if index > currentStepIndex || phase == .queued { return .upcoming }
+            if index > currentStepIndex || phase == .queued || phase == .ready { return .upcoming }
             return phase == .userTurn ? .userTurn : .running
+        }
+    }
+
+    var isAttemptRunning: Bool {
+        switch phase {
+        case .queued, .agentInControl, .userTurn: return true
+        case .ready, .submitted: return false
         }
     }
 }
@@ -42,46 +49,75 @@ extension AssistedOptOutSession {
 struct AssistedOptOutStepsPanel: View {
     @ObservedObject var session: AssistedOptOutSession
     let close: () -> Void
+    let stop: () -> Void
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 0) {
+        VStack(alignment: .leading, spacing: 16) {
+            topRow
+                .padding(.top, -4)
+                .padding(.trailing, -4)
+                .padding(.bottom, -8)
             header
             if session.phase == .submitted {
                 whatHappensNext
-                    .padding(.top, 24)
+                    .padding(.top, 8)
             } else {
                 steps
-                    .padding(.top, 16)
             }
             Spacer(minLength: 0)
             footer
         }
         .padding(16)
-        .frame(maxHeight: .infinity, alignment: .top)
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
         .background(Color(designSystemColor: .surfaceTertiary))
+    }
+
+    private var topRow: some View {
+        HStack(spacing: 8) {
+            Spacer(minLength: 0)
+            if session.isAttemptRunning {
+                Text("Keeps running if you close")
+                    .font(.system(size: 13))
+                    .foregroundColor(Color(designSystemColor: .textTertiary))
+            }
+            Button(action: close) {
+                Image(nsImage: DesignSystemImages.Glyphs.Size16.close)
+                    .renderingMode(.template)
+                    .foregroundColor(Color(designSystemColor: .iconsPrimary))
+                    .frame(width: 40, height: 40)
+                    .background(Circle().fill(Color(designSystemColor: .controlsFillPrimary)))
+                    .contentShape(Circle())
+            }
+            .buttonStyle(.plain)
+            .help(session.isAttemptRunning ? "Close \u{2014} removal keeps running" : "Close")
+            .accessibilityLabel("Close")
+        }
     }
 
     private var header: some View {
         VStack(spacing: 12) {
-            AssistedOptOutBrokerAvatar(name: session.broker.name, size: 48)
+            AssistedOptOutBrokerLogo(broker: session.broker, size: 56)
             Text(session.phase == .submitted ? "Request submitted to \(session.broker.name)" : "Removing you from \(session.broker.name)")
-                .font(.system(size: 20))
+                .font(.system(size: 22))
                 .foregroundColor(Color(designSystemColor: .textPrimary))
+                .fixedSize(horizontal: false, vertical: true)
             Text(subtitle)
-                .font(.system(size: 14))
+                .font(.system(size: 15))
                 .foregroundColor(Color(designSystemColor: .textSecondary))
+                .fixedSize(horizontal: false, vertical: true)
         }
         .multilineTextAlignment(.center)
         .frame(maxWidth: .infinity)
-        .padding(20)
+        .padding(24)
         .background(RoundedRectangle(cornerRadius: 20).fill(Color(designSystemColor: .containerFillPrimary)))
     }
 
     private var subtitle: String {
         switch session.phase {
+        case .ready: return "When you\u{2019}re ready, we\u{2019}ll fill in \(session.broker.name)\u{2019}s opt-out form. We\u{2019}ll pause whenever we need your help."
         case .submitted: return "Nice work. That\u{2019}s the hard part done."
         case .userTurn: return "We\u{2019}ve paused. \(session.broker.name) needs a person for this step."
-        case .queued: return "Waiting for another removal to finish."
+        case .queued: return "Opening \(session.broker.name)\u{2026}"
         case .agentInControl: return "Filling in your details."
         }
     }
@@ -117,38 +153,76 @@ struct AssistedOptOutStepsPanel: View {
     }
 
     private var footer: some View {
-        VStack(alignment: .trailing, spacing: 8) {
-            if session.phase != .submitted {
-                Text("Closing this window stops the removal. You can start it again from Personal Information Removal.")
-                    .font(.system(size: 12))
-                    .foregroundColor(Color(designSystemColor: .textSecondary))
-                    .fixedSize(horizontal: false, vertical: true)
+        HStack {
+            Spacer(minLength: 0)
+            switch session.phase {
+            case .ready:
+                pill(isDark: false, action: stop) { Text("Cancel") }
+            case .submitted:
+                pill(isDark: true, action: close) { Text("Back to dashboard") }
+            case .queued, .agentInControl, .userTurn:
+                pill(isDark: false, action: stop) {
+                    HStack(spacing: 8) {
+                        RoundedRectangle(cornerRadius: 2)
+                            .frame(width: 10, height: 10)
+                        Text("Stop")
+                    }
+                }
             }
-            Button(action: close) {
-                Text(session.phase == .submitted ? "Done" : "Stop and close")
-                    .font(.system(size: 14, weight: .medium))
-                    .foregroundColor(Color(designSystemColor: .textPrimary))
-                    .padding(.horizontal, 18)
-                    .frame(height: 36)
-                    .background(Capsule().fill(Color(designSystemColor: .controlsFillPrimary)))
-            }
-            .buttonStyle(.plain)
         }
-        .frame(maxWidth: .infinity, alignment: .trailing)
+    }
+
+    private func pill<Label: View>(isDark: Bool, action: @escaping () -> Void, @ViewBuilder label: () -> Label) -> some View {
+        Button(action: action) {
+            label()
+                .font(.system(size: 14, weight: .medium))
+                .foregroundColor(isDark ? Color(nsColor: .windowBackgroundColor) : Color(designSystemColor: .textPrimary))
+                .padding(.horizontal, 18)
+                .frame(height: 40)
+                .background(Capsule().fill(isDark ? Color.primary : Color(designSystemColor: .controlsFillPrimary)))
+        }
+        .buttonStyle(.plain)
     }
 }
 
-/// Stands in for the broker's logo, which the agent doesn't have.
-private struct AssistedOptOutBrokerAvatar: View {
-    let name: String
+/// The broker's favicon, or the first letter of its name when there isn't one.
+private struct AssistedOptOutBrokerLogo: View {
+    let broker: AssistedOptOut.DataBroker
     let size: CGFloat
+    @State private var favicon: NSImage?
 
     var body: some View {
-        Text(name.first.map(String.init) ?? "")
-            .font(.system(size: size * 0.45, weight: .medium))
-            .foregroundColor(Color(designSystemColor: .textPrimary))
-            .frame(width: size, height: size)
-            .background(Circle().fill(Color(designSystemColor: .controlsFillPrimary)))
+        ZStack {
+            Circle()
+                .fill(Color(designSystemColor: .controlsFillPrimary))
+            if let favicon {
+                // Most favicons are small; scaling those up to fill the circle would blur them.
+                let fillsCircle = favicon.size.width >= size
+                Image(nsImage: favicon)
+                    .resizable()
+                    .interpolation(.high)
+                    .aspectRatio(contentMode: .fit)
+                    .frame(width: fillsCircle ? size : size * 0.55, height: fillsCircle ? size : size * 0.55)
+            } else {
+                Text(broker.name.first.map(String.init) ?? "")
+                    .font(.system(size: size * 0.45, weight: .medium))
+                    .foregroundColor(Color(designSystemColor: .textPrimary))
+            }
+        }
+        .frame(width: size, height: size)
+        .clipShape(Circle())
+        .task(id: broker.url) {
+            guard let data = await Self.faviconData(for: broker) else { return }
+            favicon = NSImage(data: data)
+        }
+    }
+
+    private static func faviconData(for broker: AssistedOptOut.DataBroker) async -> Data? {
+        guard let host = broker.homeURL?.host,
+              let url = URL(string: "https://icons.duckduckgo.com/ip3/\(host).ico"),
+              let (data, response) = try? await URLSession.shared.data(from: url),
+              (response as? HTTPURLResponse)?.statusCode == 200 else { return nil }
+        return data
     }
 }
 
@@ -195,15 +269,15 @@ private struct AssistedOptOutStepRow: View {
                 .font(.system(size: 16))
                 .foregroundColor(Color(designSystemColor: .textPrimary))
             Text("Complete the highlighted part of the page. We\u{2019}ll carry on as soon as it\u{2019}s done.")
-                .font(.system(size: 12))
-                .foregroundColor(Color(designSystemColor: .textPrimary))
+                .font(.system(size: 13))
+                .lineSpacing(2)
+                .foregroundColor(Color(designSystemColor: .textSecondary))
                 .fixedSize(horizontal: false, vertical: true)
         }
         .padding(.horizontal, 16)
         .padding(.vertical, 14)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(RoundedRectangle(cornerRadius: 14).fill(Color(designSystemColor: .statusWarningFillPrimary)))
-        .overlay(RoundedRectangle(cornerRadius: 14).strokeBorder(Color(designSystemColor: .statusYellowPrimary), lineWidth: 1.5))
+        .assistedOptOutCallout()
     }
 }
 

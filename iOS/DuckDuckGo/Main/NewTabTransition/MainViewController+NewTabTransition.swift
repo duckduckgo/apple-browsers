@@ -23,14 +23,17 @@ import os
 /// The browser opens its new tabs through `newTabTransitions`; see `NewTabTransitionCoordinator`.
 extension MainViewController: NewTabTransitionHost {
 
+    /// Off in UI tests, which expect each screen to settle at once.
     var isNewTabTransitionEnabled: Bool {
-        NewTabTransitionConfigurationStore.shared.configuration.isEnabled
+        featureFlagger.isFeatureOn(.newTabTransition)
+            && NewTabTransitionConfigurationStore.shared.configuration.isEnabled
+            && !ProcessInfo.isRunningUITests
     }
 
     var newPageView: UIView { view }
 
     func makeNewTabTransition(from start: NewTabTransitionCoordinator.Start) -> NewTabTransitioning? {
-        guard let oldScreen = oldScreen(for: start) else { return nil }
+        guard isNewTabTransitionEnabled, let oldScreen = oldScreen(for: start) else { return nil }
         logMenuViews(around: oldScreen)
         return NewTabTransition.begin(over: oldScreen,
                                       dimmedBy: dimmingOverOldScreen(for: start),
@@ -91,6 +94,7 @@ extension MainViewController: NewTabTransitionHost {
 
     func installNewTabTouchLocationRecorderIfNeeded() {
         guard let window = view.window, newTabTouchLocationRecorder.view !== window else { return }
+        newTabTouchLocationRecorder.onTouchBegan = { [weak self] in self?.newTabTransitions.finishCurrent() }
         window.addGestureRecognizer(newTabTouchLocationRecorder)
     }
 

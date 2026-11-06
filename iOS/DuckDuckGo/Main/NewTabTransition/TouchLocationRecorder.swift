@@ -19,10 +19,11 @@
 
 import UIKit.UIGestureRecognizerSubclass
 
-/// Remembers where the last touch in the window began, without taking part in gesture handling.
+/// Remembers where the last touch in the window began, and reports it, without taking part in gesture handling.
 final class TouchLocationRecorder: UIGestureRecognizer {
 
     private(set) var lastTouchLocation: CGPoint?
+    var onTouchBegan: () -> Void = {}
 
     init() {
         super.init(target: nil, action: nil)
@@ -33,6 +34,7 @@ final class TouchLocationRecorder: UIGestureRecognizer {
 
     override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent) {
         lastTouchLocation = touches.first?.location(in: view)
+        onTouchBegan()
         state = .failed
     }
 

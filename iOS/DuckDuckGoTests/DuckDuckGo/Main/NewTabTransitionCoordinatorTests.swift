@@ -117,6 +117,25 @@ final class NewTabTransitionCoordinatorTests: XCTestCase {
         XCTAssertEqual(host.transitions[1].cancelCount, 0)
     }
 
+    func testWhenFinishedEarlyThenTheRunningTransitionIsCancelledAndTheNextOpenGetsItsOwn() {
+        coordinator.open(build)
+
+        coordinator.finishCurrent()
+
+        XCTAssertEqual(host.transitions[0].cancelCount, 1)
+        XCTAssertFalse(coordinator.isOpeningNewTab)
+        XCTAssertTrue(coordinator.open(build))
+    }
+
+    func testWhenFinishedEarlyThenAPreparedTransitionIsLeftForItsTab() {
+        coordinator.prepare(from: .tabManager)
+
+        coordinator.finishCurrent()
+
+        XCTAssertEqual(host.transitions[0].cancelCount, 0)
+        XCTAssertTrue(coordinator.isOpeningNewTab)
+    }
+
     // MARK: - Presented screens
 
     func testWhenTransitionIsUnavailableThenThePresentedScreenDismissesBeforeTheTabIsBuilt() {

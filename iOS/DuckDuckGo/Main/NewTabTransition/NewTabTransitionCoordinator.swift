@@ -120,6 +120,13 @@ final class NewTabTransitionCoordinator: NewTabOpeningObserving {
         reveal(transition, builtBy: build)
     }
 
+    /// The user acts while a tab comes in, so it lands at once instead of making them wait.
+    /// A prepared transition is left alone: the tab it's for hasn't been built yet.
+    func finishCurrent() {
+        guard let current, current !== prepared else { return }
+        current.cancel()
+    }
+
     /// Focus the input asks for waits while a new tab comes in, so the keyboard lands with it.
     func scheduleInputFocus(_ focus: @escaping () -> Void) {
         guard let current else { return scheduleOnNextTurn(focus) }

@@ -917,7 +917,7 @@ extension TabSwitcherViewController {
     private func openRecentChat(_ chat: AIChatSuggestion) {
         guard !isProcessingUpdates else { return }
         canUpdateCollection = false
-        dismissIfPossible(forceDismissOnEmpty: true)
+        dismissForNewTab()
         delegate.tabSwitcher(self, didRequestAIChat: chat.chatId)
     }
 

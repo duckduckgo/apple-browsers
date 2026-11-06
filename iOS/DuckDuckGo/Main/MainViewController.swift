@@ -8827,8 +8827,10 @@ extension MainViewController: TabSwitcherDelegate {
     func tabSwitcher(_ tabSwitcher: TabSwitcherViewController, didRequestAIChat chatID: String) {
         fireAIChatUsagePixelAndSetFeatureUsed(.openAIChatFromTabManager)
         fireAIChatEntryPointPixel(source: .tabSwitcher, opensNewTab: true, hasPrompt: false)
-        loadUrlInNewTab(aiChatSettings.aiChatURL.withChatID(chatID), inheritedAttribution: nil) {
-            $0.duckAIEntrySource = .tabSwitcher
+        newTabTransitions.open {
+            loadUrlInNewTab(aiChatSettings.aiChatURL.withChatID(chatID), inheritedAttribution: nil) {
+                $0.duckAIEntrySource = .tabSwitcher
+            }
         }
     }
 

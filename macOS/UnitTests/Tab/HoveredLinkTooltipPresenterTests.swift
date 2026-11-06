@@ -21,6 +21,8 @@ import XCTest
 
 @testable import DuckDuckGo_Privacy_Browser
 
+private typealias Timing = HoveredLinkTooltipPresenter.Constants
+
 final class HoveredLinkTooltipPresenterTests: XCTestCase {
 
     private let size = NSSize(width: 300, height: 28)
@@ -123,10 +125,10 @@ final class HoveredLinkTooltipPresenterTests: XCTestCase {
         XCTAssertEqual(tooltip.frame, originalFrame, "Native movement must wait for WebKit's hover update")
         harness.presenter.update(url: nil)
         // Deliberately execute the cancelled move, as if it had already been enqueued.
-        harness.scheduler.run(at: 1)
+        harness.scheduler.run(delay: Timing.webKitHoverSettleDelay)
         harness.presenter.updatePosition()
         XCTAssertEqual(tooltip.frame, originalFrame, "An exiting link must not reposition its tooltip")
-        harness.scheduler.run(at: 2)
+        harness.scheduler.run(delay: Timing.hideDelay)
         XCTAssertNil(harness.tooltip)
     }
 
@@ -137,20 +139,20 @@ final class HoveredLinkTooltipPresenterTests: XCTestCase {
         harness.pointer.location = NSPoint(x: tooltip.frame.minX + 20, y: tooltip.frame.minY + 10)
 
         harness.presenter.mouseDidMove()
-        harness.scheduler.run(at: 1)
+        harness.scheduler.run(delay: Timing.webKitHoverSettleDelay)
         XCTAssertEqual(tooltip.frame.maxY, harness.parent.frame.minY)
         XCTAssertFalse(tooltip.frame.contains(harness.pointer.location))
         XCTAssertEqual(harness.animator.movements.last?.duration,
-                       NSWorkspace.shared.accessibilityDisplayShouldReduceMotion ? 0 : 0.12)
+                       NSWorkspace.shared.accessibilityDisplayShouldReduceMotion ? 0 : Timing.slideDuration)
     }
 
     func testWhenTooltipAppearsThenItFadesIn() {
         let harness = TooltipHarness()
         harness.presenter.update(url: URL(string: "https://example.com/first")!)
-        harness.scheduler.run(at: 0)
+        harness.scheduler.run(delay: Timing.revealDelay)
         XCTAssertEqual(harness.animator.animations.last?.opacity, 1)
         XCTAssertEqual(harness.animator.animations.last?.duration,
-                       NSWorkspace.shared.accessibilityDisplayShouldReduceMotion ? 0 : 0.25)
+                       NSWorkspace.shared.accessibilityDisplayShouldReduceMotion ? 0 : Timing.fadeInDuration)
     }
 
     func testWhenTooltipAppearsThenInitialPlacementIsImmediate() {
@@ -177,7 +179,7 @@ final class HoveredLinkTooltipPresenterTests: XCTestCase {
         XCTAssertEqual(harness.animator.movements.count, movementCount + 1)
         XCTAssertEqual(harness.animator.movements.last?.frame, originalFrame)
         XCTAssertEqual(harness.animator.movements.last?.duration,
-                       NSWorkspace.shared.accessibilityDisplayShouldReduceMotion ? 0 : 0.12)
+                       NSWorkspace.shared.accessibilityDisplayShouldReduceMotion ? 0 : Timing.slideDuration)
     }
 
     func testWhenCrossingLinksRepeatedlyThenOldHideCallbacksCannotHideNewLink() {
@@ -185,10 +187,9 @@ final class HoveredLinkTooltipPresenterTests: XCTestCase {
         harness.showFirstLink()
         for index in 1...20 {
             harness.presenter.update(url: nil)
-            let hideIndex = harness.scheduler.actions.count - 1
             let url = URL(string: "https://example.com/link-\(index)")!
             harness.presenter.update(url: url)
-            harness.scheduler.run(at: hideIndex)
+            harness.scheduler.run(delay: Timing.hideDelay)
             XCTAssertTrue(harness.tooltip?.isVisible == true)
             XCTAssertEqual(harness.label?.stringValue, url.absoluteString)
         }
@@ -198,7 +199,7 @@ final class HoveredLinkTooltipPresenterTests: XCTestCase {
         let harness = TooltipHarness()
         harness.showFirstLink()
         harness.presenter.update(url: nil)
-        harness.scheduler.run(at: 1)
+        harness.scheduler.run(delay: Timing.hideDelay)
         XCTAssertNil(harness.tooltip)
         let animationCount = harness.animator.animations.count
 
@@ -215,16 +216,16 @@ final class HoveredLinkTooltipPresenterTests: XCTestCase {
         let harness = TooltipHarness()
         harness.showFirstLink()
         harness.presenter.update(url: nil)
-        harness.scheduler.run(at: 1)
-        harness.scheduler.run(at: 2) // the grace period ends
+        harness.scheduler.run(delay: Timing.hideDelay)
+        harness.scheduler.run(delay: Timing.instantShowGracePeriod)
         XCTAssertNil(harness.tooltip)
 
         let url = URL(string: "https://example.com/second")!
         harness.presenter.update(url: url)
         XCTAssertNil(harness.tooltip, "A hidden tooltip must wait for the reveal delay")
-        XCTAssertEqual(harness.scheduler.actions.count, 4)
+        XCTAssertEqual(harness.scheduler.pendingCount(delay: Timing.revealDelay), 1)
 
-        harness.scheduler.run(at: 3)
+        harness.scheduler.run(delay: Timing.revealDelay)
         XCTAssertTrue(harness.tooltip?.isVisible == true)
         XCTAssertEqual(harness.label?.stringValue, url.absoluteString)
     }
@@ -239,41 +240,43 @@ final class HoveredLinkTooltipPresenterTests: XCTestCase {
 
         harness.presenter.update(url: nil)
         XCTAssertEqual(label.stringValue, url)
-        harness.scheduler.run(at: 1)
+        harness.scheduler.run(delay: Timing.hideDelay)
         XCTAssertTrue(tooltip.isVisible)
         XCTAssertTrue(tooltip.parent === harness.parent)
         XCTAssertEqual(label.stringValue, url)
         XCTAssertEqual(label.alphaValue, 1)
         XCTAssertEqual(tooltip.contentView?.alphaValue, 1)
         XCTAssertEqual(harness.animator.animations.last?.opacity, 0)
-        XCTAssertEqual(harness.animator.animations.last?.duration, 0.1)
+        XCTAssertEqual(harness.animator.animations.last?.duration, Timing.fadeOutDuration)
 
-        harness.animator.complete(at: 0)
+        harness.animator.completeNewest(opacity: 0)
         XCTAssertNil(harness.tooltip)
         XCTAssertFalse(tooltip.isVisible)
     }
 
-    func testWhenNewLinkArrivesDuringFadeThenOldCompletionCannotDismissIt() {
+    func testWhenNewLinkArrivesDuringFadeThenTooltipFadesBackInQuicklyAndOldCompletionCannotDismissIt() {
         let harness = TooltipHarness()
         harness.animator.completesImmediately = false
         harness.showFirstLink()
         harness.presenter.update(url: nil)
-        harness.scheduler.run(at: 1)
+        harness.scheduler.run(delay: Timing.hideDelay)
 
         let url = URL(string: "https://example.com/second")!
         harness.presenter.update(url: url)
         XCTAssertEqual(harness.animator.animations.last?.opacity, 1)
-        XCTAssertEqual(harness.animator.animations.last?.duration, 0)
-        harness.animator.complete(at: 0)
+        XCTAssertEqual(harness.animator.animations.last?.duration,
+                       NSWorkspace.shared.accessibilityDisplayShouldReduceMotion ? 0 : Timing.refadeInDuration,
+                       "The tooltip fades back in from its current opacity")
+        harness.animator.completeOldest(opacity: 0)
         XCTAssertTrue(harness.tooltip?.isVisible == true)
         XCTAssertEqual(harness.tooltip?.alphaValue, 1)
         XCTAssertEqual(harness.label?.stringValue, url.absoluteString)
 
         harness.presenter.update(url: nil)
-        harness.scheduler.run(at: 2)
-        harness.animator.complete(at: 0)
+        harness.scheduler.run(delay: Timing.hideDelay)
+        harness.animator.completeOldest(opacity: 0)
         XCTAssertNotNil(harness.tooltip, "An old completion must not finish a newer fade")
-        harness.animator.complete(at: 2)
+        harness.animator.completeNewest(opacity: 0)
         XCTAssertNil(harness.tooltip)
     }
 
@@ -282,14 +285,15 @@ final class HoveredLinkTooltipPresenterTests: XCTestCase {
         harness.animator.completesImmediately = false
         harness.showFirstLink()
         harness.presenter.update(url: nil)
-        harness.scheduler.run(at: 1)
+        harness.scheduler.run(delay: Timing.hideDelay)
         let animationCount = harness.animator.animations.count
+        let scheduledCount = harness.scheduler.scheduledCount
 
         harness.presenter.update(url: nil)
 
         XCTAssertEqual(harness.animator.animations.count, animationCount)
-        XCTAssertEqual(harness.scheduler.actions.count, 2)
-        harness.animator.complete(at: 0)
+        XCTAssertEqual(harness.scheduler.scheduledCount, scheduledCount, "No second fade is scheduled")
+        harness.animator.completeNewest(opacity: 0)
         XCTAssertNil(harness.tooltip)
     }
 
@@ -298,13 +302,13 @@ final class HoveredLinkTooltipPresenterTests: XCTestCase {
         harness.animator.completesImmediately = false
         harness.showFirstLink()
         harness.presenter.update(url: nil)
-        harness.scheduler.run(at: 1)
+        harness.scheduler.run(delay: Timing.hideDelay)
         harness.presenter.reset()
         XCTAssertNil(harness.tooltip)
 
         harness.presenter.update(url: URL(string: "https://example.com/second")!)
-        harness.scheduler.run(at: 2)
-        harness.animator.complete(at: 0)
+        harness.scheduler.run(delay: Timing.revealDelay)
+        harness.animator.completeOldest(opacity: 0)
         XCTAssertTrue(harness.tooltip?.isVisible == true)
         XCTAssertEqual(harness.tooltip?.alphaValue, 1)
     }
@@ -313,7 +317,7 @@ final class HoveredLinkTooltipPresenterTests: XCTestCase {
         let harness = TooltipHarness()
         harness.presenter.update(url: URL(string: "https://example.com/first")!)
         harness.presenter.reset()
-        harness.scheduler.run(at: 0)
+        harness.scheduler.run(delay: Timing.revealDelay)
         XCTAssertNil(harness.tooltip)
     }
 
@@ -325,9 +329,8 @@ final class HoveredLinkTooltipPresenterTests: XCTestCase {
             harness.presenter.mouseDidExit()
             XCTAssertNil(harness.tooltip)
             harness.presenter.mouseDidMove()
-            let reveal = harness.scheduler.actions.count - 1
             XCTAssertNil(harness.tooltip, "Wait for WebKit to invalidate the old hover before restoring it")
-            harness.scheduler.run(at: reveal)
+            harness.scheduler.run(delay: Timing.webKitHoverSettleDelay)
             XCTAssertTrue(harness.tooltip?.isVisible == true)
             XCTAssertEqual(harness.label?.stringValue, url)
             XCTAssertEqual(harness.tooltip?.alphaValue, 1)
@@ -340,7 +343,7 @@ final class HoveredLinkTooltipPresenterTests: XCTestCase {
         harness.presenter.mouseDidExit()
         harness.presenter.mouseDidMove()
         harness.presenter.update(url: nil)
-        harness.scheduler.run(at: 1)
+        harness.scheduler.run(delay: Timing.webKitHoverSettleDelay)
         XCTAssertNil(harness.tooltip)
     }
 
@@ -352,7 +355,7 @@ final class HoveredLinkTooltipPresenterTests: XCTestCase {
         harness.presenter.update(url: url)
         XCTAssertNil(harness.tooltip)
         harness.presenter.mouseDidMove()
-        harness.scheduler.run(at: 1)
+        harness.scheduler.run(delay: Timing.webKitHoverSettleDelay)
         XCTAssertTrue(harness.tooltip?.isVisible == true)
         XCTAssertEqual(harness.label?.stringValue, url.absoluteString)
     }
@@ -363,7 +366,7 @@ final class HoveredLinkTooltipPresenterTests: XCTestCase {
         harness.presenter.mouseDidExit()
         harness.presenter.mouseDidMove()
         harness.presenter.mouseDidExit()
-        harness.scheduler.run(at: 1)
+        harness.scheduler.run(delay: Timing.webKitHoverSettleDelay)
         XCTAssertNil(harness.tooltip)
     }
 
@@ -372,9 +375,10 @@ final class HoveredLinkTooltipPresenterTests: XCTestCase {
         harness.showFirstLink()
         harness.presenter.mouseDidExit()
         harness.presenter.reset()
+        let scheduledCount = harness.scheduler.scheduledCount
         harness.presenter.mouseDidMove()
         XCTAssertNil(harness.tooltip)
-        XCTAssertEqual(harness.scheduler.actions.count, 1)
+        XCTAssertEqual(harness.scheduler.scheduledCount, scheduledCount, "Nothing is restored")
     }
 
     func testWhenAppearanceChangesThenVisibleTooltipFollowsHostWithoutMouseMovement() {
@@ -418,7 +422,7 @@ final class HoveredLinkTooltipPresenterTests: XCTestCase {
             harness.showFirstLink()
             harness.presenter.mouseDidMove()
             NotificationCenter.default.post(name: notification, object: harness.parent)
-            harness.scheduler.run(at: 1)
+            harness.scheduler.run(delay: Timing.webKitHoverSettleDelay)
             XCTAssertNil(harness.tooltip, "Tooltip must detach on \(notification.rawValue)")
         }
     }
@@ -436,13 +440,13 @@ final class HoveredLinkTooltipPresenterTests: XCTestCase {
         )
         let isPresenterReleased = { [weak presenter] in presenter == nil }
         presenter?.update(url: URL(string: "https://example.com/first")!)
-        scheduler.run(at: 0)
+        scheduler.run(delay: Timing.revealDelay)
         XCTAssertNotNil(parent.childWindows?.first)
         presenter?.mouseDidMove()
 
         presenter = nil
         XCTAssertTrue(isPresenterReleased())
-        scheduler.run(at: 1)
+        scheduler.run(delay: Timing.webKitHoverSettleDelay)
         let cleanup = expectation(description: "Child window is detached after presenter deallocation")
         DispatchQueue.main.async {
             XCTAssertNil(parent.childWindows?.first)
@@ -464,8 +468,7 @@ final class HoveredLinkTooltipPresenterTests: XCTestCase {
         XCTAssertNil(harness.tooltip)
 
         harness.presenter.mouseDidMove()
-        let restore = harness.scheduler.actions.count - 1
-        harness.scheduler.run(at: restore)
+        harness.scheduler.run(delay: Timing.revealDelay)
 
         XCTAssertTrue(harness.tooltip?.isVisible == true)
         XCTAssertEqual(harness.label?.stringValue, url.absoluteString)
@@ -480,10 +483,38 @@ final class HoveredLinkTooltipPresenterTests: XCTestCase {
         harness.presenter.windowDidResignKey()
         XCTAssertNil(harness.tooltip)
         harness.presenter.mouseDidMove()
-        harness.scheduler.run(at: harness.scheduler.actions.count - 1)
+        harness.scheduler.run(delay: Timing.revealDelay)
 
         XCTAssertTrue(harness.tooltip?.isVisible == true)
         XCTAssertEqual(harness.label?.stringValue, url.absoluteString)
+    }
+
+    func testWhenResetFollowsWindowDeactivationThenNextMoveDoesNotRestoreALink() {
+        let harness = TooltipHarness()
+        harness.hoveredLink.url = URL(string: "https://example.com/first")!
+        harness.showFirstLink()
+        harness.presenter.windowDidResignKey()
+        harness.presenter.reset()
+        let scheduledCount = harness.scheduler.scheduledCount
+
+        harness.presenter.mouseDidMove()
+
+        XCTAssertEqual(harness.scheduler.scheduledCount, scheduledCount, "A reset forgets the restore request")
+        XCTAssertNil(harness.tooltip)
+    }
+
+    func testWhenNothingToShowHideOrRestoreThenPresenterIsIdle() {
+        let harness = TooltipHarness()
+        XCTAssertTrue(harness.presenter.isIdle)
+
+        harness.showFirstLink()
+        XCTAssertFalse(harness.presenter.isIdle)
+
+        harness.presenter.reset()
+        XCTAssertTrue(harness.presenter.isIdle)
+
+        harness.presenter.windowDidResignKey()
+        XCTAssertFalse(harness.presenter.isIdle, "A restore is pending")
     }
 
     func testWhenSidebarOverlapsHostThenTooltipStaysOutOfIt() {
@@ -499,7 +530,7 @@ final class HoveredLinkTooltipPresenterTests: XCTestCase {
                                                     schedule: scheduler.schedule)
         let longURL = URL(string: "https://example.com/" + String(repeating: "a", count: 200))!
         presenter.update(url: longURL)
-        scheduler.run(at: 0)
+        scheduler.run(delay: Timing.revealDelay)
 
         let tooltip = parent.childWindows?.first
         XCTAssertNotNil(tooltip)
@@ -555,7 +586,7 @@ private final class TooltipHarness {
 
     func showFirstLink() {
         presenter.update(url: URL(string: "https://example.com/first")!)
-        scheduler.run(at: 0)
+        scheduler.run(delay: Timing.revealDelay)
         XCTAssertTrue(tooltip?.isVisible == true)
         // Tests below index fade-out animations from zero.
         animator.forgetAnimations()
@@ -595,17 +626,36 @@ private final class TooltipPointer {
     var location = NSPoint(x: 600, y: 500)
 }
 
+/// Records scheduled actions with their delays, so tests name what they run (a reveal, a hide, a grace-period end)
+/// instead of counting positions.
 private final class TooltipScheduler {
-    private(set) var actions = [() -> Void]()
+    private struct Item {
+        let delay: TimeInterval
+        let action: () -> Void
+        var hasRun = false
+    }
+    private var items = [Item]()
+
+    /// Everything scheduled so far, run or not.
+    var scheduledCount: Int { items.count }
+
+    func pendingCount(delay: TimeInterval) -> Int {
+        items.filter { $0.delay == delay && !$0.hasRun }.count
+    }
 
     func schedule(after delay: TimeInterval, action: @escaping () -> Void) -> DispatchWorkItem {
-        actions.append(action)
+        items.append(Item(delay: delay, action: action))
         return DispatchWorkItem(block: action)
     }
 
-    func run(at index: Int) {
-        // Run even cancelled actions to verify state guards independently of GCD cancellation.
-        actions[index]()
+    /// Runs the earliest not yet run action scheduled with this delay, like timers of equal length fire in order.
+    /// Cancelled actions run too, to verify the state guards independently of GCD cancellation.
+    func run(delay: TimeInterval, file: StaticString = #filePath, line: UInt = #line) {
+        guard let index = items.firstIndex(where: { $0.delay == delay && !$0.hasRun }) else {
+            return XCTFail("Nothing is scheduled with a delay of \(delay)", file: file, line: line)
+        }
+        items[index].hasRun = true
+        items[index].action()
     }
 }
 
@@ -631,8 +681,20 @@ private final class TooltipAnimator {
         animations.removeAll()
     }
 
-    func complete(at index: Int) {
-        animations[index].completion()
+    /// Completes the most recent animation toward this opacity.
+    func completeNewest(opacity: CGFloat, file: StaticString = #filePath, line: UInt = #line) {
+        guard let animation = animations.last(where: { $0.opacity == opacity }) else {
+            return XCTFail("No animation toward \(opacity)", file: file, line: line)
+        }
+        animation.completion()
+    }
+
+    /// Completes the earliest animation toward this opacity, as a superseded animation's late completion would.
+    func completeOldest(opacity: CGFloat, file: StaticString = #filePath, line: UInt = #line) {
+        guard let animation = animations.first(where: { $0.opacity == opacity }) else {
+            return XCTFail("No animation toward \(opacity)", file: file, line: line)
+        }
+        animation.completion()
     }
 }
 

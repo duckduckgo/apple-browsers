@@ -2048,8 +2048,8 @@ extension BrowserTabViewController {
     func addMouseMonitors() {
         // Assigning replaces (and cancels) the monitor from an earlier appearance.
         hoveredLinkMouseMonitor = NSEvent.addLocalCancellableMonitor(forEventsMatching: [.mouseMoved, .leftMouseDragged]) { [weak self] event in
-            // Hit testing is needed only once a link was hovered and a tooltip exists.
-            guard let self, let tooltip = self.hoveredLinkTooltip else { return event }
+            // Skip hit testing unless the tooltip has something to show, hide or restore.
+            guard let self, let tooltip = self.hoveredLinkTooltip, !tooltip.isIdle else { return event }
             // The pointer over another window (a popover, for instance) is not over the page.
             guard event.window === self.view.window else {
                 tooltip.mouseDidExit()

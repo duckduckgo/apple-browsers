@@ -258,9 +258,8 @@ class SwipeTabsCoordinator: NSObject {
     private var lastEdgeTickOverscroll: CGFloat = 0
     private var isExternalPanDragging = false
 
-    /// Swipes bounce at the first and last tab, with no new-tab page past the last one. Read once, so a flag
-    /// change mid-session can't leave the strip's pages and its gestures disagreeing.
-    private let bouncesAtEdges: Bool
+    /// Off in this release: swiping past the last tab still opens a new tab.
+    private let bouncesAtEdges = false
     
     var isEnabled = false {
         didSet {
@@ -307,7 +306,6 @@ class SwipeTabsCoordinator: NSObject {
         self.selectTab = selectTab
         self.newTab = newTab
         self.onSwipeStarted = onSwipeStarted
-        self.bouncesAtEdges = omnibarDependencies.featureFlagger.isFeatureOn(.aiChatTabHandoffImprovements)
                 
         super.init()
         

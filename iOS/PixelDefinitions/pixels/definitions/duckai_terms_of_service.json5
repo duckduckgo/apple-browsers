@@ -6,5 +6,34 @@
         "triggers": ["feature_lifecycle"],
         "suffixes": ["platform", "form_factor"],
         "parameters": ["appVersion"]
+    },
+    "aichat_terms_accepted_duplicate_context": {
+        "description": "Fires next to `m_aichat_terms_accepted_duplicate_sync_*`, when the user accepts Duck.ai's Terms of Service on the web app's card although the app already recorded an acceptance. Reports what the page could read, to tell apart the ways the web app loses its record.",
+        "owners": ["Bunn"],
+        "triggers": ["user_interaction"],
+        "suffixes": ["first_daily_count", "platform", "form_factor"],
+        "parameters": [
+            "appVersion",
+            {
+                "key": "native_storage",
+                "description": "Whether this tab's page had the native storage bridge, or read its records from WebView localStorage instead",
+                "enum": ["available", "unavailable"]
+            },
+            {
+                "key": "tab",
+                "description": "Whether the chat ran in a Fire tab, which keeps its own storage",
+                "enum": ["fire", "standard"]
+            },
+            {
+                "key": "web_record_at_load",
+                "description": "The web app's `duckaiHasAgreedToTerms` entry in native storage when the page last asked for the native config. `unknown` without the bridge or when the read failed",
+                "enum": ["accepted", "missing", "unknown"]
+            },
+            {
+                "key": "entries_migration_at_load",
+                "description": "Whether the web app had already copied its localStorage entries into native storage when the page last asked for the native config. `pending` means this page load copies them. `unknown` without the bridge or when the read failed",
+                "enum": ["done", "pending", "unknown"]
+            }
+        ]
     }
 }

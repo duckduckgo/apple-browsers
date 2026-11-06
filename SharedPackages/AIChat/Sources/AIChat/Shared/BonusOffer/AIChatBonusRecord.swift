@@ -30,8 +30,10 @@ public struct AIChatBonusRecord: Codable, Equatable, Sendable {
     /// The unique identifier for the bonus offer.
     public var bonusId: String?
 
-    /// `true` if the offer activation modal was dismissed without claiming. Gates only the Duck.ai mini promo.
-    public var dismissed: Bool
+    /// The campaign whose activation modal was dismissed without claiming.
+    ///
+    /// Duck.ai hides only the in-line promo, and only while this matches the live campaign, so a later campaign shows it again.
+    public var dismissedCampaignName: String?
 
     /// The terms of the offer. Written on redeem success.
     public var terms: Terms?
@@ -42,13 +44,13 @@ public struct AIChatBonusRecord: Codable, Equatable, Sendable {
     public init(
         campaignName: String? = nil,
         bonusId: String? = nil,
-        dismissed: Bool = false,
+        dismissedCampaignName: String? = nil,
         terms: Terms? = nil,
         lastRedeemAttemptAt: Double? = nil
     ) {
         self.campaignName = campaignName
         self.bonusId = bonusId
-        self.dismissed = dismissed
+        self.dismissedCampaignName = dismissedCampaignName
         self.terms = terms
         self.lastRedeemAttemptAt = lastRedeemAttemptAt
     }
@@ -59,7 +61,7 @@ public struct AIChatBonusRecord: Codable, Equatable, Sendable {
     /// - `terms ⇒ bonusId ⇒ campaignName`: terms need a Bonus ID, and a Bonus ID needs a campaign.
     /// - `campaignName` and `bonusId` are either absent or non-empty. Duck.ai rejects a payload with an empty one, and nothing would ever clear such a record, so the offer would stay hidden for good.
     ///
-    /// Every combination of the three optional fields, and the state Duck.ai derives from each. `dismissed` can be set on any of them.
+    /// Every combination of the three optional fields, and the state Duck.ai derives from each. `dismissedCampaignName` can be set on any of them.
     ///
     /// | campaignName | bonusId | terms | State |
     /// |---|---|---|---|

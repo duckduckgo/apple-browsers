@@ -4519,6 +4519,12 @@
 /* Footnote for the hide AI-generated images setting; ends with a Learn more link to the help page (do not remove the link) */
 "settings.aifeatures.hide.ai.generated.images.subtitle" = "Iš vaizdų paieškos rezultatų pašalina žinomas DI brukalų svetaines. [Sužinok daugiau](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/results/how-to-filter-out-ai-images-in-duckduckgo-search-results)";
 
+/* Settings screen description for the Duck.ai keyboard animation toggle */
+"settings.aifeatures.keyboard.animation.subtitle" = "Rodyti animaciją aplink klaviatūrą, kai pereini į „Duck.ai“ arba ten rašai.";
+
+/* Settings screen toggle title for the Duck.ai keyboard animation */
+"settings.aifeatures.keyboard.animation.title" = "„Duck.ai“ klaviatūros animacija";
+
 /* Label describing a feature which is turned on always */
 "settings.always.on" = "Visada įjungta";
 
@@ -6016,3 +6022,12 @@
 /* Title for screen to screen confirming what data to import from a zip file (bookmarks and /or passwords) */
 "zip.content.import.types.title" = "Ką nori importuoti?";
 
+
+/* Fireproofing setting toggle label */
+"preserveLogins.askOnSignIn" = "Prašyti apsaugoti svetaines prisijungiant";
+
+/* Empty Fireproof sites list */
+"preserveLogins.emptyState" = "Apsaugotų svetainių dar nėra";
+
+/* Button to remove all Fireproof sites */
+"preserveLogins.removeAllSites" = "Pašalinti visas apsaugotas svetaines";

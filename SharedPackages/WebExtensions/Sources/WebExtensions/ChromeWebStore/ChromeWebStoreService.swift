@@ -51,11 +51,12 @@ public extension ChromeWebStoreManaging {
     }
 }
 
+@available(macOS 15.4, iOS 18.4, *)
 @MainActor
 public protocol ChromeWebStorePresenting {
     func showDownloadProgress(cancel: @escaping () -> Void)
     func dismissDownloadProgress()
-    func confirmRemoval(name: String) async -> Bool
+    func confirmRemoval(name: String, webExtension: WKWebExtension?) async -> Bool
     func showError(_ error: Error) async
 }
 
@@ -299,7 +300,8 @@ public final class ChromeWebStoreService: ChromeWebStoreManaging {
               let installed = installedExtension(identifier, manager: manager) else { return false }
         isPerformingOperation = true
         defer { isPerformingOperation = false }
-        guard await presenter.confirmRemoval(name: installed.name ?? identifier) else { return false }
+        let webExtension = manager.context(for: installed.uniqueIdentifier)?.webExtension
+        guard await presenter.confirmRemoval(name: installed.name ?? identifier, webExtension: webExtension) else { return false }
         // Another browser entry point (e.g. Debug) may have removed it while the sheet was open.
         guard installedExtension(identifier, manager: manager) != nil else { return true }
         do {

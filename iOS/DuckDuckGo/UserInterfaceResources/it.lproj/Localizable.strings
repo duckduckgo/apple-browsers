@@ -4519,6 +4519,12 @@
 /* Footnote for the hide AI-generated images setting; ends with a Learn more link to the help page (do not remove the link) */
 "settings.aifeatures.hide.ai.generated.images.subtitle" = "Filtra i siti di spam AI noti dai risultati di ricerca delle immagini. [Scopri di più](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/results/how-to-filter-out-ai-images-in-duckduckgo-search-results)";
 
+/* Settings screen description for the Duck.ai keyboard animation toggle */
+"settings.aifeatures.keyboard.animation.subtitle" = "Mostra un'animazione intorno alla tastiera quando passi a Duck.ai o digiti con Duck.ai.";
+
+/* Settings screen toggle title for the Duck.ai keyboard animation */
+"settings.aifeatures.keyboard.animation.title" = "Animazione della tastiera di Duck.ai";
+
 /* Label describing a feature which is turned on always */
 "settings.always.on" = "Sempre attiva";
 
@@ -6016,3 +6022,12 @@
 /* Title for screen to screen confirming what data to import from a zip file (bookmarks and /or passwords) */
 "zip.content.import.types.title" = "Cosa vuoi importare?";
 
+
+/* Fireproofing setting toggle label */
+"preserveLogins.askOnSignIn" = "Chiedi di proteggere dal fuoco quando accedi a un sito";
+
+/* Empty Fireproof sites list */
+"preserveLogins.emptyState" = "Non hai ancora aggiunto siti resistenti al fuoco";
+
+/* Button to remove all Fireproof sites */
+"preserveLogins.removeAllSites" = "Rimuovi tutti i siti ignifughi";

@@ -32,8 +32,28 @@ import SwiftUI
 import DesignResourcesKit
 import DesignResourcesKitIcons
 import PixelKit
+import SyncUI_iOS
 
 class BookmarksViewController: UIViewController, UITableViewDelegate {
+
+    private enum HeaderPromo {
+        case none
+        case syncSetup
+        case syncAnotherDevice
+
+        var touchpoint: SyncPromoManager.Touchpoint? {
+            switch self {
+            case .none: nil
+            case .syncSetup: .bookmarks
+            case .syncAnotherDevice: .bookmarksAnotherDevice
+            }
+        }
+    }
+
+    private struct InstalledHeaderPromo {
+        let promo: HeaderPromo
+        let hostingController: UIViewController
+    }
 
     @IBOutlet weak var tableView: UITableView!
     @IBOutlet weak var editButton: UIBarButtonItem!
@@ -48,6 +68,7 @@ class BookmarksViewController: UIViewController, UITableViewDelegate {
     private let syncDataProviders: SyncDataProviders
     private let appSettings: AppSettings
     private let keyValueStore: ThrowingKeyValueStoring
+    private let pixelFiring: (any PixelKitFiring)?
 
     // Is set to nil once used as it should only be fired once per access
     private var productSurfaceTelemetry: ProductSurfaceTelemetry?
@@ -136,33 +157,10 @@ class BookmarksViewController: UIViewController, UITableViewDelegate {
         searchBar.bottomAnchor.constraint(equalTo: headerView.bottomAnchor)
     }()
 
-    private lazy var syncPromoViewTopConstraint: NSLayoutConstraint = {
-        syncPromoViewHostingController.view.topAnchor.constraint(equalTo: searchBar.bottomAnchor)
-    }()
+    private lazy var syncPromoManager: SyncPromoManaging = SyncPromoManager(syncService: syncService, pixelFiring: pixelFiring)
 
-    private lazy var syncPromoManager: SyncPromoManaging = SyncPromoManager(syncService: syncService)
-
-    private lazy var syncPromoViewHostingController: UIHostingController<SyncPromoView> = {
-        let design = syncPromoManager.designFor(.bookmarks)
-        let headerView = SyncPromoView(viewModel: SyncPromoViewModel(touchpointType: .bookmarks, design: design, primaryButtonAction: { [weak self] in
-            switch design {
-            case .standard:
-                self?.segueToSync(source: SyncSettingsViewController.SourceConstants.bookmarksPromotion)
-            case .redesigned:
-                self?.pushSyncSettings(source: SyncSettingsViewController.SourceConstants.bookmarksPromotion)
-            }
-            PixelKit.fire(Pixel.Event.syncPromoConfirmed, options: .parameters(["source": SyncPromoManager.Touchpoint.bookmarks.rawValue]))
-        }, dismissButtonAction: { [weak self] in
-            self?.syncPromoManager.dismissPromoFor(.bookmarks, reason: .userTapped)
-            self?.refreshTableHeaderView()
-        }))
-
-        PixelKit.fire(Pixel.Event.syncPromoDisplayed, options: .parameters(["source": SyncPromoManager.Touchpoint.bookmarks.rawValue]))
-
-        let hostingController = UIHostingController(rootView: headerView)
-        hostingController.view.backgroundColor = .clear
-        return hostingController
-    }()
+    private var installedHeaderPromo: InstalledHeaderPromo?
+    private var headerPromosWithDisplayedPixelFired: Set<HeaderPromo> = []
 
     weak var delegate: BookmarksDelegate?
 
@@ -195,7 +193,8 @@ class BookmarksViewController: UIViewController, UITableViewDelegate {
                    syncDataProviders: SyncDataProviders,
                    appSettings: AppSettings,
                    keyValueStore: ThrowingKeyValueStoring,
-                   productSurfaceTelemetry: ProductSurfaceTelemetry?
+                   productSurfaceTelemetry: ProductSurfaceTelemetry?,
+                   pixelFiring: (any PixelKitFiring)? = PixelKit.shared
     ) {
         self.bookmarksDatabase = bookmarksDatabase
         self.searchDataSource = SearchBookmarksDataSource(searchEngine: bookmarksSearch)
@@ -211,6 +210,7 @@ class BookmarksViewController: UIViewController, UITableViewDelegate {
         self.appSettings = appSettings
         self.keyValueStore = keyValueStore
         self.productSurfaceTelemetry = productSurfaceTelemetry
+        self.pixelFiring = pixelFiring
 
         super.init(coder: coder)
 
@@ -351,7 +351,8 @@ class BookmarksViewController: UIViewController, UITableViewDelegate {
                                                      syncDataProviders: self.syncDataProviders,
                                                      appSettings: self.appSettings,
                                                      keyValueStore: self.keyValueStore,
-                                                     productSurfaceTelemetry: self.productSurfaceTelemetry)
+                                                     productSurfaceTelemetry: self.productSurfaceTelemetry,
+                                                     pixelFiring: self.pixelFiring)
             controller?.delegate = self.delegate
             return controller
         })
@@ -730,6 +731,13 @@ class BookmarksViewController: UIViewController, UITableViewDelegate {
         navigationController?.pushViewController(mainVC.makeSyncSettingsViewController(source: source), animated: true)
     }
 
+    private func pushPlatformLinks() {
+        let actions = PlatformLinksActions(presenter: self, pixelFiring: nil)
+        let platformLinksViewController = UIHostingController(rootView: PlatformLinksView(model: actions, source: .activated))
+        navigationController?.setToolbarHidden(true, animated: true)
+        navigationController?.pushViewController(platformLinksViewController, animated: true)
+    }
+
     func segueToSync(source: String? = nil) {
         if let mainVC = presentingViewController as? MainViewController {
             dismiss(animated: true) {
@@ -871,59 +879,29 @@ class BookmarksViewController: UIViewController, UITableViewDelegate {
         tableView.tableHeaderView = headerView
     }
 
-    private func showSyncPromo() -> Bool {
-        return !tableView.isEditing
-               && !isSearching
-               && !isNested
-               && syncPromoManager.shouldPresentPromoFor(.bookmarks, count: viewModel.totalBookmarksCount)
+    private func headerPromoToShow() -> HeaderPromo {
+        guard !isEditingBookmarks, !isSearching, !isNested else {
+            return .none
+        }
+        if syncPromoManager.shouldPresentPromoFor(.bookmarks, count: viewModel.totalBookmarksCount) {
+            return .syncSetup
+        }
+        if syncPromoManager.shouldPresentPromoFor(.bookmarksAnotherDevice, count: viewModel.totalBookmarksCount) {
+            return .syncAnotherDevice
+        }
+        return .none
     }
 
     private func refreshTableHeaderView() {
-        if showSyncPromo() {
-            guard !headerView.subviews.contains(syncPromoViewHostingController.view) else {
+        let promo = headerPromoToShow()
+        if promo != .none {
+            guard promo != installedHeaderPromo?.promo else {
                 return
             }
-
-            syncPromoViewHostingController.view.translatesAutoresizingMaskIntoConstraints = false
-
-            // This is needed to ensure the toolbar displays correctly on iOS 15
-            if #available(iOS 16.0, *) {
-                addChild(syncPromoViewHostingController)
-            }
-
-            headerView.addSubview(syncPromoViewHostingController.view)
-
-            if #available(iOS 16.0, *) {
-                syncPromoViewHostingController.didMove(toParent: self)
-            }
-
-            NSLayoutConstraint.deactivate([
-                searchBarBottomConstraint
-            ])
-
-            NSLayoutConstraint.activate([
-                syncPromoViewTopConstraint,
-                syncPromoViewHostingController.view.leadingAnchor.constraint(equalTo: headerView.leadingAnchor),
-                syncPromoViewHostingController.view.trailingAnchor.constraint(equalTo: headerView.trailingAnchor),
-                syncPromoViewHostingController.view.bottomAnchor.constraint(equalTo: headerView.bottomAnchor)
-            ])
-
-            syncPromoViewHostingController.view.setNeedsLayout()
-            syncPromoViewHostingController.view.layoutIfNeeded()
-
-            let horizontalMargins = tableView.layoutMargins.left + tableView.layoutMargins.right + 40
-            let syncPromoViewHeight = syncPromoViewHostingController.view.sizeThatFits(CGSize(width: tableView.bounds.width - horizontalMargins, height: CGFloat.greatestFiniteMagnitude)).height
-            let totalHeight = searchBar.intrinsicContentSize.height + syncPromoViewHeight
-            headerView.frame = CGRect(x: 0, y: 0, width: tableView.bounds.width, height: totalHeight)
-
-            tableView.tableHeaderView = headerView
+            removeHeaderPromo()
+            installHeaderPromo(promo)
         } else if !headerView.subviews.contains(searchBar) || headerView.subviews.count != 1 {
-
-            if syncPromoViewHostingController.view != nil {
-                syncPromoViewHostingController.view?.removeFromSuperview()
-            }
-
-            syncPromoViewTopConstraint.isActive = false
+            removeHeaderPromo()
             searchBarBottomConstraint.isActive = true
 
             headerView.frame = CGRect(x: 0, y: 0, width: tableView.frame.width, height: searchBar.intrinsicContentSize.height)
@@ -932,6 +910,97 @@ class BookmarksViewController: UIViewController, UITableViewDelegate {
             searchBar.layoutIfNeeded()
             tableView.layoutIfNeeded()
         }
+    }
+
+    private func installHeaderPromo(_ promo: HeaderPromo) {
+        let hostingController: UIViewController
+        switch promo {
+        case .none:
+            return
+        case .syncSetup:
+            hostingController = makeSyncSetupPromoHostingController()
+        case .syncAnotherDevice:
+            hostingController = makeSyncAnotherDevicePromoHostingController()
+        }
+
+        hostingController.view.backgroundColor = .clear
+        hostingController.view.translatesAutoresizingMaskIntoConstraints = false
+
+        // This is needed to ensure the toolbar displays correctly on iOS 15
+        if #available(iOS 16.0, *) {
+            addChild(hostingController)
+        }
+
+        headerView.addSubview(hostingController.view)
+
+        if #available(iOS 16.0, *) {
+            hostingController.didMove(toParent: self)
+        }
+
+        searchBarBottomConstraint.isActive = false
+
+        NSLayoutConstraint.activate([
+            hostingController.view.topAnchor.constraint(equalTo: searchBar.bottomAnchor),
+            hostingController.view.leadingAnchor.constraint(equalTo: headerView.leadingAnchor),
+            hostingController.view.trailingAnchor.constraint(equalTo: headerView.trailingAnchor),
+            hostingController.view.bottomAnchor.constraint(equalTo: headerView.bottomAnchor)
+        ])
+
+        hostingController.view.setNeedsLayout()
+        hostingController.view.layoutIfNeeded()
+
+        let horizontalMargins = tableView.layoutMargins.left + tableView.layoutMargins.right + 40
+        let promoViewHeight = hostingController.view.sizeThatFits(CGSize(width: tableView.bounds.width - horizontalMargins, height: CGFloat.greatestFiniteMagnitude)).height
+        let totalHeight = searchBar.intrinsicContentSize.height + promoViewHeight
+        headerView.frame = CGRect(x: 0, y: 0, width: tableView.bounds.width, height: totalHeight)
+
+        tableView.tableHeaderView = headerView
+        installedHeaderPromo = InstalledHeaderPromo(promo: promo, hostingController: hostingController)
+
+        if let touchpoint = promo.touchpoint, headerPromosWithDisplayedPixelFired.insert(promo).inserted {
+            pixelFiring?.fire(Pixel.Event.syncPromoDisplayed, options: .parameters(["source": touchpoint.rawValue]))
+        }
+    }
+
+    private func removeHeaderPromo() {
+        guard let hostingController = installedHeaderPromo?.hostingController else {
+            return
+        }
+        hostingController.willMove(toParent: nil)
+        hostingController.view.removeFromSuperview()
+        hostingController.removeFromParent()
+        installedHeaderPromo = nil
+    }
+
+    private func makeSyncSetupPromoHostingController() -> UIViewController {
+        let design = syncPromoManager.designFor(.bookmarks)
+        let promoView = SyncPromoView(viewModel: SyncPromoViewModel(touchpointType: .bookmarks, design: design, primaryButtonAction: { [weak self] in
+            switch design {
+            case .standard:
+                self?.segueToSync(source: SyncSettingsViewController.SourceConstants.bookmarksPromotion)
+            case .redesigned:
+                self?.pushSyncSettings(source: SyncSettingsViewController.SourceConstants.bookmarksPromotion)
+            }
+            self?.syncPromoManager.recordPromoConfirmedFor(.bookmarks)
+        }, dismissButtonAction: { [weak self] in
+            self?.syncPromoManager.dismissPromoFor(.bookmarks, reason: .userTapped)
+            self?.refreshTableHeaderView()
+        }))
+        return UIHostingController(rootView: promoView)
+    }
+
+    private func makeSyncAnotherDevicePromoHostingController() -> UIViewController {
+        let promoView = SyncAnotherDevicePromoView(title: UserText.syncPromoBookmarksAnotherDeviceTitle,
+                                                   syncAction: { [weak self] in
+            self?.pushSyncSettings(source: SyncSettingsViewController.SourceConstants.bookmarksAnotherDevicePromotion)
+            self?.syncPromoManager.recordPromoConfirmedFor(.bookmarksAnotherDevice)
+        }, getDesktopAppAction: { [weak self] in
+            self?.pushPlatformLinks()
+        }, dismissAction: { [weak self] in
+            self?.syncPromoManager.dismissPromoFor(.bookmarksAnotherDevice, reason: .userTapped)
+            self?.refreshTableHeaderView()
+        })
+        return UIHostingController(rootView: promoView)
     }
 
     private func prepareForSearching() {
@@ -1001,6 +1070,7 @@ extension BookmarksViewController {
     private func decorate() {
         let theme = ThemeManager.shared.currentTheme
         decorateNavigationBar(with: theme)
+        navigationController?.navigationBar.isTranslucent = false
         decorateToolbar(with: theme)
 
         searchController?.searchBar.searchTextField.textColor = theme.searchBarTextColor

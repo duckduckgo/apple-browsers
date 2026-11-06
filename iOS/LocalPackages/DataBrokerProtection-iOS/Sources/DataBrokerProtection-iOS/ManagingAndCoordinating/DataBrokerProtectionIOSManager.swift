@@ -96,7 +96,8 @@ public class DBPIOSInterface {
 
     public protocol RunPrerequisitesDelegate: AnyObject, AuthenticationDelegate {
         var meetsProfileRunPrequisite: Bool { get throws }
-        var meetsEntitlementRunPrequisite: Bool { get async throws }
+        /// False only when the current token lacks the PIR entitlement. A token that can't be read doesn't stop a run.
+        var meetsEntitlementRunPrequisite: Bool { get async }
         var meetsLocaleRequirement: Bool { get }
 
         func validateRunPrerequisites() async -> Bool
@@ -962,8 +963,8 @@ extension DataBrokerProtectionIOSManager: DBPIOSInterface.RunPrerequisitesDelega
     }
 
     public var meetsEntitlementRunPrequisite: Bool {
-        get async throws {
-            return try await authenticationManager.hasValidEntitlement()
+        get async {
+            await authenticationManager.entitlementStatus() != .disabled
         }
     }
 
@@ -1004,7 +1005,7 @@ extension DataBrokerProtectionIOSManager: DBPIOSInterface.RunPrerequisitesDelega
                 return false
             }
 
-            return try await meetsEntitlementRunPrequisite
+            return await meetsEntitlementRunPrequisite
         } catch {
             Logger.dataBrokerProtection.error("Error validating prerequisites, error: \(error.localizedDescription, privacy: .public)")
             return false
@@ -1075,7 +1076,7 @@ extension DataBrokerProtectionIOSManager: DBPIOSInterface.NotificationDelegate, 
         guard privacyConfigManager.privacyConfig.isSubfeatureEnabled(DBPSubfeature.goToMarket),
               meetsLocaleRequirement,
               isWithinGoToMarketReleaseWindow(currentAppVersion: AppVersion.shared.versionNumber),
-              (try? await meetsEntitlementRunPrequisite) == true,
+              await authenticationManager.entitlementStatus() == .enabled,
               await hasNotRunPIRScan() else {
             return
         }

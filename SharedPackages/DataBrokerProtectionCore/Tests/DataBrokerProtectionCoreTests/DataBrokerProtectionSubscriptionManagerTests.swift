@@ -21,6 +21,7 @@ import XCTest
 import Common
 import SubscriptionTestingUtilities
 import Subscription
+@_spi(Testing) import Networking
 
 final class DataBrokerProtectionSubscriptionManagerTests: XCTestCase {
 
@@ -60,6 +61,40 @@ final class DataBrokerProtectionSubscriptionManagerTests: XCTestCase {
         mockSubscriptionManager.currentEnvironment = .init(serviceEnvironment: .staging, purchasePlatform: .stripe)
         mockSubscriptionManager.isEligibleForFreeTrialResult = true
         XCTAssertTrue(subscriptionManager.isUserEligibleForFreeTrial())
+    }
+
+    func testEntitlementStatus_tokenWithTheEntitlement_isEnabled() async {
+        mockSubscriptionManager.resultTokenContainer = OAuthTokensFactory.makeValidTokenContainerWithEntitlements()
+
+        let status = await subscriptionManager.entitlementStatus()
+
+        XCTAssertEqual(status, .enabled)
+        XCTAssertEqual(mockSubscriptionManager.getTokenContainerPolicies, [.localValid])
+    }
+
+    func testEntitlementStatus_tokenWithoutTheEntitlement_isDisabled() async {
+        mockSubscriptionManager.resultTokenContainer = OAuthTokensFactory.makeTokenContainer()
+
+        let status = await subscriptionManager.entitlementStatus()
+
+        XCTAssertEqual(status, .disabled)
+    }
+
+    func testEntitlementStatus_noTokenCanBeRead_isError() async {
+        mockSubscriptionManager.resultTokenContainer = nil
+
+        let status = await subscriptionManager.entitlementStatus()
+
+        XCTAssertEqual(status, .error)
+    }
+
+    func testEntitlementStatus_integrationTests_isEnabledWithoutReadingTheToken() async {
+        mockRunTypeProvider.runType = .integrationTests
+
+        let status = await subscriptionManager.entitlementStatus()
+
+        XCTAssertEqual(status, .enabled)
+        XCTAssertTrue(mockSubscriptionManager.getTokenContainerPolicies.isEmpty)
     }
 }
 

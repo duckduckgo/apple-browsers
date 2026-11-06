@@ -174,6 +174,9 @@ public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1214534686173932
     case adBlockingExtensionEnabledByDefault
 
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1220206657688032?focus=true
+    case sponsorBlock
+
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213538183403577
     case forceDarkModeOnWebsites
 
@@ -858,6 +861,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(defaultValue: .internalOnly, source: .remoteReleasable(AdBlockingExtensionSubfeature.featureEnabled), category: .adBlocking)
         case .adBlockingExtensionEnabledByDefault:
             Config(source: .remoteReleasable(AdBlockingExtensionSubfeature.featureEnabledByDefault), category: .adBlocking)
+        case .sponsorBlock:
+            Config(defaultValue: .disabled, source: .remoteReleasable(SponsorBlockPrivacySubfeature.mvpEnabled), category: .adBlocking)
         case .forceDarkModeOnWebsites:
             Config(source: .remoteReleasable(ForceDarkModeOnWebsitesSubfeature.featureRollout), category: .webExtensions)
         case .syncSeamlessAccountSwitching:

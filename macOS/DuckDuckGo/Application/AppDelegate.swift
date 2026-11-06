@@ -162,6 +162,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     let visualizeFireSettingsDecider: VisualizeFireSettingsDecider
     let contentScopeExperimentsManager: ContentScopeExperimentsManaging
     let contentScopePreferences: ContentScopePreferences
+    private(set) lazy var sponsorBlockPreferences = SponsorBlockPreferences(store: keyValueStore)
+    /// One instance for the app, so every tab shares the segments cache.
+    let sponsorBlockSegmentsProvider = SponsorBlockSegmentsProvider()
     let featureFlagOverridesPublishingHandler = FeatureFlagOverridesPublishingHandler<FeatureFlag>()
     private var appIconChanger: AppIconChanger!
     private var autoClearHandler: AutoClearHandler!

@@ -70,6 +70,7 @@ public enum PrivacyFeature: String {
     case contentScopeExperiments
     case macOSBrowserConfig
     case iOSBrowserConfig
+    case sponsorBlock
     // Demonstrative case for default value. Remove once a real-world feature is added
     case intentionallyLocalOnlyFeatureForTests
     case delayedWebviewPresentation
@@ -784,6 +785,11 @@ public enum DuckPlayerSubfeature: String, PrivacySubfeature {
     case customError
     case enableDuckPlayer // iOS DuckPlayer rollout feature
     case nativeUI // Use Duckplayer's native UI
+}
+
+public enum SponsorBlockPrivacySubfeature: String, PrivacySubfeature {
+    public var parent: PrivacyFeature { .sponsorBlock }
+    case mvpEnabled
 }
 
 public enum SyncPromotionSubfeature: String, PrivacySubfeature {

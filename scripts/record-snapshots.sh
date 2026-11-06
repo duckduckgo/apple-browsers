@@ -82,6 +82,9 @@ done
 if git_snapshots diff --cached --quiet; then
 	echo "ℹ️  $SUBMODULE_REPO@$BRANCH already has CI's renderings."
 	if [ "$BRANCH_EXISTS" = false ]; then
+		if [ -n "${GITHUB_OUTPUT:-}" ]; then
+			echo "count=0" >> "$GITHUB_OUTPUT"
+		fi
 		exit 0
 	fi
 else
@@ -109,7 +112,16 @@ else
 	git -c user.name="$BOT_NAME" -c user.email="$BOT_EMAIL" \
 		commit -q -m "Record CI snapshot renderings"
 	git push -q origin "HEAD:refs/heads/$BRANCH"
+	POINTER_COMMIT="$(git rev-parse HEAD)"
 	echo "✅ Pointed $SUBMODULE_PATH at $NEW_POINTER on '$BRANCH'."
+fi
+
+if [ -n "${GITHUB_OUTPUT:-}" ]; then
+	{
+		echo "count=${#IMAGES[@]}"
+		echo "snapshots_pr=$PR_URL"
+		echo "pointer_commit=${POINTER_COMMIT:-}"
+	} >> "$GITHUB_OUTPUT"
 fi
 
 echo "🔗 Submodule PR: $PR_URL"

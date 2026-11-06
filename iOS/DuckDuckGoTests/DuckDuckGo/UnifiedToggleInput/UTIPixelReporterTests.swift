@@ -51,13 +51,15 @@ final class UTIPixelReporterTests: XCTestCase {
                          inputMode: TextEntryMode = .search,
                          isToggleVisible: Bool = false,
                          pageType: UnifiedToggleInputPromptPageType = .unknown,
-                         duckAIEntrySource: AIChatEntryPointSource? = nil) -> UTIPixelContext {
+                         duckAIEntrySource: AIChatEntryPointSource? = nil,
+                         addressBarPosition: AddressBarPosition? = nil) -> UTIPixelContext {
         UTIPixelContext(surface: surface,
                         isDuckAISurfaceForAttribution: isDuckAISurfaceForAttribution,
                         inputMode: inputMode,
                         isToggleVisible: isToggleVisible,
                         pageType: pageType,
-                        duckAIEntrySource: duckAIEntrySource)
+                        duckAIEntrySource: duckAIEntrySource,
+                        addressBarPosition: addressBarPosition)
     }
 
     func testAttachmentPrivacyPixelsReportNamesKindsSurfacesAndFrequency() {
@@ -452,6 +454,61 @@ final class UTIPixelReporterTests: XCTestCase {
         for key in ["surface", "page_type", "default_mode"] {
             XCTAssertEqual(queryParams[key], promptParams[key], "\(key) must match across the two submission pixels")
         }
+    }
+
+    // MARK: - Address bar position and resubmits
+
+    func testSubmissionPixelsReportAddressBarPositionAndResubmitDelay() {
+        let reporter = makeReporter { self.context(addressBarPosition: .bottom) }
+
+        reporter.reportPromptSubmitted(hasText: true, selectedTool: nil, attachments: [], reasoningMode: nil, modelId: nil,
+                                       defaultOmnibarMode: .lastUsed, isFirstPromptNewInstall: false, resubmitDelay: .upTo15s)
+        let promptParams = pixelKitMock.actualFireCalls.last?.additionalParameters
+        XCTAssertEqual(promptParams?["address_bar_position"], "bottom")
+        XCTAssertEqual(promptParams?["resubmit_of_search"], "0-15")
+
+        reporter.reportQuerySubmitted(defaultOmnibarMode: .lastUsed, queryType: .search, resubmitDelay: .upTo45s)
+        let queryParams = pixelKitMock.actualFireCalls.last?.additionalParameters
+        XCTAssertEqual(queryParams?["address_bar_position"], "bottom")
+        XCTAssertEqual(queryParams?["resubmit_of_prompt"], "31-45")
+    }
+
+    func testWhenNotAResubmitThenResubmitParametersAreOmitted() {
+        let reporter = makeReporter { self.context(addressBarPosition: .top) }
+
+        reporter.reportPromptSubmitted(hasText: true, selectedTool: nil, attachments: [], reasoningMode: nil, modelId: nil,
+                                       defaultOmnibarMode: .lastUsed, isFirstPromptNewInstall: false)
+        XCTAssertNil(pixelKitMock.actualFireCalls.last?.additionalParameters?["resubmit_of_search"])
+
+        reporter.reportQuerySubmitted(defaultOmnibarMode: .lastUsed, queryType: .search)
+        XCTAssertNil(pixelKitMock.actualFireCalls.last?.additionalParameters?["resubmit_of_prompt"])
+    }
+
+    func testModeSwitchAndStopGenerationReportAddressBarPosition() {
+        let reporter = makeReporter { self.context(addressBarPosition: .top) }
+
+        reporter.reportModeSwitched(to: .search, currentText: "", defaultOmnibarMode: .lastUsed)
+        XCTAssertEqual(pixelKitMock.actualFireCalls.last?.additionalParameters?["address_bar_position"], "top")
+
+        reporter.reportStopGenerationTapped()
+        XCTAssertEqual(pixelKitMock.actualFireCalls.last?.additionalParameters, ["surface": "address_bar", "address_bar_position": "top"])
+    }
+
+    func testSearchDuckDuckGoRowReportsAddressBarPositionAndResubmitDelay() {
+        let reporter = makeReporter { self.context(addressBarPosition: .top) }
+
+        reporter.reportSearchDuckDuckGoRowSelected(resubmitDelay: .upTo30s)
+
+        XCTAssertEqual(pixelKitMock.actualFireCalls.last?.pixel.name, Pixel.Event.autocompleteDuckAIClickSearchDuckDuckGo.name)
+        XCTAssertEqual(pixelKitMock.actualFireCalls.last?.additionalParameters, ["address_bar_position": "top", "resubmit_of_prompt": "16-30"])
+    }
+
+    func testWhenPositionIsUnknownThenItIsOmitted() {
+        let reporter = makeReporter { self.context(surface: .contextualChat) }
+
+        reporter.reportStopGenerationTapped()
+
+        XCTAssertEqual(pixelKitMock.actualFireCalls.last?.additionalParameters, ["surface": "contextual_chat"])
     }
 
     // MARK: - Regular pixel with surface from context

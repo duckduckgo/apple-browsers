@@ -252,6 +252,9 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
     private let homepageAiChatsProvider: HomepageAiChatsProvider?
     private let attachmentPrivacyDisplayStore: AttachmentPrivacyDisclosureStore
     private let attachmentPrivacyWebKeySource: DuckAiNativeStorageHandling?
+    private let termsOfServiceWebRecordSource: DuckAiNativeStorageHandling?
+    private let pixelFiring: (any PixelKitFiring)?
+    private var termsOfServicePageLoadState: DuckAiTermsOfServicePageLoadState = .unknown
 
     private var isAttachmentPrivacyEnabled: Bool {
         !devicePlatform.isIphone && featureFlagger.isFeatureOn(.aiChatAttachmentPrivacyIPad)
@@ -295,6 +298,8 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
          isNativeStorageBridgeAvailable: Bool = false,
          attachmentPrivacyDisplayStore: AttachmentPrivacyDisclosureStore = AttachmentPrivacyDisclosureStore(),
          attachmentPrivacyWebKeySource: DuckAiNativeStorageHandling? = nil,
+         termsOfServiceWebRecordSource: DuckAiNativeStorageHandling? = nil,
+         pixelFiring: (any PixelKitFiring)? = PixelKit.shared,
          installDateProvider: @escaping () -> Date? = { StatisticsUserDefaults().installDate },
          installTypeProvider: @escaping () -> AIChatInstallType = {
              StatisticsUserDefaults().variant == VariantIOS.returningUser.name ? .returning : .new
@@ -316,6 +321,8 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
         self.isNativeStorageBridgeAvailable = isNativeStorageBridgeAvailable
         self.attachmentPrivacyDisplayStore = attachmentPrivacyDisplayStore
         self.attachmentPrivacyWebKeySource = attachmentPrivacyWebKeySource
+        self.termsOfServiceWebRecordSource = termsOfServiceWebRecordSource
+        self.pixelFiring = pixelFiring
         self.installDateProvider = installDateProvider
         self.installTypeProvider = installTypeProvider
         self.homepageAiChatsProvider = homepageAiChatsProvider
@@ -412,6 +419,33 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
             ? .aiChatTermsAcceptedDuplicateSyncOn
             : .aiChatTermsAcceptedDuplicateSyncOff
         PixelKit.fire(pixel, frequency: .dailyAndCount)
+
+        let context = DuplicateAcceptanceContext(isNativeStorageBridgeAvailable: isNativeStorageBridgeAvailable,
+                                                 isFireTab: isFireModeProvider?() ?? false,
+                                                 pageLoad: termsOfServicePageLoadState)
+        pixelFiring?.fire(DuckAiTermsOfServicePixel.duplicateAcceptanceContext(context), frequency: .dailyAndCount)
+    }
+
+    /// Read when the page asks for the native config, before the web app writes its own acceptance.
+    private func readTermsOfServicePageLoadState() -> DuckAiTermsOfServicePageLoadState {
+        guard isNativeStorageBridgeAvailable, let source = termsOfServiceWebRecordSource else { return .unknown }
+
+        let webRecord: DuckAiTermsOfServicePageLoadState.WebRecord
+        do {
+            let value = try source.getEntry(key: DuckAiNativeStorageConsent.termsOfServiceEntryKey)
+            webRecord = DuckAiNativeStorageConsent.isTermsOfServiceAccepted(value) ? .accepted : .missing
+        } catch {
+            webRecord = .unknown
+        }
+
+        let entriesMigration: DuckAiTermsOfServicePageLoadState.EntriesMigration
+        if let isDone = try? source.isMigrationDone(key: DuckAiMigrationKey.entries) {
+            entriesMigration = isDone ? .done : .pending
+        } else {
+            entriesMigration = .unknown
+        }
+
+        return DuckAiTermsOfServicePageLoadState(webRecord: webRecord, entriesMigration: entriesMigration)
     }
 
     /// `true` only when the prompt was sent with Ask and the acceptance is on record; every other prompt
@@ -489,6 +523,7 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
         let supportsTabContexts = supportsContextualMode || supportsBrowserTabContexts
         let supportsNativePrompt = supportsNativeChatInput || defaults.supportsNativePrompt || iPadDuckAIControlsFeature.isAvailable
         let fireMode = isFireModeProvider?() ?? false
+        termsOfServicePageLoadState = readTermsOfServicePageLoadState()
 
         let supportsNativeUsageWarnings = featureFlagger.isFeatureOn(.utiDuckAIWarnings)
             && devicePlatform.isIphone

@@ -4519,6 +4519,12 @@
 /* Footnote for the hide AI-generated images setting; ends with a Learn more link to the help page (do not remove the link) */
 "settings.aifeatures.hide.ai.generated.images.subtitle" = "Filtra os sites conhecidos de spam gerado por IA nos resultados de pesquisa de imagens. [Saiba mais](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/results/how-to-filter-out-ai-images-in-duckduckgo-search-results)";
 
+/* Settings screen description for the Duck.ai keyboard animation toggle */
+"settings.aifeatures.keyboard.animation.subtitle" = "Mostrar uma animação à volta do teclado quando mudas para o Duck.ai ou escreves no Duck.ai.";
+
+/* Settings screen toggle title for the Duck.ai keyboard animation */
+"settings.aifeatures.keyboard.animation.title" = "Animação do Teclado do Duck.ai";
+
 /* Label describing a feature which is turned on always */
 "settings.always.on" = "Sempre ligada";
 
@@ -6016,3 +6022,12 @@
 /* Title for screen to screen confirming what data to import from a zip file (bookmarks and /or passwords) */
 "zip.content.import.types.title" = "O que queres importar?";
 
+
+/* Fireproofing setting toggle label */
+"preserveLogins.askOnSignIn" = "Pedir sites com Barreiras de segurança ao iniciar sessão";
+
+/* Empty Fireproof sites list */
+"preserveLogins.emptyState" = "Ainda sem sites com Barreira de segurança";
+
+/* Button to remove all Fireproof sites */
+"preserveLogins.removeAllSites" = "Remover todos os sites com barreira de segurança";

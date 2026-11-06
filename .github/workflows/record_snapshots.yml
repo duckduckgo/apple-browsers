@@ -76,14 +76,15 @@ jobs:
           fi
 
       - name: Download rendered snapshots
+        id: download
         env:
           GH_TOKEN: ${{ github.token }}
           GITHUB_REPOSITORY: ${{ github.repository }}
           RUN_ID: ${{ steps.run.outputs.id }}
         run: |
-          job_started="$(gh api "repos/$GITHUB_REPOSITORY/actions/runs/$RUN_ID/jobs?filter=latest&per_page=100" \
-            --jq '[.jobs[] | select(.name | startswith("Test (Non-Sandbox"))][0].started_at // ""')"
-          if [ -z "$job_started" ]; then
+          read -r job_started tests_conclusion < <(gh api "repos/$GITHUB_REPOSITORY/actions/runs/$RUN_ID/jobs?filter=latest&per_page=100" \
+            --jq '[.jobs[] | select(.name | startswith("Test (Non-Sandbox"))][0] // {} | "\(.started_at // "-") \([.steps[]? | select(.name == "Run unit tests")][0].conclusion // "-")"')
+          if [ "$job_started" = "-" ]; then
             echo "::error::Run $RUN_ID has no started Test (Non-Sandbox) job, the job that renders the snapshots."
             exit 1
           fi
@@ -93,8 +94,15 @@ jobs:
             echo "::error::Run $RUN_ID's macos-rendered-snapshots artifact has expired. Re-run its Test (Non-Sandbox) job or push again, then re-add the label once the macOS PR checks finish."
             exit 1
           fi
+          if [ "$artifact_id" = "-" ] || [[ "$artifact_created" < "$job_started" ]]; then
+            if [ "$tests_conclusion" != "success" ] && [ "$tests_conclusion" != "failure" ]; then
+              echo "::error::Run $RUN_ID's latest Test (Non-Sandbox) attempt didn't run the unit tests, so it rendered no snapshots. Fix the job, then re-add the label once the macOS PR checks finish."
+              exit 1
+            fi
+            echo "no_mismatches=true" >> "$GITHUB_OUTPUT"
+          fi
           if [ "$artifact_id" = "-" ]; then
-            echo "::error::Run $RUN_ID has no macos-rendered-snapshots artifact. Every snapshot matched its reference, or the unit tests didn't run."
+            echo "::error::Run $RUN_ID has no macos-rendered-snapshots artifact. Every snapshot matched its reference."
             exit 1
           fi
           if [[ "$artifact_created" < "$job_started" ]]; then
@@ -113,6 +121,7 @@ jobs:
           token: ${{ secrets.GHA_ELEVATED_PERMISSIONS_TOKEN }}
 
       - name: Record rendered snapshots
+        id: record
         env:
           GH_TOKEN: ${{ secrets.SNAPSHOTS_REPO_TOKEN }}
           HEAD_SHA: ${{ github.event.pull_request.head.sha }}
@@ -124,6 +133,31 @@ jobs:
             exit 1
           fi
           ../trusted/scripts/record-snapshots.sh "$RUNNER_TEMP/rendered" "$PR_BRANCH"
+
+      - name: Comment on the PR
+        if: ${{ !cancelled() }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          OUTCOME: ${{ steps.record.outcome }}
+          NO_MISMATCHES: ${{ steps.download.outputs.no_mismatches }}
+          COUNT: ${{ steps.record.outputs.count }}
+          SNAPSHOTS_PR: ${{ steps.record.outputs.snapshots_pr }}
+          POINTER_COMMIT: ${{ steps.record.outputs.pointer_commit }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          if [ "$NO_MISMATCHES" = "true" ] || { [ "$OUTCOME" = "success" ] && [ "$COUNT" = "0" ]; }; then
+            body="### ℹ️ No macOS snapshots to record"$'\n\n'"Every snapshot CI rendered already matches its reference. [Workflow run]($RUN_URL)"
+          elif [ "$OUTCOME" != "success" ]; then
+            body="### ❌ Couldn't record the macOS snapshots"$'\n\n'"See [the workflow run]($RUN_URL) for why."
+          else
+            body="### 📸 Recorded $COUNT macOS snapshot rendering(s)"$'\n\n'"Review them in $SNAPSHOTS_PR before adding the \`Merge snapshots\` label."
+            if [ -n "$POINTER_COMMIT" ]; then
+              body+=$'\n\n'"$POINTER_COMMIT points \`SnapshotReferences\` at them and re-runs the macOS PR checks."
+            fi
+          fi
+          gh pr comment "$PR_NUMBER" --repo "$GITHUB_REPOSITORY" --body "$body"
 
       - name: Remove the label
         if: always()

@@ -37,8 +37,6 @@ struct UserText {
     static let chromeWebStoreDownloadTitle = NotLocalizedString("webExtensions.store.download.title", value: "Add Extension", comment: "Extension download window title")
     static let chromeWebStoreDownloadMessage = NotLocalizedString("webExtensions.store.download.message", value: "Downloading and verifying extension…", comment: "Extension download progress message")
     static let chromeWebStoreRemoveTitle = NotLocalizedString("webExtensions.store.remove.title", value: "Remove “%@”?", comment: "Remove extension title; placeholder is the name")
-    static let chromeWebStoreRemoveMessage = NotLocalizedString("webExtensions.store.remove.message", value: "The extension and its saved permissions will be removed.", comment: "Remove extension confirmation")
-    static let chromeWebStoreRemoveButton = NotLocalizedString("webExtensions.store.remove.button", value: "Remove Extension", comment: "Confirm removing an extension")
     static let chromeWebStoreErrorTitle = NotLocalizedString("webExtensions.store.error.title", value: "Couldn’t Complete Extension Request", comment: "Extension operation error title")
     static let chromeWebStoreErrorMessage = NotLocalizedString("webExtensions.store.error.message", value: "Please check your connection and try again.", comment: "Extension operation error message")
     static let chromeWebStoreUnsupportedMessage = NotLocalizedString("webExtensions.store.error.unsupported", value: "This extension requires features that DuckDuckGo does not support.", comment: "Unsupported extension explanation")
@@ -50,6 +48,7 @@ struct UserText {
     static let extensionsSettingsTitle = NotLocalizedString("webExtensions.settings.title", value: "Extensions", comment: "Title of the option to show the Extensions settings")
     static let extensionsSettingsDescription = NotLocalizedString("webExtensions.settings.description", value: "Customize your browsing experience with supported third-party extensions. %@", comment: "Description of the Extensions settings; the placeholder is a Learn more link")
     static let extensionsSettingsLearnMore = NotLocalizedString("webExtensions.settings.learn-more", value: "Learn more", comment: "Link in the Extensions settings description")
+    static let extensionsSettingsRemotelyDisabledNotice = NotLocalizedString("webExtensions.settings.remotely-disabled", value: "DuckDuckGo has disabled this extension remotely.", comment: "Notice shown under an installed extension in the Extensions settings when DuckDuckGo has disabled it remotely")
     static let extensionsSettingsAddedHeader = NotLocalizedString("webExtensions.settings.added", value: "Added", comment: "Header of the installed extensions section in the Extensions settings")
     static let extensionsSettingsMoreExtensionsHeader = NotLocalizedString("webExtensions.settings.more-extensions", value: "More Extensions", comment: "Header of the section listing extensions available to install in the Extensions settings")
     static let extensionsSettingsPasswordManagersHeader = NotLocalizedString("webExtensions.settings.password-managers", value: "Password Managers", comment: "Header of the password manager extensions section in the Extensions settings")
@@ -2064,13 +2063,33 @@ struct UserText {
         return String(format: localized, successful, total)
     }
     static func importSummaryHistoryImported(_ count: Int) -> String {
-        let localized = NotLocalizedString("import.summary.history.count", value: "History: %d", comment: "Summary text showing number of browsing history visits imported, followed by importSummaryHistoryTimeRange or importSummaryHistoryTotal")
+        let template = NSLocalizedString("import.summary.history.visits", value: "History: %d visits", comment: "Summary text showing number of browsing history visits imported, followed by importSummaryHistoryTimeRange")
+        return String.localizedStringWithFormat(template, count)
+    }
+    static let importSummaryHistoryTimeRange = NSLocalizedString("import.summary.history.time-range", value: "(last 30 days)", comment: "Shown after the number of imported browsing history visits")
+    static func importSummaryBookmarks(_ count: Int) -> String {
+        let localized = NSLocalizedString("import.summary.bookmarks", value: "Bookmarks: %d", comment: "Summary text showing number of bookmarks successfully imported")
         return String(format: localized, count)
     }
-    static let importSummaryHistoryTimeRange = NotLocalizedString("import.summary.history.time-range", value: "(last 30 days)", comment: "Shown after the number of imported browsing history visits when every visit found was new")
-    static func importSummaryHistoryTotal(_ total: Int) -> String {
-        let localized = NotLocalizedString("import.summary.history.total", value: "/ %d (last 30 days)", comment: "Shown after the number of imported browsing history visits: %d is the number of visits found in the last 30 days, including the ones already in history")
-        return String(format: localized, total)
+    static func importSummaryBookmarksPartial(_ successful: Int, _ total: Int) -> String {
+        let localized = NSLocalizedString("import.summary.bookmarks.partial", value: "Bookmarks: %d / %d", comment: "Summary text showing number of bookmarks successfully imported out of total attempted")
+        return String(format: localized, successful, total)
+    }
+    static func importSummaryPasswords(_ count: Int) -> String {
+        let localized = NSLocalizedString("import.summary.passwords", value: "Passwords: %d", comment: "Summary text showing number of passwords successfully imported")
+        return String(format: localized, count)
+    }
+    static func importSummaryPasswordsPartial(_ successful: Int, _ total: Int) -> String {
+        let localized = NSLocalizedString("import.summary.passwords.partial", value: "Passwords: %d / %d", comment: "Summary text showing number of passwords successfully imported out of total attempted")
+        return String(format: localized, successful, total)
+    }
+    static func importSummaryCreditCards(_ count: Int) -> String {
+        let localized = NSLocalizedString("import.summary.credit.cards", value: "Credit Cards: %d", comment: "Summary text showing number of credit cards successfully imported")
+        return String(format: localized, count)
+    }
+    static func importSummaryCreditCardsPartial(_ successful: Int, _ total: Int) -> String {
+        let localized = NSLocalizedString("import.summary.credit.cards.partial", value: "Credit Cards: %d / %d", comment: "Summary text showing number of credit cards successfully imported out of total attempted")
+        return String(format: localized, successful, total)
     }
     static func importSummaryDuplicatesSkipped(_ count: Int) -> String {
         let localized = NSLocalizedString("import.summary.duplicates.skipped", value: "Duplicates Skipped: %d", comment: "Summary text showing number of duplicate items that were skipped during import")

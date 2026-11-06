@@ -3179,6 +3179,12 @@ https://duckduckgo.com/mac";
 "menuActualSize" = "Actual Size";
 
 /* iPad menu bar command */
+"menuAddToDock" = "Add DuckDuckGo to Dock...";
+
+/* iPad menu bar command */
+"menuAddWidget" = "Add Widget to Home Screen...";
+
+/* iPad menu bar command */
 "menuBack" = "Back";
 
 /* iPad menu bar title */
@@ -3212,6 +3218,9 @@ https://duckduckgo.com/mac";
 "menuHideDownloads" = "Hide Downloads";
 
 /* iPad menu bar command */
+"menuHideDuckAIButton" = "Hide Duck.ai Button";
+
+/* iPad menu bar command */
 "menuHidePasswords" = "Hide Passwords";
 
 /* iPad menu bar command */
@@ -3219,6 +3228,9 @@ https://duckduckgo.com/mac";
 
 /* iPad menu bar command */
 "menuImportBookmarks" = "Import Bookmarks...";
+
+/* iPad menu bar command */
+"menuImportBookmarksAndPasswords" = "Import Bookmarks and Passwords...";
 
 /* iPad menu bar command */
 "menuLastTab" = "Last Tab";
@@ -3257,6 +3269,9 @@ https://duckduckgo.com/mac";
 "menuSelectTab" = "Select Tab %d";
 
 /* iPad menu bar command */
+"menuSetDefaultBrowser" = "Set DuckDuckGo As Default Browser...";
+
+/* iPad menu bar command */
 "menuSettings" = "DuckDuckGo Settings...";
 
 /* iPad menu bar command */
@@ -3264,6 +3279,9 @@ https://duckduckgo.com/mac";
 
 /* iPad menu bar command */
 "menuShowDownloads" = "Show Downloads";
+
+/* iPad menu bar command */
+"menuShowDuckAIButton" = "Show Duck.ai Button";
 
 /* iPad menu bar command */
 "menuShowPasswords" = "Show Passwords";
@@ -4036,11 +4054,17 @@ https://duckduckgo.com/mac";
 /* Description of too many requests error when syncing. */
 "prefrences.sync.too-many-requests.description" = "Sync & Backup is temporarily unavailable.";
 
+/* Fireproofing setting toggle label */
+"preserveLogins.askOnSignIn" = "Ask to Fireproof sites on sign-in";
+
 /* No comment provided by engineer. */
 "preserveLogins.domain.list.footer" = "Websites rely on cookies to keep you signed in. When you Fireproof a site, cookies won’t be erased and you’ll stay signed in, even after using the Fire Button. We still block third-party trackers found on Fireproof websites.";
 
 /* Section header above Fireproofed websites list */
 "preserveLogins.domain.list.title" = "Fireproof Sites";
+
+/* Empty Fireproof sites list */
+"preserveLogins.emptyState" = "No Fireproof sites yet";
 
 /* Alert message explaining to users that the benefit of fireproofing a site is that they will be kept signed in */
 "preserveLogins.fireproof.message" = "Fireproofing this site will keep you signed in after using the Fire Button.";
@@ -4071,6 +4095,9 @@ https://duckduckgo.com/mac";
 
 /* Confirmation button in alert */
 "preserveLogins.remove.all.ok" = "OK";
+
+/* Button to remove all Fireproof sites */
+"preserveLogins.removeAllSites" = "Remove All Fireproof Sites";
 
 /* Privacy Icon accessibility title */
 "privacy.icon.dax" = "DuckDuckGo logo";
@@ -4332,6 +4359,12 @@ Take back control of your personal information with the browser designed for dat
 
 /* Footnote for the hide AI-generated images setting; ends with a Learn more link to the help page (do not remove the link) */
 "settings.aifeatures.hide.ai.generated.images.subtitle" = "Filters out known AI spam sites from image search results. [Learn more](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/results/how-to-filter-out-ai-images-in-duckduckgo-search-results)";
+
+/* Settings screen description for the Duck.ai keyboard animation toggle */
+"settings.aifeatures.keyboard.animation.subtitle" = "Show an animation around the keyboard when you switch to or type in Duck.ai.";
+
+/* Settings screen toggle title for the Duck.ai keyboard animation */
+"settings.aifeatures.keyboard.animation.title" = "Duck.ai Keyboard Animation";
 
 /* Label describing a feature which is turned on always */
 "settings.always.on" = "Always On";

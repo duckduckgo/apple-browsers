@@ -8,7 +8,7 @@ Supports .xcstrings (String Catalogs), .strings files, and .stringsdict files.
 Usage:
     python3 check_new_string_translations.py --platform iOS
     python3 check_new_string_translations.py --platform macOS
-    python3 check_new_string_translations.py --platform iOS --warn-only
+    python3 check_new_string_translations.py --platform iOS --base-ref release/ios/7.245.0
 
 Copyright © 2025 DuckDuckGo. All rights reserved.
 Licensed under the Apache License, Version 2.0
@@ -580,6 +580,16 @@ def format_issues(issues: List[TranslationIssue], required_locales: Set[str]) ->
 
     return "\n".join(lines)
 
+def requires_translations(platform: str, base_ref: str) -> bool:
+    """
+    Whether untranslated strings fail the check for a pull request into base_ref.
+
+    Only release and hotfix branches require translations: nothing sends strings merged there after code freeze to
+    Smartling. Strings merged anywhere else reach main, and the nightly job sends them from there.
+    """
+    platform = platform.lower()
+    return base_ref.startswith((f"release/{platform}/", f"hotfix/{platform}/"))
+
 def main():
     """Main entry point."""
     parser = argparse.ArgumentParser(
@@ -592,9 +602,10 @@ def main():
         help='Platform to check (iOS or macOS)'
     )
     parser.add_argument(
-        '--warn-only',
-        action='store_true',
-        help='Report untranslated strings as a warning without failing'
+        '--base-ref',
+        default=os.environ.get('GITHUB_BASE_REF') or 'main',
+        help='Branch the pull request merges into (default: $GITHUB_BASE_REF, else main). Untranslated strings fail '
+             'the check only for release/<platform>/* and hotfix/<platform>/*; for any other branch they are a warning'
     )
     parser.add_argument(
         '--verbose',
@@ -625,7 +636,7 @@ def main():
 
     all_issues = xcstrings_issues + strings_issues + stringsdict_issues
 
-    if all_issues and args.warn_only:
+    if all_issues and not requires_translations(args.platform, args.base_ref):
         print(format_issues(all_issues, required_locales))
         print("::warning::Untranslated strings found. Not blocking: they are sent to Smartling after merge.")
         sys.exit(0)

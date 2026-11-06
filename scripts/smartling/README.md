@@ -6,7 +6,8 @@ release imports all of its translations in one pull request.
 ## How it works
 
 1. **Merge to `main` in English only.** The "Translated Strings" check still reports untranslated strings on pull
-   requests into `main`, as a warning that doesn't block the merge.
+   requests into `main`, feature branches and stacked pull requests, as a warning that doesn't block the merge. Those
+   strings all end up on `main`.
 2. **Nightly job** (`smartling_nightly.yml`): every night, new strings on `main` are sent to Smartling. Jobs under the
    cost cap are authorized automatically; above it, a review task is opened for the maintenance DRI. Nothing is
    committed to `main`.
@@ -22,6 +23,8 @@ Builds from `main` show English for new strings until the next release import.
 
 Nothing above covers changes merged into `release/<platform>/*` or `hotfix/<platform>/*` after code freeze. Pull
 requests into those branches must include their translations, and the "Translated Strings" check fails until they do.
+These are the only bases the check blocks on; a pull request stacked on another one into a release branch is checked
+once it is merged into that pull request's branch.
 Translate them with the labels:
 
 1. Add `start ios translation` or `start macos translation` to create a Smartling job for the pull request's branch.

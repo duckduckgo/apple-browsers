@@ -19,6 +19,16 @@
 import Foundation
 import os.log
 
+/// Bounded verification failures, excluding cancellation.
+public enum WebExtensionUpdateVerificationFailure: String, Error, CaseIterable, Sendable {
+    case invalidPackage = "invalid_package"
+    case invalidSignature = "invalid_signature"
+    case invalidVersion = "invalid_version"
+    case versionMismatch = "version_mismatch"
+    case notNewer = "not_newer"
+    case storageFailure = "storage_failure"
+}
+
 /// Downloads and verifies background updates for installation.
 @available(macOS 15.4, iOS 18.4, *)
 actor ChromeWebStoreUpdater {

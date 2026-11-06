@@ -19,6 +19,17 @@
 import CryptoKit
 import Foundation
 
+/// Bounded download failures; package metadata and server messages are never sent.
+public enum WebExtensionUpdateDownloadFailure: String, Error, CaseIterable, Sendable {
+    case invalidRequest = "invalid_request"
+    case invalidResponse = "invalid_response"
+    case httpStatus = "http_status"
+    case networkFailure = "network_failure"
+    case sizeMismatch = "size_mismatch"
+    case packageTooLarge = "package_too_large"
+    case hashMismatch = "hash_mismatch"
+}
+
 @available(macOS 15.4, iOS 18.4, *)
 struct ChromeWebStoreUpdateDownloader: Sendable {
     static let maximumPackageSize = 256 * 1024 * 1024

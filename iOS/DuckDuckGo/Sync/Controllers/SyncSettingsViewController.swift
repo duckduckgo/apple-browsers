@@ -42,8 +42,8 @@ class SyncSettingsViewController: UIHostingController<SimplifiedSyncSettingsView
         static let bookmarksPromotion = "promotion_bookmarks"
         static let passwordsPromotion = "promotion_passwords"
         static let aiChatPromotion = "promotion_ai_chat"
-        static let bookmarksAnotherDevicePromotion = "promotion_bookmarks_another_device"
-        static let passwordsAnotherDevicePromotion = "promotion_passwords_another_device"
+        static let bookmarksAnotherDevicePromotion = "promotion_bookmarks_multi_device"
+        static let passwordsAnotherDevicePromotion = "promotion_passwords_multi_device"
     }
 
     enum AutoRestorePromptSource: String {

@@ -18,15 +18,19 @@
 
 import AppKit
 import WebExtensions
+import WebKit
 
+@available(macOS 15.4, *)
 @MainActor
 final class ChromeWebStorePresenter: NSObject, ChromeWebStorePresenting {
     private let windowProvider: () -> NSWindow?
+    private let themeManager: ThemeManager
     private var progressPanel: NSPanel?
     private var cancelDownload: (() -> Void)?
 
-    init(windowProvider: @escaping () -> NSWindow?) {
+    init(windowProvider: @escaping () -> NSWindow?, themeManager: ThemeManager) {
         self.windowProvider = windowProvider
+        self.themeManager = themeManager
     }
 
     func showDownloadProgress(cancel: @escaping () -> Void) {
@@ -69,15 +73,11 @@ final class ChromeWebStorePresenter: NSObject, ChromeWebStorePresenting {
         cancelDownload = nil
     }
 
-    func confirmRemoval(name: String) async -> Bool {
-        let alert = NSAlert()
-        alert.messageText = String(format: UserText.chromeWebStoreRemoveTitle, name)
-        alert.informativeText = UserText.chromeWebStoreRemoveMessage
-        alert.addButton(withTitle: UserText.cancel)
-        alert.addButton(withTitle: UserText.chromeWebStoreRemoveButton)
-        alert.buttons[0].keyEquivalent = "\u{1b}"
-        alert.buttons[1].keyEquivalent = "\r"
-        return await present(alert) == .alertSecondButtonReturn
+    func confirmRemoval(name: String, webExtension: WKWebExtension?) async -> Bool {
+        guard let window = windowProvider() else { return false }
+        let response = await WebExtensionAlert.present(.removal(of: webExtension, name: name), themeManager: themeManager, in: window)
+        if case .confirmed = response { return true }
+        return false
     }
 
     func showError(_ error: Error) async {

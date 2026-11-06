@@ -149,20 +149,3 @@ final class WebExtensionPermissionPrompt: WebExtensionPermissionPrompting {
     }
 
 }
-
-@available(macOS 15.4, *)
-private extension WebExtensionAlert.Configuration {
-
-    static func installation(of webExtension: WKWebExtension, permissionEntries entries: [String]) -> Self {
-        let iconSize = NSSize(width: 64, height: 64)
-        return Self(
-            icon: webExtension.icon(for: iconSize) ?? webExtension.actionIcon(for: iconSize),
-            title: String(format: UserText.webExtensionInstallTitle, webExtension.displayName ?? UserText.webExtensionUnnamedExtension),
-            message: entries.isEmpty ? UserText.webExtensionNoPermissions : UserText.webExtensionPermissionExplanation,
-            details: entries,
-            checkbox: UserText.webExtensionAllowFireWindows,
-            checkboxToolTip: UserText.webExtensionPrivateAccessExplanation,
-            confirmTitle: UserText.webExtensionInstall,
-            cancelTitle: UserText.cancel)
-    }
-}

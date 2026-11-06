@@ -450,9 +450,9 @@ struct MacOSWebExtensionPixelFiring: WebExtensionPixelFiring {
         switch event {
         case .bitwardenDailyActive, .apiCompatibilityGaps, .installedCount:
             frequency = .daily
-        case .enabled, .disabled, .remotelyDisabled, .retained14Days, .churned14Days:
+        case .enabled, .disabled, .remotelyDisabled:
             frequency = .dailyAndCount
-        case .defaultPasswordManagerSet:
+        case .defaultPasswordManagerSet, .retained14Days, .churned14Days:
             frequency = .standard
         default:
             frequency = Self.frequency(of: event)

@@ -18,7 +18,6 @@
 //
 
 import SwiftUI
-import Subscription
 
 struct SubscriptionSettingsHeaderView: View {
 
@@ -99,16 +98,6 @@ struct SubscriptionSettingsHeaderView: View {
         default:
             return UserText.subscriptionSubscribed
         }
-    }
-}
-
-extension SubscriptionSettingsHeaderView.HeaderState {
-
-    static func active(isTrial: Bool, status: DuckDuckGoSubscription.Status?) -> Self {
-        if status == .notAutoRenewable {
-            return .expiring
-        }
-        return isTrial ? .trial : .subscribed
     }
 }
 

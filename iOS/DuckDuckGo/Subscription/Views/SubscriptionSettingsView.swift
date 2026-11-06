@@ -786,3 +786,13 @@ extension SubscriptionSettingsViewV2 {
         }
     }
 }
+
+extension SubscriptionSettingsHeaderView.HeaderState {
+
+    static func active(isTrial: Bool, status: DuckDuckGoSubscription.Status?) -> Self {
+        if status == .notAutoRenewable {
+            return .expiring
+        }
+        return isTrial ? .trial : .subscribed
+    }
+}

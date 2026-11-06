@@ -38,10 +38,8 @@ final class NewTabPageOmnibarModelsProvider: NewTabPageOmnibarModelsProviding {
     private(set) var lastResolvedUserTier: AIChatUserTier = .free
     private(set) var lastFetchedModels: [AIChatModel] = []
 
-    /// A free user can only upgrade where the storefront sells a subscription. Subscribers keep
-    /// upgrading, since theirs may have been bought on Stripe.
     var allowsSubscriptionUpsell: Bool {
-        lastResolvedUserTier != .free || subscriptionManager.isSubscriptionPurchaseEligible
+        lastResolvedUserTier.allowsSubscriptionUpsell(isPurchaseEligible: subscriptionManager.isSubscriptionPurchaseEligible)
     }
     private let modelsService: AIChatModelsProviding
     private let subscriptionManager: any SubscriptionManager
@@ -59,8 +57,11 @@ final class NewTabPageOmnibarModelsProvider: NewTabPageOmnibarModelsProviding {
     ]
 
     var modelsDidChangePublisher: AnyPublisher<Void, Never> {
-        Publishers.MergeMany(Self.modelsDidChangeNotifications.map { NotificationCenter.default.publisher(for: $0) })
-            .map { _ in () }
+        Publishers.Merge(
+            Publishers.MergeMany(Self.modelsDidChangeNotifications.map { NotificationCenter.default.publisher(for: $0) }).map { _ in () },
+            // Purchase eligibility is false until App Store products first load.
+            subscriptionManager.hasAppStoreProductsAvailablePublisher.map { _ in () }
+        )
             // Sign-out posts two of these back to back; one refetch is enough.
             .debounce(for: .milliseconds(300), scheduler: DispatchQueue.main)
             .eraseToAnyPublisher()

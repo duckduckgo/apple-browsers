@@ -270,6 +270,14 @@ public enum AIChatUserTier: String {
     case `internal`
 }
 
+extension AIChatUserTier {
+    /// A free user can only upgrade where the storefront sells a subscription. Subscribers keep
+    /// upgrading, since theirs may have been bought on Stripe.
+    public func allowsSubscriptionUpsell(isPurchaseEligible: Bool) -> Bool {
+        self != .free || isPurchaseEligible
+    }
+}
+
 extension AIChatModel {
     private static let nativeSupportedImageFormats = ["png", "jpeg", "webp"]
 

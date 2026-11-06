@@ -541,6 +541,19 @@ final class NewTabPageOmnibarModelsProviderTests: XCTestCase {
         }
     }
 
+    /// On a fresh install purchase eligibility is false until App Store products load, so an open
+    /// NTP tab must refetch once they arrive or it keeps hiding the paid models.
+    func testWhenAppStoreProductsBecomeAvailableThenModelsDidChangePublisherEmits() async {
+        mockSubscriptionManager.hasAppStoreProductsAvailable = false
+        let expectation = expectation(description: "modelsDidChangeEmitted")
+        let cancellable = provider.modelsDidChangePublisher.sink { expectation.fulfill() }
+
+        mockSubscriptionManager.hasAppStoreProductsAvailable = true
+
+        await fulfillment(of: [expectation], timeout: 1)
+        cancellable.cancel()
+    }
+
     // MARK: - Concurrency
 
     /// Overlapping callers (`NewTabPageOmnibarClient.getConfig` and `refreshModelsAndNotify`) must

@@ -216,7 +216,7 @@ public final class SubscriptionDebugMenu: NSMenuItem {
 
         menu.addItem(.separator())
 
-        let noProductsItem = NSMenuItem(title: "Load no products", action: #selector(toggleNoProductsOverride), target: self)
+        let noProductsItem = NSMenuItem(title: "Load no products (relaunch)", action: #selector(toggleNoProductsOverride), target: self)
         noProductsItem.state = subscriptionUserDefaults.noSubscriptionProductsOverride ? .on : .off
         menu.addItem(noProductsItem)
 

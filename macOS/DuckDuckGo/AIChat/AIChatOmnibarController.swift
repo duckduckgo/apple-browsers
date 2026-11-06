@@ -287,10 +287,8 @@ final class AIChatOmnibarController {
         surface.supportsSubscriptionUpsell && featureFlagger.isFeatureOn(.aiChatOmnibarSubscriptionUpsell)
     }
 
-    /// A free user can only upgrade where the storefront sells a subscription. Subscribers keep
-    /// upgrading, since theirs may have been bought on Stripe.
     var allowsSubscriptionUpsell: Bool {
-        userTier != .free || subscriptionManager.isSubscriptionPurchaseEligible
+        userTier.allowsSubscriptionUpsell(isPurchaseEligible: subscriptionManager.isSubscriptionPurchaseEligible)
     }
 
     /// Whether the subscription-upsell CTA (tag + dialog primary button) should read "Try for

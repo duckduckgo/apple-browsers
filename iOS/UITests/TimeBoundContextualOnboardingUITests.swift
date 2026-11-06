@@ -76,7 +76,11 @@ final class TimeBoundContextualOnboardingUITests: XCTestCase {
         XCTAssertTrue(trackersMessage.waitForExistence(timeout: timeout))
         attachScreenshot(named: "Final trackers exception")
 
-        tapButton("Got it!")
+        let acknowledge = app.buttons["Got it!"].firstMatch
+        XCTAssertTrue(acknowledge.waitForExistence(timeout: timeout))
+        XCTAssertTrue(acknowledge.isEnabled)
+        // XCTest reports this visible SwiftUI overlay button as non-hittable.
+        acknowledge.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5)).tap()
         XCTAssertTrue(trackersMessage.waitForNonExistence(timeout: timeout))
         assertNoContextualDialog()
         attachScreenshot(named: "Trackers exception dismissed without fire education")
@@ -120,7 +124,7 @@ final class TimeBoundContextualOnboardingUITests: XCTestCase {
         openTrackerFreePage()
 
         dismissInputIfNeeded()
-        tap(app.descendants(matching: .any)["Browser.Toolbar.Button.TabSwitcher"])
+        tap(app.buttons["Browser.Toolbar.Button.Menu"])
         tapButton("New Tab")
         waitForBrowser()
         assertNoContextualDialog()

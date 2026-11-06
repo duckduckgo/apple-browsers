@@ -777,9 +777,9 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .syncPromotionPasswords:
             Config(source: .remoteReleasable(SyncPromotionSubfeature.passwords), supportsLocalOverriding: false)
         case .syncPromotionSyncAnotherDevice:
-            Config(defaultValue: .internalOnly, source: .remoteReleasable(SyncPromotionSubfeature.syncAnotherDevice))
+            Config(defaultValue: .enabled, source: .remoteReleasable(SyncPromotionSubfeature.syncAnotherDevice))
         case .syncPromotionRedesign:
-            Config(defaultValue: .internalOnly, source: .remoteReleasable(SyncPromotionSubfeature.redesign))
+            Config(defaultValue: .enabled, source: .remoteReleasable(SyncPromotionSubfeature.redesign))
         case .autofillSurveys:
             Config(defaultValue: .enabled, source: .remoteReleasable(AutofillSurveysSubfeature.featureEnabled), supportsLocalOverriding: false)
         case .adAttributionReporting:

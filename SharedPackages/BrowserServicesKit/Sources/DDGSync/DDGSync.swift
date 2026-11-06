@@ -408,6 +408,35 @@ public class DDGSync: DDGSyncing {
         return currentAccount.userId == account.userId && currentAccount.deviceId == account.deviceId
     }
 
+    /// The platform schedules notifications for a completed poll before its checkpoint is committed.
+    public var loginNotificationHandler: ((SyncLoginNotification) async -> Void)?
+
+    private let pendingActivityDidChange = PassthroughSubject<Void, Never>()
+
+    public var pendingLoginEventsPublisher: AnyPublisher<[SyncLoginEvent], Never> {
+        let updates = auditLogPoller?.stateDidChange.eraseToAnyPublisher() ?? Empty().eraseToAnyPublisher()
+        return updates.merge(with: authStatePublisher.map { _ in () }, pendingActivityDidChange)
+            .prepend(())
+            .receive(on: DispatchQueue.main)
+            .map { [weak self] _ in
+                do { return try self?.pendingLoginEvents() ?? [] } catch {
+                    Logger.sync.error("Failed to load pending Sync activity: \(String(reflecting: error), privacy: .private)")
+                    return []
+                }
+            }
+            .eraseToAnyPublisher()
+    }
+
+    public func pendingLoginEvents() throws -> [SyncLoginEvent] {
+        guard dependencies.syncFeatureFlags.isLoginAuditLogEnabled(), let account else { return [] }
+        return try auditLogPoller?.pendingEvents(for: account.userId) ?? []
+    }
+
+    public func dismissPendingLoginEvents(withIDs ids: Set<String>) throws {
+        guard let account else { return }
+        try auditLogPoller?.dismissEvents(withIDs: ids, for: account.userId)
+    }
+
     public func auditLogReviewState(for accountID: String) throws -> SyncAuditLogReviewState? {
         guard let data = try dependencies.keyValueStore.object(forKey: auditLogReviewStateKey(for: accountID)) as? Data else {
             return nil
@@ -422,11 +451,15 @@ public class DDGSync: DDGSyncing {
     }
 
     public func setAuditLogReviewState(_ reviewState: SyncAuditLogReviewState, for accountID: String) throws {
-        try auditLogReviewStateLock.withLock {
+        let didSave = try auditLogReviewStateLock.withLock {
             if let current = try auditLogReviewState(for: accountID), !canAdvanceReviewState(from: current, to: reviewState) {
-                return
+                return false
             }
             try persistAuditLogReviewState(reviewState, for: accountID)
+            return true
+        }
+        if didSave, let date = reviewState.reviewedThrough {
+            try auditLogPoller?.removeReviewedEvents(through: date, for: accountID)
         }
     }
 
@@ -568,6 +601,7 @@ public class DDGSync: DDGSyncing {
             if !flags.contains(.dataSyncing) || !self.dependencies.syncFeatureFlags.isLoginAuditLogEnabled() {
                 self.auditLogPoller?.cancel()
             }
+            self.pendingActivityDidChange.send()
         })
         .removeDuplicates()
         .receive(on: DispatchQueue.main)
@@ -714,6 +748,12 @@ public class DDGSync: DDGSyncing {
             },
             onError: { error in
                 Logger.sync.error("Failed to poll the audit log: \(String(reflecting: error), privacy: .private)")
+            },
+            notify: { [weak self] notification in
+                await self?.loginNotificationHandler?(notification)
+            },
+            reviewedThrough: { [weak self] accountID in
+                try self?.auditLogReviewState(for: accountID)?.reviewedThrough
             }
         )
     }

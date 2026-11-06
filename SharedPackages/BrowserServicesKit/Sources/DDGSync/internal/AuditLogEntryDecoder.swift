@@ -46,6 +46,13 @@ enum AuditLogEntryDecodingResult {
     case unsupportedVersion(id: String, version: String)
     case unknownType(id: String, type: String)
     case unreadable(id: String, reason: AuditLogUnreadableReason)
+
+    var id: String {
+        switch self {
+        case .decoded(let event): return event.id
+        case .unsupportedVersion(let id, _), .unknownType(let id, _), .unreadable(let id, _): return id
+        }
+    }
 }
 
 struct AuditLogEntryDecoder {

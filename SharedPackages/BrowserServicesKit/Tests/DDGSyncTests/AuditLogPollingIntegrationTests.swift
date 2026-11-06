@@ -29,7 +29,7 @@ final class AuditLogPollingIntegrationTests: XCTestCase {
     private var store: PollingStore!
     private var source: MockDataProvidersSource!
     private var accountManager: AccountManagingMock { dependencies.account as! AccountManagingMock }
-    private var cursorKey: String { AuditLogPoller.cursorKey(for: SyncAccount.mock.userId) }
+    private var cursorKey: String { AuditLogPoller.checkpointKey(for: SyncAccount.mock.userId) }
 
     override func setUpWithError() throws {
         dependencies = MockSyncDependencies()
@@ -47,10 +47,23 @@ final class AuditLogPollingIntegrationTests: XCTestCase {
         return service
     }
 
+    private func waitForPendingEvents(_ service: DDGSync, ids: [String]) async {
+        let updated = expectation(description: "Pending activity updated")
+        let subscription = service.pendingLoginEventsPublisher.filter { $0.map(\.id) == ids }.prefix(1)
+            .sink { _ in updated.fulfill() }
+        await fulfillment(of: [updated], timeout: 1)
+        subscription.cancel()
+    }
+
+    private func storedCursor() throws -> String? {
+        guard let data = try store.object(forKey: cursorKey) as? Data else { return nil }
+        return try JSONDecoder().decode(AuditLogCheckpoint.self, from: data).cursor
+    }
+
     private func requestSync(_ service: DDGSync, expectingCursor cursor: String) async throws {
         let saved = expectation(description: "Cursor saved: \(cursor)")
         store.onSet = { [cursorKey] key, value in
-            if key == cursorKey, value as? String == cursor { saved.fulfill() }
+            if key == cursorKey, (value as? Data).flatMap { try? JSONDecoder().decode(AuditLogCheckpoint.self, from: $0).cursor } == cursor { saved.fulfill() }
         }
         service.scheduler.requestSyncImmediately()
         await fulfillment(of: [saved], timeout: 2)
@@ -58,6 +71,54 @@ final class AuditLogPollingIntegrationTests: XCTestCase {
         // The checkpoint is written just before the tracked task finishes. Wait for that task to release its slot.
         service.scheduler.cancelSyncAndSuspendSyncQueue()
         service.scheduler.resumeSyncQueue()
+    }
+
+    func testPendingActivityDismissalReviewAndLogoutUseTheSameCheckpoint() async throws {
+        let events = [
+            SyncLoginEvent(id: "shown", occurredAt: Date(timeIntervalSince1970: 100), deviceName: "First"),
+            SyncLoginEvent(id: "same-second", occurredAt: Date(timeIntervalSince1970: 100), deviceName: "Second"),
+            SyncLoginEvent(id: "later", occurredAt: Date(timeIntervalSince1970: 101), deviceName: "Third")
+        ]
+        try store.set(JSONEncoder().encode(AuditLogCheckpoint(cursor: "start", pendingEvents: events)), forKey: cursorKey)
+        let service = makeService()
+        var snapshots = [[String]]()
+        let subscription = service.pendingLoginEventsPublisher.sink {
+            XCTAssertTrue(Thread.isMainThread)
+            snapshots.append($0.map(\.id))
+        }
+        defer { subscription.cancel() }
+        await waitForPendingEvents(service, ids: ["shown", "same-second", "later"])
+        XCTAssertEqual(try service.pendingLoginEvents().map(\.id), ["shown", "same-second", "later"])
+        try service.dismissPendingLoginEvents(withIDs: ["shown"])
+        await waitForPendingEvents(service, ids: ["same-second", "later"])
+        XCTAssertEqual(snapshots.last, ["same-second", "later"])
+        XCTAssertNil(try service.auditLogReviewState(for: SyncAccount.mock.userId))
+        try service.setAuditLogReviewState(SyncAuditLogReviewState(reviewedThrough: Date(timeIntervalSince1970: 100), isInitialized: true),
+                                          for: SyncAccount.mock.userId)
+        await waitForPendingEvents(service, ids: ["later"])
+        XCTAssertEqual(snapshots.last, ["later"])
+        XCTAssertEqual(try storedCursor(), "start")
+        try await service.disconnect()
+        await waitForPendingEvents(service, ids: [])
+        XCTAssertEqual(snapshots.last, [])
+        XCTAssertNil(try store.object(forKey: cursorKey))
+    }
+
+    func testPendingActivityIsAccountScopedAndSurvivesServiceRecreation() throws {
+        let event = SyncLoginEvent(id: "event", occurredAt: Date(), deviceName: "Private name")
+        try store.set(JSONEncoder().encode(AuditLogCheckpoint(cursor: "start", pendingEvents: [event])), forKey: cursorKey)
+        let service = makeService()
+        XCTAssertEqual(try service.pendingLoginEvents(), [event])
+        let restored = DDGSync(dataProvidersSource: source, dependencies: dependencies)
+        XCTAssertEqual(try restored.pendingLoginEvents(), [event])
+        let account = SyncAccount.mock
+        (dependencies.secureStore as! SecureStorageStub).theAccount = SyncAccount(
+            deviceId: account.deviceId, deviceName: account.deviceName, deviceType: account.deviceType, userId: "replacement",
+            primaryKey: account.primaryKey, secretKey: account.secretKey, token: account.token, state: .active)
+        XCTAssertTrue(try service.pendingLoginEvents().isEmpty)
+        try service.dismissPendingLoginEvents(withIDs: ["event"])
+        let original = try XCTUnwrap(try store.object(forKey: cursorKey) as? Data)
+        XCTAssertEqual(try JSONDecoder().decode(AuditLogCheckpoint.self, from: original).pendingEvents, [event])
     }
 
     func testSchedulerInitializesPollingAndNextSyncUsesSavedCursorWithoutAdvancingReviewDate() async throws {
@@ -90,7 +151,7 @@ final class AuditLogPollingIntegrationTests: XCTestCase {
         let olderPage = try await reader.nextPage()
 
         XCTAssertFalse(olderPage.hasMore)
-        XCTAssertEqual(try store.object(forKey: cursorKey) as? String, "cursor")
+        XCTAssertEqual(try storedCursor(), "cursor")
         guard case .before("screen-older") = accountManager.fetchAuditLogCalls.last?.1 else { return XCTFail("Expected backward cursor") }
     }
 
@@ -241,7 +302,7 @@ final class AuditLogPollingIntegrationTests: XCTestCase {
         dependencies.isLoginAuditLogEnabled = { false }
         service.scheduler.requestSyncImmediately()
         XCTAssertEqual(accountManager.fetchAuditLogCalls.count, 1)
-        XCTAssertEqual(try store.object(forKey: cursorKey) as? String, "cursor")
+        XCTAssertEqual(try storedCursor(), "cursor")
 
         dependencies.isLoginAuditLogEnabled = { true }
         accountManager.fetchAuditLogStub = AuditLogPage(entries: [], after: "enabled-again", before: nil)
@@ -369,7 +430,7 @@ final class AuditLogPollingIntegrationTests: XCTestCase {
 
     func testUnauthorizedPollingPreservesAccountAndCursor() async throws {
         accountManager.fetchAuditLogError = SyncError.unexpectedStatusCode(401)
-        try store.set("old", forKey: cursorKey)
+        try store.set(JSONEncoder().encode(AuditLogCheckpoint(cursor: "old")), forKey: cursorKey)
         let service = makeService()
         do {
             _ = try await service.pollAuditLog()
@@ -379,7 +440,7 @@ final class AuditLogPollingIntegrationTests: XCTestCase {
         }
         XCTAssertNotNil(service.account)
         XCTAssertEqual(service.authState, .active)
-        XCTAssertEqual(try store.object(forKey: cursorKey) as? String, "old")
+        XCTAssertEqual(try storedCursor(), "old")
     }
 
     func testPollingAvailabilityMatchesThePersistedAccountWithoutInitializingSync() throws {
@@ -399,7 +460,7 @@ final class AuditLogPollingIntegrationTests: XCTestCase {
         XCTAssertTrue(try service.isAuditLogPollingAvailable())
         let completed = try await service.pollAuditLog()
         XCTAssertTrue(completed)
-        XCTAssertEqual(try store.object(forKey: cursorKey) as? String, "cursor")
+        XCTAssertEqual(try storedCursor(), "cursor")
         XCTAssertEqual(service.authState, .initializing)
         XCTAssertEqual(source.makeDataProvidersCallCount, 0)
     }
@@ -409,7 +470,7 @@ final class AuditLogPollingIntegrationTests: XCTestCase {
         service.scheduler.cancelSyncAndSuspendSyncQueue()
         let completed = try await service.pollAuditLog()
         XCTAssertTrue(completed)
-        XCTAssertEqual(try store.object(forKey: cursorKey) as? String, "cursor")
+        XCTAssertEqual(try storedCursor(), "cursor")
         let unwantedRequest = expectation(description: "Foreground request after independent poll while suspended")
         unwantedRequest.isInverted = true
         accountManager.fetchAuditLogHandler = { _, _, _ in
@@ -423,7 +484,7 @@ final class AuditLogPollingIntegrationTests: XCTestCase {
 
     func testUnavailableEnabledMarkerPreservesStateAndRetriesLater() async throws {
         let service = DDGSync(dataProvidersSource: source, dependencies: dependencies)
-        try store.set("old", forKey: cursorKey)
+        try store.set(JSONEncoder().encode(AuditLogCheckpoint(cursor: "old")), forKey: cursorKey)
         let expectedError = NSError(domain: "storage", code: 1)
         store.onRead = { key in
             if key == DDGSync.Constants.syncEnabledKey { throw expectedError }
@@ -436,7 +497,7 @@ final class AuditLogPollingIntegrationTests: XCTestCase {
         }
         XCTAssertTrue(accountManager.fetchAuditLogCalls.isEmpty)
         XCTAssertNotNil((dependencies.secureStore as! SecureStorageStub).theAccount)
-        XCTAssertEqual(try store.object(forKey: cursorKey) as? String, "old")
+        XCTAssertEqual(try storedCursor(), "old")
         store.onRead = nil
         let completed = try await service.pollAuditLog()
         XCTAssertTrue(completed)
@@ -445,7 +506,7 @@ final class AuditLogPollingIntegrationTests: XCTestCase {
     func testUnavailableAccountPreservesCredentialsAndRetriesLater() async throws {
         let service = DDGSync(dataProvidersSource: source, dependencies: dependencies)
         let secureStore = dependencies.secureStore as! SecureStorageStub
-        try store.set("old", forKey: cursorKey)
+        try store.set(JSONEncoder().encode(AuditLogCheckpoint(cursor: "old")), forKey: cursorKey)
         secureStore.mockReadError = .failedToReadSecureStore(status: -25308)
         XCTAssertThrowsError(try service.isAuditLogPollingAvailable(forAccountID: SyncAccount.mock.userId)) { error in
             guard case SyncError.failedToReadSecureStore = error else { return XCTFail("Unexpected error: \(error)") }
@@ -458,7 +519,7 @@ final class AuditLogPollingIntegrationTests: XCTestCase {
         }
         XCTAssertTrue(accountManager.fetchAuditLogCalls.isEmpty)
         XCTAssertNotNil(secureStore.theAccount)
-        XCTAssertEqual(try store.object(forKey: cursorKey) as? String, "old")
+        XCTAssertEqual(try storedCursor(), "old")
         secureStore.mockReadError = nil
         let completed = try await service.pollAuditLog()
         XCTAssertTrue(completed)
@@ -466,7 +527,7 @@ final class AuditLogPollingIntegrationTests: XCTestCase {
 
     func testUnavailableCheckpointDoesNotFetchOrReplaceState() async throws {
         let service = DDGSync(dataProvidersSource: source, dependencies: dependencies)
-        try store.set("old", forKey: cursorKey)
+        try store.set(JSONEncoder().encode(AuditLogCheckpoint(cursor: "old")), forKey: cursorKey)
         let expectedError = NSError(domain: "storage", code: 1)
         store.onRead = { [cursorKey] key in
             if key == cursorKey { throw expectedError }
@@ -479,7 +540,7 @@ final class AuditLogPollingIntegrationTests: XCTestCase {
         }
         XCTAssertTrue(accountManager.fetchAuditLogCalls.isEmpty)
         store.onRead = nil
-        XCTAssertEqual(try store.object(forKey: cursorKey) as? String, "old")
+        XCTAssertEqual(try storedCursor(), "old")
         let completed = try await service.pollAuditLog()
         XCTAssertTrue(completed)
     }
@@ -500,7 +561,7 @@ final class AuditLogPollingIntegrationTests: XCTestCase {
         continuation.finish()
         let completed = try await poll.value
         XCTAssertTrue(completed)
-        XCTAssertEqual(try store.object(forKey: cursorKey) as? String, "independent")
+        XCTAssertEqual(try storedCursor(), "independent")
     }
 
     func testMissingEnabledMarkerSkipsPollingWithoutRemovingAccount() async throws {
@@ -515,7 +576,7 @@ final class AuditLogPollingIntegrationTests: XCTestCase {
 
     func testChangedCredentialsDiscardLateResponse() async throws {
         let service = DDGSync(dataProvidersSource: source, dependencies: dependencies)
-        try store.set("old", forKey: cursorKey)
+        try store.set(JSONEncoder().encode(AuditLogCheckpoint(cursor: "old")), forKey: cursorKey)
         let secureStore = dependencies.secureStore as! SecureStorageStub
         accountManager.fetchAuditLogHandler = { account, _, _ in
             secureStore.theAccount = SyncAccount(deviceId: account.deviceId, deviceName: account.deviceName, deviceType: account.deviceType,
@@ -528,12 +589,12 @@ final class AuditLogPollingIntegrationTests: XCTestCase {
             XCTFail("Expected cancellation")
         } catch is CancellationError {
         }
-        XCTAssertEqual(try store.object(forKey: cursorKey) as? String, "old")
+        XCTAssertEqual(try storedCursor(), "old")
         XCTAssertEqual(secureStore.theAccount?.token, "replacement")
     }
 
     func testInitializingWithSyncDisabledClearsCursorWhenCredentialsAreRemoved() throws {
-        try store.set("old", forKey: cursorKey)
+        try store.set(JSONEncoder().encode(AuditLogCheckpoint(cursor: "old")), forKey: cursorKey)
         try store.removeObject(forKey: DDGSync.Constants.syncEnabledKey)
         let migration = DeviceInfoMigrationCoordinatingMock()
         dependencies.createDeviceInfoMigrationCoordinatorStub = migration

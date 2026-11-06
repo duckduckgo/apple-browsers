@@ -202,6 +202,10 @@ final class MockDDGSyncing: DDGSyncing {
     private var auditLogReviewStates = [String: SyncAuditLogReviewState]()
     var auditLogReviewStateError: Error?
 
+    var pendingLoginEventsPublisher: AnyPublisher<[SyncLoginEvent], Never> { Just([]).eraseToAnyPublisher() }
+    func pendingLoginEvents() throws -> [SyncLoginEvent] { [] }
+    func dismissPendingLoginEvents(withIDs ids: Set<String>) throws {}
+
     func auditLogReviewState(for accountID: String) throws -> SyncAuditLogReviewState? {
         if let auditLogReviewStateError { throw auditLogReviewStateError }
         return auditLogReviewStates[accountID]

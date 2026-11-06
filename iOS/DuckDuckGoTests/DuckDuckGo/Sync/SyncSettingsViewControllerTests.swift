@@ -101,6 +101,85 @@ final class SyncSettingsViewControllerTests: XCTestCase {
     }
 
     @MainActor
+    private func makeNotificationDestinationController() -> SyncSettingsViewController {
+        SyncSettingsViewController(syncService: ddgSyncing, syncBookmarksAdapter: syncBookmarksAdapter,
+                                   syncCredentialsAdapter: syncCredentialsAdapter, syncCreditCardsAdapter: syncCreditCardsAdapter,
+                                   syncPausedStateManager: errorHandler, featureFlagger: featureFlagger,
+                                   syncAutoRestoreHandler: syncAutoRestoreHandler, syncPromoStorage: MockKeyValueStore().keyedStoring())
+    }
+
+    @MainActor
+    func testNotificationDestinationOpensImmediatelyAfterInitializationWithFlagEnabled() {
+        featureFlagger.enabledFeatureFlags = [.syncLoginAuditLog]
+        let controller = makeNotificationDestinationController()
+        controller.showDeviceActivity()
+        XCTAssertTrue(controller.viewModel.isDeviceActivityAvailable)
+        XCTAssertTrue(controller.viewModel.isDeviceActivityPresented)
+    }
+
+    @MainActor
+    func testNotificationDestinationKeepsAlreadyOpenActivityInPlace() {
+        featureFlagger.enabledFeatureFlags = [.syncLoginAuditLog]
+        let controller = makeNotificationDestinationController()
+        let navigation = UINavigationController(rootViewController: controller)
+        let activity = UIViewController()
+        navigation.pushViewController(activity, animated: false)
+        controller.viewModel.isDeviceActivityPresented = true
+        controller.showDeviceActivity()
+        XCTAssertTrue(navigation.topViewController === activity)
+        XCTAssertTrue(controller.viewModel.isDeviceActivityPresented)
+    }
+
+    @MainActor
+    func testNotificationDestinationDismissesSheetBeforeReturningToSync() async throws {
+        featureFlagger.enabledFeatureFlags = [.syncLoginAuditLog]
+        let controller = makeNotificationDestinationController()
+        let navigation = UINavigationController(rootViewController: controller)
+        let scene = try XCTUnwrap(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first)
+        let window = UIWindow(windowScene: scene)
+        window.rootViewController = navigation
+        window.makeKeyAndVisible()
+        defer { window.isHidden = true; window.rootViewController = nil }
+        let details = UIViewController()
+        navigation.pushViewController(details, animated: false)
+        let sheet = UIViewController()
+        let presented = expectation(description: "Device sheet presented")
+        navigation.present(sheet, animated: false) { presented.fulfill() }
+        await fulfillment(of: [presented], timeout: 2)
+        let opened = expectation(description: "Activity opens after dismissal")
+        controller.viewModel.$isDeviceActivityPresented.filter { $0 }.prefix(1)
+            .sink { _ in opened.fulfill() }.store(in: &cancellables)
+        controller.showDeviceActivity()
+        await fulfillment(of: [opened], timeout: 2)
+        XCTAssertNil(navigation.presentedViewController)
+        XCTAssertFalse(navigation.viewControllers.contains(details))
+        XCTAssertTrue(controller.viewModel.isDeviceActivityPresented)
+    }
+
+    @MainActor
+    func testNotificationDestinationOpensOnlyWhenDeviceActivityIsAvailable() async {
+        vc.showDeviceActivity()
+        XCTAssertFalse(vc.viewModel.isDeviceActivityPresented)
+        let enabled = expectation(description: "Audit log enabled")
+        vc.viewModel.$isDeviceActivityAvailable.filter { $0 }.prefix(1)
+            .sink { _ in enabled.fulfill() }.store(in: &cancellables)
+        featureFlagger.enabledFeatureFlags = [.syncLoginAuditLog]
+        featureFlagger.triggerUpdate()
+        await fulfillment(of: [enabled], timeout: 1)
+        vc.showDeviceActivity()
+        XCTAssertTrue(vc.viewModel.isDeviceActivityPresented)
+        vc.showDeviceActivity()
+        XCTAssertTrue(vc.viewModel.isDeviceActivityPresented)
+        let disabled = expectation(description: "Audit log disabled")
+        vc.viewModel.$isDeviceActivityAvailable.filter { !$0 }.prefix(1)
+            .sink { _ in disabled.fulfill() }.store(in: &cancellables)
+        featureFlagger.enabledFeatureFlags = []
+        featureFlagger.triggerUpdate()
+        await fulfillment(of: [disabled], timeout: 1)
+        XCTAssertFalse(vc.viewModel.isDeviceActivityPresented)
+    }
+
+    @MainActor
     func testWhenSyncSettingsAreShownThenSyncUIVersionIsV2() {
         XCTAssertEqual(vc.syncUIVersion, "v2")
         XCTAssertEqual(vc.uiVersionParameters, [PixelParameters.uiVersion: "v2"])

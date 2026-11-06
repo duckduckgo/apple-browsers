@@ -29,6 +29,8 @@ struct AccountManager: AccountManaging {
     private static let defaultLoginScope = "sync"
     let endpoints: Endpoints
     let api: RemoteAPIRequestCreating
+    // Audit-log calls need HTTP error bodies; older endpoints continue to use api.
+    private let auditLogAPIService: APIService
     let crypter: CryptingInternal
     let registeredDeviceMapper: any RegisteredDeviceMapping
     let accountInfoKeys: (any AccountInfoKeyManaging)?
@@ -41,6 +43,7 @@ struct AccountManager: AccountManaging {
 
     init(endpoints: Endpoints,
          api: RemoteAPIRequestCreating,
+         auditLogAPIService: APIService,
          crypter: CryptingInternal,
          registeredDeviceMapper: (any RegisteredDeviceMapping)? = nil,
          accountInfoKeys: (any AccountInfoKeyManaging)? = nil,
@@ -52,6 +55,7 @@ struct AccountManager: AccountManaging {
          canReadUnifiedDeviceList: @escaping () -> Bool = { false }) {
         self.endpoints = endpoints
         self.api = api
+        self.auditLogAPIService = auditLogAPIService
         self.crypter = crypter
         self.registeredDeviceMapper = registeredDeviceMapper ?? RegisteredDeviceMapper(
             crypter: crypter,
@@ -233,10 +237,14 @@ struct AccountManager: AccountManaging {
             parameters["limit"] = String(limit)
         }
 
-        let request = api.createAuthenticatedGetRequest(url: endpoints.auditLog,
-                                                        authToken: token,
-                                                        parameters: parameters)
-        let result = try await request.execute()
+        let headers = APIRequestV2.HeadersV2(userAgent: APIRequest.Headers.userAgent ?? "", authToken: token)
+        guard let request = APIRequestV2(url: endpoints.auditLog, queryItems: parameters.isEmpty ? nil : Array(parameters), headers: headers) else {
+            throw APIRequestV2Error.invalidURL
+        }
+        let result = try await auditLogAPIService.fetch(request: request)
+        if result.httpResponse.statusCode >= 400 {
+            throw auditLogError(from: result)
+        }
 
         guard let body = result.data else {
             throw SyncError.noResponseBody
@@ -280,6 +288,14 @@ struct AccountManager: AccountManaging {
             entries.append(try await decoder.decode(entry, for: account))
         }
         return AuditLogPage(entries: entries, after: response.auditLog.after, before: response.auditLog.before)
+    }
+
+    private func auditLogError(from response: APIResponseV2) -> Error {
+        if response.httpResponse.statusCode == 400, let data = response.data,
+           let body = try? JSONDecoder().decode(AuditLogErrorResponse.self, from: data), body.error == "invalid_cursor" {
+            return AuditLogError.invalidCursor
+        }
+        return SyncError.unexpectedStatusCode(response.httpResponse.statusCode)
     }
 
     func updateDevice(_ update: UpdateDevices.Update, for account: SyncAccount) async throws -> [RegisteredDevice] {
@@ -552,6 +568,7 @@ enum AuditLogError: DDGError {
     case responseDecodingFailed
     case missingRequiredAfterCursor
     case accountInfoKeyUnavailable
+    case invalidCursor
 
     static var errorDomain: String { "com.duckduckgo.sync.audit-log" }
 
@@ -560,6 +577,7 @@ enum AuditLogError: DDGError {
         case .responseDecodingFailed: 1
         case .missingRequiredAfterCursor: 2
         case .accountInfoKeyUnavailable: 3
+        case .invalidCursor: 4
         }
     }
 
@@ -568,8 +586,13 @@ enum AuditLogError: DDGError {
         case .responseDecodingFailed: "Failed to decode the audit log response."
         case .missingRequiredAfterCursor: "Audit log response is missing the required after cursor."
         case .accountInfoKeyUnavailable: "The account-info key manager is unavailable for reading the audit log."
+        case .invalidCursor: "The audit log cursor is invalid."
         }
     }
+}
+
+private struct AuditLogErrorResponse: Decodable {
+    let error: String
 }
 
 private struct AuditLogResponsePage: Decodable {

@@ -17,14 +17,15 @@
 //
 
 import Foundation
-import Networking
 import XCTest
+@_spi(Testing) @testable import Networking
 
 @testable import DDGSync
 
 final class AccountManagerTests: XCTestCase {
 
     private static let baseURL = URL(string: "https://dev.null")!
+    private let auditLogAPIService = MockAPIService()
 
     func testWhenDecodingSignupResultWithoutScopedFieldsThenDecodingSucceeds() throws {
         let json = """
@@ -43,7 +44,7 @@ final class AccountManagerTests: XCTestCase {
     func testWhenCreatingAccountWithScopedAccessCredentialsEnabledThenSignupRequestIncludesCredentialId() async throws {
         let api = RemoteAPIRequestCreatingMock()
         let endpoints = Endpoints(baseURL: Self.baseURL)
-        let accountManager = AccountManager(endpoints: endpoints, api: api, crypter: CryptingMock(),
+        let accountManager = AccountManager(endpoints: endpoints, api: api, auditLogAPIService: auditLogAPIService, crypter: CryptingMock(),
                                             isScopedAccessCredentialsEnabled: { true })
         api.fakeRequests[endpoints.signup] = makeJSONRequest("""
         {
@@ -61,7 +62,7 @@ final class AccountManagerTests: XCTestCase {
     func testWhenCreatingAccountWithScopedAccessCredentialsDisabledThenSignupRequestOmitsCredentialId() async throws {
         let api = RemoteAPIRequestCreatingMock()
         let endpoints = Endpoints(baseURL: Self.baseURL)
-        let accountManager = AccountManager(endpoints: endpoints, api: api, crypter: CryptingMock(),
+        let accountManager = AccountManager(endpoints: endpoints, api: api, auditLogAPIService: auditLogAPIService, crypter: CryptingMock(),
                                             isScopedAccessCredentialsEnabled: { false })
         api.fakeRequests[endpoints.signup] = makeJSONRequest("""
         {
@@ -86,6 +87,7 @@ final class AccountManagerTests: XCTestCase {
         let events = UnifiedDeviceListEventMappingMock()
         let accountManager = AccountManager(endpoints: endpoints,
                                             api: api,
+                                            auditLogAPIService: auditLogAPIService,
                                             crypter: CryptingMock(),
                                             accountInfoKeyFactory: accountInfoKeyFactory,
                                             deviceInfoCodec: deviceInfoCodec,
@@ -131,6 +133,7 @@ final class AccountManagerTests: XCTestCase {
         let events = UnifiedDeviceListEventMappingMock()
         let accountManager = AccountManager(endpoints: endpoints,
                                             api: api,
+                                            auditLogAPIService: auditLogAPIService,
                                             crypter: CryptingMock(),
                                             accountInfoKeyFactory: accountInfoKeyFactory,
                                             deviceInfoCodec: deviceInfoCodec,
@@ -167,6 +170,7 @@ final class AccountManagerTests: XCTestCase {
         let events = UnifiedDeviceListEventMappingMock()
         let accountManager = AccountManager(endpoints: endpoints,
                                             api: api,
+                                            auditLogAPIService: auditLogAPIService,
                                             crypter: CryptingMock(),
                                             accountInfoKeyFactory: accountInfoKeyFactory,
                                             deviceInfoCodec: deviceInfoCodec,
@@ -201,6 +205,7 @@ final class AccountManagerTests: XCTestCase {
         let events = UnifiedDeviceListEventMappingMock()
         let accountManager = AccountManager(endpoints: endpoints,
                                             api: api,
+                                            auditLogAPIService: auditLogAPIService,
                                             crypter: CryptingMock(),
                                             accountInfoKeyFactory: accountInfoKeyFactory,
                                             deviceInfoCodec: deviceInfoCodec,
@@ -237,6 +242,7 @@ final class AccountManagerTests: XCTestCase {
         let events = UnifiedDeviceListEventMappingMock()
         let accountManager = AccountManager(endpoints: endpoints,
                                             api: api,
+                                            auditLogAPIService: auditLogAPIService,
                                             crypter: CryptingMock(),
                                             accountInfoKeyFactory: accountInfoKeyFactory,
                                             deviceInfoCodec: deviceInfoCodec,
@@ -273,6 +279,7 @@ final class AccountManagerTests: XCTestCase {
         let events = UnifiedDeviceListEventMappingMock()
         let accountManager = AccountManager(endpoints: endpoints,
                                             api: api,
+                                            auditLogAPIService: auditLogAPIService,
                                             crypter: CryptingMock(),
                                             accountInfoKeyFactory: accountInfoKeyFactory,
                                             deviceInfoCodec: deviceInfoCodec,
@@ -479,6 +486,7 @@ final class AccountManagerTests: XCTestCase {
         let endpoints = Endpoints(baseURL: Self.baseURL)
         let accountManager = AccountManager(endpoints: endpoints,
                                             api: api,
+                                            auditLogAPIService: auditLogAPIService,
                                             crypter: CryptingMock(),
                                             isScopedAccessCredentialsEnabled: { true })
         api.fakeRequests[endpoints.login] = makeJSONRequest("""
@@ -509,6 +517,7 @@ final class AccountManagerTests: XCTestCase {
         let endpoints = Endpoints(baseURL: Self.baseURL)
         let accountManager = AccountManager(endpoints: endpoints,
                                             api: api,
+                                            auditLogAPIService: auditLogAPIService,
                                             crypter: CryptingMock(),
                                             isScopedAccessCredentialsEnabled: { true })
         api.fakeRequests[endpoints.login] = makeJSONRequest("""
@@ -550,6 +559,7 @@ final class AccountManagerTests: XCTestCase {
         var readFlagCallCount = 0
         let accountManager = AccountManager(endpoints: endpoints,
                                             api: api,
+                                            auditLogAPIService: auditLogAPIService,
                                             crypter: CryptingMock(),
                                             registeredDeviceMapper: mapper,
                                             accountInfoKeys: accountInfoKeys,
@@ -625,6 +635,7 @@ final class AccountManagerTests: XCTestCase {
         let accountInfoKeys = AccountInfoKeyManagingMock()
         let accountManager = AccountManager(endpoints: endpoints,
                                             api: api,
+                                            auditLogAPIService: auditLogAPIService,
                                             crypter: CryptingMock(),
                                             registeredDeviceMapper: mapper,
                                             accountInfoKeys: accountInfoKeys,
@@ -682,6 +693,7 @@ final class AccountManagerTests: XCTestCase {
         let endpoints = Endpoints(baseURL: Self.baseURL)
         let accountManager = AccountManager(endpoints: endpoints,
                                             api: api,
+                                            auditLogAPIService: auditLogAPIService,
                                             crypter: CryptingMock(),
                                             isScopedAccessCredentialsEnabled: { true })
         api.fakeRequests[endpoints.login] = makeJSONRequest("""
@@ -705,6 +717,7 @@ final class AccountManagerTests: XCTestCase {
         let endpoints = Endpoints(baseURL: Self.baseURL)
         let accountManager = AccountManager(endpoints: endpoints,
                                             api: api,
+                                            auditLogAPIService: auditLogAPIService,
                                             crypter: CryptingMock(),
                                             isScopedAccessCredentialsEnabled: { false })
         api.fakeRequests[endpoints.login] = makeJSONRequest("""
@@ -731,6 +744,7 @@ final class AccountManagerTests: XCTestCase {
         let deviceInfoCodec = DeviceInfoCodingMock()
         let accountManager = AccountManager(endpoints: endpoints,
                                             api: api,
+                                            auditLogAPIService: auditLogAPIService,
                                             crypter: CryptingMock(),
                                             accountInfoKeyFactory: accountInfoKeyFactory,
                                             deviceInfoCodec: deviceInfoCodec,
@@ -762,6 +776,7 @@ final class AccountManagerTests: XCTestCase {
         let endpoints = Endpoints(baseURL: Self.baseURL)
         let accountManager = AccountManager(endpoints: endpoints,
                                             api: api,
+                                            auditLogAPIService: auditLogAPIService,
                                             crypter: CryptingMock(),
                                             isScopedAccessCredentialsEnabled: { true })
         api.fakeRequests[endpoints.login] = makeJSONRequest("""
@@ -854,6 +869,7 @@ final class AccountManagerTests: XCTestCase {
         var readFlagCallCount = 0
         let accountManager = AccountManager(endpoints: endpoints,
                                             api: api,
+                                            auditLogAPIService: auditLogAPIService,
                                             crypter: CryptingMock(),
                                             registeredDeviceMapper: mapper,
                                             isScopedAccessCredentialsEnabled: { true },
@@ -909,6 +925,7 @@ final class AccountManagerTests: XCTestCase {
         let mapper = RegisteredDeviceMappingMock()
         let accountManager = AccountManager(endpoints: endpoints,
                                             api: api,
+                                            auditLogAPIService: auditLogAPIService,
                                             crypter: CryptingMock(),
                                             registeredDeviceMapper: mapper,
                                             isScopedAccessCredentialsEnabled: { true },
@@ -945,6 +962,7 @@ final class AccountManagerTests: XCTestCase {
         let endpoints = Endpoints(baseURL: Self.baseURL)
         let accountManager = AccountManager(endpoints: endpoints,
                                             api: api,
+                                            auditLogAPIService: auditLogAPIService,
                                             crypter: CryptingMock(),
                                             isScopedAccessCredentialsEnabled: { true })
 
@@ -961,6 +979,7 @@ final class AccountManagerTests: XCTestCase {
         let endpoints = Endpoints(baseURL: Self.baseURL)
         let accountManager = AccountManager(endpoints: endpoints,
                                             api: api,
+                                            auditLogAPIService: auditLogAPIService,
                                             crypter: CryptingMock(),
                                             isScopedAccessCredentialsEnabled: { true })
         api.fakeRequests[endpoints.devices] = HTTPRequestingMock(result: .init(data: nil, response: .init()))
@@ -975,6 +994,7 @@ final class AccountManagerTests: XCTestCase {
         let endpoints = Endpoints(baseURL: Self.baseURL)
         let accountManager = AccountManager(endpoints: endpoints,
                                             api: api,
+                                            auditLogAPIService: auditLogAPIService,
                                             crypter: CryptingMock(),
                                             isScopedAccessCredentialsEnabled: { true })
         api.fakeRequests[endpoints.devices] = makeJSONRequest("""
@@ -995,6 +1015,7 @@ final class AccountManagerTests: XCTestCase {
         var readFlagCallCount = 0
         let accountManager = AccountManager(endpoints: endpoints,
                                             api: api,
+                                            auditLogAPIService: auditLogAPIService,
                                             crypter: CryptingMock(),
                                             registeredDeviceMapper: mapper,
                                             isScopedAccessCredentialsEnabled: { true },
@@ -1040,6 +1061,7 @@ final class AccountManagerTests: XCTestCase {
         let mapper = RegisteredDeviceMappingMock()
         let accountManager = AccountManager(endpoints: endpoints,
                                             api: api,
+                                            auditLogAPIService: auditLogAPIService,
                                             crypter: CryptingMock(),
                                             registeredDeviceMapper: mapper,
                                             isScopedAccessCredentialsEnabled: { true })
@@ -1075,6 +1097,7 @@ final class AccountManagerTests: XCTestCase {
         }
         let accountManager = AccountManager(endpoints: endpoints,
                                             api: api,
+                                            auditLogAPIService: auditLogAPIService,
                                             crypter: crypter,
                                             isScopedAccessCredentialsEnabled: { true },
                                             canReadUnifiedDeviceList: { true })
@@ -1118,6 +1141,7 @@ final class AccountManagerTests: XCTestCase {
         }
         let accountManager = AccountManager(endpoints: endpoints,
                                             api: api,
+                                            auditLogAPIService: auditLogAPIService,
                                             crypter: crypter,
                                             isScopedAccessCredentialsEnabled: { true },
                                             canReadUnifiedDeviceList: { false })
@@ -1162,6 +1186,7 @@ final class AccountManagerTests: XCTestCase {
         }
         let accountManager = AccountManager(endpoints: endpoints,
                                             api: api,
+                                            auditLogAPIService: auditLogAPIService,
                                             crypter: crypter,
                                             isScopedAccessCredentialsEnabled: { false })
         api.fakeRequests[devicesURL(for: endpoints)] = makeJSONRequest("""
@@ -1190,28 +1215,64 @@ final class AccountManagerTests: XCTestCase {
         XCTAssertTrue(api.createRequestCallArgs.contains { $0.url == endpoints.logoutDevice })
     }
 
+    func testAuditLogInvalidCursorResponseMapsToTypedError() async {
+        let endpoints = Endpoints(baseURL: Self.baseURL)
+        let manager = AccountManager(endpoints: endpoints, api: RemoteAPIRequestCreatingMock(), auditLogAPIService: auditLogAPIService,
+                                     crypter: CryptingMock(), isScopedAccessCredentialsEnabled: { true })
+        let response = HTTPURLResponse(url: endpoints.auditLog, statusCode: 400, httpVersion: nil, headerFields: nil)!
+        stubAuditLogResponse(APIResponseV2(data: Data(#"{"error":"invalid_cursor"}"#.utf8), httpResponse: response))
+
+        await assertThrowsError(AuditLogError.invalidCursor) {
+            _ = try await manager.fetchAuditLog(for: makeAccount(primaryKey: Data()), cursor: .after("bad"))
+        }
+    }
+
+    func testAuditLogOtherHTTPFailuresDoNotBecomeInvalidCursorErrors() async {
+        for (status, body) in [(400, #"{"error":"bad_request"}"#), (400, ""), (400, "Bad request"),
+                               (401, #"{"error":"unauthorized"}"#), (418, ""), (418, "{}"),
+                               (418, #"{"error":"rate_limited"}"#), (429, #"{"error":"rate_limited"}"#),
+                               (500, #"{"error":"invalid_cursor"}"#)] {
+            let endpoints = Endpoints(baseURL: Self.baseURL)
+            let manager = AccountManager(endpoints: endpoints, api: RemoteAPIRequestCreatingMock(), auditLogAPIService: auditLogAPIService,
+                                         crypter: CryptingMock(), isScopedAccessCredentialsEnabled: { true })
+            let response = HTTPURLResponse(url: endpoints.auditLog, statusCode: status, httpVersion: nil, headerFields: nil)!
+            stubAuditLogResponse(APIResponseV2(data: Data(body.utf8), httpResponse: response))
+
+            await assertThrowsError(SyncError.unexpectedStatusCode(status)) {
+                _ = try await manager.fetchAuditLog(for: makeAccount(primaryKey: Data()), cursor: .after("saved"))
+            }
+        }
+    }
+
     func testWhenFetchingAuditLogWithoutCursorThenSendsAuthenticatedRequestAndDecodesStringVersions() async throws {
         let fixture = try AuditLogTestFixture.make(accountSecretKey: Data(repeating: 0x01, count: 32))
         let validJWE = try fixture.entry(payload: Data("{}".utf8)).payload
         let api = RemoteAPIRequestCreatingMock()
         let endpoints = Endpoints(baseURL: Self.baseURL)
-        let accountManager = AccountManager(endpoints: endpoints, api: api, crypter: CryptingMock(),
+        let accountManager = AccountManager(endpoints: endpoints, api: api, auditLogAPIService: auditLogAPIService, crypter: CryptingMock(),
                                             accountInfoKeys: fixture.keyManager,
                                             isScopedAccessCredentialsEnabled: { true })
-        api.fakeRequests[endpoints.auditLog] = try makeAuditLogRequest(entries: [
+        let response = try makeAuditLogResponse(entries: [
             AuditLogEntry(id: "historical-event", version: "1", payload: validJWE),
             AuditLogEntry(id: "current-event", version: "2", payload: "current-jwe")
         ], after: "after-cursor")
+        var sentRequest: APIRequestV2?
+        auditLogAPIService.requestHandler = { request in
+            sentRequest = request
+            return .success(response)
+        }
 
         let page = try await accountManager.fetchAuditLog(for: makeAccount(primaryKey: Data()), cursor: nil)
 
-        let request = try XCTUnwrap(api.createRequestCallArgs.first)
+        let request = try XCTUnwrap(sentRequest).urlRequest
         XCTAssertEqual(request.url, endpoints.auditLog)
-        XCTAssertEqual(request.url.path, "/sync/account/audit-log")
-        XCTAssertEqual(request.method, .get)
-        XCTAssertEqual(request.headers["Authorization"], "Bearer token-1")
-        XCTAssertEqual(request.parameters, [:])
-        XCTAssertNil(request.body)
+        XCTAssertEqual(request.url?.path, "/sync/account/audit-log")
+        XCTAssertEqual(request.httpMethod, "GET")
+        XCTAssertEqual(request.value(forHTTPHeaderField: "Authorization"), "Bearer token-1")
+        XCTAssertEqual(request.value(forHTTPHeaderField: "User-Agent"), APIRequest.Headers.userAgent ?? "")
+        XCTAssertNil(request.url?.query)
+        XCTAssertNil(request.httpBody)
+        XCTAssertTrue(api.createRequestCallArgs.isEmpty)
         XCTAssertEqual(page.entries.count, 2)
         guard case .unreadable(id: "historical-event", reason: .invalidPayload) = page.entries[0],
               case .unsupportedVersion(id: "current-event", version: "2") = page.entries[1] else {
@@ -1222,33 +1283,29 @@ final class AccountManagerTests: XCTestCase {
     }
 
     func testWhenFetchingAuditLogWithCursorThenSendsCursorAndLimitParameters() async throws {
-        let api = RemoteAPIRequestCreatingMock()
         let endpoints = Endpoints(baseURL: Self.baseURL)
-        let accountManager = AccountManager(endpoints: endpoints, api: api, crypter: CryptingMock(),
-                                            isScopedAccessCredentialsEnabled: { true })
-        api.fakeRequests[endpoints.auditLog] = makeJSONRequest("""
-        { "audit_log": { "entries": [], "after": "next-after", "before": "next-before" } }
-        """)
+        let accountManager = AccountManager(endpoints: endpoints, api: RemoteAPIRequestCreatingMock(), auditLogAPIService: auditLogAPIService,
+                                            crypter: CryptingMock(), isScopedAccessCredentialsEnabled: { true })
+        let response = makeAuditLogResponse(#"{"audit_log":{"entries":[],"after":"next-after","before":"next-before"}}"#)
+        var queries = [[String: String]]()
+        auditLogAPIService.requestHandler = { request in
+            let items = URLComponents(url: request.url!, resolvingAgainstBaseURL: false)?.queryItems ?? []
+            queries.append(Dictionary(uniqueKeysWithValues: items.map { ($0.name, $0.value ?? "") }))
+            return .success(response)
+        }
 
-        _ = try await accountManager.fetchAuditLog(for: makeAccount(primaryKey: Data()),
-                                                   cursor: .after("opaque after"),
-                                                   limit: 25)
-        _ = try await accountManager.fetchAuditLog(for: makeAccount(primaryKey: Data()),
-                                                   cursor: .before("opaque before"),
-                                                   limit: 10)
+        _ = try await accountManager.fetchAuditLog(for: makeAccount(primaryKey: Data()), cursor: .after("opaque after"), limit: 25)
+        _ = try await accountManager.fetchAuditLog(for: makeAccount(primaryKey: Data()), cursor: .before("opaque before"), limit: 10)
 
-        XCTAssertEqual(api.createRequestCallArgs.map(\.parameters), [
-            ["after": "opaque after", "limit": "25"],
-            ["before": "opaque before", "limit": "10"]
-        ])
+        XCTAssertEqual(queries, [["after": "opaque after", "limit": "25"], ["before": "opaque before", "limit": "10"]])
     }
 
     func testWhenFetchingBackwardAuditLogPageWithoutAfterCursorThenSucceeds() async throws {
         let api = RemoteAPIRequestCreatingMock()
         let endpoints = Endpoints(baseURL: Self.baseURL)
-        let accountManager = AccountManager(endpoints: endpoints, api: api, crypter: CryptingMock(),
+        let accountManager = AccountManager(endpoints: endpoints, api: api, auditLogAPIService: auditLogAPIService, crypter: CryptingMock(),
                                             isScopedAccessCredentialsEnabled: { true })
-        api.fakeRequests[endpoints.auditLog] = try makeAuditLogRequest(entries: [], after: nil, before: "previous-page")
+        stubAuditLogResponse(try makeAuditLogResponse(entries: [], after: nil, before: "previous-page"))
 
         let page = try await accountManager.fetchAuditLog(for: makeAccount(primaryKey: Data()), cursor: .before("current-page"))
 
@@ -1260,9 +1317,9 @@ final class AccountManagerTests: XCTestCase {
         for cursor in [AuditLogCursor?.none, .some(.after("forward-page"))] {
             let api = RemoteAPIRequestCreatingMock()
             let endpoints = Endpoints(baseURL: Self.baseURL)
-            let accountManager = AccountManager(endpoints: endpoints, api: api, crypter: CryptingMock(),
+            let accountManager = AccountManager(endpoints: endpoints, api: api, auditLogAPIService: auditLogAPIService, crypter: CryptingMock(),
                                                 isScopedAccessCredentialsEnabled: { true })
-            api.fakeRequests[endpoints.auditLog] = try makeAuditLogRequest(entries: [], after: nil)
+            stubAuditLogResponse(try makeAuditLogResponse(entries: [], after: nil))
 
             await assertThrowsError(AuditLogError.missingRequiredAfterCursor) {
                 _ = try await accountManager.fetchAuditLog(for: makeAccount(primaryKey: Data()), cursor: cursor)
@@ -1273,11 +1330,11 @@ final class AccountManagerTests: XCTestCase {
     func testWhenAuditLogResponseHasWrongFieldTypeThenThrowsTypedError() async {
         let api = RemoteAPIRequestCreatingMock()
         let endpoints = Endpoints(baseURL: Self.baseURL)
-        let accountManager = AccountManager(endpoints: endpoints, api: api, crypter: CryptingMock(),
+        let accountManager = AccountManager(endpoints: endpoints, api: api, auditLogAPIService: auditLogAPIService, crypter: CryptingMock(),
                                             isScopedAccessCredentialsEnabled: { true })
-        api.fakeRequests[endpoints.auditLog] = makeJSONRequest("""
+        stubAuditLogResponse(makeAuditLogResponse("""
         { "audit_log": { "entries": [{ "id": "entry", "version": 2, "payload": "sensitive-encrypted-value" }], "after": "cursor" } }
-        """)
+        """))
 
         await assertThrowsError(AuditLogError.responseDecodingFailed) {
             _ = try await accountManager.fetchAuditLog(for: makeAccount(primaryKey: Data()), cursor: nil)
@@ -1318,9 +1375,10 @@ final class AccountManagerTests: XCTestCase {
         let endpoints = Endpoints(baseURL: Self.baseURL)
         let api = RemoteAPIRequestCreatingMock()
         let entry = try fixture.entry(payload: payload)
-        api.fakeRequests[endpoints.auditLog] = try makeAuditLogRequest(entry: entry)
+        stubAuditLogResponse(try makeAuditLogResponse(entry: entry))
         let accountManager = AccountManager(endpoints: endpoints,
                                             api: api,
+                                            auditLogAPIService: auditLogAPIService,
                                             crypter: CryptingMock(),
                                             registeredDeviceMapper: mapper,
                                             accountInfoKeys: fixture.keyManager,
@@ -1340,9 +1398,10 @@ final class AccountManagerTests: XCTestCase {
         let endpoints = Endpoints(baseURL: Self.baseURL)
         let api = RemoteAPIRequestCreatingMock()
         let entry = try fixture.entry(payload: Data("{}".utf8))
-        api.fakeRequests[endpoints.auditLog] = try makeAuditLogRequest(entry: entry)
+        stubAuditLogResponse(try makeAuditLogResponse(entry: entry))
         let accountManager = AccountManager(endpoints: endpoints,
                                             api: api,
+                                            auditLogAPIService: auditLogAPIService,
                                             crypter: CryptingMock(),
                                             isScopedAccessCredentialsEnabled: { false })
 
@@ -1359,9 +1418,10 @@ final class AccountManagerTests: XCTestCase {
         }
         let endpoints = Endpoints(baseURL: Self.baseURL)
         let api = RemoteAPIRequestCreatingMock()
-        api.fakeRequests[endpoints.auditLog] = try makeAuditLogRequest(entries: entries)
+        stubAuditLogResponse(try makeAuditLogResponse(entries: entries))
         let accountManager = AccountManager(endpoints: endpoints,
                                             api: api,
+                                            auditLogAPIService: auditLogAPIService,
                                             crypter: CryptingMock(),
                                             accountInfoKeys: fixture.keyManager,
                                             isScopedAccessCredentialsEnabled: { false })
@@ -1379,10 +1439,10 @@ final class AccountManagerTests: XCTestCase {
         let entries = try (0..<3).map { try fixture.entry(payload: Data("{}".utf8), id: "entry-\($0)") }
         let endpoints = Endpoints(baseURL: Self.baseURL)
         let api = RemoteAPIRequestCreatingMock()
-        api.fakeRequests[endpoints.auditLog] = try makeAuditLogRequest(entries: entries, before: "older-history")
+        stubAuditLogResponse(try makeAuditLogResponse(entries: entries, before: "older-history"))
         let accountManager = AccountManager(endpoints: endpoints,
                                             api: api,
-                                            crypter: CryptingMock(),
+                                            auditLogAPIService: auditLogAPIService, crypter: CryptingMock(),
                                             accountInfoKeys: fixture.keyManager,
                                             isScopedAccessCredentialsEnabled: { false })
         let failures: [Error] = [
@@ -1413,9 +1473,10 @@ final class AccountManagerTests: XCTestCase {
         fixture.keyManager.loadKeyError = CancellationError()
         let endpoints = Endpoints(baseURL: Self.baseURL)
         let api = RemoteAPIRequestCreatingMock()
-        api.fakeRequests[endpoints.auditLog] = try makeAuditLogRequest(entry: fixture.entry(payload: Data("{}".utf8)))
+        stubAuditLogResponse(try makeAuditLogResponse(entry: fixture.entry(payload: Data("{}".utf8))))
         let accountManager = AccountManager(endpoints: endpoints,
                                             api: api,
+                                            auditLogAPIService: auditLogAPIService,
                                             crypter: CryptingMock(),
                                             accountInfoKeys: fixture.keyManager,
                                             isScopedAccessCredentialsEnabled: { false })
@@ -1444,13 +1505,14 @@ final class AccountManagerTests: XCTestCase {
         let api = RemoteAPIRequestCreatingMock()
         let accountManager = AccountManager(endpoints: endpoints,
                                             api: api,
+                                            auditLogAPIService: auditLogAPIService,
                                             crypter: CryptingMock(),
                                             accountInfoKeys: fixture.keyManager,
                                             isScopedAccessCredentialsEnabled: { false })
 
         let scenarios: [(entries: [AuditLogEntry], decodedIDs: [String])] = [(entries, ["first", "last"]), (mismatchedEntries, [])]
         for scenario in scenarios {
-            api.fakeRequests[endpoints.auditLog] = try makeAuditLogRequest(entries: scenario.entries)
+            stubAuditLogResponse(try makeAuditLogResponse(entries: scenario.entries))
 
             let page = try await accountManager.fetchAuditLog(for: makeAccount(primaryKey: Data()), cursor: nil)
 
@@ -1477,13 +1539,13 @@ final class AccountManagerTests: XCTestCase {
         let api = RemoteAPIRequestCreatingMock()
         let accountManager = AccountManager(endpoints: endpoints,
                                             api: api,
-                                            crypter: CryptingMock(),
+                                            auditLogAPIService: auditLogAPIService, crypter: CryptingMock(),
                                             accountInfoKeys: fixture.keyManager,
                                             isScopedAccessCredentialsEnabled: { false })
         let pages: [[AuditLogEntry]] = [[], [AuditLogEntry(id: "future", version: "2", payload: "unreadable")]]
 
         for entries in pages {
-            api.fakeRequests[endpoints.auditLog] = try makeAuditLogRequest(entries: entries)
+            stubAuditLogResponse(try makeAuditLogResponse(entries: entries))
             let page = try await accountManager.fetchAuditLog(for: makeAccount(primaryKey: Data()), cursor: nil)
             XCTAssertEqual(page.entries.count, entries.count)
         }
@@ -1491,24 +1553,30 @@ final class AccountManagerTests: XCTestCase {
         XCTAssertTrue(fixture.keyManager.refreshKeyCalls.isEmpty)
     }
 
-    private func makeAuditLogRequest(entry: AuditLogEntry) throws -> HTTPRequestingMock {
-        try makeAuditLogRequest(entries: [entry])
+    private func makeAuditLogResponse(entry: AuditLogEntry) throws -> APIResponseV2 {
+        try makeAuditLogResponse(entries: [entry])
     }
 
-    private func makeAuditLogRequest(entries: [AuditLogEntry], after: String? = "cursor", before: String? = nil) throws -> HTTPRequestingMock {
+    private func makeAuditLogResponse(entries: [AuditLogEntry], after: String? = "cursor", before: String? = nil) throws -> APIResponseV2 {
         var auditLog: [String: Any] = ["entries": entries.map { ["id": $0.id, "version": $0.version, "payload": $0.payload] }]
         if let after { auditLog["after"] = after }
         if let before { auditLog["before"] = before }
         let data = try JSONSerialization.data(withJSONObject: ["audit_log": auditLog])
-        return HTTPRequestingMock(result: .init(data: data, response: .init()))
+        return APIResponseV2(data: data, httpResponse: HTTPURLResponse(url: Self.baseURL, statusCode: 200, httpVersion: nil, headerFields: nil)!)
     }
 
     func testWhenFetchingAuditLogWithoutTokenThenThrowsWithoutMakingRequest() async {
         let api = RemoteAPIRequestCreatingMock()
         let accountManager = AccountManager(endpoints: Endpoints(baseURL: Self.baseURL),
                                             api: api,
+                                            auditLogAPIService: auditLogAPIService,
                                             crypter: CryptingMock(),
                                             isScopedAccessCredentialsEnabled: { true })
+
+        auditLogAPIService.requestHandler = { _ in
+            XCTFail("No audit-log request should be made without a token")
+            return .failure(SyncError.noToken)
+        }
 
         await assertThrowsError(SyncError.noToken) {
             _ = try await accountManager.fetchAuditLog(for: makeAccount(primaryKey: Data(), token: nil), cursor: nil)
@@ -1519,34 +1587,40 @@ final class AccountManagerTests: XCTestCase {
     func testWhenFetchingAuditLogWithMissingOrMalformedBodyThenThrows() async {
         let api = RemoteAPIRequestCreatingMock()
         let endpoints = Endpoints(baseURL: Self.baseURL)
-        let accountManager = AccountManager(endpoints: endpoints, api: api, crypter: CryptingMock(),
+        let accountManager = AccountManager(endpoints: endpoints, api: api, auditLogAPIService: auditLogAPIService, crypter: CryptingMock(),
                                             isScopedAccessCredentialsEnabled: { true })
-        api.fakeRequests[endpoints.auditLog] = HTTPRequestingMock(result: .init(data: nil, response: .init()))
+        stubAuditLogResponse(APIResponseV2(data: nil, httpResponse: HTTPURLResponse(url: Self.baseURL, statusCode: 200, httpVersion: nil, headerFields: nil)!))
 
         await assertThrowsError(SyncError.noResponseBody) {
             _ = try await accountManager.fetchAuditLog(for: makeAccount(primaryKey: Data()), cursor: nil)
         }
 
-        api.fakeRequests[endpoints.auditLog] = makeJSONRequest("{}")
+        stubAuditLogResponse(makeAuditLogResponse("{}"))
         await assertThrowsError(AuditLogError.responseDecodingFailed) {
             _ = try await accountManager.fetchAuditLog(for: makeAccount(primaryKey: Data()), cursor: nil)
         }
     }
 
     func testWhenFetchingAuditLogRequestFailsThenPropagatesError() async {
-        let api = RemoteAPIRequestCreatingMock()
-        let endpoints = Endpoints(baseURL: Self.baseURL)
-        let accountManager = AccountManager(endpoints: endpoints,
-                                            api: api,
+        let accountManager = AccountManager(endpoints: Endpoints(baseURL: Self.baseURL),
+                                            api: RemoteAPIRequestCreatingMock(),
+                                            auditLogAPIService: auditLogAPIService,
                                             crypter: CryptingMock(),
                                             isScopedAccessCredentialsEnabled: { true })
-        let request = HTTPRequestingMock()
-        request.error = SyncError.unexpectedStatusCode(418)
-        api.fakeRequests[endpoints.auditLog] = request
+        let error = URLError(.notConnectedToInternet)
+        auditLogAPIService.requestHandler = { _ in .failure(error) }
 
-        await assertThrowsError(SyncError.unexpectedStatusCode(418)) {
+        await assertThrowsError(error) {
             _ = try await accountManager.fetchAuditLog(for: makeAccount(primaryKey: Data()), cursor: nil)
         }
+    }
+
+    private func stubAuditLogResponse(_ response: APIResponseV2) {
+        auditLogAPIService.requestHandler = { _ in .success(response) }
+    }
+
+    private func makeAuditLogResponse(_ json: String) -> APIResponseV2 {
+        APIResponseV2(data: Data(json.utf8), httpResponse: HTTPURLResponse(url: Self.baseURL, statusCode: 200, httpVersion: nil, headerFields: nil)!)
     }
 
     func testWhenUpdatingBaseURLThenAuditLogEndpointUsesNewBaseURL() {

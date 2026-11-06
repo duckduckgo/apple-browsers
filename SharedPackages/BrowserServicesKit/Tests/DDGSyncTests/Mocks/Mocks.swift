@@ -342,6 +342,7 @@ final class MockSyncDependencies: SyncDependencies, SyncDependenciesDebuggingSup
     var canWriteUnifiedDeviceList: () -> Bool = { false }
     var canUsePatchEndpointForLegacyDeviceRename: () -> Bool = { true }
     var canReadUnifiedDeviceList: () -> Bool = { false }
+    var isLoginAuditLogEnabled: () -> Bool = { false }
     lazy var syncFeatureFlags: any SyncFeatureFlagProviding = SyncFeatureFlagProvider(
         isScopedAccessCredentialsEnabled: { [weak self] in self?.isScopedAccessCredentialsEnabled() == true },
         isPairingV2ScanningEnabled: { [weak self] in self?.isPairingV2ScanningEnabled() == true },
@@ -350,7 +351,8 @@ final class MockSyncDependencies: SyncDependencies, SyncDependenciesDebuggingSup
         canSendExchangeChannelSecret: { [weak self] in self?.canSendExchangeChannelSecret() == true },
         canWriteUnifiedDeviceList: { [weak self] in self?.canWriteUnifiedDeviceList() == true },
         canUsePatchEndpointForLegacyDeviceRename: { [weak self] in self?.canUsePatchEndpointForLegacyDeviceRename() == true },
-        canReadUnifiedDeviceList: { [weak self] in self?.canReadUnifiedDeviceList() == true }
+        canReadUnifiedDeviceList: { [weak self] in self?.canReadUnifiedDeviceList() == true },
+        isLoginAuditLogEnabled: { [weak self] in self?.isLoginAuditLogEnabled() == true }
     )
     var keyValueStore: ThrowingKeyValueStoring = try! MockKeyValueFileStore()
     var legacyKeyValueStore: KeyValueStoring = MockKeyValueStore()

@@ -65,6 +65,8 @@ final class BookmarksViewControllerTests: XCTestCase {
         try loadController(searchBookmarks: [match, other])
         controller.searchBar(UISearchBar(), textDidChange: "Match")
         XCTAssertEqual(controller.searchDataSource.results.count, 1)
+        let indexPath = IndexPath(row: 0, section: 0)
+        XCTAssertNotNil(controller.tableView(controller.tableView, leadingSwipeActionsConfigurationForRowAt: indexPath))
 
         try swipeDeleteFirstRow()
 
@@ -72,6 +74,8 @@ final class BookmarksViewControllerTests: XCTestCase {
         XCTAssertEqual(controller.tableView.numberOfRows(inSection: 0), 1)
         let cell = controller.searchDataSource.tableView(controller.tableView, cellForRowAt: IndexPath(row: 0, section: 0))
         XCTAssertTrue(cell is NoResultsCell)
+        XCTAssertNil(controller.tableView(controller.tableView, leadingSwipeActionsConfigurationForRowAt: indexPath))
+        XCTAssertNil(controller.tableView(controller.tableView, trailingSwipeActionsConfigurationForRowAt: indexPath))
         let remaining = BookmarkListViewModel(bookmarksDatabase: database, parentID: nil,
                                               favoritesDisplayMode: .displayNative(.mobile), errorEvents: nil)
         XCTAssertEqual(remaining.bookmarks.map(\.objectID), [other.objectID])

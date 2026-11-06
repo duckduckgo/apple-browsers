@@ -394,6 +394,7 @@ class BookmarksViewController: UIViewController, UITableViewDelegate {
         if tableView.dataSource is BookmarksDataSource {
             return viewModel.bookmark(at: indexPath.row)
         } else if let dataSource = tableView.dataSource as? SearchBookmarksDataSource {
+            guard dataSource.results.indices.contains(indexPath.row) else { return nil }
             return viewModel.bookmark(with: dataSource.results[indexPath.row].objectID)
         }
         return nil

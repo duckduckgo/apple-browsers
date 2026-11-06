@@ -88,13 +88,23 @@ public final class DefaultSubscriptionTierOptionsProvider: SubscriptionTierOptio
 
     // MARK: - Stripe path
 
+    private var countryParameter: String {
+        let regionCode: String?
+        if #available(iOS 16, macOS 13, *) {
+            regionCode = Locale.current.region?.identifier
+        } else {
+            regionCode = Locale.current.regionCode
+        }
+        guard let regionCode, regionCode.count == 2 else { return "us" }
+        return regionCode.lowercased()
+    }
+
     private func fetchStripeTierOptions(includeProTier: Bool) async -> Result<SubscriptionTierOptions, Error> {
         Logger.subscriptionStripePurchaseFlow.log("Getting subscription tier options for Stripe (includeProTier: \(includeProTier))")
-        let regionParameter = "us"
         let productsResponse: GetTierProductsResponse
         do {
             productsResponse = try await subscriptionEndpointService.getTierProducts(
-                region: regionParameter,
+                country: countryParameter,
                 platform: SubscriptionPlatformName.stripe.rawValue
             )
         } catch {

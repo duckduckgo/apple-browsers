@@ -16,6 +16,7 @@
 //  limitations under the License.
 //
 
+import AppKitExtensions
 import BrowserServicesKit
 import Foundation
 import PrivacyConfig
@@ -24,9 +25,11 @@ import PrivacyConfig
 /// This keeps the Subscription module decoupled from the app's feature flag system
 struct SubscriptionPageFeatureFlagAdapter: SubscriptionPageFeatureFlagProviding {
     private let featureFlagger: FeatureFlagger
+    private let buildType: ApplicationBuildType
 
-    init(featureFlagger: FeatureFlagger) {
+    init(featureFlagger: FeatureFlagger, buildType: ApplicationBuildType = StandardApplicationBuildType()) {
         self.featureFlagger = featureFlagger
+        self.buildType = buildType
     }
 
     func isEnabled(_ flag: SubscriptionPageFeatureFlag) -> Bool {
@@ -36,7 +39,7 @@ struct SubscriptionPageFeatureFlagAdapter: SubscriptionPageFeatureFlagProviding 
         case .proTierPurchase:
             return featureFlagger.isFeatureOn(.allowProTierPurchase)
         case .supportsAlternateStripePaymentFlow:
-            return featureFlagger.isFeatureOn(.supportsAlternateStripePaymentFlow)
+            return buildType.isSparkleBuild && featureFlagger.isFeatureOn(.supportsAlternateStripePaymentFlow)
         }
     }
 }

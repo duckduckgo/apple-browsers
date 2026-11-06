@@ -37,13 +37,13 @@ struct SubscriptionRequest {
         return SubscriptionRequest(apiRequest: request)
     }
 
-    static func getTierProducts(baseURL: URL, region: String?, platform: String?) -> SubscriptionRequest? {
+    static func getTierProducts(baseURL: URL, country: String?, platform: String?) -> SubscriptionRequest? {
         let path = "/v2/products"
         var urlComponents = URLComponents(url: baseURL.appendingPathComponent(path), resolvingAgainstBaseURL: true)
 
         var queryItems: [URLQueryItem] = []
-        if let region = region {
-            queryItems.append(URLQueryItem(name: "region", value: region))
+        if let country = country {
+            queryItems.append(URLQueryItem(name: "country", value: country))
         }
         if let platform = platform {
             queryItems.append(URLQueryItem(name: "platform", value: platform))

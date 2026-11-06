@@ -72,7 +72,7 @@ public protocol SubscriptionManager: SubscriptionTokenProvider, SubscriptionAuth
 
     /// Whether the initial App Store product fetch has finished, including an empty result or failure.
     var hasResolvedAppStoreProducts: Bool { get }
-    func getTierProducts(region: String?, platform: String?) async throws -> GetTierProductsResponse
+    func getTierProducts(country: String?, platform: String?) async throws -> GetTierProductsResponse
 
     /// Returns subscription tier options (plans and pricing) for the appropriate platform.
     func subscriptionTierOptions(includeProTier: Bool) async -> Result<SubscriptionTierOptions, Error>
@@ -496,8 +496,8 @@ public final class DefaultSubscriptionManager: SubscriptionManager {
         }
     }
 
-    public func getTierProducts(region: String?, platform: String?) async throws -> GetTierProductsResponse {
-        try await subscriptionEndpointService.getTierProducts(region: region, platform: platform)
+    public func getTierProducts(country: String?, platform: String?) async throws -> GetTierProductsResponse {
+        try await subscriptionEndpointService.getTierProducts(country: country, platform: platform)
     }
 
     public func subscriptionTierOptions(includeProTier: Bool) async -> Result<SubscriptionTierOptions, Error> {

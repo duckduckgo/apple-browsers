@@ -139,6 +139,19 @@ enum BrowserToolOutputLimits {
     static func fits(_ value: String, within limit: Int) -> Bool {
         value.unicodeScalars.count <= limit
     }
+
+    /// The URL without its query string or fragment, which can hold a share link's key or a capability
+    /// URL, clipped to the URL limit. Every URL a tool returns goes through this.
+    static func urlWithoutQueryOrFragment(_ url: String) -> String {
+        let cut = url.firstIndex(where: { $0 == "?" || $0 == "#" }) ?? url.endIndex
+        return clip(String(url[..<cut]), to: self.url)
+    }
+
+    /// `urlWithoutQueryOrFragment` for a string value, leaving anything else untouched.
+    static func urlWithoutQueryOrFragment(_ value: JSONValue?) -> JSONValue? {
+        guard case .string(let text)? = value else { return value }
+        return .string(urlWithoutQueryOrFragment(text))
+    }
 }
 
 /// Page text for the read and find tools, behind a seam so the tools are testable without a web view.

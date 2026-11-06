@@ -87,7 +87,8 @@ final class AIChatBrowserToolsService {
             PinTabBrowserTool(windowControllersManager: windowControllersManager),
             OpenTabBrowserTool(windowControllersManager: windowControllersManager),
             CloseTabsBrowserTool(windowControllersManager: windowControllersManager),
-            BookmarkTabBrowserTool(windowControllersManager: windowControllersManager, bookmarkManager: bookmarkManager)
+            BookmarkTabBrowserTool(windowControllersManager: windowControllersManager, bookmarkManager: bookmarkManager),
+            SearchDownloadsBrowserTool()
         ]
     }
 
@@ -197,6 +198,7 @@ final class AIChatBrowserToolsConfiguration: BrowserToolsConfiguration {
         case .openTab: .aiChatBrowserToolOpenTab
         case .closeTabs: .aiChatBrowserToolCloseTabs
         case .bookmarkTab: .aiChatBrowserToolBookmarkTab
+        case .searchDownloads: .aiChatBrowserToolSearchDownloads
         }
     }
 }

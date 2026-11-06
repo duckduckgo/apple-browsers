@@ -39,7 +39,7 @@ final class AutoconsentManagement {
             var parameters = additionalParameters
             parameters["siteRank"] = siteRank?.rawValue
             PixelKit.fire(AutoconsentPixel.summary(events: events), frequency: .standard, withAdditionalParameters: parameters)
-            CPMCoverageReporter.report(summary: events, siteRank: siteRank) { eventHub?.handleNativeEvent($0) }
+            CPMCoverageReporter.report(counts: CPMCoverageCounts(summary: events), siteRank: siteRank) { eventHub?.handleNativeEvent($0) }
         }
         pixelCounter = [:]
         detectedByPatternsCache.removeAll()

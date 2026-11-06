@@ -1128,8 +1128,6 @@ class MainViewController: UIViewController {
             startupOnboardingCover.attach()
             menuRebuildRequests.send()
         }
-
-        loadInitialViewIfNeeded()
     }
 
     override func viewDidAppear(_ animated: Bool) {
@@ -2402,9 +2400,14 @@ class MainViewController: UIViewController {
         })
     }
 
-    private func loadInitialView() {
+    private func loadInitialView(drawsIdleReturnNewTabPage: Bool) {
         if tabManager.currentTabsModel.tabs.isEmpty && tabManager.currentTabsModel.allowsEmpty {
             showTabSwitcher()
+            return
+        }
+
+        if drawsIdleReturnNewTabPage {
+            attachNewTabPageForIdleReturnAtLaunch()
             return
         }
 
@@ -2418,10 +2421,29 @@ class MainViewController: UIViewController {
         }
     }
 
-    private func loadInitialViewIfNeeded() {
+    /// The previous tab stays in the model; the launch handling records the arrival and raises the keyboard.
+    private func attachNewTabPageForIdleReturnAtLaunch() {
+        selectOrAddHomeTab(reuseExisting: true)
+        // Without the deferred keyboard, the held focus raises it as `newTab` would after idle.
+        attachHomeScreen(isNewTab: true,
+                         allowingKeyboard: !featureFlagger.isFeatureOn(.alwaysShowKeyboardOnNewTabPage),
+                         openedAfterIdle: true)
+    }
+
+    private func selectOrAddHomeTab(reuseExisting: Bool, placement: TabsModel.TabPlacement = .atEnd) {
+        if reuseExisting, let existing = tabManager.firstHomeTab() {
+            tabManager.select(existing, dismissCurrent: false)
+        } else {
+            tabManager.addHomeTab(placement: placement)
+        }
+    }
+
+    /// Draws the first screen; a cold start after idle can land on the New Tab Page directly.
+    func loadInitialViewIfNeeded(drawsIdleReturnNewTabPage: Bool) {
+        loadViewIfNeeded()
         guard !hasLoadedInitialView else { return }
         hasLoadedInitialView = true
-        loadInitialView()
+        loadInitialView(drawsIdleReturnNewTabPage: drawsIdleReturnNewTabPage)
         hasCompletedInitialLoad = true
     }
 
@@ -4358,11 +4380,7 @@ class MainViewController: UIViewController {
         captureForSwipeBack(tabManager.currentTabsModel.currentTab)
         currentTab?.dismiss()
 
-        if reuseExisting, let existing = tabManager.firstHomeTab() {
-            tabManager.select(existing, dismissCurrent: false)
-        } else {
-            tabManager.addHomeTab(placement: placement)
-        }
+        selectOrAddHomeTab(reuseExisting: reuseExisting, placement: placement)
         attachHomeScreen(isNewTab: true,
                          allowingKeyboard: allowingKeyboard,
                          previousTab: previousTab,

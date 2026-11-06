@@ -57,6 +57,7 @@ struct Foreground: ForegroundHandling {
             appDependencies: stateContext.appDependencies,
             sceneDependencies: stateContext.sceneDependencies,
             isFirstForeground: true,
+            drewIdleReturnNewTabPage: stateContext.drewIdleReturnNewTabPage,
             actionToHandle: actionToHandle,
             lastBackgroundDateStorage: lastBackgroundDateStorage
         )
@@ -68,6 +69,7 @@ struct Foreground: ForegroundHandling {
             appDependencies: stateContext.appDependencies,
             sceneDependencies: stateContext.sceneDependencies,
             isFirstForeground: stateContext.didTransitionFromLaunching,
+            drewIdleReturnNewTabPage: stateContext.drewIdleReturnNewTabPage,
             actionToHandle: actionToHandle,
             lastBackgroundDateStorage: lastBackgroundDateStorage
         )
@@ -76,6 +78,7 @@ struct Foreground: ForegroundHandling {
     private init(appDependencies: AppDependencies,
                  sceneDependencies: SceneDependencies,
                  isFirstForeground: Bool,
+                 drewIdleReturnNewTabPage: Bool,
                  actionToHandle: AppAction?,
                  lastBackgroundDateStorage: any ThrowingKeyedStoring<IdleReturnLastBackgroundDateKeys>) {
         self.appDependencies = appDependencies
@@ -101,6 +104,7 @@ struct Foreground: ForegroundHandling {
             keyboardPresenter: keyboardPresenter,
             launchSourceService: appDependencies.launchSourceManager,
             idleReturnOutcome: appDependencies.idleReturnEvaluator.evaluateReturn(),
+            drewNewTabPage: drewIdleReturnNewTabPage,
             featureFlagger: appDependencies.featureFlagger,
             idleReturnDelegate: appDependencies.mainCoordinator
         )

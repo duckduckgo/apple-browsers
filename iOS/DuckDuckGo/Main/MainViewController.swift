@@ -1130,8 +1130,6 @@ class MainViewController: UIViewController {
             startupOnboardingCover.attach()
             menuRebuildRequests.send()
         }
-
-        loadInitialViewIfNeeded()
     }
 
     override func viewDidAppear(_ animated: Bool) {
@@ -1632,7 +1630,6 @@ class MainViewController: UIViewController {
     private func duckAIAddressBarMenuType(for tab: TabViewController?) -> DuckAIAddressBarMenuType {
         guard let tab else { return .webPage }
         return DuckAIAddressBarMenuType.resolve(
-            isFeatureEnabled: featureFlagger.isFeatureOn(.aiChatContextualAddressBarMenu),
             isShowingDocument: tab.isShowingDocument,
             tabType: tab.tabType,
             searchQuery: tab.url?.searchQuery
@@ -2405,9 +2402,14 @@ class MainViewController: UIViewController {
         })
     }
 
-    private func loadInitialView() {
+    private func loadInitialView(drawsIdleReturnNewTabPage: Bool) {
         if tabManager.currentTabsModel.tabs.isEmpty && tabManager.currentTabsModel.allowsEmpty {
             showTabSwitcher()
+            return
+        }
+
+        if drawsIdleReturnNewTabPage {
+            attachNewTabPageForIdleReturnAtLaunch()
             return
         }
 
@@ -2421,10 +2423,29 @@ class MainViewController: UIViewController {
         }
     }
 
-    private func loadInitialViewIfNeeded() {
+    /// The previous tab stays in the model; the launch handling records the arrival and raises the keyboard.
+    private func attachNewTabPageForIdleReturnAtLaunch() {
+        selectOrAddHomeTab(reuseExisting: true)
+        // Without the deferred keyboard, the held focus raises it as `newTab` would after idle.
+        attachHomeScreen(isNewTab: true,
+                         allowingKeyboard: !featureFlagger.isFeatureOn(.alwaysShowKeyboardOnNewTabPage),
+                         openedAfterIdle: true)
+    }
+
+    private func selectOrAddHomeTab(reuseExisting: Bool, placement: TabsModel.TabPlacement = .atEnd) {
+        if reuseExisting, let existing = tabManager.firstHomeTab() {
+            tabManager.select(existing, dismissCurrent: false)
+        } else {
+            tabManager.addHomeTab(placement: placement)
+        }
+    }
+
+    /// Draws the first screen; a cold start after idle can land on the New Tab Page directly.
+    func loadInitialViewIfNeeded(drawsIdleReturnNewTabPage: Bool) {
+        loadViewIfNeeded()
         guard !hasLoadedInitialView else { return }
         hasLoadedInitialView = true
-        loadInitialView()
+        loadInitialView(drawsIdleReturnNewTabPage: drawsIdleReturnNewTabPage)
         hasCompletedInitialLoad = true
     }
 
@@ -4361,11 +4382,7 @@ class MainViewController: UIViewController {
         captureForSwipeBack(tabManager.currentTabsModel.currentTab)
         currentTab?.dismiss()
 
-        if reuseExisting, let existing = tabManager.firstHomeTab() {
-            tabManager.select(existing, dismissCurrent: false)
-        } else {
-            tabManager.addHomeTab(placement: placement)
-        }
+        selectOrAddHomeTab(reuseExisting: reuseExisting, placement: placement)
         attachHomeScreen(isNewTab: true,
                          allowingKeyboard: allowingKeyboard,
                          previousTab: previousTab,
@@ -5418,7 +5435,7 @@ class MainViewController: UIViewController {
     }
 
     /// The "Ask Duck.ai" row auto-sends its text as a prompt, on both platforms.
-    private func fireAskDuckAISuggestionPromptSubmittedPixel() {
+    private func fireAskDuckAISuggestionPromptSubmittedPixel(prompt: String) {
         UnifiedToggleInputCoordinatorPixelHelper.fireUnifiedPromptSubmittedPixel(
             hasText: true,
             selectedTool: nil,
@@ -5430,7 +5447,9 @@ class MainViewController: UIViewController {
             origin: .suggestionAskAI,
             defaultMode: aiChatSettings.defaultOmnibarMode,
             isFirstPromptNewInstall: featureDiscovery.isFirstDuckAIPromptNewInstall,
-            usageContext: usageContextProvider.currentContext
+            usageContext: usageContextProvider.currentContext,
+            addressBarPosition: appSettings.iPhoneAddressBarPosition,
+            resubmitOfSearch: unifiedToggleInputCoordinator?.resubmitDelay(of: prompt, mode: .aiChat)
         )
         featureDiscovery.markDuckAIPromptSubmitted()
     }
@@ -6170,7 +6189,7 @@ extension MainViewController: BrowserChromeDelegate {
             // We intentionally don't forward the resolved model config: the suggestion is offered
             // from Search mode where the model chip is hidden and the user hasn't chosen a model.
             _ = unifiedToggleInputCoordinator?.prepareExternalPromptSubmission()
-            fireAskDuckAISuggestionPromptSubmittedPixel()
+            fireAskDuckAISuggestionPromptSubmittedPixel(prompt: value)
             openAIChat(source: .suggestionAskAI, value, autoSend: true,
                        nativePromptFlow: DuckAIPromptFlowStart(userTier: currentDuckAIUserTier))
 
@@ -8962,6 +8981,7 @@ extension MainViewController {
         productSurfaceTelemetry.dataClearingUsed()
         endNewTabPageSessionWithDataClearing()
         endSessionsWithDataClearing(request)
+        unifiedToggleInputCoordinator?.clearResubmitHistory()
 
         // A single tab burn rebuilds the UI from inside the burn itself, so the New Tab Page has
         // already attached by the time `didFinishBurningTabs` runs. Wider scopes are marked later,

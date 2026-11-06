@@ -164,7 +164,8 @@ extension MainViewController {
         let availability = menuCommandAvailability
         command.applyMenuState(title: availability.title(for: menuCommand),
                                isEnabled: availability.isEnabled(menuCommand) && isMenuTabSelectionAvailable(command)
-                                   && isMenuChatCommandAvailable(command))
+                                   && isMenuChatCommandAvailable(command),
+                               isHidden: availability.isHidden(menuCommand))
     }
 
     override func canPerformAction(_ action: Selector, withSender sender: Any?) -> Bool {

@@ -162,6 +162,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     let visualizeFireSettingsDecider: VisualizeFireSettingsDecider
     let contentScopeExperimentsManager: ContentScopeExperimentsManaging
     let contentScopePreferences: ContentScopePreferences
+    private(set) lazy var sponsorBlockPreferences = SponsorBlockPreferences(store: keyValueStore)
+    /// One instance for the app, so every tab shares the segments cache.
+    let sponsorBlockSegmentsProvider = SponsorBlockSegmentsProvider()
     let featureFlagOverridesPublishingHandler = FeatureFlagOverridesPublishingHandler<FeatureFlag>()
     private var appIconChanger: AppIconChanger!
     private var autoClearHandler: AutoClearHandler!
@@ -419,6 +422,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     let eventHubIntegration: MacOSEventHubIntegration
     private lazy var webNotificationClickHandler = WebNotificationClickHandler(tabFinder: windowControllersManager)
     private lazy var onboardingNonBlockingExperiment = OnboardingNonBlockingExperiment(featureFlagger: featureFlagger)
+    let userChurnService: UserChurnService
     let userChurnScheduler: UserChurnBackgroundActivityScheduler
     lazy var vpnUpsellPopoverPresenter = DefaultVPNUpsellPopoverPresenter(
         subscriptionManager: subscriptionManager,
@@ -617,6 +621,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private(set) var webExtensionManager: WebExtensionManaging?
     /// Whether a password manager extension has taken autofill over from DuckDuckGo.
     let webExtensionAutofillTakeover: WebExtensionAutofillTakeover
+    private var nativeBitwardenRetirement: AnyObject?
     private(set) var webExtensionAvailability: WebExtensionAvailabilityProviding
     private let webExtensionManagerHolder = WebExtensionManagerHolder()
     private var webExtensionFeatureFlagHandler: AnyObject?
@@ -1453,12 +1458,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             }
         )
 
-        userChurnScheduler = UserChurnBackgroundActivityScheduler(
+        userChurnService = UserChurnService(
             defaultBrowserProvider: SystemDefaultBrowserProvider(),
             keyValueStore: keyValueStore,
             pixelFiring: PixelKit.shared,
             atbProvider: { LocalStatisticsStore().atb }
         )
+        userChurnScheduler = UserChurnBackgroundActivityScheduler(userChurnService: userChurnService)
 
         bitwardenManager = BWManagerProvider.makeManager()
         passwordManagerCoordinator = PasswordManagerCoordinator(bitwardenManagement: bitwardenManager)
@@ -2039,8 +2045,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
             self.updateController = appStoreFactory.instantiate(
                 internalUserDecider: internalUserDecider,
+                featureFlagger: featureFlagger,
+                privacyConfigurationManager: privacyFeatures.contentBlocking.privacyConfigurationManager,
                 pixelFiring: PixelKit.shared,
                 notificationPresenter: notificationPresenter,
+                keyValueStore: UserDefaults.standard,
                 isOnboardingFinished: { [weak self, featureFlagger] in
                     if NonBlockingOnboarding(featureFlagger: featureFlagger).isNonBlocking {
                         return self?.isOnboardingReadyForPrompts == true
@@ -2380,6 +2389,15 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             configurationManager: privacyFeatures.contentBlocking.privacyConfigurationManager,
             featureFlagger: featureFlagger
         )
+        let nativeBitwardenRetirement = NativeBitwardenRetirement(
+            isBitwardenExtensionInstalled: { [weak webExtensionManager] in
+                webExtensionManager?.isBitwardenExtensionInstalled ?? false
+            },
+            disableNativeIntegration: { [passwordManagerCoordinator] in
+                passwordManagerCoordinator.setEnabled(false)
+            }
+        )
+        self.nativeBitwardenRetirement = nativeBitwardenRetirement
 
         let coordinator = WebExtensionLifecycleCoordinator(
             manager: webExtensionManager,
@@ -2394,9 +2412,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
         // Load extensions asynchronously - the controller is already attached to tabs
         let initialLoad = coordinator.loadAndSync()
-        Task { @MainActor [weak self] in
+        Task { @MainActor [weak self, weak nativeBitwardenRetirement] in
             await initialLoad.value
             self?.startRemoteDisableEnforcer(for: webExtensionManager)
+            nativeBitwardenRetirement?.retireIfNeeded()
         }
     }
 

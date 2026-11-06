@@ -31,7 +31,7 @@ public enum AuthVersion: String {
     public static let key = "auth_version"
 }
 
-public protocol SubscriptionManager: SubscriptionTokenProvider, SubscriptionAuthenticationStateProvider {
+public protocol SubscriptionManager: SubscriptionTokenProvider, SubscriptionAuthenticationStateProvider, SubscriptionTokenRefreshing {
 
     // MARK: - Environment and App Store
 

@@ -138,6 +138,7 @@ final class SyncPromoManager: SyncPromoManaging {
                syncService.authState == .inactive,
                featureFlagger.isFeatureOn(.sync),
                syncPromoBookmarksDismissed == nil,
+               isOldEnoughForRedesignedPromo,
                count > 0 {
                 return true
             }
@@ -146,6 +147,7 @@ final class SyncPromoManager: SyncPromoManaging {
                syncService.authState == .inactive,
                featureFlagger.isFeatureOn(.sync),
                syncPromoPasswordsDismissed == nil,
+               isOldEnoughForRedesignedPromo,
                count > 0 {
                 return true
             }
@@ -219,6 +221,16 @@ final class SyncPromoManager: SyncPromoManaging {
         return currentDateProvider().timeIntervalSince(setupPromoConfirmed) >= Self.syncAnotherDeviceSetupPromoCooldown
     }
 
+    private var isOldEnoughForRedesignedPromo: Bool {
+        guard featureFlagger.isFeatureOn(.syncPromotionRedesign) else {
+            return true
+        }
+        guard let daysSinceInstall else {
+            return false
+        }
+        return daysSinceInstall > Self.redesignMinimumDaysSinceInstall
+    }
+
     private var daysSinceInstall: Int? {
         guard let installDate = installDateProvider() else {
             return nil
@@ -229,12 +241,7 @@ final class SyncPromoManager: SyncPromoManaging {
     func designFor(_ touchpoint: Touchpoint) -> Design {
         switch touchpoint {
         case .bookmarks, .passwords:
-            guard featureFlagger.isFeatureOn(.syncPromotionRedesign),
-                  let daysSinceInstall,
-                  daysSinceInstall > Self.redesignMinimumDaysSinceInstall else {
-                return .standard
-            }
-            return .redesigned
+            return featureFlagger.isFeatureOn(.syncPromotionRedesign) ? .redesigned : .standard
         case .dataImport, .aiChat, .bookmarksAnotherDevice, .passwordsAnotherDevice:
             return .standard
         }

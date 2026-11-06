@@ -985,7 +985,6 @@ class BookmarksViewController: UIViewController, UITableViewDelegate {
 
     private func makeSyncAnotherDevicePromoHostingController() -> UIViewController {
         let promoView = SyncAnotherDevicePromoView(title: UserText.syncPromoBookmarksAnotherDeviceTitle,
-                                                   syncActionTitle: UserText.syncPromoBookmarksAnotherDeviceSyncAction,
                                                    syncAction: { [weak self] in
             self?.pushSyncSettings(source: SyncSettingsViewController.SourceConstants.bookmarksAnotherDevicePromotion)
         }, getDesktopAppAction: { [weak self] in

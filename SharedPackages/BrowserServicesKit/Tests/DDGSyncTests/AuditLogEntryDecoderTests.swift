@@ -18,6 +18,7 @@
 
 import Foundation
 import Testing
+@_spi(Testing) import Networking
 
 @testable import DDGSync
 
@@ -83,7 +84,7 @@ struct AuditLogEntryDecoderTests {
                                 accountInfoKeys: fixture.keyManager,
                                 cachedScopedPassword: { nil })
         let (accountManager, api, endpoint) = makeAccountManager(fixture: fixture, mapper: mapper)
-        api.fakeRequests[endpoint] = try makeAuditLogRequest(entries)
+        api.set(response: try makeAuditLogResponse(entries), forRequestURL: endpoint)
 
         let page = try await accountManager.fetchAuditLog(for: account, cursor: nil)
 
@@ -121,7 +122,7 @@ struct AuditLogEntryDecoderTests {
                                     accountInfoKeys: fixture.keyManager,
                                     cachedScopedPassword: { cachedPassword })
             let (accountManager, api, endpoint) = makeAccountManager(fixture: fixture, mapper: mapper)
-            api.fakeRequests[endpoint] = try makeAuditLogRequest(entries)
+            api.set(response: try makeAuditLogResponse(entries), forRequestURL: endpoint)
 
             let page = try await accountManager.fetchAuditLog(for: account, cursor: nil)
 
@@ -156,7 +157,7 @@ struct AuditLogEntryDecoderTests {
                                 accountInfoKeys: fixture.keyManager,
                                 cachedScopedPassword: { cachedPassword })
         let (accountManager, api, endpoint) = makeAccountManager(fixture: fixture, mapper: mapper)
-        api.fakeRequests[endpoint] = try makeAuditLogRequest(entries)
+        api.set(response: try makeAuditLogResponse(entries), forRequestURL: endpoint)
 
         let page = try await accountManager.fetchAuditLog(for: account, cursor: nil)
 
@@ -195,7 +196,7 @@ struct AuditLogEntryDecoderTests {
                                             isScopedAccessCredentialsEnabled: { false },
                                             canReadUnifiedDeviceList: { true })
         let (accountManager, api, endpoint) = makeAccountManager(fixture: firstFixture, mapper: mapper)
-        api.fakeRequests[endpoint] = try makeAuditLogRequest([entry])
+        api.set(response: try makeAuditLogResponse([entry]), forRequestURL: endpoint)
 
         let page = try await accountManager.fetchAuditLog(for: account, cursor: nil)
 
@@ -618,11 +619,12 @@ struct AuditLogEntryDecoderTests {
 
     private func makeAccountManager(fixture: AuditLogTestFixture,
                                     mapper: any RegisteredDeviceMapping,
-                                    keyManager: AccountInfoKeyManaging? = nil) -> (AccountManager, RemoteAPIRequestCreatingMock, URL) {
-        let api = RemoteAPIRequestCreatingMock()
+                                    keyManager: AccountInfoKeyManaging? = nil) -> (AccountManager, MockAPIService, URL) {
+        let api = MockAPIService()
         let endpoint = URL(string: "https://dev.null/sync/account/audit-log")!
         let accountManager = AccountManager(endpoints: Endpoints(baseURL: URL(string: "https://dev.null")!),
-                                            api: api,
+                                            api: RemoteAPIRequestCreatingMock(),
+                                            auditLogAPIService: api,
                                             crypter: CryptingMock(),
                                             registeredDeviceMapper: mapper,
                                             accountInfoKeys: keyManager ?? fixture.keyManager,
@@ -664,12 +666,12 @@ struct AuditLogEntryDecoderTests {
         return AuditLogEntry(id: id, version: "1", payload: encryptedPayload)
     }
 
-    private func makeAuditLogRequest(_ entries: [AuditLogEntry]) throws -> HTTPRequestingMock {
+    private func makeAuditLogResponse(_ entries: [AuditLogEntry]) throws -> APIResponseV2 {
         let body = try JSONSerialization.data(withJSONObject: ["audit_log": [
             "entries": entries.map { ["id": $0.id, "version": $0.version, "payload": $0.payload] },
             "after": "next-page"
         ]])
-        return HTTPRequestingMock(result: .init(data: body, response: .init()))
+        return APIResponseV2(data: body, httpResponse: HTTPURLResponse(url: URL(string: "https://dev.null")!, statusCode: 200, httpVersion: nil, headerFields: nil)!)
     }
 }
 

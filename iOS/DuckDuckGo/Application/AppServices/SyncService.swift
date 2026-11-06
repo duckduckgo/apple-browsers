@@ -112,6 +112,9 @@ final class SyncService {
                 },
                 canReadUnifiedDeviceList: {
                     featureFlagger.isFeatureOn(for: FeatureFlag.syncCanReadUnifiedDeviceList)
+                },
+                isLoginAuditLogEnabled: {
+                    featureFlagger.isFeatureOn(for: FeatureFlag.syncLoginAuditLog)
                 }
             ),
             shouldPreserveAccountWhenSyncDisabled: {

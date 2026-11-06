@@ -2603,6 +2603,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 },
                 canReadUnifiedDeviceList: { [featureFlagger] in
                     featureFlagger.isFeatureOn(.syncCanReadUnifiedDeviceList)
+                },
+                isLoginAuditLogEnabled: { [featureFlagger] in
+                    featureFlagger.isFeatureOn(.syncLoginAuditLog)
                 }
             )
         )

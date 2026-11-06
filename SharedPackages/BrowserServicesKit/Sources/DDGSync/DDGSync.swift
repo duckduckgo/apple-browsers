@@ -543,6 +543,8 @@ public class DDGSync: DDGSyncing {
         self.dependencies = dependencies
         self.deviceInfoMigrationCoordinator = dependencies.createDeviceInfoMigrationCoordinator()
 
+        auditLogPoller = makeAuditLogPoller()
+
         featureFlagsCancellable = Publishers.Merge(
             self.dependencies.privacyConfigurationManager.updatesPublisher,
             self.dependencies.privacyConfigurationManager.internalUserDecider.isInternalUserPublisher.map { _ in () })
@@ -551,6 +553,12 @@ public class DDGSync: DDGSyncing {
         }
         .prepend(dependencies.privacyConfigurationManager.privacyConfig)
         .map(SyncFeatureFlags.init)
+        .handleEvents(receiveOutput: { [weak self] flags in
+            guard let self else { return }
+            if !flags.contains(.dataSyncing) || !self.dependencies.syncFeatureFlags.isLoginAuditLogEnabled() {
+                self.auditLogPoller?.cancel()
+            }
+        })
         .removeDuplicates()
         .receive(on: DispatchQueue.main)
         .assign(to: \.featureFlags, onWeaklyHeld: self)
@@ -614,6 +622,7 @@ public class DDGSync: DDGSyncing {
                 try dependencies.secureStore.removeAccount()
                 clearAccountInfoKeyCache(for: storedAccount)
                 deviceInfoMigrationCoordinator.reset()
+                clearAuditLogState(for: storedAccount)
                 didRemoveAccount = true
             } catch {
                 dependencies.errorEvents.fire(.failedToRemoveAccount, error: error)
@@ -683,6 +692,42 @@ public class DDGSync: DDGSyncing {
         try removeAccount(reason: .userStartedFreshSetup)
     }
 
+    private func makeAuditLogPoller() -> AuditLogPoller {
+        AuditLogPoller(
+            accountManager: dependencies.account,
+            keyValueStore: dependencies.keyValueStore,
+            canPoll: { [weak self] account in
+                self?.canPollAuditLog(for: account) ?? false
+            },
+            initializeReviewState: { [weak self] page, account in
+                try self?.initializeAuditLogReviewState(from: page, for: account)
+            },
+            onError: { [weak self] error in
+                _ = self?.handleUnauthenticatedAndMap(error)
+                Logger.sync.error("Failed to poll the audit log: \(String(reflecting: error), privacy: .private)")
+            }
+        )
+    }
+
+    private func canPollAuditLog(for polledAccount: SyncAccount) -> Bool {
+        // Read the current configuration because the published featureFlags update is delivered later on the main queue.
+        guard isSyncEngineReady,
+              SyncFeatureFlags(privacyConfig: dependencies.privacyConfigurationManager.privacyConfig).contains(.dataSyncing),
+              dependencies.syncFeatureFlags.isLoginAuditLogEnabled(),
+              let currentAccount = account else { return false }
+        return currentAccount.userId == polledAccount.userId && currentAccount.deviceId == polledAccount.deviceId
+    }
+
+    private func initializeAuditLogReviewState(from page: AuditLogPage, for account: SyncAccount) throws {
+        guard try auditLogReviewState(for: account.userId) == nil else { return }
+        let newestDate = page.entries.compactMap { result -> Date? in
+            guard case .decoded(let event) = result else { return nil }
+            return event.occurredAt
+        }.max()
+        // Seed the review date once, so enabling polling does not highlight existing history.
+        try setAuditLogReviewState(SyncAuditLogReviewState(reviewedThrough: newestDate, isInitialized: true), for: account.userId)
+    }
+
     private func updateAccount(_ account: SyncAccount) throws {
         guard account.state != .initializing else {
             assertionFailure("Sync has not been initialized properly")
@@ -745,6 +790,9 @@ public class DDGSync: DDGSyncing {
         startSyncCancellable = dependencies.scheduler.startSyncPublisher
             .sink { [weak self] in
                 self?.syncQueue?.startSync()
+                if let self, let account = self.account {
+                    self.auditLogPoller?.startPolling(for: account)
+                }
             }
 
         syncQueueRequestErrorCancellable = syncQueue.syncHTTPRequestErrorPublisher
@@ -757,16 +805,19 @@ public class DDGSync: DDGSyncing {
         cancelSyncCancellable = dependencies.scheduler.cancelSyncPublisher
             .sink { [weak self] in
                 self?.syncQueue?.cancelOngoingSyncAndSuspendQueue()
+                self?.auditLogPoller?.setSuspended(true)
             }
 
         resumeSyncCancellable = dependencies.scheduler.resumeSyncPublisher
             .sink { [weak self] in
                 self?.syncQueue?.resumeQueue()
+                self?.auditLogPoller?.setSuspended(false)
             }
 
         isDataSyncingFeatureFlagEnabledCancellable = featureFlagsPublisher.prepend(featureFlags).map { $0.contains(.dataSyncing) }
             .assign(to: \.isDataSyncingFeatureFlagEnabled, onWeaklyHeld: syncQueue)
 
+        auditLogPoller?.setSuspended(false)
         dependencies.scheduler.isEnabled = true
         self.syncQueue = syncQueue
         setCustomOperations(customOperations)
@@ -913,14 +964,8 @@ public class DDGSync: DDGSyncing {
 
     private func removeAccount(reason: SyncError.AccountRemovedReason) throws {
         let account = try? dependencies.secureStore.account()
-        if let account {
-            do {
-                try dependencies.keyValueStore.removeObject(forKey: auditLogReviewStateKey(for: account.userId))
-            } catch {
-                Logger.sync.error("Failed to clear Device Activity review state during account removal: \(String(reflecting: error), privacy: .private)")
-            }
-        }
         deviceInfoUpdateState.cancelAll()
+        auditLogPoller?.setSuspended(true)
         dependencies.scheduler.isEnabled = false
         startSyncCancellable?.cancel()
         syncQueueCancellable?.cancel()
@@ -937,8 +982,23 @@ public class DDGSync: DDGSyncing {
         try dependencies.secureStore.removeAccount()
         clearAccountInfoKeyCache(for: account)
         deviceInfoMigrationCoordinator.reset()
+        defer { clearAuditLogState(for: account) }
         try dependencies.keyValueStore.set(nil, forKey: Constants.syncEnabledKey)
         dependencies.errorEvents.fire(.accountRemoved(reason))
+    }
+
+    private func clearAuditLogState(for account: SyncAccount?) {
+        guard let account else { return }
+        do {
+            try auditLogPoller?.clearState(for: account.userId)
+        } catch {
+            Logger.sync.error("Failed to clear the audit log cursor during account removal: \(String(reflecting: error), privacy: .private)")
+        }
+        do {
+            try dependencies.keyValueStore.removeObject(forKey: auditLogReviewStateKey(for: account.userId))
+        } catch {
+            Logger.sync.error("Failed to clear Device Activity review state during account removal: \(String(reflecting: error), privacy: .private)")
+        }
     }
 
     private func clearAccountInfoKeyCache(for account: SyncAccount?) {
@@ -987,6 +1047,11 @@ public class DDGSync: DDGSyncing {
     private var syncDidFinishCancellable: AnyCancellable?
     private var syncQueueRequestErrorCancellable: AnyCancellable?
     private let deviceInfoUpdateState = DeviceInfoUpdateState()
+    private var auditLogPoller: AuditLogPoller?
+
+    deinit {
+        auditLogPoller?.cancel()
+    }
 }
 
 final class DeviceInfoUpdateState {

@@ -354,6 +354,10 @@ public enum FeatureFlag: String {
     /// https://app.asana.com/1/137249556945/project/1206488453854252/task/1216575765851990
     case unifiedToggleInputAttachmentPaste
 
+    /// Kill switch for the on-device resubmit check behind `resubmit_of_prompt` / `resubmit_of_search`.
+    /// https://app.asana.com/1/137249556945/project/1201392122292466/task/1220262429487643
+    case unifiedToggleInputResubmitDetection
+
     /// https://app.asana.com/1/137249556945/task/1218397803938552
     case unifiedToggleInputAttachmentPrivacy
 
@@ -478,6 +482,9 @@ public enum FeatureFlag: String {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1214534686173934
     case adBlockingExtensionEnabledByDefault
 
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1220206657688026?focus=true
+    case sponsorBlock
+
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1212980785692854?focus=true
     case supportsSyncChatsDeletion
 
@@ -543,6 +550,9 @@ public enum FeatureFlag: String {
 
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1217645779581965
     case newTabPageRedesign
+
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1219937997681296?focus=true
+    case scrollableEscapeHatch
 
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1215169783702336
     case walletPassDownload
@@ -767,9 +777,9 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .syncPromotionPasswords:
             Config(source: .remoteReleasable(SyncPromotionSubfeature.passwords), supportsLocalOverriding: false)
         case .syncPromotionSyncAnotherDevice:
-            Config(defaultValue: .internalOnly, source: .remoteReleasable(SyncPromotionSubfeature.syncAnotherDevice))
+            Config(defaultValue: .enabled, source: .remoteReleasable(SyncPromotionSubfeature.syncAnotherDevice))
         case .syncPromotionRedesign:
-            Config(defaultValue: .internalOnly, source: .remoteReleasable(SyncPromotionSubfeature.redesign))
+            Config(defaultValue: .enabled, source: .remoteReleasable(SyncPromotionSubfeature.redesign))
         case .autofillSurveys:
             Config(defaultValue: .enabled, source: .remoteReleasable(AutofillSurveysSubfeature.featureEnabled), supportsLocalOverriding: false)
         case .adAttributionReporting:
@@ -932,6 +942,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(defaultValue: .enabled, source: .remoteReleasable(AIChatSubfeature.contextualFloatingInput))
         case .unifiedToggleInputAttachmentPaste:
             Config(defaultValue: .enabled, source: .remoteReleasable(AIChatSubfeature.unifiedToggleInputAttachmentPaste))
+        case .unifiedToggleInputResubmitDetection:
+            Config(defaultValue: .enabled, source: .remoteReleasable(AIChatSubfeature.unifiedToggleInputResubmitDetection))
         case .unifiedToggleInputAttachmentPrivacy:
             Config(defaultValue: .internalOnly, source: .remoteReleasable(AIChatSubfeature.unifiedToggleInputAttachmentPrivacy))
         case .unifiedToggleInputPastedText:
@@ -1006,6 +1018,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(defaultValue: .internalOnly, source: .remoteReleasable(AdBlockingExtensionSubfeature.featureEnabled))
         case .adBlockingExtensionEnabledByDefault:
             Config(source: .remoteReleasable(AdBlockingExtensionSubfeature.featureEnabledByDefault))
+        case .sponsorBlock:
+            Config(defaultValue: .disabled, source: .remoteReleasable(SponsorBlockPrivacySubfeature.mvpEnabled))
         case .supportsSyncChatsDeletion:
             Config(source: .remoteReleasable(AIChatSubfeature.supportsSyncChatsDeletion))
         case .supportsSyncChatsUpdate:
@@ -1050,6 +1064,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(defaultValue: .enabled, source: .remoteReleasable(iOSBrowserConfigSubfeature.duckAIEntryWideEvent))
         case .newTabPageRedesign:
             Config(source: .remoteReleasable(iOSBrowserConfigSubfeature.newTabPageRedesign))
+        case .scrollableEscapeHatch:
+            Config(defaultValue: .internalOnly, source: .remoteReleasable(iOSBrowserConfigSubfeature.scrollableEscapeHatch), supportsLocalOverriding: true)
         case .walletPassDownload:
             Config(defaultValue: .enabled, source: .remoteReleasable(iOSBrowserConfigSubfeature.walletPassDownload))
         case .aiChatChromeShortcutIPad:

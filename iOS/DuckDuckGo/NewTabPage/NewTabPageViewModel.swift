@@ -22,12 +22,28 @@ import Core
 import BrowserServicesKit
 import Combine
 import PixelKit
+import SwiftUI
+
+struct LegacyFocusedNewTabPageContent {
+    var recentChats: SuggestionsListViewModel?
+    var syncPromo: AnyView?
+    var isAddressBarAtBottom: Bool
+    var onEscapeHatchGeometryChange: ((EmbeddedEscapeHatchGeometry?) -> Void)?
+    /// Read when favorites or recent chats appear: true when a logo leaving on a mode switch must fade out first.
+    var waitsForLogoFadeOut: () -> Bool = { false }
+}
 
 final class NewTabPageViewModel: ObservableObject {
 
     @Published var canEditFavorites = true
     @Published private(set) var isOnboarding: Bool
     @Published var escapeHatch: EscapeHatchModel?
+    @Published var focusedContent: LegacyFocusedNewTabPageContent?
+    @Published var focusedContentTopInset: CGFloat = 0
+    /// The focused logo's frame behind the escape hatch; the hatch blurs it only where they overlap.
+    @Published var focusedLogoFrame: CGRect?
+    var onFocusedEscapeHatchGeometryChange: ((EmbeddedEscapeHatchGeometry?) -> Void)?
+    let scrollToTopRequests = PassthroughSubject<TimeInterval, Never>()
     var openedAfterIdle: Bool = false
     @Published var sectionTitle: String?
     @Published var isLogoHidden: Bool = false
@@ -50,6 +66,21 @@ final class NewTabPageViewModel: ObservableObject {
         self.pixelFiring = pixelFiring
 
         isOnboarding = false
+    }
+
+    func setFocusedContent(_ content: LegacyFocusedNewTabPageContent?, escapeHatch: EscapeHatchModel? = nil) {
+        onFocusedEscapeHatchGeometryChange = content?.onEscapeHatchGeometryChange
+        // Focused chrome visibility must not change the session's remote-message eligibility.
+        if self.escapeHatch !== escapeHatch {
+            self.escapeHatch = escapeHatch
+        }
+        if let current = focusedContent, let content,
+           current.recentChats === content.recentChats,
+           (current.syncPromo == nil) == (content.syncPromo == nil),
+           current.isAddressBarAtBottom == content.isAddressBarAtBottom {
+            return
+        }
+        focusedContent = content
     }
 
     func startOnboarding() {

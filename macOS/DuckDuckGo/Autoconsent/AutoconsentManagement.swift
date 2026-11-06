@@ -31,15 +31,16 @@ final class AutoconsentManagement {
     var detectedByBothCache = Set<String>()
     var detectedOnlyRulesCache = Set<String>()
 
-    /// Set once Event Hub exists, which is after this object is created.
+    /// Set once PixelKit and Event Hub exist, which is after this object is created.
+    var pixelFiring: (any PixelKitFiring)?
     var eventHub: EventHubManaging?
 
     func fireSummaryPixels(additionalParameters: [String: String]) {
         for (siteRank, events) in pixelCounter {
             var parameters = additionalParameters
             parameters["siteRank"] = siteRank?.rawValue
-            PixelKit.fire(AutoconsentPixel.summary(events: events), frequency: .standard, withAdditionalParameters: parameters)
-            CPMCoverageReporter.report(summary: events, siteRank: siteRank) { eventHub?.handleNativeEvent($0) }
+            pixelFiring?.fire(AutoconsentPixel.summary(events: events), frequency: .standard, options: .parameters(parameters))
+            CPMCoverageReporter.report(counts: CPMCoverageCounts(summary: events), siteRank: siteRank) { eventHub?.handleNativeEvent($0) }
         }
         pixelCounter = [:]
         detectedByPatternsCache.removeAll()

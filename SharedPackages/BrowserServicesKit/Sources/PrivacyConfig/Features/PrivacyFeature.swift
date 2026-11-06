@@ -70,6 +70,7 @@ public enum PrivacyFeature: String {
     case contentScopeExperiments
     case macOSBrowserConfig
     case iOSBrowserConfig
+    case sponsorBlock
     // Demonstrative case for default value. Remove once a real-world feature is added
     case intentionallyLocalOnlyFeatureForTests
     case delayedWebviewPresentation
@@ -402,6 +403,10 @@ public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
 
     /// Kill switch for routing native image/file paste into the unified input attachment strip.
     case unifiedToggleInputAttachmentPaste
+
+    /// Kill switch for the on-device check that adds a delay bucket when input is resubmitted in the other mode.
+    /// https://app.asana.com/1/137249556945/project/1201392122292466/task/1220262429487643
+    case unifiedToggleInputResubmitDetection
 
     /// Kill switch for the native input attachment privacy disclosure.
     case unifiedToggleInputAttachmentPrivacy
@@ -780,6 +785,11 @@ public enum DuckPlayerSubfeature: String, PrivacySubfeature {
     case customError
     case enableDuckPlayer // iOS DuckPlayer rollout feature
     case nativeUI // Use Duckplayer's native UI
+}
+
+public enum SponsorBlockPrivacySubfeature: String, PrivacySubfeature {
+    public var parent: PrivacyFeature { .sponsorBlock }
+    case mvpEnabled
 }
 
 public enum SyncPromotionSubfeature: String, PrivacySubfeature {

@@ -23,7 +23,7 @@ import WebExtensions
 
 @available(macOS 15.4, *)
 @MainActor
-final class WebExtensionsDebugMenu: NSMenu {
+final class WebExtensionsDebugMenu: NSMenu, NSMenuItemValidation {
 
     private let webExtensionManager: WebExtensionManaging
     private let cpmMessagingHealthMonitor: CPMMessagingHealthMonitor
@@ -41,6 +41,7 @@ final class WebExtensionsDebugMenu: NSMenu {
     private let extensionsPageMenuItem = NSMenuItem(title: "Extensions Page", action: #selector(WebExtensionsDebugMenu.showExtensionsPage))
     private let apiCompatibilityLogMenuItem = NSMenuItem(title: "Extension Compatibility Log…", action: #selector(WebExtensionsDebugMenu.showAPICompatibilityLog))
     private let backdateInstallDatesMenuItem = NSMenuItem(title: "Backdate Install Dates by a Month", action: #selector(WebExtensionsDebugMenu.backdateInstallDates))
+    private let checkForUpdatesMenuItem = NSMenuItem(title: "Check for Extension Updates Now", action: #selector(WebExtensionsDebugMenu.checkForUpdatesNow))
 
     init(webExtensionManager: WebExtensionManaging,
          cpmMessagingHealthMonitor: CPMMessagingHealthMonitor,
@@ -68,6 +69,7 @@ final class WebExtensionsDebugMenu: NSMenu {
         apiCompatibilityLogMenuItem.isEnabled = true
         backdateInstallDatesMenuItem.target = self
         backdateInstallDatesMenuItem.isEnabled = true
+        checkForUpdatesMenuItem.target = self
 
         addItems()
     }
@@ -91,6 +93,8 @@ final class WebExtensionsDebugMenu: NSMenu {
         addItem(extensionsPageMenuItem)
         addItem(apiCompatibilityLogMenuItem)
         addItem(backdateInstallDatesMenuItem)
+        checkForUpdatesMenuItem.isEnabled = webExtensionManager.chromeWebStore?.canCheckForUpdates == true
+        addItem(checkForUpdatesMenuItem)
 
         let addedPopoverMenuItems = makeShowAddedPopoverMenuItems()
         if !addedPopoverMenuItems.isEmpty {
@@ -159,6 +163,11 @@ final class WebExtensionsDebugMenu: NSMenu {
         updateInstallBitwardenMenuItem()
     }
 
+    func validateMenuItem(_ menuItem: NSMenuItem) -> Bool {
+        guard menuItem.action == #selector(checkForUpdatesNow) else { return true }
+        return webExtensionManager.chromeWebStore?.canCheckForUpdates == true
+    }
+
     /// The shortcut only opens Bitwarden's Web Store page, which offers no install while Bitwarden is off.
     private func updateInstallBitwardenMenuItem() {
         let isHidden = !isBitwardenEnabled()
@@ -175,6 +184,14 @@ final class WebExtensionsDebugMenu: NSMenu {
 
         Task {
             try? await webExtensionManager.installExtension(from: url)
+        }
+    }
+
+    @objc private func checkForUpdatesNow() {
+        guard let service = webExtensionManager.chromeWebStore, service.canCheckForUpdates else { return }
+        Task { @MainActor in
+            guard service.canCheckForUpdates else { return }
+            await service.checkForUpdatesNow()
         }
     }
 
@@ -256,6 +273,7 @@ final class WebExtensionsDebugMenu: NSMenu {
 }
 
 @available(macOS 15.4, *)
+@MainActor
 final class WebExtensionMenuItem: NSMenuItem {
 
     required init(coder: NSCoder) {
@@ -282,9 +300,12 @@ final class WebExtensionMenuItem: NSMenuItem {
 }
 
 @available(macOS 15.4, *)
+@MainActor
 final class WebExtensionSubMenu: NSMenu {
 
+    private static let olderVersion = "0.0.0.1"
     private let extensionIdentifier: String
+    private let updateVersionOverrideMenuItem = NSMenuItem(title: "Report Older Version (\(WebExtensionSubMenu.olderVersion))", action: #selector(WebExtensionSubMenu.toggleUpdateVersionOverride))
 
     required init(coder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
@@ -296,6 +317,8 @@ final class WebExtensionSubMenu: NSMenu {
     init(extensionIdentifier: String, isDisabled: Bool? = nil, isRemotelyDisabled: Bool = false) {
         self.extensionIdentifier = extensionIdentifier
         super.init(title: "")
+        updateVersionOverrideMenuItem.target = self
+        updateVersionOverrideMenuItem.isHidden = true
 
         let loadStateMenuItem = isDisabled.map { isDisabled in
             switch (isDisabled, isRemotelyDisabled) {
@@ -314,9 +337,31 @@ final class WebExtensionSubMenu: NSMenu {
             if let loadStateMenuItem {
                 loadStateMenuItem
             }
+            updateVersionOverrideMenuItem
             NSMenuItem.separator()
             NSMenuItem(title: "Remove the extension", action: #selector(uninstallExtension), target: self)
         }
+    }
+
+    override func update() {
+        super.update()
+        guard let manager = NSApp.delegateTyped.webExtensionManager,
+              let installed = manager.installedExtension(identifier: extensionIdentifier),
+              let identity = installed.storeIdentity, identity.store == .chromeWebStore else {
+            updateVersionOverrideMenuItem.isHidden = true
+            return
+        }
+        let service = manager.chromeWebStore as? ChromeWebStoreService
+        updateVersionOverrideMenuItem.isHidden = false
+        updateVersionOverrideMenuItem.isEnabled = service?.status(for: identity.id) == .installed && installed.version != nil
+        updateVersionOverrideMenuItem.state = service?.updateCheckVersionOverride(forInstallationIdentifier: extensionIdentifier) == nil ? .off : .on
+    }
+
+    @objc private func toggleUpdateVersionOverride() {
+        guard let service = NSApp.delegateTyped.webExtensionManager?.chromeWebStore as? ChromeWebStoreService else { return }
+        let version: String? = service.updateCheckVersionOverride(forInstallationIdentifier: extensionIdentifier) == nil ? Self.olderVersion : nil
+        service.setUpdateCheckVersionOverride(version, forInstallationIdentifier: extensionIdentifier)
+        update()
     }
 
     @objc func openFolderInFinder() {

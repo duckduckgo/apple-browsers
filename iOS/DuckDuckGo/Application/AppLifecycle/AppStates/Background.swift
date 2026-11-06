@@ -35,6 +35,8 @@ struct Background: BackgroundHandling {
     private let appDependencies: AppDependencies
     private let sceneDependencies: SceneDependencies
     private let didTransitionFromLaunching: Bool
+    /// Passed on to the next foreground, for a launch that drew the page but went to the background first.
+    private let drewIdleReturnNewTabPage: Bool
     private var services: AppServices { appDependencies.services }
 
     init(stateContext: Connected.StateContext, lastBackgroundDateStorage: any ThrowingKeyedStoring<IdleReturnLastBackgroundDateKeys>) {
@@ -42,6 +44,7 @@ struct Background: BackgroundHandling {
         appDependencies = stateContext.appDependencies
         sceneDependencies = stateContext.sceneDependencies
         didTransitionFromLaunching = true
+        drewIdleReturnNewTabPage = stateContext.drewIdleReturnNewTabPage
     }
 
     init(stateContext: Foreground.StateContext, lastBackgroundDateStorage: any ThrowingKeyedStoring<IdleReturnLastBackgroundDateKeys>) {
@@ -49,6 +52,7 @@ struct Background: BackgroundHandling {
         appDependencies = stateContext.appDependencies
         sceneDependencies = stateContext.sceneDependencies
         didTransitionFromLaunching = false
+        drewIdleReturnNewTabPage = false
     }
 
     // MARK: - Handle applicationDidEnterBackground(_:) logic here
@@ -126,13 +130,15 @@ extension Background {
         let appDependencies: AppDependencies
         let sceneDependencies: SceneDependencies
         let didTransitionFromLaunching: Bool
+        let drewIdleReturnNewTabPage: Bool
 
     }
 
     func makeForegroundState(actionToHandle: AppAction?) -> any ForegroundHandling {
         Foreground(stateContext: StateContext(appDependencies: appDependencies,
                                               sceneDependencies: sceneDependencies,
-                                              didTransitionFromLaunching: didTransitionFromLaunching),
+                                              didTransitionFromLaunching: didTransitionFromLaunching,
+                                              drewIdleReturnNewTabPage: drewIdleReturnNewTabPage),
                    actionToHandle: actionToHandle,
                    lastBackgroundDateStorage: lastBackgroundDateStorage)
     }

@@ -660,6 +660,9 @@ public enum FeatureFlag: String {
     /// Single-tab burn removes the memory cache in the background instead of waiting on every web view.
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1219780456623039?focus=true
     case deferredMemoryCacheDelete
+
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1220203462696863
+    case idleReturnNewTabPageAtLaunch
 }
 
 extension FeatureFlag: FeatureFlagDescribing {
@@ -1118,6 +1121,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(defaultValue: .internalOnly, source: .remoteReleasable(AIChatSubfeature.chatLimitExtensionPromo), supportsLocalOverriding: true)
         case .deferredMemoryCacheDelete:
             Config(defaultValue: .disabled, source: .remoteReleasable(iOSBrowserConfigSubfeature.deferredMemoryCacheDelete))
+        case .idleReturnNewTabPageAtLaunch:
+            Config(defaultValue: .internalOnly, source: .remoteReleasable(iOSBrowserConfigSubfeature.idleReturnNewTabPageAtLaunch))
         }
     }
 

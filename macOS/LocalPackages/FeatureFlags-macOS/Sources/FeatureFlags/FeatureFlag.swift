@@ -824,7 +824,7 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .webExtensionsPermissions:
             Config(defaultValue: .internalOnly, source: .remoteReleasable(WebExtensionsSubfeature.permissions), category: .webExtensions)
         case .webExtensionUpdateDiscovery:
-            Config(defaultValue: .internalOnly, source: .remoteReleasable(WebExtensionsSubfeature.updateDiscovery), category: .webExtensions)
+            Config(defaultValue: .enabled, source: .remoteReleasable(WebExtensionsSubfeature.updateDiscovery), category: .webExtensions)
         case .webExtensionLightweightReload:
             Config(defaultValue: .enabled, source: .remoteReleasable(WebExtensionsSubfeature.lightweightReloadOnDataClear), category: .webExtensions)
         case .webExtensionStateRestorationGate:

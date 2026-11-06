@@ -650,6 +650,10 @@ public enum AIChatBrowserToolsSubfeature: String, Equatable, PrivacySubfeature {
     /// Bookmarks an open tab, optionally into a folder path.
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1217165044799340
     case bookmarkTab
+
+    /// Searches completed downloads by file name and source URL.
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1217165044799340
+    case searchDownloads
 }
 
 public enum HtmlNewTabPageSubfeature: String, Equatable, PrivacySubfeature {

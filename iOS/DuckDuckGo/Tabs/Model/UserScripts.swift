@@ -125,6 +125,11 @@ final class UserScripts: UserScriptsProvider {
             }
             fatalError("Failed to initialize ContentScopeUserScript: \(error)")
         }
+        if featureFlagger.isFeatureOn(.blankFrameScriptDeferral) {
+            contentScopeUserScript.blankFrameStart = .onProtectedAPIAccess
+            contentScopeUserScriptIsolated.blankFrameStart = .onContent
+            autofillUserScript.blankFrameStart = .onFormField
+        }
         autoconsentUserScript = AutoconsentUserScript(
             config: sourceProvider.privacyConfigurationManager.privacyConfig,
             webExtensionAvailability: sourceProvider.webExtensionAvailability,

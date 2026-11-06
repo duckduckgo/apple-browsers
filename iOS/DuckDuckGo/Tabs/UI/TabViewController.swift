@@ -6033,6 +6033,10 @@ extension TabViewController: ContextualOnboardingEventDelegate {
     }
 
     func didAcknowledgeContextualOnboardingTrackersDialog() {
+        guard !contextualOnboardingLogic.endedByTimeLimit else {
+            didTapDismissContextualOnboardingAction()
+            return
+        }
         // Store when Fire contextual dialog is shown to decide if final dialog needs to be shown.
         contextualOnboardingLogic.setFireEducationMessageSeen()
         delegate?.tabDidRequestFireButtonPulse(tab: self)

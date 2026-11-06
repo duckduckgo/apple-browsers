@@ -1122,6 +1122,92 @@ final class DaxDialog: XCTestCase {
     }
 
 
+    func testAfterTimeLimitOnlyBlockedTrackersDialogRemainsEligible() {
+        let settings = MockDaxDialogsSettings()
+        settings.browsingWithoutTrackersShown = true
+        let sut = makeTimedOutSUT(settings: settings)
+
+        for url in [URLs.ddg, URLs.example, URLs.facebook, URLs.ownedByFacebook] {
+            XCTAssertNil(sut.nextBrowsingMessageIfShouldShow(for: makePrivacyInfo(url: url)))
+        }
+        XCTAssertNil(sut.nextHomeScreenMessageNew())
+        XCTAssertEqual(sut.nextBrowsingMessageIfShouldShow(for: makePrivacyInfoWithBlockedTrackers(url: URLs.example))?.type, .withOneTracker)
+        XCTAssertTrue(settings.browsingWithTrackersShown)
+        XCTAssertFalse(sut.shouldShowFireButtonPulse)
+        XCTAssertFalse(sut.shouldShowPrivacyButtonPulse)
+        XCTAssertFalse(sut.isEnabled)
+    }
+
+    func testAfterTimeLimitSearchDoesNotShowTrackersDialogEvenWithBlockedTrackers() {
+        let sut = makeTimedOutSUT()
+
+        XCTAssertNil(sut.nextBrowsingMessageIfShouldShow(for: makePrivacyInfoWithBlockedTrackers(url: URLs.ddg)))
+        XCTAssertEqual(sut.nextBrowsingMessageIfShouldShow(for: makePrivacyInfoWithBlockedTrackers(url: URLs.example))?.type, .withOneTracker)
+    }
+
+    func testAfterTimeLimitBlockedTrackersDialogCanReloadUntilDismissed() {
+        let sut = makeTimedOutSUT()
+        let info = makePrivacyInfoWithBlockedTrackers(url: URLs.example)
+
+        XCTAssertEqual(sut.nextBrowsingMessageIfShouldShow(for: info)?.type, .withOneTracker)
+        XCTAssertEqual(sut.nextBrowsingMessageIfShouldShow(for: info)?.type, .withOneTracker)
+        sut.setDaxDialogDismiss()
+        XCTAssertNil(sut.nextBrowsingMessageIfShouldShow(for: info))
+        XCTAssertNil(sut.nextBrowsingMessageIfShouldShow(for: makePrivacyInfoWithBlockedTrackers(url: URLs.amazon)))
+    }
+
+    func testAfterTimeLimitTrackersDialogDoesNotReturnAfterNavigatingAway() {
+        let sut = makeTimedOutSUT()
+        let info = makePrivacyInfoWithBlockedTrackers(url: URLs.example)
+
+        XCTAssertEqual(sut.nextBrowsingMessageIfShouldShow(for: info)?.type, .withOneTracker)
+        XCTAssertNil(sut.nextBrowsingMessageIfShouldShow(for: makePrivacyInfo(url: URLs.amazon)))
+        XCTAssertNil(sut.nextBrowsingMessageIfShouldShow(for: info))
+    }
+
+    func testAfterTimeLimitAlreadySeenTrackersDialogsSuppressException() {
+        for sawMajorTracker in [true, false] {
+            let settings = MockDaxDialogsSettings()
+            settings.browsingMajorTrackingSiteShown = sawMajorTracker
+            settings.browsingWithTrackersShown = !sawMajorTracker
+            let sut = makeTimedOutSUT(settings: settings)
+
+            XCTAssertNil(sut.nextBrowsingMessageIfShouldShow(for: makePrivacyInfoWithBlockedTrackers(url: URLs.example)))
+        }
+    }
+
+    func testAfterTimeLimitSkippedOnboardingSuppressesTrackersException() {
+        let sut = makeTimedOutSUT(tutorialSettings: MockTutorialSettings(hasSeenOnboarding: true, hasSkippedOnboarding: true))
+
+        XCTAssertNil(sut.nextBrowsingMessageIfShouldShow(for: makePrivacyInfoWithBlockedTrackers(url: URLs.example)))
+        XCTAssertNil(sut.nextHomeScreenMessageNew())
+    }
+
+    func testAfterTimeLimitMajorTrackerSiteUsesOnlyActualBlockedTrackersMessage() {
+        let sut = makeTimedOutSUT()
+
+        XCTAssertEqual(sut.nextBrowsingMessageIfShouldShow(for: makePrivacyInfoWithBlockedTrackers(url: URLs.facebook))?.type, .withOneTracker)
+    }
+
+    private func makeTimedOutSUT(settings: MockDaxDialogsSettings = MockDaxDialogsSettings(),
+                                 tutorialSettings: TutorialSettings = MockTutorialSettings(hasSeenOnboarding: true)) -> DaxDialogs {
+        let timeLimit = makeDisabledContextualOnboardingTimeLimit()
+        timeLimit.endedByTimeLimit = true
+        settings.isDismissed = true
+        return DaxDialogs(settings: settings,
+                          entityProviding: entityProvider,
+                          variantManager: MockVariantManager(),
+                          timeLimit: timeLimit,
+                          tutorialSettings: tutorialSettings)
+    }
+
+    private func makePrivacyInfoWithBlockedTrackers(url: URL) -> PrivacyInfo {
+        let info = makePrivacyInfo(url: url)
+        let tracker = detectedTrackerFrom(URLs.google, pageUrl: url.absoluteString)
+        info.trackerInfo.addDetectedTracker(tracker, onPageWithURL: url)
+        return info
+    }
+
     private func detectedTrackerFrom(_ url: URL, pageUrl: String) -> DetectedRequest {
         let entity = entityProvider.entity(forHost: url.host!)
         return DetectedRequest(url: url.absoluteString,

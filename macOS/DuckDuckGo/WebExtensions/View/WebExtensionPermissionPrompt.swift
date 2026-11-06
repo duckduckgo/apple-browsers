@@ -124,23 +124,40 @@ final class WebExtensionPermissionPrompt: WebExtensionPermissionPrompting {
     }
 
     private func permissionEntries(for permissions: WebExtensionPermissionRequest) -> [String] {
-        var entries = (permissions.permissions.map(\.rawValue) + permissions.appPermissions.map(\.rawValue))
-            .map { permissionDescription($0) }.uniqued().sorted()
-        entries += permissions.matchPatterns.map { String(format: UserText.webExtensionWebsiteAccess, $0.string) }.sorted()
-        entries += permissions.urls.map { String(format: UserText.webExtensionWebsiteAccess, $0.host ?? $0.absoluteString) }.sorted()
+        let descriptions = Set((permissions.permissions.map(\.rawValue) + permissions.appPermissions.map(\.rawValue)).map { permissionDescription($0) })
+        var entries = descriptions.sorted()
+
+        if let websiteEntry = websiteAccessEntry(for: permissions) {
+            entries.append(websiteEntry)
+        }
+
         return entries
+    }
+
+    /// Groups website access like Chrome: all websites, up to three named hosts, or "a number of websites".
+    private func websiteAccessEntry(for permissions: WebExtensionPermissionRequest) -> String? {
+        if permissions.matchPatterns.contains(where: { $0.matchesAllHosts || $0.matchesAllURLs }) {
+            return UserText.webExtensionAllWebsitesAccess
+        }
+
+        let hosts = Set(permissions.matchPatterns.compactMap(\.host) + permissions.urls.compactMap(\.host)).sorted()
+        switch hosts.count {
+        case 0:
+            return nil
+        case 1...3:
+            return String(format: UserText.webExtensionWebsiteAccess, ListFormatter.localizedString(byJoining: hosts))
+        default:
+            return UserText.webExtensionManyWebsitesAccess
+        }
     }
 
     private func permissionDescription(_ permission: String) -> String {
         switch permission {
-        case "tabs": return UserText.webExtensionTabsPermission
+        case "tabs", "webNavigation", "history": return UserText.webExtensionHistoryPermission
         case "activeTab": return UserText.webExtensionActiveTabPermission
-        case "clipboardRead": return UserText.webExtensionClipboardReadPermission
-        case "clipboardWrite": return UserText.webExtensionClipboardWritePermission
+        case "clipboardRead", "clipboardWrite": return UserText.webExtensionClipboardPermission
         case "cookies": return UserText.webExtensionCookiesPermission
         case "downloads": return UserText.webExtensionDownloadsPermission
-        case "history": return UserText.webExtensionHistoryPermission
-        case "webNavigation": return UserText.webExtensionNavigationPermission
         case "storage", "unlimitedStorage": return UserText.webExtensionStoragePermission
         case "nativeMessaging": return UserText.webExtensionNativeMessagingPermission
         case "privacy": return UserText.webExtensionPrivacyPermission

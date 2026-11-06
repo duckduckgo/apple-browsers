@@ -537,9 +537,9 @@ final public actor DefaultOAuthClient: @preconcurrency OAuthClient {
 
     /// Validates the backup, forks it into a new current pair and a new backup, and stores both, current pair first.
     /// - Parameter expectedExternalID: The account the backup must belong to, or nil for any account.
-    /// - Returns: The new current token container. If the second fork call fails, or the backup was disabled while the fork ran, the new
-    ///   current pair is stored and the spent backup is deleted instead of being replaced.
-    /// - Throws: As `restoreFromBackup(expectedExternalID:)`.
+    /// - Returns: The new current token container: the last pair the fork minted. If the fork minted a single pair, the backup was
+    ///   disabled while the fork ran, or the second fork call failed, the spent backup is deleted instead of being replaced.
+    /// - Throws: As `restoreFromBackup(expectedExternalID:)`, and `OAuthClientError.internalError` when the fork returned no pair.
     private func performRestoreFromBackup(expectedExternalID: String?) async throws -> TokenContainer {
         guard isBackupEnabled(), let backupStore else { throw TokenBackupError.unavailable }
         let backup = try backupStore.usableBackup(expectedExternalID: expectedExternalID)
@@ -549,31 +549,27 @@ final public actor DefaultOAuthClient: @preconcurrency OAuthClient {
 
         do {
             let minted = try await tokenRefresher.fork(backup, count: 2)
-            guard minted.count == 2, let newBackup = minted.first, let primary = minted.last else {
-                throw OAuthClientError.internalError("Fork returned \(minted.count) token pairs instead of 2")
+            guard let primary = minted.last else {
+                throw OAuthClientError.internalError("Fork returned no token pairs")
             }
-            try ensureSessionUnchanged(backup: backup,
-                                       generationBeforeRestore: generationBeforeRestore,
-                                       currentBeforeRestore: currentBeforeRestore,
-                                       backupStore: backupStore)
-            try tokenStorage.saveTokenContainer(primary)
-            if isBackupEnabled() {
-                backupStore.save(newBackup)
-            } else {
-                Logger.OAuthClient.log("The backup token was disabled while restoring from it, deleting the spent backup")
-                backupStore.remove()
+            if minted.count != 2 {
+                Logger.OAuthClient.error("Fork returned \(minted.count, privacy: .public) token pairs instead of 2, using the last as the current one")
             }
-            return primary
-        } catch TokenForkError.incomplete(let minted, let underlying) {
-            if let primary = minted.last {
-                Logger.OAuthClient.error("Backup restore fork incomplete, keeping the minted pair as current: \(String(describing: underlying), privacy: .public)")
-                try ensureSessionUnchanged(backup: backup,
+            return try storeRestoredTokens(primary: primary,
+                                           newBackup: minted.count >= 2 ? minted.first : nil,
+                                           spentBackup: backup,
                                            generationBeforeRestore: generationBeforeRestore,
                                            currentBeforeRestore: currentBeforeRestore,
                                            backupStore: backupStore)
-                try tokenStorage.saveTokenContainer(primary)
-                backupStore.remove()
-                return primary
+        } catch TokenForkError.incomplete(let minted, let underlying) {
+            if let primary = minted.last {
+                Logger.OAuthClient.error("Backup restore fork incomplete, keeping the minted pair as current: \(String(describing: underlying), privacy: .public)")
+                return try storeRestoredTokens(primary: primary,
+                                               newBackup: nil,
+                                               spentBackup: backup,
+                                               generationBeforeRestore: generationBeforeRestore,
+                                               currentBeforeRestore: currentBeforeRestore,
+                                               backupStore: backupStore)
             }
             switch underlying {
             case OAuthClientError.invalidTokenRequest, OAuthClientError.unknownAccount:
@@ -584,6 +580,37 @@ final public actor DefaultOAuthClient: @preconcurrency OAuthClient {
             }
             throw underlying
         }
+    }
+
+    /// Stores the token containers a backup restore minted, once the session is confirmed to be the one the restore started from.
+    /// - Parameters:
+    ///   - primary: The new current token container.
+    ///   - newBackup: The new backup token container, or nil when the restore didn't mint one. When nil, or when the backup was disabled
+    ///     while the restore ran, the spent backup is deleted instead of being replaced.
+    ///   - spentBackup: The backup the restore forked.
+    ///   - generationBeforeRestore: The session generation when the restore started.
+    ///   - currentBeforeRestore: The current token container when the restore started, or nil if none was stored.
+    ///   - backupStore: The store holding the backup.
+    /// - Returns: `primary`.
+    /// - Throws: As `ensureSessionUnchanged`, or the storage error when saving `primary` fails.
+    private func storeRestoredTokens(primary: TokenContainer,
+                                     newBackup: TokenContainer?,
+                                     spentBackup: TokenContainer,
+                                     generationBeforeRestore: Int,
+                                     currentBeforeRestore: TokenContainer?,
+                                     backupStore: TokenBackupStore) throws -> TokenContainer {
+        try ensureSessionUnchanged(backup: spentBackup,
+                                   generationBeforeRestore: generationBeforeRestore,
+                                   currentBeforeRestore: currentBeforeRestore,
+                                   backupStore: backupStore)
+        try tokenStorage.saveTokenContainer(primary)
+        if let newBackup, isBackupEnabled() {
+            backupStore.save(newBackup)
+        } else {
+            Logger.OAuthClient.log("No new backup token to store, deleting the spent backup")
+            backupStore.remove()
+        }
+        return primary
     }
 
     /// Checks that the session is still the one a backup restore started from. When it isn't, the restore is discarded, and `backup`,

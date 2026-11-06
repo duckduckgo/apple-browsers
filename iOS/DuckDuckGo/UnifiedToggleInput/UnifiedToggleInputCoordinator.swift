@@ -453,7 +453,8 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         viewController = UnifiedToggleInputViewController(isToggleEnabled: isToggleEnabled,
                                                          isFireTab: isFireTab,
                                                          placesAttachmentsAboveInput: placesAttachmentsAboveInput,
-                                                         usesCompactAttachmentLayout: attachMoreTabsFeature.usesCompactAttachmentLayout)
+                                                         usesCompactAttachmentLayout: attachMoreTabsFeature.usesCompactAttachmentLayout,
+                                                         usesFloatingUI: featureFlagger.isDuckAIAndInputLiquidGlassEnabled(isFloatingUIEnabled: floatingUIManager.isFloatingUIEnabled))
         self.subscriptionUpsellPresenter = subscriptionUpsellPresenter ?? DuckAISubscriptionUpsellPresenter(policy: upsellPolicy)
         // One coordinator serves both normal and fire tabs, so the fire state is read per refresh
         // rather than bound here — see `setUpFooter`.

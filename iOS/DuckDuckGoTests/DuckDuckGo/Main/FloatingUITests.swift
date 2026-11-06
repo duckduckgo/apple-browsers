@@ -26,6 +26,27 @@ import XCTest
 
 final class FloatingUIFeatureFlagTests: XCTestCase {
 
+    func testDuckAIAndInputLiquidGlassRequiresFloatingUIAndCanBeDisabledIndependently() {
+        let featureFlagger = MockFeatureFlagger(enabledFeatureFlags: [.floatingUIiOS27, .duckAIAndInputLiquidGlass])
+        let isEnabledOnIOS27 = {
+            featureFlagger.isDuckAIAndInputLiquidGlassEnabled(
+                isFloatingUIEnabled: featureFlagger.isFloatingUIFeatureEnabled(osMajorVersion: 27))
+        }
+
+        XCTAssertTrue(isEnabledOnIOS27())
+        XCTAssertFalse(featureFlagger.isDuckAIAndInputLiquidGlassEnabled(
+            isFloatingUIEnabled: featureFlagger.isFloatingUIFeatureEnabled(osMajorVersion: 26)))
+
+        featureFlagger.enabledFeatureFlags = [.duckAIAndInputLiquidGlass]
+        XCTAssertFalse(isEnabledOnIOS27())
+
+        featureFlagger.enabledFeatureFlags = [.floatingUIiOS27]
+        XCTAssertFalse(isEnabledOnIOS27())
+
+        featureFlagger.enabledFeatureFlags = [.floatingUIiOS27, .duckAIAndInputLiquidGlass]
+        XCTAssertTrue(isEnabledOnIOS27())
+    }
+
     func testWhenCheckingCurrentOSThenOnlyTheMatchingFlagIsUsed() {
         let featureFlagger = MockFeatureFlagger(enabledFeatureFlags: [.floatingUIiOS26])
         let isIOS26Enabled = featureFlagger.isFloatingUIFeatureEnabled()
@@ -276,6 +297,38 @@ final class FloatingUIPullToRefreshTests: XCTestCase {
         let expectedComponents = UIColor.red.resolvedColor(with: traits).cgColor.components
         XCTAssertEqual(backdrop.backgroundColor?.resolvedColor(with: traits).cgColor.components, expectedComponents)
         XCTAssertEqual(webView.scrollView.backgroundColor?.resolvedColor(with: traits).cgColor.components, expectedComponents)
+    }
+
+    func testFloatingRefreshBackgroundOverrideSurvivesPageUpdatesAndRestoresPageColor() throws {
+        let hostView = UIView(frame: CGRect(x: 0, y: 0, width: 390, height: 844))
+        let pullableView = UIView(frame: hostView.bounds)
+        let webView = WKWebView(frame: pullableView.bounds)
+        webView.underPageBackgroundColor = .red
+        hostView.addSubview(pullableView)
+        pullableView.addSubview(webView)
+        let adapter = PullToRefreshViewAdapter(with: webView.scrollView,
+                                               pullableView: pullableView,
+                                               webView: webView,
+                                               isFloatingUIEnabled: true,
+                                               onRefresh: {})
+        let backdrop = try XCTUnwrap(hostView.subviews.first { $0 !== pullableView && !($0 is UIScrollView) })
+
+        adapter.backgroundColorOverride = .blue
+        webView.underPageBackgroundColor = .green
+        adapter.webViewUnderPageBackgroundDidChange()
+
+        let traits = UITraitCollection(userInterfaceStyle: .light)
+        XCTAssertEqual(backdrop.backgroundColor?.resolvedColor(with: traits).cgColor.components,
+                       UIColor.blue.resolvedColor(with: traits).cgColor.components)
+        XCTAssertEqual(webView.scrollView.backgroundColor?.resolvedColor(with: traits).cgColor.components,
+                       UIColor.blue.resolvedColor(with: traits).cgColor.components)
+
+        adapter.backgroundColorOverride = nil
+
+        XCTAssertEqual(backdrop.backgroundColor?.resolvedColor(with: traits).cgColor.components,
+                       UIColor.green.resolvedColor(with: traits).cgColor.components)
+        XCTAssertEqual(webView.scrollView.backgroundColor?.resolvedColor(with: traits).cgColor.components,
+                       UIColor.green.resolvedColor(with: traits).cgColor.components)
     }
 
     func testWhenUnderPageBackgroundChangesAtRestThenScrollViewBackgroundMatchesIt() throws {
@@ -2401,6 +2454,40 @@ final class BrowserKeyboardLayoutTests: XCTestCase {
 }
 
 final class WebViewScrollViewInsetUpdaterTests: XCTestCase {
+
+    @available(iOS 26, *)
+    func testFloatingAIChatKeepsBothScrollEndsClearOfNativeControls() {
+        let featureFlagger = MockFeatureFlagger()
+        let tab = TabViewController.fake(featureFlagger: featureFlagger,
+                                         link: Link(title: "Duck.ai", url: URL(string: "https://duck.ai/chat")!))
+        tab.floatingUIManager = FloatingUIManager(
+            isFloatingUIFeatureEnabled: true,
+            isPadProvider: { false },
+            unifiedToggleInputFeature: MockUnifiedToggleInputFeatureProvider(isAvailable: true)
+        )
+        tab.loadViewIfNeeded()
+        let chrome = DuckPlayerBrowserChromeDelegateMock()
+        chrome.floatingAIChatHeaderObscuredHeight = 112
+        chrome.floatingBottomObscuredHeight = 148
+        tab.chromeDelegate = chrome
+
+        for isLiquidGlassEnabled in [false, true, false, true] {
+            featureFlagger.enabledFeatureFlags = isLiquidGlassEnabled ? [.duckAIAndInputLiquidGlass] : []
+            tab.updateWebViewBottomAnchor(for: 1)
+
+            let expected = isLiquidGlassEnabled
+                ? UIEdgeInsets(top: 112, left: 0, bottom: chrome.floatingBottomObscuredHeight, right: 0)
+                : .zero
+            XCTAssertEqual(tab.webView.scrollView.contentInset, expected)
+            XCTAssertEqual(tab.webView.obscuredContentInsets, expected)
+
+            if isLiquidGlassEnabled {
+                chrome.floatingBottomObscuredHeight = 190
+                tab.updateWebViewBottomAnchor(for: 0.5)
+                XCTAssertEqual(tab.webView.scrollView.contentInset.bottom, 190)
+            }
+        }
+    }
 
     @available(iOS 26, *)
     func testKeyboardLayoutUpdatesInsetsDuringChromeTransitionOnlyWithFloatingUIEnabled() {

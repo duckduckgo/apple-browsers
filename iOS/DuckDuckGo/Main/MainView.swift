@@ -760,12 +760,23 @@ extension MainViewFactory {
     private func constrainUnifiedInputContentContainer() {
         let container = coordinator.unifiedInputContentContainer!
         let toolbar = coordinator.toolbar!
+        let bottomToToolbar = container.bottomAnchor.constraint(equalTo: toolbar.topAnchor)
+        let bottomToSuperview = container.bottomAnchor.constraint(equalTo: superview.bottomAnchor)
+        coordinator.constraints.unifiedInputContentBottomToToolbar = bottomToToolbar
+        coordinator.constraints.unifiedInputContentBottomToSuperview = bottomToSuperview
+        let extendsUnderToolbar = if #available(iOS 26, *) {
+            featureFlagger.isDuckAIAndInputLiquidGlassEnabled(
+                isFloatingUIEnabled: floatingUIManager.isFloatingUIEnabled
+            )
+        } else {
+            false
+        }
         let topAnchor: NSLayoutYAxisAnchor = floatingUIManager.isFloatingUIEnabled
             ? superview.topAnchor
             : superview.safeAreaLayoutGuide.topAnchor
         NSLayoutConstraint.activate([
             container.topAnchor.constraint(equalTo: topAnchor),
-            container.bottomAnchor.constraint(equalTo: toolbar.topAnchor),
+            extendsUnderToolbar ? bottomToSuperview : bottomToToolbar,
             container.leadingAnchor.constraint(equalTo: superview.leadingAnchor),
             container.trailingAnchor.constraint(equalTo: superview.trailingAnchor),
         ])

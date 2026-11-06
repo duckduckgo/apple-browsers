@@ -288,6 +288,7 @@ class TabViewController: UIViewController {
                                                                   eventMapping: PageSignalsEventMapper(pixelFiring: pixelFiring))
     private var hasAppliedFloatingUIScrollViewInsets = false
     private var hasDeferredFloatingUIInsets = false
+    private var lastDuckAIInnerScrollInsets: UIEdgeInsets?
     private var scrollViewAdjustmentBehaviorBeforeFloatingUI: WebViewScrollViewInsetUpdater.AdjustmentBehavior?
     /// Last chrome visibility fraction applied, so layout can be redone outside a visibility change.
     private var lastAppliedBarsVisibilityPercent: CGFloat = 1.0
@@ -1264,12 +1265,21 @@ class TabViewController: UIViewController {
         borderView.isTopVisible = false
         borderView.isBottomVisible = false
 
-        // AI tabs with the unified toggle input own their own bottom layout, so keep the web view
-        // full-bleed with no obscured region there.
+        // AI tabs keep the web view full-bleed while native controls float above it.
         let isUnifiedToggleInputAffectingLayout = isAITab && unifiedToggleInputFeature.isAvailable
+        let usesFloatingAIChrome = if #available(iOS 26, *) {
+            isUnifiedToggleInputAffectingLayout
+                && featureFlagger.isDuckAIAndInputLiquidGlassEnabled(isFloatingUIEnabled: floatingUIManager.isFloatingUIEnabled)
+        } else {
+            false
+        }
         var obscuredInsets: UIEdgeInsets = isUnifiedToggleInputAffectingLayout
             ? .zero
             : (chromeDelegate?.floatingWebViewObscuredInsets(for: barsVisibilityPercent) ?? .zero)
+        if usesFloatingAIChrome {
+            obscuredInsets.top = chromeDelegate?.floatingAIChatHeaderObscuredHeight ?? 0
+            obscuredInsets.bottom = chromeDelegate?.floatingWebViewBottomObscuredHeight(for: barsVisibilityPercent) ?? 0
+        }
 
         // While a dialog is up the obscured top region offsets the stack instead of the web view, or
         // the page gets pushed down twice. Measured at full chrome visibility so the dialog (and the
@@ -1308,7 +1318,7 @@ class TabViewController: UIViewController {
         let hadDeferredInsets = hasDeferredFloatingUIInsets
         let animateTopAlignment = hadDeferredInsets
             && !webView.scrollView.isTracking && !webView.scrollView.isDragging && !webView.scrollView.isDecelerating
-        let shouldUpdateScrollInsets = forceInsets || WebViewScrollViewInsetUpdater.shouldUpdateDuringChromeTransition(
+        let shouldUpdateScrollInsets = forceInsets || usesFloatingAIChrome || WebViewScrollViewInsetUpdater.shouldUpdateDuringChromeTransition(
             barsVisibilityPercent: barsVisibilityPercent,
             hasAppliedInsets: hasAppliedFloatingUIScrollViewInsets
         )
@@ -1321,6 +1331,13 @@ class TabViewController: UIViewController {
             // Keep WebKit's viewport stable too. Changing it on every display-link tick can
             // relayout page-fixed content while the glass is morphing over a full-bleed web view.
             setWebViewObscuredContentInsetsIfSupported(obscuredInsets)
+            if isAITab, usesFloatingAIChrome || lastDuckAIInnerScrollInsets != nil {
+                let innerInsets = usesFloatingAIChrome ? obscuredInsets : .zero
+                if lastDuckAIInnerScrollInsets != innerInsets {
+                    DuckAIChatScrollInsetStyler.apply(innerInsets, to: webView)
+                    lastDuckAIInnerScrollInsets = innerInsets
+                }
+            }
         }
         // A short bounce may finish before the chrome morph; preserve smooth alignment at its endpoint.
         hasDeferredFloatingUIInsets = hadDeferredInsets && !shouldUpdateScrollInsets
@@ -1500,6 +1517,7 @@ class TabViewController: UIViewController {
                        consumeCookies: Bool,
                        loadingInitiatedByParentTab: Bool = false,
                        customWebView: ((WKWebViewConfiguration) -> WKWebView)? = nil) {
+        lastDuckAIInnerScrollInsets = nil
         cancelWebExtensionNavigationWait()
         instrumentation.willPrepareWebView()
         pageContextNavigationID = UUID()
@@ -2943,6 +2961,10 @@ extension TabViewController: WKNavigationDelegate {
 
     func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
         terminationReloadMonitor.didFinish()
+        if isAITab, #available(iOS 26, *),
+           featureFlagger.isDuckAIAndInputLiquidGlassEnabled(isFloatingUIEnabled: floatingUIManager.isFloatingUIEnabled) {
+            DuckAIChatScrollInsetStyler.apply(lastDuckAIInnerScrollInsets ?? .zero, to: webView)
+        }
         updateFloatingPageBackgroundColor(in: webView)
         navigationPixelResponder.didFinish(navigation)
         self.preventUniversalLinksOnce = false

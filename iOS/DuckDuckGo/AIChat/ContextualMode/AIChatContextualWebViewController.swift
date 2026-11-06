@@ -74,6 +74,8 @@ final class AIChatContextualWebViewController: UIViewController {
     private var promptFlowReporter: ContextualDuckAIPromptFlowReporting?
     private var chatPersistenceCancellable: AnyCancellable?
     private var webViewBottomConstraint: NSLayoutConstraint?
+    private weak var floatingInputView: UIView?
+    private var floatingInputObscuredHeight: CGFloat = 0
 
     private(set) var aiChatContentHandler: AIChatContentHandling
 
@@ -225,6 +227,11 @@ final class AIChatContextualWebViewController: UIViewController {
         }
     }
 
+    override func viewDidLayoutSubviews() {
+        super.viewDidLayoutSubviews()
+        updateFloatingInputInset()
+    }
+
     deinit {
         let request = pendingRichPrompt?.tabAttachmentRequest
         let contentHandler = aiChatContentHandler
@@ -355,6 +362,37 @@ final class AIChatContextualWebViewController: UIViewController {
         let newConstraint = webView.bottomAnchor.constraint(equalTo: anchor)
         newConstraint.isActive = true
         webViewBottomConstraint = newConstraint
+    }
+
+    func setFloatingInputView(_ inputView: UIView) {
+        if floatingInputView === inputView {
+            updateFloatingInputInset()
+            return
+        }
+        floatingInputView = inputView
+        if #available(iOS 26, *) {
+            let color = UIColor(singleUseColor: .duckAIWebViewBackground)
+            view.backgroundColor = color
+            webView.backgroundColor = color
+            webView.scrollView.backgroundColor = color
+            webView.underPageBackgroundColor = color
+            webView.isOpaque = false
+            webView.scrollView.bottomEdgeEffect.isHidden = true
+        }
+        view.setNeedsLayout()
+    }
+
+    private func updateFloatingInputInset() {
+        guard #available(iOS 26, *), let floatingInputView else { return }
+        let top = floatingInputView.convert(.zero, to: view).y
+        let height = max(0, view.bounds.maxY - top)
+        guard height != floatingInputObscuredHeight else { return }
+        floatingInputObscuredHeight = height
+        let insets = UIEdgeInsets(top: 0, left: 0, bottom: height, right: 0)
+        if webView.responds(to: #selector(setter: WKWebView.obscuredContentInsets)) {
+            webView.obscuredContentInsets = insets
+        }
+        DuckAIChatScrollInsetStyler.apply(insets, to: webView)
     }
 
     func loadChatURL(_ url: URL) {
@@ -593,6 +631,12 @@ extension AIChatContextualWebViewController: WKNavigationDelegate {
         Logger.aiChat.debug("[ContextualWebVC] didFinish navigation - URL: \(webView.url?.shortDescription ?? "nil")")
         loadingView.stopAnimating()
         isPageReady = true
+        if #available(iOS 26, *), floatingInputView != nil {
+            DuckAIChatScrollInsetStyler.apply(
+                UIEdgeInsets(top: 0, left: 0, bottom: floatingInputObscuredHeight, right: 0),
+                to: webView
+            )
+        }
         submitPendingIfReady()
     }
 

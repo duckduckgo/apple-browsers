@@ -2855,15 +2855,6 @@ public struct UserText {
 
         public enum Personalization {
 
-            public enum Search {
-                public static let title = NSLocalizedString("onboarding.personalization.search.title", value: "Your search, your way.", comment: "Title of the onboarding search personalization screen.")
-                public static let recentlyVisitedSitesTitle = NSLocalizedString("onboarding.personalization.search.recentlyVisitedSites.title", value: "Search History", comment: "Title for the recently visited sites option on the onboarding search personalization screen.")
-                public static let recentlyVisitedSitesSubtitle = NSLocalizedString("onboarding.personalization.search.recentlyVisitedSites.subtitle", value: "Show recently visited sites in search suggestions. Private, only on your device.", comment: "Subtitle for the recently visited sites option on the onboarding search personalization screen.")
-                public static let safeSearchTitle = NSLocalizedString("onboarding.personalization.search.safeSearch.title", value: "Safe Search", comment: "Title for the safe search option on the onboarding search personalization screen.")
-                public static let safeSearchSubtitle = NSLocalizedString("onboarding.personalization.search.safeSearch.subtitle", value: "Omit questionable (mostly adult) material in results.", comment: "Subtitle for the safe search option on the onboarding search personalization screen.")
-                public static let cta = NSLocalizedString("onboarding.personalization.search.cta", value: "Next", comment: "Button to continue to the next onboarding screen from the search personalization screen.")
-            }
-
             public enum AIModel {
                 public static let title = NSLocalizedString("onboarding.personalization.aiModel.title", value: "Your chats, your way.", comment: "Title of the onboarding AI model personalization screen.")
                 public static let message = NSLocalizedString("onboarding.personalization.aiModel.message", value: "Change your default AI now, or anytime during chat.", comment: "Message of the onboarding AI model personalization screen.")

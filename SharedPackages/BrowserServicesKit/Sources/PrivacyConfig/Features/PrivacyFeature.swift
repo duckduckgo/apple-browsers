@@ -634,6 +634,10 @@ public enum AIChatBrowserToolsSubfeature: String, Equatable, PrivacySubfeature {
 
     /// Paints previously-found matches on a page.
     case highlightInPage
+
+    /// Pins open tabs in the owner tab's window.
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1217165044799340
+    case pinTab
 }
 
 public enum HtmlNewTabPageSubfeature: String, Equatable, PrivacySubfeature {

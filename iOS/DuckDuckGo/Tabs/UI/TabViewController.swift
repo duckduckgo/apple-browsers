@@ -6033,6 +6033,7 @@ extension TabViewController: ContextualOnboardingEventDelegate {
     }
 
     func didAcknowledgeContextualOnboardingTrackersDialog() {
+        contextualOnboardingLogic.checkTimeLimit()
         guard !contextualOnboardingLogic.endedByTimeLimit else {
             didTapDismissContextualOnboardingAction()
             return

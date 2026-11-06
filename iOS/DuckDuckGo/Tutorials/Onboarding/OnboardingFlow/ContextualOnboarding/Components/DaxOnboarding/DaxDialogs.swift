@@ -56,8 +56,8 @@ protocol ContextualDaxDialogStatusProvider {
 protocol ContextualOnboardingLogic {
     var shouldShowPrivacyButtonPulse: Bool { get }
     var shouldShowFireButtonPulse: Bool { get }
-    func checkTimeLimit()
     var endedByTimeLimit: Bool { get }
+    func checkTimeLimit()
 
     var isShowingFireDialog: Bool { get }
     var isShowingSearchSuggestions: Bool { get }

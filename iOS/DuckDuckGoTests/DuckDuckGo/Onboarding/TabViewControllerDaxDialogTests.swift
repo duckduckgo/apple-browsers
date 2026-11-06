@@ -229,6 +229,22 @@ final class TabViewControllerDaxDialogTests: XCTestCase {
 }
 
 final class TabViewControllerTimeLimitTests: XCTestCase {
+    func testTrackersAcknowledgementChecksTimeLimitBeforeRequestingFirePulse() {
+        let logic = ContextualOnboardingLogicMock()
+        logic.onCheckTimeLimit = { [weak logic] in logic?.endedByTimeLimit = true }
+        let presenter = ContextualOnboardingPresenterMock()
+        let delegate = MockTabDelegate()
+        let sut = TabViewController.fake(contextualOnboardingPresenter: presenter, contextualOnboardingLogic: logic)
+        sut.delegate = delegate
+
+        sut.didAcknowledgeContextualOnboardingTrackersDialog()
+
+        XCTAssertFalse(delegate.didRequestFireButtonPulseCalled)
+        XCTAssertFalse(logic.didCallSetFireEducationMessageSeen)
+        XCTAssertTrue(logic.didCallSetDaxDialogDismiss)
+        XCTAssertTrue(presenter.didCallDismissContextualOnboardingIfNeeded)
+    }
+
     func testTrackersAcknowledgementAfterTimeLimitDismissesWithoutFirePulse() {
         let logic = ContextualOnboardingLogicMock()
         logic.endedByTimeLimit = true

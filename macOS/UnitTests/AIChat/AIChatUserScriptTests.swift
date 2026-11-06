@@ -251,7 +251,8 @@ final class AIChatUserScriptTests: XCTestCase {
             FeatureFlag.aiChatBrowserToolHighlightInPage.rawValue: false,
             FeatureFlag.aiChatBrowserToolPinTab.rawValue: false,
             FeatureFlag.aiChatBrowserToolOpenTab.rawValue: false,
-            FeatureFlag.aiChatBrowserToolCloseTabs.rawValue: false
+            FeatureFlag.aiChatBrowserToolCloseTabs.rawValue: false,
+            FeatureFlag.aiChatBrowserToolBookmarkTab.rawValue: false
         ])
     }
 
@@ -259,6 +260,7 @@ final class AIChatUserScriptTests: XCTestCase {
         AIChatBrowserToolsService(featureFlagger: featureFlagger ?? browserToolsFlags(),
                                  windowControllersManager: WindowControllersManagerMock(),
                                  historyCoordinator: HistoryCoordinatingMock(),
+                                 bookmarkManager: MockBookmarkManager(),
                                  permissionStorage: MockKeyValueStore().keyedStoring())
     }
 

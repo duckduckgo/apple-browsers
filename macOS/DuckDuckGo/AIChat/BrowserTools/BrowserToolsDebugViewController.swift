@@ -393,6 +393,7 @@ final class BrowserToolsDebugViewController: NSViewController {
         case ("closeTabs", "tabIds"):
             let owner = ownerTabProvider()?.uuid
             return ownerCollection?.tabCollection.tabs.first { $0.uuid != owner }?.uuid
+        case ("bookmarkTab", "folder"): return "Duck.ai"
         case ("openTab", "url"): return "https://duckduckgo.com"
         case ("searchHistory", "query"): return "wiki"
         case ("searchHistory", "limit"): return "5"

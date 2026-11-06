@@ -85,11 +85,18 @@ final class AddressBarPerformanceCoordinatorTests: XCTestCase {
             recorder: recorder,
             deferredEmitDelay: testDeferredEmitDelay,
             hookStopDelay: testHookStopDelay,
-            pixelFiring: capture
+            pixelFiring: capture,
+            clock: { testClock.read() }
         )
     }
 
     // MARK: - Helpers
+
+    private func drawChangedTextIfPending() {
+        if let drawID = coordinator.pendingCharacterDrawID {
+            coordinator.charactersDidDraw(through: drawID)
+        }
+    }
 
     private func waitForPixelEmission() {
         // Sleep just past the deferred delay to allow the async work item to fire.
@@ -106,8 +113,9 @@ final class AddressBarPerformanceCoordinatorTests: XCTestCase {
     func test_keystrokeAndPaintAndTerminate_firesPixelWithCharHalfPopulated() {
         clock.now = 0
         coordinator.markKeystroke()
-        coordinator.armCharRenderIfPending()
+        coordinator.markTextChanged()
         clock.now = 0.030 // 30ms — lands in 16..50 band (index 1)
+        drawChangedTextIfPending()
         coordinator.handlePaint(at: 0.030)
         coordinator.terminateInteraction()
 
@@ -134,8 +142,9 @@ final class AddressBarPerformanceCoordinatorTests: XCTestCase {
     func test_duplicateTerminator_doesNotCancelFirstPixel() {
         clock.now = 0
         coordinator.markKeystroke()
-        coordinator.armCharRenderIfPending()
+        coordinator.markTextChanged()
         clock.now = 0.030
+        drawChangedTextIfPending()
         coordinator.handlePaint(at: 0.030)
         coordinator.terminateInteraction()
         coordinator.terminateInteraction()
@@ -147,6 +156,7 @@ final class AddressBarPerformanceCoordinatorTests: XCTestCase {
 
     func test_paintWithoutKeystroke_recordsNothing() {
         clock.now = 0.030
+        drawChangedTextIfPending()
         coordinator.handlePaint(at: 0.030)
         coordinator.terminateInteraction()
         waitForPixelEmission()
@@ -158,9 +168,10 @@ final class AddressBarPerformanceCoordinatorTests: XCTestCase {
     func test_keystrokeAndSuggestionsUpdateAndPaint_firesPixelWithBothHalvesPopulated() {
         clock.now = 0
         coordinator.markKeystroke()
-        coordinator.armCharRenderIfPending()
+        coordinator.markTextChanged()
         clock.now = 0.080
         coordinator.markSuggestionsUpdated()
+        drawChangedTextIfPending()
         coordinator.handlePaint(at: 0.080)
         coordinator.terminateInteraction()
 
@@ -177,6 +188,7 @@ final class AddressBarPerformanceCoordinatorTests: XCTestCase {
     func test_suggestionsUpdateWithoutKeystroke_recordsNothing() {
         coordinator.markSuggestionsUpdated()
         clock.now = 0.030
+        drawChangedTextIfPending()
         coordinator.handlePaint(at: 0.030)
         coordinator.terminateInteraction()
         waitForPixelEmission()
@@ -191,7 +203,8 @@ final class AddressBarPerformanceCoordinatorTests: XCTestCase {
         coordinator.markKeystroke()
         clock.now = 0.080
         coordinator.markSuggestionsUpdated()
-        // No armCharRenderIfPending — simulating the suggest update arriving before commit.
+        // No markTextChanged — simulating the suggest update arriving before commit.
+        drawChangedTextIfPending()
         coordinator.handlePaint(at: 0.080)
         coordinator.terminateInteraction()
 
@@ -211,8 +224,9 @@ final class AddressBarPerformanceCoordinatorTests: XCTestCase {
     func test_keystrokeWithoutTextDidChange_doesNotProduceCharSample() {
         clock.now = 0
         coordinator.markKeystroke()
-        // Simulate a suppressed keystroke: no armCharRenderIfPending follows.
+        // Simulate a suppressed keystroke: no markTextChanged follows.
         clock.now = 0.030
+        drawChangedTextIfPending()
         coordinator.handlePaint(at: 0.030)
         coordinator.terminateInteraction()
         waitForPixelEmission()
@@ -221,8 +235,9 @@ final class AddressBarPerformanceCoordinatorTests: XCTestCase {
 
     func test_textDidChangeWithoutPriorKeystroke_isNoOp() {
         // Programmatic text change with no preceding markKeystroke.
-        coordinator.armCharRenderIfPending()
+        coordinator.markTextChanged()
         clock.now = 0.030
+        drawChangedTextIfPending()
         coordinator.handlePaint(at: 0.030)
         coordinator.terminateInteraction()
         waitForPixelEmission()
@@ -232,11 +247,12 @@ final class AddressBarPerformanceCoordinatorTests: XCTestCase {
     func test_suppressedKeystrokeFollowedByLegitimate_recordsOnlyTheLegitimate() {
         clock.now = 0
         coordinator.markKeystroke() // k1, will be suppressed
-        // No armCharRenderIfPending for k1 — buffer didn't change.
+        // No markTextChanged for k1 — buffer didn't change.
         clock.now = 0.020
         coordinator.markKeystroke() // k2, legitimate
-        coordinator.armCharRenderIfPending()
+        coordinator.markTextChanged()
         clock.now = 0.030 // 10ms after k2
+        drawChangedTextIfPending()
         coordinator.handlePaint(at: 0.030)
         coordinator.terminateInteraction()
 
@@ -253,9 +269,10 @@ final class AddressBarPerformanceCoordinatorTests: XCTestCase {
     func test_resetForNewInteraction_clearsPendingState() {
         clock.now = 0
         coordinator.markKeystroke()
-        coordinator.armCharRenderIfPending()
+        coordinator.markTextChanged()
         coordinator.resetForNewInteraction()
         clock.now = 0.030
+        drawChangedTextIfPending()
         coordinator.handlePaint(at: 0.030)
         coordinator.terminateInteraction()
 
@@ -268,8 +285,9 @@ final class AddressBarPerformanceCoordinatorTests: XCTestCase {
         coordinator.markKeystroke()
         coordinator.resetForNewInteraction()
         // Confirming after reset must not retroactively arm — the stashed t₀ is gone.
-        coordinator.armCharRenderIfPending()
+        coordinator.markTextChanged()
         clock.now = 0.030
+        drawChangedTextIfPending()
         coordinator.handlePaint(at: 0.030)
         coordinator.terminateInteraction()
 
@@ -282,8 +300,9 @@ final class AddressBarPerformanceCoordinatorTests: XCTestCase {
         coordinator.markKeystroke()
         coordinator.terminateInteraction()
         // Confirming after terminate must not retroactively arm a sample that didn't exist.
-        coordinator.armCharRenderIfPending()
+        coordinator.markTextChanged()
         clock.now = 0.030
+        drawChangedTextIfPending()
         coordinator.handlePaint(at: 0.030)
         coordinator.terminateInteraction()
 
@@ -297,8 +316,9 @@ final class AddressBarPerformanceCoordinatorTests: XCTestCase {
     func test_resetForNewInteraction_doesNotCancelPendingEmit() {
         clock.now = 0
         coordinator.markKeystroke()
-        coordinator.armCharRenderIfPending()
+        coordinator.markTextChanged()
         clock.now = 0.030
+        drawChangedTextIfPending()
         coordinator.handlePaint(at: 0.030)
         coordinator.terminateInteraction()
 
@@ -314,14 +334,15 @@ final class AddressBarPerformanceCoordinatorTests: XCTestCase {
     func test_burstOfKeystrokesInOneFrame_recordsNSamplesForCharStage() {
         clock.now = 0
         coordinator.markKeystroke()
-        coordinator.armCharRenderIfPending()
+        coordinator.markTextChanged()
         clock.now = 0.005
         coordinator.markKeystroke()
-        coordinator.armCharRenderIfPending()
+        coordinator.markTextChanged()
         clock.now = 0.010
         coordinator.markKeystroke()
-        coordinator.armCharRenderIfPending()
+        coordinator.markTextChanged()
         clock.now = 0.016
+        drawChangedTextIfPending()
         coordinator.handlePaint(at: 0.016)
         coordinator.terminateInteraction()
 
@@ -331,6 +352,174 @@ final class AddressBarPerformanceCoordinatorTests: XCTestCase {
         XCTAssertEqual(pixels.count, 1)
         // Three measurements: 16 → band 0, 11 → band 0, 6 → band 0. All in band 0.
         XCTAssertEqual(pixels[0].charBasisPoints[0], 10_000)
+    }
+
+    // MARK: - Draw arming
+
+    func test_textChangeWithoutDraw_doesNotProduceCharacterSample() {
+        coordinator.markKeystroke()
+        coordinator.markTextChanged()
+        clock.now = 0.030
+        coordinator.handlePaint(at: 0.030)
+        coordinator.terminateInteraction()
+
+        waitForPixelEmission()
+
+        XCTAssertTrue(capture.snapshot().isEmpty)
+    }
+
+    func test_frameBeforeDrawCompletion_isRejected() {
+        coordinator.markKeystroke()
+        coordinator.markTextChanged()
+        clock.now = 0.200
+        drawChangedTextIfPending()
+        coordinator.handlePaint(at: 0.016)
+        clock.now = 0.205
+        coordinator.handlePaint(at: 0.216)
+        coordinator.terminateInteraction()
+
+        waitForPixelEmission()
+
+        XCTAssertEqual(capture.snapshot().first?.charBasisPoints[5], 10_000)
+    }
+
+    func test_frameAnnouncedBeforeDraw_isUsedWithoutWaitingForAnotherCallback() {
+        coordinator.markKeystroke()
+        coordinator.markTextChanged()
+        clock.now = 0.001
+        coordinator.handlePaint(at: 0.016)
+        clock.now = 0.005
+        drawChangedTextIfPending()
+        coordinator.terminateInteraction()
+
+        waitForPixelEmission()
+
+        XCTAssertEqual(capture.snapshot().first?.charBasisPoints[0], 10_000)
+    }
+
+    func test_queuedCallbackAfterDraw_usesItsFutureFrameTarget() {
+        coordinator.markKeystroke()
+        coordinator.markTextChanged()
+        clock.now = 0.005
+        drawChangedTextIfPending()
+        clock.now = 0.006
+        coordinator.handlePaint(at: 0.016)
+        coordinator.terminateInteraction()
+
+        waitForPixelEmission()
+
+        XCTAssertEqual(capture.snapshot().first?.charBasisPoints[0], 10_000)
+    }
+
+    func test_multipleUpcomingFrames_usesEarliestFrameAfterDraw() {
+        coordinator.markKeystroke()
+        coordinator.markTextChanged()
+        clock.now = 0.001
+        coordinator.handlePaint(at: 0.016)
+        clock.now = 0.009
+        coordinator.handlePaint(at: 0.024)
+        clock.now = 0.015
+        drawChangedTextIfPending()
+        coordinator.terminateInteraction()
+
+        waitForPixelEmission()
+
+        XCTAssertEqual(capture.snapshot().first?.charBasisPoints[0], 10_000)
+    }
+
+    func test_cachedFrameBeforeDraw_isDiscarded() {
+        coordinator.markKeystroke()
+        coordinator.markTextChanged()
+        clock.now = 0.001
+        coordinator.handlePaint(at: 0.016)
+        clock.now = 0.020
+        drawChangedTextIfPending()
+        clock.now = 0.022
+        coordinator.handlePaint(at: 0.030)
+        coordinator.terminateInteraction()
+
+        waitForPixelEmission()
+
+        XCTAssertEqual(capture.snapshot().first?.charBasisPoints[1], 10_000)
+    }
+
+    func test_editCommittedDuringDraw_waitsForItsOwnDraw() throws {
+        coordinator.markKeystroke()
+        coordinator.markTextChanged()
+        let firstDrawID = try XCTUnwrap(coordinator.pendingCharacterDrawID)
+        clock.now = 0.020
+        coordinator.markKeystroke()
+        coordinator.markTextChanged()
+        clock.now = 0.030
+        coordinator.charactersDidDraw(through: firstDrawID)
+        clock.now = 0.031
+        coordinator.handlePaint(at: 0.035)
+        clock.now = 0.080
+        drawChangedTextIfPending()
+        clock.now = 0.081
+        coordinator.handlePaint(at: 0.090)
+        coordinator.terminateInteraction()
+
+        waitForPixelEmission()
+
+        XCTAssertEqual(capture.snapshot().first?.charBasisPoints[1], 5_000)
+        XCTAssertEqual(capture.snapshot().first?.charBasisPoints[2], 5_000)
+    }
+
+    func test_separateDraws_keepTheirOwnEligibleFrame() {
+        coordinator.markKeystroke()
+        coordinator.markTextChanged()
+        clock.now = 0.005
+        drawChangedTextIfPending()
+        clock.now = 0.010
+        coordinator.markKeystroke()
+        coordinator.markTextChanged()
+        clock.now = 0.020
+        drawChangedTextIfPending()
+        clock.now = 0.025
+        coordinator.handlePaint(at: 0.016)
+        clock.now = 0.026
+        coordinator.handlePaint(at: 0.030)
+        coordinator.terminateInteraction()
+
+        waitForPixelEmission()
+
+        XCTAssertEqual(capture.snapshot().first?.charBasisPoints[0], 5_000)
+        XCTAssertEqual(capture.snapshot().first?.charBasisPoints[1], 5_000)
+    }
+
+    func test_drawTokenFromTerminatedInteraction_doesNotArmNewEdit() throws {
+        coordinator.markKeystroke()
+        coordinator.markTextChanged()
+        let oldDrawID = try XCTUnwrap(coordinator.pendingCharacterDrawID)
+        coordinator.terminateInteraction()
+        clock.now = 0.100
+        coordinator.markKeystroke()
+        coordinator.markTextChanged()
+        coordinator.charactersDidDraw(through: oldDrawID)
+        clock.now = 0.120
+        coordinator.handlePaint(at: 0.130)
+        coordinator.terminateInteraction()
+
+        waitForPixelEmission()
+
+        XCTAssertTrue(capture.snapshot().isEmpty)
+    }
+
+    func test_interactionReset_discardsCachedFrameTargets() {
+        clock.now = 0.001
+        coordinator.handlePaint(at: 0.150)
+        coordinator.resetForNewInteraction()
+        clock.now = 0.010
+        coordinator.markKeystroke()
+        coordinator.markTextChanged()
+        clock.now = 0.020
+        drawChangedTextIfPending()
+        coordinator.terminateInteraction()
+
+        waitForPixelEmission()
+
+        XCTAssertTrue(capture.snapshot().isEmpty)
     }
 
     // MARK: - Hook lifecycle

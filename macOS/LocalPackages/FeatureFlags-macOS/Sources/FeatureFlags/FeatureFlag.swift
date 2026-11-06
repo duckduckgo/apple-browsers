@@ -956,9 +956,9 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .dataImportNewSafariFilePicker:
             Config(defaultValue: .enabled, source: .remoteReleasable(DataImportSubfeature.newSafariFilePicker))
         case .dataImportHistory:
-            Config(defaultValue: .disabled, source: .remoteReleasable(DataImportSubfeature.historyImport))
+            Config(defaultValue: .enabled, source: .remoteReleasable(DataImportSubfeature.historyImport))
         case .dataImportSourceFilter:
-            Config(defaultValue: .disabled, source: .remoteReleasable(DataImportSubfeature.sourceFilter))
+            Config(defaultValue: .enabled, source: .remoteReleasable(DataImportSubfeature.sourceFilter))
         case .blurryAddressBarTahoeFix:
             Config(defaultValue: .enabled, source: .remoteReleasable(MacOSBrowserConfigSubfeature.blurryAddressBarTahoeFix))
         case .addressBarIMEConfirmFix:

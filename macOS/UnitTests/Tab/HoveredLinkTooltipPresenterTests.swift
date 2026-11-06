@@ -456,67 +456,6 @@ final class HoveredLinkTooltipPresenterTests: XCTestCase {
         parent.orderOut(nil)
     }
 
-    func testWhenPointerReturnsToSameLinkAfterURLWasForgottenThenTooltipIsRestoredFromThePage() {
-        let harness = TooltipHarness()
-        let url = URL(string: "https://example.com/first")!
-        harness.hoveredLink.url = url
-        harness.showFirstLink()
-        // The window is deactivated (URL forgotten), the pointer goes to the inspector and comes back to the same link:
-        // the page reports no change, so the presenter has to ask for the current link.
-        harness.presenter.reset()
-        harness.presenter.mouseDidExit()
-        XCTAssertNil(harness.tooltip)
-
-        harness.presenter.mouseDidMove()
-        harness.scheduler.run(delay: Timing.revealDelay)
-
-        XCTAssertTrue(harness.tooltip?.isVisible == true)
-        XCTAssertEqual(harness.label?.stringValue, url.absoluteString)
-    }
-
-    func testWhenWindowBecomesActiveAgainWithPointerStillOnLinkThenTooltipIsRestoredOnNextMove() {
-        let harness = TooltipHarness()
-        let url = URL(string: "https://example.com/first")!
-        harness.hoveredLink.url = url
-        harness.showFirstLink()
-
-        harness.presenter.windowDidResignKey()
-        XCTAssertNil(harness.tooltip)
-        harness.presenter.mouseDidMove()
-        harness.scheduler.run(delay: Timing.revealDelay)
-
-        XCTAssertTrue(harness.tooltip?.isVisible == true)
-        XCTAssertEqual(harness.label?.stringValue, url.absoluteString)
-    }
-
-    func testWhenResetFollowsWindowDeactivationThenNextMoveDoesNotRestoreALink() {
-        let harness = TooltipHarness()
-        harness.hoveredLink.url = URL(string: "https://example.com/first")!
-        harness.showFirstLink()
-        harness.presenter.windowDidResignKey()
-        harness.presenter.reset()
-        let scheduledCount = harness.scheduler.scheduledCount
-
-        harness.presenter.mouseDidMove()
-
-        XCTAssertEqual(harness.scheduler.scheduledCount, scheduledCount, "A reset forgets the restore request")
-        XCTAssertNil(harness.tooltip)
-    }
-
-    func testWhenLinkIsRestoredAfterWindowDeactivationThenNextMoveDoesNotScheduleAnotherRestore() {
-        let harness = TooltipHarness()
-        harness.showFirstLink()
-        harness.presenter.windowDidResignKey()
-        harness.presenter.update(url: URL(string: "https://example.com/restored")!)
-        let scheduledCount = harness.scheduler.scheduledCount
-
-        harness.presenter.mouseDidMove()
-
-        XCTAssertEqual(harness.scheduler.scheduledCount, scheduledCount, "The known link is already on its way to the screen")
-        harness.scheduler.run(delay: Timing.revealDelay)
-        XCTAssertEqual(harness.label?.stringValue, "https://example.com/restored")
-    }
-
     func testWhenNothingToShowHideOrRestoreThenPresenterIsIdle() {
         let harness = TooltipHarness()
         XCTAssertTrue(harness.presenter.isIdle)
@@ -527,8 +466,8 @@ final class HoveredLinkTooltipPresenterTests: XCTestCase {
         harness.presenter.reset()
         XCTAssertTrue(harness.presenter.isIdle)
 
-        harness.presenter.windowDidResignKey()
-        XCTAssertFalse(harness.presenter.isIdle, "A restore is pending")
+        harness.presenter.mouseDidExit()
+        XCTAssertFalse(harness.presenter.isIdle, "The pointer is outside: its return must reach the presenter")
     }
 
     func testWhenSidebarOverlapsHostThenTooltipStaysOutOfIt() {
@@ -567,7 +506,6 @@ private final class TooltipHarness {
     let scheduler = TooltipScheduler()
     let animator = TooltipAnimator()
     let tooltipWindow = TooltipTestWindow()
-    let hoveredLink = TooltipHoveredLink()
     let presenter: HoveredLinkTooltipPresenter
 
     var tooltip: NSWindow? { parent.childWindows?.first }
@@ -584,10 +522,8 @@ private final class TooltipHarness {
         let scheduler = scheduler
         let animator = animator
         let tooltipWindow = tooltipWindow
-        let hoveredLink = hoveredLink
         presenter = HoveredLinkTooltipPresenter(hostView: hostView, backgroundColor: .windowBackgroundColor,
                                                makeWindow: { tooltipWindow }, mouseLocation: { pointer.location },
-                                               currentHoveredURL: { hoveredLink.url },
                                                animate: animator.animate, move: animator.move, schedule: scheduler.schedule)
     }
 
@@ -605,10 +541,6 @@ private final class TooltipHarness {
         // Tests below index fade-out animations from zero.
         animator.forgetAnimations()
     }
-}
-
-private final class TooltipHoveredLink {
-    var url: URL?
 }
 
 private final class TooltipParentWindow: NSWindow {

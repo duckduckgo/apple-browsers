@@ -51,7 +51,6 @@ final class HoveredLinkTooltipPresenter {
     private let schedule: (TimeInterval, @escaping () -> Void) -> DispatchWorkItem
     private let mouseLocation: () -> NSPoint
     private let trailingInset: () -> CGFloat
-    private let currentHoveredURL: () -> URL?
     private let animate: (NSWindow, CGFloat, TimeInterval, @escaping () -> Void) -> Void
     private let move: (NSWindow, NSRect, TimeInterval) -> Void
     private var targetFrame: NSRect?
@@ -59,7 +58,6 @@ final class HoveredLinkTooltipPresenter {
     private var isMouseInside = true
     private var hasShownTooltip = false
     private var isFadingOut = false
-    private var shouldRestoreOnNextMove = false
     private var isInstantShowAllowed = false
     private var instantShowWorkItem: DispatchWorkItem?
     private var visibilityUpdateID = UUID()
@@ -73,7 +71,6 @@ final class HoveredLinkTooltipPresenter {
          makeWindow: () -> NSWindow = HoveredLinkTooltipPresenter.makeDefaultWindow,
          mouseLocation: @escaping () -> NSPoint = { NSEvent.mouseLocation },
          trailingInset: @escaping () -> CGFloat = { 0 },
-         currentHoveredURL: @escaping () -> URL? = { nil },
          animate: @escaping (NSWindow, CGFloat, TimeInterval, @escaping () -> Void) -> Void = HoveredLinkTooltipPresenter.animateDefault,
          move: @escaping (NSWindow, NSRect, TimeInterval) -> Void = HoveredLinkTooltipPresenter.moveDefault,
          schedule: @escaping (TimeInterval, @escaping () -> Void) -> DispatchWorkItem = HoveredLinkTooltipPresenter.scheduleDefault) {
@@ -81,7 +78,6 @@ final class HoveredLinkTooltipPresenter {
         self.window = makeWindow()
         self.mouseLocation = mouseLocation
         self.trailingInset = trailingInset
-        self.currentHoveredURL = currentHoveredURL
         self.animate = animate
         self.move = move
         self.schedule = schedule
@@ -174,8 +170,6 @@ final class HoveredLinkTooltipPresenter {
             return
         }
 
-        // A link is known: nothing is left to take from the page when the pointer moves.
-        shouldRestoreOnNextMove = false
         label.stringValue = url.absoluteString
         if window.isVisible {
             updatePosition()
@@ -189,20 +183,12 @@ final class HoveredLinkTooltipPresenter {
 
     /// Nothing to show, hide or restore: pointer events can't change anything and may be skipped.
     var isIdle: Bool {
-        hoveredURL == nil && isMouseInside && !shouldRestoreOnNextMove && !window.isVisible
-    }
-
-    /// The window was deactivated: hide and forget the link. The page reports link changes only, so when the pointer
-    /// is still on the same link after the window becomes active again, the next move takes it from the page.
-    func windowDidResignKey() {
-        reset()
-        shouldRestoreOnNextMove = true
+        hoveredURL == nil && isMouseInside && !window.isVisible
     }
 
     func reset() {
         cancelPendingUpdates()
         isInstantShowAllowed = false
-        shouldRestoreOnNextMove = false
         instantShowWorkItem?.cancel()
         instantShowWorkItem = nil
         hoveredURL = nil
@@ -271,14 +257,8 @@ final class HoveredLinkTooltipPresenter {
     }
 
     func mouseDidMove() {
-        let isReturning = !isMouseInside || shouldRestoreOnNextMove
-        shouldRestoreOnNextMove = false
+        let isReturning = !isMouseInside
         isMouseInside = true
-        // The page reports only link changes. After the URL was forgotten (window deactivated) or the pointer came
-        // back from a view that doesn't belong to the page (inspector) onto the same link, nothing will report it again.
-        if isReturning, hoveredURL == nil {
-            hoveredURL = currentHoveredURL()
-        }
         if isReturning, hoveredURL != nil, !window.isVisible {
             // WebKit may still consider the same link hovered and send no new URL.
             // Give its hover update a chance to cancel a stale URL before restoring it.
@@ -326,10 +306,7 @@ final class HoveredLinkTooltipPresenter {
                 self?.updatePosition()
             })
         }
-        windowObservers.append(center.addObserver(forName: NSWindow.didResignKeyNotification, object: parent, queue: .main) { [weak self] _ in
-            self?.windowDidResignKey()
-        })
-        for name in [NSWindow.willCloseNotification, NSWindow.willMiniaturizeNotification] {
+        for name in [NSWindow.didResignKeyNotification, NSWindow.willCloseNotification, NSWindow.willMiniaturizeNotification] {
             windowObservers.append(center.addObserver(forName: name, object: parent, queue: .main) { [weak self] _ in
                 self?.reset()
             })

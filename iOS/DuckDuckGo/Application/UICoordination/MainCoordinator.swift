@@ -79,6 +79,7 @@ final class MainCoordinator {
     private let onboardingSearchExperienceSelectionHandler: OnboardingSearchExperienceSelectionHandler
     private let privacyStats: PrivacyStatsProviding
     private let daxGreetingActivity: DaxGreetingActivityStore
+    private let daxDialogs: DaxDialogs
     private let wideEvent: WideEventManaging
     private let voiceSessionStateManager: VoiceSessionStateProviding
 
@@ -152,6 +153,7 @@ final class MainCoordinator {
     ) throws {
         self.subscriptionManager = subscriptionManager
         self.featureFlagger = featureFlagger
+        self.daxDialogs = daxDialogs
         self.isFloatingUIFeatureEnabledForCurrentLaunch = featureFlagger.isFloatingUIFeatureEnabled()
         self.keyValueStore = keyValueStore
         self.darkReaderFeatureSettings = AppDarkReaderFeatureSettings(featureFlagger: featureFlagger,
@@ -690,6 +692,7 @@ final class MainCoordinator {
 
     func onForeground(isFirstForeground: Bool) {
         daxGreetingActivity.recordForegroundOpen()
+        daxDialogs.recordForegroundOpen()
         homePageConfiguration.handleAppForegrounded()
 
         // Apply tracker animation suppression based on launch source

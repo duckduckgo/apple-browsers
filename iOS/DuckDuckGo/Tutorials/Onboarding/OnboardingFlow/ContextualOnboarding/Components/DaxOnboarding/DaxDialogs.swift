@@ -28,6 +28,7 @@ import Combine
 import AIChat
 import os.log
 import Onboarding
+import Persistence
 
 protocol EntityProviding {
     
@@ -293,6 +294,9 @@ final class DaxDialogs: NewTabDialogSpecProvider, ContextualOnboardingLogic, Con
     private var entityProviding: EntityProviding
     private let variantManager: VariantManager
     private let launchOptionsHandler: LaunchOptionsHandler
+    let timeLimit: ContextualOnboardingTimeLimit
+    private let timeLimitReporter: OnboardingTimeLimitReporting
+    private let onboardingResumeStepStore: any KeyedStoring<OnboardingStoringKeys>
 
     private var nextHomeScreenMessageOverride: HomeScreenSpec?
     
@@ -314,12 +318,18 @@ final class DaxDialogs: NewTabDialogSpecProvider, ContextualOnboardingLogic, Con
          launchOptionsHandler: LaunchOptionsHandler = LaunchOptionsHandler(),
          onboardingSubscriptionPromotionHelper: OnboardingSubscriptionPromotionHelping = OnboardingSubscriptionPromotionHelper(),
          aiChatSettings: AIChatSettingsProvider = AIChatSettings(),
-         onboardingSearchExperienceProvider: OnboardingSearchExperienceProvider = OnboardingSearchExperience()
+         onboardingSearchExperienceProvider: OnboardingSearchExperienceProvider = OnboardingSearchExperience(),
+         timeLimit: ContextualOnboardingTimeLimit = ContextualOnboardingTimeLimit(),
+         timeLimitReporter: OnboardingTimeLimitReporting = OnboardingPixelReporter(subscriptionManager: AppDependencyProvider.shared.subscriptionManager),
+         onboardingResumeStepStore: any KeyedStoring<OnboardingStoringKeys> = KeyedStorage<OnboardingStoringKeys>(storage: UserDefaults.app)
     ) {
         self.settings = settings
         self.entityProviding = entityProviding
         self.variantManager = variantManager
         self.launchOptionsHandler = launchOptionsHandler
+        self.timeLimit = timeLimit
+        self.timeLimitReporter = timeLimitReporter
+        self.onboardingResumeStepStore = onboardingResumeStepStore
         self.onboardingSubscriptionPromotionHelper = onboardingSubscriptionPromotionHelper
         self.aiChatSettings = aiChatSettings
         self.onboardingSearchExperienceProvider = onboardingSearchExperienceProvider
@@ -437,8 +447,23 @@ final class DaxDialogs: NewTabDialogSpecProvider, ContextualOnboardingLogic, Con
     }
     
     func primeForUse() {
+        guard !timeLimit.endedByTimeLimit else { return }
         settings.isDismissed = false
         isDismissedPublisher.send(false)
+    }
+
+    func recordForegroundOpen() {
+        guard isEnabled else { return }
+        timeLimit.recordAppOpen()
+        checkTimeLimit()
+    }
+
+    private func checkTimeLimit() {
+        guard isEnabled, let reason = timeLimit.reachedLimit() else { return }
+        timeLimit.endedByTimeLimit = true
+        OnboardingResumeCheckpointStore.clearAll(in: onboardingResumeStepStore)
+        dismiss()
+        timeLimitReporter.measureTimeLimitReached(reason)
     }
 
     func enableAddFavoriteFlow() {
@@ -601,7 +626,7 @@ final class DaxDialogs: NewTabDialogSpecProvider, ContextualOnboardingLogic, Con
     }
 
     func nextBrowsingMessageIfShouldShow(for privacyInfo: PrivacyInfo) -> BrowsingSpec? {
-
+        checkTimeLimit()
         let message = nextBrowsingMessageExperiment(privacyInfo: privacyInfo)
         if message != nil {
             lastURLDaxDialogReturnedFor = privacyInfo.url
@@ -667,6 +692,7 @@ final class DaxDialogs: NewTabDialogSpecProvider, ContextualOnboardingLogic, Con
     }
 
     func nextHomeScreenMessageNew() -> HomeScreenSpec? {
+        checkTimeLimit()
         // Reset the last browsing information when opening a new tab so loading the previous website won't show again the Dax dialog
         clearedBrowserData()
 

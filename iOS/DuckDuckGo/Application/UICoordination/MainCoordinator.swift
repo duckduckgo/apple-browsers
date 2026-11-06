@@ -101,6 +101,7 @@ final class MainCoordinator {
     private var webExtensionLoadTask: Task<Void, Never>?
     private var isWebExtensionLoadPending = false
     private var protectedDataCancellable: AnyCancellable?
+    private var onboardingTimeLimitCancellable: AnyCancellable?
     private var pendingProtectedDataWork: [() -> Void] = []
     private var privacyConfigurationManager: PrivacyConfigurationManaging?
     private let onboardingManager: OnboardingFlowManaging
@@ -348,6 +349,14 @@ final class MainCoordinator {
                                         promoCoordinationService: promoCoordinationService,
                                         usageContextProvider: usageContextProvider,
                                         promptExposureReporter: promptExposureReporter)
+
+        onboardingTimeLimitCancellable = daxDialogs.isDismissedPublisher
+            .filter { [weak daxDialogs] isDismissed in
+                isDismissed && daxDialogs?.timeLimit.endedByTimeLimit == true
+            }
+            .sink { [weak controller] _ in
+                controller?.endContextualOnboardingAfterTimeLimit()
+            }
 
         setupWebExtensions(privacyConfigurationManager: privacyConfigurationManager)
 

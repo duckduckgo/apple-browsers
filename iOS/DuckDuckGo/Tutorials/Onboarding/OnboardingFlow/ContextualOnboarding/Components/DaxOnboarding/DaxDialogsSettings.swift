@@ -177,7 +177,7 @@ final class ContextualOnboardingTimeLimit {
     }
 
     private func remoteLimit(for key: String) -> Int? {
-        guard let json = privacyConfigurationManager.privacyConfig.settings(for: ContextualOnboardingSubfeature.timeLimit),
+        guard let json = privacyConfigurationManager.privacyConfig.settings(for: iOSBrowserConfigSubfeature.contextualOnboardingTimeLimit),
               let data = json.data(using: .utf8),
               let dictionary = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
               let number = dictionary[key] as? NSNumber,

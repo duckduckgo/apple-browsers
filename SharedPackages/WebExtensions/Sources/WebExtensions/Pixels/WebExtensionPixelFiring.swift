@@ -94,6 +94,7 @@ public enum WebExtensionPixelEvent {
     case updateDownloadFailed(extension: WebExtensionPixelExtension, outcome: WebExtensionUpdateDownloadFailure)
     case updateVerificationFailed(extension: WebExtensionPixelExtension, outcome: WebExtensionUpdateVerificationFailure)
     case updateVerified(extension: WebExtensionPixelExtension)
+    /// A fresh install; updates aren't reported.
     case installed(extension: WebExtensionPixelExtension)
     case installError(extension: WebExtensionPixelExtension, error: Error)
     case uninstalled(extension: WebExtensionPixelExtension)
@@ -146,6 +147,13 @@ public enum WebExtensionPixelEvent {
     /// How many distinct missing APIs a catalog extension used, and Chrome pages it tried to open,
     /// since launch, with its version. Fired once a day.
     case apiCompatibilityGaps(extension: ExtensionsCatalogSubfeature, version: String, missingAPICount: Int, unsupportedURLCount: Int)
+
+    case enabled(extension: WebExtensionPixelExtension)
+    case disabled(extension: WebExtensionPixelExtension)
+    case remotelyDisabled(extension: WebExtensionPixelExtension)
+    case retained14Days(extension: WebExtensionPixelExtension)
+    case churned14Days(extension: WebExtensionPixelExtension)
+    case installedCount(installed: Int, enabled: Int)
 }
 
 /// A bounded summary of existing health-monitor evidence, not proof of document initialization or all-tab recovery.
@@ -343,7 +351,8 @@ public struct CPMWebExtensionPixelMetadata: Equatable, Sendable {
              .adBlockingScriptletsNotFetched, .embeddedInstalled, .embeddedUpgraded,
              .embeddedInstallError, .scriptletFetchSuccess, .scriptletFetchError,
              .scriptletValidationError, .scriptletInstalled, .scriptletInstallError,
-             .defaultPasswordManagerSet, .bitwardenDailyActive, .apiCompatibilityGaps:
+             .defaultPasswordManagerSet, .bitwardenDailyActive, .apiCompatibilityGaps,
+             .enabled, .disabled, .remotelyDisabled, .retained14Days, .churned14Days, .installedCount:
             return nil
         }
     }

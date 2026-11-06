@@ -91,7 +91,7 @@
         "parameters": ["appVersion", "pixelSource", "channel"]
     },
     "m_mac_web_extension_installed": {
-        "description": "Fires when a web extension is successfully installed.",
+        "description": "Fires when a web extension is successfully installed. Updates of an installed extension don't fire it.",
         "owners": ["tomasstrba"],
         "triggers": ["other"],
         "suffixes": ["daily_standard"],
@@ -784,5 +784,75 @@
             "background_load_error_after",
             "background_load_error_app_state"
         ]
+    },
+    "web_extension_enabled_macos": {
+        "description": "Fires when a disabled extension is turned back on, from Settings → Extensions or the debug menu. Bundled extensions never fire it.",
+        "owners": ["ayoy"],
+        "triggers": ["user_interaction"],
+        "suffixes": ["daily_count"],
+        "parameters": ["appVersion", "pixelSource", "web_extension", "channel"]
+    },
+    "web_extension_disabled_macos": {
+        "description": "Fires when an enabled extension is turned off: by the user in Settings → Extensions or the debug menu, or by remote configuration, which also fires web_extension_remotely_disabled_macos. Bundled extensions never fire it.",
+        "owners": ["ayoy"],
+        "triggers": ["user_interaction", "feature_lifecycle"],
+        "suffixes": ["daily_count"],
+        "parameters": ["appVersion", "pixelSource", "web_extension", "channel"]
+    },
+    "web_extension_details_opened_macos": {
+        "description": "Fires when the user opens an installed extension's details from its menu in Settings → Extensions.",
+        "owners": ["ayoy"],
+        "triggers": ["user_interaction"],
+        "suffixes": ["daily_count"],
+        "parameters": ["appVersion", "pixelSource", "web_extension", "channel"]
+    },
+    "web_extension_get_clicked_macos": {
+        "description": "Fires when the user clicks Get on a catalog extension in Settings → Extensions, which opens its Chrome Web Store page.",
+        "owners": ["ayoy"],
+        "triggers": ["user_interaction"],
+        "suffixes": ["daily_count"],
+        "parameters": ["appVersion", "pixelSource", "web_extension", "channel"]
+    },
+    "web_extension_publisher_link_clicked_macos": {
+        "description": "Fires when the user clicks an extension's publisher in Settings → Extensions, which opens the publisher's site.",
+        "owners": ["jleandroperez"],
+        "triggers": ["user_interaction"],
+        "suffixes": ["daily_count"],
+        "parameters": ["appVersion", "pixelSource", "web_extension", "channel"]
+    },
+    "web_extension_retained_14d_macos": {
+        "description": "Fires once per Chrome Web Store installation, on the first tab switch or page navigation at least 14 days after it was installed, when the extension is still installed and enabled. Together with web_extension_churned_14d_macos it covers every installation made while the store catalog was available, so retained / (retained + churned) is the 14-day retention rate. Updates keep the original install date.",
+        "owners": ["ayoy"],
+        "triggers": ["user_interaction", "page_load"],
+        "suffixes": [],
+        "parameters": ["appVersion", "pixelSource", "web_extension", "channel"]
+    },
+    "web_extension_churned_14d_macos": {
+        "description": "Fires once per Chrome Web Store installation, on the first tab switch or page navigation at least 14 days after it was installed, when the extension was removed or is turned off, including by remote configuration. See web_extension_retained_14d_macos.",
+        "owners": ["ayoy"],
+        "triggers": ["user_interaction", "page_load"],
+        "suffixes": [],
+        "parameters": ["appVersion", "pixelSource", "web_extension", "channel"]
+    },
+    "web_extension_remotely_disabled_macos": {
+        "description": "Fires when remote configuration (extensionManagement disabledExtensionIds, or a catalog extension's feature flag) turns off an installed, enabled extension. The user can't turn it back on while it stays listed.",
+        "owners": ["ayoy"],
+        "triggers": ["feature_lifecycle"],
+        "suffixes": ["daily_count"],
+        "parameters": ["appVersion", "pixelSource", "web_extension", "channel"]
+    },
+    "web_extension_installed_count_macos": {
+        "description": "Fires once a day, on the first tab switch or page navigation, while the Chrome Web Store catalog is available, with how many Chrome Web Store extensions are installed and how many of those are enabled. Bundled extensions are not counted. Every device that can install from the store reports, zero included, so it is the denominator for adoption.",
+        "owners": ["ayoy"],
+        "triggers": ["user_interaction", "page_load"],
+        "suffixes": ["daily"],
+        "parameters": ["appVersion", "pixelSource", "web_extension_count", "web_extension_enabled_count", "channel"]
+    },
+    "web_extension_toolbar_clicked_macos": {
+        "description": "Fires when the user clicks an extension's toolbar button and the click performs its action, such as opening its popup. A click that closes the open popup, or on a disabled action, doesn't fire it.",
+        "owners": ["ayoy"],
+        "triggers": ["user_interaction"],
+        "suffixes": ["daily_count"],
+        "parameters": ["appVersion", "pixelSource", "web_extension", "channel"]
     }
 }

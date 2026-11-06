@@ -385,21 +385,45 @@ final class SyncPromoManagerTests: XCTestCase {
 
     // MARK: - Pixels
 
+    private let expectedPixelSources: [SyncPromoManager.Touchpoint: String] = [
+        .bookmarks: "bookmarks",
+        .passwords: "passwords",
+        .dataImport: "data_import",
+        .aiChat: "ai_chat",
+        .bookmarksAnotherDevice: "bookmarks_multi_device",
+        .passwordsAnotherDevice: "passwords_multi_device"
+    ]
+
     func testDismissPromoFiresDismissedPixelWithTouchpointAndReason() {
         let syncPromoManager = SyncPromoManager(syncService: syncService,
                                                 pixelFiring: pixelKitMock)
 
-        for touchpoint in [SyncPromoManager.Touchpoint.bookmarks, .passwords, .dataImport, .aiChat, .bookmarksAnotherDevice, .passwordsAnotherDevice] {
+        for (touchpoint, source) in expectedPixelSources {
             let countBefore = pixelKitMock.actualFireCalls.count
 
             syncPromoManager.dismissPromoFor(touchpoint, reason: .userTapped)
 
             XCTAssertEqual(pixelKitMock.actualFireCalls.count, countBefore + 1)
-            XCTAssertEqual(pixelKitMock.actualFireCalls.last?.pixel.name, Pixel.Event.syncPromoDismissed.name)
+            XCTAssertEqual(pixelKitMock.actualFireCalls.last?.pixel.name, "sync_promotion_dismissed")
             XCTAssertEqual(pixelKitMock.actualFireCalls.last?.additionalParameters, [
-                "source": touchpoint.rawValue,
-                "reason": SyncPromoManager.DismissalReason.userTapped.rawValue
+                "source": source,
+                "reason": "user_tapped"
             ])
+        }
+    }
+
+    func testRecordPromoConfirmedFiresConfirmedPixelWithTouchpointSource() {
+        let syncPromoManager = SyncPromoManager(syncService: syncService,
+                                                pixelFiring: pixelKitMock)
+
+        for (touchpoint, source) in expectedPixelSources {
+            let countBefore = pixelKitMock.actualFireCalls.count
+
+            syncPromoManager.recordPromoConfirmedFor(touchpoint)
+
+            XCTAssertEqual(pixelKitMock.actualFireCalls.count, countBefore + 1)
+            XCTAssertEqual(pixelKitMock.actualFireCalls.last?.pixel.name, "sync_promotion_confirmed")
+            XCTAssertEqual(pixelKitMock.actualFireCalls.last?.additionalParameters, ["source": source])
         }
     }
 

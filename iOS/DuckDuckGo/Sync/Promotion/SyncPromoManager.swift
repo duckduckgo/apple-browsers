@@ -69,8 +69,8 @@ final class SyncPromoManager: SyncPromoManaging {
         case passwords
         case dataImport = "data_import"
         case aiChat = "ai_chat"
-        case bookmarksAnotherDevice = "bookmarks_another_device"
-        case passwordsAnotherDevice = "passwords_another_device"
+        case bookmarksAnotherDevice = "bookmarks_multi_device"
+        case passwordsAnotherDevice = "passwords_multi_device"
     }
 
     enum DismissalReason: String {
@@ -283,6 +283,8 @@ final class SyncPromoManager: SyncPromoManaging {
         case .dataImport, .aiChat, .bookmarksAnotherDevice, .passwordsAnotherDevice:
             break
         }
+
+        pixelFiring?.fire(Pixel.Event.syncPromoConfirmed, options: .parameters(["source": touchpoint.rawValue]))
     }
 
     func dismissPromoFor(_ touchpoint: Touchpoint, reason: DismissalReason) {

@@ -38,6 +38,7 @@ protocol AutofillHeaderViewFactoryProtocol: AnyObject {
 final class AutofillHeaderViewFactory: AutofillHeaderViewFactoryProtocol {
     
     weak var delegate: AutofillHeaderViewDelegate?
+    private let pixelFiring: (any PixelKitFiring)?
     
     enum ViewType {
         case syncPromo(SyncPromoManager.Touchpoint, SyncPromoManager.Design)
@@ -47,8 +48,9 @@ final class AutofillHeaderViewFactory: AutofillHeaderViewFactoryProtocol {
         case extensionPromo
     }
     
-    init(delegate: AutofillHeaderViewDelegate?) {
+    init(delegate: AutofillHeaderViewDelegate?, pixelFiring: (any PixelKitFiring)? = PixelKit.shared) {
         self.delegate = delegate
+        self.pixelFiring = pixelFiring
     }
     
     func makeHeaderView(for type: ViewType) -> UIViewController {
@@ -78,7 +80,7 @@ final class AutofillHeaderViewFactory: AutofillHeaderViewFactoryProtocol {
             }
         ))
         
-        PixelKit.fire(Pixel.Event.syncPromoDisplayed, options: .parameters(["source": touchpointType.rawValue]))
+        pixelFiring?.fire(Pixel.Event.syncPromoDisplayed, options: .parameters(["source": touchpointType.rawValue]))
         
         let hostingController = UIHostingController(rootView: headerView)
         hostingController.view.backgroundColor = .clear
@@ -98,6 +100,8 @@ final class AutofillHeaderViewFactory: AutofillHeaderViewFactoryProtocol {
                 delegate?.handleDismissAction(for: .syncAnotherDevicePromo)
             }
         )
+
+        pixelFiring?.fire(Pixel.Event.syncPromoDisplayed, options: .parameters(["source": SyncPromoManager.Touchpoint.passwordsAnotherDevice.rawValue]))
 
         let hostingController = UIHostingController(rootView: headerView)
         hostingController.view.backgroundColor = .clear

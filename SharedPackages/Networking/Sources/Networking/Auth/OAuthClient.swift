@@ -84,7 +84,7 @@ public enum AuthTokensCachePolicy: CustomStringConvertible, Equatable {
     case localValid
     /// A refreshed token
     case localForceRefresh
-    /// Like `.localValid`,  if doesn't exist create a new one
+    /// Like `.localValid`, but creates a new account when no token is stored or the server rejects its refresh
     case createIfNeeded
 
     public var description: String {
@@ -113,7 +113,8 @@ public protocol OAuthClient {
     /// - `.local`: Returns what's in the storage, as it is, throws an error if no token is available
     /// - `.localValid`: Returns what's in the storage, refreshes it if needed. throws an error if no token is available
     /// - `.localForceRefresh`: Returns what's in the storage but forces a refresh first. throws an error if no refresh token is available.
-    /// - `.createIfNeeded`: Returns what's in the storage, if the stored token is expired refreshes it, if not token is available creates a new account/token
+    /// - `.createIfNeeded`: Returns what's in the storage, if the stored token is expired refreshes it. Creates a new account/token when no token is stored,
+    ///   or when the server rejects the stored token's refresh (`OAuthClientError.invalidTokenRequest` or `.unknownAccount`); any other refresh error is thrown.
     /// All options store new or refreshed tokens via the tokensStorage
     /// - Parameter trigger: What initiated this token request, surfaced on the refresh wide event.
     func getTokens(policy: AuthTokensCachePolicy, trigger: TokenRefreshTrigger) async throws -> TokenContainer
@@ -355,8 +356,8 @@ final public actor DefaultOAuthClient: @preconcurrency OAuthClient {
 
             do {
                 return try await getTokens(policy: .localValid, trigger: .createIfNeeded)
-            } catch {
-                Logger.OAuthClient.log("Local token not found, creating a new account")
+            } catch OAuthClientError.missingTokenContainer, OAuthClientError.invalidTokenRequest, OAuthClientError.unknownAccount {
+                Logger.OAuthClient.log("No usable current token, creating a new account")
                 do {
                     let tokenContainer = try await createAccount()
                     try tokenStorage.saveTokenContainer(tokenContainer)

@@ -28,14 +28,14 @@ public final class AssistedOptOutSession: ObservableObject, OptOutAssistanceObse
     public let recordCount: Int
     public let steps: AssistedOptOutSteps
 
-    @Published public private(set) var phase: AssistedAttemptPhase = .queued
+    @Published public private(set) var phase: AssistedAttemptPhase = .ready
     @Published public private(set) var currentStepIndex = 0
     @Published public private(set) var webView: WKWebView?
 
     /// Kept up to date by the window, so the dashboard can tell "needs you" from "you're in control".
     public var isWindowKey = false
 
-    var onWebViewCreated: ((AssistedOptOutSession) -> Void)?
+    var onBeginRequested: ((AssistedOptOutSession) -> Void)?
     var onUserTurnStarted: ((AssistedOptOutSession) -> Void)?
     var onCancelRequested: ((AssistedOptOutSession) -> Void)?
 
@@ -65,7 +65,14 @@ public final class AssistedOptOutSession: ObservableObject, OptOutAssistanceObse
                               step: step)
     }
 
-    /// Closing the window ends the attempt; the opt-out goes back to waiting for the user.
+    /// Starts the attempt from the window's intro screen.
+    public func begin() {
+        guard phase == .ready, !isCancelled else { return }
+        phase = .queued
+        onBeginRequested?(self)
+    }
+
+    /// Stopping ends the attempt; the opt-out goes back to waiting for the user.
     public func requestCancel() {
         guard !isCancelled, phase != .submitted else { return }
         isCancelled = true
@@ -84,7 +91,6 @@ public final class AssistedOptOutSession: ObservableObject, OptOutAssistanceObse
 
     public func attemptDidCreate(webView: WKWebView) {
         self.webView = webView
-        onWebViewCreated?(self)
     }
 
     public func attemptWillRun(_ action: Action) {

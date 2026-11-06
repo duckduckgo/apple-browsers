@@ -96,17 +96,16 @@ public final class AssistedOptOutQueue {
         guard config.isEnabled else { return [] }
 
         let live = activeSessions.map(\.dashboardItem)
+        let openBrokerIds = Set(sessions.keys.map(\.brokerId))
         let waiting: [AssistedOptOut]
         do {
-            waiting = try candidateOptOuts(config: config)
-                .filter { $0.job.historyEvents.latest?.type == .optOutAwaitingUserAssistance }
-                .compactMap { data, job in
-                    guard let id = Self.id(for: job), sessions[id] == nil else { return nil }
-                    return AssistedOptOut(id: id.description,
-                                          dataBroker: .init(name: data.dataBroker.name, url: data.dataBroker.url),
-                                          recordCount: Self.recordCount(in: data),
-                                          state: .waiting)
-                }
+            let groups = try waitingOptOutsByBroker(config: config).filter { !openBrokerIds.contains($0.brokerId) }
+            waiting = groups.map { group in
+                AssistedOptOut(id: group.ids[0].description,
+                               dataBroker: group.broker,
+                               recordCount: group.ids.count,
+                               state: .waiting)
+            }
         } catch {
             Logger.dataBrokerProtection.error("Assisted opt-outs fetch failed: \(error.localizedDescription, privacy: .public)")
             waiting = []
@@ -116,17 +115,15 @@ public final class AssistedOptOutQueue {
 
     // MARK: - Attempts
 
-    /// Starts the attempt, or shows it if it's already running. Only one attempt runs at a time, so starting another
-    /// opt-out while one is running does nothing.
+    /// Opens the attempt's window on its intro screen, or shows it if it's already open. Only one attempt is open at a
+    /// time, so starting another opt-out meanwhile does nothing.
     public func start(id: AssistedOptOutID) {
         if let session = sessions[id] {
-            if session.webView != nil {
-                presenter?.present(session)
-            }
+            presenter?.present(session)
             return
         }
-        guard runningID == nil, queuedIDs.isEmpty else {
-            Logger.dataBrokerProtection.log("Ignoring assisted opt-out start while another attempt runs")
+        guard !sessions.values.contains(where: { $0.phase != .submitted }) else {
+            Logger.dataBrokerProtection.log("Ignoring assisted opt-out start while another attempt is open")
             return
         }
         let config = self.config
@@ -135,15 +132,21 @@ public final class AssistedOptOutQueue {
             Logger.dataBrokerProtection.error("Can't start assisted opt-out \(id.description, privacy: .public)")
             return
         }
+        let recordCount = (try? waitingOptOutsByBroker(config: config).first { $0.brokerId == id.brokerId }?.ids.count) ?? 1
         let session = AssistedOptOutSession(id: id,
                                             broker: .init(name: data.dataBroker.name, url: data.dataBroker.url),
-                                            recordCount: Self.recordCount(in: data),
+                                            recordCount: max(recordCount, 1),
                                             steps: AssistedOptOutSteps(actions: actions))
-        session.onWebViewCreated = { [weak self] in self?.presenter?.present($0) }
+        session.onBeginRequested = { [weak self] in self?.enqueue($0) }
         session.onUserTurnStarted = { [weak self] in self?.presenter?.userTurnStarted(in: $0) }
         session.onCancelRequested = { [weak self] in self?.cancel($0.id) }
         sessions[id] = session
-        queuedIDs.append(id)
+        presenter?.present(session)
+    }
+
+    private func enqueue(_ session: AssistedOptOutSession) {
+        guard sessions[session.id] === session else { return }
+        queuedIDs.append(session.id)
         runNextIfIdle()
     }
 
@@ -155,6 +158,7 @@ public final class AssistedOptOutQueue {
         } else {
             queuedIDs.removeAll { $0 == id }
             sessions[id] = nil
+            presenter?.dismiss(session)
         }
     }
 
@@ -242,12 +246,23 @@ public final class AssistedOptOutQueue {
         }
     }
 
-    nonisolated static func id(for job: OptOutJobData) -> AssistedOptOutID? {
-        job.extractedProfile.id.map { AssistedOptOutID(brokerId: job.brokerId, profileQueryId: job.profileQueryId, extractedProfileId: $0) }
+    private func waitingOptOutsByBroker(config: UserAssistanceConfig) throws
+        -> [(brokerId: Int64, broker: AssistedOptOut.DataBroker, ids: [AssistedOptOutID])] {
+        var groups: [(brokerId: Int64, broker: AssistedOptOut.DataBroker, ids: [AssistedOptOutID])] = []
+        for (data, job) in try candidateOptOuts(config: config)
+        where job.historyEvents.latest?.type == .optOutAwaitingUserAssistance {
+            guard let id = Self.id(for: job) else { continue }
+            if let index = groups.firstIndex(where: { $0.brokerId == id.brokerId }) {
+                groups[index].ids.append(id)
+            } else {
+                groups.append((id.brokerId, .init(name: data.dataBroker.name, url: data.dataBroker.url), [id]))
+            }
+        }
+        return groups
     }
 
-    static func recordCount(in data: BrokerProfileQueryData) -> Int {
-        max(data.optOutJobData.filter { $0.extractedProfile.removedDate == nil && !$0.isRemovedByUser }.count, 1)
+    nonisolated static func id(for job: OptOutJobData) -> AssistedOptOutID? {
+        job.extractedProfile.id.map { AssistedOptOutID(brokerId: job.brokerId, profileQueryId: job.profileQueryId, extractedProfileId: $0) }
     }
 }
 

@@ -117,6 +117,8 @@ final class UserAssistanceTests: XCTestCase {
     // MARK: - Dashboard model
 
     func testStateMapping() {
+        XCTAssertEqual(AssistedOptOut.State(phase: .ready, isWindowKey: false), .needsUser)
+        XCTAssertEqual(AssistedOptOut.State(phase: .ready, isWindowKey: true), .userInControl)
         XCTAssertEqual(AssistedOptOut.State(phase: .queued, isWindowKey: true), .waiting)
         XCTAssertEqual(AssistedOptOut.State(phase: .agentInControl, isWindowKey: true), .agentInControl)
         XCTAssertEqual(AssistedOptOut.State(phase: .userTurn, isWindowKey: false), .needsUser)
@@ -157,6 +159,8 @@ final class UserAssistanceTests: XCTestCase {
                                             broker: .init(name: "Broker", url: "broker.com"), recordCount: 1,
                                             steps: AssistedOptOutSteps(actions: actions))
         session.onUserTurnStarted = { _ in userTurns += 1 }
+        XCTAssertEqual(session.dashboardItem.state, .needsUser)
+        session.begin()
         XCTAssertEqual(session.dashboardItem.state, .waiting)
 
         session.attemptWillRun(actions[1])
@@ -262,28 +266,31 @@ final class UserAssistanceTests: XCTestCase {
     }
 
     @MainActor
-    func testStartingAnotherOptOutWhileOneRunsIsIgnored() throws {
-        let (dependencies, database) = makeDependencies(optOutEvents: [.optOutAwaitingUserAssistance])
-        settings.userAssistanceEnabledBrokersOverride = ["broker.com"]
-        var data = try XCTUnwrap(database.brokerProfileQueryDataToReturn.first)
-        let broker = DataBroker(id: 1, name: "Broker", url: "broker.com", steps: [Step(type: .optOut, actions: [])], version: "1.0",
-                                schedulingConfig: .mock, optOutUrl: "", eTag: "", removedAt: nil)
-        let first = try XCTUnwrap(data.optOutJobData.first)
-        let second = OptOutJobData(brokerId: 1, profileQueryId: 1, createdDate: Date(), preferredRunDate: first.preferredRunDate,
-                                   historyEvents: first.historyEvents.map {
-                                       HistoryEvent(extractedProfileId: 2, brokerId: 1, profileQueryId: 1, type: $0.type, date: $0.date)
-                                   },
-                                   attemptCount: 0, extractedProfile: ExtractedProfile(id: 2, name: "Other", profileUrl: "def"))
-        data = BrokerProfileQueryData(dataBroker: broker, profileQuery: data.profileQuery, scanJobData: data.scanJobData,
-                                      optOutJobData: [first, second])
-        database.brokerProfileQueryDataToReturn = [data]
+    func testStartingAnotherOptOutWhileOneIsOpenIsIgnored() throws {
+        let (dependencies, _) = try makeDependenciesWithTwoRecords()
         let queue = AssistedOptOutQueue(dependencies: dependencies, runningAttempts: RunningAssistedOptOuts())
 
         queue.start(id: AssistedOptOutID(brokerId: 1, profileQueryId: 1, extractedProfileId: 1))
         queue.start(id: AssistedOptOutID(brokerId: 1, profileQueryId: 1, extractedProfileId: 2))
 
         XCTAssertEqual(queue.activeSessions.map(\.id.description), ["1-1-1"])
+        XCTAssertEqual(queue.activeSessions.first?.phase, .ready)
         queue.cancelAll()
+    }
+
+    @MainActor
+    func testNeedsYouShowsOneWaitingRowPerBrokerAndHidesItWhileTheBrokerIsOpen() throws {
+        let (dependencies, _) = try makeDependenciesWithTwoRecords()
+        let queue = AssistedOptOutQueue(dependencies: dependencies, runningAttempts: RunningAssistedOptOuts())
+        let broker = AssistedOptOut.DataBroker(name: "Broker", url: "broker.com")
+
+        XCTAssertEqual(queue.assistedOptOuts(), [AssistedOptOut(id: "1-1-1", dataBroker: broker, recordCount: 2, state: .waiting)])
+
+        queue.start(id: AssistedOptOutID(brokerId: 1, profileQueryId: 1, extractedProfileId: 1))
+        XCTAssertEqual(queue.assistedOptOuts(), [AssistedOptOut(id: "1-1-1", dataBroker: broker, recordCount: 2, state: .needsUser)])
+
+        queue.cancelAll()
+        XCTAssertEqual(queue.assistedOptOuts().map(\.state), [.waiting])
     }
 
     func testWhenAnAssistedAttemptIsRunning_thenRegularQueueLeavesItsOptOutAloneEvenWithUserAssistanceOff() async {
@@ -313,6 +320,9 @@ final class UserAssistanceTests: XCTestCase {
         let id = AssistedOptOutID(brokerId: 1, profileQueryId: 1, extractedProfileId: 1)
 
         queue.start(id: id)
+        XCTAssertFalse(running.contains(id))
+
+        try XCTUnwrap(queue.activeSessions.first).begin()
         XCTAssertTrue(running.contains(id))
 
         queue.cancel(id)
@@ -392,6 +402,23 @@ final class UserAssistanceTests: XCTestCase {
                                    scanJobData: data.scanJobData,
                                    optOutJobData: data.optOutJobData)
         ]
+        return (dependencies, database)
+    }
+
+    private func makeDependenciesWithTwoRecords() throws -> (MockBrokerProfileJobDependencies, MockDatabase) {
+        let (dependencies, database) = makeDependencies(optOutEvents: [.optOutAwaitingUserAssistance])
+        settings.userAssistanceEnabledBrokersOverride = ["broker.com"]
+        let data = try XCTUnwrap(database.brokerProfileQueryDataToReturn.first)
+        let broker = DataBroker(id: 1, name: "Broker", url: "broker.com", steps: [Step(type: .optOut, actions: [])], version: "1.0",
+                                schedulingConfig: .mock, optOutUrl: "", eTag: "", removedAt: nil)
+        let first = try XCTUnwrap(data.optOutJobData.first)
+        let second = OptOutJobData(brokerId: 1, profileQueryId: 1, createdDate: Date(), preferredRunDate: first.preferredRunDate,
+                                   historyEvents: first.historyEvents.map {
+                                       HistoryEvent(extractedProfileId: 2, brokerId: 1, profileQueryId: 1, type: $0.type, date: $0.date)
+                                   },
+                                   attemptCount: 0, extractedProfile: ExtractedProfile(id: 2, name: "Other", profileUrl: "def"))
+        database.brokerProfileQueryDataToReturn = [BrokerProfileQueryData(dataBroker: broker, profileQuery: data.profileQuery,
+                                                                          scanJobData: data.scanJobData, optOutJobData: [first, second])]
         return (dependencies, database)
     }
 

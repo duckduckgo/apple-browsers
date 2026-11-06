@@ -96,6 +96,7 @@ public struct AssistedOptOutID: Hashable, Sendable, CustomStringConvertible {
 
 /// Where an assisted attempt is, from the user's point of view.
 public enum AssistedAttemptPhase: Equatable, Sendable {
+    case ready
     case queued
     case agentInControl
     case userTurn
@@ -105,6 +106,7 @@ public enum AssistedAttemptPhase: Equatable, Sendable {
 public extension AssistedOptOut.State {
     init(phase: AssistedAttemptPhase, isWindowKey: Bool) {
         switch phase {
+        case .ready: self = isWindowKey ? .userInControl : .needsUser
         case .queued: self = .waiting
         case .agentInControl: self = .agentInControl
         case .userTurn: self = isWindowKey ? .userInControl : .needsUser

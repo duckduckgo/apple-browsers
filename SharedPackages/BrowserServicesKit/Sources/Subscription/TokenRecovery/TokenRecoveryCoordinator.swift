@@ -69,3 +69,46 @@ public final class TokenRecoveryCoordinator {
         return TokenRecoveryReport(result: .notApplicable, attempts: attempts)
     }
 }
+
+/// What a token recovery did: its outcome and the result of each strategy that ran.
+public struct TokenRecoveryReport {
+
+    /// A strategy that ran and its result.
+    public struct Attempt {
+        /// How the strategy recovers the token container.
+        public let method: TokenRecoveryMethod
+        /// The strategy's result.
+        public let result: TokenRecoveryResult
+
+        public init(method: TokenRecoveryMethod, result: TokenRecoveryResult) {
+            self.method = method
+            self.result = result
+        }
+    }
+
+    /// The outcome of the recovery.
+    public let result: TokenRecoveryResult
+    /// The strategies that ran, in order.
+    public let attempts: [Attempt]
+
+    /// - Parameters:
+    ///   - result: The outcome of the recovery.
+    ///   - attempts: The strategies that ran, in order.
+    public init(result: TokenRecoveryResult, attempts: [Attempt]) {
+        self.result = result
+        self.attempts = attempts
+    }
+
+    /// The method of the strategy that recovered the token container, or nil when none did.
+    public var recoveredBy: TokenRecoveryMethod? {
+        guard case .recovered = result else { return nil }
+        return attempts.last?.method
+    }
+
+    /// The result of the strategy using `method`.
+    /// - Parameter method: The recovery method.
+    /// - Returns: The result, or nil when no strategy using `method` ran.
+    public func result(of method: TokenRecoveryMethod) -> TokenRecoveryResult? {
+        attempts.last { $0.method == method }?.result
+    }
+}

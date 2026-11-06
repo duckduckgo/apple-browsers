@@ -56,6 +56,7 @@ protocol ContextualDaxDialogStatusProvider {
 protocol ContextualOnboardingLogic {
     var shouldShowPrivacyButtonPulse: Bool { get }
     var shouldShowFireButtonPulse: Bool { get }
+    func checkTimeLimit()
 
     var isShowingFireDialog: Bool { get }
     var isShowingSearchSuggestions: Bool { get }
@@ -297,6 +298,7 @@ final class DaxDialogs: NewTabDialogSpecProvider, ContextualOnboardingLogic, Con
     let timeLimit: ContextualOnboardingTimeLimit
     private let timeLimitReporter: OnboardingTimeLimitReporting
     private let onboardingResumeStepStore: any KeyedStoring<OnboardingStoringKeys>
+    private let tutorialSettings: TutorialSettings
 
     private var nextHomeScreenMessageOverride: HomeScreenSpec?
     
@@ -321,7 +323,8 @@ final class DaxDialogs: NewTabDialogSpecProvider, ContextualOnboardingLogic, Con
          onboardingSearchExperienceProvider: OnboardingSearchExperienceProvider = OnboardingSearchExperience(),
          timeLimit: ContextualOnboardingTimeLimit = ContextualOnboardingTimeLimit(),
          timeLimitReporter: OnboardingTimeLimitReporting = OnboardingPixelReporter(subscriptionManager: AppDependencyProvider.shared.subscriptionManager),
-         onboardingResumeStepStore: any KeyedStoring<OnboardingStoringKeys> = KeyedStorage<OnboardingStoringKeys>(storage: UserDefaults.app)
+         onboardingResumeStepStore: any KeyedStoring<OnboardingStoringKeys> = KeyedStorage<OnboardingStoringKeys>(storage: UserDefaults.app),
+         tutorialSettings: TutorialSettings = DefaultTutorialSettings()
     ) {
         self.settings = settings
         self.entityProviding = entityProviding
@@ -330,6 +333,7 @@ final class DaxDialogs: NewTabDialogSpecProvider, ContextualOnboardingLogic, Con
         self.timeLimit = timeLimit
         self.timeLimitReporter = timeLimitReporter
         self.onboardingResumeStepStore = onboardingResumeStepStore
+        self.tutorialSettings = tutorialSettings
         self.onboardingSubscriptionPromotionHelper = onboardingSubscriptionPromotionHelper
         self.aiChatSettings = aiChatSettings
         self.onboardingSearchExperienceProvider = onboardingSearchExperienceProvider
@@ -458,10 +462,14 @@ final class DaxDialogs: NewTabDialogSpecProvider, ContextualOnboardingLogic, Con
         checkTimeLimit()
     }
 
-    private func checkTimeLimit() {
-        guard isEnabled, let reason = timeLimit.reachedLimit() else { return }
+    func checkTimeLimit() {
+        guard tutorialSettings.hasSeenOnboarding || onboardingResumeStepStore.resumeStep == .duckAIAnswerStep,
+              isEnabled, let reason = timeLimit.reachedLimit() else { return }
         timeLimit.endedByTimeLimit = true
-        OnboardingResumeCheckpointStore.clearAll(in: onboardingResumeStepStore)
+        if onboardingResumeStepStore.resumeStep == .duckAIAnswerStep {
+            tutorialSettings.hasSeenOnboarding = true
+            OnboardingResumeCheckpointStore.clearAll(in: onboardingResumeStepStore)
+        }
         dismiss()
         timeLimitReporter.measureTimeLimitReached(reason)
     }

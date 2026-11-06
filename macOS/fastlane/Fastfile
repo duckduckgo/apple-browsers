@@ -1,5 +1,6 @@
 # frozen_string_literal: true
 require_relative "spaceship_patch"
+require_relative "appstore_release_metadata"
 
 opt_out_usage
 fastlane_require 'httparty'
@@ -301,75 +302,66 @@ platform :mac do
 
   end
 
-  desc 'Fetches latest App Store version and uploads metadata to CDN'
+  # Publishes the App Store entries of release_metadata.json from the live version's phased release state.
+  #
+  # @option [Boolean] is_critical (default: keep the existing value) Whether the release is critical
+  # @option [Boolean] dry_run (default: false) Print the resulting file instead of uploading it
+  #
+  desc 'Publishes the App Store release metadata from the live version\'s phased release state'
   lane :upload_appstore_version_metadata do |options|
-    # Get latest App Store version using existing lane
-    version_info = fetch_appstore_version_info(options)
+    dry_run = options[:dry_run] == true || options[:dry_run].to_s == 'true'
+    is_critical = case options[:is_critical].to_s
+                  when 'true' then true
+                  when 'false' then false
+                  when '', 'unchanged' then nil
+                  else UI.user_error!("is_critical must be true, false or unchanged, not #{options[:is_critical]}")
+                  end
 
-    # Extract values from lane context
-    version = lane_context[SharedValues::LATEST_VERSION]
-    build_number = lane_context[SharedValues::LATEST_BUILD_NUMBER]
-    timestamp = Time.now.utc.strftime("%Y-%m-%dT%H:%M:%SZ")
-    is_critical = options[:is_critical] || false
+    release = fetch_live_appstore_release(options)
+    UI.message("App Store version: #{release[:version]} (#{release[:build_number]})")
+    UI.message("Phased release: #{release[:phase_state] || 'none'}, started #{release[:phase_start_date] || 'n/a'}")
+    UI.message("Is critical: #{is_critical.nil? ? 'unchanged' : is_critical}")
 
-    UI.message("App Store version: #{version}")
-    UI.message("App Store build: #{build_number}")
-    UI.message("Is critical: #{is_critical}")
-
-    # Generate metadata JSON
-    metadata = {
-      latest_appstore_version: {
-        latest_version: version,
-        build_number: build_number,
-        release_date: timestamp,
-        is_critical: is_critical
-      }
-    }
-
-    # Get S3 configuration from environment
     s3_bucket = ENV['RELEASE_BUCKET_NAME']
     s3_prefix = ENV['RELEASE_BUCKET_PREFIX']
-    cdn_path = ENV['CDN_PATH']
-
-    unless s3_bucket && s3_prefix
+    unless dry_run || (s3_bucket && s3_prefix)
       UI.user_error!("Missing required S3 configuration: RELEASE_BUCKET_NAME and RELEASE_BUCKET_PREFIX")
     end
+    UI.user_error!("Missing required CDN configuration: CDN_PATH") unless ENV['CDN_PATH']
+    s3_url = "s3://#{s3_bucket}/#{s3_prefix}/release_metadata.json"
+    cdn_url = "#{ENV['CDN_PATH']}release_metadata.json"
 
-    s3_path = "s3://#{s3_bucket}/#{s3_prefix}/"
+    existing_content = read_release_metadata(cdn_url)
+    existing_metadata = existing_content ? JSON.parse(existing_content) : {}
 
-    # Download existing metadata (if exists)
-    existing_metadata = {}
-    cdn_url = "#{cdn_path}release_metadata.json"
-
-    begin
-      UI.message("Checking for existing metadata at #{cdn_url}")
-      existing_content = sh("curl -fLSs '#{cdn_url}'", log: false)
-      existing_metadata = JSON.parse(existing_content)
-      UI.message("Found existing metadata with keys: #{existing_metadata.keys}")
-    rescue => e
-      UI.message("No existing metadata found, will create new file")
-      existing_metadata = {}
+    updated_metadata = begin
+      AppStoreReleaseMetadata.update(
+        existing_metadata,
+        version: release[:version],
+        build_number: release[:build_number],
+        phase_state: release[:phase_state],
+        phase_start_date: release[:phase_start_date],
+        is_critical: is_critical,
+        now: Time.now
+      )
+    rescue AppStoreReleaseMetadata::Error => e
+      UI.user_error!(e.message)
     end
 
-    # Replace the latest_appstore_version entry (this should overwrite any existing entry)
-    updated_metadata = existing_metadata.dup
-    updated_metadata['latest_appstore_version'] = metadata[:latest_appstore_version]
-
-    # Write metadata to file
-    File.write('release_metadata.json', JSON.pretty_generate(updated_metadata))
+    updated_content = JSON.pretty_generate(updated_metadata)
     UI.message("Generated metadata:")
-    UI.message(JSON.pretty_generate(updated_metadata))
+    UI.message(updated_content)
 
-    # Upload to S3
-    UI.message("Uploading release_metadata.json to S3...")
-    sh("aws s3 cp release_metadata.json '#{s3_path}release_metadata.json' --acl public-read")
-
-    UI.success("✅ Successfully updated macOS release metadata")
-    UI.message("Version: #{version}")
-    UI.message("Build: #{build_number}")
-    UI.message("Release Date: #{timestamp}")
-    UI.message("Is Critical: #{is_critical}")
-    UI.message("📍 Available at: #{cdn_url}")
+    if dry_run
+      UI.important("Dry run: not uploading release_metadata.json")
+    elsif updated_metadata == existing_metadata
+      UI.success("✅ release_metadata.json is already up to date")
+    else
+      File.write('release_metadata.json', updated_content)
+      sh("aws s3 cp release_metadata.json '#{s3_url}' --acl public-read")
+      UI.success("✅ Successfully updated macOS release metadata")
+      UI.message("📍 Available at: #{cdn_url}")
+    end
   end
 
   desc 'Creates a new Kechain to use on UI tests'
@@ -495,20 +487,46 @@ platform :mac do
     build_number
   end
 
-  # Gets the latest App Store version and build number for macOS
+  # Gets the live App Store version, build number and phased release state for macOS
   #
   # @option [String] username (default: nil) Your DDG Apple ID
-  # @option [Boolean] live (default: true) Whether to get live version or TestFlight version
   #
-  private_lane :fetch_appstore_version_info do |options|
+  private_lane :fetch_live_appstore_release do |options|
     app_store_build_number(
       api_key: get_api_key,
       username: get_username(options),
       platform: 'osx',
       live: true
     )
+    version = lane_context[SharedValues::LATEST_VERSION]
+    build_number = lane_context[SharedValues::LATEST_BUILD_NUMBER]
+
+    app_identifier = CredentialsManager::AppfileConfig.try_fetch_value(:app_identifier)
+    app = Spaceship::ConnectAPI::App.find(app_identifier)
+    live_version = app.get_live_app_store_version(platform: Spaceship::ConnectAPI::Platform::MAC_OS)
+    unless live_version&.version_string == version
+      UI.user_error!("The live version changed from #{version} while fetching its phased release, please try again")
+    end
+    phased_release = live_version.fetch_app_store_version_phased_release
+
+    {
+      version: version,
+      build_number: build_number,
+      phase_state: phased_release&.phased_release_state,
+      phase_start_date: phased_release&.start_date
+    }
   end
 
+  # Returns nil if the file doesn't exist, and fails on any other error so that a failed read can't drop
+  # the file's other entries.
+  def read_release_metadata(cdn_url)
+    UI.message("Reading existing metadata from #{cdn_url}")
+    response = HTTParty.get(cdn_url)
+    return response.body if response.code == 200
+    return nil if response.code == 404
+
+    UI.user_error!("Couldn't read #{cdn_url}: HTTP #{response.code}")
+  end
 
   # Updates version and build number in respective config files
   #

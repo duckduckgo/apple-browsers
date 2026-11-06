@@ -34,8 +34,6 @@ struct UserText {
     static let searchBarSearch = NSLocalizedString("searchBar.search", value: "Search", comment: "Generic placeholder for search fields")
 
     // MARK: - Web Extensions
-    static let chromeWebStoreDownloadTitle = NotLocalizedString("webExtensions.store.download.title", value: "Add Extension", comment: "Extension download window title")
-    static let chromeWebStoreDownloadMessage = NotLocalizedString("webExtensions.store.download.message", value: "Downloading and verifying extension…", comment: "Extension download progress message")
     static let chromeWebStoreRemoveTitle = NotLocalizedString("webExtensions.store.remove.title", value: "Remove “%@”?", comment: "Remove extension title; placeholder is the name")
     static let chromeWebStoreErrorTitle = NotLocalizedString("webExtensions.store.error.title", value: "Couldn’t Complete Extension Request", comment: "Extension operation error title")
     static let chromeWebStoreErrorMessage = NotLocalizedString("webExtensions.store.error.message", value: "Please check your connection and try again.", comment: "Extension operation error message")

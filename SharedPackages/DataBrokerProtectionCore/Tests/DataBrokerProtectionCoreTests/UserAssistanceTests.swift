@@ -341,6 +341,18 @@ final class UserAssistanceTests: XCTestCase {
         XCTAssertEqual(interruptedDatabase.optOutEvents.map(\.type), [.optOutAwaitingUserAssistance])
     }
 
+    @MainActor
+    func testWhenProfileQueryIsDeprecated_thenItsOptOutsStillEnterNeedsYou() throws {
+        settings.userAssistanceEnabledBrokersOverride = ["broker.com"]
+
+        let (due, dueDatabase) = try makeDependenciesWithDeprecatedQuery(optOutEvents: [.optOutRequested])
+        AssistedOptOutQueue(dependencies: due).refresh()
+        XCTAssertEqual(dueDatabase.optOutEvents.map(\.type), [.optOutAwaitingUserAssistance])
+
+        let (waiting, _) = try makeDependenciesWithDeprecatedQuery(optOutEvents: [.optOutAwaitingUserAssistance])
+        XCTAssertEqual(AssistedOptOutQueue(dependencies: waiting).assistedOptOuts().map(\.id), ["1-1-1"])
+    }
+
     // MARK: - Helpers
 
     private func makePrivacyConfig() throws -> PrivacyConfigurationMock {
@@ -366,6 +378,19 @@ final class UserAssistanceTests: XCTestCase {
                                    profileQuery: ProfileQuery(id: 1, firstName: "a", lastName: "b", city: "c", state: "d", birthYear: 1980),
                                    scanJobData: ScanJobData(brokerId: 1, profileQueryId: 1, preferredRunDate: Date(), historyEvents: []),
                                    optOutJobData: [optOut])
+        ]
+        return (dependencies, database)
+    }
+
+    private func makeDependenciesWithDeprecatedQuery(optOutEvents: [HistoryEvent.EventType]) throws -> (MockBrokerProfileJobDependencies, MockDatabase) {
+        let (dependencies, database) = makeDependencies(optOutEvents: optOutEvents)
+        let data = try XCTUnwrap(database.brokerProfileQueryDataToReturn.first)
+        database.brokerProfileQueryDataToReturn = [
+            BrokerProfileQueryData(dataBroker: data.dataBroker,
+                                   profileQuery: ProfileQuery(id: 1, firstName: "a", lastName: "b", city: "c", state: "d", birthYear: 1980,
+                                                              deprecated: true),
+                                   scanJobData: data.scanJobData,
+                                   optOutJobData: data.optOutJobData)
         ]
         return (dependencies, database)
     }

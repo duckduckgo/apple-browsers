@@ -221,7 +221,7 @@ public final class AssistedOptOutQueue {
 
     private func candidateOptOuts(config: UserAssistanceConfig) throws -> [(data: BrokerProfileQueryData, job: OptOutJobData)] {
         try dependencies.database.fetchActiveBrokerProfileQueryData()
-            .filter { config.isEnabled(forBrokerURL: $0.dataBroker.url) && !$0.dataBroker.isRemoved && !$0.profileQuery.deprecated
+            .filter { config.isEnabled(forBrokerURL: $0.dataBroker.url) && !$0.dataBroker.isRemoved
                 && !$0.dataBroker.performsOptOutWithinParent() }
             .flatMap { data in
                 data.optOutJobData

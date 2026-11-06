@@ -917,6 +917,9 @@ public enum WebExtensionsSubfeature: String, PrivacySubfeature {
     case embeddedRollout
     /// Controls permission prompts and persistence on macOS.
     case permissions
+    /// Controls Chrome Web Store update discovery on macOS.
+    /// https://app.asana.com/1/137249556945/task/1220029145261023
+    case updateDiscovery
     /// Failsafe for the lightweight reload on data clear (fire). Disable to fall back to the full reload.
     case lightweightReloadOnDataClear
     /// Failsafe for deferring web-extension load/install until protected data is available. Disable to load immediately.

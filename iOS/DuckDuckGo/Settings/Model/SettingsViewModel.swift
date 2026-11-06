@@ -833,6 +833,35 @@ final class SettingsViewModel: ObservableObject {
         state.youTubeAdBlockingEnabled && adBlockingAvailability.isDisabledUntilRelaunch
     }
 
+    // MARK: - YouTube Sponsor Skipping (internal MVP)
+
+    /// Same file-backed store as the tabs' instance, so writes here reach open YouTube tabs through its change notification.
+    lazy var sponsorBlockPreferences = SponsorBlockPreferences(store: keyValueStore)
+
+    var isSponsorBlockAvailable: Bool {
+        featureFlagger.isFeatureOn(.sponsorBlock)
+    }
+
+    var sponsorBlockEnabled: Binding<Bool> {
+        Binding<Bool>(
+            get: { self.sponsorBlockPreferences.isEnabled },
+            set: {
+                self.objectWillChange.send()
+                self.sponsorBlockPreferences.isEnabled = $0
+            }
+        )
+    }
+
+    var sponsorBlockSkipMode: Binding<SponsorBlockSkipMode> {
+        Binding<SponsorBlockSkipMode>(
+            get: { self.sponsorBlockPreferences.skipMode },
+            set: {
+                self.objectWillChange.send()
+                self.sponsorBlockPreferences.skipMode = $0
+            }
+        )
+    }
+
     func setYouTubeAnalyticsEnabled(_ enabled: Bool) {
         try? youTubeAdBlockingStorage.set(enabled, for: \YouTubeAdBlockingKeys.youTubeAnalyticsEnabled)
         NotificationCenter.default.post(name: YouTubeAdBlockingStorageKeys.youTubeAnalyticsEnabledDidChangeNotification, object: nil)

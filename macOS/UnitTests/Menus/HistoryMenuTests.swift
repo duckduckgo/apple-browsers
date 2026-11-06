@@ -69,13 +69,15 @@ final class HistoryMenuTests: XCTestCase {
     }
 
     @MainActor
-    func testMoreOptionsHistoryMenuHasNoImportHistoryMenuItem() {
+    func testWhenDataImportHistoryIsOn_ThenMoreOptionsHistoryMenuShowsImportHistoryBelowShowAllHistory() throws {
         featureFlagger.featuresStub = [FeatureFlag.dataImportHistory.rawValue: true]
         let moreOptionsHistoryMenu = makeHistoryMenu(location: .moreOptionsMenu)
 
         moreOptionsHistoryMenu.update()
 
-        XCTAssertNil(importHistoryMenuItem(in: moreOptionsHistoryMenu))
+        let item = try XCTUnwrap(importHistoryMenuItem(in: moreOptionsHistoryMenu))
+        XCTAssertFalse(item.isHidden)
+        XCTAssertEqual(moreOptionsHistoryMenu.items.firstIndex(of: item), 1)
     }
 
     @MainActor

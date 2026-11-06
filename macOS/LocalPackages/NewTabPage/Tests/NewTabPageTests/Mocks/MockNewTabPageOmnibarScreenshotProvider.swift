@@ -25,12 +25,16 @@ final class MockNewTabPageOmnibarScreenshotProvider: NewTabPageOmnibarScreenshot
 
     @Published var screenshotModes: [String]?
     @Published var enablePastedAttachments = false
+    @Published var enablePastedText = false
+    @Published var promptLimits: NewTabPageDataModel.OmnibarPromptLimits?
     var captureResponse = NewTabPageDataModel.OmnibarCaptureScreenshotResponse.cancelled
     private(set) var requestedModes: [String] = []
 
     var configChangesPublisher: AnyPublisher<Void, Never> {
         $screenshotModes.dropFirst().map { _ in () }
             .merge(with: $enablePastedAttachments.dropFirst().map { _ in () })
+            .merge(with: $enablePastedText.dropFirst().map { _ in () })
+            .merge(with: $promptLimits.dropFirst().map { _ in () })
             .eraseToAnyPublisher()
     }
 

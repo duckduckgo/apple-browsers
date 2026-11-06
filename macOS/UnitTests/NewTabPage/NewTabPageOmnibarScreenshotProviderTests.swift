@@ -21,6 +21,7 @@ import FeatureFlags_macOS
 import NewTabPage
 @_spi(Testing) import PixelKit
 import PrivacyConfig
+import PrivacyConfigTestsUtils
 import Testing
 @testable import DuckDuckGo_Privacy_Browser
 
@@ -82,6 +83,39 @@ struct NewTabPageOmnibarScreenshotProviderTests {
     }
 
     @available(macOS 13, *)
+    @Test("Pasted text follows its flag, and prompt limits are sent only while it is on", .timeLimit(.minutes(1)))
+    func pastedTextFollowsItsFlag() {
+        let featureFlagger = MockFeatureFlagger()
+        let provider = NewTabPageOmnibarScreenshotProvider(featureFlagger: featureFlagger, pixelFiring: nil)
+        var changes = 0
+        let cancellable = provider.configChangesPublisher.sink { changes += 1 }
+        #expect(provider.enablePastedText == false)
+        #expect(provider.promptLimits == nil)
+
+        featureFlagger.enabledFeatureFlags = [.aiChatNtpPastedText]
+        featureFlagger.triggerUpdate()
+        #expect(provider.enablePastedText == true)
+        #expect(provider.promptLimits == .init(pasteConversionThreshold: 4_000, maxCharacters: 16_000))
+        #expect(changes == 1)
+        cancellable.cancel()
+    }
+
+    @available(macOS 13, *)
+    @Test("Prompt limits come from the ntpPastedText settings", .timeLimit(.minutes(1)))
+    func promptLimitsComeFromPrivacyConfig() {
+        let featureFlagger = MockFeatureFlagger()
+        featureFlagger.enabledFeatureFlags = [.aiChatNtpPastedText]
+        let config = MockPrivacyConfiguration()
+        config.subfeatureSettings = #"{"pasteConversionThreshold": 2000, "maxCharacters": 8000}"#
+        let manager = MockPrivacyConfigurationManager(privacyConfig: config)
+        let provider = NewTabPageOmnibarScreenshotProvider(featureFlagger: featureFlagger,
+                                                           privacyConfigurationManager: manager,
+                                                           pixelFiring: nil)
+
+        #expect(provider.promptLimits == .init(pasteConversionThreshold: 2_000, maxCharacters: 8_000))
+    }
+
+    @available(macOS 13, *)
     @Test("A capture request with the flag off is a cancel and fires nothing", .timeLimit(.minutes(1)))
     func flagOffCaptureIsACancel() async {
         let pixels = PixelKitMock()
@@ -118,7 +152,7 @@ struct NewTabPageOmnibarScreenshotProviderTests {
     }
 
     @available(macOS 13, *)
-    @Test("The page's image and screenshot telemetry fires the matching pixel, and drops values it doesn't know", .timeLimit(.minutes(1)))
+    @Test("The page's image, screenshot and pasted-text telemetry fires the matching pixel, and drops values it doesn't know", .timeLimit(.minutes(1)))
     func pageTelemetryFiresTheMatchingPixel() {
         let cases: [(event: NewTabPageDataModel.TelemetryEvent, name: String?, parameters: [String: String])] = [
             (.omnibarImageAttached(source: "paste"), "aichat_ntp_image_attached", ["source": "paste"]),
@@ -128,7 +162,11 @@ struct NewTabPageOmnibarScreenshotProviderTests {
             (.omnibarScreenshotFailed(reason: "unavailable"), "aichat_ntp_screenshot_failed", ["reason": "unavailable"]),
             (.omnibarScreenshotFailed(reason: "denied"), nil, [:]),
             (.omnibarScreenshotFailed(reason: "unknown"), nil, [:]),
-            (.omnibarImageAttached(source: "drop"), nil, [:])
+            (.omnibarImageAttached(source: "drop"), nil, [:]),
+            (.omnibarPastedTextAttached, "aichat_ntp_pasted_text_attached", [:]),
+            (.omnibarPastedTextRemoved, "aichat_ntp_pasted_text_removed", [:]),
+            (.omnibarPastedTextEdited, "aichat_ntp_pasted_text_edited", [:]),
+            (.omnibarPastedTextDialogOpened, "aichat_ntp_pasted_text_dialog_opened", [:])
         ]
         for testCase in cases {
             let pixels = PixelKitMock()

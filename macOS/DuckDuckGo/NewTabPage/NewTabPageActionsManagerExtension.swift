@@ -264,7 +264,10 @@ extension NewTabPageActionsManager {
                                         coordinator: Application.appDelegate.subscriptionNavigationCoordinator,
                                         subscriptionManager: Application.appDelegate.subscriptionManager
                                     ),
-                                    screenshotProvider: NewTabPageOmnibarScreenshotProvider(featureFlagger: featureFlagger)),
+                                    screenshotProvider: NewTabPageOmnibarScreenshotProvider(
+                                        featureFlagger: featureFlagger,
+                                        privacyConfigurationManager: contentBlocking.privacyConfigurationManager
+                                    )),
             NewTabPageWinBackOfferClient(provider: winBackOfferBannerProvider)
         ])
     }

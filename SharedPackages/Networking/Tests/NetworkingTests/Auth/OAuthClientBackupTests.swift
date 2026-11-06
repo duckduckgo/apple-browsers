@@ -790,6 +790,44 @@ final class OAuthClientBackupTests: XCTestCase {
         XCTAssertNil(try backupStorage.getTokenContainer())
     }
 
+    func testRestore_forkReturnsOnePair_storesItAsPrimaryAndDeletesTheSpentBackup() async throws {
+        try backupStorage.saveTokenContainer(OAuthTokensFactory.makeTokenContainer(refreshToken: "storedBackupR"))
+        let stub = SideEffectForkRefresher(minted: [newPrimary]) { }
+
+        let result = try await makeClient(backupStorage: backupStorage, tokenRefresher: stub).restoreFromBackup(expectedExternalID: nil)
+
+        XCTAssertEqual(result, newPrimary)
+        XCTAssertEqual(try primaryStorage.getTokenContainer(), newPrimary)
+        XCTAssertNil(try backupStorage.getTokenContainer())
+    }
+
+    func testRestore_forkReturnsThreePairs_storesTheLastAsPrimaryAndTheFirstAsBackup() async throws {
+        try backupStorage.saveTokenContainer(OAuthTokensFactory.makeTokenContainer(refreshToken: "storedBackupR"))
+        let extra = OAuthTokensFactory.makeTokenContainer(accessToken: "extraA", refreshToken: "extraR")
+        let stub = SideEffectForkRefresher(minted: [newBackup, extra, newPrimary]) { }
+
+        let result = try await makeClient(backupStorage: backupStorage, tokenRefresher: stub).restoreFromBackup(expectedExternalID: nil)
+
+        XCTAssertEqual(result, newPrimary)
+        XCTAssertEqual(try primaryStorage.getTokenContainer(), newPrimary)
+        XCTAssertEqual(try backupStorage.getTokenContainer(), newBackup)
+    }
+
+    func testRestore_forkReturnsNoPair_throwsAndKeepsTheBackup() async throws {
+        let stored = OAuthTokensFactory.makeTokenContainer(refreshToken: "storedBackupR")
+        try backupStorage.saveTokenContainer(stored)
+        let stub = SideEffectForkRefresher(minted: []) { }
+
+        do {
+            _ = try await makeClient(backupStorage: backupStorage, tokenRefresher: stub).restoreFromBackup(expectedExternalID: nil)
+            XCTFail("Expected error")
+        } catch OAuthClientError.internalError {
+            // Expected.
+        }
+        XCTAssertNil(try primaryStorage.getTokenContainer())
+        XCTAssertEqual(try backupStorage.getTokenContainer(), stored)
+    }
+
     func testRestore_primarySaveFails_throwsAndKeepsSpentBackupUntouched() async throws {
         let stored = OAuthTokensFactory.makeTokenContainer(refreshToken: "storedBackupR")
         try backupStorage.saveTokenContainer(stored)

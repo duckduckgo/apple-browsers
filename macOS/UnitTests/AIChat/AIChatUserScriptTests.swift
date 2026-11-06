@@ -249,7 +249,8 @@ final class AIChatUserScriptTests: XCTestCase {
             FeatureFlag.aiChatBrowserToolReadTabContent.rawValue: false,
             FeatureFlag.aiChatBrowserToolFindInPage.rawValue: false,
             FeatureFlag.aiChatBrowserToolHighlightInPage.rawValue: false,
-            FeatureFlag.aiChatBrowserToolPinTab.rawValue: false
+            FeatureFlag.aiChatBrowserToolPinTab.rawValue: false,
+            FeatureFlag.aiChatBrowserToolOpenTab.rawValue: false
         ])
     }
 

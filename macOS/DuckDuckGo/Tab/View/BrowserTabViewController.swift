@@ -1174,9 +1174,11 @@ final class BrowserTabViewController: NSViewController {
         let sidebarWidth: () -> CGFloat = { [weak self] in
             max(0, -(self?.sidebarContainerLeadingConstraint?.constant ?? 0))
         }
+        let currentLink: () -> URL? = { [weak self] in self?.tabViewModel?.tab.currentHoveredLink }
         return HoveredLinkTooltipPresenter(hostView: view, backgroundColor: NSColor(resource: .browserTabBackground),
                                            isAccessibilityIdentifierEnabled: isIdentifierEnabled,
-                                           trailingInset: sidebarWidth)
+                                           trailingInset: sidebarWidth,
+                                           currentHoveredURL: currentLink)
     }
 
     func subscribeToHoveredLink(of tabViewModel: TabViewModel?) {

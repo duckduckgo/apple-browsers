@@ -445,6 +445,25 @@ final class HoveredLinkTooltipPresenterTests: XCTestCase {
         parent.orderOut(nil)
     }
 
+    func testWhenPointerReturnsToSameLinkAfterURLWasForgottenThenTooltipIsRestoredFromThePage() {
+        let harness = TooltipHarness()
+        let url = URL(string: "https://example.com/first")!
+        harness.hoveredLink.url = url
+        harness.showFirstLink()
+        // The window is deactivated (URL forgotten), the pointer goes to the inspector and comes back to the same link:
+        // the page reports no change, so the presenter has to ask for the current link.
+        harness.presenter.reset()
+        harness.presenter.mouseDidExit()
+        XCTAssertNil(harness.tooltip)
+
+        harness.presenter.mouseDidMove()
+        let restore = harness.scheduler.actions.count - 1
+        harness.scheduler.run(at: restore)
+
+        XCTAssertTrue(harness.tooltip?.isVisible == true)
+        XCTAssertEqual(harness.label?.stringValue, url.absoluteString)
+    }
+
     func testWhenSidebarOverlapsHostThenTooltipStaysOutOfIt() {
         _ = NSApplication.shared
         let parent = TooltipParentWindow(contentRect: NSRect(x: 100, y: 200, width: 700, height: 400),
@@ -481,6 +500,7 @@ private final class TooltipHarness {
     let scheduler = TooltipScheduler()
     let animator = TooltipAnimator()
     let tooltipWindow = TooltipTestWindow()
+    let hoveredLink = TooltipHoveredLink()
     let presenter: HoveredLinkTooltipPresenter
 
     var tooltip: NSWindow? { parent.childWindows?.first }
@@ -497,9 +517,11 @@ private final class TooltipHarness {
         let scheduler = scheduler
         let animator = animator
         let tooltipWindow = tooltipWindow
+        let hoveredLink = hoveredLink
         presenter = HoveredLinkTooltipPresenter(hostView: hostView, backgroundColor: .windowBackgroundColor,
                                                isAccessibilityIdentifierEnabled: isAccessibilityIdentifierEnabled,
                                                makeWindow: { tooltipWindow }, mouseLocation: { pointer.location },
+                                               currentHoveredURL: { hoveredLink.url },
                                                animate: animator.animate, move: animator.move, schedule: scheduler.schedule)
     }
 
@@ -517,6 +539,10 @@ private final class TooltipHarness {
         // Tests below index fade-out animations from zero.
         animator.forgetAnimations()
     }
+}
+
+private final class TooltipHoveredLink {
+    var url: URL?
 }
 
 private final class TooltipParentWindow: NSWindow {

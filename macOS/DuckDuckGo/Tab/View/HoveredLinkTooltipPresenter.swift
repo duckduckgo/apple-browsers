@@ -27,6 +27,7 @@ final class HoveredLinkTooltipPresenter {
     private let schedule: (TimeInterval, @escaping () -> Void) -> DispatchWorkItem
     private let mouseLocation: () -> NSPoint
     private let trailingInset: () -> CGFloat
+    private let currentHoveredURL: () -> URL?
     private let animate: (NSWindow, CGFloat, TimeInterval, @escaping () -> Void) -> Void
     private let move: (NSWindow, NSRect, TimeInterval) -> Void
     private var targetFrame: NSRect?
@@ -45,6 +46,7 @@ final class HoveredLinkTooltipPresenter {
          makeWindow: () -> NSWindow = { HoveredLinkTooltipWindow(contentRect: .zero, styleMask: .borderless, backing: .buffered, defer: true) },
          mouseLocation: @escaping () -> NSPoint = { NSEvent.mouseLocation },
          trailingInset: @escaping () -> CGFloat = { 0 },
+         currentHoveredURL: @escaping () -> URL? = { nil },
          animate: @escaping (NSWindow, CGFloat, TimeInterval, @escaping () -> Void) -> Void = { window, opacity, duration, completion in
              NSAnimationContext.runAnimationGroup { context in
                  context.duration = duration
@@ -73,6 +75,7 @@ final class HoveredLinkTooltipPresenter {
         self.window = makeWindow()
         self.mouseLocation = mouseLocation
         self.trailingInset = trailingInset
+        self.currentHoveredURL = currentHoveredURL
         self.animate = animate
         self.move = move
         self.schedule = schedule
@@ -201,6 +204,11 @@ final class HoveredLinkTooltipPresenter {
     func mouseDidMove() {
         let isReturning = !isMouseInside
         isMouseInside = true
+        // The page reports only link changes. After the URL was forgotten (window deactivated) or the pointer came
+        // back from a view that doesn't belong to the page (inspector) onto the same link, nothing will report it again.
+        if isReturning, hoveredURL == nil {
+            hoveredURL = currentHoveredURL()
+        }
         if isReturning, hoveredURL != nil, !window.isVisible {
             // WebKit may still consider the same link hovered and send no new URL.
             // Give its hover update a chance to cancel a stale URL before restoring it.

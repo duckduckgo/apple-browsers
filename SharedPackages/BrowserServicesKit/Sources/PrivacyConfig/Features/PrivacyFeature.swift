@@ -638,6 +638,10 @@ public enum AIChatBrowserToolsSubfeature: String, Equatable, PrivacySubfeature {
     /// Pins open tabs in the owner tab's window.
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1217165044799340
     case pinTab
+
+    /// Opens a URL in a new tab.
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1217165044799340
+    case openTab
 }
 
 public enum HtmlNewTabPageSubfeature: String, Equatable, PrivacySubfeature {

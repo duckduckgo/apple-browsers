@@ -387,6 +387,7 @@ final class BrowserToolsDebugViewController: NSViewController {
         case ("pinTab", "tabIds"):
             let owner = ownerTabProvider()?.uuid
             return ownerCollection?.tabCollection.tabs.first { $0.uuid != owner }?.uuid
+        case ("openTab", "url"): return "https://duckduckgo.com"
         case ("searchHistory", "query"): return "wiki"
         case ("searchHistory", "limit"): return "5"
         case ("findInPage", "query"): return "games"

@@ -20,10 +20,10 @@ import Foundation
 import Testing
 @testable import AIChat
 
-@available(iOS 16, macOS 13, *)
 @MainActor
 struct ClientToolInvokerTests {
 
+    @available(iOS 16, macOS 13, *)
     @Test(.timeLimit(.minutes(1)), arguments: ["granted", "denied", "invalidated"])
     func usesInjectedPermissionCoordinator(outcome: String) async throws {
         let configuration = ClientToolTestConfiguration()
@@ -56,6 +56,7 @@ struct ClientToolInvokerTests {
         }
     }
 
+    @available(iOS 16, macOS 13, *)
     @Test(.timeLimit(.minutes(1)), arguments: ["parent", "tool", "unknown", "version", "fire"])
     func unavailableCallsDoNotAskOrWritePermission(reason: String) async throws {
         let harness = ClientToolTestHarness()
@@ -71,6 +72,7 @@ struct ClientToolInvokerTests {
         #expect(harness.tool.calls.isEmpty)
     }
 
+    @available(iOS 16, macOS 13, *)
     @Test(.timeLimit(.minutes(1)))
     func resolvesEachRegisteredVersionForDiscoveryAndExecution() async throws {
         let readCapability = try ClientToolCapability(name: "readTabContent", version: 2)
@@ -113,6 +115,7 @@ struct ClientToolInvokerTests {
         #expect(harness.permissions.writes == 0)
     }
 
+    @available(iOS 16, macOS 13, *)
     @Test(.timeLimit(.minutes(1)))
     func clientToolRequiresCapabilityRegistrationWhileLegacyLookupRemainsAvailable() async throws {
         let harness = ClientToolTestHarness(capabilities: [.searchHistory, .listOpenTabs])
@@ -128,6 +131,7 @@ struct ClientToolInvokerTests {
         #expect(harness.permissions.writes == 0)
     }
 
+    @available(iOS 16, macOS 13, *)
     @Test(.timeLimit(.minutes(1)), arguments: ["allow", "always", "never", "decline"])
     func availabilityIsRecheckedAfterDecision(decision: String) async throws {
         let harness = ClientToolTestHarness()
@@ -139,6 +143,7 @@ struct ClientToolInvokerTests {
         #expect(harness.tool.calls.isEmpty)
     }
 
+    @available(iOS 16, macOS 13, *)
     @Test(.timeLimit(.minutes(1)))
     func parentGateIsRecheckedAfterConsent() async throws {
         let harness = ClientToolTestHarness()
@@ -150,6 +155,7 @@ struct ClientToolInvokerTests {
         #expect(harness.tool.calls.isEmpty)
     }
 
+    @available(iOS 16, macOS 13, *)
     @Test(.timeLimit(.minutes(1)), arguments: [BrowserToolPermissionState.allow, .deny, .ask])
     func savedStateWorksWithoutPusher(state: BrowserToolPermissionState) async throws {
         let harness = ClientToolTestHarness()
@@ -164,6 +170,7 @@ struct ClientToolInvokerTests {
         #expect(harness.permissions.writes == 0)
     }
 
+    @available(iOS 16, macOS 13, *)
     @Test(.timeLimit(.minutes(1)))
     func automaticToolIgnoresStoredDenialAndLegacyHandshake() async throws {
         let harness = ClientToolTestHarness()
@@ -176,6 +183,7 @@ struct ClientToolInvokerTests {
         #expect(harness.permissions.writes == 0)
     }
 
+    @available(iOS 16, macOS 13, *)
     @Test(.timeLimit(.minutes(1)), arguments: [JSONValue.object([:]), .object(["key": .array([.int(7), .bool(true), .null])])])
     func preservesInputContextResultAndCallID(input: JSONValue) async throws {
         let harness = ClientToolTestHarness()
@@ -189,6 +197,7 @@ struct ClientToolInvokerTests {
         #expect(harness.tool.calls.first?.1 == harness.context)
     }
 
+    @available(iOS 16, macOS 13, *)
     @Test(.timeLimit(.minutes(1)), arguments: BrowserToolFailure.allCases)
     func mapsEveryLegacyToolError(error: BrowserToolFailure) async throws {
         let harness = ClientToolTestHarness()
@@ -207,6 +216,7 @@ struct ClientToolInvokerTests {
         #expect(response == .failure(callId: "call", error: expected))
     }
 
+    @available(iOS 16, macOS 13, *)
     @Test(.timeLimit(.minutes(1)))
     func invalidInternalPromptFailsWithoutExecution() async throws {
         let harness = ClientToolTestHarness()
@@ -218,6 +228,7 @@ struct ClientToolInvokerTests {
         #expect(harness.source.prompts.isEmpty)
     }
 
+    @available(iOS 16, macOS 13, *)
     @Test(.timeLimit(.minutes(1)))
     func permissionQueueDoesNotSerializeToolExecution() async throws {
         let harness = ClientToolTestHarness()
@@ -245,10 +256,10 @@ struct ClientToolInvokerTests {
     }
 }
 
-@available(iOS 16, macOS 13, *)
 extension ClientToolInvokerTests {
 
     /// Client tools send the tool's contract-shaped result; the legacy path keeps the raw value.
+    @available(iOS 16, macOS 13, *)
     @Test(.timeLimit(.minutes(1)), arguments: [BrowserToolResult.success(["shaped": true]), .failure(.unavailable)])
     func clientCallsUseTheToolsClientResult(clientResult: BrowserToolResult) async throws {
         let harness = ClientToolTestHarness()
@@ -267,6 +278,7 @@ extension ClientToolInvokerTests {
 
     /// The contract's inputs are objects without additional properties; a call that breaks that is
     /// refused before the user is asked.
+    @available(iOS 16, macOS 13, *)
     @Test(.timeLimit(.minutes(1)), arguments: [JSONValue.null, .string("x"), .array([]), .object(["unknown": .bool(true)])])
     func invalidInputIsRefusedBeforeAsking(input: JSONValue) async throws {
         let harness = ClientToolTestHarness()

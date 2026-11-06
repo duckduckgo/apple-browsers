@@ -20,9 +20,9 @@ import AIChat
 import Foundation
 import Testing
 
-@available(iOS 16, macOS 13, *)
 struct ClientToolsWireTypesTests {
 
+    @available(iOS 16, macOS 13, *)
     @Test(.timeLimit(.minutes(1)))
     func capabilityDecodingAcceptsAllowedCharactersAndBoundaryValues() throws {
         let names = ["a", "AZaz09_.:-", String(repeating: "a", count: 64)]
@@ -38,6 +38,7 @@ struct ClientToolsWireTypesTests {
         }
     }
 
+    @available(iOS 16, macOS 13, *)
     @Test(.timeLimit(.minutes(1)), arguments: [
         "", String(repeating: "a", count: 65), "list tabs", "tab/name", "tabs\n", "é", "tab😀"
     ])
@@ -47,6 +48,7 @@ struct ClientToolsWireTypesTests {
         }
     }
 
+    @available(iOS 16, macOS 13, *)
     @Test(.timeLimit(.minutes(1)), arguments: [
         JSONValue.int(0), .int(-1), .int(9_007_199_254_740_992), .double(1.5), .bool(true), .string("1"), .null
     ])
@@ -56,6 +58,7 @@ struct ClientToolsWireTypesTests {
         }
     }
 
+    @available(iOS 16, macOS 13, *)
     @Test(.timeLimit(.minutes(1)), arguments: [
         #"{"version":1}"#,
         #"{"name":"listOpenTabs"}"#,
@@ -68,6 +71,7 @@ struct ClientToolsWireTypesTests {
         }
     }
 
+    @available(iOS 16, macOS 13, *)
     @Test(.timeLimit(.minutes(1)))
     func configurationAccepts32CapabilitiesButRejects33() throws {
         let capabilities = try (0..<32).map {
@@ -81,6 +85,7 @@ struct ClientToolsWireTypesTests {
         }
     }
 
+    @available(iOS 16, macOS 13, *)
     @Test(.timeLimit(.minutes(1)), arguments: [1, 2])
     func configurationRejectsDuplicateNamesRegardlessOfVersion(_ version: Int) throws {
         let duplicate = try ClientToolCapability(name: "listOpenTabs", version: version)
@@ -89,6 +94,7 @@ struct ClientToolsWireTypesTests {
         }
     }
 
+    @available(iOS 16, macOS 13, *)
     @Test(.timeLimit(.minutes(1)))
     func executeRequestDecodesArgumentsWithoutApplyingAToolSpecificSchema() throws {
         let request = try decode(ExecuteClientToolRequest.self, from: [
@@ -102,6 +108,7 @@ struct ClientToolsWireTypesTests {
         #expect(request.input == ["limit": 5, "futureField": ["nested": true]])
     }
 
+    @available(iOS 16, macOS 13, *)
     @Test(.timeLimit(.minutes(1)))
     func executeRequestPreservesExplicitNullInput() throws {
         let request = try decode(ExecuteClientToolRequest.self, from: [
@@ -113,6 +120,7 @@ struct ClientToolsWireTypesTests {
         #expect(request.input == .null)
     }
 
+    @available(iOS 16, macOS 13, *)
     @Test(.timeLimit(.minutes(1)))
     func executeRequestPreservesUnknownCapabilityAndUnsupportedVersion() throws {
         let request = try decode(ExecuteClientToolRequest.self, from: [
@@ -125,6 +133,7 @@ struct ClientToolsWireTypesTests {
         #expect(request.capability.version == 2)
     }
 
+    @available(iOS 16, macOS 13, *)
     @Test(.timeLimit(.minutes(1)))
     func executeRequestAccepts128CharacterIdentifier() throws {
         let callId = String(repeating: "x", count: 128)
@@ -137,6 +146,7 @@ struct ClientToolsWireTypesTests {
         #expect(request.callId == callId)
     }
 
+    @available(iOS 16, macOS 13, *)
     @Test(.timeLimit(.minutes(1)), arguments: [
         "", String(repeating: "x", count: 129), "call 1", "call\n", "call/1", "é"
     ])
@@ -150,6 +160,7 @@ struct ClientToolsWireTypesTests {
         }
     }
 
+    @available(iOS 16, macOS 13, *)
     @Test(.timeLimit(.minutes(1)), arguments: [
         #"{"capability":{"name":"listOpenTabs","version":1},"input":{}}"#,
         #"{"callId":"call-1","input":{}}"#,
@@ -165,6 +176,7 @@ struct ClientToolsWireTypesTests {
         }
     }
 
+    @available(iOS 16, macOS 13, *)
     @Test(.timeLimit(.minutes(1)), arguments: [
         JSONValue.object(["tabs": .array([])]), .null
     ])
@@ -178,6 +190,7 @@ struct ClientToolsWireTypesTests {
         ])
     }
 
+    @available(iOS 16, macOS 13, *)
     @Test(.timeLimit(.minutes(1)))
     func failureEncodingIncludesOnlyErrorAndPreservesMalformedCallIdentifier() throws {
         let cases: [(String, ClientToolError, String)] = [
@@ -195,6 +208,7 @@ struct ClientToolsWireTypesTests {
         }
     }
 
+    @available(iOS 16, macOS 13, *)
     @Test(.timeLimit(.minutes(1)))
     func permissionMessageLimitCountsUnicodeScalarsInsteadOfBytesOrGraphemes() throws {
         let messages = [
@@ -209,6 +223,7 @@ struct ClientToolsWireTypesTests {
         }
     }
 
+    @available(iOS 16, macOS 13, *)
     @Test(.timeLimit(.minutes(1)))
     func permissionPromptRejectsEmptyAndRepeatedChoices() {
         let choices: [[ClientToolPermissionChoice]] = [
@@ -223,6 +238,7 @@ struct ClientToolsWireTypesTests {
         }
     }
 
+    @available(iOS 16, macOS 13, *)
     @Test(.timeLimit(.minutes(1)))
     func permissionPromptValidatesBothCorrelationIdentifiersAtTheirBoundary() throws {
         let callId = String(repeating: "c", count: 128)
@@ -239,6 +255,7 @@ struct ClientToolsWireTypesTests {
         }
     }
 
+    @available(iOS 16, macOS 13, *)
     @Test(.timeLimit(.minutes(1)), arguments: ["allow", "always", "never", "decline", "cancel"])
     func permissionAnswerDecodesKnownDecisions(_ decision: String) throws {
         let answer = try decode(RespondToClientToolPermissionRequest.self, from: [
@@ -252,6 +269,7 @@ struct ClientToolsWireTypesTests {
         #expect(answer.decision.rawValue == decision)
     }
 
+    @available(iOS 16, macOS 13, *)
     @Test(.timeLimit(.minutes(1)), arguments: ["alwaysAllow", "future_decision", ""])
     func permissionAnswerTreatsUnknownDecisionAsCancel(_ decision: String) throws {
         let answer = try decode(RespondToClientToolPermissionRequest.self, from: [
@@ -263,6 +281,7 @@ struct ClientToolsWireTypesTests {
         #expect(answer.decision == .cancel)
     }
 
+    @available(iOS 16, macOS 13, *)
     @Test(.timeLimit(.minutes(1)))
     func permissionAnswerValidatesBothCorrelationIdentifiersAtTheirBoundary() throws {
         let callId = String(repeating: "c", count: 128)
@@ -287,6 +306,7 @@ struct ClientToolsWireTypesTests {
         }
     }
 
+    @available(iOS 16, macOS 13, *)
     @Test(.timeLimit(.minutes(1)), arguments: [
         #"{"requestId":"perm-1","decision":"allow"}"#,
         #"{"callId":"call-1","decision":"allow"}"#,
@@ -305,6 +325,7 @@ struct ClientToolsWireTypesTests {
 
     // MARK: - Bridge payloads
 
+    @available(iOS 16, macOS 13, *)
     @Test(.timeLimit(.minutes(1)))
     func rawParamsParseIntoTheRequest() throws {
         let params: [String: Any] = ["callId": "call-1", "capability": ["name": "listOpenTabs", "version": 1], "input": ["limit": 5]]
@@ -317,6 +338,7 @@ struct ClientToolsWireTypesTests {
     }
 
     /// An invalid request still settles the call: the reply echoes whatever `callId` is readable.
+    @available(iOS 16, macOS 13, *)
     @Test(.timeLimit(.minutes(1)), arguments: [
         (#"{"callId":"call-1","capability":{"name":"listOpenTabs","version":1},"input":{},"extra":true}"#, "call-1"),
         (#"{"callId":"call-1","input":{}}"#, "call-1"),
@@ -330,6 +352,7 @@ struct ClientToolsWireTypesTests {
         #expect(ExecuteClientToolResponse.invalidRequest(rawParams: params) == .failure(callId: expectedCallID, error: .invalidArguments))
     }
 
+    @available(iOS 16, macOS 13, *)
     @Test(.timeLimit(.minutes(1)))
     func rawParamsOverInputByteLimitAreRejected() {
         let params: [String: Any] = ["callId": "call-1", "capability": ["name": "searchHistory", "version": 1],
@@ -340,6 +363,7 @@ struct ClientToolsWireTypesTests {
     }
 
     /// Echoing an oversized id would push the reply itself over the result limit.
+    @available(iOS 16, macOS 13, *)
     @Test(.timeLimit(.minutes(1)))
     func invalidRequestDropsAnOversizedCallID() {
         let params: [String: Any] = ["callId": String(repeating: "a", count: 129)]
@@ -347,12 +371,14 @@ struct ClientToolsWireTypesTests {
         #expect(ExecuteClientToolResponse.invalidRequest(rawParams: params) == .failure(callId: "", error: .invalidArguments))
     }
 
+    @available(iOS 16, macOS 13, *)
     @Test(.timeLimit(.minutes(1)))
     func nonObjectRawParamsAreRejectedWithoutCallID() {
         #expect(ExecuteClientToolRequest.parse(rawParams: "call-1") == nil)
         #expect(ExecuteClientToolResponse.invalidRequest(rawParams: "call-1") == .failure(callId: "", error: .invalidArguments))
     }
 
+    @available(iOS 16, macOS 13, *)
     @Test(.timeLimit(.minutes(1)))
     func resultOverByteLimitBecomesExecutionFailed() {
         let oversized = ExecuteClientToolResponse.success(callId: "call-1", value: .string(String(repeating: "a", count: ClientToolPayloadLimits.resultBytes)))
@@ -364,6 +390,7 @@ struct ClientToolsWireTypesTests {
         #expect(failure.limitedToResultBytes() == failure)
     }
 
+    @available(iOS 16, macOS 13, *)
     @Test(.timeLimit(.minutes(1)))
     func configurationRoundTripsAndRejectsUnknownProtocolVersion() throws {
         let configuration = try ClientToolsConfiguration(capabilities: [.listOpenTabs, .readTabContent])

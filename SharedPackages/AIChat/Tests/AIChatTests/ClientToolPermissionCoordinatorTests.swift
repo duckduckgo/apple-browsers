@@ -20,10 +20,10 @@ import Foundation
 import Testing
 @testable import AIChat
 
-@available(iOS 16, macOS 13, *)
 @MainActor
 struct ClientToolPermissionCoordinatorTests {
 
+    @available(iOS 16, macOS 13, *)
     @Test(.timeLimit(.minutes(1)), arguments: ["allow", "always", "never", "decline", "cancel", "futureDecision"])
     func decisionsFinishMatchingCall(decision: String) async throws {
         let harness = ClientToolTestHarness()
@@ -45,6 +45,7 @@ struct ClientToolPermissionCoordinatorTests {
         #expect(harness.permissions.writes == (["always", "never"].contains(decision) ? 1 : 0))
     }
 
+    @available(iOS 16, macOS 13, *)
     @Test(.timeLimit(.minutes(1)), arguments: ["always", "never"])
     func queuedCallsReusePersistentDecision(decision: String) async throws {
         let harness = ClientToolTestHarness()
@@ -68,6 +69,7 @@ struct ClientToolPermissionCoordinatorTests {
         #expect(harness.permissions.writes == 1)
     }
 
+    @available(iOS 16, macOS 13, *)
     @Test(.timeLimit(.minutes(1)), arguments: ["allow", "decline", "cancel"])
     func transientDecisionPromptsNextCallInOrder(decision: String) async throws {
         let harness = ClientToolTestHarness()
@@ -91,6 +93,7 @@ struct ClientToolPermissionCoordinatorTests {
         #expect(harness.permissions.writes == 0)
     }
 
+    @available(iOS 16, macOS 13, *)
     @Test(.timeLimit(.minutes(1)))
     func toolsHaveIndependentPermissionQueues() async throws {
         let harness = ClientToolTestHarness()
@@ -105,6 +108,7 @@ struct ClientToolPermissionCoordinatorTests {
         _ = await first.value
     }
 
+    @available(iOS 16, macOS 13, *)
     @Test(.timeLimit(.minutes(1)))
     func mismatchesAndDuplicatesCannotPersistOrCompleteAnotherCall() async throws {
         let harness = ClientToolTestHarness()
@@ -132,6 +136,7 @@ struct ClientToolPermissionCoordinatorTests {
         #expect(harness.permissions.writes == 0)
     }
 
+    @available(iOS 16, macOS 13, *)
     @Test(.timeLimit(.minutes(1)))
     func queueTimeCountsTowardDeadline() async throws {
         let harness = ClientToolTestHarness()
@@ -151,6 +156,7 @@ struct ClientToolPermissionCoordinatorTests {
         #expect(harness.permissions.writes == 0)
     }
 
+    @available(iOS 16, macOS 13, *)
     @Test(.timeLimit(.minutes(1)))
     func lateAnswerAndPromotionCheckTimeBeforeTimerDispatch() async throws {
         let harness = ClientToolTestHarness()
@@ -167,6 +173,7 @@ struct ClientToolPermissionCoordinatorTests {
         #expect(harness.permissions.writes == 0)
     }
 
+    @available(iOS 16, macOS 13, *)
     @Test(.timeLimit(.minutes(1)))
     func acceptedPermissionDoesNotExpireBeforeExecutionResumes() async throws {
         let harness = ClientToolTestHarness()
@@ -177,6 +184,7 @@ struct ClientToolPermissionCoordinatorTests {
         #expect(await task.value == .success(callId: "call", value: ["content": "page"]))
     }
 
+    @available(iOS 16, macOS 13, *)
     @Test(.timeLimit(.minutes(1)))
     func taskCancellationBeforeRegistrationDoesNotPrompt() async throws {
         let harness = ClientToolTestHarness()
@@ -186,6 +194,7 @@ struct ClientToolPermissionCoordinatorTests {
         #expect(harness.source.prompts.isEmpty)
     }
 
+    @available(iOS 16, macOS 13, *)
     @Test(.timeLimit(.minutes(1)))
     func taskCancellationPreventsImmediatePersistentAnswer() async throws {
         let harness = ClientToolTestHarness()
@@ -198,6 +207,7 @@ struct ClientToolPermissionCoordinatorTests {
         #expect(harness.tool.calls.isEmpty)
     }
 
+    @available(iOS 16, macOS 13, *)
     @Test(.timeLimit(.minutes(1)), arguments: [true, false])
     func cancellationAfterConsentPreventsExecution(cancelTask: Bool) async throws {
         let harness = ClientToolTestHarness()
@@ -209,6 +219,7 @@ struct ClientToolPermissionCoordinatorTests {
         #expect(harness.tool.calls.isEmpty)
     }
 
+    @available(iOS 16, macOS 13, *)
     @Test(.timeLimit(.minutes(1)))
     func sourceCancellationRemovesEntireQueueBeforePromotingOtherSource() async throws {
         let harness = ClientToolTestHarness()
@@ -233,6 +244,7 @@ struct ClientToolPermissionCoordinatorTests {
         #expect(await reused.value == .success(callId: "newDocument", value: ["content": "page"]))
     }
 
+    @available(iOS 16, macOS 13, *)
     @Test(.timeLimit(.minutes(1)))
     func synchronousAnswerSurvivesFalseDeliveryResult() async throws {
         let harness = ClientToolTestHarness()
@@ -245,6 +257,7 @@ struct ClientToolPermissionCoordinatorTests {
         #expect(result == .success(callId: "call", value: ["content": "page"]))
     }
 
+    @available(iOS 16, macOS 13, *)
     @Test(.timeLimit(.minutes(1)))
     func failedDeliveryCancelsWaitingCall() async throws {
         let harness = ClientToolTestHarness()
@@ -255,6 +268,7 @@ struct ClientToolPermissionCoordinatorTests {
         #expect(harness.tool.calls.isEmpty)
     }
 
+    @available(iOS 16, macOS 13, *)
     @Test(.timeLimit(.minutes(1)))
     func sourceCanCancelReentrantlyWhilePushing() async throws {
         let harness = ClientToolTestHarness()

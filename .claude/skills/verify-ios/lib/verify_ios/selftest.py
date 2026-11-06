@@ -84,7 +84,7 @@ def run(devices):
 
     left = sorted(_running(devices) - before)
     step("nothing left running", not left, f"still running: {left}")
-    kept = {d: found["udid"] for d in devices if (found := Device(d)._find())}
+    kept = {d: [s["udid"] for s in sims] for d in devices if (sims := Device(d)._all())}
     step("each proof deleted its simulator", not kept, f"still there: {kept}")
     return done()
 

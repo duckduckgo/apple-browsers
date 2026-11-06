@@ -102,32 +102,48 @@ class SimulatorLifecycleTests(unittest.TestCase):
     """Simulators are found by name and deleted by cleanup; nothing else on the Mac is touched."""
 
     def setUp(self):
-        self.calls, self.sims = [], {}
+        self.calls, self.sims = [], []
         self.saved = device.run
         device.run = self.fake_run
 
     def tearDown(self):
         device.run = self.saved
 
+    def sim(self, name, udid, available=True):
+        self.sims.append(dict(name=name, udid=udid, state="Booted" if available else "Shutdown", isAvailable=available))
+
     def fake_run(self, cmd, **_):
         self.calls.append(cmd)
-        out, code = "", 0
+        out = ""
         if cmd[2:4] == ["list", "devices"]:
-            out = json.dumps({"devices": {env.RUNTIME: [dict(name=n, udid=u, state="Booted", isAvailable=True)
-                                                        for n, u in self.sims.items()]}})
+            out = json.dumps({"devices": {env.RUNTIME: self.sims}})
         elif cmd[2] == "create":
-            self.sims[cmd[3]] = out = "NEW-UDID"
+            self.sim(cmd[3], "NEW-UDID")
+            out = "NEW-UDID"
         elif cmd[2] == "delete":
-            self.sims = {n: u for n, u in self.sims.items() if u != cmd[3]}
-        return subprocess.CompletedProcess(cmd, code, out, "")
+            self.sims = [s for s in self.sims if s["udid"] != cmd[3]]
+        return subprocess.CompletedProcess(cmd, 0, out, "")
+
+    def names(self):
+        return sorted(s["name"] for s in self.sims)
 
     def test_cleanup_deletes_only_this_worktrees_simulator(self):
         d = device.Device("iphone")
-        self.sims = {"verify-ios-other-worktree-abc123-iphone": "THEIRS", "iPhone 17 Pro": "PERSONAL", d.name: "OURS"}
+        self.sim("verify-ios-other-worktree-abc123-iphone", "THEIRS")
+        self.sim("iPhone 17 Pro", "PERSONAL")
+        self.sim(d.name, "OURS")
         d.cleanup(delete_sim=True)
-        self.assertEqual(sorted(self.sims), ["iPhone 17 Pro", "verify-ios-other-worktree-abc123-iphone"])
+        self.assertEqual(self.names(), ["iPhone 17 Pro", "verify-ios-other-worktree-abc123-iphone"])
         self.assertNotIn("THEIRS", str(self.calls))
         self.assertNotIn("PERSONAL", str(self.calls))
+
+    def test_an_unavailable_simulator_is_replaced_and_then_deleted(self):
+        d = device.Device("iphone")
+        self.sim(d.name, "DEAD", available=False)
+        self.assertTrue(d._ensure(), "an unavailable simulator cannot run a proof, so a usable one is created")
+        self.assertEqual(d.udid, "NEW-UDID")
+        d.cleanup(delete_sim=True)
+        self.assertEqual(self.sims, [], "cleanup leaves no simulator of this worktree behind, usable or not")
 
     def test_a_deleted_simulator_is_recreated_for_the_next_build(self):
         d = device.Device("iphone")

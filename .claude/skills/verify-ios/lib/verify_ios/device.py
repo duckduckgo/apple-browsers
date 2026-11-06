@@ -45,11 +45,15 @@ class Device:
     def name(self):
         return f"verify-ios-{KEY}-{self.device}"
 
-    def _find(self):
-        """This worktree's simulator for the device, or None. Looked up by name, never remembered across commands:
-        each proof deletes its simulator when it ends."""
+    def _all(self):
+        """Every simulator with this worktree's name, including unavailable ones (their runtime was removed).
+        Looked up by name, never remembered across commands: each proof deletes its simulator when it ends."""
         devs = json.loads(run(["xcrun", "simctl", "list", "devices", "-j"]).stdout)["devices"]
-        return next((d for ds in devs.values() for d in ds if d["name"] == self.name and d.get("isAvailable", True)), None)
+        return [d for ds in devs.values() for d in ds if d["name"] == self.name]
+
+    def _find(self):
+        """This worktree's usable simulator for the device, or None."""
+        return next((d for d in self._all() if d.get("isAvailable", True)), None)
 
     @property
     def udid(self):
@@ -277,8 +281,9 @@ class Device:
         """Stop what this worktree started for the device, by recorded and re-checked process identity."""
         removed, survivors = [], []
         st = env.load_state()
-        found = self._find()
-        udid = found and found["udid"]
+        sims = self._all()
+        usable = next((d for d in sims if d.get("isAvailable", True)), None)
+        udid = usable and usable["udid"]
         for s in st.get("devices", {}).get(self.device, {}).get("started", []):
             res = XCUITestRunner(udid or "-", s["port"], self.token).stop(s.get("processes", []))
             removed.append(res)
@@ -290,13 +295,14 @@ class Device:
             if shutdown or delete_sim:
                 run(["xcrun", "simctl", "shutdown", udid])
                 removed.append(f"shutdown:{udid}")
-            if delete_sim:
-                p = run(["xcrun", "simctl", "delete", udid])
+        if delete_sim:
+            for sim in sims:
+                p = run(["xcrun", "simctl", "delete", sim["udid"]])
                 if p.returncode:
-                    removed.append(dict(problems=[f"simctl delete {udid} failed: {p.stderr.strip()}"]))
+                    removed.append(dict(problems=[f"simctl delete {sim['udid']} failed: {p.stderr.strip()}"]))
                 else:
-                    self._udid, self._driver = None, None
-                    removed.append(f"deleted:{udid}")
+                    removed.append(f"deleted:{sim['udid']}")
+            self._udid, self._driver = None, None
         out = dict(removed=removed, evidenceKept=env.EVIDENCE)
         if survivors:
             out["left"] = [p["pid"] for s in survivors for p in s["processes"]]

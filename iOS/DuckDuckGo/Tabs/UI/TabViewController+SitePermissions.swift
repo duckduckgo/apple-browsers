@@ -494,7 +494,7 @@ extension TabViewController {
     }
 
     func closeSitePermissions() {
-        cancelWebExtensionNavigationWait()
+        cancelWebExtensionNavigationWait(outcome: .tabClosed)
         sitePermissionsState.close()
     }
 

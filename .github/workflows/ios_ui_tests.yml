@@ -49,6 +49,7 @@ on:
       - '.github/**'
       - '.xcode-version'
       - 'SharedPackages/**'
+      - '!SharedPackages/BrowserServicesKit/Package.swift'
       - 'iOS/**'
 
 concurrency:

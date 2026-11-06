@@ -67,6 +67,7 @@ class SyncDebugViewController: UITableViewController {
 
         case ensureAccountInfoKey
         case resetMigrationMarker
+        case resetDeviceActivityReviewDate
         case fetchAuditLogDump
 
     }
@@ -194,6 +195,8 @@ class SyncDebugViewController: UITableViewController {
                 cell.textLabel?.text = "Ensure/repair account_info key"
             case .resetMigrationMarker:
                 cell.textLabel?.text = "Reset migration marker"
+            case .resetDeviceActivityReviewDate:
+                cell.textLabel?.text = "Reset Device Activity review date"
             case .fetchAuditLogDump:
                 cell.textLabel?.text = "Fetch decoded audit log"
                 cell.detailTextLabel?.text = isFetchingAuditLogDump ? "Loading…" : auditLogDumpStatus
@@ -317,6 +320,8 @@ class SyncDebugViewController: UITableViewController {
                 ensureAccountInfoKey()
             case .resetMigrationMarker:
                 confirmResetMigrationMarker()
+            case .resetDeviceActivityReviewDate:
+                showDeviceActivityReviewDateOptions(at: indexPath)
             case .fetchAuditLogDump:
                 fetchAuditLogDump()
             case .none:
@@ -509,6 +514,36 @@ class SyncDebugViewController: UITableViewController {
             refreshMigrationStatus()
         })
         present(alertController, animated: true)
+    }
+
+    private func showDeviceActivityReviewDateOptions(at indexPath: IndexPath) {
+        let alert = UIAlertController(title: "Reset Device Activity review date", message: nil, preferredStyle: .actionSheet)
+        let options: [(String, Calendar.Component)] = [
+            ("1 hour ago", .hour),
+            ("1 day ago", .day),
+            ("1 week ago", .weekOfYear),
+            ("1 month ago", .month)
+        ]
+        for (title, component) in options {
+            alert.addAction(UIAlertAction(title: title, style: .default) { [weak self] _ in
+                let date = Calendar.current.date(byAdding: component, value: -1, to: Date()) ?? Date()
+                self?.resetDeviceActivityReviewDate(to: date)
+            })
+        }
+        alert.addAction(UIAlertAction(title: "Cancel", style: .cancel))
+        alert.popoverPresentationController?.sourceView = tableView
+        alert.popoverPresentationController?.sourceRect = tableView.rectForRow(at: indexPath)
+        present(alert, animated: true)
+    }
+
+    private func resetDeviceActivityReviewDate(to resetDate: Date) {
+        do {
+            try sync.resetAuditLogReviewStateForDebug(to: resetDate)
+            showAlert(title: "Device Activity Review Date Reset",
+                      message: "The review date was set to \(resetDate.formatted(date: .abbreviated, time: .shortened)). Reopen Device Activity to see the updated highlights.")
+        } catch {
+            showAlert(title: "Unable to Reset Device Activity Review Date", message: String(reflecting: error))
+        }
     }
 
     private func showDeviceDetails(_ debugDevice: RegisteredDeviceDebugInfo) {

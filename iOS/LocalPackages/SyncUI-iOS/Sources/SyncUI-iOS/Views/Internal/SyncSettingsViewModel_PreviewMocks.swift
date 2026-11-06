@@ -28,11 +28,13 @@ extension SyncSettingsViewModel {
     static func preview(isSyncEnabled: Bool = false,
                         devices: [Device] = [],
                         isAIChatSyncEnabled: Bool = true,
-                        autoRestoreProvider: SyncAutoRestorePreviewProvider = .disabled) -> SyncSettingsViewModel {
+                        autoRestoreProvider: SyncAutoRestorePreviewProvider = .disabled,
+                        deviceActivityViewModel: DeviceActivityViewModel? = nil) -> SyncSettingsViewModel {
         let model = SyncSettingsViewModel(
             isOnDevEnvironment: { false },
             switchToProdEnvironment: {},
-            autoRestoreProvider: autoRestoreProvider
+            autoRestoreProvider: autoRestoreProvider,
+            deviceActivityViewModel: deviceActivityViewModel
         )
         model.isAIChatSyncEnabled = isAIChatSyncEnabled
         // Set `isSyncEnabled` before `devices`: its didSet clears devices when false.

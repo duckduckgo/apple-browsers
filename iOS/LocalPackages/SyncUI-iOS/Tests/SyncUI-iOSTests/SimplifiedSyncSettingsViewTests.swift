@@ -38,9 +38,13 @@ final class SimplifiedSyncSettingsViewTests {
     @available(iOS 16, macOS 13, *)
     @Test("Device Activity entry point visibility", .timeLimit(.minutes(1)), arguments: [false, true])
     func testDeviceActivitySettingsSnapshots(isAvailable: Bool) {
+        let deviceActivityModel = DeviceActivityViewModel(accountIdentifier: { "snapshot-account" }, makePageFetcher: {
+            { DeviceActivityPage(entries: [], hasMore: false) }
+        })
         let model = SyncSettingsViewModel.preview(isSyncEnabled: true,
                                                  devices: [.thisDevice, .desktop, .otherMobile],
-                                                 autoRestoreProvider: .enabled)
+                                                 autoRestoreProvider: .enabled,
+                                                 deviceActivityViewModel: deviceActivityModel)
         model.isDeviceActivityAvailable = isAvailable
         let configurations = SnapshotDevice.defaultIOSDevices.flatMap { device in
             SnapshotAppearance.allCases.map { appearance in

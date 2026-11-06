@@ -725,6 +725,10 @@ public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1217165044799340
     case aiChatBrowserToolOpenTab
 
+    /// Gates the `closeTabs` browser tool.
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1217165044799340
+    case aiChatBrowserToolCloseTabs
+
     /// Makes onboarding non-blocking (tabs, address bar remain usable; closing the onboarding tab skips it).
     case onboardingAsync
 
@@ -1191,6 +1195,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(defaultValue: .internalOnly, source: .remoteReleasable(AIChatBrowserToolsSubfeature.pinTab), category: .duckAI)
         case .aiChatBrowserToolOpenTab:
             Config(defaultValue: .internalOnly, source: .remoteReleasable(AIChatBrowserToolsSubfeature.openTab), category: .duckAI)
+        case .aiChatBrowserToolCloseTabs:
+            Config(defaultValue: .internalOnly, source: .remoteReleasable(AIChatBrowserToolsSubfeature.closeTabs), category: .duckAI)
 
         case .onboardingAsync:
             Config(defaultValue: .disabled, source: .remoteReleasable(MacOSBrowserConfigSubfeature.onboardingAsync))

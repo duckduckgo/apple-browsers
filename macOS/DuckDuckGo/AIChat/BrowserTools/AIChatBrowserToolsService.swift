@@ -82,7 +82,8 @@ final class AIChatBrowserToolsService {
             FindInPageBrowserTool(windowControllersManager: windowControllersManager, reader: reader),
             HighlightInPageBrowserTool(windowControllersManager: windowControllersManager, highlighter: WebViewPageHighlighter()),
             PinTabBrowserTool(windowControllersManager: windowControllersManager),
-            OpenTabBrowserTool(windowControllersManager: windowControllersManager)
+            OpenTabBrowserTool(windowControllersManager: windowControllersManager),
+            CloseTabsBrowserTool(windowControllersManager: windowControllersManager)
         ]
     }
 
@@ -190,6 +191,7 @@ final class AIChatBrowserToolsConfiguration: BrowserToolsConfiguration {
         case .highlightInPage: .aiChatBrowserToolHighlightInPage
         case .pinTab: .aiChatBrowserToolPinTab
         case .openTab: .aiChatBrowserToolOpenTab
+        case .closeTabs: .aiChatBrowserToolCloseTabs
         }
     }
 }

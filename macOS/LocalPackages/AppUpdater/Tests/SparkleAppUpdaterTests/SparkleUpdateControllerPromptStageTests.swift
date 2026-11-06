@@ -34,6 +34,7 @@ import Testing
 final class SparkleUpdateControllerPromptStageTests {
 
     private let featureFlagger = MockFeatureFlagger()
+    private let notificationPresenter = MockNotificationPresenter()
     private let store = InMemoryThrowingKeyValueStore()
     private let item = SUAppcastItem.empty()
 
@@ -47,7 +48,7 @@ final class SparkleUpdateControllerPromptStageTests {
                                 privacyConfigurationManager: MockPrivacyConfigurationManager(),
                                 manualUpdateRemovalHandler: ManualUpdateRemovalHandler(settings: store.throwingKeyedStoring(), featureFlagger: featureFlagger),
                                 pixelFiring: nil,
-                                notificationPresenter: MockNotificationPresenter(),
+                                notificationPresenter: notificationPresenter,
                                 keyValueStore: store,
                                 applicationUpdateDetector: ApplicationUpdateDetector(settings: store.throwingKeyedStoring()),
                                 allowCustomUpdateFeed: false,
@@ -135,6 +136,7 @@ final class SparkleUpdateControllerPromptStageTests {
 
         #expect(controller.pendingNotificationTask != nil)
         #expect(!controller.needsNotificationDot)
+        #expect(!controller.mustShowUpdateIndicators, "the menu item waits for the delay too")
     }
 
     @available(iOS 16, macOS 13, *)
@@ -168,24 +170,54 @@ final class SparkleUpdateControllerPromptStageTests {
 
         #expect(controller.pendingNotificationTask == nil)
         #expect(!controller.needsNotificationDot)
+        #expect(controller.mustShowUpdateIndicators)
     }
 
     @available(iOS 16, macOS 13, *)
-    @Test("A downloaded update shows the update indicators from the first prompt", .timeLimit(.minutes(1)))
+    @Test("A downloaded update shows the menu item from day 0 and the dot only at the first prompt, with no popover", .timeLimit(.minutes(1)))
     func indicatorsFollowThePromptStage() throws {
         let controller = makeController()
         let tracker = try #require(controller.updatePromptStageTracker)
+        var shownStages: [UpdatePromptStage] = []
+        let cancellable = controller.pendingUpdatePromptStagePublisher.sink { shownStages.append($0) }
         findUpdate(controller)
 
         tracker.moveClock(to: .firstPrompt)
+        #expect(!controller.mustShowUpdateIndicators, "waits for the download")
         #expect(!controller.needsNotificationDot, "waits for the download")
-
-        finishDownload(controller)
-        #expect(controller.needsNotificationDot)
-        #expect(controller.mustShowUpdateIndicators)
+        #expect(controller.pendingUpdatePromptStage == .none, "waits for the download")
 
         tracker.resetClock()
+        finishDownload(controller)
+        #expect(controller.mustShowUpdateIndicators)
         #expect(!controller.needsNotificationDot)
-        #expect(!controller.mustShowUpdateIndicators)
+        #expect(controller.pendingUpdatePromptStage == .available)
+
+        tracker.moveClock(to: .firstPrompt)
+        #expect(controller.needsNotificationDot)
+        #expect(controller.pendingUpdatePromptStage == .firstPrompt)
+
+        tracker.moveClock(to: .secondPrompt)
+        #expect(!controller.needsNotificationDot, "the toolbar button takes over from the dot")
+        #expect(controller.mustShowUpdateIndicators)
+        #expect(controller.pendingUpdatePromptStage == .secondPrompt)
+
+        #expect(shownStages == [.none, .available, .firstPrompt, .secondPrompt])
+        #expect(notificationPresenter.shownUpdateTypes.isEmpty)
+        cancellable.cancel()
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Manual updates follow the prompt stages too, with no popover", .timeLimit(.minutes(1)))
+    func manualUpdatesFollowThePromptStage() throws {
+        let controller = makeController()
+        controller.areAutomaticUpdatesEnabled = false
+        findUpdate(controller)
+        finishDownload(controller)
+
+        try #require(controller.updatePromptStageTracker).moveClock(to: .firstPrompt)
+
+        #expect(controller.needsNotificationDot)
+        #expect(notificationPresenter.shownUpdateTypes.isEmpty)
     }
 }

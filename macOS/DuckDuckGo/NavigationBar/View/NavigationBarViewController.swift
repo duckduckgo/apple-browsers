@@ -16,6 +16,7 @@
 //  limitations under the License.
 //
 
+import AppUpdaterShared
 import BrokenSitePrompt
 import BrowserServicesKit
 import Cocoa
@@ -31,7 +32,6 @@ import NetworkProtectionIPC
 import NetworkProtectionUI
 import os.log
 import PageRefreshMonitor
-import Persistence
 import PixelKit
 import PrivacyConfig
 import Subscription
@@ -2340,37 +2340,28 @@ extension NavigationBarViewController: NSMenuDelegate {
 
     // MARK: - Address Bar Update Button
 
-    /// Shows the prominent update button to the left of the browser menu button while `moreProminentUpdates` is on
-    /// and `Debug → Updates → More Prominent Updates` enables it.
+    /// Shows the prominent update button to the left of the browser menu button at the second prompt stage.
     private func setupAddressBarUpdateButton() {
-        guard !isInPopUpWindow else { return }
+        guard !isInPopUpWindow, let updateController = Application.appDelegate.updateController else { return }
 
-        updateAddressBarUpdateButton()
-        NotificationCenter.default.publisher(for: .moreProminentUpdatesDebugSettingsDidChange)
-            .map { _ in }
-            .merge(with: featureFlagger.updatesPublisher)
+        updateController.pendingUpdatePromptStagePublisher
             .receive(on: DispatchQueue.main)
-            .sink { [weak self] in
-                self?.updateAddressBarUpdateButton()
+            .sink { [weak self] stage in
+                if stage == .secondPrompt {
+                    self?.addAddressBarUpdateButton(for: updateController)
+                } else {
+                    self?.addressBarUpdateButton?.removeFromSuperview()
+                    self?.addressBarUpdateButton = nil
+                }
             }
             .store(in: &cancellables)
     }
 
-    private func updateAddressBarUpdateButton() {
-        let debugSettings: any KeyedStoring<MoreProminentUpdatesDebugSettings> = UserDefaults.standard.keyedStoring()
-        if featureFlagger.isFeatureOn(.moreProminentUpdates) && debugSettings.isShowingAddressBarButton {
-            addAddressBarUpdateButton()
-        } else {
-            addressBarUpdateButton?.removeFromSuperview()
-            addressBarUpdateButton = nil
-        }
-    }
-
-    private func addAddressBarUpdateButton() {
+    private func addAddressBarUpdateButton(for updateController: any UpdateController) {
         guard addressBarUpdateButton == nil else { return }
 
-        let button = AddressBarUpdateButton(title: UserText.addressBarUpdateButton) {
-            Application.appDelegate.updateController?.runUpdate()
+        let button = AddressBarUpdateButton(title: updateController.updatePromptButtonTitle) {
+            updateController.runUpdate()
         }.embeddedInHostingView()
 
         let index = menuButtons.arrangedSubviews.firstIndex(of: optionsButton) ?? menuButtons.arrangedSubviews.count

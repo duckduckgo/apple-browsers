@@ -56,6 +56,7 @@ extension Notification.Name {
 }
 
 /// `Debug → Updates → More Prominent Updates` submenu, for previewing the prominent update prompts in place.
+@MainActor
 final class MoreProminentUpdatesDebugMenu: NSMenu, NSMenuDelegate {
 
     private let settings: any KeyedStoring<MoreProminentUpdatesDebugSettings>
@@ -82,6 +83,9 @@ final class MoreProminentUpdatesDebugMenu: NSMenu, NSMenuDelegate {
             menuPromptItems[.card]!.targetting(self)
             NSMenuItem.separator()
             addressBarButtonItem.targetting(self)
+            NSMenuItem.separator()
+            NSMenuItem(title: "Prompt Stage")
+                .submenu(UpdatePromptStageDebugMenu())
         }
     }
 

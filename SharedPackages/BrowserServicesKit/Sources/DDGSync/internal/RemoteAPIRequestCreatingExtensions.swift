@@ -21,10 +21,21 @@ import Networking
 
 extension RemoteAPIRequestCreating {
 
+    public func createRequest(url: URL,
+                              method: APIRequest.HTTPMethod,
+                              headers: [String: String],
+                              parameters: [String: String],
+                              body: Data?,
+                              contentType: String?) -> HTTPRequesting {
+        createRequest(url: url, method: method, headers: headers, parameters: parameters,
+                      body: body, contentType: contentType, requirements: [.allowHTTPNotModified])
+    }
+
     func createAuthenticatedGetRequest(url: URL,
                                        authToken: String,
                                        headers: [String: String] = [:],
-                                       parameters: [String: String] = [:]) -> HTTPRequesting {
+                                       parameters: [String: String] = [:],
+                                       requirements: APIResponseRequirements = [.allowHTTPNotModified]) -> HTTPRequesting {
         var headers = headers
         headers["Authorization"] = "Bearer \(authToken)"
         return createRequest(
@@ -33,7 +44,8 @@ extension RemoteAPIRequestCreating {
             headers: headers,
             parameters: parameters,
             body: nil,
-            contentType: nil
+            contentType: nil,
+            requirements: requirements
         )
     }
 

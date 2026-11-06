@@ -28,7 +28,8 @@ public struct RemoteAPIRequestCreator: RemoteAPIRequestCreating {
                               headers: HTTPHeaders,
                               parameters: [String: String],
                               body: Data?,
-                              contentType: String?) -> HTTPRequesting {
+                              contentType: String?,
+                              requirements: APIResponseRequirements) -> HTTPRequesting {
 
         var requestHeaders = headers
         if let contentType {
@@ -46,7 +47,7 @@ public struct RemoteAPIRequestCreator: RemoteAPIRequestCreating {
             Logger.sync.debug("\(method.rawValue, privacy: .public) request body: \(String(bytes: body, encoding: .utf8) ?? "", privacy: .public)")
         }
 
-        return APIRequest(configuration: configuration, requirements: [.allowHTTPNotModified])
+        return APIRequest(configuration: configuration, requirements: requirements)
     }
 }
 

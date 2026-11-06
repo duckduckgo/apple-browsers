@@ -19,7 +19,6 @@
 import Common
 import FoundationExtensions
 import Foundation
-import Networking
 import Persistence
 import PrivacyConfig
 
@@ -112,7 +111,6 @@ struct ProductionDependencies: SyncDependencies {
                                                             canReadUnifiedDeviceList: { syncFeatureFlags.canReadUnifiedDeviceList() })
         account = AccountManager(endpoints: endpoints,
                                  api: api,
-                                 auditLogAPIService: DefaultAPIService(),
                                  crypter: crypter,
                                  registeredDeviceMapper: registeredDeviceMapper,
                                  accountInfoKeys: accountInfoKeyManager,

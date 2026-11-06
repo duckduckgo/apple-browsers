@@ -129,39 +129,27 @@ final class WebExtensionPermissionPrompt: WebExtensionPermissionPrompting {
             entries.append(websiteEntry)
         }
 
-        if permissions.matchPatterns.contains(where: matchesLocalFiles) || permissions.urls.contains(where: \.isFileURL) {
-            entries.append(UserText.webExtensionLocalFilesAccess)
-        }
-
         let descriptions = Set((permissions.permissions.map(\.rawValue) + permissions.appPermissions.map(\.rawValue)).map { permissionDescription($0) })
         entries.append(contentsOf: descriptions.sorted())
 
         return entries
     }
 
-    /// Groups website access like Chrome: all websites, up to three named sites, or "a number of websites".
+    /// Groups website access like Chrome: all websites, up to three named hosts, or "a number of websites".
     private func websiteAccessEntry(for permissions: WebExtensionPermissionRequest) -> String? {
-        let patterns = permissions.matchPatterns.filter { !matchesLocalFiles($0) }
-        let urls = permissions.urls.filter { !$0.isFileURL }
-        if patterns.contains(where: { $0.matchesAllHosts || $0.matchesAllURLs }) {
+        if permissions.matchPatterns.contains(where: { $0.matchesAllHosts || $0.matchesAllURLs }) {
             return UserText.webExtensionAllWebsitesAccess
         }
 
-        // Hostless entries fall back to their full text, so every requested origin is still disclosed.
-        let sites = Set(patterns.map { $0.host ?? $0.string } + urls.map { $0.host ?? $0.absoluteString }).sorted()
-        switch sites.count {
+        let hosts = Set(permissions.matchPatterns.compactMap(\.host) + permissions.urls.compactMap(\.host)).sorted()
+        switch hosts.count {
         case 0:
             return nil
         case 1...3:
-            return String(format: UserText.webExtensionWebsiteAccess, sites.joined(separator: ", "))
+            return String(format: UserText.webExtensionWebsiteAccess, ListFormatter.localizedString(byJoining: hosts))
         default:
             return UserText.webExtensionManyWebsitesAccess
         }
-    }
-
-    /// True for every `file:` pattern whatever its path; `<all_urls>` doesn't match file URLs in WebKit.
-    private func matchesLocalFiles(_ pattern: WKWebExtension.MatchPattern) -> Bool {
-        pattern.matches(URL(fileURLWithPath: "/"), options: .ignorePaths)
     }
 
     private func permissionDescription(_ permission: String) -> String {

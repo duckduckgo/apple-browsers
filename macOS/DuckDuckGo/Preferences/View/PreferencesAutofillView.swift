@@ -33,6 +33,7 @@ extension Preferences {
 
     struct AutofillView: View {
         @ObservedObject var model: AutofillPreferencesModel
+        @Environment(\.designSystemPalette) private var palette
         private let bitwardenManager = Application.appDelegate.bitwardenManager
         @State private var bitwardenStatus: BWStatus = Application.appDelegate.bitwardenManager?.status ?? .disabled
         @State private var showingResetNeverPromptSitesSheet = false
@@ -117,7 +118,7 @@ extension Preferences {
                         }
 
                         if model.areWebExtensionsSupported {
-                            TextMenuItemCaption(UserText.autofillPasswordManagerBitwardenRetirement)
+                            bitwardenRetirementCaption
                         }
                     }
                 }
@@ -212,6 +213,16 @@ extension Preferences {
             .pickerStyle(.radioGroup)
             .rebrandedControlTint()
             .offset(x: PreferencesUI_macOS.Const.pickerHorizontalOffset)
+        }
+
+        /// The string's markdown link only marks the extension's name: `openURL` is intercepted to switch panes in place.
+        private var bitwardenRetirementCaption: some View {
+            TextMenuItemCaption(UserText.autofillPasswordManagerBitwardenRetirement)
+                .tint(Color.rebrandableLink(palette: palette))
+                .environment(\.openURL, OpenURLAction { _ in
+                    showExtensions()
+                    return .handled
+                })
         }
 
         private var bitwardenStatusPublisher: AnyPublisher<BWStatus, Never> {

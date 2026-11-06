@@ -63797,7 +63797,6 @@
     },
     "import.summary.history.visits" : {
       "comment" : "Summary text showing number of browsing history visits imported, followed by importSummaryHistoryTimeRange",
-      "extractionState" : "extracted_with_value",
       "localizations" : {
         "en" : {
           "variations" : {

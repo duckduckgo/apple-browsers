@@ -1515,6 +1515,8 @@
 		CCAA80352F5B290400BB58F4 /* DefaultBrowserAndDockPromoDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = CCAA80332F5B290400BB58F4 /* DefaultBrowserAndDockPromoDelegate.swift */; };
 		CCAA80362F5B290400BB58F4 /* DefaultBrowserAndDockPromptUIHosting.swift in Sources */ = {isa = PBXBuildFile; fileRef = CCAA80322F5B290400BB58F4 /* DefaultBrowserAndDockPromptUIHosting.swift */; };
 		CCAA80372F5B290400BB58F4 /* DefaultBrowserAndDockPromoDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = CCAA80332F5B290400BB58F4 /* DefaultBrowserAndDockPromoDelegate.swift */; };
+		AA6E00022F6C000100000001 /* DefaultBrowserWinBackPromoDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA6E00012F6C000100000001 /* DefaultBrowserWinBackPromoDelegate.swift */; };
+		AA6E00032F6C000100000001 /* DefaultBrowserWinBackPromoDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA6E00012F6C000100000001 /* DefaultBrowserWinBackPromoDelegate.swift */; };
 		CCAED3B42EBA00E900C7368E /* DefaultBrowserAndDockPromptTypeDecider+ActiveUser.swift in Sources */ = {isa = PBXBuildFile; fileRef = CCAED3B02EBA00E900C7368E /* DefaultBrowserAndDockPromptTypeDecider+ActiveUser.swift */; };
 		CCAED3B52EBA00E900C7368E /* DefaultBrowserAndDockPromptTypeDecider+InactiveUser.swift in Sources */ = {isa = PBXBuildFile; fileRef = CCAED3B12EBA00E900C7368E /* DefaultBrowserAndDockPromptTypeDecider+InactiveUser.swift */; };
 		CCAED3B62EBA00E900C7368E /* DefaultBrowserAndDockPromptTypeDeciding.swift in Sources */ = {isa = PBXBuildFile; fileRef = CCAED3B22EBA00E900C7368E /* DefaultBrowserAndDockPromptTypeDeciding.swift */; };
@@ -2737,6 +2739,7 @@
 		CCA0EB202EBBCD56006944CF /* DefaultBrowserAndDockPromptInactiveUserView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DefaultBrowserAndDockPromptInactiveUserView.swift; sourceTree = "<group>"; };
 		CCAA80322F5B290400BB58F4 /* DefaultBrowserAndDockPromptUIHosting.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DefaultBrowserAndDockPromptUIHosting.swift; sourceTree = "<group>"; };
 		CCAA80332F5B290400BB58F4 /* DefaultBrowserAndDockPromoDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DefaultBrowserAndDockPromoDelegate.swift; sourceTree = "<group>"; };
+		AA6E00012F6C000100000001 /* DefaultBrowserWinBackPromoDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DefaultBrowserWinBackPromoDelegate.swift; sourceTree = "<group>"; };
 		CCAED3B02EBA00E900C7368E /* DefaultBrowserAndDockPromptTypeDecider+ActiveUser.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "DefaultBrowserAndDockPromptTypeDecider+ActiveUser.swift"; sourceTree = "<group>"; };
 		CCAED3B12EBA00E900C7368E /* DefaultBrowserAndDockPromptTypeDecider+InactiveUser.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "DefaultBrowserAndDockPromptTypeDecider+InactiveUser.swift"; sourceTree = "<group>"; };
 		CCAED3B22EBA00E900C7368E /* DefaultBrowserAndDockPromptTypeDeciding.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DefaultBrowserAndDockPromptTypeDeciding.swift; sourceTree = "<group>"; };
@@ -5234,8 +5237,17 @@
 				CCAA80322F5B290400BB58F4 /* DefaultBrowserAndDockPromptUIHosting.swift */,
 				CCAA80332F5B290400BB58F4 /* DefaultBrowserAndDockPromoDelegate.swift */,
 				DB12ADC1D6BD72B826060657 /* DefaultBrowserAndDockActionPerformer.swift */,
+				AA6E00042F6C000100000001 /* WinBack */,
 			);
 			path = DefaultBrowserAndAddToDockPrompts;
+			sourceTree = "<group>";
+		};
+		AA6E00042F6C000100000001 /* WinBack */ = {
+			isa = PBXGroup;
+			children = (
+				AA6E00012F6C000100000001 /* DefaultBrowserWinBackPromoDelegate.swift */,
+			);
+			path = WinBack;
 			sourceTree = "<group>";
 		};
 		BBFEE6CB2E99244200F9BA45 /* WinBackOffer */ = {
@@ -7594,6 +7606,7 @@
 				F18826932BC0105900D9AC4F /* PixelDataStore.swift in Sources */,
 				CCAA80362F5B290400BB58F4 /* DefaultBrowserAndDockPromptUIHosting.swift in Sources */,
 				CCAA80372F5B290400BB58F4 /* DefaultBrowserAndDockPromoDelegate.swift in Sources */,
+				AA6E00022F6C000100000001 /* DefaultBrowserWinBackPromoDelegate.swift in Sources */,
 				BBDFAD2A2E98F41D00418F3E /* WinBackOfferDebugMenu.swift in Sources */,
 				7BBD45B22A691AB500C83CA9 /* NetworkProtectionDebugUtilities.swift in Sources */,
 				7B0A6DFA2D47CCDF00FDFDC2 /* ExcludedAppsViewController.swift in Sources */,
@@ -8692,6 +8705,7 @@
 				CCAA80342F5B290400BB58F4 /* DefaultBrowserAndDockPromptUIHosting.swift in Sources */,
 				B57268922F68861A00FEBB76 /* NavigationBarStyleProviding.swift in Sources */,
 				CCAA80352F5B290400BB58F4 /* DefaultBrowserAndDockPromoDelegate.swift in Sources */,
+				AA6E00032F6C000100000001 /* DefaultBrowserWinBackPromoDelegate.swift in Sources */,
 				372D15EC2D00FA1A00A11576 /* AppearancePreferences+NewTabPage.swift in Sources */,
 				B52B61812E94331B008888E3 /* ThemeUpdateListening.swift in Sources */,
 				BD94DDF82D7A0CEC0090A599 /* DBPMetadataCollector.swift in Sources */,

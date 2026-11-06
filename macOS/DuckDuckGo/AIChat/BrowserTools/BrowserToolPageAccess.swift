@@ -63,6 +63,47 @@ enum BrowserToolTargetTab {
         return .resolved(tabID: tabID, collection: collection)
     }
 
+    /// Whether `listOpenTabs` lists the tab. Duck.ai only learns tab ids from that list.
+    static func isListed(_ tab: AnyTab) -> Bool {
+        guard case .url(let url, _, _) = tab.content else { return false }
+        return !url.isDuckAIURL
+    }
+
+    /// The tab a tab action (pin, close, bookmark) may act on: the chat's own tab, or a listed tab of
+    /// the chat's window.
+    static func actionableTab(withID tabID: TabIdentifier, ownerTabID: TabIdentifier, in collection: TabCollectionViewModel) -> AnyTab? {
+        let tab: AnyTab? = switch collection.indexInAllTabs(where: { $0.uuid == tabID }) {
+        case .pinned(let index): collection.pinnedTabsCollection?.tabs[safe: index]
+        case .unpinned(let index): collection.tabCollection.tabs[safe: index]
+        case .none: nil
+        }
+        guard let tab, tab.uuid == ownerTabID || isListed(tab) else { return nil }
+        return tab
+    }
+
+    /// The tabs named by `tabIds`, without duplicates, or the chat's own tab when it is absent. Nil when
+    /// any id does not resolve, so a stale id changes nothing.
+    static func actionableTabs(withIDs tabIDs: [TabIdentifier]?, ownerTabID: TabIdentifier, in collection: TabCollectionViewModel) -> [AnyTab]? {
+        var unique: [TabIdentifier] = []
+        for tabID in tabIDs ?? [ownerTabID] where !unique.contains(tabID) { unique.append(tabID) }
+        let tabs = unique.compactMap { actionableTab(withID: $0, ownerTabID: ownerTabID, in: collection) }
+        return tabs.count == unique.count ? tabs : nil
+    }
+
+    /// The `tabIds` argument: nil when absent, `.invalid` when it breaks the contract (1 to 50 non-blank strings).
+    static func tabIDs(from arguments: JSONValue?, maxCount: Int = 50) -> TabIDsArgument {
+        guard let value = arguments?["tabIds"] else { return .absent }
+        guard let values = value.arrayValue, (1...maxCount).contains(values.count) else { return .invalid }
+        let tabIDs = values.compactMap { $0.stringValue?.trimmingCharacters(in: .whitespaces) }.filter { !$0.isEmpty }
+        return tabIDs.count == values.count ? .ids(tabIDs) : .invalid
+    }
+
+    enum TabIDsArgument: Equatable {
+        case absent
+        case ids([TabIdentifier])
+        case invalid
+    }
+
     /// The loaded tab, or nil when it is not a page the tab picker would offer.
     static func attachableTab(withID tabID: TabIdentifier, in collection: TabCollectionViewModel) -> Tab? {
         guard let index = collection.indexInAllTabs(where: { $0.uuid == tabID }),

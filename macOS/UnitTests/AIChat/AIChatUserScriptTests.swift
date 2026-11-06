@@ -333,7 +333,8 @@ final class AIChatUserScriptTests: XCTestCase {
             FeatureFlag.aiChatBrowserToolSwitchToTab.rawValue: false,
             FeatureFlag.aiChatBrowserToolReadTabContent.rawValue: false,
             FeatureFlag.aiChatBrowserToolFindInPage.rawValue: false,
-            FeatureFlag.aiChatBrowserToolHighlightInPage.rawValue: false
+            FeatureFlag.aiChatBrowserToolHighlightInPage.rawValue: false,
+            FeatureFlag.aiChatBrowserToolPinTab.rawValue: false
         ])
     }
 

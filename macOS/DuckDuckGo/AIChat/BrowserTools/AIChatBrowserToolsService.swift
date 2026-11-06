@@ -80,7 +80,8 @@ final class AIChatBrowserToolsService {
             SearchHistoryBrowserTool(historyCoordinator: historyCoordinator),
             ReadTabContentBrowserTool(windowControllersManager: windowControllersManager, reader: reader),
             FindInPageBrowserTool(windowControllersManager: windowControllersManager, reader: reader),
-            HighlightInPageBrowserTool(windowControllersManager: windowControllersManager, highlighter: WebViewPageHighlighter())
+            HighlightInPageBrowserTool(windowControllersManager: windowControllersManager, highlighter: WebViewPageHighlighter()),
+            PinTabBrowserTool(windowControllersManager: windowControllersManager)
         ]
     }
 
@@ -186,6 +187,7 @@ final class AIChatBrowserToolsConfiguration: BrowserToolsConfiguration {
         case .readTabContent: .aiChatBrowserToolReadTabContent
         case .findInPage: .aiChatBrowserToolFindInPage
         case .highlightInPage: .aiChatBrowserToolHighlightInPage
+        case .pinTab: .aiChatBrowserToolPinTab
         }
     }
 }

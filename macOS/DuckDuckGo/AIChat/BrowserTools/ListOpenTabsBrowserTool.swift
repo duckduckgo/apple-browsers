@@ -66,7 +66,7 @@ final class ListOpenTabsBrowserTool: BrowserTool {
         let selectedTabID = collection.selectedTabViewModel?.tab.uuid
         // Only pages with a URL are listed, and never Duck.ai itself.
         let pages: [JSONValue] = tabs.compactMap { tab in
-            guard case .url(let url, _, _) = tab.content, !url.isDuckAIURL else { return nil }
+            guard BrowserToolTargetTab.isListed(tab), case .url(let url, _, _) = tab.content else { return nil }
             return [
                 "tabId": .string(tab.uuid),
                 "title": .string(tab.title ?? url.host ?? ""),

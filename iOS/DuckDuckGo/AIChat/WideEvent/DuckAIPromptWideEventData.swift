@@ -29,7 +29,7 @@ final class DuckAIPromptWideEventData: WideEventData {
         featureName: "duckai-prompt",
         mobileMetaType: "ios-duckai-prompt",
         desktopMetaType: "macos-duckai-prompt",
-        version: "1.4.0"
+        version: "1.5.0"
     )
 
     var globalData: WideEventGlobalData
@@ -60,6 +60,7 @@ final class DuckAIPromptWideEventData: WideEventData {
     /// Optional so flows pending from an older version decode.
     var layout: UsageContext.Layout?
     var hardwareKeyboard: Bool?
+    var addressBarPosition: AddressBarPosition?
 
     /// Time to the first non-`.ready` status observed after submission. Marks
     /// when the page transitioned out of idle and began processing the prompt.
@@ -246,6 +247,7 @@ extension DuckAIPromptWideEventData {
         parameters[WideEventParameter.DuckAIPromptFeature.attachmentsSelected] = attachmentsSelected
         parameters[WideEventParameter.DuckAIPromptFeature.layout] = layout?.rawValue
         parameters[WideEventParameter.DuckAIPromptFeature.hardwareKeyboard] = hardwareKeyboard
+        parameters[WideEventParameter.DuckAIPromptFeature.addressBarPosition] = addressBarPosition?.rawValue
 
         return parameters
     }
@@ -257,6 +259,7 @@ extension WideEventParameter {
         static let modelId = "feature.data.ext.prompt.model_id"
         static let layout = "feature.data.ext.device.layout"
         static let hardwareKeyboard = "feature.data.ext.device.hardware_keyboard"
+        static let addressBarPosition = "feature.data.ext.device.address_bar_position"
         static let userTier = "feature.data.ext.prompt.user_tier"
         static let reasoningEffort = "feature.data.ext.prompt.reasoning_effort"
         static let entryPoint = "feature.data.ext.prompt.entry_point"

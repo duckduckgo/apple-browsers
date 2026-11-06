@@ -33,6 +33,12 @@ enum UnifiedSuggestionsContentKind: Hashable {
     case logo
 }
 
+enum FocusedContentPlacement {
+    case hidden
+    case embedded
+    case pinned
+}
+
 /// The complete set of facts that decide the presentation. No UIKit, no managers.
 struct UnifiedSuggestionsInputs: Equatable {
     let mode: TextEntryMode
@@ -46,6 +52,39 @@ struct UnifiedSuggestionsInputs: Equatable {
 /// Pure decision table. `previous` lets us hold the prior presentation while
 /// duck.ai fetchers are still settling, so the logo never flashes mid-query.
 enum UnifiedSuggestionsContentResolver {
+
+    static func resolveChromePlacement(usesScrollableEscapeHatch: Bool,
+                                       usesRedesignedNewTabPageLayout: Bool,
+                                       showsRedesignedSearchModules: Bool,
+                                       mode: TextEntryMode,
+                                       isTyping: Bool,
+                                       isFireTab: Bool,
+                                       hasEscapeHatch: Bool,
+                                       showsSyncPromo: Bool) -> (escapeHatch: FocusedContentPlacement, syncPromo: FocusedContentPlacement) {
+        guard !isTyping, !isFireTab else { return (.hidden, .hidden) }
+        let embedsHatch = usesScrollableEscapeHatch || (usesRedesignedNewTabPageLayout && showsRedesignedSearchModules)
+        let hatchPlacement: FocusedContentPlacement = embedsHatch ? .embedded : .pinned
+        let promoPlacement: FocusedContentPlacement = usesScrollableEscapeHatch ? .embedded : .pinned
+        return (hasEscapeHatch ? hatchPlacement : .hidden, mode == .aiChat && showsSyncPromo ? promoPlacement : .hidden)
+    }
+
+    static func showsEmbeddedContent(usesScrollableEscapeHatch: Bool,
+                                     usesRedesignedNewTabPageLayout: Bool,
+                                     showsRedesignedSearchModules: Bool,
+                                     isFireTab: Bool,
+                                     content: UnifiedSuggestionsContentKind) -> Bool {
+        guard !isFireTab else { return false }
+        guard usesScrollableEscapeHatch else {
+            return usesRedesignedNewTabPageLayout ? showsRedesignedSearchModules : content == .favorites
+        }
+        switch content {
+        case .favorites, .logo, .list(.recents):
+            // Pending Duck.ai results keep recents in this scroll view until the typing list is ready.
+            return true
+        case .list(.search), .list(.duckAI):
+            return false
+        }
+    }
 
     static func resolve(_ inputs: UnifiedSuggestionsInputs,
                         previous: UnifiedSuggestionsContentKind?) -> UnifiedSuggestionsContentKind {

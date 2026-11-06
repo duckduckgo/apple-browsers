@@ -228,6 +228,12 @@
                 "type": "boolean",
                 "description": "Whether a hardware keyboard was connected when the prompt was submitted."
             },
+            {
+                "key": "feature.data.ext.device.address_bar_position",
+                "type": "string",
+                "description": "The iPhone address bar position setting when the prompt was submitted. Absent on iPad.",
+                "enum": ["top", "bottom"]
+            },
 
             // Latency milestones (ms since prompt submission). Bucketed (round-up) into one of:
             // 100, 500, 1000, 2000, 3000, 5000, 10000, 30000. Any duration over 10s collapses into 30000.

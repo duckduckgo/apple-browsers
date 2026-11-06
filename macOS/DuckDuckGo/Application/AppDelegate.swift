@@ -422,6 +422,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     let eventHubIntegration: MacOSEventHubIntegration
     private lazy var webNotificationClickHandler = WebNotificationClickHandler(tabFinder: windowControllersManager)
     private lazy var onboardingNonBlockingExperiment = OnboardingNonBlockingExperiment(featureFlagger: featureFlagger)
+    let userChurnService: UserChurnService
     let userChurnScheduler: UserChurnBackgroundActivityScheduler
     lazy var vpnUpsellPopoverPresenter = DefaultVPNUpsellPopoverPresenter(
         subscriptionManager: subscriptionManager,
@@ -1457,12 +1458,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             }
         )
 
-        userChurnScheduler = UserChurnBackgroundActivityScheduler(
+        userChurnService = UserChurnService(
             defaultBrowserProvider: SystemDefaultBrowserProvider(),
             keyValueStore: keyValueStore,
             pixelFiring: PixelKit.shared,
             atbProvider: { LocalStatisticsStore().atb }
         )
+        userChurnScheduler = UserChurnBackgroundActivityScheduler(userChurnService: userChurnService)
 
         bitwardenManager = BWManagerProvider.makeManager()
         passwordManagerCoordinator = PasswordManagerCoordinator(bitwardenManagement: bitwardenManager)

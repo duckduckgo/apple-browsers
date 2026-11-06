@@ -32,11 +32,12 @@ extension MainViewController: NewTabTransitionHost {
 
     var newPageView: UIView { view }
 
-    func makeNewTabTransition(from start: NewTabTransitionCoordinator.Start) -> NewTabTransitioning? {
+    func makeNewTabTransition(from start: NewTabTransitionCoordinator.Start, raisesKeyboard: Bool) -> NewTabTransitioning? {
         guard isNewTabTransitionEnabled, let oldScreen = oldScreen(for: start) else { return nil }
         logMenuViews(around: oldScreen)
         return NewTabTransition.begin(over: oldScreen,
                                       dimmedBy: dimmingOverOldScreen(for: start),
+                                      newPageRaisesKeyboard: raisesKeyboard,
                                       from: start == .tabManager ? .tabManager : .inTab,
                                       tapLocation: newTabTouchLocationRecorder.lastTouchLocation,
                                       configuration: NewTabTransitionConfigurationStore.shared.configuration)

@@ -62,6 +62,7 @@ final class NewTabTransition: NewTabTransitioning {
     /// `startDimming` is how dark the screen already looks, such as under a sheet's backdrop.
     static func begin(over oldScreen: UIView,
                       dimmedBy startDimming: CGFloat = 0,
+                      newPageRaisesKeyboard: Bool,
                       from entryPoint: Tuning.EntryPoint,
                       tapLocation: CGPoint?,
                       configuration: NewTabTransitionConfiguration) -> NewTabTransition? {
@@ -72,7 +73,7 @@ final class NewTabTransition: NewTabTransitioning {
         let transition = NewTabTransition(window: window, entryPoint: entryPoint, tapLocation: tapLocation, configuration: configuration)
         logger.debug("Start dimming: \(startDimming, privacy: .public)")
         transition.coverScreen(with: screenSnapshot, dimmedBy: startDimming)
-        handleOldKeyboard(in: window, as: configuration.oldKeyboard)
+        handleOldKeyboard(in: window, as: configuration.oldKeyboard.forNewPage(raisingKeyboard: newPageRaisesKeyboard))
         transition.acknowledgeTap()
         logger.debug("Transition began at \(transition.beganAt, privacy: .public)")
         return transition

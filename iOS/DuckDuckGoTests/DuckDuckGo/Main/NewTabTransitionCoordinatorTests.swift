@@ -248,7 +248,7 @@ private final class FakeHost: NewTabTransitionHost {
     private(set) var unseenCloses: [() -> Void] = []
     private(set) var dismissals: [() -> Void] = []
 
-    func makeNewTabTransition(from start: NewTabTransitionCoordinator.Start) -> NewTabTransitioning? {
+    func makeNewTabTransition(from start: NewTabTransitionCoordinator.Start, raisesKeyboard: Bool) -> NewTabTransitioning? {
         guard isTransitionAvailable else { return nil }
         let transition = FakeTransition()
         starts.append(start)

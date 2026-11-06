@@ -35,6 +35,11 @@ enum NewTabTransitionTuning {
         case slidesDown
         /// Stays up over the card, so a new tab that raises its own keyboard never drops it.
         case staysUp
+
+        /// A new page without its own keyboard has nothing to keep the old one up for.
+        func forNewPage(raisingKeyboard: Bool) -> Self {
+            self == .staysUp && !raisingKeyboard ? .leavesInstantly : self
+        }
     }
 
     enum EntryPoint {

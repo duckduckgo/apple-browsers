@@ -5224,7 +5224,7 @@ class MainViewController: UIViewController {
             let openVoiceTab = { self.loadUrlInNewTab(voiceURL, inheritedAttribution: nil, voiceMode: true) { $0.duckAIEntrySource = source } }
             // A deep link arrives from outside the app, which keeps its usual entrance.
             guard fromDeepLink else {
-                newTabTransitions.open(openVoiceTab)
+                newTabTransitions.open(raisesKeyboard: false, openVoiceTab)
                 return
             }
             openVoiceTab()
@@ -6113,7 +6113,7 @@ extension MainViewController: BrowserChromeDelegate {
             if fromExternalLink {
                 openTab()
             } else {
-                newTabTransitions.open(openTab)
+                newTabTransitions.open(raisesKeyboard: false, openTab)
             }
         case .loadInPlace:
             currentTab?.isDuckAIDeepLinkSurfaceRequested = url.isDuckAIChatProtectionOpen
@@ -8042,7 +8042,7 @@ extension MainViewController: TabDelegate {
              didRequestNewFireTabForUrl url: URL,
              inheritingAttribution attribution: AdClickAttributionLogic.State?) {
         recordDuckAISessionPendingExit(.fireTabOpened)
-        newTabTransitions.open {
+        newTabTransitions.open(raisesKeyboard: false) {
             tabManager.setBrowsingMode(.fire, source: .longPressLink)
             loadUrlInNewTab(url, inheritedAttribution: attribution)
         }
@@ -8151,7 +8151,7 @@ extension MainViewController: TabDelegate {
         if openedByPage, isNewTabTransitionEnabled {
             capturePreviewForTab(tab)
             showBars()
-            newTabTransitions.open {
+            newTabTransitions.open(raisesKeyboard: false) {
                 loadUrlInNewTab(url, inheritedAttribution: attribution, completion: completion)
                 currentTab?.openedByPage = true
                 currentTab?.openingTab = tab
@@ -8171,7 +8171,8 @@ extension MainViewController: TabDelegate {
                 self.omniBarTabSwitcherButton?.tabCount += 1
             }
         } else {
-            newTabTransitions.open {
+            // A new Duck.ai chat brings its own keyboard; a website doesn't.
+            newTabTransitions.open(raisesKeyboard: url.isDuckAIURL) {
                 loadUrlInNewTab(url, inheritedAttribution: attribution, completion: completion)
             }
             self.currentTab?.adClickExternalOpenDetector.invalidateForUserInitiated()

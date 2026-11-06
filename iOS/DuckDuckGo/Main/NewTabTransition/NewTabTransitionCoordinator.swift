@@ -42,7 +42,8 @@ protocol NewTabOpeningObserving: AnyObject {
 protocol NewTabTransitionHost: AnyObject {
     /// The view the new tab grows into.
     var newPageView: UIView { get }
-    func makeNewTabTransition(from start: NewTabTransitionCoordinator.Start) -> NewTabTransitioning?
+    /// `raisesKeyboard` says whether the new page brings its own keyboard, which a keyboard already up can wait for.
+    func makeNewTabTransition(from start: NewTabTransitionCoordinator.Start, raisesKeyboard: Bool) -> NewTabTransitioning?
     /// Closes the presented screen without animation and out of sight.
     func closePresentedScreenUnseen(then completion: @escaping () -> Void)
     func dismissPresentedScreen(then completion: @escaping () -> Void)
@@ -88,7 +89,7 @@ final class NewTabTransitionCoordinator: NewTabOpeningObserving {
     @discardableResult
     func prepare(from start: Start) -> Bool {
         cancelPrepared()
-        guard let transition = begin(from: start) else { return false }
+        guard let transition = begin(from: start, raisesKeyboard: true) else { return false }
         prepared = transition
         scheduleOnNextTurn { [weak self, weak transition] in
             guard let self, let transition, prepared === transition else { return }
@@ -98,10 +99,10 @@ final class NewTabTransitionCoordinator: NewTabOpeningObserving {
     }
 
     /// Builds the new tab with `build` under the transition when it's on, otherwise just builds it.
-    /// Returns whether it animated.
+    /// Pass `raisesKeyboard: false` for a page without its own keyboard, such as a website. Returns whether it animated.
     @discardableResult
-    func open(_ build: () -> Void) -> Bool {
-        guard let transition = takePrepared() ?? begin(from: .page) else {
+    func open(raisesKeyboard: Bool = true, _ build: () -> Void) -> Bool {
+        guard let transition = takePrepared() ?? begin(from: .page, raisesKeyboard: raisesKeyboard) else {
             build()
             return false
         }
@@ -111,7 +112,7 @@ final class NewTabTransitionCoordinator: NewTabOpeningObserving {
 
     /// Like `open`, with the presented screen kept in the old screen and closed unseen under the cover.
     func openClosingPresentedScreen(_ build: @escaping () -> Void) {
-        guard let transition = begin(from: .presentedScreen) else {
+        guard let transition = begin(from: .presentedScreen, raisesKeyboard: true) else {
             host?.dismissPresentedScreen(then: build)
             return
         }
@@ -133,8 +134,8 @@ final class NewTabTransitionCoordinator: NewTabOpeningObserving {
         current.keyboardGate.whenOpen { [scheduleOnNextTurn] in scheduleOnNextTurn(focus) }
     }
 
-    private func begin(from start: Start) -> NewTabTransitioning? {
-        guard current == nil, let transition = host?.makeNewTabTransition(from: start) else { return nil }
+    private func begin(from start: Start, raisesKeyboard: Bool) -> NewTabTransitioning? {
+        guard current == nil, let transition = host?.makeNewTabTransition(from: start, raisesKeyboard: raisesKeyboard) else { return nil }
         current = transition
         transition.addCompletion { [weak self, weak transition] in
             guard let self, current === transition else { return }

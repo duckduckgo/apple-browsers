@@ -42,10 +42,9 @@ public protocol TokenRefreshing: Sendable {
     /// - Parameters:
     ///   - tokenContainer: The container whose refresh token is spent.
     ///   - count: How many pairs to create. A value below 1 makes no calls and returns an empty array; in debug builds it is an assertion failure.
-    ///   - refreshID: The identifier of the refresh. Only the last call reports its steps on the refresh event mapping.
     /// - Returns: The new pairs, oldest first. The last one is the most recently minted.
     /// - Throws: `TokenForkError.incomplete` as soon as one call fails, carrying the pairs minted before it.
-    func fork(_ tokenContainer: TokenContainer, count: Int, refreshID: String?) async throws(TokenForkError) -> [TokenContainer]
+    func fork(_ tokenContainer: TokenContainer, count: Int) async throws(TokenForkError) -> [TokenContainer]
 }
 
 /// Thrown by `TokenRefreshing.fork` when one of its refresh calls fails.
@@ -156,7 +155,7 @@ public actor DefaultTokenRefresher: TokenRefreshing {
             let refreshedTokens = try await decode(accessToken: refreshTokenResponse.accessToken,
                                                    refreshToken: refreshTokenResponse.refreshToken,
                                                    refreshID: refreshID)
-            Logger.OAuthClient.log("Tokens refreshed, expiry: \(refreshedTokens.decodedAccessToken.exp.value.description, privacy: .public)")
+            Logger.OAuthClient.log("Tokens refreshed, access token expiry: \(refreshedTokens.decodedAccessToken.exp.value.description, privacy: .public)")
             return refreshedTokens
         } catch OAuthServiceError.authAPIError(let apiError) where apiError.bodyError.errorCode == .invalidTokenRequest {
             Logger.OAuthClient.error("Failed to refresh token: \(apiError.description, privacy: .public)")
@@ -170,16 +169,15 @@ public actor DefaultTokenRefresher: TokenRefreshing {
         }
     }
 
-    public func fork(_ tokenContainer: TokenContainer, count: Int, refreshID: String?) async throws(TokenForkError) -> [TokenContainer] {
+    public func fork(_ tokenContainer: TokenContainer, count: Int) async throws(TokenForkError) -> [TokenContainer] {
         guard count >= 1 else {
             assertionFailure("fork needs at least one pair")
             return []
         }
         var minted: [TokenContainer] = []
-        for index in 0..<count {
-            let isLast = index == count - 1
+        for _ in 0..<count {
             do {
-                minted.append(try await refresh(tokenContainer, refreshID: isLast ? refreshID : nil))
+                minted.append(try await refresh(tokenContainer, refreshID: nil))
             } catch {
                 throw TokenForkError.incomplete(minted: minted, underlying: error)
             }

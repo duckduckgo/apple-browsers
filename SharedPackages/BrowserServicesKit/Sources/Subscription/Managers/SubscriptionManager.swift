@@ -691,12 +691,13 @@ public final class DefaultSubscriptionManager: SubscriptionManager {
 
             switch tokenRequestError {
             case OAuthClientError.unknownAccount:
-                // The account doesn't exist on the server: sign out without trying to recover
+                // The account doesn't exist on the server: sign out without trying to recover, and delete the backup of that account
                 let failedRequest = await captureFailedTokenRequestState(policy: policy, tokenBeforeAttempt: tokenBeforeAttempt)
                 await automaticallySignOut(recoveryOutcome: .notApplicable,
                                            failedRequest: failedRequest,
                                            triggeringError: tokenRequestError,
-                                           notifyUI: true)
+                                           notifyUI: true,
+                                           removingBackup: true)
                 throw SubscriptionManagerError.noTokenAvailable
 
             case OAuthClientError.invalidTokenRequest:
@@ -744,7 +745,8 @@ public final class DefaultSubscriptionManager: SubscriptionManager {
                     await automaticallySignOut(recoveryOutcome: notAttempted ? .notAttempted : .failed,
                                                failedRequest: failedRequest,
                                                triggeringError: tokenRequestError,
-                                               notifyUI: false)
+                                               notifyUI: false,
+                                               removingBackup: false)
                     pixelHandler.handle(pixel: .invalidRefreshTokenSignedOut)
                     authV2TokenRefreshInstrumentation?.completeInvalidTokenRecovery(
                         outcome: notAttempted ? .notAttempted : .failed,
@@ -784,8 +786,9 @@ public final class DefaultSubscriptionManager: SubscriptionManager {
     private func automaticallySignOut(recoveryOutcome: SubscriptionAutomaticSignOutPixelData.RecoveryOutcome,
                                       failedRequest: FailedTokenRequestState,
                                       triggeringError: Error,
-                                      notifyUI: Bool) async {
-        await clearSession(notifyUI: notifyUI, userInitiated: false, revokeOnServer: false)
+                                      notifyUI: Bool,
+                                      removingBackup: Bool) async {
+        await clearSession(notifyUI: notifyUI, userInitiated: false, revokeOnServer: false, removingBackup: removingBackup)
 
         let data = SubscriptionAutomaticSignOutPixelData(recoveryOutcome: recoveryOutcome,
                                                          policy: failedRequest.policy,
@@ -905,11 +908,11 @@ public final class DefaultSubscriptionManager: SubscriptionManager {
     public func removeLocalAccount() throws {
         Logger.subscriptionTokensManagement.log("Removing local account")
             updateCachedIsUserAuthenticated(false)
-        try oAuthClient.removeLocalAccount()
+        try oAuthClient.removeLocalAccount(includingBackup: false)
     }
 
     public func signOut(notifyUI: Bool, userInitiated: Bool) async {
-        await clearSession(notifyUI: notifyUI, userInitiated: userInitiated, revokeOnServer: true)
+        await clearSession(notifyUI: notifyUI, userInitiated: userInitiated, revokeOnServer: true, removingBackup: true)
     }
 
     public func restoreMissingTokenIfPossible() async {
@@ -933,8 +936,10 @@ public final class DefaultSubscriptionManager: SubscriptionManager {
     ///   - userInitiated: Whether the user requested the sign-out. Only used when `notifyUI` is `true`.
     ///   - revokeOnServer: Whether this is an explicit sign-out. When `true`, calls `OAuthClient.logout()`, which records the sign-out cut-off,
     ///     deletes the backup token and calls `/logout`, revoking every token issued from the same login, including the ones held by other
-    ///     processes. When `false`, only the current local token is removed and the backup is kept.
-    private func clearSession(notifyUI: Bool, userInitiated: Bool, revokeOnServer: Bool) async {
+    ///     processes. When `false`, only the local tokens are removed.
+    ///   - removingBackup: Whether the backup token is deleted. Must be `true` when `revokeOnServer` is `true`, since `logout()` always
+    ///     deletes it. When `false`, the backup is kept.
+    private func clearSession(notifyUI: Bool, userInitiated: Bool, revokeOnServer: Bool, removingBackup: Bool) async {
         Logger.subscriptionTokensManagement.log("SignOut: Removing all traces of the subscription and account. Notify UI: \(notifyUI, privacy: .public), User Initiated: \(userInitiated, privacy: .public), Revoke on server: \(revokeOnServer, privacy: .public)")
 
         if revokeOnServer {
@@ -945,7 +950,7 @@ public final class DefaultSubscriptionManager: SubscriptionManager {
             }
         } else {
             do {
-                try oAuthClient.removeLocalAccount()
+                try oAuthClient.removeLocalAccount(includingBackup: removingBackup)
             } catch {
                 Logger.subscriptionTokensManagement.error("SignOut: Failed to remove the current token: \(String(describing: error), privacy: .public)")
             }

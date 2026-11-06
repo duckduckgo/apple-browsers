@@ -230,6 +230,25 @@ class SubscriptionManagerTests: XCTestCase {
         XCTAssertNil(mockOAuthClient.internalCurrentTokenContainer)
     }
 
+    func testGetTokenContainer_UnknownAccount_RemovesTheBackupWithTheCurrentToken() async throws {
+        mockOAuthClient.internalCurrentTokenContainer = OAuthTokensFactory.makeValidTokenContainer()
+        mockOAuthClient.getTokensResponse = .failure(OAuthClientError.unknownAccount)
+
+        _ = try? await subscriptionManager.getTokenContainer(policy: .localValid)
+
+        XCTAssertEqual(mockOAuthClient.removeLocalAccountIncludingBackup, [true])
+    }
+
+    func testGetTokenContainer_InvalidTokenRequest_RecoveryFailure_KeepsTheBackup() async throws {
+        mockOAuthClient.internalCurrentTokenContainer = OAuthTokensFactory.makeValidTokenContainer()
+        mockOAuthClient.getTokensResponse = .failure(OAuthClientError.invalidTokenRequest(.reused))
+        mockAppStoreRestoreFlowV2.restoreSubscriptionAfterExpiredRefreshTokenError = NSError(domain: "RecoveryError", code: 1)
+
+        _ = try? await subscriptionManager.getTokenContainer(policy: .localValid)
+
+        XCTAssertEqual(mockOAuthClient.removeLocalAccountIncludingBackup, [false])
+    }
+
     func testSignOut_Explicit_StillCallsServerLogout() async throws {
         mockOAuthClient.internalCurrentTokenContainer = OAuthTokensFactory.makeValidTokenContainer()
 

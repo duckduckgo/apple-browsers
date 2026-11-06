@@ -138,8 +138,9 @@ public protocol OAuthClient {
     /// to invalidate the current access token. A backup issued at or before the cut-off is never restored.
     func logout() async throws
 
-    /// Removes the current token container. A backup token container, if any, is kept.
-    func removeLocalAccount() throws
+    /// Removes the current token container without recording a sign-out cut-off or contacting the server.
+    /// - Parameter includingBackup: Whether the backup token container, if any, is deleted too. When `false`, it is kept.
+    func removeLocalAccount(includingBackup: Bool) throws
 
     // MARK: Backup
 
@@ -240,7 +241,7 @@ final public actor DefaultOAuthClient: @preconcurrency OAuthClient {
     ///   - authService: The auth API client.
     ///   - refreshEventMapping: Receives the token refresh step events.
     ///   - backupStorage: Where the backup token container, an independent pair forked from the current one, is kept.
-    ///     `logout()` records the sign-out cut-off and deletes the backup, `removeLocalAccount()` keeps it, and storing a current token
+    ///     `logout()` records the sign-out cut-off and deletes the backup, `removeLocalAccount(includingBackup:)` keeps it unless asked to delete it, and storing a current token
     ///     container of another account deletes it.
     ///   - isBackupEnabled: Whether a backup is created, renewed and restored from, checked each time one of these would start.
     ///     When it returns `true`, a refresh also mints a new backup when there is none, or the stored one is expired, belongs to another
@@ -271,7 +272,7 @@ final public actor DefaultOAuthClient: @preconcurrency OAuthClient {
     ///   - refreshEventMapping: Receives the refresh events the client reports itself: started, saving, succeeded and failed.
     ///   - tokenRefresher: Performs refreshes and decoding, and reports their steps.
     ///   - backupStorage: Where the backup token container, an independent pair forked from the current one, is kept.
-    ///     When non-nil, `logout()` records the sign-out cut-off and deletes the backup, `removeLocalAccount()` keeps it, and storing a
+    ///     When non-nil, `logout()` records the sign-out cut-off and deletes the backup, `removeLocalAccount(includingBackup:)` keeps it unless asked to delete it, and storing a
     ///     current token container of another account deletes it. When nil, no backup is kept.
     ///   - isBackupEnabled: Whether a backup is created, renewed and restored from, checked each time one of these would start.
     ///     When it returns `true`, a refresh also mints a new backup when there is none, or the stored one is expired, belongs to another
@@ -681,7 +682,7 @@ final public actor DefaultOAuthClient: @preconcurrency OAuthClient {
         if let currentReadError {
             throw currentReadError
         }
-        try removeLocalAccount()
+        try removeLocalAccount(includingBackup: false)
 
         if let existingToken = current?.accessToken {
             Task { // Not waiting for an answer
@@ -696,8 +697,11 @@ final public actor DefaultOAuthClient: @preconcurrency OAuthClient {
     }
 
     /// Removes the current token container. A backup token container, if any, is kept.
-    public func removeLocalAccount() throws {
-        Logger.OAuthClient.log("Removing the current token")
+    public func removeLocalAccount(includingBackup: Bool) throws {
+        Logger.OAuthClient.log("Removing the current token, including the backup: \(includingBackup, privacy: .public)")
+        if includingBackup {
+            backupStore?.remove()
+        }
         try tokenStorage.saveTokenContainer(nil)
     }
 }

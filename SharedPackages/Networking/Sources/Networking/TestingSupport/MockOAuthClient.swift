@@ -119,13 +119,16 @@ public class MockOAuthClient: OAuthClient {
         if let logoutError {
             throw logoutError
         }
-        try removeLocalAccount()
+        try removeLocalAccount(includingBackup: true)
     }
 
     public private(set) var removeLocalAccountCallCount = 0
+    /// The `includingBackup` value of each `removeLocalAccount(includingBackup:)` call, in order.
+    public private(set) var removeLocalAccountIncludingBackup: [Bool] = []
     public var removeLocalAccountError: Error?
-    public func removeLocalAccount() throws {
+    public func removeLocalAccount(includingBackup: Bool) throws {
         removeLocalAccountCallCount += 1
+        removeLocalAccountIncludingBackup.append(includingBackup)
         callOrder.append("removeLocalAccount")
         if let removeLocalAccountError {
             throw removeLocalAccountError

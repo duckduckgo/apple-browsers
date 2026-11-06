@@ -161,7 +161,8 @@ class DefaultTabSwitcherMenuBuilder: TabSwitcherMenuBuilding {
             UIMenu(title: "", options: .displayInline, children: [
                 state.canClose ? destructive(UserText.closeTabs(withCount: state.selectedCount),
                                              imageForCloseTabs(state.selectedCount),
-                                             actions.onCloseSelected) : nil,
+                                             actions.onCloseSelected,
+                                             accessibilityIdentifier: "TabSwitcher.Menu.CloseSelected") : nil,
             ].compactMap { $0 }),
 
             UIMenu(title: "", options: .displayInline, children: [
@@ -177,7 +178,8 @@ class DefaultTabSwitcherMenuBuilder: TabSwitcherMenuBuilding {
             // Force plural version - this really means "switch to select tabs mode"
             action(UserText.tabSwitcherSelectTabs(withCount: 2),
                    DesignSystemImages.Glyphs.Size16.checkCircle,
-                   actions.onEnterSelectMode),
+                   actions.onEnterSelectMode,
+                   accessibilityIdentifier: "TabSwitcher.Menu.SelectTabs"),
 
             UIMenu(title: "", options: [.displayInline], children: [
                 destructive(UserText.closeAllTabs,
@@ -199,7 +201,8 @@ class DefaultTabSwitcherMenuBuilder: TabSwitcherMenuBuilding {
                                                actions.onBookmark) : nil,
                 state.canSelect ? action(UserText.tabSwitcherSelectTabs(withCount: 1),
                                          DesignSystemImages.Glyphs.Size16.checkCircle,
-                                         actions.onSelect) : nil,
+                                         actions.onSelect,
+                                         accessibilityIdentifier: "TabSwitcher.Menu.SelectTab") : nil,
             ].compactMap { $0 }),
 
             UIMenu(title: "", options: .displayInline, children: [
@@ -223,11 +226,19 @@ class DefaultTabSwitcherMenuBuilder: TabSwitcherMenuBuilding {
             DesignSystemImages.Glyphs.Size16.tabCloseAlt
     }
 
-    private func action(_ title: String, _ image: UIImage? = nil, _ handler: @escaping () -> Void) -> UIAction {
-        return UIAction(title: title, image: image) { _ in handler() }
+    private func action(_ title: String, _ image: UIImage? = nil, _ handler: @escaping () -> Void, accessibilityIdentifier: String? = nil) -> UIAction {
+        let action = UIAction(title: title, image: image) { _ in handler() }
+        if let accessibilityIdentifier {
+            action.accessibilityIdentifier = accessibilityIdentifier
+        }
+        return action
     }
 
-    private func destructive(_ title: String, _ image: UIImage, _ handler: @escaping () -> Void) -> UIAction {
-        return UIAction(title: title, image: image, attributes: .destructive) { _ in handler() }
+    private func destructive(_ title: String, _ image: UIImage, _ handler: @escaping () -> Void, accessibilityIdentifier: String? = nil) -> UIAction {
+        let action = UIAction(title: title, image: image, attributes: .destructive) { _ in handler() }
+        if let accessibilityIdentifier {
+            action.accessibilityIdentifier = accessibilityIdentifier
+        }
+        return action
     }
 }

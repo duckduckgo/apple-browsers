@@ -77,7 +77,12 @@ class UITestCase: XCTestCase {
             "-AppleLanguages", "(en)",
             "-AppleLocale", "en_US",
         ]
-        launchArguments += additionalLaunchArguments
+        let subclassArguments = additionalLaunchArguments
+        // Supply the Maestro toolbar defaults only when the class does not select a variant.
+        for flag in ["-ff.floatingUIiOS26", "-ff.floatingUIiOS27"] where !subclassArguments.contains(flag) {
+            launchArguments += [flag, "false"]
+        }
+        launchArguments += subclassArguments
         if try isInternalUserModeEnabled() {
             launchArguments += ["-isInternalUser", "true"]
         }

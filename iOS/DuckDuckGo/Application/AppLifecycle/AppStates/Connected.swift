@@ -148,6 +148,7 @@ struct Connected: ConnectedHandling {
         sceneDependencies.authenticationService.suspend()
         window.makeKeyAndVisible()
         mainCoordinator.start()
+        window.accessibilityIdentifier = "Browser.Window.Main"
     }
 
 }

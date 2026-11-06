@@ -147,6 +147,7 @@ class TabSwitcherPageViewController: UIViewController {
         layout.sectionInset = TabSwitcherGridLayoutGeometry.sectionInset
 
         collectionView = UICollectionView(frame: .zero, collectionViewLayout: layout)
+        collectionView.accessibilityIdentifier = browsingMode == .fire ? "TabSwitcher.Collection.FireTabs" : "TabSwitcher.Collection.Tabs"
         collectionView.translatesAutoresizingMaskIntoConstraints = false
         collectionView.backgroundColor = .clear
         collectionView.clipsToBounds = true

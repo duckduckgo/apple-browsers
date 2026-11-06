@@ -8224,11 +8224,11 @@ extension MainViewController: TabDelegate {
                                              bottomChromeMinY: bottomChromeMinYInWindow())
     }
 
-    /// Starts the new chat in place, like the chat history's New Chat, with the input focused to type.
+    /// Opens the new chat in a new tab, like the chat header's New Chat, so the current one stays reachable.
     func tabDidRequestNewChatBySwipe(_ tab: TabViewController) {
         guard tab === currentTab else { return }
-        startNewChatInPlace(in: tab, source: .swipeUpNewChat, chatState: .new)
-        unifiedToggleInputCoordinator?.showExpanded(inputMode: .aiChat)
+        recordDuckAISessionNewChatCreatedOnCurrentTab()
+        openNewChatFromDuckAIPage(tab, source: .swipeUpNewChat)
     }
 
     /// The topmost visible bar in the lower half of the window: the Duck.ai input on an AI tab.

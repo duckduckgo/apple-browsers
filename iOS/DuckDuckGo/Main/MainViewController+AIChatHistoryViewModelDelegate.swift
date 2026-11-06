@@ -44,20 +44,14 @@ extension MainViewController: AIChatHistoryViewModelDelegate {
     }
 
     private func startNewChatFromHistoryInPlace(in tab: TabViewController) {
-        startNewChatInPlace(in: tab, source: .chatHistoryNewChat)
-        dismiss(animated: true) { [weak self] in
-            self?.unifiedToggleInputCoordinator?.showExpanded(inputMode: .aiChat)
-        }
-    }
-
-    /// Replaces the chat in `tab`, the current tab, with a new one, attributed to `source`.
-    func startNewChatInPlace(in tab: TabViewController, source: AIChatEntryPointSource,
-                             chatState: DuckAIEntryWideEventData.ChatState? = nil) {
-        fireAIChatEntryPointPixel(source: source, opensNewTab: false, hasPrompt: false, chatState: chatState)
-        stampDuckAIEntrySourceOnCurrentTab(source)
+        fireAIChatEntryPointPixel(source: .chatHistoryNewChat, opensNewTab: false, hasPrompt: false)
+        stampDuckAIEntrySourceOnCurrentTab(.chatHistoryNewChat)
         recordDuckAISessionNewChatCreatedOnCurrentTab()
         unifiedToggleInputCoordinator?.startNewChat()
         tab.submitStartChatAction()
+        dismiss(animated: true) { [weak self] in
+            self?.unifiedToggleInputCoordinator?.showExpanded(inputMode: .aiChat)
+        }
     }
 
     func viewModelDidRequestOpenChat(chatId: String) {

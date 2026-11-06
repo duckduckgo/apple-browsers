@@ -20,7 +20,7 @@
 import CoreGraphics
 import Foundation
 
-/// Pulling up past the bottom of a Duck.ai chat starts a new chat in the same tab.
+/// Pulling up past the bottom of a Duck.ai chat opens a new chat in a new tab.
 enum DuckAISwipeNewChat {
 
     /// Every tunable of the gesture, in one place for design.
@@ -37,8 +37,8 @@ enum DuckAISwipeNewChat {
         static let indicatorSpacing: CGFloat = 4
         static let springBackDuration: TimeInterval = 0.35
         static let commitDuration: TimeInterval = 0.2
-        /// How long the page gets to move off the old chat before it is shown again anyway.
-        static let newChatRevealTimeout: TimeInterval = 3
+        /// How long the new tab gets to appear before the old chat is put back anyway.
+        static let newTabTimeout: TimeInterval = 1
     }
 
     /// What decides, when a pan begins, whether it may start a new chat.
@@ -151,14 +151,15 @@ enum DuckAISwipeNewChat {
         }
     }
 
-    /// From release to the new chat showing: the old chat fades out, the page is asked for a new chat, and the
-    /// page is shown again once the tab has moved off the old one. Anything unexpected puts the old chat back.
+    /// From release to the new chat's tab showing: the old chat fades out, then a new tab is asked for. The old
+    /// tab is put back as it was once it goes off screen, or after a timeout if the new tab never comes; anything
+    /// unexpected before the request puts it back without one.
     enum Commit: Equatable {
         case idle
-        /// The old chat is fading out; nothing has been asked of the page yet.
+        /// The old chat is fading out; no new tab has been asked for yet.
         case leaving(chatID: String)
-        /// The page was asked for a new chat and stays hidden until it moves off `replacing`.
-        case awaitingNewChat(replacing: String)
+        /// A new tab was asked for; the old chat stays hidden until its tab goes off screen.
+        case awaitingNewTab
 
         enum Event: Equatable {
             case released(chatID: String?)
@@ -166,6 +167,7 @@ enum DuckAISwipeNewChat {
             case fadedOut(chatID: String?, isEligible: Bool)
             case urlChanged(chatID: String?)
             case timedOut
+            /// The tab went off screen, or the interaction was otherwise abandoned.
             case cancelled
         }
 
@@ -173,9 +175,7 @@ enum DuckAISwipeNewChat {
             case fadeOut
             case requestNewChat
             case scheduleTimeout
-            /// Show the page, which now holds the new chat.
-            case reveal
-            /// Put the old chat back as it was, without a new one.
+            /// Put the old chat back as it was.
             case restore
         }
 
@@ -190,22 +190,14 @@ enum DuckAISwipeNewChat {
                     self = .idle
                     return [.restore]
                 }
-                self = .awaitingNewChat(replacing: chatID)
+                self = .awaitingNewTab
                 return [.requestNewChat, .scheduleTimeout]
 
             case (.leaving(let chatID), .urlChanged(let current)) where current != chatID:
                 self = .idle
                 return [.restore]
 
-            case (.awaitingNewChat(let chatID), .urlChanged(let current)) where current != chatID:
-                self = .idle
-                return [.reveal]
-
-            case (.awaitingNewChat, .timedOut):
-                self = .idle
-                return [.reveal]
-
-            case (.leaving, .cancelled), (.awaitingNewChat, .cancelled):
+            case (.leaving, .cancelled), (.awaitingNewTab, .cancelled), (.awaitingNewTab, .timedOut):
                 self = .idle
                 return [.restore]
 

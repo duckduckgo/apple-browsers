@@ -135,7 +135,7 @@ protocol TabDelegate: AnyObject {
     /// What the chrome knows that pulling up past the bottom of a Duck.ai chat gates on; nil when `tab` isn't the current tab.
     func duckAISwipeNewChatChromeState(for tab: TabViewController) -> DuckAISwipeNewChatChromeState?
 
-    /// The user pulled up past the bottom of the Duck.ai chat in `tab` to start a new chat in place.
+    /// The user pulled up past the bottom of the Duck.ai chat in `tab` to open a new chat in a new tab.
     func tabDidRequestNewChatBySwipe(_ tab: TabViewController)
 
     /// Called when the user picks Ask Duck.ai from the web view's text-selection edit menu.

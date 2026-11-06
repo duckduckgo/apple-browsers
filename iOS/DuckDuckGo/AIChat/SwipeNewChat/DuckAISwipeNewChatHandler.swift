@@ -183,12 +183,10 @@ final class DuckAISwipeNewChatHandler: NSObject, UIGestureRecognizerDelegate {
                 onStartNewChat()
             case .scheduleTimeout:
                 let generation = generation
-                DispatchQueue.main.asyncAfter(deadline: .now() + DuckAISwipeNewChat.Constants.newChatRevealTimeout) { [weak self] in
+                DispatchQueue.main.asyncAfter(deadline: .now() + DuckAISwipeNewChat.Constants.newTabTimeout) { [weak self] in
                     guard let self, generation == self.generation else { return }
                     self.apply(self.commitState.handle(.timedOut))
                 }
-            case .reveal:
-                reveal()
             case .restore:
                 restore()
             }
@@ -220,7 +218,7 @@ final class DuckAISwipeNewChatHandler: NSObject, UIGestureRecognizerDelegate {
         }
     }
 
-    /// The old chat carries on up and fades out before the page is asked for a new one.
+    /// The old chat carries on up and fades out before the new tab is asked for.
     private func fadeOut() {
         let constants = DuckAISwipeNewChat.Constants.self
         let generation = generation
@@ -246,16 +244,6 @@ final class DuckAISwipeNewChatHandler: NSObject, UIGestureRecognizerDelegate {
         indicator.alpha = 0
         indicator.reset()
         hideBackdrop()
-    }
-
-    private func reveal() {
-        let generation = generation
-        UIView.animate(withDuration: DuckAISwipeNewChat.Constants.commitDuration, delay: 0, options: [.curveEaseOut]) {
-            self.webView?.alpha = 1
-        } completion: { _ in
-            guard generation == self.generation else { return }
-            self.hideBackdrop()
-        }
     }
 
     /// The bottom chrome doesn't move during a pull, so the indicator is placed once per pan.
@@ -290,14 +278,16 @@ final class DuckAISwipeNewChatHandler: NSObject, UIGestureRecognizerDelegate {
 
     /// Whether the chat under the finger is at its bottom. The finger is given as a fraction of the web view, which
     /// the page scales to its own viewport, so text zoom doesn't shift it. The chat is the nearest vertical
-    /// scroller at least half the viewport tall, so a code block or menu under the finger doesn't count; a chat
-    /// too short to scroll is already at its bottom. Anything else, including no element at all, is not.
+    /// scroller between half the viewport and the viewport tall: a code block or menu under the finger is shorter,
+    /// and a content wrapper styled as a scroller but taller than the viewport never scrolls. A chat too short to
+    /// scroll is already at its bottom. Anything else, including no element at all, is not.
     private static func atBottomScript(atFractionOfViewport fraction: CGPoint) -> String {
         """
         (function(fx, fy) {
           const hit = document.elementFromPoint(fx * innerWidth, fy * innerHeight);
           for (let el = hit; el && el !== document.documentElement; el = el.parentElement) {
-            if (/(auto|scroll)/.test(getComputedStyle(el).overflowY) && el.clientHeight >= innerHeight / 2) {
+            if (/(auto|scroll)/.test(getComputedStyle(el).overflowY)
+                && el.clientHeight >= innerHeight / 2 && el.clientHeight <= innerHeight) {
               return el.scrollTop + el.clientHeight >= el.scrollHeight - 4;
             }
           }

@@ -9,7 +9,7 @@
             "appVersion",
             {
                 "key": "source",
-                "description": "The entry path into Duck.ai. direct_url: a duck.ai address loaded directly, e.g. typed. deep_link_other: a duck.ai link from another app. app_open: the app opens onto a Duck.ai tab. tab_swipe: swiping onto a Duck.ai tab. swipe_up_new_chat: pulling up past the bottom of a Duck.ai chat to start a new chat in the same tab. voice: older versions only; voice entries now set voice=true.",
+                "description": "The entry path into Duck.ai. direct_url: a duck.ai address loaded directly, e.g. typed. deep_link_other: a duck.ai link from another app. app_open: the app opens onto a Duck.ai tab. tab_swipe: swiping onto a Duck.ai tab. swipe_up_new_chat: pulling up past the bottom of a Duck.ai chat to open a new chat in a new tab. voice: older versions only; voice entries now set voice=true.",
                 "type": "string",
                 "enum": [
                     "address_bar_prompt",

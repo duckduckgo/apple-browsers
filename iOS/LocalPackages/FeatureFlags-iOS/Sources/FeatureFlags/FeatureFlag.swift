@@ -585,7 +585,7 @@ public enum FeatureFlag: String {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1219970758953673?focus=true
     case aiChatTabHandoffImprovements
 
-    /// Pulling up past the bottom of a Duck.ai chat starts a new chat in the same tab.
+    /// Pulling up past the bottom of a Duck.ai chat opens a new chat in a new tab.
     /// https://app.asana.com/1/137249556945/project/1206488453854252/task/1220098815607998
     case aiChatSwipeUpNewChat
 

@@ -3260,7 +3260,7 @@ final class WebExtensionManagerTests: XCTestCase {
                                           loader: webExtensionLoadingMock,
                                           lifecycleDelegate: lifecycleDelegateMock,
                                           pixelFiring: pixels,
-                                          retentionStore: WebExtensionRetentionStore(storage: InMemoryKeyValueStore().keyedStoring()),
+                                          retentionStore: WebExtensionRetentionStore(storage: InMemoryKeyValueStore().throwingKeyedStoring()),
                                           now: now)
         manager.chromeWebStore = CatalogNamingWebStore(entries: [managementStoreID: .bitwarden],
                                                        catalogExtensionIDs: isCatalogAvailable ? [managementStoreID] : [])

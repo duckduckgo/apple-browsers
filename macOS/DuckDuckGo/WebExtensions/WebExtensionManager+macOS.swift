@@ -175,7 +175,7 @@ enum WebExtensionManagerFactory {
             ),
             nativeMessagingHandler: nativeMessagingHandler,
             keyValueStore: keyValueStore,
-            retentionStore: WebExtensionRetentionStore(),
+            retentionStore: WebExtensionRetentionStore(storage: keyValueStore.throwingKeyedStoring()),
             scriptletConfiguration: scriptletConfiguration
         )
 

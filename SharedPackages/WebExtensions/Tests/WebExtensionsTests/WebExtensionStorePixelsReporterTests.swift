@@ -126,7 +126,7 @@ final class WebExtensionStorePixelsReporterTests: XCTestCase {
     // MARK: - Helpers
 
     private func makeReporter() -> WebExtensionStorePixelsReporter {
-        WebExtensionStorePixelsReporter(store: WebExtensionRetentionStore(storage: storage.keyedStoring()),
+        WebExtensionStorePixelsReporter(store: WebExtensionRetentionStore(storage: storage.throwingKeyedStoring()),
                                         installationStore: installationStore,
                                         pixelFiring: pixels,
                                         now: { [unowned self] in date })

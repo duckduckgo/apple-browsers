@@ -28,7 +28,7 @@ final class WebExtensionRetentionStoreTests: XCTestCase {
 
     override func setUp() {
         super.setUp()
-        store = WebExtensionRetentionStore(storage: InMemoryKeyValueStore().keyedStoring())
+        store = WebExtensionRetentionStore(storage: InMemoryKeyValueStore().throwingKeyedStoring())
     }
 
     override func tearDown() {

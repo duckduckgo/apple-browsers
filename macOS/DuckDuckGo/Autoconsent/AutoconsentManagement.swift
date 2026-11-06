@@ -16,7 +16,9 @@
 //  limitations under the License.
 //
 
+import EventHub
 import Foundation
+import PixelKit
 import WebExtensions
 
 final class AutoconsentManagement {
@@ -28,6 +30,23 @@ final class AutoconsentManagement {
     var detectedByPatternsCache = Set<String>()
     var detectedByBothCache = Set<String>()
     var detectedOnlyRulesCache = Set<String>()
+
+    /// Set once PixelKit and Event Hub exist, which is after this object is created.
+    var pixelFiring: (any PixelKitFiring)?
+    var eventHub: EventHubManaging?
+
+    func fireSummaryPixels(additionalParameters: [String: String]) {
+        for (siteRank, events) in pixelCounter {
+            var parameters = additionalParameters
+            parameters["siteRank"] = siteRank?.rawValue
+            pixelFiring?.fire(AutoconsentPixel.summary(events: events), frequency: .standard, options: .parameters(parameters))
+            CPMCoverageReporter.report(counts: CPMCoverageCounts(summary: events), siteRank: siteRank) { eventHub?.handleNativeEvent($0) }
+        }
+        pixelCounter = [:]
+        detectedByPatternsCache.removeAll()
+        detectedByBothCache.removeAll()
+        detectedOnlyRulesCache.removeAll()
+    }
 
     func clearCache() {
         dispatchPrecondition(condition: .onQueue(.main))

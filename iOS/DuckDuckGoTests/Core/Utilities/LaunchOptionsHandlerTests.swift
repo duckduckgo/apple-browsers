@@ -298,6 +298,25 @@ final class LaunchOptionsHandlerTests {
         }
     }
 
+    @MainActor
+    @available(iOS 16, macOS 13, *)
+    @Test(.timeLimit(.minutes(1)))
+    func testClearAllDefaultsRequiresUITestingAndPreservesOtherOverrides() {
+        for (testing, clear) in [(false, true), (true, false), (true, true)] {
+            var clearCalls = 0
+            let internalStore = MockInternalUserStore()
+            userDefaults.set("true", forKey: "isInternalUser")
+            let arguments = ["-isInternalUser", "true"] + (clear ? ["-clearAllDefaults"] : [])
+            let sut = LaunchOptionsHandler(
+                environment: testing ? ["UITEST_MODE": "1"] : [:], userDefaults: userDefaults,
+                arguments: arguments, internalUserStore: internalStore,
+                clearAllDefaultsOverride: { _ in clearCalls += 1 })
+            sut.applyUITestOverrides(featureFlagOverrideStore: userDefaults, configRolloutStore: userDefaults)
+            #expect(clearCalls == (testing && clear ? 1 : 0))
+            #expect(internalStore.isInternalUser)
+        }
+    }
+
     // MARK: - UI Test Overrides
 
 #if DEBUG

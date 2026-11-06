@@ -71,7 +71,9 @@ extension AuthenticationService: AuthenticationServiceProtocol {
 
     @MainActor
     private func authenticate(with authenticationViewController: AuthenticationViewController) async {
+        AppLockUITestDiagnostics.record("service.authenticationRequested")
         let didAuthenticate = await authenticator.authenticate(reason: UserText.appUnlock)
+        AppLockUITestDiagnostics.record("service.authenticationCompleted success=\(didAuthenticate)")
         if didAuthenticate {
             hasCompletedAuthentication = true
             overlayWindowManager.removeAnyOverlay()
@@ -93,10 +95,23 @@ extension AuthenticationService: AuthenticationServiceProtocol {
 extension AuthenticationService: AuthenticationViewControllerDelegate {
 
     func authenticationViewController(authenticationViewController: AuthenticationViewController, didTapWithSender sender: Any) {
+        AppLockUITestDiagnostics.record("service.recoveryGestureReceived")
         Task { @MainActor in
             authenticationViewController.hideUnlockInstructions()
             await authenticate(with: authenticationViewController)
         }
     }
 
+}
+
+// Opt-in diagnostics for the native Application Lock test; never logs credentials or authentication reasons.
+// Temporary: remove when the activation/recovery cause is confirmed and representative no-retry CI coverage no longer needs this trace.
+enum AppLockUITestDiagnostics {
+    static func record(_ event: String) {
+#if DEBUG
+        guard ProcessInfo.isRunningUITests,
+              ProcessInfo.processInfo.environment["UITEST_APP_LOCK_DIAGNOSTICS"] == "1" else { return }
+        NSLog("Application Lock UI test: %@", event)
+#endif
+    }
 }

@@ -107,39 +107,22 @@ final class TokenRefresherTests: XCTestCase {
         await refresher.setTestingDecodedTokenContainers([backup, primary])
         let source = OAuthTokensFactory.makeTokenContainer(accessToken: "a0", refreshToken: "r0")
 
-        let result = try await refresher.fork(source, count: 2, refreshID: "r")
+        let result = try await refresher.fork(source, count: 2)
 
         XCTAssertEqual(result, [backup, primary])
         XCTAssertEqual(mockOAuthService.refreshAccessTokenRequestedTokens, ["r0", "r0"])
     }
 
-    func testFork_onlyFirstCallReportsItsSteps() async throws {
+    func testFork_doesNotReportRefreshSteps() async throws {
         mockOAuthService.refreshAccessTokenResponses = [
             .success(OAuthTokensFactory.makeValidOAuthTokenResponse()),
             .failure(URLError(.timedOut))
         ]
         await refresher.setTestingDecodedTokenContainers([OAuthTokensFactory.makeValidTokenContainer()])
 
-        _ = try? await refresher.fork(OAuthTokensFactory.makeValidTokenContainer(), count: 2, refreshID: "r")
+        _ = try? await refresher.fork(OAuthTokensFactory.makeValidTokenContainer(), count: 2)
 
-        XCTAssertEqual(eventCapture.capturedEvents, [.tokenRefreshRefreshingAccessToken(refreshID: "r"),
-                                                     .tokenRefreshRefreshedAccessToken(refreshID: "r")])
-        for event in eventCapture.capturedEvents {
-            switch event {
-            case .tokenRefreshRefreshingAccessToken(let refreshID), .tokenRefreshRefreshedAccessToken(let refreshID):
-                XCTAssertEqual(refreshID, "r")
-            default:
-                XCTFail("Unexpected event \(event)")
-            }
-        }
-    }
-
-    func testFork_firstCallFails_reportsTheFailingStep() async throws {
-        mockOAuthService.refreshAccessTokenResponses = [.failure(URLError(.timedOut))]
-
-        _ = try? await refresher.fork(OAuthTokensFactory.makeValidTokenContainer(), count: 2, refreshID: "r")
-
-        XCTAssertEqual(eventCapture.capturedEvents, [.tokenRefreshRefreshingAccessToken(refreshID: "r")])
+        XCTAssertTrue(eventCapture.capturedEvents.isEmpty)
     }
 
     func testFork_secondCallFails_throwsIncompleteWithFirstPair() async throws {
@@ -151,7 +134,7 @@ final class TokenRefresherTests: XCTestCase {
         await refresher.setTestingDecodedTokenContainers([first])
 
         do {
-            _ = try await refresher.fork(OAuthTokensFactory.makeValidTokenContainer(), count: 2, refreshID: nil)
+            _ = try await refresher.fork(OAuthTokensFactory.makeValidTokenContainer(), count: 2)
             XCTFail("Expected error")
         } catch {
             guard case .incomplete(let minted, let underlying) = error else {
@@ -168,7 +151,7 @@ final class TokenRefresherTests: XCTestCase {
         ]
 
         do {
-            _ = try await refresher.fork(OAuthTokensFactory.makeValidTokenContainer(), count: 2, refreshID: nil)
+            _ = try await refresher.fork(OAuthTokensFactory.makeValidTokenContainer(), count: 2)
             XCTFail("Expected error")
         } catch TokenForkError.incomplete(let minted, let underlying) {
             XCTAssertTrue(minted.isEmpty)
@@ -177,17 +160,15 @@ final class TokenRefresherTests: XCTestCase {
         XCTAssertEqual(mockOAuthService.refreshAccessTokenCallCount, 1, "A failed call stops the fork")
     }
 
-    func testFork_onePair_spendsTheTokenOnceAndReportsTheCall() async throws {
+    func testFork_onePair_spendsTheTokenOnce() async throws {
         mockOAuthService.refreshAccessTokenResponse = .success(OAuthTokensFactory.makeValidOAuthTokenResponse())
         let pair = OAuthTokensFactory.makeTokenContainer(accessToken: "a1", refreshToken: "r1")
         await refresher.setTestingDecodedTokenContainers([pair])
 
-        let result = try await refresher.fork(OAuthTokensFactory.makeValidTokenContainer(), count: 1, refreshID: "r")
+        let result = try await refresher.fork(OAuthTokensFactory.makeValidTokenContainer(), count: 1)
 
         XCTAssertEqual(result, [pair])
         XCTAssertEqual(mockOAuthService.refreshAccessTokenCallCount, 1)
-        XCTAssertEqual(eventCapture.capturedEvents, [.tokenRefreshRefreshingAccessToken(refreshID: "r"),
-                                                     .tokenRefreshRefreshedAccessToken(refreshID: "r")])
     }
 
     func testFork_middleCallFails_throwsIncompleteWithThePairsBeforeIt_andStops() async throws {
@@ -200,7 +181,7 @@ final class TokenRefresherTests: XCTestCase {
         await refresher.setTestingDecodedTokenContainers([first])
 
         do {
-            _ = try await refresher.fork(OAuthTokensFactory.makeValidTokenContainer(), count: 3, refreshID: nil)
+            _ = try await refresher.fork(OAuthTokensFactory.makeValidTokenContainer(), count: 3)
             XCTFail("Expected error")
         } catch {
             guard case .incomplete(let minted, let underlying) = error else {
@@ -216,7 +197,7 @@ final class TokenRefresherTests: XCTestCase {
         mockOAuthService.refreshAccessTokenResponse = .success(OAuthTokensFactory.makeValidOAuthTokenResponse())
 
         do {
-            _ = try await refresher.fork(OAuthTokensFactory.makeValidTokenContainer(), count: 2, refreshID: nil)
+            _ = try await refresher.fork(OAuthTokensFactory.makeValidTokenContainer(), count: 2)
             XCTFail("Expected error")
         } catch {
             guard case .incomplete(let minted, let underlying) = error else {
@@ -246,7 +227,7 @@ final class TokenRefresherTests: XCTestCase {
         mockOAuthService.refreshAccessTokenResponse = .success(OAuthTokensFactory.makeValidOAuthTokenResponse())
         await refresher.setTestingDecodedTokenContainers([OAuthTokensFactory.makeValidTokenContainer()])
 
-        let result = try await refresher.fork(OAuthTokensFactory.makeValidTokenContainer(), count: 3, refreshID: nil)
+        let result = try await refresher.fork(OAuthTokensFactory.makeValidTokenContainer(), count: 3)
 
         XCTAssertEqual(result.count, 3)
         XCTAssertEqual(mockOAuthService.refreshAccessTokenCallCount, 3)

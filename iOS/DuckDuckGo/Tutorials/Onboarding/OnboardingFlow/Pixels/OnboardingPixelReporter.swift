@@ -34,6 +34,10 @@ protocol OnboardingIntroImpressionReporting {
     func measureOnboardingIntroImpression()
 }
 
+protocol OnboardingTimeLimitReporting {
+    func measureTimeLimitReached(_ reason: OnboardingSharedPixelEvent.TimeLimitReason)
+}
+
 protocol OnboardingIntroPixelReporting: OnboardingIntroImpressionReporting {
     func measureStartOnboardingCTAAction()
     func measureSkipOnboardingCTAAction()
@@ -126,7 +130,7 @@ protocol OnboardingDownloadReasonPixelReporting {
 }
 
 typealias LinearOnboardingPixelReporting = OnboardingIntroPixelReporting & OnboardingAddToDockReporting & OnboardingDownloadReasonPixelReporting
-typealias OnboardingPixelReporting = LinearOnboardingPixelReporting & OnboardingCustomInteractionPixelReporting & OnboardingDaxDialogsReporting
+typealias OnboardingPixelReporting = LinearOnboardingPixelReporting & OnboardingCustomInteractionPixelReporting & OnboardingDaxDialogsReporting & OnboardingTimeLimitReporting
 
 // MARK: - Implementation
 
@@ -385,6 +389,12 @@ extension OnboardingPixelReporter: OnboardingCustomInteractionPixelReporting {
 }
 
 // MARK: - OnboardingPixelReporter + Screen Impression
+
+extension OnboardingPixelReporter: OnboardingTimeLimitReporting {
+    func measureTimeLimitReached(_ reason: OnboardingSharedPixelEvent.TimeLimitReason) {
+        fireSharedPixel(.timeLimit(reason))
+    }
+}
 
 extension OnboardingPixelReporter: OnboardingDaxDialogsReporting {
 

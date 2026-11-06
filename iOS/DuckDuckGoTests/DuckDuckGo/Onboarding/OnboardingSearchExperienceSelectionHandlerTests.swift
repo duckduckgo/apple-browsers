@@ -39,7 +39,8 @@ final class OnboardingSearchExperienceSelectionHandlerTests: XCTestCase {
         daxDialogs = DaxDialogs(
             settings: mockDaxDialogsSettings,
             entityProviding: MockEntityProvider(),
-            variantManager: mockVariantManager
+            variantManager: mockVariantManager,
+            timeLimit: makeDisabledContextualOnboardingTimeLimit()
         )
     }
 

@@ -175,8 +175,10 @@ final public class OnboardingSharedPixelHandler: OnboardingSharedPixelHandling {
             additionalParameters[ParameterKeys.variant] = variant.rawValue
         }
 
+        // Preserve the shared pixel name while deduplicating the timeout across reasons and context changes.
+        let frequency: PixelKit.Frequency = if case .timeLimit = event { .legacyInitial } else { .uniqueByNameAndParameters }
         pixelFiring?.fire(event.prefixed(platform.pixelPrefix),
-                          frequency: .uniqueByNameAndParameters,
+                          frequency: frequency,
                           options: .parameters(additionalParameters))
     }
 
@@ -214,6 +216,7 @@ public enum OnboardingSharedPixelEvent: PixelKit.Event, Equatable {
     case end(EngagementEvent)
     case endTryDuckAI(EngagementEvent) // iOS only — the Try Duck.ai end-of-journey dialog
     case subscriptionPromo(EngagementEvent) // iOS only
+    case timeLimit(TimeLimitReason) // iOS only
 
     // Segmented onboarding (download-reason) events — iOS only
     case downloadChoice(DownloadChoiceEvent)
@@ -223,6 +226,11 @@ public enum OnboardingSharedPixelEvent: PixelKit.Event, Equatable {
     case preferencesAISearch(AISearchEngagementEvent)
     case preferencesDuckAI(DuckAIEvent)
     case preferencesAdBlocking(AdBlockingEngagementEvent)
+
+    public enum TimeLimitReason: String {
+        case days
+        case appOpens = "app-opens"
+    }
 
     public enum EngagementEvent: Equatable {
         public enum Value: String {
@@ -413,6 +421,7 @@ private extension OnboardingSharedPixelEvent {
         case .end: return "end"
         case .endTryDuckAI: return "end-try-duckai"
         case .subscriptionPromo: return "subscription-promo"
+        case .timeLimit: return "time-limit"
         case .downloadChoice: return "download-choice"
         case .preferencesSerp: return "preferences_serp"
         case .preferencesAIModel: return "preferences_ai-model"
@@ -432,6 +441,8 @@ private extension OnboardingSharedPixelEvent {
 
     var eventType: String {
         switch self {
+        case .timeLimit:
+            return "reached"
         case .welcome(let event),
                 .setDefault(let event),
                 .aiIntro(let event),
@@ -551,6 +562,8 @@ private extension OnboardingSharedPixelEvent {
 
     var value: String? {
         switch self {
+        case .timeLimit(let reason):
+            return reason.rawValue
         case .welcome(let event),
                 .setDefault(let event),
                 .aiIntro(let event),

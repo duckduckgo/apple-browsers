@@ -140,6 +140,34 @@ public final class LaunchOptionsHandler {
         sanitisedEnvParameter(string: userDefaults.string(forKey: Self.appVariantName))
     }
 
+    public var contextualOnboardingMaxDays: Int? {
+        positiveOnboardingLimit(forKey: "contextualOnboardingMaxDays")
+    }
+
+    public var contextualOnboardingMaxAppOpens: Int? {
+        positiveOnboardingLimit(forKey: "contextualOnboardingMaxAppOpens")
+    }
+
+    /// Seconds since the Unix epoch, used to arrange a past start date in UI tests.
+    public var contextualOnboardingStartDate: Date? {
+#if DEBUG || ALPHA
+        guard let value = userDefaults.string(forKey: "contextualOnboardingStartDate"),
+              let timestamp = TimeInterval(value), timestamp.isFinite else { return nil }
+        return Date(timeIntervalSince1970: timestamp)
+#else
+        return nil
+#endif
+    }
+
+    private func positiveOnboardingLimit(forKey key: String) -> Int? {
+#if DEBUG || ALPHA
+        guard let value = userDefaults.string(forKey: key), let limit = Int(value), limit > 0 else { return nil }
+        return limit
+#else
+        return nil
+#endif
+    }
+
     private func sanitisedEnvParameter(string: String?) -> String? {
         guard let string, string != "null" else { return nil }
         return string

@@ -1,4 +1,30 @@
 {
+    "m_ios_onboarding_time-limit": {
+        "description": "Fired once per install when contextual onboarding ends at its days or app-opens limit, checked on foreground, page load, or opening a new tab.",
+        "owners": ["rachelmcr"],
+        "triggers": ["startup", "page_load", "new_tab"],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            {
+                "key": "event",
+                "type": "string",
+                "description": "The contextual onboarding time limit was reached",
+                "enum": ["reached"]
+            },
+            {
+                "key": "value",
+                "type": "string",
+                "description": "Which contextual onboarding limit was reached",
+                "enum": ["days", "app-opens"]
+            },
+            "onboardingInstallType",
+            "onboardingDaysSinceInstall",
+            "onboardingSource",
+            "onboardingFlow",
+            "onboardingFlowVariant"
+        ]
+    },
     "m_ios_onboarding_welcome": {
         "description": "Fired during linear onboarding on the Welcome step.",
         "owners": ["rachelmcr"],

@@ -64,6 +64,31 @@ struct OnboardingDebugView: View {
             }
 
             Section {
+                Text(verbatim: "Start date: \(viewModel.timeLimitStartDate.formatted())")
+                Text(verbatim: "App opens: \(viewModel.timeLimitAppOpens)")
+                Text(verbatim: "Ended by time limit: \(viewModel.endedByTimeLimit ? "Yes" : "No")")
+                HStack {
+                    Text(verbatim: "Days limit override")
+                    TextField("", text: $viewModel.timeLimitDaysOverride)
+                        .keyboardType(.numberPad)
+                        .multilineTextAlignment(.trailing)
+                }
+                HStack {
+                    Text(verbatim: "App opens limit override")
+                    TextField("", text: $viewModel.timeLimitAppOpensOverride)
+                        .keyboardType(.numberPad)
+                        .multilineTextAlignment(.trailing)
+                }
+                Button(action: viewModel.resetTimeLimit) {
+                    Text(verbatim: "Reset Time Limit")
+                }
+            } header: {
+                Text(verbatim: "Contextual onboarding time limit")
+            } footer: {
+                Text(verbatim: "Leave overrides empty to use remote settings. Defaults are 7 days and 28 app opens.")
+            }
+
+            Section {
                 Button(action: {
                     viewModel.markSubscriptionPromoCooldownPassed()
                     isShowingSubscriptionPromoCooldownAlert = true
@@ -147,10 +172,24 @@ struct OnboardingDebugView: View {
                 })
             }
         }
+        .onAppear(perform: viewModel.refreshTimeLimitState)
+        .onReceive(NotificationCenter.default.publisher(for: UIApplication.didBecomeActiveNotification)) { _ in
+            viewModel.refreshTimeLimitState()
+        }
     }
 }
 
 final class OnboardingDebugViewModel: ObservableObject {
+
+    @Published private(set) var timeLimitStartDate: Date
+    @Published private(set) var timeLimitAppOpens: Int
+    @Published private(set) var endedByTimeLimit: Bool
+    @Published var timeLimitDaysOverride: String {
+        didSet { timeLimit.maxDaysOverride = Int(timeLimitDaysOverride).flatMap { $0 > 0 ? $0 : nil } }
+    }
+    @Published var timeLimitAppOpensOverride: String {
+        didSet { timeLimit.maxAppOpensOverride = Int(timeLimitAppOpensOverride).flatMap { $0 > 0 ? $0 : nil } }
+    }
 
     @Published var onboardingUserType: OnboardingUserType {
         didSet {
@@ -184,6 +223,7 @@ final class OnboardingDebugViewModel: ObservableObject {
     private let statisticsStore: StatisticsUserDefaults
     private let userDefaults: UserDefaults
     private var appSettings: OnboardingDebugAppSettings
+    private let timeLimit: ContextualOnboardingTimeLimit
 
     /// Keys duplicated here (rather than exposed publicly) so production types don't grow
     /// a debug-only reset surface. Keep in sync with the originals:
@@ -199,7 +239,8 @@ final class OnboardingDebugViewModel: ObservableObject {
         tutorialSettings: TutorialSettings = DefaultTutorialSettings(),
         statisticsStore: StatisticsUserDefaults = StatisticsUserDefaults(),
         userDefaults: UserDefaults = .app,
-        appSettings: OnboardingDebugAppSettings = AppDependencyProvider.shared.appSettings
+        appSettings: OnboardingDebugAppSettings = AppDependencyProvider.shared.appSettings,
+        timeLimit: ContextualOnboardingTimeLimit = ContextualOnboardingTimeLimit()
     ) {
         self.manager = manager
         self.settings = settings
@@ -207,6 +248,12 @@ final class OnboardingDebugViewModel: ObservableObject {
         self.statisticsStore = statisticsStore
         self.userDefaults = userDefaults
         self.appSettings = appSettings
+        self.timeLimit = timeLimit
+        timeLimitStartDate = timeLimit.startDate
+        timeLimitAppOpens = timeLimit.appOpens
+        endedByTimeLimit = timeLimit.endedByTimeLimit
+        timeLimitDaysOverride = timeLimit.maxDaysOverride.map(String.init) ?? ""
+        timeLimitAppOpensOverride = timeLimit.maxAppOpensOverride.map(String.init) ?? ""
         onboardingUserType = manager.onboardingUserTypeDebugValue
         forceRestorePromptEligible = appSettings.onboardingForceRestorePromptEligible
         forcedOnboardingFlowType = appSettings.onboardingFlowType
@@ -240,6 +287,11 @@ final class OnboardingDebugViewModel: ObservableObject {
     }
 
     func resetDaxDialogs() {
+        timeLimit.clear()
+        timeLimit.reset()
+        timeLimitDaysOverride = ""
+        timeLimitAppOpensOverride = ""
+        refreshTimeLimitState()
         // Remove a debug setting that internal users may have set in the past and could not remove:
         UserDefaults().removeObject(forKey: LaunchOptionsHandler.isOnboardingCompleted)
 
@@ -259,6 +311,17 @@ final class OnboardingDebugViewModel: ObservableObject {
         settings.chatPathVisitSiteSeen = false
         settings.isChatFirstPath = false
         tutorialSettings.hasSkippedOnboarding = false
+    }
+
+    func resetTimeLimit() {
+        timeLimit.reset()
+        refreshTimeLimitState()
+    }
+
+    func refreshTimeLimitState() {
+        timeLimitStartDate = timeLimit.startDate
+        timeLimitAppOpens = timeLimit.appOpens
+        endedByTimeLimit = timeLimit.endedByTimeLimit
     }
 
     func markSubscriptionPromoCooldownPassed() {

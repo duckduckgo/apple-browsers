@@ -52,6 +52,7 @@ final class NewTabTransition: NewTabTransitioning {
     private var viewsHiddenAboveNewPage: [UIView] = []
     private var completions: [() -> Void] = []
     private var keyboardMoment: Task<Void, Never>?
+    private var keyboardHideObserver: NSObjectProtocol?
     private var animators: [UIViewPropertyAnimator] = []
     private var isFinished = false
     private var newPageClippedToBounds = false
@@ -63,20 +64,57 @@ final class NewTabTransition: NewTabTransitioning {
     static func begin(over oldScreen: UIView,
                       dimmedBy startDimming: CGFloat = 0,
                       newPageRaisesKeyboard: Bool,
+                      keyboardRidingView: UIView? = nil,
                       from entryPoint: Tuning.EntryPoint,
                       tapLocation: CGPoint?,
                       configuration: NewTabTransitionConfiguration) -> NewTabTransition? {
         guard configuration.isEnabled,
               UIDevice.current.userInterfaceIdiom == .phone,
-              let window = (oldScreen as? UIWindow) ?? oldScreen.window,
-              let screenSnapshot = oldScreen.snapshotView(afterScreenUpdates: false) else { return nil }
+              let window = (oldScreen as? UIWindow) ?? oldScreen.window else { return nil }
+        let oldKeyboard = configuration.oldKeyboard.forNewPage(raisingKeyboard: newPageRaisesKeyboard)
+        // POC: an input sitting on a keyboard that slides down is lifted out of the snapshot to ride it down.
+        let ridingInput = oldKeyboard == .slidesDown ? keyboardRidingView.flatMap { liftOut($0, from: oldScreen) } : nil
+        let screenSnapshot = oldScreen.snapshotView(afterScreenUpdates: ridingInput != nil)
+        keyboardRidingView?.isHidden = false
+        guard let screenSnapshot else { return nil }
         let transition = NewTabTransition(window: window, entryPoint: entryPoint, tapLocation: tapLocation, configuration: configuration)
         logger.debug("Start dimming: \(startDimming, privacy: .public)")
         transition.coverScreen(with: screenSnapshot, dimmedBy: startDimming)
-        handleOldKeyboard(in: window, as: configuration.oldKeyboard.forNewPage(raisingKeyboard: newPageRaisesKeyboard))
+        if let ridingInput {
+            transition.letRideKeyboardDown(ridingInput)
+        }
+        handleOldKeyboard(in: window, as: oldKeyboard)
         transition.acknowledgeTap()
         logger.debug("Transition began at \(transition.beganAt, privacy: .public)")
         return transition
+    }
+
+    /// Snapshots `view` in place and hides it, so the screen snapshot taken next leaves it out.
+    private static func liftOut(_ view: UIView, from oldScreen: UIView) -> UIView? {
+        guard view.window != nil, !view.isHidden, let snapshot = view.snapshotView(afterScreenUpdates: false) else { return nil }
+        snapshot.frame = view.convert(view.bounds, to: oldScreen)
+        view.isHidden = true
+        return snapshot
+    }
+
+    /// Moves `input` down with the keyboard, on the keyboard's own duration and curve.
+    private func letRideKeyboardDown(_ input: UIView) {
+        oldPage.insertSubview(input, belowSubview: dimming)
+        keyboardHideObserver = NotificationCenter.default.addObserver(forName: UIResponder.keyboardWillHideNotification,
+                                                                      object: nil, queue: .main) { [weak self, weak input] note in
+            guard let self, let input else { return }
+            if let observer = keyboardHideObserver { NotificationCenter.default.removeObserver(observer) }
+            keyboardHideObserver = nil
+            let info = note.userInfo ?? [:]
+            let begin = (info[UIResponder.keyboardFrameBeginUserInfoKey] as? CGRect) ?? .zero
+            let end = (info[UIResponder.keyboardFrameEndUserInfoKey] as? CGRect) ?? .zero
+            let duration = (info[UIResponder.keyboardAnimationDurationUserInfoKey] as? Double) ?? 0.25
+            let curve = (info[UIResponder.keyboardAnimationCurveUserInfoKey] as? Int) ?? 7
+            let drop = max(0, end.minY - begin.minY)
+            UIView.animate(withDuration: duration, delay: 0, options: UIView.AnimationOptions(rawValue: UInt(curve) << 16)) {
+                input.transform = CGAffineTransform(translationX: 0, y: drop)
+            }
+        }
     }
 
     /// A new tab raises its own keyboard, so the old one leaves unless it should stay up for it.

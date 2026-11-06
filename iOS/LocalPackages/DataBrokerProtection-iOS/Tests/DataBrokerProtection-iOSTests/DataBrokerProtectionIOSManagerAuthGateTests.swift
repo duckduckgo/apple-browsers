@@ -31,11 +31,33 @@ final class DataBrokerProtectionIOSManagerAuthGateTests: XCTestCase {
         let (sut, dependencies) = try await DBPIOSManagerTestUtils.makeTestIOSManager()
         dependencies.database.profile = DBPIOSManagerTestUtils.makeProfile()
         dependencies.authenticationManager.isUserAuthenticatedValue = true
-        dependencies.authenticationManager.hasValidEntitlementValue = true
+        dependencies.authenticationManager.entitlementStatusValue = .enabled
 
         let result = await sut.validateRunPrerequisites()
 
         XCTAssertTrue(result)
+    }
+
+    func testValidatePrerequisites_authenticated_entitlementCantBeRead_returnsTrue() async throws {
+        let (sut, dependencies) = try await DBPIOSManagerTestUtils.makeTestIOSManager()
+        dependencies.database.profile = DBPIOSManagerTestUtils.makeProfile()
+        dependencies.authenticationManager.isUserAuthenticatedValue = true
+        dependencies.authenticationManager.entitlementStatusValue = .error
+
+        let result = await sut.validateRunPrerequisites()
+
+        XCTAssertTrue(result)
+    }
+
+    func testValidatePrerequisites_authenticatedWithoutEntitlement_returnsFalse() async throws {
+        let (sut, dependencies) = try await DBPIOSManagerTestUtils.makeTestIOSManager()
+        dependencies.database.profile = DBPIOSManagerTestUtils.makeProfile()
+        dependencies.authenticationManager.isUserAuthenticatedValue = true
+        dependencies.authenticationManager.entitlementStatusValue = .disabled
+
+        let result = await sut.validateRunPrerequisites()
+
+        XCTAssertFalse(result)
     }
 
     func testValidatePrerequisites_unauthenticatedNotActivated_returnsFalse() async throws {
@@ -87,7 +109,7 @@ final class DataBrokerProtectionIOSManagerAuthGateTests: XCTestCase {
         let (sut, dependencies) = try await DBPIOSManagerTestUtils.makeTestIOSManager()
         dependencies.database.profile = nil
         dependencies.authenticationManager.isUserAuthenticatedValue = true
-        dependencies.authenticationManager.hasValidEntitlementValue = true
+        dependencies.authenticationManager.entitlementStatusValue = .enabled
 
         let result = await sut.validateRunPrerequisites(usingCachedProfileState: .hasProfile)
 
@@ -98,7 +120,7 @@ final class DataBrokerProtectionIOSManagerAuthGateTests: XCTestCase {
         let (sut, dependencies) = try await DBPIOSManagerTestUtils.makeTestIOSManager()
         dependencies.database.profile = DBPIOSManagerTestUtils.makeProfile()
         dependencies.authenticationManager.isUserAuthenticatedValue = true
-        dependencies.authenticationManager.hasValidEntitlementValue = true
+        dependencies.authenticationManager.entitlementStatusValue = .enabled
 
         let result = await sut.validateRunPrerequisites(usingCachedProfileState: .noProfile)
 
@@ -161,7 +183,7 @@ final class DataBrokerProtectionIOSManagerAuthGateTests: XCTestCase {
         let (sut, dependencies) = try await DBPIOSManagerTestUtils.makeTestIOSManager()
         dependencies.database.profile = DBPIOSManagerTestUtils.makeProfile()
         dependencies.authenticationManager.isUserAuthenticatedValue = true
-        dependencies.authenticationManager.hasValidEntitlementValue = true
+        dependencies.authenticationManager.entitlementStatusValue = .enabled
 
         let mockTask = MockBGTask()
         sut.handleBGProcessingTask(task: mockTask)
@@ -277,7 +299,7 @@ final class DataBrokerProtectionIOSManagerAuthGateTests: XCTestCase {
         let (sut, dependencies) = try await DBPIOSManagerTestUtils.makeTestIOSManager()
         dependencies.database.profile = DBPIOSManagerTestUtils.makeProfile()
         dependencies.authenticationManager.isUserAuthenticatedValue = true
-        dependencies.authenticationManager.hasValidEntitlementValue = true
+        dependencies.authenticationManager.entitlementStatusValue = .enabled
 
         // Seed currentRunIsFreeScan = false (authenticated)
         await sut.appDidBecomeActive()

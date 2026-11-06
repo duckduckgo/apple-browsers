@@ -19,10 +19,7 @@
 import Foundation
 
 public enum AuthenticationError: Error, Equatable {
-    case noInviteCode
-    case cantGenerateURL
     case noAuthToken
-    case issueRedeemingInviteCode(error: String)
 }
 
 public protocol DataBrokerProtectionAuthenticationManaging {
@@ -30,7 +27,9 @@ public protocol DataBrokerProtectionAuthenticationManaging {
     /// Returns whether the user is eligible for a free trial
     var isUserEligibleForFreeTrial: Bool { get }
     func accessToken() async -> String?
-    func hasValidEntitlement() async throws -> Bool
+    /// Returns whether the current token carries the PIR entitlement.
+    /// - Returns: `.enabled` or `.disabled` from the token's entitlements, or `.error` when no token can be read.
+    func entitlementStatus() async -> DataBrokerProtectionEntitlementStatus
     func getAuthHeader() async -> String?
 }
 
@@ -57,8 +56,8 @@ public final class DataBrokerProtectionAuthenticationManager: DataBrokerProtecti
         self.subscriptionManager = subscriptionManager
     }
 
-    public func hasValidEntitlement() async throws -> Bool {
-        try await subscriptionManager.hasValidEntitlement()
+    public func entitlementStatus() async -> DataBrokerProtectionEntitlementStatus {
+        await subscriptionManager.entitlementStatus()
     }
 
     public func getAuthHeader() async -> String? {

@@ -194,3 +194,63 @@ extern "C" int _measureTerminateRecursionDepth(void) {
     std::set_terminate(savedHandler);
     return sTerminateCallCount;
 }
+
+// ── Real-C++-exception terminate probe ────────────────────────────────────────
+//
+// Drives `+[NSException currentCxxException]` from inside a *real* `std::terminate`
+// handler with a real C++ exception active, on a dedicated pthread so the libc++abi
+// per-thread state left behind by the longjmp escape dies with the thread.
+//
+// Two trigger paths, matching how production code reaches std::terminate:
+//   - `viaNoexcept == YES`: throw through a `noexcept` frame → `__clang_call_terminate`
+//   - `viaNoexcept == NO`:  throw with no handler on the whole stack → `__cxa_throw`
+//     fails → `failed_throw` → `std::terminate`
+
+struct CxxTerminateProbe {
+    BOOL         viaNoexcept;
+    int          callCount;
+    NSException *result;
+    jmp_buf      jmpBuf;
+};
+
+static CxxTerminateProbe *sCxxTerminateProbe;
+
+static void cxxTerminateProbeHandler() {
+    CxxTerminateProbe *probe = sCxxTerminateProbe;
+    ++probe->callCount;
+    if (probe->callCount == 1) {
+        probe->result = [NSException currentCxxException];
+    }
+    longjmp(probe->jmpBuf, 1);
+}
+
+static void throwProbeException() {
+    throw std::runtime_error("terminate probe exception");
+}
+
+static void *cxxTerminateProbeThread(void *arg) {
+    CxxTerminateProbe *probe = static_cast<CxxTerminateProbe *>(arg);
+    sCxxTerminateProbe = probe;
+    auto savedHandler = std::set_terminate(cxxTerminateProbeHandler);
+
+    if (setjmp(probe->jmpBuf) == 0) {
+        if (probe->viaNoexcept) {
+            []() noexcept { throwProbeException(); }();
+        } else {
+            throwProbeException(); // no catch anywhere on this thread's stack
+        }
+    }
+
+    std::set_terminate(savedHandler);
+    return nullptr;
+}
+
+extern "C" NSException * _Nullable _currentCxxExceptionInTerminateHandler(BOOL viaNoexcept, int *outCallCount) {
+    CxxTerminateProbe probe = { viaNoexcept, 0, nil, {} };
+    pthread_t thread;
+    if (pthread_create(&thread, nullptr, cxxTerminateProbeThread, &probe) == 0) {
+        pthread_join(thread, nullptr);
+    }
+    *outCallCount = probe.callCount;
+    return probe.result;
+}

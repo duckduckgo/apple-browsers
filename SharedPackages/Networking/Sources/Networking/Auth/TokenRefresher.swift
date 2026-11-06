@@ -42,11 +42,9 @@ public protocol TokenRefreshing: Sendable {
     /// - Parameters:
     ///   - tokenContainer: The container whose refresh token is spent.
     ///   - count: How many pairs to create. A value below 1 makes no calls and returns an empty array; in debug builds it is an assertion failure.
-    ///   - refreshID: The identifier of the refresh. When non-nil, only the first call reports its steps on the refresh event mapping,
-    ///     so the refresh event measures a single refresh call and ignores the extra pairs.
     /// - Returns: The new pairs, oldest first. The last one is the most recently minted.
     /// - Throws: `TokenForkError.incomplete` as soon as one call fails, carrying the pairs minted before it.
-    func fork(_ tokenContainer: TokenContainer, count: Int, refreshID: String?) async throws(TokenForkError) -> [TokenContainer]
+    func fork(_ tokenContainer: TokenContainer, count: Int) async throws(TokenForkError) -> [TokenContainer]
 }
 
 /// Thrown by `TokenRefreshing.fork` when one of its refresh calls fails.
@@ -171,16 +169,15 @@ public actor DefaultTokenRefresher: TokenRefreshing {
         }
     }
 
-    public func fork(_ tokenContainer: TokenContainer, count: Int, refreshID: String?) async throws(TokenForkError) -> [TokenContainer] {
+    public func fork(_ tokenContainer: TokenContainer, count: Int) async throws(TokenForkError) -> [TokenContainer] {
         guard count >= 1 else {
             assertionFailure("fork needs at least one pair")
             return []
         }
         var minted: [TokenContainer] = []
-        for index in 0..<count {
-            let isFirst = index == 0
+        for _ in 0..<count {
             do {
-                minted.append(try await refresh(tokenContainer, refreshID: isFirst ? refreshID : nil))
+                minted.append(try await refresh(tokenContainer, refreshID: nil))
             } catch {
                 throw TokenForkError.incomplete(minted: minted, underlying: error)
             }

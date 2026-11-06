@@ -576,7 +576,7 @@ private actor StubTokenRefresher: TokenRefreshing {
         return refreshed
     }
 
-    func fork(_ tokenContainer: TokenContainer, count: Int, refreshID: String?) async throws(TokenForkError) -> [TokenContainer] {
+    func fork(_ tokenContainer: TokenContainer, count: Int) async throws(TokenForkError) -> [TokenContainer] {
         Array(repeating: refreshed, count: count)
     }
 }

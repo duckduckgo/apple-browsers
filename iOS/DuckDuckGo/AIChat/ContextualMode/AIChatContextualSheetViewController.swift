@@ -567,6 +567,9 @@ final class AIChatContextualSheetViewController: UIViewController {
             break
         }
         pixelHandler.fireSheetOpened()
+        if surfaceStyle == .sidebar {
+            pixelHandler.fireSidebarOpened()
+        }
         addKeyboardObserver()
     }
 
@@ -611,6 +614,9 @@ final class AIChatContextualSheetViewController: UIViewController {
         view.endEditing(true)
         removeKeyboardObserver()
         pixelHandler.fireSheetDismissed(hadUnsubmittedSelections: sessionState.hasUnsubmittedSelections)
+        if surfaceStyle == .sidebar {
+            pixelHandler.fireSidebarClosed()
+        }
     }
 
     /// Runs once a closing surface is off screen, including a parked one that never came back.
@@ -645,6 +651,11 @@ final class AIChatContextualSheetViewController: UIViewController {
     override func viewDidLayoutSubviews() {
         super.viewDidLayoutSubviews()
         updateShadowPath()
+    }
+
+    override func viewWillTransition(to size: CGSize, with coordinator: UIViewControllerTransitionCoordinator) {
+        super.viewWillTransition(to: size, with: coordinator)
+        persistentUTIHost?.willTransitionSize(with: coordinator)
     }
 
     override func traitCollectionDidChange(_ previousTraitCollection: UITraitCollection?) {

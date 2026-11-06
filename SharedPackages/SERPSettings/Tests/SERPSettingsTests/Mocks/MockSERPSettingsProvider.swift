@@ -94,6 +94,7 @@ final class MockAIChatSettingsProvider: AIChatSettingsProvider {
     var isAIChatTabBarContextualSheetButtonVisible: Bool = true
     var isAIChatFullModeEnabled: Bool = false
     var isAutomaticContextAttachmentEnabled: Bool = false
+    var isKeyboardAnimationEnabled = true
     var isChatSuggestionsEnabled: Bool = true
     var defaultOmnibarMode: DefaultOmnibarMode = .search
 
@@ -109,6 +110,9 @@ final class MockAIChatSettingsProvider: AIChatSettingsProvider {
     func setAIChatTabBarContextualSheetButtonVisible(_ visible: Bool) {}
     func enableAIChatSearchInputUserSettings(enable: Bool) {}
     func enableAIChatFullModeSetting(enable: Bool) {}
+    func enableKeyboardAnimation(enable: Bool) {
+        isKeyboardAnimationEnabled = enable
+    }
     func enableAutomaticContextAttachment(enable: Bool) {}
     func enableChatSuggestions(enable: Bool) {}
     func setDefaultOmnibarMode(_ mode: DefaultOmnibarMode) {

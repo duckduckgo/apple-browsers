@@ -56,7 +56,7 @@
         "parameters": ["promptDaysSinceInstall", "promptExposureVersion", "appVersion"]
     },
     "m_prompt_gap": {
-        "description": "Fires when a coordinated prompt finishes, measuring the time since the previous coordinated prompt finished. Modals finish on presentation, app rating on redemption of its reserved slot, and the New Tab Page card on removal after a confirmed appearance. Only fires in coordinated mode.",
+        "description": "Fires when a coordinated prompt is shown, measuring the time since the previous coordinated prompt was shown. Each prompt is stamped at the moment its cooldown is stamped: modals on presentation, app rating on redemption of its reserved slot, and the New Tab Page card on its first confirmed appearance in an ownership lease. Only fires in coordinated mode.",
         "owners": ["bkunat"],
         "triggers": ["impression", "user_interaction", "feature_lifecycle"],
         "suffixes": ["platform", "form_factor"],
@@ -65,13 +65,13 @@
             {
                 "key": "gap_bucket",
                 "type": "string",
-                "description": "Time since the previous coordinated prompt finished, with inclusive lower bounds. first means there is no previous timestamp. Clock rollback skips this pixel but updates the timestamp.",
+                "description": "Time since the previous coordinated prompt was shown, with inclusive lower bounds. first means there is no previous timestamp. Clock rollback skips this pixel but updates the timestamp.",
                 "enum": ["first", "lt_1m", "1_5m", "5_10m", "10_30m", "30_60m", "1_4h", "4_12h", "12_24h", "24_48h", "gt_48h"]
             },
             {
                 "key": "prompt_type",
                 "type": "string",
-                "description": "The kind of coordinated prompt that finished.",
+                "description": "The kind of coordinated prompt that was shown.",
                 "enum": ["MODAL", "NTP_CARD"]
             },
             "petal",

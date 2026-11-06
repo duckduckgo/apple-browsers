@@ -4,7 +4,7 @@
         "owners": ["SabrinaTardio"],
         "meta": {
             "type": "ios-duckai-entry",
-            "version": "2.0"
+            "version": "3.0"
         },
         "feature": {
             "name": "duckai_entry",
@@ -90,8 +90,8 @@
                     },
                     "surface": {
                         "type": "string",
-                        "description": "Where Duck.ai is shown: a full Duck.ai tab, or the contextual sheet over a web page.",
-                        "enum": ["duck_ai_tab", "contextual_sheet"]
+                        "description": "Where Duck.ai is shown: a full Duck.ai tab, the contextual sheet over a web page, or the same contextual surface beside the page in the iPad sidebar. Read when the entry starts; a window resize moving the surface later does not change it.",
+                        "enum": ["duck_ai_tab", "contextual_sheet", "contextual_sidebar"]
                     },
                     "prompt_submitted": {
                         "type": "boolean",

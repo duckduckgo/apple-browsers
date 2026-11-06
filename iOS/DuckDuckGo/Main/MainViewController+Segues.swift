@@ -287,6 +287,7 @@ extension MainViewController {
                                                    duckAIGridContentProvider: duckAIGridContentProvider,
                                                    duckAIVoiceSessionTracker: self.duckAIVoiceSessionTracker,
                                                    floatingUIManager: floatingUIManager,
+                                                   isFireShortcutEnabled: { [weak self] in self?.isShortcutEnabled() == true },
                                                    pixelFiring: self.pixelFiring)
 
         controller.transitioningDelegate = tabSwitcherTransition
@@ -429,6 +430,17 @@ extension MainViewController {
         }, deepLinkTarget: .privateSearch)
     }
 
+    func makeSyncSettingsViewController(source: String?) -> SyncSettingsViewController {
+        SyncSettingsViewController(syncService: syncService,
+                                   syncBookmarksAdapter: syncDataProviders.bookmarksAdapter,
+                                   syncCredentialsAdapter: syncDataProviders.credentialsAdapter,
+                                   syncCreditCardsAdapter: syncDataProviders.creditCardsAdapter,
+                                   appSettings: appSettings,
+                                   syncPausedStateManager: syncPausedStateManager,
+                                   source: source,
+                                   syncAutoRestoreHandler: syncAutoRestoreHandler)
+    }
+
     func segueToSettingsSync(with source: String? = nil, pairingInfo: PairingInfo? = nil) {
         Logger.lifecycle.debug(#function)
         hideAllHighlightsIfNeeded()
@@ -515,6 +527,7 @@ extension MainViewController {
                                                             freemiumDBPUserStateManager: freemiumDBPUserStateManager,
                                                             daxGreetingDebugging: daxGreetingService,
                                                             duckAiNativeStorageHandler: duckAiNativeStorageHandler,
+                                                            aiChatBonusMessageLog: userScriptsDependencies.aiChatBonusOffer.messageLog,
                                                             promoCoordinationDiagnosticsProvider: promoCoordinationService,
                                                             promoCoordinationCooldownResetter: promoCoordinationService)
 
@@ -648,6 +661,7 @@ extension MainViewController {
             remoteMessagingDebugHandler: self.remoteMessagingDebugHandler,
             webExtensionManager: self.webExtensionManager,
             duckAiNativeStorageHandler: self.duckAiNativeStorageHandler,
+            aiChatBonusMessageLog: self.userScriptsDependencies.aiChatBonusOffer.messageLog,
             promoCoordinationDiagnosticsProvider: self.promoCoordinationService,
             promoCoordinationCooldownResetter: self.promoCoordinationService,
             daxGreetingDebugging: self.daxGreetingService))

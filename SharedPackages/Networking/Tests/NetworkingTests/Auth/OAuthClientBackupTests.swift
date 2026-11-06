@@ -974,7 +974,7 @@ private final class SideEffectForkRefresher: TokenRefreshing, @unchecked Sendabl
         minted[0]
     }
 
-    func fork(_ tokenContainer: TokenContainer, count: Int, refreshID: String?) async throws(TokenForkError) -> [TokenContainer] {
+    func fork(_ tokenContainer: TokenContainer, count: Int) async throws(TokenForkError) -> [TokenContainer] {
         await sideEffect()
         if let failAfterMinted {
             throw .incomplete(minted: minted, underlying: failAfterMinted)
@@ -1101,7 +1101,7 @@ private actor GatedPrimaryRefresher: TokenRefreshing {
         return primary
     }
 
-    func fork(_ tokenContainer: TokenContainer, count: Int, refreshID: String?) async throws(TokenForkError) -> [TokenContainer] {
+    func fork(_ tokenContainer: TokenContainer, count: Int) async throws(TokenForkError) -> [TokenContainer] {
         []
     }
 
@@ -1144,7 +1144,7 @@ private actor GatedRenewalRefresher: TokenRefreshing {
         return backup
     }
 
-    func fork(_ tokenContainer: TokenContainer, count: Int, refreshID: String?) async throws(TokenForkError) -> [TokenContainer] {
+    func fork(_ tokenContainer: TokenContainer, count: Int) async throws(TokenForkError) -> [TokenContainer] {
         []
     }
 

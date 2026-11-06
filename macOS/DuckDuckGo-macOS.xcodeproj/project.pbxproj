@@ -262,7 +262,6 @@
 		3706FAF0293F65D500E42796 /* YoutubePlayerNavigationHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = 315AA06F28CA5CC800200030 /* YoutubePlayerNavigationHandler.swift */; };
 		3706FAF1293F65D500E42796 /* PreferencesAboutView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 37AFCE9127DB8CAD00471A10 /* PreferencesAboutView.swift */; };
 		3706FAF2293F65D500E42796 /* ContentBlocking.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9826B09F2747DF3D0092F683 /* ContentBlocking.swift */; };
-		3706FAF3293F65D500E42796 /* LocalAuthenticationService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4B379C2127BDBA29008A968E /* LocalAuthenticationService.swift */; };
 		3706FAF4293F65D500E42796 /* SafariBookmarksReader.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4BB99CFC26FE191E001E4761 /* SafariBookmarksReader.swift */; };
 		3706FAF7293F65D500E42796 /* FireproofDomainsViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4B0511B4262CAA5A00F6079C /* FireproofDomainsViewController.swift */; };
 		3706FAFC293F65D500E42796 /* DownloadListItem.swift in Sources */ = {isa = PBXBuildFile; fileRef = B6C0B23526E732000031CB7F /* DownloadListItem.swift */; };
@@ -279,10 +278,8 @@
 		3706FB1F293F65D500E42796 /* DataClearingPreferences.swift in Sources */ = {isa = PBXBuildFile; fileRef = 37CD54C127F2FDD100F1F7B9 /* DataClearingPreferences.swift */; };
 		3706FB20293F65D500E42796 /* LocalUnprotectedDomains.swift in Sources */ = {isa = PBXBuildFile; fileRef = 336B39E22726B4B700C417D3 /* LocalUnprotectedDomains.swift */; };
 		3706FB23293F65D500E42796 /* DownloadsCellView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B6B1E88326D5EB570062C350 /* DownloadsCellView.swift */; };
-		3706FB27293F65D500E42796 /* DeviceAuthenticationService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4BBC169F27C4859400E00A38 /* DeviceAuthenticationService.swift */; };
 		3706FB28293F65D500E42796 /* AutofillPreferences.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3776582E27F82E62009A6B35 /* AutofillPreferences.swift */; };
 		3706FB32293F65D500E42796 /* FirefoxBookmarksReader.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4BB99CF526FE191E001E4761 /* FirefoxBookmarksReader.swift */; };
-		3706FB33293F65D500E42796 /* DeviceIdleStateDetector.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4BBC16A127C485BC00E00A38 /* DeviceIdleStateDetector.swift */; };
 		3706FB39293F65D500E42796 /* PrivacyDashboardPopover.swift in Sources */ = {isa = PBXBuildFile; fileRef = B6FA8940269C425400588ECD /* PrivacyDashboardPopover.swift */; };
 		3706FB43293F65D500E42796 /* DuckPlayer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 37F19A6928E2F2D000740DC6 /* DuckPlayer.swift */; };
 		3706FB45293F65D500E42796 /* SuggestionContainerViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = AABEE69924A902A90043105B /* SuggestionContainerViewModel.swift */; };
@@ -352,7 +349,6 @@
 		3706FC20293F65D500E42796 /* PreferencesAutofillView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 379DE4BC27EA31AC002CC3DE /* PreferencesAutofillView.swift */; };
 		3706FC23293F65D500E42796 /* StatisticsStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = B69B50362726A12000758A2B /* StatisticsStore.swift */; };
 		3706FC27293F65D500E42796 /* PopupBlockedPopover.swift in Sources */ = {isa = PBXBuildFile; fileRef = B6BBF17327475B15004F850E /* PopupBlockedPopover.swift */; };
-		3706FC29293F65D500E42796 /* QuartzIdleStateProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4B379C1427BD91E3008A968E /* QuartzIdleStateProvider.swift */; };
 		3706FC2A293F65D500E42796 /* DuckPlayerPreferences.swift in Sources */ = {isa = PBXBuildFile; fileRef = 37F19A6628E1B43200740DC6 /* DuckPlayerPreferences.swift */; };
 		3706FC2B293F65D500E42796 /* DownloadViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = B6C0B22D26E61CE70031CB7F /* DownloadViewModel.swift */; };
 		3706FC2C293F65D500E42796 /* BookmarkHTMLReader.swift in Sources */ = {isa = PBXBuildFile; fileRef = 373A1AA7283ED1B900586521 /* BookmarkHTMLReader.swift */; };
@@ -366,7 +362,6 @@
 		3706FC4E293F65D500E42796 /* AtbAndVariantCleanup.swift in Sources */ = {isa = PBXBuildFile; fileRef = B69B50562727D16900758A2B /* AtbAndVariantCleanup.swift */; };
 		3706FC56293F65D500E42796 /* Permissions.swift in Sources */ = {isa = PBXBuildFile; fileRef = B65536A52685B82B00085A79 /* Permissions.swift */; };
 		3706FC59293F65D500E42796 /* Fire.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA6820EA25503D6A005ED0D5 /* Fire.swift */; };
-		3706FC5F293F65D500E42796 /* DeviceAuthenticator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4B379C1D27BDB7FF008A968E /* DeviceAuthenticator.swift */; };
 		3706FC62293F65D500E42796 /* ThirdPartyBrowser.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4B59024726B3673600489384 /* ThirdPartyBrowser.swift */; };
 		3706FC64293F65D500E42796 /* SuggestionContainer.swift in Sources */ = {isa = PBXBuildFile; fileRef = AABEE69B24A902BB0043105B /* SuggestionContainer.swift */; };
 		3706FC6F293F65D500E42796 /* FireDialogViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA13DCB3271480B0006D48D3 /* FireDialogViewModel.swift */; };
@@ -706,9 +701,6 @@
 		4B2D065F2A11D2D700DE1F49 /* DuckDuckGo VPN.app in Embed Login Items */ = {isa = PBXBuildFile; fileRef = 4B2D06392A11CFBB00DE1F49 /* DuckDuckGo VPN.app */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		4B2D067F2A1334D700DE1F49 /* NetworkProtectionUI in Frameworks */ = {isa = PBXBuildFile; productRef = 4B2D067E2A1334D700DE1F49 /* NetworkProtectionUI */; };
 		4B2F565C2B38F93E001214C0 /* VPNSubscriptionEventsHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4B2F565B2B38F93E001214C0 /* VPNSubscriptionEventsHandler.swift */; };
-		4B379C1527BD91E3008A968E /* QuartzIdleStateProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4B379C1427BD91E3008A968E /* QuartzIdleStateProvider.swift */; };
-		4B379C1E27BDB7FF008A968E /* DeviceAuthenticator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4B379C1D27BDB7FF008A968E /* DeviceAuthenticator.swift */; };
-		4B379C2227BDBA29008A968E /* LocalAuthenticationService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4B379C2127BDBA29008A968E /* LocalAuthenticationService.swift */; };
 		4B4032842AAAC24400CCA602 /* WaitlistActivationDateStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4B4032832AAAC24400CCA602 /* WaitlistActivationDateStore.swift */; };
 		4B4032852AAAC24400CCA602 /* WaitlistActivationDateStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4B4032832AAAC24400CCA602 /* WaitlistActivationDateStore.swift */; };
 		4B41EDA02B15437A001EEDF4 /* NetworkProtectionNotificationsPresenterFactory.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4B41ED9F2B15437A001EEDF4 /* NetworkProtectionNotificationsPresenterFactory.swift */; };
@@ -856,8 +848,6 @@
 		4BB99D0226FE191E001E4761 /* ImportedBookmarks.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4BB99CFA26FE191E001E4761 /* ImportedBookmarks.swift */; };
 		4BB99D0326FE191E001E4761 /* SafariBookmarksReader.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4BB99CFC26FE191E001E4761 /* SafariBookmarksReader.swift */; };
 		4BB99D0426FE191E001E4761 /* SafariDataImporter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4BB99CFD26FE191E001E4761 /* SafariDataImporter.swift */; };
-		4BBC16A027C4859400E00A38 /* DeviceAuthenticationService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4BBC169F27C4859400E00A38 /* DeviceAuthenticationService.swift */; };
-		4BBC16A227C485BC00E00A38 /* DeviceIdleStateDetector.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4BBC16A127C485BC00E00A38 /* DeviceIdleStateDetector.swift */; };
 		4BCBE4552BA7E16600FC75A1 /* VPNSubscriptionEventsHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4B2F565B2B38F93E001214C0 /* VPNSubscriptionEventsHandler.swift */; };
 		4BCBE4562BA7E16900FC75A1 /* DataBrokerProtectionSubscriptionEventHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB5789712B2CA70F0009DFE2 /* DataBrokerProtectionSubscriptionEventHandler.swift */; };
 		4BCBE4582BA7E17800FC75A1 /* SubscriptionUI in Frameworks */ = {isa = PBXBuildFile; productRef = 4BCBE4572BA7E17800FC75A1 /* SubscriptionUI */; };
@@ -2790,9 +2780,6 @@
 		4B2D06642A132F3A00DE1F49 /* NetworkProtectionAppExtension.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = NetworkProtectionAppExtension.entitlements; sourceTree = "<group>"; };
 		4B2D06692A13318400DE1F49 /* DuckDuckGo VPN App Store.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "DuckDuckGo VPN App Store.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		4B2F565B2B38F93E001214C0 /* VPNSubscriptionEventsHandler.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = VPNSubscriptionEventsHandler.swift; sourceTree = "<group>"; };
-		4B379C1427BD91E3008A968E /* QuartzIdleStateProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QuartzIdleStateProvider.swift; sourceTree = "<group>"; };
-		4B379C1D27BDB7FF008A968E /* DeviceAuthenticator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeviceAuthenticator.swift; sourceTree = "<group>"; };
-		4B379C2127BDBA29008A968E /* LocalAuthenticationService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocalAuthenticationService.swift; sourceTree = "<group>"; };
 		4B4032832AAAC24400CCA602 /* WaitlistActivationDateStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WaitlistActivationDateStore.swift; sourceTree = "<group>"; };
 		4B41ED9F2B15437A001EEDF4 /* NetworkProtectionNotificationsPresenterFactory.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = NetworkProtectionNotificationsPresenterFactory.swift; sourceTree = "<group>"; };
 		4B41EDA22B1543B9001EEDF4 /* VPNPreferencesModel.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = VPNPreferencesModel.swift; sourceTree = "<group>"; };
@@ -2842,8 +2829,6 @@
 		4BB99CFA26FE191E001E4761 /* ImportedBookmarks.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ImportedBookmarks.swift; sourceTree = "<group>"; };
 		4BB99CFC26FE191E001E4761 /* SafariBookmarksReader.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SafariBookmarksReader.swift; sourceTree = "<group>"; };
 		4BB99CFD26FE191E001E4761 /* SafariDataImporter.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SafariDataImporter.swift; sourceTree = "<group>"; };
-		4BBC169F27C4859400E00A38 /* DeviceAuthenticationService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeviceAuthenticationService.swift; sourceTree = "<group>"; };
-		4BBC16A127C485BC00E00A38 /* DeviceIdleStateDetector.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeviceIdleStateDetector.swift; sourceTree = "<group>"; };
 		4BC5E8612E174B7D00391C19 /* DesignResourcesKit */ = {isa = PBXFileReference; lastKnownFileType = wrapper; name = DesignResourcesKit; path = ../SharedPackages/Infrastructure/DesignResourcesKit; sourceTree = SOURCE_ROOT; };
 		4BCB82792E92E25F004B7543 /* AttributedMetric */ = {isa = PBXFileReference; lastKnownFileType = wrapper; name = AttributedMetric; path = ../SharedPackages/AttributedMetric; sourceTree = SOURCE_ROOT; };
 		4BE4D0BA2D8D2DE400D63840 /* BrowserServicesKit */ = {isa = PBXFileReference; lastKnownFileType = wrapper; name = BrowserServicesKit; path = ../SharedPackages/BrowserServicesKit; sourceTree = SOURCE_ROOT; };
@@ -3713,6 +3698,7 @@
 		B01B3803309DEA42007AE540 /* SecureVault */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = SecureVault; sourceTree = "<group>"; };
 		B01B3861309DEA6B007AE540 /* Autofill */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = Autofill; sourceTree = "<group>"; };
 		B01B388C309DEA6B007AE540 /* PasswordManager */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = PasswordManager; sourceTree = "<group>"; };
+		B01B389E309DEA9F007AE540 /* DeviceAuthentication */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = DeviceAuthentication; sourceTree = "<group>"; };
 /* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -4948,18 +4934,6 @@
 			path = NetworkProtectionSystemExtension;
 			sourceTree = "<group>";
 		};
-		4B379C1C27BDB7EA008A968E /* DeviceAuthentication */ = {
-			isa = PBXGroup;
-			children = (
-				4BBC169F27C4859400E00A38 /* DeviceAuthenticationService.swift */,
-				4B379C2127BDBA29008A968E /* LocalAuthenticationService.swift */,
-				4BBC16A127C485BC00E00A38 /* DeviceIdleStateDetector.swift */,
-				4B379C1427BD91E3008A968E /* QuartzIdleStateProvider.swift */,
-				4B379C1D27BDB7FF008A968E /* DeviceAuthenticator.swift */,
-			);
-			path = DeviceAuthentication;
-			sourceTree = "<group>";
-		};
 		4B41EDAC2B168A66001EEDF4 /* UnifiedFeedbackForm */ = {
 			isa = PBXGroup;
 			children = (
@@ -5800,7 +5774,7 @@
 				4B723DEA26B0002B00E14D75 /* DataImport */,
 				3192EC862A4DCF0E001E97A5 /* DBP */,
 				BBDE001A2D6DE66100109F88 /* DefaultBrowserAndAddToDockPrompts */,
-				4B379C1C27BDB7EA008A968E /* DeviceAuthentication */,
+				B01B389E309DEA9F007AE540 /* DeviceAuthentication */,
 				F156E39A2FB5FBCC004A8424 /* Documentation.docc */,
 				AA585D8B248FD31400E9A3E2 /* DuckDuckGo.entitlements */,
 				370AB88B2E2641C500BBBDE0 /* DuckDuckGoAlpha.entitlements */,
@@ -6896,6 +6870,7 @@
 				B01B3803309DEA42007AE540 /* SecureVault */,
 				B01B3861309DEA6B007AE540 /* Autofill */,
 				B01B388C309DEA6B007AE540 /* PasswordManager */,
+				B01B389E309DEA9F007AE540 /* DeviceAuthentication */,
 			);
 			name = "DuckDuckGo Privacy Browser App Store";
 			packageProductDependencies = (
@@ -7545,6 +7520,7 @@
 				B01B3803309DEA42007AE540 /* SecureVault */,
 				B01B3861309DEA6B007AE540 /* Autofill */,
 				B01B388C309DEA6B007AE540 /* PasswordManager */,
+				B01B389E309DEA9F007AE540 /* DeviceAuthentication */,
 			);
 			name = "DuckDuckGo Privacy Browser";
 			packageProductDependencies = (
@@ -8723,7 +8699,6 @@
 				566B736A2BECC02D00FF1959 /* SyncAlertsPresenter.swift in Sources */,
 				3706FAF1293F65D500E42796 /* PreferencesAboutView.swift in Sources */,
 				3706FAF2293F65D500E42796 /* ContentBlocking.swift in Sources */,
-				3706FAF3293F65D500E42796 /* LocalAuthenticationService.swift in Sources */,
 				BB6EE52C2F33C74F009420FA /* MemoryUsagePixel.swift in Sources */,
 				1D36E659298AA3BA00AA485D /* InternalUserDeciderStore.swift in Sources */,
 				37AA01742E1FE8B200844427 /* CrashPixelAppIdentifier.swift in Sources */,
@@ -8787,7 +8762,6 @@
 				3706FB23293F65D500E42796 /* DownloadsCellView.swift in Sources */,
 				CC82ABBA2F520E4D00AD9807 /* PromoTrigger.swift in Sources */,
 				9FBB0C062CBD223D0006B6A6 /* ViewHighlighter.swift in Sources */,
-				3706FB27293F65D500E42796 /* DeviceAuthenticationService.swift in Sources */,
 				3706FB28293F65D500E42796 /* AutofillPreferences.swift in Sources */,
 				BBD798AE2DF213B100575051 /* AddressBarPermissionButtonsIconsProviding.swift in Sources */,
 				1EF51A7D2F89407D003ED865 /* AdBlockingNavigationHandler.swift in Sources */,
@@ -8802,7 +8776,6 @@
 				31EF1E812B63FFB800E6DB17 /* DataBrokerProtectionManager.swift in Sources */,
 				B5A5152F98D8A3F7B870E037 /* PIRDebugLaunchOptions.swift in Sources */,
 				3706FB32293F65D500E42796 /* FirefoxBookmarksReader.swift in Sources */,
-				3706FB33293F65D500E42796 /* DeviceIdleStateDetector.swift in Sources */,
 				BB4AA66E2E96F7160008CC12 /* WinBackOfferFeatureFlagger.swift in Sources */,
 				CC4B39C02ECB4E7000A3C9EF /* DefaultBrowserAndDockPromptNotificationPresenter.swift in Sources */,
 				56D60AA82EE33ED100652ABB /* SubscriptionUserScriptFeatureFlagAdapter.swift in Sources */,
@@ -9176,7 +9149,6 @@
 				3706FC27293F65D500E42796 /* PopupBlockedPopover.swift in Sources */,
 				F1476FC12C1359FB00EAE46A /* SubscriptionUIHandler.swift in Sources */,
 				5677BB712E0D641F001EB83B /* SubscriptionNavigationCoordinator.swift in Sources */,
-				3706FC29293F65D500E42796 /* QuartzIdleStateProvider.swift in Sources */,
 				3706FC2A293F65D500E42796 /* DuckPlayerPreferences.swift in Sources */,
 				D56A5D9FC3504F15837A0037 /* AutoplayPreferences.swift in Sources */,
 				3706FC2B293F65D500E42796 /* DownloadViewModel.swift in Sources */,
@@ -9239,7 +9211,6 @@
 				1EC320952F23F12A00A38D09 /* WebExtensionManager+macOS.swift in Sources */,
 				1EC320962F23F12A00A38D09 /* WebExtensionWindowTabProvider+macOS.swift in Sources */,
 				1EC320972F23F12A00A38D09 /* WebExtensionConfigurationProvider+macOS.swift in Sources */,
-				3706FC5F293F65D500E42796 /* DeviceAuthenticator.swift in Sources */,
 				EE3ED86E2E561B770026B962 /* DismissableSyncDeviceButtonModel.swift in Sources */,
 				FD6A2C0F361B5FA5A4F4E1CE /* BookmarksBarSyncPromoDelegate.swift in Sources */,
 				CFF41E4582187640A6C1DC84 /* BookmarkAddedSyncPromoDelegate.swift in Sources */,
@@ -9757,7 +9728,6 @@
 				4B2F565C2B38F93E001214C0 /* VPNSubscriptionEventsHandler.swift in Sources */,
 				9826B0A02747DF3D0092F683 /* ContentBlocking.swift in Sources */,
 				B55C8F742E81A8730024B421 /* ThemeManager.swift in Sources */,
-				4B379C2227BDBA29008A968E /* LocalAuthenticationService.swift in Sources */,
 				37CEFCA92A6737A2001EF741 /* CredentialsCleanupErrorHandling.swift in Sources */,
 				4BB99D0326FE191E001E4761 /* SafariBookmarksReader.swift in Sources */,
 				1335CC7FAF8E9433F1048426 /* SafariHistoryReader.swift in Sources */,
@@ -9820,7 +9790,6 @@
 				B6B1E88426D5EB570062C350 /* DownloadsCellView.swift in Sources */,
 				3701C9CE29BD040C00305B15 /* FirefoxBerkeleyDatabaseReader.swift in Sources */,
 				560EB9392C789A450080DBC8 /* OnboardingSuggestedSearchesProvider.swift in Sources */,
-				4BBC16A027C4859400E00A38 /* DeviceAuthenticationService.swift in Sources */,
 				37CBCA9A2A8966E60050218F /* SyncSettingsAdapter.swift in Sources */,
 				EEC4A66D2B2C894F00F7C0AA /* VPNLocationPreferenceItemModel.swift in Sources */,
 				3776582F27F82E62009A6B35 /* AutofillPreferences.swift in Sources */,
@@ -9831,7 +9800,6 @@
 				8470EAF12F10F62C009DCEB6 /* ActiveDownloadsAppTerminationDecider.swift in Sources */,
 				1EF51A7C2F89407D003ED865 /* AdBlockingNavigationHandler.swift in Sources */,
 				2026FB0CABDEF00100AA00A2 /* YouTubeAdBlockPopover.swift in Sources */,
-				4BBC16A227C485BC00E00A38 /* DeviceIdleStateDetector.swift in Sources */,
 				B6FA8941269C425400588ECD /* PrivacyDashboardPopover.swift in Sources */,
 				7B6879242EF07ECA00F9964B /* SystemPermissionWarningView.swift in Sources */,
 				7B6879272EF07ECA00F9964B /* SystemDisabledPermissionInfoView.swift in Sources */,
@@ -10202,7 +10170,6 @@
 				63F6360B709D803C891FB236 /* MacOSEventHubPixelFiring.swift in Sources */,
 				F89306773FE37E10EE24A19B /* YouTubeAdBlockingTelemetryConsentRequirement.swift in Sources */,
 				3646AC412F88EC880093AEA7 /* PromoServiceFactory+SubscriptionPromo.swift in Sources */,
-				4B379C1527BD91E3008A968E /* QuartzIdleStateProvider.swift in Sources */,
 				7B7821BD2E84440A00E0359A /* ErrorPagePixel.swift in Sources */,
 				37F19A6728E1B43200740DC6 /* DuckPlayerPreferences.swift in Sources */,
 				0796A764520744F1901532EC /* AutoplayPreferences.swift in Sources */,
@@ -10290,7 +10257,6 @@
 				CCAA80352F5B290400BB58F4 /* DefaultBrowserAndDockPromoDelegate.swift in Sources */,
 				372D15EC2D00FA1A00A11576 /* AppearancePreferences+NewTabPage.swift in Sources */,
 				B52B61812E94331B008888E3 /* ThemeUpdateListening.swift in Sources */,
-				4B379C1E27BDB7FF008A968E /* DeviceAuthenticator.swift in Sources */,
 				BD94DDF82D7A0CEC0090A599 /* DBPMetadataCollector.swift in Sources */,
 				4B4D60BF2A0C848A00BCD287 /* NetworkProtection+ConvenienceInitializers.swift in Sources */,
 				7B5A23682C468233007213AC /* ExcludedDomainsViewController.swift in Sources */,

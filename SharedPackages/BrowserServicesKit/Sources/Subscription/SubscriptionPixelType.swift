@@ -16,6 +16,7 @@
 //  limitations under the License.
 //
 
+import Common
 import Networking
 
 public enum SubscriptionPixelType: Equatable {
@@ -29,6 +30,16 @@ public enum SubscriptionPixelType: Equatable {
     case invalidRefreshTokenRecovered(TokenRecoveryMethod?)
     case purchaseSuccessAfterPendingTransaction
     case pendingTransactionApproved
+    /// The backup restored the token container, in a recovery with the associated trigger.
+    case backupRestored(TokenRecoveryTrigger)
+    /// A backup restore was tried, in a recovery with the associated trigger, and failed or was discarded.
+    case backupRestoreFailed(TokenRecoveryTrigger, BackupRestoreFailureReason, Error)
+    /// A new backup token container was stored after a refresh.
+    case backupRenewed
+    /// Renewing the backup token container failed.
+    case backupRenewalFailed(Error)
+    /// Reading or writing the backup token container's keychain item failed.
+    case backupKeychainError(AccountKeychainAccessType, AccountKeychainAccessError)
 
     public static func == (lhs: SubscriptionPixelType, rhs: SubscriptionPixelType) -> Bool {
         switch (lhs, rhs) {
@@ -38,12 +49,20 @@ public enum SubscriptionPixelType: Equatable {
             (.invalidRefreshTokenSignedOut, .invalidRefreshTokenSignedOut),
             (.getTokensError, .getTokensError),
             (.purchaseSuccessAfterPendingTransaction, .purchaseSuccessAfterPendingTransaction),
-            (.pendingTransactionApproved, .pendingTransactionApproved):
+            (.pendingTransactionApproved, .pendingTransactionApproved),
+            (.backupRenewed, .backupRenewed),
+            (.backupRenewalFailed, .backupRenewalFailed):
             return true
         case let (.automaticSignOut(lhsData, _), .automaticSignOut(rhsData, _)):
             return lhsData == rhsData
         case let (.invalidRefreshTokenRecovered(lhsMethod), .invalidRefreshTokenRecovered(rhsMethod)):
             return lhsMethod == rhsMethod
+        case let (.backupRestored(lhsTrigger), .backupRestored(rhsTrigger)):
+            return lhsTrigger == rhsTrigger
+        case let (.backupRestoreFailed(lhsTrigger, lhsReason, _), .backupRestoreFailed(rhsTrigger, rhsReason, _)):
+            return lhsTrigger == rhsTrigger && lhsReason == rhsReason
+        case let (.backupKeychainError(lhsType, _), .backupKeychainError(rhsType, _)):
+            return lhsType == rhsType
         default:
             return false
         }

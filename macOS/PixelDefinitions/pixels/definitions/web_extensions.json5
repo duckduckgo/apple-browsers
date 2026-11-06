@@ -7,11 +7,7 @@
         "parameters": [
             "appVersion",
             "pixelSource",
-            {
-                "key": "extension_id",
-                "type": "string",
-                "description": "The validated 32-character Chrome Web Store extension identifier"
-            },
+            "web_extension",
             {
                 "key": "outcome",
                 "type": "string",
@@ -37,11 +33,7 @@
         "parameters": [
             "appVersion",
             "pixelSource",
-            {
-                "key": "extension_id",
-                "type": "string",
-                "description": "The validated 32-character Chrome Web Store extension identifier"
-            },
+            "web_extension",
             {
                 "key": "outcome",
                 "type": "string",
@@ -56,16 +48,7 @@
         "owners": ["diegoreymendez"],
         "triggers": ["feature_lifecycle"],
         "suffixes": ["daily_count"],
-        "parameters": [
-            "appVersion",
-            "pixelSource",
-            {
-                "key": "extension_id",
-                "type": "string",
-                "description": "The validated 32-character Chrome Web Store extension identifier"
-            },
-            "channel"
-        ]
+        "parameters": ["appVersion", "pixelSource", "web_extension", "channel"]
     },
     "web_extension_update_found_macos": {
         "description": "Fires when a Chrome Web Store update check finds a newer version. Daily counts affected installations; count counts discoveries. No package URL, hash or version is sent.",

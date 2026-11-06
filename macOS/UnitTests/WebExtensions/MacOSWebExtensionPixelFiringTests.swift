@@ -24,49 +24,39 @@ import WebExtensions
 @available(macOS 15.4, *)
 final class MacOSWebExtensionPixelFiringTests: XCTestCase {
     func testUpdatePreparationPixelsUseOnlyAllowedParameters() throws {
-        let identifier = ChromeWebStoreID.bitwarden.rawValue
-        let cases: [(WebExtensionPixelEvent, String, [String: String])] =
-            WebExtensionUpdateDownloadFailure.allCases.map { outcome in
-                (.updateDownloadFailed(extensionID: identifier, outcome: outcome), "web_extension_update_download_failed_macos",
-                 ["extension_id": identifier, "outcome": outcome.rawValue])
-            } + WebExtensionUpdateVerificationFailure.allCases.map { outcome in
-                (.updateVerificationFailed(extensionID: identifier, outcome: outcome), "web_extension_update_verification_failed_macos",
-                 ["extension_id": identifier, "outcome": outcome.rawValue])
-            } + [(.updateVerified(extensionID: identifier), "web_extension_update_verified_macos", ["extension_id": identifier])]
+        for pixelExtension in WebExtensionPixelExtension.allCases {
+            let cases: [(WebExtensionPixelEvent, String, [String: String])] =
+                WebExtensionUpdateDownloadFailure.allCases.map { outcome in
+                    (.updateDownloadFailed(extension: pixelExtension, outcome: outcome), "web_extension_update_download_failed_macos",
+                     ["extension": pixelExtension.parameterValue, "outcome": outcome.rawValue])
+                } + WebExtensionUpdateVerificationFailure.allCases.map { outcome in
+                    (.updateVerificationFailed(extension: pixelExtension, outcome: outcome), "web_extension_update_verification_failed_macos",
+                     ["extension": pixelExtension.parameterValue, "outcome": outcome.rawValue])
+                } + [(.updateVerified(extension: pixelExtension), "web_extension_update_verified_macos", ["extension": pixelExtension.parameterValue])]
 
-        for (event, name, parameters) in cases {
-            let pixels = PixelKitMock()
-            MacOSWebExtensionPixelFiring(pixelFiring: pixels).fire(event)
-            XCTAssertEqual(pixels.actualFireCalls.count, 1)
-            let call = try XCTUnwrap(pixels.actualFireCalls.first)
-            XCTAssertEqual(call.pixel.name, name)
-            XCTAssertEqual(call.pixel.parameters, parameters)
-            XCTAssertEqual(call.frequency, .dailyAndCount)
-            XCTAssertEqual(call.pixel.namePrefix, .none)
-            XCTAssertEqual(call.pixel.standardParameters, [.pixelSource])
-            XCTAssertNil(call.pixel.error)
-            XCTAssertNil(call.additionalParameters)
-            XCTAssertTrue(call.includeAppVersionParameter)
+            for (event, name, parameters) in cases {
+                let pixels = PixelKitMock()
+                MacOSWebExtensionPixelFiring(pixelFiring: pixels).fire(event)
+                XCTAssertEqual(pixels.actualFireCalls.count, 1)
+                let call = try XCTUnwrap(pixels.actualFireCalls.first)
+                XCTAssertEqual(call.pixel.name, name)
+                XCTAssertEqual(call.pixel.parameters, parameters)
+                XCTAssertEqual(call.frequency, .dailyAndCount)
+                XCTAssertEqual(call.pixel.namePrefix, .none)
+                XCTAssertEqual(call.pixel.standardParameters, [.pixelSource])
+                XCTAssertNil(call.pixel.error)
+                XCTAssertNil(call.additionalParameters)
+                XCTAssertTrue(call.includeAppVersionParameter)
+            }
         }
-    }
-
-    func testUpdatePreparationPixelsRejectInvalidExtensionIdentifiers() {
-        let pixels = PixelKitMock()
-        let firing = MacOSWebExtensionPixelFiring(pixelFiring: pixels)
-        for identifier in ["", "bitwarden", String(repeating: "a", count: 31), String(repeating: "z", count: 32), "https://example.com"] {
-            firing.fire(.updateDownloadFailed(extensionID: identifier, outcome: .networkFailure))
-            firing.fire(.updateVerificationFailed(extensionID: identifier, outcome: .invalidPackage))
-            firing.fire(.updateVerified(extensionID: identifier))
-        }
-        XCTAssertTrue(pixels.actualFireCalls.isEmpty)
     }
 
     func testUpdatePreparationWireNamesMatchDefinitions() throws {
-        let identifier = ChromeWebStoreID.bitwarden.rawValue
+        let pixelExtension: WebExtensionPixelExtension = .catalog(.bitwarden)
         let cases: [(WebExtensionPixelEvent, String)] = [
-            (.updateDownloadFailed(extensionID: identifier, outcome: .networkFailure), "web_extension_update_download_failed_macos"),
-            (.updateVerificationFailed(extensionID: identifier, outcome: .invalidPackage), "web_extension_update_verification_failed_macos"),
-            (.updateVerified(extensionID: identifier), "web_extension_update_verified_macos")
+            (.updateDownloadFailed(extension: pixelExtension, outcome: .networkFailure), "web_extension_update_download_failed_macos"),
+            (.updateVerificationFailed(extension: pixelExtension, outcome: .invalidPackage), "web_extension_update_verification_failed_macos"),
+            (.updateVerified(extension: pixelExtension), "web_extension_update_verified_macos")
         ]
         for (event, expectedName) in cases {
             let suite = "\(#function)-\(UUID().uuidString)"

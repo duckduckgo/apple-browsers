@@ -27,9 +27,9 @@ enum WebExtensionPixel: PixelKit.Event {
     // MARK: - Chrome Web Store Updates
 
     case updateCheck(extension: WebExtensionPixelExtension, outcome: WebExtensionUpdateCheckOutcome)
-    case updateDownloadFailed(extensionID: String, outcome: String)
-    case updateVerificationFailed(extensionID: String, outcome: String)
-    case updateVerified(extensionID: String)
+    case updateDownloadFailed(extension: WebExtensionPixelExtension, outcome: String)
+    case updateVerificationFailed(extension: WebExtensionPixelExtension, outcome: String)
+    case updateVerified(extension: WebExtensionPixelExtension)
 
     // MARK: - Installation
 
@@ -226,12 +226,10 @@ enum WebExtensionPixel: PixelKit.Event {
                 parameters["outcome"] = outcome.rawValue
             }
             return parameters
-        case .updateDownloadFailed(let extensionID, let outcome):
-            return ["extension_id": extensionID, "outcome": outcome]
-        case .updateVerificationFailed(let extensionID, let outcome):
-            return ["extension_id": extensionID, "outcome": outcome]
-        case .updateVerified(let extensionID):
-            return ["extension_id": extensionID]
+        case .updateDownloadFailed(let pixelExtension, let outcome), .updateVerificationFailed(let pixelExtension, let outcome):
+            return [Self.extensionParameterKey: pixelExtension.parameterValue, "outcome": outcome]
+        case .updateVerified(let pixelExtension):
+            return [Self.extensionParameterKey: pixelExtension.parameterValue]
         case .embeddedUpgraded(let fromVersion, let toVersion),
              .darkReaderUpgraded(let fromVersion, let toVersion),
              .adBlockingExtensionUpgraded(let fromVersion, let toVersion):
@@ -350,15 +348,12 @@ struct MacOSWebExtensionPixelFiring: WebExtensionPixelFiring {
         switch event {
         case .updateCheck(let pixelExtension, let outcome):
             pixel = .updateCheck(extension: pixelExtension, outcome: outcome)
-        case .updateDownloadFailed(let extensionID, let outcome):
-            guard ChromeWebStoreURL.isValidExtensionID(extensionID) else { return }
-            pixel = .updateDownloadFailed(extensionID: extensionID, outcome: outcome.rawValue)
-        case .updateVerificationFailed(let extensionID, let outcome):
-            guard ChromeWebStoreURL.isValidExtensionID(extensionID) else { return }
-            pixel = .updateVerificationFailed(extensionID: extensionID, outcome: outcome.rawValue)
-        case .updateVerified(let extensionID):
-            guard ChromeWebStoreURL.isValidExtensionID(extensionID) else { return }
-            pixel = .updateVerified(extensionID: extensionID)
+        case .updateDownloadFailed(let pixelExtension, let outcome):
+            pixel = .updateDownloadFailed(extension: pixelExtension, outcome: outcome.rawValue)
+        case .updateVerificationFailed(let pixelExtension, let outcome):
+            pixel = .updateVerificationFailed(extension: pixelExtension, outcome: outcome.rawValue)
+        case .updateVerified(let pixelExtension):
+            pixel = .updateVerified(extension: pixelExtension)
         case .installed(let pixelExtension):
             pixel = .installed(extension: pixelExtension)
         case .installError(let pixelExtension, let error):

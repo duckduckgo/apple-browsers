@@ -22,6 +22,12 @@ import os.log
 /// Downloads and verifies background updates for installation.
 @available(macOS 15.4, iOS 18.4, *)
 actor ChromeWebStoreUpdater {
+    enum Outcome: Sendable {
+        case verified
+        case downloadFailed(WebExtensionUpdateDownloadFailure)
+        case verificationFailed(WebExtensionUpdateVerificationFailure)
+    }
+
     struct Installation: Equatable, Sendable {
         let identifiers: Set<String>
         let version: String
@@ -29,7 +35,7 @@ actor ChromeWebStoreUpdater {
 
     typealias InstallationProvider = @MainActor @Sendable (String) -> Installation?
     typealias Download = @Sendable (ChromeWebStoreUpdateChecker.Update) async throws -> Data
-    typealias Report = @MainActor @Sendable (WebExtensionPixelEvent) -> Void
+    typealias Report = @MainActor @Sendable (String, Outcome) -> Void
 
     private let download: Download
     private let verifier: ChromeWebStorePackageVerifier
@@ -107,16 +113,16 @@ actor ChromeWebStoreUpdater {
                 throw WebExtensionUpdateVerificationFailure.storageFailure
             }
             Logger.webExtensions.info("Extension update preparation: \(update.extensionID, privacy: .public) verified")
-            await report(.updateVerified(extensionID: update.extensionID))
+            await report(update.extensionID, .verified)
         } catch {
             guard !Task.isCancelled, !(error is CancellationError) else { return }
             if let failure = error as? WebExtensionUpdateVerificationFailure {
                 Logger.webExtensions.error("Extension update preparation: \(update.extensionID, privacy: .public) verification failed=\(failure.rawValue, privacy: .public)")
-                await report(.updateVerificationFailed(extensionID: update.extensionID, outcome: failure))
+                await report(update.extensionID, .verificationFailed(failure))
             } else {
                 let failure = (error as? WebExtensionUpdateDownloadFailure) ?? .networkFailure
                 Logger.webExtensions.error("Extension update preparation: \(update.extensionID, privacy: .public) download failed=\(failure.rawValue, privacy: .public)")
-                await report(.updateDownloadFailed(extensionID: update.extensionID, outcome: failure))
+                await report(update.extensionID, .downloadFailed(failure))
             }
         }
     }

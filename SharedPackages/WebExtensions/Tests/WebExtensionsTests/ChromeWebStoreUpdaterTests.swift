@@ -23,7 +23,7 @@ import XCTest
 @available(macOS 15.4, iOS 18.4, *)
 @MainActor
 final class ChromeWebStoreUpdaterTests: XCTestCase {
-    private var events: [WebExtensionPixelEvent] = []
+    private var events: [(extensionID: String, outcome: ChromeWebStoreUpdater.Outcome)] = []
     private var installedVersion = "0.9"
     private var installationIDs: Set<String> = ["installed"]
 
@@ -42,7 +42,7 @@ final class ChromeWebStoreUpdaterTests: XCTestCase {
                               download: download, installation: { [weak self] _ in
             guard let self else { return nil }
             return .init(identifiers: self.installationIDs, version: self.installedVersion)
-        }, report: { [weak self] in self?.events.append($0) })
+        }, report: { [weak self] identifier, outcome in self?.events.append((identifier, outcome)) })
     }
 
     func testValidPackageIsHandedOverAsVerifiedZIPAndSameVersionIsNotDownloadedAgain() async throws {
@@ -66,8 +66,8 @@ final class ChromeWebStoreUpdaterTests: XCTestCase {
         let count = await counter.value
         XCTAssertEqual(count, 1)
         XCTAssertEqual(events.count, 1)
-        guard case .updateVerified(let identifier) = events.first else { return XCTFail("Expected verified pixel") }
-        XCTAssertEqual(identifier, fixture.identifier)
+        guard case .verified = events.first?.outcome else { return XCTFail("Expected verified update") }
+        XCTAssertEqual(events.first?.extensionID, fixture.identifier)
     }
 
     func testReceiverCanTakeOwnershipWithoutMovingTheVerifiedFile() async throws {
@@ -148,7 +148,7 @@ final class ChromeWebStoreUpdaterTests: XCTestCase {
         let fixture = try ChromeWebStoreFixture(manifest: ["manifest_version": 3, "name": "Test", "version": "4.10"])
         let updater = updater { _ in fixture.package }
         await updater.prepare(try offer(fixture, version: "4.10"))
-        guard case .updateVerified = events.first else { return XCTFail("4.10 must be newer than 4.9") }
+        guard case .verified = events.first?.outcome else { return XCTFail("4.10 must be newer than 4.9") }
     }
 
     func testRemovedOrReinstalledExtensionDoesNotReceiveDownloadedPackage() async throws {
@@ -243,12 +243,12 @@ final class ChromeWebStoreUpdaterTests: XCTestCase {
     }
 
     private func assertDownloadFailure(_ expected: WebExtensionUpdateDownloadFailure, file: StaticString = #filePath, line: UInt = #line) {
-        guard case .updateDownloadFailed(_, let outcome) = events.last else { return XCTFail("Expected download failure", file: file, line: line) }
+        guard case .downloadFailed(let outcome) = events.last?.outcome else { return XCTFail("Expected download failure", file: file, line: line) }
         XCTAssertEqual(outcome, expected, file: file, line: line)
     }
 
     private func assertVerificationFailure(_ expected: WebExtensionUpdateVerificationFailure, file: StaticString = #filePath, line: UInt = #line) {
-        guard case .updateVerificationFailed(_, let outcome) = events.last else { return XCTFail("Expected verification failure", file: file, line: line) }
+        guard case .verificationFailed(let outcome) = events.last?.outcome else { return XCTFail("Expected verification failure", file: file, line: line) }
         XCTAssertEqual(outcome, expected, file: file, line: line)
     }
 }

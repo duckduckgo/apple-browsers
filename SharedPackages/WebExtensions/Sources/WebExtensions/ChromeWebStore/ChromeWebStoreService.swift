@@ -122,8 +122,20 @@ public final class ChromeWebStoreService: ChromeWebStoreManaging {
             let updater = ChromeWebStoreUpdater(pendingUpdates: pendingUpdates, verifier: verifier, download: updateDownload,
                                                  installation: { [weak self] identifier in
                 guard let self, self.isUpdateDiscoveryEnabled(), let version = self.eligibleInstalledVersions()?[identifier] else { return nil }
-                return .init(identifiers: self.installationIdentifiers(for: identifier), version: version)
-            }, report: { pixelFiring.fire($0) })
+                return .init(identifiers: self.installationIdentifiers(for: identifier),
+                             version: self.reportedVersion(for: identifier, installedVersion: version))
+            }, report: { identifier, outcome in
+                guard isUpdateDiscoveryEnabled() else { return }
+                let pixelExtension = catalog.catalogEntry(of: identifier).map(WebExtensionPixelExtension.catalog) ?? .other
+                switch outcome {
+                case .verified:
+                    pixelFiring.fire(.updateVerified(extension: pixelExtension))
+                case .downloadFailed(let failure):
+                    pixelFiring.fire(.updateDownloadFailed(extension: pixelExtension, outcome: failure))
+                case .verificationFailed(let failure):
+                    pixelFiring.fire(.updateVerificationFailed(extension: pixelExtension, outcome: failure))
+                }
+            })
             self.updater = updater
             let stateStore = keyValueStore.map { ChromeWebStoreUpdateStateStore(keyValueStore: $0) }
             let initialState = stateStore?.load() ?? .init()
@@ -195,7 +207,7 @@ public final class ChromeWebStoreService: ChromeWebStoreManaging {
         return versionOverride(for: identity.id, installedVersion: version)
     }
 
-    /// Sets an in-memory override for this installation's store identity. Pass nil to clear it.
+    /// Sets an in-memory version override for discovery and verification. Pass nil to clear it.
     /// Replacing this extension also clears its override without affecting other extensions.
     public func setUpdateCheckVersionOverride(_ version: String?, forInstallationIdentifier identifier: String) {
         guard let installed = manager?.installationStore.installedExtension(withUniqueIdentifier: identifier),

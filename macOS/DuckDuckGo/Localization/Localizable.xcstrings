@@ -62895,6 +62895,18 @@
         }
       }
     },
+    "import.summary.bookmarks" : {
+      "comment" : "Summary text showing number of bookmarks successfully imported",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Bookmarks: %d"
+          }
+        }
+      }
+    },
     "import.summary.bookmarks.imported" : {
       "comment" : "Summary text showing number of bookmarks successfully imported",
       "extractionState" : "extracted_with_value",
@@ -63015,6 +63027,30 @@
         }
       }
     },
+    "import.summary.bookmarks.partial" : {
+      "comment" : "Summary text showing number of bookmarks successfully imported out of total attempted",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Bookmarks: %1$d / %2$d"
+          }
+        }
+      }
+    },
+    "import.summary.credit.cards" : {
+      "comment" : "Summary text showing number of credit cards successfully imported",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Credit Cards: %d"
+          }
+        }
+      }
+    },
     "import.summary.credit.cards.imported" : {
       "comment" : "Summary text showing number of credit cards successfully imported",
       "extractionState" : "extracted_with_value",
@@ -63131,6 +63167,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Импортировано кредитных карт: %1$d из %2$d"
+          }
+        }
+      }
+    },
+    "import.summary.credit.cards.partial" : {
+      "comment" : "Summary text showing number of credit cards successfully imported out of total attempted",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Credit Cards: %1$d / %2$d"
           }
         }
       }
@@ -63735,6 +63783,54 @@
         }
       }
     },
+    "import.summary.history.time-range" : {
+      "comment" : "Shown after the number of imported browsing history visits",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "(last 30 days)"
+          }
+        }
+      }
+    },
+    "import.summary.history.visits" : {
+      "comment" : "Summary text showing number of browsing history visits imported, followed by importSummaryHistoryTimeRange",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "new",
+                  "value" : "History: %d visit"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "new",
+                  "value" : "History: %d visits"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "import.summary.passwords" : {
+      "comment" : "Summary text showing number of passwords successfully imported",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Passwords: %d"
+          }
+        }
+      }
+    },
     "import.summary.passwords.imported" : {
       "comment" : "Summary text showing number of passwords successfully imported",
       "extractionState" : "extracted_with_value",
@@ -63851,6 +63947,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Импортировано паролей: %1$d из %2$d"
+          }
+        }
+      }
+    },
+    "import.summary.passwords.partial" : {
+      "comment" : "Summary text showing number of passwords successfully imported out of total attempted",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Passwords: %1$d / %2$d"
           }
         }
       }

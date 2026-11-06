@@ -22,6 +22,7 @@ import Combine
 import FeatureFlags_iOS
 import WebKit
 import XCTest
+@_spi(Testing) import Persistence
 @_spi(Testing) import PixelKit
 
 @testable import DuckDuckGo
@@ -135,6 +136,7 @@ final class TabViewControllerFindInPageTests: XCTestCase {
     private func makeContent() -> ContentBlockingUpdating.NewContent {
         .init(rulesUpdate: .init(rules: [], changes: [:], completionTokens: []),
               sourceProvider: DefaultScriptSourceProvider(dependencies: .makeMock()),
-              duckAiNativeStorageHandler: nil)
+              duckAiNativeStorageHandler: nil,
+              sponsorBlockPreferences: SponsorBlockPreferences(store: InMemoryKeyValueStore()))
     }
 }

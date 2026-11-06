@@ -113,6 +113,7 @@ final class MainCoordinator {
          bookmarksDatabase: CoreDataDatabase,
          remoteMessagingService: RemoteMessagingService,
          daxDialogs: DaxDialogs,
+         idleReturnEligibilityManager: IdleReturnEligibilityManaging,
          reportingService: ReportingService,
          variantManager: DefaultVariantManager,
          subscriptionService: SubscriptionService,
@@ -276,12 +277,6 @@ final class MainCoordinator {
             syncService: syncService.sync
         )
         let aiChatAddressBarExperience = AIChatAddressBarExperience(featureFlagger: featureFlagger, aiChatSettings: aiChatSettings)
-        let idleReturnEligibilityManager = IdleReturnEligibilityManager(
-            featureFlagger: featureFlagger,
-            keyValueStore: keyValueStore,
-            privacyConfigurationManager: privacyConfigurationManager,
-            isStillOnboarding: { daxDialogsManager.isStillOnboarding() }
-        )
         let afterInactivityOptionAdapter = AfterInactivityOptionAdapter(
             keyValueStore: keyValueStore,
             idleReturnEligibilityManager: idleReturnEligibilityManager
@@ -362,8 +357,8 @@ final class MainCoordinator {
 
     }
 
-    func start() {
-        controller.loadViewIfNeeded()
+    func start(drawsIdleReturnNewTabPage: Bool) {
+        controller.loadInitialViewIfNeeded(drawsIdleReturnNewTabPage: drawsIdleReturnNewTabPage)
     }
 
     private func subscribeToDarkReaderChanges() {
@@ -964,6 +959,13 @@ extension MainCoordinator: IdleReturnLaunchDelegate {
             self.controller.newTab(reuseExisting: true, allowingKeyboard: !deferKeyboard, openedAfterIdle: true)
             completion(.openedNewTab)
         }
+    }
+
+    /// The arrival on the New Tab Page the launch drew is held until the return is noted.
+    func recordNewTabPageDrawnAtLaunch(timeAwayMs: Int?, completion: @escaping (IdleReturnNewTabPageResult) -> Void) {
+        controller.noteNewTabPageReturn(timeAwayMs: timeAwayMs)
+        controller.recordPendingNewTabPagePresentationIfVisible()
+        completion(.openedNewTab)
     }
 
     func markLastUsedTabAsResumedAfterIdle(timeAwayMs: Int?) {

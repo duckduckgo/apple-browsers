@@ -129,6 +129,9 @@ extension MainViewController {
         installFloatingReturnKeyViewController()
         installDuckAIKeyboardEdgeSweep()
         installSwipeTabsGesturesForUnifiedInput()
+        viewCoordinator.isAITabCollapsedBarFloatingOffsetEnabled = { [weak self] in
+            self?.featureFlagger.isAIChatSwipeChromeRefinementsEnabled == true
+        }
 
         subscribeToIntentPublisher(coordinator)
         subscribeToModeChanges(coordinator)

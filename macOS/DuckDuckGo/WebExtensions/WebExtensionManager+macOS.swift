@@ -66,7 +66,8 @@ extension WebExtensionManager {
             disabledExtensionIDs: { [featureFlagger] in
                 Self.flagDisabledExtensionIDs(featureFlagger: featureFlagger)
             },
-            disabledExtensionIDsDidChange: featureFlagger.updatesPublisher
+            disabledExtensionIDsDidChange: featureFlagger.updatesPublisher,
+            pixelFiring: MacOSWebExtensionPixelFiring()
         )
     }
 
@@ -106,6 +107,7 @@ enum WebExtensionManagerFactory {
         autoconsentPreferences: AutoconsentPreferencesProviding,
         themeManager: ThemeManager,
         buildType: ApplicationBuildType = StandardApplicationBuildType(),
+        featureFlagger: FeatureFlagger = Application.appDelegate.featureFlagger,
         darkReaderExcludedDomainsProvider: DarkReaderExcludedDomainsProviding? = nil,
         scriptletConfiguration: ScriptletConfiguration? = nil
     ) -> WebExtensionManager {
@@ -174,6 +176,7 @@ enum WebExtensionManagerFactory {
             ),
             nativeMessagingHandler: nativeMessagingHandler,
             keyValueStore: keyValueStore,
+            retentionStore: WebExtensionRetentionStore(storage: keyValueStore.throwingKeyedStoring()),
             scriptletConfiguration: scriptletConfiguration
         )
 
@@ -181,7 +184,12 @@ enum WebExtensionManagerFactory {
         manager.chromeWebStore = ChromeWebStoreService(
             manager: manager,
             catalog: ChromeWebStoreCatalog(configurationManager: privacyConfigurationManager),
-            presenter: ChromeWebStorePresenter(windowProvider: { NSApp.keyWindow ?? NSApp.mainWindow }, themeManager: themeManager)
+            presenter: ChromeWebStorePresenter(windowProvider: { NSApp.keyWindow ?? NSApp.mainWindow }, themeManager: themeManager),
+            supportsUpdateDiscovery: buildType.isSparkleBuild,
+            isUpdateDiscoveryEnabled: { featureFlagger.isFeatureOn(.webExtensionUpdateDiscovery) },
+            updateDiscoveryFeatureFlagUpdates: featureFlagger.updatesPublisher,
+            keyValueStore: keyValueStore,
+            pixelFiring: pixelFiring
         )
 
         return manager

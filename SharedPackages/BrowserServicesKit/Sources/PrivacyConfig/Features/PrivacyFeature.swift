@@ -70,6 +70,7 @@ public enum PrivacyFeature: String {
     case contentScopeExperiments
     case macOSBrowserConfig
     case iOSBrowserConfig
+    case sponsorBlock
     // Demonstrative case for default value. Remove once a real-world feature is added
     case intentionallyLocalOnlyFeatureForTests
     case delayedWebviewPresentation
@@ -572,6 +573,10 @@ public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1219970758953673?focus=true
     case tabHandoffImprovements
 
+    /// iPhone: Duck.ai chrome refinements while swiping between tabs (bar position, placeholder, gestures).
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1220115595487712
+    case swipeChromeRefinements
+
     /// macOS only. When on, the onboarding Search/Duck.ai toggle choice also drives the New Tab Page
     /// search-mode toggle and seeds the duckduckgo.com homepage. Off keeps the choice address-bar only.
     case onboardingToggleAffectsNtpAndDdg
@@ -790,6 +795,11 @@ public enum DuckPlayerSubfeature: String, PrivacySubfeature {
     case nativeUI // Use Duckplayer's native UI
 }
 
+public enum SponsorBlockPrivacySubfeature: String, PrivacySubfeature {
+    public var parent: PrivacyFeature { .sponsorBlock }
+    case mvpEnabled
+}
+
 public enum SyncPromotionSubfeature: String, PrivacySubfeature {
     public var parent: PrivacyFeature { .syncPromotion }
     case bookmarks
@@ -915,6 +925,9 @@ public enum WebExtensionsSubfeature: String, PrivacySubfeature {
     case embeddedRollout
     /// Controls permission prompts and persistence on macOS.
     case permissions
+    /// Controls Chrome Web Store update discovery on macOS.
+    /// https://app.asana.com/1/137249556945/task/1220029145261023
+    case updateDiscovery
     /// Failsafe for the lightweight reload on data clear (fire). Disable to fall back to the full reload.
     case lightweightReloadOnDataClear
     /// Failsafe for deferring web-extension load/install until protected data is available. Disable to load immediately.

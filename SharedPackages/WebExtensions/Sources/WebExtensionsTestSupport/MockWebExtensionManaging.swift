@@ -38,6 +38,7 @@ public final class MockWebExtensionManaging: WebExtensionManaging {
     public var extensionUpdates = AsyncStream<Void> { $0.finish() }
     public var lifecycleEvents = AsyncStream<WebExtensionLifecycleEvent> { $0.finish() }
     public var cpmMessagingHealthMonitor: CPMMessagingHealthMonitoring = NoOpCPMMessagingHealthMonitor()
+    public let badgeColors = WebExtensionBadgeColorStore()
 
     public init() {}
 

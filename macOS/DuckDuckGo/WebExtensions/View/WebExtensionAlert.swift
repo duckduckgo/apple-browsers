@@ -120,6 +120,14 @@ struct WebExtensionAlert: View {
         window.beginSheet(sheet)
     }
 
+    @MainActor
+    static func present(_ configuration: Configuration, themeManager: ThemeManager, in window: NSWindow) async -> Response {
+        await withCheckedContinuation { continuation in
+            WebExtensionAlert(configuration: configuration, themeManager: themeManager, onResponse: continuation.resume(returning:))
+                .show(in: window)
+        }
+    }
+
     private var content: some View {
         VStack(alignment: .leading, spacing: Constants.contentSpacing) {
             Text(configuration.title)

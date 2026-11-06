@@ -288,6 +288,9 @@ class MainViewController: UIViewController {
     private var hasLoadedInitialView = false
     private weak var burningOverlayView: UIView?
     private(set) var isStartupOnboardingPending = false
+    /// Emits when the onboarding state changes or the browser first appears, so the main menu is rebuilt with the state it can now read.
+    let menuRebuildRequests = PassthroughSubject<Void, Never>()
+    private var hasRequestedMenuRebuildOnFirstAppearance = false
     private(set) lazy var startupOnboardingCover = StartupOnboardingCover(
         parentViewController: self,
         fallbackBackgroundColor: themeManager.currentTheme.onboardingBackgroundColor
@@ -1123,6 +1126,7 @@ class MainViewController: UIViewController {
 
         if isStartupOnboardingPending {
             startupOnboardingCover.attach()
+            menuRebuildRequests.send()
         }
 
         loadInitialViewIfNeeded()
@@ -1130,6 +1134,10 @@ class MainViewController: UIViewController {
 
     override func viewDidAppear(_ animated: Bool) {
         super.viewDidAppear(animated)
+        if !hasRequestedMenuRebuildOnFirstAppearance {
+            hasRequestedMenuRebuildOnFirstAppearance = true
+            menuRebuildRequests.send()
+        }
         recordPendingNewTabPagePresentationIfVisible()
         remoteMessageImpressionReporter.browserDidAppear()
 
@@ -1622,7 +1630,6 @@ class MainViewController: UIViewController {
     private func duckAIAddressBarMenuType(for tab: TabViewController?) -> DuckAIAddressBarMenuType {
         guard let tab else { return .webPage }
         return DuckAIAddressBarMenuType.resolve(
-            isFeatureEnabled: featureFlagger.isFeatureOn(.aiChatContextualAddressBarMenu),
             isShowingDocument: tab.isShowingDocument,
             tabType: tab.tabType,
             searchQuery: tab.url?.searchQuery
@@ -5408,7 +5415,7 @@ class MainViewController: UIViewController {
     }
 
     /// The "Ask Duck.ai" row auto-sends its text as a prompt, on both platforms.
-    private func fireAskDuckAISuggestionPromptSubmittedPixel() {
+    private func fireAskDuckAISuggestionPromptSubmittedPixel(prompt: String) {
         UnifiedToggleInputCoordinatorPixelHelper.fireUnifiedPromptSubmittedPixel(
             hasText: true,
             selectedTool: nil,
@@ -5420,7 +5427,9 @@ class MainViewController: UIViewController {
             origin: .suggestionAskAI,
             defaultMode: aiChatSettings.defaultOmnibarMode,
             isFirstPromptNewInstall: featureDiscovery.isFirstDuckAIPromptNewInstall,
-            usageContext: usageContextProvider.currentContext
+            usageContext: usageContextProvider.currentContext,
+            addressBarPosition: appSettings.iPhoneAddressBarPosition,
+            resubmitOfSearch: unifiedToggleInputCoordinator?.resubmitDelay(of: prompt, mode: .aiChat)
         )
         featureDiscovery.markDuckAIPromptSubmitted()
     }
@@ -6155,7 +6164,7 @@ extension MainViewController: BrowserChromeDelegate {
             // We intentionally don't forward the resolved model config: the suggestion is offered
             // from Search mode where the model chip is hidden and the user hasn't chosen a model.
             _ = unifiedToggleInputCoordinator?.prepareExternalPromptSubmission()
-            fireAskDuckAISuggestionPromptSubmittedPixel()
+            fireAskDuckAISuggestionPromptSubmittedPixel(prompt: value)
             openAIChat(source: .suggestionAskAI, value, autoSend: true,
                        nativePromptFlow: DuckAIPromptFlowStart(userTier: currentDuckAIUserTier))
 
@@ -8946,6 +8955,7 @@ extension MainViewController {
         productSurfaceTelemetry.dataClearingUsed()
         endNewTabPageSessionWithDataClearing()
         endSessionsWithDataClearing(request)
+        unifiedToggleInputCoordinator?.clearResubmitHistory()
 
         // A single tab burn rebuilds the UI from inside the burn itself, so the New Tab Page has
         // already attached by the time `didFinishBurningTabs` runs. Wider scopes are marked later,
@@ -9474,6 +9484,7 @@ extension MainViewController: OnboardingDelegate {
         isStartupOnboardingPending = false
         tutorialSettings.hasSeenOnboarding = true
         clearDuckAIOnboardingResumeStepIfNeeded()
+        menuRebuildRequests.send()
     }
 
     func needsToShowOnboardingIntro() -> Bool {

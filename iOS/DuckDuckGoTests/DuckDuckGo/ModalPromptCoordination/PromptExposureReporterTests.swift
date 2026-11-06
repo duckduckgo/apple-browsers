@@ -132,7 +132,7 @@ struct PromptExposureReporterTests {
         let reporter = context.makeReporter()
         reporter.reportPromptShown(.appRatingPrompt)
         reporter.reportRemoteMessageCardShown(messageID: "card")
-        reporter.recordCoordinatedPromptFinished(.modal)
+        reporter.recordCoordinatedPromptShown(.modal)
         reporter.appDidEnterForeground()
 
         #expect(context.store.underlyingDict.isEmpty)
@@ -273,17 +273,17 @@ struct PromptExposureReporterTests {
 
     @available(iOS 16, macOS 13, *)
     @Test(.timeLimit(.minutes(1)))
-    func gapUsesFinishTimeAndRestampsAfterClockMovesBack() throws {
+    func gapUsesShownTimeAndRestampsAfterClockMovesBack() throws {
         let context = Context()
         let reporter = context.makeReporter()
-        reporter.recordCoordinatedPromptFinished(.modal)
+        reporter.recordCoordinatedPromptShown(.modal)
         context.now.addTimeInterval(60)
-        reporter.recordCoordinatedPromptFinished(.ntpCard)
+        reporter.recordCoordinatedPromptShown(.ntpCard)
         context.now.addTimeInterval(-30)
-        reporter.recordCoordinatedPromptFinished(.modal)
+        reporter.recordCoordinatedPromptShown(.modal)
         #expect(try context.state?.lastCoordinatedPromptFinishedAt == context.now)
         context.now.addTimeInterval(30)
-        reporter.recordCoordinatedPromptFinished(.modal)
+        reporter.recordCoordinatedPromptShown(.modal)
         #expect(context.pixel.actualFireCalls == [
             ExpectedFireCall(pixel: PromptExposurePixel.gap(daysSinceInstall: "d0_6", gapBucket: "first", promptType: .modal), frequency: .standard),
             ExpectedFireCall(pixel: PromptExposurePixel.gap(daysSinceInstall: "d0_6", gapBucket: "1_5m", promptType: .ntpCard), frequency: .standard),

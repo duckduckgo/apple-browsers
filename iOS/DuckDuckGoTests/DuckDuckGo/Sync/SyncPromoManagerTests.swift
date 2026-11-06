@@ -385,21 +385,45 @@ final class SyncPromoManagerTests: XCTestCase {
 
     // MARK: - Pixels
 
+    private let expectedPixelSources: [SyncPromoManager.Touchpoint: String] = [
+        .bookmarks: "bookmarks",
+        .passwords: "passwords",
+        .dataImport: "data_import",
+        .aiChat: "ai_chat",
+        .bookmarksAnotherDevice: "bookmarks_multi_device",
+        .passwordsAnotherDevice: "passwords_multi_device"
+    ]
+
     func testDismissPromoFiresDismissedPixelWithTouchpointAndReason() {
         let syncPromoManager = SyncPromoManager(syncService: syncService,
                                                 pixelFiring: pixelKitMock)
 
-        for touchpoint in [SyncPromoManager.Touchpoint.bookmarks, .passwords, .dataImport, .aiChat, .bookmarksAnotherDevice, .passwordsAnotherDevice] {
+        for (touchpoint, source) in expectedPixelSources {
             let countBefore = pixelKitMock.actualFireCalls.count
 
             syncPromoManager.dismissPromoFor(touchpoint, reason: .userTapped)
 
             XCTAssertEqual(pixelKitMock.actualFireCalls.count, countBefore + 1)
-            XCTAssertEqual(pixelKitMock.actualFireCalls.last?.pixel.name, Pixel.Event.syncPromoDismissed.name)
+            XCTAssertEqual(pixelKitMock.actualFireCalls.last?.pixel.name, "sync_promotion_dismissed")
             XCTAssertEqual(pixelKitMock.actualFireCalls.last?.additionalParameters, [
-                "source": touchpoint.rawValue,
-                "reason": SyncPromoManager.DismissalReason.userTapped.rawValue
+                "source": source,
+                "reason": "user_tapped"
             ])
+        }
+    }
+
+    func testRecordPromoConfirmedFiresConfirmedPixelWithTouchpointSource() {
+        let syncPromoManager = SyncPromoManager(syncService: syncService,
+                                                pixelFiring: pixelKitMock)
+
+        for (touchpoint, source) in expectedPixelSources {
+            let countBefore = pixelKitMock.actualFireCalls.count
+
+            syncPromoManager.recordPromoConfirmedFor(touchpoint)
+
+            XCTAssertEqual(pixelKitMock.actualFireCalls.count, countBefore + 1)
+            XCTAssertEqual(pixelKitMock.actualFireCalls.last?.pixel.name, "sync_promotion_confirmed")
+            XCTAssertEqual(pixelKitMock.actualFireCalls.last?.additionalParameters, ["source": source])
         }
     }
 
@@ -427,16 +451,10 @@ final class SyncPromoManagerTests: XCTestCase {
 
     // MARK: - Mock Creation
 
-    func testWhenRedesignFlagOnAndInstalledMoreThanThreeDaysAgoThenBookmarksDesignIsRedesigned() {
+    func testWhenRedesignFlagOnThenBookmarksDesignIsRedesigned() {
         let syncPromoManager = makeManager(featureFlags: [.syncPromotionRedesign], installedDaysAgo: 4)
 
         XCTAssertEqual(syncPromoManager.designFor(.bookmarks), .redesigned)
-    }
-
-    func testWhenRedesignFlagOnAndInstalledThreeDaysAgoThenBookmarksDesignIsStandard() {
-        let syncPromoManager = makeManager(featureFlags: [.syncPromotionRedesign], installedDaysAgo: 3)
-
-        XCTAssertEqual(syncPromoManager.designFor(.bookmarks), .standard)
     }
 
     func testWhenRedesignFlagOffThenBookmarksDesignIsStandard() {
@@ -445,28 +463,48 @@ final class SyncPromoManagerTests: XCTestCase {
         XCTAssertEqual(syncPromoManager.designFor(.bookmarks), .standard)
     }
 
-    func testWhenInstallDateUnknownThenBookmarksDesignIsStandard() {
-        let syncPromoManager = makeManager(featureFlags: [.syncPromotionRedesign], installedDaysAgo: nil)
-
-        XCTAssertEqual(syncPromoManager.designFor(.bookmarks), .standard)
-    }
-
-    func testWhenRedesignFlagOnAndInstalledMoreThanThreeDaysAgoThenPasswordsDesignIsRedesigned() {
+    func testWhenRedesignFlagOnThenPasswordsDesignIsRedesigned() {
         let syncPromoManager = makeManager(featureFlags: [.syncPromotionRedesign], installedDaysAgo: 4)
 
         XCTAssertEqual(syncPromoManager.designFor(.passwords), .redesigned)
-    }
-
-    func testWhenRedesignFlagOnAndInstalledThreeDaysAgoThenPasswordsDesignIsStandard() {
-        let syncPromoManager = makeManager(featureFlags: [.syncPromotionRedesign], installedDaysAgo: 3)
-
-        XCTAssertEqual(syncPromoManager.designFor(.passwords), .standard)
     }
 
     func testWhenRedesignFlagOffThenPasswordsDesignIsStandard() {
         let syncPromoManager = makeManager(featureFlags: [], installedDaysAgo: 30)
 
         XCTAssertEqual(syncPromoManager.designFor(.passwords), .standard)
+    }
+
+    func testWhenRedesignFlagOnAndInstalledMoreThanThreeDaysAgoThenShouldPresentSetupPromos() {
+        let syncPromoManager = makeManager(featureFlags: setupPromoFlags + [.syncPromotionRedesign], installedDaysAgo: 4)
+        syncPromoManager.resetPromos()
+
+        XCTAssertTrue(syncPromoManager.shouldPresentPromoFor(.bookmarks, count: 1))
+        XCTAssertTrue(syncPromoManager.shouldPresentPromoFor(.passwords, count: 1))
+    }
+
+    func testWhenRedesignFlagOnAndInstalledThreeDaysAgoThenShouldNotPresentSetupPromos() {
+        let syncPromoManager = makeManager(featureFlags: setupPromoFlags + [.syncPromotionRedesign], installedDaysAgo: 3)
+        syncPromoManager.resetPromos()
+
+        XCTAssertFalse(syncPromoManager.shouldPresentPromoFor(.bookmarks, count: 1))
+        XCTAssertFalse(syncPromoManager.shouldPresentPromoFor(.passwords, count: 1))
+    }
+
+    func testWhenRedesignFlagOnAndInstallDateUnknownThenShouldNotPresentSetupPromos() {
+        let syncPromoManager = makeManager(featureFlags: setupPromoFlags + [.syncPromotionRedesign], installedDaysAgo: nil)
+        syncPromoManager.resetPromos()
+
+        XCTAssertFalse(syncPromoManager.shouldPresentPromoFor(.bookmarks, count: 1))
+        XCTAssertFalse(syncPromoManager.shouldPresentPromoFor(.passwords, count: 1))
+    }
+
+    func testWhenRedesignFlagOffAndInstalledTodayThenShouldPresentSetupPromos() {
+        let syncPromoManager = makeManager(featureFlags: setupPromoFlags, installedDaysAgo: 0)
+        syncPromoManager.resetPromos()
+
+        XCTAssertTrue(syncPromoManager.shouldPresentPromoFor(.bookmarks, count: 1))
+        XCTAssertTrue(syncPromoManager.shouldPresentPromoFor(.passwords, count: 1))
     }
 
     func testWhenRedesignFlagOnThenAIChatDesignIsStandard() {
@@ -479,7 +517,7 @@ final class SyncPromoManagerTests: XCTestCase {
         let passwords = SyncPromoViewModel(touchpointType: .passwords, design: .redesigned)
 
         XCTAssertNil(passwords.secondaryButtonTitle)
-        XCTAssertEqual(passwords.toggleTitle, UserText.syncPromoToggleTitle)
+        XCTAssertEqual(passwords.primaryButtonTitle, UserText.syncPromoRedesignConfirmAction)
         XCTAssertEqual(passwords.title, UserText.syncPromoPasswordsTitle)
         XCTAssertEqual(passwords.subtitle, UserText.syncPromoPasswordsRedesignMessage)
     }
@@ -497,7 +535,7 @@ final class SyncPromoManagerTests: XCTestCase {
         let viewModel = SyncPromoViewModel(touchpointType: .bookmarks, design: .redesigned)
 
         XCTAssertNil(viewModel.secondaryButtonTitle)
-        XCTAssertEqual(viewModel.toggleTitle, UserText.syncPromoToggleTitle)
+        XCTAssertEqual(viewModel.primaryButtonTitle, UserText.syncPromoRedesignConfirmAction)
         XCTAssertEqual(viewModel.title, UserText.syncPromoBookmarksTitle)
         XCTAssertEqual(viewModel.subtitle, UserText.syncPromoBookmarksRedesignMessage)
     }
@@ -796,6 +834,8 @@ final class SyncPromoManagerTests: XCTestCase {
                                 installDateProvider: { installDate },
                                 currentDateProvider: { now })
     }
+
+    private let setupPromoFlags: [FeatureFlag] = [.syncPromotionBookmarks, .syncPromotionPasswords, .sync]
 
     private func makeManager(featureFlags: [FeatureFlag], installedDaysAgo: Int?) -> SyncPromoManager {
         let now = Date()

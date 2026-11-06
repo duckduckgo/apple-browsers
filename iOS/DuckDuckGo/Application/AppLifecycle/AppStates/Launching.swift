@@ -26,6 +26,7 @@ import PrivacyConfig
 import UIKit
 import PixelKit
 import BrowserServicesKit
+import Combine
 import Subscription
 import RemoteMessaging
 import ScreenTimeDataCleaner
@@ -436,15 +437,16 @@ struct Launching: LaunchingHandling {
         let mainViewController = mainCoordinator.controller
         let mainMenuBookmarks = mainViewController.mainMenuBookmarks
         let bookmarksMenuTree = BookmarksMenuTree(children: { mainMenuBookmarks.children(ofFolderWithID: $0) })
-        let mainMenuService = MainMenuService(featureFlagger: featureFlagger, contextProvider: {
+        let mainMenuService = MainMenuService(featureFlagger: featureFlagger, contextProvider: { [weak mainViewController] in
             .init(voiceSearchEnabled: voiceSearchHelper.isVoiceSearchEnabled, fireModeEnabled: fireModeCapability.isFireModeEnabled,
-                  aiChatEnabled: aiChatSettings.isAIChatEnabled, favorites: mainMenuBookmarks.favorites)
+                  aiChatEnabled: aiChatSettings.isAIChatEnabled, favorites: mainMenuBookmarks.favorites,
+                  isOnboarding: mainViewController?.needsToShowOnboardingIntro() ?? false)
         }, deferredContent: [
             DuckAIMenuSection.recentChatsIdentifier: DuckAIRecentChatsMenuContent { [weak mainViewController] in
                 await mainViewController?.mainMenuRecentChats() ?? .init(recentChats: [], totalChatCount: 0)
             },
             .bookmarksTree: bookmarksMenuTree
-        ], rebuildTriggers: [mainMenuBookmarks.changes])
+        ], rebuildTriggers: [mainMenuBookmarks.changes, mainViewController.menuRebuildRequests.eraseToAnyPublisher()])
 
         // MARK: - App Services aggregation
         // This object serves as a central hub for app-wide services that:

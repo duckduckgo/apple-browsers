@@ -18,6 +18,7 @@
 //
 
 import SwiftUI
+import UIComponents
 import UIKit
 
 /// The single unified suggestions surface for both Search and Duck.ai. Switches on the
@@ -27,18 +28,22 @@ struct UnifiedSuggestionsView: View {
     @ObservedObject var viewModel: UnifiedSuggestionsViewModel
     let isAddressBarAtBottom: Bool
     let favoritesPresentation: FocusedFavoritesPresentation
+    var usesScrollableEscapeHatch = true
     var usesRedesignedNewTabPageLayout = false
     var showsRedesignedSearchModules = false
+    var mode: TextEntryMode = .search
     var escapeHatch: EscapeHatchModel?
+    var syncPromo: AnyView?
 
     var body: some View {
-        // Chrome stays pinned to the bar except for the redesigned Search escape hatch,
-        // which follows favorites in the scrolling modules. The logo overlays
-        // the content, anchored to the keyboard (the host's fixed bottom) so neither the bar-driven top
-        // inset nor a Search↔Duck.ai toggle moves it.
         ZStack(alignment: .bottom) {
+            if usesScrollableEscapeHatch {
+                logoLayer
+            }
             contentArea
-            logoLayer
+            if !usesScrollableEscapeHatch {
+                logoLayer
+            }
             fireLayer
         }
         // UIKit already bounds this host with its keyboard layout guide. Keep container
@@ -55,7 +60,9 @@ struct UnifiedSuggestionsView: View {
     private var fireLayer: some View {
         if viewModel.isFireTab {
             let showsFire = !isTypingList
-            FireModeEmptyStateView(type: .tab)
+            FireModeEmptyStateView(type: .tab, contentTopInset: viewModel.contentTopInset)
+                // Like the other focused content, dragging the Fire screen dismisses the keyboard.
+                .scrollDismissesKeyboardIfAvailable()
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
                 .background(Color(designSystemColor: .background))
                 .opacity(showsFire ? 1 : 0)
@@ -78,24 +85,54 @@ struct UnifiedSuggestionsView: View {
             if usesRedesignedNewTabPageLayout {
                 RedesignedFocusedSearchModulesView(favoritesModel: favoritesPresentation.viewController?.favoritesModel,
                                                    messagesModel: favoritesPresentation.viewController?.messagesModel,
-                                                   escapeHatch: escapeHatch)
+                                                   showsSearchModules: !usesScrollableEscapeHatch || showsRedesignedSearchModules,
+                                                   recentChats: usesScrollableEscapeHatch && mode == .aiChat ? viewModel.listViewModel(for: .recents) : nil,
+                                                   escapeHatch: escapeHatch,
+                                                   syncPromo: usesScrollableEscapeHatch ? syncPromo : nil,
+                                                   isAddressBarAtBottom: isAddressBarAtBottom,
+                                                   contentTopInset: viewModel.contentTopInset,
+                                                   usesScrollableEscapeHatch: usesScrollableEscapeHatch,
+                                                   onEscapeHatchGeometryChange: { viewModel.setEmbeddedEscapeHatchGeometry($0) })
+                    .background(usesScrollableEscapeHatch ? Color.clear : Color(designSystemColor: .background))
                     // Keep expansion and scroll state while typing or switching modes. Only one
                     // favorites hierarchy is mounted for the selected layout.
-                    .opacity(showsRedesignedSearchModules ? 1 : 0)
-                    .animation(nil, value: showsRedesignedSearchModules)
-                    .allowsHitTesting(showsRedesignedSearchModules)
-                    .accessibilityHidden(!showsRedesignedSearchModules)
+                    .opacity(showsEmbeddedContent ? 1 : 0)
+                    .animation(favoritesAnimation, value: showsEmbeddedContent)
+                    .allowsHitTesting(showsEmbeddedContent)
+                    .accessibilityHidden(!showsEmbeddedContent)
                     .transition(.identity)
                     .modifier(FocusedContentDismissFade(isFadingOut: viewModel.isFadingOut))
             } else {
-                SuggestionsFavoritesView(presentation: favoritesPresentation, isVisible: isShowingFavorites)
+                SuggestionsFavoritesView(presentation: favoritesPresentation,
+                                         isVisible: showsEmbeddedContent && (usesScrollableEscapeHatch || !isWaitingForLeavingLogo),
+                                         visibilityAnimation: favoritesAnimation)
+                    .if(usesScrollableEscapeHatch) {
+                        $0.ignoresSafeArea(.container, edges: .bottom)
+                    }
                     .transition(.identity)
+                    .modifier(FocusedContentDismissFade(isFadingOut: usesScrollableEscapeHatch && viewModel.isFadingOut))
             }
         }
     }
 
+    /// Favorites wait for a logo leaving on a mode switch to fade out; otherwise they show and hide at once,
+    /// so they never linger over an incoming Duck.ai list.
+    private var favoritesAnimation: Animation? {
+        showsEmbeddedContent && fadesOutLeavingLogo ? FocusedContentFade.afterLogoFadeOut : nil
+    }
+
+    /// The redesigned page swaps the logo and the incoming content at once.
+    private var fadesOutLeavingLogo: Bool {
+        viewModel.waitsForLogoFadeOut && !usesRedesignedNewTabPageLayout
+    }
+
+    private var isWaitingForLeavingLogo: Bool {
+        !usesRedesignedNewTabPageLayout && viewModel.logoModeChange?.source != nil
+            && (viewModel.isPreparingLogoModeChange || fadesOutLeavingLogo)
+    }
+
     private var isShowingList: Bool {
-        guard !showsRedesignedSearchModules else { return false }
+        guard !showsEmbeddedContent, !isWaitingForLeavingLogo else { return false }
         if case .list = viewModel.content { return true }
         return false
     }
@@ -111,17 +148,26 @@ struct UnifiedSuggestionsView: View {
         FocusedSuggestionsView(viewModel: viewModel.listViewModel(for: activeListKind),
                                isAddressBarAtBottom: isAddressBarAtBottom,
                                isVisible: isShowingList,
-                               isFadingOut: viewModel.isFadingOut)
+                               isFadingOut: viewModel.isFadingOut,
+                               animatesAppearance: !usesScrollableEscapeHatch || usesRedesignedNewTabPageLayout)
+            .if(usesScrollableEscapeHatch) {
+                $0.safeAreaInset(edge: .top, spacing: 0) {
+                    Color.clear.frame(height: viewModel.contentTopInset)
+                }
+            }
     }
 
-    private var isShowingFavorites: Bool {
-        if case .favorites = viewModel.content { return true }
-        return false
+    private var showsEmbeddedContent: Bool {
+        UnifiedSuggestionsContentResolver.showsEmbeddedContent(
+            usesScrollableEscapeHatch: usesScrollableEscapeHatch,
+            usesRedesignedNewTabPageLayout: usesRedesignedNewTabPageLayout,
+            showsRedesignedSearchModules: showsRedesignedSearchModules,
+            isFireTab: viewModel.isFireTab,
+            content: viewModel.content)
     }
 
     private var isShowingLogo: Bool {
-        if case .logo = viewModel.content { return true }
-        return false
+        viewModel.isShowingLogo && !viewModel.isLogoRevealDeferred
     }
 
     /// The Dax↔Duck.ai empty-state logo, morphing via bound `logoProgress`. Pinned to the exact
@@ -130,80 +176,75 @@ struct UnifiedSuggestionsView: View {
     /// across Search↔Duck.ai toggles and the keyboard (screen-relative, not bar/keyboard-relative).
     private var logoLayer: some View {
         GeometryReader { proxy in
-            // Rests at the NTP logo's exact screen anchor (so focus/defocus is a crossfade from the NTP
-            // position, and the morph happens in place on a toggle), but kept a minimum gap from the
-            // chrome on *both* sides so the chrome never covers it:
-            //  • pushed DOWN if the top chrome (hatch) comes within `minChromeGap` of the logo's top
-            //    (top-bar Duck.ai); the chrome bottom is `minY + chromeInsetTop`, known as the bar animates.
-            //  • pushed UP if the bar's top edge comes within `minChromeGap` of the logo's bottom
-            //    (bottom-bar omnibar); the bar top is `maxY` — the content-area bottom rides the bar-height
-            //    safe-area inset, so it tracks the bar in the same pass.
-            // With room on both sides the pushes clamp to 0 and the logo stays at the NTP anchor.
             let frame = proxy.frame(in: .global)
-            let nativeViewport = viewModel.logoViewportFrame
+            let nativeViewport = viewModel.logoViewportFrame ?? viewModel.logoHostFrame
             let viewport = nativeViewport ?? frame
-            let targetCenterY = Self.logoCenterY(
-                restingAt: UIScreen.main.bounds.midY - Metrics.logoScreenCenterOffset,
-                topChromeBottom: viewport.minY + viewModel.chromeInsetTop,
-                barTop: viewport.maxY)
+            let geometry = viewModel.logoLayout(in: viewport)
+            let destinationShowsLogo = viewModel.isShowingLogo && (geometry.hatchLayout == nil || geometry.hatchLayout?.visibleFrame != nil)
+            let source = viewModel.logoModeChange?.source
+            let isPreparingLogo = !usesRedesignedNewTabPageLayout && viewModel.isPreparingLogoModeChange && source != nil
+            let isFadingLogo = viewModel.logoModeChange?.isFadingOut == true
+            let retainedSource = !usesRedesignedNewTabPageLayout && (isPreparingLogo || isFadingLogo || !destinationShowsLogo) ? source : nil
+            let showsLogo = (isPreparingLogo || (viewModel.isShowingLogo && !isFadingLogo)) && !viewModel.isFireTab && !viewModel.isLandscape
+            let targetCenterY = retainedSource?.frame.midY ?? geometry.centerY
             let offsetY = targetCenterY - frame.midY
-            let logo = FocusedDaxLogoView(progress: viewModel.logoModel.progress,
-                                         morph: viewModel.logoModel.morphs,
-                                         animationSpeed: viewModel.logoModel.morphSpeed)
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
             let animation: Animation? = UIApplication.shared.applicationState == .active ? .easeInOut(duration: 0.2) : nil
+            let hatchLayout = geometry.hatchLayout.map { layout in
+                var layout = layout
+                layout.retainedFrame = retainedSource?.frame
+                layout.animatesVisibility = !usesRedesignedNewTabPageLayout && retainedSource == nil
+                return layout
+            }
+            let logo = FocusedDaxLogoView(progress: retainedSource?.progress ?? viewModel.logoModel.progress,
+                                         morph: viewModel.logoModel.morphs,
+                                         animationSpeed: viewModel.logoModel.morphSpeed,
+                                         freezes: !isPreparingLogo && (retainedSource != nil || (hatchLayout != nil && hatchLayout?.visibleFrame == nil)))
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+            let isLogoDisplayed = isShowingLogo && !viewModel.isFireTab && !viewModel.isLandscape && !viewModel.isFadingOut
+            let backdropLogoFrame = retainedSource?.frame ?? (isLogoDisplayed ? hatchLayout?.visibleFrame : nil)
             Group {
-                if nativeViewport != nil {
+                if let hatchLayout {
+                    // A hidden logo moves straight to its target, so it appears at rest instead of sliding in.
+                    logo.modifier(hatchLayout)
+                        .animation(retainedSource != nil || viewModel.backdropLogoFrame == nil ? nil : animation, value: targetCenterY)
+                        .offset(y: -frame.midY)
+                        .animation(nil, value: frame.midY)
+                } else if nativeViewport != nil {
                     // Animate real clearance changes; compensate transient host movement immediately.
                     logo.offset(y: targetCenterY)
-                        .animation(animation, value: targetCenterY)
+                        .animation(retainedSource == nil ? animation : nil, value: targetCenterY)
                         .offset(y: -frame.midY)
                         .animation(nil, value: frame.midY)
                 } else {
                     logo.offset(y: offsetY)
-                        .animation(animation, value: targetCenterY)
+                        .animation(retainedSource == nil ? animation : nil, value: targetCenterY)
                 }
             }
-                // Show/hide is instant (matches the favorites overlay) so the logo doesn't linger over
-                // favorites/lists during a toggle. Logo→logo keeps it shown, so this never cuts a morph.
+                // Showing is instant; logo→logo keeps it shown, so this never cuts a morph.
                 // Suppressed on fire tabs (fire screen takes the slot) and in landscape (no room — matches
                 // the unfocused NTP / legacy gate).
-                .opacity(isShowingLogo && !viewModel.isFireTab && !viewModel.isLandscape ? 1 : 0)
-                .animation(nil, value: isShowingLogo)
+                .opacity(showsLogo ? 1 : 0)
+                // A mode switch fades a logo that was on screen out before the incoming content appears.
+                .animation(!showsLogo && fadesOutLeavingLogo ? FocusedContentFade.fadeOut : nil, value: showsLogo)
+                // A logo held back for the keyboard fades in once it settles.
+                .opacity(viewModel.isLogoRevealDeferred ? 0 : 1)
+                .animation(usesRedesignedNewTabPageLayout || viewModel.isLogoRevealDeferred || animation == nil ? nil : FocusedContentFade.fadeIn,
+                           value: viewModel.isLogoRevealDeferred)
                 // On dismiss it fades out (the NTP content takes over) — a separate opacity so the
                 // toggle's instant show/hide above is unaffected.
-                .modifier(FocusedContentDismissFade(isFadingOut: viewModel.isFadingOut))
+                .modifier(FocusedContentDismissFade(isFadingOut: viewModel.isFadingOut, duration: FocusedContentFade.duration))
                 .allowsHitTesting(false)
+                .onAppear {
+                    viewModel.backdropLogoFrame = backdropLogoFrame
+                    viewModel.startLogoFadeOut()
+                }
+                .onChange(of: backdropLogoFrame) {
+                    viewModel.backdropLogoFrame = $0
+                }
+                .onChange(of: viewModel.logoModeChange) { _ in
+                    viewModel.startLogoFadeOut()
+                }
         }
         .ignoresSafeArea(.container, edges: .top)
-    }
-
-    /// The logo's screen-center Y: it rests at `restCenterY` (the NTP anchor) but is clamped into the band
-    /// between the chrome — pulled up to keep `bottomBarGap` above the bar/keyboard top edge (`barTop`), and
-    /// held at least `topChromeGap` below the top chrome (`topChromeBottom`, e.g. the hatch). On a short
-    /// screen where the band can't fit the logo plus both gaps, it centers the logo between the two chrome
-    /// edges instead — clearing the keyboard and the hatch as evenly as possible rather than slipping under
-    /// either (the wordmark must not hide behind the keyboard).
-    private static func logoCenterY(restingAt restCenterY: CGFloat,
-                                    topChromeBottom: CGFloat,
-                                    barTop: CGFloat) -> CGFloat {
-        let halfHeight = Metrics.logoHeight / 2
-        let barLimit = barTop - Metrics.bottomBarGap - halfHeight
-        let hatchFloor = topChromeBottom + Metrics.topChromeGap + halfHeight
-        guard hatchFloor <= barLimit else { return (topChromeBottom + barTop) / 2 }
-        return min(max(restCenterY, hatchFloor), barLimit)
-    }
-
-    private enum Metrics {
-        /// Mirrors `NewTabPageDaxLogoView`'s screen-center offset so the focused Search logo lands exactly
-        /// where the NTP logo sits — keep in sync with that view.
-        static let logoScreenCenterOffset: CGFloat = 55
-        /// Min gap kept below the top chrome (hatch) before the logo is pushed down. Tune.
-        static let topChromeGap: CGFloat = 16
-        /// Min gap kept above the bottom bar before the logo is pushed up. Larger than the top gap — the
-        /// bottom bar is tall, so the logo needs more breathing room to sit balanced above it. Tune.
-        static let bottomBarGap: CGFloat = 56
-        /// Mirrors `FocusedDaxLogoView`'s height — used to find the logo's top for the overlap check.
-        static let logoHeight: CGFloat = 162
     }
 }

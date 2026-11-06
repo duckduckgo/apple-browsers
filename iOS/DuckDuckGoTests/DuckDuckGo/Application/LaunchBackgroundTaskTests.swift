@@ -41,6 +41,7 @@ struct LaunchBackgroundTaskTests {
 
         #expect(openTasksDuringLaunch == 1)
         #expect(runner.openTasks == 0)
+        #expect(runner.endedIdentifiers == [UIBackgroundTaskIdentifier(rawValue: 1)])
     }
 
     @available(iOS 16, macOS 13, *)
@@ -132,11 +133,12 @@ struct LaunchBackgroundTaskTests {
 private final class LaunchTaskRunnerSpy: BackgroundTaskRunning {
 
     private(set) var begun = 0
-    private(set) var ended = 0
+    private(set) var endedIdentifiers: [UIBackgroundTaskIdentifier] = []
     private(set) var expirationHandler: (@MainActor () -> Void)?
     var returnsInvalidIdentifier = false
 
     var openTasks: Int { begun - ended }
+    var ended: Int { endedIdentifiers.count }
 
     func beginBackgroundTask(withName name: String, expirationHandler: @escaping @MainActor () -> Void) -> UIBackgroundTaskIdentifier {
         begun += 1
@@ -145,6 +147,6 @@ private final class LaunchTaskRunnerSpy: BackgroundTaskRunning {
     }
 
     func endBackgroundTask(_ identifier: UIBackgroundTaskIdentifier) {
-        ended += 1
+        endedIdentifiers.append(identifier)
     }
 }

@@ -327,21 +327,31 @@ final class AppLaunchUITests: UITestCase {
     }
 
     func testAutoClearOnRelaunchShowsNewTabInTabSwitcher() {
+        func enableFloatingToolbarFlags() {
+            for flag in ["-ff.floatingUIiOS26", "-ff.floatingUIiOS27"] {
+                let indices = app.launchArguments.indices.filter { app.launchArguments[$0] == flag }
+                XCTAssertEqual(indices.count, 1, "Expected one launch value for \(flag).")
+                if let index = indices.first {
+                    app.launchArguments[index + 1] = "true"
+                }
+            }
+        }
+
         app.terminate()
         app.launchArguments += [
             "-ff.fireMode", "true",
-            "-ff.floatingUIiOS26", "true",
-            "-ff.floatingUIiOS27", "true",
             // The launch keyboard covers the tab switcher button, so the tap would race it.
             "-ff.alwaysShowKeyboardOnNewTabPage", "false",
             "-com.duckduckgo.app.autoClearActionKey", "3",
             "-com.duckduckgo.app.autoClearTimingKey", "0",
         ]
+        enableFloatingToolbarFlags()
         app.launch()
         XCTAssertTrue(app.descendants(matching: .any)["searchEntry"].waitForExistence(timeout: UITestTimeouts.navigation))
 
         app.terminate()
         app.launchArguments.removeAll { $0 == "-clearAllDefaults" }
+        enableFloatingToolbarFlags()
         app.launch()
 
         let tabSwitcherButton = app.buttons["Browser.Toolbar.Button.TabSwitcher"]

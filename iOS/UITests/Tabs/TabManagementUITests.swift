@@ -165,7 +165,9 @@ final class TabManagementUITests: UITestCase {
         }
 
         XCTContext.runActivity(named: "Close one selected tab") { _ in
-            app.tabCell(at: 0).buttons["TabSwitcher.Tab.Open"].tapWhenHittable(in: app)
+            let selectedTab = app.tabCell(at: 0)
+            let remainingTab = app.tabCell(at: 1)
+            selectedTab.buttons["TabSwitcher.Tab.Open"].tapWhenHittable(in: app)
             app.assertTabSwitcherTitle("1 Selected")
 
             app.buttons["TabSwitcher.Button.More"].tapWhenHittable(in: app)
@@ -178,6 +180,10 @@ final class TabManagementUITests: UITestCase {
 
             app.assertTabCount(1)
             app.assertTabSwitcherTitle("1 Private Tab")
+            XCTAssertTrue(
+                selectedTab.wait(for: NSPredicate(format: "exists == false"), timeout: UITestTimeouts.elementExistence),
+                "The selected tab remained after it was closed.")
+            XCTAssertTrue(remainingTab.exists, "The unselected tab did not survive closing the selected tab.")
         }
 
         XCTContext.runActivity(named: "Exit selection mode") { _ in

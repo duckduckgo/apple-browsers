@@ -44,7 +44,7 @@ enum PromptExposurePixel: PixelKit.Event {
     case exposure(daysSinceInstall: String, nthInWeek: String)
     case shown(daysSinceInstall: String, promptID: PromptExposureID)
     case userWeek(daysSinceInstall: String)
-    /// Reports the time since the previous coordinated prompt finished.
+    /// Reports the time since the previous coordinated prompt was shown, measured from the same moments the cooldowns use.
     case gap(daysSinceInstall: String, gapBucket: String, promptType: PromptExposurePromptType)
     case session(daysSinceInstall: String, promptShown: Bool)
 

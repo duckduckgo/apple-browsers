@@ -980,6 +980,19 @@ final class TabManagerTests: XCTestCase {
         return .queryPrompt(text, autoSubmit: true, pageContext: .multiple(contexts))
     }
 
+    func testDuplicateInsertsAfterSourceAndKeepsBrowsingMode() throws {
+        let fireModel = TabsModel(tabs: [], desktop: false, mode: .fire)
+        let flagger = MockFeatureFlagger()
+        flagger.enabledFeatureFlags = [.fireMode]
+        let manager = try makeManager(TabsModel(desktop: false), fireModel: fireModel, featureFlagger: flagger)
+        manager.setBrowsingMode(.fire, source: .tabSelection)
+        let source = manager.add(url: try XCTUnwrap(URL(string: "https://example.com/source")), inheritedAttribution: nil)
+        let sourceIndex = try XCTUnwrap(fireModel.currentIndex)
+        let duplicate = manager.duplicate(source)
+        XCTAssertTrue(duplicate.tabModel.fireTab)
+        XCTAssertTrue(fireModel.tabs[sourceIndex + 1] === duplicate.tabModel)
+    }
+
     /// Capacity 2 holds the current tab plus one background tab, so a second background tab forces eviction.
     private func makeManagerWithLoadedCurrentTab() throws -> TabManager {
         let currentTab = Tab(link: Link(title: "current", url: URL(string: "https://example.com/current")!))

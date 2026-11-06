@@ -23,10 +23,15 @@ import DesignResourcesKitIcons
 import DuckUI
 import MetricBuilder
 
+#if DEBUG
+import PreviewSnapshots
+#endif
+
 struct SyncPromoView: View {
 
     let viewModel: SyncPromoViewModel
     @State private var isAccessibilityHidden = true
+    @State private var isToggleOn = false
 
     var body: some View {
         ZStack(alignment: .topTrailing) {
@@ -42,32 +47,20 @@ struct SyncPromoView: View {
                         .daxHeadline()
                     Text(viewModel.subtitle)
                         .daxSubheadRegular()
+                        .foregroundColor(subtitleColor)
                         .frame(maxWidth: .infinity)
                 }
 
-                HStack(spacing: ButtonStackMetrics.interButtonSpacing) {
-                    Button {
-                        viewModel.dismissButtonAction?()
-                    } label: {
-                        Text(viewModel.secondaryButtonTitle)
-                    }
-                    .buttonStyle(SecondaryFillButtonStyle(compact: true, fullWidth: true))
-                    .accessibilityLabel(viewModel.secondaryButtonTitle)
-
-                    Button {
-                        viewModel.primaryButtonAction?()
-                    } label: {
-                        Text(viewModel.primaryButtonTitle)
-                    }
-                    .buttonStyle(PrimaryButtonStyle(compact: true, fullWidth: true))
-                    .accessibilityLabel(viewModel.primaryButtonTitle)
-
+                switch viewModel.design {
+                case .standard:
+                    buttons
+                case .redesigned:
+                    toggle
                 }
-                .padding(.top, 12)
             }
             .multilineTextAlignment(.center)
             .padding(.top)
-            .padding(.bottom, ButtonStackMetrics.containerPadding)
+            .padding(.bottom, bottomPadding)
             .padding(.horizontal, ButtonStackMetrics.containerPadding)
 
             Button {
@@ -77,7 +70,8 @@ struct SyncPromoView: View {
             }
             .buttonStyle(CloseButtonStyle())
             .padding(ContainerMetrics.closeButtonPadding - CloseButtonStyle.Constant.padding)
-            .accessibilityHidden(true)
+            .accessibilityLabel(UserText.syncPromoCloseAccessibilityLabel)
+            .accessibilityHidden(viewModel.secondaryButtonTitle != nil)
         }
         .background(
             RoundedRectangle(cornerRadius: ContainerMetrics.cornerRadius)
@@ -92,9 +86,88 @@ struct SyncPromoView: View {
                 isAccessibilityHidden = false
             }
         }
+        .onDisappear {
+            isToggleOn = false
+        }
+    }
+
+    private var bottomPadding: CGFloat {
+        switch viewModel.design {
+        case .standard:
+            ButtonStackMetrics.containerPadding
+        case .redesigned:
+            12
+        }
+    }
+
+    private var buttons: some View {
+        HStack(spacing: ButtonStackMetrics.interButtonSpacing) {
+            if let secondaryButtonTitle = viewModel.secondaryButtonTitle {
+                Button {
+                    viewModel.dismissButtonAction?()
+                } label: {
+                    Text(secondaryButtonTitle)
+                }
+                .buttonStyle(SecondaryFillButtonStyle(compact: true, fullWidth: true))
+                .accessibilityLabel(secondaryButtonTitle)
+            }
+
+            Button {
+                viewModel.primaryButtonAction?()
+            } label: {
+                Text(viewModel.primaryButtonTitle)
+            }
+            .buttonStyle(PrimaryButtonStyle(compact: true, fullWidth: true))
+            .accessibilityLabel(viewModel.primaryButtonTitle)
+        }
+        .padding(.top, 12)
+    }
+
+    private var toggle: some View {
+        VStack(spacing: 8) {
+            Rectangle()
+                .fill(Color(designSystemColor: .lines))
+                .frame(height: 1)
+
+            Toggle(isOn: Binding(get: { isToggleOn }, set: { isOn in
+                isToggleOn = isOn
+                if isOn {
+                    viewModel.primaryButtonAction?()
+                }
+            })) {
+                Text(viewModel.toggleTitle)
+                    .daxBodyRegular()
+                    .foregroundColor(Color(designSystemColor: .textPrimary))
+            }
+            .tint(Color(designSystemColor: .accentPrimary))
+        }
+        .multilineTextAlignment(.leading)
+        .padding(.top, 8)
+    }
+
+    private var subtitleColor: Color? {
+        switch viewModel.design {
+        case .standard:
+            nil
+        case .redesigned:
+            Color(designSystemColor: .textSecondary)
+        }
     }
 }
 
-#Preview {
-    SyncPromoView(viewModel: SyncPromoViewModel())
+#if DEBUG
+struct SyncPromoView_Previews: PreviewProvider {
+
+    static var previews: some View {
+        snapshots.previews
+    }
+
+    static let snapshots = PreviewSnapshots(configurations: [
+        .init(name: "Standard", state: SyncPromoManager.Design.standard, scope: .previews),
+        .init(name: "Redesigned", state: SyncPromoManager.Design.redesigned)
+    ]) { design in
+        SyncPromoView(viewModel: SyncPromoViewModel(touchpointType: .bookmarks, design: design))
+            .background(Color(designSystemColor: .background))
+    }
 }
+#endif

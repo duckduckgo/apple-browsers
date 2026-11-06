@@ -339,8 +339,26 @@ class AutofillLoginListViewModel: ObservableObject {
                && syncPromoManager.shouldPresentPromoFor(.passwords, count: accountsCount)
     }
 
+    func syncPromoDesign() -> SyncPromoManager.Design {
+        syncPromoManager.designFor(.passwords)
+    }
+
     func dismissSyncPromo() {
         syncPromoManager.dismissPromoFor(.passwords, reason: .userTapped)
+    }
+
+    func recordSyncPromoConfirmed() {
+        syncPromoManager.recordPromoConfirmedFor(.passwords)
+    }
+
+    func shouldShowSyncAnotherDevicePromo() -> Bool {
+        return viewState == .showItems
+               && !isEditing
+               && syncPromoManager.shouldPresentPromoFor(.passwordsAnotherDevice, count: accountsCount)
+    }
+
+    func dismissSyncAnotherDevicePromo() {
+        syncPromoManager.markPromoHandledFor(.passwordsAnotherDevice)
     }
 
     func getSurveyToPresent() -> AutofillSurveyManager.AutofillSurvey? {

@@ -16,32 +16,19 @@
 //  limitations under the License.
 //
 
-import BWManagementShared
-import Combine
+import DesignResourcesKit
+import DesignResourcesKitIcons
 import PixelKit
 import PreferencesUI_macOS
 import SwiftUI
 import SwiftUIExtensions
 
-fileprivate extension Preferences.Const {
-    static let autoLockWarningOffset: CGFloat = 18
-}
-
 extension Preferences {
 
     struct AutofillView: View {
         @ObservedObject var model: AutofillPreferencesModel
-        private let bitwardenManager = Application.appDelegate.bitwardenManager
-        @State private var bitwardenStatus: BWStatus = Application.appDelegate.bitwardenManager?.status ?? .disabled
         @State private var showingResetNeverPromptSitesSheet = false
-
-        var passwordManagerBinding: Binding<PasswordManager> {
-            .init {
-                model.passwordManager
-            } set: { newValue in
-                model.passwordManagerSettingsChange(passwordManager: newValue)
-            }
-        }
+        let showExtensions: () -> Void
 
         var isAutoLockEnabledBinding: Binding<Bool> {
             .init {
@@ -62,7 +49,9 @@ extension Preferences {
         var body: some View {
             PreferencePane(UserText.passwordManagementTitle) {
 
-                if model.showSyncPromo {
+                if model.isManagedByExtension {
+                    ManagedByExtensionNotice(onManageExtensions: showExtensions)
+                } else if model.showSyncPromo {
                     SyncPromoView(viewModel: model.syncPromoViewModel, layout: .horizontal)
                         .onAppear {
                             model.syncPromoViewModel.promoDisplayed()
@@ -74,77 +63,37 @@ extension Preferences {
                     Button(UserText.autofillViewContentButtonPasswords) {
                         model.showAutofillPopover(.logins, source: .settings)
                     }
+
                     Button(UserText.autofillViewContentButtonIdentities) {
                         model.showAutofillPopover(.identities, source: .settings)
                     }
+
                     Button(UserText.autofillViewContentButtonCreditCards) {
                         model.showAutofillPopover(.cards, source: .settings)
                     }
-                    if NSApp.isSandboxed {
-                        Button(UserText.importPasswords) {
-                            model.openImportPasswordsWindow()
-                        }
-                        Button(UserText.exportLogins) {
-                            model.openExportLogins()
-                        }
+
+                    Button(UserText.importPasswords) {
+                        model.openImportPasswordsWindow()
+                    }
+
+                    Button(UserText.exportLogins) {
+                        model.openExportLogins()
                     }
 
                     Text(UserText.autofillContentStoredSecurelyInfo)
                         .foregroundColor(Color(.textSecondary))
                 }
 
-                if let managingExtension = model.managingExtension {
-                    // SECTION 1: Password Manager, taken over by an extension. Shown in every build,
-                    // since an extension can take autofill over in App Store builds too.
-                    PreferencePaneSection(UserText.autofillPasswordManager) {
-                        managingExtensionView(managingExtension)
+                // SECTION 2: Ask to Save:
+                PreferencePaneSection {
+                    TextMenuItemHeader(UserText.autofillAskToSave)
+                    VStack(alignment: .leading, spacing: 6) {
+                        ToggleMenuItem(UserText.autofillPasswords, isOn: $model.askToSaveUsernamesAndPasswords)
+                        ToggleMenuItem(UserText.autofillAddresses, isOn: $model.askToSaveAddresses)
+                        ToggleMenuItem(UserText.autofillCreditCards, isOn: $model.askToSavePaymentMethods)
                     }
-                } else if !NSApp.isSandboxed {
-                    // SECTION 1: Password Manager
-                    PreferencePaneSection(UserText.autofillPasswordManager) {
-                        VStack(alignment: .leading, spacing: 6) {
-                            passwordManagerPicker(passwordManagerBinding) {
-                                Text(UserText.autofillPasswordManagerDuckDuckGo).tag(PasswordManager.duckduckgo)
-                            }
-                        }
-
-                        if shouldShowImportExportButtons {
-                            VStack(spacing: 12) {
-                                Button(UserText.importPasswords) {
-                                    model.openImportPasswordsWindow()
-                                }
-                                Button(UserText.exportLogins) {
-                                    model.openExportLogins()
-                                }
-                            }
-                            .padding(.leading, 15)
-                            .padding(.bottom, 4)
-                        }
-
-                        VStack(alignment: .leading, spacing: 6) {
-                            passwordManagerPicker(passwordManagerBinding) {
-                                Text(UserText.autofillPasswordManagerBitwarden).tag(PasswordManager.bitwarden)
-                            }
-                            if model.passwordManager == .bitwarden && !model.isBitwardenSetupFlowPresented {
-                                bitwardenStatusView(for: bitwardenStatus)
-                            }
-                        }
-
-                    }
-                }
-
-                // SECTION 2: Ask to Save. Hidden while an extension manages autofill: DuckDuckGo neither
-                // saves nor autofills anything then.
-                if model.managingExtension == nil {
-                    PreferencePaneSection {
-                        TextMenuItemHeader(UserText.autofillAskToSave)
-                        VStack(alignment: .leading, spacing: 6) {
-                            ToggleMenuItem(UserText.autofillPasswords, isOn: $model.askToSaveUsernamesAndPasswords)
-                            ToggleMenuItem(UserText.autofillAddresses, isOn: $model.askToSaveAddresses)
-                            ToggleMenuItem(UserText.autofillCreditCards, isOn: $model.askToSavePaymentMethods)
-                        }
-                        TextMenuItemCaption(UserText.autofillAskToSaveExplanation)
-                    }
+                    .disabled(model.isManagedByExtension)
+                    TextMenuItemCaption(UserText.autofillAskToSaveExplanation)
                 }
 
                 // SECTION 3: Reset excluded (aka never prompt to save) sites:
@@ -199,6 +148,7 @@ extension Preferences {
                     .offset(x: PreferencesUI_macOS.Const.pickerHorizontalOffset)
                     TextMenuItemCaption(UserText.autofillNeverLockWarning)
                 }
+                .disabled(model.isManagedByExtension)
 
                 if Application.appDelegate.featureFlagger.isFeatureOn(.autofillPasswordsStatusBar) {
                     // SECTION 5: Menu Bar
@@ -208,206 +158,38 @@ extension Preferences {
                     }
                 }
             }
-            .onReceive(bitwardenStatusPublisher) { status in
-                bitwardenStatus = status
-            }
             .onAppear {
                 model.viewDidAppear()
             }
         }
-
-        @ViewBuilder
-        private func passwordManagerPicker(_ binding: Binding<PasswordManager>, @ViewBuilder content: @escaping () -> some View) -> some View {
-            Picker(selection: binding, content: {
-                content()
-            }, label: {})
-            .pickerStyle(.radioGroup)
-            .rebrandedControlTint()
-            .offset(x: PreferencesUI_macOS.Const.pickerHorizontalOffset)
-        }
-
-        /// The extension that took autofill over: who, and a way to give it back.
-        @ViewBuilder
-        private func managingExtensionView(_ managingExtension: AutofillManagingExtension) -> some View {
-            VStack(alignment: .leading, spacing: 8) {
-                HStack(spacing: 6) {
-                    if let icon = managingExtension.icon {
-                        Image(nsImage: icon)
-                            .resizable()
-                            .frame(width: 16, height: 16)
-                    }
-                    Text(UserText.autofillManagedByExtension(managingExtension.name))
-                }
-                TextMenuItemCaption(UserText.autofillManagedByExtensionExplanation(managingExtension.name))
-                Button(UserText.autofillUseDuckDuckGoInstead) {
-                    model.useDuckDuckGoInstead()
-                }
-            }
-        }
-
-        // MARK: - Password Manager Availability Methods
-
-        private var shouldShowImportExportButtons: Bool {
-            return model.passwordManager == .duckduckgo
-        }
-
-        private var bitwardenStatusPublisher: AnyPublisher<BWStatus, Never> {
-            if let bitwardenManager {
-                return bitwardenManager.statusPublisher.eraseToAnyPublisher()
-            }
-            return Just(.disabled).eraseToAnyPublisher()
-        }
-
-        @ViewBuilder private func bitwardenStatusView(for status: BWStatus) -> some View {
-            switch status {
-            case .disabled:
-                BitwardenStatusView(iconType: .error,
-                                    title: UserText.bitwardenPreferencesUnableToConnect,
-                                    buttonValue: .init(title: UserText.bitwardenPreferencesCompleteSetup, action: { model.presentBitwardenSetupFlow() }))
-                .offset(x: Preferences.Const.autoLockWarningOffset)
-            case .notInstalled:
-                BitwardenStatusView(iconType: .warning,
-                                    title: UserText.bitwardenNotInstalled)
-                .offset(x: Preferences.Const.autoLockWarningOffset)
-            case .oldVersion:
-                BitwardenStatusView(iconType: .warning,
-                                    title: UserText.bitwardenOldVersion)
-                .offset(x: Preferences.Const.autoLockWarningOffset)
-            case .incompatible:
-                BitwardenStatusView(iconType: .warning,
-                                    title: UserText.bitwardenIncompatible,
-                                    content: AnyView(BitwardenDowngradeInfoView()))
-                .offset(x: Preferences.Const.autoLockWarningOffset)
-                    .offset(x: Preferences.Const.autoLockWarningOffset)
-            case .notRunning:
-                BitwardenStatusView(iconType: .warning,
-                                    title: UserText.bitwardenPreferencesRun,
-                                    buttonValue: .init(title: UserText.bitwardenPreferencesOpenBitwarden, action: { model.openBitwarden() }))
-                .offset(x: Preferences.Const.autoLockWarningOffset)
-            case .integrationNotApproved:
-                BitwardenStatusView(iconType: .error,
-                                    title: UserText.bitwardenIntegrationNotApproved,
-                                    buttonValue: .init(title: UserText.bitwardenPreferencesCompleteSetup, action: { model.presentBitwardenSetupFlow() }))
-                .offset(x: Preferences.Const.autoLockWarningOffset)
-            case .missingHandshake:
-                BitwardenStatusView(iconType: .error,
-                                    title: UserText.bitwardenMissingHandshake,
-                                    buttonValue: .init(title: UserText.bitwardenPreferencesCompleteSetup, action: { model.presentBitwardenSetupFlow() }))
-                .offset(x: Preferences.Const.autoLockWarningOffset)
-            case .waitingForHandshakeApproval:
-                BitwardenStatusView(iconType: .error,
-                                    title: UserText.bitwardenWaitingForHandshake,
-                                    buttonValue: .init(title: UserText.bitwardenPreferencesCompleteSetup, action: { model.presentBitwardenSetupFlow() }))
-                .offset(x: Preferences.Const.autoLockWarningOffset)
-            case .accessToContainersNotApproved:
-                BitwardenStatusView(iconType: .error,
-                                    title: UserText.bitwardenCantAccessContainer,
-                                    buttonValue: .init(title: UserText.openSystemSettings, action: { model.openSettings() }))
-                .offset(x: Preferences.Const.autoLockWarningOffset)
-            case .handshakeNotApproved:
-                BitwardenStatusView(iconType: .error,
-                                    title: UserText.bitwardenHanshakeNotApproved,
-                                    buttonValue: .init(title: UserText.bitwardenPreferencesCompleteSetup, action: { model.presentBitwardenSetupFlow() }))
-                .offset(x: Preferences.Const.autoLockWarningOffset)
-            case .connecting:
-                BitwardenStatusView(iconType: .warning,
-                                    title: UserText.bitwardenConnecting,
-                                    buttonValue: .init(title: UserText.bitwardenPreferencesOpenBitwarden, action: { model.openBitwarden() }))
-                .offset(x: Preferences.Const.autoLockWarningOffset)
-            case .waitingForStatusResponse:
-                BitwardenStatusView(iconType: .warning,
-                                    title: UserText.bitwardenWaitingForStatusResponse,
-                                    buttonValue: .init(title: UserText.bitwardenPreferencesOpenBitwarden, action: { model.openBitwarden() }))
-                .offset(x: Preferences.Const.autoLockWarningOffset)
-
-            case .connected(vault: let vault):
-                switch vault.status {
-                case .locked:
-                    BitwardenStatusView(iconType: .warning,
-                                        title: UserText.bitwardenPreferencesUnlock,
-                                        buttonValue: .init(title: UserText.bitwardenPreferencesOpenBitwarden, action: { model.openBitwarden() }))
-                    .offset(x: Preferences.Const.autoLockWarningOffset)
-                case .unlocked:
-                    BitwardenStatusView(iconType: .success,
-                                        title: vault.email,
-                                        buttonValue: .init(title: UserText.bitwardenPreferencesOpenBitwarden, action: { model.openBitwarden() }))
-                    .offset(x: Preferences.Const.autoLockWarningOffset)
-                }
-            case .error:
-                BitwardenStatusView(iconType: .error,
-                                    title: UserText.bitwardenError,
-                                    buttonValue: nil)
-                .offset(x: Preferences.Const.autoLockWarningOffset)
-            }
-        }
-    }
-}
-
-private struct BitwardenStatusView: View {
-
-    internal init(iconType: BitwardenStatusView.IconType, title: String, buttonValue: BitwardenStatusView.ButtonValue? = nil, content: AnyView? = nil) {
-        self.iconType = iconType
-        self.title = title
-        self.buttonValue = buttonValue
-        self.content = content
     }
 
-    struct ButtonValue {
-        let title: String
-        let action: () -> Void
-    }
+    private struct ManagedByExtensionNotice: View {
+        let onManageExtensions: () -> Void
 
-    enum IconType {
-        case success
-        case warning
-        case error
-
-        fileprivate var imageName: String {
-            switch self {
-            case .success: return "SuccessCheckmark"
-            case .warning: return "Warning"
-            case .error: return "Error"
-            }
-        }
-    }
-
-    let iconType: IconType
-    let title: String
-    let buttonValue: ButtonValue?
-    let content: AnyView?
-
-    var body: some View {
-
-        VStack(alignment: .leading) {
+        var body: some View {
             HStack(alignment: .top) {
-                Image(iconType.imageName)
-                    .padding(.top, 2)
-                VStack(alignment: .leading) {
-                    Text(title)
-                        .lineLimit(nil)
-                        .fixedSize(horizontal: false, vertical: true)
-                        .padding([.top, .bottom], 2)
-                    if let content {
-                        content.padding([.top, .bottom], 2)
-                    }
+                Image(nsImage: DesignSystemImages.Glyphs.Size16.exclamationRecolorableInvert)
+                    .resizable()
+                    .frame(width: 16, height: 16)
+                    .padding(.trailing, 4)
+
+                VStack(alignment: .leading, spacing: 8) {
+                    Text(UserText.autofillManagedByExtensionTitle)
+                        .bold()
+                    Text(UserText.autofillManagedByExtensionMessage)
+                    Button(UserText.autofillManagedByExtensionManageButton, action: onManageExtensions)
+                        .padding(.top, 4)
                 }
-            }
-            .padding([.leading, .trailing], 6)
-            .padding([.top, .bottom], 2)
-            .background(Color.black.opacity(0.04))
-            .cornerRadius(5)
-            .overlay(
-                RoundedRectangle(cornerRadius: 5)
-                    .stroke(Color.black.opacity(0.08), lineWidth: 1)
-            )
 
-            if let buttonValue = buttonValue {
-                Button(buttonValue.title, action: buttonValue.action)
+                Spacer()
             }
+            .padding()
+            .background(Color(designSystemColor: .statusWarningFillPrimary, palette: .default))
+            .cornerRadius(20)
+            .fixedSize(horizontal: false, vertical: true)
         }
-
     }
-
 }
 
 struct BitwardenDowngradeInfoView: View, PreferencesTabOpening {

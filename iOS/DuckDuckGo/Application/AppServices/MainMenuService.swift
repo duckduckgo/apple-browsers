@@ -25,21 +25,41 @@ import UIKit
 final class MainMenuService {
 
     private let featureFlagger: FeatureFlagger
+    private let contextProvider: () -> MainMenuSpec.Context
+    private let deferredContent: [UIMenu.Identifier: MainMenuDeferredContent]
     private let idiom: UIUserInterfaceIdiom
     private let rebuildRequests = PassthroughSubject<Void, Never>()
     private var isBuildHandlerRegistered = false
     private var cancellables = Set<AnyCancellable>()
 
     var spec: MainMenuSpec {
-        MainMenuSpec(isEnabled: featureFlagger.isFeatureOn(.ipadMenuBar), idiom: idiom)
+        MainMenuSpec(isEnabled: featureFlagger.isFeatureOn(.ipadMenuBar), idiom: idiom, context: contextProvider())
     }
 
     init(featureFlagger: FeatureFlagger,
          idiom: UIUserInterfaceIdiom = UIDevice.current.userInterfaceIdiom,
+         contextProvider: @escaping () -> MainMenuSpec.Context = { .init() },
+         deferredContent: [UIMenu.Identifier: MainMenuDeferredContent] = [:],
+         rebuildTriggers: [AnyPublisher<Void, Never>] = [],
+         notificationCenter: NotificationCenter = .default,
          rebuildDelay: DispatchQueue.SchedulerTimeType.Stride = .milliseconds(100),
          rebuild: @escaping () -> Void = { UIMenuSystem.main.setNeedsRebuild() }) {
         self.featureFlagger = featureFlagger
         self.idiom = idiom
+        self.contextProvider = contextProvider
+        self.deferredContent = deferredContent
+
+        notificationCenter.publisher(for: .speechRecognizerDidChangeAvailability)
+            .sink { [weak self] _ in self?.requestRebuild() }
+            .store(in: &cancellables)
+
+        notificationCenter.publisher(for: .aiChatSettingsChanged)
+            .sink { [weak self] _ in self?.requestRebuild() }
+            .store(in: &cancellables)
+
+        Publishers.MergeMany(rebuildTriggers)
+            .sink { [weak self] in self?.requestRebuild() }
+            .store(in: &cancellables)
 
         rebuildRequests
             .debounce(for: rebuildDelay, scheduler: DispatchQueue.main)
@@ -62,7 +82,7 @@ final class MainMenuService {
     }
 
     func buildMenu(with builder: UIMenuBuilder) {
-        MainMenuBuilder().build(spec, with: builder)
+        MainMenuBuilder(deferredContent: deferredContent).build(spec, with: builder)
     }
 
     func requestRebuild() {

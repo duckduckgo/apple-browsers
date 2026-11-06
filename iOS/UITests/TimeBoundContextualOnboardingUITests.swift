@@ -124,9 +124,13 @@ final class TimeBoundContextualOnboardingUITests: XCTestCase {
         openTrackerFreePage()
 
         dismissInputIfNeeded()
+        let tabSwitcher = app.buttons["Browser.Toolbar.Button.TabSwitcher"]
+        XCTAssertTrue(tabSwitcher.staticTexts["1"].waitForExistence(timeout: timeout))
         tap(app.buttons["Browser.Toolbar.Button.Menu"])
         tapButton("New Tab")
         waitForBrowser()
+        dismissInputIfNeeded()
+        XCTAssertTrue(tabSwitcher.staticTexts["2"].waitForExistence(timeout: timeout))
         assertNoContextualDialog()
         attachScreenshot(named: "New tab after the limit")
     }

@@ -549,6 +549,108 @@ extension ContextualDaxDialogsFactoryTests {
 
 }
 
+final class ContextualDaxDialogsTimeLimitTests: XCTestCase {
+    func testAfterTimeLimitTrackersDialogHasNoFireFollowUpAndCTAOnlyDismisses() throws {
+        let logic = ContextualOnboardingLogicMock()
+        logic.endedByTimeLimit = true
+        let delegate = ContextualOnboardingDelegateMock()
+        let reporter = OnboardingPixelReporterMock()
+        let factory = makeFactory(logic: logic, reporter: reporter)
+        let host = factory.makeView(for: .withOneTracker, delegate: delegate, onSizeUpdate: { XCTFail("No follow-up needs resizing") })
+        let view = try XCTUnwrap(find(OnboardingRebranding.OnboardingTrackersBlockedDialogScreen.self, in: host.rootView))
+
+        XCTAssertFalse(view.shouldFollowUp)
+        view.blockedTrackersCTAAction()
+
+        XCTAssertTrue(delegate.didCallDidTapDismissContextualOnboardingAction)
+        XCTAssertFalse(delegate.didCallDidAcknowledgeContextualOnboardingTrackersDialog)
+        XCTAssertTrue(reporter.didCallMeasureTrackersDialogGotItAction)
+        XCTAssertFalse(reporter.didCallMeasureScreenImpressionCalled)
+        XCTAssertFalse(reporter.didCallMeasureSharedOnboardingScreenImpression)
+    }
+
+    func testTrackersCTARechecksTimeLimitAfterDialogWasCreated() throws {
+        let logic = ContextualOnboardingLogicMock()
+        let delegate = ContextualOnboardingDelegateMock()
+        let reporter = OnboardingPixelReporterMock()
+        let factory = makeFactory(logic: logic, reporter: reporter)
+        let host = factory.makeView(for: .withOneTracker, delegate: delegate, onSizeUpdate: { XCTFail("No follow-up needs resizing") })
+        let view = try XCTUnwrap(find(OnboardingRebranding.OnboardingTrackersBlockedDialogScreen.self, in: host.rootView))
+        XCTAssertTrue(view.shouldFollowUp)
+
+        logic.endedByTimeLimit = true
+        view.blockedTrackersCTAAction()
+
+        XCTAssertTrue(delegate.didCallDidTapDismissContextualOnboardingAction)
+        XCTAssertFalse(delegate.didCallDidAcknowledgeContextualOnboardingTrackersDialog)
+        XCTAssertFalse(reporter.didCallMeasureScreenImpressionCalled)
+        XCTAssertFalse(reporter.didCallMeasureSharedOnboardingScreenImpression)
+    }
+
+    func testBeforeTimeLimitTrackersDialogKeepsFireFollowUp() throws {
+        let logic = ContextualOnboardingLogicMock()
+        let delegate = ContextualOnboardingDelegateMock()
+        let reporter = OnboardingPixelReporterMock()
+        let factory = makeFactory(logic: logic, reporter: reporter)
+        var resized = false
+        let host = factory.makeView(for: .withOneTracker, delegate: delegate, onSizeUpdate: { resized = true })
+        let view = try XCTUnwrap(find(OnboardingRebranding.OnboardingTrackersBlockedDialogScreen.self, in: host.rootView))
+
+        XCTAssertTrue(view.shouldFollowUp)
+        view.blockedTrackersCTAAction()
+
+        XCTAssertFalse(delegate.didCallDidTapDismissContextualOnboardingAction)
+        XCTAssertTrue(delegate.didCallDidAcknowledgeContextualOnboardingTrackersDialog)
+        XCTAssertTrue(resized)
+        XCTAssertEqual(reporter.capturedScreenImpression, .daxDialogsFireEducationShownUnique)
+        XCTAssertEqual(reporter.capturedSharedOnboardingScreenImpression, .fireButton(.shown))
+    }
+
+    func testTrackersCTAEvaluatesTimeLimitBeforeChoosingFireFollowUp() throws {
+        let logic = ContextualOnboardingLogicMock()
+        logic.onCheckTimeLimit = { [weak logic] in logic?.endedByTimeLimit = true }
+        let delegate = ContextualOnboardingDelegateMock()
+        let reporter = OnboardingPixelReporterMock()
+        let factory = makeFactory(logic: logic, reporter: reporter)
+        let host = factory.makeView(for: .withOneTracker, delegate: delegate, onSizeUpdate: { XCTFail("Expired dialog must not advance") })
+        let view = try XCTUnwrap(find(OnboardingRebranding.OnboardingTrackersBlockedDialogScreen.self, in: host.rootView))
+        XCTAssertTrue(view.shouldFollowUp)
+
+        view.blockedTrackersCTAAction()
+
+        XCTAssertTrue(delegate.didCallDidTapDismissContextualOnboardingAction)
+        XCTAssertFalse(delegate.didCallDidAcknowledgeContextualOnboardingTrackersDialog)
+        XCTAssertFalse(reporter.didCallMeasureScreenImpressionCalled)
+        XCTAssertFalse(reporter.didCallMeasureSharedOnboardingScreenImpression)
+    }
+
+    func testSearchCTAEvaluatesTimeLimitBeforeChoosingSiteFollowUp() throws {
+        let logic = ContextualOnboardingLogicMock()
+        logic.onCheckTimeLimit = { [weak logic] in logic?.endedByTimeLimit = true }
+        let delegate = ContextualOnboardingDelegateMock()
+        let reporter = OnboardingPixelReporterMock()
+        let factory = makeFactory(logic: logic, reporter: reporter)
+        let host = factory.makeView(for: .afterSearch, delegate: delegate, onSizeUpdate: { XCTFail("Expired dialog must not advance") })
+        let view = try XCTUnwrap(find(OnboardingRebranding.OnboardingSearchDoneDialog.self, in: host.rootView))
+        XCTAssertTrue(view.shouldFollowUp)
+
+        view.gotItAction()
+
+        XCTAssertTrue(delegate.didCallDidTapDismissContextualOnboardingAction)
+        XCTAssertFalse(delegate.didCallDidAcknowledgeContextualOnboardingSearch)
+        XCTAssertFalse(logic.didCallSetTryVisitSiteMessageSeen)
+        XCTAssertFalse(reporter.didCallMeasureScreenImpressionCalled)
+        XCTAssertFalse(reporter.didCallMeasureSharedOnboardingScreenImpression)
+    }
+
+    private func makeFactory(logic: ContextualOnboardingLogicMock, reporter: OnboardingPixelReporterMock) -> ContextualDaxDialogFactory {
+        ContextualDaxDialogFactory(contextualOnboardingLogic: logic,
+                                  contextualOnboardingSettings: ContextualOnboardingSettingsMock(),
+                                  contextualOnboardingPixelReporter: reporter,
+                                  onboardingManager: OnboardingManagerMock())
+    }
+}
+
 final class ContextualOnboardingSettingsMock: ContextualOnboardingSettings {
     var userHasSeenTrackersDialog: Bool = false
     var userHasSeenFireDialog: Bool = false

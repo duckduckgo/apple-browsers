@@ -92,7 +92,7 @@ final class ContextualDaxDialogFactory: ContextualDaxDialogsFactory {
             rootView = AnyView(
                 withTrackersDialog(
                     for: spec,
-                    shouldFollowUpToFireDialog: !contextualOnboardingSettings.userHasSeenFireDialog,
+                    shouldFollowUpToFireDialog: !contextualOnboardingLogic.endedByTimeLimit && !contextualOnboardingSettings.userHasSeenFireDialog,
                     delegate: delegate,
                     onSizeUpdate: onSizeUpdate
                 )
@@ -151,6 +151,11 @@ private extension ContextualDaxDialogFactory {
         let gotItAction: () -> Void = if shouldFollowUpToWebsiteSearch {
             { [weak delegate, weak self] in
                 self?.contextualOnboardingPixelReporter.measureSearchResultsDialogGotItAction()
+                self?.contextualOnboardingLogic.checkTimeLimit()
+                guard self?.contextualOnboardingLogic.endedByTimeLimit != true else {
+                    delegate?.didTapDismissContextualOnboardingAction()
+                    return
+                }
                 onSizeUpdate()
                 delegate?.didAcknowledgeContextualOnboardingSearch()
                 self?.contextualOnboardingLogic.setTryVisitSiteMessageSeen()
@@ -257,8 +262,9 @@ private extension ContextualDaxDialogFactory {
             message: attributedMessage,
             blockedTrackersCTAAction: { [weak self, weak delegate] in
                 self?.contextualOnboardingPixelReporter.measureTrackersDialogGotItAction()
+                self?.contextualOnboardingLogic.checkTimeLimit()
 
-                if self?.contextualOnboardingSettings.userHasSeenFireDialog == true {
+                if self?.contextualOnboardingLogic.endedByTimeLimit == true || self?.contextualOnboardingSettings.userHasSeenFireDialog == true {
                     delegate?.didTapDismissContextualOnboardingAction()
                 } else {
                     onSizeUpdate()

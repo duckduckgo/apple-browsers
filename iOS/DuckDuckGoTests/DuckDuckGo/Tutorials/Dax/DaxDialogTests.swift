@@ -25,6 +25,7 @@ import Onboarding
 @_spi(Testing) import Persistence
 import PrivacyConfig
 import PrivacyDashboard
+import SwiftUI
 import TrackerRadarKit
 import XCTest
 
@@ -1122,6 +1123,92 @@ final class DaxDialog: XCTestCase {
     }
 
 
+    func testAfterTimeLimitOnlyBlockedTrackersDialogRemainsEligible() {
+        let settings = MockDaxDialogsSettings()
+        settings.browsingWithoutTrackersShown = true
+        let sut = makeTimedOutSUT(settings: settings)
+
+        for url in [URLs.ddg, URLs.example, URLs.facebook, URLs.ownedByFacebook] {
+            XCTAssertNil(sut.nextBrowsingMessageIfShouldShow(for: makePrivacyInfo(url: url)))
+        }
+        XCTAssertNil(sut.nextHomeScreenMessageNew())
+        XCTAssertEqual(sut.nextBrowsingMessageIfShouldShow(for: makePrivacyInfoWithBlockedTrackers(url: URLs.example))?.type, .withOneTracker)
+        XCTAssertTrue(settings.browsingWithTrackersShown)
+        XCTAssertFalse(sut.shouldShowFireButtonPulse)
+        XCTAssertFalse(sut.shouldShowPrivacyButtonPulse)
+        XCTAssertFalse(sut.isEnabled)
+    }
+
+    func testAfterTimeLimitSearchDoesNotShowTrackersDialogEvenWithBlockedTrackers() {
+        let sut = makeTimedOutSUT()
+
+        XCTAssertNil(sut.nextBrowsingMessageIfShouldShow(for: makePrivacyInfoWithBlockedTrackers(url: URLs.ddg)))
+        XCTAssertEqual(sut.nextBrowsingMessageIfShouldShow(for: makePrivacyInfoWithBlockedTrackers(url: URLs.example))?.type, .withOneTracker)
+    }
+
+    func testAfterTimeLimitBlockedTrackersDialogCanReloadUntilDismissed() {
+        let sut = makeTimedOutSUT()
+        let info = makePrivacyInfoWithBlockedTrackers(url: URLs.example)
+
+        XCTAssertEqual(sut.nextBrowsingMessageIfShouldShow(for: info)?.type, .withOneTracker)
+        XCTAssertEqual(sut.nextBrowsingMessageIfShouldShow(for: info)?.type, .withOneTracker)
+        sut.setDaxDialogDismiss()
+        XCTAssertNil(sut.nextBrowsingMessageIfShouldShow(for: info))
+        XCTAssertNil(sut.nextBrowsingMessageIfShouldShow(for: makePrivacyInfoWithBlockedTrackers(url: URLs.amazon)))
+    }
+
+    func testAfterTimeLimitTrackersDialogDoesNotReturnAfterNavigatingAway() {
+        let sut = makeTimedOutSUT()
+        let info = makePrivacyInfoWithBlockedTrackers(url: URLs.example)
+
+        XCTAssertEqual(sut.nextBrowsingMessageIfShouldShow(for: info)?.type, .withOneTracker)
+        XCTAssertNil(sut.nextBrowsingMessageIfShouldShow(for: makePrivacyInfo(url: URLs.amazon)))
+        XCTAssertNil(sut.nextBrowsingMessageIfShouldShow(for: info))
+    }
+
+    func testAfterTimeLimitAlreadySeenTrackersDialogsSuppressException() {
+        for sawMajorTracker in [true, false] {
+            let settings = MockDaxDialogsSettings()
+            settings.browsingMajorTrackingSiteShown = sawMajorTracker
+            settings.browsingWithTrackersShown = !sawMajorTracker
+            let sut = makeTimedOutSUT(settings: settings)
+
+            XCTAssertNil(sut.nextBrowsingMessageIfShouldShow(for: makePrivacyInfoWithBlockedTrackers(url: URLs.example)))
+        }
+    }
+
+    func testAfterTimeLimitSkippedOnboardingSuppressesTrackersException() {
+        let sut = makeTimedOutSUT(tutorialSettings: MockTutorialSettings(hasSeenOnboarding: true, hasSkippedOnboarding: true))
+
+        XCTAssertNil(sut.nextBrowsingMessageIfShouldShow(for: makePrivacyInfoWithBlockedTrackers(url: URLs.example)))
+        XCTAssertNil(sut.nextHomeScreenMessageNew())
+    }
+
+    func testAfterTimeLimitMajorTrackerSiteUsesOnlyActualBlockedTrackersMessage() {
+        let sut = makeTimedOutSUT()
+
+        XCTAssertEqual(sut.nextBrowsingMessageIfShouldShow(for: makePrivacyInfoWithBlockedTrackers(url: URLs.facebook))?.type, .withOneTracker)
+    }
+
+    private func makeTimedOutSUT(settings: MockDaxDialogsSettings = MockDaxDialogsSettings(),
+                                 tutorialSettings: TutorialSettings = MockTutorialSettings(hasSeenOnboarding: true)) -> DaxDialogs {
+        let timeLimit = makeDisabledContextualOnboardingTimeLimit()
+        timeLimit.endedByTimeLimit = true
+        settings.isDismissed = true
+        return DaxDialogs(settings: settings,
+                          entityProviding: entityProvider,
+                          variantManager: MockVariantManager(),
+                          timeLimit: timeLimit,
+                          tutorialSettings: tutorialSettings)
+    }
+
+    private func makePrivacyInfoWithBlockedTrackers(url: URL) -> PrivacyInfo {
+        let info = makePrivacyInfo(url: url)
+        let tracker = detectedTrackerFrom(URLs.google, pageUrl: url.absoluteString)
+        info.trackerInfo.addDetectedTracker(tracker, onPageWithURL: url)
+        return info
+    }
+
     private func detectedTrackerFrom(_ url: URL, pageUrl: String) -> DetectedRequest {
         let entity = entityProvider.entity(forHost: url.host!)
         return DetectedRequest(url: url.absoluteString,
@@ -1183,7 +1270,7 @@ func makeDisabledContextualOnboardingTimeLimit() -> ContextualOnboardingTimeLimi
 }
 
 final class ContextualOnboardingTimeLimitTests: XCTestCase {
-    private let now = Date(timeIntervalSince1970: 1_800_000_000)
+    private var now = Date(timeIntervalSince1970: 1_800_000_000)
     private var store: InMemoryKeyValueStore!
     private var flagger: MockFeatureFlagger!
     private var configuration: MockPrivacyConfiguration!
@@ -1519,6 +1606,43 @@ final class ContextualOnboardingTimeLimitTests: XCTestCase {
             XCTAssertEqual(limit.appOpens, 0)
             XCTAssertEqual(reporter.reasons, [.days])
         }
+    }
+
+    func testTrackersCTACrossingDeadlineEndsWithoutFireFollowUp() throws {
+        let settings = MockDaxDialogsSettings()
+        let limit = makeLimit()
+        limit.startDate = now.addingTimeInterval(-7 * 86_400 + 1)
+        let reporter = TimeLimitReporter()
+        let dialogs = makeDialogs(settings: settings, limit: limit, reporter: reporter)
+        let pixels = OnboardingPixelReporterMock()
+        let delegate = ContextualOnboardingDelegateMock()
+        let factory = ContextualDaxDialogFactory(contextualOnboardingLogic: dialogs,
+                                                contextualOnboardingSettings: UnseenDialogSettings(),
+                                                contextualOnboardingPixelReporter: pixels,
+                                                onboardingManager: OnboardingManagerMock())
+        let host = factory.makeView(for: .withOneTracker, delegate: delegate, onSizeUpdate: { XCTFail("Expired dialog must not advance") })
+        let view = try XCTUnwrap(find(OnboardingRebranding.OnboardingTrackersBlockedDialogScreen.self, in: host.rootView))
+        XCTAssertTrue(view.shouldFollowUp)
+        XCTAssertTrue(dialogs.isEnabled)
+
+        now = now.addingTimeInterval(1)
+        view.blockedTrackersCTAAction()
+
+        XCTAssertTrue(dialogs.endedByTimeLimit)
+        XCTAssertFalse(dialogs.isEnabled)
+        XCTAssertEqual(limit.appOpens, 0)
+        XCTAssertEqual(reporter.reasons, [.days])
+        XCTAssertTrue(delegate.didCallDidTapDismissContextualOnboardingAction)
+        XCTAssertFalse(delegate.didCallDidAcknowledgeContextualOnboardingTrackersDialog)
+        XCTAssertFalse(pixels.didCallMeasureScreenImpressionCalled)
+        XCTAssertFalse(pixels.didCallMeasureSharedOnboardingScreenImpression)
+    }
+
+    private struct UnseenDialogSettings: ContextualOnboardingSettings {
+        let userHasSeenTrackersDialog = false
+        let userHasSeenFireDialog = false
+        let userHasSeenTryVisitSiteDialog = false
+        let chatPathPhase: DaxDialogs.ChatPathPhase = .none
     }
 
     private func makeLimit(launchOptionsHandler: LaunchOptionsHandler = LaunchOptionsHandler(environment: [:], arguments: [])) -> ContextualOnboardingTimeLimit {

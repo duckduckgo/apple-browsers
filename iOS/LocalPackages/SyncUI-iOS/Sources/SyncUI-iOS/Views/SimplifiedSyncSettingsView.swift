@@ -112,13 +112,13 @@ extension SimplifiedSyncSettingsView {
         Section {
             VStack(spacing: 8) {
                 ZStack {
-                    Image(AppRebrand.isAppRebranded() ? "Desktop-Mobile-DDG-Devices-Feature-128" : "Sync-New-128-legacy", bundle: .module)
+                    Image("Desktop-Mobile-DDG-Devices-Feature-128", bundle: .module)
                         .resizable()
                         .aspectRatio(contentMode: .fit)
                         .frame(width: 128, height: 96)
                         .opacity(model.isSyncEnabled ? 0 : 1)
 
-                    Image(AppRebrand.isAppRebranded() ? "Desktop-Mobile-Sync-Feature-128" : "Sync-Pair-96-legacy", bundle: .module)
+                    Image("Desktop-Mobile-Sync-Feature-128", bundle: .module)
                         .resizable()
                         .aspectRatio(contentMode: .fit)
                         .frame(width: 128, height: 96)
@@ -613,23 +613,13 @@ struct SimplifiedSyncSettingsView_Previews: PreviewProvider {
             .init(name: "Sync On – Loading Devices", state: .loadingDevices, scope: .previews)
         ],
         configure: { state in
-            navigationContainer {
+            PreviewNavigationContainer {
                 SimplifiedSyncSettingsView(model: model(for: state))
                     .navigationTitle(UserText.syncTitle)
                     .navigationBarTitleDisplayMode(.inline)
             }
         }
     )
-
-    @ViewBuilder
-    private static func navigationContainer<Content: View>(@ViewBuilder content: () -> Content) -> some View {
-        if #available(iOS 16, *) {
-            NavigationStack(root: content)
-        } else {
-            NavigationView(content: content)
-                .navigationViewStyle(.stack)
-        }
-    }
 
     private static func model(for state: State) -> SyncSettingsViewModel {
         switch state {

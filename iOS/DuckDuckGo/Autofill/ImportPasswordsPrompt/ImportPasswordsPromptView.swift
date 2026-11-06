@@ -17,17 +17,13 @@
 //  limitations under the License.
 //
 
-import Lottie
 import SwiftUI
-import DesignResourcesKitIcons
 
 struct ImportPasswordsPromptView: View {
     @State var frame: CGSize = .zero
     @ObservedObject var viewModel: ImportPasswordsPromptViewModel
     @Environment(\.horizontalSizeClass) var horizontalSizeClass
     @Environment(\.verticalSizeClass) var verticalSizeClass
-
-    @State private var isAnimating = false
 
     var body: some View {
         GeometryReader { geometry in
@@ -46,7 +42,10 @@ struct ImportPasswordsPromptView: View {
             VStack {
                 Spacer()
                     .frame(height: Const.Size.topPadding)
-                AnimationView(isAnimating: $isAnimating)
+                Image(.passwordsKeychain128)
+                    .resizable()
+                    .aspectRatio(contentMode: .fit)
+                    .frame(width: 128, height: 96)
                 Spacer()
                     .frame(height: Const.Size.headlineTopPadding)
                 AutofillViews.Headline(title: UserText.importPasswordsPromoTitle)
@@ -57,11 +56,6 @@ struct ImportPasswordsPromptView: View {
                 ctaView
                     .padding(.bottom, AutofillViews.isIPad(verticalSizeClass, horizontalSizeClass) ? Const.Size.bottomPaddingIPad
                                                                                                    : Const.Size.bottomPadding)
-            }
-            .onAppear {
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.25) {
-                    isAnimating = true
-                }
             }
             .background(GeometryReader { proxy -> Color in
                 // Using main dispatch queue to avoid SwiftUI geometry updates conflicts
@@ -86,27 +80,6 @@ struct ImportPasswordsPromptView: View {
         }
 
         return useScrollView
-    }
-
-    private struct AnimationView: View {
-        @Binding var isAnimating: Bool
-
-        var body: some View {
-            if AppRebrand.isAppRebranded() {
-                Image(.passwordsKeychain128)
-                    .resizable()
-                    .aspectRatio(contentMode: .fit)
-                    .frame(width: 128, height: 96)
-            } else {
-                LottieView(
-                    lottieFile: "password-keys",
-                    loopMode: .mode(.repeat(2.0)),
-                    isAnimating: $isAnimating
-                )
-                .frame(width: 128, height: 96)
-                .aspectRatio(contentMode: .fit)
-            }
-        }
     }
 
     private var contentViewSpacer: some View {

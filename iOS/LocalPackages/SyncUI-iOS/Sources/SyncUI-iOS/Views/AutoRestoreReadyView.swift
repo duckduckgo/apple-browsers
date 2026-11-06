@@ -39,7 +39,7 @@ public struct AutoRestoreReadyView: View {
         NavigationView {
             UnderflowContainer {
                 VStack(spacing: 0) {
-                    Image(rebrandable: "Sync-Pending-128")
+                    Image("Sync-Pending-128")
                         .padding(20)
 
                     Text(UserText.autoRestoreReadyTitle)

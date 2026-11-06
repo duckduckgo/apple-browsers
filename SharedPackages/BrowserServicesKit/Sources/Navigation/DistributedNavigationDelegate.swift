@@ -1034,7 +1034,7 @@ extension DistributedNavigationDelegate: WKNavigationDelegate {
         // if extra back list item created during the navigation transaction - remove the extra item
         if navigation.navigationAction.fromHistoryItemIdentity != originalHistoryItemIdentity,
            !backList.isEmpty,
-           navigation.navigationAction.fromHistoryItemIdentity?.url == backList.last?.url {
+           navigation.navigationAction.fromHistoryItemIdentity?.url == backList.last?.safeURL {
 
             // reload webView history without navigation excluding the filtered-out item
             if let sessionState = webView.sessionState(withFilter: { $0.identity != navigation.navigationAction.fromHistoryItemIdentity }) {

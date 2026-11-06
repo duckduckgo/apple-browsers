@@ -113,6 +113,7 @@ final class MainCoordinator {
          bookmarksDatabase: CoreDataDatabase,
          remoteMessagingService: RemoteMessagingService,
          daxDialogs: DaxDialogs,
+         idleReturnEligibilityManager: IdleReturnEligibilityManaging,
          reportingService: ReportingService,
          variantManager: DefaultVariantManager,
          subscriptionService: SubscriptionService,
@@ -183,7 +184,7 @@ final class MainCoordinator {
         let contextualOnboardingPresenter = ContextualOnboardingPresenter(variantManager: variantManager, daxDialogsFactory: daxDialogsFactory)
         let textZoomCoordinatorProvider = Self.makeTextZoomCoordinatorProvider()
         let autoconsentManagementProvider = AutoconsentManagementProvider()
-        let websiteDataManager = Self.makeWebsiteDataManager(fireproofing: fireproofing)
+        let websiteDataManager = Self.makeWebsiteDataManager(fireproofing: fireproofing, featureFlagger: featureFlagger)
         interactionStateSource = TabInteractionStateDiskSource()
         self.launchSourceManager = launchSourceManager
         let onboardingSearchExperienceProvider = OnboardingSearchExperience()
@@ -201,7 +202,7 @@ final class MainCoordinator {
             readLastActiveDate: { dailyActivityStore.currentActivity().lastActiveDate },
             isEnabled: { NewTabPageRedesignFeature(featureFlagger: featureFlagger).isAvailable })
         self.daxGreetingActivity = daxGreetingActivity
-        self.privacyStats = PrivacyStats(databaseProvider: PrivacyStatsDatabase())
+        self.privacyStats = Self.makePrivacyStats()
         let toggleModeStorage: ToggleModeStoring = ToggleModeStorage()
         let appSwitcherSnapshotCleaner = AppSwitcherSnapshotCleaner()
         let clearAppSwitcherSnapshots: @MainActor () async -> Void = {
@@ -276,12 +277,6 @@ final class MainCoordinator {
             syncService: syncService.sync
         )
         let aiChatAddressBarExperience = AIChatAddressBarExperience(featureFlagger: featureFlagger, aiChatSettings: aiChatSettings)
-        let idleReturnEligibilityManager = IdleReturnEligibilityManager(
-            featureFlagger: featureFlagger,
-            keyValueStore: keyValueStore,
-            privacyConfigurationManager: privacyConfigurationManager,
-            isStillOnboarding: { daxDialogsManager.isStillOnboarding() }
-        )
         let afterInactivityOptionAdapter = AfterInactivityOptionAdapter(
             keyValueStore: keyValueStore,
             idleReturnEligibilityManager: idleReturnEligibilityManager
@@ -362,8 +357,8 @@ final class MainCoordinator {
 
     }
 
-    func start() {
-        controller.loadViewIfNeeded()
+    func start(drawsIdleReturnNewTabPage: Bool) {
+        controller.loadInitialViewIfNeeded(drawsIdleReturnNewTabPage: drawsIdleReturnNewTabPage)
     }
 
     private func subscribeToDarkReaderChanges() {
@@ -381,13 +376,6 @@ final class MainCoordinator {
         self.privacyConfigurationManager = privacyConfigurationManager
 
         guard #available(iOS 18.4, *) else { return }
-
-        let webExtensionsPublisher = featureFlagger.updatesPublisher
-            .compactMap { [weak featureFlagger] in
-                featureFlagger?.isFeatureOn(.webExtensions)
-            }
-            .removeDuplicates()
-            .eraseToAnyPublisher()
 
         let embeddedExtensionPublisher = featureFlagger.updatesPublisher
             .compactMap { [weak featureFlagger] in
@@ -420,16 +408,9 @@ final class MainCoordinator {
 
         webExtensionFeatureFlagHandler = WebExtensionFeatureFlagHandler(
             webExtensionManagerProvider: { [weak self] in self?.webExtensionManager },
-            featureFlagPublisher: webExtensionsPublisher,
             embeddedExtensionFlagPublisher: embeddedExtensionPublisher,
             adBlockingExtensionFlagPublisher: adBlockingExtensionPublisher,
             adBlockingDefaultsFlagPublisher: adBlockingDefaultsPublisher,
-            onFeatureFlagEnabled: { [weak self] in
-                self?.initializeWebExtensions()
-            },
-            onFeatureFlagDisabled: { [weak self] in
-                self?.clearWebExtensionReferences()
-            },
             onEmbeddedExtensionFlagEnabled: { [weak self] in
                 await self?.syncEmbeddedExtensions()
             },
@@ -441,21 +422,11 @@ final class MainCoordinator {
             }
         )
 
-        if featureFlagger.isFeatureOn(.webExtensions) {
-            initializeWebExtensions()
-        } else {
-            clearWebExtensionReferences()
-        }
+        initializeWebExtensions()
     }
 
     @available(iOS 18.4, *)
     private func initializeWebExtensions() {
-        guard webExtensionManager == nil else {
-            // Already initialized, just reload extensions and re-register tabs
-            scheduleExtensionLoad()
-            return
-        }
-
         guard let privacyConfigurationManager else { return }
 
         let webExtensionManager = WebExtensionManagerFactory.makeManager(
@@ -618,26 +589,6 @@ final class MainCoordinator {
         return enabledTypes
     }
 
-    private func clearWebExtensionReferences() {
-        isWebExtensionLoadPending = false
-        webExtensionLoadTask?.cancel()
-        webExtensionLoadTask = nil
-        protectedDataCancellable = nil
-        pendingProtectedDataWork.removeAll()
-        if #available(iOS 18.4, *) {
-            webExtensionLifecycleCoordinator?.cancelAll()
-            webExtensionLifecycleCoordinator = nil
-            controller.setWebExtensionLifecycleCoordinator(nil)
-        }
-        webExtensionManager = nil
-        webExtensionEventsCoordinator = nil
-        darkReaderCancellables.removeAll()
-        tabManager.setWebExtensionManager(nil)
-        tabManager.setWebExtensionInitialLoadWaiterProvider { nil }
-        controller.setWebExtensionEventsCoordinator(nil)
-        controller.setWebExtensionManager(nil)
-    }
-
     private static func makeHistoryManager(tabsModel: TabsModelReading) throws -> HistoryManaging {
         let provider = AppDependencyProvider.shared
         switch HistoryManager.make(isAutocompleteEnabledByUser: provider.appSettings.autocomplete,
@@ -682,10 +633,22 @@ final class MainCoordinator {
     }
 
     private static func makeWebsiteDataManager(fireproofing: Fireproofing,
+                                               featureFlagger: FeatureFlagger,
                                                dataStoreIDManager: DataStoreIDManaging = DataStoreIDManager.shared) -> WebsiteDataManaging {
         WebCacheManager(cookieStorage: MigratableCookieStorage(),
                         fireproofing: fireproofing,
-                        dataStoreIDManager: dataStoreIDManager)
+                        dataStoreIDManager: dataStoreIDManager,
+                        featureFlagger: featureFlagger,
+                        memoryCacheCleaner: MemoryCacheCleaner(dataStoreProvider: { DDGWebsiteDataStoreProvider.current(fireMode: false) }),
+                        fireModeMemoryCacheCleaner: MemoryCacheCleaner(dataStoreProvider: { DDGWebsiteDataStoreProvider.current(fireMode: true) }))
+    }
+
+    private static func makePrivacyStats() -> PrivacyStatsProviding {
+        let location = PrivacyStatsDatabase.defaultLocation
+        if let database = PrivacyStatsDatabase(location: location) {
+            return PrivacyStats(databaseProvider: database)
+        }
+        return UnavailablePrivacyStats(storeLocation: location)
     }
 
     // MARK: - Public API
@@ -827,7 +790,7 @@ extension MainCoordinator: URLHandling {
             let request = FireRequest(options: .all, trigger: .manualFire, scope: .all, source: .deeplink)
             controller.forgetAllWithAnimation(request: request)
         case .voiceSearch:
-            controller.onVoiceSearchPressed()
+            controller.handleVoiceSearchOpenRequest(entrySource: AIChatEntryPointSource.forDeepLink(url))
         case .newEmail:
             controller.newEmailAddress()
         case .openVPN:
@@ -903,7 +866,7 @@ extension MainCoordinator: ShortcutItemHandling {
         } else if item.type == ShortcutKey.aiChat {
             handleAIChatAppIconShortuct()
         } else if item.type == ShortcutKey.voiceSearch {
-            controller.onVoiceSearchPressed()
+            controller.handleVoiceSearchOpenRequest(entrySource: .iconShortcut)
         }
     }
 
@@ -998,11 +961,17 @@ extension MainCoordinator: IdleReturnLaunchDelegate {
         }
     }
 
+    /// The arrival on the New Tab Page the launch drew is held until the return is noted.
+    func recordNewTabPageDrawnAtLaunch(timeAwayMs: Int?, completion: @escaping (IdleReturnNewTabPageResult) -> Void) {
+        controller.noteNewTabPageReturn(timeAwayMs: timeAwayMs)
+        controller.recordPendingNewTabPagePresentationIfVisible()
+        completion(.openedNewTab)
+    }
+
     func markLastUsedTabAsResumedAfterIdle(timeAwayMs: Int?) {
         guard !controller.resumePendingAfterIdlePresentation(timeAwayMs: timeAwayMs) else { return }
         controller.postIdleSessionInstrumentation.noteReturn(timeAwayMs: timeAwayMs)
-        controller.postIdleSessionInstrumentation.sessionStarted(landedOn: landedOnForCurrentTab(), afterIdleSurface: .lut,
-                                                                 focused: controller.isInputFocused)
+        startReturnSession(afterIdleSurface: .lut)
     }
 
     func recordOrdinaryReturn(timeAwayMs: Int?) {
@@ -1015,8 +984,22 @@ extension MainCoordinator: IdleReturnLaunchDelegate {
     private func startUntreatedReturnSession(timeAwayMs: Int?) {
         guard !controller.resumePendingAfterIdlePresentation(timeAwayMs: timeAwayMs) else { return }
         controller.postIdleSessionInstrumentation.noteReturn(timeAwayMs: timeAwayMs)
-        controller.postIdleSessionInstrumentation.sessionStarted(landedOn: landedOnForCurrentTab(), afterIdleSurface: nil,
-                                                                 focused: controller.isInputFocused)
+        startReturnSession(afterIdleSurface: nil)
+    }
+
+    private func startReturnSession(afterIdleSurface: PostIdleSessionWideEventData.Surface?) {
+        let focused = controller.isInputFocused
+        let landedOn = landedOnForCurrentTab()
+        controller.postIdleSessionInstrumentation.sessionStarted(landedOn: landedOn, afterIdleSurface: afterIdleSurface,
+                                                                 focused: focused,
+                                                                 toggleEnabled: controller.isReturnSessionToggleEnabled,
+                                                                 togglePosition: controller.returnSessionTogglePosition(focused: focused))
+        // A live voice chat carries on from its own entry.
+        if landedOn == .duckAI, !voiceSessionStateManager.isVoiceSessionActive {
+            controller.fireAIChatEntryPointPixel(source: .appOpen, opensNewTab: false, hasPrompt: false)
+            // The Duck.ai tab is already on screen, so show it to the entry that just started.
+            controller.reportDuckAISessionCurrentTab()
+        }
     }
 
     private func landedOnForCurrentTab() -> ReturnSessionWideEventData.LandedOn {

@@ -53,18 +53,79 @@
         ]
     },
     "m_mac_aichat_promptbar_image_attached": {
-        "description": "Fired when user attaches an image via the file picker in the Prompt Bar",
+        "description": "Fired when an image chip is added to the Prompt Bar: picked, dropped, pasted, or captured with Add Screenshot",
         "owners": ["Bunn"],
-        "triggers": ["other"],
+        "triggers": ["user_interaction"],
+        "suffixes": ["daily_count"],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            "channel",
+            {
+                "key": "source",
+                "type": "string",
+                "description": "How the image was added: the file picker, a drag and drop, a paste, or Add Screenshot",
+                "enum": ["file", "drop", "paste", "screenshot"]
+            }
+        ]
+    },
+    "m_mac_aichat_promptbar_image_removed": {
+        "description": "Fired when the user removes an image chip from the Prompt Bar with its ×",
+        "owners": ["Bunn"],
+        "triggers": ["user_interaction"],
+        "suffixes": ["daily_count"],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            "channel",
+            {
+                "key": "source",
+                "type": "string",
+                "description": "How the removed image was added",
+                "enum": ["file", "drop", "paste", "screenshot"]
+            }
+        ]
+    },
+    "m_mac_aichat_promptbar_screenshot_taken": {
+        "description": "Fired when a screenshot from the attach menu's Add Screenshot is added to the Prompt Bar",
+        "owners": ["jotaemepereira"],
+        "triggers": ["user_interaction"],
+        "suffixes": ["daily_count"],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            "channel",
+            {
+                "key": "kind",
+                "type": "string",
+                "description": "What was captured: a dragged region, a whole display, or a window",
+                "enum": ["selection", "screen", "window"]
+            }
+        ]
+    },
+    "m_mac_aichat_promptbar_screenshot_removed": {
+        "description": "Fired when the user removes a screenshot chip from the Prompt Bar with its ×",
+        "owners": ["jotaemepereira"],
+        "triggers": ["user_interaction"],
         "suffixes": ["daily_count"],
         "parameters": ["appVersion", "pixelSource", "channel"]
     },
-    "m_mac_aichat_promptbar_image_removed": {
-        "description": "Fired when user removes an attached image in the Prompt Bar",
-        "owners": ["Bunn"],
-        "triggers": ["other"],
+    "m_mac_aichat_promptbar_screenshot_failed": {
+        "description": "Fired when an Add Screenshot capture in the Prompt Bar fails. Not fired when the user cancels or Screen Recording is off, which aichat_screenshot_permission_needed_macos_u reports",
+        "owners": ["jotaemepereira"],
+        "triggers": ["exception"],
         "suffixes": ["daily_count"],
-        "parameters": ["appVersion", "pixelSource", "channel"]
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            "channel",
+            {
+                "key": "reason",
+                "type": "string",
+                "description": "unavailable: capture could not start; failed: the capture or its processing failed, or the image could not be attached",
+                "enum": ["unavailable", "failed"]
+            }
+        ]
     },
     "m_mac_aichat_promptbar_file_attached": {
         "description": "Fired when user attaches a file (PDF etc.) via the file picker in the Prompt Bar",

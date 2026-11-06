@@ -22,12 +22,15 @@ public enum SnapshotImageSize: Equatable {
     case intrinsicContentSize
     case constrainedWidth
     case screen
+    case tallScreen(height: CGFloat = SnapshotImageSize.defaultTallScreenHeight)
     case sheet
     case fixed(CGSize)
 
+    public static let defaultTallScreenHeight: CGFloat = 1600
+
     var usesDefaultIOSDevices: Bool {
         switch self {
-        case .screen, .sheet:
+        case .screen, .tallScreen, .sheet:
             return true
         case .intrinsicContentSize, .constrainedWidth, .fixed:
             return false
@@ -38,7 +41,7 @@ public enum SnapshotImageSize: Equatable {
         switch self {
         case .constrainedWidth:
             return SnapshotDevice.iPhoneDefault.size.width
-        case .intrinsicContentSize, .screen, .sheet, .fixed:
+        case .intrinsicContentSize, .screen, .tallScreen, .sheet, .fixed:
             return nil
         }
     }
@@ -52,6 +55,8 @@ public enum SnapshotImageSize: Equatable {
             return configuration.size
         case .screen, .sheet:
             return configuration.resolvedSize(defaultSize: defaultSize)
+        case .tallScreen(let height):
+            return CGSize(width: configuration.resolvedSize(defaultSize: defaultSize).width, height: height)
         case .fixed(let size):
             return size
         }

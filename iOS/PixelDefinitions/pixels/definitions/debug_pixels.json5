@@ -56,6 +56,14 @@
         "suffixes": ["daily_count", "platform", "form_factor"],
         "parameters": ["appVersion"]
     },
+    "debug_home-screen_missing-current-tab-recovered": {
+        "description": "Fires when the New Tab Page is attached while the current tabs model has no current tab (normal mode left empty). The app now adds a new tab instead of crashing. Expecting minimal numbers of these pixels - ideally zero.",
+        "owners": ["bkunat"],
+        "triggers": ["exception"],
+        "suffixes": ["daily_count", "platform", "form_factor"],
+        "parameters": ["appVersion"],
+        "expires": "2027-01-31"
+    },
     "debug_web_extension_reload_failed": {
         "description": "Fires when unloading or loading a web extension context fails during a reload. Parameters distinguish the reload trigger, failed phase, extension type, and original/underlying error domains and codes.",
         "owners": ["mallexxx"],

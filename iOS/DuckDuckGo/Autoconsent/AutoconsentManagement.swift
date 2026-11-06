@@ -20,6 +20,7 @@
 import Foundation
 import UIKit
 import PixelKit
+import WebExtensions
 import os.log
 
 @MainActor
@@ -28,7 +29,7 @@ protocol AutoconsentManaging: AnyObject {
     var detectedByPatternsCache: Set<String> { get set }
     var detectedByBothCache: Set<String> { get set }
     var detectedOnlyRulesCache: Set<String> { get set }
-    func firePixel(pixel: AutoconsentPixel, additionalParameters: [String: String])
+    func firePixel(pixel: AutoconsentPixel, siteRank: CPMSiteRank?, additionalParameters: [String: String])
     func clearCache() -> Result<Void, Error>
     func clearCache(forDomains domains: [String]) -> Result<Void, Error>
 }
@@ -38,7 +39,7 @@ final class AutoconsentManagement: AutoconsentManaging {
 
     var sitesNotifiedCache = Set<String>()
 
-    var pixelCounter = [String: Int]()
+    var pixelCounter = [CPMSiteRank?: [String: Int]]()
 
     var detectedByPatternsCache = Set<String>()
     var detectedByBothCache = Set<String>()
@@ -91,7 +92,7 @@ final class AutoconsentManagement: AutoconsentManaging {
         fireSummaryPixel()
     }
 
-    func firePixel(pixel: AutoconsentPixel, additionalParameters: [String: String] = [:]) {
+    func firePixel(pixel: AutoconsentPixel, siteRank: CPMSiteRank?, additionalParameters: [String: String] = [:]) {
         // Only schedule summary task if counter is currently empty
         if pixelCounter.isEmpty {
             // Cancel any existing pending task (shouldn't happen but safety first)
@@ -115,7 +116,7 @@ final class AutoconsentManagement: AutoconsentManaging {
         }
 
         // increment counter
-        pixelCounter[pixel.key, default: 0] += 1
+        pixelCounter[siteRank, default: [:]][pixel.key, default: 0] += 1
 
         // fire daily pixel if needed
         PixelKit.fire(pixel, frequency: .daily, withAdditionalParameters: additionalParameters, includeAppVersionParameter: true)
@@ -123,7 +124,11 @@ final class AutoconsentManagement: AutoconsentManaging {
 
     func fireSummaryPixel() {
         if !pixelCounter.isEmpty {
-            PixelKit.fire(AutoconsentPixel.summary(events: pixelCounter), frequency: .standard, withAdditionalParameters: pendingAdditionalParams, includeAppVersionParameter: true)
+            for (siteRank, events) in pixelCounter {
+                var parameters = pendingAdditionalParams
+                parameters["siteRank"] = siteRank?.rawValue
+                PixelKit.fire(AutoconsentPixel.summary(events: events), frequency: .standard, withAdditionalParameters: parameters, includeAppVersionParameter: true)
+            }
             pixelCounter = [:]
             pendingAdditionalParams = [:]
             detectedByPatternsCache.removeAll()

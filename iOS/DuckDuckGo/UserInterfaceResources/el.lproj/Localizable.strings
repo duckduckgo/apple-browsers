@@ -1,4 +1,7 @@
 /* No comment provided by engineer. */
+" " = " ";
+
+/* No comment provided by engineer. */
 "-config.rollout.<parent>.<subfeature> true/false" = "-config.rollout.<parent>.<subfeature> true/false";
 
 /* No comment provided by engineer. */
@@ -382,6 +385,21 @@
 /* Title for the New Tab row in the Duck.ai tab header Plus (+) menu */
 "aichat.header.plusMenu.newTab" = "Νέα καρτέλα";
 
+/* Section header in the Duck.ai tab header Plus (+) menu; every row below it opens a new tab */
+"aichat.header.plusMenu.newTabSection" = "Νέα καρτέλα";
+
+/* Row in the New Tab section of the Duck.ai tab header Plus (+) menu — opens a new Duck.ai chat in a new tab */
+"aichat.header.plusMenu.newTabSection.chat" = "Συνομιλία";
+
+/* Row in the New Tab section of the Duck.ai tab header Plus (+) menu — opens Duck.ai in image generation mode in a new tab */
+"aichat.header.plusMenu.newTabSection.image" = "Εικόνα";
+
+/* Row in the Duck.ai tab header Plus (+) menu — opens a new tab in search mode */
+"aichat.header.plusMenu.newTabSection.search" = "Αναζήτηση";
+
+/* Row in the New Tab section of the Duck.ai tab header Plus (+) menu — opens a new Duck.ai voice chat in a new tab */
+"aichat.header.plusMenu.newTabSection.voiceChat" = "Φωνητική συνομιλία";
+
 /* Title for the New Voice Chat row in the Duck.ai tab header Plus (+) menu */
 "aichat.header.plusMenu.newVoiceChat" = "Νέα φωνητική συνομιλία";
 
@@ -458,7 +476,7 @@
 "aichat.model-picker.pro-plan-exclusive" = "Αποκλειστικά για το πρόγραμμα Pro";
 
 /* Section header for subscription models shown to users who are not eligible for a free trial */
-"aichat.model-picker.subscriber-exclusive" = "Αποκλειστικά για συνδρομητές";
+"aichat.model-picker.subscriber-exclusive" = "Ξεκλείδωσε με συνδρομή";
 
 /* Section header for subscription models shown to free users */
 "aichat.model-picker.try-free" = "Δοκιμάστε το δωρεάν";
@@ -468,6 +486,27 @@
 
 /* Spoken name of the inline attachment icon in the multi-tab feature promotion, used in the VoiceOver accessibility label. */
 "aichat.multiTab.promotion.attachment" = "συνημμένο";
+
+/* VoiceOver label of the Duck.ai attachment chip holding a long block of text the user pasted */
+"aichat.pasted.text.accessibility.label" = "Επικολλημένο κείμενο";
+
+/* Character counter under the title of the Duck.ai pasted-text sheet, e.g. 923/16,000. %1$d is the number of characters in the pasted text, %2$d is the most it may hold. Keep both numbers; change the slash only if your language writes this kind of counter differently. */
+"aichat.pasted.text.count" = "%1$d/%2$d";
+
+/* What VoiceOver reads for the character counter in the Duck.ai pasted-text sheet, e.g. 923 of 16,000 characters. %1$d is the number of characters in the pasted text, %2$d is the most it may hold */
+"aichat.pasted.text.count.accessibility" = "%1$d από %2$d χαρακτήρες";
+
+/* Title of the sheet that edits a long block of text the user pasted into Duck.ai */
+"aichat.pasted.text.edit.sheet.title" = "Επεξεργασία κειμένου";
+
+/* VoiceOver action on a Duck.ai pasted-text attachment chip that removes it from the message */
+"aichat.pasted.text.remove" = "Αφαίρεση";
+
+/* Title of the sheet that shows a long block of text the user pasted into a Duck.ai message that was already sent */
+"aichat.pasted.text.sheet.title" = "Επικολλημένο κείμενο";
+
+/* Error shown below the Duck.ai input while the message is longer than allowed, e.g. Please try a shorter message. 17002/16000. %1$d is the number of characters in the message, %2$d is the most characters allowed */
+"aichat.prompt.too.long.format" = "Δοκιμάστε ένα πιο σύντομο μήνυμα. %1$d/%2$d";
 
 /* Subtitle for the extended reasoning mode in the Duck.ai reasoning picker */
 "aichat.reasoning.extended.subtitle" = "Για εργασίες ανάλυσης";
@@ -1204,9 +1243,6 @@
 /* Description of autofill onboarding prompt's secure storage feature with a string describing the available biometry + passcode as a parameter */
 "autofill.onboarding.key-features.secure-storage.biometric.description" = "Οι κωδικοί πρόσβασης κρυπτογραφούνται, αποθηκεύονται στη συσκευή και κλειδώνονται με %@.";
 
-/* Description of autofill onboarding prompt's secure storage feature */
-"autofill.onboarding.key-features.secure-storage.description" = "Passwords are encrypted, stored on device, and locked with Face ID or passcode.";
-
 /* Parameter for the description of autofill onboarding prompt's secure storage feature describing Face ID biometry + passcode */
 "autofill.onboarding.key-features.secure-storage.description.parameter.face-id" = "Face ID ή κωδικός πρόσβασης";
 
@@ -1661,7 +1697,7 @@
 "crash.report.dialog.title" = "Αυτόματη αποστολή αναφορών σφαλμάτων;";
 
 /* No comment provided by engineer. */
-"Current Dismiss Count: %@" = "Current Dismiss Count: %@";
+"Current Dismiss Count: %@" = "Τρέχων αριθμός απορρίψεων: %@";
 
 /* No comment provided by engineer. */
 "Current Subscriptions" = "Τρέχουσες συνδρομές";
@@ -2645,7 +2681,7 @@
 "Enter duration in seconds. Examples: 30, 60, 300" = "Enter duration in seconds. Examples: 30, 60, 300";
 
 /* No comment provided by engineer. */
-"Entry Pill" = "Entry Pill";
+"Entry Pill" = "Κάψουλα εισόδου";
 
 /* Button title to Sign In */
 "error.email-protection-sign-in.action" = "Είσοδος";
@@ -3279,6 +3315,72 @@
 
 /* No comment provided by engineer. */
 "menu.button.hint" = "Μενού περιήγησης";
+
+/* iPad menu bar command */
+"menuActualSize" = "Πραγματικό μέγεθος";
+
+/* iPad menu bar command */
+"menuBack" = "Πίσω";
+
+/* iPad menu bar command */
+"menuClearTabsAndData" = "Εκκαθάριση καρτελών και δεδομένων";
+
+/* iPad menu bar command */
+"menuDuplicateTab" = "Αντιγραφή καρτέλας";
+
+/* iPad menu bar command */
+"menuFeedback" = "Κοινοποίηση σχολίου";
+
+/* iPad menu bar command */
+"menuForward" = "Εμπρός";
+
+/* iPad menu bar command */
+"menuHideDownloads" = "Απόκρυψη λήψεων";
+
+/* iPad menu bar command */
+"menuHidePasswords" = "Απόκρυψη κωδικών πρόσβασης";
+
+/* iPad menu bar command */
+"menuHideTabs" = "Απόκρυψη καρτελών";
+
+/* iPad menu bar command */
+"menuLastTab" = "Τελευταία καρτέλα";
+
+/* iPad menu bar command */
+"menuNewTabOnRight" = "Νέα καρτέλα στα δεξιά";
+
+/* iPad menu bar command */
+"menuNextTab" = "Εμφάνιση επόμενης καρτέλας";
+
+/* iPad menu bar command */
+"menuOpenLocation" = "Άνοιγμα τοποθεσίας...";
+
+/* iPad menu bar command */
+"menuPreviousTab" = "Εμφάνιση προηγούμενης καρτέλας";
+
+/* iPad menu bar command */
+"menuPrint" = "Εκτύπωση...";
+
+/* iPad menu bar command selecting a numbered tab */
+"menuSelectTab" = "Επιλογή καρτέλας %d";
+
+/* iPad menu bar command */
+"menuSettings" = "Ρυθμίσεις DuckDuckGo...";
+
+/* iPad menu bar command */
+"menuShowDownloads" = "Εμφάνιση λήψεων";
+
+/* iPad menu bar command */
+"menuShowPasswords" = "Εμφάνιση κωδικών πρόσβασης";
+
+/* iPad menu bar command */
+"menuShowTabs" = "Προβολή καρτελών";
+
+/* iPad menu bar command */
+"menuStop" = "Διακοπή";
+
+/* iPad menu bar command */
+"menuVoiceSearch" = "Ιδιωτική φωνητική αναζήτηση";
 
 /* No comment provided by engineer. */
 "Message" = "Μήνυμα";
@@ -4121,7 +4223,7 @@
 "Primary / First Action" = "Πρωταρχική / Πρώτη ενέργεια";
 
 /* No comment provided by engineer. */
-"Priming Modal" = "Priming Modal";
+"Priming Modal" = "Προετοιμασία αποκλειστικού παραθύρου";
 
 /* No comment provided by engineer. */
 "Privacy Protections" = "Προστασία προσωπικών δεδομένων";
@@ -4184,10 +4286,10 @@
 "Reset" = "Επαναφορά";
 
 /* No comment provided by engineer. */
-"Reset Pill Dismiss Count" = "Reset Pill Dismiss Count";
+"Reset Pill Dismiss Count" = "Επαναφορά μετρητή απόρριψης καψουλών";
 
 /* No comment provided by engineer. */
-"Reset Priming Modal State" = "Reset Priming Modal State";
+"Reset Priming Modal State" = "Επαναφορά κατάστασης προετοιμασίας αποκλειστικού παραθύρου";
 
 /* No comment provided by engineer. */
 "Reset to Default" = "Reset to Default";
@@ -4416,6 +4518,12 @@
 
 /* Footnote for the hide AI-generated images setting; ends with a Learn more link to the help page (do not remove the link) */
 "settings.aifeatures.hide.ai.generated.images.subtitle" = "Αποκλείει γνωστούς ιστότοπους με απατηλό περιεχόμενο τεχνητής νοημοσύνης από τα αποτελέσματα αναζήτησης εικόνων. [Μάθε περισσότερα](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/results/how-to-filter-out-ai-images-in-duckduckgo-search-results)";
+
+/* Settings screen description for the Duck.ai keyboard animation toggle */
+"settings.aifeatures.keyboard.animation.subtitle" = "Εμφάνισε μια κινούμενη εικόνα γύρω από το πληκτρολόγιο όταν μεταβαίνεις στο Duck.ai ή πληκτρολογείς σε αυτό.";
+
+/* Settings screen toggle title for the Duck.ai keyboard animation */
+"settings.aifeatures.keyboard.animation.title" = "Κινούμενη εικόνα πληκτρολογίου Duck.ai";
 
 /* Label describing a feature which is turned on always */
 "settings.always.on" = "Πάντα σε λειτουργία";
@@ -5013,9 +5121,6 @@
 
 /* No comment provided by engineer. */
 "Status:" = "Status:";
-
-/* No comment provided by engineer. */
-"Stored Hostname: %@" = "Αποθηκευμένο όνομα κεντρικού υπολογιστή: %@";
 
 /* Button for adding this subscription to another device */
 "subscription.activate.add.to.device.button" = "Προσθήκη σε συσκευή";
@@ -5917,3 +6022,12 @@
 /* Title for screen to screen confirming what data to import from a zip file (bookmarks and /or passwords) */
 "zip.content.import.types.title" = "Τι θέλετε να εισαγάγετε;";
 
+
+/* Fireproofing setting toggle label */
+"preserveLogins.askOnSignIn" = "Ζητήστε διαγραφή δραστηριότητας στους ιστότοπους κατά τη σύνδεση";
+
+/* Empty Fireproof sites list */
+"preserveLogins.emptyState" = "Δεν υπάρχουν ακόμα ιστότοποι στη λίστα διαγραφής δραστηριότητας";
+
+/* Button to remove all Fireproof sites */
+"preserveLogins.removeAllSites" = "Κατάργηση όλων των ασφαλών ιστότοπων";

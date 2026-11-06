@@ -172,6 +172,11 @@ final class UnifiedToggleInputViewController: UIViewController {
         }
     }
 
+    var aiChatShortcutEmptyInputMenu: UIMenu? {
+        get { inputBarView.aiChatShortcutEmptyInputMenu }
+        set { inputBarView.aiChatShortcutEmptyInputMenu = newValue }
+    }
+
     var cardPosition: UnifiedToggleInputCardPosition {
         get { inputBarView.cardPosition }
         set {
@@ -397,6 +402,10 @@ final class UnifiedToggleInputViewController: UIViewController {
         setInputMode(config.inputMode, animated: animated)
         setInactiveCardAppearance(config.inactiveAppearance)
         applyCardLayout(config.cardLayout, animated: animated)
+        // Duck.ai tabs reveal their accessories with the chrome transition (`MainViewController`).
+        if !config.isAITab {
+            setFlankingAccessoriesVisible(config.cardLayout.flankingAccessories)
+        }
     }
 
     func applyToolsPresentation(
@@ -413,8 +422,8 @@ final class UnifiedToggleInputViewController: UIViewController {
         inputBarView.applyCardLayout(layout, animated: animated)
     }
 
-    func setAITabCollapsedFooterPoseActive(_ active: Bool) {
-        inputBarView.setAITabCollapsedFooterPoseActive(active)
+    func setFlankingAccessoriesVisible(_ accessories: UnifiedToggleInputFlankingAccessories) {
+        inputBarView.setFlankingAccessoriesVisible(accessories)
     }
 
     func prepareForOmnibarEditingShow() {
@@ -448,6 +457,15 @@ final class UnifiedToggleInputViewController: UIViewController {
 
     func setInputMode(_ mode: TextEntryMode, animated: Bool) {
         inputBarView.setInputMode(mode, animated: animated)
+    }
+
+    func performInputModeChanges(_ changes: () -> Void) {
+        inputBarView.performInputModeChanges(changes)
+        notifyHeightDidChange()
+    }
+
+    func setSelectedInputMode(_ mode: TextEntryMode, animated: Bool) {
+        inputBarView.setSelectedInputMode(mode, animated: animated)
     }
 
     func selectAllText() {
@@ -557,6 +575,7 @@ final class UnifiedToggleInputViewController: UIViewController {
     }
 
     private func notifyHeightDidChange() {
+        guard !inputBarView.isApplyingInputMode else { return }
         delegate?.unifiedToggleInputVCDidChangeHeight(self)
     }
 }
@@ -568,8 +587,10 @@ extension UnifiedToggleInputViewController: UTIFooterPresenting {
     func applyFooterMessages(_ messages: [UTIFooterItem]) {
         guard inputBarView.setFooterMessages(messages) else { return }
         Logger.duckAIUsageWarnings.debug("[UsageWarnings] pushing new bar height to host")
-        delegate?.unifiedToggleInputVCDidChangeHeight(self)
-        view.superview?.layoutIfNeeded()
+        notifyHeightDidChange()
+        if !inputBarView.isApplyingInputMode {
+            view.superview?.layoutIfNeeded()
+        }
     }
 
     func clearPendingFooterMessage() {

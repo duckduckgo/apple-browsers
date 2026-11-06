@@ -140,6 +140,11 @@
                     "widget_favorite",
                     "widget_lock_screen",
                     "widget_control_center",
+                    "address_bar_custom_button",
+                    "toolbar_custom_button",
+                    "onboarding_completion_promo",
+                    "app_open",
+                    "tab_swipe",
                     "siri",
                     "deep_link_other",
                     "browsing_menu_duckai",
@@ -222,6 +227,12 @@
                 "key": "feature.data.ext.device.hardware_keyboard",
                 "type": "boolean",
                 "description": "Whether a hardware keyboard was connected when the prompt was submitted."
+            },
+            {
+                "key": "feature.data.ext.device.address_bar_position",
+                "type": "string",
+                "description": "The iPhone address bar position setting when the prompt was submitted. Absent on iPad.",
+                "enum": ["top", "bottom"]
             },
 
             // Latency milestones (ms since prompt submission). Bucketed (round-up) into one of:

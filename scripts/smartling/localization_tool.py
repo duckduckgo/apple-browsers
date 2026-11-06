@@ -43,6 +43,7 @@ class SubmitResult:
     outcome: str
     job_id: str = ""
     job_name: str = ""
+    job_url: str = ""
     total_strings: Optional[int] = None  # Smartling's totalStrings: each string counted once per locale
     locales: Optional[int] = None
     max_usd: str = ""
@@ -65,7 +66,7 @@ class ReleaseStatus:
     incomplete_locales: List[str] = field(default_factory=list)
     locales: Optional[int] = None
     strings_awaiting_authorization: Optional[int] = None
-    jobs_awaiting_authorization: List[str] = field(default_factory=list)
+    jobs_awaiting_authorization: List[Dict] = field(default_factory=list)
     reason: str = ""
 
     def as_dict(self) -> Dict:
@@ -97,6 +98,14 @@ class SmartlingClient:
 
     async def _request(self, method: str, path: str, **kwargs) -> Dict:
         """Make authenticated API request."""
+        try:
+            return await self._send_request(method, path, **kwargs)
+        except (aiohttp.ClientError, asyncio.TimeoutError, ValueError) as error:
+            # Expose the same failure type as HTTP errors to callers that isolate failures per issue. Do not include
+            # the exception text: it can contain request/response details that must not reach public workflow logs.
+            raise RuntimeError(f"Smartling {method} request failed: {type(error).__name__}") from error
+
+    async def _send_request(self, method: str, path: str, **kwargs) -> Dict:
         if not self.token or datetime.now() >= self.token_expiry:
             await self._authenticate()
 
@@ -110,10 +119,15 @@ class SmartlingClient:
             if resp.status == 204 or not text:
                 return {}
 
-            data = json.loads(text) if text else {}
+            try:
+                data = json.loads(text)
+            except ValueError:
+                if resp.status >= 400:
+                    raise RuntimeError(f"HTTP {resp.status}: {resp.reason or 'API Error'}") from None
+                raise
 
             if resp.status >= 400:
-                error = data.get('response', {}).get('errors', [{}])[0].get('message', 'API Error')
+                error = (data.get('response', {}).get('errors') or [{}])[0].get('message', 'API Error')
                 raise RuntimeError(f"HTTP {resp.status}: {error}")
 
             return data
@@ -299,13 +313,53 @@ class SmartlingClient:
         return data.get('response', {})
 
     async def list_jobs_awaiting_authorization(self) -> List[Dict]:
-        """List the project's jobs that are awaiting authorization."""
+        """List the project's jobs that are awaiting authorization, page by page, since PR label jobs wait there too."""
+        jobs = []
+        while True:
+            data = await self._request(
+                'GET',
+                f'/jobs-api/v3/projects/{self.creds.project_id}/jobs',
+                params=[
+                    ('translationJobStatus', 'AWAITING_AUTHORIZATION'),
+                    ('limit', '100'),
+                    ('offset', str(len(jobs))),
+                ]
+            )
+            page = data['response']['data']
+            items = page.get('items', [])
+            jobs.extend(items)
+            if not items or len(jobs) >= page.get('totalCount', 0):
+                return jobs
+
+    async def list_open_source_issues(self) -> List[Dict]:
+        """List the project's open issues on English strings, page by page: the Issues API returns at most 30 at a time."""
+        issues = []
+        while True:
+            data = await self._request(
+                'POST',
+                f'/issues-api/v2/projects/{self.creds.project_id}/issues/list',
+                json={
+                    'issueStateCodes': ['OPENED'],
+                    'issueTypeCodes': ['SOURCE'],
+                    'limit': 30,
+                    'offset': len(issues),
+                }
+            )
+            page = data['response']['data']
+            items = page.get('items', [])
+            issues.extend(items)
+            if not items or len(issues) >= page.get('totalCount', 0):
+                return issues
+
+    async def get_source_string(self, hashcode: str) -> Optional[Dict]:
+        """Get a string's English text and keys."""
         data = await self._request(
             'GET',
-            f'/jobs-api/v3/projects/{self.creds.project_id}/jobs',
-            params=[('translationJobStatus', 'AWAITING_AUTHORIZATION'), ('limit', '100')]
+            f'/strings-api/v2/projects/{self.creds.project_id}/source-strings',
+            params={'hashcodes': hashcode}
         )
-        return data['response']['data'].get('items', [])
+        items = data['response']['data'].get('items', [])
+        return items[0] if items else None
 
     async def get_file_status(self, file_uri: str) -> Dict:
         """Get a file's string counts, in total and per locale."""
@@ -476,32 +530,22 @@ def parse_estimate(report: Dict) -> tuple[int, Decimal]:
 async def run_submit(client: SmartlingClient,
                      files: List[Path],
                      job_name: str,
-                     pending_job_prefix: str,
+                     pending_job_prefixes: List[str],
                      file_uri_prefix: str,
                      auto_authorize_max_usd: Decimal,
                      delete_job_on_failure: bool = False,
                      sleep=asyncio.sleep) -> SubmitResult:
     """Submit files to a new job and authorize it if its maximum USD estimate is at most auto_authorize_max_usd.
 
-    With a pending_job_prefix, nothing is submitted while a job whose name starts with it awaits authorization.
-    Without one, only a job named exactly job_name stops a new submission.
+    With pending_job_prefixes, nothing is submitted while a job whose name starts with any of them awaits
+    authorization. Without any, only a job named exactly job_name stops a new submission.
     With delete_job_on_failure, a job this run created is deleted if the submission fails before authorizing it,
     so a rerun with the same job name starts over instead of finding a half-submitted job.
     """
     job_id = ""
     unauthorized_job_id = ""
     try:
-        pending_jobs = await client.list_jobs(
-            pending_job_prefix,
-            ['AWAITING_AUTHORIZATION']
-        ) if pending_job_prefix else []
-        pending_job = next(
-            (
-                job for job in pending_jobs
-                if job.get('jobName', '').startswith(pending_job_prefix)
-            ),
-            None
-        )
+        pending_job = await find_pending_job(client, pending_job_prefixes)
         if pending_job:
             job_id = job_uid(pending_job)
             log(f"⏸️ '{pending_job['jobName']}' is still awaiting authorization: {job_url(client, job_id)}")
@@ -523,8 +567,9 @@ async def run_submit(client: SmartlingClient,
                 reason=f"A job named '{job_name}' already exists"
             )
 
-        if pending_job_prefix:
-            log(f"🔍 No pending '{pending_job_prefix}' job, no job named '{job_name}'")
+        if pending_job_prefixes:
+            pending_names = ', '.join(f"'{prefix}'" for prefix in pending_job_prefixes)
+            log(f"🔍 No pending {pending_names} job, no job named '{job_name}'")
         else:
             log(f"🔍 No job named '{job_name}'")
 
@@ -648,6 +693,20 @@ def strings_awaiting_authorization(file_status: Dict, locales: List[str]) -> int
     return awaiting
 
 
+async def find_pending_job(client: SmartlingClient, pending_job_prefixes: List[str]) -> Optional[Dict]:
+    """A job awaiting authorization whose name starts with any of pending_job_prefixes, if there is one."""
+    if not pending_job_prefixes:
+        return None
+    pending_jobs = await client.list_jobs_awaiting_authorization()
+    return next(
+        (
+            job for job in pending_jobs
+            if any(job.get('jobName', '').startswith(prefix) for prefix in pending_job_prefixes)
+        ),
+        None
+    )
+
+
 async def find_job(client: SmartlingClient, job_name: str) -> Optional[Dict]:
     """The job named exactly job_name, if there is one."""
     jobs = await client.list_jobs(job_name, [])
@@ -722,21 +781,28 @@ async def run_release_status(client: SmartlingClient,
         return failed_release_status(error, job_id, job_status)
 
 
-async def describe_jobs_awaiting_authorization(client: SmartlingClient) -> List[str]:
-    """The project's jobs awaiting authorization, which keep their strings out of other jobs."""
+async def describe_jobs_awaiting_authorization(client: SmartlingClient) -> List[Dict]:
+    """The project's jobs awaiting authorization, which keep their strings out of other jobs, with their links."""
     try:
         jobs = await client.list_jobs_awaiting_authorization()
     except Exception as error:  # pylint: disable=broad-except
         log(f"⚠️ Could not list the jobs awaiting authorization: {error}")
         return []
     jobs = sorted(jobs, key=lambda job: job.get('createdDate') or '')
-    descriptions = []
-    for job in jobs:
-        name = job.get('jobName', 'unnamed')
-        created = (job.get('createdDate') or '')[:10]
-        descriptions.append(f"{name} (created {created})" if created else name)
+    descriptions = [
+        {
+            'name': job.get('jobName', 'unnamed'),
+            'created': (job.get('createdDate') or '')[:10],
+            'url': job_url(client, job_uid(job)),
+        }
+        for job in jobs
+    ]
     if descriptions:
-        log(f"✋ Jobs awaiting authorization: {', '.join(descriptions)}")
+        lines = [
+            f"- {job['name']} (created {job['created']}): {job['url']}" if job['created'] else f"- {job['name']}: {job['url']}"
+            for job in descriptions
+        ]
+        log("✋ Jobs awaiting authorization:\n" + '\n'.join(lines))
     return descriptions
 
 
@@ -745,7 +811,7 @@ async def get_last_upload(client: SmartlingClient, file_uri: str) -> str:
     try:
         status = await client.get_file_status(file_uri)
     except RuntimeError as error:
-        if str(error).startswith('HTTP 404'):
+        if str(error).startswith('HTTP 404') or 'could not be found' in str(error):
             return ''
         raise
     return status.get('lastUploaded') or ''
@@ -767,6 +833,21 @@ async def wait_for_file_upload(client: SmartlingClient,
     raise RuntimeError(f"Smartling did not finish processing {file_uri}")
 
 
+async def wait_for_file_status(client: SmartlingClient, file_uri: str, sleep=asyncio.sleep):
+    """Wait until Smartling stops answering HTTP 423 for file_uri, which it does while it processes an upload."""
+    for attempt in range(60):
+        try:
+            await client.get_file_status(file_uri)
+            return
+        except RuntimeError as error:
+            if not str(error).startswith('HTTP 423'):
+                raise
+        if attempt == 0:
+            log(f"⏳ Smartling is still processing {file_uri}")
+        await sleep(5)
+    raise RuntimeError(f"Smartling did not finish processing {file_uri}")
+
+
 async def run_refresh(client: SmartlingClient,
                       files: List[Path],
                       file_uri_prefix: str,
@@ -776,16 +857,20 @@ async def run_refresh(client: SmartlingClient,
     for file_path in files:
         file_uri = f"{file_uri_prefix}/{file_path.name}"
         previous_upload = await get_last_upload(client, file_uri)
+        upload_start = time.monotonic()
         response = await client.upload_file(file_path, file_uri)
         code = response.get('code')
         if code == 'ACCEPTED':
             log(f"⏳ Smartling is still processing {file_uri}")
             await wait_for_file_upload(client, file_uri, previous_upload, sleep)
-        elif code != 'SUCCESS':
+        elif code == 'SUCCESS':
+            await wait_for_file_status(client, file_uri, sleep)
+        else:
             raise RuntimeError(f"Smartling answered {code or 'nothing'} to the upload of {file_uri}")
         details = response.get('data') or {}
         strings = details.get('stringCount')
-        log(f"📤 Refreshed {file_uri}" + (f" ({strings} strings)" if strings is not None else ""))
+        processing = f"processed in {time.monotonic() - upload_start:.0f}s"
+        log(f"📤 Refreshed {file_uri} (" + (f"{strings} strings, " if strings is not None else "") + f"{processing})")
         file_uris.append(file_uri)
     return file_uris
 
@@ -877,6 +962,8 @@ async def submit_command(args):
                 auto_authorize_max_usd,
                 args.delete_job_on_failure
             )
+            if result.job_id:
+                result.job_url = job_url(client, result.job_id)
     except Exception as error:  # pylint: disable=broad-except
         log(f"❌ {error}")
         traceback.print_exc()
@@ -923,11 +1010,22 @@ async def release_status_command(args):
         annotate('notice', f"{args.job_name}: {result.outcome}")
 
     Path(args.result_file).write_text(json.dumps(result.as_dict()), encoding='utf-8')
-    print(f"OUTCOME={result.outcome}")
-    print(f"JOB_ID={result.job_id}")
-    print(f"JOB_STATUS={result.job_status}")
-    print(f"STRINGS_LEFT={'' if result.strings_left is None else result.strings_left}")
-    print(f"REASON={result.reason}")
+
+
+async def pending_job_command(args):
+    """Report the job awaiting authorization that would stop a submission, before spending an export on it."""
+    async with SmartlingClient(get_credentials(args)) as client:
+        pending_job = await find_pending_job(client, args.pending_job_prefix)
+        result = {'job_id': '', 'job_name': '', 'job_url': ''}
+        if pending_job:
+            job_id = job_uid(pending_job)
+            result = {'job_id': job_id, 'job_name': pending_job['jobName'], 'job_url': job_url(client, job_id)}
+            log(f"⏸️ '{pending_job['jobName']}' is still awaiting authorization: {result['job_url']}")
+        else:
+            pending_names = ', '.join(f"'{prefix}'" for prefix in args.pending_job_prefix)
+            log(f"🔍 No pending {pending_names} job")
+
+    Path(args.result_file).write_text(json.dumps(result), encoding='utf-8')
 
 
 async def refresh_files_command(args):
@@ -938,8 +1036,7 @@ async def refresh_files_command(args):
         raise RuntimeError(f"Missing export files: {', '.join(missing_files)}")
 
     async with SmartlingClient(get_credentials(args)) as client:
-        file_uris = await run_refresh(client, files, args.file_uri_prefix)
-    print(f"REFRESHED={' '.join(file_uris)}")
+        await run_refresh(client, files, args.file_uri_prefix)
 
 
 async def status_command(args):
@@ -995,26 +1092,26 @@ async def download_command(args):
         if args.file_uris:
             file_uris = args.file_uris
             locales = await client.get_project_locales()
-            print(f"📁 Downloading {len(file_uris)} files for {len(locales)} locales")
+            log(f"📁 Downloading {len(file_uris)} files for {len(locales)} locales")
         else:
             job = await client.get_job(args.job_id)
-            print(f"📋 Job: {job['jobName']}")
-            print(f"📊 Status: {job['jobStatus']}")
+            log(f"📋 Job: {job['jobName']}")
+            log(f"📊 Status: {job['jobStatus']}")
 
             if job['jobStatus'] != "COMPLETED":
                 if not args.allow_unfinished:
                     print("DOWNLOADED=0")
-                    print(f"⚠️  Job not completed (status: {job['jobStatus']})")
+                    log(f"⚠️ Job not completed (status: {job['jobStatus']})")
                     return
-                print(f"⚠️  Job not completed (status: {job['jobStatus']}), downloading anyway (--allow-unfinished)")
+                log(f"⚠️ Job not completed (status: {job['jobStatus']}), downloading anyway (--allow-unfinished)")
 
             file_uris = await client.get_job_files(args.job_id)
             if not file_uris:
                 print("DOWNLOADED=0")
-                print("⚠️  No files found in job")
+                log("⚠️ No files found in job")
                 return
 
-            print(f"📁 Found {len(file_uris)} files")
+            log(f"📁 Found {len(file_uris)} files")
             locales = job['targetLocaleIds']
 
         count = 0
@@ -1032,23 +1129,23 @@ async def download_command(args):
                         file_name = f"{file_name}_{locale}"
 
                     (out_dir / file_name).write_bytes(data)
-                    print(f"   ✅ {file_name} ({locale})")
+                    log(f"✅ {file_name} ({locale})")
                     count += 1
                 except Exception as e:  # pylint: disable=broad-except
-                    print(f"⚠️  Failed to download {file_uri} for {locale}: {e}")
+                    log(f"⚠️ Failed to download {file_uri} for {locale}: {e}")
 
         print(f"DOWNLOADED={count}")
         if args.file_uris and count < len(file_uris) * len(locales):
             raise RuntimeError(f"Downloaded {count} of {len(file_uris) * len(locales)} files")
-        print(f"\n🎉 Downloaded {count} files")
+        log(f"🎉 Downloaded {count} files")
 
 
 # ============================================================================
 # Main CLI
 # ============================================================================
 
-def main():
-    """Main CLI entry point."""
+def build_parser() -> argparse.ArgumentParser:
+    """The CLI's argument parser."""
     parser = argparse.ArgumentParser(description='Smartling localization tool')
     subparsers = parser.add_subparsers(dest='command')
 
@@ -1060,8 +1157,9 @@ def main():
     # Submit
     submit_parser = subparsers.add_parser('submit')
     submit_parser.add_argument('--job-name', required=True)
-    submit_parser.add_argument('--pending-job-prefix', default='',
-                               help='Skip submission while a job with this name prefix awaits authorization')
+    submit_parser.add_argument('--pending-job-prefix', action='append', default=[],
+                               help='Skip submission while a job with this name prefix awaits authorization '
+                                    '(repeatable)')
     submit_parser.add_argument('--file-uri-prefix', required=True,
                                help='Smartling file URIs become <prefix>/<file name>, e.g. main or release/ios/7.200.0')
     submit_parser.add_argument('--files', nargs='+', required=True)
@@ -1070,6 +1168,12 @@ def main():
     submit_parser.add_argument('--delete-job-on-failure', action='store_true',
                                help='Delete the job this run created if the submission fails before authorizing it')
     submit_parser.add_argument('--result-file', default='submit_result.json')
+
+    # Pending job
+    pending_job_parser = subparsers.add_parser('pending-job')
+    pending_job_parser.add_argument('--pending-job-prefix', action='append', required=True,
+                                    help='Report a job with this name prefix that awaits authorization (repeatable)')
+    pending_job_parser.add_argument('--result-file', default='pending_job_result.json')
 
     # Release status
     release_status_parser = subparsers.add_parser('release-status')
@@ -1103,6 +1207,12 @@ def main():
     download_parser.add_argument('--allow-unfinished', action='store_true',
                                  help='Download even if the job is not COMPLETED (defaults to False)')
 
+    return parser
+
+
+def main():
+    """Main CLI entry point."""
+    parser = build_parser()
     args = parser.parse_args()
     if not args.command:
         parser.print_help()
@@ -1112,6 +1222,7 @@ def main():
     commands = {
         'upload': upload_command,
         'submit': submit_command,
+        'pending-job': pending_job_command,
         'release-status': release_status_command,
         'refresh-files': refresh_files_command,
         'status': status_command,

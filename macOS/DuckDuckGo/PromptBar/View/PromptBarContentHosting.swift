@@ -24,7 +24,7 @@ protocol PromptBarContentHosting: AnyObject {
 
     var viewController: NSViewController { get }
 
-    /// True while a menu, file picker or modal is up: those take key away, and must not dismiss the bar.
+    /// True while a menu, file picker, modal or screenshot capture is up: those take key away, and must not dismiss the bar.
     var isPresentingAuxiliaryUI: Bool { get }
 
     /// Whether the prompt holds anything the user typed. Read at dismissal to tell an abandoned

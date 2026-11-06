@@ -86,7 +86,6 @@ final class NewTabPageViewController: UIViewController, NewTabPage, RemoteMessag
 
     init(isFocussedState: Bool,
          openedAfterIdle: Bool = false,
-         dismissKeyboardOnScroll: Bool,
          tab: Tab,
          interactionModel: FavoritesListInteracting,
          homePageMessagesConfiguration: HomePageMessagesConfiguration,
@@ -142,7 +141,6 @@ final class NewTabPageViewController: UIViewController, NewTabPage, RemoteMessag
 
         let pageView = NewTabPageView(isFocussedState: isFocussedState,
                                      narrowLayoutInLandscape: narrowLayoutInLandscape,
-                                     dismissKeyboardOnScroll: dismissKeyboardOnScroll,
                                      layoutConfiguration: unifiedToggleInputFeature.isAvailable ? .unifiedToggleInput : .standard,
                                      viewModel: newTabPageViewModel,
                                      messagesModel: messagesModel,
@@ -178,6 +176,27 @@ final class NewTabPageViewController: UIViewController, NewTabPage, RemoteMessag
         updateBorderView()
     }
 
+    func setFocusedContent(_ content: LegacyFocusedNewTabPageContent?, escapeHatch: EscapeHatchModel? = nil) {
+        newTabPageViewModel.setFocusedContent(content, escapeHatch: escapeHatch)
+        if isViewLoaded {
+            view.backgroundColor = content == nil ? UIColor(designSystemColor: .background) : .clear
+        }
+    }
+
+    func scrollToTop(duration: TimeInterval) {
+        newTabPageViewModel.scrollToTopRequests.send(duration)
+    }
+
+    func setFocusedContentTopInset(_ inset: CGFloat) {
+        guard newTabPageViewModel.focusedContentTopInset != inset else { return }
+        newTabPageViewModel.focusedContentTopInset = inset
+    }
+
+    func setFocusedLogoFrame(_ frame: CGRect?) {
+        guard newTabPageViewModel.focusedLogoFrame != frame else { return }
+        newTabPageViewModel.focusedLogoFrame = frame
+    }
+
     func setOpenedAfterIdle(_ openedAfterIdle: Bool) {
         newTabPageViewModel.openedAfterIdle = openedAfterIdle
         messagesModel.refresh()
@@ -191,7 +210,7 @@ final class NewTabPageViewController: UIViewController, NewTabPage, RemoteMessag
     override func viewDidLoad() {
         super.viewDidLoad()
 
-        view.backgroundColor = UIColor(designSystemColor: .background)
+        view.backgroundColor = newTabPageViewModel.focusedContent == nil ? UIColor(designSystemColor: .background) : .clear
         embedPageHostingController()
         registerForNotifications()
     }
@@ -343,6 +362,8 @@ final class NewTabPageViewController: UIViewController, NewTabPage, RemoteMessag
     var isDragging: Bool { newTabPageViewModel.isDragging }
 
     var hasInlineSearchInput: Bool { false }
+
+    var inlineToggleMode: TextEntryMode? { nil }
 
     weak var chromeDelegate: BrowserChromeDelegate?
     weak var delegate: NewTabPageControllerDelegate?

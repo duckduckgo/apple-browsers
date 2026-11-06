@@ -2,7 +2,8 @@
 set -euo pipefail
 
 usage() {
-	echo "Usage: $0 <iOS|macOS> --release-branch <release/ios/x.y.z|release/macos/x.y.z> [--dry-run] [--reimport]" >&2
+	echo "Usage: $0 <iOS|macOS> --release-branch <release/ios/x.y.z|release/macos/x.y.z|other branch> [--version x.y.z] [--dry-run] [--reimport]" >&2
+	echo "A branch outside release/<platform>/ needs --version." >&2
 	exit 1
 }
 
@@ -10,12 +11,14 @@ PLATFORM="${1:-}"
 shift || true
 
 RELEASE_BRANCH=""
+VERSION=""
 DRY_RUN="false"
 REIMPORT="false"
 
 while [ $# -gt 0 ]; do
 	case "$1" in
 		--release-branch) RELEASE_BRANCH="${2:-}"; shift 2 ;;
+		--version) VERSION="${2:-}"; shift 2 ;;
 		--dry-run) DRY_RUN="true"; shift ;;
 		--reimport) REIMPORT="true"; shift ;;
 		*) usage ;;
@@ -39,11 +42,25 @@ case "$PLATFORM" in
 		;;
 esac
 
-if [[ "$RELEASE_BRANCH" != "release/$PLATFORM_SLUG/"* ]]; then
+if [[ "$RELEASE_BRANCH" =~ ^release/([^/]+)/([^/]+)$ ]]; then
+	if [ "${BASH_REMATCH[1]}" != "$PLATFORM_SLUG" ]; then
+		echo "Branch '$RELEASE_BRANCH' is a release branch for '${BASH_REMATCH[1]}', not '$PLATFORM_SLUG'." >&2
+		exit 1
+	fi
+	if [ -n "$VERSION" ] && [ "$VERSION" != "${BASH_REMATCH[2]}" ]; then
+		echo "Version '$VERSION' doesn't match release branch '$RELEASE_BRANCH'." >&2
+		exit 1
+	fi
+	VERSION="${BASH_REMATCH[2]}"
+elif [ -z "$RELEASE_BRANCH" ] || [ -z "$VERSION" ]; then
 	usage
 fi
 
-VERSION="${RELEASE_BRANCH#"release/$PLATFORM_SLUG/"}"
+if [[ ! "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+	echo "Can't resolve a release version from version '$VERSION' and branch '$RELEASE_BRANCH'." >&2
+	exit 1
+fi
+
 JOB_NAME="Release $PLATFORM $VERSION"
 IMPORT_BRANCH="smartling/release-$PLATFORM_SLUG-$VERSION"
 REFRESH_PREFIX="$RELEASE_BRANCH/current"
@@ -62,7 +79,6 @@ STRINGS_LEFT=""
 INCOMPLETE_LOCALES=""
 STRINGS_AWAITING_AUTHORIZATION=""
 JOBS_AWAITING_AUTHORIZATION=""
-INTEGRITY=""
 PR_URL=""
 
 finish() {
@@ -86,8 +102,9 @@ finish() {
 			echo "strings_left=$STRINGS_LEFT"
 			echo "incomplete_locales=$INCOMPLETE_LOCALES"
 			echo "strings_awaiting_authorization=$STRINGS_AWAITING_AUTHORIZATION"
-			echo "jobs_awaiting_authorization=$JOBS_AWAITING_AUTHORIZATION"
-			echo "integrity=$INTEGRITY"
+			echo "jobs_awaiting_authorization<<JOBS_AWAITING_AUTHORIZATION_EOF"
+			echo "$JOBS_AWAITING_AUTHORIZATION"
+			echo "JOBS_AWAITING_AUTHORIZATION_EOF"
 			echo "pr_url=$PR_URL"
 			echo "reason=$REASON"
 		} >> "$GITHUB_OUTPUT"
@@ -103,8 +120,7 @@ finish() {
 			[ -z "$STRINGS_LEFT" ] || echo "- String translations left: \`$STRINGS_LEFT\` of \`$TOTAL_STRINGS\`"
 			[ -z "$INCOMPLETE_LOCALES" ] || echo "- Incomplete locales: \`$INCOMPLETE_LOCALES\`"
 			[ -z "$STRINGS_AWAITING_AUTHORIZATION" ] || [ "$STRINGS_AWAITING_AUTHORIZATION" = "0" ] || echo "- String translations not authorized (in a job awaiting authorization or in no job): \`$STRINGS_AWAITING_AUTHORIZATION\`"
-			[ -z "$JOBS_AWAITING_AUTHORIZATION" ] || echo "- Jobs awaiting authorization: $JOBS_AWAITING_AUTHORIZATION"
-			[ -z "$INTEGRITY" ] || echo "- Integrity check: \`$INTEGRITY\`"
+			[ -z "$JOBS_AWAITING_AUTHORIZATION" ] || printf -- '- Jobs awaiting authorization:\n  %s\n' "${JOBS_AWAITING_AUTHORIZATION//$'\n'/$'\n'  }"
 			[ -z "$PR_URL" ] || echo "- Pull request: $PR_URL"
 			[ -z "$REASON" ] || echo "- Reason: $REASON"
 		} >> "$GITHUB_STEP_SUMMARY"
@@ -128,6 +144,7 @@ else
 	existing_pr="$(gh pr list --head "$IMPORT_BRANCH" --state all --limit 1 --json state,url --jq '.[] | "\(.state) \(.url)"')"
 	if [ -n "$existing_pr" ]; then
 		PR_URL="${existing_pr#* }"
+		[ "${existing_pr%% *}" != "MERGED" ] || finish pr_merged "The translations pull request for $VERSION is merged, so the release branch has the translations"
 		finish skipped_existing_pr "A translations pull request for $VERSION already exists (${existing_pr% *})"
 	fi
 fi
@@ -166,7 +183,7 @@ TOTAL_STRINGS="$(jq -r '.total_strings // empty' "$RESULT_FILE")"
 STRINGS_LEFT="$(jq -r '.strings_left // empty' "$RESULT_FILE")"
 INCOMPLETE_LOCALES="$(jq -r '.incomplete_locales | join(", ")' "$RESULT_FILE")"
 STRINGS_AWAITING_AUTHORIZATION="$(jq -r '.strings_awaiting_authorization // empty' "$RESULT_FILE")"
-JOBS_AWAITING_AUTHORIZATION="$(jq -r '(.jobs_awaiting_authorization // []) | join(", ")' "$RESULT_FILE")"
+JOBS_AWAITING_AUTHORIZATION="$(jq -r '(.jobs_awaiting_authorization // []) | map("- [\(.name)](\(.url))" + (if .created != "" then " (created \(.created))" else "" end)) | join("\n")' "$RESULT_FILE")"
 REASON="$(jq -r '.reason' "$RESULT_FILE")"
 
 case "$status_outcome" in
@@ -183,12 +200,6 @@ rm -rf "$DOWNLOAD_DIR"
 
 echo "Cleaning non-localization files from working tree..."
 git restore --staged --worktree -- . ':(exclude)**/*.strings' ':(exclude)**/*.stringsdict' ':(exclude)**/*.xcstrings'
-
-if ./scripts/smartling/check_translation_integrity.py; then
-	INTEGRITY="passed"
-else
-	INTEGRITY="issues_found"
-fi
 
 if [ -z "$(git status --porcelain -- ':(glob)**/*.strings' ':(glob)**/*.stringsdict' ':(glob)**/*.xcstrings')" ]; then
 	if [ -n "$OPEN_PR_URL" ]; then
@@ -221,19 +232,21 @@ else
 	job_line="- Smartling job: none, every string in the release was already translated by earlier jobs"
 fi
 
-if [ "$INTEGRITY" = "passed" ]; then
-	integrity_line="- Integrity check: passed"
-else
-	integrity_line="- Integrity check: ⚠️ found deleted or much shorter translations. Review the diff before merging."
-fi
-
 workflow_line=""
 if [ -n "${GITHUB_RUN_ID:-}" ]; then
 	workflow_line="- Workflow: ${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}"
 fi
 
+TASK_URL="${TRANSLATIONS_TASK_URL:-}"
+if [ -n "$OPEN_PR_URL" ]; then
+	open_pr_task_url="$(gh pr view "$OPEN_PR_URL" --json body --jq '.body' | tr -d '\r' | sed -n 's#^Task/Issue URL:[[:space:]]*\(https://[^[:space:]]*\).*#\1#p' | sed -n '1p')"
+	TASK_URL="${open_pr_task_url:-$TASK_URL}"
+fi
+[ -n "$TASK_URL" ] || echo "::warning::No Translations task to link, so the pull request has no Task/Issue URL"
+
 PR_BODY_FILE="$(mktemp)"
 cat > "$PR_BODY_FILE" <<EOF
+Task/Issue URL: $TASK_URL
 Tech Design URL: https://app.asana.com/0/0/1219548238783890/f
 
 ### Description
@@ -241,7 +254,6 @@ Imports the $PLATFORM $VERSION translations from Smartling into \`$RELEASE_BRANC
 
 - Smartling files: \`${FILE_URIS[*]}\`
 $job_line
-$integrity_line
 $workflow_line
 
 ---

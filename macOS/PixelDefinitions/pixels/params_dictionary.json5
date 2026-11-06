@@ -468,6 +468,13 @@
             "funnel_duckai_macos__unknown"
         ]
     },
+    "subscriptionPageOrigin": {
+        "key": "origin",
+        "type": "string",
+        "description": "Origin from the subscription page URL, sent as-is. Can include web-defined origins in addition to the `subscriptionFunnelOrigin` values.",
+        "pattern": "^funnel_",
+        "examples": ["funnel_appsettings_macos", "funnel_appmenu_macos", "funnel_appsettings_macos_winback"]
+    },
     "onboardingEventType": {
         "key": "event",
         "type": "string",
@@ -674,7 +681,7 @@
         "key": "extension",
         "type": "string",
         "description": "The extension's name in the Chrome Web Store catalog, or other for an extension the catalog doesn't list. Keep in sync with ExtensionsCatalogSubfeature.",
-        "enum": ["bitwarden", "onePassword", "lastPass", "other"]
+        "enum": ["bitwarden", "onePassword", "lastPass", "iCloudPasswords", "darkReader", "other"]
     },
     "web_extension_version": {
         "key": "extension_version",
@@ -698,7 +705,7 @@
         "key": "reload_trigger",
         "type": "string",
         "description": "Operation that initiated the failed web extension reload.",
-        "enum": ["data_clearing", "scriptlet_update", "explicit", "cpm_messaging_hung"]
+        "enum": ["data_clearing", "scriptlet_update", "explicit", "cpm_messaging_hung", "cpm_background_load_failed"]
     },
     "web_extension_reload_phase": {
         "key": "reload_phase",

@@ -516,6 +516,7 @@ final class BrowserTabViewControllerOnboardingTests: XCTestCase {
         // Trackers advances to Fire in place, and Skip advances to High Five in place.
         factory.performOnGotItPressed()
         factory.performOnGotItPressed()
+        XCTAssertEqual(pixelReporter.gotItPressedDialog, .tryFireButton)
         XCTAssertEqual(factory.capturedType, .trackers(message: NSAttributedString(string: "trackers"), shouldFollowUp: true))
         XCTAssertEqual(factory.makeViewCallCount, presentationsBefore)
 

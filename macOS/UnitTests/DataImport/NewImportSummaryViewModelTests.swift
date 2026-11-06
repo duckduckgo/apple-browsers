@@ -58,7 +58,7 @@ final class NewImportSummaryViewModelTests: XCTestCase {
         ]
 
         // When
-        let viewModel = NewImportSummaryViewModel(summary: summary, prefs: mockPreferences, pinningManager: mockPinningManager)
+        let viewModel = NewImportSummaryViewModel(summary: summary, isHistoryImportEnabled: false, prefs: mockPreferences, pinningManager: mockPinningManager)
 
         // Then
         XCTAssertEqual(viewModel.items.count, 1)
@@ -80,7 +80,7 @@ final class NewImportSummaryViewModelTests: XCTestCase {
         ]
 
         // When
-        let viewModel = NewImportSummaryViewModel(summary: summary, prefs: mockPreferences, pinningManager: mockPinningManager)
+        let viewModel = NewImportSummaryViewModel(summary: summary, isHistoryImportEnabled: false, prefs: mockPreferences, pinningManager: mockPinningManager)
 
         // Then
         XCTAssertEqual(viewModel.items.count, 1)
@@ -105,7 +105,7 @@ final class NewImportSummaryViewModelTests: XCTestCase {
         ]
 
         // When
-        let viewModel = NewImportSummaryViewModel(summary: summary, prefs: mockPreferences, pinningManager: mockPinningManager)
+        let viewModel = NewImportSummaryViewModel(summary: summary, isHistoryImportEnabled: false, prefs: mockPreferences, pinningManager: mockPinningManager)
 
         // Then
         XCTAssertEqual(viewModel.items.count, 1)
@@ -129,7 +129,7 @@ final class NewImportSummaryViewModelTests: XCTestCase {
         ]
 
         // When
-        let viewModel = NewImportSummaryViewModel(summary: summary, prefs: mockPreferences, pinningManager: mockPinningManager)
+        let viewModel = NewImportSummaryViewModel(summary: summary, isHistoryImportEnabled: false, prefs: mockPreferences, pinningManager: mockPinningManager)
 
         // Then
         XCTAssertEqual(viewModel.items.count, 1)
@@ -149,7 +149,7 @@ final class NewImportSummaryViewModelTests: XCTestCase {
         ]
 
         // When
-        let viewModel = NewImportSummaryViewModel(summary: summary, prefs: mockPreferences, pinningManager: mockPinningManager)
+        let viewModel = NewImportSummaryViewModel(summary: summary, isHistoryImportEnabled: false, prefs: mockPreferences, pinningManager: mockPinningManager)
 
         // Then
         XCTAssertEqual(viewModel.items.count, 3)
@@ -164,7 +164,7 @@ final class NewImportSummaryViewModelTests: XCTestCase {
         ]
 
         // When
-        let viewModel = NewImportSummaryViewModel(summary: summary, prefs: mockPreferences, pinningManager: mockPinningManager)
+        let viewModel = NewImportSummaryViewModel(summary: summary, isHistoryImportEnabled: false, prefs: mockPreferences, pinningManager: mockPinningManager)
 
         // Then
         XCTAssertEqual(viewModel.items.count, 2)
@@ -191,7 +191,7 @@ final class NewImportSummaryViewModelTests: XCTestCase {
         ]
 
         // When
-        let viewModel = NewImportSummaryViewModel(summary: summary, prefs: mockPreferences, pinningManager: mockPinningManager)
+        let viewModel = NewImportSummaryViewModel(summary: summary, isHistoryImportEnabled: false, prefs: mockPreferences, pinningManager: mockPinningManager)
 
         // Then
         XCTAssertEqual(viewModel.items.count, 1)
@@ -212,7 +212,7 @@ final class NewImportSummaryViewModelTests: XCTestCase {
         ]
 
         // When
-        let viewModel = NewImportSummaryViewModel(summary: summary, prefs: mockPreferences, pinningManager: mockPinningManager)
+        let viewModel = NewImportSummaryViewModel(summary: summary, isHistoryImportEnabled: false, prefs: mockPreferences, pinningManager: mockPinningManager)
 
         // Then
         XCTAssertEqual(viewModel.items.count, 1)
@@ -234,7 +234,7 @@ final class NewImportSummaryViewModelTests: XCTestCase {
         ]
 
         // When
-        let viewModel = NewImportSummaryViewModel(summary: summary, prefs: mockPreferences, pinningManager: mockPinningManager)
+        let viewModel = NewImportSummaryViewModel(summary: summary, isHistoryImportEnabled: false, prefs: mockPreferences, pinningManager: mockPinningManager)
 
         // Then
         XCTAssertEqual(viewModel.items.count, 1)
@@ -252,7 +252,7 @@ final class NewImportSummaryViewModelTests: XCTestCase {
         ]
 
         // When
-        let viewModel = NewImportSummaryViewModel(summary: summary, prefs: mockPreferences, pinningManager: mockPinningManager)
+        let viewModel = NewImportSummaryViewModel(summary: summary, isHistoryImportEnabled: false, prefs: mockPreferences, pinningManager: mockPinningManager)
 
         // Then
         XCTAssertEqual(viewModel.items.count, 1)
@@ -270,7 +270,7 @@ final class NewImportSummaryViewModelTests: XCTestCase {
         ]
 
         // When
-        let viewModel = NewImportSummaryViewModel(summary: summary, prefs: mockPreferences, pinningManager: mockPinningManager)
+        let viewModel = NewImportSummaryViewModel(summary: summary, isHistoryImportEnabled: false, prefs: mockPreferences, pinningManager: mockPinningManager)
 
         // Then
         XCTAssertEqual(viewModel.items.count, 1)
@@ -281,12 +281,78 @@ final class NewImportSummaryViewModelTests: XCTestCase {
         XCTAssertFalse(title.isEmpty)
     }
 
+    func testInitWithHistoryImportShowsVisitCountWithoutShortcut() {
+        let summary: DataImportSummary = [
+            .history: .success(DataImport.DataTypeSummary(successful: 120, duplicate: 0, failed: 0))
+        ]
+
+        let viewModel = makeViewModel(summary: summary)
+
+        guard case .success(let item) = viewModel.items.first else {
+            return XCTFail("Expected success item")
+        }
+        XCTAssertEqual(item.primaryText, "History: 120 visits")
+        XCTAssertEqual(item.secondaryText, "(last 30 days)")
+        XCTAssertNil(item.shortcut)
+    }
+
+    func testInitWithHistoryAlreadyInHistoryShowsOnlyNewVisits() {
+        let summary: DataImportSummary = [
+            .history: .success(DataImport.DataTypeSummary(successful: 60, duplicate: 740, failed: 0))
+        ]
+
+        let viewModel = makeViewModel(summary: summary)
+
+        guard case .success(let item) = viewModel.items.first else {
+            return XCTFail("Expected success item")
+        }
+        XCTAssertEqual(item.primaryText, "History: 60 visits")
+        XCTAssertEqual(item.secondaryText, "(last 30 days)")
+        XCTAssertNil(item.duplicateText)
+    }
+
+    func testInitWithHistoryImportEnabledLeavesImportedOutOfTheRows() {
+        let summary: DataImportSummary = [
+            .bookmarks: .success(DataImport.DataTypeSummary(successful: 32, duplicate: 0, failed: 0)),
+            .passwords: .success(DataImport.DataTypeSummary(successful: 23, duplicateItems: [duplicatePassword()])),
+            .history: .success(DataImport.DataTypeSummary(successful: 1, duplicate: 0, failed: 0))
+        ]
+
+        let viewModel = makeViewModel(summary: summary)
+
+        XCTAssertEqual(primaryTexts(of: viewModel), ["Bookmarks: 32", "Passwords: 23 / 24", "History: 1 visit"])
+    }
+
+    func testInitWithHistoryFailureShowsHistoryFailureTitle() {
+        let summary: DataImportSummary = [
+            .history: .failure(MockDataImportError())
+        ]
+
+        let viewModel = makeViewModel(summary: summary)
+
+        XCTAssertEqual(viewModel.items, [.failure(title: UserText.importCouldNotImportHistory)])
+    }
+
+    func testInitListsHistoryAfterOtherDataTypes() {
+        let imported = DataImport.DataTypeSummary(successful: 1, duplicate: 0, failed: 0)
+        let summary: DataImportSummary = [
+            .history: .success(imported),
+            .creditCards: .success(imported),
+            .passwords: .success(imported),
+            .bookmarks: .success(imported)
+        ]
+
+        let viewModel = makeViewModel(summary: summary)
+
+        XCTAssertEqual(viewModel.items.map(\.id), ["bookmarks", "passwords", "creditCards", "history"])
+    }
+
     func testDidTriggerShortcutOnFailureItemDoesNothing() {
         // Given
         let summary: DataImportSummary = [
             .bookmarks: .failure(MockDataImportError())
         ]
-        let viewModel = NewImportSummaryViewModel(summary: summary, prefs: mockPreferences, pinningManager: mockPinningManager)
+        let viewModel = NewImportSummaryViewModel(summary: summary, isHistoryImportEnabled: false, prefs: mockPreferences, pinningManager: mockPinningManager)
         let initialPrefsState = mockPreferences.showBookmarksBar
         let initialPinningState = mockPinningManager.pinnedViews
 
@@ -305,7 +371,7 @@ final class NewImportSummaryViewModelTests: XCTestCase {
         let summary: DataImportSummary = [
             .bookmarks: .success(DataImport.DataTypeSummary(successful: 100, duplicate: 0, failed: 0))
         ]
-        let viewModel = NewImportSummaryViewModel(summary: summary, prefs: mockPreferences, pinningManager: mockPinningManager)
+        let viewModel = NewImportSummaryViewModel(summary: summary, isHistoryImportEnabled: false, prefs: mockPreferences, pinningManager: mockPinningManager)
         mockPreferences.showBookmarksBar = false
 
         // When
@@ -321,7 +387,7 @@ final class NewImportSummaryViewModelTests: XCTestCase {
             .bookmarks: .success(DataImport.DataTypeSummary(successful: 100, duplicate: 0, failed: 0))
         ]
         mockPreferences.showBookmarksBar = false
-        let viewModel = NewImportSummaryViewModel(summary: summary, prefs: mockPreferences, pinningManager: mockPinningManager)
+        let viewModel = NewImportSummaryViewModel(summary: summary, isHistoryImportEnabled: false, prefs: mockPreferences, pinningManager: mockPinningManager)
 
         // When
         viewModel.didTriggerShortcut(on: viewModel.items[0], isOn: true)
@@ -339,7 +405,7 @@ final class NewImportSummaryViewModelTests: XCTestCase {
         let summary: DataImportSummary = [
             .passwords: .success(DataImport.DataTypeSummary(successful: 50, duplicate: 0, failed: 0))
         ]
-        let viewModel = NewImportSummaryViewModel(summary: summary, prefs: mockPreferences, pinningManager: mockPinningManager)
+        let viewModel = NewImportSummaryViewModel(summary: summary, isHistoryImportEnabled: false, prefs: mockPreferences, pinningManager: mockPinningManager)
         mockPinningManager.pinnedViews = []
 
         // When
@@ -355,7 +421,7 @@ final class NewImportSummaryViewModelTests: XCTestCase {
             .passwords: .success(DataImport.DataTypeSummary(successful: 50, duplicate: 0, failed: 0))
         ]
         mockPinningManager.pinnedViews = [.autofill]
-        let viewModel = NewImportSummaryViewModel(summary: summary, prefs: mockPreferences, pinningManager: mockPinningManager)
+        let viewModel = NewImportSummaryViewModel(summary: summary, isHistoryImportEnabled: false, prefs: mockPreferences, pinningManager: mockPinningManager)
 
         // When
         viewModel.didTriggerShortcut(on: viewModel.items[0], isOn: false)
@@ -370,7 +436,7 @@ final class NewImportSummaryViewModelTests: XCTestCase {
             .passwords: .success(DataImport.DataTypeSummary(successful: 50, duplicate: 0, failed: 0))
         ]
         mockPinningManager.pinnedViews = []
-        let viewModel = NewImportSummaryViewModel(summary: summary, prefs: mockPreferences, pinningManager: mockPinningManager)
+        let viewModel = NewImportSummaryViewModel(summary: summary, isHistoryImportEnabled: false, prefs: mockPreferences, pinningManager: mockPinningManager)
 
         // When
         viewModel.didTriggerShortcut(on: viewModel.items[0], isOn: true)
@@ -388,7 +454,7 @@ final class NewImportSummaryViewModelTests: XCTestCase {
         let summary: DataImportSummary = [
             .creditCards: .success(DataImport.DataTypeSummary(successful: 5, duplicate: 0, failed: 0))
         ]
-        let viewModel = NewImportSummaryViewModel(summary: summary, prefs: mockPreferences, pinningManager: mockPinningManager)
+        let viewModel = NewImportSummaryViewModel(summary: summary, isHistoryImportEnabled: false, prefs: mockPreferences, pinningManager: mockPinningManager)
         let initialPrefsState = mockPreferences.showBookmarksBar
         let initialPinningState = mockPinningManager.pinnedViews
 
@@ -412,7 +478,7 @@ final class NewImportSummaryViewModelTests: XCTestCase {
         ]
 
         // When
-        let viewModel = NewImportSummaryViewModel(summary: summary, prefs: mockPreferences, pinningManager: mockPinningManager)
+        let viewModel = NewImportSummaryViewModel(summary: summary, isHistoryImportEnabled: false, prefs: mockPreferences, pinningManager: mockPinningManager)
 
         // Then
         let bookmarksItem = viewModel.items.first { $0.id == DataImport.DataType.bookmarks.rawValue }
@@ -428,6 +494,21 @@ final class NewImportSummaryViewModelTests: XCTestCase {
             XCTAssertTrue(item.shortcut?.isOn ?? false)
         } else {
             XCTFail("Expected success item for passwords")
+        }
+    }
+
+    private func makeViewModel(summary: DataImportSummary) -> NewImportSummaryViewModel {
+        NewImportSummaryViewModel(summary: summary, isHistoryImportEnabled: true, prefs: mockPreferences, pinningManager: mockPinningManager)
+    }
+
+    private func duplicatePassword() -> DataImport.DataImportItem {
+        .password(title: nil, domain: "example.com", username: "dax")
+    }
+
+    private func primaryTexts(of viewModel: NewImportSummaryViewModel) -> [String] {
+        viewModel.items.compactMap { item in
+            guard case .success(let successItem) = item else { return nil }
+            return successItem.primaryText
         }
     }
 }

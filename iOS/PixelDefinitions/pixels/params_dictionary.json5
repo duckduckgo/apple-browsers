@@ -84,6 +84,24 @@
         "description": "Where the tab was originally selected, including when it is later removed through another control.",
         "enum": ["recent_tabs", "tab_picker", "mention"]
     },
+    "address_bar_position": {
+        "key": "address_bar_position",
+        "type": "string",
+        "description": "The iPhone address bar position setting when the pixel fired. Absent on iPad and in the contextual chat sheet.",
+        "enum": ["top", "bottom"]
+    },
+    "resubmit_of_search": {
+        "key": "resubmit_of_search",
+        "type": "string",
+        "description": "Seconds since a Search from the iPhone address bar with the same text (ignoring case and punctuation; 1 typo allowed at 4-7 characters, 2 at 8-1,000). Compared on the device; no text is sent, and it is dropped when the app goes to the background or on Fire. Never set in fire tabs. Texts over 1,000 characters must match exactly. The earlier submit may have been an address (URL). Absent when it isn't a resubmit. Mostly a baseline for resubmit_of_prompt.",
+        "enum": ["0-15", "16-30", "31-45", "46-60"]
+    },
+    "resubmit_of_prompt": {
+        "key": "resubmit_of_prompt",
+        "type": "string",
+        "description": "Seconds since a Duck.ai prompt from the iPhone address bar with the same text (ignoring case and punctuation; 1 typo allowed at 4-7 characters, 2 at 8-1,000), a proxy for a search sent to Duck.ai by mistake. Compared on the device; no text is sent, and it is dropped when the app goes to the background or on Fire. Never set in fire tabs. Texts over 1,000 characters must match exactly. Also set on address (URL) submits; filter on query_type for searches only. Absent when it isn't a resubmit, including when no prompt was sent first. Each prompt is matched at most once.",
+        "enum": ["0-15", "16-30", "31-45", "46-60"]
+    },
     "usage_layout": {
         "key": "layout",
         "type": "string",
@@ -93,7 +111,7 @@
     "usage_hardware_keyboard": {
         "key": "hardware_keyboard",
         "type": "boolean",
-        "description": "Whether a hardware keyboard was connected when the pixel fired."
+        "description": "Whether a hardware keyboard was connected when the pixel fired. Omitted when not yet known, early in a launch."
     },
     "usage_window_mode": {
         "key": "window_mode",
@@ -135,6 +153,11 @@
             "widget_favorite",
             "widget_lock_screen",
             "widget_control_center",
+            "address_bar_custom_button",
+            "toolbar_custom_button",
+            "onboarding_completion_promo",
+            "app_open",
+            "tab_swipe",
             "siri",
             "deep_link_other",
             "return_to_chat_card",
@@ -530,7 +553,44 @@
     "subscriptionFunnelOrigin": {
         "key": "origin",
         "type": "string",
-        "description": "Funnel that led the user to a subscription pixel — encodes the entry-point and platform. Values follow the convention `funnel_<entry-point>_<platform>[_<modifier>]`.",
+        "description": "Funnel that led the user to a subscription pixel — encodes the entry-point and platform. Must match a case's raw value in `SubscriptionFunnelOrigin` (iOS/DuckDuckGo/Subscription/SubscriptionFunnelOrigin.swift); never an ad-campaign or marketing-attribution origin.",
+        "enum": [
+            "funnel_onboarding_ios",
+            "funnel_modal_ios__skippedonboardingupsell",
+            "funnel_modal_ios__subscriptionnudge",
+            "funnel_appsettings_ios",
+            "funnel_appmenu_ios",
+            "funnel_addressbar_ios__modelpicker",
+            "funnel_addressbar_ios__reasoningdropdown",
+            "funnel_duckai_ios__modelpicker",
+            "funnel_duckai_ios__reasoningdropdown",
+            "funnel_duckai_ios__freelabel",
+            "funnel_addressbar_ios__usagelimit",
+            "funnel_duckai_ios__usagelimit",
+            "funnel_duckai_ios__aisidebar",
+            "funnel_duckai_ios__activatesubscription",
+            "funnel_duckai_ios__freelimit",
+            "funnel_duckai_ios__imagegenerationlimit",
+            "funnel_duckai_ios__pluslimit",
+            "funnel_duckai_ios__promotioncard",
+            "funnel_duckai_ios__settings",
+            "funnel_duckai_ios__disclaimerbanner",
+            "funnel_duckai_ios__voicechatlimit",
+            "funnel_duckai_ios__voicechatdurationlimit",
+            "funnel_applaunch_ios_winback",
+            "funnel_appsettings_ios_winback",
+            "funnel_alert_ios__subscriptionvpnrevoked",
+            "funnel_toolbar_ios__subscriptionvpn",
+            "funnel_addressbar_ios__subscriptionvpn",
+            "funnel_widget_ios__subscriptionvpn",
+            "funnel_integration_ios_shortcut_subscriptionvpn",
+            "funnel_notification_ios__subscriptionvpn"
+        ]
+    },
+    "subscriptionPageOrigin": {
+        "key": "origin",
+        "type": "string",
+        "description": "Origin from the subscription page URL, sent as-is. Can include web-defined origins in addition to the `subscriptionFunnelOrigin` values.",
         "pattern": "^funnel_",
         "examples": ["funnel_appmenu_ios", "funnel_appsettings_ios", "funnel_onboarding_ios", "funnel_appsettings_ios_winback"]
     },
@@ -715,7 +775,7 @@
         "key": "reload_trigger",
         "type": "string",
         "description": "Operation that initiated the failed web extension reload.",
-        "enum": ["data_clearing", "scriptlet_update", "explicit", "cpm_messaging_hung"]
+        "enum": ["data_clearing", "scriptlet_update", "explicit", "cpm_messaging_hung", "cpm_background_load_failed"]
     },
     "web_extension_reload_phase": {
         "key": "reload_phase",

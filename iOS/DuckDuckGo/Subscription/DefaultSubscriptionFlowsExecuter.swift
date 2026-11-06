@@ -31,7 +31,7 @@ public protocol SubscriptionFlowsExecuting: AnyObject {
     @MainActor
     func performTierChange(to productId: String,
                            changeType: String?,
-                           contextName: String?,
+                           wideEventFunnelName: String?,
                            setTransactionStatus: ((SubscriptionTransactionStatus) -> Void)?,
                            setTransactionError: ((AppStorePurchaseFlowError?) -> Void)?,
                            pushPurchaseUpdate: ((PurchaseUpdate) async -> Void)?) async
@@ -62,7 +62,7 @@ public final class DefaultSubscriptionFlowsExecuter: SubscriptionFlowsExecuting 
     @MainActor
     public func performTierChange(to productId: String,
                                   changeType: String?,
-                                  contextName: String?,
+                                  wideEventFunnelName: String?,
                                   setTransactionStatus: ((SubscriptionTransactionStatus) -> Void)? = nil,
                                   setTransactionError: ((AppStorePurchaseFlowError?) -> Void)? = nil,
                                   pushPurchaseUpdate: ((PurchaseUpdate) async -> Void)? = nil) async {
@@ -80,7 +80,7 @@ public final class DefaultSubscriptionFlowsExecuter: SubscriptionFlowsExecuting 
             changeType: resolvedChangeType,
             fromPlan: fromPlan,
             toPlan: productId,
-            funnelName: contextName,
+            funnelName: wideEventFunnelName,
             paymentDuration: WideEvent.MeasuredInterval.startingNow()
         )
         wideEvent.startFlow(wideData)
@@ -129,7 +129,7 @@ public final class DefaultSubscriptionFlowsExecuter: SubscriptionFlowsExecuting 
         wideEvent.updateFlow(wideData)
 
         // Complete the tier change by confirming with the backend
-        let completeResult = await appStorePurchaseFlow.completeSubscriptionPurchase(with: transactionJWS, experimentAttribution: nil)
+        let completeResult = await appStorePurchaseFlow.completeSubscriptionPurchase(with: transactionJWS, isFreeTrial: nil, experimentAttribution: nil)
 
         switch completeResult {
         case .success:

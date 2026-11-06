@@ -41,6 +41,11 @@ final class RedesignedNewTabPageViewController: UIViewController, NewTabPage, Re
 
     var hasInlineSearchInput: Bool { true }
 
+    var inlineToggleMode: TextEntryMode? {
+        guard let searchInputModel, searchInputModel.settings.isModeToggleShown else { return nil }
+        return searchInputModel.textEntryMode
+    }
+
     private let onboardingCoordinator: NewTabPageOnboardingCoordinator?
     var isPresentingOnboardingDialog: Bool { onboardingCoordinator?.isPresentingDialog == true }
 
@@ -96,7 +101,7 @@ final class RedesignedNewTabPageViewController: UIViewController, NewTabPage, Re
         button.isShadowHidden = true
         button.setImage(DesignSystemImages.Glyphs.Size24.options, for: .normal)
         button.setColors(foreground: UIColor(designSystemColor: .iconsSecondary),
-                         background: UIColor(designSystemColor: .controlsFillPrimary),
+                         background: .clear,
                          pressedForeground: UIColor(designSystemColor: .iconsSecondary),
                          pressedBackground: UIColor(designSystemColor: .controlsFillTertiary))
         button.accessibilityLabel = UserText.newTabPageCustomizationTitle
@@ -322,6 +327,10 @@ final class RedesignedNewTabPageViewController: UIViewController, NewTabPage, Re
 
     func beginVoiceSearch(textEntryMode: TextEntryMode) {
         delegate?.newTabPageDidRequestVoiceSearch(self, textEntryMode: textEntryMode)
+    }
+
+    func duckAIMenu() -> UIMenu? {
+        delegate?.newTabPageDuckAIMenu(self)
     }
 
     func dismiss() {

@@ -1,9 +1,20 @@
 {
     "privacy-stats_database_load_failed": {
-        "description": "Fired when the Privacy Stats Core Data store fails to load at launch, just before the app terminates. Without this the launch would freeze waiting for the store.",
+        "description": "Fired once when the Privacy Stats store fails to load at launch, with the outcome of handling the failure",
         "owners": ["hassaanelgarem"],
         "triggers": ["other"],
         "suffixes": ["daily_count", "platform", "form_factor"],
-        "parameters": ["appVersion", "errorCode", "errorDomain", "underlyingErrorCode", "underlyingErrorDomain"]
+        "parameters": [
+            "appVersion",
+            "errorCode",
+            "errorDomain",
+            "underlyingErrorCode",
+            "underlyingErrorDomain",
+            {
+                "key": "outcome",
+                "description": "unavailable: the error isn't corruption, so the store is kept and Privacy Stats is disabled for the session. recreated: the store was corrupted and has been recreated. recreate_failed: the store was corrupted and recreating it failed, so Privacy Stats is disabled for the session",
+                "enum": ["unavailable", "recreated", "recreate_failed"]
+            }
+        ]
     }
 }

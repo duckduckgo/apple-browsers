@@ -30,8 +30,8 @@ public enum WebExtensionReloadFailurePhase: String, Equatable, Sendable {
 }
 
 /// The extension a pixel reports: its entry in the Chrome Web Store catalog, or `other` for one the
-/// catalog doesn't list. Pixels take this instead of a string, so an extension's own identifier or
-/// name can't reach a pixel.
+/// catalog doesn't list. Extension pixels use this bounded value instead of an extension's own
+/// identifier or name.
 public enum WebExtensionPixelExtension: Equatable, CaseIterable {
     case catalog(ExtensionsCatalogSubfeature)
     case other
@@ -59,9 +59,38 @@ public enum WebExtensionPixelExtension: Equatable, CaseIterable {
     }
 }
 
+/// The bounded outcomes reported by Chrome Web Store update discovery. No server text is sent.
+public enum WebExtensionUpdateCheckOutcome: String, CaseIterable, Sendable {
+    case updateFound = "update_found"
+    case googleFlagged = "google_flagged"
+    case invalidRequest = "invalid_request"
+    case invalidResponse = "invalid_response"
+    case invalidManifest = "invalid_manifest"
+    case responseTooLarge = "response_too_large"
+    case networkFailure = "network_failure"
+    case httpStatus = "http_status"
+
+    @available(macOS 15.4, iOS 18.4, *)
+    init?(checkOutcome: ChromeWebStoreUpdateChecker.Outcome) {
+        switch checkOutcome {
+        case .update: self = .updateFound
+        case .skipped: self = .googleFlagged
+        case .noUpdate, .failure(.cancelled): return nil
+        case .failure(.invalidRequest): self = .invalidRequest
+        case .failure(.invalidResponse): self = .invalidResponse
+        case .failure(.invalidManifest): self = .invalidManifest
+        case .failure(.responseTooLarge): self = .responseTooLarge
+        case .failure(.networkFailure): self = .networkFailure
+        case .failure(.httpStatus): self = .httpStatus
+        }
+    }
+}
+
 /// Events that can be fired for web extension management.
 @available(macOS 15.4, iOS 18.4, *)
 public enum WebExtensionPixelEvent {
+    /// Discovery pixels report the catalog extension and, for failures, a bounded reason.
+    case updateCheck(extension: WebExtensionPixelExtension, outcome: WebExtensionUpdateCheckOutcome)
     case installed(extension: WebExtensionPixelExtension)
     case installError(extension: WebExtensionPixelExtension, error: Error)
     case uninstalled(extension: WebExtensionPixelExtension)
@@ -98,6 +127,8 @@ public enum WebExtensionPixelEvent {
     /// Intermediate initialization failures, stuck confirmation and reload checks stay local.
     case cpmMessagingEpisode(CPMMessagingEpisodeReport)
     case cpmRecovery(CPMRecoveryFix, outcome: CPMRecoveryOutcome)
+    /// Stages and one terminal observation for a retained-background error-6 restart.
+    case cpmBackgroundLoadRestart(CPMBackgroundLoadRestartOutcome)
     /// Missing first-document dashboard response after a successful first background startup.
     case cpmStartupResponseMissing
 
@@ -250,8 +281,28 @@ private extension WebExtensionReloadTrigger {
         case .scriptletUpdate: return "scriptlet_update"
         case .explicit: return "explicit"
         case .cpmMessagingHang: return "cpm_messaging_hung"
+        case .cpmBackgroundLoadFailure: return "cpm_background_load_failed"
         }
     }
+}
+
+/// Background readiness alone is not proof that a page received its dashboard response.
+public enum CPMBackgroundLoadRestartOutcome: String, CaseIterable, Sendable {
+    case restartStarted = "restart_started"
+    case backgroundReady = "background_ready"
+    case responseReceived = "response_received"
+    /// A measured navigation timed out and no qualifying response arrived within five active minutes.
+    /// This is an observation deadline, not proof of permanent breakage.
+    case noResponseBeforeDeadline = "no_response_before_deadline"
+    /// No post-restart navigation timeout or attributable response was observed by the deadline.
+    case unobserved
+    /// Another context reload or embedded upgrade ended attribution to this restart.
+    case superseded
+    case reloadFailed = "reload_failed"
+    case reloadTimedOut = "reload_timed_out"
+    /// A further error-6 restart was blocked after three attempts without observed messaging recovery.
+    /// Reported once per exhausted budget, independently of the last restart's terminal observation.
+    case restartLimitReached = "restart_limit_reached"
 }
 
 /// Canonical CPM pixel contract. Platform adapters preserve these names and let PixelKit apply its standard platform suffix policy.
@@ -267,6 +318,10 @@ public struct CPMWebExtensionPixelMetadata: Equatable, Sendable {
             name = "web_extension_cpm_startup_response_missing"
             frequency = .dailyAndCount
             parameters = [:]
+        case .cpmBackgroundLoadRestart(let outcome):
+            name = "web_extension_cpm_background_load_restart"
+            frequency = .dailyAndCount
+            parameters = ["outcome": outcome.rawValue]
         case .cpmRecovery(let fix, let outcome):
             name = "web_extension_cpm_\(fix.rawValue)"
             frequency = .dailyAndCount
@@ -279,7 +334,7 @@ public struct CPMWebExtensionPixelMetadata: Equatable, Sendable {
             name = "web_extension_cpm_network_process_recovery_applied"
             frequency = .dailyAndCount
             parameters = [:]
-        case .installed, .installError, .uninstalled, .uninstallError, .uninstalledAll,
+        case .updateCheck, .installed, .installError, .uninstalled, .uninstallError, .uninstalledAll,
              .uninstallAllError, .loaded, .loadError, .reloadError, .stateChecked, .expectedExtensionNotLoaded,
              .adBlockingScriptletsNotFetched, .embeddedInstalled, .embeddedUpgraded,
              .embeddedInstallError, .scriptletFetchSuccess, .scriptletFetchError,

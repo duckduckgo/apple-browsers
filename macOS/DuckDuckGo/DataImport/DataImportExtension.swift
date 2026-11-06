@@ -115,6 +115,7 @@ extension DataImport {
 
         let browser: ThirdPartyBrowser
         private let fileStore: FileStore
+        private let databaseInspector: ChromiumProfileDatabaseInspectorProtocol
         private let fallbackProfileName: String
 
         let accessState: AccessState
@@ -150,9 +151,16 @@ extension DataImport {
             profilePreferences?.appVersion
         }
 
-        init(browser: ThirdPartyBrowser, profileURL: URL, fileStore: FileStore = FileManager.default, accessState: AccessState = .readable) {
+        init(
+            browser: ThirdPartyBrowser,
+            profileURL: URL,
+            fileStore: FileStore = FileManager.default,
+            databaseInspector: ChromiumProfileDatabaseInspectorProtocol = ChromiumProfileDatabaseInspector(),
+            accessState: AccessState = .readable
+        ) {
             self.browser = browser
             self.fileStore = fileStore
+            self.databaseInspector = databaseInspector
             self.profileURL = profileURL
             self.accessState = accessState
 
@@ -178,10 +186,12 @@ extension DataImport {
         struct ProfileDataValidationResult {
             let logins: ProfileDataItemValidationResult
             let bookmarks: ProfileDataItemValidationResult
+            let history: ProfileDataItemValidationResult
 
             var containsValidData: Bool {
                 if case .available = logins { return true }
                 if case .available = bookmarks { return true }
+                if case .available = history { return true }
                 return false
             }
         }
@@ -201,27 +211,41 @@ extension DataImport {
                 if canBypassValidation { return true }
                 if case .available = validateProfileDataResult?.bookmarks { return true }
                 return false
+            case .history:
+                // Safari's history comes from its export file, not the profile directory
+                if browser.isSafari { return true }
+                if case .available = validateProfileDataResult?.history { return true }
+                return false
             case .creditCards:
                 return false
             }
         }
 
         func validateProfileData() -> ProfileDataValidationResult? {
-            guard let profileDirectoryContents = try? fileStore.directoryContents(at: profileURL.path) else { return nil }
+            guard let profileDirectoryContents = try? profileDataFileNames() else { return nil }
 
             let profileDirectoryContentsSet = Set(profileDirectoryContents)
             let validateLogins = validateLoginsData(profileDirectoryContents: profileDirectoryContentsSet)
             let validateBookmarks = validateBookmarksData(profileDirectoryContents: profileDirectoryContentsSet)
+            let validateHistory = validateHistoryData(profileDirectoryContents: profileDirectoryContentsSet)
 
             return .init(logins: validateLogins,
-                         bookmarks: validateBookmarks)
+                         bookmarks: validateBookmarks,
+                         history: validateHistory)
+        }
+
+        private func profileDataFileNames() throws -> [String] {
+            try fileStore.directoryContents(at: profileURL.path).filter { fileName in
+                !fileStore.isEmptyFile(at: profileURL.appendingPathComponent(fileName))
+            }
         }
 
         private func validateLoginsData(profileDirectoryContents: Set<String>) -> ProfileDataItemValidationResult {
             switch browser {
             case .brave, .chrome, .chromium, .coccoc, .edge, .opera, .operaGX, .vivaldi:
                 let hasChromiumLogins = ChromiumLoginReader.LoginDataFileName.allCases.contains { loginFileName in
-                    return profileDirectoryContents.contains(loginFileName.rawValue)
+                    profileDirectoryContents.contains(loginFileName.rawValue)
+                        && databaseInspector.hasLogins(inDatabaseAt: profileURL.appendingPathComponent(loginFileName.rawValue))
                 }
 
                 return hasChromiumLogins ? .available
@@ -249,7 +273,7 @@ extension DataImport {
         private func validateBookmarksData(profileDirectoryContents: Set<String>) -> ProfileDataItemValidationResult {
             switch browser {
             case .brave, .chrome, .chromium, .coccoc, .edge, .opera, .operaGX, .vivaldi, .yandex:
-                let hasChromiumBookmarks = profileDirectoryContents.contains(ChromiumBookmarksReader.Constants.defaultBookmarksFileName)
+                let hasChromiumBookmarks = !profileDirectoryContents.isDisjoint(with: ChromiumBookmarksReader.Constants.bookmarksFileNames)
 
                 return hasChromiumBookmarks ? .available
                 : .unavailable(path: profileURL.appendingPathComponent(ChromiumBookmarksReader.Constants.defaultBookmarksFileName).path)
@@ -266,6 +290,29 @@ extension DataImport {
             case .bitwarden, .lastPass, .onePassword7, .onePassword8:
                 return .unsupported
             }
+        }
+
+        private func validateHistoryData(profileDirectoryContents: Set<String>) -> ProfileDataItemValidationResult {
+            let historyDatabaseName: String
+            switch browser {
+            case .brave, .chrome, .chromium, .coccoc, .edge, .opera, .operaGX, .vivaldi, .yandex:
+                let historyDatabaseURL = profileURL.appendingPathComponent(ChromiumHistoryReader.Constants.historyDatabaseName)
+                let hasRecentVisits = profileDirectoryContents.contains(ChromiumHistoryReader.Constants.historyDatabaseName)
+                    && databaseInspector.hasVisits(inDatabaseAt: historyDatabaseURL, since: .monthAgo)
+                return hasRecentVisits ? .available : .unavailable(path: historyDatabaseURL.path)
+
+            case .firefox, .tor:
+                historyDatabaseName = FirefoxHistoryReader.Constants.historyDatabaseName
+
+            case .safari, .safariTechnologyPreview:
+                return .available
+
+            case .bitwarden, .lastPass, .onePassword7, .onePassword8:
+                return .unsupported
+            }
+
+            return profileDirectoryContents.contains(historyDatabaseName) ? .available
+                : .unavailable(path: profileURL.appendingPathComponent(historyDatabaseName).path)
         }
 
         private static func getDefaultProfileName(at profileURL: URL) -> String {
@@ -410,13 +457,18 @@ extension DataImport.Source {
     var supportedDataTypes: Set<DataImport.DataType> {
         switch self {
         case .brave, .chrome, .chromium, .coccoc, .edge, .firefox, .opera, .operaGX, .vivaldi, .yandex:
-            return [.bookmarks, .passwords]
+            return isHistoryImportEnabled ? [.bookmarks, .passwords, .history] : [.bookmarks, .passwords]
         case .safari, .safariTechnologyPreview:
-            if #available(macOS 15.2, *), Application.appDelegate.featureFlagger.isFeatureOn(.dataImportNewSafariFilePicker) {
-                return [.bookmarks, .passwords, .creditCards]
-            } else {
-                return [.bookmarks, .passwords]
+            guard #available(macOS 15.2, *) else { return [.bookmarks, .passwords] }
+            var dataTypes: Set<DataImport.DataType> = [.bookmarks, .passwords]
+            if Application.appDelegate.featureFlagger.isFeatureOn(.dataImportNewSafariFilePicker) {
+                dataTypes.insert(.creditCards)
             }
+            // History comes from the "Export Browsing Data" archive, which needs macOS 15.2.
+            if isHistoryImportEnabled {
+                dataTypes.insert(.history)
+            }
+            return dataTypes
         case .tor:
             return [.bookmarks]
         case .onePassword8, .onePassword7, .bitwarden, .lastPass, .csv:
@@ -428,6 +480,10 @@ extension DataImport.Source {
         }
     }
 
+    private var isHistoryImportEnabled: Bool {
+        Application.appDelegate.featureFlagger.isFeatureOn(.dataImportHistory)
+    }
+
     var archiveImportSupportedFiles: Set<UTType> {
         switch self {
         case .safari, .safariTechnologyPreview:
@@ -436,6 +492,35 @@ extension DataImport.Source {
             // Not implemented for other browsers yet
             return []
         }
+    }
+
+    /// The data types the source can import, or `nil` when it isn't offered: CSV and HTML (replaced by the combined
+    /// file option) and browsers without a profile. Password managers and the file option offer all they support.
+    func availableImportTypes(loadingProfilesWith loadProfiles: (ThirdPartyBrowser) -> DataImport.BrowserProfileList) -> Set<DataImport.DataType>? {
+        if self == .bookmarksHTML || self == .csv {
+            return nil
+        }
+        guard let browser = ThirdPartyBrowser.browser(for: self), browser.isWebBrowser else {
+            return supportedDataTypes
+        }
+        let profiles = loadProfiles(browser)
+        guard profiles.defaultProfile != nil else { return nil }
+        return availableImportTypes(in: profiles)
+    }
+
+    /// The supported data types the source's profiles have data for. Without a readable profile
+    /// (manual imports, browsers awaiting read permission), every supported type counts as available.
+    func availableImportTypes(in profiles: DataImport.BrowserProfileList?) -> Set<DataImport.DataType> {
+        let validProfiles = profiles?.validImportableProfiles ?? []
+        guard !validProfiles.isEmpty else { return supportedDataTypes }
+        return supportedDataTypes.filter { dataType in
+            validProfiles.contains { $0.hasValidProfileData(for: dataType) }
+        }
+    }
+
+    func archiveImportSupportedFiles(for dataTypes: Set<DataImport.DataType>) -> Set<UTType> {
+        let selectedFileTypes = Set(dataTypes.flatMap { $0.allowedFileTypes })
+        return archiveImportSupportedFiles.intersection(selectedFileTypes.union([.zip]))
     }
 
     func installedAppsMajorVersionDescription(selectedProfile: DataImport.BrowserProfile?) -> String? {
@@ -464,6 +549,7 @@ extension DataImport.DataType {
         case .bookmarks: UserText.bookmarkImportBookmarks
         case .passwords: UserText.importLoginsPasswords
         case .creditCards: UserText.importCreditCards
+        case .history: UserText.importHistory
         }
     }
 
@@ -475,10 +561,18 @@ extension DataImport.DataType: @retroactive Comparable {
         case .bookmarks: return 0
         case .passwords: return 1
         case .creditCards: return 2
+        case .history: return 3
         }
     }
 
     public static func < (lhs: Self, rhs: Self) -> Bool {
         lhs.order < rhs.order
+    }
+}
+
+extension Array where Element == DataImport.Source {
+    /// The first of `preferredSources` in the array, otherwise its first source.
+    func preferredSource(from preferredSources: [DataImport.Source]) -> DataImport.Source? {
+        preferredSources.first { contains($0) } ?? first
     }
 }

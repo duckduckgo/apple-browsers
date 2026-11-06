@@ -60,7 +60,7 @@ final class WebExtensionAvailabilityTests: XCTestCase {
     override func setUp() {
         super.setUp()
         mockFeatureFlagger = MockFeatureFlagger()
-        mockFeatureFlagger.enabledFeatureFlags = [.webExtensions, .embeddedExtension]
+        mockFeatureFlagger.enabledFeatureFlags = [.embeddedExtension]
         mockWebExtensionManager = MockWebExtensionManaging()
     }
 
@@ -82,14 +82,8 @@ final class WebExtensionAvailabilityTests: XCTestCase {
 
     // MARK: - isAvailable
 
-    func testWhenWebExtensionsFlagIsOnThenWebExtensionsAreAvailable() {
+    func testWebExtensionsAreAvailable() {
         XCTAssertTrue(makeSUT().isAvailable)
-    }
-
-    func testWhenWebExtensionsFlagIsOffThenWebExtensionsAreNotAvailable() {
-        mockFeatureFlagger.enabledFeatureFlags = [.embeddedExtension]
-
-        XCTAssertFalse(makeSUT().isAvailable)
     }
 
     // MARK: - isAutoconsentExtensionAvailable
@@ -121,17 +115,9 @@ final class WebExtensionAvailabilityTests: XCTestCase {
     }
 
     @MainActor
-    func testWhenWebExtensionsFlagIsOffThenAutoconsentExtensionIsNotAvailable() async throws {
-        try await loadEmbeddedExtension()
-        mockFeatureFlagger.enabledFeatureFlags = [.embeddedExtension]
-
-        XCTAssertFalse(makeSUT().isAutoconsentExtensionAvailable)
-    }
-
-    @MainActor
     func testWhenEmbeddedExtensionFlagIsOffThenAutoconsentExtensionIsNotAvailable() async throws {
         try await loadEmbeddedExtension()
-        mockFeatureFlagger.enabledFeatureFlags = [.webExtensions]
+        mockFeatureFlagger.enabledFeatureFlags = []
 
         XCTAssertFalse(makeSUT().isAutoconsentExtensionAvailable)
     }
@@ -188,7 +174,6 @@ final class WebExtensionNavigationCancellationTests: XCTestCase {
             let coordinator = WebExtensionLifecycleCoordinator(manager: MockWebExtensionManaging(),
                                                                 initialLoadTimeout: 60,
                                                                 enabledTypesProvider: { [.embedded] })
-            defer { coordinator.cancelAll() }
             let waiter = try XCTUnwrap(coordinator.initialLoadWaiter)
             let started = expectation(description: "\(name): waiting for extension startup")
             let tab = TabViewController.fake(customWebView: { MockWebView(frame: .zero, configuration: $0) },

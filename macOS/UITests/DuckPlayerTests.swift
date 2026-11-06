@@ -41,7 +41,7 @@ class DuckPlayerTests: UITestCase {
         guard #available(macOS 15.4, *) else {
             throw XCTSkip("Duck Player settings are reached via the YouTube Ad Blocking pane, which requires macOS 15.4+")
         }
-        app = XCUIApplication.setUp(featureFlags: ["webExtensions": true, "adBlockingExtension": false])
+        app = XCUIApplication.setUp(featureFlags: ["adBlockingExtension": false])
         addressBarTextField = app.addressBar
         app.enforceSingleWindow()
     }

@@ -287,6 +287,10 @@ final class AIChatOmnibarController {
         surface.supportsSubscriptionUpsell && featureFlagger.isFeatureOn(.aiChatOmnibarSubscriptionUpsell)
     }
 
+    var allowsSubscriptionUpsell: Bool {
+        userTier.allowsSubscriptionUpsell(isPurchaseEligible: subscriptionManager.isSubscriptionPurchaseEligible)
+    }
+
     /// Whether the subscription-upsell CTA (tag + dialog primary button) should read "Try for
     /// free" rather than "Upgrade". `SubscriptionManager.isUserEligibleForFreeTrial()` reflects
     /// StoreKit's on-device introductory-offer eligibility (has this Apple ID/device already used
@@ -310,6 +314,25 @@ final class AIChatOmnibarController {
         surface.supportsPageContext
             && featureFlagger.isFeatureOn(.aiChatPageContext)
             && featureFlagger.isFeatureOn(.aiChatOmnibarAttachMoreTabs)
+    }
+
+    /// "Add Screenshot" in the attach menu.
+    var isOmnibarScreenshotEnabled: Bool {
+        featureFlagger.isFeatureOn(.aiChatOmnibarScreenshot)
+    }
+
+    var isPasteImagesEnabled: Bool {
+        featureFlagger.isFeatureOn(.aiChatPasteImages)
+    }
+
+    /// Fires when the active draft goes away: another tab is selected, or the active tab closes.
+    var activeDraftChangesPublisher: AnyPublisher<Void, Never> {
+        draftSource.currentDraftStorePublisher
+            .map { $0.map(ObjectIdentifier.init) }
+            .removeDuplicates()
+            .dropFirst()
+            .map { _ in () }
+            .eraseToAnyPublisher()
     }
 
     @discardableResult
@@ -415,6 +438,7 @@ final class AIChatOmnibarController {
                 requirementsProvider: { [weak self] in self?.chatCapabilityRequirements ?? .plainText }
             ),
             isTrialEligible: { [weak self] in self?.shouldOfferFreeTrial ?? false },
+            allowsSubscriptionUpsell: { [weak self] in self?.allowsSubscriptionUpsell ?? false },
             isFireMode: { [weak self] in self?.isBurner ?? false }
         )
         usageWarningViewModel?.onAction = { [weak self] action in
@@ -1093,14 +1117,18 @@ final class AIChatOmnibarController {
         activeImageAttachments.count > maxImageAttachments
     }
 
-    /// Adds an image attachment to the active tab. No-op if at displayCap or if an attachment
-    /// with the same id is already present.
-    func addImageAttachmentToActiveTab(_ attachment: AIChatImageAttachment) {
+    /// Adds an image attachment to the active tab. Refused at displayCap, for a duplicate id, or
+    /// with no active draft.
+    /// - Returns: whether the attachment was added.
+    @discardableResult
+    func addImageAttachmentToActiveTab(_ attachment: AIChatImageAttachment) -> Bool {
         var current = activeImageAttachments
-        guard current.count < imageAttachmentsDisplayCap else { return }
-        guard !current.contains(where: { $0.id == attachment.id }) else { return }
+        guard current.count < imageAttachmentsDisplayCap,
+              !current.contains(where: { $0.id == attachment.id }),
+              let draftStore else { return false }
         current.append(attachment)
-        draftStore?.setAIChatAttachments(current)
+        draftStore.setAIChatAttachments(current)
+        return true
     }
 
     /// Removes an image attachment from the active tab, identified by `id`. No-op if not
@@ -1766,7 +1794,7 @@ extension AIChatOmnibarController {
         }
         items += rest.map { item(for: $0) }
 
-        guard !gated.isEmpty, !freeModelsOnly, !hidesGatedModels else { return items }
+        guard !gated.isEmpty, !freeModelsOnly, !hidesGatedModels, allowsSubscriptionUpsell else { return items }
         items.append(.separator)
 
         if isSubscriptionUpsellEnabled {
@@ -1788,6 +1816,7 @@ extension AIChatOmnibarController {
         for effort in pickerReasoningEfforts {
             let requiredTier = requiredTier(for: effort)
             let isGated = requiredTier != nil
+            if isGated && !allowsSubscriptionUpsell { continue }
             // Only the first gated effort heads the section.
             let sectionTitle = isGated && isSubscriptionUpsellEnabled && !titledGatedSection
                 ? AIChatPickerSectionCopy.gatedEffortsHeader(requiredTier: requiredTier, userTier: userTier, isEligibleForFreeTrial: shouldOfferFreeTrial)

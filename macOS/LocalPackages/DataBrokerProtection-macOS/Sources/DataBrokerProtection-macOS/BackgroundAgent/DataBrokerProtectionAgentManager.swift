@@ -47,8 +47,7 @@ public class DataBrokerProtectionAgentManagerProvider {
                                     featureFlagger: DBPMacOSFeatureFlagging,
                                     wideEvent: WideEventManaging,
                                     vpnBypassService: VPNBypassFeatureProvider,
-                                    resourceMonitor: ResourceMonitoring?,
-                                    applicationNameForUserAgentProvider: @escaping () -> String?) -> DataBrokerProtectionAgentManager? {
+                                    resourceMonitor: ResourceMonitoring?) -> DataBrokerProtectionAgentManager? {
         guard let pixelKit = PixelKit.shared else {
             assertionFailure("PixelKit not set up")
             return nil
@@ -148,7 +147,6 @@ public class DataBrokerProtectionAgentManagerProvider {
             emailConfirmationDataService: emailConfirmationDataService,
             captchaService: captchaService,
             featureFlagger: featureFlagger,
-            applicationNameForUserAgentProvider: applicationNameForUserAgentProvider,
             vpnBypassService: vpnBypassService,
             wideEvent: wideEvent,
             isAuthenticatedUserProvider: { await authenticationManager.isUserAuthenticated })

@@ -18,7 +18,6 @@
 //
 
 import SwiftUI
-import DesignResourcesKitIcons
 import DesignResourcesKit
 
 struct EmailSignupPromptView: View {
@@ -147,7 +146,7 @@ private enum Const {
 }
 
 private extension Image {
-    static let logo = Image(rebrandable: "duckduckgo-favicon-24x24")
+    static let logo = Image(.duckduckgoFavicon24X24)
 }
 
 #if DEBUG

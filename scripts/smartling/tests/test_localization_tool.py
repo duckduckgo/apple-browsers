@@ -4,6 +4,7 @@ import argparse
 import contextlib
 import importlib.util
 import io
+import json
 import sys
 import tempfile
 import unittest
@@ -27,7 +28,6 @@ class FakeSmartlingClient:
 
     def __init__(self,
                  report=None,
-                 pending_jobs=None,
                  named_jobs=None,
                  batch_status='COMPLETED',
                  estimate_status='COMPLETED',
@@ -42,10 +42,10 @@ class FakeSmartlingClient:
                  file_status_error=None,
                  upload_code='SUCCESS',
                  polls_until_processed=0,
+                 reads_while_processing=0,
                  authorize_error=None):
         self.creds = LOCALIZATION_TOOL.Credentials('user', 'secret', 'project-123')
         self.report = report or {}
-        self.pending_jobs = pending_jobs or []
         self.named_jobs = named_jobs or []
         self.batch_status = batch_status
         self.estimate_status = estimate_status
@@ -61,6 +61,7 @@ class FakeSmartlingClient:
         self.awaiting_jobs_calls = 0
         self.upload_code = upload_code
         self.polls_until_processed = polls_until_processed
+        self.reads_while_processing = reads_while_processing
         self.refreshed = []
         self.downloaded = []
         self.authorize_error = authorize_error
@@ -70,10 +71,10 @@ class FakeSmartlingClient:
         self.uploaded_file_uris = []
         self.operations = []
 
-    async def list_jobs(self, _job_name, statuses):
+    async def list_jobs(self, _job_name, _statuses):
         if self.list_jobs_error:
             raise self.list_jobs_error
-        return self.pending_jobs if statuses else self.named_jobs
+        return self.named_jobs
 
     async def get_project_locales(self):
         return self.locales
@@ -117,8 +118,11 @@ class FakeSmartlingClient:
         if self.file_status_error:
             raise self.file_status_error
         if file_uri not in self.file_statuses:
-            raise RuntimeError('HTTP 404: File not found')
+            raise RuntimeError(f'HTTP 400: The file "{file_uri}" could not be found')
         status = self.file_statuses[file_uri]
+        if status.get('reads_while_processing'):
+            status['reads_while_processing'] -= 1
+            raise RuntimeError('HTTP 423: The file is currently being processed and will be available in a few minutes.')
         if status.get('processing_polls_left'):
             status['processing_polls_left'] -= 1
             if not status['processing_polls_left']:
@@ -134,6 +138,7 @@ class FakeSmartlingClient:
             status['processing_polls_left'] = self.polls_until_processed
         elif self.upload_code != 'ACCEPTED':
             status['lastUploaded'] = upload_time
+            status['reads_while_processing'] = self.reads_while_processing
         return {'code': self.upload_code, 'data': {'stringCount': 42}}
 
     async def list_jobs_awaiting_authorization(self):
@@ -177,13 +182,13 @@ class SubmitSmartlingTests(unittest.IsolatedAsyncioTestCase):
                          auto_authorize_max_usd='500.00',
                          delete_job_on_failure=False,
                          job_name='Nightly iOS - 2026-08-04',
-                         pending_job_prefix='Nightly iOS - '):
+                         pending_job_prefixes=('Nightly iOS - ', 'Merge iOS - ')):
         with contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(io.StringIO()):
             return await LOCALIZATION_TOOL.run_submit(
                 client=client,
                 files=[self.export_file],
                 job_name=job_name,
-                pending_job_prefix=pending_job_prefix,
+                pending_job_prefixes=list(pending_job_prefixes),
                 file_uri_prefix='main',
                 auto_authorize_max_usd=Decimal(auto_authorize_max_usd),
                 delete_job_on_failure=delete_job_on_failure,
@@ -191,18 +196,20 @@ class SubmitSmartlingTests(unittest.IsolatedAsyncioTestCase):
             )
 
     async def testWhenNoStringsNeedTranslationThenJobIsDeleted(self):
-        client = FakeSmartlingClient(report={
-            'totalStrings': 0,
-            'priceInformation': None,
-        })
+        for limit in ('500.00', '0'):
+            with self.subTest(limit=limit):
+                client = FakeSmartlingClient(report={
+                    'totalStrings': 0,
+                    'priceInformation': None,
+                })
 
-        result = await self.run_submit(client)
+                result = await self.run_submit(client, auto_authorize_max_usd=limit)
 
-        self.assertEqual(result.outcome, 'no_new_strings')
-        self.assertEqual(result.job_id, 'job-123')
-        self.assertEqual(client.deleted_jobs, ['job-123'])
-        self.assertEqual(client.authorized_jobs, [])
-        self.assertEqual(client.operations, ['cancel:job-123', 'delete:job-123'])
+                self.assertEqual(result.outcome, 'no_new_strings')
+                self.assertEqual(result.job_id, 'job-123')
+                self.assertEqual(client.deleted_jobs, ['job-123'])
+                self.assertEqual(client.authorized_jobs, [])
+                self.assertEqual(client.operations, ['cancel:job-123', 'delete:job-123'])
 
     async def testWhenEmptyJobCancellationFailsThenJobIsNotDeleted(self):
         client = FakeSmartlingClient(
@@ -249,6 +256,20 @@ class SubmitSmartlingTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(result.max_usd, '500.01')
         self.assertEqual((result.total_strings, result.locales), (10, 1))
         self.assertFalse(result.as_dict()['failed'])
+        self.assertEqual(client.authorized_jobs, [])
+
+    async def testWhenMaximumEstimateExceedsLimitByLessThanACentThenReviewIsRequired(self):
+        client = FakeSmartlingClient(report={
+            'totalStrings': 10,
+            'priceInformation': [
+                {'currencyCode': 'USD', 'priceMin': 400, 'priceMax': '500.004'},
+            ],
+        })
+
+        result = await self.run_submit(client)
+
+        self.assertEqual(result.outcome, 'review_required')
+        self.assertEqual(result.max_usd, '500.004')
         self.assertEqual(client.authorized_jobs, [])
 
     async def testWhenEstimateHasWarningsThenReviewIsRequired(self):
@@ -362,28 +383,30 @@ class SubmitSmartlingTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(result.outcome, 'review_required')
         self.assertIn('timed out', result.reason)
 
-    async def testWhenPendingJobWithPrefixExistsThenItIsReportedWithoutCreatingAJob(self):
-        client = FakeSmartlingClient(pending_jobs=[{
-            'jobName': 'Nightly iOS - 2026-08-03',
-            'translationJobUid': 'pending-job',
-        }])
+    async def testWhenPendingJobWithAnyPrefixExistsThenItIsReportedWithoutCreatingAJob(self):
+        for pending_job_name in ('Nightly iOS - 2026-08-03', 'Merge iOS - 2026-08-03 14:05 abc1234'):
+            with self.subTest(pending_job_name):
+                client = FakeSmartlingClient(awaiting_jobs=[
+                    {'jobName': 'pau/some-feature-2026-08-03', 'translationJobUid': 'label-job'},
+                    {'jobName': pending_job_name, 'translationJobUid': 'pending-job'},
+                ])
 
-        result = await self.run_submit(client)
+                result = await self.run_submit(client)
 
-        self.assertEqual(result.outcome, 'pending_review')
-        self.assertEqual(result.job_id, 'pending-job')
-        self.assertEqual(result.job_name, 'Nightly iOS - 2026-08-03')
-        self.assertIsNone(result.total_strings)
-        self.assertIn('Nightly iOS - 2026-08-03', result.reason)
-        self.assertEqual(client.created_jobs, [])
+                self.assertEqual(result.outcome, 'pending_review')
+                self.assertEqual(result.job_id, 'pending-job')
+                self.assertEqual(result.job_name, pending_job_name)
+                self.assertIsNone(result.total_strings)
+                self.assertIn(pending_job_name, result.reason)
+                self.assertEqual(client.created_jobs, [])
 
     async def testWhenThereIsNoPendingPrefixThenSimilarlyNamedPendingJobsDontBlock(self):
-        client = FakeSmartlingClient(pending_jobs=[{
+        client = FakeSmartlingClient(awaiting_jobs=[{
             'jobName': 'Release iOS 7.200.0 (test)',
             'translationJobUid': 'test-job',
         }])
 
-        await self.run_submit(client, job_name='Release iOS 7.200.0', pending_job_prefix='')
+        await self.run_submit(client, job_name='Release iOS 7.200.0', pending_job_prefixes=())
 
         self.assertEqual(client.created_jobs, ['Release iOS 7.200.0'])
 
@@ -540,6 +563,32 @@ class ProjectLocalesTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(locales, ['de-DE', 'it-IT'])
 
 
+def jobs_page(job_names, total_count):
+    return {'response': {'data': {
+        'totalCount': total_count,
+        'items': [{'jobName': name, 'translationJobUid': name} for name in job_names],
+    }}}
+
+
+class JobsAwaitingAuthorizationTests(unittest.IsolatedAsyncioTestCase):
+
+    async def testWhenMoreJobsWaitThanFitOnAPageThenEveryPageIsRead(self):
+        client = LOCALIZATION_TOOL.SmartlingClient(LOCALIZATION_TOOL.Credentials('user', 'secret', 'project'))
+        client._request = unittest.mock.AsyncMock(side_effect=[
+            jobs_page([f'pau/feature-{index}' for index in range(100)], total_count=101),
+            jobs_page(['Nightly iOS - 2026-08-03'], total_count=101),
+        ])
+
+        jobs = await client.list_jobs_awaiting_authorization()
+
+        self.assertEqual(len(jobs), 101)
+        self.assertEqual(jobs[-1]['jobName'], 'Nightly iOS - 2026-08-03')
+        self.assertEqual(
+            [dict(call.kwargs['params'])['offset'] for call in client._request.await_args_list],
+            ['0', '100']
+        )
+
+
 class ReleaseStatusJobsAwaitingAuthorizationTests(unittest.IsolatedAsyncioTestCase):
 
     async def release_status(self, client):
@@ -550,12 +599,12 @@ class ReleaseStatusJobsAwaitingAuthorizationTests(unittest.IsolatedAsyncioTestCa
                 file_uris=[XLIFF_URI]
             )
 
-    async def testWhenNotReadyThenJobsAwaitingAuthorizationAreListedOldestFirst(self):
+    async def testWhenNotReadyThenJobsAwaitingAuthorizationAreListedOldestFirstWithTheirLinks(self):
         client = FakeSmartlingClient(
             file_statuses={XLIFF_URI: file_status(10, de_DE=(3, 0))},
             awaiting_jobs=[
-                {'jobName': 'pau/feature-2026-10-20', 'createdDate': '2026-10-20T10:00:00Z'},
-                {'jobName': 'keyChange', 'createdDate': '2025-04-04T14:23:00Z'},
+                {'jobName': 'pau/feature-2026-10-20', 'createdDate': '2026-10-20T10:00:00Z', 'translationJobUid': 'job-2'},
+                {'jobName': 'keyChange', 'createdDate': '2025-04-04T14:23:00Z', 'translationJobUid': 'job-1'},
             ]
         )
 
@@ -563,8 +612,16 @@ class ReleaseStatusJobsAwaitingAuthorizationTests(unittest.IsolatedAsyncioTestCa
 
         self.assertEqual(result.outcome, 'not_ready')
         self.assertEqual(result.jobs_awaiting_authorization, [
-            'keyChange (created 2025-04-04)',
-            'pau/feature-2026-10-20 (created 2026-10-20)',
+            {
+                'name': 'keyChange',
+                'created': '2025-04-04',
+                'url': 'https://dashboard.smartling.com/app/projects/project-123/account-jobs/project-123:job-1',
+            },
+            {
+                'name': 'pau/feature-2026-10-20',
+                'created': '2026-10-20',
+                'url': 'https://dashboard.smartling.com/app/projects/project-123/account-jobs/project-123:job-2',
+            },
         ])
 
     async def testWhenReadyThenJobsAwaitingAuthorizationAreNotLookedUp(self):
@@ -643,6 +700,20 @@ class RefreshTests(unittest.IsolatedAsyncioTestCase):
 
         self.assertEqual(client.file_statuses[XLIFF_URI]['lastUploaded'], 'upload-1')
         self.assertEqual(client.file_statuses[STRINGSDICT_URI]['lastUploaded'], 'upload-2')
+
+    async def testWhenSmartlingStillProcessesASuccessfulUploadThenTheRefreshWaitsUntilItsStatusCanBeRead(self):
+        client = FakeSmartlingClient(reads_while_processing=3)
+
+        await self.refresh(client)
+
+        self.assertEqual(client.file_statuses[XLIFF_URI]['reads_while_processing'], 0)
+        self.assertEqual(client.file_statuses[STRINGSDICT_URI]['reads_while_processing'], 0)
+
+    async def testWhenSmartlingNeverFinishesProcessingASuccessfulUploadThenTheRefreshFails(self):
+        client = FakeSmartlingClient(reads_while_processing=100)
+
+        with self.assertRaisesRegex(RuntimeError, 'did not finish processing'):
+            await self.refresh(client)
 
     async def testWhenThePreviousUploadCannotBeReadThenNothingIsUploaded(self):
         client = FakeSmartlingClient(
@@ -737,6 +808,116 @@ class DownloadCommandTests(unittest.IsolatedAsyncioTestCase):
 
         with self.assertRaisesRegex(RuntimeError, 'Downloaded 1 of 2 files'):
             await self.download(client, file_uris=[XLIFF_URI])
+
+
+
+class PendingJobCommandTests(unittest.IsolatedAsyncioTestCase):
+
+    def setUp(self):
+        result_dir = tempfile.TemporaryDirectory()
+        self.addCleanup(result_dir.cleanup)
+        self.result_file = Path(result_dir.name) / 'pending_job_result.json'
+        self.original_client = LOCALIZATION_TOOL.SmartlingClient
+        self.addCleanup(setattr, LOCALIZATION_TOOL, 'SmartlingClient', self.original_client)
+        patcher = unittest.mock.patch.dict('os.environ', {
+            'SMARTLING_USER_ID': 'user', 'SMARTLING_USER_SECRET': 'secret', 'SMARTLING_PROJECT_ID': 'project-123',
+        })
+        patcher.start()
+        self.addCleanup(patcher.stop)
+
+    async def pending_job(self, client):
+        LOCALIZATION_TOOL.SmartlingClient = lambda _creds: client
+        args = argparse.Namespace(
+            pending_job_prefix=['Nightly iOS - ', 'Merge iOS - '],
+            result_file=str(self.result_file)
+        )
+        with contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(io.StringIO()):
+            await LOCALIZATION_TOOL.pending_job_command(args)
+        return json.loads(self.result_file.read_text(encoding='utf-8'))
+
+    async def testWhenAJobWithAPrefixIsWaitingThenItIsWrittenToTheResultFile(self):
+        client = FakeSmartlingClient(awaiting_jobs=[
+            {'jobName': 'pau/some-feature-2026-08-03', 'translationJobUid': 'label-job'},
+            {'jobName': 'Merge iOS - 2026-08-03 14:05 abc1234', 'translationJobUid': 'merge-job'},
+        ])
+
+        result = await self.pending_job(client)
+
+        self.assertEqual(result, {
+            'job_id': 'merge-job',
+            'job_name': 'Merge iOS - 2026-08-03 14:05 abc1234',
+            'job_url': 'https://dashboard.smartling.com/app/projects/project-123/account-jobs/project-123:merge-job',
+        })
+
+    async def testWhenNoJobWithAPrefixIsWaitingThenTheResultFileHasAnEmptyJobName(self):
+        client = FakeSmartlingClient(awaiting_jobs=[
+            {'jobName': 'pau/some-feature-2026-08-03', 'translationJobUid': 'label-job'},
+        ])
+
+        result = await self.pending_job(client)
+
+        self.assertEqual(result, {'job_id': '', 'job_name': '', 'job_url': ''})
+
+
+class SubmitCommandTests(unittest.IsolatedAsyncioTestCase):
+
+    def setUp(self):
+        work_dir = tempfile.TemporaryDirectory()
+        self.addCleanup(work_dir.cleanup)
+        self.export_file = Path(work_dir.name) / 'en.xliff'
+        self.export_file.write_text('<xliff/>', encoding='utf-8')
+        self.result_file = Path(work_dir.name) / 'submit_result.json'
+        self.original_client = LOCALIZATION_TOOL.SmartlingClient
+        self.addCleanup(setattr, LOCALIZATION_TOOL, 'SmartlingClient', self.original_client)
+        patcher = unittest.mock.patch.dict('os.environ', {
+            'SMARTLING_USER_ID': 'user', 'SMARTLING_USER_SECRET': 'secret', 'SMARTLING_PROJECT_ID': 'project-123',
+        })
+        patcher.start()
+        self.addCleanup(patcher.stop)
+
+    async def submit(self, client):
+        LOCALIZATION_TOOL.SmartlingClient = lambda _creds: client
+        args = argparse.Namespace(
+            files=[str(self.export_file)],
+            job_name='Merge macOS - 2026-10-29 12:43 202776b',
+            pending_job_prefix=['Nightly macOS - ', 'Merge macOS - '],
+            file_uri_prefix='main',
+            auto_authorize_max_usd='500.00',
+            delete_job_on_failure=False,
+            result_file=str(self.result_file)
+        )
+        with unittest.mock.patch('asyncio.sleep', no_sleep), \
+                contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(io.StringIO()):
+            await LOCALIZATION_TOOL.submit_command(args)
+        return json.loads(self.result_file.read_text(encoding='utf-8'))
+
+    async def testWhenAJobIsCreatedThenItsDashboardLinkIsWrittenToTheResultFile(self):
+        client = FakeSmartlingClient(report={
+            'totalStrings': 64,
+            'priceInformation': [
+                {'currencyCode': 'USD', 'priceMin': 60, 'priceMax': 71.17},
+            ],
+        })
+
+        result = await self.submit(client)
+
+        self.assertEqual(result['outcome'], 'authorized')
+        self.assertEqual(
+            result['job_url'],
+            'https://dashboard.smartling.com/app/projects/project-123/account-jobs/project-123:job-123'
+        )
+
+class ParserTests(unittest.TestCase):
+
+    def testWhenPendingJobPrefixIsRepeatedThenEveryPrefixIsKept(self):
+        parser = LOCALIZATION_TOOL.build_parser()
+
+        args = parser.parse_args([
+            'submit', '--job-name', 'Merge iOS - 2026-08-03 14:05 abc1234', '--file-uri-prefix', 'main',
+            '--files', 'en.xliff', '--pending-job-prefix', 'Nightly iOS - ', '--pending-job-prefix', 'Merge iOS - ',
+        ])
+
+        self.assertEqual(args.pending_job_prefix, ['Nightly iOS - ', 'Merge iOS - '])
 
 
 if __name__ == '__main__':

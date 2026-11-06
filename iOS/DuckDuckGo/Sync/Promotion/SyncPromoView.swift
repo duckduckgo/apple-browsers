@@ -23,6 +23,10 @@ import DesignResourcesKitIcons
 import DuckUI
 import MetricBuilder
 
+#if DEBUG
+import PreviewSnapshots
+#endif
+
 struct SyncPromoView: View {
 
     let viewModel: SyncPromoViewModel
@@ -32,7 +36,7 @@ struct SyncPromoView: View {
         ZStack(alignment: .topTrailing) {
             VStack(spacing: 8) {
                 Group {
-                    Image(rebrandable: viewModel.image)
+                    Image(viewModel.image)
                         .scaledToFit()
                         .accessibilityHidden(true)
                     
@@ -42,28 +46,11 @@ struct SyncPromoView: View {
                         .daxHeadline()
                     Text(viewModel.subtitle)
                         .daxSubheadRegular()
+                        .foregroundColor(subtitleColor)
                         .frame(maxWidth: .infinity)
                 }
 
-                HStack(spacing: ButtonStackMetrics.interButtonSpacing) {
-                    Button {
-                        viewModel.dismissButtonAction?()
-                    } label: {
-                        Text(viewModel.secondaryButtonTitle)
-                    }
-                    .buttonStyle(SecondaryFillButtonStyle(compact: true, fullWidth: true))
-                    .accessibilityLabel(viewModel.secondaryButtonTitle)
-
-                    Button {
-                        viewModel.primaryButtonAction?()
-                    } label: {
-                        Text(viewModel.primaryButtonTitle)
-                    }
-                    .buttonStyle(PrimaryButtonStyle(compact: true, fullWidth: true))
-                    .accessibilityLabel(viewModel.primaryButtonTitle)
-
-                }
-                .padding(.top, 12)
+                buttons
             }
             .multilineTextAlignment(.center)
             .padding(.top)
@@ -77,7 +64,8 @@ struct SyncPromoView: View {
             }
             .buttonStyle(CloseButtonStyle())
             .padding(ContainerMetrics.closeButtonPadding - CloseButtonStyle.Constant.padding)
-            .accessibilityHidden(true)
+            .accessibilityLabel(UserText.syncPromoCloseAccessibilityLabel)
+            .accessibilityHidden(viewModel.secondaryButtonTitle != nil)
         }
         .background(
             RoundedRectangle(cornerRadius: ContainerMetrics.cornerRadius)
@@ -93,8 +81,53 @@ struct SyncPromoView: View {
             }
         }
     }
+
+    private var buttons: some View {
+        HStack(spacing: ButtonStackMetrics.interButtonSpacing) {
+            if let secondaryButtonTitle = viewModel.secondaryButtonTitle {
+                Button {
+                    viewModel.dismissButtonAction?()
+                } label: {
+                    Text(secondaryButtonTitle)
+                }
+                .buttonStyle(SecondaryFillButtonStyle(compact: true, fullWidth: true))
+                .accessibilityLabel(secondaryButtonTitle)
+            }
+
+            Button {
+                viewModel.primaryButtonAction?()
+            } label: {
+                Text(viewModel.primaryButtonTitle)
+            }
+            .buttonStyle(PrimaryButtonStyle(compact: true, fullWidth: true))
+            .accessibilityLabel(viewModel.primaryButtonTitle)
+        }
+        .padding(.top, 12)
+    }
+
+    private var subtitleColor: Color? {
+        switch viewModel.design {
+        case .standard:
+            nil
+        case .redesigned:
+            Color(designSystemColor: .textSecondary)
+        }
+    }
 }
 
-#Preview {
-    SyncPromoView(viewModel: SyncPromoViewModel())
+#if DEBUG
+struct SyncPromoView_Previews: PreviewProvider {
+
+    static var previews: some View {
+        snapshots.previews
+    }
+
+    static let snapshots = PreviewSnapshots(configurations: [
+        .init(name: "Standard", state: SyncPromoManager.Design.standard, scope: .previews),
+        .init(name: "Redesigned", state: SyncPromoManager.Design.redesigned)
+    ]) { design in
+        SyncPromoView(viewModel: SyncPromoViewModel(touchpointType: .bookmarks, design: design))
+            .background(Color(designSystemColor: .background))
+    }
 }
+#endif

@@ -41,9 +41,19 @@
     "m_mac_aichat_translate_text": {
         "description": "Fired when the AI Chat translation action was triggered",
         "owners": ["miasma13"],
-        "triggers": ["other"],
-        "suffixes": ["first_daily_count"],
-        "parameters": ["appVersion", "pixelSource", "channel"]
+        "triggers": ["user_interaction"],
+        "suffixes": ["daily_standard"],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            "channel",
+            {
+                "key": "source",
+                "description": "How the user triggered translation",
+                "type": "string",
+                "enum": ["context-menu", "keyboard-shortcut"]
+            }
+        ]
     },
     "m_mac_aichat_translation_source_link_clicked": {
         "description": "Fired when user clicks the website link on a translation prompt in Duck.ai tab or sidebar",
@@ -55,7 +65,7 @@
     "m_mac_aichat_summarize_text": {
         "description": "Fired when the AI Chat summarization action was triggered",
         "owners": ["tomasstrba"],
-        "triggers": ["other"],
+        "triggers": ["user_interaction"],
         "suffixes": ["daily_standard"],
         "parameters": [
             "appVersion",
@@ -77,11 +87,21 @@
         "parameters": ["appVersion", "pixelSource", "channel"]
     },
     "m_mac_aichat_attach_selection": {
-        "description": "Fired when the user attaches a text selection to Duck.ai via the 'Attach to Duck.ai' context-menu action",
+        "description": "Fired when the user attaches a text selection to Duck.ai via the 'Ask Duck.ai About Selected Content' action",
         "owners": ["tomasstrba"],
-        "triggers": ["other"],
-        "suffixes": ["first_daily_count"],
-        "parameters": ["appVersion", "pixelSource", "channel"]
+        "triggers": ["user_interaction"],
+        "suffixes": ["daily_standard"],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            "channel",
+            {
+                "key": "source",
+                "description": "How the user attached the selection",
+                "type": "string",
+                "enum": ["context-menu", "keyboard-shortcut"]
+            }
+        ]
     },
     "m_mac_aichat_history_autoclear_enabled": {
         "description": "Fired when user enables the setting to auto-clear Duck.ai chat history in Data Clearing preferences",
@@ -577,5 +597,29 @@
         "triggers": ["other"],
         "suffixes": ["daily_count"],
         "parameters": ["appVersion", "pixelSource", "channel", "subscriptionFunnelOrigin"]
+    },
+    "aichat_screenshot_permission_needed_macos_u": {
+        "description": "Fired once per install, the first time an Add Screenshot attempt (either mode, any surface) finds Screen Recording off. Start of the Screen Recording funnel",
+        "owners": ["jotaemepereira"],
+        "triggers": ["user_interaction"],
+        "parameters": ["appVersion", "pixelSource", "channel"]
+    },
+    "aichat_screenshot_permission_alert_accepted_macos_u": {
+        "description": "Fired once per install, the first time the user clicks Continue (which shows the macOS Screen Recording prompt) or, once macOS has asked, Open System Settings in the Duck.ai Screen Recording alert",
+        "owners": ["jotaemepereira"],
+        "triggers": ["user_interaction"],
+        "parameters": ["appVersion", "pixelSource", "channel"]
+    },
+    "aichat_screenshot_permission_granted_macos_u": {
+        "description": "Fired once per install, on the first app activation that finds Screen Recording on after aichat_screenshot_permission_needed_macos_u fired on that install. Separates installs that never turned the permission on from those that did but didn't come back to capture",
+        "owners": ["jotaemepereira"],
+        "triggers": ["startup"],
+        "parameters": ["appVersion", "pixelSource", "channel"]
+    },
+    "aichat_screenshot_permission_converted_macos_u": {
+        "description": "Fired once per install, on the first successful Add Screenshot capture after aichat_screenshot_permission_needed_macos_u fired on that install. End of the Screen Recording funnel",
+        "owners": ["jotaemepereira"],
+        "triggers": ["user_interaction"],
+        "parameters": ["appVersion", "pixelSource", "channel"]
     }
 }

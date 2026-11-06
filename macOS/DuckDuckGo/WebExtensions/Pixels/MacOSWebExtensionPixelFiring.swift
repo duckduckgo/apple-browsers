@@ -22,6 +22,12 @@ import WebExtensions
 
 enum WebExtensionPixel: PixelKit.Event {
 
+    private static let extensionParameterKey = "extension"
+
+    // MARK: - Chrome Web Store Updates
+
+    case updateCheck(extension: WebExtensionPixelExtension, outcome: WebExtensionUpdateCheckOutcome)
+
     // MARK: - Installation
 
     case installed(extension: WebExtensionPixelExtension)
@@ -104,6 +110,12 @@ enum WebExtensionPixel: PixelKit.Event {
 
     var name: String {
         switch self {
+        case .updateCheck(_, let outcome):
+            switch outcome {
+            case .updateFound: return "web_extension_update_found_macos"
+            case .googleFlagged: return "web_extension_update_skipped_macos"
+            default: return "web_extension_update_check_failed_macos"
+            }
         case .installed:
             return "m_mac_web_extension_installed"
         case .installError:
@@ -199,6 +211,12 @@ enum WebExtensionPixel: PixelKit.Event {
 
     var parameters: [String: String]? {
         switch self {
+        case .updateCheck(let pixelExtension, let outcome):
+            var parameters = [Self.extensionParameterKey: pixelExtension.parameterValue]
+            if outcome != .updateFound && outcome != .googleFlagged {
+                parameters["outcome"] = outcome.rawValue
+            }
+            return parameters
         case .embeddedUpgraded(let fromVersion, let toVersion),
              .darkReaderUpgraded(let fromVersion, let toVersion),
              .adBlockingExtensionUpgraded(let fromVersion, let toVersion):
@@ -229,7 +247,7 @@ enum WebExtensionPixel: PixelKit.Event {
              .installError(let pixelExtension, _),
              .uninstalled(let pixelExtension),
              .defaultPasswordManagerSet(let pixelExtension):
-            return ["extension": pixelExtension.parameterValue]
+            return [Self.extensionParameterKey: pixelExtension.parameterValue]
         case .apiCompatibilityGaps(_, let version, let missingAPICount, let unsupportedURLCount):
             return ["extension_version": version,
                     "missing_api_count": String(missingAPICount),
@@ -247,7 +265,7 @@ enum WebExtensionPixel: PixelKit.Event {
 
     var namePrefix: PixelKitNamePrefix {
         switch self {
-        case .debugCPM, .reloadError, .cpmNetworkProcessRecoveryApplied, .bitwardenDailyActive, .defaultPasswordManagerSet, .apiCompatibilityGaps:
+        case .updateCheck, .debugCPM, .reloadError, .cpmNetworkProcessRecoveryApplied, .bitwardenDailyActive, .defaultPasswordManagerSet, .apiCompatibilityGaps:
             return .none
         default:
             return .platformDefault
@@ -314,6 +332,8 @@ struct MacOSWebExtensionPixelFiring: WebExtensionPixelFiring {
         let pixel: WebExtensionPixel
         let frequency: PixelKit.Frequency
         switch event {
+        case .updateCheck(let pixelExtension, let outcome):
+            pixel = .updateCheck(extension: pixelExtension, outcome: outcome)
         case .installed(let pixelExtension):
             pixel = .installed(extension: pixelExtension)
         case .installError(let pixelExtension, let error):
@@ -364,7 +384,7 @@ struct MacOSWebExtensionPixelFiring: WebExtensionPixelFiring {
             pixel = macPixel
         case .adBlockingScriptletsNotFetched(let extensionLoaded):
             pixel = .adBlockingScriptletsNotFetched(extensionLoaded: extensionLoaded)
-        case .cpmMessagingEpisode, .cpmRecovery, .cpmStartupResponseMissing:
+        case .cpmBackgroundLoadRestart, .cpmMessagingEpisode, .cpmRecovery, .cpmStartupResponseMissing:
             guard let metadata = CPMWebExtensionPixelMetadata(event: event) else { return }
             pixel = .debugCPM(metadata)
         case .cpmNetworkProcessRecoveryApplied:
@@ -378,6 +398,8 @@ struct MacOSWebExtensionPixelFiring: WebExtensionPixelFiring {
                                           missingAPICount: missingAPICount, unsupportedURLCount: unsupportedURLCount)
         }
         switch event {
+        case .updateCheck:
+            frequency = .dailyAndCount
         case .bitwardenDailyActive, .apiCompatibilityGaps:
             frequency = .daily
         case .defaultPasswordManagerSet:

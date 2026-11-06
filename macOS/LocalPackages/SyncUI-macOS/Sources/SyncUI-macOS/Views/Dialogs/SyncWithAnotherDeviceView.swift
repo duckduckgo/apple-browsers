@@ -455,7 +455,6 @@ struct SyncWithAnotherDeviceView_Previews: PreviewProvider {
             .environmentObject(RecoveryCodeViewModel())
             .padding()
             .background(Color(nsColor: .windowBackgroundColor))
-            .applyRebranding()
         }
     )
 }

@@ -37,7 +37,7 @@ let package = Package(
         ),
     ],
     dependencies: [
-        .package(url: "https://github.com/pointfreeco/swift-snapshot-testing", exact: "1.19.6"),
+        .package(url: "https://github.com/pointfreeco/swift-snapshot-testing", exact: "1.19.7"),
     ],
     targets: [
         .target(name: "PreviewSnapshots"),
@@ -51,7 +51,10 @@ let package = Package(
         ),
         .testTarget(
             name: "SnapshotTestingSupportTests",
-            dependencies: ["SnapshotTestingSupport"]
+            dependencies: [
+                "SnapshotTestingSupport",
+                .product(name: "SnapshotTesting", package: "swift-snapshot-testing"),
+            ]
         ),
     ],
     swiftLanguageVersions: [.v5]

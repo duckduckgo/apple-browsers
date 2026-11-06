@@ -534,7 +534,7 @@ class TabViewController: UIViewController {
 
     var isShowingDocument: Bool {
         // Local (file://) pages aren't attachable, so don't offer the document menu for a local PDF.
-        guard featureFlagger.isFeatureOn(.aiChatPdfPageContext), let url, !url.isFileURL else { return false }
+        guard let url, !url.isFileURL else { return false }
         return DocumentPageContextProvider.isSupportedDocument(mimeType: lastMainFramePageContextMIMEType(for: url), url: url)
     }
 
@@ -747,6 +747,8 @@ class TabViewController: UIViewController {
         let duckPlayer = DuckPlayer(settings: DuckPlayerSettingsDefault(),
                                     featureFlagger: featureFlagger,
                                     userScriptsDependencies: userScriptsDependencies,
+                                    // Same app store as ContentBlockingService's instance; instances sync through the store notification.
+                                    sponsorBlockPreferences: SponsorBlockPreferences(store: keyValueStore),
                                     floatingUIManager: floatingUIManager)
 
         if duckPlayer.settings.nativeUI {
@@ -825,8 +827,7 @@ class TabViewController: UIViewController {
             userScriptProvider: { [weak self] in self?.userScripts?.pageContextUserScript },
             faviconProvider: { [weak self] url in self?.getFaviconBase64(for: url) },
             attachabilityPolicyProvider: { [weak self] in self?.currentPageContextAttachabilityPolicy() },
-            mimeTypeProvider: { [weak self] url in self?.lastMainFramePageContextMIMEType(for: url) },
-            isDocumentContextEnabled: { [weak self] in self?.featureFlagger.isFeatureOn(.aiChatPdfPageContext) ?? false }
+            mimeTypeProvider: { [weak self] url in self?.lastMainFramePageContextMIMEType(for: url) }
         )
     }
 
@@ -1982,6 +1983,11 @@ class TabViewController: UIViewController {
     
     func updateContentMode() {
         webView.configuration.defaultWebpagePreferences.preferredContentMode = tabModel.isDesktop ? .desktop : .mobile
+
+        // Desktop sites expect the Fullscreen API that iPhone Safari's mobile mode doesn't expose.
+        if #available(iOS 16.0, *), UIDevice.current.userInterfaceIdiom == .phone {
+            webView.configuration.preferences.isElementFullscreenEnabled = tabModel.isDesktop && featureFlagger.isFeatureOn(.elementFullscreen)
+        }
     }
 
     func goBack() {
@@ -2670,6 +2676,8 @@ extension TabViewController: WKNavigationDelegate {
         pendingNativeLoadURL = nil
         sitePermissionsDidCommit(webView, navigation: navigation)
         userScripts?.selectionFrameScript.reset()
+        // C-S-S may not run on the new page, so clear the previous page's lock.
+        userScripts?.browserUiLockSubfeature.reset()
         tabModel.clearPendingSessionRestoration()
 
         if let url = webView.url {
@@ -4817,7 +4825,7 @@ extension TabViewController: WKUIDelegate {
         
         let alert = WebJSAlert(domain: frame.safeRequest?.url?.host
                                // in case the web view is navigating to another host
-                               ?? webView.backForwardList.currentItem?.url.host
+                               ?? webView.backForwardList.currentItem?.safeURL?.host
                                ?? self.url?.absoluteString
                                ?? "",
                                message: message,
@@ -4837,7 +4845,7 @@ extension TabViewController: WKUIDelegate {
         
         let alert = WebJSAlert(domain: frame.safeRequest?.url?.host
                                // in case the web view is navigating to another host
-                               ?? webView.backForwardList.currentItem?.url.host
+                               ?? webView.backForwardList.currentItem?.safeURL?.host
                                ?? self.url?.absoluteString
                                ?? "",
                                message: message,
@@ -4856,9 +4864,9 @@ extension TabViewController: WKUIDelegate {
             return
         }
         
-        let alert = WebJSAlert(domain: frame.request.url?.host
+        let alert = WebJSAlert(domain: frame.safeRequest?.url?.host
                                // in case the web view is navigating to another host
-                               ?? webView.backForwardList.currentItem?.url.host
+                               ?? webView.backForwardList.currentItem?.safeURL?.host
                                ?? self.url?.absoluteString
                                ?? "",
                                message: prompt,
@@ -5016,6 +5024,7 @@ extension TabViewController: UserContentControllerDelegate {
         userScripts.autofillUserScript.passwordImportDelegate = credentialsImportManager
         userScripts.faviconScript.delegate = faviconUpdater
         userScripts.printingSubfeature.delegate = self
+        userScripts.browserUiLockSubfeature.delegate = self
         configureSitePermissionsMediaCapture(with: userScripts.mediaCaptureUserScript)
         userScripts.loginFormDetectionScript?.delegate = self
         userScripts.autoconsentUserScript.delegate = self
@@ -5204,6 +5213,14 @@ extension TabViewController: TrackerProtectionSubfeatureDelegate {
         Task {
             await privacyStats.recordBlockedTracker(entityName)
         }
+    }
+}
+
+// MARK: - BrowserUiLockSubfeatureDelegate
+extension TabViewController: BrowserUiLockSubfeatureDelegate {
+
+    func browserUiLockSubfeature(_ subfeature: BrowserUiLockSubfeature, didChangeLocked isLocked: Bool) {
+        pullToRefreshViewAdapter?.setContentLocked(isLocked)
     }
 }
 

@@ -292,6 +292,7 @@ final class SubscriptionPagesUseSubscriptionFeature: Subfeature {
 
         let origin = await setPixelOrigin(from: message)
         PixelKit.fire(SubscriptionPixel.subscriptionPurchaseAttempt(origin: origin), frequency: .legacyDailyAndCount)
+        let planChangeEntry = await queryParameter(named: SubscriptionURL.PlanChangeParameter.entry, from: message)
 
         if subscriptionManager.currentEnvironment.purchasePlatform == .appStore {
             // 1: Parse subscription selection from message object
@@ -323,12 +324,13 @@ final class SubscriptionPagesUseSubscriptionFeature: Subfeature {
             let data = SubscriptionPurchaseWideEventData(purchasePlatform: .appStore,
                                                          subscriptionIdentifier: subscriptionSelection.id,
                                                          freeTrialEligible: freeTrialEligible,
-                                                         entryPoint: SubscriptionFunnelOrigin.purchaseWideEventEntryPoint(for: origin))
+                                                         entryPoint: SubscriptionFunnelOrigin.purchaseWideEventEntryPoint(for: origin ?? planChangeEntry))
             self.purchaseWideEventData = data
             wideEvent.startFlow(data)
 
             // 5: No existing subscription was found, so proceed with the remaining purchase flow
             let purchaseTransactionJWS: String
+            let purchaseIsFreeTrial: Bool
             let appStoreRestoreFlow = DefaultAppStoreRestoreFlow(subscriptionManager: subscriptionManager,
                                                                    storePurchaseManager: subscriptionManager.storePurchaseManager())
             let appStorePurchaseFlow = DefaultAppStorePurchaseFlow(subscriptionManager: subscriptionManager,
@@ -342,6 +344,7 @@ final class SubscriptionPagesUseSubscriptionFeature: Subfeature {
             switch purchaseResult {
             case .success(let result):
                 purchaseTransactionJWS = result.transactionJWS
+                purchaseIsFreeTrial = result.isFreeTrial
 
                 // Account creation is only one piece of the purchase function's job, so we extract the creation
                 // duration from the result rather than time the execution of the entire call.
@@ -394,7 +397,7 @@ final class SubscriptionPagesUseSubscriptionFeature: Subfeature {
             data.activateAccountDuration = accountActivationDuration
             wideEvent.updateFlow(data)
 
-            let completePurchaseResult = await appStorePurchaseFlow.completeSubscriptionPurchase(with: purchaseTransactionJWS, experimentAttribution: nil)
+            let completePurchaseResult = await appStorePurchaseFlow.completeSubscriptionPurchase(with: purchaseTransactionJWS, isFreeTrial: purchaseIsFreeTrial, experimentAttribution: nil)
 
             func completeWideEventFlow(with error: Error) {
                 guard let purchaseWideEventData = self.purchaseWideEventData else { return }
@@ -452,7 +455,7 @@ final class SubscriptionPagesUseSubscriptionFeature: Subfeature {
             let data = SubscriptionPurchaseWideEventData(purchasePlatform: .stripe,
                                                          subscriptionIdentifier: nil, // Not available for Stripe
                                                          freeTrialEligible: true, // Always true for Stripe
-                                                         entryPoint: SubscriptionFunnelOrigin.purchaseWideEventEntryPoint(for: origin))
+                                                         entryPoint: SubscriptionFunnelOrigin.purchaseWideEventEntryPoint(for: origin ?? planChangeEntry))
 
             wideEvent.startFlow(data)
             self.purchaseWideEventData = data
@@ -501,8 +504,9 @@ final class SubscriptionPagesUseSubscriptionFeature: Subfeature {
         }
 
         let message = original
-        await setPixelOrigin(from: message)
-        let origin = await originFrom(originalMessage: message)
+        let origin = await setPixelOrigin(from: message)
+        let planChangeEntry = await queryParameter(named: SubscriptionURL.PlanChangeParameter.entry, from: message)
+        let funnelName = origin ?? planChangeEntry
 
         // Debug: Log raw params received from frontend
         Logger.subscription.debug("[TierChange] Raw params received: \(String(describing: params), privacy: .public)")
@@ -524,7 +528,7 @@ final class SubscriptionPagesUseSubscriptionFeature: Subfeature {
             let purchaseUpdate = await flowPerformer.performTierChange(
                 to: subscriptionSelection.id,
                 changeType: subscriptionSelection.change,
-                contextName: origin ?? ""
+                wideEventFunnelName: funnelName ?? ""
             )
             if let purchaseUpdate {
                 await pushPurchaseUpdate(originalMessage: message, purchaseUpdate: purchaseUpdate)
@@ -547,7 +551,7 @@ final class SubscriptionPagesUseSubscriptionFeature: Subfeature {
                 changeType: changeType,
                 fromPlan: fromPlan,
                 toPlan: subscriptionSelection.id,
-                funnelName: origin
+                funnelName: funnelName
             )
             self.planChangeWideEventData = wideData
             wideEvent.startFlow(wideData)
@@ -761,8 +765,13 @@ final class SubscriptionPagesUseSubscriptionFeature: Subfeature {
 
     @MainActor
     private func originFrom(originalMessage: WKScriptMessage) -> String? {
+        queryParameter(named: AttributionParameter.origin, from: originalMessage)
+    }
+
+    @MainActor
+    private func queryParameter(named name: String, from originalMessage: WKScriptMessage) -> String? {
         let url = originalMessage.webView?.url
-        return url?.getParameter(named: AttributionParameter.origin)
+        return url?.getParameter(named: name)
     }
 
     // MARK: - UI interactions

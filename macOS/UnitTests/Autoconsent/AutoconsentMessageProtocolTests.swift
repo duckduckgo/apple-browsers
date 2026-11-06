@@ -131,6 +131,22 @@ class AutoconsentMessageProtocolTests: XCTestCase {
     }
 
     @MainActor
+    func testWhenNativeAutoconsentPixelsFireThenTheyAreCountedPerSiteRank() {
+        let management = AutoconsentManagement()
+        userScript = AutoconsentUserScript(
+            config: config,
+            management: management,
+            preferences: preferences,
+            featureFlagger: MockFeatureFlagger()
+        )
+
+        _ = sendInit(url: "https://www.google.com/")
+        _ = sendInit(url: "https://example.com/")
+
+        XCTAssertEqual(management.pixelCounter, [CPMSiteRank.top10k: ["init": 1], CPMSiteRank.other: ["init": 1]])
+    }
+
+    @MainActor
     func testEval() {
         let webView = WKWebView()
         let message = WKScriptMessage.mock(name: "eval", body: [

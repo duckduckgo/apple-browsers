@@ -17,6 +17,7 @@
 //
 
 import Foundation
+import WebKit
 
 // WebKit vends Web Extension errors as `WKNSError`, an `NSProxy` posing as
 // `NSError`. On x86_64, Swift's `Error` -> `NSError` bridge (`as NSError`,
@@ -25,6 +26,11 @@ import Foundation
 // `as AnyObject` and a class cast leave the proxy intact.
 
 extension NSError {
+
+    @available(macOS 15.4, iOS 18.4, *)
+    var isBackgroundContentLoadFailure: Bool {
+        domain == WKWebExtensionContext.errorDomain && code == WKWebExtensionContext.Error.Code.backgroundContentFailedToLoad.rawValue
+    }
 
     /// `error` as an `NSError`, without Swift's `Error` -> `NSError` bridge.
     ///

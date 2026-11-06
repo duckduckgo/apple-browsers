@@ -43,7 +43,6 @@ public protocol SubJobWebRunning: CCFCommunicationDelegate {
     var pixelHandler: EventMapping<DataBrokerProtectionSharedPixels> { get }
     var executionConfig: BrokerJobExecutionConfig { get }
     var featureFlagger: DBPFeatureFlagging { get }
-    var applicationNameForUserAgentProvider: () -> String? { get }
     var contentBlocking: DBPWebViewContentBlocking? { get }
 
     var webViewHandler: WebViewHandler? { get set }
@@ -390,18 +389,22 @@ public extension SubJobWebRunning {
         if let handler = handler { // This help us swapping up the WebViewHandler on tests
             self.webViewHandler = handler
         } else {
-            let applicationNameProvider: () -> String? = featureFlagger.isWebViewUserAgentOn ? applicationNameForUserAgentProvider : { nil }
+            let debugEventReporter = stageCalculator as? DebugEventReporting
             self.webViewHandler = try await DataBrokerProtectionWebViewHandler(privacyConfig: privacyConfig,
                                                                                prefs: prefs,
                                                                                delegate: self,
                                                                                isFakeBroker: isFakeBroker,
                                                                                executionConfig: executionConfig,
-                                                                               challengePixelDataBroker: context.dataBroker.url,
-                                                                               challengePixelBrokerVersion: context.dataBroker.version,
+                                                                               dataBroker: context.dataBroker,
+                                                                               isChallengeSolverEnabled: featureFlagger.isChallengeSolverOn,
                                                                                shouldContinueActionHandler: shouldRunNextStep,
-                                                                               applicationNameForUserAgentProvider: applicationNameProvider,
+                                                                               customUserAgent: featureFlagger.isCustomWebViewUserAgentOn ? context.dataBroker.customUserAgent : nil,
                                                                                contentBlocking: contentBlocking,
-                                                                               pixelHandler: pixelHandler)
+                                                                               pixelHandler: pixelHandler,
+                                                                               actionLogContext: loggerContext(),
+                                                                               challengeEventHandler: { message in
+                                                                                   debugEventReporter?.recordDebugEvent(kind: .challenge, actionType: nil, details: message)
+                                                                               })
         }
 
         await webViewHandler?.initializeWebView(showWebView: showWebView)

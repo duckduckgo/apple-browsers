@@ -152,9 +152,9 @@ class WebKitPrivateMethodsAvailabilityTests: DistributedNavigationDelegateTestsB
         }
 
         withWebView { webView in
-            let backURLs = webView.backForwardList.backList.map(\.url)
-            let forwardURLs = webView.backForwardList.forwardList.map(\.url)
-            let currentURL = webView.backForwardList.currentItem?.url
+            let backURLs = webView.backForwardList.backList.compactMap(\.safeURL)
+            let forwardURLs = webView.backForwardList.forwardList.compactMap(\.safeURL)
+            let currentURL = webView.backForwardList.currentItem?.safeURL
 
             XCTAssertNotNil(currentURL)
             XCTAssertEqual(backURLs, [urls.local1])
@@ -194,9 +194,9 @@ class WebKitPrivateMethodsAvailabilityTests: DistributedNavigationDelegateTestsB
 
         withWebView { webView in
             // Verify we have the expected navigation history
-            let backURLs = webView.backForwardList.backList.map(\.url)
-            let forwardURLs = webView.backForwardList.forwardList.map(\.url)
-            let currentURL = webView.backForwardList.currentItem?.url
+            let backURLs = webView.backForwardList.backList.compactMap(\.safeURL)
+            let forwardURLs = webView.backForwardList.forwardList.compactMap(\.safeURL)
+            let currentURL = webView.backForwardList.currentItem?.safeURL
 
             XCTAssertEqual(backURLs, [dataURL1, dataURL2])
             XCTAssertEqual(forwardURLs, [])
@@ -204,7 +204,7 @@ class WebKitPrivateMethodsAvailabilityTests: DistributedNavigationDelegateTestsB
 
             // Test with a filter that excludes page two (dataURL2)
             let sessionStateFiltered = webView.sessionState(withFilter: { item in
-                return item.url != dataURL2
+                return item.safeURL != dataURL2
             })
             XCTAssertNotNil(sessionStateFiltered)
 
@@ -215,9 +215,9 @@ class WebKitPrivateMethodsAvailabilityTests: DistributedNavigationDelegateTestsB
             cleanWebView.restoreSessionState(from: sessionStateFiltered!, andNavigate: false)
 
             // Verify the filter worked - should only have dataURL1 and dataURL3
-            let restoredBackURLs = cleanWebView.backForwardList.backList.map(\.url)
-            let restoredForwardURLs = cleanWebView.backForwardList.forwardList.map(\.url)
-            let restoredCurrentURL = cleanWebView.backForwardList.currentItem?.url
+            let restoredBackURLs = cleanWebView.backForwardList.backList.compactMap(\.safeURL)
+            let restoredForwardURLs = cleanWebView.backForwardList.forwardList.compactMap(\.safeURL)
+            let restoredCurrentURL = cleanWebView.backForwardList.currentItem?.safeURL
 
             XCTAssertEqual(restoredBackURLs, [dataURL1])
             XCTAssertEqual(restoredForwardURLs, [])
@@ -281,9 +281,9 @@ class WebKitPrivateMethodsAvailabilityTests: DistributedNavigationDelegateTestsB
 
         withWebView { webView in
             // Verify we restored to the original multi-page session state
-            let backURLs = webView.backForwardList.backList.map(\.url)
-            let forwardURLs = webView.backForwardList.forwardList.map(\.url)
-            let currentURL = webView.backForwardList.currentItem?.url
+            let backURLs = webView.backForwardList.backList.compactMap(\.safeURL)
+            let forwardURLs = webView.backForwardList.forwardList.compactMap(\.safeURL)
+            let currentURL = webView.backForwardList.currentItem?.safeURL
 
             XCTAssertEqual(currentURL, dataURL3)
             XCTAssertEqual(backURLs, [dataURL1, dataURL2])
@@ -337,9 +337,9 @@ class WebKitPrivateMethodsAvailabilityTests: DistributedNavigationDelegateTestsB
             XCTAssertFalse(webView.isLoading)
 
             // Check URLs after restore
-            let backURLs = webView.backForwardList.backList.map(\.url)
-            let forwardURLs = webView.backForwardList.forwardList.map(\.url)
-            let currentURL = webView.backForwardList.currentItem?.url
+            let backURLs = webView.backForwardList.backList.compactMap(\.safeURL)
+            let forwardURLs = webView.backForwardList.forwardList.compactMap(\.safeURL)
+            let currentURL = webView.backForwardList.currentItem?.safeURL
 
             XCTAssertEqual(webView.url, dataURL3)
             XCTAssertEqual(currentURL, dataURL2)

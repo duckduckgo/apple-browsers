@@ -49,7 +49,7 @@ final class AIChatDataClearingUserScript: NSObject, Subfeature {
     }
 
     // MARK: - Async Clear Support
-    enum ClearError: Error, DDGError, DataClearingActionSkipping {
+    enum ClearError: Error, DDGError {
         case notReady
         case timeout
         case failedFromScript(ScriptFailure)
@@ -89,19 +89,12 @@ final class AIChatDataClearingUserScript: NSObject, Subfeature {
             }
         }
 
-        /// Whether a fresh page can fix it. Misuse, a script that never starts and a page without IndexedDB fail again.
+        /// Whether a fresh page can fix it. Misuse and a script that never starts fail again.
         var isTransient: Bool {
             switch self {
-            case .timeout, .navigationTimeout, .webContentProcessTerminated: return true
-            case .failedFromScript(let failure): return !failure.isIndexedDBDisabled
+            case .timeout, .failedFromScript, .navigationTimeout, .webContentProcessTerminated: return true
             case .notReady, .scriptNeverReady: return false
             }
-        }
-
-        /// IndexedDB turned off (Lockdown Mode) leaves the page nothing it can clear there, so the clear is reported as skipped.
-        var skipsAction: Bool {
-            guard case .failedFromScript(let failure) = self else { return false }
-            return failure.isIndexedDBDisabled
         }
 
         var underlyingError: Error? {
@@ -233,8 +226,14 @@ final class AIChatDataClearingUserScript: NSObject, Subfeature {
 
     @MainActor
     private func aiChatDataClearingFailed(params: Any, message: UserScriptMessage) -> Encodable? {
-        finish(result: .failure(ClearError.failedFromScript(ScriptFailure(payload: params))))
+        finish(result: Self.result(forScriptFailure: ScriptFailure(payload: params)))
         return nil
+    }
+
+    /// A page without IndexedDB (Lockdown Mode) has cleared all it can reach, so it counts as a success:
+    /// reporting it separately would single out those devices in telemetry.
+    private static func result(forScriptFailure failure: ScriptFailure) -> Result<Void, Error> {
+        failure.isIndexedDBDisabled ? .success(()) : .failure(ClearError.failedFromScript(failure))
     }
 
     @MainActor

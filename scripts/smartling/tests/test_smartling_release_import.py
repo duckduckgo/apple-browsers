@@ -13,10 +13,12 @@ SCRIPT_PATH = Path(__file__).parents[1] / 'smartling_release_import.sh'
 RELEASE_BRANCH = 'release/ios/0.1.0'
 REFRESH_PREFIX = 'release/ios/0.1.0/current'
 IMPORT_BRANCH = 'smartling/release-ios-0.1.0'
+TEST_BRANCH = 'test/smartling-release-0.1.0'
 STRINGS_PATH = 'iOS/App/de.lproj/Localizable.strings'
 ENGLISH_STRINGS_PATH = 'iOS/App/en.lproj/Localizable.strings'
 EXPORTED_XLIFF = './iOS/scripts/assets/loc/en.xcloc/Localized Contents/en.xliff'
 ENGLISH_STRINGSDICT = './iOS/DuckDuckGo/UserInterfaceResources/en.lproj/Localizable.stringsdict'
+TRANSLATIONS_TASK_URL = 'https://app.asana.com/0/0/1000/f'
 
 READY = {
     'outcome': 'ready', 'job_id': 'job-1', 'job_url': 'https://dashboard.smartling.com/app/projects/p/account-jobs/p:job-1',
@@ -43,6 +45,9 @@ case "${args[0]} ${args[1]}" in
 		else
 			echo "$state $url"
 		fi
+		;;
+	"pr view")
+		[ ! -e "$STUB_DIR/open_pr_body.md" ] || cat "$STUB_DIR/open_pr_body.md"
 		;;
 	"pr create")
 		[ ! -e "$STUB_DIR/pr_create_fails" ] || { echo "GraphQL: something went wrong" >&2; exit 1; }
@@ -79,11 +84,6 @@ IMPORT_STUB = """#!/bin/bash
 cp "$STUB_DIR/imported.strings" iOS/App/de.lproj/Localizable.strings
 """
 
-INTEGRITY_STUB = """#!/bin/bash
-echo "integrity $*" >> "$STUB_DIR/loc_tool.log"
-exit "$(cat "$STUB_DIR/integrity_exit_code")"
-"""
-
 
 def write_executable(path: Path, content: str):
     path.write_text(content, encoding='utf-8')
@@ -94,6 +94,20 @@ def git(cwd: Path, *args: str) -> str:
     return subprocess.run(
         ['git', *args], cwd=cwd, check=True, capture_output=True, text=True
     ).stdout.strip()
+
+
+def github_outputs(text: str) -> dict:
+    """Parse a GITHUB_OUTPUT file, including multi-line values written as name<<DELIMITER."""
+    outputs = {}
+    lines = iter(text.splitlines())
+    for line in lines:
+        if '<<' in line and '=' not in line:
+            name, delimiter = line.split('<<', 1)
+            outputs[name] = '\n'.join(iter(lambda: next(lines), delimiter))
+        elif '=' in line:
+            name, value = line.split('=', 1)
+            outputs[name] = value
+    return outputs
 
 
 @unittest.skipUnless(shutil.which('jq') and shutil.which('git'), 'needs git and jq')
@@ -117,7 +131,6 @@ class ReleaseImportScriptTests(unittest.TestCase):
         shutil.copy(SCRIPT_PATH, smartling_dir / SCRIPT_PATH.name)
         write_executable(smartling_dir / 'loc_tool.sh', LOC_TOOL_STUB)
         write_executable(smartling_dir / 'smartling_import.sh', IMPORT_STUB)
-        write_executable(smartling_dir / 'check_translation_integrity.py', INTEGRITY_STUB)
         (self.repo / 'iOS' / 'scripts').mkdir(parents=True)
         write_executable(self.repo / 'iOS' / 'scripts' / 'loc_export.sh', EXPORT_STUB)
         (self.repo / 'iOS' / '.gitignore').write_text('scripts/assets\n', encoding='utf-8')
@@ -134,14 +147,14 @@ class ReleaseImportScriptTests(unittest.TestCase):
         git(self.repo, 'remote', 'add', 'origin', str(self.origin))
         git(self.repo, 'push', '-q', 'origin', 'HEAD')
 
-    def run_import(self, *args, existing_pr='', imported='"a" = "A";\n"b" = "B";\n"c" = "C";\n',
-                   integrity_passes=True, release_status=None, refresh_passes=True, expected_exit_code=0):
+    def run_import(self, *args, release_branch=RELEASE_BRANCH, existing_pr='', imported='"a" = "A";\n"b" = "B";\n"c" = "C";\n',
+                   release_status=None, refresh_passes=True, task_url=TRANSLATIONS_TASK_URL,
+                   expected_exit_code=0):
         (self.stub_dir / 'existing_pr').write_text(existing_pr, encoding='utf-8')
         (self.stub_dir / 'release_status.json').write_text(json.dumps(release_status or READY), encoding='utf-8')
         (self.stub_dir / 'refresh_exit_code').write_text('0' if refresh_passes else '1', encoding='utf-8')
         (self.stub_dir / 'loc_tool.log').write_text('', encoding='utf-8')
         (self.stub_dir / 'imported.strings').write_text(imported, encoding='utf-8')
-        (self.stub_dir / 'integrity_exit_code').write_text('0' if integrity_passes else '1', encoding='utf-8')
         output_file = self.stub_dir / 'github_output'
         output_file.write_text('', encoding='utf-8')
         git(self.repo, 'checkout', '-q', RELEASE_BRANCH)
@@ -152,18 +165,16 @@ class ReleaseImportScriptTests(unittest.TestCase):
             'GITHUB_OUTPUT': str(output_file),
             'RUNNER_TEMP': str(self.stub_dir),
             'SMARTLING_PROJECT_ID': 'project-123',
+            'TRANSLATIONS_TASK_URL': task_url,
         }
         env.pop('GITHUB_STEP_SUMMARY', None)
         env.pop('GITHUB_RUN_ID', None)
         result = subprocess.run(
-            ['./scripts/smartling/smartling_release_import.sh', 'iOS', '--release-branch', RELEASE_BRANCH, *args],
+            ['./scripts/smartling/smartling_release_import.sh', 'iOS', '--release-branch', release_branch, *args],
             cwd=self.repo, env=env, capture_output=True, text=True, check=False
         )
         self.assertEqual(result.returncode, expected_exit_code, result.stdout + result.stderr)
-        outputs = dict(
-            line.split('=', 1) for line in output_file.read_text(encoding='utf-8').splitlines() if '=' in line
-        )
-        return outputs
+        return github_outputs(output_file.read_text(encoding='utf-8'))
 
     def tool_calls(self):
         return (self.stub_dir / 'loc_tool.log').read_text(encoding='utf-8').splitlines()
@@ -175,10 +186,23 @@ class ReleaseImportScriptTests(unittest.TestCase):
     def body(self, index):
         return (self.stub_dir / f'body-{index}.md').read_text(encoding='utf-8')
 
-    def testWhenAPullRequestExistsThenNothingIsImported(self):
-        outputs = self.run_import(existing_pr='MERGED https://github.com/duckduckgo/apple-browsers/pull/1')
+    def testWhenAnOpenPullRequestExistsThenNothingIsImported(self):
+        outputs = self.run_import(existing_pr='OPEN https://github.com/duckduckgo/apple-browsers/pull/1')
 
         self.assertEqual(outputs['outcome'], 'skipped_existing_pr')
+        self.assertEqual(outputs['pr_url'], 'https://github.com/duckduckgo/apple-browsers/pull/1')
+        self.assertFalse(any(call.startswith('pr create') for call in self.gh_calls()))
+
+    def testWhenAClosedPullRequestExistsThenNothingIsImported(self):
+        outputs = self.run_import(existing_pr='CLOSED https://github.com/duckduckgo/apple-browsers/pull/1')
+
+        self.assertEqual(outputs['outcome'], 'skipped_existing_pr')
+        self.assertFalse(any(call.startswith('pr create') for call in self.gh_calls()))
+
+    def testWhenThePullRequestIsMergedThenTheTranslationsAreReportedReady(self):
+        outputs = self.run_import(existing_pr='MERGED https://github.com/duckduckgo/apple-browsers/pull/1')
+
+        self.assertEqual(outputs['outcome'], 'pr_merged')
         self.assertEqual(outputs['pr_url'], 'https://github.com/duckduckgo/apple-browsers/pull/1')
         self.assertFalse(any(call.startswith('pr create') for call in self.gh_calls()))
 
@@ -188,7 +212,7 @@ class ReleaseImportScriptTests(unittest.TestCase):
         self.assertEqual(outputs['outcome'], 'pr_opened')
         self.assertEqual(outputs['job_url'], READY['job_url'])
         self.assertIn(f"[Release iOS 0.1.0]({READY['job_url']})", self.body(0))
-        self.assertIn('Integrity check: passed', self.body(0))
+        self.assertNotIn('Integrity check', self.body(0))
         self.assertEqual(git(self.repo, 'show', '--name-only', '--format=', IMPORT_BRANCH), STRINGS_PATH)
 
     def testWhenReimportFollowsAMergedPullRequestThenANewOneIsOpened(self):
@@ -197,25 +221,19 @@ class ReleaseImportScriptTests(unittest.TestCase):
         self.assertEqual(outputs['outcome'], 'pr_opened')
         self.assertEqual(outputs['pr_url'], 'https://github.com/duckduckgo/apple-browsers/pull/100')
 
-    def testWhenReimportUpdatesAnOpenPullRequestThenItsDescriptionShowsTheNewIntegrityResult(self):
+    def testWhenReimportUpdatesAnOpenPullRequestThenItsDescriptionAndTranslationsAreUpdated(self):
         first = self.run_import()
         self.assertEqual(first['outcome'], 'pr_opened')
-        self.assertIn('Integrity check: passed', self.body(0))
 
         second = self.run_import(
             '--reimport',
             existing_pr=f"OPEN {first['pr_url']}",
-            imported='"a" = "A";\n',
-            integrity_passes=False
+            imported='"a" = "A";\n'
         )
 
         self.assertEqual(second['outcome'], 'pr_updated')
-        self.assertEqual(second['integrity'], 'issues_found')
         self.assertIn(f"pr edit {first['pr_url']} --body-file", '\n'.join(self.gh_calls()))
         self.assertEqual(sum(call.startswith('pr create') for call in self.gh_calls()), 1)
-        updated_body = self.body(1)
-        self.assertIn('found deleted or much shorter translations', updated_body)
-        self.assertNotIn('Integrity check: passed', updated_body)
         self.assertEqual(
             git(self.repo, '--git-dir', str(self.origin), 'show', f'{IMPORT_BRANCH}:{STRINGS_PATH}'),
             '"a" = "A";'
@@ -232,7 +250,6 @@ class ReleaseImportScriptTests(unittest.TestCase):
             f'refresh-files --file-uri-prefix {REFRESH_PREFIX} --files {EXPORTED_XLIFF} {ENGLISH_STRINGSDICT}'
         )
         self.assertIn(f'--file-uris {REFRESH_PREFIX}/en.xliff {REFRESH_PREFIX}/Localizable.stringsdict', calls[2])
-        self.assertTrue(any(call.startswith('integrity') for call in calls))
 
     def testWhenTheExportChangesTrackedFilesThenOnlyTheImportedTranslationsAreCommitted(self):
         outputs = self.run_import()
@@ -273,12 +290,18 @@ class ReleaseImportScriptTests(unittest.TestCase):
         outputs = self.run_import(release_status={
             **READY, 'outcome': 'not_ready', 'strings_left': 120, 'incomplete_locales': ['de-DE'],
             'strings_awaiting_authorization': 96,
-            'jobs_awaiting_authorization': ['keyChange (created 2025-04-04)'],
+            'jobs_awaiting_authorization': [
+                {'name': 'keyChange', 'created': '2025-04-04', 'url': 'https://j/1'},
+                {'name': 'pau/feature', 'created': '', 'url': 'https://j/2'},
+            ],
         })
 
         self.assertEqual(outputs['outcome'], 'not_ready')
         self.assertEqual(outputs['strings_awaiting_authorization'], '96')
-        self.assertEqual(outputs['jobs_awaiting_authorization'], 'keyChange (created 2025-04-04)')
+        self.assertEqual(
+            outputs['jobs_awaiting_authorization'],
+            '- [keyChange](https://j/1) (created 2025-04-04)\n- [pau/feature](https://j/2)'
+        )
 
     def testWhenTheDownloadFailsThenTheOutcomeIsAnError(self):
         (self.stub_dir / 'download_fails').touch()
@@ -296,13 +319,30 @@ class ReleaseImportScriptTests(unittest.TestCase):
 
         self.assertEqual(outputs['outcome'], 'error')
         self.assertIn('Failed at line', outputs['reason'])
-        self.assertEqual(outputs['integrity'], 'passed')
 
-    def testWhenThePullRequestIsOpenedThenItsDescriptionLinksOnlyTheTechDesign(self):
+    def testWhenThePullRequestIsOpenedThenItsDescriptionLinksTheTranslationsTaskAndTheTechDesign(self):
         self.run_import()
 
-        self.assertNotIn('Task/Issue URL', self.body(0))
-        self.assertIn('Tech Design URL', self.body(0))
+        self.assertTrue(self.body(0).startswith(f'Task/Issue URL: {TRANSLATIONS_TASK_URL}\nTech Design URL: '))
+
+    def testWhenReimportUpdatesAnOpenPullRequestThenItKeepsItsTaskLink(self):
+        first = self.run_import()
+        shutil.copy(self.stub_dir / 'body-0.md', self.stub_dir / 'open_pr_body.md')
+
+        self.run_import(
+            '--reimport', existing_pr=f"OPEN {first['pr_url']}", imported='"a" = "A";\n', task_url='https://app.asana.com/0/0/2000/f'
+        )
+
+        self.assertIn(f'Task/Issue URL: {TRANSLATIONS_TASK_URL}\n', self.body(1))
+        self.assertNotIn('2000', self.body(1))
+
+    def testWhenReimportUpdatesAnOpenPullRequestWithoutATaskLinkThenItLinksTheTranslationsTask(self):
+        (self.stub_dir / 'open_pr_body.md').write_text('Task/Issue URL:\r\nTech Design URL: https://app.asana.com/0/0/1/f\r\n', encoding='utf-8')
+
+        outputs = self.run_import('--reimport', existing_pr='OPEN https://github.com/duckduckgo/apple-browsers/pull/1')
+
+        self.assertEqual(outputs['outcome'], 'pr_updated')
+        self.assertIn(f'Task/Issue URL: {TRANSLATIONS_TASK_URL}\n', self.body(0))
 
     def testWhenReimportFindsNothingNewThenTheSupersededOpenPullRequestIsClosed(self):
         first = self.run_import(imported='"a" = "A";\n"b" = "B2";\n')
@@ -337,6 +377,30 @@ class ReleaseImportScriptTests(unittest.TestCase):
 
         self.assertEqual(outputs['outcome'], 'no_changes')
         self.assertFalse(any(call.startswith('pr close') for call in self.gh_calls()))
+
+    def testWhenATestBranchHasAVersionThenItIsImportedUnderThatBranch(self):
+        outputs = self.run_import('--version', '0.1.0', release_branch=TEST_BRANCH)
+
+        self.assertEqual(outputs['outcome'], 'pr_opened')
+        self.assertEqual(outputs['version'], '0.1.0')
+        self.assertEqual(outputs['job_name'], 'Release iOS 0.1.0')
+        self.assertIn(f'--file-uri-prefix {TEST_BRANCH}/current', self.tool_calls()[1])
+        self.assertTrue(any(f'pr create --base {TEST_BRANCH} --head {IMPORT_BRANCH}' in call for call in self.gh_calls()))
+
+    def testWhenATestBranchHasNoVersionThenNothingIsExported(self):
+        self.run_import(release_branch=TEST_BRANCH, expected_exit_code=1)
+
+        self.assertEqual(self.tool_calls(), [])
+
+    def testWhenTheVersionDoesNotMatchTheReleaseBranchThenNothingIsExported(self):
+        self.run_import('--version', '0.2.0', expected_exit_code=1)
+
+        self.assertEqual(self.tool_calls(), [])
+
+    def testWhenTheReleaseBranchIsForTheOtherPlatformThenNothingIsExported(self):
+        self.run_import(release_branch='release/macos/0.1.0', expected_exit_code=1)
+
+        self.assertEqual(self.tool_calls(), [])
 
 
 if __name__ == '__main__':

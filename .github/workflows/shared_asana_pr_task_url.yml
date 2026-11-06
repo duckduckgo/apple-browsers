@@ -23,7 +23,7 @@ jobs:
 
     runs-on: ubuntu-latest
 
-    if: ${{ !github.event.pull_request.draft }}
+    if: ${{ !github.event.pull_request.draft && !startsWith(github.head_ref, 'smartling/release-') }}
 
     outputs:
       task_id: ${{ steps.get-task-id.outputs.task_id }}

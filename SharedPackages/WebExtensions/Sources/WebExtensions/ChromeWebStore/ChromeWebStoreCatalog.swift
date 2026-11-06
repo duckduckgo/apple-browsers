@@ -22,6 +22,24 @@ import PrivacyConfig
 public enum ChromeWebStoreID: String {
     case bitwarden = "nngceckbapebfimnlniiiahkandclblb"
     case onePassword = "aeblfdkhhhdcdjpifhhbdiojplfjncoa"
+    case iCloudPasswords = "pejdijmoenmkgeppbflobdenhhabjlaj"
+}
+
+public struct ChromeWebStoreListing: Equatable, Identifiable {
+    public let entry: ExtensionsCatalogSubfeature
+    public let name: String
+    public let publisher: String
+    public let iconURL: URL?
+    public let storeURL: URL
+
+    public var id: String { entry.rawValue }
+
+    public var isPasswordManager: Bool {
+        switch entry {
+        case .bitwarden, .onePassword, .lastPass, .iCloudPasswords: true
+        case .darkReader: false
+        }
+    }
 }
 
 public enum ChromeWebStoreStatus: String, Codable {
@@ -41,16 +59,26 @@ public enum ChromeWebStoreURL {
     }
 
     public static func downloadURL(for identifier: String) throws -> URL {
+        try serviceURL(for: identifier, response: "redirect", installedVersion: nil)
+    }
+
+    static func updateCheckURL(for identifier: String, installedVersion: String) throws -> URL {
+        try serviceURL(for: identifier, response: "updatecheck", installedVersion: installedVersion)
+    }
+
+    private static func serviceURL(for identifier: String, response: String, installedVersion: String?) throws -> URL {
         guard isValidExtensionID(identifier) else { throw ChromeWebStoreError.invalidRequest }
+        // Discovery reports the installed version; only package downloads use the on-demand source.
+        let extensionParameters = installedVersion.map { "&v=\($0)" } ?? "&installsource=ondemand"
         var components = URLComponents()
         components.scheme = "https"
         components.host = "clients2.google.com"
         components.path = "/service/update2/crx"
         components.queryItems = [
-            URLQueryItem(name: "response", value: "redirect"),
+            URLQueryItem(name: "response", value: response),
             Self.prodversionQueryItem,
             URLQueryItem(name: "acceptformat", value: "crx3"),
-            URLQueryItem(name: "x", value: "id=\(identifier)&installsource=ondemand&uc")
+            URLQueryItem(name: "x", value: "id=\(identifier)\(extensionParameters)&uc")
         ]
         guard let url = components.url else { throw ChromeWebStoreError.invalidRequest }
         return url
@@ -84,6 +112,12 @@ public protocol ChromeWebStoreCatalogProviding {
     /// The catalog's entry for the extension with the Chrome Web Store `identifier`, such as `.bitwarden`,
     /// whether or not the catalog offers it right now. `nil` for an extension the catalog doesn't list.
     func catalogEntry(of identifier: String) -> ExtensionsCatalogSubfeature?
+
+    /// The entry's store listing, or `nil` when its `name` or `cwsUri` is missing.
+    func listing(of subfeature: ExtensionsCatalogSubfeature) -> ChromeWebStoreListing?
+
+    /// The help page about adding extensions, or `nil` when the configuration doesn't set one.
+    var learnMoreURL: URL? { get }
 }
 
 public extension ChromeWebStoreCatalogProviding {
@@ -140,6 +174,22 @@ public final class ChromeWebStoreCatalog: ChromeWebStoreCatalogProviding {
         return ExtensionsCatalogSubfeature.allCases.first { subfeature in
             Self.settings(of: subfeature, in: config)?["id"] as? String == identifier
         }
+    }
+
+    public func listing(of subfeature: ExtensionsCatalogSubfeature) -> ChromeWebStoreListing? {
+        guard let settings = Self.settings(of: subfeature, in: configurationManager.privacyConfig),
+              let name = settings["name"] as? String,
+              let storeURL = (settings["cwsUri"] as? String).flatMap(URL.init(string:)) else { return nil }
+
+        return ChromeWebStoreListing(entry: subfeature,
+                                     name: name,
+                                     publisher: settings["publisher"] as? String ?? "",
+                                     iconURL: (settings["iconUri"] as? String).flatMap(URL.init(string:)),
+                                     storeURL: storeURL)
+    }
+
+    public var learnMoreURL: URL? {
+        (configurationManager.privacyConfig.settings(for: .extensionManagement)["learnMoreUrl"] as? String).flatMap(URL.init(string:))
     }
 
     private static func settings(of subfeature: ExtensionsCatalogSubfeature, in config: PrivacyConfiguration) -> [String: Any]? {

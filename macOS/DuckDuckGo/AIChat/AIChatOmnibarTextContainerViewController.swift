@@ -692,6 +692,18 @@ extension AIChatOmnibarTextContainerViewController: FocusableTextViewNavigationD
         guard let containerVC = containerViewController, omnibarController.isOmnibarToolsEnabled else { return false }
         return containerVC.addAttachmentsFromDrop(fileURLs)
     }
+
+    var canAttachPastedContent: Bool {
+        containerViewController != nil && omnibarController.isOmnibarToolsEnabled && omnibarController.isPasteImagesEnabled
+    }
+
+    func textViewDidReceiveAttachmentPaste(_ content: AIChatPastedContent) -> Bool {
+        guard let containerVC = containerViewController, canAttachPastedContent else { return false }
+        switch content {
+        case .files(let urls): return containerVC.addAttachmentsFromDrop(urls, source: .paste)
+        case .image(let image): return containerVC.attachPastedImage(image)
+        }
+    }
 }
 
 /// Delegate protocol for handling navigation events from FocusableTextView
@@ -710,6 +722,11 @@ protocol FocusableTextViewNavigationDelegate: AnyObject {
     /// Called when the user drops files onto the text view
     /// - Returns: `true` if any were accepted, `false` otherwise
     func textViewDidReceiveAttachmentDrop(_ fileURLs: [URL]) -> Bool
+    /// Whether ⌘V may attach images and files right now.
+    var canAttachPastedContent: Bool { get }
+    /// Called when the user pastes images or copied files into the text view
+    /// - Returns: `true` if the paste was consumed
+    func textViewDidReceiveAttachmentPaste(_ content: AIChatPastedContent) -> Bool
 }
 
 /// NSTextField label that forwards mouse hits to a configured target view.
@@ -728,6 +745,39 @@ private final class ClickThroughImageView: NSImageView {
 
     override func hitTest(_ point: NSPoint) -> NSView? {
         return hitTestForwardingTarget ?? nil
+    }
+}
+
+/// What ⌘V in the Duck.ai prompt attaches; `nil` means a normal paste.
+enum AIChatPastedContent {
+    case files([URL])
+    case image(CGImage)
+
+    /// Copied files first: Finder also puts each file's icon and name on the pasteboard. Then text, since Office
+    /// apps and Notes put a picture of the copied content next to it; but a web view's Copy Image also writes the
+    /// image's URL as text, and that alone isn't text to paste. Image data last.
+    static func read(from pasteboard: NSPasteboard) -> AIChatPastedContent? {
+        let fileURLs = attachableFileURLs(on: pasteboard)
+        if !fileURLs.isEmpty { return .files(fileURLs) }
+        if let text = trimmedString(on: pasteboard, forType: .string), !text.isEmpty,
+           text != trimmedString(on: pasteboard, forType: .URL) {
+            return nil
+        }
+        guard let image = NSImage(pasteboard: pasteboard)?.cgImage(forProposedRect: nil, context: nil, hints: nil) else { return nil }
+        return .image(image)
+    }
+
+    private static func trimmedString(on pasteboard: NSPasteboard, forType type: NSPasteboard.PasteboardType) -> String? {
+        pasteboard.string(forType: type)?.trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+
+    /// Images and PDFs, matching what the attach menu offers.
+    static func attachableFileURLs(on pasteboard: NSPasteboard) -> [URL] {
+        let urls = pasteboard.readObjects(forClasses: [NSURL.self], options: [.urlReadingFileURLsOnly: true]) as? [URL] ?? []
+        return urls.filter { url in
+            guard let type = UTType(filenameExtension: url.pathExtension.lowercased()) else { return false }
+            return type.conforms(to: .image) || type.conforms(to: .pdf)
+        }
     }
 }
 
@@ -763,21 +813,21 @@ private final class FocusableTextView: NSTextView {
     }
 
     override func draggingEntered(_ sender: NSDraggingInfo) -> NSDragOperation {
-        if !Self.attachableFileURLs(from: sender).isEmpty {
+        if !AIChatPastedContent.attachableFileURLs(on: sender.draggingPasteboard).isEmpty {
             return .copy
         }
         return super.draggingEntered(sender)
     }
 
     override func draggingUpdated(_ sender: NSDraggingInfo) -> NSDragOperation {
-        if !Self.attachableFileURLs(from: sender).isEmpty {
+        if !AIChatPastedContent.attachableFileURLs(on: sender.draggingPasteboard).isEmpty {
             return .copy
         }
         return super.draggingUpdated(sender)
     }
 
     override func performDragOperation(_ sender: NSDraggingInfo) -> Bool {
-        let fileURLs = Self.attachableFileURLs(from: sender)
+        let fileURLs = AIChatPastedContent.attachableFileURLs(on: sender.draggingPasteboard)
         if !fileURLs.isEmpty,
            navigationDelegate?.textViewDidReceiveAttachmentDrop(fileURLs) == true {
             return true
@@ -785,18 +835,22 @@ private final class FocusableTextView: NSTextView {
         return super.performDragOperation(sender)
     }
 
-    /// Images and PDFs, matching what the attach menu offers. Anything else falls through to the
-    /// text view, which drops a file path into the prompt.
-    private static func attachableFileURLs(from draggingInfo: NSDraggingInfo) -> [URL] {
-        guard let urls = draggingInfo.draggingPasteboard.readObjects(forClasses: [NSURL.self], options: [
-            .urlReadingFileURLsOnly: true
-        ]) as? [URL] else {
-            return []
+    override func paste(_ sender: Any?) {
+        if navigationDelegate?.canAttachPastedContent == true,
+           let content = AIChatPastedContent.read(from: .general),
+           navigationDelegate?.textViewDidReceiveAttachmentPaste(content) == true {
+            return
         }
-        return urls.filter { url in
-            guard let type = UTType(filenameExtension: url.pathExtension.lowercased()) else { return false }
-            return type.conforms(to: .image) || type.conforms(to: .pdf)
+        super.paste(sender)
+    }
+
+    /// NSTextView disables Paste when nothing on the pasteboard is text, which is the case for a copied image.
+    override func validateMenuItem(_ menuItem: NSMenuItem) -> Bool {
+        if menuItem.action == #selector(paste(_:)), navigationDelegate?.canAttachPastedContent == true,
+           NSPasteboard.general.canReadObject(forClasses: [NSImage.self], options: nil) {
+            return true
         }
+        return super.validateMenuItem(menuItem)
     }
 
     override func acceptsFirstMouse(for event: NSEvent?) -> Bool {

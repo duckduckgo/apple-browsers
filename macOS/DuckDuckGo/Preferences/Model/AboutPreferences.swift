@@ -77,6 +77,10 @@ final class AboutPreferences: ObservableObject, PreferencesTabOpening {
         manualUpdateRemovalHandler.shouldHideManualUpdateOption
     }
 
+    var shouldShowAppStoreUpdatesCard: Bool {
+        featureFlagger.isFeatureOn(.moreProminentUpdates)
+    }
+
     @Published var updateState = UpdateState.upToDate
 
     func runUpdate() {

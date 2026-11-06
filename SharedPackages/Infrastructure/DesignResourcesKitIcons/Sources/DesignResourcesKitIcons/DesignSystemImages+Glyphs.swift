@@ -336,6 +336,7 @@ public extension DesignSystemImages {
             public static var profileBlocked: DesignSystemImage { .init(resource: .profileBlocked16) }
             public static var profileLock: DesignSystemImage { .init(resource: .profileLock16) }
             public static var qr: DesignSystemImage { .init(resource: .QR_16) }
+            public static var qrScan: DesignSystemImage { .init(resource: .qrScan16) }
             public static var recipe: DesignSystemImage { .init(resource: .recipe16) }
             public static var reload: DesignSystemImage { .init(resource: .reload16) }
             public static var screenShare: DesignSystemImage { .init(resource: .screenShare16) }
@@ -394,6 +395,7 @@ public extension DesignSystemImages {
             public static var wand: DesignSystemImage { .init(resource: .wand16) }
             public static var weather: DesignSystemImage { .init(resource: .weather16) }
             public static var windowNew: DesignSystemImage { .init(resource: .windowNew16) }
+            public static var windows: DesignSystemImage { .init(resource: .windows16) }
             public static var windowsAndTabs: DesignSystemImage { .init(resource: .windowsAndTabs16) }
             public static var zoomActualSize: DesignSystemImage { .init(resource: .zoomActualSize16) }
             public static var zoomIn: DesignSystemImage { .init(resource: .zoomIn16) }

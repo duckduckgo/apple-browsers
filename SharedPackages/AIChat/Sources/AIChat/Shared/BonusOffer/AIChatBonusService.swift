@@ -62,13 +62,14 @@ public protocol AIChatBonusMessageHandling {
     /// - Throws: `AIChatBonusStoreError` when the record can't be read or written.
     func applyRedeemOutcome(_ outcome: AIChatBonusRedeemOutcome) throws
 
-    /// Marks the offer as dismissed.
+    /// Marks the offer as dismissed for `campaignName`.
     ///
     /// Handles `aiChatBonusDismiss`, which Duck.ai sends when the activation modal is closed without
-    /// claiming. Gates only Duck.ai's mini promo.
+    /// claiming. Gates only Duck.ai's in-line promo, for that campaign.
     ///
+    /// - Parameter campaignName: The campaign whose offer was dismissed, from Duck.ai.
     /// - Throws: `AIChatBonusStoreError` when the record can't be read or written.
-    func dismiss() throws
+    func dismiss(campaignName: String) throws
 
     /// Ends the boost, keeping only the campaign so this install can't claim it again.
     ///
@@ -90,8 +91,6 @@ public final class AIChatBonusService: @unchecked Sendable {
     private let now: () -> Date
     private let makeBonusId: () -> String
     private let lock = NSLock()
-    /// Set when a permanent delete failed, so the next access retries it.
-    private var isDeletePending = false
     private let recordSubject = PassthroughSubject<AIChatBonusRecord, Never>()
 
     /// Create a new instance of the `AIChatBonusService` with the specified parameters.
@@ -147,8 +146,8 @@ extension AIChatBonusService: AIChatBonusMessageHandling {
         try apply { AIChatBonusRecordRules.applyRedeemOutcome(outcome, to: $0, nowMilliseconds: nowMilliseconds()) }
     }
 
-    public func dismiss() throws {
-        try apply(AIChatBonusRecordRules.dismiss)
+    public func dismiss(campaignName: String) throws {
+        try apply { AIChatBonusRecordRules.dismiss($0, campaignName: campaignName) }
     }
 
     public func end() throws {
@@ -171,22 +170,13 @@ extension AIChatBonusService: AIChatBonusStateProviding {
 
 public extension AIChatBonusService {
 
-    /// Deletes the record for good, e.g. on a new install. Publishes nothing.
-    ///
-    /// If the delete fails, later reads and writes in this session retry it first and throw until it succeeds.
-    ///
-    /// - Throws: `AIChatBonusStoreError` when the record can't be deleted.
-    func permanentlyDeleteRecord() throws {
-        try withLock { try permanentlyDelete() }
-    }
-
     /// Ends the boost if it has expired, clearing its Bonus ID.
     ///
     /// Reads and writes already do this. Call it when neither may happen soon, e.g. when the app becomes active.
     ///
     /// - Throws: `AIChatBonusStoreError` when the record can't be read. A failed write doesn't throw: the next read retries.
     func endBoostIfExpired() throws {
-        try withLock { _ = endExpiredBoostIfNeeded(for: try storedRecord()) }
+        try withLock { _ = endExpiredBoostIfNeeded(for: try store.read()) }
     }
 
 }
@@ -218,7 +208,7 @@ private extension AIChatBonusService {
         _ block: (AIChatBonusRecord?) throws -> Result
     ) throws -> Result {
         try withLock(caller: caller) {
-            let currentRecord = endExpiredBoostIfNeeded(for: try storedRecord())
+            let currentRecord = endExpiredBoostIfNeeded(for: try store.read())
             return try block(currentRecord)
         }
     }
@@ -250,16 +240,6 @@ private extension AIChatBonusService {
 
 private extension AIChatBonusService {
 
-    /// The stored record, after retrying a pending delete. Throws while that delete keeps failing.
-    func storedRecord() throws -> AIChatBonusRecord? {
-        if isDeletePending {
-            try store.delete()
-            isDeletePending = false
-            Logger.aiChat.debug("Duck.ai bonus: deleted the record on retry")
-        }
-        return try store.read()
-    }
-
     /// Writes `record` and publishes it. Sent inside the lock, so pushes follow the order of the writes.
     func write(_ record: AIChatBonusRecord) throws {
         try store.write(record)
@@ -285,18 +265,6 @@ private extension AIChatBonusService {
             reportStoreFailure(error)
             // Duck.ai checks expiry itself, so a failed cleanup mustn't fail the read. The next read retries.
             return record
-        }
-    }
-
-    /// Deletes the record. On failure, marks the delete as pending so `storedRecord()` retries it.
-    func permanentlyDelete() throws {
-        do {
-            try store.delete()
-            isDeletePending = false
-            Logger.aiChat.debug("Duck.ai bonus: deleted the record")
-        } catch {
-            isDeletePending = true
-            throw error
         }
     }
 

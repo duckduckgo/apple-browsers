@@ -152,7 +152,7 @@ final class AIChatOmnibarDuckAILogoLayoutTests: XCTestCase {
             featureFlagger: featureFlagger,
             aiChatMenuConfig: MockAIChatConfig()
         )
-        let themeManager = ThemeManager(appearancePreferences: appearancePreferences, featureFlagger: featureFlagger)
+        let themeManager = ThemeManager(appearancePreferences: appearancePreferences)
 
         let omnibarController = AIChatOmnibarController(
             aiChatTabOpener: MockAIChatTabOpener(),

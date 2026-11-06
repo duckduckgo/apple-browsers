@@ -137,8 +137,9 @@ struct DataBrokerRunCustomJSONView: View {
 
     private var dbpFeatureFlagLines: [(name: String, value: String)] {
         [
-            (FeatureFlag.dbpWebViewUserAgent.rawValue, viewModel.featureFlagger.isWebViewUserAgentOn.description),
+            (FeatureFlag.dbpCustomWebViewUserAgent.rawValue, viewModel.featureFlagger.isCustomWebViewUserAgentOn.description),
             (FeatureFlag.dbpExtractedProfileRefresh.rawValue, viewModel.featureFlagger.isExtractedProfileRefreshOn.description),
+            (FeatureFlag.dbpChallengeSolver.rawValue, viewModel.featureFlagger.isChallengeSolverOn.description),
         ]
     }
 
@@ -205,7 +206,6 @@ struct DataBrokerRunCustomJSONView: View {
 
             Text("macOS App version: \(viewModel.appVersion())")
             Text("DBP API endpoint: \(viewModel.dbpEndpoint)")
-            Text("Web view applicationNameForUserAgentProvider: \(viewModel.applicationNameForUserAgentDisplayValue)")
 
             VStack(alignment: .leading, spacing: 0) {
                 ForEach(dbpFeatureFlagLines, id: \.name) { flag in
@@ -287,6 +287,12 @@ struct DataBrokerRunCustomJSONView: View {
                     }
                     .toggleStyle(.checkbox)
                     .help(Text(verbatim: "Applies the scan and opt-out job timeouts shown below."))
+
+                    Toggle(isOn: $viewModel.hidesWebView) {
+                        Text(verbatim: "Hide WebView")
+                    }
+                    .toggleStyle(.checkbox)
+                    .help(Text(verbatim: "Uses the production hidden WebView path."))
                 }
 
                 if jsonText.isEmpty {

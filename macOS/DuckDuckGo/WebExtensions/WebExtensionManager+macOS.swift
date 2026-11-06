@@ -56,27 +56,36 @@ extension WebExtensionManager {
         NSApp.delegateTyped.webExtensionManager != nil
     }
 
-    /// Start after installed extensions load, so enforcement can't race the initial load.
+    /// Installed with the manager, so `isRemotelyDisabled` is correct before the initial load finishes.
     @MainActor
-    func startRemoteDisableEnforcer(configurationManager: PrivacyConfigurationManaging, featureFlagger: FeatureFlagger) {
+    func installRemoteDisableEnforcer(configurationManager: PrivacyConfigurationManaging, featureFlagger: FeatureFlagger) {
         guard remoteDisableEnforcer == nil else { return }
-        let enforcer = WebExtensionRemoteDisableEnforcer(
+        remoteDisableEnforcer = WebExtensionRemoteDisableEnforcer(
             manager: self,
             configurationManager: configurationManager,
             disabledExtensionIDs: { [featureFlagger] in
-                var disabledIDs: Set<String> = []
-                if !featureFlagger.isFeatureOn(.webExtensionBitwarden) {
-                    disabledIDs.insert(ChromeWebStoreID.bitwarden.rawValue)
-                }
-                if !featureFlagger.isFeatureOn(.webExtensionOnePassword) {
-                    disabledIDs.insert(ChromeWebStoreID.onePassword.rawValue)
-                }
-                return disabledIDs
+                Self.flagDisabledExtensionIDs(featureFlagger: featureFlagger)
             },
             disabledExtensionIDsDidChange: featureFlagger.updatesPublisher
         )
-        remoteDisableEnforcer = enforcer
-        enforcer.start()
+    }
+
+    /// Start after installed extensions load, so enforcement can't race the initial load.
+    @MainActor
+    func startRemoteDisableEnforcer() {
+        remoteDisableEnforcer?.start()
+    }
+
+    /// Catalog extensions that a feature flag turns on or off.
+    static let flaggedCatalogExtensions: [(flag: FeatureFlag, id: ChromeWebStoreID)] = [
+        (.webExtensionBitwarden, .bitwarden),
+        (.webExtensionOnePassword, .onePassword),
+        (.webExtensionICloudPasswords, .iCloudPasswords),
+    ]
+
+    /// The catalog extensions whose feature flag is off.
+    static func flagDisabledExtensionIDs(featureFlagger: FeatureFlagger) -> Set<String> {
+        Set(flaggedCatalogExtensions.filter { !featureFlagger.isFeatureOn($0.flag) }.map(\.id.rawValue))
     }
 }
 
@@ -95,7 +104,9 @@ enum WebExtensionManagerFactory {
         keyValueStore: any ThrowingKeyValueStoring,
         privacyConfigurationManager: PrivacyConfigurationManaging,
         autoconsentPreferences: AutoconsentPreferencesProviding,
+        themeManager: ThemeManager,
         buildType: ApplicationBuildType = StandardApplicationBuildType(),
+        featureFlagger: FeatureFlagger = Application.appDelegate.featureFlagger,
         darkReaderExcludedDomainsProvider: DarkReaderExcludedDomainsProviding? = nil,
         scriptletConfiguration: ScriptletConfiguration? = nil
     ) -> WebExtensionManager {
@@ -120,7 +131,7 @@ enum WebExtensionManagerFactory {
         let permissionController = Application.appDelegate.featureFlagger.isFeatureOn(.webExtensionsPermissions) ? WebExtensionPermissionController(
             store: WebExtensionPermissionStore(keyValueStore: keyValueStore),
             installationStore: installationStore,
-            prompter: WebExtensionPermissionPrompt(windowProvider: { NSApp.keyWindow ?? NSApp.mainWindow })
+            prompter: WebExtensionPermissionPrompt(windowProvider: { Application.appDelegate.windowControllersManager.lastKeyMainWindowController?.window }, themeManager: themeManager)
         ) : nil
         // The App Store sandbox cannot launch another app's host, so only Sparkle builds offer native messaging.
         let nativeMessagingHandler = buildType.isSparkleBuild && Application.appDelegate.featureFlagger.isFeatureOn(.webExtensionNativeMessaging)
@@ -146,9 +157,16 @@ enum WebExtensionManagerFactory {
             isCPMBackgroundLoadRecoveryEnabled: {
                 Application.appDelegate.featureFlagger.isFeatureOn(.cpmBackgroundLoadRecovery)
             },
+            isCPMBackgroundLoadRestartEnabled: {
+                Application.appDelegate.featureFlagger.isFeatureOn(.cpmBackgroundLoadRestart)
+            },
             isCPMLateBackgroundDocumentRecoveryEnabled: {
                 Application.appDelegate.featureFlagger.isFeatureOn(.cpmLateBackgroundDocumentRecovery)
             },
+            isCPMStableBaseURLEnabled: {
+                Application.appDelegate.featureFlagger.isFeatureOn(.cpmStableBaseURL)
+            },
+            isCPMUpgradeBeforeLoadEnabled: Application.appDelegate.featureFlagger.isFeatureOn(.cpmUpgradeBeforeLoad),
             handlerProvider: WebExtensionHandlerProvider(
                 privacyConfigurationManager: privacyConfigurationManager,
                 autoconsentPreferences: autoconsentPreferences,
@@ -161,13 +179,16 @@ enum WebExtensionManagerFactory {
         )
 
         internalSiteHandler.dataSource = manager
-        if buildType.isSparkleBuild {
-            manager.chromeWebStore = ChromeWebStoreService(
-                manager: manager,
-                catalog: ChromeWebStoreCatalog(configurationManager: privacyConfigurationManager),
-                presenter: ChromeWebStorePresenter(windowProvider: { NSApp.keyWindow ?? NSApp.mainWindow })
-            )
-        }
+        manager.chromeWebStore = ChromeWebStoreService(
+            manager: manager,
+            catalog: ChromeWebStoreCatalog(configurationManager: privacyConfigurationManager),
+            presenter: ChromeWebStorePresenter(windowProvider: { NSApp.keyWindow ?? NSApp.mainWindow }, themeManager: themeManager),
+            supportsUpdateDiscovery: buildType.isSparkleBuild,
+            isUpdateDiscoveryEnabled: { featureFlagger.isFeatureOn(.webExtensionUpdateDiscovery) },
+            updateDiscoveryFeatureFlagUpdates: featureFlagger.updatesPublisher,
+            keyValueStore: keyValueStore,
+            pixelFiring: pixelFiring
+        )
 
         return manager
     }

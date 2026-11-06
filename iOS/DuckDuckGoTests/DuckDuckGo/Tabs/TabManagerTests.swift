@@ -825,33 +825,39 @@ final class TabManagerTests: XCTestCase {
             receiveCancel: { cancellationCount += 1 }
         ).eraseToAnyPublisher()
         let webViewReleased = expectation(description: "Closed tab web view released")
-        weak var releasedController: TabViewController?
-
-        try autoreleasepool {
-            let contentController = try autoreleasepool {
-                let controller = TabViewController.fake(
-                    customWebView: { InitialPromptRetryWebView(frame: .zero, configuration: $0) },
-                    specialErrorPageNavigationHandler: SpecialErrorPageNavigationHandler(
-                        maliciousSiteProtectionNavigationHandler: MaliciousSiteProtectionNavigationHandler(
-                            maliciousSiteProtectionManager: MockMaliciousSiteProtectionManager()
-                        )
-                    ),
-                    contentBlockingAssetsPublisher: assetsPublisher
+        var controller: TabViewController? = TabViewController.fake(
+            customWebView: { InitialPromptRetryWebView(frame: .zero, configuration: $0) },
+            specialErrorPageNavigationHandler: SpecialErrorPageNavigationHandler(
+                maliciousSiteProtectionNavigationHandler: MaliciousSiteProtectionNavigationHandler(
+                    maliciousSiteProtectionManager: MockMaliciousSiteProtectionManager()
                 )
-                releasedController = controller
-                let webView = try XCTUnwrap(controller.webView)
-                webView.onDeinit { webViewReleased.fulfill() }
-                let contentController = webView.configuration.userContentController
-                XCTAssertFalse(contentController.userScripts.isEmpty)
-                XCTAssertEqual(subscriptionCount, 1)
-                XCTAssertEqual(cancellationCount, 0)
-                return contentController
-            }
+            ),
+            contentBlockingAssetsPublisher: assetsPublisher
+        )
+        weak var releasedController = controller
+        let contentController = try XCTUnwrap(controller?.webView.configuration.userContentController as? UserContentController)
+        controller?.webView.onDeinit { webViewReleased.fulfill() }
 
-            XCTAssertNil(releasedController)
-            XCTAssertEqual(cancellationCount, 1)
-            XCTAssertTrue(contentController.userScripts.isEmpty)
+        // Site permission scripts arrive with the content-blocking assets, so install them before closing the tab.
+        let installed = expectation(description: "User scripts installed")
+        let installation = contentController.$contentBlockingAssets.compactMap { $0 }.first().sink { _ in installed.fulfill() }
+        assetsSubject.send(.init(rulesUpdate: .init(rules: [], changes: [:], completionTokens: []),
+                                 sourceProvider: DefaultScriptSourceProvider(dependencies: .makeMock()),
+                                 duckAiNativeStorageHandler: nil,
+                                 sponsorBlockPreferences: SponsorBlockPreferences(store: InMemoryKeyValueStore())))
+        await fulfillment(of: [installed], timeout: 10)
+        installation.cancel()
+        XCTAssertFalse(contentController.userScripts.isEmpty)
+        XCTAssertEqual(subscriptionCount, 1)
+        XCTAssertEqual(cancellationCount, 0)
+
+        autoreleasepool {
+            controller = nil
         }
+
+        XCTAssertNil(releasedController)
+        XCTAssertEqual(cancellationCount, 1)
+        XCTAssertTrue(contentController.userScripts.isEmpty)
         await fulfillment(of: [webViewReleased], timeout: 3.0)
     }
 

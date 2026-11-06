@@ -31,8 +31,9 @@ public struct ClientToolCapability: Codable, Equatable, Sendable {
     public static let highlightInPage = Self(canonicalName: "highlightInPage", version: 1)
     public static let pinTab = Self(canonicalName: "pinTab", version: 1)
     public static let openTab = Self(canonicalName: "openTab", version: 1)
+    public static let closeTabs = Self(canonicalName: "closeTabs", version: 1)
 
-    public static let browserTools: [Self] = [.listOpenTabs, .switchToTab, .searchHistory, .readTabContent, .findInPage, .highlightInPage, .pinTab, .openTab]
+    public static let browserTools: [Self] = [.listOpenTabs, .switchToTab, .searchHistory, .readTabContent, .findInPage, .highlightInPage, .pinTab, .openTab, .closeTabs]
 
     public init(name: String, version: Int) throws {
         try ClientToolWireValidation.validateIdentifier(name, maximumLength: ClientToolWireValidation.maximumCapabilityNameLength, field: "name")

@@ -1,4 +1,5 @@
 # frozen_string_literal: true
+require "open3"
 require_relative "spaceship_patch"
 require_relative "appstore_release_metadata"
 
@@ -324,14 +325,14 @@ platform :mac do
 
     s3_bucket = ENV['RELEASE_BUCKET_NAME']
     s3_prefix = ENV['RELEASE_BUCKET_PREFIX']
-    unless dry_run || (s3_bucket && s3_prefix)
+    unless s3_bucket && s3_prefix
       UI.user_error!("Missing required S3 configuration: RELEASE_BUCKET_NAME and RELEASE_BUCKET_PREFIX")
     end
     UI.user_error!("Missing required CDN configuration: CDN_PATH") unless ENV['CDN_PATH']
     s3_url = "s3://#{s3_bucket}/#{s3_prefix}/release_metadata.json"
     cdn_url = "#{ENV['CDN_PATH']}release_metadata.json"
 
-    existing_content = read_release_metadata(cdn_url)
+    existing_content = read_release_metadata(s3_url)
     existing_metadata = existing_content ? JSON.parse(existing_content) : {}
 
     updated_metadata = begin
@@ -503,11 +504,15 @@ platform :mac do
 
     app_identifier = CredentialsManager::AppfileConfig.try_fetch_value(:app_identifier)
     app = Spaceship::ConnectAPI::App.find(app_identifier)
-    live_version = app.get_live_app_store_version(platform: Spaceship::ConnectAPI::Platform::MAC_OS)
+    live_version = app.get_live_app_store_version(
+      platform: Spaceship::ConnectAPI::Platform::MAC_OS,
+      includes: "appStoreVersionPhasedRelease"
+    )
     unless live_version&.version_string == version
       UI.user_error!("The live version changed from #{version} while fetching its phased release, please try again")
     end
-    phased_release = live_version.fetch_app_store_version_phased_release
+    # Included rather than fetched, because fetching raises for a version released without a phased release.
+    phased_release = live_version.app_store_version_phased_release
 
     {
       version: version,
@@ -519,13 +524,13 @@ platform :mac do
 
   # Returns nil if the file doesn't exist, and fails on any other error so that a failed read can't drop
   # the file's other entries.
-  def read_release_metadata(cdn_url)
-    UI.message("Reading existing metadata from #{cdn_url}")
-    response = HTTParty.get(cdn_url)
-    return response.body if response.code == 200
-    return nil if response.code == 404
+  def read_release_metadata(s3_url)
+    UI.message("Reading existing metadata from #{s3_url}")
+    content, error, status = Open3.capture3('aws', 's3', 'cp', s3_url, '-')
+    return content if status.success?
+    return nil if error.include?('(404)')
 
-    UI.user_error!("Couldn't read #{cdn_url}: HTTP #{response.code}")
+    UI.user_error!("Couldn't read #{s3_url}: #{error.strip}")
   end
 
   # Updates version and build number in respective config files

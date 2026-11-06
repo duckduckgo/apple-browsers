@@ -42,7 +42,7 @@ defaults:
     working-directory: macOS
 
 concurrency:
-  group: ${{ github.workflow }}
+  group: ${{ github.workflow }}-${{ inputs.dry_run && 'dry-run' || 'upload' }}
   cancel-in-progress: true
 
 jobs:

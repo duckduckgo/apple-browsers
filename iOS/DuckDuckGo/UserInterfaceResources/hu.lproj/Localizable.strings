@@ -1,4 +1,7 @@
 /* No comment provided by engineer. */
+" " = " ";
+
+/* No comment provided by engineer. */
 "-config.rollout.<parent>.<subfeature> true/false" = "-config.rollout.<parent>.<subfeature> true/false";
 
 /* No comment provided by engineer. */
@@ -381,6 +384,21 @@
 
 /* Title for the New Tab row in the Duck.ai tab header Plus (+) menu */
 "aichat.header.plusMenu.newTab" = "Új lap";
+
+/* Section header in the Duck.ai tab header Plus (+) menu; every row below it opens a new tab */
+"aichat.header.plusMenu.newTabSection" = "Új lap";
+
+/* Row in the New Tab section of the Duck.ai tab header Plus (+) menu — opens a new Duck.ai chat in a new tab */
+"aichat.header.plusMenu.newTabSection.chat" = "Csevegés";
+
+/* Row in the New Tab section of the Duck.ai tab header Plus (+) menu — opens Duck.ai in image generation mode in a new tab */
+"aichat.header.plusMenu.newTabSection.image" = "Kép";
+
+/* Row in the Duck.ai tab header Plus (+) menu — opens a new tab in search mode */
+"aichat.header.plusMenu.newTabSection.search" = "Keresés";
+
+/* Row in the New Tab section of the Duck.ai tab header Plus (+) menu — opens a new Duck.ai voice chat in a new tab */
+"aichat.header.plusMenu.newTabSection.voiceChat" = "Hangcsevegés";
 
 /* Title for the New Voice Chat row in the Duck.ai tab header Plus (+) menu */
 "aichat.header.plusMenu.newVoiceChat" = "Új hangcsevegés";
@@ -3298,6 +3316,72 @@
 /* No comment provided by engineer. */
 "menu.button.hint" = "Tallózás a menüben";
 
+/* iPad menu bar command */
+"menuActualSize" = "Tényleges méret";
+
+/* iPad menu bar command */
+"menuBack" = "Vissza";
+
+/* iPad menu bar command */
+"menuClearTabsAndData" = "Lapok és adatok törlése";
+
+/* iPad menu bar command */
+"menuDuplicateTab" = "Lap megkettőzése";
+
+/* iPad menu bar command */
+"menuFeedback" = "Visszajelzés megosztása";
+
+/* iPad menu bar command */
+"menuForward" = "Előre";
+
+/* iPad menu bar command */
+"menuHideDownloads" = "Letöltések elrejtése";
+
+/* iPad menu bar command */
+"menuHidePasswords" = "Jelszavak elrejtése";
+
+/* iPad menu bar command */
+"menuHideTabs" = "Lapok elrejtése";
+
+/* iPad menu bar command */
+"menuLastTab" = "Utolsó lap";
+
+/* iPad menu bar command */
+"menuNewTabOnRight" = "Új lap jobbra";
+
+/* iPad menu bar command */
+"menuNextTab" = "Következő lap megjelenítése";
+
+/* iPad menu bar command */
+"menuOpenLocation" = "Hely megnyitása…";
+
+/* iPad menu bar command */
+"menuPreviousTab" = "Előző lap megjelenítése";
+
+/* iPad menu bar command */
+"menuPrint" = "Nyomtatás…";
+
+/* iPad menu bar command selecting a numbered tab */
+"menuSelectTab" = "%d. lap kiválasztása";
+
+/* iPad menu bar command */
+"menuSettings" = "DuckDuckGo-beállítások…";
+
+/* iPad menu bar command */
+"menuShowDownloads" = "Letöltések megjelenítése";
+
+/* iPad menu bar command */
+"menuShowPasswords" = "Jelszavak megjelenítése";
+
+/* iPad menu bar command */
+"menuShowTabs" = "Lapok megjelenítése";
+
+/* iPad menu bar command */
+"menuStop" = "Leállítás";
+
+/* iPad menu bar command */
+"menuVoiceSearch" = "Privát beszédhangalapú keresés";
+
 /* No comment provided by engineer. */
 "Message" = "Üzenet";
 
@@ -4434,6 +4518,12 @@
 
 /* Footnote for the hide AI-generated images setting; ends with a Learn more link to the help page (do not remove the link) */
 "settings.aifeatures.hide.ai.generated.images.subtitle" = "Kiszűri az ismert AI-spam-webhelyeket a képkeresési találatok közül. [További információ](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/results/how-to-filter-out-ai-images-in-duckduckgo-search-results)";
+
+/* Settings screen description for the Duck.ai keyboard animation toggle */
+"settings.aifeatures.keyboard.animation.subtitle" = "Animáció megjelenítése a billentyűzet körül a Duck.ai-ra váltáskor vagy az abban gépelésekor.";
+
+/* Settings screen toggle title for the Duck.ai keyboard animation */
+"settings.aifeatures.keyboard.animation.title" = "Duck.ai billentyűzet-animáció";
 
 /* Label describing a feature which is turned on always */
 "settings.always.on" = "Mindig be van kapcsolva";
@@ -5932,3 +6022,12 @@
 /* Title for screen to screen confirming what data to import from a zip file (bookmarks and /or passwords) */
 "zip.content.import.types.title" = "Mit szeretnél importálni?";
 
+
+/* Fireproofing setting toggle label */
+"preserveLogins.askOnSignIn" = "Bejelentkezéskor kérdezzen rá a weboldalak tűzállóvá tételére";
+
+/* Empty Fireproof sites list */
+"preserveLogins.emptyState" = "Még nincsenek tűzálló weboldalak";
+
+/* Button to remove all Fireproof sites */
+"preserveLogins.removeAllSites" = "Összes tűzálló weboldal eltávolítása";

@@ -1,4 +1,7 @@
 /* No comment provided by engineer. */
+" " = " ";
+
+/* No comment provided by engineer. */
 "-config.rollout.<parent>.<subfeature> true/false" = "-config.rollout.<parent>.<subfeature> true/false";
 
 /* No comment provided by engineer. */
@@ -381,6 +384,21 @@
 
 /* Title for the New Tab row in the Duck.ai tab header Plus (+) menu */
 "aichat.header.plusMenu.newTab" = "Uusi välilehti";
+
+/* Section header in the Duck.ai tab header Plus (+) menu; every row below it opens a new tab */
+"aichat.header.plusMenu.newTabSection" = "Uusi välilehti";
+
+/* Row in the New Tab section of the Duck.ai tab header Plus (+) menu — opens a new Duck.ai chat in a new tab */
+"aichat.header.plusMenu.newTabSection.chat" = "Keskustelu";
+
+/* Row in the New Tab section of the Duck.ai tab header Plus (+) menu — opens Duck.ai in image generation mode in a new tab */
+"aichat.header.plusMenu.newTabSection.image" = "Kuva";
+
+/* Row in the Duck.ai tab header Plus (+) menu — opens a new tab in search mode */
+"aichat.header.plusMenu.newTabSection.search" = "Haku";
+
+/* Row in the New Tab section of the Duck.ai tab header Plus (+) menu — opens a new Duck.ai voice chat in a new tab */
+"aichat.header.plusMenu.newTabSection.voiceChat" = "Äänikeskustelu";
 
 /* Title for the New Voice Chat row in the Duck.ai tab header Plus (+) menu */
 "aichat.header.plusMenu.newVoiceChat" = "Uusi äänikeskustelu";
@@ -3298,6 +3316,72 @@
 /* No comment provided by engineer. */
 "menu.button.hint" = "Selausvalikko";
 
+/* iPad menu bar command */
+"menuActualSize" = "Todellinen koko";
+
+/* iPad menu bar command */
+"menuBack" = "Takaisin";
+
+/* iPad menu bar command */
+"menuClearTabsAndData" = "Tyhjennä välilehdet ja tiedot";
+
+/* iPad menu bar command */
+"menuDuplicateTab" = "Monista välilehti";
+
+/* iPad menu bar command */
+"menuFeedback" = "Anna palautetta";
+
+/* iPad menu bar command */
+"menuForward" = "Eteenpäin";
+
+/* iPad menu bar command */
+"menuHideDownloads" = "Piilota lataukset";
+
+/* iPad menu bar command */
+"menuHidePasswords" = "Piilota salasanat";
+
+/* iPad menu bar command */
+"menuHideTabs" = "Piilota välilehdet";
+
+/* iPad menu bar command */
+"menuLastTab" = "Viimeinen välilehti";
+
+/* iPad menu bar command */
+"menuNewTabOnRight" = "Uusi välilehti oikealle";
+
+/* iPad menu bar command */
+"menuNextTab" = "Näytä seuraava välilehti";
+
+/* iPad menu bar command */
+"menuOpenLocation" = "Avaa sijainti...";
+
+/* iPad menu bar command */
+"menuPreviousTab" = "Näytä edellinen välilehti";
+
+/* iPad menu bar command */
+"menuPrint" = "Tulosta...";
+
+/* iPad menu bar command selecting a numbered tab */
+"menuSelectTab" = "Valitse välilehti %d";
+
+/* iPad menu bar command */
+"menuSettings" = "DuckDuckGo-asetukset...";
+
+/* iPad menu bar command */
+"menuShowDownloads" = "Näytä lataukset";
+
+/* iPad menu bar command */
+"menuShowPasswords" = "Näytä salasanat";
+
+/* iPad menu bar command */
+"menuShowTabs" = "Näytä välilehdet";
+
+/* iPad menu bar command */
+"menuStop" = "Lopeta";
+
+/* iPad menu bar command */
+"menuVoiceSearch" = "Yksityinen äänihaku";
+
 /* No comment provided by engineer. */
 "Message" = "Viesti";
 
@@ -4434,6 +4518,12 @@
 
 /* Footnote for the hide AI-generated images setting; ends with a Learn more link to the help page (do not remove the link) */
 "settings.aifeatures.hide.ai.generated.images.subtitle" = "Suodattaa pois tunnetut tekoälyroskapostisivustot kuvahaun tuloksista. [Lue lisää](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/results/how-to-filter-out-ai-images-in-duckduckgo-search-results)";
+
+/* Settings screen description for the Duck.ai keyboard animation toggle */
+"settings.aifeatures.keyboard.animation.subtitle" = "Näytä animaatio näppäimistön ympärillä, kun siirryt Duck.ai-palveluun tai kirjoitat palvelussa.";
+
+/* Settings screen toggle title for the Duck.ai keyboard animation */
+"settings.aifeatures.keyboard.animation.title" = "Duck.ai-näppäimistöanimaatio";
 
 /* Label describing a feature which is turned on always */
 "settings.always.on" = "Aina käytössä";
@@ -5932,3 +6022,12 @@
 /* Title for screen to screen confirming what data to import from a zip file (bookmarks and /or passwords) */
 "zip.content.import.types.title" = "Mitä haluat tuoda?";
 
+
+/* Fireproofing setting toggle label */
+"preserveLogins.askOnSignIn" = "Kysy, tehdäänkö sivustoista palonkestäviä sisäänkirjautumisen yhteydessä";
+
+/* Empty Fireproof sites list */
+"preserveLogins.emptyState" = "Ei vielä palonkestäviä sivustoja";
+
+/* Button to remove all Fireproof sites */
+"preserveLogins.removeAllSites" = "Poista kaikki palonkestävät sivustot";

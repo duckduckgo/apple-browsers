@@ -19,6 +19,6 @@ name: test_chat_tab_new_chat
 
 # Start a new chat — the page closes and the chat tab remains open.
 - tapOn: "Open Duck.ai"
-- assertVisible: "Close tab"
+- assertVisible: "Recent chats"
 - assertVisible:
     id: "AIChat.Toolbar.Button.ModelChip"

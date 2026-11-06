@@ -349,6 +349,21 @@
 /* Title for the New Tab row in the Duck.ai tab header Plus (+) menu */
 "aichat.header.plusMenu.newTab" = "New Tab";
 
+/* Section header in the Duck.ai tab header Plus (+) menu; every row below it opens a new tab */
+"aichat.header.plusMenu.newTabSection" = "New Tab";
+
+/* Row in the New Tab section of the Duck.ai tab header Plus (+) menu — opens a new Duck.ai chat in a new tab */
+"aichat.header.plusMenu.newTabSection.chat" = "Chat";
+
+/* Row in the New Tab section of the Duck.ai tab header Plus (+) menu — opens Duck.ai in image generation mode in a new tab */
+"aichat.header.plusMenu.newTabSection.image" = "Image";
+
+/* Row in the Duck.ai tab header Plus (+) menu — opens a new tab in search mode */
+"aichat.header.plusMenu.newTabSection.search" = "Search";
+
+/* Row in the New Tab section of the Duck.ai tab header Plus (+) menu — opens a new Duck.ai voice chat in a new tab */
+"aichat.header.plusMenu.newTabSection.voiceChat" = "Voice Chat";
+
 /* Title for the New Voice Chat row in the Duck.ai tab header Plus (+) menu */
 "aichat.header.plusMenu.newVoiceChat" = "New Voice Chat";
 
@@ -3160,6 +3175,126 @@ https://duckduckgo.com/mac";
 /* No comment provided by engineer. */
 "menu.button.hint" = "Browsing Menu";
 
+/* iPad menu bar command */
+"menuActualSize" = "Actual Size";
+
+/* iPad menu bar command */
+"menuAddToDock" = "Add DuckDuckGo to Dock...";
+
+/* iPad menu bar command */
+"menuAddWidget" = "Add Widget to Home Screen...";
+
+/* iPad menu bar command */
+"menuBack" = "Back";
+
+/* iPad menu bar title */
+"menuBookmarks" = "Bookmarks";
+
+/* iPad menu bar command */
+"menuClearTabsAndData" = "Clear Tabs and Data";
+
+/* iPad Duck.ai menu bar command */
+"menuDeleteAllChats" = "Delete All Chats...";
+
+/* iPad menu bar command */
+"menuDuplicateTab" = "Duplicate Tab";
+
+/* iPad menu bar command */
+"menuExportBookmarks" = "Export Bookmarks...";
+
+/* iPad menu bar submenu */
+"menuFavorites" = "Favorites";
+
+/* iPad menu bar command */
+"menuFeedback" = "Share Feedback";
+
+/* iPad menu bar command */
+"menuForward" = "Forward";
+
+/* iPad menu bar command */
+"menuHideBookmarks" = "Hide Bookmarks";
+
+/* iPad menu bar command */
+"menuHideDownloads" = "Hide Downloads";
+
+/* iPad menu bar command */
+"menuHideDuckAIButton" = "Hide Duck.ai Button";
+
+/* iPad menu bar command */
+"menuHidePasswords" = "Hide Passwords";
+
+/* iPad menu bar command */
+"menuHideTabs" = "Hide Tabs";
+
+/* iPad menu bar command */
+"menuImportBookmarks" = "Import Bookmarks...";
+
+/* iPad menu bar command */
+"menuImportBookmarksAndPasswords" = "Import Bookmarks and Passwords...";
+
+/* iPad menu bar command */
+"menuLastTab" = "Last Tab";
+
+/* iPad Duck.ai menu bar command */
+"menuNewChat" = "New Chat";
+
+/* iPad Duck.ai menu bar command */
+"menuNewImageChat" = "New Image Chat";
+
+/* iPad menu bar command */
+"menuNewTabOnRight" = "New Tab on Right";
+
+/* iPad Duck.ai menu bar command */
+"menuNewVoiceChat" = "New Voice Chat";
+
+/* iPad menu bar command */
+"menuNextTab" = "Show Next Tab";
+
+/* iPad Duck.ai menu bar command */
+"menuOpenDuckAI" = "Open Duck.ai";
+
+/* iPad menu bar command */
+"menuOpenLocation" = "Open Location...";
+
+/* iPad menu bar command */
+"menuPreviousTab" = "Show Previous Tab";
+
+/* iPad menu bar command */
+"menuPrint" = "Print...";
+
+/* iPad Duck.ai menu bar section header */
+"menuRecentChats" = "Recent Chats";
+
+/* iPad menu bar command selecting a numbered tab */
+"menuSelectTab" = "Select Tab %d";
+
+/* iPad menu bar command */
+"menuSetDefaultBrowser" = "Set DuckDuckGo As Default Browser...";
+
+/* iPad menu bar command */
+"menuSettings" = "DuckDuckGo Settings...";
+
+/* iPad menu bar command */
+"menuShowBookmarks" = "Show Bookmarks";
+
+/* iPad menu bar command */
+"menuShowDownloads" = "Show Downloads";
+
+/* iPad menu bar command */
+"menuShowDuckAIButton" = "Show Duck.ai Button";
+
+/* iPad menu bar command */
+"menuShowPasswords" = "Show Passwords";
+
+/* iPad menu bar command */
+"menuShowTabs" = "Show Tabs";
+
+/* iPad menu bar command */
+"menuStop" = "Stop";
+
+/* iPad menu bar command */
+"menuVoiceSearch" = "Private Voice Search";
+
 /* The name of the Address Bar button when referenced in settings. */
 "mobile.customization.addressbar.button" = "Address Bar Button";
 
@@ -3919,11 +4054,17 @@ https://duckduckgo.com/mac";
 /* Description of too many requests error when syncing. */
 "prefrences.sync.too-many-requests.description" = "Sync & Backup is temporarily unavailable.";
 
+/* Fireproofing setting toggle label */
+"preserveLogins.askOnSignIn" = "Ask to Fireproof sites on sign-in";
+
 /* No comment provided by engineer. */
 "preserveLogins.domain.list.footer" = "Websites rely on cookies to keep you signed in. When you Fireproof a site, cookies won’t be erased and you’ll stay signed in, even after using the Fire Button. We still block third-party trackers found on Fireproof websites.";
 
 /* Section header above Fireproofed websites list */
 "preserveLogins.domain.list.title" = "Fireproof Sites";
+
+/* Empty Fireproof sites list */
+"preserveLogins.emptyState" = "No Fireproof sites yet";
 
 /* Alert message explaining to users that the benefit of fireproofing a site is that they will be kept signed in */
 "preserveLogins.fireproof.message" = "Fireproofing this site will keep you signed in after using the Fire Button.";
@@ -3954,6 +4095,9 @@ https://duckduckgo.com/mac";
 
 /* Confirmation button in alert */
 "preserveLogins.remove.all.ok" = "OK";
+
+/* Button to remove all Fireproof sites */
+"preserveLogins.removeAllSites" = "Remove All Fireproof Sites";
 
 /* Privacy Icon accessibility title */
 "privacy.icon.dax" = "DuckDuckGo logo";
@@ -4215,6 +4359,12 @@ Take back control of your personal information with the browser designed for dat
 
 /* Footnote for the hide AI-generated images setting; ends with a Learn more link to the help page (do not remove the link) */
 "settings.aifeatures.hide.ai.generated.images.subtitle" = "Filters out known AI spam sites from image search results. [Learn more](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/results/how-to-filter-out-ai-images-in-duckduckgo-search-results)";
+
+/* Settings screen description for the Duck.ai keyboard animation toggle */
+"settings.aifeatures.keyboard.animation.subtitle" = "Show an animation around the keyboard when you switch to or type in Duck.ai.";
+
+/* Settings screen toggle title for the Duck.ai keyboard animation */
+"settings.aifeatures.keyboard.animation.title" = "Duck.ai Keyboard Animation";
 
 /* Label describing a feature which is turned on always */
 "settings.always.on" = "Always On";
@@ -5089,11 +5239,26 @@ Take back control of your personal information with the browser designed for dat
 /* Fallback device name for confirmation dialogs */
 "sync.pairing-v2.unknown-peer-name" = "the other device";
 
+/* Title for a button in the Sync Promotion banner on the Bookmarks or Passwords screen that opens a screen with links to get DuckDuckGo on other platforms */
+"sync.promo.bookmarks.another-device.get-desktop-app.action" = "Get App";
+
+/* Title for a button in the Sync Promotion banner on the Bookmarks screen that opens Sync settings to connect another device */
+"sync.promo.bookmarks.another-device.sync.action" = "Sync Bookmarks";
+
+/* Title for the Sync Promotion banner on the Bookmarks screen, shown when Sync is on but only this device is connected */
+"sync.promo.bookmarks.another-device.title" = "Sync bookmarks with your Desktop app.";
+
 /* Message for the Sync Promotion banner when user has bookmarks that can be synced */
 "sync.promo.bookmarks.message" = "No account needed. End-to-end encryption means nobody but you can see your bookmarks, not even us.";
 
+/* Message for the redesigned Sync Promotion banner on the Bookmarks screen */
+"sync.promo.bookmarks.redesign.message" = "End-to-end encrypted. Nobody can see your bookmarks, not even us.";
+
 /* Title for the Sync Promotion banner */
 "sync.promo.bookmarks.title" = "Sync & Back Up Your Bookmarks";
+
+/* Accessibility label for the close button on the Sync Promotion banner */
+"sync.promo.close.accessibility.label" = "Dismiss sync promotion";
 
 /* Title for a button in the Sync Promotion banner to set up Sync */
 "sync.promo.confirm.action" = "Set Up Sync";
@@ -5107,11 +5272,23 @@ Take back control of your personal information with the browser designed for dat
 /* Title for a button in the Sync Promotion banner to dismiss Sync promotion banner */
 "sync.promo.dismiss.action" = "No Thanks";
 
+/* Title for a button in the Sync Promotion banner on the Passwords screen that opens Sync settings to connect another device */
+"sync.promo.passwords.another-device.sync.action" = "Sync Passwords";
+
+/* Title for the Sync Promotion banner on the Passwords screen, shown when Sync is on but only this device is connected */
+"sync.promo.passwords.another-device.title" = "Sync passwords with your Desktop app.";
+
 /* Message for the Sync Promotion banner when user has passwords that can be synced */
 "sync.promo.passwords.message" = "No account needed. End-to-end encryption means nobody but you can see your passwords, not even us.";
 
+/* Message for the redesigned Sync Promotion banner on the Passwords screen */
+"sync.promo.passwords.redesign.message" = "End-to-end encrypted. Nobody can see your passwords, not even us.";
+
 /* Title for the Sync Promotion banner */
 "sync.promo.passwords.title" = "Sync & Back Up Your Passwords";
+
+/* Label for a toggle in the Sync Promotion banner that opens Sync settings and starts setting up Sync with another device */
+"sync.promo.toggle.title" = "Sync & Backup";
 
 /* Button title to start backup */
 "sync.recovery.alternative.prompt.backup.button" = "Sync & Backup This Device";

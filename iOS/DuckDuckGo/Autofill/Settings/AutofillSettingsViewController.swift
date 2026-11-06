@@ -31,6 +31,7 @@ import PixelKit
 enum AutofillSettingsSource: String {
     case settings
     case overflow = "overflow_menu"
+    case menuBar = "menu_bar"
     case sync
     case appIconShortcut = "app_icon_shortcut"
     case homeScreenWidget = "home_screen_widget"

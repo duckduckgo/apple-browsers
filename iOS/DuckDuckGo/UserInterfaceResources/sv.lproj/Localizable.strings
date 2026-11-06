@@ -1,4 +1,7 @@
 /* No comment provided by engineer. */
+" " = " ";
+
+/* No comment provided by engineer. */
 "-config.rollout.<parent>.<subfeature> true/false" = "-config.rollout.<parent>.<subfeature> true/false";
 
 /* No comment provided by engineer. */
@@ -381,6 +384,21 @@
 
 /* Title for the New Tab row in the Duck.ai tab header Plus (+) menu */
 "aichat.header.plusMenu.newTab" = "Ny flik";
+
+/* Section header in the Duck.ai tab header Plus (+) menu; every row below it opens a new tab */
+"aichat.header.plusMenu.newTabSection" = "Ny flik";
+
+/* Row in the New Tab section of the Duck.ai tab header Plus (+) menu — opens a new Duck.ai chat in a new tab */
+"aichat.header.plusMenu.newTabSection.chat" = "Chatt";
+
+/* Row in the New Tab section of the Duck.ai tab header Plus (+) menu — opens Duck.ai in image generation mode in a new tab */
+"aichat.header.plusMenu.newTabSection.image" = "Bild";
+
+/* Row in the Duck.ai tab header Plus (+) menu — opens a new tab in search mode */
+"aichat.header.plusMenu.newTabSection.search" = "Sök";
+
+/* Row in the New Tab section of the Duck.ai tab header Plus (+) menu — opens a new Duck.ai voice chat in a new tab */
+"aichat.header.plusMenu.newTabSection.voiceChat" = "Röstchatt";
 
 /* Title for the New Voice Chat row in the Duck.ai tab header Plus (+) menu */
 "aichat.header.plusMenu.newVoiceChat" = "Ny röstchatt";
@@ -3298,6 +3316,72 @@
 /* No comment provided by engineer. */
 "menu.button.hint" = "Bläddra-meny";
 
+/* iPad menu bar command */
+"menuActualSize" = "Faktisk storlek";
+
+/* iPad menu bar command */
+"menuBack" = "Tillbaka";
+
+/* iPad menu bar command */
+"menuClearTabsAndData" = "Rensa flikar och data";
+
+/* iPad menu bar command */
+"menuDuplicateTab" = "Duplicera flik";
+
+/* iPad menu bar command */
+"menuFeedback" = "Berätta vad du tycker";
+
+/* iPad menu bar command */
+"menuForward" = "Framåt";
+
+/* iPad menu bar command */
+"menuHideDownloads" = "Dölj hämtningar";
+
+/* iPad menu bar command */
+"menuHidePasswords" = "Dölj lösenord";
+
+/* iPad menu bar command */
+"menuHideTabs" = "Dölj flikar";
+
+/* iPad menu bar command */
+"menuLastTab" = "Senaste fliken";
+
+/* iPad menu bar command */
+"menuNewTabOnRight" = "Ny flik till höger";
+
+/* iPad menu bar command */
+"menuNextTab" = "Visa nästa flik";
+
+/* iPad menu bar command */
+"menuOpenLocation" = "Öppna plats...";
+
+/* iPad menu bar command */
+"menuPreviousTab" = "Visa föregående flik";
+
+/* iPad menu bar command */
+"menuPrint" = "Skriv ut ...";
+
+/* iPad menu bar command selecting a numbered tab */
+"menuSelectTab" = "Välj flik %d";
+
+/* iPad menu bar command */
+"menuSettings" = "DuckDuckGo-inställningar...";
+
+/* iPad menu bar command */
+"menuShowDownloads" = "Visa nerladdningar";
+
+/* iPad menu bar command */
+"menuShowPasswords" = "Visa lösenord";
+
+/* iPad menu bar command */
+"menuShowTabs" = "Visa flikar";
+
+/* iPad menu bar command */
+"menuStop" = "Stoppa";
+
+/* iPad menu bar command */
+"menuVoiceSearch" = "Privat röstsökning";
+
 /* No comment provided by engineer. */
 "Message" = "Meddelande";
 
@@ -4434,6 +4518,12 @@
 
 /* Footnote for the hide AI-generated images setting; ends with a Learn more link to the help page (do not remove the link) */
 "settings.aifeatures.hide.ai.generated.images.subtitle" = "Filtrerar bort kända webbplatser för AI-spam från sökresultaten för bilder. [Läs mer](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/results/how-to-filter-out-ai-images-in-duckduckgo-search-results)";
+
+/* Settings screen description for the Duck.ai keyboard animation toggle */
+"settings.aifeatures.keyboard.animation.subtitle" = "Visa en animation runt tangentbordet när du byter till Duck.ai eller skriver i Duck.ai.";
+
+/* Settings screen toggle title for the Duck.ai keyboard animation */
+"settings.aifeatures.keyboard.animation.title" = "Animering av Duck.ai-tangentbordet";
 
 /* Label describing a feature which is turned on always */
 "settings.always.on" = "Alltid på";
@@ -5932,3 +6022,12 @@
 /* Title for screen to screen confirming what data to import from a zip file (bookmarks and /or passwords) */
 "zip.content.import.types.title" = "Vad vill du importera?";
 
+
+/* Fireproofing setting toggle label */
+"preserveLogins.askOnSignIn" = "Fråga om webbplatser ska brandsäkras vid inloggning";
+
+/* Empty Fireproof sites list */
+"preserveLogins.emptyState" = "Inga brandsäkra webbplatser ännu";
+
+/* Button to remove all Fireproof sites */
+"preserveLogins.removeAllSites" = "Ta bort alla brandsäkra webbplatser";

@@ -1,4 +1,7 @@
 /* No comment provided by engineer. */
+" " = " ";
+
+/* No comment provided by engineer. */
 "-config.rollout.<parent>.<subfeature> true/false" = "-config.rollout.<parent>.<subfeature> true/false";
 
 /* No comment provided by engineer. */
@@ -381,6 +384,21 @@
 
 /* Title for the New Tab row in the Duck.ai tab header Plus (+) menu */
 "aichat.header.plusMenu.newTab" = "Neuer Tab";
+
+/* Section header in the Duck.ai tab header Plus (+) menu; every row below it opens a new tab */
+"aichat.header.plusMenu.newTabSection" = "Neuer Tab";
+
+/* Row in the New Tab section of the Duck.ai tab header Plus (+) menu — opens a new Duck.ai chat in a new tab */
+"aichat.header.plusMenu.newTabSection.chat" = "Chat";
+
+/* Row in the New Tab section of the Duck.ai tab header Plus (+) menu — opens Duck.ai in image generation mode in a new tab */
+"aichat.header.plusMenu.newTabSection.image" = "Bild";
+
+/* Row in the Duck.ai tab header Plus (+) menu — opens a new tab in search mode */
+"aichat.header.plusMenu.newTabSection.search" = "Suche";
+
+/* Row in the New Tab section of the Duck.ai tab header Plus (+) menu — opens a new Duck.ai voice chat in a new tab */
+"aichat.header.plusMenu.newTabSection.voiceChat" = "Sprachchat";
 
 /* Title for the New Voice Chat row in the Duck.ai tab header Plus (+) menu */
 "aichat.header.plusMenu.newVoiceChat" = "Neuer Voice-Chat";
@@ -3298,6 +3316,72 @@
 /* No comment provided by engineer. */
 "menu.button.hint" = "Browsing-Optionen";
 
+/* iPad menu bar command */
+"menuActualSize" = "Tatsächliche Größe";
+
+/* iPad menu bar command */
+"menuBack" = "Zurück";
+
+/* iPad menu bar command */
+"menuClearTabsAndData" = "Tabs und Daten löschen";
+
+/* iPad menu bar command */
+"menuDuplicateTab" = "Tab duplizieren";
+
+/* iPad menu bar command */
+"menuFeedback" = "Feedback teilen";
+
+/* iPad menu bar command */
+"menuForward" = "Weiter";
+
+/* iPad menu bar command */
+"menuHideDownloads" = "Downloads ausblenden";
+
+/* iPad menu bar command */
+"menuHidePasswords" = "Passwörter ausblenden";
+
+/* iPad menu bar command */
+"menuHideTabs" = "Tabs ausblenden";
+
+/* iPad menu bar command */
+"menuLastTab" = "Letzter Tab";
+
+/* iPad menu bar command */
+"menuNewTabOnRight" = "Neuer Tab auf der rechten Seite";
+
+/* iPad menu bar command */
+"menuNextTab" = "Nächsten Tab anzeigen";
+
+/* iPad menu bar command */
+"menuOpenLocation" = "Standort öffnen …";
+
+/* iPad menu bar command */
+"menuPreviousTab" = "Vorherigen Tab anzeigen";
+
+/* iPad menu bar command */
+"menuPrint" = "Drucken ...";
+
+/* iPad menu bar command selecting a numbered tab */
+"menuSelectTab" = "Tab %d auswählen";
+
+/* iPad menu bar command */
+"menuSettings" = "DuckDuckGo-Einstellungen ...";
+
+/* iPad menu bar command */
+"menuShowDownloads" = "Downloads anzeigen";
+
+/* iPad menu bar command */
+"menuShowPasswords" = "Passwörter anzeigen";
+
+/* iPad menu bar command */
+"menuShowTabs" = "Tabs anzeigen";
+
+/* iPad menu bar command */
+"menuStop" = "Stopp";
+
+/* iPad menu bar command */
+"menuVoiceSearch" = "Private Sprachsuche";
+
 /* No comment provided by engineer. */
 "Message" = "Nachricht";
 
@@ -4434,6 +4518,12 @@
 
 /* Footnote for the hide AI-generated images setting; ends with a Learn more link to the help page (do not remove the link) */
 "settings.aifeatures.hide.ai.generated.images.subtitle" = "Filtert bekannte KI-Spam-Websites aus den Bildersuchergebnissen heraus. [Mehr erfahren](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/results/how-to-filter-out-ai-images-in-duckduckgo-search-results)";
+
+/* Settings screen description for the Duck.ai keyboard animation toggle */
+"settings.aifeatures.keyboard.animation.subtitle" = "Zeige eine Animation um die Tastatur herum, wenn du zu Duck.ai wechselst oder dort tippst.";
+
+/* Settings screen toggle title for the Duck.ai keyboard animation */
+"settings.aifeatures.keyboard.animation.title" = "Duck.ai-Tastaturanimation";
 
 /* Label describing a feature which is turned on always */
 "settings.always.on" = "Immer aktiviert";
@@ -5932,3 +6022,12 @@
 /* Title for screen to screen confirming what data to import from a zip file (bookmarks and /or passwords) */
 "zip.content.import.types.title" = "Was möchtest du importieren?";
 
+
+/* Fireproofing setting toggle label */
+"preserveLogins.askOnSignIn" = "Seiten bei der Anmeldung feuerfest machen";
+
+/* Empty Fireproof sites list */
+"preserveLogins.emptyState" = "Noch keine feuerfesten Seiten";
+
+/* Button to remove all Fireproof sites */
+"preserveLogins.removeAllSites" = "Alle feuerfesten Seiten entfernen";

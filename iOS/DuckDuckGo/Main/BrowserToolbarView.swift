@@ -597,6 +597,10 @@ final class BrowserToolbarView: UIView {
         toolbarButtonViews.forEach { view in
             view.setContentCompressionResistancePriority(.defaultLow, for: .vertical)
             buttonStack.addArrangedSubview(view)
+            (view as? BrowserChromeButton)?.menuPreviewContainer = { [weak self, weak view] in
+                guard let self, let view, isFloatingStyleEnabled, view.isDescendant(of: self) else { return nil }
+                return self
+            }
         }
     }
 

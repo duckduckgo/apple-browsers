@@ -148,6 +148,37 @@ public enum TokenRecoveryOutcome: String, Codable, CaseIterable {
     case failed
 }
 
+/// The outcome of the backup restore within a token recovery, as reported on pixels and wide events.
+public enum BackupRecoveryOutcome: String, Codable, CaseIterable {
+    /// The backup restored the token container.
+    case succeeded
+    /// No backup restore ran: no backup is stored, backups are off, or no recovery is configured.
+    case notAttempted = "not_attempted"
+    /// The backup can never restore the session: it belongs to another account, predates the last sign-out or has expired,
+    /// or the server rejected it.
+    case rejected
+    /// The backup restore failed for a temporary or unknown reason.
+    case failed
+    /// The user signed out, signed in or switched account while the backup restore ran.
+    case sessionChanged = "session_changed"
+    /// The path reporting it doesn't run a token recovery.
+    case notApplicable = "not_applicable"
+
+    /// - Parameter result: The result of the backup strategy, or nil when it didn't run.
+    public init(_ result: TokenRecoveryResult?) {
+        switch result {
+        case .recovered:
+            self = .succeeded
+        case .notApplicable, nil:
+            self = .notAttempted
+        case .sessionChanged:
+            self = .sessionChanged
+        case .failed(let error):
+            self = BackupRestoreFailure(error) == .permanent ? .rejected : .failed
+        }
+    }
+}
+
 extension AuthV2TokenRefreshWideEventData {
 
     public enum FailingStep: String, Codable, CaseIterable {

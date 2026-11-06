@@ -52,10 +52,13 @@ protocol PostIdleSessionInstrumentation: AnyObject {
     /// A return session began on `landedOn`. `afterIdleSurface` is nil for an ordinary return.
     func sessionStarted(landedOn: ReturnSessionWideEventData.LandedOn,
                         afterIdleSurface: PostIdleSessionWideEventData.Surface?,
-                        focused: Bool)
+                        focused: Bool,
+                        toggleEnabled: Bool,
+                        togglePosition: ReturnSessionWideEventData.TogglePosition?)
 
     /// Records automatic address-bar focus on arrival without counting it as an interaction.
-    func keyboardRaisedOnArrival()
+    /// `togglePosition` is kept only if none was recorded at session start.
+    func keyboardRaisedOnArrival(togglePosition: ReturnSessionWideEventData.TogglePosition?)
 
     /// User scrolled or activated an in-page link. Idempotent within a session.
     func pageEngaged()
@@ -98,6 +101,7 @@ extension PostIdleSessionInstrumentation {
 final class DefaultPostIdleSessionInstrumentation: PostIdleSessionInstrumentation {
 
     private let wideEvent: WideEventManaging
+    private let usageContextProvider: UsageContextProviding
     private let dateProvider: () -> Date
     private var returnSessionID: String?
     private var postIdleSessionID: String?
@@ -106,8 +110,10 @@ final class DefaultPostIdleSessionInstrumentation: PostIdleSessionInstrumentatio
     private var pendingTimeAwayMs: Int?
 
     init(wideEvent: WideEventManaging,
+         usageContextProvider: UsageContextProviding = UsageContextProvider(),
          dateProvider: @escaping () -> Date = { Date() }) {
         self.wideEvent = wideEvent
+        self.usageContextProvider = usageContextProvider
         self.dateProvider = dateProvider
     }
 
@@ -117,7 +123,9 @@ final class DefaultPostIdleSessionInstrumentation: PostIdleSessionInstrumentatio
 
     func sessionStarted(landedOn: ReturnSessionWideEventData.LandedOn,
                         afterIdleSurface: PostIdleSessionWideEventData.Surface?,
-                        focused: Bool) {
+                        focused: Bool,
+                        toggleEnabled: Bool,
+                        togglePosition: ReturnSessionWideEventData.TogglePosition?) {
         // If a session is already active, cancel it before starting a new one.
         // Quick background-foreground cycles over the idle threshold can trigger
         // this; the previous session is reported as CANCELLED so we don't lose it.
@@ -136,7 +144,10 @@ final class DefaultPostIdleSessionInstrumentation: PostIdleSessionInstrumentatio
                                                     afterIdle: afterIdleSurface != nil,
                                                     startedAt: startedAt,
                                                     timeAwayMs: pendingTimeAwayMs,
-                                                    focused: focused)
+                                                    focused: focused,
+                                                    toggleEnabled: toggleEnabled,
+                                                    togglePosition: togglePosition)
+        returnData.record(usageContextProvider.currentContext)
         pendingTimeAwayMs = nil
         returnSessionID = returnData.globalData.id
         pageEngagedSent = false
@@ -144,17 +155,19 @@ final class DefaultPostIdleSessionInstrumentation: PostIdleSessionInstrumentatio
 
         guard let afterIdleSurface else { return }
         let postIdleData = PostIdleSessionWideEventData(surface: afterIdleSurface, startedAt: startedAt)
+        postIdleData.record(usageContextProvider.currentContext)
         postIdleSessionID = postIdleData.globalData.id
         wideEvent.startFlow(postIdleData)
     }
 
-    func keyboardRaisedOnArrival() {
+    func keyboardRaisedOnArrival(togglePosition: ReturnSessionWideEventData.TogglePosition?) {
         guard let globalID = returnSessionID,
               let data = wideEvent.getFlowData(ReturnSessionWideEventData.self, globalID: globalID),
               data.firstInteractionInterval.end == nil,
               !data.focused else { return }
         wideEvent.updateFlow(globalID: globalID) { (data: inout ReturnSessionWideEventData) in
             data.focused = true
+            data.togglePosition = data.togglePosition ?? togglePosition
         }
     }
 
@@ -205,6 +218,7 @@ final class DefaultPostIdleSessionInstrumentation: PostIdleSessionInstrumentatio
            let data = wideEvent.getFlowData(ReturnSessionWideEventData.self, globalID: globalID) {
             data.statusReason = .appBackgrounded
             data.sessionInterval.end = now
+            data.record(usageContextProvider.currentContext)
             wideEvent.completeFlow(data, status: .cancelled, onComplete: { _, _ in })
         }
         returnSessionID = nil
@@ -213,6 +227,7 @@ final class DefaultPostIdleSessionInstrumentation: PostIdleSessionInstrumentatio
            let data = wideEvent.getFlowData(PostIdleSessionWideEventData.self, globalID: globalID) {
             data.statusReason = .appBackgrounded
             data.sessionInterval.end = now
+            data.record(usageContextProvider.currentContext)
             wideEvent.completeFlow(data, status: .cancelled, onComplete: { _, _ in })
         }
         postIdleSessionID = nil
@@ -229,6 +244,7 @@ final class DefaultPostIdleSessionInstrumentation: PostIdleSessionInstrumentatio
             data.promptOrigin = reason == .aiPromptSubmitted ? promptOrigin?.rawValue : nil
             data.sessionInterval.end = now
             markFirstInteractionIfNeeded(on: data, at: now)
+            data.record(usageContextProvider.currentContext)
             wideEvent.completeFlow(data, status: .success(reason: reason.rawValue), onComplete: { _, _ in })
         }
         returnSessionID = nil
@@ -241,6 +257,7 @@ final class DefaultPostIdleSessionInstrumentation: PostIdleSessionInstrumentatio
             data.statusReason = postIdleReason
             data.sessionInterval.end = now
             markFirstInteractionIfNeeded(on: data, at: now)
+            data.record(usageContextProvider.currentContext)
             wideEvent.completeFlow(data, status: .success(reason: postIdleReason.rawValue), onComplete: { _, _ in })
         }
         postIdleSessionID = nil

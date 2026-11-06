@@ -106,13 +106,19 @@ final class DefaultDuckAIWideEventInstrumentation: DuckAIWideEventInstrumentatio
 
     private let wideEvent: WideEventManaging
     private let dateProvider: () -> Date
+    private let usageContextProvider: UsageContextProviding
+    private let addressBarPosition: () -> AddressBarPosition?
     private var activeFlows: [DuckAIWideEventFlowScope: ActiveFlow] = [:]
 
     init(wideEvent: WideEventManaging,
          completeOrphanedFlowsOnInit: Bool = false,
-         dateProvider: @escaping () -> Date = { Date() }) {
+         dateProvider: @escaping () -> Date = { Date() },
+         usageContextProvider: UsageContextProviding = UsageContextProvider(),
+         addressBarPosition: @escaping () -> AddressBarPosition? = { AppUserDefaults().iPhoneAddressBarPosition }) {
         self.wideEvent = wideEvent
         self.dateProvider = dateProvider
+        self.usageContextProvider = usageContextProvider
+        self.addressBarPosition = addressBarPosition
 
         if completeOrphanedFlowsOnInit {
             completeOrphanedFlowsFromPreviousAppSession()
@@ -149,6 +155,8 @@ final class DefaultDuckAIWideEventInstrumentation: DuckAIWideEventInstrumentatio
             attachmentsSelected: attachmentsSelected,
             startedAt: dateProvider()
         )
+        data.record(usageContextProvider.currentContext)
+        data.addressBarPosition = addressBarPosition()
         activeFlows[scope] = ActiveFlow(data: data)
         data.lastStep = .submitted
         wideEvent.startFlow(data)

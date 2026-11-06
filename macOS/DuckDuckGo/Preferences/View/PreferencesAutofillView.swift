@@ -18,6 +18,8 @@
 
 import BWManagementShared
 import Combine
+import DesignResourcesKit
+import DesignResourcesKitIcons
 import PixelKit
 import PreferencesUI_macOS
 import SwiftUI
@@ -34,6 +36,7 @@ extension Preferences {
         private let bitwardenManager = Application.appDelegate.bitwardenManager
         @State private var bitwardenStatus: BWStatus = Application.appDelegate.bitwardenManager?.status ?? .disabled
         @State private var showingResetNeverPromptSitesSheet = false
+        let showExtensions: () -> Void
 
         var passwordManagerBinding: Binding<PasswordManager> {
             .init {
@@ -62,8 +65,13 @@ extension Preferences {
         var body: some View {
             PreferencePane(UserText.passwordManagementTitle) {
 
-                if model.showSyncPromo {
+                if model.isManagedByExtension {
+                    ManagedByExtensionNotice(onManageExtensions: showExtensions)
+                } else if model.showSyncPromo {
                     SyncPromoView(viewModel: model.syncPromoViewModel, layout: .horizontal)
+                        .onAppear {
+                            model.syncPromoViewModel.promoDisplayed()
+                        }
                 }
 
                 // Autofill Content  Button
@@ -71,45 +79,32 @@ extension Preferences {
                     Button(UserText.autofillViewContentButtonPasswords) {
                         model.showAutofillPopover(.logins, source: .settings)
                     }
+
                     Button(UserText.autofillViewContentButtonIdentities) {
                         model.showAutofillPopover(.identities, source: .settings)
                     }
+
                     Button(UserText.autofillViewContentButtonCreditCards) {
                         model.showAutofillPopover(.cards, source: .settings)
                     }
-                    if NSApp.isSandboxed {
-                        Button(UserText.importPasswords) {
-                            model.openImportPasswordsWindow()
-                        }
-                        Button(UserText.exportLogins) {
-                            model.openExportLogins()
-                        }
+
+                    Button(UserText.importPasswords) {
+                        model.openImportPasswordsWindow()
+                    }
+
+                    Button(UserText.exportLogins) {
+                        model.openExportLogins()
                     }
 
                     Text(UserText.autofillContentStoredSecurelyInfo)
                         .foregroundColor(Color(.textSecondary))
                 }
 
-                if !NSApp.isSandboxed {
+                if model.isPasswordManagerChoiceVisible {
                     // SECTION 1: Password Manager
                     PreferencePaneSection(UserText.autofillPasswordManager) {
-                        VStack(alignment: .leading, spacing: 6) {
-                            passwordManagerPicker(passwordManagerBinding) {
-                                Text(UserText.autofillPasswordManagerDuckDuckGo).tag(PasswordManager.duckduckgo)
-                            }
-                        }
-
-                        if shouldShowImportExportButtons {
-                            VStack(spacing: 12) {
-                                Button(UserText.importPasswords) {
-                                    model.openImportPasswordsWindow()
-                                }
-                                Button(UserText.exportLogins) {
-                                    model.openExportLogins()
-                                }
-                            }
-                            .padding(.leading, 15)
-                            .padding(.bottom, 4)
+                        passwordManagerPicker(passwordManagerBinding) {
+                            Text(UserText.autofillPasswordManagerDuckDuckGo).tag(PasswordManager.duckduckgo)
                         }
 
                         VStack(alignment: .leading, spacing: 6) {
@@ -121,6 +116,9 @@ extension Preferences {
                             }
                         }
 
+                        if model.areWebExtensionsSupported {
+                            TextMenuItemCaption(UserText.autofillPasswordManagerBitwardenRetirement)
+                        }
                     }
                 }
 
@@ -132,6 +130,7 @@ extension Preferences {
                         ToggleMenuItem(UserText.autofillAddresses, isOn: $model.askToSaveAddresses)
                         ToggleMenuItem(UserText.autofillCreditCards, isOn: $model.askToSavePaymentMethods)
                     }
+                    .disabled(model.isManagedByExtension)
                     TextMenuItemCaption(UserText.autofillAskToSaveExplanation)
                 }
 
@@ -187,6 +186,7 @@ extension Preferences {
                     .offset(x: PreferencesUI_macOS.Const.pickerHorizontalOffset)
                     TextMenuItemCaption(UserText.autofillNeverLockWarning)
                 }
+                .disabled(model.isManagedByExtension)
 
                 if Application.appDelegate.featureFlagger.isFeatureOn(.autofillPasswordsStatusBar) {
                     // SECTION 5: Menu Bar
@@ -212,12 +212,6 @@ extension Preferences {
             .pickerStyle(.radioGroup)
             .rebrandedControlTint()
             .offset(x: PreferencesUI_macOS.Const.pickerHorizontalOffset)
-        }
-
-        // MARK: - Password Manager Availability Methods
-
-        private var shouldShowImportExportButtons: Bool {
-            return model.passwordManager == .duckduckgo
         }
 
         private var bitwardenStatusPublisher: AnyPublisher<BWStatus, Never> {
@@ -308,6 +302,33 @@ extension Preferences {
                                     buttonValue: nil)
                 .offset(x: Preferences.Const.autoLockWarningOffset)
             }
+        }
+    }
+
+    private struct ManagedByExtensionNotice: View {
+        let onManageExtensions: () -> Void
+
+        var body: some View {
+            HStack(alignment: .top) {
+                Image(nsImage: DesignSystemImages.Glyphs.Size16.exclamationRecolorableInvert)
+                    .resizable()
+                    .frame(width: 16, height: 16)
+                    .padding(.trailing, 4)
+
+                VStack(alignment: .leading, spacing: 8) {
+                    Text(UserText.autofillManagedByExtensionTitle)
+                        .bold()
+                    Text(UserText.autofillManagedByExtensionMessage)
+                    Button(UserText.autofillManagedByExtensionManageButton, action: onManageExtensions)
+                        .padding(.top, 4)
+                }
+
+                Spacer()
+            }
+            .padding()
+            .background(Color(designSystemColor: .statusWarningFillPrimary, palette: .default))
+            .cornerRadius(20)
+            .fixedSize(horizontal: false, vertical: true)
         }
     }
 }

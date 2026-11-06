@@ -43,13 +43,13 @@ final class SpinnerView: NSView {
         }
     }
 
-    var progressStartColor: NSColor = NSColor(designSystemColor: .spinnerStart) {
+    var progressStartColor: NSColor = NSColor(singleUseColor: .spinnerStart) {
         didSet {
             refreshGradientColors()
         }
     }
 
-    var progressFinalColor: NSColor = NSColor(designSystemColor: .spinnerFinal) {
+    var progressFinalColor: NSColor = NSColor(singleUseColor: .spinnerFinal) {
         didSet {
             refreshGradientColors()
         }

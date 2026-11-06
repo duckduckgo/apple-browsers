@@ -26,6 +26,7 @@ import Common
 class HistoryCoordinatorTests: XCTestCase {
 
     var location: URL!
+    private let now = Date()
 
     override func setUp() {
         super.setUp()
@@ -145,6 +146,210 @@ class HistoryCoordinatorTests: XCTestCase {
         await fulfillment(of: [expectation], timeout: 1.0)
 
         XCTAssertTrue(historyStoringMock.saveCalled)
+    }
+
+    @MainActor
+    func testWhenImportedVisitsAreAdded_ThenEachEntryGetsItsNewestTitleAndAllAreSavedInOneBatch() async throws {
+        let (historyStoringMock, historyCoordinator) = await HistoryCoordinator.aHistoryCoordinator()
+        let newest = importedVisit(title: "Newest", hoursAgo: 0)
+        let older = importedVisit(title: "Older", hoursAgo: 1)
+        let other = importedVisit(of: URL(string: "https://example.com/")!, title: "Other", hoursAgo: 2)
+
+        try await historyCoordinator.addImportedVisits([newest, older, other])
+
+        let entry = try XCTUnwrap(historyCoordinator.historyDictionary?[newest.url])
+        XCTAssertEqual(entry.visits.count, 2)
+        XCTAssertEqual(entry.lastVisit, newest.date)
+        XCTAssertEqual(entry.title, "Newest")
+        XCTAssertTrue(entry.visits.allSatisfy { $0.identifier != nil })
+        XCTAssertEqual(historyStoringMock.savedEntryBatches.map { Set($0.map(\.url)) }, [[newest.url, other.url]])
+    }
+
+    @MainActor
+    func testWhenImportedVisitIsOlderThanLocalVisit_ThenLocalTitleIsKept() async throws {
+        let (_, historyCoordinator) = await HistoryCoordinator.aHistoryCoordinator()
+        historyCoordinator.addVisit(of: .duckDuckGo)
+        historyCoordinator.updateTitleIfNeeded(title: "Local", url: .duckDuckGo)
+
+        try await historyCoordinator.addImportedVisits([importedVisit(title: "Imported", hoursAgo: 1)])
+
+        XCTAssertEqual(historyCoordinator.historyDictionary?[.duckDuckGo]?.visits.count, 2)
+        XCTAssertEqual(historyCoordinator.historyDictionary?[.duckDuckGo]?.title, "Local")
+    }
+
+    @MainActor
+    func testWhenHistoryIsStillLoading_ThenImportThrows() async {
+        let (historyStoringMock, historyCoordinator) = makeCoordinatorStillLoadingHistory()
+
+        let error = await importError(of: [importedVisit(title: "New", hoursAgo: 1)], into: historyCoordinator)
+
+        XCTAssertEqual(error as? HistoryImport.Error, .historyNotLoaded)
+        XCTAssertTrue(historyStoringMock.savedEntryBatches.isEmpty)
+    }
+
+    @MainActor
+    func testWhenHistoryLoadingFailed_ThenImportThrows() async {
+        let (historyStoringMock, historyCoordinator) = await makeCoordinatorWithFailedHistoryLoad()
+
+        let error = await importError(of: [importedVisit(title: "New", hoursAgo: 1)], into: historyCoordinator)
+
+        XCTAssertEqual(error as? HistoryImport.Error, .historyNotLoaded)
+        XCTAssertTrue(historyStoringMock.savedEntryBatches.isEmpty)
+    }
+
+    @MainActor
+    func testWhenSavingImportedVisitsFails_ThenImportThrowsAndHistoryIsUnchanged() async throws {
+        let localDate = Date().addingTimeInterval(-7200)
+        let (historyStoringMock, historyCoordinator) = await HistoryCoordinator.aHistoryCoordinator(history: [
+            savedHistoryEntry(of: .duckDuckGo, title: "Local", visitedAt: localDate)
+        ])
+        historyStoringMock.saveError = HistoryStoringMock.HistoryStoringMockError.defaultError
+        let newURL = URL(string: "https://example.com/")!
+
+        let error = await importError(of: [importedVisit(title: "Imported", hoursAgo: 1), importedVisit(of: newURL, title: "New", hoursAgo: 1)],
+                                      into: historyCoordinator)
+
+        XCTAssertEqual(error as? HistoryStoringMock.HistoryStoringMockError, .defaultError)
+        let entry = try XCTUnwrap(historyCoordinator.historyDictionary?[.duckDuckGo])
+        XCTAssertEqual(entry.visits.map(\.date), [localDate])
+        XCTAssertEqual(entry.numberOfTotalVisits, 1)
+        XCTAssertEqual(entry.title, "Local")
+        XCTAssertNil(historyCoordinator.historyDictionary?[newURL])
+    }
+
+    @MainActor
+    func testWhenANewImportedURLIsVisitedDuringTheSave_ThenTheImportIsMergedIntoTheVisitedEntry() async throws {
+        let (historyStoringMock, historyCoordinator) = await HistoryCoordinator.aHistoryCoordinator()
+        let imported = importedVisit(of: URL(string: "https://example.com/")!, title: "Imported", hoursAgo: 1)
+        perform({ historyCoordinator.addVisit(of: imported.url) }, duringNextImportSaveOf: historyStoringMock)
+        let draftRemoved = expectation(description: "Duplicate imported entry removed")
+        historyStoringMock.removeEntriesCompletion = { draftRemoved.fulfill() }
+
+        try await historyCoordinator.addImportedVisits([imported])
+
+        let entry = try XCTUnwrap(historyCoordinator.historyDictionary?[imported.url])
+        XCTAssertEqual(entry.visits.count, 2)
+        await fulfillment(of: [draftRemoved], timeout: 1)
+        XCTAssertEqual(historyStoringMock.removeEntriesArray.map(\.url), [imported.url])
+        XCTAssertNotEqual(historyStoringMock.removeEntriesArray.first?.identifier, entry.identifier)
+    }
+
+    @MainActor
+    func testWhenAllHistoryIsBurnedDuringImport_ThenNoImportedEntriesReturnAfterReloading() async throws {
+        let operation = try await startSuspendedImport(of: [importedVisit(title: "First", hoursAgo: 1),
+                                                           importedVisit(of: URL(string: "https://example.com/")!, title: "Second", hoursAgo: 2)],
+                                                       existingHistory: [historyEntry(of: .duckDuckGo, visitedHoursAgo: [3])])
+        let burnFinished = expectation(description: "All history burned")
+
+        operation.coordinator.burnAll { result in
+            if case .failure(let error) = result {
+                XCTFail("History burn failed: \(error)")
+            }
+            burnFinished.fulfill()
+        }
+
+        try await finishSuspendedImport(operation, after: burnFinished)
+    }
+
+    @MainActor
+    func testWhenDomainsAreBurnedDuringImport_ThenNoImportedEntriesReturnAfterReloading() async throws {
+        let operation = try await startSuspendedImport(of: [importedVisit(title: "First", hoursAgo: 1),
+                                                           importedVisit(of: URL(string: "https://duckduckgo.com/other")!, title: "Second", hoursAgo: 2)],
+                                                       existingHistory: [historyEntry(of: .duckDuckGo, visitedHoursAgo: [3])])
+        let burnFinished = expectation(description: "Domain history burned")
+
+        operation.coordinator.burnDomains(["duckduckgo.com"], tld: TLD()) { result in
+            if case .failure(let error) = result {
+                XCTFail("History burn failed: \(error)")
+            }
+            burnFinished.fulfill()
+        }
+
+        try await finishSuspendedImport(operation, after: burnFinished)
+    }
+
+    @MainActor
+    func testWhenAnEntryIsRemovedDuringImport_ThenItIsNotStoredAgain() async throws {
+        let otherURL = URL(string: "https://example.com/")!
+        let operation = try await startSuspendedImport(of: [importedVisit(title: "First", hoursAgo: 1),
+                                                           importedVisit(of: otherURL, title: "Second", hoursAgo: 2)],
+                                                       existingHistory: [historyEntry(of: .duckDuckGo, visitedHoursAgo: [3])])
+        let removalFinished = expectation(description: "Entry removed")
+
+        operation.coordinator.removeUrlEntry(.duckDuckGo) { error in
+            XCTAssertNil(error)
+            removalFinished.fulfill()
+        }
+
+        try await finishSuspendedImport(operation, after: removalFinished, retaining: [otherURL])
+    }
+
+    @MainActor
+    func testWhenVisitsAreBurnedDuringImport_ThenTheyDoNotReturnAfterReloading() async throws {
+        let otherURL = URL(string: "https://example.com/")!
+        let operation = try await startSuspendedImport(of: [importedVisit(title: "First", hoursAgo: 1),
+                                                           importedVisit(of: otherURL, title: "Second", hoursAgo: 2)],
+                                                       existingHistory: [historyEntry(of: .duckDuckGo, visitedHoursAgo: [3])])
+        let visits = try XCTUnwrap(operation.coordinator.allHistoryVisits)
+        let burnFinished = expectation(description: "Visits burned")
+
+        operation.coordinator.burnVisits(visits) { result in
+            if case .failure(let error) = result {
+                XCTFail("History burn failed: \(error)")
+            }
+            burnFinished.fulfill()
+        }
+
+        try await finishSuspendedImport(operation, after: burnFinished, retaining: [otherURL])
+    }
+
+    @MainActor
+    func testWhenSomeVisitsAreBurnedDuringImport_ThenOnlyRemainingVisitsAndTheirLastVisitAreStored() async throws {
+        let imported = importedVisit(title: "Imported", hoursAgo: 2)
+        let operation = try await startSuspendedImport(of: [imported], existingHistory: [historyEntry(of: .duckDuckGo, visitedHoursAgo: [3, 1])])
+        let visitsToBurn = try XCTUnwrap(operation.coordinator.allHistoryVisits).filter { $0.date == hoursAgo(1) }
+        let burnFinished = expectation(description: "Newest visit burned")
+
+        operation.coordinator.burnVisits(visitsToBurn) { result in
+            if case .failure(let error) = result {
+                XCTFail("History burn failed: \(error)")
+            }
+            burnFinished.fulfill()
+        }
+
+        try await finishSuspendedImport(operation, after: burnFinished, retaining: [.duckDuckGo])
+        let reloaded = try await operation.store.cleanOld(until: .monthAgo)
+        let entry = try XCTUnwrap(reloaded.first)
+        XCTAssertEqual(Set(entry.visits.map(\.date)), [hoursAgo(3), imported.date])
+        XCTAssertEqual(entry.lastVisit, imported.date)
+    }
+
+    @MainActor
+    func testWhenABurnedDomainIsVisitedAgainDuringImport_ThenItsImportedVisitsDoNotReturn() async throws {
+        let url = URL(string: "https://example.com/page")!
+        let operation = try await startSuspendedImport(of: [importedVisit(of: url, title: "Imported", hoursAgo: 1)], existingHistory: [])
+        let burnFinished = expectation(description: "Domain history burned")
+        operation.coordinator.burnDomains(["example.com"], tld: TLD()) { _ in burnFinished.fulfill() }
+
+        await visitAgain(url, during: operation)
+
+        let reloaded = try await finishSuspendedImport(operation, after: burnFinished, retaining: [url])
+        XCTAssertEqual(operation.coordinator.historyDictionary?[url]?.visits.count, 1)
+        XCTAssertEqual(reloaded.first?.visits.count, 1)
+    }
+
+    @MainActor
+    func testWhenARemovedEntryIsVisitedAgainDuringImport_ThenItsImportedVisitsDoNotReturn() async throws {
+        let operation = try await startSuspendedImport(of: [importedVisit(title: "Imported", hoursAgo: 1)],
+                                                       existingHistory: [historyEntry(of: .duckDuckGo, visitedHoursAgo: [3])])
+        let removalFinished = expectation(description: "Entry removed")
+        operation.coordinator.removeUrlEntry(.duckDuckGo) { _ in removalFinished.fulfill() }
+
+        await visitAgain(.duckDuckGo, during: operation)
+
+        let reloaded = try await finishSuspendedImport(operation, after: removalFinished, retaining: [.duckDuckGo])
+        XCTAssertEqual(operation.coordinator.historyDictionary?[.duckDuckGo]?.visits.count, 1)
+        XCTAssertEqual(reloaded.first?.visits.count, 1)
     }
 
     @MainActor
@@ -766,13 +971,125 @@ class HistoryCoordinatorTests: XCTestCase {
         XCTAssertTrue(historyStoringMock.removeVisitsArray.isEmpty)
     }
 
+    // MARK: - Imported Visits Helpers
+
+    private struct SuspendedImport {
+        let coordinator: HistoryCoordinator
+        let store: SuspendingHistoryStore
+        let task: Task<Error?, Never>
+    }
+
+    @MainActor
+    private func startSuspendedImport(of visits: [HistoryImport.Visit], existingHistory: [HistoryEntry]) async throws -> SuspendedImport {
+        let context = try XCTUnwrap(loadDatabase(name: UUID().uuidString)?.makeContext(concurrencyType: .privateQueueConcurrencyType))
+        let saveStarted = expectation(description: "Import save suspended")
+        let store = SuspendingHistoryStore(store: HistoryStore(context: context, eventMapper: MockHistoryStoreEventMapper()), saveStarted: saveStarted)
+        for entry in existingHistory {
+            _ = try await store.save(entry: entry)
+        }
+        let coordinator = HistoryCoordinator(historyStoring: store)
+        await withCheckedContinuation { continuation in
+            coordinator.loadHistory { continuation.resume() }
+        }
+        let task = Task { await importError(of: visits, into: coordinator) }
+        await fulfillment(of: [saveStarted], timeout: 1)
+        return SuspendedImport(coordinator: coordinator, store: store, task: task)
+    }
+
+    @MainActor
+    private func visitAgain(_ url: URL, during operation: SuspendedImport) async {
+        operation.coordinator.addVisit(of: url)
+        await operation.store.waitForSave(of: url)
+    }
+
+    @MainActor
+    @discardableResult
+    private func finishSuspendedImport(
+        _ operation: SuspendedImport,
+        after removalFinished: XCTestExpectation,
+        retaining urls: Set<URL> = []
+    ) async throws -> BrowsingHistory {
+        await operation.store.resumeSave()
+        let error = await operation.task.value
+        await fulfillment(of: [removalFinished], timeout: 1)
+
+        XCTAssertEqual(error as? HistoryImport.Error, .historyChanged)
+        XCTAssertEqual(Set(operation.coordinator.historyDictionary?.values.map(\.url) ?? []), urls)
+        let reloaded = try await operation.store.cleanOld(until: .monthAgo)
+        XCTAssertEqual(Set(reloaded.map(\.url)), urls)
+        let removedBeforeSaveFinished = await operation.store.removedBeforeSaveFinished
+        XCTAssertFalse(removedBeforeSaveFinished)
+        return reloaded
+    }
+
+    private func hoursAgo(_ hours: Double) -> Date {
+        now.addingTimeInterval(-hours * 3600)
+    }
+
+    private func historyEntry(of url: URL, visitedHoursAgo hours: [Double]) -> HistoryEntry {
+        let entry = HistoryEntry(url: url)
+        hours.forEach { _ = entry.addVisit(at: hoursAgo($0), tabID: nil) }
+        return entry
+    }
+
+    private func importedVisit(of url: URL = .duckDuckGo, title: String, hoursAgo: Double) -> HistoryImport.Visit {
+        HistoryImport.Visit(url: url, title: title, date: Date().addingTimeInterval(-hoursAgo * 3600))
+    }
+
+    private func savedHistoryEntry(of url: URL, title: String, visitedAt date: Date) -> HistoryEntry {
+        let entry = HistoryEntry(url: url)
+        _ = entry.addVisit(at: date, tabID: nil)
+        entry.title = title
+        entry.visits.forEach { $0.savingState = .saved }
+        return entry
+    }
+
+    @MainActor
+    private func perform(_ action: @escaping @MainActor () -> Void, duringNextImportSaveOf historyStoringMock: HistoryStoringMock) {
+        historyStoringMock.onSaveEntries = {
+            historyStoringMock.onSaveEntries = nil
+            action()
+        }
+    }
+
+    @MainActor
+    private func importError(of visits: [HistoryImport.Visit], into historyCoordinator: HistoryCoordinator) async -> Error? {
+        do {
+            try await historyCoordinator.addImportedVisits(visits)
+            return nil
+        } catch {
+            return error
+        }
+    }
+
+    /// Loading finishes on a later main actor turn, so the coordinator is still loading until the caller suspends.
+    @MainActor
+    private func makeCoordinatorStillLoadingHistory() -> (HistoryStoringMock, HistoryCoordinator) {
+        let historyStoringMock = HistoryStoringMock(cleanOldResult: .success([]), removeEntriesResult: .success(()))
+        let historyCoordinator = HistoryCoordinator(historyStoring: historyStoringMock)
+        historyCoordinator.loadHistory {}
+        return (historyStoringMock, historyCoordinator)
+    }
+
+    @MainActor
+    private func makeCoordinatorWithFailedHistoryLoad() async -> (HistoryStoringMock, HistoryCoordinator) {
+        let historyStoringMock = HistoryStoringMock(cleanOldResult: .failure(HistoryStoringMock.HistoryStoringMockError.defaultError))
+        let historyCoordinator = HistoryCoordinator(historyStoring: historyStoringMock)
+        await withCheckedContinuation { continuation in
+            historyCoordinator.loadHistory {
+                continuation.resume()
+            }
+        }
+        return (historyStoringMock, historyCoordinator)
+    }
+
 }
 
 fileprivate extension HistoryCoordinator {
 
     @MainActor
-    static func aHistoryCoordinator() async -> (HistoryStoringMock, HistoryCoordinator) {
-        let historyStoringMock = HistoryStoringMock(cleanOldResult: .success(BrowsingHistory()), removeEntriesResult: .success(()))
+    static func aHistoryCoordinator(history: BrowsingHistory = []) async -> (HistoryStoringMock, HistoryCoordinator) {
+        let historyStoringMock = HistoryStoringMock(cleanOldResult: .success(history), removeEntriesResult: .success(()))
         let historyCoordinator = HistoryCoordinator(historyStoring: historyStoringMock)
 
         // Use a continuation to wait for async loading
@@ -820,10 +1137,12 @@ actor HistoryStoringMock: HistoryStoring {
     @MainActor var removeEntriesCalled = false
     @MainActor var removeEntriesArray = [HistoryEntry]()
     @MainActor var removeEntriesResult: Result<Void, Error>?
+    @MainActor var removeEntriesCompletion: (() -> Void)?
     func removeEntries(_ entries: some Sequence<History.HistoryEntry>) async throws {
         try await MainActor.run {
             removeEntriesCalled = true
             removeEntriesArray = Array(entries)
+            removeEntriesCompletion?()
 
             switch removeEntriesResult {
             case .success:
@@ -854,6 +1173,7 @@ actor HistoryStoringMock: HistoryStoring {
         }
     }
 
+    @MainActor var saveError: Error?
     @MainActor var saveCalled = false
     @MainActor var savedHistoryEntries = [HistoryEntry]()
     @MainActor var savedVisitsWithTabIDs: [(visit: Visit, tabID: String?)] = []
@@ -877,6 +1197,29 @@ actor HistoryStoringMock: HistoryStoring {
         return entry.visits.map { ($0.identifier!, $0.date) }
     }
 
+    @MainActor var savedEntryBatches = [[HistoryEntry]]()
+    @MainActor var onSaveEntries: (@MainActor () -> Void)?
+
+    func save(entries: [HistoryEntry]) async throws -> [UUID: [(id: Visit.ID, date: Date)]] {
+        try await MainActor.run {
+            if let saveError {
+                throw saveError
+            }
+            onSaveEntries?()
+            savedEntryBatches.append(entries)
+        }
+
+        var storedVisitIDs = [UUID: [(id: Visit.ID, date: Date)]]()
+        for entry in entries {
+            storedVisitIDs[entry.identifier] = entry.visits.filter { $0.savingState == .initialized }.map { visit in
+                visit.savingState = .saved
+                // swiftlint:disable:next legacy_random
+                return (id: URL(string: "x-coredata://FBEAB2C4-8C32-4F3F-B34F-B79F293CDADD/VisitManagedObject/\(arc4random())")!, date: visit.date)
+            }
+        }
+        return storedVisitIDs
+    }
+
     @MainActor var pageVisitIDsCalled = false
     @MainActor var pageVisitIDsResult: [Visit.ID] = []
 
@@ -887,6 +1230,85 @@ actor HistoryStoringMock: HistoryStoring {
         }
     }
 
+}
+
+private actor SuspendingHistoryStore: HistoryStoring {
+    private let store: HistoryStore
+    private let saveStarted: XCTestExpectation
+    private var saveContinuation: CheckedContinuation<Void, Never>?
+    private var isImportSaveStarted = false
+    private var isImportSaveFinished = false
+    private(set) var removedBeforeSaveFinished = false
+    private var urlsSavedDuringImport = Set<URL>()
+    private var saveWaiters = [URL: CheckedContinuation<Void, Never>]()
+
+    init(store: HistoryStore, saveStarted: XCTestExpectation) {
+        self.store = store
+        self.saveStarted = saveStarted
+    }
+
+    func save(entry: HistoryEntry) async throws -> [(id: Visit.ID, date: Date)] {
+        let visitIDs = try await store.save(entry: entry)
+        if isImportSaveStarted {
+            urlsSavedDuringImport.insert(entry.url)
+            saveWaiters.removeValue(forKey: entry.url)?.resume()
+        }
+        return visitIDs
+    }
+
+    func waitForSave(of url: URL) async {
+        guard !urlsSavedDuringImport.contains(url) else { return }
+        await withCheckedContinuation { continuation in
+            saveWaiters[url] = continuation
+        }
+    }
+
+    func save(entries: [HistoryEntry]) async throws -> [UUID: [(id: Visit.ID, date: Date)]] {
+        let isImportSave = !isImportSaveStarted
+        if isImportSave {
+            isImportSaveStarted = true
+            await withCheckedContinuation { continuation in
+                saveContinuation = continuation
+                saveStarted.fulfill()
+            }
+        }
+        defer {
+            if isImportSave {
+                isImportSaveFinished = true
+            }
+        }
+        return try await store.save(entries: entries)
+    }
+
+    func resumeSave() {
+        saveContinuation?.resume()
+        saveContinuation = nil
+    }
+
+    func cleanOld(until date: Date) async throws -> BrowsingHistory {
+        recordRemoval()
+        return try await store.cleanOld(until: date)
+    }
+
+    func removeEntries(_ entries: some Sequence<HistoryEntry>) async throws {
+        recordRemoval()
+        try await store.removeEntries(Array(entries))
+    }
+
+    func removeVisits(_ visits: some Sequence<Visit>) async throws {
+        recordRemoval()
+        try await store.removeVisits(Array(visits))
+    }
+
+    func pageVisitIDs(in tabID: String) async throws -> [Visit.ID] {
+        try await store.pageVisitIDs(in: tabID)
+    }
+
+    private func recordRemoval() {
+        if isImportSaveStarted && !isImportSaveFinished {
+            removedBeforeSaveFinished = true
+        }
+    }
 }
 
 class MockHistoryStoreEventMapper: EventMapping<HistoryDatabaseError> {

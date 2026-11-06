@@ -78,10 +78,7 @@ extension TabViewController {
     }
 
     private func onNewTabAction(url: URL) {
-        delegate?.tab(self,
-                      didRequestNewTabForUrl: url,
-                      openedByPage: false,
-                      inheritingAttribution: adClickAttributionLogic.state)
+        delegate?.tab(self, didRequestNewTabForFollowedLink: url, inheritingAttribution: adClickAttributionLogic.state)
     }
 
     private func onFireTabAction(url: URL) {
@@ -165,6 +162,7 @@ extension TabViewController {
             voiceSearchHelper: voiceSearchHelper,
             darkReaderFeatureSettings: darkReaderFeatureSettings,
             autoplaySettings: autoplaySettings,
+            usageContextProvider: usageContextProvider,
             adBlockingAvailability: adBlockingAvailability,
             eventHub: eventHub,
             webExtensionManagerProvider: webExtensionManagerProvider,
@@ -173,7 +171,12 @@ extension TabViewController {
         tabController.isLinkPreview = true
         let configuration = WKWebViewConfiguration.nonPersistent()
         configuration.websiteDataStore = webView.configuration.websiteDataStore
+        tabModel.recordLinkPreviewDomain(for: url)
         tabController.attachWebView(configuration: configuration, andLoadRequest: URLRequest.userInitiated(url), consumeCookies: false)
+        tabController.linkPreviewNavigationCancellable = tabController.webView.publisher(for: \.url)
+            .sink { [weak parentTab = tabModel] url in
+                parentTab?.recordLinkPreviewDomain(for: url)
+            }
         tabController.loadViewIfNeeded()
         return tabController
     }

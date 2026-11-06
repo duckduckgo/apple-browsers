@@ -148,6 +148,18 @@ final class WebExtensionAPICompatibilityScriptTests: XCTestCase {
         try assertReports("[{\"kind\":\"stubbed\",\"api\":\"notifications.create\"}]")
     }
 
+    func testWhenAnotherScriptReportsAnError_ThenItsMessageIsPostedForClassification() throws {
+        try evaluateScript()
+
+        context.evaluateScript("""
+        \(WebExtensionAPICompatibilityScript.reportFunctionName)("error", "Invalid call to action.openPopup(). The 'options' value is invalid.");
+        \(WebExtensionAPICompatibilityScript.reportFunctionName)("error", "Not about an API.");
+        """)
+        try assertNoExceptions()
+
+        try assertReports("[{\"kind\":\"error\",\"message\":\"Invalid call to action.openPopup(). The 'options' value is invalid.\"}]")
+    }
+
     func testWhenErrorsAreReportedByTheHundred_ThenAPIReportsStillGetThrough() throws {
         try evaluateScript()
 

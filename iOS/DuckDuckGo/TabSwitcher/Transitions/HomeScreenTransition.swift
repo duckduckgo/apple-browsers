@@ -95,10 +95,11 @@ class HomeScreenTransition: TabSwitcherTransition {
         guard availableWidth > 0, availableHeight > 0 else {
             return CGRect(origin: .zero, size: cellBounds)
         }
+        // The cell insets its logo by an extra previewPadding * 2 at the bottom (updatePreviewToDisplayLogo).
         return CGRect(x: horizontalInset,
                       y: TabViewGridCell.Constants.headerHeight,
                       width: availableWidth,
-                      height: availableHeight)
+                      height: availableHeight - TabViewCell.Constants.previewPadding * 2)
     }
     
 }

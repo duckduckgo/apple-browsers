@@ -225,10 +225,11 @@ final class UnifiedToggleInputHandler: SwitchBarHandling {
         textSubmissionSubject.send((text: trimmed, mode: currentToggleState, trigger: trigger))
     }
 
-    /// Only the send button submits a prompt with nothing but attachments.
-    func submitAIChatAttachmentOnlyPrompt() {
+    /// Only the send button submits a prompt with nothing but attachments. Paste & Go clears the draft on the same turn,
+    /// so the length check belongs to the coordinator, which measures the prompt it sends.
+    func submitAIChatAttachmentOnlyPrompt(trigger: TextSubmissionTrigger = .sendButton) {
         guard !isInputBlockedByUsageLimit else { return }
-        textSubmissionSubject.send((text: "", mode: .aiChat, trigger: .sendButton))
+        textSubmissionSubject.send((text: "", mode: .aiChat, trigger: trigger))
     }
 
     func setToggleState(_ state: TextEntryMode) {
@@ -286,15 +287,18 @@ final class UnifiedToggleInputHandler: SwitchBarHandling {
     private func updateButtonState() {
         let aiVoiceChatAvailable = !isExpanded && currentToggleState == .aiChat && !prefersDictationOverVoiceChat
         let voiceAvailable = !hidesVoiceButton && (isVoiceSearchEnabled || aiVoiceChatAvailable)
+        let showsAIChatShortcut = DuckAIInputShortcutVisibility.isShortcutShown(isShortcutAvailable: isAIChatShortcutAvailable,
+                                                                                isModeToggleEnabled: isToggleEnabled,
+                                                                                textEntryMode: currentToggleState)
         let nextButtonState: SwitchBarButtonState
 
         if isGenerating && !isExpanded && currentToggleState == .aiChat && !isOnboardingLocked {
             nextButtonState = .stopGeneratingOnly
-        } else if !currentText.isEmpty && !isToggleEnabled && currentToggleState == .search && isAIChatShortcutAvailable {
+        } else if !currentText.isEmpty && showsAIChatShortcut {
             nextButtonState = .clearAndAIChatShortcut
         } else if !currentText.isEmpty {
             nextButtonState = .clearOnly
-        } else if !isToggleEnabled && currentToggleState == .search && isAIChatShortcutAvailable {
+        } else if showsAIChatShortcut {
             nextButtonState = voiceAvailable ? .voiceAndAIChatShortcut : .aiChatShortcutOnly
         } else if voiceAvailable {
             nextButtonState = .voiceOnly

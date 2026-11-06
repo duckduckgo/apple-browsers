@@ -37,34 +37,60 @@ struct UTIFooterItem: Equatable, Identifiable {
         case termsConsent
         case outOfUsage
         case attachmentPrivacy
+        case promptTooLong
         case modelSwitch
         case usageWarning
         case highUsage
         case multiTabPromotion
-    }
 
-    enum MessageType {
-        case required
-        case action
-        case informational
-    }
-
-    var type: MessageType {
-        switch id {
-        case .termsConsent: return .required
-        case .outOfUsage, .attachmentPrivacy: return .required
-        case .modelSwitch: return .action
-        case .usageWarning, .highUsage, .multiTabPromotion: return .informational
+        var type: MessageType {
+            switch self {
+            case .termsConsent, .attachmentPrivacy: return .required(blocksSend: false)
+            case .outOfUsage: return .required(blocksSend: true)
+            case .promptTooLong: return .error(.persistent)
+            case .modelSwitch: return .action
+            case .usageWarning, .highUsage, .multiTabPromotion: return .informational
+            }
         }
     }
+
+    enum ErrorDuration: Equatable {
+        case persistent
+        case temporary
+    }
+
+    enum MessageType: Equatable {
+        case required(blocksSend: Bool)
+        case error(ErrorDuration)
+        case action
+        case informational
+
+        var rank: Int {
+            switch self {
+            case .required: return 0
+            case .error: return 1
+            case .action: return 2
+            case .informational: return 3
+            }
+        }
+    }
+
+    var type: MessageType { id.type }
 
     let id: ID
     let message: UTIFooterMessage
 
     static func visible(from items: [Self], isEditing: Bool) -> [Self] {
+        visible(from: items, isEditing: isEditing, type: \.type)
+    }
+
+    static func visible(from items: [Self], isEditing: Bool, type: (Self) -> MessageType) -> [Self] {
+        let ordered = items.sorted { (type($0).rank, $0.id.rawValue) < (type($1).rank, $1.id.rawValue) }
+        let blocksSend = ordered.contains { type($0) == .required(blocksSend: true) }
+        let persistentError = blocksSend ? nil : ordered.first { type($0) == .error(.persistent) }
+        if let persistentError { return [persistentError] }
         guard !isEditing else { return [] }
-        let ordered = items.sorted { $0.id.rawValue < $1.id.rawValue }
-        let required = ordered.filter { $0.type == .required }
+        let required = ordered.filter { if case .required = type($0) { true } else { false } }
         return required.isEmpty ? Array(ordered.prefix(1)) : Array(required.prefix(2))
     }
 }
@@ -87,6 +113,12 @@ struct UTIFooterMessage: Equatable {
         let attachmentAccessibilityLabel: String
     }
 
+    /// `.error` sets the title in the subtitle's size and in red, so it reads as the error line above its explanation.
+    enum TitleStyle: Equatable {
+        case standard
+        case error
+    }
+
     struct PrimaryAction: Equatable {
         let title: String
     }
@@ -104,6 +136,7 @@ struct UTIFooterMessage: Equatable {
     let isDismissible: Bool
     let link: Link?
     let titleFormatting: TitleFormatting?
+    let titleStyle: TitleStyle
 
     init(icon: Icon,
          title: String,
@@ -111,7 +144,8 @@ struct UTIFooterMessage: Equatable {
          primaryAction: PrimaryAction?,
          isDismissible: Bool,
          link: Link? = nil,
-         titleFormatting: TitleFormatting? = nil) {
+         titleFormatting: TitleFormatting? = nil,
+         titleStyle: TitleStyle = .standard) {
         self.icon = icon
         self.title = title
         self.subtitle = subtitle
@@ -119,6 +153,7 @@ struct UTIFooterMessage: Equatable {
         self.isDismissible = isDismissible
         self.link = link
         self.titleFormatting = titleFormatting
+        self.titleStyle = titleStyle
     }
 }
 

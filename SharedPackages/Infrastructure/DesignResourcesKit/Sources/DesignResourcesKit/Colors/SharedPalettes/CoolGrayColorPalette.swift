@@ -155,32 +155,6 @@ struct CoolGrayColorPalette: SharedColorPaletteDefinition {
     static let unifiedInputIconsSecondary = DynamicColor(lightHex: 0x212d45, lightOpacityHex: 0x99, darkHex: 0xeeeff7, darkOpacityHex: 0x7a)
     static let unifiedInputTextPrimary = DynamicColor(lightHex: 0x050614, lightOpacityHex: 0xf4, darkHex: 0xedeff6, darkOpacityHex: 0xf4)
     static let unifiedInputTextSecondary = DynamicColor(lightHex: 0x050614, lightOpacityHex: 0x99, darkHex: 0xeeeff7, darkOpacityHex: 0xa8)
-
-    // MARK: - Inherited from LatestColorPalette
-
-    static let destructiveGlow = DynamicColor(lightHex: 0xee1025, lightOpacityHex: 0x33, darkHex: 0xee1025, darkOpacityHex: 0x33)
-
-    // MARK: - Not Specialized
-
-    static let alertGreen = DynamicColor(lightColor: RebrandingColor.Green.green40, darkColor: RebrandingColor.Green.green40)
-    static let alertYellow = DynamicColor(lightColor: .alertYellow, darkColor: .alertYellow)
-    static let shieldPrivacy = DynamicColor(lightColor: RebrandingColor.Lilypad.lilypad70, darkColor: RebrandingColor.Lilypad.lilypad50)
-
-    static let buttonsWhite = DynamicColor(lightColor: .white, darkColor: .black)
-
-    static let buttonsPrimaryDefault = DynamicColor(lightColor: .blue50, darkColor: .blue30)
-    static let buttonsPrimaryPressed = DynamicColor(lightColor: .blue70, darkColor: .blue50)
-    static let buttonsPrimaryDisabled = DynamicColor(lightColor: .shade(0.06), darkColor: .tint(0.18))
-    static let buttonsPrimaryText = DynamicColor(lightColor: .white, darkColor: .shade(0.84))
-    static let buttonsPrimaryTextDisabled = DynamicColor(lightColor: .shade(0.36), darkColor: .tint(0.36))
-
-    static let buttonsSecondaryFillDefault = DynamicColor(lightColor: .shade(0.06), darkColor: .tint(0.18))
-    static let buttonsSecondaryFillPressed = DynamicColor(lightColor: .shade(0.18), darkColor: .tint(0.3))
-    static let buttonsSecondaryFillDisabled = DynamicColor(lightColor: .shade(0.06), darkColor: .tint(0.18))
-    static let buttonsSecondaryFillText = DynamicColor(lightColor: .shade(0.84), darkColor: .white)
-    static let buttonsSecondaryFillTextDisabled = DynamicColor(lightColor: .shade(0.36), darkColor: .tint(0.36))
-
-    static let lines = DynamicColor(lightHex: 0x1F1F1F, lightOpacity: 0.09, darkHex: 0xF9F9F9, darkOpacity: 0.12)
 }
 
 #endif

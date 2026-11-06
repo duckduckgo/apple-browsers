@@ -13,9 +13,9 @@ destination folder is represented in `iOS/DuckDuckGo-iOS.xcodeproj/project.pbxpr
 1. **Classify the destination.** For each ancestor folder, nearest first, run
    `grep "path = <FolderName>;" <project.pbxproj> | grep PBXFileSystemSynchronizedRootGroup`.
    A match is a **buildable folder**; no match all the way up is a **group**. If a folder name is
-   ambiguous, confirm the match's ID is listed in the parent group's `children`. The macOS project
-   has no buildable folders. On iOS, `iOS/DuckDuckGo/` itself and `iOS/DuckDuckGoTests/` are still
-   groups.
+   ambiguous, confirm the match's ID is listed in the parent group's `children`. On iOS,
+   `iOS/DuckDuckGo/` itself and `iOS/DuckDuckGoTests/` are still groups. The macOS project is
+   mid-migration: most of its folders are still groups.
 2. **Buildable folder:** create, move or delete the file on disk and stop. A pbxproj entry on top
    of that compiles the file twice. If the file needs a different target than its folder gives
    it, mirror an existing `PBXFileSystemSynchronizedBuildFileExceptionSet`, or ask the user to set
@@ -35,9 +35,9 @@ destination folder is represented in `iOS/DuckDuckGo-iOS.xcodeproj/project.pbxpr
 4. **Edit surgically.** Insert or delete lines anchored on the sibling's exact lines. Never
    re-serialize the file, for example with the `xcodeproj` gem: it rewrites package references and
    produces an unreviewable diff.
-5. **New directory under an iOS group:** ask the user to create it in Xcode as a folder
-   (File ▸ New ▸ Folder) so it becomes a buildable folder. Converting existing groups belongs in
-   dedicated migration PRs that use Xcode's Convert to Folder.
+5. **New directory under a group:** ask the user to create it in Xcode as a folder
+   (File ▸ New ▸ Folder) so it becomes a buildable folder, on iOS and macOS alike. Converting
+   existing groups belongs in dedicated migration PRs that use Xcode's Convert to Folder.
 
 Done when `plutil -lint` passes on the project file, its `git diff` holds only the lines for your
 files, and each file is in every target its siblings are in.

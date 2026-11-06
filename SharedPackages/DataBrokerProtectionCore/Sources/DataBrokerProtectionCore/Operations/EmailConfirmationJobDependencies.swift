@@ -32,7 +32,6 @@ public protocol EmailConfirmationJobDependencyProviding {
     var captchaService: CaptchaServiceProtocol { get }
     var vpnBypassService: VPNBypassFeatureProvider? { get }
     var featureFlagger: DBPFeatureFlagging { get }
-    var applicationNameForUserAgentProvider: () -> String? { get }
     var wideEvent: WideEventManaging? { get }
     var contentBlocking: DBPWebViewContentBlocking? { get }
 }
@@ -47,7 +46,6 @@ public struct EmailConfirmationJobDependencies: EmailConfirmationJobDependencyPr
     public let captchaService: CaptchaServiceProtocol
     public let vpnBypassService: VPNBypassFeatureProvider?
     public let featureFlagger: DBPFeatureFlagging
-    public let applicationNameForUserAgentProvider: () -> String?
     public let wideEvent: WideEventManaging?
     public let contentBlocking: DBPWebViewContentBlocking?
 
@@ -61,7 +59,6 @@ public struct EmailConfirmationJobDependencies: EmailConfirmationJobDependencyPr
         self.captchaService = brokerDependencies.captchaService
         self.vpnBypassService = brokerDependencies.vpnBypassService
         self.featureFlagger = brokerDependencies.featureFlagger
-        self.applicationNameForUserAgentProvider = brokerDependencies.applicationNameForUserAgentProvider
         self.wideEvent = brokerDependencies.wideEvent
         self.contentBlocking = brokerDependencies.contentBlocking
     }
@@ -75,7 +72,6 @@ public struct EmailConfirmationJobDependencies: EmailConfirmationJobDependencyPr
                 captchaService: CaptchaServiceProtocol,
                 vpnBypassService: VPNBypassFeatureProvider?,
                 featureFlagger: DBPFeatureFlagging,
-                applicationNameForUserAgentProvider: @escaping () -> String?,
                 wideEvent: WideEventManaging? = nil,
                 contentBlocking: DBPWebViewContentBlocking? = nil) {
         self.database = database
@@ -87,7 +83,6 @@ public struct EmailConfirmationJobDependencies: EmailConfirmationJobDependencyPr
         self.captchaService = captchaService
         self.vpnBypassService = vpnBypassService
         self.featureFlagger = featureFlagger
-        self.applicationNameForUserAgentProvider = applicationNameForUserAgentProvider
         self.wideEvent = wideEvent
         self.contentBlocking = contentBlocking
     }

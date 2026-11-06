@@ -53,6 +53,7 @@ struct UTIPixelContext {
     let isToggleVisible: Bool
     let pageType: UnifiedToggleInputPromptPageType
     let duckAIEntrySource: AIChatEntryPointSource?
+    var addressBarPosition: AddressBarPosition?
 }
 
 /// Owns the omnibar UTI's pixel firing. Resolves the surface (and the other live inputs) through a
@@ -61,6 +62,8 @@ struct UTIPixelContext {
 /// `UnifiedToggleInputCoordinatorPixelHelper` for the pixels also fired from other surfaces (iPad).
 @MainActor
 final class UTIPixelReporter {
+
+    private typealias PixelKeys = UnifiedToggleInputCoordinatorPixelHelper
 
     private let firing: UTIPixelFiring
     private let context: () -> UTIPixelContext?
@@ -92,15 +95,28 @@ final class UTIPixelReporter {
     func reportModeSwitched(to mode: TextEntryMode, currentText: String, defaultOmnibarMode: DefaultOmnibarMode) {
         let direction = mode == .search ? "to_search" : "to_duckai"
         let hadText = !currentText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
-        firing.fire(.aiChatExperimentalOmnibarModeSwitched, [
+        var parameters = [
             "direction": direction,
             "had_text": String(hadText),
             "default_position": defaultOmnibarMode.rawValue
-        ])
+        ]
+        parameters[PixelKeys.addressBarPositionKey] = context()?.addressBarPosition?.rawValue
+        firing.fire(.aiChatExperimentalOmnibarModeSwitched, parameters)
     }
 
     func reportStopGenerationTapped() {
-        withContext { firing.fire(.unifiedToggleInputStopGenerationTapped, ["surface": $0.surface.rawValue]) }
+        withContext {
+            var parameters = ["surface": $0.surface.rawValue]
+            parameters[PixelKeys.addressBarPositionKey] = $0.addressBarPosition?.rawValue
+            firing.fire(.unifiedToggleInputStopGenerationTapped, parameters)
+        }
+    }
+
+    func reportSearchDuckDuckGoRowSelected(resubmitDelay: CrossModeResubmitDetector.DelayBucket?) {
+        var parameters: [String: String] = [:]
+        parameters[PixelKeys.addressBarPositionKey] = context()?.addressBarPosition?.rawValue
+        parameters[PixelKeys.resubmitOfPromptKey] = resubmitDelay?.rawValue
+        firing.fire(.autocompleteDuckAIClickSearchDuckDuckGo, parameters)
     }
 
     // MARK: - Message edit
@@ -174,27 +190,39 @@ final class UTIPixelReporter {
     }
 
     func reportTabAttachment(_ action: MultiTabAttachmentPixel.Action, source: TabAttachmentOrigin,
-                             surface: UnifiedToggleInputPixelSurface? = nil) {
-        guard let surface = surface ?? context()?.surface else { return }
-        firing.fire(MultiTabAttachmentPixel(action: action, source: source, surface: surface), frequency: .dailyAndCount)
+                             attribution: MultiTabPixelAttribution? = nil) {
+        guard let attribution = attribution ?? currentTabPixelAttribution() else { return }
+        firing.fire(MultiTabAttachmentPixel(action: action, source: source, attribution: attribution), frequency: .dailyAndCount)
+    }
+
+    func currentTabPixelAttribution() -> MultiTabPixelAttribution? {
+        guard let context = context() else { return nil }
+        return MultiTabPixelAttribution(surface: context.surface, pageType: context.pageType)
     }
 
     /// Snapshot attribution before asynchronous collection; delivery must outlive the input coordinator.
     func makeTabSubmissionReporter(requestedTabCount: Int) -> (MultiTabAttachmentRequest.SubmissionResult) -> Void {
-        guard requestedTabCount > 0, let surface = context()?.surface else { return { _ in } }
+        guard requestedTabCount > 0, let attribution = currentTabPixelAttribution() else { return { _ in } }
         return { [firing] result in
-            if result.additionalTabCount > 0 {
-                firing.fire(MultiTabSentPixel(count: result.totalTabCount, surface: surface), frequency: .dailyAndCount)
+            if result.deliveredAttachmentCount > 0 {
+                firing.fire(MultiTabSentPixel(count: result.totalTabCount, attribution: attribution), frequency: .dailyAndCount)
             }
-            if result.additionalTabCount < requestedTabCount {
-                let outcome: MultiTabSubmissionIncompletePixel.Outcome = result.additionalTabCount == 0 ? .all : .partial
-                firing.fire(MultiTabSubmissionIncompletePixel(outcome: outcome, surface: surface), frequency: .dailyAndCount)
+            if result.deliveredAttachmentCount < requestedTabCount {
+                let outcome: MultiTabSubmissionIncompletePixel.Outcome = result.deliveredAttachmentCount == 0 ? .all : .partial
+                firing.fire(MultiTabSubmissionIncompletePixel(outcome: outcome, attribution: attribution), frequency: .dailyAndCount)
             }
         }
     }
 
     func reportAttachmentRemoved(_ attachment: UnifiedToggleInputAttachment) {
-        withContext { UnifiedToggleInputCoordinatorPixelHelper.fireAttachmentRemovedPixel(for: attachment, surface: $0.surface, firing: firing) }
+        withContext {
+            UnifiedToggleInputCoordinatorPixelHelper.fireAttachmentRemovedPixel(
+                for: attachment, surface: $0.surface, pageType: $0.pageType, firing: firing)
+        }
+    }
+
+    func reportPastedText(_ action: UnifiedToggleInputPastedTextPixel.Action) {
+        withContext { firing.fire(UnifiedToggleInputPastedTextPixel(action: action, surface: $0.surface), frequency: .dailyAndCount) }
     }
 
     // MARK: - Model / reasoning / tools
@@ -252,7 +280,8 @@ final class UTIPixelReporter {
                                reasoningMode: AIChatReasoningMode?,
                                modelId: String?,
                                defaultOmnibarMode: DefaultOmnibarMode,
-                               isFirstPromptNewInstall: Bool) {
+                               isFirstPromptNewInstall: Bool,
+                               resubmitDelay: CrossModeResubmitDetector.DelayBucket? = nil) {
         withContext {
             UnifiedToggleInputCoordinatorPixelHelper.fireUnifiedPromptSubmittedPixel(
                 hasText: hasText,
@@ -265,18 +294,25 @@ final class UTIPixelReporter {
                 origin: Self.promptOrigin(for: $0),
                 defaultMode: defaultOmnibarMode,
                 isFirstPromptNewInstall: isFirstPromptNewInstall,
+                addressBarPosition: $0.addressBarPosition,
+                resubmitOfSearch: resubmitDelay,
                 firing: firing
             )
         }
     }
 
-    func reportQuerySubmitted(defaultOmnibarMode: DefaultOmnibarMode) {
+    func reportQuerySubmitted(defaultOmnibarMode: DefaultOmnibarMode,
+                              queryType: UnifiedToggleInputQueryType,
+                              resubmitDelay: CrossModeResubmitDetector.DelayBucket? = nil) {
         withContext {
             UnifiedToggleInputCoordinatorPixelHelper.fireUnifiedQuerySubmittedPixel(
                 surface: $0.surface,
                 pageType: $0.pageType,
                 isToggleVisible: $0.isToggleVisible,
                 defaultMode: defaultOmnibarMode,
+                queryType: queryType,
+                addressBarPosition: $0.addressBarPosition,
+                resubmitOfPrompt: resubmitDelay,
                 firing: firing
             )
         }

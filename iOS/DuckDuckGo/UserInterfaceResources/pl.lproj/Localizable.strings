@@ -1,4 +1,7 @@
 /* No comment provided by engineer. */
+" " = " ";
+
+/* No comment provided by engineer. */
 "-config.rollout.<parent>.<subfeature> true/false" = "-config.rollout.<parent>.<subfeature> true/false";
 
 /* No comment provided by engineer. */
@@ -382,6 +385,21 @@
 /* Title for the New Tab row in the Duck.ai tab header Plus (+) menu */
 "aichat.header.plusMenu.newTab" = "Nowa karta";
 
+/* Section header in the Duck.ai tab header Plus (+) menu; every row below it opens a new tab */
+"aichat.header.plusMenu.newTabSection" = "Nowa karta";
+
+/* Row in the New Tab section of the Duck.ai tab header Plus (+) menu — opens a new Duck.ai chat in a new tab */
+"aichat.header.plusMenu.newTabSection.chat" = "Czat";
+
+/* Row in the New Tab section of the Duck.ai tab header Plus (+) menu — opens Duck.ai in image generation mode in a new tab */
+"aichat.header.plusMenu.newTabSection.image" = "Obraz";
+
+/* Row in the Duck.ai tab header Plus (+) menu — opens a new tab in search mode */
+"aichat.header.plusMenu.newTabSection.search" = "Wyszukiwanie";
+
+/* Row in the New Tab section of the Duck.ai tab header Plus (+) menu — opens a new Duck.ai voice chat in a new tab */
+"aichat.header.plusMenu.newTabSection.voiceChat" = "Czat głosowy";
+
 /* Title for the New Voice Chat row in the Duck.ai tab header Plus (+) menu */
 "aichat.header.plusMenu.newVoiceChat" = "Nowy czat głosowy";
 
@@ -458,7 +476,7 @@
 "aichat.model-picker.pro-plan-exclusive" = "Tylko dla planu Pro";
 
 /* Section header for subscription models shown to users who are not eligible for a free trial */
-"aichat.model-picker.subscriber-exclusive" = "Tylko dla subskrybentów";
+"aichat.model-picker.subscriber-exclusive" = "Odblokuj dzięki subskrypcji";
 
 /* Section header for subscription models shown to free users */
 "aichat.model-picker.try-free" = "Wypróbuj bezpłatnie";
@@ -468,6 +486,27 @@
 
 /* Spoken name of the inline attachment icon in the multi-tab feature promotion, used in the VoiceOver accessibility label. */
 "aichat.multiTab.promotion.attachment" = "załącznik";
+
+/* VoiceOver label of the Duck.ai attachment chip holding a long block of text the user pasted */
+"aichat.pasted.text.accessibility.label" = "Wklejony tekst";
+
+/* Character counter under the title of the Duck.ai pasted-text sheet, e.g. 923/16,000. %1$d is the number of characters in the pasted text, %2$d is the most it may hold. Keep both numbers; change the slash only if your language writes this kind of counter differently. */
+"aichat.pasted.text.count" = "%1$d/%2$d";
+
+/* What VoiceOver reads for the character counter in the Duck.ai pasted-text sheet, e.g. 923 of 16,000 characters. %1$d is the number of characters in the pasted text, %2$d is the most it may hold */
+"aichat.pasted.text.count.accessibility" = "%1$d z %2$d znaków";
+
+/* Title of the sheet that edits a long block of text the user pasted into Duck.ai */
+"aichat.pasted.text.edit.sheet.title" = "Edytuj tekst";
+
+/* VoiceOver action on a Duck.ai pasted-text attachment chip that removes it from the message */
+"aichat.pasted.text.remove" = "Usuń";
+
+/* Title of the sheet that shows a long block of text the user pasted into a Duck.ai message that was already sent */
+"aichat.pasted.text.sheet.title" = "Wklejony tekst";
+
+/* Error shown below the Duck.ai input while the message is longer than allowed, e.g. Please try a shorter message. 17002/16000. %1$d is the number of characters in the message, %2$d is the most characters allowed */
+"aichat.prompt.too.long.format" = "Spróbuj wysłać krótszą wiadomość. %1$d/%2$d";
 
 /* Subtitle for the extended reasoning mode in the Duck.ai reasoning picker */
 "aichat.reasoning.extended.subtitle" = "Do zadań analitycznych";
@@ -1204,9 +1243,6 @@
 /* Description of autofill onboarding prompt's secure storage feature with a string describing the available biometry + passcode as a parameter */
 "autofill.onboarding.key-features.secure-storage.biometric.description" = "Hasła są szyfrowane, przechowywane na urządzeniu i blokowane za pomocą %@.";
 
-/* Description of autofill onboarding prompt's secure storage feature */
-"autofill.onboarding.key-features.secure-storage.description" = "Passwords are encrypted, stored on device, and locked with Face ID or passcode.";
-
 /* Parameter for the description of autofill onboarding prompt's secure storage feature describing Face ID biometry + passcode */
 "autofill.onboarding.key-features.secure-storage.description.parameter.face-id" = "Face ID lub kodu dostępu";
 
@@ -1661,7 +1697,7 @@
 "crash.report.dialog.title" = "Automatycznie wysyłać raporty o awariach?";
 
 /* No comment provided by engineer. */
-"Current Dismiss Count: %@" = "Current Dismiss Count: %@";
+"Current Dismiss Count: %@" = "Aktualna liczba odrzuceń: %@";
 
 /* No comment provided by engineer. */
 "Current Subscriptions" = "Obecne subskrypcje";
@@ -2645,7 +2681,7 @@
 "Enter duration in seconds. Examples: 30, 60, 300" = "Enter duration in seconds. Examples: 30, 60, 300";
 
 /* No comment provided by engineer. */
-"Entry Pill" = "Entry Pill";
+"Entry Pill" = "Pole wejściowe";
 
 /* Button title to Sign In */
 "error.email-protection-sign-in.action" = "Zaloguj się";
@@ -3279,6 +3315,72 @@
 
 /* No comment provided by engineer. */
 "menu.button.hint" = "Dostępne opcje";
+
+/* iPad menu bar command */
+"menuActualSize" = "Rzeczywisty rozmiar";
+
+/* iPad menu bar command */
+"menuBack" = "Wstecz";
+
+/* iPad menu bar command */
+"menuClearTabsAndData" = "Wyczyść karty i dane";
+
+/* iPad menu bar command */
+"menuDuplicateTab" = "Zduplikuj kartę";
+
+/* iPad menu bar command */
+"menuFeedback" = "Podziel się opinią";
+
+/* iPad menu bar command */
+"menuForward" = "Dalej";
+
+/* iPad menu bar command */
+"menuHideDownloads" = "Ukryj pobrane";
+
+/* iPad menu bar command */
+"menuHidePasswords" = "Ukryj hasła";
+
+/* iPad menu bar command */
+"menuHideTabs" = "Ukryj karty";
+
+/* iPad menu bar command */
+"menuLastTab" = "Ostatnia karta";
+
+/* iPad menu bar command */
+"menuNewTabOnRight" = "Nowa karta po prawej stronie";
+
+/* iPad menu bar command */
+"menuNextTab" = "Pokaż następną kartę";
+
+/* iPad menu bar command */
+"menuOpenLocation" = "Otwórz lokalizację…";
+
+/* iPad menu bar command */
+"menuPreviousTab" = "Pokaż poprzednią kartę";
+
+/* iPad menu bar command */
+"menuPrint" = "Drukuj…";
+
+/* iPad menu bar command selecting a numbered tab */
+"menuSelectTab" = "Wybierz kartę %d";
+
+/* iPad menu bar command */
+"menuSettings" = "Ustawienia DuckDuckGo…";
+
+/* iPad menu bar command */
+"menuShowDownloads" = "Pokaż pobrane";
+
+/* iPad menu bar command */
+"menuShowPasswords" = "Pokaż hasła";
+
+/* iPad menu bar command */
+"menuShowTabs" = "Pokaż karty";
+
+/* iPad menu bar command */
+"menuStop" = "Zatrzymaj";
+
+/* iPad menu bar command */
+"menuVoiceSearch" = "Prywatne wyszukiwanie głosowe";
 
 /* No comment provided by engineer. */
 "Message" = "Wiadomość";
@@ -4121,7 +4223,7 @@
 "Primary / First Action" = "Podstawowe / pierwsze działanie";
 
 /* No comment provided by engineer. */
-"Priming Modal" = "Priming Modal";
+"Priming Modal" = "Przygotowanie okna modalnego";
 
 /* No comment provided by engineer. */
 "Privacy Protections" = "Mechanizmy Ochrony Prywatności";
@@ -4184,10 +4286,10 @@
 "Reset" = "Resetowanie";
 
 /* No comment provided by engineer. */
-"Reset Pill Dismiss Count" = "Reset Pill Dismiss Count";
+"Reset Pill Dismiss Count" = "Zresetuj liczbę odrzuceń pola";
 
 /* No comment provided by engineer. */
-"Reset Priming Modal State" = "Reset Priming Modal State";
+"Reset Priming Modal State" = "Zresetuj przygotowanie stanu okna modalnego";
 
 /* No comment provided by engineer. */
 "Reset to Default" = "Reset to Default";
@@ -4416,6 +4518,12 @@
 
 /* Footnote for the hide AI-generated images setting; ends with a Learn more link to the help page (do not remove the link) */
 "settings.aifeatures.hide.ai.generated.images.subtitle" = "Filtruje znane strony z AI-spamem w wynikach wyszukiwania obrazów. [Dowiedz się więcej](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/results/how-to-filter-out-ai-images-in-duckduckgo-search-results)";
+
+/* Settings screen description for the Duck.ai keyboard animation toggle */
+"settings.aifeatures.keyboard.animation.subtitle" = "Pokaż animację wokół klawiatury po przejściu do Duck.ai lub podczas pisania w Duck.ai.";
+
+/* Settings screen toggle title for the Duck.ai keyboard animation */
+"settings.aifeatures.keyboard.animation.title" = "Animacja klawiatury Duck.ai";
 
 /* Label describing a feature which is turned on always */
 "settings.always.on" = "Zawsze włączone";
@@ -5013,9 +5121,6 @@
 
 /* No comment provided by engineer. */
 "Status:" = "Status:";
-
-/* No comment provided by engineer. */
-"Stored Hostname: %@" = "Zapisana nazwa hosta: %@";
 
 /* Button for adding this subscription to another device */
 "subscription.activate.add.to.device.button" = "Dodaj do urządzenia";
@@ -5917,3 +6022,12 @@
 /* Title for screen to screen confirming what data to import from a zip file (bookmarks and /or passwords) */
 "zip.content.import.types.title" = "Co chcesz importować?";
 
+
+/* Fireproofing setting toggle label */
+"preserveLogins.askOnSignIn" = "Proś o zabezpieczanie witryn internetowych podczas logowania";
+
+/* Empty Fireproof sites list */
+"preserveLogins.emptyState" = "Brak zabezpieczonych witryn internetowych";
+
+/* Button to remove all Fireproof sites */
+"preserveLogins.removeAllSites" = "Usuń wszystkie zabezpieczone strony";

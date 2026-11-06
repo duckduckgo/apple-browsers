@@ -169,14 +169,9 @@ struct NetworkProtectionStatusView: View {
         HStack {
             Spacer(minLength: 0)
             VStack(alignment: .center, spacing: 8) {
-                if AppRebrand.isAppRebranded() {
-                    headerAnimationView("vpn-animation", contentSize: CGSize(width: 128, height: 96))
-                        .frame(width: 128, height: 96)
-                } else if colorScheme == .light {
-                    headerAnimationView("vpn-light-mode-legacy")
-                } else {
-                    headerAnimationView("vpn-dark-mode-legacy")
-                }
+                headerAnimationView("vpn-animation", contentSize: CGSize(width: 128, height: 96))
+                    .frame(width: 128, height: 96)
+
                 Text(statusModel.headerTitle)
                     .daxTitle2()
                     .multilineTextAlignment(.center)
@@ -368,66 +363,46 @@ struct NetworkProtectionStatusView: View {
 
     @ViewBuilder
     private func headerAnimationView(_ animationName: String, contentSize: CGSize? = nil) -> some View {
-        let loopMode: LottieView.LoopMode = AppRebrand.isAppRebranded() ?
-            .withIntro(
-                .init(
-                    // Skip the intro if NetP is enabled, but the user didn't manually trigger it
-                    skipIntro: statusModel.isNetPEnabled && !statusModel.shouldDisableToggle,
-                    introStartFrame: 0,
-                    introEndFrame: 30,
-                    loopStartFrame: 31,
-                    loopEndFrame: 121
-                )
-            ) :
-            .withIntro(
-                .init(
-                    skipIntro: statusModel.isNetPEnabled && !statusModel.shouldDisableToggle,
-                    introStartFrame: 0,
-                    introEndFrame: 100,
-                    loopStartFrame: 130,
-                    loopEndFrame: 370
-                )
+        let loopMode: LottieView.LoopMode = .withIntro(
+            .init(
+                // Skip the intro if NetP is enabled, but the user didn't manually trigger it
+                skipIntro: statusModel.isNetPEnabled && !statusModel.shouldDisableToggle,
+                introStartFrame: 0,
+                introEndFrame: 30,
+                loopStartFrame: 31,
+                loopEndFrame: 121
             )
+        )
 
         LottieView(
             lottieFile: animationName,
             loopMode: loopMode,
             isAnimating: $statusModel.isNetPEnabled,
-            configure: Self.strictRoutingTint(spec: AppRebrand.isAppRebranded() ? .rebranded : .legacy,
+            configure: Self.strictRoutingTint(spec: .vpnAnimation,
                                               enforceRoutes: statusModel.enforceRoutes,
                                               colorScheme: colorScheme),
             contentSize: contentSize
         )
     }
 
-    /// The Lottie keypaths the strict-routing tint recolors, per header animation variant.
-    ///
-    /// The legacy animation's groups and fills are unnamed in the JSON; lottie-ios decodes a
-    /// null `nm` as "Layer", which is why the legacy keypaths read `<layer>.Layer.Layer.Color`.
+    /// The Lottie keypaths the strict-routing tint recolors in the header animation.
     struct TintSpec {
         /// The badge circle behind the lock. Its color is keyframed to reveal below `revealFrame`.
         let badgeKeypath: String
         /// The frame at which the badge reveal completes: black before, accent after.
         let revealFrame: CGFloat
-        /// Decorative arc lines that take the accent color (rebrand only).
+        /// Decorative arc lines that take the accent color.
         let accentLineKeypaths: [(fill: String, stroke: String)]
         /// The lock glyph, which takes the foreground color.
         let lockKeypaths: [String]
 
-        static let rebranded = TintSpec(
+        static let vpnAnimation = TintSpec(
             badgeKeypath: "badge-fill.badge-fill.Fill 1.Color",
             revealFrame: 14,
             accentLineKeypaths: ["Line", "Line 2", "Line 3"].map {
                 (fill: "\($0).Shape 1.Fill 1.Color", stroke: "\($0).Shape 1.Stroke 1.Color")
             },
             lockKeypaths: ["lock 1.lock.Stroke 1.Color", "lock-body.lock-body.Fill 1.Color"]
-        )
-
-        static let legacy = TintSpec(
-            badgeKeypath: "bg.Layer.Layer.Color",
-            revealFrame: 35,
-            accentLineKeypaths: [],
-            lockKeypaths: ["lock-hook.Layer.Layer.Color", "lock-base.Layer.Layer.Color"]
         )
     }
 

@@ -29,12 +29,24 @@ protocol OmniBarNotificationAnimated: UIViewController {
 final class OmniBarNotificationContainerView: UIView {
 
     var currentNotificationController: UIHostingController<OmniBarNotification>?
+    weak var fieldView: UIView?
+
+    private var lozengeHeight: CGFloat {
+        let fieldHeight = fieldView?.bounds.height ?? OmniBarMetrics.itemSize
+        return max(0, fieldHeight - 2 * OmniBarMetrics.notificationLozengeInset)
+    }
+
+    override func layoutSubviews() {
+        super.layoutSubviews()
+        guard currentNotificationController?.rootView.lozengeHeight != lozengeHeight else { return }
+        currentNotificationController?.rootView.lozengeHeight = lozengeHeight
+    }
     
     func prepareAnimation(_ type: OmniBarNotificationType, in controller: UIViewController) {
         removePreviousNotification()
         
         let viewModel = makeNotificationViewModel(for: type)
-        let notificationViewController = UIHostingController(rootView: OmniBarNotification(viewModel: viewModel),
+        let notificationViewController = UIHostingController(rootView: OmniBarNotification(viewModel: viewModel, lozengeHeight: lozengeHeight),
                                                              ignoreSafeArea: true)
         
         controller.addChild(notificationViewController)
@@ -94,7 +106,7 @@ final class OmniBarNotificationContainerView: UIView {
             icon = .animation(useDarkStyle ? "cookie-icon-animated-40-dark" : "cookie-icon-animated-40-light")
         case .trackersBlocked(let count):
             notificationText = UserText.omnibarNotificationTrackersBlocked(count: count)
-            icon = .still(AppRebrand.isAppRebranded() ? "shield.new" : "shield.new-legacy")
+            icon = .still("shield.new")
             // Only animate counting for 5+ trackers, show directly for fewer
             eventCount = count >= 5 ? count : 0
             textGenerator = count >= 5 ? { UserText.omnibarNotificationTrackersBlocked(count: $0) } : nil

@@ -245,11 +245,7 @@ extension URL {
     // MARK: ATB
 
     static var devMode: String {
-#if DEBUG
-        return "?test=1"
-#else
-        return ""
-#endif
+        BuildFlags.isProductionBuild ? "" : "?test=1"
     }
 
     static let atb = "\(Self.duckDuckGo)atb.js\(devMode)"
@@ -930,6 +926,8 @@ extension URL {
     // MARK: - System Settings
 
     static var fullDiskAccess = URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_AllFiles")!
+
+    static var screenRecordingSystemSettings = URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_ScreenCapture")!
 
     static var touchIDAndPassword = URL(string: "x-apple.systempreferences:com.apple.preferences.password")!
 

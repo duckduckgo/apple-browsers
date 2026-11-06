@@ -96,6 +96,9 @@ final class AutofillPreferencesModel: ObservableObject {
 
     @Published private(set) var showSyncPromo: Bool = false
 
+    /// Whether a password manager extension has taken autofill over from DuckDuckGo. Read-only here.
+    @Published private(set) var isManagedByExtension: Bool = false
+
     func authorizeAutoLockSettingsChange(
         isEnabled isAutoLockEnabledNewValue: Bool? = nil,
         threshold autoLockThresholdNewValue: AutofillAutoLockThreshold? = nil
@@ -127,9 +130,15 @@ final class AutofillPreferencesModel: ObservableObject {
         }
     }
 
+    /// Where web extensions are supported, only users who still have the native Bitwarden integration get a choice.
     @MainActor
-    func passwordManagerSettingsChange(passwordManager: PasswordManager) {
-        self.passwordManager = passwordManager
+    var isPasswordManagerChoiceVisible: Bool {
+        !isSandboxed && (passwordManager == .bitwarden || !areWebExtensionsSupported)
+    }
+
+    @MainActor
+    func passwordManagerSettingsChange(passwordManager requested: PasswordManager) {
+        passwordManager = passwordManager.transitioned(to: requested, webExtensionsSupported: areWebExtensionsSupported)
     }
 
     func openImportPasswordsWindow() {
@@ -158,9 +167,14 @@ final class AutofillPreferencesModel: ObservableObject {
         userAuthenticator: UserAuthenticating = DeviceAuthenticator.shared,
         bitwardenManager: BWManagement? = Application.appDelegate.bitwardenManager,
         neverPromptWebsitesManager: AutofillNeverPromptWebsitesManager = AutofillNeverPromptWebsitesManager.shared,
-        syncPromoManager: SyncPromoManaging = Application.appDelegate.syncSetupAutofillPromoManager
+        syncPromoManager: SyncPromoManaging = Application.appDelegate.syncSetupAutofillPromoManager,
+        notificationCenter: NotificationCenter = .default,
+        areWebExtensionsSupported: Bool = PasswordManager.areWebExtensionsSupported,
+        isSandboxed: Bool = NSApp.isSandboxed
     ) {
         self.persistor = persistor
+        self.areWebExtensionsSupported = areWebExtensionsSupported
+        self.isSandboxed = isSandboxed
         self.userAuthenticator = userAuthenticator
         self.bitwardenManager = bitwardenManager
         self.neverPromptWebsitesManager = neverPromptWebsitesManager
@@ -176,10 +190,19 @@ final class AutofillPreferencesModel: ObservableObject {
         showInMenuBar = persistor.showInMenuBar
         passwordManager = persistor.passwordManager
         hasNeverPromptWebsites = !neverPromptWebsitesManager.neverPromptWebsites.isEmpty
+        isManagedByExtension = persistor.isManagedByExtension
         syncPromoCancellable = syncPromoManager.isPromoActivePublisher
             .sink { [weak self] _ in
                 MainActor.assumeMainThread {
                     self?.setShouldShowSyncPromo()
+                }
+            }
+
+        userSettingsCancellable = notificationCenter.publisher(for: .autofillUserSettingsDidChange)
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in
+                MainActor.assumeMainThread {
+                    self?.refreshFromPersistor()
                 }
             }
 
@@ -192,6 +215,9 @@ final class AutofillPreferencesModel: ObservableObject {
     private let neverPromptWebsitesManager: AutofillNeverPromptWebsitesManager
     private let syncPromoManager: SyncPromoManaging
     private var syncPromoCancellable: AnyCancellable?
+    private var userSettingsCancellable: AnyCancellable?
+    let areWebExtensionsSupported: Bool
+    private let isSandboxed: Bool
     lazy var syncPromoViewModel: SyncPromoViewModel = SyncPromoViewModel(touchpointType: .autofill,
                                                                          primaryButtonAction: { [weak self] in
         self?.syncPromoManager.goToSyncSettings(for: .autofill)
@@ -212,7 +238,9 @@ final class AutofillPreferencesModel: ObservableObject {
         let connectBitwardenWindowController = connectBitwardenViewController.wrappedInWindowController()
 
         connectBitwardenViewController.setupFlowCancellationHandler = { [weak self] in
-            self?.passwordManager = .duckduckgo
+            // Where the integration can't be turned back on, cancelling setup must not take it away.
+            guard let self, !areWebExtensionsSupported else { return }
+            passwordManager = .duckduckgo
         }
 
         guard let connectBitwardenWindow = connectBitwardenWindowController.window,
@@ -234,6 +262,15 @@ final class AutofillPreferencesModel: ObservableObject {
 
     func openSettings() {
         NSWorkspace.shared.open(.fullDiskAccess)
+    }
+
+    @MainActor
+    private func refreshFromPersistor() {
+        let isManagedByExtension = persistor.isManagedByExtension
+        if isManagedByExtension != self.isManagedByExtension {
+            self.isManagedByExtension = isManagedByExtension
+        }
+        passwordManager = persistor.passwordManager
     }
 
     @MainActor

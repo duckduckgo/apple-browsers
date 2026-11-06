@@ -71,6 +71,12 @@ struct SubscriptionSettingsViewV2: View {
     /// Guards against a double-tap starting a second entitlement fetch before the first resolves.
     @State private var isStartingOnboarding = false
 
+    // MARK: - Cancellation flow state
+
+    @State private var cancellationFlow: SubscriptionCancellationFlowPresentation?
+    @State private var isShowingCancellationFlow = false
+    @State private var shouldOpenStoreCancellation = false
+
     var body: some View {
         optionsView
             .onFirstAppear {
@@ -237,6 +243,10 @@ struct SubscriptionSettingsViewV2: View {
                     )
                 }
 
+                if viewModel.isEligibleToCancel {
+                    cancelSubscriptionView
+                }
+
                 removeFromDeviceView
 
             case .activating:
@@ -258,6 +268,17 @@ struct SubscriptionSettingsViewV2: View {
                                disclosureIndicator: true,
                                isButton: true)
         }
+    }
+
+    var cancelSubscriptionView: some View {
+        SettingsCustomCell(content: {
+            Text(UserText.subscriptionCancelSubscription)
+                .daxBodyRegular()
+                .foregroundColor(Color(designSystemColor: .accentPrimary))
+        },
+                           action: { startCancellationFlow() },
+                           disclosureIndicator: true,
+                           isButton: true)
     }
 
     @ViewBuilder
@@ -428,7 +449,8 @@ struct SubscriptionSettingsViewV2: View {
         // View All Plans navigation
         NavigationLink(
             destination: SubscriptionContainerViewFactory.makePlansFlowV2(
-                redirectURLComponents: SubscriptionURL.plansURLComponents(SubscriptionFunnelOrigin.appSettings.rawValue),
+                // Plan changes must not send origin to the page; planChangeEntry is read natively for wide events only.
+                redirectURLComponents: SubscriptionURL.plansURLComponents(planChangeEntry: SubscriptionFunnelOrigin.appSettings.rawValue),
                 navigationCoordinator: subscriptionNavigationCoordinator,
                 subscriptionManager: AppDependencyProvider.shared.subscriptionManager,
                 subscriptionFeatureAvailability: settingsViewModel.subscriptionFeatureAvailability,
@@ -444,7 +466,8 @@ struct SubscriptionSettingsViewV2: View {
         // Upgrade navigation - uses pendingUpgradeTier captured at button click to avoid race conditions
         NavigationLink(
             destination: SubscriptionContainerViewFactory.makePlansFlowV2(
-                redirectURLComponents: SubscriptionURL.plansURLComponents(SubscriptionFunnelOrigin.appSettings.rawValue, tier: viewModel.state.pendingUpgradeTier),
+                // Plan changes must not send origin to the page; planChangeEntry is read natively for wide events only.
+                redirectURLComponents: SubscriptionURL.plansURLComponents(planChangeEntry: SubscriptionFunnelOrigin.appSettings.rawValue, tier: viewModel.state.pendingUpgradeTier),
                 navigationCoordinator: subscriptionNavigationCoordinator,
                 subscriptionManager: AppDependencyProvider.shared.subscriptionManager,
                 subscriptionFeatureAvailability: settingsViewModel.subscriptionFeatureAvailability,
@@ -455,6 +478,17 @@ struct SubscriptionSettingsViewV2: View {
                 featureFlagger: settingsViewModel.featureFlagger),
             isActive: $isShowingUpgradeView
         ) { EmptyView() }
+            .hidden()
+
+        // Cancellation flow navigation - pushes the flow built once in startCancellationFlow()
+        NavigationLink(isActive: $isShowingCancellationFlow) {
+            if let cancellationFlow {
+                SubscriptionCancellationFlowView(model: cancellationFlow.model,
+                                                 containerViewModel: cancellationFlow.containerViewModel,
+                                                 featureFlagger: settingsViewModel.featureFlagger)
+                .environmentObject(subscriptionNavigationCoordinator)
+            }
+        } label: { EmptyView() }
             .hidden()
 
         List {
@@ -485,6 +519,11 @@ struct SubscriptionSettingsViewV2: View {
             Task { await viewModel.refreshOnboardingState(hasActiveSubscription: hasActiveSubscription, isPIRAvailable: isPIRAvailable) }
         }) { flow in
             SubscriptionOnboardingLauncher.launch(flow: flow)
+        }
+        .onChange(of: isShowingCancellationFlow) { isShowing in
+            guard !isShowing, shouldOpenStoreCancellation else { return }
+            shouldOpenStoreCancellation = false
+            Task { await viewModel.openStoreCancellation() }
         }
         .onChange(of: viewModel.state.shouldDismissView) { value in
             if value {
@@ -705,6 +744,27 @@ extension SubscriptionSettingsViewV2 {
                 pirScreen: { pirDestination }) else { return }
             onboardingFlow = flow
         }
+    }
+
+    func startCancellationFlow() {
+        guard !isShowingCancellationFlow else { return }
+        viewModel.cancelSubscriptionTapped()
+        let containerViewModel = SubscriptionContainerViewFactory.makeCancellationFlowViewModel(
+            subscriptionManager: settingsViewModel.subscriptionManager,
+            subscriptionFeatureAvailability: settingsViewModel.subscriptionFeatureAvailability,
+            userScriptsDependencies: settingsViewModel.userScriptsDependencies,
+            internalUserDecider: viewModel.internalUserDecider,
+            dataBrokerProtectionViewControllerProvider: settingsViewModel.dataBrokerProtectionViewControllerProvider,
+            wideEvent: viewModel.wideEvent,
+            featureFlagger: settingsViewModel.featureFlagger)
+        cancellationFlow = SubscriptionCancellationFlowPresentation(containerViewModel: containerViewModel,
+                                                                    instrumentation: viewModel.cancellationInstrumentation) { closingFlow in
+            shouldOpenStoreCancellation = true
+            if closingFlow {
+                isShowingCancellationFlow = false
+            }
+        }
+        isShowingCancellationFlow = true
     }
 
     /// An expired or still-activating subscription has nothing left to set up.

@@ -86,3 +86,14 @@ struct AIChatAddressBarExperience: AIChatAddressBarExperienceProviding {
             && aiChatSettings.isAIChatSearchInputUserSettingsEnabled
     }
 }
+
+/// Visibility rule for the Duck.ai shortcut button in a text input that can also show the Search / Duck.ai mode toggle.
+enum DuckAIInputShortcutVisibility {
+
+    /// Whether the input shows the Duck.ai shortcut button.
+    static func isShortcutShown(isShortcutAvailable: Bool,
+                                isModeToggleEnabled: Bool,
+                                textEntryMode: TextEntryMode) -> Bool {
+        isShortcutAvailable && !isModeToggleEnabled && textEntryMode == .search
+    }
+}

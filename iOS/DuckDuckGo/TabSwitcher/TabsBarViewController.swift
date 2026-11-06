@@ -112,7 +112,9 @@ class TabsBarViewController: UIViewController {
     }
 
     lazy var fireButton: UIButton = {
-        createButton(image: DesignSystemImages.Glyphs.Size24.fireSolid)
+        let button = createButton(image: DesignSystemImages.Glyphs.Size24.fireSolid)
+        button.accessibilityIdentifier = "Browser.Toolbar.Button.Fire"
+        return button
     }()
 
     lazy var addTabButton: UIButton = {
@@ -1152,24 +1154,25 @@ extension MainViewController: TabsBarDelegate {
             return
         }
 
-        currentTab?.aiChatContextualSheetCoordinator.dismissSheet()
-        dismissOmniBar()
-
         // Tabs bar is iPad only and this is to work around on a problem iOS 26 which will be fixed later with Xcode 26.
         let switchesTab = tab !== tabManager.currentTabsModel.currentTab
         if switchesTab {
+            // The sidebar leaves the tabs bar usable, and tapping the tab it belongs to keeps it open.
+            currentTabWillLeaveScreen(.tabSwitched)
             chromeManager.preventNextScrollToTop()
         }
+        dismissOmniBar()
         
         selectTab(tab)
         if switchesTab {
+            recordDirectTabSelection(of: tab)
             showKeyboardOnNewTabPageIfAllowed()
         }
     }
     
     func tabsBar(_ controller: TabsBarViewController, didRemoveTabAtIndex index: Int) {
         if let tab = tabManager.currentTabsModel.get(tabAt: index) {
-            closeTab(tab, refreshInPlace: true)
+            closeTabOnUserRequest(tab, refreshInPlace: true)
         }
     }
 
@@ -1216,6 +1219,7 @@ extension MainViewController: TabsBarDelegate {
     }
 
     func tabsBarDidRequestNewTab(_ controller: TabsBarViewController) {
+        recordUserOpenedTab()
         newTab()
     }
     
@@ -1236,18 +1240,21 @@ extension MainViewController: TabsBarDelegate {
 
     func tabsBarDidRequestNewFireTab(_ controller: TabsBarViewController) {
         recordDuckAISessionPendingExit(.fireTabOpened)
+        recordUserOpenedTab()
         tabManager.setBrowsingMode(.fire, source: .longPressTabsIcon)
         newTab()
     }
 
     func tabsBarDidRequestNewNormalTab(_ controller: TabsBarViewController) {
         recordDuckAISessionPendingExit(.newTabOpened)
+        recordUserOpenedTab()
         tabManager.setBrowsingMode(.normal, source: .longPressTabsIcon)
         newTab()
     }
 
     func tabsBarDidRequestNewChat(_ controller: TabsBarViewController) {
-        newChatLongPressMenuAction()
+        recordUserOpenedTab()
+        openNewChatTabFromLongPressMenu()
     }
 
     func tabsBarDidRequestAIChat(_ controller: TabsBarViewController) {

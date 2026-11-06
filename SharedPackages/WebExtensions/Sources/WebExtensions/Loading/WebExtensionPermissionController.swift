@@ -20,18 +20,34 @@ import Combine
 import os.log
 import WebKit
 
+/// A permission the app implements itself because WebKit doesn't, such as `privacy`, which the API stub
+/// script backs with the app's own `chrome.privacy`. WebKit drops these names from the manifest, so the
+/// permission controller asks for and keeps them alongside WebKit's.
+public enum WebExtensionAppPermission: String, CaseIterable, Sendable {
+    /// Lets an extension change the browser's privacy settings, including turning off DuckDuckGo's
+    /// password manager so it can take autofill over.
+    case privacy
+}
+
 @available(macOS 15.4, iOS 18.4, *)
 public struct WebExtensionPermissionRequest {
     public let permissions: Set<WKWebExtension.Permission>
     public let matchPatterns: Set<WKWebExtension.MatchPattern>
     public let urls: Set<URL>
+    public let appPermissions: Set<WebExtensionAppPermission>
 
     public init(permissions: Set<WKWebExtension.Permission> = [],
                 matchPatterns: Set<WKWebExtension.MatchPattern> = [],
-                urls: Set<URL> = []) {
+                urls: Set<URL> = [],
+                appPermissions: Set<WebExtensionAppPermission> = []) {
         self.permissions = permissions
         self.matchPatterns = matchPatterns
         self.urls = urls
+        self.appPermissions = appPermissions
+    }
+
+    var asksWebKit: Bool {
+        !permissions.isEmpty || !matchPatterns.isEmpty || !urls.isEmpty
     }
 }
 
@@ -74,6 +90,11 @@ public final class WebExtensionPermissionController {
     private var contexts: [String: WKWebExtensionContext] = [:]
     /// Stores last known state of saved settings per extension to avoid unnecessary writes to disk.
     private var lastSavedSettings: [String: WebExtensionPermissionSettings] = [:]
+    /// The app permissions each loaded extension holds, which WebKit doesn't keep on the context.
+    private var grantedAppPermissions: [String: [String: Date]] = [:]
+
+    /// Called when a loaded extension gains or loses an app permission, with its identifier.
+    public var appPermissionsDidChange: @MainActor (_ identifier: String) -> Void = { _ in }
 
     /// This set keeps trusted extensions at the time of installation.
     ///
@@ -116,14 +137,19 @@ public final class WebExtensionPermissionController {
 
         observations.removeValue(forKey: identifier)
         lastSavedSettings.removeValue(forKey: identifier)
+        grantedAppPermissions.removeValue(forKey: identifier)
         contexts[identifier] = context
         do {
             if let settings = try store.settings(for: identifier) {
                 try restore(settings, to: context)
                 lastSavedSettings[identifier] = settings
             } else {
+                // WebKit leaves app permissions out of `requestedPermissions`, so the manifest says which are required.
                 let request = WebExtensionPermissionRequest(permissions: context.webExtension.requestedPermissions,
-                                                            matchPatterns: context.webExtension.allRequestedMatchPatterns)
+                                                            matchPatterns: context.webExtension.allRequestedMatchPatterns,
+                                                            appPermissions: Set(WebExtensionAppPermission.allCases.filter {
+                                                                context.webExtension.requiresPermission($0.rawValue)
+                                                            }))
                 let result = await prompter.confirmInstallation(of: context.webExtension, permissions: request)
                 guard case .granted(let privateDataAccess) = result, contexts[identifier] === context else {
                     throw PermissionError.installationDenied
@@ -131,35 +157,83 @@ public final class WebExtensionPermissionController {
                 context.hasAccessToPrivateData = privateDataAccess
                 grant(request, to: context)
                 try save(context)
+                if !request.appPermissions.isEmpty {
+                    appPermissionsDidChange(identifier)
+                }
             }
             observePermissionChanges(in: context)
         } catch {
             if contexts[identifier] === context {
                 contexts.removeValue(forKey: identifier)
                 lastSavedSettings.removeValue(forKey: identifier)
+                grantedAppPermissions.removeValue(forKey: identifier)
             }
             throw error
         }
     }
 
+    /// Asks the user for `request`, and grants it if they approve. App permissions the manifest doesn't
+    /// declare are refused, as in Chrome, and ones the extension already holds aren't asked for again.
     func request(_ request: WebExtensionPermissionRequest, for context: WKWebExtensionContext) async -> Bool {
-        if isTrusted(context.uniqueIdentifier) { return true }
-        guard contexts[context.uniqueIdentifier] === context,
-              await prompter.confirmPermissions(request, for: context) == .granted,
-              contexts[context.uniqueIdentifier] === context else { return false }
+        let identifier = context.uniqueIdentifier
+        if isTrusted(identifier) { return true }
+        guard contexts[identifier] === context,
+              request.appPermissions.allSatisfy({ context.webExtension.declaresPermission($0.rawValue) }) else { return false }
+
+        let missingAppPermissions = request.appPermissions.filter { !isGranted($0, to: identifier) }
+        let prompt = WebExtensionPermissionRequest(permissions: request.permissions,
+                                                   matchPatterns: request.matchPatterns,
+                                                   urls: request.urls,
+                                                   appPermissions: missingAppPermissions)
+        guard prompt.asksWebKit || !prompt.appPermissions.isEmpty else { return true }
+        guard await prompter.confirmPermissions(prompt, for: context) == .granted,
+              contexts[identifier] === context else { return false }
 
         let previousPermissions = context.grantedPermissions
         let previousPatterns = context.grantedPermissionMatchPatterns
+        let previousAppPermissions = grantedAppPermissions[identifier]
         do {
-            grant(request, to: context)
+            grant(prompt, to: context)
             try save(context)
-            return true
         } catch {
             context.grantedPermissions = previousPermissions
             context.grantedPermissionMatchPatterns = previousPatterns
+            grantedAppPermissions[identifier] = previousAppPermissions
             Logger.webExtensions.error("Could not save extension permissions: \(error.localizedDescription)")
             return false
         }
+        if !prompt.appPermissions.isEmpty {
+            appPermissionsDidChange(identifier)
+        }
+        return true
+    }
+
+    /// Whether the extension holds `permission`. Extensions bundled with the app hold every permission.
+    func isGranted(_ permission: WebExtensionAppPermission, to identifier: String) -> Bool {
+        isTrusted(identifier) || grantedAppPermissions[identifier]?[permission.rawValue] != nil
+    }
+
+    /// Takes `permission` back from a loaded extension. A permission the manifest requires can't be
+    /// taken back, as in Chrome. Returns whether the extension no longer holds it.
+    @discardableResult
+    func revoke(_ permission: WebExtensionAppPermission, from context: WKWebExtensionContext) -> Bool {
+        let identifier = context.uniqueIdentifier
+        guard !isTrusted(identifier),
+              contexts[identifier] === context,
+              !context.webExtension.requiresPermission(permission.rawValue) else { return false }
+        guard isGranted(permission, to: identifier) else { return true }
+
+        let previousAppPermissions = grantedAppPermissions[identifier]
+        grantedAppPermissions[identifier]?[permission.rawValue] = nil
+        do {
+            try save(context)
+        } catch {
+            grantedAppPermissions[identifier] = previousAppPermissions
+            Logger.webExtensions.error("Could not save extension permissions: \(error.localizedDescription)")
+            return false
+        }
+        appPermissionsDidChange(identifier)
+        return true
     }
 
     /// Also updates a loaded context, so a future preferences UI can use the same entry point.
@@ -197,6 +271,7 @@ public final class WebExtensionPermissionController {
         // Invalidate pending prompts and notifications even if disk cleanup fails.
         observations.removeValue(forKey: identifier)
         lastSavedSettings.removeValue(forKey: identifier)
+        grantedAppPermissions.removeValue(forKey: identifier)
         contexts.removeValue(forKey: identifier)
         try store.removeSettings(for: identifier)
     }
@@ -212,6 +287,7 @@ public final class WebExtensionPermissionController {
         }
         observations.removeValue(forKey: identifier)
         lastSavedSettings.removeValue(forKey: identifier)
+        grantedAppPermissions.removeValue(forKey: identifier)
         contexts.removeValue(forKey: identifier)
     }
 
@@ -224,6 +300,7 @@ public final class WebExtensionPermissionController {
             (try WKWebExtension.MatchPattern(string: $0.key), $0.value)
         })
         context.hasRequestedOptionalAccessToAllHosts = settings.hasRequestedOptionalAccessToAllHosts
+        grantedAppPermissions[context.uniqueIdentifier] = settings.grantedAppPermissions
     }
 
     private func grant(_ request: WebExtensionPermissionRequest, to context: WKWebExtensionContext) {
@@ -236,6 +313,9 @@ public final class WebExtensionPermissionController {
         for url in request.urls {
             context.setPermissionStatus(.grantedExplicitly, for: url)
         }
+        for permission in request.appPermissions {
+            grantedAppPermissions[context.uniqueIdentifier, default: [:]][permission.rawValue] = Date()
+        }
     }
 
     private func save(_ context: WKWebExtensionContext) throws {
@@ -245,6 +325,7 @@ public final class WebExtensionPermissionController {
         settings.grantedPermissions = Dictionary(uniqueKeysWithValues: context.grantedPermissions.map { ($0.key.rawValue, $0.value) })
         settings.grantedMatchPatterns = Dictionary(uniqueKeysWithValues: context.grantedPermissionMatchPatterns.map { ($0.key.string, $0.value) })
         settings.hasRequestedOptionalAccessToAllHosts = context.hasRequestedOptionalAccessToAllHosts
+        settings.grantedAppPermissions = grantedAppPermissions[context.uniqueIdentifier] ?? [:]
         try save(settings, for: context.uniqueIdentifier)
     }
 

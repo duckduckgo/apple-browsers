@@ -59,7 +59,8 @@ final class SelectionFrameUserScript: NSObject, Subfeature {
 
     static let readSelectionScript = "window.__ddgSelectionFrame.readSelection()"
 
-    let featureName = "textSelection"
+    static let featureName = "textSelection"
+    var featureName: String { Self.featureName }
     let messageOriginPolicy: MessageOriginPolicy = .all
     weak var broker: UserScriptMessageBroker?
 

@@ -43,6 +43,10 @@ public enum UpdateControllerStorageKeys: String, StorageKeyDescribing {
     case pendingUpdateInitiationType = "pending.update.initiation.type"
     case pendingUpdateConfiguration = "pending.update.configuration"
 
+    // Update prompt clock
+    case updatePromptClockStartDate = "updates.prompt-clock.start-date"
+    case updatePromptClockInstalledVersion = "updates.prompt-clock.installed-version"
+
 }
 
 /// StoringKeys conforming struct for typed access to UpdateController settings
@@ -68,6 +72,10 @@ public struct UpdateControllerSettings: StoringKeys {
     public let pendingUpdateExpectedBuild = StorageKey<String>(UpdateControllerStorageKeys.pendingUpdateExpectedBuild, assertionHandler: { _ in })
     public let pendingUpdateInitiationType = StorageKey<String>(UpdateControllerStorageKeys.pendingUpdateInitiationType, assertionHandler: { _ in })
     public let pendingUpdateConfiguration = StorageKey<String>(UpdateControllerStorageKeys.pendingUpdateConfiguration, assertionHandler: { _ in })
+
+    // Update prompt clock
+    public let updatePromptClockStartDate = StorageKey<Date>(UpdateControllerStorageKeys.updatePromptClockStartDate, assertionHandler: { _ in })
+    public let updatePromptClockInstalledVersion = StorageKey<String>(UpdateControllerStorageKeys.updatePromptClockInstalledVersion, assertionHandler: { _ in })
 
     public init() {}
 }

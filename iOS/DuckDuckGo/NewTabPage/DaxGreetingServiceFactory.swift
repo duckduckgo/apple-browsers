@@ -18,34 +18,21 @@
 //
 
 import AIChat
-import BrowserServicesKit
-import FeatureFlags_iOS
 import PrivacyConfig
 import WebExtensions
+import Foundation
 
 @MainActor
 enum DaxGreetingServiceFactory {
     static func makeService(activityStore: DaxGreetingActivityStore?,
                             privacyConfigurationManager: PrivacyConfigurationManaging,
-                            appSettings: AppSettings,
                             aiChatSettings: AIChatSettingsProvider,
-                            adBlockingAvailability: AdBlockingAvailabilityProviding,
-                            maliciousSiteProtectionPreferencesManager: MaliciousSiteProtectionPreferencesManaging,
-                            featureFlagger: FeatureFlagger,
-                            appearanceProvider: @escaping () -> DaxGreetingContext.Appearance?) -> DaxGreetingService {
+                            adBlockingAvailability: AdBlockingAvailabilityProviding) -> DaxGreetingService {
         DaxGreetingService(contextProvider: { date, calendar in
-            let appearance = appearanceProvider()
-            var context = activityStore?.context(at: date, calendar: calendar, appearance: appearance)
-                ?? DaxGreetingContext(appearance: appearance)
+            var context = activityStore?.context(at: date, calendar: calendar) ?? DaxGreetingContext()
             context.isAIChatEnabled = aiChatSettings.isAIChatEnabled
-            let privacyConfig = privacyConfigurationManager.privacyConfig
-            context.isTrackerProtectionEnabled = privacyConfig.isEnabled(featureKey: .contentBlocking)
-            context.isCookiePopupProtectionEnabled = appSettings.cookiePopupPreference.isBlockingEnabled
-                && privacyConfig.isEnabled(featureKey: .autoconsent)
-            context.isAdBlockingEnabled = adBlockingAvailability.isEnabled
-            context.isScamProtectionEnabled = maliciousSiteProtectionPreferencesManager.isMaliciousSiteProtectionOn
-                && featureFlagger.isFeatureOn(.maliciousSiteProtection)
-                && featureFlagger.isFeatureOn(.scamSiteProtection)
+            context.isTrackerOrAdBlockingEnabled = privacyConfigurationManager.privacyConfig.isEnabled(featureKey: .contentBlocking)
+                || adBlockingAvailability.isEnabled
             return context
         })
     }

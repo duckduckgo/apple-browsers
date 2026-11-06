@@ -26,7 +26,7 @@ extension TabSwitcherViewController {
             UIKeyCommand(title: "", action: #selector(keyboardCloseWindow), input: UIKeyCommand.inputEscape,
                          modifierFlags: [], discoverabilityTitle: UserText.keyCommandClose),
 
-            UIKeyCommand(title: "", action: #selector(keyboardCloseWindow), input: "w",
+            UIKeyCommand(title: "", action: featureFlagger.isFeatureOn(.ipadMenuBar) ? #selector(keyboardCloseTab) : #selector(keyboardCloseWindowShortcut), input: "w",
                          modifierFlags: [.command], discoverabilityTitle: UserText.keyCommandClose)
         ]
 
@@ -67,24 +67,84 @@ extension TabSwitcherViewController {
         commands.forEach {
             $0.wantsPriorityOverSystemBehavior = true
         }
-        return commands
+        let menuEnabled = featureFlagger.isFeatureOn(.ipadMenuBar)
+        let favorites = menuEnabled ? (presentingViewController as? MainViewController)?.mainMenuBookmarks.favorites ?? [] : []
+        let spec = MainMenuSpec(isEnabled: menuEnabled,
+                                context: .init(fireModeEnabled: fireModeCapability.isFireModeEnabled,
+                                               aiChatEnabled: aiChatSettings.isAIChatEnabled, favorites: favorites))
+        guard spec.shortcutRegistration != .legacy else { return commands }
+        return MainMenuBuilder().keyCommands(for: spec, from: commands, availability: switcherMenuAvailability)
     }
     
+    @objc func keyboardFire() {
+        KeyboardShortcutPixel.fireUsed(with: pixelFiring)
+        guard isFireShortcutEnabled(), !isProcessingUpdates else { return }
+        let source: AnyObject = isEditing ? view : chrome.fireButton
+        burn(sender: source, prefersSheet: true)
+    }
+
+    override func validate(_ command: UICommand) {
+        super.validate(command)
+        guard featureFlagger.isFeatureOn(.ipadMenuBar), let menuCommand = MainMenuCommand(action: command.action) else { return }
+        let availability = switcherMenuAvailability
+        command.applyMenuState(title: availability.title(for: menuCommand), isEnabled: availability.isEnabled(menuCommand),
+                               isHidden: availability.isHidden(menuCommand))
+    }
+
+    override func canPerformAction(_ action: Selector, withSender sender: Any?) -> Bool {
+        guard featureFlagger.isFeatureOn(.ipadMenuBar), let command = MainMenuCommand(action: action),
+              [.newTab, .newFireTab, .closeTab, .showTabs].contains(command) else {
+            return super.canPerformAction(action, withSender: sender)
+        }
+        return switcherMenuAvailability.isEnabled(command)
+    }
+
+    private var switcherMenuAvailability: MenuCommandAvailability {
+        var state = MenuCommandAvailability.State(
+            shortcutsEnabled: !isProcessingUpdates && ((presentingViewController as? MainViewController)?.isShortcutEnabled() ?? true),
+            presentation: presentedViewController == nil ? .tabSwitcher : .blockingModal)
+        state.fireModeEnabled = fireModeCapability.isFireModeEnabled
+        state.aiChatEnabled = aiChatSettings.isAIChatEnabled
+        state.passwordsEnabled = featureFlagger.isFeatureOn(.autofillAccessCredentialManagement)
+        state.canHideTabs = canDismissOnEmpty || !tabsModel.isEmpty
+        return MenuCommandAvailability(state: state, nextStepsItems: NextStepsItemsVisibility(keyValueStore: keyValueStore))
+    }
+
+    @objc func keyboardCloseTab() {
+        guard switcherMenuAvailability.isEnabled(.closeTab) else { return }
+        keyboardCloseWindowShortcut()
+    }
+
+    @objc func keyboardShowAllTabs() {
+        guard switcherMenuAvailability.isEnabled(.showTabs) else { return }
+        KeyboardShortcutPixel.fireUsed(with: pixelFiring)
+        dismissIfPossible()
+    }
+
     @objc func keyboardNewTab() {
+        KeyboardShortcutPixel.fireUsed(with: pixelFiring)
         guard !isProcessingUpdates else { return }
+        guard !featureFlagger.isFeatureOn(.ipadMenuBar) || switcherMenuAvailability.isEnabled(.newTab) else { return }
         dismissIfPossible(forceDismissOnEmpty: true)
         delegate?.tabSwitcherDidRequestNewTab(tabSwitcher: self)
     }
 
     @objc func keyboardNewFireTab() {
+        KeyboardShortcutPixel.fireUsed(with: pixelFiring)
         guard !isProcessingUpdates else { return }
         guard fireModeCapability.isFireModeEnabled else { return }
+        guard !featureFlagger.isFeatureOn(.ipadMenuBar) || switcherMenuAvailability.isEnabled(.newFireTab) else { return }
 
         addNewFireTab(source: .keyCommand)
     }
     
     @objc func keyboardCloseWindow() {
         dismissIfPossible()
+    }
+
+    @objc func keyboardCloseWindowShortcut() {
+        KeyboardShortcutPixel.fireUsed(with: pixelFiring)
+        keyboardCloseWindow()
     }
     
     @objc func keyboardSelectCurrent() {

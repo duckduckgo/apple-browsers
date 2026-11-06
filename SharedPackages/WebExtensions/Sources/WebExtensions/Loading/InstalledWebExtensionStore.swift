@@ -25,6 +25,8 @@ public protocol InstalledWebExtensionStoring: AnyObject {
     var installedExtensions: [InstalledWebExtension] { get }
     func add(_ extension: InstalledWebExtension)
     func remove(uniqueIdentifier: String)
+    /// Replaces the stored record that has the same unique identifier.
+    func update(_ extension: InstalledWebExtension)
     func installedExtension(withUniqueIdentifier uniqueIdentifier: String) -> InstalledWebExtension?
 }
 
@@ -77,6 +79,17 @@ public final class InstalledWebExtensionStore: InstalledWebExtensionStoring {
 
         var current = installedExtensions
         current.removeAll { $0.uniqueIdentifier == uniqueIdentifier }
+        storage.extensions = current
+    }
+
+    public func update(_ extension: InstalledWebExtension) {
+        var current = installedExtensions
+        guard let index = current.firstIndex(where: { $0.uniqueIdentifier == `extension`.uniqueIdentifier }) else {
+            Logger.webExtensions.error("❌ Extension not found: \(`extension`.uniqueIdentifier)")
+            return
+        }
+
+        current[index] = `extension`
         storage.extensions = current
     }
 

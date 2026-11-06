@@ -76,7 +76,31 @@ import WebKit
 
 final class AppDelegate: NSObject, NSApplicationDelegate {
 
+    /// Where the app keeps its key-value store files.
+    /// Integration tests use their own directory, emptied on launch (see `prepareIntegrationTestsKeyValueStoresLocation`),
+    /// so they neither read nor change the developer's app data.
+    static var keyValueStoresLocation: URL {
 #if DEBUG
+        if AppVersion.runType == .integrationTests {
+            return URL.sandboxApplicationSupportURL.appendingPathComponent("IntegrationTestsKeyValueStores", isDirectory: true)
+        }
+#endif
+        return URL.sandboxApplicationSupportURL
+    }
+
+#if DEBUG
+    /// Called before the key-value stores are created: `URL.sandboxApplicationSupportURL` needs `NSApp`.
+    private static func prepareIntegrationTestsKeyValueStoresLocation() {
+        guard AppVersion.runType == .integrationTests else { return }
+        let location = keyValueStoresLocation
+        try? FileManager.default.removeItem(at: location)
+        do {
+            try FileManager.default.createDirectory(at: location, withIntermediateDirectories: true)
+        } catch {
+            fatalError("Could not prepare the integration tests key value stores location: \(error)")
+        }
+    }
+
     let disableCVDisplayLinkLogs: Void = {
         // Disable noisy CVDisplayLink logs
         CFPreferencesSetValue("cv_note" as CFString,
@@ -119,7 +143,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         case .downgraded: versionChange = .downgraded
         case .noChange: versionChange = nil
         }
-        return CPMAppSessionDiagnostics(appVersionChange: versionChange, launchDate: appLaunchDate)
+        return CPMAppSessionDiagnostics(appVersionChange: versionChange, launchDate: appLaunchDate) {
+            NSApp.isActive ? .active : .inactive
+        }
     }
     private(set) var uncleanExitRestartSourceResolver: UncleanExitRestartSourceResolver!
     private var grammarFeaturesManager = GrammarFeaturesManager()
@@ -284,6 +310,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     @MainActor
     private(set) lazy var duckAiLauncherPromo = DuckAiLauncherPromo(featureFlagger: featureFlagger, keyValueStore: keyValueStore)
+
+    @MainActor
+    private(set) lazy var aiChatScreenshotCaptureService = AIChatScreenshotCaptureService()
 
     @MainActor
     private(set) lazy var newTabPageCoordinator: NewTabPageCoordinator = NewTabPageCoordinator(
@@ -485,6 +514,36 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         )
     }()
 
+    lazy var bookmarksEmptyStatePromoDelegate: BookmarksEmptyStatePromoDelegate = { // swiftlint:disable:this weak_delegate
+        BookmarksEmptyStatePromoDelegate(
+            featureFlagger: featureFlagger,
+            hasTopLevelEntitiesProvider: { [bookmarkManager] in
+                bookmarkManager.hasTopLevelEntities()
+            },
+            bookmarksChangedPublisher: bookmarkManager.listPublisher.map { _ in }.eraseToAnyPublisher(),
+            dataImportCompletedPublisher: NotificationCenter.default.publisher(for: .dataImportComplete).map { _ in }.eraseToAnyPublisher(),
+            syncService: syncService,
+            recordResult: { [weak self] in
+                self?.promoService?.dismiss(promoId: $0, result: $1)
+            }
+        )
+    }()
+
+    lazy var autofillEmptyStatePromoDelegate: AutofillEmptyStatePromoDelegate = { // swiftlint:disable:this weak_delegate
+        AutofillEmptyStatePromoDelegate(
+            featureFlagger: featureFlagger,
+            isAnyCategoryEmptyProvider: {
+                guard let vault = try? AutofillSecureVaultFactory.makeVault(reporter: SecureVaultReporter.shared) else { return false }
+                return (try? vault.accountsCount()) == 0 || (try? vault.identitiesCount()) == 0 || (try? vault.creditCardsCount()) == 0
+            },
+            dataImportCompletedPublisher: NotificationCenter.default.publisher(for: .dataImportComplete).map { _ in }.eraseToAnyPublisher(),
+            syncService: syncService,
+            recordResult: { [weak self] in
+                self?.promoService?.dismiss(promoId: $0, result: $1)
+            }
+        )
+    }()
+
     lazy var vpnUpsellUserDefaultsPersistor: VPNUpsellUserDefaultsPersistor = {
         return VPNUpsellUserDefaultsPersistor(keyValueStore: keyValueStore)
     }()
@@ -556,6 +615,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }()
 
     private(set) var webExtensionManager: WebExtensionManaging?
+    /// Whether a password manager extension has taken autofill over from DuckDuckGo.
+    let webExtensionAutofillTakeover: WebExtensionAutofillTakeover
+    private var nativeBitwardenRetirement: AnyObject?
     private(set) var webExtensionAvailability: WebExtensionAvailabilityProviding
     private let webExtensionManagerHolder = WebExtensionManagerHolder()
     private var webExtensionFeatureFlagHandler: AnyObject?
@@ -663,8 +725,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             Self.configurePixelKit(isInternalUser: internalUserDecider.isInternalUser)
         }
 
+#if DEBUG
+        Self.prepareIntegrationTestsKeyValueStoresLocation()
+#endif
         do {
-            keyValueStore = try KeyValueFileStore(location: URL.sandboxApplicationSupportURL, name: "AppKeyValueStore")
+            keyValueStore = try KeyValueFileStore(location: Self.keyValueStoresLocation, name: "AppKeyValueStore")
             // perform a dummy read to ensure that KVS is accessible
             _ = try keyValueStore.object(forKey: AppearancePreferencesUserDefaultsPersistor.Key.newTabPageIsProtectionsReportVisible.rawValue)
         } catch {
@@ -726,6 +791,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
         // When TEST_PRIVACY_CONFIG_PATH is set, skip cached config to use the test config from embedded data provider
         let useTestConfig = (buildType.isDebugBuild || buildType.isReviewBuild) && ProcessInfo.processInfo.environment[AppPrivacyConfigurationDataProvider.EnvironmentKeys.testPrivacyConfigPath] != nil
+
+        // Clear cached config before loading it when the override source changes or is no longer eligible.
+        let overrideMarker = PrivacyConfigurationOverrideMarker(defaults: UserDefaults.appConfiguration)
+        overrideMarker.resetIfNeeded(userDefaults: .standard, isInternalUser: internalUserDecider.isInternalUser) { [configurationStore] in
+            configurationStore.removeStoredPrivacyConfiguration()
+        }
+
         let fetchedEtag: String? = useTestConfig ? nil : configurationStore.loadEtag(for: .privacyConfiguration)
         let fetchedData: Data? = useTestConfig ? nil : configurationStore.loadData(for: .privacyConfiguration)
 
@@ -782,6 +854,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             featureFlagOverrides.applyUITestsFeatureFlagsIfNeeded()
         }
         self.featureFlagger = featureFlagger
+        webExtensionAutofillTakeover = WebExtensionAutofillTakeover()
 
         // Created at launch so the VPN issues observer catches notifications before the first report
         networkSignalsProvider = NetworkSignalsProvider(
@@ -1010,7 +1083,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         )
         self.subscriptionNavigationCoordinator = subscriptionNavigationCoordinator
 
-        themeManager = ThemeManager(appearancePreferences: appearancePreferences, featureFlagger: featureFlagger)
+        themeManager = ThemeManager(appearancePreferences: appearancePreferences)
 
         let voiceChatPermissionOverride = DuckAiVoiceChatPermissionOverride(featureFlagger: featureFlagger)
         let websitePermissionDefaults = WebsitePermissionDefaults(
@@ -1229,7 +1302,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         // `try?` — telemetry runs in memory rather than failing launch.
         eventHubIntegration = MacOSEventHubIntegration(
             privacyConfigurationManager: privacyConfigurationManager,
-            keyValueStore: try? KeyValueFileStore(location: URL.sandboxApplicationSupportURL, name: "EventHubKeyValueStore"))
+            keyValueStore: try? KeyValueFileStore(location: Self.keyValueStoresLocation, name: "EventHubKeyValueStore"))
 
         if AppVersion.runType.requiresEnvironment {
             let reinstallUserDetection = DefaultReinstallUserDetection(keyValueStore: keyValueStore)
@@ -1582,7 +1655,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             WebKitPasskeyRequestCanceller.install()
         }
 
-        configurationManager.start()
+        startConfigurationManager()
 
         let isFirstLaunch = LocalStatisticsStore().atb == nil
 
@@ -1655,7 +1728,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             syncSetupBookmarksPromoManager: syncSetupBookmarksPromoManager,
             syncSetupAutofillPromoManager: syncSetupAutofillPromoManager,
             bookmarksBarSyncPromoDelegate: bookmarksBarSyncPromoDelegate,
-            bookmarkAddedSyncPromoDelegate: bookmarkAddedSyncPromoDelegate
+            bookmarkAddedSyncPromoDelegate: bookmarkAddedSyncPromoDelegate,
+            bookmarksEmptyStatePromoDelegate: bookmarksEmptyStatePromoDelegate,
+            autofillEmptyStatePromoDelegate: autofillEmptyStatePromoDelegate
         )
         promoService = PromoServiceFactory.makePromoService(dependencies: dependencies)
         NotificationCenter.default.post(name: .promoServiceAppLaunched, object: nil)
@@ -1765,6 +1840,28 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
     }
 
+    /// Handles `-privacyConfigURL` before starting scheduled refreshes, so they use the override URL.
+    private func startConfigurationManager() {
+        let handler = PrivacyConfigurationOverrideHandler(
+            privacyConfigurationManager: privacyFeatures.contentBlocking.privacyConfigurationManager,
+            urlProvider: configurationURLProvider,
+            overrideMarker: PrivacyConfigurationOverrideMarker(defaults: UserDefaults.appConfiguration)
+        )
+        let configurationManager = configurationManager
+        let argument = UserDefaults.standard.string(forKey: PrivacyConfigurationOverrideArgument.launchArgumentKey)
+        let overrideTask = handler.handle(argument: argument) {
+            try await configurationManager.fetchPrivacyConfiguration(isDebug: true)
+        }
+        if let overrideTask {
+            Task { @MainActor in
+                await overrideTask.value
+                configurationManager.start()
+            }
+        } else {
+            configurationManager.start()
+        }
+    }
+
     private func fireFailedCompilationsPixelIfNeeded() {
         let store = FailedCompilationsStore()
         if store.hasAnyFailures {
@@ -1801,6 +1898,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         fireDailyAIChatSettingsStatePixel()
         fireDailyAIFeaturesStatePixel()
         fireDailyPromptBarStatePixel()
+        aiChatScreenshotCaptureService.reportPermissionGrantIfNeeded()
         fireDailyAdBlockingPixel()
         fireDailyAutoClearOnExitEnabledPixel()
 
@@ -1942,8 +2040,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
             self.updateController = appStoreFactory.instantiate(
                 internalUserDecider: internalUserDecider,
+                featureFlagger: featureFlagger,
+                privacyConfigurationManager: privacyFeatures.contentBlocking.privacyConfigurationManager,
                 pixelFiring: PixelKit.shared,
                 notificationPresenter: notificationPresenter,
+                keyValueStore: UserDefaults.standard,
                 isOnboardingFinished: { [weak self, featureFlagger] in
                     if NonBlockingOnboarding(featureFlagger: featureFlagger).isNonBlocking {
                         return self?.isOnboardingReadyForPrompts == true
@@ -2222,13 +2323,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             }
             .store(in: &darkReaderCancellables)
 
-        let webExtensionsPublisher = featureFlagger.updatesPublisher
-            .compactMap { [weak featureFlagger] in
-                featureFlagger?.isFeatureOn(.webExtensions)
-            }
-            .removeDuplicates()
-            .eraseToAnyPublisher()
-
         let embeddedExtensionPublisher = featureFlagger.updatesPublisher
             .compactMap { [weak featureFlagger] in
                 featureFlagger?.isFeatureOn(.embeddedExtension)
@@ -2260,18 +2354,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
         webExtensionFeatureFlagHandler = WebExtensionFeatureFlagHandler(
             webExtensionManagerProvider: { [weak self] in self?.webExtensionManager },
-            featureFlagPublisher: webExtensionsPublisher,
             embeddedExtensionFlagPublisher: embeddedExtensionPublisher,
             adBlockingExtensionFlagPublisher: adBlockingExtensionPublisher,
             adBlockingDefaultsFlagPublisher: adBlockingDefaultsPublisher,
-            onFeatureFlagEnabled: { [weak self] in
-                await self?.initializeWebExtensions()
-            },
-            onFeatureFlagDisabled: { [weak self] in
-                self?.webExtensionLifecycleCoordinator?.cancelAll()
-                self?.webExtensionLifecycleCoordinator = nil
-                self?.webExtensionManager = nil
-            },
             onEmbeddedExtensionFlagEnabled: { [weak self] in
                 await self?.syncEmbeddedExtensions()
             },
@@ -2283,52 +2368,31 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             }
         )
 
-        if featureFlagger.isFeatureOn(.webExtensions) {
-            // Create manager synchronously so it's available during state restoration.
-            // Tabs restored before the manager exists won't have webExtensionController attached.
-            let webExtensionManager = WebExtensionManagerFactory.makeManager(
-                keyValueStore: keyValueStore,
-                privacyConfigurationManager: privacyFeatures.contentBlocking.privacyConfigurationManager,
-                autoconsentPreferences: cookiePopupProtectionPreferences,
-                darkReaderExcludedDomainsProvider: darkReaderSettings,
-                scriptletConfiguration: makeScriptletConfiguration()
-            )
-            self.webExtensionManager = webExtensionManager
-
-            let coordinator = WebExtensionLifecycleCoordinator(
-                manager: webExtensionManager,
-                initialLoadGateEnabledProvider: { [weak self] in
-                    self?.featureFlagger.isFeatureOn(.webExtensionStateRestorationGate) == true
-                },
-                pixelFiring: MacOSWebExtensionPixelFiring()
-            ) { [weak self] in
-                self?.enabledEmbeddedExtensionTypes() ?? []
-            }
-            self.webExtensionLifecycleCoordinator = coordinator
-
-            // Load extensions asynchronously - the controller is already attached to tabs
-            coordinator.loadAndSync()
-        } else {
-            webExtensionManager = nil
-        }
-    }
-
-    @available(macOS 15.4, *)
-    @MainActor
-    private func initializeWebExtensions() async {
-        guard webExtensionManager == nil else {
-            await webExtensionLifecycleCoordinator?.loadAndSync().value
-            return
-        }
-
+        // Create manager synchronously so it's available during state restoration.
+        // Tabs restored before the manager exists won't have webExtensionController attached.
         let webExtensionManager = WebExtensionManagerFactory.makeManager(
             keyValueStore: keyValueStore,
             privacyConfigurationManager: privacyFeatures.contentBlocking.privacyConfigurationManager,
             autoconsentPreferences: cookiePopupProtectionPreferences,
-            darkReaderExcludedDomainsProvider: darkReaderFeatureSettings,
+            themeManager: themeManager,
+            darkReaderExcludedDomainsProvider: darkReaderSettings,
             scriptletConfiguration: makeScriptletConfiguration()
         )
         self.webExtensionManager = webExtensionManager
+        webExtensionAutofillTakeover.manager = webExtensionManager
+        webExtensionManager.installRemoteDisableEnforcer(
+            configurationManager: privacyFeatures.contentBlocking.privacyConfigurationManager,
+            featureFlagger: featureFlagger
+        )
+        let nativeBitwardenRetirement = NativeBitwardenRetirement(
+            isBitwardenExtensionInstalled: { [weak webExtensionManager] in
+                webExtensionManager?.isBitwardenExtensionInstalled ?? false
+            },
+            disableNativeIntegration: { [passwordManagerCoordinator] in
+                passwordManagerCoordinator.setEnabled(false)
+            }
+        )
+        self.nativeBitwardenRetirement = nativeBitwardenRetirement
 
         let coordinator = WebExtensionLifecycleCoordinator(
             manager: webExtensionManager,
@@ -2340,7 +2404,22 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             self?.enabledEmbeddedExtensionTypes() ?? []
         }
         self.webExtensionLifecycleCoordinator = coordinator
-        await coordinator.loadAndSync().value
+
+        // Load extensions asynchronously - the controller is already attached to tabs
+        let initialLoad = coordinator.loadAndSync()
+        Task { @MainActor [weak self, weak nativeBitwardenRetirement] in
+            await initialLoad.value
+            self?.startRemoteDisableEnforcer(for: webExtensionManager)
+            nativeBitwardenRetirement?.retireIfNeeded()
+        }
+    }
+
+    /// Call it after the initial load, so an enforcement pass can't race it.
+    @available(macOS 15.4, *)
+    @MainActor
+    private func startRemoteDisableEnforcer(for webExtensionManager: WebExtensionManager) {
+        guard self.webExtensionManager === webExtensionManager else { return }
+        webExtensionManager.startRemoteDisableEnforcer()
     }
 
     @available(macOS 15.4, *)
@@ -2932,6 +3011,15 @@ struct DuckAiNativeStoragePixelAdapter: DuckAiNativeStoragePixelFiring {
             break
         case .lastUsedReasoningModeParseError:
             break
+        case .invalidValue(let invalidValue):
+            PixelKit.fire(DuckAiNativeStorageInvalidValuePixel(parameters: invalidValue.parameters), frequency: .dailyAndCount)
         }
     }
+}
+
+struct DuckAiNativeStorageInvalidValuePixel: PixelKit.Event {
+    let parameters: [String: String]?
+    var name: String { DuckAiNativeStorageInvalidValue.pixelName + "_macos" }
+    var namePrefix: PixelKitNamePrefix { .none }
+    var standardParameters: [PixelKitStandardParameter]? { nil }
 }

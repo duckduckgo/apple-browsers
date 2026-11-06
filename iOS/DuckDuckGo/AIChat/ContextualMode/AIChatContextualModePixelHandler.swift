@@ -30,6 +30,10 @@ protocol AIChatContextualModePixelFiring {
     func fireSessionRestored()
     func fireSheetOpenedOnDeletedChat()
 
+    // MARK: - iPad Sidebar
+    func fireSidebarOpened()
+    func fireSidebarClosed()
+
     // MARK: - Sheet Actions
     func fireExpandButtonTapped()
     func fireHeaderTitleTapped()
@@ -41,11 +45,11 @@ protocol AIChatContextualModePixelFiring {
     func fireFireButtonConfirmed()
 
     // MARK: - Address Bar Menu
-    func fireAddressBarMenuShown()
-    func fireAddressBarMenuNewChatSelected()
-    func fireAddressBarMenuAskAboutPageSelected()
-    func fireAddressBarMenuAskAboutSearchSelected()
-    func fireAddressBarMenuRecentChatsSelected()
+    func fireAddressBarMenuShown(source: DuckAIMenuSource)
+    func fireAddressBarMenuNewChatSelected(source: DuckAIMenuSource)
+    func fireAddressBarMenuAskAboutPageSelected(source: DuckAIMenuSource)
+    func fireAddressBarMenuAskAboutSearchSelected(source: DuckAIMenuSource)
+    func fireAddressBarMenuRecentChatsSelected(source: DuckAIMenuSource)
 
     // MARK: - Floating Input
     func fireFloatingInputDismissedWithoutSubmission(hadUnsubmittedSelections: Bool)
@@ -169,6 +173,16 @@ final class AIChatContextualModePixelHandler: AIChatContextualModePixelFiring {
         firePixelKitEvent(AIChatContextualSessionPixel.sheetOpenedOnDeletedChat, .dailyAndCount)
     }
 
+    // MARK: - iPad Sidebar
+
+    func fireSidebarOpened() {
+        firePixelKitEvent(AIChatContextualSidebarPixel.opened, .dailyAndCount)
+    }
+
+    func fireSidebarClosed() {
+        firePixelKitEvent(AIChatContextualSidebarPixel.closed, .dailyAndCount)
+    }
+
     // MARK: - Sheet Actions
 
     func fireExpandButtonTapped() {
@@ -195,24 +209,24 @@ final class AIChatContextualModePixelHandler: AIChatContextualModePixelFiring {
         firePixel(.aiChatContextualQuickActionAskAboutPageSelected)
     }
 
-    func fireAddressBarMenuShown() {
-        firePixel(.aiChatContextualAddressBarMenuShown)
+    func fireAddressBarMenuShown(source: DuckAIMenuSource) {
+        firePixelWithParameters(.aiChatContextualAddressBarMenuShown, source.parameters)
     }
 
-    func fireAddressBarMenuNewChatSelected() {
-        firePixel(.aiChatContextualAddressBarMenuNewChatSelected)
+    func fireAddressBarMenuNewChatSelected(source: DuckAIMenuSource) {
+        firePixelWithParameters(.aiChatContextualAddressBarMenuNewChatSelected, source.parameters)
     }
 
-    func fireAddressBarMenuAskAboutPageSelected() {
-        firePixel(.aiChatContextualAddressBarMenuAskAboutPageSelected)
+    func fireAddressBarMenuAskAboutPageSelected(source: DuckAIMenuSource) {
+        firePixelWithParameters(.aiChatContextualAddressBarMenuAskAboutPageSelected, source.parameters)
     }
 
-    func fireAddressBarMenuAskAboutSearchSelected() {
-        firePixelKitEvent(AIChatAddressBarMenuPixel.askAboutSearchSelected, .dailyAndCount)
+    func fireAddressBarMenuAskAboutSearchSelected(source: DuckAIMenuSource) {
+        firePixelKitEvent(AIChatAddressBarMenuPixel.askAboutSearchSelected(source), .dailyAndCount)
     }
 
-    func fireAddressBarMenuRecentChatsSelected() {
-        firePixelKitEvent(AIChatAddressBarMenuPixel.recentChatsSelected, .dailyAndCount)
+    func fireAddressBarMenuRecentChatsSelected(source: DuckAIMenuSource) {
+        firePixelKitEvent(AIChatAddressBarMenuPixel.recentChatsSelected(source), .dailyAndCount)
     }
 
     func fireFloatingInputDismissedWithoutSubmission(hadUnsubmittedSelections: Bool) {
@@ -526,9 +540,41 @@ enum AIChatContextualSessionPixel: PixelKit.Event {
     var standardParameters: [PixelKitStandardParameter]? { nil }
 }
 
+enum AIChatContextualSidebarPixel: PixelKit.Event {
+    case opened
+    case closed
+
+    var name: String {
+        switch self {
+        case .opened:
+            return "aichat_contextual_sidebar_opened"
+        case .closed:
+            return "aichat_contextual_sidebar_closed"
+        }
+    }
+
+    var parameters: [String: String]? { nil }
+
+    var standardParameters: [PixelKitStandardParameter]? { nil }
+}
+
+/// Which button opened the Duck.ai menu.
+enum DuckAIMenuSource: String {
+    case addressBar = "address_bar"
+    case tabsBarButton = "tabs_bar_button"
+
+    init(_ entrySource: AIChatEntryPointSource) {
+        self = entrySource == .tabsBarButton ? .tabsBarButton : .addressBar
+    }
+
+    var parameters: [String: String] {
+        [PixelParameters.source: rawValue]
+    }
+}
+
 enum AIChatAddressBarMenuPixel: PixelKit.Event {
-    case recentChatsSelected
-    case askAboutSearchSelected
+    case recentChatsSelected(DuckAIMenuSource)
+    case askAboutSearchSelected(DuckAIMenuSource)
 
     var name: String {
         switch self {
@@ -539,7 +585,12 @@ enum AIChatAddressBarMenuPixel: PixelKit.Event {
         }
     }
 
-    var parameters: [String: String]? { nil }
+    var parameters: [String: String]? {
+        switch self {
+        case .recentChatsSelected(let source), .askAboutSearchSelected(let source):
+            return source.parameters
+        }
+    }
 
     var standardParameters: [PixelKitStandardParameter]? { nil }
 }

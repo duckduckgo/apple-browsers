@@ -284,6 +284,18 @@ public final class SitePermissionsCoordinator {
             case .deny:
                 return .deny
             case .allow:
+                // iOS can return to undetermined (Allow Once, Location Services off at first use, privacy reset).
+                // Ask again so the OS prompt still follows a user choice instead of denying with no way back.
+                // A type iOS already blocks ends in the reminder anyway, so a prompt would add nothing.
+                let isBlockedBySystem = request.permissionTypes.contains {
+                    preexistingSystemBlock(for: $0, state: authorizationState($0)) != nil
+                }
+                if authorizationState(permissionType) == .notDetermined, !isBlockedBySystem {
+                    if deniedForPage.contains(permissionType) {
+                        return .deny
+                    }
+                    disposition = .prompt
+                }
                 continue
             case .ask, .none:
                 if deniedForPage.contains(permissionType) {

@@ -14,7 +14,7 @@ let package = Package(
     ],
     dependencies: [
         .package(path: "../../../SharedPackages/WideEvent"),
-        .package(url: "https://github.com/sparkle-project/Sparkle.git", exact: "2.10.0"),
+        .package(url: "https://github.com/sparkle-project/Sparkle.git", exact: "2.10.1"),
         .package(path: "../../../SharedPackages/DDGError"),
         .package(path: "../../../SharedPackages/Common"),
         .package(path: "../../../SharedPackages/Persistence"),
@@ -99,6 +99,7 @@ let package = Package(
                 "AppUpdaterShared",
                 "AppUpdaterTestHelpers",
                 .product(name: "Common", package: "Common"),
+                .product(name: "PrivacyConfigTestsUtils", package: "BrowserServicesKit"),
                 .product(name: "FoundationExtensions", package: "SystemFrameworksExtensions"),
                 .product(name: "CombineExtensions", package: "SystemFrameworksExtensions"),
                 .product(name: "ConcurrencyExtensions", package: "SystemFrameworksExtensions"),

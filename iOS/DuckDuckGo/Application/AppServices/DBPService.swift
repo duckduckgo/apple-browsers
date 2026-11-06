@@ -133,7 +133,6 @@ final class DBPService: NSObject {
                     return view
                 },
                 eventsHandler: eventsHandler,
-                applicationNameForUserAgentProvider: { DefaultUserAgentManager.shared.applicationNameForUserAgent },
                 freemiumDBPUserStateManager: freemiumDBPUserStateManager,
                 profileStateManager: profileStateManager,
                 isWebViewInspectable: isWebViewInspectable,
@@ -188,8 +187,8 @@ final class DBPFeatureFlagger: DBPFeatureFlagging, FreemiumPIRFeatureFlagging {
         appDependencies.featureFlagger.isFeatureOn(.dbpContinuedProcessing)
     }
 
-    var isWebViewUserAgentOn: Bool {
-        appDependencies.featureFlagger.isFeatureOn(.dbpWebViewUserAgent)
+    var isCustomWebViewUserAgentOn: Bool {
+        appDependencies.featureFlagger.isFeatureOn(.dbpCustomWebViewUserAgent)
     }
 
     var isOptOutRetryErrorFrequencyExperimentOn: Bool {
@@ -198,6 +197,11 @@ final class DBPFeatureFlagger: DBPFeatureFlagging, FreemiumPIRFeatureFlagging {
 
     var isExtractedProfileRefreshOn: Bool {
         appDependencies.featureFlagger.isFeatureOn(.dbpExtractedProfileRefresh)
+    }
+
+    var isChallengeSolverOn: Bool {
+        // The challenge solver is macOS-only.
+        false
     }
 
     var isFreemiumPIREnabled: Bool {

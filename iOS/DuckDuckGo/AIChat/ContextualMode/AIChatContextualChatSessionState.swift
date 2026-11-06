@@ -262,10 +262,6 @@ final class AIChatContextualChatSessionState {
         aiChatSettings.isAutomaticContextAttachmentEnabled
     }
 
-    var showsSuggestionsStartSurface: Bool {
-        featureFlagger.isFeatureOn(.contextualSuggestedPrompts)
-    }
-
     /// A pinned context remains tied to its original page while auto-attach is disabled, so page
     /// suggestions must remain tied to that same context until the chip is removed.
     var shouldSuspendSuggestionsRefresh: Bool {
@@ -486,7 +482,7 @@ final class AIChatContextualChatSessionState {
     /// Keeps the page on the chip as an offer, so one tap puts it back. Deliberately not gated on
     /// `shouldOfferPageContext`: the user acted on this page just now.
     private func suggestDetachedContext(_ context: AIChatPageContext) {
-        guard featureFlagger.isFeatureOn(.contextualPagePlaceholder), isUnifiedToggleInputActive else { return }
+        guard isUnifiedToggleInputActive else { return }
         suggestedContext = context
         suggestedContextReason = .detached
         pixelHandler.firePageContextOfferShown(reason: .detached)
@@ -544,7 +540,7 @@ final class AIChatContextualChatSessionState {
     }
 
     private func resolveSuggestionsForScopeChange() {
-        guard frontendState == .noChat, showsSuggestionsStartSurface, !hasActiveChat else { return }
+        guard !hasActiveChat else { return }
         beginLoadingSuggestions()
         resolveSuggestionsIfLoading(from: lastCollectedContext)
     }
@@ -579,8 +575,7 @@ final class AIChatContextualChatSessionState {
     }
 
     func shouldOfferPageContext(for pageURL: URL? = nil) -> Bool {
-        featureFlagger.isFeatureOn(.contextualPagePlaceholder)
-            && !shouldAutoCollectContext
+        !shouldAutoCollectContext
             && isUnifiedToggleInputActive
             && hasActiveChat
             && shouldCollectPage(for: pageURL)
@@ -632,7 +627,7 @@ final class AIChatContextualChatSessionState {
     }
 
     func beginLoadingSuggestions() {
-        guard featureFlagger.isFeatureOn(.contextualSuggestedPrompts), !hasActiveChat else { return }
+        guard !hasActiveChat else { return }
         suggestionsResolveTask?.cancel()
         suggestions = []
         suggestionsLoadState = .loading
@@ -892,7 +887,7 @@ private extension AIChatContextualChatSessionState {
     }
 
     func pushDetachedContextToSuggestionsSurfaceIfNeeded(_ context: AIChatPageContext) {
-        guard frontendState == .noChat, showsSuggestionsStartSurface else { return }
+        guard frontendState == .noChat else { return }
         let payload = signalsOnlyPayload(from: context.contextData)
         emit(.deliverPageContext(nil, targets: .frontendBridge))
         emit(.deliverPageContext(payload, targets: .frontendBridge))
@@ -952,15 +947,9 @@ private extension AIChatContextualChatSessionState {
     }
 
     private func quickActionsForChipState() -> [AIChatContextualQuickAction] {
-        if featureFlagger.isFeatureOn(.contextualSuggestedPrompts) {
-            switch chipState {
-            case .placeholder: return [.askAboutPage]
-            case .attached: return []
-            }
-        }
         switch chipState {
         case .placeholder: return [.askAboutPage]
-        case .attached: return [.summarizePage]
+        case .attached: return []
         }
     }
 
@@ -970,9 +959,7 @@ private extension AIChatContextualChatSessionState {
         suggestionsTimeoutTask = Task { [weak self] in
             try? await Task.sleep(nanoseconds: UInt64(timeout * 1_000_000_000))
             guard let self, !Task.isCancelled else { return }
-            guard self.suggestionsLoadState == .loading,
-                  self.featureFlagger.isFeatureOn(.contextualSuggestedPrompts),
-                  !self.hasActiveChat else { return }
+            guard self.suggestionsLoadState == .loading, !self.hasActiveChat else { return }
             self.pixelHandler.fireSuggestionsContextCollectionTimedOut()
             self.resolveSuggestionsIfLoading(from: nil)
         }
@@ -980,7 +967,6 @@ private extension AIChatContextualChatSessionState {
 
     func resolveSuggestionsIfLoading(from context: AIChatPageContext?) {
         guard suggestionsLoadState == .loading,
-              featureFlagger.isFeatureOn(.contextualSuggestedPrompts),
               !hasActiveChat else { return }
 
         suggestionsTimeoutTask?.cancel()

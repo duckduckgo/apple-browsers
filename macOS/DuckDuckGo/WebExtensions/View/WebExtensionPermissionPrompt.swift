@@ -24,29 +24,42 @@ import WebKit
 @MainActor
 final class WebExtensionPermissionPrompt: WebExtensionPermissionPrompting {
     private let windowProvider: () -> NSWindow?
-    private var pendingPrompt: Task<NSApplication.ModalResponse, Never>?
+    private let themeManager: ThemeManager
+    private var pendingPrompt: Task<Void, Never>?
 
-    init(windowProvider: @escaping () -> NSWindow?) {
+    init(windowProvider: @escaping () -> NSWindow?, themeManager: ThemeManager) {
         self.windowProvider = windowProvider
+        self.themeManager = themeManager
     }
 
     func confirmInstallation(of webExtension: WKWebExtension, permissions: WebExtensionPermissionRequest) async -> WebExtensionPermissionInstallationPromptResult {
-        let alert = makeAlert(for: webExtension, permissions: permissions, isInstallation: true)
-        let privateAccess = NSButton(checkboxWithTitle: UserText.webExtensionAllowFireWindows, target: nil, action: nil)
-        privateAccess.state = .off
-        privateAccess.toolTip = UserText.webExtensionPrivateAccessExplanation
-        if let stack = alert.accessoryView as? NSStackView {
-            stack.addArrangedSubview(privateAccess)
-            let explanation = NSTextField(wrappingLabelWithString: UserText.webExtensionPrivateAccessExplanation)
-            stack.addArrangedSubview(explanation)
+        let configuration = WebExtensionAlert.Configuration.installation(of: webExtension, permissionEntries: permissionEntries(for: permissions))
+
+        let response = await enqueue { [windowProvider, themeManager] in
+            guard let window = windowProvider() else { return WebExtensionAlert.Response.cancelled }
+            return await withCheckedContinuation { continuation in
+                WebExtensionAlert(configuration: configuration, themeManager: themeManager, onResponse: continuation.resume(returning:))
+                    .show(in: window)
+            }
         }
-        guard await present(alert) == .alertFirstButtonReturn else { return .denied }
-        return .granted(privateDataAccess: privateAccess.state == .on)
+        guard case .confirmed(let isChecked) = response else { return .denied }
+        return .granted(privateDataAccess: isChecked)
     }
 
     func confirmPermissions(_ permissions: WebExtensionPermissionRequest, for context: WKWebExtensionContext) async -> WebExtensionPermissionPromptResult {
-        let alert = makeAlert(for: context.webExtension, permissions: permissions, isInstallation: false)
+        let alert = makeAlert(for: context.webExtension, permissions: permissions)
         return await present(alert) == .alertFirstButtonReturn ? .granted : .denied
+    }
+
+    // Several extensions (or several requests from one extension) may prompt concurrently.
+    private func enqueue<T>(_ operation: @escaping @MainActor () async -> T) async -> T {
+        let previous = pendingPrompt
+        let task = Task { @MainActor in
+            _ = await previous?.value
+            return await operation()
+        }
+        pendingPrompt = Task { _ = await task.value }
+        return await task.value
     }
 
     private func present(_ alert: NSAlert) async -> NSApplication.ModalResponse {
@@ -62,38 +75,30 @@ final class WebExtensionPermissionPrompt: WebExtensionPermissionPrompting {
             scrollView.contentView.scroll(to: NSPoint(x: 0, y: top))
             scrollView.reflectScrolledClipView(scrollView.contentView)
         }
-        // Several extensions (or several requests from one extension) may prompt concurrently.
-        let previous = pendingPrompt
-        let task = Task { @MainActor [windowProvider] in
-            _ = await previous?.value
+        return await enqueue { [windowProvider] in
             if let window = windowProvider(), window.attachedSheet == nil {
                 return await alert.beginSheetModal(for: window)
             }
             return await alert.runModal()
         }
-        pendingPrompt = task
-        return await task.value
     }
 
-    private func makeAlert(for webExtension: WKWebExtension, permissions: WebExtensionPermissionRequest, isInstallation: Bool) -> NSAlert {
+    private func makeAlert(for webExtension: WKWebExtension, permissions: WebExtensionPermissionRequest) -> NSAlert {
         let alert = NSAlert()
         let iconSize = NSSize(width: 64, height: 64)
         if let icon = webExtension.icon(for: iconSize) ?? webExtension.actionIcon(for: iconSize) {
             alert.icon = icon
         }
-        let title = isInstallation ? UserText.webExtensionInstallTitle : UserText.webExtensionPermissionTitle
-        alert.messageText = String(format: title, webExtension.displayName ?? UserText.webExtensionUnnamedExtension)
+        alert.messageText = String(format: UserText.webExtensionPermissionTitle, webExtension.displayName ?? UserText.webExtensionUnnamedExtension)
         alert.informativeText = UserText.webExtensionPermissionExplanation
-        alert.addButton(withTitle: isInstallation ? UserText.webExtensionInstall : UserText.webExtensionAllow)
+        alert.addButton(withTitle: UserText.webExtensionAllow)
         alert.addButton(withTitle: UserText.cancel)
         // Return must not approve a permission request the user hasn't read.
         alert.buttons[0].keyEquivalent = ""
         alert.buttons[1].keyEquivalent = "\r"
 
-        var entries = permissions.permissions.map { "• \(permissionDescription($0.rawValue))" }.uniqued().sorted()
-        entries += permissions.matchPatterns.map { "• \(String(format: UserText.webExtensionWebsiteAccess, $0.string))" }.sorted()
-        entries += permissions.urls.map { "• \(String(format: UserText.webExtensionWebsiteAccess, $0.host ?? $0.absoluteString))" }.sorted()
-        let label = NSTextField(wrappingLabelWithString: entries.isEmpty ? UserText.webExtensionNoPermissions : entries.joined(separator: "\n"))
+        let entries = permissionEntries(for: permissions)
+        let label = NSTextField(wrappingLabelWithString: entries.isEmpty ? UserText.webExtensionNoPermissions : entries.map { "• \($0)" }.joined(separator: "\n"))
         label.isSelectable = true
         label.frame.size.width = 360
         label.frame.size.height = label.sizeThatFits(NSSize(width: 360, height: CGFloat.greatestFiniteMagnitude)).height
@@ -118,6 +123,14 @@ final class WebExtensionPermissionPrompt: WebExtensionPermissionPrompting {
         return alert
     }
 
+    private func permissionEntries(for permissions: WebExtensionPermissionRequest) -> [String] {
+        var entries = (permissions.permissions.map(\.rawValue) + permissions.appPermissions.map(\.rawValue))
+            .map { permissionDescription($0) }.uniqued().sorted()
+        entries += permissions.matchPatterns.map { String(format: UserText.webExtensionWebsiteAccess, $0.string) }.sorted()
+        entries += permissions.urls.map { String(format: UserText.webExtensionWebsiteAccess, $0.host ?? $0.absoluteString) }.sorted()
+        return entries
+    }
+
     private func permissionDescription(_ permission: String) -> String {
         switch permission {
         case "tabs": return UserText.webExtensionTabsPermission
@@ -130,6 +143,7 @@ final class WebExtensionPermissionPrompt: WebExtensionPermissionPrompting {
         case "webNavigation": return UserText.webExtensionNavigationPermission
         case "storage", "unlimitedStorage": return UserText.webExtensionStoragePermission
         case "nativeMessaging": return UserText.webExtensionNativeMessagingPermission
+        case "privacy": return UserText.webExtensionPrivacyPermission
         default: return String(format: UserText.webExtensionOtherPermission, permission)
         }
     }

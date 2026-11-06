@@ -115,12 +115,13 @@ extension TabSwitcherViewController {
         }
     }
 
-    func burn(sender: AnyObject) {
+    func burn(sender: AnyObject, prefersSheet: Bool = false) {
         func presentFireConfirmation() {
             let presenter = FireConfirmationPresenter()
             presenter.presentFireConfirmation(
                 on: self,
                 attachPopoverTo: sender,
+                prefersSheet: prefersSheet,
                 tabViewModel: nil,
                 pixelSource: .tabSwitcher,
                 fireContext: .default(daxDialogsManager: daxDialogsManager),

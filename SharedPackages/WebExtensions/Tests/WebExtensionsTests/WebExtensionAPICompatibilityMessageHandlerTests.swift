@@ -129,6 +129,17 @@ final class WebExtensionAPICompatibilityMessageHandlerTests: XCTestCase {
                                "stubbed chrome.notifications.clear ext=Bitwarden v=2025.1.0"])
     }
 
+    func testWhenAnIssueIsLogged_ThenItIsPassedOnWithThePageURLForTheGapCounts() {
+        var issues: [(WebExtensionAPICompatibilityClassifier.Issue, URL)] = []
+        handler.onIssue = { issues.append(($0, $1)) }
+
+        handler.handle(body: stubbedReport, originProtocol: "webkit-extension", originHost: "other")
+        handler.handle(body: stubbedReport, originProtocol: "webkit-extension", originHost: "loaded")
+
+        XCTAssertEqual(issues.map(\.0), [.init(kind: .stubbed, api: "chrome.notifications.create")])
+        XCTAssertEqual(issues.map(\.1), [URL(string: "webkit-extension://loaded/")])
+    }
+
     private var stubbedReport: [String: Any] {
         ["kind": "stubbed", "api": "notifications.create"]
     }

@@ -56,6 +56,11 @@ enum BookmarksEmptyStateContent {
         }
     }
 
+    /// Whether the promo queue controls this state's message and CTAs.
+    var isPromo: Bool {
+        self == .noBookmarks
+    }
+
     var shouldHideImportButton: Bool {
         switch self {
         case .noBookmarks: false

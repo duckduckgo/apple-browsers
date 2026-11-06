@@ -293,16 +293,18 @@ public final class GeolocationUserScript: NSObject, UserScript {
             return (handlePermissionQuery(body: body,
                                           frame: frame,
                                           nonce: nonce,
+                                          pageDocumentID: registration.pageDocumentID,
                                           constraints: policy.constraints,
                                           webView: webView), nil)
         case .startWatch:
             return (handleWatchStart(body: body,
                                      frame: frame,
                                      nonce: nonce,
+                                     pageDocumentID: registration.pageDocumentID,
                                      constraints: policy.constraints,
                                      webView: webView), nil)
         case .clearWatch:
-            return (handleWatchCancellation(body: body, nonce: nonce), nil)
+            return (handleWatchCancellation(body: body, nonce: nonce, pageDocumentID: registration.pageDocumentID), nil)
         case .registerFrame:
             return (Self.errorPayload(.positionUnavailable, message: "Invalid geolocation request"), nil)
         }
@@ -388,10 +390,11 @@ public final class GeolocationUserScript: NSObject, UserScript {
     private func handlePermissionQuery(body: [String: Any],
                                        frame: GeolocationFrame,
                                        nonce: String,
+                                       pageDocumentID: String,
                                        constraints: GeolocationRequestConstraints,
                                        webView: WKWebView) -> [String: Any] {
         guard let statusID = body["statusID"] as? String,
-              Self.isValidRequestID(statusID),
+              Self.isCallbackID(statusID, ownedBy: pageDocumentID),
               let delegate else {
             return Self.permissionPayload(.denied)
         }
@@ -499,10 +502,11 @@ public final class GeolocationUserScript: NSObject, UserScript {
     private func handleWatchStart(body: [String: Any],
                                   frame: GeolocationFrame,
                                   nonce: String,
+                                  pageDocumentID: String,
                                   constraints: GeolocationRequestConstraints,
                                   webView: WKWebView?) -> [String: Any] {
         guard let requestID = body["requestID"] as? String,
-              Self.isValidRequestID(requestID),
+              Self.isCallbackID(requestID, ownedBy: pageDocumentID),
               let webView,
               let delegate else {
             return Self.errorPayload(.positionUnavailable, message: "Geolocation is unavailable")
@@ -532,9 +536,9 @@ public final class GeolocationUserScript: NSObject, UserScript {
     }
 
     @MainActor
-    private func handleWatchCancellation(body: [String: Any], nonce: String) -> [String: Any] {
+    private func handleWatchCancellation(body: [String: Any], nonce: String, pageDocumentID: String) -> [String: Any] {
         guard let requestID = body["requestID"] as? String,
-              Self.isValidRequestID(requestID) else {
+              Self.isCallbackID(requestID, ownedBy: pageDocumentID) else {
             return Self.errorPayload(.positionUnavailable, message: "Invalid geolocation watch")
         }
 
@@ -576,6 +580,12 @@ public final class GeolocationUserScript: NSObject, UserScript {
         return bytes.count == 32 && bytes.allSatisfy {
             ($0 >= 48 && $0 <= 57) || ($0 >= 97 && $0 <= 102)
         }
+    }
+
+    /// Watch and status IDs are scoped to the page document that created them, so one document cannot
+    /// claim, and so block, an ID that belongs to another.
+    static func isCallbackID(_ callbackID: String, ownedBy pageDocumentID: String) -> Bool {
+        isValidRequestID(callbackID) && callbackID.hasPrefix(pageDocumentID + ":")
     }
 
     static func isValidRequestID(_ requestID: String) -> Bool {

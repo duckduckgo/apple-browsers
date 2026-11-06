@@ -26,26 +26,27 @@ final class AIChatFrontendReadinessGate {
     private var frontendReadinessTimeoutTask: Task<Void, Never>?
     private var frontendReadinessRequestID: UUID?
 
-    func waitUntilReady(timeout: TimeInterval, onWaitStarted: (() -> Void)? = nil) async -> Bool {
+    func waitUntilReady(timeout: TimeInterval?, onWaitStarted: (() -> Void)? = nil) async -> Bool {
         guard !isReady else { return true }
 
         resolveFrontendReadinessRequest(result: false)
         let requestID = UUID()
         return await withTaskCancellationHandler(operation: {
             await withCheckedContinuation { continuation in
-                let timeoutNanoseconds = UInt64(max(0, timeout) * 1_000_000_000)
-                let timeoutTask = Task { @MainActor [weak self] in
-                    do {
-                        try await Task<Never, Never>.sleep(nanoseconds: timeoutNanoseconds)
-                    } catch {
-                        return
-                    }
-                    guard !Task.isCancelled else { return }
-                    self?.resolveFrontendReadinessRequest(requestID: requestID, result: false)
-                }
                 frontendReadinessRequestID = requestID
                 frontendReadinessContinuation = continuation
-                frontendReadinessTimeoutTask = timeoutTask
+                if let timeout {
+                    let timeoutNanoseconds = UInt64(max(0, timeout) * 1_000_000_000)
+                    frontendReadinessTimeoutTask = Task { @MainActor [weak self] in
+                        do {
+                            try await Task<Never, Never>.sleep(nanoseconds: timeoutNanoseconds)
+                        } catch {
+                            return
+                        }
+                        guard !Task.isCancelled else { return }
+                        self?.resolveFrontendReadinessRequest(requestID: requestID, result: false)
+                    }
+                }
                 onWaitStarted?()
 
                 if isReady {

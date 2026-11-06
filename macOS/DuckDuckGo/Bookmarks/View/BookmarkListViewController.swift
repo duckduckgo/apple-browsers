@@ -64,12 +64,10 @@ final class BookmarkListViewController: NSViewController {
     private lazy var outlineView = BookmarksOutlineView(frame: scrollView.frame)
 
     private lazy var emptyStateHostingView: NSHostingView<BookmarksEmptyStateView> = {
-        let emptyStateView = BookmarksEmptyStateView(content: .noBookmarks) { [weak self] in
-            self?.onImportClicked()
-        } onSyncClicked: {
-            let source = SyncDeviceButtonTouchpoint.bookmarksListEmpty
-            PixelKit.fire(SyncPromoPixelKitEvent.syncPromoConfirmed, withAdditionalParameters: ["source": source.rawValue])
-            DeviceSyncCoordinator()?.startDeviceSyncFlow(source: source, completion: nil)
+        let emptyStateView = BookmarksEmptyStateView(content: .noBookmarks, isPromoActivePublisher: self.emptyStatePromo.isPromoActivePublisher) { [weak self] in
+            self?.onEmptyStateImportClicked()
+        } onSyncClicked: { [weak self] in
+            self?.onEmptyStateSyncClicked()
         }
         return emptyStateView.embeddedInHostingView()
     }()
@@ -129,15 +127,18 @@ final class BookmarkListViewController: NSViewController {
     private var outlineViewTopToDocumentTopConstraint: NSLayoutConstraint?
 
     private let syncPromoManager: SyncPromoManaging
+    private let emptyStatePromo: ImportSyncEmptyStatePromoPresenting
+    private let pixelFiring: (any PixelKitFiring)?
+    private var shouldFireSyncPromoDisplayedPixel = false
+
+    private lazy var syncPromoViewModel = SyncPromoViewModel(touchpointType: .bookmarks, primaryButtonAction: { [weak self] in
+        self?.syncPromoManager.goToSyncSettings(for: .bookmarks)
+    }, dismissButtonAction: { [weak self] in
+        self?.syncPromoManager.promoDismissed()
+    }, pixelFiring: pixelFiring)
 
     private lazy var syncPromoViewHostingView: NSHostingView<SyncPromoView> = {
-        let model = SyncPromoViewModel(touchpointType: .bookmarks, primaryButtonAction: { [weak self] in
-            self?.syncPromoManager.goToSyncSettings(for: .bookmarks)
-        }, dismissButtonAction: { [weak self] in
-            self?.syncPromoManager.promoDismissed()
-        })
-
-        let headerView = SyncPromoView(viewModel: model)
+        let headerView = SyncPromoView(viewModel: syncPromoViewModel)
 
         let hostingController = NSHostingView(rootView: headerView)
         return hostingController
@@ -149,7 +150,9 @@ final class BookmarkListViewController: NSViewController {
          metrics: BookmarksSearchAndSortMetrics = BookmarksSearchAndSortMetrics(),
          navigationEngagementMetrics: BookmarksNavigationEngagementMetrics = .init(),
          themeManager: ThemeManaging = NSApp.delegateTyped.themeManager,
-         syncPromoManager: SyncPromoManaging = NSApp.delegateTyped.syncSetupBookmarksPromoManager) {
+         syncPromoManager: SyncPromoManaging = NSApp.delegateTyped.syncSetupBookmarksPromoManager,
+         emptyStatePromo: ImportSyncEmptyStatePromoPresenting = NSApp.delegateTyped.bookmarksEmptyStatePromoDelegate,
+         pixelFiring: (any PixelKitFiring)? = PixelKit.shared) {
         self.bookmarkManager = bookmarkManager
         self.dragDropManager = dragDropManager
         self.pinningManager = pinningManager
@@ -164,6 +167,8 @@ final class BookmarkListViewController: NSViewController {
                                                      isBookmarksBarMenu: false)
         self.themeManager = themeManager
         self.syncPromoManager = syncPromoManager
+        self.emptyStatePromo = emptyStatePromo
+        self.pixelFiring = pixelFiring
         super.init(nibName: nil, bundle: nil)
     }
 
@@ -377,6 +382,7 @@ final class BookmarkListViewController: NSViewController {
     }
 
     override func viewWillAppear() {
+        shouldFireSyncPromoDisplayedPixel = true
         subscribeToModelEvents()
         reloadData()
 
@@ -384,6 +390,7 @@ final class BookmarkListViewController: NSViewController {
     }
 
     override func viewWillDisappear() {
+        shouldFireSyncPromoDisplayedPixel = false
         cancellables = []
     }
 
@@ -572,12 +579,10 @@ final class BookmarkListViewController: NSViewController {
     }
 
     private func showEmptyStateView(for mode: BookmarksEmptyStateContent) {
-        let emptyStateView = BookmarksEmptyStateView(content: mode) { [weak self] in
-            self?.onImportClicked()
-        } onSyncClicked: {
-            let source = SyncDeviceButtonTouchpoint.bookmarksListEmpty
-            PixelKit.fire(SyncPromoPixelKitEvent.syncPromoConfirmed, withAdditionalParameters: ["source": source.rawValue])
-            DeviceSyncCoordinator()?.startDeviceSyncFlow(source: source, completion: nil)
+        let emptyStateView = BookmarksEmptyStateView(content: mode, isPromoActivePublisher: self.emptyStatePromo.isPromoActivePublisher) { [weak self] in
+            self?.onEmptyStateImportClicked()
+        } onSyncClicked: { [weak self] in
+            self?.onEmptyStateSyncClicked()
         }
         emptyStateHostingView.rootView = emptyStateView
         emptyStateHostingView.isHidden = false
@@ -709,6 +714,23 @@ final class BookmarkListViewController: NSViewController {
 
     private func onImportClicked() {
         DataImportFlowLauncher(pinningManager: pinningManager).launchDataImport()
+    }
+
+    private func onEmptyStateImportClicked() {
+        emptyStatePromo.importStarted()
+        DataImportFlowLauncher(pinningManager: pinningManager).launchDataImport(completion: { [emptyStatePromo] in
+            emptyStatePromo.importFinished()
+        })
+    }
+
+    private func onEmptyStateSyncClicked() {
+        let source = SyncDeviceButtonTouchpoint.bookmarksListEmpty
+        pixelFiring?.fire(SyncPromoPixelKitEvent.syncPromoConfirmed, options: .parameters(["source": source.rawValue]))
+        guard let deviceSyncCoordinator = DeviceSyncCoordinator() else { return }
+        emptyStatePromo.syncSetupStarted()
+        deviceSyncCoordinator.startDeviceSyncFlow(source: source, completion: { [emptyStatePromo] in
+            emptyStatePromo.syncSetupFinished()
+        })
     }
 
     private func showManageBookmarks() {
@@ -991,6 +1013,7 @@ extension BookmarkListViewController {
             }
 
             updateOutlineColumnWidth(isShowingSyncPromo: true)
+            fireSyncPromoDisplayedPixelIfNeeded()
 
             let promoHeight = syncPromoViewHostingView.intrinsicContentSize.height == 0 ? 80 : syncPromoViewHostingView.intrinsicContentSize.height
             let totalHeight = promoHeight + outlineViewHeight
@@ -1005,6 +1028,12 @@ extension BookmarkListViewController {
             updateOutlineColumnWidth(isShowingSyncPromo: false)
             updateDocumentViewHeightIfNeeded(outlineViewHeight)
         }
+    }
+
+    private func fireSyncPromoDisplayedPixelIfNeeded() {
+        guard shouldFireSyncPromoDisplayedPixel else { return }
+        shouldFireSyncPromoDisplayedPixel = false
+        syncPromoViewModel.promoDisplayed()
     }
 
     private func updateOutlineColumnWidth(isShowingSyncPromo: Bool) {

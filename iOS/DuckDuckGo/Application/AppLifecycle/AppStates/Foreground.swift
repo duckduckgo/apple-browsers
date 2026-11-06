@@ -190,6 +190,7 @@ struct Foreground: ForegroundHandling {
         appDependencies.backgroundTaskManager.endBackgroundTask()
 
         fireAIFeaturesStateDailyPixel()
+        fireDuckAISettingsStateDailyPixel()
 
         appReturnInstrumentation.recordAppForeground(
             lastBackgroundDate: (try? lastBackgroundDateStorage.lastBackgroundDate) ?? nil,
@@ -214,6 +215,20 @@ struct Foreground: ForegroundHandling {
             "hide_ai_images": hideAIImages ? "on" : "off",
             "no_ai": noAI ? "true" : "false"
         ]))
+    }
+
+    private func fireDuckAISettingsStateDailyPixel() {
+        let tabManager = appDependencies.mainCoordinator.tabManager
+        DuckAISettingsStatePixelReporter(
+            settings: appDependencies.aiChatSettings,
+            featureFlagger: appDependencies.featureFlagger,
+            openDuckAITabCount: { tabManager.allTabsModel.tabs.filter(\.isAITab).count }
+        ).fireDaily()
+    }
+
+    /// Sent on leaving the foreground, apart from the settings snapshot: the hardware keyboard only registers shortly after launch.
+    private func fireDuckAIUsageContextDailyPixel() {
+        DuckAIUsageContextPixelReporter(usageContextProvider: appDependencies.mainCoordinator.controller.usageContextProvider).fireDaily()
     }
 
     private func configureAppearance() {
@@ -277,6 +292,7 @@ extension Foreground {
     }
 
     func makeBackgroundState() -> any BackgroundHandling {
+        fireDuckAIUsageContextDailyPixel()
         keyboardPresenter.foregroundDidEnd()
         return Background(stateContext: StateContext(appDependencies: appDependencies,
                                                      sceneDependencies: sceneDependencies),

@@ -60,7 +60,7 @@ struct SettingsAIFeaturesView: View {
 
     private var header: some View {
         VStack(alignment: .center) {
-            Image(rebrandable: "SettingAIFeaturesHero")
+            Image(.settingAIFeaturesHero)
                 .padding(.top, -20)
 
             Text(UserText.settingsAiFeatures)
@@ -122,6 +122,7 @@ private struct SettingsAINativeFeaturesView: AIFeaturesSettingsRowProviding {
             Section {
                 duckAISearchInputRows
                 autoSendContentRow
+                keyboardAnimationRow
                 manageShortcutsRow
                 duckAISettingsRow
             } header: {
@@ -203,6 +204,16 @@ private extension AIFeaturesSettingsRowProviding {
             SettingsCellView(label: UserText.settingsAutomaticPageContextTitle,
                              subtitle: UserText.settingsAutomaticPageContextSubtitle,
                              accessory: .toggle(isOn: viewModel.isAutomaticContextAttachmentEnabled))
+        }
+    }
+
+    @ViewBuilder
+    var keyboardAnimationRow: some View {
+        if viewModel.isKeyboardAnimationSettingVisible {
+            SettingsCellView(label: UserText.settingsKeyboardAnimationTitle,
+                             subtitle: UserText.settingsKeyboardAnimationSubtitle,
+                             accessory: .toggle(isOn: viewModel.isKeyboardAnimationEnabledBinding),
+                             accessoryAccessibilityIdentifier: "Settings.AIFeatures.KeyboardAnimationToggle")
         }
     }
 

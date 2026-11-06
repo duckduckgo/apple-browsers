@@ -105,8 +105,7 @@ final class DuckPlayerPreferencesTests: XCTestCase {
     func testWhenAdBlockingRolloutActiveThenOnboardingCompletionDisablesDuckPlayer() {
         UserDefaultsWrapper<Any>.clearAll()
         let featureFlagger = MockFeatureFlagger(featuresStub: [
-            FeatureFlag.adBlockingExtensionEnabledByDefault.rawValue: true,
-            FeatureFlag.webExtensions.rawValue: true
+            FeatureFlag.adBlockingExtensionEnabledByDefault.rawValue: true
         ])
 
         OnboardingActionsManager.applyAdBlockingRolloutDuckPlayerDefaultIfNeeded(featureFlagger: featureFlagger)
@@ -126,8 +125,7 @@ final class DuckPlayerPreferencesTests: XCTestCase {
         XCTAssertEqual(preferences.duckPlayerMode, .alwaysAsk)
 
         let featureFlagger = MockFeatureFlagger(featuresStub: [
-            FeatureFlag.adBlockingExtensionEnabledByDefault.rawValue: true,
-            FeatureFlag.webExtensions.rawValue: true
+            FeatureFlag.adBlockingExtensionEnabledByDefault.rawValue: true
         ])
 
         OnboardingActionsManager.applyAdBlockingRolloutDuckPlayerDefaultIfNeeded(featureFlagger: featureFlagger)

@@ -63,6 +63,7 @@ public struct UserText {
     public static let scopedFireConfirmationAlertTitle = NSLocalizedString("scoped.fire.confirmation.alert.title", value: "Delete tabs and site data?", comment: "Title for scoped fire confirmation dialog asking user to delete tabs and site data")
     public static let scopedFireConfirmationAlertFireModeTitle = NSLocalizedString("scoped.fire.confirmation.alert.fireMode.title", value: "Delete Fire Tabs and their data?", comment: "Title for scoped fire confirmation dialog in fire mode, asking user to delete all fire tabs and their data")
     public static let scopedFireConfirmationAlertTitleWithAIChat = NSLocalizedString("scoped.fire.confirmation.alert.title.with.aichat", value: "Delete tabs, site data, and chats?", comment: "Title for scoped fire confirmation dialog when AI chat clearing is enabled")
+    public static let scopedFireConfirmationSlideToDeleteAll = NotLocalizedString("scoped.fire.confirmation.slide.to.delete.all", value: "Slide To Delete All", comment: "Slider to delete all tabs and site data in the fire confirmation dialog")
     public static let scopedFireConfirmationDeleteAllButton = NSLocalizedString("scoped.fire.confirmation.delete.all.button", value: "Delete All", comment: "Button to delete all tabs and data in scoped fire confirmation dialog")
     public static let scopedFireConfirmationDeleteChatsButton = NSLocalizedString("scoped.fire.confirmation.delete.chats.button", value: "Delete Chats", comment: "Button to delete all chats in scoped fire confirmation dialog")
     public static let scopedFireConfirmationDeleteThisTabButton = NSLocalizedString("scoped.fire.confirmation.delete.this.tab.button", value: "Delete This Tab", comment: "Button to delete only the current tab in scoped fire confirmation dialog")
@@ -317,6 +318,50 @@ public struct UserText {
     public static let findInPage = NSLocalizedString("findinpage.title", value: "Find in Page", comment: "")
     public static let findInPageCount = NSLocalizedString("findinpage.count", value: "%1$d of %2$d", comment: "Used to indicate number of entries found and position of the currently viewed one: e.g. 1 of 10")
 
+    public static let menuBookmarks = NSLocalizedString("menuBookmarks", value: "Bookmarks", comment: "iPad menu bar title")
+    public static let menuFavorites = NSLocalizedString("menuFavorites", value: "Favorites", comment: "iPad menu bar submenu")
+    public static let menuShowBookmarks = NSLocalizedString("menuShowBookmarks", value: "Show Bookmarks", comment: "iPad menu bar command")
+    public static let menuHideBookmarks = NSLocalizedString("menuHideBookmarks", value: "Hide Bookmarks", comment: "iPad menu bar command")
+    public static let menuImportBookmarks = NSLocalizedString("menuImportBookmarks", value: "Import Bookmarks...", comment: "iPad menu bar command")
+    public static let menuExportBookmarks = NSLocalizedString("menuExportBookmarks", value: "Export Bookmarks...", comment: "iPad menu bar command")
+    public static let menuImportBookmarksAndPasswords = NSLocalizedString("menuImportBookmarksAndPasswords", value: "Import Bookmarks and Passwords...", comment: "iPad menu bar command")
+    public static let menuSetDefaultBrowser = NSLocalizedString("menuSetDefaultBrowser", value: "Set DuckDuckGo As Default Browser...", comment: "iPad menu bar command")
+    public static let menuAddToDock = NSLocalizedString("menuAddToDock", value: "Add DuckDuckGo to Dock...", comment: "iPad menu bar command")
+    public static let menuAddWidget = NSLocalizedString("menuAddWidget", value: "Add Widget to Home Screen...", comment: "iPad menu bar command")
+    public static let menuSettings = NSLocalizedString("menuSettings", value: "DuckDuckGo Settings...", comment: "iPad menu bar command")
+    public static let menuVoiceSearch = NSLocalizedString("menuVoiceSearch", value: "Private Voice Search", comment: "iPad menu bar command")
+    public static let menuOpenLocation = NSLocalizedString("menuOpenLocation", value: "Open Location...", comment: "iPad menu bar command")
+    public static let menuPrint = NSLocalizedString("menuPrint", value: "Print...", comment: "iPad menu bar command")
+    public static let menuStop = NSLocalizedString("menuStop", value: "Stop", comment: "iPad menu bar command")
+    public static let menuShowTabs = NSLocalizedString("menuShowTabs", value: "Show Tabs", comment: "iPad menu bar command")
+    public static let menuHideTabs = NSLocalizedString("menuHideTabs", value: "Hide Tabs", comment: "iPad menu bar command")
+    public static let menuShowPasswords = NSLocalizedString("menuShowPasswords", value: "Show Passwords", comment: "iPad menu bar command")
+    public static let menuHidePasswords = NSLocalizedString("menuHidePasswords", value: "Hide Passwords", comment: "iPad menu bar command")
+    public static let menuShowDownloads = NSLocalizedString("menuShowDownloads", value: "Show Downloads", comment: "iPad menu bar command")
+    public static let menuShowDuckAIButton = NSLocalizedString("menuShowDuckAIButton", value: "Show Duck.ai Button", comment: "iPad menu bar command")
+    public static let menuHideDuckAIButton = NSLocalizedString("menuHideDuckAIButton", value: "Hide Duck.ai Button", comment: "iPad menu bar command")
+    public static let menuHideDownloads = NSLocalizedString("menuHideDownloads", value: "Hide Downloads", comment: "iPad menu bar command")
+    public static let menuActualSize = NSLocalizedString("menuActualSize", value: "Actual Size", comment: "iPad menu bar command")
+    public static let menuNewTabOnRight = NSLocalizedString("menuNewTabOnRight", value: "New Tab on Right", comment: "iPad menu bar command")
+    public static let menuDuplicateTab = NSLocalizedString("menuDuplicateTab", value: "Duplicate Tab", comment: "iPad menu bar command")
+    public static let menuPreviousTab = NSLocalizedString("menuPreviousTab", value: "Show Previous Tab", comment: "iPad menu bar command")
+    public static let menuNextTab = NSLocalizedString("menuNextTab", value: "Show Next Tab", comment: "iPad menu bar command")
+    public static let menuFeedback = NSLocalizedString("menuFeedback", value: "Share Feedback", comment: "iPad menu bar command")
+    public static let menuLastTab = NSLocalizedString("menuLastTab", value: "Last Tab", comment: "iPad menu bar command")
+    public static let menuBack = NSLocalizedString("menuBack", value: "Back", comment: "iPad menu bar command")
+    public static let menuForward = NSLocalizedString("menuForward", value: "Forward", comment: "iPad menu bar command")
+    public static let menuClearTabsAndData = NSLocalizedString("menuClearTabsAndData", value: "Clear Tabs and Data", comment: "iPad menu bar command")
+    public static let menuDuckAI = NotLocalizedString("menuDuckAI", value: "Duck.ai", comment: "iPad menu bar title. Feature name. Not translated")
+    public static let menuOpenDuckAI = NSLocalizedString("menuOpenDuckAI", value: "Open Duck.ai", comment: "iPad Duck.ai menu bar command")
+    public static let menuNewChat = NSLocalizedString("menuNewChat", value: "New Chat", comment: "iPad Duck.ai menu bar command")
+    public static let menuNewVoiceChat = NSLocalizedString("menuNewVoiceChat", value: "New Voice Chat", comment: "iPad Duck.ai menu bar command")
+    public static let menuNewImageChat = NSLocalizedString("menuNewImageChat", value: "New Image Chat", comment: "iPad Duck.ai menu bar command")
+    public static let menuRecentChats = NSLocalizedString("menuRecentChats", value: "Recent Chats", comment: "iPad Duck.ai menu bar section header")
+    public static let menuDeleteAllChats = NSLocalizedString("menuDeleteAllChats", value: "Delete All Chats...", comment: "iPad Duck.ai menu bar command")
+    public static func menuSelectTab(_ number: Int) -> String {
+        String(format: NSLocalizedString("menuSelectTab", value: "Select Tab %d", comment: "iPad menu bar command selecting a numbered tab"), number)
+    }
+
     public static let keyCommandShowAllTabs = NSLocalizedString("keyCommandShowAllTabs", value: "Show All Tabs", comment: "")
     public static let keyCommandNewTab = NSLocalizedString("keyCommandNewTab", value: "New Tab", comment: "")
     public static let keyCommandNewFireTab = NSLocalizedString("keyCommandNewFireTab", value: "New Fire Tab", comment: "Discoverability title for the keyboard command that opens a new Fire Tab")
@@ -504,6 +549,9 @@ public struct UserText {
     public static let onboardingDefaultBrowserMaybeLater = NSLocalizedString("onboardingDefaultBrowserMaybeLater", value: "Maybe Later", comment: "")
 
     public static let fireproofingListTitle = NSLocalizedString("preserveLogins.domain.list.title", value: "Fireproof Sites", comment: "Section header above Fireproofed websites list")
+    public static let fireproofingAskOnSignIn = NSLocalizedString("preserveLogins.askOnSignIn", value: "Ask to Fireproof sites on sign-in", comment: "Fireproofing setting toggle label")
+    public static let fireproofingEmptyState = NSLocalizedString("preserveLogins.emptyState", value: "No Fireproof sites yet", comment: "Empty Fireproof sites list")
+    public static let fireproofingRemoveAllSites = NSLocalizedString("preserveLogins.removeAllSites", value: "Remove All Fireproof Sites", comment: "Button to remove all Fireproof sites")
     public static let fireproofingListFooter = NSLocalizedString("preserveLogins.domain.list.footer", value: "Websites rely on cookies to keep you signed in. When you Fireproof a site, cookies won’t be erased and you’ll stay signed in, even after using the Fire Button. We still block third-party trackers found on Fireproof websites.", comment: "")
     public static let fireproofingRemoveAllTitle = NSLocalizedString("preserveLogins.remove.all", value: "Remove All", comment: "Alert title")
     public static let fireproofingRemoveAllOk = NSLocalizedString("preserveLogins.remove.all.ok", value: "OK", comment: "Confirmation button in alert")
@@ -706,7 +754,6 @@ public struct UserText {
     public static let autofillOnboardingKeyFeaturesSecureStorageDescriptionParameterFaceID = NSLocalizedString("autofill.onboarding.key-features.secure-storage.description.parameter.face-id", value: "Face ID or passcode", comment: "Parameter for the description of autofill onboarding prompt's secure storage feature describing Face ID biometry + passcode")
     public static let autofillOnboardingKeyFeaturesSecureStorageDescriptionParameterTouchID = NSLocalizedString("autofill.onboarding.key-features.secure-storage.description.parameter.touch-id", value: "Touch ID or passcode", comment: "Parameter for the description of autofill onboarding prompt's secure storage feature describing Touch ID biometry + passcode")
     public static let autofillOnboardingKeyFeaturesSecureStorageDescriptionParameterPasscode = NSLocalizedString("autofill.onboarding.key-features.secure-storage.description.parameter.passcode", value: "passcode", comment: "Parameter for the description of autofill onboarding prompt's secure storage feature describing passcode only if no biometry are available")
-    public static let autofillOnboardingKeyFeaturesSecureStorageDescription = NSLocalizedString("autofill.onboarding.key-features.secure-storage.description", value: "Passwords are encrypted, stored on device, and locked with Face ID or passcode.", comment: "Description of autofill onboarding prompt's secure storage feature")
     public static let autofillOnboardingKeyFeaturesSyncTitle = NSLocalizedString("autofill.onboarding.key-features.sync.title", value: "Sync between devices", comment: "Title of autofill onboarding prompt's sync feature")
     public static let autofillOnboardingKeyFeaturesSyncDescription = NSLocalizedString("autofill.onboarding.key-features.sync.description", value: "End-to-end encrypted and easy to set up when you’re ready.", comment: "Description of autofill onboarding prompt's sync feature")
     public static let autofillSavePasswordSaveCTA = NSLocalizedString("autofill.save-password.save.CTA", value: "Save Password", comment: "Confirm CTA displayed on modal asking for the user to save the password")
@@ -1468,6 +1515,15 @@ public struct UserText {
     public static let syncPromoPasswordsMessage = NSLocalizedString("sync.promo.passwords.message", value: "No account needed. End-to-end encryption means nobody but you can see your passwords, not even us.", comment: "Message for the Sync Promotion banner when user has passwords that can be synced")
     public static let syncPromoConfirmAction = NSLocalizedString("sync.promo.confirm.action", value: "Set Up Sync", comment: "Title for a button in the Sync Promotion banner to set up Sync")
     public static let syncPromoDismissAction = NSLocalizedString("sync.promo.dismiss.action", value: "No Thanks", comment: "Title for a button in the Sync Promotion banner to dismiss Sync promotion banner")
+    public static let syncPromoBookmarksRedesignMessage = NSLocalizedString("sync.promo.bookmarks.redesign.message", value: "End-to-end encrypted. Nobody can see your bookmarks, not even us.", comment: "Message for the redesigned Sync Promotion banner on the Bookmarks screen")
+    public static let syncPromoCloseAccessibilityLabel = NSLocalizedString("sync.promo.close.accessibility.label", value: "Dismiss sync promotion", comment: "Accessibility label for the close button on the Sync Promotion banner")
+    public static let syncPromoToggleTitle = NSLocalizedString("sync.promo.toggle.title", value: "Sync & Backup", comment: "Label for a toggle in the Sync Promotion banner that opens Sync settings and starts setting up Sync with another device")
+    public static let syncPromoPasswordsRedesignMessage = NSLocalizedString("sync.promo.passwords.redesign.message", value: "End-to-end encrypted. Nobody can see your passwords, not even us.", comment: "Message for the redesigned Sync Promotion banner on the Passwords screen")
+    public static let syncPromoBookmarksAnotherDeviceTitle = NSLocalizedString("sync.promo.bookmarks.another-device.title", value: "Sync bookmarks with your Desktop app.", comment: "Title for the Sync Promotion banner on the Bookmarks screen, shown when Sync is on but only this device is connected")
+    public static let syncPromoAnotherDeviceGetDesktopAppAction = NSLocalizedString("sync.promo.bookmarks.another-device.get-desktop-app.action", value: "Get App", comment: "Title for a button in the Sync Promotion banner on the Bookmarks or Passwords screen that opens a screen with links to get DuckDuckGo on other platforms")
+    public static let syncPromoBookmarksAnotherDeviceSyncAction = NSLocalizedString("sync.promo.bookmarks.another-device.sync.action", value: "Sync Bookmarks", comment: "Title for a button in the Sync Promotion banner on the Bookmarks screen that opens Sync settings to connect another device")
+    public static let syncPromoPasswordsAnotherDeviceTitle = NSLocalizedString("sync.promo.passwords.another-device.title", value: "Sync passwords with your Desktop app.", comment: "Title for the Sync Promotion banner on the Passwords screen, shown when Sync is on but only this device is connected")
+    public static let syncPromoPasswordsAnotherDeviceSyncAction = NSLocalizedString("sync.promo.passwords.another-device.sync.action", value: "Sync Passwords", comment: "Title for a button in the Sync Promotion banner on the Passwords screen that opens Sync settings to connect another device")
 
     // MARK: Sync Recovery Prompts
     public static func syncRecoveryPromptTitle(deviceName: String) -> String {
@@ -1839,167 +1895,117 @@ public struct UserText {
 
     public static let daxGreetingMonday = NotLocalizedString(
         "new-tab-page.dax-greeting.monday",
-        value: "Let's ease into Monday together.",
+        value: "It’s Monday. Let’s do this.",
         comment: "Dax greeting on the New Tab page.")
 
-    public static let daxGreetingWednesday = NotLocalizedString(
-        "new-tab-page.dax-greeting.wednesday",
-        value: "Halfway through the week. You're doing great!",
-        comment: "Dax greeting on the New Tab page.")
-
-    public static let daxGreetingFridaySearch = NotLocalizedString(
-        "new-tab-page.dax-greeting.fridaySearch",
-        value: "Friday! One more search before the weekend?",
+    public static let daxGreetingFriday = NotLocalizedString(
+        "new-tab-page.dax-greeting.friday",
+        value: "Almost the weekend.",
         comment: "Dax greeting on the New Tab page.")
 
     public static let daxGreetingFridayDuck = NotLocalizedString(
         "new-tab-page.dax-greeting.fridayDuck",
-        value: "Thank duck it's Friday!!",
+        value: "Thank duck it’s Friday!",
         comment: "English-only Dax greeting on the New Tab page.")
 
-    public static let daxGreetingEarly = NotLocalizedString(
-        "new-tab-page.dax-greeting.early",
-        value: "Quack of dawn, glad you're up.",
+    public static let daxGreetingSunday = NotLocalizedString(
+        "new-tab-page.dax-greeting.sunday",
+        value: "Sunday? I’m still in my PJs.",
         comment: "English-only Dax greeting on the New Tab page.")
 
-    public static let daxGreetingAfternoon = NotLocalizedString(
-        "new-tab-page.dax-greeting.afternoon",
-        value: "Afternoon slump? A quick search might help.",
+    public static let daxGreetingWhereToToday = NotLocalizedString(
+        "new-tab-page.dax-greeting.whereToToday",
+        value: "Where to today?",
         comment: "Dax greeting on the New Tab page.")
 
-    public static let daxGreetingEvening = NotLocalizedString(
-        "new-tab-page.dax-greeting.evening",
-        value: "Evening. Got a burning question for me?",
+    public static let daxGreetingNewDayNewTabs = NotLocalizedString(
+        "new-tab-page.dax-greeting.newDayNewTabs",
+        value: "New day, new tabs.",
         comment: "Dax greeting on the New Tab page.")
 
-    public static let daxGreetingLate = NotLocalizedString(
-        "new-tab-page.dax-greeting.late",
-        value: "Up late, huh? I never sleep, so ask away.",
+    public static let daxGreetingWhereShouldWeStart = NotLocalizedString(
+        "new-tab-page.dax-greeting.whereShouldWeStart",
+        value: "Where should we start?",
         comment: "Dax greeting on the New Tab page.")
 
-    public static let daxGreetingDark = NotLocalizedString(
-        "new-tab-page.dax-greeting.dark",
-        value: "Dark and cozy in here. Perfect time to search.",
-        comment: "Dax greeting on the New Tab page. Refers to dark mode.")
-
-    public static let daxGreetingLight = NotLocalizedString(
-        "new-tab-page.dax-greeting.light",
-        value: "Bright out here. Should have worn my DDG glasses!",
-        comment: "Dax greeting on the New Tab page. Refers to light mode; DDG means DuckDuckGo.")
-
-    public static let daxGreetingFirstOpen = NotLocalizedString(
-        "new-tab-page.dax-greeting.firstOpen",
-        value: "There you are. Great to see you!",
+    public static let daxGreetingMorning = NotLocalizedString(
+        "new-tab-page.dax-greeting.morning",
+        value: "Morning, sunshine.",
         comment: "Dax greeting on the New Tab page.")
 
-    public static let daxGreetingFrequentHabit = NotLocalizedString(
-        "new-tab-page.dax-greeting.frequentHabit",
-        value: "This is becoming a habit. A good one.",
+    public static let daxGreetingStillAwake = NotLocalizedString(
+        "new-tab-page.dax-greeting.stillAwake",
+        value: "Still awake? Me too!",
         comment: "Dax greeting on the New Tab page.")
 
-    public static let daxGreetingFrequentSearch = NotLocalizedString(
-        "new-tab-page.dax-greeting.frequentSearch",
-        value: "We've searched a lot together. What's next?",
+    public static let daxGreetingNightOwl = NotLocalizedString(
+        "new-tab-page.dax-greeting.nightOwl",
+        value: "Night owl? Me too.",
         comment: "Dax greeting on the New Tab page.")
 
-    public static let daxGreetingTrackersQuiet = NotLocalizedString(
-        "new-tab-page.dax-greeting.trackersQuiet",
-        value: "I've been blocking trackers quietly. ",
-        comment: "Dax greeting on the New Tab page. Preserve the trailing space.")
-
-    public static let daxGreetingCookies = NotLocalizedString(
-        "new-tab-page.dax-greeting.cookies",
-        value: "Cleared a few cookie pop-ups for you.",
+    public static let daxGreetingYoureBack = NotLocalizedString(
+        "new-tab-page.dax-greeting.youreBack",
+        value: "Hey, you’re back!",
         comment: "Dax greeting on the New Tab page.")
 
-    public static let daxGreetingAds = NotLocalizedString(
-        "new-tab-page.dax-greeting.ads",
-        value: "Caught a few ads trying to sneak in today.",
+    public static let daxGreetingGoodbyeAds = NotLocalizedString(
+        "new-tab-page.dax-greeting.goodbyeAds",
+        value: "Goodbye creepy ads!",
         comment: "Dax greeting on the New Tab page.")
 
-    public static let daxGreetingScams = NotLocalizedString(
-        "new-tab-page.dax-greeting.scams",
-        value: "Just like water, scams roll right off my back!",
-        comment: "English-only Dax greeting on the New Tab page.")
-
-    public static let daxGreetingTrackersSearch = NotLocalizedString(
-        "new-tab-page.dax-greeting.trackersSearch",
-        value: "Trackers blocked. What should we look for today?",
-        comment: "Dax greeting on the New Tab page.")
-
-    public static let daxGreetingTrackersAsk = NotLocalizedString(
-        "new-tab-page.dax-greeting.trackersAsk",
-        value: "Trackers blocked already. Ask me anything.",
-        comment: "Dax greeting on the New Tab page.")
-
-    public static let daxGreetingCookieBreakfast = NotLocalizedString(
-        "new-tab-page.dax-greeting.cookieBreakfast",
-        value: "Yum! Cookie pop-ups \nare my favorite breakfast.",
-        comment: "English-only Dax greeting on the New Tab page.")
-
-    public static let daxGreetingCookieLunch = NotLocalizedString(
-        "new-tab-page.dax-greeting.cookieLunch",
-        value: "Yum! Cookie pop-ups \nfor lunch.",
-        comment: "English-only Dax greeting on the New Tab page.")
-
-    public static let daxGreetingCookieDinner = NotLocalizedString(
-        "new-tab-page.dax-greeting.cookieDinner",
-        value: "I eat cookie pop-ups \nfor dinner.",
-        comment: "English-only Dax greeting on the New Tab page.")
-
-    public static let daxGreetingWingIt = NotLocalizedString(
-        "new-tab-page.dax-greeting.wingIt",
-        value: "Let's wing it together. Privately.",
-        comment: "English-only Dax greeting on the New Tab page.")
-
-    public static let daxGreetingDuckIt = NotLocalizedString(
-        "new-tab-page.dax-greeting.duckIt",
-        value: "Duck it! No one's watching.",
-        comment: "English-only Dax greeting on the New Tab page.")
-
-    public static let daxGreetingReady = NotLocalizedString(
-        "new-tab-page.dax-greeting.ready",
-        value: "Hey, I'm ready whenever you are.",
-        comment: "Dax greeting on the New Tab page.")
-
-    public static let daxGreetingFeelingDucky = NotLocalizedString(
-        "new-tab-page.dax-greeting.feelingDucky",
-        value: "Feeling ducky? Let's dive in.",
-        comment: "English-only Dax greeting on the New Tab page.")
-
-    public static let daxGreetingDiveIn = NotLocalizedString(
-        "new-tab-page.dax-greeting.diveIn",
-        value: "Let's dive into the internet!",
-        comment: "English-only Dax greeting on the New Tab page.")
-
-    public static let daxGreetingChatPrivately = NotLocalizedString(
-        "new-tab-page.dax-greeting.chatPrivately",
-        value: "Hey there, let's chat privately.",
-        comment: "Dax greeting on the New Tab page.")
-
-    public static let daxGreetingNobodyWatching = NotLocalizedString(
-        "new-tab-page.dax-greeting.nobodyWatching",
-        value: "Search like nobody's watching. Because they're not.",
-        comment: "Dax greeting on the New Tab page.")
-
-    public static let daxGreetingJustUs = NotLocalizedString(
-        "new-tab-page.dax-greeting.justUs",
-        value: "Just us here. Ask me anything privately.",
-        comment: "Dax greeting on the New Tab page.")
-
-    public static let daxGreetingQuestion = NotLocalizedString(
-        "new-tab-page.dax-greeting.question",
-        value: "Hi there! Got a question for me?",
-        comment: "Dax greeting on the New Tab page.")
-
-    public static let daxGreetingSearchOrChat = NotLocalizedString(
-        "new-tab-page.dax-greeting.searchOrChat",
-        value: "Search or chat? I'm here for both.",
-        comment: "Dax greeting on the New Tab page.")
+    public static let daxGreetingAskMe = NotLocalizedString(
+        "new-tab-page.dax-greeting.askMe",
+        value: "Ask me. I won’t tell.",
+        comment: "Dax greeting on the New Tab page. Refers to private AI chat.")
 
     public static let daxGreetingDuckDuckHello = NotLocalizedString(
         "new-tab-page.dax-greeting.duckDuckHello",
-        value: "DuckDuckHello!",
+        value: "Duck Duck Hello!",
+        comment: "Dax greeting on the New Tab page.")
+
+    public static let daxGreetingNiceToSeeYou = NotLocalizedString(
+        "new-tab-page.dax-greeting.niceToSeeYou",
+        value: "Nice to see you.",
+        comment: "Dax greeting on the New Tab page.")
+
+    public static let daxGreetingReadyWhenYouAre = NotLocalizedString(
+        "new-tab-page.dax-greeting.readyWhenYouAre",
+        value: "Ready when you are.",
+        comment: "Dax greeting on the New Tab page.")
+
+    public static let daxGreetingReadyToSearchPrivately = NotLocalizedString(
+        "new-tab-page.dax-greeting.readyToSearchPrivately",
+        value: "Ready to search privately?",
+        comment: "Dax greeting on the New Tab page.")
+
+    public static let daxGreetingHeyThere = NotLocalizedString(
+        "new-tab-page.dax-greeting.heyThere",
+        value: "Hey there!",
+        comment: "Dax greeting on the New Tab page.")
+
+    public static let daxGreetingWhatsOnYourMind = NotLocalizedString(
+        "new-tab-page.dax-greeting.whatsOnYourMind",
+        value: "What’s on your mind?",
+        comment: "Dax greeting on the New Tab page.")
+
+    public static let daxGreetingHowCanIHelp = NotLocalizedString(
+        "new-tab-page.dax-greeting.howCanIHelp",
+        value: "How can I help you today?",
+        comment: "Dax greeting on the New Tab page.")
+
+    public static let daxGreetingLetsExplore = NotLocalizedString(
+        "new-tab-page.dax-greeting.letsExplore",
+        value: "Let’s explore.",
+        comment: "Dax greeting on the New Tab page.")
+
+    public static let daxGreetingLetsDoThis = NotLocalizedString(
+        "new-tab-page.dax-greeting.letsDoThis",
+        value: "Let’s do this!",
+        comment: "Dax greeting on the New Tab page.")
+
+    public static let daxGreetingReadyToDiveIn = NotLocalizedString(
+        "new-tab-page.dax-greeting.readyToDiveIn",
+        value: "Ready to dive in?",
         comment: "English-only Dax greeting on the New Tab page.")
 
     // MARK: - New Tab Page customization
@@ -2197,6 +2203,8 @@ public struct UserText {
     }
     public static let subscriptionChangePlan = NSLocalizedString("subscription.change.plan", value: "Update Plan or Cancel", comment: "Change plan or cancel title")
     public static let subscriptionManagePayment = NSLocalizedString("subscription.manage.payment", value: "Manage Payment or Cancel", comment: "Manage Payment or cancel action title")
+    public static let subscriptionManageSubscription = NotLocalizedString("subscription.manage.subscription", value: "Manage Subscription", comment: "Action title that opens the payment platform's subscription management screen. Used for en_US locale only.")
+    public static let subscriptionCancelSubscription = NotLocalizedString("subscription.cancel.subscription", value: "Cancel Subscription", comment: "Action title that starts the subscription cancellation flow. Used for en_US locale only.")
     public static let subscriptionHelpAndSupport = NSLocalizedString("subscription.help", value: "Help and support", comment: "Help and support Section header")
     public static let subscriptionFAQ = NSLocalizedString("subscription.faq", value: "FAQs and Support", comment: "FAQ Button")
     public static let subscriptionFeedback = NSLocalizedString("subscription.feedback", value: "Share Feedback", comment: "Share Feedback Button")
@@ -2563,6 +2571,15 @@ public struct UserText {
 
     public static let aiChatAttachmentPromptTooLong = NSLocalizedString("aichat.attachment.prompt.too.long", value: "That message is too long to send with attachments.", comment: "Alert message shown when an AI chat message exceeds the allowed length while attachments are included")
 
+    public static let aiChatPromptTooLongFormat = NSLocalizedString("aichat.prompt.too.long.format", value: "Please try a shorter message. %1$d/%2$d", comment: "Error shown below the Duck.ai input while the message is longer than allowed, e.g. Please try a shorter message. 17002/16000. %1$d is the number of characters in the message, %2$d is the most characters allowed")
+
+    public static let aiChatPastedTextAccessibilityLabel = NSLocalizedString("aichat.pasted.text.accessibility.label", value: "Pasted text", comment: "VoiceOver label of the Duck.ai attachment chip holding a long block of text the user pasted")
+    public static let aiChatPastedTextRemoveAction = NSLocalizedString("aichat.pasted.text.remove", value: "Remove", comment: "VoiceOver action on a Duck.ai pasted-text attachment chip that removes it from the message")
+    public static let aiChatPastedTextSheetTitle = NSLocalizedString("aichat.pasted.text.sheet.title", value: "Pasted Text", comment: "Title of the sheet that shows a long block of text the user pasted into a Duck.ai message that was already sent")
+    public static let aiChatPastedTextEditSheetTitle = NSLocalizedString("aichat.pasted.text.edit.sheet.title", value: "Edit Text", comment: "Title of the sheet that edits a long block of text the user pasted into Duck.ai")
+    public static let aiChatPastedTextCountFormat = NSLocalizedString("aichat.pasted.text.count", value: "%1$d/%2$d", comment: "Character counter under the title of the Duck.ai pasted-text sheet, e.g. 923/16,000. %1$d is the number of characters in the pasted text, %2$d is the most it may hold. Keep both numbers; change the slash only if your language writes this kind of counter differently.")
+    public static let aiChatPastedTextCountAccessibilityFormat = NSLocalizedString("aichat.pasted.text.count.accessibility", value: "%1$d of %2$d characters", comment: "What VoiceOver reads for the character counter in the Duck.ai pasted-text sheet, e.g. 923 of 16,000 characters. %1$d is the number of characters in the pasted text, %2$d is the most it may hold")
+
     public static let aiChatHeaderFreePlan = NotLocalizedString("aichat.header.freePlan", value: "Free Plan", comment: "Label shown in the Duck.ai tab header for free plan users")
     public static let aiChatHeaderUpgrade = NotLocalizedString("aichat.header.upgrade", value: "Upgrade", comment: "Label shown in the Duck.ai tab header prompting free users to upgrade")
     public static let aiChatHeaderPaidTitle = NotLocalizedString("aichat.header.paidTitle", value: "Duck.ai", comment: "Label shown in the Duck.ai tab header for paid subscribers")
@@ -2610,6 +2627,11 @@ public struct UserText {
     public static let aiChatHeaderNewTabTitle = NSLocalizedString("aichat.header.plusMenu.newTab", value: "New Tab", comment: "Title for the New Tab row in the Duck.ai tab header Plus (+) menu")
     public static let aiChatHeaderNewSearchTitle = NSLocalizedString("aichat.header.plusMenu.newSearch", value: "New Search", comment: "Title for the New Search row in the Duck.ai tab header Plus (+) menu — opens a new tab and forces search mode for that entry")
     public static let aiChatHeaderNewFireTabTitle = NSLocalizedString("aichat.header.plusMenu.newFireTab", value: "New Fire Tab", comment: "Title for the New Fire Tab row in the Duck.ai tab header Plus (+) menu")
+    public static let aiChatHeaderNewTabSectionTitle = NSLocalizedString("aichat.header.plusMenu.newTabSection", value: "New Tab", comment: "Section header in the Duck.ai tab header Plus (+) menu; every row below it opens a new tab")
+    public static let aiChatHeaderNewTabChatTitle = NSLocalizedString("aichat.header.plusMenu.newTabSection.chat", value: "Chat", comment: "Row in the New Tab section of the Duck.ai tab header Plus (+) menu — opens a new Duck.ai chat in a new tab")
+    public static let aiChatHeaderNewTabVoiceChatTitle = NSLocalizedString("aichat.header.plusMenu.newTabSection.voiceChat", value: "Voice Chat", comment: "Row in the New Tab section of the Duck.ai tab header Plus (+) menu — opens a new Duck.ai voice chat in a new tab")
+    public static let aiChatHeaderNewTabImageTitle = NSLocalizedString("aichat.header.plusMenu.newTabSection.image", value: "Image", comment: "Row in the New Tab section of the Duck.ai tab header Plus (+) menu — opens Duck.ai in image generation mode in a new tab")
+    public static let aiChatHeaderNewTabSearchTitle = NSLocalizedString("aichat.header.plusMenu.newTabSection.search", value: "Search", comment: "Row in the Duck.ai tab header Plus (+) menu — opens a new tab in search mode")
     public static let aiChatAppMenuHeaderChatHistory = NSLocalizedString("aichat.appMenu.header.chatHistory", value: "Chat History", comment: "Header tile label in the app menu on a Duck.ai tab — opens the recent-chats sidebar")
     public static let aiChatAppMenuHeaderChatSettings = NSLocalizedString("aichat.appMenu.header.chatSettings", value: "Chat Settings", comment: "Header tile label in the app menu on a Duck.ai tab — opens the Duck.ai-specific settings screen")
     public static let aiChatAppMenuChats = NSLocalizedString("aichat.appMenu.chats", value: "Chats", comment: "List row label in the app menu on a Duck.ai tab — opens the recent Duck.ai chats sidebar")
@@ -2618,7 +2640,7 @@ public struct UserText {
     public static let aiChatPlusModelsSectionHeader = NotLocalizedString("aichat.model-picker.plus-section-header", value: "Plus", comment: "Section header in the model picker menu for models available from the DuckDuckGo Plus tier")
     public static let aiChatProModelsSectionHeader = NotLocalizedString("aichat.model-picker.pro-section-header", value: "Pro", comment: "Section header in the model picker menu for models available from the DuckDuckGo Pro tier")
     public static let aiChatModelPickerTryFree = NSLocalizedString("aichat.model-picker.try-free", value: "Try for Free", comment: "Section header for subscription models shown to free users")
-    public static let aiChatModelPickerSubscriberExclusive = NSLocalizedString("aichat.model-picker.subscriber-exclusive", value: "Subscriber Exclusive", comment: "Section header for subscription models shown to users who are not eligible for a free trial")
+    public static let aiChatModelPickerSubscriberExclusive = NSLocalizedString("aichat.model-picker.subscriber-exclusive", value: "Unlock with subscription", comment: "Section header for subscription models shown to users who are not eligible for a free trial")
     public static let aiChatModelPickerProPlanExclusive = NSLocalizedString("aichat.model-picker.pro-plan-exclusive", value: "Pro Plan Exclusive", comment: "Section header for Pro-only models shown to DuckDuckGo Plus subscribers")
 
     public static let settingsAIChatExperimentalMainSwitch = NotLocalizedString("settings.aichat.native.experimental", value: "Experimental Duck.ai", comment: "")
@@ -2628,6 +2650,9 @@ public struct UserText {
     public static let settingsEnableAiChat = NSLocalizedString("settings.enable.aichat", value: "Duck.ai", comment: "Settings screen cell text for enabling AI chat")
 
     public static let settingsEnableAiChatSubtitle = NSLocalizedString("settings.enable.aichat.subtitle", value: "Chat privately with popular 3rd-party AI models", comment: "A description of what the AI Chat toggle does")
+
+    public static let settingsKeyboardAnimationTitle = NSLocalizedString("settings.aifeatures.keyboard.animation.title", value: "Duck.ai Keyboard Animation", comment: "Settings screen toggle title for the Duck.ai keyboard animation")
+    public static let settingsKeyboardAnimationSubtitle = NSLocalizedString("settings.aifeatures.keyboard.animation.subtitle", value: "Show an animation around the keyboard when you switch to or type in Duck.ai.", comment: "Settings screen description for the Duck.ai keyboard animation toggle")
 
     public static let settingsAutomaticPageContextTitle = NSLocalizedString("settings.aifeatures.automatic.context.title", value: "Automatically Send Content", comment: "Settings screen cell title for enabling automatic page content attachment")
 

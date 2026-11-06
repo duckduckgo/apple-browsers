@@ -110,7 +110,7 @@ public struct AIChatImageAttachment: Identifiable {
 
     public init(id: UUID = UUID(), image: UIImage, fileName: String, fileURL: URL? = nil) {
         self.id = id
-        self.image = Self.resizeIfNeeded(image, maxDimension: 512)
+        self.image = Self.resizedForAttachment(image)
         self.fileName = fileName
         self.fileURL = fileURL
         self.originalEncodedData = nil
@@ -119,11 +119,16 @@ public struct AIChatImageAttachment: Identifiable {
 
     public init(id: UUID = UUID(), image: UIImage, fileName: String, fileURL: URL? = nil, originalEncodedData: Data, originalFormat: String) {
         self.id = id
-        self.image = Self.resizeIfNeeded(image, maxDimension: 512)
+        self.image = Self.resizedForAttachment(image)
         self.fileName = fileName
         self.fileURL = fileURL
         self.originalEncodedData = originalEncodedData
         self.originalFormat = originalFormat
+    }
+
+    /// Decoding and resizing a full-size photo blocks for hundreds of milliseconds, so image loaders call this off the main thread and `init` has nothing left to resize.
+    public static func resizedForAttachment(_ image: UIImage) -> UIImage {
+        resizeIfNeeded(image, maxDimension: 512)
     }
 
     private static func resizeIfNeeded(_ image: UIImage, maxDimension: CGFloat) -> UIImage {

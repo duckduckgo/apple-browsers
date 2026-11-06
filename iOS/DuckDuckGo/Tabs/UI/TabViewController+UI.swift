@@ -18,44 +18,13 @@
 //
 
 import DesignResourcesKit
-import DesignResourcesKitIcons
 import DuckUI
 import UIKit
 
 extension TabViewController {
 
     func setupErrorActionButton() {
-        guard AppRebrand.isAppRebranded() == false else {
-            errorActionButton.applyPrimaryStyle()
-            return
-        }
-
-        var buttonConfiguration = UIButton.Configuration.filled()
-        buttonConfiguration.baseForegroundColor = UIColor(designSystemColor: .buttonsPrimaryText)
-        buttonConfiguration.baseBackgroundColor = UIColor(designSystemColor: .buttonsPrimaryDefault)
-        buttonConfiguration.contentInsets = NSDirectionalEdgeInsets(top: 14, leading: 24, bottom: 14, trailing: 24)
-        buttonConfiguration.background.cornerRadius = 8
-        buttonConfiguration.titleTextAttributesTransformer = UIConfigurationTextAttributesTransformer { incoming in
-            var transformed = incoming
-            transformed.font = UIFont.daxButton()
-            transformed.kern = -0.23
-            return transformed
-        }
-        errorActionButton.configuration = buttonConfiguration
-        errorActionButton.configurationUpdateHandler = { button in
-            guard var configuration = button.configuration else { return }
-            if !button.isEnabled {
-                configuration.baseForegroundColor = UIColor(designSystemColor: .buttonsPrimaryTextDisabled)
-                configuration.baseBackgroundColor = UIColor(designSystemColor: .buttonsPrimaryDisabled)
-            } else if button.isHighlighted {
-                configuration.baseForegroundColor = UIColor(designSystemColor: .buttonsPrimaryText)
-                configuration.baseBackgroundColor = UIColor(designSystemColor: .buttonsPrimaryPressed)
-            } else {
-                configuration.baseForegroundColor = UIColor(designSystemColor: .buttonsPrimaryText)
-                configuration.baseBackgroundColor = UIColor(designSystemColor: .buttonsPrimaryDefault)
-            }
-            button.configuration = configuration
-        }
+        errorActionButton.applyPrimaryStyle()
     }
 
     func setupErrorReportBrokenSiteButton() {
@@ -181,7 +150,7 @@ extension TabViewController {
         errorContentStack.translatesAutoresizingMaskIntoConstraints = false
         error.addSubview(errorContentStack)
 
-        errorInfoImage = UIImageView(image: UIImage(rebrandable: "Dax-Accident"))
+        errorInfoImage = UIImageView(image: UIImage(resource: .daxAccident))
         errorInfoImage.contentMode = .scaleAspectFit
         errorInfoImage.translatesAutoresizingMaskIntoConstraints = false
         errorInfoImageWidthConstraint = errorInfoImage.widthAnchor.constraint(equalToConstant: 296)

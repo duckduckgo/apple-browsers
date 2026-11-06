@@ -1,4 +1,7 @@
 /* No comment provided by engineer. */
+" " = " ";
+
+/* No comment provided by engineer. */
 "-config.rollout.<parent>.<subfeature> true/false" = "-config.rollout.<parent>.<subfeature> true/false";
 
 /* No comment provided by engineer. */
@@ -382,6 +385,21 @@
 /* Title for the New Tab row in the Duck.ai tab header Plus (+) menu */
 "aichat.header.plusMenu.newTab" = "Ny fane";
 
+/* Section header in the Duck.ai tab header Plus (+) menu; every row below it opens a new tab */
+"aichat.header.plusMenu.newTabSection" = "Ny fane";
+
+/* Row in the New Tab section of the Duck.ai tab header Plus (+) menu — opens a new Duck.ai chat in a new tab */
+"aichat.header.plusMenu.newTabSection.chat" = "Chat";
+
+/* Row in the New Tab section of the Duck.ai tab header Plus (+) menu — opens Duck.ai in image generation mode in a new tab */
+"aichat.header.plusMenu.newTabSection.image" = "Bilde";
+
+/* Row in the Duck.ai tab header Plus (+) menu — opens a new tab in search mode */
+"aichat.header.plusMenu.newTabSection.search" = "Søk";
+
+/* Row in the New Tab section of the Duck.ai tab header Plus (+) menu — opens a new Duck.ai voice chat in a new tab */
+"aichat.header.plusMenu.newTabSection.voiceChat" = "Talechat";
+
 /* Title for the New Voice Chat row in the Duck.ai tab header Plus (+) menu */
 "aichat.header.plusMenu.newVoiceChat" = "Ny talechat";
 
@@ -458,7 +476,7 @@
 "aichat.model-picker.pro-plan-exclusive" = "Kun for Pro-abonnenter";
 
 /* Section header for subscription models shown to users who are not eligible for a free trial */
-"aichat.model-picker.subscriber-exclusive" = "Kun for abonnenter";
+"aichat.model-picker.subscriber-exclusive" = "Få tilgang med abonnement";
 
 /* Section header for subscription models shown to free users */
 "aichat.model-picker.try-free" = "Prøv gratis";
@@ -468,6 +486,27 @@
 
 /* Spoken name of the inline attachment icon in the multi-tab feature promotion, used in the VoiceOver accessibility label. */
 "aichat.multiTab.promotion.attachment" = "vedlegg";
+
+/* VoiceOver label of the Duck.ai attachment chip holding a long block of text the user pasted */
+"aichat.pasted.text.accessibility.label" = "Innlimt tekst";
+
+/* Character counter under the title of the Duck.ai pasted-text sheet, e.g. 923/16,000. %1$d is the number of characters in the pasted text, %2$d is the most it may hold. Keep both numbers; change the slash only if your language writes this kind of counter differently. */
+"aichat.pasted.text.count" = "%1$d/%2$d";
+
+/* What VoiceOver reads for the character counter in the Duck.ai pasted-text sheet, e.g. 923 of 16,000 characters. %1$d is the number of characters in the pasted text, %2$d is the most it may hold */
+"aichat.pasted.text.count.accessibility" = "%1$d av %2$d tegn";
+
+/* Title of the sheet that edits a long block of text the user pasted into Duck.ai */
+"aichat.pasted.text.edit.sheet.title" = "Rediger tekst";
+
+/* VoiceOver action on a Duck.ai pasted-text attachment chip that removes it from the message */
+"aichat.pasted.text.remove" = "Fjern";
+
+/* Title of the sheet that shows a long block of text the user pasted into a Duck.ai message that was already sent */
+"aichat.pasted.text.sheet.title" = "Innlimt tekst";
+
+/* Error shown below the Duck.ai input while the message is longer than allowed, e.g. Please try a shorter message. 17002/16000. %1$d is the number of characters in the message, %2$d is the most characters allowed */
+"aichat.prompt.too.long.format" = "Prøv en kortere melding. %1$d/%2$d";
 
 /* Subtitle for the extended reasoning mode in the Duck.ai reasoning picker */
 "aichat.reasoning.extended.subtitle" = "Til analytiske oppgaver";
@@ -1204,9 +1243,6 @@
 /* Description of autofill onboarding prompt's secure storage feature with a string describing the available biometry + passcode as a parameter */
 "autofill.onboarding.key-features.secure-storage.biometric.description" = "Passord er kryptert, lagret på enheten og låst med %@.";
 
-/* Description of autofill onboarding prompt's secure storage feature */
-"autofill.onboarding.key-features.secure-storage.description" = "Passwords are encrypted, stored on device, and locked with Face ID or passcode.";
-
 /* Parameter for the description of autofill onboarding prompt's secure storage feature describing Face ID biometry + passcode */
 "autofill.onboarding.key-features.secure-storage.description.parameter.face-id" = "Face ID eller passord";
 
@@ -1661,7 +1697,7 @@
 "crash.report.dialog.title" = "Sende krasjrapporter automatisk?";
 
 /* No comment provided by engineer. */
-"Current Dismiss Count: %@" = "Current Dismiss Count: %@";
+"Current Dismiss Count: %@" = "Nåværende antall avvisninger: %@";
 
 /* No comment provided by engineer. */
 "Current Subscriptions" = "Nåværende abonnementer";
@@ -2645,7 +2681,7 @@
 "Enter duration in seconds. Examples: 30, 60, 300" = "Enter duration in seconds. Examples: 30, 60, 300";
 
 /* No comment provided by engineer. */
-"Entry Pill" = "Entry Pill";
+"Entry Pill" = "Søkefeltknapp";
 
 /* Button title to Sign In */
 "error.email-protection-sign-in.action" = "Logg inn";
@@ -3279,6 +3315,72 @@
 
 /* No comment provided by engineer. */
 "menu.button.hint" = "Alternativer";
+
+/* iPad menu bar command */
+"menuActualSize" = "Faktisk størrelse";
+
+/* iPad menu bar command */
+"menuBack" = "Tilbake";
+
+/* iPad menu bar command */
+"menuClearTabsAndData" = "Fjern faner og slett data";
+
+/* iPad menu bar command */
+"menuDuplicateTab" = "Dupliser fane";
+
+/* iPad menu bar command */
+"menuFeedback" = "Del tilbakemelding";
+
+/* iPad menu bar command */
+"menuForward" = "Fremover";
+
+/* iPad menu bar command */
+"menuHideDownloads" = "Skjul nedlastinger";
+
+/* iPad menu bar command */
+"menuHidePasswords" = "Skjul passord";
+
+/* iPad menu bar command */
+"menuHideTabs" = "Skjul faner";
+
+/* iPad menu bar command */
+"menuLastTab" = "Siste fane";
+
+/* iPad menu bar command */
+"menuNewTabOnRight" = "Ny fane til høyre";
+
+/* iPad menu bar command */
+"menuNextTab" = "Vis neste fane";
+
+/* iPad menu bar command */
+"menuOpenLocation" = "Åpne plassering...";
+
+/* iPad menu bar command */
+"menuPreviousTab" = "Vis forrige fane";
+
+/* iPad menu bar command */
+"menuPrint" = "Skriv ut...";
+
+/* iPad menu bar command selecting a numbered tab */
+"menuSelectTab" = "Velg fane %d";
+
+/* iPad menu bar command */
+"menuSettings" = "DuckDuckGo-innstillinger...";
+
+/* iPad menu bar command */
+"menuShowDownloads" = "Vis nedlastinger";
+
+/* iPad menu bar command */
+"menuShowPasswords" = "Vis passord";
+
+/* iPad menu bar command */
+"menuShowTabs" = "Vis faner";
+
+/* iPad menu bar command */
+"menuStop" = "Stopp";
+
+/* iPad menu bar command */
+"menuVoiceSearch" = "Privat talesøk";
 
 /* No comment provided by engineer. */
 "Message" = "Melding";
@@ -4121,7 +4223,7 @@
 "Primary / First Action" = "Primær / første handling";
 
 /* No comment provided by engineer. */
-"Priming Modal" = "Priming Modal";
+"Priming Modal" = "Introduksjonsvindu";
 
 /* No comment provided by engineer. */
 "Privacy Protections" = "Personvern";
@@ -4184,10 +4286,10 @@
 "Reset" = "Tilbakestill";
 
 /* No comment provided by engineer. */
-"Reset Pill Dismiss Count" = "Reset Pill Dismiss Count";
+"Reset Pill Dismiss Count" = "Nullstill antall avviste knapper";
 
 /* No comment provided by engineer. */
-"Reset Priming Modal State" = "Reset Priming Modal State";
+"Reset Priming Modal State" = "Nullstill status for introduksjonsvindu";
 
 /* No comment provided by engineer. */
 "Reset to Default" = "Reset to Default";
@@ -4416,6 +4518,12 @@
 
 /* Footnote for the hide AI-generated images setting; ends with a Learn more link to the help page (do not remove the link) */
 "settings.aifeatures.hide.ai.generated.images.subtitle" = "Filtrerer ut kjente AI-søppelnettsteder fra bildesøkresultater. [Les mer](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/results/how-to-filter-out-ai-images-in-duckduckgo-search-results)";
+
+/* Settings screen description for the Duck.ai keyboard animation toggle */
+"settings.aifeatures.keyboard.animation.subtitle" = "Vis en animasjon rundt tastaturet når du bytter til eller skriver i Duck.ai.";
+
+/* Settings screen toggle title for the Duck.ai keyboard animation */
+"settings.aifeatures.keyboard.animation.title" = "Animasjon for Duck.ai-tastaturet";
 
 /* Label describing a feature which is turned on always */
 "settings.always.on" = "Alltid på";
@@ -5013,9 +5121,6 @@
 
 /* No comment provided by engineer. */
 "Status:" = "Status:";
-
-/* No comment provided by engineer. */
-"Stored Hostname: %@" = "Lagret vertsnavn: %@";
 
 /* Button for adding this subscription to another device */
 "subscription.activate.add.to.device.button" = "Legg til på enheten";
@@ -5917,3 +6022,12 @@
 /* Title for screen to screen confirming what data to import from a zip file (bookmarks and /or passwords) */
 "zip.content.import.types.title" = "Hva vil du importere?";
 
+
+/* Fireproofing setting toggle label */
+"preserveLogins.askOnSignIn" = "Be om å brannsikre nettsteder ved pålogging";
+
+/* Empty Fireproof sites list */
+"preserveLogins.emptyState" = "Ingen brannsikre nettsteder ennå";
+
+/* Button to remove all Fireproof sites */
+"preserveLogins.removeAllSites" = "Fjern alle brannsikre nettsteder";

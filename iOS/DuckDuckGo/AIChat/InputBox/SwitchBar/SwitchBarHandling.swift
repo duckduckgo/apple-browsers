@@ -94,6 +94,7 @@ protocol SwitchBarHandling: AnyObject {
     func updateCurrentText(_ text: String)
     func submitText(_ text: String)
     func submitText(_ text: String, trigger: TextSubmissionTrigger)
+    func submitAIChatAttachmentOnlyPrompt(trigger: TextSubmissionTrigger)
     func setToggleState(_ state: TextEntryMode)
     func saveToggleState()
     func clearText()
@@ -106,6 +107,7 @@ protocol SwitchBarHandling: AnyObject {
 
 extension SwitchBarHandling {
     func submitText(_ text: String, trigger: TextSubmissionTrigger) { submitText(text) }
+    func submitAIChatAttachmentOnlyPrompt(trigger: TextSubmissionTrigger) {}
     func saveToggleState() {}
     func stopGeneratingButtonTapped() {}
     var isImageGenerationSelected: Bool { false }

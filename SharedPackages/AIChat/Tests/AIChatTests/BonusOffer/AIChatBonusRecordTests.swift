@@ -30,11 +30,11 @@ struct AIChatBonusRecordTests {
     @available(iOS 16, macOS 13, *)
     @Test("Check record that satisfies invariant is valid", .timeLimit(.minutes(1)), arguments: [
         AIChatBonusRecord(),
-        AIChatBonusRecord(dismissed: true),
+        AIChatBonusRecord(dismissedCampaignName: "test-campaign"),
         AIChatBonusRecord(campaignName: "test-campaign"),
         AIChatBonusRecord(campaignName: "test-campaign", bonusId: "ABC123"),
         AIChatBonusRecord(campaignName: "test-campaign", bonusId: "ABC123", terms: terms),
-        AIChatBonusRecord(campaignName: "test-campaign", bonusId: "ABC123", dismissed: true, terms: terms, lastRedeemAttemptAt: 1)
+        AIChatBonusRecord(campaignName: "test-campaign", bonusId: "ABC123", dismissedCampaignName: "test-campaign", terms: terms, lastRedeemAttemptAt: 1)
     ])
     func recordsThatKeepTheInvariantAreValid(_ record: AIChatBonusRecord) {
         #expect(!record.breaksInvariant)
@@ -116,7 +116,7 @@ struct AIChatBonusRecordTests {
         let record = AIChatBonusRecord(
             campaignName: "launch",
             bonusId: "8a7b9c1d-2e3f-4a5b-8c6d-7e8f9a0b1c2d",
-            dismissed: true,
+            dismissedCampaignName: "launch",
             terms: AIChatBonusRecord.Terms(multiplier: 2.5, expiresAt: 1_790_000_000),
             lastRedeemAttemptAt: 1_780_000_000_000
         )
@@ -128,7 +128,7 @@ struct AIChatBonusRecordTests {
         // THEN
         #expect(result["campaignName"] as? String == "launch")
         #expect(result["bonusId"] as? String == "8a7b9c1d-2e3f-4a5b-8c6d-7e8f9a0b1c2d")
-        #expect(result["dismissed"] as? Bool == true)
+        #expect(result["dismissedCampaignName"] as? String == "launch")
         let resultTerms = try #require(result["terms"] as? [String: Any])
         #expect(resultTerms["multiplier"] as? Double == 2.5)
         #expect(resultTerms["expiresAt"] as? Int == 1_790_000_000_000)
@@ -140,7 +140,7 @@ struct AIChatBonusRecordTests {
     func payloadOmitsUnsetRecordFields() throws {
         // GIVEN
         let payload = AIChatBonusRecordPayload(
-            record: AIChatBonusRecord(dismissed: true),
+            record: AIChatBonusRecord(dismissedCampaignName: "launch"),
             isNewInstall: true,
             aiChatEnabled: true
         )
@@ -149,7 +149,7 @@ struct AIChatBonusRecordTests {
         let result = try #require(try jsonObject(payload)["record"] as? [String: Any])
 
         // THEN
-        #expect(Set(result.keys) == ["dismissed"])
+        #expect(Set(result.keys) == ["dismissedCampaignName"])
     }
 }
 
@@ -198,5 +198,52 @@ private extension AIChatBonusRecordTests {
 
         // THEN
         #expect(result == false)
+    }
+
+    // MARK: - Boost expired
+
+    @Test(
+        "Check only a confirmed boost can be expired",
+        arguments: [
+            (AIChatBonusRecordMock.active, true),
+            (AIChatBonusRecordMock.pending, false),
+            (AIChatBonusRecordMock.ended, false),
+            (AIChatBonusRecordMock.dismissedOnly, false),
+            (AIChatBonusRecord(), false)
+        ]
+    )
+    func onlyAConfirmedBoostCanBeExpired(record: AIChatBonusRecord, hasExpired: Bool) {
+        // GIVEN
+        let afterExpiry = Date(timeIntervalSince1970: AIChatBonusRecordMock.terms.expiresAt + 1)
+
+        // WHEN
+        let result = record.hasBoostExpired(at: afterExpiry)
+
+        // THEN
+        #expect(result == hasExpired)
+    }
+
+    @Test("Check a boost hasn't expired before its expiry")
+    func boostHasNotExpiredBeforeItsExpiry() {
+        // GIVEN
+        let beforeExpiry = Date(timeIntervalSince1970: AIChatBonusRecordMock.terms.expiresAt - 1)
+
+        // WHEN
+        let result = AIChatBonusRecordMock.active.hasBoostExpired(at: beforeExpiry)
+
+        // THEN
+        #expect(!result)
+    }
+
+    @Test("Check a boost has expired from its expiry")
+    func boostHasExpiredFromItsExpiry() {
+        // GIVEN
+        let atExpiry = Date(timeIntervalSince1970: AIChatBonusRecordMock.terms.expiresAt)
+
+        // WHEN
+        let result = AIChatBonusRecordMock.active.hasBoostExpired(at: atExpiry)
+
+        // THEN
+        #expect(result)
     }
 }

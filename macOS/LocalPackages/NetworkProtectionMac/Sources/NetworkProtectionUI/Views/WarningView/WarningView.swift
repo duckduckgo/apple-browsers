@@ -24,21 +24,12 @@ struct WarningView: View {
 
     enum Constants {
         static let backgroundCornerRadius = 16.0
-        static let legacyBackgroundCornerRadius = 8.0
     }
 
     let model: Model
 
-    /// Captured at init so it stays stable for the view's lifetime.
-    let isAppRebranded: Bool
-
-    init(model: Model, isAppRebranded: Bool = DesignSystemRebrand.isAppRebranded()) {
+    init(model: Model) {
         self.model = model
-        self.isAppRebranded = isAppRebranded
-    }
-
-    private var cornerRadius: CGFloat {
-        isAppRebranded ? Constants.backgroundCornerRadius : Constants.legacyBackgroundCornerRadius
     }
 
     public var body: some View {
@@ -67,7 +58,7 @@ struct WarningView: View {
             }
             .padding(16)
             .background(
-                RoundedRectangle(cornerRadius: cornerRadius)
+                RoundedRectangle(cornerRadius: Constants.backgroundCornerRadius)
                     .fill(Color(.alertBubbleBackground))
             )
         }

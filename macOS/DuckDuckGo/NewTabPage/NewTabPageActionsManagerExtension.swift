@@ -263,7 +263,8 @@ extension NewTabPageActionsManager {
                                     subscriptionDialogPresenter: NewTabPageOmnibarSubscriptionDialogPresenter(
                                         coordinator: Application.appDelegate.subscriptionNavigationCoordinator,
                                         subscriptionManager: Application.appDelegate.subscriptionManager
-                                    )),
+                                    ),
+                                    screenshotProvider: NewTabPageOmnibarScreenshotProvider(featureFlagger: featureFlagger)),
             NewTabPageWinBackOfferClient(provider: winBackOfferBannerProvider)
         ])
     }

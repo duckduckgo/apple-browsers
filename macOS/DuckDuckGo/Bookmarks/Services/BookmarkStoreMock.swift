@@ -297,6 +297,10 @@ final class BookmarkStoreMock: BookmarkStore, CustomDebugStringConvertible {
         store?.bookmarksCount() ?? (bookmarks ?? []).reduce(0) { $0 + Self.bookmarksCount(in: $1) }
     }
 
+    func hasTopLevelEntities() -> Bool {
+        store?.hasTopLevelEntities() ?? !(bookmarks ?? []).isEmpty
+    }
+
     private static func bookmarksCount(in entity: BaseBookmarkEntity) -> Int {
         if let folder = entity as? BookmarkFolder {
             return folder.children.reduce(0) { $0 + bookmarksCount(in: $1) }

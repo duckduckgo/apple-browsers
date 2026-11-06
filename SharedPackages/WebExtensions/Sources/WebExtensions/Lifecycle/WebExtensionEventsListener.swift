@@ -23,6 +23,8 @@ import os.log
 public protocol WebExtensionEventsListening {
 
     var droppedCallbacksCount: Int { get }
+    /// Called when the user switches tabs or a tab's page changes, which means the browser is in use.
+    var onBrowsingActivity: (() -> Void)? { get set }
 
     func didOpenWindow(_ window: WKWebExtensionWindow)
     func didCloseWindow(_ window: WKWebExtensionWindow)
@@ -49,6 +51,7 @@ public final class WebExtensionEventsListener: WebExtensionEventsListening {
     /// events before that are dropped.
     weak var controller: WKWebExtensionController?
     public private(set) var droppedCallbacksCount = 0
+    public var onBrowsingActivity: (() -> Void)?
 
     private var isSuppressingTabLifecycleEvents = false
 
@@ -78,6 +81,7 @@ public final class WebExtensionEventsListener: WebExtensionEventsListening {
 
     public func didActivateTab(_ tab: WKWebExtensionTab, previousActiveTab: WKWebExtensionTab?) {
         notifyController { $0.didActivateTab(tab, previousActiveTab: previousActiveTab) }
+        onBrowsingActivity?()
     }
 
     public func didSelectTabs(_ tabs: [WKWebExtensionTab]) {
@@ -98,6 +102,9 @@ public final class WebExtensionEventsListener: WebExtensionEventsListening {
 
     public func didChangeTabProperties(_ properties: WKWebExtension.TabChangedProperties, for tab: WKWebExtensionTab) {
         notifyController { $0.didChangeTabProperties(properties, for: tab) }
+        if properties.contains(.URL) {
+            onBrowsingActivity?()
+        }
     }
 
     public func withTabLifecycleEventsSuppressed(_ body: () -> Void) {

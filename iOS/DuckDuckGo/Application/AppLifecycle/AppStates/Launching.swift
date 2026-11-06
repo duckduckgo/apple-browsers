@@ -26,6 +26,7 @@ import PrivacyConfig
 import UIKit
 import PixelKit
 import BrowserServicesKit
+import Combine
 import Subscription
 import RemoteMessaging
 import ScreenTimeDataCleaner
@@ -78,6 +79,17 @@ struct Launching: LaunchingHandling {
         let appKeyValueFileStoreService = try AppKeyValueFileStoreService()
         launchBreadcrumb.mark(.keyValueStore)
         lastBackgroundDateStorage = appKeyValueFileStoreService.keyValueFilesStore.throwingKeyedStoring()
+
+        // The app's single owner of the Duck.ai bonus record, shared by every consumer.
+        let aiChatBonusService = AIChatBonusService()
+        // One bridge handler for every Duck.ai tab: it holds no per-tab state and builds one payload per record change.
+        let aiChatBonusOffer = AIChatBonusOfferDependencies(
+            handler: AIChatBonusHandler(
+                service: aiChatBonusService,
+                factsProvider: AIChatBonusFactsProvider(statisticsStore: StatisticsUserDefaults(), aiChatSettings: AIChatSettings())
+            ),
+            messageLog: AIChatBonusMessageLog()
+        )
 
         // Initialize configuration with the key-value store
         configuration = AppConfiguration(
@@ -167,7 +179,8 @@ struct Launching: LaunchingHandling {
                                                             webExtensionAvailability: webExtensionAvailability,
                                                             duckAiNativeStorageHandler: duckAiNativeStorageHandler,
                                                             fireModeStorageController: fireModeStorageController,
-                                                            adBlockingAvailability: adBlockingAvailability)
+                                                            adBlockingAvailability: adBlockingAvailability,
+                                                            aiChatBonusOffer: aiChatBonusOffer)
         launchBreadcrumb.mark(.contentBlocking)
 
         // Constructed before MainCoordinator: its `eventHub` is threaded down to every tab.
@@ -226,8 +239,6 @@ struct Launching: LaunchingHandling {
             privacyConfigurationManager: contentBlockingService.common.privacyConfigurationManager,
             isStillOnboarding: { daxDialogs.isStillOnboarding() }
         )
-        // The app's single owner of the Duck.ai bonus record. Shared instance between consumers.
-        let aiChatBonusService = AIChatBonusService()
         let remoteMessagingService = RemoteMessagingService(bookmarksDatabase: configuration.persistentStoresConfiguration.bookmarksDatabase,
                                                             database: configuration.persistentStoresConfiguration.database,
                                                             appSettings: appSettings,
@@ -334,6 +345,7 @@ struct Launching: LaunchingHandling {
         // Initialize the main coordinator which manages the app's primary view controller
         // This step may take some time due to loading from nibs, etc.
 
+        let usageContextProvider = UsageContextProvider()
         mainCoordinator = try MainCoordinator(privacyConfigurationManager: contentBlockingService.common.privacyConfigurationManager,
                                               syncService: syncService,
                                               contentBlockingService: contentBlockingService,
@@ -371,6 +383,7 @@ struct Launching: LaunchingHandling {
                                               wideEvent: AppDependencyProvider.shared.wideEvent,
                                               onboardingManager: onboardingManager,
                                               eventHub: eventHubService.eventHub,
+                                              usageContextProvider: usageContextProvider,
                                               promptExposureReporter: promptExposureReporter
         )
         launchBreadcrumb.mark(.mainCoordinator)
@@ -398,6 +411,7 @@ struct Launching: LaunchingHandling {
                                         keyValueStore: appKeyValueFileStoreService.keyValueFilesStore))
         let aiChatService = AIChatService(
             aiChatSettings: aiChatSettings,
+            aiChatBonusService: aiChatBonusService,
             termsOfServiceChatsObserver: DuckAiTermsOfServiceChatsObserver(
                 storageHandler: duckAiNativeStorageHandler,
                 feature: DuckAiNativeTermsOfServiceFeature(featureFlagger: featureFlagger)
@@ -411,7 +425,6 @@ struct Launching: LaunchingHandling {
             return shortcutItems.filter { $0.type != ShortcutKey.openVPNSettings }
         })
         let inactivityNotificationSchedulerService = InactivityNotificationSchedulerService(
-            featureFlagger: featureFlagger,
             notificationServiceManager: notificationServiceManager,
             privacyConfigurationManager: contentBlockingService.common.privacyConfigurationManager,
             stateStore: inactivityStateStore
@@ -419,13 +432,30 @@ struct Launching: LaunchingHandling {
 
         winBackOfferService.setURLHandler(mainCoordinator)
 
+        let voiceSearchHelper = self.voiceSearchHelper
+        let fireModeCapability = mainCoordinator.controller.fireModeCapability
+        let mainViewController = mainCoordinator.controller
+        let mainMenuBookmarks = mainViewController.mainMenuBookmarks
+        let bookmarksMenuTree = BookmarksMenuTree(children: { mainMenuBookmarks.children(ofFolderWithID: $0) })
+        let mainMenuService = MainMenuService(featureFlagger: featureFlagger, contextProvider: { [weak mainViewController] in
+            .init(voiceSearchEnabled: voiceSearchHelper.isVoiceSearchEnabled, fireModeEnabled: fireModeCapability.isFireModeEnabled,
+                  aiChatEnabled: aiChatSettings.isAIChatEnabled, favorites: mainMenuBookmarks.favorites,
+                  isOnboarding: mainViewController?.needsToShowOnboardingIntro() ?? false)
+        }, deferredContent: [
+            DuckAIMenuSection.recentChatsIdentifier: DuckAIRecentChatsMenuContent { [weak mainViewController] in
+                await mainViewController?.mainMenuRecentChats() ?? .init(recentChats: [], totalChatCount: 0)
+            },
+            .bookmarksTree: bookmarksMenuTree
+        ], rebuildTriggers: [mainMenuBookmarks.changes, mainViewController.menuRebuildRequests.eraseToAnyPublisher()])
+
         // MARK: - App Services aggregation
         // This object serves as a central hub for app-wide services that:
         // 1. Respond to lifecycle events
         // 2. Persist throughout the app's runtime
         // 3. Provide core functionality across different parts of the app
 
-        services = AppServices(contentBlockingService: contentBlockingService,
+        services = AppServices(mainMenuService: mainMenuService,
+                               contentBlockingService: contentBlockingService,
                                syncService: syncService,
                                vpnService: vpnService,
                                dbpService: dbpService,
@@ -458,6 +488,7 @@ struct Launching: LaunchingHandling {
                 taskContext.finish()
             }
         })
+        launchTaskManager.register(task: SyncDevicesCountLaunchTask(syncPromoManager: SyncPromoManager(syncService: syncService.sync)))
         if #available(iOS 26, *) {
             launchTaskManager.register(task: BlockLaunchTask(name: "Report Screen Time Data") { taskContext in
                 Task { @MainActor in
@@ -492,6 +523,7 @@ struct Launching: LaunchingHandling {
         // - Use a service for functionality that persists throughout the app's lifecycle.
         // More details: https://app.asana.com/0/1202500774821704/1209445353536498/f
         // For a broader overview: https://app.asana.com/0/1202500774821704/1209445353536490/f
+
     }
 
     private static func makeNativeStorageHandler(featureFlagger: FeatureFlagger,
@@ -659,6 +691,14 @@ struct DuckAiNativeStoragePixelAdapter: DuckAiNativeStoragePixelFiring {
         case .lastUsedReasoningModeParseError(let error):
             PixelKit.fire(Pixel.Event.duckAiNativeStorageLastUsedReasoningModeParseError.withError(error),
                           frequency: .dailyAndStandard)
+        case .invalidValue(let invalidValue):
+            PixelKit.fire(DuckAiNativeStorageInvalidValuePixel(parameters: invalidValue.parameters), frequency: .dailyAndCount)
         }
     }
+}
+
+struct DuckAiNativeStorageInvalidValuePixel: PixelKit.Event {
+    let parameters: [String: String]?
+    var name: String { DuckAiNativeStorageInvalidValue.pixelName }
+    var standardParameters: [PixelKitStandardParameter]? { nil }
 }

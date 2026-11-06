@@ -24,13 +24,20 @@ import AIChat
 import AIChatDebugServer
 import os.log
 import DebugServer
+import PrivacyConfig
 
 struct AIChatDebugView: View {
     @StateObject private var viewModel = AIChatDebugViewModel()
     private let duckAiNativeStorageHandler: DuckAiNativeStorageHandling?
+    private let aiChatBonusMessageLog: AIChatBonusMessageLog?
+    private let featureFlagger: FeatureFlagger?
 
-    init(duckAiNativeStorageHandler: DuckAiNativeStorageHandling? = nil) {
+    init(duckAiNativeStorageHandler: DuckAiNativeStorageHandling? = nil,
+         aiChatBonusMessageLog: AIChatBonusMessageLog? = nil,
+         featureFlagger: FeatureFlagger? = nil) {
         self.duckAiNativeStorageHandler = duckAiNativeStorageHandler
+        self.aiChatBonusMessageLog = aiChatBonusMessageLog
+        self.featureFlagger = featureFlagger
     }
 
     var body: some View {
@@ -38,19 +45,31 @@ struct AIChatDebugView: View {
             AIChatStorageServerSection(duckAiNativeStorageHandler: duckAiNativeStorageHandler)
 
 #if DEBUG || ALPHA
-            AIChatAttachmentPrivacySection(duckAiNativeStorageHandler: duckAiNativeStorageHandler)
-            AIChatMultiTabPromotionSection()
-            AIChatUsageWarningsSection(duckAiNativeStorageHandler: duckAiNativeStorageHandler)
-            AIChatTermsOfServiceSection(duckAiNativeStorageHandler: duckAiNativeStorageHandler)
+            Section(header: Text(verbatim: "Footer Messages")) {
+                NavigationLink(destination: AIChatInputFooterDebugView(duckAiNativeStorageHandler: duckAiNativeStorageHandler)) {
+                    Text(verbatim: "Native Input Footer Messages")
+                }
+                NavigationLink(destination: AIChatUsageWarningsDebugView(duckAiNativeStorageHandler: duckAiNativeStorageHandler)) {
+                    Text(verbatim: "Duck.ai Usage Warnings")
+                }
+            }
+
+            Section(header: Text(verbatim: "Boost Offer")) {
+                NavigationLink(destination: AIChatBoostOfferDebugView(featureFlagger: featureFlagger, messageLog: aiChatBonusMessageLog)) {
+                    Text(verbatim: "Duck.ai Boost Offer")
+                }
+            }
 #endif
 
-            Section(footer: Text("Stored Hostname: \(viewModel.enteredHostname)")) {
+            Section(header: Text(verbatim: "Message Policy Hostname"),
+                    footer: Text(verbatim: "Stored Hostname: \(viewModel.enteredHostname)")) {
                 NavigationLink(destination: AIChatDebugHostnameEntryView(viewModel: viewModel)) {
                     Text("Message policy hostname")
                 }
             }
             
-            Section(footer: Text("Custom URL: \(viewModel.customURL.isEmpty ? "Default" : viewModel.customURL)")) {
+            Section(header: Text(verbatim: "Custom URLs"),
+                    footer: Text("Custom URL: \(viewModel.customURL.isEmpty ? "Default" : viewModel.customURL)")) {
                 NavigationLink(destination: AIChatDebugURLEntryView(viewModel: viewModel)) {
                     Text("Set Custom AI Chat URL")
                 }
@@ -312,6 +331,30 @@ private struct AIChatDebugSessionTimerEntryView: View {
 }
 
 #if DEBUG || ALPHA
+private struct AIChatInputFooterDebugView: View {
+    let duckAiNativeStorageHandler: DuckAiNativeStorageHandling?
+
+    var body: some View {
+        List {
+            AIChatAttachmentPrivacySection(duckAiNativeStorageHandler: duckAiNativeStorageHandler)
+            AIChatMultiTabPromotionSection()
+            AIChatTermsOfServiceSection(duckAiNativeStorageHandler: duckAiNativeStorageHandler)
+        }
+        .navigationTitle("Native Input Footer Messages")
+    }
+}
+
+private struct AIChatUsageWarningsDebugView: View {
+    let duckAiNativeStorageHandler: DuckAiNativeStorageHandling?
+
+    var body: some View {
+        List {
+            AIChatUsageWarningsSection(duckAiNativeStorageHandler: duckAiNativeStorageHandler)
+        }
+        .navigationTitle("Duck.ai Usage Warnings")
+    }
+}
+
 private struct AIChatTermsOfServiceSection: View {
 
     let duckAiNativeStorageHandler: DuckAiNativeStorageHandling?
@@ -609,7 +652,7 @@ private struct AIChatMultiTabPromotionSection: View {
             Button {
                 AIChatContextualAttachMoreTabsFeature.resetDrawerPromoForDebugging()
                 displayCount = displayStore.displayCount
-                status = "Promotion reset. Open a new contextual chat to see it again."
+                status = "Promotion reset. Open a new input in Duck.ai mode to see it again."
             } label: {
                 Text(verbatim: "Reset promotion")
             }
@@ -644,7 +687,7 @@ private struct AIChatAttachmentPrivacySection: View {
             }
             if !status.isEmpty { Text(verbatim: status) }
         } header: {
-            Text(verbatim: DevicePlatform.isIphone ? "Unified input footer" : "iPad attachment disclosure")
+            Text(verbatim: DevicePlatform.isIphone ? "Attachment disclosure" : "iPad attachment disclosure")
         } footer: {
             Text(verbatim: "Resets the attachment disclosure so it shows once more, in any tab.")
         }

@@ -4,6 +4,27 @@ DuckDuckGo wrapper around [Point-Free's `swift-snapshot-testing`](https://github
 
 This package gives shared UI snapshot tests one consistent home for rendering SwiftUI views, validating the simulator or host environment, naming generated images, and keeping preview states reusable between Xcode previews and automated tests. It keeps the app-facing preview helpers separate from the test-only assertion helpers, so production targets can share preview configuration without taking a dependency on snapshot testing libraries.
 
+## Quick start
+
+Reference images live in a separate repo, [`duckduckgo/apple-browsers-snapshots`](https://github.com/duckduckgo/apple-browsers-snapshots), checked out as the `SnapshotReferences` submodule. Every PR that adds or changes images therefore comes with a companion PR in that repo.
+
+1. **Write the test and run it to record the reference.**
+2. **Open the snapshots PR.** From the monorepo root, on your feature branch:
+
+   ```bash
+   ./scripts/open-snapshot-submodule-pr.sh
+   ```
+
+   It commits the new images to a branch of the same name in the snapshots repo, opens the companion PR, and stages the updated `SnapshotReferences` pointer.
+
+3. **Open your main PR.** Commit the staged `SnapshotReferences` pointer with your code, push, and add the companion PR link the script printed to the description.
+
+4. **Once the PR is approved, add the `Merge snapshots` label.** The label merges the companion PR and checks that your pointer is on the snapshots repo's `main`. If you push new images after this, re-run step 2 and re-add the label.
+
+5. **Merge your PR.** Profit.
+
+
+
 ## Why snapshot testing?
 
 Snapshot testing records the rendered output of a view, data structure, or other value as a reference artifact, then compares future test runs against that reference. For UI work, this is useful because many regressions are visual rather than purely behavioral: spacing changes, missing states, clipped text, incorrect colors, light / dark appearance differences, or unexpected layout shifts can all be caught by comparing the final rendered image.
@@ -19,7 +40,7 @@ Use snapshot tests as a focused regression safety net for stable UI states. They
 
 Keep `SnapshotTestingSupport` linked only to test targets.
 
-## Quick start
+## Writing tests
 
 ### Direct view snapshots
 
@@ -92,12 +113,13 @@ assertSnapshot(of: value, as: .json)
 | `.intrinsicContentSize` | Compact view sized by its content | none |
 | `.constrainedWidth` | Content-driven height, default iPhone width (390) | none |
 | `.screen` | Full-screen layout | iPhone + iPad on iOS |
+| `.tallScreen(height:)` | Full-screen layout at the device width with a taller canvas (default `1600`), for scrolling content such as settings lists | iPhone + iPad on iOS |
 | `.sheet` | Sheet presentation; iPhone as a floating sheet (inset from the screen edges, rounded corners, grabber, home-indicator inset, dimmed backdrop), iPad centered with padding | iPhone + iPad on iOS |
 | `.fixed(CGSize)` | Explicit size (typical for macOS windows/panels) | none |
 
 Only `.sheet` adds a backdrop automatically (it simulates the sheet chrome). For every other mode the snapshot reflects the view as-is — call `.snapshotBackground()` on your view if you want `systemBackground` / `windowBackgroundColor` behind it.
 
-On macOS, device variants don't apply — `.screen`/`.sheet`/`.fixed` all resolve to the configuration's size (default `800x600` if unspecified).
+On macOS, device variants don't apply — `.screen`/`.sheet`/`.fixed` all resolve to the configuration's size (default `800x600` if unspecified), and `.tallScreen` keeps that width with its own height.
 
 Default appearance strategy is `.allAppearances` (light + dark). Use `.single(.light)` or `.single(.dark)` to scope, `.iPhoneAllAppearances` or `.iPhoneSingle(.dark)` to skip the iPad variants of `.screen` / `.sheet` (iPhone device on iOS regardless of size mode; plain appearances on macOS), or `.custom([...])` for full control.
 
@@ -105,7 +127,7 @@ Default appearance strategy is `.allAppearances` (light + dark). Use `.single(.l
 
 ### `List` needs a fixed-size mode
 
-A SwiftUI `List` has no intrinsic content size, so it needs a fixed size to render: snapshot it with `.screen` or `.fixed(CGSize)`.
+A SwiftUI `List` has no intrinsic content size, so it needs a fixed size to render: snapshot it with `.screen`, `.tallScreen()` (when it scrolls past the screen height) or `.fixed(CGSize)`.
 
 ### Effects and iPad navigation
 
@@ -140,11 +162,26 @@ Example: `iOS/DuckDuckGoTests/SyncUI/SyncSuccessViewTests.swift`.
 Snapshots are pixel-strict, so the test environment is validated before each assertion:
 
 - **iOS**: must run on **iOS 27.0** at **@3x** (simulator runtime).
-- **macOS**: must run on **macOS 27** — major version only; minor and patch are ignored.
+- **macOS**: must run on **macOS 27**. References are compared only on the CI version, `SnapshotEnvironment.ciMacOSVersion` (**27.0**, matched on major.minor).
 
-iOS renders in a pinnable simulator runtime, so it validates major.minor. macOS renders on the uncontrolled host and CI can't guarantee an exact point release, so the macOS guard only checks the major version — we accept the small flakiness risk from minor/patch rendering differences rather than fail every time CI rolls forward. A mismatch → the helper records a failure (`XCTFail` / `Issue.record`) with an explanatory message and skips the comparison — the same in CI and locally; a developer on a different OS opts out by not running the snapshot suite.
+A mismatch on the checks above makes the helper record a failure (`XCTFail` / `Issue.record`) with an explanatory message and skip the comparison. The exception is a local Mac on another macOS major version: its snapshot assertions are skipped with a warning, so engineers who haven't upgraded can still run the suites.
 
-When the OS rolls forward, bump `SnapshotEnvironment.expectedIOSVersion` / `expectedMacOSVersion` and re-record affected references.
+iOS renders in a pinnable simulator runtime, so every machine matches CI. macOS renders on the host, and engineers install point releases (27.1, 27.2…) that can render differently from CI. CI's renderings are the source of truth, so on macOS:
+
+| Where | OS | Behavior |
+|---|---|---|
+| CI (`REQUIRE_SNAPSHOT_REFERENCES=1`) | the CI version | Compares against the references. |
+| CI (`REQUIRE_SNAPSHOT_REFERENCES=1`) | another 27.x | Compares against the references and prints a warning to bump `ciMacOSVersion`, so a runner update fails only the snapshots whose rendering changed. |
+| CI (`REQUIRE_SNAPSHOT_REFERENCES=1`) | another major | Fails. |
+| Locally | the CI version | Compares against the references. |
+| Locally | another 27.x | Records missing references (and everything with `GENERATE_SNAPSHOTS`), but doesn't compare existing ones and prints a warning. `COMPARE_SNAPSHOTS=1` compares anyway. |
+| Locally | another major | Skips snapshot assertions and prints a warning. Nothing is compared or recorded. |
+
+If CI fails because a reference is missing or its renderings differ (for example, you recorded on another 27.x or didn't record at all), add the `Record snapshots (macOS)` label to the monorepo PR. It commits the images CI rendered for the failing snapshots to the snapshots PR (opening one if needed) and points the monorepo PR's `SnapshotReferences` at them, so the checks run again. It doesn't run the tests again: it takes the images from the latest macOS PR checks run on the PR's head commit, waiting for that run to finish if you add the label early. Review the new images in the snapshots PR before using `Merge snapshots`.
+
+The images come from that run's `macos-rendered-snapshots` artifact. The Non-Sandbox unit test job uploads every image that didn't match its reference or had none, laid out like `SnapshotReferences`. `SNAPSHOT_EXPORT_DIR` turns that export on.
+
+When the OS rolls forward, bump `SnapshotEnvironment.expectedIOSVersion` / `ciMacOSVersion` and re-record affected references.
 
 ## Comparison tolerance
 
@@ -153,13 +190,13 @@ Every image helper compares with two thresholds:
 - `perceptualPrecision` (default `0.98`): how close a pixel's color must be to the reference to count as matching.
 - `precision` (default `0.9999`): the fraction of pixels that must match. Up to 0.01% may differ — about 300 pixels on a full @3x iPhone screen.
 
-Even with an identical OS, Xcode and simulator runtime, different CI runners can anti-alias overlapping vector shapes slightly differently. The result is deterministic per runner, so test retries don't help. The `precision` budget absorbs those few edge pixels while any real layout, text or color change still fails. Override either argument on a single call only when a view needs a different budget.
+Even with an identical OS, Xcode and simulator runtime, different CI runners can anti-alias overlapping vector shapes slightly differently. The result is deterministic per runner, so test retries don't help. The `precision` budget absorbs those few edge pixels while any real layout, text or color change still fails. macOS snapshots render in sRGB whatever display the machine has, so a Mac with a P3 display and a CI VM produce the same colors. Sizes measured from the view (`.intrinsicContentSize`, or a fixed width with fitted height) round up to whole points on macOS, so a fractional text width can't produce a 1px-wider image on another machine. Override either argument on a single call only when a view needs a different budget.
 
 ## Reference storage
 
 Reference images live in the `SnapshotReferences` git submodule at the repo root, mirroring each test's repo-relative path (`<platform>/…/__Snapshots__/<TestClass>/`). The wrapper redirects the library's `snapshotDirectory` there automatically, so references stay out of the app trees.
 
-Each image name carries the recording environment as a suffix so references are unambiguous across OSes: iOS uses `…_iOS-27-0` (major.minor), macOS uses `…_macOS-27` (major only, matching the guard granularity).
+iOS image names carry the recording environment as a suffix (`…_iOS-27-0`). macOS names carry none, so recordings from any 27.x and CI's renderings write the same file, and moving CI to a new macOS needs no rename.
 
 ## Recording
 
@@ -174,7 +211,7 @@ After re-recording, inspect every diff and commit only the intentional ones.
 
 `SKIP_SNAPSHOT_TESTS=1` in the test scheme's env turns off **every** image-snapshot assertion. Skipped assertions return silently and go **green** — no `XCTFail` / `Issue.record` — so the suites still run but stop comparing images. Use it as a global kill switch when a rendering or environment change would otherwise turn snapshot suites red across the board, while you investigate. Accepts `1` / `true` / `yes` (case-insensitive) and takes precedence over `GENERATE_SNAPSHOTS`.
 
-The `iOS Browser` scheme sets it to `0`, so iOS snapshots run locally and in CI. The macOS schemes (`macOS Browser`, `macOS Browser App Store`, `macOS Unit Tests`) set it to `1` because the CI runners are still on macOS 26, while macOS references are pinned to macOS 27. To pause or resume snapshots for a platform, change the value in that platform's schemes.
+The `iOS Browser` scheme and the macOS schemes (`macOS Browser`, `macOS Browser CI`, `macOS Browser App Store`, `macOS Unit Tests`) set it to `0`, so snapshots run locally and in CI. To pause or resume snapshots for a platform, change the value in that platform's schemes.
 
 ## Conventions
 
@@ -189,13 +226,13 @@ Real test sites you can crib from. References mirror each test's path inside the
 
 ### iOS — preview-backed compact view (`.constrainedWidth`)
 - View: `iOS/DuckDuckGo/AIChat/InputBox/SwitchBar/Suggestions/AIChatSyncPromoView.swift`
-- Test: `iOS/DuckDuckGoTests/AIChat/InputBox/SwitchBar/Suggestions/AIChatSyncPromoViewTests.swift`
+- Test: `iOS/DuckDuckGoTests/Core/AIChat/InputBox/SwitchBar/Suggestions/AIChatSyncPromoViewTests.swift`
 - `PreviewProvider` in the same file as the view, reused directly by the test.
 
 ### iOS — preview-backed screen with mocks (`.screen`)
 - View: `iOS/DuckDuckGo/VoiceSearchFeedbackView.swift`
 - Preview mocks: `iOS/DuckDuckGo/VoiceSearchFeedbackView_PreviewMocks.swift`
-- Test: `iOS/DuckDuckGoTests/VoiceSearchFeedbackViewTests.swift`
+- Test: `iOS/DuckDuckGoTests/DuckDuckGo/Application/VoiceSearchFeedbackViewTests.swift`
 - Keep `PreviewProvider`, `typealias State`, and `static let snapshots` in the view file; move mocks to the sibling `_PreviewMocks.swift` under `#if DEBUG`.
 
 ### iOS — package test target, several states per view (`.screen`)

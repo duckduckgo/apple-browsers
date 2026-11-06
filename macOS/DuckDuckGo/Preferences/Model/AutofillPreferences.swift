@@ -32,11 +32,50 @@ protocol AutofillPreferencesPersistor {
     var passwordManager: PasswordManager { get set }
     var debugScriptEnabled: Bool { get set }
     var showInMenuBar: Bool { get set }
+    /// Whether a password manager extension has taken autofill over, so DuckDuckGo leaves all of it alone:
+    /// it neither fills nor saves anything, including the login it would otherwise create without asking
+    /// when the user picks a private Duck Address. Only `WebExtensionAutofillTakeover` writes it.
+    var isManagedByExtension: Bool { get set }
+}
+
+extension AutofillPreferencesPersistor {
+
+    /// Whether DuckDuckGo autofills and offers to save usernames and passwords: the user wants it, and
+    /// no extension has taken autofill over.
+    var isUsernamesAndPasswordsAutofillActive: Bool {
+        askToSaveUsernamesAndPasswords && !isManagedByExtension
+    }
+
+    /// Whether DuckDuckGo autofills and offers to save addresses: the user wants it, and no extension
+    /// has taken autofill over.
+    var isAddressesAutofillActive: Bool {
+        askToSaveAddresses && !isManagedByExtension
+    }
+
+    /// Whether DuckDuckGo autofills and offers to save payment methods: the user wants it, and no
+    /// extension has taken autofill over.
+    var isPaymentMethodsAutofillActive: Bool {
+        askToSavePaymentMethods && !isManagedByExtension
+    }
 }
 
 enum PasswordManager: String, CaseIterable {
     case duckduckgo
     case bitwarden
+
+    /// Where web extensions are supported, the Bitwarden extension replaces the native Bitwarden integration:
+    /// users who have the integration keep it until they leave it, and nobody else can turn it on.
+    func transitioned(to requested: PasswordManager, webExtensionsSupported: Bool) -> PasswordManager {
+        guard webExtensionsSupported, requested == .bitwarden else { return requested }
+        return self
+    }
+
+    static var areWebExtensionsSupported: Bool {
+        if #available(macOS 15.4, *) {
+            return true
+        }
+        return false
+    }
 }
 
 enum PasswordManagementSource: String {
@@ -89,6 +128,7 @@ final class AutofillPreferences: AutofillPreferencesPersistor {
 
     enum Key: String {
         case showPasswordsInMenuBar = "preferences.passwords.show-in-menu-bar"
+        case isManagedByExtension = "preferences.autofill.managed-by-extension"
     }
 
     public var isAutoLockEnabled: Bool {
@@ -145,6 +185,15 @@ final class AutofillPreferences: AutofillPreferencesPersistor {
         }
     }
 
+    var isManagedByExtension: Bool {
+        get {
+            (try? keyValueStore.object(forKey: Key.isManagedByExtension.rawValue) as? Bool) ?? false
+        }
+        set {
+            try? keyValueStore.set(newValue, forKey: Key.isManagedByExtension.rawValue)
+        }
+    }
+
     var passwordManager: PasswordManager {
         get {
             guard AppVersion.isAppStoreBuild else {
@@ -173,7 +222,8 @@ final class AutofillPreferences: AutofillPreferencesPersistor {
                 }
             }
 
-            selectedPasswordManager = newValue.rawValue
+            let current = PasswordManager(rawValue: selectedPasswordManager) ?? .duckduckgo
+            selectedPasswordManager = current.transitioned(to: newValue, webExtensionsSupported: PasswordManager.areWebExtensionsSupported).rawValue
         }
     }
 

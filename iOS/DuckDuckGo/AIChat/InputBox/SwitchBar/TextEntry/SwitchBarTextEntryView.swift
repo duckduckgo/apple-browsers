@@ -64,6 +64,7 @@ class SwitchBarTextEntryView: UIView {
         static let textTopInset: CGFloat = 12
         static let textBottomInset: CGFloat = 12
         static let textHorizontalInset: CGFloat = 16
+        static let compactLeadingContentInset: CGFloat = 8
 
         // Placeholder positioning
         static let placeholderTopOffset: CGFloat = 12
@@ -136,11 +137,22 @@ class SwitchBarTextEntryView: UIView {
 
     private let textView = SwitchBarTextView()
     private let textField = SwitchBarTextField()
+    var isInputFrozen = false {
+        didSet {
+            textView.isInputFrozen = isInputFrozen
+            if isInputFrozen { mentionHandler?.dismiss() }
+        }
+    }
     private let placeholderLabel = UILabel()
     private var buttonsView = SwitchBarButtonsView()
     private var currentButtonState: SwitchBarButtonState {
         get { buttonsView.buttonState }
         set { buttonsView.buttonState = newValue }
+    }
+
+    var aiChatShortcutEmptyInputMenu: UIMenu? {
+        get { buttonsView.aiChatShortcutEmptyInputMenu }
+        set { buttonsView.aiChatShortcutEmptyInputMenu = newValue }
     }
 
     private var currentMode: TextEntryMode {
@@ -210,8 +222,12 @@ class SwitchBarTextEntryView: UIView {
         handler.isUsingExpandedBottomBarHeight
     }
 
+    private var usesExpandedTopPlaceholderLayout: Bool {
+        isExpandable && handler.isTopBarPosition && handler.usesExpandedAIChatTextEntryLayout && !handler.usesLegacyLayoutMetrics
+    }
+
     private var usesTopAlignedPlaceholder: Bool {
-        currentPose.usesTopAlignedPlaceholder
+        currentPose.usesTopAlignedPlaceholder || usesExpandedTopPlaceholderLayout
     }
 
     private var cancellables = Set<AnyCancellable>()
@@ -219,8 +235,10 @@ class SwitchBarTextEntryView: UIView {
     private var heightConstraint: NSLayoutConstraint?
     private var buttonsTrailingConstraint: NSLayoutConstraint?
     private var buttonsCenterYConstraint: NSLayoutConstraint?
+    private var preferredButtonsWidthConstraint: NSLayoutConstraint?
     private var placeholderTopConstraint: NSLayoutConstraint?
     private var placeholderCenterYConstraint: NSLayoutConstraint?
+    private var placeholderLeadingConstraint: NSLayoutConstraint?
 
     private var wasTextEmptyForAutocorrection: Bool = true
 
@@ -231,6 +249,7 @@ class SwitchBarTextEntryView: UIView {
     var canExpandOnSelectionChange = false
 
     var hasBeenInteractedWith = false
+    private var needsTextHeightUpdate = false
     var isURL: Bool {
         let text = usesTextField ? (textField.text ?? "") : (textView.text ?? "")
         return URL(string: text)?.navigationalScheme != nil
@@ -256,7 +275,7 @@ class SwitchBarTextEntryView: UIView {
     }
 
     func updatePoseForCurrentState() {
-        updatePlaceholderVerticalAlignment()
+        updatePlaceholderLayout()
         updateTextViewHeight()
     }
 
@@ -265,6 +284,15 @@ class SwitchBarTextEntryView: UIView {
     var placeholderTextAlignment: NSTextAlignment = .natural {
         didSet {
             updatePlaceholderAlignment()
+        }
+    }
+
+    /// Use a smaller inset when a back button shares the input row.
+    var usesCompactLeadingContentInset = false {
+        didSet {
+            guard usesCompactLeadingContentInset != oldValue else { return }
+            placeholderLeadingConstraint?.constant = usesCompactLeadingContentInset ? Constants.compactLeadingContentInset : placeholderHorizontalOffset
+            adjustTextViewContentInset()
         }
     }
 
@@ -393,14 +421,20 @@ class SwitchBarTextEntryView: UIView {
 
     override func canPerformAction(_ action: Selector, withSender sender: Any?) -> Bool {
         if action == #selector(pasteURLAndGo) {
-            return UIPasteboard.general.hasStrings
+            return !isInputFrozen && textView.pasteboard().hasStrings
         }
         return super.canPerformAction(action, withSender: sender)
     }
 
-    @objc private func pasteURLAndGo() {
-        guard let pastedText = UIPasteboard.general.string,
+    @objc func pasteURLAndGo() {
+        guard !isInputFrozen, !handler.isInputBlockedByUsageLimit,
+              let pastedText = textView.pasteboard().string,
               !pastedText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return }
+        if AttachmentPasteRouting.routeInsertedText(pastedText, with: attachmentPasteHandler) {
+            setQueryText("")
+            handler.submitAIChatAttachmentOnlyPrompt(trigger: .pasteAndGo)
+            return
+        }
         handler.updateCurrentText(pastedText)
         handler.submitText(pastedText, trigger: .pasteAndGo)
     }
@@ -408,7 +442,7 @@ class SwitchBarTextEntryView: UIView {
     /// Appends "Paste & Go" to the long-press menu when the clipboard has text (iOS 16+).
     @available(iOS 16.0, *)
     private func pasteAndGoEditMenu(appendingTo suggestedActions: [UIMenuElement]) -> UIMenu? {
-        guard UIPasteboard.general.hasStrings else { return nil }
+        guard textView.pasteboard().hasStrings else { return nil }
         let pasteAndGo = UIAction(title: UserText.actionPasteAndGo) { [weak self] _ in
             self?.pasteURLAndGo()
         }
@@ -471,12 +505,19 @@ class SwitchBarTextEntryView: UIView {
 
         buttonsTrailingConstraint = buttonsView.trailingAnchor.constraint(equalTo: trailingAnchor)
         buttonsTrailingConstraint?.isActive = true
+        // Let the placeholder fill available width while required button widths still reserve their space.
+        let preferredButtonsWidth = buttonsView.widthAnchor.constraint(equalToConstant: 0)
+        preferredButtonsWidth.priority = .defaultHigh
+        preferredButtonsWidthConstraint = preferredButtonsWidth
         let buttonsCenterY = buttonsView.centerYAnchor.constraint(equalTo: topAnchor, constant: trailingButtonsRowHeight / 2)
         buttonsCenterYConstraint = buttonsCenterY
         let placeholderTopConstraint = placeholderLabel.topAnchor.constraint(equalTo: textView.topAnchor, constant: Constants.placeholderTopOffset)
         let placeholderCenterYConstraint = placeholderLabel.centerYAnchor.constraint(equalTo: textView.centerYAnchor)
+        let placeholderLeadingConstraint = placeholderLabel.leadingAnchor.constraint(equalTo: textView.leadingAnchor,
+                                                                                      constant: placeholderHorizontalOffset)
         self.placeholderTopConstraint = placeholderTopConstraint
         self.placeholderCenterYConstraint = placeholderCenterYConstraint
+        self.placeholderLeadingConstraint = placeholderLeadingConstraint
         placeholderTopConstraint.isActive = false
 
         NSLayoutConstraint.activate([
@@ -491,7 +532,7 @@ class SwitchBarTextEntryView: UIView {
             textField.trailingAnchor.constraint(equalTo: trailingAnchor),
 
             placeholderCenterYConstraint,
-            placeholderLabel.leadingAnchor.constraint(equalTo: textView.leadingAnchor, constant: placeholderHorizontalOffset),
+            placeholderLeadingConstraint,
             // Trail to the buttons so a visible stop / search-go-to / voice button truncates the
             // placeholder. When `.noButtons`, buttonsView has zero width so this is a no-op.
             placeholderLabel.trailingAnchor.constraint(equalTo: buttonsView.leadingAnchor),
@@ -681,7 +722,8 @@ class SwitchBarTextEntryView: UIView {
         placeholderLabel.textAlignment = currentButtonState.showsAnyButton ? .natural : placeholderTextAlignment
     }
 
-    private func updatePlaceholderVerticalAlignment() {
+    private func updatePlaceholderLayout() {
+        preferredButtonsWidthConstraint?.isActive = usesExpandedTopPlaceholderLayout
         guard placeholderTopConstraint?.isActive != usesTopAlignedPlaceholder else { return }
 
         if usesTopAlignedPlaceholder {
@@ -717,14 +759,16 @@ class SwitchBarTextEntryView: UIView {
             let fittingWidth = buttonsView.systemLayoutSizeFitting(UIView.layoutFittingCompressedSize).width
             let buttonsWidth = currentButtonState.showsAnyButton ? fittingWidth : 0
             let rightInset = buttonsWidth > 0 ? buttonsWidth : textHorizontalInset
-            textField.textLeftInset = textHorizontalInset + fragmentPadding
+            textField.textLeftInset = usesCompactLeadingContentInset ? Constants.compactLeadingContentInset : textHorizontalInset + fragmentPadding
             textField.textRightInset = rightInset + fragmentPadding
         } else {
             let buttonsIntersectionWidth = textView.frame.intersection(buttonsView.frame).width
             let rightInset = currentButtonState.showsAnyButton ? buttonsIntersectionWidth : textHorizontalInset
+            // Account for glyph padding so the text and placeholder share the compact inset.
+            let leftInset = usesCompactLeadingContentInset ? Constants.compactLeadingContentInset - fragmentPadding : textHorizontalInset
             textView.textContainerInset = UIEdgeInsets(
                 top: Constants.textTopInset,
-                left: textHorizontalInset,
+                left: leftInset,
                 bottom: Constants.textBottomInset,
                 right: rightInset
             )
@@ -734,12 +778,11 @@ class SwitchBarTextEntryView: UIView {
     override func layoutSubviews() {
         super.layoutSubviews()
 
-        // UITextField inset is pre-computed from intrinsic button sizes and only changes when
-        // button state changes — skip recomputing on every animation-frame layout pass.
-        if !usesTextField {
+        if needsTextHeightUpdate || !usesTextField {
             adjustTextViewContentInset()
         }
-        if !hasBeenInteractedWith {
+        if needsTextHeightUpdate || !hasBeenInteractedWith {
+            needsTextHeightUpdate = false
             updateTextViewHeight()
         }
     }
@@ -747,9 +790,8 @@ class SwitchBarTextEntryView: UIView {
     override func traitCollectionDidChange(_ previousTraitCollection: UITraitCollection?) {
         super.traitCollectionDidChange(previousTraitCollection)
         if previousTraitCollection?.preferredContentSizeCategory != traitCollection.preferredContentSizeCategory {
-            /// Dynamic Type size changed, calculate views layout
-            updateTextViewHeight()
-            adjustTextViewContentInset()
+            needsTextHeightUpdate = true
+            setNeedsLayout()
         }
     }
 
@@ -1013,7 +1055,7 @@ class SwitchBarTextEntryView: UIView {
     }
 
     func insertNewlineAtCursor() {
-        guard !usesTextField else { return }
+        guard !isInputFrozen, !usesTextField else { return }
         let selectedRange = textView.selectedTextRange
             ?? textView.textRange(from: textView.endOfDocument, to: textView.endOfDocument)
         if let selectedRange {
@@ -1113,6 +1155,10 @@ class SwitchBarTextEntryView: UIView {
     }
 
     @objc private func textFieldEditingChanged() {
+        guard !isInputFrozen else {
+            textField.text = handler.currentText
+            return
+        }
         hasBeenInteractedWith = true
         updatePlaceholderVisibility()
         handler.updateCurrentText((textField.text ?? "").strippingDictationPlaceholder)
@@ -1160,6 +1206,10 @@ extension SwitchBarTextEntryView: UITextViewDelegate {
     }
 
     func textViewDidChange(_ textView: UITextView) {
+        guard !isInputFrozen else {
+            textView.text = handler.currentText
+            return
+        }
         hasBeenInteractedWith = true
         
         updatePlaceholderVisibility()
@@ -1180,9 +1230,8 @@ extension SwitchBarTextEntryView: UITextViewDelegate {
     }
 
     func textView(_ textView: UITextView, shouldChangeTextIn range: NSRange, replacementText text: String) -> Bool {
-        // Refusing the edit rather than clearing `isEditable`: that would end editing and take the
-        // keyboard, and the card explaining the block down with it.
-        guard !handler.isInputBlockedByUsageLimit else { return false }
+        // Refuse edits without ending editing, so the keyboard stays visible.
+        guard !handler.isInputBlockedByUsageLimit, !isInputFrozen else { return false }
         if text == "\n" {
             if currentMode == .aiChat && !handler.submitsAIChatOnKeyboardReturn {
                 return true
@@ -1192,6 +1241,13 @@ extension SwitchBarTextEntryView: UITextViewDelegate {
             if !currentText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
                 handler.submitText(currentText)
             }
+            return false
+        }
+        if #available(iOS 18, *), textView.isWritingToolsActive {
+            return true
+        }
+        if AttachmentPasteRouting.routeInsertedText(text, with: attachmentPasteHandler) {
+            PastedTextInsertion.removeReplacedSelection(in: textView, range: range)
             return false
         }
         return true
@@ -1204,6 +1260,10 @@ extension SwitchBarTextEntryView: UITextViewDelegate {
 }
 
 extension SwitchBarTextEntryView: UITextFieldDelegate {
+
+    func textField(_ textField: UITextField, shouldChangeCharactersIn range: NSRange, replacementString string: String) -> Bool {
+        !isInputFrozen
+    }
 
     @available(iOS 16.0, *)
     func textField(_ textField: UITextField, editMenuForCharactersIn range: NSRange, suggestedActions: [UIMenuElement]) -> UIMenu? {
@@ -1222,7 +1282,7 @@ extension SwitchBarTextEntryView: UITextFieldDelegate {
     }
 
     func textFieldShouldReturn(_ textField: UITextField) -> Bool {
-        guard usesTextField else { return false }
+        guard usesTextField, !isInputFrozen else { return false }
         fireKeyboardGoPressedPixel()
         let currentText = textField.text ?? ""
         if !currentText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {

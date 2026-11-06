@@ -299,13 +299,13 @@ final class CPMBackgroundWebViewDelegateProxyTests: XCTestCase {
 
         recorder.backgroundWebView(webView, webContentProcessDidTerminateWith: .crash)
         clock = clock.addingTimeInterval(42)
-        var parameters = recorder.snapshot().pixelParameters
-        XCTAssertEqual(parameters[CPMMessagingDiagnostics.ParameterName.backgroundEvents], "load@1m,view@1m,died_crash@1m")
+        var events = CPMMessagingDiagnostics.backgroundEventsValue(recorder.snapshot().backgroundEvents)
+        XCTAssertEqual(events, "load@1m,view@1m,died_crash@1m")
 
         // Responsiveness callbacks for a view that is not the current one are ignored.
         recorder.backgroundWebViewWebProcessDidBecomeUnresponsive(WKWebView(frame: .zero))
-        parameters = recorder.snapshot().pixelParameters
-        XCTAssertEqual(parameters[CPMMessagingDiagnostics.ParameterName.backgroundEvents], "load@1m,view@1m,died_crash@1m")
+        events = CPMMessagingDiagnostics.backgroundEventsValue(recorder.snapshot().backgroundEvents)
+        XCTAssertEqual(events, "load@1m,view@1m,died_crash@1m")
     }
 
     func testGraveyardIsDisabledByDefault() async throws {
@@ -377,7 +377,7 @@ final class CPMBackgroundWebViewDelegateProxyTests: XCTestCase {
         scheduledReleases[1].workItem.perform()
 
         XCTAssertEqual(recorder.backgroundWebViewGraveyard.retainedWebViewCount, 0)
-        let events = recorder.snapshot().pixelParameters[CPMMessagingDiagnostics.ParameterName.backgroundEvents] ?? ""
+        let events = CPMMessagingDiagnostics.backgroundEventsValue(recorder.snapshot().backgroundEvents)
         XCTAssertTrue(events.contains("hold@"), events)
         XCTAssertTrue(events.contains("release@"), events)
     }
@@ -453,23 +453,6 @@ final class CPMBackgroundWebViewDelegateProxyTests: XCTestCase {
         XCTAssertFalse(events.contains("release"), events.description)
     }
 
-    func testTerminationTreatmentAttributionIsConsumedOnce() async throws {
-        let flags = CPMDiagnosticsStaticFeatureFlags(isBackgroundGraveyardTreatmentEnabled: true)
-        let recorder = CPMMessagingDiagnosticsRecorder(
-            tabResolver: { _ in nil },
-            observesMemoryPressure: false,
-            featureFlags: flags
-        )
-        let context = try await makeContext()
-        recorder.contextWillLoad(context)
-        let webView = WKWebView(frame: .zero)
-        recorder.didCreateBackgroundWebView(webView, for: context)
-        recorder.backgroundWebView(webView, webContentProcessDidTerminateWith: .crash)
-
-        XCTAssertEqual(recorder.consumeBackgroundGraveyardTreatmentState(), true)
-        XCTAssertNil(recorder.consumeBackgroundGraveyardTreatmentState())
-    }
-
     func testWhenProxyDisabledThenAllSurvivingViewDelegatesAreRestored() async throws {
         let flags = CPMDiagnosticsStaticFeatureFlags()
         let recorder = CPMMessagingDiagnosticsRecorder(tabResolver: { _ in nil }, observesMemoryPressure: false, featureFlags: flags)
@@ -542,7 +525,7 @@ final class CPMBackgroundWebViewDelegateProxyTests: XCTestCase {
         try await Task.sleep(nanoseconds: 100_000_000)
         XCTAssertTrue(CPMBackgroundWebViewDelegateProxy.isInstalled(on: webView))
 
-        let events = recorder.snapshot().pixelParameters[CPMMessagingDiagnostics.ParameterName.backgroundEvents] ?? ""
+        let events = CPMMessagingDiagnostics.backgroundEventsValue(recorder.snapshot().backgroundEvents)
         XCTAssertTrue(events.contains("proxy_on@"), events)
         XCTAssertTrue(events.contains("proxy_off@"), events)
     }

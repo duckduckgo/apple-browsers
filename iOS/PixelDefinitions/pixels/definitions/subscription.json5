@@ -484,14 +484,14 @@
         "owners": ["hanyutang-sandra"],
         "triggers": ["other"],
         "suffixes": ["platform", "form_factor"],
-        "parameters": ["appVersion", "subscriptionFunnelOrigin"]
+        "parameters": ["appVersion", "subscriptionPageOrigin"]
     },
     "m_privacy-pro_terms-conditions_subscribe_click": {
         "description": "Fired when the user taps the Subscribe CTA on the subscription offer page. Mid-funnel pixel preceding the purchase attempt outcome.",
         "owners": ["hanyutang-sandra"],
         "triggers": ["user_submitted"],
         "suffixes": ["legacy_daily_count", "platform", "form_factor"],
-        "parameters": ["appVersion", "subscriptionFunnelOrigin"]
+        "parameters": ["appVersion", "subscriptionPageOrigin"]
     },
 
     "m_subscribe": {
@@ -499,7 +499,18 @@
         "owners": ["hanyutang-sandra"],
         "triggers": ["other"],
         "suffixes": ["platform", "form_factor"],
-        "parameters": ["appVersion", "subscriptionFunnelOrigin", "locale", "freeTrial"]
+        "parameters": [
+            "appVersion",
+            {
+                "key": "origin",
+                "type": "string",
+                "description": "Origin from the subscription page URL, sent as-is. Conversion pixel, so campaign origins are allowed in addition to the `subscriptionFunnelOrigin` values.",
+                "pattern": "^funnel_",
+                "examples": ["funnel_appmenu_ios", "funnel_appsettings_ios", "funnel_onboarding_ios", "funnel_appsettings_ios_winback"]
+            },
+            "locale",
+            "freeTrial"
+        ]
     },
 
     // Defined in https://app.asana.com/1/137249556945/task/1210959493759232
@@ -1045,6 +1056,51 @@
                 "type": "string",
                 "description": "Why the flow never launched",
                 "enum": ["missingPersistor", "emptyChecklist", "notPresentable"]
+            }
+        ]
+    },
+    // Subscription Cancellation Flow
+    "subscription_cancellation_cancel_click": {
+        "description": "Fired when the user taps 'Cancel Subscription' in Subscription Settings, which opens the subscription cancellation flow.",
+        "owners": ["hanyutang-sandra"],
+        "triggers": ["user_interaction"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": ["appVersion", "pixelSource"]
+    },
+    "subscription_cancellation_app_store_cancelled": {
+        "description": "Fired when the subscription is found no longer set to auto-renew after the user returns from the App Store subscription management screen opened by the cancellation flow.",
+        "owners": ["hanyutang-sandra"],
+        "triggers": ["feature_lifecycle"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": ["appVersion", "pixelSource"]
+    },
+    "subscription_cancellation_flow_load_failure": {
+        "description": "Fired when a cancellation flow page fails to load, either from a network error or an HTTP 4xx/5xx response.",
+        "owners": ["hanyutang-sandra"],
+        "triggers": ["exception"],
+        "suffixes": ["first_daily_count", "platform", "form_factor"],
+        "parameters": ["appVersion", "pixelSource", "errorDomain", "errorCode", "underlyingErrorDomain", "underlyingErrorCode"]
+    },
+    "subscription_cancellation_feature-info_failure": {
+        "description": "Fired when the cancellation flow page asks to show a feature info sheet for a feature the app does not recognize, so no sheet is shown.",
+        "owners": ["hanyutang-sandra"],
+        "triggers": ["exception"],
+        "suffixes": ["first_daily_count", "platform", "form_factor"],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            {
+                "key": "entitlement",
+                "type": "string",
+                "description": "The entitlement the page asked to show, as the app decoded it. 'unknown' when the name did not match any known entitlement.",
+                "enum": [
+                    "Network Protection",
+                    "Data Broker Protection",
+                    "Identity Theft Restoration",
+                    "Global Identity Theft Restoration",
+                    "Duck.ai",
+                    "unknown"
+                ]
             }
         ]
     },

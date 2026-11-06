@@ -66,8 +66,8 @@ enum AIChatBonusRecordRules {
     /// Keeps the stored record while a campaign is stored, whether the boost is pending, active or ended:
     /// the claim was already made, and an ended campaign can't be claimed again on this install.
     ///
-    /// The new record carries over `dismissed`, so a user who dismissed the offer earlier still
-    /// doesn't see the mini promo.
+    /// The new record carries over `dismissedCampaignName`, so a user who dismissed the offer earlier
+    /// still doesn't see the in-line promo.
     ///
     /// - Parameters:
     ///   - record: The stored record, or `nil` when the device has none (first claim).
@@ -86,7 +86,7 @@ enum AIChatBonusRecordRules {
         return AIChatBonusRecord(
             campaignName: campaignName,
             bonusId: bonusId,
-            dismissed: record?.dismissed ?? false
+            dismissedCampaignName: record?.dismissedCampaignName
         )
     }
 
@@ -140,22 +140,24 @@ enum AIChatBonusRecordRules {
         return .write(record)
     }
 
-    /// Marks the offer as dismissed.
+    /// Marks the offer as dismissed for `campaignName`, replacing any campaign dismissed earlier.
     ///
     /// Handles `aiChatBonusDismiss`, sent when the activation modal is closed without claiming.
     ///
-    /// - Parameter record: The stored record, or `nil` when the device has none.
+    /// - Parameters:
+    ///   - record: The stored record, or `nil` when the device has none.
+    ///   - campaignName: The campaign whose offer was dismissed, from Duck.ai.
     /// - Returns: The record to write.
-    static func dismiss(_ record: AIChatBonusRecord?) -> AIChatBonusRecordUpdate {
+    static func dismiss(_ record: AIChatBonusRecord?, campaignName: String) -> AIChatBonusRecordUpdate {
         var record = record ?? AIChatBonusRecord()
-        record.dismissed = true
+        record.dismissedCampaignName = campaignName
         return .write(record)
     }
 
     /// Ends the boost, keeping only the campaign.
     ///
     /// Handles `aiChatBonusEnd`, sent when the boost expired, was opted out of or was replaced by a
-    /// subscription. Clears the Bonus ID, terms, `lastRedeemAttemptAt` and `dismissed`.
+    /// subscription. Clears the Bonus ID, terms, `lastRedeemAttemptAt` and `dismissedCampaignName`.
     /// Keeping the campaign means this install can't claim the same offer again.
     ///
     /// - Parameter record: The stored record, or `nil` when the device has none.

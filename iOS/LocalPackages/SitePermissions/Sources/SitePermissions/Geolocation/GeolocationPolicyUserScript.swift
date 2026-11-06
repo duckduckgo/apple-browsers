@@ -21,18 +21,14 @@ import Foundation
 import UserScript
 import WebKit
 
-/// Keeps sandbox signing and document policy separate from the page's JavaScript realm.
+/// Keeps sandbox and document policy checks separate from the page's JavaScript realm.
 public final class GeolocationPolicyUserScript: NSObject, UserScript {
 
     public static var bundle: Bundle { .module }
 
-    private static let signingToken = UUID().uuidString + UUID().uuidString
-
     public lazy var source: String = {
         do {
-            return try Self.loadJS("geolocationPolicy",
-                                   from: Self.bundle,
-                                   withReplacements: ["${SIGNING_TOKEN}": Self.signingToken])
+            return try Self.loadJS("geolocationPolicy", from: Self.bundle)
         } catch {
             fatalError("Failed to load JS for GeolocationPolicyUserScript: \(error.localizedDescription)")
         }

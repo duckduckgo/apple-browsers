@@ -18,13 +18,19 @@
 
 import Combine
 import Foundation
-import Security
 import Testing
 @testable import AIChat
 
 @Suite("AIChatBonus - Service Tests")
 struct AIChatBonusServiceTests {
     private static let now = Date(timeIntervalSince1970: 1_780_000_000.123_4)
+
+    private static let expired = AIChatBonusRecord(
+        campaignName: AIChatBonusRecordMock.campaignName,
+        bonusId: AIChatBonusRecordMock.bonusId,
+        terms: AIChatBonusRecord.Terms(multiplier: 2, expiresAt: now.timeIntervalSince1970 - 1),
+        lastRedeemAttemptAt: 1_770_000_000_000
+    )
 
     private let store = MockAIChatBonusStore()
     private let pixelFiring = MockAIChatBonusPixelFiring()
@@ -156,29 +162,29 @@ struct AIChatBonusServiceTests {
     @Test("Check a dismiss is stored")
     func dismissIsStored() throws {
         // WHEN
-        try sut.dismiss()
+        try sut.dismiss(campaignName: AIChatBonusRecordMock.campaignName)
 
         // THEN
-        #expect(store.storedRecord == AIChatBonusRecord(dismissed: true))
+        #expect(store.storedRecord == AIChatBonusRecordMock.dismissedOnly)
     }
 
     @Test("Check a repeated dismiss writes nothing")
     func repeatedDismissWritesNothing() throws {
         // GIVEN
-        try sut.dismiss()
+        try sut.dismiss(campaignName: AIChatBonusRecordMock.campaignName)
 
         // WHEN
-        try sut.dismiss()
+        try sut.dismiss(campaignName: AIChatBonusRecordMock.campaignName)
 
         // THEN
-        #expect(store.storedRecord == AIChatBonusRecord(dismissed: true))
+        #expect(store.storedRecord == AIChatBonusRecordMock.dismissedOnly)
         #expect(store.writeCallCount == 1)
     }
 
     @Test("Check an end keeps only the campaign")
     func endKeepsOnlyTheCampaign() throws {
         // GIVEN
-        let record = AIChatBonusRecordMock.active.with { $0.dismissed = true }
+        let record = AIChatBonusRecordMock.active.with { $0.dismissedCampaignName = AIChatBonusRecordMock.campaignName }
         store.storedRecord = record
 
         // WHEN
@@ -229,10 +235,10 @@ struct AIChatBonusServiceTests {
     @Test("Check the boost state throws when the record can't be read")
     func boostStateThrowsWhenTheReadFails() {
         // GIVEN
-        store.readError = AIChatBonusStoreError.readFailed(errSecInteractionNotAllowed)
+        store.readError = AIChatBonusStoreError.readFailed(domain: NSCocoaErrorDomain, code: NSFileReadNoPermissionError)
 
         // WHEN / THEN
-        #expect(throws: AIChatBonusStoreError.readFailed(errSecInteractionNotAllowed)) {
+        #expect(throws: AIChatBonusStoreError.readFailed(domain: NSCocoaErrorDomain, code: NSFileReadNoPermissionError)) {
             try sut.isBoostActive()
         }
     }
@@ -275,12 +281,12 @@ struct AIChatBonusServiceTests {
         let published = PublishedValues(sut.recordPublisher)
 
         // WHEN
-        try sut.dismiss()
-        try sut.dismiss()
+        try sut.dismiss(campaignName: AIChatBonusRecordMock.campaignName)
+        try sut.dismiss(campaignName: AIChatBonusRecordMock.campaignName)
 
         // THEN
         await drainMainQueue()
-        #expect(published.values == [AIChatBonusRecord(dismissed: true)])
+        #expect(published.values == [AIChatBonusRecordMock.dismissedOnly])
     }
 
     @available(iOS 16, macOS 13, *)
@@ -317,11 +323,11 @@ struct AIChatBonusServiceTests {
     @Test("Check a failed write publishes nothing", .timeLimit(.minutes(1)))
     func failedWritePublishesNothing() async {
         // GIVEN
-        store.writeError = AIChatBonusStoreError.writeFailed(errSecNotAvailable)
+        store.writeError = AIChatBonusStoreError.writeFailed(domain: NSCocoaErrorDomain, code: NSFileWriteOutOfSpaceError)
         let published = PublishedValues(sut.recordPublisher)
 
         // WHEN
-        try? sut.dismiss()
+        try? sut.dismiss(campaignName: AIChatBonusRecordMock.campaignName)
 
         // THEN
         await drainMainQueue()
@@ -332,19 +338,19 @@ struct AIChatBonusServiceTests {
     @Test("Check the next change publishes after a failed write", .timeLimit(.minutes(1)))
     func nextChangePublishesAfterAFailedWrite() async throws {
         // GIVEN
-        store.writeError = AIChatBonusStoreError.writeFailed(errSecNotAvailable)
-        #expect(throws: AIChatBonusStoreError.writeFailed(errSecNotAvailable)) {
+        store.writeError = AIChatBonusStoreError.writeFailed(domain: NSCocoaErrorDomain, code: NSFileWriteOutOfSpaceError)
+        #expect(throws: AIChatBonusStoreError.writeFailed(domain: NSCocoaErrorDomain, code: NSFileWriteOutOfSpaceError)) {
             try sut.claim(campaignName: AIChatBonusRecordMock.campaignName)
         }
         store.writeError = nil
         let published = PublishedValues(sut.recordPublisher)
 
         // WHEN
-        try sut.dismiss()
+        try sut.dismiss(campaignName: AIChatBonusRecordMock.campaignName)
 
         // THEN
         await drainMainQueue()
-        #expect(published.values == [AIChatBonusRecord(dismissed: true)])
+        #expect(published.values == [AIChatBonusRecordMock.dismissedOnly])
     }
 
     // Must run off main: main has to stay free to deliver the record while this thread waits.
@@ -363,13 +369,119 @@ struct AIChatBonusServiceTests {
         // WHEN
         // Write on another thread so a regressed subscriber can't run, and deadlock, on the test thread: the wait below fails instead of hanging.
         DispatchQueue.global().async { [sut] in
-            try? sut.dismiss()
+            try? sut.dismiss(campaignName: AIChatBonusRecordMock.campaignName)
         }
 
         // THEN
         #expect(readFinished.wait(timeout: .now() + 5) == .success)
-        #expect(recordReadBySubscriber == AIChatBonusRecord(dismissed: true))
+        #expect(recordReadBySubscriber == AIChatBonusRecordMock.dismissedOnly)
         cancellable.cancel()
+    }
+
+    // MARK: - Expired boost
+
+    @Test("Check reading an expired boost ends it and keeps the campaign")
+    func readingAnExpiredBoostEndsIt() throws {
+        // GIVEN
+        store.storedRecord = Self.expired
+
+        // WHEN
+        let result = try sut.record()
+
+        // THEN
+        #expect(result == AIChatBonusRecordMock.ended)
+        #expect(store.storedRecord == AIChatBonusRecordMock.ended)
+    }
+
+    @Test("Check reading an unexpired boost leaves it as it is")
+    func readingAnUnexpiredBoostLeavesIt() throws {
+        // GIVEN
+        store.storedRecord = AIChatBonusRecordMock.active
+
+        // WHEN
+        let result = try sut.record()
+
+        // THEN
+        #expect(result == AIChatBonusRecordMock.active)
+        #expect(store.writeCallCount == 0)
+    }
+
+    @Test("Check reading a pending claim leaves it as it is")
+    func readingAPendingClaimLeavesIt() throws {
+        // GIVEN
+        store.storedRecord = AIChatBonusRecordMock.pending
+
+        // WHEN
+        let result = try sut.record()
+
+        // THEN
+        #expect(result == AIChatBonusRecordMock.pending)
+        #expect(store.writeCallCount == 0)
+    }
+
+    @Test("Check the boost isn't active once an expired record is ended")
+    func expiredBoostIsNotActive() throws {
+        // GIVEN
+        store.storedRecord = Self.expired
+
+        // WHEN
+        let result = try sut.isBoostActive()
+
+        // THEN
+        #expect(!result)
+        #expect(store.storedRecord == AIChatBonusRecordMock.ended)
+    }
+
+    @Test("Check ending an expired boost ends it")
+    func endBoostIfExpiredEndsAnExpiredBoost() throws {
+        // GIVEN
+        store.storedRecord = Self.expired
+
+        // WHEN
+        try sut.endBoostIfExpired()
+
+        // THEN
+        #expect(store.storedRecord == AIChatBonusRecordMock.ended)
+    }
+
+    @Test("Check a failed write while ending an expired boost still returns the record")
+    func failedExpiryWriteStillReturnsTheRecord() throws {
+        // GIVEN
+        store.storedRecord = Self.expired
+        store.writeError = AIChatBonusStoreError.writeFailed(domain: NSCocoaErrorDomain, code: NSFileWriteOutOfSpaceError)
+
+        // WHEN
+        let result = try sut.record()
+
+        // THEN
+        #expect(result == Self.expired)
+        #expect(pixelFiring.storeFailures == [.writeFailed(domain: NSCocoaErrorDomain, code: NSFileWriteOutOfSpaceError)])
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Check ending an expired boost publishes the ended record", .timeLimit(.minutes(1)))
+    func endingAnExpiredBoostPublishes() async throws {
+        // GIVEN
+        store.storedRecord = Self.expired
+        let published = PublishedValues(sut.recordPublisher)
+
+        // WHEN
+        _ = try sut.record()
+
+        // THEN
+        await drainMainQueue()
+        #expect(published.values == [AIChatBonusRecordMock.ended])
+    }
+
+    @Test("Check a failed read while ending an expired boost is passed on")
+    func failedReadWhileEndingAnExpiredBoostIsPassedOn() {
+        // GIVEN
+        store.readError = AIChatBonusStoreError.readFailed(domain: NSCocoaErrorDomain, code: NSFileReadNoPermissionError)
+
+        // WHEN / THEN
+        #expect(throws: AIChatBonusStoreError.readFailed(domain: NSCocoaErrorDomain, code: NSFileReadNoPermissionError)) {
+            try sut.endBoostIfExpired()
+        }
     }
 
     // MARK: - Failures
@@ -377,78 +489,78 @@ struct AIChatBonusServiceTests {
     @Test("Check a failed read stops a claim before any write")
     func failedReadStopsTheClaim() {
         // GIVEN
-        store.readError = AIChatBonusStoreError.readFailed(errSecInteractionNotAllowed)
+        store.readError = AIChatBonusStoreError.readFailed(domain: NSCocoaErrorDomain, code: NSFileReadNoPermissionError)
 
         // WHEN / THEN
-        #expect(throws: AIChatBonusStoreError.readFailed(errSecInteractionNotAllowed)) {
+        #expect(throws: AIChatBonusStoreError.readFailed(domain: NSCocoaErrorDomain, code: NSFileReadNoPermissionError)) {
             try sut.claim(campaignName: AIChatBonusRecordMock.campaignName)
         }
         #expect(store.writeCallCount == 0)
-        #expect(pixelFiring.storeFailures == [.readFailed(errSecInteractionNotAllowed)])
+        #expect(pixelFiring.storeFailures == [.readFailed(domain: NSCocoaErrorDomain, code: NSFileReadNoPermissionError)])
     }
 
     @Test("Check a failed read stops a redeem outcome before any write")
     func failedReadStopsTheRedeemOutcome() {
         // GIVEN
-        store.readError = AIChatBonusStoreError.readFailed(errSecInteractionNotAllowed)
+        store.readError = AIChatBonusStoreError.readFailed(domain: NSCocoaErrorDomain, code: NSFileReadNoPermissionError)
 
         // WHEN / THEN
-        #expect(throws: AIChatBonusStoreError.readFailed(errSecInteractionNotAllowed)) {
+        #expect(throws: AIChatBonusStoreError.readFailed(domain: NSCocoaErrorDomain, code: NSFileReadNoPermissionError)) {
             try sut.applyRedeemOutcome(.success(bonusId: AIChatBonusRecordMock.bonusId, terms: AIChatBonusRecordMock.terms))
         }
         #expect(store.writeCallCount == 0)
-        #expect(pixelFiring.storeFailures == [.readFailed(errSecInteractionNotAllowed)])
+        #expect(pixelFiring.storeFailures == [.readFailed(domain: NSCocoaErrorDomain, code: NSFileReadNoPermissionError)])
     }
 
     @Test("Check a failed read stops a dismiss before any write")
     func failedReadStopsTheDismiss() {
         // GIVEN
-        store.readError = AIChatBonusStoreError.readFailed(errSecInteractionNotAllowed)
+        store.readError = AIChatBonusStoreError.readFailed(domain: NSCocoaErrorDomain, code: NSFileReadNoPermissionError)
 
         // WHEN / THEN
-        #expect(throws: AIChatBonusStoreError.readFailed(errSecInteractionNotAllowed)) {
-            try sut.dismiss()
+        #expect(throws: AIChatBonusStoreError.readFailed(domain: NSCocoaErrorDomain, code: NSFileReadNoPermissionError)) {
+            try sut.dismiss(campaignName: AIChatBonusRecordMock.campaignName)
         }
         #expect(store.writeCallCount == 0)
-        #expect(pixelFiring.storeFailures == [.readFailed(errSecInteractionNotAllowed)])
+        #expect(pixelFiring.storeFailures == [.readFailed(domain: NSCocoaErrorDomain, code: NSFileReadNoPermissionError)])
     }
 
     @Test("Check a failed read stops an end before any write")
     func failedReadStopsTheEnd() {
         // GIVEN
-        store.readError = AIChatBonusStoreError.readFailed(errSecInteractionNotAllowed)
+        store.readError = AIChatBonusStoreError.readFailed(domain: NSCocoaErrorDomain, code: NSFileReadNoPermissionError)
 
         // WHEN / THEN
-        #expect(throws: AIChatBonusStoreError.readFailed(errSecInteractionNotAllowed)) {
+        #expect(throws: AIChatBonusStoreError.readFailed(domain: NSCocoaErrorDomain, code: NSFileReadNoPermissionError)) {
             try sut.end()
         }
         #expect(store.writeCallCount == 0)
-        #expect(pixelFiring.storeFailures == [.readFailed(errSecInteractionNotAllowed)])
+        #expect(pixelFiring.storeFailures == [.readFailed(domain: NSCocoaErrorDomain, code: NSFileReadNoPermissionError)])
     }
 
     @Test("Check a failed read of the record is reported")
     func failedRecordReadIsReported() {
         // GIVEN
-        store.readError = AIChatBonusStoreError.readFailed(errSecInteractionNotAllowed)
+        store.readError = AIChatBonusStoreError.readFailed(domain: NSCocoaErrorDomain, code: NSFileReadNoPermissionError)
 
         // WHEN / THEN
-        #expect(throws: AIChatBonusStoreError.readFailed(errSecInteractionNotAllowed)) {
+        #expect(throws: AIChatBonusStoreError.readFailed(domain: NSCocoaErrorDomain, code: NSFileReadNoPermissionError)) {
             try sut.record()
         }
-        #expect(pixelFiring.storeFailures == [.readFailed(errSecInteractionNotAllowed)])
+        #expect(pixelFiring.storeFailures == [.readFailed(domain: NSCocoaErrorDomain, code: NSFileReadNoPermissionError)])
     }
 
     @Test("Check a failed write is passed on")
     func failedWriteIsPassedOn() {
         // GIVEN
-        store.writeError = AIChatBonusStoreError.writeFailed(errSecNotAvailable)
+        store.writeError = AIChatBonusStoreError.writeFailed(domain: NSCocoaErrorDomain, code: NSFileWriteOutOfSpaceError)
 
         // WHEN / THEN
-        #expect(throws: AIChatBonusStoreError.writeFailed(errSecNotAvailable)) {
+        #expect(throws: AIChatBonusStoreError.writeFailed(domain: NSCocoaErrorDomain, code: NSFileWriteOutOfSpaceError)) {
             try sut.claim(campaignName: AIChatBonusRecordMock.campaignName)
         }
         #expect(store.storedRecord == nil)
-        #expect(pixelFiring.storeFailures == [.writeFailed(errSecNotAvailable)])
+        #expect(pixelFiring.storeFailures == [.writeFailed(domain: NSCocoaErrorDomain, code: NSFileWriteOutOfSpaceError)])
     }
 }
 

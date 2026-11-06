@@ -18,6 +18,7 @@
 
 import XCTest
 import Combine
+import PrivacyConfig
 @testable import DuckDuckGo_Privacy_Browser
 
 final class AutofillPreferencesPersistorMock: AutofillPreferencesPersistor {
@@ -30,6 +31,7 @@ final class AutofillPreferencesPersistorMock: AutofillPreferencesPersistor {
     var autolockLocksFormFilling: Bool = false
     var debugScriptEnabled: Bool = false
     var showInMenuBar: Bool = false
+    var isManagedByExtension: Bool = false
 }
 
 final class UserAuthenticatorMock: UserAuthenticating {
@@ -44,6 +46,9 @@ final class UserAuthenticatorMock: UserAuthenticating {
     func authenticateUser(reason: DeviceAuthenticator.AuthenticationReason) async -> DeviceAuthenticationResult {
         didCallAuthenticate = true
         return _authenticateUser(reason)
+    }
+    func isAuthenticationPromptNeeded(reason: DeviceAuthenticator.AuthenticationReason) -> Bool {
+        true
     }
 }
 
@@ -145,5 +150,97 @@ final class AutofillPreferencesModelTests: XCTestCase {
                                                  neverPromptWebsitesManager: neverPromptWebsitesManager(), syncPromoManager: syncPromoManager)
 
         XCTAssertFalse(model.showSyncPromo)
+    }
+
+    // MARK: - Extension Managing Autofill
+
+    @MainActor
+    func testWhenAnExtensionManagesAutofill_ThenTheModelReportsIt() throws {
+        let persistor = AutofillPreferencesPersistorMock()
+        persistor.isManagedByExtension = true
+
+        let model = try makeModel(persistor: persistor, notificationCenter: NotificationCenter())
+
+        XCTAssertTrue(model.isManagedByExtension)
+    }
+
+    @MainActor
+    func testWhenAnExtensionTakesOverWhileSettingsAreOpen_ThenTheModelFollows() throws {
+        let persistor = AutofillPreferencesPersistorMock()
+        let notificationCenter = NotificationCenter()
+        let model = try makeModel(persistor: persistor, notificationCenter: notificationCenter)
+        XCTAssertFalse(model.isManagedByExtension)
+
+        let updated = expectation(description: "isManagedByExtension updated")
+        let cancellable = model.$isManagedByExtension.dropFirst().sink { _ in updated.fulfill() }
+
+        persistor.isManagedByExtension = true
+        notificationCenter.post(name: .autofillUserSettingsDidChange, object: nil)
+
+        wait(for: [updated], timeout: 1)
+        XCTAssertTrue(model.isManagedByExtension)
+        cancellable.cancel()
+    }
+
+    // MARK: - Password Manager
+
+    @MainActor
+    func testWhenWebExtensionsAreSupportedAndDuckDuckGoUserSelectsBitwarden_ThenDuckDuckGoStaysSelected() throws {
+        let persistor = AutofillPreferencesPersistorMock()
+        let model = try makeModel(persistor: persistor, notificationCenter: NotificationCenter(), areWebExtensionsSupported: true)
+
+        model.passwordManagerSettingsChange(passwordManager: .bitwarden)
+
+        XCTAssertEqual(model.passwordManager, .duckduckgo)
+        XCTAssertEqual(persistor.passwordManager, .duckduckgo)
+    }
+
+    @MainActor
+    func testWhenPasswordManagerChangesWhileSettingsAreOpen_ThenTheModelFollows() throws {
+        let persistor = AutofillPreferencesPersistorMock()
+        persistor.passwordManager = .bitwarden
+        let notificationCenter = NotificationCenter()
+        let model = try makeModel(persistor: persistor, notificationCenter: notificationCenter)
+        XCTAssertEqual(model.passwordManager, .bitwarden)
+
+        let updated = expectation(description: "passwordManager updated")
+        let cancellable = model.$passwordManager.dropFirst().sink { _ in updated.fulfill() }
+
+        persistor.passwordManager = .duckduckgo
+        notificationCenter.post(name: .autofillUserSettingsDidChange, object: nil)
+
+        wait(for: [updated], timeout: 1)
+        XCTAssertEqual(model.passwordManager, .duckduckgo)
+        cancellable.cancel()
+    }
+
+    @MainActor
+    func testPasswordManagerChoiceVisibility() throws {
+        let cases: [(selected: PasswordManager, webExtensionsSupported: Bool, sandboxed: Bool, visible: Bool)] = [
+            (.bitwarden, true, false, true),
+            (.duckduckgo, true, false, false),
+            (.duckduckgo, false, false, true),
+            (.bitwarden, false, false, true),
+            (.bitwarden, true, true, false),
+            (.duckduckgo, false, true, false),
+        ]
+
+        for testCase in cases {
+            let persistor = AutofillPreferencesPersistorMock()
+            persistor.passwordManager = testCase.selected
+            let model = try makeModel(persistor: persistor, notificationCenter: NotificationCenter(),
+                                      areWebExtensionsSupported: testCase.webExtensionsSupported, isSandboxed: testCase.sandboxed)
+
+            XCTAssertEqual(model.isPasswordManagerChoiceVisible, testCase.visible, "\(testCase)")
+        }
+    }
+
+    @MainActor
+    private func makeModel(persistor: AutofillPreferencesPersistorMock, notificationCenter: NotificationCenter,
+                           areWebExtensionsSupported: Bool = true, isSandboxed: Bool = false) throws -> AutofillPreferencesModel {
+        try AutofillPreferencesModel(persistor: persistor, userAuthenticator: UserAuthenticatorMock(),
+                                     neverPromptWebsitesManager: neverPromptWebsitesManager(), syncPromoManager: MockSyncPromoManager(),
+                                     notificationCenter: notificationCenter, areWebExtensionsSupported: areWebExtensionsSupported,
+                                     isSandboxed: isSandboxed)
     }
 }

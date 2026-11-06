@@ -1,4 +1,7 @@
 /* No comment provided by engineer. */
+" " = " ";
+
+/* No comment provided by engineer. */
 "-config.rollout.<parent>.<subfeature> true/false" = "-config.rollout.<parent>.<subfeature> true/false";
 
 /* No comment provided by engineer. */
@@ -382,6 +385,21 @@
 /* Title for the New Tab row in the Duck.ai tab header Plus (+) menu */
 "aichat.header.plusMenu.newTab" = "Jauna cilne";
 
+/* Section header in the Duck.ai tab header Plus (+) menu; every row below it opens a new tab */
+"aichat.header.plusMenu.newTabSection" = "Jauna cilne";
+
+/* Row in the New Tab section of the Duck.ai tab header Plus (+) menu — opens a new Duck.ai chat in a new tab */
+"aichat.header.plusMenu.newTabSection.chat" = "Tērzēšana";
+
+/* Row in the New Tab section of the Duck.ai tab header Plus (+) menu — opens Duck.ai in image generation mode in a new tab */
+"aichat.header.plusMenu.newTabSection.image" = "Attēls";
+
+/* Row in the Duck.ai tab header Plus (+) menu — opens a new tab in search mode */
+"aichat.header.plusMenu.newTabSection.search" = "Meklēšana";
+
+/* Row in the New Tab section of the Duck.ai tab header Plus (+) menu — opens a new Duck.ai voice chat in a new tab */
+"aichat.header.plusMenu.newTabSection.voiceChat" = "Balss tērzēšana";
+
 /* Title for the New Voice Chat row in the Duck.ai tab header Plus (+) menu */
 "aichat.header.plusMenu.newVoiceChat" = "Jauna balss tērzēšana";
 
@@ -458,7 +476,7 @@
 "aichat.model-picker.pro-plan-exclusive" = "Ekskluzīvi Pro plānam";
 
 /* Section header for subscription models shown to users who are not eligible for a free trial */
-"aichat.model-picker.subscriber-exclusive" = "Tikai abonentiem";
+"aichat.model-picker.subscriber-exclusive" = "Atbloķē ar abonementu";
 
 /* Section header for subscription models shown to free users */
 "aichat.model-picker.try-free" = "Izmēģini bez maksas";
@@ -468,6 +486,27 @@
 
 /* Spoken name of the inline attachment icon in the multi-tab feature promotion, used in the VoiceOver accessibility label. */
 "aichat.multiTab.promotion.attachment" = "pielikums";
+
+/* VoiceOver label of the Duck.ai attachment chip holding a long block of text the user pasted */
+"aichat.pasted.text.accessibility.label" = "Ielīmētais teksts";
+
+/* Character counter under the title of the Duck.ai pasted-text sheet, e.g. 923/16,000. %1$d is the number of characters in the pasted text, %2$d is the most it may hold. Keep both numbers; change the slash only if your language writes this kind of counter differently. */
+"aichat.pasted.text.count" = "%1$d/%2$d";
+
+/* What VoiceOver reads for the character counter in the Duck.ai pasted-text sheet, e.g. 923 of 16,000 characters. %1$d is the number of characters in the pasted text, %2$d is the most it may hold */
+"aichat.pasted.text.count.accessibility" = "%1$d no %2$d rakstzīmēm";
+
+/* Title of the sheet that edits a long block of text the user pasted into Duck.ai */
+"aichat.pasted.text.edit.sheet.title" = "Rediģēt tekstu";
+
+/* VoiceOver action on a Duck.ai pasted-text attachment chip that removes it from the message */
+"aichat.pasted.text.remove" = "Noņemt";
+
+/* Title of the sheet that shows a long block of text the user pasted into a Duck.ai message that was already sent */
+"aichat.pasted.text.sheet.title" = "Ielīmētais teksts";
+
+/* Error shown below the Duck.ai input while the message is longer than allowed, e.g. Please try a shorter message. 17002/16000. %1$d is the number of characters in the message, %2$d is the most characters allowed */
+"aichat.prompt.too.long.format" = "Lūdzu, mēģini ziņojumu saīsināt. %1$d/%2$d";
 
 /* Subtitle for the extended reasoning mode in the Duck.ai reasoning picker */
 "aichat.reasoning.extended.subtitle" = "Analītiskiem uzdevumiem";
@@ -1204,9 +1243,6 @@
 /* Description of autofill onboarding prompt's secure storage feature with a string describing the available biometry + passcode as a parameter */
 "autofill.onboarding.key-features.secure-storage.biometric.description" = "Paroles tiek šifrētas, saglabātas ierīcē un bloķētas ar %@.";
 
-/* Description of autofill onboarding prompt's secure storage feature */
-"autofill.onboarding.key-features.secure-storage.description" = "Passwords are encrypted, stored on device, and locked with Face ID or passcode.";
-
 /* Parameter for the description of autofill onboarding prompt's secure storage feature describing Face ID biometry + passcode */
 "autofill.onboarding.key-features.secure-storage.description.parameter.face-id" = "Face ID vai piekļuves kods";
 
@@ -1661,7 +1697,7 @@
 "crash.report.dialog.title" = "Vai automātiski nosūtīt avārijas ziņojumus?";
 
 /* No comment provided by engineer. */
-"Current Dismiss Count: %@" = "Current Dismiss Count: %@";
+"Current Dismiss Count: %@" = "Pašreizējais noraidīšanas reižu skaits: %@";
 
 /* No comment provided by engineer. */
 "Current Subscriptions" = "Pašreizējie abonementi";
@@ -2645,7 +2681,7 @@
 "Enter duration in seconds. Examples: 30, 60, 300" = "Enter duration in seconds. Examples: 30, 60, 300";
 
 /* No comment provided by engineer. */
-"Entry Pill" = "Entry Pill";
+"Entry Pill" = "Ieejas elements";
 
 /* Button title to Sign In */
 "error.email-protection-sign-in.action" = "Pierakstīties";
@@ -3279,6 +3315,72 @@
 
 /* No comment provided by engineer. */
 "menu.button.hint" = "Pārlūkošanas izvēlne";
+
+/* iPad menu bar command */
+"menuActualSize" = "Faktiskais izmērs";
+
+/* iPad menu bar command */
+"menuBack" = "Atpakaļ";
+
+/* iPad menu bar command */
+"menuClearTabsAndData" = "Notīrīt cilnes un datus";
+
+/* iPad menu bar command */
+"menuDuplicateTab" = "Dublēt cilni";
+
+/* iPad menu bar command */
+"menuFeedback" = "Kopīgot atsauksmi";
+
+/* iPad menu bar command */
+"menuForward" = "Uz priekšu";
+
+/* iPad menu bar command */
+"menuHideDownloads" = "Paslēpt lejupielādes";
+
+/* iPad menu bar command */
+"menuHidePasswords" = "Paslēpt paroles";
+
+/* iPad menu bar command */
+"menuHideTabs" = "Paslēpt cilnes";
+
+/* iPad menu bar command */
+"menuLastTab" = "Pēdējā cilne";
+
+/* iPad menu bar command */
+"menuNewTabOnRight" = "Jauna cilne pa labi";
+
+/* iPad menu bar command */
+"menuNextTab" = "Rādīt nākamo cilni";
+
+/* iPad menu bar command */
+"menuOpenLocation" = "Atvērt atrašanās vietu…";
+
+/* iPad menu bar command */
+"menuPreviousTab" = "Rādīt iepriekšējo cilni";
+
+/* iPad menu bar command */
+"menuPrint" = "Drukāt…";
+
+/* iPad menu bar command selecting a numbered tab */
+"menuSelectTab" = "Atlasīt cilni %d";
+
+/* iPad menu bar command */
+"menuSettings" = "DuckDuckGo iestatījumi…";
+
+/* iPad menu bar command */
+"menuShowDownloads" = "Rādīt lejupielādes";
+
+/* iPad menu bar command */
+"menuShowPasswords" = "Rādīt paroles";
+
+/* iPad menu bar command */
+"menuShowTabs" = "Rādīt cilnes";
+
+/* iPad menu bar command */
+"menuStop" = "Stop";
+
+/* iPad menu bar command */
+"menuVoiceSearch" = "Privātā balss meklēšana";
 
 /* No comment provided by engineer. */
 "Message" = "Ziņojums";
@@ -4121,7 +4223,7 @@
 "Primary / First Action" = "Primārā/pirmā darbība";
 
 /* No comment provided by engineer. */
-"Priming Modal" = "Priming Modal";
+"Priming Modal" = "Sagatavošanas modālais logs";
 
 /* No comment provided by engineer. */
 "Privacy Protections" = "Privātuma aizsardzība";
@@ -4184,10 +4286,10 @@
 "Reset" = "Atiestatīt";
 
 /* No comment provided by engineer. */
-"Reset Pill Dismiss Count" = "Reset Pill Dismiss Count";
+"Reset Pill Dismiss Count" = "Atiestatīt elementa aizvēršanas skaitītāju";
 
 /* No comment provided by engineer. */
-"Reset Priming Modal State" = "Reset Priming Modal State";
+"Reset Priming Modal State" = "Atiestatīt sagatavošanas modālā loga stāvokli";
 
 /* No comment provided by engineer. */
 "Reset to Default" = "Reset to Default";
@@ -4416,6 +4518,12 @@
 
 /* Footnote for the hide AI-generated images setting; ends with a Learn more link to the help page (do not remove the link) */
 "settings.aifeatures.hide.ai.generated.images.subtitle" = "Izfiltrē zināmas mākslīgā intelekta spama vietnes no attēlu meklēšanas rezultātiem. [Uzzini vairāk](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/results/how-to-filter-out-ai-images-in-duckduckgo-search-results)";
+
+/* Settings screen description for the Duck.ai keyboard animation toggle */
+"settings.aifeatures.keyboard.animation.subtitle" = "Rādīt animāciju ap tastatūru, kad pārslēdzies uz Duck.ai vai raksti tajā.";
+
+/* Settings screen toggle title for the Duck.ai keyboard animation */
+"settings.aifeatures.keyboard.animation.title" = "Duck.ai tastatūras animācija";
 
 /* Label describing a feature which is turned on always */
 "settings.always.on" = "Vienmēr ieslēgts";
@@ -5013,9 +5121,6 @@
 
 /* No comment provided by engineer. */
 "Status:" = "Status:";
-
-/* No comment provided by engineer. */
-"Stored Hostname: %@" = "Saglabātais resursdatora nosaukums: %@";
 
 /* Button for adding this subscription to another device */
 "subscription.activate.add.to.device.button" = "Pievienot ierīcei";
@@ -5917,3 +6022,12 @@
 /* Title for screen to screen confirming what data to import from a zip file (bookmarks and /or passwords) */
 "zip.content.import.types.title" = "Ko tu gribi importēt?";
 
+
+/* Fireproofing setting toggle label */
+"preserveLogins.askOnSignIn" = "Pierakstoties prasīt padarīt vietnes ugunsdrošas";
+
+/* Empty Fireproof sites list */
+"preserveLogins.emptyState" = "Vēl nav ugunsdrošu vietņu";
+
+/* Button to remove all Fireproof sites */
+"preserveLogins.removeAllSites" = "Noņemt visas ugunsdrošās vietnes";

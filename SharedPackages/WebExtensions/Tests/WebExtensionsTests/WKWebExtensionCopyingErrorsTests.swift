@@ -114,6 +114,25 @@ final class WKWebExtensionCopyingErrorsTests: XCTestCase {
         }
     }
 
+    func testWhenExtensionHasNoBackgroundContent_ThenCompletionReceivesRealNSError() async throws {
+        let context = try await makeContext()
+        let controller = makeController()
+        try controller.loadCopyingErrors(context)
+        defer { try? controller.unloadCopyingErrors(context) }
+        let completed = expectation(description: "Background load callback")
+        var receivedError: Error?
+
+        context.loadBackgroundContentCopyingErrors { error in
+            // WebKit can invoke this callback more than once; validate its first reported error.
+            guard let error, receivedError == nil else { return }
+            receivedError = error
+            completed.fulfill()
+        }
+
+        await fulfillment(of: [completed], timeout: 5)
+        assertRealNSError(try XCTUnwrap(receivedError), domain: WKWebExtensionContext.errorDomain)
+    }
+
     // MARK: - `errors` swizzling
 
     func testWhenErrorsAreSwizzled_ThenTheyAreRealNSErrors() async throws {

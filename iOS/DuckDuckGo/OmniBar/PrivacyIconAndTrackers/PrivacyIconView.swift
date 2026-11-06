@@ -30,10 +30,10 @@ private extension PrivacyIconView {
     /// Scale factor for dynamic Dax Easter Egg logos to match PDF default logo visual size (24/47 ≈ 0.51)
     static let daxLogoScaleFactor: CGFloat = 0.51
 
-    /// The rebranded art draws the shield at 20 units inside its own canvas.
-    /// Using this size results in the shield matching the 24pt DesignResourcesKit icon.
-    static let legacyShieldSize: CGFloat = 47
-    static let legacyShieldDotSize: CGFloat = 44
+    /// Used until the animations load. After that, each view takes its animation's own size, whose canvas
+    /// draws the shield at 20 units so it matches the 24pt DesignResourcesKit icon.
+    static let defaultShieldSize: CGFloat = 47
+    static let defaultShieldDotSize: CGFloat = 44
 }
 
 enum PrivacyIcon {
@@ -41,7 +41,7 @@ enum PrivacyIcon {
 
     fileprivate var staticImage: UIImage? {
         switch self {
-        case .daxLogo: return UIImage(rebrandable: "duckduckgo-favicon-24x24")
+        case .daxLogo: return UIImage(resource: .duckduckgoFavicon24X24)
         case .alert: return DesignSystemImages.Glyphs.Size24.alertRecolorable
         default: return nil
         }
@@ -116,8 +116,8 @@ class PrivacyIconView: UIView {
         ])
 
         // Protections Enabled Animation
-        shieldWidthConstraint = shieldAnimationView.widthAnchor.constraint(equalToConstant: Self.legacyShieldSize)
-        shieldHeightConstraint = shieldAnimationView.heightAnchor.constraint(equalToConstant: Self.legacyShieldSize)
+        shieldWidthConstraint = shieldAnimationView.widthAnchor.constraint(equalToConstant: Self.defaultShieldSize)
+        shieldHeightConstraint = shieldAnimationView.heightAnchor.constraint(equalToConstant: Self.defaultShieldSize)
         NSLayoutConstraint.activate([
             shieldWidthConstraint,
             shieldHeightConstraint,
@@ -126,8 +126,8 @@ class PrivacyIconView: UIView {
         ])
 
         // Protections Disable Animation
-        shieldDotWidthConstraint = shieldDotAnimationView.widthAnchor.constraint(equalToConstant: Self.legacyShieldDotSize)
-        shieldDotHeightConstraint = shieldDotAnimationView.heightAnchor.constraint(equalToConstant: Self.legacyShieldDotSize)
+        shieldDotWidthConstraint = shieldDotAnimationView.widthAnchor.constraint(equalToConstant: Self.defaultShieldDotSize)
+        shieldDotHeightConstraint = shieldDotAnimationView.heightAnchor.constraint(equalToConstant: Self.defaultShieldDotSize)
         NSLayoutConstraint.activate([
             shieldDotWidthConstraint,
             shieldDotHeightConstraint,
@@ -168,29 +168,19 @@ class PrivacyIconView: UIView {
     func loadAnimations(animationCache cache: AnimationCacheProvider = DefaultAnimationCache.sharedCache) {
         let useDarkStyle = traitCollection.userInterfaceStyle == .dark
 
-        let isRebranded = AppRebrand.isAppRebranded()
+        let shieldDotAnimationName = useDarkStyle ? "dark-shield-dot" : "shield-dot"
 
-        let shieldAnimationName = isRebranded ? "shield.new" : "shield.new-legacy"
-        let shieldDotAnimationName: String
-        if useDarkStyle {
-            shieldDotAnimationName = isRebranded ? "dark-shield-dot" : "dark-shield-dot-legacy"
-        } else {
-            shieldDotAnimationName = isRebranded ? "shield-dot" : "shield-dot-legacy"
-        }
-
-        let shieldAnimation = LottieAnimation.named(shieldAnimationName, animationCache: cache)
+        let shieldAnimation = LottieAnimation.named("shield.new", animationCache: cache)
         shieldAnimationView.animation = shieldAnimation
 
         let shieldWithDotAnimation = LottieAnimation.named(shieldDotAnimationName, animationCache: cache)
         shieldDotAnimationView.animation = shieldWithDotAnimation
 
-        let shieldSize = isRebranded ? shieldAnimation?.size : nil
-        shieldWidthConstraint.constant = shieldSize?.width ?? Self.legacyShieldSize
-        shieldHeightConstraint.constant = shieldSize?.height ?? Self.legacyShieldSize
+        shieldWidthConstraint.constant = shieldAnimation?.size.width ?? Self.defaultShieldSize
+        shieldHeightConstraint.constant = shieldAnimation?.size.height ?? Self.defaultShieldSize
 
-        let shieldDotSize = isRebranded ? shieldWithDotAnimation?.size : nil
-        shieldDotWidthConstraint.constant = shieldDotSize?.width ?? Self.legacyShieldDotSize
-        shieldDotHeightConstraint.constant = shieldDotSize?.height ?? Self.legacyShieldDotSize
+        shieldDotWidthConstraint.constant = shieldWithDotAnimation?.size.width ?? Self.defaultShieldDotSize
+        shieldDotHeightConstraint.constant = shieldWithDotAnimation?.size.height ?? Self.defaultShieldDotSize
     }
     
     func updateIcon(_ newIcon: PrivacyIcon) {

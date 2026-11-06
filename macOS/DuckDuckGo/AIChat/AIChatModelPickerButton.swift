@@ -123,13 +123,17 @@ final class AIChatModelPickerButton: NSView {
         didSet { updateFocusRingStrokeColor() }
     }
 
+    var borderColor: NSColor = NSColor(designSystemColor: .surfaceDecorationPrimary) {
+        didSet { updateBorderColor() }
+    }
+
     /// A `CGColor` freezes the appearance it's resolved in, and `NSApp`'s would be wrong in a
     /// burner window's dark override.
     private func updateBorderColor() {
         CATransaction.begin()
         CATransaction.setDisableActions(true)
         effectiveAppearance.performAsCurrentDrawingAppearance {
-            borderLayer.borderColor = NSColor(designSystemColor: .lines).cgColor
+            borderLayer.borderColor = borderColor.cgColor
         }
         CATransaction.commit()
     }

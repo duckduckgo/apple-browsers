@@ -289,6 +289,15 @@ final class LocalBookmarkStore: BookmarkStore {
         return count
     }
 
+    func hasTopLevelEntities() -> Bool {
+        let context = makeContext()
+        var hasEntities = false
+        context.performAndWait {
+            hasEntities = bookmarksRoot(in: context)?.hasVisibleChildren == true || !BookmarkUtils.fetchOrphanedEntities(context).isEmpty
+        }
+        return hasEntities
+    }
+
     func loadAll(type: BookmarkStoreFetchPredicateType, completion: @escaping ([BaseBookmarkEntity]?, Error?) -> Void) {
         func mainQueueCompletion(bookmarks: [BaseBookmarkEntity]?, error: Error?) {
             DispatchQueue.main.async {

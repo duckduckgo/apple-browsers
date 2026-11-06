@@ -55,6 +55,7 @@ struct FireModeEmptyStateView: View {
     // MARK: - Variables
 
     private let type: ViewType
+    private let contentTopInset: CGFloat
 
     private var onNewFireTab: NewFireTabBlock? {
         if case .tabSwitcher(let onNewFireTab) = type {
@@ -65,8 +66,9 @@ struct FireModeEmptyStateView: View {
 
     // MARK: - Initializer
 
-    init(type: ViewType) {
+    init(type: ViewType, contentTopInset: CGFloat = 0) {
         self.type = type
+        self.contentTopInset = contentTopInset
     }
 
     // MARK: - Body
@@ -77,7 +79,8 @@ struct FireModeEmptyStateView: View {
                 headerSection
                 contentCard
             }
-            .padding(.top, Constants.mainTopPadding)
+            // Animatable, so the content moves with the focused input instead of jumping inside the scroll view.
+            .modifier(FocusedContentTopInset(topInset: contentTopInset, fixedTopInset: Constants.mainTopPadding))
             .padding(.horizontal, Constants.mainHorizontalPadding)
             .frame(maxWidth: Constants.maxViewWidth)
         }
@@ -165,21 +168,10 @@ struct FireModeEmptyStateView: View {
     @ViewBuilder
     private var newFireTabButton: some View {
         if let onNewFireTab {
-            if AppRebrand.isAppRebranded() {
-                Button(action: onNewFireTab) {
-                    newFireTabButtonLabel
-                }
-                .buttonStyle(SecondaryFillButtonStyle())
-            } else {
-                Button(action: onNewFireTab) {
-                    newFireTabButtonLabel
-                        .foregroundColor(Color(designSystemColor: .accentContentPrimary))
-                        .frame(height: Constants.buttonHeight)
-                        .padding(.horizontal, Constants.buttonHorizontalPadding)
-                        .background(Color(singleUseColor: .fireModeAccent))
-                        .clipShape(RoundedRectangle(cornerRadius: Constants.buttonCornerRadius))
-                }
+            Button(action: onNewFireTab) {
+                newFireTabButtonLabel
             }
+            .buttonStyle(SecondaryFillButtonStyle())
         }
     }
 
@@ -209,8 +201,5 @@ struct FireModeEmptyStateView: View {
         static let iconTopPadding: CGFloat = 2
         static let separatorHeight: CGFloat = 1
 
-        static let buttonHeight: CGFloat = 40
-        static let buttonHorizontalPadding: CGFloat = 16
-        static let buttonCornerRadius: CGFloat = 12
     }
 }

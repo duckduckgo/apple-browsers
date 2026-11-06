@@ -245,7 +245,7 @@ public typealias AuthorisationCode = String
 public struct OAuthTokenResponse: Decodable {
     /// JWT with encoded account details and entitlements. Can be verified using tokens published on the /api/auth/v2/.well-known/jwks.json endpoint. Used to gain access to Subscription BE service resources (VPN, PIR, ITR). Expires after 4 hours, but can be refreshed with a refresh token.
     let accessToken: String
-    /// JWT which can be used to get a new access token after the access token expires. Expires after 30 days. Can only be used once. Re-using a refresh token will invalidate any access tokens already issued from that refresh token.
+    /// JWT which can be used to get a new token pair after the access token expires. Expires after 30 days. Can be used again for 1 hour after its first use: each use returns a new, independent pair and leaves every other token, including the access tokens already issued from it, valid. After that hour, any reuse is rejected.
     let refreshToken: String
     /// **ignored** access token expiry date in seconds. The real expiry date will be decoded from the JWT token itself
     let expiresIn: Double

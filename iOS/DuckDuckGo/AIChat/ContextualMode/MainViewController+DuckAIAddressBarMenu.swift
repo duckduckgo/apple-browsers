@@ -27,11 +27,9 @@ enum DuckAIAddressBarMenuType: Equatable {
     case document
 
     /// Resolves the menu variant for a tab with webPage as default
-    static func resolve(isFeatureEnabled: Bool,
-                        isShowingDocument: Bool,
+    static func resolve(isShowingDocument: Bool,
                         tabType: TabType,
                         searchQuery: String?) -> DuckAIAddressBarMenuType {
-        guard isFeatureEnabled else { return .webPage }
         if isShowingDocument { return .document }
         switch tabType {
         case .web, .aiChat:
@@ -92,18 +90,15 @@ extension MainViewController {
         let offersMenu = duckAIAddressBarEntry == .menu
         let addressBarButton = omniBar.barView.aiChatButton
         if offersMenu, let button = addressBarButton as? BrowserChromeButton {
-            // UIKit reparents the preview, so hand it a stand-in from outside the field's glass group.
-            button.menuHighlightTarget = { [weak self, weak button] in
-                guard let button else { return nil }
-                return self?.duckAIMenuAnchorView(over: button)
+            button.menuPreviewContainer = { [weak self] in
+                self?.viewCoordinator.navigationBarContainer
             }
         } else {
-            (addressBarButton as? BrowserChromeButton)?.menuHighlightTarget = nil
-            duckAIMenuAnchor?.removeFromSuperview()
-            duckAIMenuAnchor = nil
+            (addressBarButton as? BrowserChromeButton)?.menuPreviewContainer = nil
         }
         attachDuckAIMenu(to: addressBarButton, offersMenu: offersMenu, source: .addressBarIcon, type: type)
         attachDuckAIMenu(to: tabsBarController?.aiChatMenuButton, offersMenu: offersMenu, source: .tabsBarButton, type: type)
+        attachDuckAIMenuToFocusedInput(offersMenu: offersMenu)
     }
 
     private func attachDuckAIMenu(to button: UIButton?, offersMenu: Bool, source: AIChatEntryPointSource, type: DuckAIAddressBarMenuType) {
@@ -114,34 +109,26 @@ extension MainViewController {
             return
         }
 
-        // Deferred so the shown pixel records an actual display rather than the menu being attached.
-        button.menu = UIMenu(title: UserText.duckAiFeatureName, children: [
-            UIDeferredMenuElement.uncached { [weak self] completion in
-                self?.recordNewTabPageSessionAction { $0.tapDuckaiButton() }
-                self?.duckAIAddressBarPixelHandler.fireAddressBarMenuShown()
-                completion(self?.duckAIAddressBarMenuChildren(source: source, type: type) ?? [])
-            }
-        ])
+        button.menu = makeDuckAIMenu(source: source, type: type)
         button.showsMenuAsPrimaryAction = true
     }
 
-    /// Transparent stand-in over the button, outside the glass field, for the menu to reparent.
-    private func duckAIMenuAnchorView(over button: UIView) -> UIView? {
-        guard let container: UIView = viewCoordinator.navigationBarContainer else { return nil }
-        let anchor = duckAIMenuAnchor ?? {
-            let view = UIView()
-            view.isUserInteractionEnabled = false
-            view.isAccessibilityElement = false
-            duckAIMenuAnchor = view
-            return view
-        }()
-        if anchor.superview !== container {
-            container.addSubview(anchor)
-        }
-        // Laid out first: the bar repositions its buttons after a surface closes.
-        container.layoutIfNeeded()
-        anchor.frame = container.convert(button.bounds, from: button)
-        return anchor
+    /// Only on home tabs: elsewhere the focused input is prefilled with the page address, so the tap keeps opening Duck.ai.
+    private func attachDuckAIMenuToFocusedInput(offersMenu: Bool) {
+        let isHomeTab = tabManager.currentTabsModel.currentTab?.isHomeTab ?? true
+        let menu = offersMenu && isHomeTab ? makeDuckAIMenu(source: .addressBarShortcutChip, type: .webPage) : nil
+        unifiedToggleInputCoordinator?.updateAIChatShortcutEmptyInputMenu(menu)
+    }
+
+    func makeDuckAIMenu(source: AIChatEntryPointSource, type: DuckAIAddressBarMenuType) -> UIMenu {
+        // Deferred so the shown pixel records an actual display rather than the menu being attached.
+        UIMenu(title: UserText.duckAiFeatureName, children: [
+            UIDeferredMenuElement.uncached { [weak self] completion in
+                self?.recordNewTabPageSessionAction { $0.tapDuckaiButton() }
+                self?.duckAIAddressBarPixelHandler.fireAddressBarMenuShown(source: DuckAIMenuSource(source))
+                completion(self?.duckAIAddressBarMenuChildren(source: source, type: type) ?? [])
+            }
+        ])
     }
 
     func askAboutCurrentPageFromAddressBar() {
@@ -175,27 +162,28 @@ extension MainViewController {
     }
 
     private func duckAIAddressBarMenuChildren(source: AIChatEntryPointSource, type: DuckAIAddressBarMenuType) -> [UIMenuElement] {
-        DuckAIAddressBarMenuFactory.makeActions(
+        let menuSource = DuckAIMenuSource(source)
+        return DuckAIAddressBarMenuFactory.makeActions(
             featureFlagger: featureFlagger,
             userInterfaceIdiom: UIDevice.current.userInterfaceIdiom,
             isHomeTab: tabManager.currentTabsModel.currentTab?.isHomeTab ?? true,
             type: type,
             onNewChat: { [weak self] in
-                self?.duckAIAddressBarPixelHandler.fireAddressBarMenuNewChatSelected()
+                self?.duckAIAddressBarPixelHandler.fireAddressBarMenuNewChatSelected(source: menuSource)
                 self?.openFreshDuckAIChatFromAddressBarMenu(source: source)
             },
             onContextAction: { [weak self] in
                 switch type {
                 case .webPage, .document:
-                    self?.duckAIAddressBarPixelHandler.fireAddressBarMenuAskAboutPageSelected()
+                    self?.duckAIAddressBarPixelHandler.fireAddressBarMenuAskAboutPageSelected(source: menuSource)
                     self?.askAboutCurrentPageFromAddressBar()
                 case .search(let query):
-                    self?.duckAIAddressBarPixelHandler.fireAddressBarMenuAskAboutSearchSelected()
+                    self?.duckAIAddressBarPixelHandler.fireAddressBarMenuAskAboutSearchSelected(source: menuSource)
                     self?.askAboutCurrentSearchFromAddressBar(query: query, source: source)
                 }
             },
             onRecentChats: { [weak self] in
-                self?.duckAIAddressBarPixelHandler.fireAddressBarMenuRecentChatsSelected()
+                self?.duckAIAddressBarPixelHandler.fireAddressBarMenuRecentChatsSelected(source: menuSource)
                 self?.openRecentChatsFromAddressBarMenu()
             }
         )
@@ -212,11 +200,15 @@ extension MainViewController {
     }
 
     private func openDuckAIChatsFromAddressBarMenu() {
+        postIdleSessionInstrumentation.sessionEnded(reason: .chatSelected)
         let url = AIChatURLParameters.sidebarOpenURL(from: aiChatSettings.aiChatURL)
-        if tabManager.currentTabsModel.currentTab?.link != nil {
-            loadUrlInNewTab(url, inheritedAttribution: nil)
+        let opensNewTab = tabManager.currentTabsModel.currentTab?.link != nil
+        fireAIChatEntryPointPixel(source: .chatHistoryViewAll, opensNewTab: opensNewTab, hasPrompt: false)
+        if opensNewTab {
+            loadUrlInNewTab(url, inheritedAttribution: nil) { $0.duckAIEntrySource = .chatHistoryViewAll }
         } else {
             loadUrl(url)
+            stampDuckAIEntrySourceOnCurrentTab(.chatHistoryViewAll)
         }
     }
 

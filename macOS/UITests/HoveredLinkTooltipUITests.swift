@@ -55,6 +55,8 @@ final class HoveredLinkTooltipUITests: UITestCase {
         assertTooltipAppears("The tooltip must come back for the link under the unmoved pointer")
     }
 
+    // Skipped in the test plans: after the web view returns to the window WebKit may synthesize hover events that make
+    // the page report no link under an unmoved pointer, so the tooltip does not always come back.
     func testWhenSwitchingTabsWithCtrlTabThenTooltipIsDismissedAndComesBack() {
         let link = openPageWithLink()
         openSecondTab()

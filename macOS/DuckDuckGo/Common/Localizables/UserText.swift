@@ -110,6 +110,7 @@ struct UserText {
     static let webExtensionWebsiteAccess = NotLocalizedString("webExtensions.permissions.website", value: "Read and change your data on %@", comment: "Extension website permission; placeholder is a list of one to three hosts")
     static let webExtensionAllWebsitesAccess = NotLocalizedString("webExtensions.permissions.allWebsites", value: "Read and change all your data on all websites", comment: "Extension permission to access every website")
     static let webExtensionManyWebsitesAccess = NotLocalizedString("webExtensions.permissions.manyWebsites", value: "Read and change your data on a number of websites", comment: "Extension permission to access more than three specific websites")
+    static let webExtensionLocalFilesAccess = NotLocalizedString("webExtensions.permissions.localFiles", value: "Read your local files", comment: "Extension permission to access file URLs on this Mac")
     static let webExtensionOtherPermission = NotLocalizedString("webExtensions.permissions.other", value: "Use the “%@” permission", comment: "Fallback extension permission description; placeholder is the API permission name")
     static let webExtensionActiveTabPermission = NotLocalizedString("webExtensions.permissions.activeTab", value: "Access the current tab when you activate the extension", comment: "Extension activeTab permission")
     static let webExtensionClipboardPermission = NotLocalizedString("webExtensions.permissions.clipboard", value: "Read and change your clipboard", comment: "Extension clipboardRead or clipboardWrite permission")

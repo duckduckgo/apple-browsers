@@ -37,6 +37,7 @@
 		0DE0006FAC7029CB1E004100 /* PromoServiceFactory+CookiePopupProtectionOptIn.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0DE0004FAC7029CB1E004100 /* PromoServiceFactory+CookiePopupProtectionOptIn.swift */; };
 		0F2D07CBC5636188DAF0BD3E /* WebNotificationPixel.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5A7430C39C716A6A3A1F654 /* WebNotificationPixel.swift */; };
 		107A632E6D7CE1080997B485 /* ChromiumHistoryReader.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00F33F77DBE9F9B7609E7050 /* ChromiumHistoryReader.swift */; };
+		FE1DBB27A9F1DE6771CF1940 /* ChromiumProfileDatabaseInspector.swift in Sources */ = {isa = PBXBuildFile; fileRef = F88905F68D9A870498F2548A /* ChromiumProfileDatabaseInspector.swift */; };
 		109992D9325DA6243CD6ADE5 /* TabSuspensionService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 43A7F6C124DA119D76D5AC50 /* TabSuspensionService.swift */; };
 		1335CC7FAF8E9433F1048426 /* SafariHistoryReader.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1B3A8568E1D39FF37D77C9D9 /* SafariHistoryReader.swift */; };
 		1430DFF524D0580F00B8978C /* TabBarViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1430DFF424D0580F00B8978C /* TabBarViewController.swift */; };
@@ -2528,6 +2529,7 @@
 		C8F1A3D52B6E4C7091D4E8F5 /* ChromeExtensionInstaller.swift in Sources */ = {isa = PBXBuildFile; fileRef = A9E7C4B12D8F4A6C93E5F1B2 /* ChromeExtensionInstaller.swift */; };
 		C8F747BDFFBACE3A2268D6E2 /* NonBlockingOnboarding.swift in Sources */ = {isa = PBXBuildFile; fileRef = FC6A1D3C2297F810D9AF56C1 /* NonBlockingOnboarding.swift */; };
 		C957725981F91509282279A3 /* ChromiumHistoryReader.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00F33F77DBE9F9B7609E7050 /* ChromiumHistoryReader.swift */; };
+		5AAB465B0A16BA0A0105B5DE /* ChromiumProfileDatabaseInspector.swift in Sources */ = {isa = PBXBuildFile; fileRef = F88905F68D9A870498F2548A /* ChromiumProfileDatabaseInspector.swift */; };
 		CB2546B1D43E4D79A03D419E /* PromoServiceFactory+BookmarkToolbar.swift in Sources */ = {isa = PBXBuildFile; fileRef = E7B10F7957CD4E02BFA956FF /* PromoServiceFactory+BookmarkToolbar.swift */; };
 		CB63DECB2CDC0BBE0097986A /* PageRefreshMonitor.swift in Sources */ = {isa = PBXBuildFile; fileRef = CB63DECA2CDC0BB80097986A /* PageRefreshMonitor.swift */; };
 		CB63DECC2CDC0BBE0097986A /* PageRefreshMonitor.swift in Sources */ = {isa = PBXBuildFile; fileRef = CB63DECA2CDC0BB80097986A /* PageRefreshMonitor.swift */; };
@@ -3229,6 +3231,7 @@
 
 /* Begin PBXFileReference section */
 		00F33F77DBE9F9B7609E7050 /* ChromiumHistoryReader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChromiumHistoryReader.swift; sourceTree = "<group>"; };
+		F88905F68D9A870498F2548A /* ChromiumProfileDatabaseInspector.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChromiumProfileDatabaseInspector.swift; sourceTree = "<group>"; };
 		0132D4CACFD5583EB4FA0959 /* AddressBarUpdateButton.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddressBarUpdateButton.swift; sourceTree = "<group>"; };
 		021EA07F2BD2A9D500772C9A /* TabsPreferences.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TabsPreferences.swift; sourceTree = "<group>"; };
 		026ADE1326C3010C002518EE /* macos-config.json */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.json; path = "macos-config.json"; sourceTree = "<group>"; };
@@ -6497,6 +6500,7 @@
 				4B0AACAB28BC63ED001038AC /* ChromiumFaviconsReader.swift */,
 				CCC87D6C2E1412D00091344D /* ChromiumTopSitesReader.swift */,
 				00F33F77DBE9F9B7609E7050 /* ChromiumHistoryReader.swift */,
+				F88905F68D9A870498F2548A /* ChromiumProfileDatabaseInspector.swift */,
 				4BB99CFA26FE191E001E4761 /* ImportedBookmarks.swift */,
 			);
 			path = Chromium;
@@ -11054,6 +11058,7 @@
 				E274EFF72E1D55D500373C41 /* NewTabPageOmnibarSuggestionsProvider.swift in Sources */,
 				CCC87D6D2E1412D70091344D /* ChromiumTopSitesReader.swift in Sources */,
 				107A632E6D7CE1080997B485 /* ChromiumHistoryReader.swift in Sources */,
+				FE1DBB27A9F1DE6771CF1940 /* ChromiumProfileDatabaseInspector.swift in Sources */,
 				37197EA42942441D00394917 /* NewWindowPolicy.swift in Sources */,
 				C1D3C56A2E747BBE0086A2BD /* CreditCardsCleanupErrorHandling.swift in Sources */,
 				C1D3C56B2E747BBE0086A2BD /* SyncCreditCardsAdapter.swift in Sources */,
@@ -12152,6 +12157,7 @@
 				8C828C51C147F8FA3C57509B /* PreferencesExtensionsManagementView.swift in Sources */,
 				CCC87D6E2E1412D70091344D /* ChromiumTopSitesReader.swift in Sources */,
 				C957725981F91509282279A3 /* ChromiumHistoryReader.swift in Sources */,
+				5AAB465B0A16BA0A0105B5DE /* ChromiumProfileDatabaseInspector.swift in Sources */,
 				EEBF15C22E4CE72E0053D15B /* BookmarksEmptyStateView.swift in Sources */,
 				7B7F5D212C526CE600826256 /* AddExcludedDomainView.swift in Sources */,
 				4B92929E26670D2A00AD2C21 /* BookmarkSidebarTreeController.swift in Sources */,

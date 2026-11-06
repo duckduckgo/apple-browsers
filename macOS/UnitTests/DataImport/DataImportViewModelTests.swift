@@ -3049,7 +3049,7 @@ final class DataImportViewModelTests: XCTestCase {
                 return .init(browser: browser, profiles: createdProfiles) { profile in
                     {
                         // All profiles have valid data available
-                        .init(logins: .available, bookmarks: .available)
+                        .init(logins: .available, bookmarks: .available, history: .available)
                     }
                 }
             },

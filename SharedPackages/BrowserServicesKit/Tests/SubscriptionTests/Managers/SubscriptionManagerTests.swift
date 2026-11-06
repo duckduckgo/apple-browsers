@@ -176,6 +176,7 @@ class SubscriptionManagerTests: XCTestCase {
         XCTAssertEqual(automaticSignOutError.code, OAuthClientError.unknownAccount.errorCode)
         XCTAssertNil(automaticSignOutError.userInfo[NSUnderlyingErrorKey])
         XCTAssertEqual(automaticSignOutData.recoveryOutcome, .notApplicable)
+        XCTAssertEqual(automaticSignOutData.backupOutcome, .notApplicable)
         XCTAssertEqual(automaticSignOutData.tokenCachePolicy, .localValid)
         XCTAssertEqual(automaticSignOutData.entitlementStateBefore, .present)
         XCTAssertEqual(automaticSignOutData.accessTokenTimeRemainingBefore, .lessThanOneHour)
@@ -270,10 +271,12 @@ class SubscriptionManagerTests: XCTestCase {
 
     // MARK: - Backup recovery
 
-    private func installCoordinator(backupResult: Result<TokenContainer, Error>?, appStoreSucceeds: Bool) {
+    private func installCoordinator(backupResult: Result<TokenContainer, Error>?,
+                                    appStoreSucceeds: Bool,
+                                    purchasePlatform: SubscriptionEnvironment.PurchasePlatform = .appStore) {
         mockOAuthClient.restoreFromBackupResponse = backupResult
         let backup = BackupTokenRecovery(oAuthClient: mockOAuthClient, onRestored: { _ in })
-        let appStore = AppStoreTokenRecovery(purchasePlatform: .appStore,
+        let appStore = AppStoreTokenRecovery(purchasePlatform: purchasePlatform,
                                              restoreFlow: mockAppStoreRestoreFlowV2)
         if !appStoreSucceeds {
             mockAppStoreRestoreFlowV2.restoreSubscriptionAfterExpiredRefreshTokenError = NSError(domain: "AppStore", code: 1)
@@ -293,7 +296,7 @@ class SubscriptionManagerTests: XCTestCase {
         XCTAssertEqual(result, restored)
         XCTAssertEqual(mockOAuthClient.restoreFromBackupCalls.first?.expectedExternalID, "acct")
         XCTAssertFalse(mockAppStoreRestoreFlowV2.restoreSubscriptionAfterExpiredRefreshTokenCalled)
-        XCTAssertTrue(mockPixelHandler.handledPixels.contains(.invalidRefreshTokenRecovered))
+        XCTAssertTrue(mockPixelHandler.handledPixels.contains(.invalidRefreshTokenRecovered(.backup)))
         XCTAssertNil(automaticSignOutPixel())
     }
 
@@ -307,6 +310,104 @@ class SubscriptionManagerTests: XCTestCase {
         XCTAssertEqual(mockOAuthClient.restoreFromBackupCalls.count, 1)
         XCTAssertTrue(mockAppStoreRestoreFlowV2.restoreSubscriptionAfterExpiredRefreshTokenCalled)
         XCTAssertTrue(mockPixelHandler.handledPixels.contains(.invalidRefreshTokenSignedOut))
+    }
+
+    // MARK: - Recovery reporting
+
+    private func startPendingRecoveryFlow() {
+        let pendingFlow = AuthV2TokenRefreshWideEventData(failingStep: .recoverInvalidToken,
+                                                          globalData: WideEventGlobalData(id: "refresh-1"))
+        pendingFlow.errorData = WideEventErrorData(error: OAuthClientError.invalidTokenRequest(.reused))
+        pendingFlow.recoveryDuration = .startingNow()
+        mockWideEvent.startFlow(pendingFlow)
+    }
+
+    private func completedRefreshData() throws -> AuthV2TokenRefreshWideEventData {
+        try XCTUnwrap(mockWideEvent.completions.first?.0 as? AuthV2TokenRefreshWideEventData)
+    }
+
+    func testInvalidToken_BackupRecovers_ReportsTheBackupMethod() async throws {
+        startPendingRecoveryFlow()
+        mockOAuthClient.internalCurrentTokenContainer = OAuthTokensFactory.makeTokenContainer(refreshToken: "deadR")
+        mockOAuthClient.getTokensResponse = .failure(OAuthClientError.invalidTokenRequest(.reused))
+        installCoordinator(backupResult: .success(OAuthTokensFactory.makeValidTokenContainer()), appStoreSucceeds: false)
+
+        _ = try await subscriptionManager.getTokenContainer(policy: .localValid)
+
+        XCTAssertEqual(recoveredPixelMethods(), [.backup])
+        let refreshData = try completedRefreshData()
+        XCTAssertEqual(refreshData.recoveryOutcome, .succeeded)
+        XCTAssertEqual(refreshData.recoveryMethod, .backup)
+        XCTAssertEqual(refreshData.backupOutcome, .succeeded)
+    }
+
+    func testInvalidToken_NoBackup_AppStoreRecovers_ReportsTheAppStoreMethod() async throws {
+        startPendingRecoveryFlow()
+        mockOAuthClient.internalCurrentTokenContainer = OAuthTokensFactory.makeTokenContainer(refreshToken: "deadR")
+        mockOAuthClient.getTokensResponse = .failure(OAuthClientError.invalidTokenRequest(.reused))
+        installCoordinator(backupResult: nil, appStoreSucceeds: true)
+        mockAppStoreRestoreFlowV2.restoreSubscriptionAfterExpiredRefreshTokenHandler = { [unowned self] in
+            self.mockOAuthClient.internalCurrentTokenContainer = OAuthTokensFactory.makeValidTokenContainer()
+        }
+
+        _ = try await subscriptionManager.getTokenContainer(policy: .localValid)
+
+        XCTAssertEqual(recoveredPixelMethods(), [.appStore])
+        let refreshData = try completedRefreshData()
+        XCTAssertEqual(refreshData.recoveryOutcome, .succeeded)
+        XCTAssertEqual(refreshData.recoveryMethod, .appStore)
+        XCTAssertEqual(refreshData.backupOutcome, .notAttempted)
+    }
+
+    func testInvalidToken_BackupFailsWithoutAppStoreRestore_KeepsNotAttemptedAndReportsTheBackupFailure() async throws {
+        startPendingRecoveryFlow()
+        mockOAuthClient.internalCurrentTokenContainer = OAuthTokensFactory.makeTokenContainer(refreshToken: "deadR")
+        mockOAuthClient.getTokensResponse = .failure(OAuthClientError.invalidTokenRequest(.reused))
+        installCoordinator(backupResult: .failure(URLError(.timedOut)), appStoreSucceeds: false, purchasePlatform: .stripe)
+
+        _ = try? await subscriptionManager.getTokenContainer(policy: .localValid)
+
+        let signOutData = try XCTUnwrap(automaticSignOutPixel()).data
+        XCTAssertEqual(signOutData.recoveryOutcome, .notAttempted)
+        XCTAssertEqual(signOutData.backupOutcome, .failed)
+        XCTAssertEqual(signOutData.parameters["backup_outcome"], "failed")
+        let refreshData = try completedRefreshData()
+        XCTAssertEqual(refreshData.recoveryOutcome, .notAttempted)
+        XCTAssertNil(refreshData.recoveryMethod)
+        XCTAssertEqual(refreshData.backupOutcome, .failed)
+        XCTAssertNil(refreshData.recoveryDuration)
+        XCTAssertEqual(refreshData.errorData?.code, OAuthClientError.invalidTokenRequest(.reused).errorCode)
+    }
+
+    func testInvalidToken_BackupRejectedAndAppStoreFails_ReportsFailedAndRejected() async throws {
+        startPendingRecoveryFlow()
+        mockOAuthClient.internalCurrentTokenContainer = OAuthTokensFactory.makeTokenContainer(refreshToken: "deadR")
+        mockOAuthClient.getTokensResponse = .failure(OAuthClientError.invalidTokenRequest(.reused))
+        installCoordinator(backupResult: .failure(TokenBackupError.accountMismatch), appStoreSucceeds: false)
+
+        _ = try? await subscriptionManager.getTokenContainer(policy: .localValid)
+
+        let signOutData = try XCTUnwrap(automaticSignOutPixel()).data
+        XCTAssertEqual(signOutData.recoveryOutcome, .failed)
+        XCTAssertEqual(signOutData.backupOutcome, .rejected)
+        let refreshData = try completedRefreshData()
+        XCTAssertEqual(refreshData.recoveryOutcome, .failed)
+        XCTAssertEqual(refreshData.backupOutcome, .rejected)
+        XCTAssertEqual(refreshData.errorData?.domain, "AppStore")
+    }
+
+    func testInvalidToken_SessionChangedWithoutUsableSession_ReportsNotAttemptedAndSessionChanged() async throws {
+        startPendingRecoveryFlow()
+        mockOAuthClient.internalCurrentTokenContainer = OAuthTokensFactory.makeTokenContainer(refreshToken: "deadR")
+        mockOAuthClient.getTokensResponse = .failure(OAuthClientError.invalidTokenRequest(.reused))
+        installCoordinator(backupResult: .failure(TokenBackupError.sessionChanged), appStoreSucceeds: true)
+
+        _ = try? await subscriptionManager.getTokenContainer(policy: .localValid)
+
+        let refreshData = try completedRefreshData()
+        XCTAssertEqual(refreshData.recoveryOutcome, .notAttempted)
+        XCTAssertEqual(refreshData.backupOutcome, .sessionChanged)
+        XCTAssertFalse(refreshData.signedOut)
     }
 
     func testInvalidToken_StoredTokenAlreadyReplaced_ReturnsItWithoutRecovery() async throws {
@@ -599,7 +700,7 @@ class SubscriptionManagerTests: XCTestCase {
 
         assertGetTokensErrorPixel(policy: .localValid)
         XCTAssertTrue(mockPixelHandler.handledPixels.contains(.invalidRefreshToken))
-        XCTAssertTrue(mockPixelHandler.handledPixels.contains(.invalidRefreshTokenRecovered))
+        XCTAssertTrue(mockPixelHandler.handledPixels.contains(.invalidRefreshTokenRecovered(.appStore)))
         XCTAssertFalse(mockPixelHandler.handledPixels.contains(.invalidRefreshTokenSignedOut))
         XCTAssertNil(automaticSignOutPixel())
     }
@@ -622,7 +723,7 @@ class SubscriptionManagerTests: XCTestCase {
         assertGetTokensErrorPixel(policy: .localValid)
         XCTAssertTrue(mockPixelHandler.handledPixels.contains(.invalidRefreshToken))
         XCTAssertTrue(mockPixelHandler.handledPixels.contains(.invalidRefreshTokenSignedOut))
-        XCTAssertFalse(mockPixelHandler.handledPixels.contains(.invalidRefreshTokenRecovered))
+        XCTAssertTrue(recoveredPixelMethods().isEmpty)
 
         let automaticSignOut = try XCTUnwrap(automaticSignOutPixel())
         let automaticSignOutData = automaticSignOut.data
@@ -1417,6 +1518,14 @@ class SubscriptionManagerTests: XCTestCase {
         }))
     }
 
+    /// The recovery method of every invalid-refresh-token-recovered pixel handled, in order.
+    private func recoveredPixelMethods() -> [TokenRecoveryMethod?] {
+        mockPixelHandler.handledPixels.compactMap { pixel in
+            if case .invalidRefreshTokenRecovered(let method) = pixel { return method }
+            return nil
+        }
+    }
+
     private func automaticSignOutPixel() -> (data: SubscriptionAutomaticSignOutPixelData, error: Error)? {
         mockPixelHandler.handledPixels.compactMap { pixel in
             guard case .automaticSignOut(let data, let error) = pixel else {
@@ -1450,6 +1559,7 @@ private struct SubscriptionPixelEvent: PixelKit.Event {
 
 /// A token recovery strategy that runs a closure.
 private struct ClosureTokenRecovery: TokenRecoveryStrategy {
+    let method: TokenRecoveryMethod = .appStore
     let body: (TokenRecoveryContext) async -> TokenRecoveryResult
 
     func recover(_ context: TokenRecoveryContext) async -> TokenRecoveryResult {

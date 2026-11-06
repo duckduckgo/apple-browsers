@@ -473,6 +473,96 @@ final class SubscriptionTokenKeychainStorageTests: XCTestCase {
         XCTAssertEqual(errors[0].0, AccountKeychainAccessType.getAuthToken)
     }
 
+    // MARK: - Expected Token Tests
+
+    func testExpectedToken_whenItemIsMissing_reportsExpectedTokenNotFoundOnce() throws {
+        let keychainManager = makeKeychainManager()
+        var errors: [AccountKeychainAccessError] = []
+        let storage = makeStorage(keychainManager: keychainManager, field: .tokenContainer) { errors.append($0) }
+
+        try storage.saveTokenContainer(OAuthTokensFactory.makeValidTokenContainer())
+        try keychainManager.deleteItem(forKey: "com.duckduckgo.subscription.v2.tokens")
+        XCTAssertNil(try storage.getTokenContainer())
+        XCTAssertNil(try storage.getTokenContainer())
+
+        XCTAssertEqual(errors.count, 1)
+        guard case .expectedTokenNotFound = errors.first else {
+            return XCTFail("Expected expectedTokenNotFound, got \(errors)")
+        }
+    }
+
+    func testExpectedToken_whenLookupFails_doesNotReportExpectedTokenNotFound() throws {
+        let keychainManager = makeKeychainManager()
+        var errors: [AccountKeychainAccessError] = []
+        let storage = makeStorage(keychainManager: keychainManager, field: .tokenContainer) { errors.append($0) }
+
+        try storage.saveTokenContainer(OAuthTokensFactory.makeValidTokenContainer())
+        mockKeychain.shouldFailCopyMatching = true
+        mockKeychain.copyMatchingFailureStatus = errSecInteractionNotAllowed
+        XCTAssertThrowsError(try storage.getTokenContainer())
+
+        XCTAssertEqual(errors.count, 1)
+        guard case .keychainLookupFailure(errSecInteractionNotAllowed) = errors.first else {
+            return XCTFail("Expected keychainLookupFailure, got \(errors)")
+        }
+        XCTAssertTrue(testUserDefaults.bool(forKey: "com.duckduckgo.subscription.v2.tokens.expected"))
+    }
+
+    func testExpectedToken_whenItemIsMissingAfterLookupFailure_reportsExpectedTokenNotFound() throws {
+        let keychainManager = makeKeychainManager()
+        var errors: [AccountKeychainAccessError] = []
+        let storage = makeStorage(keychainManager: keychainManager, field: .tokenContainer) { errors.append($0) }
+
+        try storage.saveTokenContainer(OAuthTokensFactory.makeValidTokenContainer())
+        mockKeychain.shouldFailCopyMatching = true
+        mockKeychain.copyMatchingFailureStatus = errSecInteractionNotAllowed
+        XCTAssertThrowsError(try storage.getTokenContainer())
+        mockKeychain.shouldFailCopyMatching = false
+        try keychainManager.deleteItem(forKey: "com.duckduckgo.subscription.v2.tokens")
+        XCTAssertNil(try storage.getTokenContainer())
+
+        XCTAssertEqual(errors.count, 2)
+        guard case .expectedTokenNotFound = errors.last else {
+            return XCTFail("Expected expectedTokenNotFound, got \(errors)")
+        }
+    }
+
+    func testExpectedToken_whenItemCannotBeDecoded_reportsDecodeFailure() throws {
+        let keychainManager = makeKeychainManager()
+        var errors: [AccountKeychainAccessError] = []
+        let storage = makeStorage(keychainManager: keychainManager, field: .tokenContainer) { errors.append($0) }
+
+        try storage.saveTokenContainer(OAuthTokensFactory.makeValidTokenContainer())
+        try keychainManager.store(data: Data("not a token container".utf8), forKey: "com.duckduckgo.subscription.v2.tokens")
+        XCTAssertNil(try storage.getTokenContainer())
+
+        XCTAssertEqual(errors.count, 1)
+        guard case .failedToDecodeKeychainData = errors.first else {
+            return XCTFail("Expected failedToDecodeKeychainData, got \(errors)")
+        }
+        XCTAssertTrue(testUserDefaults.bool(forKey: "com.duckduckgo.subscription.v2.tokens.expected"))
+    }
+
+    func testUndecodableItem_isReportedOncePerSave() throws {
+        let keychainManager = makeKeychainManager()
+        var errors: [AccountKeychainAccessError] = []
+        let storage = makeStorage(keychainManager: keychainManager, field: .tokenContainer) { errors.append($0) }
+        let undecodable = Data("not a token container".utf8)
+
+        try storage.saveTokenContainer(OAuthTokensFactory.makeValidTokenContainer())
+        try keychainManager.store(data: undecodable, forKey: "com.duckduckgo.subscription.v2.tokens")
+        XCTAssertNil(try storage.getTokenContainer())
+        XCTAssertNil(try storage.getTokenContainer())
+        XCTAssertEqual(errors.count, 1)
+
+        try storage.saveTokenContainer(OAuthTokensFactory.makeValidTokenContainer())
+        try keychainManager.store(data: undecodable, forKey: "com.duckduckgo.subscription.v2.tokens")
+        XCTAssertNil(try storage.getTokenContainer())
+
+        XCTAssertEqual(errors.count, 2)
+        XCTAssertTrue(errors.allSatisfy { if case .failedToDecodeKeychainData = $0 { return true } else { return false } })
+    }
+
     func testKeychainUpdateFailure() throws {
         // First add a token successfully
         let tokenContainer = OAuthTokensFactory.makeValidTokenContainer()

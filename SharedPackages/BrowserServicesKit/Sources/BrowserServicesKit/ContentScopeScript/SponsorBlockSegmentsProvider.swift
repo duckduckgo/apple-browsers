@@ -28,7 +28,7 @@ import os.log
 public actor SponsorBlockSegmentsProvider {
 
     // Segments endpoint; the request URL is `<apiBaseURL>/<hash prefix>?categories=…&actionTypes=…`.
-    public static let apiBaseURL = URL(string: "https://web-dew-1.duckduckgo.com/sponsorblock/v1/segments")!
+    public static let apiBaseURL = URL(string: "https://duckduckgo.com/sponsorblock/v1/segments")!
 
     public typealias DataLoader = (URLRequest) async throws -> (Data, URLResponse)
 

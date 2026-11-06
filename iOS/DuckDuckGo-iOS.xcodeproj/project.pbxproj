@@ -1743,7 +1743,7 @@
 		24AC6CC30F8C54485BBFC541 /* TranslationLanguageAvailability.swift in Sources */ = {isa = PBXBuildFile; fileRef = 69741939673DD5692F44CBF9 /* TranslationLanguageAvailability.swift */; };
 		49A6E5A002A5C10C50FF408A /* translation.js in Resources */ = {isa = PBXBuildFile; fileRef = 3D488D4CD766E434A53C2CDB /* translation.js */; };
 		4E6A12756A6B48D02A664766 /* TranslationSettingsViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9D682AF7C7067E5E7CCC2CB5 /* TranslationSettingsViewModelTests.swift */; };
-		1AF5CD9CF159FAE174590704 /* TranslateKit in Frameworks */ = {isa = PBXBuildFile; productRef = 624DA54B91F1EAC4D2979710 /* TranslateKit */; };
+		80FEDB3B306732730036E705 /* TranslateKit in Frameworks */ = {isa = PBXBuildFile; productRef = 80FEDB3A306732730036E705 /* TranslateKit */; };
 		B774A142AAC975A91EC270D2 /* TranslationLanguageStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2CE98BA81ED06465252A3D26 /* TranslationLanguageStore.swift */; };
 		CD1B1DC2B603C156ED732377 /* TranslationSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6F2A0A1D8DB0B586DA4AC17B /* TranslationSettingsView.swift */; };
 		FAD2CD7CF552224052886BED /* TranslationLanguageStoreTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 34C8ED179F5B68CB72D9500D /* TranslationLanguageStoreTests.swift */; };
@@ -3554,7 +3554,7 @@
 		FDEC1A2B30260001000000F2 /* IOSMonthlyFreeTrialDeciderTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IOSMonthlyFreeTrialDeciderTests.swift; sourceTree = "<group>"; };
 		2CE98BA81ED06465252A3D26 /* TranslationLanguageStore.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = TranslationLanguageStore.swift; path = DuckDuckGo/WebPageTranslation/TranslationLanguageStore.swift; sourceTree = SOURCE_ROOT; };
 		34C8ED179F5B68CB72D9500D /* TranslationLanguageStoreTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = TranslationLanguageStoreTests.swift; path = DuckDuckGoTests/WebPageTranslation/TranslationLanguageStoreTests.swift; sourceTree = SOURCE_ROOT; };
-		3D488D4CD766E434A53C2CDB /* translation.js */ = {isa = PBXFileReference; includeInIndex = 1; name = translation.js; path = DuckDuckGo/WebPageTranslation/translation.js; sourceTree = SOURCE_ROOT; };
+		3D488D4CD766E434A53C2CDB /* translation.js */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.javascript; name = translation.js; path = DuckDuckGo/WebPageTranslation/translation.js; sourceTree = SOURCE_ROOT; };
 		5C0DFFE29A9250110EC62CED /* TranslationSettingsViewModel.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = TranslationSettingsViewModel.swift; path = DuckDuckGo/WebPageTranslation/TranslationSettingsViewModel.swift; sourceTree = SOURCE_ROOT; };
 		62883595A3CDEBD0C11620D5 /* TranslationLanguageAvailabilityTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = TranslationLanguageAvailabilityTests.swift; path = DuckDuckGoTests/WebPageTranslation/TranslationLanguageAvailabilityTests.swift; sourceTree = SOURCE_ROOT; };
 		69741939673DD5692F44CBF9 /* TranslationLanguageAvailability.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = TranslationLanguageAvailability.swift; path = DuckDuckGo/WebPageTranslation/TranslationLanguageAvailability.swift; sourceTree = SOURCE_ROOT; };
@@ -3747,7 +3747,7 @@
 				9FDD72052D895D8C0016246B /* CombineSchedulers in Frameworks */,
 				9F254AF12CF8D5250063B308 /* MaliciousSiteProtection in Frameworks */,
 				5B7CA46B2FAE693000D69C83 /* ICSParser in Frameworks */,
-				1AF5CD9CF159FAE174590704 /* TranslateKit in Frameworks */,
+				80FEDB3B306732730036E705 /* TranslateKit in Frameworks */,
 				F4D7F634298C00C3006C3AE9 /* FindInPageIOSJSSupport in Frameworks */,
 				4B94B79E2D4831D90014AAB8 /* SyncUI-iOS in Frameworks */,
 				DA46CDBDABEE6B9945F597C3 /* AIChatDebugServer in Frameworks */,
@@ -7829,7 +7829,7 @@
 				315E39642F86ABEE00D2289D /* DebugServer */,
 				3C12C8760D7AF6C888DAD36A /* AIChatDebugServer */,
 				5B7CA46A2FAE693000D69C83 /* ICSParser */,
-				624DA54B91F1EAC4D2979710 /* TranslateKit */,
+				80FEDB3A306732730036E705 /* TranslateKit */,
 				EE7B00000000000000000002 /* EventHub */,
 				A7B000092F6A000100000001 /* PreviewSnapshots */,
 			);
@@ -8294,7 +8294,7 @@
 				BD0C4D872DC54508001F034F /* XCLocalSwiftPackageReference "LocalPackages/DuckUI" */,
 				7B0752DA2F21BFDB00ACA559 /* XCLocalSwiftPackageReference "../SharedPackages/AutomationServer" */,
 				9FADFC482F5FC56400CA16F7 /* XCRemoteSwiftPackageReference "native-apps-ducksans" */,
-				DCA188F3D0BF46B0BE19F781 /* XCLocalSwiftPackageReference "translate-kit" */,
+				80FEDB39306732730036E705 /* XCRemoteSwiftPackageReference "translate-kit" */,
 				315E39632F86ABE100D2289D /* XCLocalSwiftPackageReference "../SharedPackages/DebugServer" */,
 				A7B000022F6A000100000001 /* XCLocalSwiftPackageReference "../SharedPackages/SnapshotTestingSupport" */,
 				A91A00013031000100000001 /* XCLocalSwiftPackageReference "../SharedPackages/UITestingSupport" */,
@@ -13461,10 +13461,6 @@
 			isa = XCLocalSwiftPackageReference;
 			relativePath = ../SharedPackages/URLPredictor;
 		};
-		DCA188F3D0BF46B0BE19F781 /* XCLocalSwiftPackageReference "translate-kit" */ = {
-			isa = XCLocalSwiftPackageReference;
-			relativePath = ../../../../translate-kit;
-		};
 /* End XCLocalSwiftPackageReference section */
 
 /* Begin XCRemoteSwiftPackageReference section */
@@ -13588,6 +13584,14 @@
 			requirement = {
 				kind = exactVersion;
 				version = 2.0.0;
+			};
+		};
+		80FEDB39306732730036E705 /* XCRemoteSwiftPackageReference "translate-kit" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/duckduckgo/translate-kit.git";
+			requirement = {
+				kind = exactVersion;
+				version = 0.2.1;
 			};
 		};
 /* End XCRemoteSwiftPackageReference section */
@@ -14318,9 +14322,9 @@
 			isa = XCSwiftPackageProductDependency;
 			productName = URLPredictor;
 		};
-		624DA54B91F1EAC4D2979710 /* TranslateKit */ = {
+		80FEDB3A306732730036E705 /* TranslateKit */ = {
 			isa = XCSwiftPackageProductDependency;
-			package = DCA188F3D0BF46B0BE19F781 /* XCLocalSwiftPackageReference "translate-kit" */;
+			package = 80FEDB39306732730036E705 /* XCRemoteSwiftPackageReference "translate-kit" */;
 			productName = TranslateKit;
 		};
 /* End XCSwiftPackageProductDependency section */

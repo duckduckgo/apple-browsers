@@ -32,6 +32,8 @@ import NaturalLanguage
 import ObjectiveC
 import os.log
 import TranslateKit
+import UserScript
+import BrowserServicesKit
 
 private let pocLogger = Logger(subsystem: "com.duckduckgo.ios", category: "WebPageTranslationPOC")
 
@@ -60,6 +62,13 @@ private final class WebPageTranslationPOCState {
     enum Mode { case idle, translating, translated }
     var mode: Mode = .idle
     var task: Task<Void, Never>?
+    // Set while the C-S-S `pageTranslation` path is in use (nil → legacy translation.js).
+    var pageTranslation: PageTranslationSubfeature?
+    // The on-demand `pageTranslation` bundle and its subfeature, created on the tab's first translation.
+    var pageTranslationScript: (script: ContentScopeUserScript, feature: PageTranslationSubfeature)?
+    var sourceLanguage = ""
+    var targetLanguage = ""
+    var unitTexts: [Int: String] = [:]   // id → extracted text, to log rejected applies
 }
 
 private let pocStateKey = malloc(1)!
@@ -103,6 +112,7 @@ extension TabViewController {
         pocState.task?.cancel()
         pocState.task = nil
         pocState.mode = .idle
+        pocState.pageTranslation = nil
     }
 
     // MARK: - Entry points (menu actions)
@@ -196,17 +206,50 @@ extension TabViewController {
 
     @MainActor
     private func revertPagePOC() async throws {
+        if let feature = pocState.pageTranslation {
+            pocState.pageTranslation = nil
+            guard let result = await feature.revert() else {
+                pocLogger.error("POC css revert: no reply")
+                return
+            }
+            pocLogger.info("POC css revert: \(result.count, privacy: .public) units restored, exact=\(result.exact, privacy: .public)")
+            if !result.exact {
+                // Should never happen: every occurrence is a C-S-S bug to report.
+                pocLogger.error("POC css revert NOT EXACT → reloading the page")
+                webView.reload()
+            }
+            return
+        }
         _ = try await evaluatePOCJavaScript("window.__ddgPOC && window.__ddgPOC.revert()")
     }
 
     // MARK: - Pipeline
 
+    /// Loads translation.js (legacy) or injects the C-S-S bundle. Nil after showing the failure.
+    @MainActor
+    private func preparePOCScripts() async -> (legacyScript: String?, pageTranslation: PageTranslationSubfeature?)? {
+        guard !TranslationDebugSettings().useLegacyScript else {
+            guard let script = loadPOCScript() else {
+                finishWithMessage(title: "POC failed", message: "Could not load translation.js")
+                return nil
+            }
+            return (script, nil)
+        }
+        let start = Date()
+        do {
+            let pageTranslation = try await injectPageTranslationPOC()
+            pocLogger.info("POC css inject: \(Date().timeIntervalSince(start), privacy: .public)s")
+            return (nil, pageTranslation)
+        } catch {
+            finishWithMessage(title: "POC failed", message: "Could not inject pageTranslation.js: \(error.localizedDescription)")
+            return nil
+        }
+    }
+
     @MainActor
     private func runPOCPipeline(approach: POCApproach) async {
-        guard let script = loadPOCScript() else {
-            finishWithMessage(title: "POC failed", message: "Could not load translation.js")
-            return
-        }
+        guard let prepared = await preparePOCScripts() else { return }
+        let (script, pageTranslation) = prepared
         let start = Date()
 
         // Vars hoisted above `do` so the `catch` block can read them for the diagnostic report.
@@ -219,13 +262,10 @@ extension TabViewController {
         var viewportCount: Int = 0
 
         do {
-            _ = try await evaluatePOCJavaScript(script)
-            // fullPageHTML bypasses block extraction and translates the whole body innerHTML as one unit.
             settings = TranslationDebugSettings()
-            let extractionScope = settings.extractionScope
-            let extractFunction = extractionScope == .fullPageHTML ? "extractFullPage" : "extract"
-            let extractResult = try await evaluatePOCJavaScript("window.__ddgPOC.\(extractFunction)()")
-            items = (extractResult as? [[String: Any]]) ?? []
+            items = try await extractUnitsPOC(pageTranslation: pageTranslation, legacyScript: script, scope: settings.extractionScope)
+            // Plain-text units (html: false) are translated with isHtml false; legacy units are all HTML.
+            let plainTexts = Set(items.filter { ($0["html"] as? NSNumber)?.boolValue == false }.compactMap { $0["text"] as? String })
             // uniqueTexts is ordered viewport-visible-first; viewportCount is the size of that prefix.
             let (deduped, textToIDs, vpCount) = dedupePOC(items)
             uniqueTexts = deduped
@@ -242,10 +282,16 @@ extension TabViewController {
             let rawTarget = TranslationLanguageStore().targetLanguageCode
             targetCode = String(rawTarget.split(separator: "-", maxSplits: 1).first ?? Substring(rawTarget))
             if #available(iOS 16.0, *) {
-                let d = detectSource(from: uniqueTexts, detector: settings.detector, input: settings.detectionInput)
+                // C-S-S html units carry data-t tags; strip them so the detector only sees text.
+                let detectionTexts = pageTranslation == nil ? uniqueTexts : uniqueTexts.map(Self.strippingTags)
+                let d = settings.detectionInput == .nativeSample
+                    ? try await detectFromNativeSamplePOC(detector: settings.detector)
+                    : detectSource(from: detectionTexts, detector: settings.detector, input: settings.detectionInput)
                 detectedSourceCode = d.language?.languageCode?.identifier
                 detectionSeconds = d.seconds
             }
+            pocState.sourceLanguage = detectedSourceCode ?? ""
+            pocState.targetLanguage = targetCode
 
             var runResult: POCRunResult
             switch approach {
@@ -269,6 +315,7 @@ extension TabViewController {
             case .bergamot:
                 // ponytail: no availability gating for Bergamot — deliberate finding vs Apple NMT's iOS 18 floor
                 runResult = try await runBergamot(uniqueTexts: uniqueTexts,
+                                                   plainTexts: plainTexts,
                                                    textToIDs: textToIDs,
                                                    viewportCount: viewportCount,
                                                    start: start,
@@ -310,6 +357,69 @@ extension TabViewController {
                 finishWithMessage(title: "POC failed · \(approach.label)", message: error.localizedDescription)
             }
         }
+    }
+
+    /// Injects the C-S-S `pageTranslation` bundle into the main frame's page world, on demand.
+    /// The message handler is (re)added on every call: it costs nothing and survives handler resets.
+    @MainActor
+    private func injectPageTranslationPOC() async throws -> PageTranslationSubfeature {
+        let (script, feature) = try pocState.pageTranslationScript ?? makePageTranslationScriptPOC()
+        pocState.pageTranslationScript = (script, feature)
+        feature.webView = webView
+
+        let controller = webView.configuration.userContentController
+        for name in script.messageNames {
+            controller.removeScriptMessageHandler(forName: name, contentWorld: .page)
+            controller.addScriptMessageHandler(script, contentWorld: .page, name: name)
+        }
+
+        // shortcut: a page-visible window flag stops a second copy on the same document; use a native per-document flag for real.
+        let source = "(() => { if (window.__ddgPageTranslationLoaded) { return; } window.__ddgPageTranslationLoaded = true;\n\(script.source)\n})(); true"
+        try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
+            webView.evaluateJavaScript(source, in: nil, in: .page) { result in
+                continuation.resume(with: result.map { _ in () })
+            }
+        }
+        return feature
+    }
+
+    private func makePageTranslationScriptPOC() throws -> (script: ContentScopeUserScript, feature: PageTranslationSubfeature) {
+        let feature = PageTranslationSubfeature()
+        let properties = ContentScopeProperties(gpcEnabled: false,
+                                                sessionKey: UUID().uuidString,
+                                                messageSecret: UUID().uuidString,
+                                                isInternalUser: AppDependencyProvider.shared.internalUserDecider.isInternalUser,
+                                                featureToggles: .supportedFeaturesOniOS)
+        let script = try ContentScopeUserScript(userScriptsDependencies.privacyConfigurationManager,
+                                                properties: properties,
+                                                scriptContext: .pageTranslation,
+                                                allowedNonisolatedFeatures: [feature.featureName],
+                                                privacyConfigurationJSONGenerator: nil)
+        script.registerSubfeature(delegate: feature)
+        return (script, feature)
+    }
+
+    /// Extracts units through the C-S-S `pageTranslation` feature, or the legacy translation.js when `pageTranslation` is nil.
+    @MainActor
+    private func extractUnitsPOC(pageTranslation: PageTranslationSubfeature?, legacyScript: String?,
+                                 scope: TranslationExtractionScope) async throws -> [[String: Any]] {
+        guard let pageTranslation else {
+            _ = try await evaluatePOCJavaScript(legacyScript ?? "")
+            // fullPageHTML bypasses block extraction and translates the whole body innerHTML as one unit.
+            let extractFunction = scope == .fullPageHTML ? "extractFullPage" : "extract"
+            return (try await evaluatePOCJavaScript("window.__ddgPOC.\(extractFunction)()") as? [[String: Any]]) ?? []
+        }
+        // C-S-S path: one `extract`, no full-page mode.
+        let extractStart = Date()
+        guard let units = await pageTranslation.extract() else {
+            throw POCError(message: "pageTranslation: no extractResult (bundle not injected, or disabled in remote config?)")
+        }
+        pocLogger.info("POC css extract: \(units.count, privacy: .public) units in \(Date().timeIntervalSince(extractStart), privacy: .public)s")
+        pocState.pageTranslation = pageTranslation
+        pocState.unitTexts = Dictionary(units.compactMap { u in
+            (u["id"] as? NSNumber).flatMap { id in (u["text"] as? String).map { (id.intValue, $0) } }
+        }, uniquingKeysWith: { first, _ in first })
+        return units
     }
 
     /// Builds and presents the diagnostic report sheet. On the failure path, the report REPLACES
@@ -369,6 +479,10 @@ extension TabViewController {
         return (viewportTexts + restTexts, textToIDs, viewportTexts.count)
     }
 
+    private static func strippingTags(_ text: String) -> String {
+        text.replacingOccurrences(of: "<[^>]+>", with: "", options: .regularExpression)
+    }
+
     /// Builds the detection sample per the debug setting: HTML-or-stripped × first-50-or-full-page.
     private func detectionSample(from texts: [String], input: TranslationDetectionInput) -> String {
         let selected = input.usesFullPage ? texts : Array(texts.prefix(50))
@@ -401,6 +515,24 @@ extension TabViewController {
         return (language, ProcessInfo.processInfo.systemUptime - start)
     }
 
+    /// Detects from a sample native reads itself (innerText + <html lang>) in an isolated world the page can't tamper with.
+    /// Falls back to the lang attribute when the detector is inconclusive. Seconds include the JS read.
+    @available(iOS 16.0, *)
+    @MainActor
+    private func detectFromNativeSamplePOC(detector: TranslationDetector) async throws -> (language: Locale.Language?, seconds: Double) {
+        let start = ProcessInfo.processInfo.systemUptime
+        let result = try await webView.callAsyncJavaScript(
+            "return [(document.body?.innerText ?? '').slice(0, 4096), document.documentElement.lang ?? '']",
+            contentWorld: .defaultClient)
+        let values = result as? [String] ?? []
+        let text = values.first ?? "", lang = values.last ?? ""
+        let readSeconds = ProcessInfo.processInfo.systemUptime - start
+        let detected = detectSource(from: [text], detector: detector, input: .nativeSample).language
+        let langAttribute = lang.isEmpty ? nil : Locale.Language(identifier: lang)
+        pocLogger.info("POC native sample: \(text.count, privacy: .public) chars read in \(String(format: "%.3f", readSeconds), privacy: .public)s, lang=\(lang, privacy: .public), detector=\(detected?.languageCode?.identifier ?? "nil", privacy: .public)")
+        return (detected ?? langAttribute, ProcessInfo.processInfo.systemUptime - start)
+    }
+
     /// Lightweight struct carrying engine-run results needed by the diagnostic report.
     private struct POCRunResult {
         var translated: Int
@@ -422,9 +554,38 @@ extension TabViewController {
     @MainActor
     private func applyTranslationsPOC(_ updates: [[String: Any]]) async throws {
         guard !updates.isEmpty else { return }
+        if let feature = pocState.pageTranslation {
+            try await applyViaPageTranslation(feature, updates: updates)
+            return
+        }
         let data = try JSONSerialization.data(withJSONObject: updates)
         guard let json = String(bytes: data, encoding: .utf8) else { return }
         _ = try await evaluatePOCJavaScript("window.__ddgPOC.apply(\(json))")
+    }
+
+    /// Pushes `apply` and logs `applyResult.count` against the number sent. When some were rejected,
+    /// re-sends that batch one update at a time (apply is idempotent) to log each rejected IN/OUT pair.
+    @MainActor
+    private func applyViaPageTranslation(_ feature: PageTranslationSubfeature, updates: [[String: Any]]) async throws {
+        let typed = updates.compactMap { u in
+            (u["id"] as? Int).flatMap { id in (u["text"] as? String).map { PageTranslationSubfeature.Update(id: id, text: $0) } }
+        }
+        let source = pocState.sourceLanguage, target = pocState.targetLanguage
+        let applyStart = Date()
+        guard let count = await feature.apply(source: source, target: target, updates: typed) else {
+            throw POCError(message: "pageTranslation: no applyResult")
+        }
+        try Task.checkCancellation()
+        pocLogger.info("POC css apply: \(count, privacy: .public)/\(typed.count, privacy: .public) written in \(Date().timeIntervalSince(applyStart), privacy: .public)s")
+        guard count < typed.count else { return }
+        for update in typed {
+            guard await feature.apply(source: source, target: target, updates: [update]) == 0 else { continue }
+            pocLogger.error("""
+            POC css REJECTED id=\(update.id, privacy: .public)
+              IN : \(self.pocState.unitTexts[update.id] ?? "?", privacy: .public)
+              OUT: \(update.text, privacy: .public)
+            """)
+        }
     }
 
     /// A dimming overlay + centered spinner shown while the viewport batch translates.
@@ -602,6 +763,7 @@ extension TabViewController {
 
     @MainActor
     private func runBergamot(uniqueTexts: [String],
+                             plainTexts: Set<String>,
                              textToIDs: [String: [Int]],
                              viewportCount: Int,
                              start: Date,
@@ -675,8 +837,12 @@ extension TabViewController {
                 _ = batchOffset // suppress unused warning; OUT logged after translate
             }
 
-            // Translate off-main — blocking C ABI call runs inside the actor.
-            let outputTexts = try await engine.translate(strings)
+            // Translate off-main — blocking C ABI call runs inside the actor. One call per html flag.
+            let isPlain = strings.map(plainTexts.contains)
+            let plainOut = try await engine.translate(strings.indices.filter { isPlain[$0] }.map { strings[$0] }, isHtml: false)
+            let htmlOut = try await engine.translate(strings.indices.filter { !isPlain[$0] }.map { strings[$0] }, isHtml: true)
+            var plainIterator = plainOut.makeIterator(), htmlIterator = htmlOut.makeIterator()
+            let outputTexts = isPlain.compactMap { $0 ? plainIterator.next() : htmlIterator.next() }
 
             // Back on MainActor: build updates and apply to page.
             var updates: [[String: Any]] = []
@@ -824,9 +990,10 @@ private actor BergamotEngine {
         self.model = m
     }
 
-    func translate(_ strings: [String]) throws -> [String] {
+    func translate(_ strings: [String], isHtml: Bool) throws -> [String] {
+        guard !strings.isEmpty else { return [] }
         guard let model else { throw BergamotEngineError.notPrepared }
-        let results = try model.translate(strings, isHtml: true)
+        let results = try model.translate(strings, isHtml: isHtml)
         return results.map(\.text)
     }
 }
@@ -903,4 +1070,75 @@ private struct POCTranslationItem {
     var id: Int
     @Guide(description: "The Spanish translation of the source line.")
     var translation: String
+}
+
+// MARK: - C-S-S pageTranslation subfeature (page world)
+
+/// Talks to the content-scope-scripts `pageTranslation` feature. Native pushes `extract`/`apply`/`revert`;
+/// the page replies with `extractResult`/`applyResult`/`revertResult` notifications, awaited here.
+final class PageTranslationSubfeature: NSObject, Subfeature {
+
+    static let featureNameValue = "pageTranslation"
+    var featureName: String { Self.featureNameValue }
+    let messageOriginPolicy: MessageOriginPolicy = .all
+    weak var broker: UserScriptMessageBroker?
+    weak var webView: WKWebView?
+
+    struct Update: Encodable { let id: Int; let text: String }
+    private struct ApplyParams: Encodable { let sourceLanguage: String; let targetLanguage: String; let updates: [Update] }
+
+    // One pending request per reply name; a newer request or the timeout resumes the old one with nil.
+    @MainActor private var pending: [String: (token: Int, continuation: CheckedContinuation<[String: Any]?, Never>)] = [:]
+    @MainActor private var nextToken = 0
+
+    func with(broker: UserScriptMessageBroker) {
+        self.broker = broker
+    }
+
+    @MainActor func extract() async -> [[String: Any]]? {
+        await request("extract", params: nil, reply: "extractResult")?["units"] as? [[String: Any]]
+    }
+
+    @MainActor func apply(source: String, target: String, updates: [Update]) async -> Int? {
+        let params = ApplyParams(sourceLanguage: source, targetLanguage: target, updates: updates)
+        return (await request("apply", params: params, reply: "applyResult")?["count"] as? NSNumber)?.intValue
+    }
+
+    @MainActor func revert() async -> (count: Int, exact: Bool)? {
+        guard let reply = await request("revert", params: nil, reply: "revertResult") else { return nil }
+        return ((reply["count"] as? NSNumber)?.intValue ?? 0, (reply["exact"] as? NSNumber)?.boolValue ?? false)
+    }
+
+    @MainActor private func request(_ method: String, params: Encodable?, reply: String) async -> [String: Any]? {
+        guard let broker, let webView else { return nil }
+        nextToken += 1
+        let token = nextToken
+        return await withCheckedContinuation { continuation in
+            pending.removeValue(forKey: reply)?.continuation.resume(returning: nil)
+            pending[reply] = (token, continuation)
+            broker.push(method: method, params: params, for: self, into: webView)
+            Task { @MainActor [weak self] in
+                try? await Task.sleep(nanoseconds: 30_000_000_000)
+                guard let self, self.pending[reply]?.token == token else { return }
+                pocLogger.error("POC css: no \(reply, privacy: .public) within 30s")
+                self.pending.removeValue(forKey: reply)?.continuation.resume(returning: nil)
+            }
+        }
+    }
+
+    @MainActor private func resolve(_ reply: String, params: Any) {
+        pending.removeValue(forKey: reply)?.continuation.resume(returning: params as? [String: Any] ?? [:])
+    }
+
+    func handler(forMethodNamed methodName: String) -> Subfeature.Handler? {
+        switch methodName {
+        case "extractResult", "applyResult", "revertResult":
+            return { [weak self] params, _ in
+                await self?.resolve(methodName, params: params)
+                return nil
+            }
+        default:
+            return nil
+        }
+    }
 }

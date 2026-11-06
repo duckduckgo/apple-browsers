@@ -34,6 +34,7 @@ enum TranslationDetectionInput: String, CaseIterable {
     case htmlFullPage       // HTML, full page
     case textFirst50        // stripped text, first 50 units
     case textFullPage       // stripped text, full page
+    case nativeSample       // native reads body.innerText (first 4 KB) + <html lang>, no C-S-S involvement
     var stripsHTML: Bool { self == .textFirst50 || self == .textFullPage }
     var usesFullPage: Bool { self == .htmlFullPage || self == .textFullPage }
 }
@@ -52,6 +53,11 @@ final class TranslationDebugSettings {
     var diagnosticReportEnabled: Bool {
         get { defaults.bool(forKey: "translationDebug.diagnosticReportEnabled") }   // absent → false, correct default
         set { defaults.set(newValue, forKey: "translationDebug.diagnosticReportEnabled") }
+    }
+    /// Old path: inject translation.js and call `window.__ddgPOC`. Off → the C-S-S `pageTranslation` feature.
+    var useLegacyScript: Bool {
+        get { defaults.bool(forKey: "translationDebug.useLegacyScript") }
+        set { defaults.set(newValue, forKey: "translationDebug.useLegacyScript") }
     }
     var detectionInput: TranslationDetectionInput {
         get { defaults.string(forKey: "translationDebug.detectionInput").flatMap(TranslationDetectionInput.init(rawValue:)) ?? .htmlFirst50 }

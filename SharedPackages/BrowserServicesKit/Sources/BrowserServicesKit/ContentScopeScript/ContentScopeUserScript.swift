@@ -54,10 +54,12 @@ public enum ContentScopeScriptContext: Equatable {
     case contentScopeIsolated
     case aiChatDataClearing
     case aiChatHistory
+    /// Page translation bundle, injected on demand when the user translates a page.
+    case pageTranslation
 
     public var isIsolated: Bool {
         switch self {
-        case .contentScope, .aiChatDataClearing, .aiChatHistory:
+        case .contentScope, .aiChatDataClearing, .aiChatHistory, .pageTranslation:
             return false
         case .contentScopeIsolated:
             return true
@@ -70,7 +72,7 @@ public enum ContentScopeScriptContext: Equatable {
         switch self {
         case .contentScope, .contentScopeIsolated:
             return true
-        case .aiChatDataClearing, .aiChatHistory:
+        case .aiChatDataClearing, .aiChatHistory, .pageTranslation:
             return false
         }
     }
@@ -85,6 +87,8 @@ public enum ContentScopeScriptContext: Equatable {
             return "duckAiDataClearing"
         case .aiChatHistory:
             return "duckAiChatHistory"
+        case .pageTranslation:
+            return "pageTranslation"
         }
     }
 
@@ -98,6 +102,8 @@ public enum ContentScopeScriptContext: Equatable {
             return "duckAiChatHistory"
         case .contentScopeIsolated:
             return "contentScopeScriptsIsolated"
+        case .pageTranslation:
+            return "pageTranslation"
         }
     }
 }
@@ -304,13 +310,16 @@ public final class ContentScopeUserScript: NSObject, UserScript, UserScriptMessa
               let userUnprotectedDomainsString = String(data: userUnprotectedDomains, encoding: .utf8),
               let jsonPropertiesString = try? encodeProperties(properties, scriptContext: scriptContext),
               let jsonConfig = try? JSONEncoder().encode(config),
-              let jsonConfigString = String(data: jsonConfig, encoding: .utf8)
+              let jsonConfigString = String(data: jsonConfig, encoding: .utf8),
+              // C-S-S 18+ reads `JSON.parse($CONTENT_SCOPE_JSON$)`: the config JSON as a JS string literal.
+              let privacyConfigLiteral = String(data: try JSONEncoder().encode(privacyConfigJson), encoding: .utf8)
         else {
             return ""
         }
 
         return try loadJS(scriptContext.fileName, from: ContentScopeScripts.Bundle, withReplacements: [
             "$CONTENT_SCOPE$": privacyConfigJson,
+            "$CONTENT_SCOPE_JSON$": privacyConfigLiteral,
             "$USER_UNPROTECTED_DOMAINS$": userUnprotectedDomainsString,
             "$USER_PREFERENCES$": jsonPropertiesString,
             "$WEBKIT_MESSAGING_CONFIG$": jsonConfigString

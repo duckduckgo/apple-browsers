@@ -27,6 +27,7 @@ struct WebPageTranslationDebugView: View {
     @State private var detector: TranslationDetector
     @State private var report: Bool
     @State private var detectionInput: TranslationDetectionInput
+    @State private var legacyScript: Bool
 
     init() {
         let s = TranslationDebugSettings()
@@ -34,6 +35,7 @@ struct WebPageTranslationDebugView: View {
         _detector = State(initialValue: s.detector)
         _report = State(initialValue: s.diagnosticReportEnabled)
         _detectionInput = State(initialValue: s.detectionInput)
+        _legacyScript = State(initialValue: s.useLegacyScript)
     }
 
     var body: some View {
@@ -53,13 +55,16 @@ struct WebPageTranslationDebugView: View {
                 Text("HTML, first 50").tag(TranslationDetectionInput.htmlFirst50)
                 Text("Text (stripped), full page").tag(TranslationDetectionInput.textFullPage)
                 Text("Text (stripped), first 50").tag(TranslationDetectionInput.textFirst50)
+                Text("Native sample (innerText + lang)").tag(TranslationDetectionInput.nativeSample)
             }
             Toggle("Diagnostic report", isOn: $report)
+            Toggle("Legacy translation.js (instead of C-S-S)", isOn: $legacyScript)
         }
         .navigationTitle("Web Page Translation")
         .onChange(of: scope) { newValue in settings.extractionScope = newValue }
         .onChange(of: detector) { newValue in settings.detector = newValue }
         .onChange(of: detectionInput) { newValue in settings.detectionInput = newValue }
         .onChange(of: report) { newValue in settings.diagnosticReportEnabled = newValue }
+        .onChange(of: legacyScript) { newValue in settings.useLegacyScript = newValue }
     }
 }

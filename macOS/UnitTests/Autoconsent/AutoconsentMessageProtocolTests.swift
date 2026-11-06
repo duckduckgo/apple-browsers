@@ -25,7 +25,7 @@ import FoundationExtensions
 import History
 import HistoryView
 @_spi(Testing) import Persistence
-import PixelKit
+@_spi(Testing) import PixelKit
 import PrivacyConfig
 import PrivacyConfigTestsUtils
 import PrivacyDashboard
@@ -164,6 +164,22 @@ class AutoconsentMessageProtocolTests: XCTestCase {
             "autoconsent_unhandled": 1, "autoconsent_unhandled_top10k": 1,
         ])
         XCTAssertTrue(management.pixelCounter.isEmpty)
+    }
+
+    @MainActor
+    func testWhenSummaryPixelsFireThenOneSummaryPixelIsFiredPerSiteRank() {
+        let pixelFiring = PixelKitMock()
+        let management = AutoconsentManagement()
+        management.pixelFiring = pixelFiring
+        management.pixelCounter = [CPMSiteRank.top10k: ["init": 2], CPMSiteRank.other: ["init": 3]]
+
+        management.fireSummaryPixels(additionalParameters: ["source": "test"])
+
+        XCTAssertEqual(pixelFiring.actualFireCalls.map(\.pixel.name), ["autoconsent_summary", "autoconsent_summary"])
+        XCTAssertTrue(pixelFiring.actualFireCalls.allSatisfy { $0.frequency == .standard })
+        XCTAssertEqual(Set(pixelFiring.actualFireCalls.compactMap { $0.additionalParameters?["siteRank"] }),
+                       [CPMSiteRank.top10k.rawValue, CPMSiteRank.other.rawValue])
+        XCTAssertTrue(pixelFiring.actualFireCalls.allSatisfy { $0.additionalParameters?["source"] == "test" })
     }
 
     func testWhenEmbeddedExtensionReportsCoverageThenItIsCountedInEventHub() throws {

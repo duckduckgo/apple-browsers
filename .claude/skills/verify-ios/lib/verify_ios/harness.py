@@ -643,11 +643,11 @@ def _write(path, text):
 
 
 def _cleanup(device):
-    """Stop what this proof started for the device and, if no other device's proof is running, the fixture server.
-    Returns problems (survivors, errors); never raises."""
+    """Stop what this proof started for the device, delete its simulator, and, if no other device's proof is running,
+    stop the fixture server. Returns problems (survivors, errors); never raises."""
     problems = []
     try:
-        res = Device(device).cleanup()
+        res = Device(device).cleanup(delete_sim=True)
         if res.get("left"):
             problems.append(f"cleanup left processes running: {res['left']} (recorded; `cleanup` retries them)")
         problems += [p for r in res.get("removed", []) if isinstance(r, dict) for p in r.get("problems", [])]
@@ -678,7 +678,6 @@ def _skill_hash():
 
 
 def _manifest(proof_path, attempt, devices, live, flags, build, results, started, decision_log=None):
-    st = env.load_state()
     xcode = run(["xcodebuild", "-version"]).stdout.split()
     hosts = sorted({h for r in results for h in r.get("liveHostsSeen", [])})
     return dict(
@@ -690,7 +689,8 @@ def _manifest(proof_path, attempt, devices, live, flags, build, results, started
         flags={**env.PINNED_FLAGS, **flags},
         capture={r["device"]: r.get("capture") for r in results if r.get("device") != "-"},
         skillSha256=_skill_hash(), xcode=" ".join(xcode[:4]),
-        simulators={d: dict(udid=st.get("sims", {}).get(d), type=env.DEVICE_TYPES[d], runtime=env.RUNTIME) for d in devices},
+        simulators={r["device"]: dict(udid=(r.get("launched") or {}).get("udid"), type=env.DEVICE_TYPES[r["device"]], runtime=env.RUNTIME)
+                    for r in results if r.get("device") in env.DEVICE_TYPES},
         live=live or [], liveHostsSeen=hosts,
         evidenceKind="live services: " + ", ".join(live) if live else "local fixture and app only",
         rerun=f"{SKILL}/bin/verify-ios prove {proof_path} --devices {','.join(devices)}" + (f" --decision-log {os.path.realpath(decision_log)}" if decision_log else ""),

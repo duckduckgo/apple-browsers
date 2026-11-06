@@ -39,13 +39,39 @@ class Device:
         os.environ["AUTOMATION_TOKEN"] = self.token
         self.web = Web(self.web_port, self.token)
         self._driver = None
+        self._udid = None
+
+    @property
+    def name(self):
+        return f"verify-ios-{KEY}-{self.device}"
+
+    def _find(self):
+        """This worktree's simulator for the device, or None. Looked up by name, never remembered across commands:
+        each proof deletes its simulator when it ends."""
+        devs = json.loads(run(["xcrun", "simctl", "list", "devices", "-j"]).stdout)["devices"]
+        return next((d for ds in devs.values() for d in ds if d["name"] == self.name and d.get("isAvailable", True)), None)
 
     @property
     def udid(self):
-        u = env.load_state().get("sims", {}).get(self.device)
-        if not u:
-            raise Failed(f"no {self.device} simulator for this worktree: run `setup --device {self.device}`")
-        return u
+        if self._udid is None:
+            found = self._find()
+            if not found:
+                raise Failed(f"no {self.device} simulator for this worktree (each proof deletes its own when it ends): "
+                             f"run `--device {self.device} launch`")
+            self._udid = found["udid"]
+        return self._udid
+
+    def _ensure(self):
+        """Find or create the simulator without booting it. True if it was created."""
+        found = self._find()
+        if found:
+            self._udid = found["udid"]
+            return False
+        p = run(["xcrun", "simctl", "create", self.name, DEVICE_TYPES[self.device], RUNTIME])
+        if p.returncode:
+            raise Failed("simctl create failed", stderr=p.stderr.strip())
+        self._udid = p.stdout.strip()
+        return True
 
     @property
     def driver(self):
@@ -58,33 +84,24 @@ class Device:
 
     # setup / build -------------------------------------------------------------
     def setup(self):
-        """Create (or adopt) this worktree's dedicated simulator for the device, and boot it."""
-        name = f"verify-ios-{KEY}-{self.device}"
-        devs = json.loads(run(["xcrun", "simctl", "list", "devices", "-j"]).stdout)["devices"]
-        found = [d for ds in devs.values() for d in ds if d["name"] == name and d.get("isAvailable", True)]
-        created = False
-        if found:
-            udid = found[0]["udid"]
-        else:
-            p = run(["xcrun", "simctl", "create", name, DEVICE_TYPES[self.device], RUNTIME])
-            if p.returncode:
-                raise Failed("simctl create failed", stderr=p.stderr.strip())
-            udid, created = p.stdout.strip(), True
-        env.update_state(lambda st: st.setdefault("sims", {}).__setitem__(self.device, udid))
+        """Create (or adopt) this worktree's simulator for the device, and boot it."""
+        created = self._ensure()
+        udid = self.udid
         run(["xcrun", "simctl", "boot", udid])
         p = run(["xcrun", "simctl", "bootstatus", udid, "-b"], timeout=300)
         if p.returncode:
             raise Failed("simulator did not finish booting", stderr=p.stderr.strip())
         self._driver = None
-        return dict(udid=udid, name=name, created=created, ports=dict(web=self.web_port, runner=self.runner_port, fixture=env.fixture_port()))
+        return dict(udid=udid, name=self.name, created=created, ports=dict(web=self.web_port, runner=self.runner_port, fixture=env.fixture_port()))
 
     def booted(self):
-        u = env.load_state().get("sims", {}).get(self.device)
-        return bool(u) and "(Booted)" in run(["xcrun", "simctl", "list", "devices", u]).stdout
+        found = self._find()
+        return bool(found) and found.get("state") == "Booted"
 
     def build(self, app=True, runner=True):
         """Build this worktree's app and the runner against this device's simulator (generic destinations fail)."""
         os.makedirs(f"{HOME}/logs", exist_ok=True)
+        self._ensure()   # xcodebuild needs a concrete destination; it need not be booted
         out, jobs = {}, []
         if app:
             jobs.append(("app", ["xcodebuild", "-project", f"{ROOT}/iOS/DuckDuckGo-iOS.xcodeproj", "-scheme", "iOS Browser",
@@ -242,8 +259,8 @@ class Device:
 
     def doctor(self):
         checks = []
-        udid = env.load_state().get("sims", {}).get(self.device)
-        checks.append(dict(name="simulator-recorded", ok=bool(udid), detail=udid))
+        found = self._find()
+        checks.append(dict(name="simulator-exists", ok=bool(found), detail=found and found["udid"]))
         booted = self.booted()
         checks.append(dict(name="simulator-booted", ok=booted))
         checks.append(dict(name="app-build-present", ok=os.path.exists(APP), detail=APP))
@@ -260,7 +277,8 @@ class Device:
         """Stop what this worktree started for the device, by recorded and re-checked process identity."""
         removed, survivors = [], []
         st = env.load_state()
-        udid = st.get("sims", {}).get(self.device)
+        found = self._find()
+        udid = found and found["udid"]
         for s in st.get("devices", {}).get(self.device, {}).get("started", []):
             res = XCUITestRunner(udid or "-", s["port"], self.token).stop(s.get("processes", []))
             removed.append(res)
@@ -273,9 +291,12 @@ class Device:
                 run(["xcrun", "simctl", "shutdown", udid])
                 removed.append(f"shutdown:{udid}")
             if delete_sim:
-                run(["xcrun", "simctl", "delete", udid])
-                env.update_state(lambda st: st.get("sims", {}).pop(self.device, None))
-                removed.append(f"deleted:{udid}")
+                p = run(["xcrun", "simctl", "delete", udid])
+                if p.returncode:
+                    removed.append(dict(problems=[f"simctl delete {udid} failed: {p.stderr.strip()}"]))
+                else:
+                    self._udid, self._driver = None, None
+                    removed.append(f"deleted:{udid}")
         out = dict(removed=removed, evidenceKept=env.EVIDENCE)
         if survivors:
             out["left"] = [p["pid"] for s in survivors for p in s["processes"]]
@@ -448,6 +469,6 @@ def fixture_release(user):
 
 
 def info():
-    st = env.load_state()
-    return dict(worktree=ROOT, key=KEY, home=HOME, app=APP, evidence=env.EVIDENCE, sims=st.get("sims", {}),
+    sims = {d: (Device(d)._find() or {}).get("udid") for d in env.PORT_OFFSET}
+    return dict(worktree=ROOT, key=KEY, home=HOME, app=APP, evidence=env.EVIDENCE, sims=sims,
                 ports={d: dict(zip(("web", "runner"), env.ports(d))) for d in env.PORT_OFFSET} | {"fixture": env.fixture_port()})

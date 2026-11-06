@@ -5,7 +5,7 @@ It runs the real commands a user runs, in order, and stops at the first failure 
   2. build the app and the runner, unless the current build already matches the source;
   3. the tool's own tests (no simulator);
   4. the "must fail" trust checks and one worked proof (the Fire button) on each device;
-  5. confirm nothing was left running.
+  5. confirm nothing was left running and each proof deleted its simulator.
 """
 import json, os, subprocess, sys, time
 
@@ -84,6 +84,8 @@ def run(devices):
 
     left = sorted(_running(devices) - before)
     step("nothing left running", not left, f"still running: {left}")
+    kept = {d: found["udid"] for d in devices if (found := Device(d)._find())}
+    step("each proof deleted its simulator", not kept, f"still there: {kept}")
     return done()
 
 

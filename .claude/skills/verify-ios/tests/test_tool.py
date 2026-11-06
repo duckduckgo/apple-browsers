@@ -8,7 +8,7 @@ os.environ["VERIFY_IOS_HOME"] = TMP   # before importing: every path below lives
 sys.dont_write_bytecode = True
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "lib"))
 
-from verify_ios import env, harness, telemetry  # noqa: E402
+from verify_ios import device, env, harness, telemetry  # noqa: E402
 from verify_ios.device import parse_locator  # noqa: E402
 
 
@@ -96,6 +96,56 @@ class ProcessOwnershipTests(unittest.TestCase):
         finally:
             bystander.kill()
             bystander.wait()
+
+
+class SimulatorLifecycleTests(unittest.TestCase):
+    """Simulators are found by name and deleted by cleanup; nothing else on the Mac is touched."""
+
+    def setUp(self):
+        self.calls, self.sims = [], {}
+        self.saved = device.run
+        device.run = self.fake_run
+
+    def tearDown(self):
+        device.run = self.saved
+
+    def fake_run(self, cmd, **_):
+        self.calls.append(cmd)
+        out, code = "", 0
+        if cmd[2:4] == ["list", "devices"]:
+            out = json.dumps({"devices": {env.RUNTIME: [dict(name=n, udid=u, state="Booted", isAvailable=True)
+                                                        for n, u in self.sims.items()]}})
+        elif cmd[2] == "create":
+            self.sims[cmd[3]] = out = "NEW-UDID"
+        elif cmd[2] == "delete":
+            self.sims = {n: u for n, u in self.sims.items() if u != cmd[3]}
+        return subprocess.CompletedProcess(cmd, code, out, "")
+
+    def test_cleanup_deletes_only_this_worktrees_simulator(self):
+        d = device.Device("iphone")
+        self.sims = {"verify-ios-other-worktree-abc123-iphone": "THEIRS", "iPhone 17 Pro": "PERSONAL", d.name: "OURS"}
+        d.cleanup(delete_sim=True)
+        self.assertEqual(sorted(self.sims), ["iPhone 17 Pro", "verify-ios-other-worktree-abc123-iphone"])
+        self.assertNotIn("THEIRS", str(self.calls))
+        self.assertNotIn("PERSONAL", str(self.calls))
+
+    def test_a_deleted_simulator_is_recreated_for_the_next_build(self):
+        d = device.Device("iphone")
+        with self.assertRaises(env.Failed) as cm:
+            d.udid
+        self.assertIn("launch", str(cm.exception))
+        self.assertTrue(d._ensure(), "a missing simulator is created")
+        self.assertEqual(d.udid, "NEW-UDID")
+        self.assertFalse(d._ensure(), "an existing simulator is reused, not duplicated")
+        self.assertEqual(sum(c[2] == "create" for c in self.calls), 1)
+
+
+class BuildLocationTests(unittest.TestCase):
+    def test_builds_live_in_the_worktree_and_git_ignores_them(self):
+        for path in (env.APP_DD, env.RUNNER_DD):
+            self.assertTrue(path.startswith(env.ROOT + os.sep), f"{path} is outside the worktree: it would outlive it")
+            p = subprocess.run(["git", "-C", env.ROOT, "check-ignore", "-q", path])
+            self.assertEqual(p.returncode, 0, f"git does not ignore {path}: builds would show up as changes")
 
 
 class LocatorTests(unittest.TestCase):
@@ -317,8 +367,9 @@ class FakeDevice:
     def status_bar(self, fixed):
         self.status_fixed = fixed
 
-    def cleanup(self):
+    def cleanup(self, shutdown=False, delete_sim=False):
         self.cleaned += 1
+        self.deleted_sim = delete_sim
         return dict(left=self.left) if self.left else {}
 
 
@@ -353,16 +404,33 @@ class HarnessTests(unittest.TestCase):
     def tearDown(self):
         harness.Device, harness.fixture, harness.Pixels, harness.WideEvents, harness.fixture_release = self.saved
 
-    def run_proof(self, run, **fake):
+    def run_proof(self, run, keep=False, **fake):
         self.fake.__dict__.update(fake)
         mod = type("Proof", (), {"run": staticmethod(run)})
         ev = tempfile.mkdtemp(dir=TMP)
-        return harness._run_device(mod, "iphone", ev, keep=False, flags={}, device_obj=self.fake)
+        return harness._run_device(mod, "iphone", ev, keep=keep, flags={}, device_obj=self.fake)
 
     def test_passes_with_a_passing_check(self):
         r = self.run_proof(lambda ios: ios.check("something", True))
         self.assertEqual(r["status"], "pass", r)
         self.assertEqual(self.fake.cleaned, 1)
+
+    def test_simulator_is_deleted_whatever_the_outcome(self):
+        outcomes = {"pass": lambda ios: ios.check("ok", True), "fail": lambda ios: ios.check("broken", False)}
+        for status, run in outcomes.items():
+            self.fake = FakeDevice()
+            r = self.run_proof(run)
+            self.assertEqual(r["status"], status, r)
+            self.assertTrue(self.fake.deleted_sim, f"the simulator outlived a proof that ended in {status}")
+        self.fake = FakeDevice()
+        r = self.run_proof(lambda ios: ios.check("never reached", True), fail_launch=True)
+        self.assertEqual(r["status"], "error", r)
+        self.assertTrue(self.fake.deleted_sim, "the simulator outlived a proof whose setup failed")
+
+    def test_keep_leaves_the_simulator_for_debugging(self):
+        r = self.run_proof(lambda ios: ios.check("ok", True), keep=True)
+        self.assertEqual(r["status"], "pass", r)
+        self.assertEqual(self.fake.cleaned, 0)
 
     def test_swallowed_failed_check_still_fails(self):
         def run(ios):

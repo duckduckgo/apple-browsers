@@ -547,7 +547,7 @@ final public actor DefaultOAuthClient: @preconcurrency OAuthClient {
         Logger.OAuthClient.log("Restoring tokens from the backup")
 
         do {
-            let minted = try await tokenRefresher.fork(backup, count: 2, refreshID: nil)
+            let minted = try await tokenRefresher.fork(backup, count: 2)
             guard minted.count == 2, let newBackup = minted.first, let primary = minted.last else {
                 throw OAuthClientError.internalError("Fork returned \(minted.count) token pairs instead of 2")
             }

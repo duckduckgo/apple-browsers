@@ -2063,13 +2063,33 @@ struct UserText {
         return String(format: localized, successful, total)
     }
     static func importSummaryHistoryImported(_ count: Int) -> String {
-        let localized = NotLocalizedString("import.summary.history.count", value: "History: %d", comment: "Summary text showing number of browsing history visits imported, followed by importSummaryHistoryTimeRange or importSummaryHistoryTotal")
+        let template = NSLocalizedString("import.summary.history.visits", value: "History: %d visits", comment: "Summary text showing number of browsing history visits imported, followed by importSummaryHistoryTimeRange")
+        return String.localizedStringWithFormat(template, count)
+    }
+    static let importSummaryHistoryTimeRange = NSLocalizedString("import.summary.history.time-range", value: "(last 30 days)", comment: "Shown after the number of imported browsing history visits")
+    static func importSummaryBookmarks(_ count: Int) -> String {
+        let localized = NSLocalizedString("import.summary.bookmarks", value: "Bookmarks: %d", comment: "Summary text showing number of bookmarks successfully imported")
         return String(format: localized, count)
     }
-    static let importSummaryHistoryTimeRange = NotLocalizedString("import.summary.history.time-range", value: "(last 30 days)", comment: "Shown after the number of imported browsing history visits when every visit found was new")
-    static func importSummaryHistoryTotal(_ total: Int) -> String {
-        let localized = NotLocalizedString("import.summary.history.total", value: "/ %d (last 30 days)", comment: "Shown after the number of imported browsing history visits: %d is the number of visits found in the last 30 days, including the ones already in history")
-        return String(format: localized, total)
+    static func importSummaryBookmarksPartial(_ successful: Int, _ total: Int) -> String {
+        let localized = NSLocalizedString("import.summary.bookmarks.partial", value: "Bookmarks: %d / %d", comment: "Summary text showing number of bookmarks successfully imported out of total attempted")
+        return String(format: localized, successful, total)
+    }
+    static func importSummaryPasswords(_ count: Int) -> String {
+        let localized = NSLocalizedString("import.summary.passwords", value: "Passwords: %d", comment: "Summary text showing number of passwords successfully imported")
+        return String(format: localized, count)
+    }
+    static func importSummaryPasswordsPartial(_ successful: Int, _ total: Int) -> String {
+        let localized = NSLocalizedString("import.summary.passwords.partial", value: "Passwords: %d / %d", comment: "Summary text showing number of passwords successfully imported out of total attempted")
+        return String(format: localized, successful, total)
+    }
+    static func importSummaryCreditCards(_ count: Int) -> String {
+        let localized = NSLocalizedString("import.summary.credit.cards", value: "Credit Cards: %d", comment: "Summary text showing number of credit cards successfully imported")
+        return String(format: localized, count)
+    }
+    static func importSummaryCreditCardsPartial(_ successful: Int, _ total: Int) -> String {
+        let localized = NSLocalizedString("import.summary.credit.cards.partial", value: "Credit Cards: %d / %d", comment: "Summary text showing number of credit cards successfully imported out of total attempted")
+        return String(format: localized, successful, total)
     }
     static func importSummaryDuplicatesSkipped(_ count: Int) -> String {
         let localized = NSLocalizedString("import.summary.duplicates.skipped", value: "Duplicates Skipped: %d", comment: "Summary text showing number of duplicate items that were skipped during import")

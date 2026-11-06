@@ -106,6 +106,16 @@ final class DuckAiUsageWarningResolverTests: XCTestCase {
                        .tryForFree(isTrialEligible: false))
     }
 
+    /// Where the storefront sells nothing, the notice stays but there's no purchase to offer.
+    func testSubscribeOffersNoButtonWhenTheUserCannotPurchase() {
+        let warning = resolve(snapshot(notice(id: .freeReached, reached: true), cta: DuckAiUsageCta(id: .subscribe)),
+                              isTrialEligible: true,
+                              allowsSubscriptionUpsell: false)
+
+        XCTAssertEqual(warning?.message, .freeReached)
+        XCTAssertNil(warning?.action)
+    }
+
     /// Web names the key and the value; native carries them through untouched.
     func testBypassWeeklyCarriesTheEntriesWebNamed() {
         let entries = [DuckAiNativeStorageEntry(key: "duckai.fixedCostWindowBypassResetAtById",
@@ -219,11 +229,13 @@ final class DuckAiUsageWarningResolverTests: XCTestCase {
 
     private func resolve(_ snapshot: DuckAiUsageSnapshot,
                          suggestion: DuckAiModelSuggestionOutcome = .none(reason: .notApplicable),
-                         isTrialEligible: Bool = false) -> DuckAiUsageWarning? {
+                         isTrialEligible: Bool = false,
+                         allowsSubscriptionUpsell: Bool = true) -> DuckAiUsageWarning? {
         let sut = DuckAiUsageWarningResolver(dismissalStore: dismissalStore,
                                             modelSuggester: StubModelSuggester(outcome: suggestion))
         guard case .warning(let warning, _) = sut.resolve(snapshot: snapshot,
                                                           isTrialEligible: isTrialEligible,
+                                                          allowsSubscriptionUpsell: allowsSubscriptionUpsell,
                                                           now: now) else { return nil }
         return warning
     }

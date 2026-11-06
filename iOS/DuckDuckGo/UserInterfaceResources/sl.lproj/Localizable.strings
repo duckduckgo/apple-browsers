@@ -4519,6 +4519,12 @@
 /* Footnote for the hide AI-generated images setting; ends with a Learn more link to the help page (do not remove the link) */
 "settings.aifeatures.hide.ai.generated.images.subtitle" = "Iz rezultatov iskanja slik filtrira znane strani z neželenimi zadetki UI. [Več](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/results/how-to-filter-out-ai-images-in-duckduckgo-search-results)";
 
+/* Settings screen description for the Duck.ai keyboard animation toggle */
+"settings.aifeatures.keyboard.animation.subtitle" = "Prikaz animacije okoli tipkovnice, ko preklopite na Duck.ai ali v njem tipkate.";
+
+/* Settings screen toggle title for the Duck.ai keyboard animation */
+"settings.aifeatures.keyboard.animation.title" = "Animacija tipkovnice Duck.ai";
+
 /* Label describing a feature which is turned on always */
 "settings.always.on" = "Vedno vklopljeno";
 
@@ -6016,3 +6022,12 @@
 /* Title for screen to screen confirming what data to import from a zip file (bookmarks and /or passwords) */
 "zip.content.import.types.title" = "Kaj želite uvoziti?";
 
+
+/* Fireproofing setting toggle label */
+"preserveLogins.askOnSignIn" = "Vprašaj za požarno zaščito spletnih mest ob vpisu";
+
+/* Empty Fireproof sites list */
+"preserveLogins.emptyState" = "Ni spletnih mest s požarno zaščito";
+
+/* Button to remove all Fireproof sites */
+"preserveLogins.removeAllSites" = "Odstrani vse spletne strani s požarno zaščito";

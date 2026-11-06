@@ -681,7 +681,7 @@
         "key": "extension",
         "type": "string",
         "description": "The extension's name in the Chrome Web Store catalog, or other for an extension the catalog doesn't list. Keep in sync with ExtensionsCatalogSubfeature.",
-        "enum": ["bitwarden", "onePassword", "lastPass", "other"]
+        "enum": ["bitwarden", "onePassword", "lastPass", "iCloudPasswords", "darkReader", "other"]
     },
     "web_extension_version": {
         "key": "extension_version",

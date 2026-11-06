@@ -26,6 +26,7 @@ import Persistence
 /// Only available to internal users
 public protocol UpdatesDebugSettingsPersistor {
     var forceUpdateAvailable: Bool { get set }
+    var forcedUpdatePromptStage: UpdatePromptStage? { get set }
 
     func reset()
 }
@@ -34,6 +35,7 @@ public final class UpdatesDebugSettingsUserDefaultsPersistor: UpdatesDebugSettin
 
     public enum Key: String {
         case forceUpdateAvailable = "updates.debug.force-update-available"
+        case forcedUpdatePromptStage = "updates.debug.forced-update-prompt-stage"
     }
 
     private let keyValueStore: KeyValueStoring
@@ -47,8 +49,14 @@ public final class UpdatesDebugSettingsUserDefaultsPersistor: UpdatesDebugSettin
         set { keyValueStore.set(newValue, forKey: Key.forceUpdateAvailable.rawValue) }
     }
 
+    public var forcedUpdatePromptStage: UpdatePromptStage? {
+        get { (keyValueStore.object(forKey: Key.forcedUpdatePromptStage.rawValue) as? Int).flatMap(UpdatePromptStage.init(rawValue:)) }
+        set { keyValueStore.set(newValue?.rawValue, forKey: Key.forcedUpdatePromptStage.rawValue) }
+    }
+
     public func reset() {
         forceUpdateAvailable = false
+        forcedUpdatePromptStage = nil
     }
 }
 
@@ -62,6 +70,12 @@ public final class UpdatesDebugSettings {
     public var forceUpdateAvailable: Bool {
         get { persistor.forceUpdateAvailable }
         set { persistor.forceUpdateAvailable = newValue }
+    }
+
+    /// Overrides the update prompt stage while an update is available.
+    public var forcedUpdatePromptStage: UpdatePromptStage? {
+        get { persistor.forcedUpdatePromptStage }
+        set { persistor.forcedUpdatePromptStage = newValue }
     }
 
     public func reset() {

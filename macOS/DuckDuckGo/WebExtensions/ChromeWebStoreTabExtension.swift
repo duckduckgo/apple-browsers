@@ -52,6 +52,10 @@ final class ChromeWebStoreTabExtension {
             }
         }.store(in: &cancellables)
     }
+
+    @MainActor deinit {
+        userScript?.cancelPendingInstalls()
+    }
 }
 
 protocol ChromeWebStoreTabExtensionProtocol: AnyObject {}

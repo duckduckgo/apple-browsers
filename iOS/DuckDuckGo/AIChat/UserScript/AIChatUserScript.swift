@@ -60,6 +60,7 @@ final class AIChatUserScript: NSObject, Subfeature {
         case changeModelAction(modelId: String)
         case openChatProtectionAction
         case nativeInputFocused(Bool)
+        case bonusRecordChanged(AIChatBonusRecordPayload)
 
         struct ChangeModelActionParams: Encodable {
             let modelId: String
@@ -95,6 +96,8 @@ final class AIChatUserScript: NSObject, Subfeature {
                 return "submitOpenChatProtectionAction"
             case .nativeInputFocused:
                 return "submitNativeInputFocused"
+            case .bonusRecordChanged:
+                return AIChatUserScriptMessages.submitAIChatBonusRecord.rawValue
             }
         }
 
@@ -108,6 +111,8 @@ final class AIChatUserScript: NSObject, Subfeature {
                 return ChangeModelActionParams(modelId: modelId)
             case .nativeInputFocused(let focused):
                 return NativeInputFocusedParams(focused: focused)
+            case .bonusRecordChanged(let payload):
+                return payload
             default:
                 return nil
             }
@@ -122,6 +127,7 @@ final class AIChatUserScript: NSObject, Subfeature {
 
     private let devicePlatform: DevicePlatformProviding.Type
     private let handler: AIChatUserScriptHandling
+    private let bonusMessageLog: AIChatBonusMessageLogging?
     private(set) var messageOriginPolicy: MessageOriginPolicy
     private(set) var messageDestinationPolicy: MessageOriginPolicy
     private var inputBoxCancellables = Set<AnyCancellable>()
@@ -156,9 +162,11 @@ final class AIChatUserScript: NSObject, Subfeature {
 
     init(handler: AIChatUserScriptHandling,
          debugSettings: AIChatDebugSettingsHandling,
-         devicePlatform: DevicePlatformProviding.Type = DevicePlatform.self) {
+         devicePlatform: DevicePlatformProviding.Type = DevicePlatform.self,
+         bonusMessageLog: AIChatBonusMessageLogging? = nil) {
         self.devicePlatform = devicePlatform
         self.handler = handler
+        self.bonusMessageLog = bonusMessageLog
         self.messageOriginPolicy = .only(rules: Self.buildMessageOriginRules(debugSettings: debugSettings))
         self.messageDestinationPolicy = .only(rules: Self.buildMessageDestinationRules(debugSettings: debugSettings))
         super.init()
@@ -169,6 +177,9 @@ final class AIChatUserScript: NSObject, Subfeature {
             Task { @MainActor [weak self] in
                 self?.submitSyncStatusChanged(status)
             }
+        }
+        handler.setBonusRecordChangedHandler { [weak self] payload in
+            self?.submitBonusRecord(payload)
         }
     }
 
@@ -322,6 +333,16 @@ final class AIChatUserScript: NSObject, Subfeature {
         case .attachmentPrivacyShouldDisplay:
             guard !devicePlatform.isIphone else { return nil }
             return handler.attachmentPrivacyShouldDisplay
+        case .getAIChatBonusRecord:
+            return handler.getAIChatBonusRecord
+        case .getAIChatNewBonusRecord:
+            return handler.getAIChatNewBonusRecord
+        case .aiChatBonusRedeemOutcome:
+            return handler.aiChatBonusRedeemOutcome
+        case .aiChatBonusDismiss:
+            return handler.aiChatBonusDismiss
+        case .aiChatBonusEnd:
+            return handler.aiChatBonusEnd
         default:
             return nil
         }
@@ -646,6 +667,17 @@ final class AIChatUserScript: NSObject, Subfeature {
               messageDestinationPolicy.isAllowed(host) else { return }
 
         push(.syncStatusChanged(status))
+    }
+
+    /// Pushes the bonus record to this tab after it changes, so Duck.ai re-derives the offer state.
+    @MainActor
+    func submitBonusRecord(_ payload: AIChatBonusRecordPayload) {
+        // Push only to websites matching origin policy
+        guard let host = webView?.url?.host,
+              messageDestinationPolicy.isAllowed(host) else { return }
+
+        guard push(.bonusRecordChanged(payload)) else { return }
+        bonusMessageLog?.record(.push, method: "\(AIChatUserScriptMessages.submitAIChatBonusRecord.rawValue) → \(host)", body: payload)
     }
 
     // MARK: - Private Helper

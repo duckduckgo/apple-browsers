@@ -482,7 +482,7 @@ final class AIChatContextualChatSessionState {
     /// Keeps the page on the chip as an offer, so one tap puts it back. Deliberately not gated on
     /// `shouldOfferPageContext`: the user acted on this page just now.
     private func suggestDetachedContext(_ context: AIChatPageContext) {
-        guard featureFlagger.isFeatureOn(.contextualPagePlaceholder), isUnifiedToggleInputActive else { return }
+        guard isUnifiedToggleInputActive else { return }
         suggestedContext = context
         suggestedContextReason = .detached
         pixelHandler.firePageContextOfferShown(reason: .detached)
@@ -575,8 +575,7 @@ final class AIChatContextualChatSessionState {
     }
 
     func shouldOfferPageContext(for pageURL: URL? = nil) -> Bool {
-        featureFlagger.isFeatureOn(.contextualPagePlaceholder)
-            && !shouldAutoCollectContext
+        !shouldAutoCollectContext
             && isUnifiedToggleInputActive
             && hasActiveChat
             && shouldCollectPage(for: pageURL)

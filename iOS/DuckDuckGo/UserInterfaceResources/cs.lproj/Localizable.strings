@@ -4519,6 +4519,12 @@
 /* Footnote for the hide AI-generated images setting; ends with a Learn more link to the help page (do not remove the link) */
 "settings.aifeatures.hide.ai.generated.images.subtitle" = "Filtruje známé weby se spamem, které jsou generované umělou inteligencí, z výsledků vyhledávání obrázků. [Další informace](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/results/how-to-filter-out-ai-images-in-duckduckgo-search-results)";
 
+/* Settings screen description for the Duck.ai keyboard animation toggle */
+"settings.aifeatures.keyboard.animation.subtitle" = "Zobrazit animaci kolem klávesnice, když přepneš na Duck.ai nebo v něm píšeš.";
+
+/* Settings screen toggle title for the Duck.ai keyboard animation */
+"settings.aifeatures.keyboard.animation.title" = "Animace klávesnice Duck.ai";
+
 /* Label describing a feature which is turned on always */
 "settings.always.on" = "Vždycky zapnuté";
 
@@ -6016,3 +6022,12 @@
 /* Title for screen to screen confirming what data to import from a zip file (bookmarks and /or passwords) */
 "zip.content.import.types.title" = "Co chceš importovat?";
 
+
+/* Fireproofing setting toggle label */
+"preserveLogins.askOnSignIn" = "Požádat o ochranu stránek při přihlášení";
+
+/* Empty Fireproof sites list */
+"preserveLogins.emptyState" = "Žádné dostupné stránky s ochranou";
+
+/* Button to remove all Fireproof sites */
+"preserveLogins.removeAllSites" = "Odebrat všechny stránky s ochranou";

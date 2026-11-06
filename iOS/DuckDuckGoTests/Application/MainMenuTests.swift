@@ -18,11 +18,12 @@
 //
 
 import Bookmarks
+import Combine
 import Core
 import CoreData
 import DesignResourcesKitIcons
 import FeatureFlags_iOS
-import Persistence
+@_spi(Testing) import Persistence
 import Testing
 import UIKit
 @testable import DuckDuckGo
@@ -210,6 +211,20 @@ struct MainMenuTests {
     }
 
     @available(iOS 16, macOS 13, *)
+    @Test(.timeLimit(.minutes(1)), arguments: [false, true])
+    func duckAIButtonToggleFollowsButtonVisibility(isVisible: Bool) {
+        let spec = MainMenuSpec(isEnabled: true, idiom: .pad)
+        #expect(spec.allItems.contains { $0.command == .toggleDuckAIButton })
+        var state = MenuCommandAvailability.State(shortcutsEnabled: true, presentation: .browser)
+        #expect(!MenuCommandAvailability(state: state).isEnabled(.toggleDuckAIButton))
+        state.duckAIShortcutAvailable = true
+        state.duckAIButtonVisible = isVisible
+        let availability = MenuCommandAvailability(state: state)
+        #expect(availability.isEnabled(.toggleDuckAIButton))
+        #expect(availability.title(for: .toggleDuckAIButton) == (isVisible ? UserText.menuHideDuckAIButton : UserText.menuShowDuckAIButton))
+    }
+
+    @available(iOS 16, macOS 13, *)
     @Test(.timeLimit(.minutes(1)))
     func deleteAllChatsStaysVisibleWithoutChats() throws {
         let elements = DuckAIRecentChatsMenuContent.elements(for: .init(recentChats: [], totalChatCount: 0))
@@ -217,6 +232,43 @@ struct MainMenuTests {
         #expect(commands.map(\.action) == [MainMenuCommand.deleteAllChats.action])
         let deleteAll = try #require(commands.first)
         #expect(deleteAll.propertyList as? String == "0")
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test(.timeLimit(.minutes(1)), arguments: [UIUserInterfaceIdiom.phone, .pad])
+    func onboardingHidesBrowserMenusFromMenuBar(idiom: UIUserInterfaceIdiom) {
+        let onboarding = MainMenuSpec(isEnabled: true, idiom: idiom, context: .init(aiChatEnabled: true, isOnboarding: true))
+        let browsing = MainMenuSpec(isEnabled: true, idiom: idiom, context: .init(aiChatEnabled: true))
+        if registersInMenuBar(enabled: true, idiom: idiom) {
+            #expect(onboarding.mainMenus.isEmpty)
+            #expect(onboarding.removedMenus == [.format, .file, .view])
+        } else {
+            #expect(onboarding.mainMenus.map(\.identifier) == browsing.mainMenus.map(\.identifier))
+            #expect(onboarding.removedMenus == browsing.removedMenus)
+        }
+        #expect(!browsing.mainMenus.isEmpty)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test(.timeLimit(.minutes(1)))
+    func firstValueIsNilWhenPublisherSendsNothingInTime() async {
+        let silentPublisher = PassthroughSubject<Int, Error>()
+        #expect(await silentPublisher.firstValue(within: .milliseconds(10)) == nil)
+        withExtendedLifetime(silentPublisher) {}
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test(.timeLimit(.minutes(1)))
+    func firstValueReturnsTheFirstValueSentInTime() async {
+        let publisher = [1, 2].publisher.setFailureType(to: Error.self)
+        #expect(await publisher.firstValue(within: .seconds(1)) == 1)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test(.timeLimit(.minutes(1)))
+    func firstValueIsNilWhenPublisherFails() async {
+        let failingPublisher = Fail<Int, Error>(error: CancellationError())
+        #expect(await failingPublisher.firstValue(within: .seconds(1)) == nil)
     }
 
     @available(iOS 16, macOS 13, *)
@@ -232,6 +284,38 @@ struct MainMenuTests {
         notificationCenter.post(name: .aiChatSettingsChanged, object: nil)
         _ = await iterator.next()
         withExtendedLifetime(service) {}
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test(.timeLimit(.minutes(1)))
+    func appItemsAppearInFileAndDuckDuckGoMenus() throws {
+        let spec = MainMenuSpec(isEnabled: true, idiom: .pad)
+        let fileMenu = try #require(spec.menus.first { $0.identifier == .file })
+        let duckDuckGoMenu = try #require(spec.menus.first { $0.identifier == .preferences })
+        let fileImport = try #require(fileMenu.submenus.first { $0.items.map(\.command) == [.importData] })
+        let appSetup = try #require(duckDuckGoMenu.submenus.first)
+
+        #expect(fileMenu.submenus.firstIndex { $0.identifier == fileImport.identifier } == 1)
+        #expect(appSetup.items.map(\.command) == [.setDefaultBrowser, .addToDock, .addWidget])
+        #expect(MainMenuCommand.importData.action == #selector(MainViewController.menuImportData))
+        #expect(MainMenuCommand.setDefaultBrowser.action == #selector(MainViewController.menuSetDefaultBrowser))
+        #expect(MainMenuCommand.addToDock.action == #selector(MainViewController.menuAddToDock))
+        #expect(MainMenuCommand.addWidget.action == #selector(MainViewController.menuAddWidget))
+        #expect(!MainMenuSpec(isEnabled: false, idiom: .pad).allItems.contains { $0.command == .addToDock })
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test(.timeLimit(.minutes(1)))
+    func completedAppItemsLeaveTheDuckDuckGoMenu() {
+        let store = MockThrowingKeyValueStore()
+        try? store.set(true, forKey: SettingsViewModel.Constants.didDismissSetAsDefaultBrowserKey)
+        try? store.set(true, forKey: SettingsViewModel.Constants.nextStepsSectionHiddenKey)
+        let state = MenuCommandAvailability.State(shortcutsEnabled: true, presentation: .browser)
+        let availability = MenuCommandAvailability(state: state, nextStepsItems: NextStepsItemsVisibility(keyValueStore: store))
+        #expect(availability.isHidden(.setDefaultBrowser))
+        #expect(availability.isHidden(.addToDock))
+        #expect(availability.isHidden(.addWidget))
+        #expect(!availability.isHidden(.settings))
     }
 
     @available(iOS 16, macOS 13, *)

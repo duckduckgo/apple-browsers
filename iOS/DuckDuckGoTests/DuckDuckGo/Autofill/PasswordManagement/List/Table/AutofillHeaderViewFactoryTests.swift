@@ -19,15 +19,22 @@
 
 import XCTest
 import SwiftUI
+@_spi(Testing) import PixelKit
 @testable import DuckDuckGo
 
 class MockAutofillHeaderViewDelegate: AutofillHeaderViewDelegate {
     var didHandlePrimaryAction = false
+    var didHandleSecondaryAction = false
     var didHandleDismissAction = false
     var lastHandledHeaderType: AutofillHeaderViewFactory.ViewType?
 
     func handlePrimaryAction(for headerType: AutofillHeaderViewFactory.ViewType) {
         didHandlePrimaryAction = true
+        lastHandledHeaderType = headerType
+    }
+
+    func handleSecondaryAction(for headerType: AutofillHeaderViewFactory.ViewType) {
+        didHandleSecondaryAction = true
         lastHandledHeaderType = headerType
     }
 
@@ -41,17 +48,20 @@ final class AutofillHeaderViewFactoryTests: XCTestCase {
 
     var factory: AutofillHeaderViewFactory!
     var mockDelegate: MockAutofillHeaderViewDelegate!
+    var pixelKitMock: PixelKitMock!
 
     override func setUpWithError() throws {
         try super.setUpWithError()
 
         mockDelegate = MockAutofillHeaderViewDelegate()
-        factory = AutofillHeaderViewFactory(delegate: mockDelegate)
+        pixelKitMock = PixelKitMock()
+        factory = AutofillHeaderViewFactory(delegate: mockDelegate, pixelFiring: pixelKitMock)
     }
 
     override func tearDownWithError() throws {
         factory = nil
         mockDelegate = nil
+        pixelKitMock = nil
 
         try super.tearDownWithError()
     }
@@ -69,6 +79,43 @@ final class AutofillHeaderViewFactoryTests: XCTestCase {
 
         XCTAssertEqual(viewController.rootView.viewModel.design, .redesigned)
         XCTAssertNil(viewController.rootView.viewModel.secondaryButtonTitle)
+    }
+
+    func testWhenMakeHeaderViewForSyncAnotherDevicePromoThenPromoHasPasswordsCopy() throws {
+        let viewController = try XCTUnwrap(factory.makeHeaderView(for: .syncAnotherDevicePromo) as? UIHostingController<SyncAnotherDevicePromoView>)
+
+        XCTAssertEqual(viewController.rootView.title, UserText.syncPromoPasswordsAnotherDeviceTitle)
+    }
+
+    func testWhenMakeHeaderViewForSyncPromoThenDisplayedPixelFiresWithPasswordsSource() {
+        _ = factory.makeHeaderView(for: .syncPromo(.passwords, .standard))
+
+        XCTAssertEqual(pixelKitMock.actualFireCalls.map(\.pixel.name), ["sync_promotion_displayed"])
+        XCTAssertEqual(pixelKitMock.actualFireCalls.last?.additionalParameters, ["source": "passwords"])
+    }
+
+    func testWhenMakeHeaderViewForSyncAnotherDevicePromoThenDisplayedPixelFiresWithMultiDeviceSource() {
+        _ = factory.makeHeaderView(for: .syncAnotherDevicePromo)
+
+        XCTAssertEqual(pixelKitMock.actualFireCalls.map(\.pixel.name), ["sync_promotion_displayed"])
+        XCTAssertEqual(pixelKitMock.actualFireCalls.last?.additionalParameters, ["source": "passwords_multi_device"])
+    }
+
+    func testWhenSyncAnotherDevicePromoButtonsAreTappedThenDelegateHandlesEachAction() throws {
+        let viewController = try XCTUnwrap(factory.makeHeaderView(for: .syncAnotherDevicePromo) as? UIHostingController<SyncAnotherDevicePromoView>)
+
+        viewController.rootView.syncAction()
+        XCTAssertTrue(mockDelegate.didHandlePrimaryAction)
+
+        viewController.rootView.getDesktopAppAction()
+        XCTAssertTrue(mockDelegate.didHandleSecondaryAction)
+
+        viewController.rootView.dismissAction()
+        XCTAssertTrue(mockDelegate.didHandleDismissAction)
+
+        guard case .syncAnotherDevicePromo = mockDelegate.lastHandledHeaderType else {
+            return XCTFail("Expected .syncAnotherDevicePromo ViewType")
+        }
     }
 
     func testWhenMakeHeaderViewForSurveyThenAutofillSurveyViewIsReturned() {

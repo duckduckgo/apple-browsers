@@ -144,6 +144,11 @@ jobs:
       run: |
         sudo cp com.apple.system.logging.plist /Library/Preferences/Logging/com.apple.system.logging.plist
         sudo killall logd || true
+        # Wait for launchd to restart logd before the next steps use logging
+        for _ in $(seq 1 30); do
+          pgrep -x logd >/dev/null && break
+          sleep 1
+        done
 
     - name: Start log stream in background
       working-directory: macOS

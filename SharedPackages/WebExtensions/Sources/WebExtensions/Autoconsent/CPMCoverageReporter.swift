@@ -79,9 +79,4 @@ public enum CPMCoverageReporter {
             if isTop10k { handleNativeEvent(EventType.pagesTop10k) }
         }
     }
-
-    /// For summaries that native builds itself (the legacy path).
-    public static func report(summary: [String: Int], siteRank: CPMSiteRank?, handleNativeEvent: (String) -> Void) {
-        report(counts: CPMCoverageCounts(summary: summary), siteRank: siteRank, handleNativeEvent: handleNativeEvent)
-    }
 }

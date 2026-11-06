@@ -26,7 +26,7 @@ struct CPMCoverageReporterTests {
 
     private func reportedEvents(_ summary: [String: Int], siteRank: CPMSiteRank?) -> [String: Int] {
         var events: [String: Int] = [:]
-        CPMCoverageReporter.report(summary: summary, siteRank: siteRank) { events[$0, default: 0] += 1 }
+        CPMCoverageReporter.report(counts: CPMCoverageCounts(summary: summary), siteRank: siteRank) { events[$0, default: 0] += 1 }
         return events
     }
 

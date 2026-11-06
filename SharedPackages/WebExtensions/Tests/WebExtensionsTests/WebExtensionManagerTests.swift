@@ -3301,6 +3301,9 @@ private final class CatalogNamingWebStore: ChromeWebStoreManaging {
     func status(for identifier: String) -> ChromeWebStoreStatus { .unknown }
     func install(identifier: String, downloadURL: URL) async -> Bool { false }
     func remove(identifier: String) async -> Bool { false }
+    func checkForUpdatesNow() async {
+        XCTFail("Unexpected manual update check in catalog naming tests")
+    }
     func catalogEntry(of identifier: String) -> ExtensionsCatalogSubfeature? { entries[identifier] }
     func listing(of subfeature: ExtensionsCatalogSubfeature) -> ChromeWebStoreListing? { nil }
 }

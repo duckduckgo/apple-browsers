@@ -25,6 +25,7 @@ import PixelKit
 
 protocol AutofillHeaderViewDelegate: AnyObject {
     func handlePrimaryAction(for headerType: AutofillHeaderViewFactory.ViewType)
+    func handleSecondaryAction(for headerType: AutofillHeaderViewFactory.ViewType)
     func handleDismissAction(for headerType: AutofillHeaderViewFactory.ViewType)
 }
 
@@ -37,22 +38,27 @@ protocol AutofillHeaderViewFactoryProtocol: AnyObject {
 final class AutofillHeaderViewFactory: AutofillHeaderViewFactoryProtocol {
     
     weak var delegate: AutofillHeaderViewDelegate?
+    private let pixelFiring: (any PixelKitFiring)?
     
     enum ViewType {
         case syncPromo(SyncPromoManager.Touchpoint, SyncPromoManager.Design)
+        case syncAnotherDevicePromo
         case survey(AutofillSurveyManager.AutofillSurvey)
         case importPromo
         case extensionPromo
     }
     
-    init(delegate: AutofillHeaderViewDelegate?) {
+    init(delegate: AutofillHeaderViewDelegate?, pixelFiring: (any PixelKitFiring)? = PixelKit.shared) {
         self.delegate = delegate
+        self.pixelFiring = pixelFiring
     }
     
     func makeHeaderView(for type: ViewType) -> UIViewController {
         switch type {
         case .syncPromo(let touchpointType, let design):
             return makeSyncPromoView(touchpointType: touchpointType, design: design)
+        case .syncAnotherDevicePromo:
+            return makeSyncAnotherDevicePromoView()
         case .survey(let survey):
             return makeSurveyView(survey: survey)
         case .importPromo:
@@ -74,13 +80,34 @@ final class AutofillHeaderViewFactory: AutofillHeaderViewFactoryProtocol {
             }
         ))
         
-        PixelKit.fire(Pixel.Event.syncPromoDisplayed, options: .parameters(["source": touchpointType.rawValue]))
+        pixelFiring?.fire(Pixel.Event.syncPromoDisplayed, options: .parameters(["source": touchpointType.rawValue]))
         
         let hostingController = UIHostingController(rootView: headerView)
         hostingController.view.backgroundColor = .clear
         return hostingController
     }
     
+    private func makeSyncAnotherDevicePromoView() -> UIHostingController<SyncAnotherDevicePromoView> {
+        let headerView = SyncAnotherDevicePromoView(
+            title: UserText.syncPromoPasswordsAnotherDeviceTitle,
+            syncAction: { [weak delegate] in
+                delegate?.handlePrimaryAction(for: .syncAnotherDevicePromo)
+            },
+            getDesktopAppAction: { [weak delegate] in
+                delegate?.handleSecondaryAction(for: .syncAnotherDevicePromo)
+            },
+            dismissAction: { [weak delegate] in
+                delegate?.handleDismissAction(for: .syncAnotherDevicePromo)
+            }
+        )
+
+        pixelFiring?.fire(Pixel.Event.syncPromoDisplayed, options: .parameters(["source": SyncPromoManager.Touchpoint.passwordsAnotherDevice.rawValue]))
+
+        let hostingController = UIHostingController(rootView: headerView)
+        hostingController.view.backgroundColor = .clear
+        return hostingController
+    }
+
     private func makeSurveyView(survey: AutofillSurveyManager.AutofillSurvey) -> UIHostingController<AutofillSurveyView> {
         let headerView = AutofillSurveyView(
             primaryButtonAction: { [weak delegate] in

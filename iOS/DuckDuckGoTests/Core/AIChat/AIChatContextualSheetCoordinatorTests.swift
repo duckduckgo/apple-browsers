@@ -2013,7 +2013,7 @@ final class AIChatContextualSheetCoordinatorTests: XCTestCase {
     func testNavigatingWithAnActiveChatAndAutoAttachOffOffersTheNewPage() async throws {
         // Given
         mockUnifiedToggleInputFeature.isAvailable = true
-        mockFeatureFlagger.enabledFeatureFlags = [.aiChatContextualUnifiedToggleInput, .contextualPagePlaceholder]
+        mockFeatureFlagger.enabledFeatureFlags = [.aiChatContextualUnifiedToggleInput]
         mockSettings.isAutomaticContextAttachmentEnabled = false
         await sut.presentSheet(from: mockPresentingVC)
         let host = try XCTUnwrap(sut.persistentUTIHost)
@@ -2039,7 +2039,7 @@ final class AIChatContextualSheetCoordinatorTests: XCTestCase {
     func testAcceptingTheOfferAttachesThePageWithoutCollectingItAgain() async throws {
         // Given
         mockUnifiedToggleInputFeature.isAvailable = true
-        mockFeatureFlagger.enabledFeatureFlags = [.aiChatContextualUnifiedToggleInput, .contextualPagePlaceholder]
+        mockFeatureFlagger.enabledFeatureFlags = [.aiChatContextualUnifiedToggleInput]
         mockSettings.isAutomaticContextAttachmentEnabled = false
         await sut.presentSheet(from: mockPresentingVC)
         let host = try XCTUnwrap(sut.persistentUTIHost)
@@ -2060,27 +2060,6 @@ final class AIChatContextualSheetCoordinatorTests: XCTestCase {
         XCTAssertEqual(host.chipViewModel.pendingAttachedContextData?.title, "Tokamak")
         XCTAssertNil(host.chipViewModel.suggestedContext)
         XCTAssertNotNil(host.chipViewModel.attachedContext)
-    }
-
-    @MainActor
-    func testNavigatingWithThePlaceholderFlagOffOffersNothing() async throws {
-        // Given
-        mockUnifiedToggleInputFeature.isAvailable = true
-        mockFeatureFlagger.enabledFeatureFlags = [.aiChatContextualUnifiedToggleInput]
-        mockSettings.isAutomaticContextAttachmentEnabled = false
-        await sut.presentSheet(from: mockPresentingVC)
-        let host = try XCTUnwrap(sut.persistentUTIHost)
-        sut.sessionState.beginChatForUTISubmission()
-        sut.sessionState.updateUnifiedToggleInputActive(true)
-        originatingTabURLSubject.send(URL(string: "https://en.wikipedia.org/wiki/Tokamak")!)
-        mockPageContextHandler.triggerContextCollectionCallCount = 0
-
-        // When
-        await sut.notifyPageChanged()
-
-        // Then
-        XCTAssertEqual(mockPageContextHandler.triggerContextCollectionCallCount, 0, "The page must not be read at all")
-        XCTAssertNil(host.chipViewModel.suggestedContext)
     }
 
     // MARK: - Recent chats storage

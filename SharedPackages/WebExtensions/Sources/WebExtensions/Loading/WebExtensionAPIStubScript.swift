@@ -38,6 +38,8 @@ import Foundation
 ///
 /// In an extension page embedded in a website, `chrome.action.openPopup` is relayed to the extension's
 /// background page, since calling WebKit's own there would take the website's web process down.
+/// `action.setBadgeBackgroundColor` and `action.setBadgeTextColor` relay their color to the app through
+/// `badgeColorMessageHandlerName`.
 /// Extension pages also expose the DuckDuckGo brand through `navigator.userAgentData`.
 ///
 /// A few extensions also get a fix of their own, listed in `extensionFixes` with the problem each one
@@ -64,6 +66,10 @@ public enum WebExtensionAPIStubScript {
     /// Name of the script message handler `chrome.permissions` asks about app permissions, the ones WebKit
     /// doesn't know (see `WebExtensionAppPermission`). Without it they are never held.
     public static let permissionsMessageHandlerName = "ddgWebExtensionPermissions"
+
+    /// Name of the script message handler `action.setBadgeBackgroundColor` and `action.setBadgeTextColor`
+    /// relay the color to as `#rrggbb`, since WebKit never passes it to the app. Without it the colors are dropped.
+    public static let badgeColorMessageHandlerName = "ddgWebExtensionBadgeColor"
 
     /// Permissions WebKit doesn't know that the script implements itself. They are always granted,
     /// without asking the user.
@@ -1485,6 +1491,74 @@ public enum WebExtensionAPIStubScript {
         } catch (error) {
             console.info("[DuckDuckGo] Could not relay chrome.action.openPopup: " + error);
         }
+
+        // WebKit accepts `setBadgeBackgroundColor` but never passes the color to the app, and has no
+        // `setBadgeTextColor`, so both send the color through `badgeColorMessageHandlerName` as `#rrggbb`.
+        var badgeColorMessageHandlerName = "\(Self.badgeColorMessageHandlerName)";
+        var badgeColorContext;
+
+        // Normalizes Chrome's `[r, g, b, a]` array or CSS color string to an opaque `#rrggbb`, or to `""` when it's
+        // fully transparent or not a color, which restores the default color.
+        function badgeColorHex(color) {
+            var context = badgeColorContext ||= new OffscreenCanvas(1, 1).getContext("2d");
+            context.fillStyle = "transparent";
+            context.fillStyle = Array.isArray(color) ? "rgb(" + color.map(function(c, i) { return i === 3 ? c / 255 : c; }) + ")" : color;
+            var hex = context.fillStyle;
+            if (hex[0] === "#") {
+                return hex;
+            }
+            // A translucent color (or an invalid one, which leaves `transparent` in place) reads back as `rgba(r, g, b, a)`.
+            var channels = hex.match(/[\\d.]+/g);
+            if (channels[3] === "0") {
+                return "";
+            }
+            context.fillStyle = "rgb(" + channels.slice(0, 3) + ")";
+            return context.fillStyle;
+        }
+
+        function relayBadgeColor(kind, details) {
+            try {
+                var handlers = globalThis.webkit && globalThis.webkit.messageHandlers;
+                var handler = handlers && handlers[badgeColorMessageHandlerName];
+                var color = details !== null && typeof details === "object" ? badgeColorHex(details.color) : null;
+                if (handler && color !== null) {
+                    handler.postMessage({ kind: kind, color: color });
+                }
+            } catch (error) {
+                console.info("[DuckDuckGo] Could not relay the badge color: " + error);
+            }
+        }
+
+        function relayBadgeColorSetter(namespace, name, kind) {
+            var original = namespace[name];
+            return define(namespace, name, function(details) {
+                relayBadgeColor(kind, details);
+                if (typeof original === "function") {
+                    return original.apply(this, arguments);
+                }
+                var last = arguments.length > 0 ? arguments[arguments.length - 1] : undefined;
+                return answerBothStyles(Promise.resolve(), typeof last === "function" ? last : undefined);
+            });
+        }
+
+        // Manifest V2 extensions set badge colors through `browserAction` or `pageAction` instead of `action`.
+        var badgeActionNamespaces = ["action", "browserAction", "pageAction"];
+
+        badgeActionNamespaces.forEach(function(name) {
+            try {
+                var namespace = api[name];
+                if (namespace && typeof namespace.setBadgeBackgroundColor === "function") {
+                    if (relayBadgeColorSetter(namespace, "setBadgeBackgroundColor", "background")) {
+                        relayedMembers.push(name + ".setBadgeBackgroundColor");
+                    }
+                    if (relayBadgeColorSetter(namespace, "setBadgeTextColor", "text")) {
+                        relayedMembers.push(name + ".setBadgeTextColor");
+                    }
+                }
+            } catch (error) {
+                console.info("[DuckDuckGo] Could not relay the " + name + " badge colors: " + error);
+            }
+        });
 
         if (stubbedNamespaces.length > 0 || stubbedMembers.length > 0 || wrappedNamespaces.length > 0
             || relayedMembers.length > 0) {

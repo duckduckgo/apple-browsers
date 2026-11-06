@@ -168,6 +168,11 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
     private let permissionsHandler = WebExtensionPermissionsMessageHandler()
 #endif
 
+    /// The badge colors extensions set, which WebKit doesn't pass to the app.
+    public let badgeColors = WebExtensionBadgeColorStore()
+
+    private let badgeColorHandler = WebExtensionBadgeColorMessageHandler()
+
     /// Pixel firing for analytics.
     let pixelFiring: WebExtensionPixelFiring
     /// Shared monitor because all tabs communicate through the same embedded-extension process.
@@ -287,6 +292,8 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
         controllerConfiguration.webViewConfiguration.userContentController.addScriptMessageHandler(
             permissionsHandler, contentWorld: .page, name: WebExtensionAPIStubScript.permissionsMessageHandlerName)
 #endif
+        controllerConfiguration.webViewConfiguration.userContentController.add(
+            badgeColorHandler, contentWorld: .page, name: WebExtensionAPIStubScript.badgeColorMessageHandlerName)
 
         self.controller = WKWebExtensionController(configuration: controllerConfiguration)
 
@@ -334,6 +341,11 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
         self.unloadGuard = WebExtensionUnloadGuard()
 
         super.init()
+
+        badgeColorHandler.store = badgeColors
+        badgeColorHandler.extensionContext = { [weak self] url in
+            self?.extensionContext(for: url)
+        }
 
         apiCompatibilityHandler.resolveExtension = { [weak self] url in
             guard let webExtension = self?.extensionContext(for: url)?.webExtension else { return nil }

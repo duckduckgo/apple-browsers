@@ -35,6 +35,8 @@ struct Background: BackgroundHandling {
     private let appDependencies: AppDependencies
     private let sceneDependencies: SceneDependencies
     private let didTransitionFromLaunching: Bool
+    /// Passed on to the next foreground, for a launch that drew the page but went to the background first.
+    private let drewIdleReturnNewTabPage: Bool
     private var services: AppServices { appDependencies.services }
 
     init(stateContext: Connected.StateContext, lastBackgroundDateStorage: any ThrowingKeyedStoring<IdleReturnLastBackgroundDateKeys>) {
@@ -42,6 +44,7 @@ struct Background: BackgroundHandling {
         appDependencies = stateContext.appDependencies
         sceneDependencies = stateContext.sceneDependencies
         didTransitionFromLaunching = true
+        drewIdleReturnNewTabPage = stateContext.drewIdleReturnNewTabPage
     }
 
     init(stateContext: Foreground.StateContext, lastBackgroundDateStorage: any ThrowingKeyedStoring<IdleReturnLastBackgroundDateKeys>) {
@@ -49,6 +52,7 @@ struct Background: BackgroundHandling {
         appDependencies = stateContext.appDependencies
         sceneDependencies = stateContext.sceneDependencies
         didTransitionFromLaunching = false
+        drewIdleReturnNewTabPage = false
     }
 
     // MARK: - Handle applicationDidEnterBackground(_:) logic here
@@ -56,7 +60,11 @@ struct Background: BackgroundHandling {
         Logger.lifecycle.info("\(type(of: self)): \(#function)")
 
         services.applicationShortcutItemsService.suspend()
-        try? lastBackgroundDateStorage.set(Date(), for: \.lastBackgroundDate)
+        // Skipped while the app is locked: a background launch or leaving at the lock prompt isn't use,
+        // so the next return measures from the last real one. Written before `suspend()` locks the app.
+        if sceneDependencies.authenticationService.isUnlocked {
+            try? lastBackgroundDateStorage.set(Date(), for: \.lastBackgroundDate)
+        }
         appDependencies.backgroundTaskManager.startBackgroundTask()
 
         services.dbpService.onBackground()
@@ -122,13 +130,15 @@ extension Background {
         let appDependencies: AppDependencies
         let sceneDependencies: SceneDependencies
         let didTransitionFromLaunching: Bool
+        let drewIdleReturnNewTabPage: Bool
 
     }
 
     func makeForegroundState(actionToHandle: AppAction?) -> any ForegroundHandling {
         Foreground(stateContext: StateContext(appDependencies: appDependencies,
                                               sceneDependencies: sceneDependencies,
-                                              didTransitionFromLaunching: didTransitionFromLaunching),
+                                              didTransitionFromLaunching: didTransitionFromLaunching,
+                                              drewIdleReturnNewTabPage: drewIdleReturnNewTabPage),
                    actionToHandle: actionToHandle,
                    lastBackgroundDateStorage: lastBackgroundDateStorage)
     }

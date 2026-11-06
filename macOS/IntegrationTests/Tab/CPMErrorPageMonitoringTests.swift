@@ -201,6 +201,7 @@ private final class RecordingCPMHealthMonitor: CPMMessagingHealthMonitoring, @un
 private final class StubWebExtensionManager: WebExtensionManaging {
 
     let cpmMessagingHealthMonitor: CPMMessagingHealthMonitoring
+    let badgeColors = WebExtensionBadgeColorStore()
     let eventsListener: WebExtensionEventsListening = WebExtensionEventsListener()
     let extensionsDirectory = FileManager.default.temporaryDirectory
     let loadedExtensions: Set<WKWebExtensionContext> = []

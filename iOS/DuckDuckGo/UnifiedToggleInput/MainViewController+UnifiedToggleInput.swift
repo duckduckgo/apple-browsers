@@ -93,6 +93,7 @@ extension MainViewController {
         coordinator.delegate = self
         coordinator.pageTypeProvider = { [weak self] in self?.currentPromptPageType() }
         coordinator.duckAIEntrySourceProvider = { [weak self] in self?.tabManager.currentTabsModel.currentTab?.duckAIEntrySource }
+        coordinator.addressBarPositionProvider = { [weak self] in self?.appSettings.iPhoneAddressBarPosition }
         coordinator.updateVoiceSearchAvailability(voiceSearchHelper.isVoiceSearchEnabled)
         coordinator.updateAIChatShortcutAvailability(aiChatAddressBarExperience.shouldShowDuckAIAddressBarButton)
         coordinator.onAnimatedDismissToOmnibar = { [weak self] completion in
@@ -351,7 +352,12 @@ extension MainViewController {
         if let cap = landscapeEditingHeightCap {
             height = min(height, cap)
         }
-        guard viewCoordinator.constraints.navigationBarContainerHeight.constant != height else { return }
+        guard viewCoordinator.constraints.navigationBarContainerHeight.constant != height else {
+            // Keyboard layout may have resized the bar while focused content still has the old inset.
+            viewCoordinator.navigationBarContainer.superview?.layoutIfNeeded()
+            coordinator.pushContentInsets()
+            return
+        }
         viewCoordinator.constraints.navigationBarContainerHeight.constant = height
         viewCoordinator.navigationBarContainer.superview?.layoutIfNeeded()
         coordinator.pushContentInsets()
@@ -427,9 +433,9 @@ extension MainViewController {
         // During a fresh navigation (e.g. opening a chat in a new tab), `tabModel.link` is briefly
         // set to nil before WebView reports the new URL. `tab.isAITab` is link-derived, so it would
         // momentarily report false and route us through `refreshNonAITab` → `coordinator.hide()`,
-        // tearing down the UTI we just set up. Preserve the current AI presentation through that
+        // tearing down the UTI we just set up. Preserve the same tab's AI presentation through that
         // window — the next refresh, after WebView reports the URL, resolves correctly.
-        if inputs.tabLinkURL == nil && inputs.coordinatorIsAITabState {
+        if inputs.tabLinkURL == nil && inputs.coordinatorIsAITabState && inputs.isRefreshingCurrentTab {
             return .refreshAITab(.preserveCurrentPresentation(allowsEarlyReturn: true))
         }
 
@@ -1203,6 +1209,27 @@ extension MainViewController {
 
 extension MainViewController {
 
+    var isEscapeHatchHandoff: Bool {
+        guard isNewTabPageVisible, escapeHatchForEditingState() != nil,
+              let content = unifiedToggleInputCoordinator?.contentViewController else { return false }
+        // Only content the resting page also shows hands off; a logo over favorites or focused recents still fade.
+        return content.isShowingEscapeHatchContent
+            && (newTabPageViewController?.restingContentIsFavorites == true ? content.isShowingFavoritesContent : content.isShowingLogoContent)
+    }
+
+    func resetLegacyScrollForDismiss(coordinator: UnifiedToggleInputCoordinator?, duration: TimeInterval) {
+        guard let coordinator, coordinator.contentViewController.usesScrollableEscapeHatch,
+              !coordinator.contentViewController.usesRedesignedNewTabPageLayout else { return }
+        coordinator.contentViewController.scrollLegacyContentToTop(duration: duration)
+        // Reset the resting copy while covered, so the last collapse frame reveals the same position.
+        (newTabPageViewController as? NewTabPageViewController)?.scrollToTop(duration: 0)
+    }
+
+    func updateLegacyContentInsetForDismiss(coordinator: UnifiedToggleInputCoordinator?) {
+        guard let coordinator, !coordinator.contentViewController.usesRedesignedNewTabPageLayout else { return }
+        coordinator.contentViewController.setContentInsetForDismiss(height: viewCoordinator.standardNavigationBarContainerHeight)
+    }
+
     func dismissUnifiedToggleInputToOmnibar(coordinator: UnifiedToggleInputCoordinator,
                                             completion: (() -> Void)? = nil) {
         if viewCoordinator.newTabPageInputPresentation.transition == .inlineInput {
@@ -1215,13 +1242,15 @@ extension MainViewController {
         let utiPlaceholderColor = coordinator.viewController.defaultPlaceholderColor
         let duration = Constants.omnibarTransitionDuration(isBottom: coordinator.cardPosition.isBottom, isFloatingUIEnabled: isFloatingUIEnabled)
 
+        resetLegacyScrollForDismiss(coordinator: coordinator, duration: duration)
         let isLogoToLogo = coordinator.contentViewController.isShowingLogoContent
             && newTabPageViewController?.restingContentIsLogo == true
         let isFavoritesToFavorites = coordinator.contentViewController.isShowingFavoritesContent
             && newTabPageViewController?.restingContentIsFavorites == true
-        let isSeamlessHandoff = isLogoToLogo || isFavoritesToFavorites
+        let isSeamlessHandoff = isLogoToLogo || isFavoritesToFavorites || isEscapeHatchHandoff
         let keepsFocusedContentStationary = coordinator.contentViewController.isShowingLogoContent
             || coordinator.contentViewController.isShowingFavoritesContent
+            || isEscapeHatchHandoff
         let contentContainer = viewCoordinator.unifiedInputContentContainer
         let stationaryContentSnapshot = makeStationaryFocusedContentSnapshotIfNeeded(
             keepsFocusedContentStationary: keepsFocusedContentStationary,
@@ -1230,7 +1259,7 @@ extension MainViewController {
 
         if isLogoToLogo {
             coordinator.contentViewController.morphLogoHomeForDismiss(matching: duration)
-        } else if !isFavoritesToFavorites {
+        } else if !isSeamlessHandoff {
             coordinator.contentViewController.beginDismissFade()
         }
 
@@ -1241,7 +1270,9 @@ extension MainViewController {
                 guard let self, let coordinator else { return }
                 coordinator.viewController.applyOmnibarEditingDismissPose()
                 self.viewCoordinator.superview.layoutIfNeeded()
-                if !keepsFocusedContentStationary {
+                if !coordinator.contentViewController.usesRedesignedNewTabPageLayout {
+                    self.updateLegacyContentInsetForDismiss(coordinator: coordinator)
+                } else if !keepsFocusedContentStationary {
                     coordinator.pushContentInsets()
                 }
                 if let omnibarPlaceholderWindowX {
@@ -1290,6 +1321,7 @@ extension MainViewController {
     }
 
     private func restoreChromeAfterInterruptedOmnibarDismiss() {
+        unifiedToggleInputCoordinator?.contentViewController.cancelContentInsetDismissal()
         viewCoordinator.unifiedInputContentContainer.alpha = 1
         newTabPageViewController?.setLogoHidden(false)
         newTabPageViewController?.setFavoritesHidden(false)
@@ -1591,6 +1623,10 @@ extension MainViewController: UnifiedToggleInputDelegate {
 
 extension MainViewController: UnifiedInputContentContainerViewControllerDelegate {
 
+    func unifiedInputEditingStateDidSelectSearchDuckDuckGo(query: String) {
+        unifiedToggleInputCoordinator?.reportSearchDuckDuckGoRowSelected(query: query)
+    }
+
     func unifiedInputEditingStateDidSubmitQuery(_ query: String) {
         unifiedToggleInputCoordinator?.clearText()
         unifiedToggleInputCoordinator?.handleExternalSubmission(.query)
@@ -1645,9 +1681,11 @@ extension MainViewController: UnifiedInputContentContainerViewControllerDelegate
     }
 
     func unifiedInputEditingStateDidChangeMode(_ mode: TextEntryMode) {
-        // Route through the same path as a toggle tap so the toggle indicator, content swap, and
-        // input-height all animate together in one transaction (a swipe is a user-driven switch).
-        unifiedToggleInputCoordinator?.updateInputMode(mode, animated: true)
+        guard let coordinator = unifiedToggleInputCoordinator else { return }
+        coordinator.viewController.setSelectedInputMode(mode, animated: true)
+        coordinator.contentViewController.performInputModeChange(to: mode) {
+            coordinator.updateInputMode(mode, animated: true)
+        }
     }
 
     func unifiedInputEditingStateDidRequestSyncSetup() {

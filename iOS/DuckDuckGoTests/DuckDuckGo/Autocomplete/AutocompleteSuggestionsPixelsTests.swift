@@ -116,6 +116,24 @@ final class AutocompleteSuggestionsPixelsTests: XCTestCase {
         XCTAssertEqual(firedNames, [Pixel.Event.autocompleteClickPhrase.name])
     }
 
+    func testClickPhraseAndSearchHistoryCarryTheResubmitDelay() {
+        pixels.fireClickPixel(for: .phrase(phrase: "q"), resubmitOfPrompt: .upTo15s)
+        pixels.fireClickPixel(for: .historyEntry(title: "h", url: url("https://duckduckgo.com/?q=cats"), score: 0), resubmitOfPrompt: .upTo30s)
+
+        XCTAssertEqual(pixelKitMock.actualFireCalls.map { $0.additionalParameters?["resubmit_of_prompt"] }, ["0-15", "16-30"])
+    }
+
+    func testClickWithoutResubmitSendsNoResubmitParameter() {
+        pixels.fireClickPixel(for: .phrase(phrase: "q"))
+        XCTAssertNil(pixelKitMock.actualFireCalls.last?.additionalParameters?["resubmit_of_prompt"])
+    }
+
+    func testSearchQueryTextIsOnlyTheSearchedTextForSearches() {
+        XCTAssertEqual(Suggestion.phrase(phrase: "weather").searchQueryText, "weather")
+        XCTAssertEqual(Suggestion.historyEntry(title: nil, url: url("https://duckduckgo.com/?q=cats"), score: 0).searchQueryText, "cats")
+        XCTAssertNil(Suggestion.historyEntry(title: nil, url: url("https://example.com/page"), score: 0).searchQueryText)
+    }
+
     func testClickWebsite() {
         pixels.fireClickPixel(for: .website(url: url("https://a.com")))
         XCTAssertEqual(firedNames, [Pixel.Event.autocompleteClickWebsite.name])

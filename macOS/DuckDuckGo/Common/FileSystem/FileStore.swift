@@ -27,6 +27,7 @@ protocol FileStore {
     func loadData(at url: URL, decryptIfNeeded: Bool) -> Data?
     func decrypt(_ data: Data) -> Data?
     func hasData(at url: URL) -> Bool
+    func isEmptyFile(at url: URL) -> Bool
     func directoryContents(at path: String) throws -> [String]
     func remove(fileAtURL url: URL)
     func removeOrThrow(fileAtURL url: URL) throws
@@ -83,6 +84,10 @@ final class EncryptedFileStore: FileStore {
         return FileManager.default.fileExists(atPath: url.path)
     }
 
+    func isEmptyFile(at url: URL) -> Bool {
+        return FileManager.default.isEmptyFile(at: url)
+    }
+
     func directoryContents(at path: String) throws -> [String] {
         return try FileManager.default.contentsOfDirectory(atPath: path)
     }
@@ -129,6 +134,12 @@ extension FileManager: FileStore {
 
     func hasData(at url: URL) -> Bool {
         return fileExists(atPath: url.path)
+    }
+
+    func isEmptyFile(at url: URL) -> Bool {
+        guard let attributes = try? attributesOfItem(atPath: url.path),
+              attributes[.type] as? FileAttributeType == .typeRegular else { return false }
+        return (attributes[.size] as? NSNumber)?.intValue == 0
     }
 
     func directoryContents(at path: String) throws -> [String] {

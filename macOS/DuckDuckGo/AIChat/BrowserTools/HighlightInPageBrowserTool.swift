@@ -29,8 +29,6 @@ final class HighlightInPageBrowserTool: BrowserTool {
 
     /// Matches `AIChatBrowserToolsSubfeature.highlightInPage`, which is how the catalog gates it.
     let name = "highlightInPage"
-    let title = "Highlight in page"
-    let description = "Highlight text ranges on the current page."
     let permissionMode = BrowserToolPermissionMode.auto
 
     let inputSchema: JSONValue = [
@@ -60,23 +58,6 @@ final class HighlightInPageBrowserTool: BrowserTool {
             ]
         ]
     ]
-
-    let outputSchema: JSONValue? = [
-        "type": "object",
-        "properties": [
-            "tabId": ["type": "string"],
-            "title": ["type": "string"],
-            "url": ["type": "string"],
-            "highlightedCount": ["type": "integer"],
-            "truncated": ["type": "boolean"]
-        ],
-        "required": ["tabId", "title", "url", "highlightedCount", "truncated"]
-    ]
-
-    let annotations: MCPToolAnnotations? = MCPToolAnnotations(readOnlyHint: false,
-                                                              destructiveHint: false,
-                                                              idempotentHint: true,
-                                                              openWorldHint: false)
 
     private let windowControllersManager: WindowControllersManagerProtocol
     private let highlighter: BrowserToolPageHighlighting

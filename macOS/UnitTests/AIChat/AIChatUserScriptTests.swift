@@ -347,41 +347,12 @@ final class AIChatUserScriptTests: XCTestCase {
 
     // MARK: - Browser tools
 
-    @MainActor func testWhenInitializeIsReceivedThenItRoutesToTheMCPHandler() async throws {
-        let handler = try XCTUnwrap(userScript.handler(forMethodNamed: AIChatUserScriptMessages.initialize.rawValue))
-        _ = try await handler([""], WKScriptMessage.mock())
+    @MainActor func testWhenLegacyBrowserToolMethodIsRequestedThenNoHandlerIsReturned() {
+        let methods = ["initialize", "notifications/initialized", "tools/list", "tools/call", "elicitation/response"]
 
-        XCTAssertTrue(mockHandler.didCallMCPInitialize)
-    }
-
-    @MainActor func testWhenInitializedNotificationIsReceivedThenItRoutesToTheMCPHandler() async throws {
-        let handler = try XCTUnwrap(userScript.handler(forMethodNamed: AIChatUserScriptMessages.notificationsInitialized.rawValue))
-        _ = try await handler([""], WKScriptMessage.mock())
-
-        XCTAssertTrue(mockHandler.didCallMCPNotificationsInitialized)
-    }
-
-    @MainActor func testWhenToolsListIsReceivedThenItRoutesToTheMCPHandler() async throws {
-        let handler = try XCTUnwrap(userScript.handler(forMethodNamed: AIChatUserScriptMessages.toolsList.rawValue))
-        _ = try await handler([""], WKScriptMessage.mock())
-
-        XCTAssertTrue(mockHandler.didCallMCPToolsList)
-    }
-
-    @MainActor func testWhenToolsCallIsReceivedThenItRoutesToTheMCPHandler() async throws {
-        let handler = try XCTUnwrap(userScript.handler(forMethodNamed: AIChatUserScriptMessages.toolsCall.rawValue))
-        _ = try await handler([""], WKScriptMessage.mock())
-
-        XCTAssertTrue(mockHandler.didCallMCPToolsCall)
-    }
-
-    /// A prompt raised by the call must go back to the page that made it, so the script hands
-    /// itself over as the pusher.
-    @MainActor func testWhenToolsCallIsReceivedThenTheScriptIsTheElicitationPusher() async throws {
-        let handler = try XCTUnwrap(userScript.handler(forMethodNamed: AIChatUserScriptMessages.toolsCall.rawValue))
-        _ = try await handler([""], WKScriptMessage.mock())
-
-        XCTAssertTrue(mockHandler.receivedElicitationPusher === userScript)
+        for method in methods {
+            XCTAssertNil(userScript.handler(forMethodNamed: method), method)
+        }
     }
 
     /// Client tools are only for a Duck.ai chat; a call from any other page gets no permission source.
@@ -399,13 +370,6 @@ final class AIChatUserScriptTests: XCTestCase {
         _ = try await handler([""], WKScriptMessage.mock())
 
         XCTAssertTrue(mockHandler.receivedClientToolPermissionSource === userScript)
-    }
-
-    @MainActor func testWhenElicitationResponseIsReceivedThenItRoutesToTheMCPHandler() async throws {
-        let handler = try XCTUnwrap(userScript.handler(forMethodNamed: AIChatUserScriptMessages.elicitationResponse.rawValue))
-        _ = try await handler([""], WKScriptMessage.mock())
-
-        XCTAssertTrue(mockHandler.didCallMCPElicitationResponse)
     }
 
     // MARK: - Open Settings handshake
@@ -652,39 +616,6 @@ final class MockAIChatUserScriptHandler: AIChatUserScriptHandling {
 
     func getAIChatTabContent(params: Any, message: UserScriptMessage) async -> Encodable? {
         didGetAIChatTabContent = true
-        return nil
-    }
-
-    var didCallMCPInitialize = false
-    var didCallMCPNotificationsInitialized = false
-    var didCallMCPToolsList = false
-    var didCallMCPToolsCall = false
-    var didCallMCPElicitationResponse = false
-    var receivedElicitationPusher: (any AIChatElicitationPushing)?
-
-    func mcpInitialize(params: Any, message: UserScriptMessage) async -> Encodable? {
-        didCallMCPInitialize = true
-        return nil
-    }
-
-    func mcpNotificationsInitialized(params: Any, message: UserScriptMessage) async -> Encodable? {
-        didCallMCPNotificationsInitialized = true
-        return nil
-    }
-
-    func mcpToolsList(params: Any, message: UserScriptMessage) async -> Encodable? {
-        didCallMCPToolsList = true
-        return nil
-    }
-
-    func mcpToolsCall(params: Any, message: UserScriptMessage, elicitationPusher: (any AIChatElicitationPushing)?) async -> Encodable? {
-        didCallMCPToolsCall = true
-        receivedElicitationPusher = elicitationPusher
-        return nil
-    }
-
-    func mcpElicitationResponse(params: Any, message: UserScriptMessage) async -> Encodable? {
-        didCallMCPElicitationResponse = true
         return nil
     }
 

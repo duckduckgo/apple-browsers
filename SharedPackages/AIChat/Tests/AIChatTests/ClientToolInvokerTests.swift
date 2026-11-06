@@ -27,18 +27,16 @@ struct ClientToolInvokerTests {
     @Test(.timeLimit(.minutes(1)), arguments: ["granted", "denied", "invalidated"])
     func usesInjectedPermissionCoordinator(outcome: String) async throws {
         let configuration = ClientToolTestConfiguration()
-        let permissions = ClientToolTestPermissions()
         let tool = ClientToolTestTool(name: "readTabContent")
         let source = ClientToolTestSource()
         let coordinator = StubClientToolPermissionCoordinator(outcome: outcome)
         let invoker = BrowserToolInvoker(catalog: BrowserToolCatalog(tools: [tool], configuration: configuration),
-                                         configuration: configuration, permissions: permissions,
-                                         elicitations: AIChatElicitationCoordinator(), clientToolPermissions: coordinator)
+                                         clientToolPermissions: coordinator)
         let requestData = try JSONEncoder().encode(JSONValue.object([
             "callId": "injected-call", "capability": ["name": "readTabContent", "version": 1], "input": [:]
         ]))
         let request = try JSONDecoder().decode(ExecuteClientToolRequest.self, from: requestData)
-        let context = BrowserToolCallContext(ownerTabID: "owner", isBurner: false, supportsElicitationForm: false)
+        let context = BrowserToolCallContext(ownerTabID: "owner", isBurner: false)
 
         let response = await invoker.invokeClientTool(request, context: context, permissionPusher: source)
 
@@ -64,7 +62,7 @@ struct ClientToolInvokerTests {
         if reason == "tool" { harness.configuration.disabled.insert(harness.tool.name) }
         let request = try harness.request(name: reason == "unknown" ? "unknown" : harness.tool.name,
                                           version: reason == "version" ? 2 : 1)
-        let context = BrowserToolCallContext(ownerTabID: "owner", isBurner: reason == "fire", supportsElicitationForm: true)
+        let context = BrowserToolCallContext(ownerTabID: "owner", isBurner: reason == "fire")
         let response = await harness.invoker.invokeClientTool(request, context: context, permissionPusher: harness.source)
         #expect(response == .failure(callId: "call", error: .unavailable))
         #expect(harness.source.prompts.isEmpty)
@@ -117,7 +115,7 @@ struct ClientToolInvokerTests {
 
     @available(iOS 16, macOS 13, *)
     @Test(.timeLimit(.minutes(1)))
-    func clientToolRequiresCapabilityRegistrationWhileLegacyLookupRemainsAvailable() async throws {
+    func clientToolRequiresCapabilityRegistration() async throws {
         let harness = ClientToolTestHarness(capabilities: [.searchHistory, .listOpenTabs])
         #expect(harness.catalog.enabledTools.map(\.name) == [harness.tool.name, harness.otherTool.name])
         #expect(harness.catalog.tool(named: harness.tool.name) === harness.tool)
@@ -172,7 +170,7 @@ struct ClientToolInvokerTests {
 
     @available(iOS 16, macOS 13, *)
     @Test(.timeLimit(.minutes(1)))
-    func automaticToolIgnoresStoredDenialAndLegacyHandshake() async throws {
+    func automaticToolIgnoresStoredDenialWithoutPermissionPusher() async throws {
         let harness = ClientToolTestHarness()
         harness.tool.permissionMode = .auto
         harness.permissions.storedDecisions[harness.tool.name] = .deny
@@ -199,7 +197,7 @@ struct ClientToolInvokerTests {
 
     @available(iOS 16, macOS 13, *)
     @Test(.timeLimit(.minutes(1)), arguments: BrowserToolFailure.allCases)
-    func mapsEveryLegacyToolError(error: BrowserToolFailure) async throws {
+    func mapsEveryInternalToolError(error: BrowserToolFailure) async throws {
         let harness = ClientToolTestHarness()
         harness.tool.permissionMode = .auto
         harness.tool.result = .failure(error)
@@ -207,8 +205,8 @@ struct ClientToolInvokerTests {
         let response = await harness.invoker.invokeClientTool(request, context: harness.context, permissionPusher: nil)
         let expected: ClientToolError
         switch error {
-        case .invalidArguments, .invalidPermissionChoice, .invalidRequest: expected = .invalidArguments
-        case .unavailable, .elicitationUnsupported, .notInitialized: expected = .unavailable
+        case .invalidArguments: expected = .invalidArguments
+        case .unavailable: expected = .unavailable
         case .notFound: expected = .notFound
         case .denied: expected = .denied
         case .cancelled: expected = .cancelled
@@ -258,7 +256,6 @@ struct ClientToolInvokerTests {
 
 extension ClientToolInvokerTests {
 
-    /// Client tools send the tool's contract-shaped result; the legacy path keeps the raw value.
     @available(iOS 16, macOS 13, *)
     @Test(.timeLimit(.minutes(1)), arguments: [BrowserToolResult.success(["shaped": true]), .failure(.unavailable)])
     func clientCallsUseTheToolsClientResult(clientResult: BrowserToolResult) async throws {
@@ -267,13 +264,11 @@ extension ClientToolInvokerTests {
         harness.tool.clientResult = { _ in clientResult }
 
         let response = await harness.invoker.invokeClientTool(try harness.request(), context: harness.context, permissionPusher: nil)
-        let legacy = await harness.invoker.invoke(toolNamed: harness.tool.name, arguments: nil, context: harness.context, elicitationPusher: nil)
 
         switch clientResult {
         case .success(let value): #expect(response == .success(callId: "call", value: value))
         case .failure: #expect(response == .failure(callId: "call", error: .unavailable))
         }
-        #expect(legacy == .success(["content": "page"]))
     }
 
     /// The contract's inputs are objects without additional properties; a call that breaks that is

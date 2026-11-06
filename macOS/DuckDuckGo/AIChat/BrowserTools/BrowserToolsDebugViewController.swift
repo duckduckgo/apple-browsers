@@ -620,8 +620,6 @@ extension BrowserToolsDebugViewController: AIChatBrowserToolsPushing {
 
     var pushTargetWebView: WKWebView? { chatContextProvider()?.webView }
 
-    func pushToolsListChanged() {}
-
     func pushTabChanged(_ data: AIChatTabChangedData) {
         appendToLog(summary: "⇠ aiChatTabChanged  \(data.url ?? "")", detail: prettyPrinted(data))
     }

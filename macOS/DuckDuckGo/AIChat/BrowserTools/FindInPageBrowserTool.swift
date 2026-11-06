@@ -29,8 +29,6 @@ final class FindInPageBrowserTool: BrowserTool {
 
     /// Matches `AIChatBrowserToolsSubfeature.findInPage`, which is how the catalog gates it.
     let name = "findInPage"
-    let title = "Find in page"
-    let description = "Find text in the current page and report match count and current match index."
     let permissionMode = BrowserToolPermissionMode.ask
     let permissionReason = "Duck.ai wants to find text on this page."
 
@@ -58,40 +56,6 @@ final class FindInPageBrowserTool: BrowserTool {
         ],
         "required": ["query"]
     ]
-
-    let outputSchema: JSONValue? = [
-        "type": "object",
-        "properties": [
-            "tabId": ["type": "string"],
-            "title": ["type": "string"],
-            "url": ["type": "string"],
-            "query": ["type": "string"],
-            "matchCount": ["type": "integer"],
-            "matches": [
-                "type": "array",
-                "items": [
-                    "type": "object",
-                    "properties": [
-                        "snippet": ["type": "string"],
-                        "matchIndex": ["type": "integer"]
-                    ],
-                    "required": ["snippet", "matchIndex"]
-                ]
-            ],
-            "truncated": ["type": "boolean"],
-            "contentTruncated": ["type": "boolean"],
-            "matchIndexesReliable": [
-                "type": "boolean",
-                "description": "When false, matchIndex values are from page-context text fallback and must not be passed to highlightInPage — use quotes instead."
-            ]
-        ],
-        "required": ["tabId", "title", "url", "query", "matchCount", "matches", "truncated", "contentTruncated", "matchIndexesReliable"]
-    ]
-
-    let annotations: MCPToolAnnotations? = MCPToolAnnotations(readOnlyHint: true,
-                                                              destructiveHint: false,
-                                                              idempotentHint: true,
-                                                              openWorldHint: false)
 
     private let windowControllersManager: WindowControllersManagerProtocol
     private let reader: BrowserToolPageContentReading

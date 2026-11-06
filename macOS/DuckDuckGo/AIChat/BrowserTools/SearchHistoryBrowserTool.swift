@@ -29,8 +29,6 @@ final class SearchHistoryBrowserTool: BrowserTool {
 
     /// Matches `AIChatBrowserToolsSubfeature.searchHistory`, which is how the catalog gates it.
     let name = "searchHistory"
-    let title = "Search history"
-    let description = "Search local browser history by term (omit query for most recent visits). Optionally narrow with inclusive startDate/endDate (YYYY-MM-DD or ISO-8601). Each result has title, url, and visitedAt (ISO-8601 UTC); prefer title for display when it is non-empty."
     let permissionMode = BrowserToolPermissionMode.ask
     let permissionReason = "Duck.ai wants to search your browsing history."
 
@@ -57,30 +55,6 @@ final class SearchHistoryBrowserTool: BrowserTool {
             ]
         ]
     ]
-
-    let outputSchema: JSONValue? = [
-        "type": "object",
-        "properties": [
-            "results": [
-                "type": "array",
-                "items": [
-                    "type": "object",
-                    "properties": [
-                        "title": ["type": "string"],
-                        "url": ["type": "string"],
-                        "visitedAt": ["type": "string"]
-                    ],
-                    "required": ["title", "url", "visitedAt"]
-                ]
-            ]
-        ],
-        "required": ["results"]
-    ]
-
-    let annotations: MCPToolAnnotations? = MCPToolAnnotations(readOnlyHint: true,
-                                                              destructiveHint: false,
-                                                              idempotentHint: true,
-                                                              openWorldHint: false)
 
     private let historyCoordinator: HistoryCoordinating
 

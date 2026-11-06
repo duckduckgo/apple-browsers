@@ -32,15 +32,14 @@ final class ClientToolTestHarness {
     let coordinator: ClientToolPermissionCoordinator
     let catalog: BrowserToolCatalog
     let invoker: BrowserToolInvoker
-    let context = BrowserToolCallContext(ownerTabID: "owner", ownerWindowToken: "window", isBurner: false, supportsElicitationForm: false)
+    let context = BrowserToolCallContext(ownerTabID: "owner", ownerWindowToken: "window", isBurner: false)
 
     init(capabilities: [ClientToolCapability] = ClientToolCapability.browserTools) {
         coordinator = ClientToolPermissionCoordinator(permissions: permissions, now: { [clock] in clock.now },
                                                       sleepUntil: { [clock] in try await clock.sleep(until: $0) })
         catalog = BrowserToolCatalog(tools: [tool, otherTool], configuration: configuration, capabilities: capabilities)
         invoker = BrowserToolInvoker(catalog: catalog,
-                                     configuration: configuration, permissions: permissions,
-                                     elicitations: AIChatElicitationCoordinator(), clientToolPermissions: coordinator)
+                                     clientToolPermissions: coordinator)
     }
 
     func request(callID: String = "call", name: String = "readTabContent", version: Int = 1,
@@ -88,8 +87,6 @@ final class ClientToolTestPermissions: BrowserToolPermissionStoring {
 @MainActor
 final class ClientToolTestTool: BrowserTool {
     let name: String
-    var title: String { name }
-    var description: String { name }
     var permissionMode: BrowserToolPermissionMode = .ask
     var permissionReason = "Read this page?"
     var inputSchema: JSONValue { ["type": "object", "properties": ["key": ["type": "array"]]] }

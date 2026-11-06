@@ -25,8 +25,6 @@ final class ReadTabContentBrowserTool: BrowserTool {
 
     /// Matches `AIChatBrowserToolsSubfeature.readTabContent`, which is how the catalog gates it.
     let name = "readTabContent"
-    let title = "Read tab content"
-    let description = "Read the text content of an open tab."
     let permissionMode = BrowserToolPermissionMode.ask
     let permissionReason = "Duck.ai wants to read this tab's content."
 
@@ -39,38 +37,6 @@ final class ReadTabContentBrowserTool: BrowserTool {
             ]
         ]
     ]
-
-    let outputSchema: JSONValue? = [
-        "type": "object",
-        "properties": [
-            "title": ["type": "string"],
-            "url": ["type": "string"],
-            "content": ["type": "string"],
-            "truncated": ["type": "boolean"],
-            "fullContentLength": ["type": "integer"],
-            "tabId": ["type": "string"],
-            "favicon": [
-                "type": "array",
-                "items": [
-                    "type": "object",
-                    "properties": [
-                        "href": ["type": "string"],
-                        "rel": ["type": "string"]
-                    ]
-                ]
-            ],
-            "contentScope": ["type": "string"],
-            "pageTypeSignals": ["type": "object"],
-            "attached": ["type": "boolean"],
-            "attachable": ["type": "boolean"]
-        ],
-        "required": ["title", "url", "truncated", "fullContentLength", "tabId"]
-    ]
-
-    let annotations: MCPToolAnnotations? = MCPToolAnnotations(readOnlyHint: true,
-                                                              destructiveHint: false,
-                                                              idempotentHint: true,
-                                                              openWorldHint: false)
 
     private let windowControllersManager: WindowControllersManagerProtocol
     private let reader: BrowserToolPageContentReading

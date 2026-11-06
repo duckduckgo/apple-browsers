@@ -19,7 +19,7 @@
 import Foundation
 
 /// Tools Duck.ai may discover and invoke, after remote-config gating. A disabled tool is absent
-/// from `tools/list` *and* unresolvable by name, so calling it anyway reports `unavailable`.
+/// from discovery and unresolvable by name, so calling it anyway reports `unavailable`.
 @MainActor
 public final class BrowserToolCatalog {
 

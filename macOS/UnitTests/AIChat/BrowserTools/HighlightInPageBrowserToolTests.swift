@@ -91,8 +91,7 @@ final class HighlightInPageBrowserToolTests: XCTestCase {
         let (tool, ownerContext, _) = make(urls: ["https://a.example"])
         let context = BrowserToolCallContext(ownerTabID: ownerContext.ownerTabID,
                                              ownerWindowToken: ownerContext.ownerWindowToken,
-                                             isBurner: true,
-                                             supportsElicitationForm: true)
+                                             isBurner: true)
 
         let result = await tool.execute(arguments: ["quotes": ["x"]], context: context)
 
@@ -209,12 +208,11 @@ final class HighlightInPageBrowserToolTests: XCTestCase {
         XCTAssertEqual(result, .failure(.unavailable))
     }
 
-    func testWhenDescribedThenItIsAutoModeAndNotReadOnly() {
+    func testWhenCreatedThenItUsesAutomaticPermission() {
         let (tool, _, _) = make(urls: ["https://a.example"])
 
         XCTAssertEqual(tool.name, "highlightInPage")
         XCTAssertEqual(tool.permissionMode, .auto)
-        XCTAssertEqual(tool.annotations?.readOnlyHint, false)
     }
 
     // MARK: -
@@ -229,8 +227,7 @@ final class HighlightInPageBrowserToolTests: XCTestCase {
         let tool = HighlightInPageBrowserTool(windowControllersManager: manager, highlighter: highlighter)
         let context = BrowserToolCallContext(ownerTabID: tabs[0].uuid,
                                              ownerWindowToken: AIChatTabPickerSource.windowToken(forCollection: collection),
-                                             isBurner: false,
-                                             supportsElicitationForm: true)
+                                             isBurner: false)
         return (tool, context, tabs[0])
     }
 }

@@ -219,23 +219,6 @@ final class AIChatUserScript: NSObject, Subfeature {
         case .getAIChatTabContent:
             return handler.getAIChatTabContent
 
-        // Browser tools. Answered regardless of the feature flag: the catalog is empty when it is
-        // off, so `tools/list` comes back empty rather than leaving the front end waiting.
-        case .initialize:
-            return handler.mcpInitialize
-        case .notificationsInitialized:
-            return handler.mcpNotificationsInitialized
-        case .toolsList:
-            return handler.mcpToolsList
-        case .toolsCall:
-            // The script is the pusher: a prompt raised by this call goes back to the page that made it.
-            return { [weak self] params, message in
-                guard let self else { return nil }
-                return await self.handler.mcpToolsCall(params: params, message: message, elicitationPusher: self)
-            }
-        case .elicitationResponse:
-            return handler.mcpElicitationResponse
-
         // Client tools. The script is the permission source, so a prompt goes back to the page
         // that made the call and only that page can answer it.
         case .executeClientTool:
@@ -291,16 +274,6 @@ final class AIChatUserScript: NSObject, Subfeature {
         default:
             return nil
         }
-    }
-}
-
-extension AIChatUserScript: AIChatElicitationPushing {
-
-    @MainActor
-    func pushElicitationCreate(_ params: MCPElicitationCreateParams) -> Bool {
-        guard let webView, let broker else { return false }
-        broker.push(method: AIChatUserScriptMessages.elicitationCreate.rawValue, params: params, for: self, into: webView)
-        return true
     }
 }
 
@@ -367,11 +340,6 @@ extension AIChatUserScript: ClientToolPermissionPushing {
 extension AIChatUserScript: AIChatBrowserToolsPushing {
 
     var pushTargetWebView: WKWebView? { webView }
-
-    @MainActor
-    func pushToolsListChanged() {
-        pushToDuckAI(.toolsListChanged, params: nil)
-    }
 
     @MainActor
     func pushTabChanged(_ data: AIChatTabChangedData) {

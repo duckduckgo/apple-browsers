@@ -31,12 +31,6 @@ public enum AuthVersion: String {
     public static let key = "auth_version"
 }
 
-/// Pixels handler
-public protocol SubscriptionPixelHandling {
-    func handle(pixel: SubscriptionPixelType)
-    func handle(pixel: KeychainManager.Pixel)
-}
-
 public protocol SubscriptionManager: SubscriptionTokenProvider, SubscriptionAuthenticationStateProvider, SubscriptionTokenRefreshing {
 
     // MARK: - Environment and App Store

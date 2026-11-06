@@ -21,43 +21,6 @@ import os.log
 import Networking
 import FoundationExtensions
 
-/// Why a backup restore that was tried didn't restore the session, as reported on pixels.
-public enum BackupRestoreFailureReason: String, CaseIterable {
-    /// The backup belongs to another account than the dead current token.
-    case accountMismatch = "account_mismatch"
-    /// The backup was issued at or before the last sign-out.
-    case predatesSignOut = "predates_sign_out"
-    /// The backup's refresh token has expired.
-    case expired
-    /// The auth server rejected the backup's refresh token or account.
-    case serverRejected = "server_rejected"
-    /// A failure `BackupRestoreFailure` classifies as `.temporary`.
-    case temporary
-    /// The user signed out, signed in or switched account while the restore ran.
-    case sessionChanged = "session_changed"
-    /// Any other failure.
-    case unknown
-
-    /// Classifies `error`.
-    /// - Parameter error: The error `OAuthClient.restoreFromBackup` threw.
-    public init(_ error: Error) {
-        switch error {
-        case TokenBackupError.accountMismatch:
-            self = .accountMismatch
-        case TokenBackupError.predatesSignOut:
-            self = .predatesSignOut
-        case TokenBackupError.expired:
-            self = .expired
-        case TokenBackupError.sessionChanged:
-            self = .sessionChanged
-        case OAuthClientError.invalidTokenRequest, OAuthClientError.unknownAccount:
-            self = .serverRejected
-        default:
-            self = BackupRestoreFailure(error) == .temporary ? .temporary : .unknown
-        }
-    }
-}
-
 /// Recovers the current token container from the backup token container.
 public final class BackupTokenRecovery: TokenRecoveryStrategy {
 

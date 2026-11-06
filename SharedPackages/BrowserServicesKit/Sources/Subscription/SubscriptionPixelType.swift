@@ -68,18 +68,3 @@ public enum SubscriptionPixelType: Equatable {
         }
     }
 }
-
-extension SubscriptionPixelHandling {
-
-    /// An event mapping for `DefaultOAuthClient`'s backup events that hands them to this handler as `.backupRenewed` and `.backupRenewalFailed`.
-    public func backupEventMapping() -> EventMapping<OAuthClientBackupEvent> {
-        EventMapping { event, _, _, _ in
-            switch event {
-            case .backupRenewed:
-                handle(pixel: .backupRenewed)
-            case .backupRenewalFailed(let error):
-                handle(pixel: .backupRenewalFailed(error))
-            }
-        }
-    }
-}

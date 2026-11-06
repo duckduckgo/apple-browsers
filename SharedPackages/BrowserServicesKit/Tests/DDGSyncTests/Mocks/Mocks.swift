@@ -962,13 +962,16 @@ class RemoteAPIRequestCreatingMock: RemoteAPIRequestCreating {
         let parameters: [String: String]
         let body: Data?
         let contentType: String?
+        let requirements: APIResponseRequirements
     }
 
-    func createRequest(url: URL, method: Networking.APIRequest.HTTPMethod, headers: [String: String], parameters: [String: String], body: Data?, contentType: String?) -> HTTPRequesting {
+    func createRequest(url: URL, method: Networking.APIRequest.HTTPMethod, headers: [String: String], parameters: [String: String],
+                       body: Data?, contentType: String?, requirements: APIResponseRequirements) -> HTTPRequesting {
         lock.lock()
         defer { lock.unlock() }
         createRequestCallCount += 1
-        createRequestCallArgs.append(CreateRequestCallArgs(url: url, method: method, headers: headers, parameters: parameters, body: body, contentType: contentType))
+        createRequestCallArgs.append(CreateRequestCallArgs(url: url, method: method, headers: headers, parameters: parameters,
+                                                           body: body, contentType: contentType, requirements: requirements))
         return fakeRequests[url] ?? request
     }
 }

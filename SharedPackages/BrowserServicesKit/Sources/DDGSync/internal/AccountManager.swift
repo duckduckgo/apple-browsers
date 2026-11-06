@@ -29,8 +29,6 @@ struct AccountManager: AccountManaging {
     private static let defaultLoginScope = "sync"
     let endpoints: Endpoints
     let api: RemoteAPIRequestCreating
-    // Audit-log calls need HTTP error bodies; older endpoints continue to use api.
-    private let auditLogAPIService: APIService
     let crypter: CryptingInternal
     let registeredDeviceMapper: any RegisteredDeviceMapping
     let accountInfoKeys: (any AccountInfoKeyManaging)?
@@ -43,7 +41,6 @@ struct AccountManager: AccountManaging {
 
     init(endpoints: Endpoints,
          api: RemoteAPIRequestCreating,
-         auditLogAPIService: APIService,
          crypter: CryptingInternal,
          registeredDeviceMapper: (any RegisteredDeviceMapping)? = nil,
          accountInfoKeys: (any AccountInfoKeyManaging)? = nil,
@@ -55,7 +52,6 @@ struct AccountManager: AccountManaging {
          canReadUnifiedDeviceList: @escaping () -> Bool = { false }) {
         self.endpoints = endpoints
         self.api = api
-        self.auditLogAPIService = auditLogAPIService
         self.crypter = crypter
         self.registeredDeviceMapper = registeredDeviceMapper ?? RegisteredDeviceMapper(
             crypter: crypter,
@@ -237,12 +233,12 @@ struct AccountManager: AccountManaging {
             parameters["limit"] = String(limit)
         }
 
-        let headers = APIRequestV2.HeadersV2(userAgent: APIRequest.Headers.userAgent ?? "", authToken: token)
-        guard let request = APIRequestV2(url: endpoints.auditLog, queryItems: parameters.isEmpty ? nil : Array(parameters), headers: headers) else {
-            throw APIRequestV2Error.invalidURL
-        }
-        let result = try await auditLogAPIService.fetch(request: request)
-        if result.httpResponse.statusCode >= 400 {
+        let request = api.createAuthenticatedGetRequest(url: endpoints.auditLog,
+                                                        authToken: token,
+                                                        parameters: parameters,
+                                                        requirements: [.allowHTTPNotModified, .allowHTTPErrorResponse])
+        let result = try await request.execute()
+        if result.response.httpStatus.isFailure {
             throw auditLogError(from: result)
         }
 
@@ -290,12 +286,12 @@ struct AccountManager: AccountManaging {
         return AuditLogPage(entries: entries, after: response.auditLog.after, before: response.auditLog.before)
     }
 
-    private func auditLogError(from response: APIResponseV2) -> Error {
-        if response.httpResponse.statusCode == 400, let data = response.data,
+    private func auditLogError(from response: HTTPResult) -> Error {
+        if response.response.statusCode == 400, let data = response.data,
            let body = try? JSONDecoder().decode(AuditLogErrorResponse.self, from: data), body.error == "invalid_cursor" {
             return AuditLogError.invalidCursor
         }
-        return SyncError.unexpectedStatusCode(response.httpResponse.statusCode)
+        return SyncError.unexpectedStatusCode(response.response.statusCode)
     }
 
     func updateDevice(_ update: UpdateDevices.Update, for account: SyncAccount) async throws -> [RegisteredDevice] {

@@ -4519,6 +4519,12 @@
 /* Footnote for the hide AI-generated images setting; ends with a Learn more link to the help page (do not remove the link) */
 "settings.aifeatures.hide.ai.generated.images.subtitle" = "Filtrează site-urile spam cunoscute, bazate pe IA, din rezultatele căutării de imagini. [Află mai multe](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/results/how-to-filter-out-ai-images-in-duckduckgo-search-results)";
 
+/* Settings screen description for the Duck.ai keyboard animation toggle */
+"settings.aifeatures.keyboard.animation.subtitle" = "Afișează o animație în jurul tastaturii când treci la Duck.ai sau tastezi în Duck.ai.";
+
+/* Settings screen toggle title for the Duck.ai keyboard animation */
+"settings.aifeatures.keyboard.animation.title" = "Animația tastaturii Duck.ai";
+
 /* Label describing a feature which is turned on always */
 "settings.always.on" = "Întotdeauna activat";
 
@@ -6016,3 +6022,12 @@
 /* Title for screen to screen confirming what data to import from a zip file (bookmarks and /or passwords) */
 "zip.content.import.types.title" = "Ce dorești să imporți?";
 
+
+/* Fireproofing setting toggle label */
+"preserveLogins.askOnSignIn" = "Solicită ignifugarea site-urile la autentificare";
+
+/* Empty Fireproof sites list */
+"preserveLogins.emptyState" = "Nu există încă site-uri ignifuge";
+
+/* Button to remove all Fireproof sites */
+"preserveLogins.removeAllSites" = "Elimină toate site-urile la care la ieșire se șterge activitatea și istoricul din browser";

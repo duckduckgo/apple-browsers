@@ -95,6 +95,7 @@ class AIChatUserScriptHandlerTests: XCTestCase {
     private func makeAIChatUserScriptHandler(isNativeStorageBridgeAvailable: Bool = false,
                                              aiChatUserScriptErrorEventMapper: EventMapping<AIChatUserScriptErrorEvent>? = nil,
                                              attachmentPrivacyWebKeySource: DuckAiNativeStorageHandling? = nil,
+                                             termsOfServiceWebRecordSource: DuckAiNativeStorageHandling? = nil,
                                              installDateProvider: @escaping () -> Date? = { nil },
                                              installTypeProvider: @escaping () -> AIChatInstallType = { .new }) -> AIChatUserScriptHandler {
         let experimentalAIChatManager = ExperimentalAIChatManager(featureFlagger: mockFeatureFlagger)
@@ -112,6 +113,8 @@ class AIChatUserScriptHandlerTests: XCTestCase {
             isNativeStorageBridgeAvailable: isNativeStorageBridgeAvailable,
             attachmentPrivacyDisplayStore: AttachmentPrivacyDisclosureStore(keyValueStore: mockUserDefaults),
             attachmentPrivacyWebKeySource: attachmentPrivacyWebKeySource,
+            termsOfServiceWebRecordSource: termsOfServiceWebRecordSource,
+            pixelFiring: pixelKitMock,
             installDateProvider: installDateProvider,
             installTypeProvider: installTypeProvider
         )
@@ -1571,6 +1574,90 @@ extension AIChatUserScriptHandlerTests {
 
         // Then
         XCTAssertEqual(mockUserDefaults.object(forKey: termsAcceptedKey) as? Bool, true)
+    }
+}
+
+// MARK: - Duplicate acceptance context Tests
+
+extension AIChatUserScriptHandlerTests {
+
+    private var duplicateContextPixelName: String { "aichat_terms_accepted_duplicate_context" }
+
+    private func duplicateContextFireCalls() -> [ExpectedFireCall] {
+        pixelKitMock.actualFireCalls.filter { $0.pixel.name == duplicateContextPixelName }
+    }
+
+    @MainActor
+    private func loadPageAndReportAcceptance() async {
+        let message = MockUserScriptMessage(name: "test", body: [:])
+        _ = aiChatUserScriptHandler.getAIChatNativeConfigValues(params: [], message: message)
+        _ = await aiChatUserScriptHandler.reportMetric(params: ["metricName": "userDidAcceptTermsAndConditions"], message: message)
+    }
+
+    @MainActor
+    func testWhenWebAsksAnAcceptedUserAgainThenContextReportsThePageLoadState() async throws {
+        mockUserDefaults.set(true, forKey: "aichat.hasAcceptedTermsAndConditions")
+        let webStorage = DuckAiNativeMemoryStorageHandler()
+        aiChatUserScriptHandler = makeAIChatUserScriptHandler(isNativeStorageBridgeAvailable: true,
+                                                              termsOfServiceWebRecordSource: webStorage)
+
+        await loadPageAndReportAcceptance()
+
+        let fireCall = try XCTUnwrap(duplicateContextFireCalls().first)
+        XCTAssertEqual(fireCall.frequency, .dailyAndCount)
+        XCTAssertEqual(fireCall.pixel.parameters, [
+            "native_storage": "available",
+            "tab": "standard",
+            "web_record_at_load": "missing",
+            "entries_migration_at_load": "pending"
+        ])
+    }
+
+    /// Read at load: the web app writes its own acceptance before it reports one.
+    @MainActor
+    func testWhenWebRecordIsWrittenAfterLoadThenContextKeepsTheValueReadAtLoad() async throws {
+        mockUserDefaults.set(true, forKey: "aichat.hasAcceptedTermsAndConditions")
+        let webStorage = DuckAiNativeMemoryStorageHandler()
+        try webStorage.markMigrationDone(key: DuckAiMigrationKey.entries)
+        aiChatUserScriptHandler = makeAIChatUserScriptHandler(isNativeStorageBridgeAvailable: true,
+                                                              termsOfServiceWebRecordSource: webStorage)
+        let message = MockUserScriptMessage(name: "test", body: [:])
+
+        _ = aiChatUserScriptHandler.getAIChatNativeConfigValues(params: [], message: message)
+        try webStorage.putEntry(key: DuckAiNativeStorageConsent.termsOfServiceEntryKey, value: "true")
+        _ = await aiChatUserScriptHandler.reportMetric(params: ["metricName": "userDidAcceptTermsAndConditions"], message: message)
+
+        let fireCall = try XCTUnwrap(duplicateContextFireCalls().first)
+        XCTAssertEqual(fireCall.pixel.parameters?["web_record_at_load"], "missing")
+        XCTAssertEqual(fireCall.pixel.parameters?["entries_migration_at_load"], "done")
+    }
+
+    @MainActor
+    func testWhenPageHasNoNativeStorageBridgeThenContextReportsItUnavailableInAFireTab() async throws {
+        mockUserDefaults.set(true, forKey: "aichat.hasAcceptedTermsAndConditions")
+        aiChatUserScriptHandler = makeAIChatUserScriptHandler(isNativeStorageBridgeAvailable: false,
+                                                              termsOfServiceWebRecordSource: DuckAiNativeMemoryStorageHandler())
+        aiChatUserScriptHandler.isFireModeProvider = { true }
+
+        await loadPageAndReportAcceptance()
+
+        let fireCall = try XCTUnwrap(duplicateContextFireCalls().first)
+        XCTAssertEqual(fireCall.pixel.parameters, [
+            "native_storage": "unavailable",
+            "tab": "fire",
+            "web_record_at_load": "unknown",
+            "entries_migration_at_load": "unknown"
+        ])
+    }
+
+    @MainActor
+    func testWhenFirstAcceptanceThenNoContextIsReported() async {
+        aiChatUserScriptHandler = makeAIChatUserScriptHandler(isNativeStorageBridgeAvailable: true,
+                                                              termsOfServiceWebRecordSource: DuckAiNativeMemoryStorageHandler())
+
+        await loadPageAndReportAcceptance()
+
+        XCTAssertTrue(duplicateContextFireCalls().isEmpty)
     }
 }
 

@@ -2317,7 +2317,6 @@ final class AIChatContextualChatSessionStateTests: XCTestCase {
 
     /// Auto-attach off, UTI active, chat under way: the conditions the offer shares with auto-attach.
     private func arrangeOfferConditions() {
-        mockFeatureFlagger.enabledFeatureFlags = [.contextualPagePlaceholder]
         mockSettings.isAutomaticContextAttachmentEnabled = false
         sessionState.updateUnifiedToggleInputActive(true)
         sessionState.beginChatForUTISubmission()
@@ -2442,7 +2441,6 @@ final class AIChatContextualChatSessionStateTests: XCTestCase {
     // MARK: - Offered back after detaching
 
     private func arrangeAttachedPage(title: String = "Tokamak") {
-        mockFeatureFlagger.enabledFeatureFlags = [.contextualPagePlaceholder]
         mockSettings.isAutomaticContextAttachmentEnabled = true
         sessionState.updateUnifiedToggleInputActive(true)
         sessionState.beginChatForUTISubmission()
@@ -2473,15 +2471,6 @@ final class AIChatContextualChatSessionStateTests: XCTestCase {
         sessionState.acceptSuggestedContext()
 
         XCTAssertEqual(sessionState.chipState, .attached(makeTestContext(title: "Tokamak")))
-        XCTAssertNil(sessionState.suggestedContext)
-    }
-
-    func testWhenThePlaceholderFlagIsOffThenDetachingOffersNothing() {
-        arrangeAttachedPage()
-        mockFeatureFlagger.enabledFeatureFlags = []
-
-        XCTAssertTrue(sessionState.handleChipRemoval())
-
         XCTAssertNil(sessionState.suggestedContext)
     }
 

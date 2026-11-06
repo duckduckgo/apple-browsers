@@ -872,6 +872,20 @@ final class DataImportViewModelTests: XCTestCase {
     }
 
     @MainActor
+    func testActionButton_nilForSummaryScreenWithOnlyHistoryAndSyncVisible() {
+        let summary: DataImportSummary = [.history: .success(.init(successful: 10, duplicate: 0, failed: 0))]
+        model = DataImportViewModel(
+            importSource: .chrome,
+            screen: .summary(summary),
+            syncFeatureVisibility: .show(syncLauncher: SyncLauncherMock())
+        )
+
+        let actionButton = model.actionButton
+
+        XCTAssertNil(actionButton)
+    }
+
+    @MainActor
     func testActionButton_nilForSummaryScreenWithoutErrorsAndSyncHidden() {
         // GIVEN
         let summary: DataImportSummary = [.bookmarks: .success(.init(successful: 10, duplicate: 0, failed: 0))]

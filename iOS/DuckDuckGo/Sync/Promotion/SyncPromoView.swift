@@ -31,7 +31,6 @@ struct SyncPromoView: View {
 
     let viewModel: SyncPromoViewModel
     @State private var isAccessibilityHidden = true
-    @State private var isToggleOn = false
 
     var body: some View {
         ZStack(alignment: .topTrailing) {
@@ -51,16 +50,11 @@ struct SyncPromoView: View {
                         .frame(maxWidth: .infinity)
                 }
 
-                switch viewModel.design {
-                case .standard:
-                    buttons
-                case .redesigned:
-                    toggle
-                }
+                buttons
             }
             .multilineTextAlignment(.center)
             .padding(.top)
-            .padding(.bottom, bottomPadding)
+            .padding(.bottom, ButtonStackMetrics.containerPadding)
             .padding(.horizontal, ButtonStackMetrics.containerPadding)
 
             Button {
@@ -86,18 +80,6 @@ struct SyncPromoView: View {
                 isAccessibilityHidden = false
             }
         }
-        .onDisappear {
-            isToggleOn = false
-        }
-    }
-
-    private var bottomPadding: CGFloat {
-        switch viewModel.design {
-        case .standard:
-            ButtonStackMetrics.containerPadding
-        case .redesigned:
-            12
-        }
     }
 
     private var buttons: some View {
@@ -121,28 +103,6 @@ struct SyncPromoView: View {
             .accessibilityLabel(viewModel.primaryButtonTitle)
         }
         .padding(.top, 12)
-    }
-
-    private var toggle: some View {
-        VStack(spacing: 8) {
-            Rectangle()
-                .fill(Color(designSystemColor: .lines))
-                .frame(height: 1)
-
-            Toggle(isOn: Binding(get: { isToggleOn }, set: { isOn in
-                isToggleOn = isOn
-                if isOn {
-                    viewModel.primaryButtonAction?()
-                }
-            })) {
-                Text(viewModel.toggleTitle)
-                    .daxBodyRegular()
-                    .foregroundColor(Color(designSystemColor: .textPrimary))
-            }
-            .tint(Color(designSystemColor: .accentPrimary))
-        }
-        .multilineTextAlignment(.leading)
-        .padding(.top, 8)
     }
 
     private var subtitleColor: Color? {

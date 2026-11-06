@@ -43,6 +43,7 @@ final class AIChatContextualUTIHost: UnifiedToggleInputDelegate, AIChatContextua
     private var frozenBottomConstraint: NSLayoutConstraint?
     private let startsPreSubmit: Bool
     private var hasKeyboardAppeared = false
+    private var isTransitioningSize = false
     /// Launch-time snapshot: re-reading the feature costs a privacy-config evaluation each time.
     private let usesFloatingInput: Bool
     private let usesLiquidGlass: Bool
@@ -62,6 +63,7 @@ final class AIChatContextualUTIHost: UnifiedToggleInputDelegate, AIChatContextua
     var onDuckAIPromptSubmitted: ((AIChatEntryPointSource?) -> Void)?
     var onAIVoiceChatRequested: (() -> Void)?
     var onEditModeChange: ((Bool) -> Void)?
+    var onFireRequested: (() -> Void)?
 
     var attachedTabContextsProvider: (() -> MultiTabAttachmentRequest?)?
 
@@ -182,12 +184,22 @@ final class AIChatContextualUTIHost: UnifiedToggleInputDelegate, AIChatContextua
             .store(in: &cancellables)
     }
 
+    /// A rotation or window resize hides the keyboard and shows it again at the new size, which is not the user
+    /// dismissing it: resigning on that hide drops the keyboard mid-rotation.
+    func willTransitionSize(with transitionCoordinator: UIViewControllerTransitionCoordinator) {
+        isTransitioningSize = true
+        transitionCoordinator.animate(alongsideTransition: nil) { [weak self] _ in
+            self?.isTransitioningSize = false
+        }
+    }
+
     /// Only a keyboard that was really shown can be lost: a hardware keyboard hides on every keystroke.
     private func collapseForKeyboardDismissal() {
         guard hasKeyboardAppeared else { return }
         hasKeyboardAppeared = false
         // Backgrounding takes the keyboard too, and offscreen hosts were never above one.
         guard UIApplication.shared.applicationState == .active,
+              !isTransitioningSize,
               !coordinator.isPresentingAttachmentModal,
               coordinator.isInputOnScreen,
               !coordinator.isContextualChatCollapsed else { return }
@@ -286,6 +298,10 @@ final class AIChatContextualUTIHost: UnifiedToggleInputDelegate, AIChatContextua
         coordinator.observeChatUpdates(publisher)
     }
 
+    var textChangePublisher: AnyPublisher<String, Never> {
+        coordinator.textChangePublisher
+    }
+
     /// Called when a prompt carrying page context is delivered; routes to the session state via `onPromptDelivered`.
     func notifyPromptDelivered() {
         onPromptDelivered?()
@@ -329,6 +345,8 @@ final class AIChatContextualUTIHost: UnifiedToggleInputDelegate, AIChatContextua
     @discardableResult
     func mount(in parent: UIViewController) -> UIView {
         coordinator.attachmentPresentingViewController = parent
+        // Accessories belong to the surface that set them; a new mount starts with none.
+        coordinator.setContextualCollapsedAccessories([], animated: false)
 
         let viewController = coordinator.viewController
         guard viewController.parent !== parent else {
@@ -459,6 +477,14 @@ final class AIChatContextualUTIHost: UnifiedToggleInputDelegate, AIChatContextua
 
     func endPresentation() {
         coordinator.endContextualInputPresentation()
+    }
+
+    /// Without the floating input, the sheet's input never collapses to the pill.
+    var collapsesToPill: Bool { usesFloatingInput }
+
+    /// Shows Fire beside the collapsed pill.
+    func setFireAccessoryVisible(_ visible: Bool) {
+        coordinator.setContextualCollapsedAccessories(visible ? .fire : [])
     }
 
     func activateInput() {
@@ -651,7 +677,9 @@ final class AIChatContextualUTIHost: UnifiedToggleInputDelegate, AIChatContextua
     func unifiedToggleInputDidRequestAIChat(prefilledText: String) {}
     func unifiedToggleInputDidChangeHeight() {}
     func unifiedToggleInputDidCommitMode(_ mode: TextEntryMode) {}
-    func unifiedToggleInputDidRequestFire() {}
+    func unifiedToggleInputDidRequestFire() {
+        onFireRequested?()
+    }
     func unifiedToggleInputDidRequestAppMenu() {}
     func unifiedToggleInputDidRequestAppMenuLongPress() {}
     func unifiedToggleInputDidChangeEditMode(_ isEditing: Bool) {

@@ -83,6 +83,7 @@ protocol TabSwitcherBarsStateHandling {
                                 canShowSelectionMenu: Bool)
 
     func configurePlusButtonLongPressMenu(isFireModeEnabled: Bool)
+    func configureDuckChatMenu(_ menu: UIMenu?)
 
 }
 
@@ -252,6 +253,15 @@ class DefaultTabSwitcherBarsStateHandler: TabSwitcherBarsStateHandling {
             isNewChatAvailable: { [weak self] in self?.isNewChatAvailable?() ?? false }
         ))
         button.showsMenuAsPrimaryAction = false
+    }
+
+    func configureDuckChatMenu(_ menu: UIMenu?) {
+        guard let button = duckChatButton.customView as? BrowserChromeButton else { return }
+        button.menu = menu
+        button.showsMenuAsPrimaryAction = menu != nil
+        if #available(iOS 16.0, *) {
+            button.preferredMenuElementOrder = .fixed
+        }
     }
 
     private func configureButtons() {

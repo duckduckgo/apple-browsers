@@ -32,6 +32,8 @@ class MainViewCoordinator {
         static let contextualSidebarMaxWidth: CGFloat = 400
         /// Below this the page beside the sidebar would be narrower than a phone, so the surface is a sheet instead.
         static let contextualSidebarMinPageWidth: CGFloat = 400
+        /// How much wider than that the window must be for a sheet to move back into the sidebar mid-drag.
+        static let contextualSidebarResizeHysteresis: CGFloat = 40
     }
 
     enum StatusBackgroundPresentation: Equatable {
@@ -582,6 +584,8 @@ class MainViewCoordinator {
             setAddressBarBottomActive(false)
             setNavBarContainerBottomToToolbar(active: false)
             setAddressBarTopActive(true)
+            // The switch above unpins the status background from the safe area, which a page without a reserved bar still needs.
+            updateStatusBackgroundAnchors()
         }
         constraints.navigationBarContainerHeight.constant = expandedHeight
         superview.layoutIfNeeded()
@@ -628,6 +632,7 @@ class MainViewCoordinator {
         if addressBarPosition == .top {
             setAddressBarBottomActive(false)
             setAddressBarTopActive(true)
+            updateStatusBackgroundAnchors()
         }
         constraints.navigationBarContainerHeight.constant = standardNavigationBarContainerHeight
         restoreContentContainerBottomAnchorAfterUnifiedToggleInput()

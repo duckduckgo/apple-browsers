@@ -385,6 +385,21 @@
 /* Title for the New Tab row in the Duck.ai tab header Plus (+) menu */
 "aichat.header.plusMenu.newTab" = "Uus vahekaart";
 
+/* Section header in the Duck.ai tab header Plus (+) menu; every row below it opens a new tab */
+"aichat.header.plusMenu.newTabSection" = "Uus vahekaart";
+
+/* Row in the New Tab section of the Duck.ai tab header Plus (+) menu — opens a new Duck.ai chat in a new tab */
+"aichat.header.plusMenu.newTabSection.chat" = "Vestlus";
+
+/* Row in the New Tab section of the Duck.ai tab header Plus (+) menu — opens Duck.ai in image generation mode in a new tab */
+"aichat.header.plusMenu.newTabSection.image" = "Pilt";
+
+/* Row in the Duck.ai tab header Plus (+) menu — opens a new tab in search mode */
+"aichat.header.plusMenu.newTabSection.search" = "Otsi";
+
+/* Row in the New Tab section of the Duck.ai tab header Plus (+) menu — opens a new Duck.ai voice chat in a new tab */
+"aichat.header.plusMenu.newTabSection.voiceChat" = "Häälvestlus";
+
 /* Title for the New Voice Chat row in the Duck.ai tab header Plus (+) menu */
 "aichat.header.plusMenu.newVoiceChat" = "Uus häälvestlus";
 
@@ -3301,6 +3316,72 @@
 /* No comment provided by engineer. */
 "menu.button.hint" = "Sirvimismenüü";
 
+/* iPad menu bar command */
+"menuActualSize" = "Tegelik suurus";
+
+/* iPad menu bar command */
+"menuBack" = "Tagasi";
+
+/* iPad menu bar command */
+"menuClearTabsAndData" = "Kustuta vahekaardid ja andmed";
+
+/* iPad menu bar command */
+"menuDuplicateTab" = "Dubleeri vahekaart";
+
+/* iPad menu bar command */
+"menuFeedback" = "Jaga tagasisidet";
+
+/* iPad menu bar command */
+"menuForward" = "Edasi";
+
+/* iPad menu bar command */
+"menuHideDownloads" = "Peida allalaadimised";
+
+/* iPad menu bar command */
+"menuHidePasswords" = "Peida paroolid";
+
+/* iPad menu bar command */
+"menuHideTabs" = "Peida vahelehed";
+
+/* iPad menu bar command */
+"menuLastTab" = "Viimane vahekaart";
+
+/* iPad menu bar command */
+"menuNewTabOnRight" = "Uus vahekaart paremal";
+
+/* iPad menu bar command */
+"menuNextTab" = "Kuva järgmine vahekaart";
+
+/* iPad menu bar command */
+"menuOpenLocation" = "Ava asukoht…";
+
+/* iPad menu bar command */
+"menuPreviousTab" = "Kuva eelmine vahekaart";
+
+/* iPad menu bar command */
+"menuPrint" = "Prindi...";
+
+/* iPad menu bar command selecting a numbered tab */
+"menuSelectTab" = "Vali vahekaart %d";
+
+/* iPad menu bar command */
+"menuSettings" = "DuckDuckGo seaded…";
+
+/* iPad menu bar command */
+"menuShowDownloads" = "Kuva allalaadimised";
+
+/* iPad menu bar command */
+"menuShowPasswords" = "Kuva paroolid";
+
+/* iPad menu bar command */
+"menuShowTabs" = "Kuva vahelehed";
+
+/* iPad menu bar command */
+"menuStop" = "Peata";
+
+/* iPad menu bar command */
+"menuVoiceSearch" = "Privaatne häälotsing";
+
 /* No comment provided by engineer. */
 "Message" = "Sõnum";
 
@@ -4437,6 +4518,12 @@
 
 /* Footnote for the hide AI-generated images setting; ends with a Learn more link to the help page (do not remove the link) */
 "settings.aifeatures.hide.ai.generated.images.subtitle" = "Filtreerib pildiotsingu tulemustest välja teadaolevad tehisintellekti rämpsposti saidid. [Lisainfo](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/results/how-to-filter-out-ai-images-in-duckduckgo-search-results)";
+
+/* Settings screen description for the Duck.ai keyboard animation toggle */
+"settings.aifeatures.keyboard.animation.subtitle" = "Kuva animatsioon ümber klaviatuuri, kui lähed üle Duck.ai-le või sisestad seal teksti.";
+
+/* Settings screen toggle title for the Duck.ai keyboard animation */
+"settings.aifeatures.keyboard.animation.title" = "Duck.ai klaviatuuri animatsioon";
 
 /* Label describing a feature which is turned on always */
 "settings.always.on" = "Alati sisse lülitatud";
@@ -5935,3 +6022,12 @@
 /* Title for screen to screen confirming what data to import from a zip file (bookmarks and /or passwords) */
 "zip.content.import.types.title" = "Mida soovite importida?";
 
+
+/* Fireproofing setting toggle label */
+"preserveLogins.askOnSignIn" = "Küsi tulekindlaid veebisaite sisselogimisel";
+
+/* Empty Fireproof sites list */
+"preserveLogins.emptyState" = "Ükski veebisait ei ole veel tulekindel";
+
+/* Button to remove all Fireproof sites */
+"preserveLogins.removeAllSites" = "Eemalda kõik tulekindlad veebisaidid";

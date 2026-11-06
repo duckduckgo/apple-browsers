@@ -385,6 +385,21 @@
 /* Title for the New Tab row in the Duck.ai tab header Plus (+) menu */
 "aichat.header.plusMenu.newTab" = "Nueva pestaña";
 
+/* Section header in the Duck.ai tab header Plus (+) menu; every row below it opens a new tab */
+"aichat.header.plusMenu.newTabSection" = "Nueva pestaña";
+
+/* Row in the New Tab section of the Duck.ai tab header Plus (+) menu — opens a new Duck.ai chat in a new tab */
+"aichat.header.plusMenu.newTabSection.chat" = "Chat";
+
+/* Row in the New Tab section of the Duck.ai tab header Plus (+) menu — opens Duck.ai in image generation mode in a new tab */
+"aichat.header.plusMenu.newTabSection.image" = "Imagen";
+
+/* Row in the Duck.ai tab header Plus (+) menu — opens a new tab in search mode */
+"aichat.header.plusMenu.newTabSection.search" = "Buscar";
+
+/* Row in the New Tab section of the Duck.ai tab header Plus (+) menu — opens a new Duck.ai voice chat in a new tab */
+"aichat.header.plusMenu.newTabSection.voiceChat" = "Chat de voz";
+
 /* Title for the New Voice Chat row in the Duck.ai tab header Plus (+) menu */
 "aichat.header.plusMenu.newVoiceChat" = "Nuevo chat de voz";
 
@@ -3301,6 +3316,72 @@
 /* No comment provided by engineer. */
 "menu.button.hint" = "Menú de navegación";
 
+/* iPad menu bar command */
+"menuActualSize" = "Tamaño real";
+
+/* iPad menu bar command */
+"menuBack" = "Volver";
+
+/* iPad menu bar command */
+"menuClearTabsAndData" = "Borrar datos y pestañas";
+
+/* iPad menu bar command */
+"menuDuplicateTab" = "Duplicar pestaña";
+
+/* iPad menu bar command */
+"menuFeedback" = "Compartir opiniones";
+
+/* iPad menu bar command */
+"menuForward" = "Avanzar";
+
+/* iPad menu bar command */
+"menuHideDownloads" = "Ocultar descargas";
+
+/* iPad menu bar command */
+"menuHidePasswords" = "Ocultar contraseñas";
+
+/* iPad menu bar command */
+"menuHideTabs" = "Ocultar pestañas";
+
+/* iPad menu bar command */
+"menuLastTab" = "Última pestaña";
+
+/* iPad menu bar command */
+"menuNewTabOnRight" = "Nueva pestaña a la derecha";
+
+/* iPad menu bar command */
+"menuNextTab" = "Mostrar pestaña siguiente";
+
+/* iPad menu bar command */
+"menuOpenLocation" = "Abrir ubicación...";
+
+/* iPad menu bar command */
+"menuPreviousTab" = "Mostrar pestaña anterior";
+
+/* iPad menu bar command */
+"menuPrint" = "Imprimir...";
+
+/* iPad menu bar command selecting a numbered tab */
+"menuSelectTab" = "Seleccionar pestaña %d";
+
+/* iPad menu bar command */
+"menuSettings" = "Ajustes de DuckDuckGo...";
+
+/* iPad menu bar command */
+"menuShowDownloads" = "Mostrar descargas";
+
+/* iPad menu bar command */
+"menuShowPasswords" = "Mostrar contraseñas";
+
+/* iPad menu bar command */
+"menuShowTabs" = "Mostrar pestañas";
+
+/* iPad menu bar command */
+"menuStop" = "Detener";
+
+/* iPad menu bar command */
+"menuVoiceSearch" = "Búsqueda privada por voz";
+
 /* No comment provided by engineer. */
 "Message" = "Mensaje";
 
@@ -4437,6 +4518,12 @@
 
 /* Footnote for the hide AI-generated images setting; ends with a Learn more link to the help page (do not remove the link) */
 "settings.aifeatures.hide.ai.generated.images.subtitle" = "Filtra los sitios de spam de IA conocidos de los resultados de búsqueda de imágenes. [Más información](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/results/how-to-filter-out-ai-images-in-duckduckgo-search-results)";
+
+/* Settings screen description for the Duck.ai keyboard animation toggle */
+"settings.aifeatures.keyboard.animation.subtitle" = "Mostrar una animación alrededor del teclado al cambiar a Duck.ai o al escribir en Duck.ai.";
+
+/* Settings screen toggle title for the Duck.ai keyboard animation */
+"settings.aifeatures.keyboard.animation.title" = "Animación del teclado de Duck.ai";
 
 /* Label describing a feature which is turned on always */
 "settings.always.on" = "Siempre activado";
@@ -5935,3 +6022,12 @@
 /* Title for screen to screen confirming what data to import from a zip file (bookmarks and /or passwords) */
 "zip.content.import.types.title" = "¿Qué quieres importar?";
 
+
+/* Fireproofing setting toggle label */
+"preserveLogins.askOnSignIn" = "Preguntar si marcar sitios web como a prueba de fuego al iniciar sesión";
+
+/* Empty Fireproof sites list */
+"preserveLogins.emptyState" = "Todavía no hay sitios web a prueba de fuego";
+
+/* Button to remove all Fireproof sites */
+"preserveLogins.removeAllSites" = "Eliminar todos los sitios web a prueba de fuego";

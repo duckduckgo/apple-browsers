@@ -114,6 +114,7 @@ class SwitchBarButtonsView: UIView {
     var buttonState: SwitchBarButtonState = .noButtons {
         didSet {
             updateButtonsVisibility()
+            updateAIChatShortcutMenu()
         }
     }
 
@@ -138,6 +139,11 @@ class SwitchBarButtonsView: UIView {
     var onVoiceTapped: (() -> Void)?
     var onStopGeneratingTapped: (() -> Void)?
     var onAIChatShortcutTapped: (() -> Void)?
+
+    /// Replaces the shortcut tap while the input is empty; typed text still goes to Duck.ai as the prompt.
+    var aiChatShortcutEmptyInputMenu: UIMenu? {
+        didSet { updateAIChatShortcutMenu() }
+    }
 
     private let stack = UIStackView()
     private let clearButton = BrowserChromeButton(.secondary)
@@ -271,6 +277,11 @@ class SwitchBarButtonsView: UIView {
         aiChatShortcutButton.accessibilityLabel = UserText.duckAiFeatureName
         aiChatShortcutButton.accessibilityIdentifier = "\(Constants.accessibilityPrefix).Button.AIChat"
         aiChatShortcutButton.accessibilityTraits = .button
+    }
+
+    private func updateAIChatShortcutMenu() {
+        aiChatShortcutButton.menu = buttonState.showsClearButton ? nil : aiChatShortcutEmptyInputMenu
+        aiChatShortcutButton.showsMenuAsPrimaryAction = aiChatShortcutButton.menu != nil
     }
 
     private func updateButtonsVisibility() {

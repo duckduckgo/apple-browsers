@@ -748,6 +748,8 @@ class TabViewController: UIViewController {
         let duckPlayer = DuckPlayer(settings: DuckPlayerSettingsDefault(),
                                     featureFlagger: featureFlagger,
                                     userScriptsDependencies: userScriptsDependencies,
+                                    // Same app store as ContentBlockingService's instance; instances sync through the store notification.
+                                    sponsorBlockPreferences: SponsorBlockPreferences(store: keyValueStore),
                                     floatingUIManager: floatingUIManager)
 
         if duckPlayer.settings.nativeUI {
@@ -2692,6 +2694,8 @@ extension TabViewController: WKNavigationDelegate {
         pendingNativeLoadURL = nil
         sitePermissionsDidCommit(webView, navigation: navigation)
         userScripts?.selectionFrameScript.reset()
+        // C-S-S may not run on the new page, so clear the previous page's lock.
+        userScripts?.browserUiLockSubfeature.reset()
         tabModel.clearPendingSessionRestoration()
 
         if let url = webView.url {
@@ -5042,6 +5046,7 @@ extension TabViewController: UserContentControllerDelegate {
         userScripts.autofillUserScript.passwordImportDelegate = credentialsImportManager
         userScripts.faviconScript.delegate = faviconUpdater
         userScripts.printingSubfeature.delegate = self
+        userScripts.browserUiLockSubfeature.delegate = self
         configureSitePermissionsMediaCapture(with: userScripts.mediaCaptureUserScript)
         userScripts.loginFormDetectionScript?.delegate = self
         userScripts.autoconsentUserScript.delegate = self
@@ -5230,6 +5235,14 @@ extension TabViewController: TrackerProtectionSubfeatureDelegate {
         Task {
             await privacyStats.recordBlockedTracker(entityName)
         }
+    }
+}
+
+// MARK: - BrowserUiLockSubfeatureDelegate
+extension TabViewController: BrowserUiLockSubfeatureDelegate {
+
+    func browserUiLockSubfeature(_ subfeature: BrowserUiLockSubfeature, didChangeLocked isLocked: Bool) {
+        pullToRefreshViewAdapter?.setContentLocked(isLocked)
     }
 }
 

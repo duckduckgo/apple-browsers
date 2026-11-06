@@ -385,6 +385,21 @@
 /* Title for the New Tab row in the Duck.ai tab header Plus (+) menu */
 "aichat.header.plusMenu.newTab" = "Νέα καρτέλα";
 
+/* Section header in the Duck.ai tab header Plus (+) menu; every row below it opens a new tab */
+"aichat.header.plusMenu.newTabSection" = "Νέα καρτέλα";
+
+/* Row in the New Tab section of the Duck.ai tab header Plus (+) menu — opens a new Duck.ai chat in a new tab */
+"aichat.header.plusMenu.newTabSection.chat" = "Συνομιλία";
+
+/* Row in the New Tab section of the Duck.ai tab header Plus (+) menu — opens Duck.ai in image generation mode in a new tab */
+"aichat.header.plusMenu.newTabSection.image" = "Εικόνα";
+
+/* Row in the Duck.ai tab header Plus (+) menu — opens a new tab in search mode */
+"aichat.header.plusMenu.newTabSection.search" = "Αναζήτηση";
+
+/* Row in the New Tab section of the Duck.ai tab header Plus (+) menu — opens a new Duck.ai voice chat in a new tab */
+"aichat.header.plusMenu.newTabSection.voiceChat" = "Φωνητική συνομιλία";
+
 /* Title for the New Voice Chat row in the Duck.ai tab header Plus (+) menu */
 "aichat.header.plusMenu.newVoiceChat" = "Νέα φωνητική συνομιλία";
 
@@ -3301,6 +3316,72 @@
 /* No comment provided by engineer. */
 "menu.button.hint" = "Μενού περιήγησης";
 
+/* iPad menu bar command */
+"menuActualSize" = "Πραγματικό μέγεθος";
+
+/* iPad menu bar command */
+"menuBack" = "Πίσω";
+
+/* iPad menu bar command */
+"menuClearTabsAndData" = "Εκκαθάριση καρτελών και δεδομένων";
+
+/* iPad menu bar command */
+"menuDuplicateTab" = "Αντιγραφή καρτέλας";
+
+/* iPad menu bar command */
+"menuFeedback" = "Κοινοποίηση σχολίου";
+
+/* iPad menu bar command */
+"menuForward" = "Εμπρός";
+
+/* iPad menu bar command */
+"menuHideDownloads" = "Απόκρυψη λήψεων";
+
+/* iPad menu bar command */
+"menuHidePasswords" = "Απόκρυψη κωδικών πρόσβασης";
+
+/* iPad menu bar command */
+"menuHideTabs" = "Απόκρυψη καρτελών";
+
+/* iPad menu bar command */
+"menuLastTab" = "Τελευταία καρτέλα";
+
+/* iPad menu bar command */
+"menuNewTabOnRight" = "Νέα καρτέλα στα δεξιά";
+
+/* iPad menu bar command */
+"menuNextTab" = "Εμφάνιση επόμενης καρτέλας";
+
+/* iPad menu bar command */
+"menuOpenLocation" = "Άνοιγμα τοποθεσίας...";
+
+/* iPad menu bar command */
+"menuPreviousTab" = "Εμφάνιση προηγούμενης καρτέλας";
+
+/* iPad menu bar command */
+"menuPrint" = "Εκτύπωση...";
+
+/* iPad menu bar command selecting a numbered tab */
+"menuSelectTab" = "Επιλογή καρτέλας %d";
+
+/* iPad menu bar command */
+"menuSettings" = "Ρυθμίσεις DuckDuckGo...";
+
+/* iPad menu bar command */
+"menuShowDownloads" = "Εμφάνιση λήψεων";
+
+/* iPad menu bar command */
+"menuShowPasswords" = "Εμφάνιση κωδικών πρόσβασης";
+
+/* iPad menu bar command */
+"menuShowTabs" = "Προβολή καρτελών";
+
+/* iPad menu bar command */
+"menuStop" = "Διακοπή";
+
+/* iPad menu bar command */
+"menuVoiceSearch" = "Ιδιωτική φωνητική αναζήτηση";
+
 /* No comment provided by engineer. */
 "Message" = "Μήνυμα";
 
@@ -4437,6 +4518,12 @@
 
 /* Footnote for the hide AI-generated images setting; ends with a Learn more link to the help page (do not remove the link) */
 "settings.aifeatures.hide.ai.generated.images.subtitle" = "Αποκλείει γνωστούς ιστότοπους με απατηλό περιεχόμενο τεχνητής νοημοσύνης από τα αποτελέσματα αναζήτησης εικόνων. [Μάθε περισσότερα](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/results/how-to-filter-out-ai-images-in-duckduckgo-search-results)";
+
+/* Settings screen description for the Duck.ai keyboard animation toggle */
+"settings.aifeatures.keyboard.animation.subtitle" = "Εμφάνισε μια κινούμενη εικόνα γύρω από το πληκτρολόγιο όταν μεταβαίνεις στο Duck.ai ή πληκτρολογείς σε αυτό.";
+
+/* Settings screen toggle title for the Duck.ai keyboard animation */
+"settings.aifeatures.keyboard.animation.title" = "Κινούμενη εικόνα πληκτρολογίου Duck.ai";
 
 /* Label describing a feature which is turned on always */
 "settings.always.on" = "Πάντα σε λειτουργία";
@@ -5935,3 +6022,12 @@
 /* Title for screen to screen confirming what data to import from a zip file (bookmarks and /or passwords) */
 "zip.content.import.types.title" = "Τι θέλετε να εισαγάγετε;";
 
+
+/* Fireproofing setting toggle label */
+"preserveLogins.askOnSignIn" = "Ζητήστε διαγραφή δραστηριότητας στους ιστότοπους κατά τη σύνδεση";
+
+/* Empty Fireproof sites list */
+"preserveLogins.emptyState" = "Δεν υπάρχουν ακόμα ιστότοποι στη λίστα διαγραφής δραστηριότητας";
+
+/* Button to remove all Fireproof sites */
+"preserveLogins.removeAllSites" = "Κατάργηση όλων των ασφαλών ιστότοπων";

@@ -385,6 +385,21 @@
 /* Title for the New Tab row in the Duck.ai tab header Plus (+) menu */
 "aichat.header.plusMenu.newTab" = "Nová karta";
 
+/* Section header in the Duck.ai tab header Plus (+) menu; every row below it opens a new tab */
+"aichat.header.plusMenu.newTabSection" = "Nová karta";
+
+/* Row in the New Tab section of the Duck.ai tab header Plus (+) menu — opens a new Duck.ai chat in a new tab */
+"aichat.header.plusMenu.newTabSection.chat" = "Chat";
+
+/* Row in the New Tab section of the Duck.ai tab header Plus (+) menu — opens Duck.ai in image generation mode in a new tab */
+"aichat.header.plusMenu.newTabSection.image" = "Obrázek";
+
+/* Row in the Duck.ai tab header Plus (+) menu — opens a new tab in search mode */
+"aichat.header.plusMenu.newTabSection.search" = "Hledat";
+
+/* Row in the New Tab section of the Duck.ai tab header Plus (+) menu — opens a new Duck.ai voice chat in a new tab */
+"aichat.header.plusMenu.newTabSection.voiceChat" = "Hlasový chat";
+
 /* Title for the New Voice Chat row in the Duck.ai tab header Plus (+) menu */
 "aichat.header.plusMenu.newVoiceChat" = "Nový hlasový chat";
 
@@ -3301,6 +3316,72 @@
 /* No comment provided by engineer. */
 "menu.button.hint" = "Procházení nabídky";
 
+/* iPad menu bar command */
+"menuActualSize" = "Skutečná velikost";
+
+/* iPad menu bar command */
+"menuBack" = "Zpět";
+
+/* iPad menu bar command */
+"menuClearTabsAndData" = "Vymazat karty a data";
+
+/* iPad menu bar command */
+"menuDuplicateTab" = "Duplikovat kartu";
+
+/* iPad menu bar command */
+"menuFeedback" = "Podělte se o zpětnou vazbu";
+
+/* iPad menu bar command */
+"menuForward" = "Dopředu";
+
+/* iPad menu bar command */
+"menuHideDownloads" = "Skrýt stahování";
+
+/* iPad menu bar command */
+"menuHidePasswords" = "Skrýt hesla";
+
+/* iPad menu bar command */
+"menuHideTabs" = "Skrýt karty";
+
+/* iPad menu bar command */
+"menuLastTab" = "Poslední karta";
+
+/* iPad menu bar command */
+"menuNewTabOnRight" = "Nová karta vpravo";
+
+/* iPad menu bar command */
+"menuNextTab" = "Zobrazit další kartu";
+
+/* iPad menu bar command */
+"menuOpenLocation" = "Otevřít adresu...";
+
+/* iPad menu bar command */
+"menuPreviousTab" = "Zobrazit předchozí kartu";
+
+/* iPad menu bar command */
+"menuPrint" = "Vytisknout...";
+
+/* iPad menu bar command selecting a numbered tab */
+"menuSelectTab" = "Vybrat kartu %d";
+
+/* iPad menu bar command */
+"menuSettings" = "Nastavení DuckDuckGo...";
+
+/* iPad menu bar command */
+"menuShowDownloads" = "Zobrazit stahování";
+
+/* iPad menu bar command */
+"menuShowPasswords" = "Zobrazit hesla";
+
+/* iPad menu bar command */
+"menuShowTabs" = "Zobrazit karty";
+
+/* iPad menu bar command */
+"menuStop" = "Zastavit";
+
+/* iPad menu bar command */
+"menuVoiceSearch" = "Soukromé hlasové vyhledávání";
+
 /* No comment provided by engineer. */
 "Message" = "Zpráva";
 
@@ -4437,6 +4518,12 @@
 
 /* Footnote for the hide AI-generated images setting; ends with a Learn more link to the help page (do not remove the link) */
 "settings.aifeatures.hide.ai.generated.images.subtitle" = "Filtruje známé weby se spamem, které jsou generované umělou inteligencí, z výsledků vyhledávání obrázků. [Další informace](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/results/how-to-filter-out-ai-images-in-duckduckgo-search-results)";
+
+/* Settings screen description for the Duck.ai keyboard animation toggle */
+"settings.aifeatures.keyboard.animation.subtitle" = "Zobrazit animaci kolem klávesnice, když přepneš na Duck.ai nebo v něm píšeš.";
+
+/* Settings screen toggle title for the Duck.ai keyboard animation */
+"settings.aifeatures.keyboard.animation.title" = "Animace klávesnice Duck.ai";
 
 /* Label describing a feature which is turned on always */
 "settings.always.on" = "Vždycky zapnuté";
@@ -5935,3 +6022,12 @@
 /* Title for screen to screen confirming what data to import from a zip file (bookmarks and /or passwords) */
 "zip.content.import.types.title" = "Co chceš importovat?";
 
+
+/* Fireproofing setting toggle label */
+"preserveLogins.askOnSignIn" = "Požádat o ochranu stránek při přihlášení";
+
+/* Empty Fireproof sites list */
+"preserveLogins.emptyState" = "Žádné dostupné stránky s ochranou";
+
+/* Button to remove all Fireproof sites */
+"preserveLogins.removeAllSites" = "Odebrat všechny stránky s ochranou";

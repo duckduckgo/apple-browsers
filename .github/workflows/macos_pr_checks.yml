@@ -165,9 +165,9 @@ jobs:
             flavor: Non-Sandbox
           - cache-key: sandbox-
             flavor: Sandbox
-          - runs-on: [image:osx-tahoe-27, general-purpose]
+          - runs-on: [image:osx-27-edge, general-purpose]
             flavor: Non-Sandbox
-          - runs-on: [image:osx-tahoe-27, m4pro]
+          - runs-on: [image:osx-27-edge, m4pro]
             flavor: Sandbox
 
     runs-on: ${{ matrix.runs-on }}
@@ -288,6 +288,7 @@ jobs:
         SPM_FORCE_DEBUG: "1"
       run: |
         echo "Runner ${RUNNER_NAME} (${RUNNER_TRACKING_ID})"
+        sw_vers
 
         set -o pipefail && xcodebuild build-for-testing \
           -scheme "${{ matrix.scheme }}" \
@@ -312,6 +313,7 @@ jobs:
       id: run-unit-tests
       env:
         TEST_RUNNER_REQUIRE_SNAPSHOT_REFERENCES: "1"
+        TEST_RUNNER_SNAPSHOT_EXPORT_DIR: ${{ matrix.flavor == 'Non-Sandbox' && format('{0}/macOS/DerivedData/RenderedSnapshots', github.workspace) || '' }}
       run: |
         export OS_ACTIVITY_MODE=debug
         mkdir -p DerivedData/Logs/Test
@@ -520,6 +522,16 @@ jobs:
         path: macOS/DerivedData/Logs/Test/${{ matrix.flavor }}-integrationtests.xcresult
         retention-days: 7
 
+    - name: Upload rendered snapshots
+      if: always() && matrix.flavor == 'Non-Sandbox' && (steps.run-unit-tests.outcome == 'success' || steps.run-unit-tests.outcome == 'failure')
+      uses: actions/upload-artifact@v6
+      with:
+        name: macos-rendered-snapshots
+        path: macOS/DerivedData/RenderedSnapshots
+        if-no-files-found: ignore
+        overwrite: true
+        retention-days: 7
+
     - name: Report snapshot failures
       if: always() && steps.run-unit-tests.outcome == 'failure'
       uses: ./.github/actions/snapshot-failure-report
@@ -569,10 +581,10 @@ jobs:
       inputs.skip-release-build != true &&
       needs.should-run-checks.outputs.should_run == 'true'
 
-    runs-on: [image:osx-tahoe-27, general-purpose]
+    runs-on: [image:osx-27-edge, general-purpose]
     timeout-minutes: 60
     env:
-      RUNS_ON: image:osx-tahoe-27,general-purpose # keep this in sync with runs-on above
+      RUNS_ON: image:osx-27-edge,general-purpose # keep this in sync with runs-on above
 
     outputs:
       changed_files: ${{ steps.changed-strings-files.outputs.changed_files }}

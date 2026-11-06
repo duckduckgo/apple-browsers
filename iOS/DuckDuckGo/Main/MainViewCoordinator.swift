@@ -574,6 +574,8 @@ class MainViewCoordinator {
             setAddressBarBottomActive(false)
             setNavBarContainerBottomToToolbar(active: false)
             setAddressBarTopActive(true)
+            // The switch above unpins the status background from the safe area, which a page without a reserved bar still needs.
+            updateStatusBackgroundAnchors()
         }
         constraints.navigationBarContainerHeight.constant = expandedHeight
         superview.layoutIfNeeded()
@@ -620,6 +622,7 @@ class MainViewCoordinator {
         if addressBarPosition == .top {
             setAddressBarBottomActive(false)
             setAddressBarTopActive(true)
+            updateStatusBackgroundAnchors()
         }
         constraints.navigationBarContainerHeight.constant = standardNavigationBarContainerHeight
         restoreContentContainerBottomAnchorAfterUnifiedToggleInput()

@@ -324,6 +324,10 @@ public struct UserText {
     public static let menuHideBookmarks = NSLocalizedString("menuHideBookmarks", value: "Hide Bookmarks", comment: "iPad menu bar command")
     public static let menuImportBookmarks = NSLocalizedString("menuImportBookmarks", value: "Import Bookmarks...", comment: "iPad menu bar command")
     public static let menuExportBookmarks = NSLocalizedString("menuExportBookmarks", value: "Export Bookmarks...", comment: "iPad menu bar command")
+    public static let menuImportBookmarksAndPasswords = NSLocalizedString("menuImportBookmarksAndPasswords", value: "Import Bookmarks and Passwords...", comment: "iPad menu bar command")
+    public static let menuSetDefaultBrowser = NSLocalizedString("menuSetDefaultBrowser", value: "Set DuckDuckGo As Default Browser...", comment: "iPad menu bar command")
+    public static let menuAddToDock = NSLocalizedString("menuAddToDock", value: "Add DuckDuckGo to Dock...", comment: "iPad menu bar command")
+    public static let menuAddWidget = NSLocalizedString("menuAddWidget", value: "Add Widget to Home Screen...", comment: "iPad menu bar command")
     public static let menuSettings = NSLocalizedString("menuSettings", value: "DuckDuckGo Settings...", comment: "iPad menu bar command")
     public static let menuVoiceSearch = NSLocalizedString("menuVoiceSearch", value: "Private Voice Search", comment: "iPad menu bar command")
     public static let menuOpenLocation = NSLocalizedString("menuOpenLocation", value: "Open Location...", comment: "iPad menu bar command")
@@ -334,6 +338,8 @@ public struct UserText {
     public static let menuShowPasswords = NSLocalizedString("menuShowPasswords", value: "Show Passwords", comment: "iPad menu bar command")
     public static let menuHidePasswords = NSLocalizedString("menuHidePasswords", value: "Hide Passwords", comment: "iPad menu bar command")
     public static let menuShowDownloads = NSLocalizedString("menuShowDownloads", value: "Show Downloads", comment: "iPad menu bar command")
+    public static let menuShowDuckAIButton = NSLocalizedString("menuShowDuckAIButton", value: "Show Duck.ai Button", comment: "iPad menu bar command")
+    public static let menuHideDuckAIButton = NSLocalizedString("menuHideDuckAIButton", value: "Hide Duck.ai Button", comment: "iPad menu bar command")
     public static let menuHideDownloads = NSLocalizedString("menuHideDownloads", value: "Hide Downloads", comment: "iPad menu bar command")
     public static let menuActualSize = NSLocalizedString("menuActualSize", value: "Actual Size", comment: "iPad menu bar command")
     public static let menuNewTabOnRight = NSLocalizedString("menuNewTabOnRight", value: "New Tab on Right", comment: "iPad menu bar command")
@@ -2645,8 +2651,8 @@ public struct UserText {
 
     public static let settingsEnableAiChatSubtitle = NSLocalizedString("settings.enable.aichat.subtitle", value: "Chat privately with popular 3rd-party AI models", comment: "A description of what the AI Chat toggle does")
 
-    public static let settingsKeyboardAnimationTitle = NotLocalizedString("settings.aifeatures.keyboard.animation.title", value: "Duck.ai Keyboard Animation", comment: "Settings screen toggle title for the Duck.ai keyboard animation")
-    public static let settingsKeyboardAnimationSubtitle = NotLocalizedString("settings.aifeatures.keyboard.animation.subtitle", value: "Show an animation around the keyboard when you switch to or type in Duck.ai.", comment: "Settings screen description for the Duck.ai keyboard animation toggle")
+    public static let settingsKeyboardAnimationTitle = NSLocalizedString("settings.aifeatures.keyboard.animation.title", value: "Duck.ai Keyboard Animation", comment: "Settings screen toggle title for the Duck.ai keyboard animation")
+    public static let settingsKeyboardAnimationSubtitle = NSLocalizedString("settings.aifeatures.keyboard.animation.subtitle", value: "Show an animation around the keyboard when you switch to or type in Duck.ai.", comment: "Settings screen description for the Duck.ai keyboard animation toggle")
 
     public static let settingsAutomaticPageContextTitle = NSLocalizedString("settings.aifeatures.automatic.context.title", value: "Automatically Send Content", comment: "Settings screen cell title for enabling automatic page content attachment")
 

@@ -245,10 +245,6 @@ final class AIChatContextualSheetCoordinator {
         isWebUTIEnabled && featureFlagger.isFeatureOn(.aiChatContextualUnifiedToggleInput)
     }
 
-    private var isPagePlaceholderEnabled: Bool {
-        featureFlagger.isFeatureOn(.contextualPagePlaceholder)
-    }
-
     /// A chat about to start brings a keyboard up with it; one that already exists does not.
     private var sheetContextualInputStart: ContextualInputStart {
         guard sessionState.hasActiveChat else { return .expandedPreSubmit }
@@ -670,8 +666,7 @@ final class AIChatContextualSheetCoordinator {
 
     @discardableResult
     private func offerPageContextIfNeeded(trigger: PageContextExtractionTrigger) -> Bool {
-        guard isPagePlaceholderEnabled,
-              isActivelyObservingContext,
+        guard isActivelyObservingContext,
               sessionState.shouldOfferPageContext(for: currentPageURL) else {
             return false
         }

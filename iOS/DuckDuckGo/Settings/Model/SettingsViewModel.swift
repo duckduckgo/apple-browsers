@@ -1486,20 +1486,12 @@ extension SettingsViewModel {
             return
         }
 
-        if let checkIfDefaultBrowser = try? keyValueStore.object(forKey: Constants.shouldCheckIfDefaultBrowserKey) as? Bool {
-            do {
-                if checkIfDefaultBrowser, try UIApplication.shared.isDefault(.webBrowser) {
-                    try? keyValueStore.set(true, forKey: Constants.didDismissSetAsDefaultBrowserKey)
-                    shouldShowSetAsDefaultBrowser = false
-                }
-            } catch {
-                try? keyValueStore.set(true, forKey: Constants.didDismissSetAsDefaultBrowserKey)
-                shouldShowSetAsDefaultBrowser = false
-            }
+        nextStepsItemsVisibility.dismissSetAsDefaultIfAlreadyDefault()
+        shouldShowSetAsDefaultBrowser = nextStepsItemsVisibility.isSetAsDefaultVisible
+    }
 
-            // only want to check default browser state once after the first time a user interacts with this row due to API restrictions. After that users can swipe to dismiss
-            try? keyValueStore.set(false, forKey: Constants.shouldCheckIfDefaultBrowserKey)
-        }
+    private var nextStepsItemsVisibility: NextStepsItemsVisibility {
+        NextStepsItemsVisibility(keyValueStore: keyValueStore)
     }
 
     private func permanentlyDismissCompleteSetupSection() {
@@ -1588,9 +1580,7 @@ extension SettingsViewModel {
         }
         PixelKit.fire(Pixel.Event.settingsSetAsDefault, options: .parameters(parameters))
         systemSettingsPiPTutorialManager.playPiPTutorialAndNavigateTo(destination: .defaultBrowser)
-        if shouldShowSetAsDefaultBrowser {
-            try? keyValueStore.set(true, forKey: Constants.shouldCheckIfDefaultBrowserKey)
-        }
+        nextStepsItemsVisibility.recordSetAsDefaultTapped()
     }
 
     @available(iOS 18.2, *)
@@ -1622,12 +1612,8 @@ extension SettingsViewModel {
             self.shouldShowSetAddressBarPositionNextStep = !self.isPad && self.appSettings.currentAddressBarPosition == .top
             self.shouldShowEnableVoiceSearchNextStep = self.voiceSearchHelper.isSpeechRecognizerAvailable
                 && !self.voiceSearchHelper.isVoiceSearchEnabled
-            self.shouldShowAddToDockNextStep = !Self.hasTapDismissalElapsed(
-                tappedAt: try? self.keyValueStore.object(forKey: Constants.didTapAddToDockNextStepKey) as? Double,
-                interval: Constants.nextStepTapDismissalInterval)
-            self.shouldShowAddWidgetNextStep = !Self.hasTapDismissalElapsed(
-                tappedAt: try? self.keyValueStore.object(forKey: Constants.didTapAddWidgetNextStepKey) as? Double,
-                interval: Constants.nextStepTapDismissalInterval)
+            self.shouldShowAddToDockNextStep = self.nextStepsItemsVisibility.isAddToDockVisible
+            self.shouldShowAddWidgetNextStep = self.nextStepsItemsVisibility.isAddWidgetVisible
             self.shouldShowNextStepsHideButton = Self.hasInstallGracePeriodElapsed(
                 installDate: StatisticsUserDefaults().installDate,
                 requiredInterval: Constants.nextStepsHideMinimumInstallAge)
@@ -1645,15 +1631,11 @@ extension SettingsViewModel {
     }
 
     func recordAddToDockNextStepTapped() {
-        recordNextStepTapIfNeeded(forKey: Constants.didTapAddToDockNextStepKey)
+        nextStepsItemsVisibility.recordAddToDockTapped()
     }
 
     func recordAddWidgetNextStepTapped() {
-        recordNextStepTapIfNeeded(forKey: Constants.didTapAddWidgetNextStepKey)
-    }
-
-    private func recordNextStepTapIfNeeded(forKey key: String) {
-        Self.recordFirstTap(forKey: key, in: keyValueStore)
+        nextStepsItemsVisibility.recordAddWidgetTapped()
     }
 
     static func recordFirstTap(forKey key: String,

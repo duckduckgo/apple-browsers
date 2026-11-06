@@ -344,9 +344,6 @@ public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
 
     case sidebarSuggestedPrompts
 
-    /// Offers the page navigated to as an attachment, in an active contextual chat with auto-attach off
-    case contextualPagePlaceholder
-
     /// Enables updated AI features settings screen
     case aiFeaturesSettingsUpdate
 
@@ -406,6 +403,10 @@ public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
 
     /// Kill switch for routing native image/file paste into the unified input attachment strip.
     case unifiedToggleInputAttachmentPaste
+
+    /// Kill switch for the on-device check that adds a delay bucket when input is resubmitted in the other mode.
+    /// https://app.asana.com/1/137249556945/project/1201392122292466/task/1220262429487643
+    case unifiedToggleInputResubmitDetection
 
     /// Kill switch for the native input attachment privacy disclosure.
     case unifiedToggleInputAttachmentPrivacy

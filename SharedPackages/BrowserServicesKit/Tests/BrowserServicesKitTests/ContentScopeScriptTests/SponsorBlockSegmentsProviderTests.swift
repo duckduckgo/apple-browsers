@@ -75,7 +75,7 @@ final class SponsorBlockSegmentsProviderTests: XCTestCase {
     func testURLEncodesListsAsPercentEncodedJSON() throws {
         let query = try Provider.Query(videoID: videoID, categories: ["sponsor", "selfpromo"], actionTypes: ["skip"])
         XCTAssertEqual(try Provider.url(for: query).absoluteString,
-                       "https://web-dew-1.duckduckgo.com/sponsorblock/v1/segments/5f6b?categories=%5B%22sponsor%22%2C%22selfpromo%22%5D&actionTypes=%5B%22skip%22%5D")
+                       "https://duckduckgo.com/sponsorblock/v1/segments/5f6b?categories=%5B%22sponsor%22%2C%22selfpromo%22%5D&actionTypes=%5B%22skip%22%5D")
     }
 
     func testSessionSendsNoCookiesAndCachesNothing() {

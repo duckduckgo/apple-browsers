@@ -428,6 +428,7 @@ final class UTIAttachmentController {
             presenterProvider: { [weak self] in
                 self?.environment.presenterViewController()
             },
+            onItemSelected: { [weak self] in self?.pixelReporter.reportAttachMenuItemSelected($0) },
             photoSelectionLimit: policy.canAttachImages ? policy.remainingImagesForPicker : 0,
             canAttachFile: canPresentFilePicker,
             allowedFileTypes: allowedFileUTTypes,

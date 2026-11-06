@@ -2057,7 +2057,7 @@ extension BrowserTabViewController {
                 tooltip.mouseDidExit()
                 return event
             }
-            if self.isPointerOverWebView(event) {
+            if let window = event.window, self.isPointerOverWebView(atWindowPoint: event.locationInWindow, in: window) {
                 tooltip.mouseDidMove()
             } else {
                 tooltip.mouseDidExit()
@@ -2072,11 +2072,6 @@ extension BrowserTabViewController {
     }
 
     /// Views stacked above the web view (find bar, overlays) take the pointer away from it.
-    private func isPointerOverWebView(_ event: NSEvent) -> Bool {
-        guard let window = event.window else { return false }
-        return isPointerOverWebView(atWindowPoint: event.locationInWindow, in: window)
-    }
-
     private func isPointerOverWebView(atWindowPoint windowPoint: NSPoint, in window: NSWindow) -> Bool {
         guard let webView, let contentView = window.contentView else { return false }
         let point = contentView.superview?.convert(windowPoint, from: nil) ?? windowPoint

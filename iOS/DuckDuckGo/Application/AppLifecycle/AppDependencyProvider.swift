@@ -120,6 +120,9 @@ extension DependencyProvider {
 
 /// Provides dependencies for objects that are not directly instantiated
 /// through `init` call (e.g. ViewControllers created from Storyboards).
+///
+/// Legacy dependency container. Do not add new consumers.
+/// Inject the specific dependencies through initializers instead.
 final class AppDependencyProvider: DependencyProvider {
     let appSessionInfo: AppSessionInfo? = AppSessionInfo(
         keyValueStore: UserDefaults.standard, version: AppVersion().versionAndBuildNumber)

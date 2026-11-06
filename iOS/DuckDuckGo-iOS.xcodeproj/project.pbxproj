@@ -542,7 +542,9 @@
 		96EB17F9308240E700712DCF /* PBXFileSystemSynchronizedBuildFileExceptionSet */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
+				AGENTS.md,
 				Autoconsent/userscript.js,
+				CLAUDE.md,
 				DuckPlayer/NativeUI/README.md,
 				"Info-Experimental.plist",
 				Info.plist,

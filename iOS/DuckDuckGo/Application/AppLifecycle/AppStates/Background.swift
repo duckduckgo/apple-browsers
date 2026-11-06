@@ -56,7 +56,11 @@ struct Background: BackgroundHandling {
         Logger.lifecycle.info("\(type(of: self)): \(#function)")
 
         services.applicationShortcutItemsService.suspend()
-        try? lastBackgroundDateStorage.set(Date(), for: \.lastBackgroundDate)
+        // Skipped while the app is locked: a background launch or leaving at the lock prompt isn't use,
+        // so the next return measures from the last real one. Written before `suspend()` locks the app.
+        if sceneDependencies.authenticationService.isUnlocked {
+            try? lastBackgroundDateStorage.set(Date(), for: \.lastBackgroundDate)
+        }
         appDependencies.backgroundTaskManager.startBackgroundTask()
 
         services.dbpService.onBackground()

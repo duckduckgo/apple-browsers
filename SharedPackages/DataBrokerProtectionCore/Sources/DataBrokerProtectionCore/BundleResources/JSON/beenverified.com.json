@@ -114,7 +114,7 @@
             },
             {
               "type": "state",
-              "selector": "//input[@name='state']"
+              "selector": "//*[@name='state']"
             }
           ],
           "id": "444a01d9-630f-42e4-a8b8-4c87ddab91e3"
@@ -146,7 +146,7 @@
           "expectations": [
             {
               "type": "element",
-              "selector": "//*[@id='comprehensive-form'] | //*[@id='result-filter']"
+              "selector": "//*[@id='comprehensive-form'] | //*[contains(@class, 'results-main')]"
             }
           ],
           "id": "ba896158-77d6-4769-b373-2b5226c6d870"
@@ -162,6 +162,12 @@
             }
           ],
           "actions": [
+            {
+              "_comment": "fillForm can't pick a fixed option. The form requires an answer to 'Do you have an account with us?'.",
+              "actionType": "executeScript",
+              "script": "var el = root.querySelector('#account_type_select'); if (!el) throw new Error('account_type_select not found'); Object.getOwnPropertyDescriptor(HTMLSelectElement.prototype, 'value').set.call(el, 'guest'); el.dispatchEvent(new Event('input', { bubbles: true })); el.dispatchEvent(new Event('change', { bubbles: true }));",
+              "id": "5e0c2a7b-9d41-4f86-b3e2-1a6c8d9f0e35"
+            },
             {
               "actionType": "fillForm",
               "selector": "#comprehensive-form",
@@ -191,13 +197,27 @@
               "id": "37326759-daef-46e8-9aad-95a3ce26b2c2"
             },
             {
+              "_comment": "Scans have no extracted profile, so the required email comes from generateEmail.",
+              "actionType": "generateEmail",
+              "id": "3a7e9c15-48b2-4d6f-a0c3-9e2b5f71d864"
+            },
+            {
               "actionType": "fillForm",
+              "dataSource": "fetchedEmail",
               "selector": "#comprehensive-form",
               "elements": [
                 {
                   "type": "email",
                   "selector": "#requestor_email"
-                },
+                }
+              ],
+              "id": "84550c23-55d6-4bd4-9e3f-f588d5635a41"
+            },
+            {
+              "actionType": "fillForm",
+              "dataSource": "userProfile",
+              "selector": "#comprehensive-form",
+              "elements": [
                 {
                   "type": "$generated_street_address$",
                   "selector": "#street"
@@ -207,7 +227,7 @@
                   "selector": "#zip"
                 }
               ],
-              "id": "84550c23-55d6-4bd4-9e3f-f588d5635a41"
+              "id": "c81f4e2d-6a9b-4357-8d0e-2b4f7a1c9e53"
             },
             {
               "_comment": "Turnstile auto-completes. Wait for the hidden token before submitting.",
@@ -239,26 +259,38 @@
           "expectations": [
             {
               "type": "element",
-              "selector": "#result-filter"
+              "selector": "//*[contains(@class, 'results-main')]"
             }
           ],
           "id": "e773731e-f9c7-40d6-b996-21c1e6ac617a"
         },
         {
           "actionType": "extract",
-          "selector": ".MuiGrid-root.MuiGrid-container.MuiGrid-spacing-xs-2 > div:nth-child(2) > .MuiPaper-root.MuiPaper-elevation.MuiPaper-rounded.MuiPaper-elevation1.MuiCard-root",
+          "selector": "//form[contains(@class, 'person-result-card')]",
           "noResultsSelector": "img[alt='Search Logo']",
           "profile": {
             "name": {
-              "selector": "h2",
-              "beforeText": ", "
+              "selector": ".//h2[contains(@class, 'result-card-name')]",
+              "beforeText": ","
             },
             "age": {
-              "selector": "h2",
-              "afterText": ", "
+              "selector": ".//h2[contains(@class, 'result-card-name')]",
+              "afterText": ","
+            },
+            "alternativeNamesList": {
+              "selector": ".//span[@class='result-entry-label' and normalize-space()='Aliases']/following-sibling::span",
+              "separator": ","
             },
             "addressCityState": {
-              "selector": ".MuiGrid-item.MuiGrid-grid-xs-12 > p.MuiTypography-body1"
+              "selector": ".//p[contains(@class, 'result-card-location')]"
+            },
+            "addressCityStateList": {
+              "selector": ".//span[@class='result-entry-label' and normalize-space()='Locations']/following-sibling::span",
+              "separator": "•"
+            },
+            "relativesList": {
+              "selector": ".//span[@class='result-entry-label' and normalize-space()='Relatives']/following-sibling::span",
+              "separator": ","
             },
             "profileUrl": {
               "identifierType": "hash"
@@ -305,7 +337,7 @@
             },
             {
               "type": "state",
-              "selector": "//input[@name='state']"
+              "selector": "//*[@name='state']"
             }
           ],
           "id": "374a01d9-630f-42e4-a8b8-4c87ddab91e3"
@@ -341,7 +373,7 @@
           "expectations": [
             {
               "type": "element",
-              "selector": "//*[@id='comprehensive-form'] | //*[@id='result-filter']"
+              "selector": "//*[@id='comprehensive-form'] | //*[contains(@class, 'results-main')]"
             }
           ],
           "id": "d275c4c7-cd31-44c3-93e4-f94ffbea600e"
@@ -358,6 +390,13 @@
             }
           ],
           "actions": [
+            {
+              "_comment": "fillForm can't pick a fixed option. The form requires an answer to 'Do you have an account with us?'.",
+              "actionType": "executeScript",
+              "script": "var el = root.querySelector('#account_type_select'); if (!el) throw new Error('account_type_select not found'); Object.getOwnPropertyDescriptor(HTMLSelectElement.prototype, 'value').set.call(el, 'guest'); el.dispatchEvent(new Event('input', { bubbles: true })); el.dispatchEvent(new Event('change', { bubbles: true }));",
+              "id": "7b3f1d9e-2c84-4a5b-9e60-4d1f8a2c3b71",
+              "step": "Searching for your record"
+            },
             {
               "actionType": "fillForm",
               "step": "Searching for your record",
@@ -441,7 +480,7 @@
           "expectations": [
             {
               "type": "element",
-              "selector": "#result-filter"
+              "selector": "//*[contains(@class, 'results-main')]"
             }
           ],
           "id": "088d8233-ce87-4a49-bfe2-38d386764f1b"
@@ -452,30 +491,32 @@
           "elements": [
             {
               "type": "button",
-              "selector": "//button[contains(text(), 'Opt Out')]",
+              "selector": ".//button[contains(@class, 'optout-button')]",
               "parent": {
                 "profileMatch": {
-                  "selector": "//div[contains(@class, 'MuiPaper-elevation') and .//button[contains(text(), 'Opt Out')]]",
+                  "selector": "//form[contains(@class, 'person-result-card')]",
                   "profile": {
                     "name": {
-                      "selector": ".//h2",
+                      "selector": ".//h2[contains(@class, 'result-card-name')]",
                       "beforeText": ","
                     },
-                    "alternativeNamesList": {
-                      "selector": ".//div[contains(., 'Aliases')]/following-sibling::div"
-                    },
                     "age": {
-                      "selector": ".//h2",
+                      "selector": ".//h2[contains(@class, 'result-card-name')]",
                       "afterText": ","
                     },
+                    "alternativeNamesList": {
+                      "selector": ".//span[@class='result-entry-label' and normalize-space()='Aliases']/following-sibling::span",
+                      "separator": ","
+                    },
                     "addressCityState": {
-                      "selector": ".//div[h2]/following-sibling::div[p]"
+                      "selector": ".//p[contains(@class, 'result-card-location')]"
                     },
                     "addressCityStateList": {
-                      "selector": ".//div[contains(., 'Locations')]/following-sibling::div/p"
+                      "selector": ".//span[@class='result-entry-label' and normalize-space()='Locations']/following-sibling::span",
+                      "separator": "•"
                     },
                     "relativesList": {
-                      "selector": ".//div[contains(., 'Relatives')]/following-sibling::div/p",
+                      "selector": ".//span[@class='result-entry-label' and normalize-space()='Relatives']/following-sibling::span",
                       "separator": ","
                     }
                   }

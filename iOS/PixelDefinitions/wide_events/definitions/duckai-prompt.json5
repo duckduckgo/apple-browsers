@@ -4,7 +4,7 @@
         "owners": ["samsymons"],
         "meta": {
             "type": "ios-duckai-prompt",
-            "version": "5.0"
+            "version": "6.0"
         },
         "feature": {
             "name": "duckai-prompt",
@@ -171,7 +171,12 @@
                                 "description": "regular is the iPad tabs-bar layout (window 678pt or wider); compact is the phone layout, on every iPhone and on narrower iPad windows.",
                                 "enum": ["regular", "compact"]
                             },
-                            "hardware_keyboard": { "type": "boolean", "description": "Whether a hardware keyboard was connected." }
+                            "hardware_keyboard": { "type": "boolean", "description": "Whether a hardware keyboard was connected." },
+                            "address_bar_position": {
+                                "type": "string",
+                                "description": "The iPhone address bar position setting. Absent on iPad.",
+                                "enum": ["top", "bottom"]
+                            }
                         }
                     },
                     "delivery": {

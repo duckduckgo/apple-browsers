@@ -5415,7 +5415,7 @@ class MainViewController: UIViewController {
     }
 
     /// The "Ask Duck.ai" row auto-sends its text as a prompt, on both platforms.
-    private func fireAskDuckAISuggestionPromptSubmittedPixel() {
+    private func fireAskDuckAISuggestionPromptSubmittedPixel(prompt: String) {
         UnifiedToggleInputCoordinatorPixelHelper.fireUnifiedPromptSubmittedPixel(
             hasText: true,
             selectedTool: nil,
@@ -5427,7 +5427,9 @@ class MainViewController: UIViewController {
             origin: .suggestionAskAI,
             defaultMode: aiChatSettings.defaultOmnibarMode,
             isFirstPromptNewInstall: featureDiscovery.isFirstDuckAIPromptNewInstall,
-            usageContext: usageContextProvider.currentContext
+            usageContext: usageContextProvider.currentContext,
+            addressBarPosition: appSettings.iPhoneAddressBarPosition,
+            resubmitOfSearch: unifiedToggleInputCoordinator?.resubmitDelay(of: prompt, mode: .aiChat)
         )
         featureDiscovery.markDuckAIPromptSubmitted()
     }
@@ -6162,7 +6164,7 @@ extension MainViewController: BrowserChromeDelegate {
             // We intentionally don't forward the resolved model config: the suggestion is offered
             // from Search mode where the model chip is hidden and the user hasn't chosen a model.
             _ = unifiedToggleInputCoordinator?.prepareExternalPromptSubmission()
-            fireAskDuckAISuggestionPromptSubmittedPixel()
+            fireAskDuckAISuggestionPromptSubmittedPixel(prompt: value)
             openAIChat(source: .suggestionAskAI, value, autoSend: true,
                        nativePromptFlow: DuckAIPromptFlowStart(userTier: currentDuckAIUserTier))
 
@@ -8982,6 +8984,7 @@ extension MainViewController {
         productSurfaceTelemetry.dataClearingUsed()
         endNewTabPageSessionWithDataClearing()
         endSessionsWithDataClearing(request)
+        unifiedToggleInputCoordinator?.clearResubmitHistory()
 
         // A single tab burn rebuilds the UI from inside the burn itself, so the New Tab Page has
         // already attached by the time `didFinishBurningTabs` runs. Wider scopes are marked later,

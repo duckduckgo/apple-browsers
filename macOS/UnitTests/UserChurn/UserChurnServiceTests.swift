@@ -247,18 +247,6 @@ final class UserChurnServiceTests: XCTestCase {
         XCTAssertEqual(mockPixelFiring.actualFireCalls.first?.pixel.parameters?["newDefault"], "Other")
     }
 
-    func testWhenNewDefaultURLIsNil_ThenPixelContainsOtherParameter() throws {
-        // Given
-        mockDefaultBrowserProvider.defaultBrowserURL = nil
-        try mockKeyValueStore.set(true, forKey: "user-churn.was-default-browser")
-
-        // When
-        sut.checkForDefaultBrowserChange()
-
-        // Then
-        XCTAssertEqual(mockPixelFiring.actualFireCalls.first?.pixel.parameters?["newDefault"], "Other")
-    }
-
     // MARK: - Tests: checkForDefaultBrowserChange with no stored state
 
     func testWhenNoStoredStateAndDuckDuckGoIsDefault_ThenStateInitializedToTrue() throws {
@@ -364,20 +352,6 @@ final class UserChurnServiceTests: XCTestCase {
         XCTAssertEqual(mockPixelFiring.actualFireCalls.count, 1, "Churn pixel should be fired when switching away from DuckDuckGo")
     }
 
-    func testWhenDefaultBrowserURLHasNoBundleIdentifier_ThenTreatedAsNonDuckDuckGo() throws {
-        // Given - DuckDuckGo was previously the default
-        try mockKeyValueStore.set(true, forKey: "user-churn.was-default-browser")
-
-        // When - Default browser URL has no bundle identifier (unknown app)
-        let unknownURL = URL(fileURLWithPath: "/Applications/Unknown.app")
-        mockDefaultBrowserProvider.defaultBrowserURL = unknownURL
-        // mockBundleIdentifiers does not contain this URL, so bundleIdentifierProvider returns nil
-        sut.checkForDefaultBrowserChange()
-
-        // Then
-        XCTAssertEqual(mockPixelFiring.actualFireCalls.count, 1, "Pixel should be fired when new default has no bundle ID")
-    }
-
     // MARK: - Tests: Churned-from-default flag
 
     private let wasDefaultKey = "user-churn.was-default-browser"
@@ -427,6 +401,17 @@ final class UserChurnServiceTests: XCTestCase {
 
         XCTAssertFalse(sut.hasChurnedFromDefault)
         XCTAssertTrue(mockPixelFiring.actualFireCalls.isEmpty)
+    }
+
+    func testWhenDefaultBrowserCannotBeResolved_ThenNothingIsRecorded() throws {
+        mockDefaultBrowserProvider.defaultBrowserURL = URL(fileURLWithPath: "/Applications/Unknown.app")
+        try mockKeyValueStore.set(true, forKey: wasDefaultKey)
+
+        sut.checkForDefaultBrowserChange()
+
+        XCTAssertFalse(sut.hasChurnedFromDefault)
+        XCTAssertTrue(mockPixelFiring.actualFireCalls.isEmpty)
+        XCTAssertEqual(try mockKeyValueStore.object(forKey: wasDefaultKey) as? Bool, true)
     }
 
     func testWhenChecksRunConcurrently_ThenOnePixelFires() throws {

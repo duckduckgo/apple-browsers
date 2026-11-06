@@ -67,8 +67,11 @@ final class UserChurnService: UserChurnStateProviding {
         lock.lock()
         defer { lock.unlock() }
 
-        let defaultBrowserURL = defaultBrowserProvider.defaultBrowserURL
-        let isDuckDuckGoDefault = isDuckDuckGoBuild(url: defaultBrowserURL)
+        guard let defaultBrowserURL = defaultBrowserProvider.defaultBrowserURL,
+              let defaultBrowserBundleId = bundleIdentifierProvider(defaultBrowserURL) else {
+            return
+        }
+        let isDuckDuckGoDefault = defaultBrowserBundleId.hasPrefix("com.duckduckgo")
 
         guard let wasDuckDuckGoDefault = readValue(for: .wasDefaultBrowser) else {
             write(isDuckDuckGoDefault, for: .wasDefaultBrowser)
@@ -78,7 +81,7 @@ final class UserChurnService: UserChurnStateProviding {
         if isDuckDuckGoDefault {
             recordDuckDuckGoIsDefault(wasDefault: wasDuckDuckGoDefault)
         } else if wasDuckDuckGoDefault {
-            recordChurn(newDefaultBrowserURL: defaultBrowserURL)
+            recordChurn(newDefaultBrowserBundleId: defaultBrowserBundleId)
         }
     }
 
@@ -91,12 +94,11 @@ final class UserChurnService: UserChurnStateProviding {
         }
     }
 
-    private func recordChurn(newDefaultBrowserURL: URL?) {
+    private func recordChurn(newDefaultBrowserBundleId: String) {
         write(true, for: .churnedFromDefault)
         write(false, for: .wasDefaultBrowser)
 
-        let bundleId = newDefaultBrowserURL.flatMap { bundleIdentifierProvider($0) }
-        pixelFiring?.fire(UserChurnPixel.unsetAsDefault(newDefaultBrowserBundleId: bundleId, atb: atbProvider()))
+        pixelFiring?.fire(UserChurnPixel.unsetAsDefault(newDefaultBrowserBundleId: newDefaultBrowserBundleId, atb: atbProvider()))
     }
 
     private func readValue(for key: Key) -> Bool? {
@@ -116,16 +118,5 @@ final class UserChurnService: UserChurnStateProviding {
             Logger.general.error("Failed to write \(key.storageKey) to keyValueStore: \(error)")
             pixelFiring?.fire(UserChurnDebugPixel.writeFailed(key: key, error: error), frequency: .dailyAndCount)
         }
-    }
-
-    /// Returns true if the app at the given URL is a DuckDuckGo build.
-    ///
-    /// All DuckDuckGo builds share the `com.duckduckgo` bundle identifier prefix.
-    private func isDuckDuckGoBuild(url: URL?) -> Bool {
-        guard let url,
-              let bundleIdentifier = bundleIdentifierProvider(url) else {
-            return false
-        }
-        return bundleIdentifier.hasPrefix("com.duckduckgo")
     }
 }

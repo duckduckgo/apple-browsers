@@ -88,8 +88,10 @@ extension MainViewController: NewTabTransitionHost {
     }
 
     /// The transition hides the sheet while UIKit's non-animated dismissal finishes behind it.
+    /// The new tab's keyboard waits for it, since focus asked for while a screen is still presented is refused.
     func dismissPresentedSheetInstantly() {
-        presentedViewController?.dismiss(animated: false)
+        let releaseKeyboard = newTabTransitions.current?.keyboardGate.hold()
+        presentedViewController?.dismiss(animated: false) { releaseKeyboard?() }
     }
 
     func installNewTabTouchLocationRecorderIfNeeded() {

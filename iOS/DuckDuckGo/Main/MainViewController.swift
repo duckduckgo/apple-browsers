@@ -8042,8 +8042,10 @@ extension MainViewController: TabDelegate {
              didRequestNewFireTabForUrl url: URL,
              inheritingAttribution attribution: AdClickAttributionLogic.State?) {
         recordDuckAISessionPendingExit(.fireTabOpened)
-        tabManager.setBrowsingMode(.fire, source: .longPressLink)
-        loadUrlInNewTab(url, inheritedAttribution: attribution)
+        newTabTransitions.open {
+            tabManager.setBrowsingMode(.fire, source: .longPressLink)
+            loadUrlInNewTab(url, inheritedAttribution: attribution)
+        }
     }
 
     func capturePreviewForTab(_ tab: TabViewController) {

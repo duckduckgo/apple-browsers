@@ -328,11 +328,15 @@ private extension Array where Element == BrokerJobData {
         }
     }
 
-    /// Opt-outs for brokers enabled for user assistance only run from the assisted queue.
-    func excludingOptOutsLeftToUserAssistance(_ config: UserAssistanceConfig, brokerProfileQueriesData: [BrokerProfileQueryData]) -> [BrokerJobData] {
-        guard config.isEnabled else { return self }
-        return filter { jobData in
-            guard jobData is OptOutJobData,
+    /// Opt-outs for brokers enabled for user assistance only run from the assisted queue, and an opt-out with an assisted
+    /// attempt still running is left to it even after its broker stops being enabled, until that attempt has ended.
+    func excludingOptOutsLeftToUserAssistance(_ config: UserAssistanceConfig,
+                                              brokerProfileQueriesData: [BrokerProfileQueryData],
+                                              runningAttempts: RunningAssistedOptOuts = .shared) -> [BrokerJobData] {
+        filter { jobData in
+            guard let optOut = jobData as? OptOutJobData else { return true }
+            if let id = AssistedOptOutQueue.id(for: optOut), runningAttempts.contains(id) { return false }
+            guard config.isEnabled,
                   let url = brokerProfileQueriesData.first(where: { $0.dataBroker.id == jobData.brokerId })?.dataBroker.url else { return true }
             return !config.isEnabled(forBrokerURL: url)
         }

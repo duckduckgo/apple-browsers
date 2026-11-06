@@ -36,6 +36,7 @@ public final class AssistedOptOutQueue {
     private let dependencies: BrokerProfileJobDependencyProviding
     private let attemptTimeout: TimeInterval
     private let now: () -> Date
+    private let runningAttempts: RunningAssistedOptOuts
     public weak var presenter: AssistedOptOutPresenting?
 
     private var sessions: [AssistedOptOutID: AssistedOptOutSession] = [:]
@@ -46,10 +47,12 @@ public final class AssistedOptOutQueue {
 
     public init(dependencies: BrokerProfileJobDependencyProviding,
                 attemptTimeout: TimeInterval = AssistedOptOutQueue.defaultAttemptTimeout,
-                now: @escaping () -> Date = Date.init) {
+                now: @escaping () -> Date = Date.init,
+                runningAttempts: RunningAssistedOptOuts = .shared) {
         self.dependencies = dependencies
         self.attemptTimeout = attemptTimeout
         self.now = now
+        self.runningAttempts = runningAttempts
     }
 
     private var config: UserAssistanceConfig { dependencies.userAssistanceConfig }
@@ -172,6 +175,7 @@ public final class AssistedOptOutQueue {
         let id = queuedIDs.removeFirst()
         guard let session = sessions[id] else { return runNextIfIdle() }
         runningID = id
+        runningAttempts.insert(id)
         let cancellation = AttemptCancellation()
         runningCancellation = cancellation
         runningTask = Task { [weak self] in
@@ -202,6 +206,7 @@ public final class AssistedOptOutQueue {
     }
 
     private func finish(_ session: AssistedOptOutSession) {
+        runningAttempts.remove(session.id)
         runningID = nil
         runningTask = nil
         runningCancellation = nil
@@ -237,13 +242,28 @@ public final class AssistedOptOutQueue {
         }
     }
 
-    static func id(for job: OptOutJobData) -> AssistedOptOutID? {
+    nonisolated static func id(for job: OptOutJobData) -> AssistedOptOutID? {
         job.extractedProfile.id.map { AssistedOptOutID(brokerId: job.brokerId, profileQueryId: job.profileQueryId, extractedProfileId: $0) }
     }
 
     static func recordCount(in data: BrokerProfileQueryData) -> Int {
         max(data.optOutJobData.filter { $0.extractedProfile.removedDate == nil && !$0.isRemovedByUser }.count, 1)
     }
+}
+
+/// The opt-outs with an assisted attempt running in this process, shared with the regular queue so it doesn't run
+/// the same opt-out at the same time once user assistance is turned off.
+public final class RunningAssistedOptOuts: @unchecked Sendable {
+    public static let shared = RunningAssistedOptOuts()
+
+    private let lock = NSLock()
+    private var ids: Set<AssistedOptOutID> = []
+
+    public init() {}
+
+    func contains(_ id: AssistedOptOutID) -> Bool { lock.withLock { ids.contains(id) } }
+    func insert(_ id: AssistedOptOutID) { lock.withLock { _ = ids.insert(id) } }
+    func remove(_ id: AssistedOptOutID) { lock.withLock { _ = ids.remove(id) } }
 }
 
 private final class AttemptCancellation: @unchecked Sendable {

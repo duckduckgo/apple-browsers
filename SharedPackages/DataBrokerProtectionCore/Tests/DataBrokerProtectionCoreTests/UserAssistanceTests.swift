@@ -277,13 +277,51 @@ final class UserAssistanceTests: XCTestCase {
         data = BrokerProfileQueryData(dataBroker: broker, profileQuery: data.profileQuery, scanJobData: data.scanJobData,
                                       optOutJobData: [first, second])
         database.brokerProfileQueryDataToReturn = [data]
-        let queue = AssistedOptOutQueue(dependencies: dependencies)
+        let queue = AssistedOptOutQueue(dependencies: dependencies, runningAttempts: RunningAssistedOptOuts())
 
         queue.start(id: AssistedOptOutID(brokerId: 1, profileQueryId: 1, extractedProfileId: 1))
         queue.start(id: AssistedOptOutID(brokerId: 1, profileQueryId: 1, extractedProfileId: 2))
 
         XCTAssertEqual(queue.activeSessions.map(\.id.description), ["1-1-1"])
         queue.cancelAll()
+    }
+
+    func testWhenAnAssistedAttemptIsRunning_thenRegularQueueLeavesItsOptOutAloneEvenWithUserAssistanceOff() async {
+        let (dependencies, database) = makeDependencies(optOutEvents: [.optOutStarted])
+        settings.userAssistanceEnabledBrokersOverride = []
+        let id = AssistedOptOutID(brokerId: 1, profileQueryId: 1, extractedProfileId: 1)
+        RunningAssistedOptOuts.shared.insert(id)
+        defer { RunningAssistedOptOuts.shared.remove(id) }
+
+        await runRegularJob(dependencies)
+
+        XCTAssertFalse(dependencies.mockOptOutRunner.wasOptOutCalled)
+        XCTAssertTrue(database.scanEvents.contains { $0.type == .scanStarted })
+    }
+
+    @MainActor
+    func testAssistedAttemptIsRegisteredAsRunningUntilItEnds() async throws {
+        let (dependencies, database) = makeDependencies(optOutEvents: [.optOutAwaitingUserAssistance])
+        settings.userAssistanceEnabledBrokersOverride = ["broker.com"]
+        let data = try XCTUnwrap(database.brokerProfileQueryDataToReturn.first)
+        let broker = DataBroker(id: 1, name: "Broker", url: "broker.com", steps: [Step(type: .optOut, actions: [])], version: "1.0",
+                                schedulingConfig: .mock, optOutUrl: "", eTag: "", removedAt: nil)
+        database.brokerProfileQueryDataToReturn = [BrokerProfileQueryData(dataBroker: broker, profileQuery: data.profileQuery,
+                                                                          scanJobData: data.scanJobData, optOutJobData: data.optOutJobData)]
+        let running = RunningAssistedOptOuts()
+        let queue = AssistedOptOutQueue(dependencies: dependencies, runningAttempts: running)
+        let id = AssistedOptOutID(brokerId: 1, profileQueryId: 1, extractedProfileId: 1)
+
+        queue.start(id: id)
+        XCTAssertTrue(running.contains(id))
+
+        queue.cancel(id)
+        let deadline = Date().addingTimeInterval(10)
+        while !queue.activeSessions.isEmpty, Date() < deadline {
+            try await Task.sleep(nanoseconds: 50_000_000)
+        }
+        XCTAssertTrue(queue.activeSessions.isEmpty)
+        XCTAssertFalse(running.contains(id))
     }
 
     @MainActor

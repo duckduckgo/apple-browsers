@@ -34,6 +34,7 @@ final class AIChatUserScript: NSObject, Subfeature {
     private(set) var messageDestinationPolicy: MessageOriginPolicy
 
     private var cancellables: Set<AnyCancellable> = []
+    private let additionalClientToolPermissionSources = NSHashTable<AnyObject>.weakObjects()
 
     /// When true, the next two messages received from the page act as a readiness
     /// handshake: after the second message we push `submitOpenSettingsAction`. Mirrors
@@ -185,10 +186,7 @@ final class AIChatUserScript: NSObject, Subfeature {
         case .getAIChatNativeConfigValues:
             return { @MainActor [weak self] params, message in
                 guard let self else { return nil }
-                let response = await self.handler.getAIChatNativeConfigValues(params: params, message: message)
-                guard var configValues = response as? AIChatNativeConfigValues else { return response }
-                configValues.clientTools = self.clientToolsConfiguration(for: message)
-                return configValues
+                return await self.getAIChatNativeConfigValues(params: params, message: message)
             }
         case .attachmentPrivacyShouldDisplay:
             return handler.attachmentPrivacyShouldDisplay
@@ -324,6 +322,29 @@ extension AIChatUserScript: ClientToolPermissionPushing {
     @MainActor
     func cancelClientToolPermissionRequests() {
         browserTools?.clientToolPermissions.cancelRequests(from: self)
+        for source in additionalClientToolPermissionSources.allObjects {
+            guard let source = source as? AIChatClientToolPermissionCancellation else { continue }
+            source.cancelClientToolPermissionRequests()
+        }
+        additionalClientToolPermissionSources.removeAllObjects()
+    }
+
+    @MainActor
+    func registerClientToolPermissionCancellation(_ source: any AIChatClientToolPermissionCancellation) {
+        additionalClientToolPermissionSources.add(source)
+    }
+
+    @MainActor
+    func getAIChatNativeConfigValues(params: Any, message: UserScriptMessage) async -> Encodable? {
+        let response = await handler.getAIChatNativeConfigValues(params: params, message: message)
+        guard var configValues = response as? AIChatNativeConfigValues else { return response }
+        configValues.clientTools = clientToolsConfiguration(for: message)
+        return configValues
+    }
+
+    @MainActor
+    func isClientToolsDocumentReady(_ webView: WKWebView) -> Bool {
+        self.webView === webView && webView.url != nil && !webView.isLoading && isClientToolsPage(webView.url)
     }
 
     /// Client tools are offered only to a Duck.ai chat outside Fire.
@@ -364,4 +385,9 @@ extension AIChatUserScript: AIChatBrowserToolsPushing {
               messageDestinationPolicy.isAllowed(host) else { return }
         broker.push(method: message.rawValue, params: params, for: self, into: webView)
     }
+}
+
+@MainActor
+protocol AIChatClientToolPermissionCancellation: AnyObject {
+    func cancelClientToolPermissionRequests()
 }

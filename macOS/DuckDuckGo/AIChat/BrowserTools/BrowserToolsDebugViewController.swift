@@ -23,48 +23,67 @@ import AppKit
 import UserScript
 import WebKit
 
-/// Debug and Review builds' stand-in for the Duck.ai front end. Drives the same dispatch and
-/// handlers a page message would, receives the pushes a page would, and answers permission prompts.
+/// Debug and Review builds' stand-in for the Duck.ai front end.
+/// Reads configuration through the real chat's user script and invokes its native tool handlers.
+/// Displays permission requests and sends decisions without exercising the web messaging transport.
 ///
 /// Shown in place of the chat inside a sidebar; `ownerTabProvider` resolves that sidebar's host tab.
 @MainActor
 final class BrowserToolsDebugViewController: NSViewController {
 
-    private let userScript: AIChatUserScript
-    private let chatHandler: AIChatUserScriptHandler
+    private let chatContextProvider: () -> (script: AIChatUserScript, webView: WKWebView)?
     private let windowControllersManager: WindowControllersManagerProtocol
     private let service: AIChatBrowserToolsService
     private let ownerTabProvider: () -> Tab?
 
+    enum ConfigurationState {
+        case loading
+        case loaded(ClientToolsConfiguration?)
+        case failed(String)
+    }
+
+    private(set) var configurationState: ConfigurationState = .loading
+    private var capabilities: [ClientToolCapability] = []
+    private var configurationGeneration = UUID()
+    private(set) var configurationTask: Task<Void, Never>?
+    private(set) var operationTask: Task<Void, Never>?
+    private var activeCallID: String?
+    private var activeRequest: ConfigurationRequest?
+    private var permissionSource: PermissionSource!
+
     private let targetLabel = NSTextField(labelWithString: "")
+    private let configurationLabel = NSTextField(labelWithString: "Loading config…")
+    private let callButton = NSButton(title: "Call", target: nil, action: nil)
     private let toolPicker = NSPopUpButton(frame: .zero, pullsDown: false)
     private let argumentsForm = NSStackView()
     private var argumentFields: [ArgumentField] = []
     private let logStack = NSStackView()
     private let logScroll = NSScrollView()
     private let permissionsStack = NSStackView()
-    private var promptEntries: [String: LogEntryView] = [:]
+    private struct PromptEntry {
+        let callID: String
+        let view: LogEntryView
+    }
+    private var promptEntries: [String: PromptEntry] = [:]
 
     init(windowControllersManager: WindowControllersManagerProtocol,
          service: AIChatBrowserToolsService = NSApp.delegateTyped.aiChatBrowserToolsService,
+         chatContextProvider: @escaping () -> (script: AIChatUserScript, webView: WKWebView)?,
          ownerTabProvider: @escaping () -> Tab?) {
         self.windowControllersManager = windowControllersManager
         self.service = service
+        self.chatContextProvider = chatContextProvider
         self.ownerTabProvider = ownerTabProvider
-        let chatHandler = AIChatUserScriptHandler(
-            storage: DefaultAIChatPreferencesStorage(),
-            windowControllersManager: windowControllersManager,
-            pixelFiring: nil,
-            statisticsLoader: nil,
-            syncServiceProvider: { nil },
-            syncErrorHandler: NSApp.delegateTyped.syncErrorHandler,
-            featureFlagger: NSApp.delegateTyped.featureFlagger,
-            browserTools: service
-        )
-        self.chatHandler = chatHandler
-        self.userScript = AIChatUserScript(handler: chatHandler, urlSettings: UserDefaults.standard.keyedStoring(), browserTools: nil)
         super.init(nibName: nil, bundle: nil)
+        permissionSource = PermissionSource(panel: self, coordinator: service.clientToolPermissions)
         service.register(self)
+    }
+
+    deinit {
+        configurationTask?.cancel()
+        operationTask?.cancel()
+        let source = permissionSource!
+        Task { @MainActor in source.cancelClientToolPermissionRequests() }
     }
 
     required init?(coder: NSCoder) {
@@ -73,33 +92,29 @@ final class BrowserToolsDebugViewController: NSViewController {
 
     override func loadView() {
         view = makeContentView()
-        reloadToolPicker()
         refreshTarget()
+        refreshConfiguration()
     }
+
+    var canCallTool: Bool { callButton.isEnabled }
+    var toolTitles: [String] { toolPicker.itemTitles }
 
     // MARK: - Actions
 
-    @objc private func initializeSession() {
-        run("initialize", params: [
-            "protocolVersion": "2025-11-25",
-            "capabilities": ["elicitation": ["form": [:] as [String: Any]]],
-            "clientInfo": ["name": "browser-tools-debug-panel", "version": "1"]
-        ])
-    }
-
-    @objc private func notifyInitialized() {
-        run("notifications/initialized", params: [:])
-    }
-
-    @objc private func listTools() {
-        run("tools/list", params: [:])
-    }
-
-    @objc private func callTool() {
-        guard let name = toolPicker.titleOfSelectedItem, !name.isEmpty else {
-            appendToLog(summary: "→ no tool selected", detail: nil)
-            return
+    @objc func refreshConfiguration() {
+        refreshTarget()
+        guard let request = beginConfigurationRequest() else { return }
+        configurationTask?.cancel()
+        configurationTask = Task { @MainActor [weak self] in
+            let response = await request.script.getAIChatNativeConfigValues(params: [:], message: request.message)
+            guard !Task.isCancelled else { return }
+            _ = self?.acceptConfiguration(response, request: request)
         }
+    }
+
+    @objc func callTool() {
+        guard case .loaded = configurationState,
+              activeCallID == nil, let capability = selectedCapability else { return }
         let arguments: [String: Any]
         switch collectArguments() {
         case .success(let collected): arguments = collected
@@ -107,15 +122,114 @@ final class BrowserToolsDebugViewController: NSViewController {
             appendToLog(summary: "→ \(problem.message); nothing sent", detail: nil)
             return
         }
-        run("tools/call", params: [
-            "name": name,
-            "callId": "panel-\(Int(Date().timeIntervalSince1970 * 1000))",
-            "arguments": arguments
-        ])
+        let callID = "panel-\(UUID().uuidString)"
+        activeCallID = callID
+        updateCallAvailability()
+        guard let request = beginConfigurationRequest() else {
+            finishCall(callID)
+            return
+        }
+        activeRequest = request
+        let source = permissionSource!
+        operationTask = Task { @MainActor [weak self] in
+            let response = await request.script.getAIChatNativeConfigValues(params: [:], message: request.message)
+            guard !Task.isCancelled,
+                  self?.acceptConfiguration(response, request: request) == true,
+                  self?.capabilities.contains(capability) == true else {
+                self?.finishCall(callID)
+                return
+            }
+            let params: [String: Any] = [
+                "callId": callID,
+                "capability": ["name": capability.name, "version": capability.version],
+                "input": arguments
+            ]
+            request.script.registerClientToolPermissionCancellation(source)
+            self?.appendToLog(summary: "→ executeClientTool", detail: self?.prettyPrinted(params))
+            let result = await request.script.handler.executeClientTool(params: params, message: request.message, permissionPusher: source)
+            self?.logResponse(result, method: "executeClientTool")
+            self?.finishCall(callID)
+        }
     }
 
     @objc private func toolPicked() {
-        rebuildArgumentsForm(for: toolPicker.titleOfSelectedItem ?? "")
+        rebuildArgumentsForm(for: selectedCapability?.name ?? "")
+    }
+
+    private struct ConfigurationRequest {
+        let generation: UUID
+        let script: AIChatUserScript
+        let message: SyntheticUserScriptMessage
+        let url: URL?
+    }
+
+    private func beginConfigurationRequest() -> ConfigurationRequest? {
+        configurationGeneration = UUID()
+        configurationState = .loading
+        configurationLabel.stringValue = "Loading config…"
+        updateCallAvailability()
+        guard let context = chatContextProvider(),
+              context.script.isClientToolsDocumentReady(context.webView) else {
+            failConfiguration("Chat document or user script is not ready")
+            return nil
+        }
+        context.script.registerClientToolPermissionCancellation(permissionSource)
+        appendToLog(summary: "→ getAIChatNativeConfigValues", detail: "{}")
+        let message = SyntheticUserScriptMessage(name: "getAIChatNativeConfigValues", body: [:], webView: context.webView)
+        return ConfigurationRequest(generation: configurationGeneration, script: context.script, message: message, url: context.webView.url)
+    }
+
+    @discardableResult
+    private func acceptConfiguration(_ response: Encodable?, request: ConfigurationRequest) -> Bool {
+        guard request.generation == configurationGeneration else { return false }
+        guard let context = chatContextProvider(), context.webView === request.message.webView,
+              context.script === request.script,
+              context.webView.url == request.url,
+              request.script.isClientToolsDocumentReady(context.webView) else {
+            failConfiguration("Chat document changed while loading config")
+            return false
+        }
+        logResponse(response, method: "getAIChatNativeConfigValues")
+        guard let config = response as? AIChatNativeConfigValues else {
+            failConfiguration("Native configuration response is missing or invalid")
+            return false
+        }
+        configurationState = .loaded(config.clientTools)
+        capabilities = config.clientTools?.capabilities ?? []
+        configurationLabel.stringValue = capabilities.isEmpty
+            ? "Config loaded · no tools available" : "Config loaded · \(capabilities.count) \(capabilities.count == 1 ? "tool" : "tools")"
+        reloadToolPicker()
+        updateCallAvailability()
+        return true
+    }
+
+    private func failConfiguration(_ reason: String) {
+        configurationState = .failed(reason)
+        capabilities = []
+        configurationLabel.stringValue = "Failed to load config"
+        reloadToolPicker()
+        updateCallAvailability()
+        appendToLog(summary: "· Failed to load config", detail: reason)
+    }
+
+    private func updateCallAvailability() {
+        if case .loaded = configurationState {
+            callButton.isEnabled = activeCallID == nil && selectedCapability != nil
+        } else {
+            callButton.isEnabled = false
+        }
+    }
+
+    private func finishCall(_ callID: String) {
+        for (id, entry) in promptEntries where entry.callID == callID {
+            resolvePromptEntry(id: id, outcome: "settled")
+        }
+        guard activeCallID == callID else { return }
+        activeCallID = nil
+        activeRequest = nil
+        operationTask = nil
+        refreshPermissions()
+        updateCallAvailability()
     }
 
     /// Reads the owner's window directly — there is no tool for discovering a tabId to hand to
@@ -131,44 +245,43 @@ final class BrowserToolsDebugViewController: NSViewController {
     }
 
     @objc private func clearLog() {
-        for row in logStack.arrangedSubviews {
+        let pendingViews = Set(promptEntries.values.map { ObjectIdentifier($0.view) })
+        for row in logStack.arrangedSubviews where !pendingViews.contains(ObjectIdentifier(row)) {
             logStack.removeArrangedSubview(row)
             row.removeFromSuperview()
         }
     }
 
-    /// The owner tab is re-read on every click, so the header shows which one and its session state.
     @objc func refreshTarget() {
-        reloadToolPicker()
         refreshPermissions()
         guard let tab = ownerTabProvider() else {
             targetLabel.stringValue = "No owner tab — open a tab to act as the Duck.ai owner tab."
             return
         }
         let burner = tab.burnerMode.isBurner ? "  ·  Fire Window" : ""
-        let session = service.sessions.session(forOwnerTabID: tab.uuid)
-        let state = switch session {
-        case .none: "no session — run initialize"
-        case .some(let session) where !session.isInitialized: "awaiting notifications/initialized"
-        case .some: "initialized"
-        }
         let title = tab.title.map { " (\($0.prefix(40)))" } ?? ""
-        targetLabel.stringValue = "Owner tab: \(tab.uuid)\(title)\(burner)  ·  \(state)"
+        targetLabel.stringValue = "Owner tab: \(tab.uuid)\(title)\(burner)"
     }
 
     // MARK: - Tool picker
 
+    private var selectedCapability: ClientToolCapability? {
+        guard capabilities.indices.contains(toolPicker.indexOfSelectedItem) else { return nil }
+        return capabilities[toolPicker.indexOfSelectedItem]
+    }
+
     private func reloadToolPicker() {
-        let names = service.catalog.enabledTools.map(\.name)
-        let selected = toolPicker.titleOfSelectedItem
-        guard names != toolPicker.itemTitles else {
-            if argumentFields.isEmpty, let selected { rebuildArgumentsForm(for: selected) }
+        let titles = capabilities.map { "\($0.name) · v\($0.version)" }
+        let selectedName = toolPicker.titleOfSelectedItem?.components(separatedBy: " · v").first
+        guard titles != toolPicker.itemTitles else { return }
+        toolPicker.removeAllItems()
+        toolPicker.addItems(withTitles: titles)
+        guard !capabilities.isEmpty else {
+            rebuildArgumentsForm(for: "")
             return
         }
-        toolPicker.removeAllItems()
-        toolPicker.addItems(withTitles: names)
-        if let selected, names.contains(selected) {
-            toolPicker.selectItem(withTitle: selected)
+        if let index = capabilities.firstIndex(where: { $0.name == selectedName }) {
+            toolPicker.selectItem(at: index)
         } else {
             toolPicker.selectItem(at: 0)
             toolPicked()
@@ -284,95 +397,81 @@ final class BrowserToolsDebugViewController: NSViewController {
 
     // MARK: - Prompts
 
-    private static let answers: [(title: String, result: MCPElicitationResult)] = [
-        ("Allow once", MCPElicitationResult(action: .accept, content: ["choice": "allowOnce"])),
-        ("Always", MCPElicitationResult(action: .accept, content: ["choice": "alwaysAllow"])),
-        ("Never", MCPElicitationResult(action: .accept, content: ["choice": "neverAllow"])),
-        ("Decline", MCPElicitationResult(action: .decline)),
-        ("Cancel", MCPElicitationResult(action: .cancel))
-    ]
-
-    /// The prompt is a log entry like any other, in sequence, with its answers in the header so it
-    /// cannot be missed and the history shows what was chosen.
-    private func addPromptEntry(for params: MCPElicitationCreateParams) {
-        let buttons = Self.answers.map { answer -> NSView in
-            let button = PromptButton(title: answer.title, target: self, action: #selector(answerPrompt(_:)))
+    private func addPromptEntry(for prompt: ClientToolPermissionRequested) -> Bool {
+        guard prompt.callId == activeCallID else { return false }
+        let answers = prompt.choices.map { choice -> (String, String) in
+            let title = switch choice {
+            case .allow: "Allow once"
+            case .always: "Always"
+            case .never: "Never"
+            }
+            return (title, choice.rawValue)
+        } + [("Decline", "decline"), ("Cancel", "cancel")]
+        let buttons = answers.map { title, decision -> NSView in
+            let button = PromptButton(title: title, target: self, action: #selector(answerPrompt(_:)))
             button.bezelStyle = .rounded
             button.controlSize = .small
-            button.promptID = params.id
-            button.result = answer.result
+            button.promptID = prompt.requestId
+            button.callID = prompt.callId
+            button.decision = decision
             return button
         }
-        let entry = appendToLog(summary: "⇠ elicitation/create  \(params.message)",
-                                detail: prettyPrinted(params),
-                                accessories: buttons,
-                                highlighted: true)
-        promptEntries[params.id] = entry
+        let entry = appendToLog(summary: "⇠ clientToolPermissionRequested  \(prompt.message)",
+                                detail: prettyPrinted(prompt), accessories: buttons, highlighted: true)
+        promptEntries[prompt.requestId] = PromptEntry(callID: prompt.callId, view: entry)
+        return true
     }
 
-    /// Goes through `elicitation/response` exactly as the page would, so the answer exercises the
-    /// same decode, correlation and persistence.
     @objc private func answerPrompt(_ sender: PromptButton) {
+        guard promptEntries[sender.promptID]?.callID == sender.callID,
+              let request = activeRequest, let context = chatContextProvider(),
+              context.script === request.script, context.webView === request.message.webView,
+              context.webView.url == request.url,
+              context.script.isClientToolsDocumentReady(context.webView) else { return }
         resolvePromptEntry(id: sender.promptID, outcome: sender.title)
-        var result: [String: Any] = ["action": sender.result.action]
-        if let choice = sender.result.content?["choice"]?.stringValue {
-            result["content"] = ["choice": choice]
+        let params: [String: Any] = ["requestId": sender.promptID, "callId": sender.callID, "decision": sender.decision]
+        let message = SyntheticUserScriptMessage(name: "respondToClientToolPermission", body: params, webView: context.webView)
+        let source = permissionSource!
+        let script = context.script
+        appendToLog(summary: "→ respondToClientToolPermission", detail: prettyPrinted(params))
+        Task { @MainActor [weak self] in
+            let result = await script.handler.respondToClientToolPermission(params: params, message: message, source: source)
+            self?.logResponse(result, method: "respondToClientToolPermission")
         }
-        run("elicitation/response", params: ["id": sender.promptID, "result": result])
     }
 
     private func resolvePromptEntry(id: String, outcome: String) {
-        promptEntries.removeValue(forKey: id)?.resolve(outcome: outcome)
+        promptEntries.removeValue(forKey: id)?.view.resolve(outcome: outcome)
     }
 
-    /// Prompts that resolved without us — timed out, or answered from elsewhere.
-    private func pruneStalePromptEntries() {
-        let pending = Set(service.elicitations.pendingPrompts.map(\.id))
-        for id in promptEntries.keys where !pending.contains(id) {
-            resolvePromptEntry(id: id, outcome: "expired")
+    private func logResponse(_ response: Encodable?, method: String) {
+        guard let response, let json = Self.jsonObject(response) else {
+            appendToLog(summary: "← \(method)  invalid response", detail: nil)
+            return
         }
+        appendToLog(summary: "← \(method)  \(Self.summary(of: json))", detail: prettyPrinted(json))
     }
 
-    // MARK: - Running messages
+    private final class PermissionSource: ClientToolPermissionPushing, AIChatClientToolPermissionCancellation {
+        private weak var panel: BrowserToolsDebugViewController?
+        private let coordinator: ClientToolPermissionCoordinator
 
-    private func run(_ method: String, params: [String: Any]) {
-        refreshTarget()
-        guard let webView = ownerTabProvider()?.webView else {
-            appendToLog(summary: "→ no owner tab; cannot resolve a session", detail: nil)
-            return
-        }
-
-        // Same lookup a page message performs. Its closure needs a concrete `WKScriptMessage`,
-        // which only WebKit can make, so the typed handler behind it is invoked directly below.
-        guard userScript.handler(forMethodNamed: method) != nil else {
-            appendToLog(summary: "→ \(method): not wired into the dispatch switch", detail: nil)
-            return
-        }
-        guard let invoke = typedHandler(for: method) else {
-            appendToLog(summary: "→ \(method): no typed handler", detail: nil)
-            return
+        init(panel: BrowserToolsDebugViewController, coordinator: ClientToolPermissionCoordinator) {
+            self.panel = panel
+            self.coordinator = coordinator
         }
 
-        appendToLog(summary: "→ \(method)", detail: prettyPrinted(params))
-        Task { @MainActor in
-            let response = await invoke(params, SyntheticUserScriptMessage(name: method, body: params, webView: webView))
-            let json = response.flatMap(Self.jsonObject) ?? [:]
-            appendToLog(summary: "← \(method)  \(Self.summary(of: json, for: method))", detail: prettyPrinted(Self.displayForm(of: json)))
-            pruneStalePromptEntries()
-            refreshTarget()
+        func pushClientToolPermissionRequested(_ prompt: ClientToolPermissionRequested) -> Bool {
+            panel?.addPromptEntry(for: prompt) ?? false
         }
-    }
 
-    private func typedHandler(for method: String) -> ((Any, UserScriptMessage) async -> Encodable?)? {
-        switch AIChatUserScriptMessages(rawValue: method) {
-        case .initialize: chatHandler.mcpInitialize
-        case .notificationsInitialized: chatHandler.mcpNotificationsInitialized
-        case .toolsList: chatHandler.mcpToolsList
-        case .toolsCall: { [chatHandler, weak self] params, message in
-            await chatHandler.mcpToolsCall(params: params, message: message, elicitationPusher: self)
-        }
-        case .elicitationResponse: chatHandler.mcpElicitationResponse
-        default: nil
+        func cancelClientToolPermissionRequests() {
+            coordinator.cancelRequests(from: self)
+            panel?.configurationGeneration = UUID()
+            panel?.configurationTask?.cancel()
+            panel?.operationTask?.cancel()
+            panel?.failConfiguration("Chat document is no longer available")
+            if let callID = panel?.activeCallID { panel?.finishCall(callID) }
         }
     }
 
@@ -388,31 +487,11 @@ final class BrowserToolsDebugViewController: NSViewController {
         return try? JSONSerialization.jsonObject(with: data)
     }
 
-    /// One line a tester can scan without expanding: the failure token, the tool count, or `ok`.
-    private static func summary(of json: Any, for method: String) -> String {
+    private static func summary(of json: Any) -> String {
         guard let dictionary = json as? [String: Any] else { return "" }
-        if let error = dictionary["error"] as? String { return error }
-        if let tools = dictionary["tools"] as? [Any] { return "\(tools.count) tools" }
-        if let result = dictionary["result"] as? [String: Any] {
-            if result["isError"] as? Bool == true,
-               let text = (result["content"] as? [[String: Any]])?.first?["text"] as? String {
-                return text
-            }
-            return "ok"
-        }
-        if let version = dictionary["protocolVersion"] as? String { return version }
+        if let code = (dictionary["error"] as? [String: Any])?["code"] as? String { return code }
+        if let ok = dictionary["ok"] as? Bool { return "\(dictionary["callId"] as? String ?? "") · ok=\(ok)" }
         return dictionary.isEmpty ? "{}" : "ok"
-    }
-
-    /// The `content` text block duplicates `structuredContent` as an escaped string; showing both
-    /// only obscures the payload.
-    private static func displayForm(of json: Any) -> Any {
-        guard var dictionary = json as? [String: Any],
-              var result = dictionary["result"] as? [String: Any],
-              result["structuredContent"] != nil else { return json }
-        result.removeValue(forKey: "content")
-        dictionary["result"] = result
-        return dictionary
     }
 
     private func prettyPrinted(_ value: Any) -> String {
@@ -460,11 +539,8 @@ final class BrowserToolsDebugViewController: NSViewController {
 
     private func makeContentView() -> NSView {
         let buttons = NSStackView(views: [
-            makeButton("initialize", #selector(initializeSession)),
-            makeButton("notifications/initialized", #selector(notifyInitialized)),
-            makeButton("tools/list", #selector(listTools)),
             makeButton("Show tab IDs", #selector(listWindowTabs)),
-            makeButton("Refresh", #selector(refreshTarget)),
+            makeButton("Refresh", #selector(refreshConfiguration)),
             makeButton("Clear log", #selector(clearLog))
         ])
         buttons.orientation = .horizontal
@@ -474,11 +550,12 @@ final class BrowserToolsDebugViewController: NSViewController {
         toolPicker.target = self
         toolPicker.action = #selector(toolPicked)
         toolPicker.controlSize = .small
-        let call = NSStackView(views: [
-            NSTextField(labelWithString: "tools/call"),
-            toolPicker,
-            makeButton("Call", #selector(callTool))
-        ])
+        callButton.target = self
+        callButton.action = #selector(callTool)
+        callButton.bezelStyle = .rounded
+        callButton.controlSize = .small
+        callButton.isEnabled = false
+        let call = NSStackView(views: [toolPicker, callButton])
         call.orientation = .horizontal
         call.spacing = 6
         toolPicker.widthAnchor.constraint(equalToConstant: 150).isActive = true
@@ -512,8 +589,9 @@ final class BrowserToolsDebugViewController: NSViewController {
 
         targetLabel.font = .monospacedSystemFont(ofSize: 11, weight: .regular)
         targetLabel.lineBreakMode = .byTruncatingMiddle
+        configurationLabel.lineBreakMode = .byTruncatingTail
 
-        let stack = NSStackView(views: [targetLabel, buttons, call, argumentsForm, logScroll, permissionsStack])
+        let stack = NSStackView(views: [targetLabel, configurationLabel, buttons, call, argumentsForm, logScroll, permissionsStack])
         stack.orientation = .vertical
         stack.alignment = .leading
         stack.spacing = 8
@@ -523,6 +601,7 @@ final class BrowserToolsDebugViewController: NSViewController {
             logScroll.widthAnchor.constraint(equalTo: stack.widthAnchor, constant: -20),
             logScroll.heightAnchor.constraint(greaterThanOrEqualToConstant: 200),
             targetLabel.widthAnchor.constraint(equalTo: stack.widthAnchor, constant: -20),
+            configurationLabel.widthAnchor.constraint(equalTo: stack.widthAnchor, constant: -20),
             argumentsForm.widthAnchor.constraint(equalTo: stack.widthAnchor, constant: -20)
         ])
         return stack
@@ -539,23 +618,12 @@ final class BrowserToolsDebugViewController: NSViewController {
 /// Receives the pushes a page would, since no page is listening.
 extension BrowserToolsDebugViewController: AIChatBrowserToolsPushing {
 
-    var pushTargetWebView: WKWebView? { ownerTabProvider()?.webView }
+    var pushTargetWebView: WKWebView? { chatContextProvider()?.webView }
 
-    func pushToolsListChanged() {
-        appendToLog(summary: "⇠ notifications/tools/list_changed", detail: nil)
-        reloadToolPicker()
-    }
+    func pushToolsListChanged() {}
 
     func pushTabChanged(_ data: AIChatTabChangedData) {
         appendToLog(summary: "⇠ aiChatTabChanged  \(data.url ?? "")", detail: prettyPrinted(data))
-    }
-}
-
-extension BrowserToolsDebugViewController: AIChatElicitationPushing {
-
-    func pushElicitationCreate(_ params: MCPElicitationCreateParams) -> Bool {
-        addPromptEntry(for: params)
-        return true
     }
 }
 
@@ -731,7 +799,8 @@ private final class LogDocumentView: NSView {
 
 private final class PromptButton: NSButton {
     var promptID = ""
-    var result = MCPElicitationResult.cancel
+    var callID = ""
+    var decision = "cancel"
 }
 
 private final class PermissionButton: NSButton {
@@ -747,7 +816,7 @@ private struct SyntheticUserScriptMessage: UserScriptMessage {
 
     var messageName: String { name }
     var messageBody: Any { body }
-    var messageHost: String { "duck.ai" }
+    var messageHost: String { webView.url?.host ?? "" }
     var isMainFrame: Bool { true }
     var messageWebView: WKWebView? { webView }
 }

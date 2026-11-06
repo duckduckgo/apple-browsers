@@ -17,77 +17,20 @@
 //
 
 import Foundation
-import DDGError
 
-/// Retains every key loaded for the page so refreshing for a newer entry does not discard
-/// a key needed by an older entry.
-/// The initial load result and one forced refresh are also shared across the page.
-/// The fetch loop uses this instance sequentially; it is intentionally not Sendable.
-final class PageScopedAccountInfoKeys: AccountInfoKeyProviding {
-    enum RefreshLimitError: DDGError {
-        case forcedRefreshAlreadyAttempted
-
-        static var errorDomain: String { "com.duckduckgo.sync.audit-log.account-info-keys" }
-
-        var errorCode: Int { 1 }
-
-        var description: String { "The account-info key refresh was already attempted for this audit-log page." }
-    }
-
-    private let manager: any AccountInfoKeyProviding
-    private var currentKeyResult: Result<AccountInfoKey, Swift.Error>?
-    private var didAttemptForcedRefresh = false
-    private var keysByID: [String: AccountInfoKey] = [:]
-
-    init(manager: any AccountInfoKeyProviding) {
-        self.manager = manager
-    }
-
-    func loadKey(for account: SyncAccount) async throws -> AccountInfoKey {
-        if let currentKeyResult {
-            return try currentKeyResult.get()
-        }
-        do {
-            let key = try await manager.loadKey(for: account)
-            cache(key)
-            return key
-        } catch {
-            currentKeyResult = .failure(error)
-            throw error
-        }
-    }
-
-    func refreshKey(for account: SyncAccount) async throws -> AccountInfoKey {
-        guard !didAttemptForcedRefresh else {
-            throw RefreshLimitError.forcedRefreshAlreadyAttempted
-        }
-        didAttemptForcedRefresh = true
-        let key = try await manager.refreshKey(for: account)
-        cache(key)
-        return key
-    }
-
-    func cachedKey(matching keyID: String) -> AccountInfoKey? {
-        keysByID[keyID]
-    }
-
-    private func cache(_ key: AccountInfoKey) {
-        keysByID[key.kid] = key
-        currentKeyResult = .success(key)
-    }
-}
-
-enum AuditLogEventType: String {
+enum AuditLogEventType: String, Sendable {
     case login
     case logout
+    case deviceInfoAdded = "device_info_added"
 }
 
-struct AuditLogEvent {
+struct AuditLogEvent: Sendable {
     let id: String
     let type: AuditLogEventType
     let occurredAt: Date
     let device: RegisteredDevice
     let actor: RegisteredDevice?
+    let hasDeviceInfo: Bool
 }
 
 enum AuditLogUnreadableReason {
@@ -128,7 +71,7 @@ struct AuditLogEntryDecoder {
         let actor: RegisteredDeviceEntry?
     }
 
-    private let accountInfoKeys: (any AccountInfoKeyProviding)?
+    private let accountInfoKey: AccountInfoKey?
     private let deviceMapper: any RegisteredDeviceMapping
     private let thirdPartyPasswordRecoveryCache: ThirdPartyPasswordRecoveryCache?
     private let jweCompactCodec: JWECompactCodec
@@ -139,23 +82,23 @@ struct AuditLogEntryDecoder {
         return formatter
     }()
 
-    init(accountInfoKeys: (any AccountInfoKeyProviding)?,
+    init(accountInfoKey: AccountInfoKey?,
          deviceMapper: any RegisteredDeviceMapping,
          thirdPartyPasswordRecoveryCache: ThirdPartyPasswordRecoveryCache? = nil,
          jweCompactCodec: JWECompactCodec = JWECompactCodec()) {
-        self.accountInfoKeys = accountInfoKeys
+        self.accountInfoKey = accountInfoKey
         self.deviceMapper = deviceMapper
         self.thirdPartyPasswordRecoveryCache = thirdPartyPasswordRecoveryCache
         self.jweCompactCodec = jweCompactCodec
     }
 
     func decode(_ entry: AuditLogEntry, for account: SyncAccount) async throws -> AuditLogEntryDecodingResult {
-        guard entry.version == "1" else {
+        guard entry.version == AuditLogEntry.supportedVersion else {
             return .unsupportedVersion(id: entry.id, version: entry.version)
         }
 
         let payloadData: Data
-        switch try await decryptPayload(for: entry, account: account) {
+        switch decryptPayload(for: entry) {
         case .decrypted(let data): payloadData = data
         case .unreadable(let reason): return .unreadable(id: entry.id, reason: reason)
         }
@@ -177,7 +120,7 @@ struct AuditLogEntryDecoder {
         let mapping = await deviceMapper.registeredDevicesWithRepairState(from: snapshots,
                                                                            account: account,
                                                                            isUnifiedReadEnabled: true,
-                                                                           accountInfoKeyProvider: accountInfoKeys,
+                                                                           accountInfoKey: accountInfoKey,
                                                                            thirdPartyPasswordRecoveryCache: thirdPartyPasswordRecoveryCache)
         try Task.checkCancellation()
         guard let device = mapping.devices.first else {
@@ -191,58 +134,25 @@ struct AuditLogEntryDecoder {
                                       type: type,
                                       occurredAt: occurredAt,
                                       device: device,
-                                      actor: actor))
+                                      actor: actor,
+                                      hasDeviceInfo: mapping.deviceInfoDeviceIDs.contains(device.id)))
     }
 
-    private func decryptPayload(for entry: AuditLogEntry, account: SyncAccount) async throws -> PayloadDecryptionResult {
-        let keyID: String
+    private func decryptPayload(for entry: AuditLogEntry) -> PayloadDecryptionResult {
         do {
-            guard let protectedKeyID = try jweCompactCodec.protectedKeyID(in: entry.payload) else {
+            guard try jweCompactCodec.protectedKeyID(in: entry.payload) != nil else {
                 return .unreadable(.missingKeyID)
             }
-            keyID = protectedKeyID
         } catch {
             return .unreadable(.decryptionFailed)
         }
-        guard let accountInfoKeys else {
+        guard let key = accountInfoKey else {
             return .unreadable(.keyUnavailable)
         }
-        let loadedKey: AccountInfoKey
-        do {
-            loadedKey = try await accountInfoKeys.loadKey(for: account)
-        } catch is CancellationError {
-            throw CancellationError()
-        } catch {
-            return .unreadable(.keyUnavailable)
-        }
-        let key = accountInfoKeys.cachedKey(matching: keyID) ?? loadedKey
         do {
             let data = try jweCompactCodec.decryptRSAOAEP256(token: entry.payload,
                                                             privateKey: key.privateKey,
                                                             expectedKid: key.kid)
-            return .decrypted(data)
-        } catch JWECompactCodecError.unexpectedKeyID {
-            return try await decryptPayloadAfterKeyRefresh(for: entry, account: account, accountInfoKeys: accountInfoKeys)
-        } catch {
-            return .unreadable(.decryptionFailed)
-        }
-    }
-
-    private func decryptPayloadAfterKeyRefresh(for entry: AuditLogEntry,
-                                               account: SyncAccount,
-                                               accountInfoKeys: any AccountInfoKeyProviding) async throws -> PayloadDecryptionResult {
-        let refreshedKey: AccountInfoKey
-        do {
-            refreshedKey = try await accountInfoKeys.refreshKey(for: account)
-        } catch is CancellationError {
-            throw CancellationError()
-        } catch {
-            return .unreadable(.keyIDMismatch)
-        }
-        do {
-            let data = try jweCompactCodec.decryptRSAOAEP256(token: entry.payload,
-                                                            privateKey: refreshedKey.privateKey,
-                                                            expectedKid: refreshedKey.kid)
             return .decrypted(data)
         } catch JWECompactCodecError.unexpectedKeyID {
             return .unreadable(.keyIDMismatch)

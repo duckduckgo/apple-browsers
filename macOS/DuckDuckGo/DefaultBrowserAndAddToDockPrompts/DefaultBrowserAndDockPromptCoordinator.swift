@@ -158,8 +158,7 @@ final class DefaultBrowserAndDockPromptCoordinator: DefaultBrowserAndDockPrompt 
 
     private let promptTypeDecider: DefaultBrowserAndDockPromptTypeDeciding
     private let store: DefaultBrowserAndDockPromptStorage
-    private let dockCustomization: DockCustomization
-    private let defaultBrowserProvider: DefaultBrowserProvider
+    private let actionPerformer: DefaultBrowserAndDockActionPerforming
     private let pixelFiring: PixelFiring?
     private let isOnboardingCompleted: () -> Bool
     private let dateProvider: () -> Date
@@ -180,8 +179,7 @@ final class DefaultBrowserAndDockPromptCoordinator: DefaultBrowserAndDockPrompt 
         self.promptTypeDecider = promptTypeDecider
         self.store = store
         self.isOnboardingCompleted = isOnboardingCompleted
-        self.dockCustomization = dockCustomization
-        self.defaultBrowserProvider = defaultBrowserProvider
+        self.actionPerformer = DefaultBrowserAndDockActionPerformer(dockCustomization: dockCustomization, defaultBrowserProvider: defaultBrowserProvider)
         self.pixelFiring = pixelFiring
         self.dateProvider = dateProvider
         self.notificationPresenter = notificationPresenter
@@ -211,22 +209,7 @@ final class DefaultBrowserAndDockPromptCoordinator: DefaultBrowserAndDockPrompt 
     /// **See also:**
     /// - `getPromptType()` - combines this with timing logic to decide WHEN to show prompt
     var evaluatePromptEligibility: DefaultBrowserAndDockPromptType? {
-        let isDefaultBrowser = defaultBrowserProvider.isDefault
-        let isAddedToDock = dockCustomization.isAddedToDock
-
-        if dockCustomization.supportsAddingToDock {
-            if isDefaultBrowser && isAddedToDock {
-                return nil
-            } else if isDefaultBrowser && !isAddedToDock {
-                return .addToDockPrompt
-            } else if !isDefaultBrowser && isAddedToDock {
-                return .setAsDefaultPrompt
-            } else {
-                return .bothDefaultBrowserAndDockPrompt
-            }
-        } else {
-            return isDefaultBrowser ? nil : .setAsDefaultPrompt
-        }
+        actionPerformer.pendingPromptType
     }
 
     // MARK: - PromoService publishers
@@ -329,26 +312,6 @@ final class DefaultBrowserAndDockPromptCoordinator: DefaultBrowserAndDockPrompt 
     /// 3. Execute the requested action (set default browser and/or add to dock)
     func confirmAction(for prompt: DefaultBrowserAndDockPromptPresentationType) {
 
-        /// Performs the actual system actions based on what was requested.
-        /// For Sparkle builds, can do both default browser AND dock.
-        /// For App Store builds, only default browser.
-        func setDefaultBrowserAndAddToDockIfNeeded() {
-            guard let type = evaluatePromptEligibility else { return }
-
-            switch type {
-            case .bothDefaultBrowserAndDockPrompt:
-                // User needs to do both → add to dock first, then show system prompt for default browser
-                dockCustomization.addToDock()
-                setAsDefaultBrowserAction()
-            case .addToDockPrompt:
-                // User only needs to add to dock (already default browser)
-                dockCustomization.addToDock()
-            case .setAsDefaultPrompt:
-                // User only needs to set default browser (already in dock or App Store build)
-                setAsDefaultBrowserAction()
-            }
-        }
-
         /// Marks the prompt as "seen" in storage.
         /// Banner: marked here when user interacts (so it shows in all windows until interaction)
         /// Popover: already marked when shown (in getPromptType), not here
@@ -377,7 +340,7 @@ final class DefaultBrowserAndDockPromptCoordinator: DefaultBrowserAndDockPrompt 
         // Set Prompt seen and then fire pixel first to get the content of the prompt before mutating it.
         setPromptSeen()
         fireConfirmActionPixel()
-        setDefaultBrowserAndAddToDockIfNeeded()
+        actionPerformer.performPendingActions()
         promptDismissedSubject.send((prompt, .actioned()))
         activePrompt = nil
     }
@@ -418,18 +381,6 @@ final class DefaultBrowserAndDockPromptCoordinator: DefaultBrowserAndDockPrompt 
 // MARK: - Private
 
 private extension DefaultBrowserAndDockPromptCoordinator {
-
-    /// Triggers the macOS system prompt to set default browser.
-    /// If the system prompt fails (e.g., on older macOS versions), opens System Preferences instead.
-    func setAsDefaultBrowserAction() {
-        do {
-            // Try to show native system prompt (macOS 14+)
-            try defaultBrowserProvider.presentDefaultBrowserPrompt()
-        } catch {
-            // Fallback: open System Preferences for manual selection
-            defaultBrowserProvider.openSystemPreferences()
-        }
-    }
 
     /// Records when popover was shown (timestamp stored in UserDefaults).
     /// This prevents the popover from showing again and starts the banner countdown.

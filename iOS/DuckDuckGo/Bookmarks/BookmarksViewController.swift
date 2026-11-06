@@ -40,6 +40,14 @@ class BookmarksViewController: UIViewController, UITableViewDelegate {
         case none
         case syncSetup
         case syncAnotherDevice
+
+        var touchpoint: SyncPromoManager.Touchpoint? {
+            switch self {
+            case .none: nil
+            case .syncSetup: .bookmarks
+            case .syncAnotherDevice: .bookmarksAnotherDevice
+            }
+        }
     }
 
     private struct InstalledHeaderPromo {
@@ -149,10 +157,10 @@ class BookmarksViewController: UIViewController, UITableViewDelegate {
         searchBar.bottomAnchor.constraint(equalTo: headerView.bottomAnchor)
     }()
 
-    private lazy var syncPromoManager: SyncPromoManaging = SyncPromoManager(syncService: syncService)
+    private lazy var syncPromoManager: SyncPromoManaging = SyncPromoManager(syncService: syncService, pixelFiring: pixelFiring)
 
     private var installedHeaderPromo: InstalledHeaderPromo?
-    private var hasFiredSyncSetupPromoDisplayedPixel = false
+    private var headerPromosWithDisplayedPixelFired: Set<HeaderPromo> = []
 
     weak var delegate: BookmarksDelegate?
 
@@ -949,9 +957,8 @@ class BookmarksViewController: UIViewController, UITableViewDelegate {
         tableView.tableHeaderView = headerView
         installedHeaderPromo = InstalledHeaderPromo(promo: promo, hostingController: hostingController)
 
-        if promo == .syncSetup, !hasFiredSyncSetupPromoDisplayedPixel {
-            hasFiredSyncSetupPromoDisplayedPixel = true
-            pixelFiring?.fire(Pixel.Event.syncPromoDisplayed, options: .parameters(["source": SyncPromoManager.Touchpoint.bookmarks.rawValue]))
+        if let touchpoint = promo.touchpoint, headerPromosWithDisplayedPixelFired.insert(promo).inserted {
+            pixelFiring?.fire(Pixel.Event.syncPromoDisplayed, options: .parameters(["source": touchpoint.rawValue]))
         }
     }
 
@@ -974,7 +981,6 @@ class BookmarksViewController: UIViewController, UITableViewDelegate {
             case .redesigned:
                 self?.pushSyncSettings(source: SyncSettingsViewController.SourceConstants.bookmarksPromotion)
             }
-            self?.pixelFiring?.fire(Pixel.Event.syncPromoConfirmed, options: .parameters(["source": SyncPromoManager.Touchpoint.bookmarks.rawValue]))
             self?.syncPromoManager.recordPromoConfirmedFor(.bookmarks)
         }, dismissButtonAction: { [weak self] in
             self?.syncPromoManager.dismissPromoFor(.bookmarks, reason: .userTapped)
@@ -985,13 +991,13 @@ class BookmarksViewController: UIViewController, UITableViewDelegate {
 
     private func makeSyncAnotherDevicePromoHostingController() -> UIViewController {
         let promoView = SyncAnotherDevicePromoView(title: UserText.syncPromoBookmarksAnotherDeviceTitle,
-                                                   syncActionTitle: UserText.syncPromoBookmarksAnotherDeviceSyncAction,
                                                    syncAction: { [weak self] in
             self?.pushSyncSettings(source: SyncSettingsViewController.SourceConstants.bookmarksAnotherDevicePromotion)
+            self?.syncPromoManager.recordPromoConfirmedFor(.bookmarksAnotherDevice)
         }, getDesktopAppAction: { [weak self] in
             self?.pushPlatformLinks()
         }, dismissAction: { [weak self] in
-            self?.syncPromoManager.markPromoHandledFor(.bookmarksAnotherDevice)
+            self?.syncPromoManager.dismissPromoFor(.bookmarksAnotherDevice, reason: .userTapped)
             self?.refreshTableHeaderView()
         })
         return UIHostingController(rootView: promoView)

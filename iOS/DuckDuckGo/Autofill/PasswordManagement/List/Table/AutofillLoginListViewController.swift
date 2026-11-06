@@ -1239,17 +1239,17 @@ extension AutofillLoginListViewController: AutofillHeaderViewDelegate {
                 self.dismiss(animated: true)
             }
             viewModel.dismissSurvey(id: survey.id)
-        case .syncPromo(let touchpoint, let design):
+        case .syncPromo(_, let design):
             switch design {
             case .standard:
                 segueToSync(source: SyncSettingsViewController.SourceConstants.passwordsPromotion)
             case .redesigned:
                 pushSyncSettings(source: SyncSettingsViewController.SourceConstants.passwordsPromotion)
             }
-            PixelKit.fire(Pixel.Event.syncPromoConfirmed, options: .parameters(["source": touchpoint.rawValue]))
             viewModel.recordSyncPromoConfirmed()
         case .syncAnotherDevicePromo:
             pushSyncSettings(source: SyncSettingsViewController.SourceConstants.passwordsAnotherDevicePromotion)
+            viewModel.recordSyncAnotherDevicePromoConfirmed()
         case .importPromo:
             segueToFileImport(source: DataImportViewModel.ImportScreen.promo)
         case .extensionPromo:

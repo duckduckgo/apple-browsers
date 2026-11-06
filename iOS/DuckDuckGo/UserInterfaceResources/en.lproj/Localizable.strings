@@ -5239,14 +5239,17 @@ Take back control of your personal information with the browser designed for dat
 /* Fallback device name for confirmation dialogs */
 "sync.pairing-v2.unknown-peer-name" = "the other device";
 
+/* Title for a button in the Sync Promotion banner on the Bookmarks or Passwords screen that opens Sync settings to connect another device */
+"sync.promo.another-device.connect.action" = "Connect";
+
+/* Message for the Sync Promotion banner on the Bookmarks or Passwords screen, shown when Sync is on but only this device is connected */
+"sync.promo.another-device.message" = "Sync & Backup is enabled on this device.";
+
 /* Title for a button in the Sync Promotion banner on the Bookmarks or Passwords screen that opens a screen with links to get DuckDuckGo on other platforms */
 "sync.promo.bookmarks.another-device.get-desktop-app.action" = "Get App";
 
-/* Title for a button in the Sync Promotion banner on the Bookmarks screen that opens Sync settings to connect another device */
-"sync.promo.bookmarks.another-device.sync.action" = "Sync Bookmarks";
-
 /* Title for the Sync Promotion banner on the Bookmarks screen, shown when Sync is on but only this device is connected */
-"sync.promo.bookmarks.another-device.title" = "Sync bookmarks with your Desktop app.";
+"sync.promo.bookmarks.another-device.title" = "Sync bookmarks with your desktop app too?";
 
 /* Message for the Sync Promotion banner when user has bookmarks that can be synced */
 "sync.promo.bookmarks.message" = "No account needed. End-to-end encryption means nobody but you can see your bookmarks, not even us.";
@@ -5272,11 +5275,8 @@ Take back control of your personal information with the browser designed for dat
 /* Title for a button in the Sync Promotion banner to dismiss Sync promotion banner */
 "sync.promo.dismiss.action" = "No Thanks";
 
-/* Title for a button in the Sync Promotion banner on the Passwords screen that opens Sync settings to connect another device */
-"sync.promo.passwords.another-device.sync.action" = "Sync Passwords";
-
 /* Title for the Sync Promotion banner on the Passwords screen, shown when Sync is on but only this device is connected */
-"sync.promo.passwords.another-device.title" = "Sync passwords with your Desktop app.";
+"sync.promo.passwords.another-device.title" = "Sync passwords with your desktop app too?";
 
 /* Message for the Sync Promotion banner when user has passwords that can be synced */
 "sync.promo.passwords.message" = "No account needed. End-to-end encryption means nobody but you can see your passwords, not even us.";
@@ -5287,8 +5287,8 @@ Take back control of your personal information with the browser designed for dat
 /* Title for the Sync Promotion banner */
 "sync.promo.passwords.title" = "Sync & Back Up Your Passwords";
 
-/* Label for a toggle in the Sync Promotion banner that opens Sync settings and starts setting up Sync with another device */
-"sync.promo.toggle.title" = "Sync & Backup";
+/* Title for the button in the redesigned Sync Promotion banner and the Data Import summary Sync card that opens Sync settings and starts setting up Sync */
+"sync.promo.redesign.confirm.action" = "Start Syncing";
 
 /* Button title to start backup */
 "sync.recovery.alternative.prompt.backup.button" = "Sync & Backup This Device";

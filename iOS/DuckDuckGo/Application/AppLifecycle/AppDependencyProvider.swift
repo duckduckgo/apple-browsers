@@ -50,6 +50,7 @@ protocol DependencyProvider {
     var featureFlagger: FeatureFlagger { get }
     var isSitePermissionsEnabled: Bool { get }
     var findInPageImplementation: FindInPageImplementation { get }
+    var sponsorBlockSegmentsProvider: SponsorBlockSegmentsProvider { get }
     var configurationURLProvider: CustomConfigurationURLProviding { get }
     var contentScopeExperimentsManager: ContentScopeExperimentsManaging { get }
     var storageCache: StorageCache { get }
@@ -130,6 +131,8 @@ final class AppDependencyProvider: DependencyProvider {
     let featureFlagger: FeatureFlagger
     let isSitePermissionsEnabled: Bool
     let findInPageImplementation: FindInPageImplementation
+    /// One instance for the app, so every tab and Duck Player share the segments cache.
+    let sponsorBlockSegmentsProvider = SponsorBlockSegmentsProvider()
     let configurationURLProvider: CustomConfigurationURLProviding
     let contentScopeExperimentsManager: ContentScopeExperimentsManaging
 

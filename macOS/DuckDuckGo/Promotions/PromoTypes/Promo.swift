@@ -57,6 +57,12 @@ protocol Promo {
     /// Default: false.
     var canShowDuringOnboarding: Bool { get }
 
+    /// When true, this promo can show over visible promos, which stay visible underneath it.
+    /// It isn't retracted when an external promo becomes visible.
+    /// This should be used only in very rare cases that are pre-validated (e.g. with a PFR).
+    /// Default: false.
+    var showsOverVisiblePromos: Bool { get }
+
     /// Provides dynamic promo behavior (eligibility, show, hide).
     /// Delegate should be set by feature module when their dependencies are ready.
     var delegate: (any PromoDelegate)? { get set }
@@ -75,6 +81,7 @@ struct InternalPromo: Promo {
     let respectsGlobalCooldown: Bool
     let setsGlobalCooldown: Bool
     let canShowDuringOnboarding: Bool
+    let showsOverVisiblePromos: Bool
 
     var delegate: (any PromoDelegate)?
 
@@ -87,6 +94,7 @@ struct InternalPromo: Promo {
          respectsGlobalCooldown: Bool = true,
          setsGlobalCooldown: Bool = true,
          canShowDuringOnboarding: Bool = false,
+         showsOverVisiblePromos: Bool = false,
          delegate: InternalPromoDelegate? = nil) {
         self.id = id
         self.triggers = triggers
@@ -97,6 +105,7 @@ struct InternalPromo: Promo {
         self.respectsGlobalCooldown = respectsGlobalCooldown
         self.setsGlobalCooldown = setsGlobalCooldown
         self.canShowDuringOnboarding = canShowDuringOnboarding
+        self.showsOverVisiblePromos = showsOverVisiblePromos
         self.delegate = delegate
     }
 }
@@ -122,6 +131,9 @@ struct ExternalPromo: Promo {
 
     /// The onboarding gate applies to triggers, which external promos don't have
     let canShowDuringOnboarding: Bool = false
+
+    /// External promos aren't shown by PromoService; they show themselves, and PromoService retracts visible promos that conflict with them
+    let showsOverVisiblePromos: Bool = false
 
     var delegate: (any PromoDelegate)?
 

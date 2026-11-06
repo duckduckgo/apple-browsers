@@ -2259,6 +2259,22 @@ final class TabViewControllerMediaCapturePermissionRoutingTests: XCTestCase {
         XCTAssertEqual(decisions, [.deny])
     }
 
+    func testMainFrameMediaAtSVGURLStillRequiresCustomPreapproval() {
+        for captureType in [WKMediaCaptureType.camera, .microphone, .cameraAndMicrophone] {
+            let sut = makeSUT(committedURL: URL(string: "https://top-level.example/permissions.svg")!)
+            defer { sut.closeSitePermissions() }
+            var decisions = [WKPermissionDecision]()
+
+            requestPermission(on: sut,
+                              originHost: "top-level.example",
+                              captureType: captureType,
+                              isMainFrame: true,
+                              decisionHandler: { decisions.append($0) })
+
+            XCTAssertEqual(decisions, [.deny])
+        }
+    }
+
     private func makeSUT(featureEnabled: Bool = true,
                          fireTab: Bool = false,
                          featureFlagger providedFeatureFlagger: MockFeatureFlagger? = nil,

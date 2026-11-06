@@ -28,6 +28,7 @@ final class ChromeWebStoreUpdateCoordinatorTests: XCTestCase {
     private func coordinator(interval: TimeInterval = ChromeWebStoreUpdateCoordinator.defaultCheckInterval,
                              scheduler: ChromeWebStorePeriodicSchedulerMock = ChromeWebStorePeriodicSchedulerMock(),
                              initialState: ChromeWebStoreUpdateState = .init(),
+                             isEnabled: Bool = true,
                              now: @escaping @Sendable () -> Date = Date.init,
                              persistState: ChromeWebStoreUpdateCoordinator.PersistState? = nil,
                              resultHandler: ChromeWebStoreUpdateCoordinator.ResultHandler? = nil,
@@ -37,8 +38,197 @@ final class ChromeWebStoreUpdateCoordinatorTests: XCTestCase {
                              },
                              check: @escaping ChromeWebStoreUpdateCoordinator.Check) -> ChromeWebStoreUpdateCoordinator {
         ChromeWebStoreUpdateCoordinator(interval: interval, schedulerFactory: { _ in scheduler },
-                                       initialState: initialState, now: now, persistState: persistState, resultHandler: resultHandler,
+                                       initialState: initialState, isEnabled: isEnabled, now: now, persistState: persistState, resultHandler: resultHandler,
                                        installedIdentifiers: identifiers, version: version, check: check)
+    }
+
+    func testDisabledCoordinatorHasNoScheduledActivityOrChecksUntilEnabled() async {
+        let checks = CheckRecorder()
+        let scheduler = ChromeWebStorePeriodicSchedulerMock()
+        let coordinator = coordinator(scheduler: scheduler, isEnabled: false) { _, _ in await checks.record() }
+        await coordinator.start()
+        await coordinator.checkForUpdatesNow()
+        XCTAssertEqual(scheduler.scheduleCount, 0)
+        let disabledCount = await checks.count
+        XCTAssertEqual(disabledCount, 0)
+
+        await coordinator.setEnabled(true, revision: 1)
+        await coordinator.start()
+        await coordinator.setEnabled(true, revision: 2)
+        await coordinator.start()
+        XCTAssertEqual(scheduler.scheduleCount, 1)
+        let enabledCount = await checks.count
+        XCTAssertEqual(enabledCount, 1)
+        await coordinator.stop()
+    }
+
+    func testDisableInvalidatesActivityAndBlocksManualAndDeliveredPeriodicChecks() async {
+        let now = Date(timeIntervalSince1970: 100000)
+        let checks = CheckRecorder()
+        let scheduler = ChromeWebStorePeriodicSchedulerMock()
+        let coordinator = coordinator(scheduler: scheduler, initialState: .init(lastCompletedBatch: now, retryNotBefore: nil), now: { now }) { _, _ in
+            await checks.record()
+        }
+        await coordinator.start()
+        XCTAssertEqual(scheduler.scheduleCount, 1)
+        await coordinator.setEnabled(false, revision: 1)
+        XCTAssertEqual(scheduler.invalidationCount, 1)
+        await coordinator.checkForUpdatesNow()
+        await scheduler.fire()
+        let count = await checks.count
+        XCTAssertEqual(count, 0)
+        await coordinator.stop()
+        XCTAssertEqual(scheduler.invalidationCount, 1)
+    }
+
+    func testReenableRetainsRecentCompletionAndRegistersOnlyOneNewActivity() async {
+        let now = Date(timeIntervalSince1970: 100000)
+        let checks = CheckRecorder()
+        let scheduler = ChromeWebStorePeriodicSchedulerMock()
+        let coordinator = coordinator(scheduler: scheduler, now: { now }) { _, _ in await checks.record() }
+        await coordinator.start()
+        await coordinator.setEnabled(false, revision: 1)
+        await coordinator.setEnabled(true, revision: 2)
+        await coordinator.start()
+        await coordinator.setEnabled(true, revision: 3)
+        await coordinator.start()
+        let count = await checks.count
+        XCTAssertEqual(count, 1, "Re-enabling must honor the recent completed batch")
+        XCTAssertEqual(scheduler.scheduleCount, 2)
+        XCTAssertEqual(scheduler.invalidationCount, 1)
+        await scheduler.fire()
+        let periodicCount = await checks.count
+        XCTAssertEqual(periodicCount, 2)
+        await coordinator.stop()
+    }
+
+    func testDisableCancelsActiveCheckWithoutReportingLateOutcomesOrCheckingNextCandidate() async {
+        let entered = expectation(description: "Check started")
+        let cancelled = expectation(description: "Check cancelled")
+        var outcomes = 0
+        var savedStates: [ChromeWebStoreUpdateState] = []
+        let coordinator = coordinator(persistState: { savedStates.append($0) }, resultHandler: { _, _ in outcomes += 1 },
+                                      identifiers: { ["a", "b"] }) { identifier, _ in
+            XCTAssertEqual(identifier, "a", "Disabling must prevent the next request")
+            entered.fulfill()
+            do { try await Task.sleep(for: .seconds(5)) } catch { cancelled.fulfill() }
+            return .init(outcome: .failure(.networkFailure), retryNotBefore: nil)
+        }
+        let manual = Task { await coordinator.checkForUpdatesNow() }
+        await fulfillment(of: [entered], timeout: 1)
+        await coordinator.setEnabled(false, revision: 1)
+        await manual.value
+        await fulfillment(of: [cancelled], timeout: 1)
+        XCTAssertEqual(outcomes, 0)
+        XCTAssertTrue(savedStates.isEmpty)
+        await coordinator.stop()
+    }
+
+    func testRapidReenableWaitsForCancelledStartupBeforeRegisteringActivity() async {
+        let entered = expectation(description: "Startup provider suspended")
+        var resume: CheckedContinuation<[String]?, Never>?
+        var providerCalls = 0
+        let checks = CheckRecorder()
+        let scheduler = ChromeWebStorePeriodicSchedulerMock()
+        let coordinator = coordinator(scheduler: scheduler, identifiers: {
+            providerCalls += 1
+            if providerCalls == 1 {
+                return await withCheckedContinuation { continuation in
+                    resume = continuation
+                    entered.fulfill()
+                }
+            }
+            return ["extension"]
+        }) { _, _ in await checks.record() }
+        let firstStart = Task { await coordinator.start() }
+        await fulfillment(of: [entered], timeout: 1)
+        await coordinator.setEnabled(false, revision: 1)
+        await coordinator.setEnabled(true, revision: 2)
+        let resumedStart = Task { await coordinator.start() }
+        XCTAssertEqual(scheduler.scheduleCount, 0)
+        resume?.resume(returning: ["extension"])
+        await firstStart.value
+        await resumedStart.value
+        let count = await checks.count
+        XCTAssertEqual(count, 1, "The cancelled startup must not check or overlap its replacement")
+        XCTAssertEqual(providerCalls, 2)
+        XCTAssertEqual(scheduler.scheduleCount, 1)
+        await coordinator.stop()
+    }
+
+    func testImmediateManualCheckAfterReenableDrainsCancelledBatchDespiteRecentCompletion() async {
+        let now = Date(timeIntervalSince1970: 100000)
+        let entered = expectation(description: "Manual provider suspended")
+        var resume: CheckedContinuation<[String]?, Never>?
+        var providerCalls = 0
+        let checks = CheckRecorder()
+        let scheduler = ChromeWebStorePeriodicSchedulerMock()
+        let coordinator = coordinator(scheduler: scheduler, initialState: .init(lastCompletedBatch: now, retryNotBefore: nil), now: { now }, identifiers: {
+            providerCalls += 1
+            if providerCalls == 1 {
+                return await withCheckedContinuation { continuation in
+                    resume = continuation
+                    entered.fulfill()
+                }
+            }
+            return ["extension"]
+        }) { _, _ in await checks.record() }
+        await coordinator.start()
+        let oldManual = Task { await coordinator.checkForUpdatesNow() }
+        await fulfillment(of: [entered], timeout: 1)
+        await coordinator.setEnabled(false, revision: 1)
+        await coordinator.setEnabled(true, revision: 2)
+        let currentManual = Task { await coordinator.checkForUpdatesNow() }
+        resume?.resume(returning: ["extension"])
+        await oldManual.value
+        await currentManual.value
+        await coordinator.start()
+        let count = await checks.count
+        XCTAssertEqual(count, 1, "A new manual action must not only join the cancelled old batch")
+        XCTAssertEqual(providerCalls, 2)
+        XCTAssertEqual(scheduler.scheduleCount, 2)
+        await coordinator.stop()
+    }
+
+    func testStaleFlagRevisionsCannotOverrideNewerState() async {
+        let checks = CheckRecorder()
+        let scheduler = ChromeWebStorePeriodicSchedulerMock()
+        let coordinator = coordinator(scheduler: scheduler, isEnabled: false) { _, _ in await checks.record() }
+        await coordinator.setEnabled(true, revision: 2)
+        await coordinator.setEnabled(false, revision: 1)
+        await coordinator.start()
+        await coordinator.setEnabled(false, revision: 4)
+        await coordinator.setEnabled(true, revision: 3)
+        await coordinator.checkForUpdatesNow()
+        let count = await checks.count
+        XCTAssertEqual(count, 1)
+        XCTAssertEqual(scheduler.scheduleCount, 1)
+        XCTAssertEqual(scheduler.invalidationCount, 1)
+        await coordinator.stop()
+    }
+
+    func testPauseRetainsServerBackoffAndStopCannotBeReenabled() async {
+        let now = Date(timeIntervalSince1970: 100000)
+        let checks = CheckRecorder()
+        let scheduler = ChromeWebStorePeriodicSchedulerMock()
+        let coordinator = coordinator(scheduler: scheduler, initialState: .init(lastCompletedBatch: nil, retryNotBefore: now.addingTimeInterval(60)), now: { now }) { _, _ in
+            await checks.record()
+        }
+        await coordinator.start()
+        await coordinator.setEnabled(false, revision: 1)
+        await coordinator.setEnabled(true, revision: 2)
+        await coordinator.start()
+        await coordinator.checkForUpdatesNow()
+        let count = await checks.count
+        XCTAssertEqual(count, 0)
+        XCTAssertEqual(scheduler.scheduleCount, 2)
+        await coordinator.stop()
+        await coordinator.setEnabled(true, revision: 3)
+        await coordinator.start()
+        await coordinator.checkForUpdatesNow()
+        XCTAssertEqual(scheduler.scheduleCount, 2)
+        let stoppedCount = await checks.count
+        XCTAssertEqual(stoppedCount, 0)
     }
 
     func testChecksRunOffMainAndProvidersRunOnMainActor() async {

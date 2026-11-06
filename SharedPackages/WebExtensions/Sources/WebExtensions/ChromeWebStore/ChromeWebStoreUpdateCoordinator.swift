@@ -52,14 +52,17 @@ actor ChromeWebStoreUpdateCoordinator {
     private var version: VersionProvider?
     private var check: Check?
     private var periodicScheduler: (any ChromeWebStorePeriodicScheduling)?
+    private var startupTask: Task<Void, Never>?
     private var batchTask: Task<Void, Never>?
     private var lastCheckedIdentifier: String?
     private var isStopped = false
-    private var isStarted = false
+    private var isEnabled: Bool
+    private var enableRevision: UInt64 = 0
 
     init(interval: TimeInterval = ChromeWebStoreUpdateCoordinator.defaultCheckInterval,
          schedulerFactory: @escaping SchedulerFactory = { ChromeWebStorePeriodicScheduler(interval: $0) },
          initialState: ChromeWebStoreUpdateState = .init(),
+         isEnabled: Bool = true,
          now: @escaping @Sendable () -> Date = Date.init,
          persistState: PersistState? = nil,
          resultHandler: ResultHandler? = nil,
@@ -70,6 +73,7 @@ actor ChromeWebStoreUpdateCoordinator {
         self.schedulerFactory = schedulerFactory
         self.now = now
         self.state = initialState
+        self.isEnabled = isEnabled
         self.persistState = persistState
         self.resultHandler = resultHandler
         self.installedIdentifiers = installedIdentifiers
@@ -78,8 +82,46 @@ actor ChromeWebStoreUpdateCoordinator {
     }
 
     func start() async {
-        guard !isStopped, !isStarted else { return }
-        isStarted = true
+        while !Task.isCancelled, let startup = beginStartupIfNeeded() {
+            await startup.value
+        }
+    }
+
+    /// Revisions prevent queued MainActor updates from restoring an older flag value.
+    func setEnabled(_ enabled: Bool, revision: UInt64) {
+        guard !isStopped, revision > enableRevision else { return }
+        enableRevision = revision
+        guard isEnabled != enabled else { return }
+        isEnabled = enabled
+        if enabled {
+            beginStartupIfNeeded()
+        } else {
+            pause()
+        }
+    }
+
+    @discardableResult
+    private func beginStartupIfNeeded() -> Task<Void, Never>? {
+        guard !isStopped, isEnabled, periodicScheduler == nil else { return nil }
+        if let startupTask { return startupTask }
+        // Reserve activation before any await; cancelled activation drains before replacement.
+        let startup = Task<Void, Never> { [weak self] in
+            await self?.activate()
+        }
+        startupTask = startup
+        return startup
+    }
+
+    private func activate() async {
+        defer {
+            startupTask = nil
+            if isEnabled, !isStopped, periodicScheduler == nil {
+                beginStartupIfNeeded()
+            }
+        }
+        // A manual batch can still be draining cancellation when the flag is re-enabled.
+        await batchTask?.value
+        guard !isStopped, isEnabled, !Task.isCancelled else { return }
         let interval = interval
         Logger.webExtensions.info("Extension update discovery: started (interval \(interval, privacy: .public)s)")
         if let lastCompleted = state.lastCompletedBatch,
@@ -89,7 +131,7 @@ actor ChromeWebStoreUpdateCoordinator {
             let initialBatch = startBatch()
             await initialBatch?.value
         }
-        guard !isStopped else { return }
+        guard !isStopped, isEnabled, !Task.isCancelled else { return }
         let scheduler = schedulerFactory(interval)
         periodicScheduler = scheduler
         scheduler.schedule { [weak self] in
@@ -100,9 +142,7 @@ actor ChromeWebStoreUpdateCoordinator {
     /// A terminal stop also prevents a delayed startup task from restarting discovery.
     func stop() {
         isStopped = true
-        periodicScheduler?.invalidate()
-        batchTask?.cancel()
-        periodicScheduler = nil
+        pause()
         installedIdentifiers = nil
         version = nil
         check = nil
@@ -111,13 +151,25 @@ actor ChromeWebStoreUpdateCoordinator {
     }
 
     func checkForUpdatesNow() async {
-        guard !Task.isCancelled else { return }
+        guard !isStopped, isEnabled, !Task.isCancelled else { return }
+        while let previous = batchTask, previous.isCancelled {
+            await previous.value
+            guard !isStopped, isEnabled, !Task.isCancelled else { return }
+        }
         let batch = startBatch()
         await batch?.value
     }
 
+    private func pause() {
+        isEnabled = false
+        periodicScheduler?.invalidate()
+        periodicScheduler = nil
+        startupTask?.cancel()
+        batchTask?.cancel()
+    }
+
     private func startBatch() -> Task<Void, Never>? {
-        guard !isStopped else { return nil }
+        guard !isStopped, isEnabled else { return nil }
         if let batchTask { return batchTask }
         if let retryNotBefore = state.retryNotBefore, retryNotBefore > now() {
             Logger.webExtensions.info("Extension update discovery: deferred until server retry deadline=\(retryNotBefore, privacy: .public)")
@@ -133,9 +185,9 @@ actor ChromeWebStoreUpdateCoordinator {
 
     private func runBatch() async {
         defer { batchTask = nil }
-        guard !isStopped, !Task.isCancelled, let installedIdentifiers else { return }
+        guard !isStopped, isEnabled, !Task.isCancelled, let installedIdentifiers else { return }
         let identifiers = await installedIdentifiers()
-        guard !isStopped, !Task.isCancelled else { return }
+        guard !isStopped, isEnabled, !Task.isCancelled else { return }
         guard let identifiers else {
             stop()
             return
@@ -144,13 +196,13 @@ actor ChromeWebStoreUpdateCoordinator {
         Logger.webExtensions.info("Extension update discovery: checking \(candidates.count) installed extensions")
         var completedCheck = false
         for (index, identifier) in candidates.enumerated() {
-            guard !isStopped, !Task.isCancelled, let version else { return }
+            guard !isStopped, isEnabled, !Task.isCancelled, let version else { return }
             // Installs and removals can happen while an earlier request is suspended.
             let currentVersion = await version(identifier)
-            guard !isStopped, !Task.isCancelled else { return }
+            guard !isStopped, isEnabled, !Task.isCancelled else { return }
             guard let currentVersion, let check else { continue }
             let result = await check(identifier, currentVersion.reportedVersion)
-            guard !isStopped, !Task.isCancelled else { return }
+            guard !isStopped, isEnabled, !Task.isCancelled else { return }
             let action = await processUpdateCheck(result, identifier: identifier, version: currentVersion)
             guard action != .stop, action != .pause || index == candidates.count - 1 else { return }
             completedCheck = true
@@ -176,11 +228,11 @@ actor ChromeWebStoreUpdateCoordinator {
             state.retryNotBefore = result.retryNotBefore
             // Store the server deadline before yielding to telemetry or another caller.
             await persistState?(state)
-            guard !isStopped, !Task.isCancelled else { return .stop }
+            guard !isStopped, isEnabled, !Task.isCancelled else { return .stop }
         }
         logUpdateCheck(result, identifier: identifier, version: version)
         await resultHandler?(identifier, result.outcome)
-        guard !isStopped, !Task.isCancelled else { return .stop }
+        guard !isStopped, isEnabled, !Task.isCancelled else { return .stop }
         return shouldPause ? .pause : .continueChecking
     }
 

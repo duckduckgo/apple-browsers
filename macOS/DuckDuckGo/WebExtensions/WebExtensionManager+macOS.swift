@@ -179,7 +179,9 @@ enum WebExtensionManagerFactory {
             manager: manager,
             catalog: ChromeWebStoreCatalog(configurationManager: privacyConfigurationManager),
             presenter: ChromeWebStorePresenter(windowProvider: { NSApp.keyWindow ?? NSApp.mainWindow }),
-            isUpdateDiscoveryEnabled: buildType.isSparkleBuild && featureFlagger.isFeatureOn(.webExtensionUpdateDiscovery),
+            supportsUpdateDiscovery: buildType.isSparkleBuild,
+            isUpdateDiscoveryEnabled: { featureFlagger.isFeatureOn(.webExtensionUpdateDiscovery) },
+            updateDiscoveryFeatureFlagUpdates: featureFlagger.updatesPublisher,
             keyValueStore: keyValueStore,
             pixelFiring: pixelFiring
         )

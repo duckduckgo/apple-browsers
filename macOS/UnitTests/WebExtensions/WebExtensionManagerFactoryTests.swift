@@ -26,23 +26,27 @@ import XCTest
 @available(macOS 15.4, *)
 @MainActor
 final class WebExtensionManagerFactoryTests: XCTestCase {
-    func testUpdateDiscoveryFlagIsReadOnlyWhenManagerIsCreated() async throws {
+    func testUpdateDiscoveryFlagChangesApplyWithoutRecreatingManager() async throws {
         for enabled in [false, true] {
             let flags = MockFeatureFlagger(featuresStub: [FeatureFlag.webExtensionUpdateDiscovery.rawValue: enabled])
             let storage = try DiscoveryStateStorage()
             let manager = makeManager(storage: storage, flags: flags)
-            XCTAssertNotNil(manager.chromeWebStore, "The discovery flag must not remove installation support")
-            XCTAssertEqual(storage.discoveryReads, enabled ? 1 : 0)
+            let store = try XCTUnwrap(manager.chromeWebStore)
+            XCTAssertEqual(store.canCheckForUpdates, enabled)
+            XCTAssertEqual(storage.discoveryReads, 1, "The same coordinator restores timing once, even when initially disabled")
 
             flags.featuresStub[FeatureFlag.webExtensionUpdateDiscovery.rawValue] = !enabled
             flags.triggerUpdate()
-            await manager.chromeWebStore?.checkForUpdatesNow()
-            XCTAssertEqual(storage.discoveryReads, enabled ? 1 : 0, "Changing the flag must not recreate discovery mid-session")
+            XCTAssertEqual(store.canCheckForUpdates, !enabled)
+            await store.checkForUpdatesNow()
+            XCTAssertEqual(storage.discoveryReads, 1, "Toggling the flag must retain the coordinator and its timing state")
 
-            let recreated = makeManager(storage: storage, flags: flags)
-            XCTAssertEqual(storage.discoveryReads, 1, "Only the enabled service must restore discovery timing")
-            await recreated.chromeWebStore?.checkForUpdatesNow()
-            withExtendedLifetime((manager, recreated)) {}
+            flags.featuresStub[FeatureFlag.webExtensionUpdateDiscovery.rawValue] = enabled
+            flags.triggerUpdate()
+            await store.checkForUpdatesNow()
+            XCTAssertEqual(store.canCheckForUpdates, enabled)
+            XCTAssertEqual(storage.discoveryReads, 1)
+            withExtendedLifetime(manager) {}
         }
     }
 
@@ -51,7 +55,14 @@ final class WebExtensionManagerFactoryTests: XCTestCase {
         let storage = try DiscoveryStateStorage()
         let manager = makeManager(storage: storage, flags: flags, isAppStore: true)
         let store = try XCTUnwrap(manager.chromeWebStore)
+        XCTAssertFalse(store.canCheckForUpdates)
         await store.checkForUpdatesNow()
+        flags.featuresStub[FeatureFlag.webExtensionUpdateDiscovery.rawValue] = false
+        flags.triggerUpdate()
+        flags.featuresStub[FeatureFlag.webExtensionUpdateDiscovery.rawValue] = true
+        flags.triggerUpdate()
+        await store.checkForUpdatesNow()
+        XCTAssertFalse(store.canCheckForUpdates)
         XCTAssertEqual(storage.discoveryReads, 0)
     }
 

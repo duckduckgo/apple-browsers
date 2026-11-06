@@ -198,8 +198,8 @@ Tokens can be invalidated in two ways:
 - `TokenContainer` is removed from local storage
 - User must create new account or activate existing account to continue
 
-**Local Removal (`removeLocalAccount()`):**
-- `TokenContainer` is removed from local storage only
+**Local Removal (`removeLocalAccount(includingBackup:)`):**
+- `TokenContainer` is removed from local storage only, and the backup too when `includingBackup` is `true`
 - Server-side token remains valid (can be security risk if token is compromised)
 - Typically used for local cleanup without server invalidation
 
@@ -245,7 +245,7 @@ Flow      Storage    Calls    (every 4h)          or Expiry
 
 ### Logout
 - `logout() async throws` - Invalidate tokens server-side and remove local storage
-- `removeLocalAccount() throws` - Remove tokens from local storage only (does not invalidate server-side)
+- `removeLocalAccount(includingBackup:) throws` - Remove tokens from local storage only (does not invalidate server-side), optionally including the backup
 
 ## Error Handling
 

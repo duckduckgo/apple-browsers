@@ -57,6 +57,16 @@ struct DuckAiTermsOfServiceStore {
         recordAcceptedNatively()
     }
 
+    /// The web app's own record holds an acceptance this key never received, such as one made before
+    /// the key existed. The web won't report it again, so nothing waits for a report.
+    /// Returns whether this recorded a new acceptance.
+    @discardableResult
+    func recordAcceptedOnWeb() -> Bool {
+        guard !hasAccepted else { return false }
+        keyValueStore.set(true, forKey: Key.hasAccepted.rawValue)
+        return true
+    }
+
     @discardableResult
     func recordWebReport() -> WebReportOutcome {
         let wasAccepted = hasAccepted

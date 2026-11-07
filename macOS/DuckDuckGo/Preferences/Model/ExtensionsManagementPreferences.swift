@@ -18,6 +18,7 @@
 
 import Combine
 import Foundation
+import PixelKit
 import PrivacyConfig
 import WebExtensions
 
@@ -36,14 +37,21 @@ final class ExtensionsManagementPreferences: ObservableObject {
         }
     }
 
+    /// Opened when the configuration doesn't set `learnMoreUrlRemoteDisable`, matching Windows.
+    private static let remoteDisableLearnMoreFallbackURL = URL(string: "https://duckduckgo.com/duckduckgo-help-pages")!
+
+    private let configurationManager: PrivacyConfigurationManaging
     private let webExtensionManager: WebExtensionManaging?
     private let windowControllersManager: WindowControllersManagerProtocol
+    private let pixelFiring: (any PixelKitFiring)?
     private var cancellables = Set<AnyCancellable>()
     private var enabledStateTasks: [String: Task<Void, Never>] = [:]
 
-    init(configurationManager: PrivacyConfigurationManaging, webExtensionManager: WebExtensionManaging? = nil, windowControllersManager: WindowControllersManagerProtocol) {
+    init(configurationManager: PrivacyConfigurationManaging, webExtensionManager: WebExtensionManaging? = nil, windowControllersManager: WindowControllersManagerProtocol, pixelFiring: (any PixelKitFiring)? = PixelKit.shared) {
+        self.configurationManager = configurationManager
         self.webExtensionManager = webExtensionManager
         self.windowControllersManager = windowControllersManager
+        self.pixelFiring = pixelFiring
 
         reloadExtensions()
         startObservingChanges(configurationManager: configurationManager)
@@ -51,10 +59,21 @@ final class ExtensionsManagementPreferences: ObservableObject {
 
     func openStorePage(for item: ChromeWebStoreListing) {
         windowControllersManager.show(url: item.storeURL, source: .ui, newTab: true, selected: true)
+        fire(.getClicked(extension: .catalog(item.entry)))
+    }
+
+    func openPublisherPage(for item: ChromeWebStoreListing) {
+        guard let url = item.publisherURL else {
+            return
+        }
+
+        windowControllersManager.show(url: url, source: .ui, newTab: true, selected: true)
+        fire(.publisherLinkClicked(extension: .catalog(item.entry)))
     }
 
     func showDetails(for entry: InstalledExtensionEntry) {
         detailsListingID = entry.listing.id
+        fire(.detailsOpened(extension: .catalog(entry.listing.entry)))
     }
 
     func hideDetails() {
@@ -83,6 +102,13 @@ final class ExtensionsManagementPreferences: ObservableObject {
         guard let url = webExtensionManager?.chromeWebStore?.learnMoreURL else {
             return
         }
+
+        windowControllersManager.show(url: url, source: .ui, newTab: true, selected: true)
+    }
+
+    func openRemoteDisableLearnMore() {
+        let configuredURL = configurationManager.privacyConfig.settings(for: .extensionManagement)["learnMoreUrlRemoteDisable"] as? String
+        let url = configuredURL.flatMap(URL.init(string:)) ?? Self.remoteDisableLearnMoreFallbackURL
 
         windowControllersManager.show(url: url, source: .ui, newTab: true, selected: true)
     }
@@ -188,6 +214,10 @@ private extension ExtensionsManagementPreferences {
         if detailsEntry == nil {
             detailsListingID = nil
         }
+    }
+
+    func fire(_ pixel: WebExtensionPixel) {
+        pixelFiring?.fire(pixel, frequency: .dailyAndCount)
     }
 
     func resetExtensions() {

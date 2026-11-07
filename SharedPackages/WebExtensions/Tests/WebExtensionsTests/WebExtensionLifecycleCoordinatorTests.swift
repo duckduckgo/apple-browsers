@@ -725,6 +725,7 @@ private final class RecordingWebExtensionManager: WebExtensionManaging {
     var extensionUpdates: AsyncStream<Void> { AsyncStream { _ in } }
     var lifecycleEvents: AsyncStream<WebExtensionLifecycleEvent> { AsyncStream { _ in } }
     var cpmMessagingHealthMonitor: CPMMessagingHealthMonitoring { NoOpCPMMessagingHealthMonitor() }
+    let badgeColors = WebExtensionBadgeColorStore()
     func installExtension(from sourceURL: URL) async throws {}
     func installExtension(from sourceURL: URL, storeIdentity: WebExtensionStoreIdentity?, replacing oldIdentifier: String?) async throws {}
     @MainActor func uninstallExtension(identifier: String) throws {}

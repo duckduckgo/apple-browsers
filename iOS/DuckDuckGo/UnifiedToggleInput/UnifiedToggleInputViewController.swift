@@ -144,6 +144,15 @@ final class UnifiedToggleInputViewController: UIViewController {
         inputBarView.refreshPlaceholderForCurrentMode()
     }
 
+    var placeholderState: AIChatPlaceholderState {
+        AIChatPlaceholderState(hasSubmittedPrompt: handler.hasSubmittedPrompt,
+                               isImageGenerationSelected: handler.isImageGenerationSelected)
+    }
+
+    func crossfadePlaceholder(to state: AIChatPlaceholderState) {
+        inputBarView.crossfadePlaceholder(to: state)
+    }
+
     var isInputExpanded: Bool {
         inputBarView.isExpanded
     }
@@ -459,6 +468,15 @@ final class UnifiedToggleInputViewController: UIViewController {
         inputBarView.setInputMode(mode, animated: animated)
     }
 
+    func performInputModeChanges(_ changes: () -> Void) {
+        inputBarView.performInputModeChanges(changes)
+        notifyHeightDidChange()
+    }
+
+    func setSelectedInputMode(_ mode: TextEntryMode, animated: Bool) {
+        inputBarView.setSelectedInputMode(mode, animated: animated)
+    }
+
     func selectAllText() {
         inputBarView.selectAllText()
     }
@@ -566,6 +584,7 @@ final class UnifiedToggleInputViewController: UIViewController {
     }
 
     private func notifyHeightDidChange() {
+        guard !inputBarView.isApplyingInputMode else { return }
         delegate?.unifiedToggleInputVCDidChangeHeight(self)
     }
 }
@@ -577,8 +596,10 @@ extension UnifiedToggleInputViewController: UTIFooterPresenting {
     func applyFooterMessages(_ messages: [UTIFooterItem]) {
         guard inputBarView.setFooterMessages(messages) else { return }
         Logger.duckAIUsageWarnings.debug("[UsageWarnings] pushing new bar height to host")
-        delegate?.unifiedToggleInputVCDidChangeHeight(self)
-        view.superview?.layoutIfNeeded()
+        notifyHeightDidChange()
+        if !inputBarView.isApplyingInputMode {
+            view.superview?.layoutIfNeeded()
+        }
     }
 
     func clearPendingFooterMessage() {

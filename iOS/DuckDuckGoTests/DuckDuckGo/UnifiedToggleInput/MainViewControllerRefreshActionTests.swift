@@ -106,12 +106,12 @@ final class MainViewControllerRefreshActionTests: XCTestCase {
 
     // MARK: - AI tab paths
 
-    func test_nilLink_whileLoading_coordinatorInAITabState_preservesAIPresentation() {
+    func test_nilLink_sameTab_coordinatorInAITabState_preservesAIPresentation() {
         let inputs = makeInputs(
             tabIsAITab: false,
             tabLinkURL: nil,
-            tabIsLoading: true,
-            coordinatorIsAITabState: true
+            coordinatorIsAITabState: true,
+            isRefreshingCurrentTab: true
         )
         XCTAssertEqual(
             MainViewController.decideRefreshAction(for: inputs),
@@ -119,15 +119,16 @@ final class MainViewControllerRefreshActionTests: XCTestCase {
         )
     }
 
-    func test_blankNewTabPage_coordinatorInAITabState_refreshesAsNonAITab() {
+    func test_nilLink_differentHomeTab_coordinatorInAITabState_refreshesNonAITab() {
         let inputs = makeInputs(
             tabIsAITab: false,
             tabURL: nil,
             tabLinkURL: nil,
-            tabIsLoading: false,
             coordinatorIsAITabState: true,
-            coordinatorIsActive: true
+            coordinatorIsActive: true,
+            isRefreshingCurrentTab: false
         )
+
         XCTAssertEqual(MainViewController.decideRefreshAction(for: inputs), .refreshNonAITab)
     }
 
@@ -203,7 +204,6 @@ final class MainViewControllerRefreshActionTests: XCTestCase {
         tabIsAITab: Bool = false,
         tabURL: URL? = URL(string: "https://example.com/"),
         tabLinkURL: URL? = URL(string: "https://example.com/"),
-        tabIsLoading: Bool = false,
         tabIsVoiceModeRequested: Bool = false,
         tabRequestsDeepLinkSurface: Bool = false,
         tabRequestsNewChatInput: Bool = false,
@@ -222,7 +222,6 @@ final class MainViewControllerRefreshActionTests: XCTestCase {
             tabIsAITab: tabIsAITab,
             tabURL: tabURL,
             tabLinkURL: tabLinkURL,
-            tabIsLoading: tabIsLoading,
             tabIsVoiceModeRequested: tabIsVoiceModeRequested,
             tabRequestsDeepLinkSurface: tabRequestsDeepLinkSurface,
             tabRequestsNewChatInput: tabRequestsNewChatInput,

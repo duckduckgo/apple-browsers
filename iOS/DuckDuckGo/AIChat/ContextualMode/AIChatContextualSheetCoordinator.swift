@@ -245,10 +245,6 @@ final class AIChatContextualSheetCoordinator {
         isWebUTIEnabled && featureFlagger.isFeatureOn(.aiChatContextualUnifiedToggleInput)
     }
 
-    private var isPagePlaceholderEnabled: Bool {
-        featureFlagger.isFeatureOn(.contextualPagePlaceholder)
-    }
-
     /// A chat about to start brings a keyboard up with it; one that already exists does not.
     private var sheetContextualInputStart: ContextualInputStart {
         guard sessionState.hasActiveChat else { return .expandedPreSubmit }
@@ -670,8 +666,7 @@ final class AIChatContextualSheetCoordinator {
 
     @discardableResult
     private func offerPageContextIfNeeded(trigger: PageContextExtractionTrigger) -> Bool {
-        guard isPagePlaceholderEnabled,
-              isActivelyObservingContext,
+        guard isActivelyObservingContext,
               sessionState.shouldOfferPageContext(for: currentPageURL) else {
             return false
         }
@@ -750,6 +745,11 @@ final class AIChatContextualSheetCoordinator {
     /// Whether the sheet is showing beside the page in the iPad sidebar rather than over it.
     var isSheetInSidebar: Bool {
         sheetViewController?.parent != nil
+    }
+
+    /// Whether the surface is beside the page now, or would open there from `presentingVC`.
+    func showsSurfaceInSidebar(from presentingVC: UIViewController) -> Bool {
+        isSheetInSidebar || sidebarHost(for: presentingVC) != nil
     }
 
     /// A window shrinking past the sidebar can't wait for the resize to end, or the column would squeeze the page to

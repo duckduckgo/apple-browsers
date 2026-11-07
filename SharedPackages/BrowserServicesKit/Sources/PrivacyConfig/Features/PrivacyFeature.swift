@@ -70,6 +70,7 @@ public enum PrivacyFeature: String {
     case contentScopeExperiments
     case macOSBrowserConfig
     case iOSBrowserConfig
+    case sponsorBlock
     // Demonstrative case for default value. Remove once a real-world feature is added
     case intentionallyLocalOnlyFeatureForTests
     case delayedWebviewPresentation
@@ -303,6 +304,7 @@ public enum DBPSubfeature: String, Equatable, PrivacySubfeature {
     case performanceMetrics
     case extractedProfileRefresh
     case schedulerDeferralHandling
+    case challengeSolver
 }
 
 public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
@@ -341,9 +343,6 @@ public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
     case selectionContext
 
     case sidebarSuggestedPrompts
-
-    /// Offers the page navigated to as an attachment, in an active contextual chat with auto-attach off
-    case contextualPagePlaceholder
 
     /// Enables updated AI features settings screen
     case aiFeaturesSettingsUpdate
@@ -402,11 +401,12 @@ public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
     /// Enables Chats in the iOS address-bar and macOS tab-bar Duck.ai menus.
     case addressBarRecentChats
 
-    /// Makes the address-bar Duck.ai menu page-aware
-    case contextualAddressBarMenu
-
     /// Kill switch for routing native image/file paste into the unified input attachment strip.
     case unifiedToggleInputAttachmentPaste
+
+    /// Kill switch for the on-device check that adds a delay bucket when input is resubmitted in the other mode.
+    /// https://app.asana.com/1/137249556945/project/1201392122292466/task/1220262429487643
+    case unifiedToggleInputResubmitDetection
 
     /// Kill switch for the native input attachment privacy disclosure.
     case unifiedToggleInputAttachmentPrivacy
@@ -414,6 +414,10 @@ public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
     /// Turns long pastes in the native Duck.ai inputs into pasted-text attachments.
     /// https://app.asana.com/0/0/1219207880593588/f
     case unifiedToggleInputPastedText
+
+    /// Sweeps a stroke along the keyboard's top edge when it comes up for the native Duck.ai input.
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1220139278590013
+    case unifiedToggleInputKeyboardEdgeSweep
 
     /// Controls the attachment privacy disclosure in Duck.ai on iPad.
     case iPadAttachmentPrivacy
@@ -502,9 +506,6 @@ public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
     /// Enables the Duck.ai suggested-prompt chips below the New Tab Page omnibar's Duck.ai input
     case ntpSuggestedPrompts
 
-    /// Enables removing individual AI chat suggestions
-    case removeSuggestion
-
     /// Enables the Duck.ai top-level main menu shortcut (macOS only)
     case mainMenuShortcut
 
@@ -571,6 +572,10 @@ public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
     /// iPhone: Duck.ai tab ↔ browser handoff improvements (new-tab menus, tab switcher recent chats).
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1219970758953673?focus=true
     case tabHandoffImprovements
+
+    /// iPhone: Duck.ai chrome refinements while swiping between tabs (bar position, placeholder, gestures).
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1220115595487712
+    case swipeChromeRefinements
 
     /// macOS only. When on, the onboarding Search/Duck.ai toggle choice also drives the New Tab Page
     /// search-mode toggle and seeds the duckduckgo.com homepage. Off keeps the choice address-bar only.
@@ -786,6 +791,11 @@ public enum DuckPlayerSubfeature: String, PrivacySubfeature {
     case nativeUI // Use Duckplayer's native UI
 }
 
+public enum SponsorBlockPrivacySubfeature: String, PrivacySubfeature {
+    public var parent: PrivacyFeature { .sponsorBlock }
+    case mvpEnabled
+}
+
 public enum SyncPromotionSubfeature: String, PrivacySubfeature {
     public var parent: PrivacyFeature { .syncPromotion }
     case bookmarks
@@ -911,6 +921,9 @@ public enum WebExtensionsSubfeature: String, PrivacySubfeature {
     case embeddedRollout
     /// Controls permission prompts and persistence on macOS.
     case permissions
+    /// Controls Chrome Web Store update discovery on macOS.
+    /// https://app.asana.com/1/137249556945/task/1220029145261023
+    case updateDiscovery
     /// Failsafe for the lightweight reload on data clear (fire). Disable to fall back to the full reload.
     case lightweightReloadOnDataClear
     /// Failsafe for deferring web-extension load/install until protected data is available. Disable to load immediately.

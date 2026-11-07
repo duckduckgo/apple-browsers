@@ -193,6 +193,8 @@ final class AppLaunchUITests: XCTestCase {
             "-ff.fireMode", "true",
             "-ff.floatingUIiOS26", "true",
             "-ff.floatingUIiOS27", "true",
+            // The launch keyboard covers the tab switcher button, so the tap would race it.
+            "-ff.alwaysShowKeyboardOnNewTabPage", "false",
             "-com.duckduckgo.app.autoClearActionKey", "3",
             "-com.duckduckgo.app.autoClearTimingKey", "0",
         ]

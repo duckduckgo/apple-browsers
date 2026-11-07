@@ -385,6 +385,21 @@
 /* Title for the New Tab row in the Duck.ai tab header Plus (+) menu */
 "aichat.header.plusMenu.newTab" = "Yeni Sekme";
 
+/* Section header in the Duck.ai tab header Plus (+) menu; every row below it opens a new tab */
+"aichat.header.plusMenu.newTabSection" = "Yeni Sekme";
+
+/* Row in the New Tab section of the Duck.ai tab header Plus (+) menu — opens a new Duck.ai chat in a new tab */
+"aichat.header.plusMenu.newTabSection.chat" = "Sohbet";
+
+/* Row in the New Tab section of the Duck.ai tab header Plus (+) menu — opens Duck.ai in image generation mode in a new tab */
+"aichat.header.plusMenu.newTabSection.image" = "Görsel";
+
+/* Row in the Duck.ai tab header Plus (+) menu — opens a new tab in search mode */
+"aichat.header.plusMenu.newTabSection.search" = "Ara";
+
+/* Row in the New Tab section of the Duck.ai tab header Plus (+) menu — opens a new Duck.ai voice chat in a new tab */
+"aichat.header.plusMenu.newTabSection.voiceChat" = "Sesli Sohbet";
+
 /* Title for the New Voice Chat row in the Duck.ai tab header Plus (+) menu */
 "aichat.header.plusMenu.newVoiceChat" = "Yeni Sesli Sohbet";
 
@@ -3301,6 +3316,72 @@
 /* No comment provided by engineer. */
 "menu.button.hint" = "Göz Atma Menüsü";
 
+/* iPad menu bar command */
+"menuActualSize" = "Gerçek Boyut";
+
+/* iPad menu bar command */
+"menuBack" = "Geri";
+
+/* iPad menu bar command */
+"menuClearTabsAndData" = "Sekmeleri ve Verileri Temizle";
+
+/* iPad menu bar command */
+"menuDuplicateTab" = "Sekmeyi Çoğalt";
+
+/* iPad menu bar command */
+"menuFeedback" = "Geri Bildirim Paylaş";
+
+/* iPad menu bar command */
+"menuForward" = "İleri";
+
+/* iPad menu bar command */
+"menuHideDownloads" = "İndirilenleri Gizle";
+
+/* iPad menu bar command */
+"menuHidePasswords" = "Parolaları gizle";
+
+/* iPad menu bar command */
+"menuHideTabs" = "Sekmeleri Gizle";
+
+/* iPad menu bar command */
+"menuLastTab" = "Son Sekme";
+
+/* iPad menu bar command */
+"menuNewTabOnRight" = "Sağda Yeni Sekme";
+
+/* iPad menu bar command */
+"menuNextTab" = "Sonraki Sekmeyi Göster";
+
+/* iPad menu bar command */
+"menuOpenLocation" = "Konumu Aç...";
+
+/* iPad menu bar command */
+"menuPreviousTab" = "Önceki Sekmeyi Göster";
+
+/* iPad menu bar command */
+"menuPrint" = "Yazdır...";
+
+/* iPad menu bar command selecting a numbered tab */
+"menuSelectTab" = "%d Sekmesini Seç";
+
+/* iPad menu bar command */
+"menuSettings" = "DuckDuckGo Ayarları...";
+
+/* iPad menu bar command */
+"menuShowDownloads" = "İndirilenleri Göster";
+
+/* iPad menu bar command */
+"menuShowPasswords" = "Parolaları göster";
+
+/* iPad menu bar command */
+"menuShowTabs" = "Sekmeleri Göster";
+
+/* iPad menu bar command */
+"menuStop" = "Durdur";
+
+/* iPad menu bar command */
+"menuVoiceSearch" = "Özel Sesli Arama";
+
 /* No comment provided by engineer. */
 "Message" = "Mesaj";
 
@@ -4437,6 +4518,12 @@
 
 /* Footnote for the hide AI-generated images setting; ends with a Learn more link to the help page (do not remove the link) */
 "settings.aifeatures.hide.ai.generated.images.subtitle" = "Görsel arama sonuçlarından bilinen yapay zeka spam sitelerini filtreler. [Daha fazla bilgi](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/results/how-to-filter-out-ai-images-in-duckduckgo-search-results)";
+
+/* Settings screen description for the Duck.ai keyboard animation toggle */
+"settings.aifeatures.keyboard.animation.subtitle" = "Duck.ai'a geçtiğinde veya Duck.ai'da yazı yazdığında klavyenin çevresinde bir animasyon göster.";
+
+/* Settings screen toggle title for the Duck.ai keyboard animation */
+"settings.aifeatures.keyboard.animation.title" = "Duck.ai Klavye Animasyonu";
 
 /* Label describing a feature which is turned on always */
 "settings.always.on" = "Her Zaman Açık";
@@ -5935,3 +6022,12 @@
 /* Title for screen to screen confirming what data to import from a zip file (bookmarks and /or passwords) */
 "zip.content.import.types.title" = "Neyi içe aktarmak istiyorsunuz?";
 
+
+/* Fireproofing setting toggle label */
+"preserveLogins.askOnSignIn" = "Oturum açıldığında sitelerin Korumalı hâle getirilip getirilmeyeceğini sor";
+
+/* Empty Fireproof sites list */
+"preserveLogins.emptyState" = "Henüz Korumalı site yok";
+
+/* Button to remove all Fireproof sites */
+"preserveLogins.removeAllSites" = "Tüm Korumalı Web Sitelerini Kaldır";

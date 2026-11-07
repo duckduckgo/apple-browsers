@@ -69,6 +69,10 @@ public protocol WebExtensionManaging: AnyObject {
     @available(macOS 15.4, iOS 18.4, *)
     var cpmMessagingHealthMonitor: CPMMessagingHealthMonitoring { get }
 
+    /// The badge colors extensions set, which WebKit doesn't pass to the app.
+    @available(macOS 15.4, iOS 18.4, *)
+    var badgeColors: WebExtensionBadgeColorStore { get }
+
     /// CPM launch policy captured at manager creation. Disabling restores load-before-sync and fresh upgrade origins.
     @available(macOS 15.4, iOS 18.4, *)
     @MainActor

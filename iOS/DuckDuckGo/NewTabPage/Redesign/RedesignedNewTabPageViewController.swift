@@ -101,7 +101,7 @@ final class RedesignedNewTabPageViewController: UIViewController, NewTabPage, Re
         button.isShadowHidden = true
         button.setImage(DesignSystemImages.Glyphs.Size24.options, for: .normal)
         button.setColors(foreground: UIColor(designSystemColor: .iconsSecondary),
-                         background: UIColor(designSystemColor: .controlsFillPrimary),
+                         background: .clear,
                          pressedForeground: UIColor(designSystemColor: .iconsSecondary),
                          pressedBackground: UIColor(designSystemColor: .controlsFillTertiary))
         button.accessibilityLabel = UserText.newTabPageCustomizationTitle

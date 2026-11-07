@@ -26,6 +26,7 @@ import PrivacyConfig
 import UIKit
 import PixelKit
 import BrowserServicesKit
+import Combine
 import Subscription
 import RemoteMessaging
 import ScreenTimeDataCleaner
@@ -49,6 +50,8 @@ struct Launching: LaunchingHandling {
     private let fireproofing: Fireproofing = UserDefaultsFireproofing()
     private let favicons: Favicons
     private let featureFlagger = AppDependencyProvider.shared.featureFlagger
+    private let idleReturnEligibilityManager: IdleReturnEligibilityManaging
+    private let idleReturnEvaluator: IdleReturnEvaluating
     private let contentScopeExperimentsManager = AppDependencyProvider.shared.contentScopeExperimentsManager
     private let aiChatSettings: AIChatSettings
 
@@ -66,6 +69,9 @@ struct Launching: LaunchingHandling {
     // MARK: - Handle application(_:didFinishLaunchingWithOptions:) logic here
 
     init() throws {
+        let launchBackgroundTask = LaunchBackgroundTask(featureFlagger: featureFlagger)
+        defer { launchBackgroundTask.end() }
+
         Logger.lifecycle.info("Launching: \(#function)")
 
         // First thing after PixelKit is set up (by the `AppDependencyProvider.shared` properties above), so a launch
@@ -81,6 +87,14 @@ struct Launching: LaunchingHandling {
 
         // The app's single owner of the Duck.ai bonus record, shared by every consumer.
         let aiChatBonusService = AIChatBonusService()
+        // One bridge handler for every Duck.ai tab: it holds no per-tab state and builds one payload per record change.
+        let aiChatBonusOffer = AIChatBonusOfferDependencies(
+            handler: AIChatBonusHandler(
+                service: aiChatBonusService,
+                factsProvider: AIChatBonusFactsProvider(statisticsStore: StatisticsUserDefaults(), aiChatSettings: AIChatSettings())
+            ),
+            messageLog: AIChatBonusMessageLog()
+        )
 
         // Initialize configuration with the key-value store
         configuration = AppConfiguration(
@@ -170,7 +184,8 @@ struct Launching: LaunchingHandling {
                                                             webExtensionAvailability: webExtensionAvailability,
                                                             duckAiNativeStorageHandler: duckAiNativeStorageHandler,
                                                             fireModeStorageController: fireModeStorageController,
-                                                            adBlockingAvailability: adBlockingAvailability)
+                                                            adBlockingAvailability: adBlockingAvailability,
+                                                            aiChatBonusOffer: aiChatBonusOffer)
         launchBreadcrumb.mark(.contentBlocking)
 
         // Constructed before MainCoordinator: its `eventHub` is threaded down to every tab.
@@ -229,6 +244,10 @@ struct Launching: LaunchingHandling {
             privacyConfigurationManager: contentBlockingService.common.privacyConfigurationManager,
             isStillOnboarding: { daxDialogs.isStillOnboarding() }
         )
+        self.idleReturnEligibilityManager = idleReturnEligibilityManager
+        self.idleReturnEvaluator = IdleReturnEvaluator(eligibilityManager: idleReturnEligibilityManager,
+                                                       lastBackgroundDateStorage: lastBackgroundDateStorage)
+
         let remoteMessagingService = RemoteMessagingService(bookmarksDatabase: configuration.persistentStoresConfiguration.bookmarksDatabase,
                                                             database: configuration.persistentStoresConfiguration.database,
                                                             appSettings: appSettings,
@@ -342,6 +361,7 @@ struct Launching: LaunchingHandling {
                                               bookmarksDatabase: configuration.persistentStoresConfiguration.bookmarksDatabase,
                                               remoteMessagingService: remoteMessagingService,
                                               daxDialogs: configuration.onboardingConfiguration.daxDialogs,
+                                              idleReturnEligibilityManager: idleReturnEligibilityManager,
                                               reportingService: reportingService,
                                               variantManager: configuration.atbAndVariantConfiguration.variantManager,
                                               subscriptionService: subscriptionService,
@@ -422,7 +442,21 @@ struct Launching: LaunchingHandling {
 
         winBackOfferService.setURLHandler(mainCoordinator)
 
-        let mainMenuService = MainMenuService(featureFlagger: featureFlagger)
+        let voiceSearchHelper = self.voiceSearchHelper
+        let fireModeCapability = mainCoordinator.controller.fireModeCapability
+        let mainViewController = mainCoordinator.controller
+        let mainMenuBookmarks = mainViewController.mainMenuBookmarks
+        let bookmarksMenuTree = BookmarksMenuTree(children: { mainMenuBookmarks.children(ofFolderWithID: $0) })
+        let mainMenuService = MainMenuService(featureFlagger: featureFlagger, contextProvider: { [weak mainViewController] in
+            .init(voiceSearchEnabled: voiceSearchHelper.isVoiceSearchEnabled, fireModeEnabled: fireModeCapability.isFireModeEnabled,
+                  aiChatEnabled: aiChatSettings.isAIChatEnabled, favorites: mainMenuBookmarks.favorites,
+                  isOnboarding: mainViewController?.needsToShowOnboardingIntro() ?? false)
+        }, deferredContent: [
+            DuckAIMenuSection.recentChatsIdentifier: DuckAIRecentChatsMenuContent { [weak mainViewController] in
+                await mainViewController?.mainMenuRecentChats() ?? .init(recentChats: [], totalChatCount: 0)
+            },
+            .bookmarksTree: bookmarksMenuTree
+        ], rebuildTriggers: [mainMenuBookmarks.changes, mainViewController.menuRebuildRequests.eraseToAnyPublisher()])
 
         // MARK: - App Services aggregation
         // This object serves as a central hub for app-wide services that:
@@ -464,6 +498,7 @@ struct Launching: LaunchingHandling {
                 taskContext.finish()
             }
         })
+        launchTaskManager.register(task: SyncDevicesCountLaunchTask(syncPromoManager: SyncPromoManager(syncService: syncService.sync)))
         if #available(iOS 26, *) {
             launchTaskManager.register(task: BlockLaunchTask(name: "Report Screen Time Data") { taskContext in
                 Task { @MainActor in
@@ -572,7 +607,9 @@ struct Launching: LaunchingHandling {
             featureFlagger: featureFlagger,
             voiceSearchHelper: voiceSearchHelper,
             appSettings: appSettings,
-            backgroundTaskManager: BackgroundTaskManager(featureFlagger: featureFlagger)
+            backgroundTaskManager: BackgroundTaskManager(featureFlagger: featureFlagger),
+            idleReturnEligibilityManager: idleReturnEligibilityManager,
+            idleReturnEvaluator: idleReturnEvaluator
         )
     }
 
@@ -676,4 +713,29 @@ struct DuckAiNativeStorageInvalidValuePixel: PixelKit.Event {
     let parameters: [String: String]?
     var name: String { DuckAiNativeStorageInvalidValue.pixelName }
     var standardParameters: [PixelKitStandardParameter]? { nil }
+}
+
+/// Launch opens shared App Group databases. iOS kills apps suspended while holding their locks with 0xdead10cc.
+/// https://developer.apple.com/documentation/xcode/sigkill
+@MainActor
+struct LaunchBackgroundTask {
+
+    private let runner: BackgroundTaskRunning
+    private let identifier: UIBackgroundTaskIdentifier
+
+    init(featureFlagger: FeatureFlagger,
+         runner: BackgroundTaskRunning = ApplicationBackgroundTaskRunner()) {
+        self.runner = runner
+        if featureFlagger.isFeatureOn(.launchBackgroundTask) {
+            // Ending on expiration would let iOS suspend the app mid-launch while it holds a database lock.
+            identifier = runner.beginBackgroundTask(withName: "Launch") {}
+        } else {
+            identifier = .invalid
+        }
+    }
+
+    func end() {
+        guard identifier != .invalid else { return }
+        runner.endBackgroundTask(identifier)
+    }
 }

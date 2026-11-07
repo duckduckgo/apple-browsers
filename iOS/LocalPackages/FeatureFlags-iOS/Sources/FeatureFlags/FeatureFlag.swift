@@ -583,7 +583,7 @@ public enum FeatureFlag: String {
     case legacyFindInPage
 
     /// Container transform when a new tab opens: the new page grows from a card over the receding old one.
-    /// Asana task: pending
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1220324835587117
     case newTabTransition
 
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1215556988889960?focus=true

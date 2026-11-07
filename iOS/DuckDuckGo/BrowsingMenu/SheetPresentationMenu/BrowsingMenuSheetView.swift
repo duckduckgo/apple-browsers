@@ -23,7 +23,6 @@ import DesignResourcesKit
 import DesignResourcesKitIcons
 import Kingfisher
 import UIComponents
-import os
 
 struct BrowsingMenuModel {
     var headerItems: [BrowsingMenuModel.Entry]
@@ -187,7 +186,6 @@ struct BrowsingMenuSheetView: View {
     /// The action runs once the menu has disappeared, or straight away when the menu hides instantly.
     /// An instant action runs before the menu hides, so a transition it starts keeps the menu's backdrop.
     private func select(_ entry: BrowsingMenuModel.Entry) {
-        Logger(subsystem: "com.duckduckgo.mobile.ios", category: "NewTabTransition").debug("Menu entry tapped at \(CACurrentMediaTime(), privacy: .public)")
         wasActionSelected = true
         if entry.dismissesMenuInstantly, let dismissInstantly {
             entry.action()

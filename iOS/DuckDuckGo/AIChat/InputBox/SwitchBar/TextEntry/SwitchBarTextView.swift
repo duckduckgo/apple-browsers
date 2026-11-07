@@ -19,7 +19,6 @@
 
 
 import UIKit
-import os
 import SwiftUI
 import Combine
 import DesignResourcesKitIcons
@@ -67,32 +66,7 @@ final class SwitchBarTextView: UITextView {
 
     override func becomeFirstResponder() -> Bool {
         guard !hasHiddenAncestor else { return false }
-        let result = super.becomeFirstResponder()
-        logFocus("become -> \(result)")
-        return result
-    }
-
-    // DEBUG: keyboard drop on Duck.ai → Search.
-    override func resignFirstResponder() -> Bool {
-        let result = super.resignFirstResponder()
-        logFocus("resign -> \(result)")
-        return result
-    }
-
-    override func reloadInputViews() {
-        logFocus("reloadInputViews")
-        super.reloadInputViews()
-    }
-
-    override func didMoveToWindow() {
-        super.didMoveToWindow()
-        logFocus("didMoveToWindow window=\(window != nil) firstResponder=\(isFirstResponder)")
-    }
-
-    private func logFocus(_ event: String) {
-        let stack = Thread.callStackSymbols.dropFirst(2).prefix(12).map { $0.split(separator: " ", omittingEmptySubsequences: true).dropFirst(3).prefix(1).joined() }.joined(separator: " < ")
-        Logger(subsystem: "com.duckduckgo.mobile.ios", category: "NewTabTransition")
-            .debug("TEXTVIEW \(UInt(bitPattern: ObjectIdentifier(self).hashValue), privacy: .public) \(event, privacy: .public) at \(CACurrentMediaTime(), privacy: .public)\n\(stack, privacy: .public)")
+        return super.becomeFirstResponder()
     }
 
 }

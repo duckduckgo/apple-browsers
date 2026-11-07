@@ -113,6 +113,10 @@ extension TabViewController: AIChatContextualSheetCoordinatorDelegate {
         delegate?.tab(self, didRequestNewTabForUrl: url, openedByPage: false, inheritingAttribution: nil)
     }
 
+    func aiChatContextualSheetCoordinator(_ coordinator: AIChatContextualSheetCoordinator, didRequestToLoadClosingSheet url: URL) {
+        delegate?.tab(self, didRequestNewTabClosingPresentedScreenForUrl: url)
+    }
+
     /// The sheet opens Duck.ai in a tab through no other entry point, so the entry pixel fires here.
     func aiChatContextualSheetCoordinator(_ coordinator: AIChatContextualSheetCoordinator,
                                           didRequestExpandWithURL url: URL,

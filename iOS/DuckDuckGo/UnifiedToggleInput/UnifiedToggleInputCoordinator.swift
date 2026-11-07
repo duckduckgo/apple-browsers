@@ -950,7 +950,6 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
     func showCollapsed() {
         keyboardMonitor.disarm()
         let previousDisplayState = displayState
-        Logger(subsystem: "com.duckduckgo.mobile.ios", category: "NewTabTransition").debug("UTI showCollapsed at \(CACurrentMediaTime(), privacy: .public) from \(String(describing: previousDisplayState), privacy: .public)")
         displayState = duckAISurfaceState(.collapsed)
         setInitialInputMode(.aiChat)
         isInputVisibleForKeyboard = true
@@ -963,12 +962,31 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         intentSubject.send(.showCollapsed(from: previousDisplayState))
     }
 
+    /// Shrinks the input to its compact bar while a menu or screen covers it. Its mode and session carry on.
+    func setAside() {
+        guard isAITabExpanded else { return }
+        let previousDisplayState = displayState
+        displayState = duckAISurfaceState(.collapsed)
+        applyToolbarPresentation()
+        viewController.deactivateInput()
+        intentSubject.send(.showCollapsed(from: previousDisplayState))
+    }
+
+    /// Brings back input that `setAside` shrank, without counting it as opened again.
+    func restoreSetAside() {
+        guard isAITabCollapsed else { return }
+        let previousDisplayState = displayState
+        displayState = duckAISurfaceState(.expanded)
+        applyToolbarPresentation()
+        intentSubject.send(.showExpanded(from: previousDisplayState))
+        activateInput()
+    }
+
     func showExpanded(prefilledText: String? = nil, inputMode: TextEntryMode = .aiChat, activatesInput: Bool = true) {
         guard !isOnboardingLocked else { return }
         restoreAttachmentsRetainedForDismiss()
         keyboardMonitor.disarm()
         let previousDisplayState = displayState
-        Logger(subsystem: "com.duckduckgo.mobile.ios", category: "NewTabTransition").debug("UTI showExpanded at \(CACurrentMediaTime(), privacy: .public) from \(String(describing: previousDisplayState), privacy: .public) mode \(String(describing: inputMode), privacy: .public)\n\(Thread.callStackSymbols.prefix(8).joined(separator: "\n"), privacy: .public)")
         displayState = duckAISurfaceState(.expanded)
         beginMultiTabPromotionOpening()
         // Pixels fire only on a real transition into expanded — header re-entries (Plus → New Chat) call this too but don't actually show either UI.

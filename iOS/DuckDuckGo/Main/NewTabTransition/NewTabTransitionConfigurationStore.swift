@@ -25,7 +25,7 @@ final class NewTabTransitionConfigurationStore: ObservableObject {
 
     static let shared = NewTabTransitionConfigurationStore()
 
-    private static let key = "com.duckduckgo.ios.newTabTransition.configuration.v9"
+    private static let key = "com.duckduckgo.ios.newTabTransition.configuration.v10"
 
     @Published var configuration: NewTabTransitionConfiguration {
         didSet { save() }

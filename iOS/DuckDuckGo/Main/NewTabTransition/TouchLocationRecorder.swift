@@ -23,7 +23,6 @@ import UIKit.UIGestureRecognizerSubclass
 final class TouchLocationRecorder: UIGestureRecognizer {
 
     private(set) var lastTouchLocation: CGPoint?
-    var onTouchBegan: () -> Void = {}
 
     init() {
         super.init(target: nil, action: nil)
@@ -34,7 +33,6 @@ final class TouchLocationRecorder: UIGestureRecognizer {
 
     override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent) {
         lastTouchLocation = touches.first?.location(in: view)
-        onTouchBegan()
         state = .failed
     }
 

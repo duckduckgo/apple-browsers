@@ -103,6 +103,10 @@ final class AIChatContextualSheetCoordinatorTests: XCTestCase {
             didRequestToLoadURLs.append(url)
         }
 
+        func aiChatContextualSheetCoordinator(_ coordinator: AIChatContextualSheetCoordinator, didRequestToLoadClosingSheet url: URL) {
+            didRequestToLoadURLs.append(url)
+        }
+
         func aiChatContextualSheetCoordinator(_ coordinator: AIChatContextualSheetCoordinator, didRequestExpandWithURL url: URL,
                                               entrySource: AIChatEntryPointSource) {
             didRequestExpandURLs.append(url)

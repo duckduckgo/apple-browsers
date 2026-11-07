@@ -68,6 +68,9 @@ protocol TabDelegate: AnyObject {
              openedByPage: Bool,
              inheritingAttribution: AdClickAttributionLogic.State?)
 
+    /// A screen this tab presented is still up; the new tab closes it as it opens.
+    func tab(_ tab: TabViewController, didRequestNewTabClosingPresentedScreenForUrl url: URL)
+
     /// Prompts in the new tab are attributed to `entrySource`; nil leaves them unattributed.
     func tab(_ tab: TabViewController,
              didRequestNewDuckAITabForUrl url: URL,

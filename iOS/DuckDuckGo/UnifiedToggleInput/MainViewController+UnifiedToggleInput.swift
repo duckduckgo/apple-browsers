@@ -26,7 +26,6 @@ import Subscription
 import Suggestions
 import UIKit
 import WebKit
-import os
 import FeatureFlags_iOS
 import PixelKit
 
@@ -257,7 +256,6 @@ extension MainViewController {
         activateUnifiedToggleInput(for: tab.tabModel)
 
         let action = refreshAction(for: tab, coordinator: coordinator, isRefreshingCurrentTab: isRefreshingCurrentTab)
-        Logger(subsystem: "com.duckduckgo.mobile.ios", category: "NewTabTransition").debug("UTI refresh at \(CACurrentMediaTime(), privacy: .public) isAITab \(tab.isAITab, privacy: .public) action \(String(describing: action), privacy: .public)")
 
         switch action {
         case .unbindInactiveNonAITab(let needsLayoutRefresh):
@@ -825,7 +823,6 @@ private extension MainViewController {
             isRefreshingCurrentTab: isRefreshingCurrentTab,
             isAddressBarPositionCurrent: viewCoordinator.addressBarPosition == appSettings.currentAddressBarPosition
         )
-        Logger(subsystem: "com.duckduckgo.mobile.ios", category: "NewTabTransition").debug("UTI refresh inputs: \(String(describing: inputs), privacy: .public) webViewURL \(String(describing: tab.webView?.url), privacy: .public) loading \(tab.webView?.isLoading ?? false, privacy: .public)")
         return MainViewController.decideRefreshAction(for: inputs)
     }
 
@@ -960,6 +957,8 @@ private extension MainViewController {
                       !self.aiTabChromeDecision().hidesInputBar else { return }
                 coordinator.showExpanded(inputMode: .aiChat)
             }
+        case .showExpanded where aiTabChromeDecision().hidesInputBar:
+            coordinator.showCollapsed()
         case .showExpanded:
             coordinator.showExpanded(inputMode: .aiChat)
         }
@@ -1801,7 +1800,7 @@ extension MainViewController: AIChatTabChatHeaderViewDelegate {
 
     func aiChatTabChatHeaderDidTapNewTab() {
         recordUserOpenedTab()
-        newTabTransitions.open { newTab(reuseExisting: false, allowingKeyboard: true) }
+        newTab(reuseExisting: false, allowingKeyboard: true)
     }
 
     /// Force-search NTP. Override mode without committing — preserved toggle preference must survive.

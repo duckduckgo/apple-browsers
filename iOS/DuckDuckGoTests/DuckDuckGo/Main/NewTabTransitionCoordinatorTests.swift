@@ -117,23 +117,38 @@ final class NewTabTransitionCoordinatorTests: XCTestCase {
         XCTAssertEqual(host.transitions[1].cancelCount, 0)
     }
 
-    func testWhenFinishedEarlyThenTheRunningTransitionIsCancelledAndTheNextOpenGetsItsOwn() {
-        coordinator.open(build)
+    // MARK: - Entrances
 
-        coordinator.finishCurrent()
+    func testWhenOpenedFromOutsideTheAppThenTheTabIsBuiltWithoutATransition() {
+        let animated = coordinator.open(entrance: .fromOutsideTheApp, build)
 
-        XCTAssertEqual(host.transitions[0].cancelCount, 1)
+        XCTAssertFalse(animated)
+        XCTAssertEqual(buildCount, 1)
+        XCTAssertTrue(host.transitions.isEmpty)
         XCTAssertFalse(coordinator.isOpeningNewTab)
-        XCTAssertTrue(coordinator.open(build))
     }
 
-    func testWhenFinishedEarlyThenAPreparedTransitionIsLeftForItsTab() {
+    func testWhenOpenedAfterASwipeThenTheTabIsBuiltWithoutATransition() {
+        let animated = coordinator.open(entrance: .followsSwipe, build)
+
+        XCTAssertFalse(animated)
+        XCTAssertEqual(buildCount, 1)
+        XCTAssertTrue(host.transitions.isEmpty)
+    }
+
+    func testWhenOpenedWithoutGrowingThenAPreparedTransitionIsLeftForItsTab() {
         coordinator.prepare(from: .tabManager)
 
-        coordinator.finishCurrent()
+        coordinator.open(entrance: .fromOutsideTheApp, build)
 
-        XCTAssertEqual(host.transitions[0].cancelCount, 0)
-        XCTAssertTrue(coordinator.isOpeningNewTab)
+        XCTAssertEqual(buildCount, 1)
+        XCTAssertEqual(host.transitions.count, 1)
+        XCTAssertNil(host.transitions[0].revealedPage)
+
+        let animated = coordinator.open(build)
+
+        XCTAssertTrue(animated)
+        XCTAssertTrue(host.transitions[0].revealedPage === host.newPageView)
     }
 
     // MARK: - Presented screens
@@ -148,17 +163,17 @@ final class NewTabTransitionCoordinatorTests: XCTestCase {
         XCTAssertEqual(buildCount, 1)
     }
 
-    func testWhenOpeningOverAPresentedScreenThenTheKeyboardWaitsForItToClose() {
+    func testWhenOpeningOverAPresentedScreenThenTheTabIsBuiltOnceTheScreenHasClosed() {
         coordinator.openClosingPresentedScreen { [unowned self] in build() }
-        let gate = host.transitions[0].keyboardGate
-        gate.reachMoment()
 
-        XCTAssertEqual(buildCount, 1)
         XCTAssertEqual(host.starts, [.presentedScreen])
-        XCTAssertFalse(gate.isOpen)
+        XCTAssertEqual(buildCount, 0)
+        XCTAssertNil(host.transitions[0].revealedPage)
 
         host.unseenCloses.forEach { $0() }
-        XCTAssertTrue(gate.isOpen)
+
+        XCTAssertEqual(buildCount, 1)
+        XCTAssertTrue(host.transitions[0].revealedPage === host.newPageView)
     }
 
     // MARK: - Keyboard focus

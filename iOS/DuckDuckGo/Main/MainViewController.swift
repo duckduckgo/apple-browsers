@@ -964,10 +964,17 @@ class MainViewController: UIViewController {
     /// Released once the new page settles, so it is set only while a transition runs.
     lazy var newTabTransitions = NewTabTransitionCoordinator(host: self)
     lazy var duckAIInputFocus = DuckAIInputFocus(
-        isFocused: { [weak self] in self?.currentTab?.isAITab == true && self?.isInputFocused == true },
-        resign: { [weak self] in _ = self?.view.endEditing(true) },
-        refocus: { [weak self] in self?.unifiedToggleInputCoordinator?.activateInput() }
+        isFocused: { [weak self] in
+            self?.currentTab?.isAITab == true && self?.unifiedToggleInputCoordinator?.isAITabExpanded == true && self?.isInputFocused == true
+        },
+        resign: { [weak self] in self?.setDuckAIInputAside() },
+        refocus: { [weak self] in self?.unifiedToggleInputCoordinator?.restoreSetAside() }
     )
+
+    /// Without its keyboard the Duck.ai input belongs in its compact bar; resigning alone would leave it full size.
+    private func setDuckAIInputAside() {
+        unifiedToggleInputCoordinator?.setAside()
+    }
     let newTabTouchLocationRecorder = TouchLocationRecorder()
 
     /// Overlay used to render tab-swipe transitions. Hosts per-tab full-screen snapshots so
@@ -1141,7 +1148,6 @@ class MainViewController: UIViewController {
     override func viewDidAppear(_ animated: Bool) {
         super.viewDidAppear(animated)
         installNewTabTouchLocationRecorderIfNeeded()
-        installKeyboardFocusLoggerIfNeeded()
         if !hasRequestedMenuRebuildOnFirstAppearance {
             hasRequestedMenuRebuildOnFirstAppearance = true
             menuRebuildRequests.send()
@@ -1320,7 +1326,7 @@ class MainViewController: UIViewController {
             PixelKit.fire(Pixel.Event.swipeToOpenNewTab)
             self?.postIdleSessionInstrumentation.sessionEnded(reason: .tabSwiped)
             self?.currentTabWillLeaveScreen(.newTabOpened)
-            self?.newTab()
+            self?.newTab(entrance: .followsSwipe)
         } onSwipeStarted: { [weak self] in
             self?.rememberNewTabPageInputFocusForTabSwitch()
             self?.performCancel(animated: false)
@@ -1581,7 +1587,7 @@ class MainViewController: UIViewController {
     func startAddFavoriteFlow() {
         contextualOnboardingLogic.enableAddFavoriteFlow()
         if tutorialSettings.hasSeenOnboarding {
-            newTab()
+            newTab(entrance: .fromOutsideTheApp)
         }
     }
     
@@ -2409,7 +2415,9 @@ class MainViewController: UIViewController {
             guard let self = self else { return }
             viewCoordinator.omniBar.endEditing()
             if let url = URL(trimmedAddressBarString: urlString, useUnifiedLogic: isUnifiedURLPredictionEnabled), url.isValid(usingUnifiedLogic: isUnifiedURLPredictionEnabled) {
-                self.loadUrlInNewTab(url, inheritedAttribution: nil)
+                // Autofill posts this from its own screen, which closes on its own as the tab opens.
+                self.loadUrlInNewTab(url, inheritedAttribution: nil,
+                                     entrance: self.presentedViewController == nil ? .grows : .underPresentedScreen)
             } else {
                 self.loadQuery(urlString)
             }
@@ -2626,9 +2634,7 @@ class MainViewController: UIViewController {
                                       openedAfterIdle: Bool = false,
                                       startsNewTabPageSessionVisit: Bool = true,
                                       sessionTrigger: NewTabPageSessionWideEventData.Trigger = .appOpen) {
-        var attachSteps = NewTabBuildStepTimer()
         reportDuckAISessionCurrentTab()
-        attachSteps.mark("  reportDuckAISession")
         guard !autoClearInProgress else { return }
 
         if tabManager.currentTabsModel.tabs.isEmpty && tabManager.currentTabsModel.allowsEmpty {
@@ -2648,7 +2654,6 @@ class MainViewController: UIViewController {
         siteThemeColorObservation = nil
         pageContentBackgroundColorObservation = nil
         refreshSettledFloatingGlassAppearance()
-        attachSteps.mark("  floatingGlass")
 
         // Reset chrome state on every NTP attach — the previous tab may have been a Duck.ai tab
         // with the AI header shown and the standard toolbar hidden. Some attach paths
@@ -2656,21 +2661,17 @@ class MainViewController: UIViewController {
         // without this the user lands on NTP with no visible bars.
         viewCoordinator.hideAITabChrome()
         reconcileToolbarVisibilityForCurrentTab()
-        attachSteps.mark("  hideAITabChrome + toolbar")
 
         viewCoordinator.moveAddressBarToPosition(appSettings.currentAddressBarPosition)
         refreshViewsBasedOnAddressBarPosition(appSettings.currentAddressBarPosition)
-        attachSteps.mark("  addressBarPosition")
 
         viewCoordinator.logoContainer.isHidden = false
         findInPageView?.isHidden = true
         chromeManager.detach()
         chromeManager.reset(animated: false)
-        attachSteps.mark("  chromeManager")
 
         currentTab?.dismiss()
         removeHomeScreen()
-        attachSteps.mark("  removeHomeScreen")
 
         // Access the tab model directly as we don't want to create a new tab controller here
         guard let tabModel = tabManager.currentTabsModel.currentTab else {
@@ -2694,7 +2695,6 @@ class MainViewController: UIViewController {
         if shouldSaveTabs {
             tabManager.save()
         }
-        attachSteps.mark("  escapeHatch + prepareForNTP + save")
 
         let newTabDaxDialogFactory = NewTabDaxDialogFactory(delegate: self, daxDialogsFlowCoordinator: daxDialogsManager, onboardingPixelReporter: contextualOnboardingPixelReporter)
 
@@ -2707,14 +2707,12 @@ class MainViewController: UIViewController {
                                                         isNewTab: isNewTab,
                                                         openedAfterIdle: hatch != nil,
                                                         daxDialogFactory: newTabDaxDialogFactory)
-        attachSteps.mark("  newTabPageController page(for:)")
 
         controller.delegate = self
         controller.chromeDelegate = self
 
         newTabPageViewController = controller
         updateCompactToolbarForNewTabPage()
-        attachSteps.mark("  compactToolbar")
 
         controller.setEscapeHatch(hatch)
         controller.setChromeLayoutContext(isBorderSuppressed: isInMinimalChromeLayout)
@@ -2725,7 +2723,6 @@ class MainViewController: UIViewController {
         }
 
         configureUnifiedInputEscapeHatch(hatch)
-        attachSteps.mark("  configure hatch + chrome context")
 
         // Suppress the NTP before it enters the view hierarchy so the Dax logo can't flash
         // on the one frame between addToContentContainer and the async alpha-0 set inside
@@ -2738,22 +2735,17 @@ class MainViewController: UIViewController {
         (controller as? RedesignedNewTabPageViewController)?.prepareForEntranceAnimation(
             if: isNewTab && !willBeginEditing && !chatPathCompletionPending)
 
-        attachSteps.mark("  prepareForEntrance")
         addToContentContainer(controller: controller)
-        attachSteps.mark("  addToContentContainer")
         viewCoordinator.logoContainer.isHidden = true
         updateAddressBarSuppressionForNewTabPage()
         adjustNewTabPageSafeAreaInsets(for: appSettings.currentAddressBarPosition)
-        attachSteps.mark("  suppression + safeArea")
 
         // This has to happen after the new tab controller is created so that it knows to set the buttons correctly
         // ie remove back/forward and show bookmarks/passwords
         // but also before any other UI updates so that data from the old tab doesn't find its way into the new one
         refreshControls()
-        attachSteps.mark("  refreshControls")
         updateScrollInteractionIfNeeded()
         presentContextualOnboardingDialogIfNeeded()
-        attachSteps.mark("  scroll + onboarding")
 
         if willBeginEditing,
            let switcher = tabSwitcherController, presentedViewController === switcher, switcher.isBeingDismissed,
@@ -2783,10 +2775,8 @@ class MainViewController: UIViewController {
                                                startsVisit: startsNewTabPageSessionVisit,
                                                openedAfterIdle: openedAfterIdle, hatch: hatch,
                                                willBeginEditing: willBeginEditing)
-        attachSteps.mark("  beginEditing + schedulePresentation")
 
         syncService.scheduler.requestSyncImmediately()
-        attachSteps.mark("  requestSync")
     }
 
     private func scheduleAttachedNewTabPagePresentation(for controller: any NewTabPage,
@@ -3078,14 +3068,18 @@ class MainViewController: UIViewController {
     ///   - reuseExisting: The policy for reusing an existing tab. Defaults to `none`, meaning no reuse.
     /// - Parameter forceSearchQuery: Search for `query` even when it looks like a URL. Callers acting on
     ///   an explicit "search for this" choice should pass true, or a URL-shaped input navigates instead.
-    func loadQueryInNewTab(_ query: String, reuseExisting: ExistingTabReusePolicy? = .none, fromExternalLink: Bool = false, forceSearchQuery: Bool = false) {
+    func loadQueryInNewTab(_ query: String,
+                           reuseExisting: ExistingTabReusePolicy? = .none,
+                           fromExternalLink: Bool = false,
+                           forceSearchQuery: Bool = false,
+                           entrance: NewTabEntrance = .grows) {
         dismissOmniBar()
         guard let url = URL.makeSearchURL(query: query, useUnifiedLogic: isUnifiedURLPredictionEnabled, forceSearchQuery: forceSearchQuery) else {
             Logger.lifecycle.error("Couldn't form URL for query: \(query, privacy: .public)")
             return
         }
 
-        loadUrlInNewTab(url, reuseExisting: reuseExisting, inheritedAttribution: nil, fromExternalLink: fromExternalLink)
+        loadUrlInNewTab(url, reuseExisting: reuseExisting, inheritedAttribution: nil, fromExternalLink: fromExternalLink, entrance: entrance)
     }
 
     private func loadDroppedURLInNewTab(_ url: URL) {
@@ -3097,14 +3091,14 @@ class MainViewController: UIViewController {
     /// A link another app asked the browser to open.
     func loadExternalLinkInNewTab(_ url: URL) {
         guard url.isDuckAIURL else {
-            loadUrlInNewTab(url, reuseExisting: .any, inheritedAttribution: nil, fromExternalLink: true)
+            loadUrlInNewTab(url, reuseExisting: .any, inheritedAttribution: nil, fromExternalLink: true, entrance: .fromOutsideTheApp)
             return
         }
         // Mirrors the reuse order in `loadUrlInNewTab`: a tab already on the URL is only selected, nothing loads.
         let reusesOpenTab = tabManager.first(withUrl: url) != nil
         let opensNewTab = !reusesOpenTab && tabManager.firstHomeTab() == nil
         let entrySource = reportDuckAIDirectNavigation(to: url, via: .external, opensNewTab: opensNewTab)
-        loadUrlInNewTab(url, reuseExisting: .any, inheritedAttribution: nil, fromExternalLink: true,
+        loadUrlInNewTab(url, reuseExisting: .any, inheritedAttribution: nil, fromExternalLink: true, entrance: .fromOutsideTheApp,
                         completion: reusesOpenTab ? nil : stampingDuckAIEntrySource(entrySource, then: nil))
     }
 
@@ -3118,62 +3112,112 @@ class MainViewController: UIViewController {
     ///   - inheritedAttribution: The attribution state to be inherited from a parent tab, if any.
     ///   - fromExternalLink: A flag indicating if the URL is from an external link. Defaults to `false`.
     ///   - voiceMode: When true, marks the new tab as opened from voice search.
+    ///   - entrance: How a new tab comes into view; it grows in unless the caller names why not.
     ///   - completion: Optional closure run once the new/selected tab is in place. When `clearInProgress`
     ///     is true at call time, this fires only after the data clear completes (via `postClear`).
     ///     Timing relative to UI refresh differs by exit path: the URL-reuse branch fires this before
     ///     `refreshOmniBar`/tab-bar refresh; all other branches fire it after. Callers should not rely
     ///     on chrome state being settled inside the closure.
-    func loadUrlInNewTab(_ url: URL, reuseExisting: ExistingTabReusePolicy? = .none, inheritedAttribution: AdClickAttributionLogic.State?, fromExternalLink: Bool = false, voiceMode: Bool = false, completion: ((Tab) -> Void)? = nil) {
-
-        func worker() {
-            allowContentUnderflow = false
-            viewCoordinator.navigationBarContainer.alpha = 1
-            loadViewIfNeeded()
-
-            let hostingTab: Tab
-
-            // Check if a specific tab ID should be reused.
-            if case .tabWithId(let id) = reuseExisting, let existing = tabManager.first(withId: id) {
-                selectTab(existing)
-                hostingTab = existing
-            }
-            // Check if an existing tab with the same URL should be reused.
-            else if reuseExisting != .none, let existing = tabManager.first(withUrl: url) {
-                selectTab(existing)
-                completion?(existing)
-                return
-            }
-            // Check if a tab presenting a New Tab page should be reused.
-            else if reuseExisting != .none, let existing = tabManager.firstHomeTab() {
-                if autoClearInProgress {
-                    autoClearShouldRefreshUIAfterClear = false
-                }
-                tabManager.select(existing, dismissCurrent: false)
-                loadUrl(url, fromExternalLink: fromExternalLink)
-                hostingTab = existing
-            }
-            // Add a new tab if no existing tab is reused.
-            else {
-                hostingTab = addTab(url: url, inheritedAttribution: inheritedAttribution, fromExternalLink: fromExternalLink, voiceMode: voiceMode)
-            }
-
-            refreshOmniBar()
-            refreshTabIcon()
-            refreshControls()
-            tabsBarController?.refresh(tabsModel: tabManager.currentTabsModel, scrollToSelected: true)
-            swipeTabsCoordinator?.refresh(tabsModel: tabManager.currentTabsModel, scrollToSelected: true)
-            completion?(hostingTab)
+    func loadUrlInNewTab(_ url: URL,
+                         reuseExisting: ExistingTabReusePolicy? = .none,
+                         inheritedAttribution: AdClickAttributionLogic.State?,
+                         fromExternalLink: Bool = false,
+                         voiceMode: Bool = false,
+                         entrance: NewTabEntrance = .grows,
+                         completion: ((Tab) -> Void)? = nil) {
+        let request = NewTabURLRequest(url: url, reuseExisting: reuseExisting, inheritedAttribution: inheritedAttribution,
+                                       fromExternalLink: fromExternalLink, voiceMode: voiceMode, completion: completion)
+        guard !clearInProgress else {
+            // Lands once the data clear ends, without growing in over the cleared page.
+            deferUntilDataClearEnds { [weak self] in self?.showTab(for: request) { $0() } }
+            return
         }
-
-        if clearInProgress {
-            // Compose with any already-deferred worker — back-to-back `loadUrlInNewTab` during the same clear must not drop the first's completion.
-            let previous = postClear
-            postClear = {
-                previous?()
-                worker()
+        let raisesKeyboard = url.isDuckAIURL && !voiceMode
+        let show: () -> Void = { [weak self] in
+            self?.showTab(for: request) { build in
+                self?.newTabTransitions.open(entrance: entrance, raisesKeyboard: raisesKeyboard, build)
             }
+        }
+        // A caller already inside a transition waited for the keyboard before starting it.
+        guard entrance == .grows, !raisesKeyboard, !newTabTransitions.isOpeningNewTab else {
+            show()
+            return
+        }
+        afterKeyboardLeaves(forPageAt: url, show)
+    }
+
+    /// A link to a page without its own keyboard opens once the keyboard has slid away, so the two never move at once.
+    /// A keyboard already on its way down, as when the tap moved focus into a page, is waited for too.
+    /// Without the transition it opens at once, as before.
+    func afterKeyboardLeaves(forPageAt url: URL?, _ open: @escaping () -> Void) {
+        guard isNewTabTransitionEnabled, keyboardShowing, url?.isDuckAIURL != true, let window = view.window else { return open() }
+        var observer: NSObjectProtocol?
+        observer = NotificationCenter.default.addObserver(forName: UIResponder.keyboardDidHideNotification, object: nil, queue: .main) { _ in
+            observer.map(NotificationCenter.default.removeObserver)
+            open()
+        }
+        window.endEditing(true)
+    }
+
+    /// One transition over steps that end in `loadUrlInNewTab`. During a data clear that load waits for it,
+    /// so there is nothing to grow yet.
+    private func openTabLoadingURL(_ url: URL, _ steps: @escaping () -> Void) {
+        guard !clearInProgress else { return steps() }
+        afterKeyboardLeaves(forPageAt: url) { [weak self] in
+            self?.newTabTransitions.open(raisesKeyboard: url.isDuckAIURL, steps)
+        }
+    }
+
+    /// Switches to a tab `request` may reuse, or builds the tab through `present`.
+    private func showTab(for request: NewTabURLRequest, present: (() -> Void) -> Void) {
+        allowContentUnderflow = false
+        viewCoordinator.navigationBarContainer.alpha = 1
+        loadViewIfNeeded()
+
+        if case .tabWithId(let id) = request.reuseExisting, let existing = tabManager.first(withId: id) {
+            selectTab(existing)
+            finishShowingTab(existing, completion: request.completion)
+        } else if request.reuseExisting != .none, let existing = tabManager.first(withUrl: request.url) {
+            selectTab(existing)
+            request.completion?(existing)
         } else {
-            worker()
+            present { buildTab(for: request) }
+        }
+    }
+
+    private func buildTab(for request: NewTabURLRequest) {
+        let tab = reusedNewTabPage(for: request)
+            ?? addTab(url: request.url, inheritedAttribution: request.inheritedAttribution,
+                      fromExternalLink: request.fromExternalLink, voiceMode: request.voiceMode)
+        finishShowingTab(tab, completion: request.completion)
+    }
+
+    /// A New Tab Page the request may load into instead of adding a tab.
+    private func reusedNewTabPage(for request: NewTabURLRequest) -> Tab? {
+        guard request.reuseExisting != .none, let existing = tabManager.firstHomeTab() else { return nil }
+        if autoClearInProgress {
+            autoClearShouldRefreshUIAfterClear = false
+        }
+        tabManager.select(existing, dismissCurrent: false)
+        loadUrl(request.url, fromExternalLink: request.fromExternalLink)
+        return existing
+    }
+
+    private func finishShowingTab(_ tab: Tab, completion: ((Tab) -> Void)?) {
+        refreshOmniBar()
+        refreshTabIcon()
+        refreshControls()
+        tabsBarController?.refresh(tabsModel: tabManager.currentTabsModel, scrollToSelected: true)
+        swipeTabsCoordinator?.refresh(tabsModel: tabManager.currentTabsModel, scrollToSelected: true)
+        completion?(tab)
+    }
+
+    /// Chains after any work already waiting, so back-to-back requests during one clear all run.
+    private func deferUntilDataClearEnds(_ work: @escaping () -> Void) {
+        let previous = postClear
+        postClear = {
+            previous?()
+            work()
         }
     }
 
@@ -4395,45 +4439,53 @@ class MainViewController: UIViewController {
     /// that opens immediately over it, such as Duck.ai on iPad. Starting a visit there would
     /// discard the visit the user is actually on, and would invent one when they came from a web
     /// page, so the page this tab shows is never a New Tab Page the user sees.
+    /// The tab grows in unless `entrance` names why not. Returns whether it grew.
+    @discardableResult
     func newTab(reuseExisting: Bool = false,
                 allowingKeyboard: Bool = true,
                 openedAfterIdle: Bool = false,
                 startsNewTabPageSessionVisit: Bool = true,
-                placement: TabsModel.TabPlacement = .atEnd) {
-        var buildSteps = NewTabBuildStepTimer()
+                placement: TabsModel.TabPlacement = .atEnd,
+                entrance: NewTabEntrance = .grows) -> Bool {
+        newTabTransitions.open(entrance: entrance, raisesKeyboard: allowingKeyboard) {
+            buildNewTab(reuseExisting: reuseExisting,
+                        allowingKeyboard: allowingKeyboard,
+                        openedAfterIdle: openedAfterIdle,
+                        startsNewTabPageSessionVisit: startsNewTabPageSessionVisit,
+                        placement: placement)
+        }
+    }
+
+    private func buildNewTab(reuseExisting: Bool,
+                             allowingKeyboard: Bool,
+                             openedAfterIdle: Bool,
+                             startsNewTabPageSessionVisit: Bool,
+                             placement: TabsModel.TabPlacement) {
         if daxDialogsManager.shouldShowFireButtonPulse {
             ViewHighlighter.hideAll()
         }
         daxDialogsManager.fireButtonPulseCancelled()
         // Tear down active editing before building the new tab; non-animated so its collapse doesn't race the new tab's focus animation.
         dismissOmniBar(animated: false)
-        buildSteps.mark("dismissOmniBar")
         hideNotificationBarIfBrokenSitePromptShown()
         currentTabWillLeaveScreen(.newTabOpened)
-        buildSteps.mark("currentTabWillLeaveScreen")
 
         let previousTab = tabManager.current()
         dismissSystemFindNavigator(for: previousTab)
         captureForSwipeBack(tabManager.currentTabsModel.currentTab)
-        buildSteps.mark("captureForSwipeBack")
         currentTab?.dismiss()
-        buildSteps.mark("currentTab.dismiss")
 
         selectOrAddHomeTab(reuseExisting: reuseExisting, placement: placement)
-        buildSteps.mark("addHomeTab")
         attachHomeScreen(isNewTab: true,
                          allowingKeyboard: allowingKeyboard,
                          previousTab: previousTab,
                          openedAfterIdle: openedAfterIdle,
                          startsNewTabPageSessionVisit: startsNewTabPageSessionVisit,
                          sessionTrigger: openedAfterIdle ? .appOpen : .newTabOpened)
-        buildSteps.mark("attachHomeScreen")
         tabsBarController?.refresh(tabsModel: tabManager.currentTabsModel, scrollToSelected: true)
         swipeTabsCoordinator?.refresh(tabsModel: tabManager.currentTabsModel, scrollToSelected: true)
-        buildSteps.mark("refresh tabs")
         themeColorManager.updateThemeColor()
         showBars() // In case the browser chrome bars are hidden when calling this method
-        buildSteps.mark("theme + showBars")
     }
 
     // MARK: - Idle return NTP (dismiss overlays so NTP is visible)
@@ -5267,18 +5319,15 @@ class MainViewController: UIViewController {
 
         if openInNewTab {
             let voiceURL = currentTab.aiChatContentHandler.buildVoiceModeURL()
-            let openVoiceTab = { self.loadUrlInNewTab(voiceURL, inheritedAttribution: nil, voiceMode: true) { $0.duckAIEntrySource = source } }
-            // A deep link arrives from outside the app, which keeps its usual entrance.
-            guard fromDeepLink else {
-                newTabTransitions.open(raisesKeyboard: false, openVoiceTab)
-                return
+            loadUrlInNewTab(voiceURL, inheritedAttribution: nil, voiceMode: true,
+                            entrance: fromDeepLink ? .fromOutsideTheApp : .grows) { $0.duckAIEntrySource = source }
+            if fromDeepLink {
+                // Collapse the input that was auto-expanded for the restored tab.
+                // This cancels any pending async activateInput because showCollapsed
+                // sets displayState to .collapsed, failing the guard in showExpanded's
+                // async block.
+                unifiedToggleInputCoordinator?.showCollapsed()
             }
-            openVoiceTab()
-            // Collapse the input that was auto-expanded for the restored tab.
-            // This cancels any pending async activateInput because showCollapsed
-            // sets displayState to .collapsed, failing the guard in showExpanded's
-            // async block.
-            unifiedToggleInputCoordinator?.showCollapsed()
             return
         }
 
@@ -5354,10 +5403,11 @@ class MainViewController: UIViewController {
         }
         if request.opensNewTab {
             originatingTab.contextualOnboardingPresenter.dismissContextualOnboardingIfNeeded(from: originatingTab)
-            if case .sharedHandler(let query, _, _) = request.prompt {
+            if case .sharedHandler(let query, _, let fromDeepLink) = request.prompt {
                 // This helper preserves deferred opening during clearing and configures the selected recipient in completion.
                 if let prompt = query.sharedPrompt { AIChatPromptHandler.shared.setData(prompt) }
-                loadUrlInNewTab(request.url, inheritedAttribution: nil) { [weak self] tab in
+                loadUrlInNewTab(request.url, inheritedAttribution: nil,
+                                entrance: fromDeepLink ? .fromOutsideTheApp : .grows) { [weak self] tab in
                     self?.prepareTabForDuckAILoad(tab, recipient: self?.currentTab, request: request)
                     self?.updateAIChatSelectedModel(for: request)
                     if let payload = request.payload {
@@ -5386,7 +5436,8 @@ class MainViewController: UIViewController {
             }
             if request.shouldPresent {
                 if request.opensNewTab {
-                    selectTab(recipient.tabModel)
+                    // The chat tab was added in the background; it only comes into view here, after its prompt is ready.
+                    newTabTransitions.open(raisesKeyboard: false) { selectTab(recipient.tabModel) }
                 } else {
                     prepareTabForRequest {}
                 }
@@ -6156,13 +6207,8 @@ extension MainViewController: BrowserChromeDelegate {
             if let tab = currentTab {
                 tab.contextualOnboardingPresenter.dismissContextualOnboardingIfNeeded(from: tab)
             }
-            let openTab = { self.loadUrlInNewTab(url, inheritedAttribution: nil, fromExternalLink: fromExternalLink, completion: completion) }
-            // An external link arrives from outside the app, which keeps its usual entrance.
-            if fromExternalLink {
-                openTab()
-            } else {
-                newTabTransitions.open(raisesKeyboard: false, openTab)
-            }
+            loadUrlInNewTab(url, inheritedAttribution: nil, fromExternalLink: fromExternalLink,
+                            entrance: fromExternalLink ? .fromOutsideTheApp : .grows, completion: completion)
         case .loadInPlace:
             currentTab?.isDuckAIDeepLinkSurfaceRequested = url.isDuckAIChatProtectionOpen
             loadUrl(url, fromExternalLink: fromExternalLink)
@@ -6962,7 +7008,7 @@ extension MainViewController: OmniBarDelegate {
         ]))
         guard !duckAIFireOnboardingFlow.controlsLocked else { return }
         postIdleSessionInstrumentation.sessionEnded(reason: .tabSwitcherSelected)
-        newTabTransitions.open { newTab() }
+        newTab()
     }
 
     private func newFireTabLongPressMenuAction() {
@@ -7970,29 +8016,62 @@ extension MainViewController: TabDelegate {
         capturePreviewForTab(tab)
         hideNotificationBarIfBrokenSitePromptShown()
         showBars()
-        currentTab?.dismiss()
-        tab.aiChatContextualSheetCoordinator.tabWillLeaveScreen()
-        themeColorManager.updateThemeColor()
 
+        guard isNewTabTransitionEnabled else {
+            currentTab?.dismiss()
+            leaveForPageRequestedTab(opener: tab)
+            let newTab = addPageRequestedTab(from: tab, configuration: configuration, for: navigationAction, inheritingAttribution: inheritingAttribution)
+            swipeTabsCoordinator?.refresh(tabsModel: tabManager.currentTabsModel, scrollToSelected: true)
+            newTabAnimation {
+                guard self.tabManager.currentTabsModel.tabs.contains(newTab.tabModel) else { return }
+                self.attachPageRequestedTab(newTab)
+            }
+            return newTab.webView
+        }
+
+        // The page needs the new web view back at once, so the tab is built now but selected only when the
+        // transition opens, which waits for a keyboard to leave first. Until then the old tab stays as it is.
+        let newTab = addPageRequestedTab(from: tab, configuration: configuration, for: navigationAction,
+                                         inheritingAttribution: inheritingAttribution, inBackground: true)
+        afterKeyboardLeaves(forPageAt: navigationAction.request.url) { [weak self, weak tab] in
+            guard let self, self.tabManager.currentTabsModel.tabs.contains(newTab.tabModel) else { return }
+            self.newTabTransitions.open(raisesKeyboard: false) {
+                self.tabManager.select(newTab.tabModel)
+                self.leaveForPageRequestedTab(opener: tab)
+                self.swipeTabsCoordinator?.refresh(tabsModel: self.tabManager.currentTabsModel, scrollToSelected: true)
+                self.attachPageRequestedTab(newTab)
+            }
+        }
+        return newTab.webView
+    }
+
+    private func leaveForPageRequestedTab(opener: TabViewController?) {
+        opener?.aiChatContextualSheetCoordinator.tabWillLeaveScreen()
+        themeColorManager.updateThemeColor()
+    }
+
+    /// Adds the tab a page asked for (`window.open`, `target=_blank`) without showing it.
+    private func addPageRequestedTab(from tab: TabViewController,
+                                     configuration: WKWebViewConfiguration,
+                                     for navigationAction: WKNavigationAction,
+                                     inheritingAttribution: AdClickAttributionLogic.State?,
+                                     inBackground: Bool = false) -> TabViewController {
         // Don't use a request or else the page gets stuck on "about:blank"
         let newTab = tabManager.addURLRequest(nil,
                                               with: configuration,
-                                              inheritedAttribution: inheritingAttribution)
+                                              inheritedAttribution: inheritingAttribution,
+                                              inBackground: inBackground)
         newTab.openedByPage = true
         newTab.openingTab = tab
         newTab.tabModel.duckAIEntrySource = reportDuckAIEntryForPageOpenedWindow(navigationAction, from: tab)
-        swipeTabsCoordinator?.refresh(tabsModel: tabManager.currentTabsModel, scrollToSelected: true)
+        return newTab
+    }
 
-        newTabAnimation {
-            guard self.tabManager.currentTabsModel.tabs.contains(newTab.tabModel) else { return }
-
-            self.dismissOmniBar()
-            self.attachTab(tab: newTab)
-            self.refreshOmniBar()
-            self.tabsBarController?.refresh(tabsModel: self.tabManager.currentTabsModel, scrollToSelected: true)
-        }
-
-        return newTab.webView
+    private func attachPageRequestedTab(_ newTab: TabViewController) {
+        dismissOmniBar()
+        attachTab(tab: newTab)
+        refreshOmniBar()
+        tabsBarController?.refresh(tabsModel: tabManager.currentTabsModel, scrollToSelected: true)
     }
 
     func tabDidRequestCloseOnBack(_ tab: TabViewController) {
@@ -8050,7 +8129,7 @@ extension MainViewController: TabDelegate {
         recordUserOpenedTab()
         endNewTabPageSessionWithMenuItem()
         _ = findInPageView?.resignFirstResponder()
-        newTabTransitions.open { newTab() }
+        newTab()
     }
 
     func tabDidRequestNewVoiceChat(_ tab: TabViewController, source: AIChatEntryPointSource) {
@@ -8090,9 +8169,9 @@ extension MainViewController: TabDelegate {
              didRequestNewFireTabForUrl url: URL,
              inheritingAttribution attribution: AdClickAttributionLogic.State?) {
         recordDuckAISessionPendingExit(.fireTabOpened)
-        newTabTransitions.open(raisesKeyboard: false) {
-            tabManager.setBrowsingMode(.fire, source: .longPressLink)
-            loadUrlInNewTab(url, inheritedAttribution: attribution)
+        openTabLoadingURL(url) { [weak self] in
+            self?.tabManager.setBrowsingMode(.fire, source: .longPressLink)
+            self?.loadUrlInNewTab(url, inheritedAttribution: attribution)
         }
     }
 
@@ -8114,6 +8193,16 @@ extension MainViewController: TabDelegate {
             recordUserOpenedTab()
         }
         openNewTab(from: tab, url: url, openedByPage: openedByPage, inheritedAttribution: attribution)
+    }
+
+    func tab(_ tab: TabViewController, didRequestNewTabClosingPresentedScreenForUrl url: URL) {
+        recordUserOpenedTab()
+        afterKeyboardLeaves(forPageAt: url) { [weak self, weak tab] in
+            self?.newTabTransitions.openClosingPresentedScreen { [weak self, weak tab] in
+                guard let self, let tab else { return }
+                self.openNewTab(from: tab, url: url, openedByPage: false, inheritedAttribution: nil)
+            }
+        }
     }
 
     func tab(_ tab: TabViewController,
@@ -8177,6 +8266,13 @@ extension MainViewController: TabDelegate {
         }
     }
 
+    /// A tab the user opened stops the opener's ad-click check, and Back on it closes it to return to `opener`.
+    private func setUpUserOpenedTab(_ newTab: Tab, openedFrom opener: TabViewController?) {
+        guard let controller = tabManager.controller(for: newTab) else { return }
+        controller.adClickExternalOpenDetector.invalidateForUserInitiated()
+        if let opener { controller.openingTab = opener }
+    }
+
     private func openNewTab(from tab: TabViewController,
                             url: URL,
                             openedByPage: Bool,
@@ -8199,10 +8295,10 @@ extension MainViewController: TabDelegate {
         if openedByPage, isNewTabTransitionEnabled {
             capturePreviewForTab(tab)
             showBars()
-            newTabTransitions.open(raisesKeyboard: false) {
-                loadUrlInNewTab(url, inheritedAttribution: attribution, completion: completion)
-                currentTab?.openedByPage = true
-                currentTab?.openingTab = tab
+            openTabLoadingURL(url) { [weak self, weak tab] in
+                self?.loadUrlInNewTab(url, inheritedAttribution: attribution, completion: completion)
+                self?.currentTab?.openedByPage = true
+                self?.currentTab?.openingTab = tab
             }
         } else if openedByPage {
             capturePreviewForTab(tab)
@@ -8219,12 +8315,11 @@ extension MainViewController: TabDelegate {
                 self.omniBarTabSwitcherButton?.tabCount += 1
             }
         } else {
-            // A new Duck.ai chat brings its own keyboard; a website doesn't.
-            newTabTransitions.open(raisesKeyboard: url.isDuckAIURL) {
-                loadUrlInNewTab(url, inheritedAttribution: attribution, completion: completion)
+            // The tab may open only once a keyboard has left, so it is set up when it exists.
+            loadUrlInNewTab(url, inheritedAttribution: attribution) { [weak self, weak tab] newTab in
+                self?.setUpUserOpenedTab(newTab, openedFrom: tab)
+                completion?(newTab)
             }
-            self.currentTab?.adClickExternalOpenDetector.invalidateForUserInitiated()
-            self.currentTab?.openingTab = tab
         }
 
     }
@@ -8871,17 +8966,14 @@ extension MainViewController: TabSwitcherDelegate {
     }
 
     func tabSwitcherDidRequestNewChatFromLongPressMenu(tabSwitcher: TabSwitcherViewController) {
-        postIdleSessionInstrumentation.sessionEnded(reason: .tabSwitcherSelected)
-        newTabTransitions.open(openNewChatTabFromLongPressMenu)
+        newChatLongPressMenuAction()
     }
 
     func tabSwitcher(_ tabSwitcher: TabSwitcherViewController, didRequestAIChat chatID: String) {
         fireAIChatUsagePixelAndSetFeatureUsed(.openAIChatFromTabManager)
         fireAIChatEntryPointPixel(source: .tabSwitcher, opensNewTab: true, hasPrompt: false)
-        newTabTransitions.open {
-            loadUrlInNewTab(aiChatSettings.aiChatURL.withChatID(chatID), inheritedAttribution: nil) {
-                $0.duckAIEntrySource = .tabSwitcher
-            }
+        loadUrlInNewTab(aiChatSettings.aiChatURL.withChatID(chatID), inheritedAttribution: nil) {
+            $0.duckAIEntrySource = .tabSwitcher
         }
     }
 
@@ -8893,7 +8985,7 @@ extension MainViewController: TabSwitcherDelegate {
         // The new tab shows its own keyboard, so a pick the switcher reported just before doesn't add a second one.
         pendingTabSwitcherKeyboard = nil
         // The transition carries the new page in, so the page's own entrance would run behind it.
-        if !newTabTransitions.open({ newTab() }) {
+        if !newTab() {
             animateNewTabPageEntrance()
         }
         themeColorManager.updateThemeColor()
@@ -8967,9 +9059,7 @@ extension MainViewController: TabSwitcherButtonDelegate {
         // Opening the switcher hides input programmatically; preserve the focus it had before cancellation.
         rememberNewTabPageInputFocusForTabSwitch()
         // Snap the UTI away so its collapse doesn't overlap the tab switcher segue (non-animated dismiss restores resting layout synchronously).
-        logFirstResponder("Tab switcher requested, before cancel")
         performCancel(animated: false)
-        logFirstResponder("Tab switcher requested, after cancel")
         // Keyboard focus left pending by an earlier switcher that never reported its dismissal is stale now.
         pendingTabSwitcherKeyboard = nil
         showTabSwitcher()
@@ -9796,8 +9886,9 @@ extension MainViewController: AIChatContentHandlingDelegate {
     }
 
     func aiChatContentHandler(_ handler: AIChatContentHandling, didRequestToOpen url: URL) {
-        loadUrlInNewTab(url, inheritedAttribution: nil)
-        currentTab?.adClickExternalOpenDetector.invalidateForUserInitiated()
+        loadUrlInNewTab(url, inheritedAttribution: nil) { [weak self] newTab in
+            self?.setUpUserOpenedTab(newTab, openedFrom: nil)
+        }
     }
 
     private func closeCurrentTab() {
@@ -10040,7 +10131,7 @@ extension MainViewController {
 
         case .newTab:
             self.recordUserOpenedTab()
-            self.newTabTransitions.open { self.newTab() }
+            self.newTab()
 
         case .fire:
             self.onFirePressed()
@@ -10154,7 +10245,7 @@ extension MainViewController {
 
         case .newTab:
             recordUserOpenedTab()
-            newTabTransitions.open { newTab() }
+            newTab()
 
         case .bookmarks:
             segueToBookmarks()
@@ -10305,4 +10396,14 @@ extension MainViewController {
 @available(iOS 18.4, *)
 extension MainViewController: SearchTokenProviding {
     func currentToken() -> String? { searchTokenFetcher.retrieveToken() }
+}
+
+/// What `loadUrlInNewTab` was asked to show, kept together while it waits for a data clear or a transition.
+private struct NewTabURLRequest {
+    let url: URL
+    let reuseExisting: MainViewController.ExistingTabReusePolicy?
+    let inheritedAttribution: AdClickAttributionLogic.State?
+    let fromExternalLink: Bool
+    let voiceMode: Bool
+    let completion: ((Tab) -> Void)?
 }

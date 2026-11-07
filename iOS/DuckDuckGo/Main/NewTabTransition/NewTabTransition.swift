@@ -18,7 +18,6 @@
 //
 
 import UIKit
-import os
 
 /// Container transform for opening a new tab: the old screen (a snapshot) scales back and dims
 /// while the live new page grows from a smaller card to full screen.
@@ -30,8 +29,6 @@ final class NewTabTransition: NewTabTransitioning {
 
     typealias Tuning = NewTabTransitionTuning
 
-    private static let logger = Logger(subsystem: "com.duckduckgo.mobile.ios", category: "NewTabTransition")
-
     private let window: UIWindow
     private let configuration: NewTabTransitionConfiguration
     private let entryPoint: Tuning.EntryPoint
@@ -39,7 +36,6 @@ final class NewTabTransition: NewTabTransitioning {
     private let motion: Tuning.Motion
     private let duration: TimeInterval
     private let tapLocation: CGPoint?
-    private let beganAt = CACurrentMediaTime()
 
     /// Focus the new tab asks for waits here, so its keyboard lands with the tab.
     let keyboardGate = NewTabKeyboardGate()
@@ -71,11 +67,11 @@ final class NewTabTransition: NewTabTransitioning {
               let window = (oldScreen as? UIWindow) ?? oldScreen.window,
               let screenSnapshot = oldScreen.snapshotView(afterScreenUpdates: false) else { return nil }
         let transition = NewTabTransition(window: window, entryPoint: entryPoint, tapLocation: tapLocation, configuration: configuration)
-        logger.debug("Start dimming: \(startDimming, privacy: .public)")
         transition.coverScreen(with: screenSnapshot, dimmedBy: startDimming)
+        // Taps wait for the new tab, as they do during a system transition.
+        window.isUserInteractionEnabled = false
         handleOldKeyboard(in: window, as: configuration.oldKeyboard.forNewPage(raisingKeyboard: newPageRaisesKeyboard))
         transition.acknowledgeTap()
-        logger.debug("Transition began at \(transition.beganAt, privacy: .public)")
         return transition
     }
 
@@ -102,12 +98,8 @@ final class NewTabTransition: NewTabTransitioning {
     /// Built without animation, so the new tab is already settled on the first frame.
     /// A keyboard the new tab asks for rises on the next turn, together with the grow.
     func revealNewPage(_ page: UIView, builtBy build: () -> Void) {
-        let keyboardObserver = logKeyboardAppearance()
         UIView.performWithoutAnimation(build)
-        NotificationCenter.default.removeObserver(keyboardObserver)
-        Self.logger.debug("Built before layout in \(Int((CACurrentMediaTime() - self.beganAt) * 1000), privacy: .public) ms")
         page.layoutIfNeeded()
-        logBuildTime()
         moveOldPage(below: page)
         hideViews(above: page)
         finishLeftoverAnimations(in: page)
@@ -145,18 +137,6 @@ final class NewTabTransition: NewTabTransitioning {
         }
         fade.addCompletion { _ in self.finish() }
         run(fade)
-    }
-
-    private func logKeyboardAppearance() -> NSObjectProtocol {
-        NotificationCenter.default.addObserver(forName: UIResponder.keyboardWillShowNotification, object: nil, queue: nil) { [beganAt] _ in
-            let ms = Int((CACurrentMediaTime() - beganAt) * 1000)
-            Self.logger.debug("Keyboard shows while building, \(ms, privacy: .public) ms after begin")
-        }
-    }
-
-    private func logBuildTime() {
-        let buildMs = Int((CACurrentMediaTime() - beganAt) * 1000)
-        Self.logger.debug("New tab built in \(buildMs, privacy: .public) ms, origin: \(self.origin.rawValue, privacy: .public), at \(CACurrentMediaTime(), privacy: .public)")
     }
 
     // MARK: - Layers
@@ -243,7 +223,6 @@ final class NewTabTransition: NewTabTransitioning {
             view = parent
         }
         viewsHiddenAboveNewPage.forEach { $0.isHidden = true }
-        Self.logger.debug("Hidden above new page: \(self.viewsHiddenAboveNewPage.map { String(describing: type(of: $0)) }, privacy: .public)")
     }
 
     /// Shared chrome can still be animating for the old page, like a glass button closing its menu.
@@ -270,6 +249,7 @@ final class NewTabTransition: NewTabTransitioning {
     private func finish() {
         guard !isFinished else { return }
         isFinished = true
+        window.isUserInteractionEnabled = true
         [backdrop, oldPage, shadow].forEach { $0.removeFromSuperview() }
         viewsHiddenAboveNewPage.forEach { $0.isHidden = false }
         restoreNewPage()
@@ -343,6 +323,7 @@ final class NewTabTransition: NewTabTransitioning {
             page.layer.cornerRadius = cornerRadius
             UIView.animateKeyframes(withDuration: 0, delay: 0) {
                 UIView.addKeyframe(withRelativeStartTime: 0, relativeDuration: Tuning.fadeInPortion) {
+                    page.alpha = 1
                     shadow.alpha = Tuning.shadowPeakAlpha
                 }
                 UIView.addKeyframe(withRelativeStartTime: Tuning.fadeInPortion, relativeDuration: 1 - Tuning.fadeInPortion) {
@@ -351,20 +332,8 @@ final class NewTabTransition: NewTabTransitioning {
             }
         }
         // Strong on purpose: nothing else keeps the transition alive until it finishes.
-        grow.addCompletion { _ in
-            Self.logger.debug("Transition finished at \(CACurrentMediaTime(), privacy: .public) window: \(self.window.subviews.map { "\(type(of: $0)) h=\($0.isHidden)" }, privacy: .public)")
-            self.finish()
-        }
+        grow.addCompletion { _ in self.finish() }
         run(grow)
-        fadeInNewPage(page)
-    }
-
-    /// Fades in over real time, not the grow curve, which covers most of its distance in the first frames.
-    private func fadeInNewPage(_ page: UIView) {
-        let fade = UIViewPropertyAnimator(duration: duration * Tuning.fadeInPortion, curve: .easeOut) {
-            page.alpha = 1
-        }
-        run(fade)
     }
 
     private var oldPageEndTransform: CGAffineTransform {

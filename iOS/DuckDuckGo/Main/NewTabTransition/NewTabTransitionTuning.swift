@@ -59,8 +59,8 @@ enum NewTabTransitionTuning {
         var duration: TimeInterval
     }
 
-    static let rightOfCenter = Motion(startScale: 0.8, offset: 0.25, oldPageScale: 0.95, oldPageDrift: 0.08, dimming: 0.25, duration: 0.5)
-    static let belowCenter = Motion(startScale: 0.8, offset: 0.15, oldPageScale: 0.95, oldPageDrift: 0, dimming: 0.25, duration: 0.5)
+    static let rightOfCenter = Motion(startScale: 0.8, offset: 0.25, oldPageScale: 0.95, oldPageDrift: 0.08, dimming: 0.25, duration: 0.36)
+    static let belowCenter = Motion(startScale: 0.8, offset: 0.15, oldPageScale: 0.95, oldPageDrift: 0, dimming: 0.25, duration: 0.36)
 
     static let inTabOrigin = Origin.rightOfCenter
     static let tabManagerOrigin = Origin.belowCenter
@@ -69,7 +69,7 @@ enum NewTabTransitionTuning {
     static let cornerRadius: CGFloat = 55
     static let roundsCorners = true
     static let fadesInNewPage = true
-    static let usesSpring = true
+    static let usesSpring = false
     static let tabManagerStaysStill = false
     /// Stays up, so a new tab that raises its own keyboard never drops and re-raises it.
     static let oldKeyboard = OldKeyboard.staysUp
@@ -80,7 +80,7 @@ enum NewTabTransitionTuning {
     static let tapFeedbackDimming: CGFloat = 0.12
     /// How dark UIKit's dimmed sheet backdrop makes the screen, measured from recordings.
     static let sheetBackdropDimming: CGFloat = 0.2
-    /// Share of the duration, in time, over which the new page fades in.
+    /// Share of the eased motion over which the new page fades in.
     static let fadeInPortion = 0.3
     /// Share of the duration over which the old page reaches full dimming.
     static let dimmingPortion = 0.35

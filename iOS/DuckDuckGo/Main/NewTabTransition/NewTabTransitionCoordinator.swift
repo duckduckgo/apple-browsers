@@ -49,8 +49,19 @@ protocol NewTabTransitionHost: AnyObject {
     func dismissPresentedScreen(then completion: @escaping () -> Void)
 }
 
+/// How a new tab comes into view. Growing in is the default; the others name why a tab doesn't.
+enum NewTabEntrance {
+    case grows
+    /// Arrives from another app, a widget, a shortcut or app launch, which bring their own entrance.
+    case fromOutsideTheApp
+    /// A swipe past the last tab already moved the new tab into place.
+    case followsSwipe
+    /// A screen presented over the page still covers it, so there is no page to grow from.
+    case underPresentedScreen
+}
+
 /// The one way to open a new tab with the transition:
-/// - From the page: `open { newTab() }`.
+/// - From the page: `newTab()` and the other openers grow by default; `open { … }` covers several steps at once.
 /// - From a presented screen such as a sheet: `openClosingPresentedScreen { ... }`.
 /// - From a screen that dismisses first, like the tab manager: `prepare(from: .tabManager)`, then `open` as usual.
 /// One transition runs at a time; a tab opened while one runs is built without its own.
@@ -98,10 +109,21 @@ final class NewTabTransitionCoordinator: NewTabOpeningObserving {
         return true
     }
 
-    /// Builds the new tab with `build` under the transition when it's on, otherwise just builds it.
-    /// Pass `raisesKeyboard: false` for a page without its own keyboard, such as a website. Returns whether it animated.
+    /// Builds the new tab with `build`, growing it in unless `entrance` says why not. Returns whether it animated.
+    /// Pass `raisesKeyboard: false` for a page without its own keyboard, such as a website.
     @discardableResult
-    func open(raisesKeyboard: Bool = true, _ build: () -> Void) -> Bool {
+    func open(entrance: NewTabEntrance = .grows, raisesKeyboard: Bool = true, _ build: () -> Void) -> Bool {
+        switch entrance {
+        case .grows:
+            return grow(raisesKeyboard: raisesKeyboard, build)
+        case .fromOutsideTheApp, .followsSwipe, .underPresentedScreen:
+            build()
+            return false
+        }
+    }
+
+    /// Builds the new tab under the transition when it's on, otherwise just builds it.
+    private func grow(raisesKeyboard: Bool, _ build: () -> Void) -> Bool {
         guard let transition = takePrepared() ?? begin(from: .page, raisesKeyboard: raisesKeyboard) else {
             build()
             return false
@@ -116,17 +138,12 @@ final class NewTabTransitionCoordinator: NewTabOpeningObserving {
             host?.dismissPresentedScreen(then: build)
             return
         }
-        // A keyboard raised while a screen is still being dismissed skips its slide.
-        host?.closePresentedScreenUnseen(then: transition.keyboardGate.hold())
-        reveal(transition, builtBy: build)
+        // Until it closes, the page sits in the presentation's dimmed container, so the tab grows only after.
+        host?.closePresentedScreenUnseen { [weak self] in
+            self?.reveal(transition, builtBy: build)
+        }
     }
 
-    /// The user acts while a tab comes in, so it lands at once instead of making them wait.
-    /// A prepared transition is left alone: the tab it's for hasn't been built yet.
-    func finishCurrent() {
-        guard let current, current !== prepared else { return }
-        current.cancel()
-    }
 
     /// Focus the input asks for waits while a new tab comes in, so the keyboard lands with it.
     func scheduleInputFocus(_ focus: @escaping () -> Void) {

@@ -8241,8 +8241,7 @@ extension MainViewController: TabDelegate {
     func duckAISwipeNewChatChromeState(for tab: TabViewController) -> DuckAISwipeNewChatChromeState? {
         guard tab === currentTab else { return nil }
         let aiTabChrome = aiTabChromeDecision()
-        return DuckAISwipeNewChatChromeState(isKeyboardVisible: keyboardShowing || isKeyboardOverlappingContent,
-                                             isGenerating: unifiedToggleInputCoordinator?.viewController.isGenerating ?? false,
+        return DuckAISwipeNewChatChromeState(isGenerating: unifiedToggleInputCoordinator?.viewController.isGenerating ?? false,
                                              isVoiceSessionActive: aiTabChrome.voiceChromeActive,
                                              isInputHidden: aiTabChrome.hidesInputBar,
                                              bottomChromeMinY: bottomChromeMinYInWindow())

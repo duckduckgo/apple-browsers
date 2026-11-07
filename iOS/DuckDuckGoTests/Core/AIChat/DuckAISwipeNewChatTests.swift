@@ -48,7 +48,7 @@ struct DuckAISwipeNewChatTests {
 
     /// A slow pull from the bottom to `distance`, a point at a time.
     private func slowPull(to distance: CGFloat) -> [DuckAISwipeNewChat.Event] {
-        [.began(isEligible: true), .reachedBottom(translation: 0)]
+        [.began(isEligible: true, translation: 0), .pageAnswered(isAtBottom: true, translation: 0)]
             + stride(from: 1, through: distance, by: 1).map { .moved(translation: -$0) }
     }
 
@@ -57,7 +57,7 @@ struct DuckAISwipeNewChatTests {
     @available(iOS 16, macOS 13, *)
     @Test("Releasing below the threshold springs back without starting a new chat", .timeLimit(.minutes(1)))
     func releaseBelowThresholdDoesNotTrigger() {
-        let result = run([.began(isEligible: true), .reachedBottom(translation: 0), .moved(translation: -(threshold - 1)), .ended])
+        let result = run([.began(isEligible: true, translation: 0), .pageAnswered(isAtBottom: true, translation: 0), .moved(translation: -(threshold - 1)), .ended])
         #expect(startNewChatCount(result.effects) == 0)
         #expect(!result.effects.contains(.arm))
         #expect(result.effects.last == .springBack)
@@ -67,8 +67,8 @@ struct DuckAISwipeNewChatTests {
     @available(iOS 16, macOS 13, *)
     @Test("Releasing past the threshold starts exactly one new chat, armed once", .timeLimit(.minutes(1)))
     func releasePastThresholdTriggersOnce() {
-        let result = run([.began(isEligible: true),
-                          .reachedBottom(translation: 0),
+        let result = run([.began(isEligible: true, translation: 0),
+                          .pageAnswered(isAtBottom: true, translation: 0),
                           .moved(translation: -threshold),
                           .moved(translation: -(threshold + 40)),
                           .ended,
@@ -107,8 +107,8 @@ struct DuckAISwipeNewChatTests {
     @available(iOS 16, macOS 13, *)
     @Test("Dropping back below the threshold before release disarms", .timeLimit(.minutes(1)))
     func droppingBackBelowThresholdDisarms() {
-        let result = run([.began(isEligible: true),
-                          .reachedBottom(translation: 0),
+        let result = run([.began(isEligible: true, translation: 0),
+                          .pageAnswered(isAtBottom: true, translation: 0),
                           .moved(translation: -threshold),
                           .moved(translation: -(threshold / 2)),
                           .ended])
@@ -117,37 +117,130 @@ struct DuckAISwipeNewChatTests {
     }
 
     @available(iOS 16, macOS 13, *)
-    @Test("The pull is measured from where the chat reached its bottom mid-drag", .timeLimit(.minutes(1)))
-    func reachingBottomMidDragUsesNewBaseline() {
-        let bottomAt: CGFloat = -300
-        let short = run([.began(isEligible: true),
+    @Test("The pull is measured from where the finger was when the page replied", .timeLimit(.minutes(1)))
+    func pageReplyMidDragSetsBaseline() {
+        let bottomAt: CGFloat = -30
+        let short = run([.began(isEligible: true, translation: 0),
                          .moved(translation: bottomAt),
-                         .reachedBottom(translation: bottomAt),
+                         .pageAnswered(isAtBottom: true, translation: bottomAt),
                          .moved(translation: bottomAt - (threshold - 1)),
                          .ended])
         #expect(startNewChatCount(short.effects) == 0)
 
-        let full = run([.began(isEligible: true),
+        let full = run([.began(isEligible: true, translation: 0),
                         .moved(translation: bottomAt),
-                        .reachedBottom(translation: bottomAt),
+                        .pageAnswered(isAtBottom: true, translation: bottomAt),
                         .moved(translation: bottomAt - threshold),
                         .ended])
         #expect(startNewChatCount(full.effects) == 1)
     }
 
     @available(iOS 16, macOS 13, *)
-    @Test("Scrolling that never reaches the bottom only asks the page, and moves nothing", .timeLimit(.minutes(1)))
-    func notAtBottomNeverShowsHint() {
-        let result = run([.began(isEligible: true), .moved(translation: -500), .moved(translation: -900), .ended])
-        #expect(result.effects == [.checkAtBottom, .checkAtBottom, .checkAtBottom])
+    @Test("A pan that starts above the bottom never pulls, even when it scrolls on to the bottom", .timeLimit(.minutes(1)))
+    func panStartedAboveBottomNeverPulls() {
+        let result = run([.began(isEligible: true, translation: 0),
+                          .pageAnswered(isAtBottom: false, translation: 0),
+                          .moved(translation: -500),
+                          .pageAnswered(isAtBottom: true, translation: -500),
+                          .moved(translation: -500 - threshold * 2),
+                          .ended])
+        #expect(result.effects == [.checkAtBottom])
+        #expect(result.pull == .idle)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("The page is asked once per pan, however far the finger moves before it replies", .timeLimit(.minutes(1)))
+    func pageAskedOncePerPan() {
+        let result = run([.began(isEligible: true, translation: 0), .moved(translation: -50), .moved(translation: -120)])
+        #expect(result.effects == [.checkAtBottom])
+        #expect(result.pull == .tracking)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("A finger that goes down above the bottom never pulls, even if the chat then scrolls to it",
+          .timeLimit(.minutes(1)))
+    func touchDownAboveBottomNeverPulls() {
+        let result = run([.touchedDown,
+                          .pageAnswered(isAtBottom: false, translation: 0),
+                          .began(isEligible: true, translation: -10),
+                          .moved(translation: -500),
+                          .moved(translation: -500 - threshold * 2),
+                          .ended])
+        #expect(result.effects == [.checkAtBottom])
+        #expect(result.pull == .idle)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("A finger that goes down at the bottom pulls from where the pan began", .timeLimit(.minutes(1)))
+    func touchDownAtBottomPullsFromPanStart() {
+        let start: CGFloat = -10
+        let short = run([.touchedDown,
+                         .pageAnswered(isAtBottom: true, translation: 0),
+                         .began(isEligible: true, translation: start),
+                         .moved(translation: start - (threshold - 1)),
+                         .ended])
+        #expect(startNewChatCount(short.effects) == 0)
+
+        let full = run([.touchedDown,
+                        .pageAnswered(isAtBottom: true, translation: 0),
+                        .began(isEligible: true, translation: start),
+                        .moved(translation: start - threshold),
+                        .ended])
+        #expect(startNewChatCount(full.effects) == 1)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("The touch-down answer still counts when it arrives after the pan has begun", .timeLimit(.minutes(1)))
+    func lateTouchDownAnswerIsUsed() {
+        let atBottom = run([.touchedDown,
+                            .began(isEligible: true, translation: -10),
+                            .pageAnswered(isAtBottom: true, translation: -14),
+                            .moved(translation: -14 - threshold),
+                            .ended])
+        #expect(startNewChatCount(atBottom.effects) == 1)
+
+        let above = run([.touchedDown,
+                         .began(isEligible: true, translation: -10),
+                         .pageAnswered(isAtBottom: false, translation: -14),
+                         .moved(translation: -14 - threshold * 2),
+                         .ended])
+        #expect(startNewChatCount(above.effects) == 0)
+        #expect(above.pull == .idle)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("A tap leaves nothing in progress", .timeLimit(.minutes(1)))
+    func tapLeavesNothingUnderway() {
+        let result = run([.touchedDown, .pageAnswered(isAtBottom: true, translation: 0)])
+        #expect(!result.pull.isUnderway)
+        #expect(!result.effects.contains(.springBack))
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Navigating mid-pull springs back, and the page's late answer starts nothing", .timeLimit(.minutes(1)))
+    func navigationMidPullDropsPull() {
+        var pull = Pull.idle
+        _ = ([.touchedDown, .began(isEligible: true, translation: 0)] as [DuckAISwipeNewChat.Event]).flatMap { pull.handle($0) }
+        #expect(pull.isUnderway)
+        #expect(pull.handle(.cancelled).isEmpty)
+        #expect(pull.handle(.pageAnswered(isAtBottom: true, translation: 0)).isEmpty)
+        #expect(pull.handle(.moved(translation: -threshold * 2)).isEmpty)
+        #expect(pull.handle(.ended).isEmpty)
+
+        _ = ([.touchedDown, .pageAnswered(isAtBottom: true, translation: 0), .began(isEligible: true, translation: 0),
+             .moved(translation: -threshold)] as [DuckAISwipeNewChat.Event]).flatMap { pull.handle($0) }
+        #expect(pull == .armed(baseline: 0))
+        #expect(pull.handle(.cancelled) == [.springBack])
+        #expect(pull.handle(.ended).isEmpty)
+        #expect(!pull.isUnderway)
     }
 
     @available(iOS 16, macOS 13, *)
     @Test("Cancelling an armed pull springs back, starts nothing and resets", .timeLimit(.minutes(1)))
     func cancelResets() {
         var pull = Pull.idle
-        _ = pull.handle(.began(isEligible: true))
-        _ = pull.handle(.reachedBottom(translation: 0))
+        _ = pull.handle(.began(isEligible: true, translation: 0))
+        _ = pull.handle(.pageAnswered(isAtBottom: true, translation: 0))
         _ = pull.handle(.moved(translation: -threshold))
         #expect(pull == .armed(baseline: 0))
 
@@ -159,10 +252,10 @@ struct DuckAISwipeNewChatTests {
     @available(iOS 16, macOS 13, *)
     @Test("A new pan starts over, without the previous pull's baseline", .timeLimit(.minutes(1)))
     func newPanStartsOver() {
-        let result = run([.began(isEligible: true),
-                          .reachedBottom(translation: 0),
+        let result = run([.began(isEligible: true, translation: 0),
+                          .pageAnswered(isAtBottom: true, translation: 0),
                           .moved(translation: -(threshold - 1)),
-                          .began(isEligible: true),
+                          .began(isEligible: true, translation: 0),
                           .moved(translation: -threshold),
                           .ended])
         #expect(startNewChatCount(result.effects) == 0)
@@ -171,8 +264,8 @@ struct DuckAISwipeNewChatTests {
     @available(iOS 16, macOS 13, *)
     @Test("An ineligible pan never arms, even if the page reports the bottom", .timeLimit(.minutes(1)))
     func ineligiblePanNeverArms() {
-        let result = run([.began(isEligible: false),
-                          .reachedBottom(translation: 0),
+        let result = run([.began(isEligible: false, translation: 0),
+                          .pageAnswered(isAtBottom: true, translation: 0),
                           .moved(translation: -(threshold * 3)),
                           .ended])
         #expect(result.effects.isEmpty)
@@ -281,7 +374,6 @@ struct DuckAISwipeNewChatTests {
     private static let eligible = Eligibility(isFeatureEnabled: true,
                                               isPhone: true,
                                               hasChat: true,
-                                              isKeyboardVisible: false,
                                               isGenerating: false,
                                               isVoiceSessionActive: false,
                                               isInputHidden: false,
@@ -302,7 +394,6 @@ struct DuckAISwipeNewChatTests {
             ("flag off", \Eligibility.isFeatureEnabled, false),
             ("not a phone", \Eligibility.isPhone, false),
             ("no chat ID", \Eligibility.hasChat, false),
-            ("keyboard up", \Eligibility.isKeyboardVisible, true),
             ("generating", \Eligibility.isGenerating, true),
             ("voice session", \Eligibility.isVoiceSessionActive, true),
             ("input hidden by the page", \Eligibility.isInputHidden, true)

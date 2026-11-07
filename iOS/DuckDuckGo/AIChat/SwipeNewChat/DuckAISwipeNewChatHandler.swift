@@ -24,7 +24,6 @@ import WebKit
 
 /// What the browser chrome around the tab knows that the swipe gates on.
 struct DuckAISwipeNewChatChromeState {
-    let isKeyboardVisible: Bool
     let isGenerating: Bool
     let isVoiceSessionActive: Bool
     let isInputHidden: Bool
@@ -33,8 +32,8 @@ struct DuckAISwipeNewChatChromeState {
 }
 
 /// Duck.ai scrolls an inner container, not the web view's scroll view, so the native scroll view never
-/// reports overscroll. Instead a simultaneous pan asks the page whether the chat under the finger is
-/// at its bottom, then measures how far the finger keeps pulling up from there.
+/// reports overscroll. Instead a simultaneous pan asks the page, as it begins, whether the chat under the
+/// finger is at its bottom, and if so measures how far the finger pulls up from there.
 @MainActor
 final class DuckAISwipeNewChatHandler: NSObject, UIGestureRecognizerDelegate {
 
@@ -54,10 +53,11 @@ final class DuckAISwipeNewChatHandler: NSObject, UIGestureRecognizerDelegate {
     private var pull = DuckAISwipeNewChat.Pull.idle
     /// Where the current pan started, to re-check eligibility as the chrome changes during the pull.
     private var panStart: (velocity: CGPoint, y: CGFloat, bottomInsetMinY: CGFloat)?
-    /// Bumped by each eligible pan and by `cancel()`, so late page replies and animation completions
-    /// from an earlier interaction do nothing.
+    /// Bumped by each touch-down, by `cancel()` and by navigation mid-pull, so late page replies and animation
+    /// completions from an earlier interaction do nothing.
     private var generation = 0
-    private var isCheckInFlight = false
+    /// Where the latest finger went down on the web view, for the page's at-bottom check.
+    private var touchDownPoint: CGPoint?
     private var commitState = DuckAISwipeNewChat.Commit.idle
 
     private var movesContent: Bool { !UIAccessibility.isReduceMotionEnabled }
@@ -86,14 +86,19 @@ final class DuckAISwipeNewChatHandler: NSObject, UIGestureRecognizerDelegate {
     /// Puts the chat back as it was, mid-pull or mid-commit; for when the tab goes off screen.
     /// With nothing in progress it leaves the web view alone.
     func cancel() {
-        guard pull != .idle || commitState != .idle || !backdrop.isHidden else { return }
+        guard pull.isUnderway || commitState != .idle || !backdrop.isHidden else { return }
         pull = .idle
         panStart = nil
         commitState = .idle
         restore()
     }
 
+    /// A pull belongs to the chat it started on, so navigating away mid-pull drops it and any page reply still due.
     func webViewURLDidChange() {
+        if pull.isUnderway {
+            generation += 1
+            apply(pull.handle(.cancelled))
+        }
         apply(commitState.handle(.urlChanged(chatID: webView?.url?.duckAIChatID)))
     }
 
@@ -102,7 +107,7 @@ final class DuckAISwipeNewChatHandler: NSObject, UIGestureRecognizerDelegate {
         let event: DuckAISwipeNewChat.Event
         switch gesture.state {
         case .began:
-            event = .began(isEligible: beginIfEligible(gesture, in: hostView))
+            event = .began(isEligible: beginIfEligible(gesture, in: hostView), translation: gesture.translation(in: hostView).y)
         case .changed:
             event = pull == .idle || isStillEligible() ? .moved(translation: gesture.translation(in: hostView).y) : .cancelled
         case .ended:
@@ -120,7 +125,6 @@ final class DuckAISwipeNewChatHandler: NSObject, UIGestureRecognizerDelegate {
         let eligibility = DuckAISwipeNewChat.Eligibility(isFeatureEnabled: isFeatureEnabled(),
                                                          isPhone: UIDevice.current.userInterfaceIdiom == .phone,
                                                          hasChat: webView?.url?.duckAIChatID != nil,
-                                                         isKeyboardVisible: chrome.isKeyboardVisible,
                                                          isGenerating: chrome.isGenerating,
                                                          isVoiceSessionActive: chrome.isVoiceSessionActive,
                                                          isInputHidden: chrome.isInputHidden,
@@ -141,7 +145,6 @@ final class DuckAISwipeNewChatHandler: NSObject, UIGestureRecognizerDelegate {
                     gesture.location(in: hostView).y,
                     hostView.convert(CGPoint(x: 0, y: homeIndicatorTop), from: nil).y)
         guard let current = eligibility(), current.eligibility.isEligible else { return false }
-        generation += 1
         tickHaptic.prepare()
         armHaptic.prepare()
         indicator.reset()
@@ -200,6 +203,9 @@ final class DuckAISwipeNewChatHandler: NSObject, UIGestureRecognizerDelegate {
             + max(distance - constants.triggerDistance, 0) * constants.overpullResistance
         indicator.update(progress: progress, isArmed: isArmed)
         guard movesContent else { return }
+        if backdrop.isHidden {
+            showBackdrop()
+        }
         webView?.transform = CGAffineTransform(translationX: 0, y: -offset)
         indicator.transform = CGAffineTransform(translationX: 0, y: -offset * constants.indicatorFollow)
     }
@@ -261,18 +267,14 @@ final class DuckAISwipeNewChatHandler: NSObject, UIGestureRecognizerDelegate {
     }
 
     private func checkAtBottom() {
-        guard let webView, !isCheckInFlight, webView.bounds.width > 0, webView.bounds.height > 0 else { return }
-        isCheckInFlight = true
+        guard let webView, webView.bounds.width > 0, webView.bounds.height > 0 else { return }
         let generation = generation
-        let point = pan.location(in: webView)
+        let point = touchDownPoint ?? pan.location(in: webView)
         let fraction = CGPoint(x: point.x / webView.bounds.width, y: point.y / webView.bounds.height)
         webView.evaluateJavaScript(Self.atBottomScript(atFractionOfViewport: fraction)) { [weak self] result, _ in
-            guard let self else { return }
-            self.isCheckInFlight = false
-            guard generation == self.generation, self.pull == .tracking,
-                  result as? Bool == true, let hostView = self.hostView else { return }
-            self.showBackdrop()
-            self.apply(self.pull.handle(.reachedBottom(translation: self.pan.translation(in: hostView).y)))
+            guard let self, generation == self.generation, let hostView = self.hostView else { return }
+            self.apply(self.pull.handle(.pageAnswered(isAtBottom: result as? Bool == true,
+                                                      translation: self.pan.translation(in: hostView).y)))
         }
     }
 
@@ -320,6 +322,16 @@ final class DuckAISwipeNewChatHandler: NSObject, UIGestureRecognizerDelegate {
 
     private func hideBackdrop() {
         backdrop.isHidden = true
+    }
+
+    /// The first finger down asks the page about the chat under it straight away, before the chat scrolls with the
+    /// finger; by the time the pan begins it has already moved. Never mid-commit, so the fade and timeout stay valid.
+    func gestureRecognizer(_ gestureRecognizer: UIGestureRecognizer, shouldReceive touch: UITouch) -> Bool {
+        guard pan.numberOfTouches == 0, isFeatureEnabled(), commitState == .idle, let webView else { return true }
+        generation += 1
+        touchDownPoint = touch.location(in: webView)
+        apply(pull.handle(.touchedDown))
+        return true
     }
 
     func gestureRecognizerShouldBegin(_ gestureRecognizer: UIGestureRecognizer) -> Bool {

@@ -25,8 +25,8 @@ enum DuckAISwipeNewChat {
 
     /// Every tunable of the gesture, in one place for design.
     enum Constants {
-        /// How far the finger must keep pulling up once the chat is at its bottom.
-        static let triggerDistance: CGFloat = 110
+        /// How far the finger must pull up past the bottom of the chat.
+        static let triggerDistance: CGFloat = 150
         /// The pull is split into this many steps; each one reached on the way up ticks, the last one arms.
         static let hapticSteps = 5
         /// Past the trigger, the chat follows the finger this much, so it resists further pulling.
@@ -46,7 +46,6 @@ enum DuckAISwipeNewChat {
         var isFeatureEnabled: Bool
         var isPhone: Bool
         var hasChat: Bool
-        var isKeyboardVisible: Bool
         var isGenerating: Bool
         var isVoiceSessionActive: Bool
         var isInputHidden: Bool
@@ -59,7 +58,6 @@ enum DuckAISwipeNewChat {
             isFeatureEnabled
             && isPhone
             && hasChat
-            && !isKeyboardVisible
             && !isGenerating
             && !isVoiceSessionActive
             && !isInputHidden
@@ -69,9 +67,12 @@ enum DuckAISwipeNewChat {
     }
 
     enum Event: Equatable {
-        case began(isEligible: Bool)
-        /// The page reported the chat under the finger is at its bottom; `translation` is the pan's vertical translation then.
-        case reachedBottom(translation: CGFloat)
+        /// A finger went down on the chat; the page is asked about the chat under it before anything scrolls.
+        case touchedDown
+        /// The page answered for the latest touch; `translation` is the pan's vertical translation then.
+        case pageAnswered(isAtBottom: Bool, translation: CGFloat)
+        /// `translation` is the pan's vertical translation as it begins.
+        case began(isEligible: Bool, translation: CGFloat)
         case moved(translation: CGFloat)
         case ended
         case cancelled
@@ -89,26 +90,60 @@ enum DuckAISwipeNewChat {
         case startNewChat
     }
 
+    /// Only a pan whose finger went down with the chat already at its bottom pulls, so scrolling down to the bottom
+    /// doesn't carry on into a new chat. The page is asked at touch-down, before the chat scrolls with the finger.
     enum Pull: Equatable {
         case idle
-        /// Eligible, waiting for the chat to reach its bottom.
+        /// A finger is down but the pan hasn't begun; `isAtBottom` is nil until the page answers.
+        case touched(isAtBottom: Bool?)
+        /// Eligible, waiting for the page's answer.
         case tracking
         /// At the bottom; the pull is measured upward from `baseline`, and has reached `step`.
         case pulling(baseline: CGFloat, step: Int)
         /// Pulled past the threshold; releasing starts a new chat.
         case armed(baseline: CGFloat)
 
+        /// A pan is in progress. A tap leaves `.touched` behind, which is not, since nothing has moved.
+        var isUnderway: Bool {
+            switch self {
+            case .tracking, .pulling, .armed: true
+            case .idle, .touched: false
+            }
+        }
+
         mutating func handle(_ event: Event) -> [Effect] {
             switch (self, event) {
-            case (_, .began(let isEligible)):
-                self = isEligible ? .tracking : .idle
-                return isEligible ? [.checkAtBottom] : []
+            case (.idle, .touchedDown), (.touched, .touchedDown):
+                self = .touched(isAtBottom: nil)
+                return [.checkAtBottom]
 
-            case (.tracking, .reachedBottom(let translation)):
+            case (.touched(nil), .pageAnswered(let isAtBottom, _)):
+                self = .touched(isAtBottom: isAtBottom)
+                return []
+
+            case (.tracking, .pageAnswered(let isAtBottom, let translation)):
+                self = isAtBottom ? .pulling(baseline: translation, step: 0) : .idle
+                return []
+
+            case (_, .began(false, _)):
+                self = .idle
+                return []
+
+            case (.touched(true), .began(true, let translation)):
                 self = .pulling(baseline: translation, step: 0)
                 return []
 
-            case (.tracking, .moved):
+            case (.touched(false), .began(true, _)):
+                self = .idle
+                return []
+
+            case (.touched(nil), .began(true, _)):
+                self = .tracking
+                return []
+
+            case (_, .began(true, _)):
+                // No touch-down was seen for this pan, so the page is asked now.
+                self = .tracking
                 return [.checkAtBottom]
 
             case (.pulling(let baseline, let step), .moved(let translation)):
@@ -125,11 +160,11 @@ enum DuckAISwipeNewChat {
                 self = .idle
                 return [.springBack]
 
-            case (.tracking, .ended), (.tracking, .cancelled):
+            case (.touched, .ended), (.touched, .cancelled), (.tracking, .ended), (.tracking, .cancelled):
                 self = .idle
                 return []
 
-            case (.idle, _), (.pulling, .reachedBottom), (.armed, .reachedBottom):
+            case (.idle, _), (.touched, _), (.tracking, _), (.pulling, _), (.armed, _):
                 return []
             }
         }

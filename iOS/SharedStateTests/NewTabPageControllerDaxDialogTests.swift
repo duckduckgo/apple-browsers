@@ -521,13 +521,13 @@ final class NewTabPageControllerDaxDialogTests: XCTestCase {
             wait(for: [animated], timeout: 5)
             let expectedOrigin = initialOrigin + topInset - 184
             let expectedCellOrigin = initialCellOrigin + topInset - 184
-            let updated = XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in
+            XCTAssertEqual(waitForLayout {
                 parent.view.layoutIfNeeded()
                 guard let cell = visibleCell(in: list) else { return false }
                 return abs(list.convert(CGPoint.zero, to: window).y - expectedOrigin) <= 1
                     && abs(cell.convert(cell.bounds, to: window).minY - expectedCellOrigin) <= 1
-            }, object: nil)
-            XCTAssertEqual(XCTWaiter.wait(for: [updated], timeout: 5), .completed)
+                    && abs(list.convert(list.bounds, to: window).minY - initialViewportOrigin) <= 1
+            }, .completed)
             XCTAssertEqual(list.convert(CGPoint.zero, to: window).y, expectedOrigin, accuracy: 1)
             let cell = try XCTUnwrap(visibleCell(in: list))
             XCTAssertEqual(cell.convert(cell.bounds, to: window).minY, expectedCellOrigin, accuracy: 1)

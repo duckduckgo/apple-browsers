@@ -107,9 +107,11 @@ final class WebExtensionScriptletCoordinatorTests: XCTestCase {
         let newScriptlets = [Scriptlet(path: "new.js", relativeCachedPath: "ext/2.0/new.js")]
         mockProvider.scriptletsMap[testType] = newScriptlets
         mockProvider.versionMap[testType] = "2.0"
+        let installationFinished = expectation(description: "Installing the updated scriptlets triggers a reload")
+        mockPathResolver.onReload = { _ in installationFinished.fulfill() }
         mockProvider.availabilitySubjects[testType]?.send(.available(newScriptlets))
 
-        try? await Task.sleep(nanoseconds: 100_000_000)
+        await fulfillment(of: [installationFinished], timeout: 30)
 
         XCTAssertEqual(mockInstaller.installCallCount, 1)
         XCTAssertEqual(mockInstaller.lastInstalledScriptlets, newScriptlets)

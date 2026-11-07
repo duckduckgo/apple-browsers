@@ -202,3 +202,14 @@ final class PacketTunnelSettingsGenerator: PacketTunnelSettingsGenerating {
             }
     }
 }
+
+#if DEBUG && (os(macOS) || os(iOS))
+extension TunnelConfiguration {
+    /// Uses the same address, routing, DNS and MTU conversion as the production adapter.
+    /// Available only to the debug adapter; the existing settings path is unchanged.
+    public func makePacketTunnelNetworkSettings() -> NEPacketTunnelNetworkSettings {
+        PacketTunnelSettingsGenerator(tunnelConfiguration: self, resolvedEndpoints: peers.map(\.endpoint))
+            .generateNetworkSettings()
+    }
+}
+#endif

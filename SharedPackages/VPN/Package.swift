@@ -12,6 +12,7 @@ let package = Package(
     products: [
         .library(name: "VPN", targets: ["VPN"]),
         .library(name: "VPNTestUtils", targets: ["VPNTestUtils"]),
+        .library(name: "VPNDebug", targets: ["VPNDebug"]),
     ],
     dependencies: [
         .package(path: "../WideEvent"),
@@ -21,6 +22,7 @@ let package = Package(
         .package(path: "../BrowserServicesKit"),
         .package(path: "../Networking"),
         .package(path: "../Infrastructure/SystemFrameworksExtensions"),
+        .package(path: "../DuckWireGuard"),
     ],
     targets: [
         .target(
@@ -43,6 +45,21 @@ let package = Package(
         ),
 
         .target(name: "WireGuardC"),
+
+        .target(
+            name: "VPNDebug",
+            dependencies: [
+                "VPN",
+                .product(name: "DuckWireGuard", package: "DuckWireGuard")
+            ],
+            swiftSettings: [.define("DEBUG", .when(configuration: .debug))]
+        ),
+
+        .testTarget(
+            name: "VPNDebugTests",
+            dependencies: ["VPNDebug", "VPN", .product(name: "DuckWireGuard", package: "DuckWireGuard")],
+            swiftSettings: [.define("DEBUG", .when(configuration: .debug))]
+        ),
 
         .target(
             name: "VPNTestUtils",

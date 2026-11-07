@@ -45,6 +45,8 @@ final class WebExtensionManagerTests: XCTestCase {
     /// tell a wait that precedes the unload from one that follows it.
     private var unloadCalledAtSleepTime: [Bool] = []
     private var currentDate = Date()
+    // These waits observe WebKit readiness; process startup can exceed a few seconds in CI.
+    private let backgroundLoadTimeout: TimeInterval = 30
 
     @MainActor
     override func setUp() {
@@ -280,7 +282,7 @@ final class WebExtensionManagerTests: XCTestCase {
             context.onBackgroundLoad = { retryStarted.fulfill() }
             context.recordedErrors = [NSError(domain: "WKWebExtensionContextErrorDomain", code: 6)]
             NotificationCenter.default.post(name: WKWebExtensionContext.errorsDidUpdateNotification, object: context)
-            await fulfillment(of: [retryStarted], timeout: 2)
+            await fulfillment(of: [retryStarted], timeout: backgroundLoadTimeout)
             XCTAssertEqual(context.completions.count, 2)
             // WebKit can retain the failed load's callback and complete it successfully with the retry.
             context.finishBackgroundLoads()
@@ -397,7 +399,7 @@ final class WebExtensionManagerTests: XCTestCase {
             NSError(domain: "WKWebExtensionContextErrorDomain", code: 6), context: context)
 
         XCTAssertTrue(scheduled)
-        await fulfillment(of: [retried], timeout: 2)
+        await fulfillment(of: [retried], timeout: backgroundLoadTimeout)
         let startup = try XCTUnwrap(manager.pendingEmbeddedBackgroundStartup)
         XCTAssertEqual(context.completions.count, 1)
         XCTAssertFalse(webExtensionLoadingMock.unloadExtensionCalled)
@@ -541,7 +543,7 @@ final class WebExtensionManagerTests: XCTestCase {
         context.onBackgroundLoad = { retried.fulfill() }
         _ = manager.recoverEmbeddedBackgroundLoadFailure(
             NSError(domain: WKWebExtensionContext.errorDomain, code: 6), context: context)
-        await fulfillment(of: [retried], timeout: 1)
+        await fulfillment(of: [retried], timeout: backgroundLoadTimeout)
         context.finishBackgroundLoads()
     }
 
@@ -729,7 +731,7 @@ final class WebExtensionManagerTests: XCTestCase {
         XCTAssertTrue(manager.recoverEmbeddedBackgroundLoadFailure(
             NSError(domain: WKWebExtensionContext.errorDomain, code: 6), context: context))
         // Reloading a real WebKit context can take more than a second on a busy simulator.
-        await fulfillment(of: [restarted], timeout: 10)
+        await fulfillment(of: [restarted], timeout: backgroundLoadTimeout)
         context.finishBackgroundLoads()
     }
 
@@ -797,7 +799,7 @@ final class WebExtensionManagerTests: XCTestCase {
         isBackground = false
         postCPMRecoveryReady()
         postCPMRecoveryReady()
-        await fulfillment(of: [requested], timeout: 1)
+        await fulfillment(of: [requested], timeout: backgroundLoadTimeout)
         XCTAssertTrue(webExtensionLoadingMock.unloadExtensionCalled)
         XCTAssertEqual(pixels.outcomes, [.restartStarted])
         XCTAssertEqual(context.completions.count, 1)
@@ -833,7 +835,7 @@ final class WebExtensionManagerTests: XCTestCase {
         context.onBackgroundLoad = { requested.fulfill() }
         isBackground = false
         postCPMRecoveryReady()
-        await fulfillment(of: [requested], timeout: 1)
+        await fulfillment(of: [requested], timeout: backgroundLoadTimeout)
         XCTAssertTrue(webExtensionLoadingMock.unloadExtensionCalled)
         context.finishBackgroundLoads()
     }
@@ -944,7 +946,7 @@ final class WebExtensionManagerTests: XCTestCase {
         restartEnabled = false
         isBackground = false
         postCPMRecoveryReady()
-        await fulfillment(of: [retried], timeout: 1)
+        await fulfillment(of: [retried], timeout: backgroundLoadTimeout)
         XCTAssertFalse(webExtensionLoadingMock.unloadExtensionCalled)
         context.finishBackgroundLoads()
     }
@@ -976,7 +978,7 @@ final class WebExtensionManagerTests: XCTestCase {
         context.onBackgroundLoad = { retried.fulfill() }
         isBackground = false
         postCPMRecoveryReady()
-        await fulfillment(of: [retried], timeout: 1)
+        await fulfillment(of: [retried], timeout: backgroundLoadTimeout)
         XCTAssertFalse(webExtensionLoadingMock.unloadExtensionCalled)
         context.finishBackgroundLoads()
     }
@@ -994,7 +996,7 @@ final class WebExtensionManagerTests: XCTestCase {
         context.onBackgroundLoad = { firstRetry.fulfill() }
         XCTAssertTrue(manager.recoverEmbeddedBackgroundLoadFailure(
             NSError(domain: WKWebExtensionContext.errorDomain, code: 6), context: context))
-        await fulfillment(of: [firstRetry], timeout: 1)
+        await fulfillment(of: [firstRetry], timeout: backgroundLoadTimeout)
         context.finishBackgroundLoads()
         context.retainedBackgroundWebView = WKWebView()
         date += 10
@@ -1013,7 +1015,7 @@ final class WebExtensionManagerTests: XCTestCase {
         let recovered = expectation(description: "The deferred failure survives until cooldown expires")
         context.onBackgroundLoad = { recovered.fulfill() }
         postCPMRecoveryReady()
-        await fulfillment(of: [recovered], timeout: 1)
+        await fulfillment(of: [recovered], timeout: backgroundLoadTimeout)
         XCTAssertTrue(webExtensionLoadingMock.unloadExtensionCalled)
         context.finishBackgroundLoads()
     }
@@ -1039,7 +1041,7 @@ final class WebExtensionManagerTests: XCTestCase {
         let recovered = expectation(description: "Cooldown expiry services the newest failed view without another event")
         context.onBackgroundLoad = { recovered.fulfill() }
         date += 1
-        await fulfillment(of: [recovered], timeout: 2)
+        await fulfillment(of: [recovered], timeout: backgroundLoadTimeout)
         XCTAssertTrue(webExtensionLoadingMock.unloadExtensionCalled)
         XCTAssertEqual(pixels.outcomes, [.restartStarted, .backgroundReady, .superseded, .restartStarted])
         XCTAssertEqual(context.completions.count, 1)
@@ -1070,7 +1072,7 @@ final class WebExtensionManagerTests: XCTestCase {
         context.onBackgroundLoad = { recovered.fulfill() }
         isBackground = false
         postCPMRecoveryReady()
-        await fulfillment(of: [recovered], timeout: 1)
+        await fulfillment(of: [recovered], timeout: backgroundLoadTimeout)
         XCTAssertTrue(webExtensionLoadingMock.unloadExtensionCalled)
         context.finishBackgroundLoads()
     }
@@ -1110,7 +1112,7 @@ final class WebExtensionManagerTests: XCTestCase {
         context.onBackgroundLoad = { restarted.fulfill() }
         XCTAssertTrue(manager.recoverEmbeddedBackgroundLoadFailure(
             NSError(domain: WKWebExtensionContext.errorDomain, code: 6), context: context))
-        await fulfillment(of: [restarted], timeout: 1)
+        await fulfillment(of: [restarted], timeout: backgroundLoadTimeout)
         // Restart schedules its background load after releasing the recovery guard and draining pending
         // attempts. Unlike a plain retry, its completion cannot later drain a pending cooldown attempt.
         context.finishBackgroundLoads()
@@ -1151,7 +1153,7 @@ final class WebExtensionManagerTests: XCTestCase {
         context.onBackgroundLoad = { recovered.fulfill() }
         isBackground = false
         postCPMRecoveryReady()
-        await fulfillment(of: [recovered], timeout: 1)
+        await fulfillment(of: [recovered], timeout: backgroundLoadTimeout)
         XCTAssertTrue(webExtensionLoadingMock.unloadExtensionCalled)
         XCTAssertEqual(pixels.outcomes, [.restartStarted])
         context.finishBackgroundLoads()
@@ -1176,7 +1178,7 @@ final class WebExtensionManagerTests: XCTestCase {
         NotificationCenter.default.post(name: WKWebExtensionContext.errorsDidUpdateNotification, object: context)
         let requested = expectation(description: "The newer foreground failure must survive the queued attempt")
         context.onBackgroundLoad = { requested.fulfill() }
-        await fulfillment(of: [requested], timeout: 1)
+        await fulfillment(of: [requested], timeout: backgroundLoadTimeout)
         XCTAssertTrue(webExtensionLoadingMock.unloadExtensionCalled)
         XCTAssertEqual(pixels.outcomes, [.restartStarted])
         context.finishBackgroundLoads()
@@ -1205,7 +1207,7 @@ final class WebExtensionManagerTests: XCTestCase {
         context.onBackgroundLoad = { requested.fulfill() }
         isBackground = false
         postCPMRecoveryReady()
-        await fulfillment(of: [requested], timeout: 1)
+        await fulfillment(of: [requested], timeout: backgroundLoadTimeout)
         XCTAssertTrue(webExtensionLoadingMock.unloadExtensionCalled)
         XCTAssertEqual(pixels.outcomes, [.restartStarted])
         context.finishBackgroundLoads()
@@ -1283,7 +1285,7 @@ final class WebExtensionManagerTests: XCTestCase {
         context.onBackgroundLoad = { restarted.fulfill() }
         context.recordedErrors = removeHistoricalError ? [error] : [error, error]
         NotificationCenter.default.post(name: WKWebExtensionContext.errorsDidUpdateNotification, object: context)
-        await fulfillment(of: [restarted], timeout: 2)
+        await fulfillment(of: [restarted], timeout: backgroundLoadTimeout)
         XCTAssertTrue(webExtensionLoadingMock.unloadExtensionCalled)
         context.finishBackgroundLoads()
     }
@@ -1302,7 +1304,7 @@ final class WebExtensionManagerTests: XCTestCase {
             NSError(domain: "WKWebExtensionContextErrorDomain", code: 6), context: context))
         restartEnabled = false
 
-        await fulfillment(of: [retried], timeout: 1)
+        await fulfillment(of: [retried], timeout: backgroundLoadTimeout)
         XCTAssertFalse(webExtensionLoadingMock.unloadExtensionCalled)
         context.finishBackgroundLoads()
     }
@@ -1319,7 +1321,7 @@ final class WebExtensionManagerTests: XCTestCase {
         context.onBackgroundLoad = { requested.fulfill() }
         XCTAssertTrue(manager.recoverEmbeddedBackgroundLoadFailure(
             NSError(domain: "WKWebExtensionContextErrorDomain", code: 6), context: context))
-        await fulfillment(of: [requested], timeout: 2)
+        await fulfillment(of: [requested], timeout: backgroundLoadTimeout)
         XCTAssertEqual(pixels.outcomes, [.restartStarted])
 
         context.finishBackgroundLoads()
@@ -1361,7 +1363,7 @@ final class WebExtensionManagerTests: XCTestCase {
             NSError(domain: "WKWebExtensionContextErrorDomain", code: 6), context: context)
 
         XCTAssertTrue(scheduled)
-        await fulfillment(of: [retried], timeout: 2)
+        await fulfillment(of: [retried], timeout: backgroundLoadTimeout)
         XCTAssertFalse(webExtensionLoadingMock.unloadExtensionCalled, "The restart flag must veto the context reload")
         context.finishBackgroundLoads()
     }
@@ -1381,7 +1383,7 @@ final class WebExtensionManagerTests: XCTestCase {
             NSError(domain: "WKWebExtensionContextErrorDomain", code: 6), context: context)
 
         XCTAssertTrue(scheduled)
-        await fulfillment(of: [retried], timeout: 2)
+        await fulfillment(of: [retried], timeout: backgroundLoadTimeout)
         XCTAssertFalse(webExtensionLoadingMock.unloadExtensionCalled)
         context.finishBackgroundLoads()
     }

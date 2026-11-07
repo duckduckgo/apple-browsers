@@ -122,6 +122,7 @@ jobs:
           -test-iterations 2 \
           -retry-tests-on-failure \
           -test-repetition-relaunch-enabled NO \
+          COMPILER_INDEX_STORE_ENABLE=NO \
           OTHER_CODE_SIGN_FLAGS=--timestamp=none \
           2>&1 | tee ui-tests-xcodebuild.log \
           | xcbeautify

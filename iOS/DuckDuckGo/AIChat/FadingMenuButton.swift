@@ -38,14 +38,14 @@ final class FadingMenuButton: UIButton {
 
     override func contextMenuInteraction(_ interaction: UIContextMenuInteraction,
                                          previewForDismissingMenuWithConfiguration configuration: UIContextMenuConfiguration) -> UITargetedPreview? {
-        fadesMenuOnDismissal() ? nil : super.contextMenuInteraction(interaction, previewForDismissingMenuWithConfiguration: configuration)
+        dismissalTarget
     }
 
     @available(iOS 16.0, *)
     override func contextMenuInteraction(_ interaction: UIContextMenuInteraction,
                                          configuration: UIContextMenuConfiguration,
                                          dismissalPreviewForItemWithIdentifier identifier: any NSCopying) -> UITargetedPreview? {
-        fadesMenuOnDismissal() ? nil : super.contextMenuInteraction(interaction, configuration: configuration, dismissalPreviewForItemWithIdentifier: identifier)
+        dismissalTarget
     }
 
     override func contextMenuInteraction(_ interaction: UIContextMenuInteraction,
@@ -60,5 +60,10 @@ final class FadingMenuButton: UIButton {
                                          animator: (any UIContextMenuInteractionAnimating)?) {
         super.contextMenuInteraction(interaction, willEndFor: configuration, animator: animator)
         if fadesMenuOnDismissal() { menuWillFadeOut() } else { menuWillCloseInPlace() }
+    }
+
+    /// The button itself, so the menu shrinks back into it, or none, so it fades out.
+    private var dismissalTarget: UITargetedPreview? {
+        fadesMenuOnDismissal() ? nil : UITargetedPreview(view: self)
     }
 }

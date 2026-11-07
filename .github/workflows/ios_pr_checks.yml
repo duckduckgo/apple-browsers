@@ -254,6 +254,19 @@ jobs:
         path: iOS/DerivedData/CompilationCache.noindex
         key: xcode-compilation-cache-ios-unit-tests-${{ steps.compilation-cache-hash.outputs.hash }}
 
+    - name: Export native test results
+      id: export-test-results
+      if: always()
+      run: |
+        result_bundle="DerivedData/Logs/Test/iOS-UnitTests.xcresult"
+        if [ -d "$result_bundle" ]; then
+          xcrun xcresulttool get test-results summary --path "$result_bundle" > test-summary.json
+          xcrun xcresulttool get test-results tests --path "$result_bundle" > test-inventory.json
+        fi
+        if [ -f unittests.xml ] && grep -q '<failure' unittests.xml; then
+          echo "has-failed-attempts=true" >> "$GITHUB_OUTPUT"
+        fi
+
     - name: Process test results
       if: always()
       uses: ./.github/actions/process-test-results
@@ -272,11 +285,13 @@ jobs:
         path: |
           iOS/unittests.xml
           iOS/unittests-crash-details.json
+          iOS/test-summary.json
+          iOS/test-inventory.json
         retention-days: 7
 
-    - name: Upload logs if workflow failed
+    - name: Upload logs for failures and retries
       uses: actions/upload-artifact@v6
-      if: failure() || cancelled()
+      if: failure() || cancelled() || steps.export-test-results.outputs.has-failed-attempts == 'true'
       with:
         name: BuildLogs
         path: |

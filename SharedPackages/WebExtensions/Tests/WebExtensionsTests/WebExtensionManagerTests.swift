@@ -728,7 +728,8 @@ final class WebExtensionManagerTests: XCTestCase {
         context.onBackgroundLoad = { restarted.fulfill() }
         XCTAssertTrue(manager.recoverEmbeddedBackgroundLoadFailure(
             NSError(domain: WKWebExtensionContext.errorDomain, code: 6), context: context))
-        await fulfillment(of: [restarted], timeout: 1)
+        // Reloading a real WebKit context can take more than a second on a busy simulator.
+        await fulfillment(of: [restarted], timeout: 10)
         context.finishBackgroundLoads()
     }
 

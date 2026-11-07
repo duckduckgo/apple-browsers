@@ -35,8 +35,6 @@ protocol MaliciousSiteProtectionDatasetsFetching {
 }
 
 final class BackgroundTaskRegistrationRegistry {
-    static let shared = BackgroundTaskRegistrationRegistry()
-
     private let lock = NSLock()
     private var registeredTaskIdentifiers: Set<String> = []
 
@@ -48,6 +46,9 @@ final class BackgroundTaskRegistrationRegistry {
 }
 
 final class MaliciousSiteProtectionDatasetsFetcher {
+    // Preserve the fetcher's process-wide registration guard. Tests inject their own registry.
+    private static let defaultTaskRegistrationRegistry = BackgroundTaskRegistrationRegistry()
+
     private let featureFlagger: MaliciousSiteProtectionFeatureFlagger & MaliciousSiteProtectionFeatureFlagsSettingsProvider
     private let userPreferencesManager: MaliciousSiteProtectionPreferencesProvider
     private let dateProvider: () -> Date
@@ -87,7 +88,7 @@ final class MaliciousSiteProtectionDatasetsFetcher {
         backgroundTaskScheduler: BGTaskScheduling = BGTaskScheduler.shared,
         application: BackgroundRefreshCapable = UIApplication.shared,
         preferencesScheduler: AnySchedulerOf<DispatchQueue> = DispatchQueue.main.eraseToAnyScheduler(),
-        taskRegistrationRegistry: BackgroundTaskRegistrationRegistry = .shared
+        taskRegistrationRegistry: BackgroundTaskRegistrationRegistry? = nil
     ) {
         self.updateManager = updateManager
         self.featureFlagger = featureFlagger
@@ -96,7 +97,7 @@ final class MaliciousSiteProtectionDatasetsFetcher {
         self.backgroundTaskScheduler = backgroundTaskScheduler
         self.application = application
         self.preferencesScheduler = preferencesScheduler
-        self.taskRegistrationRegistry = taskRegistrationRegistry
+        self.taskRegistrationRegistry = taskRegistrationRegistry ?? Self.defaultTaskRegistrationRegistry
     }
 }
 

@@ -419,8 +419,8 @@ final class WebExtensionManagerTests: XCTestCase {
         defer { manager.unloadAllExtensions() }
         context.retainedBackgroundWebView = WKWebView()
         let reloaded = expectation(description: "A retained failed background view restarts the context")
-        let observer = Task { @MainActor in
-            for await event in manager.lifecycleEvents {
+        let observer = Task { @MainActor [events = manager.lifecycleEvents] in
+            for await event in events {
                 guard case .reloaded(let identifier, _, _) = event, identifier == "embedded" else { continue }
                 reloaded.fulfill()
                 return
@@ -432,7 +432,7 @@ final class WebExtensionManagerTests: XCTestCase {
             NSError(domain: "WKWebExtensionContextErrorDomain", code: 6), context: context)
 
         XCTAssertTrue(scheduled)
-        await fulfillment(of: [reloaded], timeout: 3)
+        await fulfillment(of: [reloaded], timeout: backgroundLoadTimeout)
         XCTAssertTrue(webExtensionLoadingMock.unloadExtensionCalled, "The failed view is replaced by unloading its context")
         XCTAssertEqual(webExtensionLoadingMock.loadedIdentifiers, ["embedded"])
         observer.cancel()
@@ -761,8 +761,8 @@ final class WebExtensionManagerTests: XCTestCase {
         context.recordedErrors = []
         let restarted = expectation(description: "A self-recovered background must not be restarted")
         restarted.isInverted = true
-        let observer = Task { @MainActor in
-            for await event in manager.lifecycleEvents {
+        let observer = Task { @MainActor [events = manager.lifecycleEvents] in
+            for await event in events {
                 if case .reloaded = event { restarted.fulfill() }
             }
         }
@@ -1242,8 +1242,8 @@ final class WebExtensionManagerTests: XCTestCase {
         NotificationCenter.default.post(name: WKWebExtensionContext.errorsDidUpdateNotification, object: context)
         let restarted = expectation(description: "Historical error must not restart a healthy context")
         restarted.isInverted = true
-        let observer = Task { @MainActor in
-            for await event in manager.lifecycleEvents {
+        let observer = Task { @MainActor [events = manager.lifecycleEvents] in
+            for await event in events {
                 if case .reloaded = event { restarted.fulfill() }
             }
         }
@@ -1397,8 +1397,8 @@ final class WebExtensionManagerTests: XCTestCase {
         let context = try await loadEmbeddedContext("embedded", into: manager)
         defer { manager.unloadAllExtensions() }
         let reloaded = expectation(description: "Confirmed-hang restart retains its own flag")
-        let observer = Task { @MainActor in
-            for await event in manager.lifecycleEvents
+        let observer = Task { @MainActor [events = manager.lifecycleEvents] in
+            for await event in events
                 where event == .reloaded(identifier: "embedded", type: .embedded, trigger: .cpmMessagingHang) {
                 reloaded.fulfill()
                 return
@@ -1412,7 +1412,7 @@ final class WebExtensionManagerTests: XCTestCase {
 
         monitor.onConfirmedHang?()
 
-        await fulfillment(of: [reloaded], timeout: 3)
+        await fulfillment(of: [reloaded], timeout: backgroundLoadTimeout)
         XCTAssertTrue(webExtensionLoadingMock.unloadExtensionCalled)
         XCTAssertEqual(webExtensionLoadingMock.loadedIdentifiers, ["embedded"])
         observer.cancel()

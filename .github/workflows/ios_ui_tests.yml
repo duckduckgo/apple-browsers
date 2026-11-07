@@ -69,18 +69,27 @@ jobs:
         path: iOS/DerivedData/SourcePackages
         key: ${{ runner.os }}-ios-${{ hashFiles('iOS/DuckDuckGo-iOS.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/Package.resolved') }}
 
-    - name: Setup Bitrise Build Cache
-      uses: ./.github/actions/bitrise-build-cache
-      with:
-        enabled: ${{ vars.BITRISE_BUILD_CACHE_ENABLED }}
-        token: ${{ secrets.BITRISE_BUILD_CACHE_AUTH_TOKEN }}
-        workspace-id: ${{ secrets.BITRISE_BUILD_CACHE_WORKSPACE_ID }}
-
     - name: Select iOS Simulator
       id: select-simulator
       uses: ./.github/actions/select-ios-simulator
       with:
         preferred-versions: "27.0"
+
+    - name: Start the simulator before building
+      continue-on-error: true
+      env:
+        DESTINATION: ${{ steps.select-simulator.outputs.destination }}
+      run: |
+        name="${DESTINATION#*,name=}"
+        name="${name%,OS=*}"
+        version="${DESTINATION##*,OS=}"
+        runtime="com.apple.CoreSimulator.SimRuntime.iOS-${version//./-}"
+        device=$(xcrun simctl list devices available --json | jq -r --arg name "$name" --arg runtime "$runtime" '
+          [.devices[$runtime][]? | select(.name == $name and .state == "Shutdown")][0].udid // empty
+        ')
+        if [[ -n "$device" ]]; then
+          xcrun simctl boot "$device"
+        fi
 
     - name: Record simulator runtime diagnostics
       continue-on-error: true
@@ -113,7 +122,6 @@ jobs:
           -test-iterations 2 \
           -retry-tests-on-failure \
           -test-repetition-relaunch-enabled NO \
-          COMPILATION_CACHE_ENABLE_CACHING=YES \
           OTHER_CODE_SIGN_FLAGS=--timestamp=none \
           2>&1 | tee ui-tests-xcodebuild.log \
           | xcbeautify

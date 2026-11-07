@@ -27,7 +27,7 @@ extension MainViewController: NewTabTransitionHost {
     var isNewTabTransitionEnabled: Bool {
         !DevicePlatform.isIpad
             && featureFlagger.isFeatureOn(.newTabTransition)
-            && NewTabTransitionConfigurationStore.shared.configuration.isEnabled
+            && NewTabTransitionConfigurationStore.load().isEnabled
             && !ProcessInfo.isRunningUITests
     }
 
@@ -41,7 +41,7 @@ extension MainViewController: NewTabTransitionHost {
                                       newPageRaisesKeyboard: raisesKeyboard,
                                       from: start == .tabManager ? .tabManager : .inTab,
                                       tapLocation: newTabTouchLocationRecorder.lastTouchLocation,
-                                      configuration: NewTabTransitionConfigurationStore.shared.configuration)
+                                      configuration: NewTabTransitionConfigurationStore.load())
     }
 
     /// Even unanimated, dismissal removes the screen a moment later, so it stays hidden until then.

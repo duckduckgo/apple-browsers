@@ -23,8 +23,6 @@ import Combine
 /// Keeps the debug screen's transition values across launches.
 final class NewTabTransitionConfigurationStore: ObservableObject {
 
-    static let shared = NewTabTransitionConfigurationStore()
-
     private static let key = "com.duckduckgo.ios.newTabTransition.configuration.v10"
 
     @Published var configuration: NewTabTransitionConfiguration {
@@ -47,7 +45,8 @@ final class NewTabTransitionConfigurationStore: ObservableObject {
         defaults.set(data, forKey: Self.key)
     }
 
-    private static func load(from defaults: UserDefaults) -> NewTabTransitionConfiguration {
+    /// The values the debug screen saved last, read fresh so each transition sees the latest edit.
+    static func load(from defaults: UserDefaults = .standard) -> NewTabTransitionConfiguration {
         guard let data = defaults.data(forKey: key),
               let stored = try? JSONDecoder().decode(NewTabTransitionConfiguration.self, from: data) else {
             return NewTabTransitionConfiguration()

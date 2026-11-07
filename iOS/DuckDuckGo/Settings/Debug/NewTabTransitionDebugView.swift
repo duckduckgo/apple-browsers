@@ -23,7 +23,7 @@ struct NewTabTransitionDebugView: View {
 
     typealias Origin = NewTabTransitionTuning.Origin
 
-    @ObservedObject var store = NewTabTransitionConfigurationStore.shared
+    @StateObject private var store = NewTabTransitionConfigurationStore()
     @State private var editedOrigin = Origin.rightOfCenter
 
     var body: some View {
@@ -42,7 +42,7 @@ struct NewTabTransitionDebugView: View {
                 originPicker("Toolbar +, menus, links", selection: $store.configuration.inTabOrigin)
                 originPicker("Tab manager +", selection: $store.configuration.tabManagerOrigin)
             } header: {
-                Text("Where the new page starts")
+                Text(verbatim: "Where the new page starts")
             }
 
             Section {
@@ -52,7 +52,7 @@ struct NewTabTransitionDebugView: View {
                 .pickerStyle(.segmented)
                 MotionSliders(motion: motionBinding(for: editedOrigin), origin: editedOrigin)
             } header: {
-                Text("Motion")
+                Text(verbatim: "Motion")
             }
 
             Section {

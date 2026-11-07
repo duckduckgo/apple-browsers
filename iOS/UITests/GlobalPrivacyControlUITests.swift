@@ -101,11 +101,8 @@ final class GlobalPrivacyControlUITests: XCTestCase {
     }
 
     private func openWebTrackingProtectionFromSettings() {
-        let protection = app.staticTexts["Web Tracking Protection"]
-        for _ in 0..<5 where !protection.isHittable {
-            app.swipeUp()
-        }
-        XCTAssertTrue(protection.waitForExistence(timeout: timeout))
+        let protection = app.cells.containing(.staticText, identifier: "Web Tracking Protection").firstMatch
+        XCTAssertTrue(app.revealRow(protection, timeout: timeout))
         protection.tap()
         XCTAssertTrue(app.navigationBars["Web Tracking Protection"].waitForExistence(timeout: timeout))
     }

@@ -109,21 +109,15 @@ final class KeyboardSettingsUITests: XCTestCase {
         XCTAssertTrue(settings.waitForExistence(timeout: timeout))
         settings.tap()
         XCTAssertTrue(app.navigationBars["Settings"].waitForExistence(timeout: timeout))
-        let general = app.staticTexts["General"]
-        for _ in 0..<5 where !general.isHittable {
-            app.swipeUp()
-        }
-        XCTAssertTrue(general.waitForExistence(timeout: timeout))
+        let general = app.cells.containing(.staticText, identifier: "General").firstMatch
+        XCTAssertTrue(app.revealRow(general, timeout: timeout))
         general.tap()
         openKeyboardFromGeneral()
     }
 
     private func openKeyboardFromGeneral() {
-        let keyboard = app.staticTexts["Keyboard"]
-        for _ in 0..<5 where !keyboard.isHittable {
-            app.swipeUp()
-        }
-        XCTAssertTrue(keyboard.waitForExistence(timeout: timeout))
+        let keyboard = app.cells.containing(.staticText, identifier: "Keyboard").firstMatch
+        XCTAssertTrue(app.revealRow(keyboard, timeout: timeout))
         keyboard.tap()
         XCTAssertTrue(app.navigationBars["Keyboard"].waitForExistence(timeout: timeout))
     }

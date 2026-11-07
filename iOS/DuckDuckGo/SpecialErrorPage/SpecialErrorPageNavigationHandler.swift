@@ -71,7 +71,7 @@ extension SpecialErrorPageNavigationHandler: WebViewNavigationHandling {
     }
 
     @MainActor
-    func handleDecidePolicy(for navigationResponse: WKNavigationResponse, webView: WKWebView) async -> Bool {
+    func handleDecidePolicy(for navigationResponse: WebViewNavigationResponse, webView: WKWebView) async -> Bool {
         guard let task = maliciousSiteProtectionNavigationHandler.getMaliciousSiteDetectionTask(for: navigationResponse, webView: webView) else {
             return false
         }

@@ -34,7 +34,7 @@ class AutofillLoginListViewModelTests: XCTestCase {
 
     private let tld = TLD()
     private let appSettings = AppSettingsMock()
-    private let vault = (try? MockSecureVaultFactory.makeVault(reporter: nil))!
+    private var vault: MockSecureVault<MockDatabaseProvider>!
     private var cancellables: Set<AnyCancellable> = []
     private var syncService: MockDDGSyncing!
     private var mockStore: ThrowingKeyValueStoring!
@@ -98,6 +98,8 @@ class AutofillLoginListViewModelTests: XCTestCase {
     override func setUpWithError() throws {
         try super.setUpWithError()
         setupUserDefault(with: #file)
+        // The shared factory caches its vault. Each test needs fresh account state.
+        vault = MockSecureVault(providers: try MockSecureVaultFactory.makeSecureStorageProviders(reporter: nil))
         syncService = MockDDGSyncing(authState: .inactive, scheduler: CapturingScheduler(), isSyncInProgress: false)
         mockStore = try MockKeyValueFileStore(throwOnInit: nil)
     }
@@ -106,6 +108,7 @@ class AutofillLoginListViewModelTests: XCTestCase {
         cancellables.removeAll()
         syncService = nil
         mockStore = nil
+        vault = nil
 
         try super.tearDownWithError()
     }
@@ -679,7 +682,8 @@ class AutofillLoginListViewModelTests: XCTestCase {
                                                    secureVault: vault,
                                                    privacyConfig: makePrivacyConfig(from: configEnabled),
                                                    syncService: syncService,
-                                                   keyValueStore: mockStore)
+                                                   keyValueStore: mockStore,
+                                                   locale: Locale(identifier: "en_US"))
         let survey = model.getSurveyToPresent()
         XCTAssertNotNil(survey)
         XCTAssertEqual(survey?.id, "123")

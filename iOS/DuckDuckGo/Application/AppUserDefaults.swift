@@ -150,8 +150,10 @@ public class AppUserDefaults: AppSettings {
 
     lazy var featureFlagger = AppDependencyProvider.shared.featureFlagger
 
-    init(groupName: String = "group.com.duckduckgo.app") {
+    init(groupName: String = "group.com.duckduckgo.app", appDefaults: UserDefaults = .app) {
         self.groupName = groupName
+        self.cookiePopupStorage = appDefaults.keyedStoring()
+        self._autoconsentEnabledSetting = UserDefaultsWrapper(key: .autoconsentEnabled, defaultValue: false, container: appDefaults)
     }
 
     var autocomplete: Bool {
@@ -493,9 +495,7 @@ public class AppUserDefaults: AppSettings {
     @UserDefaultsWrapper(key: .autoconsentEnabled, defaultValue: false)
     private var autoconsentEnabledSetting: Bool?
 
-    private var cookiePopupStorage: any KeyedStoring<CookiePopupProtectionKeys> {
-        UserDefaults.app.keyedStoring()
-    }
+    private let cookiePopupStorage: any KeyedStoring<CookiePopupProtectionKeys>
 
     private func migrateCookiePopupPreferenceIfNeeded() {
         guard cookiePopupStorage.didMigrateCookiePopupPreference != true else { return }

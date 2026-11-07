@@ -158,19 +158,24 @@ final class SitePermissionsFrameBenchmarkTests: XCTestCase {
 
     func testMessageSettlingThrowsWhenRegistrationNeverReplies() async throws {
         let counter = NativeMessageCounter()
+        let registrationReceived = expectation(description: "Registration reaches the native handler")
         let configuration = WKWebViewConfiguration()
         let controller = configuration.userContentController
         let geolocation = GeolocationUserScript()
-        counter.install(geolocation, in: controller, handler: UnansweredMessageHandler())
+        counter.install(geolocation, in: controller, handler: UnansweredMessageHandler {
+            registrationReceived.fulfill()
+        })
         defer {
             geolocation.cancelAllWatches()
             controller.removeAllScriptMessageHandlers()
         }
         let page = BenchmarkPage(configuration: configuration)
         try await page.load(Self.html, baseURL: XCTUnwrap(URL(string: "http://localhost/")))
+        await fulfillment(of: [registrationReceived], timeout: 10)
 
         do {
-            _ = try await waitForMessagesToSettle(in: page.webView, counter: counter)
+            // Exhaust the polling budget without waiting through the benchmark's delays.
+            _ = try await waitForMessagesToSettle(in: page.webView, counter: counter, waitBetweenPolls: {})
             XCTFail("An unanswered registration must not produce a benchmark sample")
         } catch {
             XCTAssertEqual((error as NSError).domain, "SitePermissionsFrameBenchmark")
@@ -235,11 +240,17 @@ final class SitePermissionsFrameBenchmarkTests: XCTestCase {
                       windowMessages: windowMessages)
     }
 
-    private func waitForMessagesToSettle(in webView: WKWebView, counter: NativeMessageCounter) async throws -> Int {
+    private func waitForMessagesToSettle(
+        in webView: WKWebView,
+        counter: NativeMessageCounter,
+        waitBetweenPolls: () async throws -> Void = {
+            try await Task.sleep(nanoseconds: 100_000_000)
+        }
+    ) async throws -> Int {
         var last = (native: -1, replies: -1, window: -1)
         var stablePolls = 0
         for _ in 0..<100 {
-            try await Task.sleep(nanoseconds: 100_000_000)
+            try await waitBetweenPolls()
             let window = try await webView.callAsyncJavaScript("return windowMessages;",
                                                                 arguments: [:],
                                                                 in: nil,
@@ -252,7 +263,7 @@ final class SitePermissionsFrameBenchmarkTests: XCTestCase {
             }
         }
         throw NSError(domain: "SitePermissionsFrameBenchmark", code: 1, userInfo: [
-            NSLocalizedDescriptionKey: "Messages did not settle within 10 seconds: "
+            NSLocalizedDescriptionKey: "Messages did not settle after 100 polls: "
                 + "\(last.native) received, \(last.replies) replies, \(last.window) window messages"
         ])
     }
@@ -352,11 +363,18 @@ private final class NativeMessageCounter: NSObject, WKScriptMessageHandlerWithRe
 private final class UnansweredMessageHandler: NSObject, WKScriptMessageHandlerWithReply {
 
     private var replies = [@MainActor @Sendable (Any?, String?) -> Void]()
+    private let onMessage: () -> Void
+
+    init(onMessage: @escaping () -> Void) {
+        self.onMessage = onMessage
+        super.init()
+    }
 
     func userContentController(_ userContentController: WKUserContentController,
                                didReceive message: WKScriptMessage,
                                replyHandler: @escaping @MainActor @Sendable (Any?, String?) -> Void) {
         replies.append(replyHandler)
+        onMessage()
     }
 }
 

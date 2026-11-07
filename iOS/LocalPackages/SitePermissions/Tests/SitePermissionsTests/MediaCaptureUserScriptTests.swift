@@ -611,7 +611,7 @@ final class MediaCaptureUserScriptTests: XCTestCase {
         }
         webView.navigationDelegate = navigationDelegate
         webView.loadHTMLString("<html><body></body></html>", baseURL: baseURL)
-        await fulfillment(of: [loadExpectation], timeout: 1)
+        await fulfillment(of: [loadExpectation], timeout: 10)
         withExtendedLifetime(navigationDelegate) {}
         return (webView, handler)
     }

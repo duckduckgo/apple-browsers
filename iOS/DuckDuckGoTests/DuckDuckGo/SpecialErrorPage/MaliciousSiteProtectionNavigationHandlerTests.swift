@@ -32,15 +32,9 @@ final class MaliciousSiteProtectionNavigationHandlerTests {
 
     @MainActor
     init() {
-        WKNavigationResponse.swizzleDealloc()
-
         webView = MockWebView()
         mockMaliciousSiteProtectionManager = MockMaliciousSiteProtectionManager()
         sut = MaliciousSiteProtectionNavigationHandler(maliciousSiteProtectionManager: mockMaliciousSiteProtectionManager)
-    }
-
-    deinit {
-        WKNavigationResponse.restoreDealloc()
     }
 
     @MainActor

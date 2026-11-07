@@ -132,6 +132,10 @@ final class MockTabDelegate: TabDelegate {
 
     func tabDidRequestNewAIChatTab(tab: TabViewController) {}
 
+    func duckAISwipeNewChatChromeState(for tab: TabViewController) -> DuckAISwipeNewChatChromeState? { nil }
+
+    func tabDidRequestNewChatBySwipe(_ tab: TabViewController) {}
+
     func tab(_ tab: TabViewController, didRequestAIChatForSelectedText text: String) {}
 
     func tab(_ tab: TabViewController, didRequestSearchForSelectedText text: String) {}

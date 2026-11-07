@@ -176,7 +176,7 @@ public final class SubscriptionManagerMock: SubscriptionManager {
     }
 
     public var tierProductsResponse: Result<GetTierProductsResponse, Error>?
-    public func getTierProducts(region: String?, platform: String?) async throws -> GetTierProductsResponse {
+    public func getTierProducts(country: String?, platform: String?) async throws -> GetTierProductsResponse {
         switch tierProductsResponse! {
         case .success(let result):
             return result

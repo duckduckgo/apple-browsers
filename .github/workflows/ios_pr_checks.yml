@@ -217,32 +217,24 @@ jobs:
         echo "Using iOS simulator: ${{ steps.select-simulator.outputs.ios-version }}"
         echo "Destination: ${{ steps.select-simulator.outputs.destination }}"
 
-        # Use the same prepared test products as local test-without-building runs.
-        set -o pipefail
-        time xcodebuild build-for-testing \
+        # Avoid Xcode's verbose simulator collection for runtime warnings in passing tests.
+        # Keep the console log, result bundle, and crash reports for failed runs.
+        set -o pipefail && xcodebuild test \
           -scheme "iOS Browser" \
           -destination "${{ steps.select-simulator.outputs.destination }}" \
+          -parallel-testing-worker-count 2 \
           -derivedDataPath "DerivedData" \
-          -testProductsPath "UnitTestProducts.xctestproducts" \
+          -resultBundlePath "DerivedData/Logs/Test/iOS-UnitTests.xcresult" \
           -skipPackagePluginValidation \
           -skipMacroValidation \
-          DDG_SLOW_COMPILE_CHECK_THRESHOLD=250 \
-          COMPILATION_CACHE_ENABLE_CACHING=YES \
-          OTHER_CODE_SIGN_FLAGS=--timestamp=none \
-          | tee xcodebuild.log \
-          | xcbeautify
-
-        # Keep logs and result bundles for failed runs without collecting simulator diagnostics for every passing test.
-        mkdir -p DerivedData/Logs/Test
-        xcodebuild test-without-building \
-          -testProductsPath "UnitTestProducts.xctestproducts" \
-          -destination "${{ steps.select-simulator.outputs.destination }}" \
-          -parallel-testing-worker-count 3 \
-          -resultBundlePath "DerivedData/Logs/Test/iOS-UnitTests.xcresult" \
           -test-iterations 3 \
           -retry-tests-on-failure \
           -collect-test-diagnostics never \
-          | tee -a xcodebuild.log \
+          DDG_SLOW_COMPILE_CHECK_THRESHOLD=250 \
+          COMPILER_INDEX_STORE_ENABLE=NO \
+          COMPILATION_CACHE_ENABLE_CACHING=YES \
+          OTHER_CODE_SIGN_FLAGS=--timestamp=none \
+          | tee xcodebuild.log \
           | xcbeautify --report junit --report-path . --junit-report-filename unittests.xml
 
     - name: Compute Compilation Cache hash

@@ -28,6 +28,7 @@ class TabPreviewsSourceTests: XCTestCase {
         return cachesDirURL
     }
     
+    private let ioQueue = DispatchQueue(label: "TabPreviewsSourceTests.io", qos: .userInitiated)
     private let containerUrl = TabPreviewsSourceTests.makeContainerUrl()
     
     override func setUp() {
@@ -48,6 +49,7 @@ class TabPreviewsSourceTests: XCTestCase {
     }
     
     override func tearDown() {
+        waitForPendingIO()
         super.tearDown()
         
         guard let containerUrl = containerUrl else {
@@ -74,7 +76,7 @@ class TabPreviewsSourceTests: XCTestCase {
         XCTAssertFalse(FileManager.default.fileExists(atPath: fromUrl.path))
         XCTAssertFalse(FileManager.default.fileExists(atPath: toUrl.path))
         
-        let source = DefaultTabPreviewsSource(storeDir: toUrl, legacyDir: fromUrl)
+        let source = DefaultTabPreviewsSource(storeDir: toUrl, legacyDir: fromUrl, ioQueue: ioQueue)
         source.prepare()
         
         XCTAssertFalse(FileManager.default.fileExists(atPath: fromUrl.path))
@@ -108,7 +110,7 @@ class TabPreviewsSourceTests: XCTestCase {
         
         XCTAssertFalse(FileManager.default.fileExists(atPath: toUrl.path))
         
-        let source = DefaultTabPreviewsSource(storeDir: toUrl, legacyDir: fromUrl)
+        let source = DefaultTabPreviewsSource(storeDir: toUrl, legacyDir: fromUrl, ioQueue: ioQueue)
         source.prepare()
         
         XCTAssertFalse(FileManager.default.fileExists(atPath: fromUrl.path))
@@ -149,7 +151,7 @@ class TabPreviewsSourceTests: XCTestCase {
         
         XCTAssertFalse(FileManager.default.fileExists(atPath: toUrl.path))
         
-        let source = DefaultTabPreviewsSource(storeDir: toUrl, legacyDir: fromUrl)
+        let source = DefaultTabPreviewsSource(storeDir: toUrl, legacyDir: fromUrl, ioQueue: ioQueue)
         source.prepare()
         
         XCTAssertFalse(FileManager.default.fileExists(atPath: fromUrl.path))
@@ -174,7 +176,7 @@ class TabPreviewsSourceTests: XCTestCase {
         
         XCTAssertFalse(FileManager.default.fileExists(atPath: toUrl.path))
         
-        let source = DefaultTabPreviewsSource(storeDir: toUrl, legacyDir: fromUrl)
+        let source = DefaultTabPreviewsSource(storeDir: toUrl, legacyDir: fromUrl, ioQueue: ioQueue)
         source.prepare()
         
         var isDir: ObjCBool = false
@@ -201,7 +203,7 @@ class TabPreviewsSourceTests: XCTestCase {
         let storeURL = containerUrl.appendingPathComponent("src", isDirectory: true)
         let legacyURL = containerUrl.appendingPathComponent("oldsrc", isDirectory: true)
         
-        let source = DefaultTabPreviewsSource(storeDir: storeURL, legacyDir: legacyURL)
+        let source = DefaultTabPreviewsSource(storeDir: storeURL, legacyDir: legacyURL, ioQueue: ioQueue)
         source.prepare()
         _ = source.removeAllPreviews()
 
@@ -249,7 +251,7 @@ class TabPreviewsSourceTests: XCTestCase {
 
         let storeURL = containerUrl.appendingPathComponent("src", isDirectory: true)
         let legacyURL = containerUrl.appendingPathComponent("oldsrc", isDirectory: true)
-        let source = DefaultTabPreviewsSource(storeDir: storeURL, legacyDir: legacyURL)
+        let source = DefaultTabPreviewsSource(storeDir: storeURL, legacyDir: legacyURL, ioQueue: ioQueue)
         source.prepare()
 
         let tab = Tab(uid: "v1", fireTab: false)
@@ -261,7 +263,7 @@ class TabPreviewsSourceTests: XCTestCase {
 
         source.removePreview(forTab: tab)
 
-        waitUntilGone(jpegURL)
+        waitForPendingIO()
         XCTAssertFalse(FileManager.default.fileExists(atPath: jpegURL.path))
     }
 
@@ -273,7 +275,7 @@ class TabPreviewsSourceTests: XCTestCase {
 
         let storeURL = containerUrl.appendingPathComponent("src", isDirectory: true)
         let legacyURL = containerUrl.appendingPathComponent("oldsrc", isDirectory: true)
-        let source = DefaultTabPreviewsSource(storeDir: storeURL, legacyDir: legacyURL)
+        let source = DefaultTabPreviewsSource(storeDir: storeURL, legacyDir: legacyURL, ioQueue: ioQueue)
         source.prepare()
 
         seedFullScreenJPEG(uid: "v1", in: storeURL)
@@ -305,7 +307,7 @@ class TabPreviewsSourceTests: XCTestCase {
 
         let storeURL = containerUrl.appendingPathComponent("src", isDirectory: true)
         let legacyURL = containerUrl.appendingPathComponent("oldsrc", isDirectory: true)
-        let source = DefaultTabPreviewsSource(storeDir: storeURL, legacyDir: legacyURL)
+        let source = DefaultTabPreviewsSource(storeDir: storeURL, legacyDir: legacyURL, ioQueue: ioQueue)
         source.prepare()
 
         seedFullScreenJPEG(uid: "v1", in: storeURL)
@@ -318,7 +320,7 @@ class TabPreviewsSourceTests: XCTestCase {
         _ = source.removePreviewsWithIdNotIn(["v1", "v2"])
 
         let v3JPEG = fullScreenJPEGURL(uid: "v3", in: storeURL)
-        waitUntilGone(v3JPEG)
+        waitForPendingIO()
 
         let v1JPEG = fullScreenJPEGURL(uid: "v1", in: storeURL)
         let v2JPEG = fullScreenJPEGURL(uid: "v2", in: storeURL)
@@ -340,7 +342,7 @@ class TabPreviewsSourceTests: XCTestCase {
 
         let storeURL = containerUrl.appendingPathComponent("src", isDirectory: true)
         let legacyURL = containerUrl.appendingPathComponent("oldsrc", isDirectory: true)
-        let source = DefaultTabPreviewsSource(storeDir: storeURL, legacyDir: legacyURL)
+        let source = DefaultTabPreviewsSource(storeDir: storeURL, legacyDir: legacyURL, ioQueue: ioQueue)
         source.prepare()
 
         let tab = Tab(uid: "v1", fireTab: false)
@@ -351,7 +353,8 @@ class TabPreviewsSourceTests: XCTestCase {
         XCTAssertNotNil(source.fullScreenSnapshot(for: tab))
 
         // Let the asynchronous write finish before tearDown removes its directory.
-        waitUntilSaved(fullScreenJPEGURL(uid: tab.uid, in: storeURL))
+        waitForPendingIO()
+        XCTAssertNotNil(UIImage(contentsOfFile: fullScreenJPEGURL(uid: tab.uid, in: storeURL).path))
     }
 
     func testWhenNoFullScreenSnapshotExistsThenNilIsReturned() {
@@ -362,7 +365,7 @@ class TabPreviewsSourceTests: XCTestCase {
 
         let storeURL = containerUrl.appendingPathComponent("src", isDirectory: true)
         let legacyURL = containerUrl.appendingPathComponent("oldsrc", isDirectory: true)
-        let source = DefaultTabPreviewsSource(storeDir: storeURL, legacyDir: legacyURL)
+        let source = DefaultTabPreviewsSource(storeDir: storeURL, legacyDir: legacyURL, ioQueue: ioQueue)
         source.prepare()
 
         let tab = Tab(uid: "missing", fireTab: false)
@@ -409,29 +412,9 @@ class TabPreviewsSourceTests: XCTestCase {
         }
     }
 
-    private func waitUntilSaved(_ url: URL, timeout: TimeInterval = 5) {
-        let deadline = Date().addingTimeInterval(timeout)
-        while Date() < deadline {
-            if let data = try? Data(contentsOf: url), UIImage(data: data) != nil {
-                return
-            }
-            RunLoop.current.run(until: Date().addingTimeInterval(0.05))
-        }
-        XCTFail("Snapshot was not saved within \(timeout)s: \(url.path)")
-    }
-
-    /// Polls until the given URL no longer exists. JPEG removal is dispatched to a
-    /// background utility queue, so the file may persist a few ticks after the API call.
-    /// `XCTNSPredicateExpectation` defaults to a 1s polling interval, which is too coarse
-    /// for sub-second async file ops — runloop-pump on a tight interval instead.
-    private func waitUntilGone(_ url: URL, timeout: TimeInterval = 2.0) {
-        let deadline = Date().addingTimeInterval(timeout)
-        while Date() < deadline {
-            if !FileManager.default.fileExists(atPath: url.path) {
-                return
-            }
-            RunLoop.current.run(until: Date().addingTimeInterval(0.05))
-        }
-        XCTFail("File was not removed within \(timeout)s: \(url.path)")
+    private func waitForPendingIO() {
+        let completed = expectation(description: "Queued preview I/O completes")
+        ioQueue.async { completed.fulfill() }
+        wait(for: [completed], timeout: 5)
     }
 }

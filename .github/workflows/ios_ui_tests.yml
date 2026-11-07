@@ -56,6 +56,26 @@ jobs:
     - name: Select Xcode
       uses: ./.github/actions/select-xcode-version
 
+    - name: Check if SPM dependencies are pinned to versions
+      id: spm-cache
+      run: |
+        has_only_tags=$(jq '[.pins[].state | has("version")] | all' DuckDuckGo-iOS.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/Package.resolved)
+        echo "has-only-tags=$has_only_tags" >> "$GITHUB_OUTPUT"
+
+    - name: Restore SPM cache
+      if: steps.spm-cache.outputs.has-only-tags == 'true'
+      uses: actions/cache/restore@v5
+      with:
+        path: iOS/DerivedData/SourcePackages
+        key: ${{ runner.os }}-ios-${{ hashFiles('iOS/DuckDuckGo-iOS.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/Package.resolved') }}
+
+    - name: Setup Bitrise Build Cache
+      uses: ./.github/actions/bitrise-build-cache
+      with:
+        enabled: ${{ vars.BITRISE_BUILD_CACHE_ENABLED }}
+        token: ${{ secrets.BITRISE_BUILD_CACHE_AUTH_TOKEN }}
+        workspace-id: ${{ secrets.BITRISE_BUILD_CACHE_WORKSPACE_ID }}
+
     - name: Select iOS Simulator
       id: select-simulator
       uses: ./.github/actions/select-ios-simulator
@@ -93,6 +113,7 @@ jobs:
           -test-iterations 2 \
           -retry-tests-on-failure \
           -test-repetition-relaunch-enabled NO \
+          COMPILATION_CACHE_ENABLE_CACHING=YES \
           OTHER_CODE_SIGN_FLAGS=--timestamp=none \
           2>&1 | tee ui-tests-xcodebuild.log \
           | xcbeautify

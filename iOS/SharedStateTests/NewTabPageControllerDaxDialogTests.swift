@@ -22,6 +22,7 @@ import XCTest
 import Bookmarks
 import Combine
 import Core
+import QuartzCore
 import SwiftUI
 @_spi(Testing) import Persistence
 import BrowserServicesKit
@@ -211,11 +212,10 @@ final class NewTabPageControllerDaxDialogTests: XCTestCase {
             window.rootViewController = nil
             testWindow?.makeKeyAndVisible()
         }
-        let mounted = XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in
+        XCTAssertEqual(waitForLayout {
             hosting.view.layoutIfNeeded()
             return markerFrame?.height == 1
-        }, object: nil)
-        XCTAssertEqual(XCTWaiter.wait(for: [mounted], timeout: 5), .completed)
+        }, .completed)
         let initialFrame = try XCTUnwrap(markerFrame)
         let initialGap = initialFrame.minY - hosting.view.safeAreaInsets.top - 131
 
@@ -232,11 +232,11 @@ final class NewTabPageControllerDaxDialogTests: XCTestCase {
             animator.addCompletion { _ in animated.fulfill() }
             animator.startAnimation()
             wait(for: [animated], timeout: 5)
-            let updated = XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in
+            XCTAssertEqual(waitForLayout {
                 hosting.view.layoutIfNeeded()
                 return frameRevision > revision
-            }, object: nil)
-            XCTAssertEqual(XCTWaiter.wait(for: [updated], timeout: 5), .completed)
+                    && abs((markerFrame?.minY ?? .infinity) - initialFrame.minY - topInset + 131) <= 1
+            }, .completed)
             let frame = try XCTUnwrap(markerFrame)
             XCTAssertEqual(frame.minY - hosting.view.safeAreaInsets.top - topInset, initialGap, accuracy: 1,
                            "The marker below the unchanged hatch must retain its input gap across modes")
@@ -388,11 +388,10 @@ final class NewTabPageControllerDaxDialogTests: XCTestCase {
             testWindow?.makeKeyAndVisible()
         }
         host.setContentInsets(UIEdgeInsets(top: 184, left: 0, bottom: 0, right: 0))
-        let mounted = XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in
+        XCTAssertEqual(waitForLayout {
             parent.view.layoutIfNeeded()
             return probeFrame?.height == 1_200 && self.outerContentScrollView(in: parent.view) != nil
-        }, object: nil)
-        XCTAssertEqual(XCTWaiter.wait(for: [mounted], timeout: 5), .completed)
+        }, .completed)
         let scrollView = try XCTUnwrap(outerContentScrollView(in: parent.view))
         XCTAssertTrue(parent.view.window === window)
         if !usesRedesign { XCTAssertTrue(controller.view.window === window) }
@@ -405,11 +404,10 @@ final class NewTabPageControllerDaxDialogTests: XCTestCase {
         for topInset in [CGFloat(177), 131, 60] {
             if resetsScrolledContent && topInset == 60 {
                 scrollView.contentOffset.y = 250
-                let scrolled = XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in
+                XCTAssertEqual(waitForLayout {
                     parent.view.layoutIfNeeded()
                     return (probeFrame?.maxY ?? 0) > 0 && (probeFrame?.minY ?? 0) < 0
-                }, object: nil)
-                XCTAssertEqual(XCTWaiter.wait(for: [scrolled], timeout: 5), .completed)
+                }, .completed)
                 XCTAssertTrue(outerContentScrollView(in: controller.view) === scrollView)
                 XCTAssertTrue(controller.isViewLoaded)
                 host.scrollLegacyContentToTop(duration: 0.2)
@@ -419,8 +417,7 @@ final class NewTabPageControllerDaxDialogTests: XCTestCase {
                         return abs(scrollView.contentOffset.y + scrollView.adjustedContentInset.top) <= 1
                             && abs((probeFrame?.minY ?? .infinity) - initialFrame.minY - 131 + 184) <= 1
                     }
-                    let reset = XCTNSPredicateExpectation(predicate: alignedTop, object: nil)
-                    let animatedResult = XCTWaiter.wait(for: [reset], timeout: 5)
+                    let animatedResult = waitForLayout { alignedTop.evaluate(with: nil) }
                     XCTAssertEqual(animatedResult, .completed)
                 }
             }
@@ -434,11 +431,10 @@ final class NewTabPageControllerDaxDialogTests: XCTestCase {
             animator.startAnimation()
             wait(for: [animated], timeout: 5)
             let expectedOrigin = initialFrame.minY + topInset - 184
-            let updated = XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in
+            XCTAssertEqual(waitForLayout {
                 parent.view.layoutIfNeeded()
                 return probeRevision > revision && abs((probeFrame?.minY ?? .infinity) - expectedOrigin) <= 1
-            }, object: nil)
-            XCTAssertEqual(XCTWaiter.wait(for: [updated], timeout: 5), .completed)
+            }, .completed)
 
             let frame = try XCTUnwrap(probeFrame)
             XCTAssertEqual(frame.minY, initialFrame.minY + topInset - 184, accuracy: 1,
@@ -448,6 +444,14 @@ final class NewTabPageControllerDaxDialogTests: XCTestCase {
             XCTAssertEqual(scrollView.adjustedContentInset.top, initialNativeTopInset, accuracy: 1,
                            "Input clearance belongs to the scrolling content, not the native safe area")
         }
+    }
+
+    private func waitForLayout(_ condition: @escaping () -> Bool) -> XCTWaiter.Result {
+        let ready = expectation(description: "Layout reaches its expected geometry")
+        let observer = LayoutConditionObserver(expectation: ready, condition: condition)
+        observer.start()
+        defer { observer.stop() }
+        return XCTWaiter.wait(for: [ready], timeout: 5)
     }
 
     private func outerContentScrollView(in view: UIView) -> UIScrollView? {
@@ -756,6 +760,51 @@ final class NewTabPageControllerDaxDialogTests: XCTestCase {
         // Tailored router must NOT enter the regular Dax sequence when there is no promo — otherwise
         // a stray `.initial`/`.subsequent` dialog could leak into the Duck.ai onboarding completion UX.
         XCTAssertFalse(specProvider.nextHomeScreenMessageNewCalled)
+    }
+}
+
+@MainActor
+private final class LayoutConditionObserver: NSObject {
+    private let expectation: XCTestExpectation
+    private let condition: () -> Bool
+    private var displayLink: CADisplayLink?
+    private var isFinished = false
+    private var matchingFrames = 0
+
+    init(expectation: XCTestExpectation, condition: @escaping () -> Bool) {
+        self.expectation = expectation
+        self.condition = condition
+        super.init()
+    }
+
+    func start() {
+        guard !isFinished else { return }
+        let link = CADisplayLink(target: self, selector: #selector(displayLinkDidFire(_:)))
+        displayLink = link
+        link.add(to: .main, forMode: .common)
+    }
+
+    func stop() {
+        isFinished = true
+        displayLink?.invalidate()
+        displayLink = nil
+    }
+
+    @objc private func displayLinkDidFire(_ link: CADisplayLink) {
+        checkCondition()
+    }
+
+    private func checkCondition() {
+        guard !isFinished else { return }
+        guard condition() else {
+            matchingFrames = 0
+            return
+        }
+        // Confirm readiness on consecutive display frames instead of a transient layout.
+        matchingFrames += 1
+        guard matchingFrames >= 2 else { return }
+        stop()
+        expectation.fulfill()
     }
 }
 

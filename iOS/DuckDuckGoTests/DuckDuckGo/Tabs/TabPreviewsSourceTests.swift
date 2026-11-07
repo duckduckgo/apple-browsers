@@ -58,7 +58,7 @@ class TabPreviewsSourceTests: XCTestCase {
         do {
             try FileManager.default.removeItem(at: containerUrl)
         } catch {
-            XCTFail("Could not cleanup test dir")
+            XCTFail("Could not cleanup test dir: \(error)")
         }
     }
     
@@ -349,6 +349,9 @@ class TabPreviewsSourceTests: XCTestCase {
 
         // Hits the in-memory cache — disk write is async but cache is synchronous.
         XCTAssertNotNil(source.fullScreenSnapshot(for: tab))
+
+        // Let the asynchronous write finish before tearDown removes its directory.
+        waitUntilSaved(fullScreenJPEGURL(uid: tab.uid, in: storeURL))
     }
 
     func testWhenNoFullScreenSnapshotExistsThenNilIsReturned() {
@@ -404,6 +407,17 @@ class TabPreviewsSourceTests: XCTestCase {
             UIColor.red.setFill()
             ctx.fill(CGRect(origin: .zero, size: size))
         }
+    }
+
+    private func waitUntilSaved(_ url: URL, timeout: TimeInterval = 5) {
+        let deadline = Date().addingTimeInterval(timeout)
+        while Date() < deadline {
+            if let data = try? Data(contentsOf: url), UIImage(data: data) != nil {
+                return
+            }
+            RunLoop.current.run(until: Date().addingTimeInterval(0.05))
+        }
+        XCTFail("Snapshot was not saved within \(timeout)s: \(url.path)")
     }
 
     /// Polls until the given URL no longer exists. JPEG removal is dispatched to a

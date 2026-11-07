@@ -3133,43 +3133,25 @@ class MainViewController: UIViewController {
             return
         }
         let raisesKeyboard = url.isDuckAIURL && !voiceMode
-        let show: () -> Void = { [weak self] in
-            self?.showTab(for: request) { build in
+        // Only a tab that is built waits for the keyboard; switching to an existing one happens at once.
+        showTab(for: request) { [weak self] build in
+            self?.newTabTransitions.whenReadyToOpen(entrance: entrance, raisesKeyboard: raisesKeyboard) {
                 self?.newTabTransitions.open(entrance: entrance, raisesKeyboard: raisesKeyboard, build)
             }
         }
-        // A caller already inside a transition waited for the keyboard before starting it.
-        guard entrance == .grows, !raisesKeyboard, !newTabTransitions.isOpeningNewTab else {
-            show()
-            return
-        }
-        afterKeyboardLeaves(forPageAt: url, show)
-    }
-
-    /// A link to a page without its own keyboard opens once the keyboard has slid away, so the two never move at once.
-    /// A keyboard already on its way down, as when the tap moved focus into a page, is waited for too.
-    /// Without the transition it opens at once, as before.
-    func afterKeyboardLeaves(forPageAt url: URL?, _ open: @escaping () -> Void) {
-        guard isNewTabTransitionEnabled, keyboardShowing, url?.isDuckAIURL != true, let window = view.window else { return open() }
-        var observer: NSObjectProtocol?
-        observer = NotificationCenter.default.addObserver(forName: UIResponder.keyboardDidHideNotification, object: nil, queue: .main) { _ in
-            observer.map(NotificationCenter.default.removeObserver)
-            open()
-        }
-        window.endEditing(true)
     }
 
     /// One transition over steps that end in `loadUrlInNewTab`. During a data clear that load waits for it,
     /// so there is nothing to grow yet.
     private func openTabLoadingURL(_ url: URL, _ steps: @escaping () -> Void) {
         guard !clearInProgress else { return steps() }
-        afterKeyboardLeaves(forPageAt: url) { [weak self] in
+        newTabTransitions.whenReadyToOpen(raisesKeyboard: url.isDuckAIURL) { [weak self] in
             self?.newTabTransitions.open(raisesKeyboard: url.isDuckAIURL, steps)
         }
     }
 
     /// Switches to a tab `request` may reuse, or builds the tab through `present`.
-    private func showTab(for request: NewTabURLRequest, present: (() -> Void) -> Void) {
+    private func showTab(for request: NewTabURLRequest, present: (@escaping () -> Void) -> Void) {
         allowContentUnderflow = false
         viewCoordinator.navigationBarContainer.alpha = 1
         loadViewIfNeeded()
@@ -3181,7 +3163,7 @@ class MainViewController: UIViewController {
             selectTab(existing)
             request.completion?(existing)
         } else {
-            present { buildTab(for: request) }
+            present { [weak self] in self?.buildTab(for: request) }
         }
     }
 
@@ -8033,9 +8015,10 @@ extension MainViewController: TabDelegate {
         // transition opens, which waits for a keyboard to leave first. Until then the old tab stays as it is.
         let newTab = addPageRequestedTab(from: tab, configuration: configuration, for: navigationAction,
                                          inheritingAttribution: inheritingAttribution, inBackground: true)
-        afterKeyboardLeaves(forPageAt: navigationAction.request.url) { [weak self, weak tab] in
+        let raisesKeyboard = navigationAction.request.url?.isDuckAIURL == true
+        newTabTransitions.whenReadyToOpen(raisesKeyboard: raisesKeyboard) { [weak self, weak tab] in
             guard let self, self.tabManager.currentTabsModel.tabs.contains(newTab.tabModel) else { return }
-            self.newTabTransitions.open(raisesKeyboard: false) {
+            self.newTabTransitions.open(raisesKeyboard: raisesKeyboard) {
                 self.tabManager.select(newTab.tabModel)
                 self.leaveForPageRequestedTab(opener: tab)
                 self.swipeTabsCoordinator?.refresh(tabsModel: self.tabManager.currentTabsModel, scrollToSelected: true)
@@ -8195,14 +8178,16 @@ extension MainViewController: TabDelegate {
         openNewTab(from: tab, url: url, openedByPage: openedByPage, inheritedAttribution: attribution)
     }
 
-    func tab(_ tab: TabViewController, didRequestNewTabClosingPresentedScreenForUrl url: URL) {
+    func tab(_ tab: TabViewController, didRequestNewTabClosingPresentedScreenForUrl url: URL) -> Bool {
+        guard isNewTabTransitionEnabled else { return false }
         recordUserOpenedTab()
-        afterKeyboardLeaves(forPageAt: url) { [weak self, weak tab] in
+        newTabTransitions.whenReadyToOpen(raisesKeyboard: url.isDuckAIURL) { [weak self, weak tab] in
             self?.newTabTransitions.openClosingPresentedScreen { [weak self, weak tab] in
                 guard let self, let tab else { return }
                 self.openNewTab(from: tab, url: url, openedByPage: false, inheritedAttribution: nil)
             }
         }
+        return true
     }
 
     func tab(_ tab: TabViewController,
@@ -8266,6 +8251,13 @@ extension MainViewController: TabDelegate {
         }
     }
 
+    /// Back on a tab a page opened closes it and returns to `opener`. A data clear can delay the tab, so it is set up once it exists.
+    private func setUpPageOpenedTab(_ newTab: Tab, openedFrom opener: TabViewController?) {
+        guard let controller = tabManager.controller(for: newTab) else { return }
+        controller.openedByPage = true
+        controller.openingTab = opener
+    }
+
     /// A tab the user opened stops the opener's ad-click check, and Back on it closes it to return to `opener`.
     private func setUpUserOpenedTab(_ newTab: Tab, openedFrom opener: TabViewController?) {
         guard let controller = tabManager.controller(for: newTab) else { return }
@@ -8296,17 +8288,19 @@ extension MainViewController: TabDelegate {
             capturePreviewForTab(tab)
             showBars()
             openTabLoadingURL(url) { [weak self, weak tab] in
-                self?.loadUrlInNewTab(url, inheritedAttribution: attribution, completion: completion)
-                self?.currentTab?.openedByPage = true
-                self?.currentTab?.openingTab = tab
+                self?.loadUrlInNewTab(url, inheritedAttribution: attribution) { [weak self, weak tab] newTab in
+                    self?.setUpPageOpenedTab(newTab, openedFrom: tab)
+                    completion?(newTab)
+                }
             }
         } else if openedByPage {
             capturePreviewForTab(tab)
             showBars()
             newTabAnimation {
-                self.loadUrlInNewTab(url, inheritedAttribution: attribution, completion: completion)
-                self.currentTab?.openedByPage = true
-                self.currentTab?.openingTab = tab
+                self.loadUrlInNewTab(url, inheritedAttribution: attribution) { [weak self, weak tab] newTab in
+                    self?.setUpPageOpenedTab(newTab, openedFrom: tab)
+                    completion?(newTab)
+                }
             }
             tabSwitcherButton?.animateUpdate {
                 self.tabSwitcherButton?.tabCount += 1

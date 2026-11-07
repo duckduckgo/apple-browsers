@@ -47,6 +47,8 @@ protocol NewTabTransitionHost: AnyObject {
     /// Closes the presented screen without animation and out of sight.
     func closePresentedScreenUnseen(then completion: @escaping () -> Void)
     func dismissPresentedScreen(then completion: @escaping () -> Void)
+    /// Runs `action` once a keyboard on screen has slid away, or at once when none is up.
+    func afterKeyboardLeaves(_ action: @escaping () -> Void)
 }
 
 /// How a new tab comes into view. Growing in is the default; the others name why a tab doesn't.
@@ -64,6 +66,7 @@ enum NewTabEntrance {
 /// - From the page: `newTab()` and the other openers grow by default; `open { … }` covers several steps at once.
 /// - From a presented screen such as a sheet: `openClosingPresentedScreen { ... }`.
 /// - From a screen that dismisses first, like the tab manager: `prepare(from: .tabManager)`, then `open` as usual.
+/// - When the opening may wait for a keyboard to leave: wrap it in `whenReadyToOpen`.
 /// One transition runs at a time; a tab opened while one runs is built without its own.
 @MainActor
 final class NewTabTransitionCoordinator: NewTabOpeningObserving {
@@ -130,6 +133,13 @@ final class NewTabTransitionCoordinator: NewTabOpeningObserving {
         }
         reveal(transition, builtBy: build)
         return true
+    }
+
+    /// A new page without its own keyboard waits for one still up to slide away, so the two never move at once.
+    /// `open` may then run later, so everything that needs the new tab belongs inside it.
+    func whenReadyToOpen(entrance: NewTabEntrance = .grows, raisesKeyboard: Bool, _ open: @escaping () -> Void) {
+        guard entrance == .grows, !raisesKeyboard, !isOpeningNewTab, let host else { return open() }
+        host.afterKeyboardLeaves(open)
     }
 
     /// Like `open`, with the presented screen kept in the old screen and closed unseen under the cover.

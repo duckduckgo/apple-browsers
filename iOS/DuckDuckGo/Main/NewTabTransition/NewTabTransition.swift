@@ -45,6 +45,7 @@ final class NewTabTransition: NewTabTransitioning {
     private let dimming = UIView()
     private let shadow = UIView()
     private weak var newPage: UIView?
+    private weak var pageContent: UIView?
     private var viewsHiddenAboveNewPage: [UIView] = []
     private var completions: [() -> Void] = []
     private var keyboardMoment: Task<Void, Never>?
@@ -56,7 +57,9 @@ final class NewTabTransition: NewTabTransitioning {
     /// Freezes the screen under a snapshot of `oldScreen` so the caller can build the new tab out of sight.
     /// `oldScreen` is the view the new tab replaces, so menus and sheets above it stay out of the snapshot.
     /// `startDimming` is how dark the screen already looks, such as under a sheet's backdrop.
+    /// `pageContent` is the new page's own content, whose animations are its own and keep running.
     static func begin(over oldScreen: UIView,
+                      pageContent: UIView?,
                       dimmedBy startDimming: CGFloat = 0,
                       newPageRaisesKeyboard: Bool,
                       from entryPoint: Tuning.EntryPoint,
@@ -67,6 +70,7 @@ final class NewTabTransition: NewTabTransitioning {
               let window = (oldScreen as? UIWindow) ?? oldScreen.window,
               let screenSnapshot = oldScreen.snapshotView(afterScreenUpdates: false) else { return nil }
         let transition = NewTabTransition(window: window, entryPoint: entryPoint, tapLocation: tapLocation, configuration: configuration)
+        transition.pageContent = pageContent
         transition.coverScreen(with: screenSnapshot, dimmedBy: startDimming)
         // Taps wait for the new tab, as they do during a system transition.
         window.isUserInteractionEnabled = false
@@ -227,7 +231,7 @@ final class NewTabTransition: NewTabTransitioning {
 
     /// Shared chrome can still be animating for the old page, like a glass button closing its menu.
     private func finishLeftoverAnimations(in page: UIView) {
-        page.subviews.forEach(Self.removeAnimations(inTreeOf:))
+        page.subviews.filter { $0 !== pageContent }.forEach(Self.removeAnimations(inTreeOf:))
     }
 
     private static func removeAnimations(inTreeOf view: UIView) {

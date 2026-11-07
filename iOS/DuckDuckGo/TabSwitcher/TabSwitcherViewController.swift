@@ -686,18 +686,18 @@ class TabSwitcherViewController: UIViewController {
                                                      fireRequest: fireRequest)
     }
 
-    /// Dismisses the tab switcher unless fire mode requires the empty state to stay visible.
-    ///
-    /// Dismiss is allowed when any of these hold:
-    /// - `forceDismissOnEmpty`: caller explicitly wants dismiss (e.g. after creating a new tab)
-    /// - `canDismissOnEmpty`: normal mode — always safe to dismiss
-    /// - `!tabsModel.isEmpty`: fire mode still has tabs, so the user picked one
     /// Dismisses without animation when the delegate carries the new tab in with its own transition.
     private func dismissForNewTab() {
         let beganTransition = delegate.tabSwitcherBeginsNewTabTransition(self)
         dismissIfPossible(animated: !beganTransition, forceDismissOnEmpty: true)
     }
 
+    /// Dismisses the tab switcher unless fire mode requires the empty state to stay visible.
+    ///
+    /// Dismiss is allowed when any of these hold:
+    /// - `forceDismissOnEmpty`: caller explicitly wants dismiss (e.g. after creating a new tab)
+    /// - `canDismissOnEmpty`: normal mode — always safe to dismiss
+    /// - `!tabsModel.isEmpty`: fire mode still has tabs, so the user picked one
     func dismissIfPossible(animated: Bool = true, forceDismissOnEmpty: Bool = false) {
         guard forceDismissOnEmpty
                 || canDismissOnEmpty

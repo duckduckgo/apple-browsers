@@ -36,6 +36,7 @@ extension MainViewController: NewTabTransitionHost {
     func makeNewTabTransition(from start: NewTabTransitionCoordinator.Start, raisesKeyboard: Bool) -> NewTabTransitioning? {
         guard isNewTabTransitionEnabled, let oldScreen = oldScreen(for: start) else { return nil }
         return NewTabTransition.begin(over: oldScreen,
+                                      pageContent: viewCoordinator.contentContainer,
                                       dimmedBy: dimmingOverOldScreen(for: start),
                                       newPageRaisesKeyboard: raisesKeyboard,
                                       from: start == .tabManager ? .tabManager : .inTab,
@@ -60,6 +61,17 @@ extension MainViewController: NewTabTransitionHost {
 
     func dismissPresentedScreen(then completion: @escaping () -> Void) {
         dismiss(animated: true, completion: completion)
+    }
+
+    /// Without the transition there is nothing to wait for, as before.
+    func afterKeyboardLeaves(_ action: @escaping () -> Void) {
+        guard isNewTabTransitionEnabled, keyboardShowing, let window = view.window else { return action() }
+        var observer: NSObjectProtocol?
+        observer = NotificationCenter.default.addObserver(forName: UIResponder.keyboardDidHideNotification, object: nil, queue: .main) { _ in
+            observer.map(NotificationCenter.default.removeObserver)
+            action()
+        }
+        window.endEditing(true)
     }
 
     /// The screen the new tab replaces: the browser alone, the browser with what it presents, or the tab manager.

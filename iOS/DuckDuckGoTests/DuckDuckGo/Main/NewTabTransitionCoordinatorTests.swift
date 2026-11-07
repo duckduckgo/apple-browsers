@@ -176,6 +176,39 @@ final class NewTabTransitionCoordinatorTests: XCTestCase {
         XCTAssertTrue(host.transitions[0].revealedPage === host.newPageView)
     }
 
+    // MARK: - Waiting for the old keyboard
+
+    func testWhenTheNewPageHasNoKeyboardThenOpeningWaitsForTheOldKeyboardToLeave() {
+        coordinator.whenReadyToOpen(raisesKeyboard: false) { [unowned self] in build() }
+        XCTAssertEqual(buildCount, 0)
+
+        host.keyboardDepartures.forEach { $0() }
+        XCTAssertEqual(buildCount, 1)
+    }
+
+    func testWhenTheNewPageRaisesItsKeyboardThenItOpensAtOnce() {
+        coordinator.whenReadyToOpen(raisesKeyboard: true) { [unowned self] in build() }
+
+        XCTAssertEqual(buildCount, 1)
+        XCTAssertTrue(host.keyboardDepartures.isEmpty)
+    }
+
+    func testWhenOpenedFromOutsideTheAppThenItOpensWithoutWaitingForTheKeyboard() {
+        coordinator.whenReadyToOpen(entrance: .fromOutsideTheApp, raisesKeyboard: false) { [unowned self] in build() }
+
+        XCTAssertEqual(buildCount, 1)
+        XCTAssertTrue(host.keyboardDepartures.isEmpty)
+    }
+
+    func testWhenATabIsAlreadyOpeningThenItOpensWithoutWaitingAgain() {
+        coordinator.open(build)
+
+        coordinator.whenReadyToOpen(raisesKeyboard: false) { [unowned self] in build() }
+
+        XCTAssertEqual(buildCount, 2)
+        XCTAssertTrue(host.keyboardDepartures.isEmpty)
+    }
+
     // MARK: - Keyboard focus
 
     func testWhenNoTransitionRunsThenFocusRunsOnTheNextTurn() {
@@ -262,6 +295,7 @@ private final class FakeHost: NewTabTransitionHost {
     private(set) var transitions: [FakeTransition] = []
     private(set) var unseenCloses: [() -> Void] = []
     private(set) var dismissals: [() -> Void] = []
+    private(set) var keyboardDepartures: [() -> Void] = []
 
     func makeNewTabTransition(from start: NewTabTransitionCoordinator.Start, raisesKeyboard: Bool) -> NewTabTransitioning? {
         guard isTransitionAvailable else { return nil }
@@ -277,5 +311,9 @@ private final class FakeHost: NewTabTransitionHost {
 
     func dismissPresentedScreen(then completion: @escaping () -> Void) {
         dismissals.append(completion)
+    }
+
+    func afterKeyboardLeaves(_ action: @escaping () -> Void) {
+        keyboardDepartures.append(action)
     }
 }

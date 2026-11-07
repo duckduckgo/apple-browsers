@@ -35,6 +35,9 @@
          location = "group:DDGError">
       </FileRef>
       <FileRef
+         location = "group:DuckWireGuard">
+      </FileRef>
+      <FileRef
          location = "group:EventHub">
       </FileRef>
       <FileSystemSynchronizedGroup

@@ -91,10 +91,7 @@ final class AppLaunchUITests: XCTestCase {
         start.press(forDuration: 0.1, thenDragTo: end)
         XCTAssertTrue(slider.waitForNonExistence(timeout: UITestTimeouts.navigation))
         XCTAssertTrue(fireButton.waitForExistence(timeout: UITestTimeouts.navigation))
-        if dismissInput.exists {
-            dismissInput.tap()
-        }
-        app.buttons["Browser.Toolbar.Button.TabSwitcher"].tap()
+        openTabSwitcher()
         let newTabButton = app.buttons["Open new tab"]
         XCTAssertTrue(newTabButton.waitForExistence(timeout: UITestTimeouts.navigation))
         XCTAssertEqual(app.collectionViews.cells.containing(.button, identifier: "Open new tab").count, 1)
@@ -208,6 +205,20 @@ final class AppLaunchUITests: XCTestCase {
         app.launchArguments.removeAll { $0 == "-clearAllDefaults" }
         app.launch()
 
+        openTabSwitcher()
+
+        let screenshot = XCTAttachment(screenshot: app.screenshot())
+        screenshot.name = "Tab switcher after automatic tab clearing"
+        add(screenshot)
+
+        let newTab = app.buttons["Open new tab"]
+        XCTAssertTrue(newTab.waitForExistence(timeout: UITestTimeouts.navigation), "Cleared tab should display New Tab.")
+        XCTAssertTrue(newTab.isHittable)
+        let tabCells = app.collectionViews.cells.containing(.button, identifier: "Open new tab")
+        XCTAssertEqual(tabCells.count, 1)
+    }
+
+    private func openTabSwitcher() {
         let tabSwitcher = app.descendants(matching: .any)["Browser.Toolbar.Button.TabSwitcher"]
         XCTAssertTrue(tabSwitcher.waitForExistence(timeout: UITestTimeouts.navigation))
         let dismissInput = app.buttons.matching(NSPredicate(format: "identifier IN %@", [
@@ -220,15 +231,5 @@ final class AppLaunchUITests: XCTestCase {
         XCTAssertTrue(tabSwitcher.wait(for: switcherReady, timeout: UITestTimeouts.navigation),
                       "The tab switcher should be tappable after dismissing the launch keyboard.")
         tabSwitcher.tap()
-
-        let screenshot = XCTAttachment(screenshot: app.screenshot())
-        screenshot.name = "Tab switcher after automatic tab clearing"
-        add(screenshot)
-
-        let newTab = app.buttons["Open new tab"]
-        XCTAssertTrue(newTab.waitForExistence(timeout: UITestTimeouts.navigation), "Cleared tab should display New Tab.")
-        XCTAssertTrue(newTab.isHittable)
-        let tabCells = app.collectionViews.cells.containing(.button, identifier: "Open new tab")
-        XCTAssertEqual(tabCells.count, 1)
     }
 }

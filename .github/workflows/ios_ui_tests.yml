@@ -97,8 +97,21 @@ jobs:
           2>&1 | tee ui-tests-xcodebuild.log \
           | xcbeautify
 
+    - name: Check UI test diagnostics
+      id: ui-diagnostics
+      if: always()
+      run: |
+        log=ui-tests-xcodebuild.log
+        if [ ! -f "$log" ]; then
+          exit 0
+        fi
+        grep -F 'elapsed -- Testing started completed.' "$log" || true
+        if grep -Eq 'Test [Cc]ase .* failed( on | \()|App animations complete notification not received' "$log"; then
+          echo 'retain=true' >> "$GITHUB_OUTPUT"
+        fi
+
     - name: Upload UI test diagnostics
-      if: failure() || cancelled()
+      if: failure() || cancelled() || steps.ui-diagnostics.outputs.retain == 'true'
       uses: ./.github/actions/upload-artifact-with-retry
       with:
         name: ios-ui-test-diagnostics

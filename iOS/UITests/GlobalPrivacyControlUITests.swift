@@ -74,8 +74,13 @@ final class GlobalPrivacyControlUITests: XCTestCase {
     }
 
     private func assertGPC(isOn: Bool, file: StaticString = #filePath, line: UInt = #line) {
-        XCTAssertTrue(gpcToggle.waitForExistence(timeout: timeout), file: file, line: line)
-        XCTAssertEqual(gpcToggle.value as? String, isOn ? "1" : "0", file: file, line: line)
+        let toggle = gpcToggle
+        let expectedValue = isOn ? "1" : "0"
+        if toggle.exists, toggle.value as? String == expectedValue {
+            return
+        }
+        XCTAssertTrue(toggle.waitForExistence(timeout: timeout), file: file, line: line)
+        XCTAssertEqual(toggle.value as? String, expectedValue, file: file, line: line)
     }
 
     private func openWebTrackingProtection() {
@@ -83,7 +88,7 @@ final class GlobalPrivacyControlUITests: XCTestCase {
         XCTAssertTrue(menu.waitForExistence(timeout: timeout))
         for identifier in ["UnifiedToggleInput.Button.Dismiss", "Browser.OmniBar.Button.Dismiss"] {
             let dismiss = app.buttons[identifier]
-            if dismiss.isHittable {
+            if dismiss.exists && dismiss.isHittable {
                 dismiss.tap()
             }
         }

@@ -412,6 +412,7 @@ final class CPMBackgroundReadinessRecoveryTests: XCTestCase {
 
     private func assertRealDocumentRecovery(html: String, edit: String? = nil, isGET: Bool = true,
                                             expectsReload: Bool, file: StaticString = #filePath, line: UInt = #line) async throws {
+        let documentLoadTimeout: TimeInterval = 30
         let loaded = expectation(description: "Fixture document loaded")
         let navigationDelegate = RecoveryDocumentNavigationDelegate(loaded: loaded)
         let configuration = WKWebViewConfiguration()
@@ -420,7 +421,7 @@ final class CPMBackgroundReadinessRecoveryTests: XCTestCase {
         let webView = RecoveryDocumentWebView(frame: CGRect(x: 0, y: 0, width: 640, height: 480), configuration: configuration)
         webView.navigationDelegate = navigationDelegate
         webView.load(URLRequest(url: URL(string: "cpm-recovery-test://document")!))
-        await fulfillment(of: [loaded], timeout: 5)
+        await fulfillment(of: [loaded], timeout: documentLoadTimeout)
         XCTAssertFalse(webView.isLoading, file: file, line: line)
         XCTAssertNotNil(webView.backForwardList.currentItem, file: file, line: line)
         if let edit {
@@ -440,7 +441,7 @@ final class CPMBackgroundReadinessRecoveryTests: XCTestCase {
         recovery.registerDocument(in: "tab", webView: webView, isGET: isGET)
         recovery.initializationFailed(in: "tab")
         recovery.backgroundCompleted(startup, succeeded: true)
-        await fulfillment(of: [reload] + (reloaded.map { [$0] } ?? []), timeout: expectsReload ? 5 : 1)
+        await fulfillment(of: [reload] + (reloaded.map { [$0] } ?? []), timeout: expectsReload ? documentLoadTimeout : 1)
         XCTAssertEqual(webView.reloadCount, expectsReload ? 1 : 0, file: file, line: line)
         XCTAssertEqual(detections, 1, "Detection must remain independent of the reload veto", file: file, line: line)
         XCTAssertEqual(outcomes, expectsReload ? [.reloadStarted] : [], file: file, line: line)

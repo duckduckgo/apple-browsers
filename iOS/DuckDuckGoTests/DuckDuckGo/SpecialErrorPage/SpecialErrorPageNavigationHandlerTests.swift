@@ -33,8 +33,6 @@ final class SpecialErrorPageNavigationHandlerTests {
 
     @MainActor
     init() {
-        WKNavigationResponse.swizzleDealloc()
-
         webView = MockSpecialErrorWebView(frame: CGRect(), configuration: .nonPersistent())
         sslErrorPageNavigationHandler = MockSSLErrorPageNavigationHandler()
         maliciousSiteProtectionNavigationHandler = MockMaliciousSiteProtectionNavigationHandler()
@@ -42,12 +40,6 @@ final class SpecialErrorPageNavigationHandlerTests {
             sslErrorPageNavigationHandler: sslErrorPageNavigationHandler,
             maliciousSiteProtectionNavigationHandler: maliciousSiteProtectionNavigationHandler
         )
-    }
-
-    deinit {
-        // Avoid restoring dealloc here, because the test crashes anyway - this will be removed once the issue
-        // is fixed on the Xcode side:
-        // WKNavigationResponse.restoreDealloc()
     }
 
     @available(iOS 16, macOS 13, *)
@@ -188,7 +180,7 @@ final class SpecialErrorPageNavigationHandlerTests {
 
         // THEN
         #expect(maliciousSiteProtectionNavigationHandler.didCallHandleMaliciousSiteProtectionForNavigationResponse)
-        #expect(maliciousSiteProtectionNavigationHandler.capturedNavigationResponse == navigationResponse)
+        #expect(maliciousSiteProtectionNavigationHandler.capturedNavigationResponse === navigationResponse)
         #expect(maliciousSiteProtectionNavigationHandler.capturedWebView == webView)
     }
 

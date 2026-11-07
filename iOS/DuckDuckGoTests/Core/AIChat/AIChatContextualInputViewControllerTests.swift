@@ -125,7 +125,6 @@ final class AIChatContextualInputViewControllerTests: XCTestCase {
         let sut = makeBasicInputSUT(inputOutcomePixelFiring: firing)
         let window = show(sut)
         defer { window.isHidden = true }
-        RunLoop.main.run(until: Date().addingTimeInterval(0.05))
 
         sut.recordInputOutcome(.promptSubmitted(.button))
         sut.acceptTermsIfDisclaimerShown()
@@ -140,7 +139,6 @@ final class AIChatContextualInputViewControllerTests: XCTestCase {
         let sut = makeBasicInputSUT(inputOutcomePixelFiring: firing)
         let window = show(sut)
         defer { window.isHidden = true }
-        RunLoop.main.run(until: Date().addingTimeInterval(0.05))
 
         sut.beginAppearanceTransition(false, animated: false)
         sut.endAppearanceTransition()
@@ -279,9 +277,23 @@ final class AIChatContextualInputViewControllerTests: XCTestCase {
 
     private func show(_ viewController: UIViewController) -> UIWindow {
         let window = UIWindow(frame: CGRect(x: 0, y: 0, width: 540, height: 620))
-        window.rootViewController = viewController
+        let container = AppearanceControlledContainer()
+        container.addChild(viewController)
+        container.view.addSubview(viewController.view)
+        viewController.view.translatesAutoresizingMaskIntoConstraints = false
+        NSLayoutConstraint.activate([
+            viewController.view.leadingAnchor.constraint(equalTo: container.view.leadingAnchor),
+            viewController.view.trailingAnchor.constraint(equalTo: container.view.trailingAnchor),
+            viewController.view.topAnchor.constraint(equalTo: container.view.topAnchor),
+            viewController.view.bottomAnchor.constraint(equalTo: container.view.bottomAnchor)
+        ])
+        viewController.didMove(toParent: container)
+        window.rootViewController = container
         window.isHidden = false
-        viewController.view.layoutIfNeeded()
+        // The fixture controls appearance forwarding, so viewDidAppear completes before the test acts.
+        viewController.beginAppearanceTransition(true, animated: false)
+        container.view.layoutIfNeeded()
+        viewController.endAppearanceTransition()
         return window
     }
 
@@ -308,4 +320,9 @@ private final class RecordingContextualInputOutcomePixelFiring: DuckAiInputOutco
     func fire(_ event: DuckAiInputOutcomeEvent) {
         events.append(event)
     }
+}
+
+@MainActor
+private final class AppearanceControlledContainer: UIViewController {
+    override var shouldAutomaticallyForwardAppearanceMethods: Bool { false }
 }

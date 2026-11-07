@@ -296,7 +296,7 @@ class DummySpecialErrorPageNavigationHandler: SpecialErrorPageManaging {
     
     func handleDecidePolicy(for navigationAction: WKNavigationAction, webView: WKWebView) {}
     
-    func handleDecidePolicy(for navigationResponse: WKNavigationResponse, webView: WKWebView) async -> Bool {
+    func handleDecidePolicy(for navigationResponse: WebViewNavigationResponse, webView: WKWebView) async -> Bool {
         handlesNavigationResponse
     }
     

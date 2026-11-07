@@ -25,6 +25,7 @@ final class MockInstallationPathResolver: WebExtensionInstallationPathResolving 
     var paths: [DuckDuckGoWebExtensionType: URL] = [:]
     var reloadCallCount = 0
     var shouldThrowOnReload = false
+    var onReload: ((DuckDuckGoWebExtensionType) -> Void)?
 
     func installedExtensionPath(for type: DuckDuckGoWebExtensionType) -> URL? {
         paths[type]
@@ -36,5 +37,6 @@ final class MockInstallationPathResolver: WebExtensionInstallationPathResolving 
         if shouldThrowOnReload {
             throw NSError(domain: "MockInstallationPathResolver", code: 1)
         }
+        onReload?(type)
     }
 }

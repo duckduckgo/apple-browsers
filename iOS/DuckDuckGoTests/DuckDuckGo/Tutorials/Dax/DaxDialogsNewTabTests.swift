@@ -19,6 +19,7 @@
 
 import XCTest
 import TrackerRadarKit
+import Core
 @testable import DuckDuckGo
 
 final class DaxDialogsNewTabTests: XCTestCase {
@@ -27,7 +28,13 @@ final class DaxDialogsNewTabTests: XCTestCase {
     var settings: DaxDialogsSettings!
     var mockSettings: MockDaxDialogsSettings!
 
-    override func setUp() {
+    override func setUpWithError() throws {
+        try super.setUpWithError()
+        let suiteName = "DaxDialogsNewTabTests.\(UUID().uuidString)"
+        let userDefaults = try XCTUnwrap(UserDefaults(suiteName: suiteName))
+        addTeardownBlock {
+            userDefaults.removePersistentDomain(forName: suiteName)
+        }
         mockSettings = MockDaxDialogsSettings()
         settings = mockSettings
         let mockVariantManager = MockVariantManager(isSupportedReturns: true)
@@ -35,6 +42,7 @@ final class DaxDialogsNewTabTests: XCTestCase {
             settings: settings,
             entityProviding: MockEntityProvider(),
             variantManager: mockVariantManager,
+            launchOptionsHandler: LaunchOptionsHandler(environment: [:], userDefaults: userDefaults, arguments: []),
             onboardingSubscriptionPromotionHelper: MockOnboardingSubscriptionPromotionHelper()
         )
     }

@@ -66,7 +66,7 @@ final class DefaultBrowserPromptUserTypeStoreTests {
             .new,
         ]
     )
-    func whenUserTypeIsCalledThenRetrieveUserType(userType: DefaultBrowserPromptUserType) throws {
+    func whenSaveIsCalledThenUserTypeIsStored(userType: DefaultBrowserPromptUserType) throws {
         // GIVEN
         #expect(try storeMock.object(forKey: DefaultBrowserPromptUserTypeStore.StorageKey.userType) == nil)
 

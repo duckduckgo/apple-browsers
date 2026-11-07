@@ -31,6 +31,7 @@ final class MockScriptletProvider: ScriptletProviding {
 
     var scriptletsMap: [DuckDuckGoWebExtensionType: [Scriptlet]] = [:]
     var versionMap: [DuckDuckGoWebExtensionType: String] = [:]
+    var onVersionRead: ((String?) -> Void)?
     var availabilitySubjects: [DuckDuckGoWebExtensionType: CurrentValueSubject<ScriptletAvailability, Never>] = [:]
 
     func start(for extensionType: DuckDuckGoWebExtensionType) async {
@@ -58,7 +59,9 @@ final class MockScriptletProvider: ScriptletProviding {
     }
 
     func scriptletVersion(for extensionType: DuckDuckGoWebExtensionType) -> String? {
-        versionMap[extensionType]
+        let version = versionMap[extensionType]
+        onVersionRead?(version)
+        return version
     }
 
     func isReady(for extensionType: DuckDuckGoWebExtensionType) -> Bool {

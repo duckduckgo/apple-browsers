@@ -54,25 +54,18 @@ class EmbeddedTrackerDataTests: XCTestCase {
         let data = try JSONEncoder().encode(rules)
         let ruleList = String(data: data, encoding: .utf8)!
         
-        let identifier = UUID().uuidString
-        
+        let storeDirectory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString, isDirectory: true)
+        try FileManager.default.createDirectory(at: storeDirectory, withIntermediateDirectories: true)
+        addTeardownBlock { try FileManager.default.removeItem(at: storeDirectory) }
+        let store = try XCTUnwrap(WKContentRuleListStore(url: storeDirectory))
+
         let compiled = expectation(description: "Rules compiled")
-        
-        WKContentRuleListStore.default().compileContentRuleList(forIdentifier: identifier,
-                                                                encodedContentRuleList: ruleList) { result, error in
+        store.compileContentRuleList(forIdentifier: "embedded-tracker-data", encodedContentRuleList: ruleList) { result, error in
             XCTAssertNotNil(result)
             XCTAssertNil(error)
             compiled.fulfill()
         }
-        
+
         wait(for: [compiled], timeout: 30.0)
-        
-        let removed = expectation(description: "Rules removed")
-        
-        WKContentRuleListStore.default().removeContentRuleList(forIdentifier: identifier) { _ in
-            removed.fulfill()
-        }
-        
-        wait(for: [removed], timeout: 5.0)
     }
 }

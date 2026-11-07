@@ -27,7 +27,7 @@ final class FailureRecoveryHandlerTests: XCTestCase {
 
     private static let testConfig = FailureRecoveryHandler.RetryConfig(
         times: 0, // Means failure will bubble up after the first try
-        initialDelay: .seconds(1),
+        initialDelay: .milliseconds(1),
         maxDelay: .seconds(30),
         factor: 2.0
     )
@@ -40,6 +40,7 @@ final class FailureRecoveryHandlerTests: XCTestCase {
             deviceManager: deviceManager,
             reassertingControl: reassertingControl,
             retryConfig: Self.testConfig,
+            taskPriority: .userInitiated,
             eventHandler: { _ in }
         )
         self.executionTimeAllowance = 5
@@ -109,6 +110,7 @@ final class FailureRecoveryHandlerTests: XCTestCase {
             deviceManager: deviceManager,
             reassertingControl: reassertingControl,
             retryConfig: Self.testConfig,
+            taskPriority: .userInitiated,
             eventHandler: { step in
                 if case .started = step {
                     startedCount += 1
@@ -134,6 +136,7 @@ final class FailureRecoveryHandlerTests: XCTestCase {
             deviceManager: deviceManager,
             reassertingControl: reassertingControl,
             retryConfig: Self.testConfig,
+            taskPriority: .userInitiated,
             eventHandler: { step in
                 if case .failed = step {
                     failedCount += 1
@@ -155,6 +158,7 @@ final class FailureRecoveryHandlerTests: XCTestCase {
             deviceManager: deviceManager,
             reassertingControl: reassertingControl,
             retryConfig: Self.testConfig,
+            taskPriority: .userInitiated,
             eventHandler: { step in
                 if case .failed = step {
                     failedCount += 1
@@ -176,6 +180,7 @@ final class FailureRecoveryHandlerTests: XCTestCase {
             deviceManager: deviceManager,
             reassertingControl: reassertingControl,
             retryConfig: Self.testConfig,
+            taskPriority: .userInitiated,
             eventHandler: { step in
                 if case .completed(.healthy) = step {
                     healthyCompleteCount += 1
@@ -195,6 +200,7 @@ final class FailureRecoveryHandlerTests: XCTestCase {
             deviceManager: deviceManager,
             reassertingControl: reassertingControl,
             retryConfig: Self.testConfig,
+            taskPriority: .userInitiated,
             eventHandler: { step in
                 if case .completed(.unhealthy) = step {
                     unhealthyCompleteCount += 1
@@ -225,6 +231,7 @@ final class FailureRecoveryHandlerTests: XCTestCase {
             deviceManager: deviceManager,
             reassertingControl: reassertingControl,
             retryConfig: Self.testConfig,
+            taskPriority: .userInitiated,
             eventHandler: { step in
                 if case .completed(.unhealthy) = step {
                     unhealthyCompleteCount += 1
@@ -269,7 +276,7 @@ final class FailureRecoveryHandlerTests: XCTestCase {
     func testAttemptRecovery_configFetchFails_retries() async {
         let retryConfig = FailureRecoveryHandler.RetryConfig(times: 3, initialDelay: 0.1, maxDelay: 1.0, factor: 2)
         var failedCount = 0
-        failureRecoveryHandler = FailureRecoveryHandler(deviceManager: deviceManager, reassertingControl: reassertingControl, retryConfig: retryConfig, eventHandler: { step in
+        failureRecoveryHandler = FailureRecoveryHandler(deviceManager: deviceManager, reassertingControl: reassertingControl, retryConfig: retryConfig, taskPriority: .userInitiated, eventHandler: { step in
             if case .failed = step {
                 failedCount += 1
             }
@@ -281,7 +288,7 @@ final class FailureRecoveryHandlerTests: XCTestCase {
     func testAttemptRecovery_configUpdateFails_retries() async {
         let retryConfig = FailureRecoveryHandler.RetryConfig(times: 3, initialDelay: 0.1, maxDelay: 1.0, factor: 2)
         var failedCount = 0
-        failureRecoveryHandler = FailureRecoveryHandler(deviceManager: deviceManager, reassertingControl: reassertingControl, retryConfig: retryConfig, eventHandler: { step in
+        failureRecoveryHandler = FailureRecoveryHandler(deviceManager: deviceManager, reassertingControl: reassertingControl, retryConfig: retryConfig, taskPriority: .userInitiated, eventHandler: { step in
             if case .failed = step {
                 failedCount += 1
             }
@@ -295,7 +302,7 @@ final class FailureRecoveryHandlerTests: XCTestCase {
         var failedCount = 0
         var completedCount = 0
         var updateConfigCount = 0
-        failureRecoveryHandler = FailureRecoveryHandler(deviceManager: deviceManager, reassertingControl: reassertingControl, retryConfig: retryConfig, eventHandler: { step in
+        failureRecoveryHandler = FailureRecoveryHandler(deviceManager: deviceManager, reassertingControl: reassertingControl, retryConfig: retryConfig, taskPriority: .userInitiated, eventHandler: { step in
             if case .failed = step {
                 failedCount += 1
             }
@@ -335,6 +342,7 @@ final class FailureRecoveryHandlerTests: XCTestCase {
             deviceManager: deviceManager,
             reassertingControl: reassertingControl,
             retryConfig: Self.testConfig,
+            taskPriority: .userInitiated,
             eventHandler: { step in
                 if case .failed = step {
                     failedCount += 1

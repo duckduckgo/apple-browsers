@@ -932,6 +932,8 @@ final class VPNLeakCheckServiceTests: XCTestCase {
         let http = MockLeakCheckHTTPClient(ipv4: "1.2.3.4", ipv6Error: URLError(.cannotFindHost))
         let stun = MockLeakCheckSTUNClient(ipv4: "1.2.3.4", ipv6Error: URLError(.cannotFindHost))
         let wideEvent = MockWideEventManager()
+        let completed = expectation(description: "The replacement leak check completes")
+        wideEvent.onCompleteFlow = { completed.fulfill() }
         let config = LeakCheckConfiguration(
             host: "leakcheck.netp.duckduckgo.com",
             httpPort: 80, httpsPort: 443, stunPort: 3478,
@@ -949,13 +951,17 @@ final class VPNLeakCheckServiceTests: XCTestCase {
             wideEvent: wideEvent
         )
 
-        await service.scheduleCheck(trigger: .tunnelStart)
-        try? await Task.sleep(nanoseconds: 100_000_000)
-        await service.scheduleCheck(trigger: .reassert)
-        try? await Task.sleep(nanoseconds: 600_000_000)
+        await Self.scheduleSupersedingChecks(on: service)
+        await fulfillment(of: [completed], timeout: 10)
 
         XCTAssertEqual(wideEvent.startedFlows.count, 1, "the first scheduled check should have been cancelled by the second")
         XCTAssertEqual(wideEvent.lastCompletedData?.trigger, .reassert)
+    }
+
+    private static func scheduleSupersedingChecks(on service: isolated VPNLeakCheckService) {
+        // Keep both schedules in one actor turn so the first debounce cannot expire between them.
+        service.scheduleCheck(trigger: .tunnelStart)
+        service.scheduleCheck(trigger: .reassert)
     }
 
     func testScheduleCheck_afterStop_isNoOp() async {

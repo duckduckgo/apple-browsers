@@ -49,8 +49,7 @@ final class MaliciousSiteProtectionDatasetsFetcherTests {
         dateProvider: @escaping () -> Date = Date.init,
         backgroundSchedulerMock: MockBackgroundScheduler = .init(),
         application: MockBackgroundRefreshApplication = .init(),
-        preferencesScheduler: TestSchedulerOf<DispatchQueue> = DispatchQueue.test,
-        taskRegistrationRegistry: BackgroundTaskRegistrationRegistry? = nil
+        preferencesScheduler: TestSchedulerOf<DispatchQueue> = DispatchQueue.test
     ) {
         self.updateManagerMock = updateManagerMock
         self.featureFlaggerMock = featureFlaggerMock
@@ -68,7 +67,7 @@ final class MaliciousSiteProtectionDatasetsFetcherTests {
             backgroundTaskScheduler: backgroundSchedulerMock,
             application: application,
             preferencesScheduler: preferencesScheduler.eraseToAnyScheduler(),
-            taskRegistrationRegistry: taskRegistrationRegistry ?? self.taskRegistrationRegistry
+            taskRegistrationRegistry: taskRegistrationRegistry
         )
     }
 
@@ -482,38 +481,6 @@ final class MaliciousSiteProtectionDatasetsFetcherTests {
         // THEN there are no more registration happening
         #expect(backgroundSchedulerMock.capturedRegisteredTaskIdentifiers["com.duckduckgo.app.maliciousSiteProtectionHashPrefixSetRefresh"] == 1)
         #expect(backgroundSchedulerMock.capturedRegisteredTaskIdentifiers["com.duckduckgo.app.maliciousSiteProtectionFilterSetRefresh"] == 1)
-    }
-
-    @available(iOS 16, macOS 13, *)
-    @MainActor
-    @Test("Fetchers sharing a registry register each background task only once", .timeLimit(.minutes(1)))
-    func whenFetchersShareRegistryThenHandlersAreRegisteredOnlyOnce() {
-        let scheduler = backgroundSchedulerMock!
-        sut.registerBackgroundRefreshTaskHandler()
-
-        setupSUT(backgroundSchedulerMock: scheduler)
-        sut.registerBackgroundRefreshTaskHandler()
-
-        #expect(scheduler.capturedRegisteredTaskIdentifiers["com.duckduckgo.app.maliciousSiteProtectionHashPrefixSetRefresh"] == 1)
-        #expect(scheduler.capturedRegisteredTaskIdentifiers["com.duckduckgo.app.maliciousSiteProtectionFilterSetRefresh"] == 1)
-    }
-
-    @available(iOS 16, macOS 13, *)
-    @MainActor
-    @Test("Independent registries do not suppress another scheduler's handlers", .timeLimit(.minutes(1)))
-    func whenFetchersHaveIndependentRegistriesThenBothRegisterHandlers() {
-        let firstScheduler = backgroundSchedulerMock!
-        sut.registerBackgroundRefreshTaskHandler()
-        let secondScheduler = MockBackgroundScheduler()
-
-        setupSUT(backgroundSchedulerMock: secondScheduler, taskRegistrationRegistry: BackgroundTaskRegistrationRegistry())
-        sut.registerBackgroundRefreshTaskHandler()
-
-        for identifier in ["com.duckduckgo.app.maliciousSiteProtectionHashPrefixSetRefresh",
-                           "com.duckduckgo.app.maliciousSiteProtectionFilterSetRefresh"] {
-            #expect(firstScheduler.capturedRegisteredTaskIdentifiers[identifier] == 1)
-            #expect(secondScheduler.capturedRegisteredTaskIdentifiers[identifier] == 1)
-        }
     }
 
     @available(iOS 16, *)

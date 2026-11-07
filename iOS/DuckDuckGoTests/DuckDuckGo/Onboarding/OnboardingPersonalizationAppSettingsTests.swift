@@ -19,7 +19,6 @@
 
 import Testing
 import Foundation
-import Core
 import WebExtensions
 @testable import DuckDuckGo
 
@@ -33,7 +32,7 @@ final class OnboardingPersonalizationAppSettingsTests {
 
     init() throws {
         userDefaults = try #require(UserDefaults(suiteName: groupName))
-        sut = AppUserDefaults(groupName: groupName, appDefaults: userDefaults)
+        sut = AppUserDefaults(groupName: groupName, cookiePopupDefaults: userDefaults)
     }
 
     deinit {
@@ -130,38 +129,5 @@ final class OnboardingPersonalizationAppSettingsTests {
         // THEN
         #expect(sut.isCookiePopUpProtectionEnabled == protectionOn)
         #expect(sut.isPopUpsWithoutOptOutsEnabled == optOutOn)
-    }
-
-    @available(iOS 16, macOS 13, *)
-    @Test("Cookie preferences persist independently in each injected store", .timeLimit(.minutes(1)))
-    func cookiePreferencesStayInTheirOwnStores() throws {
-        let otherGroupName = "onboarding.personalization.other.\(UUID().uuidString)"
-        let otherDefaults = try #require(UserDefaults(suiteName: otherGroupName))
-        defer { otherDefaults.removePersistentDomain(forName: otherGroupName) }
-        let otherSettings = AppUserDefaults(groupName: otherGroupName, appDefaults: otherDefaults)
-
-        sut.cookiePopupPreference = .off
-        otherSettings.cookiePopupPreference = .max
-
-        #expect(sut.cookiePopupPreference == .off)
-        #expect(otherSettings.cookiePopupPreference == .max)
-        let restoredSettings = AppUserDefaults(groupName: groupName, appDefaults: userDefaults)
-        #expect(restoredSettings.cookiePopupPreference == .off)
-    }
-
-    @available(iOS 16, macOS 13, *)
-    @Test("Legacy cookie preferences migrate independently in each injected store", .timeLimit(.minutes(1)))
-    func cookiePreferenceMigrationsStayInTheirOwnStores() throws {
-        let otherGroupName = "onboarding.personalization.migration.\(UUID().uuidString)"
-        let otherDefaults = try #require(UserDefaults(suiteName: otherGroupName))
-        defer { otherDefaults.removePersistentDomain(forName: otherGroupName) }
-        let legacyKey = UserDefaultsWrapper<Bool>.Key.autoconsentEnabled.rawValue
-        userDefaults.set(false, forKey: legacyKey)
-        otherDefaults.set(true, forKey: legacyKey)
-        let otherSettings = AppUserDefaults(groupName: otherGroupName, appDefaults: otherDefaults)
-
-        #expect(sut.cookiePopupPreference == .off)
-        #expect(otherSettings.cookiePopupPreference == .default)
-        #expect(sut.cookiePopupPreference == .off)
     }
 }

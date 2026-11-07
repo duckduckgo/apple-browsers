@@ -260,6 +260,14 @@ final class NewTabTransition: NewTabTransitioning {
         keyboardMoment?.cancel()
         keyboardGate.open()
         completions.forEach { $0() }
+        releaseFinishedWork()
+    }
+
+    /// Animators and completions hold the transition, so letting go of them ends the cycle along with the snapshot.
+    private func releaseFinishedWork() {
+        animators.removeAll()
+        completions.removeAll()
+        viewsHiddenAboveNewPage.removeAll()
     }
 
     private func restoreNewPage() {

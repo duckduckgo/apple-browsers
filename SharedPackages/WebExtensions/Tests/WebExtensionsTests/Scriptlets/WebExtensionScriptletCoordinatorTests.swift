@@ -168,32 +168,50 @@ final class WebExtensionScriptletCoordinatorTests: XCTestCase {
 
         mockProvider.scriptletsMap[testType] = v0Scriptlets
         mockProvider.versionMap[testType] = "0.1"
-        mockInstaller.blockNextInstall()
+        let installer = try XCTUnwrap(mockInstaller)
+        let coordinator = try XCTUnwrap(coordinator)
+        let extensionType = testType
+        let blocked = expectation(description: "The V0 install blocks")
+        installer.onInstallBlocked = { blocked.fulfill() }
+        installer.blockNextInstall()
 
-        let enableTask = Task { @MainActor in
-            await self.coordinator.onExtensionEnabled(for: self.testType)
+        let reloaded = expectation(description: "Both installs reload the extension")
+        reloaded.expectedFulfillmentCount = 2
+        mockPathResolver.onReload = { _ in reloaded.fulfill() }
+        let enableTask = Task {
+            await coordinator.onExtensionEnabled(for: extensionType)
+        }
+        defer {
+            installer.resumeInstall()
+            enableTask.cancel()
         }
 
-        try await Task.sleep(nanoseconds: 100_000_000)
+        let blockedResult = await XCTWaiter.fulfillment(of: [blocked], timeout: 30)
+        XCTAssertEqual(blockedResult, .completed)
+        guard blockedResult == .completed else { return }
+        XCTAssertEqual(installer.installCallCount, 1, "V0 install should have started")
 
-        XCTAssertEqual(mockInstaller.installCallCount, 1, "V0 install should have started")
-
+        let captured = expectation(description: "The queued update reads its version")
+        mockProvider.onVersionRead = { version in
+            XCTAssertEqual(version, "1.0")
+            captured.fulfill()
+        }
         mockProvider.versionMap[testType] = "1.0"
         mockProvider.scriptletsMap[testType] = v1Scriptlets
         mockProvider.availabilitySubjects[testType]?.send(.available(v1Scriptlets))
 
-        try await Task.sleep(nanoseconds: 50_000_000)
-
+        let capturedResult = await XCTWaiter.fulfillment(of: [captured], timeout: 30)
+        XCTAssertEqual(capturedResult, .completed)
+        guard capturedResult == .completed else { return }
+        mockProvider.onVersionRead = nil
         mockProvider.versionMap[testType] = "999.0"
 
-        mockInstaller.resumeInstall()
-
+        installer.resumeInstall()
         await enableTask.value
-        try await Task.sleep(nanoseconds: 200_000_000)
+        await fulfillment(of: [reloaded], timeout: 30)
 
-        XCTAssertEqual(mockInstaller.installCallCount, 2)
-        XCTAssertEqual(mockInstaller.allInstalledScriptlets[0], v0Scriptlets)
-        XCTAssertEqual(mockInstaller.allInstalledScriptlets[1], v1Scriptlets)
+        XCTAssertEqual(installer.installCallCount, 2)
+        XCTAssertEqual(installer.allInstalledScriptlets, [v0Scriptlets, v1Scriptlets])
         XCTAssertEqual(mockStore.installedVersion(for: testType), "1.0",
                        "V1 should record version 1.0 (captured at publish time), not 999.0 (current provider version)")
     }

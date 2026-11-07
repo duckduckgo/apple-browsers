@@ -19,6 +19,7 @@
 import Foundation
 @testable import WebExtensions
 
+@MainActor
 final class MockScriptletInstaller: ScriptletInstalling {
 
     var installCallCount = 0
@@ -32,7 +33,7 @@ final class MockScriptletInstaller: ScriptletInstalling {
     private var shouldBlock = false
     private var blockContinuation: CheckedContinuation<Void, Never>?
 
-    var onInstallStarted: (() -> Void)?
+    var onInstallBlocked: (() -> Void)?
 
     func installScriptlets(_ scriptlets: [Scriptlet], cacheRootDirectory: URL, to installationDirectory: URL) async throws {
         installCallCount += 1
@@ -41,12 +42,11 @@ final class MockScriptletInstaller: ScriptletInstalling {
         lastInstallationDirectory = installationDirectory
         allInstalledScriptlets.append(scriptlets)
 
-        onInstallStarted?()
-
         if shouldBlock {
             shouldBlock = false
             await withCheckedContinuation { continuation in
                 self.blockContinuation = continuation
+                self.onInstallBlocked?()
             }
         }
 
@@ -60,7 +60,9 @@ final class MockScriptletInstaller: ScriptletInstalling {
     }
 
     func resumeInstall() {
-        blockContinuation?.resume()
+        shouldBlock = false
+        let continuation = blockContinuation
         blockContinuation = nil
+        continuation?.resume()
     }
 }

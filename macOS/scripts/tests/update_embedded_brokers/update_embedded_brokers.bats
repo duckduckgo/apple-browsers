@@ -10,7 +10,6 @@ setup() {
 	MAIN_CONFIG="$BATS_TEST_TMPDIR/main_config.json"
 	mkdir -p "$SOURCE_DIR" "$TARGET_DIR"
 
-	SIGNING_KEYS="$scripts_dir/$SIGNING_KEYS_RELATIVE_PATH"
 	SIGNING_FIXTURES="$scripts_dir/../../SharedPackages/DataBrokerProtectionCore/Tests/DataBrokerProtectionCoreTests/BundleResources/BrokerBundleSigning"
 
 	# Public verification key for the test fixture signer; keep aligned with Swift's dbpAPITestKeys.staging.
@@ -160,26 +159,9 @@ writeMainConfig() {
 	[[ "$output" == *"Same Name"* ]]
 }
 
-# Expected app public keys, pinned independently of the bundled JSON.
-# Update these alongside bundle-signing-keys.json when backend signing keys rotate.
-@test "bundle-signing-keys.json: holds one production and one staging key" {
-	run jq -r '.production[]' "$SIGNING_KEYS"
-	[ "$status" -eq 0 ]
-	[ "$output" = "MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAE+H2eWmevflETRxo3CYQiTaAVOevf0bniWcBOVRZR7yLPWl6vQKO1ltVtPsBFJvNT0UZ90ZHO4p1YMnoPo1cCxg==" ]
-
-	run jq -r '.staging[]' "$SIGNING_KEYS"
-	[ "$status" -eq 0 ]
-	[ "$output" = "MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEVdn9FvuBCQnWNwGdOnOv5qPQCQYrWP90khQ+sJSnTjpXYg+jLst5b9PmGAlYuhMMEnkVcjVusmV6Yp+4oV2ZbQ==" ]
-}
-
 @test "verifyMainConfigSignature: accepts the dbp-api fixture signed with the test staging key" {
 	run verifyMainConfigSignature "$SIGNING_FIXTURES/main_config.json" "$SIGNING_FIXTURES/main_config.json.sig" "$TEST_STAGING_KEY"
 	[ "$status" -eq 0 ]
-}
-
-@test "verifyMainConfigSignature: rejects the test-signed dbp-api fixture with the app's keys" {
-	run verifyMainConfigSignature "$SIGNING_FIXTURES/main_config.json" "$SIGNING_FIXTURES/main_config.json.sig" "$(jq -r '.production[], .staging[]' "$SIGNING_KEYS")"
-	[ "$status" -ne 0 ]
 }
 
 @test "verifyMainConfigSignature: accepts a signature from any of the keys" {

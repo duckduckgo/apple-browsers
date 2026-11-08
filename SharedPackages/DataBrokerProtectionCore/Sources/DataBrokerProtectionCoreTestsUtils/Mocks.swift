@@ -786,11 +786,27 @@ public final class DataBrokerProtectionSecureVaultMock: DataBrokerProtectionSecu
                          removedAt: nil)
         }
 
-        return nil
+        return brokers.first { $0.url == name }
     }
 
     public func fetchAllBrokers() throws -> [DataBroker] {
         return brokers
+    }
+
+    public func resetBrokerVersionsAndETags() throws {
+        brokers = brokers.map {
+            DataBroker(id: $0.id,
+                       name: $0.name,
+                       url: $0.url,
+                       steps: $0.steps,
+                       version: "0",
+                       schedulingConfig: $0.schedulingConfig,
+                       parent: $0.parent,
+                       mirrorSites: $0.mirrorSites,
+                       optOutUrl: $0.optOutUrl,
+                       eTag: "",
+                       removedAt: $0.removedAt)
+        }
     }
 
     public func fetchAllBrokerResources() throws -> [BrokerResource] {
@@ -2444,6 +2460,12 @@ public final class MockFileManager: FileManager, @unchecked Sendable {
 
     public override func removeItem(at URL: URL) throws {
         hasUnzippedContent = false
+    }
+
+    public override func createDirectory(at url: URL, withIntermediateDirectories createIntermediates: Bool, attributes: [FileAttributeKey: Any]? = nil) throws {
+    }
+
+    public override func moveItem(at srcURL: URL, to dstURL: URL) throws {
     }
 
     public override func unzipArchive(at sourceURL: URL, to destinationURL: URL) throws {

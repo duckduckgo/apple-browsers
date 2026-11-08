@@ -134,6 +134,33 @@ class BookmarksImporterTests: XCTestCase {
         XCTAssertEqual(count(importer.importedBookmarks), BookmarksImporter.totalValidBookmarks(in: Self.htmlWithListlessFolder))
     }
 
+    func test_WhenFolderDLFollowsClosedDT_ThenImportPreservesHierarchyAndPreviewCount() async throws {
+        let html = """
+        <!DOCTYPE NETSCAPE-Bookmark-file-1>
+        <DL><p>
+            <DT><H3>Outer</H3></DT>
+            <DL><p>
+                <DT><H3>Inner</H3></DT>
+                <DL><p>
+                    <DT><A HREF="https://example.com/first">First</A></DT>
+                    <DT><A HREF="https://example.com/second">Second</A></DT>
+                </DL><p>
+            </DL><p>
+            <DT><A HREF="https://example.com/outside">Outside</A></DT>
+        </DL><p>
+        """
+
+        try await importer.parseHtml(html)
+
+        XCTAssertEqual(importer.importedBookmarks.map(\.name), ["Outer", "Outside"])
+        let outer = try XCTUnwrap(importer.importedBookmarks.first)
+        XCTAssertEqual(outer.children?.map(\.name), ["Inner"])
+        let inner = try XCTUnwrap(outer.children?.first)
+        XCTAssertEqual(inner.children?.map(\.name), ["First", "Second"])
+        XCTAssertEqual(inner.children?.compactMap(\.urlString), ["https://example.com/first", "https://example.com/second"])
+        XCTAssertEqual(BookmarksImporter.totalValidBookmarks(in: html), 5)
+    }
+
     private static let htmlWithListlessFolder = """
     <!DOCTYPE NETSCAPE-Bookmark-file-1>
     <HTML>

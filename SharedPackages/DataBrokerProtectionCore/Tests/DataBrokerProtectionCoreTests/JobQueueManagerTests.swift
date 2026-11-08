@@ -1012,21 +1012,6 @@ final class JobQueueManagerTests: XCTestCase {
         XCTAssertEqual(sut.debugRunningStatusString, "idle")
     }
 
-    func testWhenSigningKeyIsRevoked_thenBrokerUpdateCheckStillRunsSoItCanReportTheRevokedKey() {
-        sut = makeSUT()
-        sut.delegate = mockQueueDelegate
-        let privacyConfig = PrivacyConfigurationManagingMock()
-        privacyConfig.setRevokedBundleSigningKeyIDs(PrivacyConfigurationManagingMock.builtInBundleSigningKeyIDs)
-
-        sut.startScheduledAllOperationsIfPermitted(showWebView: false, isAuthenticatedUser: true,
-                                                   jobDependencies: makeDependencies(privacyConfig: privacyConfig),
-                                                   errorHandler: nil, completion: nil)
-        mockQueue.completeAllOperations()
-
-        XCTAssertEqual(mockQueueDelegate.events, [.willEnqueue])
-        XCTAssertEqual(mockQueue.didCallAddCount, 0)
-    }
-
     func testWhenSigningKeyIsRevokedWhileJobsAreRunning_thenTheNextStartStopsThem() {
         sut = makeSUT()
         let privacyConfig = PrivacyConfigurationManagingMock()

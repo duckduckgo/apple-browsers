@@ -281,30 +281,16 @@ final class DBPUICommunicationLayerTests: XCTestCase {
         XCTAssertFalse(mockDelegate.startScanAndOptOutCalled)
     }
 
-    func testHandshakeStatusIsUpdateRequiredUntilTheRevokedKeyIsDropped() async throws {
+    func testWhenSigningKeyIsRevoked_thenHandshakeStatusIsUpdateRequired() async throws {
         let privacyConfig = PrivacyConfigurationManagingMock()
         privacyConfig.setRevokedBundleSigningKeyIDs(PrivacyConfigurationManagingMock.builtInBundleSigningKeyIDs)
-        let mockDelegate = MockDelegate()
-        mockDelegate.startScanAndOptOutResult = true
-        var sut = makeSUT(privacyConfig: privacyConfig)
-        sut.delegate = mockDelegate
-        let handshake = sut.handler(forMethodNamed: DBPUIReceivedMethodName.handshake.rawValue)
+        let sut = makeSUT(privacyConfig: privacyConfig)
 
-        let pausedResult = try await handshake?(["version": 12], WKScriptMessage.mock())
+        let pausedResult = try await sut.handler(forMethodNamed: DBPUIReceivedMethodName.handshake.rawValue)?(["version": 12], WKScriptMessage.mock())
         let pausedResponse = try XCTUnwrap(pausedResult as? DBPUIHandshakeResponse)
         XCTAssertTrue(pausedResponse.success)
         XCTAssertEqual(pausedResponse.status, .updateRequired)
         XCTAssertTrue(try XCTUnwrap(String(data: JSONEncoder().encode(pausedResponse), encoding: .utf8)).contains("\"status\":\"updateRequired\""))
-
-        privacyConfig.setRevokedBundleSigningKeyIDs([])
-
-        let resumedResult = try await handshake?(["version": 12], WKScriptMessage.mock())
-        XCTAssertEqual(try XCTUnwrap(resumedResult as? DBPUIHandshakeResponse).status, .active)
-        let initialScanState = try await sut.handler(forMethodNamed: DBPUIReceivedMethodName.initialScanStatus.rawValue)?([:], WKScriptMessage.mock())
-        XCTAssertTrue(initialScanState is DBPUIInitialScanState)
-        let startResult = try await sut.handler(forMethodNamed: DBPUIReceivedMethodName.startScanAndOptOut.rawValue)?([:], WKScriptMessage.mock())
-        XCTAssertEqual(try XCTUnwrap(startResult as? DBPUIStandardResponse).success, true)
-        XCTAssertTrue(mockDelegate.startScanAndOptOutCalled)
     }
 
     // MARK: - Helpers

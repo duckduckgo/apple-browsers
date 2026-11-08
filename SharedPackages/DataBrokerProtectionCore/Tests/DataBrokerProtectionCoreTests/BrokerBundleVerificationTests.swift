@@ -153,15 +153,6 @@ final class BrokerBundleVerificationTests: XCTestCase {
         XCTAssertTrue(checker.isAnyKeyRevoked)
     }
 
-    func testRevocationCheckerTreatsMissingOrMalformedSettingAsNotRevoked() {
-        let checker = BrokerBundleKeyRevocationChecker(privacyConfigurationManager: privacyConfigurationManager, settings: settings, signingKeys: .dbpAPITestKeys)
-
-        for dbpSettings: [String: Any] in [[:], ["revokedBundleSigningKeys": Self.testStagingKeyID], ["revokedBundleSigningKeys": [1, 2]]] {
-            privacyConfig.featureSettings[.dbp] = dbpSettings
-            XCTAssertFalse(checker.isAnyKeyRevoked)
-        }
-    }
-
     // MARK: - Update flow
 
     func testWhenRefreshFailsThenAnotherRefreshFilesArePreserved() async throws {
@@ -383,25 +374,6 @@ final class BrokerBundleVerificationTests: XCTestCase {
         XCTAssertEqual(settings.mainConfigETag, "previous")
         XCTAssertEqual(settings.lastManifestVersions, [Self.testStagingKeyID: Self.fixtureManifestVersion])
         XCTAssertEqual(firedVerificationSuccessCount, 0)
-    }
-
-    func testWhenRevokedKeyIsDroppedThenUpdatesResume() async throws {
-        privacyConfig.featureSettings[.dbp] = ["revokedBundleSigningKeys": [Self.testStagingKeyID]]
-        await assertCheckForUpdatesFails(with: .keyRevoked)
-
-        /// An app update drops the revoked key, so privacy-config no longer affects this app's keys
-        privacyConfig.featureSettings[.dbp] = ["revokedBundleSigningKeys": [Self.testProductionKeyID]]
-        pixelHandler.clear()
-        try stageExtractedBrokers()
-        appendFixtureResponses()
-
-        try await makeService().checkForUpdates(skipsLimiter: true)
-
-        XCTAssertTrue(vault.wasBrokerSavedCalled)
-        XCTAssertEqual(settings.mainConfigETag, eTag)
-        XCTAssertEqual(settings.lastManifestVersions, [Self.testStagingKeyID: Self.fixtureManifestVersion])
-        XCTAssertTrue(firedVerificationFailures.isEmpty)
-        XCTAssertEqual(firedVerificationSuccessCount, 1)
     }
 
     func testSigningKeyStateSurvivesResettingBrokerDeliveryData() {

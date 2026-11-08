@@ -155,6 +155,11 @@ final public class BookmarksImporter {
 
     private func parse(documentElement: Element, importedBookmark: BookmarkOrFolder?, inFavorite: Bool = false) throws {
         guard let firstDL = try documentElement.select("DL").first() else {
+            // A folder with no <DL> of its own is an empty folder, which countBookmarks already
+            // tolerates. Failing here would abort the whole import after the preview accepted it.
+            if importedBookmark != nil {
+                return
+            }
             throw BookmarksImportError.invalidHtmlNoDLTag
         }
         try firstDL.children()

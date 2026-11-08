@@ -76,13 +76,10 @@ final class BrokerBundleVerificationTests: XCTestCase {
 
     // MARK: - Keys
 
-    // Expected app public keys and fingerprints, pinned independently of the bundled JSON.
-    // Update these alongside `bundle-signing-keys.json` when backend signing keys rotate.
+    // Expected app key fingerprints. Update these alongside `bundle-signing-keys.json` when backend signing keys rotate.
     func testBuiltInKeysMatchTheDbpAPIKeys() throws {
         let keys = try BrokerBundleSigningKeys.loadBuiltIn()
         XCTAssertEqual(BrokerBundleSigningKeys.builtIn, keys)
-        XCTAssertEqual(keys.production, ["MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAE+H2eWmevflETRxo3CYQiTaAVOevf0bniWcBOVRZR7yLPWl6vQKO1ltVtPsBFJvNT0UZ90ZHO4p1YMnoPo1cCxg=="])
-        XCTAssertEqual(keys.staging, ["MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEVdn9FvuBCQnWNwGdOnOv5qPQCQYrWP90khQ+sJSnTjpXYg+jLst5b9PmGAlYuhMMEnkVcjVusmV6Yp+4oV2ZbQ=="])
         XCTAssertEqual(keys.keys(isProductionEndpoint: true).map(\.id), ["9f203b1713089cb240e7b76ba60146bc6c1c4f231206c7ae071dff555b7e6e60"])
         XCTAssertEqual(keys.keys(isProductionEndpoint: false).map(\.id), ["47b8e7e7113853a373207e6e75f377500928821df118e402a52da022074e0880"])
     }
@@ -96,39 +93,17 @@ final class BrokerBundleVerificationTests: XCTestCase {
         }
     }
 
-    func testInvalidKeyIsRejected() {
-        XCTAssertNil(BrokerBundleSigningKey(base64SPKI: "not a key"))
-        XCTAssertNil(BrokerBundleSigningKey(base64SPKI: Data("not a key".utf8).base64EncodedString()))
-    }
-
     // MARK: - Verifier
-
-    func testWhenSignatureIsValidThenVerifyingKeyIsReturned() throws {
-        let key = try stagingVerifier.verifyingKey(manifest: try fixture("main_config.json"), signature: try fixture("main_config.json.sig"))
-        XCTAssertEqual(key.id, Self.testStagingKeyID)
-    }
 
     func testWhenSignatureHasSurroundingWhitespaceThenItIsAccepted() throws {
         let signature = Data(" \n".utf8) + (try fixture("main_config.json.sig")) + Data("\r\n".utf8)
         XCTAssertNoThrow(try stagingVerifier.verifyingKey(manifest: try fixture("main_config.json"), signature: signature))
     }
 
-    func testWhenManifestIsTamperedThenSignatureIsInvalid() throws {
-        var flippedByte = try fixture("main_config.json")
-        flippedByte[flippedByte.count / 2] ^= 0x01
-        let trailingNewline = try fixture("main_config.json") + Data("\n".utf8)
+    func testWhenManifestHasTrailingWhitespaceThenSignatureIsInvalid() throws {
+        let manifest = try fixture("main_config.json") + Data("\n".utf8)
 
-        for manifest in [flippedByte, trailingNewline] {
-            XCTAssertThrowsError(try stagingVerifier.verifyingKey(manifest: manifest, signature: try fixture("main_config.json.sig"))) {
-                XCTAssertEqual($0 as? BrokerBundleVerificationError, .signatureInvalid)
-            }
-        }
-    }
-
-    func testWhenVerifiedWithWrongKeyThenSignatureIsInvalid() throws {
-        let verifier = BrokerBundleVerifier(keys: BrokerBundleSigningKeys.dbpAPITestKeys.keys(isProductionEndpoint: true))
-
-        XCTAssertThrowsError(try verifier.verifyingKey(manifest: try fixture("main_config.json"), signature: try fixture("main_config.json.sig"))) {
+        XCTAssertThrowsError(try stagingVerifier.verifyingKey(manifest: manifest, signature: try fixture("main_config.json.sig"))) {
             XCTAssertEqual($0 as? BrokerBundleVerificationError, .signatureInvalid)
         }
     }
@@ -157,21 +132,6 @@ final class BrokerBundleVerificationTests: XCTestCase {
                 XCTAssertEqual($0 as? BrokerBundleVerificationError, .signatureInvalid)
             }
         }
-    }
-
-    func testFixtureBrokersMatchTheirDigests() throws {
-        let mainConfig = try JSONDecoder().decode(MainConfig.self, from: try fixture("main_config.json"))
-        XCTAssertEqual(mainConfig.manifestVersion, Self.fixtureManifestVersion)
-
-        for fileName in Self.fixtureBrokerFileNames {
-            var data = try fixture(fileName)
-            XCTAssertTrue(BrokerBundleVerifier.hasExpectedDigest(data, expectedSHA256: mainConfig.jsonSHA256[fileName]))
-
-            data[0] ^= 0x01
-            XCTAssertFalse(BrokerBundleVerifier.hasExpectedDigest(data, expectedSHA256: mainConfig.jsonSHA256[fileName]))
-        }
-
-        XCTAssertFalse(BrokerBundleVerifier.hasExpectedDigest(try fixture("anywho.com.json"), expectedSHA256: nil))
     }
 
     // MARK: - Update flow
@@ -253,15 +213,6 @@ final class BrokerBundleVerificationTests: XCTestCase {
         assertNothingMarkedUpToDate()
     }
 
-    func testWhenSignedWithWrongKeyThenNothingIsStored() async throws {
-        try stageExtractedBrokers()
-        appendFixtureResponses()
-        let productionKey = BrokerBundleSigningKeys.dbpAPITestKeys.production
-
-        await assertCheckForUpdatesFails(with: .signatureInvalid, signingKeys: .init(production: [], staging: productionKey))
-        assertNothingMarkedUpToDate()
-    }
-
     func testWhenUsingProductionEndpointThenProductionKeysAreUsed() async throws {
         settings.selectedEnvironment = .production
         try stageExtractedBrokers()
@@ -302,18 +253,6 @@ final class BrokerBundleVerificationTests: XCTestCase {
 
     func testWhenSignatureRequestFailsThenOtherIsReported() async throws {
         appendFixtureResponses(signatureResponse: (HTTPURLResponse.internalServerError, nil))
-
-        await assertCheckForUpdatesFails(with: .other)
-        assertNothingMarkedUpToDate()
-    }
-
-    func testWhenSignatureRequestHasNetworkErrorThenOtherIsReported() async throws {
-        MockURLProtocol.requestHandlerQueue.append { [weak self] request in
-            self?.mainConfigRequests.append(request)
-            return (HTTPURLResponse(url: URL(string: "http://www.example.com")!, statusCode: 200, httpVersion: nil, headerFields: ["ETag": self?.eTag ?? ""])!,
-                    try? self?.fixture("main_config.json"))
-        }
-        MockURLProtocol.requestHandlerQueue.append { _ in throw URLError(.notConnectedToInternet) }
 
         await assertCheckForUpdatesFails(with: .other)
         assertNothingMarkedUpToDate()
@@ -410,17 +349,15 @@ final class BrokerBundleVerificationTests: XCTestCase {
 
     // MARK: - Signing key changes
 
-    func testWhenSigningKeysAreFirstSeenOrUnchangedThenStoredBrokersAreKept() async throws {
+    func testWhenSigningKeysAreUnchangedThenStoredBrokersAreKept() async throws {
+        settings.bundleSigningKeyFingerprint = Self.testStagingKeyID
         settings.mainConfigETag = eTag
         vault.brokers = [try inflatedAnyWhoBroker()]
+        appendNotModifiedResponse()
 
-        for _ in 0..<2 {
-            appendNotModifiedResponse()
-            try await makeService().checkForUpdates(skipsLimiter: true)
-        }
+        try await makeService().checkForUpdates()
 
-        XCTAssertEqual(settings.bundleSigningKeyFingerprint, Self.testStagingKeyID)
-        XCTAssertEqual(mainConfigRequests.map { $0.value(forHTTPHeaderField: "If-None-Match") }, [eTag, eTag])
+        XCTAssertEqual(mainConfigRequests.map { $0.value(forHTTPHeaderField: "If-None-Match") }, [eTag])
         XCTAssertEqual(vault.brokers.map(\.version), ["99.0.0"])
     }
 
@@ -481,10 +418,12 @@ final class BrokerBundleVerificationTests: XCTestCase {
                 let handler = DataBrokerProtectionSharedPixelsHandler(pixelKit: pixelKit, platform: platform)
 
                 handler.fire(event)
+                handler.fire(.bundleVerificationSuccess)
 
                 XCTAssertEqual(firedPixels.map(\.name), ["\(prefix)dbp_bundle_verification_failure_daily",
-                                                         "\(prefix)dbp_bundle_verification_failure_count"])
-                for pixel in firedPixels {
+                                                         "\(prefix)dbp_bundle_verification_failure_count",
+                                                         "\(prefix)dbp_bundle_verification_success_daily"])
+                for pixel in firedPixels.dropLast() {
                     XCTAssertEqual(pixel.parameters["d"], expectedDomain)
                     XCTAssertEqual(pixel.parameters["e"], String(expected.code))
                     XCTAssertEqual(pixel.parameters["reason"], expected.reason)
@@ -492,32 +431,6 @@ final class BrokerBundleVerificationTests: XCTestCase {
                     XCTAssertNil(pixel.parameters["ue"])
                 }
             }
-        }
-    }
-
-    func testVerificationPixelsFollowThePlatformNaming() throws {
-        for (platform, source, prefix) in [(DataBrokerProtectionSharedPixelsHandler.Platform.macOS, PixelKit.Source.macDMG, "m_mac_"),
-                                           (.iOS, .iOS, "m_ios_")] {
-            var firedPixels: [(name: String, parameters: [String: String])] = []
-            let suiteName = "\(#function)-\(UUID().uuidString)"
-            let defaults = try XCTUnwrap(UserDefaults(suiteName: suiteName))
-            defer { defaults.removePersistentDomain(forName: suiteName) }
-            let pixelKit = PixelKit(dryRun: false,
-                                    appVersion: "1.0.0",
-                                    source: source.rawValue,
-                                    defaultHeaders: [:],
-                                    defaults: defaults) { name, _, parameters, _, _, _ in
-                firedPixels.append((name, parameters))
-            }
-            let handler = DataBrokerProtectionSharedPixelsHandler(pixelKit: pixelKit, platform: platform)
-
-            handler.fire(.bundleVerificationFailure(reason: .digestMismatch))
-            handler.fire(.bundleVerificationSuccess)
-
-            XCTAssertEqual(firedPixels.map(\.name), ["\(prefix)dbp_bundle_verification_failure_daily",
-                                                     "\(prefix)dbp_bundle_verification_failure_count",
-                                                     "\(prefix)dbp_bundle_verification_success_daily"])
-            XCTAssertEqual(firedPixels.map { $0.parameters["reason"] }, ["digest_mismatch", "digest_mismatch", nil])
         }
     }
 

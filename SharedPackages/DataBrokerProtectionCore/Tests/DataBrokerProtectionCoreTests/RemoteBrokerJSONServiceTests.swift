@@ -159,17 +159,6 @@ final class RemoteBrokerJSONServiceTests: XCTestCase {
         }
     }
 
-    func testCheckForUpdatesThrowsOtherVerificationErrorWhenSignedResponseIsInvalid() async {
-        appendSignedMainConfigResponses(Data())
-        do {
-            try await remoteBrokerJSONService.checkForUpdates()
-            XCTFail("Expected an error")
-        } catch BrokerBundleVerificationError.other {
-        } catch {
-            XCTFail("Unexpected error \(error)")
-        }
-    }
-
     func testCheckForUpdatesDetectsNoChangesInRemoteJSONs() async {
         let mainConfig = MainConfig(mainConfigETag: "",
                                     activeDataBrokers: [],

@@ -218,6 +218,10 @@ final class UnifiedToggleInputView: UIView {
         textEntryView.refreshPlaceholderForCurrentMode()
     }
 
+    func crossfadePlaceholder(to state: AIChatPlaceholderState) {
+        textEntryView.crossfadePlaceholder(to: state)
+    }
+
     var inputMode: TextEntryMode {
         handler.currentToggleState
     }

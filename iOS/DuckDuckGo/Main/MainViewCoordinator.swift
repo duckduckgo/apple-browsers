@@ -85,7 +85,13 @@ class MainViewCoordinator {
     private var omnibarDismissContentSnapshot: UIView?
     /// Extra cleanup when dismiss is stopped mid-flight (e.g. NTP chrome restore); cleared on re-focus.
     private var omnibarDismissInterruptCleanup: (() -> Void)?
-    var toolbar: BrowserToolbarView!
+    var toolbar: BrowserToolbarView! {
+        didSet {
+            toolbar?.onFloatingBottomOffsetChange = { [weak self] in
+                self?.applyAITabCollapsedBarFloatingOffset()
+            }
+        }
+    }
     var toolbarSpacer: UIView!
     var toolbarBackButton: BrowserChromeButton { toolbarHandler.backButton }
     var toolbarFireButton: BrowserChromeButton { toolbarHandler.fireButton }
@@ -105,6 +111,7 @@ class MainViewCoordinator {
     private var isNavBarContainerBottomKeyboardBased = false
     private(set) var isOmnibarInToolbar = false
     private var isFloatingUIEnabled = false
+    var isAITabCollapsedBarFloatingOffsetEnabled: () -> Bool = { false }
     private(set) var isWebInputEditing = false
     private(set) var isInMinimalChromeLayout = false
 
@@ -631,6 +638,22 @@ class MainViewCoordinator {
     func setAITabCollapsedTopSeparatorVisible(_ visible: Bool) {
         aiTabCollapsedTopSeparatorLogicallyVisible = visible
         applyAITabCollapsedTopSeparatorVisibility()
+        applyAITabCollapsedBarFloatingOffset()
+    }
+
+    /// The collapsed Duck.ai bar sits as low as the buttons-only floating toolbar's glass, but never above its safe area slot,
+    /// which the toolbar's glass rises to in landscape to match the wide side insets.
+    var aiTabCollapsedBarFloatingOffset: CGFloat {
+        guard isFloatingUIEnabled, isAITabCollapsedBarFloatingOffsetEnabled(), #available(iOS 26.0, *) else { return 0 }
+        return max(0, BrowserToolbarView.standaloneFloatingBottomOffset(in: superview))
+    }
+
+    /// Applied even with the flag off, so a flag turned off mid-session drops the offset it left behind.
+    func applyAITabCollapsedBarFloatingOffset() {
+        let offset = aiTabCollapsedTopSeparatorLogicallyVisible ? aiTabCollapsedBarFloatingOffset : 0
+        // Only the vertical part, so a swipe's horizontal shift of the same views survives.
+        unifiedToggleInputContainer?.transform.ty = offset
+        aiTabCollapsedTopSeparator?.transform.ty = offset
     }
 
     /// Enforces the invariant: the separator can only be visible above a visible chrome. The

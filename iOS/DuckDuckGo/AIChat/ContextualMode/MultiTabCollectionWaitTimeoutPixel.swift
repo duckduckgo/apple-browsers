@@ -24,6 +24,7 @@ struct MultiTabCollectionWaitTimeoutPixel: PixelKit.Event {
         case sourceCollection = "source_collection"
         case crossTabCollection = "cross_tab_collection"
         case both
+        case timedOut = "timed_out"
 
         init?(hasSourceCollection: Bool, hasCrossTabCollection: Bool) {
             switch (hasSourceCollection, hasCrossTabCollection) {

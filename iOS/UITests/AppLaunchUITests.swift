@@ -113,6 +113,8 @@ final class AppLaunchUITests: XCTestCase {
     }
 
     func testSlideToDeleteLandscapeModalWidthAndRotation() {
+        // This case checks the sheet's layout and drag behavior independently of the Fire animation.
+        app.launchArguments += ["-com.duckduckgo.app.currentFireButtonAnimationKey", "none"]
         openFireConfirmationForWidthTest(slideToDelete: true, orientation: .portrait)
         defer { XCUIDevice.shared.orientation = .portrait }
         let slider = app.buttons["alert.forget-data.confirm"]

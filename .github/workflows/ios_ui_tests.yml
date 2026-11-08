@@ -116,7 +116,6 @@ jobs:
           -destination "${{ steps.select-simulator.outputs.destination }}" \
           -parallel-testing-enabled NO \
           -derivedDataPath "DerivedData" \
-          -showBuildTimingSummary \
           -resultBundlePath "DerivedData/Logs/Test/iOS-UI-Tests.xcresult" \
           -skipPackagePluginValidation \
           -skipMacroValidation \

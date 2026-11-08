@@ -20,6 +20,7 @@ import XCTest
 import CryptoKit
 import Foundation
 import SecureStorage
+import PrivacyConfig
 import PixelKit
 import ZIPFoundation
 @testable import DataBrokerProtectionCore
@@ -45,6 +46,8 @@ final class BrokerBundleVerificationTests: XCTestCase {
                                                                                                     database: SecureStorageDatabaseProviderMock(),
                                                                                                     keystore: EmptySecureStorageKeyStoreProviderMock()))
     let authenticationManager = MockAuthenticationManager()
+    let privacyConfigurationManager = PrivacyConfigurationManagingMock()
+    var privacyConfig: PrivacyConfigurationMock { privacyConfigurationManager.privacyConfig as! PrivacyConfigurationMock }
     var settings: DataBrokerProtectionSettings!
     var eTag: String!
     var mainConfigRequests = [URLRequest]()
@@ -132,6 +135,22 @@ final class BrokerBundleVerificationTests: XCTestCase {
                 XCTAssertEqual($0 as? BrokerBundleVerificationError, .signatureInvalid)
             }
         }
+    }
+
+    func testRevocationCheckerOnlyMatchesKeysForTheCurrentEnvironment() {
+        let checker = BrokerBundleKeyRevocationChecker(privacyConfigurationManager: privacyConfigurationManager, settings: settings, signingKeys: .dbpAPITestKeys)
+
+        for (revokedKeyIDs, isRevoked) in [([Self.testProductionKeyID, Self.testStagingKeyID], true),
+                                           ([Self.testStagingKeyID.uppercased()], true),
+                                           ([Self.testProductionKeyID], false),
+                                           ([], false)] {
+            privacyConfig.featureSettings[.dbp] = ["revokedBundleSigningKeys": revokedKeyIDs]
+            XCTAssertEqual(checker.isAnyKeyRevoked, isRevoked, "\(revokedKeyIDs)")
+        }
+
+        settings.selectedEnvironment = .production
+        privacyConfig.featureSettings[.dbp] = ["revokedBundleSigningKeys": [Self.testProductionKeyID]]
+        XCTAssertTrue(checker.isAnyKeyRevoked)
     }
 
     // MARK: - Update flow
@@ -335,6 +354,28 @@ final class BrokerBundleVerificationTests: XCTestCase {
         XCTAssertEqual(settings.mainConfigETag, eTag)
     }
 
+    func testWhenSigningKeyIsRevokedThenUpdateIsSkippedAndStoredDataIsUntouched() async throws {
+        privacyConfig.featureSettings[.dbp] = ["revokedBundleSigningKeys": [Self.testStagingKeyID]]
+        settings.mainConfigETag = "previous"
+        settings.lastManifestVersions = [Self.testStagingKeyID: Self.fixtureManifestVersion]
+        vault.shouldReturnNewVersionBroker = true
+        let olderBundledBroker = try DataBroker.initFromResource(try XCTUnwrap(Bundle.module.url(forResource: "valid-broker",
+                                                                                                 withExtension: "json",
+                                                                                                 subdirectory: "BundleResources")))
+        resources.brokerResourcesList = [olderBundledBroker]
+        appendFixtureResponses()
+
+        await assertCheckForUpdatesFails(with: .keyRevoked)
+
+        XCTAssertEqual(MockURLProtocol.requestHandlerQueue.count, 2, "No remote request should be made")
+        XCTAssertFalse(vault.wasBrokerSavedCalled)
+        XCTAssertFalse(vault.wasBrokerUpdateCalled, "Bundled brokers must not replace stored ones")
+        XCTAssertEqual(try vault.fetchBroker(with: "broker.com")?.version, "1.0.1")
+        XCTAssertEqual(settings.mainConfigETag, "previous")
+        XCTAssertEqual(settings.lastManifestVersions, [Self.testStagingKeyID: Self.fixtureManifestVersion])
+        XCTAssertEqual(firedVerificationSuccessCount, 0)
+    }
+
     func testSigningKeyStateSurvivesResettingBrokerDeliveryData() {
         settings.mainConfigETag = "previous"
         settings.lastManifestVersions = [Self.testStagingKeyID: Self.fixtureManifestVersion]
@@ -378,6 +419,7 @@ final class BrokerBundleVerificationTests: XCTestCase {
 
     func testVerificationErrorsPreserveStableNSErrorAndPixelMetadata() throws {
         let expectedErrors: [(error: BrokerBundleVerificationError, code: Int, reason: String)] = [
+            (.keyRevoked, 6, "key_revoked"),
             (.signatureMissing, 1, "signature_missing"),
             (.signatureInvalid, 2, "signature_invalid"),
             (.rollback, 3, "rollback"),
@@ -485,6 +527,7 @@ final class BrokerBundleVerificationTests: XCTestCase {
                                        authenticationManager: authenticationManager,
                                        pixelHandler: pixelHandler,
                                        localBrokerProvider: localBrokerService,
+                                       privacyConfigurationManager: privacyConfigurationManager,
                                        signingKeys: signingKeys)
     }
 

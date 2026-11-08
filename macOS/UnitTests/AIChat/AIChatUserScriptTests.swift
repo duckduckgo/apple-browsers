@@ -143,6 +143,43 @@ final class AIChatUserScriptTests: XCTestCase {
         XCTAssertEqual(reenabledConfig.clientTools?.capabilities, [.listOpenTabs])
     }
 
+    @MainActor func testFeatureFlagChangesPushUpdatedClientToolsConfiguration() async {
+        let flags = browserToolsFlags()
+        let service = makeBrowserToolsService(featureFlagger: flags)
+        let pusher = ClientToolsChangePusherSpy()
+        service.register(pusher)
+
+        flags.triggerUpdate()
+        await settleFeatureFlagUpdate()
+        XCTAssertTrue(pusher.configurations.isEmpty)
+
+        flags.featuresStub[FeatureFlag.aiChatBrowserTools.rawValue] = false
+        flags.triggerUpdate()
+        await settleFeatureFlagUpdate()
+        XCTAssertEqual(pusher.configurations.count, 1)
+        XCTAssertNil(pusher.configurations[0])
+
+        flags.featuresStub[FeatureFlag.aiChatBrowserTools.rawValue] = true
+        flags.featuresStub[FeatureFlag.aiChatBrowserToolListOpenTabs.rawValue] = true
+        flags.triggerUpdate()
+        await settleFeatureFlagUpdate()
+        XCTAssertEqual(pusher.configurations.count, 2)
+        XCTAssertEqual(pusher.configurations[1]?.capabilities, [.listOpenTabs])
+
+        flags.featuresStub[FeatureFlag.aiChatBrowserToolListOpenTabs.rawValue] = false
+        flags.triggerUpdate()
+        await settleFeatureFlagUpdate()
+        XCTAssertEqual(pusher.configurations.count, 3)
+        XCTAssertNil(pusher.configurations[2])
+    }
+
+    func testClientToolsChangedDataEncodesDisabledConfigurationAsNull() throws {
+        let data = try JSONEncoder().encode(ClientToolsChangedData(clientTools: nil))
+        let object = try XCTUnwrap(JSONSerialization.jsonObject(with: data) as? [String: Any])
+
+        XCTAssertTrue(object["clientTools"] is NSNull)
+    }
+
     @MainActor func testNativeConfigDispatcherPreservesNonConfigResponse() async throws {
         mockHandler.configResponse = ["message": "unchanged"]
         let handler = try XCTUnwrap(userScript.handler(forMethodNamed: AIChatUserScriptMessages.getAIChatNativeConfigValues.rawValue))
@@ -193,7 +230,8 @@ final class AIChatUserScriptTests: XCTestCase {
         guard case .granted(let confirmControl) = control else {
             return XCTFail("Stored permission should authorize script source")
         }
-        XCTAssertTrue(confirmControl())
+        let controlResult = await confirmControl { .success(.null) }
+        XCTAssertNotNil(controlResult)
         let authorization = await service.clientToolPermissions.authorize(callID: "cancelled", tool: tool, source: userScript)
         guard case .granted(let confirmExecution) = authorization else {
             return XCTFail("Stored permission should authorize script source")
@@ -203,7 +241,11 @@ final class AIChatUserScriptTests: XCTestCase {
 
         userScript.cancelClientToolPermissionRequests()
 
-        XCTAssertFalse(confirmExecution())
+        let cancelledResult = await confirmExecution {
+            XCTFail("Cancelled authorization must not start execution")
+            return .success(.null)
+        }
+        XCTAssertNil(cancelledResult)
         XCTAssertEqual(additionalSource.cancellationCount, 1)
         XCTAssertEqual(service.permissions.state(forToolNamed: tool.name), .allow)
     }
@@ -257,6 +299,12 @@ final class AIChatUserScriptTests: XCTestCase {
                                  windowControllersManager: WindowControllersManagerMock(),
                                  historyCoordinator: HistoryCoordinatingMock(),
                                  permissionStorage: MockKeyValueStore().keyedStoring())
+    }
+
+    @MainActor private func settleFeatureFlagUpdate() async {
+        for _ in 0..<20 {
+            await Task.yield()
+        }
     }
 
     @MainActor func testCloseAIChat() async throws {
@@ -779,4 +827,16 @@ private final class ClientToolsDocumentWebView: WKWebView {
 
     override var url: URL? { documentURL }
     override var isLoading: Bool { documentIsLoading }
+}
+
+@MainActor
+private final class ClientToolsChangePusherSpy: AIChatBrowserToolsPushing {
+    let pushTargetWebView: WKWebView? = nil
+    private(set) var configurations: [ClientToolsConfiguration?] = []
+
+    func pushClientToolsChanged(_ data: ClientToolsChangedData) {
+        configurations.append(data.clientTools)
+    }
+
+    func pushTabChanged(_ data: AIChatTabChangedData) {}
 }

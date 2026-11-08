@@ -17,6 +17,7 @@
 //
 
 import AIChat
+import Combine
 import FeatureFlags_macOS
 import Foundation
 import History
@@ -36,6 +37,8 @@ final class AIChatBrowserToolsService {
     private let configuration: AIChatBrowserToolsConfiguration
     private let windowControllersManager: WindowControllersManagerProtocol
     private let pushers = NSHashTable<AnyObject>.weakObjects()
+    private var lastClientToolsConfiguration: ClientToolsConfiguration?
+    private var featureFlagChanges: AnyCancellable?
 
     /// Whether browser tools are enabled by the parent feature flag.
     var isEnabled: Bool { configuration.isEnabled }
@@ -59,6 +62,12 @@ final class AIChatBrowserToolsService {
         self.clientToolPermissions = clientToolPermissions
         self.invoker = BrowserToolInvoker(catalog: catalog,
                                           clientToolPermissions: clientToolPermissions)
+        self.lastClientToolsConfiguration = Self.clientToolsConfiguration(for: catalog)
+        self.featureFlagChanges = featureFlagger.updatesPublisher.sink { [weak self] in
+            Task { @MainActor in
+                self?.pushClientToolsChangedIfNeeded()
+            }
+        }
     }
 
     /// Registration order determines the order of the advertised capabilities.
@@ -77,6 +86,10 @@ final class AIChatBrowserToolsService {
 
     /// Advertised to Duck.ai in `getAIChatNativeConfigValues`. Nil when no tool is enabled.
     var clientToolsConfiguration: ClientToolsConfiguration? {
+        Self.clientToolsConfiguration(for: catalog)
+    }
+
+    private static func clientToolsConfiguration(for catalog: BrowserToolCatalog) -> ClientToolsConfiguration? {
         let capabilities = catalog.enabledClientToolCapabilities
         guard !capabilities.isEmpty,
               let configuration = try? ClientToolsConfiguration(capabilities: capabilities),
@@ -103,6 +116,16 @@ final class AIChatBrowserToolsService {
         }
     }
 
+    private func pushClientToolsChangedIfNeeded() {
+        let configuration = clientToolsConfiguration
+        guard configuration != lastClientToolsConfiguration else { return }
+        lastClientToolsConfiguration = configuration
+        let data = ClientToolsChangedData(clientTools: configuration)
+        for pusher in livePushers {
+            pusher.pushClientToolsChanged(data)
+        }
+    }
+
     private var livePushers: [AIChatBrowserToolsPushing] {
         pushers.allObjects.compactMap { $0 as? AIChatBrowserToolsPushing }
     }
@@ -115,7 +138,21 @@ protocol AIChatBrowserToolsPushing: AnyObject {
     /// The web view showing the chat; resolves which owner tab the surface belongs to.
     var pushTargetWebView: WKWebView? { get }
 
+    func pushClientToolsChanged(_ data: ClientToolsChangedData)
     func pushTabChanged(_ data: AIChatTabChangedData)
+}
+
+struct ClientToolsChangedData: Encodable, Equatable {
+    let clientTools: ClientToolsConfiguration?
+
+    private enum CodingKeys: String, CodingKey {
+        case clientTools
+    }
+
+    func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encode(clientTools, forKey: .clientTools)
+    }
 }
 
 /// Maps browser-tools sub-features onto macOS feature flags. A tool's `name` is its sub-feature's

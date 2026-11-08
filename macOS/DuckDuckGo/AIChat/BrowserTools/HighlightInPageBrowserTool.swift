@@ -19,8 +19,8 @@
 import AIChat
 import Foundation
 
-/// Paints text on a page through WebKit's own find. Never prompts: it reveals nothing the user has
-/// not already consented to through `findInPage` or `readTabContent`.
+/// Paints text on a page through WebKit's own find. It asks permission because a direct call can
+/// reveal whether arbitrary text exists on the page.
 @MainActor
 final class HighlightInPageBrowserTool: BrowserTool {
 
@@ -29,7 +29,8 @@ final class HighlightInPageBrowserTool: BrowserTool {
 
     /// Matches `AIChatBrowserToolsSubfeature.highlightInPage`, which is how the catalog gates it.
     let name = "highlightInPage"
-    let permissionMode = BrowserToolPermissionMode.auto
+    let permissionMode = BrowserToolPermissionMode.ask
+    let permissionReason = "Duck.ai wants to highlight text on this page."
 
     let inputSchema: JSONValue = [
         "type": "object",
@@ -91,7 +92,10 @@ final class HighlightInPageBrowserTool: BrowserTool {
         var highlightedCount = 0
         var truncated = false
         for (position, quote) in quotes.enumerated() {
-            switch await highlighter.highlight(quote, in: tab) {
+            guard !Task.isCancelled else { return .failure(.cancelled) }
+            let outcome = await highlighter.highlight(quote, in: tab)
+            guard !Task.isCancelled else { return .failure(.cancelled) }
+            switch outcome {
             case .notFound:
                 continue
             case .cancelled:

@@ -252,6 +252,43 @@ struct ClientToolInvokerTests {
         releaseFirst?.resume()
         #expect(await first.value == .success(callId: "first", value: ["content": "page"]))
     }
+
+    @available(iOS 16, macOS 13, *)
+    @Test(.timeLimit(.minutes(1)), arguments: [true, false])
+    func cancellationDuringExecutionCancelsTheTool(cancelTask: Bool) async throws {
+        let harness = ClientToolTestHarness()
+        var executionStarted: CheckedContinuation<Void, Never>?
+        var waitForExecution: CheckedContinuation<Void, Never>?
+        var executionDidStart = false
+        var executionWasCancelled = false
+        harness.tool.onExecute = {
+            executionDidStart = true
+            executionStarted?.resume()
+            executionStarted = nil
+            try? await Task.sleep(nanoseconds: 60_000_000_000)
+            executionWasCancelled = Task.isCancelled
+            waitForExecution?.resume()
+            waitForExecution = nil
+        }
+        let task = try harness.start()
+        await harness.source.waitForPrompts(1)
+        try harness.answer(harness.source.prompts[0], decision: "allow")
+        if !executionDidStart {
+            await withCheckedContinuation { executionStarted = $0 }
+        }
+
+        if cancelTask {
+            task.cancel()
+        } else {
+            harness.coordinator.cancelRequests(from: harness.source)
+        }
+
+        #expect(await task.value == .failure(callId: "call", error: .cancelled))
+        if !executionWasCancelled {
+            await withCheckedContinuation { waitForExecution = $0 }
+        }
+        #expect(executionWasCancelled)
+    }
 }
 
 extension ClientToolInvokerTests {
@@ -300,9 +337,9 @@ private final class StubClientToolPermissionCoordinator: ClientToolPermissionCoo
     func authorize(callID: String, tool: any BrowserTool, source: (any ClientToolPermissionPushing)?) async -> ClientToolPermissionAuthorization {
         calls.append((callID, tool, source))
         guard outcome != "denied" else { return .refused(.denied) }
-        return .granted(confirmPermissionForExecution: { [self] in
+        return .granted(performExecution: { [self] operation in
             permissionConfirmationCount += 1
-            return outcome == "granted"
+            return outcome == "granted" ? await operation() : nil
         })
     }
 }

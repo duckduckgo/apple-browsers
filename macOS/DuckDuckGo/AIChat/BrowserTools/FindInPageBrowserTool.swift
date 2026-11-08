@@ -143,9 +143,31 @@ final class FindInPageBrowserTool: BrowserTool {
     }
 
     static func snippet(in content: String, around range: Range<String.Index>) -> String {
-        let start = content.index(range.lowerBound, offsetBy: -snippetRadius, limitedBy: content.startIndex) ?? content.startIndex
-        let end = content.index(range.upperBound, offsetBy: snippetRadius, limitedBy: content.endIndex) ?? content.endIndex
-        return content[start..<end]
+        let scalars = content.unicodeScalars
+        let matchLength = scalars.distance(from: range.lowerBound, to: range.upperBound)
+        let limit = BrowserToolOutputLimits.snippet
+        if matchLength >= limit {
+            let end = scalars.index(range.lowerBound, offsetBy: limit)
+            return String(scalars[range.lowerBound..<end])
+                .split(whereSeparator: \.isWhitespace)
+                .joined(separator: " ")
+        }
+
+        let availableBefore = scalars.distance(from: scalars.startIndex, to: range.lowerBound)
+        let availableAfter = scalars.distance(from: range.upperBound, to: scalars.endIndex)
+        let remaining = limit - matchLength
+        var beforeCount = min(snippetRadius, remaining / 2, availableBefore)
+        var afterCount = min(snippetRadius, remaining - beforeCount, availableAfter)
+
+        var unused = remaining - beforeCount - afterCount
+        let extraBefore = min(unused, snippetRadius - beforeCount, availableBefore - beforeCount)
+        beforeCount += extraBefore
+        unused -= extraBefore
+        afterCount += min(unused, snippetRadius - afterCount, availableAfter - afterCount)
+
+        let start = scalars.index(range.lowerBound, offsetBy: -beforeCount)
+        let end = scalars.index(range.upperBound, offsetBy: afterCount)
+        return String(scalars[start..<end])
             .split(whereSeparator: \.isWhitespace)
             .joined(separator: " ")
     }

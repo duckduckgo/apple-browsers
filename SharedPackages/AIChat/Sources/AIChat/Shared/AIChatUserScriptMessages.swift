@@ -144,6 +144,9 @@ public enum AIChatUserScriptMessages: String, CaseIterable {
     /// Pushed (native→FE) when a pending `executeClientTool` needs the user's permission.
     case clientToolPermissionRequested
 
+    /// Pushed (native→FE) when feature flags change the advertised client-tool capabilities.
+    case clientToolsChanged
+
     /// FE→native: the user's answer to `clientToolPermissionRequested`. Always acknowledged with `{}`.
     case respondToClientToolPermission
 

@@ -150,8 +150,14 @@ final class WebViewPageHighlighter: BrowserToolPageHighlighting {
         // Each await yields the main actor, so the user can open Cmd+F mid-sequence; from then on the
         // overlay is theirs and we stop touching it.
         let webView = tab.webView
-        guard !isFindBarVisible(in: tab) else { return .cancelled }
+        guard !Task.isCancelled, !isFindBarVisible(in: tab) else { return .cancelled }
         let result = await webView.find(quote, with: [.showFindIndicator, .wrapAround], maxCount: Self.maxMatches)
+        guard !Task.isCancelled else {
+            if !isFindBarVisible(in: tab) {
+                webView.clearFindInPageState()
+            }
+            return .cancelled
+        }
         guard !isFindBarVisible(in: tab) else { return .cancelled }
         let firstMatches: UInt?
         switch result {
@@ -166,6 +172,12 @@ final class WebViewPageHighlighter: BrowserToolPageHighlighting {
 
         webView.clearFindInPageState()
         let overlay = await webView.find(quote, with: [.noIndexChange, .showOverlay, .showFindIndicator, .wrapAround], maxCount: Self.maxMatches)
+        guard !Task.isCancelled else {
+            if !isFindBarVisible(in: tab) {
+                webView.clearFindInPageState()
+            }
+            return .cancelled
+        }
         guard !isFindBarVisible(in: tab) else { return .cancelled }
         switch overlay {
         case .found(let total):

@@ -2100,6 +2100,19 @@ struct AIChatUserScriptHandlerTests {
     }
 
     @available(iOS 16, macOS 13, *)
+    @Test("Legacy MCP browser tools are not advertised", .timeLimit(.minutes(1)))
+    func testLegacyBrowserToolsAreNotAdvertised() {
+        let featureFlagger = makeFeatureFlagger()
+        featureFlagger.featuresStub[FeatureFlag.aiChatBrowserTools.rawValue] = true
+        let handler = AIChatMessageHandler(featureFlagger: featureFlagger,
+                                           promptHandler: AIChatPromptHandler.shared,
+                                           installDateProvider: { nil },
+                                           installTypeProvider: { .new })
+
+        #expect(handler.getNativeConfigValues(isFireWindow: false).supportsBrowserTools == false)
+    }
+
+    @available(iOS 16, macOS 13, *)
     @Test("When aiChatNativeStorage is enabled and bridge is available, supportsNativeStorage is true", .timeLimit(.minutes(1)))
     func testWhenAIChatNativeStorageEnabledAndBridgeAvailableThenSupportsNativeStorageIsTrue() {
         let featureFlagger = makeFeatureFlagger(aiChatNativeStorageEnabled: true)

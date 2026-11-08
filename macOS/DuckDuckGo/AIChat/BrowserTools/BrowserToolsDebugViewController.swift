@@ -620,6 +620,17 @@ extension BrowserToolsDebugViewController: AIChatBrowserToolsPushing {
 
     var pushTargetWebView: WKWebView? { chatContextProvider()?.webView }
 
+    func pushClientToolsChanged(_ data: ClientToolsChangedData) {
+        guard isViewLoaded else { return }
+        configurationState = .loaded(data.clientTools)
+        capabilities = data.clientTools?.capabilities ?? []
+        configurationLabel.stringValue = capabilities.isEmpty
+            ? "Config changed · no tools available" : "Config changed · \(capabilities.count) \(capabilities.count == 1 ? "tool" : "tools")"
+        reloadToolPicker()
+        updateCallAvailability()
+        appendToLog(summary: "⇠ clientToolsChanged", detail: prettyPrinted(data))
+    }
+
     func pushTabChanged(_ data: AIChatTabChangedData) {
         appendToLog(summary: "⇠ aiChatTabChanged  \(data.url ?? "")", detail: prettyPrinted(data))
     }

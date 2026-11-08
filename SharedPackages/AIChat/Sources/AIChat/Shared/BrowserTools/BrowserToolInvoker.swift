@@ -49,8 +49,8 @@ public final class BrowserToolInvoker {
             return .failure(callId: request.callId, error: .cancelled)
         case .refused:
             guard !Task.isCancelled else { return .failure(callId: request.callId, error: .cancelled) }
-        case .granted(let confirmPermissionForExecution):
-            guard confirmPermissionForExecution() else { return .failure(callId: request.callId, error: .cancelled) }
+        case .granted:
+            break
         }
         guard !context.isBurner,
               let currentTool = catalog.tool(for: request.capability) else {
@@ -59,8 +59,16 @@ public final class BrowserToolInvoker {
         if case .refused(let error) = authorization {
             return .failure(callId: request.callId, error: error)
         }
+        guard case .granted(let performExecution) = authorization,
+              let executionResult = await performExecution({
+                  guard !Task.isCancelled else { return .failure(.cancelled) }
+                  let result = await currentTool.execute(arguments: request.input, context: context)
+                  return Task.isCancelled ? .failure(.cancelled) : result
+              }) else {
+            return .failure(callId: request.callId, error: .cancelled)
+        }
         let result: BrowserToolResult
-        switch await currentTool.execute(arguments: request.input, context: context) {
+        switch executionResult {
         case .success(let value): result = currentTool.clientToolResult(from: value)
         case .failure(let error): result = .failure(error)
         }

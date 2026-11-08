@@ -30,7 +30,7 @@ public protocol ClientToolPermissionCoordinating: AnyObject {
 }
 
 public enum ClientToolPermissionAuthorization {
-    case granted(confirmPermissionForExecution: @MainActor () -> Bool)
+    case granted(performExecution: @MainActor (@escaping @MainActor () async -> BrowserToolResult) async -> BrowserToolResult?)
     case refused(ClientToolError)
 }
 
@@ -42,6 +42,12 @@ public final class ClientToolPermissionCoordinator: ClientToolPermissionCoordina
         case queued
         case awaitingDecision
         case granted
+        case executing
+    }
+
+    private struct QueueKey: Hashable {
+        let toolName: String
+        let sourceID: ObjectIdentifier?
     }
 
     private final class Entry {
@@ -50,20 +56,24 @@ public final class ClientToolPermissionCoordinator: ClientToolPermissionCoordina
         let tool: any BrowserTool
         weak var source: (any ClientToolPermissionPushing)?
         let requiresSource: Bool
+        let queueKey: QueueKey
         let deadline: TimeInterval
         let cancellation: ClientToolCancellationSignal
         var state: State = .queued
         var continuation: CheckedContinuation<ClientToolPermissionAuthorization, Never>?
+        var executionContinuation: CheckedContinuation<BrowserToolResult?, Never>?
+        var executionTask: Task<Void, Never>?
         var timeout: Task<Void, Never>?
 
         init(requestID: String, callID: String, tool: any BrowserTool,
-             source: (any ClientToolPermissionPushing)?, deadline: TimeInterval,
+             source: (any ClientToolPermissionPushing)?, queueKey: QueueKey, deadline: TimeInterval,
              cancellation: ClientToolCancellationSignal, continuation: CheckedContinuation<ClientToolPermissionAuthorization, Never>) {
             self.requestID = requestID
             self.callID = callID
             self.tool = tool
             self.source = source
             requiresSource = source != nil
+            self.queueKey = queueKey
             self.deadline = deadline
             self.cancellation = cancellation
             self.continuation = continuation
@@ -78,8 +88,8 @@ public final class ClientToolPermissionCoordinator: ClientToolPermissionCoordina
     private let now: () -> TimeInterval
     private let sleepUntil: (TimeInterval) async throws -> Void
     private var entries: [String: Entry] = [:]
-    private var queues: [String: [String]] = [:]
-    private var toolNamesPendingQueueProcessing: Set<String> = []
+    private var queues: [QueueKey: [String]] = [:]
+    private var queueKeysPendingProcessing: Set<QueueKey> = []
     private var isProcessingPermissionQueues = false
     private var isCancellingSource = false
 
@@ -112,10 +122,11 @@ public final class ClientToolPermissionCoordinator: ClientToolPermissionCoordina
         return await withTaskCancellationHandler {
             guard !Task.isCancelled, !cancellation.isCancelled else { return .refused(.cancelled) }
             return await withCheckedContinuation { continuation in
+                let queueKey = QueueKey(toolName: tool.name, sourceID: source.map { ObjectIdentifier($0) })
                 let entry = Entry(requestID: requestID, callID: callID, tool: tool, source: source,
-                                  deadline: deadline, cancellation: cancellation, continuation: continuation)
+                                  queueKey: queueKey, deadline: deadline, cancellation: cancellation, continuation: continuation)
                 entries[requestID] = entry
-                queues[tool.name, default: []].append(requestID)
+                queues[entry.queueKey, default: []].append(requestID)
                 entry.timeout = Task { [weak self, sleepUntil] in
                     do {
                         try await sleepUntil(deadline)
@@ -125,7 +136,7 @@ public final class ClientToolPermissionCoordinator: ClientToolPermissionCoordina
                     guard !Task.isCancelled else { return }
                     self?.expire(requestID)
                 }
-                processPermissionQueue(for: tool.name)
+                processPermissionQueue(for: entry.queueKey)
             }
         } onCancel: {
             cancellation.cancel()
@@ -176,14 +187,47 @@ public final class ClientToolPermissionCoordinator: ClientToolPermissionCoordina
         processPendingPermissionQueues()
     }
 
-    private func confirmPermissionForExecution(requestID: String) -> Bool {
-        guard let entry = entries.removeValue(forKey: requestID), case .granted = entry.state else { return false }
-        return !Task.isCancelled && !entry.isCancelled
+    private func performExecution(requestID: String,
+                                  operation: @escaping @MainActor () async -> BrowserToolResult) async -> BrowserToolResult? {
+        guard let entry = entries[requestID], case .granted = entry.state,
+              !Task.isCancelled, !entry.isCancelled else {
+            finish(requestID, error: .cancelled)
+            return nil
+        }
+        entry.state = .executing
+        let cancellation = entry.cancellation
+        return await withTaskCancellationHandler {
+            await withCheckedContinuation { continuation in
+                guard entries[requestID] === entry, !entry.isCancelled else {
+                    continuation.resume(returning: nil)
+                    return
+                }
+                entry.executionContinuation = continuation
+                entry.executionTask = Task { [weak self] in
+                    let result = await operation()
+                    self?.completeExecution(requestID, result: result)
+                }
+            }
+        } onCancel: {
+            cancellation.cancel()
+            Task { @MainActor [weak self] in
+                self?.finish(requestID, error: .cancelled)
+            }
+        }
+    }
+
+    private func completeExecution(_ requestID: String, result: BrowserToolResult) {
+        guard let entry = entries.removeValue(forKey: requestID) else { return }
+        entry.executionTask = nil
+        let continuation = entry.executionContinuation
+        entry.executionContinuation = nil
+        continuation?.resume(returning: entry.isCancelled ? nil : result)
     }
 
     private func expire(_ requestID: String) {
         guard let entry = entries[requestID] else { return }
         if case .granted = entry.state { return }
+        if case .executing = entry.state { return }
         guard now() >= entry.deadline else { return }
         finish(requestID, error: .cancelled)
     }
@@ -195,33 +239,38 @@ public final class ClientToolPermissionCoordinator: ClientToolPermissionCoordina
         let continuation = entry.continuation
         entry.continuation = nil
         let requestID = entry.requestID
-        continuation?.resume(returning: .granted(confirmPermissionForExecution: { [weak self] in
-            self?.confirmPermissionForExecution(requestID: requestID) ?? false
+        continuation?.resume(returning: .granted(performExecution: { [weak self] operation in
+            await self?.performExecution(requestID: requestID, operation: operation)
         }))
         processPendingPermissionQueues()
     }
 
     private func finish(_ requestID: String, error: ClientToolError) {
         guard let entry = entries.removeValue(forKey: requestID) else { return }
+        entry.executionTask?.cancel()
+        entry.executionTask = nil
+        let executionContinuation = entry.executionContinuation
+        entry.executionContinuation = nil
         releaseQueue(entry)
         let continuation = entry.continuation
         entry.continuation = nil
         continuation?.resume(returning: .refused(error))
+        executionContinuation?.resume(returning: nil)
         processPendingPermissionQueues()
     }
 
     private func releaseQueue(_ entry: Entry) {
         entry.timeout?.cancel()
         entry.timeout = nil
-        queues[entry.tool.name]?.removeAll { $0 == entry.requestID }
-        if queues[entry.tool.name]?.isEmpty == true {
-            queues.removeValue(forKey: entry.tool.name)
+        queues[entry.queueKey]?.removeAll { $0 == entry.requestID }
+        if queues[entry.queueKey]?.isEmpty == true {
+            queues.removeValue(forKey: entry.queueKey)
         }
-        toolNamesPendingQueueProcessing.insert(entry.tool.name)
+        queueKeysPendingProcessing.insert(entry.queueKey)
     }
 
-    private func processPermissionQueue(for toolName: String) {
-        toolNamesPendingQueueProcessing.insert(toolName)
+    private func processPermissionQueue(for queueKey: QueueKey) {
+        queueKeysPendingProcessing.insert(queueKey)
         processPendingPermissionQueues()
     }
 
@@ -229,9 +278,9 @@ public final class ClientToolPermissionCoordinator: ClientToolPermissionCoordina
         guard !isProcessingPermissionQueues, !isCancellingSource else { return }
         isProcessingPermissionQueues = true
         defer { isProcessingPermissionQueues = false }
-        while let toolName = toolNamesPendingQueueProcessing.first {
-            toolNamesPendingQueueProcessing.remove(toolName)
-            guard let requestID = queues[toolName]?.first, let entry = entries[requestID] else { continue }
+        while let queueKey = queueKeysPendingProcessing.first {
+            queueKeysPendingProcessing.remove(queueKey)
+            guard let requestID = queues[queueKey]?.first, let entry = entries[requestID] else { continue }
             guard !entry.isCancelled, now() < entry.deadline else {
                 finish(requestID, error: .cancelled)
                 continue

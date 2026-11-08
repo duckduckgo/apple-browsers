@@ -342,6 +342,12 @@ extension AIChatUserScript: AIChatBrowserToolsPushing {
     var pushTargetWebView: WKWebView? { webView }
 
     @MainActor
+    func pushClientToolsChanged(_ data: ClientToolsChangedData) {
+        guard handler.isFireWindowProvider?() != true else { return }
+        pushToDuckAI(.clientToolsChanged, params: data)
+    }
+
+    @MainActor
     func pushTabChanged(_ data: AIChatTabChangedData) {
         pushToDuckAI(.aiChatTabChanged, params: data)
     }

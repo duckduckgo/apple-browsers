@@ -242,7 +242,8 @@ final class DBPUICommunicationLayerTests: XCTestCase {
                        webUISettings: MockWebSettings(),
                        pixelHandler: MockDataBrokerProtectionPixelsHandler(),
                        privacyConfig: PrivacyConfigurationManagingMock(),
-                       prefs: .mock)
+                       prefs: .mock,
+                       dbpSettings: DataBrokerProtectionSettings(defaults: UserDefaults(suiteName: "DBPUICommunicationLayerTests.\(UUID().uuidString)")!))
     }
 
     @MainActor

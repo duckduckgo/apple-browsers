@@ -16,6 +16,7 @@
 //  limitations under the License.
 //
 
+import AIChat
 import PreferencesUI_macOS
 import SwiftUI
 import SwiftUIExtensions
@@ -122,6 +123,28 @@ extension Preferences {
                         .pickerStyle(.menu)
                         .fixedSize()
                         .accessibilityIdentifier("Preferences.AIChat.hideAIGeneratedImagesPicker")
+                    }
+                }
+
+                if model.shouldShowPageSummariesSetting {
+                    PreferencePaneSection {
+                        HStack {
+                            VStack(alignment: .leading) {
+                                TextAndImageMenuItemHeader(UserText.aiChatPageSummariesTitle,
+                                                           image: Image(nsImage: DesignSystemImages.Glyphs.Size16.aiSummary),
+                                                           bottomPadding: 2)
+                                TextMenuItemCaption(UserText.aiChatPageSummariesCaption)
+                            }
+                            Spacer()
+                            Picker("" as String, selection: model.pageSummariesModelBinding) {
+                                Text(UserText.aiChatPageSummariesDuckAIModels).tag(AIChatPageSummariesModel.duckAI)
+                                Divider()
+                                Text(UserText.aiChatPageSummariesAppleIntelligence).tag(AIChatPageSummariesModel.appleIntelligence)
+                            }
+                            .pickerStyle(.menu)
+                            .fixedSize()
+                            .accessibilityIdentifier("Preferences.AIChat.pageSummariesPicker")
+                        }
                     }
                 }
 

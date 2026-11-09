@@ -178,5 +178,23 @@ public enum AIChatUserScriptMessages: String, CaseIterable {
 
     /// Pushed (native→FE) to every Duck.ai tab after the bonus record changes.
     case submitAIChatBonusRecord
+
+    // MARK: - Local models
+
+    /// Requested (FE→native) to run a task such as `summarize` on the local model. Native replies with the
+    /// model right away and streams the text with `submitAIChatLocalRunChunk`.
+    case startAIChatLocalRun
+
+    /// Pushed (native→FE) with the next part of a local run. The last chunk has `done`, `status` and `metrics`.
+    case submitAIChatLocalRunChunk
+
+    /// Posted (FE→native) to stop a local run.
+    case cancelAIChatLocalRun
+
+    /// Requested (FE→native) when the user opts in to the local model from Duck.ai.
+    case startAIChatLocalModelSetup
+
+    /// Pushed (native→FE) to every Duck.ai page when the local model's state changes.
+    case submitAIChatLocalModelState
 }
 // swiftlint:enable inclusive_language

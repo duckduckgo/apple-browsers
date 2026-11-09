@@ -685,6 +685,11 @@ public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/1/137249556945/project/1204006570077678/task/1219360966399299?focus=true
     case aiChatDragPromptBar
 
+    /// Offers on-device page summaries with Apple Intelligence (Foundation Models) and lets Duck.ai run them locally.
+    /// Internal-only for the first version.
+    /// https://app.asana.com/1/137249556945/task/1219665121531469
+    case aiChatLocalModels
+
     /// Parent kill switch for the Duck.ai browser tools bridge — with it off there are no tools.
     /// Internal-only while the front end is in development.
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1218321368831117
@@ -1158,6 +1163,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(defaultValue: .internalOnly, source: .remoteReleasable(AIChatSubfeature.nativeTermsOfService), category: .duckAI)
         case .aiChatDragPromptBar:
             Config(defaultValue: .enabled, source: .remoteReleasable(AIChatSubfeature.dragPromptBar), category: .duckAI)
+        case .aiChatLocalModels:
+            Config(defaultValue: .internalOnly, source: .remoteReleasable(AIChatSubfeature.localModels), category: .duckAI)
         case .aiChatAttachmentPrivacyDisclosure:
             Config(defaultValue: .enabled, source: .remoteReleasable(AIChatSubfeature.attachmentPrivacyDisclosure), category: .duckAI)
         case .aiChatBrowserTools:

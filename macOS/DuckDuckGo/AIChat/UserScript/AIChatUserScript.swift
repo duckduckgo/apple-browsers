@@ -47,6 +47,7 @@ final class AIChatUserScript: NSObject, Subfeature {
         Task { @MainActor [weak self] in
             guard let self else { return }
             self.browserTools?.register(self)
+            self.localModelService?.register(self)
         }
     }
 
@@ -59,12 +60,15 @@ final class AIChatUserScript: NSObject, Subfeature {
     }
 
     private let browserTools: AIChatBrowserToolsService?
+    private let localModelService: AIChatLocalModelServing?
 
     init(handler: AIChatUserScriptHandling,
          urlSettings: any KeyedStoring<AIChatDebugURLSettings>,
-         browserTools: AIChatBrowserToolsService? = Application.appDelegate.aiChatBrowserToolsService) {
+         browserTools: AIChatBrowserToolsService? = Application.appDelegate.aiChatBrowserToolsService,
+         localModelService: AIChatLocalModelServing? = Application.appDelegate.localModelService) {
         self.handler = handler
         self.browserTools = browserTools
+        self.localModelService = localModelService
         var originRules = [HostnameMatchingRule]()
         var destinationRules = [HostnameMatchingRule]()
 
@@ -270,9 +274,72 @@ final class AIChatUserScript: NSObject, Subfeature {
             return handler.customizeResponsesModalClosed
         case .getAIChats:
             return handler.getAIChats
+
+        // Main-actor closures, so the reply isn't held up by a hop in the middle of the handler.
+        case .startAIChatLocalRun:
+            return { @MainActor [weak self] params, _ in
+                try self?.startAIChatLocalRun(params: params)
+            }
+        case .cancelAIChatLocalRun:
+            return { @MainActor [weak self] params, _ in
+                self?.cancelAIChatLocalRun(params: params)
+            }
+        case .startAIChatLocalModelSetup:
+            return { @MainActor [weak self] _, _ in
+                try self?.startAIChatLocalModelSetup()
+            }
+
         default:
             return nil
         }
+    }
+
+    deinit {
+        guard let localModelService else { return }
+        let ownerID = ObjectIdentifier(self)
+        Task { @MainActor in
+            localModelService.cancelRuns(ownerID: ownerID)
+        }
+    }
+}
+
+// MARK: - Local models
+
+extension AIChatUserScript: AIChatLocalModelPushing {
+
+    @MainActor
+    func startAIChatLocalRun(params: Any) throws -> Encodable? {
+        guard let localModelService else { throw AIChatLocalModelRequestError.unavailable }
+        guard let request: AIChatLocalRunRequest = DecodableHelper.decode(from: params) else {
+            throw AIChatLocalModelRequestError.invalidArguments
+        }
+        return try localModelService.startRun(request, for: self)
+    }
+
+    /// A notification, but it also answers with `{}` in case the page sends it as a request.
+    @MainActor
+    func cancelAIChatLocalRun(params: Any) -> Encodable? {
+        if let request: AIChatLocalRunCancelRequest = DecodableHelper.decode(from: params) {
+            localModelService?.cancelRun(requestId: request.requestId)
+        }
+        return [String: String]()
+    }
+
+    @MainActor
+    func startAIChatLocalModelSetup() throws -> Encodable? {
+        guard let localModelService else { throw AIChatLocalModelRequestError.unavailable }
+        try localModelService.setUp()
+        return [String: String]()
+    }
+
+    @MainActor
+    func pushLocalModelState(_ update: AIChatLocalModelStateUpdate) {
+        pushToDuckAI(.submitAIChatLocalModelState, params: update)
+    }
+
+    @MainActor
+    func pushLocalRunChunk(_ chunk: AIChatLocalRunChunk) {
+        pushToDuckAI(.submitAIChatLocalRunChunk, params: chunk)
     }
 }
 

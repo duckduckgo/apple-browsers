@@ -608,6 +608,10 @@ public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
     /// Enables the Duck.ai limit extension promo (Boost bonus)
     /// https://app.asana.com/1/137249556945/project/1206329551987282/task/1217224457965768?focus=true
     case chatLimitExtensionPromo
+
+    /// Lets Duck.ai run tasks such as page summaries on a local model. Same name as on Windows.
+    /// https://app.asana.com/1/137249556945/task/1219665121531469
+    case localModels
 }
 
 /// Native capabilities Duck.ai can discover and invoke. The parent is the kill switch; each tool

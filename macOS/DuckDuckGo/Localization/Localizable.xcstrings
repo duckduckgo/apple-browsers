@@ -34667,6 +34667,30 @@
         }
       }
     },
+    "duckai.apple-intelligence-setup.open-settings" : {
+      "comment" : "Button in the Apple Intelligence setup dialog that opens System Settings at Apple Intelligence & Siri",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Set Up on macOS"
+          }
+        }
+      }
+    },
+    "duckai.apple-intelligence-setup.title" : {
+      "comment" : "Title of the dialog shown when the user picks Apple Intelligence for page summaries but it isn't turned on or ready on their Mac",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Set Up Apple Intelligence with Siri to access it as a local model in Duck.ai"
+          }
+        }
+      }
+    },
     "duckai.attach-selection.context-menu-action" : {
       "comment" : "Context menu option that attaches the selected text to Duck.ai as page context",
       "extractionState" : "extracted_with_value",
@@ -35683,6 +35707,30 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Попробовать сейчас"
+          }
+        }
+      }
+    },
+    "duckai.local-summaries-promo.message" : {
+      "comment" : "Promo under the Duck.ai address bar inviting the user to summarize pages on their Mac with Apple Intelligence, shown after a bold 'New' badge",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Summarize pages locally with Apple Intelligence"
+          }
+        }
+      }
+    },
+    "duckai.local-summaries-promo.try" : {
+      "comment" : "Button in the local page summaries promo under the Duck.ai address bar that turns on summaries with Apple Intelligence",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Try"
           }
         }
       }
@@ -37602,6 +37650,54 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Иногда"
+          }
+        }
+      }
+    },
+    "duckai.settings.page-summaries.apple-intelligence" : {
+      "comment" : "Option of the Ask About Page Summaries setting that summarizes pages on the Mac with Apple Intelligence. The ellipsis shows it may ask to set up Apple Intelligence first",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Apple Intelligence…"
+          }
+        }
+      }
+    },
+    "duckai.settings.page-summaries.caption" : {
+      "comment" : "Explanation under the Ask About Page Summaries setting in Settings > AI Features",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Choose what model to use. Local models add an additional layer of privacy and help to reduce usage."
+          }
+        }
+      }
+    },
+    "duckai.settings.page-summaries.duckai-models" : {
+      "comment" : "Option of the Ask About Page Summaries setting that keeps summarizing pages with Duck.ai's cloud models",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Duck.ai Models"
+          }
+        }
+      }
+    },
+    "duckai.settings.page-summaries.title" : {
+      "comment" : "Title of the setting in Settings > AI Features that picks the model for Duck.ai page summaries",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Ask About Page Summaries"
           }
         }
       }

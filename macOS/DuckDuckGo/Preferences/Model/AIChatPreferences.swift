@@ -35,6 +35,8 @@ final class AIChatPreferences: ObservableObject {
     private let featureFlagger: FeatureFlagger
     private let duckAIChromeButtonsVisibilityManager: DuckAIChromeButtonsVisibilityManaging
     let promptBarPreferences: PromptBarPreferences
+    private let localModelService: LocalModelService?
+    private let presentAppleIntelligenceSetup: @MainActor () -> Void
     // Lazy: built on first use, not during early/transient inits when the store isn't ready yet.
     private lazy var serpSettings: SERPSettingsProviding = SERPSettingsProvider()
 
@@ -43,13 +45,18 @@ final class AIChatPreferences: ObservableObject {
          windowControllersManager: WindowControllersManagerProtocol = Application.appDelegate.windowControllersManager,
          featureFlagger: FeatureFlagger = Application.appDelegate.featureFlagger,
          duckAIChromeButtonsVisibilityManager: DuckAIChromeButtonsVisibilityManaging = LocalDuckAIChromeButtonsVisibilityManager(),
-         promptBarPreferences: PromptBarPreferences = Application.appDelegate.promptBarPreferences) {
+         promptBarPreferences: PromptBarPreferences = Application.appDelegate.promptBarPreferences,
+         localModelService: LocalModelService? = nil,
+         presentAppleIntelligenceSetup: @escaping @MainActor () -> Void = { AppleIntelligenceSetupDialog().show() }) {
         self.storage = storage
         self.aiChatMenuConfiguration = aiChatMenuConfiguration
         self.windowControllersManager = windowControllersManager
         self.featureFlagger = featureFlagger
         self.duckAIChromeButtonsVisibilityManager = duckAIChromeButtonsVisibilityManager
         self.promptBarPreferences = promptBarPreferences
+        self.localModelService = localModelService
+        self.presentAppleIntelligenceSetup = presentAppleIntelligenceSetup
+        pageSummariesModel = storage.pageSummariesModel
 
         isAIFeaturesEnabled = storage.isAIFeaturesEnabled
         showShortcutOnNewTabPage = storage.showShortcutOnNewTabPage
@@ -78,6 +85,12 @@ final class AIChatPreferences: ObservableObject {
     }
 
     func subscribeToShowInApplicationMenuSettingsChanges() {
+        storage.pageSummariesModelPublisher
+            .removeDuplicates()
+            .receive(on: DispatchQueue.main)
+            .assign(to: \.pageSummariesModel, onWeaklyHeld: self)
+            .store(in: &cancellables)
+
         storage.isAIFeaturesEnabledPublisher
             .removeDuplicates()
             .receive(on: DispatchQueue.main)
@@ -133,6 +146,37 @@ final class AIChatPreferences: ObservableObject {
 
     var shouldShowNewTabPageToggle: Bool {
         featureFlagger.isFeatureOn(.newTabPageOmnibar)
+    }
+
+    var shouldShowPageSummariesSetting: Bool {
+        localModelService != nil && featureFlagger.isFeatureOn(.aiChatLocalModels)
+    }
+
+    /// Choosing Apple Intelligence opts in to local summaries when it's ready, and otherwise asks the
+    /// user to set it up in System Settings, leaving the choice as it was.
+    @MainActor
+    var pageSummariesModelBinding: Binding<AIChatPageSummariesModel> {
+        Binding(
+            get: { self.pageSummariesModel },
+            set: { self.selectPageSummariesModel($0) }
+        )
+    }
+
+    @MainActor
+    func selectPageSummariesModel(_ model: AIChatPageSummariesModel) {
+        switch model {
+        case .duckAI:
+            pageSummariesModel = .duckAI
+        case .appleIntelligence:
+            localModelService?.refreshAvailability()
+            if localModelService?.availability.isAvailable == true {
+                pageSummariesModel = .appleIntelligence
+            } else {
+                // The menu shows the new choice until the view re-reads it.
+                objectWillChange.send()
+                presentAppleIntelligenceSetup()
+            }
+        }
     }
 
     var shouldShowDuckAiSettingsLink: Bool {
@@ -277,6 +321,10 @@ final class AIChatPreferences: ObservableObject {
 
     @Published var shouldAutomaticallySendPageContext: Bool {
         didSet { storage.shouldAutomaticallySendPageContext = shouldAutomaticallySendPageContext }
+    }
+
+    @Published var pageSummariesModel: AIChatPageSummariesModel {
+        didSet { storage.pageSummariesModel = pageSummariesModel }
     }
 
     @Published var showSearchAndDuckAIToggle: Bool {

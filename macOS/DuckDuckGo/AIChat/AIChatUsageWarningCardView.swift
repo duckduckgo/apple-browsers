@@ -215,6 +215,8 @@ final class AIChatUsageWarningCardView: NSView {
     private var actionCloseSpacingConstraint: NSLayoutConstraint?
     /// The card's own margin, dropped once the host lines the icon up with its omnibar instead.
     private var iconLeadingConstraint: NSLayoutConstraint?
+    private var cardIconWidthConstraint: NSLayoutConstraint?
+    private var cardIconTitleSpacingConstraint: NSLayoutConstraint?
     private var iconAlignmentConstraint: NSLayoutConstraint?
     private var closeTrailingConstraint: NSLayoutConstraint?
     private var closeAlignmentConstraint: NSLayoutConstraint?
@@ -331,6 +333,11 @@ final class AIChatUsageWarningCardView: NSView {
         let contentGuideBottom = contentGuide.bottomAnchor.constraint(equalTo: bottomAnchor)
         contentGuideBottomConstraint = contentGuideBottom
 
+        let cardIconWidth = iconImageView.widthAnchor.constraint(equalToConstant: Constants.iconSize)
+        cardIconWidthConstraint = cardIconWidth
+        let cardIconTitleSpacing = titleLabel.leadingAnchor.constraint(equalTo: iconImageView.trailingAnchor, constant: Constants.iconTitleSpacing)
+        cardIconTitleSpacingConstraint = cardIconTitleSpacing
+
         NSLayoutConstraint.activate([
             backgroundView.topAnchor.constraint(equalTo: topAnchor),
             backgroundView.leadingAnchor.constraint(equalTo: leadingAnchor),
@@ -364,7 +371,7 @@ final class AIChatUsageWarningCardView: NSView {
 
             iconLeading,
             iconImageView.centerYAnchor.constraint(equalTo: contentGuide.centerYAnchor),
-            iconImageView.widthAnchor.constraint(equalToConstant: Constants.iconSize),
+            cardIconWidth,
             iconImageView.heightAnchor.constraint(equalToConstant: Constants.iconSize),
 
             ringView.leadingAnchor.constraint(equalTo: iconImageView.leadingAnchor),
@@ -372,7 +379,7 @@ final class AIChatUsageWarningCardView: NSView {
             ringView.widthAnchor.constraint(equalToConstant: AIChatUsageWarningRingView.Constants.size),
             ringView.heightAnchor.constraint(equalToConstant: AIChatUsageWarningRingView.Constants.size),
 
-            titleLabel.leadingAnchor.constraint(equalTo: iconImageView.trailingAnchor, constant: Constants.iconTitleSpacing),
+            cardIconTitleSpacing,
             titleLabel.centerYAnchor.constraint(equalTo: contentGuide.centerYAnchor),
 
             disclosureTextView.leadingAnchor.constraint(equalTo: titleLabel.leadingAnchor),
@@ -550,9 +557,14 @@ final class AIChatUsageWarningCardView: NSView {
         }
     }
 
-    func update(with promo: NewTabPageDataModel.OmnibarLauncherPromo) {
+    /// - Parameter showsGlyph: When false the title starts where the icon would be, as the local summaries promo design has it.
+    func update(with promo: NewTabPageDataModel.OmnibarLauncherPromo, showsGlyph: Bool = true) {
         showTitleLabel()
-        applyGlyph(DesignSystemImages.Glyphs.Size16.announce)
+        if showsGlyph {
+            applyGlyph(DesignSystemImages.Glyphs.Size16.announce)
+        } else {
+            hideGlyph()
+        }
         titleLabel.maximumNumberOfLines = 1
         let title = NSMutableAttributedString(string: promo.message, attributes: Self.textAttributes(weight: .semibold))
         title.append(NSAttributedString(string: promo.secondaryText ?? "", attributes: Self.textAttributes(weight: .regular)))
@@ -585,7 +597,20 @@ final class AIChatUsageWarningCardView: NSView {
         applyCloseButton(isVisible: true)
     }
 
+    private func setIconCollapsed(_ collapsed: Bool) {
+        cardIconWidthConstraint?.constant = collapsed ? 0 : Constants.iconSize
+        cardIconTitleSpacingConstraint?.constant = collapsed ? 0 : Constants.iconTitleSpacing
+    }
+
+    private func hideGlyph() {
+        ringView.isHidden = true
+        iconImageView.isHidden = true
+        lastShownApproachingPercent = nil
+        setIconCollapsed(true)
+    }
+
     private func applyGlyph(_ image: NSImage) {
+        setIconCollapsed(false)
         ringView.isHidden = true
         iconImageView.isHidden = false
         lastShownApproachingPercent = nil
@@ -596,6 +621,7 @@ final class AIChatUsageWarningCardView: NSView {
     }
 
     private func applyIcon(for warning: DuckAiUsageWarning) {
+        setIconCollapsed(false)
         let isApproaching = warning.message == .approaching
         ringView.isHidden = !isApproaching
         iconImageView.isHidden = isApproaching

@@ -807,6 +807,16 @@ struct UserText {
     static let duckAiLauncherIntroductionSettings = NSLocalizedString("duckai.launcher-promo.introduction.settings", value: "Settings", comment: "Link in the Duck.ai prompt bar launcher message that opens Duck.ai Settings")
     static let duckAiLauncherPromoTryNow = NSLocalizedString("duckai.launcher-promo.try-now", value: "Try Now", comment: "Button in the Duck.ai launcher promo (New Tab Page and address bar) that turns the launcher on")
 
+    // Local page summaries (Apple Intelligence)
+    static let localSummariesPromoMessage = NSLocalizedString("duckai.local-summaries-promo.message", value: "Summarize pages locally with Apple Intelligence", comment: "Promo under the Duck.ai address bar inviting the user to summarize pages on their Mac with Apple Intelligence, shown after a bold 'New' badge")
+    static let localSummariesPromoTry = NSLocalizedString("duckai.local-summaries-promo.try", value: "Try", comment: "Button in the local page summaries promo under the Duck.ai address bar that turns on summaries with Apple Intelligence")
+    static let aiChatPageSummariesTitle = NSLocalizedString("duckai.settings.page-summaries.title", value: "Ask About Page Summaries", comment: "Title of the setting in Settings > AI Features that picks the model for Duck.ai page summaries")
+    static let aiChatPageSummariesCaption = NSLocalizedString("duckai.settings.page-summaries.caption", value: "Choose what model to use. Local models add an additional layer of privacy and help to reduce usage.", comment: "Explanation under the Ask About Page Summaries setting in Settings > AI Features")
+    static let aiChatPageSummariesDuckAIModels = NSLocalizedString("duckai.settings.page-summaries.duckai-models", value: "Duck.ai Models", comment: "Option of the Ask About Page Summaries setting that keeps summarizing pages with Duck.ai's cloud models")
+    static let aiChatPageSummariesAppleIntelligence = NSLocalizedString("duckai.settings.page-summaries.apple-intelligence", value: "Apple Intelligence…", comment: "Option of the Ask About Page Summaries setting that summarizes pages on the Mac with Apple Intelligence. The ellipsis shows it may ask to set up Apple Intelligence first")
+    static let appleIntelligenceSetupTitle = NSLocalizedString("duckai.apple-intelligence-setup.title", value: "Set Up Apple Intelligence with Siri to access it as a local model in Duck.ai", comment: "Title of the dialog shown when the user picks Apple Intelligence for page summaries but it isn't turned on or ready on their Mac")
+    static let appleIntelligenceSetupOpenSettings = NSLocalizedString("duckai.apple-intelligence-setup.open-settings", value: "Set Up on macOS", comment: "Button in the Apple Intelligence setup dialog that opens System Settings at Apple Intelligence & Siri")
+
     // Duck.ai main menu
     static let aiChatMenuOpenDuckAI = NSLocalizedString("duckai.menu.open-duck-ai", value: "Open Duck.ai", comment: "Duck.ai menu item to open Duck.ai")
     static let aiChatMenuNewChat = NSLocalizedString("duckai.menu.new-chat", value: "New Chat", comment: "Duck.ai menu item to start a new chat")

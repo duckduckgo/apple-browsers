@@ -312,6 +312,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private(set) lazy var duckAiLauncherPromo = DuckAiLauncherPromo(featureFlagger: featureFlagger, keyValueStore: keyValueStore)
 
     @MainActor
+    private(set) lazy var localSummariesPromo = LocalSummariesPromo(localModelService: localModelService, keyValueStore: keyValueStore)
+
+    @MainActor
     private(set) lazy var aiChatScreenshotCaptureService = AIChatScreenshotCaptureService()
 
     @MainActor
@@ -363,6 +366,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     let aiChatSessionStore: AIChatSessionStoring
 
     let aiChatBrowserToolsService: AIChatBrowserToolsService
+    let localModelService: LocalModelService
     let aiChatPreferences: AIChatPreferences
     let promptBarPreferences: PromptBarPreferences
     private(set) var aiChatHistoryCleaner: AIChatHistoryCleaning!
@@ -1062,6 +1066,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         aiChatBrowserToolsService = AIChatBrowserToolsService(featureFlagger: featureFlagger,
                                                               windowControllersManager: windowControllersManager,
                                                               historyCoordinator: historyCoordinator)
+        localModelService = LocalModelService(featureFlagger: featureFlagger)
 
         contentScopePreferences = ContentScopePreferences(windowControllersManager: windowControllersManager)
         webTrackingProtectionPreferences = WebTrackingProtectionPreferences(persistor: WebTrackingProtectionPreferencesUserDefaultsPersistor(), windowControllersManager: windowControllersManager)
@@ -1073,7 +1078,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             aiChatMenuConfiguration: aiChatMenuConfiguration,
             windowControllersManager: windowControllersManager,
             featureFlagger: featureFlagger,
-            promptBarPreferences: promptBarPreferences
+            promptBarPreferences: promptBarPreferences,
+            localModelService: localModelService
         )
 
         let subscriptionNavigationCoordinator = SubscriptionNavigationCoordinator(

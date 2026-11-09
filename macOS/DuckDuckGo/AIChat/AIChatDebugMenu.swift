@@ -100,6 +100,9 @@ final class AIChatDebugMenu: NSMenu {
             NSMenuItem(title: "Reset Launcher Promo", action: #selector(resetLauncherPromo))
                 .targetting(self)
 
+            NSMenuItem(title: "Reset Local Summaries Opt-In and Promo", action: #selector(resetLocalSummaries))
+                .targetting(self)
+
             NSMenuItem.separator()
 
             storageServerMenuItem
@@ -160,6 +163,12 @@ final class AIChatDebugMenu: NSMenu {
 
     @objc private func resetLauncherPromo() {
         DuckAiLauncherPromo.resetOutcome(in: NSApp.delegateTyped.keyValueStore)
+    }
+
+    @MainActor
+    @objc private func resetLocalSummaries() {
+        NSApp.delegateTyped.localModelService.optOut()
+        LocalSummariesPromo.resetOutcome(in: NSApp.delegateTyped.keyValueStore)
     }
 
     // MARK: - Terms of Service

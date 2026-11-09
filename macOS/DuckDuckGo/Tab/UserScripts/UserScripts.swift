@@ -110,7 +110,8 @@ final class UserScripts: UserScriptsProvider, ReleaseNotesUserScriptProvider {
             syncServiceProvider: sourceProvider.syncServiceProvider,
             syncErrorHandler: sourceProvider.syncErrorHandler,
             featureFlagger: sourceProvider.featureFlagger,
-            homepageAiChatsProvider: homepageAiChatsProvider
+            homepageAiChatsProvider: homepageAiChatsProvider,
+            localModelService: NSApp.delegateTyped.localModelService
         )
         let aiChatDebugURLSettings: any KeyedStoring<AIChatDebugURLSettings> = if let aiChatDebugURLSettings { aiChatDebugURLSettings } else { UserDefaults.standard.keyedStoring() }
         aiChatUserScript = AIChatUserScript(handler: aiChatHandler, urlSettings: aiChatDebugURLSettings)

@@ -1416,6 +1416,9 @@
 		56F0CB302E20FBD2000FF58B /* SubscriptionTabExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 56F0CB2E2E20FBD2000FF58B /* SubscriptionTabExtension.swift */; };
 		574F5C439525F9EC0AA193EC /* DuckAiUsageWarningPixel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8019208853E1EDABC2E2EBD7 /* DuckAiUsageWarningPixel.swift */; };
 		578DF7B126699CF740CE35B5 /* AIChatScreenRecordingPermissionDialog.swift in Sources */ = {isa = PBXBuildFile; fileRef = 83EE53F7B34DCDE5FB7BAFD7 /* AIChatScreenRecordingPermissionDialog.swift */; };
+		4270933A173969C8730E0926 /* AppleIntelligenceSetupDialog.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7296D593E28C23D0322E5A6B /* AppleIntelligenceSetupDialog.swift */; };
+		1CFC1C04B7DEBF842EE11FBC /* LocalSummariesPromo.swift in Sources */ = {isa = PBXBuildFile; fileRef = E581FBB3467F18F3F1F5DCB4 /* LocalSummariesPromo.swift */; };
+		E72B6A12C4B03D10BADA0991 /* LocalModelService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 64021070D147CDEF153D3E23 /* LocalModelService.swift */; };
 		58407D61235669B6AEEFB850 /* TabSuspensionService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 43A7F6C124DA119D76D5AC50 /* TabSuspensionService.swift */; };
 		5A539014386749A5BA664BFD /* FadeInView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6D9982D6BB85483191A03D2D /* FadeInView.swift */; };
 		5A6E1D102F8A4C1100C0FFEE /* PageSignalsTabExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5A6E1D0F2F8A4C1100C0FFEE /* PageSignalsTabExtension.swift */; };
@@ -3314,6 +3317,9 @@
 		FD6A2C0F361B5FA5A4F4E1CE /* BookmarksBarSyncPromoDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68DBA621D781464E8A0128DF /* BookmarksBarSyncPromoDelegate.swift */; };
 		FD8C554D30455000D23DB903 /* EventHub in Frameworks */ = {isa = PBXBuildFile; productRef = CA7335A53836D5A56E2F5B4A /* EventHub */; };
 		FDA1B4BA3496AAC580206639 /* AIChatScreenRecordingPermissionDialog.swift in Sources */ = {isa = PBXBuildFile; fileRef = 83EE53F7B34DCDE5FB7BAFD7 /* AIChatScreenRecordingPermissionDialog.swift */; };
+		C5584D50F5C4102EA742923A /* AppleIntelligenceSetupDialog.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7296D593E28C23D0322E5A6B /* AppleIntelligenceSetupDialog.swift */; };
+		D92130A9A3F0E0B02F3CFE59 /* LocalSummariesPromo.swift in Sources */ = {isa = PBXBuildFile; fileRef = E581FBB3467F18F3F1F5DCB4 /* LocalSummariesPromo.swift */; };
+		B6D151C6B0D13FE0F1C110BD /* LocalModelService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 64021070D147CDEF153D3E23 /* LocalModelService.swift */; };
 		FFE4E67FAB868B09212E480C /* NewTabPageBackgroundColor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8DF3E4AF2A501855D1909DB8 /* NewTabPageBackgroundColor.swift */; };
 		FFF6627FC03B410786EF2635 /* RebrandedContextualOnboardingDialogs+SearchCompleted.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6E776DE170ED47F4B3E992DF /* RebrandedContextualOnboardingDialogs+SearchCompleted.swift */; };
 /* End PBXBuildFile section */
@@ -4275,6 +4281,9 @@
 		8019208853E1EDABC2E2EBD7 /* DuckAiUsageWarningPixel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DuckAiUsageWarningPixel.swift; sourceTree = "<group>"; };
 		82C2FC6E97394221101F17FC /* PromoServiceFactory+ImportSyncEmptyStates.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "PromoServiceFactory+ImportSyncEmptyStates.swift"; sourceTree = "<group>"; };
 		83EE53F7B34DCDE5FB7BAFD7 /* AIChatScreenRecordingPermissionDialog.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIChatScreenRecordingPermissionDialog.swift; sourceTree = "<group>"; };
+		7296D593E28C23D0322E5A6B /* AppleIntelligenceSetupDialog.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppleIntelligenceSetupDialog.swift; sourceTree = "<group>"; };
+		E581FBB3467F18F3F1F5DCB4 /* LocalSummariesPromo.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocalSummariesPromo.swift; sourceTree = "<group>"; };
+		64021070D147CDEF153D3E23 /* LocalModelService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocalModelService.swift; sourceTree = "<group>"; };
 		8400DC4A2C6E26AE006509D2 /* BookmarksBarCollectionView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = BookmarksBarCollectionView.swift; sourceTree = "<group>"; };
 		841BE93A2C6F1CB200E9C2B5 /* MenuItemNode.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = MenuItemNode.swift; sourceTree = "<group>"; };
 		841BE93D2C6F235F00E9C2B5 /* BookmarkDragDropManager.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = BookmarkDragDropManager.swift; sourceTree = "<group>"; };
@@ -5983,6 +5992,9 @@
 				31521ABF2CC013A400248E6F /* AIChatMenuVisibilityConfigurable.swift */,
 				A3E61483DDA440CEAD33A5C5 /* AIChatDeleteChatsDialog.swift */,
 				83EE53F7B34DCDE5FB7BAFD7 /* AIChatScreenRecordingPermissionDialog.swift */,
+				7296D593E28C23D0322E5A6B /* AppleIntelligenceSetupDialog.swift */,
+				E581FBB3467F18F3F1F5DCB4 /* LocalSummariesPromo.swift */,
+				64021070D147CDEF153D3E23 /* LocalModelService.swift */,
 				26F8268B7F214B78ABBD3CAB /* AIChatSubscriptionUpsellDialog.swift */,
 				CC5415622F29238F0084A139 /* AIChatMenuConfigurationMock.swift */,
 				CC19E9EC2E82CFBB0043F931 /* AIChatHistoryCleaner.swift */,
@@ -11280,6 +11292,9 @@
 				31521AC12CC013AD00248E6F /* AIChatMenuVisibilityConfigurable.swift in Sources */,
 				5093DFC4902349B9A5AF8683 /* AIChatDeleteChatsDialog.swift in Sources */,
 				578DF7B126699CF740CE35B5 /* AIChatScreenRecordingPermissionDialog.swift in Sources */,
+				4270933A173969C8730E0926 /* AppleIntelligenceSetupDialog.swift in Sources */,
+				1CFC1C04B7DEBF842EE11FBC /* LocalSummariesPromo.swift in Sources */,
+				E72B6A12C4B03D10BADA0991 /* LocalModelService.swift in Sources */,
 				822F3701CD2748E0BF8F7F89 /* AIChatSubscriptionUpsellDialog.swift in Sources */,
 				3706FA8C293F65D500E42796 /* AppStateChangedPublisher.swift in Sources */,
 				9FEE986E2B85BA17002E44E8 /* AddEditBookmarkDialogCoordinatorViewModel.swift in Sources */,
@@ -14004,6 +14019,9 @@
 				BBF17D1A2F7B1309004AFCF4 /* AIChatMenu.swift in Sources */,
 				6994C93E8D134666A5772C83 /* AIChatDeleteChatsDialog.swift in Sources */,
 				FDA1B4BA3496AAC580206639 /* AIChatScreenRecordingPermissionDialog.swift in Sources */,
+				C5584D50F5C4102EA742923A /* AppleIntelligenceSetupDialog.swift in Sources */,
+				D92130A9A3F0E0B02F3CFE59 /* LocalSummariesPromo.swift in Sources */,
+				B6D151C6B0D13FE0F1C110BD /* LocalModelService.swift in Sources */,
 				38935B87BCB54456BFEBB274 /* AIChatSubscriptionUpsellDialog.swift in Sources */,
 				B5D1F703303CA9870095E425 /* DataImportPermissionPixel.swift in Sources */,
 				92C91323D60F14080883F404 /* DataImportBookmarksPixel.swift in Sources */,

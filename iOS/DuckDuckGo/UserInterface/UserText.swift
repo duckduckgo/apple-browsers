@@ -1935,17 +1935,12 @@ public struct UserText {
 
     public static let daxGreetingStillAwake = NotLocalizedString(
         "new-tab-page.dax-greeting.stillAwake",
-        value: "Still awake? Me too!",
+        value: "I never sleep.",
         comment: "Dax greeting on the New Tab page.")
 
     public static let daxGreetingNightOwl = NotLocalizedString(
         "new-tab-page.dax-greeting.nightOwl",
-        value: "Night owl? Me too.",
-        comment: "Dax greeting on the New Tab page.")
-
-    public static let daxGreetingYoureBack = NotLocalizedString(
-        "new-tab-page.dax-greeting.youreBack",
-        value: "Hey, you’re back!",
+        value: "I’m really a night owl.",
         comment: "Dax greeting on the New Tab page.")
 
     public static let daxGreetingGoodbyeAds = NotLocalizedString(
@@ -1955,12 +1950,12 @@ public struct UserText {
 
     public static let daxGreetingAskMe = NotLocalizedString(
         "new-tab-page.dax-greeting.askMe",
-        value: "Ask me. I won’t tell.",
+        value: "Ask me anything.",
         comment: "Dax greeting on the New Tab page. Refers to private AI chat.")
 
     public static let daxGreetingDuckDuckHello = NotLocalizedString(
         "new-tab-page.dax-greeting.duckDuckHello",
-        value: "Duck Duck Hello!",
+        value: "Duck Duck Hello.",
         comment: "Dax greeting on the New Tab page.")
 
     public static let daxGreetingNiceToSeeYou = NotLocalizedString(
@@ -1980,7 +1975,7 @@ public struct UserText {
 
     public static let daxGreetingHeyThere = NotLocalizedString(
         "new-tab-page.dax-greeting.heyThere",
-        value: "Hey there!",
+        value: "Hey there.",
         comment: "Dax greeting on the New Tab page.")
 
     public static let daxGreetingWhatsOnYourMind = NotLocalizedString(

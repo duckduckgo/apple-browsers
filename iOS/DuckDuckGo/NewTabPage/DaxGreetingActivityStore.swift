@@ -69,7 +69,6 @@ final class DaxGreetingActivityStore {
             return calendar.isDate(eventDate, inSameDayAs: date)
         }
         let opens = happenedToday(activity.lastForegroundDate) ? activity.foregroundOpenCount : 0
-        return DaxGreetingContext(isFirstOpenOfDay: opens > 0 && activity.isFirstOpenOfDay,
-                                  foregroundOpenCount: opens)
+        return DaxGreetingContext(isFirstOpenOfDay: opens > 0 && activity.isFirstOpenOfDay)
     }
 }

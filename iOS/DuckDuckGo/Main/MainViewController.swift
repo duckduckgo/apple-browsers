@@ -2580,6 +2580,17 @@ class MainViewController: UIViewController {
         return true
     }
 
+    /// A launch action left the drawn after-idle page in place: report it as an ordinary New Tab Page once seen.
+    func releaseHeldNewTabPage() {
+        guard isAfterIdlePresentationPending, let page = newTabPageViewController else { return }
+        isAfterIdlePresentationPending = false
+        newTabPagePresentation.schedule(for: page, shown: { [weak self] in
+            guard let self else { return }
+            fireNewTabPixels()
+            fireNTPShownInstrumentation(openedAfterIdle: false, hatch: nil, focused: isInputFocused)
+        })
+    }
+
     func recordPendingNewTabPagePresentationIfVisible() {
         newTabPagePresentation.recordIfVisible()
     }

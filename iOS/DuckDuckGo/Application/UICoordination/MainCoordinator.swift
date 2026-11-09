@@ -981,6 +981,10 @@ extension MainCoordinator: IdleReturnLaunchDelegate {
         startUntreatedReturnSession(timeAwayMs: timeAwayMs)
     }
 
+    func releaseHeldNewTabPage() {
+        controller.releaseHeldNewTabPage()
+    }
+
     /// A return where no after-idle treatment was applied, so `after_idle` stays false and
     /// the post-idle event — which only reports on treated returns — is not started.
     /// `focused` starts from the input focus a short return keeps; an app-open keyboard raises it later.

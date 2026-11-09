@@ -1582,6 +1582,8 @@
 		DA11B00200000000001A0005 /* PromoServiceFactory+DuckPlayerOverlay.swift in Sources */ = {isa = PBXBuildFile; fileRef = DA11B00200000000001A0004 /* PromoServiceFactory+DuckPlayerOverlay.swift */; };
 		DA11B00200000000001A0006 /* PromoServiceFactory+DuckPlayerOverlay.swift in Sources */ = {isa = PBXBuildFile; fileRef = DA11B00200000000001A0004 /* PromoServiceFactory+DuckPlayerOverlay.swift */; };
 		DAEB98F4A520446C83673805 /* PromoServiceFactory+CookiePopupsBlocked.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4031C8EC6CF74501D704C00A /* PromoServiceFactory+CookiePopupsBlocked.swift */; };
+		8866128D8BA9060AB397C9FB /* NativeMessagingPopupNoticePresenter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2F03D7B5DCF6A711C97C03DC /* NativeMessagingPopupNoticePresenter.swift */; };
+		A0146E834A156B1D533CFBA9 /* NativeMessagingPopupNoticePresenter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2F03D7B5DCF6A711C97C03DC /* NativeMessagingPopupNoticePresenter.swift */; };
 		DC2900012FD0000000000001 /* WebExtensionPermissionPrompt.swift in Sources */ = {isa = PBXBuildFile; fileRef = DC2900012FD0000000000003 /* WebExtensionPermissionPrompt.swift */; };
 		DC2900012FD0000000000002 /* WebExtensionPermissionPrompt.swift in Sources */ = {isa = PBXBuildFile; fileRef = DC2900012FD0000000000003 /* WebExtensionPermissionPrompt.swift */; };
 		DC2900022FD0000000000004 /* ChromeWebStorePresenter.swift in Sources */ = {isa = PBXBuildFile; fileRef = DC2900022FD0000000000006 /* ChromeWebStorePresenter.swift */; };
@@ -2771,6 +2773,7 @@
 		DA11B00200000000001A0001 /* DuckPlayerOverlayObserver.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DuckPlayerOverlayObserver.swift; sourceTree = "<group>"; };
 		DA11B00200000000001A0004 /* PromoServiceFactory+DuckPlayerOverlay.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "PromoServiceFactory+DuckPlayerOverlay.swift"; sourceTree = "<group>"; };
 		DBEA6E06EC3A2A68115CC25D /* DuckAiLauncherPromo.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DuckAiLauncherPromo.swift; sourceTree = "<group>"; };
+		2F03D7B5DCF6A711C97C03DC /* NativeMessagingPopupNoticePresenter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NativeMessagingPopupNoticePresenter.swift; sourceTree = "<group>"; };
 		DC2900012FD0000000000003 /* WebExtensionPermissionPrompt.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WebExtensionPermissionPrompt.swift; sourceTree = "<group>"; };
 		DC2900022FD0000000000006 /* ChromeWebStorePresenter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChromeWebStorePresenter.swift; sourceTree = "<group>"; };
 		DD4063303C52EE98D9AC6FAC /* MacOSEventHubIntegration.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MacOSEventHubIntegration.swift; sourceTree = "<group>"; };
@@ -3655,6 +3658,7 @@
 			children = (
 				1D68604E2D36BD1A006FC53E /* WebExtensionsDebugMenu.swift */,
 				7BD5A0212F0A0C0100000021 /* WebExtensionAPICompatibilityLogWindow.swift */,
+				2F03D7B5DCF6A711C97C03DC /* NativeMessagingPopupNoticePresenter.swift */,
 				DC2900012FD0000000000003 /* WebExtensionPermissionPrompt.swift */,
 				DC2900022FD0000000000006 /* ChromeWebStorePresenter.swift */,
 				EA089C17B9C34087E99E1F73 /* WebExtensionAddedPopover.swift */,
@@ -7745,6 +7749,7 @@
 				3706FC02293F65D500E42796 /* Downloads.xcdatamodeld in Sources */,
 				7BD5049B2E5FA3EA008A0646 /* WebExtensionsDebugMenu.swift in Sources */,
 				7BD5A0222F0A0C0100000022 /* WebExtensionAPICompatibilityLogWindow.swift in Sources */,
+				A0146E834A156B1D533CFBA9 /* NativeMessagingPopupNoticePresenter.swift in Sources */,
 				DC2900012FD0000000000002 /* WebExtensionPermissionPrompt.swift in Sources */,
 				DC2900022FD0000000000005 /* ChromeWebStorePresenter.swift in Sources */,
 				0CA67E21459DF14527CAF06D /* WebExtensionAddedPopover.swift in Sources */,
@@ -8711,6 +8716,7 @@
 				C8F1A3D52B6E4C7091D4E8F4 /* ChromeExtensionInstaller.swift in Sources */,
 				1D68604F2D36BD28006FC53E /* WebExtensionsDebugMenu.swift in Sources */,
 				7BD5A0232F0A0C0100000023 /* WebExtensionAPICompatibilityLogWindow.swift in Sources */,
+				8866128D8BA9060AB397C9FB /* NativeMessagingPopupNoticePresenter.swift in Sources */,
 				DC2900012FD0000000000001 /* WebExtensionPermissionPrompt.swift in Sources */,
 				DC2900022FD0000000000004 /* ChromeWebStorePresenter.swift in Sources */,
 				608F9AD36A840D96A2327DFE /* WebExtensionAddedPopover.swift in Sources */,

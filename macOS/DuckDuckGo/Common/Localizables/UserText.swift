@@ -131,6 +131,8 @@ struct UserText {
     static let webExtensionTabGroupsPermission = NotLocalizedString("webExtensions.permissions.tabGroups", value: "View and manage your tab groups", comment: "Extension tabGroups permission")
     static let webExtensionTopSitesPermission = NotLocalizedString("webExtensions.permissions.topSites", value: "Read a list of your most frequently visited websites", comment: "Extension topSites permission")
     static let webExtensionPrivacyPermission = NotLocalizedString("webExtensions.permissions.privacy", value: "Change privacy settings, including replacing DuckDuckGo’s password manager", comment: "Extension privacy permission")
+    static let webExtensionNativeMessagingBannerMessage = NotLocalizedString("webExtensions.nativeMessagingBanner.message", value: "This extension tried to connect to an app on your Mac. The App Store version of DuckDuckGo can’t allow that, so some features may not work. Download DuckDuckGo from duckduckgo.com/mac to use them.", comment: "Banner shown above an extension's popup after the extension tried to communicate with a desktop app in the App Store version of the browser")
+    static let webExtensionNativeMessagingBannerDismiss = NotLocalizedString("webExtensions.nativeMessagingBanner.dismiss", value: "Dismiss", comment: "Accessibility label of the button that closes the native messaging banner in an extension's popup")
 
     // Fire Dialog
     static let fireDialogFireproofSitesManage = NSLocalizedString("fire.dialog.manage", value: "Manage", comment: "Button title to manage Fireproof Sites or related settings")

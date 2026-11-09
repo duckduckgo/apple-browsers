@@ -31,6 +31,11 @@ final class WebExtensionWindowTabProvider: WebExtensionWindowTabProviding {
     /// Closes the open popover when its window switches tabs, since the popup is tied to the selected tab,
     /// or when another browser window becomes active, as Chrome does.
     private var popupDismissalCancellable: AnyCancellable?
+    private let popupNoticePresenter: WebExtensionPopupNoticePresenting?
+
+    init(popupNoticePresenter: WebExtensionPopupNoticePresenting? = nil) {
+        self.popupNoticePresenter = popupNoticePresenter
+    }
 
     private var windowControllersManager: WindowControllersManager {
         Application.appDelegate.windowControllersManager
@@ -168,6 +173,7 @@ final class WebExtensionWindowTabProvider: WebExtensionWindowTabProviding {
                 popupWebView?.appearance = app.effectiveAppearance
             }
         }
+        popupNoticePresenter?.popupWillShow(popupPopover, webView: popupWebView, for: context)
         popupPopover.show(relativeTo: button.bounds, of: button, preferredEdge: .maxY)
 
         let selectedTabChange = windowController.mainViewController.tabCollectionViewModel

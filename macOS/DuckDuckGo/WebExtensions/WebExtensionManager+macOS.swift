@@ -137,12 +137,21 @@ enum WebExtensionManagerFactory {
             prompter: WebExtensionPermissionPrompt(windowProvider: { Application.appDelegate.windowControllersManager.lastKeyMainWindowController?.window }, themeManager: themeManager)
         ) : nil
         // The App Store sandbox cannot launch another app's host, so only Sparkle builds offer native messaging.
-        let nativeMessagingHandler = buildType.isSparkleBuild && Application.appDelegate.featureFlagger.isFeatureOn(.webExtensionNativeMessaging)
-            ? NativeMessagingHandler(installationStore: installationStore)
-            : nil
+        let nativeMessagingNoticeStore = NativeMessagingNoticeStore(keyValueStore: keyValueStore)
+        let nativeMessagingHandler: WebExtensionNativeMessagingHandling?
+        let popupNoticePresenter: WebExtensionPopupNoticePresenting?
+        if buildType.isAppStoreBuild {
+            nativeMessagingHandler = UnavailableNativeMessagingHandler(noticeStore: nativeMessagingNoticeStore)
+            popupNoticePresenter = NativeMessagingPopupNoticePresenter(noticeStore: nativeMessagingNoticeStore, themeManager: themeManager)
+        } else {
+            nativeMessagingHandler = Application.appDelegate.featureFlagger.isFeatureOn(.webExtensionNativeMessaging)
+                ? NativeMessagingHandler(installationStore: installationStore)
+                : nil
+            popupNoticePresenter = nil
+        }
         let manager = WebExtensionManager(
             configuration: WebExtensionConfigurationProvider(),
-            windowTabProvider: WebExtensionWindowTabProvider(),
+            windowTabProvider: WebExtensionWindowTabProvider(popupNoticePresenter: popupNoticePresenter),
             storageProvider: WebExtensionStorageProvider(extensionsDirectory: extensionsDirectory),
             installationStore: installationStore,
             permissionController: permissionController,

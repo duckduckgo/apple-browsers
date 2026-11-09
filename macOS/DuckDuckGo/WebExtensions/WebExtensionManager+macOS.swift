@@ -186,7 +186,7 @@ enum WebExtensionManagerFactory {
         internalSiteHandler.dataSource = manager
         manager.chromeWebStore = ChromeWebStoreService(
             manager: manager,
-            catalog: ChromeWebStoreCatalog(configurationManager: privacyConfigurationManager),
+            catalog: ChromeWebStoreCatalog(configurationManager: privacyConfigurationManager, isAppStoreBuild: buildType.isAppStoreBuild),
             presenter: ChromeWebStorePresenter(windowProvider: { NSApp.keyWindow ?? NSApp.mainWindow }, themeManager: themeManager),
             supportsUpdateDiscovery: buildType.isSparkleBuild,
             isUpdateDiscoveryEnabled: { featureFlagger.isFeatureOn(.webExtensionUpdateDiscovery) },

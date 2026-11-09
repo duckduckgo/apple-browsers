@@ -38,8 +38,9 @@ public enum SubscriptionPixelType: Equatable {
     case backupRenewed
     /// Renewing the backup token container failed.
     case backupRenewalFailed(Error)
-    /// Reading or writing the backup token container's keychain item failed.
-    case backupKeychainError(AccountKeychainAccessType, AccountKeychainAccessError)
+    /// Reading, writing or deleting the backup token container's keychain item failed, during the client action given, or nil when the
+    /// keychain storage found the problem on its own: an item it can't decode, or an expected item that is missing.
+    case backupKeychainError(TokenBackupAction?, TokenBackupStorageOperation, Error)
 
     public static func == (lhs: SubscriptionPixelType, rhs: SubscriptionPixelType) -> Bool {
         switch (lhs, rhs) {
@@ -61,8 +62,8 @@ public enum SubscriptionPixelType: Equatable {
             return lhsTrigger == rhsTrigger
         case let (.backupRestoreFailed(lhsTrigger, lhsReason, _), .backupRestoreFailed(rhsTrigger, rhsReason, _)):
             return lhsTrigger == rhsTrigger && lhsReason == rhsReason
-        case let (.backupKeychainError(lhsType, _), .backupKeychainError(rhsType, _)):
-            return lhsType == rhsType
+        case let (.backupKeychainError(lhsAction, lhsOperation, _), .backupKeychainError(rhsAction, rhsOperation, _)):
+            return lhsAction == rhsAction && lhsOperation == rhsOperation
         default:
             return false
         }

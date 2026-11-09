@@ -20,6 +20,7 @@
 import BrowserServicesKit
 import Combine
 import Foundation
+import PrivacyConfig
 import Suggestions
 
 /// Reuses Search-side `SuggestionLoader` ranking; produces top-N URL-typed suggestions for the Duck.ai list.
@@ -27,10 +28,10 @@ import Suggestions
 final class DuckAIURLSuggestionsLoader {
 
     static let defaultMaxResults = 3
-    private static let debounceMilliseconds = 100
 
     @Published private(set) var topURLs: [Suggestion] = []
 
+    private let featureFlagger: FeatureFlagger
     private let dataSource: SuggestionLoadingDataSource
     private let maxResults: Int
     private lazy var loader = SuggestionLoader(
@@ -43,7 +44,8 @@ final class DuckAIURLSuggestionsLoader {
     private(set) var lastCompletedFetchQuery: String?
     private var cancellables = Set<AnyCancellable>()
 
-    init(dataSource: SuggestionLoadingDataSource, maxResults: Int = defaultMaxResults) {
+    init(dataSource: SuggestionLoadingDataSource, featureFlagger: FeatureFlagger, maxResults: Int = defaultMaxResults) {
+        self.featureFlagger = featureFlagger
         self.dataSource = dataSource
         self.maxResults = maxResults
     }
@@ -56,7 +58,7 @@ final class DuckAIURLSuggestionsLoader {
     func subscribeToTextChanges<P: Publisher>(_ textPublisher: P)
         where P.Output == String, P.Failure == Never {
         textPublisher
-            .debounce(for: .milliseconds(Self.debounceMilliseconds), scheduler: DispatchQueue.main)
+            .debounceSuggestions(using: featureFlagger, scheduler: DispatchQueue.main)
             .removeDuplicates()
             .sink { [weak self] text in
                 self?.fetch(query: text)

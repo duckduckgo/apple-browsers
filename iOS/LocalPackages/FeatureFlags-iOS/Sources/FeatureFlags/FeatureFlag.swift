@@ -243,6 +243,8 @@ public enum FeatureFlag: String {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866613993355
     case unifiedURLPredictor
 
+    case suggestionDebounce200ms
+
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866713701189
     case vpnMenuItem
 
@@ -877,6 +879,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(source: .remoteReleasable(PrivacyProSubfeature.blackFridayCampaign))
         case .syncCreditCards:
             Config(defaultValue: .enabled, source: .remoteReleasable(SyncSubfeature.syncCreditCards))
+        case .suggestionDebounce200ms:
+            Config(defaultValue: .disabled, source: .remoteReleasable(iOSBrowserConfigSubfeature.suggestionDebounce200ms))
         case .unifiedURLPredictor:
             Config(defaultValue: .enabled, source: .remoteReleasable(iOSBrowserConfigSubfeature.unifiedURLPredictor))
         case .vpnMenuItem:

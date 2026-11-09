@@ -21,6 +21,7 @@ import BrowserServicesKit
 import Combine
 import Common
 import Foundation
+import PrivacyConfig
 import Suggestions
 
 /// Drives `SuggestionLoader` for the Search surface and publishes the latest result.
@@ -31,15 +32,15 @@ final class SearchSuggestionsLoader {
     @Published private(set) var result: SuggestionResult = .appEmpty
     private(set) var lastCompletedFetchQuery: String?
 
+    private let featureFlagger: FeatureFlagger
     private let dataSource: SuggestionLoadingDataSource
     private let useUnifiedURLPrediction: Bool
     private var loader: SuggestionLoader?
     private var latestDispatchedQuery: String?
     private var cancellables = Set<AnyCancellable>()
 
-    private static let debounceMilliseconds = 100
-
-    init(dataSource: SuggestionLoadingDataSource, useUnifiedURLPrediction: Bool) {
+    init(dataSource: SuggestionLoadingDataSource, useUnifiedURLPrediction: Bool, featureFlagger: FeatureFlagger) {
+        self.featureFlagger = featureFlagger
         self.dataSource = dataSource
         self.useUnifiedURLPrediction = useUnifiedURLPrediction
     }
@@ -60,7 +61,7 @@ final class SearchSuggestionsLoader {
     func subscribeToTextChanges<P: Publisher>(_ textPublisher: P)
         where P.Output == String, P.Failure == Never {
         textPublisher
-            .debounce(for: .milliseconds(Self.debounceMilliseconds), scheduler: DispatchQueue.main)
+            .debounceSuggestions(using: featureFlagger, scheduler: DispatchQueue.main)
             .removeDuplicates()
             .sink { [weak self] text in self?.fetch(query: text) }
             .store(in: &cancellables)

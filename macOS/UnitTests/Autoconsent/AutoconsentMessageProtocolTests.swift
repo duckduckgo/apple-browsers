@@ -457,7 +457,7 @@ class AutoconsentMessageProtocolTests: XCTestCase {
     }
 }
 
-private final class RecordingEventHub: EventHubManaging {
+final class RecordingEventHub: EventHubManaging {
     private(set) var nativeEventCounts: [String: Int] = [:]
 
     func handleWebEvent(_ webEventData: [String: Any], tabID: EventHubTabID) {}

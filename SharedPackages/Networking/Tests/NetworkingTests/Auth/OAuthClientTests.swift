@@ -84,50 +84,171 @@ final class OAuthClientTests: XCTestCase {
         eventCapture = nil
     }
 
-    // MARK: -
+    private func makeClient(storage: any AuthTokenStoring) -> DefaultOAuthClient {
+        DefaultOAuthClient(tokensStorage: storage,
+                           authService: mockOAuthService,
+                           refreshEventMapping: eventCapture.eventMapping,
+                           tokenRefresher: tokenRefresher)
+    }
 
-    func testUserNotAuthenticated() async throws {
+    private func makeAuthAPIError(_ code: OAuthRequest.BodyErrorCode, tokenStatus: OAuthRequest.TokenStatus? = nil) -> OAuthServiceError {
+        .authAPIError(OAuthRequestError(from: OAuthRequest.BodyError(errorCode: code, tokenStatus: tokenStatus)))
+    }
+
+    private var startedTriggers: [TokenRefreshTrigger] {
+        eventCapture.capturedEvents.compactMap {
+            if case .tokenRefreshStarted(_, let trigger) = $0 { return trigger }
+            return nil
+        }
+    }
+
+    // MARK: - Authentication state
+
+    func testIsUserAuthenticated_noTokenStored_isFalse() async throws {
         let authenticated = await oAuthClient.isUserAuthenticated
         XCTAssertFalse(authenticated)
     }
 
-    func testUserAuthenticated() async throws {
+    func testIsUserAuthenticated_tokenStored_isTrue() async throws {
         try tokenStorage.saveTokenContainer(OAuthTokensFactory.makeValidTokenContainer())
         let authenticated = await oAuthClient.isUserAuthenticated
         XCTAssertTrue(authenticated)
     }
 
-    func testCurrentTokenContainer() async throws {
-        var currentToken = try await oAuthClient.currentTokenContainer()
-        XCTAssertNil(currentToken)
+    func testIsUserAuthenticated_storageReadFails_isFalse() async throws {
+        let storage = ConfigurableTokenStorage(stored: OAuthTokensFactory.makeValidTokenContainer())
+        storage.readError = ConfigurableTokenStorage.readFailure
+
+        let authenticated = await makeClient(storage: storage).isUserAuthenticated
+
+        XCTAssertFalse(authenticated)
+    }
+
+    // MARK: - Current token container
+
+    func testCurrentTokenContainer_noTokenStored_isNil() async throws {
+        let current = try await oAuthClient.currentTokenContainer()
+        XCTAssertNil(current)
+    }
+
+    func testCurrentTokenContainer_tokenStored_returnsIt() async throws {
+        let stored = OAuthTokensFactory.makeValidTokenContainer()
+        try tokenStorage.saveTokenContainer(stored)
+
+        let current = try await oAuthClient.currentTokenContainer()
+
+        XCTAssertEqual(current, stored)
+    }
+
+    func testCurrentTokenContainer_storageReadFails_rethrows() async throws {
+        let storage = ConfigurableTokenStorage(stored: nil)
+        storage.readError = ConfigurableTokenStorage.readFailure
+
+        do {
+            _ = try await makeClient(storage: storage).currentTokenContainer()
+            XCTFail("Error expected")
+        } catch {
+            XCTAssertEqual(error as NSError, ConfigurableTokenStorage.readFailure)
+        }
+    }
+
+    // MARK: - Set current token container
+
+    func testSetCurrentTokenContainer_storesIt() async throws {
+        let tokenContainer = OAuthTokensFactory.makeValidTokenContainer()
+
+        try await oAuthClient.setCurrentTokenContainer(tokenContainer)
+
+        XCTAssertEqual(try tokenStorage.getTokenContainer(), tokenContainer)
+    }
+
+    func testSetCurrentTokenContainer_nil_removesTheStoredToken() async throws {
         try tokenStorage.saveTokenContainer(OAuthTokensFactory.makeValidTokenContainer())
-        currentToken = try await oAuthClient.currentTokenContainer()
-        XCTAssertNotNil(currentToken)
+
+        try await oAuthClient.setCurrentTokenContainer(nil)
+
+        XCTAssertNil(try tokenStorage.getTokenContainer())
+    }
+
+    func testSetCurrentTokenContainer_storageWriteFails_rethrows() async throws {
+        let storage = ConfigurableTokenStorage(stored: nil)
+        storage.writeError = ConfigurableTokenStorage.writeFailure
+
+        do {
+            try await makeClient(storage: storage).setCurrentTokenContainer(OAuthTokensFactory.makeValidTokenContainer())
+            XCTFail("Error expected")
+        } catch {
+            XCTAssertEqual(error as NSError, ConfigurableTokenStorage.writeFailure)
+        }
+    }
+
+    // MARK: - Adopt
+
+    func testAdopt_storesTheTokenContainerWithoutRefreshing() async throws {
+        let tokenContainer = OAuthTokensFactory.makeValidTokenContainer()
+
+        try await oAuthClient.adopt(tokenContainer: tokenContainer)
+
+        XCTAssertEqual(try tokenStorage.getTokenContainer(), tokenContainer)
+        XCTAssertEqual(mockOAuthService.refreshAccessTokenCallCount, 0)
+    }
+
+    func testAdopt_storageWriteFails_rethrows() async throws {
+        let storage = ConfigurableTokenStorage(stored: nil)
+        storage.writeError = ConfigurableTokenStorage.writeFailure
+
+        do {
+            try await makeClient(storage: storage).adopt(tokenContainer: OAuthTokensFactory.makeValidTokenContainer())
+            XCTFail("Error expected")
+        } catch {
+            XCTAssertEqual(error as NSError, ConfigurableTokenStorage.writeFailure)
+        }
     }
 
     // MARK: - Get tokens
 
     // MARK: Local
 
-    func testGetToken_Local_Fail() async throws {
-        let localContainer = try? await oAuthClient.getTokens(policy: .local)
-        XCTAssertNil(localContainer)
+    func testGetTokens_local_noTokenStored_throwsMissingTokenContainer() async throws {
+        do {
+            _ = try await oAuthClient.getTokens(policy: .local)
+            XCTFail("Error expected")
+        } catch {
+            XCTAssertEqual(error as? OAuthClientError, .missingTokenContainer)
+        }
     }
 
-    func testGetToken_Local_Success() async throws {
-        try tokenStorage.saveTokenContainer(OAuthTokensFactory.makeValidTokenContainer())
+    func testGetTokens_local_tokenStored_returnsItWithoutRefreshing() async throws {
+        let stored = OAuthTokensFactory.makeValidTokenContainer()
+        try tokenStorage.saveTokenContainer(stored)
 
-        let localContainer = try? await oAuthClient.getTokens(policy: .local)
-        XCTAssertNotNil(localContainer)
-        XCTAssertFalse(localContainer!.decodedAccessToken.isExpired())
+        let result = try await oAuthClient.getTokens(policy: .local)
+
+        XCTAssertEqual(result, stored)
+        XCTAssertEqual(mockOAuthService.refreshAccessTokenCallCount, 0)
     }
 
-    func testGetToken_Local_SuccessExpired() async throws {
-        try tokenStorage.saveTokenContainer(OAuthTokensFactory.makeExpiredTokenContainer())
+    func testGetTokens_local_expiredToken_returnsItWithoutRefreshing() async throws {
+        let stored = OAuthTokensFactory.makeExpiredTokenContainer()
+        try tokenStorage.saveTokenContainer(stored)
 
-        let localContainer = try? await oAuthClient.getTokens(policy: .local)
-        XCTAssertNotNil(localContainer)
-        XCTAssertTrue(localContainer!.decodedAccessToken.isExpired())
+        let result = try await oAuthClient.getTokens(policy: .local)
+
+        XCTAssertEqual(result, stored)
+        XCTAssertTrue(result.decodedAccessToken.isExpired())
+        XCTAssertEqual(mockOAuthService.refreshAccessTokenCallCount, 0)
+    }
+
+    func testGetTokens_local_storageReadFails_rethrows() async throws {
+        let storage = ConfigurableTokenStorage(stored: nil)
+        storage.readError = ConfigurableTokenStorage.readFailure
+
+        do {
+            _ = try await makeClient(storage: storage).getTokens(policy: .local)
+            XCTFail("Error expected")
+        } catch {
+            XCTAssertEqual(error as NSError, ConfigurableTokenStorage.readFailure)
+        }
     }
 
     private func assertRefreshSuccessEvents() {
@@ -198,7 +319,7 @@ final class OAuthClientTests: XCTestCase {
 
     // MARK: Auth Code Exchange
 
-    func testGetTokensWithAuthCodeSuccess() async throws {
+    func testGetTokensWithAuthCode_validCode_returnsTheDecodedTokens() async throws {
         mockOAuthService.getAccessTokenResponse = .success(OAuthTokensFactory.makeValidOAuthTokenResponse())
 
         let expectedContainer = OAuthTokensFactory.makeValidTokenContainer()
@@ -206,9 +327,10 @@ final class OAuthClientTests: XCTestCase {
 
         let tokenContainer = try await oAuthClient.getTokens(authCode: "authCode", codeVerifier: "codeVerifier")
         XCTAssertEqual(tokenContainer, expectedContainer)
+        XCTAssertEqual(mockOAuthService.getAccessTokenCodes, ["authCode"])
     }
 
-    func testGetTokensWithAuthCodeFailure() async throws {
+    func testGetTokensWithAuthCode_serverError_rethrows() async throws {
         mockOAuthService.getAccessTokenResponse = .failure(OAuthServiceError.invalidResponseCode(HTTPStatusCode.badRequest))
 
         do {
@@ -219,7 +341,7 @@ final class OAuthClientTests: XCTestCase {
         }
     }
 
-    func testGetTokensWithAuthCodeInvalidTokenRequestWithTokenStatus() async throws {
+    func testGetTokensWithAuthCode_invalidTokenRequestWithTokenStatus_rethrowsTheAPIError() async throws {
         let bodyError = OAuthRequest.BodyError(errorCode: .invalidTokenRequest, tokenStatus: .reused)
         let requestError = OAuthRequestError(from: bodyError)
         mockOAuthService.getAccessTokenResponse = .failure(OAuthServiceError.authAPIError(requestError))
@@ -232,63 +354,70 @@ final class OAuthClientTests: XCTestCase {
         }
     }
 
-    // MARK: Local Valid
+    // MARK: Verification codes
 
-    /// A valid local token exists
-    func testGetToken_localValid_local() async throws {
+    func testGetVerificationCodes_returnsAVerifierAndItsSHA256Challenge() async throws {
+        let codes = try await oAuthClient.getVerificationCodes()
 
-        try tokenStorage.saveTokenContainer(OAuthTokensFactory.makeValidTokenContainer())
-
-        let localContainer = try await oAuthClient.getTokens(policy: .localValid)
-        XCTAssertNotNil(localContainer.accessToken)
-        XCTAssertNotNil(localContainer.refreshToken)
-        XCTAssertNotNil(localContainer.decodedAccessToken)
-        XCTAssertNotNil(localContainer.decodedRefreshToken)
-        XCTAssertFalse(localContainer.decodedAccessToken.isExpired())
+        XCTAssertFalse(codes.codeVerifier.isEmpty)
+        XCTAssertEqual(codes.codeChallenge, OAuthCodesGenerator.codeChallenge(codeVerifier: codes.codeVerifier))
+        XCTAssertNil(codes.codeVerifier.rangeOfCharacter(from: CharacterSet(charactersIn: "+/=")), "The verifier must be URL safe")
     }
 
-    /// An expired local token exists and is refreshed successfully
-    func testGetToken_localValid_refreshSuccess() async throws {
+    func testGetVerificationCodes_eachCallReturnsANewVerifier() async throws {
+        let first = try await oAuthClient.getVerificationCodes()
+        let second = try await oAuthClient.getVerificationCodes()
 
+        XCTAssertNotEqual(first.codeVerifier, second.codeVerifier)
+    }
+
+    // MARK: Local Valid
+
+    func testGetTokens_localValid_validToken_returnsItWithoutRefreshing() async throws {
+        let stored = OAuthTokensFactory.makeValidTokenContainer()
+        try tokenStorage.saveTokenContainer(stored)
+
+        let localContainer = try await oAuthClient.getTokens(policy: .localValid)
+
+        XCTAssertEqual(localContainer, stored)
+        XCTAssertEqual(mockOAuthService.refreshAccessTokenCallCount, 0)
+        XCTAssertTrue(eventCapture.capturedEvents.isEmpty)
+    }
+
+    func testGetTokens_localValid_expiredToken_refreshesAndStoresTheNewToken() async throws {
         mockOAuthService.getJWTSignersResponse = .success(JWTSigners())
         mockOAuthService.refreshAccessTokenResponse = .success( OAuthTokensFactory.makeValidOAuthTokenResponse())
         try tokenStorage.saveTokenContainer(OAuthTokensFactory.makeExpiredTokenContainer())
-
-        await tokenRefresher.setTestingDecodedTokenContainers([OAuthTokensFactory.makeValidTokenContainer()])
+        let refreshed = OAuthTokensFactory.makeValidTokenContainer()
+        await tokenRefresher.setTestingDecodedTokenContainers([refreshed])
 
         let localContainer = try await oAuthClient.getTokens(policy: .localValid)
-        XCTAssertNotNil(localContainer.accessToken)
-        XCTAssertNotNil(localContainer.refreshToken)
-        XCTAssertNotNil(localContainer.decodedAccessToken)
-        XCTAssertNotNil(localContainer.decodedRefreshToken)
+
+        XCTAssertEqual(localContainer, refreshed)
+        XCTAssertEqual(try tokenStorage.getTokenContainer(), refreshed)
         XCTAssertFalse(localContainer.decodedAccessToken.isExpired())
         assertRefreshSuccessEvents()
     }
 
-    /// If a token expires in less that *Constants.tokenExpiryBufferInterval* then is treated as expired and refreshed
-    func testGetToken_localValid_expiresIn5minutes_refreshSuccess() async throws {
-
+    /// A token that expires within the expiry buffer is treated as expired and refreshed.
+    func testGetTokens_localValid_tokenExpiringSoon_refreshesIt() async throws {
         mockOAuthService.getJWTSignersResponse = .success(JWTSigners())
         try tokenStorage.saveTokenContainer(OAuthTokensFactory.makeTokenContainer(thatExpiresIn: .seconds(25)))
         mockOAuthService.refreshAccessTokenResponse = .success(OAuthTokensFactory.makeValidOAuthTokenResponse())
         await tokenRefresher.setTestingDecodedTokenContainers([OAuthTokensFactory.makeValidTokenContainer()])
 
         let localContainer = try await oAuthClient.getTokens(policy: .localValid)
-        XCTAssertNotNil(localContainer.accessToken)
-        XCTAssertNotNil(localContainer.refreshToken)
-        XCTAssertNotNil(localContainer.decodedAccessToken)
-        XCTAssertNotNil(localContainer.decodedRefreshToken)
+
         XCTAssertFalse(localContainer.decodedAccessToken.isExpired())
         XCTAssertTrue(localContainer.decodedAccessToken.exp.value.timeIntervalSinceNow > .minutes(10))
         assertRefreshSuccessEvents()
     }
 
-    /// An expired local token exists but refresh fails
-    func testGetToken_localValid_refreshFail() async throws {
-
+    func testGetTokens_localValid_refreshFails_throwsAndKeepsTheStoredToken() async throws {
         mockOAuthService.getJWTSignersResponse = .success(JWTSigners())
         mockOAuthService.refreshAccessTokenResponse = .failure(OAuthServiceError.invalidResponseCode(HTTPStatusCode.gatewayTimeout))
-        try tokenStorage.saveTokenContainer(OAuthTokensFactory.makeExpiredTokenContainer())
+        let stored = OAuthTokensFactory.makeExpiredTokenContainer()
+        try tokenStorage.saveTokenContainer(stored)
 
         do {
             _ = try await oAuthClient.getTokens(policy: .localValid)
@@ -297,15 +426,14 @@ final class OAuthClientTests: XCTestCase {
             XCTAssertEqual(error as? OAuthServiceError, .invalidResponseCode(HTTPStatusCode.gatewayTimeout))
         }
 
+        XCTAssertEqual(try tokenStorage.getTokenContainer(), stored)
         assertRefreshFailedEvents { error in
             XCTAssertEqual(error as? OAuthServiceError, .invalidResponseCode(HTTPStatusCode.gatewayTimeout))
         }
     }
 
-    func testGetToken_localValid_refreshFailInvalidTokenRequestWithTokenStatus() async throws {
-        let bodyError = OAuthRequest.BodyError(errorCode: .invalidTokenRequest, tokenStatus: .reused)
-        let requestError = OAuthRequestError(from: bodyError)
-        mockOAuthService.refreshAccessTokenResponse = .failure(OAuthServiceError.authAPIError(requestError))
+    func testGetTokens_localValid_refreshRejected_throwsInvalidTokenRequestWithTheTokenStatus() async throws {
+        mockOAuthService.refreshAccessTokenResponse = .failure(makeAuthAPIError(.invalidTokenRequest, tokenStatus: .reused))
         try tokenStorage.saveTokenContainer(OAuthTokensFactory.makeExpiredTokenContainer())
 
         do {
@@ -322,10 +450,44 @@ final class OAuthClientTests: XCTestCase {
         }
     }
 
+    func testGetTokens_localValid_refreshUnknownAccount_throwsUnknownAccount() async throws {
+        mockOAuthService.refreshAccessTokenResponse = .failure(makeAuthAPIError(.unknownAccount))
+        try tokenStorage.saveTokenContainer(OAuthTokensFactory.makeExpiredTokenContainer())
+
+        do {
+            _ = try await oAuthClient.getTokens(policy: .localValid)
+            XCTFail("Error expected")
+        } catch {
+            XCTAssertEqual(error as? OAuthClientError, .unknownAccount)
+        }
+    }
+
+    func testGetTokens_localValid_noTokenStored_throwsMissingTokenContainerWithoutRefreshing() async throws {
+        do {
+            _ = try await oAuthClient.getTokens(policy: .localValid)
+            XCTFail("Error expected")
+        } catch {
+            XCTAssertEqual(error as? OAuthClientError, .missingTokenContainer)
+        }
+        XCTAssertEqual(mockOAuthService.refreshAccessTokenCallCount, 0)
+    }
+
+    func testGetTokens_localValid_storageReadFails_rethrowsWithoutRefreshing() async throws {
+        let storage = ConfigurableTokenStorage(stored: OAuthTokensFactory.makeExpiredTokenContainer())
+        storage.readError = ConfigurableTokenStorage.readFailure
+
+        do {
+            _ = try await makeClient(storage: storage).getTokens(policy: .localValid)
+            XCTFail("Error expected")
+        } catch {
+            XCTAssertEqual(error as NSError, ConfigurableTokenStorage.readFailure)
+        }
+        XCTAssertEqual(mockOAuthService.refreshAccessTokenCallCount, 0)
+    }
+
     // MARK: Force Refresh
 
-    /// Local token is missing, refresh fails
-    func testGetToken_localForceRefresh_missingLocal() async throws {
+    func testGetTokens_localForceRefresh_noTokenStored_throwsMissingTokenContainerAndReportsTheFailure() async throws {
         do {
             _ = try await oAuthClient.getTokens(policy: .localForceRefresh)
             XCTFail("Error expected")
@@ -338,32 +500,42 @@ final class OAuthClientTests: XCTestCase {
         }
     }
 
-    /// An expired local token exists and is refreshed successfully
-    func testGetToken_localForceRefresh_success() async throws {
-
+    func testGetTokens_localForceRefresh_expiredToken_refreshesAndStoresTheNewToken() async throws {
         mockOAuthService.getJWTSignersResponse = .success(JWTSigners())
         mockOAuthService.refreshAccessTokenResponse = .success( OAuthTokensFactory.makeValidOAuthTokenResponse())
         try tokenStorage.saveTokenContainer(OAuthTokensFactory.makeExpiredTokenContainer())
-
-        await tokenRefresher.setTestingDecodedTokenContainers([TokenContainer(accessToken: "accessToken",
-                                                                              refreshToken: "refreshToken",
-                                                                              decodedAccessToken: JWTAccessToken.mock,
-                                                                              decodedRefreshToken: JWTRefreshToken.mock)])
+        let refreshed = TokenContainer(accessToken: "accessToken",
+                                       refreshToken: "refreshToken",
+                                       decodedAccessToken: JWTAccessToken.mock,
+                                       decodedRefreshToken: JWTRefreshToken.mock)
+        await tokenRefresher.setTestingDecodedTokenContainers([refreshed])
 
         let localContainer = try await oAuthClient.getTokens(policy: .localForceRefresh)
-        XCTAssertNotNil(localContainer.accessToken)
-        XCTAssertNotNil(localContainer.refreshToken)
-        XCTAssertNotNil(localContainer.decodedAccessToken)
-        XCTAssertNotNil(localContainer.decodedRefreshToken)
+
+        XCTAssertEqual(localContainer, refreshed)
+        XCTAssertEqual(try tokenStorage.getTokenContainer(), refreshed)
         XCTAssertFalse(localContainer.decodedAccessToken.isExpired())
         assertRefreshSuccessEvents()
     }
 
-    func testGetToken_localForceRefresh_refreshFail() async throws {
+    func testGetTokens_localForceRefresh_validToken_stillRefreshes() async throws {
+        mockOAuthService.refreshAccessTokenResponse = .success(OAuthTokensFactory.makeValidOAuthTokenResponse())
+        let stored = OAuthTokensFactory.makeValidTokenContainer()
+        try tokenStorage.saveTokenContainer(stored)
+        let refreshed = OAuthTokensFactory.makeTokenContainer(accessToken: "refreshedA", refreshToken: "refreshedR")
+        await tokenRefresher.setTestingDecodedTokenContainers([refreshed])
 
+        let result = try await oAuthClient.getTokens(policy: .localForceRefresh)
+
+        XCTAssertEqual(result, refreshed)
+        XCTAssertEqual(mockOAuthService.refreshAccessTokenRequestedTokens, [stored.refreshToken])
+    }
+
+    func testGetTokens_localForceRefresh_refreshFails_throwsAndKeepsTheStoredToken() async throws {
         mockOAuthService.getJWTSignersResponse = .success(JWTSigners())
         mockOAuthService.refreshAccessTokenResponse = .failure(OAuthServiceError.invalidResponseCode(HTTPStatusCode.gatewayTimeout))
-        try tokenStorage.saveTokenContainer(OAuthTokensFactory.makeExpiredTokenContainer())
+        let stored = OAuthTokensFactory.makeExpiredTokenContainer()
+        try tokenStorage.saveTokenContainer(stored)
 
         do {
             _ = try await oAuthClient.getTokens(policy: .localForceRefresh)
@@ -372,16 +544,15 @@ final class OAuthClientTests: XCTestCase {
             XCTAssertEqual(error as? OAuthServiceError, .invalidResponseCode(HTTPStatusCode.gatewayTimeout))
         }
 
+        XCTAssertEqual(try tokenStorage.getTokenContainer(), stored)
         assertRefreshFailedEvents { error in
             XCTAssertEqual(error as? OAuthServiceError, .invalidResponseCode(HTTPStatusCode.gatewayTimeout))
         }
     }
 
-    func testGetToken_localForceRefresh_unknownAccount() async throws {
+    func testGetTokens_localForceRefresh_refreshUnknownAccount_throwsUnknownAccount() async throws {
         mockOAuthService.getJWTSignersResponse = .success(JWTSigners())
-        let bodyError = OAuthRequest.BodyError(errorCode: .unknownAccount, tokenStatus: nil)
-        let requestError = OAuthRequestError(from: bodyError)
-        mockOAuthService.refreshAccessTokenResponse = .failure(OAuthServiceError.authAPIError(requestError))
+        mockOAuthService.refreshAccessTokenResponse = .failure(makeAuthAPIError(.unknownAccount))
         try tokenStorage.saveTokenContainer(OAuthTokensFactory.makeExpiredTokenContainer())
 
         do {
@@ -396,7 +567,23 @@ final class OAuthClientTests: XCTestCase {
         }
     }
 
-    func testGetToken_localForceRefresh_concurrentCallsOnlyRefreshOnce() async throws {
+    func testGetTokens_localForceRefresh_storageReadFails_rethrowsAndReportsTheFailureWithoutRefreshing() async throws {
+        let storage = ConfigurableTokenStorage(stored: OAuthTokensFactory.makeExpiredTokenContainer())
+        storage.readError = ConfigurableTokenStorage.readFailure
+
+        do {
+            _ = try await makeClient(storage: storage).getTokens(policy: .localForceRefresh)
+            XCTFail("Error expected")
+        } catch {
+            XCTAssertEqual(error as NSError, ConfigurableTokenStorage.readFailure)
+        }
+
+        XCTAssertEqual(mockOAuthService.refreshAccessTokenCallCount, 0)
+        XCTAssertEqual(eventCapture.capturedEvents, [.tokenRefreshStarted(refreshID: "", trigger: .client),
+                                                     .tokenRefreshFailed(refreshID: "", error: ConfigurableTokenStorage.readFailure)])
+    }
+
+    func testGetTokens_localForceRefresh_concurrentCalls_refreshOnce() async throws {
         mockOAuthService.getJWTSignersResponse = .success(JWTSigners())
         mockOAuthService.refreshAccessTokenResponse = .success(OAuthTokensFactory.makeValidOAuthTokenResponse())
         mockOAuthService.setRefreshAccessTokenDelay(100_000_000) // 0.1 seconds
@@ -422,38 +609,70 @@ final class OAuthClientTests: XCTestCase {
         assertRefreshSuccessEvents()
     }
 
-    // MARK: Create if needed
+    // MARK: Trigger
 
-    func testGetToken_createIfNeeded_foundLocal() async throws {
-        try tokenStorage.saveTokenContainer(OAuthTokensFactory.makeValidTokenContainer())
+    func testGetTokens_localForceRefresh_reportsTheGivenTrigger() async throws {
+        mockOAuthService.refreshAccessTokenResponse = .success(OAuthTokensFactory.makeValidOAuthTokenResponse())
+        try tokenStorage.saveTokenContainer(OAuthTokensFactory.makeExpiredTokenContainer())
+        await tokenRefresher.setTestingDecodedTokenContainers([OAuthTokensFactory.makeValidTokenContainer()])
 
-        let tokenContainer = try await oAuthClient.getTokens(policy: .createIfNeeded)
-        XCTAssertNotNil(tokenContainer.accessToken)
-        XCTAssertNotNil(tokenContainer.refreshToken)
-        XCTAssertNotNil(tokenContainer.decodedAccessToken)
-        XCTAssertNotNil(tokenContainer.decodedRefreshToken)
-        XCTAssertFalse(tokenContainer.decodedAccessToken.isExpired())
+        _ = try await oAuthClient.getTokens(policy: .localForceRefresh, trigger: .backend)
+
+        XCTAssertEqual(startedTriggers, [.backend])
     }
 
-    func testGetToken_createIfNeeded_missingLocal_createSuccess() async throws {
+    func testGetTokens_localValid_expiredToken_reportsTheGivenTrigger() async throws {
+        mockOAuthService.refreshAccessTokenResponse = .success(OAuthTokensFactory.makeValidOAuthTokenResponse())
+        try tokenStorage.saveTokenContainer(OAuthTokensFactory.makeExpiredTokenContainer())
+        await tokenRefresher.setTestingDecodedTokenContainers([OAuthTokensFactory.makeValidTokenContainer()])
+
+        _ = try await oAuthClient.getTokens(policy: .localValid, trigger: .tokenAdoption)
+
+        XCTAssertEqual(startedTriggers, [.tokenAdoption])
+    }
+
+    func testGetTokens_withoutTrigger_reportsTheClientTrigger() async throws {
+        mockOAuthService.refreshAccessTokenResponse = .success(OAuthTokensFactory.makeValidOAuthTokenResponse())
+        try tokenStorage.saveTokenContainer(OAuthTokensFactory.makeExpiredTokenContainer())
+        await tokenRefresher.setTestingDecodedTokenContainers([OAuthTokensFactory.makeValidTokenContainer()])
+
+        _ = try await oAuthClient.getTokens(policy: .localForceRefresh)
+
+        XCTAssertEqual(startedTriggers, [.client])
+    }
+
+    // MARK: Create if needed
+
+    func testGetTokens_createIfNeeded_validToken_returnsItWithoutCreatingAnAccount() async throws {
+        let stored = OAuthTokensFactory.makeValidTokenContainer()
+        try tokenStorage.saveTokenContainer(stored)
+
+        let tokenContainer = try await oAuthClient.getTokens(policy: .createIfNeeded)
+
+        XCTAssertEqual(tokenContainer, stored)
+        XCTAssertEqual(mockOAuthService.authorizeCallCount, 0)
+        XCTAssertEqual(mockOAuthService.createAccountCallCount, 0)
+    }
+
+    func testGetTokens_createIfNeeded_noTokenStored_createsAnAccountAndStoresIt() async throws {
         mockOAuthService.authorizeResponse = .success("auth_session_id")
         mockOAuthService.createAccountResponse = .success("auth_code")
         mockOAuthService.getAccessTokenResponse = .success(OAuthTokensFactory.makeValidOAuthTokenResponse())
-
-        await tokenRefresher.setTestingDecodedTokenContainers([TokenContainer(accessToken: "accessToken",
-                                                                              refreshToken: "refreshToken",
-                                                                              decodedAccessToken: JWTAccessToken.mock,
-                                                                              decodedRefreshToken: JWTRefreshToken.mock)])
+        let created = TokenContainer(accessToken: "accessToken",
+                                     refreshToken: "refreshToken",
+                                     decodedAccessToken: JWTAccessToken.mock,
+                                     decodedRefreshToken: JWTRefreshToken.mock)
+        await tokenRefresher.setTestingDecodedTokenContainers([created])
 
         let tokenContainer = try await oAuthClient.getTokens(policy: .createIfNeeded)
-        XCTAssertNotNil(tokenContainer.accessToken)
-        XCTAssertNotNil(tokenContainer.refreshToken)
-        XCTAssertNotNil(tokenContainer.decodedAccessToken)
-        XCTAssertNotNil(tokenContainer.decodedRefreshToken)
-        XCTAssertFalse(tokenContainer.decodedAccessToken.isExpired())
+
+        XCTAssertEqual(tokenContainer, created)
+        XCTAssertEqual(try tokenStorage.getTokenContainer(), created)
+        XCTAssertEqual(mockOAuthService.createAccountCallCount, 1)
+        XCTAssertEqual(mockOAuthService.getAccessTokenCodes, ["auth_code"])
     }
 
-    func testGetToken_createIfNeeded_missingLocal_createFail() async throws {
+    func testGetTokens_createIfNeeded_noTokenStored_authorizeFails_throwsAndStoresNothing() async throws {
         mockOAuthService.authorizeResponse = .failure(OAuthServiceError.invalidResponseCode(HTTPStatusCode.gatewayTimeout))
 
         do {
@@ -462,9 +681,10 @@ final class OAuthClientTests: XCTestCase {
         } catch {
             XCTAssertEqual(error as? OAuthServiceError, .invalidResponseCode(HTTPStatusCode.gatewayTimeout))
         }
+        XCTAssertNil(try tokenStorage.getTokenContainer())
     }
 
-    func testGetToken_createIfNeeded_missingLocal_createFail2() async throws {
+    func testGetTokens_createIfNeeded_noTokenStored_createAccountFails_throwsAndStoresNothing() async throws {
         mockOAuthService.authorizeResponse = .success("auth_session_id")
         mockOAuthService.createAccountResponse = .failure(OAuthServiceError.invalidResponseCode(HTTPStatusCode.gatewayTimeout))
 
@@ -474,9 +694,10 @@ final class OAuthClientTests: XCTestCase {
         } catch {
             XCTAssertEqual(error as? OAuthServiceError, .invalidResponseCode(HTTPStatusCode.gatewayTimeout))
         }
+        XCTAssertNil(try tokenStorage.getTokenContainer())
     }
 
-    func testGetToken_createIfNeeded_missingLocal_createFail3() async throws {
+    func testGetTokens_createIfNeeded_noTokenStored_tokenExchangeFails_throwsAndStoresNothing() async throws {
         mockOAuthService.authorizeResponse = .success("auth_session_id")
         mockOAuthService.createAccountResponse = .success("auth_code")
         mockOAuthService.getAccessTokenResponse = .failure(OAuthServiceError.invalidResponseCode(HTTPStatusCode.gatewayTimeout))
@@ -487,12 +708,29 @@ final class OAuthClientTests: XCTestCase {
         } catch {
             XCTAssertEqual(error as? OAuthServiceError, .invalidResponseCode(HTTPStatusCode.gatewayTimeout))
         }
+        XCTAssertNil(try tokenStorage.getTokenContainer())
     }
 
-    func testGetToken_createIfNeeded_expiredInvalidRefreshToken_usesCreateIfNeededTriggerThenCreatesAccount() async throws {
-        let bodyError = OAuthRequest.BodyError(errorCode: .invalidTokenRequest, tokenStatus: .reused)
-        let requestError = OAuthRequestError(from: bodyError)
-        mockOAuthService.refreshAccessTokenResponse = .failure(OAuthServiceError.authAPIError(requestError))
+    func testGetTokens_createIfNeeded_storageReadFails_throwsWithoutCreatingAnAccount() async throws {
+        mockOAuthService.authorizeResponse = .success("auth_session_id")
+        mockOAuthService.createAccountResponse = .success("auth_code")
+        mockOAuthService.getAccessTokenResponse = .success(OAuthTokensFactory.makeValidOAuthTokenResponse())
+        let storage = ConfigurableTokenStorage(stored: nil)
+        storage.readError = ConfigurableTokenStorage.readFailure
+
+        do {
+            _ = try await makeClient(storage: storage).getTokens(policy: .createIfNeeded)
+            XCTFail("Error expected")
+        } catch {
+            XCTAssertEqual(error as NSError, ConfigurableTokenStorage.readFailure)
+        }
+        XCTAssertEqual(mockOAuthService.authorizeCallCount, 0)
+        XCTAssertEqual(mockOAuthService.createAccountCallCount, 0)
+        XCTAssertNil(storage.stored)
+    }
+
+    func testGetTokens_createIfNeeded_expiredInvalidRefreshToken_usesCreateIfNeededTriggerThenCreatesAccount() async throws {
+        mockOAuthService.refreshAccessTokenResponse = .failure(makeAuthAPIError(.invalidTokenRequest, tokenStatus: .reused))
         mockOAuthService.authorizeResponse = .success("auth_session_id")
         mockOAuthService.createAccountResponse = .success("auth_code")
         mockOAuthService.getAccessTokenResponse = .success(OAuthTokensFactory.makeValidOAuthTokenResponse())
@@ -503,11 +741,197 @@ final class OAuthClientTests: XCTestCase {
 
         XCTAssertFalse(tokenContainer.decodedAccessToken.isExpired())
         XCTAssertEqual(mockOAuthService.refreshAccessTokenCallCount, 1)
+        XCTAssertEqual(startedTriggers, [.createIfNeeded])
+    }
 
-        guard case .tokenRefreshStarted(_, let trigger) = eventCapture.capturedEvents.first else {
-            return XCTFail("Expected createIfNeeded to attempt a refresh before creating an account")
+    // MARK: - Decode
+
+    func testDecode_decodesThroughTheTokenRefresher() async throws {
+        let decoded = OAuthTokensFactory.makeValidTokenContainer()
+        let client = DefaultOAuthClient(tokensStorage: tokenStorage,
+                                        authService: mockOAuthService,
+                                        refreshEventMapping: nil,
+                                        tokenRefresher: StubTokenRefresher(refreshed: decoded))
+
+        let result = try await client.decode(accessToken: "a", refreshToken: "r", refreshID: nil)
+
+        XCTAssertEqual(result, decoded)
+    }
+
+    func testDecode_invalidTokens_rethrowsTheDecodingError() async throws {
+        let decodeError = NSError(domain: "jwt", code: 1)
+        let client = DefaultOAuthClient(tokensStorage: tokenStorage,
+                                        authService: mockOAuthService,
+                                        refreshEventMapping: nil,
+                                        tokenRefresher: StubTokenRefresher(refreshed: OAuthTokensFactory.makeValidTokenContainer(),
+                                                                           decodeError: decodeError))
+
+        do {
+            _ = try await client.decode(accessToken: "not a jwt", refreshToken: "not a jwt", refreshID: nil)
+            XCTFail("Error expected")
+        } catch {
+            XCTAssertEqual(error as NSError, decodeError)
         }
-        XCTAssertEqual(trigger.rawValue, "create_if_needed")
+    }
+
+    // MARK: - Activate
+
+    func testActivate_validSignature_storesAndReturnsTheTokens() async throws {
+        mockOAuthService.authorizeResponse = .success("auth_session_id")
+        mockOAuthService.loginWithSignatureResponse = .success("auth_code")
+        mockOAuthService.getAccessTokenResponse = .success(OAuthTokensFactory.makeValidOAuthTokenResponse())
+        let activated = OAuthTokensFactory.makeValidTokenContainer()
+        await tokenRefresher.setTestingDecodedTokenContainers([activated])
+
+        let result = try await oAuthClient.activate(withPlatformSignature: "signature")
+
+        XCTAssertEqual(result, activated)
+        XCTAssertEqual(try tokenStorage.getTokenContainer(), activated)
+        XCTAssertEqual(mockOAuthService.loginSignatures, ["signature"])
+        XCTAssertEqual(mockOAuthService.getAccessTokenCodes, ["auth_code"])
+    }
+
+    func testActivate_authorizeFails_throwsAndKeepsTheCurrentToken() async throws {
+        let current = OAuthTokensFactory.makeValidTokenContainer()
+        try tokenStorage.saveTokenContainer(current)
+        mockOAuthService.authorizeResponse = .failure(OAuthServiceError.invalidResponseCode(HTTPStatusCode.gatewayTimeout))
+
+        do {
+            _ = try await oAuthClient.activate(withPlatformSignature: "signature")
+            XCTFail("Error expected")
+        } catch {
+            XCTAssertEqual(error as? OAuthServiceError, .invalidResponseCode(HTTPStatusCode.gatewayTimeout))
+        }
+        XCTAssertEqual(try tokenStorage.getTokenContainer(), current)
+        XCTAssertTrue(mockOAuthService.loginSignatures.isEmpty)
+    }
+
+    func testActivate_signatureRejected_throwsAndKeepsTheCurrentToken() async throws {
+        let current = OAuthTokensFactory.makeValidTokenContainer()
+        try tokenStorage.saveTokenContainer(current)
+        mockOAuthService.authorizeResponse = .success("auth_session_id")
+        mockOAuthService.loginWithSignatureResponse = .failure(makeAuthAPIError(.invalidAuthorizationRequest))
+
+        do {
+            _ = try await oAuthClient.activate(withPlatformSignature: "invalid signature")
+            XCTFail("Error expected")
+        } catch {
+            XCTAssertEqual(error as? OAuthServiceError, makeAuthAPIError(.invalidAuthorizationRequest))
+        }
+        XCTAssertEqual(try tokenStorage.getTokenContainer(), current)
+        XCTAssertTrue(mockOAuthService.getAccessTokenCodes.isEmpty)
+    }
+
+    func testActivate_tokenExchangeFails_throwsAndKeepsTheCurrentToken() async throws {
+        let current = OAuthTokensFactory.makeValidTokenContainer()
+        try tokenStorage.saveTokenContainer(current)
+        mockOAuthService.authorizeResponse = .success("auth_session_id")
+        mockOAuthService.loginWithSignatureResponse = .success("auth_code")
+        mockOAuthService.getAccessTokenResponse = .failure(OAuthServiceError.invalidResponseCode(HTTPStatusCode.gatewayTimeout))
+
+        do {
+            _ = try await oAuthClient.activate(withPlatformSignature: "signature")
+            XCTFail("Error expected")
+        } catch {
+            XCTAssertEqual(error as? OAuthServiceError, .invalidResponseCode(HTTPStatusCode.gatewayTimeout))
+        }
+        XCTAssertEqual(try tokenStorage.getTokenContainer(), current)
+    }
+
+    func testActivate_storageWriteFails_rethrows() async throws {
+        mockOAuthService.authorizeResponse = .success("auth_session_id")
+        mockOAuthService.loginWithSignatureResponse = .success("auth_code")
+        mockOAuthService.getAccessTokenResponse = .success(OAuthTokensFactory.makeValidOAuthTokenResponse())
+        await tokenRefresher.setTestingDecodedTokenContainers([OAuthTokensFactory.makeValidTokenContainer()])
+        let storage = ConfigurableTokenStorage(stored: nil)
+        storage.writeError = ConfigurableTokenStorage.writeFailure
+
+        do {
+            _ = try await makeClient(storage: storage).activate(withPlatformSignature: "signature")
+            XCTFail("Error expected")
+        } catch {
+            XCTAssertEqual(error as NSError, ConfigurableTokenStorage.writeFailure)
+        }
+    }
+
+    // MARK: - Logout
+
+    func testLogout_removesTheTokenAndInvalidatesItsAccessTokenOnTheServer() async throws {
+        let stored = OAuthTokensFactory.makeValidTokenContainer()
+        try tokenStorage.saveTokenContainer(stored)
+        let serverLogout = expectation(description: "Server logout")
+        mockOAuthService.onLogout = { _ in serverLogout.fulfill() }
+
+        try await oAuthClient.logout()
+        await fulfillment(of: [serverLogout], timeout: 2)
+
+        XCTAssertNil(try tokenStorage.getTokenContainer())
+        XCTAssertEqual(mockOAuthService.logoutAccessTokens, [stored.accessToken])
+    }
+
+    func testLogout_noTokenStored_doesNotCallTheServer() async throws {
+        let serverLogout = expectation(description: "Server logout")
+        serverLogout.isInverted = true
+        mockOAuthService.onLogout = { _ in serverLogout.fulfill() }
+
+        try await oAuthClient.logout()
+        await fulfillment(of: [serverLogout], timeout: 0.3)
+
+        XCTAssertTrue(mockOAuthService.logoutAccessTokens.isEmpty)
+    }
+
+    func testLogout_serverLogoutFails_stillSucceedsLocally() async throws {
+        try tokenStorage.saveTokenContainer(OAuthTokensFactory.makeValidTokenContainer())
+        mockOAuthService.logoutError = OAuthServiceError.invalidResponseCode(HTTPStatusCode.internalServerError)
+        let serverLogout = expectation(description: "Server logout")
+        mockOAuthService.onLogout = { _ in serverLogout.fulfill() }
+
+        try await oAuthClient.logout()
+        await fulfillment(of: [serverLogout], timeout: 2)
+
+        XCTAssertNil(try tokenStorage.getTokenContainer())
+    }
+
+    func testLogout_removingTheTokenFails_rethrowsWithoutCallingTheServer() async throws {
+        let storage = ConfigurableTokenStorage(stored: OAuthTokensFactory.makeValidTokenContainer())
+        storage.writeError = ConfigurableTokenStorage.writeFailure
+        let serverLogout = expectation(description: "Server logout")
+        serverLogout.isInverted = true
+        mockOAuthService.onLogout = { _ in serverLogout.fulfill() }
+
+        do {
+            try await makeClient(storage: storage).logout()
+            XCTFail("Error expected")
+        } catch {
+            XCTAssertEqual(error as NSError, ConfigurableTokenStorage.writeFailure)
+        }
+        await fulfillment(of: [serverLogout], timeout: 0.3)
+    }
+
+    // MARK: - Remove local account
+
+    func testRemoveLocalAccount_removesTheTokenWithoutCallingTheServer() async throws {
+        try tokenStorage.saveTokenContainer(OAuthTokensFactory.makeValidTokenContainer())
+        let serverLogout = expectation(description: "Server logout")
+        serverLogout.isInverted = true
+        mockOAuthService.onLogout = { _ in serverLogout.fulfill() }
+
+        try await oAuthClient.removeLocalAccount(includingBackup: false)
+        await fulfillment(of: [serverLogout], timeout: 0.3)
+
+        XCTAssertNil(try tokenStorage.getTokenContainer())
+    }
+
+    func testRemoveLocalAccount_storageWriteFails_rethrows() async throws {
+        let storage = ConfigurableTokenStorage(stored: OAuthTokensFactory.makeValidTokenContainer())
+        storage.writeError = ConfigurableTokenStorage.writeFailure
+
+        do {
+            try await makeClient(storage: storage).removeLocalAccount(includingBackup: false)
+            XCTFail("Error expected")
+        } catch {
+            XCTAssertEqual(error as NSError, ConfigurableTokenStorage.writeFailure)
+        }
     }
 
     // MARK: - Event Mapping
@@ -561,14 +985,17 @@ final class OAuthClientTests: XCTestCase {
 
 private actor StubTokenRefresher: TokenRefreshing {
     private let refreshed: TokenContainer
+    private let decodeError: Error?
     private(set) var refreshCount = 0
 
-    init(refreshed: TokenContainer) {
+    init(refreshed: TokenContainer, decodeError: Error? = nil) {
         self.refreshed = refreshed
+        self.decodeError = decodeError
     }
 
     func decode(accessToken: String, refreshToken: String, refreshID: String?) async throws -> TokenContainer {
-        refreshed
+        if let decodeError { throw decodeError }
+        return refreshed
     }
 
     func refresh(_ tokenContainer: TokenContainer, refreshID: String?) async throws -> TokenContainer {
@@ -578,5 +1005,29 @@ private actor StubTokenRefresher: TokenRefreshing {
 
     func fork(_ tokenContainer: TokenContainer, count: Int) async throws(TokenForkError) -> [TokenContainer] {
         Array(repeating: refreshed, count: count)
+    }
+}
+
+/// A token storage whose reads and writes can be made to fail.
+private final class ConfigurableTokenStorage: AuthTokenStoring {
+    static let readFailure = NSError(domain: "keychain", code: 1)
+    static let writeFailure = NSError(domain: "keychain", code: 2)
+
+    private(set) var stored: TokenContainer?
+    var readError: Error?
+    var writeError: Error?
+
+    init(stored: TokenContainer?) {
+        self.stored = stored
+    }
+
+    func getTokenContainer() throws -> TokenContainer? {
+        if let readError { throw readError }
+        return stored
+    }
+
+    func saveTokenContainer(_ tokenContainer: TokenContainer?) throws {
+        if let writeError { throw writeError }
+        stored = tokenContainer
     }
 }

@@ -165,25 +165,54 @@ private extension WebExtensionPermissionPrompt {
 
     /// One message per permission group, in `permissionsByMessage` order. Permissions without a message aren't listed.
     private func apiPermissionMessages(for request: WebExtensionPermissionRequest) -> [String] {
-        let permissions = request.permissionsBeyondWebsiteAccess
+        var permissions = request.permissionsBeyondWebsiteAccess
 
-        return permissionsByMessage
-            .filter {
-                $0.value.isDisjoint(with: permissions) == false
-            }
-            .map(\.key)
+        // As for CWS extensions, history access covers top sites and favicons, and changing history covers reading it.
+        if permissions.isDisjoint(with: [.history, .tabs, .webNavigation, .declarativeNetRequestFeedback]) == false {
+            permissions.subtract([.topSites, .favicon])
+        }
+        if permissions.contains(.history) {
+            permissions.subtract([.tabs, .webNavigation, .declarativeNetRequestFeedback])
+        }
+
+        // As for CWS extensions, a message needs all its permissions, appears once, and claims them from later messages.
+        var messages: [String] = []
+        for (message, required) in permissionsByMessage where required.isSubset(of: permissions) && !messages.contains(message) {
+            permissions.subtract(required)
+            messages.append(message)
+        }
+        return messages
     }
 
     private func appPermissionMessages(for request: WebExtensionPermissionRequest) -> [String] {
         request.appPermissions.contains(.privacy) ? [UserText.webExtensionPrivacyPermission] : []
     }
 
-    private var permissionsByMessage: KeyValuePairs<String, Set<WKWebExtension.Permission>> {
+    /// A message can repeat, for permissions that each warrant it on their own.
+    private var permissionsByMessage: [(message: String, permissions: Set<WebExtensionManifestPermission>)] {
         [
-            UserText.webExtensionHistoryPermission: [.tabs, .webNavigation, .declarativeNetRequestFeedback],
-            UserText.webExtensionDeclarativeNetRequestPermission: [.declarativeNetRequest],
-            UserText.webExtensionClipboardPermission: [.clipboardWrite],
-            UserText.webExtensionNativeMessagingPermission: [.nativeMessaging]
+            (UserText.webExtensionDebuggerPermission, [.debugger]),
+            (UserText.webExtensionGeolocationPermission, [.geolocation]),
+            (UserText.webExtensionHistoryWritePermission, [.history]),
+            (UserText.webExtensionHistoryPermission, [.tabs]),
+            (UserText.webExtensionHistoryPermission, [.webNavigation]),
+            (UserText.webExtensionHistoryPermission, [.declarativeNetRequestFeedback]),
+            (UserText.webExtensionFaviconPermission, [.favicon]),
+            (UserText.webExtensionTopSitesPermission, [.topSites]),
+            (UserText.webExtensionDeclarativeNetRequestPermission, [.declarativeNetRequest]),
+            (UserText.webExtensionNotificationsPermission, [.notifications]),
+            (UserText.webExtensionBookmarksPermission, [.bookmarks]),
+            (UserText.webExtensionReadingListPermission, [.readingList]),
+            (UserText.webExtensionClipboardReadWritePermission, [.clipboardRead, .clipboardWrite]),
+            (UserText.webExtensionClipboardReadPermission, [.clipboardRead]),
+            (UserText.webExtensionClipboardPermission, [.clipboardWrite]),
+            (UserText.webExtensionDesktopCapturePermission, [.desktopCapture]),
+            (UserText.webExtensionDownloadsPermission, [.downloads]),
+            (UserText.webExtensionDownloadsOpenPermission, [.downloadsOpen]),
+            (UserText.webExtensionContentSettingsPermission, [.contentSettings]),
+            (UserText.webExtensionManagementPermission, [.management]),
+            (UserText.webExtensionNativeMessagingPermission, [.nativeMessaging]),
+            (UserText.webExtensionTabGroupsPermission, [.tabGroups])
         ]
     }
 
@@ -197,9 +226,10 @@ private extension WebExtensionPermissionRequest {
     }
 
     /// Access to all websites already implies some permissions, so they aren't listed beside it.
-    var permissionsBeyondWebsiteAccess: Set<WKWebExtension.Permission> {
-        hasAllWebsitesAccess
-            ? permissions.subtracting([.tabs, .webNavigation, .declarativeNetRequest, .declarativeNetRequestFeedback])
+    var permissionsBeyondWebsiteAccess: Set<WebExtensionManifestPermission> {
+        let permissions = manifestPermissions.union(permissions.compactMap { WebExtensionManifestPermission(rawValue: $0.rawValue) })
+        return hasAllWebsitesAccess
+            ? permissions.subtracting([.tabs, .webNavigation, .declarativeNetRequest, .declarativeNetRequestFeedback, .topSites, .favicon])
             : permissions
     }
 }

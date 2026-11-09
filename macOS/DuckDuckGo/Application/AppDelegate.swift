@@ -691,6 +691,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         self.startupProfiler = startupProfiler
         self.dockCustomization = dockCustomization
 
+        // TEMPORARY, REVERT BEFORE MERGE: test builds open the Duck.ai test server without anyone
+        // setting the custom URL in the Debug menu. A registered default is never saved, so installs
+        // go back to duck.ai once this is gone. A URL set in the Debug menu still wins.
+        if case .normal = AppVersion.runType {
+            UserDefaults.standard.register(defaults: [UserDefaultsKeys.aiChatDebugURLSettings.rawValue: "https://euw-serp-dev-testing3.duck.ai/"])
+        }
+
         if [.unitTests, .integrationTests].contains(AppVersion.runType) {
             keyStore = (NSClassFromString("MockEncryptionKeyStore") as? EncryptionKeyStoring.Type)!.init()
         } else {

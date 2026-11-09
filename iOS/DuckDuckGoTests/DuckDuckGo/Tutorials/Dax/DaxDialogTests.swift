@@ -1621,7 +1621,7 @@ final class ContextualOnboardingTimeLimitTests: XCTestCase {
         now = now.addingTimeInterval(1)
         view.blockedTrackersCTAAction()
 
-        XCTAssertTrue(dialogs.endedByTimeLimit)
+        XCTAssertTrue(limit.endedByTimeLimit)
         XCTAssertFalse(dialogs.isEnabled)
         XCTAssertEqual(limit.appOpens, 0)
         XCTAssertEqual(reporter.reasons, [.days])

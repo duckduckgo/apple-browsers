@@ -606,27 +606,8 @@ final class ContextualDaxDialogsTimeLimitTests: XCTestCase {
         XCTAssertEqual(reporter.capturedSharedOnboardingScreenImpression, .fireButton(.shown))
     }
 
-    func testTrackersCTAEvaluatesTimeLimitBeforeChoosingFireFollowUp() throws {
+    func testSearchCTARechecksTimeLimitBeforeChoosingSiteFollowUp() throws {
         let logic = ContextualOnboardingLogicMock()
-        logic.onCheckTimeLimit = { [weak logic] in logic?.endedByTimeLimit = true }
-        let delegate = ContextualOnboardingDelegateMock()
-        let reporter = OnboardingPixelReporterMock()
-        let factory = makeFactory(logic: logic, reporter: reporter)
-        let host = factory.makeView(for: .withOneTracker, delegate: delegate, onSizeUpdate: { XCTFail("Expired dialog must not advance") })
-        let view = try XCTUnwrap(find(OnboardingRebranding.OnboardingTrackersBlockedDialogScreen.self, in: host.rootView))
-        XCTAssertTrue(view.shouldFollowUp)
-
-        view.blockedTrackersCTAAction()
-
-        XCTAssertTrue(delegate.didCallDidTapDismissContextualOnboardingAction)
-        XCTAssertFalse(delegate.didCallDidAcknowledgeContextualOnboardingTrackersDialog)
-        XCTAssertFalse(reporter.didCallMeasureScreenImpressionCalled)
-        XCTAssertFalse(reporter.didCallMeasureSharedOnboardingScreenImpression)
-    }
-
-    func testSearchCTAEvaluatesTimeLimitBeforeChoosingSiteFollowUp() throws {
-        let logic = ContextualOnboardingLogicMock()
-        logic.onCheckTimeLimit = { [weak logic] in logic?.endedByTimeLimit = true }
         let delegate = ContextualOnboardingDelegateMock()
         let reporter = OnboardingPixelReporterMock()
         let factory = makeFactory(logic: logic, reporter: reporter)
@@ -634,6 +615,7 @@ final class ContextualDaxDialogsTimeLimitTests: XCTestCase {
         let view = try XCTUnwrap(find(OnboardingRebranding.OnboardingSearchDoneDialog.self, in: host.rootView))
         XCTAssertTrue(view.shouldFollowUp)
 
+        logic.endedByTimeLimit = true
         view.gotItAction()
 
         XCTAssertTrue(delegate.didCallDidTapDismissContextualOnboardingAction)

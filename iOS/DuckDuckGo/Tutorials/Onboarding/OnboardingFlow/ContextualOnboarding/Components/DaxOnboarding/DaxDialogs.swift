@@ -59,7 +59,6 @@ protocol ContextualOnboardingLogic {
     /// Ends contextual onboarding when its time limit is reached. Returns whether it has ended by the time limit.
     @discardableResult
     func checkTimeLimit() -> Bool
-    var endedByTimeLimit: Bool { get }
 
     var isShowingFireDialog: Bool { get }
     var isShowingSearchSuggestions: Bool { get }
@@ -380,10 +379,6 @@ final class DaxDialogs: NewTabDialogSpecProvider, ContextualOnboardingLogic, Con
         !isEnabled
     }
 
-    var endedByTimeLimit: Bool {
-        timeLimit.endedByTimeLimit
-    }
-
     var isShowingSearchSuggestions: Bool {
         return currentHomeSpec == .initial
     }
@@ -643,8 +638,7 @@ final class DaxDialogs: NewTabDialogSpecProvider, ContextualOnboardingLogic, Con
     }
 
     func nextBrowsingMessageIfShouldShow(for privacyInfo: PrivacyInfo) -> BrowsingSpec? {
-        checkTimeLimit()
-        let message = endedByTimeLimit
+        let message = checkTimeLimit()
             ? nextBrowsingMessageAfterTimeLimit(privacyInfo: privacyInfo)
             : nextBrowsingMessageExperiment(privacyInfo: privacyInfo)
         if message != nil {

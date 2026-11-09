@@ -108,24 +108,67 @@ class AppStoreReleaseMetadataTest < Minitest::Test
     assert_equal release(release_date: "2026-01-07T12:30:00Z"), result["available_appstore_version"]
   end
 
+  def test_active_supersedes_paused_entry_for_another_release
+    paused = release(version: "1.100.1", build_number: 505, is_critical: true)
+
+    result = update(existing(paused_appstore_version: paused), phase_state: "ACTIVE")
+
+    assert_equal existing(available_appstore_version: release), result
+  end
+
   def test_active_without_latest_entry_fails
     assert_raises(AppStoreReleaseMetadata::Error) { update({}, phase_state: "ACTIVE") }
   end
 
   # PAUSED
 
-  def test_paused_withdraws_available_release
-    available = release(is_critical: true)
+  def test_paused_withdraws_available_release_and_keeps_it_as_paused
+    available = release(release_date: "2026-01-05T17:00:00Z", is_critical: true)
 
     result = update(existing(available_appstore_version: available), phase_state: "PAUSED")
+
+    assert_equal existing(paused_appstore_version: available), result
+  end
+
+  def test_paused_rerun_keeps_paused_entry
+    paused = release(release_date: "2026-01-05T17:00:00Z", is_critical: true)
+
+    result = update(existing(paused_appstore_version: paused), phase_state: "PAUSED")
+
+    assert_equal existing(paused_appstore_version: paused), result
+  end
+
+  def test_paused_rerun_can_change_critical_flag
+    paused = release(is_critical: true)
+
+    result = update(existing(paused_appstore_version: paused), phase_state: "PAUSED", is_critical: false)
+
+    assert_equal existing(paused_appstore_version: release), result
+  end
+
+  def test_paused_release_that_is_not_newer_than_latest_is_not_kept
+    stale = release(version: "1.100.0", build_number: 500)
+
+    result = update(existing(paused_appstore_version: stale), version: "1.100.0", build_number: 500,
+                                                              phase_state: "PAUSED")
 
     assert_equal existing, result
   end
 
-  def test_paused_rerun_changes_nothing
-    result = update(existing, phase_state: "PAUSED")
+  def test_critical_release_stays_critical_when_resumed_unchanged
+    active = update(existing, phase_state: "ACTIVE", is_critical: true)
+    paused = update(active, phase_state: "PAUSED")
+    resumed = update(paused, phase_state: "ACTIVE", phase_start_date: nil)
 
-    assert_equal existing, result
+    assert_equal existing(available_appstore_version: release(is_critical: true)), resumed
+  end
+
+  def test_critical_release_stays_critical_when_completed_after_pause
+    active = update(existing, phase_state: "ACTIVE", is_critical: true)
+    paused = update(active, phase_state: "PAUSED")
+    completed = update(paused, phase_state: "COMPLETE", phase_start_date: nil)
+
+    assert_equal OTHER_KEYS.merge("latest_appstore_version" => release(is_critical: true)), completed
   end
 
   # COMPLETE
@@ -175,11 +218,11 @@ class AppStoreReleaseMetadataTest < Minitest::Test
   # INACTIVE and unknown states
 
   def test_inactive_changes_nothing
-    available = release
+    entries = { available_appstore_version: release, paused_appstore_version: release(version: "1.100.1") }
 
-    result = update(existing(available_appstore_version: available), phase_state: "INACTIVE")
+    result = update(existing(**entries), phase_state: "INACTIVE")
 
-    assert_equal existing(available_appstore_version: available), result
+    assert_equal existing(**entries), result
   end
 
   def test_unknown_state_fails

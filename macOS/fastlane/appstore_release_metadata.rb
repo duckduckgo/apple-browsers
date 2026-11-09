@@ -6,9 +6,12 @@ require "time"
 #
 # `available_appstore_version` is the release that is rolling out, and `latest_appstore_version` is the
 # release that has finished rolling out. Clients require `latest_appstore_version`, so it's never removed.
+# While a rollout is paused its entry moves to `paused_appstore_version`, which clients ignore, so that
+# resuming or completing the rollout keeps its release date and critical flag.
 module AppStoreReleaseMetadata
   LATEST_KEY = "latest_appstore_version"
   AVAILABLE_KEY = "available_appstore_version"
+  PAUSED_KEY = "paused_appstore_version"
 
   module PhaseState
     INACTIVE = "INACTIVE"
@@ -35,19 +38,21 @@ module AppStoreReleaseMetadata
 
     default_date = start_date || format_date(now)
 
+    rolling_out = [existing[AVAILABLE_KEY], existing[PAUSED_KEY]]
+
     case phase_state
-    when PhaseState::ACTIVE
+    when PhaseState::ACTIVE, PhaseState::PAUSED
+      key, other_key = phase_state == PhaseState::ACTIVE ? [AVAILABLE_KEY, PAUSED_KEY] : [PAUSED_KEY, AVAILABLE_KEY]
+      metadata.delete(other_key)
       if newer?(release, metadata[LATEST_KEY])
-        metadata[AVAILABLE_KEY] = entry(release, [existing[AVAILABLE_KEY]], default_date, is_critical)
+        metadata[key] = entry(release, rolling_out, default_date, is_critical)
       else
-        metadata.delete(AVAILABLE_KEY)
+        metadata.delete(key)
       end
-    when PhaseState::PAUSED
-      metadata.delete(AVAILABLE_KEY)
     when PhaseState::COMPLETE, nil
-      metadata[LATEST_KEY] = entry(release, [existing[LATEST_KEY], existing[AVAILABLE_KEY]], default_date,
-                                   is_critical)
+      metadata[LATEST_KEY] = entry(release, [existing[LATEST_KEY], *rolling_out], default_date, is_critical)
       metadata.delete(AVAILABLE_KEY) unless newer?(metadata[AVAILABLE_KEY], metadata[LATEST_KEY])
+      metadata.delete(PAUSED_KEY)
     when PhaseState::INACTIVE
       nil
     else

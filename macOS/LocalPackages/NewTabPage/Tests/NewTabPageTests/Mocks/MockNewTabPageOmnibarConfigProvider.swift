@@ -227,11 +227,11 @@ final class MockNewTabPageOmnibarConfigProvider: NewTabPageOmnibarConfigProvidin
     }
 
     @Published var isPastedTextEnabled: Bool = false
-    @Published var promptLimits: NewTabPageDataModel.OmnibarPromptLimits?
+    @Published var pastedTextLimits: NewTabPageDataModel.OmnibarPastedTextLimits?
 
     var pastedTextConfigPublisher: AnyPublisher<Void, Never> {
         $isPastedTextEnabled.dropFirst().map { _ in () }
-            .merge(with: $promptLimits.dropFirst().map { _ in () })
+            .merge(with: $pastedTextLimits.dropFirst().map { _ in () })
             .eraseToAnyPublisher()
     }
 }

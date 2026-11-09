@@ -207,7 +207,7 @@ public final class NewTabPageOmnibarClient: NewTabPageUserScriptClient {
             screenshotModes: screenshotProvider?.screenshotModes,
             enablePastedAttachments: screenshotProvider?.enablePastedAttachments,
             enablePastedText: configProvider.isPastedTextEnabled,
-            promptLimits: configProvider.promptLimits
+            pastedTextLimits: configProvider.pastedTextLimits
         )
     }
 
@@ -301,7 +301,7 @@ public final class NewTabPageOmnibarClient: NewTabPageUserScriptClient {
             screenshotModes: screenshotProvider?.screenshotModes,
             enablePastedAttachments: screenshotProvider?.enablePastedAttachments,
             enablePastedText: configProvider.isPastedTextEnabled,
-            promptLimits: configProvider.promptLimits
+            pastedTextLimits: configProvider.pastedTextLimits
         )
         pushMessage(named: MessageName.onConfigUpdate.rawValue, params: config)
     }

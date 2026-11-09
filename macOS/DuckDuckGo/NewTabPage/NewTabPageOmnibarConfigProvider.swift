@@ -613,7 +613,7 @@ final class NewTabPageOmnibarConfigProvider: NewTabPageOmnibarConfigProviding {
         featureFlagger.isFeatureOn(.aiChatNtpPastedText)
     }
 
-    var promptLimits: NewTabPageDataModel.OmnibarPromptLimits? {
+    var pastedTextLimits: NewTabPageDataModel.OmnibarPastedTextLimits? {
         guard isPastedTextEnabled else { return nil }
         let limits = AIChatPromptLimits(privacyConfig: privacyConfigurationManager.privacyConfig, subfeature: AIChatSubfeature.ntpPastedText)
         return .init(pasteConversionThreshold: limits.pasteConversionThreshold, maxCharacters: limits.maxCharacters)
@@ -623,8 +623,8 @@ final class NewTabPageOmnibarConfigProvider: NewTabPageOmnibarConfigProviding {
     /// even when the flag doesn't change.
     var pastedTextConfigPublisher: AnyPublisher<Void, Never> {
         featureFlagger.updatesPublisher
-            .compactMap { [weak self] in self.map { ($0.isPastedTextEnabled, $0.promptLimits) } }
-            .prepend((isPastedTextEnabled, promptLimits))
+            .compactMap { [weak self] in self.map { ($0.isPastedTextEnabled, $0.pastedTextLimits) } }
+            .prepend((isPastedTextEnabled, pastedTextLimits))
             .removeDuplicates { $0 == $1 }
             .dropFirst()
             .map { _ in () }

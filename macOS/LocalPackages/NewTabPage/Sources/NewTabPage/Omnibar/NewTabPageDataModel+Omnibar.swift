@@ -320,12 +320,12 @@ public extension NewTabPageDataModel {
         var enablePastedAttachments: Bool?
         /// Lets the page turn long text pastes into pasted-text attachments; absent or `false` keeps a normal paste.
         var enablePastedText: Bool?
-        /// Paste conversion threshold and prompt length cap; absent makes the page use its built-in defaults.
-        var promptLimits: OmnibarPromptLimits?
+        /// The paste length that becomes a chip and the cap on typed text plus pastes; absent makes the page use its built-in defaults.
+        var pastedTextLimits: OmnibarPastedTextLimits?
     }
 
     /// Mirrors `AIChatPromptLimits`: lengths are UTF-16 units, and the cap covers typed text plus every paste.
-    struct OmnibarPromptLimits: Codable, Equatable {
+    struct OmnibarPastedTextLimits: Codable, Equatable {
         public let pasteConversionThreshold: Int
         public let maxCharacters: Int
 

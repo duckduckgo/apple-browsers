@@ -390,7 +390,7 @@ private final class MockAiChatsConfigProvider: NewTabPageOmnibarConfigProviding 
     var suggestedPromptsPromptCount: Int = 0
     var suggestedPromptsPublisher: AnyPublisher<Void, Never> { Empty<Void, Never>().eraseToAnyPublisher() }
     var isPastedTextEnabled: Bool = false
-    var promptLimits: NewTabPageDataModel.OmnibarPromptLimits?
+    var pastedTextLimits: NewTabPageDataModel.OmnibarPastedTextLimits?
     var pastedTextConfigPublisher: AnyPublisher<Void, Never> { Empty<Void, Never>().eraseToAnyPublisher() }
 }
 

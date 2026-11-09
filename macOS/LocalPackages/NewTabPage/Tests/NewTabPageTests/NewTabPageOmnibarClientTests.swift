@@ -1436,13 +1436,13 @@ final class NewTabPageOmnibarClientTests: XCTestCase {
     func testGetConfigPassesPastedTextAndPromptLimitsThrough() async throws {
         let off: NewTabPageDataModel.OmnibarConfig = try await messageHelper.handleMessage(named: .getConfig)
         XCTAssertEqual(off.enablePastedText, false)
-        XCTAssertNil(off.promptLimits)
+        XCTAssertNil(off.pastedTextLimits)
 
         configProvider.isPastedTextEnabled = true
-        configProvider.promptLimits = .init(pasteConversionThreshold: 2_000, maxCharacters: 8_000)
+        configProvider.pastedTextLimits = .init(pasteConversionThreshold: 2_000, maxCharacters: 8_000)
         let on: NewTabPageDataModel.OmnibarConfig = try await messageHelper.handleMessage(named: .getConfig)
         XCTAssertEqual(on.enablePastedText, true)
-        XCTAssertEqual(on.promptLimits, .init(pasteConversionThreshold: 2_000, maxCharacters: 8_000))
+        XCTAssertEqual(on.pastedTextLimits, .init(pasteConversionThreshold: 2_000, maxCharacters: 8_000))
     }
 
     @MainActor

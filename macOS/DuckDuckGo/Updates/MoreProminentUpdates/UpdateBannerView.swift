@@ -213,12 +213,11 @@ extension UpdateBannerView {
 
 extension UpdateController {
 
-    /// "Restart now" when an automatic Sparkle update has downloaded, otherwise "Update now".
+    /// "Restart now" when a Sparkle update has downloaded and is waiting for a restart, otherwise "Update now".
     var updatePromptButtonTitle: String {
-        self is any SparkleUpdateControlling && areAutomaticUpdatesEnabled ? UserText.updatePromptRestartButton : UserText.updatePromptUpdateButton
+        (self as? any SparkleUpdateControlling)?.isAtRestartCheckpoint == true ? UserText.updatePromptRestartButton : UserText.updatePromptUpdateButton
     }
 
-    /// The menu banner names the App Store because its button leaves the browser, unlike the toolbar button.
     var updateBannerButtonTitle: String {
         self is any SparkleUpdateControlling ? updatePromptButtonTitle : UserText.updateBannerOpenAppStoreButton
     }

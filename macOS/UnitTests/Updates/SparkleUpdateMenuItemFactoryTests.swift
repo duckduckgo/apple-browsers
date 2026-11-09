@@ -61,6 +61,24 @@ final class SparkleUpdateMenuItemFactoryTests: XCTestCase {
         XCTAssertEqual(menuItem.title, UserText.updateReadyMenuItem)
     }
 
+    // MARK: - Update Prompt Button Title Tests
+
+    func testUpdatePromptButtonTitle_WhenAutomaticUpdatesOnButNotDownloaded_ShowsUpdateNow() {
+        mockController.areAutomaticUpdatesEnabled = true
+        mockController.isAtRestartCheckpoint = false
+
+        XCTAssertEqual(mockController.updatePromptButtonTitle, UserText.updatePromptUpdateButton)
+        XCTAssertEqual(mockController.updateBannerButtonTitle, UserText.updatePromptUpdateButton)
+    }
+
+    func testUpdatePromptButtonTitle_WhenAtRestartCheckpoint_ShowsRestartNow() {
+        mockController.areAutomaticUpdatesEnabled = false
+        mockController.isAtRestartCheckpoint = true
+
+        XCTAssertEqual(mockController.updatePromptButtonTitle, UserText.updatePromptRestartButton)
+        XCTAssertEqual(mockController.updateBannerButtonTitle, UserText.updatePromptRestartButton)
+    }
+
     // MARK: - Target & Action Tests
 
     func testMenuItemTarget_IsThePassedInController() {

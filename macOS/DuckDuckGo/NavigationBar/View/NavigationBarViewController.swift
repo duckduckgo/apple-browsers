@@ -2344,23 +2344,24 @@ extension NavigationBarViewController: NSMenuDelegate {
     private func setupAddressBarUpdateButton() {
         guard !isInPopUpWindow, let updateController = Application.appDelegate.updateController else { return }
 
+        // Must receive on main before reading the title: @Published emits before the new progress value is stored.
         updateController.pendingUpdatePromptStagePublisher
+            .combineLatest(updateController.updateProgressPublisher)
             .receive(on: DispatchQueue.main)
-            .sink { [weak self] stage in
-                if stage == .secondPrompt {
-                    self?.addAddressBarUpdateButton(for: updateController)
-                } else {
-                    self?.addressBarUpdateButton?.removeFromSuperview()
-                    self?.addressBarUpdateButton = nil
+            .map { stage, _ in stage == .secondPrompt ? updateController.updatePromptButtonTitle : nil }
+            .removeDuplicates()
+            .sink { [weak self] title in
+                self?.addressBarUpdateButton?.removeFromSuperview()
+                self?.addressBarUpdateButton = nil
+                if let title {
+                    self?.addAddressBarUpdateButton(title: title, for: updateController)
                 }
             }
             .store(in: &cancellables)
     }
 
-    private func addAddressBarUpdateButton(for updateController: any UpdateController) {
-        guard addressBarUpdateButton == nil else { return }
-
-        let button = AddressBarUpdateButton(title: updateController.updatePromptButtonTitle) {
+    private func addAddressBarUpdateButton(title: String, for updateController: any UpdateController) {
+        let button = AddressBarUpdateButton(title: title) {
             updateController.runUpdate()
         }.embeddedInHostingView()
 

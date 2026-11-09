@@ -38,7 +38,7 @@ final class WebExtensionPermissionPrompt: WebExtensionPermissionPrompting {
         let response = await enqueue { [windowProvider, themeManager] in
             guard let window = windowProvider() else { return WebExtensionAlert.Response.cancelled }
             return await withCheckedContinuation { continuation in
-                WebExtensionAlert(configuration: configuration, themeManager: themeManager, onResponse: continuation.resume(returning:))
+                WebExtensionAlert(configuration: configuration, themeManager: themeManager, onResponse: { continuation.resume(returning: $0) })
                     .show(in: window)
             }
         }

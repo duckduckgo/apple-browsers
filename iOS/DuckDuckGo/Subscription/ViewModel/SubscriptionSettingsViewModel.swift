@@ -597,6 +597,49 @@ final class SubscriptionSettingsViewModel: ObservableObject {
         openURL(privacyPolicyQuickLinkURL)
     }
 
+    private var isKeepingSubscription = false
+
+    @MainActor
+    func keepSubscription() async {
+        guard !isKeepingSubscription else { return }
+        isKeepingSubscription = true
+        defer { isKeepingSubscription = false }
+
+        if await repurchaseCurrentSubscription() == false {
+            await showAppleManageSubscriptions()
+        }
+        _ = await fetchAndUpdateSubscriptionDetails(forceRefresh: true, loadingIndicator: false)
+    }
+
+    @MainActor
+    private func repurchaseCurrentSubscription() async -> Bool {
+        for await result in Transaction.currentEntitlements {
+            guard case .verified(let transaction) = result,
+                  transaction.productType == .autoRenewable else { continue }
+
+            guard let product = try? await Product.products(for: [transaction.productID]).first else { return false }
+
+            var options: Set<Product.PurchaseOption> = []
+            if let token = transaction.appAccountToken {
+                options.insert(.appAccountToken(token))
+            }
+
+            guard case .success(.verified(let newTransaction)) = try? await product.purchase(options: options) else { return false }
+            await newTransaction.finish()
+            return true
+        }
+        return false
+    }
+
+    @MainActor
+    private func showAppleManageSubscriptions() async {
+        if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
+           (try? await AppStore.showManageSubscriptions(in: windowScene)) != nil {
+            return
+        }
+        openURL(subscriptionManager.url(for: .manageSubscriptionsInAppStore))
+    }
+
     // MARK: -
 
     @MainActor private func manageAppleSubscription(entry: SubscriptionCancellationEntry) async {

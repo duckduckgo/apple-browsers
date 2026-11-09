@@ -26,6 +26,7 @@ import Networking
 import Subscription
 import VPN
 import UIComponents
+import DuckUI
 import BrowserServicesKit
 import PixelKit
 import DataBrokerProtection_iOS
@@ -111,9 +112,17 @@ struct SubscriptionSettingsViewV2: View {
         Section {
             switch configuration {
             case .subscribed, .trial:
-                SubscriptionSettingsHeaderView(state: .active(isTrial: configuration == .trial,
-                                                              status: viewModel.state.subscriptionInfo?.status),
-                                               tierBadge: viewModel.tierBadgeToDisplay)
+                VStack {
+                    SubscriptionSettingsHeaderView(state: .active(isTrial: configuration == .trial,
+                                                                  status: viewModel.state.subscriptionInfo?.status),
+                                                   tierBadge: viewModel.tierBadgeToDisplay)
+                    if viewModel.state.subscriptionInfo?.status == .notAutoRenewable {
+                        Button("Keep subscription") {
+                            Task { await viewModel.keepSubscription() }
+                        }
+                        .buttonStyle(GhostButtonStyle())
+                    }
+                }
             case .expired:
                 SubscriptionSettingsHeaderView(state: .expired(viewModel.state.subscriptionDetails))
             case .activating:

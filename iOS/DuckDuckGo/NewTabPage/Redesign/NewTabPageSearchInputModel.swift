@@ -66,6 +66,12 @@ final class NewTabPageSearchInputModel: ObservableObject {
             .store(in: &cancellables)
     }
 
+    /// Records the mode the user picked in the toggle. Returns whether the resting field should start editing.
+    func select(_ mode: TextEntryMode) -> Bool {
+        textEntryMode = mode
+        return mode == .aiChat
+    }
+
     func refreshSettings() {
         settings = readSettings()
         textEntryMode = settings.defaultTextEntryMode.displayed(isAIChatSearchInputEnabled: settings.isModeToggleShown)

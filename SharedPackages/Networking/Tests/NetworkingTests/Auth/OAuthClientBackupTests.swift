@@ -938,6 +938,16 @@ final class OAuthClientBackupTests: XCTestCase {
         XCTAssertEqual(try primaryStorage.getTokenContainer(), stored)
     }
 
+    func testSetCurrentTokenContainer_sameAccount_keepsTheBackup() async throws {
+        try backupStorage.saveTokenContainer(newBackup)
+        let stored = OAuthTokensFactory.makeTokenContainer(refreshToken: "storedR")
+
+        try await makeClient(backupStorage: backupStorage).setCurrentTokenContainer(stored)
+
+        XCTAssertEqual(try backupStorage.getTokenContainer(), newBackup)
+        XCTAssertEqual(try primaryStorage.getTokenContainer(), stored)
+    }
+
     func testSetCurrentTokenContainer_nil_keepsTheBackup() async throws {
         let backup = OAuthTokensFactory.makeTokenContainer(refreshToken: "backupR", externalID: "account")
         try backupStorage.saveTokenContainer(backup)

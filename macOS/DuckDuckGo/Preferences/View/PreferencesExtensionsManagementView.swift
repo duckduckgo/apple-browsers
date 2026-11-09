@@ -134,7 +134,7 @@ extension Preferences {
                 Divider()
                     .padding(.top, Const.dividerTopPadding)
                     .padding(.bottom, Const.dividerBottomPadding)
-                sectionTitle(UserText.extensionsSettingsMoreExtensionsHeader)
+                sectionTitle(UserText.extensionsSettingsAvailableHeader)
                     .padding(.bottom, Const.moreExtensionsBottomPadding)
             }
         }

@@ -1307,6 +1307,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         eventHubIntegration = MacOSEventHubIntegration(
             privacyConfigurationManager: privacyConfigurationManager,
             keyValueStore: try? KeyValueFileStore(location: Self.keyValueStoresLocation, name: "EventHubKeyValueStore"))
+        autoconsentManagement.eventHub = eventHubIntegration.eventHub
+        autoconsentManagement.pixelFiring = PixelKit.shared
 
         if AppVersion.runType.requiresEnvironment {
             let reinstallUserDetection = DefaultReinstallUserDetection(keyValueStore: keyValueStore)
@@ -2382,7 +2384,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             autoconsentPreferences: cookiePopupProtectionPreferences,
             themeManager: themeManager,
             darkReaderExcludedDomainsProvider: darkReaderSettings,
-            scriptletConfiguration: makeScriptletConfiguration()
+            scriptletConfiguration: makeScriptletConfiguration(),
+            eventHub: eventHubIntegration.eventHub
         )
         self.webExtensionManager = webExtensionManager
         webExtensionAutofillTakeover.manager = webExtensionManager

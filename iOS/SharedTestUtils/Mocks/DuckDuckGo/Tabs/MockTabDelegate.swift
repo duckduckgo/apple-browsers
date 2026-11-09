@@ -367,9 +367,13 @@ final class StubAdBlockingAvailability: AdBlockingAvailabilityProviding {
 final class StubEventHub: EventHubManaging {
     private(set) var navigationStarts: [(tabID: EventHubTabID, url: String)] = []
     private(set) var closedTabIDs: [EventHubTabID] = []
+    private(set) var nativeEventCounts: [String: Int] = [:]
+    private(set) var nativeEventsWhenAppBackgrounded: Int?
 
     func handleWebEvent(_ webEventData: [String: Any], tabID: EventHubTabID) {}
-    func handleNativeEvent(_ type: String, data: Encodable?) {}
+    func handleNativeEvent(_ type: String, data: Encodable?) {
+        nativeEventCounts[type, default: 0] += 1
+    }
 
     func onNavigationStarted(tabID: EventHubTabID, url: String) {
         navigationStarts.append((tabID, url))
@@ -381,5 +385,7 @@ final class StubEventHub: EventHubManaging {
 
     func onConfigChanged() {}
     func onAppForegrounded() {}
-    func onAppBackgrounded() {}
+    func onAppBackgrounded() {
+        nativeEventsWhenAppBackgrounded = nativeEventCounts.values.reduce(0, +)
+    }
 }

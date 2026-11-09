@@ -4519,6 +4519,12 @@
 /* Footnote for the hide AI-generated images setting; ends with a Learn more link to the help page (do not remove the link) */
 "settings.aifeatures.hide.ai.generated.images.subtitle" = "Αποκλείει γνωστούς ιστότοπους με απατηλό περιεχόμενο τεχνητής νοημοσύνης από τα αποτελέσματα αναζήτησης εικόνων. [Μάθε περισσότερα](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/results/how-to-filter-out-ai-images-in-duckduckgo-search-results)";
 
+/* Settings screen description for the Duck.ai keyboard animation toggle */
+"settings.aifeatures.keyboard.animation.subtitle" = "Εμφάνισε μια κινούμενη εικόνα γύρω από το πληκτρολόγιο όταν μεταβαίνεις στο Duck.ai ή πληκτρολογείς σε αυτό.";
+
+/* Settings screen toggle title for the Duck.ai keyboard animation */
+"settings.aifeatures.keyboard.animation.title" = "Κινούμενη εικόνα πληκτρολογίου Duck.ai";
+
 /* Label describing a feature which is turned on always */
 "settings.always.on" = "Πάντα σε λειτουργία";
 

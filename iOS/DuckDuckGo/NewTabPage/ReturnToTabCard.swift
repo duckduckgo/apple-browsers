@@ -27,6 +27,7 @@ struct ReturnToTabCard: View {
 
     @ObservedObject var model: EscapeHatchModel
     var showsBackground = true
+    var backdropFrame: CGRect?
 
     /// Frames of the Fire button and the three-dots menu button in the key window's coordinate space.
     /// Used as the popover anchor when burning a tab on iPad — the FireConfirmationPresenter expects
@@ -79,6 +80,7 @@ struct ReturnToTabCard: View {
             Capsule()
                 .fill(showsBackground ? Color(designSystemColor: .controlsFillSecondary) : Color.clear)
         )
+        .modifier(EscapeHatchBackdropBlur(backdropFrame: backdropFrame))
     }
 
     private var contentPaddingEdges: Edge.Set {
@@ -134,7 +136,9 @@ struct ReturnToTabCard: View {
         .buttonStyle(.plain)
         .accessibilityLabel(Text(UserText.escapeHatchMenuDeleteTab))
         .accessibilityIdentifier("NewTabPage.escapeHatch.fireButton")
-        .onFrameUpdate(in: .global, using: FireButtonFrameInWindowKey.self) { fireButtonFrameInWindow = $0 }
+        .onFrameUpdate(in: .global, using: FireButtonFrameInWindowKey.self) { frame in
+            fireButtonFrameInWindow = frame
+        }
     }
 
     private func deleteTab() {
@@ -155,7 +159,9 @@ struct ReturnToTabCard: View {
         }
         .accessibilityLabel(Text(UserText.escapeHatchMoreButtonAccessibilityLabel))
         .accessibilityIdentifier("NewTabPage.escapeHatch.moreButton")
-        .onFrameUpdate(in: .global, using: MenuFrameInWindowKey.self) { menuFrameInWindow = $0 }
+        .onFrameUpdate(in: .global, using: MenuFrameInWindowKey.self) { frame in
+            menuFrameInWindow = frame
+        }
     }
 
     @ViewBuilder

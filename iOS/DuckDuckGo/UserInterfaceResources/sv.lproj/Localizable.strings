@@ -4519,6 +4519,12 @@
 /* Footnote for the hide AI-generated images setting; ends with a Learn more link to the help page (do not remove the link) */
 "settings.aifeatures.hide.ai.generated.images.subtitle" = "Filtrerar bort kända webbplatser för AI-spam från sökresultaten för bilder. [Läs mer](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/results/how-to-filter-out-ai-images-in-duckduckgo-search-results)";
 
+/* Settings screen description for the Duck.ai keyboard animation toggle */
+"settings.aifeatures.keyboard.animation.subtitle" = "Visa en animation runt tangentbordet när du byter till Duck.ai eller skriver i Duck.ai.";
+
+/* Settings screen toggle title for the Duck.ai keyboard animation */
+"settings.aifeatures.keyboard.animation.title" = "Animering av Duck.ai-tangentbordet";
+
 /* Label describing a feature which is turned on always */
 "settings.always.on" = "Alltid på";
 

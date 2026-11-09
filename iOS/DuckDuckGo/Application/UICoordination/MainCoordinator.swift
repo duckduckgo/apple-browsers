@@ -80,6 +80,7 @@ final class MainCoordinator {
     private let privacyStats: PrivacyStatsProviding
     private let daxGreetingActivity: DaxGreetingActivityStore
     private let wideEvent: WideEventManaging
+    private let eventHub: EventHubManaging
     private let voiceSessionStateManager: VoiceSessionStateProviding
 
     private(set) var webExtensionManager: WebExtensionManaging?
@@ -113,6 +114,7 @@ final class MainCoordinator {
          bookmarksDatabase: CoreDataDatabase,
          remoteMessagingService: RemoteMessagingService,
          daxDialogs: DaxDialogs,
+         idleReturnEligibilityManager: IdleReturnEligibilityManaging,
          reportingService: ReportingService,
          variantManager: DefaultVariantManager,
          subscriptionService: SubscriptionService,
@@ -158,6 +160,7 @@ final class MainCoordinator {
         self.promoCoordinationService = promoCoordinationService
         self.promptExposureReporter = promptExposureReporter
         self.wideEvent = wideEvent
+        self.eventHub = eventHub
         self.onboardingManager = onboardingManager
         self.voiceSessionStateManager = VoiceSessionStateManager()
         FireModeCapability.resolve(using: featureFlagger)
@@ -182,7 +185,7 @@ final class MainCoordinator {
         )
         let contextualOnboardingPresenter = ContextualOnboardingPresenter(variantManager: variantManager, daxDialogsFactory: daxDialogsFactory)
         let textZoomCoordinatorProvider = Self.makeTextZoomCoordinatorProvider()
-        let autoconsentManagementProvider = AutoconsentManagementProvider()
+        let autoconsentManagementProvider = AutoconsentManagementProvider(eventHub: eventHub)
         let websiteDataManager = Self.makeWebsiteDataManager(fireproofing: fireproofing, featureFlagger: featureFlagger)
         interactionStateSource = TabInteractionStateDiskSource()
         self.launchSourceManager = launchSourceManager
@@ -276,12 +279,6 @@ final class MainCoordinator {
             syncService: syncService.sync
         )
         let aiChatAddressBarExperience = AIChatAddressBarExperience(featureFlagger: featureFlagger, aiChatSettings: aiChatSettings)
-        let idleReturnEligibilityManager = IdleReturnEligibilityManager(
-            featureFlagger: featureFlagger,
-            keyValueStore: keyValueStore,
-            privacyConfigurationManager: privacyConfigurationManager,
-            isStillOnboarding: { daxDialogsManager.isStillOnboarding() }
-        )
         let afterInactivityOptionAdapter = AfterInactivityOptionAdapter(
             keyValueStore: keyValueStore,
             idleReturnEligibilityManager: idleReturnEligibilityManager
@@ -362,8 +359,8 @@ final class MainCoordinator {
 
     }
 
-    func start() {
-        controller.loadViewIfNeeded()
+    func start(drawsIdleReturnNewTabPage: Bool) {
+        controller.loadInitialViewIfNeeded(drawsIdleReturnNewTabPage: drawsIdleReturnNewTabPage)
     }
 
     private func subscribeToDarkReaderChanges() {
@@ -442,7 +439,8 @@ final class MainCoordinator {
             autoconsentPreferences: AppUserDefaults(),
             darkReaderExcludedDomainsProvider: darkReaderFeatureSettings,
             searchTokenProvider: controller,
-            scriptletConfiguration: makeScriptletConfiguration()
+            scriptletConfiguration: makeScriptletConfiguration(),
+            eventHub: eventHub
         )
         self.webExtensionManager = webExtensionManager
 
@@ -964,6 +962,13 @@ extension MainCoordinator: IdleReturnLaunchDelegate {
             self.controller.newTab(reuseExisting: true, allowingKeyboard: !deferKeyboard, openedAfterIdle: true)
             completion(.openedNewTab)
         }
+    }
+
+    /// The arrival on the New Tab Page the launch drew is held until the return is noted.
+    func recordNewTabPageDrawnAtLaunch(timeAwayMs: Int?, completion: @escaping (IdleReturnNewTabPageResult) -> Void) {
+        controller.noteNewTabPageReturn(timeAwayMs: timeAwayMs)
+        controller.recordPendingNewTabPagePresentationIfVisible()
+        completion(.openedNewTab)
     }
 
     func markLastUsedTabAsResumedAfterIdle(timeAwayMs: Int?) {

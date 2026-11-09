@@ -30,8 +30,8 @@ public enum WebExtensionReloadFailurePhase: String, Equatable, Sendable {
 }
 
 /// The extension a pixel reports: its entry in the Chrome Web Store catalog, or `other` for one the
-/// catalog doesn't list. Pixels take this instead of a string, so an extension's own identifier or
-/// name can't reach a pixel.
+/// catalog doesn't list. Extension pixels use this bounded value instead of an extension's own
+/// identifier or name.
 public enum WebExtensionPixelExtension: Equatable, CaseIterable {
     case catalog(ExtensionsCatalogSubfeature)
     case other
@@ -59,9 +59,39 @@ public enum WebExtensionPixelExtension: Equatable, CaseIterable {
     }
 }
 
+/// The bounded outcomes reported by Chrome Web Store update discovery. No server text is sent.
+public enum WebExtensionUpdateCheckOutcome: String, CaseIterable, Sendable {
+    case updateFound = "update_found"
+    case googleFlagged = "google_flagged"
+    case invalidRequest = "invalid_request"
+    case invalidResponse = "invalid_response"
+    case invalidManifest = "invalid_manifest"
+    case responseTooLarge = "response_too_large"
+    case networkFailure = "network_failure"
+    case httpStatus = "http_status"
+
+    @available(macOS 15.4, iOS 18.4, *)
+    init?(checkOutcome: ChromeWebStoreUpdateChecker.Outcome) {
+        switch checkOutcome {
+        case .update: self = .updateFound
+        case .skipped: self = .googleFlagged
+        case .noUpdate, .failure(.cancelled): return nil
+        case .failure(.invalidRequest): self = .invalidRequest
+        case .failure(.invalidResponse): self = .invalidResponse
+        case .failure(.invalidManifest): self = .invalidManifest
+        case .failure(.responseTooLarge): self = .responseTooLarge
+        case .failure(.networkFailure): self = .networkFailure
+        case .failure(.httpStatus): self = .httpStatus
+        }
+    }
+}
+
 /// Events that can be fired for web extension management.
 @available(macOS 15.4, iOS 18.4, *)
 public enum WebExtensionPixelEvent {
+    /// Discovery pixels report the catalog extension and, for failures, a bounded reason.
+    case updateCheck(extension: WebExtensionPixelExtension, outcome: WebExtensionUpdateCheckOutcome)
+    /// A fresh install; updates aren't reported.
     case installed(extension: WebExtensionPixelExtension)
     case installError(extension: WebExtensionPixelExtension, error: Error)
     case uninstalled(extension: WebExtensionPixelExtension)
@@ -114,6 +144,13 @@ public enum WebExtensionPixelEvent {
     /// How many distinct missing APIs a catalog extension used, and Chrome pages it tried to open,
     /// since launch, with its version. Fired once a day.
     case apiCompatibilityGaps(extension: ExtensionsCatalogSubfeature, version: String, missingAPICount: Int, unsupportedURLCount: Int)
+
+    case enabled(extension: WebExtensionPixelExtension)
+    case disabled(extension: WebExtensionPixelExtension)
+    case remotelyDisabled(extension: WebExtensionPixelExtension)
+    case retained14Days(extension: WebExtensionPixelExtension)
+    case churned14Days(extension: WebExtensionPixelExtension)
+    case installedCount(installed: Int, enabled: Int)
 }
 
 /// A bounded summary of existing health-monitor evidence, not proof of document initialization or all-tab recovery.
@@ -305,12 +342,13 @@ public struct CPMWebExtensionPixelMetadata: Equatable, Sendable {
             name = "web_extension_cpm_network_process_recovery_applied"
             frequency = .dailyAndCount
             parameters = [:]
-        case .installed, .installError, .uninstalled, .uninstallError, .uninstalledAll,
+        case .updateCheck, .installed, .installError, .uninstalled, .uninstallError, .uninstalledAll,
              .uninstallAllError, .loaded, .loadError, .reloadError, .stateChecked, .expectedExtensionNotLoaded,
              .adBlockingScriptletsNotFetched, .embeddedInstalled, .embeddedUpgraded,
              .embeddedInstallError, .scriptletFetchSuccess, .scriptletFetchError,
              .scriptletValidationError, .scriptletInstalled, .scriptletInstallError,
-             .defaultPasswordManagerSet, .bitwardenDailyActive, .apiCompatibilityGaps:
+             .defaultPasswordManagerSet, .bitwardenDailyActive, .apiCompatibilityGaps,
+             .enabled, .disabled, .remotelyDisabled, .retained14Days, .churned14Days, .installedCount:
             return nil
         }
     }

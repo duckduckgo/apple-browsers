@@ -38,6 +38,7 @@ final class ChromeWebStoreUserScript: NSObject, Subfeature {
 
     private let notificationCenter: NotificationCenter
     private var changeCancellable: AnyCancellable?
+    @MainActor private var installTasks: Set<Task<Bool, Never>> = []
     /// The tab's web view, set by `ChromeWebStoreTabExtension`. The tab sets it on every new instance,
     /// because changes such as an extension's autofill takeover rebuild the tab's user scripts.
     @MainActor weak var webView: WKWebView?
@@ -57,6 +58,11 @@ final class ChromeWebStoreUserScript: NSObject, Subfeature {
                     self?.extensionChanged(extensionId)
                 }
             }
+    }
+
+    /// Called when the tab goes away, so a late install never prompts and the message handler returns.
+    @MainActor func cancelPendingInstalls() {
+        installTasks.forEach { $0.cancel() }
     }
 
     @MainActor
@@ -144,12 +150,23 @@ final class ChromeWebStoreUserScript: NSObject, Subfeature {
                   ChromeWebStoreURL.isValidDownloadURL(request.versionedCrxUrl, for: request.extensionId) else {
                 throw ChromeWebStoreError.invalidRequest
             }
+
             // Captured before the install: while loading, the extension may open and select a tab of its own.
             let window = message.webView?.window
-            let success = await service?.install(identifier: request.extensionId, downloadURL: request.versionedCrxUrl) ?? false
+            let downloadURL = request.versionedCrxUrl
+            let install = Task { @MainActor in
+                await service?.install(identifier: request.extensionId, downloadURL: downloadURL) ?? false
+            }
+
+            // We're supporting Task Cancellation (ie. Tab or Window closed)
+            installTasks.insert(install)
+            let success = await install.value
+            installTasks.remove(install)
+
             if success, let window {
                 notificationCenter.post(name: .chromeWebStoreExtensionInstalled, object: window, userInfo: [UserInfoKeys.extensionID: request.extensionId])
             }
+
             return OperationResponse(success: success)
         case .removeExtension:
             let success = await service?.remove(identifier: request.extensionId) ?? false

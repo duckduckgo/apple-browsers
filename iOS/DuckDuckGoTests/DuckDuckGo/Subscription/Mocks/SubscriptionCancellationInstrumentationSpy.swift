@@ -19,6 +19,7 @@
 
 import Foundation
 import Networking
+import Subscription
 @testable import DuckDuckGo
 
 final class SubscriptionCancellationInstrumentationSpy: SubscriptionCancellationInstrumenting {
@@ -28,7 +29,7 @@ final class SubscriptionCancellationInstrumentationSpy: SubscriptionCancellation
     private(set) var featureInfoFailures: [SubscriptionEntitlement] = []
 
     func cancelClicked() { cancelClickedCount += 1 }
-    func appStoreSubscriptionCancelled() { appStoreSubscriptionCancelledCount += 1 }
+    func appStoreSubscriptionCancelled(entry: SubscriptionCancellationEntry, subscription: DuckDuckGoSubscription) { appStoreSubscriptionCancelledCount += 1 }
     func flowLoadFailed(_ error: Error) { flowLoadFailures.append(error) }
     func featureInfoFailed(entitlement: SubscriptionEntitlement) { featureInfoFailures.append(entitlement) }
 }

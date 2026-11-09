@@ -17,10 +17,14 @@
 //
 
 import AppKit
+import BrowserServicesKit
 import Combine
+import Common
 import ConcurrencyExtensions
+import FeatureFlags_macOS
 import Foundation
 import Persistence
+import PrivacyConfig
 
 /// How far along the prompt ramp a user who hasn't updated is.
 public enum UpdatePromptStage: Int, Comparable, CaseIterable, Sendable {
@@ -36,8 +40,8 @@ public enum UpdatePromptStage: Int, Comparable, CaseIterable, Sendable {
 
 /// Tracks the update prompt stage from a persisted clock that starts at the first check finding a newer version (day 0).
 ///
-/// The clock survives relaunches and newer releases, and is cleared when the installed version changes
-/// or a check no longer finds an update. Critical updates go straight to `.secondPrompt`.
+/// The clock survives relaunches and newer releases, and is cleared when the installed version changes,
+/// when a check no longer finds an update, or while the feature is off. Critical updates go straight to `.secondPrompt`.
 @MainActor
 public final class UpdatePromptStageTracker {
 
@@ -51,6 +55,7 @@ public final class UpdatePromptStageTracker {
     private let now: () -> Date
     private let schedule: Scheduler
     private let forcedStage: () -> UpdatePromptStage?
+    private let isEnabled: () -> Bool
 
     private var isUpdateAvailable = false
     private var isCriticalUpdate = false
@@ -62,6 +67,7 @@ public final class UpdatePromptStageTracker {
     ///     started, so any string that changes when the app updates will do. A different value means the user
     ///     updated, so the clock is cleared.
     ///   - forcedStage: A debug override for the stage while an update is available.
+    ///   - isEnabled: Whether the feature is on. While it's off, the stage is `.none` and the clock is cleared.
     ///   - reevaluationTriggers: Extra points at which to re-evaluate the stage, besides check results and thresholds.
     public init(store: any ThrowingKeyedStoring<UpdateControllerSettings>,
                 settings: @escaping () -> MoreProminentUpdatesSettings,
@@ -69,6 +75,7 @@ public final class UpdatePromptStageTracker {
                 now: @escaping () -> Date = Date.init,
                 schedule: @escaping Scheduler = UpdatePromptStageTracker.scheduleOnMainRunLoop,
                 forcedStage: @escaping () -> UpdatePromptStage? = { nil },
+                isEnabled: @escaping () -> Bool = { true },
                 reevaluationTriggers: AnyPublisher<Void, Never> = UpdatePromptStageTracker.didBecomeActive) {
         self.store = store
         self.settings = settings
@@ -76,6 +83,7 @@ public final class UpdatePromptStageTracker {
         self.now = now
         self.schedule = schedule
         self.forcedStage = forcedStage
+        self.isEnabled = isEnabled
 
         if storedInstalledVersion != installedVersion {
             clearClock()
@@ -105,6 +113,14 @@ public final class UpdatePromptStageTracker {
 
     public func reevaluate() {
         pendingReevaluation = nil
+
+        guard isEnabled() else {
+            if clockStartDate != nil {
+                clearClock()
+            }
+            stage = .none
+            return
+        }
 
         guard isUpdateAvailable else {
             stage = .none
@@ -178,6 +194,26 @@ public final class UpdatePromptStageTracker {
 }
 
 public extension UpdatePromptStageTracker {
+
+    /// The tracker the update controllers use, driven by the `moreProminentUpdates` flag and its remote settings.
+    convenience init(store: any ThrowingKeyedStoring<UpdateControllerSettings>,
+                     internalUserDecider: InternalUserDecider,
+                     featureFlagger: FeatureFlagger,
+                     privacyConfigurationManager: PrivacyConfigurationManaging) {
+        self.init(
+            store: store,
+            settings: {
+                MoreProminentUpdatesSettings(privacyConfig: privacyConfigurationManager.privacyConfig,
+                                             isInternalUser: internalUserDecider.isInternalUser)
+            },
+            installedVersion: AppVersion().versionAndBuildNumber,
+            forcedStage: { internalUserDecider.isInternalUser ? UpdatesDebugSettings().forcedUpdatePromptStage : nil },
+            isEnabled: { featureFlagger.isFeatureOn(.moreProminentUpdates) },
+            reevaluationTriggers: Self.didBecomeActive
+                .merge(with: internalUserDecider.isInternalUserPublisher.map { _ in }, featureFlagger.updatesPublisher)
+                .eraseToAnyPublisher()
+        )
+    }
 
     nonisolated static func scheduleOnMainRunLoop(_ delay: TimeInterval, _ action: @escaping @MainActor @Sendable () -> Void) -> AnyCancellable {
         let timer = Timer(timeInterval: delay, repeats: false) { _ in

@@ -336,6 +336,7 @@ final class BrowserToolbarView: UIView {
     /// floats near the device bottom (see `floatingBottomMargin`). Kept in sync with the host's
     /// safe-area inset in `layoutSubviews`; also widens the hit-test region.
     private var floatingBottomOffset: CGFloat = 0
+    var onFloatingBottomOffsetChange: (() -> Void)?
     /// Extra translation applied while the split (top address bar) pill hides. The layout slot stays
     /// put so we can slide a plain container instead of moving `UIVisualEffectView` via Auto Layout.
     private var standaloneHideProgress: CGFloat = 0
@@ -352,6 +353,11 @@ final class BrowserToolbarView: UIView {
     private var toolbarButtonViews: [UIView] = []
     private var horizontalOuterInsetsOverride: (left: CGFloat, right: CGFloat)?
     private(set) var usesCompactStandaloneHeight = false
+    /// Resolves the safe area and corner guides from this view instead of the superview, for copies laid out away from where they'll show.
+    weak var layoutReferenceView: UIView? {
+        didSet { setNeedsLayout() }
+    }
+    private var layoutHost: UIView? { layoutReferenceView ?? superview }
 
     private var hasEmbeddedOmnibar: Bool {
         omnibarHeightConstraint.constant > 0
@@ -382,7 +388,7 @@ final class BrowserToolbarView: UIView {
                                 bottom: 0,
                                 right: Self.floatingEmbeddedHorizontalInset)
         }
-        guard let host = superview, host.bounds.width > 0 else {
+        guard let host = layoutHost, host.bounds.width > 0 else {
             return UIEdgeInsets(
                 top: 0,
                 left: Self.floatingEmbeddedConcentricInset,
@@ -412,6 +418,13 @@ final class BrowserToolbarView: UIView {
         return max(0, view.bounds.maxY - layoutFrame.maxY)
     }
 
+    /// Floating offset of a buttons-only toolbar in `host`, whatever this toolbar currently hosts.
+    @available(iOS 26.0, *)
+    static func standaloneFloatingBottomOffset(in host: UIView) -> CGFloat {
+        embeddedRestStateBottomOffset(guideBottomGap: verticalGuideBottomInset(in: host),
+                                      physicalInset: floatingPhysicalInset(guideInsets: horizontalGuideInsets(in: host)))
+    }
+
     /// Shift that puts the bottom `physicalInset` from the physical edge, matching the sides.
     static func embeddedRestStateBottomOffset(guideBottomGap: CGFloat, physicalInset: CGFloat = floatingEmbeddedConcentricInset) -> CGFloat {
         guideBottomGap - physicalInset
@@ -423,7 +436,7 @@ final class BrowserToolbarView: UIView {
         if usesEmbeddedBottomChromeMetrics {
             return Self.floatingEmbeddedHorizontalInset
         }
-        guard let host = superview, host.bounds.width > 0 else { return Self.floatingEmbeddedConcentricInset }
+        guard let host = layoutHost, host.bounds.width > 0 else { return Self.floatingEmbeddedConcentricInset }
         return Self.floatingPhysicalInset(guideInsets: Self.horizontalGuideInsets(in: host))
     }
 
@@ -1000,10 +1013,10 @@ final class BrowserToolbarView: UIView {
     }
 
     var floatingBottomMargin: CGFloat {
-        if usesCompactStandaloneHeight, isFloatingStyleEnabled, let host = superview {
+        if usesCompactStandaloneHeight, isFloatingStyleEnabled, let host = layoutHost {
             return host.safeAreaInsets.bottom + DefaultOmniBarView.bottomPositionFieldBottomPadding
         }
-        if usesRedesignedNewTabPageLayout, let host = superview, host.bounds.width > host.bounds.height {
+        if usesRedesignedNewTabPageLayout, let host = layoutHost, host.bounds.width > host.bounds.height {
             // The cutout widens the horizontal guide in landscape; it should not lift the toolbar.
             return Self.floatingEmbeddedBottomMargin
         }
@@ -1108,7 +1121,7 @@ final class BrowserToolbarView: UIView {
     }
 
     private var standaloneHideTranslation: CGFloat {
-        let slideDistance = bounds.height + (superview?.safeAreaInsets.bottom ?? 0)
+        let slideDistance = bounds.height + (layoutHost?.safeAreaInsets.bottom ?? 0)
         return slideDistance * standaloneHideProgress
     }
 
@@ -1121,19 +1134,20 @@ final class BrowserToolbarView: UIView {
     private func updateFloatingBottomOffset() {
         let target: CGFloat
         if #available(iOS 26.0, *), isFloatingStyleEnabled {
-            if let host = superview, host.bounds.height > 0 {
+            if let host = layoutHost, host.bounds.height > 0 {
                 let guideBottomGap = Self.verticalGuideBottomInset(in: host)
                 target = Self.embeddedRestStateBottomOffset(guideBottomGap: guideBottomGap, physicalInset: floatingBottomMargin)
             } else {
                 target = 0
             }
         } else {
-            let hostBottomInset = superview?.safeAreaInsets.bottom ?? 0
+            let hostBottomInset = layoutHost?.safeAreaInsets.bottom ?? 0
             target = isFloatingStyleEnabled ? hostBottomInset - floatingBottomMargin : 0
         }
         guard target != floatingBottomOffset else { return }
         floatingBottomOffset = target
         applyMaterialBackgroundTransform()
+        onFloatingBottomOffsetChange?()
     }
 
     private func updateCornerStyle() {

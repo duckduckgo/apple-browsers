@@ -4519,6 +4519,12 @@
 /* Footnote for the hide AI-generated images setting; ends with a Learn more link to the help page (do not remove the link) */
 "settings.aifeatures.hide.ai.generated.images.subtitle" = "Görsel arama sonuçlarından bilinen yapay zeka spam sitelerini filtreler. [Daha fazla bilgi](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/results/how-to-filter-out-ai-images-in-duckduckgo-search-results)";
 
+/* Settings screen description for the Duck.ai keyboard animation toggle */
+"settings.aifeatures.keyboard.animation.subtitle" = "Duck.ai'a geçtiğinde veya Duck.ai'da yazı yazdığında klavyenin çevresinde bir animasyon göster.";
+
+/* Settings screen toggle title for the Duck.ai keyboard animation */
+"settings.aifeatures.keyboard.animation.title" = "Duck.ai Klavye Animasyonu";
+
 /* Label describing a feature which is turned on always */
 "settings.always.on" = "Her Zaman Açık";
 

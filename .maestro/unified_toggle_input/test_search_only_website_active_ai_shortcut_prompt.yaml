@@ -17,6 +17,7 @@ name: test_search_only_website_active_ai_shortcut_prompt
         isRunningUITests: true
         "ff.alwaysShowKeyboardOnNewTabPage": "false"
         ff.browsingMenuSheetEnabledByDefault: "true"
+        ff.aiChatTabHandoffImprovements: "true"
         ff.contextualDuckAIMode: "true"
 
 - runFlow:
@@ -53,10 +54,12 @@ name: test_search_only_website_active_ai_shortcut_prompt
     commands:
         - tapOn: "Agree"
 
-- assertVisible: "Close tab"
+- assertVisible: "Recent chats"
 - assertVisible:
     id: "AIChat.Toolbar.Button.ModelChip"
-- tapOn: "Close tab"
+# Duck.ai tabs have no close button; open a new tab from the tab switcher instead.
+- tapOn: "Tab Switcher"
+- tapOn: "New Tab"
 - assertVisible:
     id: "searchEntry"
 
@@ -94,14 +97,15 @@ name: test_search_only_website_active_ai_shortcut_prompt
     id: "Browser.OmniBar.Button.AIChat"
 - runFlow:
     file: ../shared/dismiss_chat_open_modals.yaml
-- assertVisible: "Close tab"
+- assertVisible: "Recent chats"
 - assertVisible:
     id: "AIChat.Toolbar.Button.ModelChip"
 - assertNotVisible:
     id: "AIChat.ContextualSheet"
 # The untouched URL must NOT be submitted as a prompt.
 - assertNotVisible: ".*privacy-test-pages.*"
-- tapOn: "Close tab"
+- tapOn: "Tab Switcher"
+- tapOn: "Open \"Privacy Test Pages - Home\" at privacy-test-pages.site"
 - assertVisible: ".*Privacy Test Pages.*"
 
 # Focused UTI with a user-edited/replaced URL: opens full Duck.ai and submits it as the prompt.
@@ -119,11 +123,12 @@ name: test_search_only_website_active_ai_shortcut_prompt
         visible: "Agree"
     commands:
         - tapOn: "Agree"
-- assertVisible: "Close tab"
+- assertVisible: "Recent chats"
 - assertNotVisible:
     id: "AIChat.ContextualSheet"
 - assertVisible: ".*example.com.*"
-- tapOn: "Close tab"
+- tapOn: "Tab Switcher"
+- tapOn: "Open \"Privacy Test Pages - Home\" at privacy-test-pages.site"
 - assertVisible: ".*Privacy Test Pages.*"
 
 # If the focused UTI is cleared and left empty, the shortcut should open full Duck.ai without a prompt.
@@ -138,12 +143,13 @@ name: test_search_only_website_active_ai_shortcut_prompt
 - runFlow:
     file: ../shared/dismiss_chat_open_modals.yaml
 
-- assertVisible: "Close tab"
+- assertVisible: "Recent chats"
 - assertVisible:
     id: "AIChat.Toolbar.Button.ModelChip"
 - assertNotVisible:
     id: "AIChat.ContextualSheet"
-- tapOn: "Close tab"
+- tapOn: "Tab Switcher"
+- tapOn: "Open \"Privacy Test Pages - Home\" at privacy-test-pages.site"
 - assertVisible: ".*Privacy Test Pages.*"
 
 # Focused UTI with typed text: opens full Duck.ai and sends the typed text as the prompt.
@@ -164,7 +170,7 @@ name: test_search_only_website_active_ai_shortcut_prompt
     commands:
         - tapOn: "Agree"
 
-- assertVisible: "Close tab"
+- assertVisible: "Recent chats"
 - assertVisible:
     id: "AIChat.Toolbar.Button.ModelChip"
 - assertNotVisible:

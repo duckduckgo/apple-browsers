@@ -48,9 +48,14 @@ new checkout, or after an Xcode update.
 ## First time in a worktree
 
 ```bash
-$V --device iphone setup && $V --device ipad setup   # this worktree's own simulators (created once, then reused)
+$V --device iphone setup && $V --device ipad setup   # this worktree's own simulators
 $V build                                              # app (3–20 min) + runner (~20 s); rebuild the app after app changes
 ```
+
+Each proof deletes its simulator when it ends (pass, fail or cancel), so the next proof starts on a new device and
+nothing is left on the Mac. `prove`, `launch` and `build` recreate a missing simulator (about 30 s); `prove --keep`
+keeps it to look at after a failure. Builds live in the worktree under `DerivedData/verify-ios/` (gitignored), so
+removing the worktree removes them.
 
 `build` targets a concrete simulator: a `generic/platform=iOS Simulator` build fails in the WebKit-workaround phase.
 One app build serves both devices. `build` records a fingerprint of the source it built from (HEAD plus every
@@ -189,8 +194,10 @@ $V tap|long-press|type|key|swipe|alert …   # same actions and refusals as proo
 $V web url | eval '<js>' | navigate <url>
 $V capture screenshot --name step
 $V doctor                                  # read-only: simulator, build identity, runner, web channel
-$V cleanup [--all] [--shutdown] [--delete-sims]
+$V cleanup [--all] [--shutdown] [--delete-sims]   # --delete-sims when you are done exploring
 ```
+
+After a proof has deleted the simulator, `launch` creates a new one before the other commands work again.
 
 `launch` is ready when AutomationServer `/contentBlockerReady` is true **and** `searchEntry` exists (no fixed sleeps),
 and fails if the running binary is not this worktree's build.
@@ -208,11 +215,13 @@ and fails if the running binary is not this worktree's build.
 - A pass needs a passing check, no failing check, and the app in the foreground at the end.
 - Telemetry counts only after `mark()`, from a stream that is checked to be alive.
 - Isolation: per-worktree simulators (`verify-ios-<key>-iphone|ipad`, iPhone 17 Pro / iPad Pro 11-inch (M5),
-  iOS 27.0), ports, state and evidence under `~/.ddg-verify-ios/<worktree>-<hash>/` (`VERIFY_IOS_HOME` overrides the
-  root). The runner answers only to this worktree's token. Every command that changes a device holds its lock for its
+  iOS 27.0), found by name and deleted by the proof that used them; builds in the worktree's gitignored
+  `DerivedData/verify-ios/`; ports, state and evidence under `~/.ddg-verify-ios/<worktree>-<hash>/`
+  (`VERIFY_IOS_HOME` overrides the root), since evidence must outlive the worktree. The runner answers only to this worktree's token. Every command that changes a device holds its lock for its
   whole duration; `build` and the shared fixture server need both locks.
 - Cleanup signals only processes whose recorded identity (pid + start time + command) still matches, checked again
-  right before each signal; survivors stay recorded and are reported. It never deletes evidence or builds.
+  right before each signal; survivors stay recorded and are reported. It deletes only this worktree's simulators,
+  never evidence or builds.
 
 After changing the runner, the driver or the library, run both test suites:
 

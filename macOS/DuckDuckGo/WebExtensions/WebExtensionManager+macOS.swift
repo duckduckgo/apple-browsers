@@ -19,6 +19,7 @@
 import AppKit
 import AppKitExtensions
 import Combine
+import EventHub
 import FeatureFlags_macOS
 import Persistence
 import PrivacyConfig
@@ -66,7 +67,8 @@ extension WebExtensionManager {
             disabledExtensionIDs: { [featureFlagger] in
                 Self.flagDisabledExtensionIDs(featureFlagger: featureFlagger)
             },
-            disabledExtensionIDsDidChange: featureFlagger.updatesPublisher
+            disabledExtensionIDsDidChange: featureFlagger.updatesPublisher,
+            pixelFiring: MacOSWebExtensionPixelFiring()
         )
     }
 
@@ -108,7 +110,8 @@ enum WebExtensionManagerFactory {
         buildType: ApplicationBuildType = StandardApplicationBuildType(),
         featureFlagger: FeatureFlagger = Application.appDelegate.featureFlagger,
         darkReaderExcludedDomainsProvider: DarkReaderExcludedDomainsProviding? = nil,
-        scriptletConfiguration: ScriptletConfiguration? = nil
+        scriptletConfiguration: ScriptletConfiguration? = nil,
+        eventHub: EventHubManaging
     ) -> WebExtensionManager {
         let internalSiteHandler = WebExtensionInternalSiteHandler()
         let pixelFiring = MacOSWebExtensionPixelFiring()
@@ -171,10 +174,12 @@ enum WebExtensionManagerFactory {
                 privacyConfigurationManager: privacyConfigurationManager,
                 autoconsentPreferences: autoconsentPreferences,
                 cpmMessagingHealthMonitor: cpmMessagingHealthMonitor,
-                darkReaderExcludedDomainsProvider: darkReaderExcludedDomainsProvider
+                darkReaderExcludedDomainsProvider: darkReaderExcludedDomainsProvider,
+                eventHub: eventHub
             ),
             nativeMessagingHandler: nativeMessagingHandler,
             keyValueStore: keyValueStore,
+            retentionStore: WebExtensionRetentionStore(storage: keyValueStore.throwingKeyedStoring()),
             scriptletConfiguration: scriptletConfiguration
         )
 

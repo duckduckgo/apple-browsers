@@ -467,66 +467,17 @@ class SubscriptionManagerTests: XCTestCase {
         XCTAssertFalse(mockAppStoreRestoreFlowV2.restoreSubscriptionAfterExpiredRefreshTokenCalled)
     }
 
-    func testCreateIfNeeded_MissingPrimary_RestoresBeforeTheClientCanCreateAnAccount() async throws {
-        let restored = OAuthTokensFactory.makeValidTokenContainer()
+    func testCreateIfNeeded_MissingPrimary_LetsTheClientCreateAnAccountWithoutRestoring() async throws {
+        let created = OAuthTokensFactory.makeValidTokenContainer()
         mockOAuthClient.internalCurrentTokenContainer = nil
-        mockOAuthClient.getTokensResponse = .success(restored)
-        var restoredBeforeGetTokens = false
-        mockOAuthClient.onGetTokens = { [unowned self] in restoredBeforeGetTokens = !self.mockOAuthClient.restoreFromBackupCalls.isEmpty }
-        installCoordinator(backupResult: .success(restored), appStoreSucceeds: true)
+        mockOAuthClient.getTokensResponse = .success(created)
+        installCoordinator(backupResult: .success(OAuthTokensFactory.makeValidTokenContainer()), appStoreSucceeds: true)
 
-        _ = try await subscriptionManager.getTokenContainer(policy: .createIfNeeded)
+        let result = try await subscriptionManager.getTokenContainer(policy: .createIfNeeded)
 
-        XCTAssertTrue(restoredBeforeGetTokens)
+        XCTAssertEqual(result, created)
         XCTAssertEqual(mockOAuthClient.getTokensPolicies, [.createIfNeeded])
-    }
-
-    func testCreateIfNeeded_MissingPrimary_RestoresEvenDuringTheMissingTokenRetryPause() async throws {
-        mockOAuthClient.internalCurrentTokenContainer = nil
-        installCoordinator(backupResult: .failure(URLError(.timedOut)), appStoreSucceeds: true)
-        await subscriptionManager.restoreMissingTokenIfPossible()
-        let restored = OAuthTokensFactory.makeValidTokenContainer()
-        mockOAuthClient.restoreFromBackupResponse = .success(restored)
-        mockOAuthClient.getTokensResponse = .success(restored)
-
-        _ = try await subscriptionManager.getTokenContainer(policy: .createIfNeeded)
-
-        XCTAssertEqual(mockOAuthClient.restoreFromBackupCalls.count, 2)
-    }
-
-    func testCreateIfNeeded_MissingPrimary_TransientRestoreFailure_ThrowsWithoutCreatingAnAccount() async {
-        mockOAuthClient.internalCurrentTokenContainer = nil
-        mockOAuthClient.getTokensResponse = .success(OAuthTokensFactory.makeValidTokenContainer())
-        installCoordinator(backupResult: .failure(URLError(.timedOut)), appStoreSucceeds: true)
-
-        do {
-            _ = try await subscriptionManager.getTokenContainer(policy: .createIfNeeded)
-            XCTFail("Expected error")
-        } catch {
-            XCTAssertNotNil(error as? SubscriptionManagerError)
-        }
-        XCTAssertTrue(mockOAuthClient.getTokensPolicies.isEmpty)
-    }
-
-    func testCreateIfNeeded_MissingPrimary_BackupPermanentlyRejected_CreatesAnAccount() async throws {
-        let suspended = OAuthRequestError(from: OAuthRequest.BodyError(errorCode: .suspendedAccount, tokenStatus: nil))
-        mockOAuthClient.internalCurrentTokenContainer = nil
-        mockOAuthClient.getTokensResponse = .success(OAuthTokensFactory.makeValidTokenContainer())
-        installCoordinator(backupResult: .failure(OAuthServiceError.authAPIError(suspended)), appStoreSucceeds: true)
-
-        _ = try await subscriptionManager.getTokenContainer(policy: .createIfNeeded)
-
-        XCTAssertEqual(mockOAuthClient.getTokensPolicies, [.createIfNeeded])
-    }
-
-    func testCreateIfNeeded_MissingPrimary_NoUsableBackup_CreatesAnAccount() async throws {
-        mockOAuthClient.internalCurrentTokenContainer = nil
-        mockOAuthClient.getTokensResponse = .success(OAuthTokensFactory.makeValidTokenContainer())
-        installCoordinator(backupResult: .failure(TokenBackupError.unavailable), appStoreSucceeds: true)
-
-        _ = try await subscriptionManager.getTokenContainer(policy: .createIfNeeded)
-
-        XCTAssertEqual(mockOAuthClient.getTokensPolicies, [.createIfNeeded])
+        XCTAssertTrue(mockOAuthClient.restoreFromBackupCalls.isEmpty)
     }
 
     func testCreateIfNeeded_PrimaryPresent_DoesNotTouchTheBackup() async throws {

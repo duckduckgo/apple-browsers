@@ -19,17 +19,28 @@
 
 import UIKit
 import Testing
+import BrowserServicesKit
 @testable import DuckDuckGo
 @_spi(Testing) import PixelKit
+
+private final class TestStartupFailureInstrumentation: StartupFailureInstrumentation {
+    var failureCount = 0
+
+    func recordFailure() { failureCount += 1 }
+    func recordReturn() {}
+    func recordSuccessfulStartup() {}
+}
 
 @MainActor
 final class MockInitializing: InitializingHandling {
 
     var shouldThrowOnLaunching = false
+    var receivedStartupFailureInstrumentation: (any StartupFailureInstrumentation)?
 
     init() {}
 
-    func makeLaunchingState() throws -> any LaunchingHandling {
+    func makeLaunchingState(startupFailureInstrumentation: any StartupFailureInstrumentation) throws -> any LaunchingHandling {
+        receivedStartupFailureInstrumentation = startupFailureInstrumentation
         if shouldThrowOnLaunching {
             let underlying = NSError(domain: "com.example", code: 13, userInfo: nil)
 
@@ -40,7 +51,7 @@ final class MockInitializing: InitializingHandling {
             )
             throw TerminationError.database(.other(diskFullError))
         } else {
-            MockLaunching()
+            return MockLaunching()
         }
     }
 
@@ -167,6 +178,40 @@ final class MockTerminatingStateFactory: TerminatingStateFactory {
 
 }
 
+@MainActor
+@Suite("Startup failure instrumentation injection tests")
+struct StartupFailureInstrumentationInjectionTests {
+
+    @available(iOS 16, macOS 13, *)
+    @Test("The state machine passes its tracker to startup", .timeLimit(.minutes(1)))
+    func forwardsOwnedTracker() {
+        let initializing = MockInitializing()
+        let instrumentation = TestStartupFailureInstrumentation()
+        let stateMachine = AppStateMachine(initialState: .initializing(initializing), launchBreadcrumb: .testing,
+                                          startupFailureInstrumentation: instrumentation)
+
+        stateMachine.handle(.didFinishLaunching(isTesting: false))
+
+        #expect((initializing.receivedStartupFailureInstrumentation as? TestStartupFailureInstrumentation) === instrumentation)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("A startup error is reported through the injected tracker", .timeLimit(.minutes(1)))
+    func recordsStartupFailure() {
+        let initializing = MockInitializing()
+        initializing.shouldThrowOnLaunching = true
+        let instrumentation = TestStartupFailureInstrumentation()
+        let stateMachine = AppStateMachine(initialState: .initializing(initializing),
+                                          terminatingStateFactory: MockTerminatingStateFactory(), launchBreadcrumb: .testing,
+                                          startupFailureInstrumentation: instrumentation)
+
+        stateMachine.handle(.didFinishLaunching(isTesting: false))
+
+        #expect(instrumentation.failureCount == 1)
+        #expect(stateMachine.currentState.name == "terminating")
+    }
+}
+
 extension LaunchBreadcrumb {
 
     /// Keeps state machine tests out of the test host's `UserDefaults.standard` and away from real pixels.
@@ -182,7 +227,7 @@ final class LaunchingTests {
 
     let stateMachine = AppStateMachine(initialState: .initializing(MockInitializing()),
                                        terminatingStateFactory: MockTerminatingStateFactory(),
-                                       launchBreadcrumb: .testing)
+                                       launchBreadcrumb: .testing, startupFailureInstrumentation: TestStartupFailureInstrumentation())
 
     @Test("didFinishLaunching should transition from Initializing to Launching")
     func transitionFromInitializingToLaunching() {
@@ -275,7 +320,7 @@ final class LaunchingTests {
 @Suite("AppStateMachine connected origin transition tests", .serialized)
 final class ConnectedTests {
 
-    let stateMachine = AppStateMachine(initialState: .connected(MockConnected(actionToHandle: nil, window: UIWindow())), launchBreadcrumb: .testing)
+    let stateMachine = AppStateMachine(initialState: .connected(MockConnected(actionToHandle: nil, window: UIWindow())), launchBreadcrumb: .testing, startupFailureInstrumentation: TestStartupFailureInstrumentation())
 
     @Test("didBecomeActive should transition from Connected to Foreground and call onTransition and didReturn")
     func transitionFromConnectedToForeground() {
@@ -333,7 +378,7 @@ final class ConnectedTests {
 @Suite("AppStateMachine foreground origin transition tests", .serialized)
 final class ForegroundTests {
 
-    let stateMachine = AppStateMachine(initialState: .foreground(MockForeground(actionToHandle: nil)), launchBreadcrumb: .testing)
+    let stateMachine = AppStateMachine(initialState: .foreground(MockForeground(actionToHandle: nil)), launchBreadcrumb: .testing, startupFailureInstrumentation: TestStartupFailureInstrumentation())
 
     @Test("didEnterBackground should transition from Foreground to Background and call onTransition and didReturn")
     func transitionFromForegroundToBackground() {
@@ -399,7 +444,7 @@ final class ForegroundTests {
 @Suite("AppStateMachine background origin transition tests", .serialized)
 final class BackgroundTests {
 
-    let stateMachine = AppStateMachine(initialState: .background(MockBackground()), launchBreadcrumb: .testing)
+    let stateMachine = AppStateMachine(initialState: .background(MockBackground()), launchBreadcrumb: .testing, startupFailureInstrumentation: TestStartupFailureInstrumentation())
 
     @Test("didBecomeActive should transition from Background to Foreground and call onTransition and didReturn")
     func transitionFromBackgroundToForeground() {
@@ -550,7 +595,7 @@ final class SceneLifecycleInstrumentationTests {
     @available(iOS 16, macOS 13, *)
     @Test("Scene disconnect fires with the current app state", .timeLimit(.minutes(1)))
     func sceneDidDisconnectFiresWithState() {
-        let stateMachine = AppStateMachine(initialState: .connected(MockConnected(actionToHandle: nil, window: UIWindow())), launchBreadcrumb: .testing)
+        let stateMachine = AppStateMachine(initialState: .connected(MockConnected(actionToHandle: nil, window: UIWindow())), launchBreadcrumb: .testing, startupFailureInstrumentation: TestStartupFailureInstrumentation())
         instrumentation.sceneDidDisconnect(in: stateMachine.currentState)
         stateMachine.handle(.didBecomeActive)
         instrumentation.sceneDidDisconnect(in: stateMachine.currentState)

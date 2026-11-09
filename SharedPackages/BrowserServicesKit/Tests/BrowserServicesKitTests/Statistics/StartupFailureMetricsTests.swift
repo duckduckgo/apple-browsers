@@ -221,9 +221,19 @@ final class StartupFailureMetricsTests: XCTestCase {
     }
 
     func testUnavailablePixelKitDoesNotPersistAnUnreportedFailure() {
-        StartupFailureMetrics(storageURL: storageURL, pixelFiring: nil).recordFailure()
+        StartupFailureMetrics(storageURL: storageURL, pixelFiring: { nil }).recordFailure()
 
         XCTAssertFalse(FileManager.default.fileExists(atPath: storageURL.path))
+    }
+
+    func testPixelClientCanBeConfiguredAfterTrackerIsCreated() {
+        var client: PixelKitMock?
+        let subject = StartupFailureMetrics(storageURL: storageURL, pixelFiring: { client }, dateProvider: { self.now })
+        client = pixels
+
+        subject.recordFailure()
+
+        XCTAssertEqual(pixels.actualFireCalls, [ExpectedFireCall(pixel: StartupFailurePixel.failure, frequency: .standard)])
     }
 
     func testFailedSendDoesNotCreateAdditionalFailureOrReturnAttempts() {
@@ -247,6 +257,6 @@ final class StartupFailureMetricsTests: XCTestCase {
     }
 
     private func makeSubject(storageURL: URL? = nil) -> StartupFailureMetrics {
-        StartupFailureMetrics(storageURL: storageURL ?? self.storageURL, pixelFiring: pixels, dateProvider: { self.now })
+        StartupFailureMetrics(storageURL: storageURL ?? self.storageURL, pixelFiring: { self.pixels }, dateProvider: { self.now })
     }
 }

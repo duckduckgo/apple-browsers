@@ -29,14 +29,6 @@ public protocol StartupFailureInstrumentation {
 /// A new episode is allowed only after the app has successfully started.
 public final class StartupFailureMetrics: StartupFailureInstrumentation {
 
-    public static let shared = StartupFailureMetrics(
-        storageURL: makeStorageURL(
-            applicationSupportDirectory: FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first,
-            bundleIdentifier: Bundle.main.bundleIdentifier
-        ),
-        pixelFiring: PixelKit.shared
-    )
-
     private struct State: Codable {
         let firstFailureDate: Date
         var didReportReturn = false
@@ -44,14 +36,25 @@ public final class StartupFailureMetrics: StartupFailureInstrumentation {
     }
 
     private let storageURL: URL?
-    private let pixelFiring: (any PixelFiring)?
+    private let pixelFiringProvider: () -> (any PixelFiring)?
     private let dateProvider: () -> Date
     private let lock = NSLock()
     private var didFailInThisProcess = false
 
-    init(storageURL: URL?, pixelFiring: (any PixelFiring)?, dateProvider: @escaping () -> Date = Date.init) {
+    /// The app lifecycle is constructed before PixelKit is configured, so resolve the client at event time.
+    public convenience init(pixelFiring: @escaping () -> (any PixelFiring)? = { PixelKit.shared }) {
+        self.init(
+            storageURL: Self.makeStorageURL(
+                applicationSupportDirectory: FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first,
+                bundleIdentifier: Bundle.main.bundleIdentifier
+            ),
+            pixelFiring: pixelFiring
+        )
+    }
+
+    init(storageURL: URL?, pixelFiring: @escaping () -> (any PixelFiring)?, dateProvider: @escaping () -> Date = Date.init) {
         self.storageURL = storageURL
-        self.pixelFiring = pixelFiring
+        self.pixelFiringProvider = pixelFiring
         self.dateProvider = dateProvider
     }
 
@@ -64,6 +67,7 @@ public final class StartupFailureMetrics: StartupFailureInstrumentation {
     /// Called before deliberately exiting because startup cannot complete.
     /// Repeated failures in an open episode neither emit another pixel nor reset its age.
     public func recordFailure() {
+        let pixelFiring = pixelFiringProvider()
         lock.lock()
         do {
             defer { lock.unlock() }
@@ -83,6 +87,7 @@ public final class StartupFailureMetrics: StartupFailureInstrumentation {
     /// Reports the first launch attempt after a recorded failure.
     /// This does not rearm failure reporting: only a successful startup closes the episode.
     public func recordReturn() {
+        let pixelFiring = pixelFiringProvider()
         lock.lock()
         let daysSinceFailure: String
         do {
@@ -103,6 +108,7 @@ public final class StartupFailureMetrics: StartupFailureInstrumentation {
 
     /// Reports recovery and closes the episode once the browser is ready for user interaction.
     public func recordSuccessfulStartup() {
+        let pixelFiring = pixelFiringProvider()
         lock.lock()
         let daysSinceFailure: String
         do {

@@ -132,7 +132,7 @@ struct Foreground: ForegroundHandling {
     func onTransition() {
         Logger.lifecycle.info("\(type(of: self)): \(#function)")
         // Also covers an app that launched in the background and is now opened by the user.
-        StartupFailureMetrics.shared.recordReturn()
+        appDependencies.startupFailureInstrumentation.recordReturn()
 
         // Close the previous session before foreground work can report another prompt.
         appDependencies.mainCoordinator.promptExposureReporter.appDidEnterForeground()
@@ -151,7 +151,7 @@ struct Foreground: ForegroundHandling {
             /// Handle **UI related logic** here that could be affected by Authentication screen or `AutoClear` feature
             /// This is called when the **app is ready to handle user interactions** after data clear and authentication are complete.
             onAppReadyForInteractions: {
-                StartupFailureMetrics.shared.recordSuccessfulStartup()
+                appDependencies.startupFailureInstrumentation.recordSuccessfulStartup()
                 appDependencies.launchTaskManager.start()
 
                 // Mark that the app has successfully launched at least once

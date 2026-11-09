@@ -465,7 +465,6 @@ extension MainWindowController: NSWindowDelegate {
               keyWindow.isInHierarchy(of: mainWindow) else { return }
 
         mainViewController.windowDidBecomeKey()
-        Application.appDelegate.recordStartupRecoveryIfNeeded()
         lastWindowDidBecomeKeyTimestamp = CACurrentMediaTime()
         if !mainWindow.isPopUpWindow {
             Application.appDelegate.windowControllersManager.didChangeKeyWindowController.send(self)

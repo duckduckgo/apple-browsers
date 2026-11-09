@@ -5212,6 +5212,9 @@
 /* Alert content for not found subscription */
 "subscription.expired.alert.message" = "Abonnemanget som är kopplat till det här Apple-kontot är inte längre aktivt.";
 
+/* Subtitle in header when the subscription has been cancelled but is still active until it expires */
+"subscription.expiring" = "Löper ut";
+
 /* FAQ Button */
 "subscription.faq" = "Vanliga frågor och support";
 

@@ -5212,6 +5212,9 @@
 /* Alert content for not found subscription */
 "subscription.expired.alert.message" = "Abonamentul asociat acestui cont Apple nu mai este activ.";
 
+/* Subtitle in header when the subscription has been cancelled but is still active until it expires */
+"subscription.expiring" = "În curs de expirare";
+
 /* FAQ Button */
 "subscription.faq" = "Întrebări frecvente și asistență";
 

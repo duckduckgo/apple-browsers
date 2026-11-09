@@ -5212,6 +5212,9 @@
 /* Alert content for not found subscription */
 "subscription.expired.alert.message" = "A tua subscrição associada a esta conta Apple já não está ativa.";
 
+/* Subtitle in header when the subscription has been cancelled but is still active until it expires */
+"subscription.expiring" = "A expirar";
+
 /* FAQ Button */
 "subscription.faq" = "Perguntas Frequentes e Apoio Técnico";
 

@@ -111,6 +111,7 @@ final class DefaultBrowserWinBackPromoDelegate: InternalPromoDelegate {
         resume(with: .noChange)
     }
 
+    @MainActor
     private func handleConfirm(isForceShow: Bool) {
         guard showContinuation != nil else { return }
         markInactiveUserModalSeen(isForceShow: isForceShow)
@@ -118,6 +119,7 @@ final class DefaultBrowserWinBackPromoDelegate: InternalPromoDelegate {
         resume(with: .actioned())
     }
 
+    @MainActor
     private func handleDismiss(isForceShow: Bool) {
         guard showContinuation != nil else { return }
         markInactiveUserModalSeen(isForceShow: isForceShow)
@@ -131,6 +133,7 @@ final class DefaultBrowserWinBackPromoDelegate: InternalPromoDelegate {
         promptStore.inactiveUserModalShownDate = dateProvider().timeIntervalSince1970
     }
 
+    @MainActor
     private func resume(with result: PromoResult) {
         showContinuation?.resume(returning: result)
         showContinuation = nil

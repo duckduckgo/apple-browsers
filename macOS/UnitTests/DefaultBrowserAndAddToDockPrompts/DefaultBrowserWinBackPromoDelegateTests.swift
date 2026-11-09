@@ -86,10 +86,10 @@ final class DefaultBrowserWinBackPromoDelegateTests: XCTestCase {
         return delegate.isEligible
     }
 
-    private func startShow(_ delegate: DefaultBrowserWinBackPromoDelegate, force: Bool = false) async -> Task<PromoResult, Never> {
+    private func startShow(_ delegate: DefaultBrowserWinBackPromoDelegate) async -> Task<PromoResult, Never> {
         let presented = expectation(description: "modal presented")
         modal.didPresent = { presented.fulfill() }
-        let task = Task { await delegate.show(history: PromoHistoryRecord(id: "test"), force: force) }
+        let task = Task { await delegate.show(history: PromoHistoryRecord(id: "test"), force: false) }
         await fulfillment(of: [presented], timeout: 1)
         return task
     }

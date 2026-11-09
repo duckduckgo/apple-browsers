@@ -364,12 +364,32 @@ final class SubscriptionPixelHandlerTests: XCTestCase {
 
     func testBackupKeychainErrorPixel() {
         let handler = SubscriptionPixelHandler(source: subscriptionSource, pixelKit: phonePixelKit)
-        handler.handle(pixel: .backupKeychainError(.storeAuthToken, .failedToDecodeKeychainData))
+        handler.handle(pixel: .backupKeychainError(.restore, .write, AccountKeychainAccessError.keychainSaveFailure(errSecIO)))
 
         assertDailyAndCountPixel(
             baseName: "subscription_auth-backup_keychain_error", platformMarker: "_ios_phone",
             expectedParameters: [
-                "access_type": "storeAuthToken",
+                "action": "restore",
+                "operation": "write",
+                PixelKit.Parameters.pixelSource: PixelKit.Source.iOS.rawValue,
+                PixelKit.Parameters.appVersion: "1.0.0",
+                PixelKit.Parameters.errorCode: "12404",
+                PixelKit.Parameters.errorDomain: AccountKeychainAccessError.errorDomain,
+                PixelKit.Parameters.underlyingErrorCode: String(errSecIO),
+                PixelKit.Parameters.underlyingErrorDomain: AccountKeychainAccessError.errorDomain
+            ]
+        )
+    }
+
+    func testBackupKeychainErrorPixel_foundByTheStorage_reportsNoAction() {
+        let handler = SubscriptionPixelHandler(source: subscriptionSource, pixelKit: phonePixelKit)
+        handler.handle(pixel: .backupKeychainError(nil, .read, AccountKeychainAccessError.failedToDecodeKeychainData))
+
+        assertDailyAndCountPixel(
+            baseName: "subscription_auth-backup_keychain_error", platformMarker: "_ios_phone",
+            expectedParameters: [
+                "action": "none",
+                "operation": "read",
                 PixelKit.Parameters.pixelSource: PixelKit.Source.iOS.rawValue,
                 PixelKit.Parameters.appVersion: "1.0.0",
                 PixelKit.Parameters.errorCode: "12400",

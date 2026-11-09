@@ -956,10 +956,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
         let backupTokenStorage = SubscriptionTokenKeychainStorage(keychainManager: keychainManager,
                                                                   userDefaults: .subs,
-                                                                  field: .backupTokenContainer) { accessType, error in
-            Logger.subscriptionKeychain.error("Backup token keychain error, \(accessType.rawValue, privacy: .public): \(error.localizedDescription, privacy: .public)")
-            pixelHandler.handle(pixel: .backupKeychainError(accessType, error))
-        }
+                                                                  field: .backupTokenContainer,
+                                                                  errorEventsHandler: pixelHandler.backupKeychainErrorHandler())
 
         let isAuthV2WideEventEnabled = {
 #if DEBUG

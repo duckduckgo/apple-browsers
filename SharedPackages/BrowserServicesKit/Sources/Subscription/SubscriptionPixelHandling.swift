@@ -19,6 +19,7 @@
 import Foundation
 import Common
 import Networking
+import os.log
 
 /// Pixels handler
 public protocol SubscriptionPixelHandling {
@@ -28,7 +29,8 @@ public protocol SubscriptionPixelHandling {
 
 extension SubscriptionPixelHandling {
 
-    /// An event mapping for `DefaultOAuthClient`'s backup events that hands them to this handler as `.backupRenewed` and `.backupRenewalFailed`.
+    /// An event mapping for `DefaultOAuthClient`'s backup events that hands them to this handler as `.backupRenewed`,
+    /// `.backupRenewalFailed` and `.backupKeychainError`.
     public func backupEventMapping() -> EventMapping<OAuthClientBackupEvent> {
         EventMapping { event, _, _, _ in
             switch event {
@@ -36,6 +38,23 @@ extension SubscriptionPixelHandling {
                 handle(pixel: .backupRenewed)
             case .backupRenewalFailed(let error):
                 handle(pixel: .backupRenewalFailed(error))
+            case .storageFailed(let action, let operation, let error):
+                handle(pixel: .backupKeychainError(action, operation, error))
+            }
+        }
+    }
+
+    /// An error handler for the backup token's `SubscriptionTokenKeychainStorage`. It hands this handler, as `.backupKeychainError` without
+    /// an action, the problems the storage finds without throwing: an item it can't decode, and an expected item that is missing.
+    /// The errors it throws are reported by `DefaultOAuthClient` through `backupEventMapping()`, with the action that hit them.
+    public func backupKeychainErrorHandler() -> (AccountKeychainAccessType, AccountKeychainAccessError) -> Void {
+        { accessType, error in
+            Logger.subscriptionKeychain.error("Backup token keychain error, \(accessType.rawValue, privacy: .public): \(error.localizedDescription, privacy: .public)")
+            switch error {
+            case .failedToDecodeKeychainData, .expectedTokenNotFound:
+                handle(pixel: .backupKeychainError(nil, .read, error))
+            default:
+                break
             }
         }
     }

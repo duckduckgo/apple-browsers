@@ -310,8 +310,74 @@ final class OAuthClientBackupTests: XCTestCase {
         _ = try await client.getTokens(policy: .localForceRefresh)
         await client.waitForBackupRenewal()
 
-        XCTAssertEqual(backupEventCapture.names, ["renewal_failed"])
+        XCTAssertEqual(backupEventCapture.names, ["storage_failed:renewal:write", "renewal_failed"])
         XCTAssertEqual((backupEventCapture.renewalErrors.first as? NSError)?.code, 2)
+    }
+
+    // MARK: - Storage failure reporting
+
+    func testRefresh_backupReadFails_reportsARenewalReadFailure() async throws {
+        try primaryStorage.saveTokenContainer(OAuthTokensFactory.makeExpiredTokenContainer())
+        await refresher.setTestingDecodedTokenContainers([newPrimary])
+        let client = makeClient(backupStorage: FailingTokenStorage(failOnRead: true))
+
+        _ = try await client.getTokens(policy: .localForceRefresh)
+        await client.waitForBackupRenewal()
+
+        XCTAssertEqual(backupEventCapture.names, ["storage_failed:renewal:read"])
+    }
+
+    func testRestore_backupReadFails_reportsARestoreReadFailure() async throws {
+        _ = try? await makeClient(backupStorage: FailingTokenStorage(failOnRead: true)).restoreFromBackup(expectedExternalID: nil)
+
+        XCTAssertEqual(backupEventCapture.names, ["storage_failed:restore:read"])
+    }
+
+    func testRestore_newBackupWriteFails_reportsARestoreWriteFailure() async throws {
+        let backupStorage = FailingTokenStorage(stored: OAuthTokensFactory.makeTokenContainer(refreshToken: "storedBackupR"), failOnSave: true)
+        await refresher.setTestingDecodedTokenContainers([newBackup, newPrimary])
+
+        let result = try await makeClient(backupStorage: backupStorage).restoreFromBackup(expectedExternalID: nil)
+
+        XCTAssertEqual(result, newPrimary)
+        XCTAssertEqual(backupEventCapture.names, ["storage_failed:restore:write"])
+    }
+
+    func testRestore_rejectedBackupDeleteFails_reportsARestoreDeleteFailure() async throws {
+        let expired = OAuthTokensFactory.makeTokenContainer(refreshToken: "expiredR", refreshTokenExpiresAt: Date().addingTimeInterval(-60))
+        let backupStorage = DeleteFailingTokenStorage(stored: expired)
+
+        _ = try? await makeClient(backupStorage: backupStorage).restoreFromBackup(expectedExternalID: nil)
+
+        XCTAssertEqual(backupEventCapture.names, ["storage_failed:restore:delete"])
+    }
+
+    func testLogout_backupDeleteFails_reportsASignOutDeleteFailure() async throws {
+        try primaryStorage.saveTokenContainer(OAuthTokensFactory.makeValidTokenContainer())
+        let backupStorage = DeleteFailingTokenStorage(stored: newBackup)
+
+        try? await makeClient(backupStorage: backupStorage).logout()
+
+        XCTAssertEqual(backupEventCapture.names, ["storage_failed:sign_out:delete"])
+    }
+
+    func testRemoveLocalAccountIncludingBackup_deleteFails_reportsALocalSignOutDeleteFailure() async throws {
+        try primaryStorage.saveTokenContainer(OAuthTokensFactory.makeValidTokenContainer())
+        let backupStorage = DeleteFailingTokenStorage(stored: newBackup)
+
+        try await makeClient(backupStorage: backupStorage).removeLocalAccount(includingBackup: true)
+
+        XCTAssertEqual(backupEventCapture.names, ["storage_failed:local_sign_out:delete"])
+        XCTAssertNil(try primaryStorage.getTokenContainer())
+    }
+
+    func testAdopt_anotherAccountsBackupDeleteFails_reportsASignInDeleteFailure() async throws {
+        let backupStorage = DeleteFailingTokenStorage(stored: OAuthTokensFactory.makeTokenContainer(refreshToken: "oldR", externalID: "old-account"))
+        let adopted = OAuthTokensFactory.makeTokenContainer(refreshToken: "adoptedR", externalID: "new-account")
+
+        try await makeClient(backupStorage: backupStorage).adopt(tokenContainer: adopted)
+
+        XCTAssertEqual(backupEventCapture.names, ["storage_failed:sign_in:delete"])
     }
 
     func testRefresh_signOutDuringBackupRenewal_reportsNothing() async throws {
@@ -1247,12 +1313,13 @@ final class BackupEventCapture {
         }
     }
 
-    /// The captured events' names, `renewed` or `renewal_failed`.
+    /// The captured events' names: `renewed`, `renewal_failed`, or `storage_failed:<action>:<operation>`.
     var names: [String] {
         capturedEvents.map {
             switch $0 {
             case .backupRenewed: "renewed"
             case .backupRenewalFailed: "renewal_failed"
+            case .storageFailed(let action, let operation, _): "storage_failed:\(action.rawValue):\(operation.rawValue)"
             }
         }
     }

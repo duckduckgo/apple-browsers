@@ -75,7 +75,7 @@ final class OverlayWindowPresenterTests {
         let mainWindow = WindowSpy()
         mainWindow.isHidden = false
         let overlayWindow = WindowSpy()
-        let presenter = OverlayWindowPresenter(mainWindow: mainWindow)
+        let presenter = OverlayWindowPresenter(mainWindow: mainWindow, afterNextFrames: { $0() })
         presenter.revealInteractiveWindow(overlayWindow)
         mainWindow.isHidden = false
 
@@ -83,6 +83,25 @@ final class OverlayWindowPresenterTests {
 
         #expect(overlayWindow.isHidden)
         #expect(mainWindow.makeKeyAndVisibleCallCount == 1)
+    }
+
+    @available(iOS 16.0, *)
+    @Test("Removing an interactive overlay shows the main window before hiding the overlay", .timeLimit(.minutes(1)))
+    func removeInteractiveWindowShowsMainWindowFirst() {
+        let mainWindow = WindowSpy()
+        let overlayWindow = WindowSpy()
+        var pendingHide: (() -> Void)?
+        let presenter = OverlayWindowPresenter(mainWindow: mainWindow, afterNextFrames: { pendingHide = $0 })
+        presenter.revealInteractiveWindow(overlayWindow)
+
+        presenter.removeWindow(overlayWindow)
+
+        #expect(!mainWindow.isHidden)
+        #expect(!overlayWindow.isHidden)
+
+        pendingHide?()
+
+        #expect(overlayWindow.isHidden)
     }
 
 }

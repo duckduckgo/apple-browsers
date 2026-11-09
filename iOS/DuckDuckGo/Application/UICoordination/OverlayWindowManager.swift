@@ -46,9 +46,12 @@ final class OverlayWindowPresenter {
 
     private let mainWindow: UIWindow
     private var didHideMainWindow = false
+    private let afterNextFrames: (@escaping () -> Void) -> Void
 
-    init(mainWindow: UIWindow) {
+    init(mainWindow: UIWindow,
+         afterNextFrames: @escaping (@escaping () -> Void) -> Void = { FrameWaiter.run(afterFrames: 2, $0) }) {
         self.mainWindow = mainWindow
+        self.afterNextFrames = afterNextFrames
     }
 
     func revealBlankSnapshotWindow(_ overlayWindow: UIWindow) {
@@ -62,11 +65,47 @@ final class OverlayWindowPresenter {
     }
 
     func removeWindow(_ overlayWindow: UIWindow) {
-        overlayWindow.isHidden = true
-        if didHideMainWindow {
-            didHideMainWindow = false
-            mainWindow.makeKeyAndVisible()
+        guard didHideMainWindow else {
+            overlayWindow.isHidden = true
+            return
         }
+        didHideMainWindow = false
+        // A hidden window takes a frame or more to draw again. Show it under the overlay first,
+        // so hiding the overlay doesn't reveal a black screen.
+        mainWindow.makeKeyAndVisible()
+        afterNextFrames {
+            overlayWindow.isHidden = true
+        }
+    }
+
+}
+
+/// Runs a handler once the screen has drawn the given number of frames.
+final class FrameWaiter {
+
+    private var framesLeft: Int
+    private let handler: () -> Void
+    private var displayLink: CADisplayLink?
+
+    private init(framesLeft: Int, handler: @escaping () -> Void) {
+        self.framesLeft = framesLeft
+        self.handler = handler
+    }
+
+    static func run(afterFrames frames: Int, _ handler: @escaping () -> Void) {
+        let waiter = FrameWaiter(framesLeft: frames, handler: handler)
+        // The display link keeps the waiter alive until it is invalidated.
+        let displayLink = CADisplayLink(target: waiter, selector: #selector(frameDidDraw))
+        waiter.displayLink = displayLink
+        displayLink.add(to: .main, forMode: .common)
+    }
+
+    @objc private func frameDidDraw() {
+        framesLeft -= 1
+        guard framesLeft <= 0 else { return }
+        displayLink?.invalidate()
+        displayLink = nil
+        handler()
     }
 
 }
@@ -150,7 +189,16 @@ final class OverlayWindowManager: OverlayWindowManaging {
     }
 
     func displayOverlay(with viewController: UIViewController) {
-        guard overlayWindow == nil else { return }
+        // Swap into the privacy screen's window, which is already on screen. A new window can reach
+        // the screen a frame after the windows it replaces are hidden, which shows black.
+        if let snapshotWindow = overlayWindow ?? obtainOverlayWindow(),
+           snapshotWindow.rootViewController is BlankSnapshotViewController {
+            activeReasons = []
+            snapshotWindow.rootViewController = viewController
+            revealInteractiveWindow(snapshotWindow)
+            return
+        }
+        removeAnyOverlay()
         revealInteractiveWindow(makeOverlayWindow(with: viewController))
     }
 

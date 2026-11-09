@@ -189,6 +189,14 @@ final class UTIPixelReporter {
         withContext { firing.fireDailyAndCount(.unifiedToggleInputImageAttached, ["surface": $0.surface.rawValue, "source": source]) }
     }
 
+    func reportAttachMenuShown() {
+        withContext { firing.fire(UnifiedToggleInputAttachMenuPixel.shown(surface: $0.surface), frequency: .dailyAndCount) }
+    }
+
+    func reportAttachMenuItemSelected(_ item: UnifiedToggleInputAttachMenuItem) {
+        withContext { firing.fire(UnifiedToggleInputAttachMenuPixel.itemSelected(item, surface: $0.surface), frequency: .dailyAndCount) }
+    }
+
     func reportTabAttachment(_ action: MultiTabAttachmentPixel.Action, source: TabAttachmentOrigin,
                              attribution: MultiTabPixelAttribution? = nil) {
         guard let attribution = attribution ?? currentTabPixelAttribution() else { return }

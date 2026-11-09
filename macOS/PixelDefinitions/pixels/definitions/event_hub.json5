@@ -9,6 +9,7 @@
         "suffixes": ["daily_count"],
         "parameters": [
             "appVersion",
+            "channel",
             "errorDomain",
             "errorCode",
             "underlyingErrorDomain",
@@ -26,7 +27,7 @@
         "owners": ["miasma13"],
         "triggers": ["other"],
         "suffixes": ["daily_count"],
-        "parameters": ["appVersion"]
+        "parameters": ["appVersion", "channel"]
     },
     "autoconsent_cpmCoverage_day_macos": {
         "description": "Daily bucketed counts of pages where cookie popup management (CPM) ran and of those where a popup was detected but not handled, each with a top 10k site split. Fired by the eventHub feature at the end of each 1-day measurement period.",
@@ -65,31 +66,31 @@
         "description": "Daily bucketed count of YouTube ad-blocker-challenge detections, with the user's login state. Fired by the eventHub feature at the end of each 1-day measurement period.",
         "owners": ["jdorweiler"],
         "triggers": ["other"],
-        "parameters": ["appVersion", "eventHubBucketedCount", "eventHubYouTubeLoginState", "eventHubAttributionPeriod"]
+        "parameters": ["appVersion", "channel", "eventHubBucketedCount", "eventHubYouTubeLoginState", "eventHubAttributionPeriod"]
     },
     "webTelemetry_youtube_playabilityError_day_macos": {
         "description": "Daily bucketed count of YouTube playability-error detections, with the user's login state. Fired by the eventHub feature at the end of each 1-day measurement period.",
         "owners": ["jdorweiler"],
         "triggers": ["other"],
-        "parameters": ["appVersion", "eventHubBucketedCount", "eventHubYouTubeLoginState", "eventHubAttributionPeriod"]
+        "parameters": ["appVersion", "channel", "eventHubBucketedCount", "eventHubYouTubeLoginState", "eventHubAttributionPeriod"]
     },
     "webTelemetry_youtube_videoAd_day_macos": {
         "description": "Daily bucketed count of YouTube video-ad detections, with the user's login state. Fired by the eventHub feature at the end of each 1-day measurement period.",
         "owners": ["jdorweiler"],
         "triggers": ["other"],
-        "parameters": ["appVersion", "eventHubBucketedCount", "eventHubYouTubeLoginState", "eventHubAttributionPeriod"]
+        "parameters": ["appVersion", "channel", "eventHubBucketedCount", "eventHubYouTubeLoginState", "eventHubAttributionPeriod"]
     },
     "webTelemetry_youtube_staticAd_day_macos": {
         "description": "Daily bucketed count of YouTube static-ad detections, with the user's login state. Fired by the eventHub feature at the end of each 1-day measurement period.",
         "owners": ["jdorweiler"],
         "triggers": ["other"],
-        "parameters": ["appVersion", "eventHubBucketedCount", "eventHubYouTubeLoginState", "eventHubAttributionPeriod"]
+        "parameters": ["appVersion", "channel", "eventHubBucketedCount", "eventHubYouTubeLoginState", "eventHubAttributionPeriod"]
     },
     "webTelemetry_youtube_buffering_day_macos": {
         "description": "Daily bucketed count of YouTube playback-buffering detections, with the user's login state. Fired by the eventHub feature at the end of each 1-day measurement period.",
         "owners": ["jdorweiler"],
         "triggers": ["other"],
-        "parameters": ["appVersion", "eventHubBucketedCount", "eventHubYouTubeLoginState", "eventHubAttributionPeriod"]
+        "parameters": ["appVersion", "channel", "eventHubBucketedCount", "eventHubYouTubeLoginState", "eventHubAttributionPeriod"]
     },
     // Captcha pixels use an immediate trigger, so they carry neither a bucketed `count` nor an
     // `attributionPeriod` — EventHub fires one pixel per detection with no aggregation or deduplication.
@@ -97,247 +98,247 @@
         "description": "Fired once per detection of a Google reCAPTCHA challenge on a page. Fired immediately by the eventHub feature, without aggregation.",
         "owners": ["GuiltyDolphin"],
         "triggers": ["other"],
-        "parameters": ["appVersion"]
+        "parameters": ["appVersion", "channel"]
     },
     "webTelemetry_captcha_hcaptcha_macos": {
         "description": "Fired once per detection of an hCaptcha challenge on a page. Fired immediately by the eventHub feature, without aggregation.",
         "owners": ["GuiltyDolphin"],
         "triggers": ["other"],
-        "parameters": ["appVersion"]
+        "parameters": ["appVersion", "channel"]
     },
     "webTelemetry_captcha_turnstile_macos": {
         "description": "Fired once per detection of a Cloudflare Turnstile challenge on a page. Fired immediately by the eventHub feature, without aggregation.",
         "owners": ["GuiltyDolphin"],
         "triggers": ["other"],
-        "parameters": ["appVersion"]
+        "parameters": ["appVersion", "channel"]
     },
     "webTelemetry_captcha_cloudflare_macos": {
         "description": "Fired once per detection of a Cloudflare interstitial challenge on a page. Fired immediately by the eventHub feature, without aggregation.",
         "owners": ["GuiltyDolphin"],
         "triggers": ["other"],
-        "parameters": ["appVersion"]
+        "parameters": ["appVersion", "channel"]
     },
     "webTelemetry_captcha_datadome_macos": {
         "description": "Fired once per detection of a DataDome challenge on a page. Fired immediately by the eventHub feature, without aggregation.",
         "owners": ["GuiltyDolphin"],
         "triggers": ["other"],
-        "parameters": ["appVersion"]
+        "parameters": ["appVersion", "channel"]
     },
     "webTelemetry_captcha_imperva_macos": {
         "description": "Fired once per detection of an Imperva challenge on a page. Fired immediately by the eventHub feature, without aggregation.",
         "owners": ["GuiltyDolphin"],
         "triggers": ["other"],
-        "parameters": ["appVersion"]
+        "parameters": ["appVersion", "channel"]
     },
     "webTelemetry_captcha_arkose_macos": {
         "description": "Fired once per detection of an Arkose Labs (FunCaptcha) challenge on a page. Fired immediately by the eventHub feature, without aggregation.",
         "owners": ["GuiltyDolphin"],
         "triggers": ["other"],
-        "parameters": ["appVersion"]
+        "parameters": ["appVersion", "channel"]
     },
     "webTelemetry_captcha_geetest_macos": {
         "description": "Fired once per detection of a GeeTest challenge on a page. Fired immediately by the eventHub feature, without aggregation.",
         "owners": ["GuiltyDolphin"],
         "triggers": ["other"],
-        "parameters": ["appVersion"]
+        "parameters": ["appVersion", "channel"]
     },
     "webTelemetry_captcha_awswaf_macos": {
         "description": "Fired once per detection of an AWS WAF challenge on a page. Fired immediately by the eventHub feature, without aggregation.",
         "owners": ["GuiltyDolphin"],
         "triggers": ["other"],
-        "parameters": ["appVersion"]
+        "parameters": ["appVersion", "channel"]
     },
     "webTelemetry_captcha_perimeterx_macos": {
         "description": "Fired once per detection of a PerimeterX challenge on a page. Fired immediately by the eventHub feature, without aggregation.",
         "owners": ["GuiltyDolphin"],
         "triggers": ["other"],
-        "parameters": ["appVersion"]
+        "parameters": ["appVersion", "channel"]
     },
     "webTelemetry_captcha_other_macos": {
         "description": "Fired once per detection of a captcha challenge that matches no known provider on a page. Fired immediately by the eventHub feature, without aggregation.",
         "owners": ["GuiltyDolphin"],
         "triggers": ["other"],
-        "parameters": ["appVersion"]
+        "parameters": ["appVersion", "channel"]
     },
     // Entries below come from the shared base `event-hub` feature config rather than the Apple override.
     "eventHub_baseline_day_macos": {
         "description": "Daily bucketed count of periods in which EventHub ran at all. Serves as the denominator for the other eventHub telemetry — it counts nothing beyond the period itself. Fired by the eventHub feature at the end of each 1-day measurement period.",
         "owners": ["GuiltyDolphin"],
         "triggers": ["other"],
-        "parameters": ["appVersion", "eventHubBaseline", "eventHubAttributionPeriod"]
+        "parameters": ["appVersion", "channel", "eventHubBaseline", "eventHubAttributionPeriod"]
     },
     "eventHub_baseline_week_macos": {
         "description": "Weekly bucketed count of periods in which EventHub ran at all. Serves as the denominator for the other eventHub telemetry — it counts nothing beyond the period itself. Fired by the eventHub feature at the end of each 7-day measurement period.",
         "owners": ["GuiltyDolphin"],
         "triggers": ["other"],
-        "parameters": ["appVersion", "eventHubBaseline", "eventHubAttributionPeriod"]
+        "parameters": ["appVersion", "channel", "eventHubBaseline", "eventHubAttributionPeriod"]
     },
     "webTelemetry_adwalls_day_macos": {
         "description": "Daily bucketed count of adwall detections across all pages. Fired by the eventHub feature at the end of each 1-day measurement period.",
         "owners": ["GuiltyDolphin"],
         "triggers": ["other"],
-        "parameters": ["appVersion", "eventHubAdwallCount", "eventHubAttributionPeriod"]
+        "parameters": ["appVersion", "channel", "eventHubAdwallCount", "eventHubAttributionPeriod"]
     },
     "webTelemetry_adwalls_week_macos": {
         "description": "Weekly bucketed count of adwall detections across all pages. Fired by the eventHub feature at the end of each 7-day measurement period.",
         "owners": ["GuiltyDolphin"],
         "triggers": ["other"],
-        "parameters": ["appVersion", "eventHubAdwallCount", "eventHubAttributionPeriod"]
+        "parameters": ["appVersion", "channel", "eventHubAdwallCount", "eventHubAttributionPeriod"]
     },
     "webTelemetry_admiralAdwalls_day_macos": {
         "description": "Daily bucketed count of Admiral-served adwall detections across all pages. Fired by the eventHub feature at the end of each 1-day measurement period.",
         "owners": ["GuiltyDolphin"],
         "triggers": ["other"],
-        "parameters": ["appVersion", "eventHubAdmiralAdwallCount", "eventHubAttributionPeriod"]
+        "parameters": ["appVersion", "channel", "eventHubAdmiralAdwallCount", "eventHubAttributionPeriod"]
     },
     "webTelemetry_admiralAdwalls_week_macos": {
         "description": "Weekly bucketed count of Admiral-served adwall detections across all pages. Fired by the eventHub feature at the end of each 7-day measurement period.",
         "owners": ["GuiltyDolphin"],
         "triggers": ["other"],
-        "parameters": ["appVersion", "eventHubAdmiralAdwallCount", "eventHubAttributionPeriod"]
+        "parameters": ["appVersion", "channel", "eventHubAdmiralAdwallCount", "eventHubAttributionPeriod"]
     },
     "webTelemetry_captcha_recaptcha_day_macos": {
         "description": "Daily bucketed count of page loads where a Google reCAPTCHA challenge was detected. Fired by the eventHub feature at the end of each 1-day measurement period.",
         "owners": ["GuiltyDolphin"],
         "triggers": ["other"],
-        "parameters": ["appVersion", "eventHubBucketedCount", "eventHubAttributionPeriod"]
+        "parameters": ["appVersion", "channel", "eventHubBucketedCount", "eventHubAttributionPeriod"]
     },
     "webTelemetry_captcha_recaptcha_week_macos": {
         "description": "Weekly bucketed count of page loads where a Google reCAPTCHA challenge was detected. Fired by the eventHub feature at the end of each 7-day measurement period.",
         "owners": ["GuiltyDolphin"],
         "triggers": ["other"],
-        "parameters": ["appVersion", "eventHubBucketedCount", "eventHubAttributionPeriod"]
+        "parameters": ["appVersion", "channel", "eventHubBucketedCount", "eventHubAttributionPeriod"]
     },
     "webTelemetry_captcha_hcaptcha_day_macos": {
         "description": "Daily bucketed count of page loads where an hCaptcha challenge was detected. Fired by the eventHub feature at the end of each 1-day measurement period.",
         "owners": ["GuiltyDolphin"],
         "triggers": ["other"],
-        "parameters": ["appVersion", "eventHubBucketedCount", "eventHubAttributionPeriod"]
+        "parameters": ["appVersion", "channel", "eventHubBucketedCount", "eventHubAttributionPeriod"]
     },
     "webTelemetry_captcha_hcaptcha_week_macos": {
         "description": "Weekly bucketed count of page loads where an hCaptcha challenge was detected. Fired by the eventHub feature at the end of each 7-day measurement period.",
         "owners": ["GuiltyDolphin"],
         "triggers": ["other"],
-        "parameters": ["appVersion", "eventHubBucketedCount", "eventHubAttributionPeriod"]
+        "parameters": ["appVersion", "channel", "eventHubBucketedCount", "eventHubAttributionPeriod"]
     },
     "webTelemetry_captcha_turnstile_day_macos": {
         "description": "Daily bucketed count of page loads where a Cloudflare Turnstile challenge was detected. Fired by the eventHub feature at the end of each 1-day measurement period.",
         "owners": ["GuiltyDolphin"],
         "triggers": ["other"],
-        "parameters": ["appVersion", "eventHubBucketedCount", "eventHubAttributionPeriod"]
+        "parameters": ["appVersion", "channel", "eventHubBucketedCount", "eventHubAttributionPeriod"]
     },
     "webTelemetry_captcha_turnstile_week_macos": {
         "description": "Weekly bucketed count of page loads where a Cloudflare Turnstile challenge was detected. Fired by the eventHub feature at the end of each 7-day measurement period.",
         "owners": ["GuiltyDolphin"],
         "triggers": ["other"],
-        "parameters": ["appVersion", "eventHubBucketedCount", "eventHubAttributionPeriod"]
+        "parameters": ["appVersion", "channel", "eventHubBucketedCount", "eventHubAttributionPeriod"]
     },
     "webTelemetry_captcha_cloudflare_day_macos": {
         "description": "Daily bucketed count of page loads where a Cloudflare interstitial challenge was detected. Fired by the eventHub feature at the end of each 1-day measurement period.",
         "owners": ["GuiltyDolphin"],
         "triggers": ["other"],
-        "parameters": ["appVersion", "eventHubBucketedCount", "eventHubAttributionPeriod"]
+        "parameters": ["appVersion", "channel", "eventHubBucketedCount", "eventHubAttributionPeriod"]
     },
     "webTelemetry_captcha_cloudflare_week_macos": {
         "description": "Weekly bucketed count of page loads where a Cloudflare interstitial challenge was detected. Fired by the eventHub feature at the end of each 7-day measurement period.",
         "owners": ["GuiltyDolphin"],
         "triggers": ["other"],
-        "parameters": ["appVersion", "eventHubBucketedCount", "eventHubAttributionPeriod"]
+        "parameters": ["appVersion", "channel", "eventHubBucketedCount", "eventHubAttributionPeriod"]
     },
     "webTelemetry_captcha_datadome_day_macos": {
         "description": "Daily bucketed count of page loads where a DataDome challenge was detected. Fired by the eventHub feature at the end of each 1-day measurement period.",
         "owners": ["GuiltyDolphin"],
         "triggers": ["other"],
-        "parameters": ["appVersion", "eventHubBucketedCount", "eventHubAttributionPeriod"]
+        "parameters": ["appVersion", "channel", "eventHubBucketedCount", "eventHubAttributionPeriod"]
     },
     "webTelemetry_captcha_datadome_week_macos": {
         "description": "Weekly bucketed count of page loads where a DataDome challenge was detected. Fired by the eventHub feature at the end of each 7-day measurement period.",
         "owners": ["GuiltyDolphin"],
         "triggers": ["other"],
-        "parameters": ["appVersion", "eventHubBucketedCount", "eventHubAttributionPeriod"]
+        "parameters": ["appVersion", "channel", "eventHubBucketedCount", "eventHubAttributionPeriod"]
     },
     "webTelemetry_captcha_imperva_day_macos": {
         "description": "Daily bucketed count of page loads where an Imperva challenge was detected. Fired by the eventHub feature at the end of each 1-day measurement period.",
         "owners": ["GuiltyDolphin"],
         "triggers": ["other"],
-        "parameters": ["appVersion", "eventHubBucketedCount", "eventHubAttributionPeriod"]
+        "parameters": ["appVersion", "channel", "eventHubBucketedCount", "eventHubAttributionPeriod"]
     },
     "webTelemetry_captcha_imperva_week_macos": {
         "description": "Weekly bucketed count of page loads where an Imperva challenge was detected. Fired by the eventHub feature at the end of each 7-day measurement period.",
         "owners": ["GuiltyDolphin"],
         "triggers": ["other"],
-        "parameters": ["appVersion", "eventHubBucketedCount", "eventHubAttributionPeriod"]
+        "parameters": ["appVersion", "channel", "eventHubBucketedCount", "eventHubAttributionPeriod"]
     },
     "webTelemetry_captcha_arkose_day_macos": {
         "description": "Daily bucketed count of page loads where an Arkose Labs (FunCaptcha) challenge was detected. Fired by the eventHub feature at the end of each 1-day measurement period.",
         "owners": ["GuiltyDolphin"],
         "triggers": ["other"],
-        "parameters": ["appVersion", "eventHubBucketedCount", "eventHubAttributionPeriod"]
+        "parameters": ["appVersion", "channel", "eventHubBucketedCount", "eventHubAttributionPeriod"]
     },
     "webTelemetry_captcha_arkose_week_macos": {
         "description": "Weekly bucketed count of page loads where an Arkose Labs (FunCaptcha) challenge was detected. Fired by the eventHub feature at the end of each 7-day measurement period.",
         "owners": ["GuiltyDolphin"],
         "triggers": ["other"],
-        "parameters": ["appVersion", "eventHubBucketedCount", "eventHubAttributionPeriod"]
+        "parameters": ["appVersion", "channel", "eventHubBucketedCount", "eventHubAttributionPeriod"]
     },
     "webTelemetry_captcha_geetest_day_macos": {
         "description": "Daily bucketed count of page loads where a GeeTest challenge was detected. Fired by the eventHub feature at the end of each 1-day measurement period.",
         "owners": ["GuiltyDolphin"],
         "triggers": ["other"],
-        "parameters": ["appVersion", "eventHubBucketedCount", "eventHubAttributionPeriod"]
+        "parameters": ["appVersion", "channel", "eventHubBucketedCount", "eventHubAttributionPeriod"]
     },
     "webTelemetry_captcha_geetest_week_macos": {
         "description": "Weekly bucketed count of page loads where a GeeTest challenge was detected. Fired by the eventHub feature at the end of each 7-day measurement period.",
         "owners": ["GuiltyDolphin"],
         "triggers": ["other"],
-        "parameters": ["appVersion", "eventHubBucketedCount", "eventHubAttributionPeriod"]
+        "parameters": ["appVersion", "channel", "eventHubBucketedCount", "eventHubAttributionPeriod"]
     },
     "webTelemetry_captcha_awswaf_day_macos": {
         "description": "Daily bucketed count of page loads where an AWS WAF challenge was detected. Fired by the eventHub feature at the end of each 1-day measurement period.",
         "owners": ["GuiltyDolphin"],
         "triggers": ["other"],
-        "parameters": ["appVersion", "eventHubBucketedCount", "eventHubAttributionPeriod"]
+        "parameters": ["appVersion", "channel", "eventHubBucketedCount", "eventHubAttributionPeriod"]
     },
     "webTelemetry_captcha_awswaf_week_macos": {
         "description": "Weekly bucketed count of page loads where an AWS WAF challenge was detected. Fired by the eventHub feature at the end of each 7-day measurement period.",
         "owners": ["GuiltyDolphin"],
         "triggers": ["other"],
-        "parameters": ["appVersion", "eventHubBucketedCount", "eventHubAttributionPeriod"]
+        "parameters": ["appVersion", "channel", "eventHubBucketedCount", "eventHubAttributionPeriod"]
     },
     "webTelemetry_captcha_perimeterx_day_macos": {
         "description": "Daily bucketed count of page loads where a PerimeterX challenge was detected. Fired by the eventHub feature at the end of each 1-day measurement period.",
         "owners": ["GuiltyDolphin"],
         "triggers": ["other"],
-        "parameters": ["appVersion", "eventHubBucketedCount", "eventHubAttributionPeriod"]
+        "parameters": ["appVersion", "channel", "eventHubBucketedCount", "eventHubAttributionPeriod"]
     },
     "webTelemetry_captcha_perimeterx_week_macos": {
         "description": "Weekly bucketed count of page loads where a PerimeterX challenge was detected. Fired by the eventHub feature at the end of each 7-day measurement period.",
         "owners": ["GuiltyDolphin"],
         "triggers": ["other"],
-        "parameters": ["appVersion", "eventHubBucketedCount", "eventHubAttributionPeriod"]
+        "parameters": ["appVersion", "channel", "eventHubBucketedCount", "eventHubAttributionPeriod"]
     },
     "webTelemetry_captcha_other_day_macos": {
         "description": "Daily bucketed count of page loads where a captcha challenge that matches no known provider was detected. Fired by the eventHub feature at the end of each 1-day measurement period.",
         "owners": ["GuiltyDolphin"],
         "triggers": ["other"],
-        "parameters": ["appVersion", "eventHubBucketedCount", "eventHubAttributionPeriod"]
+        "parameters": ["appVersion", "channel", "eventHubBucketedCount", "eventHubAttributionPeriod"]
     },
     "webTelemetry_captcha_other_week_macos": {
         "description": "Weekly bucketed count of page loads where a captcha challenge that matches no known provider was detected. Fired by the eventHub feature at the end of each 7-day measurement period.",
         "owners": ["GuiltyDolphin"],
         "triggers": ["other"],
-        "parameters": ["appVersion", "eventHubBucketedCount", "eventHubAttributionPeriod"]
+        "parameters": ["appVersion", "channel", "eventHubBucketedCount", "eventHubAttributionPeriod"]
     },
     "webTelemetry_adwall_macos": {
         "description": "Fired once per detection of an adwall on a page. Fired immediately by the eventHub feature, without aggregation.",
         "owners": ["GuiltyDolphin"],
         "triggers": ["other"],
-        "parameters": ["appVersion"]
+        "parameters": ["appVersion", "channel"]
     },
     "webTelemetry_admiralAdwall_macos": {
         "description": "Fired once per detection of an Admiral-served adwall on a page. Fired immediately by the eventHub feature, without aggregation.",
         "owners": ["GuiltyDolphin"],
         "triggers": ["other"],
-        "parameters": ["appVersion"]
+        "parameters": ["appVersion", "channel"]
     }
 }

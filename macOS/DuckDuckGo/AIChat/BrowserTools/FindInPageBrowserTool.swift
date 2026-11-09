@@ -175,7 +175,7 @@ final class FindInPageBrowserTool: BrowserTool {
     func clientToolResult(from value: JSONValue) -> BrowserToolResult {
         guard var fields = value.objectValue, let matches = fields["matches"]?.arrayValue else { return .failure(.unavailable) }
         fields["title"] = BrowserToolOutputLimits.clip(fields["title"], to: BrowserToolOutputLimits.title)
-        fields["url"] = BrowserToolOutputLimits.clip(fields["url"], to: BrowserToolOutputLimits.url)
+        fields["url"] = BrowserToolOutputLimits.urlWithoutQueryOrFragment(fields["url"])
         fields["matches"] = .array(matches.map { match in
             var matchFields = match.objectValue ?? [:]
             matchFields["snippet"] = BrowserToolOutputLimits.clip(matchFields["snippet"], to: BrowserToolOutputLimits.snippet)

@@ -191,7 +191,7 @@ final class SearchHistoryBrowserTool: BrowserTool {
         return .success(["results": .array(results.map { result in
             var fields = result.objectValue ?? [:]
             fields["title"] = BrowserToolOutputLimits.clip(fields["title"], to: BrowserToolOutputLimits.title)
-            fields["url"] = BrowserToolOutputLimits.clip(fields["url"], to: BrowserToolOutputLimits.url)
+            fields["url"] = BrowserToolOutputLimits.urlWithoutQueryOrFragment(fields["url"])
             return .object(fields)
         })])
     }

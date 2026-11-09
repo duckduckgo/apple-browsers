@@ -65,7 +65,8 @@ enum BrowserToolTargetTab {
 
     /// Whether `listOpenTabs` lists the tab. Duck.ai only learns tab ids from that list.
     static func isListed(_ tab: AnyTab) -> Bool {
-        guard case .url(let url, _, _) = tab.content else { return false }
+        // Web pages only: a file URL names a local path that can include the user's name.
+        guard case .url(let url, _, _) = tab.content, url.isHttpOrHttps else { return false }
         return !url.isDuckAIURL
     }
 

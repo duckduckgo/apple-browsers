@@ -90,7 +90,7 @@ final class ReadTabContentBrowserTool: BrowserTool {
         let fullContentLength = value["fullContentLength"]?.intValue ?? 0
         return .success([
             "title": .string(BrowserToolOutputLimits.clip(value["title"]?.stringValue ?? "", to: BrowserToolOutputLimits.title)),
-            "url": .string(BrowserToolOutputLimits.clip(value["url"]?.stringValue ?? "", to: BrowserToolOutputLimits.url)),
+            "url": .string(BrowserToolOutputLimits.urlWithoutQueryOrFragment(value["url"]?.stringValue ?? "")),
             "content": .string(clippedContent),
             "truncated": .bool(value["truncated"]?.boolValue == true || clippedContent != content),
             "fullContentLength": .int(max(fullContentLength, content.unicodeScalars.count)),

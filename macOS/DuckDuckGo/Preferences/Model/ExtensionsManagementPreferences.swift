@@ -123,21 +123,20 @@ extension ExtensionsManagementPreferences {
         let isRemotelyDisabled: Bool
         /// Saved at installation, so they're known while the extension is disabled.
         let permissions: [String]
+        let matchPatterns: [String]
 
         var id: String { record.uniqueIdentifier }
         var isEnabled: Bool { !record.isDisabled && !isRemotelyDisabled }
 
+        /// The installation alert's lines, one per row.
         var permissionsSummary: String? {
-            let names = permissions
-                .compactMap(WebExtensionManifestPermission.init(rawValue:))
-                .map(\.displayName)
+            let messages = WebExtensionPermissionFormatter.messages(forPermissionNames: permissions, matchPatterns: matchPatterns)
 
-            if names.isEmpty {
+            if messages.isEmpty {
                 return nil
             }
 
-            let summary = ListFormatter.localizedString(byJoining: names)
-            return summary.prefix(1).uppercased() + summary.dropFirst()
+            return messages.map { "• \($0)" }.joined(separator: "\n")
         }
     }
 }
@@ -244,7 +243,8 @@ private extension ExtensionsManagementPreferences {
             let entry = InstalledExtensionEntry(record: record,
                                                 listing: listing,
                                                 isRemotelyDisabled: manager.isRemotelyDisabled(identifier: identifier),
-                                                permissions: manager.extensionPermissions(for: identifier))
+                                                permissions: manager.extensionPermissions(for: identifier),
+                                                matchPatterns: manager.extensionMatchPatterns(for: identifier))
             entries.append(entry)
             seenListingIDs.insert(listing.id)
         }

@@ -330,7 +330,7 @@ final class HoveredLinkTooltipPresenterTests: XCTestCase {
             XCTAssertNil(harness.tooltip)
             harness.presenter.mouseDidMove()
             XCTAssertNil(harness.tooltip, "Wait for WebKit to invalidate the old hover before restoring it")
-            harness.scheduler.run(delay: Timing.webKitHoverSettleDelay)
+            harness.scheduler.run(delay: Timing.revealDelay)
             XCTAssertTrue(harness.tooltip?.isVisible == true)
             XCTAssertEqual(harness.label?.stringValue, url)
             XCTAssertEqual(harness.tooltip?.alphaValue, 1)
@@ -343,7 +343,7 @@ final class HoveredLinkTooltipPresenterTests: XCTestCase {
         harness.presenter.mouseDidExit()
         harness.presenter.mouseDidMove()
         harness.presenter.update(url: nil)
-        harness.scheduler.run(delay: Timing.webKitHoverSettleDelay)
+        harness.scheduler.run(delay: Timing.revealDelay)
         XCTAssertNil(harness.tooltip)
     }
 
@@ -355,7 +355,7 @@ final class HoveredLinkTooltipPresenterTests: XCTestCase {
         harness.presenter.update(url: url)
         XCTAssertNil(harness.tooltip)
         harness.presenter.mouseDidMove()
-        harness.scheduler.run(delay: Timing.webKitHoverSettleDelay)
+        harness.scheduler.run(delay: Timing.revealDelay)
         XCTAssertTrue(harness.tooltip?.isVisible == true)
         XCTAssertEqual(harness.label?.stringValue, url.absoluteString)
     }
@@ -366,7 +366,7 @@ final class HoveredLinkTooltipPresenterTests: XCTestCase {
         harness.presenter.mouseDidExit()
         harness.presenter.mouseDidMove()
         harness.presenter.mouseDidExit()
-        harness.scheduler.run(delay: Timing.webKitHoverSettleDelay)
+        harness.scheduler.run(delay: Timing.revealDelay)
         XCTAssertNil(harness.tooltip)
     }
 

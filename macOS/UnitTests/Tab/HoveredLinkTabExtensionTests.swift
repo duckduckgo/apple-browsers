@@ -17,6 +17,7 @@
 //
 
 import Combine
+import WebKit
 import XCTest
 
 @testable import DuckDuckGo_Privacy_Browser
@@ -46,18 +47,18 @@ final class HoveredLinkTabExtensionTests: XCTestCase {
         XCTAssertNil(tabExtension.currentHoveredLink)
     }
 
-    func testWhenScriptReportsLinkThenItIsTheCurrentLinkAndIsPublished() {
+    func testWhenScriptReportsLinkThenItIsTheCurrentLinkAndIsPublished() async {
         var received = [URL?]()
         tabExtension.hoveredLinkPublisher.sink { received.append($0) }.store(in: &cancellables)
 
-        tabExtension.hoverUserScript(script, didChange: url)
+        await report(url)
 
         XCTAssertEqual(tabExtension.currentHoveredLink, url)
         XCTAssertEqual(received, [url])
     }
 
-    func testWhenSubscribingWhileLinkIsHoveredThenCurrentValueIsNotReplayed() {
-        tabExtension.hoverUserScript(script, didChange: url)
+    func testWhenSubscribingWhileLinkIsHoveredThenCurrentValueIsNotReplayed() async {
+        await report(url)
         var received = [URL?]()
 
         tabExtension.hoveredLinkPublisher.sink { received.append($0) }.store(in: &cancellables)
@@ -66,8 +67,8 @@ final class HoveredLinkTabExtensionTests: XCTestCase {
         XCTAssertEqual(tabExtension.currentHoveredLink, url)
     }
 
-    func testWhenNewDocumentIsCommittedThenHoveredLinkIsForgottenAndPublishedAsNil() {
-        tabExtension.hoverUserScript(script, didChange: url)
+    func testWhenNewDocumentIsCommittedThenHoveredLinkIsForgottenAndPublishedAsNil() async {
+        await report(url)
         var received = [URL?]()
         tabExtension.hoveredLinkPublisher.sink { received.append($0) }.store(in: &cancellables)
 
@@ -87,4 +88,14 @@ final class HoveredLinkTabExtensionTests: XCTestCase {
         XCTAssertTrue(received.isEmpty)
     }
 
+    private func report(_ url: URL?) async {
+        let handler = script.handler(forMethodNamed: "hoverChanged")
+        let params: [String: Any] = url.map { ["href": $0.absoluteString] } ?? [:]
+        _ = try? await handler?(params, HoverScriptMessage())
+    }
+
+}
+
+private final class HoverScriptMessage: WKScriptMessage {
+    override var webView: WKWebView? { nil }
 }

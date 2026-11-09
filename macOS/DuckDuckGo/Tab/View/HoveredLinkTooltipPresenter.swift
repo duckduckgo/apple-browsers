@@ -56,7 +56,6 @@ final class HoveredLinkTooltipPresenter {
     private var targetFrame: NSRect?
     private var hoveredURL: URL?
     private var isMouseInside = true
-    private var hasShownTooltip = false
     private var isFadingOut = false
     private var isInstantShowAllowed = false
     private var instantShowWorkItem: DispatchWorkItem?
@@ -192,7 +191,6 @@ final class HoveredLinkTooltipPresenter {
         instantShowWorkItem?.cancel()
         instantShowWorkItem = nil
         hoveredURL = nil
-        hasShownTooltip = false
         hide()
     }
 
@@ -261,8 +259,8 @@ final class HoveredLinkTooltipPresenter {
         isMouseInside = true
         if isReturning, hoveredURL != nil, !window.isVisible {
             // WebKit may still consider the same link hovered and send no new URL.
-            // Give its hover update a chance to cancel a stale URL before restoring it.
-            scheduleVisibilityUpdate(after: hasShownTooltip ? Constants.webKitHoverSettleDelay : Constants.revealDelay) { $0.show() }
+            // Wait the usual reveal delay, which also lets its hover update cancel a stale URL.
+            scheduleVisibilityUpdate(after: Constants.revealDelay) { $0.show() }
             return
         }
         guard hoveredURL != nil, window.isVisible, positionWorkItem == nil else { return }
@@ -295,7 +293,6 @@ final class HoveredLinkTooltipPresenter {
         if animated {
             animate(window, 1, Constants.fadeInDuration * animationScale) {}
         }
-        hasShownTooltip = true
         appearanceObservation = hostView.observe(\.effectiveAppearance, options: [.new]) { [weak self] hostView, _ in
             self?.window.appearance = hostView.effectiveAppearance
         }

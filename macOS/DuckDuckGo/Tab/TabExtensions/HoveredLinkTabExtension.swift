@@ -24,7 +24,7 @@ final class HoveredLinkTabExtension: TabExtension {
 
     private var cancellable: AnyCancellable?
     private weak var hoverUserScript: HoverUserScript?
-    fileprivate var hoveredLinkSubject = CurrentValueSubject<URL?, Never>(nil)
+    fileprivate var hoveredLinkSubject = PassthroughSubject<URL?, Never>()
 
     init(hoverUserScriptPublisher: some Publisher<HoverUserScript?, Never>) {
         cancellable = hoverUserScriptPublisher.sink { [weak self] hoverUserScript in
@@ -35,8 +35,8 @@ final class HoveredLinkTabExtension: TabExtension {
 
     /// The page the link was hovered on is gone: neither the script nor consumers may keep reporting it.
     func resetForNewDocument() {
-        hoverUserScript?.resetForNewDocument()
-        guard hoveredLinkSubject.value != nil else { return }
+        guard let hoverUserScript, hoverUserScript.lastURL != nil else { return }
+        hoverUserScript.resetForNewDocument()
         hoveredLinkSubject.send(nil)
     }
 
@@ -67,13 +67,13 @@ protocol HoveredLinksProtocol: AnyObject, NavigationResponder {
 extension HoveredLinkTabExtension: HoveredLinksProtocol {
     func getPublicProtocol() -> HoveredLinksProtocol { self }
 
-    /// Reports link changes only: the current value, which a new subscriber would get first, is read from `currentHoveredLink`.
+    /// Reports link changes only: the current link is read from `currentHoveredLink`.
     var hoveredLinkPublisher: AnyPublisher<URL?, Never> {
-        hoveredLinkSubject.dropFirst().eraseToAnyPublisher()
+        hoveredLinkSubject.eraseToAnyPublisher()
     }
 
     var currentHoveredLink: URL? {
-        hoveredLinkSubject.value
+        hoverUserScript?.lastURL
     }
 }
 

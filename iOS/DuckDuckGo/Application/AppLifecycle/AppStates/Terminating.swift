@@ -18,6 +18,7 @@
 //
 
 import UIKit.UIApplication
+import BrowserServicesKit
 import Core
 import Persistence
 import PixelKit
@@ -68,6 +69,7 @@ struct Terminating: TerminatingHandling {
     init(error: Error, pixelFiring: (any PixelKitFiring)?) {
         Logger.lifecycle.info("Terminating: \(#function)")
         self.pixelFiring = pixelFiring
+        StartupFailureMetrics.shared.recordFailure()
 
         let pixel: Pixel.Event
         var errorToReport: Error?

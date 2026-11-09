@@ -727,6 +727,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
         if AppVersion.runType.requiresEnvironment {
             Self.configurePixelKit(isInternalUser: internalUserDecider.isInternalUser)
+            StartupFailureMetrics.shared.recordReturn()
         }
 
 #if DEBUG
@@ -737,6 +738,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             // perform a dummy read to ensure that KVS is accessible
             _ = try keyValueStore.object(forKey: AppearancePreferencesUserDefaultsPersistor.Key.newTabPageIsProtectionsReportVisible.rawValue)
         } catch {
+            StartupFailureMetrics.shared.recordFailure()
             PixelKit.fire(DebugEvent(GeneralPixel.keyValueFileStoreInitError, error: error))
             Thread.sleep(forTimeInterval: 1)
             fatalError("Could not prepare key value store: \(error.localizedDescription)")
@@ -750,6 +752,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
             database.db.loadStore { _, error in
                 guard let error = error else { return }
+                StartupFailureMetrics.shared.recordFailure()
 
                 switch error {
                 case CoreDataDatabase.Error.containerLocationCouldNotBePrepared(let underlyingError):
@@ -769,6 +772,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                                                                                                 dbFileURL: BookmarkDatabase.defaultDBFileURL)
                 bookmarkDatabase.preFormFactorSpecificFavoritesFolderOrder = favoritesOrder
             } catch {
+                StartupFailureMetrics.shared.recordFailure()
                 PixelKit.fire(DebugEvent(GeneralPixel.bookmarksCouldNotLoadDatabase(error: error)))
                 Thread.sleep(forTimeInterval: 1)
                 fatalError("Could not create Bookmarks database stack: \(error.localizedDescription)")
@@ -776,6 +780,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
             bookmarkDatabase.db.loadStore { context, error in
                 guard let context = context else {
+                    StartupFailureMetrics.shared.recordFailure()
                     PixelKit.fire(DebugEvent(GeneralPixel.bookmarksCouldNotLoadDatabase(error: error)))
                     Thread.sleep(forTimeInterval: 1)
                     fatalError("Could not create Bookmarks database stack: \(error?.localizedDescription ?? "err")")
@@ -1631,6 +1636,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         guard AppVersion.runType.requiresEnvironment else { return }
         defer {
             didFinishLaunching = true
+            recordStartupRecoveryIfNeeded()
         }
 
         let profilerToken = startupProfiler.measureSequence(initialStep: .appDidFinishLaunchingBeforeRestoration)
@@ -1883,8 +1889,16 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
     }
 
+    @MainActor
+    func recordStartupRecoveryIfNeeded() {
+        guard didFinishLaunching, NSApp.isActive,
+              WindowsManager.windows.contains(where: { $0 is MainWindow && $0.isVisible }) else { return }
+        StartupFailureMetrics.shared.recordSuccessfulStartup()
+    }
+
     func applicationDidBecomeActive(_ notification: Notification) {
         guard didFinishLaunching else { return }
+        recordStartupRecoveryIfNeeded()
 
         // Touch coordinator so Next Steps delegate is registered before promo service starts (1s fallback).
         _ = newTabPageCoordinator

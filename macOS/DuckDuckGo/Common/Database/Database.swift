@@ -72,6 +72,7 @@ final class Database {
                 NSData.self
             ], keyStore: keyStore)
         } catch {
+            StartupFailureMetrics.shared.recordFailure()
             PixelKit.fire(DebugEvent(GeneralPixel.dbValueTransformerRegistrationError, error: error), frequency: .dailyAndCount)
             Thread.sleep(forTimeInterval: 1)
             fatalError("Could not register value transformers: \(error.localizedDescription)")

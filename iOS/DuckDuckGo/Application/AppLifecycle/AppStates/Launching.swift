@@ -74,6 +74,10 @@ struct Launching: LaunchingHandling {
 
         Logger.lifecycle.info("Launching: \(#function)")
 
+        if !isAppLaunchedInBackground {
+            StartupFailureMetrics.shared.recordReturn()
+        }
+
         // First thing after PixelKit is set up (by the `AppDependencyProvider.shared` properties above), so a launch
         // that hangs or crashes later in this init still reports the previous one.
         let launchBreadcrumb = LaunchBreadcrumb()

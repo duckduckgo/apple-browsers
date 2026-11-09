@@ -104,6 +104,27 @@ final class OverlayWindowPresenterTests {
         #expect(overlayWindow.isHidden)
     }
 
+    @available(iOS 16.0, *)
+    @Test("A pending overlay hide finishes when the next overlay appears", .timeLimit(.minutes(1)))
+    func pendingHideFinishesOnNextOverlay() {
+        let mainWindow = WindowSpy()
+        let lockWindow = WindowSpy()
+        let snapshotWindow = WindowSpy()
+        var pendingHide: (() -> Void)?
+        let presenter = OverlayWindowPresenter(mainWindow: mainWindow, afterNextFrames: { pendingHide = $0 })
+        presenter.revealInteractiveWindow(lockWindow)
+        presenter.removeWindow(lockWindow)
+
+        presenter.revealBlankSnapshotWindow(snapshotWindow)
+
+        #expect(lockWindow.isHidden)
+        #expect(!snapshotWindow.isHidden)
+
+        pendingHide?()
+
+        #expect(!snapshotWindow.isHidden)
+    }
+
 }
 
 private final class WindowSpy: UIWindow {

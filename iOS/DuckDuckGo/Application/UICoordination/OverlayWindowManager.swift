@@ -47,6 +47,8 @@ final class OverlayWindowPresenter {
     private let mainWindow: UIWindow
     private var didHideMainWindow = false
     private let afterNextFrames: (@escaping () -> Void) -> Void
+    /// A removed overlay kept on screen until the main window has drawn under it.
+    private weak var windowAwaitingHide: UIWindow?
 
     init(mainWindow: UIWindow,
          afterNextFrames: @escaping (@escaping () -> Void) -> Void = { FrameWaiter.run(afterFrames: 2, $0) }) {
@@ -55,16 +57,19 @@ final class OverlayWindowPresenter {
     }
 
     func revealBlankSnapshotWindow(_ overlayWindow: UIWindow) {
+        finishPendingHide()
         overlayWindow.isHidden = false
     }
 
     func revealInteractiveWindow(_ overlayWindow: UIWindow) {
+        finishPendingHide()
         overlayWindow.makeKeyAndVisible()
         mainWindow.isHidden = true
         didHideMainWindow = true
     }
 
     func removeWindow(_ overlayWindow: UIWindow) {
+        finishPendingHide()
         guard didHideMainWindow else {
             overlayWindow.isHidden = true
             return
@@ -73,15 +78,23 @@ final class OverlayWindowPresenter {
         // A hidden window takes a frame or more to draw again. Show it under the overlay first,
         // so hiding the overlay doesn't reveal a black screen.
         mainWindow.makeKeyAndVisible()
-        afterNextFrames {
-            overlayWindow.isHidden = true
+        windowAwaitingHide = overlayWindow
+        afterNextFrames { [weak self] in
+            guard self?.windowAwaitingHide === overlayWindow else { return }
+            self?.finishPendingHide()
         }
+    }
+
+    /// Frames don't draw in the background, so a hide can still be pending when the next overlay appears.
+    private func finishPendingHide() {
+        windowAwaitingHide?.isHidden = true
+        windowAwaitingHide = nil
     }
 
 }
 
 /// Runs a handler once the screen has drawn the given number of frames.
-final class FrameWaiter {
+private final class FrameWaiter {
 
     private var framesLeft: Int
     private let handler: () -> Void
@@ -189,16 +202,14 @@ final class OverlayWindowManager: OverlayWindowManaging {
     }
 
     func displayOverlay(with viewController: UIViewController) {
-        // Swap into the privacy screen's window, which is already on screen. A new window can reach
-        // the screen a frame after the windows it replaces are hidden, which shows black.
-        if let snapshotWindow = overlayWindow ?? obtainOverlayWindow(),
-           snapshotWindow.rootViewController is BlankSnapshotViewController {
+        // Swap into the overlay window that is already on screen, usually the blank snapshot. A new
+        // window can reach the screen a frame after the windows it replaces are hidden, which shows black.
+        if let existingWindow = overlayWindow ?? obtainOverlayWindow() {
             activeReasons = []
-            snapshotWindow.rootViewController = viewController
-            revealInteractiveWindow(snapshotWindow)
+            existingWindow.rootViewController = viewController
+            revealInteractiveWindow(existingWindow)
             return
         }
-        removeAnyOverlay()
         revealInteractiveWindow(makeOverlayWindow(with: viewController))
     }
 

@@ -104,6 +104,7 @@ public final class NewTabPageOmnibarClient: NewTabPageUserScriptClient {
             configProvider.attachmentPrivacyDisclaimerPublisher.eraseToAnyPublisher(),
             configProvider.launcherPromoPublisher.eraseToAnyPublisher(),
             configProvider.suggestedPromptsPublisher.eraseToAnyPublisher(),
+            configProvider.pastedTextConfigPublisher,
             screenshotProvider?.configChangesPublisher ?? Empty<Void, Never>().eraseToAnyPublisher()
         )
         .sink { [weak self] _ in
@@ -205,8 +206,8 @@ public final class NewTabPageOmnibarClient: NewTabPageUserScriptClient {
             showSuggestedPrompts: configProvider.showSuggestedPrompts,
             screenshotModes: screenshotProvider?.screenshotModes,
             enablePastedAttachments: screenshotProvider?.enablePastedAttachments,
-            enablePastedText: screenshotProvider?.enablePastedText,
-            promptLimits: screenshotProvider?.promptLimits
+            enablePastedText: configProvider.isPastedTextEnabled,
+            promptLimits: configProvider.promptLimits
         )
     }
 
@@ -299,8 +300,8 @@ public final class NewTabPageOmnibarClient: NewTabPageUserScriptClient {
             showSuggestedPrompts: configProvider.showSuggestedPrompts,
             screenshotModes: screenshotProvider?.screenshotModes,
             enablePastedAttachments: screenshotProvider?.enablePastedAttachments,
-            enablePastedText: screenshotProvider?.enablePastedText,
-            promptLimits: screenshotProvider?.promptLimits
+            enablePastedText: configProvider.isPastedTextEnabled,
+            promptLimits: configProvider.promptLimits
         )
         pushMessage(named: MessageName.onConfigUpdate.rawValue, params: config)
     }
@@ -369,7 +370,7 @@ public final class NewTabPageOmnibarClient: NewTabPageUserScriptClient {
             reasoningEffort: isUpdatedImageGenerationSubmission ? nil : reasoningEffortForSubmission(action: action),
             pageContexts: action.pageContext,
             files: action.files,
-            textPasted: screenshotProvider?.enablePastedText == true ? action.textPasted : nil,
+            textPasted: configProvider.isPastedTextEnabled ? action.textPasted : nil,
             aiTermsAccepted: action.aiTermsAccepted == true
         )
         if let suggestedPromptId = action.suggestedPromptId {

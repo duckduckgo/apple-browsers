@@ -389,6 +389,9 @@ private final class MockAiChatsConfigProvider: NewTabPageOmnibarConfigProviding 
     var showSuggestedPrompts: Bool = false
     var suggestedPromptsPromptCount: Int = 0
     var suggestedPromptsPublisher: AnyPublisher<Void, Never> { Empty<Void, Never>().eraseToAnyPublisher() }
+    var isPastedTextEnabled: Bool = false
+    var promptLimits: NewTabPageDataModel.OmnibarPromptLimits?
+    var pastedTextConfigPublisher: AnyPublisher<Void, Never> { Empty<Void, Never>().eraseToAnyPublisher() }
 }
 
 private extension AIChatSuggestion {

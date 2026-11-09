@@ -176,4 +176,13 @@ public protocol NewTabPageOmnibarConfigProviding: AnyObject {
 
     /// Fires when the flag flips or the persisted count changes, so every open NTP re-reads the config.
     var suggestedPromptsPublisher: AnyPublisher<Void, Never> { get }
+
+    /// Whether the page turns long text pastes into pasted-text attachments (`enablePastedText`).
+    var isPastedTextEnabled: Bool { get }
+
+    /// Paste threshold and prompt cap. `nil` while pasted text is off, so the page uses its built-in limits.
+    var promptLimits: NewTabPageDataModel.OmnibarPromptLimits? { get }
+
+    /// Fires when the flag or the limits change, so an open NTP updates without a reload.
+    var pastedTextConfigPublisher: AnyPublisher<Void, Never> { get }
 }

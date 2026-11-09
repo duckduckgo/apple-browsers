@@ -606,6 +606,28 @@ final class NewTabPageOmnibarConfigProvider: NewTabPageOmnibarConfigProviding {
             .eraseToAnyPublisher()
     }
 
+    var isPastedTextEnabled: Bool {
+        featureFlagger.isFeatureOn(.aiChatNtpPastedText)
+    }
+
+    var promptLimits: NewTabPageDataModel.OmnibarPromptLimits? {
+        guard isPastedTextEnabled else { return nil }
+        let limits = remoteSettings.ntpPromptLimits
+        return .init(pasteConversionThreshold: limits.pasteConversionThreshold, maxCharacters: limits.maxCharacters)
+    }
+
+    /// The feature flagger also reports privacy config updates, so new limits reach an open NTP
+    /// even when the flag doesn't change.
+    var pastedTextConfigPublisher: AnyPublisher<Void, Never> {
+        featureFlagger.updatesPublisher
+            .compactMap { [weak self] in self.map { ($0.isPastedTextEnabled, $0.promptLimits) } }
+            .prepend((isPastedTextEnabled, promptLimits))
+            .removeDuplicates { $0 == $1 }
+            .dropFirst()
+            .map { _ in () }
+            .eraseToAnyPublisher()
+    }
+
     var isVoiceChatAccessEnabled: Bool {
         featureFlagger.isFeatureOn(.aiChatOmnibarVoiceChatAccess)
     }

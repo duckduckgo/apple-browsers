@@ -16,7 +16,6 @@
 //  limitations under the License.
 //
 
-import AIChat
 import AppKit
 import Combine
 import FeatureFlags_macOS
@@ -29,17 +28,14 @@ import WebKit
 final class NewTabPageOmnibarScreenshotProvider: NewTabPageOmnibarScreenshotProviding {
 
     private let featureFlagger: FeatureFlagger
-    private let privacyConfigurationManager: PrivacyConfigurationManaging?
     private let captureService: AIChatScreenshotCaptureService
     private let pixelFiring: PixelFiring?
 
     /// `captureService` is resolved in the body: a default argument is evaluated off the main actor.
     init(featureFlagger: FeatureFlagger,
-         privacyConfigurationManager: PrivacyConfigurationManaging? = nil,
          captureService: AIChatScreenshotCaptureService? = nil,
          pixelFiring: PixelFiring? = PixelKit.shared) {
         self.featureFlagger = featureFlagger
-        self.privacyConfigurationManager = privacyConfigurationManager
         self.captureService = captureService ?? NSApp.delegateTyped.aiChatScreenshotCaptureService
         self.pixelFiring = pixelFiring
     }
@@ -53,27 +49,12 @@ final class NewTabPageOmnibarScreenshotProvider: NewTabPageOmnibarScreenshotProv
         featureFlagger.isFeatureOn(.aiChatNtpPasteImages)
     }
 
-    var enablePastedText: Bool {
-        featureFlagger.isFeatureOn(.aiChatNtpPastedText)
-    }
-
-    /// Read from the `ntpPastedText` settings, falling back to `AIChatPromptLimits.current`; omitted while the flag is off.
-    var promptLimits: NewTabPageDataModel.OmnibarPromptLimits? {
-        guard enablePastedText else { return nil }
-        let limits = privacyConfigurationManager.map {
-            AIChatPromptLimits(privacyConfig: $0.privacyConfig, subfeature: AIChatSubfeature.ntpPastedText)
-        } ?? .current
-        return .init(pasteConversionThreshold: limits.pasteConversionThreshold, maxCharacters: limits.maxCharacters)
-    }
-
     /// `map`, not `compactMap` like the neighbouring flag publishers: `nil` (flag off) must reach the
-    /// page so an open New Tab Page hides Add Screenshot. Privacy config updates also arrive here.
+    /// page so an open New Tab Page hides Add Screenshot.
     var configChangesPublisher: AnyPublisher<Void, Never> {
-        let current = (screenshotModes, enablePastedAttachments, enablePastedText, promptLimits)
+        let current = (screenshotModes, enablePastedAttachments)
         return featureFlagger.updatesPublisher
-            .map { [weak self] in
-                (self?.screenshotModes, self?.enablePastedAttachments ?? false, self?.enablePastedText ?? false, self?.promptLimits)
-            }
+            .map { [weak self] in (self?.screenshotModes, self?.enablePastedAttachments ?? false) }
             .prepend(current)
             .removeDuplicates { $0 == $1 }
             .dropFirst()

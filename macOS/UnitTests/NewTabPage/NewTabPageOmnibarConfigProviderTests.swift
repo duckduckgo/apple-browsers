@@ -1044,6 +1044,56 @@ final class NewTabPageOmnibarConfigProviderTests: XCTestCase {
         XCTAssertEqual(provider.suggestedPromptsPromptLimit, 5)
     }
 
+    // MARK: - Pasted text
+
+    @MainActor
+    func testPastedText_isOffWithoutTheFlagAndUsesTheBuiltInLimitsWithoutSettings() throws {
+        let featureFlagger = MockFeatureFlagger()
+        let remoteSettings = AIChatRemoteSettings(privacyConfigurationManager: MockPrivacyConfigurationManager(privacyConfig: MockPrivacyConfiguration()))
+        let provider = NewTabPageOmnibarConfigProvider(keyValueStore: try makeStore(), aiChatShortcutSettingProvider: MockNewTabPageAIChatShortcutSettingProvider(), featureFlagger: featureFlagger, remoteSettings: remoteSettings, searchPreferences: makeSearchPreferences())
+
+        XCTAssertFalse(provider.isPastedTextEnabled)
+        XCTAssertNil(provider.promptLimits)
+
+        featureFlagger.enabledFeatureFlags = [.aiChatNtpPastedText]
+        XCTAssertTrue(provider.isPastedTextEnabled)
+        XCTAssertEqual(provider.promptLimits, .init(pasteConversionThreshold: 4_000, maxCharacters: 16_000))
+    }
+
+    @MainActor
+    func testPastedText_promptLimitsComeFromTheNtpPastedTextSettings() throws {
+        let featureFlagger = MockFeatureFlagger()
+        featureFlagger.enabledFeatureFlags = [.aiChatNtpPastedText]
+        let privacyConfig = MockPrivacyConfiguration()
+        privacyConfig.subfeatureSettings = #"{ "pasteConversionThreshold": 2000, "maxCharacters": 8000 }"#
+        let remoteSettings = AIChatRemoteSettings(privacyConfigurationManager: MockPrivacyConfigurationManager(privacyConfig: privacyConfig))
+        let provider = NewTabPageOmnibarConfigProvider(keyValueStore: try makeStore(), aiChatShortcutSettingProvider: MockNewTabPageAIChatShortcutSettingProvider(), featureFlagger: featureFlagger, remoteSettings: remoteSettings, searchPreferences: makeSearchPreferences())
+
+        XCTAssertEqual(provider.promptLimits, .init(pasteConversionThreshold: 2_000, maxCharacters: 8_000))
+    }
+
+    @MainActor
+    func testPastedTextConfigPublisher_firesWhenTheFlagOrTheLimitsChange() throws {
+        let featureFlagger = MockFeatureFlagger()
+        let privacyConfig = MockPrivacyConfiguration()
+        let remoteSettings = AIChatRemoteSettings(privacyConfigurationManager: MockPrivacyConfigurationManager(privacyConfig: privacyConfig))
+        let provider = NewTabPageOmnibarConfigProvider(keyValueStore: try makeStore(), aiChatShortcutSettingProvider: MockNewTabPageAIChatShortcutSettingProvider(), featureFlagger: featureFlagger, remoteSettings: remoteSettings, searchPreferences: makeSearchPreferences())
+        var changes = 0
+        let cancellable = provider.pastedTextConfigPublisher.sink { changes += 1 }
+
+        featureFlagger.triggerUpdate()
+        XCTAssertEqual(changes, 0, "An update that changes nothing is not pushed")
+
+        featureFlagger.enabledFeatureFlags = [.aiChatNtpPastedText]
+        featureFlagger.triggerUpdate()
+        XCTAssertEqual(changes, 1)
+
+        privacyConfig.subfeatureSettings = #"{ "pasteConversionThreshold": 2000, "maxCharacters": 8000 }"#
+        featureFlagger.triggerUpdate()
+        XCTAssertEqual(changes, 2, "New limits are pushed while the flag stays on")
+        cancellable.cancel()
+    }
+
     @MainActor
     func testShowSuggestedPrompts_isFalseOnceFivePromptsWereSent() throws {
         let featureFlagger = MockFeatureFlagger()

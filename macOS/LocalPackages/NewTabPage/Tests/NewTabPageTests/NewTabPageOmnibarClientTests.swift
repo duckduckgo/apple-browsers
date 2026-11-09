@@ -1433,49 +1433,35 @@ final class NewTabPageOmnibarClientTests: XCTestCase {
     }
 
     @MainActor
-    func testGetConfigOmitsPastedTextWithoutAProvider() async throws {
-        let config: NewTabPageDataModel.OmnibarConfig = try await messageHelper.handleMessage(named: .getConfig)
-        XCTAssertNil(config.enablePastedText)
-        XCTAssertNil(config.promptLimits)
-    }
-
-    @MainActor
     func testGetConfigPassesPastedTextAndPromptLimitsThrough() async throws {
-        let provider = MockNewTabPageOmnibarScreenshotProvider()
-        let helper = makeScreenshotClient(provider)
-
-        let off: NewTabPageDataModel.OmnibarConfig = try await helper.handleMessage(named: .getConfig)
+        let off: NewTabPageDataModel.OmnibarConfig = try await messageHelper.handleMessage(named: .getConfig)
         XCTAssertEqual(off.enablePastedText, false)
         XCTAssertNil(off.promptLimits)
 
-        provider.enablePastedText = true
-        provider.promptLimits = .init(pasteConversionThreshold: 2_000, maxCharacters: 8_000)
-        let on: NewTabPageDataModel.OmnibarConfig = try await helper.handleMessage(named: .getConfig)
+        configProvider.isPastedTextEnabled = true
+        configProvider.promptLimits = .init(pasteConversionThreshold: 2_000, maxCharacters: 8_000)
+        let on: NewTabPageDataModel.OmnibarConfig = try await messageHelper.handleMessage(named: .getConfig)
         XCTAssertEqual(on.enablePastedText, true)
         XCTAssertEqual(on.promptLimits, .init(pasteConversionThreshold: 2_000, maxCharacters: 8_000))
     }
 
     @MainActor
     func testSubmitChatForwardsPastedTextWhenEnabled() async throws {
-        let provider = MockNewTabPageOmnibarScreenshotProvider()
-        provider.enablePastedText = true
-        let helper = makeScreenshotClient(provider)
+        configProvider.isPastedTextEnabled = true
         let mock = try XCTUnwrap(actionHandler as? MockNewTabPageOmnibarActionsHandler)
 
         let action: [String: Any] = ["chat": "Summarize", "target": "same-tab", "textPasted": [["content": "long paste"]]]
-        try await helper.handleMessageExpectingNilResponse(named: .submitChat, parameters: action)
+        try await messageHelper.handleMessageExpectingNilResponse(named: .submitChat, parameters: action)
 
         XCTAssertEqual(mock.lastSubmitChatTextPasted, [.init(content: "long paste")])
     }
 
     @MainActor
     func testSubmitChatDropsPastedTextWhenDisabled() async throws {
-        let provider = MockNewTabPageOmnibarScreenshotProvider()
-        let helper = makeScreenshotClient(provider)
         let mock = try XCTUnwrap(actionHandler as? MockNewTabPageOmnibarActionsHandler)
 
         let action: [String: Any] = ["chat": "Summarize", "target": "same-tab", "textPasted": [["content": "long paste"]]]
-        try await helper.handleMessageExpectingNilResponse(named: .submitChat, parameters: action)
+        try await messageHelper.handleMessageExpectingNilResponse(named: .submitChat, parameters: action)
 
         XCTAssertNil(mock.lastSubmitChatTextPasted)
     }

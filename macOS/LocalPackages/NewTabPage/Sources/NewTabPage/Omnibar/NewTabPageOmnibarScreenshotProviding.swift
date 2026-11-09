@@ -30,13 +30,7 @@ public protocol NewTabPageOmnibarScreenshotProviding: AnyObject {
     /// Lets the page attach pasted images and copied files.
     var enablePastedAttachments: Bool { get }
 
-    /// Lets the page turn long text pastes into pasted-text attachments.
-    var enablePastedText: Bool { get }
-
-    /// `nil` omits the field and the page uses its built-in limits.
-    var promptLimits: NewTabPageDataModel.OmnibarPromptLimits? { get }
-
-    /// Fires when any of the values above change, so an open New Tab Page updates without a reload.
+    /// Fires when the modes or `enablePastedAttachments` change, so an open New Tab Page updates without a reload.
     var configChangesPublisher: AnyPublisher<Void, Never> { get }
 
     /// Replies once the capture is taken, fails or is cancelled, however long the user takes.

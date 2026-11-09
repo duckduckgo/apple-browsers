@@ -3322,17 +3322,32 @@
 /* iPad menu bar command */
 "menuBack" = "Terug";
 
+/* iPad menu bar title */
+"menuBookmarks" = "Bladwijzers";
+
 /* iPad menu bar command */
 "menuClearTabsAndData" = "Tabbladen en gegevens wissen";
 
+/* iPad Duck.ai menu bar command */
+"menuDeleteAllChats" = "Alle chats verwijderen...";
+
 /* iPad menu bar command */
 "menuDuplicateTab" = "Tabblad kopiëren";
+
+/* iPad menu bar command */
+"menuExportBookmarks" = "Bladwijzers exporteren ...";
+
+/* iPad menu bar submenu */
+"menuFavorites" = "Favorieten";
 
 /* iPad menu bar command */
 "menuFeedback" = "Feedback delen";
 
 /* iPad menu bar command */
 "menuForward" = "Vooruit";
+
+/* iPad menu bar command */
+"menuHideBookmarks" = "Bladwijzers verbergen";
 
 /* iPad menu bar command */
 "menuHideDownloads" = "Downloads verbergen";
@@ -3344,13 +3359,28 @@
 "menuHideTabs" = "Verberg tabbladen";
 
 /* iPad menu bar command */
+"menuImportBookmarks" = "Bladwijzers importeren...";
+
+/* iPad menu bar command */
 "menuLastTab" = "Laatste tabblad";
+
+/* iPad Duck.ai menu bar command */
+"menuNewChat" = "Nieuwe chat";
+
+/* iPad Duck.ai menu bar command */
+"menuNewImageChat" = "Nieuwe afbeeldings-chat";
 
 /* iPad menu bar command */
 "menuNewTabOnRight" = "Nieuw tabblad aan de rechterkant";
 
+/* iPad Duck.ai menu bar command */
+"menuNewVoiceChat" = "Nieuwe spraakchat";
+
 /* iPad menu bar command */
 "menuNextTab" = "Volgende tabblad tonen";
+
+/* iPad Duck.ai menu bar command */
+"menuOpenDuckAI" = "Duck.ai openen";
 
 /* iPad menu bar command */
 "menuOpenLocation" = "Locatie openen...";
@@ -3361,11 +3391,17 @@
 /* iPad menu bar command */
 "menuPrint" = "Afdrukken ...";
 
+/* iPad Duck.ai menu bar section header */
+"menuRecentChats" = "Recente chats";
+
 /* iPad menu bar command selecting a numbered tab */
 "menuSelectTab" = "Selecteer tabblad %d";
 
 /* iPad menu bar command */
 "menuSettings" = "DuckDuckGo instellingen…";
+
+/* iPad menu bar command */
+"menuShowBookmarks" = "Bladwijzers tonen";
 
 /* iPad menu bar command */
 "menuShowDownloads" = "Downloads weergeven";
@@ -4180,11 +4216,17 @@
 /* Description of too many requests error when syncing. */
 "prefrences.sync.too-many-requests.description" = "'Synchronisatie en back-up' is tijdelijk niet beschikbaar.";
 
+/* Fireproofing setting toggle label */
+"preserveLogins.askOnSignIn" = "Vraag om websites Fireproof te maken bij inloggen";
+
 /* No comment provided by engineer. */
 "preserveLogins.domain.list.footer" = "Websites gebruiken cookies om te zorgen dat je ingelogd blijft. Als je een site brandveilig maakt, worden de cookies niet gewist en blijf je ingelogd, zelfs nadat je de vuurknop hebt gebruikt. Trackers van derden worden ook op brandveilige websites geblokkeerd.";
 
 /* Section header above Fireproofed websites list */
 "preserveLogins.domain.list.title" = "Brandveilige websites";
+
+/* Empty Fireproof sites list */
+"preserveLogins.emptyState" = "Nog geen Fireproof websites";
 
 /* Alert message explaining to users that the benefit of fireproofing a site is that they will be kept signed in */
 "preserveLogins.fireproof.message" = "Als je deze site brandveilig maakt, blijf je ook na het gebruiken van de vuurknop ingelogd.";
@@ -4215,6 +4257,9 @@
 
 /* Confirmation button in alert */
 "preserveLogins.remove.all.ok" = "OK";
+
+/* Button to remove all Fireproof sites */
+"preserveLogins.removeAllSites" = "Alle Fireproof websites verwijderen";
 
 /* No comment provided by engineer. */
 "Previews" = "Voorbeeldeweergaven";
@@ -5206,6 +5251,9 @@
 /* Alert content for not found subscription */
 "subscription.expired.alert.message" = "Je abonnement dat aan dit Apple-account is gekoppeld, is niet langer actief.";
 
+/* Subtitle in header when the subscription has been cancelled but is still active until it expires */
+"subscription.expiring" = "Verloopt";
+
 /* FAQ Button */
 "subscription.faq" = "Veelgestelde vragen en ondersteuning";
 
@@ -5404,11 +5452,26 @@
 /* Fallback device name for confirmation dialogs */
 "sync.pairing-v2.unknown-peer-name" = "het andere apparaat";
 
+/* Title for a button in the Sync Promotion banner on the Bookmarks or Passwords screen that opens a screen with links to get DuckDuckGo on other platforms */
+"sync.promo.bookmarks.another-device.get-desktop-app.action" = "Download de app";
+
+/* Title for a button in the Sync Promotion banner on the Bookmarks screen that opens Sync settings to connect another device */
+"sync.promo.bookmarks.another-device.sync.action" = "Bladwijzers synchroniseren";
+
+/* Title for the Sync Promotion banner on the Bookmarks screen, shown when Sync is on but only this device is connected */
+"sync.promo.bookmarks.another-device.title" = "Synchroniseer bladwijzers met je desktop-app.";
+
 /* Message for the Sync Promotion banner when user has bookmarks that can be synced */
 "sync.promo.bookmarks.message" = "Geen account nodig. End-to-end versleuteling betekent dat niemand anders dan jij je bladwijzers kan zien, zelfs wij niet.";
 
+/* Message for the redesigned Sync Promotion banner on the Bookmarks screen */
+"sync.promo.bookmarks.redesign.message" = "End-to-end versleuteld. Niemand kan je bladwijzers zien, zelfs wij niet.";
+
 /* Title for the Sync Promotion banner */
 "sync.promo.bookmarks.title" = "Synchroniseer en back-up je bladwijzers";
+
+/* Accessibility label for the close button on the Sync Promotion banner */
+"sync.promo.close.accessibility.label" = "Sync-promotie sluiten";
 
 /* Title for a button in the Sync Promotion banner to set up Sync */
 "sync.promo.confirm.action" = "Synchronisatie instellen";
@@ -5422,11 +5485,23 @@
 /* Title for a button in the Sync Promotion banner to dismiss Sync promotion banner */
 "sync.promo.dismiss.action" = "Nee, bedankt";
 
+/* Title for a button in the Sync Promotion banner on the Passwords screen that opens Sync settings to connect another device */
+"sync.promo.passwords.another-device.sync.action" = "Wachtwoorden synchroniseren";
+
+/* Title for the Sync Promotion banner on the Passwords screen, shown when Sync is on but only this device is connected */
+"sync.promo.passwords.another-device.title" = "Synchroniseer wachtwoorden met je desktop-app.";
+
 /* Message for the Sync Promotion banner when user has passwords that can be synced */
 "sync.promo.passwords.message" = "Geen account nodig. Dankzij end-to-end versleuteling kan niemand behalve jij je wachtwoorden zien, zelfs wij niet.";
 
+/* Message for the redesigned Sync Promotion banner on the Passwords screen */
+"sync.promo.passwords.redesign.message" = "End-to-end versleuteld. Niemand kan je wachtwoorden zien, zelfs wij niet.";
+
 /* Title for the Sync Promotion banner */
 "sync.promo.passwords.title" = "Synchroniseer en maak een back-up van je wachtwoorden";
+
+/* Label for a toggle in the Sync Promotion banner that opens Sync settings and starts setting up Sync with another device */
+"sync.promo.toggle.title" = "Synchronisatie en back-up";
 
 /* Button title to start backup */
 "sync.recovery.alternative.prompt.backup.button" = "Sync & Backup voor dit apparaat";
@@ -6016,12 +6091,3 @@
 /* Title for screen to screen confirming what data to import from a zip file (bookmarks and /or passwords) */
 "zip.content.import.types.title" = "Wat wil je importeren?";
 
-
-/* Fireproofing setting toggle label */
-"preserveLogins.askOnSignIn" = "Vraag naar brandveilige websites bij het inloggen";
-
-/* Empty Fireproof sites list */
-"preserveLogins.emptyState" = "Nog geen brandveilige websites";
-
-/* Button to remove all Fireproof sites */
-"preserveLogins.removeAllSites" = "Alle brandveilige websites verwijderen";

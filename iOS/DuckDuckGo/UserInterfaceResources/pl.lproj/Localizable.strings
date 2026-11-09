@@ -3322,17 +3322,32 @@
 /* iPad menu bar command */
 "menuBack" = "Wstecz";
 
+/* iPad menu bar title */
+"menuBookmarks" = "Zakładki";
+
 /* iPad menu bar command */
 "menuClearTabsAndData" = "Wyczyść karty i dane";
 
+/* iPad Duck.ai menu bar command */
+"menuDeleteAllChats" = "Usuń wszystkie czaty…";
+
 /* iPad menu bar command */
 "menuDuplicateTab" = "Zduplikuj kartę";
+
+/* iPad menu bar command */
+"menuExportBookmarks" = "Eksportuj zakładki…";
+
+/* iPad menu bar submenu */
+"menuFavorites" = "Ulubione";
 
 /* iPad menu bar command */
 "menuFeedback" = "Podziel się opinią";
 
 /* iPad menu bar command */
 "menuForward" = "Dalej";
+
+/* iPad menu bar command */
+"menuHideBookmarks" = "Ukryj zakładki";
 
 /* iPad menu bar command */
 "menuHideDownloads" = "Ukryj pobrane";
@@ -3344,13 +3359,28 @@
 "menuHideTabs" = "Ukryj karty";
 
 /* iPad menu bar command */
+"menuImportBookmarks" = "Importuj zakładki…";
+
+/* iPad menu bar command */
 "menuLastTab" = "Ostatnia karta";
+
+/* iPad Duck.ai menu bar command */
+"menuNewChat" = "Nowy czat";
+
+/* iPad Duck.ai menu bar command */
+"menuNewImageChat" = "Nowy czat z obrazami";
 
 /* iPad menu bar command */
 "menuNewTabOnRight" = "Nowa karta po prawej stronie";
 
+/* iPad Duck.ai menu bar command */
+"menuNewVoiceChat" = "Nowy czat głosowy";
+
 /* iPad menu bar command */
 "menuNextTab" = "Pokaż następną kartę";
+
+/* iPad Duck.ai menu bar command */
+"menuOpenDuckAI" = "Otwórz Duck.ai";
 
 /* iPad menu bar command */
 "menuOpenLocation" = "Otwórz lokalizację…";
@@ -3361,11 +3391,17 @@
 /* iPad menu bar command */
 "menuPrint" = "Drukuj…";
 
+/* iPad Duck.ai menu bar section header */
+"menuRecentChats" = "Ostatnie czaty";
+
 /* iPad menu bar command selecting a numbered tab */
 "menuSelectTab" = "Wybierz kartę %d";
 
 /* iPad menu bar command */
 "menuSettings" = "Ustawienia DuckDuckGo…";
+
+/* iPad menu bar command */
+"menuShowBookmarks" = "Pokaż zakładki";
 
 /* iPad menu bar command */
 "menuShowDownloads" = "Pokaż pobrane";
@@ -4180,11 +4216,17 @@
 /* Description of too many requests error when syncing. */
 "prefrences.sync.too-many-requests.description" = "Funkcja Sync & Backup jest tymczasowo niedostępna.";
 
+/* Fireproofing setting toggle label */
+"preserveLogins.askOnSignIn" = "Proś o zabezpieczanie Fireproof witryn podczas logowania";
+
 /* No comment provided by engineer. */
 "preserveLogins.domain.list.footer" = "W witrynach internetowych są wykorzystywane pliki cookie. Gdy użyjesz w witrynie funkcji zabezpieczenia, pliki cookie nie zostaną usunięte i pozostaniesz zalogowany(-a) nawet po użyciu przycisku Zabezpiecz. Nadal blokujemy narzędzia śledzące innych firm znalezione w zabezpieczonych witrynach.";
 
 /* Section header above Fireproofed websites list */
 "preserveLogins.domain.list.title" = "Bezpieczne witryny internetowe";
+
+/* Empty Fireproof sites list */
+"preserveLogins.emptyState" = "Brak witryn Fireproof";
 
 /* Alert message explaining to users that the benefit of fireproofing a site is that they will be kept signed in */
 "preserveLogins.fireproof.message" = "Zabezpieczenie tej witryny za pomocą przycisku Zabezpiecz nie spowoduje wylogowania Cię z witryny.";
@@ -4215,6 +4257,9 @@
 
 /* Confirmation button in alert */
 "preserveLogins.remove.all.ok" = "OK";
+
+/* Button to remove all Fireproof sites */
+"preserveLogins.removeAllSites" = "Usuń wszystkie witryny Fireproof";
 
 /* No comment provided by engineer. */
 "Previews" = "Podglądy";
@@ -5206,6 +5251,9 @@
 /* Alert content for not found subscription */
 "subscription.expired.alert.message" = "Subskrypcja powiązana z tym kontem Apple nie jest już aktywna.";
 
+/* Subtitle in header when the subscription has been cancelled but is still active until it expires */
+"subscription.expiring" = "Wygasa";
+
 /* FAQ Button */
 "subscription.faq" = "Często zadawane pytania i pomoc techniczna";
 
@@ -5404,11 +5452,26 @@
 /* Fallback device name for confirmation dialogs */
 "sync.pairing-v2.unknown-peer-name" = "drugiego urządzenia";
 
+/* Title for a button in the Sync Promotion banner on the Bookmarks or Passwords screen that opens a screen with links to get DuckDuckGo on other platforms */
+"sync.promo.bookmarks.another-device.get-desktop-app.action" = "Pobierz aplikację";
+
+/* Title for a button in the Sync Promotion banner on the Bookmarks screen that opens Sync settings to connect another device */
+"sync.promo.bookmarks.another-device.sync.action" = "Synchronizuj zakładki…";
+
+/* Title for the Sync Promotion banner on the Bookmarks screen, shown when Sync is on but only this device is connected */
+"sync.promo.bookmarks.another-device.title" = "Synchronizuj zakładki z aplikacją komputerową.";
+
 /* Message for the Sync Promotion banner when user has bookmarks that can be synced */
 "sync.promo.bookmarks.message" = "Konto nie jest wymagane. Kompleksowe szyfrowanie oznacza, że nikt poza Tobą nie może zobaczyć Twoich zakładek, nawet my.";
 
+/* Message for the redesigned Sync Promotion banner on the Bookmarks screen */
+"sync.promo.bookmarks.redesign.message" = "Szyfrowane kompleksowo. Nikt nie może zobaczyć Twoich zakładek, nawet my.";
+
 /* Title for the Sync Promotion banner */
 "sync.promo.bookmarks.title" = "Synchronizuj i twórz kopie zapasowe zakładek";
+
+/* Accessibility label for the close button on the Sync Promotion banner */
+"sync.promo.close.accessibility.label" = "Odrzuć promocję funkcji Sync & Backup";
 
 /* Title for a button in the Sync Promotion banner to set up Sync */
 "sync.promo.confirm.action" = "Skonfiguruj synchronizację";
@@ -5422,11 +5485,23 @@
 /* Title for a button in the Sync Promotion banner to dismiss Sync promotion banner */
 "sync.promo.dismiss.action" = "Nie, dziękuję";
 
+/* Title for a button in the Sync Promotion banner on the Passwords screen that opens Sync settings to connect another device */
+"sync.promo.passwords.another-device.sync.action" = "Synchronizuj hasła";
+
+/* Title for the Sync Promotion banner on the Passwords screen, shown when Sync is on but only this device is connected */
+"sync.promo.passwords.another-device.title" = "Synchronizuj hasła z aplikacją komputerową.";
+
 /* Message for the Sync Promotion banner when user has passwords that can be synced */
 "sync.promo.passwords.message" = "Konto nie jest wymagane. Kompleksowe szyfrowanie oznacza, że nikt poza Tobą nie może zobaczyć Twoich haseł, nawet my.";
 
+/* Message for the redesigned Sync Promotion banner on the Passwords screen */
+"sync.promo.passwords.redesign.message" = "Szyfrowane kompleksowo. Nikt nie może zobaczyć Twoich haseł, nawet my.";
+
 /* Title for the Sync Promotion banner */
 "sync.promo.passwords.title" = "Synchronizuj i twórz kopie zapasowe haseł";
+
+/* Label for a toggle in the Sync Promotion banner that opens Sync settings and starts setting up Sync with another device */
+"sync.promo.toggle.title" = "Sync & Backup";
 
 /* Button title to start backup */
 "sync.recovery.alternative.prompt.backup.button" = "Synchronizuj i utwórz kopię zapasową tego urządzenia";
@@ -6016,12 +6091,3 @@
 /* Title for screen to screen confirming what data to import from a zip file (bookmarks and /or passwords) */
 "zip.content.import.types.title" = "Co chcesz importować?";
 
-
-/* Fireproofing setting toggle label */
-"preserveLogins.askOnSignIn" = "Proś o zabezpieczanie witryn internetowych podczas logowania";
-
-/* Empty Fireproof sites list */
-"preserveLogins.emptyState" = "Brak zabezpieczonych witryn internetowych";
-
-/* Button to remove all Fireproof sites */
-"preserveLogins.removeAllSites" = "Usuń wszystkie zabezpieczone strony";

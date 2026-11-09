@@ -3322,17 +3322,32 @@
 /* iPad menu bar command */
 "menuBack" = "Înapoi";
 
+/* iPad menu bar title */
+"menuBookmarks" = "Semne de carte";
+
 /* iPad menu bar command */
 "menuClearTabsAndData" = "Șterge filele și datele";
 
+/* iPad Duck.ai menu bar command */
+"menuDeleteAllChats" = "Șterge toate chaturile...";
+
 /* iPad menu bar command */
 "menuDuplicateTab" = "Duplică fila";
+
+/* iPad menu bar command */
+"menuExportBookmarks" = "Exportă marcajele…";
+
+/* iPad menu bar submenu */
+"menuFavorites" = "Preferințe";
 
 /* iPad menu bar command */
 "menuFeedback" = "Partajează feedback";
 
 /* iPad menu bar command */
 "menuForward" = "Înainte";
+
+/* iPad menu bar command */
+"menuHideBookmarks" = "Ascunde marcajele";
 
 /* iPad menu bar command */
 "menuHideDownloads" = "Ascunde descărcările";
@@ -3344,13 +3359,28 @@
 "menuHideTabs" = "Ascunde filele";
 
 /* iPad menu bar command */
+"menuImportBookmarks" = "Importă marcaje…";
+
+/* iPad menu bar command */
 "menuLastTab" = "Ultima filă";
+
+/* iPad Duck.ai menu bar command */
+"menuNewChat" = "Chat nou";
+
+/* iPad Duck.ai menu bar command */
+"menuNewImageChat" = "Chat nou cu imagini";
 
 /* iPad menu bar command */
 "menuNewTabOnRight" = "Filă nouă la dreapta";
 
+/* iPad Duck.ai menu bar command */
+"menuNewVoiceChat" = "Chat vocal nou";
+
 /* iPad menu bar command */
 "menuNextTab" = "Afișează fila următoare";
+
+/* iPad Duck.ai menu bar command */
+"menuOpenDuckAI" = "Deschide Duck.ai";
 
 /* iPad menu bar command */
 "menuOpenLocation" = "Deschide locația…";
@@ -3361,11 +3391,17 @@
 /* iPad menu bar command */
 "menuPrint" = "Tipărește…";
 
+/* iPad Duck.ai menu bar section header */
+"menuRecentChats" = "Chaturi recente";
+
 /* iPad menu bar command selecting a numbered tab */
 "menuSelectTab" = "Selectează fila %d";
 
 /* iPad menu bar command */
 "menuSettings" = "Setări DuckDuckGo…";
+
+/* iPad menu bar command */
+"menuShowBookmarks" = "Afișează marcajele";
 
 /* iPad menu bar command */
 "menuShowDownloads" = "Afișează descărcările";
@@ -4180,11 +4216,17 @@
 /* Description of too many requests error when syncing. */
 "prefrences.sync.too-many-requests.description" = "Sync & Backup sunt temporar indisponibile.";
 
+/* Fireproofing setting toggle label */
+"preserveLogins.askOnSignIn" = "Solicită aplicarea funcției Fireproof pe site-uri la conectare";
+
 /* No comment provided by engineer. */
 "preserveLogins.domain.list.footer" = "Site-urile web se bazează pe cookie-uri pentru a te menține conectat. Atunci când ștergi activitatea și istoricul unui site, cookie-urile nu vor fi șterse și vei rămâne conectat, chiar și după utilizarea butonului Ștergere activitate și istoric. Blocăm totuși instrumentele de urmărire terțe găsite pe site-urile web cu ștergerea activității și istoricului din browser la ieșire.";
 
 /* Section header above Fireproofed websites list */
 "preserveLogins.domain.list.title" = "Site-uri cu ștergerea activității și istoricului din browser la ieșire";
+
+/* Empty Fireproof sites list */
+"preserveLogins.emptyState" = "Nu există încă site-uri pe care să se fi aplicat funcția Fireproof";
 
 /* Alert message explaining to users that the benefit of fireproofing a site is that they will be kept signed in */
 "preserveLogins.fireproof.message" = "Ștergerea activității și istoricului din browser pentru acest site te va menține conectat după utilizarea butonului Ștergere activitate și istoric.";
@@ -4215,6 +4257,9 @@
 
 /* Confirmation button in alert */
 "preserveLogins.remove.all.ok" = "OK";
+
+/* Button to remove all Fireproof sites */
+"preserveLogins.removeAllSites" = "Elimină toate site-urile pe care s-a aplicat funcția Fireproof";
 
 /* No comment provided by engineer. */
 "Previews" = "Previzualizări";
@@ -5206,6 +5251,9 @@
 /* Alert content for not found subscription */
 "subscription.expired.alert.message" = "Abonamentul asociat acestui cont Apple nu mai este activ.";
 
+/* Subtitle in header when the subscription has been cancelled but is still active until it expires */
+"subscription.expiring" = "În curs de expirare";
+
 /* FAQ Button */
 "subscription.faq" = "Întrebări frecvente și asistență";
 
@@ -5404,11 +5452,26 @@
 /* Fallback device name for confirmation dialogs */
 "sync.pairing-v2.unknown-peer-name" = "celălalt dispozitiv";
 
+/* Title for a button in the Sync Promotion banner on the Bookmarks or Passwords screen that opens a screen with links to get DuckDuckGo on other platforms */
+"sync.promo.bookmarks.another-device.get-desktop-app.action" = "Obține aplicația";
+
+/* Title for a button in the Sync Promotion banner on the Bookmarks screen that opens Sync settings to connect another device */
+"sync.promo.bookmarks.another-device.sync.action" = "Sincronizează marcajele";
+
+/* Title for the Sync Promotion banner on the Bookmarks screen, shown when Sync is on but only this device is connected */
+"sync.promo.bookmarks.another-device.title" = "Sincronizează marcajele cu aplicația pentru desktop.";
+
 /* Message for the Sync Promotion banner when user has bookmarks that can be synced */
 "sync.promo.bookmarks.message" = "Nu este nevoie să ai un cont. Criptarea de la un punct la altul (end-to-end) înseamnă că nimeni în afară de tine nu îți poate vedea marcajele, nici măcar noi.";
 
+/* Message for the redesigned Sync Promotion banner on the Bookmarks screen */
+"sync.promo.bookmarks.redesign.message" = "Criptat de la un capăt la altul. Nimeni nu poate vedea marcajele tale, nici măcar noi.";
+
 /* Title for the Sync Promotion banner */
 "sync.promo.bookmarks.title" = "Sincronizează și creează copii de rezervă pentru marcajele tale";
+
+/* Accessibility label for the close button on the Sync Promotion banner */
+"sync.promo.close.accessibility.label" = "Ignoră promovarea sincronizării";
 
 /* Title for a button in the Sync Promotion banner to set up Sync */
 "sync.promo.confirm.action" = "Configurează sincronizarea";
@@ -5422,11 +5485,23 @@
 /* Title for a button in the Sync Promotion banner to dismiss Sync promotion banner */
 "sync.promo.dismiss.action" = "Nu, mulțumesc";
 
+/* Title for a button in the Sync Promotion banner on the Passwords screen that opens Sync settings to connect another device */
+"sync.promo.passwords.another-device.sync.action" = "Sincronizează parolele";
+
+/* Title for the Sync Promotion banner on the Passwords screen, shown when Sync is on but only this device is connected */
+"sync.promo.passwords.another-device.title" = "Sincronizează parolele cu aplicația pentru desktop.";
+
 /* Message for the Sync Promotion banner when user has passwords that can be synced */
 "sync.promo.passwords.message" = "Nu este nevoie să ai un cont. Criptarea end-to-end înseamnă că nimeni în afară de tine nu îți poate vedea parolele, nici măcar noi.";
 
+/* Message for the redesigned Sync Promotion banner on the Passwords screen */
+"sync.promo.passwords.redesign.message" = "Criptat de la un capăt la altul. Nimeni nu-ți poate vedea parolele, nici măcar noi.";
+
 /* Title for the Sync Promotion banner */
 "sync.promo.passwords.title" = "Sincronizează și creează copii de rezervă pentru parolele tale";
+
+/* Label for a toggle in the Sync Promotion banner that opens Sync settings and starts setting up Sync with another device */
+"sync.promo.toggle.title" = "Sync & Backup";
 
 /* Button title to start backup */
 "sync.recovery.alternative.prompt.backup.button" = "Sync & Backup pentru acest dispozitiv";
@@ -6016,12 +6091,3 @@
 /* Title for screen to screen confirming what data to import from a zip file (bookmarks and /or passwords) */
 "zip.content.import.types.title" = "Ce dorești să imporți?";
 
-
-/* Fireproofing setting toggle label */
-"preserveLogins.askOnSignIn" = "Solicită ignifugarea site-urile la autentificare";
-
-/* Empty Fireproof sites list */
-"preserveLogins.emptyState" = "Nu există încă site-uri ignifuge";
-
-/* Button to remove all Fireproof sites */
-"preserveLogins.removeAllSites" = "Elimină toate site-urile la care la ieșire se șterge activitatea și istoricul din browser";

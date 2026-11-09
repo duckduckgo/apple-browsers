@@ -3322,17 +3322,32 @@
 /* iPad menu bar command */
 "menuBack" = "Takaisin";
 
+/* iPad menu bar title */
+"menuBookmarks" = "Kirjanmerkit";
+
 /* iPad menu bar command */
 "menuClearTabsAndData" = "Tyhjennä välilehdet ja tiedot";
 
+/* iPad Duck.ai menu bar command */
+"menuDeleteAllChats" = "Poista kaikki keskustelut...";
+
 /* iPad menu bar command */
 "menuDuplicateTab" = "Monista välilehti";
+
+/* iPad menu bar command */
+"menuExportBookmarks" = "Vie kirjanmerkit...";
+
+/* iPad menu bar submenu */
+"menuFavorites" = "Suosikit";
 
 /* iPad menu bar command */
 "menuFeedback" = "Anna palautetta";
 
 /* iPad menu bar command */
 "menuForward" = "Eteenpäin";
+
+/* iPad menu bar command */
+"menuHideBookmarks" = "Piilota kirjanmerkit";
 
 /* iPad menu bar command */
 "menuHideDownloads" = "Piilota lataukset";
@@ -3344,13 +3359,28 @@
 "menuHideTabs" = "Piilota välilehdet";
 
 /* iPad menu bar command */
+"menuImportBookmarks" = "Tuo kirjanmerkit...";
+
+/* iPad menu bar command */
 "menuLastTab" = "Viimeinen välilehti";
+
+/* iPad Duck.ai menu bar command */
+"menuNewChat" = "Uusi keskustelu";
+
+/* iPad Duck.ai menu bar command */
+"menuNewImageChat" = "Uusi kuvakeskustelu";
 
 /* iPad menu bar command */
 "menuNewTabOnRight" = "Uusi välilehti oikealle";
 
+/* iPad Duck.ai menu bar command */
+"menuNewVoiceChat" = "Uusi äänikeskustelu";
+
 /* iPad menu bar command */
 "menuNextTab" = "Näytä seuraava välilehti";
+
+/* iPad Duck.ai menu bar command */
+"menuOpenDuckAI" = "Avaa Duck.ai";
 
 /* iPad menu bar command */
 "menuOpenLocation" = "Avaa sijainti...";
@@ -3361,11 +3391,17 @@
 /* iPad menu bar command */
 "menuPrint" = "Tulosta...";
 
+/* iPad Duck.ai menu bar section header */
+"menuRecentChats" = "Viimeaikaiset keskustelut";
+
 /* iPad menu bar command selecting a numbered tab */
 "menuSelectTab" = "Valitse välilehti %d";
 
 /* iPad menu bar command */
 "menuSettings" = "DuckDuckGo-asetukset...";
+
+/* iPad menu bar command */
+"menuShowBookmarks" = "Näytä kirjanmerkit";
 
 /* iPad menu bar command */
 "menuShowDownloads" = "Näytä lataukset";
@@ -4180,11 +4216,17 @@
 /* Description of too many requests error when syncing. */
 "prefrences.sync.too-many-requests.description" = "Synkronointi ja varmuuskopiointi on tilapäisesti poissa käytöstä.";
 
+/* Fireproofing setting toggle label */
+"preserveLogins.askOnSignIn" = "Kysy, tehdäänkö sivustoista Fireproof-sivustoja sisäänkirjautumisen yhteydessä";
+
 /* No comment provided by engineer. */
 "preserveLogins.domain.list.footer" = "Verkkosivustot käyttävät evästeitä, joilla pysyt kirjautuneena sisään. Kun teet sivustosta palonkestävän, evästeitä ei poisteta ja pysyt kirjautuneena sisään, vaikka käytät Liekki-painiketta. Estämme edelleen kolmannen osapuolen seurannan palonkestävillä sivustoilla.";
 
 /* Section header above Fireproofed websites list */
 "preserveLogins.domain.list.title" = "Tee sivustoista palonkestäviä";
+
+/* Empty Fireproof sites list */
+"preserveLogins.emptyState" = "Ei vielä Fireproof-sivustoja";
 
 /* Alert message explaining to users that the benefit of fireproofing a site is that they will be kept signed in */
 "preserveLogins.fireproof.message" = "Sivuston tekeminen palonkestäväksi tarkoittaa, että pysyt kirjautuneena, vaikka käytät Liekki-painiketta.";
@@ -4215,6 +4257,9 @@
 
 /* Confirmation button in alert */
 "preserveLogins.remove.all.ok" = "OK";
+
+/* Button to remove all Fireproof sites */
+"preserveLogins.removeAllSites" = "Poista kaikki Fireproof-sivustot";
 
 /* No comment provided by engineer. */
 "Previews" = "Esikatselut";
@@ -5206,6 +5251,9 @@
 /* Alert content for not found subscription */
 "subscription.expired.alert.message" = "Tähän Apple-tiliin liitetty tilaus ei ole enää aktiivinen.";
 
+/* Subtitle in header when the subscription has been cancelled but is still active until it expires */
+"subscription.expiring" = "Voimassaolo päättyy";
+
 /* FAQ Button */
 "subscription.faq" = "Usein kysytyt kysymykset ja tuki";
 
@@ -5404,11 +5452,26 @@
 /* Fallback device name for confirmation dialogs */
 "sync.pairing-v2.unknown-peer-name" = "toinen laite";
 
+/* Title for a button in the Sync Promotion banner on the Bookmarks or Passwords screen that opens a screen with links to get DuckDuckGo on other platforms */
+"sync.promo.bookmarks.another-device.get-desktop-app.action" = "Hanki sovellus";
+
+/* Title for a button in the Sync Promotion banner on the Bookmarks screen that opens Sync settings to connect another device */
+"sync.promo.bookmarks.another-device.sync.action" = "Synkronoi kirjanmerkit";
+
+/* Title for the Sync Promotion banner on the Bookmarks screen, shown when Sync is on but only this device is connected */
+"sync.promo.bookmarks.another-device.title" = "Synkronoi kirjanmerkit työpöytäsovelluksesi kanssa.";
+
 /* Message for the Sync Promotion banner when user has bookmarks that can be synced */
 "sync.promo.bookmarks.message" = "Tiliä ei tarvita. Päästä päähän -salaus tarkoittaa, että sinun lisäksesi kukaan muu ei näe kirjanmerkkejäsi, emme edes me.";
 
+/* Message for the redesigned Sync Promotion banner on the Bookmarks screen */
+"sync.promo.bookmarks.redesign.message" = "Päästä päähän salattu. Kukaan ei voi nähdä kirjanmerkkejäsi, emme edes me.";
+
 /* Title for the Sync Promotion banner */
 "sync.promo.bookmarks.title" = "Synkronoi ja varmuuskopioi kirjanmerkkisi";
+
+/* Accessibility label for the close button on the Sync Promotion banner */
+"sync.promo.close.accessibility.label" = "Hylkää synkronointitarjous";
 
 /* Title for a button in the Sync Promotion banner to set up Sync */
 "sync.promo.confirm.action" = "Määritä synkronointi";
@@ -5422,11 +5485,23 @@
 /* Title for a button in the Sync Promotion banner to dismiss Sync promotion banner */
 "sync.promo.dismiss.action" = "Ei kiitos";
 
+/* Title for a button in the Sync Promotion banner on the Passwords screen that opens Sync settings to connect another device */
+"sync.promo.passwords.another-device.sync.action" = "Synkronoi salasanat";
+
+/* Title for the Sync Promotion banner on the Passwords screen, shown when Sync is on but only this device is connected */
+"sync.promo.passwords.another-device.title" = "Synkronoi salasanat työpöytäsovelluksesi kanssa.";
+
 /* Message for the Sync Promotion banner when user has passwords that can be synced */
 "sync.promo.passwords.message" = "Tiliä ei tarvita. Päästä päähän -salaus tarkoittaa, että sinun lisäksesi kukaan muu ei näe salasanojasi, emme edes me.";
 
+/* Message for the redesigned Sync Promotion banner on the Passwords screen */
+"sync.promo.passwords.redesign.message" = "Päästä päähän salattu. Kukaan ei näe salasanojasi, emme edes me.";
+
 /* Title for the Sync Promotion banner */
 "sync.promo.passwords.title" = "Synkronoi ja varmuuskopioi salasanasi";
+
+/* Label for a toggle in the Sync Promotion banner that opens Sync settings and starts setting up Sync with another device */
+"sync.promo.toggle.title" = "Sync & Backup";
 
 /* Button title to start backup */
 "sync.recovery.alternative.prompt.backup.button" = "Synkronoi ja varmuuskopioi tämä laite";
@@ -6016,12 +6091,3 @@
 /* Title for screen to screen confirming what data to import from a zip file (bookmarks and /or passwords) */
 "zip.content.import.types.title" = "Mitä haluat tuoda?";
 
-
-/* Fireproofing setting toggle label */
-"preserveLogins.askOnSignIn" = "Kysy, tehdäänkö sivustoista palonkestäviä sisäänkirjautumisen yhteydessä";
-
-/* Empty Fireproof sites list */
-"preserveLogins.emptyState" = "Ei vielä palonkestäviä sivustoja";
-
-/* Button to remove all Fireproof sites */
-"preserveLogins.removeAllSites" = "Poista kaikki palonkestävät sivustot";

@@ -319,6 +319,11 @@ extension WebExtensionManager {
                 guard let self, let context, let webView = self.backgroundWebView(in: context) else { break }
                 guard self.nativeMessagingHandler?.hasOpenPorts(for: context) == true else {
                     _ = try? await webView.evaluateJavaScript("\(function)?.(false)")
+                    // A port that connected during the release found this task registered and started
+                    // none, so this task keeps the page loaded for it.
+                    if self.nativeMessagingHandler?.hasOpenPorts(for: context) == true {
+                        continue
+                    }
                     break
                 }
                 let renewed = (try? await webView.evaluateJavaScript("\(function)?.() === true")) as? Bool ?? false

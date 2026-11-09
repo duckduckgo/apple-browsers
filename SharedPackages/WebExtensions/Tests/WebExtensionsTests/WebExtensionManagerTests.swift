@@ -2701,6 +2701,57 @@ final class WebExtensionManagerTests: XCTestCase {
         XCTAssertNil(manager.nativePortKeepAliveTasks["native-messaging-reload"])
     }
 
+    /// A native port can open while the keep-alive task releases the page's keep-alive port. The task
+    /// must then keep the page loaded, since the new port's connect found the task still registered.
+    @MainActor
+    func testWhenANativePortOpensWhileTheKeepAliveIsReleased_ThenTheKeepAliveContinues() async throws {
+        let host = ScriptedOpenPortsNativeMessagingHandler(answers: [false, true])
+        let manager = WebExtensionManager(configuration: configurationMock,
+                                          windowTabProvider: windowTabProviderMock,
+                                          storageProvider: storageProvidingMock,
+                                          installationStore: installedExtensionStoringMock,
+                                          loader: webExtensionLoadingMock,
+                                          lifecycleDelegate: lifecycleDelegateMock,
+                                          nativeMessagingHandler: host)
+        let directory = try makeTestExtensionDirectory(permissions: ["nativeMessaging"])
+        let manifestURL = directory.appendingPathComponent("manifest.json")
+        var manifest = try XCTUnwrap(JSONSerialization.jsonObject(with: Data(contentsOf: manifestURL)) as? [String: Any])
+        manifest["background"] = ["page": "bg.html"]
+        try JSONSerialization.data(withJSONObject: manifest).write(to: manifestURL)
+        try #"<!DOCTYPE html><html><head><meta charset="utf-8"></head><body><script src="bg.js"></script></body></html>"#
+            .write(to: directory.appendingPathComponent("bg.html"), atomically: true, encoding: .utf8)
+        try """
+        globalThis.keepAliveCalls = [];
+        globalThis.\(WebExtensionAPIStubScript.keepBackgroundAliveFunctionName) = function(keepAlive) {
+            keepAliveCalls.push(keepAlive === false ? "release" : "renew");
+            return true;
+        };
+        """.write(to: directory.appendingPathComponent("bg.js"), atomically: true, encoding: .utf8)
+
+        let context = WKWebExtensionContext(for: try await WKWebExtension(resourceBaseURL: directory))
+        context.uniqueIdentifier = "native-messaging-keep-alive-race"
+        try manager.controller.load(context)
+        addTeardownBlock { try? manager.controller.unload(context) }
+        try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
+            context.loadBackgroundContent { error in
+                if let error { continuation.resume(throwing: error) } else { continuation.resume() }
+            }
+        }
+        let webView = try XCTUnwrap(manager.backgroundWebView(in: context))
+
+        manager.keepBackgroundLoadedWhileNativePortsAreOpen(for: context)
+
+        var calls: [String] = []
+        for _ in 0..<50 where calls.count < 2 {
+            try await Task.sleep(for: .milliseconds(100))
+            let result: Any? = try await webView.evaluateJavaScript("keepAliveCalls")
+            calls = result as? [String] ?? []
+        }
+        XCTAssertEqual(calls, ["release", "renew"])
+        XCTAssertNotNil(manager.nativePortKeepAliveTasks["native-messaging-keep-alive-race"])
+        manager.nativePortKeepAliveTasks["native-messaging-keep-alive-race"]?.task.cancel()
+    }
+
     /// Without a native messaging handler, as in the App Store build, `connectNative()` must fail at once,
     /// so an extension falls back right away instead of waiting on a port no host ever answers.
     @MainActor
@@ -3525,6 +3576,31 @@ private final class ExpectingMessageHandler: WebExtensionMessageHandler {
         receivedMessages.append(message)
         receivedMessage.fulfill()
         return .success(nil)
+    }
+}
+
+/// Answers `hasOpenPorts(for:)` from `answers` in order, then keeps giving the last one.
+@available(macOS 15.4, iOS 18.4, *)
+@MainActor
+private final class ScriptedOpenPortsNativeMessagingHandler: WebExtensionNativeMessagingHandling {
+    private var answers: [Bool]
+
+    init(answers: [Bool]) {
+        self.answers = answers
+    }
+
+    func connect(_ port: WKWebExtension.MessagePort,
+                 applicationIdentifier: String?,
+                 for context: WKWebExtensionContext) async throws {}
+
+    func hasOpenPorts(for context: WKWebExtensionContext) -> Bool {
+        answers.count > 1 ? answers.removeFirst() : answers.first ?? false
+    }
+
+    func sendMessage(_ message: Any,
+                     applicationIdentifier: String?,
+                     for context: WKWebExtensionContext) async throws -> Any? {
+        nil
     }
 }
 

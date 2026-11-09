@@ -661,11 +661,6 @@ public final class DefaultSubscriptionManager: SubscriptionManager {
         // Snapshot of the stored token before the request, used to detect a replacement and for the sign-out pixel
         let tokenBeforeAttempt = localTokenSnapshot()
 
-        // Before creating a new account, try to restore the missing token from the backup
-        if policy == .createIfNeeded, tokenBeforeAttempt == .missing, tokenRecoveryCoordinator != nil {
-            try await restoreBeforeAccountCreation()
-        }
-
         do {
             // Get the token, refreshing it or creating an account as the policy requires, and update the cached state
             let resultTokenContainer = try await oAuthClient.getTokens(policy: policy)
@@ -796,23 +791,6 @@ public final class DefaultSubscriptionManager: SubscriptionManager {
                                                          localTokenStateAfterSignOut: localTokenState(),
                                                          now: failedRequest.capturedAt)
         pixelHandler.handle(pixel: .automaticSignOut(data, triggeringError))
-    }
-
-    /// Restores the missing current token from the backup before an account is created, ignoring the missing-token retry pause.
-    /// - Throws: `SubscriptionManagerError.errorRetrievingTokenContainer` when the restore failed for a temporary reason,
-    ///   so no account is created while a backup that could still restore the session is stored. Otherwise nothing is thrown.
-    private func restoreBeforeAccountCreation() async throws {
-        do {
-            _ = try await recoverToken(trigger: .accountCreation, deadPrimary: nil)
-            Logger.subscriptionTokensManagement.log("Restored the missing token before creating an account")
-        } catch SubscriptionManagerError.tokenRecoveryNotAttempted {
-            return
-        } catch let error where BackupRestoreFailure(error) == .temporary {
-            Logger.subscriptionTokensManagement.error("Backup restore failed before creating an account, not creating one: \(String(describing: error), privacy: .public)")
-            throw SubscriptionManagerError.errorRetrievingTokenContainer(error: error)
-        } catch {
-            return
-        }
     }
 
     /// Runs `tokenRecoveryCoordinator` for `trigger` and returns the token it stored.

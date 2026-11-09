@@ -289,6 +289,8 @@ class TabViewController: UIViewController {
     private var hasAppliedFloatingUIScrollViewInsets = false
     private var hasDeferredFloatingUIInsets = false
     private var lastDuckAIInnerScrollInsets: UIEdgeInsets?
+    private var scrollingBeforeFloatingAIChrome: Bool?
+    private var backgroundBeforeFloatingAIChrome: (view: UIColor?, outer: UIColor?, container: UIColor?, isOpaque: Bool)?
     private var scrollViewAdjustmentBehaviorBeforeFloatingUI: WebViewScrollViewInsetUpdater.AdjustmentBehavior?
     /// Last chrome visibility fraction applied, so layout can be redone outside a visibility change.
     private var lastAppliedBarsVisibilityPercent: CGFloat = 1.0
@@ -1179,6 +1181,28 @@ class TabViewController: UIViewController {
         applyWebViewLayout(for: 1.0)
     }
 
+    func applyFloatingAIChromeBackground(_ color: UIColor?) {
+        guard isAITab || backgroundBeforeFloatingAIChrome != nil else { return }
+        if let color {
+            if backgroundBeforeFloatingAIChrome == nil {
+                backgroundBeforeFloatingAIChrome = (view.backgroundColor, outerContainer.backgroundColor,
+                                                    webViewContainer.backgroundColor, webView.isOpaque)
+            }
+            view.backgroundColor = color
+            outerContainer.backgroundColor = color
+            webViewContainer.backgroundColor = color
+            webView.isOpaque = false
+        } else if let previous = backgroundBeforeFloatingAIChrome {
+            view.backgroundColor = previous.view
+            outerContainer.backgroundColor = previous.outer
+            webViewContainer.backgroundColor = previous.container
+            if !webView.isLoading {
+                webView.isOpaque = previous.isOpaque
+            }
+            backgroundBeforeFloatingAIChrome = nil
+        }
+    }
+
     func updateWebViewBottomAnchor(for barsVisibilityPercent: CGFloat) {
         lastAppliedBarsVisibilityPercent = barsVisibilityPercent
         applyWebViewLayout(for: barsVisibilityPercent)
@@ -1269,7 +1293,7 @@ class TabViewController: UIViewController {
         let isUnifiedToggleInputAffectingLayout = isAITab && unifiedToggleInputFeature.isAvailable
         let usesFloatingAIChrome = if #available(iOS 26, *) {
             isUnifiedToggleInputAffectingLayout
-                && featureFlagger.isDuckAIAndInputLiquidGlassEnabled(isFloatingUIEnabled: floatingUIManager.isFloatingUIEnabled)
+                && floatingUIManager.isDuckAIAndInputLiquidGlassEnabled
         } else {
             false
         }
@@ -1331,6 +1355,7 @@ class TabViewController: UIViewController {
             // Keep WebKit's viewport stable too. Changing it on every display-link tick can
             // relayout page-fixed content while the glass is morphing over a full-bleed web view.
             setWebViewObscuredContentInsetsIfSupported(obscuredInsets)
+            updateFloatingAIChatScrolling(isEnabled: usesFloatingAIChrome, topInset: obscuredInsets.top)
             if isAITab, usesFloatingAIChrome || lastDuckAIInnerScrollInsets != nil {
                 let innerInsets = usesFloatingAIChrome ? obscuredInsets : .zero
                 if lastDuckAIInnerScrollInsets != innerInsets {
@@ -1343,7 +1368,27 @@ class TabViewController: UIViewController {
         hasDeferredFloatingUIInsets = hadDeferredInsets && !shouldUpdateScrollInsets
     }
 
+    private func updateFloatingAIChatScrolling(isEnabled: Bool, topInset: CGFloat) {
+        guard isEnabled else {
+            restoreScrollingAfterFloatingAIChrome()
+            return
+        }
+        if scrollingBeforeFloatingAIChrome == nil {
+            scrollingBeforeFloatingAIChrome = webView.scrollView.isScrollEnabled
+        }
+        // Chat owns scrolling. Pin the outer view.
+        webView.scrollView.isScrollEnabled = false
+        webView.scrollView.contentOffset.y = -topInset
+    }
+
+    private func restoreScrollingAfterFloatingAIChrome() {
+        guard let scrollingBeforeFloatingAIChrome else { return }
+        webView.scrollView.isScrollEnabled = scrollingBeforeFloatingAIChrome
+        self.scrollingBeforeFloatingAIChrome = nil
+    }
+
     private func updateWebViewLayoutForClassicUI(for barsVisibilityPercent: CGFloat) {
+        restoreScrollingAfterFloatingAIChrome()
         hasDeferredFloatingUIInsets = false
         applyContextualOnboardingTopInset(0)
         webViewTopAnchorConstraint?.constant = 0
@@ -1518,6 +1563,7 @@ class TabViewController: UIViewController {
                        loadingInitiatedByParentTab: Bool = false,
                        customWebView: ((WKWebViewConfiguration) -> WKWebView)? = nil) {
         lastDuckAIInnerScrollInsets = nil
+        scrollingBeforeFloatingAIChrome = nil
         cancelWebExtensionNavigationWait()
         instrumentation.willPrepareWebView()
         pageContextNavigationID = UUID()
@@ -2962,7 +3008,7 @@ extension TabViewController: WKNavigationDelegate {
     func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
         terminationReloadMonitor.didFinish()
         if isAITab, #available(iOS 26, *),
-           featureFlagger.isDuckAIAndInputLiquidGlassEnabled(isFloatingUIEnabled: floatingUIManager.isFloatingUIEnabled) {
+           floatingUIManager.isDuckAIAndInputLiquidGlassEnabled {
             DuckAIChatScrollInsetStyler.apply(lastDuckAIInnerScrollInsets ?? .zero, to: webView)
         }
         updateFloatingPageBackgroundColor(in: webView)

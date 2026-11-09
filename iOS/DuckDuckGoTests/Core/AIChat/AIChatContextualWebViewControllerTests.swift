@@ -81,6 +81,51 @@ final class AIChatContextualWebViewControllerTests: XCTestCase {
     }
 
     @MainActor
+    func testNativeQuickActionsEndAboveInputUntilConversationIsVisible() async throws {
+        for usesLiquidGlass in [false, true] {
+            let webController = makeAttachmentSubmissionController()
+            let settings = MockAIChatSettingsProvider(aiChatURL: URL(string: "about:blank")!)
+            let pixels = StubContextualModePixelHandler()
+            let flagger = MockFeatureFlagger()
+            let floatingInputFeature = AIChatContextualFloatingInputFeature(featureFlagger: flagger)
+            let host = AIChatContextualUTIHost(originatingURLPublisher: Empty<URL?, Never>().eraseToAnyPublisher(),
+                                             initialAttachedContext: nil, hasActiveChat: { false },
+                                             isAutoAttachEnabled: { false }, isFireTab: false,
+                                             unifiedToggleInputFeature: MockUnifiedToggleInputFeatureProvider(isAvailable: true),
+                                             floatingInputFeature: floatingInputFeature)
+            let state = AIChatContextualChatSessionState(aiChatSettings: settings, pixelHandler: pixels, featureFlagger: flagger,
+                                                        floatingInputFeature: floatingInputFeature)
+            state.updateUnifiedToggleInputActive(true, isImmediateContextual: true)
+            let sheet = AIChatContextualSheetViewController(
+                sessionState: state,
+                aiChatSettings: settings, voiceSearchHelper: MockVoiceSearchHelper(),
+                webViewControllerFactory: { webController }, pixelHandler: pixels, featureFlagger: flagger,
+                persistentUTIHost: host, floatingInputFeature: floatingInputFeature, usesLiquidGlassHeader: usesLiquidGlass
+            )
+            let window = UIWindow(frame: CGRect(x: 0, y: 0, width: 390, height: 800))
+            defer { window.isHidden = true }
+            window.rootViewController = sheet
+            window.makeKeyAndVisible()
+            await withCheckedContinuation { continuation in
+                DispatchQueue.main.async { continuation.resume() }
+            }
+            sheet.view.layoutIfNeeded()
+            let input = host.mount(in: sheet)
+            let nativeInput = try XCTUnwrap(sheet.children.first { $0 is AIChatContextualInputViewController })
+            XCTAssertEqual(nativeInput.view.convert(nativeInput.view.bounds, to: sheet.view).maxY, input.frame.minY, accuracy: 0.5)
+
+            state.restoreChat(with: settings.aiChatURL)
+            await withCheckedContinuation { continuation in
+                DispatchQueue.main.async { continuation.resume() }
+            }
+            sheet.view.layoutIfNeeded()
+            let extendsUnderInput = if #available(iOS 26, *) { usesLiquidGlass } else { false }
+            XCTAssertEqual(webController.view.convert(webController.view.bounds, to: sheet.view).maxY,
+                           extendsUnderInput ? sheet.view.bounds.maxY : input.frame.minY, accuracy: 0.5)
+        }
+    }
+
+    @MainActor
     func testQueuedFirstPromptKeepsItsRequestUntilFrontendIsReady() async {
         let sut = makeAttachmentSubmissionController()
         let script = makeTestUserScript()

@@ -765,9 +765,7 @@ extension MainViewFactory {
         coordinator.constraints.unifiedInputContentBottomToToolbar = bottomToToolbar
         coordinator.constraints.unifiedInputContentBottomToSuperview = bottomToSuperview
         let extendsUnderToolbar = if #available(iOS 26, *) {
-            featureFlagger.isDuckAIAndInputLiquidGlassEnabled(
-                isFloatingUIEnabled: floatingUIManager.isFloatingUIEnabled
-            )
+            floatingUIManager.isDuckAIAndInputLiquidGlassEnabled
         } else {
             false
         }

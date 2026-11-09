@@ -848,7 +848,7 @@ extension SwipeTabsCoordinator: UICollectionViewDelegate {
         let header = AIChatTabChatHeaderView(
             isFireModeEnabled: true,
             shouldShowImageGeneration: omnibarDependencies.featureFlagger.isFeatureOn(.aiChatNativeSidebar),
-            usesFloatingAIChrome: omnibarDependencies.featureFlagger.isDuckAIAndInputLiquidGlassEnabled(isFloatingUIEnabled: floatingUIManager.isFloatingUIEnabled),
+            usesFloatingAIChrome: floatingUIManager.isDuckAIAndInputLiquidGlassEnabled,
             layout: AIChatTabChatHeaderView.Layout(featureFlagger: omnibarDependencies.featureFlagger)
         )
         header.isUserInteractionEnabled = false
@@ -877,7 +877,7 @@ extension SwipeTabsCoordinator: UICollectionViewDelegate {
             isToggleEnabled: true,
             isFireTab: tab.fireTab,
             usesCompactAttachmentLayout: attachMoreTabsFeature.usesCompactAttachmentLayout,
-            usesFloatingUI: omnibarDependencies.featureFlagger.isDuckAIAndInputLiquidGlassEnabled(isFloatingUIEnabled: floatingUIManager.isFloatingUIEnabled))
+            usesFloatingUI: floatingUIManager.isDuckAIAndInputLiquidGlassEnabled)
         inputController.loadViewIfNeeded()
         inputController.view.isUserInteractionEnabled = false
 

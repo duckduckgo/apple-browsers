@@ -350,12 +350,7 @@ extension MainViewController {
             webView.backgroundColor = webViewBackgroundColor
             webView.scrollView.backgroundColor = webViewBackgroundColor
             webView.underPageBackgroundColor = webViewBackgroundColor
-            currentTab?.view.backgroundColor = usesFloatingAIChrome && currentTab?.isAITab == true
-                ? rootBackgroundColor
-                : ThemeManager.shared.currentTheme.backgroundColor
-            currentTab?.outerContainer.backgroundColor = currentTab?.view.backgroundColor
-            currentTab?.webViewContainer.backgroundColor = currentTab?.view.backgroundColor
-            webView.isOpaque = !(usesFloatingAIChrome && currentTab?.isAITab == true)
+            currentTab?.applyFloatingAIChromeBackground(usesFloatingAIChrome && currentTab?.isAITab == true ? rootBackgroundColor : nil)
             currentTab?.pullToRefreshViewAdapter?.webViewBackgroundDidChange()
         }
     }

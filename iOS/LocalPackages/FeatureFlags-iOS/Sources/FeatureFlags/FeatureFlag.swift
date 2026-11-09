@@ -1162,10 +1162,6 @@ extension FeatureFlagger {
         }
     }
 
-    public func isDuckAIAndInputLiquidGlassEnabled(isFloatingUIEnabled: Bool) -> Bool {
-        isFloatingUIEnabled && isFeatureOn(.duckAIAndInputLiquidGlass)
-    }
-
     public func isFeatureOn(_ featureFlag: FeatureFlag) -> Bool {
         isFeatureOn(for: featureFlag)
     }

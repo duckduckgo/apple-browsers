@@ -102,9 +102,7 @@ final class AIChatContextualUTIHost: UnifiedToggleInputDelegate, AIChatContextua
         self.startsPreSubmit = start.isPreSubmit
         self.usesFloatingInput = isFloatingInputAvailable
         if #available(iOS 26, *) {
-            self.usesLiquidGlass = AppDependencyProvider.shared.featureFlagger.isDuckAIAndInputLiquidGlassEnabled(
-                isFloatingUIEnabled: floatingUIManager.isFloatingUIEnabled
-            )
+            self.usesLiquidGlass = floatingUIManager.isDuckAIAndInputLiquidGlassEnabled
         } else {
             self.usesLiquidGlass = false
         }

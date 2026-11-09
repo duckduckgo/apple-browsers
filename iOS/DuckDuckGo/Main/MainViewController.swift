@@ -3457,13 +3457,10 @@ class MainViewController: UIViewController {
 
         if #available(iOS 26, *), isDuckAIAndInputLiquidGlassEnabled, tab.isAITab {
             let color = UIColor(singleUseColor: .duckAIWebViewBackground)
-            tab.view.backgroundColor = color
-            tab.outerContainer.backgroundColor = color
-            tab.webViewContainer.backgroundColor = color
+            tab.applyFloatingAIChromeBackground(color)
             tab.webView.backgroundColor = color
             tab.webView.scrollView.backgroundColor = color
             tab.webView.underPageBackgroundColor = color
-            tab.webView.isOpaque = false
         }
         addToContentContainer(controller: tab)
 
@@ -9411,7 +9408,7 @@ extension MainViewController {
     }
 
     var isDuckAIAndInputLiquidGlassEnabled: Bool {
-        featureFlagger.isDuckAIAndInputLiquidGlassEnabled(isFloatingUIEnabled: isFloatingUIEnabled)
+        floatingUIManager.isDuckAIAndInputLiquidGlassEnabled
     }
 
     override func traitCollectionDidChange(_ previousTraitCollection: UITraitCollection?) {

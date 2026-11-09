@@ -41,9 +41,9 @@ enum DuckAIChatScrollInsetStyler {
                 state.find = () => {
                     let best = null;
                     for (const element of document.querySelectorAll('div')) {
+                        if (best?.contains(element)) continue;
                         const overflow = getComputedStyle(element).overflowY;
                         if (overflow !== 'auto' && overflow !== 'scroll') continue;
-                        if (element.scrollHeight <= element.clientHeight + 1) continue;
                         const rect = element.getBoundingClientRect();
                         if (rect.height < innerHeight * 0.65 || rect.top > innerHeight * 0.25) continue;
                         if (!best || element.clientHeight > best.clientHeight) best = element;
@@ -91,7 +91,16 @@ enum DuckAIChatScrollInsetStyler {
                         const contentEnd = content
                             ? content.getBoundingClientRect().bottom - targetRect.top - state.target.clientTop + state.target.scrollTop
                             : 0;
-                        const existingClearance = Math.max(0, state.target.scrollHeight - contentEnd - state.spacer.getBoundingClientRect().height);
+                        const targetStyle = getComputedStyle(state.target);
+                        const after = getComputedStyle(state.target, '::after');
+                        const afterClearance = after.display !== 'none' && !['none', 'normal'].includes(after.content)
+                            ? (parseFloat(after.height) || 0) + (parseFloat(after.marginTop) || 0)
+                                + (parseFloat(after.marginBottom) || 0) + (parseFloat(targetStyle.rowGap) || 0)
+                            : 0;
+                        const spacerTop = state.spacer.getBoundingClientRect().top - targetRect.top
+                            - state.target.clientTop + state.target.scrollTop;
+                        const existingClearance = Math.max(0, spacerTop - contentEnd
+                            + (parseFloat(targetStyle.paddingBottom) || 0) + afterClearance);
                         const overlap = Math.max(state.bottom, targetRect.bottom + scrollY - innerHeight);
                         state.spacer.style.height = `${Math.max(0, overlap - existingClearance)}px`;
                     } else if (state.spacer?.parentElement === state.target) {

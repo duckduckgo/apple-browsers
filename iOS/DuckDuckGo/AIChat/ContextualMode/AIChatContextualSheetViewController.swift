@@ -792,6 +792,7 @@ private extension AIChatContextualSheetViewController {
         removeCurrentChildViewController()
         showContextualInput()
         updateChipUI(chipState: sessionState.chipState)
+        updateContentContainerBottomConstraint()
     }
 
     func embedChildViewController(_ childVC: UIViewController) {
@@ -824,6 +825,7 @@ private extension AIChatContextualSheetViewController {
         removeCurrentChildViewController()
         embedChildViewController(webVC)
         isWebViewVisible = true
+        updateContentContainerBottomConstraint()
     }
 
     func showWebViewWithPrompt(_ prompt: String, pageContext: AIChatPageContextData?, termsAccepted: Bool) {
@@ -1709,19 +1711,25 @@ private extension AIChatContextualSheetViewController {
             }
             self.contextualInputViewController.view.isHidden = isVisible
         }
-        if #available(iOS 26, *), usesLiquidGlassHeader {
-            floatingInputView = utiView
-            contentContainerBottomConstraint?.isActive = true
-        } else {
-            // The previous constraint died with the old mount — its two views no longer share an ancestor.
-            contentContainerBottomConstraint?.isActive = false
-            let bottomConstraint = contentContainerView.bottomAnchor.constraint(equalTo: utiView.topAnchor)
-            contentContainerBottomConstraint = bottomConstraint
-            bottomConstraint.isActive = true
-        }
+        floatingInputView = utiView
+        updateContentContainerBottomConstraint()
         if contentDragKeyboardDismissRecognizer.view == nil {
             contentContainerView.addGestureRecognizer(contentDragKeyboardDismissRecognizer)
         }
+    }
+
+    func updateContentContainerBottomConstraint() {
+        guard let floatingInputView, floatingInputView.superview === view else { return }
+        contentContainerBottomConstraint?.isActive = false
+        let bottomAnchor: NSLayoutYAxisAnchor
+        if #available(iOS 26, *), usesLiquidGlassHeader, isWebViewVisible {
+            bottomAnchor = view.bottomAnchor
+        } else {
+            bottomAnchor = floatingInputView.topAnchor
+        }
+        let constraint = contentContainerView.bottomAnchor.constraint(equalTo: bottomAnchor)
+        contentContainerBottomConstraint = constraint
+        constraint.isActive = true
     }
 
     @objc private func handleContentDragToDismissKeyboard(_ gesture: UIPanGestureRecognizer) {

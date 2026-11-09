@@ -26,25 +26,21 @@ import XCTest
 
 final class FloatingUIFeatureFlagTests: XCTestCase {
 
-    func testDuckAIAndInputLiquidGlassRequiresFloatingUIAndCanBeDisabledIndependently() {
-        let featureFlagger = MockFeatureFlagger(enabledFeatureFlags: [.floatingUIiOS27, .duckAIAndInputLiquidGlass])
-        let isEnabledOnIOS27 = {
-            featureFlagger.isDuckAIAndInputLiquidGlassEnabled(
-                isFloatingUIEnabled: featureFlagger.isFloatingUIFeatureEnabled(osMajorVersion: 27))
+    func testLiquidGlassKeepsItsLaunchStateAndRequiresFloatingUI() {
+        for floatingUIEnabled in [false, true] {
+            for liquidGlassEnabled in [false, true] {
+                let flagger = MockFeatureFlagger(enabledFeatureFlags: liquidGlassEnabled ? [.duckAIAndInputLiquidGlass] : [])
+                let manager = FloatingUIManager(
+                    isFloatingUIFeatureEnabled: floatingUIEnabled,
+                    isDuckAIAndInputLiquidGlassFeatureEnabled: flagger.isFeatureOn(.duckAIAndInputLiquidGlass),
+                    isPadProvider: { false }, isSupportedOSProvider: { true },
+                    unifiedToggleInputFeature: MockUnifiedToggleInputFeatureProvider(isAvailable: true)
+                )
+                XCTAssertEqual(manager.isDuckAIAndInputLiquidGlassEnabled, floatingUIEnabled && liquidGlassEnabled)
+                flagger.enabledFeatureFlags = liquidGlassEnabled ? [] : [.duckAIAndInputLiquidGlass]
+                XCTAssertEqual(manager.isDuckAIAndInputLiquidGlassEnabled, floatingUIEnabled && liquidGlassEnabled)
+            }
         }
-
-        XCTAssertTrue(isEnabledOnIOS27())
-        XCTAssertFalse(featureFlagger.isDuckAIAndInputLiquidGlassEnabled(
-            isFloatingUIEnabled: featureFlagger.isFloatingUIFeatureEnabled(osMajorVersion: 26)))
-
-        featureFlagger.enabledFeatureFlags = [.duckAIAndInputLiquidGlass]
-        XCTAssertFalse(isEnabledOnIOS27())
-
-        featureFlagger.enabledFeatureFlags = [.floatingUIiOS27]
-        XCTAssertFalse(isEnabledOnIOS27())
-
-        featureFlagger.enabledFeatureFlags = [.floatingUIiOS27, .duckAIAndInputLiquidGlass]
-        XCTAssertTrue(isEnabledOnIOS27())
     }
 
     func testWhenCheckingCurrentOSThenOnlyTheMatchingFlagIsUsed() {
@@ -2455,24 +2451,66 @@ final class BrowserKeyboardLayoutTests: XCTestCase {
 
 final class WebViewScrollViewInsetUpdaterTests: XCTestCase {
 
+    func testFloatingAIBackgroundLeavesUntreatedTabsAlone() {
+        for url in ["https://spreadprivacy.com", "https://duck.ai/chat"] {
+            let tab = TabViewController.fake(link: Link(title: "Test", url: URL(string: url)!))
+            tab.loadViewIfNeeded()
+            tab.view.backgroundColor = .red
+            tab.outerContainer.backgroundColor = .green
+            tab.webViewContainer.backgroundColor = .blue
+            tab.webView.isOpaque = false
+
+            tab.applyFloatingAIChromeBackground(nil)
+            if !tab.isAITab { tab.applyFloatingAIChromeBackground(.white) }
+
+            XCTAssertEqual(tab.view.backgroundColor, .red)
+            XCTAssertEqual(tab.outerContainer.backgroundColor, .green)
+            XCTAssertEqual(tab.webViewContainer.backgroundColor, .blue)
+            XCTAssertFalse(tab.webView.isOpaque)
+        }
+    }
+
+    func testFloatingAIBackgroundRestoresOnlyItsOwnChanges() {
+        let tab = TabViewController.fake(link: Link(title: "Duck.ai", url: URL(string: "https://duck.ai/chat")!))
+        tab.loadViewIfNeeded()
+        tab.view.backgroundColor = .red
+        tab.outerContainer.backgroundColor = .green
+        tab.webViewContainer.backgroundColor = .blue
+        tab.webView.isOpaque = true
+
+        tab.applyFloatingAIChromeBackground(.black)
+        XCTAssertEqual(tab.view.backgroundColor, .black)
+        XCTAssertEqual(tab.outerContainer.backgroundColor, .black)
+        XCTAssertEqual(tab.webViewContainer.backgroundColor, .black)
+        XCTAssertFalse(tab.webView.isOpaque)
+        tab.applyFloatingAIChromeBackground(.white)
+        tab.applyFloatingAIChromeBackground(nil)
+
+        XCTAssertEqual(tab.view.backgroundColor, .red)
+        XCTAssertEqual(tab.outerContainer.backgroundColor, .green)
+        XCTAssertEqual(tab.webViewContainer.backgroundColor, .blue)
+        XCTAssertTrue(tab.webView.isOpaque)
+    }
+
     @available(iOS 26, *)
     func testFloatingAIChatKeepsBothScrollEndsClearOfNativeControls() {
         let featureFlagger = MockFeatureFlagger()
         let tab = TabViewController.fake(featureFlagger: featureFlagger,
                                          link: Link(title: "Duck.ai", url: URL(string: "https://duck.ai/chat")!))
-        tab.floatingUIManager = FloatingUIManager(
-            isFloatingUIFeatureEnabled: true,
-            isPadProvider: { false },
-            unifiedToggleInputFeature: MockUnifiedToggleInputFeatureProvider(isAvailable: true)
-        )
         tab.loadViewIfNeeded()
         let chrome = DuckPlayerBrowserChromeDelegateMock()
         chrome.floatingAIChatHeaderObscuredHeight = 112
         chrome.floatingBottomObscuredHeight = 148
         tab.chromeDelegate = chrome
 
-        for isLiquidGlassEnabled in [false, true, false, true] {
-            featureFlagger.enabledFeatureFlags = isLiquidGlassEnabled ? [.duckAIAndInputLiquidGlass] : []
+        for isLiquidGlassEnabled in [false, true, false] {
+            tab.floatingUIManager = FloatingUIManager(
+                isFloatingUIFeatureEnabled: true,
+                isDuckAIAndInputLiquidGlassFeatureEnabled: isLiquidGlassEnabled,
+                isPadProvider: { false },
+                unifiedToggleInputFeature: MockUnifiedToggleInputFeatureProvider(isAvailable: true)
+            )
+            featureFlagger.enabledFeatureFlags = isLiquidGlassEnabled ? [] : [.duckAIAndInputLiquidGlass]
             tab.updateWebViewBottomAnchor(for: 1)
 
             let expected = isLiquidGlassEnabled
@@ -2480,11 +2518,16 @@ final class WebViewScrollViewInsetUpdaterTests: XCTestCase {
                 : .zero
             XCTAssertEqual(tab.webView.scrollView.contentInset, expected)
             XCTAssertEqual(tab.webView.obscuredContentInsets, expected)
+            XCTAssertEqual(tab.webView.scrollView.isScrollEnabled, !isLiquidGlassEnabled)
 
             if isLiquidGlassEnabled {
-                chrome.floatingBottomObscuredHeight = 190
-                tab.updateWebViewBottomAnchor(for: 0.5)
-                XCTAssertEqual(tab.webView.scrollView.contentInset.bottom, 190)
+                for bottom in [480.0, 520.0, 148.0, 480.0, 148.0] {
+                    tab.webView.scrollView.contentOffset.y = 500
+                    chrome.floatingBottomObscuredHeight = bottom
+                    tab.updateWebViewLayoutForKeyboard()
+                    XCTAssertEqual(tab.webView.scrollView.contentOffset.y, -112)
+                    XCTAssertEqual(tab.webView.obscuredContentInsets.bottom, bottom)
+                }
             }
         }
     }

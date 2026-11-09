@@ -88,7 +88,8 @@ extension MainViewController {
             recentModalPromptStatusProvider: promoCoordinationService,
             duckAIWideEventInstrumentation: duckAIWideEventInstrumentation,
             attachmentPasteEnabled: unifiedToggleInputFeature.isAttachmentPasteEnabled,
-            floatingUIManager: floatingUIManager
+            floatingUIManager: floatingUIManager,
+            scheduleInputFocus: { [weak self] focus in self?.newTabTransitions.scheduleInputFocus(focus) }
         )
         coordinator.delegate = self
         coordinator.pageTypeProvider = { [weak self] in self?.currentPromptPageType() }
@@ -405,6 +406,7 @@ enum UnifiedToggleInputRefreshAction: Equatable {
 enum AITabRefreshBehavior: Equatable {
     case preserveCurrentPresentation(allowsEarlyReturn: Bool)
     case showCollapsed(expandAfterRefresh: Bool)
+    case showExpanded
 }
 
 struct UnifiedToggleInputRefreshActionInputs: Equatable {
@@ -415,6 +417,7 @@ struct UnifiedToggleInputRefreshActionInputs: Equatable {
     let tabRequestsDeepLinkSurface: Bool
     let tabRequestsNewChatInput: Bool
     let coordinatorIsAITabState: Bool
+    let coordinatorIsAITabExpanded: Bool
     let coordinatorIsActive: Bool
     let coordinatorIsOmnibarSession: Bool
     let coordinatorHasSubmittedPrompt: Bool
@@ -430,7 +433,8 @@ extension MainViewController {
     static func decideRefreshAction(for inputs: UnifiedToggleInputRefreshActionInputs) -> UnifiedToggleInputRefreshAction {
         // A tab opened for a new chat starts focused, even when the tab it came from left the input collapsed.
         if inputs.tabRequestsNewChatInput {
-            return .refreshAITab(.showCollapsed(expandAfterRefresh: true))
+            // From an expanded input it stays expanded, so the keyboard doesn't drop and rise again.
+            return .refreshAITab(inputs.coordinatorIsAITabExpanded ? .showExpanded : .showCollapsed(expandAfterRefresh: true))
         }
 
         // During a fresh navigation (e.g. opening a chat in a new tab), `tabModel.link` is briefly
@@ -809,6 +813,7 @@ private extension MainViewController {
             tabRequestsDeepLinkSurface: tab.isDuckAIDeepLinkSurfaceRequested,
             tabRequestsNewChatInput: tab.tabModel.newChatInputRequest != nil,
             coordinatorIsAITabState: coordinator.isAITabState,
+            coordinatorIsAITabExpanded: coordinator.isAITabExpanded,
             coordinatorIsActive: coordinator.isActive,
             coordinatorIsOmnibarSession: coordinator.isOmnibarSession,
             coordinatorHasSubmittedPrompt: coordinator.hasSubmittedPrompt,
@@ -952,6 +957,10 @@ private extension MainViewController {
                       !self.aiTabChromeDecision().hidesInputBar else { return }
                 coordinator.showExpanded(inputMode: .aiChat)
             }
+        case .showExpanded where aiTabChromeDecision().hidesInputBar:
+            coordinator.showCollapsed()
+        case .showExpanded:
+            coordinator.showExpanded(inputMode: .aiChat)
         }
     }
 
@@ -979,6 +988,7 @@ private extension MainViewController {
                                                  shouldShowImageGeneration: featureFlagger.isFeatureOn(.aiChatNativeSidebar),
                                                  layout: AIChatTabChatHeaderView.Layout(featureFlagger: featureFlagger))
         headerView.delegate = self
+        headerView.newTabOpening = newTabTransitions
         headerView.translatesAutoresizingMaskIntoConstraints = false
         viewCoordinator.aiChatTabChatHeaderContainer.addSubview(headerView)
         NSLayoutConstraint.activate([
@@ -1797,15 +1807,28 @@ extension MainViewController: AIChatTabChatHeaderViewDelegate {
     func aiChatTabChatHeaderDidTapNewSearch() {
         recordUserOpenedTab()
         recordDuckAISessionPendingExit(.searchStarted)
-        newTab(reuseExisting: false, allowingKeyboard: true)
-        unifiedToggleInputCoordinator?.syncInputModeFromExternalSource(.search)
+        newTabTransitions.open {
+            newTab(reuseExisting: false, allowingKeyboard: true)
+            unifiedToggleInputCoordinator?.syncInputModeFromExternalSource(.search)
+        }
     }
 
     func aiChatTabChatHeaderDidTapNewFireTab() {
         recordUserOpenedTab()
         recordDuckAISessionPendingExit(.fireTabOpened)
-        tabManager.setBrowsingMode(.fire, source: .aiChatHeaderPlusMenu)
-        newTab(reuseExisting: false, allowingKeyboard: true)
+        newTabTransitions.open {
+            tabManager.setBrowsingMode(.fire, source: .aiChatHeaderPlusMenu)
+            newTab(reuseExisting: false, allowingKeyboard: true)
+        }
+    }
+
+
+    func aiChatTabChatHeaderPlusMenuWillOpen() {
+        duckAIInputFocus.setAside()
+    }
+
+    func aiChatTabChatHeaderPlusMenuWillCloseInPlace() {
+        duckAIInputFocus.restore()
     }
 
     func aiChatTabChatHeaderDidTapTabSwitcher() {

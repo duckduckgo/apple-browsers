@@ -112,6 +112,71 @@ class BookmarksImporterTests: XCTestCase {
         }
     }
 
+    func test_WhenFolderHasNoDLTag_ThenFolderImportedEmptyAndSiblingsImported() async throws {
+        try await importer.parseHtml(Self.htmlWithListlessFolder)
+
+        XCTAssertEqual(importer.importedBookmarks.map(\.name), ["Before", "Outer"])
+        let outer = try XCTUnwrap(importer.importedBookmarks.last)
+        XCTAssertEqual(outer.type, .folder)
+        XCTAssertEqual(outer.children?.map(\.name), ["Empty", "Inside"])
+
+        let empty = try XCTUnwrap(outer.children?.first)
+        XCTAssertEqual(empty.type, .folder)
+        XCTAssertNil(empty.children)
+    }
+
+    func test_WhenFolderHasNoDLTag_ThenImportedItemCountMatchesPreviewCount() async throws {
+        try await importer.parseHtml(Self.htmlWithListlessFolder)
+
+        func count(_ items: [BookmarkOrFolder]) -> Int {
+            items.reduce(0) { $0 + 1 + count($1.children ?? []) }
+        }
+        XCTAssertEqual(count(importer.importedBookmarks), BookmarksImporter.totalValidBookmarks(in: Self.htmlWithListlessFolder))
+    }
+
+    func test_WhenFolderDLFollowsClosedDT_ThenImportPreservesHierarchyAndPreviewCount() async throws {
+        let html = """
+        <!DOCTYPE NETSCAPE-Bookmark-file-1>
+        <DL><p>
+            <DT><H3>Outer</H3></DT>
+            <DL><p>
+                <DT><H3>Inner</H3></DT>
+                <DL><p>
+                    <DT><A HREF="https://example.com/first">First</A></DT>
+                    <DT><A HREF="https://example.com/second">Second</A></DT>
+                </DL><p>
+            </DL><p>
+            <DT><A HREF="https://example.com/outside">Outside</A></DT>
+        </DL><p>
+        """
+
+        try await importer.parseHtml(html)
+
+        XCTAssertEqual(importer.importedBookmarks.map(\.name), ["Outer", "Outside"])
+        let outer = try XCTUnwrap(importer.importedBookmarks.first)
+        XCTAssertEqual(outer.children?.map(\.name), ["Inner"])
+        let inner = try XCTUnwrap(outer.children?.first)
+        XCTAssertEqual(inner.children?.map(\.name), ["First", "Second"])
+        XCTAssertEqual(inner.children?.compactMap(\.urlString), ["https://example.com/first", "https://example.com/second"])
+        XCTAssertEqual(BookmarksImporter.totalValidBookmarks(in: html), 5)
+    }
+
+    private static let htmlWithListlessFolder = """
+    <!DOCTYPE NETSCAPE-Bookmark-file-1>
+    <HTML>
+    <BODY>
+    <DL><p>
+        <DT><A HREF="https://example.com/before">Before</A>
+        <DT><H3>Outer</H3>
+        <DL><p>
+            <DT><H3>Empty</H3>
+            <DT><A HREF="https://example.com/inside">Inside</A>
+        </DL><p>
+    </DL><p>
+    </BODY>
+    </HTML>
+    """
+
     func test_WhenCreateBookmark_ThenBookmarkCreated() {
         let importedBookmark = BookmarkOrFolder(name: "AFolder", type: .folder,
                 urlString: Constants.bookmarkURLString, children: nil)

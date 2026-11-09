@@ -141,47 +141,6 @@ extension ExtensionsManagementPreferences {
     }
 }
 
-extension WebExtensionManifestPermission {
-
-    var displayName: String {
-        switch self {
-        case .accessibilityFeaturesModify: UserText.extensionsSettingsPermissionAccessibilityFeaturesModify
-        case .accessibilityFeaturesRead: UserText.extensionsSettingsPermissionAccessibilityFeaturesRead
-        case .bookmarks: UserText.extensionsSettingsPermissionBookmarks
-        case .clipboardRead: UserText.extensionsSettingsPermissionClipboardRead
-        case .clipboardWrite: UserText.extensionsSettingsPermissionClipboardWrite
-        case .contentSettings: UserText.extensionsSettingsPermissionContentSettings
-        case .debugger: UserText.extensionsSettingsPermissionDebugger
-        case .declarativeNetRequest: UserText.extensionsSettingsPermissionDeclarativeNetRequest
-        case .declarativeNetRequestFeedback: UserText.extensionsSettingsPermissionDeclarativeNetRequestFeedback
-        case .desktopCapture: UserText.extensionsSettingsPermissionDesktopCapture
-        case .downloads: UserText.extensionsSettingsPermissionDownloads
-        case .downloadsOpen: UserText.extensionsSettingsPermissionDownloadsOpen
-        case .downloadsUI: UserText.extensionsSettingsPermissionDownloadsUI
-        case .favicon: UserText.extensionsSettingsPermissionFavicon
-        case .geolocation: UserText.extensionsSettingsPermissionGeolocation
-        case .history: UserText.extensionsSettingsPermissionHistory
-        case .identityEmail: UserText.extensionsSettingsPermissionIdentityEmail
-        case .management: UserText.extensionsSettingsPermissionManagement
-        case .nativeMessaging: UserText.extensionsSettingsPermissionNativeMessaging
-        case .notifications: UserText.extensionsSettingsPermissionNotifications
-        case .pageCapture: UserText.extensionsSettingsPermissionPageCapture
-        case .privacy: UserText.extensionsSettingsPermissionPrivacy
-        case .proxy: UserText.extensionsSettingsPermissionProxy
-        case .readingList: UserText.extensionsSettingsPermissionReadingList
-        case .sessions: UserText.extensionsSettingsPermissionSessions
-        case .systemStorage: UserText.extensionsSettingsPermissionSystemStorage
-        case .tabCapture: UserText.extensionsSettingsPermissionTabCapture
-        case .tabGroups: UserText.extensionsSettingsPermissionTabGroups
-        case .tabs: UserText.extensionsSettingsPermissionTabs
-        case .topSites: UserText.extensionsSettingsPermissionTopSites
-        case .ttsEngine: UserText.extensionsSettingsPermissionTtsEngine
-        case .webAuthenticationProxy: UserText.extensionsSettingsPermissionWebAuthenticationProxy
-        case .webNavigation: UserText.extensionsSettingsPermissionWebNavigation
-        }
-    }
-}
-
 @available(macOS 15.4, *)
 private extension ExtensionsManagementPreferences {
 

@@ -775,7 +775,6 @@ private extension NSAttributedString {
     static let aiChatTrustedIndicator = singlePartTrustedIndicatorAttributedString(with: DesignSystemImages.Color.Size16.duckAI,
                                                                                    title: UserText.aiChatAddressBarTrustedIndicator)
 
-    /// "[extensions] Password Manager Extensions › [extension icon] name", without the "DuckDuckGo ›" prefix, as on Windows.
     static func passwordManagerExtensionsTrustedIndicator(extensionName: String, extensionIcon: NSImage?) -> NSAttributedString {
         trustedIndicatorAttributedString(segments: [(DesignSystemImages.Color.Size16.extensions, UserText.extensionsSettingsTitle),
                                                     (extensionIcon, extensionName)])

@@ -180,6 +180,49 @@ final class AIChatUserScriptTests: XCTestCase {
         XCTAssertTrue(object["clientTools"] is NSNull)
     }
 
+    @MainActor func testClientToolsChangedUsesTheClientToolsPagePolicyAndExcludesFire() async throws {
+        let settings = AIChatMockDebugSettings()
+        settings.customURL = "https://chat.example.com"
+        userScript = AIChatUserScript(handler: mockHandler, urlSettings: settings, browserTools: nil)
+        let broker = UserScriptMessageBroker(context: "client-tools-tests", requiresRunInPageContentWorld: true)
+        userScript.broker = broker
+        let webView = ClientToolsDocumentWebView()
+        userScript.webView = webView
+        let cases: [(url: String?, isFire: Bool, shouldPush: Bool)] = [
+            ("https://duck.ai/chat", false, true),
+            ("https://duckduckgo.com/?ia=chat", false, true),
+            ("https://chat.example.com/conversation", false, true),
+            ("https://duckduckgo.com/?q=search", false, false),
+            ("https://example.com", false, false),
+            (nil, false, false),
+            ("https://duck.ai/chat", true, false),
+            ("https://duckduckgo.com/?ia=chat", true, false),
+            ("https://chat.example.com/conversation", true, false)
+        ]
+        let configurations: [ClientToolsConfiguration?] = [try ClientToolsConfiguration(capabilities: [.listOpenTabs]), nil]
+
+        for testCase in cases {
+            webView.documentURL = testCase.url.flatMap(URL.init(string:))
+            mockHandler.isFireWindowProvider = { testCase.isFire }
+            for configuration in configurations {
+                webView.evaluatedScripts.removeAll()
+                withExtendedLifetime(broker) {
+                    userScript.pushClientToolsChanged(ClientToolsChangedData(clientTools: configuration))
+                }
+                await withCheckedContinuation { continuation in
+                    DispatchQueue.main.async { continuation.resume() }
+                }
+
+                XCTAssertEqual(webView.evaluatedScripts.count, testCase.shouldPush ? 1 : 0,
+                               "URL: \(testCase.url ?? "nil"), Fire: \(testCase.isFire)")
+                if testCase.shouldPush {
+                    let script = try XCTUnwrap(webView.evaluatedScripts.first)
+                    XCTAssertTrue(script.contains("clientToolsChanged"))
+                }
+            }
+        }
+    }
+
     @MainActor func testNativeConfigDispatcherPreservesNonConfigResponse() async throws {
         mockHandler.configResponse = ["message": "unchanged"]
         let handler = try XCTUnwrap(userScript.handler(forMethodNamed: AIChatUserScriptMessages.getAIChatNativeConfigValues.rawValue))
@@ -824,9 +867,15 @@ private final class ClientToolCancellationSpy: AIChatClientToolPermissionCancell
 private final class ClientToolsDocumentWebView: WKWebView {
     var documentURL: URL?
     var documentIsLoading = false
+    var evaluatedScripts: [String] = []
 
     override var url: URL? { documentURL }
     override var isLoading: Bool { documentIsLoading }
+
+    override func evaluateJavaScript(_ javaScriptString: String, completionHandler: ((Any?, (any Error)?) -> Void)? = nil) {
+        evaluatedScripts.append(javaScriptString)
+        completionHandler?(nil, nil)
+    }
 }
 
 @MainActor

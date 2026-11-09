@@ -154,6 +154,67 @@ struct ClientToolInvokerTests {
     }
 
     @available(iOS 16, macOS 13, *)
+    @Test(.timeLimit(.minutes(1)), arguments: [false, true])
+    func unavailableAfterConsentReleasesTheAuthorizationTool(parentDisabled: Bool) async throws {
+        let configuration = ClientToolTestConfiguration()
+        let coordinator = ClientToolPermissionCoordinator(permissions: ClientToolTestPermissions())
+        let source = ClientToolTestSource()
+        weak var releasedTool: ClientToolTestTool?
+
+        @MainActor func invoke() async throws {
+            let tool = ClientToolTestTool(name: "readTabContent")
+            releasedTool = tool
+            let catalog = BrowserToolCatalog(tools: [tool], configuration: configuration)
+            let invoker = BrowserToolInvoker(catalog: catalog, clientToolPermissions: coordinator)
+            let requestData = try JSONEncoder().encode(JSONValue.object([
+                "callId": "call", "capability": ["name": "readTabContent", "version": 1], "input": [:]
+            ]))
+            let request = try JSONDecoder().decode(ExecuteClientToolRequest.self, from: requestData)
+            let context = BrowserToolCallContext(ownerTabID: "owner", isBurner: false)
+            let task = Task { await invoker.invokeClientTool(request, context: context, permissionPusher: source) }
+            await source.waitForPrompts(1)
+            if parentDisabled {
+                configuration.isEnabled = false
+            } else {
+                configuration.disabled.insert(tool.name)
+            }
+            let prompt = try #require(source.prompts.first)
+            let answerData = try JSONEncoder().encode([
+                "requestId": prompt.requestId, "callId": prompt.callId, "decision": "allow"
+            ])
+            let answer = try JSONDecoder().decode(RespondToClientToolPermissionRequest.self, from: answerData)
+            coordinator.respond(to: answer, from: source)
+
+            #expect(await task.value == .failure(callId: "call", error: .unavailable))
+            #expect(tool.calls.isEmpty)
+        }
+
+        try await invoke()
+
+        withExtendedLifetime(coordinator) {
+            #expect(releasedTool == nil)
+        }
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test(.timeLimit(.minutes(1)), arguments: [false, true])
+    func cancellationAfterConsentTakesPrecedenceOverUnavailable(cancelTask: Bool) async throws {
+        let harness = ClientToolTestHarness()
+        let task = try harness.start()
+        await harness.source.waitForPrompts(1)
+        harness.configuration.disabled.insert(harness.tool.name)
+        try harness.answer(harness.source.prompts[0], decision: "allow")
+        if cancelTask {
+            task.cancel()
+        } else {
+            harness.coordinator.cancelRequests(from: harness.source)
+        }
+
+        #expect(await task.value == .failure(callId: "call", error: .cancelled))
+        #expect(harness.tool.calls.isEmpty)
+    }
+
+    @available(iOS 16, macOS 13, *)
     @Test(.timeLimit(.minutes(1)), arguments: [BrowserToolPermissionState.allow, .deny, .ask])
     func savedStateWorksWithoutPusher(state: BrowserToolPermissionState) async throws {
         let harness = ClientToolTestHarness()

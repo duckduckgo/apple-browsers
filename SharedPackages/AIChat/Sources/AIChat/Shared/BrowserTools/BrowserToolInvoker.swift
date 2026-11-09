@@ -52,15 +52,13 @@ public final class BrowserToolInvoker {
         case .granted:
             break
         }
-        guard !context.isBurner,
-              let currentTool = catalog.tool(for: request.capability) else {
-            return .failure(callId: request.callId, error: .unavailable)
-        }
+        let currentTool = context.isBurner ? nil : catalog.tool(for: request.capability)
         if case .refused(let error) = authorization {
-            return .failure(callId: request.callId, error: error)
+            return .failure(callId: request.callId, error: currentTool == nil ? .unavailable : error)
         }
         guard case .granted(let performExecution) = authorization,
               let executionResult = await performExecution({
+                  guard let currentTool else { return .failure(.unavailable) }
                   guard !Task.isCancelled else { return .failure(.cancelled) }
                   let result = await currentTool.execute(arguments: request.input, context: context)
                   return Task.isCancelled ? .failure(.cancelled) : result
@@ -69,7 +67,7 @@ public final class BrowserToolInvoker {
         }
         let result: BrowserToolResult
         switch executionResult {
-        case .success(let value): result = currentTool.clientToolResult(from: value)
+        case .success(let value): result = tool.clientToolResult(from: value)
         case .failure(let error): result = .failure(error)
         }
         switch result {

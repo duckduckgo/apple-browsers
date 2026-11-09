@@ -343,8 +343,10 @@ extension AIChatUserScript: AIChatBrowserToolsPushing {
 
     @MainActor
     func pushClientToolsChanged(_ data: ClientToolsChangedData) {
-        guard handler.isFireWindowProvider?() != true else { return }
-        pushToDuckAI(.clientToolsChanged, params: data)
+        guard handler.isFireWindowProvider?() != true,
+              let webView, let broker,
+              isClientToolsPage(webView.url) else { return }
+        broker.push(method: AIChatUserScriptMessages.clientToolsChanged.rawValue, params: data, for: self, into: webView)
     }
 
     @MainActor

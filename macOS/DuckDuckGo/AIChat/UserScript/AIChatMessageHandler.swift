@@ -157,6 +157,7 @@ extension AIChatMessageHandler {
             attachmentLimits: featureFlagger.isFeatureOn(.aiChatTabAttachmentLimit)
                 ? AIChatNativeAttachmentLimits(tabs: .init(maxAttached: AIChatOmnibarController.maxTabAttachments))
                 : nil,
+            // Prevent older Duck.ai clients from starting the removed MCP handshake; new clients use clientTools.
             supportsBrowserTools: false,
             supportsAttachmentPrivacyDisplay: featureFlagger.isFeatureOn(.aiChatAttachmentPrivacyDisclosure),
             supportsHomePageChatSuggestions: homepageAiChatsProvider?.isSupported == true,

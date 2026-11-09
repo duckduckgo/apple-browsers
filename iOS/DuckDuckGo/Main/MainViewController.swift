@@ -1925,7 +1925,7 @@ class MainViewController: UIViewController {
             .sink { [weak self] notification in
                 guard let window = notification.object as? UIWindow,
                       window.rootViewController is AuthenticationViewController,
-                      UIApplication.shared.applicationState != .active else { return }
+                      UIApplication.shared.applicationState == .inactive else { return }
                 self?.isFinishingAppLockUnlock = true
             }
             .store(in: &appLockUnlockCancellables)

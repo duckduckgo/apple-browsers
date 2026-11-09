@@ -1609,8 +1609,8 @@ class MainViewController: UIViewController {
         }
     }
 
-    func presentDataBrokerProtectionDashboard() {
-        segueToDataBrokerProtection()
+    func presentDataBrokerProtectionDashboard(freeScanEntryPoint: FreemiumDBPEntryPoint? = nil) {
+        segueToDataBrokerProtection(freeScanEntryPoint: freeScanEntryPoint)
     }
 
     private func registerForKeyboardNotifications() {

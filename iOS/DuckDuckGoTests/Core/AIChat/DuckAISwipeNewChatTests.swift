@@ -292,6 +292,27 @@ struct DuckAISwipeNewChatTests {
     }
 
     @available(iOS 16, macOS 13, *)
+    @Test("When the browser animates new tabs in, releasing asks for the new tab at once with no fade",
+          .timeLimit(.minutes(1)))
+    func releaseWithNewTabAnimationSkipsFade() {
+        var commit = Commit.idle
+        #expect(commit.handle(.released(chatID: "old", newTabAnimates: true)) == [.requestNewChat, .scheduleTimeout])
+        #expect(commit == .awaitingNewTab)
+        #expect(commit.handle(.cancelled) == [.restore])
+        #expect(commit == .idle)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Releasing with no chat restores, whether or not new tabs animate in", .timeLimit(.minutes(1)))
+    func releaseWithoutChatRestoresEitherWay() {
+        for newTabAnimates in [false, true] {
+            var commit = Commit.idle
+            #expect(commit.handle(.released(chatID: nil, newTabAnimates: newTabAnimates)) == [.restore])
+            #expect(commit == .idle)
+        }
+    }
+
+    @available(iOS 16, macOS 13, *)
     @Test("Once faded out, a new tab is asked for once and the old chat stays hidden until its tab goes off screen",
           .timeLimit(.minutes(1)))
     func fadedOutRequestsNewTabThenRestoresWhenTabLeaves() {

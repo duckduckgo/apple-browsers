@@ -8450,7 +8450,8 @@ extension MainViewController: TabDelegate {
         return DuckAISwipeNewChatChromeState(isGenerating: unifiedToggleInputCoordinator?.viewController.isGenerating ?? false,
                                              isVoiceSessionActive: aiTabChrome.voiceChromeActive,
                                              isInputHidden: aiTabChrome.hidesInputBar,
-                                             bottomChromeMinY: bottomChromeMinYInWindow())
+                                             bottomChromeMinY: bottomChromeMinYInWindow(),
+                                             animatesNewTab: isNewTabTransitionEnabled)
     }
 
     /// Opens the new chat in a new tab, like the chat header's New Chat, so the current one stays reachable.

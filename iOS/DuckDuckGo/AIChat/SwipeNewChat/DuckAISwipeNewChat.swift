@@ -197,7 +197,8 @@ enum DuckAISwipeNewChat {
         case awaitingNewTab
 
         enum Event: Equatable {
-            case released(chatID: String?)
+            /// `newTabAnimates`: the browser animates new tabs in itself, so the old chat doesn't fade out first.
+            case released(chatID: String?, newTabAnimates: Bool = false)
             /// The fade finished; `chatID` and `isEligible` are as they are now, not as they were at release.
             case fadedOut(chatID: String?, isEligible: Bool)
             case urlChanged(chatID: String?)
@@ -216,7 +217,11 @@ enum DuckAISwipeNewChat {
 
         mutating func handle(_ event: Event) -> [Effect] {
             switch (self, event) {
-            case (.idle, .released(let chatID?)):
+            case (.idle, .released(_?, newTabAnimates: true)):
+                self = .awaitingNewTab
+                return [.requestNewChat, .scheduleTimeout]
+
+            case (.idle, .released(let chatID?, newTabAnimates: false)):
                 self = .leaving(chatID: chatID)
                 return [.fadeOut]
 
@@ -236,7 +241,7 @@ enum DuckAISwipeNewChat {
                 self = .idle
                 return [.restore]
 
-            case (.idle, .released(nil)):
+            case (.idle, .released(nil, _)):
                 return [.restore]
 
             default:

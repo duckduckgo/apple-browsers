@@ -770,6 +770,17 @@ extension MainCoordinator: URLHandling {
 
         fireMediumWidgetPixelIfNeeded(url: url)
 
+        // Already on a New Tab Page: focus it in place. Clearing and rebuilding it would drop
+        // the keyboard the app opened with, or is about to raise, and raise it again.
+        if AppDeepLinkSchemes.fromURL(url) == .newSearch,
+           controller.isNewTabPageVisible,
+           controller.presentedViewController == nil {
+            if !controller.isInputFocused {
+                controller.enterSearch()
+            }
+            return true
+        }
+
         let syncPairingInfo = featureFlagger.isFeatureOn(.canInterceptSyncSetupUrls) ? PairingInfo(url: url) : nil
 
         if syncPairingInfo == nil

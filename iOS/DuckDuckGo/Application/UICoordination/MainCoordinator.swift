@@ -104,6 +104,7 @@ final class MainCoordinator {
     private var pendingProtectedDataWork: [() -> Void] = []
     private var privacyConfigurationManager: PrivacyConfigurationManaging?
     private let onboardingManager: OnboardingFlowManaging
+    private let idleReturnHiddenScreens = IdleReturnHiddenScreens()
     let isFloatingUIFeatureEnabledForCurrentLaunch: Bool
 
     private var hasPresentedOnboarding = false
@@ -361,6 +362,29 @@ final class MainCoordinator {
 
     func start(drawsIdleReturnNewTabPage: Bool) {
         controller.loadInitialViewIfNeeded(drawsIdleReturnNewTabPage: drawsIdleReturnNewTabPage)
+    }
+
+    /// Before a warm return's first frame: puts up the after-idle New Tab Page, hiding rather than closing what's over it.
+    func drawNewTabPageForIdleReturnOnForeground() {
+        hideScreensForIdleReturn()
+        controller.currentTab?.aiChatContextualSheetCoordinator.dismissFloatingInput(.systemTeardown)
+        controller.newTab(reuseExisting: true,
+                          allowingKeyboard: !featureFlagger.isFeatureOn(.alwaysShowKeyboardOnNewTabPage),
+                          openedAfterIdle: true)
+    }
+
+    func hideScreensForIdleReturn() {
+        idleReturnHiddenScreens.hide(controller.presentedViewController)
+    }
+
+    func restoreScreensHiddenForIdleReturn() {
+        idleReturnHiddenScreens.restore()
+    }
+
+    /// The return is certain: closes what the draw hid.
+    func closeScreensHiddenForIdleReturn(completion: @escaping () -> Void) {
+        controller.closeScreensOverNewTabPageForIdleReturn(screenLeftOpen: idleReturnHiddenScreens.takeForClosing(),
+                                                           completion: completion)
     }
 
     private func subscribeToDarkReaderChanges() {

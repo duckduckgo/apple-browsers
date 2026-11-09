@@ -2102,6 +2102,7 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
                 guard let self, let childWindows, childWindows.contains(where: {
                     !(
                         $0.windowController is TabPreviewWindowController
+                        || $0 is HoveredLinkTooltipWindow
                         || $0 === self.view.window?.titlebarView?.window // fullscreen titlebar owning window
                     )
                 }) else { return }
@@ -2116,7 +2117,7 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
         let collectionView = isPinned ? pinnedTabsCollectionView : self.collectionView
 
         // don‘t show tab previews when a child window is shown (Suggestions, Bookmarks etc…)
-        guard view.window?.childWindows?.contains(where: { !($0.windowController is TabPreviewWindowController) }) != true,
+        guard view.window?.childWindows?.contains(where: { !($0.windowController is TabPreviewWindowController || $0 is HoveredLinkTooltipWindow) }) != true,
               let collectionView,
               let tabIndex = tabIndex(forTabBarViewItem: tabBarViewItem)
         else {

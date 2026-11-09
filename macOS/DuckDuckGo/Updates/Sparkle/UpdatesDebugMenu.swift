@@ -29,6 +29,7 @@ import Persistence
 import PrivacyConfig
 import PixelKit
 
+@MainActor
 final class UpdatesDebugMenu: NSMenu {
     private let settings: any ThrowingKeyedStoring<UpdateControllerSettings>
     private let internalUserDecider: InternalUserDecider

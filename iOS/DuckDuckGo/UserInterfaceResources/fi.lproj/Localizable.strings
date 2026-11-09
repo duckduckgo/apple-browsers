@@ -5206,6 +5206,9 @@
 /* Alert content for not found subscription */
 "subscription.expired.alert.message" = "Tähän Apple-tiliin liitetty tilaus ei ole enää aktiivinen.";
 
+/* Subtitle in header when the subscription has been cancelled but is still active until it expires */
+"subscription.expiring" = "Voimassaolo päättyy";
+
 /* FAQ Button */
 "subscription.faq" = "Usein kysytyt kysymykset ja tuki";
 

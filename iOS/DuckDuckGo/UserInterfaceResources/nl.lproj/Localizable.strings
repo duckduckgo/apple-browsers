@@ -5206,6 +5206,9 @@
 /* Alert content for not found subscription */
 "subscription.expired.alert.message" = "Je abonnement dat aan dit Apple-account is gekoppeld, is niet langer actief.";
 
+/* Subtitle in header when the subscription has been cancelled but is still active until it expires */
+"subscription.expiring" = "Verloopt";
+
 /* FAQ Button */
 "subscription.faq" = "Veelgestelde vragen en ondersteuning";
 

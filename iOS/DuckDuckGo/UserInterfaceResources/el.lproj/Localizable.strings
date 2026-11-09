@@ -5206,6 +5206,9 @@
 /* Alert content for not found subscription */
 "subscription.expired.alert.message" = "Η συνδρομή που συνδέεται με αυτόν τον Λογαριασμό Apple δεν είναι πλέον ενεργή.";
 
+/* Subtitle in header when the subscription has been cancelled but is still active until it expires */
+"subscription.expiring" = "Λήγει";
+
 /* FAQ Button */
 "subscription.faq" = "Συχνές ερωτήσεις και υποστήριξη";
 

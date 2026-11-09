@@ -5206,6 +5206,9 @@
 /* Alert content for not found subscription */
 "subscription.expired.alert.message" = "Selle Apple'i kontoga seotud tellimus ei ole enam aktiivne.";
 
+/* Subtitle in header when the subscription has been cancelled but is still active until it expires */
+"subscription.expiring" = "Aeguv";
+
 /* FAQ Button */
 "subscription.faq" = "KKK ja tugi";
 

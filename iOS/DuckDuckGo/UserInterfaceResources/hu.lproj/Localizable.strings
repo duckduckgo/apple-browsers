@@ -5206,6 +5206,9 @@
 /* Alert content for not found subscription */
 "subscription.expired.alert.message" = "Az ehhez az Apple-fiókhoz tartozó előfizetés már nem aktív.";
 
+/* Subtitle in header when the subscription has been cancelled but is still active until it expires */
+"subscription.expiring" = "Lejáró";
+
 /* FAQ Button */
 "subscription.faq" = "GYIK és segítségnyújtás";
 

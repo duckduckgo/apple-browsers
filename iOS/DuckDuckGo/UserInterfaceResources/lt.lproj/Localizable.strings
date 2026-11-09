@@ -5206,6 +5206,9 @@
 /* Alert content for not found subscription */
 "subscription.expired.alert.message" = "Su šia „Apple“ paskyra susijusi prenumerata nebėra aktyvi.";
 
+/* Subtitle in header when the subscription has been cancelled but is still active until it expires */
+"subscription.expiring" = "Baigia galioti";
+
 /* FAQ Button */
 "subscription.faq" = "DUK ir pagalba";
 

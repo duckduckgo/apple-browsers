@@ -84,6 +84,51 @@ struct OnboardingAIModelsFallbackTests {
         #expect(result.defaultModelId == "o")
     }
 
+    @Test("Check a malformed model entry is dropped, the rest kept")
+    func malformedEntryIsDropped() {
+        // GIVEN the second entry has a numeric id and the third is missing its provider
+        let sut = makeSUT(settingsJSON: """
+            { "defaultModelId": "o", "models": [{"id": "o", "provider": "openai"}, {"id": 1, "provider": "anthropic"}, {"id": "m"}] }
+            """)
+
+        // WHEN
+        let result = sut.aiModels
+
+        // THEN
+        #expect(result.models.map(\.id) == ["o"])
+        #expect(result.defaultModelId == "o")
+    }
+
+    @Test("Check a default id not among the kept models falls back to the OpenAI model")
+    func unknownDefaultFallsBackToOpenAIModel() {
+        // GIVEN the default points at a model dropped for its unsupported provider
+        let sut = makeSUT(settingsJSON: """
+            { "defaultModelId": "t", "models": [{"id": "c", "provider": "anthropic"}, {"id": "o", "provider": "openai"}, {"id": "t", "provider": "tinfoil"}] }
+            """)
+
+        // WHEN
+        let result = sut.aiModels
+
+        // THEN
+        #expect(result.models.map(\.id) == ["c", "o"])
+        #expect(result.defaultModelId == "o")
+    }
+
+    @Test("Check a default id not among the kept models falls back to the first model when there is no OpenAI model")
+    func unknownDefaultWithoutOpenAIFallsBackToFirstModel() {
+        // GIVEN no OpenAI model and a default that isn't in the list
+        let sut = makeSUT(settingsJSON: """
+            { "defaultModelId": "missing", "models": [{"id": "c", "provider": "anthropic"}, {"id": "m", "provider": "mistral"}] }
+            """)
+
+        // WHEN
+        let result = sut.aiModels
+
+        // THEN
+        #expect(result.models.map(\.id) == ["c", "m"])
+        #expect(result.defaultModelId == "c")
+    }
+
     @Test("Check settings that are not an object fall back to the baked default")
     func malformedConfigFallsBackToBaked() {
         // GIVEN

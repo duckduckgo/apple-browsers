@@ -82,14 +82,27 @@ private struct OnboardingAIModelsFallbackPayload: Decodable {
         let modelShortName: String?
     }
 
+    /// Decodes a single entry without failing the whole list when that entry is malformed.
+    struct LossyModel: Decodable {
+        let model: Model?
+
+        init(from decoder: Decoder) throws {
+            model = try? Model(from: decoder)
+        }
+    }
+
     let defaultModelId: String?
-    let models: [Model]
+    let models: [LossyModel]
 
     var response: OnboardingAIModelResponse {
-        let options = models.compactMap { model -> OnboardingAIModelOption? in
-            guard let provider = OnboardingAIProvider(rawValue: model.provider) else { return nil }
+        let options = models.compactMap { entry -> OnboardingAIModelOption? in
+            guard let model = entry.model, let provider = OnboardingAIProvider(rawValue: model.provider) else { return nil }
             return OnboardingAIModelOption(id: model.id, provider: provider, modelShortName: model.modelShortName)
         }
-        return OnboardingAIModelResponse(models: options, defaultModelId: defaultModelId)
+        // If the default isn't among the kept models, prefer the OpenAI one, otherwise the first, so the picker always has a selection.
+        let defaultId = options.contains { $0.id == defaultModelId }
+            ? defaultModelId
+            : (options.first { $0.provider == .openai } ?? options.first)?.id
+        return OnboardingAIModelResponse(models: options, defaultModelId: defaultId)
     }
 }

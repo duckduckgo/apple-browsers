@@ -43,4 +43,14 @@ extension WebExtensionAlert.Configuration {
             confirmTitle: UserText.webExtensionRemoveButton,
             cancelTitle: UserText.cancel)
     }
+
+    /// Explains that the extension asked only for permissions this build can't grant, such as native messaging
+    /// in the App Store build, so the user can only close it.
+    static func unavailablePermissions(for webExtension: WKWebExtension) -> Self {
+        Self(
+            icon: webExtension.icon(for: iconSize) ?? webExtension.actionIcon(for: iconSize),
+            title: String(format: UserText.webExtensionNativeMessagingUnavailableTitle, webExtension.displayName ?? UserText.webExtensionUnnamedExtension),
+            message: UserText.webExtensionNativeMessagingUnavailableMessage,
+            cancelTitle: UserText.close)
+    }
 }

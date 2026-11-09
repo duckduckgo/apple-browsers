@@ -17,6 +17,7 @@
 //
 
 import AppKit
+import DesignResourcesKit
 import WebExtensions
 import WebKit
 
@@ -47,13 +48,33 @@ final class WebExtensionPermissionPrompt: WebExtensionPermissionPrompting {
     }
 
     func confirmPermissions(_ permissions: WebExtensionPermissionRequest, for context: WKWebExtensionContext) async -> WebExtensionPermissionPromptResult {
+        let hasUnavailablePermissions = !permissions.unavailablePermissions.isEmpty
+
         // Nothing to warn the user about, so nothing to ask: the alert would list no permissions above an Allow button.
         if permissionMessages(for: permissions).isEmpty {
+            if hasUnavailablePermissions {
+                await explainUnavailablePermissions(of: context.webExtension)
+            }
             return .granted
         }
 
         let alert = makeAlert(for: context.webExtension, permissions: permissions)
+        if hasUnavailablePermissions, let stack = alert.accessoryView as? NSStackView {
+            let note = NSTextField(wrappingLabelWithString: UserText.webExtensionNativeMessagingUnavailablePermission)
+            note.textColor = NSColor(designSystemColor: .textSecondary, palette: themeManager.designColorPalette)
+            note.preferredMaxLayoutWidth = 380
+            stack.addArrangedSubview(note)
+        }
         return await present(alert) == .alertFirstButtonReturn ? .granted : .denied
+    }
+
+    /// The extension asked only for permissions the build can't grant, so the alert explains why and can only be closed.
+    private func explainUnavailablePermissions(of webExtension: WKWebExtension) async {
+        let configuration = WebExtensionAlert.Configuration.unavailablePermissions(for: webExtension)
+        _ = await enqueue { [windowProvider, themeManager] in
+            guard let window = windowProvider(), window.attachedSheet == nil else { return WebExtensionAlert.Response.cancelled }
+            return await WebExtensionAlert.present(configuration, themeManager: themeManager, in: window)
+        }
     }
 
     // Several extensions (or several requests from one extension) may prompt concurrently.

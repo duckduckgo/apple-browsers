@@ -31,7 +31,8 @@ struct WebExtensionAlert: View {
         var details: [String] = []
         var checkbox: String?
         var checkboxToolTip: String?
-        let confirmTitle: String
+        /// `nil` for an alert that only informs, with the cancel button alone.
+        var confirmTitle: String?
         let cancelTitle: String
     }
 
@@ -182,15 +183,17 @@ struct WebExtensionAlert: View {
             .buttonStyle(DismissActionButtonStyle(topPadding: 0, bottomPadding: 0, pillShape: true, stateColors: .themedDismissButton))
             .keyboardShortcut(.cancelAction)
 
-            Button {
-                respond(.confirmed(isChecked: isChecked))
-            } label: {
-                Text(configuration.confirmTitle)
-                    .frame(maxWidth: .infinity)
-                    .frame(height: Constants.buttonHeight)
+            if let confirmTitle = configuration.confirmTitle {
+                Button {
+                    respond(.confirmed(isChecked: isChecked))
+                } label: {
+                    Text(confirmTitle)
+                        .frame(maxWidth: .infinity)
+                        .frame(height: Constants.buttonHeight)
+                }
+                .buttonStyle(DefaultActionButtonStyle(enabled: true, topPadding: 0, bottomPadding: 0, stateColors: .themedActionButton, pillShape: true))
+                .keyboardShortcut(.defaultAction)
             }
-            .buttonStyle(DefaultActionButtonStyle(enabled: true, topPadding: 0, bottomPadding: 0, stateColors: .themedActionButton, pillShape: true))
-            .keyboardShortcut(.defaultAction)
         }
     }
 

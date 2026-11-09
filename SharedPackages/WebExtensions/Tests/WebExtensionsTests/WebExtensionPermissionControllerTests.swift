@@ -29,8 +29,14 @@ final class WebExtensionPermissionControllerTests: XCTestCase {
     private let prompter = PermissionPrompterMock()
     private var store: WebExtensionPermissionStore { WebExtensionPermissionStore(keyValueStore: keyValueStore) }
 
-    private func makeController(permissionStore: (any WebExtensionPermissionStoring)? = nil) -> WebExtensionPermissionController {
-        WebExtensionPermissionController(store: permissionStore ?? store, installationStore: installationStore, prompter: prompter)
+    private func makeController(
+        permissionStore: (any WebExtensionPermissionStoring)? = nil,
+        unavailablePermissions: Set<WKWebExtension.Permission> = []
+    ) -> WebExtensionPermissionController {
+        WebExtensionPermissionController(store: permissionStore ?? store,
+                                         installationStore: installationStore,
+                                         prompter: prompter,
+                                         unavailablePermissions: unavailablePermissions)
     }
 
     // MARK: - App Permissions
@@ -311,6 +317,33 @@ final class WebExtensionPermissionControllerTests: XCTestCase {
         try controller.setHasAccessToPrivateData(false, for: context.uniqueIdentifier)
         XCTAssertFalse(context.hasAccessToPrivateData)
         XCTAssertEqual(try store.settings(for: context.uniqueIdentifier)?.hasAccessToPrivateData, false)
+    }
+
+    func testWhenOnlyAnUnavailablePermissionIsRequestedThenThePromptExplainsItAndItIsNotGranted() async throws {
+        let controller = makeController(unavailablePermissions: [.nativeMessaging])
+        let context = try await makeContext(optionalPermissions: ["nativeMessaging"])
+        try await controller.prepare(context)
+
+        let granted = await controller.request(.init(permissions: [.nativeMessaging]), for: context)
+
+        XCTAssertFalse(granted)
+        XCTAssertFalse(context.hasPermission(.nativeMessaging))
+        XCTAssertEqual(prompter.permissionRequests.map(\.unavailablePermissions), [[.nativeMessaging]])
+        XCTAssertEqual(prompter.permissionRequests.map(\.permissions), [[]])
+    }
+
+    func testWhenAnUnavailablePermissionIsRequestedWithOthersThenOnlyTheOthersAreGranted() async throws {
+        let controller = makeController(unavailablePermissions: [.nativeMessaging])
+        let context = try await makeContext(optionalPermissions: ["nativeMessaging", "clipboardWrite"])
+        try await controller.prepare(context)
+
+        let granted = await controller.request(.init(permissions: [.nativeMessaging, .clipboardWrite]), for: context)
+
+        XCTAssertTrue(granted)
+        XCTAssertTrue(context.hasPermission(.clipboardWrite))
+        XCTAssertFalse(context.hasPermission(.nativeMessaging))
+        XCTAssertEqual(prompter.permissionRequests.map(\.permissions), [[.clipboardWrite]])
+        XCTAssertEqual(prompter.permissionRequests.map(\.unavailablePermissions), [[.nativeMessaging]])
     }
 
     func testWhenAdditionalPermissionsAreDeniedThenGrantsDoNotChange() async throws {

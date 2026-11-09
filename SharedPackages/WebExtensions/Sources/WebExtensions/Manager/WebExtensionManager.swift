@@ -1743,7 +1743,7 @@ extension WebExtensionManager: WKWebExtensionControllerDelegate {
                                        for extensionContext: WKWebExtensionContext) async -> (Set<WKWebExtension.Permission>, Date?) {
         guard let permissionController else { return (permissions, nil) }
         let granted = await permissionController.request(WebExtensionPermissionRequest(permissions: permissions), for: extensionContext)
-        return (granted ? permissions : [], nil)
+        return (granted ? permissions.subtracting(permissionController.unavailablePermissions) : [], nil)
     }
 
     public func webExtensionController(_ controller: WKWebExtensionController,

@@ -41,6 +41,10 @@ final class SitePermissionsXCUITests: XCTestCase {
         app.resetAuthorizationStatus(for: .microphone)
         app.resetAuthorizationStatus(for: .location)
         server["/camera"] = { _ in .ok(.html(Self.permissionsHTML)) }
+        server["/permissions.svg"] = { _ in .ok(.data(Data(Self.permissionsSVG.utf8), contentType: "image/svg+xml")) }
+        server["/permissions-svg"] = { _ in .ok(.data(Data(Self.permissionsSVG.utf8), contentType: "image/svg+xml")) }
+        server["/iframe-svg"] = { _ in .ok(.html(Self.svgFrameHTML)) }
+        server["/permissions-html.svg"] = { _ in .ok(.html(Self.permissionsHTML)) }
         server["/history"] = { _ in .ok(.html(Self.historyHTML)) }
         server["/history-next"] = { _ in .ok(.html(Self.historyHTML)) }
         server["/atb.js"] = { _ in .ok(.json(["version": "v1-1", "majorVersion": 1, "minorVersion": 1])) }
@@ -923,6 +927,59 @@ final class SitePermissionsXCUITests: XCTestCase {
         assertNoPermissionPrompt()
     }
 
+    func testWhenSVGRequestsPermissionsThenSavedDenialsAreReusedWithoutPrompts() {
+        assertSVGSavedDenialsAreReused(path: "/permissions.svg")
+    }
+
+    func testWhenSameOriginSVGFrameRequestsPermissionsThenSavedDenialsAreReusedWithoutPrompts() {
+        assertSVGSavedDenialsAreReused(path: "/iframe-svg")
+    }
+
+    func testWhenExtensionlessSVGRequestsPermissionsThenCustomFlowGrantsLocationAndCamera() throws {
+        try assertSVGCustomPermissionFlows(path: "/permissions-svg")
+    }
+
+    func testWhenSameOriginSVGFrameRequestsPermissionsThenCustomFlowGrantsLocationAndCamera() throws {
+        try assertSVGCustomPermissionFlows(path: "/iframe-svg")
+    }
+
+    func testWhenFlagIsOffThenSVGLocationUsesWebKitDespiteSavedDenial() throws {
+        try simulateLocation(latitude: 37.3317, longitude: -122.0301)
+        launchApp(flagEnabled: true)
+        openPermissionPage()
+        request("location")
+        tap(element("SitePermissions.Dialog.AllowOnce"))
+        answerSystemAlert(for: "location", allow: true)
+        try assertLocationResult("location success 1", latitude: 37.3317, longitude: -122.0301)
+
+        app.terminate()
+        launchApp(flagEnabled: false, seedPermissions: "{ \"127.0.0.1\" = { geolocation = deny; }; }")
+        openSVGPermissionPage(path: "/permissions.svg")
+        request("location")
+        denyWebKitPrompt(for: "location")
+        assertResult("location error 1 1")
+        assertNoPermissionPrompt()
+    }
+
+    func testWhenHTMLHasSVGExtensionThenSavedDenialAndCustomPromptStillApply() {
+        launchApp(seedPermissions: "{ \"127.0.0.1\" = { camera = deny; }; }")
+        openPermissionPage(path: "/permissions-html.svg")
+        request("camera")
+        assertResult("NotAllowedError 1")
+        assertResult("tracks video=0 audio=0")
+        assertNoPermissionPrompt()
+
+        app.terminate()
+        launchApp()
+        openPermissionPage(path: "/permissions-html.svg")
+        request("camera")
+        assertSiteDialog(permission: "camera")
+        tap(element("SitePermissions.Dialog.NeverAllow"))
+        assertResult("NotAllowedError 1")
+        assertResult("tracks video=0 audio=0")
+        assertNoPermissionPrompt()
+    }
+
     func testWhenFireClearsDataThenFireproofPermissionsAndGlobalDefaultsAreKept() {
         // These public DNS aliases resolve to loopback; all page content comes from our server.
         // For fully offline runs, map fireproof.lvh.me and clear.localtest.me to 127.0.0.1 in /etc/hosts.
@@ -1167,6 +1224,48 @@ final class SitePermissionsXCUITests: XCTestCase {
     private func reloadPermissionPage() {
         tap(app.webViews.buttons["Reload fixture"])
         assertResult("ready")
+    }
+
+    private func openSVGPermissionPage(path: String) {
+        openPermissionPage(path: path)
+        assertResult("SVG ready")
+    }
+
+    private func assertSVGSavedDenialsAreReused(path: String) {
+        launchApp(flagEnabled: true, seedPermissions: "{ \"127.0.0.1\" = { camera = deny; geolocation = deny; }; }")
+        openSVGPermissionPage(path: path)
+
+        for requestNumber in 1...2 {
+            request("location")
+            assertResult("location error \(requestNumber) 1")
+            assertNoPermissionPrompt()
+            request("camera")
+            assertResult("NotAllowedError \(requestNumber)")
+            assertResult("tracks video=0 audio=0")
+            assertNoPermissionPrompt()
+        }
+    }
+
+    private func assertSVGCustomPermissionFlows(path: String) throws {
+        try simulateLocation(latitude: 37.3317, longitude: -122.0301)
+        launchApp(flagEnabled: true)
+        openSVGPermissionPage(path: path)
+        request("location")
+        assertSiteDialog(permission: "location")
+        tap(element("SitePermissions.Dialog.AllowWhileUsingSite"))
+        answerSystemAlert(for: "location", allow: true)
+        try assertLocationResult("location success 1", latitude: 37.3317, longitude: -122.0301)
+        request("location")
+        try assertLocationResult("location success 2", latitude: 37.3317, longitude: -122.0301)
+        assertNoPermissionPrompt()
+
+        request("camera")
+        assertSiteDialog(permission: "camera")
+        tap(element("SitePermissions.Dialog.AllowOnce"))
+        answerSystemAlert(for: "camera", allow: true)
+        assertResult("success 1")
+        assertResult("tracks video=1 audio=0")
+        assertNoPermissionPrompt()
     }
 
     private func openPermissionsSheetAfterSystemDenial(of permission: String, expectedError: String) {
@@ -1686,6 +1785,60 @@ final class SitePermissionsXCUITests: XCTestCase {
           ? 'Next permissions document' : 'Original permissions document';
       </script>
     """)
+
+    private static let permissionsSVG = """
+    <svg xmlns="http://www.w3.org/2000/svg" width="100%" height="100%" viewBox="0 0 400 700" preserveAspectRatio="xMinYMin meet">
+      <foreignObject width="400" height="700">
+        <body xmlns="http://www.w3.org/1999/xhtml" style="font:18px sans-serif; margin:12px">
+          <h1>Permissions fixture</h1>
+          <p role="status">SVG ready</p>
+          <button style="font:inherit" onclick="requestMedia()">Request camera</button>
+          <button style="font:inherit" onclick="requestLocation()">Request location</button>
+          <p id="result" role="status">ready</p>
+          <p id="tracks" role="status">tracks video=0 audio=0</p>
+          <p id="locationResult" role="status">location ready</p>
+        </body>
+      </foreignObject>
+      <script><![CDATA[
+        let mediaRequestCount = 0;
+        let locationRequestCount = 0;
+        async function requestMedia() {
+          const requestNumber = ++mediaRequestCount;
+          const result = document.getElementById('result');
+          result.textContent = 'pending ' + requestNumber;
+          try {
+            const stream = await navigator.mediaDevices.getUserMedia({video: true});
+            document.getElementById('tracks').textContent = 'tracks video=' + stream.getVideoTracks().length + ' audio=0';
+            result.textContent = 'success ' + requestNumber;
+            stream.getTracks().forEach(track => track.stop());
+          } catch (error) {
+            result.textContent = error.name + ' ' + requestNumber;
+          }
+        }
+        function requestLocation() {
+          const requestNumber = ++locationRequestCount;
+          const result = document.getElementById('locationResult');
+          result.textContent = 'location pending ' + requestNumber;
+          navigator.geolocation.getCurrentPosition(
+            position => result.textContent = 'location success ' + requestNumber + ' '
+              + position.coords.latitude.toFixed(4) + ',' + position.coords.longitude.toFixed(4),
+            error => result.textContent = 'location error ' + requestNumber + ' ' + error.code,
+            {maximumAge: 0, enableHighAccuracy: true});
+        }
+      ]]></script>
+    </svg>
+    """
+
+    private static let svgFrameHTML = """
+    <!doctype html>
+    <html lang="en">
+    <head><meta name="viewport" content="width=device-width, initial-scale=1"><title>SVG frame host</title></head>
+    <body style="margin:0">
+      <iframe src="/permissions.svg" allow="geolocation; camera" sandbox="allow-scripts allow-same-origin"
+        title="SVG permissions" style="border:0; width:100%; height:700px"></iframe>
+    </body>
+    </html>
+    """
 
     private static func iframeHTML(src: String, allow: String = "geolocation", sandbox: String? = nil) -> String {
         let sandboxAttribute = sandbox.map { " sandbox=\"\($0)\"" } ?? ""

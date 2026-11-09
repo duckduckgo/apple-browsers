@@ -24,7 +24,7 @@ public enum BackupRestoreFailure: Equatable {
     /// Known to be temporary: no connection or a timeout, a server error, a timed-out or rate-limited request,
     /// or a backup that couldn't be read because the keychain is locked.
     case temporary
-    /// Retrying can't succeed: the backup is missing or was rejected, the session changed,
+    /// Retrying can't succeed: the backup is missing, can't be decoded or was rejected, the session changed,
     /// or the server rejected the refresh or the account.
     case permanent
     /// Any other failure, including a backup that couldn't be read for another reason.

@@ -543,6 +543,21 @@ final class SubscriptionTokenKeychainStorageTests: XCTestCase {
         XCTAssertTrue(testUserDefaults.bool(forKey: "com.duckduckgo.subscription.v2.tokens.expected"))
     }
 
+    func testReadTokenContainer_tellsAnUndecodableItemFromAMissingOne() throws {
+        let keychainManager = makeKeychainManager()
+        let storage = makeStorage(keychainManager: keychainManager, field: .backupTokenContainer) { _ in }
+        let tokenContainer = OAuthTokensFactory.makeValidTokenContainer()
+
+        XCTAssertEqual(try storage.readTokenContainer(), .missing)
+
+        try storage.saveTokenContainer(tokenContainer)
+        XCTAssertEqual(try storage.readTokenContainer(), .found(tokenContainer))
+
+        try keychainManager.store(data: Data("not a token container".utf8), forKey: "com.duckduckgo.subscription.v2.tokens.backup")
+        XCTAssertEqual(try storage.readTokenContainer(), .undecodable)
+        XCTAssertNil(try storage.getTokenContainer())
+    }
+
     func testUndecodableItem_isReportedOncePerSave() throws {
         let keychainManager = makeKeychainManager()
         var errors: [AccountKeychainAccessError] = []

@@ -34,6 +34,8 @@ public enum TokenBackupError: DDGError {
     case sessionChanged
     /// Reading the backup token container from its storage failed with `underlying`.
     case readFailed(underlying: Error)
+    /// The stored backup can't be decoded as a token container.
+    case undecodable
 
     public var description: String {
         switch self {
@@ -49,6 +51,8 @@ public enum TokenBackupError: DDGError {
             return "The session changed during the backup restore"
         case .readFailed(let underlying):
             return "Failed to read the backup token: \(underlying)"
+        case .undecodable:
+            return "The backup token can't be decoded"
         }
     }
 
@@ -68,6 +72,8 @@ public enum TokenBackupError: DDGError {
             return 11104
         case .readFailed:
             return 11105
+        case .undecodable:
+            return 11106
         }
     }
 
@@ -84,7 +90,7 @@ public enum TokenBackupError: DDGError {
     public static func == (lhs: TokenBackupError, rhs: TokenBackupError) -> Bool {
         switch (lhs, rhs) {
         case (.unavailable, .unavailable), (.accountMismatch, .accountMismatch), (.predatesSignOut, .predatesSignOut),
-             (.expired, .expired), (.sessionChanged, .sessionChanged):
+             (.expired, .expired), (.sessionChanged, .sessionChanged), (.undecodable, .undecodable):
             return true
         case let (.readFailed(lhsUnderlying), .readFailed(rhsUnderlying)):
             let lhsError = lhsUnderlying as NSError

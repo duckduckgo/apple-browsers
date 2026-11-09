@@ -71,10 +71,31 @@ public enum OAuthClientError: DDGError {
     }
 }
 
+/// The result of reading the token container from storage.
+public enum TokenContainerReadResult: Equatable {
+    /// A token container is stored and was decoded.
+    case found(TokenContainer)
+    /// No token container is stored.
+    case missing
+    /// An item is stored but can't be decoded as a token container.
+    case undecodable
+}
+
 /// Provides the locally stored tokens container
 public protocol AuthTokenStoring {
     func getTokenContainer() throws -> TokenContainer?
+    /// Reads the stored token container, telling an item that can't be decoded apart from a missing one.
+    /// The default implementation reports both as `.missing`.
+    func readTokenContainer() throws -> TokenContainerReadResult
     func saveTokenContainer(_ tokenContainer: TokenContainer?) throws
+}
+
+extension AuthTokenStoring {
+
+    public func readTokenContainer() throws -> TokenContainerReadResult {
+        guard let tokenContainer = try getTokenContainer() else { return .missing }
+        return .found(tokenContainer)
+    }
 }
 
 public enum AuthTokensCachePolicy: CustomStringConvertible, Equatable {

@@ -91,7 +91,7 @@ final class WebExtensionPermissionPrompt: WebExtensionPermissionPrompting {
     private func makeAlert(for webExtension: WKWebExtension, permissions: WebExtensionPermissionRequest) -> NSAlert {
         let alert = NSAlert()
         let iconSize = NSSize(width: 64, height: 64)
-        if let icon = webExtension.icon(for: iconSize) ?? webExtension.actionIcon(for: iconSize) {
+        if let icon = webExtension.displayIcon(for: iconSize) {
             alert.icon = icon
         }
         alert.messageText = String(format: UserText.webExtensionPermissionTitle, webExtension.displayName ?? UserText.webExtensionUnnamedExtension)

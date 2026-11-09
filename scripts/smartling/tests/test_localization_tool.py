@@ -40,7 +40,8 @@ class FakeSmartlingClient:
                  awaiting_jobs=None,
                  awaiting_jobs_error=None,
                  file_hashcodes=None,
-                 jobs_by_hashcode=None,
+                 job_uids_by_string=None,
+                 in_progress_jobs=None,
                  job_search_error=None,
                  file_status_error=None,
                  upload_code='SUCCESS',
@@ -61,7 +62,8 @@ class FakeSmartlingClient:
         self.awaiting_jobs = awaiting_jobs or []
         self.awaiting_jobs_error = awaiting_jobs_error
         self.file_hashcodes = file_hashcodes or {}
-        self.jobs_by_hashcode = jobs_by_hashcode or {}
+        self.job_uids_by_string = job_uids_by_string or {}
+        self.in_progress_jobs = in_progress_jobs or []
         self.job_search_error = job_search_error
         self.job_searches = []
         self.file_status_error = file_status_error
@@ -157,11 +159,18 @@ class FakeSmartlingClient:
     async def list_source_hashcodes(self, file_uri):
         return self.file_hashcodes.get(file_uri, [])
 
-    async def search_jobs(self, hashcodes, locale_ids):
+    async def find_job_uids_by_strings(self, hashcodes, locale_ids):
         if self.job_search_error:
             raise self.job_search_error
         self.job_searches.append((hashcodes, locale_ids))
-        return [job for hashcode in hashcodes for job in self.jobs_by_hashcode.get(hashcode, [])]
+        return {
+            uid
+            for hashcode in hashcodes for locale in locale_ids
+            for uid in self.job_uids_by_string.get((hashcode, locale), [])
+        }
+
+    async def list_jobs_in_status(self, status):
+        return self.in_progress_jobs if status == 'IN_PROGRESS' else []
 
     async def download_file(self, file_uri, locale):
         if (file_uri, locale) in self.failing_downloads:
@@ -695,8 +704,28 @@ class SourceHashcodesTests(unittest.IsolatedAsyncioTestCase):
         )
 
 
-def search_job(uid, status, created='2026-11-06T12:02:00Z'):
-    return {'translationJobUid': uid, 'jobName': f'Merge iOS - {uid}', 'jobStatus': status, 'createdDate': created}
+def jobs_by_strings_page(*job_uids):
+    return {'response': {'data': {'items': [{'translationJobUid': uid, 'jobName': uid} for uid in job_uids]}}}
+
+
+class FindJobsByStringsTests(unittest.IsolatedAsyncioTestCase):
+
+    async def testWhenThereAreMoreStringLocalePairsThanOneRequestTakesThenTheStringsAreSplitAcrossRequests(self):
+        client = LOCALIZATION_TOOL.SmartlingClient(LOCALIZATION_TOOL.Credentials('user', 'secret', 'project'))
+        client._request = unittest.mock.AsyncMock(side_effect=[jobs_by_strings_page('a', 'b'), jobs_by_strings_page('b')])
+        hashcodes = [f'hash-{index}' for index in range(5001)]
+
+        job_uids = await client.find_job_uids_by_strings(hashcodes, ['de-DE', 'el-GR', 'ro-RO', 'tr-TR'])
+
+        self.assertEqual(job_uids, {'a', 'b'})
+        calls = client._request.await_args_list
+        self.assertTrue(all(call.args[1].endswith('/jobs/find-jobs-by-strings') for call in calls))
+        self.assertEqual([len(call.kwargs['json']['hashcodes']) for call in calls], [5000, 1])
+        self.assertEqual(calls[0].kwargs['json']['localeIds'], ['de-DE', 'el-GR', 'ro-RO', 'tr-TR'])
+
+
+def in_progress_job(uid, created='2026-11-06T12:02:00Z'):
+    return {'translationJobUid': uid, 'jobName': f'Merge iOS - {uid}', 'createdDate': created}
 
 
 class ReleaseStatusJobsInProgressTests(unittest.IsolatedAsyncioTestCase):
@@ -709,7 +738,7 @@ class ReleaseStatusJobsInProgressTests(unittest.IsolatedAsyncioTestCase):
                 file_uris=[XLIFF_URI, STRINGSDICT_URI]
             )
 
-    async def testWhenNotReadyThenOnlyTheJobsInProgressWithTheIncompleteFilesStringsAreListedOnce(self):
+    async def testWhenNotReadyThenOnlyTheJobsInProgressWithTheIncompleteStringsAndLocalesAreListed(self):
         client = FakeSmartlingClient(
             locales=['de-DE', 'tr-TR'],
             file_statuses={
@@ -717,11 +746,13 @@ class ReleaseStatusJobsInProgressTests(unittest.IsolatedAsyncioTestCase):
                 STRINGSDICT_URI: file_status(5, de_DE=(5, 0), tr_TR=(5, 0)),
             },
             file_hashcodes={XLIFF_URI: ['hash-1', 'hash-2'], STRINGSDICT_URI: ['hash-3']},
-            jobs_by_hashcode={
-                'hash-1': [search_job('merge', 'IN_PROGRESS'), search_job('old', 'COMPLETED')],
-                'hash-2': [search_job('merge', 'IN_PROGRESS'), search_job('pr', 'AWAITING_AUTHORIZATION')],
-                'hash-3': [search_job('other', 'IN_PROGRESS')],
-            }
+            job_uids_by_string={
+                ('hash-1', 'tr-TR'): ['merge', 'old'],
+                ('hash-2', 'tr-TR'): ['merge'],
+                ('hash-2', 'de-DE'): ['german'],
+                ('hash-3', 'tr-TR'): ['other'],
+            },
+            in_progress_jobs=[in_progress_job('merge'), in_progress_job('german'), in_progress_job('other')]
         )
 
         result = await self.release_status(client)

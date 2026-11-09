@@ -18,7 +18,7 @@ from contextlib import contextmanager
 from pathlib import Path
 from datetime import datetime, timedelta
 from decimal import Decimal, InvalidOperation
-from typing import List, Dict, Optional
+from typing import List, Dict, Optional, Set
 from dataclasses import asdict, dataclass, field
 from urllib.parse import urlencode
 
@@ -314,14 +314,18 @@ class SmartlingClient:
         return data.get('response', {})
 
     async def list_jobs_awaiting_authorization(self) -> List[Dict]:
-        """List the project's jobs that are awaiting authorization, page by page, since PR label jobs wait there too."""
+        """List the project's jobs that are awaiting authorization, since PR label jobs wait there too."""
+        return await self.list_jobs_in_status('AWAITING_AUTHORIZATION')
+
+    async def list_jobs_in_status(self, status: str) -> List[Dict]:
+        """List the project's jobs in status, page by page."""
         jobs = []
         while True:
             data = await self._request(
                 'GET',
                 f'/jobs-api/v3/projects/{self.creds.project_id}/jobs',
                 params=[
-                    ('translationJobStatus', 'AWAITING_AUTHORIZATION'),
+                    ('translationJobStatus', status),
                     ('limit', '100'),
                     ('offset', str(len(jobs))),
                 ]
@@ -346,17 +350,21 @@ class SmartlingClient:
             if len(items) < 500:
                 return hashcodes
 
-    async def search_jobs(self, hashcodes: List[str], locale_ids: List[str]) -> List[Dict]:
-        """List the jobs, in any status, that hold any of the strings in any of the locales, 500 strings per search."""
-        jobs = []
-        for start in range(0, len(hashcodes), 500):
+    async def find_job_uids_by_strings(self, hashcodes: List[str], locale_ids: List[str]) -> Set[str]:
+        """The IDs of the jobs, in any status, that hold any of the strings in any of the locales.
+
+        Smartling takes at most 20,000 string and locale pairs per request.
+        """
+        job_uids = set()
+        batch_size = max(20000 // max(len(locale_ids), 1), 1)
+        for start in range(0, len(hashcodes), batch_size):
             data = await self._request(
                 'POST',
-                f'/jobs-api/v3/projects/{self.creds.project_id}/jobs/search',
-                json={'hashcodes': hashcodes[start:start + 500], 'localeIds': locale_ids}
+                f'/jobs-api/v3/projects/{self.creds.project_id}/jobs/find-jobs-by-strings',
+                json={'hashcodes': hashcodes[start:start + batch_size], 'localeIds': locale_ids}
             )
-            jobs.extend(data['response']['data'].get('items', []))
-        return jobs
+            job_uids.update(item['translationJobUid'] for item in data['response']['data'].get('items', []))
+        return job_uids
 
     async def list_open_source_issues(self) -> List[Dict]:
         """List the project's open issues on English strings, page by page: the Issues API returns at most 30 at a time."""
@@ -835,12 +843,13 @@ async def describe_jobs_in_progress(client: SmartlingClient, file_uris: List[str
         hashcodes = set()
         for file_uri in file_uris:
             hashcodes.update(await client.list_source_hashcodes(file_uri))
-        jobs = await client.search_jobs(sorted(hashcodes), locales)
+        holding_strings = await client.find_job_uids_by_strings(sorted(hashcodes), locales)
+        in_progress = await client.list_jobs_in_status('IN_PROGRESS')
     except Exception as error:  # pylint: disable=broad-except
         log(f"⚠️ Could not find the jobs in progress with the release's strings: {error}")
         return []
-    in_progress = {job_uid(job): job for job in jobs if job.get('jobStatus') == 'IN_PROGRESS'}
-    return describe_jobs(client, "Jobs in progress with the release's strings", list(in_progress.values()))
+    jobs = [job for job in in_progress if job_uid(job) in holding_strings]
+    return describe_jobs(client, "Jobs in progress with the release's strings", jobs)
 
 
 def describe_jobs(client: SmartlingClient, title: str, jobs: List[Dict]) -> List[Dict]:

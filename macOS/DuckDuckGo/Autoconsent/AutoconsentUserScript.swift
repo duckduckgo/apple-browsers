@@ -676,15 +676,7 @@ extension AutoconsentUserScript {
             // Fire summary pixels, one per site rank bucket, containing counters of all other pixels,
             // 2 minutes after the first event is received.
             DispatchQueue.main.asyncAfter(deadline: .now() + 60*2) { [additionalParams] in
-                for (siteRank, events) in self.management.pixelCounter {
-                    var parameters = additionalParams
-                    parameters["siteRank"] = siteRank?.rawValue
-                    PixelKit.fire(AutoconsentPixel.summary(events: events), frequency: .standard, withAdditionalParameters: parameters)
-                }
-                self.management.pixelCounter = [:]
-                self.management.detectedByPatternsCache.removeAll()
-                self.management.detectedByBothCache.removeAll()
-                self.management.detectedOnlyRulesCache.removeAll()
+                self.management.fireSummaryPixels(additionalParameters: additionalParams)
             }
         }
         // increment counter

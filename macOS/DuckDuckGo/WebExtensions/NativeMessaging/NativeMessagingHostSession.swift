@@ -41,6 +41,8 @@ final class NativeMessagingHostSession {
     var terminationHandler: (@MainActor (Error?) -> Void)?
 
     let hostName: String
+    /// The unique identifier of the extension context that opened the session.
+    let extensionIdentifier: String
     let diagnosticIdentifier = String(UUID().uuidString.prefix(8))
 
     private let createdAt = Date()
@@ -70,14 +72,16 @@ final class NativeMessagingHostSession {
     ///
     /// - Parameters:
     ///   - hostName: The name the extension asked for, which is also the manifest's `name`.
+    ///   - extensionIdentifier: The unique identifier of the extension context that opens the session.
     ///   - executable: The binary the host manifest's `path` names.
     ///   - callerOrigin: The origin the host sees as its first argument. Chrome passes
     ///     `chrome-extension://<id>/` there, and a host that has an `allowed_origins` list
     ///     matches the argument against it and quits when it finds no match. So this is
     ///     normally the extension's Chrome origin rather than our own `webkit-extension://`
     ///     base URL. `NativeMessagingHandler` picks the value.
-    init(hostName: String, executable: URL, callerOrigin: String) {
+    init(hostName: String, extensionIdentifier: String, executable: URL, callerOrigin: String) {
         self.hostName = hostName
+        self.extensionIdentifier = extensionIdentifier
         process.executableURL = executable
         process.arguments = [callerOrigin]
         process.standardInput = inputPipe

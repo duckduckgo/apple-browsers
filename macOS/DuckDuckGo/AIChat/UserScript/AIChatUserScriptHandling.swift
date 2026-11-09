@@ -135,11 +135,8 @@ protocol AIChatUserScriptHandling: AnyObject {
 
     // MARK: Browser tools
 
-    @MainActor func mcpInitialize(params: Any, message: UserScriptMessage) async -> Encodable?
-    @MainActor func mcpNotificationsInitialized(params: Any, message: UserScriptMessage) async -> Encodable?
-    @MainActor func mcpToolsList(params: Any, message: UserScriptMessage) async -> Encodable?
-    @MainActor func mcpToolsCall(params: Any, message: UserScriptMessage, elicitationPusher: (any AIChatElicitationPushing)?) async -> Encodable?
-    @MainActor func mcpElicitationResponse(params: Any, message: UserScriptMessage) async -> Encodable?
+    @MainActor func executeClientTool(params: Any, message: UserScriptMessage, permissionPusher: (any ClientToolPermissionPushing)?) async -> Encodable?
+    @MainActor func respondToClientToolPermission(params: Any, message: UserScriptMessage, source: any ClientToolPermissionPushing) async -> Encodable?
     func togglePageContextTelemetry(params: Any, message: UserScriptMessage) -> Encodable?
     @MainActor func reportMetric(params: Any, message: UserScriptMessage) async -> Encodable?
     func storeMigrationData(params: Any, message: UserScriptMessage) -> Encodable?
@@ -1359,105 +1356,43 @@ extension AIChatUserScriptHandler: AIChatMetricReportingHandling {
 
 extension AIChatUserScriptHandler {
 
-    /// Always answers, even on an unreadable payload: the bridge has no timeout, so silence would
-    /// leave the caller pending forever.
+    /// Always replies with the request's `callId`, including for an invalid payload.
+    /// - Parameter permissionPusher: the chat page that made the call. `nil` means the page may not
+    ///   use client tools, so the call is `unavailable`.
     @MainActor
-    func mcpInitialize(params: Any, message: UserScriptMessage) async -> Encodable? {
-        let request: MCPInitializeRequest? = DecodableHelper.decode(from: params)
-
-        if let ownerTabID = ownerTabID(for: message) {
-            browserTools.sessions.applyInitialize(forOwnerTabID: ownerTabID,
-                                                  protocolVersion: request?.protocolVersion,
-                                                  supportsElicitationForm: request?.supportsElicitationForm ?? false)
+    func executeClientTool(params: Any, message: UserScriptMessage, permissionPusher: (any ClientToolPermissionPushing)?) async -> Encodable? {
+        guard let request = ExecuteClientToolRequest.parse(rawParams: params) else {
+            return ExecuteClientToolResponse.invalidRequest(rawParams: params)
         }
 
-        return MCPInitializeResult(serverName: AIChatBrowserToolsService.serverName,
-                                   serverVersion: AppVersion.shared.versionAndBuildNumber)
-    }
-
-    /// The bridge decides whether this reply is delivered — a message with an envelope `id` gets
-    /// it, a plain notification discards it — so returning a result is correct either way.
-    @MainActor
-    func mcpNotificationsInitialized(params: Any, message: UserScriptMessage) async -> Encodable? {
-        if let ownerTabID = ownerTabID(for: message) {
-            browserTools.sessions.markInitialized(forOwnerTabID: ownerTabID)
-        }
-        return MCPEmptyResult()
-    }
-
-    /// A listing failure is a top-level `error` token, unlike `tools/call`, which carries failures
-    /// inside the MCP result envelope.
-    @MainActor
-    func mcpToolsList(params: Any, message: UserScriptMessage) async -> Encodable? {
-        guard let ownerTabID = ownerTabID(for: message),
-              let session = browserTools.sessions.session(forOwnerTabID: ownerTabID),
-              session.isInitialized else {
-            return BrowserToolsListResponse(failure: .notInitialized)
-        }
-
-        // No Fire check, mirroring Windows: a Fire window is advertised the catalogue and refused
-        // on every call. Detectable, and a known cross-platform gap to close on both sides together.
-        let permissions = browserTools.permissions
-        return BrowserToolsListResponse(tools: browserTools.catalog.enabledTools.map {
-            $0.descriptor(permissionState: permissions.effectiveState(for: $0).rawValue)
-        })
-    }
-
-    /// Every outcome is a well-formed reply carrying the request's `callId`. A refusal rides in
-    /// `isError`; the envelope status describes the round trip only, and is always `ok`.
-    /// - Parameter elicitationPusher: where a permission prompt raised by this call is delivered.
-    @MainActor
-    func mcpToolsCall(params: Any, message: UserScriptMessage, elicitationPusher: (any AIChatElicitationPushing)?) async -> Encodable? {
-        guard let request: InvokeBrowserToolRequest = DecodableHelper.decode(from: params), !request.name.isEmpty else {
-            // Recover the call id even from a payload we could not read, so the front end can still
-            // match the failure to the call it made rather than being left guessing.
-            return InvokeBrowserToolResponse(callId: Self.callID(fromRawParams: params), result: .failure(.invalidRequest))
-        }
-
-        guard let ownerTabID = ownerTabID(for: message),
-              let session = browserTools.sessions.session(forOwnerTabID: ownerTabID),
-              session.isInitialized else {
-            return InvokeBrowserToolResponse(callId: request.callId, result: .failure(.notInitialized))
-        }
-
-        // Scoped by the owner tab, never the key window: a backgrounded chat would otherwise act on
-        // whichever window the user is in now, Fire included.
-        guard let ownerCollection = AIChatTabPickerSource.ownerCollection(for: message.messageWebView,
+        // Scoped by the owner tab, never the key window, so a backgrounded chat cannot act on another window.
+        guard let permissionPusher,
+              let ownerTabID = ownerTabID(for: message),
+              let ownerCollection = AIChatTabPickerSource.ownerCollection(for: message.messageWebView,
                                                                           ownerTabID: ownerTabID,
                                                                           in: windowControllersManager) else {
-            return InvokeBrowserToolResponse(callId: request.callId, result: .failure(.unavailable))
+            return ExecuteClientToolResponse.failure(callId: request.callId, error: .unavailable)
         }
         let context = BrowserToolCallContext(
             ownerTabID: ownerTabID,
             ownerWindowToken: AIChatTabPickerSource.windowToken(forCollection: ownerCollection),
-            isBurner: ownerCollection.isBurner,
-            supportsElicitationForm: session.supportsElicitationForm
+            isBurner: ownerCollection.isBurner
         )
-
-        let result = await browserTools.invoke(toolNamed: request.name,
-                                               arguments: request.arguments,
-                                               context: context,
-                                               callID: request.callId,
-                                               elicitationPusher: elicitationPusher)
-        return InvokeBrowserToolResponse(callId: request.callId, result: result.callToolResult)
+        let response = await browserTools.invoke(request, context: context, permissionPusher: permissionPusher)
+        return response.limitedToResultBytes()
     }
 
-    /// Always acknowledged, even for a malformed payload, so a front end that sends this as a
-    /// request cannot hang. An unreadable `result` completes the prompt as `cancel`.
+    /// Always acknowledged with `{}`. A late, mismatched or unreadable answer changes nothing.
     @MainActor
-    func mcpElicitationResponse(params: Any, message: UserScriptMessage) async -> Encodable? {
-        if let response: AIChatElicitationResponseRequest = DecodableHelper.decode(from: params), !response.id.isEmpty {
-            browserTools.elicitations.complete(id: response.id, result: response.result ?? .cancel)
+    func respondToClientToolPermission(params: Any, message: UserScriptMessage, source: any ClientToolPermissionPushing) async -> Encodable? {
+        if let response: RespondToClientToolPermissionRequest = DecodableHelper.decode(from: params) {
+            browserTools.clientToolPermissions.respond(to: response, from: source)
         }
-        return MCPEmptyResult()
-    }
-
-    private static func callID(fromRawParams params: Any) -> String {
-        (params as? [String: Any])?["callId"] as? String ?? ""
+        return RespondToClientToolPermissionResponse()
     }
 
     /// The Duck.ai owner tab this message belongs to — the host tab for a sidebar or detached
-    /// window, the chat's own tab otherwise. Sessions and tool scoping are keyed on it.
+    /// window, the chat's own tab otherwise. Tool access is scoped to it.
     @MainActor
     private func ownerTabID(for message: UserScriptMessage) -> TabIdentifier? {
         AIChatTabPickerSource.ownerTabID(for: message.messageWebView, in: windowControllersManager)

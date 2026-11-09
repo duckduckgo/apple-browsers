@@ -41,11 +41,10 @@ final class AIChatBrowserToolsServiceTests: XCTestCase {
         super.tearDown()
     }
 
-    func testACallIsReportedWhenItStartsAndWhenItEndsWithWhatItSearchedFor() async {
+    func testACallIsReportedWhenItStartsAndWhenItEndsWithWhatItSearchedFor() async throws {
         let (service, received) = makeService(tool: StubBrowserTool(permissionMode: .auto))
 
-        _ = await service.invoke(toolNamed: "listOpenTabs", arguments: ["query": "flights"], context: context(),
-                                 callID: "call-1", elicitationPusher: nil)
+        _ = await service.invoke(try request(callID: "call-1", input: ["query": "flights"]), context: context(), permissionPusher: nil)
 
         XCTAssertEqual(received(), [
             AIChatBrowserToolActivity(callID: "call-1", toolName: "listOpenTabs", subject: "flights", phase: .started),
@@ -53,22 +52,29 @@ final class AIChatBrowserToolsServiceTests: XCTestCase {
         ])
     }
 
-    func testWhenTheUserIsAskedForTheirOKThenThatIsReportedToo() async {
+    func testWhenTheUserIsAskedForTheirOKThenThatIsReportedToo() async throws {
         let (service, received) = makeService(tool: StubBrowserTool(permissionMode: .ask))
-        let pusher = AnsweringElicitationPusher { id in service.elicitations.complete(id: id, result: .cancel) }
+        let pusher = DecliningPermissionPusher(service: service)
 
-        _ = await service.invoke(toolNamed: "listOpenTabs", arguments: nil, context: context(), callID: "call-2", elicitationPusher: pusher)
+        _ = await service.invoke(try request(callID: "call-2"), context: context(), permissionPusher: pusher)
 
         XCTAssertEqual(received().map(\.phase), [.started, .awaitingPermission, .finished(succeeded: false)])
         XCTAssertEqual(pusher.pushes, 1)
     }
 
-    func testNothingIsReportedFromAFireWindow() async {
-        let tool = StubBrowserTool(permissionMode: .auto)
-        let (service, received) = makeService(tool: tool)
+    func testAPromptForACallThatAlreadyEndedIsNotReported() async throws {
+        let (service, received) = makeService(tool: StubBrowserTool(permissionMode: .auto))
+        _ = await service.invoke(try request(callID: "call-4"), context: context(), permissionPusher: nil)
 
-        _ = await service.invoke(toolNamed: "listOpenTabs", arguments: nil, context: context(isBurner: true),
-                                 callID: "call-3", elicitationPusher: nil)
+        service.permissionWasRequested(forCallID: "call-4")
+
+        XCTAssertEqual(received().map(\.phase), [.started, .finished(succeeded: true)])
+    }
+
+    func testNothingIsReportedFromAFireWindow() async throws {
+        let (service, received) = makeService(tool: StubBrowserTool(permissionMode: .auto))
+
+        _ = await service.invoke(try request(callID: "call-3"), context: context(isBurner: true), permissionPusher: nil)
 
         XCTAssertEqual(received(), [])
     }
@@ -86,18 +92,21 @@ final class AIChatBrowserToolsServiceTests: XCTestCase {
         return (service, { received })
     }
 
+    private func request(callID: String, input: [String: Any] = [:]) throws -> ExecuteClientToolRequest {
+        let params: [String: Any] = ["callId": callID, "capability": ["name": "listOpenTabs", "version": 1], "input": input]
+        return try XCTUnwrap(ExecuteClientToolRequest.parse(rawParams: params))
+    }
+
     private func context(isBurner: Bool = false) -> BrowserToolCallContext {
-        BrowserToolCallContext(ownerTabID: "owner", ownerWindowToken: nil, isBurner: isBurner, supportsElicitationForm: true)
+        BrowserToolCallContext(ownerTabID: "owner", ownerWindowToken: nil, isBurner: isBurner)
     }
 }
 
 @MainActor
 private final class StubBrowserTool: BrowserTool {
     let name = "listOpenTabs"
-    let title = "List open tabs"
-    let description = "Lists open tabs"
     let permissionMode: BrowserToolPermissionMode
-    var inputSchema: JSONValue { ["type": "object"] }
+    var inputSchema: JSONValue { ["type": "object", "properties": ["query": ["type": "string"]]] }
 
     init(permissionMode: BrowserToolPermissionMode) {
         self.permissionMode = permissionMode
@@ -108,20 +117,24 @@ private final class StubBrowserTool: BrowserTool {
     }
 }
 
-/// Answers each permission prompt as soon as it's shown.
+/// Stands in for the chat page: tells the service a prompt was shown, then declines it.
 @MainActor
-private final class AnsweringElicitationPusher: AIChatElicitationPushing {
+private final class DecliningPermissionPusher: ClientToolPermissionPushing {
     private(set) var pushes = 0
-    private let answer: (String) -> Void
+    private let service: AIChatBrowserToolsService
 
-    init(answer: @escaping (String) -> Void) {
-        self.answer = answer
+    init(service: AIChatBrowserToolsService) {
+        self.service = service
     }
 
-    func pushElicitationCreate(_ params: MCPElicitationCreateParams) -> Bool {
+    func pushClientToolPermissionRequested(_ prompt: ClientToolPermissionRequested) -> Bool {
         pushes += 1
-        let id = params.id
-        Task { @MainActor in self.answer(id) }
+        service.permissionWasRequested(forCallID: prompt.callId)
+        Task { @MainActor in
+            let data = try JSONSerialization.data(withJSONObject: ["callId": prompt.callId, "requestId": prompt.requestId, "decision": "decline"])
+            let response = try JSONDecoder().decode(RespondToClientToolPermissionRequest.self, from: data)
+            self.service.clientToolPermissions.respond(to: response, from: self)
+        }
         return true
     }
 }

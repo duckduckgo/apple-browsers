@@ -30,6 +30,7 @@ final class UpdatePromptStageTrackerTests {
     private let store = InMemoryThrowingKeyValueStore().throwingKeyedStoring() as any ThrowingKeyedStoring<UpdateControllerSettings>
     private var settings = MoreProminentUpdatesSettings(hoursUntilFirstPrompt: 48, hoursUntilSecondPrompt: 96, hoursUntilAppStoreUpdateAvailable: 24)
     private var forcedStage: UpdatePromptStage?
+    private var isEnabled = true
     private let day0 = Date(timeIntervalSince1970: 1_800_000_000)
     private lazy var now = day0
     private var scheduled: (delay: TimeInterval, action: () -> Void)?
@@ -45,6 +46,7 @@ final class UpdatePromptStageTrackerTests {
                                      return AnyCancellable { [unowned self] in scheduled = nil }
                                  },
                                  forcedStage: { [unowned self] in forcedStage },
+                                 isEnabled: { [unowned self] in isEnabled },
                                  reevaluationTriggers: reevaluationTriggers ?? becomeActive.eraseToAnyPublisher())
     }
 
@@ -243,6 +245,27 @@ final class UpdatePromptStageTrackerTests {
         forcedStage = nil
         tracker.reevaluate()
         #expect(tracker.stage == .available)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Turning the feature off shows no stage and clears the clock, and turning it back on starts again from day 0", .timeLimit(.minutes(1)))
+    func disablingClearsTheClock() {
+        let tracker = makeTracker()
+        tracker.updateCheckDidFinish(isUpdateAvailable: true, isCritical: false)
+        advance(by: .hours(50))
+        tracker.reevaluate()
+        #expect(tracker.stage == .firstPrompt)
+
+        isEnabled = false
+        becomeActive.send()
+        #expect(tracker.stage == .none)
+        #expect(tracker.clockStartDate == nil)
+        #expect(scheduled == nil)
+
+        isEnabled = true
+        becomeActive.send()
+        #expect(tracker.stage == .available)
+        #expect(tracker.clockStartDate == now)
     }
 
     @available(iOS 16, macOS 13, *)

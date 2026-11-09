@@ -42,6 +42,7 @@ protocol UnifiedToggleInputViewDelegate: AnyObject {
     func unifiedToggleInputViewDidTapReturnKey(_ view: UnifiedToggleInputView)
     func unifiedToggleInputViewDidShowModelPicker(_ view: UnifiedToggleInputView)
     func unifiedToggleInputViewDidShowReasoningPicker(_ view: UnifiedToggleInputView)
+    func unifiedToggleInputViewDidShowAttachMenu(_ view: UnifiedToggleInputView)
 }
 
 // MARK: - Card Position
@@ -218,6 +219,10 @@ final class UnifiedToggleInputView: UIView {
         textEntryView.refreshPlaceholderForCurrentMode()
     }
 
+    func crossfadePlaceholder(to state: AIChatPlaceholderState) {
+        textEntryView.crossfadePlaceholder(to: state)
+    }
+
     var inputMode: TextEntryMode {
         handler.currentToggleState
     }
@@ -382,6 +387,13 @@ final class UnifiedToggleInputView: UIView {
     var onAttachmentsLayoutDidChange: (() -> Void)?
 
     private var isApplyingDismissPose = false
+    private(set) var isApplyingInputMode = false
+
+    func performInputModeChanges(_ changes: () -> Void) {
+        isApplyingInputMode = true
+        defer { isApplyingInputMode = false }
+        changes()
+    }
 
     private func requestHierarchyLayout() {
         guard !isApplyingDismissPose else { return }
@@ -486,26 +498,47 @@ final class UnifiedToggleInputView: UIView {
     @discardableResult
     private func renderFooterMessages(expanded: Bool) -> Bool {
         let messages = expanded ? pendingFooterMessages : []
+        let messagesChanged = messages != renderedFooterMessages
         let wasVisible = bottomCardSlot == .footer
-        if messages != renderedFooterMessages {
+        if messagesChanged {
             let existingRows = Dictionary(uniqueKeysWithValues: zip(renderedFooterMessages.map(\.id), footerCard.arrangedSubviews))
             let previousMessages = renderedFooterMessages
-            for item in previousMessages where !messages.contains(where: { $0.id == item.id }) {
-                if let row = existingRows[item.id] {
-                    footerCard.removeArrangedSubview(row)
+            for (id, row) in existingRows where !messages.contains(where: { $0.id == id }) {
+                footerCard.removeArrangedSubview(row)
+                let duration = UIView.inheritedAnimationDuration
+                if isApplyingInputMode && UIView.areAnimationsEnabled && duration > 0 {
+                    row.translatesAutoresizingMaskIntoConstraints = true
+                    UIView.animate(withDuration: duration) {
+                        row.alpha = 0
+                    } completion: { _ in
+                        row.removeFromSuperview()
+                    }
+                } else {
                     row.removeFromSuperview()
                 }
             }
             for (index, item) in messages.enumerated() {
-                let row = (existingRows[item.id] as? UTIFooterCardView) ?? UTIFooterCardView()
+                let existingRow = existingRows[item.id] as? UTIFooterCardView
+                let row = existingRow ?? makeFooterRow(with: item.message)
                 row.accessibilityIdentifier = "AIChat.Footer.Card.\(item.id)"
                 row.isBelowAnotherCard = index > 0
                 if !previousMessages.contains(item) {
-                    row.configure(with: item.message, animateIcon: existingRows[item.id] != nil)
+                    existingRow?.configure(with: item.message, animateIcon: true)
                 }
                 row.onPrimaryTap = { [weak self] in self?.onFooterPrimaryTapped?(item.id) }
                 row.onDismissTap = { [weak self] in self?.onFooterDismissTapped?(item.id) }
                 row.onLinkTap = { [weak self] url in self?.onFooterLinkTapped?(item.id, url) }
+                if existingRows[item.id] == nil, footerCard.bounds.width > 0 {
+                    UIView.performWithoutAnimation {
+                        let size = row.systemLayoutSizeFitting(
+                            CGSize(width: footerCard.bounds.width, height: UIView.layoutFittingCompressedSize.height),
+                            withHorizontalFittingPriority: .required,
+                            verticalFittingPriority: .fittingSizeLevel
+                        )
+                        row.frame = CGRect(origin: .zero, size: size)
+                        row.layoutIfNeeded()
+                    }
+                }
                 if footerCard.arrangedSubviews.firstIndex(of: row) != index {
                     footerCard.removeArrangedSubview(row)
                     footerCard.insertArrangedSubview(row, at: index)
@@ -526,8 +559,19 @@ final class UnifiedToggleInputView: UIView {
         applyBottomSlot(slot)
         editReplaceDisclaimerCard.alpha = slot == .editDisclaimer ? 1 : 0
         reportFooterVisibility()
-        footerCard.layoutIfNeeded()
+        if !isApplyingInputMode {
+            footerCard.layoutIfNeeded()
+        }
         return wasVisible || !messages.isEmpty
+    }
+
+    private func makeFooterRow(with message: UTIFooterMessage) -> UTIFooterCardView {
+        let animationsEnabled = UIView.areAnimationsEnabled
+        UIView.setAnimationsEnabled(false)
+        defer { UIView.setAnimationsEnabled(animationsEnabled) }
+        let row = UTIFooterCardView()
+        row.configure(with: message, animateIcon: false)
+        return row
     }
 
     private func applyBottomSlot(_ slot: BottomCardSlot) {
@@ -939,7 +983,16 @@ final class UnifiedToggleInputView: UIView {
 
     private func applyFireModeAppearance(isFireTab: Bool) {
         let background = cardBackgroundColor(isFireTab: isFireTab)
-        applyCardBackgroundColor(background)
+        if omnibarMaterialTransitionBackgroundColor != nil {
+            // Mid transition the card stays clear under the fill, which the dismiss hands back to the card.
+            omnibarMaterialTransitionBackgroundColor = background
+            omnibarMaterialEditingFillView?.backgroundColor = background
+            if #available(iOS 26.0, *), let glass = omnibarMaterialBackdropView as? UIVisualEffectView, glass.effect != nil {
+                glass.effect = omnibarGlassEffect()
+            }
+        } else {
+            applyCardBackgroundColor(background)
+        }
         // cardView keeps the OS trait so `fireModeCardBackground` picks its light variant in light OS; content subviews force `.dark` so their dynamic colors resolve against the dark surface.
         let style: UIUserInterfaceStyle = isFireTab ? .dark : .unspecified
         // Future direct content subviews inherit fire-mode appearance by default; card chrome and collapsed flanking accessories keep the OS trait.
@@ -983,6 +1036,8 @@ final class UnifiedToggleInputView: UIView {
                 backdrop.topAnchor.constraint(equalTo: cardView.topAnchor),
                 backdrop.bottomAnchor.constraint(equalTo: cardView.bottomAnchor)
             ])
+            // Start at the card's size, so the first animated layout doesn't grow it from a zero frame.
+            backdrop.frame = cardView.bounds
             omnibarMaterialBackdropView = backdrop
         }
 
@@ -1001,6 +1056,7 @@ final class UnifiedToggleInputView: UIView {
                 fill.topAnchor.constraint(equalTo: cardView.topAnchor),
                 fill.bottomAnchor.constraint(equalTo: cardView.bottomAnchor)
             ])
+            fill.frame = cardView.bounds
             omnibarMaterialEditingFillView = fill
         }
 
@@ -1054,21 +1110,30 @@ final class UnifiedToggleInputView: UIView {
         guard let fill = omnibarMaterialEditingFillView else { return }
         fill.layer.removeAllAnimations()
         let glassBackdrop = omnibarMaterialBackdropView as? UIVisualEffectView
-        let animations = {
-            fill.alpha = alpha
-            if #available(iOS 26.0, *) {
-                glassBackdrop?.effect = alpha == 0 ? self.omnibarGlassEffect() : nil
+        // Keep the glass fully present while the fill fades over it. Cross-fading both lets the
+        // screen behind show through mid-fade, a light flash under the dark Fire card.
+        let setGlass = { (isVisible: Bool) in
+            guard #available(iOS 26.0, *) else { return }
+            UIView.performWithoutAnimation {
+                glassBackdrop?.effect = isVisible ? self.omnibarGlassEffect() : nil
             }
         }
+        if alpha == 0 {
+            setGlass(true)
+        }
         if UIAccessibility.isReduceMotionEnabled {
-            UIView.performWithoutAnimation(animations)
+            UIView.performWithoutAnimation { fill.alpha = alpha }
+            if alpha > 0 { setGlass(false) }
             return
         }
         UIView.animate(
             withDuration: max(duration, 0.01),
             delay: max(delay, 0),
             options: [.curveEaseInOut, .beginFromCurrentState, .allowUserInteraction],
-            animations: animations
+            animations: { fill.alpha = alpha },
+            completion: { finished in
+                if finished && alpha > 0 { setGlass(false) }
+            }
         )
     }
 
@@ -1149,9 +1214,8 @@ final class UnifiedToggleInputView: UIView {
         if handler.currentToggleState != mode {
             handler.setToggleState(mode)
         }
-        if isToggleEnabled {
-            toggleView.setMode(mode, animated: animated)
-        }
+        setSelectedInputMode(mode, animated: animated)
+        textEntryView.refreshPlaceholderForCurrentMode()
         textEntryView.style = mode == .aiChat ? .multiLine : .singleLine
         // Drive textView pose synchronously inside the caller's UIView.animate so the
         // placeholder constraint switch animates rather than snapping when the publisher
@@ -1159,6 +1223,10 @@ final class UnifiedToggleInputView: UIView {
         textEntryView.updatePoseForCurrentState()
         updateToolbarVisibility(for: mode, animated: animated)
         updateToggleDisabledSearchPadding(for: mode)
+    }
+
+    func setSelectedInputMode(_ mode: TextEntryMode, animated: Bool) {
+        if isToggleEnabled { toggleView.setMode(mode, animated: animated) }
     }
 
     /// Extra breathing room above the text view while expanded on a Duck.ai tab; zero otherwise.
@@ -1201,6 +1269,7 @@ final class UnifiedToggleInputView: UIView {
     }
 
     func setFlankingAccessoriesVisible(_ accessories: UnifiedToggleInputFlankingAccessories) {
+        textEntryView.placeholderTextAlignment = accessories.isEmpty ? .natural : .center
         let previous = visibleFlankingAccessories
         guard previous != accessories else { return }
         let appearing = accessories.subtracting(previous)
@@ -1210,7 +1279,6 @@ final class UnifiedToggleInputView: UIView {
             if appearing.contains(accessory) { button.alpha = 0 }
             button.isHidden = !accessories.contains(accessory)
         }
-        textEntryView.placeholderTextAlignment = accessories.isEmpty ? .natural : .center
 
         guard !appearing.isEmpty else { return }
         // Clear transient state left by the omnibar dismiss (color + horizontal shift).
@@ -1430,7 +1498,8 @@ final class UnifiedToggleInputView: UIView {
 
     func prepareForOmnibarMaterialTransition(duration: TimeInterval) {
         if cardPosition == .top {
-            guard #available(iOS 26.0, *) else { return }
+            // The morph starts from light glass, so the dark Fire card would turn light first: it shows at once.
+            guard #available(iOS 26.0, *), !handler.isFireTab else { return }
         }
         omnibarMaterialTransitionDuration = duration
         if omnibarMaterialTransitionBackgroundColor == nil {
@@ -1664,6 +1733,9 @@ final class UnifiedToggleInputView: UIView {
         guard isExpanded else { return }
 
         let showToolbar = mode == .aiChat
+        // The handler's "Ask" label reaches the toolbar a run loop late; read it now, so the revealed
+        // submit button doesn't shrink to the arrow and grow back.
+        updateSubmitButtonStyle()
         toolsToolbar.prepareForToolbarVisibilityChange(showToolbar: showToolbar)
         toolbarHeightConstraint.constant = showToolbar ? Constants.toolbarHeight : 0
         if isToggleEnabled {
@@ -1674,10 +1746,16 @@ final class UnifiedToggleInputView: UIView {
         }
         updateAttachmentsStripLayout()
 
-        guard animated else {
+        // The enclosing mode animator may be paused while the logo fades.
+        guard animated, UIView.inheritedAnimationDuration == 0 else {
             toolsToolbar.alpha = showToolbar ? 1 : 0
             attachmentsStrip.alpha = attachmentsStripHeightConstraint.constant > 0 ? 1 : 0
-            layoutIfNeeded()
+            if !isApplyingInputMode {
+                layoutIfNeeded()
+            }
+            if animated {
+                requestHierarchyLayout()
+            }
             if showToolbar {
                 toolsToolbar.finalizeToolbarShown()
             }
@@ -1687,7 +1765,9 @@ final class UnifiedToggleInputView: UIView {
         UIView.animate(withDuration: 0.2, delay: 0, options: [.curveEaseInOut, .beginFromCurrentState]) {
             self.toolsToolbar.alpha = showToolbar ? 1 : 0
             self.attachmentsStrip.alpha = self.attachmentsStripHeightConstraint.constant > 0 ? 1 : 0
-            self.layoutIfNeeded()
+            if !self.isApplyingInputMode {
+                self.layoutIfNeeded()
+            }
             self.requestHierarchyLayout()
         } completion: { _ in
             if showToolbar {
@@ -1914,9 +1994,6 @@ private extension UnifiedToggleInputView {
             guard let self else { return }
             // Intent only — coordinator is the single writer of handler.currentToggleState.
             self.delegate?.unifiedToggleInputViewDidChangeMode(self, mode: mode)
-            if self.isExpanded {
-                self.textEntryView.becomeFirstResponder()
-            }
         }
         toggleView.onDragStateChanged = { [weak self] isDragging in
             guard let self else { return }
@@ -1979,6 +2056,10 @@ private extension UnifiedToggleInputView {
         toolsToolbar.onReasoningPickerShown = { [weak self] in
             guard let self else { return }
             delegate?.unifiedToggleInputViewDidShowReasoningPicker(self)
+        }
+        toolsToolbar.onAttachMenuShown = { [weak self] in
+            guard let self else { return }
+            delegate?.unifiedToggleInputViewDidShowAttachMenu(self)
         }
         addSubview(toolsToolbar)
         toolsToolbar.refreshFireMode(fireMode: handler.isFireTab)
@@ -2140,7 +2221,10 @@ private extension UnifiedToggleInputView {
             .sink { [weak self] mode in
                 guard let self else { return }
                 toggleView.setMode(mode, animated: true)
-                updateToolbarVisibility(for: mode, animated: true)
+                let needsToolbarLayout = currentLayout.showsToolbar != (mode == .aiChat)
+                if needsToolbarLayout {
+                    updateToolbarVisibility(for: mode, animated: true)
+                }
                 updateSubmitButtonAvailability()
             }
             .store(in: &cancellables)

@@ -354,6 +354,10 @@ public enum FeatureFlag: String {
     /// https://app.asana.com/1/137249556945/project/1206488453854252/task/1216575765851990
     case unifiedToggleInputAttachmentPaste
 
+    /// Kill switch for the on-device resubmit check behind `resubmit_of_prompt` / `resubmit_of_search`.
+    /// https://app.asana.com/1/137249556945/project/1201392122292466/task/1220262429487643
+    case unifiedToggleInputResubmitDetection
+
     /// https://app.asana.com/1/137249556945/task/1218397803938552
     case unifiedToggleInputAttachmentPrivacy
 
@@ -478,6 +482,9 @@ public enum FeatureFlag: String {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1214534686173934
     case adBlockingExtensionEnabledByDefault
 
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1220206657688026?focus=true
+    case sponsorBlock
+
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1212980785692854?focus=true
     case supportsSyncChatsDeletion
 
@@ -544,6 +551,9 @@ public enum FeatureFlag: String {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1217645779581965
     case newTabPageRedesign
 
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1219937997681296?focus=true
+    case scrollableEscapeHatch
+
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1215169783702336
     case walletPassDownload
 
@@ -577,6 +587,9 @@ public enum FeatureFlag: String {
 
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1219970758953673?focus=true
     case aiChatTabHandoffImprovements
+
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1220115595487712
+    case aiChatSwipeChromeRefinements
 
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1215597855114749?focus=true
     case syncScopedAccessCredentials
@@ -650,6 +663,14 @@ public enum FeatureFlag: String {
     /// Single-tab burn removes the memory cache in the background instead of waiting on every web view.
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1219780456623039?focus=true
     case deferredMemoryCacheDelete
+
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1220203462696863
+    case idleReturnNewTabPageAtLaunch
+
+    /// Holds a background task assertion during `didFinishLaunching`, so iOS doesn't suspend the app mid-launch
+    /// while it holds a lock on a shared App Group database (0xdead10cc).
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1220262683074513
+    case launchBackgroundTask
 }
 
 extension FeatureFlag: FeatureFlagDescribing {
@@ -717,7 +738,7 @@ extension FeatureFlag: FeatureFlagDescribing {
     private var config: Config {
         switch self {
         case .ipadMenuBar:
-            Config(defaultValue: .internalOnly, source: .remoteReleasable(iOSBrowserConfigSubfeature.ipadMenuBar))
+            Config(defaultValue: .enabled, source: .remoteReleasable(iOSBrowserConfigSubfeature.ipadMenuBar))
         case .sync:
             Config(source: .remoteReleasable(SyncSubfeature.level0ShowSync), supportsLocalOverriding: false)
         case .autofillCredentialInjecting:
@@ -767,9 +788,9 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .syncPromotionPasswords:
             Config(source: .remoteReleasable(SyncPromotionSubfeature.passwords), supportsLocalOverriding: false)
         case .syncPromotionSyncAnotherDevice:
-            Config(defaultValue: .internalOnly, source: .remoteReleasable(SyncPromotionSubfeature.syncAnotherDevice))
+            Config(defaultValue: .enabled, source: .remoteReleasable(SyncPromotionSubfeature.syncAnotherDevice))
         case .syncPromotionRedesign:
-            Config(defaultValue: .internalOnly, source: .remoteReleasable(SyncPromotionSubfeature.redesign))
+            Config(defaultValue: .enabled, source: .remoteReleasable(SyncPromotionSubfeature.redesign))
         case .autofillSurveys:
             Config(defaultValue: .enabled, source: .remoteReleasable(AutofillSurveysSubfeature.featureEnabled), supportsLocalOverriding: false)
         case .adAttributionReporting:
@@ -932,6 +953,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(defaultValue: .enabled, source: .remoteReleasable(AIChatSubfeature.contextualFloatingInput))
         case .unifiedToggleInputAttachmentPaste:
             Config(defaultValue: .enabled, source: .remoteReleasable(AIChatSubfeature.unifiedToggleInputAttachmentPaste))
+        case .unifiedToggleInputResubmitDetection:
+            Config(defaultValue: .enabled, source: .remoteReleasable(AIChatSubfeature.unifiedToggleInputResubmitDetection))
         case .unifiedToggleInputAttachmentPrivacy:
             Config(defaultValue: .internalOnly, source: .remoteReleasable(AIChatSubfeature.unifiedToggleInputAttachmentPrivacy))
         case .unifiedToggleInputPastedText:
@@ -1006,6 +1029,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(defaultValue: .internalOnly, source: .remoteReleasable(AdBlockingExtensionSubfeature.featureEnabled))
         case .adBlockingExtensionEnabledByDefault:
             Config(source: .remoteReleasable(AdBlockingExtensionSubfeature.featureEnabledByDefault))
+        case .sponsorBlock:
+            Config(defaultValue: .disabled, source: .remoteReleasable(SponsorBlockPrivacySubfeature.mvpEnabled))
         case .supportsSyncChatsDeletion:
             Config(source: .remoteReleasable(AIChatSubfeature.supportsSyncChatsDeletion))
         case .supportsSyncChatsUpdate:
@@ -1050,6 +1075,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(defaultValue: .enabled, source: .remoteReleasable(iOSBrowserConfigSubfeature.duckAIEntryWideEvent))
         case .newTabPageRedesign:
             Config(source: .remoteReleasable(iOSBrowserConfigSubfeature.newTabPageRedesign))
+        case .scrollableEscapeHatch:
+            Config(defaultValue: .internalOnly, source: .remoteReleasable(iOSBrowserConfigSubfeature.scrollableEscapeHatch), supportsLocalOverriding: true)
         case .walletPassDownload:
             Config(defaultValue: .enabled, source: .remoteReleasable(iOSBrowserConfigSubfeature.walletPassDownload))
         case .aiChatChromeShortcutIPad:
@@ -1068,6 +1095,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(defaultValue: .enabled, source: .remoteReleasable(AIChatSubfeature.tabSwitcherRichCard))
         case .aiChatTabHandoffImprovements:
             Config(defaultValue: .enabled, source: .remoteReleasable(AIChatSubfeature.tabHandoffImprovements))
+        case .aiChatSwipeChromeRefinements:
+            Config(defaultValue: .internalOnly, source: .remoteReleasable(AIChatSubfeature.swipeChromeRefinements))
         case .syncScopedAccessCredentials:
             Config(source: .remoteReleasable(SyncSubfeature.scopedAccessCredentials))
         case .syncCanUseV2ConnectFlow:
@@ -1102,6 +1131,10 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(defaultValue: .internalOnly, source: .remoteReleasable(AIChatSubfeature.chatLimitExtensionPromo), supportsLocalOverriding: true)
         case .deferredMemoryCacheDelete:
             Config(defaultValue: .disabled, source: .remoteReleasable(iOSBrowserConfigSubfeature.deferredMemoryCacheDelete))
+        case .idleReturnNewTabPageAtLaunch:
+            Config(defaultValue: .internalOnly, source: .remoteReleasable(iOSBrowserConfigSubfeature.idleReturnNewTabPageAtLaunch))
+        case .launchBackgroundTask:
+            Config(defaultValue: .disabled, source: .remoteReleasable(iOSBrowserConfigSubfeature.launchBackgroundTask))
         }
     }
 
@@ -1134,6 +1167,11 @@ extension FeatureFlagger {
         default:
             return false
         }
+    }
+
+    /// Swipe chrome refinements build on the Duck.ai tab handoff, so they need both flags.
+    public var isAIChatSwipeChromeRefinementsEnabled: Bool {
+        isFeatureOn(.aiChatTabHandoffImprovements) && isFeatureOn(.aiChatSwipeChromeRefinements)
     }
 
     public func isFeatureOn(_ featureFlag: FeatureFlag) -> Bool {

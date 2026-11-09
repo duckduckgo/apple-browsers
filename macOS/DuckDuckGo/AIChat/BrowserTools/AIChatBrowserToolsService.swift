@@ -25,29 +25,24 @@ import Persistence
 import PrivacyConfig
 import WebKit
 
-/// Owns the MCP sessions, the tool catalog and their gating. App-wide rather than per web view,
-/// because a session belongs to the owner tab while each web view gets its own user script.
+/// Owns the tool catalog, invocation and permissions shared by all chat surfaces.
 @MainActor
 final class AIChatBrowserToolsService {
 
-    /// Identifies this browser in the MCP `initialize` result. The Windows browser reports
-    /// `windows-browser`.
-    static let serverName = "macos-browser"
-
-    let sessions = AIChatMCPSessionStore()
     let catalog: BrowserToolCatalog
     let invoker: BrowserToolInvoker
     let permissions: BrowserToolPermissionStoring
-    let elicitations: AIChatElicitationCoordinator
+    let clientToolPermissions: ClientToolPermissionCoordinator
 
     private let configuration: AIChatBrowserToolsConfiguration
     private let windowControllersManager: WindowControllersManagerProtocol
     private let activitySubject = PassthroughSubject<AIChatBrowserToolActivity, Never>()
+    private var reportedCalls: [String: ReportedCall] = [:]
     private let pushers = NSHashTable<AnyObject>.weakObjects()
-    private var catalogChangeNotifier: BrowserToolCatalogChangeNotifier?
+    private var lastClientToolsConfiguration: ClientToolsConfiguration?
+    private var featureFlagChanges: AnyCancellable?
 
-    /// Reported to the front end as `supportsBrowserTools`. The front end must not open a session
-    /// when this is false, which also protects against version skew.
+    /// Whether browser tools are enabled by the parent feature flag.
     var isEnabled: Bool { configuration.isEnabled }
 
     /// - Parameter tools: overridable so tests can register their own catalog.
@@ -61,24 +56,23 @@ final class AIChatBrowserToolsService {
                                                                            historyCoordinator: historyCoordinator),
                                          configuration: configuration)
         let permissions = BrowserToolPermissionStore(storage: permissionStorage)
-        let elicitations = AIChatElicitationCoordinator()
+        let clientToolPermissions = ClientToolPermissionCoordinator(permissions: permissions)
         self.configuration = configuration
         self.windowControllersManager = windowControllersManager
         self.catalog = catalog
         self.permissions = permissions
-        self.elicitations = elicitations
+        self.clientToolPermissions = clientToolPermissions
         self.invoker = BrowserToolInvoker(catalog: catalog,
-                                          configuration: configuration,
-                                          permissions: permissions,
-                                          elicitations: elicitations)
-        self.catalogChangeNotifier = BrowserToolCatalogChangeNotifier(
-            changes: featureFlagger.updatesPublisher,
-            signature: { [configuration, catalog] in configuration.isEnabled ? catalog.enabledTools.map(\.name) : [] },
-            onChange: { [weak self] in self?.pushToolsListChanged() }
-        )
+                                          clientToolPermissions: clientToolPermissions)
+        self.lastClientToolsConfiguration = Self.clientToolsConfiguration(for: catalog)
+        self.featureFlagChanges = featureFlagger.updatesPublisher.sink { [weak self] in
+            Task { @MainActor in
+                self?.pushClientToolsChangedIfNeeded()
+            }
+        }
     }
 
-    /// Registration order is the order the front end sees in `tools/list`.
+    /// Registration order determines the order of the advertised capabilities.
     private static func defaultTools(windowControllersManager: WindowControllersManagerProtocol,
                                      historyCoordinator: HistoryCoordinating) -> [any BrowserTool] {
         let reader = BrowserToolPageContentReader(windowControllersManager: windowControllersManager)
@@ -92,6 +86,19 @@ final class AIChatBrowserToolsService {
         ]
     }
 
+    /// Advertised to Duck.ai in `getAIChatNativeConfigValues`. Nil when no tool is enabled.
+    var clientToolsConfiguration: ClientToolsConfiguration? {
+        Self.clientToolsConfiguration(for: catalog)
+    }
+
+    private static func clientToolsConfiguration(for catalog: BrowserToolCatalog) -> ClientToolsConfiguration? {
+        let capabilities = catalog.enabledClientToolCapabilities
+        guard !capabilities.isEmpty,
+              let configuration = try? ClientToolsConfiguration(capabilities: capabilities),
+              ClientToolPayloadLimits.fits(configuration, within: ClientToolPayloadLimits.configBytes) else { return nil }
+        return configuration
+    }
+
     // MARK: - Calls
 
     /// What Duck.ai does in the browser, call by call, for whoever wants to show it. Fire Windows report nothing.
@@ -100,27 +107,34 @@ final class AIChatBrowserToolsService {
     }
 
     /// Runs a call through the invoker, reporting to `activity` when it starts, waits on the user and ends.
-    func invoke(toolNamed name: String,
-                arguments: JSONValue?,
+    func invoke(_ request: ExecuteClientToolRequest,
                 context: BrowserToolCallContext,
-                callID: String,
-                elicitationPusher: (any AIChatElicitationPushing)?) async -> BrowserToolResult {
+                permissionPusher: (any ClientToolPermissionPushing)?) async -> ExecuteClientToolResponse {
         guard !context.isBurner else {
-            return await invoker.invoke(toolNamed: name, arguments: arguments, context: context, elicitationPusher: elicitationPusher)
+            return await invoker.invokeClientTool(request, context: context, permissionPusher: permissionPusher)
         }
-        let subject = subject(ofToolNamed: name, arguments: arguments, context: context)
-        let report = { [activitySubject] (phase: AIChatBrowserToolActivity.Phase) in
-            activitySubject.send(AIChatBrowserToolActivity(callID: callID, toolName: name, subject: subject, phase: phase))
-        }
-        report(.started)
-        let pusher = elicitationPusher.map { ActivityReportingElicitationPusher(pusher: $0) { report(.awaitingPermission) } }
-        let result = await invoker.invoke(toolNamed: name, arguments: arguments, context: context, elicitationPusher: pusher)
-        if case .success = result {
-            report(.finished(succeeded: true))
+        let call = ReportedCall(name: request.capability.name,
+                                subject: subject(ofToolNamed: request.capability.name, arguments: request.input, context: context))
+        reportedCalls[request.callId] = call
+        report(call, callID: request.callId, phase: .started)
+        let response = await invoker.invokeClientTool(request, context: context, permissionPusher: permissionPusher)
+        reportedCalls[request.callId] = nil
+        if case .success = response {
+            report(call, callID: request.callId, phase: .finished(succeeded: true))
         } else {
-            report(.finished(succeeded: false))
+            report(call, callID: request.callId, phase: .finished(succeeded: false))
         }
-        return result
+        return response
+    }
+
+    /// Called once a chat has shown a permission prompt for `callID`.
+    func permissionWasRequested(forCallID callID: String) {
+        guard let call = reportedCalls[callID] else { return }
+        report(call, callID: callID, phase: .awaitingPermission)
+    }
+
+    private func report(_ call: ReportedCall, callID: String, phase: AIChatBrowserToolActivity.Phase) {
+        activitySubject.send(AIChatBrowserToolActivity(callID: callID, toolName: call.name, subject: call.subject, phase: phase))
     }
 
     /// Tools that act on the chat's own page when no tab is named.
@@ -163,9 +177,13 @@ final class AIChatBrowserToolsService {
         }
     }
 
-    private func pushToolsListChanged() {
+    private func pushClientToolsChangedIfNeeded() {
+        let configuration = clientToolsConfiguration
+        guard configuration != lastClientToolsConfiguration else { return }
+        lastClientToolsConfiguration = configuration
+        let data = ClientToolsChangedData(clientTools: configuration)
         for pusher in livePushers {
-            pusher.pushToolsListChanged()
+            pusher.pushClientToolsChanged(data)
         }
     }
 
@@ -174,7 +192,6 @@ final class AIChatBrowserToolsService {
     }
 }
 
-/// A chat surface that native can push browser-tools events to.
 /// One step of a browser tool call Duck.ai made.
 struct AIChatBrowserToolActivity: Equatable {
 
@@ -192,33 +209,34 @@ struct AIChatBrowserToolActivity: Equatable {
     let phase: Phase
 }
 
-/// Passes permission prompts on, and says when one was shown.
-@MainActor
-private final class ActivityReportingElicitationPusher: AIChatElicitationPushing {
-
-    private let pusher: any AIChatElicitationPushing
-    private let onPush: () -> Void
-
-    init(pusher: any AIChatElicitationPushing, onPush: @escaping () -> Void) {
-        self.pusher = pusher
-        self.onPush = onPush
-    }
-
-    func pushElicitationCreate(_ params: MCPElicitationCreateParams) -> Bool {
-        let isShown = pusher.pushElicitationCreate(params)
-        if isShown { onPush() }
-        return isShown
-    }
+/// A call reported to `activity`, kept until it ends.
+private struct ReportedCall {
+    let name: String
+    let subject: String?
 }
 
+/// A chat surface that native can push browser-tools events to.
 @MainActor
 protocol AIChatBrowserToolsPushing: AnyObject {
 
     /// The web view showing the chat; resolves which owner tab the surface belongs to.
     var pushTargetWebView: WKWebView? { get }
 
-    func pushToolsListChanged()
+    func pushClientToolsChanged(_ data: ClientToolsChangedData)
     func pushTabChanged(_ data: AIChatTabChangedData)
+}
+
+struct ClientToolsChangedData: Encodable, Equatable {
+    let clientTools: ClientToolsConfiguration?
+
+    private enum CodingKeys: String, CodingKey {
+        case clientTools
+    }
+
+    func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encode(clientTools, forKey: .clientTools)
+    }
 }
 
 /// Maps browser-tools sub-features onto macOS feature flags. A tool's `name` is its sub-feature's

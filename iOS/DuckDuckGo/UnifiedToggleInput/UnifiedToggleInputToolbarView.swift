@@ -52,6 +52,7 @@ final class UnifiedToggleInputToolbarView: UIView {
     var onReturnKeyTapped: (() -> Void)?
     var onModelPickerShown: (() -> Void)?
     var onReasoningPickerShown: (() -> Void)?
+    var onAttachMenuShown: (() -> Void)?
 
     // MARK: - State
 
@@ -331,6 +332,7 @@ final class UnifiedToggleInputToolbarView: UIView {
         if #available(iOS 16.0, *) {
             button.preferredMenuElementOrder = .fixed
         }
+        button.addTarget(self, action: #selector(attachMenuShown), for: .touchDown)
         return button
     }()
 
@@ -885,6 +887,10 @@ private extension UnifiedToggleInputToolbarView {
     @objc private func modelPickerShown() {
         guard modelPickerMenu != nil else { return }
         onModelPickerShown?()
+    }
+    @objc private func attachMenuShown() {
+        guard imageButton.menu != nil, imageButton.isEnabled else { return }
+        onAttachMenuShown?()
     }
     @objc private func reasoningPickerShown() {
         guard reasoningPickerMenu != nil else { return }

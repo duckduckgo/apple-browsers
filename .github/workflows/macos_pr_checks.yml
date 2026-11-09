@@ -816,7 +816,9 @@ jobs:
         run: python3 scripts/translation-pr-checks/verify_string_extraction.py --platform macOS
 
       - name: Check translations
-        run: python3 scripts/translation-pr-checks/check_new_string_translations.py --platform macOS
+        # Fails on untranslated strings only for PRs into release/macos/* and hotfix/macos/*. PRs into any other base
+        # (main, or a stacked PR's parent branch) only warn: their strings reach main, and the nightly job sends them.
+        run: python3 scripts/translation-pr-checks/check_new_string_translations.py --platform macOS --base-ref "$GITHUB_BASE_REF"
 
       - name: Check markdown markers
         id: marker-check

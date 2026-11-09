@@ -4519,6 +4519,12 @@
 /* Footnote for the hide AI-generated images setting; ends with a Learn more link to the help page (do not remove the link) */
 "settings.aifeatures.hide.ai.generated.images.subtitle" = "画像検索結果から既知のAIスパムサイトが除外されます。[詳細を表示](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/results/how-to-filter-out-ai-images-in-duckduckgo-search-results)";
 
+/* Settings screen description for the Duck.ai keyboard animation toggle */
+"settings.aifeatures.keyboard.animation.subtitle" = "Duck.aiに切り替えたときや、Duck.aiで入力したときに、キーボードの周囲にアニメーションを表示します。";
+
+/* Settings screen toggle title for the Duck.ai keyboard animation */
+"settings.aifeatures.keyboard.animation.title" = "Duck.aiのキーボードアニメーション";
+
 /* Label describing a feature which is turned on always */
 "settings.always.on" = "常にオン";
 

@@ -45,6 +45,7 @@ final class AppStoreUpdateControllerPromptStageTests {
         installedVersion: "1.0.0",
         now: { [unowned self] in now },
         schedule: { _, _ in AnyCancellable {} },
+        isEnabled: { [unowned self] in featureFlagger.isFeatureOn(.moreProminentUpdates) },
         reevaluationTriggers: Empty().eraseToAnyPublisher()
     )
 

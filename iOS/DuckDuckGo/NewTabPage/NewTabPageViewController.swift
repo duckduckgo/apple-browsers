@@ -176,6 +176,27 @@ final class NewTabPageViewController: UIViewController, NewTabPage, RemoteMessag
         updateBorderView()
     }
 
+    func setFocusedContent(_ content: LegacyFocusedNewTabPageContent?, escapeHatch: EscapeHatchModel? = nil) {
+        newTabPageViewModel.setFocusedContent(content, escapeHatch: escapeHatch)
+        if isViewLoaded {
+            view.backgroundColor = content == nil ? UIColor(designSystemColor: .background) : .clear
+        }
+    }
+
+    func scrollToTop(duration: TimeInterval) {
+        newTabPageViewModel.scrollToTopRequests.send(duration)
+    }
+
+    func setFocusedContentTopInset(_ inset: CGFloat) {
+        guard newTabPageViewModel.focusedContentTopInset != inset else { return }
+        newTabPageViewModel.focusedContentTopInset = inset
+    }
+
+    func setFocusedLogoFrame(_ frame: CGRect?) {
+        guard newTabPageViewModel.focusedLogoFrame != frame else { return }
+        newTabPageViewModel.focusedLogoFrame = frame
+    }
+
     func setOpenedAfterIdle(_ openedAfterIdle: Bool) {
         newTabPageViewModel.openedAfterIdle = openedAfterIdle
         messagesModel.refresh()
@@ -189,7 +210,7 @@ final class NewTabPageViewController: UIViewController, NewTabPage, RemoteMessag
     override func viewDidLoad() {
         super.viewDidLoad()
 
-        view.backgroundColor = UIColor(designSystemColor: .background)
+        view.backgroundColor = newTabPageViewModel.focusedContent == nil ? UIColor(designSystemColor: .background) : .clear
         embedPageHostingController()
         registerForNotifications()
     }

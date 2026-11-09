@@ -25,6 +25,7 @@ import UIKit
 struct SuggestionsFavoritesView: View {
     let presentation: FocusedFavoritesPresentation
     let isVisible: Bool
+    var visibilityAnimation: Animation?
 
     var body: some View {
         if let controller = presentation.viewController {
@@ -32,10 +33,9 @@ struct SuggestionsFavoritesView: View {
             // its top inset through its scroll view, preserving the existing input animation.
             FavoritesControllerView(controller: controller)
                 .ignoresSafeArea(.container, edges: .top)
-                // Keep visibility instant during mode changes so favorites do not linger over
-                // the incoming Duck.ai list. Keeping it mounted also preserves interrupted toggles.
+                // Keeping it mounted preserves interrupted toggles.
                 .opacity(isVisible ? 1 : 0)
-                .animation(nil, value: isVisible)
+                .animation(visibilityAnimation, value: isVisible)
                 .allowsHitTesting(isVisible)
                 .accessibilityHidden(!isVisible)
         }

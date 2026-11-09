@@ -46,6 +46,7 @@ protocol UnifiedToggleInputViewControllerDelegate: AnyObject {
     func unifiedToggleInputVCDidTapReturnKey(_ vc: UnifiedToggleInputViewController)
     func unifiedToggleInputVCDidShowModelPicker(_ vc: UnifiedToggleInputViewController)
     func unifiedToggleInputVCDidShowReasoningPicker(_ vc: UnifiedToggleInputViewController)
+    func unifiedToggleInputVCDidShowAttachMenu(_ vc: UnifiedToggleInputViewController)
     func unifiedToggleInputVC(_ vc: UnifiedToggleInputViewController, didTapFooterPrimaryAction id: UTIFooterItem.ID)
     func unifiedToggleInputVC(_ vc: UnifiedToggleInputViewController, didDismissFooter id: UTIFooterItem.ID)
     func unifiedToggleInputVC(_ vc: UnifiedToggleInputViewController, didChangeFooterVisibility ids: [UTIFooterItem.ID])
@@ -142,6 +143,15 @@ final class UnifiedToggleInputViewController: UIViewController {
 
     func refreshPlaceholderForCurrentMode() {
         inputBarView.refreshPlaceholderForCurrentMode()
+    }
+
+    var placeholderState: AIChatPlaceholderState {
+        AIChatPlaceholderState(hasSubmittedPrompt: handler.hasSubmittedPrompt,
+                               isImageGenerationSelected: handler.isImageGenerationSelected)
+    }
+
+    func crossfadePlaceholder(to state: AIChatPlaceholderState) {
+        inputBarView.crossfadePlaceholder(to: state)
     }
 
     var isInputExpanded: Bool {
@@ -459,6 +469,15 @@ final class UnifiedToggleInputViewController: UIViewController {
         inputBarView.setInputMode(mode, animated: animated)
     }
 
+    func performInputModeChanges(_ changes: () -> Void) {
+        inputBarView.performInputModeChanges(changes)
+        notifyHeightDidChange()
+    }
+
+    func setSelectedInputMode(_ mode: TextEntryMode, animated: Bool) {
+        inputBarView.setSelectedInputMode(mode, animated: animated)
+    }
+
     func selectAllText() {
         inputBarView.selectAllText()
     }
@@ -566,6 +585,7 @@ final class UnifiedToggleInputViewController: UIViewController {
     }
 
     private func notifyHeightDidChange() {
+        guard !inputBarView.isApplyingInputMode else { return }
         delegate?.unifiedToggleInputVCDidChangeHeight(self)
     }
 }
@@ -577,8 +597,10 @@ extension UnifiedToggleInputViewController: UTIFooterPresenting {
     func applyFooterMessages(_ messages: [UTIFooterItem]) {
         guard inputBarView.setFooterMessages(messages) else { return }
         Logger.duckAIUsageWarnings.debug("[UsageWarnings] pushing new bar height to host")
-        delegate?.unifiedToggleInputVCDidChangeHeight(self)
-        view.superview?.layoutIfNeeded()
+        notifyHeightDidChange()
+        if !inputBarView.isApplyingInputMode {
+            view.superview?.layoutIfNeeded()
+        }
     }
 
     func clearPendingFooterMessage() {
@@ -640,6 +662,10 @@ extension UnifiedToggleInputViewController: UnifiedToggleInputViewDelegate {
 
     func unifiedToggleInputViewDidShowReasoningPicker(_ view: UnifiedToggleInputView) {
         delegate?.unifiedToggleInputVCDidShowReasoningPicker(self)
+    }
+
+    func unifiedToggleInputViewDidShowAttachMenu(_ view: UnifiedToggleInputView) {
+        delegate?.unifiedToggleInputVCDidShowAttachMenu(self)
     }
 }
 

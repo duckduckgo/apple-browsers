@@ -220,6 +220,61 @@ final class AutoconsentMessageHandlerDelegateTests: XCTestCase {
         }
     }
 
+    func testReportCpmCoverage() async {
+        let message = WebExtensionMessage(
+            featureName: Self.testFeatureName,
+            method: "reportCpmCoverage",
+            id: nil,
+            params: ["unhandled": 3, "pages": 7, "siteRank": "top10k"],
+            context: nil,
+            extensionIdentifier: Self.testExtensionIdentifier
+        )
+
+        let result = await handler.handleMessage(message)
+
+        guard case .success(let response) = result else { return XCTFail("Expected success but got \(result)") }
+        XCTAssertEqual((response as? [String: Any])?["response"] as? String, "ok")
+        XCTAssertEqual(mockDelegate.coverageReported?.counts, CPMCoverageCounts(unhandled: 3, pages: 7))
+        XCTAssertEqual(mockDelegate.coverageReported?.siteRank, .top10k)
+    }
+
+    func testReportCpmCoverageWithoutSiteRankOrWithUnknownSiteRank() async {
+        for siteRank in [nil, "unexpected"] as [String?] {
+            var params: [String: Any] = ["unhandled": 0, "pages": 1]
+            params["siteRank"] = siteRank
+            let message = WebExtensionMessage(
+                featureName: Self.testFeatureName,
+                method: "reportCpmCoverage",
+                id: nil,
+                params: params,
+                context: nil,
+                extensionIdentifier: Self.testExtensionIdentifier
+            )
+
+            _ = await handler.handleMessage(message)
+
+            XCTAssertEqual(mockDelegate.coverageReported?.counts, CPMCoverageCounts(unhandled: 0, pages: 1))
+            XCTAssertNil(mockDelegate.coverageReported?.siteRank)
+            mockDelegate.coverageReported = nil
+        }
+    }
+
+    func testReportCpmCoverageFailsWhenCountsAreMissing() async {
+        let message = WebExtensionMessage(
+            featureName: Self.testFeatureName,
+            method: "reportCpmCoverage",
+            id: nil,
+            params: ["pages": 1],
+            context: nil,
+            extensionIdentifier: Self.testExtensionIdentifier
+        )
+
+        let result = await handler.handleMessage(message)
+
+        guard case .failure = result else { return XCTFail("Expected failure but got \(result)") }
+        XCTAssertNil(mockDelegate.coverageReported)
+    }
+
     func testHandleCookiePopup() async {
         let msg: [String: Any] = [
             "url": "https://example.com/page",
@@ -261,6 +316,7 @@ final class MockAutoconsentDelegate: AutoconsentMessageHandlerDelegate {
     var dashboardRefreshed: (URL, ConsentStatusInfo)?
     var popupHandled: CookiePopupHandledInfo?
     var pixelSent: PixelInfo?
+    var coverageReported: (counts: CPMCoverageCounts, siteRank: CPMSiteRank?)?
 
     func showCookiePopupAnimation(topUrl: URL, isCosmetic: Bool) {
         animationShown = (topUrl, isCosmetic)
@@ -276,5 +332,9 @@ final class MockAutoconsentDelegate: AutoconsentMessageHandlerDelegate {
 
     func sendPixel(_ pixelInfo: PixelInfo) {
         pixelSent = pixelInfo
+    }
+
+    func reportCPMCoverage(counts: CPMCoverageCounts, siteRank: CPMSiteRank?) {
+        coverageReported = (counts, siteRank)
     }
 }

@@ -28,6 +28,39 @@
         "suffixes": ["daily_count"],
         "parameters": ["appVersion"]
     },
+    "autoconsent_cpmCoverage_day_macos": {
+        "description": "Daily bucketed counts of pages where cookie popup management (CPM) ran and of those where a popup was detected but not handled, each with a top 10k site split. Fired by the eventHub feature at the end of each 1-day measurement period.",
+        "owners": ["mgurgel"],
+        "triggers": ["scheduled"],
+        "parameters": [
+            "appVersion",
+            {
+                "key": "unhandled",
+                "type": "string",
+                "description": "Bucketed count of pages with a detected but unhandled cookie popup. Bucket boundaries are set by the eventHub remote config",
+                "enum": ["0", "1-5", "6-10", "11-30", "31+"]
+            },
+            {
+                "key": "unhandled_top10k",
+                "type": "string",
+                "description": "Bucketed count of unhandled cookie popup pages on top 10k sites. Bucket boundaries are set by the eventHub remote config",
+                "enum": ["0", "1-5", "6-10", "11-30", "31+"]
+            },
+            {
+                "key": "pages",
+                "type": "string",
+                "description": "Bucketed count of pages where CPM ran. Bucket boundaries are set by the eventHub remote config",
+                "enum": ["0", "1-9", "10-24", "25-49", "50-99", "100-199", "200+"]
+            },
+            {
+                "key": "pages_top10k",
+                "type": "string",
+                "description": "Bucketed count of pages where CPM ran on top 10k sites. Bucket boundaries are set by the eventHub remote config",
+                "enum": ["0", "1-9", "10-24", "25-49", "50-99", "100-199", "200+"]
+            },
+            "eventHubAttributionPeriod"
+        ]
+    },
     "webTelemetry_youtube_adBlocker_day_macos": {
         "description": "Daily bucketed count of YouTube ad-blocker-challenge detections, with the user's login state. Fired by the eventHub feature at the end of each 1-day measurement period.",
         "owners": ["jdorweiler"],

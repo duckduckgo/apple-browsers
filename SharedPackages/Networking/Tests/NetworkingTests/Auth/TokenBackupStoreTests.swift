@@ -108,25 +108,26 @@ final class TokenBackupStoreTests: XCTestCase {
         let storage = MockTokenStorage()
         let backup = OAuthTokensFactory.makeTokenContainer(refreshToken: "backupR")
 
-        try makeStore(storage: storage).save(backup)
+        try makeStore(storage: storage).save(backup, action: .renewal)
 
         XCTAssertEqual(try storage.getTokenContainer(), backup)
     }
 
     func testSave_failure_throws() {
-        XCTAssertThrowsError(try makeStore(storage: ThrowingTokenStorage()).save(OAuthTokensFactory.makeTokenContainer(refreshToken: "backupR")))
+        XCTAssertThrowsError(try makeStore(storage: ThrowingTokenStorage()).save(OAuthTokensFactory.makeTokenContainer(refreshToken: "backupR"),
+                                                                               action: .renewal))
     }
 
     func testRemove_deletesBackup() throws {
         let storage = MockTokenStorage(tokenContainer: OAuthTokensFactory.makeTokenContainer(refreshToken: "backupR"))
 
-        makeStore(storage: storage).remove()
+        makeStore(storage: storage).remove(action: .signOut)
 
         XCTAssertNil(try storage.getTokenContainer())
     }
 
     func testRemove_failureIsIgnored() {
-        makeStore(storage: ThrowingTokenStorage()).remove()
+        makeStore(storage: ThrowingTokenStorage()).remove(action: .signOut)
     }
 
     // MARK: - usableBackup

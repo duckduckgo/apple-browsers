@@ -73,8 +73,8 @@ public struct SubscriptionPixelHandler: SubscriptionPixelHandling {
             pixelKit?.fire(SubscriptionBackupTokenPixel.renewed, frequency: .standard)
         case .backupRenewalFailed(let error):
             pixelKit?.fire(SubscriptionBackupTokenPixel.renewalFailed(error), frequency: .dailyAndCount)
-        case .backupKeychainError(let accessType, let error):
-            pixelKit?.fire(SubscriptionBackupTokenPixel.keychainError(accessType, error), frequency: .dailyAndCount)
+        case .backupKeychainError(let action, let operation, let error):
+            pixelKit?.fire(SubscriptionBackupTokenPixel.keychainError(action, operation, error), frequency: .dailyAndCount)
         }
     }
 

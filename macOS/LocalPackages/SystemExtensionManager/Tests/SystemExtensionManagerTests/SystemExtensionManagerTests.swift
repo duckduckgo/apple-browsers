@@ -72,6 +72,48 @@ final class SystemExtensionManagerTests: XCTestCase {
         XCTAssertEqual(result, .enabled)
     }
 
+    func testShouldOpenSystemSettingsBeforeActivationOnlyWhenAwaitingUserApproval() {
+        let expectations: [SystemExtensionActivationState: Bool] = [
+            .awaitingUserApproval: true,
+            .enabled: false,
+            .disabled: false,
+            .uninstalling: false,
+            .notInstalled: false,
+            .unknown: false
+        ]
+
+        for (state, expected) in expectations {
+            XCTAssertEqual(SystemExtensionManager.shouldOpenSystemSettingsBeforeActivation(for: state), expected, "\(state)")
+        }
+    }
+
+    func testShouldNotOpenSystemSettingsWhenStaleVersionAwaitsApprovalButAnotherIsEnabled() {
+        let state = SystemExtensionManager.activationState(from: [
+            .init(isEnabled: false, isAwaitingUserApproval: true, isUninstalling: false),
+            .init(isEnabled: true, isAwaitingUserApproval: false, isUninstalling: false)
+        ])
+
+        XCTAssertFalse(SystemExtensionManager.shouldOpenSystemSettingsBeforeActivation(for: state))
+    }
+
+    func testActivateChecksStateBeforeSubmittingActivationRequest() async {
+        let manager = CapturingSystemExtensionRequestManager()
+        let systemExtensionManager = SystemExtensionManager(
+            extensionBundleID: "com.duckduckgo.test.extension",
+            manager: manager,
+            requestTimeout: 0.01
+        )
+
+        do {
+            _ = try await systemExtensionManager.activate(waitingForUserApproval: {})
+            XCTFail("Expected activation request to time out")
+        } catch {
+            XCTAssertEqual(error as? SystemExtensionRequestError, .requestTimedOut)
+        }
+
+        XCTAssertEqual(manager.submittedRequests.count, 2)
+    }
+
     func testSystemSettingsURLStringTargetsNetworkExtensionOnSequoia() throws {
         guard #available(macOS 15, *) else {
             throw XCTSkip("Specific ExtensionsPreferences URL is only used on macOS 15 and above")

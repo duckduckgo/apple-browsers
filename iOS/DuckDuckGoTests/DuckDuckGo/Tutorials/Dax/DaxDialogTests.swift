@@ -69,7 +69,7 @@ final class DaxDialog: XCTestCase {
     lazy var onboarding = DaxDialogs(settings: settings,
                                      entityProviding: MockEntityProvider(),
                                      variantManager: mockVariantManager,
-                                     timeLimit: makeDisabledContextualOnboardingTimeLimit())
+                                     timeLimit: makeDisabledContextualOnboardingTimeLimit(), timeLimitReporter: OnboardingPixelReporterMock())
     private var entityProvider: EntityProviding!
 
     override func setUp() {
@@ -94,14 +94,14 @@ final class DaxDialog: XCTestCase {
         let onboarding = DaxDialogs(settings: settings,
                                     entityProviding: MockEntityProvider(),
                                     launchOptionsHandler: launchOptionsHandler,
-                                    timeLimit: makeDisabledContextualOnboardingTimeLimit())
+                                    timeLimit: makeDisabledContextualOnboardingTimeLimit(), timeLimitReporter: OnboardingPixelReporterMock())
         XCTAssertTrue(onboarding.isEnabled)
 
         let launchOptionsHandlerDisabled = LaunchOptionsHandler(environment: ["ONBOARDING": "false"])
         let onboardingDisabled = DaxDialogs(settings: settings,
                                             entityProviding: MockEntityProvider(),
                                             launchOptionsHandler: launchOptionsHandlerDisabled,
-                                            timeLimit: makeDisabledContextualOnboardingTimeLimit())
+                                            timeLimit: makeDisabledContextualOnboardingTimeLimit(), timeLimitReporter: OnboardingPixelReporterMock())
         XCTAssertFalse(onboardingDisabled.isEnabled)
     }
 
@@ -120,7 +120,7 @@ final class DaxDialog: XCTestCase {
             let onboarding = DaxDialogs(settings: MockDaxDialogsSettings(),
                                         entityProviding: MockEntityProvider(),
                                         variantManager: mockVariantManager,
-                                        timeLimit: makeDisabledContextualOnboardingTimeLimit())
+                                        timeLimit: makeDisabledContextualOnboardingTimeLimit(), timeLimitReporter: OnboardingPixelReporterMock())
             let privacyInfo = makePrivacyInfo(url: URLs.example)
             
             testCase.urls.forEach { url in
@@ -140,7 +140,7 @@ final class DaxDialog: XCTestCase {
         let settings = MockDaxDialogsSettings()
         settings.isDismissed = true
         
-        let onboarding = DaxDialogs(settings: settings, entityProviding: entityProvider, timeLimit: makeDisabledContextualOnboardingTimeLimit())
+        let onboarding = DaxDialogs(settings: settings, entityProviding: entityProvider, timeLimit: makeDisabledContextualOnboardingTimeLimit(), timeLimitReporter: OnboardingPixelReporterMock())
         onboarding.primeForUse()
         XCTAssertFalse(settings.isDismissed)
     }
@@ -255,7 +255,7 @@ final class DaxDialog: XCTestCase {
         try [DaxDialogs.BrowsingSpec.withoutTrackers, .siteIsMajorTracker, .siteOwnedByMajorTracker, .withOneTracker, .withMultipleTrackers].forEach { spec in
             // GIVEN
             let settings = MockDaxDialogsSettings()
-            let sut = DaxDialogs(settings: settings, entityProviding: entityProvider, timeLimit: makeDisabledContextualOnboardingTimeLimit())
+            let sut = DaxDialogs(settings: settings, entityProviding: entityProvider, timeLimit: makeDisabledContextualOnboardingTimeLimit(), timeLimitReporter: OnboardingPixelReporterMock())
             sut.overrideShownFlagFor(spec, flag: true)
 
             // WHEN
@@ -891,7 +891,7 @@ final class DaxDialog: XCTestCase {
 
     func testWhenIsEnabledIsCalled_AndShouldShowDaxDialogsIsTrue_ThenReturnTrue() {
         // GIVEN
-        let sut = DaxDialogs(settings: settings, entityProviding: entityProvider, timeLimit: makeDisabledContextualOnboardingTimeLimit())
+        let sut = DaxDialogs(settings: settings, entityProviding: entityProvider, timeLimit: makeDisabledContextualOnboardingTimeLimit(), timeLimitReporter: OnboardingPixelReporterMock())
 
         // WHEN
         let result = sut.isEnabled
@@ -1150,7 +1150,7 @@ final class DaxDialog: XCTestCase {
                    entityProviding: entityProvider,
                    variantManager: MockVariantManager(),
                    onboardingSubscriptionPromotionHelper: onboardingSubscriptionPromotionHelper,
-                   timeLimit: makeDisabledContextualOnboardingTimeLimit())
+                   timeLimit: makeDisabledContextualOnboardingTimeLimit(), timeLimitReporter: OnboardingPixelReporterMock())
     }
 }
 
@@ -1275,7 +1275,7 @@ final class ContextualOnboardingTimeLimitTests: XCTestCase {
         XCTAssertEqual(limit.maxAppOpens, 1)
     }
 
-    func testDebugOverridesTakePrecedenceAndInvalidValuesAreIgnored() {
+    func testDebugOverridesTakePrecedenceOverRemoteSettings() {
         configuration.subfeatureSettings = #"{"maxDaysSinceInstall":10,"maxAppOpens":20}"#
         let limit = makeLimit()
         limit.maxDaysOverride = 2
@@ -1283,8 +1283,8 @@ final class ContextualOnboardingTimeLimitTests: XCTestCase {
         XCTAssertEqual(limit.maxDaysSinceInstall, 2)
         XCTAssertEqual(limit.maxAppOpens, 3)
         XCTAssertEqual(makeLimit().maxAppOpens, 3)
-        limit.maxDaysOverride = 0
-        limit.maxAppOpensOverride = -1
+        limit.maxDaysOverride = nil
+        limit.maxAppOpensOverride = nil
         XCTAssertEqual(limit.maxDaysSinceInstall, 10)
         XCTAssertEqual(limit.maxAppOpens, 20)
     }
@@ -1352,14 +1352,6 @@ final class ContextualOnboardingTimeLimitTests: XCTestCase {
         XCTAssertNil(dialogs.nextHomeScreenMessageNew())
         XCTAssertFalse(dialogs.isEnabled)
         XCTAssertEqual(reporter.reasons, [.appOpens])
-    }
-
-    func testOpenCountDoesNotOverflow() {
-        let limit = makeLimit()
-        limit.appOpens = Int.max
-        limit.recordAppOpen()
-        XCTAssertEqual(limit.appOpens, Int.max)
-        XCTAssertEqual(limit.reachedLimit(), .appOpens)
     }
 
     func testTimeLimitDismissesOnceClearsDuckAICheckpointAndCannotBePrimedAgain() {

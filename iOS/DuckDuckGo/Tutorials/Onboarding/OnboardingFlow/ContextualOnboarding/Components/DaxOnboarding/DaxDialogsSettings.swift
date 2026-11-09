@@ -86,8 +86,8 @@ final class ContextualOnboardingTimeLimit {
     private let dateProvider: () -> Date
 
     init(store: KeyValueStoring = UserDefaults.app,
-         featureFlagger: FeatureFlagger = AppDependencyProvider.shared.featureFlagger,
-         privacyConfigurationManager: PrivacyConfigurationManaging = ContentBlocking.shared.privacyConfigurationManager,
+         featureFlagger: FeatureFlagger,
+         privacyConfigurationManager: PrivacyConfigurationManaging,
          statisticsStore: StatisticsStore = StatisticsUserDefaults(),
          launchOptionsHandler: LaunchOptionsHandler = LaunchOptionsHandler(),
          dateProvider: @escaping () -> Date = Date.init) {
@@ -131,22 +131,22 @@ final class ContextualOnboardingTimeLimit {
     }
 
     var maxDaysSinceInstall: Int {
-        positive(launchOptionsHandler.contextualOnboardingMaxDays)
-            ?? positive(maxDaysOverride)
+        launchOptionsHandler.contextualOnboardingMaxDays
+            ?? maxDaysOverride
             ?? remoteLimit(for: "maxDaysSinceInstall")
             ?? 7
     }
 
     var maxAppOpens: Int {
-        positive(launchOptionsHandler.contextualOnboardingMaxAppOpens)
-            ?? positive(maxAppOpensOverride)
+        launchOptionsHandler.contextualOnboardingMaxAppOpens
+            ?? maxAppOpensOverride
             ?? remoteLimit(for: "maxAppOpens")
             ?? 28
     }
 
     func recordAppOpen() {
         _ = startDate
-        if appOpens < Int.max { appOpens += 1 }
+        appOpens += 1
     }
 
     func reachedLimit() -> OnboardingSharedPixelEvent.TimeLimitReason? {
@@ -170,10 +170,6 @@ final class ContextualOnboardingTimeLimit {
         for key in [Key.startDate, Key.appOpens, Key.ended, Key.maxDaysOverride, Key.maxAppOpensOverride] {
             try? store.removeObject(forKey: key)
         }
-    }
-
-    private func positive(_ value: Int?) -> Int? {
-        value.flatMap { $0 > 0 ? $0 : nil }
     }
 
     private func remoteLimit(for key: String) -> Int? {

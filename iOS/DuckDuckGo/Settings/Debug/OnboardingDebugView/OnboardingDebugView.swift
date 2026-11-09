@@ -24,7 +24,7 @@ import Persistence
 
 struct OnboardingDebugView: View {
 
-    @StateObject private var viewModel = OnboardingDebugViewModel()
+    @StateObject private var viewModel: OnboardingDebugViewModel
     @State private var isShowingResetDaxDialogsAlert = false
     @State private var isShowingResetOnboardingAlert = false
     @State private var isShowingSubscriptionPromoCooldownAlert = false
@@ -33,7 +33,8 @@ struct OnboardingDebugView: View {
 
     private let newOnboardingIntroStartAction: () -> Void
 
-    init(onNewOnboardingIntroStartAction: @escaping @MainActor () -> Void) {
+    init(timeLimit: ContextualOnboardingTimeLimit, onNewOnboardingIntroStartAction: @escaping @MainActor () -> Void) {
+        _viewModel = StateObject(wrappedValue: OnboardingDebugViewModel(timeLimit: timeLimit))
         newOnboardingIntroStartAction = onNewOnboardingIntroStartAction
     }
 
@@ -240,7 +241,7 @@ final class OnboardingDebugViewModel: ObservableObject {
         statisticsStore: StatisticsUserDefaults = StatisticsUserDefaults(),
         userDefaults: UserDefaults = .app,
         appSettings: OnboardingDebugAppSettings = AppDependencyProvider.shared.appSettings,
-        timeLimit: ContextualOnboardingTimeLimit = ContextualOnboardingTimeLimit()
+        timeLimit: ContextualOnboardingTimeLimit
     ) {
         self.manager = manager
         self.settings = settings
@@ -345,8 +346,4 @@ extension OnboardingUserType: Identifiable {
     var id: OnboardingUserType {
         self
     }
-}
-
-#Preview {
-    OnboardingDebugView(onNewOnboardingIntroStartAction: { })
 }

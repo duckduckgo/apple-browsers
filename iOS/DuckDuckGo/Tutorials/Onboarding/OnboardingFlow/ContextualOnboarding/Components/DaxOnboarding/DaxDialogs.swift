@@ -56,7 +56,9 @@ protocol ContextualDaxDialogStatusProvider {
 protocol ContextualOnboardingLogic {
     var shouldShowPrivacyButtonPulse: Bool { get }
     var shouldShowFireButtonPulse: Bool { get }
-    func checkTimeLimit()
+    /// Ends contextual onboarding when its time limit is reached. Returns whether it has ended by the time limit.
+    @discardableResult
+    func checkTimeLimit() -> Bool
 
     var isShowingFireDialog: Bool { get }
     var isShowingSearchSuggestions: Bool { get }
@@ -321,8 +323,8 @@ final class DaxDialogs: NewTabDialogSpecProvider, ContextualOnboardingLogic, Con
          onboardingSubscriptionPromotionHelper: OnboardingSubscriptionPromotionHelping = OnboardingSubscriptionPromotionHelper(),
          aiChatSettings: AIChatSettingsProvider = AIChatSettings(),
          onboardingSearchExperienceProvider: OnboardingSearchExperienceProvider = OnboardingSearchExperience(),
-         timeLimit: ContextualOnboardingTimeLimit = ContextualOnboardingTimeLimit(),
-         timeLimitReporter: OnboardingTimeLimitReporting = OnboardingPixelReporter(subscriptionManager: AppDependencyProvider.shared.subscriptionManager),
+         timeLimit: ContextualOnboardingTimeLimit,
+         timeLimitReporter: OnboardingTimeLimitReporting,
          onboardingResumeStepStore: any KeyedStoring<OnboardingStoringKeys> = KeyedStorage<OnboardingStoringKeys>(storage: UserDefaults.app),
          tutorialSettings: TutorialSettings = DefaultTutorialSettings()
     ) {
@@ -462,9 +464,11 @@ final class DaxDialogs: NewTabDialogSpecProvider, ContextualOnboardingLogic, Con
         checkTimeLimit()
     }
 
-    func checkTimeLimit() {
+    @discardableResult
+    func checkTimeLimit() -> Bool {
         guard tutorialSettings.hasSeenOnboarding || onboardingResumeStepStore.resumeStep == .duckAIAnswerStep,
-              isEnabled, let reason = timeLimit.reachedLimit() else { return }
+              isEnabled, let reason = timeLimit.reachedLimit() else { return timeLimit.endedByTimeLimit }
+        // Set before `dismiss()`: MainCoordinator's synchronous `isDismissedPublisher` sink reads it to tell a time-limit end from a regular dismissal.
         timeLimit.endedByTimeLimit = true
         if onboardingResumeStepStore.resumeStep == .duckAIAnswerStep {
             tutorialSettings.hasSeenOnboarding = true
@@ -472,6 +476,7 @@ final class DaxDialogs: NewTabDialogSpecProvider, ContextualOnboardingLogic, Con
         }
         dismiss()
         timeLimitReporter.measureTimeLimitReached(reason)
+        return true
     }
 
     func enableAddFavoriteFlow() {

@@ -149,10 +149,11 @@ struct AppConfiguration {
 
     @MainActor
     func finalize(reportingService: ReportingService,
+                  daxDialogs: DaxDialogs,
                   mainViewController: MainViewController,
                   launchTaskManager: LaunchTaskManager) -> AutomationServer? {
         atbAndVariantConfiguration.cleanUpATBAndAssignVariant {
-            onVariantAssigned(reportingService: reportingService)
+            onVariantAssigned(reportingService: reportingService, daxDialogs: daxDialogs)
         }
         CrashHandlersConfiguration.handleCrashDuringCrashHandlersSetup()
         let automationServer = startAutomationServerIfNeeded(mainViewController: mainViewController)
@@ -178,8 +179,8 @@ struct AppConfiguration {
 
     // MARK: - Handle ATB and variant assigned logic here
 
-    private func onVariantAssigned(reportingService: ReportingService) {
-        onboardingConfiguration.adjustDialogsForUITesting()
+    private func onVariantAssigned(reportingService: ReportingService, daxDialogs: DaxDialogs) {
+        onboardingConfiguration.adjustDialogsForUITesting(daxDialogs: daxDialogs)
         reportingService.setupStorageForMarketPlacePostback()
     }
 

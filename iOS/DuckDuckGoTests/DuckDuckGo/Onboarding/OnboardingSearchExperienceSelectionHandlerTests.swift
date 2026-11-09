@@ -40,7 +40,7 @@ final class OnboardingSearchExperienceSelectionHandlerTests: XCTestCase {
             settings: mockDaxDialogsSettings,
             entityProviding: MockEntityProvider(),
             variantManager: mockVariantManager,
-            timeLimit: makeDisabledContextualOnboardingTimeLimit()
+            timeLimit: makeDisabledContextualOnboardingTimeLimit(), timeLimitReporter: OnboardingPixelReporterMock()
         )
     }
 

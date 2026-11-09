@@ -36,7 +36,7 @@ final class DaxDialogsNewTabTests: XCTestCase {
             entityProviding: MockEntityProvider(),
             variantManager: mockVariantManager,
             onboardingSubscriptionPromotionHelper: MockOnboardingSubscriptionPromotionHelper(),
-            timeLimit: makeDisabledContextualOnboardingTimeLimit()
+            timeLimit: makeDisabledContextualOnboardingTimeLimit(), timeLimitReporter: OnboardingPixelReporterMock()
         )
     }
 

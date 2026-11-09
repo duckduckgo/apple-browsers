@@ -181,8 +181,6 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
     public let cpmMessagingHealthMonitor: CPMMessagingHealthMonitoring
     /// Passive state recorder used to attribute CPM failures without changing recovery behavior.
     public let cpmDiagnosticsRecorder: CPMMessagingDiagnosticsRecorder?
-    /// Reads the runtime kill switch immediately before a CPM messaging hang recovery reload.
-    private let isCPMMessagingHangRecoveryEnabled: @MainActor () -> Bool
     /// Captured at manager creation so one startup cannot mix the enabled and disabled upgrade paths.
     public let isCPMUpgradeBeforeLoadEnabled: Bool
     /// Independent kill switch for retrying a failed background load in its current context.
@@ -254,14 +252,12 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
                 pixelFiring: WebExtensionPixelFiring = NoOpWebExtensionPixelFiring(),
                 cpmMessagingHealthMonitor: CPMMessagingHealthMonitoring? = nil,
                 cpmDiagnosticsRecorder: CPMMessagingDiagnosticsRecorder? = nil,
-                isCPMMessagingHangRecoveryEnabled: @escaping @MainActor () -> Bool = { true },
                 isCPMNetworkProcessRecoveryEnabled: @escaping @MainActor () -> Bool = { false },
                 cpmNetworkProcessRecoveryFeatureFlagUpdates: AnyPublisher<Void, Never>? = nil,
                 isCPMBackgroundLoadRecoveryEnabled: @escaping @MainActor () -> Bool = { true },
                 isCPMBackgroundLoadRestartEnabled: @escaping @MainActor () -> Bool = { false },
                 backgroundLoadRecoveryCooldown: TimeInterval = 60,
                 isApplicationInBackground: @escaping @MainActor () -> Bool = { false },
-                isCPMLateBackgroundDocumentRecoveryEnabled: @escaping @MainActor () -> Bool = { false },
                 isCPMStableBaseURLEnabled: @escaping @MainActor () -> Bool = { false },
                 isCPMUpgradeBeforeLoadEnabled: Bool = false,
                 messageRouter: WebExtensionMessageRouting? = nil,
@@ -317,12 +313,9 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
         self.now = now
         self.cpmMessagingHealthMonitor = cpmMessagingHealthMonitor ?? CPMMessagingHealthMonitor(pixelFiring: pixelFiring)
         (self.cpmMessagingHealthMonitor as? CPMMessagingHealthMonitor)?.backgroundReadinessRecovery = CPMBackgroundReadinessRecovery(
-            isEnabled: isCPMLateBackgroundDocumentRecoveryEnabled,
-            isApplicationInBackground: isApplicationInBackground,
             pixelFiring: pixelFiring
         )
         self.cpmDiagnosticsRecorder = cpmDiagnosticsRecorder
-        self.isCPMMessagingHangRecoveryEnabled = isCPMMessagingHangRecoveryEnabled
         self.isCPMUpgradeBeforeLoadEnabled = isCPMUpgradeBeforeLoadEnabled
         self.cpmNetworkProcessRecovery = CPMNetworkProcessRecovery(
             isEnabled: isCPMNetworkProcessRecoveryEnabled,
@@ -443,11 +436,6 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
             }
             healthMonitor.onHealthyResponse = { [weak self] in
                 self?.backgroundLoadRestartAttempts = 0
-            }
-            healthMonitor.onConfirmedHang = { [weak self] in
-                Task { @MainActor [weak self] in
-                    await self?.reloadEmbeddedExtensionAfterCPMMessagingHang()
-                }
             }
         }
         self.cpmInterruptionObserver = CPMInterruptionObserver(monitor: cpmMessagingHealthMonitor) { [weak self] in
@@ -1175,7 +1163,7 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
                 return
             }
             // Otherwise retry background content without replacing the context, preserving in-flight
-            // content-script replies. Confirmed-hang recovery remains the fallback if messaging stays stuck.
+            // content-script replies.
             self.lastBackgroundLoadRecoveryAt = self.now()
             self.backgroundStartupFix[context.uniqueIdentifier] = .backgroundLoadRetry
             await self.loadEmbeddedExtensionBackgroundContent(in: context)
@@ -1511,22 +1499,6 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
         }
         lifecycleEventsContinuation?.yield(event)
         cpmMessagingHealthMonitor.handle(.extensionLifecycle(event))
-    }
-
-    @MainActor
-    private func reloadEmbeddedExtensionAfterCPMMessagingHang() async {
-        guard !isCPMMessagingRecoveryInProgress else { return }
-        guard isCPMMessagingHangRecoveryEnabled() else {
-            Logger.webExtensions.info("[CPM Health Monitor] Skipping embedded extension reload after a confirmed hang because cpmMessagingHangRecovery is disabled")
-            return
-        }
-
-        guard let installedExtension = installedEmbeddedExtension(for: .embedded) else {
-            Logger.webExtensions.warning("[CPM Health Monitor] Cannot reload the embedded extension after a confirmed hang because it is not installed")
-            return
-        }
-
-        await reloadEmbeddedContext(identifier: installedExtension.uniqueIdentifier, trigger: .cpmMessagingHang)
     }
 
     @MainActor

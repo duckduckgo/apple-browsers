@@ -82,21 +82,6 @@ public enum CPMMessagingHealthEvent: Sendable {
 public protocol CPMMessagingHealthMonitoring: AnyObject, Sendable {
     @MainActor
     func handle(_ event: CPMMessagingHealthEvent)
-
-    @MainActor
-    func registerReadinessRecoveryDocument(tabIdentifier: String, webView: WKWebView, isGET: Bool)
-
-    @MainActor
-    func matchReadinessRecoveryNavigation(tabIdentifier: String, matches: @escaping @MainActor (WKNavigation) -> Bool)
-}
-
-@available(macOS 15.4, iOS 18.4, *)
-public extension CPMMessagingHealthMonitoring {
-    @MainActor
-    func registerReadinessRecoveryDocument(tabIdentifier: String, webView: WKWebView, isGET: Bool) {}
-
-    @MainActor
-    func matchReadinessRecoveryNavigation(tabIdentifier: String, matches: @escaping @MainActor (WKNavigation) -> Bool) {}
 }
 
 /// Internal token tying a completed navigation to its eventual response or timeout.
@@ -120,6 +105,7 @@ public final class CPMMessagingHealthMonitor: CPMMessagingHealthMonitoring {
 
     /// Called once when a failure episode is confirmed as a CPM messaging hang. The first
     /// initialization failure only begins the episode; the next qualifying failure confirms it.
+    /// Nothing in the apps reloads the extension on it anymore; the monitor's own tests observe it.
     var onConfirmedHang: (() -> Void)?
     /// Lets the manager reset the three-restart limit when the current extension answers a page,
     /// even after a pixel observation ends. Old-context responses and successful background-load
@@ -128,14 +114,6 @@ public final class CPMMessagingHealthMonitor: CPMMessagingHealthMonitoring {
     /// Old and new embedded versions can coexist during an upgrade; only the current sender is evidence.
     var isCurrentEmbeddedExtension: ((String) -> Bool)?
     var backgroundReadinessRecovery: CPMBackgroundReadinessRecovery?
-
-    public func registerReadinessRecoveryDocument(tabIdentifier: String, webView: WKWebView, isGET: Bool) {
-        backgroundReadinessRecovery?.registerDocument(in: tabIdentifier, webView: webView, isGET: isGET)
-    }
-
-    public func matchReadinessRecoveryNavigation(tabIdentifier: String, matches: @escaping @MainActor (WKNavigation) -> Bool) {
-        backgroundReadinessRecovery?.matchNavigationStarted(in: tabIdentifier, matches: matches)
-    }
 
     private enum TimeoutOutcome: Sendable {
         case reportFailure

@@ -101,8 +101,8 @@ final class CPMMessagingHealthMonitorTests: XCTestCase {
         let pixels = CapturingWebExtensionPixelFiring()
         let monitor = CPMMessagingHealthMonitor(pixelFiring: pixels)
         startError6Restart(on: monitor)
-        monitor.handle(.willReload(identifier: "embedded", type: .embedded, trigger: .cpmMessagingHang))
-        monitor.handle(.reloaded(identifier: "embedded", type: .embedded, trigger: .cpmMessagingHang))
+        monitor.handle(.willReload(identifier: "embedded", type: .embedded, trigger: .explicit))
+        monitor.handle(.reloaded(identifier: "embedded", type: .embedded, trigger: .explicit))
         monitor.reportSuccess(monitor.beginMeasurement(tabIdentifier: "tab", navigationKind: .other))
         XCTAssertEqual(pixels.restartOutcomes, [.restartStarted, .superseded])
     }

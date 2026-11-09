@@ -143,17 +143,20 @@ public struct SystemExtensionManager {
     /// see the alert every single time, they'll see both the alert and system settings being opened automatically.
     ///
     private func openSystemSettingsIfAwaitingUserApproval() async {
-        let state = await activationState(requestTimeout: min(requestTimeout, Self.preActivationStateCheckTimeout))
-
-        guard Self.shouldOpenSystemSettingsBeforeActivation(for: state) else {
+        guard let properties = await propertySnapshots(requestTimeout: min(requestTimeout, Self.preActivationStateCheckTimeout)),
+              Self.shouldOpenSystemSettingsBeforeActivation(for: properties) else {
             return
         }
 
         openSystemSettingsSecurity()
     }
 
-    static func shouldOpenSystemSettingsBeforeActivation(for state: SystemExtensionActivationState) -> Bool {
-        state == .awaitingUserApproval
+    /// Decides from the raw properties rather than `activationState(from:)`, whose ranking reports
+    /// `.uninstalling` when a deactivated copy awaits reboot alongside a new copy awaiting approval.
+    /// An enabled copy means any waiting entry is stale, so Settings must stay closed.
+    ///
+    static func shouldOpenSystemSettingsBeforeActivation(for properties: [SystemExtensionPropertiesSnapshot]) -> Bool {
+        !properties.contains(where: \.isEnabled) && properties.contains(where: \.isAwaitingUserApproval)
     }
 
     public func deactivate() async throws {
@@ -169,33 +172,38 @@ public struct SystemExtensionManager {
     }
 
     public func activationState() async -> SystemExtensionActivationState {
-        await activationState(requestTimeout: requestTimeout)
+        guard let properties = await propertySnapshots(requestTimeout: requestTimeout) else {
+            return .unknown
+        }
+
+        return Self.activationState(from: properties)
     }
 
-    private func activationState(requestTimeout: TimeInterval) async -> SystemExtensionActivationState {
+    /// - Returns: `nil` when the properties request fails, times out or is cancelled.
+    ///
+    private func propertySnapshots(requestTimeout: TimeInterval) async -> [SystemExtensionPropertiesSnapshot]? {
         do {
             let properties = try await SystemExtensionPropertiesRequest.properties(
                 forExtensionWithIdentifier: extensionBundleID,
                 manager: manager,
                 requestTimeout: requestTimeout
             )
-            let snapshots = properties.map {
+            return properties.map {
                 SystemExtensionPropertiesSnapshot(
                     isEnabled: $0.isEnabled,
                     isAwaitingUserApproval: $0.isAwaitingUserApproval,
                     isUninstalling: $0.isUninstalling
                 )
             }
-            return Self.activationState(from: snapshots)
         } catch is CancellationError {
-            return .unknown
+            return nil
         } catch {
             Logger.systemExtensionManager.error("""
             Failed to query system extension state
               bundleID:    \(extensionBundleID, privacy: .public)
               description: \(error.localizedDescription, privacy: .public)
             """)
-            return .unknown
+            return nil
         }
     }
 

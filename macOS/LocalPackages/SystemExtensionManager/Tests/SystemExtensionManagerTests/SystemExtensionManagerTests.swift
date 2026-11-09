@@ -72,28 +72,40 @@ final class SystemExtensionManagerTests: XCTestCase {
         XCTAssertEqual(result, .enabled)
     }
 
-    func testShouldOpenSystemSettingsBeforeActivationOnlyWhenAwaitingUserApproval() {
-        let expectations: [SystemExtensionActivationState: Bool] = [
-            .awaitingUserApproval: true,
-            .enabled: false,
-            .disabled: false,
-            .uninstalling: false,
-            .notInstalled: false,
-            .unknown: false
+    func testShouldOpenSystemSettingsWhenOnlyEntryAwaitsApproval() {
+        XCTAssertTrue(SystemExtensionManager.shouldOpenSystemSettingsBeforeActivation(for: [
+            .init(isEnabled: false, isAwaitingUserApproval: true, isUninstalling: false)
+        ]))
+    }
+
+    func testShouldOpenSystemSettingsWhenUninstallingCopyAndNewCopyAwaitsApproval() {
+        let properties: [SystemExtensionPropertiesSnapshot] = [
+            .init(isEnabled: false, isAwaitingUserApproval: false, isUninstalling: true),
+            .init(isEnabled: false, isAwaitingUserApproval: true, isUninstalling: false)
         ]
 
-        for (state, expected) in expectations {
-            XCTAssertEqual(SystemExtensionManager.shouldOpenSystemSettingsBeforeActivation(for: state), expected, "\(state)")
-        }
+        XCTAssertEqual(SystemExtensionManager.activationState(from: properties), .uninstalling)
+        XCTAssertTrue(SystemExtensionManager.shouldOpenSystemSettingsBeforeActivation(for: properties))
     }
 
     func testShouldNotOpenSystemSettingsWhenStaleVersionAwaitsApprovalButAnotherIsEnabled() {
-        let state = SystemExtensionManager.activationState(from: [
+        XCTAssertFalse(SystemExtensionManager.shouldOpenSystemSettingsBeforeActivation(for: [
             .init(isEnabled: false, isAwaitingUserApproval: true, isUninstalling: false),
             .init(isEnabled: true, isAwaitingUserApproval: false, isUninstalling: false)
-        ])
+        ]))
+    }
 
-        XCTAssertFalse(SystemExtensionManager.shouldOpenSystemSettingsBeforeActivation(for: state))
+    func testShouldNotOpenSystemSettingsWhenNoEntryAwaitsApproval() {
+        let cases: [[SystemExtensionPropertiesSnapshot]] = [
+            [],
+            [.init(isEnabled: true, isAwaitingUserApproval: false, isUninstalling: false)],
+            [.init(isEnabled: false, isAwaitingUserApproval: false, isUninstalling: false)],
+            [.init(isEnabled: false, isAwaitingUserApproval: false, isUninstalling: true)]
+        ]
+
+        for properties in cases {
+            XCTAssertFalse(SystemExtensionManager.shouldOpenSystemSettingsBeforeActivation(for: properties), "\(properties)")
+        }
     }
 
     func testActivateChecksStateBeforeSubmittingActivationRequest() async {

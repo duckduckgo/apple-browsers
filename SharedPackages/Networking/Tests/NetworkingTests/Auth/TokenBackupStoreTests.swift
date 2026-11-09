@@ -158,6 +158,20 @@ final class TokenBackupStoreTests: XCTestCase {
         assertRejected(.unavailable, store: makeStore(storage: MockTokenStorage()), expectedExternalID: nil)
     }
 
+    func testUsableBackup_undecodable_isUndecodableAndDeleted() throws {
+        let storage = UndecodableTokenStorage()
+
+        assertRejected(.undecodable, store: makeStore(storage: storage), expectedExternalID: nil)
+        XCTAssertEqual(try storage.readTokenContainer(), .missing)
+    }
+
+    func testReadTokenContainer_defaultImplementation_reportsFoundOrMissing() throws {
+        let backup = OAuthTokensFactory.makeTokenContainer(refreshToken: "backupR")
+
+        XCTAssertEqual(try MockTokenStorage().readTokenContainer(), .missing)
+        XCTAssertEqual(try MockTokenStorage(tokenContainer: backup).readTokenContainer(), .found(backup))
+    }
+
     func testUsableBackup_readFails_isReadFailedWithTheStorageError() {
         let storageError = NSError(domain: "keychain", code: 1)
 
@@ -268,6 +282,24 @@ final class TokenBackupStoreTests: XCTestCase {
 
         assertRejected(.expired, store: makeStore(storage: storage, now: issuedAt.addingTimeInterval(.days(31))), expectedExternalID: nil)
         XCTAssertNil(try storage.getTokenContainer())
+    }
+}
+
+/// Holds an item that can't be decoded until a token container is saved or the item is deleted.
+private final class UndecodableTokenStorage: AuthTokenStoring {
+    private var stored: TokenContainerReadResult = .undecodable
+
+    func getTokenContainer() throws -> TokenContainer? {
+        guard case .found(let tokenContainer) = stored else { return nil }
+        return tokenContainer
+    }
+
+    func readTokenContainer() throws -> TokenContainerReadResult {
+        stored
+    }
+
+    func saveTokenContainer(_ tokenContainer: TokenContainer?) throws {
+        stored = tokenContainer.map(TokenContainerReadResult.found) ?? .missing
     }
 }
 

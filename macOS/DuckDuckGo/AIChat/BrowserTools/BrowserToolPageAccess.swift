@@ -75,6 +75,31 @@ enum BrowserToolTargetTab {
     }
 }
 
+/// Field limits from the client-tools contract, applied at the browser-tools boundary only.
+enum BrowserToolOutputLimits {
+    static let title = 256
+    static let url = 1280
+    static let content = 3000
+    static let snippet = 100
+    static let query = 1000
+
+    /// JSON Schema `maxLength` counts code points, so this cuts by Unicode scalar.
+    static func clip(_ value: String, to limit: Int) -> String {
+        guard value.unicodeScalars.count > limit else { return value }
+        return String(String.UnicodeScalarView(value.unicodeScalars.prefix(limit)))
+    }
+
+    /// Clips a string value and leaves anything else untouched.
+    static func clip(_ value: JSONValue?, to limit: Int) -> JSONValue? {
+        guard case .string(let text)? = value else { return value }
+        return .string(clip(text, to: limit))
+    }
+
+    static func fits(_ value: String, within limit: Int) -> Bool {
+        value.unicodeScalars.count <= limit
+    }
+}
+
 /// Page text for the read and find tools, behind a seam so the tools are testable without a web view.
 @MainActor
 protocol BrowserToolPageContentReading: AnyObject {
@@ -125,8 +150,14 @@ final class WebViewPageHighlighter: BrowserToolPageHighlighting {
         // Each await yields the main actor, so the user can open Cmd+F mid-sequence; from then on the
         // overlay is theirs and we stop touching it.
         let webView = tab.webView
-        guard !isFindBarVisible(in: tab) else { return .cancelled }
+        guard !Task.isCancelled, !isFindBarVisible(in: tab) else { return .cancelled }
         let result = await webView.find(quote, with: [.showFindIndicator, .wrapAround], maxCount: Self.maxMatches)
+        guard !Task.isCancelled else {
+            if !isFindBarVisible(in: tab) {
+                webView.clearFindInPageState()
+            }
+            return .cancelled
+        }
         guard !isFindBarVisible(in: tab) else { return .cancelled }
         let firstMatches: UInt?
         switch result {
@@ -141,6 +172,12 @@ final class WebViewPageHighlighter: BrowserToolPageHighlighting {
 
         webView.clearFindInPageState()
         let overlay = await webView.find(quote, with: [.noIndexChange, .showOverlay, .showFindIndicator, .wrapAround], maxCount: Self.maxMatches)
+        guard !Task.isCancelled else {
+            if !isFindBarVisible(in: tab) {
+                webView.clearFindInPageState()
+            }
+            return .cancelled
+        }
         guard !isFindBarVisible(in: tab) else { return .cancelled }
         switch overlay {
         case .found(let total):

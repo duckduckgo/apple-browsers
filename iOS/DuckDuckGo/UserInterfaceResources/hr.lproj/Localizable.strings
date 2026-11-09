@@ -5212,6 +5212,9 @@
 /* Alert content for not found subscription */
 "subscription.expired.alert.message" = "Tvoja pretplata povezana s ovim Apple računom više nije aktivna.";
 
+/* Subtitle in header when the subscription has been cancelled but is still active until it expires */
+"subscription.expiring" = "Istječe";
+
 /* FAQ Button */
 "subscription.faq" = "Često postavljana pitanja i podrška";
 

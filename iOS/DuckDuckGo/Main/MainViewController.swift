@@ -1988,7 +1988,7 @@ class MainViewController: UIViewController {
     }
 
     func refreshViewsBasedOnAddressBarPosition(_ position: AddressBarPosition) {
-        viewCoordinator.setFloatingUIEnabled(isFloatingUIEnabled)
+        viewCoordinator.setFloatingUIEnabled(isFloatingUIEnabled, duckAIAndInputLiquidGlassEnabled: isDuckAIAndInputLiquidGlassEnabled)
         switch position {
         case .top:
             swipeTabsCoordinator?.addressBarPositionChanged(isTop: true)
@@ -2138,9 +2138,20 @@ class MainViewController: UIViewController {
 
     @objc private func keyboardWillChangeFrame(_ notification: Notification) {
         guard let keyboard = BrowserKeyboardLayout(notification: notification) else { return }
+        let animateAccessoryChange: Bool
+        if #available(iOS 26, *) {
+            animateAccessoryChange = isDuckAIAndInputLiquidGlassEnabled
+                && unifiedToggleInputCoordinator?.isInputEditing == true
+                && unifiedToggleInputCoordinator?.cardPosition == .bottom
+                && latestKeyboardFrame != .zero
+                && latestKeyboardFrame.minY != keyboard.frame.minY
+                && keyboard.duration == 0
+        } else {
+            animateAccessoryChange = false
+        }
         adjustUI(withKeyboardFrame: keyboard.frame,
-                 in: keyboard.duration,
-                 animationCurve: keyboard.animationCurve,
+                 in: animateAccessoryChange ? 0.25 : keyboard.duration,
+                 animationCurve: animateAccessoryChange ? .curveEaseInOut : keyboard.animationCurve,
                  keyboardTargetFrame: keyboard.frame)
     }
 
@@ -2253,8 +2264,7 @@ class MainViewController: UIViewController {
         }
 
         if isAnyAITabUTIState, let currentTab {
-            // The web view is anchored to the input bar's top (.unifiedToggleInput mode),
-            // so it never extends behind the input — no bottom inset is needed.
+            // Floating Duck.ai content runs under the input; classic chrome reserves its height.
             if isFloatingUIEnabled {
                 currentTab.updateWebViewBottomAnchor(for: currentBarsVisibility)
             } else if currentTab.webView.scrollView.contentInset.bottom != 0 {
@@ -3504,7 +3514,14 @@ class MainViewController: UIViewController {
         hideNotificationBarIfBrokenSitePromptShown()
         currentTab?.progressWorker.progressBar = nil
         currentTab?.chromeDelegate = nil
-            
+
+        if #available(iOS 26, *), isDuckAIAndInputLiquidGlassEnabled, tab.isAITab {
+            let color = UIColor(singleUseColor: .duckAIWebViewBackground)
+            tab.applyFloatingAIChromeBackground(color)
+            tab.webView.backgroundColor = color
+            tab.webView.scrollView.backgroundColor = color
+            tab.webView.underPageBackgroundColor = color
+        }
         addToContentContainer(controller: tab)
 
         viewCoordinator.logoContainer.isHidden = true
@@ -3528,6 +3545,7 @@ class MainViewController: UIViewController {
     /// iOS 26 scroll-edge chrome interactions, tracked together so they can be torn down and
     /// reattached as a unit whenever the visible page changes (see `updateScrollInteractionIfNeeded`).
     private var scrollEdgeInteractions: [UIInteraction] = []
+    private weak var duckAIScrollEdgeScrollView: UIScrollView?
 
     private func addToContentContainer(controller: UIViewController) {
         viewCoordinator.contentContainer.isHidden = false
@@ -3899,6 +3917,10 @@ class MainViewController: UIViewController {
             currentTab?.updateWebViewBottomAnchor(for: currentBarsVisibility)
             view.layoutIfNeeded()
         }
+        if #available(iOS 26, *), isDuckAIAndInputLiquidGlassEnabled, currentTab?.isAITab == true {
+            view.layoutIfNeeded()
+            updateScrollInteractionIfNeeded()
+        }
 
         let sharesRow = WindowControlsRowLayout.sharesRow(in: view, for: targetSize, isEnabled: isWindowControlsRowEnabled)
         updateWindowControlsRowMetricsIfNeeded(sharesRow: sharesRow, force: true)
@@ -4237,6 +4259,15 @@ class MainViewController: UIViewController {
             // Guide and selection settle after layout.
             DispatchQueue.main.async { [weak self] in
                 self?.updateWebInputChromeVisibility()
+            }
+        }
+        if #available(iOS 26, *), isDuckAIAndInputLiquidGlassEnabled,
+           let tab = currentTab, tab.isAITab {
+            let insets = tab.webView.scrollView.contentInset
+            let top = floatingAIChatHeaderObscuredHeight
+            let bottom = floatingWebViewBottomObscuredHeight(for: currentBarsVisibility)
+            if insets.top != top || insets.bottom != bottom {
+                tab.updateWebViewBottomAnchor(for: currentBarsVisibility)
             }
         }
         updateAddressBarSuppressionForNewTabPage()
@@ -5991,6 +6022,13 @@ extension MainViewController: BrowserChromeDelegate {
     }
 
     func floatingWebViewBottomObscuredHeight(for barsVisibilityPercent: CGFloat) -> CGFloat {
+        if #available(iOS 26, *), isDuckAIAndInputLiquidGlassEnabled, currentTab?.isAITab == true {
+            let navigationBar = viewCoordinator.navigationBarContainer!
+            guard !navigationBar.isHidden,
+                  viewCoordinator.unifiedToggleInputContainer?.isHidden == false,
+                  navigationBar.bounds.height > 0 else { return view.safeAreaInsets.bottom }
+            return max(view.safeAreaInsets.bottom, view.bounds.maxY - navigationBar.frame.minY)
+        }
         if viewCoordinator.isWebInputEditing {
             return view.safeAreaInsets.bottom
         }
@@ -6888,12 +6926,16 @@ extension MainViewController: OmniBarDelegate {
     // otherwise the interactions keep pointing at a dismissed tab's scroll view — or, after the bar
     // moves between top and bottom, at a container that has crossed to the opposite edge, which
     // stretches the edge effect across the whole page.
-    private func updateScrollInteractionIfNeeded() {
+    func updateScrollInteractionIfNeeded() {
         guard #available(iOS 26, *) else { return }
 
         // Detach any existing interactions from whatever views they're currently installed in.
         scrollEdgeInteractions.forEach { $0.view?.removeInteraction($0) }
         scrollEdgeInteractions.removeAll()
+        duckAIScrollEdgeScrollView?.topEdgeEffect.style = .automatic
+        duckAIScrollEdgeScrollView?.bottomEdgeEffect.style = .automatic
+        duckAIScrollEdgeScrollView?.bottomEdgeEffect.isHidden = false
+        duckAIScrollEdgeScrollView = nil
 
         guard floatingUIManager.isFloatingUIEnabled else { return }
 
@@ -6908,6 +6950,14 @@ extension MainViewController: OmniBarDelegate {
             interaction.edge = edge
             view.addInteraction(interaction)
             scrollEdgeInteractions.append(interaction)
+        }
+
+        if currentTab?.isAITab == true, isDuckAIAndInputLiquidGlassEnabled {
+            scrollView.topEdgeEffect.style = .soft
+            scrollView.bottomEdgeEffect.isHidden = true
+            duckAIScrollEdgeScrollView = scrollView
+            attach(to: viewCoordinator.aiChatTabChatHeaderContainer, onEdge: .top)
+            return
         }
 
         if appSettings.currentAddressBarPosition == .top {
@@ -8789,6 +8839,10 @@ extension MainViewController: TabSwitcherDelegate {
                     && pendingTabSwitcherKeyboard?.requestID == appOpenKeyboardRequestID))
             && !isDismissingTabSwitcherForFire && !isClearingNavigationForAppOpen
         transitionTo(tab: newTab, from: previousTab)
+        if #available(iOS 26, *), isDuckAIAndInputLiquidGlassEnabled, newTab.isAITab {
+            view.layoutIfNeeded()
+            updateScrollInteractionIfNeeded()
+        }
         // Transitioning invalidates the previous request; only this tab can receive focus after dismissal.
         pendingTabSwitcherKeyboard = shouldFocusKeyboard ? (newTab.tabModel, appOpenKeyboardRequestID) : nil
     }
@@ -9559,6 +9613,10 @@ extension MainViewController {
         floatingUIManager.isFloatingUIEnabled
     }
 
+    var isDuckAIAndInputLiquidGlassEnabled: Bool {
+        floatingUIManager.isDuckAIAndInputLiquidGlassEnabled
+    }
+
     override func traitCollectionDidChange(_ previousTraitCollection: UITraitCollection?) {
         super.traitCollectionDidChange(previousTraitCollection)
 
@@ -9632,7 +9690,7 @@ extension MainViewController {
 
     func applyFloatingUIIfNeeded() {
         guard floatingUIManager.isFloatingUIEnabled else { return }
-        viewCoordinator.setFloatingUIEnabled(floatingUIManager.isFloatingUIEnabled)
+        viewCoordinator.setFloatingUIEnabled(isFloatingUIEnabled, duckAIAndInputLiquidGlassEnabled: isDuckAIAndInputLiquidGlassEnabled)
         FloatingUIChromeStyler().decorateMainViewIfNeeded(manager: floatingUIManager, coordinator: viewCoordinator)
         viewCoordinator.omniBar.adjust(for: appSettings.currentAddressBarPosition)
         viewCoordinator.updateToolbarLayoutForAddressBarPosition(appSettings.currentAddressBarPosition)

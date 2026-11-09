@@ -185,6 +185,7 @@ final class AIChatContextualSheetViewController: UIViewController {
 
     /// Glass capsules, the Duck.ai bubble icon, and close/hand-off swapped to opposite pills.
     private let usesRedesignedHeader: Bool
+    private let usesLiquidGlassHeader: Bool
 
     private lazy var contextualInputViewController = AIChatContextualInputViewController(
         voiceSearchHelper: voiceSearchHelper,
@@ -197,6 +198,7 @@ final class AIChatContextualSheetViewController: UIViewController {
     private var cancellables = Set<AnyCancellable>()
     private var hostInputTextCancellable: AnyCancellable?
     private var contentContainerBottomConstraint: NSLayoutConstraint?
+    private weak var floatingInputView: UIView?
     private var headerTopConstraint: NSLayoutConstraint?
 
     /// The single web view controller for this sheet, created once and reused
@@ -373,7 +375,9 @@ final class AIChatContextualSheetViewController: UIViewController {
             pill.translatesAutoresizingMaskIntoConstraints = false
             return pill
         }
-        return AIChatHeaderGlassPill(cornerRadius: Constants.headerButtonSize / 2, shadowStyle: .restingOnChrome)
+        return AIChatHeaderGlassPill(cornerRadius: Constants.headerButtonSize / 2,
+                                     shadowStyle: .restingOnChrome,
+                                     usesFloatingAIChrome: usesLiquidGlassHeader)
     }
 
     private lazy var rightButtonStack: UIStackView = {
@@ -452,8 +456,10 @@ final class AIChatContextualSheetViewController: UIViewController {
          persistentUTIHost: AIChatContextualUTIHost? = nil,
          suggestionsReader: AIChatSuggestionsReading? = nil,
          floatingInputFeature: AIChatContextualFloatingInputFeatureProviding = AIChatContextualFloatingInputFeature(),
+         usesLiquidGlassHeader: Bool = false,
          opensOntoSubmittedChat: Bool = false) {
         self.usesRedesignedHeader = floatingInputFeature.isAvailable
+        self.usesLiquidGlassHeader = usesLiquidGlassHeader
         self.sessionState = sessionState
         self.aiChatSettings = aiChatSettings
         self.voiceSearchHelper = voiceSearchHelper
@@ -651,6 +657,10 @@ final class AIChatContextualSheetViewController: UIViewController {
     override func viewDidLayoutSubviews() {
         super.viewDidLayoutSubviews()
         updateShadowPath()
+        if #available(iOS 26, *), usesLiquidGlassHeader, isWebViewVisible,
+           let floatingInputView, floatingInputView.superview === view {
+            webViewController?.setFloatingInputView(floatingInputView)
+        }
     }
 
     override func viewWillTransition(to size: CGSize, with coordinator: UIViewControllerTransitionCoordinator) {
@@ -782,6 +792,7 @@ private extension AIChatContextualSheetViewController {
         removeCurrentChildViewController()
         showContextualInput()
         updateChipUI(chipState: sessionState.chipState)
+        updateContentContainerBottomConstraint()
     }
 
     func embedChildViewController(_ childVC: UIViewController) {
@@ -814,6 +825,7 @@ private extension AIChatContextualSheetViewController {
         removeCurrentChildViewController()
         embedChildViewController(webVC)
         isWebViewVisible = true
+        updateContentContainerBottomConstraint()
     }
 
     func showWebViewWithPrompt(_ prompt: String, pageContext: AIChatPageContextData?, termsAccepted: Bool) {
@@ -1590,6 +1602,10 @@ private extension AIChatContextualSheetViewController {
         })
 
         view.addSubview(contentContainerView)
+        if #available(iOS 26, *), usesLiquidGlassHeader {
+            view.bringSubviewToFront(headerView)
+            view.bringSubviewToFront(aiChatEditHeaderView)
+        }
 
         setupConstraints()
         applySurfaceStyle()
@@ -1699,14 +1715,25 @@ private extension AIChatContextualSheetViewController {
             }
             self.contextualInputViewController.view.isHidden = isVisible
         }
-        // The previous constraint died with the old mount — its two views no longer share an ancestor.
-        contentContainerBottomConstraint?.isActive = false
-        let bottomConstraint = contentContainerView.bottomAnchor.constraint(equalTo: utiView.topAnchor)
-        contentContainerBottomConstraint = bottomConstraint
-        bottomConstraint.isActive = true
+        floatingInputView = utiView
+        updateContentContainerBottomConstraint()
         if contentDragKeyboardDismissRecognizer.view == nil {
             contentContainerView.addGestureRecognizer(contentDragKeyboardDismissRecognizer)
         }
+    }
+
+    func updateContentContainerBottomConstraint() {
+        guard let floatingInputView, floatingInputView.superview === view else { return }
+        contentContainerBottomConstraint?.isActive = false
+        let bottomAnchor: NSLayoutYAxisAnchor
+        if #available(iOS 26, *), usesLiquidGlassHeader, isWebViewVisible {
+            bottomAnchor = view.bottomAnchor
+        } else {
+            bottomAnchor = floatingInputView.topAnchor
+        }
+        let constraint = contentContainerView.bottomAnchor.constraint(equalTo: bottomAnchor)
+        contentContainerBottomConstraint = constraint
+        constraint.isActive = true
     }
 
     @objc private func handleContentDragToDismissKeyboard(_ gesture: UIPanGestureRecognizer) {

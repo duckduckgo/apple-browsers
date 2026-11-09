@@ -25,6 +25,118 @@ import AIChat
 import WebKit
 import Combine
 
+@MainActor
+enum DuckAIChatScrollInsetStyler {
+
+    static func apply(_ insets: UIEdgeInsets, to webView: WKWebView) {
+        let top = max(0, insets.top)
+        let bottom = max(0, insets.bottom)
+        let script = """
+        (() => {
+            if (location.hostname !== 'duck.ai' && !location.hostname.endsWith('.duck.ai')) return;
+            const key = '__ddgNativeScrollInsets';
+            let state = window[key];
+            if (!state) {
+                state = { top: 0, bottom: 0, target: null, scheduled: false };
+                state.find = () => {
+                    let best = null;
+                    for (const element of document.querySelectorAll('div')) {
+                        if (best?.contains(element)) continue;
+                        const overflow = getComputedStyle(element).overflowY;
+                        if (overflow !== 'auto' && overflow !== 'scroll') continue;
+                        const rect = element.getBoundingClientRect();
+                        if (rect.height < innerHeight * 0.65 || rect.top > innerHeight * 0.25) continue;
+                        if (!best || element.clientHeight > best.clientHeight) best = element;
+                    }
+                    return best;
+                };
+                state.apply = () => {
+                    if (!state.target?.isConnected) {
+                        state.target = state.find();
+                        if (state.target) {
+                            state.lastMessage = null;
+                            const style = state.target.style;
+                            state.original = {
+                                scrollTop: style.scrollPaddingTop,
+                                scrollBottom: style.scrollPaddingBottom,
+                                overscroll: style.overscrollBehaviorY
+                            };
+                        }
+                    }
+                    if (!state.target) return;
+                    const style = state.target.style;
+                    const scrollTop = state.top ? `${state.top}px` : state.original.scrollTop;
+                    const scrollBottom = state.bottom ? `${state.bottom}px` : state.original.scrollBottom;
+                    if (state.bottom > 0) {
+                        if (state.spacer?.parentElement !== state.target) {
+                            state.spacer = document.createElement('div');
+                            state.spacer.setAttribute('aria-hidden', 'true');
+                            state.spacer.style.cssText = 'flex: 0 0 auto; width: 100%; pointer-events: none;';
+                            state.target.appendChild(state.spacer);
+                        }
+                        if (state.target.lastElementChild !== state.spacer) {
+                            state.target.appendChild(state.spacer);
+                        }
+                        const lastMessage = state.spacer.previousElementSibling;
+                        const content = lastMessage?.lastElementChild || lastMessage;
+                        if (state.lastMessage !== lastMessage || state.content !== content) {
+                            state.resizeObserver.disconnect();
+                            state.resizeObserver.observe(state.target);
+                            if (content) state.resizeObserver.observe(content);
+                            state.lastMessage = lastMessage;
+                            state.content = content;
+                        }
+                        state.spacer.style.marginTop = `${-(parseFloat(getComputedStyle(state.target).rowGap) || 0)}px`;
+                        const targetRect = state.target.getBoundingClientRect();
+                        const contentEnd = content
+                            ? content.getBoundingClientRect().bottom - targetRect.top - state.target.clientTop + state.target.scrollTop
+                            : 0;
+                        const targetStyle = getComputedStyle(state.target);
+                        const after = getComputedStyle(state.target, '::after');
+                        const afterClearance = after.display !== 'none' && !['none', 'normal'].includes(after.content)
+                            ? (parseFloat(after.height) || 0) + (parseFloat(after.marginTop) || 0)
+                                + (parseFloat(after.marginBottom) || 0) + (parseFloat(targetStyle.rowGap) || 0)
+                            : 0;
+                        const spacerTop = state.spacer.getBoundingClientRect().top - targetRect.top
+                            - state.target.clientTop + state.target.scrollTop;
+                        const existingClearance = Math.max(0, spacerTop - contentEnd
+                            + (parseFloat(targetStyle.paddingBottom) || 0) + afterClearance);
+                        const overlap = Math.max(state.bottom, targetRect.bottom + scrollY - innerHeight);
+                        const height = Math.max(0, overlap - existingClearance);
+                        const previousHeight = state.spacer.getBoundingClientRect().height;
+                        state.spacer.style.height = `${height}px`;
+                        // Auto margins move without resizing content.
+                        if (Math.abs(height - previousHeight) > 0.5) state.schedule();
+                    } else if (state.spacer?.parentElement === state.target) {
+                        state.spacer.remove();
+                    }
+                    if (style.scrollPaddingTop !== scrollTop) style.scrollPaddingTop = scrollTop;
+                    if (style.scrollPaddingBottom !== scrollBottom) style.scrollPaddingBottom = scrollBottom;
+                    style.overscrollBehaviorY = state.top || state.bottom ? 'contain' : state.original.overscroll;
+                };
+                state.schedule = () => {
+                    if (state.scheduled) return;
+                    state.scheduled = true;
+                    requestAnimationFrame(() => {
+                        state.scheduled = false;
+                        state.apply();
+                    });
+                };
+                state.resizeObserver = new ResizeObserver(state.schedule);
+                window.addEventListener('resize', state.schedule);
+                window.visualViewport?.addEventListener('resize', state.schedule);
+                new MutationObserver(state.schedule).observe(document.documentElement, { childList: true, subtree: true });
+                window[key] = state;
+            }
+            state.top = \(top);
+            state.bottom = \(bottom);
+            state.apply();
+        })();
+        """
+        webView.evaluateJavaScript(script)
+    }
+}
+
 // MARK: - Delegate Protocol
 
 protocol AIChatUserScriptDelegate: AnyObject {

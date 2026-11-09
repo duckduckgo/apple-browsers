@@ -112,6 +112,7 @@ class MainViewCoordinator {
     private(set) var isOmnibarInToolbar = false
     private var isFloatingUIEnabled = false
     var isAITabCollapsedBarFloatingOffsetEnabled: () -> Bool = { false }
+    private var isDuckAIAndInputLiquidGlassEnabled = false
     private(set) var isWebInputEditing = false
     private(set) var isInMinimalChromeLayout = false
 
@@ -123,8 +124,15 @@ class MainViewCoordinator {
         !(unifiedToggleInputContainer?.isHidden ?? true) && (unifiedToggleInputContainer?.alpha ?? 0) > 0.01
     }
 
-    func setFloatingUIEnabled(_ enabled: Bool) {
+    func setFloatingUIEnabled(_ enabled: Bool, duckAIAndInputLiquidGlassEnabled: Bool = false) {
         isFloatingUIEnabled = enabled
+        isDuckAIAndInputLiquidGlassEnabled = enabled && duckAIAndInputLiquidGlassEnabled
+        if let bottomToToolbar = constraints.unifiedInputContentBottomToToolbar,
+           let bottomToSuperview = constraints.unifiedInputContentBottomToSuperview,
+           bottomToSuperview.isActive != isDuckAIAndInputLiquidGlassEnabled {
+            NSLayoutConstraint.deactivate([bottomToToolbar, bottomToSuperview])
+            (isDuckAIAndInputLiquidGlassEnabled ? bottomToSuperview : bottomToToolbar).isActive = true
+        }
         if !enabled {
             setWebInputEditing(false)
         }
@@ -257,6 +265,8 @@ class MainViewCoordinator {
         var statusBackgroundBottomToSafeAreaTop: NSLayoutConstraint!
         var contentContainerBottomToToolbarTop: NSLayoutConstraint!
         var contentContainerBottomToSafeArea: NSLayoutConstraint!
+        var unifiedInputContentBottomToToolbar: NSLayoutConstraint!
+        var unifiedInputContentBottomToSuperview: NSLayoutConstraint!
         var topSlideContainerBottomToNavigationBarBottom: NSLayoutConstraint!
         var topSlideContainerBottomToStatusBackgroundBottom: NSLayoutConstraint!
         var topSlideContainerTopToNavigationBar: NSLayoutConstraint!
@@ -660,7 +670,10 @@ class MainViewCoordinator {
     /// separator is anchored to the safe area, not to `navigationBarContainer`, so hiding the
     /// chrome doesn't hide the separator transitively — we have to re-apply on either change.
     private func applyAITabCollapsedTopSeparatorVisibility() {
-        let visible = aiTabCollapsedTopSeparatorLogicallyVisible && !navigationBarContainer.isHidden
+        var visible = aiTabCollapsedTopSeparatorLogicallyVisible && !navigationBarContainer.isHidden
+        if #available(iOS 26, *), isDuckAIAndInputLiquidGlassEnabled {
+            visible = false
+        }
         guard aiTabCollapsedTopSeparator.isHidden == visible else { return }
         aiTabCollapsedTopSeparator.isHidden = !visible
         if visible {
@@ -936,7 +949,11 @@ class MainViewCoordinator {
         aiChatTabChatHeaderContainer.isHidden = false
         aiChatTabChatHeaderView?.setContainerVisible(true)
         guard isNavigationChromeHidden else { return }
-        setContentContainerTopAnchorMode(.aiChatHeader)
+        if #available(iOS 26, *), isDuckAIAndInputLiquidGlassEnabled {
+            setContentContainerTopAnchorMode(.floatingBehindBar)
+        } else {
+            setContentContainerTopAnchorMode(.aiChatHeader)
+        }
     }
 
     func hideAIChatTabChatHeader() {
@@ -954,7 +971,9 @@ class MainViewCoordinator {
             isNavigationChromeHidden = true
             navigationBarCollectionView.alpha = 0
             navigationBarCollectionView.isUserInteractionEnabled = false
-            if constraints.contentContainerTopToAIChatHeader != nil, !aiChatTabChatHeaderContainer.isHidden {
+            if #available(iOS 26, *), isDuckAIAndInputLiquidGlassEnabled {
+                setContentContainerTopAnchorMode(.floatingBehindBar)
+            } else if constraints.contentContainerTopToAIChatHeader != nil, !aiChatTabChatHeaderContainer.isHidden {
                 setContentContainerTopAnchorMode(.aiChatHeader)
             } else {
                 setContentContainerTopAnchorMode(.safeArea)
@@ -1041,7 +1060,11 @@ class MainViewCoordinator {
     /// Voice sessions paint the top strip with the FE-provided voice colour; regular chat chrome-hidden
     /// keeps the standard canvas tone.
     private func chatChromeHiddenStatusBackgroundColor() -> UIColor {
-        voiceModeBackgroundColor ?? UIColor(designSystemColor: .surfaceCanvas)
+        if let voiceModeBackgroundColor { return voiceModeBackgroundColor }
+        if #available(iOS 26, *), isDuckAIAndInputLiquidGlassEnabled {
+            return .clear
+        }
+        return UIColor(designSystemColor: .surfaceCanvas)
     }
 
     private func showFocusedStateBackground() {
@@ -1089,10 +1112,7 @@ class MainViewCoordinator {
         setContentContainerBottomAnchorMode(requesting: preferredBottomContentAnchorModeForVisibleChrome())
     }
 
-    /// Anchors the contentContainer to the UTI's top — except when the bottom chrome is hidden
-    /// (voice / FE-hidden chat input), in which case the UTI's frame still sits at the bottom of
-    /// the screen and anchoring there would leave a gap below the webview. Falls through to
-    /// `.safeArea` then, matching what `setAITabBottomChromeHidden(true)` would set.
+    /// Floating Duck.ai content runs under the input. Other visible UTI layouts reserve its height.
     func anchorContentContainerToInputTop() {
         if navigationBarContainer.isHidden {
             setContentContainerBottomAnchorMode(requesting: .safeArea)
@@ -1108,7 +1128,12 @@ class MainViewCoordinator {
     }
 
     private func setContentContainerBottomAnchorMode(requesting requestedMode: ContentContainerBottomAnchorMode) {
-        let resolvedMode: ContentContainerBottomAnchorMode = shouldUnifiedToggleInputOwnBottomAnchor ? .unifiedToggleInput : requestedMode
+        let resolvedMode: ContentContainerBottomAnchorMode
+        if #available(iOS 26, *), isDuckAIAndInputLiquidGlassEnabled, isNavigationChromeHidden {
+            resolvedMode = .safeArea
+        } else {
+            resolvedMode = shouldUnifiedToggleInputOwnBottomAnchor ? .unifiedToggleInput : requestedMode
+        }
         constraints.contentContainerBottomToToolbarTop.isActive = resolvedMode == .toolbar
         constraints.contentContainerBottomToUnifiedToggleInputTop.isActive = resolvedMode == .unifiedToggleInput
         constraints.contentContainerBottomToSafeArea.isActive = resolvedMode == .safeArea

@@ -75,9 +75,6 @@ final class NativeMessagingHandler: WebExtensionNativeMessagingHandling {
     /// Sessions of open ports, keyed by the port that owns each one.
     private var sessions: [ObjectIdentifier: NativeMessagingHostSession] = [:]
 
-    /// The extension that opened each port in `sessions`, by its unique identifier.
-    private var sessionExtensions: [ObjectIdentifier: String] = [:]
-
     // MARK: - WebExtensionNativeMessagingHandling
 
     func connect(_ port: WKWebExtension.MessagePort,
@@ -93,7 +90,6 @@ final class NativeMessagingHandler: WebExtensionNativeMessagingHandling {
 
         let key = ObjectIdentifier(port)
         sessions[key] = session
-        sessionExtensions[key] = context.uniqueIdentifier
 
         // Host to extension.
         session.messageHandler = { [weak port] message in
@@ -115,7 +111,6 @@ final class NativeMessagingHandler: WebExtensionNativeMessagingHandling {
 
         session.terminationHandler = { [weak self, weak port] error in
             self?.sessions[key] = nil
-            self?.sessionExtensions[key] = nil
             Logger.webExtensions.info("""
             [NativeMessaging] disconnect-extension session=\(identifier, privacy: .public) failed=\(error != nil)
             """)
@@ -154,21 +149,19 @@ final class NativeMessagingHandler: WebExtensionNativeMessagingHandling {
             Logger.webExtensions.info("[NativeMessaging] port-closed-by-extension session=\(identifier, privacy: .public)")
             self?.sessions[key]?.stop()
             self?.sessions[key] = nil
-            self?.sessionExtensions[key] = nil
         }
 
         do {
             try session.start()
         } catch {
             sessions[key] = nil
-            sessionExtensions[key] = nil
             throw error
         }
         Logger.webExtensions.debug("🔗 Port bridged to \(hostName, privacy: .public)")
     }
 
     func hasOpenPorts(for context: WKWebExtensionContext) -> Bool {
-        sessionExtensions.values.contains(context.uniqueIdentifier)
+        sessions.values.contains { $0.extensionIdentifier == context.uniqueIdentifier }
     }
 
     func sendMessage(_ message: Any,
@@ -267,6 +260,7 @@ final class NativeMessagingHandler: WebExtensionNativeMessagingHandling {
 
         let origin = try callerOrigin(for: context, hostName: hostName, manifest: located.manifest)
         let session = NativeMessagingHostSession(hostName: hostName,
+                                                 extensionIdentifier: context.uniqueIdentifier,
                                                  executable: located.executable,
                                                  callerOrigin: origin)
         Logger.webExtensions.info("""

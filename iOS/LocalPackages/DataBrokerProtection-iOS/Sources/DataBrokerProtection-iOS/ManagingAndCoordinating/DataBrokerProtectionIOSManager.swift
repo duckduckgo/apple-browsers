@@ -158,8 +158,9 @@ public class DBPIOSInterface {
 public enum FreemiumDBPEntryPoint: String, Equatable {
     case freeScanBanner = "freescanbanner"
     case viewResultsBanner = "viewresultsbanner"
-    case appMenuPreScan = "appmenuprescan"
-    case appMenuPostScan = "appmenupostscan"
+    case appSettingsPreScan = "appsettingsprescan"
+    case appSettingsPostScan = "appsettingspostscan"
+    case scanCompleteNotification = "scancompletenotification"
 }
 
 extension BGTask: DBPIOSInterface.BGTaskHandling {}

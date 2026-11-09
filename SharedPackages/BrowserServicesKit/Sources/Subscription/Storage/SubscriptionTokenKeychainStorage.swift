@@ -82,18 +82,23 @@ public final class SubscriptionTokenKeychainStorage: AuthTokenStoring {
     }
 
     public func getTokenContainer() throws -> TokenContainer? {
+        guard case .found(let tokenContainer) = try readTokenContainer() else { return nil }
+        return tokenContainer
+    }
+
+    public func readTokenContainer() throws -> TokenContainerReadResult {
         do {
             guard let data = try keychainManager.retrieveData(forKey: field.keyValue) else {
                 Logger.subscriptionKeychain.log("Token container not found: \(self.field.rawValue, privacy: .public)")
                 verifyTokenNotFoundExpectation()
-                return nil
+                return .missing
             }
-            let result: TokenContainer? = CodableHelper.decode(jsonData: data)
-            if result == nil {
+            guard let result: TokenContainer = CodableHelper.decode(jsonData: data) else {
                 Logger.subscriptionKeychain.error("Failed to decode the token container: \(self.field.rawValue, privacy: .public)")
                 reportDecodeFailureOnce()
+                return .undecodable
             }
-            return result
+            return .found(result)
         } catch {
             if let error = error as? AccountKeychainAccessError {
                 errorEventsHandler(AccountKeychainAccessType.getAuthToken, error)

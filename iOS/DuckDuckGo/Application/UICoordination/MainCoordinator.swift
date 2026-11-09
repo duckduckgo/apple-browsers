@@ -382,9 +382,14 @@ final class MainCoordinator {
     }
 
     /// The return is certain: closes what the draw hid.
-    func closeScreensHiddenForIdleReturn(completion: @escaping () -> Void) {
-        controller.closeScreensOverNewTabPageForIdleReturn(screenLeftOpen: idleReturnHiddenScreens.takeForClosing(),
-                                                           completion: completion)
+    func closeScreensHiddenForIdleReturn() {
+        controller.closeScreensOverNewTabPageForIdleReturn(screenLeftOpen: idleReturnHiddenScreens.takeForClosing()) { [weak self] in
+            self?.idleReturnHiddenScreens.didClose()
+        }
+    }
+
+    var isVoiceSessionActive: Bool {
+        voiceSessionStateManager.isVoiceSessionActive
     }
 
     private func subscribeToDarkReaderChanges() {
@@ -992,7 +997,10 @@ extension MainCoordinator: IdleReturnLaunchDelegate {
     func recordNewTabPageDrawnAtLaunch(timeAwayMs: Int?, completion: @escaping (IdleReturnNewTabPageResult) -> Void) {
         controller.noteNewTabPageReturn(timeAwayMs: timeAwayMs)
         controller.recordPendingNewTabPagePresentationIfVisible()
-        completion(.openedNewTab)
+        // The keyboard needs nothing presented, so it waits for screens a warm-return draw is still closing.
+        idleReturnHiddenScreens.runWhenClosed {
+            completion(.openedNewTab)
+        }
     }
 
     func markLastUsedTabAsResumedAfterIdle(timeAwayMs: Int?) {

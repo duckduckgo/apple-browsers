@@ -112,6 +112,67 @@ struct IdleReturnHiddenScreensTests {
         #expect(screens.takeForClosing() == nil)
     }
 
+    // MARK: - Waiting for the close
+
+    @available(iOS 16, macOS 13, *)
+    @Test("With nothing closing, a waiting handler runs right away", .timeLimit(.minutes(1)))
+    func runsRightAwayWhenNothingCloses() {
+        var didRun = false
+
+        screens.runWhenClosed { didRun = true }
+
+        #expect(didRun)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("While a hidden screen closes, a handler waits and runs once it's closed", .timeLimit(.minutes(1)))
+    func waitsForTheClose() {
+        let screen = UIViewController()
+        screens.hide(screen)
+        _ = screens.takeForClosing()
+        var runCount = 0
+
+        screens.runWhenClosed { runCount += 1 }
+        #expect(runCount == 0)
+
+        screens.didClose()
+        #expect(runCount == 1)
+
+        screens.didClose()
+        #expect(runCount == 1)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("A close with nothing hidden makes nothing wait", .timeLimit(.minutes(1)))
+    func closeWithNothingHiddenDoesNotWait() {
+        _ = screens.takeForClosing()
+        var didRun = false
+
+        screens.runWhenClosed { didRun = true }
+
+        #expect(didRun)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("A new close drops what waited on one that never finished", .timeLimit(.minutes(1)))
+    func newCloseDropsAbandonedWaiters() {
+        let first = UIViewController()
+        screens.hide(first)
+        _ = screens.takeForClosing()
+        var abandonedRan = false
+        screens.runWhenClosed { abandonedRan = true }
+
+        let second = UIViewController()
+        screens.hide(second)
+        _ = screens.takeForClosing()
+        screens.didClose()
+        #expect(!abandonedRan)
+
+        var laterRan = false
+        screens.runWhenClosed { laterRan = true }
+        #expect(laterRan)
+    }
+
 }
 
 private final class DismissingViewController: UIViewController {

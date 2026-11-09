@@ -136,6 +136,9 @@ struct Foreground: ForegroundHandling {
 
         configureAppearance()
 
+        // The return is certain now: close what a warm-return draw hid, before any launch action presents.
+        appDependencies.mainCoordinator.closeScreensHiddenForIdleReturn()
+
         interactionManager.start(
             launchAction: launchAction,
             /// Handle **WebView related logic** here that could be affected by `AutoClear` feature.

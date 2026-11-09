@@ -25,6 +25,8 @@ import UIKit
 final class IdleReturnHiddenScreens {
 
     private weak var hidden: UIViewController?
+    /// Non-nil while a close is in progress: what waits for it to finish.
+    private var waitingForClose: [() -> Void]?
 
     /// Hides `presented` and anything it presents. Skips an alert, which would leave a site's request
     /// unanswered, and a screen already being dismissed.
@@ -44,7 +46,25 @@ final class IdleReturnHiddenScreens {
     /// The return is certain: hands over the hidden screen to be dismissed, once.
     func takeForClosing() -> UIViewController? {
         defer { hidden = nil }
+        // A new close replaces one whose foreground ended before UIKit finished it.
+        waitingForClose = hidden == nil ? nil : []
         return hidden
+    }
+
+    /// The hidden screens are gone: runs what waited for them.
+    func didClose() {
+        let waiting = waitingForClose ?? []
+        waitingForClose = nil
+        waiting.forEach { $0() }
+    }
+
+    /// Runs `handler` once nothing a draw hid is still closing, right away if nothing is.
+    func runWhenClosed(_ handler: @escaping () -> Void) {
+        if waitingForClose != nil {
+            waitingForClose?.append(handler)
+        } else {
+            handler()
+        }
     }
 
     /// The container also holds the dimming behind a sheet; a screen with none falls back to its own view.

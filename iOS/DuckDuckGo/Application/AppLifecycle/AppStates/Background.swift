@@ -108,9 +108,17 @@ extension Background {
         Logger.lifecycle.info("\(type(of: self)): \(#function)")
         
         ThemeManager.shared.updateUserInterfaceStyle()
+        var background = self
+        if drawsIdleReturnNewTabPage(hasLaunchAction: actionToHandle != nil) {
+            appDependencies.mainCoordinator.drawNewTabPageForIdleReturnOnForeground()
+            background.drewIdleReturnNewTabPage = true
+        } else if drewIdleReturnNewTabPage {
+            // The page is still up from a cancelled return; hide again what didReturn showed.
+            appDependencies.mainCoordinator.hideScreensForIdleReturn()
+        }
         sceneDependencies.autoClearService.resume()
         services.systemSettingsPiPTutorialService.resume()
-        return self
+        return background
     }
 
     /// Called when the app transitions from launching or foreground to background
@@ -120,6 +128,21 @@ extension Background {
     /// Use this method to revert any actions performed in `willLeave` (if applicable).
     func didReturn() {
         Logger.lifecycle.info("\(type(of: self)): \(#function)")
+        // A cancelled return shows the screens again; the drawn page and its mark stay for the next return.
+        appDependencies.mainCoordinator.restoreScreensHiddenForIdleReturn()
+    }
+
+    private func drawsIdleReturnNewTabPage(hasLaunchAction: Bool) -> Bool {
+        let mainCoordinator = appDependencies.mainCoordinator
+        let controller = mainCoordinator.controller
+        return appDependencies.idleReturnEvaluator.evaluateReturn().drawsNewTabPageOnForeground(
+            isFeatureOn: appDependencies.featureFlagger.isFeatureOn(.idleReturnNewTabPageOnForeground),
+            hasLaunchAction: hasLaunchAction,
+            isClearingTabs: sceneDependencies.autoClearService.isTabClearingEnabled || controller.autoClearInProgress,
+            isVoiceSessionActive: mainCoordinator.isVoiceSessionActive,
+            hasPageToReplace: mainCoordinator.tabManager.currentTabsModel.currentTab?.link != nil,
+            isAlertPresented: controller.presentedViewController is UIAlertController,
+            isTabSwitcherPresented: controller.presentedViewController is TabSwitcherViewController)
     }
 
 }

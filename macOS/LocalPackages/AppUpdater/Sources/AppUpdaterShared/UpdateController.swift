@@ -43,8 +43,10 @@ public protocol AppStoreUpdateControllerFactory {
 }
 
 public protocol SparkleUpdateControllerFactory {
+    @MainActor
     static func instantiate(internalUserDecider: InternalUserDecider,
                             featureFlagger: FeatureFlagger,
+                            privacyConfigurationManager: PrivacyConfigurationManaging,
                             pixelFiring: PixelFiring?,
                             notificationPresenter: any UpdateNotificationPresenting,
                             keyValueStore: any ThrowingKeyValueStoring,

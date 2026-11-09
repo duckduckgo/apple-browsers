@@ -67,6 +67,7 @@ class ReleaseStatus:
     locales: Optional[int] = None
     strings_awaiting_authorization: Optional[int] = None
     jobs_awaiting_authorization: List[Dict] = field(default_factory=list)
+    jobs_in_progress: List[Dict] = field(default_factory=list)
     reason: str = ""
 
     def as_dict(self) -> Dict:
@@ -330,6 +331,32 @@ class SmartlingClient:
             jobs.extend(items)
             if not items or len(jobs) >= page.get('totalCount', 0):
                 return jobs
+
+    async def list_source_hashcodes(self, file_uri: str) -> List[str]:
+        """List the hashcodes of a file's strings, page by page: the Strings API returns at most 500 at a time."""
+        hashcodes = []
+        while True:
+            data = await self._request(
+                'GET',
+                f'/strings-api/v2/projects/{self.creds.project_id}/source-strings',
+                params={'fileUri': file_uri, 'limit': '500', 'offset': str(len(hashcodes))}
+            )
+            items = data['response']['data'].get('items', [])
+            hashcodes.extend(item['hashcode'] for item in items)
+            if len(items) < 500:
+                return hashcodes
+
+    async def search_jobs(self, hashcodes: List[str], locale_ids: List[str]) -> List[Dict]:
+        """List the jobs, in any status, that hold any of the strings in any of the locales, 500 strings per search."""
+        jobs = []
+        for start in range(0, len(hashcodes), 500):
+            data = await self._request(
+                'POST',
+                f'/jobs-api/v3/projects/{self.creds.project_id}/jobs/search',
+                json={'hashcodes': hashcodes[start:start + 500], 'localeIds': locale_ids}
+            )
+            jobs.extend(data['response']['data'].get('items', []))
+        return jobs
 
     async def list_open_source_issues(self) -> List[Dict]:
         """List the project's open issues on English strings, page by page: the Issues API returns at most 30 at a time."""
@@ -743,6 +770,7 @@ async def run_release_status(client: SmartlingClient,
         strings_left = 0
         awaiting_authorization = 0
         incomplete_locales = set()
+        incomplete_files = []
         for file_uri in file_uris:
             try:
                 file_status = await client.get_file_status(file_uri)
@@ -758,6 +786,8 @@ async def run_release_status(client: SmartlingClient,
             strings_left += sum(left.values())
             awaiting_authorization += strings_awaiting_authorization(file_status, locales)
             incomplete_locales.update(left)
+            if left:
+                incomplete_files.append(file_uri)
 
         if total_strings == 0:
             raise RuntimeError("The release files have no strings")
@@ -775,7 +805,11 @@ async def run_release_status(client: SmartlingClient,
             strings_awaiting_authorization=awaiting_authorization,
             incomplete_locales=sorted(incomplete_locales),
             locales=len(locales),
-            jobs_awaiting_authorization=await describe_jobs_awaiting_authorization(client) if strings_left else []
+            jobs_awaiting_authorization=await describe_jobs_awaiting_authorization(client) if strings_left else [],
+            jobs_in_progress=(
+                await describe_jobs_in_progress(client, incomplete_files, sorted(incomplete_locales))
+                if strings_left else []
+            )
         )
     except Exception as error:  # pylint: disable=broad-except
         return failed_release_status(error, job_id, job_status)
@@ -788,6 +822,29 @@ async def describe_jobs_awaiting_authorization(client: SmartlingClient) -> List[
     except Exception as error:  # pylint: disable=broad-except
         log(f"⚠️ Could not list the jobs awaiting authorization: {error}")
         return []
+    return describe_jobs(client, "Jobs awaiting authorization", jobs)
+
+
+async def describe_jobs_in_progress(client: SmartlingClient, file_uris: List[str], locales: List[str]) -> List[Dict]:
+    """The jobs in progress that hold the release files' strings in the incomplete locales, with their links.
+
+    The release files are refreshed outside any job, so their strings get translated in the jobs of the PRs and merges
+    that added them: the release waits on those jobs.
+    """
+    try:
+        hashcodes = set()
+        for file_uri in file_uris:
+            hashcodes.update(await client.list_source_hashcodes(file_uri))
+        jobs = await client.search_jobs(sorted(hashcodes), locales)
+    except Exception as error:  # pylint: disable=broad-except
+        log(f"⚠️ Could not find the jobs in progress with the release's strings: {error}")
+        return []
+    in_progress = {job_uid(job): job for job in jobs if job.get('jobStatus') == 'IN_PROGRESS'}
+    return describe_jobs(client, "Jobs in progress with the release's strings", list(in_progress.values()))
+
+
+def describe_jobs(client: SmartlingClient, title: str, jobs: List[Dict]) -> List[Dict]:
+    """Jobs' names, creation dates and links, oldest first, also logged under title."""
     jobs = sorted(jobs, key=lambda job: job.get('createdDate') or '')
     descriptions = [
         {
@@ -802,7 +859,7 @@ async def describe_jobs_awaiting_authorization(client: SmartlingClient) -> List[
             f"- {job['name']} (created {job['created']}): {job['url']}" if job['created'] else f"- {job['name']}: {job['url']}"
             for job in descriptions
         ]
-        log("✋ Jobs awaiting authorization:\n" + '\n'.join(lines))
+        log(f"✋ {title}:\n" + '\n'.join(lines))
     return descriptions
 
 

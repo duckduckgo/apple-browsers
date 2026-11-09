@@ -184,6 +184,8 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
     let isSitePermissionsEnabled: Bool
     let sitePermissionsPixelHandler = SitePermissionsPixelHandler()
 
+    @MainActor private(set) lazy var browserToolsService = AIChatBrowserToolsService(featureFlagger: featureFlagger)
+
     @MainActor
     lazy var sitePermissionsStore = SitePermissionsStore(storage: UserDefaults.app.keyedStoring())
 
@@ -359,6 +361,15 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
         case .fire: return tabsModelProvider.fireModeTabsModel
         case .normal: return tabsModelProvider.normalTabsModel
         }
+    }
+
+    @MainActor
+    func makeBrowserToolScope(for owner: Tab) -> BrowserToolScope? {
+        let mode = owner.mode
+        guard tabsModel(for: mode).tabs.contains(where: { $0 === owner }) else { return nil }
+        return BrowserToolScope(owner: owner, source: makeTabAttachmentSource(for: owner), selectedTabID: { [weak self] in
+            self?.tabsModel(for: mode).currentTab?.uid
+        })
     }
 
     @MainActor

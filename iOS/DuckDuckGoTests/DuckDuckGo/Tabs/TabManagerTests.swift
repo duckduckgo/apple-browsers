@@ -1151,6 +1151,37 @@ final class TabManagerTests: XCTestCase {
         }
     }
 
+    func testBrowserToolServiceHasStableManagerOwnership() throws {
+        let manager = try makeManager(TabsModel(desktop: false))
+        XCTAssertTrue(manager.browserToolsService === manager.browserToolsService)
+    }
+
+    func testBrowserToolScopeUsesActualOwnerAndLiveNormalModelSelection() throws {
+        let owner = Tab(uid: "owner", fireTab: false)
+        let selected = Tab(uid: "selected", fireTab: false)
+        let fire = Tab(uid: "fire", fireTab: true)
+        let model = TabsModel(tabs: [owner, selected], currentIndex: 1, desktop: false)
+        let manager = try makeManager(model,
+                                      fireModel: TabsModel(tabs: [fire], desktop: false, mode: .fire),
+                                      featureFlagger: MockFeatureFlagger(enabledFeatureFlags: [.fireMode]))
+        let scope = try XCTUnwrap(manager.makeBrowserToolScope(for: owner))
+        XCTAssertTrue(scope.isValid)
+        XCTAssertEqual(scope.selectedTabID(), selected.uid)
+        XCTAssertEqual(scope.source.tabsProvider().map(\.uid), [owner.uid, selected.uid])
+        XCTAssertNil(manager.makeBrowserToolScope(for: Tab(uid: owner.uid, fireTab: false)))
+        model.select(tab: owner)
+        XCTAssertEqual(scope.selectedTabID(), owner.uid)
+        let added = Tab(fireTab: false)
+        model.insert(tab: added, placement: .atEnd, selectNewTab: true)
+        XCTAssertEqual(scope.selectedTabID(), added.uid)
+        XCTAssertEqual(scope.source.tabsProvider().map(\.uid), [owner.uid, selected.uid, added.uid])
+        XCTAssertEqual(manager.currentBrowsingMode, .normal)
+        let fireScope = try XCTUnwrap(manager.makeBrowserToolScope(for: fire))
+        XCTAssertFalse(fireScope.isValid)
+        manager.remove(tab: owner)
+        XCTAssertFalse(scope.isValid)
+    }
+
     private func makeAttachmentManager() throws -> (TabManager, [Tab]) {
         let tabs = (0..<3).map {
             Tab(link: Link(title: "Page \($0)", url: URL(string: "https://example.com/\($0)")!))

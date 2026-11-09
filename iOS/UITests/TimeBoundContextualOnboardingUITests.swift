@@ -25,6 +25,7 @@ final class TimeBoundContextualOnboardingUITests: XCTestCase {
     private let app = XCUIApplication()
     private let timeout = UITestTimeouts.navigation
     private let trackerPage = "https://privacy-test-pages.site/tracker-reporting/1major-via-script.html"
+    private let secondTrackerPage = "https://privacy-test-pages.site/tracker-reporting/1major-via-img.html"
     private let searchDialogTitle = "That’s DuckDuckGo Search!"
 
     override func setUpWithError() throws {
@@ -39,24 +40,27 @@ final class TimeBoundContextualOnboardingUITests: XCTestCase {
         try super.tearDownWithError()
     }
 
-    func testBeforeLimitShowsContextualSearchDialog() {
-        launch()
-        finishLinearOnboarding()
-        search()
-
-        XCTAssertTrue(app.staticTexts[searchDialogTitle].waitForExistence(timeout: timeout))
-        attachScreenshot(named: "Contextual search before the limit")
-    }
-
-    func testAppOpensLimitSuppressesSearchAndTrackerFreeSiteDialogs() {
+    func testAppOpensLimitSuppressesSearchSiteAndNewTabDialogs() {
         launch(maxAppOpens: 1)
         finishLinearOnboarding()
         relaunchPreservingOnboardingState()
+        assertNoContextualDialog()
 
         search()
         assertNoContextualDialog()
         openTrackerFreePage()
         assertNoContextualDialog()
+
+        dismissInputIfNeeded()
+        let tabSwitcher = app.buttons["Browser.Toolbar.Button.TabSwitcher"]
+        XCTAssertTrue(tabSwitcher.staticTexts["1"].waitForExistence(timeout: timeout))
+        tap(app.buttons["Browser.Toolbar.Button.Menu"])
+        tapButton("New Tab")
+        waitForBrowser()
+        dismissInputIfNeeded()
+        XCTAssertTrue(tabSwitcher.staticTexts["2"].waitForExistence(timeout: timeout))
+        assertNoContextualDialog()
+        attachScreenshot(named: "New tab after the limit")
     }
 
     func testDaysLimitSuppressesSearchAndTrackerFreeSiteDialogs() {
@@ -114,25 +118,6 @@ final class TimeBoundContextualOnboardingUITests: XCTestCase {
         assertNoContextualDialog()
         assertCurrentPageHasBlockedTrackers()
         assertNoContextualDialog()
-    }
-
-    func testNewTabAfterLimitShowsNoOnboardingDialog() {
-        launch(maxAppOpens: 1)
-        finishLinearOnboarding()
-        relaunchPreservingOnboardingState()
-        assertNoContextualDialog()
-        openTrackerFreePage()
-
-        dismissInputIfNeeded()
-        let tabSwitcher = app.buttons["Browser.Toolbar.Button.TabSwitcher"]
-        XCTAssertTrue(tabSwitcher.staticTexts["1"].waitForExistence(timeout: timeout))
-        tap(app.buttons["Browser.Toolbar.Button.Menu"])
-        tapButton("New Tab")
-        waitForBrowser()
-        dismissInputIfNeeded()
-        XCTAssertTrue(tabSwitcher.staticTexts["2"].waitForExistence(timeout: timeout))
-        assertNoContextualDialog()
-        attachScreenshot(named: "New tab after the limit")
     }
 
     func testWarmReturnPastLimitRemovesAnAlreadyVisibleSearchDialog() {
@@ -227,24 +212,22 @@ final class TimeBoundContextualOnboardingUITests: XCTestCase {
     }
 
     private func openSecondTrackerSite() {
-        navigate(to: "https://espn.com")
-        let espn = app.webViews.descendants(matching: .any).matching(NSPredicate(format: "label CONTAINS[c] %@", "ESPN")).firstMatch
-        XCTAssertTrue(espn.waitForExistence(timeout: timeout), "The second tracker site did not load.")
-        waitForPageLoad()
+        navigate(to: secondTrackerPage)
+        waitForPageText("1 major tracker loaded via img src")
     }
 
     private func navigate(to text: String) {
         tap(app.descendants(matching: .any)["searchEntry"].firstMatch)
         let field = app.textFields["searchEntry"].firstMatch
         XCTAssertTrue(field.waitForExistence(timeout: timeout))
+        // The keyboard introduction can animate in with or just after the keyboard, so give it a moment once the keyboard is up.
         let keyboardIntroduction = app.buttons["Continue"]
-        if keyboardIntroduction.isHittable {
-            keyboardIntroduction.tap()
+        let keyboard = app.keyboards.firstMatch
+        XCTAssertTrue(app.wait(for: NSPredicate { _, _ in keyboardIntroduction.exists || keyboard.exists }, timeout: timeout))
+        if keyboardIntroduction.waitForExistence(timeout: 1) {
+            tap(keyboardIntroduction)
         }
-        let clear = app.buttons["Clear text"]
-        if clear.isHittable {
-            clear.tap()
-        } else if let value = field.value as? String {
+        if let value = field.value as? String, !value.isEmpty {
             field.typeText(String(repeating: XCUIKeyboardKey.delete.rawValue, count: value.count))
         }
         field.typeText(text + "\n")
@@ -275,10 +258,13 @@ final class TimeBoundContextualOnboardingUITests: XCTestCase {
         waitForBrowser()
     }
 
+    /// Browsing dialogs appear about half a second after tracker info settles, so watch for any of them for several seconds.
     private func assertNoContextualDialog(file: StaticString = #filePath, line: UInt = #line) {
-        XCTAssertFalse(app.buttons["onboardingDialogDismissButton"].waitForExistence(timeout: 2), file: file, line: line)
-        XCTAssertFalse(app.staticTexts.matching(NSPredicate(format: "label CONTAINS %@", "Give it a try!")).firstMatch.exists, file: file, line: line)
-        XCTAssertFalse(app.staticTexts["You’ve got this!"].exists, file: file, line: line)
+        let dialog = app.descendants(matching: .any).matching(NSPredicate(
+            format: "identifier == %@ OR label CONTAINS %@ OR label CONTAINS %@ OR label == %@ OR label == %@",
+            "onboardingDialogDismissButton", "Give it a try!", "trying to track you here", "You’ve got this!", searchDialogTitle
+        )).firstMatch
+        XCTAssertFalse(dialog.waitForExistence(timeout: UITestTimeouts.elementExistence), "A contextual onboarding dialog appeared", file: file, line: line)
     }
 
     private func waitForBrowser() {
@@ -298,13 +284,12 @@ final class TimeBoundContextualOnboardingUITests: XCTestCase {
         element.tap()
     }
 
+    /// Waits until either the toolbar or an active input's dismiss button is available, then closes the input.
     private func dismissInputIfNeeded() {
-        for identifier in ["UnifiedToggleInput.Button.Dismiss", "Browser.OmniBar.Button.Dismiss"] {
-            let button = app.buttons[identifier]
-            if button.isHittable {
-                button.tap()
-            }
-        }
+        let menu = app.buttons["Browser.Toolbar.Button.Menu"]
+        let dismissButtons = ["UnifiedToggleInput.Button.Dismiss", "Browser.OmniBar.Button.Dismiss"].map { app.buttons[$0] }
+        XCTAssertTrue(app.wait(for: NSPredicate { _, _ in menu.isHittable || dismissButtons.contains { $0.isHittable } }, timeout: timeout))
+        dismissButtons.first { $0.isHittable }?.tap()
     }
 
     private func attachScreenshot(named name: String) {

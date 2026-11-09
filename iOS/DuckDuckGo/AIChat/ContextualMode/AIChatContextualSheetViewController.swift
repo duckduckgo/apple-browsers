@@ -1602,6 +1602,10 @@ private extension AIChatContextualSheetViewController {
         })
 
         view.addSubview(contentContainerView)
+        if #available(iOS 26, *), usesLiquidGlassHeader {
+            view.bringSubviewToFront(headerView)
+            view.bringSubviewToFront(aiChatEditHeaderView)
+        }
 
         setupConstraints()
         applySurfaceStyle()

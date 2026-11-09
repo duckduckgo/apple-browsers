@@ -41,7 +41,7 @@ final class AIChatContextualWebViewControllerTests: XCTestCase {
             }
             let settings = MockAIChatSettingsProvider(aiChatURL: URL(string: "about:blank")!)
             let pixels = StubContextualModePixelHandler()
-            let flagger = MockFeatureFlagger()
+            let flagger = MockFeatureFlagger(enabledFeatureFlags: [.aiChatContextualFloatingInput])
             let floatingInputFeature = AIChatContextualFloatingInputFeature(featureFlagger: flagger)
             let host = AIChatContextualUTIHost(originatingURLPublisher: Empty<URL?, Never>().eraseToAnyPublisher(),
                                                initialAttachedContext: nil, hasActiveChat: { true },
@@ -67,6 +67,11 @@ final class AIChatContextualWebViewControllerTests: XCTestCase {
             sheet.view.setNeedsLayout()
             sheet.view.layoutIfNeeded()
             webController.view.layoutIfNeeded()
+            let header = try XCTUnwrap(sheet.view.subviews.first { $0.firstSubview(ofType: AIChatHeaderGlassPill.self) != nil })
+            let content = try XCTUnwrap(webController.view.superview)
+            let headerIndex = try XCTUnwrap(sheet.view.subviews.firstIndex(of: header))
+            let contentIndex = try XCTUnwrap(sheet.view.subviews.firstIndex(of: content))
+            XCTAssertEqual(headerIndex > contentIndex, usesLiquidGlass)
             let input = host.mount(in: sheet)
             let restingInset = webView.obscuredContentInsets.bottom
             if usesLiquidGlass { XCTAssertGreaterThan(restingInset, 0) }

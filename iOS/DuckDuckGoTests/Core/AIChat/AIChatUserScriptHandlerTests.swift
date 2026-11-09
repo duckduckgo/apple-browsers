@@ -267,6 +267,51 @@ class AIChatUserScriptHandlerTests: XCTestCase {
         XCTAssertEqual(try XCTUnwrap(result as? Double), 0, accuracy: 0.5)
     }
 
+    func testCenteredWelcomeSettlesAboveKeyboardAfterConversationReset() async throws {
+        guard #available(iOS 26, *) else { throw XCTSkip("Requires WebKit obscured content insets") }
+        let (webView, window) = await makeChatScrollFixture(height: 600)
+        defer { window.isHidden = true }
+        _ = WebViewScrollViewInsetUpdater.beginManaging(webView.scrollView)
+        webView.scrollView.isScrollEnabled = false
+        let insets = UIEdgeInsets(top: 80, left: 0, bottom: 260, right: 0)
+        WebViewScrollViewInsetUpdater.update(webView.scrollView, insets: insets, isFloatingUIEnabled: true)
+        webView.obscuredContentInsets = insets
+        DuckAIChatScrollInsetStyler.apply(insets, to: webView)
+        _ = try await webView.callAsyncJavaScript("""
+        const style = document.createElement('style');
+        style.textContent = '#chat::after { display: none; }';
+        document.head.appendChild(style);
+        const chat = document.getElementById('chat');
+        chat.style.gap = '0';
+        chat.style.justifyContent = 'normal';
+        chat.innerHTML = '<article style="margin-block:auto;min-height:236px;flex-shrink:0">'
+            + '<div style="height:144px">Dax</div><div style="height:72px;margin-top:20px">Suggestions</div></article>';
+        """, arguments: [:], in: nil, contentWorld: .page)
+
+        for bottom in [260.0, 94.0, 260.0, 94.0] {
+            let insets = UIEdgeInsets(top: 80, left: 0, bottom: bottom, right: 0)
+            WebViewScrollViewInsetUpdater.update(webView.scrollView, insets: insets, isFloatingUIEnabled: true)
+            webView.obscuredContentInsets = insets
+            DuckAIChatScrollInsetStyler.apply(insets, to: webView)
+            let result = try await webView.callAsyncJavaScript("""
+            const chat = document.getElementById('chat');
+            const deadline = performance.now() + 1000;
+            while (performance.now() < deadline) {
+                await new Promise(resolve => requestAnimationFrame(resolve));
+                if (Math.abs(innerHeight - expectedHeight) < 0.5
+                    && chat.querySelector('article').getBoundingClientRect().bottom <= innerHeight + 0.5) break;
+            }
+            chat.scrollTop = chat.scrollHeight;
+            return { offset: chat.scrollTop, top: chat.querySelector('article').getBoundingClientRect().top,
+                bottom: chat.querySelector('article').getBoundingClientRect().bottom, viewport: innerHeight };
+            """, arguments: ["expectedHeight": 600 - 80 - bottom], in: nil, contentWorld: .page)
+            let metrics = try XCTUnwrap(result as? [String: Any])
+            XCTAssertEqual(try XCTUnwrap(metrics["offset"] as? Double), 0, accuracy: 0.5)
+            XCTAssertGreaterThanOrEqual(try XCTUnwrap(metrics["top"] as? Double), 0)
+            XCTAssertLessThanOrEqual(try XCTUnwrap(metrics["bottom"] as? Double), try XCTUnwrap(metrics["viewport"] as? Double) + 0.5)
+        }
+    }
+
     func testScrollInsetsUseConversationInsteadOfTallNestedAnswer() async throws {
         let (webView, window) = await makeChatScrollFixture(height: 600)
         defer { window.isHidden = true }

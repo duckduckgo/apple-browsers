@@ -243,6 +243,37 @@ class FloatingUIXCUITestCase: XCTestCase {
         assertConfiguredBarPosition()
     }
 
+    func verifyAddressBarButtonSpacingAfterRotation() {
+        launchApp(additionalArguments: ["-ff.duckAIAndInputLiquidGlass", "true"])
+        openPage(path: "/page-one", heading: Page.oneHeading)
+        openNewTab()
+        openPage(path: "/page-two", heading: Page.twoHeading)
+
+        for (index, orientation) in [UIDeviceOrientation.landscapeLeft, .portrait, .landscapeRight, .portrait].enumerated() {
+            XCUIDevice.shared.orientation = orientation
+            XCTAssertTrue(waitUntil(timeout: timeout) {
+                (self.app.frame.width > self.app.frame.height) == orientation.isLandscape
+            })
+            tabSwitcherButton.tap()
+            let title = index.isMultiple(of: 2) ? "Page One" : "Page Two"
+            let tab = app.buttons.matching(NSPredicate(format: "label BEGINSWITH %@", "Open \"\(title)\"")).firstMatch
+            XCTAssertTrue(tab.waitForHittable(timeout: timeout))
+            tab.tap()
+            let share = element(withIdentifier: AccessibilityID.customizable)
+            XCTAssertTrue(share.waitForHittable(timeout: timeout))
+            let refresh = ["Browser.OmniBar.Button.Refresh", "Browser.OmniBar.Button.RefreshExternal"]
+                .map { element(withIdentifier: $0) }.first { $0.isHittable }
+            guard let refresh else { return XCTFail("Refresh button missing after rotation") }
+            XCTAssertGreaterThanOrEqual(refresh.frame.width, 40)
+            XCTAssertGreaterThanOrEqual(share.frame.width, 40)
+            XCTAssertFalse(refresh.frame.intersects(share.frame))
+            let screenshot = XCTAttachment(screenshot: app.screenshot())
+            screenshot.name = "\(barPosition.rawValue) address bar, rotation \(index + 1)"
+            screenshot.lifetime = .keepAlways
+            add(screenshot)
+        }
+    }
+
     func verifyDomainCapsuleAppears() {
         openPage(path: "/long-page", heading: Page.longHeading)
 
@@ -1127,6 +1158,7 @@ final class FloatingUITopBarTests: FloatingUIXCUITestCase {
     func testBrowserChromeLongPressMenus() { verifyBrowserChromeLongPressMenus() }
     func testAddressBarButtonMenus() { verifyAddressBarButtonMenus() }
     func testBrowserChromeInLandscape() { verifyBrowserChromeInLandscape() }
+    func testAddressBarButtonSpacingAfterRotation() { verifyAddressBarButtonSpacingAfterRotation() }
     func testDomainCapsuleAppears() { verifyDomainCapsuleAppears() }
     func testBrowsingMenuOpens() { verifyBrowsingMenuOpens() }
     func testDefaultCustomizableFireButton() { verifyDefaultCustomizableFireButton() }
@@ -1164,6 +1196,7 @@ final class FloatingUIBottomBarTests: FloatingUIXCUITestCase {
     func testBrowserChromeLongPressMenus() { verifyBrowserChromeLongPressMenus() }
     func testAddressBarButtonMenus() { verifyAddressBarButtonMenus() }
     func testBrowserChromeInLandscape() { verifyBrowserChromeInLandscape() }
+    func testAddressBarButtonSpacingAfterRotation() { verifyAddressBarButtonSpacingAfterRotation() }
     func testDomainCapsuleAppears() { verifyDomainCapsuleAppears() }
     func testBrowsingMenuOpens() { verifyBrowsingMenuOpens() }
     func testDefaultCustomizableFireButton() { verifyDefaultCustomizableFireButton() }

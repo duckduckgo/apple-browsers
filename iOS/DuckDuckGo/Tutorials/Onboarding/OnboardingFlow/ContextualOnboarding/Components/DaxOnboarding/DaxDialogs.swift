@@ -315,7 +315,6 @@ final class DaxDialogs: NewTabDialogSpecProvider, ContextualOnboardingLogic, Con
 
     public let isDismissedPublisher: PassthroughSubject<Bool, Never>
 
-    /// Use singleton accessor, this is only accessible for tests
     init(settings: DaxDialogsSettings = DefaultDaxDialogsSettings(),
          entityProviding: EntityProviding,
          variantManager: VariantManager = DefaultVariantManager(),

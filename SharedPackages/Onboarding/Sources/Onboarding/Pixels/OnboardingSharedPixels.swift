@@ -175,7 +175,7 @@ final public class OnboardingSharedPixelHandler: OnboardingSharedPixelHandling {
             additionalParameters[ParameterKeys.variant] = variant.rawValue
         }
 
-        // Preserve the shared pixel name while deduplicating the timeout across reasons and context changes.
+        // The time-limit pixel fires once per install, whatever its reason or onboarding context.
         let frequency: PixelKit.Frequency = if case .timeLimit = event { .legacyInitial } else { .uniqueByNameAndParameters }
         pixelFiring?.fire(event.prefixed(platform.pixelPrefix),
                           frequency: frequency,

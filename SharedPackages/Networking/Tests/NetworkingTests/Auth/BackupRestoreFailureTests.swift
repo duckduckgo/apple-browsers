@@ -44,6 +44,7 @@ final class BackupRestoreFailureTests: XCTestCase {
 
     func testRejectedBackupsAndRefreshes_arePermanent() {
         XCTAssertEqual(BackupRestoreFailure(TokenBackupError.unavailable), .permanent)
+        XCTAssertEqual(BackupRestoreFailure(TokenBackupError.undecodable), .permanent)
         XCTAssertEqual(BackupRestoreFailure(TokenBackupError.expired), .permanent)
         XCTAssertEqual(BackupRestoreFailure(TokenBackupError.sessionChanged), .permanent)
         XCTAssertEqual(BackupRestoreFailure(OAuthClientError.invalidTokenRequest(.reused)), .permanent)

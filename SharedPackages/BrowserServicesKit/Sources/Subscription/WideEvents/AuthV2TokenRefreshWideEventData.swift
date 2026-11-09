@@ -154,8 +154,8 @@ public enum BackupRecoveryOutcome: String, Codable, CaseIterable {
     case succeeded
     /// No backup restore ran: no backup is stored, backups are off, or no recovery is configured.
     case notAttempted = "not_attempted"
-    /// The backup can never restore the session: it belongs to another account, predates the last sign-out or has expired,
-    /// or the server rejected it.
+    /// The backup can never restore the session: it can't be decoded, belongs to another account, predates the last sign-out or
+    /// has expired, or the server rejected it.
     case rejected
     /// The backup restore failed for a temporary or unknown reason.
     case failed

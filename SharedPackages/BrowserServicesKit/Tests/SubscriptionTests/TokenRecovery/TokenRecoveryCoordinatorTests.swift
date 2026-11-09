@@ -159,6 +159,7 @@ final class TokenRecoveryCoordinatorTests: XCTestCase {
         XCTAssertEqual(BackupRecoveryOutcome(.recovered), .succeeded)
         XCTAssertEqual(BackupRecoveryOutcome(.sessionChanged), .sessionChanged)
         XCTAssertEqual(BackupRecoveryOutcome(.failed(TokenBackupError.accountMismatch)), .rejected)
+        XCTAssertEqual(BackupRecoveryOutcome(.failed(TokenBackupError.undecodable)), .rejected)
         XCTAssertEqual(BackupRecoveryOutcome(.failed(OAuthClientError.invalidTokenRequest(.reused))), .rejected)
         XCTAssertEqual(BackupRecoveryOutcome(.failed(URLError(.timedOut))), .failed)
         XCTAssertEqual(BackupRecoveryOutcome(.failed(TokenBackupError.readFailed(underlying: NSError(domain: "keychain", code: 1)))), .failed)

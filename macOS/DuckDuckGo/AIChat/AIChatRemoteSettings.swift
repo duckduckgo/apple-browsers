@@ -107,11 +107,6 @@ struct AIChatRemoteSettings: AIChatRemoteSettingsProvider {
         return promptLimit
     }
 
-    /// The New Tab Page omnibar's paste threshold and prompt cap, from the `ntpPastedText` settings.
-    var ntpPromptLimits: AIChatPromptLimits {
-        AIChatPromptLimits(privacyConfig: privacyConfigurationManager.privacyConfig, subfeature: AIChatSubfeature.ntpPastedText)
-    }
-
     // MARK: - Private
 
     private func getSettingsData(_ value: SettingsValue) -> String {

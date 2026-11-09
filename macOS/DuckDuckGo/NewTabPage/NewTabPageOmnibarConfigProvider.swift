@@ -97,6 +97,7 @@ final class NewTabPageOmnibarConfigProvider: NewTabPageOmnibarConfigProviding {
     private let aiChatShortcutSettingProvider: NewTabPageAIChatShortcutSettingProviding
     private let featureFlagger: FeatureFlagger
     private let remoteSettings: AIChatRemoteSettings
+    private let privacyConfigurationManager: PrivacyConfigurationManaging
     private let firePixel: (PixelKit.Event) -> Void
     private var aiChatPreferencesPersistor: AIChatPreferencesPersisting
     private let searchPreferences: SearchPreferences
@@ -125,6 +126,7 @@ final class NewTabPageOmnibarConfigProvider: NewTabPageOmnibarConfigProviding {
          aiChatShortcutSettingProvider: NewTabPageAIChatShortcutSettingProviding,
          featureFlagger: FeatureFlagger,
          remoteSettings: AIChatRemoteSettings = AIChatRemoteSettings(),
+         privacyConfigurationManager: PrivacyConfigurationManaging = Application.appDelegate.privacyFeatures.contentBlocking.privacyConfigurationManager,
          aiChatPreferencesPersistor: AIChatPreferencesPersisting = AIChatPreferencesPersistor(),
          searchPreferences: SearchPreferences,
          windowControllersManager: WindowControllersManagerProtocol? = nil,
@@ -141,6 +143,7 @@ final class NewTabPageOmnibarConfigProvider: NewTabPageOmnibarConfigProviding {
         self.aiChatShortcutSettingProvider = aiChatShortcutSettingProvider
         self.featureFlagger = featureFlagger
         self.remoteSettings = remoteSettings
+        self.privacyConfigurationManager = privacyConfigurationManager
         self.aiChatPreferencesPersistor = aiChatPreferencesPersistor
         self.searchPreferences = searchPreferences
         self.windowControllersManager = windowControllersManager
@@ -612,7 +615,7 @@ final class NewTabPageOmnibarConfigProvider: NewTabPageOmnibarConfigProviding {
 
     var promptLimits: NewTabPageDataModel.OmnibarPromptLimits? {
         guard isPastedTextEnabled else { return nil }
-        let limits = remoteSettings.ntpPromptLimits
+        let limits = AIChatPromptLimits(privacyConfig: privacyConfigurationManager.privacyConfig, subfeature: AIChatSubfeature.ntpPastedText)
         return .init(pasteConversionThreshold: limits.pasteConversionThreshold, maxCharacters: limits.maxCharacters)
     }
 

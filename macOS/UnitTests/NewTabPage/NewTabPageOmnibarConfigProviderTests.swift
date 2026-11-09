@@ -1049,8 +1049,8 @@ final class NewTabPageOmnibarConfigProviderTests: XCTestCase {
     @MainActor
     func testPastedText_isOffWithoutTheFlagAndUsesTheBuiltInLimitsWithoutSettings() throws {
         let featureFlagger = MockFeatureFlagger()
-        let remoteSettings = AIChatRemoteSettings(privacyConfigurationManager: MockPrivacyConfigurationManager(privacyConfig: MockPrivacyConfiguration()))
-        let provider = NewTabPageOmnibarConfigProvider(keyValueStore: try makeStore(), aiChatShortcutSettingProvider: MockNewTabPageAIChatShortcutSettingProvider(), featureFlagger: featureFlagger, remoteSettings: remoteSettings, searchPreferences: makeSearchPreferences())
+        let privacyConfigurationManager = MockPrivacyConfigurationManager(privacyConfig: MockPrivacyConfiguration())
+        let provider = NewTabPageOmnibarConfigProvider(keyValueStore: try makeStore(), aiChatShortcutSettingProvider: MockNewTabPageAIChatShortcutSettingProvider(), featureFlagger: featureFlagger, privacyConfigurationManager: privacyConfigurationManager, searchPreferences: makeSearchPreferences())
 
         XCTAssertFalse(provider.isPastedTextEnabled)
         XCTAssertNil(provider.promptLimits)
@@ -1066,8 +1066,8 @@ final class NewTabPageOmnibarConfigProviderTests: XCTestCase {
         featureFlagger.enabledFeatureFlags = [.aiChatNtpPastedText]
         let privacyConfig = MockPrivacyConfiguration()
         privacyConfig.subfeatureSettings = #"{ "pasteConversionThreshold": 2000, "maxCharacters": 8000 }"#
-        let remoteSettings = AIChatRemoteSettings(privacyConfigurationManager: MockPrivacyConfigurationManager(privacyConfig: privacyConfig))
-        let provider = NewTabPageOmnibarConfigProvider(keyValueStore: try makeStore(), aiChatShortcutSettingProvider: MockNewTabPageAIChatShortcutSettingProvider(), featureFlagger: featureFlagger, remoteSettings: remoteSettings, searchPreferences: makeSearchPreferences())
+        let privacyConfigurationManager = MockPrivacyConfigurationManager(privacyConfig: privacyConfig)
+        let provider = NewTabPageOmnibarConfigProvider(keyValueStore: try makeStore(), aiChatShortcutSettingProvider: MockNewTabPageAIChatShortcutSettingProvider(), featureFlagger: featureFlagger, privacyConfigurationManager: privacyConfigurationManager, searchPreferences: makeSearchPreferences())
 
         XCTAssertEqual(provider.promptLimits, .init(pasteConversionThreshold: 2_000, maxCharacters: 8_000))
     }
@@ -1076,8 +1076,8 @@ final class NewTabPageOmnibarConfigProviderTests: XCTestCase {
     func testPastedTextConfigPublisher_firesWhenTheFlagOrTheLimitsChange() throws {
         let featureFlagger = MockFeatureFlagger()
         let privacyConfig = MockPrivacyConfiguration()
-        let remoteSettings = AIChatRemoteSettings(privacyConfigurationManager: MockPrivacyConfigurationManager(privacyConfig: privacyConfig))
-        let provider = NewTabPageOmnibarConfigProvider(keyValueStore: try makeStore(), aiChatShortcutSettingProvider: MockNewTabPageAIChatShortcutSettingProvider(), featureFlagger: featureFlagger, remoteSettings: remoteSettings, searchPreferences: makeSearchPreferences())
+        let privacyConfigurationManager = MockPrivacyConfigurationManager(privacyConfig: privacyConfig)
+        let provider = NewTabPageOmnibarConfigProvider(keyValueStore: try makeStore(), aiChatShortcutSettingProvider: MockNewTabPageAIChatShortcutSettingProvider(), featureFlagger: featureFlagger, privacyConfigurationManager: privacyConfigurationManager, searchPreferences: makeSearchPreferences())
         var changes = 0
         let cancellable = provider.pastedTextConfigPublisher.sink { changes += 1 }
 

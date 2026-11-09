@@ -739,7 +739,8 @@ final class AIChatTabChatHeaderView: UIView {
     }
 
     private func makeRightPairStandIn() -> AIChatHeaderGlassPill {
-        let pill = Self.makeRightPairPill(holding: [makePlusIconStandIn(), makeTabSwitcherStandIn()])
+        let pill = Self.makeRightPairPill(holding: [makePlusIconStandIn(), makeTabSwitcherStandIn()],
+                                          usesFloatingAIChrome: usesFloatingAIChrome)
         pill.applyShadow(dimmed: state.isOnboardingLocked)
         pill.isUserInteractionEnabled = false
         return pill

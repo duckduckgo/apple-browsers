@@ -52,18 +52,17 @@ class DuckPlayerTests: UITestCase {
     }
 
     /// Finds a YouTube video link on the SERP, checking for both possible title formats
-    /// (with and without " - YouTube" suffix)
+    /// (with and without " - YouTube" suffix).
+    /// Links to `/live/` URLs are skipped because Duck Player only redirects `/watch?v=` URLs.
     private func findOrganicVideoLink(timeout: TimeInterval = UITests.Timeouts.navigation) -> XCUIElement? {
-        // Try the full title with " - YouTube" suffix first
-        let organicVideo = app.links.containing(.staticText, identifier: Self.organicVideoTitle).firstMatch
-        if organicVideo.waitForExistence(timeout: timeout) {
-            return organicVideo
-        }
+        // Try the full title with " - YouTube" suffix first, then fall back to the shorter title without suffix
+        for title in [Self.organicVideoTitle, Self.youtubeVideoTitle] {
+            let links = app.links.containing(.staticText, identifier: title)
+            guard links.firstMatch.waitForExistence(timeout: timeout) else { continue }
 
-        // Fall back to the shorter title without suffix
-        let shortTitleVideo = app.links.containing(.staticText, identifier: Self.youtubeVideoTitle).firstMatch
-        if shortTitleVideo.waitForExistence(timeout: timeout) {
-            return shortTitleVideo
+            if let link = links.allElementsBoundByIndex.first(where: { !($0.url ?? "").contains("/live/") }) {
+                return link
+            }
         }
 
         return nil

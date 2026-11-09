@@ -48,8 +48,7 @@ public final class BackupTokenRecovery: TokenRecoveryStrategy {
 
     /// Restores from the backup. The backup must belong to the dead current token's account, when there is one.
     /// `OAuthClient` also rejects a backup issued before the last sign-out.
-    /// For `.missingToken`, a restore within `retryInterval` of a failure that isn't `BackupRestoreFailure.permanent` is skipped;
-    /// `.accountCreation` restores are never skipped.
+    /// For `.missingToken`, a restore within `retryInterval` of a failure that isn't `BackupRestoreFailure.permanent` is skipped.
     /// - Returns: `.notApplicable` when no backup is stored or the restore is skipped, `.sessionChanged` when the session changed
     ///   during the restore, `.failed` with the error `restoreFromBackup` threw otherwise.
     public func recover(_ context: TokenRecoveryContext) async -> TokenRecoveryResult {

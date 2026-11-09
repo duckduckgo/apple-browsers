@@ -25,8 +25,6 @@ public enum TokenRecoveryTrigger: String {
     case invalidToken = "invalid_token"
     /// No current token is stored.
     case missingToken = "missing_token"
-    /// No current token is stored and an account is about to be created.
-    case accountCreation = "account_creation"
 }
 
 /// The state a token recovery starts from.

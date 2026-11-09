@@ -16,6 +16,7 @@
 //  limitations under the License.
 //
 
+import EventHub
 import FeatureFlags_macOS
 import Persistence
 import PrivacyConfig
@@ -74,7 +75,8 @@ final class WebExtensionManagerFactoryTests: XCTestCase {
                                                      privacyConfigurationManager: MockPrivacyConfigurationManaging(),
                                                      autoconsentPreferences: Preferences(),
                                                      themeManager: ThemeManager(appearancePreferences: .mock),
-                                                     buildType: buildType, featureFlagger: flags)
+                                                     buildType: buildType, featureFlagger: flags,
+                                                     eventHub: RecordingEventHub())
     }
 
     private struct Preferences: AutoconsentPreferencesProviding {

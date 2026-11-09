@@ -59,7 +59,6 @@ let package = Package(
                 .product(name: "UIComponents", package: "UIComponents")
             ],
             resources: [
-                .process("jsSources"),
                 .copy("PrivacyInfo.xcprivacy")
             ]
         ),
@@ -67,7 +66,10 @@ let package = Package(
             name: "SitePermissionsTests",
             dependencies: [
                 "SitePermissions",
+                .product(name: "BrowserServicesKit", package: "BrowserServicesKit"),
                 .product(name: "BrowserServicesKitTestsUtils", package: "BrowserServicesKit"),
+                .product(name: "PrivacyConfig", package: "BrowserServicesKit"),
+                .product(name: "PrivacyConfigTestsUtils", package: "BrowserServicesKit"),
                 .product(name: "Persistence", package: "Persistence")
             ]
         )

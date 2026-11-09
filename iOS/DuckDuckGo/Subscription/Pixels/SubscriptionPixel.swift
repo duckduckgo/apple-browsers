@@ -240,12 +240,14 @@ enum SubscriptionBackupTokenPixel: PixelKit.Event {
     case renewed
     /// Renewing the backup failed.
     case renewalFailed(Error)
-    /// Reading or writing the backup's keychain item failed.
-    case keychainError(AccountKeychainAccessType, AccountKeychainAccessError)
+    /// Reading, writing or deleting the backup's keychain item failed, during the client action given, or nil when the keychain storage
+    /// found the problem on its own.
+    case keychainError(TokenBackupAction?, TokenBackupStorageOperation, Error)
 
     private static let triggerKey = "trigger"
     private static let reasonKey = "reason"
-    private static let accessTypeKey = "access_type"
+    private static let actionKey = "action"
+    private static let operationKey = "operation"
 
     var name: String {
         switch self {
@@ -263,8 +265,8 @@ enum SubscriptionBackupTokenPixel: PixelKit.Event {
             return [Self.triggerKey: trigger.rawValue]
         case .restoreFailed(let trigger, let reason, _):
             return [Self.triggerKey: trigger.rawValue, Self.reasonKey: reason.rawValue]
-        case .keychainError(let accessType, _):
-            return [Self.accessTypeKey: accessType.rawValue]
+        case .keychainError(let action, let operation, _):
+            return [Self.actionKey: action?.rawValue ?? "none", Self.operationKey: operation.rawValue]
         case .renewed, .renewalFailed:
             return nil
         }

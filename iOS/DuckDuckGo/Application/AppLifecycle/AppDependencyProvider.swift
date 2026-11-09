@@ -305,10 +305,8 @@ final class AppDependencyProvider: DependencyProvider {
         }
         let backupTokenStorage = SubscriptionTokenKeychainStorage(keychainManager: keychainManager,
                                                                   userDefaults: subscriptionUserDefaults,
-                                                                  field: .backupTokenContainer) { accessType, error in
-            Logger.subscriptionKeychain.error("Backup token keychain error, \(accessType.rawValue, privacy: .public): \(error.localizedDescription, privacy: .public)")
-            pixelHandler.handle(pixel: .backupKeychainError(accessType, error))
-        }
+                                                                  field: .backupTokenContainer,
+                                                                  errorEventsHandler: pixelHandler.backupKeychainErrorHandler())
 
         // Init V2 classes for migration
         let authEnvironment: OAuthEnvironment = subscriptionEnvironment.serviceEnvironment == .production ? .production : .staging

@@ -660,6 +660,26 @@ final class UTIAttachmentControllerTests: XCTestCase {
         XCTAssertFalse(askPage.attributes.contains(.disabled))
     }
 
+    // MARK: - Attach menu pixels
+
+    func test_attachMenuItem_firesItemSelectedPixelWithReporterSurface() throws {
+        guard #available(iOS 16, *) else { throw XCTSkip("UIAction.performWithSender requires iOS 16") }
+        config.model = makeModel(supportsImageUpload: true)
+        config.limits = makeLimits()
+        let controller = makeController()
+        let menu = try XCTUnwrap(controller.makeAttachmentMenu())
+        let attachPhoto = try XCTUnwrap(menu.children.compactMap { $0 as? UIAction }
+            .first { $0.title == UserText.aiChatAttachmentOptionAttachPhoto })
+
+        // The menu holds the controller weakly; keep it alive through the action.
+        withExtendedLifetime(controller) { attachPhoto.performWithSender(nil, target: nil) }
+
+        let call = try XCTUnwrap(pixelKitMock.actualFireCalls.last)
+        XCTAssertEqual(call.pixel.name, "m_aichat_unified_input_attach_menu_item_selected")
+        XCTAssertEqual(call.pixel.parameters, ["surface": "address_bar", "item": "photo_library"])
+        XCTAssertEqual(call.frequency, .dailyAndCount)
+    }
+
     // MARK: - Helpers
 
     private func makePickerPixelSession() -> MultiTabPickerPixelSession {

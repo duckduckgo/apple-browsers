@@ -19,6 +19,8 @@ on:
       - 'SharedPackages/Persistence/**'
       - 'SharedPackages/PixelKit/**'
       - 'SharedPackages/WideEvent/**'
+      - '.github/shared-package-checks.json'
+      - 'scripts/run-shared-package-checks.sh'
       - 'scripts/check-swift-concurrency-warnings.py'
   pull_request:
     # opened, synchronize, reopened are the default triggering events for a pull request
@@ -38,6 +40,8 @@ jobs:
     with:
       paths: |
         .github/workflows/bsk_pr_checks.yml
+        .github/shared-package-checks.json
+        scripts/run-shared-package-checks.sh
         scripts/check-swift-concurrency-warnings.py
         .github/workflows/should_run_pr_checks.yml
         .github/actions/**
@@ -328,54 +332,7 @@ jobs:
         working-directory: .
         env:
           DESTINATION: ${{ steps.select-simulator.outputs.destination }}
-        run: |
-          failed=()
-          for package in DDGError ICSParser Infrastructure/DesignResourcesKit Infrastructure/SystemFrameworksExtensions; do
-            (
-              cd "SharedPackages/${package}" || exit 1
-              scheme="${package##*/}"
-              test_settings=()
-              warning_sources=(Sources Tests)
-              if [[ "$package" == Infrastructure/SystemFrameworksExtensions ]]; then
-                scheme="SystemFrameworksExtensions-Package"
-                test_settings=(-only-testing:FoundationExtensionsTests)
-                warning_sources=(
-                  Sources/FoundationExtensions
-                  Sources/CombineExtensions
-                  Sources/UIKitExtensions
-                  Sources/UIKitExtensionsProxy
-                  Tests/FoundationExtensionsTests
-                )
-              fi
-              set -o pipefail && xcodebuild clean test \
-                -scheme "$scheme" \
-                "${test_settings[@]}" \
-                -destination "$DESTINATION" \
-                -derivedDataPath DerivedData \
-                CODE_SIGNING_ALLOWED=NO \
-                2>&1 | tee ios-build-log.txt \
-                | xcbeautify --report junit --report-path . --junit-report-filename ios-unittests.xml || exit 1
-              python3 "$GITHUB_WORKSPACE/scripts/check-swift-concurrency-warnings.py" ios-build-log.txt "${warning_sources[@]}"
-            ) || failed+=("$package")
-          done
-          if (( ${#failed[@]} > 0 )); then
-            echo "::error::Package checks failed for: ${failed[*]}"
-            exit 1
-          fi
-
-      - name: Validate DesignResourcesKitIcons (iOS)
-        if: (success() || failure()) && steps.select-simulator.outcome == 'success'
-        working-directory: SharedPackages/Infrastructure/DesignResourcesKitIcons
-        env:
-          DESTINATION: ${{ steps.select-simulator.outputs.destination }}
-        run: |
-          set -o pipefail && xcodebuild clean build \
-            -scheme DesignResourcesKitIcons \
-            -destination "$DESTINATION" \
-            -derivedDataPath DerivedData \
-            CODE_SIGNING_ALLOWED=NO \
-            2>&1 | tee ios-build-log.txt | xcbeautify || exit 1
-          python3 "$GITHUB_WORKSPACE/scripts/check-swift-concurrency-warnings.py" ios-build-log.txt Sources
+        run: bash scripts/run-shared-package-checks.sh ios "$DESTINATION"
 
       - name: Report job duration
         if: success() || (always() && steps.run-unit-tests-ios.outcome == 'failure')
@@ -525,71 +482,7 @@ jobs:
 
       - name: Run tests
         id: run-unit-tests
-        run: |
-          # Every package runs even if an earlier one fails, so one broken package cannot hide
-          # another. Clean selected packages so cached compilation cannot hide warnings.
-          # Each package writes its own report next to its manifest, matching the BSK job layout.
-          failed=()
-          for package in Common DDGError ICSParser Infrastructure/DesignResourcesKit Infrastructure/SystemFrameworksExtensions Networking Persistence PixelKit WideEvent; do
-            echo "::group::${package}"
-            (
-              cd "SharedPackages/${package}" || exit 1
-              scheme="${package##*/}"
-              test_settings=()
-              check_concurrency=false
-              build_actions=(test)
-              warning_sources=(Sources Tests)
-              case "$package" in
-                DDGError|ICSParser|Infrastructure/DesignResourcesKit) check_concurrency=true; build_actions=(clean test) ;;
-                Infrastructure/SystemFrameworksExtensions)
-                  scheme="SystemFrameworksExtensions-Package"
-                  test_settings=(-only-testing:FoundationExtensionsTests)
-                  check_concurrency=true
-                  build_actions=(clean test)
-                  warning_sources=(
-                    Sources/FoundationExtensions
-                    Sources/CombineExtensions
-                    Sources/UIKitExtensions
-                    Sources/UIKitExtensionsProxy
-                    Tests/FoundationExtensionsTests
-                  )
-                  ;;
-              esac
-              set -o pipefail && xcodebuild "${build_actions[@]}" \
-                -scheme "$scheme" \
-                -destination 'platform=macOS' \
-                -derivedDataPath DerivedData \
-                -skipPackagePluginValidation \
-                -skipMacroValidation \
-                -test-iterations 3 \
-                -retry-tests-on-failure \
-                CODE_SIGNING_ALLOWED=NO \
-                "${test_settings[@]}" \
-                2>&1 | tee build-log.txt \
-                | sed -e 's/CoreData: error:/CoreData: [notice]:/g' -e 's/Failed to create NSXPCConnection/[notice] NSXPCConnection unavailable/g' \
-                | xcbeautify --report junit --report-path . --junit-report-filename package-tests.xml || exit 1
-              if [[ "$check_concurrency" == true ]]; then
-                python3 "$GITHUB_WORKSPACE/scripts/check-swift-concurrency-warnings.py" build-log.txt "${warning_sources[@]}"
-              fi
-            ) || failed+=("${package}")
-            echo "::endgroup::"
-          done
-          if (( ${#failed[@]} > 0 )); then
-            echo "::error::Package checks failed for: ${failed[*]}"
-            exit 1
-          fi
-
-      - name: Validate DesignResourcesKitIcons (macOS)
-        if: success() || failure()
-        working-directory: SharedPackages/Infrastructure/DesignResourcesKitIcons
-        run: |
-          set -o pipefail && xcodebuild clean build \
-            -scheme DesignResourcesKitIcons \
-            -destination 'platform=macOS' \
-            -derivedDataPath DerivedData \
-            CODE_SIGNING_ALLOWED=NO \
-            2>&1 | tee build-log.txt | xcbeautify || exit 1
-          python3 "$GITHUB_WORKSPACE/scripts/check-swift-concurrency-warnings.py" build-log.txt Sources
+        run: bash scripts/run-shared-package-checks.sh macos 'platform=macOS'
 
       # One call per package: the action reads a single report, and this keeps a separate
       # job-summary table per package. test-outcome only gates crash injection, which is a no-op
@@ -634,14 +527,14 @@ jobs:
           title: DesignResourcesKit (macOS)
           test-outcome: ${{ steps.run-unit-tests.outcome }}
 
-      - name: Process test results (FoundationExtensions)
+      - name: Process test results (SystemFrameworksExtensions)
         if: always()
         uses: ./.github/actions/process-test-results
         with:
           working-directory: SharedPackages/Infrastructure/SystemFrameworksExtensions
           junit-path: package-tests.xml
           log-path: build-log.txt
-          title: FoundationExtensions (macOS)
+          title: SystemFrameworksExtensions (macOS)
           test-outcome: ${{ steps.run-unit-tests.outcome }}
 
       - name: Process test results (Networking)
@@ -736,14 +629,15 @@ jobs:
         run: |
           # Extract failed tests from the junit reports
           # Only keep failures unique by classname and name (column 1 and 2 of the yq output)
-          for package in Common DDGError ICSParser Infrastructure/DesignResourcesKit Infrastructure/SystemFrameworksExtensions Networking Persistence PixelKit WideEvent; do
+          packages=$(jq -er '.[] | select(.buildOnly != true) | .path' .github/shared-package-checks.json)
+          while IFS= read -r package; do
             report="SharedPackages/${package}/package-tests.xml"
             [[ -f "$report" ]] || continue
             yq < "$report" -p xml -o json -r \
               $'[.testsuites.testsuite[].testcase] | flatten | map(select(.failure) | .+@classname + " " + .+@name + " \'" + .failure.+@message + "\' ${{ env.WORKFLOW_URL }}") | .[]' \
               | sort -u -k 1,2 \
               | xargs -L 1 ${{ github.workspace }}/scripts/report-failed-unit-test.sh -s ${{ vars.APPLE_CI_FAILING_TESTS_BSK_FAILED_TESTS_SECTION_ID }}
-          done
+          done <<< "$packages"
 
       - name: Upload logs
         uses: actions/upload-artifact@v6

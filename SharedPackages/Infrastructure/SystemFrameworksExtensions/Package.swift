@@ -64,7 +64,8 @@ let package = Package(
         .target(
             name: "ConcurrencyExtensions",
             swiftSettings: [
-                .define("DEBUG", .when(configuration: .debug))
+                .define("DEBUG", .when(configuration: .debug)),
+                .enableExperimentalFeature("StrictConcurrency")
             ]
         ),
 
@@ -98,7 +99,10 @@ let package = Package(
         ),
         .testTarget(
             name: "ConcurrencyExtensionsTests",
-            dependencies: ["ConcurrencyExtensions"]
+            dependencies: ["ConcurrencyExtensions"],
+            swiftSettings: [
+                .enableExperimentalFeature("StrictConcurrency")
+            ]
         ),
     ],
     swiftLanguageVersions: [.v5]

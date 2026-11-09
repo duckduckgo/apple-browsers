@@ -142,7 +142,7 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
     var installingStoreIdentities: [String: WebExtensionStoreIdentity] = [:]
 
     /// Tasks that keep background pages with open native messaging ports loaded, by extension identifier.
-    var nativePortKeepAliveTasks: [String: Task<Void, Never>] = [:]
+    var nativePortKeepAliveTasks: [String: NativePortKeepAlive] = [:]
 
     /// See `WebExtensionUnloadGuard`. Settable only so tests can inject a controlled clock.
     var unloadGuard: WebExtensionUnloadGuard

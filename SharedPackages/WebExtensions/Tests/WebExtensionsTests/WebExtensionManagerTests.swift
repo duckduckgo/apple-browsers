@@ -2677,6 +2677,30 @@ final class WebExtensionManagerTests: XCTestCase {
         XCTAssertEqual(host.receivedMessages.first as? [String: String], ["cmd": "hello"])
     }
 
+    /// A reloaded extension gets a new context with the same identifier while the old context's keep-alive
+    /// task may still be waiting. The new context's background page must get a keep-alive of its own.
+    @MainActor
+    func testWhenAReloadedExtensionOpensANativePort_ThenItsNewContextGetsItsOwnKeepAlive() async throws {
+        let manager = makeManager()
+        let webExtension = try await WKWebExtension(resourceBaseURL: try makeTestExtensionDirectory(permissions: ["nativeMessaging"]))
+        let previousContext = WKWebExtensionContext(for: webExtension)
+        previousContext.uniqueIdentifier = "native-messaging-reload"
+        let reloadedContext = WKWebExtensionContext(for: webExtension)
+        reloadedContext.uniqueIdentifier = "native-messaging-reload"
+
+        manager.keepBackgroundLoadedWhileNativePortsAreOpen(for: previousContext)
+        let previousTask = try XCTUnwrap(manager.nativePortKeepAliveTasks["native-messaging-reload"]?.task)
+        manager.keepBackgroundLoadedWhileNativePortsAreOpen(for: reloadedContext)
+
+        let current = try XCTUnwrap(manager.nativePortKeepAliveTasks["native-messaging-reload"])
+        XCTAssertTrue(current.context === reloadedContext)
+        XCTAssertTrue(previousTask.isCancelled)
+
+        await previousTask.value
+        await current.task.value
+        XCTAssertNil(manager.nativePortKeepAliveTasks["native-messaging-reload"])
+    }
+
     /// Without a native messaging handler, as in the App Store build, `connectNative()` must fail at once,
     /// so an extension falls back right away instead of waiting on a port no host ever answers.
     @MainActor

@@ -301,14 +301,21 @@ extension WebExtensionManager {
     /// page to renew the port every `nativePortKeepAliveInterval`. The task
     /// ends, and the page closes the port, when the extension has no native port open. It also ends
     /// when the page is gone.
+    ///
+    /// A reloaded extension gets a new context with the same identifier, so a task left from the
+    /// previous context is replaced rather than kept.
     func keepBackgroundLoadedWhileNativePortsAreOpen(for context: WKWebExtensionContext) {
         let identifier = context.uniqueIdentifier
-        guard nativePortKeepAliveTasks[identifier] == nil else { return }
+        if let existing = nativePortKeepAliveTasks[identifier] {
+            guard existing.context !== context else { return }
+            existing.task.cancel()
+        }
 
         let displayName = context.webExtension.displayName ?? "(unknown)"
         let function = "globalThis.\(WebExtensionAPIStubScript.keepBackgroundAliveFunctionName)"
-        nativePortKeepAliveTasks[identifier] = Task { @MainActor [weak self, weak context] in
-            while true {
+        let token = UUID()
+        let task = Task { @MainActor [weak self, weak context] in
+            while !Task.isCancelled {
                 guard let self, let context, let webView = self.backgroundWebView(in: context) else { break }
                 guard self.nativeMessagingHandler?.hasOpenPorts(for: context) == true else {
                     _ = try? await webView.evaluateJavaScript("\(function)?.(false)")
@@ -326,9 +333,21 @@ extension WebExtensionManager {
                 }
             }
             Logger.webExtensions.debug("🔗 The background page of \(displayName) is no longer kept loaded")
-            self?.nativePortKeepAliveTasks[identifier] = nil
+            if self?.nativePortKeepAliveTasks[identifier]?.token == token {
+                self?.nativePortKeepAliveTasks[identifier] = nil
+            }
         }
+        nativePortKeepAliveTasks[identifier] = NativePortKeepAlive(context: context, task: task, token: token)
     }
+}
+
+/// The task that keeps one context's background page loaded.
+@available(macOS 15.4, iOS 18.4, *)
+struct NativePortKeepAlive {
+    weak var context: WKWebExtensionContext?
+    let task: Task<Void, Never>
+    /// Tells this entry apart from a later one for the same extension identifier.
+    let token: UUID
 }
 
 /// Holds port messages that arrive before a native messaging host is ready for them.

@@ -141,6 +141,9 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
     /// Store identities available before a successful first load creates the installation record.
     var installingStoreIdentities: [String: WebExtensionStoreIdentity] = [:]
 
+    /// Tasks that keep background pages with open native messaging ports loaded, by extension identifier.
+    var nativePortKeepAliveTasks: [String: Task<Void, Never>] = [:]
+
     /// See `WebExtensionUnloadGuard`. Settable only so tests can inject a controlled clock.
     var unloadGuard: WebExtensionUnloadGuard
 
@@ -1201,7 +1204,7 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
     }
 
     @MainActor
-    private func backgroundWebView(in context: WKWebExtensionContext) -> WKWebView? {
+    func backgroundWebView(in context: WKWebExtensionContext) -> WKWebView? {
         guard context.responds(to: Selector.backgroundWebView) else { return nil }
         return context.value(forKey: NSStringFromSelector(Selector.backgroundWebView)) as? WKWebView
     }

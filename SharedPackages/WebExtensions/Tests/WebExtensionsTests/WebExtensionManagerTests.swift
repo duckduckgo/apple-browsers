@@ -3530,6 +3530,10 @@ private final class SlowStartingNativeMessagingHandler: WebExtensionNativeMessag
         }
     }
 
+    func hasOpenPorts(for context: WKWebExtensionContext) -> Bool {
+        false
+    }
+
     func sendMessage(_ message: Any,
                      applicationIdentifier: String?,
                      for context: WKWebExtensionContext) async throws -> Any? {

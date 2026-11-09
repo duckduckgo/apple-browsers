@@ -31,4 +31,17 @@ extension IdleReturnOutcome {
         return !hasLaunchAction && !isAppLockEnabled && hasPageToReplace
     }
 
+    /// Whether a warm start opens straight on the New Tab Page, instead of showing the restored page and replacing it.
+    /// Only for an after-idle New Tab Page return, and only when:
+    /// - No launch action opened the app. The action decides where the user lands.
+    /// - No tab clearing is configured or running.
+    /// - No Duck.ai voice session is active.
+    /// - No alert is open, such as a site’s sign-in prompt.
+    /// - There's a page to replace. If the restored tab is already a New Tab Page, the normal launch lands there.
+    func drawsNewTabPageOnForeground(isFeatureOn: Bool, hasLaunchAction: Bool, isClearingTabs: Bool,
+                                     isVoiceSessionActive: Bool, hasPageToReplace: Bool, isAlertPresented: Bool) -> Bool {
+        guard isFeatureOn, case .afterIdle(.ntp, _) = self else { return false }
+        return !hasLaunchAction && !isClearingTabs && !isVoiceSessionActive && !isAlertPresented && hasPageToReplace
+    }
+
 }

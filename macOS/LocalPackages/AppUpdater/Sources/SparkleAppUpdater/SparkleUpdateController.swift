@@ -89,6 +89,8 @@ public final class SparkleUpdateController: NSObject, SparkleUpdateControlling {
             } else {
                 latestUpdate = nil
                 hasPendingUpdate = false
+                hasBeenReadyToUpdate = false
+                canShowUpdatePrompts = false
                 needsNotificationDot = false
             }
         }
@@ -102,6 +104,8 @@ public final class SparkleUpdateController: NSObject, SparkleUpdateControlling {
         let isDone = currentProgress.isDone
         let isResumable = progressState.isResumable
         hasPendingUpdate = isInstalled && isDone && isResumable
+        hasBeenReadyToUpdate = isInstalled && (hasBeenReadyToUpdate || hasPendingUpdate)
+        canShowUpdatePrompts = hasBeenReadyToUpdate && currentProgress.isIdle
     }
 
     // MARK: - Update Progress State Machine
@@ -127,6 +131,11 @@ public final class SparkleUpdateController: NSObject, SparkleUpdateControlling {
 
     @Published public private(set) var hasPendingUpdate = false
     public var hasPendingUpdatePublisher: Published<Bool>.Publisher { $hasPendingUpdate }
+
+    /// Once an update has been ready, the prompts show whenever no update is running, including after a failure, until the app has updated.
+    @Published public private(set) var canShowUpdatePrompts = false
+    private var hasBeenReadyToUpdate = false
+    public var canShowUpdatePromptsPublisher: AnyPublisher<Bool, Never> { $canShowUpdatePrompts.eraseToAnyPublisher() }
 
     public var mustShowUpdateIndicators: Bool = false
     public let clearsNotificationDotOnMenuOpen = false
@@ -545,10 +554,14 @@ public final class SparkleUpdateController: NSObject, SparkleUpdateControlling {
     }
 
     private func resumeUpdater() {
-        if !progressState.isResumable {
+        if let resume = progressState.resumeCallback {
+            resume()
+        } else if progressState.updateProgress.isIdle {
+            // Nothing to resume after a failed or dismissed update, so start it again.
+            checkForUpdateSkippingRollout()
+        } else {
             pixelFiring?.fire(DebugEvent(UpdateFlowPixels.updaterAttemptToRestartWithoutResumeBlock))
         }
-        progressState.resumeCallback?()
     }
 
     public func handleAppTermination() {

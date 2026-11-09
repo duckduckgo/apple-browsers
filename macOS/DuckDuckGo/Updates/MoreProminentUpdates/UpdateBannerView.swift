@@ -221,6 +221,15 @@ extension UpdateController {
     var updateBannerButtonTitle: String {
         self is any SparkleUpdateControlling ? updatePromptButtonTitle : UserText.updateBannerOpenAppStoreButton
     }
+
+    /// Opens the release notes to show progress when a Sparkle update still has to download, otherwise runs the update.
+    func runUpdateFromPrompt() {
+        if let sparkleUpdateController = self as? any SparkleUpdateControlling, !sparkleUpdateController.isAtRestartCheckpoint {
+            sparkleUpdateController.runUpdateFromMenuItem()
+        } else {
+            runUpdate()
+        }
+    }
 }
 
 #Preview("Row") {

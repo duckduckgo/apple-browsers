@@ -150,6 +150,10 @@ public protocol UpdateController: UpdateControllerObjC {
     /// `nil` for controllers that don't track prompt stages.
     var updatePromptStageTracker: UpdatePromptStageTracker? { get }
 
+    /// Whether the update prompts may show. Defaults to `hasPendingUpdate`.
+    var canShowUpdatePrompts: Bool { get }
+    var canShowUpdatePromptsPublisher: AnyPublisher<Bool, Never> { get }
+
     // MARK: - Update Configuration
 
     /// Whether automatic updates are enabled for this installation.
@@ -290,15 +294,15 @@ public extension UpdateController {
 
     /// The prompt stage to show for the pending update, or `.none` until there's an update ready to install or open.
     var pendingUpdatePromptStage: UpdatePromptStage {
-        hasPendingUpdate ? updatePromptStageTracker?.stage ?? .none : .none
+        canShowUpdatePrompts ? updatePromptStageTracker?.stage ?? .none : .none
     }
 
     var pendingUpdatePromptStagePublisher: AnyPublisher<UpdatePromptStage, Never> {
         guard let tracker = updatePromptStageTracker else {
             return Just(.none).eraseToAnyPublisher()
         }
-        return hasPendingUpdatePublisher.combineLatest(tracker.$stage)
-            .map { hasPendingUpdate, stage in hasPendingUpdate ? stage : .none }
+        return canShowUpdatePromptsPublisher.combineLatest(tracker.$stage)
+            .map { canShowUpdatePrompts, stage in canShowUpdatePrompts ? stage : .none }
             .removeDuplicates()
             .eraseToAnyPublisher()
     }
@@ -307,6 +311,9 @@ public extension UpdateController {
 extension UpdateController {
 
     public var updatePromptStageTracker: UpdatePromptStageTracker? { nil }
+
+    public var canShowUpdatePrompts: Bool { hasPendingUpdate }
+    public var canShowUpdatePromptsPublisher: AnyPublisher<Bool, Never> { hasPendingUpdatePublisher.eraseToAnyPublisher() }
 
     /// Whether release notes need a fresh update check to populate data.
     ///

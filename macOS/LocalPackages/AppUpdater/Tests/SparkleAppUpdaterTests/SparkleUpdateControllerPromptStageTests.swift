@@ -37,6 +37,7 @@ final class SparkleUpdateControllerPromptStageTests {
     private let notificationPresenter = MockNotificationPresenter()
     private let store = InMemoryThrowingKeyValueStore()
     private let item = SUAppcastItem.empty()
+    private let wideEvent = WideEventMock()
 
     init() {
         featureFlagger.featuresStub[FeatureFlag.moreProminentUpdates.rawValue] = true
@@ -53,7 +54,7 @@ final class SparkleUpdateControllerPromptStageTests {
                                 applicationUpdateDetector: ApplicationUpdateDetector(settings: store.throwingKeyedStoring()),
                                 allowCustomUpdateFeed: false,
                                 isAutoUpdatePaused: { true },
-                                wideEvent: WideEventMock(),
+                                wideEvent: wideEvent,
                                 isOnboardingFinished: { true })
     }
 
@@ -73,6 +74,15 @@ final class SparkleUpdateControllerPromptStageTests {
 
     private func finishDownload(_ controller: SparkleUpdateController) {
         _ = controller.updater(updater(for: controller), willInstallUpdateOnQuit: item, immediateInstallationBlock: {})
+    }
+
+    private func startInstalling(_ controller: SparkleUpdateController) {
+        controller.updater(updater(for: controller), willExtractUpdate: item)
+    }
+
+    private func failUpdate(_ controller: SparkleUpdateController) {
+        let error = NSError(domain: SUSparkleErrorDomain, code: Int(SUError.installationError.rawValue))
+        controller.updater(updater(for: controller), didFinishUpdateCycleFor: .updates, error: error)
     }
 
     @available(iOS 16, macOS 13, *)
@@ -219,5 +229,39 @@ final class SparkleUpdateControllerPromptStageTests {
 
         #expect(controller.needsNotificationDot)
         #expect(notificationPresenter.shownUpdateTypes.isEmpty)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("The prompts hide while the update runs and come back if it fails, until a check finds the app up to date", .timeLimit(.minutes(1)))
+    func promptsComeBackAfterAFailure() throws {
+        let controller = makeController()
+        findUpdate(controller)
+        finishDownload(controller)
+        try #require(controller.updatePromptStageTracker).moveClock(to: .secondPrompt)
+
+        startInstalling(controller)
+        #expect(controller.pendingUpdatePromptStage == .none)
+
+        failUpdate(controller)
+        #expect(controller.pendingUpdatePromptStage == .secondPrompt)
+
+        findNoUpdate(controller, latestItem: item)
+        #expect(controller.pendingUpdatePromptStage == .none)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Updating from a prompt after a failure starts a new update", .timeLimit(.minutes(1)))
+    func updatingAfterFailureRetries() throws {
+        let controller = makeController()
+        findUpdate(controller)
+        finishDownload(controller)
+        startInstalling(controller)
+        failUpdate(controller)
+        wideEvent.started.removeAll()
+
+        controller.runUpdate()
+
+        let flow = try #require(wideEvent.started.last as? UpdateWideEventData)
+        #expect(flow.initiationType == .manual)
     }
 }

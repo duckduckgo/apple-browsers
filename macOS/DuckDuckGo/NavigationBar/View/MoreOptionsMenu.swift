@@ -547,7 +547,7 @@ final class MoreOptionsMenu: NSMenu, NSMenuDelegate {
                                       version: update.version,
                                       buttonTitle: updateController.updateBannerButtonTitle) { [weak self] in
             self?.cancelTracking()
-            updateController.runUpdate()
+            updateController.runUpdateFromPrompt()
         }
 
         let item = NSMenuItem()

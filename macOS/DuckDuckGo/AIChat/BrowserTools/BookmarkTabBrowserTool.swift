@@ -130,8 +130,8 @@ final class BookmarkTabBrowserTool: BrowserTool {
         return (folder, created)
     }
 
-    /// The folder names, empty when omitted, or nil when malformed.
-    private static func folderPath(from arguments: JSONValue?) -> [String]? {
+    /// The folder names, empty when omitted, or nil when malformed. Shared with `searchBookmarks`.
+    static func folderPath(from arguments: JSONValue?) -> [String]? {
         guard let value = arguments?["folder"] else { return [] }
         guard let values = value.arrayValue, (1...maxFolderDepth).contains(values.count) else { return nil }
         let names = values.compactMap { value -> String? in

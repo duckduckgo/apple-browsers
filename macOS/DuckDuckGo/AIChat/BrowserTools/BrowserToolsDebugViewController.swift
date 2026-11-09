@@ -393,6 +393,7 @@ final class BrowserToolsDebugViewController: NSViewController {
         case ("bookmarkTab", "folder"): return "Duck.ai"
         case ("openTab", "url"): return "https://duckduckgo.com"
         case ("searchDownloads", "query"): return "pdf"
+        case ("searchBookmarks", "query"): return "duck"
         case ("searchHistory", "query"): return "wiki"
         case ("searchHistory", "limit"): return "5"
         case ("findInPage", "query"): return "games"

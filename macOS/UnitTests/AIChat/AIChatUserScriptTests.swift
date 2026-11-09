@@ -338,7 +338,8 @@ final class AIChatUserScriptTests: XCTestCase {
             FeatureFlag.aiChatBrowserToolOpenTab.rawValue: false,
             FeatureFlag.aiChatBrowserToolCloseTabs.rawValue: false,
             FeatureFlag.aiChatBrowserToolBookmarkTab.rawValue: false,
-            FeatureFlag.aiChatBrowserToolSearchDownloads.rawValue: false
+            FeatureFlag.aiChatBrowserToolSearchDownloads.rawValue: false,
+            FeatureFlag.aiChatBrowserToolSearchBookmarks.rawValue: false
         ])
     }
 

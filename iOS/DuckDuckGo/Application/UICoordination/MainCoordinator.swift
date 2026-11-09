@@ -875,7 +875,7 @@ extension MainCoordinator: ShortcutItemHandling {
 
     private func handleQuery(_ query: String) {
         controller.clearNavigationStack()
-        controller.loadQueryInNewTab(query, fromExternalLink: true)
+        controller.loadQueryInNewTab(query, reuseExisting: .any, fromExternalLink: true)
     }
 
     private func handleSearchPassword() {

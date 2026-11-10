@@ -1,15 +1,52 @@
 # Auth
 
-## Overview
-
-A Swift framework implementing a subset of OAuth 2.0 authentication for DuckDuckGo's Privacy Pro services on macOS and iOS. This library handles user authentication, token management, and secure communication with DuckDuckGo's authentication services.
+A Swift implementation of the subset of OAuth 2.0 that DuckDuckGo's subscription (Privacy Pro) uses on iOS and macOS. It creates and activates accounts, stores and refreshes the token pair, keeps a backup pair that can restore a lost session, and talks to the Auth API v2.
 
 [Overview of OAuth2 Implementation for Privacy Pro](https://dub.duckduckgo.com/duckduckgo/ddg/blob/main/components/auth/docs/AuthAPIV2Documentation.md#overview-of-oauth2-implementation-for-privacy-pro)
 
-## Main Components
+## Contents
+
+- [Main components](#main-components)
+- [Usage](#usage)
+- [Token retrieval policies](#token-retrieval-policies)
+- [Token container lifecycle](#token-container-lifecycle)
+  - [Creation](#creation)
+  - [Storage](#storage)
+  - [Refresh](#refresh)
+  - [Expiration](#expiration)
+  - [Sign-out and local removal](#sign-out-and-local-removal)
+- [Backup token](#backup-token)
+  - [Renewal](#renewal)
+  - [Restore](#restore)
+  - [Sign-out cut-off](#sign-out-cut-off)
+  - [When the backup is deleted](#when-the-backup-is-deleted)
+  - [The authBackupToken flag](#the-authbackuptoken-flag)
+- [Sessions and concurrency](#sessions-and-concurrency)
+- [Error handling](#error-handling)
+  - [How the Auth API's responses are read](#how-the-auth-apis-responses-are-read)
+  - [Errors](#errors)
+  - [Classifying a failed restore](#classifying-a-failed-restore)
+- [Events](#events)
+- [How the apps use it](#how-the-apps-use-it)
+- [Public API](#public-api)
+- [Security and other considerations](#security-and-other-considerations)
+- [Testing and mocks](#testing-and-mocks)
+- [Additional documentation](#additional-documentation)
+
+## Main components
+
+| Type | Role |
+|---|---|
+| `TokenContainer` | The access token, the refresh token and their decoded JWT payloads. |
+| `OAuthClient` / `DefaultOAuthClient` | The interface the apps use, and the only source of truth for the current token. Owns storage, refresh, account creation, sign-out and the backup. |
+| `TokenRefreshing` / `DefaultTokenRefresher` | Spends a refresh token for a new pair (`refresh`), spends it several times for independent pairs (`fork`), and verifies tokens (`decode`). Never touches storage. |
+| `TokenBackupStore` | Internal. Reads and writes the backup, decides when it needs renewal, validates it before a restore, and keeps the sign-out cut-off. |
+| `OAuthService` / `DefaultOAuthService` | Sends the Auth API requests and turns their responses into values or errors. |
+| `OAuthRequest` | Builds each Auth API request and declares which status codes are success and which carry a decodable error body. |
+| `AuthTokenStoring` | Where a token container is kept. Injected; the apps use the keychain. |
+| `BackupRestoreFailure` | Classifies a failed restore as temporary, permanent or unknown, so callers can decide whether to retry. |
 
 ### TokenContainer
-The structure that holds authentication token, the refresh token, and their decoded representations:
 
 ```swift
 public struct TokenContainer: Codable {
@@ -20,297 +57,324 @@ public struct TokenContainer: Codable {
 }
 ```
 
-**Warnings:**
-- Never store or cache a TokenContainer outside this framework.
-- Never pass the TokenContainer around, always ask the `OAuthClient` for it, use it and discard it. (Notable exception is IPC coms for the VPN SysExt)
+- Two containers are equal when their encoded access and refresh tokens are equal.
+- `decodedAccessToken.externalID` identifies the account; the backup code uses it to tell accounts apart.
+- `decodedRefreshToken.issuedAtDate` and `expirationDate` drive backup renewal, the sign-out cut-off and the iOS background refresh.
+- For IPC, such as handing the token to the macOS VPN system extension, `data: NSData?` encodes the container and `init(with: NSData)` decodes it.
 
-**IPC Support:**
-For IPC communication (e.g., VPN System Extension), `TokenContainer` provides convenience methods:
-- `data: NSData?` - Encodes the container to NSData for IPC transmission
-- `init(with data: NSData)` - Decodes a container from NSData received via IPC
+**Warnings:**
+- Never store or cache a `TokenContainer` outside this framework.
+- Never pass a `TokenContainer` around: ask the `OAuthClient` for it, use it and discard it. The exception is the IPC above.
 
 ### OAuthClient
-The **main** interface for client applications to interact with the authentication system and the **only** source of truth for the authentication token. 
 
-**Important:** `DefaultOAuthClient` is implemented as a Swift `actor`, which means:
-- All method calls must be `await`ed
-- The client provides thread-safe access to token storage
-- Concurrent token refresh requests are automatically deduplicated
-
-Key features include:
-- Token management and refresh
-- Account creation and activation
-- Logout functionality
-- Token refresh event tracking
-
-### OAuthService
-Handles the low-level communication with the authentication server, implementing the OAuth 2.0 protocol:
-- Authorization code flow
-- Token exchange
-- Token refresh
-- JWT verification
-
-### OAuthRequest
-Defines all API endpoints and request structures for the authentication service:
-- Authorization
-- Account creation
-- Token management
-- Account management
-- Logout
-
-## Key Features
-
-- **Secure Token Management**: Automatic token refresh and secure storage
-- **JWT Verification**: Built-in JWT verification using server-provided keys
-- **Error Handling**: Comprehensive error handling with detailed error messages
-- **Environment Support**: Support for both production and staging environments
-- **Concurrent Safety**: Actor-based implementation ensures thread-safe token operations
-- **Refresh Deduplication**: Multiple concurrent refresh requests share the same refresh task
+`DefaultOAuthClient` is a Swift `actor`:
+- Every call is `await`ed.
+- Storage is accessed from one place at a time.
+- Concurrent refreshes share one request, and so do concurrent restores.
 
 ## Usage
 
-### Basic Authentication Flow
-
-1. Initialise the OAuthClient with appropriate storage and service implementations.
-2. Use the client to create or activate an account.
-3. Use the stored tokens for authenticated requests via `getTokens(policy:)`.
-
-### Example
+1. Create a `DefaultOAuthService` with an `APIService` that doesn't follow redirects.
+2. Create a `DefaultOAuthClient` with the storage for the current token and, to keep a backup, the storage for the backup.
+3. Get tokens through `getTokens(policy:)`.
 
 ```swift
-// Initialise the client
-let authService = DefaultOAuthService(baseURL: <API base URL>, apiService: <Your APIService>)
-let refreshEventMapping: EventMapping<OAuthClientRefreshEvent>? = <Your event mapping or nil>
-let oAuthClient = DefaultOAuthClient(
-    tokensStorage: yourTokenStorage,
-    authService: authService,
-    refreshEventMapping: refreshEventMapping
-)
+let authService = DefaultOAuthService(baseURL: OAuthEnvironment.production.url,
+                                      apiService: APIServiceFactory.makeAPIServiceForAuthV2(withUserAgent: userAgent))
 
-// Create a new account (if needed)
+// Without a backup
+let oAuthClient = DefaultOAuthClient(tokensStorage: tokenStorage,
+                                     authService: authService,
+                                     refreshEventMapping: refreshEventMapping)
+
+// With a backup, as the main apps do
+let oAuthClient = DefaultOAuthClient(tokensStorage: tokenStorage,
+                                     authService: authService,
+                                     refreshEventMapping: refreshEventMapping,
+                                     backupStorage: backupTokenStorage,
+                                     isBackupEnabled: { featureFlagger.isFeatureOn(.authBackupToken) },
+                                     backupUserDefaults: subscriptionUserDefaults,
+                                     backupEventMapping: backupEventMapping)
+
+// Create an account if there is no usable token
 let tokenContainer = try await oAuthClient.getTokens(policy: .createIfNeeded)
 
-// Or activate with platform signature (e.g., App Store receipt)
+// Or sign in with a purchase signature, such as an App Store receipt
 let tokenContainer = try await oAuthClient.activate(withPlatformSignature: signature)
 
-// Use the tokens for authenticated requests
+// A valid token for an authenticated request
 let validTokens = try await oAuthClient.getTokens(policy: .localValid)
 ```
 
-**Warning:**
-
-The `APIService` must disable automatic redirection because in our specific OAuth implementation, we manage the redirection, not the user.
-This is done using our custom `SessionDelegate` as `URLSession` delegate.
+**Warning:** the `APIService` must not follow redirects, because the authorization flow reads them itself. `APIServiceFactory.makeAPIServiceForAuthV2` does this with `SessionDelegate`:
 
 ```swift
-public static func makeAPIServiceForAuthV2() -> APIService {
-    let configuration = URLSessionConfiguration.ephemeral
-    configuration.requestCachePolicy = .reloadIgnoringLocalCacheData
-    configuration.httpCookieStorage = nil
-    let urlSession = URLSession(configuration: configuration, delegate: SessionDelegate(), delegateQueue: nil)
-    return DefaultAPIService(urlSession: urlSession)
-}
+let configuration = URLSessionConfiguration.ephemeral
+configuration.requestCachePolicy = .reloadIgnoringLocalCacheData
+configuration.httpCookieStorage = nil
+let urlSession = URLSession(configuration: configuration, delegate: SessionDelegate(), delegateQueue: nil)
 ```
 
-## Token Management
+## Token retrieval policies
 
-The framework provides several token retrieval policies:
+`getTokens(policy:trigger:)` returns a `TokenContainer` according to `AuthTokensCachePolicy`. `getTokens(policy:)` uses the `.client` trigger.
 
-- `.local`: Use stored tokens as-is, throws `missingTokenContainer` if no token exists
-- `.localValid`: Use stored tokens, automatically refreshes if expired or expiring soon (within 45 seconds)
-- `.localForceRefresh`: Force refresh of stored tokens, throws `missingTokenContainer` if no refresh token exists
-- `.createIfNeeded`: Like `.localValid`, but creates a new account if no token exists
+| Policy | Behavior |
+|---|---|
+| `.local` | Returns the stored container as it is. Throws `missingTokenContainer` when none is stored. |
+| `.localValid` | Returns the stored container, refreshing it first when the access token has expired or expires within 45 seconds. Throws `missingTokenContainer` when none is stored. |
+| `.localForceRefresh` | Always refreshes the stored container. Throws `missingTokenContainer` when none is stored. |
+| `.createIfNeeded` | Reads storage first and throws if the read fails, so a locked keychain never leads to a new account. Then behaves like `.localValid`; if that throws for any reason, it creates a new account and stores it. |
 
-**Token Refresh Behavior:**
-- Tokens are automatically refreshed if they expire within 45 seconds (configurable via `tokenExpiryBufferInterval`)
-- Multiple concurrent refresh requests share the same refresh task to avoid redundant network calls
-- Refresh operations emit events via `OAuthClientRefreshEvent` if `refreshEventMapping` is provided
+The `trigger` (`TokenRefreshTrigger`) says what started the request and is reported on the refresh wide event: `.client`, `.backend` (a 401 retry path), `.createIfNeeded` and `.tokenAdoption`.
 
-## Token Container Lifecycle
+The client never restores from the backup on its own. A missing or rejected token is reported to the caller, which decides whether to call `restoreFromBackup(expectedExternalID:)`. See [How the apps use it](#how-the-apps-use-it).
 
-Understanding the lifecycle of a `TokenContainer` helps clarify when and how tokens are created, refreshed, and invalidated.
+## Token container lifecycle
 
-### 1. Creation
+### Creation
 
-A `TokenContainer` is created in one of two ways:
+- **New account** (`.createIfNeeded`): `authorize` with a PKCE code challenge, `createAccount` for an authorization code, then exchange the code for a token pair.
+- **Sign-in** (`activate(withPlatformSignature:)`): the same flow, with `login` and the purchase signature instead of `createAccount`.
+- **Adoption** (`adopt(tokenContainer:)`): stores a container obtained elsewhere, such as the subscription page's email restore flow.
 
-**Account Creation:**
-- User initiates account creation via `getTokens(policy: .createIfNeeded)` or `activate(withPlatformSignature:)`
-- OAuth authorization flow generates authorization code
-- Authorization code is exchanged for access token and refresh token
-- Both tokens are decoded and verified using server-provided JWKS keys
-- `TokenContainer` is created with both tokens and their decoded representations
-- Container is stored in `AuthTokenStoring` implementation (typically Keychain)
+Each new pair is verified against the published signing keys before it's stored. Storing a container of another account deletes the backup.
 
-**Account Activation:**
-- User activates existing account with platform signature (e.g., App Store receipt)
-- Similar flow to creation, but uses login endpoint instead of create endpoint
-- New `TokenContainer` is created and stored
+### Storage
 
-### 2. Storage
+- `AuthTokenStoring` keeps one container. `readTokenContainer()` tells a stored item that can't be decoded (`.undecodable`) apart from a missing one (`.missing`); the default implementation reports both as `.missing`.
+- The apps use `SubscriptionTokenKeychainStorage`: the `tokenContainer` field for the current pair, shared with the app's extensions, and the `backupTokenContainer` field for the backup, kept by the main app only.
 
-- `TokenContainer` is persisted via `AuthTokenStoring` (injected dependency)
-- Storage is typically Keychain-based for security
-- Both access token and refresh token are stored together
-- Decoded token representations are also stored (for quick expiry checks without re-decoding)
+### Refresh
 
-### 3. Usage
+When the access token has expired or expires within 45 seconds, `.localValid` refreshes it:
 
-- Applications request tokens via `getTokens(policy:)` with appropriate policy
-- `.localValid` policy automatically checks expiry and refreshes if needed
-- Access token is used for authenticated API requests
-- Refresh token remains stored and is only used for token refresh operations
+1. If a refresh is running, the caller waits for it and gets its result.
+2. The stored refresh token is sent to `/api/auth/v2/token`.
+3. The signing keys are fetched and both new tokens are verified.
+4. The new container replaces the stored one. The refresh token rotates, so the whole container is replaced.
+5. If the session changed while the request ran, the new pair is discarded and the container stored at that point is returned. See [Sessions and concurrency](#sessions-and-concurrency).
+6. If the backup needs renewal, a new one is minted in the background. See [Renewal](#renewal).
 
-### 4. Refresh
+Refreshing happens on demand. Nothing in this framework refreshes on a schedule; on iOS the app refreshes in the background when the refresh token gets old (see [How the apps use it](#how-the-apps-use-it)).
 
-When access token expires or is about to expire (within 45 seconds):
+### Expiration
 
-1. **Detection**: `getTokens(policy: .localValid)` detects expiry from decoded token
-2. **Deduplication**: If refresh already in progress, concurrent requests await same task
-3. **Refresh Request**: Refresh token is sent to server to obtain new access token
-4. **JWKS Fetch**: Server's public keys are fetched for token verification
-5. **Verification**: Both new access token and refresh token are verified using JWKS
-6. **Storage**: New `TokenContainer` replaces old one in storage
-7. **Return**: New container is returned to caller
+| Token | Lifetime |
+|---|---|
+| Access token | 4 hours (4 minutes in staging) |
+| Refresh token | 30 days |
 
-**Important**: The refresh token may also be rotated (new refresh token issued), so the entire `TokenContainer` is replaced, not just the access token.
+A refresh with a refresh token the server no longer accepts fails with `OAuthClientError.invalidTokenRequest` or `.unknownAccount`. The client keeps the stored container; the caller decides what to do next.
 
-### 5. Expiration
+### Sign-out and local removal
 
-**Access Token Expiration:**
-- Access tokens expire after 4 hours (4 minutes in Staging)
-- Expired access tokens cannot be used for API requests
-- Framework automatically refreshes before expiration (45-second buffer)
-- If refresh fails, user must re-authenticate
+| | `logout()` | `removeLocalAccount(includingBackup:)` |
+|---|---|---|
+| Current token | Removed | Removed |
+| Backup | Deleted | Deleted only when `includingBackup` is `true` |
+| Sign-out cut-off | Recorded | Not recorded |
+| Server | `/logout` is sent and not awaited; its result is ignored. It revokes every token issued from the same login, the backup included. | Not contacted. The tokens stay valid on the server. |
 
-**Refresh Token Expiration:**
-- Refresh tokens expire after 30 days
-- Once expired, cannot be used to obtain new access tokens
-- User must create new account or re-authenticate
-- Expired refresh token results in `invalidTokenRequest` or `unknownAccount` error
+`logout()` throws the storage error when the current token can't be read or removed, after recording the cut-off and deleting the backup.
 
-### 6. Invalidation
+## Backup token
 
-Tokens can be invalidated in two ways:
+The backup is a second, independent token pair for the same account, kept in its own storage. If the current token is lost, for example because the keychain item is deleted or a refresh is rejected after a race between processes, the backup can mint a new current pair without asking the user to sign in again.
 
-**Logout (`logout()`):**
-- Access token is invalidated server-side via logout API
-- `TokenContainer` is removed from local storage
-- User must create new account or activate existing account to continue
+The backup is kept only when the client is created with `backupStorage`. In the apps, only the main iOS and macOS apps do this; the VPN extensions, the macOS VPN app and the macOS PIR agent don't.
 
-**Local Removal (`removeLocalAccount(includingBackup:)`):**
-- `TokenContainer` is removed from local storage only, and the backup too when `includingBackup` is `true`
-- Server-side token remains valid (can be security risk if token is compromised)
-- Typically used for local cleanup without server invalidation
+### Renewal
 
-### 7. Error Recovery
+After a successful refresh, the client mints a new backup in the background when:
+- the backup is enabled,
+- no renewal is running, and
+- there is no backup, or the stored one has expired, belongs to another account, or its refresh token was issued more than 14 days ago.
 
-When token operations fail:
+The renewal spends the refresh token the refresh just used a second time, so the refresh itself isn't delayed. A failure to read the stored backup skips the renewal.
 
-- **`missingTokenContainer`**: No tokens stored → Create new account or activate
-- **`invalidTokenRequest`**: Refresh token invalid → User must re-authenticate
-- **`unknownAccount`**: Account no longer exists → User must create new account
-- **`unauthenticated`**: Authentication state lost → User must re-authenticate
+The new backup is stored only if, when the request returns, the session is unchanged, the stored current token belongs to the same account, and the backup is still enabled. Otherwise it is discarded silently. Success is reported as `backupRenewed`; a failed request or a failed write is reported as `backupRenewalFailed`, and the next refresh tries again.
 
-### Lifecycle Summary
+### Restore
 
-```
-Creation → Storage → Usage → [Refresh Loop] → Expiration/Invalidation
-   ↓         ↓         ↓            ↓                    ↓
-OAuth     Keychain   API      Auto-refresh        Logout/Remove
-Flow      Storage    Calls    (every 4h)          or Expiry
-```
+`restoreFromBackup(expectedExternalID:)` replaces the current token with one minted from the backup:
 
-**Key Points:**
-- Tokens are ephemeral - access tokens last 4 hours, refresh tokens 30 days
-- Framework handles refresh automatically when using `.localValid` policy
-- Storage is abstracted via `AuthTokenStoring` protocol
-- Server-side invalidation requires explicit `logout()` call
-- Failed refresh requires user re-authentication
+1. The backup must be enabled and configured, otherwise it throws `TokenBackupError.unavailable`.
+2. The stored backup is validated. It must:
+   - be readable (`.readFailed`), stored (`.unavailable`) and decodable (`.undecodable`),
+   - belong to `expectedExternalID`, when given (`.accountMismatch`),
+   - have been issued after the [sign-out cut-off](#sign-out-cut-off) (`.predatesSignOut`),
+   - not have expired (`.expired`).
 
-## Public API Methods
+   A backup that can't be decoded or is rejected is deleted; one that is missing or can't be read is left alone.
+3. The current token is read; a read failure is thrown and nothing is refreshed.
+4. The backup's refresh token is forked into two pairs: the first becomes the new backup, the second the new current token.
+5. Before anything is stored, the client checks the session is still the one the restore started from: no [session change](#sessions-and-concurrency) in this client, the backup still stored, and the current token readable and unchanged (one deleted by another process is fine). If not, it throws `TokenBackupError.sessionChanged`, stores nothing, and deletes the spent backup if it's still stored.
+6. The new current token is stored, then the new backup. If the backup was disabled meanwhile, the spent backup is deleted instead.
 
-### Token Retrieval
-- `getTokens(policy: AuthTokensCachePolicy) async throws -> TokenContainer` - Get tokens based on policy
-- `currentTokenContainer() throws -> TokenContainer?` - Get current stored tokens without refresh
-- `setCurrentTokenContainer(_ tokenContainer: TokenContainer?) throws` - Manually set tokens (use with caution)
-- `isUserAuthenticated: Bool` - Check if user has stored tokens
+If the fork fails part way:
+- After one pair: that pair becomes the current token and the spent backup is deleted.
+- On the first call: nothing is stored. After `invalidTokenRequest` or `unknownAccount` the backup is deleted; after any other error, such as a network failure, it's kept. The error is thrown.
 
-### Account Management
-- `activate(withPlatformSignature signature: String) async throws -> TokenContainer` - Activate account with platform signature (e.g., App Store receipt)
-- `adopt(tokenContainer: TokenContainer) throws` - Adopt an externally-provided token container
+Concurrent calls share one restore.
 
-### Token Operations
-- `decode(accessToken: String, refreshToken: String, refreshID: String?) async throws -> TokenContainer` - Decode and verify tokens, returns a TokenContainer
+### Sign-out cut-off
 
-### Logout
-- `logout() async throws` - Invalidate tokens server-side and remove local storage
-- `removeLocalAccount(includingBackup:) throws` - Remove tokens from local storage only (does not invalidate server-side), optionally including the backup
+`logout()` records a cut-off in `backupUserDefaults`. A backup whose refresh token was issued at or before it is never restored, even if deleting it failed or another process wrote it back.
 
-## Error Handling
+The cut-off is the newest issue date among the current token's and the stored backup's refresh tokens. Those dates come from the auth server's clock, so a wrong device clock can't move it. When neither token is available, the previous cut-off is kept, unless reading the current token failed, in which case the current date is used.
 
-The framework provides detailed error handling through `OAuthServiceError` and `OAuthClientError`:
+### When the backup is deleted
+
+- `logout()`.
+- `removeLocalAccount(includingBackup: true)`.
+- Storing a current token of another account: `activate`, `adopt`, `setCurrentTokenContainer` and account creation through `.createIfNeeded`. A backup of the same account is kept.
+- A restore that finds the backup undecodable, of another account, issued before the cut-off or expired.
+- A restore whose first refresh is rejected with `invalidTokenRequest` or `unknownAccount`.
+- A restore that minted only one pair, or ran while the backup was disabled.
+- A restore discarded because the session changed, if the spent backup is still stored.
+
+### The authBackupToken flag
+
+`isBackupEnabled` is checked every time a backup would be created, renewed or restored from, so turning the flag off takes effect without a restart. When it returns `false`:
+- no backup is created, renewed or restored from, and `restoreFromBackup` throws `.unavailable`;
+- a stored backup is still deleted in the cases above, so turning the flag back on never brings back a backup that should have been deleted;
+- a renewal or restore that was running stores no new backup.
+
+The apps wire it to the `authBackupToken` feature flag.
+
+## Sessions and concurrency
+
+The client counts session changes: sign-out, adoption, activation, account creation and storing a token directly. Work started before a change doesn't store its result after it:
+
+- A **refresh** that finishes after a change discards its pair and returns the container stored at that point, or throws `missingTokenContainer` when none is stored.
+- A **backup renewal** is discarded.
+- A **restore** throws `TokenBackupError.sessionChanged`.
+
+Refreshes and restores are each deduplicated: a second caller waits for the running task and gets its result.
+
+## Error handling
+
+### How the Auth API's responses are read
+
+`OAuthRequest` declares a `successCode` and the `bodyErrorDecodableCodes`. `DefaultOAuthService` then:
+- returns the response for `successCode`;
+- decodes a `BodyError` for a status in `bodyErrorDecodableCodes` and throws `OAuthServiceError.authAPIError`, or `.missingResponseValue(.bodyError)` when it can't be decoded;
+- throws `OAuthServiceError.invalidResponseCode(status)` for any other status.
+
+| Request | Success | Body decoded on |
+|---|---|---|
+| `authorize`, `createAccount`, `login` | 302 | 400, 500 |
+| `getAccessToken` | 200 | 400, 500 |
+| `refreshAccessToken` | 200 | 400 only. A 500 is `invalidResponseCode`. |
+| `logout`, `editAccount`, `confirmEditAccount` | 200 | 401, 500 |
+| `jwks` | 200 | None |
+
+`DefaultTokenRefresher.refresh` maps two body errors to client errors: `invalid_token_request` to `OAuthClientError.invalidTokenRequest(tokenStatus)` and `unknown_account` to `.unknownAccount`. Every other error is thrown as it is. A 401 or 403 from the token endpoint is therefore `invalidResponseCode`, not a rejection.
+
+### Errors
 
 ```swift
 public enum OAuthClientError: DDGError {
     case internalError(String)
     case missingTokenContainer
     case unauthenticated
-    case invalidTokenRequest
+    case invalidTokenRequest(OAuthRequest.TokenStatus?)
     case unknownAccount
 }
 ```
 
-**Notable errors:**
-- `missingTokenContainer`: No tokens are stored locally. Use `.createIfNeeded` policy or call `activate(withPlatformSignature:)` to create an account.
-- `invalidTokenRequest`: The refresh token is invalid or has been revoked. User must re-authenticate.
-- `unknownAccount`: The account associated with the refresh token no longer exists. User must create a new account.
-- `unauthenticated`: The account is not authenticated. User must re-authenticate.
+| Error | Meaning |
+|---|---|
+| `OAuthClientError.missingTokenContainer` | No current token is stored. |
+| `OAuthClientError.invalidTokenRequest` | The server rejected the refresh token. `TokenStatus` says why, when the response includes it. |
+| `OAuthClientError.unknownAccount` | The server doesn't know the account. |
+| `OAuthClientError.internalError` | A bug or unexpected state, such as failing to generate the PKCE challenge or a fork returning no pair. |
+| `OAuthClientError.unauthenticated` | Not thrown by `DefaultOAuthClient`. |
+| `OAuthServiceError` | The request couldn't be sent or its response couldn't be used: `authAPIError`, `apiServiceError`, `invalidRequest`, `invalidResponseCode`, `missingResponseValue`. |
+| `TokenBackupError` | Why the backup can't be used: `unavailable`, `accountMismatch`, `predatesSignOut`, `expired`, `sessionChanged`, `readFailed`, `undecodable`. |
+| `TokenForkError.incomplete` | Thrown by `TokenRefreshing.fork` with the pairs minted before the failure. `DefaultOAuthClient` never lets it escape. |
 
-## Refresh Event System
+The client never signs anyone out on its own. Deciding what a rejection means for the session is up to the caller.
 
-The framework provides an optional refresh event system for monitoring token refresh operations:
+### Classifying a failed restore
 
-```swift
-public enum OAuthClientRefreshEvent {
-    case tokenRefreshStarted(refreshID: String)
-    case tokenRefreshRefreshingAccessToken(refreshID: String)
-    case tokenRefreshRefreshedAccessToken(refreshID: String)
-    case tokenRefreshFetchingJWKS(refreshID: String)
-    case tokenRefreshFetchedJWKS(refreshID: String)
-    case tokenRefreshVerifyingAccessToken(refreshID: String)
-    case tokenRefreshVerifyingRefreshToken(refreshID: String)
-    case tokenRefreshSavingTokens(refreshID: String)
-    case tokenRefreshSucceeded(refreshID: String)
-    case tokenRefreshFailed(refreshID: String, error: Error)
-}
-```
+`BackupRestoreFailure(error)` says whether a failed restore could succeed if tried again:
 
-Each refresh operation is assigned a unique `refreshID` (UUID) that can be used to track the refresh lifecycle. Pass an `EventMapping<OAuthClientRefreshEvent>` to the initializer to receive these events, or `nil` to disable event tracking.
+| Classification | Errors |
+|---|---|
+| `.temporary` | `URLError`, `APIRequestV2Error.urlSession`, a 5xx, 408 or 429 response, a backup that couldn't be read because the keychain is locked. |
+| `.permanent` | Any other `TokenBackupError`, `invalidTokenRequest`, `unknownAccount`. |
+| `.unknown` | Everything else, including other HTTP statuses and other keychain read failures. |
+
+## Events
+
+**Refresh events** (`refreshEventMapping`, `OAuthClientRefreshEvent`) report each step of a refresh under one `refreshID`: started (with its trigger), refreshing, refreshed, fetching and fetched JWKS, verifying the access and refresh tokens, saving, succeeded and failed. The apps turn them into the AuthV2 token refresh wide event. Backup renewals and restores report no refresh events.
+
+**Backup events** (`backupEventMapping`, `OAuthClientBackupEvent`):
+- `backupRenewed`
+- `backupRenewalFailed(error)`
+- `storageFailed(action, operation, error)` for every failed read, write or delete of the backup storage. `TokenBackupAction` is the client action (`renewal`, `restore`, `signOut`, `localSignOut`, `signIn`) and `TokenBackupStorageOperation` is `read`, `write` or `delete`.
+
+## How the apps use it
+
+`SubscriptionManager` (in `BrowserServicesKit/Subscription`) wraps the client and decides what a failure means for the session:
+
+| `getTokens` failure | What `SubscriptionManager.getTokenContainer` does |
+|---|---|
+| `missingTokenContainer` | Restores from the backup when a recovery coordinator is set; otherwise throws `noTokenAvailable`. |
+| `invalidTokenRequest` | Uses a newer token another process stored meanwhile, if there is one. Otherwise runs the recovery: backup restore first, then, for App Store subscriptions, the App Store restore. If the session changed during the recovery, keeps the new session. If the recovery fails, signs out locally and keeps the backup. |
+| `unknownAccount` | Signs out locally and deletes the backup. |
+| Anything else | Keeps the session and throws `errorRetrievingTokenContainer`. |
+
+- The strategies live in `TokenRecovery/`: `TokenRecoveryCoordinator` runs `BackupTokenRecovery` and `AppStoreTokenRecovery` in order and stops at the first success.
+- After a missing-token restore fails for a reason that isn't `.permanent`, `BackupTokenRecovery` skips further missing-token restores for 5 minutes.
+- Both apps call `restoreMissingTokenIfPossible()` when they become active, so a lost token comes back without waiting for a request.
+- On iOS, `SubscriptionTokenKeepAlive` refreshes the token in the background once its refresh token is 15 days old, behind the `authBackgroundTokenRefresh` flag, so a session the app doesn't use renews before it expires.
+- Explicit sign-out (`signOut`) calls `logout()`. Automatic sign-outs call `removeLocalAccount(includingBackup:)` and never contact the server, so they don't revoke the backup.
+
+## Public API
+
+### Tokens
+- `getTokens(policy:trigger:) async throws -> TokenContainer`, and `getTokens(policy:)` with the `.client` trigger.
+- `currentTokenContainer() throws -> TokenContainer?`: the stored container, without refreshing it.
+- `setCurrentTokenContainer(_:) throws`: stores a container, or removes it with `nil`, as a new session. Use with caution.
+- `isUserAuthenticated: Bool`: whether a container can be read from storage.
+- `decode(accessToken:refreshToken:refreshID:) async throws -> TokenContainer`: verifies two tokens and wraps them in a container, without storing it.
+
+### Account
+- `activate(withPlatformSignature:) async throws -> TokenContainer`: signs in with a purchase signature.
+- `adopt(tokenContainer:) throws`: stores a container obtained elsewhere as a new session.
+
+### Backup
+- `restoreFromBackup(expectedExternalID:) async throws -> TokenContainer`: see [Restore](#restore).
+
+### Sign-out
+- `logout() async throws`: see [Sign-out and local removal](#sign-out-and-local-removal).
+- `removeLocalAccount(includingBackup:) throws`: removes the current token locally, and the backup when asked.
 
 ## Security and other considerations
 
-- Secure token storage is not the responsibility of this framework and is provided by dependency injection of objects implementing `AuthTokenStoring`.
-- JWT verification uses server-provided public keys fetched from `/api/auth/v2/.well-known/jwks.json`.
-- The token is automatically refreshed if requested less than 45 seconds before expiration (configurable via `tokenExpiryBufferInterval`).
-- On logout, the token is invalidated server-side and removed from local storage.
-- Token durations:
-    - Access Token: 4 hours (4 minutes in Staging)
-    - Refresh Token: 30 days
-- The client is implemented as a Swift `actor` for thread-safe access to token storage.
-- Concurrent refresh requests are automatically deduplicated - multiple calls to refresh will share the same refresh task.
+- Secure storage is the injected `AuthTokenStoring`'s job, not this framework's.
+- Tokens are verified with the keys published at `/api/auth/v2/.well-known/jwks.json`, fetched each time a pair is decoded.
+- Tokens are refreshed when they expire within 45 seconds.
+- The backup is a credential like the current token: it's kept in the keychain, deleted at sign-out, and never restored when issued before the last sign-out.
+- `/logout` revokes every token from the same login, the backup included, so only an explicit sign-out should call `logout()`.
 
 ## Testing and mocks
 
-The `NetworkTestingUtils` Swift package contains all needed mocks, factories and utilities needed for testing the Auth code itself and code that uses the AuthV2 authentication.
+The `TestingSupport` folder of the `Networking` target holds the test helpers, behind `@_spi(Testing)`:
 
-- `OAuthTokensFactory` creates different type of `TokenContainer` in different states of expiration.
-- `MockURLProtocol` can be used for isolating the code from the real API and run integration tests  
-- `HTTPURLResponseExtension` provides pre-configured `HTTPURLResponse` responses like `HTTPURLResponse.ok` or `HTTPURLResponse.internalServerError`
+- `MockOAuthClient`, `MockOAuthService`, `MockTokenStorage` and `MockAPIService`, each configurable with a result or an error per method.
+- `OAuthTokensFactory` builds token containers in different states: valid, expiring, expired, with entitlements, and Auth API errors.
+- `MockURLProtocol` isolates code from the real API for integration tests.
+- `APIMockResponseFactory` and `HTTPURLResponseExtension` provide ready-made responses, such as `HTTPURLResponse.ok` or `HTTPURLResponse.internalServerError`.
 
-All mocks are completely independent and configurable with errors or successful responses for each function
+`DefaultTokenRefresher.setTestingDecodedTokenContainers(_:)` (debug builds only) makes `decode` return given containers instead of verifying real JWTs.
 
-## Additional Documentation
+## Additional documentation
+
 - [OAuth 2.0 protocol](https://auth0.com/intro-to-iam/what-is-oauth-2)
 - [Auth API V2 Documentation](https://dub.duckduckgo.com/duckduckgo/ddg/blob/main/components/auth/docs/AuthAPIV2Documentation.md)
 - [Original Task with Tech Designs](https://app.asana.com/1/137249556945/project/72649045549333/task/1207591586576970?focus=true)

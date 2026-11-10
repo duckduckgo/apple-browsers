@@ -40,6 +40,9 @@ final class DataBrokerProtectionDebugViewController: UITableViewController {
         case database
         case debugActions
         case freemiumPIR
+#if DEBUG
+        case emailOptOut
+#endif
         case environment
         case dbpMetadata
 
@@ -53,6 +56,10 @@ final class DataBrokerProtectionDebugViewController: UITableViewController {
                 return "Debug Actions"
             case .freemiumPIR:
                 return "Freemium PIR"
+#if DEBUG
+            case .emailOptOut:
+                return "Email Opt-Out"
+#endif
             case .environment:
                 return "Environment"
             case .dbpMetadata:
@@ -70,6 +77,10 @@ final class DataBrokerProtectionDebugViewController: UITableViewController {
                 return .rightDetail
             case .freemiumPIR:
                 return .rightDetail
+#if DEBUG
+            case .emailOptOut:
+                return .rightDetail
+#endif
             case .environment:
                 return .subtitle
             case .dbpMetadata:
@@ -150,6 +161,22 @@ final class DataBrokerProtectionDebugViewController: UITableViewController {
         }
     }
 
+#if DEBUG
+    enum EmailOptOutRows: Int, CaseIterable {
+        case forceCanSendEmail
+        case seedTestRecords
+
+        var title: String {
+            switch self {
+            case .forceCanSendEmail:
+                return "Force canSendEmail"
+            case .seedTestRecords:
+                return "Seed Email Opt-Out Test Records"
+            }
+        }
+    }
+#endif
+
     enum EnvironmentRows: Int, CaseIterable {
         case subscriptionEnvironment
         case dbpAPI
@@ -177,6 +204,9 @@ final class DataBrokerProtectionDebugViewController: UITableViewController {
     private weak var runPrerequisitesDelegate: DBPIOSInterface.RunPrerequisitesDelegate?
     private let freemiumPIRDebugSettings: FreemiumPIRDebugSettings
     private let freemiumDBPUserStateManager: FreemiumDBPUserStateManaging
+#if DEBUG
+    private let emailOptOutDebugSettings = DBPEmailOptOutDebugSettings()
+#endif
     private let settings = DataBrokerProtectionSettings(defaults: .dbp)
     private let webUISettings = DataBrokerProtectionWebUIURLSettings(.dbp)
     private let healthOverviewPresenter: HealthOverviewSectionPresenter
@@ -592,6 +622,26 @@ final class DataBrokerProtectionDebugViewController: UITableViewController {
             cell.accessoryView = nil
             return cell
 
+#if DEBUG
+        case .emailOptOut:
+            let cell = dequeueCell(identifier: identifier, style: section.cellType(for: indexPath.row))
+
+            let row = EmailOptOutRows(rawValue: indexPath.row)
+            cell.textLabel?.text = row?.title
+
+            switch row {
+            case .forceCanSendEmail:
+                cell.detailTextLabel?.text = emailOptOutDebugSettings.isCanSendEmailForced ? "On" : "Off"
+            case .seedTestRecords:
+                cell.detailTextLabel?.text = nil
+            case nil:
+                break
+            }
+
+            cell.accessoryView = nil
+            return cell
+#endif
+
         case .environment:
             let cell = dequeueCell(identifier: identifier, style: section.cellType(for: indexPath.row))
 
@@ -648,6 +698,9 @@ final class DataBrokerProtectionDebugViewController: UITableViewController {
         case .database: return DatabaseRows.allCases.count
         case .debugActions: return DebugActionRows.allCases.count
         case .freemiumPIR: return FreemiumPIRRows.allCases.count
+#if DEBUG
+        case .emailOptOut: return EmailOptOutRows.allCases.count
+#endif
         case .environment: return EnvironmentRows.allCases.count
         case .dbpMetadata: return DBPMetadataRows.allCases.count
         case .none: return 0
@@ -675,6 +728,11 @@ final class DataBrokerProtectionDebugViewController: UITableViewController {
         case .freemiumPIR:
             guard let row = FreemiumPIRRows(rawValue: indexPath.row) else { return }
             handleFreemiumPIRAction(for: row)
+#if DEBUG
+        case .emailOptOut:
+            guard let row = EmailOptOutRows(rawValue: indexPath.row) else { return }
+            handleEmailOptOutAction(for: row)
+#endif
         case .environment:
             guard let row = EnvironmentRows(rawValue: indexPath.row) else { return }
             handleEnvironmentAction(for: row)
@@ -761,6 +819,28 @@ final class DataBrokerProtectionDebugViewController: UITableViewController {
         }
     }
     
+#if DEBUG
+    private func handleEmailOptOutAction(for row: EmailOptOutRows) {
+        switch row {
+        case .forceCanSendEmail:
+            emailOptOutDebugSettings.isCanSendEmailForced.toggle()
+            tableView.reloadSections(IndexSet(integer: Sections.emailOptOut.rawValue), with: .none)
+        case .seedTestRecords:
+            seedEmailOptOutTestRecords()
+        }
+    }
+
+    private func seedEmailOptOutTestRecords() {
+        do {
+            let seededBrokerURLs = try debuggingDelegate?.seedEmailOptOutTestRecords() ?? []
+            let seeded = seededBrokerURLs.isEmpty ? "none, the records already exist" : seededBrokerURLs.joined(separator: ", ")
+            presentAlert(title: "Email Opt-Out Test Records", message: "Seeded: \(seeded). Scans for these brokers are deferred.")
+        } catch {
+            presentAlert(title: "Seeding Failed", message: error.localizedDescription)
+        }
+    }
+#endif
+
     private func runEmailConfirmationOperations() {
         guard jobExecutionState == .idle else {
             presentAlert(title: "Jobs Already Running", message: "Please wait for the current jobs to complete before starting new ones.")

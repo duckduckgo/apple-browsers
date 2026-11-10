@@ -891,7 +891,7 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
         self.snoozeTimingStore.reset()
 
         do {
-            try reconnectGuard.validate(startupMethod: startupOptions.startupMethod)
+            try reconnectGuard.runStartValidation(startupMethod: startupOptions.startupMethod)
             try await load(options: startupOptions)
             Logger.networkProtection.log("🟢 Startup options loaded correctly")
 
@@ -947,7 +947,7 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
 
             let reason: AdapterStartReason = startupOptions.startupMethod == .automaticOnDemand ? .onDemand : .manual
             try await startTunnel(reason: reason)
-            reconnectGuard.startSucceeded(startupMethod: startupOptions.startupMethod)
+            reconnectGuard.didStartSuccessfully()
 
             providerEvents.fire(.tunnelStartAttempt(.success))
             providerEvents.fire(.reportConnectionAttempt(attempt: .success, source: .start))
@@ -1595,7 +1595,7 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
             // shut it down even if the process keeps running.
 
             // Subscription recovery must not undo this guard if the extension process restarts.
-            reconnectGuard.canReconnect = false
+            reconnectGuard.blockAutomaticReconnect()
 
             // We don't want to be firing monitoring pixels for failures from this point onward...
             await stopMonitors()

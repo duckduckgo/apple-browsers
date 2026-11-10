@@ -21,26 +21,33 @@ import Foundation
 /// Persists the failed-shutdown guard independently of subscription credentials.
 struct ReconnectGuard {
     private static let blockedKey = "com.duckduckgo.vpn.reconnectBlocked"
-    let defaults: UserDefaults
+    private let defaults: UserDefaults
     /// Startup history belongs to the current provider instance and is never persisted.
     private(set) var hasStartedSuccessfully = false
 
-    var canReconnect: Bool {
-        get { !defaults.bool(forKey: Self.blockedKey) }
-        nonmutating set { defaults.set(!newValue, forKey: Self.blockedKey) }
+    init(defaults: UserDefaults) {
+        self.defaults = defaults
     }
 
-    func validate(startupMethod: StartupOptions.StartupMethod) throws {
+    private var isAutomaticReconnectBlocked: Bool {
+        get { defaults.bool(forKey: Self.blockedKey) }
+        nonmutating set { defaults.set(newValue, forKey: Self.blockedKey) }
+    }
+
+    /// Validates the start and immediately enables automatic reconnects when it is allowed.
+    func runStartValidation(startupMethod: StartupOptions.StartupMethod) throws {
         // A system restart can arrive without options and look like a system-initiated start.
-        guard canReconnect || startupMethod == .manualByMainApp else {
+        guard !isAutomaticReconnectBlocked || startupMethod == .manualByMainApp else {
             throw PacketTunnelProvider.TunnelError.reconnectBlocked
         }
+        isAutomaticReconnectBlocked = false
     }
 
-    mutating func startSucceeded(startupMethod: StartupOptions.StartupMethod) {
+    func blockAutomaticReconnect() {
+        isAutomaticReconnectBlocked = true
+    }
+
+    mutating func didStartSuccessfully() {
         hasStartedSuccessfully = true
-        if startupMethod == .manualByMainApp {
-            canReconnect = true
-        }
     }
 }

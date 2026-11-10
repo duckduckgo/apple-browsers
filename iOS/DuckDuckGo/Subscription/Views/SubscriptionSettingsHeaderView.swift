@@ -27,6 +27,7 @@ struct SubscriptionSettingsHeaderView: View {
         case expired(_ details: String)
         case activating
         case trial
+        case withdrawn
     }
 
     let state: HeaderState
@@ -85,6 +86,15 @@ struct SubscriptionSettingsHeaderView: View {
                     .foregroundColor(Color(designSystemColor: .textSecondary))
                     .padding(.top, 9)
                     .multilineTextAlignment(.center)
+            case .withdrawn:
+                HStack(spacing: 4) {
+                    Circle()
+                        .fill(Color(designSystemColor: .iconsTertiary))
+                        .frame(width: 8, height: 8)
+                    Text(UserText.subscriptionNotSubscribed)
+                        .daxBodyRegular()
+                        .foregroundColor(Color(designSystemColor: .textSecondary))
+                }
             }
         }
     }

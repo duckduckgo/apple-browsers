@@ -100,6 +100,22 @@ public final class SubscriptionManagerMock: SubscriptionManager {
         return customerPortalURL
     }
 
+    public var getWithdrawalEligibilityResult: Result<WithdrawalEligibility, Error>?
+    public func getWithdrawalEligibility() async throws -> WithdrawalEligibility {
+        guard let getWithdrawalEligibilityResult else {
+            throw SubscriptionManagerError.noTokenAvailable
+        }
+        return try getWithdrawalEligibilityResult.get()
+    }
+
+    public var withdrawSubscriptionResult: Result<WithdrawSubscriptionResponse, Error>?
+    public func withdrawSubscription() async throws -> WithdrawSubscriptionResponse {
+        guard let withdrawSubscriptionResult else {
+            throw SubscriptionManagerError.noTokenAvailable
+        }
+        return try withdrawSubscriptionResult.get()
+    }
+
     public var isUserAuthenticated: Bool {
         resultTokenContainer != nil
     }

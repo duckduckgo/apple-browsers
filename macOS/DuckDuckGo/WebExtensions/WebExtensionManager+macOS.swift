@@ -143,7 +143,13 @@ enum WebExtensionManagerFactory {
         let popupNoticePresenter: WebExtensionPopupNoticePresenting?
         if buildType.isAppStoreBuild {
             nativeMessagingHandler = UnavailableNativeMessagingHandler(noticeStore: nativeMessagingNoticeStore)
-            popupNoticePresenter = NativeMessagingPopupNoticePresenter(noticeStore: nativeMessagingNoticeStore, themeManager: themeManager)
+            popupNoticePresenter = NativeMessagingPopupNoticePresenter(
+                noticeStore: nativeMessagingNoticeStore,
+                themeManager: themeManager,
+                openURL: { url in
+                    Application.appDelegate.windowControllersManager.show(url: url, source: .ui, newTab: true)
+                }
+            )
         } else {
             nativeMessagingHandler = Application.appDelegate.featureFlagger.isFeatureOn(.webExtensionNativeMessaging)
                 ? NativeMessagingHandler(installationStore: installationStore)

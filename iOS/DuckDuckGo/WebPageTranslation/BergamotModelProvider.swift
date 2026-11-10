@@ -16,7 +16,9 @@
 //  limitations under the License.
 //
 
+import CryptoKit
 import Foundation
+import os.log
 import TranslateKit
 
 // MARK: - Constants
@@ -62,12 +64,31 @@ private enum CDN {
     ]
 }
 
+/// DuckDuckGo-hosted es→en model (zstd-compressed). Each file: URL, SHA-256 of the .zst, SHA-256 once decompressed.
+// shortcut: one pair hardcoded from models.json (2026-11-02) to validate the hosted + zstd flow; read the manifest before shipping.
+private enum Hosted {
+    static let base = "https://translations.duck.com/translations/models/es-en/3.0/base-memory/"
+    static let pair = "es-en"
+    static let model = (url: base + "model.esen.intgemm.alphas.bin.zst",
+                        sha256: "7d1a512f3d3c420a0d87e52dccf6c83bf7eba7f4c54608824d3f86b757993a3e",
+                        decompressedSHA256: "4aed7734152ae0045d1a69ae49c86cfda18f53c61f90e95e1d1de1c7c7c3b033")
+    static let vocab = (url: base + "vocab.esen.spm.zst",
+                        sha256: "76b9ef220b22cec379f097852ca6312cabf065d5ddfb05149d5af31aa050ec22",
+                        decompressedSHA256: "5ae254fa9b15aa182e70fd2a6186b1333c63a29a48043a9224c6aa4fcac058ad")
+    static let lex = (url: base + "lex.50.50.esen.s2t.bin.zst",
+                      sha256: "5c3aae52d8fddeb2e09098171cdecf059ea453474633edcebc77375b04cbcaee",
+                      decompressedSHA256: "e2610211d3b9577d012638fe7e7e74ed7b4b708ce96b9e792e67c282a6492daa")
+}
+
+private let providerLogger = Logger(subsystem: "com.duckduckgo.ios", category: "WebPageTranslationPOC")
+
 // MARK: - Error
 
 enum BergamotModelProviderError: Error {
     case unsupportedLanguagePair(source: String, target: String)
     case httpError(statusCode: Int)
     case writeFailure(Error)
+    case hashMismatch(file: String)
 }
 
 // MARK: - BergamotModelProvider
@@ -145,7 +166,6 @@ final class BergamotModelProvider {
             return DownloadResult(model: cached, bytes: bytes, seconds: 0)
         }
 
-        let remote = try remoteFiles(source: source, target: target)
         let dir = cacheDir(source: source, target: target)
         try fileManager.createDirectory(at: dir, withIntermediateDirectories: true)
 
@@ -155,9 +175,14 @@ final class BergamotModelProvider {
         let start = ProcessInfo.processInfo.systemUptime
         var totalBytes: Int64 = 0
 
-        totalBytes += try await download(url: remote.modelURL, to: paths.model)
-        totalBytes += try await download(url: remote.vocabURL, to: paths.vocab)
-        totalBytes += try await download(url: remote.lexURL, to: paths.lex)
+        if "\(source)-\(target)" == Hosted.pair {
+            totalBytes = try await downloadHosted(to: paths)
+        } else {
+            let remote = try remoteFiles(source: source, target: target)
+            totalBytes += try await download(url: remote.modelURL, to: paths.model)
+            totalBytes += try await download(url: remote.vocabURL, to: paths.vocab)
+            totalBytes += try await download(url: remote.lexURL, to: paths.lex)
+        }
 
         let seconds = ProcessInfo.processInfo.systemUptime - start
 
@@ -197,6 +222,33 @@ final class BergamotModelProvider {
         return size
     }
 
+    /// Downloads each hosted `.zst`, checks its SHA-256, decompresses it with TranslateKit, checks the
+    /// decompressed SHA-256, then deletes the `.zst`. Returns the compressed bytes transferred.
+    private func downloadHosted(to paths: LocalPaths) async throws -> Int64 {
+        var totalBytes: Int64 = 0
+        for (file, localPath) in [(Hosted.model, paths.model), (Hosted.vocab, paths.vocab), (Hosted.lex, paths.lex)] {
+            let zstPath = localPath + ".zst"
+            totalBytes += try await download(url: URL(string: file.url)!, to: zstPath)
+            try verifySHA256(atPath: zstPath, expected: file.sha256)
+            let start = ProcessInfo.processInfo.systemUptime
+            try await Task.detached { try TranslateKit.decompressZstd(at: zstPath, to: localPath) }.value
+            let seconds = ProcessInfo.processInfo.systemUptime - start
+            try verifySHA256(atPath: localPath, expected: file.decompressedSHA256)
+            try? fileManager.removeItem(atPath: zstPath)
+            providerLogger.info("POC hosted model: \((file.url as NSString).lastPathComponent, privacy: .public) decompressed in \(String(format: "%.3f", seconds), privacy: .public)s, both hashes OK")
+        }
+        return totalBytes
+    }
+
+    private func verifySHA256(atPath path: String, expected: String) throws {
+        // shortcut: reads the whole file (~32 MB max) into memory; stream it if models grow.
+        let digest = SHA256.hash(data: try Data(contentsOf: URL(fileURLWithPath: path), options: .mappedIfSafe))
+        guard digest.map({ String(format: "%02x", $0) }).joined() == expected else {
+            try? fileManager.removeItem(atPath: path)
+            throw BergamotModelProviderError.hashMismatch(file: (path as NSString).lastPathComponent)
+        }
+    }
+
     private func onDiskBytes(source: String, target: String) -> Int64 {
         let pair = source + target
         let dir = cacheDir(source: source, target: target)
@@ -210,7 +262,9 @@ final class BergamotModelProvider {
     // MARK: - Path helpers
 
     private func cacheDir(source: String, target: String) -> URL {
-        rootDirectory.appendingPathComponent("\(source)-\(target)")
+        // Hosted models live apart so a cached Mozilla CDN copy of the same pair isn't reused.
+        let pair = "\(source)-\(target)"
+        return rootDirectory.appendingPathComponent(pair == Hosted.pair ? "hosted/\(pair)" : pair)
     }
 
     private struct LocalPaths {

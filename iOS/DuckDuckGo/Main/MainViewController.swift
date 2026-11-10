@@ -68,7 +68,7 @@ struct StartupOnboardingDecision {
         case .downloadReasonSelection, .setDefaultBrowser, .aiIntro, .addToDockPromo, .appIconSelection,
              .addressBarPositionSelection, .searchExperienceSelection,
              .duckAIQuerySelection, .interludeDuckAI,
-             .searchPrivacySettingsSelection, .aiSearchSettingsSelection, .aiModelSelection,
+             .aiSearchSettingsSelection, .aiModelSelection,
              .toggleInputModeSelection, .keepDuckAISelection, .adBlockingPersonalization:
             shouldShowOnboarding = true
             return
@@ -291,6 +291,9 @@ class MainViewController: UIViewController {
     private var hasLoadedInitialView = false
     private weak var burningOverlayView: UIView?
     private(set) var isStartupOnboardingPending = false
+    /// Emits when the onboarding state changes or the browser first appears, so the main menu is rebuilt with the state it can now read.
+    let menuRebuildRequests = PassthroughSubject<Void, Never>()
+    private var hasRequestedMenuRebuildOnFirstAppearance = false
     private(set) lazy var startupOnboardingCover = StartupOnboardingCover(
         parentViewController: self,
         fallbackBackgroundColor: themeManager.currentTheme.onboardingBackgroundColor
@@ -343,6 +346,11 @@ class MainViewController: UIViewController {
     var vpnConnectedWhenLeavingNewTabPage: Bool?
     let duckAIWideEventInstrumentation: DuckAIWideEventInstrumentation
     let duckAISessionInstrumentation: DuckAISessionInstrumentation
+    let duckAIEntryInstrumentation: DuckAIEntryInstrumentation
+    /// The new tab page onboarding's Try Duck.ai opened the address bar on, until the next entry.
+    weak var onboardingPromoTab: Tab?
+    /// Where voice search was opened from outside the address bar, e.g. a widget; nil when opened in-app.
+    private var voiceSearchEntrySource: AIChatEntryPointSource?
     let syncAutoRestoreHandler: SyncAutoRestoreHandling
     private let lastActiveTabStore: LastActiveTabStoring
     let fireModeCapability: FireModeCapable
@@ -369,12 +377,10 @@ class MainViewController: UIViewController {
     private weak var boundAIChatChromeChipCoordinator: AIChatContextualSheetCoordinator?
     /// Separates "bound to no tab" from "never bound", so a launch onto a tab-less NTP still refreshes.
     private var hasBoundAIChatChromeChip = false
-    var duckAIMenuAnchor: UIView?
     /// iPad only: shows the contextual Duck.ai surface beside the page.
     lazy var contextualSidebarPresenter: AIChatContextualSidebarPresenter? = makeContextualSidebarPresenter()
     /// Watches a live window resize for its end, when the contextual surface settles where it fits.
     var contextualSurfaceResizeEndObservation: NSKeyValueObservation?
-    private var customizableButtonMenuAnchor: UIView?
     private var settingsCancellables = Set<AnyCancellable>()
     private var webViewViewportRefreshCancellable: AnyCancellable?
     private lazy var floatingDomainCapsuleController = FloatingDomainCapsuleController { [weak self] in
@@ -483,6 +489,9 @@ class MainViewController: UIViewController {
     private lazy var browsingMenuHeaderDataSource = BrowsingMenuHeaderDataSource()
     private lazy var browsingMenuHeaderStateProvider = BrowsingMenuHeaderStateProvider()
 
+    lazy var bookmarksFileFlow = BookmarksFileFlow(bookmarksDatabase: bookmarksDatabase, appSettings: appSettings)
+    lazy var mainMenuBookmarks = MainMenuBookmarks(database: bookmarksDatabase, appSettings: appSettings)
+
     lazy var menuBookmarksViewModel: MenuBookmarksInteracting = {
         let viewModel = MenuBookmarksViewModel(bookmarksDatabase: bookmarksDatabase, syncService: syncService)
         viewModel.favoritesDisplayMode = appSettings.favoritesDisplayMode
@@ -501,7 +510,7 @@ class MainViewController: UIViewController {
 
     let gestureBookmarksButton = GestureToolbarButton()
 
-    private lazy var fireButtonAnimator: FireButtonAnimator = FireButtonAnimator(appSettings: appSettings)
+    lazy var fireButtonAnimator: FireButtonAnimator = FireButtonAnimator(appSettings: appSettings)
 
     let bookmarksCachingSearch: BookmarksCachingSearch
 
@@ -639,6 +648,7 @@ class MainViewController: UIViewController {
     var unifiedToggleInputCancellables = Set<AnyCancellable>()
     var unifiedToggleInputFloatingReturnKeyKeyboardBottomConstraint: NSLayoutConstraint?
     var unifiedToggleInputFloatingReturnKeyInputTopConstraint: NSLayoutConstraint?
+    var duckAIKeyboardEdgeSweepView: DuckAIKeyboardEdgeSweepView?
     var aiChatTabChatHeaderView: AIChatTabChatHeaderView?
     /// Minimal header shown in place of `aiChatTabChatHeaderView` while editing a message.
     var aiChatEditHeaderView: AIChatEditHeaderView?
@@ -863,6 +873,11 @@ class MainViewController: UIViewController {
         self.duckAISessionInstrumentation = DefaultDuckAISessionInstrumentation(
             wideEvent: AppDependencyProvider.shared.wideEvent,
             isEnabled: { featureFlagger.isFeatureOn(.duckAISessionWideEvent) },
+            completeOrphanedFlowsOnInit: true
+        )
+        self.duckAIEntryInstrumentation = DefaultDuckAIEntryInstrumentation(
+            wideEvent: AppDependencyProvider.shared.wideEvent,
+            isEnabled: { featureFlagger.isFeatureOn(.duckAIEntryWideEvent) },
             completeOrphanedFlowsOnInit: true
         )
         self.syncAutoRestoreHandler = syncAutoRestoreHandler
@@ -1133,13 +1148,16 @@ class MainViewController: UIViewController {
 
         if isStartupOnboardingPending {
             startupOnboardingCover.attach()
+            menuRebuildRequests.send()
         }
-
-        loadInitialViewIfNeeded()
     }
 
     override func viewDidAppear(_ animated: Bool) {
         super.viewDidAppear(animated)
+        if !hasRequestedMenuRebuildOnFirstAppearance {
+            hasRequestedMenuRebuildOnFirstAppearance = true
+            menuRebuildRequests.send()
+        }
         recordPendingNewTabPagePresentationIfVisible()
         remoteMessageImpressionReporter.browserDidAppear()
 
@@ -1263,6 +1281,9 @@ class MainViewController: UIViewController {
                                                     inputStateProvider: { [weak self] tab in
                                                         self?.unifiedInputStateStore?.state(for: tab.uid) ?? TabInputState()
                                                     },
+                                                    placeholderStateProvider: { [weak self] tab in
+                                                        self?.duckAIPlaceholderState(for: tab) ?? .newChat
+                                                    },
                                                     isPaidAIChatEnabledProvider: { [weak self] in
                                                         self?.isPaidAIChatEnabledForSwipe ?? false
                                                     },
@@ -1294,8 +1315,14 @@ class MainViewController: UIViewController {
                 pixelFiring?.fire(Pixel.Event.swipeTabsUsedDaily, frequency: .legacyDailyNoSuffix)
                 newTabPageSessionInstrumentation.visitEnded(terminalAction: .swipeToOtherTab)
                 postIdleSessionInstrumentation.sessionEnded(reason: .tabSwiped)
-                currentTab?.aiChatContextualSheetCoordinator.dismissSheet()
+                currentTabWillLeaveScreen(.tabSwitched)
+                if tab.isAITab {
+                    // Before selecting, so the entry attaches to this tab when it is shown.
+                    fireAIChatEntryPointPixel(source: .tabSwipe, opensNewTab: false, hasPrompt: false)
+                }
                 selectTab(tab)
+            } else {
+                crossfadeDuckAIPlaceholder(toMatch: tab)
             }
             if shouldRestoreFocus {
                 showKeyboardIfAllowed(restoringInputFocus: true) { _ in }
@@ -1304,12 +1331,13 @@ class MainViewController: UIViewController {
         } newTab: { [weak self] in
             PixelKit.fire(Pixel.Event.swipeToOpenNewTab)
             self?.postIdleSessionInstrumentation.sessionEnded(reason: .tabSwiped)
-            self?.currentTab?.aiChatContextualSheetCoordinator.dismissSheet()
+            self?.currentTabWillLeaveScreen(.newTabOpened)
             self?.newTab()
         } onSwipeStarted: { [weak self] in
             self?.rememberNewTabPageInputFocusForTabSwitch()
             self?.performCancel(animated: false)
             self?.hideKeyboard(animated: false)
+            self?.collapseDuckAIInputForTabSwipe()
             self?.updatePreviewForCurrentTab()
         }
 
@@ -1524,6 +1552,8 @@ class MainViewController: UIViewController {
         hasBoundAIChatChromeChip = true
         boundAIChatChromeChipCoordinator = coordinator
         aiChatChromeChipCancellables.removeAll()
+        // Only on an actual tab change: the tab leaving refreshes the omnibar while it is still the current one.
+        coordinator?.tabDidReturnToScreen(presentedFrom: self)
 
         guard let coordinator else {
             refreshAIChatChromeChip()
@@ -1605,8 +1635,8 @@ class MainViewController: UIViewController {
         }
     }
 
-    func presentDataBrokerProtectionDashboard() {
-        segueToDataBrokerProtection()
+    func presentDataBrokerProtectionDashboard(freeScanEntryPoint: FreemiumDBPEntryPoint? = nil) {
+        segueToDataBrokerProtection(freeScanEntryPoint: freeScanEntryPoint)
     }
 
     private func registerForKeyboardNotifications() {
@@ -1626,7 +1656,6 @@ class MainViewController: UIViewController {
     private func duckAIAddressBarMenuType(for tab: TabViewController?) -> DuckAIAddressBarMenuType {
         guard let tab else { return .webPage }
         return DuckAIAddressBarMenuType.resolve(
-            isFeatureEnabled: featureFlagger.isFeatureOn(.aiChatContextualAddressBarMenu),
             isShowingDocument: tab.isShowingDocument,
             tabType: tab.tabType,
             searchQuery: tab.url?.searchQuery
@@ -1916,6 +1945,7 @@ class MainViewController: UIViewController {
         newTabPageReturnTimeAwayMs = nil
         postIdleSessionInstrumentation.sessionCancelledByBackground()
         duckAISessionInstrumentation.sessionCancelledByBackground()
+        duckAIEntryInstrumentation.entryCancelledByBackground()
         recordNewTabPageSessionVPNChangeIfNeeded()
         newTabPageSessionInstrumentation.visitBackgrounded()
 
@@ -1941,7 +1971,7 @@ class MainViewController: UIViewController {
         }
         updateStatusBarBackgroundColor()
         themeColorManager.updateThemeColor()
-        refreshCustomizableButtonMenuHighlightTarget()
+        refreshCustomizableButtonMenuPreviewContainer()
         if let coordinator = unifiedToggleInputCoordinator, !coordinator.isActive {
             coordinator.viewController.refreshFireMode(fireMode: tabManager.currentTabsModel.currentTab?.fireTab ?? false)
         }
@@ -2115,7 +2145,10 @@ class MainViewController: UIViewController {
 
     @objc private func keyboardWillChangeFrame(_ notification: Notification) {
         guard let keyboard = BrowserKeyboardLayout(notification: notification) else { return }
-        adjustUI(withKeyboardFrame: keyboard.frame, in: keyboard.duration, animationCurve: keyboard.animationCurve)
+        adjustUI(withKeyboardFrame: keyboard.frame,
+                 in: keyboard.duration,
+                 animationCurve: keyboard.animationCurve,
+                 keyboardTargetFrame: keyboard.frame)
         scheduleCurrentFindResultVisibility(after: keyboard.duration + 0.15)
     }
 
@@ -2152,7 +2185,10 @@ class MainViewController: UIViewController {
     }
 
     // swiftlint:disable:next cyclomatic_complexity
-    func adjustUI(withKeyboardFrame keyboardFrame: CGRect, in duration: TimeInterval = 0.2, animationCurve: UIView.AnimationOptions = .curveEaseInOut) {
+    func adjustUI(withKeyboardFrame keyboardFrame: CGRect,
+                  in duration: TimeInterval = 0.2,
+                  animationCurve: UIView.AnimationOptions = .curveEaseInOut,
+                  keyboardTargetFrame: CGRect? = nil) {
         latestKeyboardFrame = keyboardFrame
         var keyboardHeight = keyboardFrame.size.height
 
@@ -2164,6 +2200,7 @@ class MainViewController: UIViewController {
         isKeyboardOverlappingContent = keyboardVisible
         keyboardHeight = keyboardFrameInView.height
         updateUnifiedToggleInputKeyboardVisibility(keyboardVisible)
+        updateDuckAIKeyboardEdgeSweep(keyboardTargetFrame: keyboardTargetFrame)
         updateWebInputChromeVisibility()
         if isFloatingUIEnabled {
             currentTab?.updateWebViewLayoutForKeyboard()
@@ -2393,9 +2430,14 @@ class MainViewController: UIViewController {
         })
     }
 
-    private func loadInitialView() {
+    private func loadInitialView(drawsIdleReturnNewTabPage: Bool) {
         if tabManager.currentTabsModel.tabs.isEmpty && tabManager.currentTabsModel.allowsEmpty {
             showTabSwitcher()
+            return
+        }
+
+        if drawsIdleReturnNewTabPage {
+            attachNewTabPageForIdleReturnAtLaunch()
             return
         }
 
@@ -2409,10 +2451,29 @@ class MainViewController: UIViewController {
         }
     }
 
-    private func loadInitialViewIfNeeded() {
+    /// The previous tab stays in the model; the launch handling records the arrival and raises the keyboard.
+    private func attachNewTabPageForIdleReturnAtLaunch() {
+        selectOrAddHomeTab(reuseExisting: true)
+        // Without the deferred keyboard, the held focus raises it as `newTab` would after idle.
+        attachHomeScreen(isNewTab: true,
+                         allowingKeyboard: !featureFlagger.isFeatureOn(.alwaysShowKeyboardOnNewTabPage),
+                         openedAfterIdle: true)
+    }
+
+    private func selectOrAddHomeTab(reuseExisting: Bool, placement: TabsModel.TabPlacement = .atEnd) {
+        if reuseExisting, let existing = tabManager.firstHomeTab() {
+            tabManager.select(existing, dismissCurrent: false)
+        } else {
+            tabManager.addHomeTab(placement: placement)
+        }
+    }
+
+    /// Draws the first screen; a cold start after idle can land on the New Tab Page directly.
+    func loadInitialViewIfNeeded(drawsIdleReturnNewTabPage: Bool) {
+        loadViewIfNeeded()
         guard !hasLoadedInitialView else { return }
         hasLoadedInitialView = true
-        loadInitialView()
+        loadInitialView(drawsIdleReturnNewTabPage: drawsIdleReturnNewTabPage)
         hasCompletedInitialLoad = true
     }
 
@@ -2827,15 +2888,21 @@ class MainViewController: UIViewController {
     }
 
     @IBAction func onFirePressed() {
+        performFirePressed(prefersSheet: false)
+    }
+
+    func performFirePressed(prefersSheet: Bool) {
         recordNewTabPageSessionAction { $0.tapFireButton() }
         let wasContextualFireOnboardingDialogVisible = daxDialogsManager.isShowingFireDialog
 
         func showFireConfirmation() {
             let presenter = FireConfirmationPresenter()
-            let source: UIView = findFireButton() ?? viewCoordinator.toolbar
+            let tabsBarFireButton = viewCoordinator.tabBarContainer.isHidden ? nil : tabsBarController?.fireButton
+            let source: UIView = tabsBarFireButton ?? findFireButton() ?? viewCoordinator.toolbar
             presenter.presentFireConfirmation(
                 on: self,
                 attachPopoverTo: source,
+                prefersSheet: prefersSheet,
                 tabViewModel: tabManager.viewModelForCurrentTab(),
                 pixelSource: .browsing,
                 fireContext: .default(daxDialogsManager: daxDialogsManager),
@@ -2906,7 +2973,7 @@ class MainViewController: UIViewController {
             enterSearch()
         }
     }
-    
+
     private func wakeLazyFireButtonAnimator() {
         DispatchQueue.main.async {
             _ = self.fireButtonAnimator
@@ -3306,8 +3373,15 @@ class MainViewController: UIViewController {
         transitionTo(tab: tab, from: nil)
     }
 
+    /// Swiping back shows a tab's full-screen snapshot; without one it falls back to the tab switcher thumbnail.
+    private func captureForSwipeBack(_ outgoingTab: Tab?) {
+        guard featureFlagger.isFeatureOn(.aiChatTabHandoffImprovements), let outgoingTab else { return }
+        swipeTabsCoordinator?.updateFullScreenSnapshot(forTab: outgoingTab)
+    }
+
     @discardableResult
     private func addTab(url: URL?, inheritedAttribution: AdClickAttributionLogic.State?, fromExternalLink: Bool = false, voiceMode: Bool = false) -> Tab {
+        captureForSwipeBack(tabManager.currentTabsModel.currentTab)
         let tab = tabManager.add(url: url, inheritedAttribution: inheritedAttribution)
         tab.inferredOpenerContext = .external
         tab.isVoiceModeRequested = voiceMode
@@ -3320,7 +3394,7 @@ class MainViewController: UIViewController {
             tabManager.setSuppressTrackerAnimationOnFirstLoad(for: tab.tabModel, shouldSuppress: true)
         }
 
-        currentTab?.aiChatContextualSheetCoordinator.dismissSheet()
+        currentTab?.aiChatContextualSheetCoordinator.tabWillLeaveScreen()
         dismissOmniBar()
         resetUnifiedToggleInputForTabTransition(to: tab)
         attachTab(tab: tab)
@@ -3342,7 +3416,7 @@ class MainViewController: UIViewController {
         guard let tab else { return }
         // Re-selecting the current tab keeps its sidebar chat open.
         if previousTab !== tab {
-            previousTab?.aiChatContextualSheetCoordinator.dismissSheet()
+            previousTab?.aiChatContextualSheetCoordinator.tabWillLeaveScreen()
         }
         previousTab?.tabModel.openedAfterIdle = false
         dismissSystemFindNavigator(for: previousTab)
@@ -4325,7 +4399,8 @@ class MainViewController: UIViewController {
     func newTab(reuseExisting: Bool = false,
                 allowingKeyboard: Bool = true,
                 openedAfterIdle: Bool = false,
-                startsNewTabPageSessionVisit: Bool = true) {
+                startsNewTabPageSessionVisit: Bool = true,
+                placement: TabsModel.TabPlacement = .atEnd) {
         if daxDialogsManager.shouldShowFireButtonPulse {
             ViewHighlighter.hideAll()
         }
@@ -4333,18 +4408,14 @@ class MainViewController: UIViewController {
         // Tear down active editing before building the new tab; non-animated so its collapse doesn't race the new tab's focus animation.
         dismissOmniBar(animated: false)
         hideNotificationBarIfBrokenSitePromptShown()
-        currentTab?.aiChatContextualSheetCoordinator.dismissSheet()
+        currentTabWillLeaveScreen(.newTabOpened)
 
-        recordDuckAISessionPendingExit(.newTabOpened)
         let previousTab = tabManager.current()
         dismissSystemFindNavigator(for: previousTab)
+        captureForSwipeBack(tabManager.currentTabsModel.currentTab)
         currentTab?.dismiss()
 
-        if reuseExisting, let existing = tabManager.firstHomeTab() {
-            tabManager.select(existing, dismissCurrent: false)
-        } else {
-            tabManager.addHomeTab()
-        }
+        selectOrAddHomeTab(reuseExisting: reuseExisting, placement: placement)
         attachHomeScreen(isNewTab: true,
                          allowingKeyboard: allowingKeyboard,
                          previousTab: previousTab,
@@ -4506,10 +4577,11 @@ class MainViewController: UIViewController {
         (tab?.webView as? WebView)?.lastFindInPageQuery = tab?.webView.findInteraction?.searchText
     }
 
-    func handleVoiceSearchOpenRequest(preferredTarget: VoiceSearchTarget? = nil) {
+    func handleVoiceSearchOpenRequest(preferredTarget: VoiceSearchTarget? = nil, entrySource: AIChatEntryPointSource? = nil) {
         SpeechRecognizer.requestMicAccess { [weak self] permission in
             guard let self = self else { return }
             if permission {
+                self.voiceSearchEntrySource = entrySource
                 if let target = preferredTarget {
                     self.showVoiceSearch(preferredTarget: target)
                 } else {
@@ -4634,7 +4706,8 @@ class MainViewController: UIViewController {
             redirectURLComponents: redirectURLComponents
         )
 
-        if let settingsNavigationController = presentedViewController as? SettingsUINavigationController {
+        let presenter = topMostPresentedViewController() ?? self
+        if let settingsNavigationController = presenter as? SettingsUINavigationController {
             settingsNavigationController.pushViewController(subscriptionFlowViewController, animated: true)
             return
         }
@@ -4642,10 +4715,6 @@ class MainViewController: UIViewController {
         let navigationController = DataBrokerProtectionSubscriptionFlowNavigationController(
             rootViewController: subscriptionFlowViewController
         )
-        var presenter: UIViewController = self
-        while let presentedViewController = presenter.presentedViewController {
-            presenter = presentedViewController
-        }
         presenter.present(navigationController, animated: true)
     }
 
@@ -5094,7 +5163,8 @@ class MainViewController: UIViewController {
                     fromDeepLink: Bool = false,
                     termsAccepted: Bool = false,
                     nativePromptFlow: DuckAIPromptFlowStart? = nil,
-                    tabAttachmentRequest: MultiTabAttachmentRequest?) {
+                    tabAttachmentRequest: MultiTabAttachmentRequest?,
+                    voice: Bool = false) {
 
         // A query means the user asked something and a response is what they are waiting for;
         // without one they are only opening the chat surface.
@@ -5115,16 +5185,47 @@ class MainViewController: UIViewController {
             fromDeepLink: fromDeepLink,
             termsAccepted: termsAccepted,
             nativePromptFlow: nativePromptFlow,
-            tabAttachmentRequest: tabAttachmentRequest
+            tabAttachmentRequest: tabAttachmentRequest,
+            voice: voice
         )
     }
 
-    func fireAIChatEntryPointPixel(source: AIChatEntryPointSource, opensNewTab: Bool, hasPrompt: Bool) {
+    /// `chatState` overrides how the entry wide event reads it, for an entry that starts a new chat in the tab on screen.
+    /// Returns the source reported, which the caller stamps on the tab so its prompts report it too.
+    @discardableResult
+    func fireAIChatEntryPointPixel(source: AIChatEntryPointSource, opensNewTab: Bool, hasPrompt: Bool, voice: Bool = false,
+                                   chatState: DuckAIEntryWideEventData.ChatState? = nil) -> AIChatEntryPointSource {
+        let source = takeOnboardingPromoSource(for: source)
         AIChatEntryPointPixel.fire(source: source,
                                    duckAIEnabled: aiChatSettings.isAIChatEnabled,
                                    toggleEnabled: aiChatSettings.isAIChatSearchInputUserSettingsEnabled,
                                    opensNewTab: opensNewTab,
-                                   hasPrompt: hasPrompt)
+                                   hasPrompt: hasPrompt,
+                                   voice: voice)
+        let surface = DuckAIEntryWideEventData.Surface(source: source, opensNewTab: opensNewTab,
+                                                       opensInSidebar: opensContextualSurfaceInSidebar)
+        // A tab entry reads its chat state once its Duck.ai tab is shown.
+        let sheetChatState: DuckAIEntryWideEventData.ChatState? = surface.isContextual
+            ? (currentTab?.hasContextualChatToReopen == true ? .existing : .new)
+            : nil
+        duckAIEntryInstrumentation.entryStarted(source: source, hasPrompt: hasPrompt, voice: voice, surface: surface,
+                                                chatState: chatState ?? sheetChatState)
+        if surface.isContextual {
+            // Gives the sheet entry the page it opened on, so it can notice that page changing later.
+            reportDuckAISessionCurrentTab()
+        }
+        return source
+    }
+
+    /// An address-bar prompt from the tab onboarding's Try Duck.ai opened reports the promo; any entry clears it.
+    private func takeOnboardingPromoSource(for source: AIChatEntryPointSource) -> AIChatEntryPointSource {
+        defer { onboardingPromoTab = nil }
+        guard let promoTab = onboardingPromoTab,
+              promoTab === tabManager.currentTabsModel.currentTab,
+              promoTab.link == nil,
+              source == .addressBarPrompt || source == .ipadTogglePrompt
+        else { return source }
+        return .onboardingCompletionPromo
     }
 
     func stampDuckAIEntrySourceOnCurrentTab(_ source: AIChatEntryPointSource) {
@@ -5143,25 +5244,24 @@ class MainViewController: UIViewController {
 
     /// Voice requested from the address bar (iPad) or Unified Input.
     func onDuckAIVoiceModeRequested() {
-        startDuckAIVoiceMode(from: .addressBar)
+        startDuckAIVoiceMode(from: .addressBar, entrySource: isPad ? .ipadTogglePrompt : .addressBarPrompt)
     }
 
-    func startDuckAIVoiceMode(from source: VoiceEntryPointSource) {
+    /// `opensNewTabOverContent` keeps voice from replacing the current page when Unified Input would load it in place.
+    func startDuckAIVoiceMode(from source: VoiceEntryPointSource, entrySource: AIChatEntryPointSource, opensNewTabOverContent: Bool = false) {
         pixelFiring?.fire(Pixel.Event.voiceEntryPointTapped, options: .parameters([PixelParameters.source: source.rawValue]))
         if let tab = tabManager.currentTabsModel.currentTab, tab.link == nil {
             ntpAfterIdleInstrumentation.barUsedFromNTP(afterIdle: tab.openedAfterIdle)
         }
         postIdleSessionInstrumentation.duckAIOpenedWithoutPrompt()
-        openAIChatInVoiceMode()
+        openAIChatInVoiceMode(source: entrySource, fromDeepLink: false, opensNewTabOverContent: opensNewTabOverContent)
     }
 
     func openAIVoiceChatFromDeepLink(source: AIChatEntryPointSource) {
-        openAIChatInVoiceMode(deepLinkSource: source)
+        openAIChatInVoiceMode(source: source, fromDeepLink: true)
     }
 
-    /// `deepLinkSource` is nil when voice was started in-app, so a widget voice entry is
-    /// attributed to the widget; `m_aichat_voice_entry_point_tapped` separates voice from text.
-    private func openAIChatInVoiceMode(deepLinkSource: AIChatEntryPointSource? = nil) {
+    private func openAIChatInVoiceMode(source: AIChatEntryPointSource, fromDeepLink: Bool, opensNewTabOverContent: Bool = false) {
         if let reminder = NoMicPermissionAlert.buildVoiceChatReminderIfNeeded(
             isSitePermissionsEnabled: tabManager.isSitePermissionsEnabled,
             microphoneAuthorization: AVCaptureDevice.authorizationStatus(for: .audio),
@@ -5177,12 +5277,10 @@ class MainViewController: UIViewController {
         }
 
         // Voice mode bypasses `openAIChat`, so fire the entry pixel directly.
-        let source = deepLinkSource ?? .voice
-        let fromDeepLink = deepLinkSource != nil
-        openAIChatVoiceModeInTab(source: source, fromDeepLink: fromDeepLink)
+        openAIChatVoiceModeInTab(source: source, fromDeepLink: fromDeepLink, opensNewTabOverContent: opensNewTabOverContent)
     }
 
-    private func openAIChatVoiceModeInTab(source: AIChatEntryPointSource, fromDeepLink: Bool = false) {
+    private func openAIChatVoiceModeInTab(source: AIChatEntryPointSource, fromDeepLink: Bool = false, opensNewTabOverContent: Bool = false) {
         guard tabManager.current(createIfNeeded: true) != nil else {
             assertionFailure("openAIChatVoiceModeInTab: no current tab available")
             return
@@ -5195,8 +5293,8 @@ class MainViewController: UIViewController {
 
         // Voice always opens a new tab over existing content (chat included) — voice over a chat would replace the prior conversation. NTP stays in-place via `link != nil`.
         let hasContent = currentTab.tabModel.link != nil
-        let openInNewTab = hasContent && (unifiedToggleInputFeature.isAvailable || fromDeepLink)
-        fireAIChatEntryPointPixel(source: source, opensNewTab: openInNewTab, hasPrompt: false)
+        let openInNewTab = hasContent && (unifiedToggleInputFeature.isAvailable || fromDeepLink || opensNewTabOverContent)
+        let source = fireAIChatEntryPointPixel(source: source, opensNewTab: openInNewTab, hasPrompt: false, voice: true)
 
         if openInNewTab {
             let voiceURL = currentTab.aiChatContentHandler.buildVoiceModeURL()
@@ -5240,7 +5338,8 @@ class MainViewController: UIViewController {
                                  fromDeepLink: Bool = false,
                                  termsAccepted: Bool = false,
                                  nativePromptFlow: DuckAIPromptFlowStart? = nil,
-                                 tabAttachmentRequest: MultiTabAttachmentRequest? = nil) {
+                                 tabAttachmentRequest: MultiTabAttachmentRequest? = nil,
+                                 voice: Bool = false) {
         guard tabManager.current(createIfNeeded: true) != nil else {
             assertionFailure("openAIChatInTab: no current tab available")
             tabAttachmentRequest?.cancel()
@@ -5264,12 +5363,15 @@ class MainViewController: UIViewController {
         let opening = AIChatOpeningRequest(url: openingQuery.url(using: currentTab.aiChatContentHandler),
                                            payload: payload, source: source,
                                            opensNewTab: shouldOpenInNewTab,
-                                           prompt: .sharedHandler(openingQuery, reportsNewTab: reportsNewTab, fromDeepLink: fromDeepLink))
+                                           prompt: .sharedHandler(openingQuery, reportsNewTab: reportsNewTab, fromDeepLink: fromDeepLink),
+                                           isVoice: voice)
         openAIChat(opening, from: currentTab)
     }
 
     private func openAIChat(_ request: AIChatOpeningRequest, from originatingTab: TabViewController) {
-        fireAIChatEntryPointPixel(source: request.source, opensNewTab: request.reportsNewTab, hasPrompt: request.hasEntryPrompt)
+        var request = request
+        request.source = fireAIChatEntryPointPixel(source: request.source, opensNewTab: request.reportsNewTab,
+                                                   hasPrompt: request.hasEntryPrompt, voice: request.isVoice)
         // Record NTP use before ending the idle session.
         if !request.opensNewTab {
             measureAIChatUseFromNewTabPage(originatingTab)
@@ -5405,7 +5507,7 @@ class MainViewController: UIViewController {
     }
 
     /// The "Ask Duck.ai" row auto-sends its text as a prompt, on both platforms.
-    private func fireAskDuckAISuggestionPromptSubmittedPixel() {
+    private func fireAskDuckAISuggestionPromptSubmittedPixel(prompt: String) {
         UnifiedToggleInputCoordinatorPixelHelper.fireUnifiedPromptSubmittedPixel(
             hasText: true,
             selectedTool: nil,
@@ -5417,7 +5519,9 @@ class MainViewController: UIViewController {
             origin: .suggestionAskAI,
             defaultMode: aiChatSettings.defaultOmnibarMode,
             isFirstPromptNewInstall: featureDiscovery.isFirstDuckAIPromptNewInstall,
-            usageContext: usageContextProvider.currentContext
+            usageContext: usageContextProvider.currentContext,
+            addressBarPosition: appSettings.iPhoneAddressBarPosition,
+            resubmitOfSearch: unifiedToggleInputCoordinator?.resubmitDelay(of: prompt, mode: .aiChat)
         )
         featureDiscovery.markDuckAIPromptSubmitted()
     }
@@ -6188,7 +6292,7 @@ extension MainViewController: BrowserChromeDelegate {
             // We intentionally don't forward the resolved model config: the suggestion is offered
             // from Search mode where the model chip is hidden and the user hasn't chosen a model.
             _ = unifiedToggleInputCoordinator?.prepareExternalPromptSubmission()
-            fireAskDuckAISuggestionPromptSubmittedPixel()
+            fireAskDuckAISuggestionPromptSubmittedPixel(prompt: value)
             openAIChat(source: .suggestionAskAI, value, autoSend: true,
                        nativePromptFlow: DuckAIPromptFlowStart(userTier: currentDuckAIUserTier))
 
@@ -6865,6 +6969,7 @@ extension MainViewController: OmniBarDelegate {
     }
 
     func performCancel(animated: Bool = true) {
+        onboardingPromoTab = nil
         cancelPendingAppOpenKeyboard()
         dismissOmniBar(animated: animated)
         omniBar.cancel()
@@ -7661,6 +7766,10 @@ extension MainViewController: EscapeHatchActionRouter {
 
 extension MainViewController: NewTabPageControllerDelegate {
 
+    func newTabPageDidOpenDuckAIOnboardingPromo(_ controller: any NewTabPage) {
+        onboardingPromoTab = tabManager.currentTabsModel.currentTab
+    }
+
     func newTabPageDidRequestSettings(_ controller: any NewTabPage) {
         segueToSettings()
     }
@@ -7889,6 +7998,11 @@ extension MainViewController: TabDelegate {
 
     func tab(_ tab: TabViewController, didSubmitDuckAIPromptWithOrigin origin: AIChatEntryPointSource?) {
         postIdleSessionInstrumentation.promptSubmittedWithoutNavigation(origin: origin)
+        duckAIEntryInstrumentation.sheetPromptSubmitted()
+    }
+
+    func tabDidCloseContextualDuckAI(_ tab: TabViewController, chatDeleted: Bool) {
+        duckAIEntryInstrumentation.sheetDismissed(exitTrigger: chatDeleted ? .chatDeleted : nil)
     }
 
     func tab(_ tab: TabViewController, didFailDuckAINavigationFor url: URL, error: Error) {
@@ -7907,7 +8021,7 @@ extension MainViewController: TabDelegate {
         hideNotificationBarIfBrokenSitePromptShown()
         showBars()
         currentTab?.dismiss()
-        tab.aiChatContextualSheetCoordinator.dismissSheet()
+        tab.aiChatContextualSheetCoordinator.tabWillLeaveScreen()
         themeColorManager.updateThemeColor()
 
         // Don't use a request or else the page gets stuck on "about:blank"
@@ -7989,10 +8103,9 @@ extension MainViewController: TabDelegate {
         newTab()
     }
 
-    func tabDidRequestNewVoiceChat(_ tab: TabViewController) {
+    func tabDidRequestNewVoiceChat(_ tab: TabViewController, source: AIChatEntryPointSource) {
         endNewTabPageSessionWithMenuItem()
-        // Same as the Duck.ai header Plus-menu "New Voice Chat".
-        aiChatTabChatHeaderDidTapNewVoiceChat()
+        startDuckAIVoiceMode(from: .duckAI, entrySource: source)
     }
 
     private func presentChatPathOnboardingCompletionIfNeeded() {
@@ -8063,12 +8176,18 @@ extension MainViewController: TabDelegate {
                    completion: stampingDuckAIEntrySource(entrySource, then: nil))
     }
 
+    func tab(_ tab: TabViewController, didReportDuckAIEntry source: AIChatEntryPointSource, opensNewTab: Bool, hasPrompt: Bool) {
+        fireAIChatEntryPointPixel(source: source, opensNewTab: opensNewTab, hasPrompt: hasPrompt)
+    }
+
     func tab(_ tab: TabViewController,
              didRequestNewDuckAITabForUrl url: URL,
-             entrySource: AIChatEntryPointSource?) {
+             entrySource: AIChatEntryPointSource?,
+             newChatInputRequest: DuckAINewChatInputRequest?) {
         recordUserOpenedTab()
         openNewTab(from: tab, url: url, openedByPage: false, inheritedAttribution: nil) {
             $0.duckAIEntrySource = entrySource
+            $0.newChatInputRequest = newChatInputRequest
         }
     }
 
@@ -8116,7 +8235,7 @@ extension MainViewController: TabDelegate {
         }
         _ = findInPageView?.resignFirstResponder()
         hideNotificationBarIfBrokenSitePromptShown()
-        tab.aiChatContextualSheetCoordinator.dismissSheet()
+        tab.aiChatContextualSheetCoordinator.tabWillLeaveScreen()
 
         // The new tab carries a URL, so no New Tab Page attaches to supersede the visit and nothing
         // else would end it. Reached from the browsing menu's Duck.ai entry on builds where chat
@@ -8215,9 +8334,12 @@ extension MainViewController: TabDelegate {
 
     /// The new chat continues the visit to Duck.ai, so its tab keeps this page's entry source;
     /// `source` names only the control, on the entry pixel.
-    func openNewChatFromDuckAIPage(_ tab: TabViewController, source: AIChatEntryPointSource) {
+    func openNewChatFromDuckAIPage(_ tab: TabViewController,
+                                   source: AIChatEntryPointSource,
+                                   inputRequest: DuckAINewChatInputRequest = DuckAINewChatInputRequest()) {
         fireAIChatEntryPointPixel(source: source, opensNewTab: true, hasPrompt: false)
-        tab.openNewChatInNewTab(source: tab.tabModel.duckAIEntrySource)
+        let focusRequest = featureFlagger.isFeatureOn(.aiChatTabHandoffImprovements) ? inputRequest : nil
+        tab.openNewChatInNewTab(source: tab.tabModel.duckAIEntrySource, inputRequest: focusRequest)
     }
 
     func tab(_ tab: TabViewController, didRequestAIChatForSelectedText text: String) {
@@ -8487,6 +8609,8 @@ extension MainViewController: TabDelegate {
         postIdleSessionInstrumentation.sessionEnded(reason: .tabSelected)
         if tab.isAITab {
             fireAIChatEntryPointPixel(source: .tabsBarExistingChat, opensNewTab: false, hasPrompt: false)
+            // This tab was shown before the entry started, so report it again for the entry.
+            reportDuckAISessionCurrentTab()
         }
     }
 
@@ -8776,6 +8900,18 @@ extension MainViewController: TabSwitcherDelegate {
         newChatLongPressMenuAction()
     }
 
+    func tabSwitcher(_ tabSwitcher: TabSwitcherViewController, didRequestAIChat chatID: String) {
+        fireAIChatUsagePixelAndSetFeatureUsed(.openAIChatFromTabManager)
+        fireAIChatEntryPointPixel(source: .tabSwitcher, opensNewTab: true, hasPrompt: false)
+        loadUrlInNewTab(aiChatSettings.aiChatURL.withChatID(chatID), inheritedAttribution: nil) {
+            $0.duckAIEntrySource = .tabSwitcher
+        }
+    }
+
+    func tabSwitcherDidRequestAIChatHistory(_ tabSwitcher: TabSwitcherViewController) {
+        openAIChatHistory(source: .tabSwitcher)
+    }
+
     private func tabSwitcherNewTabWithAnimation() {
         // The new tab shows its own keyboard, so a pick the switcher reported just before doesn't add a second one.
         pendingTabSwitcherKeyboard = nil
@@ -8880,7 +9016,8 @@ extension MainViewController: TabSwitcherButtonDelegate {
 extension MainViewController: UIGestureRecognizerDelegate {
 
     func gestureRecognizer(_ gestureRecognizer: UIGestureRecognizer, shouldRecognizeSimultaneouslyWith otherGestureRecognizer: UIGestureRecognizer) -> Bool {
-        return true
+        // A tab swipe owns its touch, so the input it starts on can't also read it as a tap.
+        !(gestureRecognizer is UnifiedInputSwipeTabsPanGestureRecognizer && featureFlagger.isAIChatSwipeChromeRefinementsEnabled)
     }
 
     func gestureRecognizerShouldBegin(_ gestureRecognizer: UIGestureRecognizer) -> Bool {
@@ -8945,6 +9082,7 @@ extension MainViewController {
         productSurfaceTelemetry.dataClearingUsed()
         endNewTabPageSessionWithDataClearing()
         endSessionsWithDataClearing(request)
+        unifiedToggleInputCoordinator?.clearResubmitHistory()
 
         // A single tab burn rebuilds the UI from inside the burn itself, so the New Tab Page has
         // already attached by the time `didFinishBurningTabs` runs. Wider scopes are marked later,
@@ -9473,6 +9611,7 @@ extension MainViewController: OnboardingDelegate {
         isStartupOnboardingPending = false
         tutorialSettings.hasSeenOnboarding = true
         clearDuckAIOnboardingResumeStepIfNeeded()
+        menuRebuildRequests.send()
     }
 
     func needsToShowOnboardingIntro() -> Bool {
@@ -9564,7 +9703,8 @@ extension MainViewController: VoiceSearchViewControllerDelegate {
                 coordinator.submitVoicePrompt(query)
             } else {
                 performCancel()
-                openAIChat(source: .voice, query, autoSend: true)
+                let source = voiceSearchEntrySource ?? (isPad ? .ipadTogglePrompt : .addressBarPrompt)
+                openAIChat(source: source, query, autoSend: true, tabAttachmentRequest: nil, voice: true)
             }
         }
     }
@@ -9862,7 +10002,7 @@ extension MainViewController {
                 }
             }
 
-            refreshCustomizableButtonMenuHighlightTarget()
+            refreshCustomizableButtonMenuPreviewContainer()
             customizableButton?.menu = UIMenu(children: [
                 UIAction(title: "Customize", image: DesignSystemImages.Glyphs.Size16.options) { [weak self] _ in
                     self?.segueToCustomizeAddressBarSettings()
@@ -9871,46 +10011,22 @@ extension MainViewController {
             customizableButton?.showsMenuAsPrimaryAction = false
         } else {
             customizableButton?.menu = nil
-            (customizableButton as? BrowserChromeButton)?.menuHighlightTarget = nil
-            customizableButtonMenuAnchor?.removeFromSuperview()
-            customizableButtonMenuAnchor = nil
+            (customizableButton as? BrowserChromeButton)?.menuPreviewContainer = nil
         }
     }
 
-    private func refreshCustomizableButtonMenuHighlightTarget() {
+    private func refreshCustomizableButtonMenuPreviewContainer() {
         guard mobileCustomization.state.isEnabled,
               isFloatingUIEnabled,
               appSettings.currentAddressBarPosition == .top,
               let customizableButton = omniBar.barView.customizableButton as? BrowserChromeButton else {
-            (omniBar.barView.customizableButton as? BrowserChromeButton)?.menuHighlightTarget = nil
-            customizableButtonMenuAnchor?.removeFromSuperview()
-            customizableButtonMenuAnchor = nil
+            (omniBar.barView.customizableButton as? BrowserChromeButton)?.menuPreviewContainer = nil
             return
         }
 
-        customizableButton.menuHighlightTarget = { [weak self, weak customizableButton] in
-            guard let customizableButton else { return nil }
-            return self?.customizableButtonMenuAnchorView(over: customizableButton)
+        customizableButton.menuPreviewContainer = { [weak self] in
+            self?.viewCoordinator.navigationBarContainer
         }
-    }
-
-    /// UIKit reparents a menu preview view into the platter. The customizable button lives in the
-    /// address bar's glass group, so its preview uses a stand-in outside that group.
-    private func customizableButtonMenuAnchorView(over button: UIView) -> UIView? {
-        guard let container: UIView = viewCoordinator.navigationBarContainer else { return nil }
-        let anchor = customizableButtonMenuAnchor ?? {
-            let view = UIView()
-            view.isUserInteractionEnabled = false
-            view.isAccessibilityElement = false
-            customizableButtonMenuAnchor = view
-            return view
-        }()
-        if anchor.superview !== container {
-            container.addSubview(anchor)
-        }
-        container.layoutIfNeeded()
-        anchor.frame = container.convert(button.bounds, from: button)
-        return anchor
     }
 
     @objc private func performCustomizationActionForToolbar() {
@@ -9974,7 +10090,7 @@ extension MainViewController {
 
         case .duckAIVoice:
             pixelFiring?.fire(Pixel.Event.voiceEntryPointTapped, options: .parameters([PixelParameters.source: VoiceEntryPointSource.toolbar.rawValue]))
-            self.openAIChatInVoiceMode()
+            self.openAIChatInVoiceMode(source: .toolbarCustomButton, fromDeepLink: false)
 
         default:
             assertionFailure("Unexpected case \(button)")
@@ -10069,7 +10185,7 @@ extension MainViewController {
 
         case .duckAIVoice:
             pixelFiring?.fire(Pixel.Event.voiceEntryPointTapped, options: .parameters([PixelParameters.source: VoiceEntryPointSource.addressBar.rawValue]))
-            openAIChatInVoiceMode()
+            openAIChatInVoiceMode(source: .addressBarCustomButton, fromDeepLink: false)
 
         default:
             assertionFailure("Unexpected case: \(button)")

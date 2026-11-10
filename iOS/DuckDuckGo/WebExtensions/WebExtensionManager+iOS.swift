@@ -19,6 +19,7 @@
 
 import Combine
 import Core
+import EventHub
 import FeatureFlags_iOS
 import PrivacyConfig
 import UIKit
@@ -82,7 +83,8 @@ public enum WebExtensionManagerFactory {
         autoconsentPreferences: AutoconsentPreferences,
         darkReaderExcludedDomainsProvider: DarkReaderExcludedDomainsProviding? = nil,
         searchTokenProvider: SearchTokenProviding? = nil,
-        scriptletConfiguration: ScriptletConfiguration? = nil
+        scriptletConfiguration: ScriptletConfiguration? = nil,
+        eventHub: EventHubManaging
     ) -> WebExtensionManager {
         let preferencesAdapter = AutoconsentPreferencesAdapter(preferences: autoconsentPreferences)
         let pixelFiring = iOSWebExtensionPixelFiring()
@@ -132,6 +134,9 @@ public enum WebExtensionManagerFactory {
             isCPMBackgroundLoadRecoveryEnabled: {
                 featureFlagger.isFeatureOn(.cpmBackgroundLoadRecovery)
             },
+            isCPMBackgroundLoadRestartEnabled: {
+                featureFlagger.isFeatureOn(.cpmBackgroundLoadRestart)
+            },
             isApplicationInBackground: { UIApplication.shared.applicationState == .background },
             isCPMLateBackgroundDocumentRecoveryEnabled: {
                 featureFlagger.isFeatureOn(.cpmLateBackgroundDocumentRecovery)
@@ -139,12 +144,14 @@ public enum WebExtensionManagerFactory {
             isCPMStableBaseURLEnabled: {
                 featureFlagger.isFeatureOn(.cpmStableBaseURL)
             },
+            isCPMUpgradeBeforeLoadEnabled: featureFlagger.isFeatureOn(.cpmUpgradeBeforeLoad),
             handlerProvider: WebExtensionHandlerProvider(
                 privacyConfigurationManager: privacyConfigurationManager,
                 autoconsentPreferences: preferencesAdapter,
                 cpmMessagingHealthMonitor: cpmMessagingHealthMonitor,
                 darkReaderExcludedDomainsProvider: darkReaderExcludedDomainsProvider,
-                searchTokenProvider: searchTokenProvider
+                searchTokenProvider: searchTokenProvider,
+                eventHub: eventHub
             ),
             scriptletConfiguration: scriptletConfiguration
         )

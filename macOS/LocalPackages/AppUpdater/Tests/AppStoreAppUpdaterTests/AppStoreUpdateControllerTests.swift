@@ -25,6 +25,7 @@ import XCTest
 
 @testable import AppStoreAppUpdater
 
+@MainActor
 final class AppStoreUpdateControllerTests: XCTestCase {
 
     private var controller: AppStoreUpdateController!

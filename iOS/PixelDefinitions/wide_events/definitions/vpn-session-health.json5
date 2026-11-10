@@ -4,7 +4,7 @@
         "owners": ["jleandroperez"],
         "meta": {
             "type": "ios-vpn-session-health",
-            "version": "0.1"
+            "version": "0.2"
         },
         "feature": {
             "name": "vpn-session-health",
@@ -82,6 +82,14 @@
                     "app_version_changed": {
                         "type": "boolean",
                         "description": "Present only as true when the app version at session start differs from the completing or orphan-recovering process app version. Omitted when versions match."
+                    },
+                    "os_version_changed": {
+                        "type": "boolean",
+                        "description": "Present only as true when the OS version at session start differs from the OS version of the completing or orphan-recovering process. Omitted when versions match."
+                    },
+                    "system_rebooted": {
+                        "type": "boolean",
+                        "description": "Present only as true when the system boot time observed by the completing or orphan-recovering process is more than 60 seconds later than the one at session start. Omitted otherwise."
                     },
                     "time_to_first_error_seconds_bucketed": {
                         "type": "string",

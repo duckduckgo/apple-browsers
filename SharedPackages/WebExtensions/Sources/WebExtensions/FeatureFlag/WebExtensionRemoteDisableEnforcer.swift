@@ -40,6 +40,7 @@ public final class WebExtensionRemoteDisableEnforcer {
     private let configurationManager: PrivacyConfigurationManaging
     private let disabledExtensionIDs: @MainActor () -> Set<String>
     private let disabledExtensionIDsDidChange: AnyPublisher<Void, Never>
+    private let pixelFiring: WebExtensionPixelFiring
     private var cancellables = Set<AnyCancellable>()
 
     /// The most recent pass. Each pass waits for the previous one, so passes never overlap.
@@ -51,11 +52,13 @@ public final class WebExtensionRemoteDisableEnforcer {
     public init(manager: WebExtensionManaging,
                 configurationManager: PrivacyConfigurationManaging,
                 disabledExtensionIDs: @escaping @MainActor () -> Set<String> = { [] },
-                disabledExtensionIDsDidChange: AnyPublisher<Void, Never> = Empty().eraseToAnyPublisher()) {
+                disabledExtensionIDsDidChange: AnyPublisher<Void, Never> = Empty().eraseToAnyPublisher(),
+                pixelFiring: WebExtensionPixelFiring = NoOpWebExtensionPixelFiring()) {
         self.manager = manager
         self.configurationManager = configurationManager
         self.disabledExtensionIDs = disabledExtensionIDs
         self.disabledExtensionIDsDidChange = disabledExtensionIDsDidChange
+        self.pixelFiring = pixelFiring
     }
 
     /// The lowercased Chrome Web Store IDs to disable. The configuration's list counts only while extension
@@ -124,10 +127,22 @@ public final class WebExtensionRemoteDisableEnforcer {
             let identifier = installedExtension.uniqueIdentifier
             do {
                 try await manager.disableExtension(identifier: identifier)
+                // Unloading an extension that was disabled while loading doesn't turn it off.
+                if !installedExtension.isDisabled {
+                    pixelFiring.fire(.remotelyDisabled(extension: pixelExtension(for: installedExtension)))
+                }
                 Logger.webExtensions.info("Disabled extension '\(identifier)' because remote configuration lists it")
             } catch {
                 Logger.webExtensions.error("Failed to disable remotely disabled extension '\(identifier)': \(error.localizedDescription)")
             }
         }
+    }
+
+    private func pixelExtension(for installedExtension: InstalledWebExtension) -> WebExtensionPixelExtension {
+        guard let storeIdentity = installedExtension.storeIdentity,
+              let entry = manager?.chromeWebStore?.catalogEntry(of: storeIdentity.id) else {
+            return .other
+        }
+        return .catalog(entry)
     }
 }

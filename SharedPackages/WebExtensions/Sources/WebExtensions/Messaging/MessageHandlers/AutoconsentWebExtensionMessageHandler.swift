@@ -29,6 +29,7 @@ public final class AutoconsentWebExtensionMessageHandler: WebExtensionMessageHan
 
     enum Method: String {
         case sendPixel
+        case reportCpmCoverage
         case refreshCpmDashboardState
         case showCpmAnimation
         case cookiePopupHandled
@@ -71,8 +72,10 @@ public final class AutoconsentWebExtensionMessageHandler: WebExtensionMessageHan
         switch method {
         case .sendPixel:
             return handleSendPixel(message.params)
+        case .reportCpmCoverage:
+            return handleReportCpmCoverage(message.params)
         case .refreshCpmDashboardState:
-            return await handleRefreshCpmDashboardState(message.params)
+            return await handleRefreshCpmDashboardState(message.params, extensionIdentifier: message.extensionIdentifier)
         case .showCpmAnimation:
             return handleShowCpmAnimation(message.params)
         case .cookiePopupHandled:
@@ -110,7 +113,24 @@ public final class AutoconsentWebExtensionMessageHandler: WebExtensionMessageHan
         return .success(Self.successResponse)
     }
 
-    private func handleRefreshCpmDashboardState(_ params: [String: Any]?) async -> WebExtensionMessageResult {
+    private func handleReportCpmCoverage(_ params: [String: Any]?) -> WebExtensionMessageResult {
+        guard
+            let unhandled = (params?["unhandled"] as? NSNumber)?.intValue,
+            let pages = (params?["pages"] as? NSNumber)?.intValue
+        else {
+            return .failure(WebExtensionMessageHandlerError.missingParameter("unhandled or pages"))
+        }
+
+        let siteRank = (params?["siteRank"] as? String).flatMap(CPMSiteRank.init(rawValue:))
+
+        Logger.webExtensions.debug("📊 Report CPM Coverage - unhandled: \(unhandled), pages: \(pages), siteRank: \(siteRank?.rawValue ?? "none")")
+
+        delegate?.reportCPMCoverage(counts: CPMCoverageCounts(unhandled: unhandled, pages: pages), siteRank: siteRank)
+
+        return .success(Self.successResponse)
+    }
+
+    private func handleRefreshCpmDashboardState(_ params: [String: Any]?, extensionIdentifier: String) async -> WebExtensionMessageResult {
         guard
             let urlString = params?["url"] as? String,
             let url = URL(string: urlString),
@@ -124,7 +144,8 @@ public final class AutoconsentWebExtensionMessageHandler: WebExtensionMessageHan
         Logger.webExtensions.debug("📊 Refresh CPM Dashboard State - url: \(url.shortDescription), consentManaged: \(consentStatus.consentManaged)")
 
         let extensionTabIdentifier = (params?["tabId"] as? NSNumber)?.intValue
-        await cpmMessagingHealthMonitor?.handle(.dashboardResponse(extensionTabIdentifier: extensionTabIdentifier, url: url))
+        await cpmMessagingHealthMonitor?.handle(.dashboardResponse(extensionTabIdentifier: extensionTabIdentifier, url: url,
+                                                                 extensionIdentifier: extensionIdentifier))
         delegate?.refreshDashboardState(url: url, consentStatus: consentStatus)
 
         return .success(Self.successResponse)
@@ -235,6 +256,13 @@ public final class AutoconsentWebExtensionMessageHandler: WebExtensionMessageHan
     }
 
     private func privacyConfigIfNewerThan(lastVersion: String) -> WebExtensionMessageResult {
+        // The version is already parsed, so an unchanged config skips re-parsing the raw JSON.
+        if privacyConfigurationManager.privacyConfig.version == lastVersion {
+            return .success([
+                "updated": false
+            ])
+        }
+
         guard let privacyConfigData = try? PrivacyConfigurationData(data: privacyConfigurationManager.currentConfig),
               let currentVersion = privacyConfigData.version else {
             Logger.webExtensions.error("❌ Failed to read privacy config data or version is missing")

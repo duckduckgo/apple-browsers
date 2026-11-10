@@ -27,4 +27,7 @@ public protocol WebExtensionAvailabilityProviding {
 
     /// Whether the embedded autoconsent web extension is loaded and active
     var isAutoconsentExtensionAvailable: Bool { get }
+
+    /// Whether the user can manage web extensions
+    var isExtensionManagementAvailable: Bool { get }
 }

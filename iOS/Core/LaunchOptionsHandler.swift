@@ -314,6 +314,12 @@ extension LaunchOptionsHandler {
     private func applyFlagOverrides(featureFlagOverrideStore: KeyValueStoring, configRolloutStore: UserDefaults) {
         let persistor = FeatureFlagLocalOverridesUserDefaultsPersistor(keyValueStore: featureFlagOverrideStore)
 
+        // Focusing the address bar on every new tab breaks UI tests that expect other screens after launch.
+        // Tests that need it pass -ff.alwaysShowKeyboardOnNewTabPage true, which the loop below applies.
+        if isUITesting {
+            persistor.set(false, for: FeatureFlag.alwaysShowKeyboardOnNewTabPage)
+        }
+
         for arg in arguments {
             guard arg.hasPrefix("-") else { continue }
             let key = String(arg.dropFirst())

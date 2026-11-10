@@ -22,6 +22,7 @@ public extension AccessibilityIdentifiers {
         public static let simulateFreshAppInstallMenuItem = "DefaultBrowserAndDockPromptDebugMenu.simulateFreshInstall"
         public static let advanceBy14DaysMenuItem = "DefaultBrowserAndDockPromptDebugMenu.advanceBy14Days"
         public static let inactiveUserPrompt = "DefaultBrowserAndDockPrompts.inactiveUser"
+        public static let winBackPrompt = "DefaultBrowserAndDockPrompts.winBack"
         public static let confirmButton = "DefaultBrowserAndDockPrompts.inactiveUser.confirmButton"
         public static let dismissButton = "DefaultBrowserAndDockPrompts.inactiveUser.dismissButton"
     }

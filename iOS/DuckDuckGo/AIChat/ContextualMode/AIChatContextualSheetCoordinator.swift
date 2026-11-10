@@ -76,6 +76,13 @@ protocol AIChatContextualSheetCoordinatorDelegate: AnyObject {
 
     func aiChatContextualSheetCoordinator(_ coordinator: AIChatContextualSheetCoordinator,
                                           didSubmitDuckAIPromptWithOrigin origin: AIChatEntryPointSource?)
+
+    /// The sheet or floating input left the screen; `chatDeleted` when it closed because its chat was deleted.
+    /// Handing over between the two is not a close.
+    func aiChatContextualSheetCoordinatorDidCloseSurface(_ coordinator: AIChatContextualSheetCoordinator, chatDeleted: Bool)
+
+    /// The user started a new chat from the sheet, an entry into Duck.ai like any other New Chat.
+    func aiChatContextualSheetCoordinatorDidStartNewChat(_ coordinator: AIChatContextualSheetCoordinator)
 }
 
 /// Coordinates the presentation and lifecycle of the contextual AI chat sheet.
@@ -130,8 +137,12 @@ final class AIChatContextualSheetCoordinator {
     /// Where the sheet went the last time it opened beside the page instead of over it.
     private weak var sidebarHost: AIChatContextualSidebarHosting?
 
-    /// The sheet while a window resize carries it between the sidebar and a sheet: off screen, its chat still open.
+    /// The sheet while it is off screen with its chat still open: carried between the sidebar and a sheet by a window
+    /// resize, or away with its tab.
     private var parkedSheetViewController: AIChatContextualSheetViewController?
+
+    /// The parked sheet left the screen with its tab rather than for a resize, and comes back when the tab does.
+    private var isAwayWithTab = false
 
     /// The floating pre-submit input, when it is the current surface instead of the sheet.
     private(set) var floatingInputViewController: AIChatContextualFloatingInputViewController? {
@@ -153,6 +164,9 @@ final class AIChatContextualSheetCoordinator {
     /// so chrome surfaces (e.g. the iPad tabs-bar Duck.ai chip) can swap their
     /// state-aware glyph and respond to swipe-to-dismiss.
     @Published private(set) var isSheetPresented: Bool = false
+
+    /// Set while New Chat swaps the sheet for the floating input, so the swap is not reported as a close.
+    private var isHandingOverToFloatingInput = false
 
     /// Whether the sheet is presented and actively observing page context updates.
     private var isActivelyObservingContext: Bool {
@@ -229,10 +243,6 @@ final class AIChatContextualSheetCoordinator {
 
     private var isImmediateContextualUTIEnabled: Bool {
         isWebUTIEnabled && featureFlagger.isFeatureOn(.aiChatContextualUnifiedToggleInput)
-    }
-
-    private var isPagePlaceholderEnabled: Bool {
-        featureFlagger.isFeatureOn(.contextualPagePlaceholder)
     }
 
     /// A chat about to start brings a keyboard up with it; one that already exists does not.
@@ -541,6 +551,7 @@ final class AIChatContextualSheetCoordinator {
         case .systemTeardown:
             controller.removeWithoutAnimation()
         }
+        delegate?.aiChatContextualSheetCoordinatorDidCloseSurface(self, chatDeleted: false)
         selectionJourneyInstrumentation.surfaceDismissed()
         stopObservingContextUpdates()
         sessionState.handleSheetDismissed()
@@ -655,8 +666,7 @@ final class AIChatContextualSheetCoordinator {
 
     @discardableResult
     private func offerPageContextIfNeeded(trigger: PageContextExtractionTrigger) -> Bool {
-        guard isPagePlaceholderEnabled,
-              isActivelyObservingContext,
+        guard isActivelyObservingContext,
               sessionState.shouldOfferPageContext(for: currentPageURL) else {
             return false
         }
@@ -737,10 +747,54 @@ final class AIChatContextualSheetCoordinator {
         sheetViewController?.parent != nil
     }
 
+    /// Whether the surface is beside the page now, or would open there from `presentingVC`.
+    func showsSurfaceInSidebar(from presentingVC: UIViewController) -> Bool {
+        isSheetInSidebar || sidebarHost(for: presentingVC) != nil
+    }
+
     /// A window shrinking past the sidebar can't wait for the resize to end, or the column would squeeze the page to
     /// nothing. The sheet steps out of it now and comes back in whatever presentation the settled window calls for.
     func parkSurfaceForResize(animated: Bool) {
         guard let sheetViewController, isSheetInSidebar, let sidebarHost else { return }
+        park(sheetViewController, leavingSidebarOf: sidebarHost, animated: animated)
+    }
+
+    /// As on macOS, the sidebar belongs to its tab: it leaves the screen with the tab, its chat still open, and comes
+    /// back with it. A sheet over the page closes, as it always has.
+    func tabWillLeaveScreen() {
+        guard !isAwayWithTab else { return }
+        guard let sheetViewController, isSheetInSidebar, let sidebarHost else {
+            dismissSheet()
+            return
+        }
+        guard sidebarHost.isContextualSidebarShowing(sheetViewController) else {
+            // The user closed it and it is still sliding out, so it finishes now rather than beside the next tab.
+            dismissSheet(animated: false)
+            return
+        }
+        park(sheetViewController, leavingSidebarOf: sidebarHost, animated: false)
+        isAwayWithTab = true
+        persistentUTIHost?.endPresentation()
+        // Leaving the tab still ends the visit to Duck.ai, as it did when leaving closed the chat.
+        delegate?.aiChatContextualSheetCoordinatorDidCloseSurface(self, chatDeleted: false)
+    }
+
+    /// The tab is back on screen, and so is the sidebar that left with it, as it was.
+    func tabDidReturnToScreen(presentedFrom presentingVC: UIViewController) {
+        guard isAwayWithTab else { return }
+        persistentUTIHost?.beginPresentation()
+        adaptSurface(toPresenter: presentingVC, animated: false)
+    }
+
+    /// Its tab is closing or being unloaded, so a sidebar that left the screen with it closes where it is.
+    func closeSurfaceAwayWithTab() {
+        guard isAwayWithTab else { return }
+        dismissSheet(animated: false)
+    }
+
+    private func park(_ sheetViewController: AIChatContextualSheetViewController,
+                      leavingSidebarOf sidebarHost: AIChatContextualSidebarHosting,
+                      animated: Bool) {
         // Something the chat presented, like the Fire confirmation, would be left behind by the move.
         sheetViewController.presentedViewController?.dismiss(animated: false)
         sheetViewController.beginSurfaceChange()
@@ -748,29 +802,30 @@ final class AIChatContextualSheetCoordinator {
         sidebarHost.detachContextualSidebar(sheetViewController, animated: animated)
     }
 
-    /// The chat is between the sidebar and a sheet, waiting for `adaptSurface(toPresenter:)` to place it.
+    /// The chat is off screen and still open, waiting for `adaptSurface(toPresenter:)` to place it.
     var hasParkedSurface: Bool {
         parkedSheetViewController != nil
     }
 
-    /// Once a resize settles, puts the open surface where the window's size calls for: the sidebar when there's room
-    /// for it, a sheet when there isn't. The chat, its draft and its page context carry over untouched.
-    func adaptSurface(toPresenter presentingVC: UIViewController) {
+    /// On a resize or the tab's return, puts the open surface where the window's size calls for: the sidebar when
+    /// there's room for it, a sheet when there isn't. The chat, its draft and its page context carry over untouched.
+    func adaptSurface(toPresenter presentingVC: UIViewController, animated: Bool = true) {
         guard isSheetPresented, let sheetVC = sheetViewController else { return }
         let host = sidebarHost(for: presentingVC)
         if parkedSheetViewController === sheetVC {
             parkedSheetViewController = nil
             if let host {
-                moveIntoSidebar(sheetVC, host: host)
+                moveIntoSidebar(sheetVC, host: host, animated: animated)
             } else if presentingVC.presentedViewController == nil {
                 sidebarHost = nil
                 // A conversation keeps the full height it had in the sidebar; a chat yet to start opens like a new one.
                 sheetVC.prepareForPresentation(expanded: sessionState.hasActiveChat)
-                presentingVC.present(sheetVC, animated: true)
+                presentingVC.present(sheetVC, animated: animated)
             } else {
                 // Something else holds the screen; the chat waits behind the Duck.ai button instead.
                 sheetVC.closeWhileOffScreen()
             }
+            isAwayWithTab = false
         } else if let host,
                   sheetVC.presentingViewController != nil,
                   !sheetVC.isBeingPresented, !sheetVC.isBeingDismissed,
@@ -794,10 +849,13 @@ final class AIChatContextualSheetCoordinator {
         sinkingSheet?()
     }
 
-    private func moveIntoSidebar(_ sheetVC: AIChatContextualSheetViewController, host: AIChatContextualSidebarHosting) {
+    private func moveIntoSidebar(_ sheetVC: AIChatContextualSheetViewController,
+                                 host: AIChatContextualSidebarHosting,
+                                 animated: Bool = true) {
         sheetVC.prepareForSidebar()
         sidebarHost = host
-        host.presentContextualSidebar(sheetVC)
+        // Only a resize or the tab's return moves the chat into the sidebar here.
+        host.presentContextualSidebar(sheetVC, animated: animated, coversPage: false)
     }
 
     /// Every route off screen funnels through here, because a sheet in the sidebar is not presented and
@@ -806,9 +864,10 @@ final class AIChatContextualSheetCoordinator {
                                 animated: Bool = true,
                                 completion: (() -> Void)? = nil) {
         if parkedSheetViewController === sheetViewController {
-            // Already off screen for a resize: nothing to animate away, only the chat to close.
+            // Already off screen, for a resize or with its tab: nothing to animate away, only the chat to close.
             parkedSheetViewController = nil
             sheetViewController.closeWhileOffScreen()
+            isAwayWithTab = false
             completion?()
             return
         }
@@ -828,6 +887,10 @@ final class AIChatContextualSheetCoordinator {
     private func handleSheetDismissed() {
         guard isSheetPresented else { return }
         isSheetPresented = false
+        // A chat away with its tab reported leaving the screen when the tab left.
+        if !isHandingOverToFloatingInput && !isAwayWithTab {
+            delegate?.aiChatContextualSheetCoordinatorDidCloseSurface(self, chatDeleted: false)
+        }
         persistentUTIHost?.endPresentation()
         selectionJourneyInstrumentation.surfaceDismissed()
         stopObservingContextUpdates()
@@ -845,6 +908,10 @@ final class AIChatContextualSheetCoordinator {
         persistentUTIHost?.discardTabAttachments()
         selectionJourneyInstrumentation.selectionsCleared(reason: reason)
         sheetViewController?.notifySheetDismissed()
+        if isSheetPresented && !isAwayWithTab {
+            delegate?.aiChatContextualSheetCoordinatorDidCloseSurface(self, chatDeleted: reason == .chatCleared)
+        }
+        isAwayWithTab = false
         isSheetPresented = false
         sheetViewController = nil
         persistentUTIHost = nil
@@ -962,7 +1029,7 @@ private extension AIChatContextualSheetCoordinator {
         }
         if sheetVC.parent != nil {
             // Still in the sidebar, maybe sliding out, in which case the column turns back.
-            sidebarHost?.presentContextualSidebar(sheetVC)
+            sidebarHost?.presentContextualSidebar(sheetVC, animated: true, coversPage: true)
             return
         }
         guard sheetVC.presentingViewController == nil else { return }
@@ -1018,7 +1085,7 @@ private extension AIChatContextualSheetCoordinator {
         self.sidebarHost = sidebarHost
         if let sidebarHost {
             sheetVC.prepareForSidebar()
-            sidebarHost.presentContextualSidebar(sheetVC)
+            sidebarHost.presentContextualSidebar(sheetVC, animated: true, coversPage: true)
         } else {
             sheetVC.prepareForPresentation()
             presentingVC.present(sheetVC, animated: true)
@@ -1034,14 +1101,11 @@ private extension AIChatContextualSheetCoordinator {
     }
 
     func makeSuggestionsReaderIfEnabled() -> AIChatSuggestionsReading? {
-        let reader = SuggestionsReader(
-            featureFlagger: featureFlagger,
-            privacyConfig: privacyConfigurationManager,
-            nativeStorageHandler: duckAiNativeStorageHandler,
-            featureFlagProvider: AIChatFeatureFlagProvider(featureFlagger: featureFlagger)
-        )
-        let settings = AIChatHistorySettings(privacyConfig: privacyConfigurationManager)
-        return AIChatSuggestionsReader(suggestionsReader: reader, historySettings: settings)
+        AIChatSuggestionsReader.makeRecentChatsReader(isFireMode: isFireTab,
+                                                      nativeStorageHandler: duckAiNativeStorageHandler,
+                                                      fireModeStorageHandler: duckAiFireModeStorageHandler,
+                                                      featureFlagger: featureFlagger,
+                                                      privacyConfig: privacyConfigurationManager)
     }
 
     func makePersistentUTIHostIfNeeded(start: ContextualInputStart) -> AIChatContextualUTIHost? {
@@ -1507,13 +1571,16 @@ extension AIChatContextualSheetCoordinator: AIChatContextualSheetViewControllerD
 
     func aiChatContextualSheetViewControllerDidRequestNewChat(_ viewController: AIChatContextualSheetViewController) {
         resetToNativeInputState()
+        delegate?.aiChatContextualSheetCoordinatorDidStartNewChat(self)
 
         // A fresh chat starts on the floating input, not the sheet's own start surface.
         guard floatingInputFeature.isAvailable,
               let presenter = viewController.presentingViewController else { return }
+        isHandingOverToFloatingInput = true
         dismissSurface(of: viewController) { [weak self] in
             Task { @MainActor in
                 await self?.presentFloatingInput(from: presenter)
+                self?.isHandingOverToFloatingInput = false
             }
         }
     }

@@ -18,6 +18,7 @@
 //
 
 import Foundation
+import FoundationExtensions
 import SwiftUI
 import StoreKit
 import Subscription
@@ -29,6 +30,7 @@ import Persistence
 import FeatureFlags_iOS
 import PixelKit
 import AIChat
+import WideEvent
 
 /// Status for the cancel-downgrade overlay
 enum CancelDowngradeOverlayStatus {
@@ -43,9 +45,13 @@ final class SubscriptionSettingsViewModel: ObservableObject {
     private var signOutObserver: Any?
     private var subscriptionChangeObserver: Any?
     private let featureFlagger: FeatureFlagger
+    let internalUserDecider: InternalUserDecider
+    let wideEvent: WideEventManaging
     private let subscriptionFlowsExecuter: SubscriptionFlowsExecuting
     private let onboardingKeyValueStore: ThrowingKeyValueStoring
     private let aiChatSettings: AIChatSettingsProvider
+    private let locale: Locale
+    let cancellationInstrumentation: SubscriptionCancellationInstrumenting
 
     private var externalAllowedDomains = ["stripe.com"]
 
@@ -158,9 +164,29 @@ final class SubscriptionSettingsViewModel: ObservableObject {
     }
 
     var subscriptionManageButtonText: String {
-        featureFlagger.isFeatureOn(.allowProTierPurchase)
+        if isAppleSubscriptionWithCancellationFlowEnabled {
+            return UserText.subscriptionManageSubscription
+        }
+        return featureFlagger.isFeatureOn(.allowProTierPurchase)
             ? UserText.subscriptionManagePayment
             : UserText.subscriptionChangePlan
+    }
+
+    var isEligibleToCancel: Bool {
+        state.subscriptionInfo?.status == .autoRenewable && isAppleSubscriptionWithCancellationFlowEnabled
+    }
+
+    private var isAppleSubscriptionWithCancellationFlowEnabled: Bool {
+        state.subscriptionInfo?.platform == .apple && locale.isEnglishUnitedStates && featureFlagger.isFeatureOn(.subscriptionCancellationFlow)
+    }
+
+    func cancelSubscriptionTapped() {
+        cancellationInstrumentation.cancelClicked()
+    }
+
+    @MainActor
+    func openStoreCancellation() async {
+        await manageAppleSubscription(entry: .cancellation)
     }
 
     /// Handles navigation to plans page based on subscription platform
@@ -201,19 +227,27 @@ final class SubscriptionSettingsViewModel: ObservableObject {
 
     init(subscriptionManager: SubscriptionManager = AppDependencyProvider.shared.subscriptionManager,
          featureFlagger: FeatureFlagger = AppDependencyProvider.shared.featureFlagger,
+         internalUserDecider: InternalUserDecider = AppDependencyProvider.shared.internalUserDecider,
+         wideEvent: WideEventManaging = AppDependencyProvider.shared.wideEvent,
          keyValueStorage: KeyValueStoring = SubscriptionSettingsStore(),
          onboardingKeyValueStore: ThrowingKeyValueStoring,
          userScriptsDependencies: DefaultScriptSourceProvider.Dependencies,
          subscriptionFlowsExecuter: SubscriptionFlowsExecuting? = nil,
-         aiChatSettings: AIChatSettingsProvider = AIChatSettings()) {
+         aiChatSettings: AIChatSettingsProvider = AIChatSettings(),
+         locale: Locale = .current,
+         cancellationInstrumentation: SubscriptionCancellationInstrumenting = SubscriptionCancellationInstrumentation()) {
         self.subscriptionManager = subscriptionManager
         self.userScriptsDependencies = userScriptsDependencies
         self.featureFlagger = featureFlagger
+        self.internalUserDecider = internalUserDecider
+        self.wideEvent = wideEvent
         self.onboardingKeyValueStore = onboardingKeyValueStore
         self.aiChatSettings = aiChatSettings
+        self.locale = locale
+        self.cancellationInstrumentation = cancellationInstrumentation
         self.subscriptionFlowsExecuter = subscriptionFlowsExecuter ?? SubscriptionContainerViewFactory.makeSubscriptionFlowsExecuter(
             subscriptionManager: subscriptionManager,
-            wideEvent: AppDependencyProvider.shared.wideEvent)
+            wideEvent: wideEvent)
         let subscriptionFAQURL = subscriptionManager.url(for: .faq)
         let learnMoreURL = subscriptionFAQURL.appendingPathComponent("adding-email")
         self.state = State(faqURL: subscriptionFAQURL, learnMoreURL: learnMoreURL, userScriptsDependencies: userScriptsDependencies, featureFlagger: featureFlagger)
@@ -332,7 +366,9 @@ final class SubscriptionSettingsViewModel: ObservableObject {
 
         switch platform {
         case .apple:
-            Task { await manageAppleSubscription() }
+            Task {
+                await manageAppleSubscription(entry: .manage)
+            }
         case .google:
             displayGoogleView(true)
         case .stripe:
@@ -563,13 +599,14 @@ final class SubscriptionSettingsViewModel: ObservableObject {
 
     // MARK: -
 
-    @MainActor private func manageAppleSubscription() async {
+    @MainActor private func manageAppleSubscription(entry: SubscriptionCancellationEntry) async {
         Logger.subscription.log("Managing Apple Subscription")
-        if state.subscriptionInfo?.isActive ?? false {
+        if let subscriptionBefore = state.subscriptionInfo, subscriptionBefore.isActive {
             let url = subscriptionManager.url(for: .manageSubscriptionsInAppStore)
             if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene {
                 do {
                     try await AppStore.showManageSubscriptions(in: windowScene)
+                    await refetchAndDetectCancellation(since: subscriptionBefore, entry: entry)
                 } catch {
                     self.openURL(url)
                 }
@@ -577,6 +614,14 @@ final class SubscriptionSettingsViewModel: ObservableObject {
                 self.openURL(url)
             }
         }
+    }
+
+    @MainActor private func refetchAndDetectCancellation(since subscriptionBefore: DuckDuckGoSubscription, entry: SubscriptionCancellationEntry) async {
+        // Force a refetch so the status reflects any change made in the App Store, and update Settings with it.
+        _ = await fetchAndUpdateSubscriptionDetails(forceRefresh: true, loadingIndicator: false)
+        guard subscriptionBefore.status == .autoRenewable,
+              state.subscriptionInfo?.status == .notAutoRenewable else { return }
+        cancellationInstrumentation.appStoreSubscriptionCancelled(entry: entry, subscription: subscriptionBefore)
     }
 
     private func manageStripeSubscription() async {

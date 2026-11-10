@@ -80,6 +80,52 @@ final class WebExtensionManagerTests: XCTestCase {
     // MARK: - Web view configuration
 
     @MainActor
+    func testWhenStartupBufferIsDrainedThenMessagesKeepTheirOrderAndCapacityIsReusable() throws {
+        let message = ["index": 1]
+        let size = try NativeMessagingFraming.encode(message).count
+        let pending = PendingPortMessages(maximumMessages: 2, maximumBytes: size * 2)
+        try pending.append(message: message, error: nil)
+        try pending.append(message: ["index": 2], error: nil)
+
+        XCTAssertEqual(try pending.drain().compactMap { ($0.message as? [String: Int])?["index"] }, [1, 2])
+        try pending.append(message: message, error: nil)
+        try pending.append(message: message, error: nil)
+        XCTAssertEqual(try pending.drain().count, 2)
+    }
+
+    @MainActor
+    func testWhenStartupMessageCountIsExceededThenNoBufferedMessagesCanBeReplayed() throws {
+        let pending = PendingPortMessages(maximumMessages: 1)
+        try pending.append(message: ["index": 1], error: nil)
+
+        XCTAssertThrowsError(try pending.append(message: ["index": 2], error: nil))
+        XCTAssertThrowsError(try pending.drain())
+        XCTAssertThrowsError(try pending.append(message: ["index": 3], error: nil))
+    }
+
+    @MainActor
+    func testWhenStartupByteLimitIsExceededThenNoBufferedMessagesCanBeReplayed() throws {
+        let message = ["value": "secret"]
+        let size = try NativeMessagingFraming.encode(message).count
+        let pending = PendingPortMessages(maximumBytes: size)
+        try pending.append(message: message, error: nil)
+
+        XCTAssertThrowsError(try pending.append(message: message, error: nil))
+        XCTAssertThrowsError(try pending.drain())
+    }
+
+    @MainActor
+    func testWhenStartupPortDisconnectsThenItsBufferCannotBeReplayed() throws {
+        let pending = PendingPortMessages()
+        try pending.append(message: ["index": 1], error: nil)
+
+        pending.discard(with: WKWebExtension.MessagePort.Error(.notConnected))
+
+        XCTAssertThrowsError(try pending.drain())
+        XCTAssertThrowsError(try pending.append(message: ["index": 2], error: nil))
+    }
+
+    @MainActor
     func testWhenExtensionsAreAttached_ThenConfigurationUsesController() {
         let manager = makeManager()
         let configuration = WKWebViewConfiguration()

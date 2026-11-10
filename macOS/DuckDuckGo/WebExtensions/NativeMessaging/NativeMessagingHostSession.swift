@@ -29,9 +29,22 @@ import WebExtensions
 /// the container. App Store builds are sandboxed, so this only works in the DMG builds.
 final class NativeMessagingHostSession {
 
-    enum SessionError: Error {
+    enum SessionError: Error, LocalizedError {
         case launchFailed(underlying: Error)
         case hostEnded
+        case pendingMessagesLimitExceeded
+        case writeFailed(underlying: Error)
+
+        var errorDescription: String? {
+            switch self {
+            case .pendingMessagesLimitExceeded:
+                return "Too many native messages are waiting to be written to the host."
+            case .writeFailed:
+                return "A message could not be written to the native messaging host."
+            case .launchFailed, .hostEnded:
+                return nil
+            }
+        }
     }
 
     /// Called on the main actor for each message the host sends.
@@ -57,6 +70,12 @@ final class NativeMessagingHostSession {
 
     /// Serial, so frames are written to the host in send order and never interleave.
     private let writeQueue = DispatchQueue(label: "com.duckduckgo.native-messaging.host-write")
+    private let writeLock = NSLock()
+    private let maximumPendingMessages: Int
+    private let maximumPendingBytes: Int
+    private var pendingMessages = 0
+    private var pendingBytes = 0
+    private var writesStopped = false
 
     /// Bytes the host wrote that don't make a whole message yet. Only the output pipe's
     /// readability handler touches it, and that handler never runs concurrently with itself.
@@ -79,9 +98,13 @@ final class NativeMessagingHostSession {
     ///     matches the argument against it and quits when it finds no match. So this is
     ///     normally the extension's Chrome origin rather than our own `webkit-extension://`
     ///     base URL. `NativeMessagingHandler` picks the value.
-    init(hostName: String, extensionIdentifier: String, executable: URL, callerOrigin: String) {
+    init(hostName: String, extensionIdentifier: String, executable: URL, callerOrigin: String,
+         maximumPendingMessages: Int = 256,
+         maximumPendingBytes: Int = NativeMessagingFraming.maximumMessageSize + NativeMessagingFraming.prefixSize) {
         self.hostName = hostName
         self.extensionIdentifier = extensionIdentifier
+        self.maximumPendingMessages = maximumPendingMessages
+        self.maximumPendingBytes = maximumPendingBytes
         process.executableURL = executable
         process.arguments = [callerOrigin]
         process.standardInput = inputPipe
@@ -170,6 +193,7 @@ final class NativeMessagingHostSession {
     /// does not stay alive with an open stdin after the session is gone.
     @MainActor
     private func tearDown() {
+        writeLock.withLock { writesStopped = true }
         // Removing the handlers also releases the session they hold.
         outputPipe.fileHandleForReading.readabilityHandler = nil
         errorPipe.fileHandleForReading.readabilityHandler = nil
@@ -185,7 +209,19 @@ final class NativeMessagingHostSession {
 
     @MainActor
     func send(_ message: Any) throws {
+        guard !didFinish else { throw SessionError.hostEnded }
         let frame = try NativeMessagingFraming.encode(message)
+        let accepted = writeLock.withLock {
+            guard !writesStopped, pendingMessages < maximumPendingMessages,
+                  frame.count <= maximumPendingBytes - pendingBytes else { return false }
+            pendingMessages += 1
+            pendingBytes += frame.count
+            return true
+        }
+        guard accepted else {
+            finish(with: SessionError.pendingMessagesLimitExceeded)
+            throw SessionError.pendingMessagesLimitExceeded
+        }
         let handle = inputPipe.fileHandleForWriting
         queuedMessageCount += 1
         let sequence = queuedMessageCount
@@ -199,7 +235,14 @@ final class NativeMessagingHostSession {
         // They go through one serial queue, so frames reach the host in the order the extension
         // posted them and never interleave. A host that expects a handshake in order fails when
         // a later frame overtakes an earlier one.
-        writeQueue.async {
+        writeQueue.async { [self] in
+            defer {
+                writeLock.withLock {
+                    pendingMessages -= 1
+                    pendingBytes -= frame.count
+                }
+            }
+            guard writeLock.withLock({ !writesStopped }) else { return }
             do {
                 try handle.write(contentsOf: frame)
                 Logger.webExtensions.debug("""
@@ -211,6 +254,9 @@ final class NativeMessagingHostSession {
                 [NativeMessaging] write-failed session=\(identifier, privacy: .public) \
                 sequence=\(sequence) errorDomain=\((error as NSError).domain, privacy: .public) errorCode=\((error as NSError).code)
                 """)
+                Task { @MainActor [weak self] in
+                    self?.finish(with: SessionError.writeFailed(underlying: error))
+                }
             }
         }
     }
@@ -351,10 +397,7 @@ final class NativeMessagingHostSession {
         }
     }
 
-    /// Logs whatever the host writes to its standard error.
-    ///
-    /// A host that refuses the connection usually explains itself here, and that explanation
-    /// is the only clue the browser gets.
+    /// Drains standard error without recording host-controlled content, which may contain secrets.
     private func startErrorLoop() {
         let name = hostName
 
@@ -363,8 +406,7 @@ final class NativeMessagingHostSession {
                 handle.readabilityHandler = nil
                 return
             }
-            let text = String(data: chunk, encoding: .utf8) ?? "(\(chunk.count) bytes)"
-            Logger.webExtensions.error("❌ Host \(name, privacy: .public) stderr: \(text, privacy: .public)")
+            Logger.webExtensions.debug("Host \(name, privacy: .public) stderr discarded: \(chunk.count) bytes")
         }
     }
 

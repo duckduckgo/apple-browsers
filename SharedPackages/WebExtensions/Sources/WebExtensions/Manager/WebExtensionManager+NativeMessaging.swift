@@ -255,18 +255,26 @@ extension WebExtensionManager {
         }
 
         let pending = PendingPortMessages()
-        port.messageHandler = { message, error in
-            pending.append(message: message, error: error)
+        port.messageHandler = { [weak port] message, error in
+            do {
+                try pending.append(message: message, error: error)
+            } catch {
+                port?.disconnect(throwing: error)
+            }
+        }
+        port.disconnectHandler = { error in
+            pending.discard(with: error ?? WKWebExtension.MessagePort.Error(.notConnected))
         }
         completionHandler(nil)
 
         Task { @MainActor in
             do {
+                if let failure = pending.failure { throw failure }
                 try await nativeMessagingHandler.connect(port,
                                                          applicationIdentifier: port.applicationIdentifier,
                                                          for: extensionContext)
                 // The handler has installed its own message handler, and nothing can slip in before the replay.
-                let replayed = pending.drain()
+                let replayed = try pending.drain()
                 for (message, error) in replayed {
                     port.messageHandler?(message, error)
                 }
@@ -275,6 +283,8 @@ extension WebExtensionManager {
                 }
                 keepBackgroundLoadedWhileNativePortsAreOpen(for: extensionContext)
             } catch {
+                pending.discard(with: error)
+                port.messageHandler = nil
                 // The disconnect is all the extension sees, so this is the one place the failure is recorded.
                 Logger.webExtensions.error("❌ Port of \(displayName) to \(applicationIdentifier, privacy: .public) failed: \(error.localizedDescription, privacy: .public)")
                 port.disconnect(throwing: error)
@@ -357,15 +367,53 @@ struct NativePortKeepAlive {
 
 /// Holds port messages that arrive before a native messaging host is ready for them.
 @available(macOS 15.4, iOS 18.4, *)
-private final class PendingPortMessages: @unchecked Sendable {
-    private var messages: [(message: Any?, error: Error?)] = []
+@MainActor
+final class PendingPortMessages {
+    enum BufferError: Error, LocalizedError {
+        case queueLimitExceeded
 
-    func append(message: Any?, error: Error?) {
-        messages.append((message, error))
+        var errorDescription: String? { "Too many native messages are waiting for the host to start." }
     }
 
-    func drain() -> [(message: Any?, error: Error?)] {
-        defer { messages.removeAll() }
+    private let maximumMessages: Int
+    private let maximumBytes: Int
+    private var messages: [(message: Any?, error: Error?)] = []
+    private var byteCount = 0
+    private(set) var failure: Error?
+
+    init(maximumMessages: Int = 256,
+         maximumBytes: Int = NativeMessagingFraming.maximumMessageSize + NativeMessagingFraming.prefixSize) {
+        self.maximumMessages = maximumMessages
+        self.maximumBytes = maximumBytes
+    }
+
+    func append(message: Any?, error: Error?) throws {
+        if let failure { throw failure }
+        do {
+            let size = try message.map { try NativeMessagingFraming.encode($0).count } ?? 0
+            guard messages.count < maximumMessages, size <= maximumBytes - byteCount else {
+                throw BufferError.queueLimitExceeded
+            }
+            messages.append((message, error))
+            byteCount += size
+        } catch {
+            discard(with: error)
+            throw error
+        }
+    }
+
+    func drain() throws -> [(message: Any?, error: Error?)] {
+        if let failure { throw failure }
+        defer {
+            messages.removeAll()
+            byteCount = 0
+        }
         return messages
+    }
+
+    func discard(with error: Error) {
+        failure = failure ?? error
+        messages.removeAll()
+        byteCount = 0
     }
 }

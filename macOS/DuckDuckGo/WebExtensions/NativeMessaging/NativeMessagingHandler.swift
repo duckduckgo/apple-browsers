@@ -36,6 +36,8 @@ final class NativeMessagingHandler: WebExtensionNativeMessagingHandling {
         case originNotAllowed(host: String, origin: String?)
         case originMismatch(host: String, manifestOrigin: String, webStoreOrigin: String)
         case timedOut(host: String)
+        case sessionLimitExceeded
+        case portDisconnected
 
         var errorDescription: String? {
             switch self {
@@ -54,6 +56,10 @@ final class NativeMessagingHandler: WebExtensionNativeMessagingHandling {
                     + "as \(webStoreOrigin), so it cannot connect to \(host)."
             case .timedOut(let host):
                 return "The native messaging host \(host) did not answer in time."
+            case .sessionLimitExceeded:
+                return "Too many native messaging sessions are already open."
+            case .portDisconnected:
+                return "The native messaging port was disconnected before its host started."
             }
         }
     }
@@ -62,18 +68,30 @@ final class NativeMessagingHandler: WebExtensionNativeMessagingHandling {
     static let defaultSingleMessageTimeout: TimeInterval = 10
 
     private let singleMessageTimeout: TimeInterval
+    private let maximumSessionsPerExtension: Int
+    private let maximumSessions: Int
+    private let locateHost: (String) throws -> (manifest: NativeMessagingHostManifest, executable: URL)
 
     /// Where an extension came from, which gives the Chrome identifier of a Web Store install.
     private let installationStore: InstalledWebExtensionStoring?
 
     init(installationStore: InstalledWebExtensionStoring? = nil,
-         singleMessageTimeout: TimeInterval = NativeMessagingHandler.defaultSingleMessageTimeout) {
+         singleMessageTimeout: TimeInterval = NativeMessagingHandler.defaultSingleMessageTimeout,
+         maximumSessionsPerExtension: Int = 4,
+         maximumSessions: Int = 16,
+         locateHost: @escaping (String) throws -> (manifest: NativeMessagingHostManifest, executable: URL) = {
+             try NativeMessagingHostManifestLocator.locate(name: $0)
+         }) {
         self.installationStore = installationStore
         self.singleMessageTimeout = singleMessageTimeout
+        self.maximumSessionsPerExtension = maximumSessionsPerExtension
+        self.maximumSessions = maximumSessions
+        self.locateHost = locateHost
     }
 
-    /// Sessions of open ports, keyed by the port that owns each one.
+    /// Persistent ports and one-shot requests share the same limits, but only ports keep backgrounds alive.
     private var sessions: [ObjectIdentifier: NativeMessagingHostSession] = [:]
+    private var singleMessageSessions: [ObjectIdentifier: NativeMessagingHostSession] = [:]
 
     // MARK: - WebExtensionNativeMessagingHandling
 
@@ -85,10 +103,11 @@ final class NativeMessagingHandler: WebExtensionNativeMessagingHandling {
         host=\(applicationIdentifier ?? "containing-app", privacy: .public)
         """)
         let hostName = try hostName(from: applicationIdentifier, for: context)
+        guard !port.isDisconnected else { throw HandlerError.portDisconnected }
         let session = try makeSession(hostName: hostName, for: context)
         let identifier = session.diagnosticIdentifier
 
-        let key = ObjectIdentifier(port)
+        let key = ObjectIdentifier(session)
         sessions[key] = session
 
         // Host to extension.
@@ -154,6 +173,7 @@ final class NativeMessagingHandler: WebExtensionNativeMessagingHandling {
         do {
             try session.start()
         } catch {
+            session.stop()
             sessions[key] = nil
             throw error
         }
@@ -173,6 +193,9 @@ final class NativeMessagingHandler: WebExtensionNativeMessagingHandling {
         """)
         let hostName = try hostName(from: applicationIdentifier, for: context)
         let session = try makeSession(hostName: hostName, for: context)
+        let key = ObjectIdentifier(session)
+        singleMessageSessions[key] = session
+        defer { singleMessageSessions[key] = nil }
 
         return try await Self.exchange(message, with: session, hostName: hostName, timeout: singleMessageTimeout)
     }
@@ -251,9 +274,15 @@ final class NativeMessagingHandler: WebExtensionNativeMessagingHandling {
 
     private func makeSession(hostName: String,
                              for context: WKWebExtensionContext) throws -> NativeMessagingHostSession {
+        let extensionSessionCount = sessions.values.filter { $0.extensionIdentifier == context.uniqueIdentifier }.count
+            + singleMessageSessions.values.filter { $0.extensionIdentifier == context.uniqueIdentifier }.count
+        guard sessions.count + singleMessageSessions.count < maximumSessions,
+              extensionSessionCount < maximumSessionsPerExtension else {
+            throw HandlerError.sessionLimitExceeded
+        }
         let located: (manifest: NativeMessagingHostManifest, executable: URL)
         do {
-            located = try NativeMessagingHostManifestLocator.locate(name: hostName)
+            located = try locateHost(hostName)
         } catch {
             throw HandlerError.hostUnavailable(host: hostName, underlying: error)
         }

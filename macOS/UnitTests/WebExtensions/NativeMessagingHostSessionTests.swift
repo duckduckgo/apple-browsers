@@ -18,6 +18,7 @@
 
 import AppKit
 import WebExtensions
+import WebKit
 import XCTest
 @testable import DuckDuckGo_Privacy_Browser
 
@@ -261,6 +262,197 @@ final class NativeMessagingHostSessionTests: XCTestCase {
 
     // MARK: - One-shot exchange
 
+    func testWhenHostStopsReadingThenMessageCountOverflowStopsTheSession() throws {
+        let executable = try makeHost(named: "stalled-host", script: Self.stalledHostScript)
+        let session = NativeMessagingHostSession(hostName: "test", extensionIdentifier: "test-extension",
+                                                 executable: executable, callerOrigin: Self.callerOrigin,
+                                                 maximumPendingMessages: 1)
+        defer { session.stop() }
+        var terminationCount = 0
+        session.terminationHandler = { error in
+            guard let sessionError = error as? NativeMessagingHostSession.SessionError,
+                  case .pendingMessagesLimitExceeded = sessionError else {
+                return XCTFail("Expected a queue overflow, got \(String(describing: error))")
+            }
+            terminationCount += 1
+        }
+        try session.start()
+        try session.send(["payload": String(repeating: "x", count: 256 * 1024)])
+
+        XCTAssertThrowsError(try session.send(["command": "ping"]))
+        XCTAssertThrowsError(try session.send(["command": "ping"]))
+        XCTAssertEqual(terminationCount, 1)
+        XCTAssertTrue(waitForNoRunningHosts())
+    }
+
+    func testWhenHostStopsReadingThenAggregateByteOverflowStopsTheSession() throws {
+        let executable = try makeHost(named: "stalled-host", script: Self.stalledHostScript)
+        let message = ["payload": String(repeating: "x", count: 256 * 1024)]
+        let size = try NativeMessagingFraming.encode(message).count
+        let session = NativeMessagingHostSession(hostName: "test", extensionIdentifier: "test-extension",
+                                                 executable: executable, callerOrigin: Self.callerOrigin,
+                                                 maximumPendingBytes: size)
+        defer { session.stop() }
+        try session.start()
+        try session.send(message)
+
+        XCTAssertThrowsError(try session.send(message)) { error in
+            guard let sessionError = error as? NativeMessagingHostSession.SessionError,
+                  case .pendingMessagesLimitExceeded = sessionError else {
+                return XCTFail("Expected a queue overflow, got \(error)")
+            }
+        }
+        XCTAssertTrue(waitForNoRunningHosts())
+    }
+
+    func testWhenWritesCompleteThenQueueCapacityCanBeReused() throws {
+        let executable = try makeHost(named: "echo-host", script: Self.echoHostScript)
+        let session = NativeMessagingHostSession(hostName: "test", extensionIdentifier: "test-extension",
+                                                 executable: executable, callerOrigin: Self.callerOrigin,
+                                                 maximumPendingMessages: 1)
+        defer { session.stop() }
+        try session.start()
+
+        for index in 0..<3 {
+            let received = expectation(description: "reply \(index)")
+            session.messageHandler = { message in
+                XCTAssertEqual((message as? [String: Int])?["index"], index)
+                received.fulfill()
+            }
+            try session.send(["index": index])
+            wait(for: [received], timeout: 5)
+        }
+    }
+
+    func testWhenHostWritesLargeStderrThenItIsDrainedWithoutBlockingReplies() throws {
+        let executable = try makeHost(named: "stderr-host", script: Self.framingPreamble + """
+        sys.stderr.write('sensitive-host-output' * 100000)
+        sys.stderr.flush()
+        write_frame(b'{"ready":true}')
+        """)
+        let session = makeSession(executable: executable)
+        defer { session.stop() }
+        let received = expectation(description: "reply after stderr")
+        session.messageHandler = { message in
+            XCTAssertEqual((message as? [String: Bool])?["ready"], true)
+            received.fulfill()
+        }
+
+        try session.start()
+
+        wait(for: [received], timeout: 10)
+    }
+
+    @available(macOS 15.4, *)
+    func testWhenPersistentPortIsOpenThenOneShotRequestsShareItsLimitAndDisconnectReleasesCapacity() async throws {
+        let context = try await makeExtensionContext(backgroundScript: """
+        const api = globalThis.chrome || globalThis.browser;
+        globalThis.testPort = api.runtime.connectNative("echo");
+        testPort.onMessage.addListener(() => testPort.disconnect());
+        """)
+        let echo = try makeHost(named: "echo-host", script: Self.echoHostScript)
+        let handler = makeHandler(context: context, silent: echo, echo: echo,
+                                  maximumSessionsPerExtension: 1, maximumSessions: 1)
+        let connected = expectation(description: "persistent port connected")
+        let disconnected = expectation(description: "extension disconnected its port")
+        let delegate = NativeMessagingPortTestDelegate(handler: handler) { port, error in
+            XCTAssertNil(error)
+            let disconnectHandler = port.disconnectHandler
+            port.disconnectHandler = { error in
+                disconnectHandler?(error)
+                disconnected.fulfill()
+            }
+            connected.fulfill()
+        }
+        let controller = WKWebExtensionController(configuration: .nonPersistent())
+        controller.delegate = delegate
+        try controller.loadCopyingErrors(context)
+        defer { try? controller.unloadCopyingErrors(context) }
+        await fulfillment(of: [connected], timeout: 10)
+
+        do {
+            _ = try await handler.sendMessage(["ping": true], applicationIdentifier: "echo", for: context)
+            XCTFail("Expected the persistent port to use the shared session limit")
+        } catch NativeMessagingHandler.HandlerError.sessionLimitExceeded {}
+
+        let port = try XCTUnwrap(delegate.port)
+        port.sendMessage(["disconnect": true]) { error in XCTAssertNil(error) }
+        await fulfillment(of: [disconnected], timeout: 5)
+        let reply = try await handler.sendMessage(["ping": true], applicationIdentifier: "echo", for: context)
+        XCTAssertEqual(reply as? [String: Bool], ["ping": true])
+        XCTAssertTrue(waitForNoRunningHosts())
+    }
+
+    @available(macOS 15.4, *)
+    func testWhenOneShotLimitIsReachedThenOtherExtensionsCanConnectAndTimedOutCapacityIsReleased() async throws {
+        let context = try await makeExtensionContext()
+        let otherContext = try await makeExtensionContext()
+        let silent = try makeHost(named: "silent-host", script: Self.silentHostScript)
+        let echo = try makeHost(named: "echo-host", script: Self.echoHostScript)
+        let started = expectation(description: "silent host started")
+        let handler = makeHandler(context: context, silent: silent, echo: echo, started: started,
+                                  maximumSessionsPerExtension: 1, maximumSessions: 2)
+        let first = Task { try await handler.sendMessage(["ping": true], applicationIdentifier: "silent", for: context) }
+        await fulfillment(of: [started], timeout: 5)
+
+        do {
+            _ = try await handler.sendMessage(["ping": true], applicationIdentifier: "echo", for: context)
+            XCTFail("Expected the per-extension limit to reject the request")
+        } catch NativeMessagingHandler.HandlerError.sessionLimitExceeded {}
+        let otherReply = try await handler.sendMessage(["ping": true], applicationIdentifier: "echo", for: otherContext)
+        XCTAssertEqual(otherReply as? [String: Bool], ["ping": true])
+
+        do {
+            _ = try await first.value
+            XCTFail("Expected the silent host to time out")
+        } catch NativeMessagingHandler.HandlerError.timedOut {}
+        let reply = try await handler.sendMessage(["ping": true], applicationIdentifier: "echo", for: context)
+        XCTAssertEqual(reply as? [String: Bool], ["ping": true])
+        XCTAssertTrue(waitForNoRunningHosts())
+    }
+
+    @available(macOS 15.4, *)
+    func testWhenGlobalSessionLimitIsReachedThenAnotherExtensionIsRejected() async throws {
+        let context = try await makeExtensionContext()
+        let otherContext = try await makeExtensionContext()
+        let silent = try makeHost(named: "silent-host", script: Self.silentHostScript)
+        let echo = try makeHost(named: "echo-host", script: Self.echoHostScript)
+        let started = expectation(description: "silent host started")
+        let handler = makeHandler(context: context, silent: silent, echo: echo, started: started,
+                                  maximumSessionsPerExtension: 2, maximumSessions: 1)
+        let first = Task { try await handler.sendMessage(["ping": true], applicationIdentifier: "silent", for: context) }
+        await fulfillment(of: [started], timeout: 5)
+
+        do {
+            _ = try await handler.sendMessage(["ping": true], applicationIdentifier: "echo", for: otherContext)
+            XCTFail("Expected the global limit to reject the request")
+        } catch NativeMessagingHandler.HandlerError.sessionLimitExceeded {}
+
+        do {
+            _ = try await first.value
+            XCTFail("Expected the silent host to time out")
+        } catch NativeMessagingHandler.HandlerError.timedOut {}
+        let reply = try await handler.sendMessage(["ping": true], applicationIdentifier: "echo", for: otherContext)
+        XCTAssertEqual(reply as? [String: Bool], ["ping": true])
+    }
+
+    @available(macOS 15.4, *)
+    func testWhenHostLaunchFailsThenSessionCapacityIsReleased() async throws {
+        let context = try await makeExtensionContext()
+        let missing = directory.appendingPathComponent("missing-host")
+        let echo = try makeHost(named: "echo-host", script: Self.echoHostScript)
+        let started = expectation(description: "missing host selected")
+        let handler = makeHandler(context: context, silent: missing, echo: echo, started: started,
+                                  maximumSessionsPerExtension: 1, maximumSessions: 1)
+
+        do {
+            _ = try await handler.sendMessage(["ping": true], applicationIdentifier: "silent", for: context)
+            XCTFail("Expected launch failure")
+        } catch NativeMessagingHostSession.SessionError.launchFailed {}
+        let reply = try await handler.sendMessage(["ping": true], applicationIdentifier: "echo", for: context)
+        XCTAssertEqual(reply as? [String: Bool], ["ping": true])
+    }
+
     @available(macOS 15.4, *)
     func testWhenHostNeverAnswersThenExchangeTimesOutAndStopsTheHost() async throws {
         let executable = try makeHost(named: "silent-host", script: Self.silentHostScript)
@@ -296,6 +488,39 @@ final class NativeMessagingHostSessionTests: XCTestCase {
     }
 
     // MARK: - Helpers
+
+    @available(macOS 15.4, *)
+    private func makeExtensionContext(backgroundScript: String? = nil) async throws -> WKWebExtensionContext {
+        let folder = directory.appendingPathComponent(UUID().uuidString)
+        try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
+        var manifest: [String: Any] = ["manifest_version": 3, "name": "Native messaging test", "version": "1.0",
+                                      "permissions": ["nativeMessaging"], "key": Data("test-key".utf8).base64EncodedString()]
+        if let backgroundScript {
+            manifest["background"] = ["page": "background.html"]
+            try backgroundScript.write(to: folder.appendingPathComponent("background.js"), atomically: true, encoding: .utf8)
+            try "<script src=\"background.js\"></script>".write(to: folder.appendingPathComponent("background.html"),
+                                                             atomically: true, encoding: .utf8)
+        }
+        try JSONSerialization.data(withJSONObject: manifest).write(to: folder.appendingPathComponent("manifest.json"))
+        let webExtension = try await WKWebExtension.makeCopyingErrors(at: folder)
+        let context = WKWebExtensionContext(for: webExtension)
+        context.uniqueIdentifier = UUID().uuidString
+        context.setPermissionStatus(.grantedExplicitly, for: .nativeMessaging)
+        return context
+    }
+
+    @available(macOS 15.4, *)
+    private func makeHandler(context: WKWebExtensionContext, silent: URL, echo: URL, started: XCTestExpectation? = nil,
+                             maximumSessionsPerExtension: Int, maximumSessions: Int) -> NativeMessagingHandler {
+        NativeMessagingHandler(singleMessageTimeout: 1, maximumSessionsPerExtension: maximumSessionsPerExtension,
+                               maximumSessions: maximumSessions, locateHost: { name in
+            let executable = name == "silent" ? silent : echo
+            if name == "silent" { started?.fulfill() }
+            let manifest = NativeMessagingHostManifest(name: name, path: executable.path, type: .stdio,
+                                                       allowedOrigins: context.webExtension.chromeExtensionOrigin.map { [$0] })
+            return (manifest, executable)
+        })
+    }
 
     private func makeSession(executable: URL) -> NativeMessagingHostSession {
         NativeMessagingHostSession(hostName: "com.duckduckgo.test.host",
@@ -416,6 +641,11 @@ final class NativeMessagingHostSessionTests: XCTestCase {
         pass
     """
 
+    private static let stalledHostScript = NativeMessagingHostSessionTests.framingPreamble + """
+    import time
+    time.sleep(30)
+    """
+
     /// Fails without a word.
     private static let failingHostScript = NativeMessagingHostSessionTests.framingPreamble + """
     sys.exit(1)
@@ -436,4 +666,32 @@ final class NativeMessagingHostSessionTests: XCTestCase {
     import time
     time.sleep(5)
     """
+}
+
+@available(macOS 15.4, *)
+@MainActor
+private final class NativeMessagingPortTestDelegate: NSObject, WKWebExtensionControllerDelegate {
+    private let handler: NativeMessagingHandler
+    private let connected: (WKWebExtension.MessagePort, Error?) -> Void
+    private(set) var port: WKWebExtension.MessagePort?
+
+    init(handler: NativeMessagingHandler, connected: @escaping (WKWebExtension.MessagePort, Error?) -> Void) {
+        self.handler = handler
+        self.connected = connected
+    }
+
+    func webExtensionController(_ controller: WKWebExtensionController, connectUsing port: WKWebExtension.MessagePort,
+                                for extensionContext: WKWebExtensionContext, completionHandler: @escaping (Error?) -> Void) {
+        self.port = port
+        Task { @MainActor in
+            do {
+                try await handler.connect(port, applicationIdentifier: port.applicationIdentifier, for: extensionContext)
+                completionHandler(nil)
+                connected(port, nil)
+            } catch {
+                completionHandler(error)
+                connected(port, error)
+            }
+        }
+    }
 }

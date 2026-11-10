@@ -24,7 +24,6 @@ public enum CPMRecoveryFix: String, CaseIterable, Sendable {
     case installReadiness = "install_readiness"
     case upgradeReadiness = "upgrade_readiness"
     case backgroundWake = "background_wake"
-    case backgroundLoadRetry = "background_load_retry"
 }
 
 public enum CPMRecoveryOutcome: String, Sendable {

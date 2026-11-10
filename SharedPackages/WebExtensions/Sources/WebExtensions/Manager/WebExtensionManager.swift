@@ -184,7 +184,6 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
     /// Captured at manager creation so one startup cannot mix the enabled and disabled upgrade paths.
     public let isCPMUpgradeBeforeLoadEnabled: Bool
     /// Independent kill switch for retrying a failed background load in its current context.
-    private let isCPMBackgroundLoadRecoveryEnabled: @MainActor () -> Bool
     /// Independent kill switch for restarting the context when a failed background view is still retained.
     private let isCPMBackgroundLoadRestartEnabled: @MainActor () -> Bool
     /// Platform lifecycle state must remain available when diagnostics are disabled.
@@ -254,7 +253,6 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
                 cpmDiagnosticsRecorder: CPMMessagingDiagnosticsRecorder? = nil,
                 isCPMNetworkProcessRecoveryEnabled: @escaping @MainActor () -> Bool = { false },
                 cpmNetworkProcessRecoveryFeatureFlagUpdates: AnyPublisher<Void, Never>? = nil,
-                isCPMBackgroundLoadRecoveryEnabled: @escaping @MainActor () -> Bool = { true },
                 isCPMBackgroundLoadRestartEnabled: @escaping @MainActor () -> Bool = { false },
                 backgroundLoadRecoveryCooldown: TimeInterval = 60,
                 isApplicationInBackground: @escaping @MainActor () -> Bool = { false },
@@ -322,7 +320,6 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
             featureFlagUpdates: cpmNetworkProcessRecoveryFeatureFlagUpdates,
             pixelFiring: pixelFiring
         )
-        self.isCPMBackgroundLoadRecoveryEnabled = isCPMBackgroundLoadRecoveryEnabled
         self.isCPMBackgroundLoadRestartEnabled = isCPMBackgroundLoadRestartEnabled
         self.backgroundLoadRecoveryCooldown = backgroundLoadRecoveryCooldown
         self.isApplicationInBackground = isApplicationInBackground
@@ -1074,7 +1071,7 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
                     self.backgroundLoadRestartContext = nil
                     if error == nil { self.pixelFiring.fire(.cpmBackgroundLoadRestart(.backgroundReady)) }
                 }
-                if error == nil, (elapsed >= 1 && didWaitForNavigation) || fix == .backgroundLoadRetry {
+                if error == nil, elapsed >= 1 && didWaitForNavigation {
                     self.pixelFiring.fire(.cpmRecovery(fix, outcome: .backgroundReady))
                 }
             }
@@ -1108,7 +1105,7 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
         context.webExtension.duckDuckGoWebExtensionType == .embedded
             && self.context(for: context.uniqueIdentifier) === context
             && embeddedBackgroundContextForNavigation === context
-            && isCPMBackgroundLoadRecoveryEnabled()
+            && isCPMBackgroundLoadRestartEnabled()
             && !isCPMMessagingRecoveryInProgress
     }
 
@@ -1157,16 +1154,10 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
             // Keep the original failure's view across suspension. A new view is WebKit's own recovery,
             // even if the replacement is still loading; do not restart it or join its load.
             guard currentView == nil || currentView === attempt.failedView else { return }
-            if self.isCPMBackgroundLoadRestartEnabled(), currentView != nil {
-                // WebKit cannot replace a retained failed view with a background-only retry.
-                await self.restartEmbeddedExtensionAfterRetainedBackgroundLoadFailure(context)
-                return
-            }
-            // Otherwise retry background content without replacing the context, preserving in-flight
-            // content-script replies.
-            self.lastBackgroundLoadRecoveryAt = self.now()
-            self.backgroundStartupFix[context.uniqueIdentifier] = .backgroundLoadRetry
-            await self.loadEmbeddedExtensionBackgroundContent(in: context)
+            // Without a retained view WebKit recreates the background on the next navigation by itself.
+            guard currentView != nil else { return }
+            // WebKit cannot replace a retained failed view with a background-only retry.
+            await self.restartEmbeddedExtensionAfterRetainedBackgroundLoadFailure(context)
         }
         return true
     }

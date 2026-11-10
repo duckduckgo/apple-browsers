@@ -124,9 +124,6 @@ public enum WebExtensionManagerFactory {
                 featureFlagger.isFeatureOn(.cpmNetworkProcessRecovery)
             },
             cpmNetworkProcessRecoveryFeatureFlagUpdates: featureFlagger.updatesPublisher,
-            isCPMBackgroundLoadRecoveryEnabled: {
-                featureFlagger.isFeatureOn(.cpmBackgroundLoadRecovery)
-            },
             isCPMBackgroundLoadRestartEnabled: {
                 featureFlagger.isFeatureOn(.cpmBackgroundLoadRestart)
             },

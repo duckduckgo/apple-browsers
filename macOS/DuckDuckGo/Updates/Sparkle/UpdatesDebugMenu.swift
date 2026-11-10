@@ -29,6 +29,7 @@ import Persistence
 import PrivacyConfig
 import PixelKit
 
+@MainActor
 final class UpdatesDebugMenu: NSMenu {
     private let settings: any ThrowingKeyedStoring<UpdateControllerSettings>
     private let internalUserDecider: InternalUserDecider
@@ -70,8 +71,8 @@ final class UpdatesDebugMenu: NSMenu {
                 }
                 NSMenuItem.separator()
             }
-            NSMenuItem(title: "More Prominent Updates")
-                .submenu(MoreProminentUpdatesDebugMenu())
+            NSMenuItem(title: "Prompt Stage")
+                .submenu(UpdatePromptStageDebugMenu())
         }
     }
 

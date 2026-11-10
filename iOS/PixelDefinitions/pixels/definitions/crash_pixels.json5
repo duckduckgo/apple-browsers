@@ -4,7 +4,18 @@
         "owners": ["bwaresiak"],
         "triggers": ["exception"],
         "suffixes": ["platform", "form_factor"],
-        "parameters": ["crashAppVersion", "crashFirst", "crashCode", "crashType", "crashSignal", "crashTerminationReason"]
+        "parameters": [
+            "crashAppVersion",
+            "crashFirst",
+            "crashCode",
+            "crashType",
+            "crashSignal",
+            "crashTerminationReason",
+            "crashWatchdogEvent",
+            "crashWatchdogLimit",
+            "crashProcessVisibility",
+            "crashWatchdogVisibility"
+        ]
     },
     "m_d_crash_daily": {
         "description": "Fires at most once per day when MetricKit reports a crash of the main app. App extension crashes fire m_d_crash_<extension>_daily instead.",
@@ -21,7 +32,18 @@
             ["daily", "platform", "form_factor"],
             ["platform", "form_factor"]
         ],
-        "parameters": ["crashAppVersion", "crashFirst", "crashCode", "crashType", "crashSignal", "crashTerminationReason"]
+        "parameters": [
+            "crashAppVersion",
+            "crashFirst",
+            "crashCode",
+            "crashType",
+            "crashSignal",
+            "crashTerminationReason",
+            "crashWatchdogEvent",
+            "crashWatchdogLimit",
+            "crashProcessVisibility",
+            "crashWatchdogVisibility"
+        ]
     },
     "m_d_crash_shareextension": {
         "description": "Fires once per crash of the Share extension, reported by MetricKit on a later launch of the main app. The daily variant fires at most once per day and sends only appVersion. Crashes older than 7 days are not reported.",
@@ -31,7 +53,18 @@
             ["daily", "platform", "form_factor"],
             ["platform", "form_factor"]
         ],
-        "parameters": ["crashAppVersion", "crashFirst", "crashCode", "crashType", "crashSignal", "crashTerminationReason"]
+        "parameters": [
+            "crashAppVersion",
+            "crashFirst",
+            "crashCode",
+            "crashType",
+            "crashSignal",
+            "crashTerminationReason",
+            "crashWatchdogEvent",
+            "crashWatchdogLimit",
+            "crashProcessVisibility",
+            "crashWatchdogVisibility"
+        ]
     },
     "m_d_crash_credentialextension": {
         "description": "Fires once per crash of the Credential Provider extension, reported by MetricKit on a later launch of the main app. The daily variant fires at most once per day and sends only appVersion. Crashes older than 7 days are not reported.",
@@ -41,7 +74,18 @@
             ["daily", "platform", "form_factor"],
             ["platform", "form_factor"]
         ],
-        "parameters": ["crashAppVersion", "crashFirst", "crashCode", "crashType", "crashSignal", "crashTerminationReason"]
+        "parameters": [
+            "crashAppVersion",
+            "crashFirst",
+            "crashCode",
+            "crashType",
+            "crashSignal",
+            "crashTerminationReason",
+            "crashWatchdogEvent",
+            "crashWatchdogLimit",
+            "crashProcessVisibility",
+            "crashWatchdogVisibility"
+        ]
     },
     "m_d_crash_networkextension": {
         "description": "Fires once per crash of the VPN network extension, reported by MetricKit on a later launch of the main app. The daily variant fires at most once per day and sends only appVersion. Crashes older than 7 days are not reported.",
@@ -51,7 +95,18 @@
             ["daily", "platform", "form_factor"],
             ["platform", "form_factor"]
         ],
-        "parameters": ["crashAppVersion", "crashFirst", "crashCode", "crashType", "crashSignal", "crashTerminationReason"]
+        "parameters": [
+            "crashAppVersion",
+            "crashFirst",
+            "crashCode",
+            "crashType",
+            "crashSignal",
+            "crashTerminationReason",
+            "crashWatchdogEvent",
+            "crashWatchdogLimit",
+            "crashProcessVisibility",
+            "crashWatchdogVisibility"
+        ]
     },
     "m_d_crash_widgets": {
         "description": "Fires once per crash of the Widgets extension, reported by MetricKit on a later launch of the main app. The daily variant fires at most once per day and sends only appVersion. Crashes older than 7 days are not reported.",
@@ -61,7 +116,18 @@
             ["daily", "platform", "form_factor"],
             ["platform", "form_factor"]
         ],
-        "parameters": ["crashAppVersion", "crashFirst", "crashCode", "crashType", "crashSignal", "crashTerminationReason"]
+        "parameters": [
+            "crashAppVersion",
+            "crashFirst",
+            "crashCode",
+            "crashType",
+            "crashSignal",
+            "crashTerminationReason",
+            "crashWatchdogEvent",
+            "crashWatchdogLimit",
+            "crashProcessVisibility",
+            "crashWatchdogVisibility"
+        ]
     },
     "m_d_crash_on_handlers_setup": {
         "description": "Fires when the app crashed on the previous launch while setting up crash handlers.",

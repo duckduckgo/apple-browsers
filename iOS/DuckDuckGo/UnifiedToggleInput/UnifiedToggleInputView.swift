@@ -42,6 +42,7 @@ protocol UnifiedToggleInputViewDelegate: AnyObject {
     func unifiedToggleInputViewDidTapReturnKey(_ view: UnifiedToggleInputView)
     func unifiedToggleInputViewDidShowModelPicker(_ view: UnifiedToggleInputView)
     func unifiedToggleInputViewDidShowReasoningPicker(_ view: UnifiedToggleInputView)
+    func unifiedToggleInputViewDidShowAttachMenu(_ view: UnifiedToggleInputView)
 }
 
 // MARK: - Card Position
@@ -216,6 +217,10 @@ final class UnifiedToggleInputView: UIView {
 
     func refreshPlaceholderForCurrentMode() {
         textEntryView.refreshPlaceholderForCurrentMode()
+    }
+
+    func crossfadePlaceholder(to state: AIChatPlaceholderState) {
+        textEntryView.crossfadePlaceholder(to: state)
     }
 
     var inputMode: TextEntryMode {
@@ -2051,6 +2056,10 @@ private extension UnifiedToggleInputView {
         toolsToolbar.onReasoningPickerShown = { [weak self] in
             guard let self else { return }
             delegate?.unifiedToggleInputViewDidShowReasoningPicker(self)
+        }
+        toolsToolbar.onAttachMenuShown = { [weak self] in
+            guard let self else { return }
+            delegate?.unifiedToggleInputViewDidShowAttachMenu(self)
         }
         addSubview(toolsToolbar)
         toolsToolbar.refreshFireMode(fireMode: handler.isFireTab)

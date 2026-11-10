@@ -174,6 +174,9 @@ public enum FeatureFlag: String {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1219907744895168
     case subscriptionCancellationFlow
 
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1220034712448602
+    case stripeInternationalSubscriptionWithdrawal
+
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866464085187
     case syncSetupBarcodeIsUrlBased
 
@@ -588,6 +591,9 @@ public enum FeatureFlag: String {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1219970758953673?focus=true
     case aiChatTabHandoffImprovements
 
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1220115595487712
+    case aiChatSwipeChromeRefinements
+
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1215597855114749?focus=true
     case syncScopedAccessCredentials
 
@@ -667,6 +673,11 @@ public enum FeatureFlag: String {
 
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1220203462696863
     case idleReturnNewTabPageAtLaunch
+
+    /// Holds a background task assertion during `didFinishLaunching`, so iOS doesn't suspend the app mid-launch
+    /// while it holds a lock on a shared App Group database (0xdead10cc).
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1220262683074513
+    case launchBackgroundTask
 }
 
 extension FeatureFlag: FeatureFlagDescribing {
@@ -734,7 +745,7 @@ extension FeatureFlag: FeatureFlagDescribing {
     private var config: Config {
         switch self {
         case .ipadMenuBar:
-            Config(defaultValue: .internalOnly, source: .remoteReleasable(iOSBrowserConfigSubfeature.ipadMenuBar))
+            Config(defaultValue: .enabled, source: .remoteReleasable(iOSBrowserConfigSubfeature.ipadMenuBar))
         case .sync:
             Config(source: .remoteReleasable(SyncSubfeature.level0ShowSync), supportsLocalOverriding: false)
         case .autofillCredentialInjecting:
@@ -831,6 +842,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(source: .remoteReleasable(PrivacyProSubfeature.subscriptionOnboardingPaidSubsOct2026), cohortType: SubscriptionOnboardingPaidSubsOct2026Cohort.self)
         case .subscriptionCancellationFlow:
             Config(source: .remoteReleasable(PrivacyProSubfeature.subscriptionCancellationFlow))
+        case .stripeInternationalSubscriptionWithdrawal:
+            Config(source: .remoteReleasable(PrivacyProSubfeature.stripeInternationalSubscriptionWithdrawal))
         case .syncSetupBarcodeIsUrlBased:
             Config(source: .remoteReleasable(SyncSubfeature.syncSetupBarcodeIsUrlBased))
         case .canScanUrlBasedSyncSetupBarcodes:
@@ -1091,6 +1104,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(defaultValue: .enabled, source: .remoteReleasable(AIChatSubfeature.tabSwitcherRichCard))
         case .aiChatTabHandoffImprovements:
             Config(defaultValue: .enabled, source: .remoteReleasable(AIChatSubfeature.tabHandoffImprovements))
+        case .aiChatSwipeChromeRefinements:
+            Config(defaultValue: .internalOnly, source: .remoteReleasable(AIChatSubfeature.swipeChromeRefinements))
         case .syncScopedAccessCredentials:
             Config(source: .remoteReleasable(SyncSubfeature.scopedAccessCredentials))
         case .syncCanUseV2ConnectFlow:
@@ -1129,6 +1144,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(defaultValue: .internalOnly, source: .remoteReleasable(iOSBrowserConfigSubfeature.searchSubmitPageCover))
         case .idleReturnNewTabPageAtLaunch:
             Config(defaultValue: .internalOnly, source: .remoteReleasable(iOSBrowserConfigSubfeature.idleReturnNewTabPageAtLaunch))
+        case .launchBackgroundTask:
+            Config(defaultValue: .disabled, source: .remoteReleasable(iOSBrowserConfigSubfeature.launchBackgroundTask))
         }
     }
 
@@ -1161,6 +1178,11 @@ extension FeatureFlagger {
         default:
             return false
         }
+    }
+
+    /// Swipe chrome refinements build on the Duck.ai tab handoff, so they need both flags.
+    public var isAIChatSwipeChromeRefinementsEnabled: Bool {
+        isFeatureOn(.aiChatTabHandoffImprovements) && isFeatureOn(.aiChatSwipeChromeRefinements)
     }
 
     public func isFeatureOn(_ featureFlag: FeatureFlag) -> Bool {

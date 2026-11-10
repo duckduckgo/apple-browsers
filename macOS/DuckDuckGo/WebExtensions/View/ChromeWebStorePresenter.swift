@@ -22,55 +22,13 @@ import WebKit
 
 @available(macOS 15.4, *)
 @MainActor
-final class ChromeWebStorePresenter: NSObject, ChromeWebStorePresenting {
+final class ChromeWebStorePresenter: ChromeWebStorePresenting {
     private let windowProvider: () -> NSWindow?
     private let themeManager: ThemeManager
-    private var progressPanel: NSPanel?
-    private var cancelDownload: (() -> Void)?
 
     init(windowProvider: @escaping () -> NSWindow?, themeManager: ThemeManager) {
         self.windowProvider = windowProvider
         self.themeManager = themeManager
-    }
-
-    func showDownloadProgress(cancel: @escaping () -> Void) {
-        cancelDownload = cancel
-        let panel = NSPanel(contentRect: NSRect(x: 0, y: 0, width: 380, height: 130),
-                            styleMask: [.titled], backing: .buffered, defer: false)
-        panel.title = UserText.chromeWebStoreDownloadTitle
-        let label = NSTextField(labelWithString: UserText.chromeWebStoreDownloadMessage)
-        let spinner = NSProgressIndicator()
-        spinner.style = .spinning
-        spinner.startAnimation(nil)
-        let cancelButton = NSButton(title: UserText.cancel, target: self, action: #selector(cancelRequested))
-        cancelButton.keyEquivalent = "\u{1b}" // Esc
-        let stack = NSStackView(views: [label, spinner, cancelButton])
-        stack.orientation = .vertical
-        stack.spacing = 12
-        stack.translatesAutoresizingMaskIntoConstraints = false
-        if let contentView = panel.contentView {
-            contentView.addSubview(stack)
-            NSLayoutConstraint.activate([
-                stack.centerXAnchor.constraint(equalTo: contentView.centerXAnchor),
-                stack.centerYAnchor.constraint(equalTo: contentView.centerYAnchor)
-            ])
-        }
-        progressPanel = panel
-        if let window = windowProvider(), window.attachedSheet == nil {
-            window.beginSheet(panel)
-        } else {
-            panel.center()
-            panel.makeKeyAndOrderFront(nil)
-        }
-    }
-
-    func dismissDownloadProgress() {
-        if let panel = progressPanel {
-            panel.sheetParent?.endSheet(panel)
-            panel.orderOut(nil)
-        }
-        progressPanel = nil
-        cancelDownload = nil
     }
 
     func confirmRemoval(name: String, webExtension: WKWebExtension?) async -> Bool {
@@ -100,9 +58,5 @@ final class ChromeWebStorePresenter: NSObject, ChromeWebStorePresenting {
             return await alert.beginSheetModal(for: window)
         }
         return await alert.runModal()
-    }
-
-    @objc private func cancelRequested() {
-        cancelDownload?()
     }
 }

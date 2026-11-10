@@ -38,6 +38,7 @@ public final class MockWebExtensionManaging: WebExtensionManaging {
     public var extensionUpdates = AsyncStream<Void> { $0.finish() }
     public var lifecycleEvents = AsyncStream<WebExtensionLifecycleEvent> { $0.finish() }
     public var cpmMessagingHealthMonitor: CPMMessagingHealthMonitoring = NoOpCPMMessagingHealthMonitor()
+    public let badgeColors = WebExtensionBadgeColorStore()
 
     public init() {}
 
@@ -118,6 +119,7 @@ public final class MockWebExtensionManaging: WebExtensionManaging {
     public func extensionName(for identifier: String) -> String? { nil }
     public func extensionVersion(for identifier: String) -> String? { nil }
     public func extensionPermissions(for identifier: String) -> [String] { [] }
+    public func extensionMatchPatterns(for identifier: String) -> [String] { [] }
     public func extensionContext(for url: URL) -> WKWebExtensionContext? { nil }
     public func context(for identifier: String) -> WKWebExtensionContext? { nil }
     @MainActor public func clearCachedScriptlets() {}

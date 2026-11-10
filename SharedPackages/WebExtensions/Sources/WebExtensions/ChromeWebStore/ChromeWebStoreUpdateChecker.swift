@@ -54,7 +54,7 @@ public struct ChromeWebStoreUpdateChecker {
     private static let requestTimeout: TimeInterval = 30
     private static let maximumRetryDelay: TimeInterval = 24 * 60 * 60
     private static let maximumVersionComponents = 4
-    private static let genericUserAgent = "Mozilla/5.0"
+    static let genericUserAgent = "Mozilla/5.0"
     private static let fixedAcceptLanguage = "en-US"
     private let configuration: URLSessionConfiguration
 

@@ -28,7 +28,7 @@ struct ChatToBrowserToolCallingFeature: ChatToBrowserToolCallingFeatureProviding
 
     private let featureFlagger: any FeatureFlagger
 
-    init(featureFlagger: any FeatureFlagger = AppDependencyProvider.shared.featureFlagger) {
+    init(featureFlagger: any FeatureFlagger) {
         self.featureFlagger = featureFlagger
     }
 

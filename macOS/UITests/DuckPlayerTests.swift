@@ -53,19 +53,37 @@ class DuckPlayerTests: UITestCase {
 
     /// Finds a YouTube video link on the SERP, checking for both possible title formats
     /// (with and without " - YouTube" suffix).
-    /// Links to `/live/` URLs are skipped because Duck Player only redirects `/watch?v=` URLs.
+    /// Results whose URL is a `/live/` page are skipped because Duck Player only redirects `/watch?v=` URLs.
     private func findOrganicVideoLink(timeout: TimeInterval = UITests.Timeouts.navigation) -> XCUIElement? {
         // Try the full title with " - YouTube" suffix first, then fall back to the shorter title without suffix
         for title in [Self.organicVideoTitle, Self.youtubeVideoTitle] {
-            let links = app.links.containing(.staticText, identifier: title)
-            guard links.firstMatch.waitForExistence(timeout: timeout) else { continue }
+            let link = app.links.containing(.staticText, identifier: title).firstMatch
+            guard link.waitForExistence(timeout: timeout) else { continue }
 
-            if let link = links.allElementsBoundByIndex.first(where: { !($0.url ?? "").contains("/live/") }) {
-                return link
+            if isOrganicResultLive() {
+                continue
             }
+            return link
         }
 
         return nil
+    }
+
+    /// Returns true if the SERP result for the test video displays a YouTube `/live/` URL.
+    /// The result's display URL is a link labelled like "https://www.youtube.com › live › <videoID>"
+    /// inside the result card, whose label is the result title.
+    private func isOrganicResultLive() -> Bool {
+        let resultCard = app.webViews.firstMatch.groups
+            .matching(NSPredicate(format: "label BEGINSWITH %@", Self.youtubeVideoTitle))
+            .firstMatch
+        guard resultCard.exists else { return false }
+
+        let displayURL = resultCard.links
+            .matching(NSPredicate(format: "label BEGINSWITH %@", "https://www.youtube.com"))
+            .firstMatch
+        guard displayURL.exists else { return false }
+
+        return displayURL.label.contains("› live ›")
     }
 
     private func openYouTubeAdBlockingSettings() {

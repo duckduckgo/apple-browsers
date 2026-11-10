@@ -33,6 +33,7 @@ struct PromoDependencies {
     let isOnboardingCompletedProvider: () -> Bool
     let activeRemoteMessageModel: ActiveRemoteMessageModel
     let defaultBrowserAndDockPromptService: DefaultBrowserAndDockPromptService
+    let userChurnService: UserChurnStateProviding
     let sessionRestoreCoordinator: SessionRestorePromptCoordinating
     let subscriptionPromoDelegate: FireWindowSubscriptionPromoDelegate
     let featureFlagger: FeatureFlagger

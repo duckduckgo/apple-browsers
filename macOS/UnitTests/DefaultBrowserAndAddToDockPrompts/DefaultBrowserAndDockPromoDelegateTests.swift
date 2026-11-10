@@ -290,17 +290,3 @@ final class DefaultBrowserAndDockPromoDelegateTests: XCTestCase {
         XCTAssertEqual(result, .noChange)
     }
 }
-
-private final class MockDefaultBrowserAndDockPromptUIHosting: DefaultBrowserAndDockPromptUIHosting {
-    var isInPopUpWindow: Bool = false
-
-    func providePopoverAnchor() -> NSView? {
-        return nil
-    }
-
-    func addSetAsDefaultBanner(_ banner: BannerMessageViewController) { }
-
-    func provideModalAnchor() -> NSWindow? {
-        return nil
-    }
-}

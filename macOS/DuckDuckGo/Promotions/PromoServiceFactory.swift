@@ -71,6 +71,7 @@ struct PromoServiceFactory {
             autofillToolbarPinning(dependencies: dependencies),
             brokenSite(coordinator: dependencies.brokenSitePromptPresentationCoordinator),
             subscriptionPromo(delegate: dependencies.subscriptionPromoDelegate),
+            defaultBrowserAndDockWinBackModal(dependencies: dependencies),
             defaultBrowserAndDockPopover(service: dependencies.defaultBrowserAndDockPromptService),
             defaultBrowserAndDockBanner(service: dependencies.defaultBrowserAndDockPromptService),
             defaultBrowserAndDockInactiveModal(service: dependencies.defaultBrowserAndDockPromptService),

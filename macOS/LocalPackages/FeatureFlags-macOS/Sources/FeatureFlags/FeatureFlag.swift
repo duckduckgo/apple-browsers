@@ -580,6 +580,9 @@ public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1219459128570484?focus=true
     case promoQueueAutofillEmptyStatePromo
 
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1220012766503746?focus=true
+    case defaultBrowserWinBackPromo
+
     /// Enables showing browsing history domains in the first-time quit survey
     case websitesHistoryFirstTimeQuitSurvey
 
@@ -1101,6 +1104,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(defaultValue: .enabled, source: .remoteReleasable(PromoQueueSubfeature.bookmarksEmptyStatePromo))
         case .promoQueueAutofillEmptyStatePromo:
             Config(defaultValue: .enabled, source: .remoteReleasable(PromoQueueSubfeature.autofillEmptyStatePromo))
+        case .defaultBrowserWinBackPromo:
+            Config(defaultValue: .disabled, source: .remoteReleasable(PromoQueueSubfeature.defaultBrowserWinBackPromo))
         case .websitesHistoryFirstTimeQuitSurvey:
             Config(defaultValue: .enabled, source: .remoteReleasable(MacOSBrowserConfigSubfeature.websitesHistoryFirstTimeQuitSurvey))
         case .lazyMenuRebuild:

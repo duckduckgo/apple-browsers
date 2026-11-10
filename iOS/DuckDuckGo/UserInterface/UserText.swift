@@ -1903,12 +1903,12 @@ public struct UserText {
         value: "Almost the weekend.",
         comment: "Dax greeting on the New Tab page.")
 
-    public static let daxGreetingFridayDuck = NSLocalizedString(
+    public static let daxGreetingFridayDuck = NotLocalizedString(
         "new-tab-page.dax-greeting.fridayDuck",
         value: "Thank duck it’s Friday!",
         comment: "English-only Dax greeting on the New Tab page.")
 
-    public static let daxGreetingSunday = NSLocalizedString(
+    public static let daxGreetingSunday = NotLocalizedString(
         "new-tab-page.dax-greeting.sunday",
         value: "Sunday? I’m still in my PJs.",
         comment: "English-only Dax greeting on the New Tab page.")
@@ -1998,7 +1998,7 @@ public struct UserText {
         value: "Let’s do this!",
         comment: "Dax greeting on the New Tab page.")
 
-    public static let daxGreetingReadyToDiveIn = NSLocalizedString(
+    public static let daxGreetingReadyToDiveIn = NotLocalizedString(
         "new-tab-page.dax-greeting.readyToDiveIn",
         value: "Ready to dive in?",
         comment: "English-only Dax greeting on the New Tab page.")

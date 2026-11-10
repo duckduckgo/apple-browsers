@@ -3619,9 +3619,6 @@ https://duckduckgo.com/mac";
 /* Dax greeting on the New Tab page. */
 "new-tab-page.dax-greeting.friday" = "Almost the weekend.";
 
-/* English-only Dax greeting on the New Tab page. */
-"new-tab-page.dax-greeting.fridayDuck" = "Thank duck it’s Friday!";
-
 /* Dax greeting on the New Tab page. */
 "new-tab-page.dax-greeting.goodbyeAds" = "Goodbye creepy ads!";
 
@@ -3652,9 +3649,6 @@ https://duckduckgo.com/mac";
 /* Dax greeting on the New Tab page. */
 "new-tab-page.dax-greeting.nightOwl" = "I’m really a night owl.";
 
-/* English-only Dax greeting on the New Tab page. */
-"new-tab-page.dax-greeting.readyToDiveIn" = "Ready to dive in?";
-
 /* Dax greeting on the New Tab page. */
 "new-tab-page.dax-greeting.readyToSearchPrivately" = "Ready to search privately?";
 
@@ -3663,9 +3657,6 @@ https://duckduckgo.com/mac";
 
 /* Dax greeting on the New Tab page. */
 "new-tab-page.dax-greeting.stillAwake" = "I never sleep.";
-
-/* English-only Dax greeting on the New Tab page. */
-"new-tab-page.dax-greeting.sunday" = "Sunday? I’m still in my PJs.";
 
 /* Dax greeting on the New Tab page. */
 "new-tab-page.dax-greeting.whatsOnYourMind" = "What’s on your mind?";

@@ -216,7 +216,7 @@ final class TokenRefresherTests: XCTestCase {
         let error = TokenForkError.incomplete(minted: minted, underlying: underlying)
 
         XCTAssertEqual(TokenForkError.errorDomain, "com.duckduckgo.networking.TokenForkError")
-        XCTAssertEqual(error.errorCode, 11300)
+        XCTAssertEqual(error.errorCode, 11600)
         XCTAssertEqual((error.underlyingError as? URLError)?.code, .timedOut)
         XCTAssertEqual(error, TokenForkError.incomplete(minted: minted, underlying: URLError(.timedOut)))
         XCTAssertNotEqual(error, TokenForkError.incomplete(minted: [], underlying: URLError(.timedOut)))

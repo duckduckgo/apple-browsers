@@ -1715,6 +1715,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             },
             activeRemoteMessageModel: activeRemoteMessageModel,
             defaultBrowserAndDockPromptService: defaultBrowserAndDockPromptService,
+            userChurnService: userChurnService,
             sessionRestoreCoordinator: sessionRestorePromptCoordinator,
             subscriptionPromoDelegate: subscriptionPromoDelegate,
             featureFlagger: featureFlagger,

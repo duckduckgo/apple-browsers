@@ -1,7 +1,7 @@
 {
   "images" : [
     {
-      "filename" : "OnboardingSearchOn.pdf",
+      "filename" : "Search-Selected-Light.pdf",
       "idiom" : "universal"
     },
     {
@@ -11,7 +11,7 @@
           "value" : "dark"
         }
       ],
-      "filename" : "OnboardingSearchOn-dark.pdf",
+      "filename" : "Search-Selected-Dark.pdf",
       "idiom" : "universal"
     }
   ],

@@ -43,6 +43,7 @@ public final class DBPUIViewModel {
     private var webView: WKWebView?
     private let webUISettings: DataBrokerProtectionWebUIURLSettingsRepresentable
     private let pixelHandler: EventMapping<DataBrokerProtectionSharedPixels>
+    private let dbpSettings: DataBrokerProtectionSettings
     @MainActor private var freeScanEntryPoint: String?
     @MainActor private var lastHandshakeFreeScanEntryPoint: String?
 
@@ -53,7 +54,8 @@ public final class DBPUIViewModel {
                 pixelHandler: EventMapping<DataBrokerProtectionSharedPixels>,
                 privacyConfig: PrivacyConfigurationManaging? = nil,
                 prefs: ContentScopeProperties? = nil,
-                webView: WKWebView? = nil) {
+                webView: WKWebView? = nil,
+                dbpSettings: DataBrokerProtectionSettings = DataBrokerProtectionSettings(defaults: .dbp)) {
         self.dataManager = dataManager
         self.agentInterface = agentInterface
         self.vpnBypassService = vpnBypassService
@@ -62,6 +64,7 @@ public final class DBPUIViewModel {
         self.privacyConfig = privacyConfig
         self.prefs = prefs
         self.webView = webView
+        self.dbpSettings = dbpSettings
     }
 
     @MainActor func setupCommunicationLayer() -> WKWebViewConfiguration? {
@@ -76,7 +79,8 @@ public final class DBPUIViewModel {
                                                       delegate: dataManager.communicator,
                                                       handshakeDelegate: self,
                                                       webUISettings: webUISettings,
-                                                      vpnBypassService: vpnBypassService)
+                                                      vpnBypassService: vpnBypassService,
+                                                      dbpSettings: dbpSettings)
         } catch {
             if case let UserScriptError.failedToLoadJS(jsFile, error) = error {
                 pixelHandler.fire(.userScriptLoadJSFailed(jsFile: jsFile, error: error))

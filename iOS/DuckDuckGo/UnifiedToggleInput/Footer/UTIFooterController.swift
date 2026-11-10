@@ -56,6 +56,7 @@ final class UTIFooterController {
     private var actedOnMessage: UTIFooterMessage?
     private var modelSwitchNotice: CreateImageModelSwitchNotice?
     private var termsOfServiceSendButton: DuckAiTermsOfServiceSendButton = .ask
+    private var isTermsOfServiceShownOnPage = false
     private var promptOverLimit: AIChatPromptLength?
     private var visibleIDs: Set<UTIFooterItem.ID> = []
     private var reportedTermsOfServiceState = (isVisible: false, isInEffect: false)
@@ -68,7 +69,7 @@ final class UTIFooterController {
     var currentMessage: UTIFooterMessage? { currentMessages.first?.message }
     var isTermsOfServiceVisible: Bool { visibleIDs.contains(.termsConsent) }
     var isTermsOfServiceApplicable: Bool {
-        termsOfServiceStore?.hasAccepted == false && viewModel?.warning?.blocksInput != true
+        termsOfServiceStore?.hasAccepted == false && !isTermsOfServiceShownOnPage && viewModel?.warning?.blocksInput != true
     }
     var isTermsOfServiceInEffect: Bool {
         isTermsOfServiceVisible
@@ -166,6 +167,13 @@ final class UTIFooterController {
         applyCurrentState()
     }
 
+
+    /// The page's own card already asks for the terms, so the disclaimer would ask a second time.
+    func setTermsOfServiceShownOnPage(_ shown: Bool) {
+        guard isTermsOfServiceShownOnPage != shown else { return }
+        isTermsOfServiceShownOnPage = shown
+        applyCurrentState()
+    }
 
     func setPromptTooLong(_ overLimit: AIChatPromptLength?) {
         guard promptOverLimit != overLimit else { return }

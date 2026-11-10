@@ -227,7 +227,8 @@ final class OnboardingDebugViewModel: ObservableObject {
         let sharedPixelsStorage = KeyedStorage<OnboardingSharedPixelsKeys>(storage: UserDefaults.app)
         sharedPixelsStorage.onboardingSource = nil
         sharedPixelsStorage.onboardingFlow = nil
-        sharedPixelsStorage.onboardingVariant = nil
+        sharedPixelsStorage.onboardingSearchExperienceVariant = nil
+        sharedPixelsStorage.onboardingDownloadReasonVariant = nil
         // Forget the Search-vs-Duck.ai choice and the post-onboarding settings flag.
         // `OnboardingSearchExperience` uses `UserDefaults.standard` for these keys.
         UserDefaults.standard.removeObject(forKey: Self.didEnableAIChatSearchInputDuringOnboardingKey)

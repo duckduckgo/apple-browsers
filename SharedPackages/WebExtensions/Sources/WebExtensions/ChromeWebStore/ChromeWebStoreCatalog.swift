@@ -29,6 +29,7 @@ public struct ChromeWebStoreListing: Equatable, Identifiable {
     public let entry: ExtensionsCatalogSubfeature
     public let name: String
     public let publisher: String
+    public let publisherURL: URL?
     public let iconURL: URL?
     public let storeURL: URL
 
@@ -184,6 +185,7 @@ public final class ChromeWebStoreCatalog: ChromeWebStoreCatalogProviding {
         return ChromeWebStoreListing(entry: subfeature,
                                      name: name,
                                      publisher: settings["publisher"] as? String ?? "",
+                                     publisherURL: (settings["publisherUri"] as? String).flatMap(URL.init(string:)),
                                      iconURL: (settings["iconUri"] as? String).flatMap(URL.init(string:)),
                                      storeURL: storeURL)
     }

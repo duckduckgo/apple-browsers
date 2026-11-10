@@ -58,7 +58,31 @@
     "crashTerminationReason": {
         "key": "terminationReason",
         "type": "string",
-        "description": "MXCrashDiagnostic termination reason reduced to '<namespace>_<code>', e.g. 'springboard_0x8badf00d' for a watchdog kill; '-1' when the crash has none, 'unknown' when it can't be parsed"
+        "description": "MXCrashDiagnostic termination reason reduced to '<namespace>_<code>', e.g. 'springboard_0x8badf00d' for a watchdog kill, or to 'domain<domain>_<code>' for the RunningBoard format, e.g. 'domain10_0x8badf00d'; '-1' when the crash has none, 'unknown' when it can't be parsed"
+    },
+    "crashWatchdogEvent": {
+        "key": "watchdogEvent",
+        "type": "string",
+        "pattern": "^(-1|[a-z-]{1,32})$",
+        "description": "The WatchdogEvent from a RunningBoard termination reason, e.g. 'scene-create', 'scene-update' or 'process-exit'; '-1' when the termination reason has none, 'unknown' when it isn't 1-32 lowercase letters and hyphens"
+    },
+    "crashWatchdogLimit": {
+        "key": "watchdogLimit",
+        "type": "string",
+        "enum": ["wall", "cpu", "-1", "unknown"],
+        "description": "Which watchdog allowance the app exhausted: 'wall' for real (wall clock) time, 'cpu' for CPU time; '-1' when the termination reason has no allowance (e.g. process-exit), 'unknown' for any other allowance"
+    },
+    "crashProcessVisibility": {
+        "key": "processVisibility",
+        "type": "string",
+        "pattern": "^(-1|[a-z]{1,32})$",
+        "description": "The ProcessVisibility from a RunningBoard termination reason, e.g. 'background', 'foreground' or 'unknown'; '-1' when the termination reason has none, 'unknown' when it can't be parsed"
+    },
+    "crashWatchdogVisibility": {
+        "key": "watchdogVisibility",
+        "type": "string",
+        "pattern": "^(-1|[a-z]{1,32})$",
+        "description": "The WatchdogVisibility from a RunningBoard termination reason, e.g. 'background'; '-1' when the termination reason has none, 'unknown' when it can't be parsed"
     },
     "ui_version": {
         "key": "ui_version",
@@ -647,18 +671,17 @@
         "description": "Version of the onboarding flow the user entered",
         "enum": ["default", "duckai", "tailored_by_download_reason"]
     },
-    "onboardingFlowVariant": {
-        "key": "variant",
+    "onboardingVariantSearchExperience": {
+        "key": "variant_search_experience",
         "type": "string",
-        "description": "Variant of the onboarding flow the user selected after branching (the 'Try a search or AI chat' step, or the download-reason screen)",
-        "enum": [
-            "search_plus_duckai-search",
-            "search_plus_duckai-chat",
-            "download_reason_search",
-            "download_reason_ai-chat",
-            "download_reason_no-ai",
-            "download_reason_ad-blocking"
-        ]
+        "description": "Variant of the onboarding flow the user selected at the 'Try a search or AI chat' step",
+        "enum": ["search_plus_duckai-search", "search_plus_duckai-chat"]
+    },
+    "onboardingVariantDownloadReason": {
+        "key": "variant_download_reason",
+        "type": "string",
+        "description": "Variant of the onboarding flow the user selected on the download-reason screen",
+        "enum": ["download_reason_search", "download_reason_ai-chat", "download_reason_no-ai", "download_reason_ad-blocking"]
     },
     "tabCount": {
         "key": "tab_count",

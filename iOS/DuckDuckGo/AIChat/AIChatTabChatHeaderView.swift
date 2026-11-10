@@ -720,4 +720,15 @@ private final class SiblingTouchGuard: UIGestureRecognizer {
             return
         }
     }
+
+    // Must leave `.possible` when the touch ends; otherwise UIKit keeps the gesture graph blocked and the whole app stops responding.
+    override func touchesEnded(_ touches: Set<UITouch>, with event: UIEvent) {
+        super.touchesEnded(touches, with: event)
+        state = .failed
+    }
+
+    override func touchesCancelled(_ touches: Set<UITouch>, with event: UIEvent) {
+        super.touchesCancelled(touches, with: event)
+        state = .failed
+    }
 }

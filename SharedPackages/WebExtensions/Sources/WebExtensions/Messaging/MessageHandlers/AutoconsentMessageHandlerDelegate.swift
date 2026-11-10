@@ -175,4 +175,14 @@ public protocol AutoconsentMessageHandlerDelegate: AnyObject {
     /// - Parameters:
     ///   - pixelInfo: Information about the pixel to fire (name, type, parameters)
     func sendPixel(_ pixelInfo: PixelInfo)
+
+    /// Called when the web extension reports the CPM coverage counts of one summary window.
+    ///
+    /// The extension builds the counts next to the `autoconsent_summary` pixel it sends, so the delegate only has
+    /// to hand them to the daily coverage telemetry.
+    ///
+    /// - Parameters:
+    ///   - counts: Unhandled popups and pages of the window
+    ///   - siteRank: Popularity bucket of the sites the counts belong to, `nil` when the extension could not tell
+    func reportCPMCoverage(counts: CPMCoverageCounts, siteRank: CPMSiteRank?)
 }

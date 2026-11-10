@@ -1534,6 +1534,126 @@ final class WebExtensionManagerTests: XCTestCase {
         manager.unloadAllExtensions()
     }
 
+    // MARK: - Extension Management Pixel Tests
+
+    @MainActor
+    func testWhenAStoreExtensionIsInstalled_ThenInstalledFiresWithItsCatalogEntry() async throws {
+        let pixels = EventCapturingPixelFiring()
+        let manager = makeManagementPixelManager(pixels: pixels)
+
+        try await manager.installExtension(from: try createTestWebExtension(), storeIdentity: storeIdentity(managementStoreID))
+
+        XCTAssertEqual(pixels.events, ["installed bitwarden"])
+    }
+
+    @MainActor
+    func testWhenAStoreExtensionIsUpdated_ThenInstalledDoesNotFire() async throws {
+        let pixels = EventCapturingPixelFiring()
+        let manager = makeManagementPixelManager(pixels: pixels)
+        installedExtensionStoringMock.installedExtensions = [storeRecord("old", managementStoreID)]
+
+        try await manager.installExtension(from: try createTestWebExtension(), storeIdentity: storeIdentity(managementStoreID), replacing: "old")
+
+        XCTAssertEqual(pixels.events, [])
+    }
+
+    @MainActor
+    func testWhenAStoreExtensionIsUninstalled_ThenUninstalledFiresWithItsCatalogEntry() throws {
+        let pixels = EventCapturingPixelFiring()
+        let manager = makeManagementPixelManager(pixels: pixels)
+        installedExtensionStoringMock.installedExtensions = [storeRecord("bitwarden", managementStoreID)]
+
+        try manager.uninstallExtension(identifier: "bitwarden")
+
+        XCTAssertEqual(pixels.events, ["uninstalled bitwarden"])
+    }
+
+    @MainActor
+    func testWhenAnExtensionFromOutsideTheStoreIsDisabled_ThenItIsReportedAsOther() async throws {
+        let pixels = EventCapturingPixelFiring()
+        let manager = makeManagementPixelManager(pixels: pixels)
+        installedExtensionStoringMock.installedExtensions = [
+            InstalledWebExtension(uniqueIdentifier: "manual", filename: "manual", name: nil, version: "1")
+        ]
+
+        try await manager.disableExtension(identifier: "manual")
+
+        XCTAssertEqual(pixels.events, ["disabled other"])
+    }
+
+    @MainActor
+    func testWhenAStoreExtensionIsDisabledAndEnabled_ThenEachFiresOnce() async throws {
+        let pixels = EventCapturingPixelFiring()
+        let manager = makeManagementPixelManager(pixels: pixels)
+        installedExtensionStoringMock.installedExtensions = [storeRecord("bitwarden", managementStoreID)]
+
+        try await manager.disableExtension(identifier: "bitwarden")
+        try await manager.disableExtension(identifier: "bitwarden")
+        try await manager.enableExtension(identifier: "bitwarden")
+        try await manager.enableExtension(identifier: "bitwarden")
+
+        XCTAssertEqual(pixels.events, ["disabled bitwarden", "enabled bitwarden"])
+    }
+
+#if os(macOS)
+    /// Each install is judged once, 14 days later: retained while installed and enabled, churned otherwise.
+    @MainActor
+    func testWhenAStoreExtensionHasBeenInstalledFor14Days_ThenRetentionIsReportedOnce() async throws {
+        let retainedID = String(repeating: "a", count: 32)
+        let disabledID = String(repeating: "b", count: 32)
+        let removedID = String(repeating: "c", count: 32)
+        var date = Date(timeIntervalSince1970: 0)
+        let pixels = EventCapturingPixelFiring()
+        let manager = makeManagementPixelManager(pixels: pixels, now: { date })
+        for extensionID in [retainedID, disabledID, removedID] {
+            try await manager.installExtension(from: try createTestWebExtension(), storeIdentity: storeIdentity(extensionID))
+        }
+        let identifier = { (extensionID: String) in
+            try XCTUnwrap(self.installedExtensionStoringMock.installedExtensions.first { $0.storeIdentity?.id == extensionID }?.uniqueIdentifier)
+        }
+        try await manager.disableExtension(identifier: identifier(disabledID))
+        try manager.uninstallExtension(identifier: identifier(removedID))
+        var checkedEvents = pixels.events.count
+        let newEvents = {
+            defer { checkedEvents = pixels.events.count }
+            return Array(pixels.events.dropFirst(checkedEvents))
+        }
+
+        date += 14 * 24 * 60 * 60 - 1
+        manager.eventsListener.onBrowsingActivity?()
+        XCTAssertEqual(newEvents(), [], "Nothing is due before 14 days")
+
+        date += 60 * 60
+        manager.eventsListener.onBrowsingActivity?()
+        XCTAssertEqual(newEvents(), [
+            "retained other",
+            "churned other",
+            "churned other"
+        ])
+
+        date += 2 * 60 * 60
+        manager.eventsListener.onBrowsingActivity?()
+        XCTAssertEqual(newEvents(), [], "Each install is judged once")
+        XCTAssertEqual(pixels.installedCountCount, 3, "The count is sent on each hourly check")
+    }
+
+    @MainActor
+    func testWhenTheStoreCatalogIsUnavailable_ThenNeitherCountNorRetentionIsReported() async throws {
+        var date = Date(timeIntervalSince1970: 0)
+        let pixels = EventCapturingPixelFiring()
+        let manager = makeManagementPixelManager(pixels: pixels, now: { date }, isCatalogAvailable: false)
+        try await manager.installExtension(from: try createTestWebExtension(), storeIdentity: storeIdentity(managementStoreID))
+        let installEvents = pixels.events.count
+
+        date += 14 * 24 * 60 * 60
+        manager.eventsListener.onBrowsingActivity?()
+
+        XCTAssertEqual(pixels.events.count, installEvents)
+        XCTAssertEqual(pixels.installedCountCount, 0)
+    }
+
+#endif
+
     // MARK: - Install Extension Tests
 
     @MainActor
@@ -2557,6 +2677,81 @@ final class WebExtensionManagerTests: XCTestCase {
         XCTAssertEqual(host.receivedMessages.first as? [String: String], ["cmd": "hello"])
     }
 
+    /// A reloaded extension gets a new context with the same identifier while the old context's keep-alive
+    /// task may still be waiting. The new context's background page must get a keep-alive of its own.
+    @MainActor
+    func testWhenAReloadedExtensionOpensANativePort_ThenItsNewContextGetsItsOwnKeepAlive() async throws {
+        let manager = makeManager()
+        let webExtension = try await WKWebExtension(resourceBaseURL: try makeTestExtensionDirectory(permissions: ["nativeMessaging"]))
+        let previousContext = WKWebExtensionContext(for: webExtension)
+        previousContext.uniqueIdentifier = "native-messaging-reload"
+        let reloadedContext = WKWebExtensionContext(for: webExtension)
+        reloadedContext.uniqueIdentifier = "native-messaging-reload"
+
+        manager.keepBackgroundLoadedWhileNativePortsAreOpen(for: previousContext)
+        let previousTask = try XCTUnwrap(manager.nativePortKeepAliveTasks["native-messaging-reload"]?.task)
+        manager.keepBackgroundLoadedWhileNativePortsAreOpen(for: reloadedContext)
+
+        let current = try XCTUnwrap(manager.nativePortKeepAliveTasks["native-messaging-reload"])
+        XCTAssertTrue(current.context === reloadedContext)
+        XCTAssertTrue(previousTask.isCancelled)
+
+        await previousTask.value
+        await current.task.value
+        XCTAssertNil(manager.nativePortKeepAliveTasks["native-messaging-reload"])
+    }
+
+    /// A native port can open while the keep-alive task releases the page's keep-alive port. The task
+    /// must then keep the page loaded, since the new port's connect found the task still registered.
+    @MainActor
+    func testWhenANativePortOpensWhileTheKeepAliveIsReleased_ThenTheKeepAliveContinues() async throws {
+        let host = ScriptedOpenPortsNativeMessagingHandler(answers: [false, true])
+        let manager = WebExtensionManager(configuration: configurationMock,
+                                          windowTabProvider: windowTabProviderMock,
+                                          storageProvider: storageProvidingMock,
+                                          installationStore: installedExtensionStoringMock,
+                                          loader: webExtensionLoadingMock,
+                                          lifecycleDelegate: lifecycleDelegateMock,
+                                          nativeMessagingHandler: host)
+        let directory = try makeTestExtensionDirectory(permissions: ["nativeMessaging"])
+        let manifestURL = directory.appendingPathComponent("manifest.json")
+        var manifest = try XCTUnwrap(JSONSerialization.jsonObject(with: Data(contentsOf: manifestURL)) as? [String: Any])
+        manifest["background"] = ["page": "bg.html"]
+        try JSONSerialization.data(withJSONObject: manifest).write(to: manifestURL)
+        try #"<!DOCTYPE html><html><head><meta charset="utf-8"></head><body><script src="bg.js"></script></body></html>"#
+            .write(to: directory.appendingPathComponent("bg.html"), atomically: true, encoding: .utf8)
+        try """
+        globalThis.keepAliveCalls = [];
+        globalThis.\(WebExtensionAPIStubScript.keepBackgroundAliveFunctionName) = function(keepAlive) {
+            keepAliveCalls.push(keepAlive === false ? "release" : "renew");
+            return true;
+        };
+        """.write(to: directory.appendingPathComponent("bg.js"), atomically: true, encoding: .utf8)
+
+        let context = WKWebExtensionContext(for: try await WKWebExtension(resourceBaseURL: directory))
+        context.uniqueIdentifier = "native-messaging-keep-alive-race"
+        try manager.controller.load(context)
+        addTeardownBlock { try? manager.controller.unload(context) }
+        try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
+            context.loadBackgroundContent { error in
+                if let error { continuation.resume(throwing: error) } else { continuation.resume() }
+            }
+        }
+        let webView = try XCTUnwrap(manager.backgroundWebView(in: context))
+
+        manager.keepBackgroundLoadedWhileNativePortsAreOpen(for: context)
+
+        var calls: [String] = []
+        for _ in 0..<50 where calls.count < 2 {
+            try await Task.sleep(for: .milliseconds(100))
+            let result: Any? = try await webView.evaluateJavaScript("keepAliveCalls")
+            calls = result as? [String] ?? []
+        }
+        XCTAssertEqual(calls, ["release", "renew"])
+        XCTAssertNotNil(manager.nativePortKeepAliveTasks["native-messaging-keep-alive-race"])
+        manager.nativePortKeepAliveTasks["native-messaging-keep-alive-race"]?.task.cancel()
+    }
+
     /// Without a native messaging handler, as in the App Store build, `connectNative()` must fail at once,
     /// so an extension falls back right away instead of waiting on a port no host ever answers.
     @MainActor
@@ -3118,6 +3313,35 @@ final class WebExtensionManagerTests: XCTestCase {
         )
     }
 
+    private let managementStoreID = "nngceckbapebfimnlniiiahkandclblb"
+
+    private func storeIdentity(_ extensionID: String) -> WebExtensionStoreIdentity {
+        WebExtensionStoreIdentity(store: .chromeWebStore, id: extensionID)
+    }
+
+    private func storeRecord(_ identifier: String, _ extensionID: String) -> InstalledWebExtension {
+        InstalledWebExtension(uniqueIdentifier: identifier, filename: identifier, name: nil, version: "1",
+                              storeIdentity: storeIdentity(extensionID))
+    }
+
+    @MainActor
+    private func makeManagementPixelManager(pixels: EventCapturingPixelFiring,
+                                            now: @escaping () -> Date = Date.init,
+                                            isCatalogAvailable: Bool = true) -> WebExtensionManager {
+        let manager = WebExtensionManager(configuration: configurationMock,
+                                          windowTabProvider: windowTabProviderMock,
+                                          storageProvider: storageProvidingMock,
+                                          installationStore: installedExtensionStoringMock,
+                                          loader: webExtensionLoadingMock,
+                                          lifecycleDelegate: lifecycleDelegateMock,
+                                          pixelFiring: pixels,
+                                          retentionStore: WebExtensionRetentionStore(storage: InMemoryKeyValueStore().throwingKeyedStoring()),
+                                          now: now)
+        manager.chromeWebStore = CatalogNamingWebStore(entries: [managementStoreID: .bitwarden],
+                                                       catalogExtensionIDs: isCatalogAvailable ? [managementStoreID] : [])
+        return manager
+    }
+
     private func createTestWebExtension() throws -> URL {
         let tempDir = FileManager.default.temporaryDirectory
         let extensionDir = tempDir.appendingPathComponent("TestExtension-\(UUID().uuidString)")
@@ -3269,9 +3493,13 @@ private final class CapturingReloadErrorPixelFiring: WebExtensionPixelFiring {
 @available(macOS 15.4, iOS 18.4, *)
 private final class EventCapturingPixelFiring: WebExtensionPixelFiring {
     private(set) var events: [String] = []
+    private(set) var installedCountCount = 0
     private(set) var cpmInstallErrors: [NSError] = []
 
     func fire(_ event: WebExtensionPixelEvent) {
+        if case .installedCount = event {
+            installedCountCount += 1
+        }
         switch event {
         case .embeddedInstallError(let type, let error) where type == .embedded:
             cpmInstallErrors.append(error as NSError)
@@ -3281,6 +3509,18 @@ private final class EventCapturingPixelFiring: WebExtensionPixelFiring {
             events.append("default set: \(pixelExtension.parameterValue)")
         case .apiCompatibilityGaps(let catalogEntry, let version, let missingAPICount, let unsupportedURLCount):
             events.append("gaps \(catalogEntry.rawValue) \(version): \(missingAPICount) apis, \(unsupportedURLCount) urls")
+        case .installed(let pixelExtension):
+            events.append("installed \(pixelExtension.parameterValue)")
+        case .uninstalled(let pixelExtension):
+            events.append("uninstalled \(pixelExtension.parameterValue)")
+        case .enabled(let pixelExtension):
+            events.append("enabled \(pixelExtension.parameterValue)")
+        case .disabled(let pixelExtension):
+            events.append("disabled \(pixelExtension.parameterValue)")
+        case .retained14Days(let pixelExtension):
+            events.append("retained \(pixelExtension.parameterValue)")
+        case .churned14Days(let pixelExtension):
+            events.append("churned \(pixelExtension.parameterValue)")
         default:
             break
         }
@@ -3289,14 +3529,15 @@ private final class EventCapturingPixelFiring: WebExtensionPixelFiring {
 
 @available(macOS 15.4, iOS 18.4, *)
 @MainActor
-private final class CatalogNamingWebStore: ChromeWebStoreManaging {
+final class CatalogNamingWebStore: ChromeWebStoreManaging {
     let entries: [String: ExtensionsCatalogSubfeature]
+    let catalogExtensionIDs: [String]
 
-    init(entries: [String: ExtensionsCatalogSubfeature]) {
+    init(entries: [String: ExtensionsCatalogSubfeature], catalogExtensionIDs: [String] = []) {
         self.entries = entries
+        self.catalogExtensionIDs = catalogExtensionIDs
     }
 
-    var catalogExtensionIDs: [String] { [] }
     var learnMoreURL: URL? { nil }
     func status(for identifier: String) -> ChromeWebStoreStatus { .unknown }
     func install(identifier: String, downloadURL: URL) async -> Bool { false }
@@ -3338,6 +3579,31 @@ private final class ExpectingMessageHandler: WebExtensionMessageHandler {
     }
 }
 
+/// Answers `hasOpenPorts(for:)` from `answers` in order, then keeps giving the last one.
+@available(macOS 15.4, iOS 18.4, *)
+@MainActor
+private final class ScriptedOpenPortsNativeMessagingHandler: WebExtensionNativeMessagingHandling {
+    private var answers: [Bool]
+
+    init(answers: [Bool]) {
+        self.answers = answers
+    }
+
+    func connect(_ port: WKWebExtension.MessagePort,
+                 applicationIdentifier: String?,
+                 for context: WKWebExtensionContext) async throws {}
+
+    func hasOpenPorts(for context: WKWebExtensionContext) -> Bool {
+        answers.count > 1 ? answers.removeFirst() : answers.first ?? false
+    }
+
+    func sendMessage(_ message: Any,
+                     applicationIdentifier: String?,
+                     for context: WKWebExtensionContext) async throws -> Any? {
+        nil
+    }
+}
+
 /// A native messaging host that takes a while to start, like a real host process, and then records
 /// every message the port delivers.
 @available(macOS 15.4, iOS 18.4, *)
@@ -3362,6 +3628,10 @@ private final class SlowStartingNativeMessagingHandler: WebExtensionNativeMessag
                 self.receivedFirstMessage.fulfill()
             }
         }
+    }
+
+    func hasOpenPorts(for context: WKWebExtensionContext) -> Bool {
+        false
     }
 
     func sendMessage(_ message: Any,

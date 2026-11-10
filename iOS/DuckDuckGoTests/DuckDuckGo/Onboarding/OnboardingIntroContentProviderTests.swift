@@ -1173,27 +1173,6 @@ struct OnboardingIntroContentProviderTests {
             sut = OnboardingIntroContentProvider(flowType: .default, featureFlagger: MockFeatureFlagger())
         }
 
-        @Test("SERP personalization content matches the expected copy and toggles")
-        func serpPersonalizationContent() {
-            // GIVEN
-            let expected = OnboardingPersonalizationContent(
-                title: "Your search, your way.",
-                message: nil,
-                items: [
-                    .init(type: .recentlyVisitedSites, title: "Search History", subtitle: "Show recently visited sites in search suggestions. Private, only on your device."),
-                    .init(type: .safeSearch, title: "Safe Search", subtitle: "Omit questionable (mostly adult) material in results.")
-                ],
-                primaryCTA: "Next",
-                daxAnimation: .wingLeft
-            )
-
-            // WHEN
-            let result = sut.serpPersonalizationContent
-
-            // THEN
-            #expect(result == expected)
-        }
-
         @Test("AI-model personalization content matches the expected copy")
         func aiModelPersonalizationContent() {
             // GIVEN

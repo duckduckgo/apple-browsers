@@ -27,6 +27,9 @@ enum WebExtensionPixel: PixelKit.Event {
     // MARK: - Chrome Web Store Updates
 
     case updateCheck(extension: WebExtensionPixelExtension, outcome: WebExtensionUpdateCheckOutcome)
+    case updateDownloadFailed(extension: WebExtensionPixelExtension, outcome: String)
+    case updateVerificationFailed(extension: WebExtensionPixelExtension, outcome: String)
+    case updateVerified(extension: WebExtensionPixelExtension)
 
     // MARK: - Installation
 
@@ -102,6 +105,20 @@ enum WebExtensionPixel: PixelKit.Event {
 
     case cpmNetworkProcessRecoveryApplied
 
+    // MARK: - Extension Management
+
+    case enabled(extension: WebExtensionPixelExtension)
+    case disabled(extension: WebExtensionPixelExtension)
+    case remotelyDisabled(extension: WebExtensionPixelExtension)
+    case retained14Days(extension: WebExtensionPixelExtension)
+    case churned14Days(extension: WebExtensionPixelExtension)
+    case installedCount(installed: Int, enabled: Int)
+    case getClicked(extension: WebExtensionPixelExtension)
+    case detailsOpened(extension: WebExtensionPixelExtension)
+    case publisherLinkClicked(extension: WebExtensionPixelExtension)
+    /// An extension's toolbar button, when the click performs its action rather than closing its popup.
+    case toolbarClicked(extension: WebExtensionPixelExtension)
+
     // MARK: - Debug
 
     case debugCPM(CPMWebExtensionPixelMetadata)
@@ -116,6 +133,12 @@ enum WebExtensionPixel: PixelKit.Event {
             case .googleFlagged: return "web_extension_update_skipped_macos"
             default: return "web_extension_update_check_failed_macos"
             }
+        case .updateDownloadFailed:
+            return "web_extension_update_download_failed_macos"
+        case .updateVerificationFailed:
+            return "web_extension_update_verification_failed_macos"
+        case .updateVerified:
+            return "web_extension_update_verified_macos"
         case .installed:
             return "m_mac_web_extension_installed"
         case .installError:
@@ -206,6 +229,37 @@ enum WebExtensionPixel: PixelKit.Event {
             return metadata.name
         case .cpmNetworkProcessRecoveryApplied:
             return "web_extension_cpm_network_process_recovery_applied"
+        case .enabled:
+            return "web_extension_enabled_macos"
+        case .disabled:
+            return "web_extension_disabled_macos"
+        case .detailsOpened:
+            return "web_extension_details_opened_macos"
+        case .getClicked:
+            return "web_extension_get_clicked_macos"
+        case .publisherLinkClicked:
+            return "web_extension_publisher_link_clicked_macos"
+        case .retained14Days:
+            return "web_extension_retained_14d_macos"
+        case .churned14Days:
+            return "web_extension_churned_14d_macos"
+        case .remotelyDisabled:
+            return "web_extension_remotely_disabled_macos"
+        case .installedCount:
+            return "web_extension_installed_count_macos"
+        case .toolbarClicked:
+            return "web_extension_toolbar_clicked_macos"
+        }
+    }
+
+    /// Floors a count to 0, 1, 2 (2–3), 4 (4–5) or 6 (6+), the Windows browser's buckets.
+    static func countBucket(_ count: Int) -> String {
+        switch count {
+        case ..<1: return "0"
+        case 1: return "1"
+        case 2...3: return "2"
+        case 4...5: return "4"
+        default: return "6"
         }
     }
 
@@ -217,6 +271,10 @@ enum WebExtensionPixel: PixelKit.Event {
                 parameters["outcome"] = outcome.rawValue
             }
             return parameters
+        case .updateDownloadFailed(let pixelExtension, let outcome), .updateVerificationFailed(let pixelExtension, let outcome):
+            return [Self.extensionParameterKey: pixelExtension.parameterValue, "outcome": outcome]
+        case .updateVerified(let pixelExtension):
+            return [Self.extensionParameterKey: pixelExtension.parameterValue]
         case .embeddedUpgraded(let fromVersion, let toVersion),
              .darkReaderUpgraded(let fromVersion, let toVersion),
              .adBlockingExtensionUpgraded(let fromVersion, let toVersion):
@@ -246,8 +304,19 @@ enum WebExtensionPixel: PixelKit.Event {
         case .installed(let pixelExtension),
              .installError(let pixelExtension, _),
              .uninstalled(let pixelExtension),
-             .defaultPasswordManagerSet(let pixelExtension):
+             .defaultPasswordManagerSet(let pixelExtension),
+             .enabled(let pixelExtension),
+             .disabled(let pixelExtension),
+             .remotelyDisabled(let pixelExtension),
+             .retained14Days(let pixelExtension),
+             .churned14Days(let pixelExtension),
+             .getClicked(let pixelExtension),
+             .detailsOpened(let pixelExtension),
+             .publisherLinkClicked(let pixelExtension),
+             .toolbarClicked(let pixelExtension):
             return [Self.extensionParameterKey: pixelExtension.parameterValue]
+        case .installedCount(let installed, let enabled):
+            return ["count": Self.countBucket(installed), "enabled_count": Self.countBucket(enabled)]
         case .apiCompatibilityGaps(_, let version, let missingAPICount, let unsupportedURLCount):
             return ["extension_version": version,
                     "missing_api_count": String(missingAPICount),
@@ -265,7 +334,10 @@ enum WebExtensionPixel: PixelKit.Event {
 
     var namePrefix: PixelKitNamePrefix {
         switch self {
-        case .updateCheck, .debugCPM, .reloadError, .cpmNetworkProcessRecoveryApplied, .bitwardenDailyActive, .defaultPasswordManagerSet, .apiCompatibilityGaps:
+        case .updateCheck, .updateDownloadFailed, .updateVerificationFailed, .updateVerified,
+             .debugCPM, .reloadError, .cpmNetworkProcessRecoveryApplied, .bitwardenDailyActive, .defaultPasswordManagerSet, .apiCompatibilityGaps,
+             .enabled, .disabled, .remotelyDisabled, .retained14Days, .churned14Days, .installedCount,
+             .getClicked, .detailsOpened, .publisherLinkClicked, .toolbarClicked:
             return .none
         default:
             return .platformDefault
@@ -334,6 +406,12 @@ struct MacOSWebExtensionPixelFiring: WebExtensionPixelFiring {
         switch event {
         case .updateCheck(let pixelExtension, let outcome):
             pixel = .updateCheck(extension: pixelExtension, outcome: outcome)
+        case .updateDownloadFailed(let pixelExtension, let outcome):
+            pixel = .updateDownloadFailed(extension: pixelExtension, outcome: outcome.rawValue)
+        case .updateVerificationFailed(let pixelExtension, let outcome):
+            pixel = .updateVerificationFailed(extension: pixelExtension, outcome: outcome.rawValue)
+        case .updateVerified(let pixelExtension):
+            pixel = .updateVerified(extension: pixelExtension)
         case .installed(let pixelExtension):
             pixel = .installed(extension: pixelExtension)
         case .installError(let pixelExtension, let error):
@@ -396,13 +474,27 @@ struct MacOSWebExtensionPixelFiring: WebExtensionPixelFiring {
         case .apiCompatibilityGaps(let catalogEntry, let version, let missingAPICount, let unsupportedURLCount):
             pixel = .apiCompatibilityGaps(extension: catalogEntry, version: version,
                                           missingAPICount: missingAPICount, unsupportedURLCount: unsupportedURLCount)
+        case .enabled(let pixelExtension):
+            pixel = .enabled(extension: pixelExtension)
+        case .disabled(let pixelExtension):
+            pixel = .disabled(extension: pixelExtension)
+        case .retained14Days(let pixelExtension):
+            pixel = .retained14Days(extension: pixelExtension)
+        case .churned14Days(let pixelExtension):
+            pixel = .churned14Days(extension: pixelExtension)
+        case .remotelyDisabled(let pixelExtension):
+            pixel = .remotelyDisabled(extension: pixelExtension)
+        case .installedCount(let installed, let enabled):
+            pixel = .installedCount(installed: installed, enabled: enabled)
         }
         switch event {
-        case .updateCheck:
+        case .updateCheck, .updateDownloadFailed, .updateVerificationFailed, .updateVerified:
             frequency = .dailyAndCount
-        case .bitwardenDailyActive, .apiCompatibilityGaps:
+        case .bitwardenDailyActive, .apiCompatibilityGaps, .installedCount:
             frequency = .daily
-        case .defaultPasswordManagerSet:
+        case .enabled, .disabled, .remotelyDisabled:
+            frequency = .dailyAndCount
+        case .defaultPasswordManagerSet, .retained14Days, .churned14Days:
             frequency = .standard
         default:
             frequency = Self.frequency(of: event)

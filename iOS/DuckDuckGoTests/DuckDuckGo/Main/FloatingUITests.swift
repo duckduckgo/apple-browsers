@@ -2815,6 +2815,40 @@ final class SwipeTabBoundaryPolicyTests: XCTestCase {
     }
 }
 
+final class SwipeChromeRefinementsFlagTests: XCTestCase {
+
+    func testWhenBothFlagsAreOnThenRefinementsAreEnabled() {
+        let featureFlagger = MockFeatureFlagger(enabledFeatureFlags: [.aiChatTabHandoffImprovements, .aiChatSwipeChromeRefinements])
+        XCTAssertTrue(featureFlagger.isAIChatSwipeChromeRefinementsEnabled)
+    }
+
+    func testWhenEitherFlagIsOffThenRefinementsAreDisabled() {
+        XCTAssertFalse(MockFeatureFlagger(enabledFeatureFlags: [.aiChatSwipeChromeRefinements]).isAIChatSwipeChromeRefinementsEnabled)
+        XCTAssertFalse(MockFeatureFlagger(enabledFeatureFlags: [.aiChatTabHandoffImprovements]).isAIChatSwipeChromeRefinementsEnabled)
+    }
+
+    func testWhenFlagTurnsOffWhileRunningThenRefinementsAreDisabled() {
+        let featureFlagger = MockFeatureFlagger(enabledFeatureFlags: [.aiChatTabHandoffImprovements, .aiChatSwipeChromeRefinements])
+        featureFlagger.enabledFeatureFlags = [.aiChatTabHandoffImprovements]
+        XCTAssertFalse(featureFlagger.isAIChatSwipeChromeRefinementsEnabled)
+    }
+
+    func testWhenFlagTurnsOffWhileRunningThenCollapsedBarDropsItsFloatingOffset() {
+        let coordinator = MainViewCoordinator(parentController: UIViewController())
+        coordinator.unifiedToggleInputContainer = UIView()
+        coordinator.aiTabCollapsedTopSeparator = UIView()
+        coordinator.unifiedToggleInputContainer.transform = CGAffineTransform(translationX: 12, y: 20)
+        coordinator.aiTabCollapsedTopSeparator.transform.ty = 20
+        coordinator.isAITabCollapsedBarFloatingOffsetEnabled = { false }
+
+        coordinator.applyAITabCollapsedBarFloatingOffset()
+
+        XCTAssertEqual(coordinator.unifiedToggleInputContainer.transform.ty, 0)
+        XCTAssertEqual(coordinator.unifiedToggleInputContainer.transform.tx, 12)
+        XCTAssertEqual(coordinator.aiTabCollapsedTopSeparator.transform.ty, 0)
+    }
+}
+
 final class LiveTabSwipePolicyTests: XCTestCase {
 
     func testWhenFloatingUIHasWebDestinationThenLiveDestinationIsUsed() {
@@ -3177,6 +3211,7 @@ final class SwipeTabsNewTabDestinationTests: XCTestCase {
             ),
             liveTabControllerProvider: { _ in nil },
             inputStateProvider: { _ in TabInputState() },
+            placeholderStateProvider: { _ in .newChat },
             isPaidAIChatEnabledProvider: { false },
             allowsSubscriptionUpsellProvider: { false },
             pixelFiring: nil,

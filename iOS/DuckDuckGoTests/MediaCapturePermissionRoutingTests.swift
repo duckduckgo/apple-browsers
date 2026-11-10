@@ -1781,6 +1781,7 @@ final class TabViewControllerMediaCapturePermissionRoutingTests: XCTestCase {
             ),
             liveTabControllerProvider: { $0 === sut.tabModel ? sut : nil },
             inputStateProvider: { _ in TabInputState() },
+            placeholderStateProvider: { _ in .newChat },
             isPaidAIChatEnabledProvider: { false },
             allowsSubscriptionUpsellProvider: { false },
             pixelFiring: nil,

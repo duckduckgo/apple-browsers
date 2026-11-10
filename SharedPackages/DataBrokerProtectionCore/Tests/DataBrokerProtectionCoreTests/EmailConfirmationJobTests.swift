@@ -153,6 +153,43 @@ final class EmailConfirmationJobTests: XCTestCase {
         XCTAssertEqual(mockWebRunner.attemptCount, 1)
     }
 
+    func testWhenSigningKeyIsRevoked_thenEmailConfirmationDoesNotRun() async {
+        let privacyConfig = PrivacyConfigurationManagingMock()
+        privacyConfig.setRevokedBundleSigningKeyIDs(PrivacyConfigurationManagingMock.builtInBundleSigningKeyIDs)
+        mockBrokerDependencies.privacyConfig = privacyConfig
+        mockBrokerDependencies.dataBrokerProtectionSettings = DataBrokerProtectionSettings(defaults: UserDefaults(suiteName: "EmailConfirmationJobTests.\(UUID().uuidString)")!)
+        mockDatabase.brokerToReturn = DataBroker.mockWithEmailConfirmation
+        mockDatabase.profileQueryToReturn = ProfileQuery.mock
+        mockDatabase.extractedProfileToReturn = ExtractedProfile.mockWithoutRemovedDate
+
+        sut = EmailConfirmationJob(
+            jobData: OptOutEmailConfirmationJobData(brokerId: 1,
+                                                    profileQueryId: 2,
+                                                    extractedProfileId: 3,
+                                                    generatedEmail: "test@example.com",
+                                                    attemptID: "test-attempt",
+                                                    emailConfirmationLink: "https://example.com/confirm"),
+            showWebView: false,
+            errorDelegate: mockErrorDelegate,
+            jobDependencies: mockDependencies,
+            webRunnerForTesting: mockWebRunner,
+            webViewHandlerForTesting: mockWebViewHandler
+        )
+
+        let expectation = XCTestExpectation(description: "Job should finish")
+        sut.completionBlock = {
+            expectation.fulfill()
+        }
+
+        sut.start()
+        await fulfillment(of: [expectation], timeout: 5)
+
+        XCTAssertFalse(mockWebRunner.wasOptOutCalled)
+        XCTAssertFalse(mockErrorDelegate.didCallError)
+        XCTAssertFalse(mockDatabase.wasIncrementAttemptCountCalled)
+        XCTAssertFalse(mockDatabase.wasDeleteOptOutEmailConfirmationCalled)
+    }
+
     func testFailedJobIncrementsAttemptCount() async {
         let jobData = OptOutEmailConfirmationJobData(
             brokerId: 1,

@@ -71,7 +71,7 @@ public final class SparkleUpdateController: NSObject, SparkleUpdateControlling {
         }
     }
 
-    private var pendingNotificationTask: Task<Void, Never>?
+    private(set) var pendingNotificationTask: Task<Void, Never>?
 
     public let notificationPresenter: any UpdateNotificationPresenting
     public let willRelaunchAppPublisher: AnyPublisher<Void, Never>
@@ -89,6 +89,8 @@ public final class SparkleUpdateController: NSObject, SparkleUpdateControlling {
             } else {
                 latestUpdate = nil
                 hasPendingUpdate = false
+                hasBeenReadyToUpdate = false
+                canShowUpdatePrompts = false
                 needsNotificationDot = false
             }
         }
@@ -102,6 +104,8 @@ public final class SparkleUpdateController: NSObject, SparkleUpdateControlling {
         let isDone = currentProgress.isDone
         let isResumable = progressState.isResumable
         hasPendingUpdate = isInstalled && isDone && isResumable
+        hasBeenReadyToUpdate = isInstalled && (hasBeenReadyToUpdate || hasPendingUpdate)
+        canShowUpdatePrompts = hasBeenReadyToUpdate && currentProgress.isIdle
     }
 
     // MARK: - Update Progress State Machine
@@ -128,8 +132,17 @@ public final class SparkleUpdateController: NSObject, SparkleUpdateControlling {
     @Published public private(set) var hasPendingUpdate = false
     public var hasPendingUpdatePublisher: Published<Bool>.Publisher { $hasPendingUpdate }
 
+    /// Once an update has been ready, the prompts show whenever no update is running, including after a failure, until the app has updated.
+    @Published public private(set) var canShowUpdatePrompts = false
+    private var hasBeenReadyToUpdate = false
+    public var canShowUpdatePromptsPublisher: AnyPublisher<Bool, Never> { $canShowUpdatePrompts.eraseToAnyPublisher() }
+
     public var mustShowUpdateIndicators: Bool = false
     public let clearsNotificationDotOnMenuOpen = false
+
+    public let updatePromptStageTracker: UpdatePromptStageTracker?
+    private var promptStage: UpdatePromptStage = .none
+    private var promptStageCancellable: AnyCancellable?
 
     private let settings: any ThrowingKeyedStoring<UpdateControllerSettings>
 
@@ -213,6 +226,9 @@ public final class SparkleUpdateController: NSObject, SparkleUpdateControlling {
     // MARK: - Feature Flags support
 
     private let featureFlagger: FeatureFlagger
+    private var isMoreProminentUpdatesOn: Bool {
+        featureFlagger.isFeatureOn(.moreProminentUpdates)
+    }
     private let manualUpdateRemovalHandler: ManualUpdateRemovalHandling
     private let allowCustomUpdateFeedOverride: Bool
     private let isAutoUpdatePaused: () -> Bool
@@ -242,8 +258,10 @@ public final class SparkleUpdateController: NSObject, SparkleUpdateControlling {
 
     // MARK: - Public
 
+    @MainActor
     public init(internalUserDecider: InternalUserDecider,
                 featureFlagger: FeatureFlagger,
+                privacyConfigurationManager: PrivacyConfigurationManaging,
                 manualUpdateRemovalHandler: ManualUpdateRemovalHandling,
                 pixelFiring: PixelFiring?,
                 notificationPresenter: UpdateNotificationPresenting,
@@ -268,6 +286,10 @@ public final class SparkleUpdateController: NSObject, SparkleUpdateControlling {
         self.settings = keyValueStore.throwingKeyedStoring()
         self.applicationUpdateDetector = applicationUpdateDetector
         self.updateCompletionValidator = SparkleUpdateCompletionValidator(settings: settings)
+        self.updatePromptStageTracker = UpdatePromptStageTracker(store: settings,
+                                                                 internalUserDecider: internalUserDecider,
+                                                                 featureFlagger: featureFlagger,
+                                                                 privacyConfigurationManager: privacyConfigurationManager)
 
         // Capture the current value before initializing updateWideEvent
         let currentAutomaticUpdatesEnabled = manualUpdateRemovalHandler.shouldHideManualUpdateOption
@@ -297,6 +319,13 @@ public final class SparkleUpdateController: NSObject, SparkleUpdateControlling {
         progressCancellable = progressState.updateProgressPublisher
             .sink { [weak self] progress in
                 self?.handleProgressChange(progress)
+            }
+
+        promptStageCancellable = updatePromptStageTracker?.$stage
+            .removeDuplicates()
+            .sink { [weak self] stage in
+                self?.promptStage = stage
+                self?.handleUpdateNotification()
             }
 
         // Update check interval when internal user status changes
@@ -394,14 +423,24 @@ public final class SparkleUpdateController: NSObject, SparkleUpdateControlling {
     /// For automatic updates, regular notifications and the blue dot are delayed.
     /// to reduce noise - users who quit within that time get the update silently.
     /// Critical updates show immediately. Manual updates show immediately (unchanged behavior).
+    /// With more prominent updates on, the persisted prompt stage replaces the delay and the popover: the menu item
+    /// shows as soon as the update is ready, and the dot only at the first prompt.
     private func handleUpdateNotification() {
         guard let latestUpdate, hasPendingUpdate else {
             hideUpdateIndicators()
             return
         }
 
-        // Already scheduled - don't restart the timer
-        guard pendingNotificationTask == nil else { return }
+        if isMoreProminentUpdatesOn {
+            pendingNotificationTask?.cancel()
+            pendingNotificationTask = nil
+            mustShowUpdateIndicators = true
+            needsNotificationDot = promptStage == .firstPrompt
+            return
+        }
+
+        // Already scheduled or shown - don't restart the timer
+        guard pendingNotificationTask == nil, !needsNotificationDot else { return }
 
         // Manual updates: show immediately (unchanged behavior)
         guard areAutomaticUpdatesEnabled else {
@@ -415,6 +454,8 @@ public final class SparkleUpdateController: NSObject, SparkleUpdateControlling {
         if delay == 0 {
             showUpdateIndicators()
         } else {
+            // Turning the flag off can leave the menu item showing, but here it waits for the delay too.
+            mustShowUpdateIndicators = false
             scheduleDelayedNotification(delay: delay)
         }
     }
@@ -513,10 +554,14 @@ public final class SparkleUpdateController: NSObject, SparkleUpdateControlling {
     }
 
     private func resumeUpdater() {
-        if !progressState.isResumable {
+        if let resume = progressState.resumeCallback {
+            resume()
+        } else if progressState.updateProgress.isIdle {
+            // Nothing to resume after a failed or dismissed update, so start it again.
+            checkForUpdateSkippingRollout()
+        } else {
             pixelFiring?.fire(DebugEvent(UpdateFlowPixels.updaterAttemptToRestartWithoutResumeBlock))
         }
-        progressState.resumeCallback?()
     }
 
     public func handleAppTermination() {
@@ -632,6 +677,7 @@ extension SparkleUpdateController: SPUUpdaterDelegate {
         return "unknown"
     }
 
+    @MainActor
     public func updater(_ updater: SPUUpdater, didFindValidUpdate item: SUAppcastItem) {
         Logger.updates.log("Found update: \(item.displayVersionString, privacy: .public) (\(item.versionString, privacy: .public))")
 
@@ -640,6 +686,7 @@ extension SparkleUpdateController: SPUUpdaterDelegate {
 
         pixelFiring?.fire(DebugEvent(UpdateFlowPixels.updaterDidFindUpdate))
         cachedUpdateResult = UpdateCheckResult(item: item, isInstalled: false)
+        updatePromptStage(isUpdateAvailable: true, isCritical: item.isCriticalUpdate)
 
         updateWideEvent.didFindUpdate(
             version: item.displayVersionString,
@@ -648,9 +695,11 @@ extension SparkleUpdateController: SPUUpdaterDelegate {
         )
     }
 
+    @MainActor
     public func updaterDidNotFindUpdate(_ updater: SPUUpdater, error: any Error) {
         // Sparkle background checks bypass our check methods, so ensure tracking exists
         updateWideEvent.ensureFlowExists(initiationType: .automatic)
+        updatePromptStage(isUpdateAvailable: false, isCritical: false)
 
         let nsError = error as NSError
         guard let item = nsError.userInfo[SPULatestAppcastItemFoundKey] as? SUAppcastItem else { return }
@@ -660,6 +709,11 @@ extension SparkleUpdateController: SPUUpdaterDelegate {
         cachedUpdateResult = UpdateCheckResult(item: item, isInstalled: true)
 
         updateWideEvent.didFindNoUpdate()
+    }
+
+    @MainActor
+    private func updatePromptStage(isUpdateAvailable: Bool, isCritical: Bool) {
+        updatePromptStageTracker?.updateCheckDidFinish(isUpdateAvailable: isUpdateAvailable, isCritical: isCritical)
     }
 
     public func updater(_ updater: SPUUpdater, willDownloadUpdate item: SUAppcastItem, with request: NSMutableURLRequest) {

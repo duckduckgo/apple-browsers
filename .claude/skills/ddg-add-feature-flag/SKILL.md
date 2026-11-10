@@ -25,8 +25,10 @@ cases; the steps below cover what the neighbours don't show.
    - Keep `supportsLocalOverriding` at its default `true` unless the flag must not be toggled from
      the debug menu. macOS UI tests crash at launch when they set a flag that doesn't allow it.
    - macOS: pass `category:` (`FeatureFlagCategory.swift`) to group the flag in the debug menu.
-4. **Gate the code** with `featureFlagger.isFeatureOn(.flag)` on an injected `FeatureFlagger`; on
-   iOS, default the parameter to `AppDependencyProvider.shared.featureFlagger`. When the flag picks
+4. **Gate the code** with `featureFlagger.isFeatureOn(.flag)` on an injected `FeatureFlagger`.
+   On iOS, pass the existing flagger from the owner or caller. Do not add `AppDependencyProvider`
+   access or use it in default arguments. During launch, place gated work where the existing
+   flagger is available instead of initializing the dependency provider earlier. When the flag picks
    between two UI implementations that bind at launch, read it once at startup instead, as
    `FireModeCapability.resolve(using:)` does in `MainCoordinator`, so a mid-session toggle can't
    leave the UI half-switched.

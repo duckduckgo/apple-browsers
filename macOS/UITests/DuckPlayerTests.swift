@@ -51,9 +51,38 @@ class DuckPlayerTests: UITestCase {
         addressBarTextField.pasteURL(URL(string: url)!)
     }
 
-    /// Finds a YouTube video link on the SERP, checking for both possible title formats
-    /// (with and without " - YouTube" suffix)
+    /// Finds a YouTube video link on the SERP that points to a `/watch?v=` URL.
+    /// The SERP can link the same video as `/watch?v=` or `/live/`, and Duck Player only redirects `/watch?v=` URLs,
+    /// so this goes through the result cards for the video and returns the display URL link showing `watch?v=`.
     private func findOrganicVideoLink(timeout: TimeInterval = UITests.Timeouts.navigation) -> XCUIElement? {
+        let resultCards = app.webViews.firstMatch.groups
+            .matching(NSPredicate(format: "label BEGINSWITH %@", Self.youtubeVideoTitle))
+        guard resultCards.firstMatch.waitForExistence(timeout: timeout) else { return nil }
+
+        // Matches elements whose label, title or value satisfies `comparison` against `text`
+        let anyText = { (comparison: String, text: String) -> NSPredicate in
+            NSCompoundPredicate(orPredicateWithSubpredicates: ["label", "title", "value"].map {
+                NSPredicate(format: "%K \(comparison) %@", $0, text)
+            })
+        }
+        let watchURL = NSCompoundPredicate(andPredicateWithSubpredicates: [
+            anyText("BEGINSWITH", "https://www.youtube.com"),
+            anyText("CONTAINS", "watch?v=")
+        ])
+
+        for card in resultCards.allElementsBoundByIndex {
+            let displayURLLink = card.descendants(matching: .any).matching(watchURL).firstMatch
+            if displayURLLink.exists {
+                return displayURLLink
+            }
+        }
+
+        return nil
+    }
+
+    /// Finds the video's link on the SERP Videos tab, checking for both possible title formats
+    /// (with and without " - YouTube" suffix).
+    private func findVideoTabLink(timeout: TimeInterval = UITests.Timeouts.navigation) -> XCUIElement? {
         // Try the full title with " - YouTube" suffix first
         let organicVideo = app.links.containing(.staticText, identifier: Self.organicVideoTitle).firstMatch
         if organicVideo.waitForExistence(timeout: timeout) {
@@ -280,7 +309,7 @@ class DuckPlayerTests: UITestCase {
         openURL(url: Self.videoSearchURL)
 
         // Click Link - check both possible title formats
-        let organicVideo = findOrganicVideoLink()
+        let organicVideo = findVideoTabLink()
         XCTAssertNotNil(organicVideo, "Could not find YouTube video link on SERP")
         organicVideo?.click()
 

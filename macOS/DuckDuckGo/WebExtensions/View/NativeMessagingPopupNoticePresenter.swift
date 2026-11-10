@@ -91,8 +91,9 @@ final class NativeMessagingPopupNoticePresenter: WebExtensionPopupNoticePresenti
 
 /// Lays the banner out above the view controller WebKit created for the popup.
 ///
-/// WebKit's view keeps the size WebKit asks for, and the container's height comes from Auto Layout, so the
-/// banner gets the height its wrapped text needs at the popup's width.
+/// WebKit's view keeps the size WebKit asks for. The banner's height is what its text needs once wrapped at
+/// the popup's width: `NSHostingView` would otherwise report the height of the unwrapped text, and SwiftUI
+/// would take the missing lines out of the padding.
 @available(macOS 15.4, *)
 @MainActor
 private final class NativeMessagingBannerContainerViewController: NSViewController {
@@ -101,6 +102,9 @@ private final class NativeMessagingBannerContainerViewController: NSViewControll
     private let onOpenURL: (URL) -> Void
     private let onDismiss: () -> Void
     private var banner: NSView?
+    /// A copy of the banner outside the popup, laid out at the popup's width to measure its height.
+    private lazy var measuringBanner = NSHostingView(rootView: AnyView(EmptyView()))
+    private var bannerHeightConstraint: NSLayoutConstraint?
     private var contentWidthConstraint: NSLayoutConstraint?
     private var contentHeightConstraint: NSLayoutConstraint?
     private var contentTopConstraint: NSLayoutConstraint?
@@ -124,7 +128,8 @@ private final class NativeMessagingBannerContainerViewController: NSViewControll
 
     override func loadView() {
         let contentView = content.view
-        let size = contentView.frame.size
+        // WebKit sets the popup's size before the container takes over, while its view still has no frame.
+        let size = content.preferredContentSize == .zero ? contentView.frame.size : content.preferredContentSize
         addChild(content)
 
         let banner = NSHostingView(rootView: NativeMessagingBannerView(
@@ -132,6 +137,7 @@ private final class NativeMessagingBannerContainerViewController: NSViewControll
             onOpenURL: { [weak self] url in self?.onOpenURL(url) },
             onDismiss: { [weak self] in self?.removeBanner() }
         ))
+        banner.sizingOptions = []
         self.banner = banner
 
         let container = NSView()
@@ -142,6 +148,7 @@ private final class NativeMessagingBannerContainerViewController: NSViewControll
         let contentTopConstraint = contentView.topAnchor.constraint(equalTo: banner.bottomAnchor)
         let contentWidthConstraint = contentView.widthAnchor.constraint(equalToConstant: size.width)
         let contentHeightConstraint = contentView.heightAnchor.constraint(equalToConstant: size.height)
+        let bannerHeightConstraint = banner.heightAnchor.constraint(equalToConstant: 0)
         NSLayoutConstraint.activate([
             banner.topAnchor.constraint(equalTo: container.topAnchor),
             banner.leadingAnchor.constraint(equalTo: container.leadingAnchor),
@@ -151,8 +158,10 @@ private final class NativeMessagingBannerContainerViewController: NSViewControll
             contentView.trailingAnchor.constraint(equalTo: container.trailingAnchor),
             contentView.bottomAnchor.constraint(equalTo: container.bottomAnchor),
             contentWidthConstraint,
-            contentHeightConstraint
+            contentHeightConstraint,
+            bannerHeightConstraint
         ])
+        self.bannerHeightConstraint = bannerHeightConstraint
         self.contentTopConstraint = contentTopConstraint
         self.contentWidthConstraint = contentWidthConstraint
         self.contentHeightConstraint = contentHeightConstraint
@@ -168,9 +177,18 @@ private final class NativeMessagingBannerContainerViewController: NSViewControll
     private func updateSize(for contentSize: NSSize) {
         contentWidthConstraint?.constant = contentSize.width
         contentHeightConstraint?.constant = contentSize.height
-        let size = NSSize(width: contentSize.width, height: view.fittingSize.height)
+        let bannerHeight = banner == nil ? 0 : bannerHeight(width: contentSize.width)
+        bannerHeightConstraint?.constant = bannerHeight
+        let size = NSSize(width: contentSize.width, height: contentSize.height + bannerHeight)
         guard preferredContentSize != size else { return }
         preferredContentSize = size
+    }
+
+    private func bannerHeight(width: CGFloat) -> CGFloat {
+        guard width > 0 else { return 0 }
+        let banner = NativeMessagingBannerView(themeManager: themeManager, onOpenURL: { _ in }, onDismiss: {})
+        measuringBanner.rootView = AnyView(banner.frame(width: width))
+        return ceil(measuringBanner.fittingSize.height)
     }
 
     private func removeBanner() {
@@ -178,6 +196,7 @@ private final class NativeMessagingBannerContainerViewController: NSViewControll
         contentTopConstraint?.isActive = false
         banner.removeFromSuperview()
         self.banner = nil
+        bannerHeightConstraint = nil
         let contentTopConstraint = content.view.topAnchor.constraint(equalTo: view.topAnchor)
         contentTopConstraint.isActive = true
         self.contentTopConstraint = contentTopConstraint

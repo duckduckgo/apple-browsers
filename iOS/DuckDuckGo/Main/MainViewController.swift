@@ -3610,6 +3610,12 @@ class MainViewController: UIViewController {
         return coordinator.switchBarHandler.currentToggleState
     }
 
+    /// Whether the input is already in the mode that focusing the current tab afresh would pick.
+    var isInputInInitialToggleMode: Bool {
+        guard let tab = tabManager.currentTabsModel.currentTab, let mode = liveToggleMode else { return true }
+        return mode == initialOmnibarToggleMode(for: tab)
+    }
+
     func refreshOmniBar() {
         if isPad {
             viewCoordinator.omniBar.bindIPadDraft(to: tabManager.currentTabsModel.currentTab)

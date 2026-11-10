@@ -492,6 +492,7 @@ public enum FeatureFlag: String, CaseIterable {
     case aiChatNtpPasteImages
 
     /// Duck.ai: turning long pastes in the New Tab Page omnibar into pasted-text attachments.
+    /// https://app.asana.com/1/137249556945/project/72649045549333/task/1219223530508187
     case aiChatNtpPastedText
 
     /// Enables deleting recent AI chats from the New Tab Page omnibar

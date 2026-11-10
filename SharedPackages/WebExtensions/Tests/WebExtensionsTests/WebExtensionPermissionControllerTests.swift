@@ -1022,6 +1022,85 @@ final class WebExtensionPermissionControllerTests: XCTestCase {
         XCTAssertEqual(storage.cleanupOrphanedExtensionsKnownIdentifiers, ["denied"])
     }
 
+    func testAutomaticUpdateWithoutSavedConsentRejectsBeforePrompting() async throws {
+        let controller = makeController()
+        let context = try await makeContext()
+        controller.beginUpdate(for: context.uniqueIdentifier)
+        defer { controller.endUpdate(for: context.uniqueIdentifier) }
+
+        do {
+            try await controller.prepare(context)
+            XCTFail("An automatic update must require existing approval")
+        } catch WebExtensionPermissionController.PermissionError.updateConsentRequired { }
+
+        XCTAssertTrue(prompter.installationRequests.isEmpty)
+        XCTAssertTrue(context.grantedPermissions.isEmpty)
+    }
+
+    func testAutomaticUpdateWithUnreadableConsentFailsClosedWithoutPrompting() async throws {
+        let controller = makeController()
+        let context = try await makeContext()
+        controller.beginUpdate(for: context.uniqueIdentifier)
+        defer { controller.endUpdate(for: context.uniqueIdentifier) }
+        keyValueStore.shouldThrowOnGet = true
+        XCTAssertFalse(controller.canActivateUpdate(context.webExtension, for: context.uniqueIdentifier))
+
+        do {
+            try await controller.prepare(context)
+            XCTFail("Unreadable approval must prevent automatic loading")
+        } catch WebExtensionPermissionController.PermissionError.updateConsentRequired { }
+
+        XCTAssertTrue(prompter.installationRequests.isEmpty)
+    }
+
+    func testConsentRemovedAfterUpdatePreflightDoesNotStartAnInstallPrompt() async throws {
+        let controller = makeController()
+        let incumbent = try await makeContext()
+        try await controller.prepare(incumbent)
+        let initialPromptCount = prompter.installationRequests.count
+        controller.beginUpdate(for: incumbent.uniqueIdentifier)
+        defer { controller.endUpdate(for: incumbent.uniqueIdentifier) }
+        XCTAssertTrue(controller.canActivateUpdate(incumbent.webExtension, for: incumbent.uniqueIdentifier))
+        try store.removeSettings(for: incumbent.uniqueIdentifier)
+        let replacement = WKWebExtensionContext(for: incumbent.webExtension)
+        replacement.uniqueIdentifier = incumbent.uniqueIdentifier
+        do {
+            try await controller.prepare(replacement)
+            XCTFail("Prepare must recheck approval after asynchronous bundle parsing")
+        } catch WebExtensionPermissionController.PermissionError.updateConsentRequired { }
+
+        XCTAssertEqual(prompter.installationRequests.count, initialPromptCount)
+        XCTAssertTrue(replacement.grantedPermissions.isEmpty)
+    }
+
+    func testUpdateSnapshotPreservesIncumbentRevocationAndPrivateAccessChanges() async throws {
+        let controller = makeController()
+        let incumbent = try await makeContext()
+        prompter.installationResponse = .granted(privateDataAccess: true)
+        try await controller.prepare(incumbent)
+        incumbent.grantedPermissions.removeValue(forKey: .tabs)
+        incumbent.hasAccessToPrivateData = false
+        controller.beginUpdate(for: incumbent.uniqueIdentifier)
+        defer { controller.endUpdate(for: incumbent.uniqueIdentifier) }
+
+        try controller.snapshotForUpdate(for: incumbent.uniqueIdentifier)
+
+        XCTAssertNil(try store.settings(for: incumbent.uniqueIdentifier)?.grantedPermissions["tabs"])
+        XCTAssertEqual(try store.settings(for: incumbent.uniqueIdentifier)?.hasAccessToPrivateData, false)
+        XCTAssertFalse(controller.canActivateUpdate(incumbent.webExtension, for: incumbent.uniqueIdentifier))
+    }
+
+    func testEndingAutomaticUpdateScopePreservesOrdinaryInstallationConsentFlow() async throws {
+        let controller = makeController()
+        let context = try await makeContext()
+        controller.beginUpdate(for: context.uniqueIdentifier)
+        controller.endUpdate(for: context.uniqueIdentifier)
+
+        try await controller.prepare(context)
+
+        XCTAssertEqual(prompter.installationRequests.count, 1)
+    }
+
     private func makeManager(storage: WebExtensionStorageProvidingMock,
                              pixelFiring: WebExtensionPixelFiring = NoOpWebExtensionPixelFiring(),
                              bundledExtensionURL: @escaping (EmbeddedWebExtensionDescriptor) -> URL? = { _ in

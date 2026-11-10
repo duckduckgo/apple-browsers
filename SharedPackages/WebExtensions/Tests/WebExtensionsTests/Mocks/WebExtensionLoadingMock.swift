@@ -40,8 +40,16 @@ final class WebExtensionLoadingMock: WebExtensionLoading {
 
     private var createdTestExtensions: [URL] = []
 
+    @MainActor
     @discardableResult
     func loadWebExtension(identifier: String, into controller: WKWebExtensionController) async throws -> WebExtensionLoadResult {
+        try await loadWebExtension(identifier: identifier, into: controller, beforeActivation: { _ in })
+    }
+
+    @MainActor
+    @discardableResult
+    func loadWebExtension(identifier: String, into controller: WKWebExtensionController,
+                          beforeActivation: @MainActor (WKWebExtension) throws -> Void) async throws -> WebExtensionLoadResult {
         loadWebExtensionCalled = true
         loadedIdentifiers.append(identifier)
 
@@ -49,28 +57,16 @@ final class WebExtensionLoadingMock: WebExtensionLoading {
             throw mockError
         }
 
-        let result: WebExtensionLoadResult
-        let context: WKWebExtensionContext
-
-        if let mockLoadResult = mockLoadResult {
-            result = mockLoadResult
-            let testExtensionURL = try createTestWebExtension()
-            let mockExtension = try await WKWebExtension(resourceBaseURL: testExtensionURL)
-            context = await WKWebExtensionContext(for: mockExtension)
-        } else {
-            let testExtensionURL = try createTestWebExtension()
-            let mockExtension = try await WKWebExtension(resourceBaseURL: testExtensionURL)
-            context = await WKWebExtensionContext(for: mockExtension)
-            result = WebExtensionLoadResult(
-                identifier: identifier,
-                filename: testExtensionURL.lastPathComponent,
-                displayName: mockExtension.displayName,
-                version: mockExtension.version
-            )
-        }
+        let testExtensionURL = try createTestWebExtension()
+        let mockExtension = try await WKWebExtension(resourceBaseURL: testExtensionURL)
+        try beforeActivation(mockExtension)
+        let context = WKWebExtensionContext(for: mockExtension)
+        let result = mockLoadResult ?? WebExtensionLoadResult(identifier: identifier, filename: testExtensionURL.lastPathComponent,
+                                                            displayName: mockExtension.displayName, version: mockExtension.version)
 
         // Notify delegate before returning (simulating the real loader's behavior)
         delegate?.webExtensionLoader(self, willLoad: context, identifier: identifier)
+        try beforeActivation(mockExtension)
 
         return result
     }

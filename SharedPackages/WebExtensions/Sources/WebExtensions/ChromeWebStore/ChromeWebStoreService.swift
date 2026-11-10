@@ -79,6 +79,7 @@ public final class ChromeWebStoreService: ChromeWebStoreManaging {
     private var updateDiscoverySubscription: AnyCancellable?
     private var updateDiscoveryRevision: UInt64 = 0
     private var updater: ChromeWebStoreUpdater?
+    private let startupInstaller: ChromeWebStoreUpdateInstaller?
     public let pendingUpdates: any ChromeWebStorePendingUpdateStoring
     private var updateVersionOverrides: [String: UpdateVersionOverride] = [:]
 
@@ -89,11 +90,17 @@ public final class ChromeWebStoreService: ChromeWebStoreManaging {
                             updateDiscoveryFeatureFlagUpdates: AnyPublisher<Void, Never>? = nil,
                             keyValueStore: (any ThrowingKeyValueStoring)? = nil,
                             pixelFiring: WebExtensionPixelFiring = NoOpWebExtensionPixelFiring(),
-                            pendingUpdates: any ChromeWebStorePendingUpdateStoring = ChromeWebStorePendingUpdateStore()) {
+                            pendingUpdates: (any ChromeWebStorePendingUpdateStoring)? = nil) {
+        let pending = pendingUpdates ?? (supportsUpdateDiscovery
+            ? ChromeWebStorePendingUpdateStore(persistentDirectory: manager.storageProvider.extensionsDirectory.appendingPathComponent(".pending-updates"))
+            : ChromeWebStorePendingUpdateStore())
+        let installer = supportsUpdateDiscovery ? ChromeWebStoreUpdateInstaller(manager: manager, pendingUpdates: pending,
+                                                                               isEnabled: isUpdateDiscoveryEnabled,
+                                                                               isCatalogExtension: { catalog.contains($0) }) : nil
         self.init(manager: manager, catalog: catalog, downloader: downloader, presenter: presenter,
                   verifier: ChromeWebStorePackageVerifier(), supportsUpdateDiscovery: supportsUpdateDiscovery,
                   isUpdateDiscoveryEnabled: isUpdateDiscoveryEnabled, updateDiscoveryFeatureFlagUpdates: updateDiscoveryFeatureFlagUpdates,
-                  keyValueStore: keyValueStore, pixelFiring: pixelFiring, pendingUpdates: pendingUpdates, updateCheck: { identifier, version in
+                  keyValueStore: keyValueStore, pixelFiring: pixelFiring, pendingUpdates: pending, startupInstaller: installer, updateCheck: { identifier, version in
                       await ChromeWebStoreUpdateChecker().check(extensionID: identifier, installedVersion: version)
                   })
     }
@@ -106,6 +113,7 @@ public final class ChromeWebStoreService: ChromeWebStoreManaging {
          keyValueStore: (any ThrowingKeyValueStoring)? = nil,
          pixelFiring: WebExtensionPixelFiring = NoOpWebExtensionPixelFiring(),
          pendingUpdates: any ChromeWebStorePendingUpdateStoring = ChromeWebStorePendingUpdateStore(),
+         startupInstaller: ChromeWebStoreUpdateInstaller? = nil,
          updateDownload: @escaping ChromeWebStoreUpdater.Download = { try await ChromeWebStoreUpdateDownloader().download($0) },
          now: @escaping @Sendable () -> Date = Date.init,
          updateCheck: ChromeWebStoreUpdateCoordinator.Check? = nil,
@@ -118,6 +126,8 @@ public final class ChromeWebStoreService: ChromeWebStoreManaging {
         self.verifier = verifier
         self.isUpdateDiscoveryEnabled = isUpdateDiscoveryEnabled
         self.pendingUpdates = pendingUpdates
+        self.startupInstaller = startupInstaller
+        configureStartupInstaller(manager: manager)
         if supportsUpdateDiscovery, let updateCheck {
             let updater = ChromeWebStoreUpdater(pendingUpdates: pendingUpdates, verifier: verifier, download: updateDownload,
                                                  installation: { [weak self] identifier in
@@ -179,6 +189,12 @@ public final class ChromeWebStoreService: ChromeWebStoreManaging {
         }
     }
 
+    private func configureStartupInstaller(manager: WebExtensionManager) {
+        guard let startupInstaller else { return }
+        manager.startupUpdateInstaller = startupInstaller
+        startupInstaller.onSnapshotReady = { [weak self] in _ = self?.refreshUpdateDiscovery() }
+    }
+
     /// Checks now, joining an active batch and honoring the server's retry deadline.
     public func checkForUpdatesNow() async {
         guard !Task.isCancelled else { return }
@@ -188,11 +204,12 @@ public final class ChromeWebStoreService: ChromeWebStoreManaging {
     }
 
     public var canCheckForUpdates: Bool {
-        manager != nil && updateCoordinator != nil && isUpdateDiscoveryEnabled()
+        manager != nil && updateCoordinator != nil && isUpdateDiscoveryEnabled() && (startupInstaller?.isSnapshotReady ?? true)
     }
 
     @discardableResult
     private func refreshUpdateDiscovery() -> Task<Void, Never>? {
+        startupInstaller?.configurationDidChange()
         guard let updateCoordinator else { return nil }
         updateDiscoveryRevision += 1
         let revision = updateDiscoveryRevision

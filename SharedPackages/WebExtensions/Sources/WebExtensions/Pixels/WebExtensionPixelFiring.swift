@@ -94,6 +94,10 @@ public enum WebExtensionPixelEvent {
     case updateDownloadFailed(extension: WebExtensionPixelExtension, outcome: WebExtensionUpdateDownloadFailure)
     case updateVerificationFailed(extension: WebExtensionPixelExtension, outcome: WebExtensionUpdateVerificationFailure)
     case updateVerified(extension: WebExtensionPixelExtension)
+    /// The replacement is committed, either loaded with existing approval or installed disabled without executing it.
+    case updateApplied(extension: WebExtensionPixelExtension)
+    case updateRolledBack(extension: WebExtensionPixelExtension)
+    case updateInstallFailed(extension: WebExtensionPixelExtension, outcome: WebExtensionUpdateInstallFailure)
     /// A fresh install; updates aren't reported.
     case installed(extension: WebExtensionPixelExtension)
     case installError(extension: WebExtensionPixelExtension, error: Error)
@@ -345,7 +349,7 @@ public struct CPMWebExtensionPixelMetadata: Equatable, Sendable {
             name = "web_extension_cpm_network_process_recovery_applied"
             frequency = .dailyAndCount
             parameters = [:]
-        case .updateCheck, .updateDownloadFailed, .updateVerificationFailed, .updateVerified,
+        case .updateCheck, .updateDownloadFailed, .updateVerificationFailed, .updateVerified, .updateApplied, .updateRolledBack, .updateInstallFailed,
              .installed, .installError, .uninstalled, .uninstallError, .uninstalledAll,
              .uninstallAllError, .loaded, .loadError, .reloadError, .stateChecked, .expectedExtensionNotLoaded,
              .adBlockingScriptletsNotFetched, .embeddedInstalled, .embeddedUpgraded,

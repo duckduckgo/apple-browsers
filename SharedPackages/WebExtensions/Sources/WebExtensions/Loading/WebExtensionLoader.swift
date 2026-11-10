@@ -39,6 +39,11 @@ public protocol WebExtensionLoading: AnyObject {
 
     @discardableResult
     func loadWebExtension(identifier: String, into controller: WKWebExtensionController) async throws -> WebExtensionLoadResult
+    /// Revalidates after parsing and immediately before native activation; required so protocol dispatch cannot bypass the gate.
+    @MainActor
+    @discardableResult
+    func loadWebExtension(identifier: String, into controller: WKWebExtensionController,
+                          beforeActivation: @MainActor (WKWebExtension) throws -> Void) async throws -> WebExtensionLoadResult
     func loadWebExtensions(identifiers: [String], into controller: WKWebExtensionController) async -> [Result<WebExtensionLoadResult, Error>]
     @MainActor
     func unloadExtension(identifier: String, from controller: WKWebExtensionController) throws
@@ -90,8 +95,16 @@ public final class WebExtensionLoader: WebExtensionLoading {
     @MainActor
     @discardableResult
     public func loadWebExtension(identifier: String, into controller: WKWebExtensionController) async throws -> WebExtensionLoadResult {
+        try await loadWebExtension(identifier: identifier, into: controller, beforeActivation: { _ in })
+    }
+
+    @MainActor
+    @discardableResult
+    public func loadWebExtension(identifier: String, into controller: WKWebExtensionController,
+                                 beforeActivation: @MainActor (WKWebExtension) throws -> Void) async throws -> WebExtensionLoadResult {
         // Check if extension is already loaded (idempotent operation)
         if let existingContext = controller.extensionContexts.first(where: { $0.uniqueIdentifier == identifier }) {
+            try beforeActivation(existingContext.webExtension)
             Logger.webExtensions.debug("✓ Extension '\(identifier)' already loaded, skipping")
 
             guard let extensionURL = storageProvider.resolveInstalledExtension(identifier: identifier) else {
@@ -122,12 +135,13 @@ public final class WebExtensionLoader: WebExtensionLoading {
             at: loadableURL
         )
 
+        try beforeActivation(webExtension)
         let context = try await makeContext(for: webExtension, identifier: identifier)
 
         // Notify delegate before loading to allow handler registration
         delegate?.webExtensionLoader(self, willLoad: context, identifier: identifier)
 
-        try loadWithThirdPartyScripts(context, identifier: identifier, into: controller)
+        try loadWithThirdPartyScripts(context, identifier: identifier, into: controller, beforeActivation: beforeActivation)
 
         return WebExtensionLoadResult(
             identifier: identifier,
@@ -184,7 +198,8 @@ public final class WebExtensionLoader: WebExtensionLoading {
     /// must be added before the context loads, because a user script only reaches documents created after it.
     /// Only macOS adds them: Chrome extensions are supported there, and not on iOS.
     @MainActor
-    private func loadWithThirdPartyScripts(_ context: WKWebExtensionContext, identifier: String, into controller: WKWebExtensionController) throws {
+    private func loadWithThirdPartyScripts(_ context: WKWebExtensionContext, identifier: String, into controller: WKWebExtensionController,
+                                           beforeActivation: @MainActor (WKWebExtension) throws -> Void = { _ in }) throws {
 #if os(macOS)
         if !declaresDuckDuckGoSettings(inManifest: context.webExtension.manifest) {
             installThirdPartyScriptsIfNeeded(on: controller)
@@ -193,9 +208,10 @@ public final class WebExtensionLoader: WebExtensionLoading {
 #endif
 
         do {
+            try beforeActivation(context.webExtension)
             try controller.loadCopyingErrors(context)
         } catch {
-            permissionController?.didUnload(identifier)
+            permissionController?.discardPreparation(of: context)
             throw error
         }
     }

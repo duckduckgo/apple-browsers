@@ -604,7 +604,7 @@ extension DataBrokerProtectionAgentManager: DataBrokerProtectionAgentDebugComman
             self.debugServer = nil
         }
 
-        let server = DataBrokerProtectionDebugHTTPServer(provider: self, logReader: DataBrokerProtectionOSLogReader())
+        let server = DataBrokerProtectionDebugHTTPServer(provider: self, logReader: DataBrokerProtectionOSLogReader(), controller: self)
         do {
             try server.start()
             debugServer = server
@@ -705,6 +705,79 @@ extension DataBrokerProtectionAgentManager: DataBrokerProtectionDebugReadProvidi
 
     public func brokerProfileQueryData() throws -> [BrokerProfileQueryData] {
         try dataManager.fetchBrokerProfileQueryData(ignoresCache: true)
+    }
+}
+
+// MARK: - Debug HTTP server control
+
+extension DataBrokerProtectionAgentManager: DataBrokerProtectionDebugControlling {
+
+    public func installBroker(json: Data) async throws -> DebugInstalledBroker {
+        let broker = try brokerUpdater.replaceBroker(json: json)
+        await refreshAssistedOptOuts()
+        return DebugInstalledBroker(id: broker.id,
+                                    name: broker.name,
+                                    url: broker.url,
+                                    version: broker.version,
+                                    isRemoved: broker.removedAt != nil)
+    }
+
+    public func runScans(brokerIdentifier: String) async throws -> DebugScanRun {
+        let queries = try brokerProfileQueryData().filter {
+            !$0.profileQuery.deprecated
+                && ($0.dataBroker.url.caseInsensitiveCompare(brokerIdentifier) == .orderedSame
+                    || $0.dataBroker.name.caseInsensitiveCompare(brokerIdentifier) == .orderedSame)
+        }
+        guard let broker = queries.first?.dataBroker else {
+            throw DataBrokerProtectionDebugControlError.brokerNotFound(brokerIdentifier)
+        }
+
+        let dependencies = jobDependencies
+        Task { @MainActor in
+            for query in queries {
+                do {
+                    _ = try await DataBrokerProtectionDebugJobs.runScan(query, dependencies: dependencies)
+                } catch {
+                    Logger.dataBrokerProtection.error("Debug scan failed: \(error.localizedDescription, privacy: .public)")
+                }
+            }
+            await self.refreshAssistedOptOuts()
+        }
+        return DebugScanRun(broker: broker.url, profileQueryIds: queries.compactMap(\.profileQuery.id))
+    }
+
+    public func assistedOptOutsForDebugging(droppingSubmitted: Bool) async -> DebugAssistedOptOuts {
+        await refreshAssistedOptOuts()
+        let list = await getAssistedOptOuts(droppingSubmitted: droppingSubmitted)
+        return DebugAssistedOptOuts(isFeatureOn: jobDependencies.featureFlagger.isUserAssistanceOn,
+                                    enabledBrokers: jobDependencies.userAssistanceConfig.enabledBrokers.sorted(),
+                                    optOuts: list.optOuts)
+    }
+
+    public func startAssistedOptOutForDebugging(id: String) async throws {
+        let available = await assistedOptOutsForDebugging(droppingSubmitted: false)
+        guard available.isFeatureOn else {
+            throw DataBrokerProtectionDebugControlError.userAssistanceDisabled("turn on the dbpUserAssistance flag")
+        }
+        guard let assistedID = AssistedOptOutID(id), available.optOuts.contains(where: { $0.id == id }) else {
+            throw DataBrokerProtectionDebugControlError.assistedOptOutNotFound(id)
+        }
+        await MainActor.run {
+            if let session = assistedOptOutQueue?.activeSessions.first(where: { $0.id == assistedID }), session.phase == .ready {
+                session.begin()
+            } else {
+                assistedOptOutQueue?.start(id: assistedID)
+            }
+        }
+    }
+
+    public func cancelAssistedOptOutForDebugging(id: String) async throws {
+        guard let assistedID = AssistedOptOutID(id) else {
+            throw DataBrokerProtectionDebugControlError.assistedOptOutNotFound(id)
+        }
+        await MainActor.run {
+            assistedOptOutQueue?.cancel(assistedID)
+        }
     }
 }
 

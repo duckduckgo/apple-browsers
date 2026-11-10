@@ -43,6 +43,7 @@ public final class DataBrokerProtectionWebViewHandler: NSObject, WebViewHandler 
     private let isFakeBroker: Bool
     private let executionConfig: BrokerJobExecutionConfig
     private let customUserAgent: String?
+    private let brokerURL: String?
     private(set) var webViewConfiguration: WKWebViewConfiguration?
     private var userContentController: DataBrokerUserContentController?
 
@@ -82,6 +83,7 @@ public final class DataBrokerProtectionWebViewHandler: NSObject, WebViewHandler 
         self.isFakeBroker = isFakeBroker
         self.executionConfig = executionConfig
         self.customUserAgent = customUserAgent
+        self.brokerURL = dataBroker?.url
 #if os(macOS)
         self.challengeSolver = ChallengeSolver(
             isEnabled: isChallengeSolverEnabled,
@@ -127,6 +129,9 @@ public final class DataBrokerProtectionWebViewHandler: NSObject, WebViewHandler 
 
         webView = WebView(frame: CGRect(origin: .zero, size: CGSize(width: 1024, height: 1024)), configuration: configuration)
         webView?.navigationDelegate = self
+        if let webView {
+            DataBrokerProtectionDebugWebViews.shared.register(webView, brokerURL: brokerURL)
+        }
         if let customUserAgent {
             webView?.customUserAgent = customUserAgent
         }

@@ -161,6 +161,80 @@ final class AIChatBrowserToolsBridgeTests: XCTestCase {
         XCTAssertEqual(fixture.webView.configurationPayloads.count, 1)
     }
 
+    func testChatLoadedDuringClearingReceivesConfigurationWithoutFlagChanges() async throws {
+        for contextual in [false, true] {
+            let fixture = makeFixture()
+            let token = fixture.service.beginClearing(.all)
+            fixture.script.setDisplayMode(contextual ? .contextual : .fullTab)
+            fixture.script.browserToolsDocumentDidCommit()
+            XCTAssertNil(fixture.service.configuration(for: fixture.script))
+            let blocked = await fixture.invoke()
+            XCTAssertEqual(blocked, .failure(callId: "call", error: .unavailable))
+            XCTAssertEqual(fixture.listings, 0)
+            XCTAssertTrue(fixture.webView.configurationPayloads.isEmpty)
+
+            fixture.service.endClearing(token)
+            await drainBridge()
+
+            XCTAssertEqual(fixture.webView.configurationPayloads.count, 1)
+            try assertEnabledConfiguration(fixture.webView.configurationPayloads.last)
+            let available = await fixture.invoke()
+            XCTAssertEqual(available, fixture.success)
+        }
+    }
+
+    func testConfigurationRequestedDuringClearingWaitsForFinalTokenAndPushesOnce() async throws {
+        let fixture = makeFixture()
+        let first = fixture.service.beginClearing(.all)
+        XCTAssertNil(fixture.service.configuration(for: fixture.script))
+        let second = fixture.service.beginClearing(.owner(tabID: fixture.owner.uid))
+        XCTAssertNil(fixture.service.configuration(for: fixture.script))
+
+        fixture.service.endClearing(first)
+        await drainBridge()
+        XCTAssertTrue(fixture.webView.configurationPayloads.isEmpty)
+
+        fixture.service.endClearing(second)
+        await drainBridge()
+        XCTAssertEqual(fixture.webView.configurationPayloads.count, 1)
+        try assertEnabledConfiguration(fixture.webView.configurationPayloads.last)
+
+        fixture.service.endClearing(second)
+        await drainBridge()
+        XCTAssertEqual(fixture.webView.configurationPayloads.count, 1)
+    }
+
+    func testDeferredInitialConfigurationRejectsStaleSourcesAndInvalidOwnersOrDocuments() async {
+        for transition in ["commit", "processLoss", "detach", "removeOwner", "untrustedDocument"] {
+            let fixture = makeFixture()
+            let token = fixture.service.beginClearing(.all)
+            XCTAssertNil(fixture.service.configuration(for: fixture.script))
+            switch transition {
+            case "commit": fixture.script.browserToolsDocumentDidCommit()
+            case "processLoss": fixture.script.browserToolsDocumentProcessDidTerminate()
+            case "detach": fixture.script.detachBrowserTools()
+            case "removeOwner": fixture.ownerPresent = false
+            default: fixture.webView.documentURL = URL(string: "https://untrusted.example/chat")
+            }
+
+            fixture.service.endClearing(token)
+            await drainBridge()
+
+            XCTAssertTrue(fixture.webView.configurationPayloads.isEmpty, transition)
+        }
+    }
+
+    func testConfigurationRequestedWhileDisabledDuringClearingDoesNotScheduleRefresh() async {
+        let fixture = makeFixture(enabledFlags: [.aiChatBrowserToolListOpenTabs])
+        let token = fixture.service.beginClearing(.all)
+        XCTAssertNil(fixture.service.configuration(for: fixture.script))
+
+        fixture.service.endClearing(token)
+        await drainBridge()
+
+        XCTAssertTrue(fixture.webView.configurationPayloads.isEmpty)
+    }
+
     func testConfigurationRevocationWaitsForFinalOverlappingClearingToken() async {
         let fixture = makeFixture()
         _ = fixture.script

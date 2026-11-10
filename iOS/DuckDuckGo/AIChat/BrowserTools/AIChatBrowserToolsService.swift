@@ -90,7 +90,12 @@ extension AIChatBrowserToolsService {
     }
 
     func configuration(for source: AIChatUserScript) -> ClientToolsConfiguration? {
-        guard admittedScope(for: source) != nil else { return nil }
+        guard admittedScope(for: source) != nil else {
+            if isEnabled, !clearing.isEmpty {
+                binding(for: source)?.pendingConfigurationRefresh = true
+            }
+            return nil
+        }
         return clientToolsConfiguration
     }
 

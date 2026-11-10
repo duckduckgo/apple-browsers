@@ -215,7 +215,7 @@ public final class DataBrokerProtectionIOSManager {
     private let minBackgroundTaskWaitTime: TimeInterval
     private let feedbackViewCreator: () -> (any View)
     private let contentScopeProperties: ContentScopeProperties
-    private let featureFlagger: DBPFeatureFlagging & FreemiumPIRFeatureFlagging
+    private let featureFlagger: DBPFeatureFlagging & FreemiumPIRFeatureFlagging & EmailOptOutFeatureFlagging
     private let settings: DataBrokerProtectionSettings
     private let subscriptionManager: DataBrokerProtectionSubscriptionManaging
     private let wideEventSweeper: DBPWideEventSweeper?
@@ -289,7 +289,7 @@ public final class DataBrokerProtectionIOSManager {
                                            maxBackgroundTaskWaitTime: TimeInterval = Constants.defaultMaxBackgroundTaskWaitTime,
                                            minBackgroundTaskWaitTime: TimeInterval = Constants.defaultMinBackgroundTaskWaitTime,
                                            feedbackViewCreator: @escaping () -> (any View),
-                                           featureFlagger: DBPFeatureFlagging & FreemiumPIRFeatureFlagging,
+                                           featureFlagger: DBPFeatureFlagging & FreemiumPIRFeatureFlagging & EmailOptOutFeatureFlagging,
                                            settings: DataBrokerProtectionSettings,
                                            subscriptionManager: DataBrokerProtectionSubscriptionManaging,
                                            wideEvent: WideEventManaging?,
@@ -337,7 +337,7 @@ public final class DataBrokerProtectionIOSManager {
                  maxBackgroundTaskWaitTime: TimeInterval,
                  minBackgroundTaskWaitTime: TimeInterval,
                  feedbackViewCreator: @escaping () -> (any View),
-                 featureFlagger: DBPFeatureFlagging & FreemiumPIRFeatureFlagging,
+                 featureFlagger: DBPFeatureFlagging & FreemiumPIRFeatureFlagging & EmailOptOutFeatureFlagging,
                  settings: DataBrokerProtectionSettings,
                  subscriptionManager: DataBrokerProtectionSubscriptionManaging,
                  wideEvent: WideEventManaging?,
@@ -1019,6 +1019,7 @@ extension DataBrokerProtectionIOSManager: DBPIOSInterface.DataBrokerProtectionVi
                                                   userEventsDelegate: self,
                                                   privacyConfigManager: self.privacyConfigManager,
                                                   contentScopeProperties: contentScopeProperties,
+                                                  emailOptOutFeatureFlagger: featureFlagger,
                                                   webUISettings: DataBrokerProtectionWebUIURLSettings(.dbp),
                                                   openURLHandler: quickLinkOpenURLHandler,
                                                   feedbackViewCreator: feedbackViewCreator,

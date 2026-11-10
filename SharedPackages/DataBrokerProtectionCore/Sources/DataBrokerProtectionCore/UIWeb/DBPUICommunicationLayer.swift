@@ -403,7 +403,9 @@ public struct DBPUICommunicationLayer: Subfeature {
             useUnifiedFeedback: privacyConfig.privacyConfig.isSubfeatureEnabled(PrivacyProSubfeature.useUnifiedFeedback),
             excludeVpnTraffic: vpnBypassService?.isSupported ?? false,
             brokerRemovalEnabled: true,
-            needBackgroundAppRefresh: await delegate?.needBackgroundAppRefresh() ?? false
+            needBackgroundAppRefresh: await delegate?.needBackgroundAppRefresh() ?? false,
+            emailOptOutEnabled: delegate?.isEmailOptOutEnabled() ?? false,
+            canSendEmail: delegate?.canSendEmail() ?? false
         )
     }
 

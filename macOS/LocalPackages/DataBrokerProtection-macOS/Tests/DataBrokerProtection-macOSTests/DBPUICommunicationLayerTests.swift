@@ -235,6 +235,32 @@ final class DBPUICommunicationLayerTests: XCTestCase {
         XCTAssertEqual(featureConfig.excludeVpnTraffic, true)
     }
 
+    func testWhenGetFeatureConfigCalled_thenEmailOptOutValuesComeFromDelegate() async throws {
+        let mockDelegate = MockDelegate()
+        mockDelegate.isEmailOptOutEnabledValue = true
+        mockDelegate.canSendEmailValue = true
+        var sut = makeSUT(handshakeDelegate: mockDelegate)
+        sut.delegate = mockDelegate
+
+        let handler = sut.handler(forMethodNamed: DBPUIReceivedMethodName.getFeatureConfig.rawValue)
+        let featureConfig = try await handler?([:], WKScriptMessage.mock()) as? DBPUIFeatureConfigurationResponse
+
+        XCTAssertEqual(featureConfig?.emailOptOutEnabled, true)
+        XCTAssertEqual(featureConfig?.canSendEmail, true)
+    }
+
+    func testWhenGetFeatureConfigCalledOnMacOS_thenEmailOptOutIsOff() async throws {
+        let communicator = DBPUICommunicator()
+        var sut = makeSUT(handshakeDelegate: communicator)
+        sut.delegate = communicator
+
+        let handler = sut.handler(forMethodNamed: DBPUIReceivedMethodName.getFeatureConfig.rawValue)
+        let featureConfig = try await handler?([:], WKScriptMessage.mock()) as? DBPUIFeatureConfigurationResponse
+
+        XCTAssertEqual(featureConfig?.emailOptOutEnabled, false)
+        XCTAssertEqual(featureConfig?.canSendEmail, false)
+    }
+
     @MainActor
     private func makeViewModel(dataManager: DataBrokerProtectionDataManaging) -> DBPUIViewModel {
         DBPUIViewModel(dataManager: dataManager,
@@ -340,6 +366,8 @@ private final class HandshakeAgentInterface: DataBrokerProtectionAppToAgentInter
 private final class MockDelegate: DBPUICommunicationDelegate, DBPUIHandshakeDelegate {
     var handshakeUserDataCalled = false
     var handshakeUserDataToReturn: DBPUIHandshakeUserData?
+    var isEmailOptOutEnabledValue = false
+    var canSendEmailValue = false
 
     func getHandshakeUserData() async -> DBPUIHandshakeUserData? {
         handshakeUserDataCalled = true
@@ -400,6 +428,10 @@ private final class MockDelegate: DBPUICommunicationDelegate, DBPUIHandshakeDele
     func needBackgroundAppRefresh() async -> Bool { false }
 
     func enableBackgroundAppRefresh() async {}
+
+    func isEmailOptOutEnabled() -> Bool { isEmailOptOutEnabledValue }
+
+    func canSendEmail() -> Bool { canSendEmailValue }
 }
 
 private final class MockWebSettings: DataBrokerProtectionWebUIURLSettingsRepresentable {

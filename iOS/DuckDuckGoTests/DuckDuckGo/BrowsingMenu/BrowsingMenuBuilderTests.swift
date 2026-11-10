@@ -85,7 +85,7 @@ final class BrowsingMenuBuilderTests: XCTestCase {
             internalFeedbackEntry: .named(MockBrowsingMenuEntryBuilder.internalFeedbackName)
         )
 
-        for context in [BrowsingMenuContext.newTabPage, .website] {
+        for context in [BrowsingMenuContext.newTabPage, .website, .aiChatTab] {
             let model = makeBuilder(entryBuilder: entryBuilder).buildMenu(
                 context: context,
                 bookmarksInterface: MockMenuBookmarksInteractor(),

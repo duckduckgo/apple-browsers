@@ -391,8 +391,6 @@ extension OnboardingManager: OnboardingFlowManaging {
         OnboardingResumeCheckpointStore.clearAll(in: onboardingResumeStepStore)
 
         tutorialSettings.onboardingFlowType = resolvedFlow
-        // The VPN download-reason experiment enrolls later, when the user starts onboarding
-        // (see `enrollInDownloadReasonVPNExperimentIfNeeded()`), once purchase eligibility is known.
         persistOnboardingPixelContext(flow: resolvedFlow, source: onboardingSource)
     }
 

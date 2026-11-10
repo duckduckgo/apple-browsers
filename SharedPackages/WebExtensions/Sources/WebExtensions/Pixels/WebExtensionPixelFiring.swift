@@ -127,7 +127,6 @@ public enum WebExtensionPixelEvent {
     /// One terminal report for a failure episode, on a valid dashboard response or the observation deadline.
     /// Intermediate initialization failures, stuck confirmation and reload checks stay local.
     case cpmMessagingEpisode(CPMMessagingEpisodeReport)
-    case cpmRecovery(CPMRecoveryFix, outcome: CPMRecoveryOutcome)
     /// Stages and one terminal observation for a retained-background error-6 restart.
     case cpmBackgroundLoadRestart(CPMBackgroundLoadRestartOutcome)
 
@@ -291,17 +290,6 @@ private extension WebExtensionReloadTrigger {
     }
 }
 
-public enum CPMRecoveryFix: String, CaseIterable, Sendable {
-    case installReadiness = "install_readiness"
-    case upgradeReadiness = "upgrade_readiness"
-    case backgroundWake = "background_wake"
-}
-
-public enum CPMRecoveryOutcome: String, Sendable {
-    /// A slow public WebKit background callback completed successfully; not proof of a page response.
-    case backgroundReady = "background_ready"
-}
-
 /// Background readiness alone is not proof that a page received its dashboard response.
 public enum CPMBackgroundLoadRestartOutcome: String, CaseIterable, Sendable {
     case restartStarted = "restart_started"
@@ -332,10 +320,6 @@ public struct CPMWebExtensionPixelMetadata: Equatable, Sendable {
         switch event {
         case .cpmBackgroundLoadRestart(let outcome):
             name = "web_extension_cpm_background_load_restart"
-            frequency = .dailyAndCount
-            parameters = ["outcome": outcome.rawValue]
-        case .cpmRecovery(let fix, let outcome):
-            name = "web_extension_cpm_\(fix.rawValue)"
             frequency = .dailyAndCount
             parameters = ["outcome": outcome.rawValue]
         case .cpmMessagingEpisode(let report):

@@ -206,11 +206,9 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
     private var backgroundLoadErrorObserver: NSObjectProtocol?
     /// WebKit can retain historical errors after recovery. Weak keys keep generations independent.
     private let observedBackgroundLoadErrors = NSMapTable<WKWebExtensionContext, NSArray>.weakToStrongObjects()
-    private var backgroundStartupFix: [String: CPMRecoveryFix] = [:]
     private weak var backgroundLoadRestartContext: WKWebExtensionContext?
     /// Three restarts without an attributed response; four means the exhausted budget was reported.
     private var backgroundLoadRestartAttempts = 0
-    private var navigationWaitContexts: Set<String> = []
     private let now: () -> Date
     /// Keeps the health monitor informed of app suspension for as long as the manager lives.
     private var cpmInterruptionObserver: CPMInterruptionObserver?
@@ -968,9 +966,6 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
     @MainActor
     func trackEmbeddedBackgroundStartup(identifier: String) {
         guard let context = context(for: identifier), context.webExtension.hasBackgroundContent else { return }
-        backgroundStartupFix[identifier] = installationStore.installedExtensions.contains {
-            $0.embeddedType == .embedded && $0.uniqueIdentifier != identifier
-        } ? .upgradeReadiness : .installReadiness
         preferredEmbeddedBackgroundContext = context
         Task { @MainActor [weak self] in
             await self?.loadEmbeddedExtensionBackgroundContent(in: context)
@@ -998,7 +993,6 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
     @MainActor
     public func prepareEmbeddedBackgroundForNavigation() -> Task<Void, Never>? {
         guard let context = embeddedBackgroundContextForNavigation, context.webExtension.hasBackgroundContent else { return nil }
-        navigationWaitContexts.insert(context.uniqueIdentifier)
         return startEmbeddedBackgroundContent(in: context)
     }
 
@@ -1029,7 +1023,6 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
         embeddedBackgroundStartupCompletion = continuation
         let started = Date()
         let identifier = context.uniqueIdentifier
-        let fix = backgroundStartupFix.removeValue(forKey: identifier) ?? .backgroundWake
         Logger.webExtensions.debug("[CPM Background] Starting background wait for \(identifier, privacy: .public)")
         // Copies WebKit's error on the main thread, as the other background-load paths do.
         context.loadBackgroundContentCopyingErrors { [weak self, weak context] error in
@@ -1041,13 +1034,9 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
                 Logger.webExtensions.error("❌ Failed to load embedded extension background content: \(error.localizedDescription)")
             }
             if let self, let context, self.embeddedBackgroundContextForNavigation === context {
-                let didWaitForNavigation = self.navigationWaitContexts.remove(identifier) != nil
                 if self.backgroundLoadRestartContext === context {
                     self.backgroundLoadRestartContext = nil
                     if error == nil { self.pixelFiring.fire(.cpmBackgroundLoadRestart(.backgroundReady)) }
-                }
-                if error == nil, elapsed >= 1 && didWaitForNavigation {
-                    self.pixelFiring.fire(.cpmRecovery(fix, outcome: .backgroundReady))
                 }
             }
             if self?.embeddedBackgroundStartup == startup {

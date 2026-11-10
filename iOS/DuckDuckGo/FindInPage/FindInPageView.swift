@@ -194,7 +194,8 @@ class FindInPageView: UIView {
         if updateTextField {
             inputText?.text = findInPage?.searchTerm
         }
-        counterLabel.isHidden = findInPage?.diagnosticStatus == nil && (findInPage?.total ?? 0) == 0
+        counterLabel.isHidden = findInPage?.searchTerm.isEmpty != false
+            || (findInPage?.diagnosticStatus == nil && (findInPage?.total ?? 0) == 0)
 
         let current = findInPage?.current ?? 0
         let total = findInPage?.total ?? 0

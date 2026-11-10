@@ -641,6 +641,7 @@ class FloatingUIXCUITestCase: XCTestCase {
         openFindFromMenu()
         let field = app.searchFields["FindInPage.Query"]
         XCTAssertTrue(field.waitForHittable(timeout: timeout))
+        expectDelegateCount(nil)
         field.typeText("needle")
         expectDelegateCount("1 of 3")
         if UIDevice.current.userInterfaceIdiom == .phone {
@@ -702,15 +703,15 @@ class FloatingUIXCUITestCase: XCTestCase {
         XCTAssertEqual(field.value as? String, "needle")
         expectDelegateCount("1 of 3")
         app.buttons["FindInPage.Clear"].tap()
-        expectDelegateCount("0 of 0")
+        expectDelegateCount(nil)
         app.buttons["Done"].tap()
         openFindFromMenu()
         XCTAssertTrue(field.waitForHittable(timeout: timeout))
         XCTAssertEqual(field.value as? String, "")
-        expectDelegateCount("0 of 0")
+        expectDelegateCount(nil)
         if UIDevice.current.userInterfaceIdiom == .phone {
             app.typeKey("f", modifierFlags: .command)
-            expectDelegateCount("0 of 0")
+            expectDelegateCount(nil)
         }
         app.buttons["Done"].tap()
         XCTAssertTrue(field.waitForNonExistence(timeout: timeout))
@@ -867,9 +868,13 @@ class FloatingUIXCUITestCase: XCTestCase {
         action.tap()
     }
 
-    private func expectDelegateCount(_ count: String, file: StaticString = #filePath, line: UInt = #line) {
+    private func expectDelegateCount(_ count: String?, file: StaticString = #filePath, line: UInt = #line) {
         let counter = app.staticTexts["FindInPage.ResultCount"]
-        XCTAssertTrue(waitUntil(timeout: timeout) { counter.exists && counter.label == count }, counter.label, file: file, line: line)
+        if let count {
+            XCTAssertTrue(waitUntil(timeout: timeout) { counter.exists && counter.label == count }, counter.label, file: file, line: line)
+        } else {
+            XCTAssertTrue(counter.waitForNonExistence(timeout: timeout), file: file, line: line)
+        }
         XCTAssertFalse(app.searchFields["find.searchField"].firstMatch.exists, file: file, line: line)
         XCTAssertTrue(app.staticTexts["FindInPage.ExperimentStatus"].label.contains("nativeUI=false"), file: file, line: line)
     }

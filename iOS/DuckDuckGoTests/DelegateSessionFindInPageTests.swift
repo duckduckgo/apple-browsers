@@ -24,6 +24,38 @@ import XCTest
 @available(iOS 16.0, *)
 @MainActor
 final class DelegateSessionFindInPageTests: XCTestCase {
+    func testCounterHidesForEmptyQueryAndReappearsForSearchResults() {
+        let session = SessionSpy()
+        let find = makeFind(session: session)
+        defer { find.done() }
+        let view = FindInPageView.loadFromXib()
+
+        view.update(with: find, updateTextField: true)
+        XCTAssertTrue(view.counterLabel.isHidden)
+
+        _ = find.search(forText: "needle")
+        view.update(with: find, updateTextField: true)
+        XCTAssertFalse(view.counterLabel.isHidden)
+        XCTAssertEqual(find.total, 0)
+
+        session.resultCount = 3
+        session.highlightedResultIndex = 0
+        find.refreshResults(generation: 1)
+        view.update(with: find, updateTextField: false)
+        XCTAssertFalse(view.counterLabel.isHidden)
+        XCTAssertEqual(find.total, 3)
+
+        _ = find.search(forText: "")
+        view.update(with: find, updateTextField: true)
+        XCTAssertTrue(view.counterLabel.isHidden)
+
+        view.update(with: nil, updateTextField: true)
+        let reopened = makeFind(session: SessionSpy())
+        defer { reopened.done() }
+        view.update(with: reopened, updateTextField: true)
+        XCTAssertTrue(view.counterLabel.isHidden)
+    }
+
     func testWaitsForResultsBeforeSelectingAndTreatsNotFoundIndexAsUnselected() {
         let session = SessionSpy()
         let find = makeFind(session: session)

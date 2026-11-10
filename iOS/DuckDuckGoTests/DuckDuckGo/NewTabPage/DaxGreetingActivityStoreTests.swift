@@ -41,6 +41,7 @@ final class DaxGreetingActivityStoreTests: XCTestCase {
         store.recordForegroundOpen()
         var context = store.context(at: now, calendar: calendar)
         XCTAssertEqual(context.isFirstOpenOfDay, true)
+        XCTAssertEqual(store.context(at: date(day: 16), calendar: calendar).isFirstOpenOfDay, false)
 
         store.recordForegroundOpen()
         store.recordForegroundOpen()

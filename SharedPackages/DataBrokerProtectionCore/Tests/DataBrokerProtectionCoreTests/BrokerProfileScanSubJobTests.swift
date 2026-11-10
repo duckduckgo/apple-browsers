@@ -583,6 +583,103 @@ final class BrokerProfileScanSubJobTests: XCTestCase {
         XCTAssertTrue(firedNames.contains("dbp_optout_stage_finish"))
     }
 
+    func testMarkSavedProfilesAsRemovedAndNotifyUser_whenLatestRequestWasTheUsersEmail_successPixelCarriesEmailSent() throws {
+        mockDatabase.attemptInformation = .mock
+        let identifiers = makeFixtureIdentifiers()
+        mockDatabase.optOutEvents = [
+            HistoryEvent(extractedProfileId: 1, brokerId: identifiers.brokerId, profileQueryId: identifiers.profileQueryId,
+                         type: .optOutRequested, date: Date().addingTimeInterval(-3600)),
+            HistoryEvent(extractedProfileId: 1, brokerId: identifiers.brokerId, profileQueryId: identifiers.profileQueryId,
+                         type: .optOutByUserEmail, date: Date().addingTimeInterval(-60))
+        ]
+
+        try sut.markSavedProfilesAsRemovedAndNotifyUser(
+            removedProfiles: [.mockWithoutRemovedDate],
+            brokerId: identifiers.brokerId,
+            profileQueryId: identifiers.profileQueryId,
+            brokerProfileQueryData: makeFixtureBrokerProfileQueryData(),
+            database: mockDatabase,
+            pixelHandler: mockPixelHandler,
+            eventsHandler: mockEventsHandler
+        )
+
+        let success = mockPixelHandler.firedEvents.first { $0.name == "dbp_optout_process_success" }
+        XCTAssertEqual(success?.params?[DataBrokerProtectionSharedPixels.Consts.emailSent], "true")
+    }
+
+    func testMarkSavedProfilesAsRemovedAndNotifyUser_whenOurAutomatedResubmitFollowsTheUsersEmail_successPixelCarriesEmailSent() throws {
+        mockDatabase.attemptInformation = .mock
+        let identifiers = makeFixtureIdentifiers()
+        mockDatabase.optOutEvents = [
+            HistoryEvent(extractedProfileId: 1, brokerId: identifiers.brokerId, profileQueryId: identifiers.profileQueryId,
+                         type: .optOutByUserEmail, date: Date().addingTimeInterval(-130 * 60 * 60)),
+            HistoryEvent(extractedProfileId: 1, brokerId: identifiers.brokerId, profileQueryId: identifiers.profileQueryId,
+                         type: .optOutStarted, date: Date().addingTimeInterval(-120)),
+            HistoryEvent(extractedProfileId: 1, brokerId: identifiers.brokerId, profileQueryId: identifiers.profileQueryId,
+                         type: .optOutRequested, date: Date().addingTimeInterval(-60))
+        ]
+
+        try sut.markSavedProfilesAsRemovedAndNotifyUser(
+            removedProfiles: [.mockWithoutRemovedDate],
+            brokerId: identifiers.brokerId,
+            profileQueryId: identifiers.profileQueryId,
+            brokerProfileQueryData: makeFixtureBrokerProfileQueryData(),
+            database: mockDatabase,
+            pixelHandler: mockPixelHandler,
+            eventsHandler: mockEventsHandler
+        )
+
+        let success = mockPixelHandler.firedEvents.first { $0.name == "dbp_optout_process_success" }
+        XCTAssertNotNil(success)
+        XCTAssertEqual(success?.params?[DataBrokerProtectionSharedPixels.Consts.emailSent], "true")
+    }
+
+    func testMarkSavedProfilesAsRemovedAndNotifyUser_whenHistoryHasNoUserEmail_successPixelHasNoEmailSent() throws {
+        mockDatabase.attemptInformation = .mock
+        let identifiers = makeFixtureIdentifiers()
+        mockDatabase.optOutEvents = [
+            HistoryEvent(extractedProfileId: 1, brokerId: identifiers.brokerId, profileQueryId: identifiers.profileQueryId,
+                         type: .optOutRequested, date: Date().addingTimeInterval(-3600)),
+            HistoryEvent(extractedProfileId: 1, brokerId: identifiers.brokerId, profileQueryId: identifiers.profileQueryId,
+                         type: .optOutSubmittedAndAwaitingEmailConfirmation, date: Date().addingTimeInterval(-60))
+        ]
+
+        try sut.markSavedProfilesAsRemovedAndNotifyUser(
+            removedProfiles: [.mockWithoutRemovedDate],
+            brokerId: identifiers.brokerId,
+            profileQueryId: identifiers.profileQueryId,
+            brokerProfileQueryData: makeFixtureBrokerProfileQueryData(),
+            database: mockDatabase,
+            pixelHandler: mockPixelHandler,
+            eventsHandler: mockEventsHandler
+        )
+
+        let success = mockPixelHandler.firedEvents.first { $0.name == "dbp_optout_process_success" }
+        XCTAssertNotNil(success)
+        XCTAssertNil(success?.params?[DataBrokerProtectionSharedPixels.Consts.emailSent])
+    }
+
+    func testMarkSavedProfilesAsRemovedAndNotifyUser_whenHistoryReadFails_stillMarksTheRemovalAndFiresWithoutEmailSent() throws {
+        mockDatabase.attemptInformation = .mock
+        mockDatabase.fetchOptOutHistoryEventsError = MockDatabase.MockError.fetchFailed
+        let identifiers = makeFixtureIdentifiers()
+
+        try sut.markSavedProfilesAsRemovedAndNotifyUser(
+            removedProfiles: [.mockWithoutRemovedDate],
+            brokerId: identifiers.brokerId,
+            profileQueryId: identifiers.profileQueryId,
+            brokerProfileQueryData: makeFixtureBrokerProfileQueryData(),
+            database: mockDatabase,
+            pixelHandler: mockPixelHandler,
+            eventsHandler: mockEventsHandler
+        )
+
+        XCTAssertTrue(mockDatabase.wasUpdateRemoveDateCalled)
+        let success = mockPixelHandler.firedEvents.first { $0.name == "dbp_optout_process_success" }
+        XCTAssertNotNil(success)
+        XCTAssertNil(success?.params?[DataBrokerProtectionSharedPixels.Consts.emailSent])
+    }
+
     func testMarkSavedProfilesAsRemovedAndNotifyUser_whenProfileAlreadyHasRemovedDate_doesNotFireTransitionPixels() throws {
         // Maintenance-scan scenario: the profile was already confirmed removed on a prior scan
         // (removedDate set) but the current scan still doesn't find it, so it re-enters the

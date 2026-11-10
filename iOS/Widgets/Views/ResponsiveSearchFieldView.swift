@@ -62,6 +62,8 @@ struct ResponsiveSearchFieldView: View {
 
                         Text(prompt)
                             .daxBodyRegular()
+                            .lineLimit(1)
+                            .minimumScaleFactor(0.7)
                             .foregroundStyle(Color(designSystemColor: .textSecondary))
                             .padding(.leading, showLogo ? 8 : 12)
                             .makeAccentable()

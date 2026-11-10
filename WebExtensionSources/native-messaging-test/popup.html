@@ -1,0 +1,43 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <header>
+    <img src="icons/icon-48.png" width="32" height="32" alt="">
+    <div>
+      <h1>Native Messaging Test</h1>
+      <p>Requests permissions at runtime</p>
+    </div>
+  </header>
+
+  <main>
+    <button class="action" data-permissions="nativeMessaging">
+      <span class="title">Request native messaging</span>
+      <span class="detail">Only <code>nativeMessaging</code></span>
+    </button>
+    <button class="action" data-permissions="nativeMessaging,tabs">
+      <span class="title">Request native messaging and tabs</span>
+      <span class="detail"><code>nativeMessaging</code> + <code>tabs</code></span>
+    </button>
+
+    <section id="result" hidden>
+      <span id="result-label"></span>
+      <span id="result-detail"></span>
+    </section>
+
+    <section class="granted">
+      <h2>Permissions</h2>
+      <ul id="granted"></ul>
+    </section>
+  </main>
+
+  <footer>
+    <button id="reset" class="link">Remove granted permissions</button>
+  </footer>
+
+  <script src="popup.js"></script>
+</body>
+</html>

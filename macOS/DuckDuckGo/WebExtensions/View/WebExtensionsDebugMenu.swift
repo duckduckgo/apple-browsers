@@ -31,6 +31,7 @@ final class WebExtensionsDebugMenu: NSMenu, NSMenuItemValidation {
     private let isBitwardenEnabled: () -> Bool
     /// Set in the App Store build only, where extensions can't reach their desktop apps.
     private let nativeMessagingNoticeStore: NativeMessagingNoticeStoring?
+    private let debugExtensions: BundledDebugWebExtensionsProtocol
     private let installBitwardenSeparator = NSMenuItem.separator()
     private let installBitwardenMenuItem = NSMenuItem(title: "Install Bitwarden", action: #selector(WebExtensionsDebugMenu.installBitwarden))
 
@@ -50,12 +51,14 @@ final class WebExtensionsDebugMenu: NSMenu, NSMenuItemValidation {
         webExtensionManager: WebExtensionManaging,
         cpmMessagingHealthMonitor: CPMMessagingHealthMonitor,
         isBitwardenEnabled: @escaping () -> Bool = { true },
-        nativeMessagingNoticeStore: NativeMessagingNoticeStoring? = nil
+        nativeMessagingNoticeStore: NativeMessagingNoticeStoring? = nil,
+        debugExtensions: BundledDebugWebExtensionsProtocol = BundledDebugWebExtensions()
     ) {
         self.webExtensionManager = webExtensionManager
         self.cpmMessagingHealthMonitor = cpmMessagingHealthMonitor
         self.isBitwardenEnabled = isBitwardenEnabled
         self.nativeMessagingNoticeStore = nativeMessagingNoticeStore
+        self.debugExtensions = debugExtensions
         super.init(title: "")
 
         installExtensionMenuItem.submenu = makeInstallSubmenu()
@@ -151,6 +154,10 @@ final class WebExtensionsDebugMenu: NSMenu, NSMenuItemValidation {
         browseItem.target = self
         submenu.addItem(browseItem)
 
+        let nativeMessagingTestItem = NSMenuItem(title: "Install Native Messaging Test Extension", action: #selector(installNativeMessagingTestExtension))
+        nativeMessagingTestItem.target = self
+        submenu.addItem(nativeMessagingTestItem)
+
         submenu.addItem(installBitwardenSeparator)
 
         installBitwardenMenuItem.target = self
@@ -201,6 +208,28 @@ final class WebExtensionsDebugMenu: NSMenu, NSMenuItemValidation {
     /// Lets each extension that tried native messaging show its banner the next time its popup opens.
     @objc private func resetNativeMessagingNotices() {
         nativeMessagingNoticeStore?.resetShownNotices()
+    }
+
+    /// Installs the bundled test extension that requests `nativeMessaging` at runtime, replacing any copy
+    /// already installed so its permissions start from scratch.
+    @objc private func installNativeMessagingTestExtension() {
+        guard let url = debugExtensions.nativeMessagingTestExtensionURL else {
+            Logger.webExtensions.error("The native messaging test extension isn't in the app bundle")
+            return
+        }
+        let installedCopies = webExtensionManager.webExtensionIdentifiers.filter {
+            webExtensionManager.extensionName(for: $0) == "Native Messaging Test"
+        }
+        Task { @MainActor in
+            do {
+                for identifier in installedCopies {
+                    try webExtensionManager.uninstallExtension(identifier: identifier)
+                }
+                try await webExtensionManager.installExtension(from: url)
+            } catch {
+                Logger.webExtensions.error("Could not install the native messaging test extension: \(String(describing: error), privacy: .public)")
+            }
+        }
     }
 
     @objc private func checkForUpdatesNow() {

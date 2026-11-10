@@ -71,15 +71,16 @@ final class OverlayWindowPresenterTests {
 
     @available(iOS 16.0, *)
     @Test("Removing an interactive overlay restores the main window when it was unhidden elsewhere", .timeLimit(.minutes(1)))
-    func removeInteractiveWindow() {
+    func removeInteractiveWindow() async {
         let mainWindow = WindowSpy()
         mainWindow.isHidden = false
         let overlayWindow = WindowSpy()
-        let presenter = OverlayWindowPresenter(mainWindow: mainWindow, afterNextFrames: { $0() })
+        let presenter = OverlayWindowPresenter(mainWindow: mainWindow)
         presenter.revealInteractiveWindow(overlayWindow)
         mainWindow.isHidden = false
 
         presenter.removeWindow(overlayWindow)
+        await drainMainQueue()
 
         #expect(overlayWindow.isHidden)
         #expect(mainWindow.makeKeyAndVisibleCallCount == 1)
@@ -87,11 +88,10 @@ final class OverlayWindowPresenterTests {
 
     @available(iOS 16.0, *)
     @Test("Removing an interactive overlay shows the main window before hiding the overlay", .timeLimit(.minutes(1)))
-    func removeInteractiveWindowShowsMainWindowFirst() {
+    func removeInteractiveWindowShowsMainWindowFirst() async {
         let mainWindow = WindowSpy()
         let overlayWindow = WindowSpy()
-        var pendingHide: (() -> Void)?
-        let presenter = OverlayWindowPresenter(mainWindow: mainWindow, afterNextFrames: { pendingHide = $0 })
+        let presenter = OverlayWindowPresenter(mainWindow: mainWindow)
         presenter.revealInteractiveWindow(overlayWindow)
 
         presenter.removeWindow(overlayWindow)
@@ -99,30 +99,16 @@ final class OverlayWindowPresenterTests {
         #expect(!mainWindow.isHidden)
         #expect(!overlayWindow.isHidden)
 
-        pendingHide?()
+        await drainMainQueue()
 
         #expect(overlayWindow.isHidden)
     }
 
-    @available(iOS 16.0, *)
-    @Test("A pending overlay hide finishes when the next overlay appears", .timeLimit(.minutes(1)))
-    func pendingHideFinishesOnNextOverlay() {
-        let mainWindow = WindowSpy()
-        let lockWindow = WindowSpy()
-        let snapshotWindow = WindowSpy()
-        var pendingHide: (() -> Void)?
-        let presenter = OverlayWindowPresenter(mainWindow: mainWindow, afterNextFrames: { pendingHide = $0 })
-        presenter.revealInteractiveWindow(lockWindow)
-        presenter.removeWindow(lockWindow)
-
-        presenter.revealBlankSnapshotWindow(snapshotWindow)
-
-        #expect(lockWindow.isHidden)
-        #expect(!snapshotWindow.isHidden)
-
-        pendingHide?()
-
-        #expect(!snapshotWindow.isHidden)
+    /// Returns after every block already enqueued on the main queue has run.
+    private func drainMainQueue() async {
+        await withCheckedContinuation { continuation in
+            DispatchQueue.main.async { continuation.resume() }
+        }
     }
 
 }

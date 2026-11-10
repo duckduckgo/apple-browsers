@@ -64,6 +64,12 @@ import Subscription
         await whenStatusUpdate_connected()
     }
 
+    func testReconnectBlockedErrorMapsToConnectionFailure() {
+        let error = PacketTunnelProvider.TunnelError.reconnectBlocked as NSError
+
+        XCTAssertEqual(VPNConnectionError(nsError: error), .connectionFailed)
+    }
+
     func testStatusUpdate_notConnected_setsIsNetPEnabledToFalse() async throws {
         await whenStatusUpdate_notConnected()
     }

@@ -636,7 +636,11 @@ final class DuckPlayerBrowserChromeDelegateMock: BrowserChromeDelegate {
 
     var isInMinimalChromeLayout: Bool = false
 
-    func floatingWebViewBottomObscuredHeight(for barsVisibilityPercent: CGFloat) -> CGFloat { 0 }
+    var floatingBottomObscuredHeight: CGFloat = 0
+
+    func floatingWebViewBottomObscuredHeight(for barsVisibilityPercent: CGFloat) -> CGFloat { floatingBottomObscuredHeight }
+
+    var floatingAIChatHeaderObscuredHeight: CGFloat = 0
 
     var obscuredContentInsets: UIEdgeInsets = .zero
 

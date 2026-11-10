@@ -278,16 +278,16 @@ final class AIChatUserScript: NSObject, Subfeature {
 
         // Main-actor closures, so the reply isn't held up by a hop in the middle of the handler.
         case .startAIChatLocalRun:
-            return { @MainActor [weak self] params, _ in
-                try self?.startAIChatLocalRun(params: params)
+            return { @MainActor [weak self] params, message in
+                try self?.startAIChatLocalRun(params: params, message: message)
             }
         case .cancelAIChatLocalRun:
             return { @MainActor [weak self] params, _ in
                 self?.cancelAIChatLocalRun(params: params)
             }
         case .startAIChatLocalModelSetup:
-            return { @MainActor [weak self] _, _ in
-                try self?.startAIChatLocalModelSetup()
+            return { @MainActor [weak self] _, message in
+                try self?.startAIChatLocalModelSetup(message: message)
             }
 
         default:
@@ -309,8 +309,10 @@ final class AIChatUserScript: NSObject, Subfeature {
 extension AIChatUserScript: AIChatLocalModelPushing {
 
     @MainActor
-    func startAIChatLocalRun(params: Any) throws -> Encodable? {
-        guard let localModelService else { throw AIChatLocalModelRequestError.unavailable }
+    func startAIChatLocalRun(params: Any, message: UserScriptMessage) throws -> Encodable? {
+        guard let localModelService, isDuckAIPushDestination(message.messageWebView?.url) else {
+            throw AIChatLocalModelRequestError.unavailable
+        }
         guard let request: AIChatLocalRunRequest = DecodableHelper.decode(from: params) else {
             throw AIChatLocalModelRequestError.invalidArguments
         }
@@ -327,8 +329,10 @@ extension AIChatUserScript: AIChatLocalModelPushing {
     }
 
     @MainActor
-    func startAIChatLocalModelSetup() throws -> Encodable? {
-        guard let localModelService else { throw AIChatLocalModelRequestError.unavailable }
+    func startAIChatLocalModelSetup(message: UserScriptMessage) throws -> Encodable? {
+        guard let localModelService, isDuckAIPushDestination(message.messageWebView?.url) else {
+            throw AIChatLocalModelRequestError.unavailable
+        }
         try localModelService.setUp()
         return [String: String]()
     }
@@ -379,6 +383,11 @@ extension AIChatUserScript: ClientToolPermissionPushing {
         let response = await handler.getAIChatNativeConfigValues(params: params, message: message)
         guard var configValues = response as? AIChatNativeConfigValues else { return response }
         configValues.clientTools = clientToolsConfiguration(for: message)
+        // The model's state and text reach the page only through `pushToDuckAI`. A page it skips,
+        // such as Duck.ai on duckduckgo.com, would wait for a summary that never arrives.
+        if !isDuckAIPushDestination(message.messageWebView?.url) {
+            configValues.localModel = nil
+        }
         return configValues
     }
 
@@ -423,10 +432,13 @@ extension AIChatUserScript: AIChatBrowserToolsPushing {
 
     /// Only a Duck.ai page can receive these; every tab has this script, so the host is checked.
     private func pushToDuckAI(_ message: AIChatUserScriptMessages, params: Encodable?) {
-        guard let webView, let broker,
-              let host = webView.url?.host,
-              messageDestinationPolicy.isAllowed(host) else { return }
+        guard let webView, let broker, isDuckAIPushDestination(webView.url) else { return }
         broker.push(method: message.rawValue, params: params, for: self, into: webView)
+    }
+
+    fileprivate func isDuckAIPushDestination(_ url: URL?) -> Bool {
+        guard let host = url?.host else { return false }
+        return messageDestinationPolicy.isAllowed(host)
     }
 }
 

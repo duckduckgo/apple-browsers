@@ -130,8 +130,6 @@ public enum WebExtensionPixelEvent {
     case cpmRecovery(CPMRecoveryFix, outcome: CPMRecoveryOutcome)
     /// Stages and one terminal observation for a retained-background error-6 restart.
     case cpmBackgroundLoadRestart(CPMBackgroundLoadRestartOutcome)
-    /// Missing first-document dashboard response after a successful first background startup.
-    case cpmStartupResponseMissing
 
     /// A stale background was restarted after an observed Network process replacement.
     /// This records applying the mitigation, not confirmed messaging recovery.
@@ -293,6 +291,17 @@ private extension WebExtensionReloadTrigger {
     }
 }
 
+public enum CPMRecoveryFix: String, CaseIterable, Sendable {
+    case installReadiness = "install_readiness"
+    case upgradeReadiness = "upgrade_readiness"
+    case backgroundWake = "background_wake"
+}
+
+public enum CPMRecoveryOutcome: String, Sendable {
+    /// A slow public WebKit background callback completed successfully; not proof of a page response.
+    case backgroundReady = "background_ready"
+}
+
 /// Background readiness alone is not proof that a page received its dashboard response.
 public enum CPMBackgroundLoadRestartOutcome: String, CaseIterable, Sendable {
     case restartStarted = "restart_started"
@@ -321,10 +330,6 @@ public struct CPMWebExtensionPixelMetadata: Equatable, Sendable {
     @available(macOS 15.4, iOS 18.4, *)
     public init?(event: WebExtensionPixelEvent) {
         switch event {
-        case .cpmStartupResponseMissing:
-            name = "web_extension_cpm_startup_response_missing"
-            frequency = .dailyAndCount
-            parameters = [:]
         case .cpmBackgroundLoadRestart(let outcome):
             name = "web_extension_cpm_background_load_restart"
             frequency = .dailyAndCount

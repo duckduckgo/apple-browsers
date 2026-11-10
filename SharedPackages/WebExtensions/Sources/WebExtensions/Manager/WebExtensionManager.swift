@@ -211,12 +211,6 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
     /// Three restarts without an attributed response; four means the exhausted budget was reported.
     private var backgroundLoadRestartAttempts = 0
     private var navigationWaitContexts: Set<String> = []
-    /// Distinguishes first startup from idle wakes without retaining replaced contexts.
-    private let preparedEmbeddedBackgroundContexts = NSHashTable<WKWebExtensionContext>.weakObjects()
-    @MainActor
-    private var backgroundRecovery: CPMBackgroundReadinessRecovery? {
-        (cpmMessagingHealthMonitor as? CPMMessagingHealthMonitor)?.backgroundReadinessRecovery
-    }
     private let now: () -> Date
     /// Keeps the health monitor informed of app suspension for as long as the manager lives.
     private var cpmInterruptionObserver: CPMInterruptionObserver?
@@ -309,9 +303,6 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
         self.pixelFiring = pixelFiring
         self.now = now
         self.cpmMessagingHealthMonitor = cpmMessagingHealthMonitor ?? CPMMessagingHealthMonitor(pixelFiring: pixelFiring)
-        (self.cpmMessagingHealthMonitor as? CPMMessagingHealthMonitor)?.backgroundReadinessRecovery = CPMBackgroundReadinessRecovery(
-            pixelFiring: pixelFiring
-        )
         self.cpmDiagnosticsRecorder = cpmDiagnosticsRecorder
         self.isCPMUpgradeBeforeLoadEnabled = isCPMUpgradeBeforeLoadEnabled
         self.cpmNetworkProcessRecovery = CPMNetworkProcessRecovery(
@@ -458,9 +449,6 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
                 // WebKit can record a service-worker load failure without invoking pending
                 // loadBackgroundContent callbacks. Release callers before retrying its background.
                 if self.embeddedBackgroundStartupContext === context {
-                    // Retained callbacks may succeed with a later retry. They must not turn this
-                    // known failed startup into a P4 detection or an automatic document reload.
-                    self.backgroundRecovery?.invalidate()
                     self.clearEmbeddedBackgroundStartup()
                 }
                 // Capture the failing view on this notification's turn, before WebKit can replace it.
@@ -643,7 +631,6 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
 
         let installedExtension = installationStore.installedExtension(withUniqueIdentifier: identifier)
         let embeddedType = installedExtension?.embeddedType
-        let removesCurrentEmbeddedContext = embeddedBackgroundContextForNavigation?.uniqueIdentifier == identifier
 
         do {
             try loader.unloadExtension(identifier: identifier, from: controller)
@@ -658,11 +645,6 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
             cpmDiagnosticsRecorder?.contextUnloadFailed(identifier: identifier, error: error)
         }
 
-        if removesCurrentEmbeddedContext {
-            // A preflight can still be suspended after startup completed. Do not reload its
-            // document after uninstall, or cancel the replacement when removing an old version.
-            backgroundRecovery?.invalidate()
-        }
         clearEmbeddedBackgroundStartup(identifier: identifier)
         do {
             try permissionController?.forget(identifier)
@@ -986,7 +968,6 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
     @MainActor
     func trackEmbeddedBackgroundStartup(identifier: String) {
         guard let context = context(for: identifier), context.webExtension.hasBackgroundContent else { return }
-        backgroundRecovery?.invalidate()
         backgroundStartupFix[identifier] = installationStore.installedExtensions.contains {
             $0.embeddedType == .embedded && $0.uniqueIdentifier != identifier
         } ? .upgradeReadiness : .installReadiness
@@ -1047,10 +1028,6 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
         embeddedBackgroundStartupContext = context
         embeddedBackgroundStartupCompletion = continuation
         let started = Date()
-        let startupID = UUID()
-        let isFirstLoad = !preparedEmbeddedBackgroundContexts.contains(context)
-        preparedEmbeddedBackgroundContexts.add(context)
-        backgroundRecovery?.backgroundStarted(startupID, isFirstLoad: isFirstLoad)
         let identifier = context.uniqueIdentifier
         let fix = backgroundStartupFix.removeValue(forKey: identifier) ?? .backgroundWake
         Logger.webExtensions.debug("[CPM Background] Starting background wait for \(identifier, privacy: .public)")
@@ -1064,7 +1041,6 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
                 Logger.webExtensions.error("❌ Failed to load embedded extension background content: \(error.localizedDescription)")
             }
             if let self, let context, self.embeddedBackgroundContextForNavigation === context {
-                self.backgroundRecovery?.backgroundCompleted(startupID, succeeded: error == nil)
                 let didWaitForNavigation = self.navigationWaitContexts.remove(identifier) != nil
                 if self.backgroundLoadRestartContext === context {
                     self.backgroundLoadRestartContext = nil

@@ -113,7 +113,6 @@ public final class CPMMessagingHealthMonitor: CPMMessagingHealthMonitoring {
     var onHealthyResponse: (() -> Void)?
     /// Old and new embedded versions can coexist during an upgrade; only the current sender is evidence.
     var isCurrentEmbeddedExtension: ((String) -> Bool)?
-    var backgroundReadinessRecovery: CPMBackgroundReadinessRecovery?
 
     private enum TimeoutOutcome: Sendable {
         case reportFailure
@@ -305,13 +304,10 @@ public final class CPMMessagingHealthMonitor: CPMMessagingHealthMonitoring {
         case .navigationFinished(let tabIdentifier, let url, let extensionIsLoaded):
             finishNavigation(in: tabIdentifier, url: url, extensionIsLoaded: extensionIsLoaded)
         case .navigationFailed(let tabIdentifier):
-            backgroundReadinessRecovery?.navigationCancelled(in: tabIdentifier)
             cancelCurrentNavigation(in: tabIdentifier, preserveCrashMarker: true)
         case .tabClosed(let tabIdentifier):
-            backgroundReadinessRecovery?.navigationCancelled(in: tabIdentifier)
             removeTab(tabIdentifier)
         case .webContentProcessTerminated(let tabIdentifier):
-            backgroundReadinessRecovery?.navigationCancelled(in: tabIdentifier)
             markWebContentProcessTerminated(in: tabIdentifier)
         case .dashboardResponse(let extensionTabIdentifier, let url, let extensionIdentifier):
             if let extensionIdentifier, isCurrentEmbeddedExtension?(extensionIdentifier) == false { return }
@@ -376,7 +372,6 @@ public final class CPMMessagingHealthMonitor: CPMMessagingHealthMonitoring {
     /// Invalidates the previous document's work and advances the tab generation.
     /// Generation changes prevent a late timeout from affecting a replacement navigation.
     private func startNavigation(in tabIdentifier: String, navigationKind: CPMNavigationKind) {
-        backgroundReadinessRecovery?.navigationStarted(in: tabIdentifier)
         var state = tabs[tabIdentifier] ?? TabNavigationState()
         cancelMeasurement(state.measurement)
         state.timeoutTask?.cancel()
@@ -403,7 +398,6 @@ public final class CPMMessagingHealthMonitor: CPMMessagingHealthMonitoring {
             cancelCurrentNavigation(in: tabIdentifier, preserveCrashMarker: true)
             return
         }
-        backgroundReadinessRecovery?.navigationCommitted(in: tabIdentifier, url: url)
         state.committedURL = url
         state.didReceiveResponse = false
         tabs[tabIdentifier] = state
@@ -636,7 +630,6 @@ public final class CPMMessagingHealthMonitor: CPMMessagingHealthMonitoring {
     /// Cancels the tab deadline and completes its active measurement when present.
     /// A pre-finish response remains recorded so finishing the same navigation succeeds immediately.
     private func markResponseReceived(in tabIdentifier: String) {
-        backgroundReadinessRecovery?.responseReceived(in: tabIdentifier)
         guard var state = tabs[tabIdentifier] else { return }
         recordHealthyResponse(in: state.extensionReloadGeneration)
         Logger.webExtensions.debug("[CPM Health Monitor] Dashboard response attributed to tab=\(tabIdentifier, privacy: .public)")
@@ -781,7 +774,6 @@ public final class CPMMessagingHealthMonitor: CPMMessagingHealthMonitoring {
         if backgroundLoadRestartObservation?.generation == measurement.extensionReloadGeneration {
             backgroundLoadRestartObservation?.sawFailedMeasurement = true
         }
-        backgroundReadinessRecovery?.initializationFailed(in: measurement.tabIdentifier)
         measurements[measurement.identifier] = record
         // Reload attribution is reserved when the navigation begins, so simultaneous tabs cannot
         // race to become "first" merely by returning their result sooner.
@@ -937,7 +929,6 @@ public final class CPMMessagingHealthMonitor: CPMMessagingHealthMonitoring {
                 pixelFiring.fire(.cpmBackgroundLoadRestart(.restartStarted))
                 scheduleBackgroundLoadRestartDeadline()
             }
-            backgroundReadinessRecovery?.invalidate()
             episode?.reloadState = .pending
             invalidateNavigationEvidenceForReload()
         case .reloaded(let identifier, _, let trigger):

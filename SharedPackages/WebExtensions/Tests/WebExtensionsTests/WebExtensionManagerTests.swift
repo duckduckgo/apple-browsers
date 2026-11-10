@@ -250,33 +250,6 @@ final class WebExtensionManagerTests: XCTestCase {
     }
 
     @MainActor
-    func testUnrelatedErrorPreservesCurrentFirstStartupDetection() async throws {
-        for errorOnCurrentContext in [false, true] {
-            let pixels = CapturingCPMStartupPixels()
-            let monitor = CPMMessagingHealthMonitor(pixelFiring: pixels)
-            let manager = makeManager(controllerConfiguration: .nonPersistent(), cpmMessagingHealthMonitor: monitor, pixelFiring: pixels)
-            let old = try await loadDeferredEmbeddedContext("old", into: manager)
-            let replacement = try await loadDeferredEmbeddedContext("replacement", into: manager)
-            defer { manager.unloadAllExtensions() }
-            let startup = try XCTUnwrap(manager.prepareEmbeddedBackgroundForNavigation())
-            monitor.handle(.navigationStarted(tabIdentifier: "tab", navigationKind: .other))
-            monitor.handle(.navigationCommitted(tabIdentifier: "tab", url: URL(string: "https://example.com/first")!))
-            monitor.reportFailure(monitor.beginMeasurement(tabIdentifier: "tab", navigationKind: .other))
-            let source = errorOnCurrentContext ? replacement : old
-            let domain = errorOnCurrentContext ? "UnrelatedErrorDomain" : "WKWebExtensionContextErrorDomain"
-            source.recordedErrors = [NSError(domain: domain, code: 6)]
-            NotificationCenter.default.post(name: WKWebExtensionContext.errorsDidUpdateNotification, object: source)
-            for _ in 0..<10 { await Task.yield() }
-            XCTAssertEqual(manager.pendingEmbeddedBackgroundStartup, startup)
-            XCTAssertEqual(old.completions.count, 0, "An obsolete context must not be retried")
-            replacement.finishBackgroundLoads()
-            await startup.value
-            XCTAssertEqual(pixels.missingResponseCount, 1)
-            monitor.handle(.tabClosed(tabIdentifier: "tab"))
-        }
-    }
-
-    @MainActor
     private func loadEmbeddedContext(_ identifier: String, into manager: WebExtensionManager) async throws -> WKWebExtensionContext {
         let directory = try makeTestExtensionDirectory(embeddedType: .embedded)
         let webExtension = try await WKWebExtension(resourceBaseURL: directory)
@@ -3142,15 +3115,6 @@ private final class CapturingCPMRestartPixels: WebExtensionPixelFiring {
         guard case .cpmBackgroundLoadRestart(let outcome) = event else { return }
         outcomes.append(outcome)
         onOutcome?(outcome)
-    }
-}
-
-@available(macOS 15.4, iOS 18.4, *)
-private final class CapturingCPMStartupPixels: WebExtensionPixelFiring {
-    private(set) var missingResponseCount = 0
-
-    func fire(_ event: WebExtensionPixelEvent) {
-        if case .cpmStartupResponseMissing = event { missingResponseCount += 1 }
     }
 }
 

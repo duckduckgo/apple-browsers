@@ -31,9 +31,7 @@ enum DuckAISwipeNewChat {
         static let hapticSteps = 5
         /// Past the trigger, the chat follows the finger this much, so it resists further pulling.
         static let overpullResistance: CGFloat = 0.3
-        /// How fast the indicator rises relative to the chat.
-        static let indicatorFollow: CGFloat = 0.3
-        /// Gap between the indicator, before it rises, and the top of the bottom chrome.
+        /// Smallest gap kept between the indicator and the chat's bottom edge above it.
         static let indicatorSpacing: CGFloat = 4
         static let springBackDuration: TimeInterval = 0.35
         static let commitDuration: TimeInterval = 0.2

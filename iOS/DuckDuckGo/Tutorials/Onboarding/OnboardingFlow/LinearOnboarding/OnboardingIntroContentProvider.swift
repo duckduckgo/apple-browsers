@@ -27,7 +27,6 @@ protocol OnboardingIntroContentProviding {
     var landingContent: OnboardingLandingContent { get }
     var introStepContent: OnboardingIntroStepContent { get }
     var downloadReasonContent: OnboardingDownloadReasonContent { get }
-    var serpPersonalizationContent: OnboardingPersonalizationContent { get }
     var aiModelPersonalizationContent: OnboardingAIModelContent { get }
     var addressBarToggleModePersonalizationContent: OnboardingAddressBarToggleModeContent { get }
     var aiSearchPersonalizationContent: OnboardingPersonalizationContent { get }
@@ -235,8 +234,6 @@ extension OnboardingPersonalizationContent {
 extension OnboardingPersonalizationContent.Item {
 
     enum ItemType: Equatable {
-        case recentlyVisitedSites
-        case safeSearch
         case searchAssist
         case aiGeneratedImages
         case youTubeAdBlocking
@@ -272,19 +269,6 @@ struct OnboardingDuckAIEnabledPersonalizationContent: Equatable {
 }
 
 extension OnboardingIntroContentProvider {
-
-    var serpPersonalizationContent: OnboardingPersonalizationContent {
-        OnboardingPersonalizationContent(
-            title: UserText.Onboarding.Personalization.Search.title,
-            message: nil,
-            items: [
-                OnboardingPersonalizationContent.Item(type: .recentlyVisitedSites, title: UserText.Onboarding.Personalization.Search.recentlyVisitedSitesTitle, subtitle: UserText.Onboarding.Personalization.Search.recentlyVisitedSitesSubtitle),
-                OnboardingPersonalizationContent.Item(type: .safeSearch, title: UserText.Onboarding.Personalization.Search.safeSearchTitle, subtitle: UserText.Onboarding.Personalization.Search.safeSearchSubtitle)
-            ],
-            primaryCTA: UserText.Onboarding.Personalization.Search.cta,
-            daxAnimation: .wingLeft
-        )
-    }
 
     var aiModelPersonalizationContent: OnboardingAIModelContent {
         OnboardingAIModelContent(

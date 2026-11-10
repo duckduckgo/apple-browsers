@@ -1314,6 +1314,36 @@ extension OnboardingIntroViewModelTests {
         XCTAssertNil(resumeStepRawValue(in: store))
     }
 
+    func testWhenResumeStepIsNoLongerARecognisedStep_ThenOnboardingStartsFromBeginningAndNextStepOverwritesIt() {
+        // A checkpoint saved by an older build for a step that has since been removed (the search privacy settings step)
+        let store = MockKeyValueStore()
+        store.set("searchPrivacySettingsSelection", forKey: OnboardingStorageKeys.resumeStep.rawValue)
+        onboardingManagerMock.onboardingSteps = OnboardingStepsHelper.expectedIPhoneDownloadReasonSteps(isReturningUser: false)
+        let sut = makeSUT(resumeStepStore: store)
+
+        // WHEN
+        sut.onAppear()
+
+        // THEN - onboarding starts from the intro, and the unrecognised checkpoint is left untouched
+        XCTAssertEqual(sut.state, .onboarding(.init(type: .startOnboardingDialog(content: .mock, type: .default), step: .hidden)))
+        XCTAssertEqual(resumeStepRawValue(in: store), "searchPrivacySettingsSelection")
+
+        // WHEN - the user leaves the intro
+        sut.startOnboardingAction()
+
+        // THEN - the first step after the intro overwrites the stale checkpoint
+        XCTAssertEqual(resumeStepRawValue(in: store), OnboardingResumeStep.downloadReasonSelection.rawValue)
+    }
+
+    func testWhenResumeStepIsOldIPhoneDefaultStep_AndFlowStartsWithDownloadScreen_ThenStoreIsCleared() {
+        // Users mid-way through the old iPhone default flow when the download-reason flow rolls out
+        let store = MockKeyValueStore()
+        setResumeStep(.appIconSelection, in: store)
+        onboardingManagerMock.onboardingSteps = OnboardingStepsHelper.expectedIPhoneDownloadReasonSteps(isReturningUser: false)
+        _ = makeSUT(resumeStepStore: store)
+        XCTAssertNil(resumeStepRawValue(in: store))
+    }
+
     func testWhenResumeStepIsDuckAIQuerySelection_AndIsDefaultFlow_ThenOnAppearShowsDuckAIQuery() {
         let store = MockKeyValueStore()
         setResumeStep(.duckAIQuerySelection, in: store)
@@ -1774,7 +1804,7 @@ extension OnboardingIntroViewModelTests {
     }
 
     func testBrowsePrivatelyFlowAdvancesThroughItsStepsInOrder() {
-        // GIVEN a treatment user picking "browse privately" on the Download Screen
+        // GIVEN an iPhone user picking "browse privately" on the Download Screen
         let sut = makeSUTOnDownloadScreen(for: .browserPrivately)
 
         // WHEN / THEN each action advances to the next screen of the real browse-privately sequence
@@ -1782,9 +1812,6 @@ extension OnboardingIntroViewModelTests {
         XCTAssertEqual(sut.state.intro?.type, .setDefaultBrowserDialog(content: .mockBrowser))
 
         sut.setDefaultBrowserAction()
-        XCTAssertEqual(sut.state.intro?.type, .searchPrivacySettingsDialog(content: .mock))
-
-        sut.searchPrivacySettingsContinueAction()
         XCTAssertEqual(sut.state.intro?.type, .chooseSearchExperienceDialog(content: .mock))
 
         sut.selectSearchExperienceAction()
@@ -1890,9 +1917,6 @@ extension OnboardingIntroViewModelTests {
         makeSUT(currentOnboardingStep: .downloadReasonSelection).onAppear()
         XCTAssertTrue(pixelReporterMock.didCallMeasureDownloadReasonImpression)
 
-        makeSUT(currentOnboardingStep: .searchPrivacySettingsSelection).onAppear()
-        XCTAssertTrue(pixelReporterMock.didCallMeasureSearchPrivacySettingsImpression)
-
         makeSUT(currentOnboardingStep: .aiSearchSettingsSelection).onAppear()
         XCTAssertTrue(pixelReporterMock.didCallMeasureAISearchSettingsImpression)
 
@@ -1921,23 +1945,6 @@ extension OnboardingIntroViewModelTests {
         // THEN
         XCTAssertTrue(pixelReporterMock.didCallMeasureDownloadReasonSelection)
         XCTAssertEqual(pixelReporterMock.didCaptureDownloadReasonSelection, .privateAIChat)
-    }
-
-    func testWhenSearchPrivacySettingsContinueThenFirePixelWithCorrectParameters() {
-        // GIVEN
-        onboardingManagerMock.onboardingSteps = [.searchPrivacySettingsSelection]
-        let personalizationManager = MockOnboardingPersonalizationManager()
-        personalizationManager.isRecentlyVisitedSitesEnabled = true
-        personalizationManager.isSafeSearchEnabled = false
-        let sut = makeSUT(currentOnboardingStep: .searchPrivacySettingsSelection, personalizationManager: personalizationManager)
-
-        // WHEN
-        sut.searchPrivacySettingsContinueAction()
-
-        // THEN
-        XCTAssertTrue(pixelReporterMock.didCallMeasureSearchPrivacySettingsSelection)
-        XCTAssertEqual(pixelReporterMock.didCaptureSearchPrivacySettingsSelection?.recentlyVisitedSitesEnabled, true)
-        XCTAssertEqual(pixelReporterMock.didCaptureSearchPrivacySettingsSelection?.safeSearchEnabled, false)
     }
 
     func testWhenAISearchSettingsContinueThenFirePixelWithCorrectParameters() {

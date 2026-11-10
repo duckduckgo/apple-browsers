@@ -1369,7 +1369,9 @@ class TabViewController: UIViewController {
     }
 
     private func updateFloatingAIChatScrolling(isEnabled: Bool, topInset: CGFloat) {
-        guard isEnabled else {
+        let host = (webView.url ?? tabModel.link?.url)?.host?.lowercased()
+        let usesInnerChatScrolling = host == "duck.ai" || host?.hasSuffix(".duck.ai") == true
+        guard isEnabled, usesInnerChatScrolling else {
             restoreScrollingAfterFloatingAIChrome()
             return
         }

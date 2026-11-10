@@ -256,7 +256,7 @@ final class AIChatContextualSheetViewController: UIViewController {
     }()
 
     private lazy var aiChatEditHeaderView: AIChatEditHeaderView = {
-        let header = AIChatEditHeaderView(preferredHeight: nil)
+        let header = AIChatEditHeaderView(preferredHeight: nil, usesFloatingAIChrome: usesLiquidGlassHeader)
         header.delegate = self
         header.translatesAutoresizingMaskIntoConstraints = false
         header.isHidden = true

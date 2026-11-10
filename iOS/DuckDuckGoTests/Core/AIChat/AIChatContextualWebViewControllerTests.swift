@@ -72,6 +72,11 @@ final class AIChatContextualWebViewControllerTests: XCTestCase {
             let headerIndex = try XCTUnwrap(sheet.view.subviews.firstIndex(of: header))
             let contentIndex = try XCTUnwrap(sheet.view.subviews.firstIndex(of: content))
             XCTAssertEqual(headerIndex > contentIndex, usesLiquidGlass)
+            let editHeader = try XCTUnwrap(sheet.view.firstSubview(ofType: AIChatEditHeaderView.self))
+            let cancelPill = try XCTUnwrap(editHeader.firstSubview(ofType: AIChatHeaderGlassPill.self))
+            let glass = try XCTUnwrap(cancelPill.firstSubview(ofType: UIVisualEffectView.self))
+            XCTAssertEqual(cancelPill.layer.shadowOpacity, usesLiquidGlass ? 0 : 0.16)
+            XCTAssertEqual(glass.clipsToBounds, !usesLiquidGlass)
             let input = host.mount(in: sheet)
             let restingInset = webView.obscuredContentInsets.bottom
             if usesLiquidGlass { XCTAssertGreaterThan(restingInset, 0) }

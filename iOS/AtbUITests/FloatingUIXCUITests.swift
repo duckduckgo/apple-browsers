@@ -131,6 +131,32 @@ class FloatingUIXCUITestCase: XCTestCase {
         assertConfiguredBarPosition()
     }
 
+    func verifyCustomAIChatPageScrolling() {
+        for usesLiquidGlass in [false, true] {
+            app.terminate()
+            launchApp(additionalArguments: [
+                "-ff.duckAIAndInputLiquidGlass", String(usesLiquidGlass),
+                "-aichat.debug.customURL", "\(serverBaseURL)/long-page",
+            ])
+            openPage(path: "/long-page", heading: Page.longHeading)
+            XCTAssertTrue(app.buttons["Recent chats"].waitForHittable(timeout: timeout))
+            let heading = app.staticTexts[Page.longHeading]
+            XCTAssertTrue(heading.waitForHittable(timeout: timeout))
+            heading.tap()
+            XCTAssertTrue(app.keyboards.firstMatch.waitForNotHittable(timeout: timeout))
+
+            webView.swipeUp()
+
+            let attachment = XCTAttachment(screenshot: app.screenshot())
+            attachment.name = "Custom chat after scrolling — Liquid Glass \(usesLiquidGlass)"
+            attachment.lifetime = .keepAlways
+            add(attachment)
+            XCTAssertTrue(heading.waitForNotHittable(timeout: timeout), "Custom chat page did not scroll.")
+            webView.swipeDown()
+            XCTAssertTrue(heading.waitForHittable(timeout: timeout), "Custom chat page could not return to the top.")
+        }
+    }
+
     func verifyExistingSearchReplacement(toggleEnabled: Bool) {
         app.terminate()
         launchApp(toggleEnabled: toggleEnabled)
@@ -1192,6 +1218,7 @@ final class FloatingUIBottomBarTests: FloatingUIXCUITestCase {
     func testExistingSearchReplacementWithToggleDisabled() { verifyExistingSearchReplacement(toggleEnabled: false) }
 
     func testUnifiedToggleInputTransitions() { verifyUnifiedToggleInputTransitions() }
+    func testCustomAIChatPageScrolling() { verifyCustomAIChatPageScrolling() }
     func testTabSwitcherTransitions() { verifyTabSwitcherTransitions() }
     func testBrowserChromeLongPressMenus() { verifyBrowserChromeLongPressMenus() }
     func testAddressBarButtonMenus() { verifyAddressBarButtonMenus() }

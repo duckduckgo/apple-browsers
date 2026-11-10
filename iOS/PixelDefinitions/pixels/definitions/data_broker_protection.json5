@@ -271,7 +271,7 @@
     "m_ios_dbp_optout_process_success": {
         "description": "Fired when an opt-out attempt completes successfully.",
         "owners": ["quanganhdo", "THISISDINOSAUR"],
-        "triggers": ["other"],
+        "triggers": ["feature_lifecycle"],
         "suffixes": [],
         "parameters": [
             "appVersion",
@@ -296,6 +296,11 @@
                 "description": "VPN bypass status when the attempt succeeded",
                 "type": "string",
                 "enum": ["on", "off", "unsupported", "unknown"]
+            },
+            {
+                "key": "email_sent",
+                "description": "Present and true when the record's history includes a removal email the user sent from the dashboard, even if we sent an automated request later",
+                "type": "boolean"
             }
         ]
     },

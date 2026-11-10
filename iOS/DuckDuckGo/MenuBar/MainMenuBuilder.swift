@@ -113,8 +113,13 @@ extension UIMenuElement {
 
 extension UICommand {
 
-    func applyMenuState(title: String?, isEnabled: Bool) {
+    func applyMenuState(title: String?, isEnabled: Bool, isHidden: Bool = false) {
         if let title { self.title = title }
+        if isHidden {
+            attributes.insert(.hidden)
+        } else {
+            attributes.remove(.hidden)
+        }
         if isEnabled {
             attributes.remove(.disabled)
         } else {

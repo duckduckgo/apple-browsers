@@ -1579,6 +1579,21 @@
 /* Parameter is domain name (string) */
 "contextual.onboarding.browsing.one.tracker" = "*%1$@* mēģināja tevi šeit izsekot. Es to nobloķēju!\n\n☝️ Pieskaries vairogam, lai uzzinātu vairāk.";
 
+/* Body of the alternative onboarding end-of-journey dialog promoting Duck.ai. */
+"contextual.onboarding.eoj-try-ai.message" = "Sarunas tiek anonimizētas, konts nav nepieciešams. Un tas ir bez maksas!";
+
+/* Primary button on the alternative onboarding end-of-journey dialog; opens Duck.ai. 'Duck.ai' is a brand name and should not be translated. */
+"contextual.onboarding.eoj-try-ai.primary-button" = "Izmēģini Duck.ai";
+
+/* Secondary button on the alternative onboarding end-of-journey dialog; skips to the new tab page. */
+"contextual.onboarding.eoj-try-ai.secondary-button" = "Izlaist";
+
+/* Title of the alternative onboarding end-of-journey dialog promoting Duck.ai. 'Duck.ai' is a brand name and should not be translated. */
+"contextual.onboarding.eoj-try-ai.title" = "Tērzē privāti ar populāriem MI vietnē Duck.ai";
+
+/* Body of the onboarding end-of-journey dialog for users who chose the AI-chat download reason. 'Search' refers to the Search option of the address bar Search/Duck.ai toggle and should match its translation. 'Duck.ai' is a brand name and should not be translated. */
+"contextual.onboarding.eoj.private-ai-chat.message" = "Sāc privātu MI tērzēšanu ar Duck.ai vai pārslēdzies uz meklēšanu aizsargātai pārlūkošanai.";
+
 /* Button on the last screen of the onboarding, it will dismiss the onboarding screen. */
 "contextual.onboarding.final-screen.button" = "Dod pieci!";
 
@@ -3320,13 +3335,31 @@
 "menuActualSize" = "Faktiskais izmērs";
 
 /* iPad menu bar command */
+"menuAddToDock" = "Pievienot DuckDuckGo dokam…";
+
+/* iPad menu bar command */
+"menuAddWidget" = "Pievienot logrīku sākuma ekrānam…";
+
+/* iPad menu bar command */
 "menuBack" = "Atpakaļ";
+
+/* iPad menu bar title */
+"menuBookmarks" = "Grāmatzīmes";
 
 /* iPad menu bar command */
 "menuClearTabsAndData" = "Notīrīt cilnes un datus";
 
+/* iPad Duck.ai menu bar command */
+"menuDeleteAllChats" = "Dzēst visas tērzēšanas sarunas…";
+
 /* iPad menu bar command */
 "menuDuplicateTab" = "Dublēt cilni";
+
+/* iPad menu bar command */
+"menuExportBookmarks" = "Eksportēt grāmatzīmes...";
+
+/* iPad menu bar submenu */
+"menuFavorites" = "Izlase";
 
 /* iPad menu bar command */
 "menuFeedback" = "Kopīgot atsauksmi";
@@ -3335,7 +3368,13 @@
 "menuForward" = "Uz priekšu";
 
 /* iPad menu bar command */
+"menuHideBookmarks" = "Paslēpt grāmatzīmes";
+
+/* iPad menu bar command */
 "menuHideDownloads" = "Paslēpt lejupielādes";
+
+/* iPad menu bar command */
+"menuHideDuckAIButton" = "Paslēpt Duck.ai pogu";
 
 /* iPad menu bar command */
 "menuHidePasswords" = "Paslēpt paroles";
@@ -3344,13 +3383,31 @@
 "menuHideTabs" = "Paslēpt cilnes";
 
 /* iPad menu bar command */
+"menuImportBookmarks" = "Importēt grāmatzīmes...";
+
+/* iPad menu bar command */
+"menuImportBookmarksAndPasswords" = "Importēt grāmatzīmes un paroles...";
+
+/* iPad menu bar command */
 "menuLastTab" = "Pēdējā cilne";
+
+/* iPad Duck.ai menu bar command */
+"menuNewChat" = "Jauna tērzēšanas saruna";
+
+/* iPad Duck.ai menu bar command */
+"menuNewImageChat" = "Jauna attēlu tērzēšana";
 
 /* iPad menu bar command */
 "menuNewTabOnRight" = "Jauna cilne pa labi";
 
+/* iPad Duck.ai menu bar command */
+"menuNewVoiceChat" = "Jauna balss tērzēšana";
+
 /* iPad menu bar command */
 "menuNextTab" = "Rādīt nākamo cilni";
+
+/* iPad Duck.ai menu bar command */
+"menuOpenDuckAI" = "Atvērt Duck.ai";
 
 /* iPad menu bar command */
 "menuOpenLocation" = "Atvērt atrašanās vietu…";
@@ -3361,14 +3418,26 @@
 /* iPad menu bar command */
 "menuPrint" = "Drukāt…";
 
+/* iPad Duck.ai menu bar section header */
+"menuRecentChats" = "Jaunākās tērzēšanas sarunas";
+
 /* iPad menu bar command selecting a numbered tab */
 "menuSelectTab" = "Atlasīt cilni %d";
+
+/* iPad menu bar command */
+"menuSetDefaultBrowser" = "Iestatīt DuckDuckGo kā noklusējuma pārlūku…";
 
 /* iPad menu bar command */
 "menuSettings" = "DuckDuckGo iestatījumi…";
 
 /* iPad menu bar command */
+"menuShowBookmarks" = "Rādīt grāmatzīmes";
+
+/* iPad menu bar command */
 "menuShowDownloads" = "Rādīt lejupielādes";
+
+/* iPad menu bar command */
+"menuShowDuckAIButton" = "Rādīt Duck.ai pogu";
 
 /* iPad menu bar command */
 "menuShowPasswords" = "Rādīt paroles";
@@ -3784,8 +3853,41 @@
 /* Button on the Add to Dock tutorial screen of the onboarding, it will proceed to the next step of the onboarding. */
 "onboarding.addToDock.buttons.gotIt" = "Sapratu";
 
+/* The message of the onboarding dialog popup that promotes adding the DDG browser icon to the dock. */
+"onboarding.addToDock.promo.intro.message" = "Es būšu ērti sasniedzams ātrai piekļuvei.";
+
 /* Button to change the default browser */
 "onboarding.browsers.cta" = "Izvēlies pārlūku";
+
+/* Label for the option to set up the app to block ads and pop-ups. The text is split over two lines; keep a line break at a natural position in the translation. */
+"onboarding.downloadReason.blockAds" = "Bloķē reklāmas\nun uznirstošos logus";
+
+/* Label for the option to set up the app for private searching and browsing. The text is split over two lines; keep a line break at a natural position in the translation. */
+"onboarding.downloadReason.browsePrivately" = "Meklē un\npārlūko privāti";
+
+/* Label for the option to set up the app for private AI chat. The text is split over two lines; keep a line break at a natural position in the translation. */
+"onboarding.downloadReason.chatWithAI" = "Tērzē ar MI\nprivāti";
+
+/* Heading shown above the browser comparison chart during onboarding for users who chose to search and browse privately or to chat with AI privately. The text is split over two lines; keep a line break at a natural position in the translation. */
+"onboarding.downloadReason.comparison.title-generic" = "Tu esi īstajā vietā!\nAizsardzība ir aktivizēta.";
+
+/* Heading shown above the browser comparison chart during onboarding for users who chose to block ads and pop-ups. The text is split over two lines; keep a line break at a natural position in the translation. */
+"onboarding.downloadReason.comparison.title-no-ads" = "Tu esi īstajā vietā!\nReklāmu bloķēšana aktivizēta.";
+
+/* Heading shown above the browser comparison chart during onboarding for users who chose to disable AI features. The text is split over two lines; keep a line break at a natural position in the translation. */
+"onboarding.downloadReason.comparison.title-no-ai" = "Tu esi īstajā vietā!\nMI funkcijas atspējotas.";
+
+/* Button to continue to the next onboarding screen after choosing a reason. */
+"onboarding.downloadReason.cta" = "Tālāk";
+
+/* Subtitle of the onboarding screen asking why the user downloaded the app. */
+"onboarding.downloadReason.message" = "Izvēlies, kas tevi interesē visvairāk, un sāksim ar to.";
+
+/* Label for the option to set up the app without AI features in search results. The text is split over two lines; keep a line break at a natural position in the translation. */
+"onboarding.downloadReason.removeAI" = "Atspējot\nMI funkcijas";
+
+/* Title of the onboarding screen asking why the user downloaded the app. */
+"onboarding.downloadReason.title" = "Iestati visu tā, kā vēlies";
 
 /* Message in the onboarding dialog popup that promotes adding the DuckDuckGo browser icon to the iPhone dock, shown during the Duck.ai onboarding flow. */
 "onboarding.duckai.addToDock.promo.message" = "Es būšu ērti sasniedzams tavai ikdienas MI tērzēšanai un pārlūkošanai.";
@@ -3814,8 +3916,8 @@
 /* Title of the dialog in the Duck.ai onboarding flow asking the user if they want to set DuckDuckGo as their default browser. */
 "onboarding.duckai.browser.title" = "Vai vēlies padarīt DuckDuckGo par savu noklusējuma pārlūku?";
 
-/* Message of the last screen of the onboarding to the browser app for the Duck.ai flow. 'Duck.ai' is a brand name and should not be translated. '[[chat_icon]]' is a placeholder and should not be translated. */
-"onboarding.duckai.contextual.end-of-journey.message" = "Sāc privātu MI tērzēšanu ar Duck.ai vai pārslēdzies uz meklēšanu aizsargātai pārlūkošanai.\n\nDuck.ai vari izmantot no jebkuras vietas, kur redzi tērzēšanas ikonu [[chat_icon]]";
+/* Message of the last screen of the onboarding to the browser app for the Duck.ai flow. */
+"onboarding.duckai.contextual.end-of-journey.message" = "Sāc privātu MI tērzēšanu ar Duck.ai vai pārslēdzies uz meklēšanu aizsargātai pārlūkošanai.";
 
 /* Body text of the subscription promo shown at the end of the Duck.ai onboarding flow. Describes the paid Duck.ai subscription. 'GPT', 'Claude' are brand names and should not be translated. */
 "onboarding.duckai.contextual.subscription.message" = "Mēs piedāvājam arī maksas abonementu ar uzlabotiem mākslīgā intelekta modeļiem ar augstākiem tērzēšanas ierobežojumiem no GPT un Claude, drošu VPN un citām iespējām.";
@@ -3939,6 +4041,84 @@
 
 /* Button to skip the onboarding process */
 "onboarding.intro.cta.skip" = "Es jau esmu bijis/-usi šeit agrāk";
+
+/* Subtitle for the accept-other-cookies option on the onboarding ad-blocking personalization screen. */
+"onboarding.personalization.adBlocking.acceptOtherCookies.subtitle" = "Paslēpj vairāk uznirstošo logu, pieņemot sīkfailus, no kuriem nevar atteikties";
+
+/* Title for the accept-other-cookies option on the onboarding ad-blocking personalization screen. */
+"onboarding.personalization.adBlocking.acceptOtherCookies.title" = "Pieņem dažus sīkfailus";
+
+/* Button to continue to the next onboarding screen from the ad-blocking personalization screen. */
+"onboarding.personalization.adBlocking.cta" = "Tālāk";
+
+/* Footer text shown above the button on the ad-blocking personalization screen, reassuring the user the choices can be changed later. */
+"onboarding.personalization.adBlocking.footer" = "Vēlāk to vienmēr vari mainīt sadaļā Iestatījumi.";
+
+/* Subtitle for the reject-optional-cookies option on the onboarding ad-blocking personalization screen. */
+"onboarding.personalization.adBlocking.rejectOptionalCookies.subtitle" = "Tas maksimāli uzlabo privātumu un aizver sīkfailu uznirstošos logus";
+
+/* Title for the reject-optional-cookies option on the onboarding ad-blocking personalization screen. */
+"onboarding.personalization.adBlocking.rejectOptionalCookies.title" = "Noraidīt neobligātos sīkfailus";
+
+/* Title of the onboarding ad-blocking personalization screen. */
+"onboarding.personalization.adBlocking.title" = "Internets bez trokšņa.";
+
+/* Title for the YouTube ad blocking option on the onboarding ad-blocking personalization screen. 'YouTube' is a brand name and should not be translated. */
+"onboarding.personalization.adBlocking.youTubeAdBlocking.title" = "Bloķē videoreklāmas pakalpojumā YouTube";
+
+/* Primary button to open new tabs with AI chat on the onboarding address bar toggle mode personalization screen. */
+"onboarding.personalization.addressBarToggle.cta.primary" = "Atver cilnes ar MI tērzēšanu";
+
+/* Secondary button to dismiss the onboarding address bar toggle mode personalization screen. */
+"onboarding.personalization.addressBarToggle.cta.secondary" = "Ne tagad";
+
+/* Footer of the onboarding address bar toggle mode personalization screen. 'Search' refers to the Search option of the address bar Search/Duck.ai toggle and should match its translation. */
+"onboarding.personalization.addressBarToggle.footer" = "Vari ar vienu pieskārienu pārslēgties uz Meklēšanu";
+
+/* Title of the onboarding address bar toggle mode personalization screen. */
+"onboarding.personalization.addressBarToggle.title" = "Vai vēlies, lai jaunās cilnes atvērtos ar MI tērzēšanu?";
+
+/* Button to continue to the next onboarding screen from the AI model personalization screen. */
+"onboarding.personalization.aiModel.cta" = "Tālāk";
+
+/* Message of the onboarding AI model personalization screen. */
+"onboarding.personalization.aiModel.message" = "Maini savu noklusējuma MI modeli tagad vai jebkurā brīdī tērzēšanas laikā.";
+
+/* Title of the onboarding AI model personalization screen. */
+"onboarding.personalization.aiModel.title" = "Tavas sarunas, tavā stilā.";
+
+/* Button to continue to the next onboarding screen from the AI search personalization screen. */
+"onboarding.personalization.aiSearch.cta" = "Tālāk";
+
+/* Subtitle for the hide AI-generated images option on the onboarding AI search personalization screen. */
+"onboarding.personalization.aiSearch.hideAIGeneratedImages.subtitle" = "Izfiltrē zināmas MI nevēlamā satura vietnes no attēlu meklēšanas rezultātiem";
+
+/* Title for the hide AI-generated images option on the onboarding AI search personalization screen. */
+"onboarding.personalization.aiSearch.hideAIGeneratedImages.title" = "Paslēp MI ģenerētus attēlus";
+
+/* Subtitle for the Search Assist option on the onboarding AI search personalization screen. */
+"onboarding.personalization.aiSearch.searchAssist.subtitle" = "Iekļauj MI ģenerētas atbildes kopā ar meklēšanas rezultātiem";
+
+/* Title for the Search Assist option on the onboarding AI search personalization screen. 'Search Assist' is a DuckDuckGo product name and should not be translated. */
+"onboarding.personalization.aiSearch.searchAssist.title" = "Search Assist";
+
+/* Title of the onboarding AI search personalization screen. */
+"onboarding.personalization.aiSearch.title" = "Meklēšana bez MI";
+
+/* Primary button to turn Duck.ai on from the onboarding Duck.ai enabled personalization screen. 'Duck.ai' is a brand name and should not be translated. */
+"onboarding.personalization.duckAIEnabled.cta.primary" = "Ieslēgt Duck.ai";
+
+/* Secondary button to keep Duck.ai off from the onboarding Duck.ai enabled personalization screen. 'Duck.ai' is a brand name and should not be translated. */
+"onboarding.personalization.duckAIEnabled.cta.secondary" = "Atstāt Duck.ai izslēgtu";
+
+/* Message of the onboarding Duck.ai enabled personalization screen. 'Duck.ai' is a brand name and should not be translated. */
+"onboarding.personalization.duckAIEnabled.message" = "Duck.ai vietnē mēs anonimizējam tavas tērzēšanas sarunas, un tās nekad netiek izmantotas MI apmācībai.";
+
+/* Title of the onboarding Duck.ai enabled personalization screen. */
+"onboarding.personalization.duckAIEnabled.title" = "Vai vēlies iespēju privāti tērzēt ar populāriem MI?";
+
+/* Title for the private search Duck.ai query onboarding screen. */
+"onboarding.personalization.duckAIQuery.privateSearch.title" = "Tagad izmēģini privātu meklēšanu!";
 
 /* Button on the Privacy Pro promotion onboarding step. Tapping the button navigates to the Privacy Pro paywall. */
 "onboarding.privacypro.promo.buttons.learnMore" = "Uzzināt vairāk";
@@ -4180,11 +4360,17 @@
 /* Description of too many requests error when syncing. */
 "prefrences.sync.too-many-requests.description" = "Sync & Backup uz laiku nav pieejams.";
 
+/* Fireproofing setting toggle label */
+"preserveLogins.askOnSignIn" = "Pierakstoties prasīt izmantot Fireproof vietnes";
+
 /* No comment provided by engineer. */
 "preserveLogins.domain.list.footer" = "Vietnes lieto sīkfailus, lai tu varētu turpināt būt pierakstījies(-usies). Padarot vietni ugunsdrošu, sīkfaili netiek dzēsti, bet tu vari turpināt būt pierakstījies(-usies) arī pēc Uguns pogas lietošanas. Mēs joprojām bloķēsim trešo pušu izsekotājus, kas atrodami ugunsdrošās vietnēs.";
 
 /* Section header above Fireproofed websites list */
 "preserveLogins.domain.list.title" = "Ugunsdrošas vietnes";
+
+/* Empty Fireproof sites list */
+"preserveLogins.emptyState" = "Vēl nav Fireproof vietņu";
 
 /* Alert message explaining to users that the benefit of fireproofing a site is that they will be kept signed in */
 "preserveLogins.fireproof.message" = "Padarot šo vietni ugunsdrošu, varēsi turpināt būt pierakstījies(-usies) arī pēc Uguns pogas lietošanas.";
@@ -4215,6 +4401,9 @@
 
 /* Confirmation button in alert */
 "preserveLogins.remove.all.ok" = "Labi";
+
+/* Button to remove all Fireproof sites */
+"preserveLogins.removeAllSites" = "Noņemt visas Fireproof vietnes";
 
 /* No comment provided by engineer. */
 "Previews" = "Priekšskatījumi";
@@ -4518,6 +4707,12 @@
 
 /* Footnote for the hide AI-generated images setting; ends with a Learn more link to the help page (do not remove the link) */
 "settings.aifeatures.hide.ai.generated.images.subtitle" = "Izfiltrē zināmas mākslīgā intelekta spama vietnes no attēlu meklēšanas rezultātiem. [Uzzini vairāk](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/results/how-to-filter-out-ai-images-in-duckduckgo-search-results)";
+
+/* Settings screen description for the Duck.ai keyboard animation toggle */
+"settings.aifeatures.keyboard.animation.subtitle" = "Rādīt animāciju ap tastatūru, kad pārslēdzies uz Duck.ai vai raksti tajā.";
+
+/* Settings screen toggle title for the Duck.ai keyboard animation */
+"settings.aifeatures.keyboard.animation.title" = "Duck.ai tastatūras animācija";
 
 /* Label describing a feature which is turned on always */
 "settings.always.on" = "Vienmēr ieslēgts";
@@ -5206,6 +5401,9 @@
 /* Alert content for not found subscription */
 "subscription.expired.alert.message" = "Ar šo Apple kontu saistītais abonements vairs nav spēkā.";
 
+/* Subtitle in header when the subscription has been cancelled but is still active until it expires */
+"subscription.expiring" = "Derīguma termiņš beidzas";
+
 /* FAQ Button */
 "subscription.faq" = "Bieži uzdotie jautājumi un atbalsts";
 
@@ -5235,6 +5433,9 @@
 
 /* Header for the subscription section */
 "subscription.manage.title" = "Abonements";
+
+/* Subscription status shown after the user withdrew from the subscription contract */
+"subscription.not.subscribed" = "Nav abonēts";
 
 /* Alert content for not found subscription */
 "subscription.notFound.alert.message" = "Ar šo Apple kontu nav saistīts neviens abonements.";
@@ -5277,6 +5478,9 @@
 
 /* Progress view title when restoring past subscription purchase */
 "subscription.progress.view.restoring.subscription" = "Atjauno abonementu...";
+
+/* Progress view title while withdrawing from the subscription contract */
+"subscription.progress.view.withdraw.in.progress" = "Notiek atteikšanās…";
 
 /* Dismiss button on the reinstaller subscription promo. */
 "subscription.promo.reinstaller.buttons.notNow" = "Ne tagad";
@@ -5383,6 +5587,39 @@
 /* View All Plans button to see available subscription tiers */
 "subscription.view.all.plans" = "Skatīt visus plānus";
 
+/* Button that confirms withdrawal from the subscription contract */
+"subscription.withdraw.confirm.button" = "Apstiprināt atteikšanos";
+
+/* Second paragraph of the alert confirming withdrawal from the subscription contract. Parameter is a localized list of features, e.g. VPN, Personal Information Removal and Duck.ai. */
+"subscription.withdraw.confirm.features.message" = "Tiklīdz apstiprināsi, %@ pārstās darboties.";
+
+/* Message of the alert confirming withdrawal from the subscription contract. Parameters are the tier name (e.g. Plus) and the refund amount with currency. */
+"subscription.withdraw.confirm.message" = "Tavs %1$@ abonements nekavējoties beigsies, un 14 dienu laikā mēs tev atmaksāsim %2$@, izmantojot sākotnējo maksājuma veidu.";
+
+/* Title of the alert confirming withdrawal from the subscription contract */
+"subscription.withdraw.confirm.title" = "Vai atteikties no abonementa?";
+
+/* Button that opens the help page to complete a failed subscription withdrawal */
+"subscription.withdraw.error.button" = "Apmeklēt palīdzības lapu";
+
+/* Message of the alert shown when withdrawing from the subscription contract fails */
+"subscription.withdraw.error.message" = "Mums neizdevās automātiski apstrādāt tavu atteikšanās pieprasījumu. Lūdzu, apmeklē mūsu palīdzības lapu, lai pabeigtu atteikšanos.";
+
+/* Action title that starts withdrawing from the subscription contract with a full refund */
+"subscription.withdraw.from.contract" = "Atteikties no līguma";
+
+/* Subtitle of the Withdraw from Contract action. Parameter is the last date the user can withdraw. */
+"subscription.withdraw.from.contract.subtitle" = "Vari atteikties un saņemt pilnu atmaksu līdz %@";
+
+/* Button that dismisses the withdrawal confirmation and keeps the subscription */
+"subscription.withdraw.keep.button" = "Paturēt abonementu";
+
+/* Confirmation shown after withdrawing from the subscription contract. Parameter is the withdrawal date. */
+"subscription.withdrawn.info" = "Tu atteicies no abonementa šajā datumā: %@.";
+
+/* Shown below the withdrawal confirmation. Parameter is the refunded amount with currency. */
+"subscription.withdrawn.refund.info" = "Tava atmaksa %@ apmērā tiek apstrādāta.";
+
 /* No comment provided by engineer. */
 "SwiftUI Alert" = "SwiftUI brīdinājums";
 
@@ -5404,11 +5641,29 @@
 /* Fallback device name for confirmation dialogs */
 "sync.pairing-v2.unknown-peer-name" = "otra ierīce";
 
+/* Title for a button in the Sync Promotion banner on the Bookmarks or Passwords screen that opens Sync settings to connect another device */
+"sync.promo.another-device.connect.action" = "Savienot";
+
+/* Message for the Sync Promotion banner on the Bookmarks or Passwords screen, shown when Sync is on but only this device is connected */
+"sync.promo.another-device.message" = "Šajā ierīcē ir iespējota funkcija Sync & Backup.";
+
+/* Title for a button in the Sync Promotion banner on the Bookmarks or Passwords screen that opens a screen with links to get DuckDuckGo on other platforms */
+"sync.promo.bookmarks.another-device.get-desktop-app.action" = "Iegūt lietotni";
+
+/* Title for the Sync Promotion banner on the Bookmarks screen, shown when Sync is on but only this device is connected */
+"sync.promo.bookmarks.another-device.title" = "Vai sinhronizēt grāmatzīmes arī ar datora lietotni?";
+
 /* Message for the Sync Promotion banner when user has bookmarks that can be synced */
 "sync.promo.bookmarks.message" = "Nav nepieciešams konts. Pilnīga šifrēšana nozīmē, ka tavas grāmatzīmes vari redzēt tikai tu, un pat mēs tās neredzam.";
 
+/* Message for the redesigned Sync Promotion banner on the Bookmarks screen */
+"sync.promo.bookmarks.redesign.message" = "Šifrēšana no gala līdz galam. Neviens nevar redzēt tavas grāmatzīmes, pat ne mēs.";
+
 /* Title for the Sync Promotion banner */
 "sync.promo.bookmarks.title" = "Sinhronizē un dublē savas grāmatzīmes";
+
+/* Accessibility label for the close button on the Sync Promotion banner */
+"sync.promo.close.accessibility.label" = "Aizvērt sinhronizācijas piedāvājumu";
 
 /* Title for a button in the Sync Promotion banner to set up Sync */
 "sync.promo.confirm.action" = "Iestatīt sinhronizāciju";
@@ -5422,11 +5677,20 @@
 /* Title for a button in the Sync Promotion banner to dismiss Sync promotion banner */
 "sync.promo.dismiss.action" = "Nē, paldies";
 
+/* Title for the Sync Promotion banner on the Passwords screen, shown when Sync is on but only this device is connected */
+"sync.promo.passwords.another-device.title" = "Vai sinhronizēt paroles arī ar datora lietotni?";
+
 /* Message for the Sync Promotion banner when user has passwords that can be synced */
 "sync.promo.passwords.message" = "Nav nepieciešams konts. Pilnīga šifrēšana nozīmē, ka tavas paroles vari redzēt tikai tu, un tās neredzam pat mēs.";
 
+/* Message for the redesigned Sync Promotion banner on the Passwords screen */
+"sync.promo.passwords.redesign.message" = "Šifrēšana no gala līdz galam. Neviens nevar redzēt tavas paroles, pat ne mēs.";
+
 /* Title for the Sync Promotion banner */
 "sync.promo.passwords.title" = "Sinhronizē un dublē savas paroles";
+
+/* Title for the button in the redesigned Sync Promotion banner and the Data Import summary Sync card that opens Sync settings and starts setting up Sync */
+"sync.promo.redesign.confirm.action" = "Sākt sinhronizāciju";
 
 /* Button title to start backup */
 "sync.recovery.alternative.prompt.backup.button" = "Sync & Backup šo ierīci";
@@ -6016,12 +6280,3 @@
 /* Title for screen to screen confirming what data to import from a zip file (bookmarks and /or passwords) */
 "zip.content.import.types.title" = "Ko tu gribi importēt?";
 
-
-/* Fireproofing setting toggle label */
-"preserveLogins.askOnSignIn" = "Pierakstoties prasīt padarīt vietnes ugunsdrošas";
-
-/* Empty Fireproof sites list */
-"preserveLogins.emptyState" = "Vēl nav ugunsdrošu vietņu";
-
-/* Button to remove all Fireproof sites */
-"preserveLogins.removeAllSites" = "Noņemt visas ugunsdrošās vietnes";

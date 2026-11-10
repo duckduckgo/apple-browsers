@@ -57,7 +57,7 @@ let package = Package(
         .package(url: "https://github.com/1024jp/GzipSwift.git", exact: "6.0.1"),
         .package(url: "https://github.com/vapor/jwt-kit.git", exact: "4.13.5"),
         .package(url: "https://github.com/pointfreeco/swift-clocks.git", exact: "1.1.1"),
-        .package(url: "https://github.com/duckduckgo/content-scope-scripts.git", exact: "20.1.0"),
+        .package(url: "https://github.com/duckduckgo/content-scope-scripts.git", exact: "20.6.0"),
         .package(path: "../DDGError"),
         .package(path: "../Common"),
         .package(path: "../Persistence"),
@@ -80,6 +80,7 @@ let package = Package(
             name: "BrowserServicesKit",
             dependencies: [
                 .product(name: "WideEvent", package: "WideEvent"),
+                .product(name: "DDGError", package: "DDGError"),
                 .product(name: "Autofill", package: "duckduckgo-autofill"),
                 .product(name: "ContentScopeScripts", package: "content-scope-scripts"),
                 .product(name: "Persistence", package: "Persistence"),

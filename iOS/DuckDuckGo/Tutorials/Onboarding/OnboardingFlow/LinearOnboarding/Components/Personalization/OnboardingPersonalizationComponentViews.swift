@@ -27,10 +27,6 @@ extension OnboardingPersonalizationContent.Item.ItemType {
 
     var icon: Image {
         switch self {
-        case .recentlyVisitedSites:
-            Image(uiImage: DesignSystemImages.Color.Size24.history)
-        case .safeSearch:
-            Image(uiImage: DesignSystemImages.Color.Size24.exclamation)
         case .searchAssist:
             Image(uiImage: DesignSystemImages.Color.Size24.searchAssist)
         case .aiGeneratedImages:

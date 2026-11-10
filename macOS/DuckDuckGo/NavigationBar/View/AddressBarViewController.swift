@@ -747,6 +747,7 @@ final class AddressBarViewController: NSViewController {
         childWindows.contains { window in
             !(
                 window.windowController is TabPreviewWindowController
+                || window is HoveredLinkTooltipWindow
                 || window.contentViewController is SuggestionViewController
                 || window === titlebarWindow
                 || window.contentViewController?.identifier == .updateNotificationPopover

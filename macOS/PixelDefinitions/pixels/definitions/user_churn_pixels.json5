@@ -14,5 +14,33 @@
                 "enum": ["Chrome", "Safari", "Firefox", "Brave", "Other"]
             }
         ]
+    },
+    "user-churn_was-default-browser_read-failed_macos": {
+        "description": "Fired when the stored value recording whether DuckDuckGo was the default browser fails to be read from the key-value store.",
+        "owners": ["rachelmcr"],
+        "triggers": ["exception"],
+        "suffixes": ["first_daily_count"],
+        "parameters": ["appVersion", "pixelSource", "channel", "errorDomain", "errorCode", "underlyingErrorCode", "underlyingErrorDomain"]
+    },
+    "user-churn_churned-from-default_read-failed_macos": {
+        "description": "Fired when the stored value recording whether the user churned from DuckDuckGo as default fails to be read from the key-value store.",
+        "owners": ["rachelmcr"],
+        "triggers": ["exception"],
+        "suffixes": ["first_daily_count"],
+        "parameters": ["appVersion", "pixelSource", "channel", "errorDomain", "errorCode", "underlyingErrorCode", "underlyingErrorDomain"]
+    },
+    "user-churn_was-default-browser_write-failed_macos": {
+        "description": "Fired when the stored value recording whether DuckDuckGo was the default browser fails to be written to the key-value store.",
+        "owners": ["rachelmcr"],
+        "triggers": ["exception"],
+        "suffixes": ["first_daily_count"],
+        "parameters": ["appVersion", "pixelSource", "channel", "errorDomain", "errorCode", "underlyingErrorCode", "underlyingErrorDomain"]
+    },
+    "user-churn_churned-from-default_write-failed_macos": {
+        "description": "Fired when the stored value recording whether the user churned from DuckDuckGo as default fails to be written to the key-value store.",
+        "owners": ["rachelmcr"],
+        "triggers": ["exception"],
+        "suffixes": ["first_daily_count"],
+        "parameters": ["appVersion", "pixelSource", "channel", "errorDomain", "errorCode", "underlyingErrorCode", "underlyingErrorDomain"]
     }
 }

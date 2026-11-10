@@ -42,7 +42,6 @@ struct WebExtensionAlert: View {
 
     private enum Constants {
         static let width: CGFloat = 406
-        static let maxHeight: CGFloat = 340
         // Matches the corner radius AppKit gives the sheet window.
         static let cornerRadius: CGFloat = 16
         static let padding: CGFloat = 16
@@ -100,7 +99,6 @@ struct WebExtensionAlert: View {
         }
         .padding(Constants.padding)
         .frame(width: Constants.width)
-        .frame(maxHeight: Constants.maxHeight)
         .fixedSize(horizontal: false, vertical: true)
         .background(RoundedRectangle(cornerRadius: Constants.cornerRadius)
             .fill(Color(designSystemColor: .surfacePrimary, palette: palette)))
@@ -120,6 +118,14 @@ struct WebExtensionAlert: View {
         window.beginSheet(sheet)
     }
 
+    @MainActor
+    static func present(_ configuration: Configuration, themeManager: ThemeManager, in window: NSWindow) async -> Response {
+        await withCheckedContinuation { continuation in
+            WebExtensionAlert(configuration: configuration, themeManager: themeManager, onResponse: continuation.resume(returning:))
+                .show(in: window)
+        }
+    }
+
     private var content: some View {
         VStack(alignment: .leading, spacing: Constants.contentSpacing) {
             Text(configuration.title)
@@ -133,11 +139,7 @@ struct WebExtensionAlert: View {
             }
 
             if !configuration.details.isEmpty {
-                // A hidden copy sizes the ScrollView, the only part that shrinks when the alert hits its max height.
                 detailsList
-                    .hidden()
-                    .frame(minHeight: 0, alignment: .top)
-                    .overlay(ScrollView(.vertical) { detailsList })
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)

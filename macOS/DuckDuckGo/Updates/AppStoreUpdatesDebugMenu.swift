@@ -21,6 +21,7 @@ import AppUpdaterShared
 import Common
 import FoundationExtensions
 
+@MainActor
 final class AppStoreUpdatesDebugMenu: NSMenu {
     private let debugSettings = UpdatesDebugSettings()
     private let forceUpdateMenuItem = NSMenuItem(title: "")
@@ -56,6 +57,7 @@ final class AppStoreUpdatesDebugMenu: NSMenu {
 
     @objc private func resetDebugSettings() {
         debugSettings.reset()
+        Application.appDelegate.updateController?.updatePromptStageTracker?.reevaluate()
         updateMenuItemsState()
     }
 

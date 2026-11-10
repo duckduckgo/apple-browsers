@@ -70,6 +70,7 @@ public enum PrivacyFeature: String {
     case contentScopeExperiments
     case macOSBrowserConfig
     case iOSBrowserConfig
+    case sponsorBlock
     // Demonstrative case for default value. Remove once a real-world feature is added
     case intentionallyLocalOnlyFeatureForTests
     case delayedWebviewPresentation
@@ -343,9 +344,6 @@ public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
 
     case sidebarSuggestedPrompts
 
-    /// Offers the page navigated to as an attachment, in an active contextual chat with auto-attach off
-    case contextualPagePlaceholder
-
     /// Enables updated AI features settings screen
     case aiFeaturesSettingsUpdate
 
@@ -403,11 +401,12 @@ public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
     /// Enables Chats in the iOS address-bar and macOS tab-bar Duck.ai menus.
     case addressBarRecentChats
 
-    /// Makes the address-bar Duck.ai menu page-aware
-    case contextualAddressBarMenu
-
     /// Kill switch for routing native image/file paste into the unified input attachment strip.
     case unifiedToggleInputAttachmentPaste
+
+    /// Kill switch for the on-device check that adds a delay bucket when input is resubmitted in the other mode.
+    /// https://app.asana.com/1/137249556945/project/1201392122292466/task/1220262429487643
+    case unifiedToggleInputResubmitDetection
 
     /// Kill switch for the native input attachment privacy disclosure.
     case unifiedToggleInputAttachmentPrivacy
@@ -573,6 +572,10 @@ public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
     /// iPhone: Duck.ai tab ↔ browser handoff improvements (new-tab menus, tab switcher recent chats).
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1219970758953673?focus=true
     case tabHandoffImprovements
+
+    /// iPhone: Duck.ai chrome refinements while swiping between tabs (bar position, placeholder, gestures).
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1220115595487712
+    case swipeChromeRefinements
 
     /// macOS only. When on, the onboarding Search/Duck.ai toggle choice also drives the New Tab Page
     /// search-mode toggle and seeds the duckduckgo.com homepage. Off keeps the choice address-bar only.
@@ -776,6 +779,9 @@ public enum PrivacyProSubfeature: String, Equatable, PrivacySubfeature {
 
     /// Gates the cancellation flow shown from "Cancel Subscription" in Subscription Settings.
     case subscriptionCancellationFlow
+
+    /// Gates "Withdraw from Contract" in Subscription Settings, letting international Stripe subscribers withdraw for a full refund.
+    case stripeInternationalSubscriptionWithdrawal
 }
 
 public enum DuckPlayerSubfeature: String, PrivacySubfeature {
@@ -786,6 +792,11 @@ public enum DuckPlayerSubfeature: String, PrivacySubfeature {
     case customError
     case enableDuckPlayer // iOS DuckPlayer rollout feature
     case nativeUI // Use Duckplayer's native UI
+}
+
+public enum SponsorBlockPrivacySubfeature: String, PrivacySubfeature {
+    public var parent: PrivacyFeature { .sponsorBlock }
+    case mvpEnabled
 }
 
 public enum SyncPromotionSubfeature: String, PrivacySubfeature {
@@ -913,6 +924,9 @@ public enum WebExtensionsSubfeature: String, PrivacySubfeature {
     case embeddedRollout
     /// Controls permission prompts and persistence on macOS.
     case permissions
+    /// Controls Chrome Web Store update discovery on macOS.
+    /// https://app.asana.com/1/137249556945/project/1203108348835387/task/1220303318554449
+    case updateDiscovery
     /// Failsafe for the lightweight reload on data clear (fire). Disable to fall back to the full reload.
     case lightweightReloadOnDataClear
     /// Failsafe for deferring web-extension load/install until protected data is available. Disable to load immediately.
@@ -1028,6 +1042,10 @@ public enum PromoQueueSubfeature: String, PrivacySubfeature {
 
     /// Kill switch for the import/sync promo on the Passwords panel empty states.
     case autofillEmptyStatePromo
+
+    /// Kill switch for the default browser win-back modal.
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1220012766503746?focus=true
+    case defaultBrowserWinBackPromo
 }
 
 public enum AutofillBreakageReporterSubfeature: String, PrivacySubfeature {

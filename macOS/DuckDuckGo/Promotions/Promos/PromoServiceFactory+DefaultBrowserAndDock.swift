@@ -17,8 +17,41 @@
 //
 
 import Foundation
+import Utilities
 
 extension PromoServiceFactory {
+
+    @MainActor
+    static func defaultBrowserAndDockWinBackModal(dependencies: PromoDependencies) -> Promo {
+        let service = dependencies.defaultBrowserAndDockPromptService
+        let featureFlagger = dependencies.featureFlagger
+        let uiProvider = service.uiProvider
+        let delegate = DefaultBrowserWinBackPromoDelegate(
+            actionPerformer: service.actionPerformer,
+            churnState: dependencies.userChurnService,
+            promptStore: service.store,
+            isFeatureEnabled: { featureFlagger.isFeatureOn(.defaultBrowserWinBackPromo) },
+            uiHosting: service.uiHosting,
+            modalFactory: { type, onConfirm, onDismiss in
+                DefaultBrowserAndDockPromptModal(type: type,
+                                                 uiProvider: uiProvider,
+                                                 accessibilityIdentifier: AccessibilityIdentifiers.DefaultBrowserAndDockPrompts.winBackPrompt,
+                                                 onConfirm: onConfirm,
+                                                 onDismiss: onDismiss)
+            },
+            dateProvider: service.dateProvider
+        )
+        return InternalPromo(
+            id: "default-browser-and-dock-win-back-modal",
+            triggers: [.appLaunched, .appBecameActive],
+            initiated: .app,
+            promoType: PromoType(.appModal),
+            context: .global,
+            respectsGlobalCooldown: false,
+            showsOverVisiblePromos: true,
+            delegate: delegate
+        )
+    }
 
     @MainActor
     static func defaultBrowserAndDockInactiveModal(service: DefaultBrowserAndDockPromptService) -> Promo {

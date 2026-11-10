@@ -102,6 +102,30 @@ final class YouTubeAdBlockingPreferences: ObservableObject {
 
     var duckPlayerPreferences: DuckPlayerPreferences
 
+    // MARK: - YouTube Sponsor Skipping (internal MVP)
+
+    private let sponsorBlockPreferences: SponsorBlockPreferences
+
+    var isSponsorBlockAvailable: Bool {
+        featureFlagger?.isFeatureOn(.sponsorBlock) ?? false
+    }
+
+    var sponsorBlockEnabled: Bool {
+        get { sponsorBlockPreferences.isEnabled }
+        set {
+            objectWillChange.send()
+            sponsorBlockPreferences.isEnabled = newValue
+        }
+    }
+
+    var sponsorBlockSkipMode: SponsorBlockSkipMode {
+        get { sponsorBlockPreferences.skipMode }
+        set {
+            objectWillChange.send()
+            sponsorBlockPreferences.skipMode = newValue
+        }
+    }
+
     var duckPlayerMode: DuckPlayerMode {
         get { duckPlayerPreferences.duckPlayerMode }
         set { duckPlayerPreferences.duckPlayerMode = newValue }
@@ -162,13 +186,15 @@ final class YouTubeAdBlockingPreferences: ObservableObject {
          duckPlayerPreferences: DuckPlayerPreferences? = nil,
          pixelFiring: PixelFiring? = nil,
          adBlockingAvailability: AdBlockingAvailabilityProviding? = nil,
-         featureFlagger: FeatureFlagger? = Application.appDelegate.featureFlagger) {
+         featureFlagger: FeatureFlagger? = Application.appDelegate.featureFlagger,
+         sponsorBlockPreferences: SponsorBlockPreferences = Application.appDelegate.sponsorBlockPreferences) {
         let resolvedSettings: any KeyedStoring<YouTubeAdBlockingSettings> = if let settings { settings } else { UserDefaults.standard.keyedStoring() }
         self.settings = resolvedSettings
         self.duckPlayerPreferences = duckPlayerPreferences ?? DuckPlayerPreferences()
         self.pixelFiring = pixelFiring
         self.adBlockingAvailability = adBlockingAvailability
         self.featureFlagger = featureFlagger
+        self.sponsorBlockPreferences = sponsorBlockPreferences
         youTubeAdBlockingEnabled = resolvedSettings.youTubeAdBlockingEnabled
             ?? adBlockingAvailability?.defaultYouTubeAdBlockingEnabled
             ?? false

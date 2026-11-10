@@ -427,7 +427,9 @@ public struct DBPUICommunicationLayer: Subfeature {
             excludeVpnTraffic: vpnBypassService?.isSupported ?? false,
             brokerRemovalEnabled: true,
             needBackgroundAppRefresh: await delegate?.needBackgroundAppRefresh() ?? false,
-            userAssistanceEnabled: assistedOptOutsDelegate?.isUserAssistanceEnabled ?? false
+            userAssistanceEnabled: assistedOptOutsDelegate?.isUserAssistanceEnabled ?? false,
+            emailOptOutEnabled: delegate?.isEmailOptOutEnabled() ?? false,
+            canSendEmail: delegate?.canSendEmail() ?? false
         )
     }
 

@@ -28,6 +28,8 @@ final class DBPUIViewModelHandshakeTests: XCTestCase {
     private var databaseDelegate: MockDatabaseDelegate!
     private var feedbackFormDelegate: MockOpenFeedbackFormDelegate!
     private var userEventsDelegate: MockUserEventsDelegate!
+    private var featureFlagger: MockDBPFeatureFlagger!
+    private var emailComposer: MockOptOutEmailComposer!
     private var sut: DBPUIViewModel!
 
     override func setUp() {
@@ -38,6 +40,8 @@ final class DBPUIViewModelHandshakeTests: XCTestCase {
         databaseDelegate = MockDatabaseDelegate()
         feedbackFormDelegate = MockOpenFeedbackFormDelegate()
         userEventsDelegate = MockUserEventsDelegate()
+        featureFlagger = MockDBPFeatureFlagger()
+        emailComposer = MockOptOutEmailComposer()
 
         sut = DBPUIViewModel(authenticationDelegate: authenticationDelegate,
                              databaseDelegate: databaseDelegate,
@@ -46,7 +50,9 @@ final class DBPUIViewModelHandshakeTests: XCTestCase {
                              webUISettings: MockWebUIURLSettings(),
                              pixelHandler: MockDataBrokerProtectionPixelsHandler(),
                              privacyConfigManager: PrivacyConfigurationManagingMock(),
-                             contentScopeProperties: .mock)
+                             contentScopeProperties: .mock,
+                             emailOptOutFeatureFlagger: featureFlagger,
+                             emailComposer: emailComposer)
     }
 
     override func tearDown() {
@@ -55,6 +61,8 @@ final class DBPUIViewModelHandshakeTests: XCTestCase {
         databaseDelegate = nil
         feedbackFormDelegate = nil
         userEventsDelegate = nil
+        featureFlagger = nil
+        emailComposer = nil
         super.tearDown()
     }
 
@@ -66,6 +74,26 @@ final class DBPUIViewModelHandshakeTests: XCTestCase {
 
         XCTAssertEqual(userData, DBPUIHandshakeUserData(isAuthenticatedUser: false,
                                                         isUserEligibleForFreeTrial: true))
+    }
+
+    func testEmailOptOutEnabled_followsTheFlagWhileTheDashboardIsOpen() {
+        featureFlagger.isEmailOptOutEnabled = false
+        XCTAssertFalse(sut.isEmailOptOutEnabled())
+
+        featureFlagger.isEmailOptOutEnabled = true
+        XCTAssertTrue(sut.isEmailOptOutEnabled())
+    }
+
+    func testCanSendEmail_whenMailHasAnAccount_isTrue() {
+        emailComposer.canSendMail = true
+
+        XCTAssertTrue(sut.canSendEmail())
+    }
+
+    func testCanSendEmail_whenMailHasNoAccount_isFalse() {
+        emailComposer.canSendMail = false
+
+        XCTAssertFalse(sut.canSendEmail())
     }
 }
 
@@ -97,6 +125,10 @@ private final class MockOpenFeedbackFormDelegate: DBPUIViewModelOpenFeedbackForm
 private final class MockUserEventsDelegate: DBPIOSInterface.UserEventsDelegate {
     func dashboardDidOpen() {}
     func dashboardDidClose() {}
+}
+
+private final class MockOptOutEmailComposer: DBPOptOutEmailComposing {
+    var canSendMail = false
 }
 
 private final class MockWebUIURLSettings: DataBrokerProtectionWebUIURLSettingsRepresentable {

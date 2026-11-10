@@ -46,7 +46,7 @@ public class DataBrokerProtectionIOSManagerProvider {
 
     public static func iOSManager(authenticationManager: DataBrokerProtectionAuthenticationManaging,
                                   privacyConfigurationManager: PrivacyConfigurationManaging,
-                                  featureFlagger: DBPFeatureFlagging & FreemiumPIRFeatureFlagging,
+                                  featureFlagger: DBPFeatureFlagging & FreemiumPIRFeatureFlagging & EmailOptOutFeatureFlagging,
                                   userNotificationService: DataBrokerProtectionUserNotificationService,
                                   pixelKit: PixelKit,
                                   wideEvent: WideEventManaging,
@@ -121,7 +121,7 @@ public class DataBrokerProtectionIOSManagerProvider {
 
     private static func makeVaultResources(authenticationManager: DataBrokerProtectionAuthenticationManaging,
                                            privacyConfigurationManager: PrivacyConfigurationManaging,
-                                           featureFlagger: DBPFeatureFlagging & FreemiumPIRFeatureFlagging,
+                                           featureFlagger: DBPFeatureFlagging & FreemiumPIRFeatureFlagging & EmailOptOutFeatureFlagging,
                                            sharedPixelsHandler: EventMapping<DataBrokerProtectionSharedPixels>,
                                            wideEvent: WideEventManaging,
                                            eventsHandler: EventMapping<JobEvent>,

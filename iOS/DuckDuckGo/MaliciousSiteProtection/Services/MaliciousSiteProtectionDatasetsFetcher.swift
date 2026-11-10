@@ -35,6 +35,16 @@ protocol MaliciousSiteProtectionDatasetsFetching {
 }
 
 final class MaliciousSiteProtectionDatasetsFetcher {
+    final class BackgroundTaskRegistrations {
+        static let shared = BackgroundTaskRegistrations()
+        private var identifiers: Set<String> = []
+
+        @MainActor
+        func insert(_ identifier: String) -> Bool {
+            identifiers.insert(identifier).inserted
+        }
+    }
+
     private let featureFlagger: MaliciousSiteProtectionFeatureFlagger & MaliciousSiteProtectionFeatureFlagsSettingsProvider
     private let userPreferencesManager: MaliciousSiteProtectionPreferencesProvider
     private let dateProvider: () -> Date
@@ -42,12 +52,14 @@ final class MaliciousSiteProtectionDatasetsFetcher {
     private let backgroundTaskScheduler: BGTaskScheduling
     private let application: BackgroundRefreshCapable
     private let preferencesScheduler: AnySchedulerOf<DispatchQueue>
-
-    // Avoid multiple background tasks registrations.
-    private static var registeredTaskIdentifiers: Set<String> = []
+    private let backgroundTaskRegistrations: BackgroundTaskRegistrations
+    private let featureFlagChanges: () -> AnyPublisher<(FeatureFlag, Bool), Never>?
 
     @MainActor
-    private(set) var isDatasetsFetchInProgress: Bool = false
+    private(set) var datasetFetchTask: Task<Void, Never>?
+
+    @MainActor
+    var isDatasetsFetchInProgress: Bool { datasetFetchTask != nil }
 
     private var preferencesManagerCancellable: AnyCancellable?
     private var featureFlagOverrideCancellable: AnyCancellable?
@@ -75,7 +87,11 @@ final class MaliciousSiteProtectionDatasetsFetcher {
         dateProvider: @escaping () -> Date = Date.init,
         backgroundTaskScheduler: BGTaskScheduling = BGTaskScheduler.shared,
         application: BackgroundRefreshCapable = UIApplication.shared,
-        preferencesScheduler: AnySchedulerOf<DispatchQueue> = DispatchQueue.main.eraseToAnyScheduler()
+        preferencesScheduler: AnySchedulerOf<DispatchQueue> = DispatchQueue.main.eraseToAnyScheduler(),
+        backgroundTaskRegistrations: BackgroundTaskRegistrations = .shared,
+        featureFlagChanges: @escaping () -> AnyPublisher<(FeatureFlag, Bool), Never>? = {
+            (AppDependencyProvider.shared.featureFlagger.localOverrides?.actionHandler as? FeatureFlagOverridesPublishingHandler<FeatureFlag>)?.flagDidChangePublisher
+        }
     ) {
         self.updateManager = updateManager
         self.featureFlagger = featureFlagger
@@ -84,6 +100,8 @@ final class MaliciousSiteProtectionDatasetsFetcher {
         self.backgroundTaskScheduler = backgroundTaskScheduler
         self.application = application
         self.preferencesScheduler = preferencesScheduler
+        self.backgroundTaskRegistrations = backgroundTaskRegistrations
+        self.featureFlagChanges = featureFlagChanges
     }
 }
 
@@ -102,11 +120,10 @@ extension MaliciousSiteProtectionDatasetsFetcher: MaliciousSiteProtectionDataset
             return Task {}
         }
 
-        isDatasetsFetchInProgress = true
         Logger.MaliciousSiteProtection.datasetsFetcher.debug("Start Updating Datasets...")
 
-        return Task {
-            defer { isDatasetsFetchInProgress = false }
+        let task = Task {
+            defer { datasetFetchTask = nil }
 
             // If hashPrefix Sets need to be updated fetch them
             if shouldUpdateHashPrefixSets {
@@ -120,6 +137,8 @@ extension MaliciousSiteProtectionDatasetsFetcher: MaliciousSiteProtectionDataset
                 await updateManager.updateData(datasetType: .filterSet).value
             }
         }
+        datasetFetchTask = task
+        return task
     }
 
 }
@@ -221,6 +240,7 @@ private extension MaliciousSiteProtectionDatasetsFetcher {
         }
     }
 
+    @MainActor
     func backgroundRefreshTaskHandler(backgroundTask: BGTaskInterface, datasetType: DataManager.StoredDataType.Kind) {
         let fetchAndProcessDatasetTask = Task { [weak self] in
             guard let self else { return }
@@ -242,11 +262,7 @@ private extension MaliciousSiteProtectionDatasetsFetcher {
 
     @MainActor
     func subscribeToScamProtectionFlagChanges() {
-        guard let overridesHandler = AppDependencyProvider.shared.featureFlagger.localOverrides?.actionHandler as? FeatureFlagOverridesPublishingHandler<FeatureFlag> else {
-            return
-        }
-
-        featureFlagOverrideCancellable = overridesHandler.flagDidChangePublisher
+        featureFlagOverrideCancellable = featureFlagChanges()?
             .filter { $0.0 == .scamSiteProtection || $0.0 == .maliciousSiteProtection }
             .sink { [weak self] (_, value) in
                 if value {
@@ -271,8 +287,7 @@ extension MaliciousSiteProtectionDatasetsFetcher {
         // The system kills the app on the second registration of the same task identifier.
         DataManager.StoredDataType.Kind.allCases.forEach { datasetType in
             let backgroundTaskIdentifier = datasetType.backgroundTaskIdentifier
-            guard !Self.registeredTaskIdentifiers.contains(backgroundTaskIdentifier) else { return }
-            Self.registeredTaskIdentifiers.insert(backgroundTaskIdentifier)
+            guard backgroundTaskRegistrations.insert(backgroundTaskIdentifier) else { return }
 
             backgroundTaskScheduler.register(forTaskWithIdentifier: backgroundTaskIdentifier) { [weak self] backgroundTask in
                 guard let self else { return }
@@ -306,7 +321,7 @@ extension MaliciousSiteProtectionDatasetsFetcher {
 
         let task = BGProcessingTaskRequest(identifier: datasetType.backgroundTaskIdentifier)
         task.requiresNetworkConnectivity = true
-        task.earliestBeginDate = Date(timeIntervalSinceNow: refreshInterval(for: datasetType))
+        task.earliestBeginDate = dateProvider().addingTimeInterval(refreshInterval(for: datasetType))
 
         // Background tasks can be debugged by breaking on the `submit` call, stepping over, then running the following LLDB command, before resuming:
         //
@@ -317,25 +332,12 @@ extension MaliciousSiteProtectionDatasetsFetcher {
         // e -l objc -- (void)[[BGTaskScheduler sharedScheduler] _simulateExpirationForTaskWithIdentifier:@"com.duckduckgo.app.maliciousSiteProtectionHashPrefixSetRefresh"]
 
         #if targetEnvironment(simulator)
-        guard ProcessInfo().arguments.contains("testing") else { return }
-        performScheduleTasks()
-        #else
-        performScheduleTasks()
+        if backgroundTaskScheduler is BGTaskScheduler, !ProcessInfo().arguments.contains("testing") { return }
         #endif
+        performScheduleTasks()
     }
 
 }
-
-#if DEBUG
-extension MaliciousSiteProtectionDatasetsFetcher {
-
-    // To be used only in tests
-    static func resetRegisteredTaskIdentifiers() {
-        registeredTaskIdentifiers = []
-    }
-
-}
-#endif
 
 // MARK: - DataManager.StoredDataType.Kind + Background Tasks
 

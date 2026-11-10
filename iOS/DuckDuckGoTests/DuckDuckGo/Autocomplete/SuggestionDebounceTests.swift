@@ -25,35 +25,27 @@ import XCTest
 final class SuggestionDebounceTests: XCTestCase {
 
     func testDisabledFlagSendsAfter100Milliseconds() {
-        let scheduler = DispatchQueue.test
-        let subject = PassthroughSubject<String, Never>()
-        let featureFlagger = MockFeatureFlagger(enabledFeatureFlags: [])
-        var received = [String]()
-        let subscription = subject.debounceSuggestions(using: featureFlagger, scheduler: scheduler)
-            .sink { received.append($0) }
-        defer { subscription.cancel() }
-
-        subject.send("duck")
-        scheduler.advance(by: .milliseconds(99))
-        XCTAssertTrue(received.isEmpty)
-        scheduler.advance(by: .milliseconds(1))
-        XCTAssertEqual(received, ["duck"])
+        assertDebounceBoundary(enabled: false, milliseconds: 100)
     }
 
     func testEnabledFlagSendsAfter200Milliseconds() {
+        assertDebounceBoundary(enabled: true, milliseconds: 200)
+    }
+
+    private func assertDebounceBoundary(enabled: Bool, milliseconds: Int, file: StaticString = #filePath, line: UInt = #line) {
         let scheduler = DispatchQueue.test
         let subject = PassthroughSubject<String, Never>()
-        let featureFlagger = MockFeatureFlagger(enabledFeatureFlags: [.suggestionDebounce200ms])
+        let featureFlagger = MockFeatureFlagger(enabledFeatureFlags: enabled ? [.suggestionDebounce200ms] : [])
         var received = [String]()
         let subscription = subject.debounceSuggestions(using: featureFlagger, scheduler: scheduler)
             .sink { received.append($0) }
         defer { subscription.cancel() }
 
         subject.send("duck")
-        scheduler.advance(by: .milliseconds(199))
-        XCTAssertTrue(received.isEmpty)
+        scheduler.advance(by: .milliseconds(milliseconds - 1))
+        XCTAssertTrue(received.isEmpty, file: file, line: line)
         scheduler.advance(by: .milliseconds(1))
-        XCTAssertEqual(received, ["duck"])
+        XCTAssertEqual(received, ["duck"], file: file, line: line)
     }
 
     func testContinuedTypingCancelsPendingSuggestionInBothFlagStates() {

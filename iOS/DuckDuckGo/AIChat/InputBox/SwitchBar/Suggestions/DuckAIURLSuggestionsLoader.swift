@@ -39,7 +39,7 @@ final class DuckAIURLSuggestionsLoader {
         isUrlIgnored: { _ in false }
     )
     /// Out-of-order guard: `SuggestionLoader` has no cancellation, so a slow callback for a stale query would otherwise win.
-    private var latestDispatchedQuery: String?
+    private var latestQuery: String?
     /// Settle marker: callers compare against current text to detect "fetcher hasn't caught up yet" and gate Dax visibility.
     private(set) var lastCompletedFetchQuery: String?
     private var cancellables = Set<AnyCancellable>()
@@ -55,11 +55,12 @@ final class DuckAIURLSuggestionsLoader {
         Array(result.filteringToURLsOnly().all.prefix(max))
     }
 
-    func subscribeToTextChanges<P: Publisher>(_ textPublisher: P)
+    func subscribeToTextChanges<P: Publisher, S: Scheduler>(_ textPublisher: P, scheduler: S = DispatchQueue.main)
         where P.Output == String, P.Failure == Never {
         textPublisher
-            .debounceSuggestions(using: featureFlagger, scheduler: DispatchQueue.main)
             .removeDuplicates()
+            .handleEvents(receiveOutput: { [weak self] text in self?.latestQuery = text })
+            .debounceSuggestions(using: featureFlagger, scheduler: scheduler)
             .sink { [weak self] text in
                 self?.fetch(query: text)
             }
@@ -67,11 +68,11 @@ final class DuckAIURLSuggestionsLoader {
     }
 
     func refreshSuggestions() {
-        fetch(query: latestDispatchedQuery ?? "")
+        fetch(query: latestQuery ?? "")
     }
 
     func fetch(query: String) {
-        latestDispatchedQuery = query
+        latestQuery = query
         guard !query.isEmpty else {
             // Skip re-emitting an already-empty list — @Published emits unconditionally and would trigger a needless reload.
             if !topURLs.isEmpty { topURLs = [] }
@@ -81,7 +82,7 @@ final class DuckAIURLSuggestionsLoader {
 
         loader.getSuggestions(query: query, usingDataSource: dataSource) { [weak self] result, _ in
             guard let self else { return }
-            guard self.latestDispatchedQuery == query else { return }
+            guard self.latestQuery == query else { return }
             // Always settle, even on error — otherwise `hasSettled` stays false forever and Dax suppression never clears.
             self.lastCompletedFetchQuery = query
             // Local matches (bookmarks/history/open tabs) come back even when the remote API errors — keep them.
@@ -95,7 +96,7 @@ final class DuckAIURLSuggestionsLoader {
 
     func tearDown() {
         cancellables.removeAll()
-        latestDispatchedQuery = nil
+        latestQuery = nil
         lastCompletedFetchQuery = nil
         topURLs = []
     }

@@ -36,7 +36,7 @@ final class SearchSuggestionsLoader {
     private let dataSource: SuggestionLoadingDataSource
     private let useUnifiedURLPrediction: Bool
     private var loader: SuggestionLoader?
-    private var latestDispatchedQuery: String?
+    private var latestQuery: String?
     private var cancellables = Set<AnyCancellable>()
 
     init(dataSource: SuggestionLoadingDataSource, useUnifiedURLPrediction: Bool, featureFlagger: FeatureFlagger) {
@@ -58,17 +58,18 @@ final class SearchSuggestionsLoader {
         return true
     }
 
-    func subscribeToTextChanges<P: Publisher>(_ textPublisher: P)
+    func subscribeToTextChanges<P: Publisher, S: Scheduler>(_ textPublisher: P, scheduler: S = DispatchQueue.main)
         where P.Output == String, P.Failure == Never {
         textPublisher
-            .debounceSuggestions(using: featureFlagger, scheduler: DispatchQueue.main)
             .removeDuplicates()
+            .handleEvents(receiveOutput: { [weak self] text in self?.latestQuery = text })
+            .debounceSuggestions(using: featureFlagger, scheduler: scheduler)
             .sink { [weak self] text in self?.fetch(query: text) }
             .store(in: &cancellables)
     }
 
     func fetch(query: String) {
-        latestDispatchedQuery = query
+        latestQuery = query
         guard !query.isEmpty else {
             if result != .appEmpty { result = .appEmpty }
             lastCompletedFetchQuery = query
@@ -78,7 +79,7 @@ final class SearchSuggestionsLoader {
             self?.shouldLoadSuggestions(for: phrase) ?? true
         }, isUrlIgnored: { _ in false })
         loader?.getSuggestions(query: query, usingDataSource: dataSource) { [weak self] result, _ in
-            guard let self, self.latestDispatchedQuery == query else { return }
+            guard let self, self.latestQuery == query else { return }
             self.lastCompletedFetchQuery = query
             self.result = result ?? .appEmpty
         }
@@ -88,7 +89,7 @@ final class SearchSuggestionsLoader {
     /// session's suggestions for the new query.
     func reset() {
         loader = nil
-        latestDispatchedQuery = nil
+        latestQuery = nil
         lastCompletedFetchQuery = nil
         // Unconditional (no `!= .appEmpty` guard) to force `sectionsPublisher` to recompute
         result = .appEmpty

@@ -205,9 +205,9 @@ public actor ChromeWebStorePendingUpdateStore: ChromeWebStorePendingUpdateStorin
     }
 
     private func cleanupUnreferencedArchives() {
-        let referenced = Set(updates.values.map(\.fileURL))
+        let referenced = Set(updates.values.map { $0.fileURL.lastPathComponent })
         guard let files = try? FileManager.default.contentsOfDirectory(at: directory, includingPropertiesForKeys: nil) else { return }
-        for file in files where validArchiveName(file.lastPathComponent) && !referenced.contains(file) {
+        for file in files where validArchiveName(file.lastPathComponent) && !referenced.contains(file.lastPathComponent) {
             try? FileManager.default.removeItem(at: file)
         }
     }

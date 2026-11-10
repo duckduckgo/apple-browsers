@@ -61,6 +61,23 @@ final class ChromeWebStorePendingUpdateStoreTests: XCTestCase {
         XCTAssertEqual(try Data(contentsOf: pending.fileURL), Data("4.9".utf8))
     }
 
+    func testCleanupPreservesReferencedArchiveInABaseRelativeDirectory() async throws {
+        let base = directory.appendingPathComponent("base", isDirectory: true)
+        let relativeDirectory = try XCTUnwrap(URL(string: "pending/", relativeTo: base))
+        let persistentStore = ChromeWebStorePendingUpdateStore(persistentDirectory: relativeDirectory)
+        _ = try await persistentStore.store(update(version: "4.9"))
+        try await persistentStore.cleanupAbandonedInstallationCopies()
+
+        let pending = await persistentStore.pendingUpdate(for: identifier)
+        let accepted = try XCTUnwrap(pending)
+        XCTAssertEqual(try Data(contentsOf: accepted.fileURL), Data("4.9".utf8))
+
+        let recreated = ChromeWebStorePendingUpdateStore(persistentDirectory: relativeDirectory.absoluteURL)
+        let restored = await recreated.pendingUpdate(for: identifier)
+        XCTAssertEqual(restored?.version, "4.9")
+        XCTAssertEqual(try Data(contentsOf: XCTUnwrap(restored).fileURL), Data("4.9".utf8))
+    }
+
     func testNewerVersionReplacesAndDeletesPreviousPackageUsingNumericOrder() async throws {
         _ = try await store.store(update(version: "4.9"))
         let old = try await pendingUpdate()

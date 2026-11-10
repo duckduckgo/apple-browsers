@@ -1,7 +1,7 @@
 {
   "images" : [
     {
-      "filename" : "OnboardingSearchAIOff.pdf",
+      "filename" : "Toggle-Default-Light.pdf",
       "idiom" : "universal"
     },
     {
@@ -11,7 +11,7 @@
           "value" : "dark"
         }
       ],
-      "filename" : "OnboardingSearchAIOff-dark.pdf",
+      "filename" : "Toggle-Default-Dark.pdf",
       "idiom" : "universal"
     }
   ],

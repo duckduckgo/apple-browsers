@@ -33,7 +33,8 @@ public enum WebExtensionUpdateDownloadFailure: String, Error, CaseIterable, Send
 @available(macOS 15.4, iOS 18.4, *)
 struct ChromeWebStoreUpdateDownloader: Sendable {
     static let maximumPackageSize = 256 * 1024 * 1024
-    private static let timeout: TimeInterval = 120
+    private static let requestTimeout: TimeInterval = 120
+    private static let resourceTimeout: TimeInterval = 30 * 60
     private let configuration: URLSessionConfiguration
 
     init(configuration: URLSessionConfiguration = .ephemeral) {
@@ -43,8 +44,8 @@ struct ChromeWebStoreUpdateDownloader: Sendable {
         configuration.urlCredentialStorage = nil
         configuration.urlCache = nil
         configuration.requestCachePolicy = .reloadIgnoringLocalCacheData
-        configuration.timeoutIntervalForRequest = Self.timeout
-        configuration.timeoutIntervalForResource = Self.timeout
+        configuration.timeoutIntervalForRequest = Self.requestTimeout
+        configuration.timeoutIntervalForResource = Self.resourceTimeout
         configuration.httpAdditionalHeaders = ["User-Agent": ChromeWebStoreUpdateChecker.genericUserAgent, "Accept-Language": "en-US"]
         self.configuration = configuration
     }

@@ -32,6 +32,7 @@ extension Preferences {
 
         private enum Const {
             static let footerSpacing: CGFloat = 4
+            static let descriptionTopPadding: CGFloat = 5
             static let dividerTopPadding: CGFloat = 32
             static let dividerBottomPadding: CGFloat = 28
             static let moreExtensionsBottomPadding: CGFloat = 12
@@ -91,6 +92,7 @@ extension Preferences {
 
                 PreferencePaneSection {
                     description
+                        .padding(.top, Const.descriptionTopPadding)
                 }
 
                 extensionsList
@@ -111,7 +113,7 @@ extension Preferences {
                     uninstalledExtensionsView
                 }
             }
-            .padding(.top, 20)
+            .padding(.top, 6)
             .padding(.bottom, 16)
         }
 

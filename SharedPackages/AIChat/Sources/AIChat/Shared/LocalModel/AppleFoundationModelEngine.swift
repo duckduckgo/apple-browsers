@@ -102,10 +102,13 @@ public final class AppleFoundationModelEngine: AIChatLocalModelEngine {
     }
 
     static func prompt(instruction: String, content: String, tag: String) -> String {
-        // The content must not be able to close its own block and pose as instructions.
-        let safeContent = content
-            .replacingOccurrences(of: "<\(tag)>", with: "")
-            .replacingOccurrences(of: "</\(tag)>", with: "")
+        // The content must not be able to close its own block and pose as instructions. Removing a
+        // tag can join its halves into a new one, as in "<</page>/page>", so this repeats until none is left.
+        let tagPattern = "<\\s*/?\\s*\(NSRegularExpression.escapedPattern(for: tag))\\s*>"
+        var safeContent = content
+        while let range = safeContent.range(of: tagPattern, options: [.regularExpression, .caseInsensitive]) {
+            safeContent.removeSubrange(range)
+        }
         return """
         \(instruction)
 

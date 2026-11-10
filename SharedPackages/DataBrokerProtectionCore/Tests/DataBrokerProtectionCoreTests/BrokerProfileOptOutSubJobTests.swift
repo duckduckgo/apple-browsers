@@ -741,4 +741,37 @@ final class BrokerProfileOptOutSubJobTests: XCTestCase {
         XCTAssertFalse(mockOptOutRunner.wasOptOutCalled)
         XCTAssertFalse(mockDatabase.optOutEvents.contains { $0.type == .optOutStarted })
     }
+
+    func testOptOutSubJob_whenUserSentEmailBeforeTheWaitBetweenAttempts_runsAutomatedAttempt() async throws {
+        let broker = DataBroker(id: 1,
+                                name: "broker",
+                                url: "broker.com",
+                                steps: [],
+                                version: "1",
+                                schedulingConfig: .default,
+                                optOutUrl: "",
+                                eTag: "",
+                                removedAt: nil)
+        let queuedJob = BrokerProfileQueryData(
+            dataBroker: broker,
+            profileQuery: .mock,
+            scanJobData: .mock,
+            optOutJobData: [OptOutJobData.mock(with: .mockWithoutRemovedDate)]
+        )
+        let waitBetweenAttempts = broker.schedulingConfig.hoursUntilNextOptOutAttempt.hoursToSeconds
+        try mockDatabase.add(HistoryEvent(extractedProfileId: 1,
+                                          brokerId: 1,
+                                          profileQueryId: 1,
+                                          type: .optOutByUserEmail,
+                                          date: Date().addingTimeInterval(-waitBetweenAttempts - 60)))
+
+        _ = try await sut.runOptOut(
+            for: .mockWithoutRemovedDate,
+            brokerProfileQueryData: queuedJob,
+            showWebView: false,
+            shouldRunNextStep: { true }
+        )
+
+        XCTAssertTrue(mockDatabase.optOutEvents.contains { $0.type == .optOutStarted })
+    }
 }

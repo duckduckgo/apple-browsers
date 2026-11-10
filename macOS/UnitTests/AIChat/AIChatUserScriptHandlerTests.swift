@@ -167,6 +167,28 @@ struct AIChatUserScriptHandlerTests {
     }
 
     @available(iOS 16, macOS 13, *)
+    @Test("An invalid executeClientTool is invalid_arguments and echoes the readable callId", .timeLimit(.minutes(1)))
+    @MainActor
+    func testThatAnInvalidExecuteClientToolEchoesTheReadableCallID() async {
+        let params: [String: Any] = ["callId": "call-1", "capability": ["name": "listOpenTabs", "version": 1], "input": [:], "extra": true]
+
+        let response = await handler.executeClientTool(params: params, message: WKScriptMessage.mock(), permissionPusher: nil)
+
+        #expect(response as? ExecuteClientToolResponse == .failure(callId: "call-1", error: .invalidArguments))
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("executeClientTool from a page without a permission source is unavailable", .timeLimit(.minutes(1)))
+    @MainActor
+    func testThatExecuteClientToolWithoutAPermissionSourceIsUnavailable() async {
+        let params: [String: Any] = ["callId": "call-1", "capability": ["name": "listOpenTabs", "version": 1], "input": [:]]
+
+        let response = await handler.executeClientTool(params: params, message: WKScriptMessage.mock(), permissionPusher: nil)
+
+        #expect(response as? ExecuteClientToolResponse == .failure(callId: "call-1", error: .unavailable))
+    }
+
+    @available(iOS 16, macOS 13, *)
     @Test("getAIChatNativeConfigValues calls messageHandler", .timeLimit(.minutes(1)))
     func testThatGetAIChatNativeConfigValuesCallsMessageHandler() async {
         _ = await handler.getAIChatNativeConfigValues(params: [], message: WKScriptMessage.mock())
@@ -2075,6 +2097,19 @@ struct AIChatUserScriptHandlerTests {
 
         #expect(handler.getNativeConfigValues(isFireWindow: false).supportsCanonicalChatFormat == true)
         #expect(handler.getNativeConfigValues(isFireWindow: true).supportsCanonicalChatFormat == true)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Legacy MCP browser tools are not advertised", .timeLimit(.minutes(1)))
+    func testLegacyBrowserToolsAreNotAdvertised() {
+        let featureFlagger = makeFeatureFlagger()
+        featureFlagger.featuresStub[FeatureFlag.aiChatBrowserTools.rawValue] = true
+        let handler = AIChatMessageHandler(featureFlagger: featureFlagger,
+                                           promptHandler: AIChatPromptHandler.shared,
+                                           installDateProvider: { nil },
+                                           installTypeProvider: { .new })
+
+        #expect(handler.getNativeConfigValues(isFireWindow: false).supportsBrowserTools == false)
     }
 
     @available(iOS 16, macOS 13, *)

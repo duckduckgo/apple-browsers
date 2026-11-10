@@ -301,14 +301,6 @@ final class OnboardingIntroViewModel: ObservableObject {
     }
 
     // NA Experiment: per-step actions for the reason-tailored screens.
-    func searchPrivacySettingsContinueAction() {
-        pixelReporter.measureSearchPrivacySettingsSelection(
-            recentlyVisitedSitesEnabled: personalizationManager.isRecentlyVisitedSitesEnabled,
-            safeSearchEnabled: personalizationManager.isSafeSearchEnabled
-        )
-        makeNextViewState()
-    }
-
     func aiSearchSettingsContinueAction() {
         pixelReporter.measureAISearchSettingsSelection(
             searchAssistEnabled: personalizationManager.isSearchAssistEnabled,
@@ -452,12 +444,6 @@ private extension OnboardingIntroViewModel {
                     )
                 )
             // NA Experiment: reason-tailored steps. View bodies/content are built in the UI task.
-            case .searchPrivacySettingsSelection:
-                return .onboarding(
-                    .init(
-                        type: .searchPrivacySettingsDialog(content: contentProvider.serpPersonalizationContent),
-                        step: stepInfo())
-                )
             case .aiSearchSettingsSelection:
                 return .onboarding(
                     .init(
@@ -627,8 +613,6 @@ private extension OnboardingIntroViewModel {
         case .searchExperienceSelection where introSteps.contains(.searchExperienceSelection):
             currentIntroStep = .searchExperienceSelection
         // NA Experiment: reason-tailored steps.
-        case .searchPrivacySettingsSelection where introSteps.contains(.searchPrivacySettingsSelection):
-            currentIntroStep = .searchPrivacySettingsSelection
         case .aiSearchSettingsSelection where introSteps.contains(.aiSearchSettingsSelection):
             currentIntroStep = .aiSearchSettingsSelection
         case .aiModelSelection where introSteps.contains(.aiModelSelection):
@@ -679,8 +663,6 @@ private extension OnboardingIntroViewModel {
             pixelReporter.measureDuckAIQuerySelectionImpression()
         case .downloadReasonDialog:
             pixelReporter.measureDownloadReasonImpression()
-        case .searchPrivacySettingsDialog:
-            pixelReporter.measureSearchPrivacySettingsImpression()
         case .aiSearchSettingsDialog:
             pixelReporter.measureAISearchSettingsImpression()
         case .aiModelDialog:

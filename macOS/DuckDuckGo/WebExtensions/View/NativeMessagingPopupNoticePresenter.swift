@@ -221,7 +221,7 @@ private struct NativeMessagingBannerView: View {
                 .accessibilityLabel(UserText.webExtensionNativeMessagingBannerDismiss)
             }
             .padding(.horizontal, 16)
-            .padding(.vertical, 14)
+            .padding(.vertical, 16)
             Rectangle()
                 .fill(Color(designSystemColor: .surfaceDecorationPrimary, palette: palette))
                 .frame(height: 1)

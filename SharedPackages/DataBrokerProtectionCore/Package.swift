@@ -99,6 +99,7 @@ let package = Package(
                 .product(name: "WideEvent", package: "WideEvent"),
                 "DataBrokerProtectionCore",
                 "DataBrokerProtectionCoreTestsUtils",
+                "DataBrokerProtectionDebugServer",
                 "BrowserServicesKit",
                 .product(name: "PixelKit", package: "PixelKit"),
                 .product(name: "Persistence", package: "Persistence"),

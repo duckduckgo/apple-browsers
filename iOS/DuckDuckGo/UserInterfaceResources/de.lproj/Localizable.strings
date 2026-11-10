@@ -385,21 +385,6 @@
 /* Title for the New Tab row in the Duck.ai tab header Plus (+) menu */
 "aichat.header.plusMenu.newTab" = "Neuer Tab";
 
-/* Section header in the Duck.ai tab header Plus (+) menu; every row below it opens a new tab */
-"aichat.header.plusMenu.newTabSection" = "Neuer Tab";
-
-/* Row in the New Tab section of the Duck.ai tab header Plus (+) menu — opens a new Duck.ai chat in a new tab */
-"aichat.header.plusMenu.newTabSection.chat" = "Chat";
-
-/* Row in the New Tab section of the Duck.ai tab header Plus (+) menu — opens Duck.ai in image generation mode in a new tab */
-"aichat.header.plusMenu.newTabSection.image" = "Bild";
-
-/* Row in the Duck.ai tab header Plus (+) menu — opens a new tab in search mode */
-"aichat.header.plusMenu.newTabSection.search" = "Suche";
-
-/* Row in the New Tab section of the Duck.ai tab header Plus (+) menu — opens a new Duck.ai voice chat in a new tab */
-"aichat.header.plusMenu.newTabSection.voiceChat" = "Sprachchat";
-
 /* Title for the New Voice Chat row in the Duck.ai tab header Plus (+) menu */
 "aichat.header.plusMenu.newVoiceChat" = "Neuer Voice-Chat";
 
@@ -1578,21 +1563,6 @@
 
 /* Parameter is domain name (string) */
 "contextual.onboarding.browsing.one.tracker" = "*%1$@* hat versucht, dich hier zu tracken. Ich hab die Domain blockiert!\n\n☝️ Tippe auf das Schild, um mehr Informationen zu erhalten.";
-
-/* Body of the alternative onboarding end-of-journey dialog promoting Duck.ai. */
-"contextual.onboarding.eoj-try-ai.message" = "Chats werden anonymisiert, kein Konto erforderlich. Und es ist kostenlos!";
-
-/* Primary button on the alternative onboarding end-of-journey dialog; opens Duck.ai. 'Duck.ai' is a brand name and should not be translated. */
-"contextual.onboarding.eoj-try-ai.primary-button" = "Duck.ai ausprobieren";
-
-/* Secondary button on the alternative onboarding end-of-journey dialog; skips to the new tab page. */
-"contextual.onboarding.eoj-try-ai.secondary-button" = "Überspringen";
-
-/* Title of the alternative onboarding end-of-journey dialog promoting Duck.ai. 'Duck.ai' is a brand name and should not be translated. */
-"contextual.onboarding.eoj-try-ai.title" = "Privat mit beliebten KIs in Duck.ai chatten";
-
-/* Body of the onboarding end-of-journey dialog for users who chose the AI-chat download reason. 'Search' refers to the Search option of the address bar Search/Duck.ai toggle and should match its translation. 'Duck.ai' is a brand name and should not be translated. */
-"contextual.onboarding.eoj.private-ai-chat.message" = "Starte einen privaten KI-Chat mit Duck.ai oder wechsle zur Suche, um sicher zu browsen.";
 
 /* Button on the last screen of the onboarding, it will dismiss the onboarding screen. */
 "contextual.onboarding.final-screen.button" = "Schlag ein!";
@@ -3331,126 +3301,6 @@
 /* No comment provided by engineer. */
 "menu.button.hint" = "Browsing-Optionen";
 
-/* iPad menu bar command */
-"menuActualSize" = "Tatsächliche Größe";
-
-/* iPad menu bar command */
-"menuAddToDock" = "DuckDuckGo zum Dock hinzufügen ...";
-
-/* iPad menu bar command */
-"menuAddWidget" = "Widget zum Startbildschirm hinzufügen ...";
-
-/* iPad menu bar command */
-"menuBack" = "Zurück";
-
-/* iPad menu bar title */
-"menuBookmarks" = "Lesezeichen";
-
-/* iPad menu bar command */
-"menuClearTabsAndData" = "Tabs und Daten löschen";
-
-/* iPad Duck.ai menu bar command */
-"menuDeleteAllChats" = "Alle Chats löschen …";
-
-/* iPad menu bar command */
-"menuDuplicateTab" = "Tab duplizieren";
-
-/* iPad menu bar command */
-"menuExportBookmarks" = "Lesezeichen exportieren …";
-
-/* iPad menu bar submenu */
-"menuFavorites" = "Favoriten";
-
-/* iPad menu bar command */
-"menuFeedback" = "Feedback teilen";
-
-/* iPad menu bar command */
-"menuForward" = "Weiter";
-
-/* iPad menu bar command */
-"menuHideBookmarks" = "Lesezeichen ausblenden";
-
-/* iPad menu bar command */
-"menuHideDownloads" = "Downloads ausblenden";
-
-/* iPad menu bar command */
-"menuHideDuckAIButton" = "„Duck.ai“-Button ausblenden";
-
-/* iPad menu bar command */
-"menuHidePasswords" = "Passwörter ausblenden";
-
-/* iPad menu bar command */
-"menuHideTabs" = "Tabs ausblenden";
-
-/* iPad menu bar command */
-"menuImportBookmarks" = "Lesezeichen importieren ...";
-
-/* iPad menu bar command */
-"menuImportBookmarksAndPasswords" = "Lesezeichen und Passwörter importieren …";
-
-/* iPad menu bar command */
-"menuLastTab" = "Letzter Tab";
-
-/* iPad Duck.ai menu bar command */
-"menuNewChat" = "Neuer Chat";
-
-/* iPad Duck.ai menu bar command */
-"menuNewImageChat" = "Neuer Bild-Chat";
-
-/* iPad menu bar command */
-"menuNewTabOnRight" = "Neuer Tab auf der rechten Seite";
-
-/* iPad Duck.ai menu bar command */
-"menuNewVoiceChat" = "Neuer Voice-Chat";
-
-/* iPad menu bar command */
-"menuNextTab" = "Nächsten Tab anzeigen";
-
-/* iPad Duck.ai menu bar command */
-"menuOpenDuckAI" = "Duck.ai öffnen";
-
-/* iPad menu bar command */
-"menuOpenLocation" = "Standort öffnen …";
-
-/* iPad menu bar command */
-"menuPreviousTab" = "Vorherigen Tab anzeigen";
-
-/* iPad menu bar command */
-"menuPrint" = "Drucken ...";
-
-/* iPad Duck.ai menu bar section header */
-"menuRecentChats" = "Aktuelle Chats";
-
-/* iPad menu bar command selecting a numbered tab */
-"menuSelectTab" = "Tab %d auswählen";
-
-/* iPad menu bar command */
-"menuSetDefaultBrowser" = "DuckDuckGo als Standard-Browser festlegen ...";
-
-/* iPad menu bar command */
-"menuSettings" = "DuckDuckGo-Einstellungen ...";
-
-/* iPad menu bar command */
-"menuShowBookmarks" = "Lesezeichen anzeigen";
-
-/* iPad menu bar command */
-"menuShowDownloads" = "Downloads anzeigen";
-
-/* iPad menu bar command */
-"menuShowDuckAIButton" = "„Duck.ai“-Button anzeigen";
-
-/* iPad menu bar command */
-"menuShowPasswords" = "Passwörter anzeigen";
-
-/* iPad menu bar command */
-"menuShowTabs" = "Tabs anzeigen";
-
-/* iPad menu bar command */
-"menuStop" = "Stopp";
-
-/* iPad menu bar command */
-"menuVoiceSearch" = "Private Sprachsuche";
-
 /* No comment provided by engineer. */
 "Message" = "Nachricht";
 
@@ -3853,41 +3703,8 @@
 /* Button on the Add to Dock tutorial screen of the onboarding, it will proceed to the next step of the onboarding. */
 "onboarding.addToDock.buttons.gotIt" = "Verstanden";
 
-/* The message of the onboarding dialog popup that promotes adding the DDG browser icon to the dock. */
-"onboarding.addToDock.promo.intro.message" = "Ich bleibe in der Nähe, damit du schnell auf mich zugreifen kannst.";
-
 /* Button to change the default browser */
 "onboarding.browsers.cta" = "Wähle deinen Browser";
-
-/* Label for the option to set up the app to block ads and pop-ups. The text is split over two lines; keep a line break at a natural position in the translation. */
-"onboarding.downloadReason.blockAds" = "Werbung und\nPop-ups blockieren";
-
-/* Label for the option to set up the app for private searching and browsing. The text is split over two lines; keep a line break at a natural position in the translation. */
-"onboarding.downloadReason.browsePrivately" = "Privat suchen und browsen";
-
-/* Label for the option to set up the app for private AI chat. The text is split over two lines; keep a line break at a natural position in the translation. */
-"onboarding.downloadReason.chatWithAI" = "Privat mit KI\nchatten";
-
-/* Heading shown above the browser comparison chart during onboarding for users who chose to search and browse privately or to chat with AI privately. The text is split over two lines; keep a line break at a natural position in the translation. */
-"onboarding.downloadReason.comparison.title-generic" = "Du bist hier genau richtig!\nSchutz aktiviert.";
-
-/* Heading shown above the browser comparison chart during onboarding for users who chose to block ads and pop-ups. The text is split over two lines; keep a line break at a natural position in the translation. */
-"onboarding.downloadReason.comparison.title-no-ads" = "Du bist hier genau richtig!\nWerbeblockierung aktiviert.";
-
-/* Heading shown above the browser comparison chart during onboarding for users who chose to disable AI features. The text is split over two lines; keep a line break at a natural position in the translation. */
-"onboarding.downloadReason.comparison.title-no-ai" = "Du bist hier genau richtig!\nKI-Funktionen deaktiviert.";
-
-/* Button to continue to the next onboarding screen after choosing a reason. */
-"onboarding.downloadReason.cta" = "Weiter";
-
-/* Subtitle of the onboarding screen asking why the user downloaded the app. */
-"onboarding.downloadReason.message" = "Wähle aus, was dich am meisten interessiert, und wir fangen damit an.";
-
-/* Label for the option to set up the app without AI features in search results. The text is split over two lines; keep a line break at a natural position in the translation. */
-"onboarding.downloadReason.removeAI" = "Deaktiviere\nKI-Funktionen";
-
-/* Title of the onboarding screen asking why the user downloaded the app. */
-"onboarding.downloadReason.title" = "Richte alles nach deinen Wünschen ein";
 
 /* Message in the onboarding dialog popup that promotes adding the DuckDuckGo browser icon to the iPhone dock, shown during the Duck.ai onboarding flow. */
 "onboarding.duckai.addToDock.promo.message" = "Ich bleibe in der Nähe, damit du täglich auf KI-Chats zugreifen und browsen kannst.";
@@ -3915,9 +3732,6 @@
 
 /* Title of the dialog in the Duck.ai onboarding flow asking the user if they want to set DuckDuckGo as their default browser. */
 "onboarding.duckai.browser.title" = "Möchtest du DuckDuckGo zu deinem Standardbrowser machen?";
-
-/* Message of the last screen of the onboarding to the browser app for the Duck.ai flow. */
-"onboarding.duckai.contextual.end-of-journey.message" = "Starte einen privaten KI-Chat mit Duck.ai oder wechsle zur Suche, um sicher zu browsen.";
 
 /* Body text of the subscription promo shown at the end of the Duck.ai onboarding flow. Describes the paid Duck.ai subscription. 'GPT', 'Claude' are brand names and should not be translated. */
 "onboarding.duckai.contextual.subscription.message" = "Wir bieten auch ein kostenpflichtiges Abonnement für fortschrittliche KI-Modelle mit höheren Chat-Limits von GPT und Claude, einem sicheren VPN und mehr.";
@@ -4041,84 +3855,6 @@
 
 /* Button to skip the onboarding process */
 "onboarding.intro.cta.skip" = "Ich war schon einmal hier";
-
-/* Subtitle for the accept-other-cookies option on the onboarding ad-blocking personalization screen. */
-"onboarding.personalization.adBlocking.acceptOtherCookies.subtitle" = "Blendet mehr Pop-ups aus, indem Cookies akzeptiert werden, die nicht abgelehnt werden können";
-
-/* Title for the accept-other-cookies option on the onboarding ad-blocking personalization screen. */
-"onboarding.personalization.adBlocking.acceptOtherCookies.title" = "Einige Cookies akzeptieren";
-
-/* Button to continue to the next onboarding screen from the ad-blocking personalization screen. */
-"onboarding.personalization.adBlocking.cta" = "Weiter";
-
-/* Footer text shown above the button on the ad-blocking personalization screen, reassuring the user the choices can be changed later. */
-"onboarding.personalization.adBlocking.footer" = "Du kannst das später jederzeit in den Einstellungen anpassen.";
-
-/* Subtitle for the reject-optional-cookies option on the onboarding ad-blocking personalization screen. */
-"onboarding.personalization.adBlocking.rejectOptionalCookies.subtitle" = "Maximiert die Privatsphäre und schließt Cookie-Pop-ups";
-
-/* Title for the reject-optional-cookies option on the onboarding ad-blocking personalization screen. */
-"onboarding.personalization.adBlocking.rejectOptionalCookies.title" = "Optionale Cookies ablehnen";
-
-/* Title of the onboarding ad-blocking personalization screen. */
-"onboarding.personalization.adBlocking.title" = "Internet, ohne den Lärm.";
-
-/* Title for the YouTube ad blocking option on the onboarding ad-blocking personalization screen. 'YouTube' is a brand name and should not be translated. */
-"onboarding.personalization.adBlocking.youTubeAdBlocking.title" = "Video-Werbung auf YouTube blockieren";
-
-/* Primary button to open new tabs with AI chat on the onboarding address bar toggle mode personalization screen. */
-"onboarding.personalization.addressBarToggle.cta.primary" = "Tabs mit KI-Chat öffnen";
-
-/* Secondary button to dismiss the onboarding address bar toggle mode personalization screen. */
-"onboarding.personalization.addressBarToggle.cta.secondary" = "Jetzt nicht";
-
-/* Footer of the onboarding address bar toggle mode personalization screen. 'Search' refers to the Search option of the address bar Search/Duck.ai toggle and should match its translation. */
-"onboarding.personalization.addressBarToggle.footer" = "Du kannst mit einem Klick zur Suche wechseln";
-
-/* Title of the onboarding address bar toggle mode personalization screen. */
-"onboarding.personalization.addressBarToggle.title" = "Möchtest du, dass neue Tabs mit einem KI-Chat geöffnet werden?";
-
-/* Button to continue to the next onboarding screen from the AI model personalization screen. */
-"onboarding.personalization.aiModel.cta" = "Weiter";
-
-/* Message of the onboarding AI model personalization screen. */
-"onboarding.personalization.aiModel.message" = "Ändere deine Standard-KI jetzt oder jederzeit während des Chats.";
-
-/* Title of the onboarding AI model personalization screen. */
-"onboarding.personalization.aiModel.title" = "Deine Chats, ganz nach deinem Geschmack.";
-
-/* Button to continue to the next onboarding screen from the AI search personalization screen. */
-"onboarding.personalization.aiSearch.cta" = "Weiter";
-
-/* Subtitle for the hide AI-generated images option on the onboarding AI search personalization screen. */
-"onboarding.personalization.aiSearch.hideAIGeneratedImages.subtitle" = "Filtert bekannte KI-Spam-Websites aus den Bildersuchergebnissen heraus";
-
-/* Title for the hide AI-generated images option on the onboarding AI search personalization screen. */
-"onboarding.personalization.aiSearch.hideAIGeneratedImages.title" = "KI-generierte Bilder ausblenden";
-
-/* Subtitle for the Search Assist option on the onboarding AI search personalization screen. */
-"onboarding.personalization.aiSearch.searchAssist.subtitle" = "KI-generierte Antworten in die Suchergebnisse aufnehmen";
-
-/* Title for the Search Assist option on the onboarding AI search personalization screen. 'Search Assist' is a DuckDuckGo product name and should not be translated. */
-"onboarding.personalization.aiSearch.searchAssist.title" = "Search Assist";
-
-/* Title of the onboarding AI search personalization screen. */
-"onboarding.personalization.aiSearch.title" = "Suche ohne KI";
-
-/* Primary button to turn Duck.ai on from the onboarding Duck.ai enabled personalization screen. 'Duck.ai' is a brand name and should not be translated. */
-"onboarding.personalization.duckAIEnabled.cta.primary" = "Duck.ai einschalten";
-
-/* Secondary button to keep Duck.ai off from the onboarding Duck.ai enabled personalization screen. 'Duck.ai' is a brand name and should not be translated. */
-"onboarding.personalization.duckAIEnabled.cta.secondary" = "Duck.ai ausgeschaltet lassen";
-
-/* Message of the onboarding Duck.ai enabled personalization screen. 'Duck.ai' is a brand name and should not be translated. */
-"onboarding.personalization.duckAIEnabled.message" = "In Duck.ai werden deine Chats von uns anonymisiert und niemals zum Trainieren von KI verwendet.";
-
-/* Title of the onboarding Duck.ai enabled personalization screen. */
-"onboarding.personalization.duckAIEnabled.title" = "Möchtest du privat mit beliebten KIs chatten können?";
-
-/* Title for the private search Duck.ai query onboarding screen. */
-"onboarding.personalization.duckAIQuery.privateSearch.title" = "Probiere jetzt eine private Suche aus!";
 
 /* Button on the Privacy Pro promotion onboarding step. Tapping the button navigates to the Privacy Pro paywall. */
 "onboarding.privacypro.promo.buttons.learnMore" = "Mehr erfahren";
@@ -4360,17 +4096,11 @@
 /* Description of too many requests error when syncing. */
 "prefrences.sync.too-many-requests.description" = "Sync & Backup ist vorübergehend nicht verfügbar.";
 
-/* Fireproofing setting toggle label */
-"preserveLogins.askOnSignIn" = "Seiten bei der Anmeldung feuerfest machen";
-
 /* No comment provided by engineer. */
 "preserveLogins.domain.list.footer" = "Websites sorgen mit Cookies dafür, dass du angemeldet bleibst. Wenn du eine Website feuerfest machst, werden Cookies nicht gelöscht und du bleibst angemeldet – auch nach Verwendung der Schaltfläche „Feuer“. Wir blockieren weiterhin auf feuerfest gemachten Websites gefundene Tracker von Dritten.";
 
 /* Section header above Fireproofed websites list */
 "preserveLogins.domain.list.title" = "Feuerfeste Seiten";
-
-/* Empty Fireproof sites list */
-"preserveLogins.emptyState" = "Noch keine feuerfesten Seiten";
 
 /* Alert message explaining to users that the benefit of fireproofing a site is that they will be kept signed in */
 "preserveLogins.fireproof.message" = "Wenn du diese Website feuerfest machst, bleibst du nach Verwendung der Schaltfläche „Feuer“ angemeldet.";
@@ -4401,9 +4131,6 @@
 
 /* Confirmation button in alert */
 "preserveLogins.remove.all.ok" = "OK";
-
-/* Button to remove all Fireproof sites */
-"preserveLogins.removeAllSites" = "Alle feuerfesten Seiten entfernen";
 
 /* No comment provided by engineer. */
 "Previews" = "Vorschau";
@@ -4707,12 +4434,6 @@
 
 /* Footnote for the hide AI-generated images setting; ends with a Learn more link to the help page (do not remove the link) */
 "settings.aifeatures.hide.ai.generated.images.subtitle" = "Filtert bekannte KI-Spam-Websites aus den Bildersuchergebnissen heraus. [Mehr erfahren](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/results/how-to-filter-out-ai-images-in-duckduckgo-search-results)";
-
-/* Settings screen description for the Duck.ai keyboard animation toggle */
-"settings.aifeatures.keyboard.animation.subtitle" = "Zeige eine Animation um die Tastatur herum, wenn du zu Duck.ai wechselst oder dort tippst.";
-
-/* Settings screen toggle title for the Duck.ai keyboard animation */
-"settings.aifeatures.keyboard.animation.title" = "Duck.ai-Tastaturanimation";
 
 /* Label describing a feature which is turned on always */
 "settings.always.on" = "Immer aktiviert";
@@ -5401,9 +5122,6 @@
 /* Alert content for not found subscription */
 "subscription.expired.alert.message" = "Das mit diesem Apple-Konto verknüpfte Abonnement ist nicht mehr aktiv.";
 
-/* Subtitle in header when the subscription has been cancelled but is still active until it expires */
-"subscription.expiring" = "Läuft ab";
-
 /* FAQ Button */
 "subscription.faq" = "F&A und Support";
 
@@ -5433,6 +5151,9 @@
 
 /* Header for the subscription section */
 "subscription.manage.title" = "Abonnement";
+
+/* Subscription status shown after the user withdrew from the subscription contract */
+"subscription.not.subscribed" = "Nicht abonniert";
 
 /* Alert content for not found subscription */
 "subscription.notFound.alert.message" = "Mit diesem Apple-Konto ist kein Abonnement verknüpft.";
@@ -5475,6 +5196,9 @@
 
 /* Progress view title when restoring past subscription purchase */
 "subscription.progress.view.restoring.subscription" = "Abonnement wird wiederhergestellt ...";
+
+/* Progress view title while withdrawing from the subscription contract */
+"subscription.progress.view.withdraw.in.progress" = "Widerruf wird bearbeitet …";
 
 /* Dismiss button on the reinstaller subscription promo. */
 "subscription.promo.reinstaller.buttons.notNow" = "Jetzt nicht";
@@ -5581,6 +5305,39 @@
 /* View All Plans button to see available subscription tiers */
 "subscription.view.all.plans" = "Alle Tarife anzeigen";
 
+/* Button that confirms withdrawal from the subscription contract */
+"subscription.withdraw.confirm.button" = "Widerruf bestätigen";
+
+/* Second paragraph of the alert confirming withdrawal from the subscription contract. Parameter is a localized list of features, e.g. VPN, Personal Information Removal and Duck.ai. */
+"subscription.withdraw.confirm.features.message" = "%@ funktionieren nicht mehr, sobald du bestätigst.";
+
+/* Message of the alert confirming withdrawal from the subscription contract. Parameters are the tier name (e.g. Plus) and the refund amount with currency. */
+"subscription.withdraw.confirm.message" = "Dein %1$@-Abonnement endet sofort und dir wird %2$@ innerhalb von 14 Tagen auf deine ursprüngliche Zahlungsmethode zurückerstattet.";
+
+/* Title of the alert confirming withdrawal from the subscription contract */
+"subscription.withdraw.confirm.title" = "Möchtest du dein Abonnement widerrufen?";
+
+/* Button that opens the help page to complete a failed subscription withdrawal */
+"subscription.withdraw.error.button" = "Hilfeseite besuchen";
+
+/* Message of the alert shown when withdrawing from the subscription contract fails */
+"subscription.withdraw.error.message" = "Wir konnten deinen Widerruf nicht automatisch bearbeiten. Bitte besuche unsere Hilfeseite, um deinen Widerruf abzuschließen.";
+
+/* Action title that starts withdrawing from the subscription contract with a full refund */
+"subscription.withdraw.from.contract" = "Vertrag widerrufen";
+
+/* Subtitle of the Withdraw from Contract action. Parameter is the last date the user can withdraw. */
+"subscription.withdraw.from.contract.subtitle" = "Du kannst bis zum %@ widerrufen und erhältst eine vollständige Rückerstattung";
+
+/* Button that dismisses the withdrawal confirmation and keeps the subscription */
+"subscription.withdraw.keep.button" = "Abonnement behalten";
+
+/* Confirmation shown after withdrawing from the subscription contract. Parameter is the withdrawal date. */
+"subscription.withdrawn.info" = "Du hast am %@ widerrufen.";
+
+/* Shown below the withdrawal confirmation. Parameter is the refunded amount with currency. */
+"subscription.withdrawn.refund.info" = "Deine Rückerstattung in Höhe von %@ wird bearbeitet.";
+
 /* No comment provided by engineer. */
 "SwiftUI Alert" = "SwiftUI-Benachrichtigung";
 
@@ -5602,29 +5359,11 @@
 /* Fallback device name for confirmation dialogs */
 "sync.pairing-v2.unknown-peer-name" = "das andere Gerät";
 
-/* Title for a button in the Sync Promotion banner on the Bookmarks or Passwords screen that opens Sync settings to connect another device */
-"sync.promo.another-device.connect.action" = "Verbinden";
-
-/* Message for the Sync Promotion banner on the Bookmarks or Passwords screen, shown when Sync is on but only this device is connected */
-"sync.promo.another-device.message" = "Sync & Backup ist auf diesem Gerät aktiviert.";
-
-/* Title for a button in the Sync Promotion banner on the Bookmarks or Passwords screen that opens a screen with links to get DuckDuckGo on other platforms */
-"sync.promo.bookmarks.another-device.get-desktop-app.action" = "App erhalten";
-
-/* Title for the Sync Promotion banner on the Bookmarks screen, shown when Sync is on but only this device is connected */
-"sync.promo.bookmarks.another-device.title" = "Lesezeichen auch mit deiner Desktop-App synchronisieren?";
-
 /* Message for the Sync Promotion banner when user has bookmarks that can be synced */
 "sync.promo.bookmarks.message" = "Kein Konto erforderlich. Ende-zu-Ende-Verschlüsselung bedeutet, dass niemand außer dir deine Lesezeichen sehen kann, nicht einmal wir.";
 
-/* Message for the redesigned Sync Promotion banner on the Bookmarks screen */
-"sync.promo.bookmarks.redesign.message" = "Ende-zu-Ende-verschlüsselt. Niemand kann deine Lesezeichen sehen, nicht einmal wir.";
-
 /* Title for the Sync Promotion banner */
 "sync.promo.bookmarks.title" = "Lesezeichen synchronisieren und sichern";
-
-/* Accessibility label for the close button on the Sync Promotion banner */
-"sync.promo.close.accessibility.label" = "Synchronisierungs-Werbung verwerfen";
 
 /* Title for a button in the Sync Promotion banner to set up Sync */
 "sync.promo.confirm.action" = "Sync einrichten";
@@ -5638,20 +5377,11 @@
 /* Title for a button in the Sync Promotion banner to dismiss Sync promotion banner */
 "sync.promo.dismiss.action" = "Nein, danke";
 
-/* Title for the Sync Promotion banner on the Passwords screen, shown when Sync is on but only this device is connected */
-"sync.promo.passwords.another-device.title" = "Passwörter auch mit deiner Desktop-App synchronisieren?";
-
 /* Message for the Sync Promotion banner when user has passwords that can be synced */
 "sync.promo.passwords.message" = "Kein Konto erforderlich. Ende-zu-Ende-Verschlüsselung bedeutet, dass niemand außer dir deine Passwörter sehen kann, nicht einmal wir.";
 
-/* Message for the redesigned Sync Promotion banner on the Passwords screen */
-"sync.promo.passwords.redesign.message" = "Ende-zu-Ende-verschlüsselt. Niemand kann deine Passwörter sehen, nicht einmal wir.";
-
 /* Title for the Sync Promotion banner */
 "sync.promo.passwords.title" = "Passwörter synchronisieren und sichern";
-
-/* Title for the button in the redesigned Sync Promotion banner and the Data Import summary Sync card that opens Sync settings and starts setting up Sync */
-"sync.promo.redesign.confirm.action" = "Synchronisierung starten";
 
 /* Button title to start backup */
 "sync.recovery.alternative.prompt.backup.button" = "Sync & Backup: dieses Gerät";

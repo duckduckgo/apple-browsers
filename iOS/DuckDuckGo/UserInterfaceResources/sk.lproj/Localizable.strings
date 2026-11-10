@@ -385,21 +385,6 @@
 /* Title for the New Tab row in the Duck.ai tab header Plus (+) menu */
 "aichat.header.plusMenu.newTab" = "Nová karta";
 
-/* Section header in the Duck.ai tab header Plus (+) menu; every row below it opens a new tab */
-"aichat.header.plusMenu.newTabSection" = "Nová karta";
-
-/* Row in the New Tab section of the Duck.ai tab header Plus (+) menu — opens a new Duck.ai chat in a new tab */
-"aichat.header.plusMenu.newTabSection.chat" = "Čet";
-
-/* Row in the New Tab section of the Duck.ai tab header Plus (+) menu — opens Duck.ai in image generation mode in a new tab */
-"aichat.header.plusMenu.newTabSection.image" = "Obrázok";
-
-/* Row in the Duck.ai tab header Plus (+) menu — opens a new tab in search mode */
-"aichat.header.plusMenu.newTabSection.search" = "Vyhľadávať";
-
-/* Row in the New Tab section of the Duck.ai tab header Plus (+) menu — opens a new Duck.ai voice chat in a new tab */
-"aichat.header.plusMenu.newTabSection.voiceChat" = "Hlasový čet";
-
 /* Title for the New Voice Chat row in the Duck.ai tab header Plus (+) menu */
 "aichat.header.plusMenu.newVoiceChat" = "Nový hlasový čet";
 
@@ -1578,21 +1563,6 @@
 
 /* Parameter is domain name (string) */
 "contextual.onboarding.browsing.one.tracker" = "Služba *%1$@* sa vás tu pokúsila sledovať. Bola zablokovaná!\n\n☝️ Ťuknite na štít pre viac informácií.";
-
-/* Body of the alternative onboarding end-of-journey dialog promoting Duck.ai. */
-"contextual.onboarding.eoj-try-ai.message" = "Čety sú anonymizované, účet nie je potrebný. A je to zadarmo!";
-
-/* Primary button on the alternative onboarding end-of-journey dialog; opens Duck.ai. 'Duck.ai' is a brand name and should not be translated. */
-"contextual.onboarding.eoj-try-ai.primary-button" = "Vyskúšaj Duck.ai";
-
-/* Secondary button on the alternative onboarding end-of-journey dialog; skips to the new tab page. */
-"contextual.onboarding.eoj-try-ai.secondary-button" = "Preskočiť";
-
-/* Title of the alternative onboarding end-of-journey dialog promoting Duck.ai. 'Duck.ai' is a brand name and should not be translated. */
-"contextual.onboarding.eoj-try-ai.title" = "Četuj súkromne s populárnymi AI v Duck.ai";
-
-/* Body of the onboarding end-of-journey dialog for users who chose the AI-chat download reason. 'Search' refers to the Search option of the address bar Search/Duck.ai toggle and should match its translation. 'Duck.ai' is a brand name and should not be translated. */
-"contextual.onboarding.eoj.private-ai-chat.message" = "Začni súkromný čet s umelou inteligenciou s Duck.ai alebo prepni na vyhľadávanie pre chránené prehliadanie.";
 
 /* Button on the last screen of the onboarding, it will dismiss the onboarding screen. */
 "contextual.onboarding.final-screen.button" = "Ruku na to!";
@@ -3331,126 +3301,6 @@
 /* No comment provided by engineer. */
 "menu.button.hint" = "Ponuka prehliadania";
 
-/* iPad menu bar command */
-"menuActualSize" = "Skutočná veľkosť";
-
-/* iPad menu bar command */
-"menuAddToDock" = "Pridať DuckDuckGo do Docku...";
-
-/* iPad menu bar command */
-"menuAddWidget" = "Pridať miniaplikáciu na úvodnú obrazovku…";
-
-/* iPad menu bar command */
-"menuBack" = "Späť";
-
-/* iPad menu bar title */
-"menuBookmarks" = "Záložky";
-
-/* iPad menu bar command */
-"menuClearTabsAndData" = "Vymazať karty a údaje";
-
-/* iPad Duck.ai menu bar command */
-"menuDeleteAllChats" = "Zmazať všetky čety…";
-
-/* iPad menu bar command */
-"menuDuplicateTab" = "Duplikovať kartu";
-
-/* iPad menu bar command */
-"menuExportBookmarks" = "Exportovať záložky…";
-
-/* iPad menu bar submenu */
-"menuFavorites" = "Obľúbené položky";
-
-/* iPad menu bar command */
-"menuFeedback" = "Zdieľať spätnú väzbu";
-
-/* iPad menu bar command */
-"menuForward" = "Ďalej";
-
-/* iPad menu bar command */
-"menuHideBookmarks" = "Skryť záložky";
-
-/* iPad menu bar command */
-"menuHideDownloads" = "Skryť sťahovania";
-
-/* iPad menu bar command */
-"menuHideDuckAIButton" = "Skryť tlačidlo Duck.ai";
-
-/* iPad menu bar command */
-"menuHidePasswords" = "Skryť heslá";
-
-/* iPad menu bar command */
-"menuHideTabs" = "Skryť karty";
-
-/* iPad menu bar command */
-"menuImportBookmarks" = "Importovať záložky...";
-
-/* iPad menu bar command */
-"menuImportBookmarksAndPasswords" = "Importovať záložky a heslá...";
-
-/* iPad menu bar command */
-"menuLastTab" = "Posledná karta";
-
-/* iPad Duck.ai menu bar command */
-"menuNewChat" = "Nový čet";
-
-/* iPad Duck.ai menu bar command */
-"menuNewImageChat" = "Nový obrazový čet";
-
-/* iPad menu bar command */
-"menuNewTabOnRight" = "Nová karta napravo";
-
-/* iPad Duck.ai menu bar command */
-"menuNewVoiceChat" = "Nový hlasový čet";
-
-/* iPad menu bar command */
-"menuNextTab" = "Zobraziť ďalšiu kartu";
-
-/* iPad Duck.ai menu bar command */
-"menuOpenDuckAI" = "Otvoriť Duck.ai";
-
-/* iPad menu bar command */
-"menuOpenLocation" = "Otvoriť polohu…";
-
-/* iPad menu bar command */
-"menuPreviousTab" = "Zobraziť predchádzajúcu kartu";
-
-/* iPad menu bar command */
-"menuPrint" = "Vytlačiť…";
-
-/* iPad Duck.ai menu bar section header */
-"menuRecentChats" = "Nedávne čety";
-
-/* iPad menu bar command selecting a numbered tab */
-"menuSelectTab" = "Vybrať kartu %d";
-
-/* iPad menu bar command */
-"menuSetDefaultBrowser" = "Nastaviť DuckDuckGo ako predvolený prehliadač…";
-
-/* iPad menu bar command */
-"menuSettings" = "Nastavenia DuckDuckGo…";
-
-/* iPad menu bar command */
-"menuShowBookmarks" = "Zobraziť záložky";
-
-/* iPad menu bar command */
-"menuShowDownloads" = "Zobraziť sťahovania";
-
-/* iPad menu bar command */
-"menuShowDuckAIButton" = "Zobraziť tlačidlo Duck.ai";
-
-/* iPad menu bar command */
-"menuShowPasswords" = "Zobraziť heslá";
-
-/* iPad menu bar command */
-"menuShowTabs" = "Zobraziť karty";
-
-/* iPad menu bar command */
-"menuStop" = "Stop";
-
-/* iPad menu bar command */
-"menuVoiceSearch" = "Súkromné hlasové vyhľadávanie";
-
 /* No comment provided by engineer. */
 "Message" = "Správa";
 
@@ -3853,41 +3703,8 @@
 /* Button on the Add to Dock tutorial screen of the onboarding, it will proceed to the next step of the onboarding. */
 "onboarding.addToDock.buttons.gotIt" = "Rozumiem";
 
-/* The message of the onboarding dialog popup that promotes adding the DDG browser icon to the dock. */
-"onboarding.addToDock.promo.intro.message" = "Budem ti vždy na dosah pre rýchly prístup.";
-
 /* Button to change the default browser */
 "onboarding.browsers.cta" = "Vyberte si prehliadač";
-
-/* Label for the option to set up the app to block ads and pop-ups. The text is split over two lines; keep a line break at a natural position in the translation. */
-"onboarding.downloadReason.blockAds" = "Blokovať reklamy\na vyskakovacie okná";
-
-/* Label for the option to set up the app for private searching and browsing. The text is split over two lines; keep a line break at a natural position in the translation. */
-"onboarding.downloadReason.browsePrivately" = "Vyhľadávaj a\nprehliadaj súkromne";
-
-/* Label for the option to set up the app for private AI chat. The text is split over two lines; keep a line break at a natural position in the translation. */
-"onboarding.downloadReason.chatWithAI" = "Četuj s AI\nsúkromne";
-
-/* Heading shown above the browser comparison chart during onboarding for users who chose to search and browse privately or to chat with AI privately. The text is split over two lines; keep a line break at a natural position in the translation. */
-"onboarding.downloadReason.comparison.title-generic" = "Si na správnom mieste!\nOchrany boli aktivované.";
-
-/* Heading shown above the browser comparison chart during onboarding for users who chose to block ads and pop-ups. The text is split over two lines; keep a line break at a natural position in the translation. */
-"onboarding.downloadReason.comparison.title-no-ads" = "Si na správnom mieste!\nBlokovanie reklám\nje aktivované.";
-
-/* Heading shown above the browser comparison chart during onboarding for users who chose to disable AI features. The text is split over two lines; keep a line break at a natural position in the translation. */
-"onboarding.downloadReason.comparison.title-no-ai" = "Si na správnom\nmieste!\nFunkcie AI\nsú vypnuté.";
-
-/* Button to continue to the next onboarding screen after choosing a reason. */
-"onboarding.downloadReason.cta" = "Ďalšie";
-
-/* Subtitle of the onboarding screen asking why the user downloaded the app. */
-"onboarding.downloadReason.message" = "Vyber si, čo ťa zaujíma najviac, a začneme tým.";
-
-/* Label for the option to set up the app without AI features in search results. The text is split over two lines; keep a line break at a natural position in the translation. */
-"onboarding.downloadReason.removeAI" = "Vypnúť\nfunkcie AI";
-
-/* Title of the onboarding screen asking why the user downloaded the app. */
-"onboarding.downloadReason.title" = "Nastav si veci podľa seba";
 
 /* Message in the onboarding dialog popup that promotes adding the DuckDuckGo browser icon to the iPhone dock, shown during the Duck.ai onboarding flow. */
 "onboarding.duckai.addToDock.promo.message" = "Budem ti vždy na dosah na tvoje denné rozhovory s umelou inteligenciou a prehliadanie.";
@@ -3915,9 +3732,6 @@
 
 /* Title of the dialog in the Duck.ai onboarding flow asking the user if they want to set DuckDuckGo as their default browser. */
 "onboarding.duckai.browser.title" = "Chceš nastaviť DuckDuckGo ako svoj predvolený prehliadač?";
-
-/* Message of the last screen of the onboarding to the browser app for the Duck.ai flow. */
-"onboarding.duckai.contextual.end-of-journey.message" = "Začni súkromný čet s umelou inteligenciou s Duck.ai alebo prepni na vyhľadávanie pre chránené prehliadanie.";
 
 /* Body text of the subscription promo shown at the end of the Duck.ai onboarding flow. Describes the paid Duck.ai subscription. 'GPT', 'Claude' are brand names and should not be translated. */
 "onboarding.duckai.contextual.subscription.message" = "Ponúkame tiež platené predplatné s pokročilými modelmi umelej inteligencie s vyššími limitmi chatu od GPT a Claude, bezpečnou VPN a ďalšími funkciami.";
@@ -4041,84 +3855,6 @@
 
 /* Button to skip the onboarding process */
 "onboarding.intro.cta.skip" = "Bol/-a som tu už predtým";
-
-/* Subtitle for the accept-other-cookies option on the onboarding ad-blocking personalization screen. */
-"onboarding.personalization.adBlocking.acceptOtherCookies.subtitle" = "Skryje viac vyskakovacích okien prijatím súborov cookie, ktoré nemožno odmietnuť";
-
-/* Title for the accept-other-cookies option on the onboarding ad-blocking personalization screen. */
-"onboarding.personalization.adBlocking.acceptOtherCookies.title" = "Prijať niektoré súbory cookie";
-
-/* Button to continue to the next onboarding screen from the ad-blocking personalization screen. */
-"onboarding.personalization.adBlocking.cta" = "Ďalšie";
-
-/* Footer text shown above the button on the ad-blocking personalization screen, reassuring the user the choices can be changed later. */
-"onboarding.personalization.adBlocking.footer" = "Toto môžeš kedykoľvek neskôr upraviť v Nastaveniach.";
-
-/* Subtitle for the reject-optional-cookies option on the onboarding ad-blocking personalization screen. */
-"onboarding.personalization.adBlocking.rejectOptionalCookies.subtitle" = "Maximalizuje súkromie a zatvára vyskakovacie okná so súbormi cookie";
-
-/* Title for the reject-optional-cookies option on the onboarding ad-blocking personalization screen. */
-"onboarding.personalization.adBlocking.rejectOptionalCookies.title" = "Odmietnuť voliteľné súbory cookie";
-
-/* Title of the onboarding ad-blocking personalization screen. */
-"onboarding.personalization.adBlocking.title" = "Internet bez rušivých prvkov.";
-
-/* Title for the YouTube ad blocking option on the onboarding ad-blocking personalization screen. 'YouTube' is a brand name and should not be translated. */
-"onboarding.personalization.adBlocking.youTubeAdBlocking.title" = "Blokuje videoreklamy na YouTube";
-
-/* Primary button to open new tabs with AI chat on the onboarding address bar toggle mode personalization screen. */
-"onboarding.personalization.addressBarToggle.cta.primary" = "Otvoriť karty s AI četom";
-
-/* Secondary button to dismiss the onboarding address bar toggle mode personalization screen. */
-"onboarding.personalization.addressBarToggle.cta.secondary" = "Teraz nie";
-
-/* Footer of the onboarding address bar toggle mode personalization screen. 'Search' refers to the Search option of the address bar Search/Duck.ai toggle and should match its translation. */
-"onboarding.personalization.addressBarToggle.footer" = "Môžeš prepnúť na Vyhľadávanie jedným ťuknutím";
-
-/* Title of the onboarding address bar toggle mode personalization screen. */
-"onboarding.personalization.addressBarToggle.title" = "Chceš, aby sa v nových kartách otváral čet s AI?";
-
-/* Button to continue to the next onboarding screen from the AI model personalization screen. */
-"onboarding.personalization.aiModel.cta" = "Ďalšie";
-
-/* Message of the onboarding AI model personalization screen. */
-"onboarding.personalization.aiModel.message" = "Zmeň si predvolenú AI teraz alebo kedykoľvek počas četu.";
-
-/* Title of the onboarding AI model personalization screen. */
-"onboarding.personalization.aiModel.title" = "Tvoje čety, po tvojom.";
-
-/* Button to continue to the next onboarding screen from the AI search personalization screen. */
-"onboarding.personalization.aiSearch.cta" = "Ďalšie";
-
-/* Subtitle for the hide AI-generated images option on the onboarding AI search personalization screen. */
-"onboarding.personalization.aiSearch.hideAIGeneratedImages.subtitle" = "Filtrovať známe spamové stránky generované umelou inteligenciou z výsledkov vyhľadávania obrázkov";
-
-/* Title for the hide AI-generated images option on the onboarding AI search personalization screen. */
-"onboarding.personalization.aiSearch.hideAIGeneratedImages.title" = "Skryť obrázky generované umelou inteligenciou";
-
-/* Subtitle for the Search Assist option on the onboarding AI search personalization screen. */
-"onboarding.personalization.aiSearch.searchAssist.subtitle" = "Zahrnúť odpovede vytvorené umelou inteligenciou do výsledkov vyhľadávania";
-
-/* Title for the Search Assist option on the onboarding AI search personalization screen. 'Search Assist' is a DuckDuckGo product name and should not be translated. */
-"onboarding.personalization.aiSearch.searchAssist.title" = "Search Assist";
-
-/* Title of the onboarding AI search personalization screen. */
-"onboarding.personalization.aiSearch.title" = "Vyhľadávanie bez AI";
-
-/* Primary button to turn Duck.ai on from the onboarding Duck.ai enabled personalization screen. 'Duck.ai' is a brand name and should not be translated. */
-"onboarding.personalization.duckAIEnabled.cta.primary" = "Zapnúť Duck.ai";
-
-/* Secondary button to keep Duck.ai off from the onboarding Duck.ai enabled personalization screen. 'Duck.ai' is a brand name and should not be translated. */
-"onboarding.personalization.duckAIEnabled.cta.secondary" = "Ponechať Duck.ai vypnuté";
-
-/* Message of the onboarding Duck.ai enabled personalization screen. 'Duck.ai' is a brand name and should not be translated. */
-"onboarding.personalization.duckAIEnabled.message" = "V Duck.ai sú tvoje čety nami anonymizované a nikdy sa nepoužívajú na trénovanie AI.";
-
-/* Title of the onboarding Duck.ai enabled personalization screen. */
-"onboarding.personalization.duckAIEnabled.title" = "Chceš mať možnosť súkromne četovať s populárnymi AI?";
-
-/* Title for the private search Duck.ai query onboarding screen. */
-"onboarding.personalization.duckAIQuery.privateSearch.title" = "Vyskúšaj teraz súkromné vyhľadávanie!";
 
 /* Button on the Privacy Pro promotion onboarding step. Tapping the button navigates to the Privacy Pro paywall. */
 "onboarding.privacypro.promo.buttons.learnMore" = "Zistite viac";
@@ -4360,17 +4096,11 @@
 /* Description of too many requests error when syncing. */
 "prefrences.sync.too-many-requests.description" = "Služba Sync & Backup je dočasne nedostupná.";
 
-/* Fireproofing setting toggle label */
-"preserveLogins.askOnSignIn" = "Požadovať Fireproof stránok pri prihlásení";
-
 /* No comment provided by engineer. */
 "preserveLogins.domain.list.footer" = "Webové stránky sa spoliehajú na súbory cookie, aby ste zostali prihlásení. Keď webovú stránku zabezpečíte funkciou ohňovzdornosti, súbory cookie nebudú zmazané a zostanete prihlásení aj po použití tlačidla Oheň. Stále budeme blokovať sledovacie zariadenia tretích strán, ktoré sa nachádzajú na webových stránkach zabezpečených funkciou ohňovzdornosti.";
 
 /* Section header above Fireproofed websites list */
 "preserveLogins.domain.list.title" = "Zabezpečené stránky";
-
-/* Empty Fireproof sites list */
-"preserveLogins.emptyState" = "Zatiaľ žiadne Fireproof stránky";
 
 /* Alert message explaining to users that the benefit of fireproofing a site is that they will be kept signed in */
 "preserveLogins.fireproof.message" = "Zabezpečenie tejto webovej stránky funkciou ohňovzdornosti zaistí, aby ste zostali prihlásení aj po použití tlačidla Oheň.";
@@ -4401,9 +4131,6 @@
 
 /* Confirmation button in alert */
 "preserveLogins.remove.all.ok" = "OK";
-
-/* Button to remove all Fireproof sites */
-"preserveLogins.removeAllSites" = "Odstrániť všetky Fireproof stránky";
 
 /* No comment provided by engineer. */
 "Previews" = "Náhľady";
@@ -4707,12 +4434,6 @@
 
 /* Footnote for the hide AI-generated images setting; ends with a Learn more link to the help page (do not remove the link) */
 "settings.aifeatures.hide.ai.generated.images.subtitle" = "Filtruje známe spamové stránky generované umelou inteligenciou vo výsledkoch vyhľadávania obrázkov. [Zisti viac](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/results/how-to-filter-out-ai-images-in-duckduckgo-search-results)";
-
-/* Settings screen description for the Duck.ai keyboard animation toggle */
-"settings.aifeatures.keyboard.animation.subtitle" = "Zobraziť animáciu okolo klávesnice pri prepnutí na Duck.ai alebo písaní v Duck.ai.";
-
-/* Settings screen toggle title for the Duck.ai keyboard animation */
-"settings.aifeatures.keyboard.animation.title" = "Animácia klávesnice Duck.ai";
 
 /* Label describing a feature which is turned on always */
 "settings.always.on" = "Vždy zapnuté";
@@ -5401,9 +5122,6 @@
 /* Alert content for not found subscription */
 "subscription.expired.alert.message" = "Predplatné spojené s týmto Apple účtom už nie je aktívne.";
 
-/* Subtitle in header when the subscription has been cancelled but is still active until it expires */
-"subscription.expiring" = "Platnosť sa končí";
-
 /* FAQ Button */
 "subscription.faq" = "Často kladené otázky a podpora";
 
@@ -5433,6 +5151,9 @@
 
 /* Header for the subscription section */
 "subscription.manage.title" = "Predplatné";
+
+/* Subscription status shown after the user withdrew from the subscription contract */
+"subscription.not.subscribed" = "Bez predplatného";
 
 /* Alert content for not found subscription */
 "subscription.notFound.alert.message" = "S týmto Apple účtom nie je spojené žiadne predplatné.";
@@ -5475,6 +5196,9 @@
 
 /* Progress view title when restoring past subscription purchase */
 "subscription.progress.view.restoring.subscription" = "Obnovuje sa predplatné...";
+
+/* Progress view title while withdrawing from the subscription contract */
+"subscription.progress.view.withdraw.in.progress" = "Prebieha odstúpenie od zmluvy…";
 
 /* Dismiss button on the reinstaller subscription promo. */
 "subscription.promo.reinstaller.buttons.notNow" = "Teraz nie";
@@ -5581,6 +5305,39 @@
 /* View All Plans button to see available subscription tiers */
 "subscription.view.all.plans" = "Zobraziť všetky plány";
 
+/* Button that confirms withdrawal from the subscription contract */
+"subscription.withdraw.confirm.button" = "Potvrdiť výber";
+
+/* Second paragraph of the alert confirming withdrawal from the subscription contract. Parameter is a localized list of features, e.g. VPN, Personal Information Removal and Duck.ai. */
+"subscription.withdraw.confirm.features.message" = "%@ prestanú fungovať, keď to potvrdíš.";
+
+/* Message of the alert confirming withdrawal from the subscription contract. Parameters are the tier name (e.g. Plus) and the refund amount with currency. */
+"subscription.withdraw.confirm.message" = "Tvoje predplatné %1$@ sa skončí okamžite a suma %2$@ ti bude do 14 dní vrátená na pôvodný spôsob platby.";
+
+/* Title of the alert confirming withdrawal from the subscription contract */
+"subscription.withdraw.confirm.title" = "Chceš zrušiť predplatné?";
+
+/* Button that opens the help page to complete a failed subscription withdrawal */
+"subscription.withdraw.error.button" = "Prejsť na stránku Pomocníka";
+
+/* Message of the alert shown when withdrawing from the subscription contract fails */
+"subscription.withdraw.error.message" = "Nepodarilo sa nám automaticky spracovať tvoje odstúpenie od predplatného. Navštív našu stránku pomoci a dokonči odstúpenie od predplatného.";
+
+/* Action title that starts withdrawing from the subscription contract with a full refund */
+"subscription.withdraw.from.contract" = "Odstúpiť od zmluvy";
+
+/* Subtitle of the Withdraw from Contract action. Parameter is the last date the user can withdraw. */
+"subscription.withdraw.from.contract.subtitle" = "Od zmluvy môžeš odstúpiť a získať späť celú sumu do %@";
+
+/* Button that dismisses the withdrawal confirmation and keeps the subscription */
+"subscription.withdraw.keep.button" = "Ponechať predplatné";
+
+/* Confirmation shown after withdrawing from the subscription contract. Parameter is the withdrawal date. */
+"subscription.withdrawn.info" = "Od zmluvy si odstúpil/-a dňa %@.";
+
+/* Shown below the withdrawal confirmation. Parameter is the refunded amount with currency. */
+"subscription.withdrawn.refund.info" = "Vrátenie sumy %@ sa spracúva.";
+
 /* No comment provided by engineer. */
 "SwiftUI Alert" = "Upozornenie SwiftUI";
 
@@ -5602,29 +5359,11 @@
 /* Fallback device name for confirmation dialogs */
 "sync.pairing-v2.unknown-peer-name" = "druhé zariadenie";
 
-/* Title for a button in the Sync Promotion banner on the Bookmarks or Passwords screen that opens Sync settings to connect another device */
-"sync.promo.another-device.connect.action" = "Pripojiť";
-
-/* Message for the Sync Promotion banner on the Bookmarks or Passwords screen, shown when Sync is on but only this device is connected */
-"sync.promo.another-device.message" = "Sync & Backup je povolené na tomto zariadení.";
-
-/* Title for a button in the Sync Promotion banner on the Bookmarks or Passwords screen that opens a screen with links to get DuckDuckGo on other platforms */
-"sync.promo.bookmarks.another-device.get-desktop-app.action" = "Získaj aplikáciu";
-
-/* Title for the Sync Promotion banner on the Bookmarks screen, shown when Sync is on but only this device is connected */
-"sync.promo.bookmarks.another-device.title" = "Chceš synchronizovať záložky aj s aplikáciou pre počítač?";
-
 /* Message for the Sync Promotion banner when user has bookmarks that can be synced */
 "sync.promo.bookmarks.message" = "Účet nie je potrebný. Šifrovanie end-to-end znamená, že vaše záložky nevidí nikto okrem vás, dokonca ani my.";
 
-/* Message for the redesigned Sync Promotion banner on the Bookmarks screen */
-"sync.promo.bookmarks.redesign.message" = "Šifrované end-to-end. Nikto nevidí tvoje záložky, dokonca ani my.";
-
 /* Title for the Sync Promotion banner */
 "sync.promo.bookmarks.title" = "Synchronizujte a zálohujte svoje záložky";
-
-/* Accessibility label for the close button on the Sync Promotion banner */
-"sync.promo.close.accessibility.label" = "Zrušiť výzvu na synchronizáciu";
 
 /* Title for a button in the Sync Promotion banner to set up Sync */
 "sync.promo.confirm.action" = "Nastavenie synchronizácie";
@@ -5638,20 +5377,11 @@
 /* Title for a button in the Sync Promotion banner to dismiss Sync promotion banner */
 "sync.promo.dismiss.action" = "Nie, ďakujem";
 
-/* Title for the Sync Promotion banner on the Passwords screen, shown when Sync is on but only this device is connected */
-"sync.promo.passwords.another-device.title" = "Chceš synchronizovať heslá aj s aplikáciou pre počítač?";
-
 /* Message for the Sync Promotion banner when user has passwords that can be synced */
 "sync.promo.passwords.message" = "Účet nie je potrebný. End-to-end šifrovanie znamená, že nikto okrem vás nevidí vaše heslá, dokonca ani my.";
 
-/* Message for the redesigned Sync Promotion banner on the Passwords screen */
-"sync.promo.passwords.redesign.message" = "Šifrované end-to-end. Nikto nevidí tvoje heslá, dokonca ani my.";
-
 /* Title for the Sync Promotion banner */
 "sync.promo.passwords.title" = "Synchronizujte a zálohujte svoje heslá";
-
-/* Title for the button in the redesigned Sync Promotion banner and the Data Import summary Sync card that opens Sync settings and starts setting up Sync */
-"sync.promo.redesign.confirm.action" = "Začať synchronizáciu";
 
 /* Button title to start backup */
 "sync.recovery.alternative.prompt.backup.button" = "Sync & Backup pre toto zariadenie";

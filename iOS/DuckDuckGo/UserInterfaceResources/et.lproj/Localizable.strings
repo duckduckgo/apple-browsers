@@ -385,21 +385,6 @@
 /* Title for the New Tab row in the Duck.ai tab header Plus (+) menu */
 "aichat.header.plusMenu.newTab" = "Uus vahekaart";
 
-/* Section header in the Duck.ai tab header Plus (+) menu; every row below it opens a new tab */
-"aichat.header.plusMenu.newTabSection" = "Uus vahekaart";
-
-/* Row in the New Tab section of the Duck.ai tab header Plus (+) menu — opens a new Duck.ai chat in a new tab */
-"aichat.header.plusMenu.newTabSection.chat" = "Vestlus";
-
-/* Row in the New Tab section of the Duck.ai tab header Plus (+) menu — opens Duck.ai in image generation mode in a new tab */
-"aichat.header.plusMenu.newTabSection.image" = "Pilt";
-
-/* Row in the Duck.ai tab header Plus (+) menu — opens a new tab in search mode */
-"aichat.header.plusMenu.newTabSection.search" = "Otsi";
-
-/* Row in the New Tab section of the Duck.ai tab header Plus (+) menu — opens a new Duck.ai voice chat in a new tab */
-"aichat.header.plusMenu.newTabSection.voiceChat" = "Häälvestlus";
-
 /* Title for the New Voice Chat row in the Duck.ai tab header Plus (+) menu */
 "aichat.header.plusMenu.newVoiceChat" = "Uus häälvestlus";
 
@@ -1578,21 +1563,6 @@
 
 /* Parameter is domain name (string) */
 "contextual.onboarding.browsing.one.tracker" = "*%1$@* üritas sind siin jälitada. Ma blokeerisin need!\n\n☝️ Lisateabe saamiseks vajuta kilbile.";
-
-/* Body of the alternative onboarding end-of-journey dialog promoting Duck.ai. */
-"contextual.onboarding.eoj-try-ai.message" = "Vestlused anonüümitakse, kontot pole vaja. Ja see on tasuta!";
-
-/* Primary button on the alternative onboarding end-of-journey dialog; opens Duck.ai. 'Duck.ai' is a brand name and should not be translated. */
-"contextual.onboarding.eoj-try-ai.primary-button" = "Proovi Duck.ai-d";
-
-/* Secondary button on the alternative onboarding end-of-journey dialog; skips to the new tab page. */
-"contextual.onboarding.eoj-try-ai.secondary-button" = "Jäta vahele";
-
-/* Title of the alternative onboarding end-of-journey dialog promoting Duck.ai. 'Duck.ai' is a brand name and should not be translated. */
-"contextual.onboarding.eoj-try-ai.title" = "Vestle privaatselt populaarsete tehisintellektidega Duck.ai-s";
-
-/* Body of the onboarding end-of-journey dialog for users who chose the AI-chat download reason. 'Search' refers to the Search option of the address bar Search/Duck.ai toggle and should match its translation. 'Duck.ai' is a brand name and should not be translated. */
-"contextual.onboarding.eoj.private-ai-chat.message" = "Alusta privaatset AI-vestlust Duck.ai-ga või lülita sisse, et otsida kaitstud sirvimist.";
 
 /* Button on the last screen of the onboarding, it will dismiss the onboarding screen. */
 "contextual.onboarding.final-screen.button" = "Viska viis!";
@@ -3331,126 +3301,6 @@
 /* No comment provided by engineer. */
 "menu.button.hint" = "Sirvimismenüü";
 
-/* iPad menu bar command */
-"menuActualSize" = "Tegelik suurus";
-
-/* iPad menu bar command */
-"menuAddToDock" = "Lisa DuckDuckGo dokki...";
-
-/* iPad menu bar command */
-"menuAddWidget" = "Lisa vidin avakuvale";
-
-/* iPad menu bar command */
-"menuBack" = "Tagasi";
-
-/* iPad menu bar title */
-"menuBookmarks" = "Järjehoidjad";
-
-/* iPad menu bar command */
-"menuClearTabsAndData" = "Kustuta vahekaardid ja andmed";
-
-/* iPad Duck.ai menu bar command */
-"menuDeleteAllChats" = "Kustuta kõik vestlused...";
-
-/* iPad menu bar command */
-"menuDuplicateTab" = "Dubleeri vahekaart";
-
-/* iPad menu bar command */
-"menuExportBookmarks" = "Järjehoidjate eksportimine…";
-
-/* iPad menu bar submenu */
-"menuFavorites" = "Lemmikud";
-
-/* iPad menu bar command */
-"menuFeedback" = "Jaga tagasisidet";
-
-/* iPad menu bar command */
-"menuForward" = "Edasi";
-
-/* iPad menu bar command */
-"menuHideBookmarks" = "Peida järjehoidjad";
-
-/* iPad menu bar command */
-"menuHideDownloads" = "Peida allalaadimised";
-
-/* iPad menu bar command */
-"menuHideDuckAIButton" = "Peida Duck.ai nupp";
-
-/* iPad menu bar command */
-"menuHidePasswords" = "Peida paroolid";
-
-/* iPad menu bar command */
-"menuHideTabs" = "Peida vahelehed";
-
-/* iPad menu bar command */
-"menuImportBookmarks" = "Impordi järjehoidjad…";
-
-/* iPad menu bar command */
-"menuImportBookmarksAndPasswords" = "Impordi järjehoidjad ja paroolid…";
-
-/* iPad menu bar command */
-"menuLastTab" = "Viimane vahekaart";
-
-/* iPad Duck.ai menu bar command */
-"menuNewChat" = "Uus vestlus";
-
-/* iPad Duck.ai menu bar command */
-"menuNewImageChat" = "Uus pildivestlus";
-
-/* iPad menu bar command */
-"menuNewTabOnRight" = "Uus vahekaart paremal";
-
-/* iPad Duck.ai menu bar command */
-"menuNewVoiceChat" = "Uus häälvestlus";
-
-/* iPad menu bar command */
-"menuNextTab" = "Kuva järgmine vahekaart";
-
-/* iPad Duck.ai menu bar command */
-"menuOpenDuckAI" = "Ava Duck.ai";
-
-/* iPad menu bar command */
-"menuOpenLocation" = "Ava asukoht…";
-
-/* iPad menu bar command */
-"menuPreviousTab" = "Kuva eelmine vahekaart";
-
-/* iPad menu bar command */
-"menuPrint" = "Prindi...";
-
-/* iPad Duck.ai menu bar section header */
-"menuRecentChats" = "Hiljutised vestlused";
-
-/* iPad menu bar command selecting a numbered tab */
-"menuSelectTab" = "Vali vahekaart %d";
-
-/* iPad menu bar command */
-"menuSetDefaultBrowser" = "Määra DuckDuckGo vaikebrauseriks…";
-
-/* iPad menu bar command */
-"menuSettings" = "DuckDuckGo seaded…";
-
-/* iPad menu bar command */
-"menuShowBookmarks" = "Näita järjehoidjaid";
-
-/* iPad menu bar command */
-"menuShowDownloads" = "Kuva allalaadimised";
-
-/* iPad menu bar command */
-"menuShowDuckAIButton" = "Kuva Duck.ai nupp";
-
-/* iPad menu bar command */
-"menuShowPasswords" = "Kuva paroolid";
-
-/* iPad menu bar command */
-"menuShowTabs" = "Kuva vahelehed";
-
-/* iPad menu bar command */
-"menuStop" = "Peata";
-
-/* iPad menu bar command */
-"menuVoiceSearch" = "Privaatne häälotsing";
-
 /* No comment provided by engineer. */
 "Message" = "Sõnum";
 
@@ -3853,41 +3703,8 @@
 /* Button on the Add to Dock tutorial screen of the onboarding, it will proceed to the next step of the onboarding. */
 "onboarding.addToDock.buttons.gotIt" = "Sain aru";
 
-/* The message of the onboarding dialog popup that promotes adding the DDG browser icon to the dock. */
-"onboarding.addToDock.promo.intro.message" = "Olen kiireks juurdepääsuks hõlpsasti kättesaadav.";
-
 /* Button to change the default browser */
 "onboarding.browsers.cta" = "Vali oma brauser";
-
-/* Label for the option to set up the app to block ads and pop-ups. The text is split over two lines; keep a line break at a natural position in the translation. */
-"onboarding.downloadReason.blockAds" = "Blokeeri reklaamid\nja hüpikaknad";
-
-/* Label for the option to set up the app for private searching and browsing. The text is split over two lines; keep a line break at a natural position in the translation. */
-"onboarding.downloadReason.browsePrivately" = "Otsi ja sirvi\nprivaatselt";
-
-/* Label for the option to set up the app for private AI chat. The text is split over two lines; keep a line break at a natural position in the translation. */
-"onboarding.downloadReason.chatWithAI" = "Vestle tehisintellektiga\nprivaatselt";
-
-/* Heading shown above the browser comparison chart during onboarding for users who chose to search and browse privately or to chat with AI privately. The text is split over two lines; keep a line break at a natural position in the translation. */
-"onboarding.downloadReason.comparison.title-generic" = "Oled õiges kohas!\nKaitsed aktiveeritud.";
-
-/* Heading shown above the browser comparison chart during onboarding for users who chose to block ads and pop-ups. The text is split over two lines; keep a line break at a natural position in the translation. */
-"onboarding.downloadReason.comparison.title-no-ads" = "Oled õiges kohas!\nReklaamide blokeerimine aktiveeritud.";
-
-/* Heading shown above the browser comparison chart during onboarding for users who chose to disable AI features. The text is split over two lines; keep a line break at a natural position in the translation. */
-"onboarding.downloadReason.comparison.title-no-ai" = "Oled õiges kohas!\nTehisintellekti funktsioonid on välja lülitatud.";
-
-/* Button to continue to the next onboarding screen after choosing a reason. */
-"onboarding.downloadReason.cta" = "Järgmine";
-
-/* Subtitle of the onboarding screen asking why the user downloaded the app. */
-"onboarding.downloadReason.message" = "Vali, mis sind kõige rohkem huvitab, ja alustame sealt.";
-
-/* Label for the option to set up the app without AI features in search results. The text is split over two lines; keep a line break at a natural position in the translation. */
-"onboarding.downloadReason.removeAI" = "Keela\ntehisintellekti funktsioonid";
-
-/* Title of the onboarding screen asking why the user downloaded the app. */
-"onboarding.downloadReason.title" = "Seadista kõik enda soovide järgi";
 
 /* Message in the onboarding dialog popup that promotes adding the DuckDuckGo browser icon to the iPhone dock, shown during the Duck.ai onboarding flow. */
 "onboarding.duckai.addToDock.promo.message" = "Ma pesitsen sinu igapäevaste tehisintellektiga vestluste ja sirvimise jaoks käeulatuses.";
@@ -3915,9 +3732,6 @@
 
 /* Title of the dialog in the Duck.ai onboarding flow asking the user if they want to set DuckDuckGo as their default browser. */
 "onboarding.duckai.browser.title" = "Kas sa tahad DuckDuckGo oma vaikebrauseriks teha?";
-
-/* Message of the last screen of the onboarding to the browser app for the Duck.ai flow. */
-"onboarding.duckai.contextual.end-of-journey.message" = "Alusta privaatset AI-vestlust Duck.ai-ga või lülita sisse, et otsida kaitstud sirvimist.";
 
 /* Body text of the subscription promo shown at the end of the Duck.ai onboarding flow. Describes the paid Duck.ai subscription. 'GPT', 'Claude' are brand names and should not be translated. */
 "onboarding.duckai.contextual.subscription.message" = "Pakume ka tasulist tellimust, kus on täiustatud tehisintellekti mudelid GPT-lt ja Claude'lt, kõrgemad vestluspiirangud, turvaline VPN ja palju muud.";
@@ -4041,84 +3855,6 @@
 
 /* Button to skip the onboarding process */
 "onboarding.intro.cta.skip" = "Olen siin varem olnud";
-
-/* Subtitle for the accept-other-cookies option on the onboarding ad-blocking personalization screen. */
-"onboarding.personalization.adBlocking.acceptOtherCookies.subtitle" = "Peidab rohkem hüpikaknaid, nõustudes küpsistega, millest ei saa loobuda";
-
-/* Title for the accept-other-cookies option on the onboarding ad-blocking personalization screen. */
-"onboarding.personalization.adBlocking.acceptOtherCookies.title" = "Nõustu mõne küpsisega";
-
-/* Button to continue to the next onboarding screen from the ad-blocking personalization screen. */
-"onboarding.personalization.adBlocking.cta" = "Järgmine";
-
-/* Footer text shown above the button on the ad-blocking personalization screen, reassuring the user the choices can be changed later. */
-"onboarding.personalization.adBlocking.footer" = "Saad seda hiljem alati seadetes muuta.";
-
-/* Subtitle for the reject-optional-cookies option on the onboarding ad-blocking personalization screen. */
-"onboarding.personalization.adBlocking.rejectOptionalCookies.subtitle" = "Maksimeerib privaatsust ja sulgeb küpsiste hüpikaknad";
-
-/* Title for the reject-optional-cookies option on the onboarding ad-blocking personalization screen. */
-"onboarding.personalization.adBlocking.rejectOptionalCookies.title" = "Keeldu valikulistest küpsistest";
-
-/* Title of the onboarding ad-blocking personalization screen. */
-"onboarding.personalization.adBlocking.title" = "Internet, ilma mürata.";
-
-/* Title for the YouTube ad blocking option on the onboarding ad-blocking personalization screen. 'YouTube' is a brand name and should not be translated. */
-"onboarding.personalization.adBlocking.youTubeAdBlocking.title" = "Videoreklaamide blokeerimine YouTube'is";
-
-/* Primary button to open new tabs with AI chat on the onboarding address bar toggle mode personalization screen. */
-"onboarding.personalization.addressBarToggle.cta.primary" = "Ava vahekaardid tehisintellekti vestlusega";
-
-/* Secondary button to dismiss the onboarding address bar toggle mode personalization screen. */
-"onboarding.personalization.addressBarToggle.cta.secondary" = "Mitte praegu";
-
-/* Footer of the onboarding address bar toggle mode personalization screen. 'Search' refers to the Search option of the address bar Search/Duck.ai toggle and should match its translation. */
-"onboarding.personalization.addressBarToggle.footer" = "Saad ühe puudutusega lülituda otsingule";
-
-/* Title of the onboarding address bar toggle mode personalization screen. */
-"onboarding.personalization.addressBarToggle.title" = "Kas soovid, et uutel vahekaartidel avaneks tehisintellekti vestlus?";
-
-/* Button to continue to the next onboarding screen from the AI model personalization screen. */
-"onboarding.personalization.aiModel.cta" = "Järgmine";
-
-/* Message of the onboarding AI model personalization screen. */
-"onboarding.personalization.aiModel.message" = "Muuda oma vaikimisi tehisintellekti kohe või igal ajal vestluse käigus.";
-
-/* Title of the onboarding AI model personalization screen. */
-"onboarding.personalization.aiModel.title" = "Sinu vestlused, sinu moodi.";
-
-/* Button to continue to the next onboarding screen from the AI search personalization screen. */
-"onboarding.personalization.aiSearch.cta" = "Järgmine";
-
-/* Subtitle for the hide AI-generated images option on the onboarding AI search personalization screen. */
-"onboarding.personalization.aiSearch.hideAIGeneratedImages.subtitle" = "Eemalda pildiotsingu tulemustest teadaolevad tehisintellekti rämpsposti saidid";
-
-/* Title for the hide AI-generated images option on the onboarding AI search personalization screen. */
-"onboarding.personalization.aiSearch.hideAIGeneratedImages.title" = "Peida AI loodud pildid";
-
-/* Subtitle for the Search Assist option on the onboarding AI search personalization screen. */
-"onboarding.personalization.aiSearch.searchAssist.subtitle" = "Kaasa otsingutulemustesse tehisintellekti loodud vastused";
-
-/* Title for the Search Assist option on the onboarding AI search personalization screen. 'Search Assist' is a DuckDuckGo product name and should not be translated. */
-"onboarding.personalization.aiSearch.searchAssist.title" = "Search Assist";
-
-/* Title of the onboarding AI search personalization screen. */
-"onboarding.personalization.aiSearch.title" = "Otsi ilma tehisintellektita";
-
-/* Primary button to turn Duck.ai on from the onboarding Duck.ai enabled personalization screen. 'Duck.ai' is a brand name and should not be translated. */
-"onboarding.personalization.duckAIEnabled.cta.primary" = "Lülita Duck.ai sisse";
-
-/* Secondary button to keep Duck.ai off from the onboarding Duck.ai enabled personalization screen. 'Duck.ai' is a brand name and should not be translated. */
-"onboarding.personalization.duckAIEnabled.cta.secondary" = "Jäta Duck.ai välja lülitatuks";
-
-/* Message of the onboarding Duck.ai enabled personalization screen. 'Duck.ai' is a brand name and should not be translated. */
-"onboarding.personalization.duckAIEnabled.message" = "Duck.ai-s muudame sinu vestlused anonüümseks ega kasuta neid kunagi tehisintellekti treenimiseks.";
-
-/* Title of the onboarding Duck.ai enabled personalization screen. */
-"onboarding.personalization.duckAIEnabled.title" = "Kas soovid võimalust vestelda privaatselt populaarsete tehisintellektidega?";
-
-/* Title for the private search Duck.ai query onboarding screen. */
-"onboarding.personalization.duckAIQuery.privateSearch.title" = "Proovi nüüd privaatset otsingut!";
 
 /* Button on the Privacy Pro promotion onboarding step. Tapping the button navigates to the Privacy Pro paywall. */
 "onboarding.privacypro.promo.buttons.learnMore" = "Loe edasi";
@@ -4360,17 +4096,11 @@
 /* Description of too many requests error when syncing. */
 "prefrences.sync.too-many-requests.description" = "Sync & Backup pole ajutiselt saadaval.";
 
-/* Fireproofing setting toggle label */
-"preserveLogins.askOnSignIn" = "Küsi Fireproof-veebisaite sisselogimisel";
-
 /* No comment provided by engineer. */
 "preserveLogins.domain.list.footer" = "Veebisaidid kasutavad küpsiseid, et hoida sind sisse logitud. Kui teed saidi tulekindlaks, ei kustutata küpsiseid ja sa jääd sisse logituks isegi pärast tulenupu kasutamist. Me blokeerime endiselt kolmanda poole jälitajad, kelle me tulekindlatelt lehtedelt leiame.";
 
 /* Section header above Fireproofed websites list */
 "preserveLogins.domain.list.title" = "Tulekindlad veebisaidid";
-
-/* Empty Fireproof sites list */
-"preserveLogins.emptyState" = "Ükski veebisait ei ole veel Fireproof";
 
 /* Alert message explaining to users that the benefit of fireproofing a site is that they will be kept signed in */
 "preserveLogins.fireproof.message" = "Selle lehe muutmine tulekindaks hoiab sind sisse logitud pärast tulenupu kasutamist.";
@@ -4401,9 +4131,6 @@
 
 /* Confirmation button in alert */
 "preserveLogins.remove.all.ok" = "OK";
-
-/* Button to remove all Fireproof sites */
-"preserveLogins.removeAllSites" = "Eemalda kõik Fireproof-veebisaidid";
 
 /* No comment provided by engineer. */
 "Previews" = "Eelvaated";
@@ -4707,12 +4434,6 @@
 
 /* Footnote for the hide AI-generated images setting; ends with a Learn more link to the help page (do not remove the link) */
 "settings.aifeatures.hide.ai.generated.images.subtitle" = "Filtreerib pildiotsingu tulemustest välja teadaolevad tehisintellekti rämpsposti saidid. [Lisainfo](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/results/how-to-filter-out-ai-images-in-duckduckgo-search-results)";
-
-/* Settings screen description for the Duck.ai keyboard animation toggle */
-"settings.aifeatures.keyboard.animation.subtitle" = "Kuva animatsioon ümber klaviatuuri, kui lähed üle Duck.ai-le või sisestad seal teksti.";
-
-/* Settings screen toggle title for the Duck.ai keyboard animation */
-"settings.aifeatures.keyboard.animation.title" = "Duck.ai klaviatuuri animatsioon";
 
 /* Label describing a feature which is turned on always */
 "settings.always.on" = "Alati sisse lülitatud";
@@ -5401,9 +5122,6 @@
 /* Alert content for not found subscription */
 "subscription.expired.alert.message" = "Selle Apple'i kontoga seotud tellimus ei ole enam aktiivne.";
 
-/* Subtitle in header when the subscription has been cancelled but is still active until it expires */
-"subscription.expiring" = "Aeguv";
-
 /* FAQ Button */
 "subscription.faq" = "KKK ja tugi";
 
@@ -5433,6 +5151,9 @@
 
 /* Header for the subscription section */
 "subscription.manage.title" = "Püsitellimus";
+
+/* Subscription status shown after the user withdrew from the subscription contract */
+"subscription.not.subscribed" = "Pole tellitud";
 
 /* Alert content for not found subscription */
 "subscription.notFound.alert.message" = "Selle Apple'i kontoga ei ole seotud ühtegi tellimust.";
@@ -5475,6 +5196,9 @@
 
 /* Progress view title when restoring past subscription purchase */
 "subscription.progress.view.restoring.subscription" = "Tellimuse taastamine...";
+
+/* Progress view title while withdrawing from the subscription contract */
+"subscription.progress.view.withdraw.in.progress" = "Lepingust taganemine pooleli…";
 
 /* Dismiss button on the reinstaller subscription promo. */
 "subscription.promo.reinstaller.buttons.notNow" = "Mitte praegu";
@@ -5581,6 +5305,39 @@
 /* View All Plans button to see available subscription tiers */
 "subscription.view.all.plans" = "Vaata kõiki plaane";
 
+/* Button that confirms withdrawal from the subscription contract */
+"subscription.withdraw.confirm.button" = "Kinnita tellimusest loobumine";
+
+/* Second paragraph of the alert confirming withdrawal from the subscription contract. Parameter is a localized list of features, e.g. VPN, Personal Information Removal and Duck.ai. */
+"subscription.withdraw.confirm.features.message" = "%@ lakkavad töötamast, kui oled kinnitanud.";
+
+/* Message of the alert confirming withdrawal from the subscription contract. Parameters are the tier name (e.g. Plus) and the refund amount with currency. */
+"subscription.withdraw.confirm.message" = "Sinu %1$@ tellimus lõpeb kohe ja %2$@ tagastatakse 14 päeva jooksul sinu algsele makseviisile.";
+
+/* Title of the alert confirming withdrawal from the subscription contract */
+"subscription.withdraw.confirm.title" = "Kas soovid tellimusest taganeda?";
+
+/* Button that opens the help page to complete a failed subscription withdrawal */
+"subscription.withdraw.error.button" = "Külasta abilehte";
+
+/* Message of the alert shown when withdrawing from the subscription contract fails */
+"subscription.withdraw.error.message" = "Sinu tellimusest taganemise taotlust ei saanud automaatselt töödelda. Palun mine meie abilehele, et tellimusest taganemine lõpule viia.";
+
+/* Action title that starts withdrawing from the subscription contract with a full refund */
+"subscription.withdraw.from.contract" = "Tagane lepingust";
+
+/* Subtitle of the Withdraw from Contract action. Parameter is the last date the user can withdraw. */
+"subscription.withdraw.from.contract.subtitle" = "Sa saad lepingust taganeda ja kogu raha tagasi saada kuni %@";
+
+/* Button that dismisses the withdrawal confirmation and keeps the subscription */
+"subscription.withdraw.keep.button" = "Jätka tellimust";
+
+/* Confirmation shown after withdrawing from the subscription contract. Parameter is the withdrawal date. */
+"subscription.withdrawn.info" = "Sa taganesid lepingust %@.";
+
+/* Shown below the withdrawal confirmation. Parameter is the refunded amount with currency. */
+"subscription.withdrawn.refund.info" = "Sinu %@ tagasimakset töödeldakse.";
+
 /* No comment provided by engineer. */
 "SwiftUI Alert" = "SwiftUI teade";
 
@@ -5602,29 +5359,11 @@
 /* Fallback device name for confirmation dialogs */
 "sync.pairing-v2.unknown-peer-name" = "teine seade";
 
-/* Title for a button in the Sync Promotion banner on the Bookmarks or Passwords screen that opens Sync settings to connect another device */
-"sync.promo.another-device.connect.action" = "Ühenda";
-
-/* Message for the Sync Promotion banner on the Bookmarks or Passwords screen, shown when Sync is on but only this device is connected */
-"sync.promo.another-device.message" = "Sync & Backup on selles seadmes sisse lülitatud.";
-
-/* Title for a button in the Sync Promotion banner on the Bookmarks or Passwords screen that opens a screen with links to get DuckDuckGo on other platforms */
-"sync.promo.bookmarks.another-device.get-desktop-app.action" = "Hangi rakendus";
-
-/* Title for the Sync Promotion banner on the Bookmarks screen, shown when Sync is on but only this device is connected */
-"sync.promo.bookmarks.another-device.title" = "Kas sünkroonida järjehoidjad ka sinu töölauarakendusega?";
-
 /* Message for the Sync Promotion banner when user has bookmarks that can be synced */
 "sync.promo.bookmarks.message" = "Kontot pole vaja. Otsast lõpuni krüptimine tähendab, et keegi peale sinu ei näe sinu järjehoidjaid, isegi mitte meie.";
 
-/* Message for the redesigned Sync Promotion banner on the Bookmarks screen */
-"sync.promo.bookmarks.redesign.message" = "Otspunktkrüpteeritud. Keegi ei näe sinu järjehoidjaid, isegi mitte meie.";
-
 /* Title for the Sync Promotion banner */
 "sync.promo.bookmarks.title" = "Oma järjehoidjate sünkroonimine ja varundamine";
-
-/* Accessibility label for the close button on the Sync Promotion banner */
-"sync.promo.close.accessibility.label" = "Loobu sünkroonimise reklaamist";
 
 /* Title for a button in the Sync Promotion banner to set up Sync */
 "sync.promo.confirm.action" = "Sünkroonimise seadistamine";
@@ -5638,20 +5377,11 @@
 /* Title for a button in the Sync Promotion banner to dismiss Sync promotion banner */
 "sync.promo.dismiss.action" = "Ei aitäh";
 
-/* Title for the Sync Promotion banner on the Passwords screen, shown when Sync is on but only this device is connected */
-"sync.promo.passwords.another-device.title" = "Kas sünkroonida paroolid ka sinu töölauarakendusega?";
-
 /* Message for the Sync Promotion banner when user has passwords that can be synced */
 "sync.promo.passwords.message" = "Kontot pole vaja. Otsast lõpuni krüptimine tähendab, et keegi peale sinu ei näe sinu paroole, isegi mitte meie.";
 
-/* Message for the redesigned Sync Promotion banner on the Passwords screen */
-"sync.promo.passwords.redesign.message" = "Otspunktkrüpteeritud. Keegi ei näe sinu paroole, isegi mitte meie.";
-
 /* Title for the Sync Promotion banner */
 "sync.promo.passwords.title" = "Oma paroolide sünkroonimine ja varundamine";
-
-/* Title for the button in the redesigned Sync Promotion banner and the Data Import summary Sync card that opens Sync settings and starts setting up Sync */
-"sync.promo.redesign.confirm.action" = "Alusta sünkroonimist";
 
 /* Button title to start backup */
 "sync.recovery.alternative.prompt.backup.button" = "Sync & Backup see seade";

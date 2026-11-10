@@ -29,15 +29,18 @@ final class BrowserToolScope {
     let token = UUID().uuidString
     let source: MultiTabAttachmentSource
     let selectedTabID: () -> String?
+    let selectTab: (Tab) -> Bool
     private weak var owner: Tab?
     private var isRevoked = false
 
-    init(owner: Tab, source: MultiTabAttachmentSource, selectedTabID: @escaping () -> String?) {
+    init(owner: Tab, source: MultiTabAttachmentSource, selectedTabID: @escaping () -> String?,
+         selectTab: @escaping (Tab) -> Bool = { _ in false }) {
         self.owner = owner
         self.ownerTabID = owner.uid
         self.isBurner = owner.mode == .fire
         self.source = source
         self.selectedTabID = selectedTabID
+        self.selectTab = selectTab
     }
 
     var isValid: Bool {
@@ -47,6 +50,10 @@ final class BrowserToolScope {
 
     func accepts(_ context: BrowserToolCallContext) -> Bool {
         isValid && !context.isBurner && context.ownerTabID == ownerTabID && context.ownerWindowToken == token
+    }
+
+    func contains(_ tab: Tab) -> Bool {
+        isValid && tab.mode == .normal && source.tabsProvider().contains { $0 === tab }
     }
 
     func revoke() {

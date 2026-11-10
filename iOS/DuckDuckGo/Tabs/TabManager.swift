@@ -370,6 +370,12 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
         guard tabsModel(for: mode).tabs.contains(where: { $0 === owner }) else { return nil }
         return BrowserToolScope(owner: owner, source: makeTabAttachmentSource(for: owner), selectedTabID: { [weak self] in
             self?.tabsModel(for: mode).currentTab?.uid
+        }, selectTab: { [weak self] target in
+            guard let self, self.currentBrowsingMode == .normal, target.mode == .normal,
+                  self.tabsModel(for: .normal).tabs.contains(where: { $0 === target }),
+                  let mainController = self.delegate as? MainViewController else { return false }
+            mainController.selectTab(target)
+            return self.currentTabsModel.currentTab === target
         })
     }
 

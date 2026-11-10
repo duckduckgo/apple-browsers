@@ -90,4 +90,25 @@ final class BrowserToolScopeTests: XCTestCase {
         XCTAssertFalse(scope.accepts(BrowserToolCallContext(ownerTabID: owner.uid, ownerWindowToken: scope.token,
                                                            isBurner: false)))
     }
+
+    func testContainsRequiresNormalObjectMembershipAndValidOwner() {
+        let owner = Tab(uid: "owner", fireTab: false)
+        let target = Tab(uid: "target", fireTab: false)
+        let fire = Tab(uid: "fire", fireTab: true)
+        var tabs = [owner, target, fire]
+        let source = MultiTabAttachmentSource(currentTabID: owner.uid, mode: .normal, tabsProvider: { tabs })
+        let scope = BrowserToolScope(owner: owner, source: source, selectedTabID: { owner.uid })
+        XCTAssertTrue(scope.contains(target))
+        XCTAssertFalse(scope.contains(Tab(uid: target.uid, fireTab: false)))
+        XCTAssertFalse(scope.contains(fire))
+        XCTAssertFalse(scope.selectTab(target))
+        tabs = [owner]
+        XCTAssertFalse(scope.contains(target))
+        tabs = [Tab(uid: owner.uid, fireTab: false), target]
+        XCTAssertFalse(scope.contains(target))
+        tabs = [owner, target]
+        scope.revoke()
+        XCTAssertFalse(scope.contains(target))
+    }
+
 }

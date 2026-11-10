@@ -36,6 +36,7 @@ final class TabManagerTests: XCTestCase {
 
     func testOwnerRemovalDetachesSourcesEvenWithoutCachedController() throws {
         let fixture = BrowserToolsBridgeFixture()
+        fixture.flags.enabledFeatureFlags.append(.aiChatBrowserToolSwitchToTab)
         defer { fixture.cleanUp() }
         let model = TabsModel(tabs: [fixture.owner], desktop: false)
         let manager = try makeManager(model, featureFlagger: fixture.flags)
@@ -52,6 +53,7 @@ final class TabManagerTests: XCTestCase {
 
     func testNormalControllerReceivesSharedServiceAndWeakOwnerScopeBeforeUse() throws {
         let fixture = BrowserToolsBridgeFixture()
+        fixture.flags.enabledFeatureFlags.append(.aiChatBrowserToolSwitchToTab)
         defer { fixture.cleanUp() }
         let model = TabsModel(tabs: [fixture.owner], desktop: false)
         let manager = try makeManager(model, featureFlagger: fixture.flags)
@@ -1214,6 +1216,16 @@ final class TabManagerTests: XCTestCase {
         XCTAssertFalse(fireScope.isValid)
         manager.remove(tab: owner)
         XCTAssertFalse(scope.isValid)
+    }
+
+    func testBrowserToolScopeRejectsSelectionWithoutMainController() throws {
+        let owner = Tab(uid: "owner", fireTab: false)
+        let target = Tab(uid: "target", fireTab: false)
+        let model = TabsModel(tabs: [owner, target], desktop: false)
+        let manager = try makeManager(model)
+        let scope = try XCTUnwrap(manager.makeBrowserToolScope(for: owner))
+        XCTAssertFalse(scope.selectTab(target))
+        XCTAssertEqual(model.currentTab?.uid, owner.uid)
     }
 
     private func makeAttachmentManager() throws -> (TabManager, [Tab]) {

@@ -33,18 +33,26 @@ final class AIChatBrowserToolsService {
     private let injectedScopeProvider: BrowserToolScopeProvider?
     private(set) lazy var catalog = BrowserToolCatalog(
         tools: makeTools(),
-        configuration: configuration, capabilities: [.listOpenTabs])
+        configuration: configuration, capabilities: supportedCapabilities)
     private(set) lazy var invoker = BrowserToolInvoker(
         catalog: catalog, clientToolPermissions: clientToolPermissions)
     let permissions: BrowserToolPermissionStoring
     let clientToolPermissions: ClientToolPermissionCoordinator
     private let configuration: AIChatBrowserToolsConfiguration
 
+    private var supportedCapabilities: [ClientToolCapability] = [
+        .switchToTab
+    ]
+
     init(featureFlagger: any FeatureFlagger,
          scopeProvider: BrowserToolScopeProvider? = nil,
-         permissionStorage: any KeyedStoring<BrowserToolPermissionStorageKeys> = UserDefaults.standard.keyedStoring()) {
+         permissionStorage: any KeyedStoring<BrowserToolPermissionStorageKeys> = UserDefaults.standard.keyedStoring(),
+         capabilities: [ClientToolCapability]? = nil) {
         configuration = AIChatBrowserToolsConfiguration(featureFlagger: featureFlagger)
         injectedScopeProvider = scopeProvider
+        if let capabilities {
+            self.supportedCapabilities = capabilities
+        }
         let permissions = BrowserToolPermissionStore(storage: permissionStorage)
         self.permissions = permissions
         clientToolPermissions = ClientToolPermissionCoordinator(permissions: permissions)
@@ -61,7 +69,8 @@ final class AIChatBrowserToolsService {
             self?.scope(for: context)
         }
         return [
-            ListOpenTabsBrowserTool(scopeProvider: scopeProvider)
+            ListOpenTabsBrowserTool(scopeProvider: scopeProvider),
+            SwitchToTabBrowserTool(scopeProvider: scopeProvider)
         ]
     }
 }
@@ -306,7 +315,9 @@ private final class AIChatBrowserToolsConfiguration: BrowserToolsConfiguration {
         switch subfeature {
         case .listOpenTabs:
             .aiChatBrowserToolListOpenTabs
-        case .featureEnabled, .searchHistory, .switchToTab, .readTabContent, .findInPage, .highlightInPage:
+        case .switchToTab:
+            .aiChatBrowserToolSwitchToTab
+        case .featureEnabled, .searchHistory, .readTabContent, .findInPage, .highlightInPage:
             nil
         }
     }

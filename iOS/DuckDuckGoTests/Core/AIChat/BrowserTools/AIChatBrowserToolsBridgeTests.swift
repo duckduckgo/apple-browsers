@@ -644,7 +644,8 @@ final class BrowserToolsBridgeFixture {
         self.defaults = defaults
         self.flags = flags
         owner = Tab(uid: "owner", link: Link(title: "Owner", url: URL(string: "https://owner.example")!), fireTab: fire)
-        service = AIChatBrowserToolsService(featureFlagger: flags, permissionStorage: defaults.keyedStoring())
+        service = AIChatBrowserToolsService(featureFlagger: flags, permissionStorage: defaults.keyedStoring(),
+                                            capabilities: [.listOpenTabs])
         handler = AIChatUserScriptHandler(experimentalAIChatManager: ExperimentalAIChatManager(featureFlagger: flags),
                                           syncHandler: MockAIChatSyncHandling(), bonusHandler: MockAIChatBonusHandling(),
                                           featureFlagger: flags, keyValueStore: defaults)

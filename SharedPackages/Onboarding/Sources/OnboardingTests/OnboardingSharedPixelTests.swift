@@ -374,7 +374,6 @@ final class OnboardingSharedPixelTests: XCTestCase {
         // GIVEN
         let cases: [(OnboardingSharedPixelEvent, String)] = [
             (.downloadChoice(.shown), "onboarding_download-choice"),
-            (.preferencesSerp(.shown), "onboarding_preferences_serp"),
             (.preferencesAIModel(.shown), "onboarding_preferences_ai-model"),
             (.preferencesAIToggleMode(.shown), "onboarding_preferences_ai-toggle-mode"),
             (.preferencesAISearch(.shown), "onboarding_preferences_ai-search"),
@@ -419,23 +418,6 @@ final class OnboardingSharedPixelTests: XCTestCase {
             XCTAssertEqual(event.pixel.parameters?["event"], "clicked")
             XCTAssertEqual(event.pixel.parameters?["value"], expectedValue, "Failed for \(value)")
         }
-    }
-
-    func testWhenPreferencesSerpClickedThenSendsToggleParametersAndNoValue() throws {
-        // GIVEN
-        let pixelFiring = PixelKitMock()
-        let pixelHandler = makeHandler(pixelFiring: pixelFiring)
-
-        // WHEN
-        pixelHandler.fire(.preferencesSerp(.clicked(recentlyVisitedSitesEnabled: true, safeSearchEnabled: false)))
-
-        // THEN
-        let event = try XCTUnwrap(pixelFiring.actualFireCalls.first)
-        XCTAssertEqual(event.pixel.name, "onboarding_preferences_serp")
-        XCTAssertEqual(event.pixel.parameters?["event"], "clicked")
-        XCTAssertNil(event.pixel.parameters?["value"])
-        XCTAssertEqual(event.pixel.parameters?["recently_visited_sites_enabled"], "true")
-        XCTAssertEqual(event.pixel.parameters?["safe_search_enabled"], "false")
     }
 
     func testWhenPreferencesAISearchClickedThenSendsToggleParametersAndNoValue() throws {

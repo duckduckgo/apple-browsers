@@ -64,28 +64,6 @@ extension OnboardingPersonalizationManager {
 
 }
 
-// MARK: - OnboardingSearchPersonalizing
-
-extension OnboardingPersonalizationManager {
-
-    public var isRecentlyVisitedSitesEnabled: Bool {
-        appSettings.recentlyVisitedSitesEnabled
-    }
-
-    public var isSafeSearchEnabled: Bool {
-        serpSettings.isSafeSearchEnabled
-    }
-
-    public func setRecentlyVisitedSites(_ enabled: Bool) {
-        appSettings.recentlyVisitedSitesEnabled = enabled
-    }
-
-    public func setSafeSearch(_ enabled: Bool) {
-        serpSettings.isSafeSearchEnabled = enabled
-    }
-
-}
-
 // MARK: - OnboardingAIChatModelPersonalizing
 
 extension OnboardingPersonalizationManager {

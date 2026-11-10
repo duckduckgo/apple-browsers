@@ -4066,24 +4066,6 @@
 /* Title for the private search Duck.ai query onboarding screen. */
 "onboarding.personalization.duckAIQuery.privateSearch.title" = "Τώρα, δοκίμασε την ιδιωτική αναζήτηση!";
 
-/* Button to continue to the next onboarding screen from the search personalization screen. */
-"onboarding.personalization.search.cta" = "Επόμενο";
-
-/* Subtitle for the recently visited sites option on the onboarding search personalization screen. */
-"onboarding.personalization.search.recentlyVisitedSites.subtitle" = "Εμφάνιση ιστότοπων που επισκέφτηκες πρόσφατα στις προτάσεις αναζήτησης. Ιδιωτικά, μόνο στη συσκευή σου.";
-
-/* Title for the recently visited sites option on the onboarding search personalization screen. */
-"onboarding.personalization.search.recentlyVisitedSites.title" = "Ιστορικό αναζήτησης";
-
-/* Subtitle for the safe search option on the onboarding search personalization screen. */
-"onboarding.personalization.search.safeSearch.subtitle" = "Παράλειψε ανάρμοστο περιεχόμενο (κυρίως για ενήλικες) από τα αποτελέσματα.";
-
-/* Title for the safe search option on the onboarding search personalization screen. */
-"onboarding.personalization.search.safeSearch.title" = "Ασφαλής αναζήτηση";
-
-/* Title of the onboarding search personalization screen. */
-"onboarding.personalization.search.title" = "Η αναζήτησή σου, όπως τη θέλεις.";
-
 /* Button on the Privacy Pro promotion onboarding step. Tapping the button navigates to the Privacy Pro paywall. */
 "onboarding.privacypro.promo.buttons.learnMore" = "Μάθετε περισσότερα";
 

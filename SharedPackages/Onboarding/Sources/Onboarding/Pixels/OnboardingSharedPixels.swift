@@ -218,7 +218,6 @@ public enum OnboardingSharedPixelEvent: PixelKit.Event, Equatable {
 
     // Segmented onboarding (download-reason) events — iOS only
     case downloadChoice(DownloadChoiceEvent)
-    case preferencesSerp(SerpEngagementEvent)
     case preferencesAIModel(AIModelEvent)
     case preferencesAIToggleMode(AIToggleModeEvent)
     case preferencesAISearch(AISearchEngagementEvent)
@@ -320,12 +319,6 @@ public enum OnboardingSharedPixelEvent: PixelKit.Event, Equatable {
         case clicked(Value)
     }
 
-    /// The SERP preferences screen.
-    public enum SerpEngagementEvent: Equatable {
-        case shown
-        case clicked(recentlyVisitedSitesEnabled: Bool, safeSearchEnabled: Bool)
-    }
-
     /// The AI search settings screen.
     public enum AISearchEngagementEvent: Equatable {
         case shown
@@ -415,7 +408,6 @@ private extension OnboardingSharedPixelEvent {
         case .endTryDuckAI: return "end-try-duckai"
         case .subscriptionPromo: return "subscription-promo"
         case .downloadChoice: return "download-choice"
-        case .preferencesSerp: return "preferences_serp"
         case .preferencesAIModel: return "preferences_ai-model"
         case .preferencesAIToggleMode: return "preferences_ai-toggle-mode"
         case .preferencesAISearch: return "preferences_ai-search"
@@ -499,13 +491,6 @@ private extension OnboardingSharedPixelEvent {
                 return ParameterValues.clicked
             }
         case .downloadChoice(let event):
-            switch event {
-            case .shown:
-                return ParameterValues.shown
-            case .clicked:
-                return ParameterValues.clicked
-            }
-        case .preferencesSerp(let event):
             switch event {
             case .shown:
                 return ParameterValues.shown
@@ -626,12 +611,6 @@ private extension OnboardingSharedPixelEvent {
             case .clicked(let value):
                 return value.rawValue
             }
-        case .preferencesSerp(let event):
-            switch event {
-            case .shown, .clicked:
-                // Toggle states are emitted via `extraParameters`, not as `value`.
-                return nil
-            }
         case .preferencesAISearch(let event):
             switch event {
             case .shown, .clicked:
@@ -669,11 +648,6 @@ private extension OnboardingSharedPixelEvent {
     // Screen-specific toggle states emitted as their own pixel parameters (in addition to `event`/`value`).
     var extraParameters: [String: String] {
         switch self {
-        case .preferencesSerp(.clicked(let recentlyVisitedSitesEnabled, let safeSearchEnabled)):
-            return [
-                "recently_visited_sites_enabled": String(recentlyVisitedSitesEnabled),
-                "safe_search_enabled": String(safeSearchEnabled)
-            ]
         case .preferencesAISearch(.clicked(let searchAssistEnabled, let aiGeneratedImagesEnabled)):
             return [
                 "search_assist_enabled": String(searchAssistEnabled),

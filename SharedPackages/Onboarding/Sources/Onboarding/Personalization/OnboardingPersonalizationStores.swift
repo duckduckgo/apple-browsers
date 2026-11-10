@@ -24,10 +24,8 @@ import Foundation
 /// value translation the store needs (e.g. an iOS `Bool` → a Duck Player youtube-mode enum) lives in
 /// that per-platform conformance, not in the shared manager.
 
-/// Backed by the platform's app settings (recently-visited sites, cookie pop-up protection).
+/// Backed by the platform's app settings (cookie pop-up protection).
 public protocol OnboardingAppSettingsPersonalizationStore: AnyObject {
-    /// Whether the browser records and shows recently visited sites.
-    var recentlyVisitedSitesEnabled: Bool { get set }
     /// Whether cookie pop-up protection (autoconsent) is enabled.
     var isCookiePopUpProtectionEnabled: Bool { get set }
     /// Whether cookie pop-ups without opt-outs are auto-accepted. Only meaningful while cookie pop-up
@@ -37,8 +35,6 @@ public protocol OnboardingAppSettingsPersonalizationStore: AnyObject {
 
 /// Backed by the platform's SERP settings blob.
 public protocol OnboardingSERPPersonalizationStore: AnyObject {
-    /// Whether Safe Search filtering is on. Enabling selects the platform's default filtering level; disabling turns filtering off.
-    var isSafeSearchEnabled: Bool { get set }
     /// Whether Search Assist (AI-assisted answers) is on. Enabling selects the platform's default frequency; disabling turns it off.
     var isSearchAssistEnabled: Bool { get set }
     /// Whether AI-generated images are *hidden* in results.

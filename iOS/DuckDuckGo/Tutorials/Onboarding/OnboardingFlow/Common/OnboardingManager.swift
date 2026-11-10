@@ -149,7 +149,6 @@ enum OnboardingIntroStep: Equatable {
 // Mirror every new `RenderableStep` case here.
 extension OnboardingIntroStep {
     static let downloadReasonSelection: Self = .renderable(.downloadReasonSelection)
-    static let searchPrivacySettingsSelection: Self = .renderable(.searchPrivacySettingsSelection)
     static let aiSearchSettingsSelection: Self = .renderable(.aiSearchSettingsSelection)
     static let aiModelSelection: Self = .renderable(.aiModelSelection)
     static let toggleInputModeSelection: Self = .renderable(.toggleInputModeSelection)
@@ -173,7 +172,6 @@ extension OnboardingIntroStep {
     enum RenderableStep: Equatable {
         case introDialog(isReturningUser: Bool)
         case downloadReasonSelection // NA Experiment: Asks the user why they downloaded the app to tailor the remaining default-flow steps.
-        case searchPrivacySettingsSelection  // NA Experiment Search Personalisation: https://www.figma.com/design/vsuCJP9OGykRkk1iZIU0ek/Mobile-Onboarding---Segmented?node-id=426-90387&m=dev
         case aiSearchSettingsSelection // NA Experiment AI Personalisation: https://www.figma.com/design/vsuCJP9OGykRkk1iZIU0ek/Mobile-Onboarding---Segmented?node-id=437-33717&m=dev
         case aiModelSelection // NA Experiment AI Model Personalisation: https://www.figma.com/design/vsuCJP9OGykRkk1iZIU0ek/Mobile-Onboarding---Segmented?node-id=426-77761&m=dev
         case toggleInputModeSelection // NA Experiment Omnibar Input Mode Personalisation: https://www.figma.com/design/vsuCJP9OGykRkk1iZIU0ek/Mobile-Onboarding---Segmented?node-id=426-76416&m=dev
@@ -206,7 +204,6 @@ extension OnboardingIntroStep {
         switch self {
         case .renderable(.introDialog): return nil
         case .renderable(.downloadReasonSelection): return .downloadReasonSelection
-        case .renderable(.searchPrivacySettingsSelection): return .searchPrivacySettingsSelection
         case .renderable(.aiSearchSettingsSelection): return .aiSearchSettingsSelection
         case .renderable(.aiModelSelection): return .aiModelSelection
         case .renderable(.toggleInputModeSelection): return .toggleInputModeSelection
@@ -248,7 +245,6 @@ extension OnboardingIntroStep {
 enum OnboardingResumeStep: String {
     /// User reached the Download Screen but has not yet selected a download reason.
     case downloadReasonSelection
-    case searchPrivacySettingsSelection // NA Experiment: reason-tailored step checkpoints.
     case aiSearchSettingsSelection // NA Experiment: reason-tailored step checkpoints.
     case aiModelSelection // NA Experiment: reason-tailored step checkpoints.
     case toggleInputModeSelection // NA Experiment: reason-tailored step checkpoints.

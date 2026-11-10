@@ -358,7 +358,8 @@ extension DBPUIDataBrokerProfileMatch {
                   optOutFormSubmittedDate: optOutFormSubmittedDate?.timeIntervalSince1970,
                   estimatedRemovalDate: estimatedRemovalDate?.timeIntervalSince1970,
                   removedDate: extractedProfile.removedDate?.timeIntervalSince1970,
-                  hasMatchingRecordOnParentBroker: hasFoundParentMatch)
+                  hasMatchingRecordOnParentBroker: hasFoundParentMatch,
+                  profileUrl: extractedProfile.profileUrl)
     }
 
     private static func formSubmittedDate(from optOutJobData: OptOutJobData) -> Date? {

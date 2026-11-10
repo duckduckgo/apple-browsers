@@ -31,8 +31,8 @@ protocol WebExtensionPopupNoticePresenting {
     func popupWillShow(_ popover: NSPopover, webView: WKWebView, for context: WKWebExtensionContext)
 }
 
-/// Tells the user, once per installed extension, that the extension tried to reach a desktop app,
-/// which the App Store build can't allow.
+/// Tells the user that an installed extension tried to reach a desktop app, which the App Store build
+/// can't allow. The banner shows each time the popup opens until the user dismisses it.
 ///
 /// WebKit's popover shows a plain view controller whose view is the popup web view, and resizes it to the
 /// page through that controller's `preferredContentSize`. The banner goes in a container that stacks it
@@ -54,7 +54,10 @@ final class NativeMessagingPopupNoticePresenter: WebExtensionPopupNoticePresenti
         guard noticeStore.needsNotice(for: context.uniqueIdentifier),
               let original = popover.contentViewController else { return }
 
-        let container = NativeMessagingBannerContainerViewController(content: original, themeManager: themeManager)
+        let identifier = context.uniqueIdentifier
+        let container = NativeMessagingBannerContainerViewController(content: original, themeManager: themeManager) { [noticeStore] in
+            noticeStore.markNoticeShown(for: identifier)
+        }
         popover.contentViewController = container
         observations = [
             original.observe(\.preferredContentSize, options: [.initial, .new]) { [weak container] original, _ in
@@ -69,7 +72,6 @@ final class NativeMessagingPopupNoticePresenter: WebExtensionPopupNoticePresenti
                 }
             }
         ]
-        noticeStore.markNoticeShown(for: context.uniqueIdentifier)
     }
 }
 
@@ -79,11 +81,15 @@ final class NativeMessagingPopupNoticePresenter: WebExtensionPopupNoticePresenti
 private final class NativeMessagingBannerContainerViewController: NSViewController {
     private let content: NSViewController
     private let themeManager: ThemeManager
+    private let onDismiss: () -> Void
     private var banner: NSHostingView<NativeMessagingBannerView>?
+    /// A copy of the banner outside the popup, measured at the popup's width.
+    private lazy var measuringBanner = NSHostingView(rootView: NativeMessagingBannerView(themeManager: themeManager) {})
 
-    init(content: NSViewController, themeManager: ThemeManager) {
+    init(content: NSViewController, themeManager: ThemeManager, onDismiss: @escaping () -> Void) {
         self.content = content
         self.themeManager = themeManager
+        self.onDismiss = onDismiss
         super.init(nibName: nil, bundle: nil)
     }
 
@@ -115,16 +121,18 @@ private final class NativeMessagingBannerContainerViewController: NSViewControll
     }
 
     private func updateSize(for contentSize: NSSize) {
-        let bannerHeight = banner.map { bannerHeight(of: $0, width: contentSize.width) } ?? 0
+        let bannerHeight = banner == nil ? 0 : bannerHeight(width: contentSize.width)
         let size = NSSize(width: contentSize.width, height: contentSize.height + bannerHeight)
         guard preferredContentSize != size else { return }
         preferredContentSize = size
     }
 
-    private func bannerHeight(of banner: NSView, width: CGFloat) -> CGFloat {
-        banner.frame.size.width = width
-        banner.layoutSubtreeIfNeeded()
-        return banner.fittingSize.height
+    /// The banner's height when it fills the popup's width, with its text wrapped to fit.
+    private func bannerHeight(width: CGFloat) -> CGFloat {
+        let widthConstraint = measuringBanner.widthAnchor.constraint(equalToConstant: width)
+        widthConstraint.isActive = true
+        defer { widthConstraint.isActive = false }
+        return measuringBanner.fittingSize.height
     }
 
     private func removeBanner() {
@@ -133,6 +141,7 @@ private final class NativeMessagingBannerContainerViewController: NSViewControll
         banner.removeFromSuperview()
         self.banner = nil
         updateSize(for: contentSize)
+        onDismiss()
     }
 }
 
@@ -163,7 +172,7 @@ private struct NativeMessagingBannerView: View {
         }
         .padding(.horizontal, 12)
         .padding(.vertical, 10)
-        .frame(minWidth: 280, maxWidth: 400)
+        .frame(maxWidth: .infinity)
         .background(Color(designSystemColor: .surfaceSecondary, palette: palette))
     }
 }

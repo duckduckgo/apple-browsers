@@ -1052,14 +1052,15 @@ struct OnboardingDownloadReasonFlowTests {
         subscriptionManager: SubscriptionManagerMock? = nil,
         sharedPixelsStorage: (any KeyedStoring<OnboardingSharedPixelsKeys>)? = nil
     ) -> OnboardingManager {
-        OnboardingManager(
+        let pixelStore: any KeyedStoring<OnboardingSharedPixelsKeys> = if let sharedPixelsStorage { sharedPixelsStorage } else { makePixelStore() }
+        return OnboardingManager(
             appDefaults: AppSettingsMock(),
             featureFlagger: featureFlagger,
             variantManager: variantManager,
             isIphone: isIphone,
             tutorialSettings: tutorialSettings ?? makeTutorialSettings(),
             subscriptionManager: subscriptionManager ?? makeEligibleSubscriptionManager(),
-            sharedPixelsStorage: sharedPixelsStorage ?? makePixelStore()
+            sharedPixelsStorage: pixelStore
         )
     }
 

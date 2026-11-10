@@ -21,6 +21,7 @@ import SwiftUI
 import MessageUI
 import DataBrokerProtectionCore
 import DataBrokerProtectionCoreTestsUtils
+import PrivacyConfig
 @testable import DataBrokerProtection_iOS
 
 final class DBPUIViewModelHandshakeTests: XCTestCase {
@@ -31,6 +32,9 @@ final class DBPUIViewModelHandshakeTests: XCTestCase {
     private var userEventsDelegate: MockUserEventsDelegate!
     private var featureFlagger: MockDBPFeatureFlagger!
     private var emailComposer: MockOptOutEmailComposer!
+    private var internalUserDecider: MockInternalUserDecider!
+    private var debugUserDefaults: UserDefaults!
+    private var debugSuiteName: String!
     private var sut: DBPUIViewModel!
 
     override func setUp() {
@@ -43,6 +47,11 @@ final class DBPUIViewModelHandshakeTests: XCTestCase {
         userEventsDelegate = MockUserEventsDelegate()
         featureFlagger = MockDBPFeatureFlagger(isEmailOptOutEnabled: true)
         emailComposer = MockOptOutEmailComposer()
+        internalUserDecider = MockInternalUserDecider()
+        debugSuiteName = "DBPUIViewModelHandshakeTests.\(UUID().uuidString)"
+        debugUserDefaults = UserDefaults(suiteName: debugSuiteName)
+        let privacyConfigManager = PrivacyConfigurationManagingMock()
+        privacyConfigManager.internalUserDecider = internalUserDecider
 
         sut = DBPUIViewModel(authenticationDelegate: authenticationDelegate,
                              databaseDelegate: databaseDelegate,
@@ -50,10 +59,11 @@ final class DBPUIViewModelHandshakeTests: XCTestCase {
                              userEventsDelegate: userEventsDelegate,
                              webUISettings: MockWebUIURLSettings(),
                              pixelHandler: MockDataBrokerProtectionPixelsHandler(),
-                             privacyConfigManager: PrivacyConfigurationManagingMock(),
+                             privacyConfigManager: privacyConfigManager,
                              contentScopeProperties: .mock,
                              emailOptOutFeatureFlagger: featureFlagger,
                              emailComposer: emailComposer)
+        sut.emailOptOutDebugSettings = DBPEmailOptOutDebugSettings(userDefaults: debugUserDefaults)
     }
 
     override func tearDown() {
@@ -64,6 +74,9 @@ final class DBPUIViewModelHandshakeTests: XCTestCase {
         userEventsDelegate = nil
         featureFlagger = nil
         emailComposer = nil
+        internalUserDecider = nil
+        debugUserDefaults.removePersistentDomain(forName: debugSuiteName)
+        debugUserDefaults = nil
         super.tearDown()
     }
 
@@ -97,6 +110,22 @@ final class DBPUIViewModelHandshakeTests: XCTestCase {
         XCTAssertFalse(sut.canSendEmail())
     }
 
+    func testCanSendEmail_whenInternalUserForcesItInDebug_isTrueWithoutAMailAccount() {
+        emailComposer.canSendMail = false
+        internalUserDecider.isInternalUser = true
+        DBPEmailOptOutDebugSettings(userDefaults: debugUserDefaults).isCanSendEmailForced = true
+
+        XCTAssertTrue(sut.canSendEmail())
+    }
+
+    func testCanSendEmail_whenNonInternalUserHasTheDebugOverrideStored_isFalse() {
+        emailComposer.canSendMail = false
+        internalUserDecider.isInternalUser = false
+        DBPEmailOptOutDebugSettings(userDefaults: debugUserDefaults).isCanSendEmailForced = true
+
+        XCTAssertFalse(sut.canSendEmail())
+    }
+
     func testOpenOptOutEmail_whenUserTapsSendInMail_returnsSent() async {
         emailComposer.canSendMail = true
         emailComposer.composeResult = .sent
@@ -126,6 +155,31 @@ final class DBPUIViewModelHandshakeTests: XCTestCase {
 
         XCTAssertEqual(result, DBPUIOpenOptOutEmailResult(sent: false))
         XCTAssertTrue(emailComposer.composedEmails.isEmpty)
+        XCTAssertTrue(emailComposer.simulatedEmails.isEmpty)
+    }
+
+    func testOpenOptOutEmail_whenInternalUserSimulatesSendInDebug_returnsSent() async {
+        emailComposer.canSendMail = false
+        emailComposer.simulateSendResult = true
+        internalUserDecider.isInternalUser = true
+        DBPEmailOptOutDebugSettings(userDefaults: debugUserDefaults).isCanSendEmailForced = true
+
+        let result = await sut.openOptOutEmail(Self.removalEmail)
+
+        XCTAssertEqual(result, DBPUIOpenOptOutEmailResult(sent: true))
+        XCTAssertEqual(emailComposer.simulatedEmails, [Self.removalEmail])
+        XCTAssertTrue(emailComposer.composedEmails.isEmpty)
+    }
+
+    func testOpenOptOutEmail_whenInternalUserCancelsTheDebugSend_returnsNotSent() async {
+        emailComposer.canSendMail = false
+        emailComposer.simulateSendResult = false
+        internalUserDecider.isInternalUser = true
+        DBPEmailOptOutDebugSettings(userDefaults: debugUserDefaults).isCanSendEmailForced = true
+
+        let result = await sut.openOptOutEmail(Self.removalEmail)
+
+        XCTAssertEqual(result, DBPUIOpenOptOutEmailResult(sent: false))
     }
 
     func testConfirmOptOutEmailSent_passesTheRecordIdsToTheManager() async {
@@ -144,6 +198,7 @@ final class DBPUIViewModelHandshakeTests: XCTestCase {
 
         XCTAssertEqual(result, DBPUIOpenOptOutEmailResult(sent: false))
         XCTAssertTrue(emailComposer.composedEmails.isEmpty)
+        XCTAssertTrue(emailComposer.simulatedEmails.isEmpty)
         XCTAssertTrue(databaseDelegate.confirmedOptOutEmailRecordIds.isEmpty)
     }
 
@@ -190,7 +245,9 @@ private final class MockUserEventsDelegate: DBPIOSInterface.UserEventsDelegate {
 private final class MockOptOutEmailComposer: DBPOptOutEmailComposing {
     var canSendMail = false
     var composeResult = MFMailComposeResult.cancelled
+    var simulateSendResult = false
     private(set) var composedEmails: [DBPUIOpenOptOutEmailRequest] = []
+    private(set) var simulatedEmails: [DBPUIOpenOptOutEmailRequest] = []
 
     @MainActor
     func compose(_ email: DBPUIOpenOptOutEmailRequest) async -> MFMailComposeResult {
@@ -198,6 +255,12 @@ private final class MockOptOutEmailComposer: DBPOptOutEmailComposing {
         guard canSendMail else { return .failed }
         composedEmails.append(email)
         return composeResult
+    }
+
+    @MainActor
+    func simulateSend(_ email: DBPUIOpenOptOutEmailRequest) async -> Bool {
+        simulatedEmails.append(email)
+        return simulateSendResult
     }
 }
 

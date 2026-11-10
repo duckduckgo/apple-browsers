@@ -27,7 +27,7 @@ let package = Package(
         .package(path: "../DuckUI"),
         .package(path: "../../../SharedPackages/Infrastructure/DesignResourcesKitIcons"),
         .package(path: "../../../SharedPackages/UIComponents"),
-        .package(path: "../MetricBuilder"),
+        .package(path: "../../../SharedPackages/Infrastructure/MetricBuilder"),
         .package(url: "https://github.com/duckduckgo/apple-toolbox.git", exact: "3.2.1"),
     ],
     targets: [

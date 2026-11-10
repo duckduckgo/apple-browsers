@@ -57,12 +57,13 @@ final class ChromeWebStoreServiceTests: XCTestCase {
                                   featureFlagUpdates: AnyPublisher<Void, Never>? = nil,
                                   scheduler: ChromeWebStorePeriodicSchedulerMock = ChromeWebStorePeriodicSchedulerMock(),
                                   pixelFiring: WebExtensionPixelFiring = NoOpWebExtensionPixelFiring(),
+                                  keyValueStore: (any ThrowingKeyValueStoring)? = nil,
                                   check: @escaping @MainActor @Sendable (String, String) async -> ChromeWebStoreUpdateChecker.CheckResult) -> ChromeWebStoreService {
         ChromeWebStoreService(manager: manager, catalog: catalog,
                               downloader: StoreDownloaderMock(action: { Data() }), presenter: presenter,
                               verifier: ChromeWebStorePackageVerifier(), isUpdateDiscoveryEnabled: isUpdateDiscoveryEnabled,
                               updateDiscoveryFeatureFlagUpdates: featureFlagUpdates,
-                              pixelFiring: pixelFiring, updateCheck: { identifier, version in
+                              keyValueStore: keyValueStore, pixelFiring: pixelFiring, updateCheck: { identifier, version in
                                   await check(identifier, version)
                               }, updateCheckInterval: interval, updateSchedulerFactory: { _ in scheduler })
     }
@@ -487,6 +488,137 @@ final class ChromeWebStoreServiceTests: XCTestCase {
         let freshService = scheduledService(manager) { _, _ in .init(outcome: .noUpdate, retryNotBefore: nil) }
         XCTAssertNil(freshService.updateCheckVersionOverride(forInstallationIdentifier: "store"))
         XCTAssertEqual(service.updateCheckVersionOverride(forInstallationIdentifier: "store"), "0.0.0.1")
+    }
+
+    func testPersistedOverridesSurviveRecreationAndDisableAndResetOnlyTheirExtension() throws {
+        let manager = try makeManager()
+        installationStore.installedExtensions = [installed("first", version: "2.0", storeID: ChromeWebStoreID.onePassword.rawValue),
+                                                 installed("second", version: "3.0", storeID: ChromeWebStoreID.bitwarden.rawValue)]
+        let service = scheduledService(manager, keyValueStore: keyValueStore) { _, _ in .init(outcome: .noUpdate, retryNotBefore: nil) }
+        service.setUpdateCheckVersionOverride("0.0.0.1", forInstallationIdentifier: "first")
+        service.setUpdateCheckVersionOverride("1.0", forInstallationIdentifier: "second")
+        installationStore.installedExtensions[0].isDisabled = true
+        let relaunched = scheduledService(manager, keyValueStore: keyValueStore) { _, _ in .init(outcome: .noUpdate, retryNotBefore: nil) }
+
+        XCTAssertEqual(relaunched.updateCheckVersionOverride(forInstallationIdentifier: "first"), "0.0.0.1")
+        relaunched.setUpdateCheckVersionOverride(nil, forInstallationIdentifier: "first")
+        let afterReset = scheduledService(manager, keyValueStore: keyValueStore) { _, _ in .init(outcome: .noUpdate, retryNotBefore: nil) }
+        XCTAssertNil(afterReset.updateCheckVersionOverride(forInstallationIdentifier: "first"))
+        XCTAssertEqual(afterReset.updateCheckVersionOverride(forInstallationIdentifier: "second"), "1.0")
+    }
+
+    func testPersistedOverrideCannotTransferToReinstalledIdentity() throws {
+        let manager = try makeManager()
+        let storeID = ChromeWebStoreID.onePassword.rawValue
+        installationStore.installedExtensions = [installed("original", version: "2.0", storeID: storeID)]
+        let service = scheduledService(manager, keyValueStore: keyValueStore) { _, _ in .init(outcome: .noUpdate, retryNotBefore: nil) }
+        service.setUpdateCheckVersionOverride("0.0.0.1", forInstallationIdentifier: "original")
+        installationStore.installedExtensions = [installed("replacement", version: "2.0", storeID: storeID)]
+        let relaunched = scheduledService(manager, keyValueStore: keyValueStore) { _, _ in .init(outcome: .noUpdate, retryNotBefore: nil) }
+        XCTAssertNil(relaunched.updateCheckVersionOverride(forInstallationIdentifier: "replacement"))
+        let afterPrune = scheduledService(manager, keyValueStore: keyValueStore) { _, _ in .init(outcome: .noUpdate, retryNotBefore: nil) }
+        XCTAssertNil(afterPrune.updateCheckVersionOverride(forInstallationIdentifier: "replacement"))
+    }
+
+    func testSuccessfulSameVersionCommitClearsOnlyItsPersistedOverrideAndRetriesFailedWrites() throws {
+        let manager = try makeManager()
+        let first = installed("first", version: "2.0", storeID: ChromeWebStoreID.onePassword.rawValue)
+        installationStore.installedExtensions = [first, installed("second", version: "3.0", storeID: ChromeWebStoreID.bitwarden.rawValue)]
+        let service = scheduledService(manager, keyValueStore: keyValueStore) { _, _ in .init(outcome: .noUpdate, retryNotBefore: nil) }
+        service.setUpdateCheckVersionOverride("0.0.0.1", forInstallationIdentifier: "first")
+        service.setUpdateCheckVersionOverride("1.0", forInstallationIdentifier: "second")
+        let overrideIdentifier = try persistedOverrideIdentifier(for: ChromeWebStoreID.onePassword.rawValue)
+        keyValueStore.throwOnSet = CocoaError(.fileWriteNoPermission)
+        XCTAssertFalse(manager.didCommitStoreUpdate(first, overrideIdentifier))
+        XCTAssertEqual(service.updateCheckVersionOverride(forInstallationIdentifier: "first"), "0.0.0.1")
+        keyValueStore.throwOnSet = nil
+        XCTAssertTrue(manager.didCommitStoreUpdate(first, overrideIdentifier))
+        let relaunched = scheduledService(manager, keyValueStore: keyValueStore) { _, _ in .init(outcome: .noUpdate, retryNotBefore: nil) }
+        XCTAssertNil(relaunched.updateCheckVersionOverride(forInstallationIdentifier: "first"))
+        XCTAssertEqual(relaunched.updateCheckVersionOverride(forInstallationIdentifier: "second"), "1.0")
+    }
+
+    func testFailedOverrideSetResetAndPruneKeepDurableStateRetryable() throws {
+        let manager = try makeManager()
+        let storeID = ChromeWebStoreID.onePassword.rawValue
+        let record = installed("original", version: "2.0", storeID: storeID)
+        installationStore.installedExtensions = [record]
+        let service = scheduledService(manager, keyValueStore: keyValueStore) { _, _ in .init(outcome: .noUpdate, retryNotBefore: nil) }
+        keyValueStore.throwOnSet = CocoaError(.fileWriteNoPermission)
+        service.setUpdateCheckVersionOverride("0.0.0.1", forInstallationIdentifier: "original")
+        XCTAssertNil(service.updateCheckVersionOverride(forInstallationIdentifier: "original"))
+        keyValueStore.throwOnSet = nil
+        service.setUpdateCheckVersionOverride("0.0.0.1", forInstallationIdentifier: "original")
+        let overrideIdentifier = try persistedOverrideIdentifier(for: storeID)
+        keyValueStore.throwOnSet = CocoaError(.fileWriteNoPermission)
+        service.setUpdateCheckVersionOverride(nil, forInstallationIdentifier: "original")
+        XCTAssertEqual(service.updateCheckVersionOverride(forInstallationIdentifier: "original"), "0.0.0.1")
+        installationStore.installedExtensions = [installed("replacement", version: "2.0", storeID: storeID)]
+        XCTAssertNil(service.updateCheckVersionOverride(forInstallationIdentifier: "replacement"))
+        XCTAssertFalse(manager.didCommitStoreUpdate(try XCTUnwrap(installationStore.installedExtensions.first), overrideIdentifier))
+        keyValueStore.throwOnSet = nil
+        XCTAssertTrue(manager.didCommitStoreUpdate(try XCTUnwrap(installationStore.installedExtensions.first), overrideIdentifier))
+        let relaunched = scheduledService(manager, keyValueStore: keyValueStore) { _, _ in .init(outcome: .noUpdate, retryNotBefore: nil) }
+        XCTAssertNil(relaunched.updateCheckVersionOverride(forInstallationIdentifier: "replacement"))
+    }
+
+    func testOverrideSetAfterADisabledSameVersionCommitSurvivesRetainedJournalRecovery() async throws {
+        let manager = try makeManager()
+        let fixture = try ChromeWebStoreFixture(manifest: ["manifest_version": 3, "name": "Reinstall fixture", "version": "1.0", "permissions": ["storage"]])
+        let identifier = UUID().uuidString
+        let record = installed(identifier, version: "1.0", storeID: fixture.identifier)
+        installationStore.installedExtensions = [record]
+        let root = manager.storageProvider.extensionsDirectory
+        let current = root.appendingPathComponent(identifier)
+        try FileManager.default.createDirectory(at: current, withIntermediateDirectories: true)
+        try JSONSerialization.data(withJSONObject: ["manifest_version": 3, "name": "Original", "version": "1.0"])
+            .write(to: current.appendingPathComponent("manifest.json"))
+        let archive = root.appendingPathComponent("verified.zip")
+        try fixture.archive.write(to: archive)
+        let service = scheduledService(manager, keyValueStore: keyValueStore) { _, _ in .init(outcome: .noUpdate, retryNotBefore: nil) }
+        service.setUpdateCheckVersionOverride("0.0.0.1", forInstallationIdentifier: identifier)
+        let consumed = try persistedOverrideIdentifier(for: fixture.identifier)
+        let update = ChromeWebStoreVerifiedUpdate(extensionID: fixture.identifier, version: "1.0", fileURL: archive)
+        _ = try await manager.applyVerifiedUpdate(update, replacing: record, reportedInstalledVersion: "0.0.0.1",
+                                                  versionOverrideIdentifier: consumed, isEligible: { true })
+        XCTAssertTrue(try XCTUnwrap(installationStore.installedExtensions.first).isDisabled)
+        XCTAssertNil(service.updateCheckVersionOverride(forInstallationIdentifier: identifier))
+        service.setUpdateCheckVersionOverride("0.0.0.1", forInstallationIdentifier: identifier)
+        let rearmed = try persistedOverrideIdentifier(for: fixture.identifier)
+        XCTAssertNotEqual(rearmed, consumed)
+
+        let failures = try await manager.recoverExtensionUpdates(isAllowed: { _ in true })
+
+        XCTAssertTrue(failures.isEmpty)
+        XCTAssertEqual(service.updateCheckVersionOverride(forInstallationIdentifier: identifier), "0.0.0.1")
+        XCTAssertEqual(try persistedOverrideIdentifier(for: fixture.identifier), rearmed)
+        XCTAssertTrue(manager.didCommitStoreUpdate(try XCTUnwrap(installationStore.installedExtensions.first), nil))
+        XCTAssertEqual(service.updateCheckVersionOverride(forInstallationIdentifier: identifier), "0.0.0.1")
+    }
+
+    func testRearmingAnOverrideAfterClearFailureCannotBeClearedByTheOldCompletion() throws {
+        let manager = try makeManager()
+        let record = installed("installed", version: "1.0", storeID: ChromeWebStoreID.bitwarden.rawValue)
+        installationStore.installedExtensions = [record]
+        let service = scheduledService(manager, keyValueStore: keyValueStore) { _, _ in .init(outcome: .noUpdate, retryNotBefore: nil) }
+        service.setUpdateCheckVersionOverride("0.0.0.1", forInstallationIdentifier: "installed")
+        let consumed = try persistedOverrideIdentifier(for: ChromeWebStoreID.bitwarden.rawValue)
+        keyValueStore.throwOnSet = CocoaError(.fileWriteNoPermission)
+        XCTAssertFalse(manager.didCommitStoreUpdate(record, consumed))
+        keyValueStore.throwOnSet = nil
+        service.setUpdateCheckVersionOverride("0.0.0.1", forInstallationIdentifier: "installed")
+        let rearmed = try persistedOverrideIdentifier(for: ChromeWebStoreID.bitwarden.rawValue)
+
+        XCTAssertTrue(manager.didCommitStoreUpdate(record, consumed))
+        XCTAssertEqual(try persistedOverrideIdentifier(for: ChromeWebStoreID.bitwarden.rawValue), rearmed)
+        XCTAssertEqual(service.updateCheckVersionOverride(forInstallationIdentifier: "installed"), "0.0.0.1")
+    }
+
+    private func persistedOverrideIdentifier(for storeID: String) throws -> UUID {
+        let data = try XCTUnwrap(keyValueStore.object(forKey: "web-extension-update-version-overrides") as? Data)
+        let values = try XCTUnwrap(JSONSerialization.jsonObject(with: data) as? [String: [String: Any]])
+        let rawIdentifier = try XCTUnwrap(values[storeID]?["identifier"] as? String)
+        return try XCTUnwrap(UUID(uuidString: rawIdentifier))
     }
 
     func testLaunchAndManualChecksDoNotOverlap() async throws {

@@ -103,6 +103,216 @@ final class WebExtensionUpdateTransactionTests: XCTestCase {
         try await transactions.finish(staged.transactionID)
     }
 
+    func testSameVersionReinstallRequiresOverrideAndStillChecksActualVersionAndPermissions() async throws {
+        let permissionStore = WebExtensionPermissionStore(keyValueStore: InMemoryThrowingKeyValueStore())
+        try permissionStore.save(WebExtensionPermissionSettings(), for: identifier)
+        let permissions = WebExtensionPermissionController(store: permissionStore, installationStore: installationStore, prompter: NoUpdatePrompt())
+        let loader = RejectingUpdateLoader(storageProvider: WebExtensionStorageProvider(extensionsDirectory: directory), permissionController: permissions)
+        let manager = makeManager(loader: loader, permissions: permissions)
+        installationStore.add(original)
+        let update = try makeUpdate(version: "1.0", permissions: ["storage"])
+        do {
+            _ = try await manager.applyVerifiedUpdate(update, replacing: original, isEligible: { true })
+            XCTFail("Equal real versions require an explicit override")
+        } catch WebExtensionManager.UpdateInstallationError.invalidPackage { }
+        do {
+            _ = try await manager.applyVerifiedUpdate(makeUpdate(version: "0.9"), replacing: original,
+                                                      reportedInstalledVersion: "0.0.0.1", isEligible: { true })
+            XCTFail("An override cannot authorize a real downgrade")
+        } catch WebExtensionManager.UpdateInstallationError.invalidPackage { }
+
+        let result = try await manager.applyVerifiedUpdate(update, replacing: original,
+                                                           reportedInstalledVersion: "0.0.0.1", isEligible: { true })
+
+        guard case .installedDisabled = result else { return XCTFail("Reinstallation cannot grant new permissions") }
+        XCTAssertNil(manager.context(for: identifier))
+        XCTAssertEqual(installationStore.installedExtensions.first?.permissions, ["storage"])
+        XCTAssertTrue(try XCTUnwrap(installationStore.installedExtensions.first).isDisabled)
+        XCTAssertEqual(try permissionStore.settings(for: identifier)?.grantedPermissions, [:])
+        let journal = try await onlyJournal()
+        XCTAssertEqual(journal.registryCommitted, true)
+    }
+
+    func testSameVersionCrashBeforeRegistryCommitReconcilesCandidateMetadataAndRetainsItsDisabledBackup() async throws {
+        let staged = try await transactions.stage(makeUpdate(version: "1.0", permissions: ["storage"]), installationID: identifier,
+                                                  previousVersion: "1.0", previousMetadata: JSONEncoder().encode(original))
+        let candidate = InstalledWebExtension(uniqueIdentifier: identifier, filename: identifier, name: original.name, version: "1.0",
+                                               storeIdentity: original.storeIdentity, permissions: ["storage"], isDisabled: true)
+        try await transactions.replace(staged)
+        try await transactions.commit(staged, updatedMetadata: JSONEncoder().encode(candidate), retainPrevious: true)
+        installationStore.add(original)
+        let manager = makeManager(loader: WebExtensionLoadingMock())
+        var clearCount = 0
+        manager.didCommitStoreUpdate = { _, _ in clearCount += 1; return true }
+
+        let failures = try await manager.recoverExtensionUpdates(isAllowed: { _ in true })
+
+        XCTAssertTrue(failures.isEmpty)
+        XCTAssertEqual(installationStore.installedExtensions, [candidate])
+        XCTAssertEqual(clearCount, 1)
+        let journal = try await onlyJournal()
+        XCTAssertEqual(journal.registryCommitted, true)
+        XCTAssertTrue(FileManager.default.fileExists(atPath: transactionDirectory(staged.transactionID).appendingPathComponent("previous").path))
+    }
+
+    func testAcknowledgedSameVersionRecoveryPreservesLaterExplicitEnable() async throws {
+        let staged = try await transactions.stage(makeUpdate(version: "1.0"), installationID: identifier,
+                                                  previousVersion: "1.0", previousMetadata: JSONEncoder().encode(original))
+        var candidate = original
+        candidate.isDisabled = true
+        try await transactions.replace(staged)
+        try await transactions.commit(staged, updatedMetadata: JSONEncoder().encode(candidate), retainPrevious: true)
+        let acknowledged = await transactions.acknowledgeRegistry(staged.transactionID)
+        XCTAssertTrue(acknowledged)
+        candidate.isDisabled = false
+        installationStore.add(candidate)
+        let manager = makeManager(loader: WebExtensionLoadingMock())
+
+        let failures = try await manager.recoverExtensionUpdates(isAllowed: { _ in true })
+
+        XCTAssertTrue(failures.isEmpty)
+        XCTAssertEqual(installationStore.installedExtensions, [candidate])
+        let remaining = try await transactions.journals()
+        XCTAssertTrue(remaining.isEmpty)
+    }
+
+    func testAcknowledgedSameVersionRecoveryPreservesLaterDisable() async throws {
+        let staged = try await transactions.stage(makeUpdate(version: "1.0"), installationID: identifier,
+                                                  previousVersion: "1.0", previousMetadata: JSONEncoder().encode(original))
+        try await transactions.replace(staged)
+        try await transactions.commit(staged, updatedMetadata: JSONEncoder().encode(original), retainPrevious: true)
+        let acknowledged = await transactions.acknowledgeRegistry(staged.transactionID)
+        XCTAssertTrue(acknowledged)
+        var disabled = original
+        disabled.isDisabled = true
+        installationStore.add(disabled)
+        let manager = makeManager(loader: WebExtensionLoadingMock())
+
+        let failures = try await manager.recoverExtensionUpdates(isAllowed: { _ in true })
+
+        XCTAssertTrue(failures.isEmpty)
+        XCTAssertEqual(installationStore.installedExtensions, [disabled])
+    }
+
+    func testCommittedRecoveryRetriesFailedOverrideClearEvenWhenRegistryWasAlreadyReconciled() async throws {
+        let overrideIdentifier = UUID()
+        let staged = try await transactions.stage(makeUpdate(version: "1.0"), installationID: identifier,
+                                                  previousVersion: "1.0", previousMetadata: JSONEncoder().encode(original),
+                                                  versionOverrideIdentifier: overrideIdentifier)
+        try await transactions.replace(staged)
+        try await transactions.commit(staged, updatedMetadata: JSONEncoder().encode(original), retainPrevious: false)
+        installationStore.add(original)
+        let manager = makeManager(loader: WebExtensionLoadingMock())
+        var canClear = false
+        var attempts = 0
+        manager.didCommitStoreUpdate = { _, identifier in
+            XCTAssertEqual(identifier, overrideIdentifier)
+            attempts += 1
+            return canClear
+        }
+
+        let initialFailures = try await manager.recoverExtensionUpdates(isAllowed: { _ in true })
+        XCTAssertTrue(initialFailures.isEmpty)
+        let retained = try await onlyJournal()
+        XCTAssertEqual(retained.registryCommitted, true)
+        canClear = true
+        let retryFailures = try await manager.recoverExtensionUpdates(isAllowed: { _ in true })
+
+        XCTAssertTrue(retryFailures.isEmpty)
+        XCTAssertEqual(attempts, 2)
+        XCTAssertEqual(installationStore.installedExtensions, [original])
+        let remaining = try await transactions.journals()
+        XCTAssertTrue(remaining.isEmpty)
+    }
+
+    func testSameVersionRollbackResetsAcknowledgementBeforeRestoringRegistryMetadata() async throws {
+        let staged = try await transactions.stage(makeUpdate(version: "1.0", permissions: ["storage"]), installationID: identifier,
+                                                  previousVersion: "1.0", previousMetadata: JSONEncoder().encode(original))
+        let candidate = InstalledWebExtension(uniqueIdentifier: identifier, filename: identifier, name: original.name, version: "1.0",
+                                               storeIdentity: original.storeIdentity, permissions: ["storage"])
+        try await transactions.replace(staged)
+        try await transactions.commit(staged, updatedMetadata: JSONEncoder().encode(candidate), retainPrevious: true)
+        _ = await transactions.acknowledgeRegistry(staged.transactionID)
+        installationStore.add(candidate)
+        _ = try await transactions.rollback(staged.transactionID, restoreInstallation: true)
+        let rollingBack = try await onlyJournal()
+        XCTAssertEqual(rollingBack.registryCommitted, false)
+        let manager = makeManager(loader: WebExtensionLoadingMock())
+
+        let failures = try await manager.recoverExtensionUpdates(isAllowed: { _ in true })
+
+        XCTAssertTrue(failures.isEmpty)
+        XCTAssertEqual(installationStore.installedExtensions, [original])
+    }
+
+    func testPersistentAcknowledgementFailurePreventsEnableUntilItsRegistryStateIsDurable() async throws {
+        let staged = try await transactions.stage(makeUpdate(version: "1.0"), installationID: identifier,
+                                                   previousVersion: "1.0", previousMetadata: JSONEncoder().encode(original))
+        var candidate = original
+        candidate.isDisabled = true
+        try await transactions.replace(staged)
+        try await transactions.commit(staged, updatedMetadata: JSONEncoder().encode(candidate), retainPrevious: true)
+        installationStore.add(candidate)
+        let permissionStore = WebExtensionPermissionStore(keyValueStore: InMemoryThrowingKeyValueStore())
+        try permissionStore.save(WebExtensionPermissionSettings(), for: identifier)
+        let permissions = WebExtensionPermissionController(store: permissionStore, installationStore: installationStore, prompter: NoUpdatePrompt())
+        let loader = RejectingUpdateLoader(storageProvider: WebExtensionStorageProvider(extensionsDirectory: directory), permissionController: permissions)
+        let manager = makeManager(loader: loader, permissions: permissions)
+        let transaction = transactionDirectory(staged.transactionID)
+        try FileManager.default.setAttributes([.posixPermissions: 0o555], ofItemAtPath: transaction.path)
+        defer { try? FileManager.default.setAttributes([.posixPermissions: 0o700], ofItemAtPath: transaction.path) }
+        let recovered = try await manager.recoverExtensionUpdates(isAllowed: { _ in true })
+        XCTAssertTrue(recovered.isEmpty, "A failed acknowledgement must not quarantine a coherent package")
+
+        do {
+            try await manager.enableExtension(identifier: identifier)
+            XCTFail("Enable cannot be reported successful while recovery would undo it")
+        } catch WebExtensionManager.UpdateInstallationError.recoveryFailed { }
+
+        XCTAssertNil(manager.context(for: identifier))
+        XCTAssertTrue(loader.loadedVersions.isEmpty)
+        XCTAssertEqual(installationStore.installedExtensions, [candidate])
+        let journal = try await onlyJournal()
+        XCTAssertEqual(journal.registryCommitted, false)
+        try FileManager.default.setAttributes([.posixPermissions: 0o700], ofItemAtPath: transaction.path)
+        try await manager.enableExtension(identifier: identifier)
+        XCTAssertFalse(try XCTUnwrap(installationStore.installedExtensions.first).isDisabled)
+        try loader.unloadExtension(identifier: identifier, from: manager.controller)
+    }
+
+    func testFallbackEnableCannotBypassAcknowledgementFailureAfterRollback() async throws {
+        let staged = try await transactions.stage(makeUpdate(version: "1.0"), installationID: identifier,
+                                                   previousVersion: "1.0", previousMetadata: JSONEncoder().encode(original))
+        var candidate = original
+        candidate.isDisabled = true
+        try await transactions.replace(staged)
+        try await transactions.commit(staged, updatedMetadata: JSONEncoder().encode(candidate), retainPrevious: true)
+        _ = await transactions.acknowledgeRegistry(staged.transactionID)
+        installationStore.add(candidate)
+        let permissionStore = WebExtensionPermissionStore(keyValueStore: InMemoryThrowingKeyValueStore())
+        try permissionStore.save(WebExtensionPermissionSettings(), for: identifier)
+        let permissions = WebExtensionPermissionController(store: permissionStore, installationStore: installationStore, prompter: NoUpdatePrompt())
+        let loader = RejectingUpdateLoader(storageProvider: WebExtensionStorageProvider(extensionsDirectory: directory), permissionController: permissions)
+        let fileManager = ReadOnlyTransactionAfterRollbackFileManager()
+        let manager = makeManager(loader: loader, permissions: permissions, fileManager: fileManager)
+        _ = try await manager.recoverExtensionUpdates(isAllowed: { _ in true })
+        loader.rejectedVersion = "1.0"
+        let transaction = transactionDirectory(staged.transactionID)
+        defer { try? FileManager.default.setAttributes([.posixPermissions: 0o700], ofItemAtPath: transaction.path) }
+
+        do {
+            try await manager.enableExtension(identifier: identifier)
+            XCTFail("Fallback cannot report enable success before predecessor metadata is acknowledged")
+        } catch WebExtensionManager.UpdateInstallationError.recoveryFailed { }
+
+        XCTAssertNil(manager.context(for: identifier))
+        XCTAssertTrue(try XCTUnwrap(installationStore.installedExtensions.first).isDisabled)
+        XCTAssertEqual(loader.loadedVersions, ["1.0"], "The rejected candidate is the only attempted activation")
+        let journal = try await onlyJournal()
+        XCTAssertEqual(journal.phase, .rollingBack)
+        XCTAssertEqual(journal.registryCommitted, false)
+    }
+
     func testRollbackInterruptedAfterCurrentRemovalRestoresBackupAndRetainsIntent() async throws {
         let staged = try await stage()
         try await transactions.replace(staged)
@@ -925,12 +1135,12 @@ final class WebExtensionUpdateTransactionTests: XCTestCase {
         directory.appendingPathComponent(".update-transactions").appendingPathComponent(identifier.uuidString)
     }
 
-    private func makeUpdate(permissions: [String] = [], hostPermissions: [String] = []) throws -> ChromeWebStoreVerifiedUpdate {
+    private func makeUpdate(version: String = "2.0", permissions: [String] = [], hostPermissions: [String] = []) throws -> ChromeWebStoreVerifiedUpdate {
         let source = directory.appendingPathComponent(UUID().uuidString, isDirectory: true)
-        try writePackage(version: "2.0", at: source, permissions: permissions, hostPermissions: hostPermissions)
+        try writePackage(version: version, at: source, permissions: permissions, hostPermissions: hostPermissions)
         let archive = source.appendingPathExtension("zip")
         try FileManager.default.zipItem(at: source, to: archive, shouldKeepParent: false)
-        return .init(extensionID: storeID, version: "2.0", fileURL: archive)
+        return .init(extensionID: storeID, version: version, fileURL: archive)
     }
 
     private func writePackage(version: String, at url: URL, permissions: [String] = [], hostPermissions: [String] = []) throws {
@@ -950,6 +1160,15 @@ final class WebExtensionUpdateTransactionTests: XCTestCase {
         WebExtensionManager(configuration: WebExtensionConfigurationProvidingMock(), controllerConfiguration: .nonPersistent(),
                             windowTabProvider: WebExtensionWindowTabProvidingMock(), storageProvider: WebExtensionStorageProvider(extensionsDirectory: directory, fileManager: fileManager),
                             installationStore: installationStore, permissionController: permissions, loader: loader, pixelFiring: pixels)
+    }
+}
+
+private final class ReadOnlyTransactionAfterRollbackFileManager: FileManager, @unchecked Sendable {
+    override func moveItem(at source: URL, to destination: URL) throws {
+        try super.moveItem(at: source, to: destination)
+        if source.lastPathComponent == "previous" {
+            try setAttributes([.posixPermissions: 0o555], ofItemAtPath: source.deletingLastPathComponent().path)
+        }
     }
 }
 

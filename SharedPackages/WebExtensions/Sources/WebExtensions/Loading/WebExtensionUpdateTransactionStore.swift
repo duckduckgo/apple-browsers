@@ -42,6 +42,7 @@ actor WebExtensionUpdateTransactionStore {
         let transactionID: UUID
         let installationID: String
         let extensionID: String
+        let version: String
         let bundleURL: URL
         let installedFilename: String
     }
@@ -57,6 +58,9 @@ actor WebExtensionUpdateTransactionStore {
         var updatedMetadata: Data?
         var phase: Phase
         var retainsPrevious: Bool
+        /// Same-version reinstalls need acknowledgement because version equality cannot identify the registry write.
+        var registryCommitted: Bool?
+        let versionOverrideIdentifier: UUID?
     }
 
     private let root: URL
@@ -69,7 +73,8 @@ actor WebExtensionUpdateTransactionStore {
     }
 
     /// The source archive must be owned by the caller for the duration of extraction.
-    func stage(_ update: ChromeWebStoreVerifiedUpdate, installationID: String, previousVersion: String?, previousMetadata: Data) throws -> Staged {
+    func stage(_ update: ChromeWebStoreVerifiedUpdate, installationID: String, previousVersion: String?, previousMetadata: Data,
+               versionOverrideIdentifier: UUID? = nil) throws -> Staged {
         guard UUID(uuidString: installationID) != nil else { throw TransactionError.invalidInstallationIdentifier }
         guard try journals().allSatisfy({ $0.installationID != installationID }) else { throw TransactionError.transactionAlreadyExists }
         try Task.checkCancellation()
@@ -83,10 +88,11 @@ actor WebExtensionUpdateTransactionStore {
             try Task.checkCancellation()
             try save(Journal(transactionID: transactionID, installationID: installationID, extensionID: update.extensionID,
                              previousVersion: previousVersion, version: update.version, previousMetadata: previousMetadata,
-                             phase: .prepared, retainsPrevious: false))
+                             phase: .prepared, retainsPrevious: false, registryCommitted: previousVersion == update.version ? false : nil,
+                             versionOverrideIdentifier: versionOverrideIdentifier))
             let filename = bundleURL.lastPathComponent == Filename.staged ? installationID : bundleURL.lastPathComponent
             return Staged(transactionID: transactionID, installationID: installationID, extensionID: update.extensionID,
-                          bundleURL: bundleURL, installedFilename: filename)
+                          version: update.version, bundleURL: bundleURL, installedFilename: filename)
         } catch {
             try? fileManager.removeItem(at: directory)
             throw error
@@ -120,6 +126,20 @@ actor WebExtensionUpdateTransactionStore {
         try fileManager.removeItem(at: transactionDirectory(transactionID))
     }
 
+    /// An acknowledgement failure leaves a coherent package usable and its journal available for another launch.
+    func acknowledgeRegistry(_ transactionID: UUID) -> Bool {
+        do {
+            var journal = try read(transactionID)
+            guard journal.registryCommitted == false else { return true }
+            journal.registryCommitted = true
+            try save(journal)
+            return true
+        } catch {
+            Logger.webExtensions.error("Extension update transaction registry acknowledgement failed: \(error.localizedDescription)")
+            return false
+        }
+    }
+
     /// Cleanup cannot invalidate an otherwise working package; leave its journal for another launch on failure.
     func cleanup(_ transactionID: UUID) {
         do { try finish(transactionID) } catch {
@@ -141,6 +161,7 @@ actor WebExtensionUpdateTransactionStore {
         let hasPrevious = fileManager.fileExists(atPath: previous.path)
         // A committed candidate cannot be mistaken for a restored predecessor if its backup is unavailable.
         guard journal.phase != .committed || hasPrevious else { throw TransactionError.missingPackage }
+        if journal.phase != .rollingBack, journal.registryCommitted != nil { journal.registryCommitted = false }
         journal.phase = .rollingBack
         try save(journal)
         if hasPrevious {

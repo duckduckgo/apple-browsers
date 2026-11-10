@@ -138,6 +138,8 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
     private lazy var extensionUpdateTransactions = WebExtensionUpdateTransactionStore(extensionsDirectory: storageProvider.extensionsDirectory,
                                                                                    fileManager: storageProvider.fileManager)
     weak var startupUpdateInstaller: ChromeWebStoreUpdateInstaller?
+    /// A failed debug-state write retains the transaction for retry without failing an already committed update.
+    var didCommitStoreUpdate: (InstalledWebExtension, UUID?) -> Bool = { _, _ in true }
     private var updateRecoveryBlockedIdentifiers: Set<String> = []
     private var retainedUpdateIdentifiers: Set<String> = []
     /// Distinguishes the next full load as restoration after data clearing rather than initial startup.
@@ -988,6 +990,7 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
             throw WebExtensionError.extensionNotInstalled
         }
         guard installedExtension.isDisabled else { return }
+        try await acknowledgeUpdateRegistryBeforeEnable(installedExtension, generation: generation)
 
         Logger.webExtensions.debug("🔄 Enabling extension '\(identifier)'")
         var enabledContext: WKWebExtensionContext?
@@ -1844,10 +1847,13 @@ extension WebExtensionManager {
     /// Kept internal until lifecycle eligibility is connected. Missing or increased approval installs disabled.
     func applyVerifiedUpdate(_ update: ChromeWebStoreVerifiedUpdate,
                              replacing installed: InstalledWebExtension,
+                             reportedInstalledVersion: String? = nil,
+                             versionOverrideIdentifier: UUID? = nil,
                              isEligible: () -> Bool) async throws -> UpdateInstallationResult {
         let identifier = installed.uniqueIdentifier
         guard !installed.isEmbedded, installed.storeIdentity == .init(store: .chromeWebStore, id: update.extensionID),
-              let installedVersion = installed.version, SemanticVersionComparator().isVersion(update.version, newerThan: installedVersion) else {
+              Self.isVersionEligibleForUpdate(update.version, installedVersion: installed.version,
+                                              reportedInstalledVersion: reportedInstalledVersion) else {
             throw UpdateInstallationError.invalidPackage
         }
         guard extensionUpdateGenerations[identifier] == nil else { throw UpdateInstallationError.alreadyUpdating }
@@ -1867,7 +1873,7 @@ extension WebExtensionManager {
 
         try checkEligibility()
         try? permissionController?.snapshotForUpdate(for: identifier)
-        let staged = try await stageVerifiedExtensionUpdate(update, installed: installed)
+        let staged = try await stageVerifiedExtensionUpdate(update, installed: installed, versionOverrideIdentifier: versionOverrideIdentifier)
         let previousContext = context(for: identifier)
         var didUnload = false
         var didReplace = false
@@ -1923,7 +1929,8 @@ extension WebExtensionManager {
             try await extensionUpdateTransactions.commit(staged, updatedMetadata: JSONEncoder().encode(replacement), retainPrevious: disabled)
             try checkEligibility()
             installationStore.update(replacement)
-            await didCommitExtensionUpdate(replacement, replacing: installed, transactionID: staged.transactionID)
+            await didCommitExtensionUpdate(replacement, replacing: installed, transactionID: staged.transactionID,
+                                            versionOverrideIdentifier: versionOverrideIdentifier)
             return disabled ? .installedDisabled : .applied
         } catch {
             let installationError = error
@@ -1940,10 +1947,19 @@ extension WebExtensionManager {
         }
     }
 
-    private func stageVerifiedExtensionUpdate(_ update: ChromeWebStoreVerifiedUpdate, installed: InstalledWebExtension) async throws -> WebExtensionUpdateTransactionStore.Staged {
+    /// Debug overrides may permit a verified same-version reinstall, but can never lower the actual installed version.
+    static func isVersionEligibleForUpdate(_ offeredVersion: String, installedVersion: String?, reportedInstalledVersion: String? = nil) -> Bool {
+        guard let installedVersion else { return false }
+        let comparator = SemanticVersionComparator()
+        return comparator.isVersion(offeredVersion, newerThan: reportedInstalledVersion ?? installedVersion)
+            && !comparator.isVersion(installedVersion, newerThan: offeredVersion)
+    }
+
+    private func stageVerifiedExtensionUpdate(_ update: ChromeWebStoreVerifiedUpdate, installed: InstalledWebExtension,
+                                              versionOverrideIdentifier: UUID?) async throws -> WebExtensionUpdateTransactionStore.Staged {
         do {
             return try await extensionUpdateTransactions.stage(update, installationID: installed.uniqueIdentifier, previousVersion: installed.version,
-                                                                previousMetadata: JSONEncoder().encode(installed))
+                                                                previousMetadata: JSONEncoder().encode(installed), versionOverrideIdentifier: versionOverrideIdentifier)
         } catch {
             reportUpdateInstallationFailureIfNeeded(error, outcome: .storageFailure, storeIdentity: installed.storeIdentity)
             throw error
@@ -2036,9 +2052,12 @@ extension WebExtensionManager {
         return failed
     }
 
-    private func didCommitExtensionUpdate(_ replacement: InstalledWebExtension, replacing installed: InstalledWebExtension, transactionID: UUID) async {
+    private func didCommitExtensionUpdate(_ replacement: InstalledWebExtension, replacing installed: InstalledWebExtension, transactionID: UUID,
+                                          versionOverrideIdentifier: UUID?) async {
         let identifier = replacement.uniqueIdentifier
         guard installationStore.installedExtension(withUniqueIdentifier: identifier) == replacement else { return }
+        let registryAcknowledged = await acknowledgeUpdateRegistry(transactionID, required: installed.version == replacement.version)
+        let overrideCleared = didCommitStoreUpdate(replacement, versionOverrideIdentifier)
         pixelFiring.fire(.updateApplied(extension: pixelExtension(for: replacement.storeIdentity)))
         if replacement.isDisabled {
             retainedUpdateIdentifiers.insert(identifier)
@@ -2050,7 +2069,7 @@ extension WebExtensionManager {
         if let identity = replacement.storeIdentity {
             NotificationCenter.default.post(name: .chromeWebStoreExtensionChanged, object: self, userInfo: ["extensionId": identity.id])
         }
-        if !replacement.isDisabled {
+        if !replacement.isDisabled, registryAcknowledged, overrideCleared {
             // The new version and registry are committed. Cleanup failure must not roll that success back.
             await extensionUpdateTransactions.cleanup(transactionID)
         }
@@ -2071,7 +2090,8 @@ extension WebExtensionManager {
             let current = installationStore.installedExtension(withUniqueIdentifier: identifier)
             let stillInstalled = current?.storeIdentity == installed.storeIdentity && current?.version == installed.version
             let metadata = try await extensionUpdateTransactions.rollback(staged.transactionID, restoreInstallation: stillInstalled)
-            try await reconcileRolledBackExtensionUpdate(metadata, installed: installed, transactionID: staged.transactionID)
+            try await reconcileRolledBackExtensionUpdate(metadata, installed: installed, transactionID: staged.transactionID,
+                                                         requiresAcknowledgement: installed.version == staged.version)
             if shouldReload, extensionUpdateGenerations[identifier] == generation,
                installationStore.installedExtension(withUniqueIdentifier: identifier) == installed, !installed.isDisabled {
                 _ = try await loader.loadWebExtension(identifier: identifier, into: controller, beforeActivation: { parsed in
@@ -2099,7 +2119,8 @@ extension WebExtensionManager {
         }
     }
 
-    private func reconcileRolledBackExtensionUpdate(_ metadata: Data?, installed: InstalledWebExtension, transactionID: UUID) async throws {
+    private func reconcileRolledBackExtensionUpdate(_ metadata: Data?, installed: InstalledWebExtension, transactionID: UUID,
+                                                    requiresAcknowledgement: Bool) async throws {
         guard let metadata else { return }
         if let current = installationStore.installedExtension(withUniqueIdentifier: installed.uniqueIdentifier),
            current.storeIdentity == installed.storeIdentity, current.version == installed.version {
@@ -2111,7 +2132,14 @@ extension WebExtensionManager {
             installationStore.update(previous)
         }
         // If uninstalled during the rollback await, discard the journal without recreating its registry entry.
-        await extensionUpdateTransactions.cleanup(transactionID)
+        if await acknowledgeUpdateRegistry(transactionID, required: requiresAcknowledgement) {
+            await extensionUpdateTransactions.cleanup(transactionID)
+        }
+    }
+
+    private func acknowledgeUpdateRegistry(_ transactionID: UUID, required: Bool) async -> Bool {
+        guard required else { return true }
+        return await extensionUpdateTransactions.acknowledgeRegistry(transactionID)
     }
 
     /// Must run before loading installed extensions once the production update flow is connected.
@@ -2154,8 +2182,9 @@ extension WebExtensionManager {
         guard recovered.uniqueIdentifier == before.uniqueIdentifier, recovered.storeIdentity == before.storeIdentity else {
             throw WebExtensionUpdateTransactionStore.TransactionError.invalidJournal
         }
-        let alreadyReconciled = (journal.phase == .committed && before.version == journal.version)
-            || (journal.phase == .rollingBack && before.version == journal.previousVersion)
+        let alreadyReconciled = journal.registryCommitted
+            ?? ((journal.phase == .committed && before.version == journal.version)
+                    || (journal.phase == .rollingBack && before.version == journal.previousVersion))
         if allowed, alreadyReconciled {
             // Registry changes after a successful explicit enable/disable are newer than the journal's commit metadata.
             recovered = before
@@ -2164,21 +2193,25 @@ extension WebExtensionManager {
         }
         recovered.isDisabled = recovered.isDisabled || !isAllowed(journal.extensionID)
         installationStore.update(recovered)
+        let registryAcknowledged = await acknowledgeUpdateRegistry(journal.transactionID, required: journal.registryCommitted != nil)
+        let overrideCleared = journal.phase != .committed || !allowed || didCommitStoreUpdate(recovered, journal.versionOverrideIdentifier)
         if journal.phase == .replacing || (journal.phase == .rollingBack && !alreadyReconciled) || (!allowed && journal.phase == .committed) {
             reportUpdateRollback(storeIdentity: recovered.storeIdentity)
         } else if journal.phase == .committed, !alreadyReconciled {
             pixelFiring.fire(.updateApplied(extension: pixelExtension(for: recovered.storeIdentity)))
             Logger.webExtensions.info("Extension update installation: \(journal.extensionID, privacy: .public) recovered committed package")
         }
-        let enabledRegistryCommitted = allowed && before.version == journal.version && !before.isDisabled
-        if journal.phase != .committed || !allowed || !journal.retainsPrevious || enabledRegistryCommitted {
+        let enabledRegistryCommitted = allowed && recovered.version == journal.version && !recovered.isDisabled
+        if registryAcknowledged, overrideCleared,
+           journal.phase != .committed || !allowed || !journal.retainsPrevious || enabledRegistryCommitted {
             await extensionUpdateTransactions.cleanup(journal.transactionID)
             retainedUpdateIdentifiers.remove(journal.installationID)
         }
     }
 
-    func prepareRetainedExtensionUpdateForReplacement(_ installed: InstalledWebExtension, offeredVersion: String) async throws -> InstalledWebExtension {
-        guard let installedVersion = installed.version, SemanticVersionComparator().isVersion(offeredVersion, newerThan: installedVersion) else {
+    func prepareRetainedExtensionUpdateForReplacement(_ installed: InstalledWebExtension, offeredVersion: String,
+                                                      reportedInstalledVersion: String? = nil) async throws -> InstalledWebExtension {
+        guard Self.isVersionEligibleForUpdate(offeredVersion, installedVersion: installed.version, reportedInstalledVersion: reportedInstalledVersion) else {
             throw UpdateInstallationError.invalidPackage
         }
         guard installed.isDisabled else { return installed }
@@ -2225,7 +2258,9 @@ extension WebExtensionManager {
         guard predecessor.uniqueIdentifier == identifier, predecessor.storeIdentity == installed.storeIdentity else { throw UpdateInstallationError.invalidPackage }
         predecessor.isDisabled = disabled || current.isDisabled || isRemotelyDisabled(identifier: identifier)
         installationStore.update(predecessor)
-        await extensionUpdateTransactions.cleanup(journal.transactionID)
+        if await acknowledgeUpdateRegistry(journal.transactionID, required: journal.registryCommitted != nil) {
+            await extensionUpdateTransactions.cleanup(journal.transactionID)
+        }
         retainedUpdateIdentifiers.remove(identifier)
         return predecessor
     }
@@ -2239,6 +2274,24 @@ extension WebExtensionManager {
         return generation
     }
 
+    /// Persist the existing registry state before allowing a user mutation that ambiguous same-version recovery could undo.
+    private func acknowledgeUpdateRegistryBeforeEnable(_ installed: InstalledWebExtension, generation: UUID?) async throws {
+        guard generation != nil else { return }
+        let identifier = installed.uniqueIdentifier
+        let journals = try await extensionUpdateTransactions.journals()
+        try await validateStoreExtensionEnable(identifier: identifier, generation: generation, installed: installed)
+        for journal in journals where journal.installationID == identifier && journal.registryCommitted == false {
+            guard installed.storeIdentity == .init(store: .chromeWebStore, id: journal.extensionID),
+                  (journal.phase == .committed && installed.version == journal.version)
+                    || (journal.phase == .rollingBack && installed.version == journal.previousVersion) else {
+                throw UpdateInstallationError.recoveryFailed
+            }
+            let acknowledged = await extensionUpdateTransactions.acknowledgeRegistry(journal.transactionID)
+            try await validateStoreExtensionEnable(identifier: identifier, generation: generation, installed: installed)
+            guard acknowledged else { throw UpdateInstallationError.recoveryFailed }
+        }
+    }
+
     private func endStoreExtensionEnable(identifier: String, generation: UUID?) {
         if let generation, extensionUpdateGenerations[identifier] == generation { extensionUpdateGenerations.removeValue(forKey: identifier) }
     }
@@ -2249,6 +2302,7 @@ extension WebExtensionManager {
         do {
             guard let predecessor = try await restoreRetainedExtensionUpdate(installed, disabled: true, generation: generation) else { return nil }
             try await validateStoreExtensionEnable(identifier: identifier, generation: generation, installed: predecessor)
+            try await acknowledgeUpdateRegistryBeforeEnable(predecessor, generation: generation)
             permissionController?.beginUpdate(for: identifier)
             defer { permissionController?.endUpdate(for: identifier) }
             _ = try await loader.loadWebExtension(identifier: identifier, into: controller, beforeActivation: { parsed in
@@ -2328,6 +2382,8 @@ extension WebExtensionManager {
             guard installationStore.installedExtension(withUniqueIdentifier: identifier) == installed,
                   installed.storeIdentity == .init(store: .chromeWebStore, id: journal.extensionID), installed.version == journal.version,
                   context(for: identifier)?.webExtension.version == journal.version else { continue }
+            guard await acknowledgeUpdateRegistry(journal.transactionID, required: journal.registryCommitted != nil),
+                  didCommitStoreUpdate(installed, journal.versionOverrideIdentifier) else { continue }
             await extensionUpdateTransactions.cleanup(journal.transactionID)
             retainedUpdateIdentifiers.remove(identifier)
         }

@@ -16,6 +16,7 @@
 //  limitations under the License.
 //
 
+import Foundation
 import os.log
 
 /// Bounded local installation failures; no package contents, identities or system error text enter pixels.
@@ -43,6 +44,7 @@ final class ChromeWebStoreUpdateInstaller {
 
     private(set) var isSnapshotReady = false
     var onSnapshotReady: (() -> Void)?
+    var versionOverride: (InstalledWebExtension) -> (reportedVersion: String, identifier: UUID)? = { _ in nil }
 
     init(manager: WebExtensionManager, pendingUpdates: any ChromeWebStorePendingUpdateStoring,
          isEnabled: @escaping () -> Bool, isCatalogExtension: @escaping (String) -> Bool) {
@@ -117,8 +119,7 @@ final class ChromeWebStoreUpdateInstaller {
     }
 
     private func applyAtStartup(_ source: ChromeWebStoreVerifiedUpdate, installed: InstalledWebExtension) async {
-        guard let currentVersion = installed.version,
-              SemanticVersionComparator().isVersion(source.version, newerThan: currentVersion) else {
+        guard isVersionEligible(source.version, installed: installed) else {
             try? await pendingUpdates.remove(source)
             return
         }
@@ -141,11 +142,15 @@ final class ChromeWebStoreUpdateInstaller {
             guard canApply(source), matchingInstallation(source) == installed,
                   manager.context(for: installed.uniqueIdentifier) == nil else { return }
             // Validate against the disabled candidate before restoring its older working predecessor.
-            guard let version = installed.version, SemanticVersionComparator().isVersion(copy.version, newerThan: version) else { return }
-            let incumbent = try await manager.prepareRetainedExtensionUpdateForReplacement(installed, offeredVersion: copy.version)
+            guard isVersionEligible(copy.version, installed: installed) else { return }
+            let override = versionOverride(installed)
+            let incumbent = try await manager.prepareRetainedExtensionUpdateForReplacement(installed, offeredVersion: copy.version,
+                                                                                           reportedInstalledVersion: override?.reportedVersion)
             try Task.checkCancellation()
             guard canApply(source) else { return }
-            let outcome = try await manager.applyVerifiedUpdate(copy, replacing: incumbent, isEligible: { [weak self] in self?.canApply(source) == true })
+            let outcome = try await manager.applyVerifiedUpdate(copy, replacing: incumbent, reportedInstalledVersion: override?.reportedVersion,
+                                                                versionOverrideIdentifier: override?.identifier,
+                                                                isEligible: { [weak self] in self?.canApply(source) == true })
             try? await pendingUpdates.remove(source)
             switch outcome {
             case .applied:
@@ -163,7 +168,13 @@ final class ChromeWebStoreUpdateInstaller {
     }
 
     private func canApply(_ update: ChromeWebStoreVerifiedUpdate) -> Bool {
-        !Task.isCancelled && isEnabled() && matchingInstallation(update) != nil
+        guard !Task.isCancelled, isEnabled(), let installed = matchingInstallation(update) else { return false }
+        return isVersionEligible(update.version, installed: installed)
+    }
+
+    private func isVersionEligible(_ offeredVersion: String, installed: InstalledWebExtension) -> Bool {
+        WebExtensionManager.isVersionEligibleForUpdate(offeredVersion, installedVersion: installed.version,
+                                                       reportedInstalledVersion: versionOverride(installed)?.reportedVersion)
     }
 
     private func matchingInstallation(_ update: ChromeWebStoreVerifiedUpdate) -> InstalledWebExtension? {

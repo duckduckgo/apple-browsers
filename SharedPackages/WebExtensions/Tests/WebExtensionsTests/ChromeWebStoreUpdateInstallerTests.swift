@@ -86,6 +86,39 @@ final class ChromeWebStoreUpdateInstallerTests: XCTestCase {
         XCTAssertEqual(remaining?.version, "2.0")
     }
 
+    func testStartupUsesTheOverrideForAVerifiedSameVersionReinstall() async throws {
+        _ = try await pending.store(makeUpdate(version: "1.0"))
+        let owner = makeInstaller()
+        let overrideIdentifier = UUID()
+        owner.versionOverride = { _ in ("0.0.0.1", overrideIdentifier) }
+        var committed = false
+        manager.didCommitStoreUpdate = { _, identifier in
+            XCTAssertEqual(identifier, overrideIdentifier)
+            committed = true
+            return true
+        }
+
+        await manager.loadInstalledExtensions()
+
+        XCTAssertTrue(committed)
+        XCTAssertEqual(manager.context(for: installationID)?.webExtension.version, "1.0")
+        let remaining = await pending.pendingUpdate(for: storeID)
+        XCTAssertNil(remaining)
+    }
+
+    func testStartupWithoutOverrideRejectsSameVersionAndOverrideCannotPermitRealDowngrade() async throws {
+        _ = try await pending.store(makeUpdate(version: "1.0"))
+        let owner = makeInstaller()
+        var committed = false
+        manager.didCommitStoreUpdate = { _, _ in committed = true; return true }
+
+        _ = await owner.runOnce()
+
+        XCTAssertFalse(committed)
+        XCTAssertEqual(installationStore.installedExtensions, [original])
+        XCTAssertFalse(WebExtensionManager.isVersionEligibleForUpdate("0.9", installedVersion: "1.0", reportedInstalledVersion: "0.0.0.1"))
+    }
+
     func testReinstalledStoreIdentityCannotConsumeThePreviousInstallationPackage() async throws {
         _ = try await pending.store(makeUpdate(version: "2.0", binding: UUID().uuidString))
         let owner = makeInstaller()

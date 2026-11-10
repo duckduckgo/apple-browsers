@@ -21,6 +21,11 @@ import Foundation
 
 final class MockUserChurnStateProvider: UserChurnStateProviding {
     var hasChurnedFromDefault = false
+    var shouldDetectChurnOnNextCheck: Bool?
 
-    func checkForDefaultBrowserChange() {}
+    func checkForDefaultBrowserChange() {
+        if let shouldDetectChurnOnNextCheck {
+            hasChurnedFromDefault = shouldDetectChurnOnNextCheck
+        }
+    }
 }

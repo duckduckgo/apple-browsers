@@ -110,6 +110,12 @@ final class DefaultBrowserWinBackPromoDelegateTests: XCTestCase {
         XCTAssertFalse(isEligibleAfterRefresh())
     }
 
+    func testWhenChurnDetectedDuringRefreshThenEligible() {
+        churnState.hasChurnedFromDefault = false
+        churnState.shouldDetectChurnOnNextCheck = true
+        XCTAssertTrue(isEligibleAfterRefresh())
+    }
+
     func testWhenBannerPermanentlyDismissedThenNotEligible() {
         promptStore.isBannerPermanentlyDismissed = true
         XCTAssertFalse(isEligibleAfterRefresh())

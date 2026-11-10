@@ -59,7 +59,7 @@ struct NSObjectExtensionTests {
         var callbackExecuted = false
         var deinitCalled = false
 
-        try await withTimeout(.seconds(1)) {
+        try await withTimeout(.seconds(1)) { @MainActor in
             await withCheckedContinuation { continuation in
                 autoreleasepool {
                     let testObject = TestObject()
@@ -91,7 +91,7 @@ struct NSObjectExtensionTests {
     func deinitObserverExecutesCallback() async throws {
         var callbackExecuted = false
 
-        try await withTimeout(.seconds(1)) {
+        try await withTimeout(.seconds(1)) { @MainActor in
             await withCheckedContinuation { continuation in
                 autoreleasepool {
                     _=NSObject.DeinitObserver {

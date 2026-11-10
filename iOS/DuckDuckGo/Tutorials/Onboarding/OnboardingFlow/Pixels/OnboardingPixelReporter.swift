@@ -111,8 +111,6 @@ protocol OnboardingAddToDockReporting {
 protocol OnboardingDownloadReasonPixelReporting {
     func measureDownloadReasonImpression()
     func measureDownloadReasonSelection(_ reason: OnboardingDownloadReason)
-    func measureSearchPrivacySettingsImpression()
-    func measureSearchPrivacySettingsSelection(recentlyVisitedSitesEnabled: Bool, safeSearchEnabled: Bool)
     func measureAIModelImpression()
     func measureAIModelSelection(model: String)
     func measureToggleInputModeImpression()
@@ -172,19 +170,26 @@ final class OnboardingPixelReporter {
         pixelFiring?.fire(event, frequency: unique ? .legacyInitial : .standard, options: .parameters(additionalParameters))
     }
 
-    // Fires a shared onboarding pixel with the current stored context (source, flow and variant).
+    // Fires a shared onboarding pixel with the current stored context (source, flow and the variant of each fork).
     private func fireSharedPixel(_ event: OnboardingSharedPixelEvent) {
         sharedPixelHandler.fire(event,
                                 source: sharedPixelsStorage.onboardingSource,
                                 flow: sharedPixelsStorage.onboardingFlow,
-                                variant: sharedPixelsStorage.onboardingVariant)
+                                variants: OnboardingPixelParameter.Variants(
+                                    searchExperience: sharedPixelsStorage.onboardingSearchExperienceVariant,
+                                    downloadReason: sharedPixelsStorage.onboardingDownloadReasonVariant
+                                ))
     }
 
-    // Records the onboarding variant only if one hasn't been set yet, so the first branching
-    // choice wins and a later step can't overwrite it.
-    private func setVariantIfNotAlreadySet(_ variant: OnboardingPixelParameter.Variant) {
-        guard sharedPixelsStorage.onboardingVariant == nil else { return }
-        sharedPixelsStorage.onboardingVariant = variant
+    // Each fork keeps its first choice, so a repeated step can't overwrite it.
+    private func setSearchExperienceVariantIfNotAlreadySet(_ variant: OnboardingPixelParameter.SearchExperienceVariant) {
+        guard sharedPixelsStorage.onboardingSearchExperienceVariant == nil else { return }
+        sharedPixelsStorage.onboardingSearchExperienceVariant = variant
+    }
+
+    private func setDownloadReasonVariantIfNotAlreadySet(_ variant: OnboardingPixelParameter.DownloadReasonVariant) {
+        guard sharedPixelsStorage.onboardingDownloadReasonVariant == nil else { return }
+        sharedPixelsStorage.onboardingDownloadReasonVariant = variant
     }
 
 }
@@ -338,7 +343,7 @@ extension OnboardingPixelReporter: OnboardingIntroPixelReporting {
         case (_, .search):
             fireSharedPixel(.searchChatToggle(.clicked(.suggestedSearch)))
         }
-        setVariantIfNotAlreadySet(OnboardingPixelParameter.Variant(selection))
+        setSearchExperienceVariantIfNotAlreadySet(OnboardingPixelParameter.SearchExperienceVariant(selection))
     }
 
     func measureSkipOnboardingScreenImpression() {
@@ -533,7 +538,7 @@ extension OnboardingPixelReporter: OnboardingAddToDockReporting {
 
 }
 
-extension OnboardingPixelParameter.Variant {
+extension OnboardingPixelParameter.SearchExperienceVariant {
 
     init(_ mode: DuckAIQueryMode) {
         switch mode {
@@ -557,16 +562,8 @@ extension OnboardingPixelReporter: OnboardingDownloadReasonPixelReporting {
     func measureDownloadReasonSelection(_ reason: OnboardingDownloadReason) {
         fireSharedPixel(.downloadChoice(.clicked(.init(reason))))
         // Persist the chosen reason as the variant so every subsequent tailored-step pixel carries it.
-        setVariantIfNotAlreadySet(OnboardingPixelParameter.Variant(reason))
+        setDownloadReasonVariantIfNotAlreadySet(OnboardingPixelParameter.DownloadReasonVariant(reason))
         downloadReasonExperimentMetric.measureDownloadReasonSelected(reason)
-    }
-
-    func measureSearchPrivacySettingsImpression() {
-        fireSharedPixel(.preferencesSerp(.shown))
-    }
-
-    func measureSearchPrivacySettingsSelection(recentlyVisitedSitesEnabled: Bool, safeSearchEnabled: Bool) {
-        fireSharedPixel(.preferencesSerp(.clicked(recentlyVisitedSitesEnabled: recentlyVisitedSitesEnabled, safeSearchEnabled: safeSearchEnabled)))
     }
 
     func measureAIModelImpression() {

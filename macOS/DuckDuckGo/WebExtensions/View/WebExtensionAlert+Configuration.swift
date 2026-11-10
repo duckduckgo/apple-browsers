@@ -26,7 +26,7 @@ extension WebExtensionAlert.Configuration {
 
     static func installation(of webExtension: WKWebExtension, permissionEntries entries: [String]) -> Self {
         Self(
-            icon: webExtension.icon(for: iconSize) ?? webExtension.actionIcon(for: iconSize),
+            icon: webExtension.displayIcon(for: iconSize),
             title: String(format: UserText.webExtensionInstallTitle, webExtension.displayName ?? UserText.webExtensionUnnamedExtension),
             message: entries.isEmpty ? UserText.webExtensionNoPermissions : UserText.webExtensionPermissionExplanation,
             details: entries,
@@ -38,7 +38,7 @@ extension WebExtensionAlert.Configuration {
 
     static func removal(of webExtension: WKWebExtension?, name: String) -> Self {
         Self(
-            icon: webExtension?.icon(for: iconSize) ?? webExtension?.actionIcon(for: iconSize),
+            icon: webExtension?.displayIcon(for: iconSize),
             title: String(format: UserText.chromeWebStoreRemoveTitle, name),
             confirmTitle: UserText.webExtensionRemoveButton,
             cancelTitle: UserText.cancel)

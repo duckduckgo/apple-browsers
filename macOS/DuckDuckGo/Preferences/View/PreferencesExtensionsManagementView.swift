@@ -423,7 +423,7 @@ extension Preferences {
                 }
             }
             .padding(.horizontal, Const.rowHorizontalPadding)
-            .frame(width: Const.cardWidth)
+            .frame(maxWidth: Const.cardWidth)
             .background(Color(designSystemColor: .containerFillSecondary, palette: palette))
             .clipShape(RoundedRectangle(cornerRadius: Const.cardCornerRadius, style: .continuous))
         }

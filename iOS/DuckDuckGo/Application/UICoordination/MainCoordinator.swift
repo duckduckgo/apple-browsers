@@ -668,8 +668,8 @@ final class MainCoordinator {
         controller.presentNetworkProtectionStatusSettingsModal(entryPoint: entryPoint, scrollToStrictRouting: scrollToStrictRouting)
     }
 
-    func presentDataBrokerProtectionDashboard() {
-        controller.presentDataBrokerProtectionDashboard()
+    func presentDataBrokerProtectionDashboard(freeScanEntryPoint: FreemiumDBPEntryPoint? = nil) {
+        controller.presentDataBrokerProtectionDashboard(freeScanEntryPoint: freeScanEntryPoint)
     }
 
     func presentModalPromptIfNeeded() {

@@ -68,7 +68,7 @@ struct StartupOnboardingDecision {
         case .downloadReasonSelection, .setDefaultBrowser, .aiIntro, .addToDockPromo, .appIconSelection,
              .addressBarPositionSelection, .searchExperienceSelection,
              .duckAIQuerySelection, .interludeDuckAI,
-             .searchPrivacySettingsSelection, .aiSearchSettingsSelection, .aiModelSelection,
+             .aiSearchSettingsSelection, .aiModelSelection,
              .toggleInputModeSelection, .keepDuckAISelection, .adBlockingPersonalization:
             shouldShowOnboarding = true
             return
@@ -1613,8 +1613,8 @@ class MainViewController: UIViewController {
         }
     }
 
-    func presentDataBrokerProtectionDashboard() {
-        segueToDataBrokerProtection()
+    func presentDataBrokerProtectionDashboard(freeScanEntryPoint: FreemiumDBPEntryPoint? = nil) {
+        segueToDataBrokerProtection(freeScanEntryPoint: freeScanEntryPoint)
     }
 
     private func registerForKeyboardNotifications() {

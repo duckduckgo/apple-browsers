@@ -722,7 +722,7 @@ extension FeatureFlag: FeatureFlagDescribing {
     private var config: Config {
         switch self {
         case .ipadMenuBar:
-            Config(defaultValue: .internalOnly, source: .remoteReleasable(iOSBrowserConfigSubfeature.ipadMenuBar))
+            Config(defaultValue: .enabled, source: .remoteReleasable(iOSBrowserConfigSubfeature.ipadMenuBar))
         case .sync:
             Config(source: .remoteReleasable(SyncSubfeature.level0ShowSync), supportsLocalOverriding: false)
         case .autofillCredentialInjecting:

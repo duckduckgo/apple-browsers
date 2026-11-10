@@ -39,7 +39,7 @@ extension ScanJobData {
             return .retry
         case .optOutStarted, .scanStarted:
             return .other
-        case .optOutRequested:
+        case .optOutRequested, .optOutByUserEmail:
             return .confirmOptOut
         case .matchRemovedByUser, .optOutSubmittedAndAwaitingEmailConfirmation:
             return .other

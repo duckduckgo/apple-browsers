@@ -48,7 +48,7 @@ final class DefaultBrowserConfirmationStoreTests: XCTestCase {
     }
 
     func testWhenPendingConfirmationSetToNilThenKeyIsRemoved() {
-        sut.pendingConfirmation = DefaultBrowserPendingConfirmation(clickDate: Date(), nextCheck: .returned)
+        sut.pendingConfirmation = DefaultBrowserPendingConfirmation(clickDate: Date(), nextCheck: .afterClick)
 
         sut.pendingConfirmation = nil
 

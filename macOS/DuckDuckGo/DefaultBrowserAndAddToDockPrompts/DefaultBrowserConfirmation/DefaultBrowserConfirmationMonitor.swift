@@ -25,8 +25,8 @@ enum DefaultBrowserConfirmationSource: String {
 }
 
 enum DefaultBrowserConfirmationCheck: String, Codable {
-    /// A few seconds after the user returns to a DuckDuckGo window from the system prompt.
-    case returned
+    /// About 5 seconds after the click.
+    case afterClick = "after-click"
     /// The next time the app becomes active.
     case nextActivation = "next-activation"
     /// 24 hours after the click, or the first launch or activation after that.
@@ -34,7 +34,7 @@ enum DefaultBrowserConfirmationCheck: String, Codable {
 
     fileprivate var next: DefaultBrowserConfirmationCheck? {
         switch self {
-        case .returned: return .nextActivation
+        case .afterClick: return .nextActivation
         case .nextActivation: return .deadline
         case .deadline: return nil
         }
@@ -64,9 +64,8 @@ protocol DefaultBrowserConfirmationMonitoring: AnyObject {
 final class DefaultBrowserConfirmationMonitor: DefaultBrowserConfirmationMonitoring {
 
     private enum Event {
-        case windowBecameKey
         case appBecameActive
-        case returnTimerFired
+        case afterClickTimerFired
         case deadlineTimerFired
     }
 
@@ -76,7 +75,7 @@ final class DefaultBrowserConfirmationMonitor: DefaultBrowserConfirmationMonitor
     private let notificationCenter: NotificationCenter
     private let timerFactory: TimerCreating
     private let dateProvider: () -> Date
-    private let returnDelay: TimeInterval
+    private let afterClickDelay: TimeInterval
     private let deadlineInterval: TimeInterval
     // Temporary: lets tests read results until pixels are added, then pixel firing replaces it.
     // https://app.asana.com/1/137249556945/project/1209825025475019/task/1215996183949490
@@ -85,7 +84,7 @@ final class DefaultBrowserConfirmationMonitor: DefaultBrowserConfirmationMonitor
     private var pending: DefaultBrowserPendingConfirmation? {
         didSet { store.pendingConfirmation = pending }
     }
-    private var returnTimer: TimerInterface?
+    private var afterClickTimer: TimerInterface?
     private var deadlineTimer: TimerInterface?
     private var observers: [NSObjectProtocol] = []
 
@@ -95,7 +94,7 @@ final class DefaultBrowserConfirmationMonitor: DefaultBrowserConfirmationMonitor
          notificationCenter: NotificationCenter = .default,
          timerFactory: TimerCreating = TimerFactory(),
          dateProvider: @escaping () -> Date = Date.init,
-         returnDelay: TimeInterval = 5,
+         afterClickDelay: TimeInterval = 5,
          deadlineInterval: TimeInterval = 24 * 60 * 60,
          report: ((DefaultBrowserConfirmationResult) -> Void)? = nil) {
         self.source = source
@@ -104,14 +103,11 @@ final class DefaultBrowserConfirmationMonitor: DefaultBrowserConfirmationMonitor
         self.notificationCenter = notificationCenter
         self.timerFactory = timerFactory
         self.dateProvider = dateProvider
-        self.returnDelay = returnDelay
+        self.afterClickDelay = afterClickDelay
         self.deadlineInterval = deadlineInterval
         self.report = report
 
         observers = [
-            notificationCenter.addObserver(forName: NSWindow.didBecomeKeyNotification, object: nil, queue: nil) { [weak self] _ in
-                self?.handle(.windowBecameKey)
-            },
             notificationCenter.addObserver(forName: NSApplication.didBecomeActiveNotification, object: nil, queue: nil) { [weak self] _ in
                 self?.handle(.appBecameActive)
             }
@@ -124,7 +120,7 @@ final class DefaultBrowserConfirmationMonitor: DefaultBrowserConfirmationMonitor
     }
 
     func start(clickDate: Date) {
-        begin(DefaultBrowserPendingConfirmation(clickDate: clickDate, nextCheck: .returned))
+        begin(DefaultBrowserPendingConfirmation(clickDate: clickDate, nextCheck: .afterClick))
     }
 
     func resume() {
@@ -142,16 +138,20 @@ final class DefaultBrowserConfirmationMonitor: DefaultBrowserConfirmationMonitor
         pending = confirmation
         if isPastDeadline(confirmation) {
             run(.deadline)
-        } else {
-            deadlineTimer = makeTimer(after: deadline(for: confirmation).timeIntervalSince(dateProvider()), sending: .deadlineTimerFired)
+            return
+        }
+        deadlineTimer = makeTimer(after: deadline(for: confirmation).timeIntervalSince(dateProvider()), sending: .deadlineTimerFired)
+        if confirmation.nextCheck == .afterClick {
+            let afterClickDate = confirmation.clickDate.addingTimeInterval(afterClickDelay)
+            afterClickTimer = makeTimer(after: max(0, afterClickDate.timeIntervalSince(dateProvider())), sending: .afterClickTimerFired)
         }
     }
 
     // MARK: - Events
 
     private func handle(_ event: Event) {
-        if event == .returnTimerFired {
-            returnTimer = nil
+        if event == .afterClickTimerFired {
+            afterClickTimer = nil
         }
         guard let pending else { return }
         if event == .deadlineTimerFired || isPastDeadline(pending) {
@@ -159,10 +159,8 @@ final class DefaultBrowserConfirmationMonitor: DefaultBrowserConfirmationMonitor
             return
         }
         switch (event, pending.nextCheck) {
-        case (.windowBecameKey, .returned) where returnTimer == nil:
-            returnTimer = makeTimer(after: returnDelay, sending: .returnTimerFired)
-        case (.returnTimerFired, .returned):
-            run(.returned)
+        case (.afterClickTimerFired, .afterClick):
+            run(.afterClick)
         case (.appBecameActive, .nextActivation):
             run(.nextActivation)
         default:
@@ -216,8 +214,8 @@ final class DefaultBrowserConfirmationMonitor: DefaultBrowserConfirmationMonitor
     }
 
     private func invalidateTimers() {
-        returnTimer?.invalidate()
-        returnTimer = nil
+        afterClickTimer?.invalidate()
+        afterClickTimer = nil
         deadlineTimer?.invalidate()
         deadlineTimer = nil
     }

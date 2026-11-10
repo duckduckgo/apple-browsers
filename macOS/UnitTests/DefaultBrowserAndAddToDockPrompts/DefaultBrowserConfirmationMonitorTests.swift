@@ -23,7 +23,7 @@ import XCTest
 final class DefaultBrowserConfirmationMonitorTests: XCTestCase {
 
     private let clickDate = Date(timeIntervalSince1970: 1_700_000_000)
-    private let returnDelay: TimeInterval = 5
+    private let afterClickDelay: TimeInterval = 5
     private let deadlineInterval: TimeInterval = 24 * 60 * 60
 
     private var store: InMemoryConfirmationStore!
@@ -56,12 +56,11 @@ final class DefaultBrowserConfirmationMonitorTests: XCTestCase {
         super.tearDown()
     }
 
-    func testWhenNotDefaultAtReturnedThenNextActivationRuns() {
+    func testWhenNotDefaultAfterClickThenNextActivationRuns() {
         let sut = makeMonitor()
         sut.start(clickDate: clickDate)
 
-        center.post(name: NSWindow.didBecomeKeyNotification, object: nil)
-        fireTimer(interval: returnDelay)
+        fireTimer(interval: afterClickDelay)
 
         XCTAssertTrue(results.isEmpty)
         XCTAssertEqual(store.pendingConfirmation?.nextCheck, .nextActivation)
@@ -76,8 +75,7 @@ final class DefaultBrowserConfirmationMonitorTests: XCTestCase {
     func testWhenNotDefaultAtFirstTwoChecksThenDeadlineTimerNotConfirmed() {
         let sut = makeMonitor()
         sut.start(clickDate: clickDate)
-        center.post(name: NSWindow.didBecomeKeyNotification, object: nil)
-        fireTimer(interval: returnDelay)
+        fireTimer(interval: afterClickDelay)
         center.post(name: NSApplication.didBecomeActiveNotification, object: nil)
         XCTAssertEqual(store.pendingConfirmation?.nextCheck, .deadline)
 
@@ -88,7 +86,7 @@ final class DefaultBrowserConfirmationMonitorTests: XCTestCase {
     }
 
     func testWhenResumedPastDeadlineThenOnlyDeadlineCheckRuns() {
-        store.pendingConfirmation = DefaultBrowserPendingConfirmation(clickDate: clickDate, nextCheck: .returned)
+        store.pendingConfirmation = DefaultBrowserPendingConfirmation(clickDate: clickDate, nextCheck: .afterClick)
         provider.isDefault = true
         now = clickDate.addingTimeInterval(25 * 60 * 60)
         let sut = makeMonitor()
@@ -112,17 +110,17 @@ final class DefaultBrowserConfirmationMonitorTests: XCTestCase {
         XCTAssertNil(store.pendingConfirmation)
     }
 
-    func testWhenQuitDuringReturnDelayThenNextKeyWindowRerunsReturned() {
-        store.pendingConfirmation = DefaultBrowserPendingConfirmation(clickDate: clickDate, nextCheck: .returned)
+    func testWhenRelaunchedAfterAfterClickDelayThenAfterClickRunsRightAway() {
+        store.pendingConfirmation = DefaultBrowserPendingConfirmation(clickDate: clickDate, nextCheck: .afterClick)
         provider.isDefault = true
+        now = clickDate.addingTimeInterval(60)
         let sut = makeMonitor()
         sut.resume()
         XCTAssertTrue(results.isEmpty)
 
-        center.post(name: NSWindow.didBecomeKeyNotification, object: nil)
-        fireTimer(interval: returnDelay)
+        fireTimer(interval: 0)
 
-        XCTAssertEqual(results, [.confirmed(.returned)])
+        XCTAssertEqual(results, [.confirmed(.afterClick)])
     }
 
     func testWhenResumedBeforeDeadlineThenDeadlineTimerScheduledForRemainingTime() {
@@ -141,16 +139,14 @@ final class DefaultBrowserConfirmationMonitorTests: XCTestCase {
         let sut = makeMonitor()
         sut.start(clickDate: clickDate)
         provider.isDefault = true
-        center.post(name: NSWindow.didBecomeKeyNotification, object: nil)
-        fireTimer(interval: returnDelay)
-        XCTAssertEqual(results, [.confirmed(.returned)])
+        fireTimer(interval: afterClickDelay)
+        XCTAssertEqual(results, [.confirmed(.afterClick)])
 
-        center.post(name: NSWindow.didBecomeKeyNotification, object: nil)
         center.post(name: NSApplication.didBecomeActiveNotification, object: nil)
         timerFactory.createdTimers.forEach { $0.fire() }
         sut.resume()
 
-        XCTAssertEqual(results, [.confirmed(.returned)])
+        XCTAssertEqual(results, [.confirmed(.afterClick)])
     }
 
     // MARK: - Helpers
@@ -162,7 +158,7 @@ final class DefaultBrowserConfirmationMonitorTests: XCTestCase {
                                                         notificationCenter: center,
                                                         timerFactory: timerFactory,
                                                         dateProvider: { [unowned self] in now },
-                                                        returnDelay: returnDelay,
+                                                        afterClickDelay: afterClickDelay,
                                                         deadlineInterval: deadlineInterval,
                                                         report: { [unowned self] in results.append($0) })
         monitors.append(monitor)

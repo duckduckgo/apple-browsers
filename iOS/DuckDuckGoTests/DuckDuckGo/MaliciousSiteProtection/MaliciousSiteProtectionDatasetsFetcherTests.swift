@@ -56,6 +56,7 @@ final class MaliciousSiteProtectionDatasetsFetcherTests {
         self.application = application
         self.preferencesScheduler = preferencesScheduler
 
+        var registeredTaskIdentifiers: Set<String> = []
         sut = MaliciousSiteProtectionDatasetsFetcher(
             updateManager: updateManagerMock,
             featureFlagger: featureFlaggerMock,
@@ -64,7 +65,7 @@ final class MaliciousSiteProtectionDatasetsFetcherTests {
             backgroundTaskScheduler: backgroundSchedulerMock,
             application: application,
             preferencesScheduler: preferencesScheduler.eraseToAnyScheduler(),
-            backgroundTaskRegistrations: .init(),
+            insertBackgroundTaskIdentifier: { registeredTaskIdentifiers.insert($0).inserted },
             featureFlagChanges: { nil }
         )
     }

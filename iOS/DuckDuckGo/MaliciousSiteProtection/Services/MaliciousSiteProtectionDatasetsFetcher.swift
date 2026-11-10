@@ -35,15 +35,8 @@ protocol MaliciousSiteProtectionDatasetsFetching {
 }
 
 final class MaliciousSiteProtectionDatasetsFetcher {
-    final class BackgroundTaskRegistrations {
-        static let shared = BackgroundTaskRegistrations()
-        private var identifiers: Set<String> = []
-
-        @MainActor
-        func insert(_ identifier: String) -> Bool {
-            identifiers.insert(identifier).inserted
-        }
-    }
+    @MainActor
+    private static var registeredTaskIdentifiers: Set<String> = []
 
     private let featureFlagger: MaliciousSiteProtectionFeatureFlagger & MaliciousSiteProtectionFeatureFlagsSettingsProvider
     private let userPreferencesManager: MaliciousSiteProtectionPreferencesProvider
@@ -52,7 +45,7 @@ final class MaliciousSiteProtectionDatasetsFetcher {
     private let backgroundTaskScheduler: BGTaskScheduling
     private let application: BackgroundRefreshCapable
     private let preferencesScheduler: AnySchedulerOf<DispatchQueue>
-    private let backgroundTaskRegistrations: BackgroundTaskRegistrations
+    private let insertBackgroundTaskIdentifier: @MainActor (String) -> Bool
     private let featureFlagChanges: () -> AnyPublisher<(FeatureFlag, Bool), Never>?
 
     @MainActor
@@ -88,7 +81,9 @@ final class MaliciousSiteProtectionDatasetsFetcher {
         backgroundTaskScheduler: BGTaskScheduling = BGTaskScheduler.shared,
         application: BackgroundRefreshCapable = UIApplication.shared,
         preferencesScheduler: AnySchedulerOf<DispatchQueue> = DispatchQueue.main.eraseToAnyScheduler(),
-        backgroundTaskRegistrations: BackgroundTaskRegistrations = .shared,
+        insertBackgroundTaskIdentifier: @escaping @MainActor (String) -> Bool = {
+            MaliciousSiteProtectionDatasetsFetcher.registeredTaskIdentifiers.insert($0).inserted
+        },
         featureFlagChanges: @escaping () -> AnyPublisher<(FeatureFlag, Bool), Never>? = {
             (AppDependencyProvider.shared.featureFlagger.localOverrides?.actionHandler as? FeatureFlagOverridesPublishingHandler<FeatureFlag>)?.flagDidChangePublisher
         }
@@ -100,7 +95,7 @@ final class MaliciousSiteProtectionDatasetsFetcher {
         self.backgroundTaskScheduler = backgroundTaskScheduler
         self.application = application
         self.preferencesScheduler = preferencesScheduler
-        self.backgroundTaskRegistrations = backgroundTaskRegistrations
+        self.insertBackgroundTaskIdentifier = insertBackgroundTaskIdentifier
         self.featureFlagChanges = featureFlagChanges
     }
 }
@@ -287,7 +282,7 @@ extension MaliciousSiteProtectionDatasetsFetcher {
         // The system kills the app on the second registration of the same task identifier.
         DataManager.StoredDataType.Kind.allCases.forEach { datasetType in
             let backgroundTaskIdentifier = datasetType.backgroundTaskIdentifier
-            guard backgroundTaskRegistrations.insert(backgroundTaskIdentifier) else { return }
+            guard insertBackgroundTaskIdentifier(backgroundTaskIdentifier) else { return }
 
             backgroundTaskScheduler.register(forTaskWithIdentifier: backgroundTaskIdentifier) { [weak self] backgroundTask in
                 guard let self else { return }

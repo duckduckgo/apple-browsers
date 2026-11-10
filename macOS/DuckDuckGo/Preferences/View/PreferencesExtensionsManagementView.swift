@@ -52,6 +52,16 @@ extension Preferences {
         }
 
         var body: some View {
+            if let entry = model.detailsEntry {
+                ExtensionDetailsView(entry: entry,
+                                     onBack: model.hideDetails,
+                                     onRemove: { model.remove(entry) })
+            } else {
+                overview
+            }
+        }
+
+        private var overview: some View {
             ViewThatFits(in: .vertical) {
                 VStack(alignment: .leading, spacing: Const.footerSpacing) {
                     content
@@ -113,9 +123,10 @@ extension Preferences {
                                   isEnabled: Binding(get: { entry.isEnabled },
                                                      set: { model.setEnabled($0, for: entry) }),
                                   isLocked: entry.isRemotelyDisabled,
-                                  // Placeholder until details are wired up.
-                                  onDetails: {},
-                                  onRemove: { model.remove(entry) })
+                                  onDetails: { model.showDetails(for: entry) },
+                                  onPublisher: { model.openPublisherPage(for: entry.listing) },
+                                  onRemove: { model.remove(entry) },
+                                  onRemoteDisableLearnMore: model.openRemoteDisableLearnMore)
         }
 
         private var moreExtensionsHeader: some View {
@@ -123,7 +134,7 @@ extension Preferences {
                 Divider()
                     .padding(.top, Const.dividerTopPadding)
                     .padding(.bottom, Const.dividerBottomPadding)
-                sectionTitle(UserText.extensionsSettingsMoreExtensionsHeader)
+                sectionTitle(UserText.extensionsSettingsAvailableHeader)
                     .padding(.bottom, Const.moreExtensionsBottomPadding)
             }
         }
@@ -132,7 +143,9 @@ extension Preferences {
             VStack(alignment: .leading, spacing: 12) {
                 TextMenuItemHeader(UserText.extensionsSettingsPasswordManagersHeader)
                 ForEach(model.uninstalledPasswordManagers) { item in
-                    UninstalledExtensionRow(item: item, imageLoader: imageLoader) {
+                    UninstalledExtensionRow(item: item,
+                                            imageLoader: imageLoader,
+                                            onPublisher: { model.openPublisherPage(for: item) }) {
                         model.openStorePage(for: item)
                     }
                 }
@@ -188,6 +201,7 @@ extension Preferences {
 
         let item: ChromeWebStoreListing
         let imageLoader: RemoteMessagingImageLoading
+        let onPublisher: () -> Void
         let onGet: () -> Void
 
         @Environment(\.designSystemPalette) private var palette
@@ -198,7 +212,8 @@ extension Preferences {
                                  imageLoader: imageLoader,
                                  tileSize: Const.iconTileSize,
                                  tileCornerRadius: Const.iconTileCornerRadius,
-                                 iconSize: Const.iconSize)
+                                 iconSize: Const.iconSize,
+                                 onPublisher: onPublisher)
 
                 Spacer(minLength: 0)
 
@@ -218,7 +233,7 @@ extension Preferences {
             .padding(.horizontal, Const.padding)
             .frame(maxWidth: Const.maxWidth)
             .frame(height: Const.height)
-            .background(Color(designSystemColor: .controlsSubtleFillSecondary, palette: palette))
+            .background(Color(designSystemColor: .containerFillSecondary, palette: palette))
             .clipShape(RoundedRectangle(cornerRadius: Const.cornerRadius, style: .continuous))
             .accessibilityIdentifier("Preferences.Extensions.\(item.id)")
         }
@@ -236,6 +251,10 @@ extension Preferences {
             static let iconTileCornerRadius: CGFloat = 8
             static let iconSize: CGFloat = 24
             static let optionsToSwitchSpacing: CGFloat = 16
+            static let footerHorizontalPadding: CGFloat = 24
+            static let footerVerticalPadding: CGFloat = 12
+            static let footerIconToTextSpacing: CGFloat = 8
+            static let footerTextToLinkMinSpacing: CGFloat = 16
         }
 
         let item: ChromeWebStoreListing
@@ -243,17 +262,32 @@ extension Preferences {
         @Binding var isEnabled: Bool
         let isLocked: Bool
         let onDetails: () -> Void
+        let onPublisher: () -> Void
         let onRemove: () -> Void
+        let onRemoteDisableLearnMore: () -> Void
 
         @Environment(\.designSystemPalette) private var palette
 
         var body: some View {
+            VStack(spacing: 0) {
+                card
+                if isLocked {
+                    remoteDisableFooter
+                }
+            }
+            .frame(maxWidth: Const.maxWidth)
+            .background(isLocked ? Color(designSystemColor: .destructiveGlowPrimary, palette: palette) : .clear)
+            .clipShape(RoundedRectangle(cornerRadius: Const.cornerRadius, style: .continuous))
+        }
+
+        private var card: some View {
             HStack(spacing: 16) {
                 ExtensionSummary(item: item,
                                  imageLoader: imageLoader,
                                  tileSize: Const.iconTileSize,
                                  tileCornerRadius: Const.iconTileCornerRadius,
-                                 iconSize: Const.iconSize)
+                                 iconSize: Const.iconSize,
+                                 onPublisher: onPublisher)
 
                 Spacer(minLength: 0)
 
@@ -284,9 +318,144 @@ extension Preferences {
             .padding(.trailing, Const.trailingPadding)
             .frame(maxWidth: Const.maxWidth)
             .frame(height: Const.height)
-            .background(Color(designSystemColor: .controlsSubtleFillSecondary, palette: palette))
+            .background(Color(designSystemColor: .containerFillSecondary, palette: palette))
+            // The card fill is translucent; an opaque backing keeps the footer's pink from tinting it.
+            .background(Color(designSystemColor: .surfaceCanvas, palette: palette))
             .clipShape(RoundedRectangle(cornerRadius: Const.cornerRadius, style: .continuous))
             .accessibilityIdentifier("Preferences.Extensions.\(item.id)")
+        }
+
+        private var remoteDisableFooter: some View {
+            HStack(spacing: Const.footerIconToTextSpacing) {
+                Image(nsImage: DesignSystemImages.Glyphs.Size16.exclamationRecolorable)
+
+                Text(UserText.extensionsSettingsRemotelyDisabledNotice)
+                    .foregroundColor(Color(designSystemColor: .textPrimary, palette: palette))
+                    .fixedSize(horizontal: false, vertical: true)
+
+                Spacer(minLength: Const.footerTextToLinkMinSpacing)
+
+                Button(UserText.extensionsSettingsLearnMore, action: onRemoteDisableLearnMore)
+                    .buttonStyle(.plain)
+                    .foregroundColor(Color.rebrandableLink(palette: palette))
+                    .fixedSize()
+            }
+            .padding(.horizontal, Const.footerHorizontalPadding)
+            .padding(.vertical, Const.footerVerticalPadding)
+            .accessibilityIdentifier("Preferences.Extensions.\(item.id).RemotelyDisabledNotice")
+        }
+    }
+
+    @available(macOS 15.4, *)
+    private struct ExtensionDetailsView: View {
+
+        private enum Const {
+            static let backButtonSize: CGFloat = 32
+            static let backButtonCornerRadius: CGFloat = 6
+            static let chevronSize: CGFloat = 18
+            static let headerSpacing: CGFloat = 4
+            static let cardTopPadding: CGFloat = 24
+            static let cardWidth: CGFloat = 512
+            static let cardCornerRadius: CGFloat = 12
+            static let rowHeight: CGFloat = 58
+            static let rowHorizontalPadding: CGFloat = 10
+            static let rowVerticalPadding: CGFloat = 12
+            static let titleFontSize: CGFloat = 13
+            static let detailsFontSize: CGFloat = 11
+            static let removeButtonTopPadding: CGFloat = 56
+            static let removeButtonHeight: CGFloat = 24
+            static let removeButtonHorizontalPadding: CGFloat = 8
+        }
+
+        let entry: ExtensionsManagementPreferences.InstalledExtensionEntry
+        let onBack: () -> Void
+        let onRemove: () -> Void
+
+        @Environment(\.designSystemPalette) private var palette
+
+        var body: some View {
+            PreferencePane(nil, spacing: 0) {
+                header
+                card
+                    .padding(.top, Const.cardTopPadding)
+                removeButton
+                    .padding(.top, Const.removeButtonTopPadding)
+            }
+            .accessibilityIdentifier("Preferences.Extensions.Details.\(entry.listing.id)")
+        }
+
+        private var header: some View {
+            HStack(alignment: .top, spacing: Const.headerSpacing) {
+                Button(action: onBack) {
+                    Image(nsImage: DesignSystemImages.Glyphs.Size24.chevronLeft)
+                        .renderingMode(.template)
+                        .resizable()
+                        .aspectRatio(contentMode: .fit)
+                        .frame(width: Const.chevronSize, height: Const.chevronSize)
+                        .foregroundColor(Color(designSystemColor: .iconsPrimary, palette: palette))
+                        .frame(width: Const.backButtonSize, height: Const.backButtonSize)
+                        .contentShape(Rectangle())
+                }
+                .buttonStyle(HoverHighlightButtonStyle(cornerRadius: Const.backButtonCornerRadius))
+                .accessibilityLabel(UserText.extensionsSettingsBack)
+
+                VStack(alignment: .leading, spacing: Const.headerSpacing) {
+                    TextMenuTitle(entry.listing.name)
+                    StatusIndicatorView(status: entry.isEnabled ? .on : .off, isLarge: true)
+                }
+            }
+        }
+
+        private var card: some View {
+            let rows = [
+                entry.record.version.map { (UserText.extensionsSettingsVersion, $0) },
+                // Settings only lists extensions installed from the Chrome Web Store.
+                (UserText.extensionsSettingsSource, UserText.extensionsSettingsChromeWebStore),
+                entry.permissionsSummary.map { (UserText.extensionsSettingsPermissions, $0) }
+            ].compactMap { $0 }
+
+            return VStack(alignment: .leading, spacing: 0) {
+                ForEach(Array(rows.enumerated()), id: \.offset) { index, row in
+                    if index > 0 {
+                        Divider()
+                    }
+                    detailRow(title: row.0, details: row.1)
+                }
+            }
+            .padding(.horizontal, Const.rowHorizontalPadding)
+            .frame(maxWidth: Const.cardWidth)
+            .background(Color(designSystemColor: .containerFillSecondary, palette: palette))
+            .clipShape(RoundedRectangle(cornerRadius: Const.cardCornerRadius, style: .continuous))
+        }
+
+        private func detailRow(title: String, details: String) -> some View {
+            VStack(alignment: .leading, spacing: 4) {
+                Text(title)
+                    .font(.system(size: Const.titleFontSize))
+                    .foregroundColor(Color(designSystemColor: .textPrimary, palette: palette))
+                    .lineLimit(1)
+                    .truncationMode(.tail)
+                Text(details)
+                    .font(.system(size: Const.detailsFontSize))
+                    .foregroundColor(Color(designSystemColor: .textSecondary, palette: palette))
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            .padding(.vertical, Const.rowVerticalPadding)
+            .frame(maxWidth: .infinity, minHeight: Const.rowHeight, alignment: .leading)
+        }
+
+        private var removeButton: some View {
+            Button(action: onRemove) {
+                Text(UserText.extensionsSettingsRemoveButton)
+                    .padding(.horizontal, Const.removeButtonHorizontalPadding)
+                    .frame(height: Const.removeButtonHeight)
+            }
+            .buttonStyle(DismissActionButtonStyle(textColor: Color(designSystemColor: .destructiveTextPrimary, palette: palette),
+                                                  topPadding: 0,
+                                                  bottomPadding: 0,
+                                                  showsBorder: true,
+                                                  stateColors: .themedDismissButton))
+            .fixedSize()
         }
     }
 
@@ -297,6 +466,7 @@ extension Preferences {
         let tileSize: CGFloat
         let tileCornerRadius: CGFloat
         let iconSize: CGFloat
+        let onPublisher: () -> Void
 
         @Environment(\.designSystemPalette) private var palette
         @State private var remoteIcon: NSImage?
@@ -317,7 +487,7 @@ extension Preferences {
                     }
                 }
                 .frame(width: tileSize, height: tileSize)
-                .background(Color(designSystemColor: .containerFillTertiary, palette: palette))
+                .background(Color(designSystemColor: .surfaceCanvas, palette: palette))
                 .clipShape(RoundedRectangle(cornerRadius: tileCornerRadius, style: .continuous))
                 .task(id: item.iconURL) {
                     guard let iconURL = item.iconURL else { return }
@@ -328,8 +498,13 @@ extension Preferences {
                     Text(item.name)
                         .font(.system(size: 13, weight: .semibold))
                         .foregroundColor(Color(designSystemColor: .textPrimary, palette: palette))
-                    Text(item.publisher)
-                        .foregroundColor(Color.rebrandableLink(palette: palette))
+
+                    Button(action: onPublisher) {
+                        Text(item.publisher)
+                            .font(.system(size: 11))
+                            .foregroundColor(Color.rebrandableLink(palette: palette))
+                    }
+                    .buttonStyle(.plain)
                 }
                 .lineLimit(1)
                 .truncationMode(.tail)

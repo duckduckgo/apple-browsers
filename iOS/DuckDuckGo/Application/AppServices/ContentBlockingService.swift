@@ -18,6 +18,7 @@
 //
 
 import AIChat
+import BrowserServicesKit
 import ContentBlocking
 import Persistence
 import PrivacyConfig
@@ -30,6 +31,7 @@ final class ContentBlockingService {
     public let common: ContentBlocking
     public let updating: ContentBlockingUpdating
     public let userScriptsDependencies: DefaultScriptSourceProvider.Dependencies
+    public let sponsorBlockPreferences: SponsorBlockPreferences
     public let duckAiNativeStorageHandler: DuckAiNativeStorageHandling?
     public let fireModeStorageController: FireModeNativeStorageController?
     public let adBlockingAvailability: AdBlockingAvailabilityProviding
@@ -46,7 +48,8 @@ final class ContentBlockingService {
          webExtensionAvailability: WebExtensionAvailabilityProviding? = nil,
          duckAiNativeStorageHandler: DuckAiNativeStorageHandling? = nil,
          fireModeStorageController: FireModeNativeStorageController? = nil,
-         adBlockingAvailability: AdBlockingAvailabilityProviding) {
+         adBlockingAvailability: AdBlockingAvailabilityProviding,
+         aiChatBonusOffer: AIChatBonusOfferDependencies) {
 
         self.duckAiNativeStorageHandler = duckAiNativeStorageHandler
         self.fireModeStorageController = fireModeStorageController
@@ -61,9 +64,12 @@ final class ContentBlockingService {
                                                                            contentScopeExperimentsManager: contentScopeExperimentsManager,
                                                                            internalUserDecider: internalUserDecider,
                                                                            syncErrorHandler: syncErrorHandler,
-                                                                           webExtensionAvailability: webExtensionAvailability)
+                                                                           webExtensionAvailability: webExtensionAvailability,
+                                                                           aiChatBonusOffer: aiChatBonusOffer)
 
+        sponsorBlockPreferences = SponsorBlockPreferences(store: keyValueStore)
         updating = ContentBlockingUpdating(userScriptsDependencies: userScriptsDependencies,
-                                           duckAiNativeStorageHandler: duckAiNativeStorageHandler)
+                                           duckAiNativeStorageHandler: duckAiNativeStorageHandler,
+                                           sponsorBlockPreferences: sponsorBlockPreferences)
     }
 }

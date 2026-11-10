@@ -1,0 +1,25 @@
+[
+  {"path": "Common", "macosTestOnly": true},
+  {"path": "DDGError"},
+  {"path": "ICSParser"},
+  {"path": "Infrastructure/DesignResourcesKit"},
+  {
+    "path": "Infrastructure/SystemFrameworksExtensions",
+    "scheme": "SystemFrameworksExtensions-Package",
+    "testTargets": ["FoundationExtensionsTests", "ConcurrencyExtensionsTests"],
+    "warningSources": [
+      "Sources/FoundationExtensions",
+      "Sources/CombineExtensions",
+      "Sources/ConcurrencyExtensions",
+      "Sources/UIKitExtensions",
+      "Sources/UIKitExtensionsProxy",
+      "Tests/FoundationExtensionsTests",
+      "Tests/ConcurrencyExtensionsTests"
+    ]
+  },
+  {"path": "Networking", "macosTestOnly": true},
+  {"path": "Persistence", "macosTestOnly": true},
+  {"path": "PixelKit", "macosTestOnly": true},
+  {"path": "WideEvent", "macosTestOnly": true},
+  {"path": "Infrastructure/DesignResourcesKitIcons", "buildOnly": true, "warningSources": ["Sources"]}
+]

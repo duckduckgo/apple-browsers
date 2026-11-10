@@ -103,6 +103,7 @@ public final class NewTabPageOmnibarClient: NewTabPageUserScriptClient {
             configProvider.requiresAiTermsAcceptancePublisher.map { _ in () }.eraseToAnyPublisher(),
             configProvider.attachmentPrivacyDisclaimerPublisher.eraseToAnyPublisher(),
             configProvider.launcherPromoPublisher.eraseToAnyPublisher(),
+            configProvider.suggestedPromptsPublisher.eraseToAnyPublisher(),
             screenshotProvider?.configChangesPublisher ?? Empty<Void, Never>().eraseToAnyPublisher()
         )
         .sink { [weak self] _ in
@@ -201,6 +202,7 @@ public final class NewTabPageOmnibarClient: NewTabPageUserScriptClient {
             usageLimits: configProvider.usageLimits(),
             requiresAiTermsAcceptance: configProvider.requiresAiTermsAcceptance,
             launcherPromo: configProvider.launcherPromo(),
+            showSuggestedPrompts: configProvider.showSuggestedPrompts,
             screenshotModes: screenshotProvider?.screenshotModes,
             enablePastedAttachments: screenshotProvider?.enablePastedAttachments
         )
@@ -292,6 +294,7 @@ public final class NewTabPageOmnibarClient: NewTabPageUserScriptClient {
             usageLimits: configProvider.usageLimits(),
             requiresAiTermsAcceptance: configProvider.requiresAiTermsAcceptance,
             launcherPromo: configProvider.launcherPromo(),
+            showSuggestedPrompts: configProvider.showSuggestedPrompts,
             screenshotModes: screenshotProvider?.screenshotModes,
             enablePastedAttachments: screenshotProvider?.enablePastedAttachments
         )
@@ -364,6 +367,14 @@ public final class NewTabPageOmnibarClient: NewTabPageUserScriptClient {
             files: action.files,
             aiTermsAccepted: action.aiTermsAccepted == true
         )
+        if let suggestedPromptId = action.suggestedPromptId {
+            actionHandler.suggestedPromptSubmitted(promptId: suggestedPromptId)
+        }
+        // Chip and typed prompts both count toward hiding the chips; voice chats don't. Only counted
+        // while the chips are on, so prompts sent with the feature off don't use them up.
+        if configProvider.showSuggestedPrompts, action.mode != AIChatNativePrompt.voiceMode {
+            configProvider.suggestedPromptsPromptCount += 1
+        }
         if action.launcherPromoVisible == true {
             configProvider.launcherPromoIgnored()
         }

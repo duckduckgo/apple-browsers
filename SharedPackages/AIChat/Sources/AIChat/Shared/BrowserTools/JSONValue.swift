@@ -18,7 +18,7 @@
 
 import Foundation
 
-/// Free-form JSON on the MCP wire: schemas, tool arguments, structured results. Tools declare
+/// Free-form JSON for schemas, tool arguments and structured results. Tools declare
 /// schemas as Swift literals, so a malformed one is a compile error rather than a runtime surprise.
 public enum JSONValue: Codable, Equatable, Sendable {
     case null

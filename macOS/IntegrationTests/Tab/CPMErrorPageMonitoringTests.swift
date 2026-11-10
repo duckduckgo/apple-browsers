@@ -201,6 +201,7 @@ private final class RecordingCPMHealthMonitor: CPMMessagingHealthMonitoring, @un
 private final class StubWebExtensionManager: WebExtensionManaging {
 
     let cpmMessagingHealthMonitor: CPMMessagingHealthMonitoring
+    let badgeColors = WebExtensionBadgeColorStore()
     let eventsListener: WebExtensionEventsListening = WebExtensionEventsListener()
     let extensionsDirectory = FileManager.default.temporaryDirectory
     let loadedExtensions: Set<WKWebExtensionContext> = []
@@ -228,8 +229,11 @@ private final class StubWebExtensionManager: WebExtensionManaging {
     func disableExtension(identifier: String) async throws {}
     func enableExtension(identifier: String) async throws {}
     func installedExtension(identifier: String) -> InstalledWebExtension? { nil }
+    func isRemotelyDisabled(identifier: String) -> Bool { false }
     func extensionName(for identifier: String) -> String? { nil }
     func extensionVersion(for identifier: String) -> String? { nil }
+    func extensionPermissions(for identifier: String) -> [String] { [] }
+    func extensionMatchPatterns(for identifier: String) -> [String] { [] }
     func extensionContext(for url: URL) -> WKWebExtensionContext? { nil }
     func context(for identifier: String) -> WKWebExtensionContext? { nil }
     func clearCachedScriptlets() {}

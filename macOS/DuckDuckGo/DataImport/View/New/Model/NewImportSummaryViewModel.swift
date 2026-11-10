@@ -55,6 +55,7 @@ final class NewImportSummaryViewModel: ObservableObject {
 
         var image: NSImage
         var primaryText: String
+        var secondaryText: String?
         var duplicateText: String?
         var failureText: String?
         var shortcut: ShortcutItem?
@@ -89,7 +90,7 @@ final class NewImportSummaryViewModel: ObservableObject {
         }
     }
 
-    init(summary: DataImportSummary, prefs: AppearancePreferences? = nil, pinningManager: PinningManager) {
+    init(summary: DataImportSummary, isHistoryImportEnabled: Bool, prefs: AppearancePreferences? = nil, pinningManager: PinningManager) {
         self.prefs = prefs ?? NSApp.delegateTyped.appearancePreferences
         self.pinningManager = pinningManager
 
@@ -99,7 +100,7 @@ final class NewImportSummaryViewModel: ObservableObject {
         self.items = summary.sorted {
             $0.key < $1.key
         }.compactMap { dataType, result in
-            Self.createSummaryItem(for: dataType, result: result)
+            Self.createSummaryItem(for: dataType, result: result, isHistoryImportEnabled: isHistoryImportEnabled)
         }
 
         shouldShowFeedbackView = summary.contains { element in
@@ -145,7 +146,11 @@ final class NewImportSummaryViewModel: ObservableObject {
         }
     }
 
-    private static func createSummaryItem(for dataType: DataImport.DataType, result: DataImportResult<DataImport.DataTypeSummary>) -> SummaryItem {
+    private static func createSummaryItem(
+        for dataType: DataImport.DataType,
+        result: DataImportResult<DataImport.DataTypeSummary>,
+        isHistoryImportEnabled: Bool
+    ) -> SummaryItem {
         guard case .success(let typeSummary) = result else {
             switch dataType {
             case .bookmarks:
@@ -160,7 +165,8 @@ final class NewImportSummaryViewModel: ObservableObject {
         }
 
         let image = image(for: dataType)
-        let primaryText = primaryText(for: dataType, summary: typeSummary)
+        let primaryText = primaryText(for: dataType, summary: typeSummary, isHistoryImportEnabled: isHistoryImportEnabled)
+        let secondaryText: String? = dataType == .history ? UserText.importSummaryHistoryTimeRange : nil
         let duplicateText = duplicateText(from: typeSummary)
         let failureText = failureText(from: typeSummary)
         let shortcut = shortcutItem(for: dataType)
@@ -169,6 +175,7 @@ final class NewImportSummaryViewModel: ObservableObject {
             type: dataType,
             image: image,
             primaryText: primaryText,
+            secondaryText: secondaryText,
             duplicateText: duplicateText,
             failureText: failureText,
             shortcut: shortcut
@@ -190,32 +197,38 @@ final class NewImportSummaryViewModel: ObservableObject {
         }
     }
 
-    private static func primaryText(for dataType: DataImport.DataType, summary: DataImport.DataTypeSummary) -> String {
+    private static func primaryText(for dataType: DataImport.DataType, summary: DataImport.DataTypeSummary, isHistoryImportEnabled: Bool) -> String {
         let total = summary.successful + summary.duplicateItems.count + summary.failedItems.count
         let allImported = summary.duplicateItems.isEmpty && summary.failedItems.isEmpty
 
-        if allImported {
-            switch dataType {
-            case .bookmarks:
-                return UserText.importSummaryBookmarksImported(summary.successful)
-            case .passwords:
-                return UserText.importSummaryPasswordsImported(summary.successful)
-            case .creditCards:
-                return UserText.importSummaryCreditCardsImported(summary.successful)
-            case .history:
-                return UserText.importSummaryHistoryImported(summary.successful)
-            }
-        } else {
-            switch dataType {
-            case .bookmarks:
-                return UserText.importSummaryBookmarksImportedPartial(summary.successful, total)
-            case .passwords:
-                return UserText.importSummaryPasswordsImportedPartial(summary.successful, total)
-            case .creditCards:
-                return UserText.importSummaryCreditCardsImportedPartial(summary.successful, total)
-            case .history:
-                return UserText.importSummaryHistoryImportedPartial(summary.successful, total)
-            }
+        switch (dataType, allImported, isHistoryImportEnabled) {
+        case (.history, _, _):
+            // History reports only the visits it added: the ones already in history aren't counted.
+            return UserText.importSummaryHistoryImported(summary.successful)
+        case (.bookmarks, true, true):
+            return UserText.importSummaryBookmarks(summary.successful)
+        case (.bookmarks, false, true):
+            return UserText.importSummaryBookmarksPartial(summary.successful, total)
+        case (.bookmarks, true, false):
+            return UserText.importSummaryBookmarksImported(summary.successful)
+        case (.bookmarks, false, false):
+            return UserText.importSummaryBookmarksImportedPartial(summary.successful, total)
+        case (.passwords, true, true):
+            return UserText.importSummaryPasswords(summary.successful)
+        case (.passwords, false, true):
+            return UserText.importSummaryPasswordsPartial(summary.successful, total)
+        case (.passwords, true, false):
+            return UserText.importSummaryPasswordsImported(summary.successful)
+        case (.passwords, false, false):
+            return UserText.importSummaryPasswordsImportedPartial(summary.successful, total)
+        case (.creditCards, true, true):
+            return UserText.importSummaryCreditCards(summary.successful)
+        case (.creditCards, false, true):
+            return UserText.importSummaryCreditCardsPartial(summary.successful, total)
+        case (.creditCards, true, false):
+            return UserText.importSummaryCreditCardsImported(summary.successful)
+        case (.creditCards, false, false):
+            return UserText.importSummaryCreditCardsImportedPartial(summary.successful, total)
         }
     }
 

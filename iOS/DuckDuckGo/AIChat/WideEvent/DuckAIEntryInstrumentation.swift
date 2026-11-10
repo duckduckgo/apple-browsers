@@ -28,6 +28,7 @@ protocol DuckAIEntryInstrumentation: AnyObject {
     /// Pass `chatState` when it is known up front; a tab entry otherwise reads it when its tab is first shown.
     func entryStarted(source: AIChatEntryPointSource,
                       hasPrompt: Bool,
+                      voice: Bool,
                       surface: DuckAIEntryWideEventData.Surface,
                       chatState: DuckAIEntryWideEventData.ChatState?)
 
@@ -85,6 +86,7 @@ final class DefaultDuckAIEntryInstrumentation: DuckAIEntryInstrumentation {
 
     func entryStarted(source: AIChatEntryPointSource,
                       hasPrompt: Bool,
+                      voice: Bool,
                       surface: DuckAIEntryWideEventData.Surface,
                       chatState: DuckAIEntryWideEventData.ChatState?) {
         if let entry = activeEntry {
@@ -92,7 +94,7 @@ final class DefaultDuckAIEntryInstrumentation: DuckAIEntryInstrumentation {
         }
         guard isEnabled() else { return }
 
-        let data = DuckAIEntryWideEventData(source: source, hasPrompt: hasPrompt, chatState: chatState, surface: surface, startedAt: now())
+        let data = DuckAIEntryWideEventData(source: source, hasPrompt: hasPrompt, voice: voice, chatState: chatState, surface: surface, startedAt: now())
         activeEntry = ActiveEntry(data: data)
         wideEvent.startFlow(data)
     }
@@ -129,7 +131,7 @@ final class DefaultDuckAIEntryInstrumentation: DuckAIEntryInstrumentation {
 
     func recordPendingExit(_ trigger: DuckAISessionWideEventData.ExitTrigger, tabUID: TabUID?) {
         guard let entry = activeEntry, pendingExit == nil else { return }
-        guard entry.data.surface == .contextualSheet || (entry.tabUID != nil && entry.tabUID == tabUID) else { return }
+        guard entry.data.surface.isContextual || (entry.tabUID != nil && entry.tabUID == tabUID) else { return }
         pendingExit = trigger
     }
 
@@ -139,12 +141,12 @@ final class DefaultDuckAIEntryInstrumentation: DuckAIEntryInstrumentation {
     }
 
     func sheetPromptSubmitted() {
-        guard let entry = activeEntry, entry.data.surface == .contextualSheet else { return }
+        guard let entry = activeEntry, entry.data.surface.isContextual else { return }
         recordPrompt(entry)
     }
 
     func sheetDismissed(exitTrigger: DuckAISessionWideEventData.ExitTrigger?) {
-        guard let entry = activeEntry, entry.data.surface == .contextualSheet else { return }
+        guard let entry = activeEntry, entry.data.surface.isContextual else { return }
         if let exitTrigger {
             pendingExit = exitTrigger
         }

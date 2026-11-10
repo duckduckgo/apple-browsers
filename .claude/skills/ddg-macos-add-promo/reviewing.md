@@ -16,7 +16,7 @@ For reviewing a PR or diff, and for your own self-review before finishing. For e
 7. **`triggers` are the described event**, not an approximation. A single one-shot trigger on a medium+ promo is easily lost for good. A condition that can hold at launch needs `.appLaunched` too.
 8. **`initiated` is what caused it to appear**, not what gives a convenient cooldown.
 9. **Priority position is justified in the PR**, relative to its neighbours. An unexplained append to the end is a finding. Read the whole `makeAllPromos`, since promos are also `insert`ed after the literal.
-10. **Exceptions** (`respectsGlobalCooldown: false`, `setsGlobalCooldown: false`, coexistence) have product sign-off referenced in the PR.
+10. **Exceptions** (`respectsGlobalCooldown: false`, `setsGlobalCooldown: false`, `showsOverVisiblePromos: true`, coexistence) have product sign-off referenced in the PR.
 11. **Consistency**: two promos in one diff making opposite calls on the same question.
 
 ## Delegate

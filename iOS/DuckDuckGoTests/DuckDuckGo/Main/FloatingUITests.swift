@@ -2685,6 +2685,40 @@ final class SwipeTabBoundaryPolicyTests: XCTestCase {
     }
 }
 
+final class SwipeChromeRefinementsFlagTests: XCTestCase {
+
+    func testWhenBothFlagsAreOnThenRefinementsAreEnabled() {
+        let featureFlagger = MockFeatureFlagger(enabledFeatureFlags: [.aiChatTabHandoffImprovements, .aiChatSwipeChromeRefinements])
+        XCTAssertTrue(featureFlagger.isAIChatSwipeChromeRefinementsEnabled)
+    }
+
+    func testWhenEitherFlagIsOffThenRefinementsAreDisabled() {
+        XCTAssertFalse(MockFeatureFlagger(enabledFeatureFlags: [.aiChatSwipeChromeRefinements]).isAIChatSwipeChromeRefinementsEnabled)
+        XCTAssertFalse(MockFeatureFlagger(enabledFeatureFlags: [.aiChatTabHandoffImprovements]).isAIChatSwipeChromeRefinementsEnabled)
+    }
+
+    func testWhenFlagTurnsOffWhileRunningThenRefinementsAreDisabled() {
+        let featureFlagger = MockFeatureFlagger(enabledFeatureFlags: [.aiChatTabHandoffImprovements, .aiChatSwipeChromeRefinements])
+        featureFlagger.enabledFeatureFlags = [.aiChatTabHandoffImprovements]
+        XCTAssertFalse(featureFlagger.isAIChatSwipeChromeRefinementsEnabled)
+    }
+
+    func testWhenFlagTurnsOffWhileRunningThenCollapsedBarDropsItsFloatingOffset() {
+        let coordinator = MainViewCoordinator(parentController: UIViewController())
+        coordinator.unifiedToggleInputContainer = UIView()
+        coordinator.aiTabCollapsedTopSeparator = UIView()
+        coordinator.unifiedToggleInputContainer.transform = CGAffineTransform(translationX: 12, y: 20)
+        coordinator.aiTabCollapsedTopSeparator.transform.ty = 20
+        coordinator.isAITabCollapsedBarFloatingOffsetEnabled = { false }
+
+        coordinator.applyAITabCollapsedBarFloatingOffset()
+
+        XCTAssertEqual(coordinator.unifiedToggleInputContainer.transform.ty, 0)
+        XCTAssertEqual(coordinator.unifiedToggleInputContainer.transform.tx, 12)
+        XCTAssertEqual(coordinator.aiTabCollapsedTopSeparator.transform.ty, 0)
+    }
+}
+
 final class LiveTabSwipePolicyTests: XCTestCase {
 
     func testWhenFloatingUIHasWebDestinationThenLiveDestinationIsUsed() {
@@ -2967,5 +3001,97 @@ final class ChromeMorphAnimatorTests: XCTestCase {
         animator.advance(timestamp: 10.20, targetTimestamp: 10.25)
         XCTAssertEqual(animator.currentValue, 1)
         XCTAssertFalse(animator.isAnimating)
+    }
+}
+
+final class SwipeTabsEdgeResistanceTests: XCTestCase {
+
+    func testOffsetsWithinTheTabsAreUnchanged() {
+        XCTAssertEqual(SwipeTabsEdgeResistance.offset(for: 120, limits: 0...800, dimension: 400), 120)
+    }
+
+    func testDraggingPastTheLastTabMovesLessThanTheFinger() {
+        let offset = SwipeTabsEdgeResistance.offset(for: 900, limits: 0...800, dimension: 400)
+
+        XCTAssertGreaterThan(offset, 800)
+        XCTAssertLessThan(offset, 900)
+    }
+
+    func testDraggingBeforeTheFirstTabMovesLessThanTheFinger() {
+        let offset = SwipeTabsEdgeResistance.offset(for: -100, limits: 0...800, dimension: 400)
+
+        XCTAssertLessThan(offset, 0)
+        XCTAssertGreaterThan(offset, -100)
+    }
+
+    func testResistanceGrowsTheFurtherTheDragGoes() {
+        let near = SwipeTabsEdgeResistance.offset(for: 850, limits: 0...800, dimension: 400) - 800
+        let far = SwipeTabsEdgeResistance.offset(for: 1200, limits: 0...800, dimension: 400) - 800
+
+        XCTAssertLessThan(far / 400, near / 50)
+    }
+}
+
+@MainActor
+final class SwipeTabsNewTabDestinationTests: XCTestCase {
+
+    // The coordinator holds these weakly.
+    private var mainViewCoordinator: MainViewCoordinator!
+    private var tabsModel: TabsModel!
+
+    override func tearDown() {
+        mainViewCoordinator = nil
+        tabsModel = nil
+        super.tearDown()
+    }
+
+    func testWhenHandoffFlagIsOffThenSwipingPastTheLastWebTabOffersANewTab() {
+        let (sut, collection) = makeSUT(isHandoffEnabled: false)
+
+        XCTAssertEqual(sut.collectionView(collection, numberOfItemsInSection: 0), 2)
+    }
+
+    func testWhenHandoffFlagIsOnThenSwipingPastTheLastWebTabStillOffersANewTab() {
+        let (sut, collection) = makeSUT(isHandoffEnabled: true)
+
+        XCTAssertEqual(sut.collectionView(collection, numberOfItemsInSection: 0), 2)
+    }
+
+    private func makeSUT(isHandoffEnabled: Bool) -> (SwipeTabsCoordinator, UICollectionView) {
+        let coordinator = MainViewCoordinator(parentController: UIViewController())
+        mainViewCoordinator = coordinator
+        let collection = MainViewFactory.NavigationBarCollectionView(
+            frame: CGRect(x: 0, y: 0, width: 390, height: DefaultOmniBarView.expectedHeight),
+            collectionViewLayout: UICollectionViewFlowLayout()
+        )
+        coordinator.navigationBarCollectionView = collection
+        coordinator.omniBar = MockOmniBar()
+        coordinator.toolbar = BrowserToolbarView(frame: .zero)
+        let featureFlagger = MockFeatureFlagger(enabledFeatureFlags: isHandoffEnabled ? [.aiChatTabHandoffImprovements] : [])
+        let sut = SwipeTabsCoordinator(
+            coordinator: coordinator,
+            tabPreviewsSource: MockTabPreviewsSource(),
+            appSettings: AppSettingsMock(),
+            omnibarDependencies: MockOmnibarDependency(featureFlagger: featureFlagger),
+            floatingUIManager: FloatingUIManager(
+                isFloatingUIFeatureEnabled: true,
+                isPadProvider: { false },
+                isSupportedOSProvider: { true },
+                unifiedToggleInputFeature: MockUnifiedToggleInputFeatureProvider(isAvailable: true)
+            ),
+            liveTabControllerProvider: { _ in nil },
+            inputStateProvider: { _ in TabInputState() },
+            placeholderStateProvider: { _ in .newChat },
+            isPaidAIChatEnabledProvider: { false },
+            allowsSubscriptionUpsellProvider: { false },
+            pixelFiring: nil,
+            selectTab: { _ in },
+            newTab: {},
+            onSwipeStarted: {}
+        )
+        tabsModel = TabsModel(tabs: [Tab(link: Link(title: "Example", url: URL(string: "https://example.com")!))], desktop: false)
+        sut.tabsModel = tabsModel
+        sut.isEnabled = true
+        return (sut, collection)
     }
 }

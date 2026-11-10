@@ -116,8 +116,7 @@ final class ListOpenTabsBrowserToolTests: XCTestCase {
         let tool = ListOpenTabsBrowserTool(windowControllersManager: manager(with: [collection]))
         let context = BrowserToolCallContext(ownerTabID: "owner",
                                              ownerWindowToken: "not-a-window",
-                                             isBurner: false,
-                                             supportsElicitationForm: true)
+                                             isBurner: false)
 
         let result = await tool.execute(arguments: nil, context: context)
 
@@ -130,8 +129,7 @@ final class ListOpenTabsBrowserToolTests: XCTestCase {
         let tool = ListOpenTabsBrowserTool(windowControllersManager: manager(with: [collection]))
         let context = BrowserToolCallContext(ownerTabID: "owner",
                                              ownerWindowToken: AIChatTabPickerSource.windowToken(forCollection: collection),
-                                             isBurner: true,
-                                             supportsElicitationForm: true)
+                                             isBurner: true)
 
         let result = await tool.execute(arguments: nil, context: context)
 
@@ -152,8 +150,7 @@ final class ListOpenTabsBrowserToolTests: XCTestCase {
         let tool = ListOpenTabsBrowserTool(windowControllersManager: manager(with: [collection]))
         let context = BrowserToolCallContext(ownerTabID: ownerTabID,
                                              ownerWindowToken: AIChatTabPickerSource.windowToken(forCollection: collection),
-                                             isBurner: false,
-                                             supportsElicitationForm: true)
+                                             isBurner: false)
         return (tool, context)
     }
 

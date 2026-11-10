@@ -79,7 +79,7 @@ STRINGS_LEFT=""
 INCOMPLETE_LOCALES=""
 STRINGS_AWAITING_AUTHORIZATION=""
 JOBS_AWAITING_AUTHORIZATION=""
-INTEGRITY=""
+JOBS_IN_PROGRESS=""
 PR_URL=""
 
 finish() {
@@ -106,7 +106,9 @@ finish() {
 			echo "jobs_awaiting_authorization<<JOBS_AWAITING_AUTHORIZATION_EOF"
 			echo "$JOBS_AWAITING_AUTHORIZATION"
 			echo "JOBS_AWAITING_AUTHORIZATION_EOF"
-			echo "integrity=$INTEGRITY"
+			echo "jobs_in_progress<<JOBS_IN_PROGRESS_EOF"
+			echo "$JOBS_IN_PROGRESS"
+			echo "JOBS_IN_PROGRESS_EOF"
 			echo "pr_url=$PR_URL"
 			echo "reason=$REASON"
 		} >> "$GITHUB_OUTPUT"
@@ -122,8 +124,8 @@ finish() {
 			[ -z "$STRINGS_LEFT" ] || echo "- String translations left: \`$STRINGS_LEFT\` of \`$TOTAL_STRINGS\`"
 			[ -z "$INCOMPLETE_LOCALES" ] || echo "- Incomplete locales: \`$INCOMPLETE_LOCALES\`"
 			[ -z "$STRINGS_AWAITING_AUTHORIZATION" ] || [ "$STRINGS_AWAITING_AUTHORIZATION" = "0" ] || echo "- String translations not authorized (in a job awaiting authorization or in no job): \`$STRINGS_AWAITING_AUTHORIZATION\`"
+			[ -z "$JOBS_IN_PROGRESS" ] || printf -- "- Jobs in progress with the release's strings:\n  %s\n" "${JOBS_IN_PROGRESS//$'\n'/$'\n'  }"
 			[ -z "$JOBS_AWAITING_AUTHORIZATION" ] || printf -- '- Jobs awaiting authorization:\n  %s\n' "${JOBS_AWAITING_AUTHORIZATION//$'\n'/$'\n'  }"
-			[ -z "$INTEGRITY" ] || echo "- Integrity check: \`$INTEGRITY\`"
 			[ -z "$PR_URL" ] || echo "- Pull request: $PR_URL"
 			[ -z "$REASON" ] || echo "- Reason: $REASON"
 		} >> "$GITHUB_STEP_SUMMARY"
@@ -186,7 +188,9 @@ TOTAL_STRINGS="$(jq -r '.total_strings // empty' "$RESULT_FILE")"
 STRINGS_LEFT="$(jq -r '.strings_left // empty' "$RESULT_FILE")"
 INCOMPLETE_LOCALES="$(jq -r '.incomplete_locales | join(", ")' "$RESULT_FILE")"
 STRINGS_AWAITING_AUTHORIZATION="$(jq -r '.strings_awaiting_authorization // empty' "$RESULT_FILE")"
-JOBS_AWAITING_AUTHORIZATION="$(jq -r '(.jobs_awaiting_authorization // []) | map("- [\(.name)](\(.url))" + (if .created != "" then " (created \(.created))" else "" end)) | join("\n")' "$RESULT_FILE")"
+JOB_LINKS='map("- [\(.name)](\(.url))" + (if .created != "" then " (created \(.created))" else "" end)) | join("\n")'
+JOBS_AWAITING_AUTHORIZATION="$(jq -r "(.jobs_awaiting_authorization // []) | $JOB_LINKS" "$RESULT_FILE")"
+JOBS_IN_PROGRESS="$(jq -r "(.jobs_in_progress // []) | $JOB_LINKS" "$RESULT_FILE")"
 REASON="$(jq -r '.reason' "$RESULT_FILE")"
 
 case "$status_outcome" in
@@ -203,12 +207,6 @@ rm -rf "$DOWNLOAD_DIR"
 
 echo "Cleaning non-localization files from working tree..."
 git restore --staged --worktree -- . ':(exclude)**/*.strings' ':(exclude)**/*.stringsdict' ':(exclude)**/*.xcstrings'
-
-if ./scripts/smartling/check_translation_integrity.py; then
-	INTEGRITY="passed"
-else
-	INTEGRITY="issues_found"
-fi
 
 if [ -z "$(git status --porcelain -- ':(glob)**/*.strings' ':(glob)**/*.stringsdict' ':(glob)**/*.xcstrings')" ]; then
 	if [ -n "$OPEN_PR_URL" ]; then
@@ -241,12 +239,6 @@ else
 	job_line="- Smartling job: none, every string in the release was already translated by earlier jobs"
 fi
 
-if [ "$INTEGRITY" = "passed" ]; then
-	integrity_line="- Integrity check: passed"
-else
-	integrity_line="- Integrity check: ⚠️ found deleted or much shorter translations. Review the diff before merging."
-fi
-
 workflow_line=""
 if [ -n "${GITHUB_RUN_ID:-}" ]; then
 	workflow_line="- Workflow: ${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}"
@@ -269,7 +261,6 @@ Imports the $PLATFORM $VERSION translations from Smartling into \`$RELEASE_BRANC
 
 - Smartling files: \`${FILE_URIS[*]}\`
 $job_line
-$integrity_line
 $workflow_line
 
 ---

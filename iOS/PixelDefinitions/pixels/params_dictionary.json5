@@ -58,7 +58,31 @@
     "crashTerminationReason": {
         "key": "terminationReason",
         "type": "string",
-        "description": "MXCrashDiagnostic termination reason reduced to '<namespace>_<code>', e.g. 'springboard_0x8badf00d' for a watchdog kill; '-1' when the crash has none, 'unknown' when it can't be parsed"
+        "description": "MXCrashDiagnostic termination reason reduced to '<namespace>_<code>', e.g. 'springboard_0x8badf00d' for a watchdog kill, or to 'domain<domain>_<code>' for the RunningBoard format, e.g. 'domain10_0x8badf00d'; '-1' when the crash has none, 'unknown' when it can't be parsed"
+    },
+    "crashWatchdogEvent": {
+        "key": "watchdogEvent",
+        "type": "string",
+        "pattern": "^(-1|[a-z-]{1,32})$",
+        "description": "The WatchdogEvent from a RunningBoard termination reason, e.g. 'scene-create', 'scene-update' or 'process-exit'; '-1' when the termination reason has none, 'unknown' when it isn't 1-32 lowercase letters and hyphens"
+    },
+    "crashWatchdogLimit": {
+        "key": "watchdogLimit",
+        "type": "string",
+        "enum": ["wall", "cpu", "-1", "unknown"],
+        "description": "Which watchdog allowance the app exhausted: 'wall' for real (wall clock) time, 'cpu' for CPU time; '-1' when the termination reason has no allowance (e.g. process-exit), 'unknown' for any other allowance"
+    },
+    "crashProcessVisibility": {
+        "key": "processVisibility",
+        "type": "string",
+        "pattern": "^(-1|[a-z]{1,32})$",
+        "description": "The ProcessVisibility from a RunningBoard termination reason, e.g. 'background', 'foreground' or 'unknown'; '-1' when the termination reason has none, 'unknown' when it can't be parsed"
+    },
+    "crashWatchdogVisibility": {
+        "key": "watchdogVisibility",
+        "type": "string",
+        "pattern": "^(-1|[a-z]{1,32})$",
+        "description": "The WatchdogVisibility from a RunningBoard termination reason, e.g. 'background'; '-1' when the termination reason has none, 'unknown' when it can't be parsed"
     },
     "ui_version": {
         "key": "ui_version",
@@ -84,6 +108,24 @@
         "description": "Where the tab was originally selected, including when it is later removed through another control.",
         "enum": ["recent_tabs", "tab_picker", "mention"]
     },
+    "address_bar_position": {
+        "key": "address_bar_position",
+        "type": "string",
+        "description": "The iPhone address bar position setting when the pixel fired. Absent on iPad and in the contextual chat sheet.",
+        "enum": ["top", "bottom"]
+    },
+    "resubmit_of_search": {
+        "key": "resubmit_of_search",
+        "type": "string",
+        "description": "Seconds since a Search from the iPhone address bar with the same text (ignoring case and punctuation; 1 typo allowed at 4-7 characters, 2 at 8-1,000). Compared on the device; no text is sent, and it is dropped when the app goes to the background or on Fire. Never set in fire tabs. Texts over 1,000 characters must match exactly. The earlier submit may have been an address (URL). Absent when it isn't a resubmit. Mostly a baseline for resubmit_of_prompt.",
+        "enum": ["0-15", "16-30", "31-45", "46-60"]
+    },
+    "resubmit_of_prompt": {
+        "key": "resubmit_of_prompt",
+        "type": "string",
+        "description": "Seconds since a Duck.ai prompt from the iPhone address bar with the same text (ignoring case and punctuation; 1 typo allowed at 4-7 characters, 2 at 8-1,000), a proxy for a search sent to Duck.ai by mistake. Compared on the device; no text is sent, and it is dropped when the app goes to the background or on Fire. Never set in fire tabs. Texts over 1,000 characters must match exactly. Also set on address (URL) submits; filter on query_type for searches only. Absent when it isn't a resubmit, including when no prompt was sent first. Each prompt is matched at most once.",
+        "enum": ["0-15", "16-30", "31-45", "46-60"]
+    },
     "usage_layout": {
         "key": "layout",
         "type": "string",
@@ -93,7 +135,7 @@
     "usage_hardware_keyboard": {
         "key": "hardware_keyboard",
         "type": "boolean",
-        "description": "Whether a hardware keyboard was connected when the pixel fired."
+        "description": "Whether a hardware keyboard was connected when the pixel fired. Omitted when not yet known, early in a launch."
     },
     "usage_window_mode": {
         "key": "window_mode",
@@ -135,6 +177,11 @@
             "widget_favorite",
             "widget_lock_screen",
             "widget_control_center",
+            "address_bar_custom_button",
+            "toolbar_custom_button",
+            "onboarding_completion_promo",
+            "app_open",
+            "tab_swipe",
             "siri",
             "deep_link_other",
             "return_to_chat_card",
@@ -624,18 +671,17 @@
         "description": "Version of the onboarding flow the user entered",
         "enum": ["default", "duckai", "tailored_by_download_reason"]
     },
-    "onboardingFlowVariant": {
-        "key": "variant",
+    "onboardingVariantSearchExperience": {
+        "key": "variant_search_experience",
         "type": "string",
-        "description": "Variant of the onboarding flow the user selected after branching (the 'Try a search or AI chat' step, or the download-reason screen)",
-        "enum": [
-            "search_plus_duckai-search",
-            "search_plus_duckai-chat",
-            "download_reason_search",
-            "download_reason_ai-chat",
-            "download_reason_no-ai",
-            "download_reason_ad-blocking"
-        ]
+        "description": "Variant of the onboarding flow the user selected at the 'Try a search or AI chat' step",
+        "enum": ["search_plus_duckai-search", "search_plus_duckai-chat"]
+    },
+    "onboardingVariantDownloadReason": {
+        "key": "variant_download_reason",
+        "type": "string",
+        "description": "Variant of the onboarding flow the user selected on the download-reason screen",
+        "enum": ["download_reason_search", "download_reason_ai-chat", "download_reason_no-ai", "download_reason_ad-blocking"]
     },
     "tabCount": {
         "key": "tab_count",

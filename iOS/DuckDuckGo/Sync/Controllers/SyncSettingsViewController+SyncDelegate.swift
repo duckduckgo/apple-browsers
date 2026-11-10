@@ -407,16 +407,7 @@ extension SyncSettingsViewController: SyncManagementViewModelDelegate {
     }
 
     func fireOtherPlatformLinksPixel(event: SyncSettingsViewModel.PlatformLinksPixelEvent, with source: SyncSettingsViewModel.PlatformLinksPixelSource) {
-        let params = ["source": source.rawValue]
-
-        switch event {
-        case .appear:
-            pixelFiring?.fire(Pixel.Event.syncGetOtherDevices, options: .parameters(params))
-        case .copy:
-            pixelFiring?.fire(Pixel.Event.syncGetOtherDevicesCopy, options: .parameters(params))
-        case .share:
-            pixelFiring?.fire(Pixel.Event.syncGetOtherDevicesShare, options: .parameters(params))
-        }
+        PlatformLinksActions(presenter: self, pixelFiring: pixelFiring).fireOtherPlatformLinksPixel(for: event, source: source)
     }
 
     func fireAutoRestorePixel(event: SyncSettingsViewModel.AutoRestorePixelEvent) {

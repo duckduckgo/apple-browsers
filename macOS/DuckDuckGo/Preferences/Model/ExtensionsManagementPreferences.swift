@@ -18,6 +18,7 @@
 
 import Combine
 import Foundation
+import PixelKit
 import PrivacyConfig
 import WebExtensions
 
@@ -27,15 +28,30 @@ final class ExtensionsManagementPreferences: ObservableObject {
 
     @Published private(set) var installedExtensions: [InstalledExtensionEntry] = []
     @Published private(set) var uninstalledPasswordManagers: [ChromeWebStoreListing] = []
+    @Published private(set) var detailsListingID: String?
 
+    /// Looked up by store ID, so an update keeps the details open.
+    var detailsEntry: InstalledExtensionEntry? {
+        detailsListingID.flatMap { id in
+            installedExtensions.first { $0.listing.id == id }
+        }
+    }
+
+    /// Opened when the configuration doesn't set `learnMoreUrlRemoteDisable`, matching Windows.
+    private static let remoteDisableLearnMoreFallbackURL = URL(string: "https://duckduckgo.com/duckduckgo-help-pages")!
+
+    private let configurationManager: PrivacyConfigurationManaging
     private let webExtensionManager: WebExtensionManaging?
     private let windowControllersManager: WindowControllersManagerProtocol
+    private let pixelFiring: (any PixelKitFiring)?
     private var cancellables = Set<AnyCancellable>()
     private var enabledStateTasks: [String: Task<Void, Never>] = [:]
 
-    init(configurationManager: PrivacyConfigurationManaging, webExtensionManager: WebExtensionManaging? = nil, windowControllersManager: WindowControllersManagerProtocol) {
+    init(configurationManager: PrivacyConfigurationManaging, webExtensionManager: WebExtensionManaging? = nil, windowControllersManager: WindowControllersManagerProtocol, pixelFiring: (any PixelKitFiring)? = PixelKit.shared) {
+        self.configurationManager = configurationManager
         self.webExtensionManager = webExtensionManager
         self.windowControllersManager = windowControllersManager
+        self.pixelFiring = pixelFiring
 
         reloadExtensions()
         startObservingChanges(configurationManager: configurationManager)
@@ -43,6 +59,25 @@ final class ExtensionsManagementPreferences: ObservableObject {
 
     func openStorePage(for item: ChromeWebStoreListing) {
         windowControllersManager.show(url: item.storeURL, source: .ui, newTab: true, selected: true)
+        fire(.getClicked(extension: .catalog(item.entry)))
+    }
+
+    func openPublisherPage(for item: ChromeWebStoreListing) {
+        guard let url = item.publisherURL else {
+            return
+        }
+
+        windowControllersManager.show(url: url, source: .ui, newTab: true, selected: true)
+        fire(.publisherLinkClicked(extension: .catalog(item.entry)))
+    }
+
+    func showDetails(for entry: InstalledExtensionEntry) {
+        detailsListingID = entry.listing.id
+        fire(.detailsOpened(extension: .catalog(entry.listing.entry)))
+    }
+
+    func hideDetails() {
+        detailsListingID = nil
     }
 
     func setEnabled(_ isEnabled: Bool, for entry: InstalledExtensionEntry) {
@@ -70,6 +105,13 @@ final class ExtensionsManagementPreferences: ObservableObject {
 
         windowControllersManager.show(url: url, source: .ui, newTab: true, selected: true)
     }
+
+    func openRemoteDisableLearnMore() {
+        let configuredURL = configurationManager.privacyConfig.settings(for: .extensionManagement)["learnMoreUrlRemoteDisable"] as? String
+        let url = configuredURL.flatMap(URL.init(string:)) ?? Self.remoteDisableLearnMoreFallbackURL
+
+        windowControllersManager.show(url: url, source: .ui, newTab: true, selected: true)
+    }
 }
 
 @available(macOS 15.4, *)
@@ -79,9 +121,23 @@ extension ExtensionsManagementPreferences {
         var record: InstalledWebExtension
         let listing: ChromeWebStoreListing
         let isRemotelyDisabled: Bool
+        /// Saved at installation, so they're known while the extension is disabled.
+        let permissions: [String]
+        let matchPatterns: [String]
 
         var id: String { record.uniqueIdentifier }
         var isEnabled: Bool { !record.isDisabled && !isRemotelyDisabled }
+
+        /// The installation alert's lines, one per row.
+        var permissionsSummary: String? {
+            let messages = WebExtensionPermissionFormatter.messages(forPermissionNames: permissions, matchPatterns: matchPatterns)
+
+            if messages.isEmpty {
+                return nil
+            }
+
+            return messages.map { "• \($0)" }.joined(separator: "\n")
+        }
     }
 }
 
@@ -111,11 +167,21 @@ private extension ExtensionsManagementPreferences {
 
         installedExtensions = installedEntries(manager: manager, store: store)
         uninstalledPasswordManagers = availablePasswordManagers(in: store)
+
+        // Whoever removed it, a reinstall shouldn't reopen its details.
+        if detailsEntry == nil {
+            detailsListingID = nil
+        }
+    }
+
+    func fire(_ pixel: WebExtensionPixel) {
+        pixelFiring?.fire(pixel, frequency: .dailyAndCount)
     }
 
     func resetExtensions() {
         installedExtensions = []
         uninstalledPasswordManagers = []
+        detailsListingID = nil
     }
 
     /// Built from the installation records, so extensions the catalog no longer offers stay listed.
@@ -133,7 +199,11 @@ private extension ExtensionsManagementPreferences {
                 continue
             }
 
-            let entry = InstalledExtensionEntry(record: record, listing: listing, isRemotelyDisabled: manager.isRemotelyDisabled(identifier: identifier))
+            let entry = InstalledExtensionEntry(record: record,
+                                                listing: listing,
+                                                isRemotelyDisabled: manager.isRemotelyDisabled(identifier: identifier),
+                                                permissions: manager.extensionPermissions(for: identifier),
+                                                matchPatterns: manager.extensionMatchPatterns(for: identifier))
             entries.append(entry)
             seenListingIDs.insert(listing.id)
         }

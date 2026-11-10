@@ -6,17 +6,26 @@ appId: com.duckduckgo.mobile.ios
 - assertVisible: 
     text: "Duck Player"
 
-# Tap to show the UI controls
-- tapOn:
-    point: "50%,15%"
+- retry:
+    maxRetries: 2
+    commands:
+        - runFlow:
+            when:
+                notVisible: ${output.watchOnYoutubeLabel}
+            commands:
+                - tapOn:
+                    point: "50%,15%"
+        - assertVisible: 
+            text: ${output.watchOnYoutubeLabel}
 
-- assertVisible: 
-    text: ${output.watchOnYoutubeLabel}
-
-- tapOn:
-    point: "50%,15%"
-
-- assertVisible: 
-    text: ${output.openInfoLabel}
-
-
+- retry:
+    maxRetries: 2
+    commands:
+        - runFlow:
+            when:
+                notVisible: ${output.openInfoLabel}
+            commands:
+                - tapOn:
+                    point: "50%,15%"
+        - assertVisible: 
+            text: ${output.openInfoLabel}

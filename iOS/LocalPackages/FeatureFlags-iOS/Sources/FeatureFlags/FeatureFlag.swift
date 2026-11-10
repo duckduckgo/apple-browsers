@@ -626,11 +626,7 @@ public enum FeatureFlag: String {
     case searchTokenExperimentV4
 
     /// NA Experiment: add VPN as a download reason, with its own onboarding branch that offers the subscription.
-    /// Both cohorts get the onboarding flow tailored by download reason. Treatment also gets the VPN reason.
-    /// https://app.asana.com/1/137249556945/project/72649045549333/task/1219341928461688
-    ///
-    /// Follows the concluded download-reason experiment (`iOSBrowserConfigSubfeature.onboardingFlowByDownloadReasonExperiment`).
-    /// The subfeature lives under `privacyPro` so `SubscriptionExperimentAttributionProvider` reports the cohort on purchases.
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1220388646436579
     case onboardingVPNDownloadReasonExperiment
 
     /// Experiment for removing monthly free trials — second run, enrolling only free-trial eligible users.

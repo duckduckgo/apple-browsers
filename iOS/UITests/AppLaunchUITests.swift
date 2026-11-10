@@ -35,7 +35,6 @@ final class AppLaunchUITests: XCTestCase {
             "-AppleLocale", "en_US",
         ]
         app.launchEnvironment = ["UITEST_MODE": "1"]
-        app.launch()
     }
 
     override func tearDownWithError() throws {
@@ -44,6 +43,7 @@ final class AppLaunchUITests: XCTestCase {
     }
 
     func testAppLaunchesIntoBrowser() {
+        app.launch()
         let searchEntry = app.descendants(matching: .any)["searchEntry"]
 
         XCTAssertTrue(
@@ -53,7 +53,6 @@ final class AppLaunchUITests: XCTestCase {
     }
 
     func testSlideToDeleteRequiresCompletedDrag() {
-        app.terminate()
         app.launchArguments += ["-ff.slideToDelete", "true", "-ff.fireMode", "true", "-ff.fireButtonRefinements", "true"]
         app.launch()
 
@@ -163,9 +162,14 @@ final class AppLaunchUITests: XCTestCase {
     }
 
     private func openFireConfirmationForWidthTest(slideToDelete: Bool, orientation: UIDeviceOrientation) {
-        app.terminate()
         XCUIDevice.shared.orientation = orientation
-        app.launchArguments += ["-ff.slideToDelete", String(slideToDelete), "-ff.fireMode", "true", "-ff.fireButtonRefinements", "true"]
+        app.launchArguments += [
+            "-ff.slideToDelete", String(slideToDelete),
+            "-ff.fireMode", "true",
+            "-ff.fireButtonRefinements", "true",
+            // Keep automatic keyboard focus out of the Fire modal layout tests.
+            "-ff.alwaysShowKeyboardOnNewTabPage", "false",
+        ]
         app.launch()
         let dismissInput = app.buttons.matching(NSPredicate(format: "identifier IN %@", [
             "UnifiedToggleInput.Button.Dismiss", "Browser.OmniBar.Button.Dismiss"
@@ -190,7 +194,6 @@ final class AppLaunchUITests: XCTestCase {
     }
 
     func testAutoClearOnRelaunchShowsNewTabInTabSwitcher() {
-        app.terminate()
         app.launchArguments += [
             "-ff.fireMode", "true",
             "-ff.floatingUIiOS26", "true",

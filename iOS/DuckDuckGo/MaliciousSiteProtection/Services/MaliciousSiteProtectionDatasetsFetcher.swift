@@ -84,9 +84,7 @@ final class MaliciousSiteProtectionDatasetsFetcher {
         insertBackgroundTaskIdentifier: @escaping @MainActor (String) -> Bool = {
             MaliciousSiteProtectionDatasetsFetcher.registeredTaskIdentifiers.insert($0).inserted
         },
-        featureFlagChanges: @escaping () -> AnyPublisher<(FeatureFlag, Bool), Never>? = {
-            (AppDependencyProvider.shared.featureFlagger.localOverrides?.actionHandler as? FeatureFlagOverridesPublishingHandler<FeatureFlag>)?.flagDidChangePublisher
-        }
+        featureFlagChanges: @escaping () -> AnyPublisher<(FeatureFlag, Bool), Never>?
     ) {
         self.updateManager = updateManager
         self.featureFlagger = featureFlagger

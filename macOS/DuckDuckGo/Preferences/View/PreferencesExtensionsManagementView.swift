@@ -134,7 +134,7 @@ extension Preferences {
                 Divider()
                     .padding(.top, Const.dividerTopPadding)
                     .padding(.bottom, Const.dividerBottomPadding)
-                sectionTitle(UserText.extensionsSettingsMoreExtensionsHeader)
+                sectionTitle(UserText.extensionsSettingsAvailableHeader)
                     .padding(.bottom, Const.moreExtensionsBottomPadding)
             }
         }
@@ -423,7 +423,7 @@ extension Preferences {
                 }
             }
             .padding(.horizontal, Const.rowHorizontalPadding)
-            .frame(width: Const.cardWidth)
+            .frame(maxWidth: Const.cardWidth)
             .background(Color(designSystemColor: .containerFillSecondary, palette: palette))
             .clipShape(RoundedRectangle(cornerRadius: Const.cardCornerRadius, style: .continuous))
         }

@@ -3335,13 +3335,31 @@
 "menuActualSize" = "Faktisk størrelse";
 
 /* iPad menu bar command */
+"menuAddToDock" = "Legg til DuckDuckGo i Dock ...";
+
+/* iPad menu bar command */
+"menuAddWidget" = "Legg til widgeten på startskjermen ...";
+
+/* iPad menu bar command */
 "menuBack" = "Tilbake";
+
+/* iPad menu bar title */
+"menuBookmarks" = "Bokmerker";
 
 /* iPad menu bar command */
 "menuClearTabsAndData" = "Fjern faner og slett data";
 
+/* iPad Duck.ai menu bar command */
+"menuDeleteAllChats" = "Slett alle chatter ...";
+
 /* iPad menu bar command */
 "menuDuplicateTab" = "Dupliser fane";
+
+/* iPad menu bar command */
+"menuExportBookmarks" = "Eksporter bokmerker ...";
+
+/* iPad menu bar submenu */
+"menuFavorites" = "Favoritter";
 
 /* iPad menu bar command */
 "menuFeedback" = "Del tilbakemelding";
@@ -3350,7 +3368,13 @@
 "menuForward" = "Fremover";
 
 /* iPad menu bar command */
+"menuHideBookmarks" = "Skjul bokmerker";
+
+/* iPad menu bar command */
 "menuHideDownloads" = "Skjul nedlastinger";
+
+/* iPad menu bar command */
+"menuHideDuckAIButton" = "Skjul Duck.ai-knappen";
 
 /* iPad menu bar command */
 "menuHidePasswords" = "Skjul passord";
@@ -3359,13 +3383,31 @@
 "menuHideTabs" = "Skjul faner";
 
 /* iPad menu bar command */
+"menuImportBookmarks" = "Importer bokmerker ...";
+
+/* iPad menu bar command */
+"menuImportBookmarksAndPasswords" = "Importer bokmerker og passord ...";
+
+/* iPad menu bar command */
 "menuLastTab" = "Siste fane";
+
+/* iPad Duck.ai menu bar command */
+"menuNewChat" = "Ny chat";
+
+/* iPad Duck.ai menu bar command */
+"menuNewImageChat" = "Ny bildechat";
 
 /* iPad menu bar command */
 "menuNewTabOnRight" = "Ny fane til høyre";
 
+/* iPad Duck.ai menu bar command */
+"menuNewVoiceChat" = "Ny talechat";
+
 /* iPad menu bar command */
 "menuNextTab" = "Vis neste fane";
+
+/* iPad Duck.ai menu bar command */
+"menuOpenDuckAI" = "Åpne Duck.ai";
 
 /* iPad menu bar command */
 "menuOpenLocation" = "Åpne plassering...";
@@ -3376,14 +3418,26 @@
 /* iPad menu bar command */
 "menuPrint" = "Skriv ut...";
 
+/* iPad Duck.ai menu bar section header */
+"menuRecentChats" = "Nylige chatter";
+
 /* iPad menu bar command selecting a numbered tab */
 "menuSelectTab" = "Velg fane %d";
+
+/* iPad menu bar command */
+"menuSetDefaultBrowser" = "Angi DuckDuckGo som standardnettleser ...";
 
 /* iPad menu bar command */
 "menuSettings" = "DuckDuckGo-innstillinger...";
 
 /* iPad menu bar command */
+"menuShowBookmarks" = "Vis bokmerker";
+
+/* iPad menu bar command */
 "menuShowDownloads" = "Vis nedlastinger";
+
+/* iPad menu bar command */
+"menuShowDuckAIButton" = "Vis Duck.ai-knappen";
 
 /* iPad menu bar command */
 "menuShowPasswords" = "Vis passord";
@@ -4306,11 +4360,17 @@
 /* Description of too many requests error when syncing. */
 "prefrences.sync.too-many-requests.description" = "Sync & Backup er midlertidig utilgjengelig.";
 
+/* Fireproofing setting toggle label */
+"preserveLogins.askOnSignIn" = "Be om å bruke Fireproof på nettsteder ved pålogging";
+
 /* No comment provided by engineer. */
 "preserveLogins.domain.list.footer" = "Nettsider anvender informasjonskapsler for å holde deg innlogget. Når du gjør en side brannsikker, slettes ikke informasjonskapslene, og du forblir innlogget, selv etter å ha brukt brannknappen. Vi blokkerer fortsatt tredjeparters sporingsanordninger som blir funnet på Brannsikre nettsteder.";
 
 /* Section header above Fireproofed websites list */
 "preserveLogins.domain.list.title" = "Brannsikre nettsteder";
+
+/* Empty Fireproof sites list */
+"preserveLogins.emptyState" = "Ingen nettsteder med Fireproof ennå";
 
 /* Alert message explaining to users that the benefit of fireproofing a site is that they will be kept signed in */
 "preserveLogins.fireproof.message" = "Hvis du brannsikrer dette nettstedet, vil du fortsatt være innlogget etter å ha brukt brannknappen.";
@@ -4341,6 +4401,9 @@
 
 /* Confirmation button in alert */
 "preserveLogins.remove.all.ok" = "OK";
+
+/* Button to remove all Fireproof sites */
+"preserveLogins.removeAllSites" = "Fjern alle nettsteder med Fireproof";
 
 /* No comment provided by engineer. */
 "Previews" = "Forhåndsvisninger";
@@ -4649,7 +4712,7 @@
 "settings.aifeatures.keyboard.animation.subtitle" = "Vis en animasjon rundt tastaturet når du bytter til eller skriver i Duck.ai.";
 
 /* Settings screen toggle title for the Duck.ai keyboard animation */
-"settings.aifeatures.keyboard.animation.title" = "Animasjon for Duck.ai-tastaturet";
+"settings.aifeatures.keyboard.animation.title" = "Animasjon for Duck.ai-tastatur";
 
 /* Label describing a feature which is turned on always */
 "settings.always.on" = "Alltid på";
@@ -5539,11 +5602,29 @@
 /* Fallback device name for confirmation dialogs */
 "sync.pairing-v2.unknown-peer-name" = "den andre enheten";
 
+/* Title for a button in the Sync Promotion banner on the Bookmarks or Passwords screen that opens Sync settings to connect another device */
+"sync.promo.another-device.connect.action" = "Koble til";
+
+/* Message for the Sync Promotion banner on the Bookmarks or Passwords screen, shown when Sync is on but only this device is connected */
+"sync.promo.another-device.message" = "Sync & Backup er aktivert på denne enheten.";
+
+/* Title for a button in the Sync Promotion banner on the Bookmarks or Passwords screen that opens a screen with links to get DuckDuckGo on other platforms */
+"sync.promo.bookmarks.another-device.get-desktop-app.action" = "Få appen";
+
+/* Title for the Sync Promotion banner on the Bookmarks screen, shown when Sync is on but only this device is connected */
+"sync.promo.bookmarks.another-device.title" = "Vil du synkronisere bokmerker med skrivebordsappen også?";
+
 /* Message for the Sync Promotion banner when user has bookmarks that can be synced */
 "sync.promo.bookmarks.message" = "Ingen konto kreves. Ende-til-ende-kryptering betyr at ingen andre enn deg kan se bokmerkene dine, ikke engang vi.";
 
+/* Message for the redesigned Sync Promotion banner on the Bookmarks screen */
+"sync.promo.bookmarks.redesign.message" = "Ende-til-ende-kryptert. Ingen kan se bokmerkene dine, ikke engang vi.";
+
 /* Title for the Sync Promotion banner */
 "sync.promo.bookmarks.title" = "Synkroniser og sikkerhetskopier bokmerkene dine";
+
+/* Accessibility label for the close button on the Sync Promotion banner */
+"sync.promo.close.accessibility.label" = "Avvis synkroniseringskampanjen";
 
 /* Title for a button in the Sync Promotion banner to set up Sync */
 "sync.promo.confirm.action" = "Sett opp synkronisering";
@@ -5557,11 +5638,20 @@
 /* Title for a button in the Sync Promotion banner to dismiss Sync promotion banner */
 "sync.promo.dismiss.action" = "Nei takk";
 
+/* Title for the Sync Promotion banner on the Passwords screen, shown when Sync is on but only this device is connected */
+"sync.promo.passwords.another-device.title" = "Vil du synkronisere passord med skrivebordsappen også?";
+
 /* Message for the Sync Promotion banner when user has passwords that can be synced */
 "sync.promo.passwords.message" = "Ingen konto kreves. Ende-til-ende-kryptering betyr at ingen andre enn deg kan se passordene dine, ikke engang vi.";
 
+/* Message for the redesigned Sync Promotion banner on the Passwords screen */
+"sync.promo.passwords.redesign.message" = "Ende-til-ende-kryptert. Ingen kan se passordene dine, ikke engang vi.";
+
 /* Title for the Sync Promotion banner */
 "sync.promo.passwords.title" = "Synkroniser og sikkerhetskopier passordene dine";
+
+/* Title for the button in the redesigned Sync Promotion banner and the Data Import summary Sync card that opens Sync settings and starts setting up Sync */
+"sync.promo.redesign.confirm.action" = "Start synkronisering";
 
 /* Button title to start backup */
 "sync.recovery.alternative.prompt.backup.button" = "Sync & Backup denne enheten";
@@ -6151,12 +6241,3 @@
 /* Title for screen to screen confirming what data to import from a zip file (bookmarks and /or passwords) */
 "zip.content.import.types.title" = "Hva vil du importere?";
 
-
-/* Fireproofing setting toggle label */
-"preserveLogins.askOnSignIn" = "Be om å brannsikre nettsteder ved pålogging";
-
-/* Empty Fireproof sites list */
-"preserveLogins.emptyState" = "Ingen brannsikre nettsteder ennå";
-
-/* Button to remove all Fireproof sites */
-"preserveLogins.removeAllSites" = "Fjern alle brannsikre nettsteder";

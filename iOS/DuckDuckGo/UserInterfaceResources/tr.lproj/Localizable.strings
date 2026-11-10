@@ -3335,13 +3335,31 @@
 "menuActualSize" = "Gerçek Boyut";
 
 /* iPad menu bar command */
+"menuAddToDock" = "DuckDuckGo'yu Dock'a Ekle...";
+
+/* iPad menu bar command */
+"menuAddWidget" = "Widget'ı Ana Ekrana Ekle...";
+
+/* iPad menu bar command */
 "menuBack" = "Geri";
+
+/* iPad menu bar title */
+"menuBookmarks" = "Yer İşaretleri";
 
 /* iPad menu bar command */
 "menuClearTabsAndData" = "Sekmeleri ve Verileri Temizle";
 
+/* iPad Duck.ai menu bar command */
+"menuDeleteAllChats" = "Tüm Sohbetleri Sil...";
+
 /* iPad menu bar command */
 "menuDuplicateTab" = "Sekmeyi Çoğalt";
+
+/* iPad menu bar command */
+"menuExportBookmarks" = "Yer İşaretlerini Dışa Aktar...";
+
+/* iPad menu bar submenu */
+"menuFavorites" = "Favoriler";
 
 /* iPad menu bar command */
 "menuFeedback" = "Geri Bildirim Paylaş";
@@ -3350,7 +3368,13 @@
 "menuForward" = "İleri";
 
 /* iPad menu bar command */
+"menuHideBookmarks" = "Yer İşaretlerini Gizle";
+
+/* iPad menu bar command */
 "menuHideDownloads" = "İndirilenleri Gizle";
+
+/* iPad menu bar command */
+"menuHideDuckAIButton" = "Duck.ai Düğmesini Gizle";
 
 /* iPad menu bar command */
 "menuHidePasswords" = "Parolaları gizle";
@@ -3359,13 +3383,31 @@
 "menuHideTabs" = "Sekmeleri Gizle";
 
 /* iPad menu bar command */
+"menuImportBookmarks" = "Yer İşaretlerini İçe Aktar...";
+
+/* iPad menu bar command */
+"menuImportBookmarksAndPasswords" = "Yer İşaretlerini ve Parolaları İçe Aktar...";
+
+/* iPad menu bar command */
 "menuLastTab" = "Son Sekme";
+
+/* iPad Duck.ai menu bar command */
+"menuNewChat" = "Yeni Sohbet";
+
+/* iPad Duck.ai menu bar command */
+"menuNewImageChat" = "Yeni Görsel Sohbet";
 
 /* iPad menu bar command */
 "menuNewTabOnRight" = "Sağda Yeni Sekme";
 
+/* iPad Duck.ai menu bar command */
+"menuNewVoiceChat" = "Yeni Sesli Sohbet";
+
 /* iPad menu bar command */
 "menuNextTab" = "Sonraki Sekmeyi Göster";
+
+/* iPad Duck.ai menu bar command */
+"menuOpenDuckAI" = "Duck.ai'ı aç";
 
 /* iPad menu bar command */
 "menuOpenLocation" = "Konumu Aç...";
@@ -3376,14 +3418,26 @@
 /* iPad menu bar command */
 "menuPrint" = "Yazdır...";
 
+/* iPad Duck.ai menu bar section header */
+"menuRecentChats" = "Son Sohbetler";
+
 /* iPad menu bar command selecting a numbered tab */
 "menuSelectTab" = "%d Sekmesini Seç";
+
+/* iPad menu bar command */
+"menuSetDefaultBrowser" = "DuckDuckGo'yu varsayılan tarayıcı olarak ayarla...";
 
 /* iPad menu bar command */
 "menuSettings" = "DuckDuckGo Ayarları...";
 
 /* iPad menu bar command */
+"menuShowBookmarks" = "Yer İşaretlerini Göster";
+
+/* iPad menu bar command */
 "menuShowDownloads" = "İndirilenleri Göster";
+
+/* iPad menu bar command */
+"menuShowDuckAIButton" = "Duck.ai Düğmesini Göster";
 
 /* iPad menu bar command */
 "menuShowPasswords" = "Parolaları göster";
@@ -4306,11 +4360,17 @@
 /* Description of too many requests error when syncing. */
 "prefrences.sync.too-many-requests.description" = "Senkronizasyon ve Yedekleme geçici olarak kullanılamıyor.";
 
+/* Fireproofing setting toggle label */
+"preserveLogins.askOnSignIn" = "Oturum açıldığında sitelere Fireproof uygulanıp uygulanmayacağını sor";
+
 /* No comment provided by engineer. */
 "preserveLogins.domain.list.footer" = "Web siteleri oturumunuzu açık tutmak için çerezler kullanır. Bir siteyi Korumalı hâle getirdiğinizde çerezler silinmez ve Yangın Düğmesi'ni kullandıktan sonra bile oturumunuz açık kalır. Korumalı web sitelerinde bulunan üçüncü taraf izleyicileri yine engelleriz.";
 
 /* Section header above Fireproofed websites list */
 "preserveLogins.domain.list.title" = "Korumalı Siteler";
+
+/* Empty Fireproof sites list */
+"preserveLogins.emptyState" = "Henüz Fireproof uygulanan site yok";
 
 /* Alert message explaining to users that the benefit of fireproofing a site is that they will be kept signed in */
 "preserveLogins.fireproof.message" = "Korumalı yaptığınızda, Yangın düğmesini kullanıktan sonra da oturumunuz açık kalır.";
@@ -4341,6 +4401,9 @@
 
 /* Confirmation button in alert */
 "preserveLogins.remove.all.ok" = "Tamam";
+
+/* Button to remove all Fireproof sites */
+"preserveLogins.removeAllSites" = "Fireproof Uygulanan Tüm Web Sitelerini Kaldır";
 
 /* No comment provided by engineer. */
 "Previews" = "Önizlemeler";
@@ -5539,11 +5602,29 @@
 /* Fallback device name for confirmation dialogs */
 "sync.pairing-v2.unknown-peer-name" = "diğer cihaz";
 
+/* Title for a button in the Sync Promotion banner on the Bookmarks or Passwords screen that opens Sync settings to connect another device */
+"sync.promo.another-device.connect.action" = "Bağlan";
+
+/* Message for the Sync Promotion banner on the Bookmarks or Passwords screen, shown when Sync is on but only this device is connected */
+"sync.promo.another-device.message" = "Sync & Backup bu cihazda etkin.";
+
+/* Title for a button in the Sync Promotion banner on the Bookmarks or Passwords screen that opens a screen with links to get DuckDuckGo on other platforms */
+"sync.promo.bookmarks.another-device.get-desktop-app.action" = "Uygulamayı İndir";
+
+/* Title for the Sync Promotion banner on the Bookmarks screen, shown when Sync is on but only this device is connected */
+"sync.promo.bookmarks.another-device.title" = "Yer işaretlerin masaüstü uygulamanızla da senkronize edilsin mi?";
+
 /* Message for the Sync Promotion banner when user has bookmarks that can be synced */
 "sync.promo.bookmarks.message" = "Hesaba gerek yok. Uçtan uca şifreleme, yer işaretlerinizi sizden başka hiç kimsenin, hatta bizim bile göremeyeceğimiz anlamına gelir.";
 
+/* Message for the redesigned Sync Promotion banner on the Bookmarks screen */
+"sync.promo.bookmarks.redesign.message" = "Uçtan uca şifrelenmiş. Yer işaretlerinizi kimse göremez. Biz bile.";
+
 /* Title for the Sync Promotion banner */
 "sync.promo.bookmarks.title" = "Yer İşaretlerinizi Senkronize Edin ve Yedekleyin";
+
+/* Accessibility label for the close button on the Sync Promotion banner */
+"sync.promo.close.accessibility.label" = "Senkronizasyon promosyonunu kapat";
 
 /* Title for a button in the Sync Promotion banner to set up Sync */
 "sync.promo.confirm.action" = "Senkronizasyonu Ayarla";
@@ -5557,11 +5638,20 @@
 /* Title for a button in the Sync Promotion banner to dismiss Sync promotion banner */
 "sync.promo.dismiss.action" = "Hayır Teşekkürler";
 
+/* Title for the Sync Promotion banner on the Passwords screen, shown when Sync is on but only this device is connected */
+"sync.promo.passwords.another-device.title" = "Şifreler masaüstü uygulamanla da senkronize edilsin mi?";
+
 /* Message for the Sync Promotion banner when user has passwords that can be synced */
 "sync.promo.passwords.message" = "Hesaba gerek yok. Uçtan uca şifreleme, şifrelerinizi sizden başka hiç kimsenin, hatta bizim bile göremeyeceğimiz anlamına gelir.";
 
+/* Message for the redesigned Sync Promotion banner on the Passwords screen */
+"sync.promo.passwords.redesign.message" = "Uçtan uca şifrelenmiş. Şifrelerinizi kimse göremez. Biz bile.";
+
 /* Title for the Sync Promotion banner */
 "sync.promo.passwords.title" = "Şifrelerinizi Senkronize Edin ve Yedekleyin";
+
+/* Title for the button in the redesigned Sync Promotion banner and the Data Import summary Sync card that opens Sync settings and starts setting up Sync */
+"sync.promo.redesign.confirm.action" = "Senkronizasyonu Başlat";
 
 /* Button title to start backup */
 "sync.recovery.alternative.prompt.backup.button" = "Bu Cihazı Sync & Backup";
@@ -6151,12 +6241,3 @@
 /* Title for screen to screen confirming what data to import from a zip file (bookmarks and /or passwords) */
 "zip.content.import.types.title" = "Neyi içe aktarmak istiyorsunuz?";
 
-
-/* Fireproofing setting toggle label */
-"preserveLogins.askOnSignIn" = "Oturum açıldığında sitelerin Korumalı hâle getirilip getirilmeyeceğini sor";
-
-/* Empty Fireproof sites list */
-"preserveLogins.emptyState" = "Henüz Korumalı site yok";
-
-/* Button to remove all Fireproof sites */
-"preserveLogins.removeAllSites" = "Tüm Korumalı Web Sitelerini Kaldır";

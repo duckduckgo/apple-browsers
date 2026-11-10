@@ -3335,13 +3335,31 @@
 "menuActualSize" = "原寸大";
 
 /* iPad menu bar command */
+"menuAddToDock" = "DuckDuckGoをDockに追加...";
+
+/* iPad menu bar command */
+"menuAddWidget" = "ホーム画面にウィジェットを追加...";
+
+/* iPad menu bar command */
 "menuBack" = "戻る";
+
+/* iPad menu bar title */
+"menuBookmarks" = "ブックマーク";
 
 /* iPad menu bar command */
 "menuClearTabsAndData" = "タブとデータをクリア";
 
+/* iPad Duck.ai menu bar command */
+"menuDeleteAllChats" = "すべてのチャットを削除...";
+
 /* iPad menu bar command */
 "menuDuplicateTab" = "タブを複製";
+
+/* iPad menu bar command */
+"menuExportBookmarks" = "ブックマークをエクスポート...";
+
+/* iPad menu bar submenu */
+"menuFavorites" = "お気に入り";
 
 /* iPad menu bar command */
 "menuFeedback" = "フィードバックを共有";
@@ -3350,7 +3368,13 @@
 "menuForward" = "次へ進む";
 
 /* iPad menu bar command */
+"menuHideBookmarks" = "ブックマークを隠す";
+
+/* iPad menu bar command */
 "menuHideDownloads" = "ダウンロードを非表示";
+
+/* iPad menu bar command */
+"menuHideDuckAIButton" = "Duck.aiボタンを非表示にする";
 
 /* iPad menu bar command */
 "menuHidePasswords" = "パスワードを非表示";
@@ -3359,13 +3383,31 @@
 "menuHideTabs" = "タブを非表示";
 
 /* iPad menu bar command */
+"menuImportBookmarks" = "ブックマークをインポート...";
+
+/* iPad menu bar command */
+"menuImportBookmarksAndPasswords" = "ブックマークとパスワードをインポート...";
+
+/* iPad menu bar command */
 "menuLastTab" = "最後のタブ";
+
+/* iPad Duck.ai menu bar command */
+"menuNewChat" = "新しいチャット";
+
+/* iPad Duck.ai menu bar command */
+"menuNewImageChat" = "新しい画像チャット";
 
 /* iPad menu bar command */
 "menuNewTabOnRight" = "右側に新しいタブを作成";
 
+/* iPad Duck.ai menu bar command */
+"menuNewVoiceChat" = "新しいボイスチャット";
+
 /* iPad menu bar command */
 "menuNextTab" = "次のタブを表示";
+
+/* iPad Duck.ai menu bar command */
+"menuOpenDuckAI" = "Duck.aiを開く";
 
 /* iPad menu bar command */
 "menuOpenLocation" = "場所を開く...";
@@ -3376,14 +3418,26 @@
 /* iPad menu bar command */
 "menuPrint" = "印刷...";
 
+/* iPad Duck.ai menu bar section header */
+"menuRecentChats" = "最近のチャット";
+
 /* iPad menu bar command selecting a numbered tab */
 "menuSelectTab" = "タブ%dを選択";
+
+/* iPad menu bar command */
+"menuSetDefaultBrowser" = "DuckDuckGoをデフォルトのブラウザに設定...";
 
 /* iPad menu bar command */
 "menuSettings" = "DuckDuckGoの設定...";
 
 /* iPad menu bar command */
+"menuShowBookmarks" = "ブックマークを表示";
+
+/* iPad menu bar command */
 "menuShowDownloads" = "ダウンロードを表示";
+
+/* iPad menu bar command */
+"menuShowDuckAIButton" = "Duck.aiボタンを表示する";
 
 /* iPad menu bar command */
 "menuShowPasswords" = "パスワードを表示";
@@ -4306,11 +4360,17 @@
 /* Description of too many requests error when syncing. */
 "prefrences.sync.too-many-requests.description" = "Sync & Backupは一時的に利用できません。";
 
+/* Fireproofing setting toggle label */
+"preserveLogins.askOnSignIn" = "サインイン時にサイトにFireproof機能を適用するか尋ねる";
+
 /* No comment provided by engineer. */
 "preserveLogins.domain.list.footer" = "ウェブサイトは、サインイン状態を維持するためにCookieに依存しています。サイトをFireproof設定しても、Cookieは消去されず、Fire Buttonを使用した後でもログインしたままになります。Fireproofウェブサイトで見つかったサードパーティトラッカーは引き続きブロックされます。";
 
 /* Section header above Fireproofed websites list */
 "preserveLogins.domain.list.title" = "Fireproofサイト";
+
+/* Empty Fireproof sites list */
+"preserveLogins.emptyState" = "Fireproof機能の適用サイトはまだありません";
 
 /* Alert message explaining to users that the benefit of fireproofing a site is that they will be kept signed in */
 "preserveLogins.fireproof.message" = "このサイトをFireproof設定すると、Fire Buttonを使用した後もサインイン状態が維持されます。";
@@ -4341,6 +4401,9 @@
 
 /* Confirmation button in alert */
 "preserveLogins.remove.all.ok" = "OK";
+
+/* Button to remove all Fireproof sites */
+"preserveLogins.removeAllSites" = "Fireproof機能の適用サイトをすべて削除";
 
 /* No comment provided by engineer. */
 "Previews" = "プレビュー";
@@ -5539,11 +5602,29 @@
 /* Fallback device name for confirmation dialogs */
 "sync.pairing-v2.unknown-peer-name" = "もう一方のデバイス";
 
+/* Title for a button in the Sync Promotion banner on the Bookmarks or Passwords screen that opens Sync settings to connect another device */
+"sync.promo.another-device.connect.action" = "接続";
+
+/* Message for the Sync Promotion banner on the Bookmarks or Passwords screen, shown when Sync is on but only this device is connected */
+"sync.promo.another-device.message" = "このデバイスではSync & Backupが有効になっています。";
+
+/* Title for a button in the Sync Promotion banner on the Bookmarks or Passwords screen that opens a screen with links to get DuckDuckGo on other platforms */
+"sync.promo.bookmarks.another-device.get-desktop-app.action" = "アプリを入手";
+
+/* Title for the Sync Promotion banner on the Bookmarks screen, shown when Sync is on but only this device is connected */
+"sync.promo.bookmarks.another-device.title" = "デスクトップアプリともブックマークを同期しますか？";
+
 /* Message for the Sync Promotion banner when user has bookmarks that can be synced */
 "sync.promo.bookmarks.message" = "アカウントは必要ありません。エンドツーエンドの暗号化により、お客様以外は誰もブックマークを見ることができません。当社ですらアクセスできません。";
 
+/* Message for the redesigned Sync Promotion banner on the Bookmarks screen */
+"sync.promo.bookmarks.redesign.message" = "エンドツーエンドで暗号化されています。 お客様以外は誰もブックマークを見ることができません。当社ですら見ることはできません。";
+
 /* Title for the Sync Promotion banner */
 "sync.promo.bookmarks.title" = "ブックマークを同期してバックアップ";
+
+/* Accessibility label for the close button on the Sync Promotion banner */
+"sync.promo.close.accessibility.label" = "同期プロモーションを閉じる";
 
 /* Title for a button in the Sync Promotion banner to set up Sync */
 "sync.promo.confirm.action" = "同期を設定";
@@ -5557,11 +5638,20 @@
 /* Title for a button in the Sync Promotion banner to dismiss Sync promotion banner */
 "sync.promo.dismiss.action" = "いいえ、結構です";
 
+/* Title for the Sync Promotion banner on the Passwords screen, shown when Sync is on but only this device is connected */
+"sync.promo.passwords.another-device.title" = "デスクトップアプリともパスワードを同期しますか？";
+
 /* Message for the Sync Promotion banner when user has passwords that can be synced */
 "sync.promo.passwords.message" = "アカウントは必要ありません。エンドツーエンドの暗号化により、お客様以外は誰もパスワードを見ることができません。当社ですらアクセスできません。";
 
+/* Message for the redesigned Sync Promotion banner on the Passwords screen */
+"sync.promo.passwords.redesign.message" = "エンドツーエンドで暗号化されています。 誰にもパスワードを見ることはできません。私たちにも見えません。";
+
 /* Title for the Sync Promotion banner */
 "sync.promo.passwords.title" = "パスワードの同期とバックアップ";
+
+/* Title for the button in the redesigned Sync Promotion banner and the Data Import summary Sync card that opens Sync settings and starts setting up Sync */
+"sync.promo.redesign.confirm.action" = "同期を開始";
 
 /* Button title to start backup */
 "sync.recovery.alternative.prompt.backup.button" = "このデバイスの同期とバックアップ";
@@ -6151,12 +6241,3 @@
 /* Title for screen to screen confirming what data to import from a zip file (bookmarks and /or passwords) */
 "zip.content.import.types.title" = "何をインポートしますか？";
 
-
-/* Fireproofing setting toggle label */
-"preserveLogins.askOnSignIn" = "サインイン時にサイトをFireproof設定するか尋ねる";
-
-/* Empty Fireproof sites list */
-"preserveLogins.emptyState" = "まだFireproofサイトはありません";
-
-/* Button to remove all Fireproof sites */
-"preserveLogins.removeAllSites" = "すべてのFireproofサイトを削除";

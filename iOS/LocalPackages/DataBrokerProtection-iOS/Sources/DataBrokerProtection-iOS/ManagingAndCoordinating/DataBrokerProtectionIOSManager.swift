@@ -81,6 +81,10 @@ public class DBPIOSInterface {
 
         func resetAllNotificationStatesForDebug()
 
+#if DEBUG
+        func seedEmailOptOutTestRecords() throws -> [String]
+#endif
+
         @discardableResult
         func startDebugServer(contentBlocking: DBPWebViewContentBlocking?) async -> Bool
         func stopDebugServer()
@@ -861,6 +865,12 @@ extension DataBrokerProtectionIOSManager: DBPIOSInterface.DebugCommandsDelegate 
     public func resetAllNotificationStatesForDebug() {
         userNotificationService.resetAllNotificationStatesForDebug()
     }
+
+#if DEBUG
+    public func seedEmailOptOutTestRecords() throws -> [String] {
+        try DataBrokerProtectionDebugEmailOptOutSeeder(database: vaultResources().database).seed()
+    }
+#endif
 
     private var canStartDebugServer: Bool {
         #if DEBUG

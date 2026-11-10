@@ -38,7 +38,7 @@ extension Preferences {
             static let disclaimerFallbackLineSpacing: CGFloat = 3
             static let descriptionTopPadding: CGFloat = 5
             static let dividerTopPadding: CGFloat = 32
-            static let dividerBottomPadding: CGFloat = 28
+            static let dividerBottomPadding: CGFloat = 23
             static let moreExtensionsBottomPadding: CGFloat = 12
         }
 
@@ -493,11 +493,11 @@ extension Preferences {
                 tileSize: 72,
                 tileCornerRadius: 12,
                 iconSize: 40,
-                titleSpacing: 10,
+                titleSpacing: 9,
                 titleFontSize: 15,
                 titleFontWeight: .semibold,
                 publisherFontSize: 13,
-                textTopPadding: 4
+                textTopPadding: 3
             )
         }
 

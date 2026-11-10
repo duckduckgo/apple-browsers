@@ -10,7 +10,7 @@ on:
       all_os_versions:
         description: "Test all supported macOS versions (not just the latest)"
         type: boolean
-        default: true
+        default: false
       single_test_class:
         description: "Run one or more UITestCases (optional, space-separated, e.g. 'AutocompleteTests' or 'AutocompleteTests BookmarksTests')"
         type: string
@@ -35,7 +35,7 @@ on:
       all_os_versions:
         description: "Test all supported macOS versions (not just the latest)"
         type: boolean
-        default: true
+        default: false
       branch:
         description: "Branch name"
         required: false

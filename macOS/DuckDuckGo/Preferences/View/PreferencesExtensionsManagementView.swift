@@ -68,8 +68,15 @@ extension Preferences {
                     disclaimer
                 }
                 VStack(alignment: .leading, spacing: Const.footerSpacing) {
-                    ScrollView(.vertical) {
-                        content
+                    GeometryReader { proxy in
+                        ScrollView(.vertical) {
+                            content
+                                .frame(width: proxy.size.width, alignment: .leading)
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                        }
+                        .containerRelativeFrame(.horizontal, alignment: .leading) { length, _ in
+                            length - Preferences.Const.panePaddingHorizontal
+                        }
                     }
                     disclaimer
                 }

@@ -423,13 +423,15 @@ struct OnboardingIntroContentProviderTests {
             let result = sut.setDefaultBrowserContent
 
             // THEN
-            let expectedTitle: String = switch reason {
-            case .browserPrivately, .privateAIChat, .vpn:
+            let expectedTitle: String? = switch reason {
+            case .browserPrivately, .privateAIChat:
                 UserText.Onboarding.BrowsersComparison.titleGenericDownloadReasonExperiment
             case .noAI:
                 UserText.Onboarding.BrowsersComparison.titleNoAIDownloadReasonExperiment
             case .blockAds:
                 UserText.Onboarding.BrowsersComparison.titleNoAdsDownloadReasonExperiment
+            case .vpn:
+                nil
             }
             #expect(result.title == expectedTitle)
             #expect(result.primaryCTA == UserText.Onboarding.BrowsersComparison.cta)
@@ -485,6 +487,39 @@ struct OnboardingIntroContentProviderTests {
 
             // THEN
             #expect(result.competitor == expectedCompetitor)
+        }
+
+        @available(iOS 16, macOS 13, *)
+        @Test("The VPN reason shows the subscription note, and only the other reasons omit it", .timeLimit(.minutes(1)), arguments: OnboardingDownloadReason.allCases)
+        func subscriptionFooterPerReason(reason: OnboardingDownloadReason) {
+            // GIVEN
+            let sut = makeSUT(reason: reason)
+
+            // WHEN
+            let result = sut.setDefaultBrowserContent
+
+            // THEN
+            let expectedFooter = reason == .vpn ? UserText.Onboarding.BrowsersComparison.vpnSubscriptionFooter : nil
+            #expect(result.footer == expectedFooter)
+        }
+
+        @available(iOS 16, macOS 13, *)
+        @Test("The VPN reason's table marks the VPN rows as part of the subscription", .timeLimit(.minutes(1)))
+        func vpnFeaturesMarkSubscriptionRows() {
+            // WHEN
+            let features = RebrandedComparisonTableModel.browserFeatures(for: .vpn)
+
+            // THEN
+            #expect(features.map(\.title) == [
+                BrowsersComparisonModel.PrivacyFeature.UserText.BrowsersComparison.Features.cookiePopupsAndAds,
+                BrowsersComparisonModel.PrivacyFeature.UserText.BrowsersComparison.Features.duckplayer,
+                BrowsersComparisonModel.PrivacyFeature.UserText.BrowsersComparison.Features.privateSearch,
+                UserText.Onboarding.DuckAICPP.AIComparison.Features.onePlaceAccess,
+                UserText.Onboarding.BrowsersComparison.vpnHideLocation,
+                UserText.Onboarding.BrowsersComparison.vpnSecureWiFi
+            ])
+            #expect(features.map(\.ddgAvailability) == [.available, .available, .available, .available, .subscription, .subscription])
+            #expect(features.allSatisfy { $0.competitorAvailability == .unavailable })
         }
 
         @Test("Nil Download Reason keeps Safari as the competitor")

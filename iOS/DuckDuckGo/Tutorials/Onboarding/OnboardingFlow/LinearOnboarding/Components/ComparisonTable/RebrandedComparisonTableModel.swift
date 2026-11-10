@@ -33,11 +33,15 @@ struct RebrandedComparisonTableModel {
             case available
             case partial
             case unavailable
+            /// Available with a paid subscription.
+            case subscription
 
             var image: Image {
                 switch self {
                 case .available:
                     return OnboardingRebrandingImages.Comparison.availableIcon
+                case .subscription:
+                    return Image(uiImage: DesignSystemImages.Color.Size24.subscription)
                 case .partial:
                     return OnboardingRebrandingImages.Comparison.partialIcon
                 case .unavailable:
@@ -136,10 +140,20 @@ extension RebrandedComparisonTableModel {
     private typealias Icon = OnboardingRebrandingImages.Comparison
     private typealias BrowserText = BrowsersComparisonModel.PrivacyFeature.UserText.BrowsersComparison.Features
     private typealias AIText = UserText.Onboarding.DuckAICPP.AIComparison.Features
+    private typealias VPNText = UserText.Onboarding.BrowsersComparison
 
     static func browserFeatures(for reason: OnboardingDownloadReason) -> [Feature] {
         switch reason {
-        case .browserPrivately, .vpn:
+        case .vpn:
+            return [
+                Feature(icon: Image(uiImage: DesignSystemImages.Color.Size24.adsBlocked), title: BrowserText.cookiePopupsAndAds, competitorAvailability: .unavailable, ddgAvailability: .available),
+                Feature(icon: Icon.blockYouTubeAdsIcon, title: BrowserText.duckplayer, competitorAvailability: .unavailable, ddgAvailability: .available),
+                Feature(icon: Icon.lensIcon, title: BrowserText.privateSearch, competitorAvailability: .unavailable, ddgAvailability: .available),
+                Feature(icon: Image(uiImage: DesignSystemImages.Color.Size24.aiGeneral), title: AIText.onePlaceAccess, competitorAvailability: .unavailable, ddgAvailability: .available),
+                Feature(icon: Image(uiImage: DesignSystemImages.Color.Size24.vpn), title: VPNText.vpnHideLocation, competitorAvailability: .unavailable, ddgAvailability: .subscription),
+                Feature(icon: Image(uiImage: DesignSystemImages.Color.Size24.lock), title: VPNText.vpnSecureWiFi, competitorAvailability: .unavailable, ddgAvailability: .subscription),
+            ]
+        case .browserPrivately:
             return [
                 Feature(icon: Icon.lensIcon, title: BrowserText.privateSearch, competitorAvailability: .unavailable, ddgAvailability: .available),
                 Feature(icon: Image(uiImage: DesignSystemImages.Color.Size24.shield), title: BrowserText.trackerBlockers, competitorAvailability: .partial, ddgAvailability: .available),

@@ -17,6 +17,7 @@
 //  limitations under the License.
 //
 
+import DesignResourcesKitIcons
 import DuckUI
 import Onboarding
 import SwiftUI
@@ -53,20 +54,16 @@ extension OnboardingView {
         // the comparison table has its own animated row reveal that needs `showContent`.
         var body: some View {
             VStack(spacing: onboardingTheme.linearOnboardingMetrics.contentInnerSpacing) {
-                TypingText(
-                    content.title,
-                    startAnimating: $shouldStartTyping,
-                    onTypingFinished: { [reduceMotion] in
-                        if reduceMotion {
-                            showContent = true
-                        } else {
-                            withAnimation { showContent = true }
-                        }
-                    }
-                )
-                .foregroundColor(onboardingTheme.colorPalette.textPrimary)
-                .font(onboardingTheme.typography.title)
-                .multilineTextAlignment(.center)
+                if let title = content.title {
+                    TypingText(
+                        title,
+                        startAnimating: $shouldStartTyping,
+                        onTypingFinished: revealContent
+                    )
+                    .foregroundColor(onboardingTheme.colorPalette.textPrimary)
+                    .font(onboardingTheme.typography.title)
+                    .multilineTextAlignment(.center)
+                }
 
                 VStack(spacing: onboardingTheme.linearOnboardingMetrics.contentInnerSpacing) {
                     RebrandedOnboardingComparisonTableView(
@@ -74,6 +71,10 @@ extension OnboardingView {
                         features: content.features,
                         availableFeatureAnimation: .animated(startAnimation: showContent)
                     )
+
+                    if let footer = content.footer {
+                        SubscriptionNote(text: footer)
+                    }
 
                     VStack(spacing: onboardingTheme.linearOnboardingMetrics.buttonSpacing) {
                         Button(action: primaryAction) {
@@ -93,6 +94,20 @@ extension OnboardingView {
                 .animation(reduceMotion ? nil : .easeIn(duration: 0.25), value: showContent)
             }
             .onBubbleVisibilityChanged(isVisible: $isVisible, shouldStartTyping: $shouldStartTyping, showContent: $showContent)
+            .onChange(of: shouldStartTyping) { shouldStart in
+                // Without a title there's nothing to type, so reveal the content right away.
+                if shouldStart && content.title == nil {
+                    revealContent()
+                }
+            }
+        }
+
+        private func revealContent() {
+            if reduceMotion {
+                showContent = true
+            } else {
+                withAnimation { showContent = true }
+            }
         }
 
         private var tableHeader: RebrandedOnboardingComparisonTableView.Header {
@@ -120,4 +135,35 @@ extension OnboardingView {
 
     }
 
+}
+
+private enum SubscriptionNoteMetrics {
+    static let spacing: CGFloat = 12
+    static let padding: CGFloat = 12
+    static let cornerRadius: CGFloat = 16
+    static let iconSize: CGFloat = 24
+}
+
+/// A highlighted note pointing out that some features need a paid subscription.
+private struct SubscriptionNote: View {
+    @Environment(\.onboardingTheme) private var onboardingTheme
+
+    let text: String
+
+    var body: some View {
+        HStack(spacing: SubscriptionNoteMetrics.spacing) {
+            Image(uiImage: DesignSystemImages.Color.Size24.subscription)
+                .resizable()
+                .frame(width: SubscriptionNoteMetrics.iconSize, height: SubscriptionNoteMetrics.iconSize)
+
+            Text(text)
+                .font(onboardingTheme.typography.rowDetails)
+                .foregroundColor(onboardingTheme.colorPalette.textPrimary)
+                .multilineTextAlignment(.leading)
+                .fixedSize(horizontal: false, vertical: true)
+                .frame(maxWidth: .infinity, alignment: .leading)
+        }
+        .padding(SubscriptionNoteMetrics.padding)
+        .background(OnboardingRebrandColor.subscriptionNoteBackground, in: RoundedRectangle(cornerRadius: SubscriptionNoteMetrics.cornerRadius))
+    }
 }

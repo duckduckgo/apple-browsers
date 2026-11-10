@@ -395,15 +395,38 @@ struct OnboardingComparisonContent: Equatable {
         case ai
     }
 
-    let title: String
+    /// `nil` hides the title.
+    let title: String?
     /// When set, renders as a text-and-icons table header; absent for icon-only headers.
     let subHeader: String?
     let competitor: Competitor
     let features: [RebrandedComparisonTableModel.Feature]
+    /// When set, renders a subscription note below the table.
+    let footer: String?
     let primaryCTA: String
     /// When set, renders a secondary skip button below the primary CTA.
     let secondaryCTA: String?
     let daxAnimation: DaxAnimation?
+
+    init(
+        title: String?,
+        subHeader: String?,
+        competitor: Competitor,
+        features: [RebrandedComparisonTableModel.Feature],
+        footer: String? = nil,
+        primaryCTA: String,
+        secondaryCTA: String?,
+        daxAnimation: DaxAnimation?
+    ) {
+        self.title = title
+        self.subHeader = subHeader
+        self.competitor = competitor
+        self.features = features
+        self.footer = footer
+        self.primaryCTA = primaryCTA
+        self.secondaryCTA = secondaryCTA
+        self.daxAnimation = daxAnimation
+    }
 }
 
 extension OnboardingIntroContentProvider {
@@ -434,13 +457,15 @@ extension OnboardingIntroContentProvider {
         // Return default version of comparison table if download reason is nil (Duck.ai + No experiment enrolled users)
         guard let reason = downloadReasonProvider() else { return defaultSetDefaultBrowserContent }
 
-        let title = switch reason {
-        case .browserPrivately, .privateAIChat, .vpn:
+        let title: String? = switch reason {
+        case .browserPrivately, .privateAIChat:
             UserText.Onboarding.BrowsersComparison.titleGenericDownloadReasonExperiment
         case .noAI:
             UserText.Onboarding.BrowsersComparison.titleNoAIDownloadReasonExperiment
         case .blockAds:
             UserText.Onboarding.BrowsersComparison.titleNoAdsDownloadReasonExperiment
+        case .vpn:
+            nil
         }
 
         let subHeader = reason == .privateAIChat ? UserText.Onboarding.DuckAICPP.AIComparison.subHeader : nil
@@ -459,6 +484,7 @@ extension OnboardingIntroContentProvider {
             subHeader: subHeader,
             competitor: competitor,
             features: RebrandedComparisonTableModel.browserFeatures(for: reason),
+            footer: reason == .vpn ? UserText.Onboarding.BrowsersComparison.vpnSubscriptionFooter : nil,
             primaryCTA: UserText.Onboarding.BrowsersComparison.cta,
             secondaryCTA: UserText.onboardingSkip,
             daxAnimation: nil

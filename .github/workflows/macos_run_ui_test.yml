@@ -25,6 +25,11 @@ on:
         description: "Xcode version override; defaults to the checked-out .xcode-version file"
         required: false
         type: string
+      ruby-version:
+        description: "Ruby version override; defaults to the checked-out macOS/.ruby-version file"
+        required: false
+        type: string
+        default: ''
       test:
         description: "The UITestCase class to run"
         required: true
@@ -134,6 +139,7 @@ jobs:
       with:
         working-directory: macOS
         cache-key-prefix: macos-ruby
+        ruby-version: ${{ inputs.ruby-version }}
 
     - name: Create Default Keychain
       run: bundle exec fastlane create_keychain_ui_tests

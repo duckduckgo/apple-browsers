@@ -36,6 +36,8 @@ protocol AIChatUserScriptProviding: AnyObject {
     var webView: WKWebView? { get set }
     var canDispatchBridgeMessages: Bool { get }
     func setPayloadHandler(_ payloadHandler: any AIChatConsumableDataHandling)
+    /// The payload this page will ask for once it loads.
+    @MainActor func willHandOff(_ payload: AIChatPayload)
     func setOpenLinkHandler(_ openLinkHandler: ((URL) -> Void)?)
     func setPageContextProvider(_ provider: PageContextAsyncProvider?)
     func setAttachedSelectionsProvider(_ provider: (() -> [AIChatSelectionContextData])?)
@@ -134,6 +136,7 @@ protocol AIChatContentHandling: AnyObject {
     func setup(with userScript: AIChatUserScriptProviding, webView: WKWebView, displayMode: AIChatDisplayMode)
 
     /// Sets the initial payload data for the AIChat session.
+    @MainActor
     func setPayload(payload: Any?)
 
     /// Builds a query URL with optional prompt, auto-submit, onboarding flow and RAG tools.
@@ -254,6 +257,9 @@ final class AIChatContentHandler: AIChatContentHandling {
     private var getAttachedSelections: (() -> [AIChatSelectionContextData])?
     private var onAttachedSelectionsConsumed: (([String]) -> Void)?
 
+    /// A new tab is given its payload before its user scripts are installed.
+    private var unannouncedHandoff: AIChatPayload?
+
     weak var delegate: AIChatContentHandlingDelegate?
 
     init(aiChatSettings: AIChatSettingsProvider,
@@ -305,12 +311,27 @@ final class AIChatContentHandler: AIChatContentHandling {
         self.userScript?.setPageContextProvider(getPageContext)
         self.userScript?.setAttachedSelectionsProvider(getAttachedSelections)
         self.userScript?.setAttachedSelectionsConsumedHandler(onAttachedSelectionsConsumed)
+        if let unannouncedHandoff {
+            announceHandoff(unannouncedHandoff)
+        }
     }
-    
+
     /// Sets the initial payload data for the AIChat session.
+    @MainActor
     func setPayload(payload: Any?) {
         guard let payload = payload as? AIChatPayload else { return }
         payloadHandler.setData(payload)
+        announceHandoff(payload)
+    }
+
+    @MainActor
+    private func announceHandoff(_ payload: AIChatPayload) {
+        guard let userScript else {
+            unannouncedHandoff = payload
+            return
+        }
+        unannouncedHandoff = nil
+        userScript.willHandOff(payload)
     }
     
     /// Builds a query URL with optional prompt, auto-submit, onboarding flow and RAG tools.

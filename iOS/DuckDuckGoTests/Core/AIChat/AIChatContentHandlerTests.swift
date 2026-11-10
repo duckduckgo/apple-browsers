@@ -188,6 +188,29 @@ final class AIChatContentHandlerTests: XCTestCase {
         XCTAssertEqual(consumed?["query"] as? String, "hello world")
     }
 
+    /// The page asks for the payload only once it loads, and the input can't wait that long to know.
+    func testWhenAPayloadIsSetThenThePageLearnsOfTheHandoffBeforeItLoads() {
+        let mockUserScript = MockAIChatUserScript()
+        handler.setup(with: mockUserScript, webView: WKWebView(), displayMode: .fullTab)
+
+        handler.setPayload(payload: ["aiChatPrompt": "More bread recipes", "aiChatAutoPrompt": true] as AIChatPayload)
+
+        XCTAssertEqual(mockUserScript.announcedHandoffs.count, 1)
+        XCTAssertEqual(mockUserScript.announcedHandoffs.first?["aiChatPrompt"] as? String, "More bread recipes")
+    }
+
+    /// A new tab is given the payload before its user scripts are installed.
+    func testWhenAPayloadIsSetBeforeTheUserScriptThenTheHandoffIsAnnouncedOnceTheScriptArrives() {
+        handler.setPayload(payload: ["aiChatPrompt": "More bread recipes", "aiChatAutoPrompt": true] as AIChatPayload)
+        let mockUserScript = MockAIChatUserScript()
+
+        handler.setup(with: mockUserScript, webView: WKWebView(), displayMode: .fullTab)
+        handler.setup(with: mockUserScript, webView: WKWebView(), displayMode: .fullTab)
+
+        XCTAssertEqual(mockUserScript.announcedHandoffs.count, 1)
+        XCTAssertEqual(mockUserScript.announcedHandoffs.first?["aiChatPrompt"] as? String, "More bread recipes")
+    }
+
     func testSetPayloadWithInvalidPayload() throws {
         // Given
         let invalidPayload = "invalid"
@@ -1091,6 +1114,11 @@ final class MockAIChatUserScript: AIChatUserScriptProviding {
         payloadHandlerSet = true
     }
 
+    private(set) var announcedHandoffs: [AIChatPayload] = []
+    func willHandOff(_ payload: AIChatPayload) {
+        announcedHandoffs.append(payload)
+    }
+
     func setOpenLinkHandler(_ openLinkHandler: ((URL) -> Void)?) {
         openLinkHandlerSet = true
         self.openLinkHandler = openLinkHandler
@@ -1188,6 +1216,7 @@ final class MockAIChatUserScriptHandling: AIChatUserScriptHandling {
     @MainActor func openTranslationSourceLink(params: Any, message: UserScriptMessage) async -> Encodable? { nil }
     @MainActor func openAIChatLink(params: Any, message: UserScriptMessage) async -> Encodable? { nil }
     func setPayloadHandler(_ payloadHandler: (any AIChatConsumableDataHandling)?) {}
+    func willHandOff(_ payload: AIChatPayload) {}
     func setOpenLinkHandler(_ handler: ((URL) -> Void)?) {}
     func setAIChatInputBoxHandler(_ inputBoxHandler: (any AIChatInputBoxHandling)?) {}
     func setMetricReportingHandler(_ metricHandler: (any AIChatMetricReportingHandling)?) {}

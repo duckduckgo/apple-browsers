@@ -352,6 +352,11 @@ final class AIChatUserScript: NSObject, Subfeature {
         handler.setPayloadHandler(payloadHandler)
     }
 
+    @MainActor
+    func willHandOff(_ payload: AIChatPayload) {
+        handler.willHandOff(payload)
+    }
+
     func setOpenLinkHandler(_ openLinkHandler: ((URL) -> Void)?) {
         handler.setOpenLinkHandler(openLinkHandler)
     }

@@ -671,6 +671,10 @@ public enum FeatureFlag: String {
     /// while it holds a lock on a shared App Group database (0xdead10cc).
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1220262683074513
     case launchBackgroundTask
+
+    /// On-device web page translation.
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1220370569025326?focus=true
+    case webPageTranslation
 }
 
 extension FeatureFlag: FeatureFlagDescribing {
@@ -1135,6 +1139,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(defaultValue: .internalOnly, source: .remoteReleasable(iOSBrowserConfigSubfeature.idleReturnNewTabPageAtLaunch))
         case .launchBackgroundTask:
             Config(defaultValue: .disabled, source: .remoteReleasable(iOSBrowserConfigSubfeature.launchBackgroundTask))
+        case .webPageTranslation:
+            Config(defaultValue: .disabled, source: .remoteReleasable(iOSBrowserConfigSubfeature.webPageTranslation))
         }
     }
 

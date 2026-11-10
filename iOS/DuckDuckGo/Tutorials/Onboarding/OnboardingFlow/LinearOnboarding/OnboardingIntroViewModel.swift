@@ -552,8 +552,6 @@ private extension OnboardingIntroViewModel {
     }
 
     /// Enrolls the user in the VPN download-reason experiment when they start onboarding from the intro.
-    /// Skipped once the user is past the intro (e.g. a restored checkpoint), so a flow that's already under way
-    /// is never enrolled.
     func enrollInDownloadReasonVPNExperimentIfNeeded() {
         guard currentIntroStep == introSteps.first else { return }
         onboardingManager.enrollInDownloadReasonVPNExperimentIfNeeded()

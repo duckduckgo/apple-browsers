@@ -43,16 +43,26 @@ final class AIChatContextualSheetCoordinatorTests: XCTestCase {
         let webController = try XCTUnwrap(sut.browserToolsWebViewController)
         webController.configureContentHandler(with: fixture.script)
         fixture.script.webView = fixture.webView
-        fixture.webView.onPermission = { params in
-            self.sut.tabWillLeaveScreen()
-            self.sut.parkSurfaceForResize(animated: false)
-            self.sut.tabDidReturnToScreen(presentedFrom: host)
-            XCTAssertTrue(self.sut.sheetViewController === sheet)
-            _ = fixture.handler.respondToClientToolPermission(params: fixture.response(params, decision: "allow"), source: fixture.script)
+        guard case .granted(let performExecution) = try await fixture.authorizeListing() else {
+            return XCTFail("Expected automatic authorization")
         }
+        sut.tabWillLeaveScreen()
+        sut.parkSurfaceForResize(animated: false)
+        sut.tabDidReturnToScreen(presentedFrom: host)
+        XCTAssertTrue(sut.sheetViewController === sheet)
+        let retained = await performExecution { .success([:]) }
+        XCTAssertEqual(retained, .success([:]))
         let allowed = await fixture.invoke()
         XCTAssertEqual(allowed, fixture.success)
+        guard case .granted(let performAfterClearing) = try await fixture.authorizeListing() else {
+            return XCTFail("Expected automatic authorization")
+        }
         sut.clearActiveChat()
+        let cancelled = await performAfterClearing {
+            XCTFail("Cleared chat must not execute")
+            return .success([:])
+        }
+        XCTAssertNil(cancelled)
         let detached = await fixture.invoke()
         XCTAssertEqual(detached, .failure(callId: "call", error: .unavailable))
         let lateScript = AIChatUserScript(handler: fixture.handler, debugSettings: AIChatDebugSettings(userDefault: fixture.defaults))

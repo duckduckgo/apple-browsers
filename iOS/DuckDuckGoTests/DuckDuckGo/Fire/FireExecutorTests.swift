@@ -424,31 +424,21 @@ final class FireExecutorTests: XCTestCase {
         XCTAssertTrue(pixelFiring.actualFireCalls.isEmpty)
     }
 
-    func testDirectChatBurnCancelsMatchingLiveDocumentPermissionAndRejectsLateAlways() async {
+    func testDirectChatBurnCancelsMatchingGrantedListingWithoutPersistingPermission() async throws {
         let fixture = BrowserToolsBridgeFixture()
         defer { fixture.cleanUp() }
         mockTabManager.browserToolsService = fixture.service
-        let delivered = expectation(description: "Permission pending before deletion")
-        var lateResponse: [String: Any] = [:]
-        fixture.webView.onPermission = { params in
-            lateResponse = fixture.response(params, decision: "always")
-            delivered.fulfill()
+        guard case .granted(let performExecution) = try await fixture.authorizeListing() else {
+            return XCTFail("Expected automatic authorization")
         }
-        let completed = expectation(description: "Pending tool invocation completed")
-        let pending = Task {
-            let result = await fixture.invoke()
-            completed.fulfill()
-            return result
-        }
-        await fulfillment(of: [delivered], timeout: 2)
         let executor = makeFireExecutor()
         let result = await executor.burnChat(chatID: "chat", isFireMode: false)
         if case .failure(let error) = result { XCTFail("Deletion failed: \(error)") }
-        _ = fixture.handler.respondToClientToolPermission(params: lateResponse, source: fixture.script)
-        await fulfillment(of: [completed], timeout: 2)
-        pending.cancel()
-        let cancelled = await pending.value
-        XCTAssertEqual(cancelled, .failure(callId: "call", error: .cancelled))
+        let cancelled = await performExecution {
+            XCTFail("Burned chat must not execute")
+            return .success([:])
+        }
+        XCTAssertNil(cancelled)
         XCTAssertEqual(fixture.listings, 0)
         XCTAssertEqual(fixture.service.permissions.state(forToolNamed: "listOpenTabs"), .ask)
     }
@@ -517,29 +507,22 @@ final class FireExecutorTests: XCTestCase {
         XCTAssertEqual(available, fixture.success)
     }
 
-    func testFailedDirectChatDeletionCancelsOldPermissionButAllowsFreshRequest() async {
+    func testFailedDirectChatDeletionCancelsGrantedListingButAllowsFreshRequest() async throws {
         let fixture = BrowserToolsBridgeFixture()
         defer { fixture.cleanUp() }
         mockTabManager.browserToolsService = fixture.service
         mockHistoryCleaner.deleteAIChatResult = .failure(NSError(domain: "test", code: 1))
-        let delivered = expectation(description: "Permission pending before failed deletion")
-        fixture.webView.onPermission = { _ in delivered.fulfill() }
-        let completed = expectation(description: "Pending tool invocation completed")
-        let pending = Task {
-            let result = await fixture.invoke()
-            completed.fulfill()
-            return result
+        guard case .granted(let performExecution) = try await fixture.authorizeListing() else {
+            return XCTFail("Expected automatic authorization")
         }
-        await fulfillment(of: [delivered], timeout: 2)
         let result = await makeFireExecutor().burnChat(chatID: "chat", isFireMode: false)
         if case .success = result { XCTFail("Expected deletion failure") }
-        await fulfillment(of: [completed], timeout: 2)
-        pending.cancel()
-        let cancelled = await pending.value
-        XCTAssertEqual(cancelled, .failure(callId: "call", error: .cancelled))
-        fixture.webView.onPermission = { params in
-            _ = fixture.handler.respondToClientToolPermission(params: fixture.response(params, decision: "allow"), source: fixture.script)
+        let cancelled = await performExecution {
+            XCTFail("Failed burn must still cancel old authorization")
+            return .success([:])
         }
+        XCTAssertNil(cancelled)
+        XCTAssertEqual(fixture.listings, 0)
         let fresh = await fixture.invoke()
         XCTAssertEqual(fresh, fixture.success)
         XCTAssertEqual(fixture.service.permissions.state(forToolNamed: "listOpenTabs"), .ask)
@@ -565,7 +548,7 @@ final class FireExecutorTests: XCTestCase {
                 XCTAssertEqual(blocked, .failure(callId: "call", error: .unavailable))
                 snapshotsReached.fulfill()
             })
-            let request = FireRequest(options: [.aiChats], trigger: .manualFire, scope: scope)
+            let request = makeFireRequest(options: [.aiChats], trigger: .manualFire, scope: scope)
             await executor.burn(request: request, applicationState: .active)
             await fulfillment(of: [cleanerReached, snapshotsReached], timeout: 2)
             let fresh = await fixture.invoke()

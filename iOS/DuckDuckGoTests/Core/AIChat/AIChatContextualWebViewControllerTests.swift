@@ -96,7 +96,7 @@ final class AIChatContextualWebViewControllerTests: XCTestCase {
     }
 
     @MainActor
-    func testBrowserToolsRetainPendingPermissionAcrossHiddenViewAndFailedProvisionalNavigation() async throws {
+    func testBrowserToolsRetainGrantedListingAcrossHiddenViewAndFailedProvisionalNavigation() async throws {
         let fixture = BrowserToolsBridgeFixture()
         defer { fixture.cleanUp() }
         let sut = makeAttachmentSubmissionController()
@@ -106,12 +106,14 @@ final class AIChatContextualWebViewControllerTests: XCTestCase {
         sut.configureContentHandler(with: fixture.script)
         let actualWebView = try XCTUnwrap(fixture.script.webView)
         fixture.script.webView = fixture.webView
-        fixture.webView.onPermission = { params in
-            sut.viewDidDisappear(false)
-            sut.webView(actualWebView, didStartProvisionalNavigation: nil)
-            sut.webView(actualWebView, didFailProvisionalNavigation: nil, withError: NSError(domain: NSURLErrorDomain, code: NSURLErrorCancelled))
-            _ = fixture.handler.respondToClientToolPermission(params: fixture.response(params, decision: "allow"), source: fixture.script)
+        guard case .granted(let performExecution) = try await fixture.authorizeListing() else {
+            return XCTFail("Expected automatic authorization")
         }
+        sut.viewDidDisappear(false)
+        sut.webView(actualWebView, didStartProvisionalNavigation: nil)
+        sut.webView(actualWebView, didFailProvisionalNavigation: nil, withError: NSError(domain: NSURLErrorDomain, code: NSURLErrorCancelled))
+        let retained = await performExecution { .success([:]) }
+        XCTAssertEqual(retained, .success([:]))
         let result = await fixture.invoke()
         XCTAssertEqual(result, fixture.success)
         XCTAssertEqual(fixture.listings, 1)

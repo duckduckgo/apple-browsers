@@ -400,38 +400,31 @@ final class AIChatBrowserToolsBridgeTests: XCTestCase {
         XCTAssertFalse(fixture.service.canPushMetadata(from: fixture.script))
     }
 
-    func testRealPermissionPushAndHandlerResponseReturnOriginalExecutionResult() async throws {
+    func testAutoListingReturnsOriginalExecutionResultWithoutPermissionPrompt() async {
         let fixture = makeFixture()
-        let delivered = expectation(description: "Permission delivered through broker")
-        fixture.webView.onPermission = { params in
-            XCTAssertEqual(params["callId"] as? String, "call")
-            XCTAssertEqual(params["choices"] as? [String], ["allow", "always", "never"])
-            let reply = fixture.handler.respondToClientToolPermission(
-                params: fixture.response(params, decision: "allow"), source: fixture.script)
-            XCTAssertEqual(try? JSONEncoder().encode(reply), Data("{}".utf8))
-            delivered.fulfill()
-        }
         let result = await fixture.invoke()
-        await fulfillment(of: [delivered], timeout: 2)
         XCTAssertEqual(result, fixture.success)
         XCTAssertEqual(fixture.listings, 1)
+        XCTAssertTrue(fixture.webView.permissionPrompts.isEmpty)
         XCTAssertEqual(fixture.service.permissions.state(forToolNamed: "listOpenTabs"), .ask)
     }
 
-    func testAllowThenCleanupBeforeAdmissionDoesNotListOrReviveOldSource() async {
+    func testCleanupCancelsGrantedListingAndDoesNotReviveOldSource() async throws {
         let fixture = makeFixture()
-        fixture.webView.onPermission = { params in
-            _ = fixture.handler.respondToClientToolPermission(params: fixture.response(params, decision: "allow"), source: fixture.script)
-            fixture.script.cleanUpForReplacement()
+        guard case .granted(let performExecution) = try await fixture.authorizeListing() else {
+            return XCTFail("Expected automatic authorization")
         }
-        let result = await fixture.invoke()
-        XCTAssertEqual(result, .failure(callId: "call", error: .cancelled))
+        fixture.script.cleanUpForReplacement()
+        let result = await performExecution {
+            XCTFail("Cleaned-up source must not execute")
+            return .success([:])
+        }
+        XCTAssertNil(result)
         XCTAssertEqual(fixture.listings, 0)
         fixture.script.webView = fixture.webView
         let stale = await fixture.invoke()
         XCTAssertEqual(stale, .failure(callId: "call", error: .unavailable))
         let replacement = fixture.makeScript()
-        fixture.service.permissions.setState(.allow, forToolNamed: "listOpenTabs")
         let renewed = await fixture.handler.executeClientTool(params: fixture.params(), source: replacement)
         XCTAssertEqual(renewed, fixture.success)
     }
@@ -441,47 +434,48 @@ final class AIChatBrowserToolsBridgeTests: XCTestCase {
             let states: [[FeatureFlag]] = [[.aiChatBrowserTools], [.aiChatBrowserToolListOpenTabs]]
             for enabled in states {
                 let fixture = makeFixture()
-                fixture.webView.onPermission = { params in
-                    fixture.flags.enabledFeatureFlags = enabled
-                    _ = fixture.handler.respondToClientToolPermission(
-                        params: fixture.response(params, decision: decision), source: fixture.script)
-                    fixture.script.detachBrowserTools()
-                }
+                fixture.flags.enabledFeatureFlags = enabled
+                let reply = fixture.handler.respondToClientToolPermission(
+                    params: ["callId": "call", "requestId": "unmatched", "decision": decision], source: fixture.script)
+                XCTAssertEqual(try? JSONEncoder().encode(reply), Data("{}".utf8))
                 let result = await fixture.invoke()
-                XCTAssertEqual(result, .failure(callId: "call", error: .cancelled))
+                XCTAssertEqual(result, .failure(callId: "call", error: .unavailable))
                 XCTAssertEqual(fixture.service.permissions.state(forToolNamed: "listOpenTabs"), .ask)
                 XCTAssertEqual(fixture.listings, 0)
+                XCTAssertTrue(fixture.webView.permissionPrompts.isEmpty)
             }
         }
     }
 
-    func testMalformedAndUnmatchedResponsesAcknowledgeWithoutWritingThenOriginalCallCanFinish() async {
+    func testMalformedAndUnmatchedResponsesAcknowledgeWithoutWritingAndAutoListingStillWorks() async {
         let fixture = makeFixture()
-        fixture.webView.onPermission = { params in
-            let malformed: [[String: Any]] = [[:], ["callId": "call", "requestId": 1, "decision": "always"],
-                                              ["callId": "other", "requestId": params["requestId"] ?? "", "decision": "always"],
-                                              ["callId": "call", "requestId": "unmatched", "decision": "never"]]
-            for response in malformed {
-                let reply = fixture.handler.respondToClientToolPermission(params: response, source: fixture.script)
-                XCTAssertEqual(try? JSONEncoder().encode(reply), Data("{}".utf8))
-                XCTAssertEqual(fixture.service.permissions.state(forToolNamed: "listOpenTabs"), .ask)
-                XCTAssertEqual(fixture.listings, 0)
-            }
-            _ = fixture.handler.respondToClientToolPermission(params: fixture.response(params, decision: "allow"), source: fixture.script)
+        let malformed: [[String: Any]] = [[:], ["callId": "call", "requestId": 1, "decision": "always"],
+                                          ["callId": "other", "requestId": "unmatched", "decision": "always"],
+                                          ["callId": "call", "requestId": "unmatched", "decision": "never"]]
+        for response in malformed {
+            let reply = fixture.handler.respondToClientToolPermission(params: response, source: fixture.script)
+            XCTAssertEqual(try? JSONEncoder().encode(reply), Data("{}".utf8))
+            XCTAssertEqual(fixture.service.permissions.state(forToolNamed: "listOpenTabs"), .ask)
+            XCTAssertEqual(fixture.listings, 0)
         }
         let result = await fixture.invoke()
         XCTAssertEqual(result, fixture.success)
+        XCTAssertEqual(fixture.listings, 1)
+        XCTAssertTrue(fixture.webView.permissionPrompts.isEmpty)
         XCTAssertEqual(fixture.service.permissions.state(forToolNamed: "listOpenTabs"), .ask)
     }
 
-    func testOwnerRemovalCancelsPendingAndRejectsLatePersistentDecision() async {
+    func testOwnerRemovalCancelsGrantedListingWithoutPersistingPermission() async throws {
         let fixture = makeFixture()
-        fixture.webView.onPermission = { params in
-            fixture.service.detachSources(ownerTabID: fixture.owner.uid)
-            _ = fixture.handler.respondToClientToolPermission(params: fixture.response(params, decision: "always"), source: fixture.script)
+        guard case .granted(let performExecution) = try await fixture.authorizeListing() else {
+            return XCTFail("Expected automatic authorization")
         }
-        let result = await fixture.invoke()
-        XCTAssertEqual(result, .failure(callId: "call", error: .cancelled))
+        fixture.service.detachSources(ownerTabID: fixture.owner.uid)
+        let result = await performExecution {
+            XCTFail("Removed owner must not execute")
+            return .success([:])
+        }
+        XCTAssertNil(result)
         XCTAssertEqual(fixture.listings, 0)
         XCTAssertEqual(fixture.service.permissions.state(forToolNamed: "listOpenTabs"), .ask)
     }
@@ -503,18 +497,29 @@ final class AIChatBrowserToolsBridgeTests: XCTestCase {
         XCTAssertEqual(actual3, fixture.success)
     }
 
-    func testCommittedDocumentCancelsPendingButAnotherSourceSameOwnerStillWorks() async {
-        let fixture = makeFixture()
-        let contextual = fixture.makeScript()
-        fixture.webView.onPermission = { _ in fixture.script.browserToolsDocumentDidCommit() }
-        let cancelled = await fixture.invoke()
-        XCTAssertEqual(cancelled, .failure(callId: "call", error: .cancelled))
-        XCTAssertEqual(fixture.listings, 0)
-        fixture.service.permissions.setState(.allow, forToolNamed: "listOpenTabs")
-        let actual4 = await fixture.handler.executeClientTool(params: fixture.params(), source: contextual)
-        XCTAssertEqual(actual4, fixture.success)
-        let actual5 = await fixture.invoke()
-        XCTAssertEqual(actual5, fixture.success)
+    func testDocumentLossCancelsGrantedListingButAnotherSourceSameOwnerStillWorks() async throws {
+        for processLoss in [false, true] {
+            let fixture = makeFixture()
+            let contextual = fixture.makeScript()
+            guard case .granted(let performExecution) = try await fixture.authorizeListing() else {
+                return XCTFail("Expected automatic authorization")
+            }
+            if processLoss {
+                fixture.script.browserToolsDocumentProcessDidTerminate()
+            } else {
+                fixture.script.browserToolsDocumentDidCommit()
+            }
+            let cancelled = await performExecution {
+                XCTFail("Replaced or terminated document must not execute")
+                return .success([:])
+            }
+            XCTAssertNil(cancelled)
+            XCTAssertEqual(fixture.listings, 0)
+            let contextualResult = await fixture.handler.executeClientTool(params: fixture.params(), source: contextual)
+            XCTAssertEqual(contextualResult, fixture.success)
+            let sourceResult = await fixture.invoke()
+            XCTAssertEqual(sourceResult, processLoss ? .failure(callId: "call", error: .unavailable) : fixture.success)
+        }
     }
 
     func testStoredAllowStillHonorsFireOwnerAndProcessLoss() async {
@@ -537,21 +542,20 @@ final class AIChatBrowserToolsBridgeTests: XCTestCase {
         XCTAssertEqual(fixture.service.permissions.state(forToolNamed: "listOpenTabs"), .allow)
     }
 
-    func testFireCancelsGrantedBeforeExecutionAndFailureAllowsFreshRequest() async {
+    func testFireCancelsGrantedBeforeExecutionAndFailureAllowsFreshRequest() async throws {
         let fixture = makeFixture()
-        fixture.webView.onPermission = { params in
-            _ = fixture.handler.respondToClientToolPermission(params: fixture.response(params, decision: "allow"), source: fixture.script)
-            let token = fixture.service.beginClearing(.chats(ids: ["chat"]))
-            _ = fixture.handler.respondToClientToolPermission(params: fixture.response(params, decision: "always"), source: fixture.script)
-            fixture.service.endClearing(token)
+        guard case .granted(let performExecution) = try await fixture.authorizeListing() else {
+            return XCTFail("Expected automatic authorization")
         }
-        let actual10 = await fixture.invoke()
-        XCTAssertEqual(actual10, .failure(callId: "call", error: .cancelled))
+        let token = fixture.service.beginClearing(.chats(ids: ["chat"]))
+        fixture.service.endClearing(token)
+        let cancelled = await performExecution {
+            XCTFail("Cleared document must not execute")
+            return .success([:])
+        }
+        XCTAssertNil(cancelled)
         XCTAssertEqual(fixture.listings, 0)
         XCTAssertEqual(fixture.service.permissions.state(forToolNamed: "listOpenTabs"), .ask)
-        fixture.webView.onPermission = { params in
-            _ = fixture.handler.respondToClientToolPermission(params: fixture.response(params, decision: "allow"), source: fixture.script)
-        }
         let actual11 = await fixture.invoke()
         XCTAssertEqual(actual11, fixture.success)
     }
@@ -566,7 +570,7 @@ final class AIChatBrowserToolsBridgeTests: XCTestCase {
         XCTAssertTrue(fixture.webView.permissionPrompts.isEmpty)
     }
 
-    func testContextualMetadataUsesOnlyMainFlagAndOwnerNavigationPreservesPermission() async {
+    func testContextualMetadataUsesOnlyMainFlagAndOwnerNavigationPreservesToolAvailability() async {
         let fixture = makeFixture()
         fixture.script.setDisplayMode(.contextual)
         let metadata = expectation(description: "Owner navigation metadata delivered")
@@ -577,10 +581,7 @@ final class AIChatBrowserToolsBridgeTests: XCTestCase {
             XCTAssertNil(params["title"])
             metadata.fulfill()
         }
-        fixture.webView.onPermission = { params in
-            fixture.service.ownerDidNavigate(tabID: fixture.owner.uid, url: URL(string: "https://next.example"))
-            _ = fixture.handler.respondToClientToolPermission(params: fixture.response(params, decision: "allow"), source: fixture.script)
-        }
+        fixture.service.ownerDidNavigate(tabID: fixture.owner.uid, url: URL(string: "https://next.example"))
         let allowed = await fixture.invoke()
         XCTAssertEqual(allowed, fixture.success)
         await fulfillment(of: [metadata], timeout: 2)
@@ -675,8 +676,9 @@ final class BrowserToolsBridgeFixture {
         ["callId": "call", "capability": ["name": "listOpenTabs", "version": 1], "input": [:]]
     }
 
-    func response(_ prompt: [String: Any], decision: String) -> [String: Any] {
-        ["requestId": prompt["requestId"] as? String ?? "", "callId": prompt["callId"] as? String ?? "", "decision": decision]
+    func authorizeListing() async throws -> ClientToolPermissionAuthorization {
+        let tool = try XCTUnwrap(service.catalog.tool(for: .listOpenTabs))
+        return await service.clientToolPermissions.authorize(callID: "call", tool: tool, source: script)
     }
 
     func invoke() async -> ExecuteClientToolResponse {
@@ -689,7 +691,6 @@ final class BrowserToolsBridgeFixture {
     }
 
     func cleanUp() {
-        webView.onPermission = nil
         webView.onTabChanged = nil
         script.detachBrowserTools()
         defaults.removePersistentDomain(forName: suiteName)
@@ -703,7 +704,6 @@ final class BrowserToolsBridgeWebView: WKWebView {
     var permissionPrompts: [[String: Any]] = []
     var configurationPayloads: [[String: Any]] = []
     var metadataPayloads: [[String: Any]] = []
-    var onPermission: (([String: Any]) -> Void)?
     var onTabChanged: (([String: Any]) -> Void)?
     private let context = JSContext()!
 
@@ -722,7 +722,6 @@ final class BrowserToolsBridgeWebView: WKWebView {
         if let error = context.exception { XCTFail("Bridge JavaScript failed: \(error)") }
         if let params = context.objectForKeyedSubscript("capturedPermission")?.toDictionary() as? [String: Any] {
             permissionPrompts.append(params)
-            onPermission?(params)
         }
         if let params = context.objectForKeyedSubscript("capturedMetadata")?.toDictionary() as? [String: Any] {
             metadataPayloads.append(params)

@@ -114,6 +114,7 @@ public class DBPIOSInterface {
         func saveProfile(_ profile: DataBrokerProtectionCore.DataBrokerProtectionProfile) async throws
         func deleteAllUserProfileData() throws
         func matchRemovedByUser(with id: Int64) throws
+        func confirmOptOutEmailSent(recordIds: [Int64]) throws
     }
 
     public protocol DataBrokerProtectionViewControllerProvider: AnyObject {
@@ -693,6 +694,10 @@ extension DataBrokerProtectionIOSManager: DBPIOSInterface.DatabaseDelegate {
 
     public func matchRemovedByUser(with id: Int64) throws {
         try vaultResources().database.matchRemovedByUser(id)
+    }
+
+    public func confirmOptOutEmailSent(recordIds: [Int64]) throws {
+        Logger.dataBrokerProtection.log("User sent an opt-out email for \(recordIds.count, privacy: .public) records")
     }
 }
 

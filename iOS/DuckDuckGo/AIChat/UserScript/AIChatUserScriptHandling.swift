@@ -166,15 +166,19 @@ protocol AIChatUserScriptHandling: AnyObject {
     @MainActor func cancelInitialPrompt()
     /// The `termsAccepted` value `prompt` carries across the bridge.
     func termsAcceptedMarker(for prompt: AIChatNativePrompt) -> Bool?
-    func getAIChatNativeHandoffData(params: Any, message: UserScriptMessage) -> Encodable?
+    @MainActor func getAIChatNativeHandoffData(params: Any, message: UserScriptMessage) -> Encodable?
     func getAIChatPageContext(params: Any, message: UserScriptMessage) async -> Encodable?
     func openAIChat(params: Any, message: UserScriptMessage) async -> Encodable?
     @MainActor func openSummarizationSourceLink(params: Any, message: UserScriptMessage) async -> Encodable?
     @MainActor func openTranslationSourceLink(params: Any, message: UserScriptMessage) async -> Encodable?
     @MainActor func openAIChatLink(params: Any, message: UserScriptMessage) async -> Encodable?
     func setPayloadHandler(_ payloadHandler: (any AIChatConsumableDataHandling)?)
+    /// The payload the page will ask for once it loads.
+    @MainActor func willHandOff(_ payload: AIChatPayload)
+    /// Whether the page holds a handed-off prompt behind its own Terms of Service card.
+    @MainActor var isTermsOfServiceShownOnPage: Bool { get set }
     func setOpenLinkHandler(_ handler: ((URL) -> Void)?)
-    func setAIChatInputBoxHandler(_ inputBoxHandler: (any AIChatInputBoxHandling)?)
+    @MainActor func setAIChatInputBoxHandler(_ inputBoxHandler: (any AIChatInputBoxHandling)?)
     func setMetricReportingHandler(_ metricHandler: (any AIChatMetricReportingHandling)?)
     func setSyncStatusChangedHandler(_ handler: ((AIChatSyncHandler.SyncStatus) -> Void)?)
     func getResponseState(params: Any, message: UserScriptMessage) async -> Encodable?
@@ -277,6 +281,9 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
     private let termsOfServiceWebRecordSource: DuckAiNativeStorageHandling?
     private let pixelFiring: (any PixelKitFiring)?
     private var termsOfServicePageLoadState: DuckAiTermsOfServicePageLoadState = .unknown
+    @MainActor var isTermsOfServiceShownOnPage = false {
+        didSet { inputBoxHandler?.isTermsOfServiceShownOnPage = isTermsOfServiceShownOnPage }
+    }
 
     private var isAttachmentPrivacyEnabled: Bool {
         !devicePlatform.isIphone && featureFlagger.isFeatureOn(.aiChatAttachmentPrivacyIPad)
@@ -669,8 +676,30 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
         initialPromptConnection?.cancel()
     }
 
+    /// The page asks for this once per load, so it also tells whether the page holds a prompt behind its own Terms of Service card.
+    @MainActor
     public func getAIChatNativeHandoffData(params: Any, message: UserScriptMessage) -> Encodable? {
-        AIChatNativeHandoffData.defaultValuesWithPayload(payloadHandler?.consumeData() as? AIChatPayload)
+        let payload = payloadHandler?.consumeData() as? AIChatPayload
+        updateTermsOfServiceShownOnPage(for: payload, when: "Page load")
+        return AIChatNativeHandoffData.defaultValuesWithPayload(payload)
+    }
+
+    /// Lets the input stand its disclaimer down while the page is still loading.
+    @MainActor
+    func willHandOff(_ payload: AIChatPayload) {
+        updateTermsOfServiceShownOnPage(for: payload, when: "Handoff before page load")
+    }
+
+    @MainActor
+    private func updateTermsOfServiceShownOnPage(for payload: AIChatPayload?, when moment: String) {
+        isTermsOfServiceShownOnPage = !termsOfServiceStore.hasAccepted && Self.autoSubmitsPrompt(payload)
+        Logger.aiChat.debug("[TermsOfService] \(moment, privacy: .public) holds a prompt behind the page's own card: \(self.isTermsOfServiceShownOnPage, privacy: .public)")
+    }
+
+    /// The web app sends such a prompt by itself, and asks for the terms on its own card first.
+    private static func autoSubmitsPrompt(_ payload: AIChatPayload?) -> Bool {
+        guard let prompt = payload?["aiChatPrompt"] as? String, !prompt.isEmpty else { return false }
+        return payload?["aiChatAutoPrompt"] as? Bool == true
     }
 
     func getAIChatPageContext(params: Any, message: UserScriptMessage) async -> Encodable? {
@@ -692,8 +721,10 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
         chatStatusHandler = handler
     }
 
+    @MainActor
     func setAIChatInputBoxHandler(_ inputBoxHandler: (any AIChatInputBoxHandling)?) {
         self.inputBoxHandler = inputBoxHandler
+        self.inputBoxHandler?.isTermsOfServiceShownOnPage = isTermsOfServiceShownOnPage
     }
 
     func setMetricReportingHandler(_ metricHandler: (any AIChatMetricReportingHandling)?) {

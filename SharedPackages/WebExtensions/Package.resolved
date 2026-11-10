@@ -6,8 +6,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/duckduckgo/content-scope-scripts.git",
       "state" : {
-        "revision" : "3a3509ec3fd0633777cff16417c61741a2eac8d9",
-        "version" : "20.5.0"
+        "revision" : "231658a22b682ffba804f95ddc0cc005dc7fea20",
+        "version" : "20.6.0"
       }
     },
     {
@@ -51,8 +51,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/gumob/PunycodeSwift.git",
       "state" : {
-        "revision" : "de703481cf48b859a04bac8ef1d98217b9c97aa9",
-        "version" : "4.0.3"
+        "revision" : "01d1465a1ab47d7ba43ae573ba277a13538f852f",
+        "version" : "4.0.4"
       }
     },
     {

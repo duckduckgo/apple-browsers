@@ -5434,6 +5434,9 @@
 /* Header for the subscription section */
 "subscription.manage.title" = "Naročnina";
 
+/* Subscription status shown after the user withdrew from the subscription contract */
+"subscription.not.subscribed" = "Brez naročnine";
+
 /* Alert content for not found subscription */
 "subscription.notFound.alert.message" = "S tem računom Apple ni povezana nobena naročnina.";
 
@@ -5475,6 +5478,9 @@
 
 /* Progress view title when restoring past subscription purchase */
 "subscription.progress.view.restoring.subscription" = "Obnavljanje naročnine ...";
+
+/* Progress view title while withdrawing from the subscription contract */
+"subscription.progress.view.withdraw.in.progress" = "Odstop poteka …";
 
 /* Dismiss button on the reinstaller subscription promo. */
 "subscription.promo.reinstaller.buttons.notNow" = "Ne zdaj";
@@ -5580,6 +5586,39 @@
 
 /* View All Plans button to see available subscription tiers */
 "subscription.view.all.plans" = "Oglejte si vse naročnine";
+
+/* Button that confirms withdrawal from the subscription contract */
+"subscription.withdraw.confirm.button" = "Potrjujem odstop";
+
+/* Second paragraph of the alert confirming withdrawal from the subscription contract. Parameter is a localized list of features, e.g. VPN, Personal Information Removal and Duck.ai. */
+"subscription.withdraw.confirm.features.message" = "Storitve %@ prenehajo delovati, ko potrdite.";
+
+/* Message of the alert confirming withdrawal from the subscription contract. Parameters are the tier name (e.g. Plus) and the refund amount with currency. */
+"subscription.withdraw.confirm.message" = "Vaša naročnina %1$@ bo takoj prenehala, znesek v višini %2$@ pa vam bo v 14 dneh povrnjen na prvotni način plačila.";
+
+/* Title of the alert confirming withdrawal from the subscription contract */
+"subscription.withdraw.confirm.title" = "Želite odstopiti od naročnine?";
+
+/* Button that opens the help page to complete a failed subscription withdrawal */
+"subscription.withdraw.error.button" = "Obišči stran s pomočjo";
+
+/* Message of the alert shown when withdrawing from the subscription contract fails */
+"subscription.withdraw.error.message" = "Odstopa nismo mogli samodejno obdelati. Obiščite našo stran za pomoč, da dokončate odstop.";
+
+/* Action title that starts withdrawing from the subscription contract with a full refund */
+"subscription.withdraw.from.contract" = "Odstop od pogodbe";
+
+/* Subtitle of the Withdraw from Contract action. Parameter is the last date the user can withdraw. */
+"subscription.withdraw.from.contract.subtitle" = "Lahko odstopite in prejmete celotno povračilo do dne %@";
+
+/* Button that dismisses the withdrawal confirmation and keeps the subscription */
+"subscription.withdraw.keep.button" = "Obdrži naročnino";
+
+/* Confirmation shown after withdrawing from the subscription contract. Parameter is the withdrawal date. */
+"subscription.withdrawn.info" = "Odstop je bil izveden dne %@.";
+
+/* Shown below the withdrawal confirmation. Parameter is the refunded amount with currency. */
+"subscription.withdrawn.refund.info" = "Povračilo zneska v višini %@ je v obdelavi.";
 
 /* No comment provided by engineer. */
 "SwiftUI Alert" = "Opozorilo SwiftUI";

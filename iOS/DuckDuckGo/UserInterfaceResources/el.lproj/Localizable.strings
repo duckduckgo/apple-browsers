@@ -5434,6 +5434,9 @@
 /* Header for the subscription section */
 "subscription.manage.title" = "Συνδρομή";
 
+/* Subscription status shown after the user withdrew from the subscription contract */
+"subscription.not.subscribed" = "Δεν έχει γίνει εγγραφή";
+
 /* Alert content for not found subscription */
 "subscription.notFound.alert.message" = "Δεν υπάρχει συνδρομή που να συνδέεται με αυτόν τον Λογαριασμό Apple.";
 
@@ -5475,6 +5478,9 @@
 
 /* Progress view title when restoring past subscription purchase */
 "subscription.progress.view.restoring.subscription" = "Επαναφορά συνδρομής...";
+
+/* Progress view title while withdrawing from the subscription contract */
+"subscription.progress.view.withdraw.in.progress" = "Υπαναχώρηση σε εξέλιξη…";
 
 /* Dismiss button on the reinstaller subscription promo. */
 "subscription.promo.reinstaller.buttons.notNow" = "Όχι τώρα";
@@ -5580,6 +5586,39 @@
 
 /* View All Plans button to see available subscription tiers */
 "subscription.view.all.plans" = "Δείτε όλα τα προγράμματα";
+
+/* Button that confirms withdrawal from the subscription contract */
+"subscription.withdraw.confirm.button" = "Επιβεβαίωση υπαναχώρησης";
+
+/* Second paragraph of the alert confirming withdrawal from the subscription contract. Parameter is a localized list of features, e.g. VPN, Personal Information Removal and Duck.ai. */
+"subscription.withdraw.confirm.features.message" = "Η/Οι λειτουργία(-ες) «%@» σταματούν να λειτουργούν μόλις επιβεβαιώσετε.";
+
+/* Message of the alert confirming withdrawal from the subscription contract. Parameters are the tier name (e.g. Plus) and the refund amount with currency. */
+"subscription.withdraw.confirm.message" = "Η συνδρομή σας στο %1$@ θα λήξει αμέσως και θα σας επιστραφούν τα χρήματα %2$@ στην αρχική μέθοδο πληρωμής σας εντός 14 ημερών.";
+
+/* Title of the alert confirming withdrawal from the subscription contract */
+"subscription.withdraw.confirm.title" = "Θέλετε να υπαναχωρήσετε από τη συνδρομή σας;";
+
+/* Button that opens the help page to complete a failed subscription withdrawal */
+"subscription.withdraw.error.button" = "Επισκεφθείτε τη σελίδα βοήθειας";
+
+/* Message of the alert shown when withdrawing from the subscription contract fails */
+"subscription.withdraw.error.message" = "Δεν μπορέσαμε να επεξεργαστούμε αυτόματα την υπαναχώρησή σας. Επισκεφθείτε τη σελίδα βοήθειάς μας για να ολοκληρώσετε την υπαναχώρησή σας.";
+
+/* Action title that starts withdrawing from the subscription contract with a full refund */
+"subscription.withdraw.from.contract" = "Υπαναχώρηση από τη σύμβαση";
+
+/* Subtitle of the Withdraw from Contract action. Parameter is the last date the user can withdraw. */
+"subscription.withdraw.from.contract.subtitle" = "Μπορείτε να υπαναχωρήσετε και να λάβετε πλήρη επιστροφή χρημάτων έως %@";
+
+/* Button that dismisses the withdrawal confirmation and keeps the subscription */
+"subscription.withdraw.keep.button" = "Διατήρηση συνδρομής";
+
+/* Confirmation shown after withdrawing from the subscription contract. Parameter is the withdrawal date. */
+"subscription.withdrawn.info" = "Υπαναχωρήσατε %@.";
+
+/* Shown below the withdrawal confirmation. Parameter is the refunded amount with currency. */
+"subscription.withdrawn.refund.info" = "Η επιστροφή χρημάτων σας ύψους %@ διεκπεραιώνεται.";
 
 /* No comment provided by engineer. */
 "SwiftUI Alert" = "Ειδοποίηση SwiftUI";

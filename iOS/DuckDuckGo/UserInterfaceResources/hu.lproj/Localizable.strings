@@ -3335,13 +3335,31 @@
 "menuActualSize" = "Tényleges méret";
 
 /* iPad menu bar command */
+"menuAddToDock" = "DuckDuckGo hozzáadása a dokkhoz…";
+
+/* iPad menu bar command */
+"menuAddWidget" = "Minialkalmazás hozzáadása a kezdőképernyőhöz…";
+
+/* iPad menu bar command */
 "menuBack" = "Vissza";
+
+/* iPad menu bar title */
+"menuBookmarks" = "Könyvjelzők";
 
 /* iPad menu bar command */
 "menuClearTabsAndData" = "Lapok és adatok törlése";
 
+/* iPad Duck.ai menu bar command */
+"menuDeleteAllChats" = "Minden csevegés törlése…";
+
 /* iPad menu bar command */
 "menuDuplicateTab" = "Lap megkettőzése";
+
+/* iPad menu bar command */
+"menuExportBookmarks" = "Könyvjelzők exportálása…";
+
+/* iPad menu bar submenu */
+"menuFavorites" = "Kedvencek";
 
 /* iPad menu bar command */
 "menuFeedback" = "Visszajelzés megosztása";
@@ -3350,7 +3368,13 @@
 "menuForward" = "Előre";
 
 /* iPad menu bar command */
+"menuHideBookmarks" = "Könyvjelzők elrejtése";
+
+/* iPad menu bar command */
 "menuHideDownloads" = "Letöltések elrejtése";
+
+/* iPad menu bar command */
+"menuHideDuckAIButton" = "Duck.ai-gomb elrejtése";
 
 /* iPad menu bar command */
 "menuHidePasswords" = "Jelszavak elrejtése";
@@ -3359,13 +3383,31 @@
 "menuHideTabs" = "Lapok elrejtése";
 
 /* iPad menu bar command */
+"menuImportBookmarks" = "Könyvjelzők importálása…";
+
+/* iPad menu bar command */
+"menuImportBookmarksAndPasswords" = "Könyvjelzők és jelszavak importálása…";
+
+/* iPad menu bar command */
 "menuLastTab" = "Utolsó lap";
+
+/* iPad Duck.ai menu bar command */
+"menuNewChat" = "Új csevegés";
+
+/* iPad Duck.ai menu bar command */
+"menuNewImageChat" = "Új képcsevegés";
 
 /* iPad menu bar command */
 "menuNewTabOnRight" = "Új lap jobbra";
 
+/* iPad Duck.ai menu bar command */
+"menuNewVoiceChat" = "Új hangcsevegés";
+
 /* iPad menu bar command */
 "menuNextTab" = "Következő lap megjelenítése";
+
+/* iPad Duck.ai menu bar command */
+"menuOpenDuckAI" = "Duck.ai megnyitása";
 
 /* iPad menu bar command */
 "menuOpenLocation" = "Hely megnyitása…";
@@ -3376,14 +3418,26 @@
 /* iPad menu bar command */
 "menuPrint" = "Nyomtatás…";
 
+/* iPad Duck.ai menu bar section header */
+"menuRecentChats" = "Legutóbbi csevegések";
+
 /* iPad menu bar command selecting a numbered tab */
 "menuSelectTab" = "%d. lap kiválasztása";
+
+/* iPad menu bar command */
+"menuSetDefaultBrowser" = "DuckDuckGo beállítása alapértelmezett böngészőként…";
 
 /* iPad menu bar command */
 "menuSettings" = "DuckDuckGo-beállítások…";
 
 /* iPad menu bar command */
+"menuShowBookmarks" = "Könyvjelzők megjelenítése";
+
+/* iPad menu bar command */
 "menuShowDownloads" = "Letöltések megjelenítése";
+
+/* iPad menu bar command */
+"menuShowDuckAIButton" = "Duck.ai-gomb megjelenítése";
 
 /* iPad menu bar command */
 "menuShowPasswords" = "Jelszavak megjelenítése";
@@ -4306,11 +4360,17 @@
 /* Description of too many requests error when syncing. */
 "prefrences.sync.too-many-requests.description" = "A szinkronizálás és biztonsági mentés átmenetileg nem érhető el.";
 
+/* Fireproofing setting toggle label */
+"preserveLogins.askOnSignIn" = "Bejelentkezéskor rákérdezés a webhelyek tűzállóvá tételére";
+
 /* No comment provided by engineer. */
 "preserveLogins.domain.list.footer" = "A webhelyek sütik segítségével teszik lehetővé, hogy bejelentkezve maradhass. Ha tűzállóvá teszel egy weboldalt, a sütik nem törlődnek, és még a Tűz gomb használata után is bejelentkezve maradsz. A tűzálló webhelyeken a külső felek nyomkövetőit azonban blokkoljuk.";
 
 /* Section header above Fireproofed websites list */
 "preserveLogins.domain.list.title" = "Tűzálló weboldalak";
+
+/* Empty Fireproof sites list */
+"preserveLogins.emptyState" = "Még nincsenek tűzálló webhelyek";
 
 /* Alert message explaining to users that the benefit of fireproofing a site is that they will be kept signed in */
 "preserveLogins.fireproof.message" = "Ha tűzállóvá teszel egy weboldalt, a Fire gomb használata után is bejelentkezve maradsz.";
@@ -4341,6 +4401,9 @@
 
 /* Confirmation button in alert */
 "preserveLogins.remove.all.ok" = "OK";
+
+/* Button to remove all Fireproof sites */
+"preserveLogins.removeAllSites" = "Összes tűzálló webhely eltávolítása";
 
 /* No comment provided by engineer. */
 "Previews" = "Előnézetek";
@@ -5536,11 +5599,29 @@
 /* Fallback device name for confirmation dialogs */
 "sync.pairing-v2.unknown-peer-name" = "a másik eszköz";
 
+/* Title for a button in the Sync Promotion banner on the Bookmarks or Passwords screen that opens Sync settings to connect another device */
+"sync.promo.another-device.connect.action" = "Csatlakozás";
+
+/* Message for the Sync Promotion banner on the Bookmarks or Passwords screen, shown when Sync is on but only this device is connected */
+"sync.promo.another-device.message" = "A Sync & Backup engedélyezve van ezen az eszközön.";
+
+/* Title for a button in the Sync Promotion banner on the Bookmarks or Passwords screen that opens a screen with links to get DuckDuckGo on other platforms */
+"sync.promo.bookmarks.another-device.get-desktop-app.action" = "Alkalmazás letöltése";
+
+/* Title for the Sync Promotion banner on the Bookmarks screen, shown when Sync is on but only this device is connected */
+"sync.promo.bookmarks.another-device.title" = "A könyvjelzőket is szinkronizálod az asztali alkalmazással?";
+
 /* Message for the Sync Promotion banner when user has bookmarks that can be synced */
 "sync.promo.bookmarks.message" = "Nincs szükség fiókra. A végpontok közötti titkosítás azt jelenti, hogy rajtad kívül senki sem láthatja a könyvjelzőidet, még mi sem.";
 
+/* Message for the redesigned Sync Promotion banner on the Bookmarks screen */
+"sync.promo.bookmarks.redesign.message" = "Végpontok közötti titkosítás. Senki sem láthatja a könyvjelzőidet, még mi sem.";
+
 /* Title for the Sync Promotion banner */
 "sync.promo.bookmarks.title" = "Könyvjelzők szinkronizálása és biztonsági mentése";
+
+/* Accessibility label for the close button on the Sync Promotion banner */
+"sync.promo.close.accessibility.label" = "Szinkronizálási promóció bezárása";
 
 /* Title for a button in the Sync Promotion banner to set up Sync */
 "sync.promo.confirm.action" = "Szinkronizálás beállítása";
@@ -5554,11 +5635,20 @@
 /* Title for a button in the Sync Promotion banner to dismiss Sync promotion banner */
 "sync.promo.dismiss.action" = "Nem, köszönöm";
 
+/* Title for the Sync Promotion banner on the Passwords screen, shown when Sync is on but only this device is connected */
+"sync.promo.passwords.another-device.title" = "A jelszavakat is szinkronizálod az asztali alkalmazással?";
+
 /* Message for the Sync Promotion banner when user has passwords that can be synced */
 "sync.promo.passwords.message" = "Nincs szükség fiókra. A végpontok közötti titkosítás azt jelenti, hogy rajtad kívül senki sem láthatja a jelszavaidat, még mi sem.";
 
+/* Message for the redesigned Sync Promotion banner on the Passwords screen */
+"sync.promo.passwords.redesign.message" = "Végpontok közötti titkosítás. Senki sem láthatja a jelszavaidat, még mi sem.";
+
 /* Title for the Sync Promotion banner */
 "sync.promo.passwords.title" = "Jelszavak szinkronizálása és biztonsági mentése";
+
+/* Title for the button in the redesigned Sync Promotion banner and the Data Import summary Sync card that opens Sync settings and starts setting up Sync */
+"sync.promo.redesign.confirm.action" = "Szinkronizálás indítása";
 
 /* Button title to start backup */
 "sync.recovery.alternative.prompt.backup.button" = "Sync & Backup ezen az eszközön";
@@ -6148,12 +6238,3 @@
 /* Title for screen to screen confirming what data to import from a zip file (bookmarks and /or passwords) */
 "zip.content.import.types.title" = "Mit szeretnél importálni?";
 
-
-/* Fireproofing setting toggle label */
-"preserveLogins.askOnSignIn" = "Bejelentkezéskor kérdezzen rá a weboldalak tűzállóvá tételére";
-
-/* Empty Fireproof sites list */
-"preserveLogins.emptyState" = "Még nincsenek tűzálló weboldalak";
-
-/* Button to remove all Fireproof sites */
-"preserveLogins.removeAllSites" = "Összes tűzálló weboldal eltávolítása";

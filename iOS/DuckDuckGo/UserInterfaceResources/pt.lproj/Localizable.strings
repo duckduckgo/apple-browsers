@@ -3335,13 +3335,31 @@
 "menuActualSize" = "Tamanho real";
 
 /* iPad menu bar command */
+"menuAddToDock" = "Adicionar DuckDuckGo à Dock...";
+
+/* iPad menu bar command */
+"menuAddWidget" = "Adicionar widget ao ecrã inicial...";
+
+/* iPad menu bar command */
 "menuBack" = "Voltar atrás";
+
+/* iPad menu bar title */
+"menuBookmarks" = "Marcadores";
 
 /* iPad menu bar command */
 "menuClearTabsAndData" = "Limpar separadores e dados";
 
+/* iPad Duck.ai menu bar command */
+"menuDeleteAllChats" = "Eliminar todos os chats...";
+
 /* iPad menu bar command */
 "menuDuplicateTab" = "Duplicar separador";
+
+/* iPad menu bar command */
+"menuExportBookmarks" = "Exportar marcadores...";
+
+/* iPad menu bar submenu */
+"menuFavorites" = "Favoritos";
 
 /* iPad menu bar command */
 "menuFeedback" = "Partilhar feedback";
@@ -3350,7 +3368,13 @@
 "menuForward" = "Avançar";
 
 /* iPad menu bar command */
+"menuHideBookmarks" = "Ocultar marcadores";
+
+/* iPad menu bar command */
 "menuHideDownloads" = "Ocultar transferências";
+
+/* iPad menu bar command */
+"menuHideDuckAIButton" = "Ocultar botão Duck.ai";
 
 /* iPad menu bar command */
 "menuHidePasswords" = "Ocultar palavras-passe";
@@ -3359,13 +3383,31 @@
 "menuHideTabs" = "Ocultar Separadores";
 
 /* iPad menu bar command */
+"menuImportBookmarks" = "Importar marcadores...";
+
+/* iPad menu bar command */
+"menuImportBookmarksAndPasswords" = "Importar marcadores e palavras-passe...";
+
+/* iPad menu bar command */
 "menuLastTab" = "Último separador";
+
+/* iPad Duck.ai menu bar command */
+"menuNewChat" = "Novo chat";
+
+/* iPad Duck.ai menu bar command */
+"menuNewImageChat" = "Novo chat de imagem";
 
 /* iPad menu bar command */
 "menuNewTabOnRight" = "Novo separador à direita";
 
+/* iPad Duck.ai menu bar command */
+"menuNewVoiceChat" = "Novo chat de voz";
+
 /* iPad menu bar command */
 "menuNextTab" = "Mostrar separador seguinte";
+
+/* iPad Duck.ai menu bar command */
+"menuOpenDuckAI" = "Abrir Duck.ai";
 
 /* iPad menu bar command */
 "menuOpenLocation" = "Abrir localização...";
@@ -3376,14 +3418,26 @@
 /* iPad menu bar command */
 "menuPrint" = "Imprimir...";
 
+/* iPad Duck.ai menu bar section header */
+"menuRecentChats" = "Chats recentes";
+
 /* iPad menu bar command selecting a numbered tab */
 "menuSelectTab" = "Selecionar separador %d";
+
+/* iPad menu bar command */
+"menuSetDefaultBrowser" = "Definir o DuckDuckGo como navegador predefinido...";
 
 /* iPad menu bar command */
 "menuSettings" = "Definições do DuckDuckGo...";
 
 /* iPad menu bar command */
+"menuShowBookmarks" = "Mostrar marcadores";
+
+/* iPad menu bar command */
 "menuShowDownloads" = "Mostrar transferências";
+
+/* iPad menu bar command */
+"menuShowDuckAIButton" = "Mostrar botão Duck.ai";
 
 /* iPad menu bar command */
 "menuShowPasswords" = "Mostrar palavras-passe";
@@ -4306,11 +4360,17 @@
 /* Description of too many requests error when syncing. */
 "prefrences.sync.too-many-requests.description" = "O Sync & Backup está temporariamente indisponível.";
 
+/* Fireproofing setting toggle label */
+"preserveLogins.askOnSignIn" = "Pedir para fazer o Fireproof de sites ao iniciar sessão";
+
 /* No comment provided by engineer. */
 "preserveLogins.domain.list.footer" = "Os websites confiam nos cookies para o manter ligado. Quando se usa uma barreira de segurança num site, os cookies não são apagados e permanecerá ligado, mesmo após usar o botão de segurança. Ainda bloqueamos rastreadores de terceiros encontrados em sites com barreiras de segurança.";
 
 /* Section header above Fireproofed websites list */
 "preserveLogins.domain.list.title" = "Sites com barreira de segurança";
+
+/* Empty Fireproof sites list */
+"preserveLogins.emptyState" = "Ainda sem sites com Fireproof";
 
 /* Alert message explaining to users that the benefit of fireproofing a site is that they will be kept signed in */
 "preserveLogins.fireproof.message" = "Utilizar uma barreira de segurança neste site vai mantê-lo ligado após utilizar o botão de segurança.";
@@ -4341,6 +4401,9 @@
 
 /* Confirmation button in alert */
 "preserveLogins.remove.all.ok" = "OK";
+
+/* Button to remove all Fireproof sites */
+"preserveLogins.removeAllSites" = "Remover todos os sites com Fireproof";
 
 /* No comment provided by engineer. */
 "Previews" = "Pré-visualizações";
@@ -5536,11 +5599,29 @@
 /* Fallback device name for confirmation dialogs */
 "sync.pairing-v2.unknown-peer-name" = "o outro dispositivo";
 
+/* Title for a button in the Sync Promotion banner on the Bookmarks or Passwords screen that opens Sync settings to connect another device */
+"sync.promo.another-device.connect.action" = "Ligar";
+
+/* Message for the Sync Promotion banner on the Bookmarks or Passwords screen, shown when Sync is on but only this device is connected */
+"sync.promo.another-device.message" = "O Sync & Backup está ativado neste dispositivo.";
+
+/* Title for a button in the Sync Promotion banner on the Bookmarks or Passwords screen that opens a screen with links to get DuckDuckGo on other platforms */
+"sync.promo.bookmarks.another-device.get-desktop-app.action" = "Obter aplicação";
+
+/* Title for the Sync Promotion banner on the Bookmarks screen, shown when Sync is on but only this device is connected */
+"sync.promo.bookmarks.another-device.title" = "Sincronizar também os marcadores com a aplicação para computador?";
+
 /* Message for the Sync Promotion banner when user has bookmarks that can be synced */
 "sync.promo.bookmarks.message" = "Não precisas de uma conta. A encriptação ponta a ponta significa que ninguém além de ti pode ver os teus favoritos, nem mesmo nós.";
 
+/* Message for the redesigned Sync Promotion banner on the Bookmarks screen */
+"sync.promo.bookmarks.redesign.message" = "Encriptado de ponta a ponta. Ninguém pode ver os teus favoritos, nem mesmo nós.";
+
 /* Title for the Sync Promotion banner */
 "sync.promo.bookmarks.title" = "Sincroniza e faz uma cópia de segurança dos teus favoritos";
+
+/* Accessibility label for the close button on the Sync Promotion banner */
+"sync.promo.close.accessibility.label" = "Ignorar promoção de sincronização";
 
 /* Title for a button in the Sync Promotion banner to set up Sync */
 "sync.promo.confirm.action" = "Configurar sincronização";
@@ -5554,11 +5635,20 @@
 /* Title for a button in the Sync Promotion banner to dismiss Sync promotion banner */
 "sync.promo.dismiss.action" = "Não, obrigado";
 
+/* Title for the Sync Promotion banner on the Passwords screen, shown when Sync is on but only this device is connected */
+"sync.promo.passwords.another-device.title" = "Também sincronizas as palavras-passe com a aplicação para computador?";
+
 /* Message for the Sync Promotion banner when user has passwords that can be synced */
 "sync.promo.passwords.message" = "Não precisas de uma conta. A encriptação ponta a ponta significa que ninguém além de ti pode ver as tuas palavras-passe, nem mesmo nós.";
 
+/* Message for the redesigned Sync Promotion banner on the Passwords screen */
+"sync.promo.passwords.redesign.message" = "Encriptado de ponta a ponta. Ninguém consegue ver as tuas palavras-passe, nem mesmo nós.";
+
 /* Title for the Sync Promotion banner */
 "sync.promo.passwords.title" = "Sincroniza e faz uma cópia de segurança das tuas palavras-passe";
+
+/* Title for the button in the redesigned Sync Promotion banner and the Data Import summary Sync card that opens Sync settings and starts setting up Sync */
+"sync.promo.redesign.confirm.action" = "Iniciar sincronização";
 
 /* Button title to start backup */
 "sync.recovery.alternative.prompt.backup.button" = "Sync & Backup deste dispositivo";
@@ -6148,12 +6238,3 @@
 /* Title for screen to screen confirming what data to import from a zip file (bookmarks and /or passwords) */
 "zip.content.import.types.title" = "O que queres importar?";
 
-
-/* Fireproofing setting toggle label */
-"preserveLogins.askOnSignIn" = "Pedir sites com Barreiras de segurança ao iniciar sessão";
-
-/* Empty Fireproof sites list */
-"preserveLogins.emptyState" = "Ainda sem sites com Barreira de segurança";
-
-/* Button to remove all Fireproof sites */
-"preserveLogins.removeAllSites" = "Remover todos os sites com barreira de segurança";

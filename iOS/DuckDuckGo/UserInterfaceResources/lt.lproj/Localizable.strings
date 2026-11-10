@@ -3335,13 +3335,31 @@
 "menuActualSize" = "Tikrasis dydis";
 
 /* iPad menu bar command */
+"menuAddToDock" = "Pridėti „DuckDuckGo“ į juostą…";
+
+/* iPad menu bar command */
+"menuAddWidget" = "Pridėti valdiklį į pagrindinį ekraną…";
+
+/* iPad menu bar command */
 "menuBack" = "Atgal";
+
+/* iPad menu bar title */
+"menuBookmarks" = "Žymės";
 
 /* iPad menu bar command */
 "menuClearTabsAndData" = "Valyti skirtukus ir duomenis";
 
+/* iPad Duck.ai menu bar command */
+"menuDeleteAllChats" = "Trinti visus pokalbius…";
+
 /* iPad menu bar command */
 "menuDuplicateTab" = "Kopijuoti skirtuką";
+
+/* iPad menu bar command */
+"menuExportBookmarks" = "Eksportuoti žymes…";
+
+/* iPad menu bar submenu */
+"menuFavorites" = "Mėgstami";
 
 /* iPad menu bar command */
 "menuFeedback" = "Bendrinti atsiliepimą";
@@ -3350,7 +3368,13 @@
 "menuForward" = "Pirmyn";
 
 /* iPad menu bar command */
+"menuHideBookmarks" = "Slėpti žymes";
+
+/* iPad menu bar command */
 "menuHideDownloads" = "Slėpti atsisiuntimus";
+
+/* iPad menu bar command */
+"menuHideDuckAIButton" = "Slėpti mygtuką „Duck.ai“";
 
 /* iPad menu bar command */
 "menuHidePasswords" = "Slėpti slaptažodžius";
@@ -3359,13 +3383,31 @@
 "menuHideTabs" = "Slėpti skirtukus";
 
 /* iPad menu bar command */
+"menuImportBookmarks" = "Importuoti žymes…";
+
+/* iPad menu bar command */
+"menuImportBookmarksAndPasswords" = "Importuoti žymes ir slaptažodžius…";
+
+/* iPad menu bar command */
 "menuLastTab" = "Paskutinis skirtukas";
+
+/* iPad Duck.ai menu bar command */
+"menuNewChat" = "Naujas pokalbis";
+
+/* iPad Duck.ai menu bar command */
+"menuNewImageChat" = "Naujas pokalbis su vaizdu";
 
 /* iPad menu bar command */
 "menuNewTabOnRight" = "Naujas skirtukas dešinėje";
 
+/* iPad Duck.ai menu bar command */
+"menuNewVoiceChat" = "Naujas balso pokalbis";
+
 /* iPad menu bar command */
 "menuNextTab" = "Rodyti paskesnį skirtuką";
+
+/* iPad Duck.ai menu bar command */
+"menuOpenDuckAI" = "Atidaryti „Duck.ai“";
 
 /* iPad menu bar command */
 "menuOpenLocation" = "Atidaryti vietą…";
@@ -3376,14 +3418,26 @@
 /* iPad menu bar command */
 "menuPrint" = "Spausdinti…";
 
+/* iPad Duck.ai menu bar section header */
+"menuRecentChats" = "Pastarieji pokalbiai";
+
 /* iPad menu bar command selecting a numbered tab */
 "menuSelectTab" = "Pasirinkti %d skirtuką";
+
+/* iPad menu bar command */
+"menuSetDefaultBrowser" = "Nustatyti „DuckDuckGo“ kaip numatytąją naršyklę…";
 
 /* iPad menu bar command */
 "menuSettings" = "„DuckDuckGo“ nustatymai…";
 
 /* iPad menu bar command */
+"menuShowBookmarks" = "Rodyti žymes";
+
+/* iPad menu bar command */
 "menuShowDownloads" = "Rodyti atsisiuntimus";
+
+/* iPad menu bar command */
+"menuShowDuckAIButton" = "Rodyti mygtuką „Duck.ai“";
 
 /* iPad menu bar command */
 "menuShowPasswords" = "Rodyti slaptažodžius";
@@ -4306,11 +4360,17 @@
 /* Description of too many requests error when syncing. */
 "prefrences.sync.too-many-requests.description" = "Sinchronizavimas ir atsarginės kopijos kūrimas laikinai nepasiekiami.";
 
+/* Fireproofing setting toggle label */
+"preserveLogins.askOnSignIn" = "Prisijungiant klausti, ar apsaugoti svetainės duomenis nuo išvalymo (funkcija „Fireproof“)";
+
 /* No comment provided by engineer. */
 "preserveLogins.domain.list.footer" = "Svetainės pagrįstos slapukais, kad liktumėte prisijungę. Apsaugojus svetainę, slapukai nėra ištrinami ir liksite prisijungę net paspaudę apsaugojimo mygtuką. Vis tiek blokuosime trečiųjų šalių stebėjimo priemones, randamas svetainėse, kuriose pasinaudosite parinktimi „Fireproof“.";
 
 /* Section header above Fireproofed websites list */
 "preserveLogins.domain.list.title" = "Apsaugoti svetaines";
+
+/* Empty Fireproof sites list */
+"preserveLogins.emptyState" = "Apsaugotų nuo duomenų valymo (funkcija „Fireproof“) svetainių dar nėra";
 
 /* Alert message explaining to users that the benefit of fireproofing a site is that they will be kept signed in */
 "preserveLogins.fireproof.message" = "Pasirinkę parinktį „Fireproof“ šioje svetainėje, liksite prisijungę net panaudoję mygtuką „Fire“.";
@@ -4341,6 +4401,9 @@
 
 /* Confirmation button in alert */
 "preserveLogins.remove.all.ok" = "GERAI";
+
+/* Button to remove all Fireproof sites */
+"preserveLogins.removeAllSites" = "Pašalinti visas nuo duomenų valymo apsaugotas (funkcija „Fireproof“) svetaines";
 
 /* No comment provided by engineer. */
 "Previews" = "Peržiūros";
@@ -5536,11 +5599,29 @@
 /* Fallback device name for confirmation dialogs */
 "sync.pairing-v2.unknown-peer-name" = "kitas įrenginys";
 
+/* Title for a button in the Sync Promotion banner on the Bookmarks or Passwords screen that opens Sync settings to connect another device */
+"sync.promo.another-device.connect.action" = "Prijungti";
+
+/* Message for the Sync Promotion banner on the Bookmarks or Passwords screen, shown when Sync is on but only this device is connected */
+"sync.promo.another-device.message" = "Šiame įrenginyje įjungta funkcija „Sync & Backup“.";
+
+/* Title for a button in the Sync Promotion banner on the Bookmarks or Passwords screen that opens a screen with links to get DuckDuckGo on other platforms */
+"sync.promo.bookmarks.another-device.get-desktop-app.action" = "Gauti programą";
+
+/* Title for the Sync Promotion banner on the Bookmarks screen, shown when Sync is on but only this device is connected */
+"sync.promo.bookmarks.another-device.title" = "Sinchronizuoti žymes ir su kompiuterio programa?";
+
 /* Message for the Sync Promotion banner when user has bookmarks that can be synced */
 "sync.promo.bookmarks.message" = "Paskyros nereikia. Galutinis šifravimas (angl. „end-to-end encryption“) reiškia, kad niekas, išskyrus jus, negali pamatyti jūsų žymių, net mes.";
 
+/* Message for the redesigned Sync Promotion banner on the Bookmarks screen */
+"sync.promo.bookmarks.redesign.message" = "Naudojamas ištisinis šifravimas. Niekas negali matyti jūsų žymių, net mes.";
+
 /* Title for the Sync Promotion banner */
 "sync.promo.bookmarks.title" = "Sinchronizuokite žymes ir kurkite jų atsargines kopijas";
+
+/* Accessibility label for the close button on the Sync Promotion banner */
+"sync.promo.close.accessibility.label" = "Uždaryti sinchronizavimo pasiūlymą";
 
 /* Title for a button in the Sync Promotion banner to set up Sync */
 "sync.promo.confirm.action" = "Nustatykite sinchronizavimą";
@@ -5554,11 +5635,20 @@
 /* Title for a button in the Sync Promotion banner to dismiss Sync promotion banner */
 "sync.promo.dismiss.action" = "Ne, dėkoju";
 
+/* Title for the Sync Promotion banner on the Passwords screen, shown when Sync is on but only this device is connected */
+"sync.promo.passwords.another-device.title" = "Sinchronizuoti slaptažodžius ir su kompiuterio programa?";
+
 /* Message for the Sync Promotion banner when user has passwords that can be synced */
 "sync.promo.passwords.message" = "Paskyros nereikia. Galutinis šifravimas (angl. „end-to-end encryption“) reiškia, kad niekas, išskyrus jus, negali pamatyti jūsų slaptažodžių, net mes.";
 
+/* Message for the redesigned Sync Promotion banner on the Passwords screen */
+"sync.promo.passwords.redesign.message" = "Apsaugota ištisiniu šifravimu. Tavo slaptažodžių negali matyti niekas – net ir mes.";
+
 /* Title for the Sync Promotion banner */
 "sync.promo.passwords.title" = "Sinchronizuokite slaptažodžius ir sukurkite atsargines jų kopijas";
+
+/* Title for the button in the redesigned Sync Promotion banner and the Data Import summary Sync card that opens Sync settings and starts setting up Sync */
+"sync.promo.redesign.confirm.action" = "Pradėti sinchronizavimą";
 
 /* Button title to start backup */
 "sync.recovery.alternative.prompt.backup.button" = "Šio įrenginio „Sync & Backup“";
@@ -6148,12 +6238,3 @@
 /* Title for screen to screen confirming what data to import from a zip file (bookmarks and /or passwords) */
 "zip.content.import.types.title" = "Ką nori importuoti?";
 
-
-/* Fireproofing setting toggle label */
-"preserveLogins.askOnSignIn" = "Prašyti apsaugoti svetaines prisijungiant";
-
-/* Empty Fireproof sites list */
-"preserveLogins.emptyState" = "Apsaugotų svetainių dar nėra";
-
-/* Button to remove all Fireproof sites */
-"preserveLogins.removeAllSites" = "Pašalinti visas apsaugotas svetaines";

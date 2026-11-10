@@ -1,5 +1,5 @@
 {
-  "originHash" : "6d108d17ad96dcd1d28fb3351487cdfe11e4e975d7ea363ed1292383d1353f27",
+  "originHash" : "15e9ff5260a7869218d2de0da3e3cfe1f6b245ecc6d4991ce11ec17c1f55e686",
   "pins" : [
     {
       "identity" : "apple-toolbox",
@@ -26,15 +26,6 @@
       "state" : {
         "revision" : "dcccb979a2183b8df3334237e3dc1ae2b4116a86",
         "version" : "1.2.0"
-      }
-    },
-    {
-      "identity" : "content-scope-scripts",
-      "kind" : "remoteSourceControl",
-      "location" : "https://github.com/duckduckgo/content-scope-scripts.git",
-      "state" : {
-        "revision" : "e032eac688cc9dd30eae2c60425e915aae1507f6",
-        "version" : "17.18.0"
       }
     },
     {
@@ -260,6 +251,15 @@
       "state" : {
         "revision" : "6ae7e79e77a4deb03fb5f21a73d701cae4132281",
         "version" : "4.0.0"
+      }
+    },
+    {
+      "identity" : "translate-kit",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/duckduckgo/translate-kit.git",
+      "state" : {
+        "revision" : "67ca1df7f2197a29f0abf7ab84a55b78e468e831",
+        "version" : "0.2.1"
       }
     },
     {

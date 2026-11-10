@@ -8294,7 +8294,7 @@
 				BD0C4D872DC54508001F034F /* XCLocalSwiftPackageReference "LocalPackages/DuckUI" */,
 				7B0752DA2F21BFDB00ACA559 /* XCLocalSwiftPackageReference "../SharedPackages/AutomationServer" */,
 				9FADFC482F5FC56400CA16F7 /* XCRemoteSwiftPackageReference "native-apps-ducksans" */,
-				80FEDB39306732730036E705 /* XCRemoteSwiftPackageReference "translate-kit" */,
+				80FEDB39306732730036E705 /* XCLocalSwiftPackageReference "translate-kit" */,
 				315E39632F86ABE100D2289D /* XCLocalSwiftPackageReference "../SharedPackages/DebugServer" */,
 				A7B000022F6A000100000001 /* XCLocalSwiftPackageReference "../SharedPackages/SnapshotTestingSupport" */,
 				A91A00013031000100000001 /* XCLocalSwiftPackageReference "../SharedPackages/UITestingSupport" */,
@@ -13586,13 +13586,9 @@
 				version = 2.0.0;
 			};
 		};
-		80FEDB39306732730036E705 /* XCRemoteSwiftPackageReference "translate-kit" */ = {
-			isa = XCRemoteSwiftPackageReference;
-			repositoryURL = "https://github.com/duckduckgo/translate-kit.git";
-			requirement = {
-				kind = exactVersion;
-				version = 0.2.1;
-			};
+		80FEDB39306732730036E705 /* XCLocalSwiftPackageReference "translate-kit" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = ../../../../translate-kit;
 		};
 /* End XCRemoteSwiftPackageReference section */
 
@@ -14324,7 +14320,7 @@
 		};
 		80FEDB3A306732730036E705 /* TranslateKit */ = {
 			isa = XCSwiftPackageProductDependency;
-			package = 80FEDB39306732730036E705 /* XCRemoteSwiftPackageReference "translate-kit" */;
+			package = 80FEDB39306732730036E705 /* XCLocalSwiftPackageReference "translate-kit" */;
 			productName = TranslateKit;
 		};
 /* End XCSwiftPackageProductDependency section */

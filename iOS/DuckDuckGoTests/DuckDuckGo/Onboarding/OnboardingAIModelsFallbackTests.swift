@@ -19,8 +19,9 @@
 
 import Foundation
 import PrivacyConfig
+import PrivacyConfigTestsUtils
+import Core
 import Testing
-import FeatureFlags_iOS
 @testable import DuckDuckGo
 
 @Suite("Onboarding - AI Models Fallback")
@@ -34,23 +35,22 @@ struct OnboardingAIModelsFallbackTests {
     }
 
     // Distinct from the baked default so we can tell the config was actually used.
-    // `models` is a JSON-encoded string (the privacy-config subfeature `settings` schema only permits string values).
     static let supportedAIModelsJSON = """
-        { "defaultModelId": "config-openai", "models": "[{\\"id\\": \\"config-openai\\", \\"provider\\": \\"openai\\", \\"modelShortName\\": \\"Config GPT\\"}, {\\"id\\": \\"config-claude\\", \\"provider\\": \\"anthropic\\", \\"modelShortName\\": \\"Config Claude\\"}]" }
+        { "defaultModelId": "config-openai", "models": [{"id": "config-openai", "provider": "openai", "modelShortName": "Config GPT"}, {"id": "config-claude", "provider": "anthropic", "modelShortName": "Config Claude"}] }
         """
 
     static let modelsWithUnsupportedProviderJSON = """
-    { "defaultModelId": "o", "models": "[{\\"id\\": \\"o\\", \\"provider\\": \\"openai\\", \\"modelShortName\\": \\"O\\"}, {\\"id\\": \\"t\\", \\"provider\\": \\"tinfoil\\", \\"modelShortName\\": \\"T\\"}]" }
+    { "defaultModelId": "o", "models": [{"id": "o", "provider": "openai", "modelShortName": "O"}, {"id": "t", "provider": "tinfoil", "modelShortName": "T"}] }
     """
 
     static let modelsWithAllUnsupportedProviderJSON = """
-    { "defaultModelId": "o", "models": "[{\\"id\\": \\"t0\\", \\"provider\\": \\"tinfoil\\", \\"modelShortName\\": \\"T0\\"}, {\\"id\\": \\"t1\\", \\"provider\\": \\"tinfoil\\", \\"modelShortName\\": \\"T1\\"}]" }
+    { "defaultModelId": "o", "models": [{"id": "t0", "provider": "tinfoil", "modelShortName": "T0"}, {"id": "t1", "provider": "tinfoil", "modelShortName": "T1"}] }
     """
 
-    private func makeSUT(subfeatureSettings: String?) -> OnboardingAIModelsFallback {
+    private func makeSUT(settingsJSON: String?) -> OnboardingAIModelsFallback {
         let privacyConfig = PrivacyConfigurationMock()
-        if let subfeatureSettings {
-            privacyConfig.subfeatureSettings[iOSBrowserConfigSubfeature.onboardingFlowByDownloadReasonExperiment.rawValue] = subfeatureSettings
+        if let settingsJSON, let value = try? JSONSerialization.jsonObject(with: Data(settingsJSON.utf8), options: .fragmentsAllowed) {
+            privacyConfig.settings[.iOSBrowserConfig] = ["onboardingAIModelsFallback": value]
         }
         let manager = PrivacyConfigurationManagerMock()
         manager.privacyConfig = privacyConfig
@@ -60,7 +60,7 @@ struct OnboardingAIModelsFallbackTests {
     @Test("Check valid config settings are decoded and used")
     func validConfigIsUsed() {
         // GIVEN
-        let sut = makeSUT(subfeatureSettings: Self.supportedAIModelsJSON)
+        let sut = makeSUT(settingsJSON: Self.supportedAIModelsJSON)
 
         // WHEN
         let result = sut.aiModels
@@ -74,7 +74,7 @@ struct OnboardingAIModelsFallbackTests {
     @Test("Check config entries with an unsupported provider are dropped, the rest kept")
     func unsupportedProviderIsDropped() {
         // GIVEN
-        let sut = makeSUT(subfeatureSettings: Self.modelsWithUnsupportedProviderJSON)
+        let sut = makeSUT(settingsJSON: Self.modelsWithUnsupportedProviderJSON)
 
         // WHEN
         let result = sut.aiModels
@@ -84,10 +84,55 @@ struct OnboardingAIModelsFallbackTests {
         #expect(result.defaultModelId == "o")
     }
 
-    @Test("Check malformed config settings fall back to the baked default")
+    @Test("Check a malformed model entry is dropped, the rest kept")
+    func malformedEntryIsDropped() {
+        // GIVEN the second entry has a numeric id and the third is missing its provider
+        let sut = makeSUT(settingsJSON: """
+            { "defaultModelId": "o", "models": [{"id": "o", "provider": "openai"}, {"id": 1, "provider": "anthropic"}, {"id": "m"}] }
+            """)
+
+        // WHEN
+        let result = sut.aiModels
+
+        // THEN
+        #expect(result.models.map(\.id) == ["o"])
+        #expect(result.defaultModelId == "o")
+    }
+
+    @Test("Check a default id not among the kept models falls back to the OpenAI model")
+    func unknownDefaultFallsBackToOpenAIModel() {
+        // GIVEN the default points at a model dropped for its unsupported provider
+        let sut = makeSUT(settingsJSON: """
+            { "defaultModelId": "t", "models": [{"id": "c", "provider": "anthropic"}, {"id": "o", "provider": "openai"}, {"id": "t", "provider": "tinfoil"}] }
+            """)
+
+        // WHEN
+        let result = sut.aiModels
+
+        // THEN
+        #expect(result.models.map(\.id) == ["c", "o"])
+        #expect(result.defaultModelId == "o")
+    }
+
+    @Test("Check a default id not among the kept models falls back to the first model when there is no OpenAI model")
+    func unknownDefaultWithoutOpenAIFallsBackToFirstModel() {
+        // GIVEN no OpenAI model and a default that isn't in the list
+        let sut = makeSUT(settingsJSON: """
+            { "defaultModelId": "missing", "models": [{"id": "c", "provider": "anthropic"}, {"id": "m", "provider": "mistral"}] }
+            """)
+
+        // WHEN
+        let result = sut.aiModels
+
+        // THEN
+        #expect(result.models.map(\.id) == ["c", "m"])
+        #expect(result.defaultModelId == "c")
+    }
+
+    @Test("Check settings that are not an object fall back to the baked default")
     func malformedConfigFallsBackToBaked() {
         // GIVEN
-        let sut = makeSUT(subfeatureSettings: "{ not valid json")
+        let sut = makeSUT(settingsJSON: #""not-an-object""#)
 
         // WHEN
         let result = sut.aiModels
@@ -98,10 +143,10 @@ struct OnboardingAIModelsFallbackTests {
         #expect(result.defaultModelId == BakedDefault.defaultModelId)
     }
 
-    @Test("Valid settings whose encoded models string is malformed fall back to the baked default")
-    func malformedEncodedModelsFallsBackToBaked() {
-        // GIVEN valid outer settings but the `models` string isn't valid JSON
-        let sut = makeSUT(subfeatureSettings: #"{ "defaultModelId": "x", "models": "not-json" }"#)
+    @Test("Check settings whose models are not an array fall back to the baked default")
+    func malformedModelsFallsBackToBaked() {
+        // GIVEN models encoded as a string instead of an array
+        let sut = makeSUT(settingsJSON: #"{ "defaultModelId": "x", "models": "[{\"id\":\"x\",\"provider\":\"openai\"}]" }"#)
 
         // WHEN
         let result = sut.aiModels
@@ -115,7 +160,7 @@ struct OnboardingAIModelsFallbackTests {
     @Test("Absent config settings fall back to the baked default")
     func absentConfigFallsBackToBaked() {
         // GIVEN
-        let sut = makeSUT(subfeatureSettings: nil)
+        let sut = makeSUT(settingsJSON: nil)
 
         // WHEN
         let result = sut.aiModels
@@ -126,10 +171,53 @@ struct OnboardingAIModelsFallbackTests {
         #expect(result.defaultModelId == BakedDefault.defaultModelId)
     }
 
+    @Test("Check the remote config entry is parsed into the fallback models")
+    func remoteConfigEntryIsParsed() throws {
+        // GIVEN the iOSBrowserConfig settings as shipped in the remote privacy config
+        let configJSON = """
+        {
+            "features": {
+                "iOSBrowserConfig": {
+                    "state": "enabled",
+                    "exceptions": [],
+                    "settings": {
+                        "onboardingAIModelsFallback": {
+                            "defaultModelId": "gpt-5.4-nano",
+                            "models": [
+                                { "id": "gpt-5.4-nano", "provider": "openai", "modelShortName": "5.4-nano" },
+                                { "id": "claude-haiku-4-5", "provider": "anthropic", "modelShortName": "Haiku 4.5" },
+                                { "id": "mistral-small-2603", "provider": "mistral", "modelShortName": "Mistral" }
+                            ]
+                        }
+                    },
+                    "features": {}
+                }
+            },
+            "unprotectedTemporary": []
+        }
+        """
+        let configData = try PrivacyConfigurationData(data: Data(configJSON.utf8))
+        let manager = PrivacyConfigurationManagerMock()
+        manager.privacyConfig = AppPrivacyConfiguration(data: configData,
+                                                        identifier: "",
+                                                        localProtection: MockDomainsProtectionStore(),
+                                                        internalUserDecider: DefaultInternalUserDecider(store: InternalUserStore()))
+        let sut = OnboardingAIModelsFallback(privacyConfigurationManager: manager)
+
+        // WHEN
+        let result = sut.aiModels
+
+        // THEN
+        #expect(result.models.map(\.id) == ["gpt-5.4-nano", "claude-haiku-4-5", "mistral-small-2603"])
+        #expect(result.models.map(\.provider) == [.openai, .anthropic, .mistral])
+        #expect(result.models.map(\.modelShortName) == ["5.4-nano", "Haiku 4.5", "Mistral"])
+        #expect(result.defaultModelId == "gpt-5.4-nano")
+    }
+
     @Test("Check config entries with all unsupported providers fallback to last resort")
     func allUnsupportedProviderFallbackToLastResort() {
         // GIVEN
-        let sut = makeSUT(subfeatureSettings: Self.modelsWithAllUnsupportedProviderJSON)
+        let sut = makeSUT(settingsJSON: Self.modelsWithAllUnsupportedProviderJSON)
 
         // WHEN
         let result = sut.aiModels

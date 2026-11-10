@@ -47,7 +47,11 @@ final class DuckAISwipeNewChatHandler: NSObject, UIGestureRecognizerDelegate {
     private let tickHaptic = UIImpactFeedbackGenerator(style: .light)
     private let armHaptic = UIImpactFeedbackGenerator(style: .medium)
     private let indicator: DuckAISwipeNewChatIndicatorView
-    private var indicatorBottomConstraint: NSLayoutConstraint?
+    /// The gap the pull opens between the chat's bottom edge and the input. The indicator lives in it and is clipped
+    /// to it, so it never covers the chat or the input.
+    private let indicatorSlot = UIView()
+    /// Top of the input in the host view, where the slot's bottom sits.
+    private var indicatorSlotBottomY: CGFloat = 0
     private let backdrop = UIView()
 
     private var pull = DuckAISwipeNewChat.Pull.idle
@@ -179,7 +183,7 @@ final class DuckAISwipeNewChatHandler: NSObject, UIGestureRecognizerDelegate {
                 fadeOut()
             case .requestNewChat:
                 webView?.transform = .identity
-                indicator.transform = .identity
+                setIndicatorSlotHeight(0)
                 indicator.reset()
                 onStartNewChat()
             case .scheduleTimeout:
@@ -194,18 +198,24 @@ final class DuckAISwipeNewChatHandler: NSObject, UIGestureRecognizerDelegate {
         }
     }
 
-    /// The chat follows the finger up to the trigger, then resists; the indicator rises at a fraction of that.
+    /// The chat follows the finger up to the trigger, then resists. The gap it opens above the input is the
+    /// indicator's slot, so the indicator comes out from under the chat's bottom edge as the chat rises.
+    /// At the bottom of a chat its last content ends at the input, so the gap is as tall as the chat has moved.
+    /// With reduced motion the chat stays put and the indicator only fades in, in a slot of the full pull's height.
     private func followPull(distance: CGFloat, progress: CGFloat, isArmed: Bool) {
         let constants = DuckAISwipeNewChat.Constants.self
         let offset = min(distance, constants.triggerDistance)
             + max(distance - constants.triggerDistance, 0) * constants.overpullResistance
         indicator.update(progress: progress, isArmed: isArmed)
-        guard movesContent else { return }
+        guard movesContent else {
+            setIndicatorSlotHeight(constants.triggerDistance)
+            return
+        }
         if backdrop.isHidden {
             showBackdrop()
         }
         webView?.transform = CGAffineTransform(translationX: 0, y: -offset)
-        indicator.transform = CGAffineTransform(translationX: 0, y: -offset * constants.indicatorFollow)
+        setIndicatorSlotHeight(offset)
     }
 
     private func springBack() {
@@ -214,7 +224,7 @@ final class DuckAISwipeNewChatHandler: NSObject, UIGestureRecognizerDelegate {
                        usingSpringWithDamping: 0.85, initialSpringVelocity: 0,
                        options: [.beginFromCurrentState, .allowUserInteraction]) {
             self.webView?.transform = .identity
-            self.indicator.transform = .identity
+            self.setIndicatorSlotHeight(0)
             self.indicator.alpha = 0
         } completion: { _ in
             guard generation == self.generation else { return }
@@ -244,24 +254,41 @@ final class DuckAISwipeNewChatHandler: NSObject, UIGestureRecognizerDelegate {
         generation += 1
         webView?.transform = .identity
         webView?.alpha = 1
-        indicator.transform = .identity
+        setIndicatorSlotHeight(0)
         indicator.alpha = 0
         indicator.reset()
         hideBackdrop()
     }
 
-    /// The bottom chrome doesn't move during a pull, so the indicator is placed once per pan.
+    /// The bottom chrome doesn't move during a pull, so the slot is placed once per pan.
     private func placeIndicator(in hostView: UIView, above chromeMinYInWindow: CGFloat) {
-        if indicator.superview !== hostView {
-            indicator.removeFromSuperview()
-            hostView.addSubview(indicator)
-            let bottom = indicator.bottomAnchor.constraint(equalTo: hostView.bottomAnchor)
-            NSLayoutConstraint.activate([indicator.centerXAnchor.constraint(equalTo: hostView.centerXAnchor), bottom])
-            indicatorBottomConstraint = bottom
+        if indicatorSlot.superview !== hostView {
+            indicatorSlot.removeFromSuperview()
+            indicatorSlot.isUserInteractionEnabled = false
+            indicatorSlot.clipsToBounds = true
+            if indicator.superview !== indicatorSlot {
+                indicatorSlot.addSubview(indicator)
+                let centered = indicator.centerYAnchor.constraint(equalTo: indicatorSlot.centerYAnchor)
+                centered.priority = .defaultHigh
+                NSLayoutConstraint.activate([
+                    centered,
+                    indicator.centerXAnchor.constraint(equalTo: indicatorSlot.centerXAnchor),
+                    indicator.topAnchor.constraint(greaterThanOrEqualTo: indicatorSlot.topAnchor,
+                                                   constant: DuckAISwipeNewChat.Constants.indicatorSpacing),
+                ])
+            }
+            hostView.addSubview(indicatorSlot)
         }
-        hostView.bringSubviewToFront(indicator)
-        let chromeTop = min(hostView.convert(CGPoint(x: 0, y: chromeMinYInWindow), from: nil).y, hostView.bounds.maxY)
-        indicatorBottomConstraint?.constant = chromeTop - hostView.bounds.maxY - DuckAISwipeNewChat.Constants.indicatorSpacing
+        hostView.bringSubviewToFront(indicatorSlot)
+        indicatorSlotBottomY = min(hostView.convert(CGPoint(x: 0, y: chromeMinYInWindow), from: nil).y, hostView.bounds.maxY)
+        setIndicatorSlotHeight(0)
+    }
+
+    /// Sets the slot by frame, so animating it lays out only the indicator, not the tab around it.
+    private func setIndicatorSlotHeight(_ height: CGFloat) {
+        guard let hostView = indicatorSlot.superview else { return }
+        indicatorSlot.frame = CGRect(x: 0, y: indicatorSlotBottomY - height, width: hostView.bounds.width, height: height)
+        indicatorSlot.layoutIfNeeded()
     }
 
     private func checkAtBottom() {

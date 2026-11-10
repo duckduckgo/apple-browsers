@@ -71,6 +71,7 @@ struct Launching: LaunchingHandling {
 
     init(startupFailureInstrumentation: any StartupFailureInstrumentation) throws {
         self.startupFailureInstrumentation = startupFailureInstrumentation
+        startupFailureInstrumentation.configure(featureFlagger: featureFlagger, feature: FeatureFlag.startupFailureMetrics)
         let launchBackgroundTask = LaunchBackgroundTask(featureFlagger: featureFlagger)
         defer { launchBackgroundTask.end() }
 

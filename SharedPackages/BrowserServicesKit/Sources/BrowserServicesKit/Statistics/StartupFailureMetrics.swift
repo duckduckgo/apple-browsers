@@ -17,9 +17,12 @@
 //
 
 import Foundation
+import Combine
 import PixelKit
+import PrivacyConfig
 
 public protocol StartupFailureInstrumentation {
+    func configure(featureFlagger: any FeatureFlagger, feature: any FeatureFlagDescribing)
     func recordFailure()
     func recordReturn()
     func recordSuccessfulStartup()
@@ -29,33 +32,60 @@ public protocol StartupFailureInstrumentation {
 /// A new episode is allowed only after the app has successfully started.
 public final class StartupFailureMetrics: StartupFailureInstrumentation {
 
+    static let enabledKey = "startupFailureMetricsEnabled"
+
     private struct State: Codable {
         let firstFailureDate: Date
         var didReportReturn = false
         var didSuccessfullyStart = false
     }
 
-    private let storageURL: URL?
+    private let storageURLProvider: () -> URL?
     private let pixelFiringProvider: () -> (any PixelFiring)?
+    private let defaults: UserDefaults
     private let dateProvider: () -> Date
     private let lock = NSLock()
+    private var featureFlagCancellable: AnyCancellable?
     private var didFailInThisProcess = false
 
     /// The app lifecycle is constructed before PixelKit is configured, so resolve the client at event time.
-    public convenience init(pixelFiring: @escaping () -> (any PixelFiring)? = { PixelKit.shared }) {
+    public convenience init(defaults: UserDefaults = .standard, pixelFiring: @escaping () -> (any PixelFiring)? = { PixelKit.shared }) {
         self.init(
-            storageURL: Self.makeStorageURL(
-                applicationSupportDirectory: FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first,
-                bundleIdentifier: Bundle.main.bundleIdentifier
-            ),
-            pixelFiring: pixelFiring
+            storageURL: {
+                Self.makeStorageURL(
+                    applicationSupportDirectory: FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first,
+                    bundleIdentifier: Bundle.main.bundleIdentifier
+                )
+            },
+            pixelFiring: pixelFiring,
+            defaults: defaults
         )
     }
 
-    init(storageURL: URL?, pixelFiring: @escaping () -> (any PixelFiring)?, dateProvider: @escaping () -> Date = Date.init) {
-        self.storageURL = storageURL
+    init(storageURL: @escaping () -> URL?, pixelFiring: @escaping () -> (any PixelFiring)?, defaults: UserDefaults,
+         dateProvider: @escaping () -> Date = Date.init) {
+        self.storageURLProvider = storageURL
         self.pixelFiringProvider = pixelFiring
+        self.defaults = defaults
         self.dateProvider = dateProvider
+    }
+
+    /// Early startup failures use the last resolved flag value, defaulting to off.
+    /// Once the flagger is available, keep that value current for this process and the next launch.
+    public func configure(featureFlagger: any FeatureFlagger, feature: any FeatureFlagDescribing) {
+        featureFlagCancellable = featureFlagger.updatesPublisher.sink { [weak self] in
+            self?.updateFeatureFlag(featureFlagger: featureFlagger, feature: feature)
+        }
+        updateFeatureFlag(featureFlagger: featureFlagger, feature: feature)
+    }
+
+    private func updateFeatureFlag(featureFlagger: any FeatureFlagger, feature: any FeatureFlagDescribing) {
+        lock.lock()
+        defer { lock.unlock() }
+        let isEnabled = featureFlagger.isFeatureOn(for: feature)
+        if defaults.bool(forKey: Self.enabledKey) != isEnabled {
+            defaults.set(isEnabled, forKey: Self.enabledKey)
+        }
     }
 
     static func makeStorageURL(applicationSupportDirectory: URL?, bundleIdentifier: String?) -> URL? {
@@ -67,12 +97,14 @@ public final class StartupFailureMetrics: StartupFailureInstrumentation {
     /// Called before deliberately exiting because startup cannot complete.
     /// Repeated failures in an open episode neither emit another pixel nor reset its age.
     public func recordFailure() {
+        guard defaults.bool(forKey: Self.enabledKey) else { return }
         let pixelFiring = pixelFiringProvider()
         lock.lock()
         do {
             defer { lock.unlock() }
+            guard defaults.bool(forKey: Self.enabledKey) else { return }
             didFailInThisProcess = true
-            guard pixelFiring != nil, let storageURL else { return }
+            guard pixelFiring != nil, let storageURL = storageURLProvider() else { return }
             let state = try readState(from: storageURL)
             guard state == nil || state?.didSuccessfullyStart == true else { return }
             try writeState(State(firstFailureDate: dateProvider()), to: storageURL)
@@ -87,12 +119,13 @@ public final class StartupFailureMetrics: StartupFailureInstrumentation {
     /// Reports the first launch attempt after a recorded failure.
     /// This does not rearm failure reporting: only a successful startup closes the episode.
     public func recordReturn() {
+        guard defaults.bool(forKey: Self.enabledKey) else { return }
         let pixelFiring = pixelFiringProvider()
         lock.lock()
         let daysSinceFailure: String
         do {
             defer { lock.unlock() }
-            guard !didFailInThisProcess, pixelFiring != nil, let storageURL,
+            guard defaults.bool(forKey: Self.enabledKey), !didFailInThisProcess, pixelFiring != nil, let storageURL = storageURLProvider(),
                   var state = try readState(from: storageURL),
                   !state.didReportReturn, !state.didSuccessfullyStart else { return }
             daysSinceFailure = Self.daysSinceFailure(from: state.firstFailureDate, to: dateProvider())
@@ -108,12 +141,13 @@ public final class StartupFailureMetrics: StartupFailureInstrumentation {
 
     /// Reports recovery and closes the episode once the browser is ready for user interaction.
     public func recordSuccessfulStartup() {
+        guard defaults.bool(forKey: Self.enabledKey) else { return }
         let pixelFiring = pixelFiringProvider()
         lock.lock()
         let daysSinceFailure: String
         do {
             defer { lock.unlock() }
-            guard !didFailInThisProcess, pixelFiring != nil, let storageURL,
+            guard defaults.bool(forKey: Self.enabledKey), !didFailInThisProcess, pixelFiring != nil, let storageURL = storageURLProvider(),
                   var state = try readState(from: storageURL),
                   state.didReportReturn, !state.didSuccessfullyStart else { return }
             daysSinceFailure = Self.daysSinceFailure(from: state.firstFailureDate, to: dateProvider())

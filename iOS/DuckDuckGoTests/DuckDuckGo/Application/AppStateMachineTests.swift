@@ -20,12 +20,14 @@
 import UIKit
 import Testing
 import BrowserServicesKit
+import PrivacyConfig
 @testable import DuckDuckGo
 @_spi(Testing) import PixelKit
 
 private final class TestStartupFailureInstrumentation: StartupFailureInstrumentation {
     var failureCount = 0
 
+    func configure(featureFlagger: any FeatureFlagger, feature: any FeatureFlagDescribing) {}
     func recordFailure() { failureCount += 1 }
     func recordReturn() {}
     func recordSuccessfulStartup() {}
@@ -209,6 +211,26 @@ struct StartupFailureInstrumentationInjectionTests {
 
         #expect(instrumentation.failureCount == 1)
         #expect(stateMachine.currentState.name == "terminating")
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("A startup error still terminates with tracking disabled", .timeLimit(.minutes(1)))
+    func disabledTrackingPreservesStartupFailureHandling() throws {
+        let suiteName = "StartupFailureFlagOffTests.\(UUID().uuidString)"
+        let defaults = try #require(UserDefaults(suiteName: suiteName))
+        defer { defaults.removePersistentDomain(forName: suiteName) }
+        let pixels = PixelKitMock()
+        let instrumentation = StartupFailureMetrics(defaults: defaults, pixelFiring: { pixels })
+        let initializing = MockInitializing()
+        initializing.shouldThrowOnLaunching = true
+        let stateMachine = AppStateMachine(initialState: .initializing(initializing),
+                                          terminatingStateFactory: MockTerminatingStateFactory(), launchBreadcrumb: .testing,
+                                          startupFailureInstrumentation: instrumentation)
+
+        stateMachine.handle(.didFinishLaunching(isTesting: false))
+
+        #expect(stateMachine.currentState.name == "terminating")
+        #expect(pixels.actualFireCalls.isEmpty)
     }
 }
 

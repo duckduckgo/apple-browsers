@@ -870,6 +870,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             featureFlagOverrides.applyUITestsFeatureFlagsIfNeeded()
         }
         self.featureFlagger = featureFlagger
+        startupFailureInstrumentation.configure(featureFlagger: featureFlagger, feature: FeatureFlag.startupFailureMetrics)
+        if AppVersion.runType.requiresEnvironment {
+            startupFailureInstrumentation.recordReturn()
+        }
         webExtensionAutofillTakeover = WebExtensionAutofillTakeover()
 
         // Created at launch so the VPN issues observer catches notifications before the first report

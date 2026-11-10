@@ -1614,6 +1614,16 @@ extension AIChatUserScriptHandlerTests {
         XCTAssertTrue(inputBox.isTermsOfServiceShownOnPage)
     }
 
+    /// A replacement script takes over the page's state when it's rebuilt under a page that won't load again.
+    func testWhenThePagesTermsCardIsCarriedOverThenTheBoundInputBoxLearnsIt() {
+        let inputBox = MockAIChatInputBox()
+        aiChatUserScriptHandler.setAIChatInputBoxHandler(inputBox)
+
+        aiChatUserScriptHandler.isTermsOfServiceShownOnPage = true
+
+        XCTAssertTrue(inputBox.isTermsOfServiceShownOnPage)
+    }
+
     /// The input box binds to a tab whenever it comes on screen, which can be after the page asked for the handoff.
     func testWhenAnInputBoxAttachesAfterTheHandoffThenItLearnsThePageAsksForTheTerms() {
         mockPayloadHandler.setData(searchAssistHandoffPayload)

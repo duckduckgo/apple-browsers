@@ -173,6 +173,8 @@ protocol AIChatUserScriptHandling: AnyObject {
     func setPayloadHandler(_ payloadHandler: (any AIChatConsumableDataHandling)?)
     /// The payload the page will ask for once it loads.
     @MainActor func willHandOff(_ payload: AIChatPayload)
+    /// Whether the page holds a handed-off prompt behind its own Terms of Service card.
+    @MainActor var isTermsOfServiceShownOnPage: Bool { get set }
     func setOpenLinkHandler(_ handler: ((URL) -> Void)?)
     @MainActor func setAIChatInputBoxHandler(_ inputBoxHandler: (any AIChatInputBoxHandling)?)
     func setMetricReportingHandler(_ metricHandler: (any AIChatMetricReportingHandling)?)
@@ -257,7 +259,7 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
     private let termsOfServiceWebRecordSource: DuckAiNativeStorageHandling?
     private let pixelFiring: (any PixelKitFiring)?
     private var termsOfServicePageLoadState: DuckAiTermsOfServicePageLoadState = .unknown
-    @MainActor private var isTermsOfServiceShownOnPage = false {
+    @MainActor var isTermsOfServiceShownOnPage = false {
         didSet { inputBoxHandler?.isTermsOfServiceShownOnPage = isTermsOfServiceShownOnPage }
     }
 

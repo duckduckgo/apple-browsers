@@ -357,6 +357,12 @@ final class AIChatUserScript: NSObject, Subfeature {
         handler.willHandOff(payload)
     }
 
+    @MainActor
+    var isTermsOfServiceShownOnPage: Bool {
+        get { handler.isTermsOfServiceShownOnPage }
+        set { handler.isTermsOfServiceShownOnPage = newValue }
+    }
+
     func setOpenLinkHandler(_ openLinkHandler: ((URL) -> Void)?) {
         handler.setOpenLinkHandler(openLinkHandler)
     }

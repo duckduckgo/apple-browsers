@@ -199,6 +199,18 @@ final class AIChatContentHandlerTests: XCTestCase {
         XCTAssertEqual(mockUserScript.announcedHandoffs.first?["aiChatPrompt"] as? String, "More bread recipes")
     }
 
+    /// Rebuilt user scripts replace the script under a page that already took its handoff and won't ask again.
+    func testWhenTheUserScriptIsReplacedThenTheReplacementKeepsThePagesTermsCard() {
+        let original = MockAIChatUserScript()
+        handler.setup(with: original, webView: WKWebView(), displayMode: .fullTab)
+        original.isTermsOfServiceShownOnPage = true
+        let replacement = MockAIChatUserScript()
+
+        handler.setup(with: replacement, webView: WKWebView(), displayMode: .fullTab)
+
+        XCTAssertTrue(replacement.isTermsOfServiceShownOnPage)
+    }
+
     /// A new tab is given the payload before its user scripts are installed.
     func testWhenAPayloadIsSetBeforeTheUserScriptThenTheHandoffIsAnnouncedOnceTheScriptArrives() {
         handler.setPayload(payload: ["aiChatPrompt": "More bread recipes", "aiChatAutoPrompt": true] as AIChatPayload)
@@ -1119,6 +1131,8 @@ final class MockAIChatUserScript: AIChatUserScriptProviding {
         announcedHandoffs.append(payload)
     }
 
+    var isTermsOfServiceShownOnPage = false
+
     func setOpenLinkHandler(_ openLinkHandler: ((URL) -> Void)?) {
         openLinkHandlerSet = true
         self.openLinkHandler = openLinkHandler
@@ -1217,6 +1231,7 @@ final class MockAIChatUserScriptHandling: AIChatUserScriptHandling {
     @MainActor func openAIChatLink(params: Any, message: UserScriptMessage) async -> Encodable? { nil }
     func setPayloadHandler(_ payloadHandler: (any AIChatConsumableDataHandling)?) {}
     func willHandOff(_ payload: AIChatPayload) {}
+    var isTermsOfServiceShownOnPage = false
     func setOpenLinkHandler(_ handler: ((URL) -> Void)?) {}
     func setAIChatInputBoxHandler(_ inputBoxHandler: (any AIChatInputBoxHandling)?) {}
     func setMetricReportingHandler(_ metricHandler: (any AIChatMetricReportingHandling)?) {}

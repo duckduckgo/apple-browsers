@@ -195,6 +195,9 @@ public enum OAuthClientRefreshEvent {
 
 final public actor DefaultOAuthClient: @preconcurrency OAuthClient {
 
+    /// The OAuth client identifier the apps send to the auth API.
+    public static let clientID = Constants.clientID
+
     private struct Constants {
         /// https://app.asana.com/0/1205784033024509/1207979495854201/f
         static let clientID = "f4311287-0121-40e6-8bbd-85c36daf1837"

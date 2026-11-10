@@ -198,6 +198,22 @@ final class StalledOperationCalculatorTests: XCTestCase {
         XCTAssertEqual(optOutResult.stalledByBroker["test.com-1.0.0"], 1)
     }
 
+    func testOptOutByUserEmail_CompletesAttemptWithoutStalling() {
+        let baseTime = Date().addingTimeInterval(-2 * 24 * 3600)
+        let optOutEvents = [
+            HistoryEvent(brokerId: 1, profileQueryId: 1, type: .optOutStarted, date: baseTime),
+            HistoryEvent(brokerId: 1, profileQueryId: 1, type: .optOutByUserEmail, date: baseTime.addingTimeInterval(600))
+        ]
+        let profileData = createProfileData(with: [], optOutEvents: [optOutEvents])
+
+        let result = StalledOperationCalculator.optOut.calculate(from: profileData)
+
+        XCTAssertEqual(result.total, 1)
+        XCTAssertEqual(result.stalled, 0)
+        XCTAssertEqual(result.totalByBroker["test.com-1.0.0"], 1)
+        XCTAssertTrue(result.stalledByBroker.isEmpty)
+    }
+
     func testEventsWithinTimeoutWindow_AreExcluded() {
         // Given - The scan calculator excludes events within the timeout window
         let calculator = StalledOperationCalculator.scan

@@ -92,6 +92,22 @@ final class ScanWideEventRecorderTests: XCTestCase {
         XCTAssertEqual(metadata.attemptType, .confirmOptOutScan)
     }
 
+    func testMetadataUsesConfirmationAttemptWhenOptOutByUserEmailIsLatestOptOutEvent() {
+        let scanHistoryEvents = [
+            HistoryEvent(brokerId: 1, profileQueryId: 1, type: .matchesFound(count: 1), date: Date(timeIntervalSince1970: 5_500))
+        ]
+        let optOutHistoryEvents = [
+            HistoryEvent(extractedProfileId: 1, brokerId: 1, profileQueryId: 1, type: .optOutByUserEmail, date: Date(timeIntervalSince1970: 6_000))
+        ]
+
+        let metadata = ScanWideEventRecorder.Metadata(scanHistoryEvents: scanHistoryEvents,
+                                                      optOutsHistoryEvents: [optOutHistoryEvents],
+                                                      referenceDate: Date(timeIntervalSince1970: 20_000),
+                                                      isFreeScan: false)
+
+        XCTAssertEqual(metadata.attemptType, .confirmOptOutScan)
+    }
+
     func testMetadataFallsBackToMaintenanceScanWhenLatestOptOutEventIsConfirmed() {
         let referenceDate = Date(timeIntervalSince1970: 20_000)
         let scanHistoryEvents: [HistoryEvent] = [

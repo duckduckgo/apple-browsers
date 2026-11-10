@@ -34,10 +34,10 @@ final class LocalSummariesPromoTests {
     private let keyValueStore = MockKeyValueFileStore()
     private let notificationCenter = NotificationCenter()
 
-    private lazy var service = LocalModelService(featureFlagger: featureFlagger,
-                                                 storage: storage,
-                                                 engine: engine,
-                                                 notificationCenter: notificationCenter)
+    private lazy var service = AIChatLocalModelService(featureFlagger: featureFlagger,
+                                                       storage: storage,
+                                                       engine: engine,
+                                                       notificationCenter: notificationCenter)
     private lazy var promo = LocalSummariesPromo(localModelService: service,
                                                  keyValueStore: keyValueStore,
                                                  notificationCenter: notificationCenter)

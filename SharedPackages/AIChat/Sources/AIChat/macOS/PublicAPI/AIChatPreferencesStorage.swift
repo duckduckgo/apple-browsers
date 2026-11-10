@@ -20,7 +20,7 @@
 import Combine
 import Foundation
 
-public protocol AIChatPreferencesStorage {
+public protocol AIChatPreferencesStorage: AIChatPageSummariesModelStoring {
     var isAIFeaturesEnabled: Bool { get set }
     var isAIFeaturesEnabledPublisher: AnyPublisher<Bool, Never> { get }
 
@@ -51,16 +51,7 @@ public protocol AIChatPreferencesStorage {
 
     var hasAcceptedTermsAndConditions: Bool { get set }
 
-    /// The model Duck.ai uses for "Summarize this page". Choosing a local model is the opt-in to local summaries.
-    var pageSummariesModel: AIChatPageSummariesModel { get set }
-    var pageSummariesModelPublisher: AnyPublisher<AIChatPageSummariesModel, Never> { get }
-
     func reset()
-}
-
-public enum AIChatPageSummariesModel: String, CaseIterable, Sendable {
-    case duckAI = "duckai"
-    case appleIntelligence
 }
 
 public struct DefaultAIChatPreferencesStorage: AIChatPreferencesStorage {

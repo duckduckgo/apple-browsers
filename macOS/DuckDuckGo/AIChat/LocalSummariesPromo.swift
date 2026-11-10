@@ -47,11 +47,11 @@ final class LocalSummariesPromo {
 
     private static let outcomeKey = "duckai.local-summaries-promo.outcome"
 
-    private let localModelService: LocalModelService
+    private let localModelService: AIChatLocalModelService
     private let keyValueStore: ThrowingKeyValueStoring
     private let notificationCenter: NotificationCenter
 
-    init(localModelService: LocalModelService,
+    init(localModelService: AIChatLocalModelService,
          keyValueStore: ThrowingKeyValueStoring,
          notificationCenter: NotificationCenter = .default) {
         self.localModelService = localModelService

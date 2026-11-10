@@ -32,10 +32,10 @@ final class AIChatPreferencesPageSummariesTests {
     private let featureFlagger = MockFeatureFlagger(featuresStub: [FeatureFlag.aiChatLocalModels.rawValue: true])
     private var setupDialogPresentations = 0
 
-    private lazy var service = LocalModelService(featureFlagger: featureFlagger,
-                                                 storage: storage,
-                                                 engine: engine,
-                                                 notificationCenter: NotificationCenter())
+    private lazy var service = AIChatLocalModelService(featureFlagger: featureFlagger,
+                                                       storage: storage,
+                                                       engine: engine,
+                                                       notificationCenter: NotificationCenter())
 
     private func makePreferences() -> AIChatPreferences {
         AIChatPreferences(storage: storage,

@@ -366,7 +366,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     let aiChatSessionStore: AIChatSessionStoring
 
     let aiChatBrowserToolsService: AIChatBrowserToolsService
-    let localModelService: LocalModelService
+    let localModelService: AIChatLocalModelService
     let aiChatPreferences: AIChatPreferences
     let promptBarPreferences: PromptBarPreferences
     private(set) var aiChatHistoryCleaner: AIChatHistoryCleaning!
@@ -1073,7 +1073,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         aiChatBrowserToolsService = AIChatBrowserToolsService(featureFlagger: featureFlagger,
                                                               windowControllersManager: windowControllersManager,
                                                               historyCoordinator: historyCoordinator)
-        localModelService = LocalModelService(featureFlagger: featureFlagger)
+        localModelService = AIChatLocalModelService(featureFlagger: featureFlagger)
 
         contentScopePreferences = ContentScopePreferences(windowControllersManager: windowControllersManager)
         webTrackingProtectionPreferences = WebTrackingProtectionPreferences(persistor: WebTrackingProtectionPreferencesUserDefaultsPersistor(), windowControllersManager: windowControllersManager)

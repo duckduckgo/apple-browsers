@@ -35,7 +35,7 @@ final class AIChatPreferences: ObservableObject {
     private let featureFlagger: FeatureFlagger
     private let duckAIChromeButtonsVisibilityManager: DuckAIChromeButtonsVisibilityManaging
     let promptBarPreferences: PromptBarPreferences
-    private let localModelService: LocalModelService?
+    private let localModelService: AIChatLocalModelService?
     private let presentAppleIntelligenceSetup: @MainActor () -> Void
     // Lazy: built on first use, not during early/transient inits when the store isn't ready yet.
     private lazy var serpSettings: SERPSettingsProviding = SERPSettingsProvider()
@@ -46,7 +46,7 @@ final class AIChatPreferences: ObservableObject {
          featureFlagger: FeatureFlagger = Application.appDelegate.featureFlagger,
          duckAIChromeButtonsVisibilityManager: DuckAIChromeButtonsVisibilityManaging = LocalDuckAIChromeButtonsVisibilityManager(),
          promptBarPreferences: PromptBarPreferences = Application.appDelegate.promptBarPreferences,
-         localModelService: LocalModelService? = nil,
+         localModelService: AIChatLocalModelService? = nil,
          presentAppleIntelligenceSetup: @escaping @MainActor () -> Void = { AppleIntelligenceSetupDialog().show() }) {
         self.storage = storage
         self.aiChatMenuConfiguration = aiChatMenuConfiguration

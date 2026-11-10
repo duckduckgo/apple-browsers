@@ -569,7 +569,7 @@ extension TabViewController {
     @MainActor
     private func applyViaPageTranslation(_ feature: PageTranslationSubfeature, updates: [[String: Any]]) async throws {
         let typed = updates.compactMap { u in
-            (u["id"] as? Int).flatMap { id in (u["text"] as? String).map { PageTranslationSubfeature.Update(id: id, text: $0) } }
+            (u["id"] as? Int).map { PageTranslationSubfeature.Update(id: $0, text: u["text"] as? String, tree: u["tree"] as? String) }
         }
         let source = pocState.sourceLanguage, target = pocState.targetLanguage
         let applyStart = Date()
@@ -584,7 +584,7 @@ extension TabViewController {
             pocLogger.error("""
             POC css REJECTED id=\(update.id, privacy: .public)
               IN : \(self.pocState.unitTexts[update.id] ?? "?", privacy: .public)
-              OUT: \(update.text, privacy: .public)
+              OUT: \(update.text ?? update.tree ?? "", privacy: .public)
             """)
         }
     }
@@ -855,7 +855,7 @@ extension TabViewController {
                   OUT: \(out, privacy: .public)
                 """)
                 for nodeID in textToIDs[uniqueTexts[globalIndex]] ?? [] {
-                    updates.append(["id": nodeID, "text": out])
+                    updates.append(["id": nodeID, isPlain[batchOffset] ? "text" : "tree": out])
                 }
                 translated += 1
             }
@@ -994,7 +994,8 @@ private actor BergamotEngine {
     func translate(_ strings: [String], isHtml: Bool) throws -> [String] {
         guard !strings.isEmpty else { return [] }
         guard let model else { throw BergamotEngineError.notPrepared }
-        let results = try model.translate(strings, isHtml: isHtml)
+        // HTML comes back as TranslateKit's JSON tree, which pageTranslation takes as `tree`.
+        let results = try model.translate(strings, isHtml: isHtml, htmlAsJSONTree: isHtml)
         return results.map(\.text)
     }
 }
@@ -1085,7 +1086,8 @@ final class PageTranslationSubfeature: NSObject, Subfeature {
     weak var broker: UserScriptMessageBroker?
     weak var webView: WKWebView?
 
-    struct Update: Encodable { let id: Int; let text: String }
+    /// `text` for plain units, `tree` (TranslateKit's JSON) for HTML units.
+    struct Update: Encodable { let id: Int; let text: String?; let tree: String? }
     private struct ApplyParams: Encodable { let sourceLanguage: String; let targetLanguage: String; let updates: [Update] }
 
     // One pending request per reply name; a newer request or the timeout resumes the old one with nil.

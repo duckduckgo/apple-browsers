@@ -3335,13 +3335,31 @@
 "menuActualSize" = "Фактический размер";
 
 /* iPad menu bar command */
+"menuAddToDock" = "Добавить DuckDuckGo на док-панель...";
+
+/* iPad menu bar command */
+"menuAddWidget" = "Добавьте виджет на домашний экран...";
+
+/* iPad menu bar command */
 "menuBack" = "Назад";
+
+/* iPad menu bar title */
+"menuBookmarks" = "Закладки";
 
 /* iPad menu bar command */
 "menuClearTabsAndData" = "Сбросить вкладки и данные";
 
+/* iPad Duck.ai menu bar command */
+"menuDeleteAllChats" = "Удалить все чаты...";
+
 /* iPad menu bar command */
 "menuDuplicateTab" = "Дублировать вкладку";
+
+/* iPad menu bar command */
+"menuExportBookmarks" = "Экспортировать закладки...";
+
+/* iPad menu bar submenu */
+"menuFavorites" = "Избранное";
 
 /* iPad menu bar command */
 "menuFeedback" = "Оставить отзыв";
@@ -3350,7 +3368,13 @@
 "menuForward" = "Вперёд";
 
 /* iPad menu bar command */
+"menuHideBookmarks" = "Скрыть закладки";
+
+/* iPad menu bar command */
 "menuHideDownloads" = "Скрыть загрузки";
+
+/* iPad menu bar command */
+"menuHideDuckAIButton" = "Скрыть кнопку Duck.ai";
 
 /* iPad menu bar command */
 "menuHidePasswords" = "Скрыть пароли";
@@ -3359,13 +3383,31 @@
 "menuHideTabs" = "Скрыть вкладки";
 
 /* iPad menu bar command */
+"menuImportBookmarks" = "Импортировать закладки...";
+
+/* iPad menu bar command */
+"menuImportBookmarksAndPasswords" = "Импортировать закладки и пароли...";
+
+/* iPad menu bar command */
 "menuLastTab" = "Последняя вкладка";
+
+/* iPad Duck.ai menu bar command */
+"menuNewChat" = "Новый чат";
+
+/* iPad Duck.ai menu bar command */
+"menuNewImageChat" = "Начать чат с изображениями";
 
 /* iPad menu bar command */
 "menuNewTabOnRight" = "Новая вкладка справа";
 
+/* iPad Duck.ai menu bar command */
+"menuNewVoiceChat" = "Новый голосовой чат";
+
 /* iPad menu bar command */
 "menuNextTab" = "Показать следующую вкладку";
+
+/* iPad Duck.ai menu bar command */
+"menuOpenDuckAI" = "Открыть Duck.ai";
 
 /* iPad menu bar command */
 "menuOpenLocation" = "Открыть адрес...";
@@ -3376,14 +3418,26 @@
 /* iPad menu bar command */
 "menuPrint" = "Распечатать...";
 
+/* iPad Duck.ai menu bar section header */
+"menuRecentChats" = "Недавние чаты";
+
 /* iPad menu bar command selecting a numbered tab */
 "menuSelectTab" = "Выбрать вкладку %d";
+
+/* iPad menu bar command */
+"menuSetDefaultBrowser" = "Сделать DuckDuckGo браузером по умолчанию...";
 
 /* iPad menu bar command */
 "menuSettings" = "Настройки DuckDuckGo...";
 
 /* iPad menu bar command */
+"menuShowBookmarks" = "Показывать закладки";
+
+/* iPad menu bar command */
 "menuShowDownloads" = "Показать загрузки";
+
+/* iPad menu bar command */
+"menuShowDuckAIButton" = "Показать кнопку Duck.ai";
 
 /* iPad menu bar command */
 "menuShowPasswords" = "Показать пароли";
@@ -4306,11 +4360,17 @@
 /* Description of too many requests error when syncing. */
 "prefrences.sync.too-many-requests.description" = "Функция «Синхронизация и резервное копирование» временно недоступна.";
 
+/* Fireproofing setting toggle label */
+"preserveLogins.askOnSignIn" = "Предлагать сделать сайты огнеупорными при входе";
+
 /* No comment provided by engineer. */
 "preserveLogins.domain.list.footer" = "Чтобы вам не приходилось каждый раз входить в свою учетную запись, сайты используют куки-файлы. Если сделать сайт огнеупорным, мы не будем стирать его куки-файлы, даже если вы воспользуетесь кнопкой «Огонь». Но мы по-прежнему будем блокировать сторонние трекеры, в том числе на огнеупорных сайтах.";
 
 /* Section header above Fireproofed websites list */
 "preserveLogins.domain.list.title" = "Огнеупорные сайты";
+
+/* Empty Fireproof sites list */
+"preserveLogins.emptyState" = "Огнеупорных сайтов нет";
 
 /* Alert message explaining to users that the benefit of fireproofing a site is that they will be kept signed in */
 "preserveLogins.fireproof.message" = "Вам не придется заново входить в свою учетную запись даже после применения кнопки «Огонь».";
@@ -4341,6 +4401,9 @@
 
 /* Confirmation button in alert */
 "preserveLogins.remove.all.ok" = "Хорошо";
+
+/* Button to remove all Fireproof sites */
+"preserveLogins.removeAllSites" = "Удалить все огнеупорные сайты";
 
 /* No comment provided by engineer. */
 "Previews" = "Предпросмотр";
@@ -5539,11 +5602,29 @@
 /* Fallback device name for confirmation dialogs */
 "sync.pairing-v2.unknown-peer-name" = "другое устройство";
 
+/* Title for a button in the Sync Promotion banner on the Bookmarks or Passwords screen that opens Sync settings to connect another device */
+"sync.promo.another-device.connect.action" = "Подключить";
+
+/* Message for the Sync Promotion banner on the Bookmarks or Passwords screen, shown when Sync is on but only this device is connected */
+"sync.promo.another-device.message" = "Sync & Backup включено на этом устройстве.";
+
+/* Title for a button in the Sync Promotion banner on the Bookmarks or Passwords screen that opens a screen with links to get DuckDuckGo on other platforms */
+"sync.promo.bookmarks.another-device.get-desktop-app.action" = "Скачать приложение";
+
+/* Title for the Sync Promotion banner on the Bookmarks screen, shown when Sync is on but only this device is connected */
+"sync.promo.bookmarks.another-device.title" = "Синхронизировать закладки с приложением для компьютера тоже?";
+
 /* Message for the Sync Promotion banner when user has bookmarks that can be synced */
 "sync.promo.bookmarks.message" = "Учетная запись не требуется. Сквозное шифрование означает, что ваши закладки видны только вам. Даже у нас нет к ним доступа.";
 
+/* Message for the redesigned Sync Promotion banner on the Bookmarks screen */
+"sync.promo.bookmarks.redesign.message" = "Защита сквозным шифрованием. Никто не может видеть твои закладки. Даже мы.";
+
 /* Title for the Sync Promotion banner */
 "sync.promo.bookmarks.title" = "Синхронизация и резервное копирование закладок";
+
+/* Accessibility label for the close button on the Sync Promotion banner */
+"sync.promo.close.accessibility.label" = "Закрыть предложение синхронизации";
 
 /* Title for a button in the Sync Promotion banner to set up Sync */
 "sync.promo.confirm.action" = "Настройка синхронизации";
@@ -5557,11 +5638,20 @@
 /* Title for a button in the Sync Promotion banner to dismiss Sync promotion banner */
 "sync.promo.dismiss.action" = "Нет, спасибо";
 
+/* Title for the Sync Promotion banner on the Passwords screen, shown when Sync is on but only this device is connected */
+"sync.promo.passwords.another-device.title" = "Синхронизировать пароли с приложением для компьютера тоже?";
+
 /* Message for the Sync Promotion banner when user has passwords that can be synced */
 "sync.promo.passwords.message" = "Учетная запись не требуется. Сквозное шифрование означает, что ваши пароли видны только вам. Даже у нас нет к ним доступа.";
 
+/* Message for the redesigned Sync Promotion banner on the Passwords screen */
+"sync.promo.passwords.redesign.message" = "Защита сквозным шифрованием. Твои пароли никто не увидит, даже мы.";
+
 /* Title for the Sync Promotion banner */
 "sync.promo.passwords.title" = "Синхронизация и резервное копирование паролей";
+
+/* Title for the button in the redesigned Sync Promotion banner and the Data Import summary Sync card that opens Sync settings and starts setting up Sync */
+"sync.promo.redesign.confirm.action" = "Начать синхронизацию";
 
 /* Button title to start backup */
 "sync.recovery.alternative.prompt.backup.button" = "Синхронизация и резервная копия";
@@ -6151,12 +6241,3 @@
 /* Title for screen to screen confirming what data to import from a zip file (bookmarks and /or passwords) */
 "zip.content.import.types.title" = "Что будем импортировать?";
 
-
-/* Fireproofing setting toggle label */
-"preserveLogins.askOnSignIn" = "Предлагать сделать сайты огнеупорными при входе";
-
-/* Empty Fireproof sites list */
-"preserveLogins.emptyState" = "Огнеупорных сайтов нет";
-
-/* Button to remove all Fireproof sites */
-"preserveLogins.removeAllSites" = "Удалить все огнеупорные сайты";

@@ -922,7 +922,7 @@ public enum WebExtensionsSubfeature: String, PrivacySubfeature {
     /// Controls permission prompts and persistence on macOS.
     case permissions
     /// Controls Chrome Web Store update discovery on macOS.
-    /// https://app.asana.com/1/137249556945/task/1220029145261023
+    /// https://app.asana.com/1/137249556945/project/1203108348835387/task/1220303318554449
     case updateDiscovery
     /// Failsafe for the lightweight reload on data clear (fire). Disable to fall back to the full reload.
     case lightweightReloadOnDataClear
@@ -1039,6 +1039,10 @@ public enum PromoQueueSubfeature: String, PrivacySubfeature {
 
     /// Kill switch for the import/sync promo on the Passwords panel empty states.
     case autofillEmptyStatePromo
+
+    /// Kill switch for the default browser win-back modal.
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1220012766503746?focus=true
+    case defaultBrowserWinBackPromo
 }
 
 public enum AutofillBreakageReporterSubfeature: String, PrivacySubfeature {

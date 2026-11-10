@@ -1893,12 +1893,12 @@ public struct UserText {
 
     // MARK: - Dax greetings
 
-    public static let daxGreetingMonday = NotLocalizedString(
+    public static let daxGreetingMonday = NSLocalizedString(
         "new-tab-page.dax-greeting.monday",
         value: "It’s Monday. Let’s do this.",
         comment: "Dax greeting on the New Tab page.")
 
-    public static let daxGreetingFriday = NotLocalizedString(
+    public static let daxGreetingFriday = NSLocalizedString(
         "new-tab-page.dax-greeting.friday",
         value: "Almost the weekend.",
         comment: "Dax greeting on the New Tab page.")
@@ -1913,92 +1913,87 @@ public struct UserText {
         value: "Sunday? I’m still in my PJs.",
         comment: "English-only Dax greeting on the New Tab page.")
 
-    public static let daxGreetingWhereToToday = NotLocalizedString(
+    public static let daxGreetingWhereToToday = NSLocalizedString(
         "new-tab-page.dax-greeting.whereToToday",
         value: "Where to today?",
         comment: "Dax greeting on the New Tab page.")
 
-    public static let daxGreetingNewDayNewTabs = NotLocalizedString(
+    public static let daxGreetingNewDayNewTabs = NSLocalizedString(
         "new-tab-page.dax-greeting.newDayNewTabs",
         value: "New day, new tabs.",
         comment: "Dax greeting on the New Tab page.")
 
-    public static let daxGreetingWhereShouldWeStart = NotLocalizedString(
+    public static let daxGreetingWhereShouldWeStart = NSLocalizedString(
         "new-tab-page.dax-greeting.whereShouldWeStart",
         value: "Where should we start?",
         comment: "Dax greeting on the New Tab page.")
 
-    public static let daxGreetingMorning = NotLocalizedString(
+    public static let daxGreetingMorning = NSLocalizedString(
         "new-tab-page.dax-greeting.morning",
         value: "Morning, sunshine.",
         comment: "Dax greeting on the New Tab page.")
 
-    public static let daxGreetingStillAwake = NotLocalizedString(
+    public static let daxGreetingStillAwake = NSLocalizedString(
         "new-tab-page.dax-greeting.stillAwake",
-        value: "Still awake? Me too!",
+        value: "I never sleep.",
         comment: "Dax greeting on the New Tab page.")
 
-    public static let daxGreetingNightOwl = NotLocalizedString(
+    public static let daxGreetingNightOwl = NSLocalizedString(
         "new-tab-page.dax-greeting.nightOwl",
-        value: "Night owl? Me too.",
+        value: "I’m really a night owl.",
         comment: "Dax greeting on the New Tab page.")
 
-    public static let daxGreetingYoureBack = NotLocalizedString(
-        "new-tab-page.dax-greeting.youreBack",
-        value: "Hey, you’re back!",
-        comment: "Dax greeting on the New Tab page.")
-
-    public static let daxGreetingGoodbyeAds = NotLocalizedString(
+    public static let daxGreetingGoodbyeAds = NSLocalizedString(
         "new-tab-page.dax-greeting.goodbyeAds",
         value: "Goodbye creepy ads!",
         comment: "Dax greeting on the New Tab page.")
 
-    public static let daxGreetingAskMe = NotLocalizedString(
+    public static let daxGreetingAskMe = NSLocalizedString(
         "new-tab-page.dax-greeting.askMe",
-        value: "Ask me. I won’t tell.",
+        value: "Ask me anything.",
         comment: "Dax greeting on the New Tab page. Refers to private AI chat.")
 
-    public static let daxGreetingDuckDuckHello = NotLocalizedString(
+    public static let daxGreetingDuckDuckHello = NSLocalizedString(
         "new-tab-page.dax-greeting.duckDuckHello",
-        value: "Duck Duck Hello!",
+        value: "Duck Duck Hello.",
         comment: "Dax greeting on the New Tab page.")
 
-    public static let daxGreetingNiceToSeeYou = NotLocalizedString(
+    public static let daxGreetingNiceToSeeYou = NSLocalizedString(
         "new-tab-page.dax-greeting.niceToSeeYou",
         value: "Nice to see you.",
         comment: "Dax greeting on the New Tab page.")
 
-    public static let daxGreetingReadyWhenYouAre = NotLocalizedString(
+    public static let daxGreetingReadyWhenYouAre = NSLocalizedString(
         "new-tab-page.dax-greeting.readyWhenYouAre",
         value: "Ready when you are.",
         comment: "Dax greeting on the New Tab page.")
 
-    public static let daxGreetingReadyToSearchPrivately = NotLocalizedString(
+    public static let daxGreetingReadyToSearchPrivately = NSLocalizedString(
         "new-tab-page.dax-greeting.readyToSearchPrivately",
         value: "Ready to search privately?",
         comment: "Dax greeting on the New Tab page.")
 
-    public static let daxGreetingHeyThere = NotLocalizedString(
+    public static let daxGreetingHeyThere = NSLocalizedString(
         "new-tab-page.dax-greeting.heyThere",
-        value: "Hey there!",
+        value: "Hey there.",
         comment: "Dax greeting on the New Tab page.")
 
-    public static let daxGreetingWhatsOnYourMind = NotLocalizedString(
+    public static let daxGreetingWhatsOnYourMind = NSLocalizedString(
         "new-tab-page.dax-greeting.whatsOnYourMind",
         value: "What’s on your mind?",
         comment: "Dax greeting on the New Tab page.")
 
-    public static let daxGreetingHowCanIHelp = NotLocalizedString(
+    public static let daxGreetingHowCanIHelp = NSLocalizedString(
         "new-tab-page.dax-greeting.howCanIHelp",
         value: "How can I help you today?",
         comment: "Dax greeting on the New Tab page.")
 
-    public static let daxGreetingLetsExplore = NotLocalizedString(
+    public static let daxGreetingLetsExplore = NSLocalizedString(
         "new-tab-page.dax-greeting.letsExplore",
         value: "Let’s explore.",
         comment: "Dax greeting on the New Tab page.")
 
-    public static let daxGreetingLetsDoThis = NotLocalizedString(
+    public static let daxGreetingLetsDoThis = NSLocalizedString(
         "new-tab-page.dax-greeting.letsDoThis",
         value: "Let’s do this!",
         comment: "Dax greeting on the New Tab page.")

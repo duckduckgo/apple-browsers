@@ -3335,13 +3335,31 @@
 "menuActualSize" = "Faktiskais izmērs";
 
 /* iPad menu bar command */
+"menuAddToDock" = "Pievienot DuckDuckGo dokam…";
+
+/* iPad menu bar command */
+"menuAddWidget" = "Pievienot logrīku sākuma ekrānam…";
+
+/* iPad menu bar command */
 "menuBack" = "Atpakaļ";
+
+/* iPad menu bar title */
+"menuBookmarks" = "Grāmatzīmes";
 
 /* iPad menu bar command */
 "menuClearTabsAndData" = "Notīrīt cilnes un datus";
 
+/* iPad Duck.ai menu bar command */
+"menuDeleteAllChats" = "Dzēst visas tērzēšanas sarunas…";
+
 /* iPad menu bar command */
 "menuDuplicateTab" = "Dublēt cilni";
+
+/* iPad menu bar command */
+"menuExportBookmarks" = "Eksportēt grāmatzīmes...";
+
+/* iPad menu bar submenu */
+"menuFavorites" = "Izlase";
 
 /* iPad menu bar command */
 "menuFeedback" = "Kopīgot atsauksmi";
@@ -3350,7 +3368,13 @@
 "menuForward" = "Uz priekšu";
 
 /* iPad menu bar command */
+"menuHideBookmarks" = "Paslēpt grāmatzīmes";
+
+/* iPad menu bar command */
 "menuHideDownloads" = "Paslēpt lejupielādes";
+
+/* iPad menu bar command */
+"menuHideDuckAIButton" = "Paslēpt Duck.ai pogu";
 
 /* iPad menu bar command */
 "menuHidePasswords" = "Paslēpt paroles";
@@ -3359,13 +3383,31 @@
 "menuHideTabs" = "Paslēpt cilnes";
 
 /* iPad menu bar command */
+"menuImportBookmarks" = "Importēt grāmatzīmes...";
+
+/* iPad menu bar command */
+"menuImportBookmarksAndPasswords" = "Importēt grāmatzīmes un paroles...";
+
+/* iPad menu bar command */
 "menuLastTab" = "Pēdējā cilne";
+
+/* iPad Duck.ai menu bar command */
+"menuNewChat" = "Jauna tērzēšanas saruna";
+
+/* iPad Duck.ai menu bar command */
+"menuNewImageChat" = "Jauna attēlu tērzēšana";
 
 /* iPad menu bar command */
 "menuNewTabOnRight" = "Jauna cilne pa labi";
 
+/* iPad Duck.ai menu bar command */
+"menuNewVoiceChat" = "Jauna balss tērzēšana";
+
 /* iPad menu bar command */
 "menuNextTab" = "Rādīt nākamo cilni";
+
+/* iPad Duck.ai menu bar command */
+"menuOpenDuckAI" = "Atvērt Duck.ai";
 
 /* iPad menu bar command */
 "menuOpenLocation" = "Atvērt atrašanās vietu…";
@@ -3376,14 +3418,26 @@
 /* iPad menu bar command */
 "menuPrint" = "Drukāt…";
 
+/* iPad Duck.ai menu bar section header */
+"menuRecentChats" = "Jaunākās tērzēšanas sarunas";
+
 /* iPad menu bar command selecting a numbered tab */
 "menuSelectTab" = "Atlasīt cilni %d";
+
+/* iPad menu bar command */
+"menuSetDefaultBrowser" = "Iestatīt DuckDuckGo kā noklusējuma pārlūku…";
 
 /* iPad menu bar command */
 "menuSettings" = "DuckDuckGo iestatījumi…";
 
 /* iPad menu bar command */
+"menuShowBookmarks" = "Rādīt grāmatzīmes";
+
+/* iPad menu bar command */
 "menuShowDownloads" = "Rādīt lejupielādes";
+
+/* iPad menu bar command */
+"menuShowDuckAIButton" = "Rādīt Duck.ai pogu";
 
 /* iPad menu bar command */
 "menuShowPasswords" = "Rādīt paroles";
@@ -4306,11 +4360,17 @@
 /* Description of too many requests error when syncing. */
 "prefrences.sync.too-many-requests.description" = "Sync & Backup uz laiku nav pieejams.";
 
+/* Fireproofing setting toggle label */
+"preserveLogins.askOnSignIn" = "Pierakstoties prasīt izmantot Fireproof vietnes";
+
 /* No comment provided by engineer. */
 "preserveLogins.domain.list.footer" = "Vietnes lieto sīkfailus, lai tu varētu turpināt būt pierakstījies(-usies). Padarot vietni ugunsdrošu, sīkfaili netiek dzēsti, bet tu vari turpināt būt pierakstījies(-usies) arī pēc Uguns pogas lietošanas. Mēs joprojām bloķēsim trešo pušu izsekotājus, kas atrodami ugunsdrošās vietnēs.";
 
 /* Section header above Fireproofed websites list */
 "preserveLogins.domain.list.title" = "Ugunsdrošas vietnes";
+
+/* Empty Fireproof sites list */
+"preserveLogins.emptyState" = "Vēl nav Fireproof vietņu";
 
 /* Alert message explaining to users that the benefit of fireproofing a site is that they will be kept signed in */
 "preserveLogins.fireproof.message" = "Padarot šo vietni ugunsdrošu, varēsi turpināt būt pierakstījies(-usies) arī pēc Uguns pogas lietošanas.";
@@ -4341,6 +4401,9 @@
 
 /* Confirmation button in alert */
 "preserveLogins.remove.all.ok" = "Labi";
+
+/* Button to remove all Fireproof sites */
+"preserveLogins.removeAllSites" = "Noņemt visas Fireproof vietnes";
 
 /* No comment provided by engineer. */
 "Previews" = "Priekšskatījumi";
@@ -5539,11 +5602,29 @@
 /* Fallback device name for confirmation dialogs */
 "sync.pairing-v2.unknown-peer-name" = "otra ierīce";
 
+/* Title for a button in the Sync Promotion banner on the Bookmarks or Passwords screen that opens Sync settings to connect another device */
+"sync.promo.another-device.connect.action" = "Savienot";
+
+/* Message for the Sync Promotion banner on the Bookmarks or Passwords screen, shown when Sync is on but only this device is connected */
+"sync.promo.another-device.message" = "Šajā ierīcē ir iespējota funkcija Sync & Backup.";
+
+/* Title for a button in the Sync Promotion banner on the Bookmarks or Passwords screen that opens a screen with links to get DuckDuckGo on other platforms */
+"sync.promo.bookmarks.another-device.get-desktop-app.action" = "Iegūt lietotni";
+
+/* Title for the Sync Promotion banner on the Bookmarks screen, shown when Sync is on but only this device is connected */
+"sync.promo.bookmarks.another-device.title" = "Vai sinhronizēt grāmatzīmes arī ar datora lietotni?";
+
 /* Message for the Sync Promotion banner when user has bookmarks that can be synced */
 "sync.promo.bookmarks.message" = "Nav nepieciešams konts. Pilnīga šifrēšana nozīmē, ka tavas grāmatzīmes vari redzēt tikai tu, un pat mēs tās neredzam.";
 
+/* Message for the redesigned Sync Promotion banner on the Bookmarks screen */
+"sync.promo.bookmarks.redesign.message" = "Šifrēšana no gala līdz galam. Neviens nevar redzēt tavas grāmatzīmes, pat ne mēs.";
+
 /* Title for the Sync Promotion banner */
 "sync.promo.bookmarks.title" = "Sinhronizē un dublē savas grāmatzīmes";
+
+/* Accessibility label for the close button on the Sync Promotion banner */
+"sync.promo.close.accessibility.label" = "Aizvērt sinhronizācijas piedāvājumu";
 
 /* Title for a button in the Sync Promotion banner to set up Sync */
 "sync.promo.confirm.action" = "Iestatīt sinhronizāciju";
@@ -5557,11 +5638,20 @@
 /* Title for a button in the Sync Promotion banner to dismiss Sync promotion banner */
 "sync.promo.dismiss.action" = "Nē, paldies";
 
+/* Title for the Sync Promotion banner on the Passwords screen, shown when Sync is on but only this device is connected */
+"sync.promo.passwords.another-device.title" = "Vai sinhronizēt paroles arī ar datora lietotni?";
+
 /* Message for the Sync Promotion banner when user has passwords that can be synced */
 "sync.promo.passwords.message" = "Nav nepieciešams konts. Pilnīga šifrēšana nozīmē, ka tavas paroles vari redzēt tikai tu, un tās neredzam pat mēs.";
 
+/* Message for the redesigned Sync Promotion banner on the Passwords screen */
+"sync.promo.passwords.redesign.message" = "Šifrēšana no gala līdz galam. Neviens nevar redzēt tavas paroles, pat ne mēs.";
+
 /* Title for the Sync Promotion banner */
 "sync.promo.passwords.title" = "Sinhronizē un dublē savas paroles";
+
+/* Title for the button in the redesigned Sync Promotion banner and the Data Import summary Sync card that opens Sync settings and starts setting up Sync */
+"sync.promo.redesign.confirm.action" = "Sākt sinhronizāciju";
 
 /* Button title to start backup */
 "sync.recovery.alternative.prompt.backup.button" = "Sync & Backup šo ierīci";
@@ -6151,12 +6241,3 @@
 /* Title for screen to screen confirming what data to import from a zip file (bookmarks and /or passwords) */
 "zip.content.import.types.title" = "Ko tu gribi importēt?";
 
-
-/* Fireproofing setting toggle label */
-"preserveLogins.askOnSignIn" = "Pierakstoties prasīt padarīt vietnes ugunsdrošas";
-
-/* Empty Fireproof sites list */
-"preserveLogins.emptyState" = "Vēl nav ugunsdrošu vietņu";
-
-/* Button to remove all Fireproof sites */
-"preserveLogins.removeAllSites" = "Noņemt visas ugunsdrošās vietnes";

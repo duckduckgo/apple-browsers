@@ -17,6 +17,7 @@
 //
 
 import Combine
+import CryptoKit
 @_spi(Testing) import Persistence
 import PrivacyConfig
 import WebKit
@@ -214,7 +215,8 @@ final class ChromeWebStoreServiceTests: XCTestCase {
             let pixels = StoreUpdatePixelFiringMock()
             let scheduled = expectation(description: "Initial check completed")
             let service = ChromeWebStoreService(manager: manager, catalog: catalog, downloader: StoreDownloaderMock(action: { Data() }), presenter: presenter,
-                                               verifier: ChromeWebStorePackageVerifier(), pixelFiring: pixels, updateCheck: { _, _ in
+                                               verifier: ChromeWebStorePackageVerifier(), pixelFiring: pixels,
+                                               updateDownload: { _ in throw WebExtensionUpdateDownloadFailure.networkFailure }, updateCheck: { _, _ in
                 .init(outcome: outcome, retryNotBefore: nil)
             }, updateSchedulerFactory: { _ in
                 scheduled.fulfill()
@@ -239,6 +241,101 @@ final class ChromeWebStoreServiceTests: XCTestCase {
         XCTAssertFalse(pixels.extensions.isEmpty)
         XCTAssertTrue(pixels.extensions.allSatisfy { $0 == .other })
         withExtendedLifetime((manager, service)) {}
+    }
+
+    func testDiscoveryPreparesPendingPackageWithoutCallingPresenterOrInstaller() async throws {
+        let fixture = try ChromeWebStoreFixture()
+        let manager = try makeManager()
+        catalog.catalogEntries[fixture.identifier] = .bitwarden
+        installationStore.installedExtensions = [installed("installed", version: "0.9", storeID: fixture.identifier)]
+        let update = try updateOffer(fixture)
+        let pixels = StoreUpdatePixelFiringMock()
+        let service = ChromeWebStoreService(manager: manager, catalog: catalog, downloader: StoreDownloaderMock(action: {
+            XCTFail("Background updates must not enter the UI download flow")
+            return Data()
+        }), presenter: presenter, verifier: ChromeWebStorePackageVerifier(publisherKeyHash: ChromeWebStoreFixture.publisherKeyHash),
+                                           pixelFiring: pixels, updateDownload: { _ in fixture.package }, updateCheck: { _, _ in
+            .init(outcome: .update(update), retryNotBefore: nil)
+        }, updateSchedulerFactory: { _ in ChromeWebStorePeriodicSchedulerMock() })
+        await service.checkForUpdatesNow()
+        let pending = await service.pendingUpdates.pendingUpdate(for: fixture.identifier)
+        XCTAssertEqual(try Data(contentsOf: XCTUnwrap(pending).fileURL), fixture.archive)
+        guard case .updateVerified(let pixelExtension) = pixels.preparationEvents.first else { return XCTFail("Expected verified update") }
+        XCTAssertEqual(pixelExtension, .catalog(.bitwarden))
+        XCTAssertEqual(presenter.progressRequests, 0)
+        XCTAssertTrue(presenter.errors.isEmpty)
+        XCTAssertTrue(presenter.removalRequests.isEmpty)
+        XCTAssertEqual(prompter.installationRequests, 0)
+        XCTAssertEqual(installationStore.installedExtensions.first?.version, "0.9")
+        withExtendedLifetime((manager, service)) {}
+    }
+
+    func testUpdateVerificationUsesDebugVersionOverrideOnlyWhenSet() async throws {
+        let fixture = try ChromeWebStoreFixture()
+        for versionOverride in [String?.none, "0.0.0.1"] {
+            let manager = try makeManager()
+            installationStore.installedExtensions = [installed("installed", version: "1.0", storeID: fixture.identifier)]
+            let update = try updateOffer(fixture)
+            let pixels = StoreUpdatePixelFiringMock()
+            let service = ChromeWebStoreService(manager: manager, catalog: catalog, downloader: StoreDownloaderMock(action: { Data() }),
+                                               presenter: presenter, verifier: ChromeWebStorePackageVerifier(publisherKeyHash: ChromeWebStoreFixture.publisherKeyHash),
+                                               pixelFiring: pixels, updateDownload: { _ in fixture.package }, updateCheck: { _, reported in
+                XCTAssertEqual(reported, versionOverride ?? "1.0")
+                return .init(outcome: .update(update), retryNotBefore: nil)
+            }, updateSchedulerFactory: { _ in ChromeWebStorePeriodicSchedulerMock() })
+            service.setUpdateCheckVersionOverride(versionOverride, forInstallationIdentifier: "installed")
+            await service.checkForUpdatesNow()
+            let pending = await service.pendingUpdates.pendingUpdate(for: fixture.identifier)
+            if versionOverride != nil {
+                XCTAssertEqual(try Data(contentsOf: XCTUnwrap(pending).fileURL), fixture.archive)
+                guard case .updateVerified(let pixelExtension) = pixels.preparationEvents.first else { return XCTFail("Expected verified update") }
+                XCTAssertEqual(pixelExtension, .other)
+            } else {
+                XCTAssertNil(pending)
+                guard case .updateVerificationFailed(let pixelExtension, let reason) = pixels.preparationEvents.first else {
+                    return XCTFail("Expected version rejection")
+                }
+                XCTAssertEqual(pixelExtension, .other)
+                XCTAssertEqual(reason, .notNewer)
+            }
+            XCTAssertEqual(installationStore.installedExtensions.first?.version, "1.0")
+            XCTAssertEqual(presenter.progressRequests, 0)
+            XCTAssertTrue(presenter.errors.isEmpty)
+            withExtendedLifetime((manager, service)) {}
+        }
+    }
+
+    func testUpdateDownloadFailurePixelsUseCatalogEntryAndOther() async throws {
+        let fixture = try ChromeWebStoreFixture()
+        for pixelExtension in WebExtensionPixelExtension.allCases {
+            let manager = try makeManager()
+            if case .catalog(let entry) = pixelExtension {
+                catalog.catalogEntries[fixture.identifier] = entry
+            } else {
+                catalog.catalogEntries.removeValue(forKey: fixture.identifier)
+            }
+            installationStore.installedExtensions = [installed("installed", version: "0.9", storeID: fixture.identifier)]
+            let update = try updateOffer(fixture)
+            let pixels = StoreUpdatePixelFiringMock()
+            let service = ChromeWebStoreService(manager: manager, catalog: catalog, downloader: StoreDownloaderMock(action: { Data() }),
+                                               presenter: presenter, verifier: ChromeWebStorePackageVerifier(), pixelFiring: pixels,
+                                               updateDownload: { _ in throw WebExtensionUpdateDownloadFailure.networkFailure }, updateCheck: { _, _ in
+                .init(outcome: .update(update), retryNotBefore: nil)
+            }, updateSchedulerFactory: { _ in ChromeWebStorePeriodicSchedulerMock() })
+            await service.checkForUpdatesNow()
+            guard case .updateDownloadFailed(let reportedExtension, let reason) = pixels.preparationEvents.first else {
+                return XCTFail("Expected download failure")
+            }
+            XCTAssertEqual(reportedExtension, pixelExtension)
+            XCTAssertEqual(reason, .networkFailure)
+            withExtendedLifetime((manager, service)) {}
+        }
+    }
+
+    private func updateOffer(_ fixture: ChromeWebStoreFixture) throws -> ChromeWebStoreUpdateChecker.Update {
+        .init(extensionID: fixture.identifier, version: "1.0",
+              downloadURL: try XCTUnwrap(URL(string: "https://clients2.googleusercontent.com/update.crx")),
+              size: fixture.package.count, sha256: SHA256.hash(data: fixture.package).map { String(format: "%02x", $0) }.joined())
     }
 
     private func installed(_ identifier: String, version: String?, storeID: String? = nil) -> InstalledWebExtension {
@@ -828,7 +925,16 @@ private final class StorePresenterMock: ChromeWebStorePresenting {
     var errors: [Error] = []
     var removalRequests: [String] = []
     var allowRemoval = true
+    var progressVisible = false
+    var progressRequests = 0
+    var cancelImmediately = false
 
+    func showDownloadProgress(cancel: @escaping () -> Void) {
+        progressRequests += 1
+        progressVisible = true
+        if cancelImmediately { cancel() }
+    }
+    func dismissDownloadProgress() { progressVisible = false }
     func confirmRemoval(name: String, webExtension: WKWebExtension?) async -> Bool {
         removalRequests.append(name)
         return allowRemoval
@@ -856,10 +962,12 @@ private final class StorePermissionPrompter: WebExtensionPermissionPrompting {
 private final class StoreUpdatePixelFiringMock: WebExtensionPixelFiring {
     private(set) var extensions: [WebExtensionPixelExtension] = []
     private(set) var outcomes: [WebExtensionUpdateCheckOutcome] = []
+    private(set) var preparationEvents: [WebExtensionPixelEvent] = []
 
     func fire(_ event: WebExtensionPixelEvent) {
         guard case .updateCheck(let pixelExtension, let outcome) = event else {
-            return XCTFail("Expected a discovery pixel")
+            preparationEvents.append(event)
+            return
         }
         extensions.append(pixelExtension)
         outcomes.append(outcome)

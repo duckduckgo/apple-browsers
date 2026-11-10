@@ -589,7 +589,7 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
             let loadResult = try await loader.loadWebExtension(identifier: identifier, into: controller)
             unloadGuard.recordLoad(of: identifier)
 
-            let permissions = context(for: identifier)?.webExtension.requiredPermissionNames
+            let webExtension = context(for: identifier)?.webExtension
             let installedExtension = InstalledWebExtension(
                 uniqueIdentifier: identifier,
                 filename: loadResult.filename,
@@ -597,7 +597,8 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
                 version: loadResult.version,
                 embeddedType: embeddedType,
                 storeIdentity: storeIdentity,
-                permissions: permissions
+                permissions: webExtension?.requiredPermissionNames,
+                matchPatterns: webExtension?.allRequestedMatchPatterns.map(\.string)
             )
 
             installationStore.add(installedExtension)
@@ -1461,6 +1462,12 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
         // Records saved before permissions were stored fall back to the loaded extension.
         installationStore.installedExtension(withUniqueIdentifier: identifier)?.permissions
             ?? context(for: identifier)?.webExtension.requiredPermissionNames
+            ?? []
+    }
+
+    public func extensionMatchPatterns(for identifier: String) -> [String] {
+        installationStore.installedExtension(withUniqueIdentifier: identifier)?.matchPatterns
+            ?? context(for: identifier)?.webExtension.allRequestedMatchPatterns.map(\.string)
             ?? []
     }
 

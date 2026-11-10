@@ -91,6 +91,9 @@ public enum WebExtensionUpdateCheckOutcome: String, CaseIterable, Sendable {
 public enum WebExtensionPixelEvent {
     /// Discovery pixels report the catalog extension and, for failures, a bounded reason.
     case updateCheck(extension: WebExtensionPixelExtension, outcome: WebExtensionUpdateCheckOutcome)
+    case updateDownloadFailed(extension: WebExtensionPixelExtension, outcome: WebExtensionUpdateDownloadFailure)
+    case updateVerificationFailed(extension: WebExtensionPixelExtension, outcome: WebExtensionUpdateVerificationFailure)
+    case updateVerified(extension: WebExtensionPixelExtension)
     /// A fresh install; updates aren't reported.
     case installed(extension: WebExtensionPixelExtension)
     case installError(extension: WebExtensionPixelExtension, error: Error)
@@ -342,7 +345,8 @@ public struct CPMWebExtensionPixelMetadata: Equatable, Sendable {
             name = "web_extension_cpm_network_process_recovery_applied"
             frequency = .dailyAndCount
             parameters = [:]
-        case .updateCheck, .installed, .installError, .uninstalled, .uninstallError, .uninstalledAll,
+        case .updateCheck, .updateDownloadFailed, .updateVerificationFailed, .updateVerified,
+             .installed, .installError, .uninstalled, .uninstallError, .uninstalledAll,
              .uninstallAllError, .loaded, .loadError, .reloadError, .stateChecked, .expectedExtensionNotLoaded,
              .adBlockingScriptletsNotFetched, .embeddedInstalled, .embeddedUpgraded,
              .embeddedInstallError, .scriptletFetchSuccess, .scriptletFetchError,

@@ -247,8 +247,14 @@ class MainViewController: UIViewController {
         appOpenKeyboardRequestID = UUID()
     }
 
+    /// After a Face ID unlock, iOS keeps the app inactive for up to about 2 s while its Face ID indicator goes away.
+    /// The unlocked page can take focus during that time; iOS shows the keyboard once the app is active.
+    private var isFinishingAppLockUnlock = false
+    private var appLockUnlockCancellables = Set<AnyCancellable>()
+
     private var isAppOpenKeyboardWindowVisible: Bool {
-        guard UIApplication.shared.applicationState == .active,
+        let applicationState = UIApplication.shared.applicationState
+        guard applicationState == .active || (applicationState == .inactive && isFinishingAppLockUnlock),
               let window = viewIfLoaded?.window, !window.isHidden, window.isKeyWindow else { return false }
         // The blank snapshot covers a browser window that remains visible and key.
         let sceneWindows = window.windowScene?.windows ?? UIApplication.shared.foregroundSceneWindows
@@ -1081,6 +1087,7 @@ class MainViewController: UIViewController {
         registerForPageRefreshPatterns()
         registerForSyncFeatureFlagsUpdates()
         registerForAppBackgroundNotification()
+        registerForAppLockUnlockNotifications()
         registerForNewTabPageSessionForegroundNotification()
         registerForDownloadMenuAlertNotifications()
 
@@ -1910,6 +1917,24 @@ class MainViewController: UIViewController {
                 guard AppWidthObserver.shared.isPad else { return }
                 self?.refreshCurrentWebViewViewportAfterForeground()
             }
+    }
+
+    /// App Lock removes its window only after a successful unlock.
+    private func registerForAppLockUnlockNotifications() {
+        NotificationCenter.default.publisher(for: UIWindow.didBecomeHiddenNotification)
+            .sink { [weak self] notification in
+                guard let window = notification.object as? UIWindow,
+                      window.rootViewController is AuthenticationViewController,
+                      UIApplication.shared.applicationState == .inactive else { return }
+                self?.isFinishingAppLockUnlock = true
+            }
+            .store(in: &appLockUnlockCancellables)
+        NotificationCenter.default.publisher(for: UIApplication.didBecomeActiveNotification)
+            .merge(with: NotificationCenter.default.publisher(for: UIApplication.didEnterBackgroundNotification))
+            .sink { [weak self] _ in
+                self?.isFinishingAppLockUnlock = false
+            }
+            .store(in: &appLockUnlockCancellables)
     }
 
     @objc private func onAppDidEnterBackground() {

@@ -1536,6 +1536,106 @@ extension AIChatUserScriptHandlerTests {
     }
 }
 
+// MARK: - Terms of Service card on a handed-off prompt
+
+extension AIChatUserScriptHandlerTests {
+
+    /// What the SERP's Search Assist follow-up sends when it opens Duck.ai.
+    private var searchAssistHandoffPayload: AIChatPayload {
+        ["aiChatPrompt": "More bread recipes", "aiChatAutoPrompt": true, "aiChatMetadata": "{\"duckAssist\":{}}"]
+    }
+
+    private func requestHandoffData() {
+        _ = aiChatUserScriptHandler.getAIChatNativeHandoffData(params: [], message: MockUserScriptMessage(name: "test", body: [:]))
+    }
+
+    func testWhenTheSERPHandsOffAnAutoSubmittedPromptBeforeTheTermsAreAcceptedThenTheInputBoxLearnsThePageAsksForThem() {
+        let inputBox = MockAIChatInputBox()
+        aiChatUserScriptHandler.setAIChatInputBoxHandler(inputBox)
+        mockPayloadHandler.setData(searchAssistHandoffPayload)
+
+        requestHandoffData()
+
+        XCTAssertTrue(inputBox.isTermsOfServiceShownOnPage)
+    }
+
+    func testWhenTheTermsAreAlreadyAcceptedThenAHandedOffPromptLeavesTheTermsToTheInputBox() {
+        mockUserDefaults.set(true, forKey: "aichat.hasAcceptedTermsAndConditions")
+        let inputBox = MockAIChatInputBox()
+        aiChatUserScriptHandler.setAIChatInputBoxHandler(inputBox)
+        mockPayloadHandler.setData(searchAssistHandoffPayload)
+
+        requestHandoffData()
+
+        XCTAssertFalse(inputBox.isTermsOfServiceShownOnPage)
+    }
+
+    /// The page only holds a prompt behind its card when it would otherwise send it on its own.
+    func testWhenTheHandedOffPayloadSendsNoPromptOnItsOwnThenThePageAsksForNothing() {
+        let payloads: [AIChatPayload] = [
+            ["aiChatPrompt": "More bread recipes", "aiChatAutoPrompt": false],
+            ["aiChatPrompt": "More bread recipes"],
+            ["aiChatPrompt": "", "aiChatAutoPrompt": true],
+            ["aiChatAutoPrompt": true],
+            ["key": "value"]
+        ]
+        let inputBox = MockAIChatInputBox()
+        aiChatUserScriptHandler.setAIChatInputBoxHandler(inputBox)
+
+        for payload in payloads {
+            inputBox.isTermsOfServiceShownOnPage = true
+            mockPayloadHandler.setData(payload)
+
+            requestHandoffData()
+
+            XCTAssertFalse(inputBox.isTermsOfServiceShownOnPage, "\(payload)")
+        }
+    }
+
+    /// The payload is consumed once, so a reload brings the page back without its card.
+    func testWhenThePageLoadsAgainWithoutAHandoffThenTheInputBoxLearnsTheCardIsGone() {
+        let inputBox = MockAIChatInputBox()
+        aiChatUserScriptHandler.setAIChatInputBoxHandler(inputBox)
+        mockPayloadHandler.setData(searchAssistHandoffPayload)
+        requestHandoffData()
+
+        requestHandoffData()
+
+        XCTAssertFalse(inputBox.isTermsOfServiceShownOnPage)
+    }
+
+    /// A new tab binds the input before it's given the payload, and the page loads after both.
+    func testWhenAHandoffIsAnnouncedBeforeThePageLoadsThenTheInputBoxLearnsThePageWillAskForTheTerms() {
+        let inputBox = MockAIChatInputBox()
+        aiChatUserScriptHandler.setAIChatInputBoxHandler(inputBox)
+
+        aiChatUserScriptHandler.willHandOff(searchAssistHandoffPayload)
+
+        XCTAssertTrue(inputBox.isTermsOfServiceShownOnPage)
+    }
+
+    /// A replacement script takes over the page's state when it's rebuilt under a page that won't load again.
+    func testWhenThePagesTermsCardIsCarriedOverThenTheBoundInputBoxLearnsIt() {
+        let inputBox = MockAIChatInputBox()
+        aiChatUserScriptHandler.setAIChatInputBoxHandler(inputBox)
+
+        aiChatUserScriptHandler.isTermsOfServiceShownOnPage = true
+
+        XCTAssertTrue(inputBox.isTermsOfServiceShownOnPage)
+    }
+
+    /// The input box binds to a tab whenever it comes on screen, which can be after the page asked for the handoff.
+    func testWhenAnInputBoxAttachesAfterTheHandoffThenItLearnsThePageAsksForTheTerms() {
+        mockPayloadHandler.setData(searchAssistHandoffPayload)
+        requestHandoffData()
+        let inputBox = MockAIChatInputBox()
+
+        aiChatUserScriptHandler.setAIChatInputBoxHandler(inputBox)
+
+        XCTAssertTrue(inputBox.isTermsOfServiceShownOnPage)
+    }
+}
+
 // MARK: - handleTermsAcceptedIfNeeded Tests
 
 extension AIChatUserScriptHandlerTests {
@@ -1986,6 +2086,7 @@ private final class MockAIChatInputBox: AIChatInputBoxHandling {
     var aiChatInputBoxVisibilityPublisher: Published<AIChatInputBoxVisibility>.Publisher { $aiChatInputBoxVisibility }
 
     var isSubmitBlockedByRecoveryCard = false
+    var isTermsOfServiceShownOnPage = false
 
     @Published var attachmentUsage: AIChatAttachmentUsage?
     var attachmentUsagePublisher: Published<AIChatAttachmentUsage?>.Publisher { $attachmentUsage }

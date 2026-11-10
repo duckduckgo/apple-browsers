@@ -38,7 +38,7 @@ public protocol AIChatLocalModelServing: AnyObject {
     func config() -> AIChatLocalModelConfig?
     func register(_ pusher: AIChatLocalModelPushing)
     func startRun(_ request: AIChatLocalRunRequest, for pusher: AIChatLocalModelPushing) throws -> AIChatLocalRunStartReply
-    func cancelRun(requestId: String)
+    func cancelRun(requestId: String, for pusher: AIChatLocalModelPushing)
     func cancelRuns(ownerID: ObjectIdentifier)
     func setUp() throws
 }
@@ -187,8 +187,8 @@ public final class AIChatLocalModelService: AIChatLocalModelServing {
         return AIChatLocalRunStartReply(model: engine.model)
     }
 
-    public func cancelRun(requestId: String) {
-        runQueue.cancel(requestId: requestId)
+    public func cancelRun(requestId: String, for pusher: AIChatLocalModelPushing) {
+        runQueue.cancel(requestId: requestId, ownerID: ObjectIdentifier(pusher))
     }
 
     public func cancelRuns(ownerID: ObjectIdentifier) {

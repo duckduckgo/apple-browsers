@@ -116,7 +116,7 @@ final class AIChatLocalRunQueueTests {
         enqueue("r1", on: queue)
         await waitUntil { engine.startedRequestIds == ["r1"] }
 
-        queue.cancel(requestId: "r1")
+        queue.cancel(requestId: "r1", ownerID: ObjectIdentifier(owner))
         await waitUntil { chunks.last?.done == true }
 
         #expect(chunks.last?.status == .cancelled)
@@ -146,12 +146,30 @@ final class AIChatLocalRunQueueTests {
         enqueue("r2", on: queue)
         await waitUntil { engine.startedRequestIds == ["r1"] }
 
-        queue.cancel(requestId: "r2")
+        queue.cancel(requestId: "r2", ownerID: ObjectIdentifier(owner))
         #expect(chunks(for: "r2") == [AIChatLocalRunChunk(requestId: "r2", seq: 0, text: "", done: true, status: .cancelled)])
 
         engine.finish("r1")
         await waitUntil { queue.isIdle }
         #expect(engine.startedRequestIds == ["r1"])
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Another page can't cancel a run, even with the same request id", .timeLimit(.minutes(1)))
+    func cancelFromAnotherPageIsIgnored() async {
+        let queue = makeQueue()
+        let otherOwner = NSObject()
+        enqueue("r1", on: queue)
+        enqueue("r2", on: queue)
+        await waitUntil { engine.startedRequestIds == ["r1"] }
+
+        queue.cancel(requestId: "r1", ownerID: ObjectIdentifier(otherOwner))
+        queue.cancel(requestId: "r2", ownerID: ObjectIdentifier(otherOwner))
+        engine.finish("r1")
+        await waitUntil { engine.startedRequestIds == ["r1", "r2"] }
+
+        #expect(chunks(for: "r1").last?.status == .ok)
+        #expect(chunks(for: "r2").isEmpty)
     }
 
     @available(iOS 16, macOS 13, *)

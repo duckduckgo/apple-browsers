@@ -321,7 +321,7 @@ extension AIChatUserScript: AIChatLocalModelPushing {
     @MainActor
     func cancelAIChatLocalRun(params: Any) -> Encodable? {
         if let request: AIChatLocalRunCancelRequest = DecodableHelper.decode(from: params) {
-            localModelService?.cancelRun(requestId: request.requestId)
+            localModelService?.cancelRun(requestId: request.requestId, for: self)
         }
         return [String: String]()
     }

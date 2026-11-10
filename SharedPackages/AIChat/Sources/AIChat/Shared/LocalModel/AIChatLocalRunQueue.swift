@@ -58,12 +58,13 @@ public final class AIChatLocalRunQueue {
         startNextIfIdle()
     }
 
-    public func cancel(requestId: String) {
-        if let running, running.job.request.requestId == requestId {
+    /// Request ids come from the page, so another page's run with the same id is left alone.
+    public func cancel(requestId: String, ownerID: ObjectIdentifier) {
+        if let running, running.job.request.requestId == requestId, running.job.ownerID == ownerID {
             running.task.cancel()
             return
         }
-        guard let index = pending.firstIndex(where: { $0.request.requestId == requestId }) else { return }
+        guard let index = pending.firstIndex(where: { $0.request.requestId == requestId && $0.ownerID == ownerID }) else { return }
         let job = pending.remove(at: index)
         job.onChunk(AIChatLocalRunChunk(requestId: requestId, seq: 0, text: "", done: true, status: .cancelled))
     }

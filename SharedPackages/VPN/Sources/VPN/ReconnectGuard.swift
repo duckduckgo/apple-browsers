@@ -22,6 +22,8 @@ import Foundation
 struct ReconnectGuard {
     private static let blockedKey = "com.duckduckgo.vpn.reconnectBlocked"
     let defaults: UserDefaults
+    /// Startup history belongs to the current provider instance and is never persisted.
+    private(set) var hasStartedSuccessfully = false
 
     var canReconnect: Bool {
         get { !defaults.bool(forKey: Self.blockedKey) }
@@ -35,7 +37,8 @@ struct ReconnectGuard {
         }
     }
 
-    func startSucceeded(startupMethod: StartupOptions.StartupMethod) {
+    mutating func startSucceeded(startupMethod: StartupOptions.StartupMethod) {
+        hasStartedSuccessfully = true
         if startupMethod == .manualByMainApp {
             canReconnect = true
         }

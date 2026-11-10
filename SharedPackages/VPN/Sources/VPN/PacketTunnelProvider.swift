@@ -344,6 +344,7 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
     // MARK: - User Defaults
 
     private let defaults: UserDefaults
+    private var reconnectGuard: ReconnectGuard
 
     // MARK: - Server Selection
 
@@ -524,6 +525,7 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
         self.wireGuardInterface = wireGuardInterface
         self.settings = settings
         self.defaults = defaults
+        self.reconnectGuard = ReconnectGuard(defaults: defaults)
         self.bandwidthAnalyzer = bandwidthAnalyzer ?? NetworkProtectionConnectionBandwidthAnalyzer()
         self.latencyMonitor = latencyMonitor
         self.entitlementMonitor = entitlementMonitor
@@ -889,7 +891,7 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
         self.snoozeTimingStore.reset()
 
         do {
-            try ReconnectGuard(defaults: defaults).validate(startupMethod: startupOptions.startupMethod)
+            try reconnectGuard.validate(startupMethod: startupOptions.startupMethod)
             try await load(options: startupOptions)
             Logger.networkProtection.log("🟢 Startup options loaded correctly")
 
@@ -945,7 +947,7 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
 
             let reason: AdapterStartReason = startupOptions.startupMethod == .automaticOnDemand ? .onDemand : .manual
             try await startTunnel(reason: reason)
-            ReconnectGuard(defaults: defaults).startSucceeded(startupMethod: startupOptions.startupMethod)
+            reconnectGuard.startSucceeded(startupMethod: startupOptions.startupMethod)
 
             providerEvents.fire(.tunnelStartAttempt(.success))
             providerEvents.fire(.reportConnectionAttempt(attempt: .success, source: .start))
@@ -1593,7 +1595,7 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
             // shut it down even if the process keeps running.
 
             // Subscription recovery must not undo this guard if the extension process restarts.
-            ReconnectGuard(defaults: defaults).canReconnect = false
+            reconnectGuard.canReconnect = false
 
             // We don't want to be firing monitoring pixels for failures from this point onward...
             await stopMonitors()
@@ -1684,6 +1686,11 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
 
     @MainActor
     public override func wake() {
+        // The provider can be launched for IPC without ever starting a tunnel.
+        guard reconnectGuard.hasStartedSuccessfully else {
+            return
+        }
+
         switch connectionStatus {
         case .connected, .reasserting:
             if reportWakeConnectivityFailure != nil, wakeConnectivityFailures == nil {
@@ -1692,14 +1699,6 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
         default: wakeConnectivityFailures = nil
         }
         Logger.networkProtectionSleep.log("Wake up")
-
-        // macOS can launch the extension due to calls to `sendProviderMessage`, so there's
-        // a chance this is being called when the VPN isn't really meant to be connected or
-        // running.  We want to avoid firing pixels or handling adapter changes when this is
-        // the case.
-        guard connectionStatus != .disconnected else {
-            return
-        }
 
         Task {
             providerEvents.fire(.tunnelWakeAttempt(.begin))

@@ -46,6 +46,7 @@ final class PacketTunnelProviderTests: XCTestCase {
         let reconnectGuard = ReconnectGuard(defaults: reconnectDefaults)
 
         XCTAssertTrue(reconnectGuard.canReconnect)
+        XCTAssertFalse(reconnectGuard.hasStartedSuccessfully)
         XCTAssertNoThrow(try reconnectGuard.validate(startupMethod: .automaticOnDemand))
         XCTAssertNoThrow(try reconnectGuard.validate(startupMethod: .manualByTheSystem))
         XCTAssertNoThrow(try reconnectGuard.validate(startupMethod: .manualByMainApp))
@@ -82,7 +83,7 @@ final class PacketTunnelProviderTests: XCTestCase {
     }
 
     func testSuccessfulManualAppStartAllowsSubsequentAutomaticReconnect() {
-        let reconnectGuard = ReconnectGuard(defaults: reconnectDefaults)
+        var reconnectGuard = ReconnectGuard(defaults: reconnectDefaults)
         reconnectGuard.canReconnect = false
 
         reconnectGuard.startSucceeded(startupMethod: .manualByMainApp)
@@ -92,13 +93,54 @@ final class PacketTunnelProviderTests: XCTestCase {
     }
 
     func testOtherStartSourcesCannotClearTheReconnectGuard() {
-        let reconnectGuard = ReconnectGuard(defaults: reconnectDefaults)
+        var reconnectGuard = ReconnectGuard(defaults: reconnectDefaults)
         reconnectGuard.canReconnect = false
 
         reconnectGuard.startSucceeded(startupMethod: .automaticOnDemand)
         reconnectGuard.startSucceeded(startupMethod: .manualByTheSystem)
 
         XCTAssertThrowsError(try reconnectGuard.validate(startupMethod: .automaticOnDemand))
+    }
+
+    func testSuccessfulStartIsRememberedForEveryStartupMethod() {
+        let methods: [StartupOptions.StartupMethod] = [.manualByMainApp, .manualByTheSystem, .automaticOnDemand]
+        for method in methods {
+            var reconnectGuard = ReconnectGuard(defaults: reconnectDefaults)
+
+            reconnectGuard.startSucceeded(startupMethod: method)
+
+            XCTAssertTrue(reconnectGuard.hasStartedSuccessfully)
+        }
+    }
+
+    func testSuccessfulStartHistoryIsNotPersistedAcrossProviderInstances() {
+        var firstGuard = ReconnectGuard(defaults: reconnectDefaults)
+        firstGuard.startSucceeded(startupMethod: .manualByMainApp)
+
+        let newGuard = ReconnectGuard(defaults: reconnectDefaults)
+
+        XCTAssertTrue(firstGuard.hasStartedSuccessfully)
+        XCTAssertFalse(newGuard.hasStartedSuccessfully)
+    }
+
+    func testStartupValidationDoesNotCountAsSuccessfulStart() {
+        let reconnectGuard = ReconnectGuard(defaults: reconnectDefaults)
+        reconnectGuard.canReconnect = false
+
+        XCTAssertThrowsError(try reconnectGuard.validate(startupMethod: .automaticOnDemand))
+        XCTAssertFalse(reconnectGuard.hasStartedSuccessfully)
+        XCTAssertNoThrow(try reconnectGuard.validate(startupMethod: .manualByMainApp))
+        XCTAssertFalse(reconnectGuard.hasStartedSuccessfully)
+    }
+
+    func testBlockingReconnectDoesNotEraseSuccessfulStartHistory() {
+        var reconnectGuard = ReconnectGuard(defaults: reconnectDefaults)
+        reconnectGuard.startSucceeded(startupMethod: .manualByMainApp)
+
+        reconnectGuard.canReconnect = false
+
+        XCTAssertFalse(reconnectGuard.canReconnect)
+        XCTAssertTrue(reconnectGuard.hasStartedSuccessfully)
     }
 
     func testReconnectBlockedErrorHasItsOwnCodeForProcessBoundaries() {

@@ -48,17 +48,21 @@ struct OnboardingIntroContentProvider: OnboardingIntroContentProviding {
     /// Resolves the user's selected download reason lazily. The reason is chosen mid-flow — after this provider is built — so it's read on demand.
     /// Defaults to `nil` (control arm and Duck.ai CPP flow).
     private let downloadReasonProvider: () -> OnboardingDownloadReason?
+    /// Read on demand: enrollment happens when the user starts onboarding, after this provider is built.
+    private let isVPNDownloadReasonAvailable: () -> Bool
 
     init(
         flowType: OnboardingFlowType,
         featureFlagger: FeatureFlagger,
         searchExperienceProvider: OnboardingSearchExperienceProvider = OnboardingSearchExperience(),
-        downloadReasonProvider: @escaping () -> OnboardingDownloadReason? = { nil }
+        downloadReasonProvider: @escaping () -> OnboardingDownloadReason? = { nil },
+        isVPNDownloadReasonAvailable: @escaping () -> Bool = { false }
     ) {
         self.flowType = flowType
         self.featureFlagger = featureFlagger
         self.searchExperienceProvider = searchExperienceProvider
         self.downloadReasonProvider = downloadReasonProvider
+        self.isVPNDownloadReasonAvailable = isVPNDownloadReasonAvailable
     }
 }
 
@@ -149,19 +153,18 @@ extension OnboardingIntroContentProvider {
 // MARK: - Content Provider + Download Reason (Set things up your way)
 
 struct OnboardingDownloadReasonContent: Equatable {
-    /// Lottie pictograms in `OnboardingAnimations.xcassets/Pictograms`. Data assets get no
-    /// generated symbol, so the raw value is the dataset name passed to `DotLottieFile.asset(named:)`.
-    enum Animation: String {
+    enum Icon {
         case search
-        case duckAIChat = "duckai-chat"
-        case noAI = "no-ai"
-        case imageSweep = "image-sweep"
+        case aiChat
+        case adsBlocked
+        case block
+        case vpn
     }
 
-    /// A selectable reason tile.
+    /// A selectable reason row.
     struct Option: Hashable {
         let reason: OnboardingDownloadReason
-        let animation: Animation
+        let icon: Icon
         let title: String
     }
 
@@ -176,15 +179,20 @@ extension OnboardingIntroContentProvider {
 
     /// Content for the Download Reason Screen.
     var downloadReasonContent: OnboardingDownloadReasonContent {
-        OnboardingDownloadReasonContent(
+        var options: [OnboardingDownloadReasonContent.Option] = [
+            .init(reason: .browserPrivately, icon: .search, title: UserText.Onboarding.DownloadReason.browsePrivately),
+            .init(reason: .privateAIChat, icon: .aiChat, title: UserText.Onboarding.DownloadReason.chatWithAI),
+            .init(reason: .blockAds, icon: .adsBlocked, title: UserText.Onboarding.DownloadReason.blockAds),
+            .init(reason: .noAI, icon: .block, title: UserText.Onboarding.DownloadReason.removeAI)
+        ]
+        if isVPNDownloadReasonAvailable() {
+            options.append(.init(reason: .vpn, icon: .vpn, title: UserText.Onboarding.DownloadReason.vpn))
+        }
+
+        return OnboardingDownloadReasonContent(
             title: UserText.Onboarding.DownloadReason.title,
             message: UserText.Onboarding.DownloadReason.message,
-            options: [
-                .init(reason: .browserPrivately, animation: .search, title: UserText.Onboarding.DownloadReason.browsePrivately),
-                .init(reason: .privateAIChat, animation: .duckAIChat, title: UserText.Onboarding.DownloadReason.chatWithAI),
-                .init(reason: .noAI, animation: .noAI, title: UserText.Onboarding.DownloadReason.removeAI),
-                .init(reason: .blockAds, animation: .imageSweep, title: UserText.Onboarding.DownloadReason.blockAds)
-            ],
+            options: options,
             primaryCTA: UserText.Onboarding.DownloadReason.cta,
             daxAnimation: .wingBottom
         )
@@ -391,7 +399,7 @@ extension OnboardingIntroContentProvider {
         guard let reason = downloadReasonProvider() else { return defaultSetDefaultBrowserContent }
 
         let title = switch reason {
-        case .browserPrivately, .privateAIChat:
+        case .browserPrivately, .privateAIChat, .vpn:
             UserText.Onboarding.BrowsersComparison.titleGenericDownloadReasonExperiment
         case .noAI:
             UserText.Onboarding.BrowsersComparison.titleNoAIDownloadReasonExperiment
@@ -402,7 +410,7 @@ extension OnboardingIntroContentProvider {
         let subHeader = reason == .privateAIChat ? UserText.Onboarding.DuckAICPP.AIComparison.subHeader : nil
 
         let competitor: OnboardingComparisonContent.Competitor = switch reason {
-        case .browserPrivately, .blockAds:
+        case .browserPrivately, .blockAds, .vpn:
                 .safari
         case .privateAIChat:
                 .ai
@@ -598,14 +606,14 @@ extension OnboardingIntroContentProvider {
 
     /// Default-flow branching:
     /// - `.privateAIChat` → the AI chat prompt (no picker visible).
-    /// - `.browserPrivately, .noAI, .blockAds` show the AI toggle only if the user
+    /// - `.browserPrivately, .noAI, .blockAds, .vpn` show the AI toggle only if the user
     ///   turned the AI-chat search input on in the search experience screen, otherwise a search-only prompt.
     /// - not enrolled (`.none`) → the default combined prompt.
     private var defaultFlowDuckAIQueryScreen: DuckAIQueryScreen {
         switch downloadReasonProvider() {
         case .privateAIChat:
             return .privateAIChat
-        case .browserPrivately, .noAI, .blockAds:
+        case .browserPrivately, .noAI, .blockAds, .vpn:
             return searchExperienceProvider.didEnableAIChatSearchInputDuringOnboarding ? .searchOrAIChat : .privateSearch
         case .none:
             return .searchOrAIChat

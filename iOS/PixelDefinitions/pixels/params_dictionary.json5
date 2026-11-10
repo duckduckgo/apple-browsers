@@ -681,7 +681,13 @@
         "key": "variant_download_reason",
         "type": "string",
         "description": "Variant of the onboarding flow the user selected on the download-reason screen",
-        "enum": ["download_reason_search", "download_reason_ai-chat", "download_reason_no-ai", "download_reason_ad-blocking"]
+        "enum": [
+            "download_reason_search",
+            "download_reason_ai-chat",
+            "download_reason_no-ai",
+            "download_reason_ad-blocking",
+            "download_reason_vpn"
+        ]
     },
     "tabCount": {
         "key": "tab_count",

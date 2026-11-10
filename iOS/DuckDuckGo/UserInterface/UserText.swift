@@ -2886,10 +2886,11 @@ public struct UserText {
         public enum DownloadReason {
             public static let title = NSLocalizedString("onboarding.downloadReason.title", value: "Set things up your way", comment: "Title of the onboarding screen asking why the user downloaded the app.")
             public static let message = NSLocalizedString("onboarding.downloadReason.message", value: "Choose what interests you most, and we’ll start there.", comment: "Subtitle of the onboarding screen asking why the user downloaded the app.")
-            public static let browsePrivately = NSLocalizedString("onboarding.downloadReason.browsePrivately", value: "Search and\nbrowse privately", comment: "Label for the option to set up the app for private searching and browsing. The text is split over two lines; keep a line break at a natural position in the translation.")
-            public static let chatWithAI = NSLocalizedString("onboarding.downloadReason.chatWithAI", value: "Chat with AI\nprivately", comment: "Label for the option to set up the app for private AI chat. The text is split over two lines; keep a line break at a natural position in the translation.")
-            public static let removeAI = NSLocalizedString("onboarding.downloadReason.removeAI", value: "Disable\nAI features", comment: "Label for the option to set up the app without AI features in search results. The text is split over two lines; keep a line break at a natural position in the translation.")
-            public static let blockAds = NSLocalizedString("onboarding.downloadReason.blockAds", value: "Block ads\nand pop-ups", comment: "Label for the option to set up the app to block ads and pop-ups. The text is split over two lines; keep a line break at a natural position in the translation.")
+            public static let browsePrivately = NSLocalizedString("onboarding.downloadReason.list.browsePrivately", value: "Search and browse privately", comment: "Label for the option to set up the app for private searching and browsing.")
+            public static let chatWithAI = NSLocalizedString("onboarding.downloadReason.list.chatWithAI", value: "Chat with AI privately", comment: "Label for the option to set up the app for private AI chat.")
+            public static let removeAI = NSLocalizedString("onboarding.downloadReason.list.removeAI", value: "Disable AI features", comment: "Label for the option to set up the app without AI features in search results.")
+            public static let blockAds = NSLocalizedString("onboarding.downloadReason.list.blockAds", value: "Block ads and pop-ups", comment: "Label for the option to set up the app to block ads and pop-ups.")
+            public static let vpn = NotLocalizedString("onboarding.downloadReason.vpn", value: "VPN-protect my connection", comment: "Label for the option to set up the app to protect the user's connection with a VPN.")
             public static let cta = NSLocalizedString("onboarding.downloadReason.cta", value: "Next", comment: "Button to continue to the next onboarding screen after choosing a reason.")
         }
 

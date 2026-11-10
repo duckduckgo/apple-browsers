@@ -3739,15 +3739,6 @@ https://duckduckgo.com/mac";
 /* Button to change the default browser */
 "onboarding.browsers.cta" = "Choose Your Browser";
 
-/* Label for the option to set up the app to block ads and pop-ups. The text is split over two lines; keep a line break at a natural position in the translation. */
-"onboarding.downloadReason.blockAds" = "Block ads\nand pop-ups";
-
-/* Label for the option to set up the app for private searching and browsing. The text is split over two lines; keep a line break at a natural position in the translation. */
-"onboarding.downloadReason.browsePrivately" = "Search and\nbrowse privately";
-
-/* Label for the option to set up the app for private AI chat. The text is split over two lines; keep a line break at a natural position in the translation. */
-"onboarding.downloadReason.chatWithAI" = "Chat with AI\nprivately";
-
 /* Heading shown above the browser comparison chart during onboarding for users who chose to search and browse privately or to chat with AI privately. The text is split over two lines; keep a line break at a natural position in the translation. */
 "onboarding.downloadReason.comparison.title-generic" = "You’re in the right place!\nProtections activated.";
 
@@ -3760,11 +3751,20 @@ https://duckduckgo.com/mac";
 /* Button to continue to the next onboarding screen after choosing a reason. */
 "onboarding.downloadReason.cta" = "Next";
 
+/* Label for the option to set up the app to block ads and pop-ups. */
+"onboarding.downloadReason.list.blockAds" = "Block ads and pop-ups";
+
+/* Label for the option to set up the app for private searching and browsing. */
+"onboarding.downloadReason.list.browsePrivately" = "Search and browse privately";
+
+/* Label for the option to set up the app for private AI chat. */
+"onboarding.downloadReason.list.chatWithAI" = "Chat with AI privately";
+
+/* Label for the option to set up the app without AI features in search results. */
+"onboarding.downloadReason.list.removeAI" = "Disable AI features";
+
 /* Subtitle of the onboarding screen asking why the user downloaded the app. */
 "onboarding.downloadReason.message" = "Choose what interests you most, and we’ll start there.";
-
-/* Label for the option to set up the app without AI features in search results. The text is split over two lines; keep a line break at a natural position in the translation. */
-"onboarding.downloadReason.removeAI" = "Disable\nAI features";
 
 /* Title of the onboarding screen asking why the user downloaded the app. */
 "onboarding.downloadReason.title" = "Set things up your way";

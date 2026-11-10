@@ -65,6 +65,7 @@ public enum OnboardingPixelParameter {
         case downloadReasonAIChat = "download_reason_ai-chat"
         case downloadReasonNoAI = "download_reason_no-ai"
         case downloadReasonAdBlocking = "download_reason_ad-blocking"
+        case downloadReasonVPN = "download_reason_vpn"
     }
 
     /// The variants of the onboarding flow the user entered at each branching step (fork).
@@ -89,6 +90,7 @@ public extension OnboardingPixelParameter.DownloadReasonVariant {
         case .privateAIChat:    self = .downloadReasonAIChat
         case .noAI:             self = .downloadReasonNoAI
         case .blockAds:         self = .downloadReasonAdBlocking
+        case .vpn:              self = .downloadReasonVPN
         }
     }
 }
@@ -332,6 +334,7 @@ public enum OnboardingSharedPixelEvent: PixelKit.Event, Equatable {
             case aiChat = "ai-chat"
             case noAI = "no-ai"
             case adBlocking = "ad-blocking"
+            case vpn
         }
 
         case shown

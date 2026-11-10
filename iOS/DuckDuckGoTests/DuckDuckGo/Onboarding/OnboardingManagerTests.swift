@@ -1027,6 +1027,45 @@ struct OnboardingDownloadReasonFlowTests {
         #expect(featureFlagger.didCallResolveCohort == false)
     }
 
+    // MARK: - VPN download reason
+
+    @available(iOS 16, macOS 13, *)
+    @Test(
+        "Only the treatment cohort is offered the VPN download reason",
+        .timeLimit(.minutes(1)),
+        arguments: [(Cohort.treatment, true), (Cohort.control, false)]
+    )
+    func vpnReasonAvailabilityPerCohort(_ cohort: Cohort, expectedAvailability: Bool) {
+        // GIVEN
+        let sut = makeManager(featureFlagger: PrivacyConfig.MockFeatureFlagger(resolveCohortStub: cohort))
+
+        // THEN
+        #expect(sut.isVPNDownloadReasonAvailable == expectedAvailability)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Users not enrolled in the VPN experiment aren't offered the VPN download reason", .timeLimit(.minutes(1)))
+    func vpnReasonUnavailableWhenNotEnrolled() {
+        // GIVEN
+        let sut = makeManager(featureFlagger: makeUnassignedFeatureFlagger())
+
+        // THEN
+        #expect(!sut.isVPNDownloadReasonAvailable)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("The VPN download reason continues with the browse-privately steps for now", .timeLimit(.minutes(1)))
+    func vpnReasonUsesBrowsePrivatelySteps() {
+        // GIVEN
+        let sut = makeManager()
+
+        // WHEN
+        let result = sut.selectDownloadReason(.vpn)
+
+        // THEN
+        #expect(result == OnboardingStepsHelper.expectedRemainingSteps(for: .browserPrivately))
+    }
+
     // MARK: - Helpers
 
     private func makeVariantManager(isReturningUser: Bool) -> VariantManager {
@@ -1075,5 +1114,54 @@ struct OnboardingDownloadReasonFlowTests {
 
     private func makePixelStore() -> any KeyedStoring<OnboardingSharedPixelsKeys> {
         InMemoryKeyValueStore().keyedStoring()
+    }
+}
+
+@Suite("Onboarding - Download Reason Store")
+struct OnboardingDownloadReasonStoreTests {
+
+    @available(iOS 16, macOS 13, *)
+    @Test(
+        "Each persisted download reason maps to its pixel token",
+        .timeLimit(.minutes(1)),
+        arguments: [
+            (OnboardingDownloadReason.browserPrivately, "search"),
+            (.privateAIChat, "ai-chat"),
+            (.noAI, "no-ai"),
+            (.blockAds, "ad-blocking"),
+            (.vpn, "vpn")
+        ]
+    )
+    func pixelTokenPerReason(_ reason: OnboardingDownloadReason, expectedToken: String) {
+        // GIVEN
+        let userDefaults = makeUserDefaults()
+        userDefaults.set(reason.rawValue, forKey: OnboardingDownloadReasonStore.key)
+
+        // THEN
+        #expect(OnboardingDownloadReasonStore.currentPixelToken(userDefaults) == expectedToken)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Every download reason has a pixel token", .timeLimit(.minutes(1)), arguments: OnboardingDownloadReason.allCases)
+    func everyReasonHasPixelToken(_ reason: OnboardingDownloadReason) {
+        // GIVEN
+        let userDefaults = makeUserDefaults()
+        userDefaults.set(reason.rawValue, forKey: OnboardingDownloadReasonStore.key)
+
+        // THEN
+        #expect(OnboardingDownloadReasonStore.currentPixelToken(userDefaults) != nil)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("No persisted download reason has no pixel token", .timeLimit(.minutes(1)))
+    func noReasonHasNoPixelToken() {
+        #expect(OnboardingDownloadReasonStore.currentPixelToken(makeUserDefaults()) == nil)
+    }
+
+    private func makeUserDefaults() -> UserDefaults {
+        let suiteName = "OnboardingDownloadReasonStoreTests-\(UUID().uuidString)"
+        let userDefaults = UserDefaults(suiteName: suiteName)!
+        userDefaults.removePersistentDomain(forName: suiteName)
+        return userDefaults
     }
 }

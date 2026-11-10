@@ -424,7 +424,7 @@ struct OnboardingIntroContentProviderTests {
 
             // THEN
             let expectedTitle: String = switch reason {
-            case .browserPrivately, .privateAIChat:
+            case .browserPrivately, .privateAIChat, .vpn:
                 UserText.Onboarding.BrowsersComparison.titleGenericDownloadReasonExperiment
             case .noAI:
                 UserText.Onboarding.BrowsersComparison.titleNoAIDownloadReasonExperiment
@@ -438,7 +438,7 @@ struct OnboardingIntroContentProviderTests {
 
         @Test(
             "Browser-style reasons return their tailored feature list with no sub-header",
-            arguments: [OnboardingDownloadReason.browserPrivately, .noAI, .blockAds]
+            arguments: [OnboardingDownloadReason.browserPrivately, .noAI, .blockAds, .vpn]
         )
         func browserStyleReasons(reason: OnboardingDownloadReason) {
             // GIVEN
@@ -471,6 +471,7 @@ struct OnboardingIntroContentProviderTests {
             arguments: [
                 (.browserPrivately, .safari),
                 (.blockAds, .safari),
+                (.vpn, .safari),
                 (.privateAIChat, .ai),
                 (.noAI, .google),
             ] as [(OnboardingDownloadReason, OnboardingComparisonContent.Competitor)]
@@ -1143,24 +1144,68 @@ struct OnboardingIntroContentProviderTests {
         }
 
         @Test(
-            "Check download reason options map each tile to its reason and label",
+            "Check download reason options map each row to its reason, icon and label",
             arguments: [OnboardingFlowType.default, .duckAI] as [OnboardingFlowType]
         )
         func checkDownloadReasonOptions(flow: OnboardingFlowType) {
             // GIVEN
             let sut = OnboardingIntroContentProvider(flowType: flow, featureFlagger: MockFeatureFlagger())
-            let expectedOptions: [OnboardingDownloadReasonContent.Option] = [
-                .init(reason: .browserPrivately, animation: .search, title: UserText.Onboarding.DownloadReason.browsePrivately),
-                .init(reason: .privateAIChat, animation: .duckAIChat, title: UserText.Onboarding.DownloadReason.chatWithAI),
-                .init(reason: .noAI, animation: .noAI, title: UserText.Onboarding.DownloadReason.removeAI),
-                .init(reason: .blockAds, animation: .imageSweep, title: UserText.Onboarding.DownloadReason.blockAds)
-            ]
 
             // WHEN
             let result = sut.downloadReasonContent
 
+            // THEN
+            #expect(result.options == Self.expectedStandardOptions)
+        }
+
+        @available(iOS 16, macOS 13, *)
+        @Test(
+            "The VPN option is listed last only when the VPN download reason is available",
+            .timeLimit(.minutes(1)),
+            arguments: [true, false]
+        )
+        func vpnOptionFollowsAvailability(isVPNDownloadReasonAvailable: Bool) {
+            // GIVEN
+            let sut = OnboardingIntroContentProvider(
+                flowType: .default,
+                featureFlagger: MockFeatureFlagger(),
+                isVPNDownloadReasonAvailable: { isVPNDownloadReasonAvailable }
+            )
+            let vpnOption = OnboardingDownloadReasonContent.Option(reason: .vpn, icon: .vpn, title: UserText.Onboarding.DownloadReason.vpn)
+
+            // WHEN
+            let result = sut.downloadReasonContent
+
+            // THEN
+            let expectedOptions = isVPNDownloadReasonAvailable ? Self.expectedStandardOptions + [vpnOption] : Self.expectedStandardOptions
             #expect(result.options == expectedOptions)
         }
+
+        @available(iOS 16, macOS 13, *)
+        @Test("The VPN option's availability is read each time the content is built", .timeLimit(.minutes(1)))
+        func vpnOptionAvailabilityIsReadOnDemand() {
+            // GIVEN
+            var isVPNDownloadReasonAvailable = false
+            let sut = OnboardingIntroContentProvider(
+                flowType: .default,
+                featureFlagger: MockFeatureFlagger(),
+                isVPNDownloadReasonAvailable: { isVPNDownloadReasonAvailable }
+            )
+            #expect(!sut.downloadReasonContent.options.contains { $0.reason == .vpn })
+
+            // WHEN
+            isVPNDownloadReasonAvailable = true
+
+            // THEN
+            #expect(sut.downloadReasonContent.options.last?.reason == .vpn)
+        }
+
+        private static let expectedStandardOptions: [OnboardingDownloadReasonContent.Option] = [
+            .init(reason: .browserPrivately, icon: .search, title: UserText.Onboarding.DownloadReason.browsePrivately),
+            .init(reason: .privateAIChat, icon: .aiChat, title: UserText.Onboarding.DownloadReason.chatWithAI),
+            .init(reason: .blockAds, icon: .adsBlocked, title: UserText.Onboarding.DownloadReason.blockAds),
+            .init(reason: .noAI, icon: .block, title: UserText.Onboarding.DownloadReason.removeAI)
+        ]
 
     }
 

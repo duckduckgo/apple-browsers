@@ -616,6 +616,7 @@ private extension OnboardingSharedPixelEvent.DownloadChoiceEvent.Value {
         case .privateAIChat: self = .aiChat
         case .noAI: self = .noAI
         case .blockAds: self = .adBlocking
+        case .vpn: self = .vpn
         }
     }
 
@@ -646,6 +647,7 @@ struct OnboardingDownloadReasonExperimentMetric {
         case downloadReasonSelectedAIChat = "download_reason_selected_ai-chat"
         case downloadReasonSelectedNoAI = "download_reason_selected_no-ai"
         case downloadReasonSelectedAdBlocking = "download_reason_selected_ad-blocking"
+        case downloadReasonSelectedVPN = "download_reason_selected_vpn"
     }
 
     private static let conversionWindowD0: ConversionWindow = 0...0
@@ -668,6 +670,7 @@ struct OnboardingDownloadReasonExperimentMetric {
         case .privateAIChat: .downloadReasonSelectedAIChat
         case .noAI: .downloadReasonSelectedNoAI
         case .blockAds: .downloadReasonSelectedAdBlocking
+        case .vpn: .downloadReasonSelectedVPN
         }
         fire(metric: metric)
     }

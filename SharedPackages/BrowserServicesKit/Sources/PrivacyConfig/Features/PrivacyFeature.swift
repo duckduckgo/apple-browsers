@@ -305,6 +305,8 @@ public enum DBPSubfeature: String, Equatable, PrivacySubfeature {
     case extractedProfileRefresh
     case schedulerDeferralHandling
     case challengeSolver
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1220132297723303
+    case emailOptOut
 }
 
 public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {

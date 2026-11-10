@@ -24,7 +24,7 @@ import AppKit
 #endif
 
 public extension Logger {
-    static var automationServer = { Logger(subsystem: Bundle.main.bundleIdentifier ?? "DuckDuckGo", category: "Automation Server") }()
+    static let automationServer = Logger(subsystem: Bundle.main.bundleIdentifier ?? "DuckDuckGo", category: "Automation Server")
 }
 
 public typealias ConnectionResult = Result<String, AutomationServerError>
@@ -41,8 +41,8 @@ public actor PerConnectionQueue {
 
     public func enqueue(
         content: Data,
-        processor: @escaping (Data) async -> ConnectionResultWithPath,
-        responder: @escaping (ConnectionResultWithPath) -> Void
+        processor: @escaping @MainActor @Sendable (Data) async -> ConnectionResultWithPath,
+        responder: @escaping @Sendable (ConnectionResultWithPath) -> Void
     ) async {
         // Append to buffer
         self.buffer.append(content)
@@ -609,7 +609,7 @@ public final class AutomationServerCore {
 
     // MARK: - Response Handling
 
-    public func responseToString(_ connectionResultWithPath: ConnectionResultWithPath) -> String {
+    public nonisolated func responseToString(_ connectionResultWithPath: ConnectionResultWithPath) -> String {
         let (requestPath, responseData) = connectionResultWithPath
         struct Response: Codable {
             var message: String
@@ -639,7 +639,8 @@ public final class AutomationServerCore {
         return "HTTP/1.1 \(errorCode) \(statusText)\r\nContent-Type: application/json\r\nConnection: close\r\n\r\n\(responseString)"
     }
 
-    public func respond(on connection: NWConnection, connectionResultWithPath: ConnectionResultWithPath) {
+    // Submit the network send from the queue before it processes the next request.
+    public nonisolated func respond(on connection: NWConnection, connectionResultWithPath: ConnectionResultWithPath) {
         let responseString = responseToString(connectionResultWithPath)
         connection.send(
             content: responseString.data(using: .utf8),

@@ -1,4 +1,5 @@
 [
+  {"path": "AutomationServer", "testTargets": ["AutomationServerTests"]},
   {"path": "Common", "macosTestOnly": true},
   {"path": "DDGError"},
   {"path": "ICSParser"},
@@ -20,6 +21,9 @@
   {"path": "Networking", "macosTestOnly": true},
   {"path": "Persistence", "macosTestOnly": true},
   {"path": "PixelKit", "macosTestOnly": true},
+  {"path": "ScreenTimeDataCleaner", "buildOnly": true, "warningSources": ["Sources"]},
+  {"path": "SERPInstallOrigin", "testTargets": ["SERPInstallOriginTests"]},
+  {"path": "URLPredictor", "testTargets": ["URLPredictorTests"], "warningSources": ["Sources"]},
   {"path": "WideEvent", "macosTestOnly": true},
   {"path": "Infrastructure/DesignResourcesKitIcons", "buildOnly": true, "warningSources": ["Sources"]}
 ]

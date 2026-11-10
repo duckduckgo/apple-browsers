@@ -29,12 +29,21 @@ public struct DBPUIFeatureConfigurationResponse: Encodable {
     public let excludeVpnTraffic: Bool
     public let brokerRemovalEnabled: Bool
     public let needBackgroundAppRefresh: Bool
+    public let emailOptOutEnabled: Bool
+    public let canSendEmail: Bool
 
-    public init(useUnifiedFeedback: Bool, excludeVpnTraffic: Bool, brokerRemovalEnabled: Bool, needBackgroundAppRefresh: Bool) {
+    public init(useUnifiedFeedback: Bool,
+                excludeVpnTraffic: Bool,
+                brokerRemovalEnabled: Bool,
+                needBackgroundAppRefresh: Bool,
+                emailOptOutEnabled: Bool = false,
+                canSendEmail: Bool = false) {
         self.useUnifiedFeedback = useUnifiedFeedback
         self.excludeVpnTraffic = excludeVpnTraffic
         self.brokerRemovalEnabled = brokerRemovalEnabled
         self.needBackgroundAppRefresh = needBackgroundAppRefresh
+        self.emailOptOutEnabled = emailOptOutEnabled
+        self.canSendEmail = canSendEmail
     }
 }
 
@@ -63,6 +72,19 @@ public protocol DBPUICommunicationDelegate: AnyObject {
     func removeOptOutFromDashboard(_ id: Int64) async
     func needBackgroundAppRefresh() async -> Bool
     func enableBackgroundAppRefresh() async
+    func isEmailOptOutEnabled() -> Bool
+    func canSendEmail() -> Bool
+    func openOptOutEmail(_ request: DBPUIOpenOptOutEmailRequest) async -> DBPUIOpenOptOutEmailResult
+    func confirmOptOutEmailSent(recordIds: [Int64]) async
+}
+
+public extension DBPUICommunicationDelegate {
+    func isEmailOptOutEnabled() -> Bool { false }
+    func canSendEmail() -> Bool { false }
+    func openOptOutEmail(_ request: DBPUIOpenOptOutEmailRequest) async -> DBPUIOpenOptOutEmailResult {
+        DBPUIOpenOptOutEmailResult(sent: false)
+    }
+    func confirmOptOutEmailSent(recordIds: [Int64]) async {}
 }
 
 public enum DBPUIReceivedMethodName: String {
@@ -88,6 +110,8 @@ public enum DBPUIReceivedMethodName: String {
     case setVPNBypassSetting = "setVpnExclusionSetting"
     case removeOptOutFromDashboard
     case enableBackgroundAppRefresh
+    case openOptOutEmail
+    case confirmOptOutEmailSent
 }
 
 public enum DBPUISendableMethodName: String {
@@ -158,6 +182,8 @@ public struct DBPUICommunicationLayer: Subfeature {
         case .setVPNBypassSetting: return setVPNBypassSetting
         case .removeOptOutFromDashboard: return removeOptOutFromDashboard
         case .enableBackgroundAppRefresh: return enableBackgroundAppRefresh
+        case .openOptOutEmail: return openOptOutEmail
+        case .confirmOptOutEmailSent: return confirmOptOutEmailSent
         }
 
     }
@@ -423,6 +449,27 @@ public struct DBPUICommunicationLayer: Subfeature {
 
     func enableBackgroundAppRefresh(params: Any, original: WKScriptMessage) async throws -> Encodable? {
         await delegate?.enableBackgroundAppRefresh()
+        return nil
+    }
+
+    func openOptOutEmail(params: Any, original: WKScriptMessage) async throws -> Encodable? {
+        guard let data = try? JSONSerialization.data(withJSONObject: params),
+              let request = try? JSONDecoder().decode(DBPUIOpenOptOutEmailRequest.self, from: data) else {
+            Logger.dataBrokerProtection.error("Failed to parse openOptOutEmail message")
+            throw DBPUIError.malformedRequest
+        }
+
+        return await delegate?.openOptOutEmail(request) ?? DBPUIOpenOptOutEmailResult(sent: false)
+    }
+
+    func confirmOptOutEmailSent(params: Any, original: WKScriptMessage) async throws -> Encodable? {
+        guard let data = try? JSONSerialization.data(withJSONObject: params),
+              let request = try? JSONDecoder().decode(DBPUIConfirmOptOutEmailSentRequest.self, from: data) else {
+            Logger.dataBrokerProtection.error("Failed to parse confirmOptOutEmailSent message")
+            throw DBPUIError.malformedRequest
+        }
+
+        await delegate?.confirmOptOutEmailSent(recordIds: request.recordIds)
         return nil
     }
 }

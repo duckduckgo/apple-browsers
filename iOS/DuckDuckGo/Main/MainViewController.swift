@@ -8335,16 +8335,13 @@ extension MainViewController: TabDelegate {
         openNewChatFromDuckAIPage(tab, source: .swipeUpNewChat)
     }
 
-    /// The topmost visible bar in the lower half of the window: the Duck.ai input on an AI tab.
+    /// Top of the Duck.ai input card, wherever the keyboard or orientation has put it; nil when it isn't showing.
     private func bottomChromeMinYInWindow() -> CGFloat? {
-        guard let window = view.window else { return nil }
-        let bars: [UIView?] = [viewCoordinator.navigationBarContainer, viewCoordinator.toolbar]
-        return bars.compactMap { $0 }
-            .filter { $0.window != nil && !$0.isHidden && $0.alpha > 0.01 }
-            .map { $0.convert($0.bounds, to: nil) }
-            .filter { $0.midY > window.bounds.midY }
-            .map(\.minY)
-            .min()
+        guard view.window != nil, viewCoordinator.isUnifiedToggleInputVisible,
+              let input = unifiedToggleInputCoordinator?.viewController, input.isViewLoaded else { return nil }
+        let card = input.inputCardFrame(in: view)
+        guard !card.isEmpty else { return nil }
+        return view.convert(card, to: nil).minY
     }
 
     func tab(_ tab: TabViewController, didRequestAIChatForSelectedText text: String) {

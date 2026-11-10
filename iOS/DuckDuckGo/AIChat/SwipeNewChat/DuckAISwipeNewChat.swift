@@ -191,7 +191,7 @@ enum DuckAISwipeNewChat {
         case idle
         /// The old chat is fading out; no new tab has been asked for yet.
         case leaving(chatID: String)
-        /// A new tab was asked for; the old chat stays hidden until its tab goes off screen.
+        /// A new tab was asked for; the swipe stays off until the old tab goes off screen or the new tab never comes.
         case awaitingNewTab
 
         enum Event: Equatable {

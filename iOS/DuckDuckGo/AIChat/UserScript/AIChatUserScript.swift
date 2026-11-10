@@ -30,23 +30,35 @@ import Combine
 enum DuckAIChatScroller {
 
     /// JavaScript that evaluates to the conversation's scrolling element, or null: the outermost vertical scroller
-    /// that is most of the viewport tall and starts near its top. The page remembers it while it stays in the
-    /// document, so a caller that runs on every touch doesn't search the whole page each time.
+    /// that is most of the viewport tall and starts near its top. The page remembers it while it still fits that
+    /// description, so a caller that runs on every touch doesn't search the whole page each time, and a conversation
+    /// the page hides or removes is searched for again.
     static let expression = """
     (() => {
+        const fits = element => {
+            const overflow = getComputedStyle(element).overflowY;
+            if (overflow !== 'auto' && overflow !== 'scroll') return false;
+            const rect = element.getBoundingClientRect();
+            return rect.height >= innerHeight * 0.65 && rect.top <= innerHeight * 0.25;
+        };
         const cache = window.__ddgDuckAIChatScroller ??= {};
-        if (cache.element?.isConnected) return cache.element;
+        if (cache.element?.isConnected && fits(cache.element)) return cache.element;
         let best = null;
         for (const element of document.querySelectorAll('div')) {
-            if (best?.contains(element)) continue;
-            const overflow = getComputedStyle(element).overflowY;
-            if (overflow !== 'auto' && overflow !== 'scroll') continue;
-            const rect = element.getBoundingClientRect();
-            if (rect.height < innerHeight * 0.65 || rect.top > innerHeight * 0.25) continue;
+            if (best?.contains(element) || !fits(element)) continue;
             if (!best || element.clientHeight > best.clientHeight) best = element;
         }
         cache.element = best;
         return best;
+    })()
+    """
+
+    /// JavaScript that evaluates to whether the conversation is scrolled to its end. One too short to scroll already
+    /// is; no conversation at all is not. Liquid Glass's spacer counts, so the end means the last reply clears the input.
+    static let isAtBottomExpression = """
+    (() => {
+        const chat = \(expression);
+        return !!chat && chat.scrollTop + chat.clientHeight >= chat.scrollHeight - 4;
     })()
     """
 }

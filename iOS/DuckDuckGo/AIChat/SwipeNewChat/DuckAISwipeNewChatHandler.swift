@@ -182,7 +182,10 @@ final class DuckAISwipeNewChatHandler: NSObject, UIGestureRecognizerDelegate {
             case .fadeOut:
                 fadeOut()
             case .requestNewChat:
+                // Opening the tab captures this screen for swiping back, and switches tabs before the next frame,
+                // so the old chat is put back first: the capture shows it, and the faded frame is never seen again.
                 webView?.transform = .identity
+                webView?.alpha = 1
                 setIndicatorSlotHeight(0)
                 indicator.reset()
                 onStartNewChat()
@@ -294,20 +297,13 @@ final class DuckAISwipeNewChatHandler: NSObject, UIGestureRecognizerDelegate {
     private func checkAtBottom() {
         guard let webView, webView.bounds.width > 0, webView.bounds.height > 0 else { return }
         let generation = generation
-        webView.evaluateJavaScript(Self.atBottomScript) { [weak self] result, _ in
+        webView.evaluateJavaScript(DuckAIChatScroller.isAtBottomExpression) { [weak self] result, _ in
             guard let self, generation == self.generation, let hostView = self.hostView else { return }
             self.apply(self.pull.handle(.pageAnswered(isAtBottom: result as? Bool == true,
                                                       translation: self.pan.translation(in: hostView).y)))
         }
     }
 
-    /// Whether the conversation is at its bottom. One too short to scroll already is; no conversation at all is not.
-    private static let atBottomScript = """
-    (() => {
-        const chat = \(DuckAIChatScroller.expression);
-        return !!chat && chat.scrollTop + chat.clientHeight >= chat.scrollHeight - 4;
-    })()
-    """
 
     /// The chat uncovers what is behind the web view as it slides up and fades; this fills that with the Duck.ai
     /// page's own colour token. It doesn't read the web view's background colours, which the chrome, site

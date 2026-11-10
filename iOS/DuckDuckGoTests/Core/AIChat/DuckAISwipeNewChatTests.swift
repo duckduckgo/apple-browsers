@@ -292,7 +292,7 @@ struct DuckAISwipeNewChatTests {
     }
 
     @available(iOS 16, macOS 13, *)
-    @Test("Once faded out, a new tab is asked for once and the old chat stays hidden until its tab goes off screen",
+    @Test("Once faded out, a new tab is asked for once, and the swipe resets when the old tab goes off screen",
           .timeLimit(.minutes(1)))
     func fadedOutRequestsNewTabThenRestoresWhenTabLeaves() {
         var commit = Commit.idle

@@ -54,6 +54,16 @@ public struct UserText {
     // Synced Devices
     static let syncedDevicesThisDeviceLabel = NSLocalizedString("synced.devices.this.device.label", bundle: Bundle.module, value: "This Device", comment: "Synced Devices - This Device Label")
 
+    // New devices card
+    static let newDevicesCardTitle = NotLocalizedString("sync.new-devices-card.title", bundle: Bundle.module, value: "New synced device", comment: "Title of the Sync settings card for one new device")
+    static let newDevicesCardPluralTitle = NotLocalizedString("sync.new-devices-card.plural-title", bundle: Bundle.module, value: "New synced devices", comment: "Title of the Sync settings card for multiple new devices")
+    static let newDevicesCardMessage = NotLocalizedString("sync.new-devices-card.message", bundle: Bundle.module, value: "%@ has been added to Sync & Backup.", comment: "Card message; placeholder is the new device's name")
+    static let newDevicesCardPluralMessage = NotLocalizedString("sync.new-devices-card.plural-message", bundle: Bundle.module, value: "%@ have been added to Sync & Backup.", comment: "Card message; placeholder is a formatted list of new device names")
+    static let newDevicesCardReview = NotLocalizedString("sync.new-devices-card.review", bundle: Bundle.module, value: "Review Activity", comment: "Button to open Device Activity from the new-device card")
+
+    static let newDevicesCardMore = NotLocalizedString("sync.new-devices-card.more", bundle: Bundle.module, value: "%d more", comment: "Last item in the device names list; placeholder is the number of additional devices")
+    static let newDevicesCardClose = NotLocalizedString("sync.new-devices-card.close", bundle: Bundle.module, value: "Close", comment: "Dismiss the new devices card")
+
     // Recovery Section
     static let recoverySectionHeader = NSLocalizedString("sync.settings.recovery.section.header", bundle: Bundle.module, value: "Recovery", comment: "Sync Settings - Recovery section header")
 

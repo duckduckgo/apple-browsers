@@ -36,6 +36,31 @@ final class SimplifiedSyncSettingsViewTests {
     }
 
     @available(iOS 16, macOS 13, *)
+    @Test("New-device card wraps names and summarizes overflow", .timeLimit(.minutes(1)), arguments: [1, 3, 5, 10])
+    func testNewDevicesCardSnapshots(deviceCount: Int) {
+        let activityModel = DeviceActivityViewModel(accountIdentifier: { "snapshot-account" }, makePageFetcher: {
+            { DeviceActivityPage(entries: [], hasMore: false) }
+        })
+        let model = SyncSettingsViewModel.preview(isSyncEnabled: true,
+                                                 devices: [.thisDevice, .desktop, .otherMobile],
+                                                 autoRestoreProvider: .enabled,
+                                                 deviceActivityViewModel: activityModel)
+        model.isDeviceActivityAvailable = true
+        let names = ["Dave’s iPhone", "MacBook Pro", "iPad", "Anya’s MacBook Pro with a deliberately long device name", "Another phone with a long name"] + (6...10).map { "Device \($0)" }
+        model.pendingLoginEvents = names.prefix(deviceCount).enumerated().map {
+            .init(id: "event-\($0.offset)", deviceName: $0.element)
+        }
+        assertImageSnapshot(
+            matching: NavigationStack {
+                SimplifiedSyncSettingsView(model: model)
+                    .navigationBarTitleDisplayMode(.inline)
+            },
+            size: .screen,
+            testName: "testNewDevicesCardSnapshots-\(deviceCount)Devices"
+        )
+    }
+
+    @available(iOS 16, macOS 13, *)
     @Test("Device Activity entry point visibility", .timeLimit(.minutes(1)), arguments: [false, true])
     func testDeviceActivitySettingsSnapshots(isAvailable: Bool) {
         let deviceActivityModel = DeviceActivityViewModel(accountIdentifier: { "snapshot-account" }, makePageFetcher: {

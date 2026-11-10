@@ -180,6 +180,7 @@ class SyncSettingsViewController: UIHostingController<SimplifiedSyncSettingsView
         setUpSyncFeatureFlags(viewModel)
         setUpAIChatSyncFeatureFlag(viewModel)
         setUpDeviceActivityFeatureFlag(viewModel)
+        setUpPendingLoginEvents(viewModel)
         refreshForState(syncService.authState)
 
         syncService.authStatePublisher
@@ -249,6 +250,15 @@ class SyncSettingsViewController: UIHostingController<SimplifiedSyncSettingsView
             .sink { [weak self] in
                 guard let self else { return }
                 viewModel.isAIChatSyncEnabled = self.featureFlagger.isFeatureOn(.aiChatSync)
+            }
+            .store(in: &cancellables)
+    }
+
+    private func setUpPendingLoginEvents(_ viewModel: SyncSettingsViewModel) {
+        syncService.pendingLoginEventsPublisher
+            .receive(on: DispatchQueue.main)
+            .sink { [weak viewModel] events in
+                viewModel?.pendingLoginEvents = events.map { .init(id: $0.id, deviceName: $0.deviceName) }
             }
             .store(in: &cancellables)
     }

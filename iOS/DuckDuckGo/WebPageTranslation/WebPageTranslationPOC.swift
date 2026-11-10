@@ -508,7 +508,8 @@ extension TabViewController {
                 language = Locale.Language(identifier: dominant.rawValue)
             } else { language = nil }
         case .cld2:
-            if let code = try? TranslateKit().detectLanguage(sample).language, !code.isEmpty {
+            // Only trust CLD2's overall pick when it's reliable; topLanguages is unused for now.
+            if let result = try? TranslateKit().detectLanguage(sample), result.isReliable, let code = result.language {
                 language = Locale.Language(identifier: code)
             } else { language = nil }
         }

@@ -149,6 +149,14 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         }
     }
 
+    /// The bound page sets this on every bind, so only `unbind` clears it.
+    var isTermsOfServiceShownOnPage: Bool = false {
+        didSet {
+            guard oldValue != isTermsOfServiceShownOnPage else { return }
+            footerController?.setTermsOfServiceShownOnPage(isTermsOfServiceShownOnPage)
+        }
+    }
+
     // MARK: - Properties
 
     private(set) var viewController: UnifiedToggleInputViewController
@@ -700,6 +708,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         boundUserScript?.inputBoxHandler = nil
         boundUserScript = nil
         boundUserScriptIdentifier = nil
+        isTermsOfServiceShownOnPage = false
         resetSessionState()
     }
 

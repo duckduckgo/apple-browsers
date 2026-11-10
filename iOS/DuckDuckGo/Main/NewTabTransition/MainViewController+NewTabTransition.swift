@@ -28,6 +28,7 @@ extension MainViewController: NewTabTransitionHost {
         !DevicePlatform.isIpad
             && featureFlagger.isFeatureOn(.newTabTransition)
             && NewTabTransitionConfigurationStore.load().isEnabled
+            && !ProcessInfo.isRunningUITests
     }
 
     var newPageView: UIView { view }

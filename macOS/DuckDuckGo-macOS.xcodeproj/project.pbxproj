@@ -1353,20 +1353,20 @@
 		961FCD0C30A22786000B767F /* PBXFileSystemSynchronizedBuildFileExceptionSet */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
-				DuckDuckGoDBPBackgroundAgentAppDelegate.swift,
-				"Logger+DBPBackgroundAgent.swift",
-				UserText.swift,
-				VPNBypassServiceExtensions.swift,
+				DuckDuckGoDBPBackgroundAgent.entitlements,
+				DuckDuckGoDBPBackgroundAgentAppStore.entitlements,
+				"Info-AppStore.plist",
+				Info.plist,
 			);
 			target = 9D9AE8B22AAA39A70026E7DC /* DuckDuckGoDBPBackgroundAgent */;
 		};
 		961FCD0D30A22786000B767F /* PBXFileSystemSynchronizedBuildFileExceptionSet */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
-				DuckDuckGoDBPBackgroundAgentAppDelegate.swift,
-				"Logger+DBPBackgroundAgent.swift",
-				UserText.swift,
-				VPNBypassServiceExtensions.swift,
+				DuckDuckGoDBPBackgroundAgent.entitlements,
+				DuckDuckGoDBPBackgroundAgentAppStore.entitlements,
+				"Info-AppStore.plist",
+				Info.plist,
 			);
 			target = 9D9AE8D32AAA39D30026E7DC /* DuckDuckGoDBPBackgroundAgentAppStore */;
 		};
@@ -3753,6 +3753,9 @@
 			);
 			dependencies = (
 			);
+			fileSystemSynchronizedGroups = (
+				961FCD0330A22785000B767F /* DuckDuckGoDBPBackgroundAgent */,
+			);
 			name = DuckDuckGoDBPBackgroundAgent;
 			packageProductDependencies = (
 				02CEB1343E11D5F92293C1F5 /* WideEvent */,
@@ -3783,6 +3786,9 @@
 			buildRules = (
 			);
 			dependencies = (
+			);
+			fileSystemSynchronizedGroups = (
+				961FCD0330A22785000B767F /* DuckDuckGoDBPBackgroundAgent */,
 			);
 			name = DuckDuckGoDBPBackgroundAgentAppStore;
 			packageProductDependencies = (

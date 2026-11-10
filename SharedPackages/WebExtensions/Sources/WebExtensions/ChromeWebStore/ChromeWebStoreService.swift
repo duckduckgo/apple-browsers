@@ -78,6 +78,8 @@ public final class ChromeWebStoreService: ChromeWebStoreManaging {
     private let isUpdateDiscoveryEnabled: @MainActor @Sendable () -> Bool
     private var updateDiscoverySubscription: AnyCancellable?
     private var updateDiscoveryRevision: UInt64 = 0
+    private var updater: ChromeWebStoreUpdater?
+    public let pendingUpdates: any ChromeWebStorePendingUpdateStoring
     private var updateVersionOverrides: [String: UpdateVersionOverride] = [:]
 
     public convenience init(manager: WebExtensionManager, catalog: ChromeWebStoreCatalogProviding,
@@ -86,11 +88,12 @@ public final class ChromeWebStoreService: ChromeWebStoreManaging {
                             isUpdateDiscoveryEnabled: @escaping @MainActor @Sendable () -> Bool = { true },
                             updateDiscoveryFeatureFlagUpdates: AnyPublisher<Void, Never>? = nil,
                             keyValueStore: (any ThrowingKeyValueStoring)? = nil,
-                            pixelFiring: WebExtensionPixelFiring = NoOpWebExtensionPixelFiring()) {
+                            pixelFiring: WebExtensionPixelFiring = NoOpWebExtensionPixelFiring(),
+                            pendingUpdates: any ChromeWebStorePendingUpdateStoring = ChromeWebStorePendingUpdateStore()) {
         self.init(manager: manager, catalog: catalog, downloader: downloader, presenter: presenter,
                   verifier: ChromeWebStorePackageVerifier(), supportsUpdateDiscovery: supportsUpdateDiscovery,
                   isUpdateDiscoveryEnabled: isUpdateDiscoveryEnabled, updateDiscoveryFeatureFlagUpdates: updateDiscoveryFeatureFlagUpdates,
-                  keyValueStore: keyValueStore, pixelFiring: pixelFiring, updateCheck: { identifier, version in
+                  keyValueStore: keyValueStore, pixelFiring: pixelFiring, pendingUpdates: pendingUpdates, updateCheck: { identifier, version in
                       await ChromeWebStoreUpdateChecker().check(extensionID: identifier, installedVersion: version)
                   })
     }
@@ -102,6 +105,8 @@ public final class ChromeWebStoreService: ChromeWebStoreManaging {
          updateDiscoveryFeatureFlagUpdates: AnyPublisher<Void, Never>? = nil,
          keyValueStore: (any ThrowingKeyValueStoring)? = nil,
          pixelFiring: WebExtensionPixelFiring = NoOpWebExtensionPixelFiring(),
+         pendingUpdates: any ChromeWebStorePendingUpdateStoring = ChromeWebStorePendingUpdateStore(),
+         updateDownload: @escaping ChromeWebStoreUpdater.Download = { try await ChromeWebStoreUpdateDownloader().download($0) },
          now: @escaping @Sendable () -> Date = Date.init,
          updateCheck: ChromeWebStoreUpdateCoordinator.Check? = nil,
          updateCheckInterval: TimeInterval = ChromeWebStoreUpdateCoordinator.defaultCheckInterval,
@@ -112,7 +117,26 @@ public final class ChromeWebStoreService: ChromeWebStoreManaging {
         self.presenter = presenter
         self.verifier = verifier
         self.isUpdateDiscoveryEnabled = isUpdateDiscoveryEnabled
+        self.pendingUpdates = pendingUpdates
         if supportsUpdateDiscovery, let updateCheck {
+            let updater = ChromeWebStoreUpdater(pendingUpdates: pendingUpdates, verifier: verifier, download: updateDownload,
+                                                 installation: { [weak self] identifier in
+                guard let self, self.isUpdateDiscoveryEnabled(), let version = self.eligibleInstalledVersions()?[identifier] else { return nil }
+                return .init(identifiers: self.installationIdentifiers(for: identifier),
+                             version: self.reportedVersion(for: identifier, installedVersion: version))
+            }, report: { identifier, outcome in
+                guard isUpdateDiscoveryEnabled() else { return }
+                let pixelExtension = catalog.catalogEntry(of: identifier).map(WebExtensionPixelExtension.catalog) ?? .other
+                switch outcome {
+                case .verified:
+                    pixelFiring.fire(.updateVerified(extension: pixelExtension))
+                case .downloadFailed(let failure):
+                    pixelFiring.fire(.updateDownloadFailed(extension: pixelExtension, outcome: failure))
+                case .verificationFailed(let failure):
+                    pixelFiring.fire(.updateVerificationFailed(extension: pixelExtension, outcome: failure))
+                }
+            })
+            self.updater = updater
             let stateStore = keyValueStore.map { ChromeWebStoreUpdateStateStore(keyValueStore: $0) }
             let initialState = stateStore?.load() ?? .init()
             let coordinator = ChromeWebStoreUpdateCoordinator(interval: updateCheckInterval, schedulerFactory: updateSchedulerFactory,
@@ -122,6 +146,9 @@ public final class ChromeWebStoreService: ChromeWebStoreManaging {
                 guard isUpdateDiscoveryEnabled(), let pixelOutcome = WebExtensionUpdateCheckOutcome(checkOutcome: outcome) else { return }
                 let pixelExtension = catalog.catalogEntry(of: identifier).map(WebExtensionPixelExtension.catalog) ?? .other
                 pixelFiring.fire(.updateCheck(extension: pixelExtension, outcome: pixelOutcome))
+                if case .update(let update) = outcome, update.extensionID == identifier {
+                    await updater.prepare(update)
+                }
             }, installedIdentifiers: { [weak self] in
                 guard let self, self.manager != nil else { return nil }
                 guard self.isUpdateDiscoveryEnabled() else { return [] }
@@ -146,6 +173,9 @@ public final class ChromeWebStoreService: ChromeWebStoreManaging {
     deinit {
         if let updateCoordinator {
             Task { await updateCoordinator.stop() }
+        }
+        if let updater {
+            Task { await updater.stop() }
         }
     }
 
@@ -177,7 +207,7 @@ public final class ChromeWebStoreService: ChromeWebStoreManaging {
         return versionOverride(for: identity.id, installedVersion: version)
     }
 
-    /// Sets an in-memory override for this installation's store identity. Pass nil to clear it.
+    /// Sets an in-memory version override for discovery and verification. Pass nil to clear it.
     /// Replacing this extension also clears its override without affecting other extensions.
     public func setUpdateCheckVersionOverride(_ version: String?, forInstallationIdentifier identifier: String) {
         guard let installed = manager?.installationStore.installedExtension(withUniqueIdentifier: identifier),

@@ -464,8 +464,6 @@ extension OnboardingView {
                 introView(content: content, dialogType: dialogType)
             case let .downloadReasonDialog(content):
                 downloadReasonView(content: content)
-            case let .searchPrivacySettingsDialog(content):
-                toggleSettingsPersonalizationView(content: content, action: model.searchPrivacySettingsContinueAction)
             case let .aiSearchSettingsDialog(content):
                 toggleSettingsPersonalizationView(content: content, action: model.aiSearchSettingsContinueAction)
             case let .aiModelDialog(content, options, selectedID):
@@ -665,7 +663,7 @@ extension OnboardingView {
                 return scaledThumbUpAnimation(forBubbleHeight: lockedIntroBubbleHeight, base: content.daxAnimation)
             case .downloadReasonDialog(let content):
                 return content.daxAnimation
-            case .searchPrivacySettingsDialog(let content), .aiSearchSettingsDialog(let content), .adBlockingDialog(let content):
+            case .aiSearchSettingsDialog(let content), .adBlockingDialog(let content):
                 return content.daxAnimation
             case .aiModelDialog(let content, _, _):
                 return content.daxAnimation
@@ -848,7 +846,7 @@ private extension OnboardingView {
                 isVisible: model.introState.showIntroViewContent
             )
         case .downloadReasonDialog,
-             .searchPrivacySettingsDialog, .aiSearchSettingsDialog, .aiModelDialog,
+             .aiSearchSettingsDialog, .aiModelDialog,
              .toggleInputModeDialog, .keepDuckAIDialog, .adBlockingDialog:
             return BubbleBackedDialogConfiguration(
                 tailOffset: tailLeadingOffset,

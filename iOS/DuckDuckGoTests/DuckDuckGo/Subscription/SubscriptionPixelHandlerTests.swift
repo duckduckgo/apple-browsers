@@ -328,7 +328,7 @@ final class SubscriptionPixelHandlerTests: XCTestCase {
                 "reason": "account_mismatch",
                 PixelKit.Parameters.pixelSource: PixelKit.Source.iOS.rawValue,
                 PixelKit.Parameters.appVersion: "1.0.0",
-                PixelKit.Parameters.errorCode: "11101",
+                PixelKit.Parameters.errorCode: "11501",
                 PixelKit.Parameters.errorDomain: TokenBackupError.errorDomain
             ]
         )

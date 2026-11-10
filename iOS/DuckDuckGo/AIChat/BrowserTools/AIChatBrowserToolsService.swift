@@ -41,6 +41,7 @@ final class AIChatBrowserToolsService {
     private let configuration: AIChatBrowserToolsConfiguration
 
     private var supportedCapabilities: [ClientToolCapability] = [
+        .listOpenTabs,
         .switchToTab
     ]
 

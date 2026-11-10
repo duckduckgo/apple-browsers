@@ -28,7 +28,8 @@ final class ListOpenTabsBrowserTool: BrowserTool {
     static let maxLimit = 50
 
     let name = AIChatBrowserToolsSubfeature.listOpenTabs.rawValue
-    let permissionMode = BrowserToolPermissionMode.ask
+    /// To be switched to .ask in https://app.asana.com/1/137249556945/project/1214463053803990/task/1220049662899007?focus=true
+    let permissionMode = BrowserToolPermissionMode.auto
     let permissionReason = "Duck.ai wants to see your open tabs."
 
     let inputSchema: JSONValue = [

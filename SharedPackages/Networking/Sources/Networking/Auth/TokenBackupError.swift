@@ -57,17 +57,17 @@ public enum TokenBackupError: DDGError {
     public var errorCode: Int {
         switch self {
         case .unavailable:
-            return 11100
+            return 11500
         case .accountMismatch:
-            return 11101
+            return 11501
         case .predatesSignOut:
-            return 11102
+            return 11502
         case .expired:
-            return 11103
+            return 11503
         case .sessionChanged:
-            return 11104
+            return 11504
         case .readFailed:
-            return 11105
+            return 11505
         }
     }
 

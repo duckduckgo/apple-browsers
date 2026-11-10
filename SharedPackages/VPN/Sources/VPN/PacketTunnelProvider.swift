@@ -275,6 +275,8 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
 
     // MARK: - Status
 
+    @MainActor private var hasStartedSuccessfully = false
+
     @MainActor
     public override var reasserting: Bool {
         get {
@@ -344,7 +346,7 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
     // MARK: - User Defaults
 
     private let defaults: UserDefaults
-    private var reconnectGuard: ReconnectGuard
+    private let reconnectGuard: ReconnectGuard
 
     // MARK: - Server Selection
 
@@ -947,7 +949,7 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
 
             let reason: AdapterStartReason = startupOptions.startupMethod == .automaticOnDemand ? .onDemand : .manual
             try await startTunnel(reason: reason)
-            reconnectGuard.didStartSuccessfully()
+            hasStartedSuccessfully = true
 
             providerEvents.fire(.tunnelStartAttempt(.success))
             providerEvents.fire(.reportConnectionAttempt(attempt: .success, source: .start))
@@ -1687,7 +1689,7 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
     @MainActor
     public override func wake() {
         // The provider can be launched for IPC without ever starting a tunnel.
-        guard reconnectGuard.hasStartedSuccessfully else {
+        guard hasStartedSuccessfully else {
             return
         }
 

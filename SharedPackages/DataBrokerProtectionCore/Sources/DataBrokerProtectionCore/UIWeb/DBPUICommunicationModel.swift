@@ -277,8 +277,9 @@ public struct DBPUIDataBrokerProfileMatch: Codable {
     public let estimatedRemovalDate: Double?
     public let removedDate: Double?
     public let hasMatchingRecordOnParentBroker: Bool
+    public let profileUrl: String?
 
-    public init(id: Int64?, dataBroker: DBPUIDataBroker, name: String, addresses: [DBPUIUserProfileAddress], alternativeNames: [String], relatives: [String], foundDate: Double, optOutSubmittedDate: Double? = nil, optOutFormSubmittedDate: Double? = nil, estimatedRemovalDate: Double? = nil, removedDate: Double? = nil, hasMatchingRecordOnParentBroker: Bool) {
+    public init(id: Int64?, dataBroker: DBPUIDataBroker, name: String, addresses: [DBPUIUserProfileAddress], alternativeNames: [String], relatives: [String], foundDate: Double, optOutSubmittedDate: Double? = nil, optOutFormSubmittedDate: Double? = nil, estimatedRemovalDate: Double? = nil, removedDate: Double? = nil, hasMatchingRecordOnParentBroker: Bool, profileUrl: String? = nil) {
         self.id = id
         self.dataBroker = dataBroker
         self.name = name
@@ -291,6 +292,7 @@ public struct DBPUIDataBrokerProfileMatch: Codable {
         self.estimatedRemovalDate = estimatedRemovalDate
         self.removedDate = removedDate
         self.hasMatchingRecordOnParentBroker = hasMatchingRecordOnParentBroker
+        self.profileUrl = profileUrl
     }
 }
 
@@ -642,5 +644,33 @@ public struct DBPUIBackgroundAppRefreshDidChange: DBPUISendableMessage {
 
     public init(needBackgroundAppRefresh: Bool) {
         self.needBackgroundAppRefresh = needBackgroundAppRefresh
+    }
+}
+
+public struct DBPUIOpenOptOutEmailRequest: DBPUISendableMessage, Equatable {
+    public let to: String
+    public let subject: String
+    public let body: String
+
+    public init(to: String, subject: String, body: String) {
+        self.to = to
+        self.subject = subject
+        self.body = body
+    }
+}
+
+public struct DBPUIOpenOptOutEmailResult: DBPUISendableMessage, Equatable {
+    public let sent: Bool
+
+    public init(sent: Bool) {
+        self.sent = sent
+    }
+}
+
+public struct DBPUIConfirmOptOutEmailSentRequest: DBPUISendableMessage, Equatable {
+    public let recordIds: [Int64]
+
+    public init(recordIds: [Int64]) {
+        self.recordIds = recordIds
     }
 }

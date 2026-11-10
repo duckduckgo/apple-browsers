@@ -67,7 +67,7 @@ extension Preferences {
                     content
                     disclaimer
                 }
-                VStack(alignment: .leading, spacing: Const.footerSpacing) {
+                VStack(alignment: .leading, spacing: 0) {
                     GeometryReader { proxy in
                         ScrollView(.vertical) {
                             content

@@ -410,6 +410,9 @@ public enum FeatureFlag: String {
     /// https://app.asana.com/1/137249556945/project/414709148257752/task/1219446662051332
     case webContentFreezeTelemetry
 
+    /// https://app.asana.com/1/137249556945/task/1220342640159443?focus=true
+    case startupFailureMetrics
+
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1217244101759205?focus=true
     case tabLRUEviction
 
@@ -991,6 +994,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(defaultValue: .enabled, source: .remoteReleasable(iOSBrowserConfigSubfeature.tabEvictionOnMemoryWarning), supportsLocalOverriding: true)
         case .webContentFreezeTelemetry:
             Config(defaultValue: .enabled, source: .remoteReleasable(iOSBrowserConfigSubfeature.webContentFreezeTelemetry), supportsLocalOverriding: true)
+        case .startupFailureMetrics:
+            Config(defaultValue: .disabled, source: .remoteReleasable(iOSBrowserConfigSubfeature.startupFailureMetrics))
         case .tabLRUEviction:
             Config(defaultValue: .enabled, source: .remoteReleasable(iOSBrowserConfigSubfeature.tabLRUEviction), supportsLocalOverriding: true)
         case .webExtensions:

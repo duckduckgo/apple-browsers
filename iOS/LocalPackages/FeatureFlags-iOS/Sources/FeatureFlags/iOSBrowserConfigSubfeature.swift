@@ -72,6 +72,9 @@ public enum iOSBrowserConfigSubfeature: String, PrivacySubfeature {
     /// https://app.asana.com/1/137249556945/project/414709148257752/task/1219446662051332
     case webContentFreezeTelemetry
 
+    /// https://app.asana.com/1/137249556945/task/1220342640159443?focus=true
+    case startupFailureMetrics
+
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1217244101759205?focus=true
     case tabLRUEviction
 

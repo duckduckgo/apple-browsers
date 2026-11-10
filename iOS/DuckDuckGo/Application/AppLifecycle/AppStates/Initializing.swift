@@ -18,6 +18,7 @@
 //
 
 import UIKit
+import BrowserServicesKit
 
 /// The initial setup phase of the app, where basic services or components are initialized.
 /// This state can be invoked when the system prewarms the app but does not fully launch it.
@@ -35,8 +36,8 @@ struct Initializing: InitializingHandling {
 
 extension Initializing {
 
-    func makeLaunchingState() throws -> any LaunchingHandling {
-        try Launching()
+    func makeLaunchingState(startupFailureInstrumentation: any StartupFailureInstrumentation) throws -> any LaunchingHandling {
+        try Launching(startupFailureInstrumentation: startupFailureInstrumentation)
     }
 
 }

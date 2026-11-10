@@ -128,6 +128,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private let hangMetricsService: HangMetricsService
 
     let keyValueStore: ThrowingKeyValueStoring
+    private let startupFailureInstrumentation: any StartupFailureInstrumentation
 
     let faviconManager: FaviconManager
     let pinnedTabsManager = PinnedTabsManager()
@@ -646,6 +647,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     private var didFinishLaunching = false
+    private var startupRecoveryCancellable: AnyCancellable?
 
     var updateController: UpdateController?
     private var updateNotificationPromoBridge: UpdateNotificationPromoBridge?
@@ -729,6 +731,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             Self.configurePixelKit(isInternalUser: internalUserDecider.isInternalUser)
         }
 
+        let startupFailureInstrumentation = StartupFailureMetrics()
+        self.startupFailureInstrumentation = startupFailureInstrumentation
+        if AppVersion.runType.requiresEnvironment {
+            startupFailureInstrumentation.recordReturn()
+        }
+
 #if DEBUG
         Self.prepareIntegrationTestsKeyValueStoresLocation()
 #endif
@@ -737,6 +745,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             // perform a dummy read to ensure that KVS is accessible
             _ = try keyValueStore.object(forKey: AppearancePreferencesUserDefaultsPersistor.Key.newTabPageIsProtectionsReportVisible.rawValue)
         } catch {
+            startupFailureInstrumentation.recordFailure()
             PixelKit.fire(DebugEvent(GeneralPixel.keyValueFileStoreInitError, error: error))
             Thread.sleep(forTimeInterval: 1)
             fatalError("Could not prepare key value store: \(error.localizedDescription)")
@@ -745,11 +754,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         bookmarkDatabase = BookmarkDatabase()
 
         if AppVersion.runType.requiresEnvironment {
-            let commonDatabase = Database()
+            let commonDatabase = Database(startupFailureInstrumentation: startupFailureInstrumentation)
             database = commonDatabase
 
             database.db.loadStore { _, error in
                 guard let error = error else { return }
+                startupFailureInstrumentation.recordFailure()
 
                 switch error {
                 case CoreDataDatabase.Error.containerLocationCouldNotBePrepared(let underlyingError):
@@ -769,6 +779,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                                                                                                 dbFileURL: BookmarkDatabase.defaultDBFileURL)
                 bookmarkDatabase.preFormFactorSpecificFavoritesFolderOrder = favoritesOrder
             } catch {
+                startupFailureInstrumentation.recordFailure()
                 PixelKit.fire(DebugEvent(GeneralPixel.bookmarksCouldNotLoadDatabase(error: error)))
                 Thread.sleep(forTimeInterval: 1)
                 fatalError("Could not create Bookmarks database stack: \(error.localizedDescription)")
@@ -776,6 +787,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
             bookmarkDatabase.db.loadStore { context, error in
                 guard let context = context else {
+                    startupFailureInstrumentation.recordFailure()
                     PixelKit.fire(DebugEvent(GeneralPixel.bookmarksCouldNotLoadDatabase(error: error)))
                     Thread.sleep(forTimeInterval: 1)
                     fatalError("Could not create Bookmarks database stack: \(error?.localizedDescription ?? "err")")
@@ -858,6 +870,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             featureFlagOverrides.applyUITestsFeatureFlagsIfNeeded()
         }
         self.featureFlagger = featureFlagger
+        startupFailureInstrumentation.configure(featureFlagger: featureFlagger, feature: FeatureFlag.startupFailureMetrics)
+        if AppVersion.runType.requiresEnvironment {
+            startupFailureInstrumentation.recordReturn()
+        }
         webExtensionAutofillTakeover = WebExtensionAutofillTakeover()
 
         // Created at launch so the VPN issues observer catches notifications before the first report
@@ -1629,8 +1645,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         guard AppVersion.runType.requiresEnvironment else { return }
+        startupRecoveryCancellable = windowControllersManager.didChangeKeyWindowController.sink { [weak self] _ in
+            self?.recordStartupRecoveryIfNeeded()
+        }
         defer {
             didFinishLaunching = true
+            recordStartupRecoveryIfNeeded()
         }
 
         let profilerToken = startupProfiler.measureSequence(initialStep: .appDidFinishLaunchingBeforeRestoration)
@@ -1884,8 +1904,16 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
     }
 
+    @MainActor
+    private func recordStartupRecoveryIfNeeded() {
+        guard didFinishLaunching, NSApp.isActive,
+              WindowsManager.windows.contains(where: { $0 is MainWindow && $0.isVisible }) else { return }
+        startupFailureInstrumentation.recordSuccessfulStartup()
+    }
+
     func applicationDidBecomeActive(_ notification: Notification) {
         guard didFinishLaunching else { return }
+        recordStartupRecoveryIfNeeded()
 
         // Touch coordinator so Next Steps delegate is registered before promo service starts (1s fallback).
         _ = newTabPageCoordinator

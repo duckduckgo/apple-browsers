@@ -34,7 +34,7 @@ extension Preferences {
             static let footerSpacing: CGFloat = 4
             static let dividerTopPadding: CGFloat = 32
             static let dividerBottomPadding: CGFloat = 28
-            static let moreExtensionsBottomPadding: CGFloat = 42
+            static let moreExtensionsBottomPadding: CGFloat = 12
         }
 
         @StateObject private var model: ExtensionsManagementPreferences
@@ -148,7 +148,6 @@ extension Preferences {
 
         private var uninstalledExtensionsView: some View {
             VStack(alignment: .leading, spacing: 12) {
-                TextMenuItemHeader(UserText.extensionsSettingsPasswordManagersHeader)
                 ForEach(model.uninstalledPasswordManagers) { item in
                     UninstalledExtensionRow(item: item,
                                             imageLoader: imageLoader,
@@ -196,9 +195,6 @@ extension Preferences {
             static let height: CGFloat = 120
             static let cornerRadius: CGFloat = 16
             static let padding: CGFloat = 24
-            static let iconTileSize: CGFloat = 72
-            static let iconTileCornerRadius: CGFloat = 12
-            static let iconSize: CGFloat = 40
             static let buttonHorizontalPadding: CGFloat = 8
             /// Minimum label size, so the button measures at least 80 x 24pt once padded.
             static let buttonLabelMinWidth: CGFloat = 80 - 2 * buttonHorizontalPadding
@@ -217,9 +213,7 @@ extension Preferences {
             HStack(spacing: 16) {
                 ExtensionSummary(item: item,
                                  imageLoader: imageLoader,
-                                 tileSize: Const.iconTileSize,
-                                 tileCornerRadius: Const.iconTileCornerRadius,
-                                 iconSize: Const.iconSize,
+                                 mode: .available,
                                  onPublisher: onPublisher)
 
                 Spacer(minLength: 0)
@@ -254,9 +248,6 @@ extension Preferences {
             static let cornerRadius: CGFloat = 16
             static let leadingPadding: CGFloat = 16
             static let trailingPadding: CGFloat = 24
-            static let iconTileSize: CGFloat = 48
-            static let iconTileCornerRadius: CGFloat = 8
-            static let iconSize: CGFloat = 24
             static let optionsToSwitchSpacing: CGFloat = 16
             static let footerHorizontalPadding: CGFloat = 24
             static let footerVerticalPadding: CGFloat = 12
@@ -291,9 +282,7 @@ extension Preferences {
             HStack(spacing: 16) {
                 ExtensionSummary(item: item,
                                  imageLoader: imageLoader,
-                                 tileSize: Const.iconTileSize,
-                                 tileCornerRadius: Const.iconTileCornerRadius,
-                                 iconSize: Const.iconSize,
+                                 mode: .installed,
                                  onPublisher: onPublisher)
 
                 Spacer(minLength: 0)
@@ -468,11 +457,26 @@ extension Preferences {
 
     private struct ExtensionSummary: View {
 
+        struct Mode {
+            let tileSize: CGFloat
+            let tileCornerRadius: CGFloat
+            let iconSize: CGFloat
+            let titleSpacing: CGFloat
+            let titleFontSize: CGFloat
+            let publisherFontSize: CGFloat
+
+            static var installed: Mode {
+                Mode(tileSize: 48, tileCornerRadius: 8, iconSize: 24, titleSpacing: 6, titleFontSize: 13, publisherFontSize: 11)
+            }
+
+            static var available: Mode {
+                Mode(tileSize: 72, tileCornerRadius: 12, iconSize: 40, titleSpacing: 10, titleFontSize: 15, publisherFontSize: 13)
+            }
+        }
+
         let item: ChromeWebStoreListing
         let imageLoader: RemoteMessagingImageLoading
-        let tileSize: CGFloat
-        let tileCornerRadius: CGFloat
-        let iconSize: CGFloat
+        let mode: Mode
         let onPublisher: () -> Void
 
         @Environment(\.designSystemPalette) private var palette
@@ -490,26 +494,26 @@ extension Preferences {
                         Image(nsImage: icon)
                             .resizable()
                             .aspectRatio(contentMode: .fit)
-                            .frame(width: iconSize, height: iconSize)
+                            .frame(width: mode.iconSize, height: mode.iconSize)
                     }
                 }
-                .frame(width: tileSize, height: tileSize)
+                .frame(width: mode.tileSize, height: mode.tileSize)
                 .background(Color(designSystemColor: .surfaceCanvas, palette: palette))
-                .clipShape(RoundedRectangle(cornerRadius: tileCornerRadius, style: .continuous))
+                .clipShape(RoundedRectangle(cornerRadius: mode.tileCornerRadius, style: .continuous))
                 .task(id: item.iconURL) {
                     guard let iconURL = item.iconURL else { return }
                     remoteIcon = try? await imageLoader.loadImage(from: iconURL)
                 }
 
-                VStack(alignment: .leading, spacing: 6) {
+                VStack(alignment: .leading, spacing: mode.titleSpacing) {
                     Text(item.name)
-                        .font(.system(size: 13, weight: .semibold))
+                        .font(.system(size: mode.titleFontSize, weight: .semibold))
                         .foregroundColor(Color(designSystemColor: .textPrimary, palette: palette))
                         .padding(.top, -2)
 
                     Button(action: onPublisher) {
                         Text(item.publisher)
-                            .font(.system(size: 11))
+                            .font(.system(size: mode.publisherFontSize))
                             .foregroundColor(Color.rebrandableLink(palette: palette))
                     }
                     .buttonStyle(.plain)

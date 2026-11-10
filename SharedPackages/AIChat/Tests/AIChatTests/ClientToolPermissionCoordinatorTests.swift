@@ -149,7 +149,7 @@ struct ClientToolPermissionCoordinatorTests {
 
     @available(iOS 16, macOS 13, *)
     @Test(.timeLimit(.minutes(1)))
-    func queueTimeCountsTowardDeadline() async throws {
+    func queueTimeCountsTowardDeadlineAndAnUnansweredPromptIsDenied() async throws {
         let harness = ClientToolTestHarness()
         let first = try harness.start(callID: "first")
         await harness.source.waitForPrompts(1)
@@ -157,12 +157,12 @@ struct ClientToolPermissionCoordinatorTests {
         harness.clock.advance(to: 30)
         let second = try harness.start(callID: "second")
         await harness.clock.waitForRegistrations(2)
-        harness.clock.advance(to: 149)
+        harness.clock.advance(to: 119)
         harness.answer(harness.source.prompts[0], decision: .dismiss)
         await harness.source.waitForPrompts(2)
-        harness.clock.advance(to: 180)
+        harness.clock.advance(to: 150)
         #expect(await first.value == .failure(callId: "first", error: .cancelled))
-        #expect(await second.value == .failure(callId: "second", error: .cancelled))
+        #expect(await second.value == .failure(callId: "second", error: .denied))
         #expect(harness.source.withdrawn == [harness.source.prompts[1].requestID])
         harness.answer(harness.source.prompts[1], decision: .always)
         #expect(harness.permissions.writes == 0)
@@ -177,10 +177,10 @@ struct ClientToolPermissionCoordinatorTests {
         await harness.clock.waitForRegistrations(1)
         let second = try harness.start(callID: "second")
         await harness.clock.waitForRegistrations(2)
-        harness.clock.advance(to: 150, dispatchTimers: false)
+        harness.clock.advance(to: 120, dispatchTimers: false)
         harness.answer(harness.source.prompts[0], decision: .always)
-        #expect(await first.value == .failure(callId: "first", error: .cancelled))
-        #expect(await second.value == .failure(callId: "second", error: .cancelled))
+        #expect(await first.value == .failure(callId: "first", error: .denied))
+        #expect(await second.value == .failure(callId: "second", error: .denied))
         #expect(harness.source.prompts.count == 1)
         #expect(harness.permissions.writes == 0)
     }
@@ -192,7 +192,7 @@ struct ClientToolPermissionCoordinatorTests {
         let task = try harness.start()
         await harness.source.waitForPrompts(1)
         harness.answer(harness.source.prompts[0], decision: .allowOnce)
-        harness.clock.advance(to: 151, dispatchTimers: false)
+        harness.clock.advance(to: 121, dispatchTimers: false)
         #expect(await task.value == .success(callId: "call", value: ["content": "page"]))
     }
 

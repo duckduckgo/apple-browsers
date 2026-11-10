@@ -35,7 +35,8 @@ public struct ClientToolPermissionPrompt: Equatable, Sendable {
     public let toolName: String
 }
 
-/// Allow once · Always · Never, or the prompt closed without a choice.
+/// Allow once · Always · Never, or the prompt closed without a choice. A prompt left unanswered until
+/// the deadline is denied for that call, as Duck.ai asks again after `cancelled`.
 public enum ClientToolPermissionDecision: Equatable, Sendable {
     case allowOnce
     case always
@@ -55,7 +56,9 @@ public enum ClientToolPermissionAuthorization {
 
 @MainActor
 public final class ClientToolPermissionCoordinator: ClientToolPermissionCoordinating {
-    private static let permissionTimeout: TimeInterval = 150
+    /// Shorter than Duck.ai's 150 s `executeClientTool` deadline, which ignores later replies, so the
+    /// call is settled while Duck.ai still waits for it.
+    private static let permissionTimeout: TimeInterval = 120
 
     private enum State {
         case queued
@@ -168,8 +171,12 @@ public final class ClientToolPermissionCoordinator: ClientToolPermissionCoordina
               entry.callID == prompt.callID, entry.prompter === prompter else {
             return
         }
-        guard !entry.isCancelled, now() < entry.deadline else {
+        guard !entry.isCancelled else {
             finish(entry.requestID, error: .cancelled, withdrawingPrompt: false)
+            return
+        }
+        guard now() < entry.deadline else {
+            finish(entry.requestID, error: .denied, withdrawingPrompt: false)
             return
         }
         switch decision {
@@ -239,7 +246,7 @@ public final class ClientToolPermissionCoordinator: ClientToolPermissionCoordina
         if case .granted = entry.state { return }
         if case .executing = entry.state { return }
         guard now() >= entry.deadline else { return }
-        finish(requestID, error: .cancelled)
+        finish(requestID, error: .denied)
     }
 
     private func grant(_ entry: Entry) {
@@ -296,8 +303,12 @@ public final class ClientToolPermissionCoordinator: ClientToolPermissionCoordina
         while let queueKey = queueKeysPendingProcessing.first {
             queueKeysPendingProcessing.remove(queueKey)
             guard let requestID = queues[queueKey]?.first, let entry = entries[requestID] else { continue }
-            guard !entry.isCancelled, now() < entry.deadline else {
+            guard !entry.isCancelled else {
                 finish(requestID, error: .cancelled)
+                continue
+            }
+            guard now() < entry.deadline else {
+                finish(requestID, error: .denied)
                 continue
             }
             guard case .queued = entry.state else { continue }

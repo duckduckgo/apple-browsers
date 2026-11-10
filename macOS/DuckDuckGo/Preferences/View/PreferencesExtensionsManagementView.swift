@@ -31,9 +31,11 @@ extension Preferences {
     struct ExtensionsManagementView: View {
 
         private enum Const {
-            static let footerSpacing: CGFloat = 4
-            // 10pt text has a 12pt line; 4pt more gives the 16pt line height.
-            static let disclaimerLineSpacing: CGFloat = 4
+            static let footerSpacing: CGFloat = 2
+            static let disclaimerDividerSpacing: CGFloat = 18
+            static let disclaimerLineHeight: CGFloat = 16
+            // Before macOS 26: 10pt text draws a 13pt line, so 3pt more reaches the 16pt line height.
+            static let disclaimerFallbackLineSpacing: CGFloat = 3
             static let descriptionTopPadding: CGFloat = 5
             static let dividerTopPadding: CGFloat = 32
             static let dividerBottomPadding: CGFloat = 28
@@ -115,7 +117,7 @@ extension Preferences {
                     uninstalledExtensionsView
                 }
             }
-            .padding(.top, 6)
+            .padding(.top, 5)
             .padding(.bottom, 16)
         }
 
@@ -181,14 +183,18 @@ extension Preferences {
         }
 
         private var disclaimer: some View {
-            VStack(alignment: .leading, spacing: 16) {
+            VStack(alignment: .leading, spacing: Const.disclaimerDividerSpacing) {
                 Divider()
-                Text(UserText.extensionsSettingsDisclaimer)
-                    .font(PreferencesUI_macOS.Const.Fonts.preferencePaneDisclaimer)
-                    .lineSpacing(Const.disclaimerLineSpacing)
-                    .foregroundColor(Color(designSystemColor: .textSecondary, palette: palette))
-                    .fixMultilineScrollableText()
+                disclaimerText
             }
+        }
+
+        private var disclaimerText: some View {
+            Text(UserText.extensionsSettingsDisclaimer)
+                .font(PreferencesUI_macOS.Const.Fonts.preferencePaneDisclaimer)
+                .foregroundColor(Color(designSystemColor: .textSecondary, palette: palette))
+                .lineHeight(Const.disclaimerLineHeight, fallbackLineSpacing: Const.disclaimerFallbackLineSpacing)
+                .fixMultilineScrollableText()
         }
     }
 
@@ -470,14 +476,29 @@ extension Preferences {
             let titleFontSize: CGFloat
             let titleFontWeight: Font.Weight
             let publisherFontSize: CGFloat
+            let textTopPadding: CGFloat
 
-            static var installed: Mode {
-                Mode(tileSize: 48, tileCornerRadius: 8, iconSize: 24, titleSpacing: 6, titleFontSize: 13, titleFontWeight: .medium, publisherFontSize: 11)
-            }
+            static let installed = Mode(
+                tileSize: 48,
+                tileCornerRadius: 8,
+                iconSize: 24,
+                titleSpacing: 6,
+                titleFontSize: 13,
+                titleFontWeight: .medium,
+                publisherFontSize: 11,
+                textTopPadding: 0
+            )
 
-            static var available: Mode {
-                Mode(tileSize: 72, tileCornerRadius: 12, iconSize: 40, titleSpacing: 10, titleFontSize: 15, titleFontWeight: .semibold, publisherFontSize: 13)
-            }
+            static let available = Mode(
+                tileSize: 72,
+                tileCornerRadius: 12,
+                iconSize: 40,
+                titleSpacing: 10,
+                titleFontSize: 15,
+                titleFontWeight: .semibold,
+                publisherFontSize: 13,
+                textTopPadding: 4
+            )
         }
 
         let item: ChromeWebStoreListing
@@ -524,9 +545,23 @@ extension Preferences {
                     }
                     .buttonStyle(.plain)
                 }
+                .padding(.top, mode.textTopPadding)
                 .lineLimit(1)
                 .truncationMode(.tail)
             }
+        }
+    }
+}
+
+private extension View {
+
+    /// Exact line height on macOS 26+; earlier systems approximate it with `fallbackLineSpacing`.
+    @ViewBuilder
+    func lineHeight(_ lineHeight: CGFloat, fallbackLineSpacing: CGFloat) -> some View {
+        if #available(macOS 26, *) {
+            self.lineHeight(.exact(points: lineHeight))
+        } else {
+            lineSpacing(fallbackLineSpacing)
         }
     }
 }

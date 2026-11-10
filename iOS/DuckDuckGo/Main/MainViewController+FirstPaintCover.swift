@@ -58,6 +58,7 @@ extension MainViewController {
         guard featureFlagger.isFeatureOn(.searchSubmitPageCover),
               let scheme = url.scheme?.lowercased(), scheme == "http" || scheme == "https",
               let tab = currentTab, tab.link != nil, !tab.isAITab,
+              !Self.isSameDocument(url, as: tab.url),
               aiBoundaryDecision(for: url) == .loadInPlace else { return }
 
         var handoff = FirstPaintCover.Handoff()
@@ -69,6 +70,16 @@ extension MainViewController {
         }
         handoff.destinationColor = expectedPageBackgroundColor(for: url)
         tab.coverPageUntilFirstPaint(handoff: handoff)
+    }
+
+    /// A fragment change on the current page scrolls in place and loads nothing.
+    static func isSameDocument(_ url: URL, as current: URL?) -> Bool {
+        guard url.fragment != nil, let current,
+              var target = URLComponents(url: url, resolvingAgainstBaseURL: false),
+              var page = URLComponents(url: current, resolvingAgainstBaseURL: false) else { return false }
+        target.fragment = nil
+        page.fragment = nil
+        return target.url == page.url
     }
 
     private func expectedPageBackgroundColor(for url: URL) -> UIColor? {

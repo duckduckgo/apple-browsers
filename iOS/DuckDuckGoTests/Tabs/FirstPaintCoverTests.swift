@@ -503,6 +503,48 @@ struct FirstPaintCoverTests {
     }
 
     @available(iOS 16, macOS 13, *)
+    @Test("A cancel that lands after the re-issued request is already pending keeps the full wait", .timeLimit(.minutes(1)))
+    func cancelDuringPendingReissueKeepsCommitWait() {
+        let harness = Harness()
+        harness.cover.arm(in: harness.container, above: harness.webView)
+        harness.cover.willDecidePolicy()
+        harness.cover.willDecidePolicy()
+
+        harness.cover.didDecidePolicy(allowed: false, isSameDocument: false)
+
+        #expect(harness.timeouts.last?.delay == FirstPaintCover.Constants.commitTimeout)
+        harness.cover.didDecidePolicy(allowed: false, isSameDocument: false)
+        #expect(harness.timeouts.last?.delay == FirstPaintCover.Constants.noNavigationGrace)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("A decision requested before arming doesn't start the grace", .timeLimit(.minutes(1)))
+    func decisionFromBeforeArmingIsIgnored() {
+        let harness = Harness()
+        harness.cover.arm(in: harness.container, above: harness.webView)
+        let timeoutCount = harness.timeouts.count
+
+        harness.cover.didDecidePolicy(allowed: false, isSameDocument: false)
+
+        #expect(harness.cover.phase == .awaitingCommit)
+        #expect(harness.timeouts.count == timeoutCount)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Only a fragment change on the current page counts as the same document", .timeLimit(.minutes(1)))
+    func sameDocumentDetection() throws {
+        let page = try #require(URL(string: "https://en.wikipedia.org/wiki/Lisbon"))
+        let fragment = try #require(URL(string: "https://en.wikipedia.org/wiki/Lisbon#History"))
+        let otherPage = try #require(URL(string: "https://en.wikipedia.org/wiki/Porto#History"))
+
+        #expect(MainViewController.isSameDocument(fragment, as: page))
+        #expect(MainViewController.isSameDocument(fragment, as: fragment))
+        #expect(!MainViewController.isSameDocument(otherPage, as: page))
+        #expect(!MainViewController.isSameDocument(page, as: page), "a reload without a fragment loads")
+        #expect(!MainViewController.isSameDocument(fragment, as: nil))
+    }
+
+    @available(iOS 16, macOS 13, *)
     @Test("Policy decisions after the covered load starts don't shorten its wait", .timeLimit(.minutes(1)))
     func policyDecisionsAfterStartAreIgnored() {
         let harness = Harness()

@@ -86,6 +86,7 @@ final class FirstPaintCover {
     private var fadeAnimator: UIViewPropertyAnimator?
     private var handoffAnimators: [UIViewPropertyAnimator] = []
     private var coveredNavigation: CoveredNavigation = .notStarted
+    private var pendingPolicyDecisions = 0
 
     /// The navigation the cover waits for; anything else belongs to the previous page.
     private enum CoveredNavigation {
@@ -129,22 +130,26 @@ final class FirstPaintCover {
 
         phase = .awaitingCommit
         coveredNavigation = .notStarted
+        pendingPolicyDecisions = 0
         restartTimeout(after: Constants.commitTimeout)
     }
 
     /// A main-frame policy check can wait on content blocking or a re-issued request, so it gets the full commit window.
     func willDecidePolicy() {
         guard isAwaitingStart else { return }
+        pendingPolicyDecisions += 1
         restartTimeout(after: Constants.commitTimeout)
     }
 
     /// Cancelled and same-document navigations never start a provisional load, so nothing else would lift the cover.
-    /// A cancel that re-issues the request re-enters `willDecidePolicy` well within the grace.
+    /// A re-issued request can enter `willDecidePolicy` before the cancel lands, so the grace waits for every pending decision.
     func didDecidePolicy(allowed: Bool, isSameDocument: Bool) {
-        guard isAwaitingStart else { return }
+        // Decisions requested before arming belong to the previous page.
+        guard isAwaitingStart, pendingPolicyDecisions > 0 else { return }
+        pendingPolicyDecisions -= 1
         if allowed && isSameDocument {
             reveal(animated: true)
-        } else {
+        } else if pendingPolicyDecisions == 0 {
             restartTimeout(after: Constants.noNavigationGrace)
         }
     }

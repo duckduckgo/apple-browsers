@@ -18,6 +18,7 @@
 //
 
 import AIChat
+import AIChatTestingUtilities
 import Core
 import FeatureFlags_iOS
 import JavaScriptCore
@@ -645,7 +646,8 @@ final class BrowserToolsBridgeFixture {
         owner = Tab(uid: "owner", link: Link(title: "Owner", url: URL(string: "https://owner.example")!), fireTab: fire)
         service = AIChatBrowserToolsService(featureFlagger: flags, permissionStorage: defaults.keyedStoring())
         handler = AIChatUserScriptHandler(experimentalAIChatManager: ExperimentalAIChatManager(featureFlagger: flags),
-                                          syncHandler: MockAIChatSyncHandling(), featureFlagger: flags, keyValueStore: defaults)
+                                          syncHandler: MockAIChatSyncHandling(), bonusHandler: MockAIChatBonusHandling(),
+                                          featureFlagger: flags, keyValueStore: defaults)
     }
 
     func makeScript() -> AIChatUserScript {

@@ -273,4 +273,22 @@ extension DBPUIViewModel: DBPUICommunicationDelegate, DBPUIHandshakeDelegate {
     public func canSendEmail() -> Bool {
         emailComposer.canSendMail
     }
+
+    @MainActor
+    public func openOptOutEmail(_ request: DBPUIOpenOptOutEmailRequest) async -> DBPUIOpenOptOutEmailResult {
+        guard isEmailOptOutEnabled() else { return DBPUIOpenOptOutEmailResult(sent: false) }
+
+        let result = await emailComposer.compose(request)
+        return DBPUIOpenOptOutEmailResult(sent: result == .sent)
+    }
+
+    public func confirmOptOutEmailSent(recordIds: [Int64]) async {
+        guard isEmailOptOutEnabled() else { return }
+
+        do {
+            try databaseDelegate?.confirmOptOutEmailSent(recordIds: recordIds)
+        } catch {
+            Logger.dataBrokerProtection.error("Failed to record the user-sent opt-out email: \(error.localizedDescription, privacy: .public)")
+        }
+    }
 }

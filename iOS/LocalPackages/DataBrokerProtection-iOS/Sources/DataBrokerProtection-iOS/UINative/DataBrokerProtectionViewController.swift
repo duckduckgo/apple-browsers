@@ -73,7 +73,7 @@ final public class DataBrokerProtectionViewController: UIViewController {
                               privacyConfigManager: privacyConfigManager,
                               contentScopeProperties: contentScopeProperties,
                               emailOptOutFeatureFlagger: emailOptOutFeatureFlagger,
-                              emailComposer: DBPOptOutEmailComposer(),
+                              emailComposer: DBPOptOutEmailComposer(presentingViewController: self),
                               freeScanEntryPoint: freeScanEntryPoint)
     }()
 

@@ -59,7 +59,7 @@ public enum TokenForkError: DDGError {
     public var errorCode: Int {
         switch self {
         case .incomplete:
-            return 11300
+            return 11600
         }
     }
 

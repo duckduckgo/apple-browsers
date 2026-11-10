@@ -271,6 +271,7 @@ public extension DesignSystemImages {
             public static var lockLocked: DesignSystemImage { .init(resource: .lockLocked128) }
             public static var networkProtectionVPN: DesignSystemImage { .init(resource: .networkProtectionVPN128) }
             public static var networkProtectionVPNDisabled: DesignSystemImage { .init(resource: .networkProtectionVPNDisabled128) }
+            public static var webFeature: DesignSystemImage { .init(resource: .webFeatureColor128) }
             public static var youTubeAdBlockWarning: DesignSystemImage { .init(resource: .youTubeWarning128) }
         }
     }

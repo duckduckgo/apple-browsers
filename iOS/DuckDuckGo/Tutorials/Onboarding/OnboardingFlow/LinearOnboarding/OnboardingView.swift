@@ -474,6 +474,8 @@ extension OnboardingView {
                 aiChatEnabledSelectionView(content: content)
             case let .adBlockingDialog(content):
                 toggleSettingsPersonalizationView(content: content, action: model.adBlockingContinueAction)
+            case let .tryVPNDialog(content):
+                tryVPNView(content: content)
             case let .setDefaultBrowserDialog(content):
                 setDefaultBrowserView(content: content)
             case let .aiIntroDialog(content):
@@ -537,6 +539,19 @@ extension OnboardingView {
                     model.aiModelContinueAction()
                 }
             }
+        }
+
+        private func tryVPNView(content: OnboardingTryVPNContent) -> some View {
+            TryVPNContent(
+                content: content,
+                isVisible: $showBubbleContent,
+                primaryAction: model.tryVPNAction,
+                secondaryAction: {
+                    animateContentTransition {
+                        model.skipTryVPNAction()
+                    }
+                }
+            )
         }
 
         private func addressBarToggleModeView(content: OnboardingAddressBarToggleModeContent) -> some View {
@@ -670,6 +685,8 @@ extension OnboardingView {
             case let .toggleInputModeDialog(content):
                 return content.daxAnimation
             case let .keepDuckAIDialog(content):
+                return content.daxAnimation
+            case let .tryVPNDialog(content):
                 return content.daxAnimation
             case .setDefaultBrowserDialog(let content):
                 return content.daxAnimation
@@ -847,7 +864,7 @@ private extension OnboardingView {
             )
         case .downloadReasonDialog,
              .aiSearchSettingsDialog, .aiModelDialog,
-             .toggleInputModeDialog, .keepDuckAIDialog, .adBlockingDialog:
+             .toggleInputModeDialog, .keepDuckAIDialog, .adBlockingDialog, .tryVPNDialog:
             return BubbleBackedDialogConfiguration(
                 tailOffset: tailLeadingOffset,
                 tailDirection: .leading,

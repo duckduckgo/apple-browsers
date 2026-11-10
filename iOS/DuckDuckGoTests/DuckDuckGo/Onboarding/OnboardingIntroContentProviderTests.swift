@@ -536,6 +536,29 @@ struct OnboardingIntroContentProviderTests {
     }
 
     @MainActor
+    @Suite("Try VPN Content")
+    struct TryVPNContent {
+
+        @available(iOS 16, macOS 13, *)
+        @Test("Check Try VPN content uses its copy and a skip button", .timeLimit(.minutes(1)))
+        func checkTryVPNContent() {
+            // GIVEN
+            let sut = OnboardingIntroContentProvider(flowType: .default, featureFlagger: MockFeatureFlagger())
+
+            // WHEN
+            let result = sut.tryVPNContent
+
+            // THEN
+            #expect(result.title == UserText.Onboarding.TryVPN.title)
+            #expect(result.message == UserText.Onboarding.TryVPN.message)
+            #expect(result.footer == UserText.Onboarding.TryVPN.footer)
+            #expect(result.primaryCTA == UserText.Onboarding.TryVPN.cta)
+            #expect(result.secondaryCTA == UserText.onboardingSkip)
+        }
+
+    }
+
+    @MainActor
     @Suite("AI Comparison Content")
     struct AIIntroContent {
 

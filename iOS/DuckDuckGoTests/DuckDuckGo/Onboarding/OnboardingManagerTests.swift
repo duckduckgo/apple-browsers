@@ -1054,8 +1054,8 @@ struct OnboardingDownloadReasonFlowTests {
     }
 
     @available(iOS 16, macOS 13, *)
-    @Test("The VPN download reason continues with the browse-privately steps for now", .timeLimit(.minutes(1)))
-    func vpnReasonUsesBrowsePrivatelySteps() {
+    @Test("The VPN download reason offers the VPN trial right after the comparison", .timeLimit(.minutes(1)))
+    func vpnReasonOffersTrialAfterComparison() {
         // GIVEN
         let sut = makeManager()
 
@@ -1063,7 +1063,9 @@ struct OnboardingDownloadReasonFlowTests {
         let result = sut.selectDownloadReason(.vpn)
 
         // THEN
-        #expect(result == OnboardingStepsHelper.expectedRemainingSteps(for: .browserPrivately))
+        #expect(result == [.setDefaultBrowser, .tryVPN, .searchExperienceSelection, .addressBarPositionSelection, .addToDockPromo, .appIconSelection, .duckAIQuerySelection])
+        #expect(OnboardingIntroStep.tryVPN.resumeStep == .tryVPN)
+        #expect(OnboardingIntroStep.tryVPN.countsTowardProgress(flow: .default))
     }
 
     // MARK: - Helpers

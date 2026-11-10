@@ -39,6 +39,7 @@ protocol OnboardingIntroContentProviding {
     var addressBarPositionContent: OnboardingAddressBarPositionContent { get }
     var searchExperienceContent: OnboardingSearchExperienceContent { get }
     var duckAIQueryContent: OnboardingDuckAIQueryContent { get }
+    var tryVPNContent: OnboardingTryVPNContent { get }
 }
 
 struct OnboardingIntroContentProvider: OnboardingIntroContentProviding {
@@ -500,6 +501,32 @@ extension OnboardingIntroContentProvider {
             primaryCTA: UserText.Onboarding.DuckAICPP.AIComparison.cta,
             secondaryCTA: nil,
             daxAnimation: .wingBottom
+        )
+    }
+
+}
+
+// MARK: - Content Provider + Try VPN
+
+struct OnboardingTryVPNContent: Equatable {
+    let title: String
+    let message: String
+    let footer: String
+    let primaryCTA: String
+    let secondaryCTA: String
+    let daxAnimation: DaxAnimation?
+}
+
+extension OnboardingIntroContentProvider {
+
+    var tryVPNContent: OnboardingTryVPNContent {
+        OnboardingTryVPNContent(
+            title: UserText.Onboarding.TryVPN.title,
+            message: UserText.Onboarding.TryVPN.message,
+            footer: UserText.Onboarding.TryVPN.footer,
+            primaryCTA: UserText.Onboarding.TryVPN.cta,
+            secondaryCTA: UserText.onboardingSkip,
+            daxAnimation: .wingLeft
         )
     }
 

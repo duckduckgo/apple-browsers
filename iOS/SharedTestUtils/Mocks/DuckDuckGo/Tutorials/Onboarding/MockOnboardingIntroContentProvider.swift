@@ -36,9 +36,21 @@ class MockOnboardingIntroContentProvider: OnboardingIntroContentProviding {
     var addressBarPositionContent: OnboardingAddressBarPositionContent = .mock
     var searchExperienceContent: OnboardingSearchExperienceContent = .mock
     var duckAIQueryContent: OnboardingDuckAIQueryContent = .mock
+    var tryVPNContent: OnboardingTryVPNContent = .mock
 }
 
 // MARK: - Helpers
+
+extension OnboardingTryVPNContent {
+    static let mock = OnboardingTryVPNContent(
+        title: "Try VPN",
+        message: "Message",
+        footer: "Footer",
+        primaryCTA: "Try",
+        secondaryCTA: "Skip",
+        daxAnimation: nil
+    )
+}
 
 extension OnboardingLandingContent {
     static let mock = OnboardingLandingContent(

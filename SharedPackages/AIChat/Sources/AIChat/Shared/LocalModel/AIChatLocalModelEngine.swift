@@ -16,6 +16,7 @@
 //  limitations under the License.
 //
 
+import DDGError
 import Foundation
 
 public enum AIChatLocalModelAvailability: Equatable, Sendable {
@@ -57,12 +58,30 @@ public enum AIChatLocalModelEngineEvent: Equatable, Sendable {
     case finished(AIChatLocalModelRunSummary)
 }
 
-public struct AIChatLocalModelEngineError: Error, Equatable, Sendable {
+public struct AIChatLocalModelEngineError: DDGError, Sendable {
     public let code: AIChatLocalRunChunk.ErrorCode
 
     public init(code: AIChatLocalRunChunk.ErrorCode) {
         self.code = code
     }
+
+    public static let errorDomain = "com.duckduckgo.aiChat.localModel.engine"
+
+    public var errorCode: Int {
+        switch code {
+        case .unavailable: return 1
+        case .contentFiltered: return 2
+        case .contextExceeded: return 3
+        case .unsupportedLanguage: return 4
+        case .rateLimited: return 5
+        case .outOfMemory: return 6
+        case .interrupted: return 7
+        case .internal: return 8
+        }
+    }
+
+    public var underlyingError: Error? { nil }
+    public var description: String { "AIChatLocalModelEngineError(\(code.rawValue))" }
 }
 
 /// A model that runs Duck.ai tasks on the device. The stream ends after `.finished`, or throws an

@@ -16,6 +16,7 @@
 //  limitations under the License.
 //
 
+import DDGError
 import Foundation
 
 /// Payloads of the local-model messages between Duck.ai and the browser, as defined in
@@ -101,10 +102,21 @@ public struct AIChatLocalRunCancelRequest: Codable, Equatable, Sendable {
 
 /// The error message `startAIChatLocalRun` and `startAIChatLocalModelSetup` reject with.
 /// The message broker sends `errorDescription` to the page as `error.message`.
-public enum AIChatLocalModelRequestError: String, LocalizedError, Equatable, Sendable {
+public enum AIChatLocalModelRequestError: String, DDGError, LocalizedError, Sendable {
     case unavailable
     case invalidArguments = "invalid_arguments"
 
+    public static let errorDomain = "com.duckduckgo.aiChat.localModel.request"
+
+    public var errorCode: Int {
+        switch self {
+        case .unavailable: return 1
+        case .invalidArguments: return 2
+        }
+    }
+
+    public var underlyingError: Error? { nil }
+    public var description: String { rawValue }
     public var errorDescription: String? { rawValue }
 }
 

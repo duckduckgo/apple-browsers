@@ -124,7 +124,9 @@ extension Preferences {
                                                      set: { model.setEnabled($0, for: entry) }),
                                   isLocked: entry.isRemotelyDisabled,
                                   onDetails: { model.showDetails(for: entry) },
-                                  onRemove: { model.remove(entry) })
+                                  onPublisher: { model.openPublisherPage(for: entry.listing) },
+                                  onRemove: { model.remove(entry) },
+                                  onRemoteDisableLearnMore: model.openRemoteDisableLearnMore)
         }
 
         private var moreExtensionsHeader: some View {
@@ -141,7 +143,9 @@ extension Preferences {
             VStack(alignment: .leading, spacing: 12) {
                 TextMenuItemHeader(UserText.extensionsSettingsPasswordManagersHeader)
                 ForEach(model.uninstalledPasswordManagers) { item in
-                    UninstalledExtensionRow(item: item, imageLoader: imageLoader) {
+                    UninstalledExtensionRow(item: item,
+                                            imageLoader: imageLoader,
+                                            onPublisher: { model.openPublisherPage(for: item) }) {
                         model.openStorePage(for: item)
                     }
                 }
@@ -197,6 +201,7 @@ extension Preferences {
 
         let item: ChromeWebStoreListing
         let imageLoader: RemoteMessagingImageLoading
+        let onPublisher: () -> Void
         let onGet: () -> Void
 
         @Environment(\.designSystemPalette) private var palette
@@ -207,7 +212,8 @@ extension Preferences {
                                  imageLoader: imageLoader,
                                  tileSize: Const.iconTileSize,
                                  tileCornerRadius: Const.iconTileCornerRadius,
-                                 iconSize: Const.iconSize)
+                                 iconSize: Const.iconSize,
+                                 onPublisher: onPublisher)
 
                 Spacer(minLength: 0)
 
@@ -245,6 +251,10 @@ extension Preferences {
             static let iconTileCornerRadius: CGFloat = 8
             static let iconSize: CGFloat = 24
             static let optionsToSwitchSpacing: CGFloat = 16
+            static let footerHorizontalPadding: CGFloat = 24
+            static let footerVerticalPadding: CGFloat = 12
+            static let footerIconToTextSpacing: CGFloat = 8
+            static let footerTextToLinkMinSpacing: CGFloat = 16
         }
 
         let item: ChromeWebStoreListing
@@ -252,17 +262,32 @@ extension Preferences {
         @Binding var isEnabled: Bool
         let isLocked: Bool
         let onDetails: () -> Void
+        let onPublisher: () -> Void
         let onRemove: () -> Void
+        let onRemoteDisableLearnMore: () -> Void
 
         @Environment(\.designSystemPalette) private var palette
 
         var body: some View {
+            VStack(spacing: 0) {
+                card
+                if isLocked {
+                    remoteDisableFooter
+                }
+            }
+            .frame(maxWidth: Const.maxWidth)
+            .background(isLocked ? Color(designSystemColor: .destructiveGlowPrimary, palette: palette) : .clear)
+            .clipShape(RoundedRectangle(cornerRadius: Const.cornerRadius, style: .continuous))
+        }
+
+        private var card: some View {
             HStack(spacing: 16) {
                 ExtensionSummary(item: item,
                                  imageLoader: imageLoader,
                                  tileSize: Const.iconTileSize,
                                  tileCornerRadius: Const.iconTileCornerRadius,
-                                 iconSize: Const.iconSize)
+                                 iconSize: Const.iconSize,
+                                 onPublisher: onPublisher)
 
                 Spacer(minLength: 0)
 
@@ -294,8 +319,30 @@ extension Preferences {
             .frame(maxWidth: Const.maxWidth)
             .frame(height: Const.height)
             .background(Color(designSystemColor: .containerFillSecondary, palette: palette))
+            // The card fill is translucent; an opaque backing keeps the footer's pink from tinting it.
+            .background(Color(designSystemColor: .surfaceCanvas, palette: palette))
             .clipShape(RoundedRectangle(cornerRadius: Const.cornerRadius, style: .continuous))
             .accessibilityIdentifier("Preferences.Extensions.\(item.id)")
+        }
+
+        private var remoteDisableFooter: some View {
+            HStack(spacing: Const.footerIconToTextSpacing) {
+                Image(nsImage: DesignSystemImages.Glyphs.Size16.exclamationRecolorable)
+
+                Text(UserText.extensionsSettingsRemotelyDisabledNotice)
+                    .foregroundColor(Color(designSystemColor: .textPrimary, palette: palette))
+                    .fixedSize(horizontal: false, vertical: true)
+
+                Spacer(minLength: Const.footerTextToLinkMinSpacing)
+
+                Button(UserText.extensionsSettingsLearnMore, action: onRemoteDisableLearnMore)
+                    .buttonStyle(.plain)
+                    .foregroundColor(Color.rebrandableLink(palette: palette))
+                    .fixedSize()
+            }
+            .padding(.horizontal, Const.footerHorizontalPadding)
+            .padding(.vertical, Const.footerVerticalPadding)
+            .accessibilityIdentifier("Preferences.Extensions.\(item.id).RemotelyDisabledNotice")
         }
     }
 
@@ -419,6 +466,7 @@ extension Preferences {
         let tileSize: CGFloat
         let tileCornerRadius: CGFloat
         let iconSize: CGFloat
+        let onPublisher: () -> Void
 
         @Environment(\.designSystemPalette) private var palette
         @State private var remoteIcon: NSImage?
@@ -439,7 +487,7 @@ extension Preferences {
                     }
                 }
                 .frame(width: tileSize, height: tileSize)
-                .background(Color(designSystemColor: .containerFillTertiary, palette: palette))
+                .background(Color(designSystemColor: .surfaceCanvas, palette: palette))
                 .clipShape(RoundedRectangle(cornerRadius: tileCornerRadius, style: .continuous))
                 .task(id: item.iconURL) {
                     guard let iconURL = item.iconURL else { return }
@@ -450,8 +498,13 @@ extension Preferences {
                     Text(item.name)
                         .font(.system(size: 13, weight: .semibold))
                         .foregroundColor(Color(designSystemColor: .textPrimary, palette: palette))
-                    Text(item.publisher)
-                        .foregroundColor(Color.rebrandableLink(palette: palette))
+
+                    Button(action: onPublisher) {
+                        Text(item.publisher)
+                            .font(.system(size: 11))
+                            .foregroundColor(Color.rebrandableLink(palette: palette))
+                    }
+                    .buttonStyle(.plain)
                 }
                 .lineLimit(1)
                 .truncationMode(.tail)

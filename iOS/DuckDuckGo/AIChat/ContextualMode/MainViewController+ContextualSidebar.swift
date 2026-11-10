@@ -79,6 +79,11 @@ extension MainViewController: AIChatContextualSidebarHosting {
         currentTab?.aiChatContextualSheetCoordinator.isSheetInSidebar == true
     }
 
+    /// Whether the contextual surface opening now goes beside the page, as the coordinator decides when it shows it.
+    var opensContextualSurfaceInSidebar: Bool {
+        currentTab?.aiChatContextualSheetCoordinator.showsSurfaceInSidebar(from: self) == true
+    }
+
     /// The sidebar only ever shows the current tab's chat. Closing a tab attaches the next one without
     /// dismissing the closed tab's surface, which would otherwise stay beside the new page.
     func reconcileContextualSidebarWithCurrentTab() {

@@ -29,7 +29,7 @@ struct SuggestionsListView: View {
     let isAddressBarAtBottom: Bool
     var isFloatingPopover: Bool = false
 
-    private enum Metrics {
+    fileprivate enum Metrics {
         /// Per Figma: the list table sits 6pt below the top-positioned input's bottom margin.
         static let listTopInset: CGFloat = 6
         static let popoverVerticalInset: CGFloat = 12
@@ -129,6 +129,90 @@ struct SuggestionsListView: View {
         } else {
             EmptyView()
         }
+    }
+}
+
+/// The legacy NTP owns scrolling, so its recent chats use the list's rows without a nested `List`.
+struct LegacyRecentChatsView: View {
+
+    @ObservedObject var viewModel: SuggestionsListViewModel
+    let isAddressBarAtBottom: Bool
+
+    @Environment(\.displayScale) private var displayScale
+
+    private typealias Metrics = SuggestionsListView.Metrics
+
+    var body: some View {
+        VStack(spacing: Metrics.popoverSectionSpacing) {
+            ForEach(viewModel.sections) { section in
+                VStack(spacing: 0) {
+                    ForEach(section.rows) { row in
+                        rowButton(row)
+                            .overlay(alignment: .bottom) {
+                                if row.id != section.rows.last?.id {
+                                    Color(uiColor: .separator)
+                                        .frame(height: 1 / displayScale)
+                                        .padding(.leading, separatorLeadingInset)
+                                        .padding(.trailing, Metrics.rowRightInset)
+                                }
+                            }
+                    }
+                }
+                .clipShape(RoundedRectangle(cornerRadius: cornerRadius, style: .continuous))
+            }
+        }
+        .onHover { isHovering in
+            if !isHovering { viewModel.selectedRowID = nil }
+        }
+    }
+
+    private var cornerRadius: CGFloat {
+        if #available(iOS 26, *) { return 24 }
+        return 10
+    }
+
+    private var separatorLeadingInset: CGFloat {
+        // List aligns separators with the title: 12pt row inset + 24pt icon + 10pt spacing.
+        Metrics.rowLeftInset + 24 + 10
+    }
+
+    private func rowButton(_ row: SuggestionRow) -> some View {
+        Button {
+            viewModel.selectRow(id: row.id)
+        } label: {
+            SuggestionRowView(
+                row: row,
+                isAddressBarAtBottom: isAddressBarAtBottom,
+                isSelected: row.id == viewModel.selectedRowID,
+                onTapAhead: { viewModel.tapAheadRow(id: row.id) },
+                onDelete: { viewModel.deleteRow(id: row.id) },
+                onFire: { frame in viewModel.fireDeleteRow(id: row.id, sourceRect: frame) })
+                .padding(.vertical, row.subtitle == nil ? Metrics.rowVerticalPaddingSingleLine : Metrics.rowVerticalPaddingWithSubtitle)
+                .padding(.leading, Metrics.rowLeftInset)
+                .padding(.trailing, Metrics.rowRightInset)
+                .contentShape(Rectangle())
+        }
+        .buttonStyle(LegacyRecentChatButtonStyle(isSelected: row.id == viewModel.selectedRowID))
+        .accessibilityIdentifier(row.accessibilityID)
+        .onHover { isHovering in
+            if isHovering { viewModel.selectedRowID = row.id }
+        }
+    }
+}
+
+private struct LegacyRecentChatButtonStyle: ButtonStyle {
+    let isSelected: Bool
+
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .background {
+                ZStack {
+                    Color(designSystemColor: isSelected ? .accentPrimary : .surface)
+                    if configuration.isPressed {
+                        Color(uiColor: .tertiarySystemFill)
+                    }
+                }
+            }
     }
 }
 

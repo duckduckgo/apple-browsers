@@ -128,6 +128,29 @@
             }
         ]
     },
+    "m_aichat_unified_input_attach_menu_shown": {
+        "description": "Fires when the user opens the attach (+) menu in the Unified Toggle Input or the iPad address bar. Not fired when the attach button is disabled or has no menu.",
+        "owners": ["aataraxiaa"],
+        "triggers": ["user_interaction"],
+        "suffixes": ["daily_count", "platform", "form_factor"],
+        "parameters": ["appVersion", "unified_input_surface"]
+    },
+    "m_aichat_unified_input_attach_menu_item_selected": {
+        "description": "Fires when the user picks an enabled item from the attach (+) menu in the Unified Toggle Input or the iPad address bar. Fires on the pick, before any picker or sheet opens, so it counts picks that are later cancelled.",
+        "owners": ["aataraxiaa"],
+        "triggers": ["user_interaction"],
+        "suffixes": ["daily_count", "platform", "form_factor"],
+        "parameters": [
+            "appVersion",
+            "unified_input_surface",
+            {
+                "key": "item",
+                "description": "The menu item picked: camera (Take Photo), photo_library (Add Image), file_picker (Add File), page (Ask About Page), recent_tab (a tab in the recent tabs section, attaching or detaching it), tab_picker (Add Tabs).",
+                "type": "string",
+                "enum": ["camera", "photo_library", "file_picker", "page", "recent_tab", "tab_picker"]
+            }
+        ]
+    },
     "m_aichat_unified_input_image_attached": {
         "description": "Fires when the user attaches an image (camera, photo library, or paste) in the Unified Toggle Input.",
         "owners": ["pikorddg", "aataraxiaa"],
@@ -271,7 +294,7 @@
         "owners": ["pikorddg", "aataraxiaa"],
         "triggers": ["other"],
         "suffixes": ["platform", "form_factor"],
-        "parameters": ["appVersion", "unified_input_surface"]
+        "parameters": ["appVersion", "unified_input_surface", "address_bar_position"]
     },
     "aichat_edit_prompt_opened": {
         "description": "Fires when the frontend requests to edit a previously sent message and the Unified Toggle Input enters edit mode.",
@@ -442,11 +465,11 @@
         "parameters": ["appVersion"]
     },
     "m_autocomplete_duckai_click_search_duckduckgo": {
-        "description": "Fires when user taps the 'Search DuckDuckGo: X' exit row in the Duck.ai autocomplete suggestion list.",
+        "description": "Fires when user taps the 'Search DuckDuckGo: X' exit row in the Duck.ai autocomplete suggestion list. Counts every tap, including ones that catch a search before it reaches Duck.ai. On iPhone this search fires no m_aichat_unified_input_query_submitted, so resubmit_of_prompt here is the only record of a prompt recovered through the row; add it to that pixel's resubmit_of_prompt for the total.",
         "owners": ["pikorddg"],
         "triggers": ["other"],
         "suffixes": ["platform", "form_factor"],
-        "parameters": ["appVersion"]
+        "parameters": ["appVersion", "address_bar_position", "resubmit_of_prompt"]
     },
     "m_aichat_unified_input_prompt_submitted": {
         "description": "Fires on every Duck.ai submission in the unified toggle input, with the submit-time state of the composer. Divide against m_aichat_unified_input_query_submitted for the Search vs Duck.ai mix.",
@@ -459,6 +482,8 @@
             "unified_input_page_type",
             "usage_layout",
             "usage_hardware_keyboard",
+            "address_bar_position",
+            "resubmit_of_search",
             {
                 "key": "default_mode",
                 "description": "The user's Opening-mode setting, for telling an accepted default apart from a switch. Absent before iPad's address bar reported it; filter on it being present for any Search-vs-Duck.ai ratio.",
@@ -573,6 +598,8 @@
             },
             "usage_layout",
             "usage_hardware_keyboard",
+            "address_bar_position",
+            "resubmit_of_prompt",
             {
                 "key": "default_mode",
                 "description": "The user's Opening-mode setting, for telling an accepted default apart from a switch.",

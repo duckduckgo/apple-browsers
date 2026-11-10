@@ -287,6 +287,7 @@ extension MainViewController {
                                                    duckAIGridContentProvider: duckAIGridContentProvider,
                                                    duckAIVoiceSessionTracker: self.duckAIVoiceSessionTracker,
                                                    floatingUIManager: floatingUIManager,
+                                                   isFireShortcutEnabled: { [weak self] in self?.isShortcutEnabled() == true },
                                                    pixelFiring: self.pixelFiring)
 
         controller.transitioningDelegate = tabSwitcherTransition
@@ -344,12 +345,12 @@ extension MainViewController {
         }, deepLinkTarget: .netP(source: source, scrollToStrictRouting: scrollToStrictRouting))
     }
 
-    func segueToDataBrokerProtection() {
+    func segueToDataBrokerProtection(freeScanEntryPoint: FreemiumDBPEntryPoint? = nil) {
         Logger.lifecycle.debug(#function)
         hideAllHighlightsIfNeeded()
         launchSettings(completion: {
-            $0.triggerDeepLinkNavigation(to: .dbp())
-        }, deepLinkTarget: .dbp())
+            $0.triggerDeepLinkNavigation(to: .dbp(freeScanEntryPoint: freeScanEntryPoint))
+        }, deepLinkTarget: .dbp(freeScanEntryPoint: freeScanEntryPoint))
     }
 
     func segueToPIRWithSubscriptionCheck() {
@@ -526,6 +527,7 @@ extension MainViewController {
                                                             freemiumDBPUserStateManager: freemiumDBPUserStateManager,
                                                             daxGreetingDebugging: daxGreetingService,
                                                             duckAiNativeStorageHandler: duckAiNativeStorageHandler,
+                                                            aiChatBonusMessageLog: userScriptsDependencies.aiChatBonusOffer.messageLog,
                                                             promoCoordinationDiagnosticsProvider: promoCoordinationService,
                                                             promoCoordinationCooldownResetter: promoCoordinationService)
 
@@ -659,6 +661,7 @@ extension MainViewController {
             remoteMessagingDebugHandler: self.remoteMessagingDebugHandler,
             webExtensionManager: self.webExtensionManager,
             duckAiNativeStorageHandler: self.duckAiNativeStorageHandler,
+            aiChatBonusMessageLog: self.userScriptsDependencies.aiChatBonusOffer.messageLog,
             promoCoordinationDiagnosticsProvider: self.promoCoordinationService,
             promoCoordinationCooldownResetter: self.promoCoordinationService,
             daxGreetingDebugging: self.daxGreetingService))

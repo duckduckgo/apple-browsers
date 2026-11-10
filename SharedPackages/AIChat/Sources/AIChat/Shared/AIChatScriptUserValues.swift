@@ -172,6 +172,9 @@ public struct AIChatNativeConfigValues: Codable {
     /// What the local model can do on this device. Left out when the local-models flag is off,
     /// which Duck.ai treats as unsupported.
     public var localModel: AIChatLocalModelConfig?
+    /// Browser tools Duck.ai may call through `executeClientTool`. Omitted outside a Duck.ai chat,
+    /// in Fire, and when no tool is enabled.
+    public var clientTools: ClientToolsConfiguration?
 
     public static var defaultValues: AIChatNativeConfigValues {
 #if os(iOS)

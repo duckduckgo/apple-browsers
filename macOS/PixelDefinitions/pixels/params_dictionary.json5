@@ -681,7 +681,19 @@
         "key": "extension",
         "type": "string",
         "description": "The extension's name in the Chrome Web Store catalog, or other for an extension the catalog doesn't list. Keep in sync with ExtensionsCatalogSubfeature.",
-        "enum": ["bitwarden", "onePassword", "lastPass", "other"]
+        "enum": ["bitwarden", "onePassword", "lastPass", "iCloudPasswords", "darkReader", "other"]
+    },
+    "web_extension_count": {
+        "key": "count",
+        "type": "string",
+        "description": "How many Chrome Web Store extensions are installed, enabled or not, floored to a bucket: 0, 1, 2 (2-3), 4 (4-5) or 6 (6 or more).",
+        "enum": ["0", "1", "2", "4", "6"]
+    },
+    "web_extension_enabled_count": {
+        "key": "enabled_count",
+        "type": "string",
+        "description": "How many of the installed Chrome Web Store extensions are enabled, floored to the same buckets as count.",
+        "enum": ["0", "1", "2", "4", "6"]
     },
     "web_extension_version": {
         "key": "extension_version",

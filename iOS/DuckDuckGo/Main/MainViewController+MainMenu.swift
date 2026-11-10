@@ -17,6 +17,7 @@
 //  limitations under the License.
 //
 
+import FeatureFlags_iOS
 import UIKit
 
 extension MainViewController {
@@ -51,12 +52,15 @@ extension MainViewController {
         state.omnibarEditing = viewCoordinator.omniBar.isTextFieldEditing
         state.fireModeEnabled = fireModeCapability.isFireModeEnabled
         state.voiceSearchEnabled = voiceSearchHelper.isVoiceSearchEnabled
+        state.aiChatEnabled = aiChatSettings.isAIChatEnabled
+        state.duckAIShortcutAvailable = aiChatSettings.isAIChatEnabled && featureFlagger.isFeatureOn(.aiChatChromeShortcutIPad)
+        state.duckAIButtonVisible = isDuckAIChromeButtonVisible
         state.passwordsEnabled = featureFlagger.isFeatureOn(.autofillAccessCredentialManagement)
         state.canHideTabs = tabSwitcherController.map { $0.canDismissOnEmpty || !$0.tabsModel.isEmpty } ?? true
         state.tabCount = tabManager.currentTabsModel.count
         state.canGoBack = currentTab?.canGoBack == true
         state.canGoForward = currentTab?.canGoForward == true
-        return MenuCommandAvailability(state: state)
+        return MenuCommandAvailability(state: state, nextStepsItems: NextStepsItemsVisibility(keyValueStore: keyValueStore))
     }
 
     func isMenuTabSelectionAvailable(_ command: UICommand?) -> Bool {
@@ -104,6 +108,28 @@ extension MainViewController {
         }
     }
 
+    @objc func menuToggleDuckAIButton() {
+        guard menuCommandAvailability.isEnabled(.toggleDuckAIButton) else { return }
+        setDuckAIChromeButtonVisible(!isDuckAIChromeButtonVisible)
+    }
+
+    private var duckAIButtonFollowsTabBarShortcutSetting: Bool {
+        featureFlagger.isFeatureOn(.aiChatChromeMenuButtonIPad)
+    }
+
+    private var isDuckAIChromeButtonVisible: Bool {
+        guard aiChatSettings.isAIChatTabBarUserSettingsEnabled else { return false }
+        return duckAIButtonFollowsTabBarShortcutSetting || aiChatSettings.isAIChatTabBarDuckAIButtonVisible
+    }
+
+    private func setDuckAIChromeButtonVisible(_ isVisible: Bool) {
+        if duckAIButtonFollowsTabBarShortcutSetting || !aiChatSettings.isAIChatTabBarUserSettingsEnabled {
+            aiChatSettings.enableAIChatTabBarUserSettings(enable: isVisible)
+        } else {
+            aiChatSettings.setAIChatTabBarDuckAIButtonVisible(isVisible)
+        }
+    }
+
     @objc func menuNewTabOnRight() {
         guard menuCommandAvailability.isEnabled(.newTabOnRight) else { return }
         recordUserOpenedTab()
@@ -131,6 +157,48 @@ extension MainViewController {
     @objc func menuFeedback() {
         guard menuCommandAvailability.isEnabled(.feedback) else { return }
         dismissMenuPresentation { [weak self] in self?.segueToFeedback() }
+    }
+
+    @objc func menuImportData() {
+        guard menuCommandAvailability.isEnabled(.importData) else { return }
+        dismissMenuPresentation { [weak self] in
+            self?.launchDataImport(source: .settings, onFinished: {}, onCancelled: {})
+        }
+    }
+
+    @objc func menuSetDefaultBrowser() {
+        guard menuCommandAvailability.isEnabled(.setDefaultBrowser) else { return }
+        NextStepsItemsVisibility(keyValueStore: keyValueStore).recordSetAsDefaultTapped()
+        dismissMenuPresentation { [weak self] in
+            self?.systemSettingsPiPTutorialManager.playPiPTutorialAndNavigateTo(destination: .defaultBrowser)
+        }
+    }
+
+    @objc func menuAddToDock() {
+        guard menuCommandAvailability.isEnabled(.addToDock) else { return }
+        NextStepsItemsVisibility(keyValueStore: keyValueStore).recordAddToDockTapped()
+        dismissMenuPresentation { [weak self] in
+            let instructions = UIStoryboard(name: "HomeRow", bundle: nil).instantiateViewController(withIdentifier: "instructions")
+            instructions.modalPresentationStyle = .fullScreen
+            self?.present(instructions, animated: true)
+        }
+    }
+
+    @objc func menuAddWidget() {
+        guard menuCommandAvailability.isEnabled(.addWidget) else { return }
+        NextStepsItemsVisibility(keyValueStore: keyValueStore).recordAddWidgetTapped()
+        dismissMenuPresentation { [weak self] in
+            guard let self else { return }
+            let widgetEducation = WidgetEducationViewController()
+            let navigationController = UINavigationController(rootViewController: widgetEducation)
+            widgetEducation.navigationItem.leftBarButtonItem = UIBarButtonItem(
+                title: UserText.autofillNavigationButtonItemTitleClose, style: .plain, target: self, action: #selector(menuDismissPresentedScreen))
+            self.present(navigationController, animated: true)
+        }
+    }
+
+    @objc private func menuDismissPresentedScreen() {
+        dismiss(animated: true)
     }
 
     func dismissMenuPresentation(completion: @escaping () -> Void) {

@@ -34,6 +34,7 @@ final class AIChatUserScript: NSObject, Subfeature {
     private(set) var messageDestinationPolicy: MessageOriginPolicy
 
     private var cancellables: Set<AnyCancellable> = []
+    private let additionalClientToolPermissionSources = NSHashTable<AnyObject>.weakObjects()
 
     /// When true, the next two messages received from the page act as a readiness
     /// handshake: after the second message we push `submitOpenSettingsAction`. Mirrors
@@ -187,7 +188,10 @@ final class AIChatUserScript: NSObject, Subfeature {
         case .openAIChatSettings:
             return handler.openAIChatSettings
         case .getAIChatNativeConfigValues:
-            return handler.getAIChatNativeConfigValues
+            return { @MainActor [weak self] params, message in
+                guard let self else { return nil }
+                return await self.getAIChatNativeConfigValues(params: params, message: message)
+            }
         case .attachmentPrivacyShouldDisplay:
             return handler.attachmentPrivacyShouldDisplay
         case .closeAIChat:
@@ -219,22 +223,19 @@ final class AIChatUserScript: NSObject, Subfeature {
         case .getAIChatTabContent:
             return handler.getAIChatTabContent
 
-        // Browser tools. Answered regardless of the feature flag: the catalog is empty when it is
-        // off, so `tools/list` comes back empty rather than leaving the front end waiting.
-        case .initialize:
-            return handler.mcpInitialize
-        case .notificationsInitialized:
-            return handler.mcpNotificationsInitialized
-        case .toolsList:
-            return handler.mcpToolsList
-        case .toolsCall:
-            // The script is the pusher: a prompt raised by this call goes back to the page that made it.
-            return { [weak self] params, message in
+        // Client tools. The script is the permission source, so a prompt goes back to the page
+        // that made the call and only that page can answer it.
+        case .executeClientTool:
+            return { @MainActor [weak self] params, message in
                 guard let self else { return nil }
-                return await self.handler.mcpToolsCall(params: params, message: message, elicitationPusher: self)
+                let pusher = self.isClientToolsPage(message.messageWebView?.url) ? self : nil
+                return await self.handler.executeClientTool(params: params, message: message, permissionPusher: pusher)
             }
-        case .elicitationResponse:
-            return handler.mcpElicitationResponse
+        case .respondToClientToolPermission:
+            return { @MainActor [weak self] params, message in
+                guard let self else { return nil }
+                return await self.handler.respondToClientToolPermission(params: params, message: message, source: self)
+            }
 
         case .reportMetric:
             return handler.reportMetric
@@ -343,13 +344,63 @@ extension AIChatUserScript: AIChatLocalModelPushing {
     }
 }
 
-extension AIChatUserScript: AIChatElicitationPushing {
+// MARK: - Client tools
+
+extension AIChatUserScript: ClientToolPermissionPushing {
 
     @MainActor
-    func pushElicitationCreate(_ params: MCPElicitationCreateParams) -> Bool {
-        guard let webView, let broker else { return false }
-        broker.push(method: AIChatUserScriptMessages.elicitationCreate.rawValue, params: params, for: self, into: webView)
+    func pushClientToolPermissionRequested(_ prompt: ClientToolPermissionRequested) -> Bool {
+        guard let webView, let broker,
+              isClientToolsPage(webView.url),
+              ClientToolPayloadLimits.fits(prompt, within: ClientToolPayloadLimits.permissionBytes) else { return false }
+        broker.push(method: AIChatUserScriptMessages.clientToolPermissionRequested.rawValue, params: prompt, for: self, into: webView)
         return true
+    }
+
+    /// The chat document is gone (navigated, reloaded or closed), so its pending calls finish as
+    /// `cancelled`. Hiding the sidebar keeps the document, so it does not come here.
+    @MainActor
+    func cancelClientToolPermissionRequests() {
+        browserTools?.clientToolPermissions.cancelRequests(from: self)
+        for source in additionalClientToolPermissionSources.allObjects {
+            guard let source = source as? AIChatClientToolPermissionCancellation else { continue }
+            source.cancelClientToolPermissionRequests()
+        }
+        additionalClientToolPermissionSources.removeAllObjects()
+    }
+
+    @MainActor
+    func registerClientToolPermissionCancellation(_ source: any AIChatClientToolPermissionCancellation) {
+        additionalClientToolPermissionSources.add(source)
+    }
+
+    @MainActor
+    func getAIChatNativeConfigValues(params: Any, message: UserScriptMessage) async -> Encodable? {
+        let response = await handler.getAIChatNativeConfigValues(params: params, message: message)
+        guard var configValues = response as? AIChatNativeConfigValues else { return response }
+        configValues.clientTools = clientToolsConfiguration(for: message)
+        return configValues
+    }
+
+    @MainActor
+    func isClientToolsDocumentReady(_ webView: WKWebView) -> Bool {
+        self.webView === webView && webView.url != nil && !webView.isLoading && isClientToolsPage(webView.url)
+    }
+
+    /// Client tools are offered only to a Duck.ai chat outside Fire.
+    @MainActor
+    fileprivate func clientToolsConfiguration(for message: UserScriptMessage) -> ClientToolsConfiguration? {
+        guard isClientToolsPage(message.messageWebView?.url),
+              handler.isFireWindowProvider?() != true else { return nil }
+        return browserTools?.clientToolsConfiguration
+    }
+
+    @MainActor
+    fileprivate func isClientToolsPage(_ url: URL?) -> Bool {
+        guard let url else { return false }
+        if url.isDuckAIURL { return true }
+        guard let host = url.host else { return false }
+        return messageDestinationPolicy.isAllowed(host)
     }
 }
 
@@ -358,8 +409,11 @@ extension AIChatUserScript: AIChatBrowserToolsPushing {
     var pushTargetWebView: WKWebView? { webView }
 
     @MainActor
-    func pushToolsListChanged() {
-        pushToDuckAI(.toolsListChanged, params: nil)
+    func pushClientToolsChanged(_ data: ClientToolsChangedData) {
+        guard handler.isFireWindowProvider?() != true,
+              let webView, let broker,
+              isClientToolsPage(webView.url) else { return }
+        broker.push(method: AIChatUserScriptMessages.clientToolsChanged.rawValue, params: data, for: self, into: webView)
     }
 
     @MainActor
@@ -374,4 +428,9 @@ extension AIChatUserScript: AIChatBrowserToolsPushing {
               messageDestinationPolicy.isAllowed(host) else { return }
         broker.push(method: message.rawValue, params: params, for: self, into: webView)
     }
+}
+
+@MainActor
+protocol AIChatClientToolPermissionCancellation: AnyObject {
+    func cancelClientToolPermissionRequests()
 }

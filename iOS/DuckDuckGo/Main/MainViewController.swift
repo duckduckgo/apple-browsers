@@ -68,7 +68,7 @@ struct StartupOnboardingDecision {
         case .downloadReasonSelection, .setDefaultBrowser, .aiIntro, .addToDockPromo, .appIconSelection,
              .addressBarPositionSelection, .searchExperienceSelection,
              .duckAIQuerySelection, .interludeDuckAI,
-             .searchPrivacySettingsSelection, .aiSearchSettingsSelection, .aiModelSelection,
+             .aiSearchSettingsSelection, .aiModelSelection,
              .toggleInputModeSelection, .keepDuckAISelection, .adBlockingPersonalization:
             shouldShowOnboarding = true
             return
@@ -288,6 +288,9 @@ class MainViewController: UIViewController {
     private var hasLoadedInitialView = false
     private weak var burningOverlayView: UIView?
     private(set) var isStartupOnboardingPending = false
+    /// Emits when the onboarding state changes or the browser first appears, so the main menu is rebuilt with the state it can now read.
+    let menuRebuildRequests = PassthroughSubject<Void, Never>()
+    private var hasRequestedMenuRebuildOnFirstAppearance = false
     private(set) lazy var startupOnboardingCover = StartupOnboardingCover(
         parentViewController: self,
         fallbackBackgroundColor: themeManager.currentTheme.onboardingBackgroundColor
@@ -483,6 +486,9 @@ class MainViewController: UIViewController {
     private lazy var browsingMenuHeaderDataSource = BrowsingMenuHeaderDataSource()
     private lazy var browsingMenuHeaderStateProvider = BrowsingMenuHeaderStateProvider()
 
+    lazy var bookmarksFileFlow = BookmarksFileFlow(bookmarksDatabase: bookmarksDatabase, appSettings: appSettings)
+    lazy var mainMenuBookmarks = MainMenuBookmarks(database: bookmarksDatabase, appSettings: appSettings)
+
     lazy var menuBookmarksViewModel: MenuBookmarksInteracting = {
         let viewModel = MenuBookmarksViewModel(bookmarksDatabase: bookmarksDatabase, syncService: syncService)
         viewModel.favoritesDisplayMode = appSettings.favoritesDisplayMode
@@ -501,7 +507,7 @@ class MainViewController: UIViewController {
 
     let gestureBookmarksButton = GestureToolbarButton()
 
-    private lazy var fireButtonAnimator: FireButtonAnimator = FireButtonAnimator(appSettings: appSettings)
+    lazy var fireButtonAnimator: FireButtonAnimator = FireButtonAnimator(appSettings: appSettings)
 
     let bookmarksCachingSearch: BookmarksCachingSearch
 
@@ -1120,13 +1126,16 @@ class MainViewController: UIViewController {
 
         if isStartupOnboardingPending {
             startupOnboardingCover.attach()
+            menuRebuildRequests.send()
         }
-
-        loadInitialViewIfNeeded()
     }
 
     override func viewDidAppear(_ animated: Bool) {
         super.viewDidAppear(animated)
+        if !hasRequestedMenuRebuildOnFirstAppearance {
+            hasRequestedMenuRebuildOnFirstAppearance = true
+            menuRebuildRequests.send()
+        }
         recordPendingNewTabPagePresentationIfVisible()
         remoteMessageImpressionReporter.browserDidAppear()
 
@@ -1250,6 +1259,9 @@ class MainViewController: UIViewController {
                                                     inputStateProvider: { [weak self] tab in
                                                         self?.unifiedInputStateStore?.state(for: tab.uid) ?? TabInputState()
                                                     },
+                                                    placeholderStateProvider: { [weak self] tab in
+                                                        self?.duckAIPlaceholderState(for: tab) ?? .newChat
+                                                    },
                                                     isPaidAIChatEnabledProvider: { [weak self] in
                                                         self?.isPaidAIChatEnabledForSwipe ?? false
                                                     },
@@ -1287,6 +1299,8 @@ class MainViewController: UIViewController {
                     fireAIChatEntryPointPixel(source: .tabSwipe, opensNewTab: false, hasPrompt: false)
                 }
                 selectTab(tab)
+            } else {
+                crossfadeDuckAIPlaceholder(toMatch: tab)
             }
             if shouldRestoreFocus {
                 showKeyboardIfAllowed(restoringInputFocus: true) { _ in }
@@ -1301,6 +1315,7 @@ class MainViewController: UIViewController {
             self?.rememberNewTabPageInputFocusForTabSwitch()
             self?.performCancel(animated: false)
             self?.hideKeyboard(animated: false)
+            self?.collapseDuckAIInputForTabSwipe()
             self?.updatePreviewForCurrentTab()
         }
 
@@ -1598,8 +1613,8 @@ class MainViewController: UIViewController {
         }
     }
 
-    func presentDataBrokerProtectionDashboard() {
-        segueToDataBrokerProtection()
+    func presentDataBrokerProtectionDashboard(freeScanEntryPoint: FreemiumDBPEntryPoint? = nil) {
+        segueToDataBrokerProtection(freeScanEntryPoint: freeScanEntryPoint)
     }
 
     private func registerForKeyboardNotifications() {
@@ -1619,7 +1634,6 @@ class MainViewController: UIViewController {
     private func duckAIAddressBarMenuType(for tab: TabViewController?) -> DuckAIAddressBarMenuType {
         guard let tab else { return .webPage }
         return DuckAIAddressBarMenuType.resolve(
-            isFeatureEnabled: featureFlagger.isFeatureOn(.aiChatContextualAddressBarMenu),
             isShowingDocument: tab.isShowingDocument,
             tabType: tab.tabType,
             searchQuery: tab.url?.searchQuery
@@ -2392,9 +2406,14 @@ class MainViewController: UIViewController {
         })
     }
 
-    private func loadInitialView() {
+    private func loadInitialView(drawsIdleReturnNewTabPage: Bool) {
         if tabManager.currentTabsModel.tabs.isEmpty && tabManager.currentTabsModel.allowsEmpty {
             showTabSwitcher()
+            return
+        }
+
+        if drawsIdleReturnNewTabPage {
+            attachNewTabPageForIdleReturnAtLaunch()
             return
         }
 
@@ -2408,10 +2427,29 @@ class MainViewController: UIViewController {
         }
     }
 
-    private func loadInitialViewIfNeeded() {
+    /// The previous tab stays in the model; the launch handling records the arrival and raises the keyboard.
+    private func attachNewTabPageForIdleReturnAtLaunch() {
+        selectOrAddHomeTab(reuseExisting: true)
+        // Without the deferred keyboard, the held focus raises it as `newTab` would after idle.
+        attachHomeScreen(isNewTab: true,
+                         allowingKeyboard: !featureFlagger.isFeatureOn(.alwaysShowKeyboardOnNewTabPage),
+                         openedAfterIdle: true)
+    }
+
+    private func selectOrAddHomeTab(reuseExisting: Bool, placement: TabsModel.TabPlacement = .atEnd) {
+        if reuseExisting, let existing = tabManager.firstHomeTab() {
+            tabManager.select(existing, dismissCurrent: false)
+        } else {
+            tabManager.addHomeTab(placement: placement)
+        }
+    }
+
+    /// Draws the first screen; a cold start after idle can land on the New Tab Page directly.
+    func loadInitialViewIfNeeded(drawsIdleReturnNewTabPage: Bool) {
+        loadViewIfNeeded()
         guard !hasLoadedInitialView else { return }
         hasLoadedInitialView = true
-        loadInitialView()
+        loadInitialView(drawsIdleReturnNewTabPage: drawsIdleReturnNewTabPage)
         hasCompletedInitialLoad = true
     }
 
@@ -2826,15 +2864,21 @@ class MainViewController: UIViewController {
     }
 
     @IBAction func onFirePressed() {
+        performFirePressed(prefersSheet: false)
+    }
+
+    func performFirePressed(prefersSheet: Bool) {
         recordNewTabPageSessionAction { $0.tapFireButton() }
         let wasContextualFireOnboardingDialogVisible = daxDialogsManager.isShowingFireDialog
 
         func showFireConfirmation() {
             let presenter = FireConfirmationPresenter()
-            let source: UIView = findFireButton() ?? viewCoordinator.toolbar
+            let tabsBarFireButton = viewCoordinator.tabBarContainer.isHidden ? nil : tabsBarController?.fireButton
+            let source: UIView = tabsBarFireButton ?? findFireButton() ?? viewCoordinator.toolbar
             presenter.presentFireConfirmation(
                 on: self,
                 attachPopoverTo: source,
+                prefersSheet: prefersSheet,
                 tabViewModel: tabManager.viewModelForCurrentTab(),
                 pixelSource: .browsing,
                 fireContext: .default(daxDialogsManager: daxDialogsManager),
@@ -2905,7 +2949,7 @@ class MainViewController: UIViewController {
             enterSearch()
         }
     }
-    
+
     private func wakeLazyFireButtonAnimator() {
         DispatchQueue.main.async {
             _ = self.fireButtonAnimator
@@ -4342,11 +4386,7 @@ class MainViewController: UIViewController {
         captureForSwipeBack(tabManager.currentTabsModel.currentTab)
         currentTab?.dismiss()
 
-        if reuseExisting, let existing = tabManager.firstHomeTab() {
-            tabManager.select(existing, dismissCurrent: false)
-        } else {
-            tabManager.addHomeTab(placement: placement)
-        }
+        selectOrAddHomeTab(reuseExisting: reuseExisting, placement: placement)
         attachHomeScreen(isNewTab: true,
                          allowingKeyboard: allowingKeyboard,
                          previousTab: previousTab,
@@ -5094,14 +5134,15 @@ class MainViewController: UIViewController {
                                    opensNewTab: opensNewTab,
                                    hasPrompt: hasPrompt,
                                    voice: voice)
-        let surface = DuckAIEntryWideEventData.Surface(source: source, opensNewTab: opensNewTab)
+        let surface = DuckAIEntryWideEventData.Surface(source: source, opensNewTab: opensNewTab,
+                                                       opensInSidebar: opensContextualSurfaceInSidebar)
         // A tab entry reads its chat state once its Duck.ai tab is shown.
-        let sheetChatState: DuckAIEntryWideEventData.ChatState? = surface == .contextualSheet
+        let sheetChatState: DuckAIEntryWideEventData.ChatState? = surface.isContextual
             ? (currentTab?.hasContextualChatToReopen == true ? .existing : .new)
             : nil
         duckAIEntryInstrumentation.entryStarted(source: source, hasPrompt: hasPrompt, voice: voice, surface: surface,
                                                 chatState: chatState ?? sheetChatState)
-        if surface == .contextualSheet {
+        if surface.isContextual {
             // Gives the sheet entry the page it opened on, so it can notice that page changing later.
             reportDuckAISessionCurrentTab()
         }
@@ -5138,20 +5179,21 @@ class MainViewController: UIViewController {
         startDuckAIVoiceMode(from: .addressBar, entrySource: isPad ? .ipadTogglePrompt : .addressBarPrompt)
     }
 
-    func startDuckAIVoiceMode(from source: VoiceEntryPointSource, entrySource: AIChatEntryPointSource) {
+    /// `opensNewTabOverContent` keeps voice from replacing the current page when Unified Input would load it in place.
+    func startDuckAIVoiceMode(from source: VoiceEntryPointSource, entrySource: AIChatEntryPointSource, opensNewTabOverContent: Bool = false) {
         pixelFiring?.fire(Pixel.Event.voiceEntryPointTapped, options: .parameters([PixelParameters.source: source.rawValue]))
         if let tab = tabManager.currentTabsModel.currentTab, tab.link == nil {
             ntpAfterIdleInstrumentation.barUsedFromNTP(afterIdle: tab.openedAfterIdle)
         }
         postIdleSessionInstrumentation.duckAIOpenedWithoutPrompt()
-        openAIChatInVoiceMode(source: entrySource, fromDeepLink: false)
+        openAIChatInVoiceMode(source: entrySource, fromDeepLink: false, opensNewTabOverContent: opensNewTabOverContent)
     }
 
     func openAIVoiceChatFromDeepLink(source: AIChatEntryPointSource) {
         openAIChatInVoiceMode(source: source, fromDeepLink: true)
     }
 
-    private func openAIChatInVoiceMode(source: AIChatEntryPointSource, fromDeepLink: Bool) {
+    private func openAIChatInVoiceMode(source: AIChatEntryPointSource, fromDeepLink: Bool, opensNewTabOverContent: Bool = false) {
         if let reminder = NoMicPermissionAlert.buildVoiceChatReminderIfNeeded(
             isSitePermissionsEnabled: tabManager.isSitePermissionsEnabled,
             microphoneAuthorization: AVCaptureDevice.authorizationStatus(for: .audio),
@@ -5167,10 +5209,10 @@ class MainViewController: UIViewController {
         }
 
         // Voice mode bypasses `openAIChat`, so fire the entry pixel directly.
-        openAIChatVoiceModeInTab(source: source, fromDeepLink: fromDeepLink)
+        openAIChatVoiceModeInTab(source: source, fromDeepLink: fromDeepLink, opensNewTabOverContent: opensNewTabOverContent)
     }
 
-    private func openAIChatVoiceModeInTab(source: AIChatEntryPointSource, fromDeepLink: Bool = false) {
+    private func openAIChatVoiceModeInTab(source: AIChatEntryPointSource, fromDeepLink: Bool = false, opensNewTabOverContent: Bool = false) {
         guard tabManager.current(createIfNeeded: true) != nil else {
             assertionFailure("openAIChatVoiceModeInTab: no current tab available")
             return
@@ -5183,7 +5225,7 @@ class MainViewController: UIViewController {
 
         // Voice always opens a new tab over existing content (chat included) — voice over a chat would replace the prior conversation. NTP stays in-place via `link != nil`.
         let hasContent = currentTab.tabModel.link != nil
-        let openInNewTab = hasContent && (unifiedToggleInputFeature.isAvailable || fromDeepLink)
+        let openInNewTab = hasContent && (unifiedToggleInputFeature.isAvailable || fromDeepLink || opensNewTabOverContent)
         let source = fireAIChatEntryPointPixel(source: source, opensNewTab: openInNewTab, hasPrompt: false, voice: true)
 
         if openInNewTab {
@@ -5397,7 +5439,7 @@ class MainViewController: UIViewController {
     }
 
     /// The "Ask Duck.ai" row auto-sends its text as a prompt, on both platforms.
-    private func fireAskDuckAISuggestionPromptSubmittedPixel() {
+    private func fireAskDuckAISuggestionPromptSubmittedPixel(prompt: String) {
         UnifiedToggleInputCoordinatorPixelHelper.fireUnifiedPromptSubmittedPixel(
             hasText: true,
             selectedTool: nil,
@@ -5409,7 +5451,9 @@ class MainViewController: UIViewController {
             origin: .suggestionAskAI,
             defaultMode: aiChatSettings.defaultOmnibarMode,
             isFirstPromptNewInstall: featureDiscovery.isFirstDuckAIPromptNewInstall,
-            usageContext: usageContextProvider.currentContext
+            usageContext: usageContextProvider.currentContext,
+            addressBarPosition: appSettings.iPhoneAddressBarPosition,
+            resubmitOfSearch: unifiedToggleInputCoordinator?.resubmitDelay(of: prompt, mode: .aiChat)
         )
         featureDiscovery.markDuckAIPromptSubmitted()
     }
@@ -6144,7 +6188,7 @@ extension MainViewController: BrowserChromeDelegate {
             // We intentionally don't forward the resolved model config: the suggestion is offered
             // from Search mode where the model chip is hidden and the user hasn't chosen a model.
             _ = unifiedToggleInputCoordinator?.prepareExternalPromptSubmission()
-            fireAskDuckAISuggestionPromptSubmittedPixel()
+            fireAskDuckAISuggestionPromptSubmittedPixel(prompt: value)
             openAIChat(source: .suggestionAskAI, value, autoSend: true,
                        nativePromptFlow: DuckAIPromptFlowStart(userTier: currentDuckAIUserTier))
 
@@ -8870,7 +8914,8 @@ extension MainViewController: TabSwitcherButtonDelegate {
 extension MainViewController: UIGestureRecognizerDelegate {
 
     func gestureRecognizer(_ gestureRecognizer: UIGestureRecognizer, shouldRecognizeSimultaneouslyWith otherGestureRecognizer: UIGestureRecognizer) -> Bool {
-        return true
+        // A tab swipe owns its touch, so the input it starts on can't also read it as a tap.
+        !(gestureRecognizer is UnifiedInputSwipeTabsPanGestureRecognizer && featureFlagger.isAIChatSwipeChromeRefinementsEnabled)
     }
 
     func gestureRecognizerShouldBegin(_ gestureRecognizer: UIGestureRecognizer) -> Bool {
@@ -8935,6 +8980,7 @@ extension MainViewController {
         productSurfaceTelemetry.dataClearingUsed()
         endNewTabPageSessionWithDataClearing()
         endSessionsWithDataClearing(request)
+        unifiedToggleInputCoordinator?.clearResubmitHistory()
 
         // A single tab burn rebuilds the UI from inside the burn itself, so the New Tab Page has
         // already attached by the time `didFinishBurningTabs` runs. Wider scopes are marked later,
@@ -9463,6 +9509,7 @@ extension MainViewController: OnboardingDelegate {
         isStartupOnboardingPending = false
         tutorialSettings.hasSeenOnboarding = true
         clearDuckAIOnboardingResumeStepIfNeeded()
+        menuRebuildRequests.send()
     }
 
     func needsToShowOnboardingIntro() -> Bool {

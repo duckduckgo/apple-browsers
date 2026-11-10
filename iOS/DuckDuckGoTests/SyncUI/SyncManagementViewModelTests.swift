@@ -259,7 +259,7 @@ class SyncManagementViewModelTests: XCTestCase, SyncManagementViewModelDelegate 
         monitor.incrementCalls(function: #function.cleaningFunctionName())
     }
 
-    func shareLink(for url: URL, with message: String, from rect: CGRect) {
+    func shareLink(for url: URL, with message: String, from sourceView: UIView) {
         monitor.incrementCalls(function: #function.cleaningFunctionName())
     }
 }

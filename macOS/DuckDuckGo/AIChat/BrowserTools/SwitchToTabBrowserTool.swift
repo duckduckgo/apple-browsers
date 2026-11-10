@@ -26,8 +26,6 @@ final class SwitchToTabBrowserTool: BrowserTool {
 
     /// Matches `AIChatBrowserToolsSubfeature.switchToTab`, which is how the catalog gates it.
     let name = "switchToTab"
-    let title = "Switch to tab"
-    let description = "Switch to an open tab in the current window by tabId from listOpenTabs."
     let permissionMode = BrowserToolPermissionMode.auto
 
     let inputSchema: JSONValue = [
@@ -37,21 +35,6 @@ final class SwitchToTabBrowserTool: BrowserTool {
         ],
         "required": ["tabId"]
     ]
-
-    let outputSchema: JSONValue? = [
-        "type": "object",
-        "properties": [
-            "tabId": ["type": "string"],
-            "title": ["type": "string"],
-            "url": ["type": "string"]
-        ],
-        "required": ["tabId", "title", "url"]
-    ]
-
-    let annotations: MCPToolAnnotations? = MCPToolAnnotations(readOnlyHint: false,
-                                                              destructiveHint: false,
-                                                              idempotentHint: true,
-                                                              openWorldHint: false)
 
     private let windowControllersManager: WindowControllersManagerProtocol
 
@@ -83,5 +66,10 @@ final class SwitchToTabBrowserTool: BrowserTool {
             "title": .string(tab.title ?? ""),
             "url": .string(tab.content.userEditableUrl?.absoluteString ?? "")
         ])
+    }
+
+    func clientToolResult(from value: JSONValue) -> BrowserToolResult {
+        guard let tabID = value["tabId"] else { return .failure(.unavailable) }
+        return .success(["tabId": tabID])
     }
 }

@@ -63,17 +63,20 @@ final class AIChatSettings: AIChatSettingsProvider {
     private let keyValueStore: KeyValueStoring
     private let notificationCenter: NotificationCenter
     private let featureFlagger: FeatureFlagger
+    private let pixelFiring: (any PixelKitFiring)?
     
     init(privacyConfigurationManager: PrivacyConfigurationManaging = ContentBlocking.shared.privacyConfigurationManager,
          debugSettings: AIChatDebugSettingsHandling = AIChatDebugSettings(),
          keyValueStore: KeyValueStoring = UserDefaults(suiteName: Global.appConfigurationGroupName) ?? UserDefaults(),
          notificationCenter: NotificationCenter = .default,
-         featureFlagger: FeatureFlagger = AppDependencyProvider.shared.featureFlagger) {
+         featureFlagger: FeatureFlagger = AppDependencyProvider.shared.featureFlagger,
+         pixelFiring: (any PixelKitFiring)? = PixelKit.shared) {
         self.privacyConfigurationManager = privacyConfigurationManager
         self.debugSettings = debugSettings
         self.keyValueStore = keyValueStore
         self.notificationCenter = notificationCenter
         self.featureFlagger = featureFlagger
+        self.pixelFiring = pixelFiring
 
         migrateAddressBarSettingIfNeeded()
     }
@@ -344,8 +347,13 @@ final class AIChatSettings: AIChatSettingsProvider {
     }
 
     func enableKeyboardAnimation(enable: Bool) {
+        let wasEnabled = isKeyboardAnimationEnabled
         keyValueStore.set(enable, forKey: .isKeyboardAnimationEnabledKey)
         triggerSettingsChangedNotification()
+
+        if wasEnabled && !enable {
+            pixelFiring?.fire(DuckAIKeyboardAnimationPixel.disabled, frequency: .dailyAndCount)
+        }
     }
 
     func setDefaultOmnibarMode(_ mode: DefaultOmnibarMode) {

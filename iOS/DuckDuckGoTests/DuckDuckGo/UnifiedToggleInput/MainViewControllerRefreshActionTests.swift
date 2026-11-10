@@ -99,16 +99,30 @@ final class MainViewControllerRefreshActionTests: XCTestCase {
 
     // MARK: - AI tab paths
 
-    func test_nilLink_coordinatorInAITabState_preservesAIPresentation() {
+    func test_nilLink_sameTab_coordinatorInAITabState_preservesAIPresentation() {
         let inputs = makeInputs(
             tabIsAITab: false,
             tabLinkURL: nil,
-            coordinatorIsAITabState: true
+            coordinatorIsAITabState: true,
+            isRefreshingCurrentTab: true
         )
         XCTAssertEqual(
             MainViewController.decideRefreshAction(for: inputs),
             .refreshAITab(.preserveCurrentPresentation(allowsEarlyReturn: true))
         )
+    }
+
+    func test_nilLink_differentHomeTab_coordinatorInAITabState_refreshesNonAITab() {
+        let inputs = makeInputs(
+            tabIsAITab: false,
+            tabURL: nil,
+            tabLinkURL: nil,
+            coordinatorIsAITabState: true,
+            coordinatorIsActive: true,
+            isRefreshingCurrentTab: false
+        )
+
+        XCTAssertEqual(MainViewController.decideRefreshAction(for: inputs), .refreshNonAITab)
     }
 
     func test_aiTab_coordinatorInAITabState_chromeHidden_preservesWithEarlyReturn() {

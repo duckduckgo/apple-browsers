@@ -41,10 +41,10 @@ jobs:
         os-version: [15, 26, 27]
         include:
           - xcode-version: "26.2"
-            runner: macos-15-xlarge
+            runner: [image:osx-sequoia-26, ui-tests]
             os-version: 15
           - xcode-version: "26.6"
-            runner: macos-26-xlarge
+            runner: [image:osx-tahoe-26, ui-tests]
             os-version: 26
           - xcode-version: "27.0"
             runner: [image:osx-27-edge, ui-tests]

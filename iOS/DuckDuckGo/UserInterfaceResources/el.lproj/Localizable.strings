@@ -3335,13 +3335,31 @@
 "menuActualSize" = "Πραγματικό μέγεθος";
 
 /* iPad menu bar command */
+"menuAddToDock" = "Προσθήκη του DuckDuckGo στο Dock...";
+
+/* iPad menu bar command */
+"menuAddWidget" = "Προσθήκη μικροεφαρμογής στην Αρχική οθόνη...";
+
+/* iPad menu bar command */
 "menuBack" = "Πίσω";
+
+/* iPad menu bar title */
+"menuBookmarks" = "Σελιδοδείκτες";
 
 /* iPad menu bar command */
 "menuClearTabsAndData" = "Εκκαθάριση καρτελών και δεδομένων";
 
+/* iPad Duck.ai menu bar command */
+"menuDeleteAllChats" = "Διαγραφή όλων των συνομιλιών…";
+
 /* iPad menu bar command */
 "menuDuplicateTab" = "Αντιγραφή καρτέλας";
+
+/* iPad menu bar command */
+"menuExportBookmarks" = "Εξαγωγή σελιδοδεικτών…";
+
+/* iPad menu bar submenu */
+"menuFavorites" = "Αγαπημένα";
 
 /* iPad menu bar command */
 "menuFeedback" = "Κοινοποίηση σχολίου";
@@ -3350,7 +3368,13 @@
 "menuForward" = "Εμπρός";
 
 /* iPad menu bar command */
+"menuHideBookmarks" = "Απόκρυψη σελιδοδεικτών";
+
+/* iPad menu bar command */
 "menuHideDownloads" = "Απόκρυψη λήψεων";
+
+/* iPad menu bar command */
+"menuHideDuckAIButton" = "Απόκρυψη του κουμπιού Duck.ai";
 
 /* iPad menu bar command */
 "menuHidePasswords" = "Απόκρυψη κωδικών πρόσβασης";
@@ -3359,13 +3383,31 @@
 "menuHideTabs" = "Απόκρυψη καρτελών";
 
 /* iPad menu bar command */
+"menuImportBookmarks" = "Εισαγωγή σελιδοδεικτών…";
+
+/* iPad menu bar command */
+"menuImportBookmarksAndPasswords" = "Εισαγωγή σελιδοδεικτών και κωδικών πρόσβασης…";
+
+/* iPad menu bar command */
 "menuLastTab" = "Τελευταία καρτέλα";
+
+/* iPad Duck.ai menu bar command */
+"menuNewChat" = "Νέα συνομιλία";
+
+/* iPad Duck.ai menu bar command */
+"menuNewImageChat" = "Νέα συνομιλία με εικόνα";
 
 /* iPad menu bar command */
 "menuNewTabOnRight" = "Νέα καρτέλα στα δεξιά";
 
+/* iPad Duck.ai menu bar command */
+"menuNewVoiceChat" = "Νέα φωνητική συνομιλία";
+
 /* iPad menu bar command */
 "menuNextTab" = "Εμφάνιση επόμενης καρτέλας";
+
+/* iPad Duck.ai menu bar command */
+"menuOpenDuckAI" = "Άνοιγμα Duck.ai";
 
 /* iPad menu bar command */
 "menuOpenLocation" = "Άνοιγμα τοποθεσίας...";
@@ -3376,14 +3418,26 @@
 /* iPad menu bar command */
 "menuPrint" = "Εκτύπωση...";
 
+/* iPad Duck.ai menu bar section header */
+"menuRecentChats" = "Πρόσφατες συνομιλίες";
+
 /* iPad menu bar command selecting a numbered tab */
 "menuSelectTab" = "Επιλογή καρτέλας %d";
+
+/* iPad menu bar command */
+"menuSetDefaultBrowser" = "Ορισμός του DuckDuckGo ως προεπιλεγμένου προγράμματος περιήγησης…";
 
 /* iPad menu bar command */
 "menuSettings" = "Ρυθμίσεις DuckDuckGo...";
 
 /* iPad menu bar command */
+"menuShowBookmarks" = "Εμφάνιση σελιδοδεικτών";
+
+/* iPad menu bar command */
 "menuShowDownloads" = "Εμφάνιση λήψεων";
+
+/* iPad menu bar command */
+"menuShowDuckAIButton" = "Εμφάνιση του κουμπιού Duck.ai";
 
 /* iPad menu bar command */
 "menuShowPasswords" = "Εμφάνιση κωδικών πρόσβασης";
@@ -4306,11 +4360,17 @@
 /* Description of too many requests error when syncing. */
 "prefrences.sync.too-many-requests.description" = "Το Sync & Backup είναι προσωρινά μη διαθέσιμο.";
 
+/* Fireproofing setting toggle label */
+"preserveLogins.askOnSignIn" = "Ζητήστε να γίνει Fireproof σε ιστότοπους κατά τη σύνδεση";
+
 /* No comment provided by engineer. */
 "preserveLogins.domain.list.footer" = "Οι ιστότοποι βασίζονται σε cookies για να σας διατηρούν συνδεδεμένους. Όταν ενεργοποιείτε τη διαγραφή δραστηριότητας για έναν ιστότοπο, τα cookies δεν διαγράφονται και παραμένετε συνδεδεμένοι, ακόμα και μετά τη χρήση του Κουμπιού διαγραφής δραστηριότητας. Εξακολουθούμε να αποκλείουμε εφαρμογές παρακολούθησης από τρίτους που υπάρχουν σε ιστότοπους με διαγραφή δραστηριότητας.";
 
 /* Section header above Fireproofed websites list */
 "preserveLogins.domain.list.title" = "Ασφαλείς ιστότοποι";
+
+/* Empty Fireproof sites list */
+"preserveLogins.emptyState" = "Δεν υπάρχουν ακόμα Fireproof ιστότοποι";
 
 /* Alert message explaining to users that the benefit of fireproofing a site is that they will be kept signed in */
 "preserveLogins.fireproof.message" = "Ενεργοποιώντας τη διαγραφή δραστηριότητας για αυτόν τον ιστότοπο, θα παραμείνετε συνδεδεμένοι μετά τη χρήση του Κουμπιού διαγραφής δραστηριότητας.";
@@ -4341,6 +4401,9 @@
 
 /* Confirmation button in alert */
 "preserveLogins.remove.all.ok" = "Εντάξει";
+
+/* Button to remove all Fireproof sites */
+"preserveLogins.removeAllSites" = "Κατάργηση όλων των Fireproof ιστότοπων";
 
 /* No comment provided by engineer. */
 "Previews" = "Προεπισκοπήσεις";
@@ -4646,7 +4709,7 @@
 "settings.aifeatures.hide.ai.generated.images.subtitle" = "Αποκλείει γνωστούς ιστότοπους με απατηλό περιεχόμενο τεχνητής νοημοσύνης από τα αποτελέσματα αναζήτησης εικόνων. [Μάθε περισσότερα](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/results/how-to-filter-out-ai-images-in-duckduckgo-search-results)";
 
 /* Settings screen description for the Duck.ai keyboard animation toggle */
-"settings.aifeatures.keyboard.animation.subtitle" = "Εμφάνισε μια κινούμενη εικόνα γύρω από το πληκτρολόγιο όταν μεταβαίνεις στο Duck.ai ή πληκτρολογείς σε αυτό.";
+"settings.aifeatures.keyboard.animation.subtitle" = "Εμφάνιση μιας κινούμενης εικόνας γύρω από το πληκτρολόγιο όταν αλλάζετε ή πληκτρολογείτε σε Duck.ai.";
 
 /* Settings screen toggle title for the Duck.ai keyboard animation */
 "settings.aifeatures.keyboard.animation.title" = "Κινούμενη εικόνα πληκτρολογίου Duck.ai";
@@ -5536,11 +5599,29 @@
 /* Fallback device name for confirmation dialogs */
 "sync.pairing-v2.unknown-peer-name" = "η άλλη συσκευή";
 
+/* Title for a button in the Sync Promotion banner on the Bookmarks or Passwords screen that opens Sync settings to connect another device */
+"sync.promo.another-device.connect.action" = "Σύνδεση";
+
+/* Message for the Sync Promotion banner on the Bookmarks or Passwords screen, shown when Sync is on but only this device is connected */
+"sync.promo.another-device.message" = "Το Sync & Backup είναι ενεργοποιημένο σε αυτή τη συσκευή.";
+
+/* Title for a button in the Sync Promotion banner on the Bookmarks or Passwords screen that opens a screen with links to get DuckDuckGo on other platforms */
+"sync.promo.bookmarks.another-device.get-desktop-app.action" = "Λήψη εφαρμογής";
+
+/* Title for the Sync Promotion banner on the Bookmarks screen, shown when Sync is on but only this device is connected */
+"sync.promo.bookmarks.another-device.title" = "Να συγχρονιστούν και οι σελιδοδείκτες με την εφαρμογή για υπολογιστή;";
+
 /* Message for the Sync Promotion banner when user has bookmarks that can be synced */
 "sync.promo.bookmarks.message" = "Δεν απαιτείται λογαριασμός. Η κρυπτογράφηση από άκρο σε άκρο σημαίνει ότι κανείς άλλος εκτός από εσάς δεν θα μπορεί να βλέπει τους σελιδοδείκτες σας, ούτε καν εμείς.";
 
+/* Message for the redesigned Sync Promotion banner on the Bookmarks screen */
+"sync.promo.bookmarks.redesign.message" = "Κρυπτογράφηση από άκρο σε άκρο. Κανείς δεν μπορεί να δει τους σελιδοδείκτες σου, ούτε καν εμείς.";
+
 /* Title for the Sync Promotion banner */
 "sync.promo.bookmarks.title" = "Συγχρονισμός και δημιουργία αντιγράφων ασφαλείας των σελιδοδεικτών σας";
+
+/* Accessibility label for the close button on the Sync Promotion banner */
+"sync.promo.close.accessibility.label" = "Απόρριψη προώθησης συγχρονισμού";
 
 /* Title for a button in the Sync Promotion banner to set up Sync */
 "sync.promo.confirm.action" = "Ρύθμιση συγχρονισμού";
@@ -5554,11 +5635,20 @@
 /* Title for a button in the Sync Promotion banner to dismiss Sync promotion banner */
 "sync.promo.dismiss.action" = "Όχι, ευχαριστώ";
 
+/* Title for the Sync Promotion banner on the Passwords screen, shown when Sync is on but only this device is connected */
+"sync.promo.passwords.another-device.title" = "Να συγχρονιστούν και οι κωδικοί πρόσβασης με την εφαρμογή για υπολογιστή;";
+
 /* Message for the Sync Promotion banner when user has passwords that can be synced */
 "sync.promo.passwords.message" = "Δεν απαιτείται λογαριασμός. Η κρυπτογράφηση από άκρο σε άκρο σημαίνει ότι κανείς άλλος εκτός από εσάς δεν θα μπορεί να βλέπει τους κωδικούς πρόσβασής σας, ούτε καν εμείς.";
 
+/* Message for the redesigned Sync Promotion banner on the Passwords screen */
+"sync.promo.passwords.redesign.message" = "Κρυπτογράφηση από άκρο σε άκρο. Κανείς δεν μπορεί να δει τους κωδικούς πρόσβασής σας, ούτε καν εμείς.";
+
 /* Title for the Sync Promotion banner */
 "sync.promo.passwords.title" = "Συγχρονισμός και δημιουργία αντιγράφων ασφαλείας των κωδικών πρόσβασής σας";
+
+/* Title for the button in the redesigned Sync Promotion banner and the Data Import summary Sync card that opens Sync settings and starts setting up Sync */
+"sync.promo.redesign.confirm.action" = "Έναρξη συγχρονισμού";
 
 /* Button title to start backup */
 "sync.recovery.alternative.prompt.backup.button" = "Συγχρονισμός και δημιουργία αντιγράφων ασφαλείας σε αυτήν τη συσκευή";
@@ -6148,12 +6238,3 @@
 /* Title for screen to screen confirming what data to import from a zip file (bookmarks and /or passwords) */
 "zip.content.import.types.title" = "Τι θέλετε να εισαγάγετε;";
 
-
-/* Fireproofing setting toggle label */
-"preserveLogins.askOnSignIn" = "Ζητήστε διαγραφή δραστηριότητας στους ιστότοπους κατά τη σύνδεση";
-
-/* Empty Fireproof sites list */
-"preserveLogins.emptyState" = "Δεν υπάρχουν ακόμα ιστότοποι στη λίστα διαγραφής δραστηριότητας";
-
-/* Button to remove all Fireproof sites */
-"preserveLogins.removeAllSites" = "Κατάργηση όλων των ασφαλών ιστότοπων";

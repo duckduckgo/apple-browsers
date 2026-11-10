@@ -3335,13 +3335,31 @@
 "menuActualSize" = "Stvarna veličina";
 
 /* iPad menu bar command */
+"menuAddToDock" = "Dodaj DuckDuckGo na svoju traku izbornika…";
+
+/* iPad menu bar command */
+"menuAddWidget" = "Dodaj widget na početni zaslon...";
+
+/* iPad menu bar command */
 "menuBack" = "Natrag";
+
+/* iPad menu bar title */
+"menuBookmarks" = "Knjižne oznake";
 
 /* iPad menu bar command */
 "menuClearTabsAndData" = "Obriši kartice i podatke";
 
+/* iPad Duck.ai menu bar command */
+"menuDeleteAllChats" = "Izbriši sva čavrljanja...";
+
 /* iPad menu bar command */
 "menuDuplicateTab" = "Dupliciraj karticu";
+
+/* iPad menu bar command */
+"menuExportBookmarks" = "Izvezi knjižne oznake...";
+
+/* iPad menu bar submenu */
+"menuFavorites" = "Omiljeno";
 
 /* iPad menu bar command */
 "menuFeedback" = "Podijeli povratne informacije";
@@ -3350,7 +3368,13 @@
 "menuForward" = "Naprijed";
 
 /* iPad menu bar command */
+"menuHideBookmarks" = "Sakrij knjižne oznake";
+
+/* iPad menu bar command */
 "menuHideDownloads" = "Sakrij preuzimanja";
+
+/* iPad menu bar command */
+"menuHideDuckAIButton" = "Sakrij gumb Duck.ai";
 
 /* iPad menu bar command */
 "menuHidePasswords" = "Sakrij lozinke";
@@ -3359,13 +3383,31 @@
 "menuHideTabs" = "Sakrij kartice";
 
 /* iPad menu bar command */
+"menuImportBookmarks" = "Uvezi knjižne oznake...";
+
+/* iPad menu bar command */
+"menuImportBookmarksAndPasswords" = "Uvezi knjižne oznake i lozinke...";
+
+/* iPad menu bar command */
 "menuLastTab" = "Posljednja kartica";
+
+/* iPad Duck.ai menu bar command */
+"menuNewChat" = "Novo čavrljanje";
+
+/* iPad Duck.ai menu bar command */
+"menuNewImageChat" = "Novo slikovno čavrljanje";
 
 /* iPad menu bar command */
 "menuNewTabOnRight" = "Nova kartica desno";
 
+/* iPad Duck.ai menu bar command */
+"menuNewVoiceChat" = "Novo glasovno čavrljanje";
+
 /* iPad menu bar command */
 "menuNextTab" = "Prikaži sljedeću karticu";
+
+/* iPad Duck.ai menu bar command */
+"menuOpenDuckAI" = "Otvori Duck.ai";
 
 /* iPad menu bar command */
 "menuOpenLocation" = "Otvori lokaciju...";
@@ -3376,14 +3418,26 @@
 /* iPad menu bar command */
 "menuPrint" = "Ispis…";
 
+/* iPad Duck.ai menu bar section header */
+"menuRecentChats" = "Nedavna čavrljanja";
+
 /* iPad menu bar command selecting a numbered tab */
 "menuSelectTab" = "Odaberi karticu %d";
+
+/* iPad menu bar command */
+"menuSetDefaultBrowser" = "Postavi DuckDuckGo kao zadani preglednik...";
 
 /* iPad menu bar command */
 "menuSettings" = "DuckDuckGo postavke...";
 
 /* iPad menu bar command */
+"menuShowBookmarks" = "Prikaži knjižne oznake";
+
+/* iPad menu bar command */
 "menuShowDownloads" = "Prikaži preuzimanja";
+
+/* iPad menu bar command */
+"menuShowDuckAIButton" = "Prikaži gumb Duck.ai";
 
 /* iPad menu bar command */
 "menuShowPasswords" = "Prikaži lozinke";
@@ -4306,11 +4360,17 @@
 /* Description of too many requests error when syncing. */
 "prefrences.sync.too-many-requests.description" = "Sinkronizacija i sigurnosno kopiranje Sync & Backup privremeno su nedostupni.";
 
+/* Fireproofing setting toggle label */
+"preserveLogins.askOnSignIn" = "Zatraži označavanje web-mjesta kao zaštićenih (Fireproof) prilikom prijave";
+
 /* No comment provided by engineer. */
 "preserveLogins.domain.list.footer" = "Web-mjesta oslanjaju se na kolačiće kako bi te zadržala prijavljenim/om. Kada je web-mjesto označeno kao zaštićeno, kolačići neće biti izbrisani i ostat ćeš prijavljen/a čak i nakon upotrebe gumba Fire. I dalje blokiramo alate za praćenje trećih strana koje pronađemo na mrežnim mjestima označenim kao Fireproof.";
 
 /* Section header above Fireproofed websites list */
 "preserveLogins.domain.list.title" = "Zaštićena web-mjesta";
+
+/* Empty Fireproof sites list */
+"preserveLogins.emptyState" = "Još nema web-mjesta koja su označena kao zaštićena";
 
 /* Alert message explaining to users that the benefit of fireproofing a site is that they will be kept signed in */
 "preserveLogins.fireproof.message" = "Postavljanjem Fireproof za ovo web-mjesto i dalje ćete ostati prijavljeni nakon korištenja gumba Fire.";
@@ -4341,6 +4401,9 @@
 
 /* Confirmation button in alert */
 "preserveLogins.remove.all.ok" = "U redu";
+
+/* Button to remove all Fireproof sites */
+"preserveLogins.removeAllSites" = "Ukloni sva zaštićena web-mjesta";
 
 /* No comment provided by engineer. */
 "Previews" = "Pretpregledi";
@@ -5536,11 +5599,29 @@
 /* Fallback device name for confirmation dialogs */
 "sync.pairing-v2.unknown-peer-name" = "drugi uređaj";
 
+/* Title for a button in the Sync Promotion banner on the Bookmarks or Passwords screen that opens Sync settings to connect another device */
+"sync.promo.another-device.connect.action" = "Poveži se";
+
+/* Message for the Sync Promotion banner on the Bookmarks or Passwords screen, shown when Sync is on but only this device is connected */
+"sync.promo.another-device.message" = "Sync & Backup uključen je na ovom uređaju.";
+
+/* Title for a button in the Sync Promotion banner on the Bookmarks or Passwords screen that opens a screen with links to get DuckDuckGo on other platforms */
+"sync.promo.bookmarks.another-device.get-desktop-app.action" = "Dohvati aplikaciju";
+
+/* Title for the Sync Promotion banner on the Bookmarks screen, shown when Sync is on but only this device is connected */
+"sync.promo.bookmarks.another-device.title" = "Želiš li također sinkronizirati knjižne oznake sa svojom aplikacijom za računala?";
+
 /* Message for the Sync Promotion banner when user has bookmarks that can be synced */
 "sync.promo.bookmarks.message" = "Nije potreban račun. Enkripcija od početka do kraja znači da nitko osim tebe ne može vidjeti tvoje knjižne oznake, čak ni mi.";
 
+/* Message for the redesigned Sync Promotion banner on the Bookmarks screen */
+"sync.promo.bookmarks.redesign.message" = "Šifrirano od početka do kraja. Nitko ne može vidjeti tvoje knjižne oznake, čak ni mi.";
+
 /* Title for the Sync Promotion banner */
 "sync.promo.bookmarks.title" = "Sinkroniziraj i sigurnosno kopiraj svoje knjižne oznake";
+
+/* Accessibility label for the close button on the Sync Promotion banner */
+"sync.promo.close.accessibility.label" = "Odbaci promociju sinkronizacije";
 
 /* Title for a button in the Sync Promotion banner to set up Sync */
 "sync.promo.confirm.action" = "Postavljanje sinkronizacije";
@@ -5554,11 +5635,20 @@
 /* Title for a button in the Sync Promotion banner to dismiss Sync promotion banner */
 "sync.promo.dismiss.action" = "Ne, hvala";
 
+/* Title for the Sync Promotion banner on the Passwords screen, shown when Sync is on but only this device is connected */
+"sync.promo.passwords.another-device.title" = "Želiš li također sinkronizirati lozinke sa svojom aplikacijom za računala?";
+
 /* Message for the Sync Promotion banner when user has passwords that can be synced */
 "sync.promo.passwords.message" = "Nije potreban račun. Enkripcija s kraja na kraj znači da nitko osim tebe ne može vidjeti tvoje lozinke, čak ni mi.";
 
+/* Message for the redesigned Sync Promotion banner on the Passwords screen */
+"sync.promo.passwords.redesign.message" = "Šifrirano od početka do kraja. Nitko ne može vidjeti tvoje lozinke, čak ni mi.";
+
 /* Title for the Sync Promotion banner */
 "sync.promo.passwords.title" = "Sinkroniziraj i sigurnosno kopiraj svoje lozinke";
+
+/* Title for the button in the redesigned Sync Promotion banner and the Data Import summary Sync card that opens Sync settings and starts setting up Sync */
+"sync.promo.redesign.confirm.action" = "Pokreni sinkronizaciju";
 
 /* Button title to start backup */
 "sync.recovery.alternative.prompt.backup.button" = "Sync & Backup ovog uređaja";
@@ -6148,12 +6238,3 @@
 /* Title for screen to screen confirming what data to import from a zip file (bookmarks and /or passwords) */
 "zip.content.import.types.title" = "Što želiš uvesti?";
 
-
-/* Fireproofing setting toggle label */
-"preserveLogins.askOnSignIn" = "Zatraži označavanje web-mjesta kao zaštićenih prilikom prijave";
-
-/* Empty Fireproof sites list */
-"preserveLogins.emptyState" = "Još nema web-mjesta koja su označena kao zaštićena";
-
-/* Button to remove all Fireproof sites */
-"preserveLogins.removeAllSites" = "Ukloni sva zaštićena web-mjesta";

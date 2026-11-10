@@ -3335,13 +3335,31 @@
 "menuActualSize" = "Skutečná velikost";
 
 /* iPad menu bar command */
+"menuAddToDock" = "Přidej DuckDuckGo do Docku...";
+
+/* iPad menu bar command */
+"menuAddWidget" = "Přidat widget na domovskou obrazovku...";
+
+/* iPad menu bar command */
 "menuBack" = "Zpět";
+
+/* iPad menu bar title */
+"menuBookmarks" = "Záložky";
 
 /* iPad menu bar command */
 "menuClearTabsAndData" = "Vymazat karty a data";
 
+/* iPad Duck.ai menu bar command */
+"menuDeleteAllChats" = "Smazat všechny chaty...";
+
 /* iPad menu bar command */
 "menuDuplicateTab" = "Duplikovat kartu";
+
+/* iPad menu bar command */
+"menuExportBookmarks" = "Exportovat záložky...";
+
+/* iPad menu bar submenu */
+"menuFavorites" = "Oblíbené";
 
 /* iPad menu bar command */
 "menuFeedback" = "Podělte se o zpětnou vazbu";
@@ -3350,7 +3368,13 @@
 "menuForward" = "Dopředu";
 
 /* iPad menu bar command */
+"menuHideBookmarks" = "Skrýt záložky";
+
+/* iPad menu bar command */
 "menuHideDownloads" = "Skrýt stahování";
+
+/* iPad menu bar command */
+"menuHideDuckAIButton" = "Skrýt tlačítko Duck.ai";
 
 /* iPad menu bar command */
 "menuHidePasswords" = "Skrýt hesla";
@@ -3359,13 +3383,31 @@
 "menuHideTabs" = "Skrýt karty";
 
 /* iPad menu bar command */
+"menuImportBookmarks" = "Importovat záložky...";
+
+/* iPad menu bar command */
+"menuImportBookmarksAndPasswords" = "Importovat záložky a hesla...";
+
+/* iPad menu bar command */
 "menuLastTab" = "Poslední karta";
+
+/* iPad Duck.ai menu bar command */
+"menuNewChat" = "Nový chat";
+
+/* iPad Duck.ai menu bar command */
+"menuNewImageChat" = "Nový chat s obrázkem";
 
 /* iPad menu bar command */
 "menuNewTabOnRight" = "Nová karta vpravo";
 
+/* iPad Duck.ai menu bar command */
+"menuNewVoiceChat" = "Nový hlasový chat";
+
 /* iPad menu bar command */
 "menuNextTab" = "Zobrazit další kartu";
+
+/* iPad Duck.ai menu bar command */
+"menuOpenDuckAI" = "Spustit Duck.ai";
 
 /* iPad menu bar command */
 "menuOpenLocation" = "Otevřít adresu...";
@@ -3376,14 +3418,26 @@
 /* iPad menu bar command */
 "menuPrint" = "Vytisknout...";
 
+/* iPad Duck.ai menu bar section header */
+"menuRecentChats" = "Nedávné chaty";
+
 /* iPad menu bar command selecting a numbered tab */
 "menuSelectTab" = "Vybrat kartu %d";
+
+/* iPad menu bar command */
+"menuSetDefaultBrowser" = "Nastavit DuckDuckGo jako výchozí prohlížeč...";
 
 /* iPad menu bar command */
 "menuSettings" = "Nastavení DuckDuckGo...";
 
 /* iPad menu bar command */
+"menuShowBookmarks" = "Zobrazit záložky";
+
+/* iPad menu bar command */
 "menuShowDownloads" = "Zobrazit stahování";
+
+/* iPad menu bar command */
+"menuShowDuckAIButton" = "Zobrazit tlačítko Duck.ai";
 
 /* iPad menu bar command */
 "menuShowPasswords" = "Zobrazit hesla";
@@ -4306,11 +4360,17 @@
 /* Description of too many requests error when syncing. */
 "prefrences.sync.too-many-requests.description" = "Funkce Sync & Backup je dočasně nedostupná.";
 
+/* Fireproofing setting toggle label */
+"preserveLogins.askOnSignIn" = "Požádat o stránky Fireproof při přihlášení";
+
 /* No comment provided by engineer. */
 "preserveLogins.domain.list.footer" = "Webové stránky spoléhají na soubory cookie, aby vás udržely přihlášené. Když na webu zapnete ochranu, soubory cookie se nevymažou a zůstanete přihlášeni, a to i po použití tlačítka pro mazání. Stále přitom blokujeme sledovací programy třetích stran nalezené na webových stránkách s ochranou.";
 
 /* Section header above Fireproofed websites list */
 "preserveLogins.domain.list.title" = "Stránky s ochranou";
+
+/* Empty Fireproof sites list */
+"preserveLogins.emptyState" = "Žádné dostupné stránky Fireproof";
 
 /* Alert message explaining to users that the benefit of fireproofing a site is that they will be kept signed in */
 "preserveLogins.fireproof.message" = "Když na těchto stránkách zapnete ochranu, zůstanete přihlášeni i po použití tlačítka pro mazání.";
@@ -4341,6 +4401,9 @@
 
 /* Confirmation button in alert */
 "preserveLogins.remove.all.ok" = "DOBŘE";
+
+/* Button to remove all Fireproof sites */
+"preserveLogins.removeAllSites" = "Odebrat všechny stránky Fireproof";
 
 /* No comment provided by engineer. */
 "Previews" = "Náhledy";
@@ -5536,11 +5599,29 @@
 /* Fallback device name for confirmation dialogs */
 "sync.pairing-v2.unknown-peer-name" = "druhé zařízení";
 
+/* Title for a button in the Sync Promotion banner on the Bookmarks or Passwords screen that opens Sync settings to connect another device */
+"sync.promo.another-device.connect.action" = "Připojit";
+
+/* Message for the Sync Promotion banner on the Bookmarks or Passwords screen, shown when Sync is on but only this device is connected */
+"sync.promo.another-device.message" = "Sync & Backup je na tomto zařízení zapnuto.";
+
+/* Title for a button in the Sync Promotion banner on the Bookmarks or Passwords screen that opens a screen with links to get DuckDuckGo on other platforms */
+"sync.promo.bookmarks.another-device.get-desktop-app.action" = "Stáhnout aplikaci";
+
+/* Title for the Sync Promotion banner on the Bookmarks screen, shown when Sync is on but only this device is connected */
+"sync.promo.bookmarks.another-device.title" = "Synchronizovat záložky taky s aplikací pro počítač?";
+
 /* Message for the Sync Promotion banner when user has bookmarks that can be synced */
 "sync.promo.bookmarks.message" = "Není potřeba žádný účet. Šifrování end-to-end znamená, že tvoje záložky neuvidí nikdo jiný než ty – dokonce ani my.";
 
+/* Message for the redesigned Sync Promotion banner on the Bookmarks screen */
+"sync.promo.bookmarks.redesign.message" = "End-to-end šifrované. Nikdo kromě tebe tvoje záložky neuvidí, dokonce ani my.";
+
 /* Title for the Sync Promotion banner */
 "sync.promo.bookmarks.title" = "Synchronizuj a zálohuj si záložky";
+
+/* Accessibility label for the close button on the Sync Promotion banner */
+"sync.promo.close.accessibility.label" = "Zavřít propagační akci synchronizace";
 
 /* Title for a button in the Sync Promotion banner to set up Sync */
 "sync.promo.confirm.action" = "Nastavit synchronizaci";
@@ -5554,11 +5635,20 @@
 /* Title for a button in the Sync Promotion banner to dismiss Sync promotion banner */
 "sync.promo.dismiss.action" = "Ne, děkuji";
 
+/* Title for the Sync Promotion banner on the Passwords screen, shown when Sync is on but only this device is connected */
+"sync.promo.passwords.another-device.title" = "Synchronizovat hesla taky s aplikací pro počítač?";
+
 /* Message for the Sync Promotion banner when user has passwords that can be synced */
 "sync.promo.passwords.message" = "Není potřeba žádný účet. End-to-end šifrování znamená, že tvoje hesla neuvidí nikdo jiný než ty – dokonce ani my.";
 
+/* Message for the redesigned Sync Promotion banner on the Passwords screen */
+"sync.promo.passwords.redesign.message" = "End-to-end šifrované. Nikdo kromě tebe tvoje hesla neuvidí, dokonce ani my.";
+
 /* Title for the Sync Promotion banner */
 "sync.promo.passwords.title" = "Synchronizuj a zálohuj si hesla";
+
+/* Title for the button in the redesigned Sync Promotion banner and the Data Import summary Sync card that opens Sync settings and starts setting up Sync */
+"sync.promo.redesign.confirm.action" = "Začít synchronizaci";
 
 /* Button title to start backup */
 "sync.recovery.alternative.prompt.backup.button" = "Synchronizovat a zálohovat toto zařízení";
@@ -6148,12 +6238,3 @@
 /* Title for screen to screen confirming what data to import from a zip file (bookmarks and /or passwords) */
 "zip.content.import.types.title" = "Co chceš importovat?";
 
-
-/* Fireproofing setting toggle label */
-"preserveLogins.askOnSignIn" = "Požádat o ochranu stránek při přihlášení";
-
-/* Empty Fireproof sites list */
-"preserveLogins.emptyState" = "Žádné dostupné stránky s ochranou";
-
-/* Button to remove all Fireproof sites */
-"preserveLogins.removeAllSites" = "Odebrat všechny stránky s ochranou";

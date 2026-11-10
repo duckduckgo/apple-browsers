@@ -30,6 +30,137 @@ import WebKit
 final class AIChatContextualWebViewControllerTests: XCTestCase {
 
     @MainActor
+    func testBrowserToolsAttachOnlyWhenConfiguredWithParentFlagEnabled() async {
+        let fixture = BrowserToolsBridgeFixture()
+        defer { fixture.cleanUp() }
+        fixture.flags.enabledFeatureFlags = [.aiChatBrowserToolListOpenTabs]
+        let sut = makeAttachmentSubmissionController()
+        defer { sut.detachBrowserTools() }
+        sut.browserToolsOwner = fixture.owner
+        sut.browserToolsService = fixture.service
+        var scopeCreations = 0
+        sut.browserToolScopeFactory = { [weak fixture] in
+            scopeCreations += 1
+            return fixture?.makeScope()
+        }
+        let disabledScript = AIChatUserScript(handler: fixture.handler, debugSettings: AIChatDebugSettings(userDefault: fixture.defaults))
+        sut.configureContentHandler(with: disabledScript)
+        XCTAssertNotNil(disabledScript.webView)
+        XCTAssertEqual(fixture.handler.displayMode, .contextual)
+        XCTAssertNil(disabledScript.browserToolsService)
+        XCTAssertEqual(scopeCreations, 0)
+        disabledScript.webView = fixture.webView
+        fixture.flags.enabledFeatureFlags = [.aiChatBrowserTools, .aiChatBrowserToolListOpenTabs]
+        XCTAssertNil(fixture.service.configuration(for: disabledScript))
+        let unavailable = await fixture.handler.executeClientTool(params: fixture.params(), source: disabledScript)
+        XCTAssertEqual(unavailable, .failure(callId: "call", error: .unavailable))
+        XCTAssertTrue(fixture.webView.permissionPrompts.isEmpty)
+        XCTAssertEqual(fixture.listings, 0)
+
+        let enabledScript = AIChatUserScript(handler: fixture.handler, debugSettings: AIChatDebugSettings(userDefault: fixture.defaults))
+        sut.configureContentHandler(with: enabledScript)
+        enabledScript.webView = fixture.webView
+        XCTAssertTrue(enabledScript.browserToolsService === fixture.service)
+        XCTAssertEqual(scopeCreations, 1)
+        fixture.service.permissions.setState(.allow, forToolNamed: "listOpenTabs")
+        let allowed = await fixture.handler.executeClientTool(params: fixture.params(), source: enabledScript)
+        XCTAssertEqual(allowed, fixture.success)
+    }
+
+    @MainActor
+    func testReconfiguringWithParentFlagDisabledDetachesPreviousBrowserToolsSource() {
+        let fixture = BrowserToolsBridgeFixture()
+        defer { fixture.cleanUp() }
+        let sut = makeAttachmentSubmissionController()
+        defer { sut.detachBrowserTools() }
+        sut.browserToolsOwner = fixture.owner
+        sut.browserToolsService = fixture.service
+        var scopeCreations = 0
+        sut.browserToolScopeFactory = { [weak fixture] in
+            scopeCreations += 1
+            return fixture?.makeScope()
+        }
+        let enabledScript = AIChatUserScript(handler: fixture.handler, debugSettings: AIChatDebugSettings(userDefault: fixture.defaults))
+        sut.configureContentHandler(with: enabledScript)
+        XCTAssertTrue(enabledScript.browserToolsService === fixture.service)
+        XCTAssertEqual(scopeCreations, 1)
+
+        fixture.flags.enabledFeatureFlags = [.aiChatBrowserToolListOpenTabs]
+        let disabledScript = AIChatUserScript(handler: fixture.handler, debugSettings: AIChatDebugSettings(userDefault: fixture.defaults))
+        sut.configureContentHandler(with: disabledScript)
+        XCTAssertNil(enabledScript.browserToolsService)
+        XCTAssertNil(disabledScript.browserToolsService)
+        XCTAssertNotNil(disabledScript.webView)
+        XCTAssertEqual(fixture.handler.displayMode, .contextual)
+        XCTAssertEqual(scopeCreations, 1)
+    }
+
+    @MainActor
+    func testBrowserToolsRetainPendingPermissionAcrossHiddenViewAndFailedProvisionalNavigation() async throws {
+        let fixture = BrowserToolsBridgeFixture()
+        defer { fixture.cleanUp() }
+        let sut = makeAttachmentSubmissionController()
+        sut.browserToolsOwner = fixture.owner
+        sut.browserToolsService = fixture.service
+        sut.browserToolScopeFactory = { [weak fixture] in fixture?.makeScope() }
+        sut.configureContentHandler(with: fixture.script)
+        let actualWebView = try XCTUnwrap(fixture.script.webView)
+        fixture.script.webView = fixture.webView
+        fixture.webView.onPermission = { params in
+            sut.viewDidDisappear(false)
+            sut.webView(actualWebView, didStartProvisionalNavigation: nil)
+            sut.webView(actualWebView, didFailProvisionalNavigation: nil, withError: NSError(domain: NSURLErrorDomain, code: NSURLErrorCancelled))
+            _ = fixture.handler.respondToClientToolPermission(params: fixture.response(params, decision: "allow"), source: fixture.script)
+        }
+        let result = await fixture.invoke()
+        XCTAssertEqual(result, fixture.success)
+        XCTAssertEqual(fixture.listings, 1)
+    }
+
+    @MainActor
+    func testBrowserToolsIgnoreForeignProcessLossAndWaitForRealCommitAfterOwnProcessLoss() async throws {
+        let fixture = BrowserToolsBridgeFixture()
+        defer { fixture.cleanUp() }
+        let sut = makeAttachmentSubmissionController()
+        sut.browserToolsOwner = fixture.owner
+        sut.browserToolsService = fixture.service
+        sut.browserToolScopeFactory = { [weak fixture] in fixture?.makeScope() }
+        sut.configureContentHandler(with: fixture.script)
+        let actualWebView = try XCTUnwrap(fixture.script.webView)
+        fixture.script.webView = fixture.webView
+        fixture.service.permissions.setState(.allow, forToolNamed: "listOpenTabs")
+        sut.webViewWebContentProcessDidTerminate(WKWebView())
+        let unaffected = await fixture.invoke()
+        XCTAssertEqual(unaffected, fixture.success)
+        sut.webViewWebContentProcessDidTerminate(actualWebView)
+        let unavailable = await fixture.invoke()
+        XCTAssertEqual(unavailable, .failure(callId: "call", error: .unavailable))
+        sut.webView(actualWebView, didCommit: nil)
+        let restored = await fixture.invoke()
+        XCTAssertEqual(restored, fixture.success)
+        sut.detachBrowserTools()
+        let detached = await fixture.invoke()
+        XCTAssertEqual(detached, .failure(callId: "call", error: .unavailable))
+        let lateScript = AIChatUserScript(handler: fixture.handler, debugSettings: AIChatDebugSettings(userDefault: fixture.defaults))
+        sut.configureContentHandler(with: lateScript)
+        lateScript.webView = fixture.webView
+        XCTAssertNil(fixture.service.configuration(for: lateScript))
+        let lateInvocation = await fixture.handler.executeClientTool(params: fixture.params(), source: lateScript)
+        XCTAssertEqual(lateInvocation, .failure(callId: "call", error: .unavailable))
+
+        let freshController = makeAttachmentSubmissionController()
+        freshController.browserToolsOwner = fixture.owner
+        freshController.browserToolsService = fixture.service
+        freshController.browserToolScopeFactory = { [weak fixture] in fixture?.makeScope() }
+        let freshScript = AIChatUserScript(handler: fixture.handler, debugSettings: AIChatDebugSettings(userDefault: fixture.defaults))
+        freshController.configureContentHandler(with: freshScript)
+        freshScript.webView = fixture.webView
+        let freshInvocation = await fixture.handler.executeClientTool(params: fixture.params(), source: freshScript)
+        XCTAssertEqual(freshInvocation, fixture.success)
+        freshController.detachBrowserTools()
+    }
+
+    @MainActor
     func testQueuedFirstPromptKeepsItsRequestUntilFrontendIsReady() async {
         let sut = makeAttachmentSubmissionController()
         let script = makeTestUserScript()

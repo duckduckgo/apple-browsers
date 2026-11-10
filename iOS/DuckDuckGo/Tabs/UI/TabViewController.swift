@@ -808,6 +808,8 @@ class TabViewController: UIViewController {
     /// Main-frame response (URL + MIME) for the page-context gate; keyed by URL to avoid stale-MIME leaks.
     private var lastMainFramePageContextResponse: (url: URL, mimeType: String?)?
 
+    var browserToolsService: AIChatBrowserToolsService?
+    var browserToolScopeFactory: (@MainActor () -> BrowserToolScope?)?
     var tabAttachmentSource: MultiTabAttachmentSource?
 
     private var pageContextNavigationID = UUID()
@@ -864,6 +866,8 @@ class TabViewController: UIViewController {
         pageContextPageChanges.send()
     }
 
+    private weak var initializedAIChatContextualSheetCoordinator: AIChatContextualSheetCoordinator?
+
     lazy var aiChatContextualSheetCoordinator: AIChatContextualSheetCoordinator = {
         let coordinator = AIChatContextualSheetCoordinator(
             voiceSearchHelper: voiceSearchHelper,
@@ -884,7 +888,11 @@ class TabViewController: UIViewController {
             selectionJourneyScopeID: tabModel.uid,
             tabAttachmentSource: tabAttachmentSource
         )
+        coordinator.browserToolsOwner = tabModel
+        coordinator.browserToolsService = browserToolsService
+        coordinator.browserToolScopeFactory = browserToolScopeFactory
         coordinator.delegate = self
+        initializedAIChatContextualSheetCoordinator = coordinator
         return coordinator
     }()
     let subscriptionAIChatStateHandler: SubscriptionAIChatStateHandling
@@ -1510,6 +1518,7 @@ class TabViewController: UIViewController {
         pageContextProcessTerminated = false
         let isReplacingWebView = webView != nil
         if isReplacingWebView {
+            userScripts?.aiChatUserScript.detachBrowserTools()
             cancelPendingAIChatTabAttachmentPrompt()
         }
         let mediaCaptureUserScript = makeSitePermissionsMediaCaptureUserScript(replacingWebView: isReplacingWebView)
@@ -1746,7 +1755,16 @@ class TabViewController: UIViewController {
         })
     }
 
+    func detachBrowserTools() {
+        guard let service = browserToolsService else { return }
+        browserToolScopeFactory = nil
+        browserToolsService = nil
+        initializedAIChatContextualSheetCoordinator?.detachBrowserTools()
+        service.detachSources(ownerTabID: tabModel.uid)
+    }
+
     func prepareForDataClearing() {
+        detachBrowserTools()
         freezeMonitor.end(.fire)
         cancelPendingAIChatTabAttachmentPrompt()
         cancelWebExtensionNavigationWait()
@@ -2575,6 +2593,8 @@ class TabViewController: UIViewController {
     }
 
     deinit {
+        let browserToolsScript = userScripts?.aiChatUserScript
+        Task { @MainActor in browserToolsScript?.detachBrowserTools() }
         webExtensionNavigationTask?.cancel()
         if #available(iOS 18.4, *) {
             DispatchQueue.main.asyncOrNow { [webExtensionManagerProvider, id=tabModel.uid] in
@@ -2672,6 +2692,10 @@ extension TabViewController: WKNavigationDelegate {
     }
 
     func webView(_ webView: WKWebView, didCommit navigation: WKNavigation!) {
+        if webView === self.webView {
+            userScripts?.aiChatUserScript.browserToolsDocumentDidCommit()
+            browserToolsService?.ownerDidNavigate(tabID: tabModel.uid, url: webView.url)
+        }
         pageSignalsDidCommitNavigation(to: webView.url)
         pendingNativeLoadURL = nil
         sitePermissionsDidCommit(webView, navigation: navigation)
@@ -4738,6 +4762,7 @@ extension TabViewController: WKUIDelegate {
         terminationReloadMonitor.didTerminate()
 
         if webView === self.webView {
+            userScripts?.aiChatUserScript.browserToolsDocumentProcessDidTerminate()
             cancelPendingAIChatTabAttachmentPrompt()
             cancelWebExtensionNavigationWait()
             freezeMonitor.end(.terminated)
@@ -5047,6 +5072,10 @@ extension TabViewController: UserContentControllerDelegate {
                             handler: self.duckAiFireModeStorageHandler)
         }
         aiChatContentHandler.setup(with: userScripts.aiChatUserScript, webView: webView, displayMode: .fullTab)
+        if let browserToolsService, browserToolsService.isEnabled, let browserToolScopeFactory,
+           let webView, webView.configuration.userContentController === userContentController {
+            userScripts.aiChatUserScript.bindBrowserTools(to: browserToolsService, owner: tabModel, makeScope: browserToolScopeFactory)
+        }
         userScripts.aiChatUserScript.connectInitialPromptSession(initialAIChatPromptSession)
         aiChatContextualSheetCoordinator.pageContextHandler.resubscribe()
 

@@ -37,6 +37,7 @@ import WebExtensions
 import PixelKit
 
 protocol TabManaging {
+    @MainActor var browserToolsService: AIChatBrowserToolsService { get }
     var currentTabsModel: TabsModelManaging { get }
     var allTabsModel: TabsModelReading { get }
     var currentBrowsingMode: BrowsingMode { get }
@@ -494,6 +495,13 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
                                                               sitePermissionsDependenciesProvider: { [weak self] in
                                                                   self?.sitePermissionsDependencies
                                                               })
+        if browserToolsService.isEnabled {
+            controller.browserToolsService = browserToolsService
+            controller.browserToolScopeFactory = { [weak self, weak tab] in
+                guard let self, let tab else { return nil }
+                return self.makeBrowserToolScope(for: tab)
+            }
+        }
         controller.tabAttachmentSource = makeTabAttachmentSource(for: tab)
         controller.applyInheritedAttribution(inheritedAttribution)
         controller.attachWebView(configuration: configuration,
@@ -643,6 +651,14 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
                                                               sitePermissionsDependenciesProvider: { [weak self] in
                                                                   self?.sitePermissionsDependencies
                                                               })
+        if browserToolsService.isEnabled {
+            controller.browserToolsService = browserToolsService
+            let owner = controller.tabModel
+            controller.browserToolScopeFactory = { [weak self, weak owner] in
+                guard let self, let owner else { return nil }
+                return self.makeBrowserToolScope(for: owner)
+            }
+        }
         controller.tabAttachmentSource = makeTabAttachmentSource(for: controller.tabModel)
         controller.attachWebView(configuration: configCopy,
                                  andLoadRequest: request,
@@ -806,6 +822,7 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
 
     @MainActor
     private func removeFromCache(_ controller: TabViewController) {
+        controller.detachBrowserTools()
         if controllerPendingTerminationRecovery === controller {
             controllerPendingTerminationRecovery = nil
         }
@@ -1043,6 +1060,7 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
     private func clean(tabs: [Tab], clearTabHistory: Bool) {
         let tabIDs = tabs.map { $0.uid }
         tabs.forEach { tab in
+            browserToolsService.detachSources(ownerTabID: tab.uid)
             tab.iPadOmnibarDraft.invalidate()
             previewsSource.removePreview(forTab: tab)
             if let controller = controller(for: tab) {

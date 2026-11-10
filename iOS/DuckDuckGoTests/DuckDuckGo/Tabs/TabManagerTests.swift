@@ -34,6 +34,40 @@ import WebKit
 @MainActor
 final class TabManagerTests: XCTestCase {
 
+    func testOwnerRemovalDetachesSourcesEvenWithoutCachedController() throws {
+        let fixture = BrowserToolsBridgeFixture()
+        defer { fixture.cleanUp() }
+        let model = TabsModel(tabs: [fixture.owner], desktop: false)
+        let manager = try makeManager(model, featureFlagger: fixture.flags)
+        fixture.script.bindBrowserTools(to: manager.browserToolsService, owner: fixture.owner) { [weak manager, weak owner = fixture.owner] in
+            guard let manager, let owner else { return nil }
+            return manager.makeBrowserToolScope(for: owner)
+        }
+        XCTAssertNil(manager.controller(for: fixture.owner))
+        XCTAssertNotNil(manager.browserToolsService.configuration(for: fixture.script))
+        manager.remove(tab: fixture.owner)
+        XCTAssertNil(fixture.script.browserToolsService)
+        XCTAssertNil(manager.browserToolsService.configuration(for: fixture.script))
+    }
+
+    func testNormalControllerReceivesSharedServiceAndWeakOwnerScopeBeforeUse() throws {
+        let fixture = BrowserToolsBridgeFixture()
+        defer { fixture.cleanUp() }
+        let model = TabsModel(tabs: [fixture.owner], desktop: false)
+        let manager = try makeManager(model, featureFlagger: fixture.flags)
+        let controller = try XCTUnwrap(manager.current(createIfNeeded: true))
+        XCTAssertTrue(controller.browserToolsService === manager.browserToolsService)
+        XCTAssertEqual(controller.browserToolScopeFactory?()?.ownerTabID, fixture.owner.uid)
+        fixture.script.bindBrowserTools(to: manager.browserToolsService, owner: fixture.owner, makeScope: try XCTUnwrap(controller.browserToolScopeFactory))
+        XCTAssertNotNil(manager.browserToolsService.configuration(for: fixture.script))
+        controller.prepareForDataClearing()
+        XCTAssertNil(fixture.script.browserToolsService)
+        XCTAssertNil(manager.browserToolsService.configuration(for: fixture.script))
+        XCTAssertNil(controller.browserToolScopeFactory)
+        XCTAssertNil(controller.browserToolsService)
+        XCTAssertNil(controller.aiChatContextualSheetCoordinator.browserToolScopeFactory)
+    }
+
     override func tearDown() {
         UserDefaults.app.removeObject(forKey: FireModeCapability.isFireModeEnabledKey)
         UserDefaults.app.removeObject(forKey: UserDefaultsWrapper<Bool>.Key.faviconTabsCacheNeedsCleanup.rawValue)

@@ -125,6 +125,8 @@ final class AIChatUserScript: NSObject, Subfeature {
     weak var broker: UserScriptMessageBroker?
     weak var webView: WKWebView?
 
+    @MainActor weak var browserToolsService: AIChatBrowserToolsService?
+    private let debugSettings: AIChatDebugSettingsHandling
     private let devicePlatform: DevicePlatformProviding.Type
     private let handler: AIChatUserScriptHandling
     private let bonusMessageLog: AIChatBonusMessageLogging?
@@ -164,6 +166,7 @@ final class AIChatUserScript: NSObject, Subfeature {
          debugSettings: AIChatDebugSettingsHandling,
          devicePlatform: DevicePlatformProviding.Type = DevicePlatform.self,
          bonusMessageLog: AIChatBonusMessageLogging? = nil) {
+        self.debugSettings = debugSettings
         self.devicePlatform = devicePlatform
         self.handler = handler
         self.bonusMessageLog = bonusMessageLog
@@ -243,10 +246,34 @@ final class AIChatUserScript: NSObject, Subfeature {
         delegate?.aiChatUserScript(self, didReceiveMessage: message)
 
         switch message {
+        case .executeClientTool:
+            return { @MainActor [weak self, handler = self.handler] params, message in
+                let source = self.flatMap { $0.isBrowserToolsMessage(message) ? $0 : nil }
+                return await handler.executeClientTool(params: params, source: source)
+            }
+        case .respondToClientToolPermission:
+            return { @MainActor [weak self] params, message in
+                guard let self else { return RespondToClientToolPermissionResponse() }
+                return self.handler.respondToClientToolPermission(params: params, source: self.isBrowserToolsMessage(message) ? self : nil)
+            }
         case .responseState:
             return handler.getResponseState
         case .getAIChatNativeConfigValues:
-            return handler.getAIChatNativeConfigValues
+            return { @MainActor [weak self, handler = self.handler] params, message in
+                let response = handler.getAIChatNativeConfigValues(params: params, message: message)
+
+                guard let self, self.browserToolsService?.isEnabled == true else {
+                    return response
+                }
+                guard var config = response as? AIChatNativeConfigValues else { return response }
+
+                if self.isBrowserToolsMessage(message) {
+                    config.clientTools = self.browserToolsService?.configuration(for: self)
+                } else {
+                    config.clientTools = nil
+                }
+                return config
+            }
         case .getAIChats:
             return handler.getAIChats
         case .getAIChatNativePrompt:
@@ -431,6 +458,7 @@ final class AIChatUserScript: NSObject, Subfeature {
 
     @MainActor
     func cleanUpForReplacement() {
+        detachBrowserTools()
         handler.disconnectInitialPromptSession()
         cancelQueuedTabContextSubmissions()
         inputBoxHandler = nil
@@ -716,5 +744,103 @@ final class AIChatUserScript: NSObject, Subfeature {
 extension AIChatUserScript: AIChatMetricReportingHandling {
     func didReportMetric(_ metric: AIChatMetric) {
         delegate?.aiChatUserScript(self, didReceiveMetric: metric)
+    }
+}
+
+extension AIChatUserScript: ClientToolPermissionPushing {
+    @MainActor
+    func bindBrowserTools(to service: AIChatBrowserToolsService, owner: Tab, makeScope: @escaping @MainActor () -> BrowserToolScope?) {
+        detachBrowserTools()
+        service.attach(self, owner: owner, makeScope: makeScope)
+        browserToolsService = service
+    }
+
+    @MainActor
+    func detachBrowserTools() {
+        let service = browserToolsService
+        browserToolsService = nil
+        service?.detach(self)
+    }
+
+    @MainActor
+    func browserToolsDocumentDidCommit() {
+        browserToolsService?.documentDidCommit(self)
+    }
+
+    @MainActor
+    func browserToolsDocumentProcessDidTerminate() {
+        browserToolsService?.documentProcessDidTerminate(self)
+    }
+
+    @MainActor
+    var browserToolsDocumentURL: URL? {
+        guard let url = webView?.url, url.isDuckAIURL || debugSettings.matchesCustomURL(url),
+              let host = url.host else { return nil }
+        let policyHost = url.port.map { "\(host):\($0)" } ?? host
+        guard messageOriginPolicy.isAllowed(policyHost) else { return nil }
+        return url
+    }
+
+    @MainActor
+    var browserToolsAvailable: Bool {
+        browserToolsService?.canPushPermission(from: self) == true
+    }
+
+    @MainActor
+    func invokeBrowserTool(_ request: ExecuteClientToolRequest) async -> ExecuteClientToolResponse {
+        guard let browserToolsService else { return .failure(callId: request.callId, error: .unavailable) }
+        return await browserToolsService.invoke(request, from: self).limitedToResultBytes()
+    }
+
+    @MainActor
+    func respondToBrowserToolPermission(_ request: RespondToClientToolPermissionRequest) {
+        browserToolsService?.respond(request, from: self)
+    }
+
+    @MainActor
+    func pushClientToolPermissionRequested(_ prompt: ClientToolPermissionRequested) -> Bool {
+        guard browserToolsAvailable, let broker, let webView,
+              ClientToolPayloadLimits.fits(prompt, within: ClientToolPayloadLimits.permissionBytes) else { return false }
+        broker.push(method: AIChatUserScriptMessages.clientToolPermissionRequested.rawValue, params: prompt, for: self, into: webView)
+        return true
+    }
+
+    @MainActor
+    func pushBrowserToolsTabChanged(_ data: AIChatTabChangedData) {
+        guard handler.displayMode == .contextual, browserToolsService?.canPushMetadata(from: self) == true, browserToolsDocumentURL != nil, let broker, let webView else { return }
+        let metadata = AIChatTabChangedData(tabId: data.tabId, url: data.url, isAttachable: data.url.flatMap(URL.init(string:)).map {
+            !AIChatTabMetadata.shouldExcludeFromTabPicker($0) && !debugSettings.matchesCustomURL($0)
+        })
+        broker.push(method: AIChatUserScriptMessages.aiChatTabChanged.rawValue, params: metadata, for: self, into: webView)
+    }
+
+    @MainActor
+    private func isBrowserToolsMessage(_ message: UserScriptMessage) -> Bool {
+        guard let message = message as? WKScriptMessage, let webView, message.webView === webView else { return false }
+        let origin = message.frameInfo.securityOrigin
+        return acceptsBrowserToolsMessage(message, senderScheme: origin.protocol, senderHost: origin.host, senderPort: origin.port)
+    }
+
+    @MainActor
+    func acceptsBrowserToolsMessage(_ message: UserScriptMessage, senderScheme: String, senderHost: String, senderPort: Int) -> Bool {
+        guard let webView, message.messageWebView === webView, message.isMainFrame,
+              let document = browserToolsDocumentURL,
+              messageOriginPolicy.isAllowed(message.messageHost) else { return false }
+        return Self.browserToolsOriginMatches(scheme: senderScheme, host: senderHost, port: senderPort, document: document)
+    }
+
+    static func browserToolsOriginMatches(scheme: String, host: String, port: Int, document: URL) -> Bool {
+        func effectivePort(_ port: Int?, scheme: String) -> Int? {
+            if let port, port != 0 { return port }
+            switch scheme.lowercased() {
+            case "https": return 443
+            case "http": return 80
+            default: return nil
+            }
+        }
+        guard let documentScheme = document.scheme, let documentHost = document.host else { return false }
+        return scheme.lowercased() == documentScheme.lowercased() &&
+            host.lowercased() == documentHost.lowercased() &&
+            effectivePort(port, scheme: scheme) == effectivePort(document.port, scheme: documentScheme)
     }
 }

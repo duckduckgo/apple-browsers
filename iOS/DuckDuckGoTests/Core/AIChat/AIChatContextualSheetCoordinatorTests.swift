@@ -29,6 +29,40 @@ import WebKit
 
 final class AIChatContextualSheetCoordinatorTests: XCTestCase {
 
+    @MainActor
+    func testRetainedContextualSourceSurvivesTabLeaveAndParkingButClearActiveChatDetachesIt() async throws {
+        let fixture = BrowserToolsBridgeFixture()
+        defer { fixture.cleanUp() }
+        sut.browserToolsOwner = fixture.owner
+        sut.browserToolsService = fixture.service
+        sut.browserToolScopeFactory = { [weak fixture] in fixture?.makeScope() }
+        let host = makeSidebarHost()
+        await sut.presentSheet(from: host)
+        let sheet = try XCTUnwrap(sut.sheetViewController)
+        sheet.loadViewIfNeeded()
+        let webController = try XCTUnwrap(sut.browserToolsWebViewController)
+        webController.configureContentHandler(with: fixture.script)
+        fixture.script.webView = fixture.webView
+        fixture.webView.onPermission = { params in
+            self.sut.tabWillLeaveScreen()
+            self.sut.parkSurfaceForResize(animated: false)
+            self.sut.tabDidReturnToScreen(presentedFrom: host)
+            XCTAssertTrue(self.sut.sheetViewController === sheet)
+            _ = fixture.handler.respondToClientToolPermission(params: fixture.response(params, decision: "allow"), source: fixture.script)
+        }
+        let allowed = await fixture.invoke()
+        XCTAssertEqual(allowed, fixture.success)
+        sut.clearActiveChat()
+        let detached = await fixture.invoke()
+        XCTAssertEqual(detached, .failure(callId: "call", error: .unavailable))
+        let lateScript = AIChatUserScript(handler: fixture.handler, debugSettings: AIChatDebugSettings(userDefault: fixture.defaults))
+        webController.configureContentHandler(with: lateScript)
+        lateScript.webView = fixture.webView
+        let lateInvocation = await fixture.handler.executeClientTool(params: fixture.params(), source: lateScript)
+        XCTAssertEqual(lateInvocation, .failure(callId: "call", error: .unavailable))
+        XCTAssertNil(webController.browserToolScopeFactory)
+    }
+
     // MARK: - Mocks
 
     private final class MockPageContextHandler: AIChatPageContextHandling {

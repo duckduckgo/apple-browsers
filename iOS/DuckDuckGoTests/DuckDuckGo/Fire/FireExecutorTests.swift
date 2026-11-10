@@ -424,6 +424,263 @@ final class FireExecutorTests: XCTestCase {
         XCTAssertTrue(pixelFiring.actualFireCalls.isEmpty)
     }
 
+    func testDirectChatBurnCancelsMatchingLiveDocumentPermissionAndRejectsLateAlways() async {
+        let fixture = BrowserToolsBridgeFixture()
+        defer { fixture.cleanUp() }
+        mockTabManager.browserToolsService = fixture.service
+        let delivered = expectation(description: "Permission pending before deletion")
+        var lateResponse: [String: Any] = [:]
+        fixture.webView.onPermission = { params in
+            lateResponse = fixture.response(params, decision: "always")
+            delivered.fulfill()
+        }
+        let completed = expectation(description: "Pending tool invocation completed")
+        let pending = Task {
+            let result = await fixture.invoke()
+            completed.fulfill()
+            return result
+        }
+        await fulfillment(of: [delivered], timeout: 2)
+        let executor = makeFireExecutor()
+        let result = await executor.burnChat(chatID: "chat", isFireMode: false)
+        if case .failure(let error) = result { XCTFail("Deletion failed: \(error)") }
+        _ = fixture.handler.respondToClientToolPermission(params: lateResponse, source: fixture.script)
+        await fulfillment(of: [completed], timeout: 2)
+        pending.cancel()
+        let cancelled = await pending.value
+        XCTAssertEqual(cancelled, .failure(callId: "call", error: .cancelled))
+        XCTAssertEqual(fixture.listings, 0)
+        XCTAssertEqual(fixture.service.permissions.state(forToolNamed: "listOpenTabs"), .ask)
+    }
+
+    func testDirectBurnReleasesBlockAfterSnapshotCleanupEvenIfFeatureIsDisabled() async {
+        let fixture = BrowserToolsBridgeFixture()
+        defer { fixture.cleanUp() }
+        fixture.service.permissions.setState(.allow, forToolNamed: "listOpenTabs")
+        mockTabManager.browserToolsService = fixture.service
+        let snapshotsStarted = expectation(description: "Snapshot cleanup started")
+        var finishSnapshots: CheckedContinuation<Void, Never>?
+        let executor = makeFireExecutor(clearAppSwitcherSnapshots: {
+            XCTAssertNil(fixture.service.configuration(for: fixture.script))
+            await withCheckedContinuation { continuation in
+                finishSnapshots = continuation
+                snapshotsStarted.fulfill()
+            }
+        })
+        let burning = Task { await executor.burnChat(chatID: "chat", isFireMode: false) }
+        await fulfillment(of: [snapshotsStarted], timeout: 2)
+        let blocked = await fixture.invoke()
+        XCTAssertEqual(blocked, .failure(callId: "call", error: .unavailable))
+        XCTAssertEqual(fixture.listings, 0)
+        fixture.flags.enabledFeatureFlags = [.aiChatBrowserToolListOpenTabs]
+        finishSnapshots?.resume()
+        let result = await burning.value
+        if case .failure(let error) = result { XCTFail("Deletion failed: \(error)") }
+        fixture.flags.enabledFeatureFlags = [.aiChatBrowserTools, .aiChatBrowserToolListOpenTabs]
+        let fresh = await fixture.invoke()
+        XCTAssertEqual(fresh, fixture.success)
+        XCTAssertEqual(fixture.service.permissions.state(forToolNamed: "listOpenTabs"), .allow)
+    }
+
+    func testOverlappingDirectBurnsReleaseOnlyTheirOwnBlock() async {
+        let fixture = BrowserToolsBridgeFixture()
+        defer { fixture.cleanUp() }
+        fixture.service.permissions.setState(.allow, forToolNamed: "listOpenTabs")
+        mockTabManager.browserToolsService = fixture.service
+        let firstSnapshots = expectation(description: "First snapshots suspended")
+        let secondSnapshots = expectation(description: "Second snapshots suspended")
+        var finishFirst: CheckedContinuation<Void, Never>?
+        var finishSecond: CheckedContinuation<Void, Never>?
+        let first = makeFireExecutor(clearAppSwitcherSnapshots: {
+            await withCheckedContinuation { continuation in
+                finishFirst = continuation
+                firstSnapshots.fulfill()
+            }
+        })
+        let second = makeFireExecutor(clearAppSwitcherSnapshots: {
+            await withCheckedContinuation { continuation in
+                finishSecond = continuation
+                secondSnapshots.fulfill()
+            }
+        })
+        let firstBurn = Task { await first.burnChat(chatID: "chat", isFireMode: false) }
+        await fulfillment(of: [firstSnapshots], timeout: 2)
+        let secondBurn = Task { await second.burnAllChats(isFireMode: false) }
+        await fulfillment(of: [secondSnapshots], timeout: 2)
+        finishFirst?.resume()
+        _ = await firstBurn.value
+        let stillBlocked = await fixture.invoke()
+        XCTAssertEqual(stillBlocked, .failure(callId: "call", error: .unavailable))
+        finishSecond?.resume()
+        _ = await secondBurn.value
+        let available = await fixture.invoke()
+        XCTAssertEqual(available, fixture.success)
+    }
+
+    func testFailedDirectChatDeletionCancelsOldPermissionButAllowsFreshRequest() async {
+        let fixture = BrowserToolsBridgeFixture()
+        defer { fixture.cleanUp() }
+        mockTabManager.browserToolsService = fixture.service
+        mockHistoryCleaner.deleteAIChatResult = .failure(NSError(domain: "test", code: 1))
+        let delivered = expectation(description: "Permission pending before failed deletion")
+        fixture.webView.onPermission = { _ in delivered.fulfill() }
+        let completed = expectation(description: "Pending tool invocation completed")
+        let pending = Task {
+            let result = await fixture.invoke()
+            completed.fulfill()
+            return result
+        }
+        await fulfillment(of: [delivered], timeout: 2)
+        let result = await makeFireExecutor().burnChat(chatID: "chat", isFireMode: false)
+        if case .success = result { XCTFail("Expected deletion failure") }
+        await fulfillment(of: [completed], timeout: 2)
+        pending.cancel()
+        let cancelled = await pending.value
+        XCTAssertEqual(cancelled, .failure(callId: "call", error: .cancelled))
+        fixture.webView.onPermission = { params in
+            _ = fixture.handler.respondToClientToolPermission(params: fixture.response(params, decision: "allow"), source: fixture.script)
+        }
+        let fresh = await fixture.invoke()
+        XCTAssertEqual(fresh, fixture.success)
+        XCTAssertEqual(fixture.service.permissions.state(forToolNamed: "listOpenTabs"), .ask)
+    }
+
+    func testGeneralBurnBlocksBrowserToolsDuringActualHistoryDeletionAndSnapshotCleanup() async {
+        mockFeatureFlagger.enabledFeatureFlags = []
+        FireModeCapability.resolve(using: mockFeatureFlagger)
+        let scopes: [FireRequest.Scope] = [.normalMode, .all]
+        for scope in scopes {
+            let fixture = BrowserToolsBridgeFixture()
+            defer { fixture.cleanUp() }
+            mockTabManager.browserToolsService = fixture.service
+            fixture.service.permissions.setState(.allow, forToolNamed: "listOpenTabs")
+            let cleanerReached = expectation(description: "History deletion reached")
+            mockHistoryCleaner.onCleanAIChatHistory = {
+                XCTAssertNil(fixture.service.configuration(for: fixture.script))
+                cleanerReached.fulfill()
+            }
+            let snapshotsReached = expectation(description: "Snapshots reached")
+            let executor = makeFireExecutor(clearAppSwitcherSnapshots: {
+                let blocked = await fixture.invoke()
+                XCTAssertEqual(blocked, .failure(callId: "call", error: .unavailable))
+                snapshotsReached.fulfill()
+            })
+            let request = FireRequest(options: [.aiChats], trigger: .manualFire, scope: scope)
+            await executor.burn(request: request, applicationState: .active)
+            await fulfillment(of: [cleanerReached, snapshotsReached], timeout: 2)
+            let fresh = await fixture.invoke()
+            XCTAssertEqual(fresh, fixture.success)
+        }
+    }
+
+    func testDisabledBrowserToolsDoNotRevokeScopesDuringDirectNormalChatBurns() async throws {
+        let fixture = BrowserToolsBridgeFixture()
+        defer { fixture.cleanUp() }
+        fixture.flags.enabledFeatureFlags = [.aiChatBrowserToolListOpenTabs]
+        mockTabManager.browserToolsService = fixture.service
+        let scope = try XCTUnwrap(fixture.makeScope())
+        fixture.script.bindBrowserTools(to: fixture.service, owner: fixture.owner, makeScope: { scope })
+        for operation in ["single", "multiple", "all"] {
+            let deletionCount = mockHistoryCleaner.cleanAIChatHistoryCallCount + mockHistoryCleaner.deleteAIChatCalls.count + mockHistoryCleaner.deleteAIChatsCalls.count
+            var snapshotsReached = false
+            let executor = makeFireExecutor(clearAppSwitcherSnapshots: {
+                snapshotsReached = true
+                XCTAssertTrue(scope.isValid)
+            })
+            let result: Result<Void, Error>
+            switch operation {
+            case "single": result = await executor.burnChat(chatID: "chat", isFireMode: false)
+            case "multiple": result = await executor.burnChats(chatIDs: ["chat"], isFireMode: false)
+            default: result = await executor.burnAllChats(isFireMode: false)
+            }
+            if case .failure(let error) = result { XCTFail("Deletion failed: \(error)") }
+            XCTAssertTrue(snapshotsReached)
+            XCTAssertTrue(scope.isValid)
+            XCTAssertEqual(mockHistoryCleaner.cleanAIChatHistoryCallCount + mockHistoryCleaner.deleteAIChatCalls.count + mockHistoryCleaner.deleteAIChatsCalls.count,
+                           deletionCount + 1)
+        }
+    }
+
+    func testDisabledBrowserToolsDoNotRevokeScopesDuringGeneralNormalBurns() async throws {
+        let fixture = BrowserToolsBridgeFixture()
+        defer { fixture.cleanUp() }
+        fixture.flags.enabledFeatureFlags = [.aiChatBrowserToolListOpenTabs]
+        mockFeatureFlagger.enabledFeatureFlags = []
+        FireModeCapability.resolve(using: mockFeatureFlagger)
+        mockTabManager.browserToolsService = fixture.service
+        fixture.owner.link = Link(title: "Chat", url: URL.duckAi.withChatID("chat"))
+        let scope = try XCTUnwrap(fixture.makeScope())
+        fixture.script.bindBrowserTools(to: fixture.service, owner: fixture.owner, makeScope: { scope })
+        let scopes: [FireRequest.Scope] = [.normalMode, .all, .tab(viewModel: TabViewModel(tab: fixture.owner, historyManager: mockHistoryManager))]
+        for target in scopes {
+            let deletionCount = mockHistoryCleaner.cleanAIChatHistoryCallCount + mockHistoryCleaner.deleteAIChatCalls.count
+            var snapshotsReached = false
+            let executor = makeFireExecutor(clearAppSwitcherSnapshots: {
+                snapshotsReached = true
+                XCTAssertTrue(scope.isValid)
+            })
+            let request = makeFireRequest(options: .aiChats, scope: target)
+            await executor.burn(request: request, applicationState: .active)
+            XCTAssertTrue(snapshotsReached)
+            XCTAssertTrue(scope.isValid)
+            XCTAssertEqual(mockHistoryCleaner.cleanAIChatHistoryCallCount + mockHistoryCleaner.deleteAIChatCalls.count, deletionCount + 1)
+            XCTAssertTrue(mockDelegate.didFinishBurningCalled)
+        }
+    }
+
+    func testDirectFireModeChatBurnsKeepNormalBrowserToolsAvailableDuringSnapshotCleanup() async {
+        mockFeatureFlagger.enabledFeatureFlags.append(.fireMode)
+        FireModeCapability.resolve(using: mockFeatureFlagger)
+        for operation in ["single", "multiple", "all"] {
+            let fixture = BrowserToolsBridgeFixture()
+            defer { fixture.cleanUp() }
+            mockTabManager.browserToolsService = fixture.service
+            fixture.service.permissions.setState(.allow, forToolNamed: "listOpenTabs")
+            var snapshotsReached = false
+            let executor = makeFireExecutor(clearAppSwitcherSnapshots: {
+                snapshotsReached = true
+                XCTAssertNotNil(fixture.service.configuration(for: fixture.script))
+                let allowed = await fixture.invoke()
+                XCTAssertEqual(allowed, fixture.success)
+            })
+            let result: Result<Void, Error>
+            switch operation {
+            case "single": result = await executor.burnChat(chatID: "chat", isFireMode: true)
+            case "multiple": result = await executor.burnChats(chatIDs: ["chat"], isFireMode: true)
+            default: result = await executor.burnAllChats(isFireMode: true)
+            }
+            if case .failure(let error) = result { XCTFail("Deletion failed: \(error)") }
+            XCTAssertTrue(snapshotsReached)
+            XCTAssertEqual(fixture.listings, 1)
+            let allowed = await fixture.invoke()
+            XCTAssertEqual(allowed, fixture.success)
+        }
+    }
+
+    func testGeneralFireModeBurnsKeepNormalBrowserToolsAvailableDuringSnapshotCleanup() async {
+        mockFeatureFlagger.enabledFeatureFlags.append(.fireMode)
+        FireModeCapability.resolve(using: mockFeatureFlagger)
+        let scopes: [FireRequest.Scope] = [.fireMode, .tab(viewModel: makeTabViewModel(chatID: "chat", fireTab: true))]
+        for scope in scopes {
+            let fixture = BrowserToolsBridgeFixture()
+            defer { fixture.cleanUp() }
+            mockTabManager.browserToolsService = fixture.service
+            fixture.service.permissions.setState(.allow, forToolNamed: "listOpenTabs")
+            var snapshotsReached = false
+            let executor = makeFireExecutor(clearAppSwitcherSnapshots: {
+                snapshotsReached = true
+                XCTAssertNotNil(fixture.service.configuration(for: fixture.script))
+                let allowed = await fixture.invoke()
+                XCTAssertEqual(allowed, fixture.success)
+            })
+            await executor.burn(request: makeFireRequest(options: .aiChats, scope: scope), applicationState: .active)
+            XCTAssertTrue(snapshotsReached)
+            XCTAssertEqual(fixture.listings, 1)
+            let allowed = await fixture.invoke()
+            XCTAssertEqual(allowed, fixture.success)
+        }
+    }
+
     func testWhenDirectAIChatBurnsSucceedThenAppSwitcherSnapshotsAreCleared() async {
         var cleanupCallCount = 0
         let executor = makeFireExecutor {

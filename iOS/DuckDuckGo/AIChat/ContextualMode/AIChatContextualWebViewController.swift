@@ -54,6 +54,10 @@ final class AIChatContextualWebViewController: UIViewController {
 
     // MARK: - Properties
 
+    weak var browserToolsOwner: Tab?
+    var browserToolsService: AIChatBrowserToolsService?
+    var browserToolScopeFactory: (@MainActor () -> BrowserToolScope?)?
+    private weak var browserToolsScript: AIChatUserScript?
     weak var delegate: AIChatContextualWebViewControllerDelegate?
 
     private let aiChatSettings: AIChatSettingsProvider
@@ -226,9 +230,11 @@ final class AIChatContextualWebViewController: UIViewController {
     }
 
     deinit {
+        let browserToolsScript = browserToolsScript
         let request = pendingRichPrompt?.tabAttachmentRequest
         let contentHandler = aiChatContentHandler
         Task { @MainActor in
+            browserToolsScript?.detachBrowserTools()
             request?.cancel()
             contentHandler.cancelPendingTabContextSubmission()
         }
@@ -552,6 +558,11 @@ extension AIChatContextualWebViewController: UserContentControllerDelegate {
 
     func configureContentHandler(with userScript: AIChatUserScript) {
         aiChatContentHandler.setup(with: userScript, webView: webView, displayMode: .contextual)
+        browserToolsScript = nil
+        if let browserToolsService, browserToolsService.isEnabled, let browserToolsOwner, let browserToolScopeFactory {
+            browserToolsScript = userScript
+            userScript.bindBrowserTools(to: browserToolsService, owner: browserToolsOwner, makeScope: browserToolScopeFactory)
+        }
         userScript.setContextualModePixelHandler(pixelHandler)
         utiHost?.bindToUserScript(userScript)
         isContentHandlerReady = true
@@ -559,9 +570,28 @@ extension AIChatContextualWebViewController: UserContentControllerDelegate {
     }
 }
 
+extension AIChatContextualWebViewController {
+    func detachBrowserTools() {
+        browserToolScopeFactory = nil
+        browserToolsOwner = nil
+        browserToolsService = nil
+        browserToolsScript?.detachBrowserTools()
+        browserToolsScript = nil
+    }
+}
+
 // MARK: - WKNavigationDelegate
 
 extension AIChatContextualWebViewController: WKNavigationDelegate {
+    func webView(_ webView: WKWebView, didCommit navigation: WKNavigation!) {
+        guard webView === self.webView else { return }
+        browserToolsScript?.browserToolsDocumentDidCommit()
+    }
+
+    func webViewWebContentProcessDidTerminate(_ webView: WKWebView) {
+        guard webView === self.webView else { return }
+        browserToolsScript?.browserToolsDocumentProcessDidTerminate()
+    }
 
     func webView(_ webView: WKWebView, decidePolicyFor navigationAction: WKNavigationAction) async -> WKNavigationActionPolicy {
         guard let url = navigationAction.request.url else { return .allow }

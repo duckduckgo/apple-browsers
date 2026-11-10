@@ -31,6 +31,25 @@ final class AIChatBrowserToolsServiceTests: XCTestCase {
         return try JSONDecoder().decode(ExecuteClientToolRequest.self, from: JSONEncoder().encode(value))
     }
 
+    func testInjectedScopeCannotBypassActiveFireBlock() async throws {
+        let fixture = BrowserToolsBridgeFixture()
+        defer { fixture.cleanUp() }
+        let scope = try XCTUnwrap(fixture.makeScope())
+        let service = AIChatBrowserToolsService(featureFlagger: fixture.flags, scopeProvider: { _ in scope },
+                                                permissionStorage: fixture.defaults.keyedStoring())
+        service.permissions.setState(.allow, forToolNamed: "listOpenTabs")
+        let context = BrowserToolCallContext(ownerTabID: scope.ownerTabID, ownerWindowToken: scope.token,
+                                             isBurner: false)
+        let token = service.beginClearing(.all)
+        let blocked = await service.invoker.invokeClientTool(try request(), context: context, permissionPusher: nil)
+        XCTAssertEqual(blocked, .failure(callId: "call", error: .unavailable))
+        XCTAssertEqual(fixture.listings, 0)
+        service.endClearing(token)
+        let fresh = await service.invoker.invokeClientTool(try request(), context: context, permissionPusher: nil)
+        XCTAssertEqual(fresh, fixture.success)
+        XCTAssertEqual(service.permissions.state(forToolNamed: "listOpenTabs"), .allow)
+    }
+
     func testBothGatesAreDynamicForSameServiceAndParentFeature() throws {
         let flags = MockFeatureFlagger(enabledFeatureFlags: [])
         let feature = ChatToBrowserToolCallingFeature(featureFlagger: flags)

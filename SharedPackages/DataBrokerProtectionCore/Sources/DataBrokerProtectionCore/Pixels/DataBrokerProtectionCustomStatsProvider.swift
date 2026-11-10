@@ -122,7 +122,7 @@ private extension DefaultDataBrokerProtectionCustomOptOutStatsProvider {
         return optOutJobData.reduce(0) { result, optOutJobData in
             let optOutRequested = optOutJobData.historyEvents.contains { historyEvent in
                 let matchDatePlus24 = Calendar.current.date(byAdding: .hour, value: 24, to: optOutJobData.createdDate) ?? Date()
-                return historyEvent.type == .optOutRequested && (historyEvent.date < matchDatePlus24 && historyEvent.date > optOutJobData.createdDate)
+                return historyEvent.isOptOutRequestEvent() && (historyEvent.date < matchDatePlus24 && historyEvent.date > optOutJobData.createdDate)
             }
             return result + (optOutRequested ? 1 : 0)
         }

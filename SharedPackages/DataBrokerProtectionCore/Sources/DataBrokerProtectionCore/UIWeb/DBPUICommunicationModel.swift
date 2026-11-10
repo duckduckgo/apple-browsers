@@ -323,7 +323,7 @@ extension DBPUIDataBrokerProfileMatch {
                 assertionFailure("No matching MatchFound event for an extract profile found")
             }
 
-            let optOutSubmittedEvents = optOutJobData.historyEvents.filter { $0.type == .optOutRequested }
+            let optOutSubmittedEvents = optOutJobData.historyEvents.filter { $0.isOptOutRequestEvent() }
             let firstOptOutEvent = optOutSubmittedEvents.min(by: { $0.date < $1.date })
             optOutSubmittedDate = firstOptOutEvent?.date
         }

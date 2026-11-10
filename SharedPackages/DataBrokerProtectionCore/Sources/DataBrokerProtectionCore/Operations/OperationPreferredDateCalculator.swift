@@ -56,7 +56,7 @@ struct OperationPreferredDateCalculator {
             earliestRunDateSoFar = min(earliestRunDateSoFar, Date().addingTimeInterval(schedulingConfig.retryError.hoursToSeconds))
         }
 
-        if lastOptOutEvents.contains(where: { $0.type == .optOutRequested }) {
+        if lastOptOutEvents.contains(where: { $0.isOptOutRequestEvent() }) {
             earliestRunDateSoFar = min(earliestRunDateSoFar, Date().addingTimeInterval(schedulingConfig.confirmOptOutScan.hoursToSeconds))
         }
 
@@ -89,7 +89,7 @@ struct OperationPreferredDateCalculator {
             return currentPreferredRunDate
         case .optOutConfirmed, .matchRemovedByUser:
             return nil
-        case .optOutRequested:
+        case .optOutRequested, .optOutByUserEmail:
             // Previously, opt-out jobs with `nil` preferredRunDate were never executed,
             // but we need this following the child-to-parent-broker transition
             // to prevent repeated scheduling of those former child broker opt-out jobs.
@@ -112,7 +112,7 @@ struct OperationPreferredDateCalculator {
             return false
         }
 
-        guard let lastRemovalEvent = events.last(where: { $0.type == .optOutRequested && $0.extractedProfileId == extractedProfileId }) else {
+        guard let lastRemovalEvent = events.last(where: { $0.isOptOutRequestEvent() && $0.extractedProfileId == extractedProfileId }) else {
             return false
         }
 

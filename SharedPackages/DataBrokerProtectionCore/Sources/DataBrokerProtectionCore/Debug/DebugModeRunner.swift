@@ -333,6 +333,7 @@ extension DebugModeRunner {
         case .optOutStarted: return "Opt-out Started"
         case .optOutAwaitingUserAssistance: return "Opt-out Awaiting User Assistance"
         case .optOutRequested: return "Opt-out Requested"
+        case .optOutByUserEmail: return "Opt-out Requested by User Email"
         case .optOutSubmittedAndAwaitingEmailConfirmation: return "Opt-out Awaiting Email"
         case .optOutConfirmed: return "Opt-out Confirmed"
         case .scanStarted: return "Scan Started"

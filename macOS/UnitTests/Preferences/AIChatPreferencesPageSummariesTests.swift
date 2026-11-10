@@ -57,6 +57,22 @@ final class AIChatPreferencesPageSummariesTests {
     }
 
     @available(iOS 16, macOS 13, *)
+    @Test("The setting is hidden on Macs that can't run Apple Intelligence",
+          .timeLimit(.minutes(1)),
+          arguments: [
+            (AIChatLocalModelAvailability.available, true),
+            (.appleIntelligenceNotEnabled, true),
+            (.modelNotReady, true),
+            (.deviceNotEligible, false),
+            (.unsupportedOS, false)
+          ])
+    func hiddenWhereAppleIntelligenceCantRun(availability: AIChatLocalModelAvailability, isShown: Bool) {
+        engine.availability = availability
+
+        #expect(makePreferences().shouldShowPageSummariesSetting == isShown)
+    }
+
+    @available(iOS 16, macOS 13, *)
     @Test("Choosing Apple Intelligence opts in when it's available", .timeLimit(.minutes(1)))
     func choosingAppleIntelligenceOptsIn() {
         let preferences = makePreferences()

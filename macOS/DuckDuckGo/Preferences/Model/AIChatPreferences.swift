@@ -148,8 +148,11 @@ final class AIChatPreferences: ObservableObject {
         featureFlagger.isFeatureOn(.newTabPageOmnibar)
     }
 
+    /// Hidden on Macs that can never run the model, because the setup dialog couldn't help there.
+    @MainActor
     var shouldShowPageSummariesSetting: Bool {
-        localModelService != nil && featureFlagger.isFeatureOn(.aiChatLocalModels)
+        guard let localModelService, featureFlagger.isFeatureOn(.aiChatLocalModels) else { return false }
+        return localModelService.availability.isSupportedOnDevice
     }
 
     /// Choosing Apple Intelligence opts in to local summaries when it's ready, and otherwise asks the

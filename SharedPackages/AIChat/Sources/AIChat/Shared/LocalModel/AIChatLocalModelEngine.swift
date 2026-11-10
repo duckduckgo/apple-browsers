@@ -26,6 +26,17 @@ public enum AIChatLocalModelAvailability: Equatable, Sendable {
     case unsupportedOS
 
     public var isAvailable: Bool { self == .available }
+
+    /// False when nothing the user can turn on makes the model available, such as on a device
+    /// without Apple Intelligence or an older OS, so there's no point offering it.
+    public var isSupportedOnDevice: Bool {
+        switch self {
+        case .available, .appleIntelligenceNotEnabled, .modelNotReady:
+            return true
+        case .deviceNotEligible, .unsupportedOS:
+            return false
+        }
+    }
 }
 
 public struct AIChatLocalModelRunSummary: Equatable, Sendable {

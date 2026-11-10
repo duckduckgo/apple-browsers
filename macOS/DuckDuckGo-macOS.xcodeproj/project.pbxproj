@@ -66,9 +66,13 @@
 		1EB714F02EDA30CA00B6F589 /* AutoconsentStatsPopoverPresenter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1EB714EF2EDA30CA00B6F589 /* AutoconsentStatsPopoverPresenter.swift */; };
 		1EB714F12EDA30CA00B6F589 /* AutoconsentStatsPopoverPresenter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1EB714EF2EDA30CA00B6F589 /* AutoconsentStatsPopoverPresenter.swift */; };
 		1EC320952F23F12A00A38D09 /* WebExtensionManager+macOS.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1EC320922F23F12A00A38D09 /* WebExtensionManager+macOS.swift */; };
+		F5BA7201FA5E0B49F107326C /* WKWebExtension+DisplayIcon.swift in Sources */ = {isa = PBXBuildFile; fileRef = D65C3FF52EE5DFAC288709C0 /* WKWebExtension+DisplayIcon.swift */; };
+		0329F52AC8317F7F496C6CA7 /* WebExtensionPermissionFormatter.swift in Sources */ = {isa = PBXBuildFile; fileRef = FD6E16294512C39D6250CCBF /* WebExtensionPermissionFormatter.swift */; };
 		1EC320962F23F12A00A38D09 /* WebExtensionWindowTabProvider+macOS.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1EC320932F23F12A00A38D09 /* WebExtensionWindowTabProvider+macOS.swift */; };
 		1EC320972F23F12A00A38D09 /* WebExtensionConfigurationProvider+macOS.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1EC320912F23F12A00A38D09 /* WebExtensionConfigurationProvider+macOS.swift */; };
 		1EC320982F23F12A00A38D09 /* WebExtensionManager+macOS.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1EC320922F23F12A00A38D09 /* WebExtensionManager+macOS.swift */; };
+		32D06283C65F36FFB83C1FED /* WKWebExtension+DisplayIcon.swift in Sources */ = {isa = PBXBuildFile; fileRef = D65C3FF52EE5DFAC288709C0 /* WKWebExtension+DisplayIcon.swift */; };
+		E8369B82171C7411D57412A3 /* WebExtensionPermissionFormatter.swift in Sources */ = {isa = PBXBuildFile; fileRef = FD6E16294512C39D6250CCBF /* WebExtensionPermissionFormatter.swift */; };
 		1EC320992F23F12A00A38D09 /* WebExtensionWindowTabProvider+macOS.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1EC320932F23F12A00A38D09 /* WebExtensionWindowTabProvider+macOS.swift */; };
 		1EC3209A2F23F12A00A38D09 /* WebExtensionConfigurationProvider+macOS.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1EC320912F23F12A00A38D09 /* WebExtensionConfigurationProvider+macOS.swift */; };
 		1EC711552D03421B0009EB5C /* Localizable.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = 1EC711542D03421B0009EB5C /* Localizable.xcstrings */; };
@@ -1477,6 +1481,8 @@
 		1EB714EF2EDA30CA00B6F589 /* AutoconsentStatsPopoverPresenter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AutoconsentStatsPopoverPresenter.swift; sourceTree = "<group>"; };
 		1EC320912F23F12A00A38D09 /* WebExtensionConfigurationProvider+macOS.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "WebExtensionConfigurationProvider+macOS.swift"; sourceTree = "<group>"; };
 		1EC320922F23F12A00A38D09 /* WebExtensionManager+macOS.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "WebExtensionManager+macOS.swift"; sourceTree = "<group>"; };
+		D65C3FF52EE5DFAC288709C0 /* WKWebExtension+DisplayIcon.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "WKWebExtension+DisplayIcon.swift"; sourceTree = "<group>"; };
+		FD6E16294512C39D6250CCBF /* WebExtensionPermissionFormatter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WebExtensionPermissionFormatter.swift; sourceTree = "<group>"; };
 		1EC320932F23F12A00A38D09 /* WebExtensionWindowTabProvider+macOS.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "WebExtensionWindowTabProvider+macOS.swift"; sourceTree = "<group>"; };
 		1EC711542D03421B0009EB5C /* Localizable.xcstrings */ = {isa = PBXFileReference; lastKnownFileType = text.json.xcstrings; path = Localizable.xcstrings; sourceTree = "<group>"; };
 		1EC711572D035BC30009EB5C /* NetworkProtectionLocalizable.xcstrings */ = {isa = PBXFileReference; lastKnownFileType = text.json.xcstrings; path = NetworkProtectionLocalizable.xcstrings; sourceTree = "<group>"; };
@@ -2849,6 +2855,8 @@
 				1D3A2B652D2D230000F06679 /* WebExtensionInternalSiteHandler.swift */,
 				1D3A2B622D2D225B00F06679 /* WebExtensionInternalSiteNavigationDelegate.swift */,
 				1EC320922F23F12A00A38D09 /* WebExtensionManager+macOS.swift */,
+				D65C3FF52EE5DFAC288709C0 /* WKWebExtension+DisplayIcon.swift */,
+				FD6E16294512C39D6250CCBF /* WebExtensionPermissionFormatter.swift */,
 				1EEBF90E2F3E16DD00DF90F3 /* WebExtensionHandlerProvider+macOS.swift */,
 				1EA1DA212F46063F005387D0 /* AutoconsentMessageHandlerDelegate+macOS.swift */,
 				7BE33DCC2DC12C0300A96502 /* WebExtensionNavigationBarUpdater.swift */,
@@ -6266,6 +6274,8 @@
 				4B8A1D3C2F9B000100D1A600 /* NetworkProtectionDiagnosticsExporter.swift in Sources */,
 				7BE146082A6A83C700C313B8 /* NetworkProtectionDebugMenu.swift in Sources */,
 				1EC320952F23F12A00A38D09 /* WebExtensionManager+macOS.swift in Sources */,
+				F5BA7201FA5E0B49F107326C /* WKWebExtension+DisplayIcon.swift in Sources */,
+				0329F52AC8317F7F496C6CA7 /* WebExtensionPermissionFormatter.swift in Sources */,
 				1EC320962F23F12A00A38D09 /* WebExtensionWindowTabProvider+macOS.swift in Sources */,
 				1EC320972F23F12A00A38D09 /* WebExtensionConfigurationProvider+macOS.swift in Sources */,
 				8440B2B72EF136D200E32722 /* QuitSurveyPresenter.swift in Sources */,
@@ -6606,6 +6616,8 @@
 				B313C0502E1FD91200C34AE6 /* AutoconsentPixels.swift in Sources */,
 				F1C70D792BFF50A400599292 /* DataBrokerProtectionLoginItemInterface.swift in Sources */,
 				1EC320982F23F12A00A38D09 /* WebExtensionManager+macOS.swift in Sources */,
+				32D06283C65F36FFB83C1FED /* WKWebExtension+DisplayIcon.swift in Sources */,
+				E8369B82171C7411D57412A3 /* WebExtensionPermissionFormatter.swift in Sources */,
 				1EC320992F23F12A00A38D09 /* WebExtensionWindowTabProvider+macOS.swift in Sources */,
 				1EC3209A2F23F12A00A38D09 /* WebExtensionConfigurationProvider+macOS.swift in Sources */,
 				7B7F5D212C526CE600826256 /* AddExcludedDomainView.swift in Sources */,

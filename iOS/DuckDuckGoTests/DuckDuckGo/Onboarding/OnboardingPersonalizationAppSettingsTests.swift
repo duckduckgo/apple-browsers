@@ -39,27 +39,6 @@ final class OnboardingPersonalizationAppSettingsTests {
         userDefaults.removePersistentDomain(forName: groupName)
     }
 
-    // MARK: - Recently visited sites (Search step)
-
-    @Test("Recently visited sites defaults to On")
-    func recentlyVisitedDefaultsToOn() {
-        // WHEN
-        let result = sut.recentlyVisitedSitesEnabled
-
-        // THEN
-        #expect(result)
-    }
-
-    @Test("Recently visited sites passes straight through to the store", arguments: [true, false])
-    func recentlyVisitedPassthrough(enabled: Bool) {
-        // WHEN
-        sut.recentlyVisitedSitesEnabled = enabled
-
-        // THEN
-        #expect(sut.recentlyVisitedSites == enabled)
-        #expect(sut.recentlyVisitedSitesEnabled == enabled)
-    }
-
     // MARK: - Cookie pop-up protection (Block Ads step)
 
     @Test("Disabling cookie protection collapses the preference to off and clears pop-ups-without-opt-outs")

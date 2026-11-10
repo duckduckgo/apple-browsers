@@ -169,6 +169,9 @@ public struct AIChatNativeConfigValues: Codable {
     /// canonical chat format, so the web app may write canonical chats to native storage. Absent on
     /// builds that predate it, which must keep receiving the legacy format.
     public let supportsCanonicalChatFormat: Bool
+    /// Browser tools Duck.ai may call through `executeClientTool`. Omitted outside a Duck.ai chat,
+    /// in Fire, and when no tool is enabled.
+    public var clientTools: ClientToolsConfiguration?
 
     public static var defaultValues: AIChatNativeConfigValues {
 #if os(iOS)

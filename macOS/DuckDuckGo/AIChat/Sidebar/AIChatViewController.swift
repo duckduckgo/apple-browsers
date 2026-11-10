@@ -678,7 +678,11 @@ extension AIChatViewController {
 
         let windowControllersManager = NSApp.delegateTyped.windowControllersManager
         // Resolved through this sidebar's window: a pinned host tab is in every window's collection.
-        let panel = BrowserToolsDebugViewController(windowControllersManager: windowControllersManager) { [weak self] in
+        let panel = BrowserToolsDebugViewController(windowControllersManager: windowControllersManager,
+                                                    chatContextProvider: { [weak self] in
+            guard let self, let script = aiTab.aiChat?.aiChatUserScript else { return nil }
+            return (script, aiTab.webView)
+        }) { [weak self] in
             guard let self, let tabID,
                   let collection = AIChatTabPickerSource.ownerCollection(for: aiTab.webView, ownerTabID: tabID, in: windowControllersManager),
                   let index = collection.indexInAllTabs(where: { $0.uuid == tabID }) else { return nil }

@@ -18,12 +18,26 @@
 //
 
 import Foundation
+import FoundationExtensions
 import Networking
 import PixelKit
+import Subscription
+
+extension SubscriptionDaysSincePurchaseBucket {
+
+    init(startedAt: Date, now: Date) {
+        switch Calendar.current.numberOfDaysBetween(startedAt, and: now) ?? 0 {
+        case ...1: self = .d1
+        case 2...7: self = .d2To7
+        case 8...30: self = .d8To30
+        default: self = .d31Plus
+        }
+    }
+}
 
 protocol SubscriptionCancellationInstrumenting {
     func cancelClicked()
-    func appStoreSubscriptionCancelled()
+    func appStoreSubscriptionCancelled(entry: SubscriptionCancellationEntry, subscription: DuckDuckGoSubscription)
     func flowLoadFailed(_ error: Error)
     func featureInfoFailed(entitlement: SubscriptionEntitlement)
 }
@@ -31,17 +45,22 @@ protocol SubscriptionCancellationInstrumenting {
 struct SubscriptionCancellationInstrumentation: SubscriptionCancellationInstrumenting {
 
     private let pixelFiring: PixelFiring?
+    private let now: () -> Date
 
-    init(pixelFiring: PixelFiring? = PixelKit.shared) {
+    init(pixelFiring: PixelFiring? = PixelKit.shared, now: @escaping () -> Date = Date.init) {
         self.pixelFiring = pixelFiring
+        self.now = now
     }
 
     func cancelClicked() {
         pixelFiring?.fire(SubscriptionPixel.subscriptionCancellationCancelClick)
     }
 
-    func appStoreSubscriptionCancelled() {
-        pixelFiring?.fire(SubscriptionPixel.subscriptionCancellationAppStoreCancelled)
+    func appStoreSubscriptionCancelled(entry: SubscriptionCancellationEntry, subscription: DuckDuckGoSubscription) {
+        let daysSincePurchase = SubscriptionDaysSincePurchaseBucket(startedAt: subscription.startedAt, now: now())
+        pixelFiring?.fire(SubscriptionPixel.subscriptionCancellationAppStoreCancelled(entry: entry,
+                                                                                      isTrial: subscription.hasActiveTrialOffer,
+                                                                                      daysSincePurchase: daysSincePurchase))
     }
 
     func flowLoadFailed(_ error: Error) {

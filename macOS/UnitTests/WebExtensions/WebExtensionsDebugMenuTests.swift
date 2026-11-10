@@ -17,6 +17,7 @@
 //
 
 import AppKit
+import EventHub
 import FeatureFlags_macOS
 @_spi(Testing) import Persistence
 import PrivacyConfig
@@ -33,7 +34,8 @@ final class WebExtensionsDebugMenuTests: XCTestCase {
                                                              privacyConfigurationManager: MockPrivacyConfigurationManaging(),
                                                              autoconsentPreferences: Preferences(),
                                                              themeManager: ThemeManager(appearancePreferences: .mock),
-                                                             featureFlagger: flags)
+                                                             featureFlagger: flags,
+                                                             eventHub: RecordingEventHub())
         manager.chromeWebStore = store
         return WebExtensionsDebugMenu(webExtensionManager: manager,
                                       cpmMessagingHealthMonitor: CPMMessagingHealthMonitor(pixelFiring: NoOpWebExtensionPixelFiring()))

@@ -42,6 +42,9 @@ import Foundation
 /// `badgeColorMessageHandlerName`.
 /// Extension pages also expose the DuckDuckGo brand through `navigator.userAgentData`.
 ///
+/// A background page holds a keep-alive port when the app asks, so WebKit keeps the page loaded while
+/// the extension has a native messaging port open, as Chrome does (see `keepBackgroundAliveFunctionName`).
+///
 /// A few extensions also get a fix of their own, listed in `extensionFixes` with the problem each one
 /// solves, for Chrome-only code no generic stub can cover.
 ///
@@ -70,6 +73,15 @@ public enum WebExtensionAPIStubScript {
     /// Name of the script message handler `action.setBadgeBackgroundColor` and `action.setBadgeTextColor`
     /// relay the color to as `#rrggbb`, since WebKit never passes it to the app. Without it the colors are dropped.
     public static let badgeColorMessageHandlerName = "ddgWebExtensionBadgeColor"
+
+    /// Native messaging application a background page holds a port to only so WebKit keeps it loaded.
+    /// The app answers this port itself and starts no host.
+    public static let keepAliveApplicationIdentifier = "com.duckduckgo.background-keep-alive"
+
+    /// Global function of a background page that renews its port to `keepAliveApplicationIdentifier`,
+    /// which keeps WebKit from unloading the page, or closes that port when called with `false`. It
+    /// returns whether it succeeded.
+    public static let keepBackgroundAliveFunctionName = "__ddgKeepBackgroundAlive"
 
     /// Permissions WebKit doesn't know that the script implements itself. They are always granted,
     /// without asking the user.
@@ -1490,6 +1502,101 @@ public enum WebExtensionAPIStubScript {
             }
         } catch (error) {
             console.info("[DuckDuckGo] Could not relay chrome.action.openPopup: " + error);
+        }
+
+        // Chrome keeps a background running as long as it has a native messaging port open, and
+        // extensions rely on that. iCloud Passwords keeps its paired session and its host's
+        // capabilities only in the background page: after an unload, its completion list offers
+        // only "Manage Passwords", and the button does nothing.
+        //
+        // WebKit keeps a background page loaded while the page has open ports that carried
+        // something from it in the last two minutes. But when any one port of the page closes,
+        // WebKit forgets all the page's ports (`WebExtensionContext::removePort` drops the whole
+        // set once one channel's count reaches zero), so the page unloads 30 seconds later even
+        // with its native port open. Closing the popup or reloading a website is enough.
+        //
+        // So while the extension has a native port open, the page holds a port to
+        // `keepAliveApplicationIdentifier`, which the app answers itself. The page renews that port
+        // whenever a port that reached it disconnects, and whenever the app calls
+        // `keepBackgroundAliveFunctionName`, which it does well within WebKit's 30 seconds. Opening a
+        // port puts the page back among WebKit's pages with ports and counts as activity. The old port
+        // is closed first, because closing it makes WebKit forget the page's ports again.
+        //
+        // The page keeps every port that reaches it until the port disconnects. Otherwise the garbage
+        // collector removes the ports nobody kept, which also makes WebKit forget the page's ports, and
+        // without a disconnect event. Chrome keeps an open port until it disconnects, too.
+        var keepAlivePort = null;
+        var watchesIncomingPorts = false;
+        var incomingPorts = [];
+
+        function closeKeepAlivePort() {
+            var port = keepAlivePort;
+            keepAlivePort = null;
+            if (port !== null) {
+                try {
+                    port.disconnect();
+                } catch (error) {
+                    // Already disconnected.
+                }
+            }
+        }
+
+        function renewKeepAlivePort() {
+            closeKeepAlivePort();
+            keepAlivePort = api.runtime.connectNative("\(Self.keepAliveApplicationIdentifier)");
+        }
+
+        function watchIncomingPorts() {
+            if (watchesIncomingPorts) {
+                return;
+            }
+            watchesIncomingPorts = true;
+            api.runtime.onConnect.addListener(function(port) {
+                incomingPorts.push(port);
+                port.onDisconnect.addListener(function() {
+                    var index = incomingPorts.indexOf(port);
+                    if (index !== -1) {
+                        incomingPorts.splice(index, 1);
+                    }
+                    if (keepAlivePort === null) {
+                        return;
+                    }
+                    try {
+                        renewKeepAlivePort();
+                    } catch (error) {
+                        keepAlivePort = null;
+                    }
+                });
+            });
+        }
+
+        // Renews the keep-alive port, or closes it when `keepAlive` is `false`. Returns whether it succeeded.
+        function keepBackgroundAlive(keepAlive) {
+            try {
+                if (keepAlive === false) {
+                    closeKeepAlivePort();
+                    return true;
+                }
+                watchIncomingPorts();
+                renewKeepAlivePort();
+                return true;
+            } catch (error) {
+                keepAlivePort = null;
+                return false;
+            }
+        }
+
+        try {
+            if (api.runtime && typeof api.runtime.connectNative === "function" && api.runtime.onConnect
+                && isBackgroundPage()) {
+                Object.defineProperty(globalThis, "\(Self.keepBackgroundAliveFunctionName)", {
+                    value: keepBackgroundAlive,
+                    enumerable: false,
+                    configurable: true
+                });
+            }
+        } catch (error) {
+            console.info("[DuckDuckGo] Could not define the background keep-alive: " + error);
         }
 
         // WebKit accepts `setBadgeBackgroundColor` but never passes the color to the app, and has no

@@ -19,27 +19,39 @@
 import Foundation
 
 /// Tools Duck.ai may discover and invoke, after remote-config gating. A disabled tool is absent
-/// from `tools/list` *and* unresolvable by name, so calling it anyway reports `unavailable`.
+/// from discovery and unresolvable by name, so calling it anyway reports `unavailable`.
 @MainActor
 public final class BrowserToolCatalog {
 
     private let orderedTools: [any BrowserTool]
     private let toolsByName: [String: any BrowserTool]
+    private let clientToolCapabilitiesByName: [String: ClientToolCapability]
     private let configuration: BrowserToolsConfiguration
 
     /// - Parameter tools: registration order is the order the front end sees, so it stays stable
     ///   across launches rather than following dictionary ordering.
-    public init(tools: [any BrowserTool], configuration: BrowserToolsConfiguration) {
+    public init(tools: [any BrowserTool], configuration: BrowserToolsConfiguration,
+                capabilities: [ClientToolCapability] = ClientToolCapability.browserTools) {
         self.orderedTools = tools
         self.configuration = configuration
         self.toolsByName = Dictionary(tools.map { ($0.name, $0) }, uniquingKeysWith: { first, _ in first })
         assert(tools.count == toolsByName.count, "Browser tool names must be unique")
+        self.clientToolCapabilitiesByName = Dictionary(uniqueKeysWithValues: capabilities.map { ($0.name, $0) })
     }
 
     /// Enabled tools, in registration order. Empty when the parent feature is off.
     public var enabledTools: [any BrowserTool] {
         guard configuration.isEnabled else { return [] }
         return orderedTools.filter { configuration.isToolEnabled(named: $0.name) }
+    }
+
+    public var enabledClientToolCapabilities: [ClientToolCapability] {
+        enabledTools.compactMap { clientToolCapabilitiesByName[$0.name] }
+    }
+
+    public func tool(for capability: ClientToolCapability) -> (any BrowserTool)? {
+        guard clientToolCapabilitiesByName[capability.name] == capability else { return nil }
+        return tool(named: capability.name)
     }
 
     /// Resolves a tool for invocation. `nil` covers an unknown name and a disabled sub-feature

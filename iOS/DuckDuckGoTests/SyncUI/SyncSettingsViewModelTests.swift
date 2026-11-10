@@ -1410,6 +1410,8 @@ final class SyncSettingsViewModelTests: XCTestCase {
 
 private final class MockSyncSettingsViewModelDelegate: SyncManagementViewModelDelegate {
 
+    func dismissPendingLoginEvents(withIDs ids: Set<String>) {}
+
     var authenticateUserCallCount = 0
     var authenticationError: Error?
     var isUserAuthenticationPromptNeeded = false

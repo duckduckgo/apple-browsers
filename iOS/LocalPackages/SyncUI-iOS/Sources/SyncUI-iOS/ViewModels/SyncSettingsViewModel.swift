@@ -38,6 +38,7 @@ public protocol SyncManagementViewModelDelegate: AnyObject {
     func removeDevice(_ device: SyncSettingsViewModel.Device)
     func updateDeviceName(_ name: String)
     func refreshDevices(clearDevices: Bool)
+    func dismissPendingLoginEvents(withIDs ids: Set<String>)
     func updateOptions()
     func launchBookmarksViewController()
     func launchAutofillViewController()
@@ -70,6 +71,16 @@ public protocol SyncManagementViewModelDelegate: AnyObject {
 }
 
 public class SyncSettingsViewModel: ObservableObject {
+
+    public struct LoginEvent: Equatable, Identifiable {
+        public let id: String
+        public let deviceName: String
+
+        public init(id: String, deviceName: String) {
+            self.id = id
+            self.deviceName = deviceName
+        }
+    }
 
     public enum UserAuthenticationError: Error {
         case authFailed
@@ -264,6 +275,50 @@ public class SyncSettingsViewModel: ObservableObject {
 
     @Published public var isDeviceActivityPresented = false
     public let deviceActivityViewModel: DeviceActivityViewModel?
+    @Published public var pendingLoginEvents: [LoginEvent] = []
+
+    var isNewDevicesCardVisible: Bool {
+        canShowDeviceActivity && !pendingLoginEvents.isEmpty
+    }
+
+    var canShowDeviceActivity: Bool {
+        isSyncEnabled && isDeviceActivityAvailable && deviceActivityViewModel != nil
+    }
+
+    private var newDevicesCardNames: [String] {
+        var names = Set<String>()
+        return pendingLoginEvents.map(\.deviceName).filter { names.insert($0).inserted }
+    }
+
+    var newDevicesCardTitle: String {
+        newDevicesCardNames.count == 1 ? UserText.newDevicesCardTitle : UserText.newDevicesCardPluralTitle
+    }
+
+    var newDevicesCardMessage: String {
+        let uniqueNames = newDevicesCardNames
+        let nameLimit = 8
+        var names = Array(uniqueNames.prefix(nameLimit))
+        if uniqueNames.count > nameLimit {
+            names.append(String(format: UserText.newDevicesCardMore, uniqueNames.count - nameLimit))
+        }
+        let format = uniqueNames.count == 1 ? UserText.newDevicesCardMessage : UserText.newDevicesCardPluralMessage
+        return String(format: format, ListFormatter.localizedString(byJoining: names))
+    }
+
+    func showDeviceActivity() {
+        guard canShowDeviceActivity else { return }
+        isDeviceActivityPresented = true
+    }
+
+    func deviceActivityDidOpen() {
+        // Opening dismisses the card; the review timer separately marks activity as reviewed.
+        dismissPendingLoginEvents(withIDs: Set(pendingLoginEvents.map(\.id)))
+    }
+
+    func dismissPendingLoginEvents(withIDs ids: Set<String>) {
+        guard !ids.isEmpty else { return }
+        delegate?.dismissPendingLoginEvents(withIDs: ids)
+    }
 
     public let isAutoRestoreFeatureAvailable: Bool
     @Published public var isAutoRestoreEnabled: Bool = false

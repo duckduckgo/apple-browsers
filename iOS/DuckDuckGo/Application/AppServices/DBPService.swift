@@ -192,7 +192,7 @@ enum DataBrokerProtectionSubscriptionFlowParameter {
     static let redirectURLComponents = "redirectURLComponents"
 }
 
-final class DBPFeatureFlagger: DBPFeatureFlagging, FreemiumPIRFeatureFlagging {
+final class DBPFeatureFlagger: DBPFeatureFlagging, FreemiumPIRFeatureFlagging, EmailOptOutFeatureFlagging {
     
     private let appDependencies: DependencyProvider
     private let freemiumPIRDebugSettings: FreemiumPIRDebugSettings
@@ -225,6 +225,10 @@ final class DBPFeatureFlagger: DBPFeatureFlagging, FreemiumPIRFeatureFlagging {
     var isFreemiumPIREnabled: Bool {
         freemiumPIRDebugSettings.isEligibilityForced
             || appDependencies.featureFlagger.isFeatureOn(.dbpFreemiumPIR)
+    }
+
+    var isEmailOptOutEnabled: Bool {
+        appDependencies.featureFlagger.isFeatureOn(.dbpEmailOptOut)
     }
 
     init(appDependencies: DependencyProvider,

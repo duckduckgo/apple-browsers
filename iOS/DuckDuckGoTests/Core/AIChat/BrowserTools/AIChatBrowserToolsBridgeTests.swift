@@ -19,6 +19,7 @@
 
 import AIChat
 import AIChatTestingUtilities
+import BrowserServicesKitTestsUtils
 import Core
 import FeatureFlags_iOS
 import JavaScriptCore
@@ -258,7 +259,7 @@ final class AIChatBrowserToolsBridgeTests: XCTestCase {
 
     func testConfigurationRoutePreservesExistingFieldsForUntrustedOrHomepageSource() async throws {
         let fixture = makeFixture()
-        let message = BrowserToolsBoundaryMessage(webView: nil, host: "duckduckgo.com")
+        let message = WKScriptMessage.mock(webView: nil, frameInfo: .mock(isMainFrame: true, securityOriginHost: "duckduckgo.com"))
         let original = try XCTUnwrap(fixture.handler.getAIChatNativeConfigValues(params: [:], message: message) as? AIChatNativeConfigValues)
         let route = try XCTUnwrap(fixture.script.handler(forMethodNamed: "getAIChatNativeConfigValues"))
         fixture.webView.documentURL = URL(string: "https://duckduckgo.com/")
@@ -299,7 +300,7 @@ final class AIChatBrowserToolsBridgeTests: XCTestCase {
         source?.detachBrowserTools()
         source = nil
         XCTAssertNil(releasedSource)
-        let message = BrowserToolsBoundaryMessage(webView: nil)
+        let message = WKScriptMessage.mock(webView: nil, frameInfo: .mock(isMainFrame: true, securityOriginHost: "duck.ai"))
         let original = try XCTUnwrap(fixture.handler.getAIChatNativeConfigValues(params: [:], message: message) as? AIChatNativeConfigValues)
         let routed = try await route([:], message)
         let response = try XCTUnwrap(routed as? AIChatNativeConfigValues)

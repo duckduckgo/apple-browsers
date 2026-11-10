@@ -120,7 +120,24 @@ final class AIChatContextualWebViewControllerTests: XCTestCase {
     }
 
     @MainActor
-    func testBrowserToolsIgnoreForeignProcessLossAndWaitForRealCommitAfterOwnProcessLoss() async throws {
+    func testNavigationDelegateDoesNotHandleProcessTerminationWithBrowserToolsEnabledOrDisabled() throws {
+        for enabled in [false, true] {
+            let fixture = BrowserToolsBridgeFixture()
+            defer { fixture.cleanUp() }
+            fixture.flags.enabledFeatureFlags = enabled ? [.aiChatBrowserTools, .aiChatBrowserToolListOpenTabs] : [.aiChatBrowserToolListOpenTabs]
+            let sut = makeAttachmentSubmissionController()
+            defer { sut.detachBrowserTools() }
+            sut.browserToolsOwner = fixture.owner
+            sut.browserToolsService = fixture.service
+            sut.browserToolScopeFactory = { [weak fixture] in fixture?.makeScope() }
+            sut.configureContentHandler(with: fixture.script)
+            let navigationDelegate = try XCTUnwrap(fixture.script.webView?.navigationDelegate)
+            XCTAssertFalse(navigationDelegate.responds(to: #selector(WKNavigationDelegate.webViewWebContentProcessDidTerminate(_:))))
+        }
+    }
+
+    @MainActor
+    func testBrowserToolsCancelGrantedListingOnlyForOwnCommitAndDetach() async throws {
         let fixture = BrowserToolsBridgeFixture()
         defer { fixture.cleanUp() }
         let sut = makeAttachmentSubmissionController()
@@ -130,14 +147,24 @@ final class AIChatContextualWebViewControllerTests: XCTestCase {
         sut.configureContentHandler(with: fixture.script)
         let actualWebView = try XCTUnwrap(fixture.script.webView)
         fixture.script.webView = fixture.webView
-        fixture.service.permissions.setState(.allow, forToolNamed: "listOpenTabs")
-        sut.webViewWebContentProcessDidTerminate(WKWebView())
+        guard case .granted(let performAfterForeignCommit) = try await fixture.authorizeListing() else {
+            return XCTFail("Expected automatic authorization")
+        }
+        sut.webView(WKWebView(), didCommit: nil)
+        let retained = await performAfterForeignCommit { .success([:]) }
+        XCTAssertEqual(retained, .success([:]))
         let unaffected = await fixture.invoke()
         XCTAssertEqual(unaffected, fixture.success)
-        sut.webViewWebContentProcessDidTerminate(actualWebView)
-        let unavailable = await fixture.invoke()
-        XCTAssertEqual(unavailable, .failure(callId: "call", error: .unavailable))
+        guard case .granted(let performAfterOwnCommit) = try await fixture.authorizeListing() else {
+            return XCTFail("Expected automatic authorization")
+        }
         sut.webView(actualWebView, didCommit: nil)
+        let cancelled = await performAfterOwnCommit {
+            XCTFail("Replaced document must not execute")
+            return .success([:])
+        }
+        XCTAssertNil(cancelled)
+        XCTAssertEqual(fixture.listings, 1)
         let restored = await fixture.invoke()
         XCTAssertEqual(restored, fixture.success)
         sut.detachBrowserTools()

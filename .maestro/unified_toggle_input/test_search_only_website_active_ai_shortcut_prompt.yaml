@@ -105,15 +105,14 @@ name: test_search_only_website_active_ai_shortcut_prompt
 # The untouched URL must NOT be submitted as a prompt.
 - assertNotVisible: ".*privacy-test-pages.*"
 - tapOn: "Tab Switcher"
-# Each round trip adds a Duck.ai tab. The switcher scrolls to the selected one, which can hide the
-# web tab's title row (the tappable "Open ..." element) under the toolbar. Scroll back to the top.
+# Each round trip adds a Duck.ai tab. The switcher keeps the selected one at the bottom, which can
+# push the web tab's title row (the tappable "Open ..." element) under its top bar. Scroll to the top.
 - swipe:
     direction: DOWN
 - tapOn: "Open \"Privacy Test Pages - Home\" at privacy-test-pages.site"
-# The switcher's own card label also matches ".*Privacy Test Pages.*", so wait for the address bar.
+# The switcher's own card label also matches ".*Privacy Test Pages.*", so wait for it to close.
 - extendedWaitUntil:
-    visible:
-        id: "searchEntry"
+    notVisible: "Open \"Privacy Test Pages - Home\" at privacy-test-pages.site"
     timeout: 5000
 - assertVisible: ".*Privacy Test Pages.*"
 
@@ -137,15 +136,14 @@ name: test_search_only_website_active_ai_shortcut_prompt
     id: "AIChat.ContextualSheet"
 - assertVisible: ".*example.com.*"
 - tapOn: "Tab Switcher"
-# Each round trip adds a Duck.ai tab. The switcher scrolls to the selected one, which can hide the
-# web tab's title row (the tappable "Open ..." element) under the toolbar. Scroll back to the top.
+# Each round trip adds a Duck.ai tab. The switcher keeps the selected one at the bottom, which can
+# push the web tab's title row (the tappable "Open ..." element) under its top bar. Scroll to the top.
 - swipe:
     direction: DOWN
 - tapOn: "Open \"Privacy Test Pages - Home\" at privacy-test-pages.site"
-# The switcher's own card label also matches ".*Privacy Test Pages.*", so wait for the address bar.
+# The switcher's own card label also matches ".*Privacy Test Pages.*", so wait for it to close.
 - extendedWaitUntil:
-    visible:
-        id: "searchEntry"
+    notVisible: "Open \"Privacy Test Pages - Home\" at privacy-test-pages.site"
     timeout: 5000
 - assertVisible: ".*Privacy Test Pages.*"
 
@@ -167,15 +165,14 @@ name: test_search_only_website_active_ai_shortcut_prompt
 - assertNotVisible:
     id: "AIChat.ContextualSheet"
 - tapOn: "Tab Switcher"
-# Each round trip adds a Duck.ai tab. The switcher scrolls to the selected one, which can hide the
-# web tab's title row (the tappable "Open ..." element) under the toolbar. Scroll back to the top.
+# Each round trip adds a Duck.ai tab. The switcher keeps the selected one at the bottom, which can
+# push the web tab's title row (the tappable "Open ..." element) under its top bar. Scroll to the top.
 - swipe:
     direction: DOWN
 - tapOn: "Open \"Privacy Test Pages - Home\" at privacy-test-pages.site"
-# The switcher's own card label also matches ".*Privacy Test Pages.*", so wait for the address bar.
+# The switcher's own card label also matches ".*Privacy Test Pages.*", so wait for it to close.
 - extendedWaitUntil:
-    visible:
-        id: "searchEntry"
+    notVisible: "Open \"Privacy Test Pages - Home\" at privacy-test-pages.site"
     timeout: 5000
 - assertVisible: ".*Privacy Test Pages.*"
 

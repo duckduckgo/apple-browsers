@@ -521,6 +521,10 @@ struct BrokerProfileScanSubJob {
                     let now = Date()
                     let calculateDurationSinceLastStage = now.timeIntervalSince(attempt.lastStageDate) * 1000
                     let calculateDurationSinceStart = now.timeIntervalSince(attempt.startDate) * 1000
+                    let userSentEmail = (try? database.fetchOptOutHistoryEvents(brokerId: brokerId,
+                                                                                profileQueryId: profileQueryId,
+                                                                                extractedProfileId: extractedProfileId))?
+                        .contains { $0.type == .optOutByUserEmail } == true
                     pixelHandler.fire(.optOutFinish(dataBroker: attempt.dataBroker,
                                                     attemptId: attemptUUID,
                                                     duration: calculateDurationSinceLastStage,
@@ -531,7 +535,8 @@ struct BrokerProfileScanSubJob {
                                                      parent: brokerProfileQueryData.dataBroker.parent ?? "",
                                                      brokerType: brokerProfileQueryData.dataBroker.type,
                                                      vpnConnectionState: vpnConnectionState,
-                                                     vpnBypassStatus: vpnBypassStatus))
+                                                     vpnBypassStatus: vpnBypassStatus,
+                                                     emailSent: userSentEmail))
                 }
             }
         }

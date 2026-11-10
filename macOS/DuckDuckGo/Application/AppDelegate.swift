@@ -424,6 +424,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private lazy var onboardingNonBlockingExperiment = OnboardingNonBlockingExperiment(featureFlagger: featureFlagger)
     let userChurnService: UserChurnService
     let userChurnScheduler: UserChurnBackgroundActivityScheduler
+    let defaultBrowserWinBackConfirmationMonitor: DefaultBrowserConfirmationMonitor
     lazy var vpnUpsellPopoverPresenter = DefaultVPNUpsellPopoverPresenter(
         subscriptionManager: subscriptionManager,
         featureFlagger: featureFlagger,
@@ -1468,6 +1469,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         )
         userChurnScheduler = UserChurnBackgroundActivityScheduler(userChurnService: userChurnService)
 
+        defaultBrowserWinBackConfirmationMonitor = DefaultBrowserConfirmationMonitor(
+            source: .winBack,
+            store: DefaultBrowserConfirmationStore(source: .winBack, keyValueStore: keyValueStore),
+            defaultBrowserProvider: SystemDefaultBrowserProvider(),
+            dateProvider: DebugSimulatedDateStore.makeDateProvider(keyValueStore: keyValueStore)
+        )
+        defaultBrowserWinBackConfirmationMonitor.resume()
+
         bitwardenManager = BWManagerProvider.makeManager()
         passwordManagerCoordinator = PasswordManagerCoordinator(bitwardenManagement: bitwardenManager)
 
@@ -1716,6 +1725,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             activeRemoteMessageModel: activeRemoteMessageModel,
             defaultBrowserAndDockPromptService: defaultBrowserAndDockPromptService,
             userChurnService: userChurnService,
+            defaultBrowserWinBackConfirmationMonitor: defaultBrowserWinBackConfirmationMonitor,
             sessionRestoreCoordinator: sessionRestorePromptCoordinator,
             subscriptionPromoDelegate: subscriptionPromoDelegate,
             featureFlagger: featureFlagger,

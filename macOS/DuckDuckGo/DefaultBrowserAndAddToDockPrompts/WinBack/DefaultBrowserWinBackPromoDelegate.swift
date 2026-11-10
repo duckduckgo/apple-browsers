@@ -29,6 +29,7 @@ final class DefaultBrowserWinBackPromoDelegate: InternalPromoDelegate {
     private let actionPerformer: DefaultBrowserAndDockActionPerforming
     private let churnState: UserChurnStateProviding
     private let promptStore: DefaultBrowserAndDockPromptStorage
+    private let confirmationMonitor: DefaultBrowserConfirmationMonitoring
     private let isFeatureEnabled: () -> Bool
     private let uiHosting: () -> DefaultBrowserAndDockPromptUIHosting?
     private let modalFactory: ModalFactory
@@ -49,6 +50,7 @@ final class DefaultBrowserWinBackPromoDelegate: InternalPromoDelegate {
     init(actionPerformer: DefaultBrowserAndDockActionPerforming,
          churnState: UserChurnStateProviding,
          promptStore: DefaultBrowserAndDockPromptStorage,
+         confirmationMonitor: DefaultBrowserConfirmationMonitoring,
          isFeatureEnabled: @escaping () -> Bool,
          uiHosting: @escaping () -> DefaultBrowserAndDockPromptUIHosting?,
          modalFactory: @escaping ModalFactory,
@@ -56,6 +58,7 @@ final class DefaultBrowserWinBackPromoDelegate: InternalPromoDelegate {
         self.actionPerformer = actionPerformer
         self.churnState = churnState
         self.promptStore = promptStore
+        self.confirmationMonitor = confirmationMonitor
         self.isFeatureEnabled = isFeatureEnabled
         self.uiHosting = uiHosting
         self.modalFactory = modalFactory
@@ -116,6 +119,7 @@ final class DefaultBrowserWinBackPromoDelegate: InternalPromoDelegate {
         guard showContinuation != nil else { return }
         markInactiveUserModalSeen(isForceShow: isForceShow)
         actionPerformer.performPendingActions()
+        confirmationMonitor.start(clickDate: dateProvider())
         resume(with: .actioned())
     }
 

@@ -1,5 +1,7 @@
 // swift-tools-version: 5.10
 //
+//  Package.swift
+//
 //  Copyright © 2026 DuckDuckGo. All rights reserved.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
@@ -30,13 +32,22 @@ let package = Package(
         ),
     ],
     targets: [
-        .target(name: "ICSParser"),
+        .target(
+            name: "ICSParser",
+            swiftSettings: [
+                .enableExperimentalFeature("StrictConcurrency")
+            ]
+        ),
         .testTarget(
             name: "ICSParserTests",
             dependencies: ["ICSParser"],
             resources: [
                 .copy("Fixtures")
+            ],
+            swiftSettings: [
+                .enableExperimentalFeature("StrictConcurrency")
             ]
         ),
-    ]
+    ],
+    swiftLanguageVersions: [.v5]
 )

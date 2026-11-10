@@ -289,8 +289,8 @@ final class DataBrokerRunCustomJSONViewModel: ObservableObject {
         loadPresets()
     }
 
-    private func withOptionalTimeout<T>(_ timeout: TimeInterval?,
-                                        do operation: @escaping () async throws -> T) async throws -> T {
+    private func withOptionalTimeout<T: Sendable>(_ timeout: TimeInterval?,
+                                                  do operation: @escaping @Sendable () async throws -> T) async throws -> T {
         guard let timeout else {
             return try await operation()
         }

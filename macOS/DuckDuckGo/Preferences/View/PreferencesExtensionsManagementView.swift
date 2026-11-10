@@ -501,10 +501,11 @@ extension Preferences {
                     remoteIcon = try? await imageLoader.loadImage(from: iconURL)
                 }
 
-                VStack(alignment: .leading, spacing: 4) {
+                VStack(alignment: .leading, spacing: 6) {
                     Text(item.name)
                         .font(.system(size: 13, weight: .semibold))
                         .foregroundColor(Color(designSystemColor: .textPrimary, palette: palette))
+                        .padding(.top, -2)
 
                     Button(action: onPublisher) {
                         Text(item.publisher)

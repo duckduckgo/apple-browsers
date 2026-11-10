@@ -230,7 +230,7 @@
     "m_ios_dbp_optout_process_submit-success": {
         "description": "Fired when an opt-out submission succeeds.",
         "owners": ["quanganhdo", "THISISDINOSAUR"],
-        "triggers": ["other"],
+        "triggers": ["feature_lifecycle", "user_interaction"],
         "suffixes": [],
         "parameters": [
             "appVersion",
@@ -260,6 +260,11 @@
                 "description": "VPN bypass status when the submission succeeded",
                 "type": "string",
                 "enum": ["on", "off", "unsupported", "unknown"]
+            },
+            {
+                "key": "email_sent",
+                "description": "Present and true when the user sent the removal request by email from the dashboard instead of our automated submission",
+                "type": "boolean"
             }
         ]
     },

@@ -143,7 +143,7 @@ extension ScanWideEventRecorder.Metadata {
     ///   falling back to 1.
     ///
     /// attemptType mirrors the confirmOptOutScan branch of OperationPreferredDateCalculator.dateForScanOperation:
-    /// - confirmOptOutScan if any opt-out job's most recent event is .optOutRequested.
+    /// - confirmOptOutScan if any opt-out job's most recent event is .optOutRequested or .optOutByUserEmail.
     /// - maintenanceScan if there has been a prior scan success.
     /// - newScan otherwise.
     /// - Parameters:
@@ -165,7 +165,7 @@ extension ScanWideEventRecorder.Metadata {
         let intervalStart = attemptsInCurrentCycle.first?.date ?? referenceDate
 
         let latestOptOutEvents = optOutsHistoryEvents.compactMap { $0.last }
-        let hasPendingOptOutConfirmation = latestOptOutEvents.contains { $0.type == .optOutRequested }
+        let hasPendingOptOutConfirmation = latestOptOutEvents.contains { $0.isOptOutRequestEvent() }
 
         let attemptType: ScanWideEventData.AttemptType
         if hasPendingOptOutConfirmation {

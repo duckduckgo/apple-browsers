@@ -697,7 +697,12 @@ extension DataBrokerProtectionIOSManager: DBPIOSInterface.DatabaseDelegate {
     }
 
     public func confirmOptOutEmailSent(recordIds: [Int64]) throws {
-        Logger.dataBrokerProtection.log("User sent an opt-out email for \(recordIds.count, privacy: .public) records")
+        let resources = try vaultResources()
+        try UserSentOptOutEmailRecorder(database: resources.database,
+                                        pixelHandler: resources.jobDependencies.pixelHandler,
+                                        featureFlagger: featureFlagger,
+                                        vpnBypassService: resources.jobDependencies.vpnBypassService)
+            .record(recordIds: recordIds)
     }
 }
 

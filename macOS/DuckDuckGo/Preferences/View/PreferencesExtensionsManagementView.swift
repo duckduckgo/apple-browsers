@@ -431,12 +431,12 @@ extension Preferences {
         private func detailRow(title: String, details: String) -> some View {
             VStack(alignment: .leading, spacing: 4) {
                 Text(title)
-                    .font(.system(size: Const.titleFontSize))
+                    .font(.system(size: Const.titleFontSize, weight: .regular))
                     .foregroundColor(Color(designSystemColor: .textPrimary, palette: palette))
                     .lineLimit(1)
                     .truncationMode(.tail)
                 Text(details)
-                    .font(.system(size: Const.detailsFontSize))
+                    .font(.system(size: Const.detailsFontSize, weight: .regular))
                     .foregroundColor(Color(designSystemColor: .textSecondary, palette: palette))
                     .fixedSize(horizontal: false, vertical: true)
             }

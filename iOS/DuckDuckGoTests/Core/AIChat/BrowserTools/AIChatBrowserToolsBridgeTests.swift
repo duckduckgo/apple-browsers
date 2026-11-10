@@ -29,10 +29,220 @@ import XCTest
 
 @MainActor
 final class AIChatBrowserToolsBridgeTests: XCTestCase {
-    private func makeFixture(fire: Bool = false) -> BrowserToolsBridgeFixture {
-        let fixture = BrowserToolsBridgeFixture(fire: fire)
+    private func makeFixture(fire: Bool = false, enabledFlags: [FeatureFlag] = [.aiChatBrowserTools, .aiChatBrowserToolListOpenTabs]) -> BrowserToolsBridgeFixture {
+        let fixture = BrowserToolsBridgeFixture(fire: fire, enabledFlags: enabledFlags)
         addTeardownBlock { @MainActor in fixture.cleanUp() }
         return fixture
+    }
+
+    private func publish(_ flags: [FeatureFlag], in fixture: BrowserToolsBridgeFixture) async {
+        fixture.flags.enabledFeatureFlags = flags
+        fixture.flags.triggerUpdate()
+        await drainBridge()
+    }
+
+    private func drainBridge() async {
+        let drained = expectation(description: "Feature update and broker delivery drained")
+        Task { @MainActor in
+            DispatchQueue.main.async { drained.fulfill() }
+        }
+        await fulfillment(of: [drained], timeout: 2)
+    }
+
+    private func assertEnabledConfiguration(_ payload: [String: Any]?, file: StaticString = #filePath, line: UInt = #line) throws {
+        let payload = try XCTUnwrap(payload, file: file, line: line)
+        let configuration = try XCTUnwrap(payload["clientTools"] as? [String: Any], file: file, line: line)
+        let data = try JSONSerialization.data(withJSONObject: configuration)
+        XCTAssertEqual(try JSONDecoder().decode(ClientToolsConfiguration.self, from: data).capabilities,
+                       [.listOpenTabs], file: file, line: line)
+    }
+
+    func testConfigurationUpdatesDeduplicateEffectiveFlagsAndEncodeExplicitNull() async throws {
+        let fixture = makeFixture()
+        _ = fixture.script
+        await publish([.aiChatBrowserTools, .aiChatBrowserToolListOpenTabs], in: fixture)
+        XCTAssertTrue(fixture.webView.configurationPayloads.isEmpty)
+        await publish([.aiChatBrowserToolListOpenTabs], in: fixture)
+        XCTAssertEqual(fixture.webView.configurationPayloads.count, 1)
+        XCTAssertTrue(fixture.webView.configurationPayloads.last?["clientTools"] is NSNull)
+        await publish([], in: fixture)
+        XCTAssertEqual(fixture.webView.configurationPayloads.count, 1)
+        await publish([.aiChatBrowserTools, .aiChatBrowserToolListOpenTabs], in: fixture)
+        XCTAssertEqual(fixture.webView.configurationPayloads.count, 2)
+        try assertEnabledConfiguration(fixture.webView.configurationPayloads.last)
+        await publish([.aiChatBrowserTools], in: fixture)
+        XCTAssertEqual(fixture.webView.configurationPayloads.count, 3)
+        XCTAssertTrue(fixture.webView.configurationPayloads.last?["clientTools"] is NSNull)
+        await publish([.aiChatBrowserTools], in: fixture)
+        XCTAssertEqual(fixture.webView.configurationPayloads.count, 3)
+    }
+
+    func testInitiallyDisabledToolCanEnableForFullAndContextualChat() async throws {
+        for contextual in [false, true] {
+            let fixture = makeFixture(enabledFlags: [.aiChatBrowserTools])
+            fixture.script.setDisplayMode(contextual ? .contextual : .fullTab)
+            await publish([.aiChatBrowserTools], in: fixture)
+            XCTAssertTrue(fixture.webView.configurationPayloads.isEmpty)
+            await publish([.aiChatBrowserTools, .aiChatBrowserToolListOpenTabs], in: fixture)
+            XCTAssertEqual(fixture.webView.configurationPayloads.count, 1)
+            try assertEnabledConfiguration(fixture.webView.configurationPayloads.last)
+        }
+    }
+
+    func testConfigurationUpdatesRejectUntrustedMissingAndHomepageDocuments() async {
+        for url in [nil, URL(string: "https://untrusted.example/chat"), URL(string: "https://duckduckgo.com/")] {
+            let fixture = makeFixture()
+            _ = fixture.script
+            fixture.webView.documentURL = url
+            await publish([], in: fixture)
+            XCTAssertTrue(fixture.webView.configurationPayloads.isEmpty)
+            XCTAssertFalse(fixture.script.pushClientToolsChanged(ClientToolsChangedData(clientTools: nil)))
+        }
+    }
+
+    func testConfigurationUpdatesHonorCustomDocumentPolicy() async {
+        let fixture = makeFixture()
+        let settings = AIChatDebugSettings(userDefault: fixture.defaults)
+        settings.customURL = "https://dev.example/start"
+        settings.messagePolicyHostname = "dev.example:8443"
+        let source = fixture.makeScript()
+        fixture.webView.documentURL = URL(string: "https://dev.example:8443/chat")
+        await publish([], in: fixture)
+        XCTAssertEqual(fixture.webView.configurationPayloads.count, 1)
+        XCTAssertTrue(fixture.webView.configurationPayloads.last?["clientTools"] is NSNull)
+        fixture.webView.documentURL = URL(string: "https://dev.example:9443/chat")
+        await publish([.aiChatBrowserTools, .aiChatBrowserToolListOpenTabs], in: fixture)
+        XCTAssertEqual(fixture.webView.configurationPayloads.count, 1)
+        XCTAssertFalse(source.pushClientToolsChanged(ClientToolsChangedData(clientTools: nil)))
+    }
+
+    func testConfigurationUpdatesRejectFireOwnerRemovedOwnerAndProcessLoss() async {
+        let fire = makeFixture(fire: true)
+        _ = fire.script
+        await publish([], in: fire)
+        XCTAssertTrue(fire.webView.configurationPayloads.isEmpty)
+        let removed = makeFixture()
+        _ = removed.script
+        removed.ownerPresent = false
+        await publish([], in: removed)
+        XCTAssertTrue(removed.webView.configurationPayloads.isEmpty)
+        let terminated = makeFixture()
+        terminated.script.browserToolsDocumentProcessDidTerminate()
+        await publish([], in: terminated)
+        XCTAssertTrue(terminated.webView.configurationPayloads.isEmpty)
+        terminated.script.browserToolsDocumentDidCommit()
+        await publish([.aiChatBrowserTools, .aiChatBrowserToolListOpenTabs], in: terminated)
+        XCTAssertEqual(terminated.webView.configurationPayloads.count, 1)
+    }
+
+    func testConfigurationUpdatesRejectCleanedUpAndReleasedSourcesButReachReplacement() async throws {
+        let fixture = makeFixture()
+        let stale = fixture.script
+        stale.cleanUpForReplacement()
+        stale.webView = fixture.webView
+        stale.broker = fixture.broker
+        var released: AIChatUserScript? = fixture.makeScript()
+        weak var weakSource = released
+        released = nil
+        XCTAssertNil(weakSource)
+        await publish([], in: fixture)
+        XCTAssertTrue(fixture.webView.configurationPayloads.isEmpty)
+        XCTAssertFalse(stale.pushClientToolsChanged(ClientToolsChangedData(clientTools: nil)))
+        let replacement = fixture.makeScript()
+        await publish([.aiChatBrowserTools, .aiChatBrowserToolListOpenTabs], in: fixture)
+        XCTAssertEqual(fixture.webView.configurationPayloads.count, 1)
+        try assertEnabledConfiguration(fixture.webView.configurationPayloads.last)
+        replacement.detachBrowserTools()
+        replacement.browserToolsService = fixture.service
+        XCTAssertFalse(replacement.pushClientToolsChanged(ClientToolsChangedData(clientTools: nil)))
+        await publish([], in: fixture)
+        XCTAssertEqual(fixture.webView.configurationPayloads.count, 1)
+    }
+
+    func testConfigurationRevocationWaitsForFinalOverlappingClearingToken() async {
+        let fixture = makeFixture()
+        _ = fixture.script
+        let first = fixture.service.beginClearing(.owner(tabID: fixture.owner.uid))
+        let second = fixture.service.beginClearing(.chats(ids: ["chat"]))
+        await publish([], in: fixture)
+        XCTAssertTrue(fixture.webView.configurationPayloads.isEmpty)
+        fixture.service.endClearing(first)
+        await drainBridge()
+        XCTAssertTrue(fixture.webView.configurationPayloads.isEmpty)
+        fixture.service.didClear(second)
+        fixture.service.endClearing(second)
+        await drainBridge()
+        XCTAssertEqual(fixture.webView.configurationPayloads.count, 1)
+        XCTAssertTrue(fixture.webView.configurationPayloads.last?["clientTools"] is NSNull)
+        await publish([], in: fixture)
+        XCTAssertEqual(fixture.webView.configurationPayloads.count, 1)
+    }
+
+    func testConfigurationRefreshCoalescesLatestValueDuringClearing() async throws {
+        let fixture = makeFixture()
+        _ = fixture.script
+        let token = fixture.service.beginClearing(.all)
+        await publish([], in: fixture)
+        await publish([.aiChatBrowserTools, .aiChatBrowserToolListOpenTabs], in: fixture)
+        await publish([.aiChatBrowserTools], in: fixture)
+        await publish([.aiChatBrowserTools, .aiChatBrowserToolListOpenTabs], in: fixture)
+        XCTAssertTrue(fixture.webView.configurationPayloads.isEmpty)
+        fixture.service.endClearing(token)
+        await drainBridge()
+        XCTAssertEqual(fixture.webView.configurationPayloads.count, 1)
+        try assertEnabledConfiguration(fixture.webView.configurationPayloads.last)
+    }
+
+    func testConfigurationPushRequiresBrokerAndSourceBindingEvenWhenDisabled() async {
+        let fixture = makeFixture()
+        let source = fixture.script
+        source.broker = nil
+        await publish([], in: fixture)
+        XCTAssertFalse(source.pushClientToolsChanged(ClientToolsChangedData(clientTools: nil)))
+        XCTAssertTrue(fixture.webView.configurationPayloads.isEmpty)
+        source.broker = fixture.broker
+        XCTAssertTrue(source.pushClientToolsChanged(ClientToolsChangedData(clientTools: nil)))
+        await drainBridge()
+        XCTAssertTrue(fixture.webView.configurationPayloads.last?["clientTools"] is NSNull)
+        let foreign = AIChatUserScript(handler: fixture.handler, debugSettings: AIChatDebugSettings(userDefault: fixture.defaults))
+        foreign.webView = fixture.webView
+        foreign.broker = fixture.broker
+        foreign.browserToolsService = fixture.service
+        XCTAssertFalse(foreign.pushClientToolsChanged(ClientToolsChangedData(clientTools: nil)))
+    }
+
+    func testPendingConfigurationRechecksOwnerAndDocumentAfterClearing() async {
+        for removeOwner in [false, true] {
+            let fixture = makeFixture()
+            _ = fixture.script
+            let token = fixture.service.beginClearing(.all)
+            await publish([], in: fixture)
+            if removeOwner {
+                fixture.ownerPresent = false
+            } else {
+                fixture.webView.documentURL = URL(string: "https://untrusted.example/chat")
+            }
+            fixture.service.endClearing(token)
+            await drainBridge()
+            XCTAssertTrue(fixture.webView.configurationPayloads.isEmpty)
+        }
+    }
+
+    func testPendingConfigurationIsDiscardedOnCommitProcessLossAndDetach() async {
+        for transition in ["commit", "processLoss", "detach"] {
+            let fixture = makeFixture()
+            _ = fixture.script
+            let token = fixture.service.beginClearing(.all)
+            await publish([], in: fixture)
+            switch transition {
+            case "commit": fixture.script.browserToolsDocumentDidCommit()
+            case "processLoss": fixture.script.browserToolsDocumentProcessDidTerminate()
+            default: fixture.script.detachBrowserTools()
+            }
+            fixture.service.endClearing(token)
+            await drainBridge()
+            XCTAssertTrue(fixture.webView.configurationPayloads.isEmpty, transition)
+        }
     }
 
     func testHandlerParsesBeforeMissingSourceAndPreservesInvalidIdentifierEcho() async {
@@ -54,6 +264,8 @@ final class AIChatBrowserToolsBridgeTests: XCTestCase {
         let routed = try await route([:], message)
         let response = try XCTUnwrap(routed as? AIChatNativeConfigValues)
         XCTAssertNil(response.clientTools)
+        let encoded = try XCTUnwrap(JSONSerialization.jsonObject(with: JSONEncoder().encode(response)) as? [String: Any])
+        XCTAssertEqual(encoded["supportsBrowserTools"] as? Bool, false)
         let encoder = JSONEncoder()
         encoder.outputFormatting = .sortedKeys
         XCTAssertEqual(try encoder.encode(response), try encoder.encode(original))
@@ -423,10 +635,10 @@ final class BrowserToolsBridgeFixture {
     var listings = 0
     lazy var script = makeScript()
 
-    init(fire: Bool = false) {
+    init(fire: Bool = false, enabledFlags: [FeatureFlag] = [.aiChatBrowserTools, .aiChatBrowserToolListOpenTabs]) {
         let suiteName = UUID().uuidString
         let defaults = UserDefaults(suiteName: suiteName)!
-        let flags = MockFeatureFlagger(enabledFeatureFlags: [.aiChatBrowserTools, .aiChatBrowserToolListOpenTabs])
+        let flags = MockFeatureFlagger(enabledFeatureFlags: enabledFlags)
         self.suiteName = suiteName
         self.defaults = defaults
         self.flags = flags
@@ -486,6 +698,7 @@ final class BrowserToolsBridgeWebView: WKWebView {
     var documentURL: URL? = URL.duckAi.withChatID("chat")
     override var url: URL? { documentURL }
     var permissionPrompts: [[String: Any]] = []
+    var configurationPayloads: [[String: Any]] = []
     var metadataPayloads: [[String: Any]] = []
     var onPermission: (([String: Any]) -> Void)?
     var onTabChanged: (([String: Any]) -> Void)?
@@ -495,7 +708,9 @@ final class BrowserToolsBridgeWebView: WKWebView {
         context.evaluateScript("""
             var capturedPermission = null;
             var capturedMetadata = null;
+            var capturedConfiguration = null;
             var navigator = { duckduckgo: { messageHandlers: {
+                clientToolsChanged: function(event) { capturedConfiguration = event.params; },
                 clientToolPermissionRequested: function(event) { capturedPermission = event.params; },
                 aiChatTabChanged: function(event) { capturedMetadata = event.params; }
             } } };
@@ -509,6 +724,9 @@ final class BrowserToolsBridgeWebView: WKWebView {
         if let params = context.objectForKeyedSubscript("capturedMetadata")?.toDictionary() as? [String: Any] {
             metadataPayloads.append(params)
             onTabChanged?(params)
+        }
+        if let params = context.objectForKeyedSubscript("capturedConfiguration")?.toDictionary() as? [String: Any] {
+            configurationPayloads.append(params)
         }
         completionHandler?(nil, nil)
     }

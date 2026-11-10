@@ -806,6 +806,13 @@ extension AIChatUserScript: ClientToolPermissionPushing {
     }
 
     @MainActor
+    func pushClientToolsChanged(_ data: ClientToolsChangedData) -> Bool {
+        guard browserToolsService?.canPushConfiguration(from: self) == true, let broker, let webView else { return false }
+        broker.push(method: AIChatUserScriptMessages.clientToolsChanged.rawValue, params: data, for: self, into: webView)
+        return true
+    }
+
+    @MainActor
     func pushBrowserToolsTabChanged(_ data: AIChatTabChangedData) {
         guard handler.displayMode == .contextual, browserToolsService?.canPushMetadata(from: self) == true, browserToolsDocumentURL != nil, let broker, let webView else { return }
         let metadata = AIChatTabChangedData(tabId: data.tabId, url: data.url, isAttachable: data.url.flatMap(URL.init(string:)).map {

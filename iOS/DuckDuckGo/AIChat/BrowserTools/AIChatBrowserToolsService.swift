@@ -18,6 +18,7 @@
 //
 
 import AIChat
+import Combine
 import FeatureFlags_iOS
 import Foundation
 import Persistence
@@ -25,6 +26,8 @@ import PrivacyConfig
 
 @MainActor
 final class AIChatBrowserToolsService {
+    private var lastClientToolsConfiguration: ClientToolsConfiguration?
+    private var featureFlagChanges: AnyCancellable?
     private var bindings: [ObjectIdentifier: AIChatBrowserToolsBinding] = [:]
     private var clearing: [UUID: AIChatBrowserToolsClearing] = [:]
     private let injectedScopeProvider: BrowserToolScopeProvider?
@@ -45,6 +48,12 @@ final class AIChatBrowserToolsService {
         let permissions = BrowserToolPermissionStore(storage: permissionStorage)
         self.permissions = permissions
         clientToolPermissions = ClientToolPermissionCoordinator(permissions: permissions)
+        lastClientToolsConfiguration = clientToolsConfiguration
+        featureFlagChanges = featureFlagger.updatesPublisher.sink { [weak self] in
+            Task { @MainActor in
+                self?.pushClientToolsChangedIfNeeded()
+            }
+        }
     }
 
     private func makeTools() -> [any BrowserTool] {
@@ -74,6 +83,31 @@ extension AIChatBrowserToolsService {
         guard admittedScope(for: source) != nil else { return nil }
         return clientToolsConfiguration
     }
+
+    func canPushConfiguration(from source: AIChatUserScript) -> Bool {
+        configurationScope(for: source) != nil
+    }
+
+    private func pushClientToolsChangedIfNeeded() {
+        let configuration = clientToolsConfiguration
+        guard configuration != lastClientToolsConfiguration else { return }
+        lastClientToolsConfiguration = configuration
+        for binding in bindings.values {
+            binding.pendingConfigurationRefresh = true
+            pushPendingConfiguration(for: binding)
+        }
+    }
+
+    private func pushPendingConfiguration(for binding: AIChatBrowserToolsBinding) {
+        guard binding.pendingConfigurationRefresh, clearing.isEmpty else { return }
+        guard let source = binding.source, canPushConfiguration(from: source) else {
+            binding.pendingConfigurationRefresh = false
+            return
+        }
+        if source.pushClientToolsChanged(ClientToolsChangedData(clientTools: clientToolsConfiguration)) {
+            binding.pendingConfigurationRefresh = false
+        }
+    }
 }
 
 // MARK: - Source lifecycle
@@ -86,6 +120,7 @@ extension AIChatBrowserToolsService {
 
     func detach(_ source: AIChatUserScript) {
         guard let binding = bindings.removeValue(forKey: ObjectIdentifier(source)), binding.source === source else { return }
+        binding.pendingConfigurationRefresh = false
         revoke(binding, document: .awaitingCommit)
         source.browserToolsService = nil
         clientToolPermissions.cancelRequests(from: source)
@@ -99,12 +134,14 @@ extension AIChatBrowserToolsService {
 
     func documentDidCommit(_ source: AIChatUserScript) {
         guard let binding = binding(for: source) else { return }
+        binding.pendingConfigurationRefresh = false
         revoke(binding, document: .ready(nil))
         clientToolPermissions.cancelRequests(from: source)
     }
 
     func documentProcessDidTerminate(_ source: AIChatUserScript) {
         guard let binding = binding(for: source) else { return }
+        binding.pendingConfigurationRefresh = false
         revoke(binding, document: .awaitingCommit)
         clientToolPermissions.cancelRequests(from: source)
     }
@@ -173,6 +210,7 @@ extension AIChatBrowserToolsService {
 
     func endClearing(_ token: AIChatBrowserToolsClearingToken) {
         clearing.removeValue(forKey: token.id)
+        for binding in bindings.values { pushPendingConfiguration(for: binding) }
     }
 }
 
@@ -216,7 +254,12 @@ private extension AIChatBrowserToolsService {
     }
 
     func admittedScope(for source: AIChatUserScript) -> BrowserToolScope? {
-        guard isEnabled, let binding = binding(for: source), !binding.isBurner,
+        guard isEnabled else { return nil }
+        return configurationScope(for: source)
+    }
+
+    func configurationScope(for source: AIChatUserScript) -> BrowserToolScope? {
+        guard let binding = binding(for: source), !binding.isBurner,
               clearing.isEmpty,
               source.browserToolsDocumentURL != nil,
               case .ready(let existing) = binding.document else { return nil }
@@ -281,6 +324,7 @@ private final class AIChatBrowserToolsBinding {
     let ownerTabID: String
     let isBurner: Bool
     var document: Document
+    var pendingConfigurationRefresh = false
 
     init(source: AIChatUserScript, owner: Tab, scope: BrowserToolScope?, makeScope: @escaping @MainActor () -> BrowserToolScope?) {
         self.source = source
@@ -318,4 +362,17 @@ private struct AIChatBrowserToolsClearingSnapshot {
 private struct AIChatBrowserToolsClearing {
     let target: AIChatBrowserToolsClearingTarget
     let snapshots: [AIChatBrowserToolsClearingSnapshot]
+}
+
+struct ClientToolsChangedData: Encodable, Equatable {
+    let clientTools: ClientToolsConfiguration?
+
+    private enum CodingKeys: String, CodingKey {
+        case clientTools
+    }
+
+    func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encode(clientTools, forKey: .clientTools)
+    }
 }

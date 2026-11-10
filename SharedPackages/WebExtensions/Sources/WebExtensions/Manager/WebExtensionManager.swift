@@ -183,7 +183,6 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
     public let cpmDiagnosticsRecorder: CPMMessagingDiagnosticsRecorder?
     /// Captured at manager creation so one startup cannot mix the enabled and disabled upgrade paths.
     public let isCPMUpgradeBeforeLoadEnabled: Bool
-    /// Independent kill switch for retrying a failed background load in its current context.
     /// Independent kill switch for restarting the context when a failed background view is still retained.
     private let isCPMBackgroundLoadRestartEnabled: @MainActor () -> Bool
     /// Platform lifecycle state must remain available when diagnostics are disabled.
@@ -1153,9 +1152,8 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
             let currentView = self.backgroundWebView(in: context)
             // Keep the original failure's view across suspension. A new view is WebKit's own recovery,
             // even if the replacement is still loading; do not restart it or join its load.
-            guard currentView == nil || currentView === attempt.failedView else { return }
             // Without a retained view WebKit recreates the background on the next navigation by itself.
-            guard currentView != nil else { return }
+            guard let currentView, currentView === attempt.failedView else { return }
             // WebKit cannot replace a retained failed view with a background-only retry.
             await self.restartEmbeddedExtensionAfterRetainedBackgroundLoadFailure(context)
         }

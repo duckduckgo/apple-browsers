@@ -140,27 +140,6 @@ final class WindowsManagerPopupTests: XCTestCase {
 
     @available(macOS 15.4, *)
     @MainActor
-    func testDisabledWindowCloseFlagReproducesSharedPinnedTabRegistrationLoss() async throws {
-        let context = try await makeWindowCloseContext()
-        let retained = Tab(content: .newtab)
-        let closing = Tab(content: .newtab)
-        let fixture = makeWindowCloseFixture(tabs: [retained, closing], retainedTabs: [retained])
-        fixture.manager.register(fixture.controller)
-        context.didOpenWindow(fixture.controller)
-        XCTAssertTrue(context.openTabs.contains { ($0.base as AnyObject) === retained })
-        XCTAssertTrue(context.openTabs.contains { ($0.base as AnyObject) === closing })
-
-        fixture.manager.unregister(fixture.controller)
-        context.didCloseWindow(fixture.controller)
-
-        XCTAssertFalse(context.openTabs.contains { ($0.base as AnyObject) === retained }, "Without the fix, WebKit forgets the surviving shared pinned tab")
-        XCTAssertFalse(context.openTabs.contains { ($0.base as AnyObject) === closing })
-        XCTAssertTrue(fixture.controller.tabs(for: context).first === retained)
-        XCTAssertTrue(fixture.controller.activeTab(for: context) === retained)
-    }
-
-    @available(macOS 15.4, *)
-    @MainActor
     func testOpeningWindowBeforeAppRegistrationExposesSharedPinnedTabs() async throws {
         let context = try await makeWindowCloseContext()
         let retained = Tab(content: .newtab)

@@ -56,40 +56,11 @@ jobs:
     - name: Select Xcode
       uses: ./.github/actions/select-xcode-version
 
-    - name: Check if SPM dependencies are pinned to versions
-      id: spm-cache
-      run: |
-        has_only_tags=$(jq '[.pins[].state | has("version")] | all' DuckDuckGo-iOS.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/Package.resolved)
-        echo "has-only-tags=$has_only_tags" >> "$GITHUB_OUTPUT"
-
-    - name: Restore SPM cache
-      if: steps.spm-cache.outputs.has-only-tags == 'true'
-      uses: actions/cache/restore@v5
-      with:
-        path: iOS/DerivedData/SourcePackages
-        key: ${{ runner.os }}-ios-${{ hashFiles('iOS/DuckDuckGo-iOS.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/Package.resolved') }}
-
     - name: Select iOS Simulator
       id: select-simulator
       uses: ./.github/actions/select-ios-simulator
       with:
         preferred-versions: "27.0"
-
-    - name: Start the simulator before building
-      continue-on-error: true
-      env:
-        DESTINATION: ${{ steps.select-simulator.outputs.destination }}
-      run: |
-        name="${DESTINATION#*,name=}"
-        name="${name%,OS=*}"
-        version="${DESTINATION##*,OS=}"
-        runtime="com.apple.CoreSimulator.SimRuntime.iOS-${version//./-}"
-        device=$(xcrun simctl list devices available --json | jq -r --arg name "$name" --arg runtime "$runtime" '
-          [.devices[$runtime][]? | select(.name == $name and .state == "Shutdown")][0].udid // empty
-        ')
-        if [[ -n "$device" ]]; then
-          xcrun simctl boot "$device"
-        fi
 
     - name: Record simulator runtime diagnostics
       continue-on-error: true
@@ -114,33 +85,19 @@ jobs:
         set -o pipefail && xcodebuild test \
           -scheme "iOS UI Tests" \
           -destination "${{ steps.select-simulator.outputs.destination }}" \
-          -parallel-testing-enabled NO \
           -derivedDataPath "DerivedData" \
           -resultBundlePath "DerivedData/Logs/Test/iOS-UI-Tests.xcresult" \
           -skipPackagePluginValidation \
           -skipMacroValidation \
           -test-iterations 2 \
           -retry-tests-on-failure \
-          -test-repetition-relaunch-enabled NO \
+          -test-repetition-relaunch-enabled YES \
           OTHER_CODE_SIGN_FLAGS=--timestamp=none \
           2>&1 | tee ui-tests-xcodebuild.log \
           | xcbeautify
 
-    - name: Check UI test diagnostics
-      id: ui-diagnostics
-      if: always()
-      run: |
-        log=ui-tests-xcodebuild.log
-        if [ ! -f "$log" ]; then
-          exit 0
-        fi
-        grep -F 'elapsed -- Testing started completed.' "$log" || true
-        if grep -Eq 'Test [Cc]ase .* failed( on | \()|App animations complete notification not received' "$log"; then
-          echo 'retain=true' >> "$GITHUB_OUTPUT"
-        fi
-
     - name: Upload UI test diagnostics
-      if: failure() || cancelled() || steps.ui-diagnostics.outputs.retain == 'true'
+      if: failure() || cancelled()
       uses: ./.github/actions/upload-artifact-with-retry
       with:
         name: ios-ui-test-diagnostics

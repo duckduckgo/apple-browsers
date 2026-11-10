@@ -20,18 +20,6 @@ import XCTest
 
 public extension XCUIElement {
 
-    /// Swipes up to reveal a row in a list, then waits for it to become tappable.
-    func revealRow(_ row: XCUIElement, timeout: TimeInterval = UITestTimeouts.navigation) -> Bool {
-        for _ in 0..<5 {
-            if row.exists && row.isHittable {
-                return true
-            }
-            swipeUp()
-        }
-        let hittable = NSPredicate { _, _ in row.exists && row.isHittable }
-        return row.wait(for: hittable, timeout: timeout)
-    }
-
     /// Waits for a property of the element to contain a substring.
     @discardableResult
     func wait(for keyPath: PartialKeyPath<XCUIElement>,

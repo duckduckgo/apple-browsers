@@ -100,7 +100,7 @@ final class KeyboardSettingsUITests: XCTestCase {
         XCTAssertTrue(menu.waitForExistence(timeout: timeout))
         for identifier in ["UnifiedToggleInput.Button.Dismiss", "Browser.OmniBar.Button.Dismiss"] {
             let dismiss = app.buttons[identifier]
-            if dismiss.exists && dismiss.isHittable {
+            if dismiss.isHittable {
                 dismiss.tap()
             }
         }
@@ -109,15 +109,21 @@ final class KeyboardSettingsUITests: XCTestCase {
         XCTAssertTrue(settings.waitForExistence(timeout: timeout))
         settings.tap()
         XCTAssertTrue(app.navigationBars["Settings"].waitForExistence(timeout: timeout))
-        let general = app.cells.containing(.staticText, identifier: "General").firstMatch
-        XCTAssertTrue(app.revealRow(general, timeout: timeout))
+        let general = app.staticTexts["General"]
+        for _ in 0..<5 where !general.isHittable {
+            app.swipeUp()
+        }
+        XCTAssertTrue(general.waitForExistence(timeout: timeout))
         general.tap()
         openKeyboardFromGeneral()
     }
 
     private func openKeyboardFromGeneral() {
-        let keyboard = app.cells.containing(.staticText, identifier: "Keyboard").firstMatch
-        XCTAssertTrue(app.revealRow(keyboard, timeout: timeout))
+        let keyboard = app.staticTexts["Keyboard"]
+        for _ in 0..<5 where !keyboard.isHittable {
+            app.swipeUp()
+        }
+        XCTAssertTrue(keyboard.waitForExistence(timeout: timeout))
         keyboard.tap()
         XCTAssertTrue(app.navigationBars["Keyboard"].waitForExistence(timeout: timeout))
     }
@@ -128,12 +134,8 @@ final class KeyboardSettingsUITests: XCTestCase {
 
     private func assertSwitch(_ label: String, isOn: Bool, file: StaticString = #filePath, line: UInt = #line) {
         let toggle = keyboardSwitch(label)
-        let expectedValue = isOn ? "1" : "0"
-        if toggle.exists, toggle.value as? String == expectedValue {
-            return
-        }
         XCTAssertTrue(toggle.waitForExistence(timeout: timeout), file: file, line: line)
-        XCTAssertEqual(toggle.value as? String, expectedValue, file: file, line: line)
+        XCTAssertEqual(toggle.value as? String, isOn ? "1" : "0", file: file, line: line)
     }
 
     private func attachScreenshot(named name: String) {

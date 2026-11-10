@@ -35,6 +35,7 @@ final class AppLaunchUITests: XCTestCase {
             "-AppleLocale", "en_US",
         ]
         app.launchEnvironment = ["UITEST_MODE": "1"]
+        app.launch()
     }
 
     override func tearDownWithError() throws {
@@ -43,7 +44,6 @@ final class AppLaunchUITests: XCTestCase {
     }
 
     func testAppLaunchesIntoBrowser() {
-        app.launch()
         let searchEntry = app.descendants(matching: .any)["searchEntry"]
 
         XCTAssertTrue(
@@ -53,6 +53,7 @@ final class AppLaunchUITests: XCTestCase {
     }
 
     func testSlideToDeleteRequiresCompletedDrag() {
+        app.terminate()
         app.launchArguments += ["-ff.slideToDelete", "true", "-ff.fireMode", "true", "-ff.fireButtonRefinements", "true"]
         app.launch()
 
@@ -91,7 +92,10 @@ final class AppLaunchUITests: XCTestCase {
         start.press(forDuration: 0.1, thenDragTo: end)
         XCTAssertTrue(slider.waitForNonExistence(timeout: UITestTimeouts.navigation))
         XCTAssertTrue(fireButton.waitForExistence(timeout: UITestTimeouts.navigation))
-        openTabSwitcher()
+        if dismissInput.exists {
+            dismissInput.tap()
+        }
+        app.buttons["Browser.Toolbar.Button.TabSwitcher"].tap()
         let newTabButton = app.buttons["Open new tab"]
         XCTAssertTrue(newTabButton.waitForExistence(timeout: UITestTimeouts.navigation))
         XCTAssertEqual(app.collectionViews.cells.containing(.button, identifier: "Open new tab").count, 1)
@@ -159,14 +163,9 @@ final class AppLaunchUITests: XCTestCase {
     }
 
     private func openFireConfirmationForWidthTest(slideToDelete: Bool, orientation: UIDeviceOrientation) {
+        app.terminate()
         XCUIDevice.shared.orientation = orientation
-        app.launchArguments += [
-            "-ff.slideToDelete", String(slideToDelete),
-            "-ff.fireMode", "true",
-            "-ff.fireButtonRefinements", "true",
-            // Keep automatic New Tab Page keyboard focus out of the Fire modal layout fixture.
-            "-ff.alwaysShowKeyboardOnNewTabPage", "false",
-        ]
+        app.launchArguments += ["-ff.slideToDelete", String(slideToDelete), "-ff.fireMode", "true", "-ff.fireButtonRefinements", "true"]
         app.launch()
         let dismissInput = app.buttons.matching(NSPredicate(format: "identifier IN %@", [
             "UnifiedToggleInput.Button.Dismiss", "Browser.OmniBar.Button.Dismiss"
@@ -191,6 +190,7 @@ final class AppLaunchUITests: XCTestCase {
     }
 
     func testAutoClearOnRelaunchShowsNewTabInTabSwitcher() {
+        app.terminate()
         app.launchArguments += [
             "-ff.fireMode", "true",
             "-ff.floatingUIiOS26", "true",
@@ -207,7 +207,9 @@ final class AppLaunchUITests: XCTestCase {
         app.launchArguments.removeAll { $0 == "-clearAllDefaults" }
         app.launch()
 
-        openTabSwitcher()
+        let tabSwitcher = app.descendants(matching: .any)["Browser.Toolbar.Button.TabSwitcher"]
+        XCTAssertTrue(tabSwitcher.waitForExistence(timeout: UITestTimeouts.navigation))
+        tabSwitcher.tap()
 
         let screenshot = XCTAttachment(screenshot: app.screenshot())
         screenshot.name = "Tab switcher after automatic tab clearing"
@@ -218,20 +220,5 @@ final class AppLaunchUITests: XCTestCase {
         XCTAssertTrue(newTab.isHittable)
         let tabCells = app.collectionViews.cells.containing(.button, identifier: "Open new tab")
         XCTAssertEqual(tabCells.count, 1)
-    }
-
-    private func openTabSwitcher() {
-        let tabSwitcher = app.descendants(matching: .any)["Browser.Toolbar.Button.TabSwitcher"]
-        XCTAssertTrue(tabSwitcher.waitForExistence(timeout: UITestTimeouts.navigation))
-        let dismissInput = app.buttons.matching(NSPredicate(format: "identifier IN %@", [
-            "UnifiedToggleInput.Button.Dismiss", "Browser.OmniBar.Button.Dismiss"
-        ])).firstMatch
-        if dismissInput.exists && dismissInput.isHittable {
-            dismissInput.tap()
-        }
-        let switcherReady = NSPredicate { _, _ in tabSwitcher.isHittable && !self.app.keyboards.firstMatch.exists }
-        XCTAssertTrue(tabSwitcher.wait(for: switcherReady, timeout: UITestTimeouts.navigation),
-                      "The tab switcher should be tappable after dismissing the launch keyboard.")
-        tabSwitcher.tap()
     }
 }

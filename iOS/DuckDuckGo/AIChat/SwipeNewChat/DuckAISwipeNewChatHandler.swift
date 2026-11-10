@@ -32,8 +32,8 @@ struct DuckAISwipeNewChatChromeState {
 }
 
 /// Duck.ai scrolls an inner container, not the web view's scroll view, so the native scroll view never
-/// reports overscroll. Instead a simultaneous pan asks the page, as it begins, whether the chat under the
-/// finger is at its bottom, and if so measures how far the finger pulls up from there.
+/// reports overscroll. Instead a simultaneous pan asks the page, as it begins, whether the chat is at its
+/// bottom, and if so measures how far the finger pulls up from there.
 @MainActor
 final class DuckAISwipeNewChatHandler: NSObject, UIGestureRecognizerDelegate {
 
@@ -56,8 +56,6 @@ final class DuckAISwipeNewChatHandler: NSObject, UIGestureRecognizerDelegate {
     /// Bumped by each touch-down, by `cancel()` and by navigation mid-pull, so late page replies and animation
     /// completions from an earlier interaction do nothing.
     private var generation = 0
-    /// Where the latest finger went down on the web view, for the page's at-bottom check.
-    private var touchDownPoint: CGPoint?
     private var commitState = DuckAISwipeNewChat.Commit.idle
 
     private var movesContent: Bool { !UIAccessibility.isReduceMotionEnabled }
@@ -269,34 +267,20 @@ final class DuckAISwipeNewChatHandler: NSObject, UIGestureRecognizerDelegate {
     private func checkAtBottom() {
         guard let webView, webView.bounds.width > 0, webView.bounds.height > 0 else { return }
         let generation = generation
-        let point = touchDownPoint ?? pan.location(in: webView)
-        let fraction = CGPoint(x: point.x / webView.bounds.width, y: point.y / webView.bounds.height)
-        webView.evaluateJavaScript(Self.atBottomScript(atFractionOfViewport: fraction)) { [weak self] result, _ in
+        webView.evaluateJavaScript(Self.atBottomScript) { [weak self] result, _ in
             guard let self, generation == self.generation, let hostView = self.hostView else { return }
             self.apply(self.pull.handle(.pageAnswered(isAtBottom: result as? Bool == true,
                                                       translation: self.pan.translation(in: hostView).y)))
         }
     }
 
-    /// Whether the chat under the finger is at its bottom. The finger is given as a fraction of the web view, which
-    /// the page scales to its own viewport, so text zoom doesn't shift it. The chat is the nearest vertical
-    /// scroller between half the viewport and the viewport tall: a code block or menu under the finger is shorter,
-    /// and a content wrapper styled as a scroller but taller than the viewport never scrolls. A chat too short to
-    /// scroll is already at its bottom. Anything else, including no element at all, is not.
-    private static func atBottomScript(atFractionOfViewport fraction: CGPoint) -> String {
-        """
-        (function(fx, fy) {
-          const hit = document.elementFromPoint(fx * innerWidth, fy * innerHeight);
-          for (let el = hit; el && el !== document.documentElement; el = el.parentElement) {
-            if (/(auto|scroll)/.test(getComputedStyle(el).overflowY)
-                && el.clientHeight >= innerHeight / 2 && el.clientHeight <= innerHeight) {
-              return el.scrollTop + el.clientHeight >= el.scrollHeight - 4;
-            }
-          }
-          return false;
-        })(\(fraction.x), \(fraction.y))
-        """
-    }
+    /// Whether the conversation is at its bottom. One too short to scroll already is; no conversation at all is not.
+    private static let atBottomScript = """
+    (() => {
+        const chat = \(DuckAIChatScroller.expression);
+        return !!chat && chat.scrollTop + chat.clientHeight >= chat.scrollHeight - 4;
+    })()
+    """
 
     /// The chat uncovers what is behind the web view as it slides up and fades; this fills that with the Duck.ai
     /// page's own colour token. It doesn't read the web view's background colours, which the chrome, site
@@ -324,12 +308,11 @@ final class DuckAISwipeNewChatHandler: NSObject, UIGestureRecognizerDelegate {
         backdrop.isHidden = true
     }
 
-    /// The first finger down asks the page about the chat under it straight away, before the chat scrolls with the
-    /// finger; by the time the pan begins it has already moved. Never mid-commit, so the fade and timeout stay valid.
+    /// The first finger down asks the page whether the chat is at its bottom straight away, before the chat scrolls
+    /// with the finger; by the time the pan begins it has already moved. Never mid-commit, so the fade and timeout stay valid.
     func gestureRecognizer(_ gestureRecognizer: UIGestureRecognizer, shouldReceive touch: UITouch) -> Bool {
-        guard pan.numberOfTouches == 0, isFeatureEnabled(), commitState == .idle, let webView else { return true }
+        guard pan.numberOfTouches == 0, isFeatureEnabled(), commitState == .idle, webView != nil else { return true }
         generation += 1
-        touchDownPoint = touch.location(in: webView)
         apply(pull.handle(.touchedDown))
         return true
     }

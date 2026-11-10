@@ -25,6 +25,32 @@ import AIChat
 import WebKit
 import Combine
 
+/// Duck.ai scrolls its conversation in an inner element, not the page. Native code that needs that element
+/// finds it here, so there is one guess at the page's layout.
+enum DuckAIChatScroller {
+
+    /// JavaScript that evaluates to the conversation's scrolling element, or null: the outermost vertical scroller
+    /// that is most of the viewport tall and starts near its top. The page remembers it while it stays in the
+    /// document, so a caller that runs on every touch doesn't search the whole page each time.
+    static let expression = """
+    (() => {
+        const cache = window.__ddgDuckAIChatScroller ??= {};
+        if (cache.element?.isConnected) return cache.element;
+        let best = null;
+        for (const element of document.querySelectorAll('div')) {
+            if (best?.contains(element)) continue;
+            const overflow = getComputedStyle(element).overflowY;
+            if (overflow !== 'auto' && overflow !== 'scroll') continue;
+            const rect = element.getBoundingClientRect();
+            if (rect.height < innerHeight * 0.65 || rect.top > innerHeight * 0.25) continue;
+            if (!best || element.clientHeight > best.clientHeight) best = element;
+        }
+        cache.element = best;
+        return best;
+    })()
+    """
+}
+
 @MainActor
 enum DuckAIChatScrollInsetStyler {
 
@@ -38,18 +64,7 @@ enum DuckAIChatScrollInsetStyler {
             let state = window[key];
             if (!state) {
                 state = { top: 0, bottom: 0, target: null, scheduled: false };
-                state.find = () => {
-                    let best = null;
-                    for (const element of document.querySelectorAll('div')) {
-                        if (best?.contains(element)) continue;
-                        const overflow = getComputedStyle(element).overflowY;
-                        if (overflow !== 'auto' && overflow !== 'scroll') continue;
-                        const rect = element.getBoundingClientRect();
-                        if (rect.height < innerHeight * 0.65 || rect.top > innerHeight * 0.25) continue;
-                        if (!best || element.clientHeight > best.clientHeight) best = element;
-                    }
-                    return best;
-                };
+                state.find = () => \(DuckAIChatScroller.expression);
                 state.apply = () => {
                     if (!state.target?.isConnected) {
                         state.target = state.find();

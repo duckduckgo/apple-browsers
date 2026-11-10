@@ -24,30 +24,31 @@ import Testing
 struct ClientToolPermissionCoordinatorTests {
 
     @available(iOS 16, macOS 13, *)
-    @Test(.timeLimit(.minutes(1)), arguments: ["allow", "always", "never", "decline", "cancel", "futureDecision"])
-    func decisionsFinishMatchingCall(decision: String) async throws {
+    @Test(.timeLimit(.minutes(1)), arguments: [ClientToolPermissionDecision.allowOnce, .always, .never, .dismiss])
+    func decisionsFinishMatchingCall(decision: ClientToolPermissionDecision) async throws {
         let harness = ClientToolTestHarness()
         let task = try harness.start()
         await harness.source.waitForPrompts(1)
-        try harness.answer(harness.source.prompts[0], decision: decision)
+        harness.answer(harness.source.prompts[0], decision: decision)
         let result = await task.value
         switch decision {
-        case "allow", "always":
+        case .allowOnce, .always:
             #expect(result == .success(callId: "call", value: ["content": "page"]))
             #expect(harness.tool.calls.count == 1)
-        case "never", "decline":
+        case .never:
             #expect(result == .failure(callId: "call", error: .denied))
             #expect(harness.tool.calls.isEmpty)
-        default:
+        case .dismiss:
             #expect(result == .failure(callId: "call", error: .cancelled))
             #expect(harness.tool.calls.isEmpty)
         }
-        #expect(harness.permissions.writes == (["always", "never"].contains(decision) ? 1 : 0))
+        #expect(harness.permissions.writes == ([.always, .never].contains(decision) ? 1 : 0))
+        #expect(harness.source.withdrawn.isEmpty)
     }
 
     @available(iOS 16, macOS 13, *)
-    @Test(.timeLimit(.minutes(1)), arguments: ["always", "never"])
-    func queuedCallsReusePersistentDecision(decision: String) async throws {
+    @Test(.timeLimit(.minutes(1)), arguments: [ClientToolPermissionDecision.always, .never])
+    func queuedCallsReusePersistentDecision(decision: ClientToolPermissionDecision) async throws {
         let harness = ClientToolTestHarness()
         let first = try harness.start(callID: "first")
         await harness.source.waitForPrompts(1)
@@ -55,10 +56,10 @@ struct ClientToolPermissionCoordinatorTests {
         let second = try harness.start(callID: "second")
         await harness.clock.waitForRegistrations(2)
         #expect(harness.source.prompts.count == 1)
-        try harness.answer(harness.source.prompts[0], decision: decision)
+        harness.answer(harness.source.prompts[0], decision: decision)
         let firstResult = await first.value
         let secondResult = await second.value
-        if decision == "always" {
+        if decision == .always {
             #expect(firstResult == .success(callId: "first", value: ["content": "page"]))
             #expect(secondResult == .success(callId: "second", value: ["content": "page"]))
         } else {
@@ -70,8 +71,8 @@ struct ClientToolPermissionCoordinatorTests {
     }
 
     @available(iOS 16, macOS 13, *)
-    @Test(.timeLimit(.minutes(1)), arguments: ["allow", "decline", "cancel"])
-    func transientDecisionPromptsNextCallInOrder(decision: String) async throws {
+    @Test(.timeLimit(.minutes(1)), arguments: [ClientToolPermissionDecision.allowOnce, .dismiss])
+    func transientDecisionPromptsNextCallInOrder(decision: ClientToolPermissionDecision) async throws {
         let harness = ClientToolTestHarness()
         let first = try harness.start(callID: "first")
         await harness.source.waitForPrompts(1)
@@ -80,13 +81,13 @@ struct ClientToolPermissionCoordinatorTests {
         await harness.clock.waitForRegistrations(2)
         let third = try harness.start(callID: "third")
         await harness.clock.waitForRegistrations(3)
-        try harness.answer(harness.source.prompts[0], decision: decision)
+        harness.answer(harness.source.prompts[0], decision: decision)
         await harness.source.waitForPrompts(2)
-        #expect(harness.source.prompts[1].callId == "second")
-        try harness.answer(harness.source.prompts[1], decision: "allow")
+        #expect(harness.source.prompts[1].callID == "second")
+        harness.answer(harness.source.prompts[1], decision: .allowOnce)
         await harness.source.waitForPrompts(3)
-        #expect(harness.source.prompts[2].callId == "third")
-        try harness.answer(harness.source.prompts[2], decision: "allow")
+        #expect(harness.source.prompts[2].callID == "third")
+        harness.answer(harness.source.prompts[2], decision: .allowOnce)
         _ = await first.value
         #expect(await second.value == .success(callId: "second", value: ["content": "page"]))
         #expect(await third.value == .success(callId: "third", value: ["content": "page"]))
@@ -101,27 +102,30 @@ struct ClientToolPermissionCoordinatorTests {
         await harness.source.waitForPrompts(1)
         let second = try harness.start(callID: "other", name: "searchHistory")
         await harness.source.waitForPrompts(2)
-        try harness.answer(harness.source.prompts[1], decision: "allow")
+        harness.answer(harness.source.prompts[1], decision: .allowOnce)
         #expect(await second.value == .success(callId: "other", value: ["content": "page"]))
         #expect(harness.tool.calls.isEmpty)
-        try harness.answer(harness.source.prompts[0], decision: "cancel")
+        harness.answer(harness.source.prompts[0], decision: .dismiss)
         _ = await first.value
     }
 
     @available(iOS 16, macOS 13, *)
     @Test(.timeLimit(.minutes(1)))
-    func chatsHaveIndependentPermissionQueuesForTheSameTool() async throws {
+    func oneToolPromptsOnceAtATimeAcrossChats() async throws {
         let harness = ClientToolTestHarness()
         let otherSource = ClientToolTestSource()
         let first = try harness.start(callID: "first")
         await harness.source.waitForPrompts(1)
+        await harness.clock.waitForRegistrations(1)
         let second = try harness.start(callID: "second", source: otherSource)
+        await harness.clock.waitForRegistrations(2)
+        #expect(otherSource.prompts.isEmpty)
 
-        await otherSource.waitForPrompts(1)
-        try harness.answer(otherSource.prompts[0], decision: "allow", source: otherSource)
-        #expect(await second.value == .success(callId: "second", value: ["content": "page"]))
-        try harness.answer(harness.source.prompts[0], decision: "cancel")
+        harness.answer(harness.source.prompts[0], decision: .dismiss)
         #expect(await first.value == .failure(callId: "first", error: .cancelled))
+        await otherSource.waitForPrompts(1)
+        harness.answer(otherSource.prompts[0], decision: .allowOnce, source: otherSource)
+        #expect(await second.value == .success(callId: "second", value: ["content": "page"]))
     }
 
     @available(iOS 16, macOS 13, *)
@@ -129,25 +133,17 @@ struct ClientToolPermissionCoordinatorTests {
     func mismatchesAndDuplicatesCannotPersistOrCompleteAnotherCall() async throws {
         let harness = ClientToolTestHarness()
         let otherSource = ClientToolTestSource()
-        let first = try harness.start()
+        let task = try harness.start()
         await harness.source.waitForPrompts(1)
-        await harness.clock.waitForRegistrations(1)
-        let second = try harness.start(source: otherSource)
-        await harness.clock.waitForRegistrations(2)
-        await otherSource.waitForPrompts(1)
         let prompt = harness.source.prompts[0]
-        try harness.answer(prompt, decision: "always", source: otherSource)
-        try harness.answer(prompt, decision: "always", callID: "wrong")
-        try harness.answer(prompt, decision: "always", requestID: "wrong")
+        harness.answer(prompt, decision: .always, source: otherSource)
+        harness.answer(prompt, decision: .always, callID: "wrong")
+        harness.answer(prompt, decision: .always, requestID: "wrong")
         #expect(harness.permissions.writes == 0)
-        try harness.answer(prompt, decision: "allow")
-        #expect(otherSource.prompts[0].requestId != prompt.requestId)
-        try harness.answer(prompt, decision: "never")
-        try harness.answer(otherSource.prompts[0], decision: "always")
-        #expect(harness.permissions.writes == 0)
-        try harness.answer(otherSource.prompts[0], decision: "allow", source: otherSource)
-        #expect(await first.value == .success(callId: "call", value: ["content": "page"]))
-        #expect(await second.value == .success(callId: "call", value: ["content": "page"]))
+        #expect(harness.tool.calls.isEmpty)
+        harness.answer(prompt, decision: .allowOnce)
+        harness.answer(prompt, decision: .never)
+        #expect(await task.value == .success(callId: "call", value: ["content": "page"]))
         #expect(harness.permissions.writes == 0)
     }
 
@@ -161,13 +157,14 @@ struct ClientToolPermissionCoordinatorTests {
         harness.clock.advance(to: 30)
         let second = try harness.start(callID: "second")
         await harness.clock.waitForRegistrations(2)
-        harness.clock.advance(to: 119)
-        try harness.answer(harness.source.prompts[0], decision: "decline")
+        harness.clock.advance(to: 149)
+        harness.answer(harness.source.prompts[0], decision: .dismiss)
         await harness.source.waitForPrompts(2)
-        harness.clock.advance(to: 150)
-        #expect(await first.value == .failure(callId: "first", error: .denied))
+        harness.clock.advance(to: 180)
+        #expect(await first.value == .failure(callId: "first", error: .cancelled))
         #expect(await second.value == .failure(callId: "second", error: .cancelled))
-        try harness.answer(harness.source.prompts[1], decision: "always")
+        #expect(harness.source.withdrawn == [harness.source.prompts[1].requestID])
+        harness.answer(harness.source.prompts[1], decision: .always)
         #expect(harness.permissions.writes == 0)
     }
 
@@ -180,8 +177,8 @@ struct ClientToolPermissionCoordinatorTests {
         await harness.clock.waitForRegistrations(1)
         let second = try harness.start(callID: "second")
         await harness.clock.waitForRegistrations(2)
-        harness.clock.advance(to: 120, dispatchTimers: false)
-        try harness.answer(harness.source.prompts[0], decision: "always")
+        harness.clock.advance(to: 150, dispatchTimers: false)
+        harness.answer(harness.source.prompts[0], decision: .always)
         #expect(await first.value == .failure(callId: "first", error: .cancelled))
         #expect(await second.value == .failure(callId: "second", error: .cancelled))
         #expect(harness.source.prompts.count == 1)
@@ -194,8 +191,8 @@ struct ClientToolPermissionCoordinatorTests {
         let harness = ClientToolTestHarness()
         let task = try harness.start()
         await harness.source.waitForPrompts(1)
-        try harness.answer(harness.source.prompts[0], decision: "allow")
-        harness.clock.advance(to: 121, dispatchTimers: false)
+        harness.answer(harness.source.prompts[0], decision: .allowOnce)
+        harness.clock.advance(to: 151, dispatchTimers: false)
         #expect(await task.value == .success(callId: "call", value: ["content": "page"]))
     }
 
@@ -211,13 +208,14 @@ struct ClientToolPermissionCoordinatorTests {
 
     @available(iOS 16, macOS 13, *)
     @Test(.timeLimit(.minutes(1)))
-    func taskCancellationPreventsImmediatePersistentAnswer() async throws {
+    func taskCancellationWithdrawsPromptAndIgnoresLateAnswer() async throws {
         let harness = ClientToolTestHarness()
         let task = try harness.start()
         await harness.source.waitForPrompts(1)
         task.cancel()
-        try harness.answer(harness.source.prompts[0], decision: "always")
         #expect(await task.value == .failure(callId: "call", error: .cancelled))
+        #expect(harness.source.withdrawn == [harness.source.prompts[0].requestID])
+        harness.answer(harness.source.prompts[0], decision: .always)
         #expect(harness.permissions.writes == 0)
         #expect(harness.tool.calls.isEmpty)
     }
@@ -228,7 +226,7 @@ struct ClientToolPermissionCoordinatorTests {
         let harness = ClientToolTestHarness()
         let task = try harness.start()
         await harness.source.waitForPrompts(1)
-        try harness.answer(harness.source.prompts[0], decision: "allow")
+        harness.answer(harness.source.prompts[0], decision: .allowOnce)
         if cancelTask { task.cancel() } else { harness.coordinator.cancelRequests(from: harness.source) }
         #expect(await task.value == .failure(callId: "call", error: .cancelled))
         #expect(harness.tool.calls.isEmpty)
@@ -236,7 +234,7 @@ struct ClientToolPermissionCoordinatorTests {
 
     @available(iOS 16, macOS 13, *)
     @Test(.timeLimit(.minutes(1)))
-    func sourceCancellationOnlyRemovesThatSourcesQueue() async throws {
+    func chatGoneWithdrawsItsPromptAndPromotesAnotherChat() async throws {
         let harness = ClientToolTestHarness()
         let otherSource = ClientToolTestSource()
         let first = try harness.start(callID: "first")
@@ -246,16 +244,17 @@ struct ClientToolPermissionCoordinatorTests {
         await harness.clock.waitForRegistrations(2)
         let third = try harness.start(callID: "third", source: otherSource)
         await harness.clock.waitForRegistrations(3)
-        await otherSource.waitForPrompts(1)
         harness.coordinator.cancelRequests(from: harness.source)
         #expect(harness.source.prompts.count == 1)
-        try harness.answer(otherSource.prompts[0], decision: "allow", source: otherSource)
+        #expect(harness.source.withdrawn == [harness.source.prompts[0].requestID])
+        await otherSource.waitForPrompts(1)
+        harness.answer(otherSource.prompts[0], decision: .allowOnce, source: otherSource)
         #expect(await first.value == .failure(callId: "first", error: .cancelled))
         #expect(await second.value == .failure(callId: "second", error: .cancelled))
         #expect(await third.value == .success(callId: "third", value: ["content": "page"]))
         let reused = try harness.start(callID: "newDocument")
         await harness.source.waitForPrompts(2)
-        try harness.answer(harness.source.prompts[1], decision: "allow")
+        harness.answer(harness.source.prompts[1], decision: .allowOnce)
         #expect(await reused.value == .success(callId: "newDocument", value: ["content": "page"]))
     }
 
@@ -264,35 +263,36 @@ struct ClientToolPermissionCoordinatorTests {
     func synchronousAnswerSurvivesFalseDeliveryResult() async throws {
         let harness = ClientToolTestHarness()
         harness.source.onPush = { prompt in
-            try? harness.answer(prompt, decision: "allow")
+            harness.answer(prompt, decision: .allowOnce)
             return false
         }
         let request = try harness.request()
-        let result = await harness.invoker.invokeClientTool(request, context: harness.context, permissionPusher: harness.source)
+        let result = await harness.invoker.invokeClientTool(request, context: harness.context, permissionPrompter: harness.source)
         #expect(result == .success(callId: "call", value: ["content": "page"]))
     }
 
     @available(iOS 16, macOS 13, *)
     @Test(.timeLimit(.minutes(1)))
-    func failedDeliveryCancelsWaitingCall() async throws {
+    func promptThatCannotBeShownCancelsWaitingCall() async throws {
         let harness = ClientToolTestHarness()
         harness.source.onPush = { _ in false }
         let request = try harness.request()
-        let result = await harness.invoker.invokeClientTool(request, context: harness.context, permissionPusher: harness.source)
+        let result = await harness.invoker.invokeClientTool(request, context: harness.context, permissionPrompter: harness.source)
         #expect(result == .failure(callId: "call", error: .cancelled))
         #expect(harness.tool.calls.isEmpty)
+        #expect(harness.source.withdrawn.isEmpty)
     }
 
     @available(iOS 16, macOS 13, *)
     @Test(.timeLimit(.minutes(1)))
-    func sourceCanCancelReentrantlyWhilePushing() async throws {
+    func prompterCanCancelReentrantlyWhilePresenting() async throws {
         let harness = ClientToolTestHarness()
         harness.source.onPush = { _ in
             harness.coordinator.cancelRequests(from: harness.source)
             return true
         }
         let request = try harness.request()
-        let result = await harness.invoker.invokeClientTool(request, context: harness.context, permissionPusher: harness.source)
+        let result = await harness.invoker.invokeClientTool(request, context: harness.context, permissionPrompter: harness.source)
         #expect(result == .failure(callId: "call", error: .cancelled))
         #expect(harness.tool.calls.isEmpty)
     }

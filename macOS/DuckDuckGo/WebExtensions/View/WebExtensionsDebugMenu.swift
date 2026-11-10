@@ -29,6 +29,8 @@ final class WebExtensionsDebugMenu: NSMenu, NSMenuItemValidation {
     private let cpmMessagingHealthMonitor: CPMMessagingHealthMonitor
     /// Whether Bitwarden may be installed, read each time the menu opens.
     private let isBitwardenEnabled: () -> Bool
+    /// Set in the App Store build only, where extensions can't reach their desktop apps.
+    private let nativeMessagingNoticeStore: NativeMessagingNoticeStoring?
     private let installBitwardenSeparator = NSMenuItem.separator()
     private let installBitwardenMenuItem = NSMenuItem(title: "Install Bitwarden", action: #selector(WebExtensionsDebugMenu.installBitwarden))
 
@@ -42,13 +44,18 @@ final class WebExtensionsDebugMenu: NSMenu, NSMenuItemValidation {
     private let apiCompatibilityLogMenuItem = NSMenuItem(title: "Extension Compatibility Log…", action: #selector(WebExtensionsDebugMenu.showAPICompatibilityLog))
     private let backdateInstallDatesMenuItem = NSMenuItem(title: "Backdate Install Dates by a Month", action: #selector(WebExtensionsDebugMenu.backdateInstallDates))
     private let checkForUpdatesMenuItem = NSMenuItem(title: "Check for Extension Updates Now", action: #selector(WebExtensionsDebugMenu.checkForUpdatesNow))
+    private let resetNativeMessagingNoticesMenuItem = NSMenuItem(title: "Show Native Messaging Banners Again", action: #selector(WebExtensionsDebugMenu.resetNativeMessagingNotices))
 
-    init(webExtensionManager: WebExtensionManaging,
-         cpmMessagingHealthMonitor: CPMMessagingHealthMonitor,
-         isBitwardenEnabled: @escaping () -> Bool = { true }) {
+    init(
+        webExtensionManager: WebExtensionManaging,
+        cpmMessagingHealthMonitor: CPMMessagingHealthMonitor,
+        isBitwardenEnabled: @escaping () -> Bool = { true },
+        nativeMessagingNoticeStore: NativeMessagingNoticeStoring? = nil
+    ) {
         self.webExtensionManager = webExtensionManager
         self.cpmMessagingHealthMonitor = cpmMessagingHealthMonitor
         self.isBitwardenEnabled = isBitwardenEnabled
+        self.nativeMessagingNoticeStore = nativeMessagingNoticeStore
         super.init(title: "")
 
         installExtensionMenuItem.submenu = makeInstallSubmenu()
@@ -70,6 +77,7 @@ final class WebExtensionsDebugMenu: NSMenu, NSMenuItemValidation {
         backdateInstallDatesMenuItem.target = self
         backdateInstallDatesMenuItem.isEnabled = true
         checkForUpdatesMenuItem.target = self
+        resetNativeMessagingNoticesMenuItem.target = self
 
         addItems()
     }
@@ -95,6 +103,9 @@ final class WebExtensionsDebugMenu: NSMenu, NSMenuItemValidation {
         addItem(backdateInstallDatesMenuItem)
         checkForUpdatesMenuItem.isEnabled = webExtensionManager.chromeWebStore?.canCheckForUpdates == true
         addItem(checkForUpdatesMenuItem)
+        if nativeMessagingNoticeStore != nil {
+            addItem(resetNativeMessagingNoticesMenuItem)
+        }
 
         let addedPopoverMenuItems = makeShowAddedPopoverMenuItems()
         if !addedPopoverMenuItems.isEmpty {
@@ -185,6 +196,11 @@ final class WebExtensionsDebugMenu: NSMenu, NSMenuItemValidation {
         Task {
             try? await webExtensionManager.installExtension(from: url)
         }
+    }
+
+    /// Lets each extension that tried native messaging show its banner the next time its popup opens.
+    @objc private func resetNativeMessagingNotices() {
+        nativeMessagingNoticeStore?.resetShownNotices()
     }
 
     @objc private func checkForUpdatesNow() {

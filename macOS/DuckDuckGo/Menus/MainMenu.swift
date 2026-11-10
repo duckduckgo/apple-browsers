@@ -686,7 +686,10 @@ final class MainMenu: NSMenu {
                             cpmMessagingHealthMonitor: cpmMessagingHealthMonitor,
                             isBitwardenEnabled: { [featureFlagger] in
                                 featureFlagger.isFeatureOn(.webExtensionBitwarden)
-                            }
+                            },
+                            nativeMessagingNoticeStore: StandardApplicationBuildType().isAppStoreBuild
+                                ? NativeMessagingNoticeStore(keyValueStore: Application.appDelegate.keyValueStore)
+                                : nil
                         ))
                 }
                 if let webExtensionsMenuItem, webExtensionsMenuItem.parent == nil {

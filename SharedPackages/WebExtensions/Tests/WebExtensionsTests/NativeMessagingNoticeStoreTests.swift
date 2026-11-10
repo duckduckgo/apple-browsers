@@ -44,4 +44,17 @@ final class NativeMessagingNoticeStoreTests: XCTestCase {
         XCTAssertFalse(relaunched.needsNotice(for: "bitwarden"))
         XCTAssertFalse(relaunched.recordAttempt(for: "bitwarden"))
     }
+
+    func testWhenShownNoticesAreResetThenEveryExtensionThatTriedNeedsTheNoticeAgain() {
+        let store = NativeMessagingNoticeStore(keyValueStore: keyValueStore)
+        store.recordAttempt(for: "bitwarden")
+        store.markNoticeShown(for: "bitwarden")
+        store.recordAttempt(for: "1password")
+
+        store.resetShownNotices()
+
+        XCTAssertTrue(store.needsNotice(for: "bitwarden"))
+        XCTAssertTrue(store.needsNotice(for: "1password"))
+        XCTAssertFalse(store.needsNotice(for: "icloud"))
+    }
 }

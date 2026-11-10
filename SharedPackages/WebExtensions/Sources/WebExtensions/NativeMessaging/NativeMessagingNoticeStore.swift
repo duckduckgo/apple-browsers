@@ -38,6 +38,9 @@ public protocol NativeMessagingNoticeStoring: AnyObject {
 
     /// Forgets the extension, for example after it is uninstalled.
     func forget(_ identifier: String)
+
+    /// Shows the notice again to every extension that has already tried, for testing from the Debug menu.
+    func resetShownNotices()
 }
 
 /// Keeps the state in the key-value store, keyed by the extension's installation identifier, so an
@@ -79,6 +82,10 @@ public final class NativeMessagingNoticeStore: NativeMessagingNoticeStoring {
         var states = load()
         guard states.removeValue(forKey: identifier) != nil else { return }
         save(states)
+    }
+
+    public func resetShownNotices() {
+        save(load().mapValues { _ in .attempted })
     }
 
     private func load() -> [String: State] {

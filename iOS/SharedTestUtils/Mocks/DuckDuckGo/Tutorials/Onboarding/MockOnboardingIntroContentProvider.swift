@@ -24,7 +24,6 @@ class MockOnboardingIntroContentProvider: OnboardingIntroContentProviding {
     var landingContent: OnboardingLandingContent = .mock
     var introStepContent: OnboardingIntroStepContent = .mock
     var downloadReasonContent: OnboardingDownloadReasonContent = .mock
-    var serpPersonalizationContent: OnboardingPersonalizationContent = .mock
     var aiModelPersonalizationContent: OnboardingAIModelContent = .mock
     var addressBarToggleModePersonalizationContent: OnboardingAddressBarToggleModeContent = .mock
     var aiSearchPersonalizationContent: OnboardingPersonalizationContent = .mock
@@ -68,7 +67,7 @@ extension OnboardingPersonalizationContent {
         title: "Personalization Title",
         message: "Personalization Message",
         items: [
-            .init(type: .recentlyVisitedSites, title: "Personalization Item Title", subtitle: "Personalization Item Subtitle")
+            .init(type: .searchAssist, title: "Personalization Item Title", subtitle: "Personalization Item Subtitle")
         ],
         primaryCTA: "Personalization Primary",
         daxAnimation: .wingBottom

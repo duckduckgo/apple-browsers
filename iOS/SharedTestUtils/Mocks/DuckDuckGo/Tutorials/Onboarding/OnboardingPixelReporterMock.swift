@@ -345,9 +345,6 @@ final class OnboardingPixelReporterMock: OnboardingIntroPixelReporting, Onboardi
     private(set) var didCallMeasureDownloadReasonImpression = false
     private(set) var didCallMeasureDownloadReasonSelection = false
     private(set) var didCaptureDownloadReasonSelection: OnboardingDownloadReason?
-    private(set) var didCallMeasureSearchPrivacySettingsImpression = false
-    private(set) var didCallMeasureSearchPrivacySettingsSelection = false
-    private(set) var didCaptureSearchPrivacySettingsSelection: (recentlyVisitedSitesEnabled: Bool, safeSearchEnabled: Bool)?
     private(set) var didCallMeasureAIModelImpression = false
     private(set) var didCallMeasureAIModelSelection = false
     private(set) var didCaptureAIModelSelection: String?
@@ -371,15 +368,6 @@ final class OnboardingPixelReporterMock: OnboardingIntroPixelReporting, Onboardi
     func measureDownloadReasonSelection(_ reason: OnboardingDownloadReason) {
         didCallMeasureDownloadReasonSelection = true
         didCaptureDownloadReasonSelection = reason
-    }
-
-    func measureSearchPrivacySettingsImpression() {
-        didCallMeasureSearchPrivacySettingsImpression = true
-    }
-
-    func measureSearchPrivacySettingsSelection(recentlyVisitedSitesEnabled: Bool, safeSearchEnabled: Bool) {
-        didCallMeasureSearchPrivacySettingsSelection = true
-        didCaptureSearchPrivacySettingsSelection = (recentlyVisitedSitesEnabled, safeSearchEnabled)
     }
 
     func measureAIModelImpression() {

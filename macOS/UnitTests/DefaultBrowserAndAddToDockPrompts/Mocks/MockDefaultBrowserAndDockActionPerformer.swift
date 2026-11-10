@@ -1,5 +1,5 @@
 //
-//  FadeInView.swift
+//  MockDefaultBrowserAndDockActionPerformer.swift
 //
 //  Copyright © 2026 DuckDuckGo. All rights reserved.
 //
@@ -16,23 +16,14 @@
 //  limitations under the License.
 //
 
-import SwiftUI
+import Foundation
+@testable import DuckDuckGo_Privacy_Browser
 
-struct FadeInView<Content: View>: View {
-    var content: Content
-    @State private var opacity: Double = 0
+final class MockDefaultBrowserAndDockActionPerformer: DefaultBrowserAndDockActionPerforming {
+    var pendingPromptType: DefaultBrowserAndDockPromptType?
+    private(set) var performPendingActionsCallCount = 0
 
-    init(@ViewBuilder content: () -> Content) {
-        self.content = content()
-    }
-
-    var body: some View {
-        content
-            .opacity(opacity)
-            .onAppear {
-                withAnimation(.easeIn(duration: 0.4)) {
-                    opacity = 1.0
-                }
-            }
+    func performPendingActions() {
+        performPendingActionsCallCount += 1
     }
 }

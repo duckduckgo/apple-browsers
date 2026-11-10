@@ -1278,37 +1278,7 @@ final class AIChatOmnibarContainerViewController: NSViewController {
             Application.appDelegate.windowControllersManager.showPreferencesTab(withSelectedPane: .aiChat)
         }
         usageWarningCardView.onDismiss = { [weak self] in
-            guard let self else { return }
-            if launcherIntroductionShortcut != nil {
-                launcherIntroductionShortcut = nil
-                refreshUsageCard()
-                return
-            }
-            if isShowingLocalSummariesPromo {
-                localSummariesPromo?.dismiss()
-                refreshUsageCard()
-                return
-            }
-            if isShowingLauncherPromo {
-                launcherPromo?.dismiss(on: .addressBar)
-                refreshUsageCard()
-                return
-            }
-            // Ahead of the pixel: this card is not a usage message, so closing it must not report
-            // a dismissal against whichever usage exposure happens to be open.
-            if createImageModelSwitchNotice != nil {
-                omnibarController.pixelHandler.fire(.createImageModelSwitchNoticeDismissed)
-                clearCreateImageModelSwitchNotice()
-                return
-            }
-
-            omnibarController.usageWarningMeasurement.warningDismissed()
-            if omnibarController.usageWarningViewModel?.warning != nil {
-                omnibarController.usageWarningViewModel?.dismiss()
-            } else {
-                highUsageNoticeSource?.dismissCurrent()
-            }
-            refreshUsageCard()
+            self?.dismissUsageCard()
         }
         usageWarningCardView.onOpenModelPicker = { [weak self] in
             self?.omnibarController.usageWarningViewModel?.openModelPicker()
@@ -1349,6 +1319,39 @@ final class AIChatOmnibarContainerViewController: NSViewController {
             self?.refreshUsageCard()
         }
         highUsageNoticeSource?.refresh()
+    }
+
+    private func dismissUsageCard() {
+        if launcherIntroductionShortcut != nil {
+            launcherIntroductionShortcut = nil
+            refreshUsageCard()
+            return
+        }
+        if isShowingLocalSummariesPromo {
+            localSummariesPromo?.dismiss()
+            refreshUsageCard()
+            return
+        }
+        if isShowingLauncherPromo {
+            launcherPromo?.dismiss(on: .addressBar)
+            refreshUsageCard()
+            return
+        }
+        // Ahead of the pixel: this card is not a usage message, so closing it must not report
+        // a dismissal against whichever usage exposure happens to be open.
+        if createImageModelSwitchNotice != nil {
+            omnibarController.pixelHandler.fire(.createImageModelSwitchNoticeDismissed)
+            clearCreateImageModelSwitchNotice()
+            return
+        }
+
+        omnibarController.usageWarningMeasurement.warningDismissed()
+        if omnibarController.usageWarningViewModel?.warning != nil {
+            omnibarController.usageWarningViewModel?.dismiss()
+        } else {
+            highUsageNoticeSource?.dismissCurrent()
+        }
+        refreshUsageCard()
     }
 
     private func subscribeToUsageWarnings() {

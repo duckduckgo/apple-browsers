@@ -224,6 +224,7 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
     private let featureDiscovery: FeatureDiscovery
     private let termsOfServiceStore: DuckAiTermsOfServiceStore
     private let bonusHandler: AIChatBonusHandling
+    private let bonusMessageLog: AIChatBonusMessageLogging?
     private let isSparkleBuild: Bool
 
     var isFireWindowProvider: (() -> Bool)?
@@ -280,11 +281,13 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
         homepageAiChatsProvider: HomepageAiChatsProvider? = nil,
         termsOfServiceStore: DuckAiTermsOfServiceStore = DuckAiTermsOfServiceStore(),
         bonusHandler: AIChatBonusHandling = Application.appDelegate.aiChatBonusOffer.handler,
+        bonusMessageLog: AIChatBonusMessageLogging? = nil,
         isSparkleBuild: Bool = StandardApplicationBuildType().isSparkleBuild
     ) {
         self.storage = storage
         self.termsOfServiceStore = termsOfServiceStore
         self.bonusHandler = bonusHandler
+        self.bonusMessageLog = bonusMessageLog
         self.isSparkleBuild = isSparkleBuild
         self.messageHandling = messageHandling
         self.windowControllersManager = windowControllersManager
@@ -879,30 +882,64 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
     }
 
     func getAIChatBonusRecord(params: Any, message: UserScriptMessage) -> Encodable? {
-        guard isBonusOfferEnabled else { return nil }
+        let method = AIChatUserScriptMessages.getAIChatBonusRecord.rawValue
+        guard isBonusOfferEnabled else {
+            logIgnoredBonusMessage(.request, method: method, params: params)
+            return nil
+        }
         // The bonus requests reply `nil` on failure, so the bridge sends an error and Duck.ai treats it like a timeout.
-        return bonusHandler.getAIChatBonusRecord()
+        let reply = bonusHandler.getAIChatBonusRecord()
+        logBonusRequest(method, params: params, reply: reply)
+        return reply
     }
 
     func getAIChatNewBonusRecord(params: Any, message: UserScriptMessage) -> Encodable? {
-        guard isBonusOfferEnabled else { return nil }
+        let method = AIChatUserScriptMessages.getAIChatNewBonusRecord.rawValue
+        guard isBonusOfferEnabled else {
+            logIgnoredBonusMessage(.request, method: method, params: params)
+            return nil
+        }
         // The bonus requests reply `nil` on failure, so the bridge sends an error and Duck.ai treats it like a timeout.
-        return bonusHandler.getAIChatNewBonusRecord(params: params)
+        let reply = bonusHandler.getAIChatNewBonusRecord(params: params)
+        logBonusRequest(method, params: params, reply: reply)
+        return reply
     }
 
     func aiChatBonusRedeemOutcome(params: Any, message: UserScriptMessage) -> Encodable? {
+        bonusMessageLog?.record(.notification, method: AIChatUserScriptMessages.aiChatBonusRedeemOutcome.rawValue, params: params)
         bonusHandler.aiChatBonusRedeemOutcome(params: params)
         return nil
     }
 
     func aiChatBonusDismiss(params: Any, message: UserScriptMessage) -> Encodable? {
+        bonusMessageLog?.record(.notification, method: AIChatUserScriptMessages.aiChatBonusDismiss.rawValue, params: params)
         bonusHandler.aiChatBonusDismiss(params: params)
         return nil
     }
 
     func aiChatBonusEnd(params: Any, message: UserScriptMessage) -> Encodable? {
+        bonusMessageLog?.record(.notification, method: AIChatUserScriptMessages.aiChatBonusEnd.rawValue, params: params)
         bonusHandler.aiChatBonusEnd()
         return nil
+    }
+
+    private func logBonusRequest(_ method: String, params: Any, reply: Encodable?) {
+        bonusMessageLog?.record(
+            .request,
+            method: method,
+            params: params,
+            body: reply,
+            note: reply == nil ? "No reply: invalid params, or the record couldn't be read or written" : nil
+        )
+    }
+
+    private func logIgnoredBonusMessage(_ kind: AIChatBonusMessageLog.Kind, method: String, params: Any) {
+        bonusMessageLog?.record(
+            kind,
+            method: method,
+            params: params,
+            note: "Dropped: aiChatLimitExtensionPromo is off, or not a Sparkle build"
+        )
     }
 
     // MARK: - Sync

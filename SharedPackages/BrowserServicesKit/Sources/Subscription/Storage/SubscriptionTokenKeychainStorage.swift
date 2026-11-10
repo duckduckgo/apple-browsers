@@ -66,7 +66,7 @@ public final class SubscriptionTokenKeychainStorage: AuthTokenStoring {
         /// A second, independent token container kept by the main app.
         case backupTokenContainer = "subscription.v2.tokens.backup"
 
-        var keyValue: String {
+        public var keyValue: String {
             "com.duckduckgo" + "." + rawValue
         }
     }

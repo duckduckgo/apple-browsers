@@ -16,19 +16,22 @@
 //  limitations under the License.
 //
 
-import Common
 import Foundation
-import os.log
 import Persistence
+import PixelKit
 
 final class DefaultBrowserConfirmationStore: DefaultBrowserConfirmationStoring {
 
+    private let source: DefaultBrowserConfirmationSource
     private let pendingConfirmationKey: String
     private let keyValueStore: ThrowingKeyValueStoring
+    private let pixelFiring: PixelFiring?
 
-    init(source: DefaultBrowserConfirmationSource, keyValueStore: ThrowingKeyValueStoring) {
+    init(source: DefaultBrowserConfirmationSource, keyValueStore: ThrowingKeyValueStoring, pixelFiring: PixelFiring? = PixelKit.shared) {
+        self.source = source
         self.pendingConfirmationKey = "\(source.rawValue).pending-confirmation"
         self.keyValueStore = keyValueStore
+        self.pixelFiring = pixelFiring
     }
 
     var pendingConfirmation: DefaultBrowserPendingConfirmation? {
@@ -38,7 +41,9 @@ final class DefaultBrowserConfirmationStore: DefaultBrowserConfirmationStoring {
                 guard let data = stored as? Data else { throw CocoaError(.coderReadCorrupt) }
                 return try JSONDecoder().decode(DefaultBrowserPendingConfirmation.self, from: data)
             } catch {
-                Logger.general.error("Failed to read \(self.pendingConfirmationKey): \(error)")
+                pixelFiring?.fire(DefaultBrowserConfirmationDebugPixel.pendingConfirmationReadFailed(source: source, error: error),
+                                  frequency: .dailyAndCount)
+                try? keyValueStore.removeObject(forKey: pendingConfirmationKey)
                 return nil
             }
         }
@@ -50,7 +55,8 @@ final class DefaultBrowserConfirmationStore: DefaultBrowserConfirmationStoring {
                     try keyValueStore.removeObject(forKey: pendingConfirmationKey)
                 }
             } catch {
-                Logger.general.error("Failed to write \(self.pendingConfirmationKey): \(error)")
+                pixelFiring?.fire(DefaultBrowserConfirmationDebugPixel.pendingConfirmationWriteFailed(source: source, error: error),
+                                  frequency: .dailyAndCount)
             }
         }
     }

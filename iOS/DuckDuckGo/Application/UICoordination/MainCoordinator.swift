@@ -823,7 +823,10 @@ extension MainCoordinator: URLHandling {
     private func handleNewSearchDeepLink() {
         // Already on a New Tab Page: focus it in place. Clearing and rebuilding it would drop
         // the keyboard the app opened with, or is about to raise, and raise it again.
-        if controller.isNewTabPageVisible, controller.presentedViewController == nil {
+        // An input left in another mode, such as Duck.ai, is still rebuilt so it opens in the
+        // mode a new search starts in.
+        if controller.isNewTabPageVisible, controller.presentedViewController == nil,
+           controller.isInputInInitialToggleMode {
             if !controller.isInputFocused {
                 controller.enterSearch()
             }

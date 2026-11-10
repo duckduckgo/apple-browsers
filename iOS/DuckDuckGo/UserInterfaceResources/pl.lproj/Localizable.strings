@@ -5434,6 +5434,9 @@
 /* Header for the subscription section */
 "subscription.manage.title" = "Subskrypcja";
 
+/* Subscription status shown after the user withdrew from the subscription contract */
+"subscription.not.subscribed" = "Brak subskrypcji";
+
 /* Alert content for not found subscription */
 "subscription.notFound.alert.message" = "Nie ma subskrypcji powiązanej z tym kontem Apple.";
 
@@ -5475,6 +5478,9 @@
 
 /* Progress view title when restoring past subscription purchase */
 "subscription.progress.view.restoring.subscription" = "Przywracanie subskrypcji...";
+
+/* Progress view title while withdrawing from the subscription contract */
+"subscription.progress.view.withdraw.in.progress" = "Trwa odstępowanie od umowy…";
 
 /* Dismiss button on the reinstaller subscription promo. */
 "subscription.promo.reinstaller.buttons.notNow" = "Nie teraz";
@@ -5580,6 +5586,39 @@
 
 /* View All Plans button to see available subscription tiers */
 "subscription.view.all.plans" = "Zobacz wszystkie plany";
+
+/* Button that confirms withdrawal from the subscription contract */
+"subscription.withdraw.confirm.button" = "Potwierdź rezygnację";
+
+/* Second paragraph of the alert confirming withdrawal from the subscription contract. Parameter is a localized list of features, e.g. VPN, Personal Information Removal and Duck.ai. */
+"subscription.withdraw.confirm.features.message" = "Po potwierdzeniu funkcje %@ przestaną działać.";
+
+/* Message of the alert confirming withdrawal from the subscription contract. Parameters are the tier name (e.g. Plus) and the refund amount with currency. */
+"subscription.withdraw.confirm.message" = "Twoja subskrypcja %1$@ zakończy się od razu, a kwota %2$@ zostanie zwrócona na pierwotną metodę płatności w ciągu 14 dni.";
+
+/* Title of the alert confirming withdrawal from the subscription contract */
+"subscription.withdraw.confirm.title" = "Zrezygnować z subskrypcji?";
+
+/* Button that opens the help page to complete a failed subscription withdrawal */
+"subscription.withdraw.error.button" = "Odwiedź stronę pomocy";
+
+/* Message of the alert shown when withdrawing from the subscription contract fails */
+"subscription.withdraw.error.message" = "Nie udało nam się automatycznie przetworzyć Twojej rezygnacji. Odwiedź naszą stronę pomocy, aby dokończyć proces rezygnacji.";
+
+/* Action title that starts withdrawing from the subscription contract with a full refund */
+"subscription.withdraw.from.contract" = "Odstąp od umowy";
+
+/* Subtitle of the Withdraw from Contract action. Parameter is the last date the user can withdraw. */
+"subscription.withdraw.from.contract.subtitle" = "Możesz odstąpić od umowy i otrzymać pełny zwrot pieniędzy do %@";
+
+/* Button that dismisses the withdrawal confirmation and keeps the subscription */
+"subscription.withdraw.keep.button" = "Zachowaj subskrypcję";
+
+/* Confirmation shown after withdrawing from the subscription contract. Parameter is the withdrawal date. */
+"subscription.withdrawn.info" = "Rezygnacja nastąpiła w dniu %@.";
+
+/* Shown below the withdrawal confirmation. Parameter is the refunded amount with currency. */
+"subscription.withdrawn.refund.info" = "Trwa przetwarzanie zwrotu pieniędzy w wysokości %@.";
 
 /* No comment provided by engineer. */
 "SwiftUI Alert" = "Alert SwiftUI";

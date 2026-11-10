@@ -5434,6 +5434,9 @@
 /* Header for the subscription section */
 "subscription.manage.title" = "Tilaus";
 
+/* Subscription status shown after the user withdrew from the subscription contract */
+"subscription.not.subscribed" = "Ei tilattu";
+
 /* Alert content for not found subscription */
 "subscription.notFound.alert.message" = "Tähän Apple-tiliin ei ole liitetty tilausta.";
 
@@ -5475,6 +5478,9 @@
 
 /* Progress view title when restoring past subscription purchase */
 "subscription.progress.view.restoring.subscription" = "Palautetaan tilausta...";
+
+/* Progress view title while withdrawing from the subscription contract */
+"subscription.progress.view.withdraw.in.progress" = "Tilaussopimuksen peruuttaminen käynnissä…";
 
 /* Dismiss button on the reinstaller subscription promo. */
 "subscription.promo.reinstaller.buttons.notNow" = "Ei nyt";
@@ -5580,6 +5586,39 @@
 
 /* View All Plans button to see available subscription tiers */
 "subscription.view.all.plans" = "Näytä kaikki tilaukset";
+
+/* Button that confirms withdrawal from the subscription contract */
+"subscription.withdraw.confirm.button" = "Vahvista peruuttaminen";
+
+/* Second paragraph of the alert confirming withdrawal from the subscription contract. Parameter is a localized list of features, e.g. VPN, Personal Information Removal and Duck.ai. */
+"subscription.withdraw.confirm.features.message" = "%@ lakkaavat toimimasta, kun vahvistat.";
+
+/* Message of the alert confirming withdrawal from the subscription contract. Parameters are the tier name (e.g. Plus) and the refund amount with currency. */
+"subscription.withdraw.confirm.message" = "%1$@-tilauksesi päättyy heti, ja %2$@ palautetaan alkuperäiselle maksutavallesi 14 päivän kuluessa.";
+
+/* Title of the alert confirming withdrawal from the subscription contract */
+"subscription.withdraw.confirm.title" = "Peruutatko tilauksesi?";
+
+/* Button that opens the help page to complete a failed subscription withdrawal */
+"subscription.withdraw.error.button" = "Siirry ohjesivulle";
+
+/* Message of the alert shown when withdrawing from the subscription contract fails */
+"subscription.withdraw.error.message" = "Emme voineet käsitellä peruutustasi automaattisesti. Käy ohjesivullamme viimeistelemässä peruutuksesi.";
+
+/* Action title that starts withdrawing from the subscription contract with a full refund */
+"subscription.withdraw.from.contract" = "Peruuta sopimus";
+
+/* Subtitle of the Withdraw from Contract action. Parameter is the last date the user can withdraw. */
+"subscription.withdraw.from.contract.subtitle" = "Voit peruuttaa ja saada täyden hyvityksen %@ asti";
+
+/* Button that dismisses the withdrawal confirmation and keeps the subscription */
+"subscription.withdraw.keep.button" = "Jatka tilausta";
+
+/* Confirmation shown after withdrawing from the subscription contract. Parameter is the withdrawal date. */
+"subscription.withdrawn.info" = "Peruutit tilauksesi %@.";
+
+/* Shown below the withdrawal confirmation. Parameter is the refunded amount with currency. */
+"subscription.withdrawn.refund.info" = "Hyvitystäsi (%@) käsitellään.";
 
 /* No comment provided by engineer. */
 "SwiftUI Alert" = "SwiftUI-ilmoitus";

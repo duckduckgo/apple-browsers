@@ -82,6 +82,7 @@ class MockDuckPlayerPixelHandler: DuckPlayerPixelFiring {
 private struct MockFloatingUIManager: FloatingUIManaging {
     let isFloatingUIEnabled: Bool
     let isFloatingTabSwitcherEnabled = false
+    let isDuckAIAndInputLiquidGlassEnabled = false
 }
 
 final class DuckPlayerNativeUIPresenterTests: XCTestCase {

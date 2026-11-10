@@ -39,10 +39,15 @@ struct AppConfiguration {
     let onboardingConfiguration = OnboardingConfiguration()
     private let appKeyValueStore: ThrowingKeyValueStoring
     private let featureFlagger: FeatureFlagger
+    private let onboardingSharedPixelsStorage: any KeyedStoring<OnboardingSharedPixelsKeys>
 
-    init(appKeyValueStore: ThrowingKeyValueStoring, featureFlagger: FeatureFlagger) {
+    init(appKeyValueStore: ThrowingKeyValueStoring,
+         featureFlagger: FeatureFlagger,
+         onboardingSharedPixelsStorage: any KeyedStoring<OnboardingSharedPixelsKeys> = UserDefaults.app.keyedStoring()
+    ) {
         self.appKeyValueStore = appKeyValueStore
         self.featureFlagger = featureFlagger
+        self.onboardingSharedPixelsStorage = onboardingSharedPixelsStorage
     }
 
     func start(isBookmarksDBFilePresent: Bool?) throws {
@@ -56,6 +61,7 @@ struct AppConfiguration {
         APIRequest.Headers.setUserAgent(DefaultUserAgentManager.duckDuckGoUserAgent)
 
         onboardingConfiguration.migrateToNewOnboarding()
+        OnboardingSharedPixelsVariantMigration.migrateLegacyVariantIfNeeded(in: onboardingSharedPixelsStorage)
         clearTemporaryDirectory()
         try persistentStoresConfiguration.configure(syncKeyValueStore: appKeyValueStore, isBookmarksDBFilePresent: isBookmarksDBFilePresent)
         migrateAIChatSettings()

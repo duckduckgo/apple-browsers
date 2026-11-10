@@ -119,10 +119,15 @@ final class UserScripts: UserScriptsProvider, ReleaseNotesUserScriptProvider {
             featureFlagger: sourceProvider.featureFlagger,
             homepageAiChatsProvider: homepageAiChatsProvider,
             localModelService: NSApp.delegateTyped.localModelService,
-            bonusHandler: sourceProvider.aiChatBonusOffer.handler
+            bonusHandler: sourceProvider.aiChatBonusOffer.handler,
+            bonusMessageLog: sourceProvider.aiChatBonusOffer.messageLog
         )
         let aiChatDebugURLSettings: any KeyedStoring<AIChatDebugURLSettings> = if let aiChatDebugURLSettings { aiChatDebugURLSettings } else { UserDefaults.standard.keyedStoring() }
-        aiChatUserScript = AIChatUserScript(handler: aiChatHandler, urlSettings: aiChatDebugURLSettings)
+        aiChatUserScript = AIChatUserScript(
+            handler: aiChatHandler,
+            urlSettings: aiChatDebugURLSettings,
+            bonusMessageLog: sourceProvider.aiChatBonusOffer.messageLog
+        )
         let subscriptionFeatureFlagAdapter = SubscriptionUserScriptFeatureFlagAdapter(featureFlagger: sourceProvider.featureFlagger)
         subscriptionUserScript = SubscriptionUserScript(
             platform: .macos,

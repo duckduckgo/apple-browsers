@@ -65,16 +65,19 @@ final class AIChatUserScript: NSObject, Subfeature {
     private let localModelService: AIChatLocalModelServing?
     /// Nil uses the app's, which lives on the main actor and so can't be a default argument here.
     private let localModelAccessPrompt: LocalModelAccessAsking?
+    private let bonusMessageLog: AIChatBonusMessageLogging?
 
     init(handler: AIChatUserScriptHandling,
          urlSettings: any KeyedStoring<AIChatDebugURLSettings>,
          browserTools: AIChatBrowserToolsService? = Application.appDelegate.aiChatBrowserToolsService,
          localModelService: AIChatLocalModelServing? = Application.appDelegate.localModelService,
-         localModelAccessPrompt: LocalModelAccessAsking? = nil) {
+         localModelAccessPrompt: LocalModelAccessAsking? = nil,
+         bonusMessageLog: AIChatBonusMessageLogging? = nil) {
         self.handler = handler
         self.browserTools = browserTools
         self.localModelService = localModelService
         self.localModelAccessPrompt = localModelAccessPrompt
+        self.bonusMessageLog = bonusMessageLog
         var originRules = [HostnameMatchingRule]()
         var destinationRules = [HostnameMatchingRule]()
 
@@ -462,6 +465,7 @@ extension AIChatUserScript: AIChatBrowserToolsPushing {
               let host = webView.url?.host,
               messageDestinationPolicy.isAllowed(host) else { return }
         broker.push(method: AIChatUserScriptMessages.submitAIChatBonusRecord.rawValue, params: payload, for: self, into: webView)
+        bonusMessageLog?.record(.push, method: "\(AIChatUserScriptMessages.submitAIChatBonusRecord.rawValue) → \(host)", body: payload)
     }
 
     /// Only a Duck.ai page can receive these; every tab has this script, so the host is checked.

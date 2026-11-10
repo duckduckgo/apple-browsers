@@ -1,0 +1,35 @@
+<!doctype html>
+<html>
+<head><meta charset="utf-8"><title>Fake Assisted Broker – Opt out</title><link rel="stylesheet" href="style.css"></head>
+<body>
+<h1>Opt out</h1>
+<form id="optout-form" action="results.html" method="get">
+  <label>First name <input name="fname"></label>
+  <label>Last name <input name="ln"></label>
+  <!-- Stands in for Cloudflare Turnstile: solving it fills the hidden token's value attribute. -->
+  <div id="captcha-widget" class="captcha">
+    <input type="checkbox" id="fake-turnstile"> <label for="fake-turnstile">Verify you are human</label>
+    <input type="hidden" name="cf-turnstile-response">
+  </div>
+  <button type="submit" aria-label="search-optout-button">Search</button>
+</form>
+<script>
+  document.getElementById('fake-turnstile').addEventListener('change', (event) => {
+    const token = document.querySelector("input[name='cf-turnstile-response']");
+    if (event.target.checked) {
+      token.setAttribute('value', 'fake-token-' + Date.now());
+      document.getElementById('captcha-widget').classList.add('solved');
+    } else {
+      token.removeAttribute('value');
+      document.getElementById('captcha-widget').classList.remove('solved');
+    }
+  });
+  document.getElementById('optout-form').addEventListener('submit', (event) => {
+    if (!document.querySelector("input[name='cf-turnstile-response']").getAttribute('value')) {
+      event.preventDefault();
+      alert('Please verify you are human');
+    }
+  });
+</script>
+</body>
+</html>

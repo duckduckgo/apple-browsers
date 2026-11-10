@@ -1,0 +1,6 @@
+body { font-family: -apple-system, sans-serif; max-width: 640px; margin: 40px auto; padding: 0 16px; }
+form, .card { border: 1px solid #ccc; border-radius: 8px; padding: 16px; margin: 16px 0; }
+label { display: block; margin: 8px 0; }
+.captcha { display: flex; align-items: center; gap: 8px; border: 1px solid #999; padding: 12px; margin: 12px 0; background: #f6f6f6; }
+.captcha.solved { background: #e3f7e3; }
+iframe.captcha-frame { width: 1px; height: 1px; border: 0; }

@@ -909,6 +909,14 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
             await loadProtectedResources()
 #endif
         } catch {
+            if case TunnelError.reconnectBlocked = error {
+                do {
+                    try await disableOnDemandIfSupportedByOS()
+                } catch {
+                    Logger.networkProtection.error("Failed to disable Connect On Demand after blocking automatic reconnection: \(error.localizedDescription, privacy: .public)")
+                }
+            }
+
             if startupOptions.startupMethod == .automaticOnDemand {
                 if loopDetector.connectionFailed(isOnDemand: true) {
                     providerEvents.fire(.connectionFailureLoopDetected(error))

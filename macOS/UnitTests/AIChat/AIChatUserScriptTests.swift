@@ -269,13 +269,13 @@ final class AIChatUserScriptTests: XCTestCase {
         userScript = AIChatUserScript(handler: mockHandler, urlSettings: AIChatMockDebugSettings(), browserTools: service)
         let tool = try XCTUnwrap(service.catalog.tool(named: "listOpenTabs"))
         service.permissions.setState(.allow, forToolNamed: tool.name)
-        let control = await service.clientToolPermissions.authorize(callID: "control", tool: tool, source: userScript)
+        let control = await service.clientToolPermissions.authorize(callID: "control", tool: tool, prompter: userScript)
         guard case .granted(let confirmControl) = control else {
             return XCTFail("Stored permission should authorize script source")
         }
         let controlResult = await confirmControl { .success(.null) }
         XCTAssertNotNil(controlResult)
-        let authorization = await service.clientToolPermissions.authorize(callID: "cancelled", tool: tool, source: userScript)
+        let authorization = await service.clientToolPermissions.authorize(callID: "cancelled", tool: tool, prompter: userScript)
         guard case .granted(let confirmExecution) = authorization else {
             return XCTFail("Stored permission should authorize script source")
         }

@@ -17,6 +17,7 @@
 //
 
 import DataBrokerProtectionCore
+import DDGError
 import Foundation
 
 /// Calls return without waiting for the work, so callers poll `run(id:)`. Nothing is saved to the PIR database.
@@ -28,7 +29,7 @@ public protocol DataBrokerProtectionDebugControlling: AnyObject {
     func continueOptOut(runId: String, resultId: String) throws -> DebugRun
 }
 
-public enum DataBrokerProtectionDebugControlError: LocalizedError, Equatable {
+public enum DataBrokerProtectionDebugControlError: DDGError {
     case invalidRequest(String)
     case brokerNotFound(String)
     case runNotFound(String)
@@ -36,7 +37,20 @@ public enum DataBrokerProtectionDebugControlError: LocalizedError, Equatable {
     case busy(runId: String)
     case notAwaitingEmailConfirmation(resultId: String)
 
-    public var errorDescription: String? {
+    public static var errorDomain: String { "com.duckduckgo.pir.debug-control" }
+
+    public var errorCode: Int {
+        switch self {
+        case .invalidRequest: return 0
+        case .brokerNotFound: return 1
+        case .runNotFound: return 2
+        case .resultNotFound: return 3
+        case .busy: return 4
+        case .notAwaitingEmailConfirmation: return 5
+        }
+    }
+
+    public var description: String {
         switch self {
         case .invalidRequest(let reason):
             return "Invalid request: \(reason)"

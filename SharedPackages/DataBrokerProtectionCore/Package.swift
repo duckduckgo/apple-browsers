@@ -73,6 +73,7 @@ let package = Package(
             name: "DataBrokerProtectionDebugServer",
             dependencies: [
                 "DataBrokerProtectionCore",
+                .product(name: "DDGError", package: "DDGError"),
                 .product(name: "DebugServer", package: "DebugServer"),
             ],
             swiftSettings: [

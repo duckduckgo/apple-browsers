@@ -171,6 +171,18 @@ final class DBPUICommunicationViewModelScanStateExtensionsTests: XCTestCase {
         XCTAssertEqual(result.resultsFound.count, 1)
     }
 
+    func testRecordsCarryTheBrokerProfileUrlInBothScanStates() {
+        let profileUrl = "https://fakebroker.com/person/john-doe"
+        let extractedProfile = ExtractedProfile(id: 1, name: "John Doe", profileUrl: profileUrl)
+        let brokerProfileQueryData: [BrokerProfileQueryData] = [.mock(lastRunDate: Date(), extractedProfile: extractedProfile)]
+
+        let initialState = DBPUIInitialScanState(from: brokerProfileQueryData)
+        let maintenanceState = DBPUIScanAndOptOutMaintenanceState(from: brokerProfileQueryData)
+
+        XCTAssertEqual(initialState.resultsFound.map(\.profileUrl), [profileUrl])
+        XCTAssertEqual(maintenanceState.inProgressOptOuts.map(\.profileUrl), [profileUrl])
+    }
+
     func testInProgressAndCompletedOptOuts_areMappedCorrectly() {
         let brokerProfileQueryData: [BrokerProfileQueryData] = [
             .mock(extractedProfile: .mockWithRemovedDate),

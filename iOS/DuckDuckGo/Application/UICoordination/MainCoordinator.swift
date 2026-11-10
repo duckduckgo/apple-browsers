@@ -771,17 +771,19 @@ extension MainCoordinator: URLHandling {
         fireMediumWidgetPixelIfNeeded(url: url)
 
         let syncPairingInfo = featureFlagger.isFeatureOn(.canInterceptSyncSetupUrls) ? PairingInfo(url: url) : nil
+        let deepLink = AppDeepLinkSchemes.fromURL(url)
 
+        // New Search clears the navigation stack itself, only when it has to.
         if syncPairingInfo == nil
+            && deepLink != .newSearch
             && url.scheme != AppDeepLinkSchemes.openVPN.url.scheme
             && url.scheme != AppDeepLinkSchemes.openAIChat.url.scheme
             && url.scheme != AppDeepLinkSchemes.openAIVoiceChat.url.scheme {
             controller.clearNavigationStack()
         }
-        switch AppDeepLinkSchemes.fromURL(url) {
+        switch deepLink {
         case .newSearch:
-            controller.newTab(reuseExisting: true)
-            controller.enterSearch()
+            handleNewSearchDeepLink()
         case .favorites:
             controller.newTab(reuseExisting: true, allowingKeyboard: false)
         case .quickLink:
@@ -816,6 +818,23 @@ extension MainCoordinator: URLHandling {
             return false
         }
         return true
+    }
+
+    private func handleNewSearchDeepLink() {
+        // Already on a New Tab Page: focus it in place. Clearing and rebuilding it would drop
+        // the keyboard the app opened with, or is about to raise, and raise it again.
+        // An input left in another mode, such as Duck.ai, is still rebuilt so it opens in the
+        // mode a new search starts in.
+        if controller.isNewTabPageVisible, controller.presentedViewController == nil,
+           controller.isInputInInitialToggleMode {
+            if !controller.isInputFocused {
+                controller.enterSearch()
+            }
+            return
+        }
+        controller.clearNavigationStack()
+        controller.newTab(reuseExisting: true)
+        controller.enterSearch()
     }
 
     private func handleOpenPasswords(url: URL) {

@@ -256,7 +256,9 @@ final class DBPUICommunicationLayerTests: XCTestCase {
     private func handshake(_ layer: DBPUICommunicationLayer) async throws -> DBPUIHandshakeResponse {
         let handler = try XCTUnwrap(layer.handler(forMethodNamed: DBPUIReceivedMethodName.handshake.rawValue))
         let result = try await handler(["version": 12], WKScriptMessage.mock())
-        return try XCTUnwrap(result as? DBPUIHandshakeResponse)
+        let response = try XCTUnwrap(result as? DBPUIHandshakeResponse)
+        XCTAssertTrue(response.success)
+        return response
     }
 
     func testWhenSigningKeyIsRevoked_thenScanDataIsNotServedAndScansDoNotStart() async throws {

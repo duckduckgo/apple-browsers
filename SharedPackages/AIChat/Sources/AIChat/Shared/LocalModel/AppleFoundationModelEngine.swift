@@ -115,6 +115,17 @@ public final class AppleFoundationModelEngine: AIChatLocalModelEngine {
         """
     }
 
+    /// What a streamed snapshot adds to the text already sent, or nil when it adds nothing.
+    /// Compared by Unicode scalars, not characters: a vowel sign or emoji modifier joins the last
+    /// character without making the string longer, and would be lost.
+    static func newText(in snapshot: String, after emitted: String) -> String? {
+        let sent = emitted.unicodeScalars
+        let all = snapshot.unicodeScalars
+        // Text already on the page can't be taken back, so a snapshot that rewrites it is skipped.
+        guard all.count > sent.count, all.starts(with: sent) else { return nil }
+        return String(String.UnicodeScalarView(all.dropFirst(sent.count)))
+    }
+
     // MARK: - Generation
 
     private static func generate(_ request: AIChatLocalRunRequest,
@@ -137,10 +148,9 @@ public final class AppleFoundationModelEngine: AIChatLocalModelEngine {
         var emitted = ""
         do {
             for try await snapshot in session.streamResponse(to: prompt, options: options) {
-                let text = snapshot.content
-                guard text.count > emitted.count else { continue }
-                continuation.yield(.text(String(text.dropFirst(emitted.count))))
-                emitted = text
+                guard let newText = newText(in: snapshot.content, after: emitted) else { continue }
+                continuation.yield(.text(newText))
+                emitted = snapshot.content
             }
         } catch is CancellationError {
             throw CancellationError()

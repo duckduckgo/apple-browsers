@@ -43,6 +43,8 @@ final class FirstPaintCover {
         var exitSnapshotWindowFrame: CGRect = .zero
         /// Expected background of the incoming page; nil keeps the panel colour.
         var destinationColor: UIColor?
+        /// Outlines the results page while it loads; only for searches, never for websites.
+        var showsSearchResultsSkeleton = false
     }
 
     /// Returns a closure that cancels the scheduled action.
@@ -78,6 +80,7 @@ final class FirstPaintCover {
     private(set) var phase: Phase = .idle
     private(set) var coverView: UIView?
     private(set) var exitSnapshotView: UIView?
+    private(set) var skeletonView: SearchResultsSkeletonView?
 
     private let scheduler: Scheduler
     private let fadeOut: FadeOut
@@ -87,6 +90,8 @@ final class FirstPaintCover {
     private var handoffAnimators: [UIViewPropertyAnimator] = []
     private var coveredNavigation: CoveredNavigation = .notStarted
     private var pendingPolicyDecisions = 0
+    private var armedAt: CFTimeInterval?
+    private var cancelHold: (() -> Void)?
 
     /// The navigation the cover waits for; anything else belongs to the previous page.
     private enum CoveredNavigation {
@@ -106,8 +111,11 @@ final class FirstPaintCover {
     var isCovering: Bool { phase != .idle }
 
     /// Covers `webView` straight away; re-arming mid-fade brings the cover back without a flash.
-    func arm(in container: UIView, above webView: UIView, handoff: Handoff = Handoff()) {
+    /// `contentTop` is where the page's content starts in `container`, below a floating address bar.
+    func arm(in container: UIView, above webView: UIView, handoff: Handoff = Handoff(), contentTop: CGFloat = 0) {
         stopAnimators()
+        cancelDebugHold()
+        armedAt = CACurrentMediaTime()
 
         let view = coverView ?? makeCoverView()
         if view.superview !== container {
@@ -117,6 +125,16 @@ final class FirstPaintCover {
         view.alpha = 1
         view.backgroundColor = Constants.baseColor
         coverView = view
+
+        skeletonView?.removeFromSuperview()
+        skeletonView = nil
+        if handoff.showsSearchResultsSkeleton {
+            let skeleton = SearchResultsSkeletonView(frame: view.bounds)
+            skeleton.contentTop = contentTop
+            view.insertSubview(skeleton, at: 0)
+            skeleton.appear()
+            skeletonView = skeleton
+        }
 
         exitSnapshotView?.removeFromSuperview()
         exitSnapshotView = handoff.exitSnapshot
@@ -202,6 +220,27 @@ final class FirstPaintCover {
         reveal(animated: false)
     }
 
+    /// Keeps the cover up as long again as the load took (times the slowdown), so its stages are visible.
+    private func holdForDebugSlowdown() -> Bool {
+        guard Self.debugSlowdown > 1 else { return false }
+        if cancelHold != nil { return true }
+        guard let armedAt else { return false }
+        self.armedAt = nil
+        let hold = (CACurrentMediaTime() - armedAt) * (Self.debugSlowdown - 1)
+        cancelTimeout?()
+        cancelTimeout = nil
+        cancelHold = scheduler(hold) { [weak self] in
+            self?.cancelHold = nil
+            self?.reveal(animated: true)
+        }
+        return true
+    }
+
+    private func cancelDebugHold() {
+        cancelHold?()
+        cancelHold = nil
+    }
+
     private var isAwaitingStart: Bool {
         guard phase == .awaitingCommit, case .notStarted = coveredNavigation else { return false }
         return true
@@ -214,6 +253,8 @@ final class FirstPaintCover {
     }
 
     private func reveal(animated: Bool) {
+        if animated, holdForDebugSlowdown() { return }
+        cancelDebugHold()
         phase = .idle
         coveredNavigation = .notStarted
         cancelTimeout?()
@@ -243,6 +284,8 @@ final class FirstPaintCover {
     private func removeCover(_ view: UIView) {
         exitSnapshotView?.removeFromSuperview()
         exitSnapshotView = nil
+        skeletonView?.removeFromSuperview()
+        skeletonView = nil
         view.removeFromSuperview()
         view.alpha = 1
     }
@@ -272,7 +315,17 @@ extension FirstPaintCover {
     }
 
     private static func duration(_ base: TimeInterval) -> TimeInterval {
-        UIAccessibility.isReduceMotionEnabled ? base * Constants.reducedMotionScale : base
+        let scaled = base * debugSlowdown
+        return UIAccessibility.isReduceMotionEnabled ? scaled * Constants.reducedMotionScale : scaled
+    }
+
+    /// Testing aid for debug builds: launch with `-firstPaintCoverSlowdown 2` to run the cover at half speed.
+    static var debugSlowdown: Double {
+        #if DEBUG
+        return max(1, UserDefaults.standard.double(forKey: "firstPaintCoverSlowdown"))
+        #else
+        return 1
+        #endif
     }
 
     // Strong ease-out: responsive start for things entering or leaving.

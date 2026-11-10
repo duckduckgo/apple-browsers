@@ -597,6 +597,75 @@ struct FirstPaintCoverTests {
     }
 
     @available(iOS 16, macOS 13, *)
+    @Test("A website load keeps the plain cover, with no results outline", .timeLimit(.minutes(1)))
+    func websiteLoadHasNoSkeleton() {
+        let harness = Harness()
+
+        harness.cover.arm(in: harness.container, above: harness.webView)
+
+        #expect(harness.cover.skeletonView == nil)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("A search outlines the results page under the outgoing panel, from where the page content starts", .timeLimit(.minutes(1)))
+    func searchShowsSkeletonBelowSnapshot() throws {
+        let harness = Harness()
+        var handoff = FirstPaintCover.Handoff()
+        handoff.exitSnapshot = UIView()
+        handoff.showsSearchResultsSkeleton = true
+
+        harness.cover.arm(in: harness.container, above: harness.webView, handoff: handoff, contentTop: 120)
+
+        let skeleton = try #require(harness.cover.skeletonView)
+        #expect(skeleton.superview === harness.cover.coverView)
+        #expect(harness.cover.coverView?.subviews.first === skeleton)
+        #expect(harness.cover.coverView?.subviews.last === handoff.exitSnapshot)
+        #expect(skeleton.contentTop == 120)
+        #expect(skeleton.frame == harness.container.bounds)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Revealing removes the results outline with the cover", .timeLimit(.minutes(1)))
+    func revealRemovesSkeleton() {
+        let harness = Harness()
+        var handoff = FirstPaintCover.Handoff()
+        handoff.showsSearchResultsSkeleton = true
+        harness.cover.arm(in: harness.container, above: harness.webView, handoff: handoff)
+        let skeleton = harness.cover.skeletonView
+
+        harness.cover.cancel()
+
+        #expect(harness.cover.skeletonView == nil)
+        #expect(skeleton?.superview == nil)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Re-arming for a website drops the previous search's outline", .timeLimit(.minutes(1)))
+    func rearmForWebsiteDropsSkeleton() {
+        let harness = Harness()
+        var search = FirstPaintCover.Handoff()
+        search.showsSearchResultsSkeleton = true
+        harness.cover.arm(in: harness.container, above: harness.webView, handoff: search)
+        let skeleton = harness.cover.skeletonView
+
+        harness.cover.arm(in: harness.container, above: harness.webView)
+
+        #expect(harness.cover.skeletonView == nil)
+        #expect(skeleton?.superview == nil)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("The outline fills the height below the page content", .timeLimit(.minutes(1)))
+    func skeletonPathFillsHeight() {
+        let path = SearchResultsSkeletonView.path(width: 402, height: 800, contentTop: 120, scale: 3)
+
+        let bounds = path.boundingBoxOfPath
+        #expect(bounds.minY >= 120)
+        #expect(bounds.maxY > 700)
+        #expect(bounds.maxX <= 402)
+    }
+
+    @available(iOS 16, macOS 13, *)
     @Test("Callbacks without an armed cover do nothing", .timeLimit(.minutes(1)))
     func idleCallbacksDoNothing() {
         let harness = Harness()

@@ -23,21 +23,26 @@ import UIKit
 ///
 /// Read from the rendered preview's side margins: results and modules are cards on top of the page
 /// background, and that background is what paints first.
+///
+/// Dark mode is fixed instead: there, organic results sit on a lighter band (#222222) that fills most of
+/// the margins, while the header and modules paint on #181818 first.
 @MainActor
 final class SearchPageColorMemory {
+
+    static let darkPageBackground = UIColor(red: 0x18 / 255, green: 0x18 / 255, blue: 0x18 / 255, alpha: 1)
 
     private var colors: [UIUserInterfaceStyle: UIColor] = [:]
 
     func color(for style: UIUserInterfaceStyle) -> UIColor? {
-        colors[style]
+        style == .dark ? Self.darkPageBackground : colors[style]
     }
 
     func needsSample(for style: UIUserInterfaceStyle) -> Bool {
-        colors[style] == nil
+        style != .dark && colors[style] == nil
     }
 
     func record(preview: UIImage, for style: UIUserInterfaceStyle) {
-        guard let image = preview.cgImage, let color = Self.marginColor(in: image) else { return }
+        guard style != .dark, let image = preview.cgImage, let color = Self.marginColor(in: image) else { return }
         colors[style] = color
     }
 

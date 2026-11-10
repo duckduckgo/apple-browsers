@@ -1688,7 +1688,8 @@ class TabViewController: UIViewController {
     func coverPageUntilFirstPaint(handoff: FirstPaintCover.Handoff = .init()) {
         guard isViewLoaded, let webView, webView.superview === webViewContainer else { return }
         webView.observeRenderingProgressEvents(FirstPaintCover.Constants.observedEvents)
-        firstPaintCover.arm(in: webViewContainer, above: webView, handoff: handoff)
+        let contentTop = webView.convert(CGPoint(x: 0, y: webView.scrollView.adjustedContentInset.top), to: webViewContainer).y
+        firstPaintCover.arm(in: webViewContainer, above: webView, handoff: handoff, contentTop: contentTop)
     }
 
     private func load(url: URL, shouldCancelPendingAIChatTabAttachmentPrompt: Bool) {

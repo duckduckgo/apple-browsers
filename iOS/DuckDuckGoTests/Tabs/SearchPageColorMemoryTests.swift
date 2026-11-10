@@ -68,16 +68,26 @@ struct SearchPageColorMemoryTests {
     }
 
     @available(iOS 16, macOS 13, *)
-    @Test("Remembers a colour per appearance and only asks for one sample each", .timeLimit(.minutes(1)))
-    func remembersPerAppearance() {
+    @Test("Remembers the light page colour and only asks for one sample", .timeLimit(.minutes(1)))
+    func remembersLightColor() {
         let memory = SearchPageColorMemory()
-        #expect(memory.needsSample(for: .dark))
+        #expect(memory.needsSample(for: .light))
+        #expect(memory.color(for: .light) == nil)
+
+        memory.record(preview: Self.makePage(), for: .light)
+
+        #expect(!memory.needsSample(for: .light))
+        #expect(Self.hex(memory.color(for: .light)) == "#171717")
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Dark mode uses the page background behind the header, not the lighter organic results band", .timeLimit(.minutes(1)))
+    func darkUsesFixedPageBackground() {
+        let memory = SearchPageColorMemory()
+        #expect(!memory.needsSample(for: .dark))
 
         memory.record(preview: Self.makePage(), for: .dark)
 
-        #expect(!memory.needsSample(for: .dark))
-        #expect(memory.needsSample(for: .light))
-        #expect(Self.hex(memory.color(for: .dark)) == "#171717")
-        #expect(memory.color(for: .light) == nil)
+        #expect(Self.hex(memory.color(for: .dark)) == "#181818")
     }
 }

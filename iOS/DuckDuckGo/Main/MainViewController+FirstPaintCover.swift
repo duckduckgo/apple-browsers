@@ -69,6 +69,8 @@ extension MainViewController {
             handoff.exitSnapshotWindowFrame = panel.convert(panel.bounds, to: nil)
         }
         handoff.destinationColor = expectedPageBackgroundColor(for: url)
+        // Websites keep the plain cover; the outline matches the phone-width results page only.
+        handoff.showsSearchResultsSkeleton = url.isDuckDuckGoSearch && traitCollection.horizontalSizeClass == .compact
         tab.coverPageUntilFirstPaint(handoff: handoff)
     }
 

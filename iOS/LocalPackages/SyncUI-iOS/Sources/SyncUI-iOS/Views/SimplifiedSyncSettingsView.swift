@@ -44,6 +44,7 @@ public struct SimplifiedSyncSettingsView: View {
     public var body: some View {
         List {
             syncWarningBanners
+            newDevicesCardSection
             headerSection
 
             if model.isSyncEnabled {
@@ -57,6 +58,7 @@ public struct SimplifiedSyncSettingsView: View {
         .animation(.easeInOut(duration: 0.3), value: model.isSyncEnabled)
         .animation(.easeInOut(duration: 0.3), value: model.devices.isEmpty)
         .applyListStyle()
+        .background(deviceActivityNavigationLink)
         .environmentObject(model)
         .onChange(of: model.isSyncEnabled) { isEnabled in
             if !isEnabled {
@@ -107,6 +109,43 @@ extension SimplifiedSyncSettingsView {
             } else {
                 SyncWarningMessageView(title: UserText.syncUnavailableTitle, message: UserText.syncUnavailableMessage)
             }
+        }
+    }
+
+    @ViewBuilder
+    var newDevicesCardSection: some View {
+        if model.isNewDevicesCardVisible {
+            // Capture the displayed IDs so dismissal cannot also remove events that arrive before the next render.
+            let eventIDs = Set(model.pendingLoginEvents.map(\.id))
+            Section {
+                VStack(alignment: .leading, spacing: 24) {
+                    HStack(alignment: .top, spacing: 8) {
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text(model.newDevicesCardTitle)
+                                .daxBodyBold()
+                                .foregroundColor(Color(designSystemColor: .textPrimary))
+                            Text(model.newDevicesCardMessage)
+                                .daxBodyRegular()
+                                .foregroundColor(Color(designSystemColor: .textSecondary))
+                        }
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .fixedSize(horizontal: false, vertical: true)
+
+                        Button {
+                            model.dismissPendingLoginEvents(withIDs: eventIDs)
+                        } label: {
+                            Image(uiImage: DesignSystemImages.Glyphs.Size16.close)
+                        }
+                        .buttonStyle(CloseButtonStyle())
+                        .accessibilityLabel(UserText.newDevicesCardClose)
+                    }
+                    Button(UserText.newDevicesCardReview, action: model.showDeviceActivity)
+                        .buttonStyle(SecondaryFillButtonStyle(compact: true))
+                }
+                .padding(24)
+            }
+            .listRowInsets(EdgeInsets())
+            .listRowBackground(Color(designSystemColor: .surfaceTertiary))
         }
     }
 
@@ -593,19 +632,36 @@ extension SimplifiedSyncSettingsView {
     }
 
     @ViewBuilder
-    var deviceActivitySection: some View {
-        if model.isDeviceActivityAvailable,
+    var deviceActivityNavigationLink: some View {
+        if model.canShowDeviceActivity,
            let deviceActivityViewModel = model.deviceActivityViewModel {
+            // Keep programmatic navigation mounted even when the entry-point row is below the fold.
+            NavigationLink(destination: DeviceActivityView(model: deviceActivityViewModel)
+                .onAppear(perform: model.deviceActivityDidOpen), isActive: $model.isDeviceActivityPresented) {
+                EmptyView()
+            }
+            .accessibilityHidden(true)
+        }
+    }
+
+    @ViewBuilder
+    var deviceActivitySection: some View {
+        if model.canShowDeviceActivity {
             Section {
-                NavigationLink(destination: DeviceActivityView(model: deviceActivityViewModel), isActive: $model.isDeviceActivityPresented) {
-                    Label(title: {
-                        Text(UserText.deviceActivityTitle)
-                            .daxBodyRegular()
-                            .foregroundColor(Color(designSystemColor: .textPrimary))
-                    }, icon: {
-                        Image(uiImage: DesignSystemImages.Glyphs.Size24.history)
-                            .foregroundColor(Color(designSystemColor: .icons))
-                    })
+                Button(action: model.showDeviceActivity) {
+                    HStack {
+                        Label(title: {
+                            Text(UserText.deviceActivityTitle)
+                                .daxBodyRegular()
+                                .foregroundColor(Color(designSystemColor: .textPrimary))
+                        }, icon: {
+                            Image(uiImage: DesignSystemImages.Glyphs.Size24.history)
+                                .foregroundColor(Color(designSystemColor: .icons))
+                        })
+                        Spacer()
+                        disclosureChevron
+                    }
+                    .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)
             }

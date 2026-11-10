@@ -32,6 +32,8 @@ extension Preferences {
 
         private enum Const {
             static let footerSpacing: CGFloat = 4
+            // 10pt text has a 12pt line; 4pt more gives the 16pt line height.
+            static let disclaimerLineSpacing: CGFloat = 4
             static let descriptionTopPadding: CGFloat = 5
             static let dividerTopPadding: CGFloat = 32
             static let dividerBottomPadding: CGFloat = 28
@@ -183,6 +185,7 @@ extension Preferences {
                 Divider()
                 Text(UserText.extensionsSettingsDisclaimer)
                     .font(PreferencesUI_macOS.Const.Fonts.preferencePaneDisclaimer)
+                    .lineSpacing(Const.disclaimerLineSpacing)
                     .foregroundColor(Color(designSystemColor: .textSecondary, palette: palette))
                     .fixMultilineScrollableText()
             }
@@ -465,14 +468,15 @@ extension Preferences {
             let iconSize: CGFloat
             let titleSpacing: CGFloat
             let titleFontSize: CGFloat
+            let titleFontWeight: Font.Weight
             let publisherFontSize: CGFloat
 
             static var installed: Mode {
-                Mode(tileSize: 48, tileCornerRadius: 8, iconSize: 24, titleSpacing: 6, titleFontSize: 13, publisherFontSize: 11)
+                Mode(tileSize: 48, tileCornerRadius: 8, iconSize: 24, titleSpacing: 6, titleFontSize: 13, titleFontWeight: .medium, publisherFontSize: 11)
             }
 
             static var available: Mode {
-                Mode(tileSize: 72, tileCornerRadius: 12, iconSize: 40, titleSpacing: 10, titleFontSize: 15, publisherFontSize: 13)
+                Mode(tileSize: 72, tileCornerRadius: 12, iconSize: 40, titleSpacing: 10, titleFontSize: 15, titleFontWeight: .semibold, publisherFontSize: 13)
             }
         }
 
@@ -509,13 +513,13 @@ extension Preferences {
 
                 VStack(alignment: .leading, spacing: mode.titleSpacing) {
                     Text(item.name)
-                        .font(.system(size: mode.titleFontSize, weight: .semibold))
+                        .font(.system(size: mode.titleFontSize, weight: mode.titleFontWeight))
                         .foregroundColor(Color(designSystemColor: .textPrimary, palette: palette))
                         .padding(.top, -2)
 
                     Button(action: onPublisher) {
                         Text(item.publisher)
-                            .font(.system(size: mode.publisherFontSize))
+                            .font(.system(size: mode.publisherFontSize, weight: .regular))
                             .foregroundColor(Color.rebrandableLink(palette: palette))
                     }
                     .buttonStyle(.plain)

@@ -669,7 +669,7 @@
         "key": "flow",
         "type": "string",
         "description": "Version of the onboarding flow the user entered",
-        "enum": ["default", "duckai", "tailored_by_download_reason"]
+        "enum": ["default", "duckai", "tailored_by_download_reason", "tailored_by_download_reason_vpn"]
     },
     "onboardingVariantSearchExperience": {
         "key": "variant_search_experience",

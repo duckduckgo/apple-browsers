@@ -625,15 +625,13 @@ public enum FeatureFlag: String {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1216365830146824
     case searchTokenExperimentV4
 
-    /// NA Experiment: tailor the onboarding flow based on the user's download reason.
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1216491579842691?focus=true
+    /// NA Experiment: add VPN as a download reason, with its own onboarding branch that offers the subscription.
+    /// Both cohorts get the onboarding flow tailored by download reason. Treatment also gets the VPN reason.
+    /// https://app.asana.com/1/137249556945/project/72649045549333/task/1219341928461688
     ///
-    /// Concluded and disabled so no new users are enrolled. The download-reason flow  is kept for the follow-up experiment:
-    /// https://app.asana.com/1/137249556945/project/1207260194172075/task/1219341928461688
-    /// To reuse it, rename this case, its subfeature and cohort enum, rename the experiment in
-    /// `native_experiments.json5`, and switch the source back to `.remoteReleasable`. Use a new subfeature name
-    /// so devices enrolled in this run are not carried over.
-    case onboardingFlowByDownloadReasonExperiment
+    /// Follows the concluded download-reason experiment (`iOSBrowserConfigSubfeature.onboardingFlowByDownloadReasonExperiment`).
+    /// The subfeature lives under `privacyPro` so `SubscriptionExperimentAttributionProvider` reports the cohort on purchases.
+    case onboardingVPNDownloadReasonExperiment
 
     /// Experiment for removing monthly free trials — second run, enrolling only free-trial eligible users.
     /// https://app.asana.com/1/137249556945/task/1217334233390728
@@ -689,8 +687,8 @@ extension FeatureFlag: FeatureFlagDescribing {
         case treatment
     }
 
-    /// Cohorts for the onboarding-flow-by-download-reason experiment.
-    public enum OnboardingFlowByDownloadReasonExperimentCohort: String, FeatureFlagCohortDescribing {
+    /// Cohorts for the `onboardingVPNDownloadReasonExperiment` ABN test.
+    public enum OnboardingVPNDownloadReasonExperimentCohort: String, FeatureFlagCohortDescribing {
         case control
         case treatment
     }
@@ -984,8 +982,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(source: .disabled, cohortType: UITestExperimentCohort.self)
         case .searchTokenExperimentV4:
             Config(source: .remoteReleasable(iOSBrowserConfigSubfeature.searchTokenExperimentV4), cohortType: SearchTokenExperimentCohort.self)
-        case .onboardingFlowByDownloadReasonExperiment:
-            Config(source: .disabled, cohortType: OnboardingFlowByDownloadReasonExperimentCohort.self)
+        case .onboardingVPNDownloadReasonExperiment:
+            Config(source: .remoteReleasable(PrivacyProSubfeature.onboardingVPNDownloadReasonExperiment), cohortType: OnboardingVPNDownloadReasonExperimentCohort.self)
         case .monthlyFreeTrialExperiment2:
             Config(source: .remoteReleasable(PrivacyProSubfeature.monthlyFreeTrialExperiment2), cohortType: MonthlyFreeTrialExperimentCohort.self)
         case .genericBackgroundTask:

@@ -24,6 +24,7 @@ import Testing
 import class UIKit.UIDevice
 import protocol BrowserServicesKit.VariantManager
 import FeatureFlags_iOS
+import SubscriptionTestingUtilities
 @testable import Core
 @testable import DuckDuckGo
 
@@ -631,6 +632,8 @@ struct OnboardingStepsForConfiguredFlow {
 @Suite("Onboarding - Download Reason Flow")
 struct OnboardingDownloadReasonFlowTests {
 
+    typealias Cohort = FeatureFlag.OnboardingVPNDownloadReasonExperimentCohort
+
     // MARK: - Pixel flow
 
     @Test("iPhone default-flow users report under the tailored pixel", arguments: [true, false])
@@ -656,10 +659,10 @@ struct OnboardingDownloadReasonFlowTests {
     }
 
     @Test(
-        "iPhone users enrolled in the VPN experiment report under the VPN tailored pixel",
-        arguments: [FeatureFlag.OnboardingFlowByDownloadReasonExperimentCohort.control, .treatment]
+        "iPhone users already enrolled in the VPN experiment report under the VPN tailored pixel",
+        arguments: [Cohort.control, Cohort.treatment]
     )
-    func enrolledIPhoneUsersReportVPNTailoredPixel(_ cohort: FeatureFlag.OnboardingFlowByDownloadReasonExperimentCohort) {
+    func enrolledIPhoneUsersReportVPNTailoredPixel(_ cohort: Cohort) {
         // GIVEN
         let sharedPixelStorage = makePixelStore()
         let tutorialSettings = MockTutorialSettings(hasSeenOnboarding: false)
@@ -678,6 +681,62 @@ struct OnboardingDownloadReasonFlowTests {
         // THEN
         #expect(tutorialSettings.onboardingFlowType == .default)
         #expect(sharedPixelStorage.onboardingFlow == .tailoredByDownloadReasonVPN)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Configuring the flow doesn't enroll the user in the VPN experiment", .timeLimit(.minutes(1)))
+    func configuringFlowDoesNotEnroll() {
+        // GIVEN
+        let sharedPixelStorage = makePixelStore()
+        let featureFlagger = makeUnassignedFeatureFlagger()
+        let sut = makeManager(featureFlagger: featureFlagger, tutorialSettings: MockTutorialSettings(hasSeenOnboarding: false), sharedPixelsStorage: sharedPixelStorage)
+
+        // WHEN
+        sut.configureOnboardingFlow(from: nil)
+
+        // THEN
+        #expect(featureFlagger.didCallResolveCohort == false)
+        #expect(sharedPixelStorage.onboardingFlow == .tailoredByDownloadReason)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test(
+        "Eligible users are enrolled in the VPN experiment and report under the VPN tailored pixel",
+        .timeLimit(.minutes(1)),
+        arguments: [Cohort.control, Cohort.treatment]
+    )
+    func eligibleUsersAreEnrolledAndReportVPNTailoredPixel(_ cohort: Cohort) {
+        // GIVEN
+        let sharedPixelStorage = makePixelStore()
+        let tutorialSettings = MockTutorialSettings(hasSeenOnboarding: false)
+        let featureFlagger = PrivacyConfig.MockFeatureFlagger(resolveCohortStub: cohort, isAlreadyAssigned: false)
+        let sut = makeManager(featureFlagger: featureFlagger, tutorialSettings: tutorialSettings, sharedPixelsStorage: sharedPixelStorage)
+        sut.configureOnboardingFlow(from: nil)
+
+        // WHEN
+        sut.enrollInDownloadReasonVPNExperimentIfNeeded()
+
+        // THEN
+        #expect(featureFlagger.didCallResolveCohort)
+        #expect(tutorialSettings.onboardingFlowType == .default)
+        #expect(sharedPixelStorage.onboardingFlow == .tailoredByDownloadReasonVPN)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Users the VPN experiment doesn't enroll keep the tailored pixel", .timeLimit(.minutes(1)))
+    func usersNotAssignedACohortKeepTailoredPixel() {
+        // GIVEN — the flag is off remotely, so resolving returns no cohort.
+        let sharedPixelStorage = makePixelStore()
+        let featureFlagger = PrivacyConfig.MockFeatureFlagger(resolveCohortStub: nil, isAlreadyAssigned: false)
+        let sut = makeManager(featureFlagger: featureFlagger, tutorialSettings: MockTutorialSettings(hasSeenOnboarding: false), sharedPixelsStorage: sharedPixelStorage)
+        sut.configureOnboardingFlow(from: nil)
+
+        // WHEN
+        sut.enrollInDownloadReasonVPNExperimentIfNeeded()
+
+        // THEN
+        #expect(featureFlagger.didCallResolveCohort)
+        #expect(sharedPixelStorage.onboardingFlow == .tailoredByDownloadReason)
     }
 
     @Test("iPad default-flow users report under the default pixel", arguments: [true, false])
@@ -872,42 +931,97 @@ struct OnboardingDownloadReasonFlowTests {
         #expect(sut.currentDownloadReason == reason)
     }
 
-    // MARK: - Experiment enrollment (new installers, iPhone)
 
-    @Test("New iPhone users are enrolled in the experiment")
-    func newIPhoneUsersAreEnrolled() {
-        // GIVEN
-        let featureFlagger = PrivacyConfig.MockFeatureFlagger()
-        let sut = makeManager(featureFlagger: featureFlagger, tutorialSettings: MockTutorialSettings(hasSeenOnboarding: false))
+    // MARK: - VPN experiment eligibility (new installers, iPhone, default flow, can buy the subscription with a free trial)
 
-        // WHEN
-        sut.configureOnboardingFlow(from: nil)
-
-        // THEN
-        #expect(featureFlagger.didCallResolveCohort)
-    }
-
-    @Test("iPad users are not enrolled in the experiment")
+    @available(iOS 16, macOS 13, *)
+    @Test("iPad users are not enrolled in the VPN experiment", .timeLimit(.minutes(1)))
     func iPadUsersAreNotEnrolled() {
         // GIVEN
-        let featureFlagger = PrivacyConfig.MockFeatureFlagger()
-        let sut = makeManager(featureFlagger: featureFlagger, isIphone: false, tutorialSettings: MockTutorialSettings(hasSeenOnboarding: false))
+        let featureFlagger = makeUnassignedFeatureFlagger()
+        let sut = makeManager(featureFlagger: featureFlagger, isIphone: false)
 
         // WHEN
-        sut.configureOnboardingFlow(from: nil)
+        sut.enrollInDownloadReasonVPNExperimentIfNeeded()
 
         // THEN
         #expect(featureFlagger.didCallResolveCohort == false)
     }
 
-    @Test("Returning users are not enrolled in the experiment")
+    @available(iOS 16, macOS 13, *)
+    @Test("Returning users are not enrolled in the VPN experiment", .timeLimit(.minutes(1)))
     func returningUsersAreNotEnrolled() {
         // GIVEN
-        let featureFlagger = PrivacyConfig.MockFeatureFlagger()
-        let sut = makeManager(featureFlagger: featureFlagger, variantManager: OnboardingManagerVariants.returningUserVariantManagerMock, tutorialSettings: MockTutorialSettings(hasSeenOnboarding: false))
+        let featureFlagger = makeUnassignedFeatureFlagger()
+        let sut = makeManager(featureFlagger: featureFlagger, variantManager: OnboardingManagerVariants.returningUserVariantManagerMock)
 
         // WHEN
-        sut.configureOnboardingFlow(from: nil)
+        sut.enrollInDownloadReasonVPNExperimentIfNeeded()
+
+        // THEN
+        #expect(featureFlagger.didCallResolveCohort == false)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Duck.ai flow users are not enrolled in the VPN experiment", .timeLimit(.minutes(1)))
+    func duckAIFlowUsersAreNotEnrolled() {
+        // GIVEN
+        let featureFlagger = makeUnassignedFeatureFlagger()
+        let tutorialSettings = MockTutorialSettings(hasSeenOnboarding: false)
+        tutorialSettings.onboardingFlowType = .duckAI
+        let sut = makeManager(featureFlagger: featureFlagger, tutorialSettings: tutorialSettings)
+
+        // WHEN
+        sut.enrollInDownloadReasonVPNExperimentIfNeeded()
+
+        // THEN
+        #expect(featureFlagger.didCallResolveCohort == false)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Users whose purchase eligibility isn't known yet are not enrolled in the VPN experiment", .timeLimit(.minutes(1)))
+    func usersWithUnknownPurchaseEligibilityAreNotEnrolled() {
+        // GIVEN — no cached products and the App Store product fetch hasn't finished.
+        let featureFlagger = makeUnassignedFeatureFlagger()
+        let subscriptionManager = makeEligibleSubscriptionManager()
+        subscriptionManager.hasAppStoreProductsAvailable = false
+        subscriptionManager.hasResolvedAppStoreProducts = false
+        let sut = makeManager(featureFlagger: featureFlagger, subscriptionManager: subscriptionManager)
+
+        // WHEN
+        sut.enrollInDownloadReasonVPNExperimentIfNeeded()
+
+        // THEN
+        #expect(featureFlagger.didCallResolveCohort == false)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Users who can't buy the subscription are not enrolled in the VPN experiment", .timeLimit(.minutes(1)))
+    func usersNotEligibleToPurchaseAreNotEnrolled() {
+        // GIVEN — the product fetch finished, but there's nothing to buy.
+        let featureFlagger = makeUnassignedFeatureFlagger()
+        let subscriptionManager = makeEligibleSubscriptionManager()
+        subscriptionManager.hasAppStoreProductsAvailable = false
+        let sut = makeManager(featureFlagger: featureFlagger, subscriptionManager: subscriptionManager)
+
+        // WHEN
+        sut.enrollInDownloadReasonVPNExperimentIfNeeded()
+
+        // THEN
+        #expect(featureFlagger.didCallResolveCohort == false)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Users who aren't eligible for the free trial are not enrolled in the VPN experiment", .timeLimit(.minutes(1)))
+    func usersNotEligibleForFreeTrialAreNotEnrolled() {
+        // GIVEN — they can buy, but this Apple ID has already used the trial (e.g. subscribed on another device).
+        let featureFlagger = makeUnassignedFeatureFlagger()
+        let subscriptionManager = makeEligibleSubscriptionManager()
+        subscriptionManager.isEligibleForFreeTrialResult = false
+        let sut = makeManager(featureFlagger: featureFlagger, subscriptionManager: subscriptionManager)
+
+        // WHEN
+        sut.enrollInDownloadReasonVPNExperimentIfNeeded()
 
         // THEN
         #expect(featureFlagger.didCallResolveCohort == false)
@@ -925,11 +1039,18 @@ struct OnboardingDownloadReasonFlowTests {
         return tutorialSettings
     }
 
+    /// A flagger that would put the user in treatment if asked, so a missing `resolveCohort` call proves the guard held.
+    private func makeUnassignedFeatureFlagger() -> PrivacyConfig.MockFeatureFlagger {
+        PrivacyConfig.MockFeatureFlagger(resolveCohortStub: Cohort.treatment, isAlreadyAssigned: false)
+    }
+
     private func makeManager(
         featureFlagger: FeatureFlagger = PrivacyConfig.MockFeatureFlagger(),
         isIphone: Bool = true,
         variantManager: VariantManager = OnboardingManagerVariants.newUserVariantManagerMock,
-        tutorialSettings: MockTutorialSettings? = nil
+        tutorialSettings: MockTutorialSettings? = nil,
+        subscriptionManager: SubscriptionManagerMock? = nil,
+        sharedPixelsStorage: (any KeyedStoring<OnboardingSharedPixelsKeys>)? = nil
     ) -> OnboardingManager {
         OnboardingManager(
             appDefaults: AppSettingsMock(),
@@ -937,8 +1058,18 @@ struct OnboardingDownloadReasonFlowTests {
             variantManager: variantManager,
             isIphone: isIphone,
             tutorialSettings: tutorialSettings ?? makeTutorialSettings(),
-            sharedPixelsStorage: makePixelStore()
+            subscriptionManager: subscriptionManager ?? makeEligibleSubscriptionManager(),
+            sharedPixelsStorage: sharedPixelsStorage ?? makePixelStore()
         )
+    }
+
+    /// Purchase eligibility is known, and the user can buy the subscription with a free trial.
+    private func makeEligibleSubscriptionManager() -> SubscriptionManagerMock {
+        let subscriptionManager = SubscriptionManagerMock()
+        subscriptionManager.hasAppStoreProductsAvailable = true
+        subscriptionManager.hasResolvedAppStoreProducts = true
+        subscriptionManager.isEligibleForFreeTrialResult = true
+        return subscriptionManager
     }
 
     private func makePixelStore() -> any KeyedStoring<OnboardingSharedPixelsKeys> {

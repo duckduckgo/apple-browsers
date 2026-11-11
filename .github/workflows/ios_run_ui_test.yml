@@ -93,8 +93,8 @@ jobs:
           exit 1
         fi
 
-    - name: Resolve and configure selected simulator logging
-      id: simulator-logging
+    - name: Resolve and start selected simulator
+      id: simulator
       env:
         DESTINATION: ${{ steps.select-simulator.outputs.destination }}
       run: |
@@ -113,10 +113,7 @@ jobs:
         if [[ "$state" != "Booted" ]]; then
           xcrun simctl boot "$simulator_udid"
         fi
-        xcrun simctl bootstatus "$simulator_udid" -b
         echo "simulator-udid=$simulator_udid" >> "$GITHUB_OUTPUT"
-        xcrun simctl spawn "$simulator_udid" log config --subsystem General --mode level:debug,persist:debug
-        xcrun simctl spawn "$simulator_udid" log config --status --subsystem General
 
     - name: Record simulator runtime diagnostics
       continue-on-error: true
@@ -160,10 +157,22 @@ jobs:
         fi
         find DerivedData/Build/Products -type f -name "$pattern" -print -quit > xctestrun-path
 
+    - name: Wait for simulator and configure logging
+      id: simulator-logging
+      env:
+        SIMULATOR_UDID: ${{ steps.simulator.outputs.simulator-udid }}
+      run: |
+        # The simulator boots while the build products download and extract.
+        set -euo pipefail
+        xcrun simctl bootstatus "$SIMULATOR_UDID" -b
+        xcrun simctl spawn "$SIMULATOR_UDID" log config --subsystem General --mode level:debug,persist:debug
+        echo "configured=true" >> "$GITHUB_OUTPUT"
+        xcrun simctl spawn "$SIMULATOR_UDID" log config --status --subsystem General
+
     - name: Run UI Tests
       id: run-ui-tests
       env:
-        SIMULATOR_UDID: ${{ steps.simulator-logging.outputs.simulator-udid }}
+        SIMULATOR_UDID: ${{ steps.simulator.outputs.simulator-udid }}
         DIAGNOSTICS_MODE: ${{ inputs.diagnostics-mode }}
       run: |
         : > ui-tests.log
@@ -189,9 +198,9 @@ jobs:
         | xcbeautify
 
     - name: Restore simulator logging defaults
-      if: always() && steps.simulator-logging.outputs.simulator-udid != ''
+      if: always() && steps.simulator-logging.outputs.configured == 'true'
       env:
-        SIMULATOR_UDID: ${{ steps.simulator-logging.outputs.simulator-udid }}
+        SIMULATOR_UDID: ${{ steps.simulator.outputs.simulator-udid }}
       run: |
         xcrun simctl spawn "$SIMULATOR_UDID" log config --subsystem General --mode level:info,persist:default
 

@@ -956,6 +956,28 @@ final class SyncSettingsViewControllerErrorTests: XCTestCase {
     }
 
     @MainActor
+    func testWhenOpenedFromAIChatPromoWithRedesignOnThenShowsSyncAnotherDevicePrompt() async {
+        let vc = makeVC(source: SyncSettingsViewController.SourceConstants.aiChatPromotion,
+                        featureFlagger: MockFeatureFlagger(enabledFeatureFlags: [.syncPromotionRedesign, .syncImprovedPairingFlow]))
+        let promptShown = expectSyncAnotherDevicePrompt(in: vc)
+
+        vc.loadViewIfNeeded()
+
+        await fulfillment(of: [promptShown], timeout: 1)
+    }
+
+    @MainActor
+    func testWhenOpenedFromAIChatPromoWithRedesignOffThenStartsPairing() async {
+        let vc = makeAuthStubVC(source: SyncSettingsViewController.SourceConstants.aiChatPromotion,
+                                syncService: MockDDGSyncing(authState: .inactive, isSyncInProgress: false))
+
+        vc.loadViewIfNeeded()
+
+        await waitUntil { vc.codeCollectionIntent == .syncAnotherDevice }
+        XCTAssertEqual(vc.codeCollectionIntent, .syncAnotherDevice)
+    }
+
+    @MainActor
     func testWhenOpenedFromBookmarksPromoWithRedesignOffThenDoesNotStartSetup() async {
         let vc = makeVC(source: SyncSettingsViewController.SourceConstants.bookmarksPromotion,
                         featureFlagger: MockFeatureFlagger(enabledFeatureFlags: [.syncImprovedPairingFlow]))

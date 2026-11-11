@@ -465,12 +465,12 @@ class SyncSettingsViewController: UIHostingController<SimplifiedSyncSettingsView
         guard let source, syncService.authState == .inactive else {
             return
         }
+        let autoStartSetupSources = [SourceConstants.bookmarksPromotion, SourceConstants.passwordsPromotion, SourceConstants.aiChatPromotion]
         let autoStartPairingSources = [SourceConstants.startSyncFlow, SourceConstants.aiChatPromotion]
-        let autoStartSetupSources = [SourceConstants.bookmarksPromotion, SourceConstants.passwordsPromotion]
-        if autoStartPairingSources.contains(source) {
-            viewModel.beginPairingFlow()
-        } else if autoStartSetupSources.contains(source), featureFlagger.isFeatureOn(.syncPromotionRedesign) {
+        if autoStartSetupSources.contains(source), featureFlagger.isFeatureOn(.syncPromotionRedesign) {
             viewModel.enableSyncToggleTapped()
+        } else if autoStartPairingSources.contains(source) {
+            viewModel.beginPairingFlow()
         }
     }
 

@@ -36,15 +36,23 @@ struct AIChatLocalModelProtocolTests {
         let metrics = AIChatLocalRunChunk.Metrics(timeToFirstWordMs: 900, totalMs: 7400, loadMs: nil,
                                                   promptTokens: 2100, outputTokens: 340, inputTruncated: true)
         let chunk = AIChatLocalRunChunk(requestId: "r1", seq: 3, text: "", done: true, status: .cutOff,
-                                        errorCode: .contentFiltered, metrics: metrics)
+                                        errorCode: .refused, metrics: metrics)
         let json = try jsonObject(chunk)
         #expect(json["status"] as? String == "cut_off")
-        #expect(json["errorCode"] as? String == "content_filtered")
+        #expect(json["errorCode"] as? String == "refused")
         #expect(json["done"] as? Bool == true)
         let metricsJSON = try #require(json["metrics"] as? [String: Any])
         #expect(metricsJSON["totalMs"] as? Int == 7400)
         #expect(metricsJSON["inputTruncated"] as? Bool == true)
         #expect(metricsJSON["loadMs"] == nil)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Error codes match the list every platform sends", .timeLimit(.minutes(1)))
+    func errorCodesMatchTheSharedList() {
+        let codes = Set(AIChatLocalRunChunk.ErrorCode.allCases.map(\.rawValue))
+        #expect(codes == ["refused", "context_exceeded", "unsupported_language", "model_unavailable",
+                          "rate_limited", "out_of_memory", "unknown"])
     }
 
     @available(iOS 16, macOS 13, *)

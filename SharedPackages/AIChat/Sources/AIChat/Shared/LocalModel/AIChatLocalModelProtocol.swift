@@ -130,15 +130,14 @@ public struct AIChatLocalRunChunk: Codable, Equatable, Sendable {
         case error
     }
 
-    public enum ErrorCode: String, Codable, Equatable, Sendable {
-        case unavailable
-        case contentFiltered = "content_filtered"
+    public enum ErrorCode: String, Codable, Equatable, Sendable, CaseIterable {
+        case modelUnavailable = "model_unavailable"
+        case refused
         case contextExceeded = "context_exceeded"
         case unsupportedLanguage = "unsupported_language"
         case rateLimited = "rate_limited"
         case outOfMemory = "out_of_memory"
-        case interrupted
-        case `internal`
+        case unknown
     }
 
     public struct Metrics: Codable, Equatable, Sendable {

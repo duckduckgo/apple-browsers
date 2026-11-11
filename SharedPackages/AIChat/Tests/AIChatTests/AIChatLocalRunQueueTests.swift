@@ -101,12 +101,12 @@ final class AIChatLocalRunQueueTests {
         await waitUntil { engine.startedRequestIds == ["r1"] }
 
         engine.send(.text("Partial"), to: "r1")
-        engine.fail("r1", code: .contentFiltered)
+        engine.fail("r1", code: .refused)
         await waitUntil { chunks.last?.done == true }
 
         #expect(chunks.first?.text == "Partial")
         #expect(chunks.last?.status == .error)
-        #expect(chunks.last?.errorCode == .contentFiltered)
+        #expect(chunks.last?.errorCode == .refused)
     }
 
     @available(iOS 16, macOS 13, *)

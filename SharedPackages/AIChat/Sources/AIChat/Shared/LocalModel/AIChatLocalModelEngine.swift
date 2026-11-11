@@ -69,14 +69,13 @@ public struct AIChatLocalModelEngineError: DDGError, Sendable {
 
     public var errorCode: Int {
         switch code {
-        case .unavailable: return 1
-        case .contentFiltered: return 2
+        case .modelUnavailable: return 1
+        case .refused: return 2
         case .contextExceeded: return 3
         case .unsupportedLanguage: return 4
         case .rateLimited: return 5
         case .outOfMemory: return 6
-        case .interrupted: return 7
-        case .internal: return 8
+        case .unknown: return 7
         }
     }
 

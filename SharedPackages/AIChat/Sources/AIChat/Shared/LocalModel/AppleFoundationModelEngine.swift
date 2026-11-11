@@ -135,11 +135,11 @@ public final class AppleFoundationModelEngine: AIChatLocalModelEngine {
                                  continuation: AsyncThrowingStream<AIChatLocalModelEngineEvent, Error>.Continuation) async throws {
 #if canImport(FoundationModels)
         guard #available(macOS 26.0, iOS 26.0, *) else {
-            throw AIChatLocalModelEngineError(code: .unavailable)
+            throw AIChatLocalModelEngineError(code: .modelUnavailable)
         }
         let model = SystemLanguageModel.default
         guard model.isAvailable else {
-            throw AIChatLocalModelEngineError(code: .unavailable)
+            throw AIChatLocalModelEngineError(code: .modelUnavailable)
         }
 
         let taskPrompt = taskPrompt(for: request.task)
@@ -167,7 +167,7 @@ public final class AppleFoundationModelEngine: AIChatLocalModelEngine {
                                                                 outputTokens: outputTokens,
                                                                 inputTruncated: fitted.truncated)))
 #else
-        throw AIChatLocalModelEngineError(code: .unavailable)
+        throw AIChatLocalModelEngineError(code: .modelUnavailable)
 #endif
     }
 
@@ -226,22 +226,22 @@ public final class AppleFoundationModelEngine: AIChatLocalModelEngine {
             switch error {
             case .contextSizeExceeded: return .contextExceeded
             case .rateLimited: return .rateLimited
-            case .guardrailViolation, .refusal: return .contentFiltered
+            case .guardrailViolation, .refusal: return .refused
             case .unsupportedLanguageOrLocale: return .unsupportedLanguage
-            default: return .internal
+            default: return .unknown
             }
         }
         if let error = error as? LanguageModelSession.GenerationError {
             switch error {
             case .exceededContextWindowSize: return .contextExceeded
-            case .assetsUnavailable: return .unavailable
-            case .guardrailViolation, .refusal: return .contentFiltered
+            case .assetsUnavailable: return .modelUnavailable
+            case .guardrailViolation, .refusal: return .refused
             case .unsupportedLanguageOrLocale: return .unsupportedLanguage
             case .rateLimited, .concurrentRequests: return .rateLimited
-            default: return .internal
+            default: return .unknown
             }
         }
-        return .internal
+        return .unknown
     }
 #endif
 }

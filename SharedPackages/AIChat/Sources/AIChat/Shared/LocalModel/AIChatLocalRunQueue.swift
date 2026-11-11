@@ -132,7 +132,7 @@ public final class AIChatLocalRunQueue {
             if Task.isCancelled || error is CancellationError {
                 finish(.cancelled)
             } else {
-                finish(.error, errorCode: (error as? AIChatLocalModelEngineError)?.code ?? .internal)
+                finish(.error, errorCode: (error as? AIChatLocalModelEngineError)?.code ?? .unknown)
             }
         }
     }

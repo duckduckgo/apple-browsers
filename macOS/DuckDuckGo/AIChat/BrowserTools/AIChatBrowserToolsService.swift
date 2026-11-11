@@ -142,19 +142,6 @@ protocol AIChatBrowserToolsPushing: AnyObject {
     func pushTabChanged(_ data: AIChatTabChangedData)
 }
 
-struct ClientToolsChangedData: Encodable, Equatable {
-    let clientTools: ClientToolsConfiguration?
-
-    private enum CodingKeys: String, CodingKey {
-        case clientTools
-    }
-
-    func encode(to encoder: Encoder) throws {
-        var container = encoder.container(keyedBy: CodingKeys.self)
-        try container.encode(clientTools, forKey: .clientTools)
-    }
-}
-
 /// Maps browser-tools sub-features onto macOS feature flags. A tool's `name` is its sub-feature's
 /// raw value, so adding a sub-feature is a compile error here until it is mapped.
 @MainActor

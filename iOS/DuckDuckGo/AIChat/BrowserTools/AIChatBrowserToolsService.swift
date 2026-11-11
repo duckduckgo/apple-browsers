@@ -383,16 +383,3 @@ private struct AIChatBrowserToolsClearing {
     let target: AIChatBrowserToolsClearingTarget
     let snapshots: [AIChatBrowserToolsClearingSnapshot]
 }
-
-struct ClientToolsChangedData: Encodable, Equatable {
-    let clientTools: ClientToolsConfiguration?
-
-    private enum CodingKeys: String, CodingKey {
-        case clientTools
-    }
-
-    func encode(to encoder: Encoder) throws {
-        var container = encoder.container(keyedBy: CodingKeys.self)
-        try container.encode(clientTools, forKey: .clientTools)
-    }
-}

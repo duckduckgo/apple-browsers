@@ -392,6 +392,25 @@ struct ClientToolsWireTypesTests {
 
     @available(iOS 16, macOS 13, *)
     @Test(.timeLimit(.minutes(1)))
+    func clientToolsChangedEncodesEnabledConfiguration() throws {
+        let configuration = try ClientToolsConfiguration(capabilities: [.listOpenTabs])
+        let data = try JSONEncoder().encode(ClientToolsChangedData(clientTools: configuration))
+        let payload = try JSONDecoder().decode(JSONValue.self, from: data)
+
+        #expect(payload == ["clientTools": ["protocolVersion": 1, "capabilities": [["name": "listOpenTabs", "version": 1]]]])
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test(.timeLimit(.minutes(1)))
+    func clientToolsChangedEncodesDisabledConfigurationAsExplicitNull() throws {
+        let data = try JSONEncoder().encode(ClientToolsChangedData(clientTools: nil))
+        let payload = try JSONDecoder().decode(JSONValue.self, from: data)
+
+        #expect(payload == ["clientTools": .null])
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test(.timeLimit(.minutes(1)))
     func configurationRoundTripsAndRejectsUnknownProtocolVersion() throws {
         let configuration = try ClientToolsConfiguration(capabilities: [.listOpenTabs, .readTabContent])
 

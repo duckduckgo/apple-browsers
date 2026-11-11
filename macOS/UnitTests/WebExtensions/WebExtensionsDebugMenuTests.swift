@@ -38,7 +38,7 @@ final class WebExtensionsDebugMenuTests: XCTestCase {
                                                              eventHub: RecordingEventHub())
         manager.chromeWebStore = store
         return WebExtensionsDebugMenu(webExtensionManager: manager,
-                                      cpmMessagingHealthMonitor: CPMMessagingHealthMonitor())
+                                      cpmMessagingHealthMonitor: CPMMessagingHealthMonitor(pixelFiring: NoOpWebExtensionPixelFiring()))
     }
 
     private func checkItem(in menu: NSMenu) throws -> NSMenuItem {

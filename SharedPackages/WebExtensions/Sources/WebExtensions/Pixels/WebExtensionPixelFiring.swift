@@ -124,6 +124,11 @@ public enum WebExtensionPixelEvent {
     case scriptletInstalled(type: DuckDuckGoWebExtensionType, version: String)
     case scriptletInstallError(type: DuckDuckGoWebExtensionType, error: Error)
 
+    /// One report for each tab that stayed silent after a page loaded.
+    case cpmMessagingBreakage(CPMMessagingBreakageReport)
+    /// Sent once when a second tab goes silent without any answer from the extension in between.
+    case cpmMessagingBreakagePersistent
+
     /// An extension turned password saving off, which makes it the default password manager.
     case defaultPasswordManagerSet(extension: WebExtensionPixelExtension)
     /// Bitwarden is installed and loaded. Fired once a day.
@@ -138,6 +143,27 @@ public enum WebExtensionPixelEvent {
     case retained14Days(extension: WebExtensionPixelExtension)
     case churned14Days(extension: WebExtensionPixelExtension)
     case installedCount(installed: Int, enabled: Int)
+}
+
+/// How many tabs have been silent since the extension last answered anything.
+public enum CPMSilentTabs: String, Equatable, Sendable {
+    /// Only this tab: the page, not the extension, is the likely cause.
+    case one
+    /// Another tab was already silent: the extension itself is the likely cause.
+    case many
+}
+
+/// One detected breakage. Sent the moment it is detected, so nothing is lost if the app closes afterwards.
+public struct CPMMessagingBreakageReport: Equatable, Sendable {
+    public let tabs: CPMSilentTabs
+
+    public init(tabs: CPMSilentTabs) {
+        self.tabs = tabs
+    }
+
+    var pixelParameters: [String: String] {
+        ["tabs": tabs.rawValue]
+    }
 }
 
 /// PII-free metadata shared by the iOS and macOS reload-error pixel adapters.
@@ -175,6 +201,32 @@ private extension WebExtensionReloadTrigger {
         case .scriptletUpdate: return "scriptlet_update"
         case .explicit: return "explicit"
         case .cpmBackgroundLoadFailure: return "cpm_background_load_failed"
+        }
+    }
+}
+
+/// Canonical CPM pixel contract. Platform adapters preserve these names and let PixelKit apply its standard platform suffix policy.
+public struct CPMWebExtensionPixelMetadata: Equatable, Sendable {
+    public let name: String
+    public let parameters: [String: String]
+
+    @available(macOS 15.4, iOS 18.4, *)
+    public init?(event: WebExtensionPixelEvent) {
+        switch event {
+        case .cpmMessagingBreakage(let report):
+            name = "web_extension_cpm_breakage"
+            parameters = report.pixelParameters
+        case .cpmMessagingBreakagePersistent:
+            name = "web_extension_cpm_breakage_persistent"
+            parameters = [:]
+        case .updateCheck, .installed, .installError, .uninstalled, .uninstallError, .uninstalledAll,
+             .uninstallAllError, .loaded, .loadError, .reloadError, .stateChecked, .expectedExtensionNotLoaded,
+             .adBlockingScriptletsNotFetched, .embeddedInstalled, .embeddedUpgraded,
+             .embeddedInstallError, .scriptletFetchSuccess, .scriptletFetchError,
+             .scriptletValidationError, .scriptletInstalled, .scriptletInstallError,
+             .defaultPasswordManagerSet, .bitwardenDailyActive, .apiCompatibilityGaps,
+             .enabled, .disabled, .remotelyDisabled, .retained14Days, .churned14Days, .installedCount:
+            return nil
         }
     }
 }

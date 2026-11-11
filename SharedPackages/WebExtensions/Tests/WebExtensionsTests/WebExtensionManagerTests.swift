@@ -329,7 +329,7 @@ final class WebExtensionManagerTests: XCTestCase {
     @MainActor
     func testOldContextResponseAfterUpgradeCannotResetRestartLimit() async throws {
         var date = Date()
-        let monitor = CPMMessagingHealthMonitor()
+        let monitor = CPMMessagingHealthMonitor(pixelFiring: NoOpWebExtensionPixelFiring())
         let manager = makeManager(controllerConfiguration: .nonPersistent(), cpmMessagingHealthMonitor: monitor,
                                   isCPMBackgroundLoadRestartEnabled: { true }, now: { date })
         let old = try await loadDeferredEmbeddedContext("embedded", into: manager)
@@ -353,7 +353,7 @@ final class WebExtensionManagerTests: XCTestCase {
     @MainActor
     func testNewContextResponseAfterUpgradeResetsRestartLimit() async throws {
         var date = Date()
-        let monitor = CPMMessagingHealthMonitor()
+        let monitor = CPMMessagingHealthMonitor(pixelFiring: NoOpWebExtensionPixelFiring())
         let manager = makeManager(controllerConfiguration: .nonPersistent(), cpmMessagingHealthMonitor: monitor,
                                   isCPMBackgroundLoadRestartEnabled: { true }, now: { date })
         let old = try await loadDeferredEmbeddedContext("embedded", into: manager)
@@ -464,7 +464,7 @@ final class WebExtensionManagerTests: XCTestCase {
     @MainActor
     func testOnlyAVisibleResponseGrantsAFreshRestartBudget() async throws {
         var date = Date()
-        let monitor = CPMMessagingHealthMonitor()
+        let monitor = CPMMessagingHealthMonitor(pixelFiring: NoOpWebExtensionPixelFiring())
         let manager = makeManager(controllerConfiguration: .nonPersistent(), cpmMessagingHealthMonitor: monitor,
                                   isCPMBackgroundLoadRestartEnabled: { true }, now: { date })
         let context = try await loadDeferredEmbeddedContext("embedded", into: manager)
@@ -494,7 +494,7 @@ final class WebExtensionManagerTests: XCTestCase {
     @MainActor
     func testReloadAloneDoesNotResetTheRestartLimitButAResponseAfterItDoes() async throws {
         var date = Date()
-        let monitor = CPMMessagingHealthMonitor()
+        let monitor = CPMMessagingHealthMonitor(pixelFiring: NoOpWebExtensionPixelFiring())
         let manager = makeManager(controllerConfiguration: .nonPersistent(), cpmMessagingHealthMonitor: monitor,
                                   isCPMBackgroundLoadRestartEnabled: { true }, now: { date })
         let context = try await loadDeferredEmbeddedContext("embedded", into: manager)

@@ -143,9 +143,15 @@ public final class AutoconsentWebExtensionMessageHandler: WebExtensionMessageHan
 
         Logger.webExtensions.debug("📊 Refresh CPM Dashboard State - url: \(url.shortDescription), consentManaged: \(consentStatus.consentManaged)")
 
+        // These stages mean the background will never answer the page's init: the extension is running, but
+        // the page stays unanswered and its tab is reported.
+        let isUnanswerable = consentStatus.cpmStage == "config_unavailable" || consentStatus.cpmStage == "settings_missing"
         let extensionTabIdentifier = (params?["tabId"] as? NSNumber)?.intValue
-        await cpmMessagingHealthMonitor?.handle(.dashboardResponse(extensionTabIdentifier: extensionTabIdentifier, url: url,
-                                                                 extensionIdentifier: extensionIdentifier))
+        let event = CPMMessagingHealthEvent.dashboardResponse(extensionTabIdentifier: extensionTabIdentifier,
+                                                              url: url,
+                                                              extensionIdentifier: extensionIdentifier,
+                                                              isAnswer: !isUnanswerable)
+        await cpmMessagingHealthMonitor?.handle(event)
         delegate?.refreshDashboardState(url: url, consentStatus: consentStatus)
 
         return .success(Self.successResponse)

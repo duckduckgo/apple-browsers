@@ -114,6 +114,10 @@ enum WebExtensionPixel: PixelKit.Event {
     /// An extension's toolbar button, when the click performs its action rather than closing its popup.
     case toolbarClicked(extension: WebExtensionPixelExtension)
 
+    // MARK: - Debug
+
+    case debugCPM(CPMWebExtensionPixelMetadata)
+
     // MARK: - PixelKit.Event
 
     var name: String {
@@ -209,6 +213,9 @@ enum WebExtensionPixel: PixelKit.Event {
             return "web_extension_ad_blocking_not_loaded_macos"
         case .adBlockingScriptletsNotFetched:
             return "web_extension_ad_blocking_scriptlets_not_fetched_macos"
+        case .debugCPM(let metadata):
+            // Preserve the shared canonical CPM names on both platforms.
+            return metadata.name
         case .enabled:
             return "web_extension_enabled_macos"
         case .disabled:
@@ -299,6 +306,8 @@ enum WebExtensionPixel: PixelKit.Event {
                     "unsupported_url_count": String(unsupportedURLCount)]
         case .bitwardenDailyActive(let isDefault):
             return ["is_default": isDefault ? "true" : "false"]
+        case .debugCPM(let metadata):
+            return metadata.parameters
         case .reloadError(let parameters):
             return parameters
         default:
@@ -308,7 +317,7 @@ enum WebExtensionPixel: PixelKit.Event {
 
     var namePrefix: PixelKitNamePrefix {
         switch self {
-        case .updateCheck, .reloadError, .bitwardenDailyActive, .defaultPasswordManagerSet, .apiCompatibilityGaps,
+        case .updateCheck, .debugCPM, .reloadError, .bitwardenDailyActive, .defaultPasswordManagerSet, .apiCompatibilityGaps,
              .enabled, .disabled, .remotelyDisabled, .retained14Days, .churned14Days, .installedCount,
              .getClicked, .detailsOpened, .publisherLinkClicked, .toolbarClicked:
             return .none
@@ -429,6 +438,9 @@ struct MacOSWebExtensionPixelFiring: WebExtensionPixelFiring {
             pixel = macPixel
         case .adBlockingScriptletsNotFetched(let extensionLoaded):
             pixel = .adBlockingScriptletsNotFetched(extensionLoaded: extensionLoaded)
+        case .cpmMessagingBreakage, .cpmMessagingBreakagePersistent:
+            guard let metadata = CPMWebExtensionPixelMetadata(event: event) else { return }
+            pixel = .debugCPM(metadata)
         case .defaultPasswordManagerSet(let pixelExtension):
             pixel = .defaultPasswordManagerSet(extension: pixelExtension)
         case .bitwardenDailyActive(let isDefault):
@@ -467,6 +479,8 @@ struct MacOSWebExtensionPixelFiring: WebExtensionPixelFiring {
     private static func frequency(of event: WebExtensionPixelEvent) -> PixelKit.Frequency {
         let frequency: PixelKit.Frequency
         if case .reloadError = event {
+            frequency = .dailyAndCount
+        } else if CPMWebExtensionPixelMetadata(event: event) != nil {
             frequency = .dailyAndCount
         } else {
             frequency = .dailyAndStandard

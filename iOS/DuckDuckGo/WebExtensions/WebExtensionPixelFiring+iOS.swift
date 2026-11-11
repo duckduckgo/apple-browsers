@@ -22,6 +22,16 @@ import Foundation
 import PixelKit
 import WebExtensions
 
+private struct CPMWebExtensionPixel: PixelKit.Event {
+    let metadata: CPMWebExtensionPixelMetadata
+
+    var name: String { metadata.name }
+
+    var parameters: [String: String]? { metadata.parameters }
+    var standardParameters: [PixelKitStandardParameter]? { nil }
+    var namePrefix: PixelKitNamePrefix { .none }
+}
+
 @available(iOS 18.4, *)
 private struct WebExtensionReloadErrorPixel: PixelKit.Event {
     let metadata: WebExtensionReloadErrorPixelMetadata
@@ -162,6 +172,8 @@ struct iOSWebExtensionPixelFiring: WebExtensionPixelFiring {
             pixelFiring?.fire(Pixel.Event.webExtensionAdBlockingScriptletsNotFetched,
                           frequency: .dailyAndStandard,
                           options: .parameters(["extension_loaded": extensionLoaded ? "true" : "false"]))
+        case .cpmMessagingBreakage, .cpmMessagingBreakagePersistent:
+            fireCPMPixel(event)
         case .enabled, .disabled, .remotelyDisabled:
             // Store pixels are macOS-only, but iOS debug-menu toggles still reach here, so drop rather than assert.
             break
@@ -173,5 +185,10 @@ struct iOSWebExtensionPixelFiring: WebExtensionPixelFiring {
             // these are only sent there.
             assertionFailure("\(event) is only sent on macOS")
         }
+    }
+
+    private func fireCPMPixel(_ event: WebExtensionPixelEvent) {
+        guard let metadata = CPMWebExtensionPixelMetadata(event: event) else { return }
+        pixelFiring?.fire(CPMWebExtensionPixel(metadata: metadata), frequency: .dailyAndCount)
     }
 }

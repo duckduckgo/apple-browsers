@@ -1,0 +1,88 @@
+{
+    "m_debug_malicious-site-protection_update-time": {
+        "description": "Fires after a Malicious Site Protection dataset update is saved, carrying how long applying, encoding and writing the update took as a time bucket in the name. With aggregate in place of the category, it fires once per update round that wrote at least one dataset, carrying the total time spent applying, encoding and writing the datasets it wrote. The network isn't counted.",
+        "owners": ["alessandroboron"],
+        "triggers": ["feature_lifecycle"],
+        "suffixes": [
+            {
+                "description": "Threat category of the dataset, or aggregate for the whole update round of that dataset type.",
+                "enum": ["phishing", "malware", "scam", "aggregate"]
+            },
+            {
+                "description": "Dataset type.",
+                "enum": ["hash-prefix", "filter-set"]
+            },
+            {
+                "description": "Smallest upper bound the update time is less than or equal to; more when above 30 seconds.",
+                "enum": [
+                    "100ms",
+                    "250ms",
+                    "500ms",
+                    "1s",
+                    "2s",
+                    "3s",
+                    "4s",
+                    "5s",
+                    "6s",
+                    "7s",
+                    "8s",
+                    "9s",
+                    "10s",
+                    "15s",
+                    "20s",
+                    "25s",
+                    "30s",
+                    "more"
+                ]
+            },
+            "daily_count",
+            "platform",
+            "form_factor"
+        ],
+        "parameters": ["appVersion"]
+    },
+    "m_debug_malicious-site-protection_dataset-size": {
+        "description": "Fires after a Malicious Site Protection dataset update is saved, carrying the size of the whole dataset file written as a size bucket in the name (1 MB = 1,000,000 bytes). With aggregate in place of the category, it fires once per update round that wrote at least one dataset, carrying the total size of every file the round wrote.",
+        "owners": ["alessandroboron"],
+        "triggers": ["feature_lifecycle"],
+        "suffixes": [
+            {
+                "description": "Threat category of the dataset, or aggregate for the whole update round of that dataset type.",
+                "enum": ["phishing", "malware", "scam", "aggregate"]
+            },
+            {
+                "description": "Dataset type.",
+                "enum": ["hash-prefix", "filter-set"]
+            },
+            {
+                "description": "Smallest upper bound the file size is less than or equal to; more when above 100 MB.",
+                "enum": [
+                    "500kb",
+                    "1mb",
+                    "2mb",
+                    "3mb",
+                    "4mb",
+                    "5mb",
+                    "6mb",
+                    "8mb",
+                    "10mb",
+                    "15mb",
+                    "20mb",
+                    "25mb",
+                    "30mb",
+                    "35mb",
+                    "40mb",
+                    "50mb",
+                    "60mb",
+                    "75mb",
+                    "100mb",
+                    "more"
+                ]
+            },
+            "daily_count",
+            "platform",
+            "form_factor"
+        ],
+        "parameters": ["appVersion"]
+    }
+}

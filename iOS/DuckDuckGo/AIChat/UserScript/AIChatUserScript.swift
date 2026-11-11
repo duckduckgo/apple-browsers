@@ -29,10 +29,8 @@ import Combine
 /// finds it here, so there is one guess at the page's layout.
 enum DuckAIChatScroller {
 
-    /// JavaScript that evaluates to the conversation's scrolling element, or null: the outermost vertical scroller
-    /// that is most of the viewport tall and starts near its top. The page remembers it while it still fits that
-    /// description, so a caller that runs on every touch doesn't search the whole page each time, and a conversation
-    /// the page hides or removes is searched for again.
+    /// The conversation's scrolling element, or null: the outermost vertical scroller that is most of the viewport
+    /// tall and starts near its top. Cached on the page while it still fits.
     static let expression = """
     (() => {
         const fits = element => {
@@ -53,8 +51,7 @@ enum DuckAIChatScroller {
     })()
     """
 
-    /// JavaScript that evaluates to whether the conversation is scrolled to its end. One too short to scroll already
-    /// is; no conversation at all is not. Liquid Glass's spacer counts, so the end means the last reply clears the input.
+    /// Whether the conversation is scrolled to its end. One too short to scroll is; no conversation is not.
     static let isAtBottomExpression = """
     (() => {
         const chat = \(expression);

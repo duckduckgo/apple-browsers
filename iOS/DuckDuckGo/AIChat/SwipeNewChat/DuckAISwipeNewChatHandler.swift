@@ -22,18 +22,16 @@ import DesignResourcesKitIcons
 import UIKit
 import WebKit
 
-/// What the browser chrome around the tab knows that the swipe gates on.
 struct DuckAISwipeNewChatChromeState {
     let isGenerating: Bool
     let isVoiceSessionActive: Bool
     let isInputHidden: Bool
-    /// Top of the bottom chrome (the Duck.ai input bar), in window coordinates; nil when none is showing.
+    /// Top of the Duck.ai input bar in window coordinates; nil when it isn't showing.
     let bottomChromeMinY: CGFloat?
 }
 
-/// Duck.ai scrolls an inner container, not the web view's scroll view, so the native scroll view never
-/// reports overscroll. Instead a simultaneous pan asks the page, as it begins, whether the chat is at its
-/// bottom, and if so measures how far the finger pulls up from there.
+/// Duck.ai scrolls an inner element, so the web view never reports overscroll. A simultaneous pan asks the page
+/// whether the chat is at its bottom, then measures the pull from there.
 @MainActor
 final class DuckAISwipeNewChatHandler: NSObject, UIGestureRecognizerDelegate {
 
@@ -47,18 +45,13 @@ final class DuckAISwipeNewChatHandler: NSObject, UIGestureRecognizerDelegate {
     private let tickHaptic = UIImpactFeedbackGenerator(style: .light)
     private let armHaptic = UIImpactFeedbackGenerator(style: .medium)
     private let indicator: DuckAISwipeNewChatIndicatorView
-    /// The gap the pull opens between the chat's bottom edge and the input. The indicator lives in it and is clipped
-    /// to it, so it never covers the chat or the input.
     private let indicatorSlot = UIView()
-    /// Top of the input in the host view, where the slot's bottom sits.
     private var indicatorSlotBottomY: CGFloat = 0
     private let backdrop = UIView()
 
     private var pull = DuckAISwipeNewChat.Pull.idle
-    /// Where the current pan started, to re-check eligibility as the chrome changes during the pull.
     private var panStart: (velocity: CGPoint, y: CGFloat, bottomInsetMinY: CGFloat)?
-    /// Bumped by each touch-down, by `cancel()` and by navigation mid-pull, so late page replies and animation
-    /// completions from an earlier interaction do nothing.
+    /// Bumped to make late page replies and animation completions from an earlier interaction do nothing.
     private var generation = 0
     private var commitState = DuckAISwipeNewChat.Commit.idle
 
@@ -86,7 +79,6 @@ final class DuckAISwipeNewChatHandler: NSObject, UIGestureRecognizerDelegate {
     }
 
     /// Puts the chat back as it was, mid-pull or mid-commit; for when the tab goes off screen.
-    /// With nothing in progress it leaves the web view alone.
     func cancel() {
         guard pull.isUnderway || commitState != .idle || !backdrop.isHidden else { return }
         pull = .idle
@@ -95,8 +87,7 @@ final class DuckAISwipeNewChatHandler: NSObject, UIGestureRecognizerDelegate {
         restore()
     }
 
-    /// A pull belongs to the chat it started on, so navigating away mid-pull drops it and any page reply still due.
-    /// That includes a finger that is down but hasn't moved yet, so the old chat's answer can't arm the new one.
+    /// Drops any pull or page reply that belongs to the previous chat.
     func webViewURLDidChange() {
         if pull != .idle {
             generation += 1
@@ -182,8 +173,7 @@ final class DuckAISwipeNewChatHandler: NSObject, UIGestureRecognizerDelegate {
             case .fadeOut:
                 fadeOut()
             case .requestNewChat:
-                // Opening the tab captures this screen for swiping back, and switches tabs before the next frame,
-                // so the old chat is put back first: the capture shows it, and the faded frame is never seen again.
+                // Opening the tab snapshots this one, so the chat is put back first.
                 webView?.transform = .identity
                 webView?.alpha = 1
                 setIndicatorSlotHeight(0)
@@ -201,10 +191,6 @@ final class DuckAISwipeNewChatHandler: NSObject, UIGestureRecognizerDelegate {
         }
     }
 
-    /// The chat follows the finger up to the trigger, then resists. The gap it opens above the input is the
-    /// indicator's slot, so the indicator comes out from under the chat's bottom edge as the chat rises.
-    /// At the bottom of a chat its last content ends at the input, so the gap is as tall as the chat has moved.
-    /// With reduced motion the chat stays put and the indicator only fades in, in a slot of the full pull's height.
     private func followPull(distance: CGFloat, progress: CGFloat, isArmed: Bool) {
         let constants = DuckAISwipeNewChat.Constants.self
         let offset = min(distance, constants.triggerDistance)
@@ -214,7 +200,6 @@ final class DuckAISwipeNewChatHandler: NSObject, UIGestureRecognizerDelegate {
             setIndicatorSlotHeight(constants.triggerDistance)
             return
         }
-        // The ring only starts once the whole circle is out from under the chat, so it never fills half hidden.
         let revealed = constants.indicatorSpacing + DuckAISwipeNewChatIndicatorView.circleDiameter
         indicator.update(progress: max(0, min((offset - revealed) / (constants.triggerDistance - revealed), 1)), isArmed: isArmed)
         if backdrop.isHidden {
@@ -238,7 +223,6 @@ final class DuckAISwipeNewChatHandler: NSObject, UIGestureRecognizerDelegate {
         }
     }
 
-    /// The old chat carries on up and fades out before the new tab is asked for.
     private func fadeOut() {
         let constants = DuckAISwipeNewChat.Constants.self
         let generation = generation
@@ -255,7 +239,6 @@ final class DuckAISwipeNewChatHandler: NSObject, UIGestureRecognizerDelegate {
         }
     }
 
-    /// Puts the chat back in place at once, and makes any animation or reply still in flight do nothing.
     private func restore() {
         generation += 1
         webView?.transform = .identity
@@ -266,7 +249,6 @@ final class DuckAISwipeNewChatHandler: NSObject, UIGestureRecognizerDelegate {
         hideBackdrop()
     }
 
-    /// The bottom chrome doesn't move during a pull, so the slot is placed once per pan.
     private func placeIndicator(in hostView: UIView, above chromeMinYInWindow: CGFloat) {
         if indicatorSlot.superview !== hostView {
             indicatorSlot.removeFromSuperview()
@@ -290,7 +272,6 @@ final class DuckAISwipeNewChatHandler: NSObject, UIGestureRecognizerDelegate {
         setIndicatorSlotHeight(0)
     }
 
-    /// Sets the slot by frame, so animating it lays out only the indicator, not the tab around it.
     private func setIndicatorSlotHeight(_ height: CGFloat) {
         guard let hostView = indicatorSlot.superview else { return }
         indicatorSlot.frame = CGRect(x: 0, y: indicatorSlotBottomY - height, width: hostView.bounds.width, height: height)
@@ -307,10 +288,7 @@ final class DuckAISwipeNewChatHandler: NSObject, UIGestureRecognizerDelegate {
         }
     }
 
-
-    /// The chat uncovers what is behind the web view as it slides up and fades; this fills that with the Duck.ai
-    /// page's own colour token. It doesn't read the web view's background colours, which the chrome, site
-    /// theming and pull-to-refresh each overwrite. It is the handler's own view, so no shared background changes.
+    /// Uses the page's colour token: the web view's own background colours are overwritten by other chrome.
     private func showBackdrop() {
         guard let webView, let container = webView.superview else { return }
         if backdrop.superview !== container {
@@ -334,8 +312,7 @@ final class DuckAISwipeNewChatHandler: NSObject, UIGestureRecognizerDelegate {
         backdrop.isHidden = true
     }
 
-    /// The first finger down asks the page whether the chat is at its bottom straight away, before the chat scrolls
-    /// with the finger; by the time the pan begins it has already moved. Never mid-commit, so the fade and timeout stay valid.
+    /// Asks the page at touch-down, before the chat scrolls with the finger.
     func gestureRecognizer(_ gestureRecognizer: UIGestureRecognizer, shouldReceive touch: UITouch) -> Bool {
         guard pan.numberOfTouches == 0, feature.isAvailable, commitState == .idle, webView != nil else { return true }
         generation += 1
@@ -353,14 +330,13 @@ final class DuckAISwipeNewChatHandler: NSObject, UIGestureRecognizerDelegate {
     }
 }
 
-/// A ring that fills as the pull nears the trigger, then becomes a button styled like the Duck.ai input's send button.
+/// A ring that fills as the pull nears the trigger, then becomes a button styled like the input's send button.
 private final class DuckAISwipeNewChatIndicatorView: UIView {
 
     private enum Metrics {
         static let diameter: CGFloat = 48
         static let lineWidth: CGFloat = 2.5
         static let labelSpacing: CGFloat = 6
-        /// The fraction of the pull over which the indicator fades in.
         static let fadeInProgress: CGFloat = 0.3
         static let collapsed = CGAffineTransform(scaleX: 0.01, y: 0.01)
     }
@@ -436,7 +412,6 @@ private final class DuckAISwipeNewChatIndicatorView: UIView {
         }
     }
 
-    /// The ring takes the button's own colour, so the two always match.
     private func applyRingColor() {
         ring.strokeColor = button.backgroundColor?.resolvedColor(with: traitCollection).cgColor
     }
@@ -467,7 +442,6 @@ private final class DuckAISwipeNewChatIndicatorView: UIView {
         }
     }
 
-    /// Under Reduce Motion the button fades in place; otherwise it grows out of the ring.
     private func showButton(_ isShown: Bool) {
         if UIAccessibility.isReduceMotionEnabled {
             button.transform = .identity

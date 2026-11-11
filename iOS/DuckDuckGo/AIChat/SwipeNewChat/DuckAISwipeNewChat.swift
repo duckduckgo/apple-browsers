@@ -23,25 +23,20 @@ import Foundation
 /// Pulling up past the bottom of a Duck.ai chat opens a new chat in a new tab.
 enum DuckAISwipeNewChat {
 
-    /// Every tunable of the gesture, in one place for design.
     enum Constants {
-        /// How far the finger must pull up past the bottom of the chat.
         static let triggerDistance: CGFloat = 150
-        /// The pull is split into this many steps; each one reached on the way up ticks, the last one arms.
+        /// Each step reached on the way up ticks; the last one arms.
         static let hapticSteps = 5
-        /// Past the trigger, the chat follows the finger this much, so it resists further pulling.
+        /// How much of the finger's movement past the trigger the chat follows.
         static let overpullResistance: CGFloat = 0.3
-        /// Smallest gap kept between the indicator and the chat's bottom edge above it.
         static let indicatorSpacing: CGFloat = 4
         static let springBackDuration: TimeInterval = 0.35
         static let commitDuration: TimeInterval = 0.2
-        /// How long the new tab gets to appear before the old chat is put back anyway.
+        /// How long the new tab gets to appear before the old chat is put back.
         static let newTabTimeout: TimeInterval = 1
     }
 
-    /// What decides, when a pan begins, whether it may start a new chat.
     struct Eligibility: Equatable {
-        /// The flag and the device, from `DuckAISwipeNewChatFeature`.
         var isFeatureAvailable: Bool
         var hasChat: Bool
         var isGenerating: Bool
@@ -49,7 +44,7 @@ enum DuckAISwipeNewChat {
         var isInputHidden: Bool
         var panVelocity: CGPoint
         var startY: CGFloat
-        /// Where the bottom safe-area inset (home indicator) starts, in the same coordinates as `startY`.
+        /// Top of the home indicator inset, in the same coordinates as `startY`.
         var bottomInsetMinY: CGFloat
 
         var isEligible: Bool {
@@ -64,11 +59,8 @@ enum DuckAISwipeNewChat {
     }
 
     enum Event: Equatable {
-        /// A finger went down on the chat; the page is asked about the chat under it before anything scrolls.
         case touchedDown
-        /// The page answered for the latest touch; `translation` is the pan's vertical translation then.
         case pageAnswered(isAtBottom: Bool, translation: CGFloat)
-        /// `translation` is the pan's vertical translation as it begins.
         case began(isEligible: Bool, translation: CGFloat)
         case moved(translation: CGFloat)
         case ended
@@ -77,30 +69,26 @@ enum DuckAISwipeNewChat {
 
     enum Effect: Equatable {
         case checkAtBottom
-        /// `distance` is how far past the bottom the finger has pulled; `progress` is that toward the trigger, from 0 to 1.
+        /// `progress` runs from 0 to 1 toward the trigger.
         case pull(distance: CGFloat, progress: CGFloat, isArmed: Bool)
-        /// The pull reached a new step on its way to the trigger; `step` runs from 1 to `hapticSteps - 1`.
         case tick(step: Int)
-        /// The pull reached the trigger; releasing now starts a new chat.
         case arm
         case springBack
         case startNewChat
     }
 
-    /// Only a pan whose finger went down with the chat already at its bottom pulls, so scrolling down to the bottom
-    /// doesn't carry on into a new chat. The page is asked at touch-down, before the chat scrolls with the finger.
+    /// Only a pan that starts with the chat already at its bottom pulls, so scrolling to the bottom doesn't carry on
+    /// into a new chat.
     enum Pull: Equatable {
         case idle
-        /// A finger is down but the pan hasn't begun; `isAtBottom` is nil until the page answers.
+        /// `isAtBottom` is nil until the page answers.
         case touched(isAtBottom: Bool?)
         /// Eligible, waiting for the page's answer.
         case tracking
-        /// At the bottom; the pull is measured upward from `baseline`, and has reached `step`.
         case pulling(baseline: CGFloat, step: Int)
-        /// Pulled past the threshold; releasing starts a new chat.
         case armed(baseline: CGFloat)
 
-        /// A pan is in progress. A tap leaves `.touched` behind, which is not, since nothing has moved.
+        /// A tap leaves `.touched` behind, which doesn't count, since nothing has moved.
         var isUnderway: Bool {
             switch self {
             case .tracking, .pulling, .armed: true
@@ -139,7 +127,7 @@ enum DuckAISwipeNewChat {
                 return []
 
             case (_, .began(true, _)):
-                // No touch-down was seen for this pan, so the page is asked now.
+                // No touch-down was seen, so the page is asked now.
                 self = .tracking
                 return [.checkAtBottom]
 
@@ -183,23 +171,19 @@ enum DuckAISwipeNewChat {
         }
     }
 
-    /// From release to the new chat's tab showing: the old chat fades out, then a new tab is asked for. The old
-    /// tab is put back as it was once it goes off screen, or after a timeout if the new tab never comes; anything
-    /// unexpected before the request puts it back without one.
+    /// From release to the new tab: the old chat fades out, then a new tab is asked for. The old chat is put back
+    /// once its tab goes off screen, after a timeout, or if anything unexpected happens first.
     enum Commit: Equatable {
         case idle
-        /// The old chat is fading out; no new tab has been asked for yet.
         case leaving(chatID: String)
-        /// A new tab was asked for; the swipe stays off until the old tab goes off screen or the new tab never comes.
         case awaitingNewTab
 
         enum Event: Equatable {
             case released(chatID: String?)
-            /// The fade finished; `chatID` and `isEligible` are as they are now, not as they were at release.
+            /// `chatID` and `isEligible` are read when the fade finishes, not at release.
             case fadedOut(chatID: String?, isEligible: Bool)
             case urlChanged(chatID: String?)
             case timedOut
-            /// The tab went off screen, or the interaction was otherwise abandoned.
             case cancelled
         }
 
@@ -207,7 +191,6 @@ enum DuckAISwipeNewChat {
             case fadeOut
             case requestNewChat
             case scheduleTimeout
-            /// Put the old chat back as it was.
             case restore
         }
 

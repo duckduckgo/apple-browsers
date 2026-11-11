@@ -185,15 +185,13 @@ extension TabViewController {
 
     /// Also called as the tab appears, so the flag turning on reaches a chat that is already open.
     func installDuckAISwipeNewChatIfNeeded() {
-        guard isAITab,
-              duckAISwipeNewChat == nil,
-              UIDevice.current.userInterfaceIdiom == .phone,
-              featureFlagger.isFeatureOn(.aiChatSwipeUpNewChat) else { return }
+        let feature = DuckAISwipeNewChatFeature(featureFlagger: featureFlagger)
+        guard isAITab, duckAISwipeNewChat == nil, feature.isAvailable else { return }
         duckAISwipeNewChat = DuckAISwipeNewChatHandler(
             webView: webView,
             hostView: view,
             isFireTab: tabModel.fireTab,
-            feature: DuckAISwipeNewChatFeature(featureFlagger: featureFlagger),
+            feature: feature,
             chromeState: { [weak self] in
                 guard let self else { return nil }
                 return self.delegate?.duckAISwipeNewChatChromeState(for: self)

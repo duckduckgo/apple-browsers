@@ -8484,14 +8484,13 @@ extension MainViewController: TabDelegate {
                                              bottomChromeMinY: bottomChromeMinYInWindow())
     }
 
-    /// Opens the new chat in a new tab, like the chat header's New Chat, so the current one stays reachable.
     func tabDidRequestNewChatBySwipe(_ tab: TabViewController) {
         guard tab === currentTab else { return }
         recordDuckAISessionNewChatCreatedOnCurrentTab()
         openNewChatFromDuckAIPage(tab, source: .swipeUpNewChat)
     }
 
-    /// Top of the Duck.ai input card, wherever the keyboard or orientation has put it; nil when it isn't showing.
+    /// Top of the Duck.ai input card; nil when it isn't showing.
     private func bottomChromeMinYInWindow() -> CGFloat? {
         guard view.window != nil, viewCoordinator.isUnifiedToggleInputVisible,
               let input = unifiedToggleInputCoordinator?.viewController, input.isViewLoaded else { return nil }

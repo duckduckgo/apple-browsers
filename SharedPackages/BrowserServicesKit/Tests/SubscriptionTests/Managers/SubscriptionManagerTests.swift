@@ -212,7 +212,7 @@ class SubscriptionManagerTests: XCTestCase {
     func testGetTokenContainer_InvalidTokenRequest_RecoveryFailure_DoesNotCallServerLogout() async throws {
         mockOAuthClient.internalCurrentTokenContainer = OAuthTokensFactory.makeValidTokenContainer()
         mockOAuthClient.getTokensResponse = .failure(OAuthClientError.invalidTokenRequest(.reused))
-        mockAppStoreRestoreFlowV2.restoreSubscriptionAfterExpiredRefreshTokenError = NSError(domain: "RecoveryError", code: 1)
+        mockAppStoreRestoreFlowV2.restoreSubscriptionAfterExpiredRefreshTokenError = AppStoreRestoreFlowError.missingAccountOrTransactions
 
         _ = try? await subscriptionManager.getTokenContainer(policy: .localValid)
 
@@ -244,7 +244,7 @@ class SubscriptionManagerTests: XCTestCase {
     func testGetTokenContainer_InvalidTokenRequest_RecoveryFailure_KeepsTheBackup() async throws {
         mockOAuthClient.internalCurrentTokenContainer = OAuthTokensFactory.makeValidTokenContainer()
         mockOAuthClient.getTokensResponse = .failure(OAuthClientError.invalidTokenRequest(.reused))
-        mockAppStoreRestoreFlowV2.restoreSubscriptionAfterExpiredRefreshTokenError = NSError(domain: "RecoveryError", code: 1)
+        mockAppStoreRestoreFlowV2.restoreSubscriptionAfterExpiredRefreshTokenError = AppStoreRestoreFlowError.missingAccountOrTransactions
 
         _ = try? await subscriptionManager.getTokenContainer(policy: .localValid)
 
@@ -299,7 +299,7 @@ class SubscriptionManagerTests: XCTestCase {
         let appStore = AppStoreTokenRecovery(purchasePlatform: purchasePlatform,
                                              restoreFlow: mockAppStoreRestoreFlowV2)
         if !appStoreSucceeds {
-            mockAppStoreRestoreFlowV2.restoreSubscriptionAfterExpiredRefreshTokenError = NSError(domain: "AppStore", code: 1)
+            mockAppStoreRestoreFlowV2.restoreSubscriptionAfterExpiredRefreshTokenError = AppStoreRestoreFlowError.missingAccountOrTransactions
         }
         subscriptionManager.tokenRecoveryCoordinator = TokenRecoveryCoordinator(invalidTokenStrategies: [backup, appStore],
                                                                                 missingTokenStrategies: [backup])
@@ -379,23 +379,23 @@ class SubscriptionManagerTests: XCTestCase {
         XCTAssertEqual(refreshData.backupOutcome, .notAttempted)
     }
 
-    func testInvalidToken_BackupFailsWithoutAppStoreRestore_KeepsNotAttemptedAndReportsTheBackupFailure() async throws {
+    func testInvalidToken_BackupFailsTemporarilyWithoutAppStoreRestore_KeepsTheSessionAndReportsTheBackupFailure() async throws {
         startPendingRecoveryFlow()
-        mockOAuthClient.internalCurrentTokenContainer = OAuthTokensFactory.makeTokenContainer(refreshToken: "deadR")
+        let deadToken = OAuthTokensFactory.makeTokenContainer(refreshToken: "deadR")
+        mockOAuthClient.internalCurrentTokenContainer = deadToken
         mockOAuthClient.getTokensResponse = .failure(OAuthClientError.invalidTokenRequest(.reused))
         installCoordinator(backupResult: .failure(URLError(.timedOut)), appStoreSucceeds: false, purchasePlatform: .stripe)
 
         _ = try? await subscriptionManager.getTokenContainer(policy: .localValid)
 
-        let signOutData = try XCTUnwrap(automaticSignOutPixel()).data
-        XCTAssertEqual(signOutData.recoveryOutcome, .notAttempted)
-        XCTAssertEqual(signOutData.backupOutcome, .failed)
-        XCTAssertEqual(signOutData.parameters["backup_outcome"], "failed")
+        XCTAssertNil(automaticSignOutPixel())
+        XCTAssertEqual(mockOAuthClient.internalCurrentTokenContainer, deadToken)
         let refreshData = try completedRefreshData()
         XCTAssertEqual(refreshData.recoveryOutcome, .notAttempted)
         XCTAssertNil(refreshData.recoveryMethod)
         XCTAssertEqual(refreshData.backupOutcome, .failed)
         XCTAssertNil(refreshData.recoveryDuration)
+        XCTAssertFalse(refreshData.signedOut)
         XCTAssertEqual(refreshData.errorData?.code, OAuthClientError.invalidTokenRequest(.reused).errorCode)
     }
 
@@ -413,7 +413,7 @@ class SubscriptionManagerTests: XCTestCase {
         let refreshData = try completedRefreshData()
         XCTAssertEqual(refreshData.recoveryOutcome, .failed)
         XCTAssertEqual(refreshData.backupOutcome, .rejected)
-        XCTAssertEqual(refreshData.errorData?.domain, "AppStore")
+        XCTAssertEqual(refreshData.errorData?.domain, AppStoreRestoreFlowError.errorDomain)
     }
 
     func testInvalidToken_SessionChangedWithoutUsableSession_ReportsNotAttemptedAndSessionChanged() async throws {
@@ -680,7 +680,7 @@ class SubscriptionManagerTests: XCTestCase {
         mockOAuthClient.internalCurrentTokenContainer = OAuthTokensFactory.makeValidTokenContainerWithEntitlements()
         mockSubscriptionCachingService.cachedSubscription = SubscriptionMockFactory.appleSubscription
         mockOAuthClient.getTokensResponse = .failure(OAuthClientError.invalidTokenRequest(.reused))
-        mockAppStoreRestoreFlowV2.restoreSubscriptionAfterExpiredRefreshTokenError = NSError(domain: "RecoveryError", code: 1)
+        mockAppStoreRestoreFlowV2.restoreSubscriptionAfterExpiredRefreshTokenError = AppStoreRestoreFlowError.missingAccountOrTransactions
 
         do {
             _ = try await subscriptionManager.getTokenContainer(policy: .localValid)
@@ -1267,7 +1267,7 @@ class SubscriptionManagerTests: XCTestCase {
 
     func testDeadTokenRecoveryFailure() async throws {
         mockOAuthClient.getTokensResponse = .failure(OAuthClientError.invalidTokenRequest(OAuthRequest.TokenStatus.fraudDetected))
-        mockAppStoreRestoreFlowV2.restoreSubscriptionAfterExpiredRefreshTokenError = SubscriptionManagerError.errorRetrievingTokenContainer(error: nil)
+        mockAppStoreRestoreFlowV2.restoreSubscriptionAfterExpiredRefreshTokenError = AppStoreRestoreFlowError.missingAccountOrTransactions
 
         do {
             try await subscriptionManager.getTokenContainer(policy: .localValid)

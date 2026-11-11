@@ -740,13 +740,20 @@ public final class DefaultSubscriptionManager: SubscriptionManager {
             self.updateCachedIsUserAuthenticated(true)
             return resultTokenContainer
         } catch OAuthClientError.missingTokenContainer {
-            // No token stored: restore it from the backup if possible
-            if let restored = await restoreMissingToken() {
+            // No token stored: restore it if possible. Only an unrecoverable token signs the user out
+            switch await restoreMissingToken() {
+            case .recovered(let restored):
                 return restored
+            case .pending(let error):
+                throw SubscriptionManagerError.errorRetrievingTokenContainer(error: error)
+            case .sessionChanged:
+                if case .present(let current) = localTokenSnapshot() {
+                    return current
+                }
+                throw SubscriptionManagerError.noTokenAvailable
+            case .unrecoverable, .unavailable, nil:
+                throw SubscriptionManagerError.noTokenAvailable
             }
-            // Expected when no tokens are available
-            self.updateCachedUserEntitlements([])
-            throw SubscriptionManagerError.noTokenAvailable
         } catch let tokenRequestError {
             // Any other failure: report it, then handle the server rejections
             pixelHandler.handle(pixel: SubscriptionPixelType.getTokensError(policy, tokenRequestError))
@@ -800,10 +807,11 @@ public final class DefaultSubscriptionManager: SubscriptionManager {
 
                 // Recover the token through the recovery coordinator (in the apps: backup, then App Store restore) and return it
                 var recoveryReport: TokenRecoveryReport?
-                do {
-                    let recoveredTokenContainer = try await recoverToken(trigger: .invalidToken,
-                                                                         deadPrimary: tokenBeforeAttempt.tokenContainer,
-                                                                         report: &recoveryReport)
+                let recoveryOutcome = await attemptRecovery(trigger: .invalidToken,
+                                                            deadPrimary: tokenBeforeAttempt.tokenContainer,
+                                                            report: &recoveryReport)
+                switch recoveryOutcome {
+                case .recovered(let recoveredTokenContainer):
                     updateCachedUserEntitlements(recoveredTokenContainer.decodedAccessToken.subscriptionEntitlements)
                     updateCachedIsUserAuthenticated(true)
                     pixelHandler.handle(pixel: .invalidRefreshTokenRecovered(recoveryReport?.recoveredBy))
@@ -813,7 +821,7 @@ public final class DefaultSubscriptionManager: SubscriptionManager {
                                                                                     error: nil,
                                                                                     signedOut: false)
                     return recoveredTokenContainer
-                } catch TokenBackupError.sessionChanged {
+                case .sessionChanged:
                     // The user signed out, signed in or switched account during the recovery: keep that session, don't sign out
                     Logger.subscriptionTokensManagement.log("The session changed during token recovery, keeping the current session")
                     if case .present(let current) = localTokenSnapshot(),
@@ -835,10 +843,25 @@ public final class DefaultSubscriptionManager: SubscriptionManager {
                                                                                     error: nil,
                                                                                     signedOut: false)
                     throw SubscriptionManagerError.noTokenAvailable
-                } catch let recoveryError {
-                    // The recovery failed or didn't apply: sign out.
+                case .pending(let pendingError):
+                    // The recovery may still succeed later: keep the session and the dead token, so the next request tries again
+                    Logger.subscriptionTokensManagement.log("Token recovery didn't finish, keeping the session: \(String(describing: pendingError), privacy: .public)")
+                    let appStoreRestoreRan = Self.appStoreRestoreRan(in: recoveryReport)
+                    authV2TokenRefreshInstrumentation?.completeInvalidTokenRecovery(
+                        outcome: appStoreRestoreRan ? .failed : .notAttempted,
+                        method: nil,
+                        backupOutcome: BackupRecoveryOutcome(recoveryReport?.result(of: .backup)),
+                        error: appStoreRestoreRan ? pendingError : nil,
+                        signedOut: false)
+                    throw SubscriptionManagerError.errorRetrievingTokenContainer(error: pendingError ?? tokenRequestError)
+                case .unrecoverable, .unavailable:
+                    // Nothing can recover the token: sign out.
                     // `tokenRecoveryNotAttempted` means no restore ran (no coordinator, or no strategy applied), which is a different finding from a restore that ran and failed to yield a valid token.
                     // Either way the refresh is a failure.
+                    var recoveryError: Error = SubscriptionManagerError.tokenRecoveryNotAttempted
+                    if case .unrecoverable(let unrecoverableError?) = recoveryOutcome {
+                        recoveryError = unrecoverableError
+                    }
                     let notAttempted = (recoveryError as? SubscriptionManagerError) == .tokenRecoveryNotAttempted
                     Logger.subscriptionTokensManagement.error("Token recovery \(notAttempted ? "not attempted" : "failed", privacy: .public), signing out: \(String(describing: recoveryError), privacy: .public)")
                     // The recovery outcome reports `failed` only when the App Store restore ran, as before the backup token existed;
@@ -891,15 +914,48 @@ public final class DefaultSubscriptionManager: SubscriptionManager {
 
     // MARK: - Token recovery
 
-    /// Runs `tokenRecoveryCoordinator` for `trigger` and returns the token it stored.
+    /// What a token recovery attempt leaves the session with.
+    private enum RecoveryAttemptOutcome {
+        /// A valid token was stored.
+        case recovered(TokenContainer)
+        /// Nothing can recover the token, with the error that showed it when there is one.
+        case unrecoverable(Error?)
+        /// The recovery failed for a reason that may not repeat, or was deferred after such a failure (nil error).
+        case pending(Error?)
+        /// The user signed out, signed in or switched account while the recovery ran.
+        case sessionChanged
+        /// This process has no recovery coordinator.
+        case unavailable
+    }
+
+    /// Runs the token recovery for `trigger` and classifies what it left behind.
     /// - Parameters:
     ///   - trigger: What made the recovery necessary.
     ///   - deadPrimary: The token container whose refresh was rejected, or nil when none is stored.
-    /// - Returns: The recovered token container.
-    /// - Throws: As `recoverToken(trigger:deadPrimary:report:)`.
-    private func recoverToken(trigger: TokenRecoveryTrigger, deadPrimary: TokenContainer?) async throws -> TokenContainer {
-        var report: TokenRecoveryReport?
-        return try await recoverToken(trigger: trigger, deadPrimary: deadPrimary, report: &report)
+    ///   - report: Set to what the recovery did. Left unchanged when no coordinator is set.
+    /// - Returns: The outcome of the attempt.
+    private func attemptRecovery(trigger: TokenRecoveryTrigger,
+                                 deadPrimary: TokenContainer?,
+                                 report: inout TokenRecoveryReport?) async -> RecoveryAttemptOutcome {
+        guard tokenRecoveryCoordinator != nil else {
+            return .unavailable
+        }
+        do {
+            return .recovered(try await recoverToken(trigger: trigger, deadPrimary: deadPrimary, report: &report))
+        } catch TokenBackupError.sessionChanged {
+            return .sessionChanged
+        } catch {
+            guard let report else { return .unavailable }
+            switch report.result {
+            case .recovered:
+                // The recovery reported success but left no usable token
+                return .unrecoverable(error)
+            case .deferred:
+                return .pending(nil)
+            case .notApplicable, .failed, .sessionChanged:
+                return report.isUnrecoverable ? .unrecoverable(error) : .pending(error)
+            }
+        }
     }
 
     /// Runs `tokenRecoveryCoordinator` for `trigger` and returns the token it stored.
@@ -953,18 +1009,28 @@ public final class DefaultSubscriptionManager: SubscriptionManager {
     }
 
     public func restoreMissingTokenIfPossible() async {
-        guard await restoreMissingToken() != nil else { return }
+        guard case .recovered = await restoreMissingToken() else { return }
         _ = try? await getSubscription(forceRefresh: true)
     }
 
-    /// Restores the current token from the backup when none is stored, and updates the cached entitlements and authentication state.
-    /// - Returns: The restored token container, or nil when a token is stored, no recovery is configured, or the restore fails.
-    private func restoreMissingToken() async -> TokenContainer? {
-        guard tokenRecoveryCoordinator != nil, localTokenSnapshot() == .missing else { return nil }
-        guard let restored = try? await recoverToken(trigger: .missingToken, deadPrimary: nil) else { return nil }
-        updateCachedUserEntitlements(restored.decodedAccessToken.subscriptionEntitlements)
-        updateCachedIsUserAuthenticated(true)
-        return restored
+    /// Restores the current token when none is stored. On success it marks the user as signed in with the restored entitlements;
+    /// when nothing can recover the token it signs the user out. Any other outcome leaves the session as it is.
+    /// - Returns: The outcome of the restore, or nil when a token is stored or can't be read.
+    private func restoreMissingToken() async -> RecoveryAttemptOutcome? {
+        guard localTokenSnapshot() == .missing else { return nil }
+        var report: TokenRecoveryReport?
+        let outcome = await attemptRecovery(trigger: .missingToken, deadPrimary: nil, report: &report)
+        switch outcome {
+        case .recovered(let restored):
+            updateCachedUserEntitlements(restored.decodedAccessToken.subscriptionEntitlements)
+            updateCachedIsUserAuthenticated(true)
+        case .unrecoverable:
+            Logger.subscriptionTokensManagement.log("The missing token can't be recovered, signing out")
+            await clearSession(notifyUI: true, userInitiated: false, revokeOnServer: false, removingBackup: false)
+        case .pending, .sessionChanged, .unavailable:
+            break
+        }
+        return outcome
     }
 
     // MARK: - Token adoption

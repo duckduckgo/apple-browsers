@@ -28,6 +28,7 @@ import Combine
 import AIChat
 import os.log
 import Onboarding
+import Persistence
 
 protocol EntityProviding {
     
@@ -55,6 +56,9 @@ protocol ContextualDaxDialogStatusProvider {
 protocol ContextualOnboardingLogic {
     var shouldShowPrivacyButtonPulse: Bool { get }
     var shouldShowFireButtonPulse: Bool { get }
+    /// Ends contextual onboarding when its time limit is reached. Returns whether it has ended by the time limit.
+    @discardableResult
+    func checkTimeLimit() -> Bool
 
     var isShowingFireDialog: Bool { get }
     var isShowingSearchSuggestions: Bool { get }
@@ -293,6 +297,10 @@ final class DaxDialogs: NewTabDialogSpecProvider, ContextualOnboardingLogic, Con
     private var entityProviding: EntityProviding
     private let variantManager: VariantManager
     private let launchOptionsHandler: LaunchOptionsHandler
+    let timeLimit: ContextualOnboardingTimeLimit
+    private let timeLimitReporter: OnboardingTimeLimitReporting
+    private let onboardingResumeStepStore: any KeyedStoring<OnboardingStoringKeys>
+    private let tutorialSettings: TutorialSettings
 
     private var nextHomeScreenMessageOverride: HomeScreenSpec?
     
@@ -307,19 +315,26 @@ final class DaxDialogs: NewTabDialogSpecProvider, ContextualOnboardingLogic, Con
 
     public let isDismissedPublisher: PassthroughSubject<Bool, Never>
 
-    /// Use singleton accessor, this is only accessible for tests
     init(settings: DaxDialogsSettings = DefaultDaxDialogsSettings(),
          entityProviding: EntityProviding,
          variantManager: VariantManager = DefaultVariantManager(),
          launchOptionsHandler: LaunchOptionsHandler = LaunchOptionsHandler(),
          onboardingSubscriptionPromotionHelper: OnboardingSubscriptionPromotionHelping = OnboardingSubscriptionPromotionHelper(),
          aiChatSettings: AIChatSettingsProvider = AIChatSettings(),
-         onboardingSearchExperienceProvider: OnboardingSearchExperienceProvider = OnboardingSearchExperience()
+         onboardingSearchExperienceProvider: OnboardingSearchExperienceProvider = OnboardingSearchExperience(),
+         timeLimit: ContextualOnboardingTimeLimit,
+         timeLimitReporter: OnboardingTimeLimitReporting,
+         onboardingResumeStepStore: any KeyedStoring<OnboardingStoringKeys> = KeyedStorage<OnboardingStoringKeys>(storage: UserDefaults.app),
+         tutorialSettings: TutorialSettings = DefaultTutorialSettings()
     ) {
         self.settings = settings
         self.entityProviding = entityProviding
         self.variantManager = variantManager
         self.launchOptionsHandler = launchOptionsHandler
+        self.timeLimit = timeLimit
+        self.timeLimitReporter = timeLimitReporter
+        self.onboardingResumeStepStore = onboardingResumeStepStore
+        self.tutorialSettings = tutorialSettings
         self.onboardingSubscriptionPromotionHelper = onboardingSubscriptionPromotionHelper
         self.aiChatSettings = aiChatSettings
         self.onboardingSearchExperienceProvider = onboardingSearchExperienceProvider
@@ -437,8 +452,30 @@ final class DaxDialogs: NewTabDialogSpecProvider, ContextualOnboardingLogic, Con
     }
     
     func primeForUse() {
+        guard !timeLimit.endedByTimeLimit else { return }
         settings.isDismissed = false
         isDismissedPublisher.send(false)
+    }
+
+    func recordForegroundOpen() {
+        guard isEnabled else { return }
+        timeLimit.recordAppOpen()
+        checkTimeLimit()
+    }
+
+    @discardableResult
+    func checkTimeLimit() -> Bool {
+        guard tutorialSettings.hasSeenOnboarding || onboardingResumeStepStore.resumeStep == .duckAIAnswerStep,
+              isEnabled, let reason = timeLimit.reachedLimit() else { return timeLimit.endedByTimeLimit }
+        // Set before `dismiss()`: MainCoordinator's synchronous `isDismissedPublisher` sink reads it to tell a time-limit end from a regular dismissal.
+        timeLimit.endedByTimeLimit = true
+        if onboardingResumeStepStore.resumeStep == .duckAIAnswerStep {
+            tutorialSettings.hasSeenOnboarding = true
+            OnboardingResumeCheckpointStore.clearAll(in: onboardingResumeStepStore)
+        }
+        dismiss()
+        timeLimitReporter.measureTimeLimitReached(reason)
+        return true
     }
 
     func enableAddFavoriteFlow() {
@@ -601,7 +638,7 @@ final class DaxDialogs: NewTabDialogSpecProvider, ContextualOnboardingLogic, Con
     }
 
     func nextBrowsingMessageIfShouldShow(for privacyInfo: PrivacyInfo) -> BrowsingSpec? {
-
+        checkTimeLimit()
         let message = nextBrowsingMessageExperiment(privacyInfo: privacyInfo)
         if message != nil {
             lastURLDaxDialogReturnedFor = privacyInfo.url
@@ -667,6 +704,7 @@ final class DaxDialogs: NewTabDialogSpecProvider, ContextualOnboardingLogic, Con
     }
 
     func nextHomeScreenMessageNew() -> HomeScreenSpec? {
+        checkTimeLimit()
         // Reset the last browsing information when opening a new tab so loading the previous website won't show again the Dax dialog
         clearedBrowserData()
 

@@ -304,8 +304,13 @@ extension DebugScreensViewModel {
 
                 weak var capturedController: OnboardingDebugViewController?
 
-                // swiftlint:disable:next empty_parentheses_with_trailing_closure
-                let onboardingController = OnboardingDebugViewController(rootView: OnboardingDebugView() {
+                // The app always injects `DaxDialogs`; the debug screen edits its time-limit state.
+                guard let daxDialogs = d.daxDialogManager as? DaxDialogs else {
+                    assertionFailure("Expected DaxDialogs")
+                    return UIViewController()
+                }
+
+                let onboardingController = OnboardingDebugViewController(rootView: OnboardingDebugView(timeLimit: daxDialogs.timeLimit) {
                     guard let capturedController else { return }
 
                     let viewModel = OnboardingIntroFactory.makeViewModel(

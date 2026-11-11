@@ -66,6 +66,7 @@ public enum AIChatEntryPointSource: String, CaseIterable {
     case browsingMenuWebpage = "browsing_menu_webpage"
     case browsingMenuDuckAI = "browsing_menu_duckai"
     case duckAINewChat = "duck_ai_new_chat"
+    case swipeUpNewChat = "swipe_up_new_chat"
     case tabSwitcher = "tab_switcher"
     case tabSwitcherExistingChat = "tab_switcher_existing_chat"
     case tabsBarExistingChat = "tabs_bar_existing_chat"

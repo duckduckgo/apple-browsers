@@ -167,7 +167,7 @@ extension MainViewController {
     }
 
     /// AI-tab bottom-chrome decision for the current tab (native input bar + voice pill).
-    private func aiTabChromeDecision() -> AITabChromeDecision {
+    func aiTabChromeDecision() -> AITabChromeDecision {
         AITabChromeDecision.resolve(.init(
             isOnAITab: currentTab?.isAITab == true,
             isAIChatInputHiddenByFrontend: unifiedToggleInputCoordinator?.aiChatInputBoxVisibility == .hidden,

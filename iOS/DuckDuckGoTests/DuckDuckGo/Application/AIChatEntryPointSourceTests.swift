@@ -127,6 +127,7 @@ struct AIChatEntryPointSourceTests {
         #expect(AIChatEntryPointSource.browsingMenuWebpage.rawValue == "browsing_menu_webpage")
         #expect(AIChatEntryPointSource.browsingMenuDuckAI.rawValue == "browsing_menu_duckai")
         #expect(AIChatEntryPointSource.duckAINewChat.rawValue == "duck_ai_new_chat")
+        #expect(AIChatEntryPointSource.swipeUpNewChat.rawValue == "swipe_up_new_chat")
     }
 
     // MARK: - In-page navigations

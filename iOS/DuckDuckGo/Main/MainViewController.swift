@@ -8319,6 +8319,34 @@ extension MainViewController: TabDelegate {
         tab.openNewChatInNewTab(source: tab.tabModel.duckAIEntrySource, inputRequest: focusRequest)
     }
 
+    func duckAISwipeNewChatChromeState(for tab: TabViewController) -> DuckAISwipeNewChatChromeState? {
+        guard tab === currentTab else { return nil }
+        let aiTabChrome = aiTabChromeDecision()
+        return DuckAISwipeNewChatChromeState(isGenerating: unifiedToggleInputCoordinator?.viewController.isGenerating ?? false,
+                                             isVoiceSessionActive: aiTabChrome.voiceChromeActive,
+                                             isInputHidden: aiTabChrome.hidesInputBar,
+                                             bottomChromeMinY: bottomChromeMinYInWindow())
+    }
+
+    /// Opens the new chat in a new tab, like the chat header's New Chat, so the current one stays reachable.
+    func tabDidRequestNewChatBySwipe(_ tab: TabViewController) {
+        guard tab === currentTab else { return }
+        recordDuckAISessionNewChatCreatedOnCurrentTab()
+        openNewChatFromDuckAIPage(tab, source: .swipeUpNewChat)
+    }
+
+    /// The topmost visible bar in the lower half of the window: the Duck.ai input on an AI tab.
+    private func bottomChromeMinYInWindow() -> CGFloat? {
+        guard let window = view.window else { return nil }
+        let bars: [UIView?] = [viewCoordinator.navigationBarContainer, viewCoordinator.toolbar]
+        return bars.compactMap { $0 }
+            .filter { $0.window != nil && !$0.isHidden && $0.alpha > 0.01 }
+            .map { $0.convert($0.bounds, to: nil) }
+            .filter { $0.midY > window.bounds.midY }
+            .map(\.minY)
+            .min()
+    }
+
     func tab(_ tab: TabViewController, didRequestAIChatForSelectedText text: String) {
         // The sheet bypasses `openAIChat`, so fire the entry pixel directly.
         fireAIChatEntryPointPixel(source: .contextualChat, opensNewTab: false, hasPrompt: true)

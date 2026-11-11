@@ -127,6 +127,26 @@ final class BookmarkTabBrowserToolTests: XCTestCase {
         XCTAssertEqual(manager.getBookmark(forUrl: otherURL)?.parentFolderUUID, trips.first?.id)
     }
 
+    func testWhenAQueuedCallIsCancelledThenItSavesNothing() async throws {
+        let saved = Bookmark(id: "saved", url: pageURL, title: "Page", isFavorite: false)
+        let travel = BookmarkFolder(id: "travel", title: "Travel")
+        let otherURL = "https://example.com/other"
+        let (tool, context, manager, _, store) = makeWithStore(bookmarks: [saved, travel], extraTabURLs: [otherURL])
+        store.defersMoveCompletions = true
+
+        let first = Task { await tool.execute(arguments: ["folder": ["Travel"]], context: context) }
+        try await waitUntil { store.deferredMoveCompletionCount == 1 }
+        let second = Task { await tool.execute(arguments: ["tabId": JSONValue.string(tabs[1].uuid)], context: context) }
+        await Task.yield()
+        second.cancel()
+        store.completeNextMove()
+        _ = await first.value
+
+        let result = await second.value
+        XCTAssertEqual(result, .failure(.cancelled))
+        XCTAssertNil(manager.getBookmark(forUrl: otherURL))
+    }
+
     func testWhenTheFolderIsMalformedThenArgumentsAreInvalid() async {
         let (tool, context, manager, _) = make()
         let tooDeep = JSONValue.array(Array(repeating: "a", count: BookmarkTabBrowserTool.maxFolderDepth + 1))
@@ -166,12 +186,13 @@ final class BookmarkTabBrowserToolTests: XCTestCase {
         return (tool, context, manager, owner)
     }
 
-    private func makeWithStore(bookmarks: [BaseBookmarkEntity]) -> (BookmarkTabBrowserTool, BrowserToolCallContext, LocalBookmarkManager, String, BookmarkStoreMock) {
+    private func makeWithStore(bookmarks: [BaseBookmarkEntity],
+                               extraTabURLs: [String] = []) -> (BookmarkTabBrowserTool, BrowserToolCallContext, LocalBookmarkManager, String, BookmarkStoreMock) {
         let store = BookmarkStoreMock(bookmarks: bookmarks)
         store.completesMoveCompletions = true
         let manager = LocalBookmarkManager(bookmarkStore: store, foldersStore: BookmarkFolderStoreMock(), appearancePreferences: .mock)
         manager.loadBookmarks()
-        let (tool, context, owner) = makeTool(manager: manager)
+        let (tool, context, owner) = makeTool(manager: manager, extraTabURLs: extraTabURLs)
         return (tool, context, manager, owner, store)
     }
 

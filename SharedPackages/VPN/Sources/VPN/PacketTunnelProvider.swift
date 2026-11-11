@@ -512,7 +512,7 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
                 heartbeatStore: TunnelHeartbeatStore? = nil,
                 reportWakeConnectivityFailure: (() -> Void)? = nil,
                 sessionHealth: VPNSessionHealthInstrumentation,
-                isAuthTokenMissing: @escaping () -> Bool = { false }) {
+                isAuthTokenMissing: @escaping () -> Bool) {
         Logger.networkProtectionMemory.log("[+] PacketTunnelProvider")
 
         self.notificationsPresenter = notificationsPresenter

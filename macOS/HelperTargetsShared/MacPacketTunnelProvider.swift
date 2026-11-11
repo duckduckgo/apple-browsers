@@ -622,7 +622,8 @@ final class MacPacketTunnelProvider: PacketTunnelProvider {
                    entitlementCheck: entitlementsCheck,
                    loopDetector: loopDetector,
                    heartbeatStore: heartbeatStore,
-                   sessionHealth: sessionHealth)
+                   sessionHealth: sessionHealth,
+                   isAuthTokenMissing: { false })
 
         setupPixels()
         Logger.networkProtection.log("[+] MacPacketTunnelProvider Initialised")

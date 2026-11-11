@@ -322,6 +322,18 @@ final class TabTests: XCTestCase {
         XCTAssertEqual(tab.content, .url(urls.url1, source: .ui))
     }
 
+    @MainActor
+    func testWhenContentIsExtensionPageThenTabWebViewDoesNotLoadIt() {
+        tab = Tab(content: .none, webViewConfiguration: schemeHandler.webViewConfiguration())
+        let extensionURL = URL(string: "webkit-extension://example/app/app.html#/page/ready")!
+
+        let navigation = tab.setContent(.webExtensionUrl(extensionURL))
+
+        XCTAssertNil(navigation)
+        XCTAssertNil(tab.webView.url)
+        XCTAssertNil(tab.error)
+    }
+
     @available(macOS 15.4, *)
     @MainActor
     func testWhenExtensionSubframeNavigatesThenOwningTabStaysUnchanged() async {

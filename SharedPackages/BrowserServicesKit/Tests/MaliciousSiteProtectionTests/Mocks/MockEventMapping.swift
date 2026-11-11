@@ -38,6 +38,7 @@ public class MockEventMapping: EventMapping<MaliciousSiteProtection.Event> {
     #if os(iOS)
     var dataSetUpdateTimeEvents: [BucketedEvent] = []
     var dataSetSizeEvents: [BucketedEvent] = []
+    var dataSetLoadTimeEvents: [BucketedEvent] = []
     var aggregateUpdateTimeEvents: [AggregateEvent] = []
     var aggregateSizeEvents: [AggregateEvent] = []
     #endif
@@ -55,6 +56,8 @@ public class MockEventMapping: EventMapping<MaliciousSiteProtection.Event> {
                 weakSelf!.dataSetUpdateTimeEvents.append(BucketedEvent(category: category, type: type, bucket: bucket.rawValue))
             case .dataSetSize(let category, let type, let bucket):
                 weakSelf!.dataSetSizeEvents.append(BucketedEvent(category: category, type: type, bucket: bucket.rawValue))
+            case .dataSetLoadTime(let category, let type, let bucket):
+                weakSelf!.dataSetLoadTimeEvents.append(BucketedEvent(category: category, type: type, bucket: bucket.rawValue))
             case .dataSetAggregateUpdateTime(let type, let bucket):
                 weakSelf!.aggregateUpdateTimeEvents.append(AggregateEvent(type: type, bucket: bucket.rawValue))
             case .dataSetAggregateSize(let type, let bucket):

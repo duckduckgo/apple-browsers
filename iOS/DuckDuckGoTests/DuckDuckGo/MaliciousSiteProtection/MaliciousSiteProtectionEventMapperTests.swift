@@ -54,6 +54,16 @@ struct MaliciousSiteProtectionEventMapperTests {
         #expect(pixelKit.actualFireCalls.first?.pixel.name == "m_debug_malicious-site-protection_dataset-size_scam_filter-set_30mb")
     }
 
+    @Test("Load time fires a daily and count pixel with the bucket in its name")
+    func loadTime() {
+        mapping.fire(.dataSetLoadTime(category: .malware, type: .hashPrefixSet, bucket: .upTo1s))
+
+        #expect(pixelKit.actualFireCalls == [
+            ExpectedFireCall(pixel: MaliciousSiteProtectionDebugPixel.loadTime(category: .malware, type: .hashPrefixSet, bucket: .upTo1s), frequency: .dailyAndCount)
+        ])
+        #expect(pixelKit.actualFireCalls.first?.pixel.name == "m_debug_malicious-site-protection_load-time_malware_hash-prefix_1s")
+    }
+
     @Test("Aggregate update time fires a daily and count pixel with aggregate in place of the category")
     func aggregateUpdateTime() {
         mapping.fire(.dataSetAggregateUpdateTime(type: .filterSet, bucket: .upTo4s))

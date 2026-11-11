@@ -45,6 +45,8 @@ enum MaliciousSiteProtectionEventMapper {
                 pixelFiring()?.fire(MaliciousSiteProtectionDebugPixel.updateTime(category: category, type: type, bucket: bucket), frequency: .dailyAndCount)
             case .dataSetSize(let category, let type, let bucket):
                 pixelFiring()?.fire(MaliciousSiteProtectionDebugPixel.datasetSize(category: category, type: type, bucket: bucket), frequency: .dailyAndCount)
+            case .dataSetLoadTime(let category, let type, let bucket):
+                pixelFiring()?.fire(MaliciousSiteProtectionDebugPixel.loadTime(category: category, type: type, bucket: bucket), frequency: .dailyAndCount)
             case .dataSetAggregateUpdateTime(let type, let bucket):
                 pixelFiring()?.fire(MaliciousSiteProtectionDebugPixel.aggregateUpdateTime(type: type, bucket: bucket), frequency: .dailyAndCount)
             case .dataSetAggregateSize(let type, let bucket):

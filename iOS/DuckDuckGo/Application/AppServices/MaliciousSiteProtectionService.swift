@@ -44,7 +44,8 @@ final class MaliciousSiteProtectionService {
                 dataStoreURL: applicationSupportDirectory
             ),
             embeddedDataProvider: nil,
-            fileNameProvider: MaliciousSiteProtectionManager.fileName(for:)
+            fileNameProvider: MaliciousSiteProtectionManager.fileName(for:),
+            eventMapping: MaliciousSiteProtectionEventMapper.debugEvents()
         )
 
         let maliciousSiteProtectionFeatureFlagger = MaliciousSiteProtectionFeatureFlags(featureFlagger: featureFlagger,

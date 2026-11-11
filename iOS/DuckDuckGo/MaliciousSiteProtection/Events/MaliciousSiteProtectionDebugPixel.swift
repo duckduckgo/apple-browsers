@@ -33,6 +33,8 @@ enum MaliciousSiteProtectionDebugPixel: PixelKit.Event, Equatable {
     case updateTime(category: ThreatKind, type: DataManager.StoredDataType.Kind, bucket: MaliciousSiteProtection.Event.DurationBucketAggregation)
     /// The size of the dataset file written after an update.
     case datasetSize(category: ThreatKind, type: DataManager.StoredDataType.Kind, bucket: MaliciousSiteProtection.Event.DatasetSizeBucketAggregation)
+    /// How long reading and decoding a stored dataset file took.
+    case loadTime(category: ThreatKind, type: DataManager.StoredDataType.Kind, bucket: MaliciousSiteProtection.Event.DurationBucketAggregation)
     /// The total time spent applying, encoding and writing the datasets an update round wrote.
     case aggregateUpdateTime(type: DataManager.StoredDataType.Kind, bucket: MaliciousSiteProtection.Event.DurationBucketAggregation)
     /// The total size of the dataset files written in an update round.
@@ -43,6 +45,8 @@ enum MaliciousSiteProtectionDebugPixel: PixelKit.Event, Equatable {
             return Self.name("update-time", category.rawValue, type, bucket.rawValue)
         case .datasetSize(let category, let type, let bucket):
             return Self.name("dataset-size", category.rawValue, type, bucket.rawValue)
+        case .loadTime(let category, let type, let bucket):
+            return Self.name("load-time", category.rawValue, type, bucket.rawValue)
         case .aggregateUpdateTime(let type, let bucket):
             return Self.name("update-time", "aggregate", type, bucket.rawValue)
         case .aggregateDatasetSize(let type, let bucket):

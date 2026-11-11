@@ -18,6 +18,7 @@
 
 import Combine
 @_spi(Testing) import PixelKit
+import SharedTestUtilities
 import XCTest
 @testable import DuckDuckGo_Privacy_Browser
 
@@ -46,7 +47,7 @@ final class DefaultBrowserWinBackPromoDelegateTests: XCTestCase {
         churnState.hasChurnedFromDefault = true
         promptStore = MockDefaultBrowserAndDockPromptStore()
         uiHosting = MockDefaultBrowserAndDockPromptUIHosting()
-        uiHosting.modalAnchor = NSWindow()
+        uiHosting.modalAnchor = MockWindow()
         modal = MockDefaultBrowserAndDockPromptModal()
         confirmationMonitor = MockDefaultBrowserConfirmationMonitor()
         pixelFiring = PixelKitMock()
@@ -214,8 +215,11 @@ final class DefaultBrowserWinBackPromoDelegateTests: XCTestCase {
         XCTAssertEqual(promptStore.inactiveUserModalShownDate, now.timeIntervalSince1970)
         XCTAssertEqual(modal.dismissCallCount, 0)
 
+        let dismissed = expectation(description: "modal dismissed")
+        modal.didDismiss = { dismissed.fulfill() }
         actionPerformer.pendingPromptType = nil
         delegate.hide()
+        await fulfillment(of: [dismissed], timeout: 1)
 
         XCTAssertEqual(firedPixels, [.shown(type: .bothDefaultBrowserAndDockPrompt),
                                      .confirmButtonClicked(type: .bothDefaultBrowserAndDockPrompt)])
@@ -257,9 +261,12 @@ final class DefaultBrowserWinBackPromoDelegateTests: XCTestCase {
         let delegate = makeDelegate()
         let task = await startShow(delegate)
         actionPerformer.pendingPromptType = .addToDockPrompt
+        let dismissed = expectation(description: "modal dismissed")
+        modal.didDismiss = { dismissed.fulfill() }
 
         delegate.hide()
         let result = await task.value
+        await fulfillment(of: [dismissed], timeout: 1)
 
         XCTAssertEqual(result, .noChange)
         XCTAssertEqual(firedPixels, [.shown(type: .bothDefaultBrowserAndDockPrompt),

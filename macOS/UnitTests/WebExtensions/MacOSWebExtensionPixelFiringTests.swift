@@ -23,22 +23,6 @@ import WebExtensions
 
 @available(macOS 15.4, *)
 final class MacOSWebExtensionPixelFiringTests: XCTestCase {
-    func testBackgroundLoadRestartOutcomesUseCanonicalPixelKitContract() throws {
-        for outcome in CPMBackgroundLoadRestartOutcome.allCases {
-            let pixels = PixelKitMock()
-            MacOSWebExtensionPixelFiring(pixelFiring: pixels).fire(.cpmBackgroundLoadRestart(outcome))
-            XCTAssertEqual(pixels.actualFireCalls.count, 1)
-            let call = try XCTUnwrap(pixels.actualFireCalls.first)
-            XCTAssertEqual(call.pixel.name, "web_extension_cpm_background_load_restart")
-            XCTAssertEqual(call.pixel.namePrefix, .none)
-            XCTAssertEqual(call.frequency, .dailyAndCount)
-            XCTAssertEqual(call.pixel.parameters, ["outcome": outcome.rawValue])
-            XCTAssertEqual(call.pixel.standardParameters, [.pixelSource])
-            XCTAssertNil(call.additionalParameters)
-            XCTAssertTrue(call.includeAppVersionParameter)
-        }
-    }
-
     func testUpdateCheckOutcomesUseBoundedParametersAndDailyAndCount() throws {
         let pixelExtension: WebExtensionPixelExtension = .catalog(.bitwarden)
         for outcome in WebExtensionUpdateCheckOutcome.allCases {
@@ -99,45 +83,6 @@ final class MacOSWebExtensionPixelFiringTests: XCTestCase {
             let call = try XCTUnwrap(pixels.actualFireCalls.first)
             pixelKit.fire(call.pixel, frequency: call.frequency)
             XCTAssertEqual(names, [expectedName + "_daily", expectedName + "_count"])
-        }
-    }
-
-    func testRecoveryApplicationUsesDailyAndCountWithoutCustomParameters() throws {
-        let pixels = PixelKitMock()
-        MacOSWebExtensionPixelFiring(pixelFiring: pixels).fire(.cpmNetworkProcessRecoveryApplied)
-
-        XCTAssertEqual(pixels.actualFireCalls.count, 1)
-        let call = try XCTUnwrap(pixels.actualFireCalls.first)
-        XCTAssertEqual(call.pixel.name, "web_extension_cpm_network_process_recovery_applied")
-        XCTAssertEqual(call.frequency, .dailyAndCount)
-        XCTAssertEqual(call.pixel.namePrefix, .none)
-        XCTAssertNil(call.pixel.parameters)
-        XCTAssertEqual(call.pixel.standardParameters, [.pixelSource])
-        XCTAssertNil(call.additionalParameters)
-        XCTAssertTrue(call.includeAppVersionParameter)
-    }
-
-    func testRecoveryApplicationWireNamesMatchDefinitions() throws {
-        let sources: [PixelKit.Source] = [.macDMG, .macStore]
-        for source in sources {
-            let pixels = PixelKitMock()
-            MacOSWebExtensionPixelFiring(pixelFiring: pixels).fire(.cpmNetworkProcessRecoveryApplied)
-            let call = try XCTUnwrap(pixels.actualFireCalls.first)
-            let suite = "\(#function)-\(UUID().uuidString)"
-            let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))
-            defer { defaults.removePersistentDomain(forName: suite) }
-            var names: [String] = []
-            let pixelKit = PixelKit(dryRun: false,
-                                    appVersion: "1.0.0",
-                                    source: source.rawValue,
-                                    defaultHeaders: [:],
-                                    pixelCalendar: nil,
-                                    defaults: defaults) { name, _, _, _, _, completion in
-                names.append(name)
-                completion(true, nil)
-            }
-            pixelKit.fire(call.pixel, frequency: call.frequency)
-            XCTAssertEqual(names, ["web_extension_cpm_network_process_recovery_applied_daily", "web_extension_cpm_network_process_recovery_applied_count"])
         }
     }
 

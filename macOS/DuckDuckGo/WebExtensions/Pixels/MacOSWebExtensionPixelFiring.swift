@@ -100,8 +100,6 @@ enum WebExtensionPixel: PixelKit.Event {
     case defaultPasswordManagerSet(extension: WebExtensionPixelExtension)
     case apiCompatibilityGaps(extension: ExtensionsCatalogSubfeature, version: String, missingAPICount: Int, unsupportedURLCount: Int)
 
-    case cpmNetworkProcessRecoveryApplied
-
     // MARK: - Extension Management
 
     case enabled(extension: WebExtensionPixelExtension)
@@ -115,10 +113,6 @@ enum WebExtensionPixel: PixelKit.Event {
     case publisherLinkClicked(extension: WebExtensionPixelExtension)
     /// An extension's toolbar button, when the click performs its action rather than closing its popup.
     case toolbarClicked(extension: WebExtensionPixelExtension)
-
-    // MARK: - Debug
-
-    case debugCPM(CPMWebExtensionPixelMetadata)
 
     // MARK: - PixelKit.Event
 
@@ -215,11 +209,6 @@ enum WebExtensionPixel: PixelKit.Event {
             return "web_extension_ad_blocking_not_loaded_macos"
         case .adBlockingScriptletsNotFetched:
             return "web_extension_ad_blocking_scriptlets_not_fetched_macos"
-        case .debugCPM(let metadata):
-            // Preserve the shared canonical CPM names on both platforms.
-            return metadata.name
-        case .cpmNetworkProcessRecoveryApplied:
-            return "web_extension_cpm_network_process_recovery_applied"
         case .enabled:
             return "web_extension_enabled_macos"
         case .disabled:
@@ -310,8 +299,6 @@ enum WebExtensionPixel: PixelKit.Event {
                     "unsupported_url_count": String(unsupportedURLCount)]
         case .bitwardenDailyActive(let isDefault):
             return ["is_default": isDefault ? "true" : "false"]
-        case .debugCPM(let metadata):
-            return metadata.parameters
         case .reloadError(let parameters):
             return parameters
         default:
@@ -321,7 +308,7 @@ enum WebExtensionPixel: PixelKit.Event {
 
     var namePrefix: PixelKitNamePrefix {
         switch self {
-        case .updateCheck, .debugCPM, .reloadError, .cpmNetworkProcessRecoveryApplied, .bitwardenDailyActive, .defaultPasswordManagerSet, .apiCompatibilityGaps,
+        case .updateCheck, .reloadError, .bitwardenDailyActive, .defaultPasswordManagerSet, .apiCompatibilityGaps,
              .enabled, .disabled, .remotelyDisabled, .retained14Days, .churned14Days, .installedCount,
              .getClicked, .detailsOpened, .publisherLinkClicked, .toolbarClicked:
             return .none
@@ -442,11 +429,6 @@ struct MacOSWebExtensionPixelFiring: WebExtensionPixelFiring {
             pixel = macPixel
         case .adBlockingScriptletsNotFetched(let extensionLoaded):
             pixel = .adBlockingScriptletsNotFetched(extensionLoaded: extensionLoaded)
-        case .cpmBackgroundLoadRestart, .cpmMessagingEpisode:
-            guard let metadata = CPMWebExtensionPixelMetadata(event: event) else { return }
-            pixel = .debugCPM(metadata)
-        case .cpmNetworkProcessRecoveryApplied:
-            pixel = .cpmNetworkProcessRecoveryApplied
         case .defaultPasswordManagerSet(let pixelExtension):
             pixel = .defaultPasswordManagerSet(extension: pixelExtension)
         case .bitwardenDailyActive(let isDefault):
@@ -486,19 +468,9 @@ struct MacOSWebExtensionPixelFiring: WebExtensionPixelFiring {
         let frequency: PixelKit.Frequency
         if case .reloadError = event {
             frequency = .dailyAndCount
-        } else if let metadata = CPMWebExtensionPixelMetadata(event: event) {
-            frequency = metadata.frequency.pixelKitFrequency
         } else {
             frequency = .dailyAndStandard
         }
         return frequency
-    }
-}
-
-private extension CPMWebExtensionPixelFrequency {
-    var pixelKitFrequency: PixelKit.Frequency {
-        switch self {
-        case .dailyAndCount: return .dailyAndCount
-        }
     }
 }

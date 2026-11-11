@@ -232,14 +232,6 @@ final class PrivacyDashboardTabExtension {
 extension PrivacyDashboardTabExtension: NavigationResponder {
 
     @MainActor
-    func didStart(_ navigation: Navigation) {
-        guard #available(macOS 15.4, *) else { return }
-        webExtensionManagerProvider()?.cpmMessagingHealthMonitor.handle(
-            .navigationStarted(tabIdentifier: tabIdentifier, navigationKind: navigation.cpmMessagingNavigationKind)
-        )
-    }
-
-    @MainActor
     func decidePolicy(for navigationAction: NavigationAction, preferences: inout NavigationPreferences) async -> NavigationActionPolicy? {
         if #available(macOS 15.4, *), navigationAction.isForMainFrame,
            navigationAction.url.isHttpOrHttps {
@@ -267,8 +259,13 @@ extension PrivacyDashboardTabExtension: NavigationResponder {
     @MainActor
     func didCommit(_ navigation: Navigation) {
         resetDashboardInfo(for: navigation.url, didGoBackForward: navigation.navigationAction.navigationType.isBackForward)
-        guard #available(macOS 15.4, *) else { return }
-        webExtensionManagerProvider()?.cpmMessagingHealthMonitor.handle(.navigationCommitted(tabIdentifier: tabIdentifier, url: navigation.url))
+        guard #available(macOS 15.4, *), let webExtensionManager = webExtensionManagerProvider() else { return }
+        webExtensionManager.cpmMessagingHealthMonitor.handle(.navigationCommitted(
+            tabIdentifier: tabIdentifier,
+            url: navigation.url,
+            navigationKind: navigation.cpmMessagingNavigationKind,
+            extensionIsLoaded: webExtensionManager.isAutoconsentExtensionLoaded
+        ))
     }
 
     @MainActor
@@ -276,18 +273,6 @@ extension PrivacyDashboardTabExtension: NavigationResponder {
         if privacyInfo?.url != navigation.url {
             resetDashboardInfo(for: navigation.url, didGoBackForward: navigation.navigationAction.navigationType.isBackForward)
         }
-        guard #available(macOS 15.4, *), let webExtensionManager = webExtensionManagerProvider() else { return }
-        webExtensionManager.cpmMessagingHealthMonitor.handle(.navigationFinished(
-            tabIdentifier: tabIdentifier,
-            url: navigation.url,
-            extensionIsLoaded: webExtensionManager.isAutoconsentExtensionLoaded
-        ))
-    }
-
-    @MainActor
-    func navigation(_ navigation: Navigation, didFailWith error: WKError) {
-        guard #available(macOS 15.4, *) else { return }
-        webExtensionManagerProvider()?.cpmMessagingHealthMonitor.handle(.navigationFailed(tabIdentifier: tabIdentifier))
     }
 
 }

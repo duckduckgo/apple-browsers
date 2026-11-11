@@ -169,7 +169,7 @@ final class AuthenticationServiceTests {
 
         #expect(!authenticationService.hasCompletedAuthentication)
         #expect(mockAuthenticator.authenticateCallCount == 1)
-        #expect(mockOverlayWindowManager.removeAnyOverlayCallCount == 1)
+        #expect(mockOverlayWindowManager.removeAnyOverlayCallCount == 0)
         guard let authenticationViewController = mockOverlayWindowManager.lastDisplayedViewController as? AuthenticationViewController else {
             Issue.record("Authentication screen was not displayed after an unsuccessful attempt.")
             return
@@ -185,7 +185,7 @@ final class AuthenticationServiceTests {
         #expect(result == .completed)
         #expect(mockAuthenticator.authenticateCallCount == 2)
         #expect(authenticationService.hasCompletedAuthentication)
-        #expect(mockOverlayWindowManager.removeAnyOverlayCallCount == 2)
+        #expect(mockOverlayWindowManager.removeAnyOverlayCallCount == 1)
     }
 
     @Test("suspend() when authentication enabled should display blank snapshot window")

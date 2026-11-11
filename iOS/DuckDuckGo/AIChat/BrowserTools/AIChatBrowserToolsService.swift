@@ -171,7 +171,7 @@ extension AIChatBrowserToolsService {
         }
         let context = BrowserToolCallContext(ownerTabID: scope.ownerTabID, ownerWindowToken: scope.token,
                                              isBurner: scope.isBurner)
-        return await invoker.invokeClientTool(request, context: context, permissionPusher: source).limitedToResultBytes()
+        return await invoker.invokeClientTool(request, context: context, permissionPusher: source)
     }
 
     func canPushPermission(from source: AIChatUserScript) -> Bool {

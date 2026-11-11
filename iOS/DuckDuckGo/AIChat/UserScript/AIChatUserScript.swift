@@ -912,7 +912,7 @@ extension AIChatUserScript: ClientToolPermissionPushing {
     @MainActor
     func invokeBrowserTool(_ request: ExecuteClientToolRequest) async -> ExecuteClientToolResponse {
         guard let browserToolsService else { return .failure(callId: request.callId, error: .unavailable) }
-        return await browserToolsService.invoke(request, from: self).limitedToResultBytes()
+        return await browserToolsService.invoke(request, from: self)
     }
 
     @MainActor

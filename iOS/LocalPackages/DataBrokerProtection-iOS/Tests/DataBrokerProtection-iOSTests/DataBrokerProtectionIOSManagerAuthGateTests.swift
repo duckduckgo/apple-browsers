@@ -38,7 +38,7 @@ final class DataBrokerProtectionIOSManagerAuthGateTests: XCTestCase {
         XCTAssertTrue(result)
     }
 
-    func testValidatePrerequisites_authenticated_entitlementCantBeRead_returnsTrue() async throws {
+    func testValidatePrerequisites_authenticated_entitlementCantBeRead_returnsFalse() async throws {
         let (sut, dependencies) = try await DBPIOSManagerTestUtils.makeTestIOSManager()
         dependencies.database.profile = DBPIOSManagerTestUtils.makeProfile()
         dependencies.authenticationManager.isUserAuthenticatedValue = true
@@ -46,7 +46,7 @@ final class DataBrokerProtectionIOSManagerAuthGateTests: XCTestCase {
 
         let result = await sut.validateRunPrerequisites()
 
-        XCTAssertTrue(result)
+        XCTAssertFalse(result)
     }
 
     func testValidatePrerequisites_authenticatedWithoutEntitlement_returnsFalse() async throws {

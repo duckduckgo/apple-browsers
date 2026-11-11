@@ -560,6 +560,7 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
     func addURLRequest(_ request: URLRequest?,
                        with configuration: WKWebViewConfiguration,
                        inheritedAttribution: AdClickAttributionLogic.State?,
+                       inBackground: Bool = false,
                        in tabsModel: TabsModelManaging? = nil) -> TabViewController {
 
         let model = tabsModel ?? currentTabsModel
@@ -578,7 +579,7 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
         } else {
             tab = Tab(fireTab: shouldCreateFireTab)
         }
-        model.insert(tab: tab, placement: .afterCurrentTab, selectNewTab: true)
+        model.insert(tab: tab, placement: .afterCurrentTab, selectNewTab: !inBackground)
 
         let specialErrorPageNavigationHandler = SpecialErrorPageNavigationHandler(
             maliciousSiteProtectionNavigationHandler: MaliciousSiteProtectionNavigationHandler(

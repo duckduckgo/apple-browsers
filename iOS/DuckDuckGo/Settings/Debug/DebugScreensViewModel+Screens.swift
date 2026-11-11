@@ -52,6 +52,9 @@ extension DebugScreensViewModel {
                     }
                 }
             }),
+            .view(title: "New Tab Transition", { _ in
+                NewTabTransitionDebugView()
+            }),
             .view(title: "CPM", { d in
                 CPMDebugScreensView(
                     keyValueStore: d.keyValueStore,

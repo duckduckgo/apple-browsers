@@ -34,6 +34,7 @@ public final class DataBrokerProtectionDebugHTTPServer {
     private let server: DebugHTTPServer
     private let readService: DataBrokerProtectionDebugReadService
     private let logReader: DebugLogReading?
+    private let runManager: DataBrokerProtectionDebugModeRunning?
     private let logger = Logger(subsystem: "com.duckduckgo.dbp", category: "DebugHTTPServer")
 
     public var isRunning: Bool {
@@ -52,10 +53,12 @@ public final class DataBrokerProtectionDebugHTTPServer {
 
     public init(provider: DataBrokerProtectionDebugReadProviding,
                 logReader: DebugLogReading? = nil,
+                runManager: DataBrokerProtectionDebugModeRunning? = nil,
                 port: UInt16 = defaultPort) {
         self.port = port
         self.logReader = logReader
-        self.server = DebugHTTPServer(port: port)
+        self.runManager = runManager
+        self.server = DebugHTTPServer(port: port, loopbackOnly: true)
         self.readService = DataBrokerProtectionDebugReadService(provider: provider)
     }
 
@@ -74,12 +77,16 @@ public final class DataBrokerProtectionDebugHTTPServer {
         let service = UncheckedSendable(readService)
         let logReader = logReader.map(UncheckedSendable.init)
         let hasLogReader = logReader != nil
+        let hasRunManager = runManager != nil
 
         server.addRoute("/api", method: .GET) { _ in
             let service = service.value
             var endpoints = service.defaultEndpoints()
             if hasLogReader {
                 endpoints.append(Self.logsEndpointDescription)
+            }
+            if hasRunManager {
+                endpoints.append(contentsOf: Self.debugModeEndpointDescriptions)
             }
             return try Self.json(try service.apiResponse(endpoints: endpoints))
         }
@@ -116,11 +123,91 @@ public final class DataBrokerProtectionDebugHTTPServer {
             }
             return try Self.json(detail)
         }
+
+        if let runManager {
+            registerDebugModeRoutes(runManager: UncheckedSendable(runManager))
+        }
+    }
+
+    private func registerDebugModeRoutes(runManager: UncheckedSendable<DataBrokerProtectionDebugModeRunning>) {
+        server.addRoute("/api/debug/scans", method: .POST) { request in
+            if Self.isFromWebPage(request) {
+                return Self.webPageRejection
+            }
+            return try Self.debugModeResponse {
+                try runManager.value.startScan(try DebugModeScanRequest(body: request.body))
+            }
+        }
+
+        server.addPrefixRoute("/api/debug/runs/", method: .GET) { request in
+            let runId = String(request.path.dropFirst("/api/debug/runs/".count))
+                .trimmingCharacters(in: CharacterSet(charactersIn: "/"))
+            guard let run = runManager.value.run(id: runId) else {
+                return .text("Run not found: \(runId)", status: .notFound)
+            }
+            return try Self.json(run)
+        }
+
+        server.addPrefixRoute("/api/debug/runs/", method: .POST) { request in
+            if Self.isFromWebPage(request) {
+                return Self.webPageRejection
+            }
+            guard let action = DebugModeRunAction(path: String(request.path.dropFirst("/api/debug/runs/".count))) else {
+                return .text("Unknown run action: \(request.path)", status: .notFound)
+            }
+            return try Self.debugModeResponse {
+                switch action {
+                case .optOut(let runId, let resultId):
+                    return try runManager.value.startOptOut(runId: runId, resultId: resultId)
+                case .continueOptOut(let runId, let resultId):
+                    return try runManager.value.continueOptOut(runId: runId, resultId: resultId)
+                case .checkForEmailConfirmation(let runId):
+                    return try runManager.value.checkForEmailConfirmation(runId: runId)
+                }
+            }
+        }
+    }
+
+    /// Browsers send `Origin` on every POST and pages can't remove it, so this keeps web pages from starting scans or opt-outs.
+    private static func isFromWebPage(_ request: HTTPRequest) -> Bool {
+        request.headers.keys.contains { $0.caseInsensitiveCompare("Origin") == .orderedSame }
+    }
+
+    private static let webPageRejection = HTTPResponse.text("Requests from web pages are not accepted", status: .forbidden)
+
+    private static func debugModeResponse(_ start: () throws -> DebugModeRun) throws -> HTTPResponse {
+        do {
+            return try json(try start(), status: .accepted)
+        } catch let error as DebugModeRunError {
+            let status: HTTPStatusCode
+            switch error {
+            case .invalidRequest:
+                status = .badRequest
+            case .brokerNotFound, .runNotFound, .resultNotFound:
+                status = .notFound
+            case .busy, .notAwaitingEmailConfirmation:
+                status = .conflict
+            }
+            return .text(error.localizedDescription, status: status)
+        }
     }
 
     private static let logsEndpointDescription = DebugAPIResponse.Endpoint(
         path: "/api/logs?since={iso8601}&category={category}&limit={n}",
         description: "Unified-log tail for PIR execution detail. 'since' tails new lines; 'category' filters by category; 'limit' defaults to \(DataBrokerProtectionDebugReadService.defaultLimit) and is capped at \(DataBrokerProtectionDebugReadService.maximumLimit).")
+
+    private static let debugModeEndpointDescriptions: [DebugAPIResponse.Endpoint] = [
+        .init(path: "POST /api/debug/scans",
+              description: "Starts a debug mode scan. Body: {\"broker\": stored broker url or name, or broker JSON, \"profile\": same shape as -pirProfileJSON, \"hidesWebView\": true}. hidesWebView defaults to true and applies to the whole run. The configured job timeouts always apply. Nothing is saved to the PIR database. Returns the run; one activity runs at a time."),
+        .init(path: "/api/debug/runs/{runId}",
+              description: "A debug run: its activity (omitted when idle), results with their opt-out status, scan errors and the debug mode event log."),
+        .init(path: "POST /api/debug/runs/{runId}/optouts/{resultId}",
+              description: "Starts the opt-out for a result."),
+        .init(path: "POST /api/debug/runs/{runId}/email-confirmation/check",
+              description: "Checks the email service for confirmation links of opt-outs awaiting email confirmation."),
+        .init(path: "POST /api/debug/runs/{runId}/optouts/{resultId}/continue",
+              description: "Finishes an opt-out awaiting email confirmation with its confirmation link.")
+    ]
 
     private static let iso8601 = ISO8601DateFormatter()
 
@@ -132,11 +219,11 @@ public final class DataBrokerProtectionDebugHTTPServer {
         DataBrokerProtectionDebugReadService.clampedLimit(request.queryParameters["limit"].flatMap(Int.init))
     }
 
-    private static func json<T: Encodable>(_ value: T) throws -> HTTPResponse {
+    private static func json<T: Encodable>(_ value: T, status: HTTPStatusCode = .ok) throws -> HTTPResponse {
         let encoder = JSONEncoder()
         encoder.dateEncodingStrategy = .iso8601
         encoder.outputFormatting = [.prettyPrinted, .sortedKeys, .withoutEscapingSlashes]
-        return .json(try encoder.encode(value))
+        return .json(try encoder.encode(value), status: status)
     }
 }
 

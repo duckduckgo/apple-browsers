@@ -5263,6 +5263,9 @@ Take back control of your personal information with the browser designed for dat
 /* Header for the subscription section */
 "subscription.manage.title" = "Subscription";
 
+/* Subscription status shown after the user withdrew from the subscription contract */
+"subscription.not.subscribed" = "Not Subscribed";
+
 /* Alert content for not found subscription */
 "subscription.notFound.alert.message" = "There is no subscription associated with this Apple Account.";
 
@@ -5304,6 +5307,9 @@ Take back control of your personal information with the browser designed for dat
 
 /* Progress view title when restoring past subscription purchase */
 "subscription.progress.view.restoring.subscription" = "Restoring subscription...";
+
+/* Progress view title while withdrawing from the subscription contract */
+"subscription.progress.view.withdraw.in.progress" = "Withdrawal in progress…";
 
 /* Dismiss button on the reinstaller subscription promo. */
 "subscription.promo.reinstaller.buttons.notNow" = "Not Now";
@@ -5409,6 +5415,42 @@ Take back control of your personal information with the browser designed for dat
 
 /* View All Plans button to see available subscription tiers */
 "subscription.view.all.plans" = "View All Plans";
+
+/* Button that confirms withdrawal from the subscription contract */
+"subscription.withdraw.confirm.button" = "Confirm Withdrawal";
+
+/* Second paragraph of the alert confirming withdrawal from the subscription contract. Parameter is a localized list of features, e.g. VPN, Personal Information Removal and Duck.ai. */
+"subscription.withdraw.confirm.features.message" = "%@ stop working once you confirm.";
+
+/* Message of the alert confirming withdrawal from the subscription contract. Parameters are the tier name (e.g. Plus) and the refund amount with currency. */
+"subscription.withdraw.confirm.message" = "Your %1$@ subscription will end right away and you’ll be refunded %2$@ to your original payment method within 14 days.";
+
+/* Message of the alert confirming withdrawal from the subscription contract, used when the refund amount is unknown. Parameter is the tier name (e.g. Plus). */
+"subscription.withdraw.confirm.message.no.amount" = "Your %@ subscription will end right away and you’ll get a full refund to your original payment method within 14 days.";
+
+/* Title of the alert confirming withdrawal from the subscription contract */
+"subscription.withdraw.confirm.title" = "Withdraw from your subscription?";
+
+/* Button that opens the help page to complete a failed subscription withdrawal */
+"subscription.withdraw.error.button" = "Visit Help Page";
+
+/* Message of the alert shown when withdrawing from the subscription contract fails */
+"subscription.withdraw.error.message" = "We couldn’t process your withdrawal automatically. Please visit our help page to complete your withdrawal.";
+
+/* Action title that starts withdrawing from the subscription contract with a full refund */
+"subscription.withdraw.from.contract" = "Withdraw from Contract";
+
+/* Subtitle of the Withdraw from Contract action. Parameter is the last date the user can withdraw. */
+"subscription.withdraw.from.contract.subtitle" = "You can withdraw and get a full refund until %@";
+
+/* Button that dismisses the withdrawal confirmation and keeps the subscription */
+"subscription.withdraw.keep.button" = "Keep Subscription";
+
+/* Confirmation shown after withdrawing from the subscription contract. Parameter is the withdrawal date. */
+"subscription.withdrawn.info" = "You withdrew on %@.";
+
+/* Shown below the withdrawal confirmation. Parameter is the refunded amount with currency. */
+"subscription.withdrawn.refund.info" = "Your refund of %@ is being processed.";
 
 /* Caption for a button to delete Sync server data */
 "sync.delete.all.confirm.action" = "Delete Server Data";

@@ -92,6 +92,270 @@ class AIChatUserScriptHandlerTests: XCTestCase {
         super.tearDown()
     }
 
+    func testScrollInsetsKeepClearanceAfterNewMessagesAreAppended() async throws {
+        let (webView, window) = await makeChatScrollFixture()
+        defer { window.isHidden = true }
+        for bottomInset in [94.0, 180.0, 94.0] {
+            DuckAIChatScrollInsetStyler.apply(UIEdgeInsets(top: 0, left: 0, bottom: bottomInset, right: 0), to: webView)
+            let result = try await webView.callAsyncJavaScript("""
+            const chat = document.getElementById('chat');
+            const message = document.createElement('article');
+            message.textContent = 'Another long response';
+            chat.appendChild(message);
+            await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+            chat.scrollTop = chat.scrollHeight;
+            const spacer = window.__ddgNativeScrollInsets.spacer;
+            return {
+                spacerIsLast: chat.lastElementChild === spacer,
+                clearance: chat.getBoundingClientRect().bottom - message.getBoundingClientRect().bottom,
+                spacerCount: [...chat.children].filter(child => child.getAttribute('aria-hidden') === 'true').length
+            };
+            """, arguments: [:], in: nil, contentWorld: .page)
+            let metrics = try XCTUnwrap(result as? [String: Any])
+            XCTAssertEqual(metrics["spacerIsLast"] as? Bool, true)
+            XCTAssertEqual(try XCTUnwrap(metrics["clearance"] as? Double), bottomInset, accuracy: 0.5)
+            XCTAssertEqual(metrics["spacerCount"] as? Int, 1)
+        }
+
+        let clearanceAfterResize = try await webView.callAsyncJavaScript("""
+        const chat = document.getElementById('chat');
+        const settle = () => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(() => requestAnimationFrame(resolve))));
+        for (const message of chat.querySelectorAll('article')) message.style.minHeight = '40px';
+        await settle();
+        const lastMessage = window.__ddgNativeScrollInsets.spacer.previousElementSibling;
+        lastMessage.style.minHeight = '1200px';
+        await settle();
+        chat.scrollTop = chat.scrollHeight;
+        return chat.getBoundingClientRect().bottom - lastMessage.getBoundingClientRect().bottom;
+        """, arguments: [:], in: nil, contentWorld: .page)
+        XCTAssertEqual(try XCTUnwrap(clearanceAfterResize as? Double), 94, accuracy: 0.5)
+
+        let viewportClearance = try await webView.callAsyncJavaScript("""
+        const chat = document.getElementById('chat');
+        chat.style.height = '800px';
+        await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(() => requestAnimationFrame(resolve))));
+        chat.scrollTop = chat.scrollHeight;
+        return innerHeight - window.__ddgNativeScrollInsets.spacer.previousElementSibling.getBoundingClientRect().bottom;
+        """, arguments: [:], in: nil, contentWorld: .page)
+        XCTAssertEqual(try XCTUnwrap(viewportClearance as? Double), 0, accuracy: 0.5)
+
+        let extraSpaceForShortReply = try await webView.callAsyncJavaScript("""
+        const lastMessage = window.__ddgNativeScrollInsets.spacer.previousElementSibling;
+        lastMessage.innerHTML = '<div style="height: 40px">Short reply</div>';
+        await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(() => requestAnimationFrame(resolve))));
+        return window.__ddgNativeScrollInsets.spacer.getBoundingClientRect().height;
+        """, arguments: [:], in: nil, contentWorld: .page)
+        XCTAssertEqual(try XCTUnwrap(extraSpaceForShortReply as? Double), 0)
+
+        let clearanceAfterStreaming = try await webView.callAsyncJavaScript("""
+        const chat = document.getElementById('chat');
+        const content = window.__ddgNativeScrollInsets.spacer.previousElementSibling.lastElementChild;
+        content.style.height = '1200px';
+        await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(() => requestAnimationFrame(resolve))));
+        chat.scrollTop = chat.scrollHeight;
+        return innerHeight - content.getBoundingClientRect().bottom;
+        """, arguments: [:], in: nil, contentWorld: .page)
+        XCTAssertEqual(try XCTUnwrap(clearanceAfterStreaming as? Double), 0, accuracy: 0.5)
+    }
+
+    func testScrollInsetsStayStableAcrossViewportAndOuterScrollChanges() async throws {
+        guard #available(iOS 26, *) else { throw XCTSkip("Requires WebKit obscured content insets") }
+        let (webView, window) = await makeChatScrollFixture(height: 600)
+        defer { window.isHidden = true }
+        guard webView.responds(to: #selector(setter: WKWebView.obscuredContentInsets)) else {
+            throw XCTSkip("Runtime lacks obscured content insets")
+        }
+        _ = WebViewScrollViewInsetUpdater.beginManaging(webView.scrollView)
+
+        for bottomInset in [94.0, 260.0, 94.0, 260.0, 94.0] {
+            let insets = UIEdgeInsets(top: 80, left: 0, bottom: bottomInset, right: 0)
+            WebViewScrollViewInsetUpdater.update(webView.scrollView, insets: insets, isFloatingUIEnabled: true)
+            DuckAIChatScrollInsetStyler.apply(insets, to: webView)
+            _ = try await webView.callAsyncJavaScript("return innerHeight;", arguments: [:], in: nil, contentWorld: .page)
+            webView.obscuredContentInsets = insets
+            let result = try await webView.callAsyncJavaScript("""
+            await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(() => requestAnimationFrame(resolve))));
+            const state = window.__ddgNativeScrollInsets;
+            state.target.scrollTop = state.target.scrollHeight;
+            return {
+                gap: innerHeight - state.content.getBoundingClientRect().bottom,
+                viewport: innerHeight,
+                overscroll: getComputedStyle(state.target).overscrollBehaviorY
+            };
+            """, arguments: [:], in: nil, contentWorld: .page)
+            let metrics = try XCTUnwrap(result as? [String: Any])
+            XCTAssertEqual(try XCTUnwrap(metrics["gap"] as? Double), 0, accuracy: 0.5)
+            XCTAssertEqual(try XCTUnwrap(metrics["viewport"] as? Double), 600 - 80 - bottomInset, accuracy: 0.5)
+            XCTAssertEqual(metrics["overscroll"] as? String, "contain")
+        }
+
+        let result = try await webView.callAsyncJavaScript("""
+        const state = window.__ddgNativeScrollInsets;
+        const height = state.spacer.getBoundingClientRect().height;
+        window.scrollTo(0, 80);
+        state.apply();
+        return { outerOffset: scrollY, heightChange: state.spacer.getBoundingClientRect().height - height };
+        """, arguments: [:], in: nil, contentWorld: .page)
+        let metrics = try XCTUnwrap(result as? [String: Any])
+        XCTAssertGreaterThan(try XCTUnwrap(metrics["outerOffset"] as? Double), 0)
+        XCTAssertEqual(try XCTUnwrap(metrics["heightChange"] as? Double), 0, accuracy: 0.5)
+
+        DuckAIChatScrollInsetStyler.apply(.zero, to: webView)
+        let restored = try await webView.callAsyncJavaScript("""
+        const state = window.__ddgNativeScrollInsets;
+        return !state.spacer.isConnected && getComputedStyle(state.target).overscrollBehaviorY === 'auto';
+        """, arguments: [:], in: nil, contentWorld: .page)
+        XCTAssertEqual(restored as? Bool, true)
+    }
+
+    func testNonOverflowingChatsKeepContentVisibleAcrossKeyboardChanges() async throws {
+        guard #available(iOS 26, *) else { throw XCTSkip("Requires WebKit obscured content insets") }
+        let (webView, window) = await makeChatScrollFixture(height: 600)
+        defer { window.isHidden = true }
+        _ = WebViewScrollViewInsetUpdater.beginManaging(webView.scrollView)
+        webView.scrollView.isScrollEnabled = false
+        _ = try await webView.callAsyncJavaScript("""
+        const style = document.createElement('style');
+        style.textContent = '#chat::after { display: none; }';
+        document.head.appendChild(style);
+        const chat = document.getElementById('chat');
+        chat.style.gap = '0';
+        chat.style.justifyContent = 'normal';
+        chat.innerHTML = '<article style="min-height:144px;margin-top:auto">Dax</article>'
+            + '<footer style="height:108px;flex-shrink:0;margin-top:auto">Privacy notice</footer>';
+        """, arguments: [:], in: nil, contentWorld: .page)
+
+        for bottom in [94.0, 260.0, 94.0, 260.0, 94.0] {
+            let insets = UIEdgeInsets(top: 80, left: 0, bottom: bottom, right: 0)
+            WebViewScrollViewInsetUpdater.update(webView.scrollView, insets: insets, isFloatingUIEnabled: true)
+            webView.obscuredContentInsets = insets
+            DuckAIChatScrollInsetStyler.apply(insets, to: webView)
+            let result = try await webView.callAsyncJavaScript("""
+            const chat = document.getElementById('chat');
+            const deadline = performance.now() + 1000;
+            while (performance.now() < deadline) {
+                await new Promise(resolve => requestAnimationFrame(resolve));
+                if (Math.abs(innerHeight - expectedHeight) < 0.5
+                    && Math.abs(chat.querySelector('footer').getBoundingClientRect().bottom - expectedHeight) < 0.5) break;
+            }
+            return { hasTarget: window.__ddgNativeScrollInsets.target === chat,
+                range: chat.scrollHeight - chat.clientHeight,
+                logoTop: chat.firstElementChild.getBoundingClientRect().top,
+                footerBottom: chat.querySelector('footer').getBoundingClientRect().bottom,
+                viewport: innerHeight };
+            """, arguments: ["expectedHeight": 600 - 80 - bottom], in: nil, contentWorld: .page)
+            let metrics = try XCTUnwrap(result as? [String: Any])
+            XCTAssertEqual(metrics["hasTarget"] as? Bool, true)
+            XCTAssertEqual(try XCTUnwrap(metrics["range"] as? Double), 0, accuracy: 0.5)
+            XCTAssertGreaterThanOrEqual(try XCTUnwrap(metrics["logoTop"] as? Double), 0)
+            XCTAssertEqual(try XCTUnwrap(metrics["footerBottom"] as? Double), try XCTUnwrap(metrics["viewport"] as? Double), accuracy: 0.5)
+        }
+
+        _ = try await webView.callAsyncJavaScript("""
+        document.getElementById('chat').innerHTML = '<article style="min-height:420px">Short conversation</article>';
+        """, arguments: [:], in: nil, contentWorld: .page)
+        let insets = UIEdgeInsets(top: 80, left: 0, bottom: 260, right: 0)
+        WebViewScrollViewInsetUpdater.update(webView.scrollView, insets: insets, isFloatingUIEnabled: true)
+        webView.obscuredContentInsets = insets
+        DuckAIChatScrollInsetStyler.apply(insets, to: webView)
+        let result = try await webView.callAsyncJavaScript("""
+        await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(() => requestAnimationFrame(resolve))));
+        const chat = document.getElementById('chat');
+        chat.scrollTop = chat.scrollHeight;
+        return chat.querySelector('article').getBoundingClientRect().bottom - innerHeight;
+        """, arguments: [:], in: nil, contentWorld: .page)
+        XCTAssertEqual(try XCTUnwrap(result as? Double), 0, accuracy: 0.5)
+    }
+
+    func testCenteredWelcomeSettlesAboveKeyboardAfterConversationReset() async throws {
+        guard #available(iOS 26, *) else { throw XCTSkip("Requires WebKit obscured content insets") }
+        let (webView, window) = await makeChatScrollFixture(height: 600)
+        defer { window.isHidden = true }
+        _ = WebViewScrollViewInsetUpdater.beginManaging(webView.scrollView)
+        webView.scrollView.isScrollEnabled = false
+        let insets = UIEdgeInsets(top: 80, left: 0, bottom: 260, right: 0)
+        WebViewScrollViewInsetUpdater.update(webView.scrollView, insets: insets, isFloatingUIEnabled: true)
+        webView.obscuredContentInsets = insets
+        DuckAIChatScrollInsetStyler.apply(insets, to: webView)
+        _ = try await webView.callAsyncJavaScript("""
+        const style = document.createElement('style');
+        style.textContent = '#chat::after { display: none; }';
+        document.head.appendChild(style);
+        const chat = document.getElementById('chat');
+        chat.style.gap = '0';
+        chat.style.justifyContent = 'normal';
+        chat.innerHTML = '<article style="margin-block:auto;min-height:236px;flex-shrink:0">'
+            + '<div style="height:144px">Dax</div><div style="height:72px;margin-top:20px">Suggestions</div></article>';
+        """, arguments: [:], in: nil, contentWorld: .page)
+
+        for bottom in [260.0, 94.0, 260.0, 94.0] {
+            let insets = UIEdgeInsets(top: 80, left: 0, bottom: bottom, right: 0)
+            WebViewScrollViewInsetUpdater.update(webView.scrollView, insets: insets, isFloatingUIEnabled: true)
+            webView.obscuredContentInsets = insets
+            DuckAIChatScrollInsetStyler.apply(insets, to: webView)
+            let result = try await webView.callAsyncJavaScript("""
+            const chat = document.getElementById('chat');
+            const deadline = performance.now() + 1000;
+            while (performance.now() < deadline) {
+                await new Promise(resolve => requestAnimationFrame(resolve));
+                if (Math.abs(innerHeight - expectedHeight) < 0.5
+                    && chat.querySelector('article').getBoundingClientRect().bottom <= innerHeight + 0.5) break;
+            }
+            chat.scrollTop = chat.scrollHeight;
+            return { offset: chat.scrollTop, top: chat.querySelector('article').getBoundingClientRect().top,
+                bottom: chat.querySelector('article').getBoundingClientRect().bottom, viewport: innerHeight };
+            """, arguments: ["expectedHeight": 600 - 80 - bottom], in: nil, contentWorld: .page)
+            let metrics = try XCTUnwrap(result as? [String: Any])
+            XCTAssertEqual(try XCTUnwrap(metrics["offset"] as? Double), 0, accuracy: 0.5)
+            XCTAssertGreaterThanOrEqual(try XCTUnwrap(metrics["top"] as? Double), 0)
+            XCTAssertLessThanOrEqual(try XCTUnwrap(metrics["bottom"] as? Double), try XCTUnwrap(metrics["viewport"] as? Double) + 0.5)
+        }
+    }
+
+    func testScrollInsetsUseConversationInsteadOfTallNestedAnswer() async throws {
+        let (webView, window) = await makeChatScrollFixture(height: 600)
+        defer { window.isHidden = true }
+        _ = try await webView.callAsyncJavaScript("""
+        document.querySelector('article').innerHTML = '<div style="overflow-y:auto;height:1200px">Long answer</div>';
+        """, arguments: [:], in: nil, contentWorld: .page)
+        DuckAIChatScrollInsetStyler.apply(UIEdgeInsets(top: 80, left: 0, bottom: 260, right: 0), to: webView)
+        let result = try await webView.callAsyncJavaScript("""
+        await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(() => requestAnimationFrame(resolve))));
+        const chat = document.getElementById('chat');
+        const state = window.__ddgNativeScrollInsets;
+        return { targetIsConversation: state.target === chat, spacerInConversation: state.spacer.parentElement === chat,
+            spacerHeight: state.spacer.getBoundingClientRect().height };
+        """, arguments: [:], in: nil, contentWorld: .page)
+        let metrics = try XCTUnwrap(result as? [String: Any])
+        XCTAssertEqual(metrics["targetIsConversation"] as? Bool, true)
+        XCTAssertEqual(metrics["spacerInConversation"] as? Bool, true)
+        XCTAssertLessThanOrEqual(try XCTUnwrap(metrics["spacerHeight"] as? Double), 260)
+    }
+
+    private func makeChatScrollFixture(height: CGFloat = 500) async -> (WKWebView, UIWindow) {
+        let webView = WKWebView(frame: CGRect(x: 0, y: 0, width: 390, height: 600))
+        let window = UIWindow(frame: webView.frame)
+        window.rootViewController = UIViewController()
+        window.rootViewController?.view.addSubview(webView)
+        window.makeKeyAndVisible()
+        let navigationDelegate = MockWKNavigationDelegate()
+        let loaded = expectation(description: "Chat fixture loaded")
+        navigationDelegate.didFinishNavigation = { _, _ in loaded.fulfill() }
+        webView.navigationDelegate = navigationDelegate
+        webView.loadHTMLString("""
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <style>
+            body { margin: 0; }
+            #chat { height: \(height)px; overflow-y: auto; display: flex; flex-direction: column; gap: 12px; }
+            #chat::after { content: ''; flex: 0 0 57px; }
+            article { min-height: 1200px; flex-shrink: 0; }
+        </style>
+        <div id="chat"><article>Initial response</article></div>
+        """, baseURL: URL(string: "https://duck.ai"))
+        await fulfillment(of: [loaded], timeout: 10)
+        return (webView, window)
+    }
+
     private func makeAIChatUserScriptHandler(isNativeStorageBridgeAvailable: Bool = false,
                                              aiChatUserScriptErrorEventMapper: EventMapping<AIChatUserScriptErrorEvent>? = nil,
                                              attachmentPrivacyWebKeySource: DuckAiNativeStorageHandling? = nil,
@@ -1536,6 +1800,106 @@ extension AIChatUserScriptHandlerTests {
     }
 }
 
+// MARK: - Terms of Service card on a handed-off prompt
+
+extension AIChatUserScriptHandlerTests {
+
+    /// What the SERP's Search Assist follow-up sends when it opens Duck.ai.
+    private var searchAssistHandoffPayload: AIChatPayload {
+        ["aiChatPrompt": "More bread recipes", "aiChatAutoPrompt": true, "aiChatMetadata": "{\"duckAssist\":{}}"]
+    }
+
+    private func requestHandoffData() {
+        _ = aiChatUserScriptHandler.getAIChatNativeHandoffData(params: [], message: MockUserScriptMessage(name: "test", body: [:]))
+    }
+
+    func testWhenTheSERPHandsOffAnAutoSubmittedPromptBeforeTheTermsAreAcceptedThenTheInputBoxLearnsThePageAsksForThem() {
+        let inputBox = MockAIChatInputBox()
+        aiChatUserScriptHandler.setAIChatInputBoxHandler(inputBox)
+        mockPayloadHandler.setData(searchAssistHandoffPayload)
+
+        requestHandoffData()
+
+        XCTAssertTrue(inputBox.isTermsOfServiceShownOnPage)
+    }
+
+    func testWhenTheTermsAreAlreadyAcceptedThenAHandedOffPromptLeavesTheTermsToTheInputBox() {
+        mockUserDefaults.set(true, forKey: "aichat.hasAcceptedTermsAndConditions")
+        let inputBox = MockAIChatInputBox()
+        aiChatUserScriptHandler.setAIChatInputBoxHandler(inputBox)
+        mockPayloadHandler.setData(searchAssistHandoffPayload)
+
+        requestHandoffData()
+
+        XCTAssertFalse(inputBox.isTermsOfServiceShownOnPage)
+    }
+
+    /// The page only holds a prompt behind its card when it would otherwise send it on its own.
+    func testWhenTheHandedOffPayloadSendsNoPromptOnItsOwnThenThePageAsksForNothing() {
+        let payloads: [AIChatPayload] = [
+            ["aiChatPrompt": "More bread recipes", "aiChatAutoPrompt": false],
+            ["aiChatPrompt": "More bread recipes"],
+            ["aiChatPrompt": "", "aiChatAutoPrompt": true],
+            ["aiChatAutoPrompt": true],
+            ["key": "value"]
+        ]
+        let inputBox = MockAIChatInputBox()
+        aiChatUserScriptHandler.setAIChatInputBoxHandler(inputBox)
+
+        for payload in payloads {
+            inputBox.isTermsOfServiceShownOnPage = true
+            mockPayloadHandler.setData(payload)
+
+            requestHandoffData()
+
+            XCTAssertFalse(inputBox.isTermsOfServiceShownOnPage, "\(payload)")
+        }
+    }
+
+    /// The payload is consumed once, so a reload brings the page back without its card.
+    func testWhenThePageLoadsAgainWithoutAHandoffThenTheInputBoxLearnsTheCardIsGone() {
+        let inputBox = MockAIChatInputBox()
+        aiChatUserScriptHandler.setAIChatInputBoxHandler(inputBox)
+        mockPayloadHandler.setData(searchAssistHandoffPayload)
+        requestHandoffData()
+
+        requestHandoffData()
+
+        XCTAssertFalse(inputBox.isTermsOfServiceShownOnPage)
+    }
+
+    /// A new tab binds the input before it's given the payload, and the page loads after both.
+    func testWhenAHandoffIsAnnouncedBeforeThePageLoadsThenTheInputBoxLearnsThePageWillAskForTheTerms() {
+        let inputBox = MockAIChatInputBox()
+        aiChatUserScriptHandler.setAIChatInputBoxHandler(inputBox)
+
+        aiChatUserScriptHandler.willHandOff(searchAssistHandoffPayload)
+
+        XCTAssertTrue(inputBox.isTermsOfServiceShownOnPage)
+    }
+
+    /// A replacement script takes over the page's state when it's rebuilt under a page that won't load again.
+    func testWhenThePagesTermsCardIsCarriedOverThenTheBoundInputBoxLearnsIt() {
+        let inputBox = MockAIChatInputBox()
+        aiChatUserScriptHandler.setAIChatInputBoxHandler(inputBox)
+
+        aiChatUserScriptHandler.isTermsOfServiceShownOnPage = true
+
+        XCTAssertTrue(inputBox.isTermsOfServiceShownOnPage)
+    }
+
+    /// The input box binds to a tab whenever it comes on screen, which can be after the page asked for the handoff.
+    func testWhenAnInputBoxAttachesAfterTheHandoffThenItLearnsThePageAsksForTheTerms() {
+        mockPayloadHandler.setData(searchAssistHandoffPayload)
+        requestHandoffData()
+        let inputBox = MockAIChatInputBox()
+
+        aiChatUserScriptHandler.setAIChatInputBoxHandler(inputBox)
+
+        XCTAssertTrue(inputBox.isTermsOfServiceShownOnPage)
+    }
+}
+
 // MARK: - handleTermsAcceptedIfNeeded Tests
 
 extension AIChatUserScriptHandlerTests {
@@ -1986,6 +2350,7 @@ private final class MockAIChatInputBox: AIChatInputBoxHandling {
     var aiChatInputBoxVisibilityPublisher: Published<AIChatInputBoxVisibility>.Publisher { $aiChatInputBoxVisibility }
 
     var isSubmitBlockedByRecoveryCard = false
+    var isTermsOfServiceShownOnPage = false
 
     @Published var attachmentUsage: AIChatAttachmentUsage?
     var attachmentUsagePublisher: Published<AIChatAttachmentUsage?>.Publisher { $attachmentUsage }

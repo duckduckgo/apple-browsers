@@ -352,7 +352,40 @@ final class TabRestorationDataCodingTests: XCTestCase {
         XCTAssertEqual(aiChat.recreationSources, [])
     }
 
+    // MARK: - Web extension pages
+
+    @MainActor
+    func testWebExtensionTabsAreNotRestored() throws {
+        let regularURL = URL(string: "https://example.com")!
+        let collection = TabCollection(tabs: [
+            .unloaded(UnloadedTab(content: .url(regularURL, credential: nil, source: .ui))),
+            .unloaded(UnloadedTab(content: .webExtensionUrl(webExtensionURL)))
+        ])
+
+        let archive = try NSKeyedArchiver.archivedData(withRootObject: collection, requiringSecureCoding: true)
+        let decoded = try XCTUnwrap(NSKeyedUnarchiver.unarchivedObject(ofClass: TabCollection.self, from: archive))
+
+        XCTAssertEqual(decoded.tabs.count, 1)
+        XCTAssertEqual(decoded.tabs.first?.content.urlForWebView, regularURL)
+    }
+
+    @MainActor
+    func testWhenTheSelectedWebExtensionTabIsDroppedThenSelectionStaysInBounds() throws {
+        let model = TabCollectionViewModel(tabCollection: TabCollection(tabs: [
+            .unloaded(UnloadedTab(content: .url(URL(string: "https://example.com")!, credential: nil, source: .ui))),
+            .unloaded(UnloadedTab(content: .webExtensionUrl(webExtensionURL)))
+        ]), selectionIndex: .unpinned(1))
+
+        let archive = try NSKeyedArchiver.archivedData(withRootObject: model, requiringSecureCoding: true)
+        let decoded = try XCTUnwrap(NSKeyedUnarchiver.unarchivedObject(ofClass: TabCollectionViewModel.self, from: archive))
+
+        XCTAssertEqual(decoded.tabCollection.tabs.count, 1)
+        XCTAssertEqual(decoded.selectionIndex, .unpinned(0))
+    }
+
     // MARK: - Helpers
+
+    private let webExtensionURL = URL(string: "webkit-extension://abcdef/popup.html")!
 
     private let duckAIURL = URL(string: "https://duck.ai/chat")!
 

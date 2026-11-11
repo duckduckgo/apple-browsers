@@ -5434,6 +5434,9 @@
 /* Header for the subscription section */
 "subscription.manage.title" = "Abonements";
 
+/* Subscription status shown after the user withdrew from the subscription contract */
+"subscription.not.subscribed" = "Nav abonēts";
+
 /* Alert content for not found subscription */
 "subscription.notFound.alert.message" = "Ar šo Apple kontu nav saistīts neviens abonements.";
 
@@ -5475,6 +5478,9 @@
 
 /* Progress view title when restoring past subscription purchase */
 "subscription.progress.view.restoring.subscription" = "Atjauno abonementu...";
+
+/* Progress view title while withdrawing from the subscription contract */
+"subscription.progress.view.withdraw.in.progress" = "Notiek atteikšanās…";
 
 /* Dismiss button on the reinstaller subscription promo. */
 "subscription.promo.reinstaller.buttons.notNow" = "Ne tagad";
@@ -5580,6 +5586,39 @@
 
 /* View All Plans button to see available subscription tiers */
 "subscription.view.all.plans" = "Skatīt visus plānus";
+
+/* Button that confirms withdrawal from the subscription contract */
+"subscription.withdraw.confirm.button" = "Apstiprināt atteikšanos";
+
+/* Second paragraph of the alert confirming withdrawal from the subscription contract. Parameter is a localized list of features, e.g. VPN, Personal Information Removal and Duck.ai. */
+"subscription.withdraw.confirm.features.message" = "Tiklīdz apstiprināsi, %@ pārstās darboties.";
+
+/* Message of the alert confirming withdrawal from the subscription contract. Parameters are the tier name (e.g. Plus) and the refund amount with currency. */
+"subscription.withdraw.confirm.message" = "Tavs %1$@ abonements nekavējoties beigsies, un 14 dienu laikā mēs tev atmaksāsim %2$@, izmantojot sākotnējo maksājuma veidu.";
+
+/* Title of the alert confirming withdrawal from the subscription contract */
+"subscription.withdraw.confirm.title" = "Vai atteikties no abonementa?";
+
+/* Button that opens the help page to complete a failed subscription withdrawal */
+"subscription.withdraw.error.button" = "Apmeklēt palīdzības lapu";
+
+/* Message of the alert shown when withdrawing from the subscription contract fails */
+"subscription.withdraw.error.message" = "Mums neizdevās automātiski apstrādāt tavu atteikšanās pieprasījumu. Lūdzu, apmeklē mūsu palīdzības lapu, lai pabeigtu atteikšanos.";
+
+/* Action title that starts withdrawing from the subscription contract with a full refund */
+"subscription.withdraw.from.contract" = "Atteikties no līguma";
+
+/* Subtitle of the Withdraw from Contract action. Parameter is the last date the user can withdraw. */
+"subscription.withdraw.from.contract.subtitle" = "Vari atteikties un saņemt pilnu atmaksu līdz %@";
+
+/* Button that dismisses the withdrawal confirmation and keeps the subscription */
+"subscription.withdraw.keep.button" = "Paturēt abonementu";
+
+/* Confirmation shown after withdrawing from the subscription contract. Parameter is the withdrawal date. */
+"subscription.withdrawn.info" = "Tu atteicies no abonementa šajā datumā: %@.";
+
+/* Shown below the withdrawal confirmation. Parameter is the refunded amount with currency. */
+"subscription.withdrawn.refund.info" = "Tava atmaksa %@ apmērā tiek apstrādāta.";
 
 /* No comment provided by engineer. */
 "SwiftUI Alert" = "SwiftUI brīdinājums";

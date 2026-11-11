@@ -129,7 +129,7 @@ extension RebrandedComparisonTableModel.Feature {
 
 //
 // Feature lists for the Set-as-Default comparison chart when the user is enrolled in the
-// download-reason experiment (`OnboardingFlowByDownloadReasonExperiment`).
+// download-reason experiment (`onboardingVPNDownloadReasonExperiment`).
 // Each download reason shows a different, ordered list.
 // - See: [Set-as-Default (Comparison Chart) step](https://app.asana.com/1/137249556945/task/1216445221863459?focus=true)
 extension RebrandedComparisonTableModel {

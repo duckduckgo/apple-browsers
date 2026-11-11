@@ -162,6 +162,7 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
         case settingsMissing
         case simulateSubscriptionExpiration
         case tokenReset
+        case reconnectBlocked
 
         // Subscription Errors - 100+
         case vpnAccessRevoked(_ underlyingError: Error)
@@ -180,6 +181,7 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
             case settingsMissing = 3
             case simulateSubscriptionExpiration = 4
             case tokenReset = 5
+            case reconnectBlocked = 6
             // Subscription Errors - 100+
             case vpnAccessRevoked = 100
             case vpnAccessRevokedDetectedByMonitorCheck = 101
@@ -203,6 +205,8 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
                 return nil
             case .tokenReset:
                 return "Abnormal situation caused the token to be reset"
+            case .reconnectBlocked:
+                return "Automatic reconnection is disabled. Connect again from the DuckDuckGo app."
             case .appRequestedCancellation:
                 return nil
             }
@@ -217,6 +221,7 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
             case .settingsMissing: return .settingsMissing
             case .simulateSubscriptionExpiration: return .simulateSubscriptionExpiration
             case .tokenReset: return .tokenReset
+            case .reconnectBlocked: return .reconnectBlocked
             case .vpnAccessRevoked: return .vpnAccessRevoked
             case .vpnAccessRevokedDetectedByMonitorCheck: return .vpnAccessRevokedDetectedByMonitorCheck
             case .appRequestedCancellation: return .appRequestedCancellation
@@ -232,6 +237,7 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
                     .vpnAccessRevokedDetectedByMonitorCheck,
                     .simulateSubscriptionExpiration,
                     .tokenReset,
+                    .reconnectBlocked,
                     .appRequestedCancellation:
                 return [:]
             case .couldNotGenerateTunnelConfiguration(let underlyingError),
@@ -268,6 +274,8 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
     private let timerQueue = DispatchQueue(label: "com.duckduckgo.network-protection.PacketTunnelProvider.timerQueue")
 
     // MARK: - Status
+
+    @MainActor private var hasStartedSuccessfully = false
 
     @MainActor
     public override var reasserting: Bool {
@@ -338,6 +346,7 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
     // MARK: - User Defaults
 
     private let defaults: UserDefaults
+    private let reconnectGuard: ReconnectGuard
 
     // MARK: - Server Selection
 
@@ -518,6 +527,7 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
         self.wireGuardInterface = wireGuardInterface
         self.settings = settings
         self.defaults = defaults
+        self.reconnectGuard = ReconnectGuard(defaults: defaults)
         self.bandwidthAnalyzer = bandwidthAnalyzer ?? NetworkProtectionConnectionBandwidthAnalyzer()
         self.latencyMonitor = latencyMonitor
         self.entitlementMonitor = entitlementMonitor
@@ -883,6 +893,7 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
         self.snoozeTimingStore.reset()
 
         do {
+            try reconnectGuard.runStartValidation(startupMethod: startupOptions.startupMethod)
             try await load(options: startupOptions)
             Logger.networkProtection.log("🟢 Startup options loaded correctly")
 
@@ -898,6 +909,14 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
             await loadProtectedResources()
 #endif
         } catch {
+            if case TunnelError.reconnectBlocked = error {
+                do {
+                    try await disableOnDemandIfSupportedByOS()
+                } catch {
+                    Logger.networkProtection.error("Failed to disable Connect On Demand after blocking automatic reconnection: \(error.localizedDescription, privacy: .public)")
+                }
+            }
+
             if startupOptions.startupMethod == .automaticOnDemand {
                 if loopDetector.connectionFailed(isOnDemand: true) {
                     providerEvents.fire(.connectionFailureLoopDetected(error))
@@ -923,7 +942,7 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
                 providerEvents.fire(.reportConnectionAttempt(attempt: .failure, source: .start))
             }
 
-            Logger.networkProtection.error("🔴 Stopping VPN due to no auth token")
+            Logger.networkProtection.error("🔴 Stopping VPN because startup prerequisites were not met")
             completeAndCleanupConnectionWideEvent(with: error, description: error.contextualizedDescription())
             throw error
         }
@@ -938,6 +957,7 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
 
             let reason: AdapterStartReason = startupOptions.startupMethod == .automaticOnDemand ? .onDemand : .manual
             try await startTunnel(reason: reason)
+            hasStartedSuccessfully = true
 
             providerEvents.fire(.tunnelStartAttempt(.success))
             providerEvents.fire(.reportConnectionAttempt(attempt: .success, source: .start))
@@ -1584,11 +1604,11 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
             // If we can't cleanly shut the tunneldown, we'll do our best to
             // shut it down even if the process keeps running.
 
+            // Subscription recovery must not undo this guard if the extension process restarts.
+            reconnectGuard.blockAutomaticReconnect()
+
             // We don't want to be firing monitoring pixels for failures from this point onward...
             await stopMonitors()
-
-            // If the extension process restarts we don't want it to attempt to reconnect
-            try? await self.tokenHandlerProvider.removeToken()
 
             // We show some visual indication that something's off, so the user can chose to
             // manually stop the VPN.
@@ -1676,6 +1696,11 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
 
     @MainActor
     public override func wake() {
+        // The provider can be launched for IPC without ever starting a tunnel.
+        guard hasStartedSuccessfully else {
+            return
+        }
+
         switch connectionStatus {
         case .connected, .reasserting:
             if reportWakeConnectivityFailure != nil, wakeConnectivityFailures == nil {
@@ -1684,14 +1709,6 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
         default: wakeConnectivityFailures = nil
         }
         Logger.networkProtectionSleep.log("Wake up")
-
-        // macOS can launch the extension due to calls to `sendProviderMessage`, so there's
-        // a chance this is being called when the VPN isn't really meant to be connected or
-        // running.  We want to avoid firing pixels or handling adapter changes when this is
-        // the case.
-        guard connectionStatus != .disconnected else {
-            return
-        }
 
         Task {
             providerEvents.fire(.tunnelWakeAttempt(.begin))

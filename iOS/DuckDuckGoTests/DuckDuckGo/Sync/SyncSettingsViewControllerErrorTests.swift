@@ -23,7 +23,7 @@ import Core
 import Combine
 @testable import DDGSync
 @_spi(Testing) import Persistence
-import PixelKit
+@_spi(Testing) import PixelKit
 import Common
 import FoundationExtensions
 import SyncUI_iOS
@@ -867,6 +867,64 @@ final class SyncSettingsViewControllerErrorTests: XCTestCase {
     func test_WhenSyncErrorMessageIsUnableToSyncWithDevice_ThenDescriptionIsPresent() {
         XCTAssertEqual(SyncErrorMessage.unableToSyncWithDevice.title, UserText.syncFailedTitle)
         XCTAssertEqual(SyncErrorMessage.unableToSyncWithDevice.description, UserText.syncFailedDescription)
+    }
+
+    @MainActor
+    func testWhenSignupPixelFailsToSendAfterAccountIsCreatedThenShowsSuccess() async {
+        let pixelFiring = PixelKitMock()
+        pixelFiring.expectedFireError = URLError(.notConnectedToInternet)
+        let settingsVC = makeSignupVC(pixelFiring: pixelFiring)
+
+        await runSimplifiedSignup(on: settingsVC)
+
+        XCTAssertEqual(settingsVC.viewModel.connectingSheetPhase, .success(.newlySyncing))
+    }
+
+    @MainActor
+    func testWhenSignupSucceedsThenFiresSignupDirectButNotSetupEndedSuccessful() async {
+        let pixelFiring = PixelKitMock()
+        let settingsVC = makeSignupVC(pixelFiring: pixelFiring)
+
+        await runSimplifiedSignup(on: settingsVC)
+
+        let firedPixelNames = pixelFiring.actualFireCalls.map(\.pixel.name)
+        XCTAssertTrue(firedPixelNames.contains(Pixel.Event.syncSignupDirect.name))
+        XCTAssertFalse(firedPixelNames.contains(Pixel.Event.syncSetupEndedSuccessful.name))
+    }
+
+    @MainActor
+    private func makeSignupVC(pixelFiring: PixelKitMock) -> SyncSettingsViewController {
+        SyncSettingsViewController(
+            syncService: MockDDGSyncing(authState: .inactive, isSyncInProgress: false),
+            syncBookmarksAdapter: syncBookmarksAdapter,
+            syncCredentialsAdapter: syncCredentialsAdapter,
+            syncCreditCardsAdapter: syncCreditCardsAdapter,
+            syncPausedStateManager: errorHandler,
+            featureFlagger: featureFlagger,
+            syncAutoRestoreHandler: syncAutoRestoreHandler,
+            pixelFiring: pixelFiring,
+            syncPromoStorage: MockKeyValueStore().keyedStoring()
+        )
+    }
+
+    @MainActor
+    private func runSimplifiedSignup(on settingsVC: SyncSettingsViewController) async {
+        let viewModel = settingsVC.viewModel
+        viewModel.connectingSheetPhase = .syncAnotherDevice(isConnecting: true)
+        let finished = expectation(description: "signup flow finishes")
+        finished.assertForOverFulfill = false
+        viewModel.$connectingSheetPhase
+            .dropFirst()
+            .sink { phase in
+                if phase == .success(.newlySyncing) || phase == .syncAnotherDevice(isConnecting: false) {
+                    finished.fulfill()
+                }
+            }
+            .store(in: &cancellables)
+
+        settingsVC.simplifiedCreateAccountAndStartSyncing(optionsViewModel: viewModel)
+
+        await fulfillment(of: [finished], timeout: 5)
     }
 
     private func legacyPairingURL(for syncCode: SyncCode) throws -> URL {

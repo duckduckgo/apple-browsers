@@ -92,7 +92,7 @@ public enum FeatureFlag: String, CaseIterable {
     case webExtensionsPermissions
 
     /// Controls Chrome Web Store update discovery when the extension manager is created.
-    /// https://app.asana.com/1/137249556945/task/1220029145261023
+    /// https://app.asana.com/1/137249556945/project/1203108348835387/task/1220303318554449
     case webExtensionUpdateDiscovery
 
     /// Failsafe kill switch for the lightweight web-extension reload on data clear (fire). On by
@@ -202,9 +202,6 @@ public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1212843034975366
     case dbpOptOutRetryError96Hours
 
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1217280986826116
-    case dbpPerformanceMetrics
-
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1217396600005661
     case dbpExtractedProfileRefresh
 
@@ -240,9 +237,6 @@ public enum FeatureFlag: String, CaseIterable {
 
     /// https://app.asana.com/1/137249556945/project/72649045549333/task/1211654922002904
     case aiChatOmnibarTools
-
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1212710873113687
-    case aiChatOmnibarOnboarding
 
     /// https://app.asana.com/1/137249556945/project/1204006570077678/task/1215385527516382?focus=true
     case aiChatOnboardingToggleAffectsNtpAndDdg
@@ -827,7 +821,7 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .webExtensionsPermissions:
             Config(defaultValue: .internalOnly, source: .remoteReleasable(WebExtensionsSubfeature.permissions), category: .webExtensions)
         case .webExtensionUpdateDiscovery:
-            Config(defaultValue: .internalOnly, source: .remoteReleasable(WebExtensionsSubfeature.updateDiscovery), category: .webExtensions)
+            Config(defaultValue: .enabled, source: .remoteReleasable(WebExtensionsSubfeature.updateDiscovery), category: .webExtensions)
         case .webExtensionLightweightReload:
             Config(defaultValue: .enabled, source: .remoteReleasable(WebExtensionsSubfeature.lightweightReloadOnDataClear), category: .webExtensions)
         case .webExtensionStateRestorationGate:
@@ -886,8 +880,6 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(source: .remoteReleasable(DBPSubfeature.customWebViewUserAgent), supportsLocalOverriding: true, category: .dbp)
         case .dbpOptOutRetryError96Hours:
             Config(source: .remoteReleasable(DBPSubfeature.optOutRetryError96Hours), category: .dbp)
-        case .dbpPerformanceMetrics:
-            Config(defaultValue: .enabled, source: .remoteReleasable(DBPSubfeature.performanceMetrics), category: .dbp)
         case .dbpExtractedProfileRefresh:
             Config(defaultValue: .enabled, source: .remoteReleasable(DBPSubfeature.extractedProfileRefresh), supportsLocalOverriding: true, category: .dbp)
         case .dbpSchedulerDeferralHandling:
@@ -912,8 +904,6 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(defaultValue: .enabled, source: .remoteReleasable(DuckAiChatHistorySubfeature.featureEnabled), category: .duckAI)
         case .aiChatOmnibarTools:
             Config(source: .remoteReleasable(AIChatSubfeature.omnibarTools), category: .duckAI)
-        case .aiChatOmnibarOnboarding:
-            Config(defaultValue: .enabled, source: .remoteReleasable(AIChatSubfeature.omnibarOnboarding), category: .duckAI)
         case .aiChatOnboardingToggleAffectsNtpAndDdg:
             Config(defaultValue: .enabled, source: .remoteReleasable(AIChatSubfeature.onboardingToggleAffectsNtpAndDdg), category: .duckAI)
         case .osSupportForceUnsupportedMessage:

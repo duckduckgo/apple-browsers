@@ -9,7 +9,9 @@ do. Every case is a small, real task with deterministic graders. Each case runs 
 | `base` | `--base` (default `origin/main`) |
 | `none` | your working tree with every `AGENTS.md`/`CLAUDE.md` removed; skills stay |
 
-Local only for now. Runs use your Claude Code login and cost money; the default cap is $20.
+Local only for now. Runs use your Claude Code login. As a safety net against runaway runs, the
+runner stops starting new runs once Claude Code's estimated API cost passes `--max-cost-usd`
+(default 20). That estimate isn't what anyone is billed.
 
 ## Run
 
@@ -18,9 +20,8 @@ python3 scripts/agent-evals/run_agent_evals.py --dry-run
 python3 scripts/agent-evals/run_agent_evals.py --case 'swift-testing-*' --arms candidate,none --reps 3
 ```
 
-Small cases cost about $0.05–0.15 per run with `--model sonnet` (the default); bigger tasks cost
-more. The report prints the pass
-rate, cost and turns per case and arm. Transcripts (`.jsonl`) and diffs for every run are saved
+Small cases take 20–30 seconds per run with `--model sonnet` (the default). The report prints, per
+case and arm, the pass rate, input and output tokens, and turns, plus a pass rate for each check. Transcripts (`.jsonl`) and diffs for every run are saved
 next to it, by default under `$TMPDIR/ddg-agent-evals/results/`.
 
 Runs happen in one reusable worktree (`$TMPDIR/ddg-agent-evals/worktree`), with project settings
@@ -32,8 +33,8 @@ worktree with `git worktree remove --force "$TMPDIR/ddg-agent-evals/worktree"`.
 
 1. Run the cases that cover what you changed with `--arms candidate,base`, plus the
    `distractor-*` cases.
-2. Compare pass rate and cost. A new line should raise a case's pass rate and leave the
-   distractors' cost flat.
+2. Compare pass rates, tokens and turns. A new line should raise a case's pass rate and leave
+   the distractors' tokens and turns flat.
 3. Adding a line? Add a case where agents get it wrong without the line.
 
 To check whether an existing line still earns its place, run its cases with

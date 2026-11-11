@@ -162,12 +162,14 @@ class ReportTests(unittest.TestCase):
 
     def testWhenRunsAreSummarizedThenEachArmGetsPassRateAndCost(self):
         runs = [
-            {"case": "c", "arm": "candidate", "rep": 1, "passed": True, "graders": [], "cost_usd": 0.4, "turns": 4, "input_tokens": 100},
+            {"case": "c", "arm": "candidate", "rep": 1, "passed": True, "graders": [], "turns": 4, "input_tokens": 90_000, "output_tokens": 2_000},
             {"case": "c", "arm": "none", "rep": 1, "passed": False, "error": "",
-             "graders": [{"detail": "ran swiftlint", "passed": False}], "cost_usd": 0.2, "turns": 2, "input_tokens": 50},
+             "graders": [{"detail": "ran swiftlint", "passed": False}], "turns": 2, "input_tokens": 80_000, "output_tokens": 1_000},
         ]
         report = evals.summarize(runs, ["candidate", "none"])
-        self.assertIn("| c | 1/1 · $0.40 · 4 turns | 0/1 · $0.20 · 2 turns |", report)
+        self.assertIn("| c | 1/1 · 90k in · 4 turns | 0/1 · 80k in · 2 turns |", report)
+        self.assertIn("| candidate | 1/1 (100%) | 90,000 | 2,000 | 4.0 |", report)
+        self.assertNotIn("$", report)
         self.assertIn("- c / none #1: ran swiftlint", report)
 
     def testWhenRunsPartiallyPassThenEachCheckGetsItsOwnRate(self):
@@ -175,7 +177,7 @@ class ReportTests(unittest.TestCase):
             return {"case": "c", "arm": arm, "rep": rep, "passed": time_limit and available, "error": "",
                     "graders": [{"detail": "timeLimit", "passed": time_limit},
                                 {"detail": "a|b", "passed": available}],
-                    "cost_usd": 0.1, "turns": 1, "input_tokens": 1}
+                    "turns": 1, "input_tokens": 1, "output_tokens": 1}
         runs = [run("candidate", 1, True, True), run("candidate", 2, True, True),
                 run("none", 1, True, False), run("none", 2, False, False)]
         report = evals.summarize(runs, ["candidate", "none"])

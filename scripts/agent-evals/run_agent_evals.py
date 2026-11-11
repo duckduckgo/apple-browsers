@@ -14,6 +14,9 @@ also gets a fresh CLAUDE_CONFIG_DIR.
 Usage:
   run_agent_evals.py [--case GLOB] [--arms candidate,base,none] [--reps 3] [--model sonnet]
                      [--base origin/main] [--max-cost-usd 20] [--workdir DIR] [--dry-run]
+
+--max-cost-usd stops starting runs once the estimated API cost Claude Code reports passes the cap.
+It guards against runaway runs; it isn't what anyone is billed.
 """
 
 import argparse
@@ -280,7 +283,7 @@ def summarize(runs, arms):
         n = len(items)
         passed = sum(1 for r in items if r["passed"])
         mean = lambda key: sum(r[key] for r in items) / n if n else 0  # noqa: E731
-        return passed, n, mean("cost_usd"), mean("turns"), mean("input_tokens")
+        return passed, n, mean("input_tokens"), mean("output_tokens"), mean("turns")
 
     out = ["# Agent instruction evals", ""]
     out += ["| Case | " + " | ".join(arms) + " |", "|---|" + "---|" * len(arms)]
@@ -291,16 +294,16 @@ def summarize(runs, arms):
             if not items:
                 cells.append("–")
                 continue
-            passed, n, cost, turns, _ = stats(items)
-            cells.append(f"{passed}/{n} · ${cost:.2f} · {turns:.0f} turns")
+            passed, n, tokens_in, _, turns = stats(items)
+            cells.append(f"{passed}/{n} · {tokens_in / 1000:.0f}k in · {turns:.0f} turns")
         out.append(f"| {case} | " + " | ".join(cells) + " |")
 
-    out += ["", "| Arm | Pass rate | Mean cost | Mean turns | Mean input tokens |", "|---|---:|---:|---:|---:|"]
+    out += ["", "| Arm | Pass rate | Mean input tokens | Mean output tokens | Mean turns |", "|---|---:|---:|---:|---:|"]
     for arm in arms:
         items = [r for r in runs if r["arm"] == arm]
         if items:
-            passed, n, cost, turns, tokens = stats(items)
-            out.append(f"| {arm} | {passed}/{n} ({100 * passed / n:.0f}%) | ${cost:.2f} | {turns:.1f} | {tokens:,.0f} |")
+            passed, n, tokens_in, tokens_out, turns = stats(items)
+            out.append(f"| {arm} | {passed}/{n} ({100 * passed / n:.0f}%) | {tokens_in:,.0f} | {tokens_out:,.0f} | {turns:.1f} |")
 
     out += ["", "## Checks", "", "| Case | Check | " + " | ".join(arms) + " |", "|---|---|" + "---:|" * len(arms)]
     for case in sorted({r["case"] for r in runs}):
@@ -329,7 +332,8 @@ def main(argv=None):
     parser.add_argument("--model", default="sonnet")
     parser.add_argument("--base", default="origin/main")
     parser.add_argument("--commit", default="HEAD", help="commit the tasks start from")
-    parser.add_argument("--max-cost-usd", type=float, default=20.0)
+    parser.add_argument("--max-cost-usd", type=float, default=20.0,
+                        help="stop starting runs once the estimated API cost passes this (a safety net, not a bill)")
     parser.add_argument("--workdir", default=str(Path(tempfile.gettempdir()) / "ddg-agent-evals"))
     parser.add_argument("--dry-run", action="store_true")
     args = parser.parse_args(argv)
@@ -345,7 +349,7 @@ def main(argv=None):
 
     plan = [(case, arm, rep) for case in cases for arm in arms for rep in range(1, args.reps + 1)]
     print(f"{len(plan)} runs: {len(cases)} cases × {len(arms)} arms × {args.reps} reps, model {args.model}, "
-          f"start {commit[:10]}, base {args.base}, cost cap ${args.max_cost_usd:.2f}")
+          f"start {commit[:10]}, base {args.base}, estimated API cost cap ${args.max_cost_usd:.2f}")
     if args.dry_run:
         for case, arm, rep in plan:
             print(f"  {case['id']} / {arm} #{rep}")
@@ -361,7 +365,7 @@ def main(argv=None):
     runs, spent = [], 0.0
     for index, (case, arm, rep) in enumerate(plan, 1):
         if spent >= args.max_cost_usd:
-            print(f"Stopping: spent ${spent:.2f}, cap ${args.max_cost_usd:.2f}")
+            print(f"Stopping: estimated API cost ${spent:.2f} reached the cap ${args.max_cost_usd:.2f}")
             break
         start = case.get("commit", commit)
         workspace.reset(start)
@@ -382,7 +386,7 @@ def main(argv=None):
             "case": case["id"], "arm": arm, "rep": rep,
             "passed": not error and all(g["passed"] for g in graded),
             "graders": graded, "error": error,
-            "cost_usd": result.get("total_cost_usd") or 0.0,
+            "estimated_api_cost_usd": result.get("total_cost_usd") or 0.0,
             "turns": result.get("num_turns") or 0,
             "input_tokens": (usage.get("input_tokens", 0) + usage.get("cache_read_input_tokens", 0)
                              + usage.get("cache_creation_input_tokens", 0)),
@@ -391,10 +395,11 @@ def main(argv=None):
             "skills": sorted(transcript.skills_invoked()),
         }
         runs.append(run)
-        spent += run["cost_usd"]
+        spent += run["estimated_api_cost_usd"]
         status = "pass" if run["passed"] else "FAIL"
         print(f"[{index}/{len(plan)}] {case['id']} / {arm} #{rep}: {status} "
-              f"${run['cost_usd']:.2f} {run['turns']} turns {run['seconds']}s"
+              f"{run['input_tokens'] / 1000:.0f}k in {run['output_tokens'] / 1000:.1f}k out "
+              f"{run['turns']} turns {run['seconds']}s"
               + (f" ({error})" if error else ""))
 
     (results_dir / "runs.json").write_text(json.dumps(runs, indent=2), encoding="utf-8")

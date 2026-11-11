@@ -25,6 +25,7 @@ public enum HTTPStatusCode: Int, Sendable, Hashable {
     case accepted = 202
     case noContent = 204
     case badRequest = 400
+    case forbidden = 403
     case notFound = 404
     case methodNotAllowed = 405
     case conflict = 409
@@ -37,6 +38,7 @@ public enum HTTPStatusCode: Int, Sendable, Hashable {
         case .accepted: return "Accepted"
         case .noContent: return "No Content"
         case .badRequest: return "Bad Request"
+        case .forbidden: return "Forbidden"
         case .notFound: return "Not Found"
         case .methodNotAllowed: return "Method Not Allowed"
         case .conflict: return "Conflict"

@@ -104,8 +104,14 @@ public struct DebugScanRequest {
               let profile = try? JSONDecoder().decode(DataBrokerProtectionProfile.self, from: profileData) else {
             throw DataBrokerProtectionDebugControlError.invalidRequest("'profile' must be a PIR profile with names, addresses, phones and birthYear")
         }
-        guard !profile.names.isEmpty, !profile.addresses.isEmpty else {
-            throw DataBrokerProtectionDebugControlError.invalidRequest("'profile' needs at least one name and one address")
+        func hasText(_ value: String) -> Bool {
+            !value.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+        }
+        guard !profile.names.isEmpty, profile.names.allSatisfy({ hasText($0.firstName) && hasText($0.lastName) }) else {
+            throw DataBrokerProtectionDebugControlError.invalidRequest("'profile' needs at least one name, each with a first and last name")
+        }
+        guard !profile.addresses.isEmpty, profile.addresses.allSatisfy({ hasText($0.city) && hasText($0.state) }) else {
+            throw DataBrokerProtectionDebugControlError.invalidRequest("'profile' needs at least one address, each with a city and state")
         }
         let currentYear = Calendar.current.component(.year, from: Date())
         guard (1900...currentYear).contains(profile.birthYear) else {

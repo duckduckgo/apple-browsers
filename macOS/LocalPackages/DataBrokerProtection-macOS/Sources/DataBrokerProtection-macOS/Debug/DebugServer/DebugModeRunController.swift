@@ -72,6 +72,7 @@ final class DebugModeRunController: DataBrokerProtectionDebugControlling, @unche
 
         let run = try locked {
             try claim(runId)
+            runner.debugEmailConfirmationStore.reset()
             runs[runId] = state
             return snapshot(of: state)
         }
@@ -94,11 +95,6 @@ final class DebugModeRunController: DataBrokerProtectionDebugControlling, @unche
     func startOptOut(runId: String, resultId: String) throws -> DebugRun {
         let (run, (scanResult, showWebView)) = try beginActivity(.optOut, runId: runId) { state in
             let result = try Self.result(resultId, in: state)
-            if let identifiers = runner.confirmationIdentifiers(for: result) {
-                try? runner.debugEmailConfirmationStore.deleteOptOutEmailConfirmation(profileQueryId: identifiers.profileQueryId,
-                                                                                        brokerId: identifiers.brokerId,
-                                                                                        extractedProfileId: identifiers.extractedProfileId)
-            }
             state.optOuts[resultId] = OptOut(status: .running)
             return (result, !state.hidesWebView)
         }

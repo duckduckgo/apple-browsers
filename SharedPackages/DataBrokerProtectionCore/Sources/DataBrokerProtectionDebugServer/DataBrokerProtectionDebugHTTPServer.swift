@@ -58,7 +58,7 @@ public final class DataBrokerProtectionDebugHTTPServer {
         self.port = port
         self.logReader = logReader
         self.controller = controller
-        self.server = DebugHTTPServer(port: port)
+        self.server = DebugHTTPServer(port: port, loopbackOnly: true)
         self.readService = DataBrokerProtectionDebugReadService(provider: provider)
     }
 
@@ -131,7 +131,10 @@ public final class DataBrokerProtectionDebugHTTPServer {
 
     private func registerControlRoutes(controller: UncheckedSendable<DataBrokerProtectionDebugControlling>) {
         server.addRoute("/api/debug/scans", method: .POST) { request in
-            try Self.controlResponse {
+            if Self.isFromWebPage(request) {
+                return Self.webPageRejection
+            }
+            return try Self.controlResponse {
                 try controller.value.startScan(try DebugScanRequest(body: request.body))
             }
         }
@@ -146,6 +149,9 @@ public final class DataBrokerProtectionDebugHTTPServer {
         }
 
         server.addPrefixRoute("/api/debug/runs/", method: .POST) { request in
+            if Self.isFromWebPage(request) {
+                return Self.webPageRejection
+            }
             guard let action = DebugRunAction(path: String(request.path.dropFirst("/api/debug/runs/".count))) else {
                 return .text("Unknown run action: \(request.path)", status: .notFound)
             }
@@ -161,6 +167,13 @@ public final class DataBrokerProtectionDebugHTTPServer {
             }
         }
     }
+
+    /// Browsers send `Origin` on every POST and pages can't remove it, so this keeps web pages from starting scans or opt-outs.
+    private static func isFromWebPage(_ request: HTTPRequest) -> Bool {
+        request.headers.keys.contains { $0.caseInsensitiveCompare("Origin") == .orderedSame }
+    }
+
+    private static let webPageRejection = HTTPResponse.text("Requests from web pages are not accepted", status: .forbidden)
 
     private static func controlResponse(_ start: () throws -> DebugRun) throws -> HTTPResponse {
         do {

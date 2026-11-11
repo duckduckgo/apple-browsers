@@ -278,6 +278,12 @@ extension MainViewController {
 
     func applyUnifiedInputChromeBackground(_ state: UnifiedInputChromeBackgroundState, updateWebView: Bool = true) {
 
+        let usesFloatingAIChrome: Bool
+        if #available(iOS 26, *) {
+            usesFloatingAIChrome = isDuckAIAndInputLiquidGlassEnabled
+        } else {
+            usesFloatingAIChrome = false
+        }
         let statusBackgroundPresentation: MainViewCoordinator.StatusBackgroundPresentation
         let rootBackgroundColor: UIColor
         let navigationBarContainerColor: UIColor?
@@ -310,20 +316,20 @@ extension MainViewController {
         case .aiTabChatChromeHidden:
             statusBackgroundPresentation = .aiTabChatChromeHidden
             inputContentContainerColor = .clear
-            // Only paint the chrome around the input with the contextual sheet tone while the
-            // input is engaged (first responder). In the idle/collapsed state we keep the chrome
-            // transparent so the chat surface beneath shows through unchanged.
-            if unifiedToggleInputCoordinator?.isInputEditing == true {
+            if usesFloatingAIChrome {
+                rootBackgroundColor = UIColor(singleUseColor: .duckAIWebViewBackground)
+                navigationBarContainerColor = .clear
+                unifiedToggleInputContainerColor = .clear
+            } else if unifiedToggleInputCoordinator?.isInputEditing == true {
                 rootBackgroundColor = UIColor(singleUseColor: .duckAIContextualSheetBackground)
                 navigationBarContainerColor = rootBackgroundColor
                 unifiedToggleInputContainerColor = .clear
-                webViewBackgroundColor = rootBackgroundColor
             } else {
                 rootBackgroundColor = UIColor(designSystemColor: .surfaceCanvas)
                 navigationBarContainerColor = .clear
-                unifiedToggleInputContainerColor = UIColor(designSystemColor: .surfaceCanvas)
-                webViewBackgroundColor = UIColor(designSystemColor: .surfaceCanvas)
+                unifiedToggleInputContainerColor = rootBackgroundColor
             }
+            webViewBackgroundColor = rootBackgroundColor
         }
 
         viewCoordinator.setStatusBackgroundPresentation(statusBackgroundPresentation)
@@ -337,11 +343,18 @@ extension MainViewController {
         viewCoordinator.unifiedToggleInputContainer.backgroundColor = unifiedToggleInputContainerColor
         unifiedToggleInputCoordinator?.viewController.view.backgroundColor = .clear
 
+        if case .aiTabChatChromeHidden = state, usesFloatingAIChrome {
+            currentTab?.pullToRefreshViewAdapter?.backgroundColorOverride = UIColor(singleUseColor: .duckAIWebViewBackground)
+        } else {
+            currentTab?.pullToRefreshViewAdapter?.backgroundColorOverride = nil
+        }
+
         guard updateWebView else { return }
         if let webView = currentTab?.webView {
             webView.backgroundColor = webViewBackgroundColor
             webView.scrollView.backgroundColor = webViewBackgroundColor
             webView.underPageBackgroundColor = webViewBackgroundColor
+            currentTab?.applyFloatingAIChromeBackground(usesFloatingAIChrome && currentTab?.isAITab == true ? rootBackgroundColor : nil)
             currentTab?.pullToRefreshViewAdapter?.webViewBackgroundDidChange()
         }
     }
@@ -876,6 +889,9 @@ private extension MainViewController {
 
         if case .preserveCurrentPresentation(let allowsEarlyReturn) = behavior, allowsEarlyReturn {
             syncPreservedAITabPresentation(coordinator: coordinator)
+            if isDuckAIAndInputLiquidGlassEnabled {
+                tab.updateWebViewBottomAnchor(for: currentBarsVisibility)
+            }
             return false
         }
         ensureStandardChromeVisibleForAITabRefresh()
@@ -897,6 +913,7 @@ private extension MainViewController {
 
         updateUnifiedInputContentVisibility(for: coordinator)
         refreshAIChatTabChatHeaderSubscriptionState()
+        updateScrollInteractionIfNeeded()
         return true
     }
 
@@ -929,6 +946,13 @@ private extension MainViewController {
 }
 
 extension MainViewController {
+
+    var floatingAIChatHeaderObscuredHeight: CGFloat {
+        guard #available(iOS 26, *), isDuckAIAndInputLiquidGlassEnabled,
+              currentTab?.isAITab == true,
+              viewCoordinator.aiChatTabChatHeaderContainer?.isHidden == false else { return 0 }
+        return view.safeAreaInsets.top + AIChatTabChatHeaderView.preferredHeight
+    }
 
     func aiTabChromeBackgroundState(for renderState: UTIRenderState) -> UnifiedInputChromeBackgroundState {
         renderState.isContentVisible ? .aiTabSearchChromeHidden : .aiTabChatChromeHidden
@@ -981,11 +1005,13 @@ private extension MainViewController {
         reconcileAIChromeForCurrentTab()
         // Snap chrome revealed — prior chat-scroll could have hidden bars under the AI header, so without this the omnibar flies in on return.
         chromeManager.reset(animated: false)
+        updateScrollInteractionIfNeeded()
     }
 
     func setUpAIChatTabChatHeader() {
         let headerView = AIChatTabChatHeaderView(isFireModeEnabled: fireModeCapability.isFireModeEnabled,
                                                  shouldShowImageGeneration: featureFlagger.isFeatureOn(.aiChatNativeSidebar),
+                                                 usesFloatingAIChrome: isDuckAIAndInputLiquidGlassEnabled,
                                                  layout: AIChatTabChatHeaderView.Layout(featureFlagger: featureFlagger))
         headerView.delegate = self
         headerView.newTabOpening = newTabTransitions
@@ -1005,7 +1031,7 @@ private extension MainViewController {
         self.aiChatTabChatHeaderView = headerView
         viewCoordinator.aiChatTabChatHeaderView = headerView
 
-        let editHeaderView = AIChatEditHeaderView()
+        let editHeaderView = AIChatEditHeaderView(usesFloatingAIChrome: isDuckAIAndInputLiquidGlassEnabled)
         editHeaderView.delegate = self
         editHeaderView.translatesAutoresizingMaskIntoConstraints = false
         editHeaderView.isHidden = true

@@ -74,6 +74,26 @@ final class AIChatTabExtension {
         }
     }
 
+    /// Scripts are reinstalled mid-page (e.g. new content-blocking rules) and the bridge routes answers
+    /// to the new script, so the old one's pending client-tool prompts could never be answered.
+    @MainActor
+    private func replaceAIChatUserScript(with script: AIChatUserScript?) {
+        let previousScript = aiChatUserScript
+        aiChatUserScript = script
+        if let previousScript, previousScript !== script {
+            previousScript.cancelClientToolPermissionRequests()
+        }
+    }
+
+    deinit {
+        // The tab closed. A pending client-tool call keeps its script alive, so cancel it explicitly
+        // rather than leaving it to the permission timeout.
+        let aiChatUserScript = aiChatUserScript
+        Task { @MainActor in
+            aiChatUserScript?.cancelClientToolPermissionRequests()
+        }
+    }
+
     init(scriptsPublisher: some Publisher<some AIChatUserScriptProvider, Never>,
          webViewPublisher: some Publisher<WKWebView, Never>,
          contentPublisher: some Publisher<TabContent, Never>,
@@ -129,7 +149,7 @@ final class AIChatTabExtension {
 
         scriptsPublisher.sink { [weak self] scripts in
             Task { @MainActor in
-                self?.aiChatUserScript = scripts.aiChatUserScript
+                self?.replaceAIChatUserScript(with: scripts.aiChatUserScript)
                 self?.aiChatUserScript?.webView = self?.webView
                 if let isTabBurner = self?.isTabBurner {
                     self?.aiChatUserScript?.handler.isFireWindowProvider = { isTabBurner }
@@ -430,6 +450,8 @@ extension AIChatTabExtension: NavigationResponder {
 
     func didCommit(_ navigation: Navigation) {
         aiChatUserScript?.handler.resetConversationSourceForNewDocument()
+        // A new document replaces the chat that asked for permission; its pending calls cannot be answered.
+        aiChatUserScript?.cancelClientToolPermissionRequests()
 
         // Only the first commit may use it, so a later chat in this tab isn't labelled as re-created.
         let recreationSource = pendingRecreationSource

@@ -116,6 +116,7 @@ struct BrowsingMenuSheetView: View {
             menuSections
         }
         .compactSectionSpacingIfAvailable()
+        .accessibilityIdentifier("Browser.Menu.List")
         .hideScrollContentBackground()
         .listStyle(.insetGrouped)
         .bounceBasedOnSizeIfAvailable()
@@ -254,6 +255,7 @@ extension BrowsingMenuModel {
         let detail: Detail?
         let action: () -> Void
         let tag: Tag?
+        let accessibilityIdentifier: String?
 
         func hash(into hasher: inout Hasher) {
             hasher.combine(id)
@@ -295,7 +297,17 @@ extension BrowsingMenuModel.Entry {
 
             return nil
 
-        case .regular(let name, let accessibilityLabel, let image, let showNotificationDot, let customDotColor, let detailText, let detailBadge, let entryTag, let action):
+        case let .regular(
+            name,
+            accessibilityLabel,
+            image,
+            showNotificationDot,
+            customDotColor,
+            detailText,
+            detailBadge,
+            entryTag,
+            identifier,
+            action):
             let detail: Detail? = if let detailBadge {
                 .badge(detailBadge)
             } else if let detailText {
@@ -312,6 +324,7 @@ extension BrowsingMenuModel.Entry {
                 detail: detail,
                 action: action,
                 tag: tag ?? entryTag,
+                accessibilityIdentifier: identifier,
             )
         }
     }
@@ -352,6 +365,7 @@ private struct MenuRowButton: View {
         .if(entryData.tag == .sitePermissions) { view in
             view.accessibilityIdentifier("BrowsingMenu.SitePermissions")
         }
+        .accessibilityIdentifier(ifPresent: entryData.accessibilityIdentifier)
     }
 
     struct DetailView: View {
@@ -413,6 +427,7 @@ private struct MenuHeaderButton: View {
         }
         .buttonStyle(.plain)
         .accessibilityLabel(entryData.accessibilityLabel ?? entryData.name)
+        .accessibilityIdentifier(ifPresent: entryData.accessibilityIdentifier)
     }
 }
 

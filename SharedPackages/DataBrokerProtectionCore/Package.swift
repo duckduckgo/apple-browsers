@@ -39,6 +39,7 @@ let package = Package(
         .package(path: "../WideEvent"),
         .package(path: "../Persistence"),
         .package(path: "../PixelKit"),
+        .package(path: "../DDGError"),
         .package(path: "../BrowserServicesKit"),
         .package(path: "../Networking"),
         .package(path: "../DebugServer"),
@@ -55,6 +56,7 @@ let package = Package(
                 .product(name: "BrowserServicesKit", package: "BrowserServicesKit"),
                 .product(name: "PrivacyConfig", package: "BrowserServicesKit"),
                 .product(name: "PixelKit", package: "PixelKit"),
+                .product(name: "DDGError", package: "DDGError"),
                 .product(name: "Persistence", package: "Persistence"),
                 .product(name: "Subscription", package: "BrowserServicesKit"),
                 .product(name: "ConcurrencyExtensions", package: "SystemFrameworksExtensions"),
@@ -71,6 +73,7 @@ let package = Package(
             name: "DataBrokerProtectionDebugServer",
             dependencies: [
                 "DataBrokerProtectionCore",
+                .product(name: "DDGError", package: "DDGError"),
                 .product(name: "DebugServer", package: "DebugServer"),
             ],
             swiftSettings: [
@@ -97,6 +100,7 @@ let package = Package(
                 .product(name: "WideEvent", package: "WideEvent"),
                 "DataBrokerProtectionCore",
                 "DataBrokerProtectionCoreTestsUtils",
+                "DataBrokerProtectionDebugServer",
                 "BrowserServicesKit",
                 .product(name: "PixelKit", package: "PixelKit"),
                 .product(name: "Persistence", package: "Persistence"),

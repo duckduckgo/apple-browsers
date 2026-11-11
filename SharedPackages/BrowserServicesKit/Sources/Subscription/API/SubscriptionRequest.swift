@@ -37,6 +37,26 @@ struct SubscriptionRequest {
         return SubscriptionRequest(apiRequest: request)
     }
 
+    static func getWithdrawalEligibility(baseURL: URL, accessToken: String) -> SubscriptionRequest? {
+        let path = "/subscription/withdraw"
+        guard let request = APIRequestV2(url: baseURL.appendingPathComponent(path),
+                                         method: .get,
+                                         headers: APIRequestV2.HeadersV2(authToken: accessToken)) else {
+            return nil
+        }
+        return SubscriptionRequest(apiRequest: request)
+    }
+
+    static func withdrawSubscription(baseURL: URL, accessToken: String) -> SubscriptionRequest? {
+        let path = "/subscription/withdraw"
+        guard let request = APIRequestV2(url: baseURL.appendingPathComponent(path),
+                                         method: .post,
+                                         headers: APIRequestV2.HeadersV2(authToken: accessToken)) else {
+            return nil
+        }
+        return SubscriptionRequest(apiRequest: request)
+    }
+
     static func getTierProducts(baseURL: URL, region: String?, platform: String?) -> SubscriptionRequest? {
         let path = "/v2/products"
         var urlComponents = URLComponents(url: baseURL.appendingPathComponent(path), resolvingAgainstBaseURL: true)

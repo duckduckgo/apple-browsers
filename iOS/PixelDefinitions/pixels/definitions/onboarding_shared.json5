@@ -1,4 +1,31 @@
 {
+    "m_ios_onboarding_time-limit": {
+        "description": "Fired once per install when contextual onboarding ends at its days or app-opens limit, checked on foreground, page load, opening a new tab, or a dialog action.",
+        "owners": ["rachelmcr"],
+        "triggers": ["startup", "page_load", "new_tab", "user_interaction"],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            {
+                "key": "event",
+                "type": "string",
+                "description": "The contextual onboarding time limit was reached",
+                "enum": ["reached"]
+            },
+            {
+                "key": "value",
+                "type": "string",
+                "description": "Which contextual onboarding limit was reached",
+                "enum": ["days", "app-opens"]
+            },
+            "onboardingInstallType",
+            "onboardingDaysSinceInstall",
+            "onboardingSource",
+            "onboardingFlow",
+            "onboardingVariantSearchExperience",
+            "onboardingVariantDownloadReason"
+        ]
+    },
     "m_ios_onboarding_welcome": {
         "description": "Fired during linear onboarding on the Welcome step.",
         "owners": ["rachelmcr"],
@@ -12,7 +39,8 @@
             "onboardingDaysSinceInstall",
             "onboardingSource",
             "onboardingFlow",
-            "onboardingFlowVariant"
+            "onboardingVariantSearchExperience",
+            "onboardingVariantDownloadReason"
         ]
     },
     "m_ios_onboarding_skip-onboarding": {
@@ -28,7 +56,8 @@
             "onboardingDaysSinceInstall",
             "onboardingSource",
             "onboardingFlow",
-            "onboardingFlowVariant"
+            "onboardingVariantSearchExperience",
+            "onboardingVariantDownloadReason"
         ]
     },
     "m_ios_onboarding_set-default": {
@@ -44,7 +73,8 @@
             "onboardingDaysSinceInstall",
             "onboardingSource",
             "onboardingFlow",
-            "onboardingFlowVariant"
+            "onboardingVariantSearchExperience",
+            "onboardingVariantDownloadReason"
         ]
     },
     "m_ios_onboarding_ai-intro": {
@@ -60,7 +90,8 @@
             "onboardingDaysSinceInstall",
             "onboardingSource",
             "onboardingFlow",
-            "onboardingFlowVariant"
+            "onboardingVariantSearchExperience",
+            "onboardingVariantDownloadReason"
         ]
     },
     "m_ios_onboarding_add-to-dock": {
@@ -76,7 +107,8 @@
             "onboardingDaysSinceInstall",
             "onboardingSource",
             "onboardingFlow",
-            "onboardingFlowVariant"
+            "onboardingVariantSearchExperience",
+            "onboardingVariantDownloadReason"
         ]
     },
     "m_ios_onboarding_app-icon-color": {
@@ -97,7 +129,8 @@
             "onboardingDaysSinceInstall",
             "onboardingSource",
             "onboardingFlow",
-            "onboardingFlowVariant"
+            "onboardingVariantSearchExperience",
+            "onboardingVariantDownloadReason"
         ]
     },
     "m_ios_onboarding_address-bar-position": {
@@ -118,7 +151,8 @@
             "onboardingDaysSinceInstall",
             "onboardingSource",
             "onboardingFlow",
-            "onboardingFlowVariant"
+            "onboardingVariantSearchExperience",
+            "onboardingVariantDownloadReason"
         ]
     },
     "m_ios_onboarding_search-experience": {
@@ -139,7 +173,8 @@
             "onboardingDaysSinceInstall",
             "onboardingSource",
             "onboardingFlow",
-            "onboardingFlowVariant"
+            "onboardingVariantSearchExperience",
+            "onboardingVariantDownloadReason"
         ]
     },
     "m_ios_onboarding_search-chat-toggle": {
@@ -160,7 +195,8 @@
             "onboardingDaysSinceInstall",
             "onboardingSource",
             "onboardingFlow",
-            "onboardingFlowVariant"
+            "onboardingVariantSearchExperience",
+            "onboardingVariantDownloadReason"
         ]
     },
     "m_ios_onboarding_search": {
@@ -181,7 +217,8 @@
             "onboardingDaysSinceInstall",
             "onboardingSource",
             "onboardingFlow",
-            "onboardingFlowVariant"
+            "onboardingVariantSearchExperience",
+            "onboardingVariantDownloadReason"
         ]
     },
     "m_ios_onboarding_search-results": {
@@ -197,7 +234,8 @@
             "onboardingDaysSinceInstall",
             "onboardingSource",
             "onboardingFlow",
-            "onboardingFlowVariant"
+            "onboardingVariantSearchExperience",
+            "onboardingVariantDownloadReason"
         ]
     },
     "m_ios_onboarding_visit-site": {
@@ -218,7 +256,8 @@
             "onboardingDaysSinceInstall",
             "onboardingSource",
             "onboardingFlow",
-            "onboardingFlowVariant"
+            "onboardingVariantSearchExperience",
+            "onboardingVariantDownloadReason"
         ]
     },
     "m_ios_onboarding_trackers-blocked": {
@@ -234,7 +273,8 @@
             "onboardingDaysSinceInstall",
             "onboardingSource",
             "onboardingFlow",
-            "onboardingFlowVariant"
+            "onboardingVariantSearchExperience",
+            "onboardingVariantDownloadReason"
         ]
     },
     "m_ios_onboarding_fire-button": {
@@ -250,7 +290,8 @@
             "onboardingDaysSinceInstall",
             "onboardingSource",
             "onboardingFlow",
-            "onboardingFlowVariant"
+            "onboardingVariantSearchExperience",
+            "onboardingVariantDownloadReason"
         ]
     },
     "m_ios_onboarding_end": {
@@ -266,7 +307,8 @@
             "onboardingDaysSinceInstall",
             "onboardingSource",
             "onboardingFlow",
-            "onboardingFlowVariant"
+            "onboardingVariantSearchExperience",
+            "onboardingVariantDownloadReason"
         ]
     },
     "m_ios_onboarding_subscription-promo": {
@@ -282,7 +324,8 @@
             "onboardingDaysSinceInstall",
             "onboardingSource",
             "onboardingFlow",
-            "onboardingFlowVariant"
+            "onboardingVariantSearchExperience",
+            "onboardingVariantDownloadReason"
         ]
     },
     "m_ios_onboarding_download-choice": {
@@ -303,32 +346,8 @@
             "onboardingDaysSinceInstall",
             "onboardingSource",
             "onboardingFlow",
-            "onboardingFlowVariant"
-        ]
-    },
-    "m_ios_onboarding_preferences_serp": {
-        "description": "Fired during linear onboarding on the SERP preferences step of the download-reason segmented flow (treatment cohort).",
-        "owners": ["alessandroboron"],
-        "triggers": ["other"],
-        "parameters": [
-            "appVersion",
-            "pixelSource",
-            "onboardingEventType",
-            {
-                "key": "recently_visited_sites_enabled",
-                "type": "boolean",
-                "description": "On the engagement (clicked) event: whether recently visited sites is enabled: true or false"
-            },
-            {
-                "key": "safe_search_enabled",
-                "type": "boolean",
-                "description": "On the engagement (clicked) event: whether safe search is enabled: true or false"
-            },
-            "onboardingInstallType",
-            "onboardingDaysSinceInstall",
-            "onboardingSource",
-            "onboardingFlow",
-            "onboardingFlowVariant"
+            "onboardingVariantSearchExperience",
+            "onboardingVariantDownloadReason"
         ]
     },
     "m_ios_onboarding_preferences_ai-model": {
@@ -349,7 +368,8 @@
             "onboardingDaysSinceInstall",
             "onboardingSource",
             "onboardingFlow",
-            "onboardingFlowVariant"
+            "onboardingVariantSearchExperience",
+            "onboardingVariantDownloadReason"
         ]
     },
     "m_ios_onboarding_preferences_ai-toggle-mode": {
@@ -369,7 +389,8 @@
             "onboardingDaysSinceInstall",
             "onboardingSource",
             "onboardingFlow",
-            "onboardingFlowVariant"
+            "onboardingVariantSearchExperience",
+            "onboardingVariantDownloadReason"
         ]
     },
     "m_ios_onboarding_preferences_ai-search": {
@@ -394,7 +415,8 @@
             "onboardingDaysSinceInstall",
             "onboardingSource",
             "onboardingFlow",
-            "onboardingFlowVariant"
+            "onboardingVariantSearchExperience",
+            "onboardingVariantDownloadReason"
         ]
     },
     "m_ios_onboarding_preferences_duck-ai": {
@@ -415,7 +437,8 @@
             "onboardingDaysSinceInstall",
             "onboardingSource",
             "onboardingFlow",
-            "onboardingFlowVariant"
+            "onboardingVariantSearchExperience",
+            "onboardingVariantDownloadReason"
         ]
     },
     "m_ios_onboarding_preferences_ad-blocking": {
@@ -445,7 +468,8 @@
             "onboardingDaysSinceInstall",
             "onboardingSource",
             "onboardingFlow",
-            "onboardingFlowVariant"
+            "onboardingVariantSearchExperience",
+            "onboardingVariantDownloadReason"
         ]
     },
     "m_ios_onboarding_end-try-duckai": {
@@ -461,7 +485,8 @@
             "onboardingDaysSinceInstall",
             "onboardingSource",
             "onboardingFlow",
-            "onboardingFlowVariant"
+            "onboardingVariantSearchExperience",
+            "onboardingVariantDownloadReason"
         ]
     }
 }

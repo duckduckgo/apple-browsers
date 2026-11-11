@@ -564,6 +564,99 @@ final class WebExtensionAPIStubScriptTests: XCTestCase {
         try assertTrue("registered.length === 0")
     }
 
+    // MARK: - Native Port Keep-Alive
+
+    func testWhenTheAppAsksTheBackgroundPage_ThenItReplacesItsKeepAlivePort() throws {
+        try installFakeBackgroundPage()
+        try installFakeNativePorts()
+        try evaluateStubScript()
+
+        context.evaluateScript("""
+        var firstRenewal = __ddgKeepBackgroundAlive();
+        var secondRenewal = __ddgKeepBackgroundAlive();
+        """)
+        try assertNoExceptions()
+
+        try assertTrue("firstRenewal === true && secondRenewal === true")
+        let host = WebExtensionAPIStubScript.keepAliveApplicationIdentifier
+        try assertTrue("JSON.stringify(connectedHosts) === '[\"\(host)\",\"\(host)\"]'")
+        try assertTrue("openedPorts[0].disconnected && !openedPorts[1].disconnected")
+    }
+
+    func testWhenAPortToTheBackgroundPageCloses_ThenItReplacesItsKeepAlivePort() throws {
+        try installFakeBackgroundPage()
+        try installFakeNativePorts()
+        try evaluateStubScript()
+
+        context.evaluateScript("""
+        __ddgKeepBackgroundAlive();
+        var popupPort = connectIncomingPort();
+        popupPort.fireDisconnect();
+        """)
+        try assertNoExceptions()
+
+        try assertTrue("openedPorts.length === 2 && openedPorts[0].disconnected && !openedPorts[1].disconnected")
+    }
+
+    func testWhenTheKeepAliveIsReleased_ThenClosingPortsNoLongerRenewsIt() throws {
+        try installFakeBackgroundPage()
+        try installFakeNativePorts()
+        try evaluateStubScript()
+
+        context.evaluateScript("""
+        __ddgKeepBackgroundAlive();
+        var popupPort = connectIncomingPort();
+        var released = __ddgKeepBackgroundAlive(false);
+        popupPort.fireDisconnect();
+        """)
+        try assertNoExceptions()
+
+        try assertTrue("released === true && openedPorts.length === 1 && openedPorts[0].disconnected")
+    }
+
+    func testWhenTheKeepAliveWasNeverAskedFor_ThenClosingPortsOpensNone() throws {
+        try installFakeBackgroundPage()
+        try installFakeNativePorts()
+        try evaluateStubScript()
+
+        context.evaluateScript("connectIncomingPort().fireDisconnect();")
+        try assertNoExceptions()
+
+        try assertTrue("openedPorts.length === 0 && connectListeners.length === 0")
+    }
+
+    func testWhenOpeningTheKeepAlivePortThrows_ThenItReportsFailure() throws {
+        try installFakeBackgroundPage()
+        try installFakeNativePorts()
+        try evaluateStubScript()
+
+        context.evaluateScript("""
+        chrome.runtime.connectNative = function() { throw new Error("Native messaging is unavailable"); };
+        var renewed = __ddgKeepBackgroundAlive();
+        """)
+        try assertNoExceptions()
+
+        try assertTrue("renewed === false")
+    }
+
+    func testWhenAnotherExtensionPageLoads_ThenItHasNoKeepAlive() throws {
+        try installFakeNativePorts()
+        context.evaluateScript("""
+        var location = { protocol: "webkit-extension:", pathname: "/popup.html" };
+        chrome.runtime.getManifest = function() { return { background: { page: "background.html" } }; };
+        """)
+        try evaluateStubScript()
+
+        try assertTrue("typeof __ddgKeepBackgroundAlive === 'undefined'")
+    }
+
+    func testWhenTheExtensionCannotUseNativeMessaging_ThenTheBackgroundPageHasNoKeepAlive() throws {
+        try installFakeBackgroundPage()
+        try evaluateStubScript()
+
+        try assertTrue("typeof __ddgKeepBackgroundAlive === 'undefined'")
+    }
+
     // MARK: - Missing Namespaces
 
     func testWhenNamespaceIsMissing_ThenItsEventsExposeListenerAPI() throws {
@@ -2178,6 +2271,41 @@ final class WebExtensionAPIStubScriptTests: XCTestCase {
     }
 
     /// `setInterval` and `clearInterval` that park the poll for the test to fire.
+    /// `chrome.runtime.connectNative` hands out ports that record whether they were disconnected.
+    /// `fireDisconnect()` plays the other side closing a port. `connectedHosts` lists the hosts asked
+    /// for, and `openedPorts` the ports handed out. `connectIncomingPort()` plays another page
+    /// connecting to this one through `runtime.onConnect`, and returns the port.
+    private func installFakeNativePorts() throws {
+        context.evaluateScript("""
+        function makeFakePort() {
+            var disconnectListeners = [];
+            var port = {
+                disconnected: false,
+                disconnect: function() { this.disconnected = true; },
+                onDisconnect: { addListener: function(listener) { disconnectListeners.push(listener); } },
+                fireDisconnect: function() { disconnectListeners.forEach(function(listener) { listener(port); }); }
+            };
+            return port;
+        }
+        var connectedHosts = [];
+        var openedPorts = [];
+        chrome.runtime.connectNative = function(host) {
+            connectedHosts.push(host);
+            var port = makeFakePort();
+            openedPorts.push(port);
+            return port;
+        };
+        var connectListeners = [];
+        chrome.runtime.onConnect = { addListener: function(listener) { connectListeners.push(listener); } };
+        function connectIncomingPort() {
+            var port = makeFakePort();
+            connectListeners.forEach(function(listener) { listener(port); });
+            return port;
+        }
+        """)
+        try assertNoExceptions()
+    }
+
     private func installFakeIntervals() throws {
         let scheduleInterval: @convention(block) (JSValue, Double) -> Int = { [weak self] callback, delay in
             self?.scheduledIntervals.append(ScheduledTimer(callback: callback, delay: delay))

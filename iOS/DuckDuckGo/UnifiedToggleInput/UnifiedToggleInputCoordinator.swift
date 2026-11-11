@@ -149,6 +149,14 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         }
     }
 
+    /// The bound page sets this on every bind, so only `unbind` clears it.
+    var isTermsOfServiceShownOnPage: Bool = false {
+        didSet {
+            guard oldValue != isTermsOfServiceShownOnPage else { return }
+            footerController?.setTermsOfServiceShownOnPage(isTermsOfServiceShownOnPage)
+        }
+    }
+
     // MARK: - Properties
 
     private(set) var viewController: UnifiedToggleInputViewController
@@ -454,7 +462,8 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         viewController = UnifiedToggleInputViewController(isToggleEnabled: isToggleEnabled,
                                                          isFireTab: isFireTab,
                                                          placesAttachmentsAboveInput: placesAttachmentsAboveInput,
-                                                         usesCompactAttachmentLayout: attachMoreTabsFeature.usesCompactAttachmentLayout)
+                                                         usesCompactAttachmentLayout: attachMoreTabsFeature.usesCompactAttachmentLayout,
+                                                         usesFloatingUI: floatingUIManager.isDuckAIAndInputLiquidGlassEnabled)
         self.subscriptionUpsellPresenter = subscriptionUpsellPresenter ?? DuckAISubscriptionUpsellPresenter(policy: upsellPolicy)
         // One coordinator serves both normal and fire tabs, so the fire state is read per refresh
         // rather than bound here — see `setUpFooter`.
@@ -701,6 +710,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         boundUserScript?.inputBoxHandler = nil
         boundUserScript = nil
         boundUserScriptIdentifier = nil
+        isTermsOfServiceShownOnPage = false
         resetSessionState()
     }
 
@@ -2559,6 +2569,10 @@ extension UnifiedToggleInputCoordinator: UnifiedToggleInputViewControllerDelegat
 
     func unifiedToggleInputVCDidShowReasoningPicker(_ vc: UnifiedToggleInputViewController) {
         pixelReporter.reportReasoningPickerShown()
+    }
+
+    func unifiedToggleInputVCDidShowAttachMenu(_ vc: UnifiedToggleInputViewController) {
+        pixelReporter.reportAttachMenuShown()
     }
 
     func unifiedToggleInputVCDidClearSelectedTool(_ vc: UnifiedToggleInputViewController) {

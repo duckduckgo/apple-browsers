@@ -17216,6 +17216,18 @@
         }
       }
     },
+    "autofill.password-manager.bitwarden.retirement" : {
+      "comment" : "Autofill settings caption under the password manager choice: the integration with the Bitwarden app is going away and the Bitwarden browser extension replaces it. The text in square brackets is a link to the Extensions settings: translate it, keep the brackets, and keep the URL in parentheses unchanged",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "The Bitwarden app integration is being retired, but we've added support for the [Bitwarden browser extension](duck://settings/extensions). Please install the extension to continue using Bitwarden."
+          }
+        }
+      }
+    },
     "autofill.password-manager.duckduckgo" : {
       "comment" : "Autofill password manager row title",
       "extractionState" : "extracted_with_value",
@@ -62899,10 +62911,58 @@
       "comment" : "Summary text showing number of bookmarks successfully imported",
       "extractionState" : "extracted_with_value",
       "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Lesezeichen: %d"
+          }
+        },
         "en" : {
           "stringUnit" : {
             "state" : "new",
             "value" : "Bookmarks: %d"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Marcadores: %d"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Signets : %d"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Segnalibri: %d"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bladwijzers: %d"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zakładki: %d"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Marcadores: %d"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Закладок: %d"
           }
         }
       }
@@ -63031,10 +63091,58 @@
       "comment" : "Summary text showing number of bookmarks successfully imported out of total attempted",
       "extractionState" : "extracted_with_value",
       "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Lesezeichen: %1$d / %2$d"
+          }
+        },
         "en" : {
           "stringUnit" : {
             "state" : "new",
             "value" : "Bookmarks: %1$d / %2$d"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Marcadores: %1$d / %2$d"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Signets : %1$d / %2$d"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Segnalibri: %1$d / %2$d"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bladwijzers: %1$d / %2$d"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zakładki: %1$d/%2$d"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Marcadores: %1$d / %2$d"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Закладок: %1$d из %2$d"
           }
         }
       }
@@ -63043,10 +63151,58 @@
       "comment" : "Summary text showing number of credit cards successfully imported",
       "extractionState" : "extracted_with_value",
       "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kreditkarten: %d"
+          }
+        },
         "en" : {
           "stringUnit" : {
             "state" : "new",
             "value" : "Credit Cards: %d"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tarjetas de crédito: %d"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cartes bancaires : %d"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Carte di credito: %d"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Creditcards: %d"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Karty kredytowe: %d"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cartões de crédito: %d"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Импортировано платежных карт: %d"
           }
         }
       }
@@ -63175,10 +63331,58 @@
       "comment" : "Summary text showing number of credit cards successfully imported out of total attempted",
       "extractionState" : "extracted_with_value",
       "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kreditkarten: %1$d von %2$d"
+          }
+        },
         "en" : {
           "stringUnit" : {
             "state" : "new",
             "value" : "Credit Cards: %1$d / %2$d"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tarjetas de crédito: %1$d / %2$d"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cartes bancaires : %1$d / %2$d"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Carte di credito: %1$d / %2$d"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Creditcards: %1$d / %2$d"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Karty kredytowe: %1$d/%2$d"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cartões de crédito: %1$d / %2$d"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Импортировано платежных карт: %1$d из %2$d"
           }
         }
       }
@@ -63787,18 +63991,83 @@
       "comment" : "Shown after the number of imported browsing history visits",
       "extractionState" : "extracted_with_value",
       "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "(letzte 30 Tage)"
+          }
+        },
         "en" : {
           "stringUnit" : {
             "state" : "new",
             "value" : "(last 30 days)"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "(últimos 30 días)"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "(30 derniers jours)"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "(ultimi 30 giorni)"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "(afgelopen 30 dagen)"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "(ostatnie 30 dni)"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "(últimos 30 dias)"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "(за последние 30 дней)"
           }
         }
       }
     },
     "import.summary.history.visits" : {
       "comment" : "Summary text showing number of browsing history visits imported, followed by importSummaryHistoryTimeRange",
-      "extractionState" : "extracted_with_value",
       "localizations" : {
+        "de" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "Verlauf: %d Besuch"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "Verlauf: %d Besuche"
+                }
+              }
+            }
+          }
+        },
         "en" : {
           "variations" : {
             "plural" : {
@@ -63816,6 +64085,156 @@
               }
             }
           }
+        },
+        "es" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "Historial: %d visita"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "Historial: %d visitas"
+                }
+              }
+            }
+          }
+        },
+        "fr" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "Historique : %d visite"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "Historique : %d visites"
+                }
+              }
+            }
+          }
+        },
+        "it" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "Cronologia: %d visita"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "Cronologia: %d visite"
+                }
+              }
+            }
+          }
+        },
+        "nl" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "Geschiedenis: %d bezoeken"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "Geschiedenis: %d bezoeken"
+                }
+              }
+            }
+          }
+        },
+        "pl" : {
+          "variations" : {
+            "plural" : {
+              "few" : {
+                "stringUnit" : {
+                  "state" : "new",
+                  "value" : "History: %d visits"
+                }
+              },
+              "many" : {
+                "stringUnit" : {
+                  "state" : "new",
+                  "value" : "History: %d visits"
+                }
+              },
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "Historia: %d odwiedziny"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "Historia: %d odwiedzin(y)"
+                }
+              }
+            }
+          }
+        },
+        "pt" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "Histórico: %d visitas"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "Histórico: %d visitas"
+                }
+              }
+            }
+          }
+        },
+        "ru" : {
+          "variations" : {
+            "plural" : {
+              "few" : {
+                "stringUnit" : {
+                  "state" : "new",
+                  "value" : "History: %d visits"
+                }
+              },
+              "many" : {
+                "stringUnit" : {
+                  "state" : "new",
+                  "value" : "History: %d visits"
+                }
+              },
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "История: %d посещений"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "История: %d посещений"
+                }
+              }
+            }
+          }
         }
       }
     },
@@ -63823,10 +64242,58 @@
       "comment" : "Summary text showing number of passwords successfully imported",
       "extractionState" : "extracted_with_value",
       "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Passwörter: %d"
+          }
+        },
         "en" : {
           "stringUnit" : {
             "state" : "new",
             "value" : "Passwords: %d"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Contraseñas: %d"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mots de passe : %d"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Password: %d"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wachtwoorden: %d"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hasła: %d"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Palavras-passe: %d"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Паролей: %d"
           }
         }
       }
@@ -63955,10 +64422,58 @@
       "comment" : "Summary text showing number of passwords successfully imported out of total attempted",
       "extractionState" : "extracted_with_value",
       "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Passwörter: %1$d / %2$d"
+          }
+        },
         "en" : {
           "stringUnit" : {
             "state" : "new",
             "value" : "Passwords: %1$d / %2$d"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Contraseñas: %1$d / %2$d"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mots de passe : %1$d / %2$d"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Password: %1$d / %2$d"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wachtwoorden: %1$d / %2$d"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hasła: %1$d/%2$d"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Palavras-passe: %1$d / %2$d"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Пароли: %1$d из %2$d"
           }
         }
       }
@@ -67606,10 +68121,58 @@
       "comment" : "Main Menu History item that opens the Import Browser Data dialog",
       "extractionState" : "extracted_with_value",
       "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Verlauf importieren …"
+          }
+        },
         "en" : {
           "stringUnit" : {
             "state" : "new",
             "value" : "Import History…"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Importar historial…"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Importer l’historique…"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Importa cronologia…"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Geschiedenis importeren…"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Importuj historię…"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Importar histórico…"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Импорт истории…"
           }
         }
       }
@@ -124538,6 +125101,1158 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Функции защиты от отслеживания в составе DuckDuckGo работают без остановки."
+          }
+        }
+      }
+    },
+    "webExtensions.added.message" : {
+      "comment" : "Popover message shown by a newly installed extension's toolbar button",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "You can access this extension from here. We've also turned off DuckDuckGo's built-in autofill."
+          }
+        }
+      }
+    },
+    "webExtensions.added.title" : {
+      "comment" : "Popover title shown by a newly installed extension's toolbar button; placeholder is the extension name",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "“%@” added!"
+          }
+        }
+      }
+    },
+    "webExtensions.autofill.managed-by-extension.manage-button" : {
+      "comment" : "Button in Passwords & Autofill settings that opens the Extensions settings pane",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Manage Extensions"
+          }
+        }
+      }
+    },
+    "webExtensions.autofill.managed-by-extension.message" : {
+      "comment" : "Body of the notice shown in Passwords & Autofill settings when a password manager extension has taken over autofill",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "DuckDuckGo's built-in autofill is turned off when password manager extensions are in use."
+          }
+        }
+      }
+    },
+    "webExtensions.autofill.managed-by-extension.title" : {
+      "comment" : "Title of the notice shown in Passwords & Autofill settings when a password manager extension has taken over autofill",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Extensions are managing your passwords"
+          }
+        }
+      }
+    },
+    "webExtensions.install.button" : {
+      "comment" : "Approve extension installation",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Add Extension"
+          }
+        }
+      }
+    },
+    "webExtensions.install.title" : {
+      "comment" : "Extension installation title; placeholder is the extension name",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Add “%@”?"
+          }
+        }
+      }
+    },
+    "webExtensions.permissions.allow" : {
+      "comment" : "Approve additional extension permissions",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Allow"
+          }
+        }
+      }
+    },
+    "webExtensions.permissions.allWebsites" : {
+      "comment" : "Extension permission to access every website",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Read and change all your data on all websites"
+          }
+        }
+      }
+    },
+    "webExtensions.permissions.bookmarks" : {
+      "comment" : "Extension bookmarks permission",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Read and change your bookmarks"
+          }
+        }
+      }
+    },
+    "webExtensions.permissions.clipboard" : {
+      "comment" : "Extension clipboardWrite permission",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Modify data you copy and paste"
+          }
+        }
+      }
+    },
+    "webExtensions.permissions.clipboardRead" : {
+      "comment" : "Extension clipboardRead permission",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Read data you copy and paste"
+          }
+        }
+      }
+    },
+    "webExtensions.permissions.clipboardReadWrite" : {
+      "comment" : "Extension clipboardRead and clipboardWrite permissions",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Read and modify data you copy and paste"
+          }
+        }
+      }
+    },
+    "webExtensions.permissions.contentSettings" : {
+      "comment" : "Extension contentSettings permission",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Change and grant access to features such as geolocation, microphone, camera, cookies, etc., for all your websites and extensions, including this extension."
+          }
+        }
+      }
+    },
+    "webExtensions.permissions.debugger" : {
+      "comment" : "Extension debugger permission",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Access the page debugger backend"
+          }
+        }
+      }
+    },
+    "webExtensions.permissions.declarativeNetRequest" : {
+      "comment" : "Extension declarativeNetRequest permission",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Block content on any page"
+          }
+        }
+      }
+    },
+    "webExtensions.permissions.desktopCapture" : {
+      "comment" : "Extension desktopCapture permission",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Capture content of your screen"
+          }
+        }
+      }
+    },
+    "webExtensions.permissions.downloads" : {
+      "comment" : "Extension downloads permission",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Manage your downloads"
+          }
+        }
+      }
+    },
+    "webExtensions.permissions.downloadsOpen" : {
+      "comment" : "Extension downloads.open permission",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Open downloaded files"
+          }
+        }
+      }
+    },
+    "webExtensions.permissions.explanation" : {
+      "comment" : "Introduction to extension permission list",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "It can:"
+          }
+        }
+      }
+    },
+    "webExtensions.permissions.favicon" : {
+      "comment" : "Extension favicon permission",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Read the icons of the websites you visit"
+          }
+        }
+      }
+    },
+    "webExtensions.permissions.fireWindows" : {
+      "comment" : "Opt in to extension access to private browsing",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Allow in Fire Windows"
+          }
+        }
+      }
+    },
+    "webExtensions.permissions.fireWindowsExplanation" : {
+      "comment" : "Warning shown beside private browsing access option",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "The extension may save your browsing activity, including activity in Fire Windows."
+          }
+        }
+      }
+    },
+    "webExtensions.permissions.geolocation" : {
+      "comment" : "Extension geolocation permission",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Detect your physical location"
+          }
+        }
+      }
+    },
+    "webExtensions.permissions.history" : {
+      "comment" : "Extension tabs, webNavigation or declarativeNetRequestFeedback permission",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Access your browsing history"
+          }
+        }
+      }
+    },
+    "webExtensions.permissions.historyWrite" : {
+      "comment" : "Extension history permission",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Read and change your browsing history on all your signed-in devices"
+          }
+        }
+      }
+    },
+    "webExtensions.permissions.management" : {
+      "comment" : "Extension management permission",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Manage your apps, extensions, and themes"
+          }
+        }
+      }
+    },
+    "webExtensions.permissions.manyWebsites" : {
+      "comment" : "Extension permission to access more than three specific websites",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Read and change your data on a number of websites"
+          }
+        }
+      }
+    },
+    "webExtensions.permissions.nativeMessaging" : {
+      "comment" : "Extension nativeMessaging permission",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Communicate with native applications"
+          }
+        }
+      }
+    },
+    "webExtensions.permissions.none" : {
+      "comment" : "Extension requests no permissions",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "No additional permissions requested."
+          }
+        }
+      }
+    },
+    "webExtensions.permissions.notifications" : {
+      "comment" : "Extension notifications permission",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Display notifications"
+          }
+        }
+      }
+    },
+    "webExtensions.permissions.privacy" : {
+      "comment" : "Extension privacy permission",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Change privacy settings, including replacing DuckDuckGo’s password manager"
+          }
+        }
+      }
+    },
+    "webExtensions.permissions.readingList" : {
+      "comment" : "Extension readingList permission",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Read and change entries in the reading list"
+          }
+        }
+      }
+    },
+    "webExtensions.permissions.tabGroups" : {
+      "comment" : "Extension tabGroups permission",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "View and manage your tab groups"
+          }
+        }
+      }
+    },
+    "webExtensions.permissions.title" : {
+      "comment" : "Extension permissions title; placeholder is the extension name",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Allow “%@” additional access?"
+          }
+        }
+      }
+    },
+    "webExtensions.permissions.topSites" : {
+      "comment" : "Extension topSites permission",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Read a list of your most frequently visited websites"
+          }
+        }
+      }
+    },
+    "webExtensions.permissions.website" : {
+      "comment" : "Extension website permission; placeholder is a list of one to three hosts",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Read and change your data on %@"
+          }
+        }
+      }
+    },
+    "webExtensions.remove.button" : {
+      "comment" : "Confirm removing an extension from its toolbar button",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Remove"
+          }
+        }
+      }
+    },
+    "webExtensions.remove.error.message" : {
+      "comment" : "Error message when removing an extension fails",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "The extension couldn’t be removed. Please try again."
+          }
+        }
+      }
+    },
+    "webExtensions.remove.menu-item" : {
+      "comment" : "Context menu item of an extension's toolbar button that removes the extension",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Remove from DuckDuckGo"
+          }
+        }
+      }
+    },
+    "webExtensions.settings.added" : {
+      "comment" : "Header of the installed extensions section in the Extensions settings",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Added"
+          }
+        }
+      }
+    },
+    "webExtensions.settings.available" : {
+      "comment" : "Header of the section listing extensions available to install in the Extensions settings",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Available"
+          }
+        }
+      }
+    },
+    "webExtensions.settings.back" : {
+      "comment" : "Accessibility label of the button that returns from an extension's details to the Extensions settings",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Back"
+          }
+        }
+      }
+    },
+    "webExtensions.settings.beta-badge" : {
+      "comment" : "Copy of badge used to indicate the Extensions settings are in beta",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Beta"
+          }
+        }
+      }
+    },
+    "webExtensions.settings.chrome-web-store" : {
+      "comment" : "Source of an extension installed from the Chrome Web Store",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Chrome Web Store"
+          }
+        }
+      }
+    },
+    "webExtensions.settings.description" : {
+      "comment" : "Description of the Extensions settings; the placeholder is a Learn more link",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Customize your browsing experience with supported third-party extensions. %@"
+          }
+        }
+      }
+    },
+    "webExtensions.settings.details" : {
+      "comment" : "Menu item that shows the details of an installed extension in the Extensions settings",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Details"
+          }
+        }
+      }
+    },
+    "webExtensions.settings.disclaimer" : {
+      "comment" : "Disclaimer at the bottom of the Extensions settings",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "The extensions on this list are provided by a third party. We provide links to select third-party password managers for your convenience only. Inclusion on this list does not constitute an endorsement, certification, or representation regarding a password manager’s security, privacy practices, or suitability for your needs. DuckDuckGo does not develop, monitor, or control these products and is not responsible for their performance, security, or content. Before installing or using any extension, you should review the provider’s terms, privacy policy, security practices, and other relevant information to determine whether it meets your needs."
+          }
+        }
+      }
+    },
+    "webExtensions.settings.get" : {
+      "comment" : "Button that installs an extension from the Extensions settings",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Get"
+          }
+        }
+      }
+    },
+    "webExtensions.settings.learn-more" : {
+      "comment" : "Link in the Extensions settings description",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Learn more"
+          }
+        }
+      }
+    },
+    "webExtensions.settings.more-options" : {
+      "comment" : "Accessibility label of the button that shows more options for an installed extension in the Extensions settings",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "More Options"
+          }
+        }
+      }
+    },
+    "webExtensions.settings.permission.accessibility-features-modify" : {
+      "comment" : "Item in the list of an extension's permissions: changing accessibility settings",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "change accessibility settings"
+          }
+        }
+      }
+    },
+    "webExtensions.settings.permission.accessibility-features-read" : {
+      "comment" : "Item in the list of an extension's permissions: reading accessibility settings",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "accessibility settings"
+          }
+        }
+      }
+    },
+    "webExtensions.settings.permission.bookmarks" : {
+      "comment" : "Item in the list of an extension's permissions: reading and changing bookmarks",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "bookmarks"
+          }
+        }
+      }
+    },
+    "webExtensions.settings.permission.clipboard-read" : {
+      "comment" : "Item in the list of an extension's permissions: reading data you copy and paste",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "reading copied data"
+          }
+        }
+      }
+    },
+    "webExtensions.settings.permission.clipboard-write" : {
+      "comment" : "Item in the list of an extension's permissions: changing data you copy and paste",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "changing copied data"
+          }
+        }
+      }
+    },
+    "webExtensions.settings.permission.content-settings" : {
+      "comment" : "Item in the list of an extension's permissions: changing settings that control websites' access to features",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "site settings"
+          }
+        }
+      }
+    },
+    "webExtensions.settings.permission.debugger" : {
+      "comment" : "Item in the list of an extension's permissions: accessing the page debugger",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "page debugger"
+          }
+        }
+      }
+    },
+    "webExtensions.settings.permission.declarative-net-request" : {
+      "comment" : "Item in the list of an extension's permissions: blocking content on any page",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "content blocking"
+          }
+        }
+      }
+    },
+    "webExtensions.settings.permission.declarative-net-request-feedback" : {
+      "comment" : "Item in the list of an extension's permissions: reading browsing history",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "browsing history"
+          }
+        }
+      }
+    },
+    "webExtensions.settings.permission.desktop-capture" : {
+      "comment" : "Item in the list of an extension's permissions: capturing the content of the screen",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "screen capture"
+          }
+        }
+      }
+    },
+    "webExtensions.settings.permission.downloads" : {
+      "comment" : "Item in the list of an extension's permissions: managing downloads",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "downloads"
+          }
+        }
+      }
+    },
+    "webExtensions.settings.permission.downloads-open" : {
+      "comment" : "Item in the list of an extension's permissions: opening downloaded files",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "opening downloads"
+          }
+        }
+      }
+    },
+    "webExtensions.settings.permission.downloads-ui" : {
+      "comment" : "Item in the list of an extension's permissions: changing the downloads interface",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "downloads bar"
+          }
+        }
+      }
+    },
+    "webExtensions.settings.permission.favicon" : {
+      "comment" : "Item in the list of an extension's permissions: reading the icons of visited websites",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "website icons"
+          }
+        }
+      }
+    },
+    "webExtensions.settings.permission.geolocation" : {
+      "comment" : "Item in the list of an extension's permissions: detecting physical location",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "location"
+          }
+        }
+      }
+    },
+    "webExtensions.settings.permission.history" : {
+      "comment" : "Item in the list of an extension's permissions: reading and changing browsing history",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "history"
+          }
+        }
+      }
+    },
+    "webExtensions.settings.permission.identity-email" : {
+      "comment" : "Item in the list of an extension's permissions: knowing the user's email address",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "email address"
+          }
+        }
+      }
+    },
+    "webExtensions.settings.permission.management" : {
+      "comment" : "Item in the list of an extension's permissions: managing apps, extensions, and themes",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "apps and extensions"
+          }
+        }
+      }
+    },
+    "webExtensions.settings.permission.native-messaging" : {
+      "comment" : "Item in the list of an extension's permissions: communicating with cooperating native applications",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "native apps"
+          }
+        }
+      }
+    },
+    "webExtensions.settings.permission.notifications" : {
+      "comment" : "Item in the list of an extension's permissions: showing notifications",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "notifications"
+          }
+        }
+      }
+    },
+    "webExtensions.settings.permission.page-capture" : {
+      "comment" : "Item in the list of an extension's permissions: saving pages, which can read all data on websites",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "page capture"
+          }
+        }
+      }
+    },
+    "webExtensions.settings.permission.privacy" : {
+      "comment" : "Item in the list of an extension's permissions: changing privacy settings",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "privacy settings"
+          }
+        }
+      }
+    },
+    "webExtensions.settings.permission.proxy" : {
+      "comment" : "Item in the list of an extension's permissions: changing proxy settings, which can read all data on websites",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "proxy settings"
+          }
+        }
+      }
+    },
+    "webExtensions.settings.permission.reading-list" : {
+      "comment" : "Item in the list of an extension's permissions: reading and changing the reading list",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "reading list"
+          }
+        }
+      }
+    },
+    "webExtensions.settings.permission.sessions" : {
+      "comment" : "Item in the list of an extension's permissions: reading recently closed tabs and windows",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "recently closed tabs"
+          }
+        }
+      }
+    },
+    "webExtensions.settings.permission.system-storage" : {
+      "comment" : "Item in the list of an extension's permissions: identifying and ejecting storage devices",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "storage devices"
+          }
+        }
+      }
+    },
+    "webExtensions.settings.permission.tab-capture" : {
+      "comment" : "Item in the list of an extension's permissions: capturing the content of tabs",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "tab capture"
+          }
+        }
+      }
+    },
+    "webExtensions.settings.permission.tab-groups" : {
+      "comment" : "Item in the list of an extension's permissions: viewing and managing tab groups",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "tab groups"
+          }
+        }
+      }
+    },
+    "webExtensions.settings.permission.tabs" : {
+      "comment" : "Item in the list of an extension's permissions: reading open tabs, including their addresses",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "tabs"
+          }
+        }
+      }
+    },
+    "webExtensions.settings.permission.top-sites" : {
+      "comment" : "Item in the list of an extension's permissions: reading the most visited websites",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "most visited sites"
+          }
+        }
+      }
+    },
+    "webExtensions.settings.permission.tts-engine" : {
+      "comment" : "Item in the list of an extension's permissions: reading all text spoken using synthesized speech",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "spoken text"
+          }
+        }
+      }
+    },
+    "webExtensions.settings.permission.web-authentication-proxy" : {
+      "comment" : "Item in the list of an extension's permissions: handling web authentication requests",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "web authentication"
+          }
+        }
+      }
+    },
+    "webExtensions.settings.permission.web-navigation" : {
+      "comment" : "Item in the list of an extension's permissions: reading browsing history through navigation events",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "navigation"
+          }
+        }
+      }
+    },
+    "webExtensions.settings.permissions" : {
+      "comment" : "Title of the row listing an installed extension's permissions in its details",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Permissions"
+          }
+        }
+      }
+    },
+    "webExtensions.settings.remotely-disabled" : {
+      "comment" : "Notice shown under an installed extension in the Extensions settings when DuckDuckGo has disabled it remotely",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "DuckDuckGo has disabled this extension remotely."
+          }
+        }
+      }
+    },
+    "webExtensions.settings.remove" : {
+      "comment" : "Button that removes an installed extension from its details in the Extensions settings",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Remove Extension"
+          }
+        }
+      }
+    },
+    "webExtensions.settings.source" : {
+      "comment" : "Title of the row showing where an installed extension came from in its details",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Source"
+          }
+        }
+      }
+    },
+    "webExtensions.settings.title" : {
+      "comment" : "Title of the option to show the Extensions settings",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Password Manager Extensions"
+          }
+        }
+      }
+    },
+    "webExtensions.settings.version" : {
+      "comment" : "Title of the row showing an installed extension's version in its details",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Version"
+          }
+        }
+      }
+    },
+    "webExtensions.store.error.invalid" : {
+      "comment" : "Extension verification failure explanation",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "The extension’s identity or downloaded package could not be verified."
+          }
+        }
+      }
+    },
+    "webExtensions.store.error.message" : {
+      "comment" : "Extension operation error message",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Please check your connection and try again."
+          }
+        }
+      }
+    },
+    "webExtensions.store.error.title" : {
+      "comment" : "Extension operation error title",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Couldn’t Complete Extension Request"
+          }
+        }
+      }
+    },
+    "webExtensions.store.error.unsupported" : {
+      "comment" : "Unsupported extension explanation",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "This extension requires features that DuckDuckGo does not support."
+          }
+        }
+      }
+    },
+    "webExtensions.store.remove.title" : {
+      "comment" : "Remove extension title; placeholder is the name",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Remove “%@”?"
+          }
+        }
+      }
+    },
+    "webExtensions.unnamed" : {
+      "comment" : "Fallback for an unnamed web extension",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Extension"
           }
         }
       }

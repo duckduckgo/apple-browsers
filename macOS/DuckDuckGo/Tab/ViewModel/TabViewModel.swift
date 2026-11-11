@@ -32,6 +32,10 @@ import WebExtensions
 
 final class TabViewModel: NSObject {
 
+    private enum Constants {
+        static let webExtensionIconSize = NSSize(width: 16, height: 16)
+    }
+
     private(set) var tab: Tab
     private let appearancePreferences: AppearancePreferences
     private let accessibilityPreferences: AccessibilityPreferences
@@ -466,9 +470,22 @@ final class TabViewModel: NSObject {
             .emailProtectionTrustedIndicator
         case .aiChat:
             .aiChatTrustedIndicator
-        case .url(let url, _, _), .webExtensionUrl(let url):
+        case .webExtensionUrl(let url):
+            webExtensionTrustedIndicator(for: url) ?? NSAttributedString(string: passiveAddressBarString(with: url, showFullURL: showFullURL))
+        case .url(let url, _, _):
             NSAttributedString(string: passiveAddressBarString(with: url, showFullURL: showFullURL))
         }
+    }
+
+    /// As on Windows: a known extension's name replaces its opaque URL, even when full URLs are shown.
+    /// Nil when no installed extension serves `url`, so the URL shows as usual.
+    private func webExtensionTrustedIndicator(for url: URL) -> NSAttributedString? {
+        guard #available(macOS 15.4, *),
+              let webExtension = NSApp.delegateTyped.webExtensionManager?.extensionContext(for: url)?.webExtension else { return nil }
+
+        let name = webExtension.displayName.flatMap { $0.isEmpty ? nil : $0 } ?? url.host ?? ""
+        return .passwordManagerExtensionsTrustedIndicator(extensionName: name,
+                                                          extensionIcon: webExtension.displayIcon(for: Constants.webExtensionIconSize))
     }
 
     private func passiveAddressBarString(with url: URL, showFullURL: Bool) -> String {
@@ -711,6 +728,30 @@ private extension NSAttributedString {
         }
     }
 
+    /// Draws "[icon] title › [icon] title …"; a segment without an icon shows only its title.
+    private static func trustedIndicatorAttributedString(segments: [(icon: NSImage?, title: String)]) -> NSAttributedString {
+        NSAttributedString {
+            for (index, segment) in segments.enumerated() {
+                if index > 0 {
+                    // spacing (wide)
+                    Component(image: spacer, rect: CGRect(x: 0, y: 0, width: chevronSpacing, height: 1))
+                    // chevron
+                    Component(image: NSImage(resource: .chevronRight12), rect: CGRect(x: 0, y: -1, width: chevronSize, height: chevronSize))
+                    // spacing (wide)
+                    Component(image: spacer, rect: CGRect(x: 0, y: 0, width: chevronSpacing, height: 1))
+                }
+                if let icon = segment.icon {
+                    // icon
+                    Component(image: icon, rect: CGRect(x: 0, y: iconBaselineOffset, width: iconSize, height: iconSize))
+                    // spacing
+                    Component(image: spacer, rect: CGRect(x: 0, y: 0, width: iconSpacing, height: 1))
+                }
+                // title
+                Component(string: segment.title)
+            }
+        }
+    }
+
     static let onboardingTrustedIndicator = NSAttributedString(string: UserText.tabOnboardingTitle)
 
     static let settingsTrustedIndicator = trustedIndicatorAttributedString(with: DesignSystemImages.Color.Size16.settings,
@@ -733,6 +774,11 @@ private extension NSAttributedString {
                                                                                title: UserText.releaseNotesTitle)
     static let aiChatTrustedIndicator = singlePartTrustedIndicatorAttributedString(with: DesignSystemImages.Color.Size16.duckAI,
                                                                                    title: UserText.aiChatAddressBarTrustedIndicator)
+
+    static func passwordManagerExtensionsTrustedIndicator(extensionName: String, extensionIcon: NSImage?) -> NSAttributedString {
+        trustedIndicatorAttributedString(segments: [(DesignSystemImages.Color.Size16.extensions, UserText.extensionsSettingsTitle),
+                                                    (extensionIcon, extensionName)])
+    }
 
 }
 

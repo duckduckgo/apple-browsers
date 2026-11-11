@@ -1074,6 +1074,7 @@ private extension AIChatContextualSheetCoordinator {
             persistentUTIHost: persistentUTIHost,
             suggestionsReader: suggestionsReader,
             floatingInputFeature: floatingInputFeature,
+            usesLiquidGlassHeader: floatingUIManager.isDuckAIAndInputLiquidGlassEnabled,
             opensOntoSubmittedChat: opensOntoSubmittedChat
         )
         sheetVC.delegate = self

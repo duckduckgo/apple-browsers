@@ -24,80 +24,74 @@ import Foundation
 public final class BrowserToolInvoker {
 
     private let catalog: BrowserToolCatalog
-    private let configuration: BrowserToolsConfiguration
-    private let permissions: BrowserToolPermissionStoring
-    private let elicitations: AIChatElicitationCoordinator
+    private let clientToolPermissions: any ClientToolPermissionCoordinating
 
     public init(catalog: BrowserToolCatalog,
-                configuration: BrowserToolsConfiguration,
-                permissions: BrowserToolPermissionStoring,
-                elicitations: AIChatElicitationCoordinator) {
+                clientToolPermissions: any ClientToolPermissionCoordinating) {
         self.catalog = catalog
-        self.configuration = configuration
-        self.permissions = permissions
-        self.elicitations = elicitations
+        self.clientToolPermissions = clientToolPermissions
     }
 
-    /// - Parameter elicitationPusher: where a permission prompt for this call is delivered. `nil`
-    ///   means it cannot be, so an `ask` tool completes as `cancelled`.
-    public func invoke(toolNamed name: String,
-                       arguments: JSONValue?,
-                       context: BrowserToolCallContext,
-                       elicitationPusher: (any AIChatElicitationPushing)?) async -> BrowserToolResult {
-        guard configuration.isEnabled else { return .failure(.unavailable) }
-
-        // Covers an unknown name and a disabled sub-feature alike: the front end learns only that
-        // the capability is not available here, not which of the two it was.
-        guard let tool = catalog.tool(named: name) else { return .failure(.unavailable) }
-
-        // Reported as plain `unavailable`, never a Fire-specific token. Checked before consent so a
-        // call that can never succeed here cannot persist a decision.
-        guard !context.isBurner else { return .failure(.unavailable) }
-
-        switch permissions.effectiveState(for: tool) {
-        case .allow:
-            break
-        case .deny:
-            return .failure(.denied)
-        case .ask:
-            guard context.supportsElicitationForm else { return .failure(.elicitationUnsupported) }
-            let answer = await elicitations.elicit(toolName: tool.name,
-                                                   message: tool.permissionReason,
-                                                   requestedSchema: BrowserToolPermissionElicitation.choiceSchema,
-                                                   ownerTabID: context.ownerTabID,
-                                                   pusher: elicitationPusher)
-            if let refusal = apply(answer, forToolNamed: tool.name) {
-                return .failure(refusal)
-            }
+    public func invokeClientTool(_ request: ExecuteClientToolRequest,
+                                 context: BrowserToolCallContext,
+                                 permissionPrompter: (any ClientToolPermissionPrompting)?) async -> ExecuteClientToolResponse {
+        guard !context.isBurner,
+              let tool = catalog.tool(for: request.capability) else {
+            return .failure(callId: request.callId, error: .unavailable)
         }
-
-        return await tool.execute(arguments: arguments, context: context)
+        // Malformed inputs are rejected before asking. Each tool still validates its values after permission.
+        guard Self.isAcceptedInput(request.input, for: tool) else {
+            return .failure(callId: request.callId, error: .invalidArguments)
+        }
+        let authorization = await clientToolPermissions.authorize(callID: request.callId, tool: tool, prompter: permissionPrompter)
+        switch authorization {
+        case .refused(.cancelled):
+            return .failure(callId: request.callId, error: .cancelled)
+        case .refused:
+            guard !Task.isCancelled else { return .failure(callId: request.callId, error: .cancelled) }
+        case .granted:
+            break
+        }
+        let currentTool = context.isBurner ? nil : catalog.tool(for: request.capability)
+        if case .refused(let error) = authorization {
+            return .failure(callId: request.callId, error: currentTool == nil ? .unavailable : error)
+        }
+        guard case .granted(let performExecution) = authorization,
+              let executionResult = await performExecution({
+                  guard let currentTool else { return .failure(.unavailable) }
+                  guard !Task.isCancelled else { return .failure(.cancelled) }
+                  let result = await currentTool.execute(arguments: request.input, context: context)
+                  return Task.isCancelled ? .failure(.cancelled) : result
+              }) else {
+            return .failure(callId: request.callId, error: .cancelled)
+        }
+        let result: BrowserToolResult
+        switch executionResult {
+        case .success(let value): result = tool.clientToolResult(from: value)
+        case .failure(let error): result = .failure(error)
+        }
+        switch result {
+        case .success(let value):
+            return .success(callId: request.callId, value: value)
+        case .failure(let error):
+            return .failure(callId: request.callId, error: Self.clientToolError(error))
+        }
     }
 
-    /// Records Always/Never and says whether the call may proceed. Anything unexpected is a refusal,
-    /// so nothing here can let a call through by accident.
-    private func apply(_ answer: MCPElicitationResult, forToolNamed name: String) -> BrowserToolFailure? {
-        switch MCPElicitationAction(rawValue: answer.action) {
-        case .decline:
-            return .denied
-        case .cancel, .none:
-            return .cancelled
-        case .accept:
-            guard let choice = answer.content?["choice"]?.stringValue, !choice.isEmpty else {
-                return .invalidArguments
-            }
-            switch BrowserToolPermissionChoice(rawValue: choice) {
-            case .allowOnce:
-                return nil
-            case .alwaysAllow:
-                permissions.setState(.allow, forToolNamed: name)
-                return nil
-            case .neverAllow:
-                permissions.setState(.deny, forToolNamed: name)
-                return .denied
-            case .none:
-                return .invalidPermissionChoice
-            }
+    /// Every contract input is an object without additional properties; each tool validates its own values.
+    private static func isAcceptedInput(_ input: JSONValue, for tool: any BrowserTool) -> Bool {
+        guard let fields = input.objectValue else { return false }
+        let declared = tool.inputSchema["properties"]?.objectValue ?? [:]
+        return fields.keys.allSatisfy { declared[$0] != nil }
+    }
+
+    private static func clientToolError(_ error: BrowserToolFailure) -> ClientToolError {
+        switch error {
+        case .invalidArguments: .invalidArguments
+        case .unavailable: .unavailable
+        case .notFound: .notFound
+        case .denied: .denied
+        case .cancelled: .cancelled
         }
     }
 }

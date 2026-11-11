@@ -890,7 +890,7 @@ public final class DefaultSubscriptionManager: SubscriptionManager {
         switch recoveryReport.result {
         case .recovered:
             break
-        case .notApplicable:
+        case .notApplicable, .deferred:
             throw SubscriptionManagerError.tokenRecoveryNotAttempted
         case .sessionChanged:
             throw TokenBackupError.sessionChanged
@@ -911,8 +911,10 @@ public final class DefaultSubscriptionManager: SubscriptionManager {
     /// - Returns: `true` when the App Store strategy ran and applied, even if it didn't yield a valid token.
     private static func appStoreRestoreRan(in report: TokenRecoveryReport?) -> Bool {
         guard let result = report?.result(of: .appStore) else { return false }
-        if case .notApplicable = result { return false }
-        return true
+        switch result {
+        case .notApplicable, .deferred: return false
+        case .recovered, .sessionChanged, .failed: return true
+        }
     }
 
     public func restoreMissingTokenIfPossible() async {

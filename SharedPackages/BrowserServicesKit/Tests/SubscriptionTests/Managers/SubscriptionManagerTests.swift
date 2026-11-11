@@ -61,6 +61,7 @@ class SubscriptionManagerTests: XCTestCase {
             subscriptionEndpointService: mockSubscriptionEndpointService,
             subscriptionCachingService: mockSubscriptionCachingService,
             subscriptionEnvironment: SubscriptionEnvironment(serviceEnvironment: .production, purchasePlatform: .appStore),
+            process: .browser,
             pixelHandler: mockPixelHandler,
             wideEvent: mockWideEvent,
             isAuthV2WideEventEnabled: { true },
@@ -1181,6 +1182,7 @@ class SubscriptionManagerTests: XCTestCase {
             subscriptionEndpointService: mockSubscriptionEndpointService,
             subscriptionCachingService: mockSubscriptionCachingService,
             subscriptionEnvironment: environment,
+            process: .browser,
             pixelHandler: MockPixelHandler()
         )
 
@@ -1274,6 +1276,7 @@ class SubscriptionManagerTests: XCTestCase {
             subscriptionEndpointService: mockSubscriptionEndpointService,
             subscriptionCachingService: mockSubscriptionCachingService,
             subscriptionEnvironment: productionEnvironment,
+            process: .browser,
             pixelHandler: MockPixelHandler()
         )
 
@@ -1295,6 +1298,7 @@ class SubscriptionManagerTests: XCTestCase {
             subscriptionEndpointService: mockSubscriptionEndpointService,
             subscriptionCachingService: mockSubscriptionCachingService,
             subscriptionEnvironment: stagingEnvironment,
+            process: .browser,
             pixelHandler: MockPixelHandler()
         )
 
@@ -1366,6 +1370,7 @@ class SubscriptionManagerTests: XCTestCase {
             subscriptionEndpointService: mockSubscriptionEndpointService,
             subscriptionCachingService: mockSubscriptionCachingService,
             subscriptionEnvironment: stripeEnvironment,
+            process: .browser,
             pixelHandler: MockPixelHandler()
         )
 
@@ -1388,6 +1393,7 @@ class SubscriptionManagerTests: XCTestCase {
             subscriptionEndpointService: mockSubscriptionEndpointService,
             subscriptionCachingService: mockSubscriptionCachingService,
             subscriptionEnvironment: appStoreEnvironment,
+            process: .browser,
             pixelHandler: MockPixelHandler()
         )
 
@@ -1410,6 +1416,7 @@ class SubscriptionManagerTests: XCTestCase {
             subscriptionEndpointService: mockSubscriptionEndpointService,
             subscriptionCachingService: mockSubscriptionCachingService,
             subscriptionEnvironment: appStoreEnvironment,
+            process: .browser,
             pixelHandler: MockPixelHandler()
         )
 
@@ -1433,6 +1440,7 @@ class SubscriptionManagerTests: XCTestCase {
                 userDefaults: defaults,
                 subscriptionEndpointService: mockSubscriptionEndpointService,
                 subscriptionEnvironment: SubscriptionEnvironment(serviceEnvironment: .production, purchasePlatform: .appStore),
+                process: .browser,
                 pixelHandler: mockPixelHandler
             )
             store.onUpdateAvailableProducts = { [weak manager, weak store] in

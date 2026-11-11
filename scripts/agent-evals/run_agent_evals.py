@@ -302,6 +302,16 @@ def summarize(runs, arms):
             passed, n, cost, turns, tokens = stats(items)
             out.append(f"| {arm} | {passed}/{n} ({100 * passed / n:.0f}%) | ${cost:.2f} | {turns:.1f} | {tokens:,.0f} |")
 
+    out += ["", "## Checks", "", "| Case | Check | " + " | ".join(arms) + " |", "|---|---|" + "---:|" * len(arms)]
+    for case in sorted({r["case"] for r in runs}):
+        details = list(dict.fromkeys(g["detail"] for r in runs if r["case"] == case for g in r["graders"]))
+        for detail in details:
+            cells = []
+            for arm in arms:
+                results = [g["passed"] for r in by.get((case, arm), []) for g in r["graders"] if g["detail"] == detail]
+                cells.append(f"{sum(results)}/{len(results)}" if results else "–")
+            out.append(f"| {case} | {detail.replace('|', chr(92) + '|')} | " + " | ".join(cells) + " |")
+
     failures = [r for r in runs if not r["passed"]]
     if failures:
         out += ["", "## Failed graders", ""]

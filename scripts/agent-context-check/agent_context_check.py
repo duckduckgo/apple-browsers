@@ -203,6 +203,23 @@ def referenced_spans(tree):
                 yield (path, *found)
 
 
+DECLARATION_KEYWORDS = ("class", "struct", "enum", "protocol", "actor", "typealias", "macro",
+                        "@interface", "@protocol")
+
+
+def declared_types(names, root):
+    """Names from `names` that a Swift or Objective-C declaration in the repo defines."""
+    pattern = rf"({'|'.join(DECLARATION_KEYWORDS)})[[:space:]]+({'|'.join(names)})"
+    result = subprocess.run(
+        ["git", "grep", "--untracked", "-h", "-w", "-E", pattern,
+         "--", "*.swift", "*.h", "*.m", "*.mm"],
+        cwd=root, capture_output=True, text=True,
+    )
+    keywords = "|".join(re.escape(k) for k in DECLARATION_KEYWORDS)
+    found = re.findall(rf"(?:^|[^\w@])(?:{keywords})\s+(\w+)", result.stdout, re.MULTILINE)
+    return set(found) & set(names)
+
+
 def check_references(tree, root, ignored):
     tracked = git("ls-files", "--cached", "--others", "--exclude-standard",
                   root=root).splitlines()
@@ -221,21 +238,16 @@ def check_references(tree, root, ignored):
 
     spans = [s for s in referenced_spans(tree) if s[2] not in ignored | AGENT_TOOL_NAMES]
     types = sorted({value for _, kind, value in spans if kind == "type"})
-    found_types = set()
-    if types:
-        result = subprocess.run(
-            ["git", "grep", "--untracked", "-h", "-o", "-w", "-F", *sum((["-e", t] for t in types), []),
-             "--", ".", ":(exclude,glob)**/*.md"],  # the docs themselves don't count as uses
-            cwd=root, capture_output=True, text=True,
-        )
-        found_types = set(result.stdout.split())
+    # Module, package and file names (`BrowserServicesKit`, `SnapshotReferences`) have no declaration.
+    path_names = {Path(p).stem for p in tracked} | {Path(d).name for d in directories}
+    declared = declared_types(types, root) if types else set()
 
     errors = []
     for source, kind, value in spans:
         if kind == "path" and looks_like_repo_path(value, source) and not path_exists(value, source):
             errors.append(f"{source}: `{value}` doesn't exist in the repo")
-        elif kind == "type" and value not in found_types:
-            errors.append(f"{source}: `{value}` isn't used anywhere in the repo")
+        elif kind == "type" and value not in declared and value not in path_names:
+            errors.append(f"{source}: `{value}` isn't declared anywhere in the repo")
         elif kind == "skill" and value not in skills:
             errors.append(f"{source}: skill `{value}` isn't in {SKILLS_DIR}/")
     return sorted(set(errors))
@@ -277,7 +289,8 @@ def render_markdown(head_items, base_items, errors):
         new, old = head.get(key), base.get(key)
         if base_items is None or new != old:
             name = f"{key[0]} (description)" if key[1] == "skill-description" else key[0]
-            out.append(f"| {name} | {old if old is not None else '–'} | {new if new is not None else '–'} | {delta(new, old)} |")
+            change = delta(new, old) if base_items is not None else ""
+            out.append(f"| {name} | {old if old is not None else '–'} | {new if new is not None else '–'} | {change} |")
     out.append(f"| **Total** | {total_base if base_items is not None else '–'} | {total_head} | "
                f"{delta(total_head, total_base) if base_items is not None else ''} |")
 

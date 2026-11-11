@@ -95,7 +95,22 @@ class ReferenceTests(RepoTestCase):
 
     def testWhenReferencedTypeIsRenamedThenItFails(self):
         self.write("Sources/App/Widget.swift", "struct WidgetRepository {}\n")
-        self.assertEqual(self.errors(), ["AGENTS.md: `WidgetStore` isn't used anywhere in the repo"])
+        self.assertEqual(self.errors(), ["AGENTS.md: `WidgetStore` isn't declared anywhere in the repo"])
+
+    def testWhenTypeNameSurvivesOnlyInACommentThenItFails(self):
+        self.write("Sources/App/Widget.swift", "// Replaces WidgetStore.\nstruct WidgetRepository {}\n")
+        self.assertEqual(self.errors(), ["AGENTS.md: `WidgetStore` isn't declared anywhere in the repo"])
+
+    def testWhenTypeIsDeclaredWithGenericsOrAsAProtocolThenItPasses(self):
+        self.write("Sources/App/Widget.swift", "public final class WidgetStore<T>: Sendable {}\n")
+        self.assertEqual(self.errors(), [])
+        self.write("Sources/App/Widget.swift", "protocol WidgetStore {}\n")
+        self.assertEqual(self.errors(), [])
+
+    def testWhenNameIsAModuleFolderThenItPasses(self):
+        self.write("Packages/WidgetKitCore/Sources/File.swift", "struct WidgetStore {}\n")
+        self.write("AGENTS.md", "- Import `WidgetKitCore`.\n")
+        self.assertEqual(self.errors(), [])
 
     def testWhenReferencedFileIsMovedThenItFails(self):
         (self.root / "Sources/App/Widget.swift").rename(self.root / "Sources/App/Gadget.swift")

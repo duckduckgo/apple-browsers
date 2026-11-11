@@ -301,7 +301,6 @@ public enum DBPSubfeature: String, Equatable, PrivacySubfeature {
     case customWebViewUserAgent
     case freemiumPIR
     case optOutRetryError96Hours
-    case performanceMetrics
     case extractedProfileRefresh
     case schedulerDeferralHandling
     case challengeSolver
@@ -367,9 +366,6 @@ public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
 
     /// Enables Duck.ai query experiment with tracker-blocking demo during onboarding
     case onboardingDuckAIQueryTrackersDemoExperiment
-
-    /// Enables the omnibar onboarding for AI Chat
-    case omnibarOnboarding
 
     /// Enables the omnibar tools (customize, search toggle, image upload) for AI Chat
     case omnibarTools
@@ -782,6 +778,9 @@ public enum PrivacyProSubfeature: String, Equatable, PrivacySubfeature {
 
     /// Gates "Withdraw from Contract" in Subscription Settings, letting international Stripe subscribers withdraw for a full refund.
     case stripeInternationalSubscriptionWithdrawal
+
+    /// iOS onboarding experiment that adds VPN as a download reason.
+    case onboardingVPNDownloadReasonExperiment
 }
 
 public enum DuckPlayerSubfeature: String, PrivacySubfeature {

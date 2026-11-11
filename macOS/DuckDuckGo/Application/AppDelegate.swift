@@ -1018,7 +1018,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                                                                     isInternalUserEnabled: isInternalUserEnabled,
                                                                     wideEvent: wideEvent,
                                                                     isAuthV2WideEventEnabled: isAuthV2WideEventEnabled,
-                                                                    authV2TokenRefreshInstrumentation: authV2RefreshInstrumentation)
+                                                                    authV2TokenRefreshInstrumentation: authV2RefreshInstrumentation,
+                                                                    isStripeProductsByPlanCountryEnabled: { [featureFlagger] in featureFlagger.isFeatureOn(.stripeProductsByPlanCountry) })
 
         // Expired refresh token recovery
         let restoreFlow = DefaultAppStoreRestoreFlow(subscriptionManager: defaultSubscriptionManager,

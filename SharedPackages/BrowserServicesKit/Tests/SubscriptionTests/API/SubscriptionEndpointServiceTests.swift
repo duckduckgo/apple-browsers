@@ -320,11 +320,11 @@ final class SubscriptionEndpointServiceTests: XCTestCase {
         let response = GetTierProductsResponse(products: tierProducts)
         let responseData = try encoder.encode(response)
         let apiResponse = createAPIResponse(statusCode: 200, data: responseData)
-        let request = SubscriptionRequest.getTierProducts(baseURL: baseURL, country: "us", platform: "stripe")!.apiRequest
+        let request = SubscriptionRequest.getTierProducts(baseURL: baseURL, location: .country("fr"), platform: "stripe")!.apiRequest
 
         apiService.set(response: apiResponse, forRequest: request)
 
-        let result = try await endpointService.getTierProducts(country: "us", platform: "stripe")
+        let result = try await endpointService.getTierProducts(location: .country("fr"), platform: "stripe")
         XCTAssertEqual(result.products.count, 1)
         XCTAssertEqual(result.products[0].tier, .plus)
         XCTAssertEqual(result.products[0].productName, "Plus Plan")
@@ -332,18 +332,28 @@ final class SubscriptionEndpointServiceTests: XCTestCase {
     }
 
     func testGetTierProductsThrowsInvalidResponseCode() async {
-        let request = SubscriptionRequest.getTierProducts(baseURL: baseURL, country: "us", platform: "stripe")!.apiRequest
+        let request = SubscriptionRequest.getTierProducts(baseURL: baseURL, location: .country("fr"), platform: "stripe")!.apiRequest
         let apiResponse = createAPIResponse(statusCode: 500, data: nil)
         apiService.set(response: apiResponse, forRequest: request)
 
         do {
-            _ = try await endpointService.getTierProducts(country: "us", platform: "stripe")
+            _ = try await endpointService.getTierProducts(location: .country("fr"), platform: "stripe")
             XCTFail("Expected invalidResponseCode error")
         } catch SubscriptionEndpointServiceError.invalidResponseCode(let statusCode) {
             XCTAssertEqual(statusCode.rawValue, 500)
         } catch {
             XCTFail("Unexpected error: \(error)")
         }
+    }
+
+    func testGetTierProductsRequestWithCountry() {
+        let request = SubscriptionRequest.getTierProducts(baseURL: baseURL, location: .country("fr"), platform: "stripe")!.apiRequest
+        XCTAssertEqual(request.url?.query, "country=fr&platform=stripe")
+    }
+
+    func testGetTierProductsRequestWithRegion() {
+        let request = SubscriptionRequest.getTierProducts(baseURL: baseURL, location: .legacyUSRegion, platform: "stripe")!.apiRequest
+        XCTAssertEqual(request.url?.query, "region=us&platform=stripe")
     }
 
     // MARK: - getSubscriptionTierFeatures Tests

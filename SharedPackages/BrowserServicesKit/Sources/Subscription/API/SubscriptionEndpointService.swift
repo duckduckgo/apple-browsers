@@ -75,6 +75,11 @@ public struct GetTierProductsResponse: Codable {
     public let products: [TierProduct]
 }
 
+public enum TierProductsLocation: Equatable {
+    case country(String)
+    case legacyUSRegion
+}
+
 public struct TierProduct: Codable, Equatable {
     public let productName: String
     public let tier: TierName
@@ -123,10 +128,10 @@ public protocol SubscriptionEndpointService {
 
     /// Fetches products using the new /api/v2/products endpoint with tier information.
     /// - Parameters:
-    ///   - country: Optional ISO 3166-1 alpha-2 country code filter (e.g. "us", "fr")
+    ///   - location: Country code filter (e.g. "fr"), or the legacy "us" region filter
     ///   - platform: Optional platform filter ("apple", "stripe")
     /// - Returns: A response containing products with tier and entitlement information
-    func getTierProducts(country: String?, platform: String?) async throws -> GetTierProductsResponse
+    func getTierProducts(location: TierProductsLocation, platform: String?) async throws -> GetTierProductsResponse
 
     /// Fetches subscription features for multiple SKUs in a single API call.
     /// This uses the new /api/v2/features endpoint that returns features with tier information.
@@ -201,8 +206,8 @@ public struct DefaultSubscriptionEndpointService: SubscriptionEndpointService {
 
     // MARK: - Products
 
-    public func getTierProducts(country: String?, platform: String?) async throws -> GetTierProductsResponse {
-        guard let request = SubscriptionRequest.getTierProducts(baseURL: baseURL, country: country, platform: platform) else {
+    public func getTierProducts(location: TierProductsLocation, platform: String?) async throws -> GetTierProductsResponse {
+        guard let request = SubscriptionRequest.getTierProducts(baseURL: baseURL, location: location, platform: platform) else {
             throw SubscriptionEndpointServiceError.invalidRequest
         }
         let response = try await apiService.fetch(request: request.apiRequest)

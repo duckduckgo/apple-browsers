@@ -194,18 +194,18 @@ final class SubscriptionTierOptionsProviderTests: XCTestCase {
     // MARK: - Stripe path: country parameter
 
     func testWhenStripeSubscriptionHasPlanCountryThenSendsLowercasedPlanCountry() async throws {
-        let country = await sentCountry(forActiveStripeSubscriptionWithPlanCountry: "FR")
-        XCTAssertEqual(country, "fr")
+        let location = await sentLocation(forActiveStripeSubscriptionWithPlanCountry: "FR")
+        XCTAssertEqual(location, .country("fr"))
     }
 
     func testWhenStripeSubscriptionHasNoPlanCountryThenSendsUS() async throws {
-        let country = await sentCountry(forActiveStripeSubscriptionWithPlanCountry: nil)
-        XCTAssertEqual(country, "us")
+        let location = await sentLocation(forActiveStripeSubscriptionWithPlanCountry: nil)
+        XCTAssertEqual(location, .country("us"))
     }
 
     func testWhenStripeSubscriptionHasInvalidPlanCountryThenSendsUS() async throws {
-        let country = await sentCountry(forActiveStripeSubscriptionWithPlanCountry: "FRA")
-        XCTAssertEqual(country, "us")
+        let location = await sentLocation(forActiveStripeSubscriptionWithPlanCountry: "FRA")
+        XCTAssertEqual(location, .country("us"))
     }
 
     func testWhenNoSubscriptionAndAppPlatformStripeThenSendsUS() async throws {
@@ -219,21 +219,28 @@ final class SubscriptionTierOptionsProviderTests: XCTestCase {
 
         _ = await sut.subscriptionTierOptions(includeProTier: false, currentSubscription: nil)
 
-        XCTAssertEqual(mockEndpointService.getTierProductsCountry, "us")
+        XCTAssertEqual(mockEndpointService.getTierProductsLocation, .country("us"))
     }
 
-    private func sentCountry(forActiveStripeSubscriptionWithPlanCountry planCountry: String?) async -> String? {
+    func testWhenStripeProductsByPlanCountryDisabledThenSendsLegacyUSRegion() async throws {
+        let location = await sentLocation(forActiveStripeSubscriptionWithPlanCountry: "FR", isStripeProductsByPlanCountryEnabled: false)
+        XCTAssertEqual(location, .legacyUSRegion)
+    }
+
+    private func sentLocation(forActiveStripeSubscriptionWithPlanCountry planCountry: String?,
+                              isStripeProductsByPlanCountryEnabled: Bool = true) async -> TierProductsLocation? {
         mockEndpointService.getTierProductsResult = .success(SubscriptionMockFactory.tierProductsResponse)
         let subscription = SubscriptionMockFactory.subscription(status: .autoRenewable, platform: .stripe, planCountry: planCountry)
 
         let sut = DefaultSubscriptionTierOptionsProvider(
             subscriptionEnvironmentPlatform: .appStore,
             storePurchaseManager: mockStorePurchaseManager,
-            subscriptionEndpointService: mockEndpointService
+            subscriptionEndpointService: mockEndpointService,
+            isStripeProductsByPlanCountryEnabled: { isStripeProductsByPlanCountryEnabled }
         )
 
         _ = await sut.subscriptionTierOptions(includeProTier: false, currentSubscription: subscription)
-        return mockEndpointService.getTierProductsCountry
+        return mockEndpointService.getTierProductsLocation
     }
 
     // MARK: - Stripe path: API failure and empty products

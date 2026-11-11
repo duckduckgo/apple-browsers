@@ -376,6 +376,43 @@ final class TokenRecoveryCoordinatorTests: XCTestCase {
         XCTAssertFalse(sessionChanged.isUnrecoverable)
     }
 
+    func testWhenInvalidTokenRecoveryWasPendingThenNextOneWithinRetryIntervalIsDeferred() async {
+        let strategy = StubStrategy(.failed(URLError(.timedOut)))
+        let clock = Clock()
+        let coordinator = TokenRecoveryCoordinator(invalidTokenStrategies: [strategy], missingTokenStrategies: [],
+                                                   retryInterval: .minutes(5), now: { clock.now })
+
+        _ = await coordinator.recover(invalidTokenContext)
+        clock.now = clock.now.addingTimeInterval(.minutes(4))
+        let report = await coordinator.recover(invalidTokenContext)
+
+        XCTAssertEqual(report.result.outcome, .deferred)
+        XCTAssertEqual(strategy.calls, 1)
+    }
+
+    func testWhenInvalidTokenRetryIntervalElapsedThenRecoveryRunsAgain() async {
+        let strategy = StubStrategy(.failed(URLError(.timedOut)))
+        let clock = Clock()
+        let coordinator = TokenRecoveryCoordinator(invalidTokenStrategies: [strategy], missingTokenStrategies: [],
+                                                   retryInterval: .minutes(5), now: { clock.now })
+
+        _ = await coordinator.recover(invalidTokenContext)
+        clock.now = clock.now.addingTimeInterval(.minutes(6))
+        _ = await coordinator.recover(invalidTokenContext)
+
+        XCTAssertEqual(strategy.calls, 2)
+    }
+
+    func testWhenInvalidTokenRecoveryWasUnrecoverableThenNextOneIsNotDeferred() async {
+        let strategy = StubStrategy(.failed(TokenBackupError.expired))
+        let coordinator = TokenRecoveryCoordinator(invalidTokenStrategies: [strategy], missingTokenStrategies: [])
+
+        _ = await coordinator.recover(invalidTokenContext)
+        _ = await coordinator.recover(invalidTokenContext)
+
+        XCTAssertEqual(strategy.calls, 2)
+    }
+
     // MARK: - Backup restore failure reason
 
     func testBackupRestoreFailureReason_classifiesTheRestoreErrors() {

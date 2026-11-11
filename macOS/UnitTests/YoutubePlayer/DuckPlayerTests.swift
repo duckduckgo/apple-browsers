@@ -164,6 +164,25 @@ final class DuckPlayerTests: XCTestCase {
     private func duckPlayerURL() -> URL {
         return .youtubeNoCookie("12345678")
     }
+
+    func testCustomErrorSendsConfigSettingsUnderSettingsKey() throws {
+        let configJSON = #"{"signInRequiredSelector":"a.sign-in","youtubeErrorSelector":".ytp-error"}"#
+        let configSettings = try JSONDecoder().decode(CustomErrorSettings.self, from: Data(configJSON.utf8))
+        let customError = InitialPlayerSettings.CustomError(state: .enabled, settings: configSettings)
+
+        let encoded = try JSONSerialization.jsonObject(with: JSONEncoder().encode(customError)) as? NSDictionary
+        let expected: NSDictionary = [
+            "state": "enabled",
+            "settings": ["signInRequiredSelector": "a.sign-in", "youtubeErrorSelector": ".ytp-error"]
+        ]
+        XCTAssertEqual(encoded, expected)
+    }
+
+    func testCustomErrorSettingsDecodeWithoutYouTubeErrorSelector() throws {
+        let configJSON = #"{"signInRequiredSelector":"a.sign-in"}"#
+        let configSettings = try JSONDecoder().decode(CustomErrorSettings.self, from: Data(configJSON.utf8))
+        XCTAssertEqual(configSettings, CustomErrorSettings(signInRequiredSelector: "a.sign-in", youtubeErrorSelector: nil))
+    }
 }
 
 extension WKWebViewConfiguration {

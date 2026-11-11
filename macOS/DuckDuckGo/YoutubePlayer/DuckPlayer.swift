@@ -95,7 +95,7 @@ struct InitialPlayerSettings: Codable {
 
     struct CustomError: Codable {
         let state: State
-        let signInRequiredSelector: String
+        let settings: CustomErrorSettings?
     }
 
     enum State: String, Codable {
@@ -148,8 +148,9 @@ public struct UIUserValues: Codable {
 }
 
 // Custom Error privacy config settings
-struct CustomErrorSettings: Codable {
-    let signInRequiredSelector: String
+struct CustomErrorSettings: Codable, Equatable {
+    let signInRequiredSelector: String?
+    let youtubeErrorSelector: String?
 }
 
 final class DuckPlayer {
@@ -202,7 +203,7 @@ final class DuckPlayer {
         if let customErrorSettingsJSON = privacyConfigurationManager.privacyConfig.settings(for: DuckPlayerSubfeature.customError),
            let jsonData = customErrorSettingsJSON.data(using: .utf8),
            let customErrorSettings: CustomErrorSettings = DecodableHelper.decode(jsonData: jsonData) {
-            customErrorSignInRequiredSelector = customErrorSettings.signInRequiredSelector
+            self.customErrorSettings = customErrorSettings
         }
 
         self.onboardingDecider = onboardingDecider ?? DefaultDuckPlayerOnboardingDecider(preferences: preferences)
@@ -328,7 +329,7 @@ final class DuckPlayer {
         let environment = InitialPlayerSettings.Environment.development
         let locale = InitialPlayerSettings.Locale.en
         let focusMode = InitialPlayerSettings.FocusMode(state: onboardingDecider.shouldOpenFirstVideoOnDuckPlayer ? .disabled : .enabled)
-        let customError = InitialPlayerSettings.CustomError(state: isCustomErrorFeatureEnabled ? .enabled : .disabled, signInRequiredSelector: customErrorSignInRequiredSelector ?? "")
+        let customError = InitialPlayerSettings.CustomError(state: isCustomErrorFeatureEnabled ? .enabled : .disabled, settings: customErrorSettings)
         let playerSettings = InitialPlayerSettings.PlayerSettings(pip: pip, autoplay: autoplay, focusMode: focusMode, customError: customError)
         let userValues = encodeUserValues()
 
@@ -376,7 +377,7 @@ final class DuckPlayer {
     private var isPiPFeatureEnabled: Bool
     private var isAutoplayFeatureEnabled: Bool
     private var isCustomErrorFeatureEnabled: Bool
-    private var customErrorSignInRequiredSelector: String?
+    private var customErrorSettings: CustomErrorSettings?
     private let onboardingDecider: DuckPlayerOnboardingDecider
     private(set) var shouldOpenNextVideoOnYoutube: Bool = false
 

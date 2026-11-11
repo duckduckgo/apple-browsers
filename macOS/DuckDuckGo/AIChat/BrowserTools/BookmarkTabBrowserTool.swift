@@ -18,6 +18,7 @@
 
 import AIChat
 import Bookmarks
+import Combine
 import Foundation
 
 @MainActor
@@ -45,6 +46,7 @@ final class BookmarkTabBrowserTool: BrowserTool {
 
     private let windowControllersManager: WindowControllersManagerProtocol
     private let bookmarkManager: BookmarkManager
+    private var running: Task<Void, Never>?
 
     init(windowControllersManager: WindowControllersManagerProtocol, bookmarkManager: BookmarkManager) {
         self.windowControllersManager = windowControllersManager
@@ -52,6 +54,14 @@ final class BookmarkTabBrowserTool: BrowserTool {
     }
 
     func execute(arguments: JSONValue?, context: BrowserToolCallContext) async -> BrowserToolResult {
+        // One call at a time, so a folder one call creates is found by the next.
+        let previous = running
+        let call = Task { await previous?.value; return await bookmark(arguments: arguments, context: context) }
+        running = Task { _ = await call.value }
+        return await call.value
+    }
+
+    private func bookmark(arguments: JSONValue?, context: BrowserToolCallContext) async -> BrowserToolResult {
         guard !context.isBurner else { return .failure(.unavailable) }
         guard let folderPath = Self.folderPath(from: arguments) else { return .failure(.invalidArguments) }
 
@@ -84,7 +94,7 @@ final class BookmarkTabBrowserTool: BrowserTool {
     }
 
     private func save(_ url: URL, title: String, in folder: BookmarkFolder?, moving: Bool) async throws -> Bool {
-        guard let existing = bookmarkManager.getBookmark(for: url) else {
+        guard let existing = bookmarkManager.getBookmark(forVariantUrl: url) else {
             try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
                 let bookmark = bookmarkManager.makeBookmark(for: url, title: title, isFavorite: false, index: nil, parent: folder) { error in
                     continuation.resume(with: error.map { .failure($0) } ?? .success(()))
@@ -115,13 +125,29 @@ final class BookmarkTabBrowserTool: BrowserTool {
                 continue
             }
             let parent = folder
-            folder = try await withCheckedThrowingContinuation { continuation in
+            let created: BookmarkFolder = try await withCheckedThrowingContinuation { continuation in
                 bookmarkManager.makeFolder(named: name, parent: parent) { continuation.resume(with: $0) }
             }
+            await waitUntilListed(created.id)
+            folder = created
             siblings = []
             created = true
         }
         return (folder, created)
+    }
+
+    // makeFolder reloads the list asynchronously.
+    private func waitUntilListed(_ folderID: String) async {
+        let lists = bookmarkManager.listPublisher.timeout(.seconds(2), scheduler: DispatchQueue.main).values
+        for await list in lists where list.map({ Self.contains(folderID, in: $0.topLevelEntities) }) == true {
+            return
+        }
+    }
+
+    private static func contains(_ folderID: String, in entities: [BaseBookmarkEntity]) -> Bool {
+        entities.contains { entity in
+            entity.id == folderID || (entity as? BookmarkFolder).map { contains(folderID, in: $0.children) } == true
+        }
     }
 
     static func folderPath(from arguments: JSONValue?) -> [String]? {

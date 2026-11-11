@@ -24,6 +24,12 @@ import XCTest
 final class BookmarkTabBrowserToolTests: XCTestCase {
 
     private let pageURL = "https://example.com/page"
+    private var tabs: [Tab] = []
+
+    override func tearDown() {
+        tabs = []
+        super.tearDown()
+    }
 
     func testWhenNoFolderIsGivenThenTheCurrentTabIsBookmarkedAtTheTopLevel() async {
         let (tool, context, manager, owner) = make()
@@ -83,6 +89,32 @@ final class BookmarkTabBrowserToolTests: XCTestCase {
         XCTAssertFalse(store.moveObjectUUIDCalled)
     }
 
+    func testWhenAVariantOfThePageIsBookmarkedThenNoSecondBookmarkIsMade() async {
+        let saved = Bookmark(id: "saved", url: "http://example.com/page/", title: "Page", isFavorite: false)
+        let (tool, context, manager, owner, store) = makeWithStore(bookmarks: [saved])
+
+        let result = await tool.execute(arguments: [:], context: context)
+
+        XCTAssertEqual(result, .success(response(tabID: owner, alreadyBookmarked: true, folderCreated: false)))
+        XCTAssertNil(manager.getBookmark(forUrl: pageURL))
+        XCTAssertNil(store.saveEntitiesAtIndicesCalledWith)
+    }
+
+    func testWhenTwoCallsNameTheSameNewFolderThenItIsCreatedOnce() async {
+        let otherURL = "https://example.com/other"
+        let (tool, context, manager, _, _) = makeWithStore(bookmarks: [], extraTabURLs: [otherURL])
+        let other = tabs[1].uuid
+
+        async let first = tool.execute(arguments: ["folder": ["Trips"]], context: context)
+        async let second = tool.execute(arguments: ["tabId": .string(other), "folder": ["Trips"]], context: context)
+        _ = await (first, second)
+
+        let trips = manager.list?.topLevelEntities.filter { $0.title == "Trips" } ?? []
+        XCTAssertEqual(trips.count, 1)
+        XCTAssertEqual(manager.getBookmark(forUrl: pageURL)?.parentFolderUUID, trips.first?.id)
+        XCTAssertEqual(manager.getBookmark(forUrl: otherURL)?.parentFolderUUID, trips.first?.id)
+    }
+
     func testWhenTheFolderIsMalformedThenArgumentsAreInvalid() async {
         let (tool, context, manager, _) = make()
         let tooDeep = JSONValue.array(Array(repeating: "a", count: BookmarkTabBrowserTool.maxFolderDepth + 1))
@@ -122,14 +154,15 @@ final class BookmarkTabBrowserToolTests: XCTestCase {
         return (tool, context, manager, owner)
     }
 
-    private func makeWithStore(bookmarks: [BaseBookmarkEntity]) -> (BookmarkTabBrowserTool, BrowserToolCallContext, LocalBookmarkManager, String, BookmarkStoreMock) {
+    private func makeWithStore(bookmarks: [BaseBookmarkEntity],
+                               extraTabURLs: [String] = []) -> (BookmarkTabBrowserTool, BrowserToolCallContext, LocalBookmarkManager, String, BookmarkStoreMock) {
         let store = BookmarkStoreMock(bookmarks: bookmarks)
         store.completesMoveCompletions = true
         let manager = LocalBookmarkManager(bookmarkStore: store, foldersStore: BookmarkFolderStoreMock(), appearancePreferences: .mock)
         manager.loadBookmarks()
 
-        let collection = TabCollectionViewModel(tabCollection: TabCollection(tabs: [Tab(content: .url(URL(string: pageURL)!, credential: nil, source: .ui))]),
-                                                pinnedTabsManagerProvider: nil)
+        tabs = ([pageURL] + extraTabURLs).map { Tab(content: .url(URL(string: $0)!, credential: nil, source: .ui)) }
+        let collection = TabCollectionViewModel(tabCollection: TabCollection(tabs: tabs), pinnedTabsManagerProvider: nil)
         let windows = WindowControllersManagerMock()
         windows.customAllTabCollectionViewModels = [collection]
         let owner = collection.tabCollection.tabs[0].uuid

@@ -66,14 +66,15 @@ final class WebExtensionUpdateTransactionTests: XCTestCase {
     }
 
     func testInterruptedReplacementRecoversAfterStoreRecreation() async throws {
-        let staged = try await stage()
+        let previousMetadata = try JSONEncoder().encode(original)
+        let staged = try await stage(previousMetadata: previousMetadata)
         try await transactions.replace(staged)
         transactions = WebExtensionUpdateTransactionStore(extensionsDirectory: directory)
         let journal = try await onlyJournal()
 
         let metadata = try await transactions.recover(journal, installationStillMatches: true)
 
-        XCTAssertEqual(metadata, try JSONEncoder().encode(original))
+        XCTAssertEqual(metadata, previousMetadata)
         XCTAssertEqual(try installedVersion(), "1.0")
     }
 
@@ -314,7 +315,8 @@ final class WebExtensionUpdateTransactionTests: XCTestCase {
     }
 
     func testRollbackInterruptedAfterCurrentRemovalRestoresBackupAndRetainsIntent() async throws {
-        let staged = try await stage()
+        let previousMetadata = try JSONEncoder().encode(original)
+        let staged = try await stage(previousMetadata: previousMetadata)
         try await transactions.replace(staged)
         try await transactions.commit(staged, updatedMetadata: Data(), retainPrevious: true)
         let journal = try await persistRollbackIntent()
@@ -323,13 +325,14 @@ final class WebExtensionUpdateTransactionTests: XCTestCase {
 
         let metadata = try await transactions.recover(journal, installationStillMatches: true)
 
-        XCTAssertEqual(metadata, try JSONEncoder().encode(original))
+        XCTAssertEqual(metadata, previousMetadata)
         XCTAssertEqual(try installedVersion(), "1.0")
         try await assertRollbackIntent()
     }
 
     func testRollbackInterruptedAfterBackupRestorationDoesNotReturnCandidateMetadata() async throws {
-        let staged = try await stage()
+        let previousMetadata = try JSONEncoder().encode(original)
+        let staged = try await stage(previousMetadata: previousMetadata)
         try await transactions.replace(staged)
         try await transactions.commit(staged, updatedMetadata: Data("candidate metadata".utf8), retainPrevious: true)
         let journal = try await persistRollbackIntent()
@@ -340,7 +343,7 @@ final class WebExtensionUpdateTransactionTests: XCTestCase {
 
         let metadata = try await transactions.recover(journal, installationStillMatches: true)
 
-        XCTAssertEqual(metadata, try JSONEncoder().encode(original))
+        XCTAssertEqual(metadata, previousMetadata)
         XCTAssertEqual(try installedVersion(), "1.0")
         try await assertRollbackIntent()
     }
@@ -395,12 +398,13 @@ final class WebExtensionUpdateTransactionTests: XCTestCase {
     }
 
     func testBlockedCandidateRestoresPredecessorInsteadOfDeletingTheOnlyBackup() async throws {
-        let staged = try await stage()
+        let previousMetadata = try JSONEncoder().encode(original)
+        let staged = try await stage(previousMetadata: previousMetadata)
         try await transactions.replace(staged)
 
         let metadata = try await transactions.recover(try await onlyJournal(), installationStillMatches: true, rejectCandidate: true)
 
-        XCTAssertEqual(metadata, try JSONEncoder().encode(original))
+        XCTAssertEqual(metadata, previousMetadata)
         XCTAssertEqual(try installedVersion(), "1.0")
     }
 
@@ -1108,9 +1112,9 @@ final class WebExtensionUpdateTransactionTests: XCTestCase {
         return (manager, loader, permissionStore)
     }
 
-    private func stage() async throws -> WebExtensionUpdateTransactionStore.Staged {
+    private func stage(previousMetadata: Data? = nil) async throws -> WebExtensionUpdateTransactionStore.Staged {
         try await transactions.stage(makeUpdate(), installationID: identifier, previousVersion: original.version,
-                                     previousMetadata: JSONEncoder().encode(original))
+                                     previousMetadata: previousMetadata ?? JSONEncoder().encode(original))
     }
 
     private func onlyJournal() async throws -> WebExtensionUpdateTransactionStore.Journal {

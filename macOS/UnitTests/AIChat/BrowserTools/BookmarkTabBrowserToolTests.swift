@@ -113,8 +113,6 @@ final class BookmarkTabBrowserToolTests: XCTestCase {
         XCTAssertNil(manager.getBookmark(forUrl: pageURL))
     }
 
-    // MARK: -
-
     private func response(tabID: String, alreadyBookmarked: Bool, folderCreated: Bool) -> JSONValue {
         ["tabId": .string(tabID), "alreadyBookmarked": .bool(alreadyBookmarked), "folderCreated": .bool(folderCreated)]
     }

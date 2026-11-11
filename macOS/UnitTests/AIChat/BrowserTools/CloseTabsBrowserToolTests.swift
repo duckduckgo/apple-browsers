@@ -121,8 +121,6 @@ final class CloseTabsBrowserToolTests: XCTestCase {
         XCTAssertEqual(tool.permissionMode, .ask)
     }
 
-    // MARK: -
-
     private func closed(_ states: KeyValuePairs<String, Bool>) -> JSONValue {
         ["tabs": .array(states.map { ["tabId": .string($0.key), "closed": .bool($0.value)] })]
     }

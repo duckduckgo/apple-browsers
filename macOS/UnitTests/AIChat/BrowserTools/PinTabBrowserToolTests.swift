@@ -71,7 +71,6 @@ final class PinTabBrowserToolTests: XCTestCase {
     }
 
     func testWhenATabCannotBePinnedThenOnlyThatTabReportsNotPinned() async {
-        // The chat's own tab is always a target, even when it is not a web page.
         let collection = collection([
             Tab(content: .url(URL(fileURLWithPath: "/tmp/notes.txt"), credential: nil, source: .ui)),
             Tab(content: .url(URL(string: "https://a.example")!, credential: nil, source: .ui))
@@ -86,7 +85,6 @@ final class PinTabBrowserToolTests: XCTestCase {
         XCTAssertEqual(collection.pinnedTabsCollection?.tabs.map(\.uuid), [ids[1]])
     }
 
-    /// Duck.ai only learns ids from listOpenTabs, so a tab it does not list is as unknown as a stale id.
     func testWhenATabIsNotListedThenNothingIsPinned() async {
         let collection = collection([
             Tab(content: .url(URL(string: "https://a.example")!, credential: nil, source: .ui)),
@@ -125,8 +123,6 @@ final class PinTabBrowserToolTests: XCTestCase {
         XCTAssertEqual(result, .failure(.unavailable))
         XCTAssertEqual(collection.pinnedTabsCollection?.tabs.count, 0)
     }
-
-    // MARK: -
 
     private func pinned(_ tabIDs: String...) -> JSONValue {
         ["tabs": .array(tabIDs.map { ["tabId": .string($0), "pinned": true] })]

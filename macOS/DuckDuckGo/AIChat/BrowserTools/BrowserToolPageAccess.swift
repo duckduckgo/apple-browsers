@@ -63,15 +63,12 @@ enum BrowserToolTargetTab {
         return .resolved(tabID: tabID, collection: collection)
     }
 
-    /// Whether `listOpenTabs` lists the tab. Duck.ai only learns tab ids from that list.
     static func isListed(_ tab: AnyTab) -> Bool {
         // Web pages only: a file URL names a local path that can include the user's name.
         guard case .url(let url, _, _) = tab.content, url.isHttpOrHttps else { return false }
         return !url.isDuckAIURL
     }
 
-    /// The tab a tab action (pin, close, bookmark) may act on: the chat's own tab, or a listed tab of
-    /// the chat's window.
     static func actionableTab(withID tabID: TabIdentifier, ownerTabID: TabIdentifier, in collection: TabCollectionViewModel) -> AnyTab? {
         let tab: AnyTab? = switch collection.indexInAllTabs(where: { $0.uuid == tabID }) {
         case .pinned(let index): collection.pinnedTabsCollection?.tabs[safe: index]
@@ -82,8 +79,6 @@ enum BrowserToolTargetTab {
         return tab
     }
 
-    /// The tabs named by `tabIds`, without duplicates, or the chat's own tab when it is absent. Nil when
-    /// any id does not resolve, so a stale id changes nothing.
     static func actionableTabs(withIDs tabIDs: [TabIdentifier]?, ownerTabID: TabIdentifier, in collection: TabCollectionViewModel) -> [AnyTab]? {
         var unique: [TabIdentifier] = []
         for tabID in tabIDs ?? [ownerTabID] where !unique.contains(tabID) { unique.append(tabID) }
@@ -91,7 +86,6 @@ enum BrowserToolTargetTab {
         return tabs.count == unique.count ? tabs : nil
     }
 
-    /// The `tabIds` argument: nil when absent, `.invalid` when it breaks the contract (1 to 50 non-blank strings).
     static func tabIDs(from arguments: JSONValue?, maxCount: Int = 50) -> TabIDsArgument {
         guard let value = arguments?["tabIds"] else { return .absent }
         guard let values = value.arrayValue, (1...maxCount).contains(values.count) else { return .invalid }
@@ -141,14 +135,12 @@ enum BrowserToolOutputLimits {
         value.unicodeScalars.count <= limit
     }
 
-    /// The URL without its query string or fragment, which can hold a share link's key or a capability
-    /// URL, clipped to the URL limit. Every URL a tool returns goes through this.
+    // Query and fragment can hold tokens.
     static func urlWithoutQueryOrFragment(_ url: String) -> String {
         let cut = url.firstIndex(where: { $0 == "?" || $0 == "#" }) ?? url.endIndex
         return clip(String(url[..<cut]), to: self.url)
     }
 
-    /// `urlWithoutQueryOrFragment` for a string value, leaving anything else untouched.
     static func urlWithoutQueryOrFragment(_ value: JSONValue?) -> JSONValue? {
         guard case .string(let text)? = value else { return value }
         return .string(urlWithoutQueryOrFragment(text))

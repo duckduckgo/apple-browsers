@@ -20,15 +20,12 @@ import AIChat
 import Bookmarks
 import Foundation
 
-/// Bookmarks a tab of the chat's window into a folder path, creating the folders it lacks. A page
-/// has at most one bookmark, so one saved elsewhere is moved into a named folder rather than duplicated.
 @MainActor
 final class BookmarkTabBrowserTool: BrowserTool {
 
     static let maxFolderDepth = 10
     static let maxFolderNameLength = 256
 
-    /// Matches `AIChatBrowserToolsSubfeature.bookmarkTab`, which is how the catalog gates it.
     let name = "bookmarkTab"
     let permissionMode = BrowserToolPermissionMode.auto
 
@@ -86,8 +83,6 @@ final class BookmarkTabBrowserTool: BrowserTool {
         }
     }
 
-    /// Whether the page was already bookmarked anywhere. A new bookmark goes into `folder`; an existing
-    /// one moves there only when the call named a folder, so the user's own filing stays as it is.
     private func save(_ url: URL, title: String, in folder: BookmarkFolder?, moving: Bool) async throws -> Bool {
         guard let existing = bookmarkManager.getBookmark(for: url) else {
             try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
@@ -109,7 +104,6 @@ final class BookmarkTabBrowserTool: BrowserTool {
         return true
     }
 
-    /// The folder at `path`, nil for the top level, and whether any part of it had to be created.
     private func folder(at path: [String], in list: BookmarkList) async throws -> (BookmarkFolder?, Bool) {
         var folder: BookmarkFolder?
         var siblings = list.topLevelEntities.compactMap { $0 as? BookmarkFolder }
@@ -130,7 +124,6 @@ final class BookmarkTabBrowserTool: BrowserTool {
         return (folder, created)
     }
 
-    /// The folder names, empty when omitted, or nil when malformed. Shared with `searchBookmarks`.
     static func folderPath(from arguments: JSONValue?) -> [String]? {
         guard let value = arguments?["folder"] else { return [] }
         guard let values = value.arrayValue, (1...maxFolderDepth).contains(values.count) else { return nil }

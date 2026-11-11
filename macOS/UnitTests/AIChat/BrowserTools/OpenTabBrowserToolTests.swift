@@ -38,7 +38,6 @@ final class OpenTabBrowserToolTests: XCTestCase {
         XCTAssertEqual(collection.selectedTabViewModel?.tab.uuid, current)
     }
 
-    /// With no regular window to fall back on, a detached chat opens in its host tab's window.
     func testWhenDetachedWithoutAnyMainWindowThenItOpensInTheChatsWindow() async {
         let collection = collection(urls: ["https://a.example"])
         let (tool, context) = make(collection: collection, isDetached: true)
@@ -85,8 +84,6 @@ final class OpenTabBrowserToolTests: XCTestCase {
 
         XCTAssertEqual(result, .failure(.unavailable))
     }
-
-    // MARK: -
 
     private func make(collection: TabCollectionViewModel, isDetached: Bool = false) -> (OpenTabBrowserTool, BrowserToolCallContext) {
         let tool = OpenTabBrowserTool(windowControllersManager: manager(with: [collection]))

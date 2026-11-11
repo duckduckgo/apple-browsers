@@ -25,7 +25,6 @@ final class SearchBookmarksBrowserToolTests: XCTestCase {
 
     private let context = BrowserToolCallContext(ownerTabID: "owner", isBurner: false)
 
-    /// Top level: News; Travel/Disney/{Parks, Hotels/Grand}; Travel/Paris; a bookmarklet.
     private func tree() -> [BaseBookmarkEntity] {
         let grand = bookmark("grand", "Grand Hotel", "https://grand.example/rooms?promo=secret#top", parent: "hotels")
         let hotels = BookmarkFolder(id: "hotels", title: "Hotels", parentFolderUUID: "disney", children: [grand])
@@ -122,8 +121,6 @@ final class SearchBookmarksBrowserToolTests: XCTestCase {
         XCTAssertEqual(tool.name, "searchBookmarks")
         XCTAssertEqual(tool.permissionMode, .ask)
     }
-
-    // MARK: -
 
     private func make(_ bookmarks: [BaseBookmarkEntity]) -> SearchBookmarksBrowserTool {
         let manager = LocalBookmarkManager(bookmarkStore: BookmarkStoreMock(bookmarks: bookmarks), foldersStore: BookmarkFolderStoreMock(), appearancePreferences: .mock)

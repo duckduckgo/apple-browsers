@@ -276,7 +276,7 @@ class SubscriptionManagerTests: XCTestCase {
         await subscriptionManager.signOut(notifyUI: false)
 
         XCTAssertEqual(mockOAuthClient.logoutCallCount, 1)
-        XCTAssertFalse(subscriptionManager.cachedIsUserAuthenticated)
+        XCTAssertFalse(subscriptionManager.isUserAuthenticated)
     }
 
     func testAutomaticSignOut_RemovesOnlyTheCurrentTokenWithoutLoggingOut() async throws {
@@ -538,7 +538,7 @@ class SubscriptionManagerTests: XCTestCase {
         XCTAssertEqual(result, restored)
         XCTAssertEqual(mockOAuthClient.restoreFromBackupCalls.count, 1)
         XCTAssertNil(mockOAuthClient.restoreFromBackupCalls.first?.expectedExternalID)
-        XCTAssertTrue(subscriptionManager.cachedIsUserAuthenticated)
+        XCTAssertTrue(subscriptionManager.isUserAuthenticated)
     }
 
     func testMissingPrimary_NeverRunsAppStoreRestore() async throws {
@@ -662,7 +662,7 @@ class SubscriptionManagerTests: XCTestCase {
 
         await fulfillment(of: [signedIn], timeout: 1)
         XCTAssertEqual(mockOAuthClient.restoreFromBackupCalls.count, 1)
-        XCTAssertTrue(subscriptionManager.cachedIsUserAuthenticated)
+        XCTAssertTrue(subscriptionManager.isUserAuthenticated)
         XCTAssertFalse(mockAppStoreRestoreFlowV2.restoreSubscriptionAfterExpiredRefreshTokenCalled)
         XCTAssertTrue(mockSubscriptionEndpointService.getSubscriptionCalled)
     }
@@ -678,7 +678,7 @@ class SubscriptionManagerTests: XCTestCase {
         _ = try await subscriptionManager.getTokenContainer(policy: .localValid)
 
         await fulfillment(of: [entitlementsChanged, signedIn], timeout: 1)
-        XCTAssertTrue(subscriptionManager.cachedIsUserAuthenticated)
+        XCTAssertTrue(subscriptionManager.isUserAuthenticated)
     }
 
     func testRestoreMissingTokenIfPossible_NoCoordinator_DoesNothing() async {
@@ -706,7 +706,7 @@ class SubscriptionManagerTests: XCTestCase {
         await subscriptionManager.loadInitialData()
 
         XCTAssertEqual(restoresBeforeFirstTokenRead, 1)
-        XCTAssertTrue(subscriptionManager.cachedIsUserAuthenticated)
+        XCTAssertTrue(subscriptionManager.isUserAuthenticated)
     }
 
     func testGetTokenContainer_InvalidTokenRequest_RecoverySuccess_Pixels() async throws {
@@ -1167,6 +1167,7 @@ class SubscriptionManagerTests: XCTestCase {
         mockOAuthClient.getTokensResponse = .success(tokenContainer)
         let customerPortalURLString = "https://example.com/customer-portal"
         mockSubscriptionEndpointService.getCustomerPortalURLResult = .success(GetCustomerPortalURLResponse(customerPortalUrl: customerPortalURLString))
+        _ = try await subscriptionManager.getTokenContainer(policy: .localValid)
 
         let url = try await subscriptionManager.getCustomerPortalURL()
         XCTAssertEqual(url.absoluteString, customerPortalURLString)

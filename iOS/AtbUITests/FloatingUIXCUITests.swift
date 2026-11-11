@@ -635,7 +635,8 @@ class FloatingUIXCUITestCase: XCTestCase {
                            "The glass dimmed during the \(name) (p=\(sample.percent)).", file: file, line: line)
         }
 
-        let insets = trace.map(\.bottomObscuredHeight)
+        // Skip the first sample: it is the previous resting state, taken before the bar was laid out.
+        let insets = trace.dropFirst().map(\.bottomObscuredHeight)
         let isShrinking = (insets.first ?? 0) > (insets.last ?? 0)
         for (previous, next) in zip(insets, insets.dropFirst()) {
             XCTAssertTrue(isShrinking ? next <= previous + 0.5 : next >= previous - 0.5,
@@ -650,7 +651,8 @@ class FloatingUIXCUITestCase: XCTestCase {
     private func assertNoJump(in trace: [MorphSample], named name: String,
                               file: StaticString = #filePath, line: UInt = #line) {
         XCTAssertGreaterThanOrEqual(trace.count, 8, "The \(name) was not paced over enough frames.", file: file, line: line)
-        let duration = (trace.last?.seconds ?? 0) - (trace.first?.seconds ?? 0)
+        // The first sample is the previous resting state, recorded long before the motion started.
+        let duration = (trace.last?.seconds ?? 0) - (trace.dropFirst().first?.seconds ?? 0)
         XCTAssertGreaterThan(duration, 0.15, "The \(name) finished too quickly to read as motion.", file: file, line: line)
         XCTAssertLessThan(duration, 1.5, "The \(name) took too long to settle.", file: file, line: line)
 

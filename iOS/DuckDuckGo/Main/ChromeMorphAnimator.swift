@@ -24,7 +24,8 @@ import UIKit
 /// A scroll only ever assigns a new target; the spring decides the pacing. It carries its velocity
 /// across target changes, so reversing mid-flight neither stalls nor snaps, and a hard flick is
 /// paced out over roughly `collapseDuration` / `expandDuration` instead of cutting in one frame.
-/// The value runs slightly past the target before settling, which is what gives the morph its give.
+/// Expanding runs slightly past the target before settling, which is what gives the morph its give;
+/// collapsing stops as soon as it arrives.
 final class ChromeMorphAnimator {
 
     static let defaultCollapseDuration: CFTimeInterval = 0.225
@@ -128,6 +129,13 @@ final class ChromeMorphAnimator {
         let elapsed = CGFloat(max(targetTimestamp - (previousTargetTimestamp ?? timestamp), 0))
         previousTargetTimestamp = targetTimestamp
         integrate(over: min(elapsed, Self.maxFrameDuration))
+
+        // The collapsed end has no give: the shape can't shrink further, so stop on arrival rather
+        // than spend the spring's tail frozen just below it.
+        if target <= 0, currentValue <= 0 {
+            settle()
+            return
+        }
 
         guard abs(target - currentValue) > Self.settleEpsilon || abs(velocity) > Self.settleSpeedEpsilon else {
             settle()

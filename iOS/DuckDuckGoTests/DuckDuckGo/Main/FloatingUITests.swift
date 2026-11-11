@@ -3322,6 +3322,20 @@ final class ChromeMorphAnimatorTests: XCTestCase {
         XCTAssertLessThan(highest, 1 + FloatingUILayoutPolicy.bottomMorphOvershoot)
     }
 
+    func testWhenCollapsingThenItStopsOnArrivalInsteadOfSpendingTheSpringTailBelowZero() {
+        let animator = ChromeMorphAnimator()
+        var completions = 0
+        animator.setTarget(0, onProgress: { _ in }, onComplete: { completions += 1 })
+
+        let values = run(animator, frames: 120)
+
+        XCTAssertGreaterThanOrEqual(values.min() ?? 0, 0)
+        let settledAt = values.firstIndex(of: 0) ?? values.count
+        let frames = Int((ChromeMorphAnimator.defaultCollapseDuration * 2 / frame).rounded(.up))
+        XCTAssertLessThan(settledAt, frames, "collapse lingered after reaching the pill")
+        XCTAssertEqual(completions, 1)
+    }
+
     func testWhenReversedMidFlightThenValueAndVelocityCarryOver() {
         let animator = ChromeMorphAnimator()
         var obsoleteCompletions = 0

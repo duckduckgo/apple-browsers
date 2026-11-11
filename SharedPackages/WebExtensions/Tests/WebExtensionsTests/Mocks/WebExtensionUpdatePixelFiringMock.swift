@@ -22,7 +22,7 @@
 final class WebExtensionUpdatePixelFiringMock: WebExtensionPixelFiring {
     enum Event: Equatable {
         case applied(WebExtensionPixelExtension)
-        case failed(WebExtensionPixelExtension, WebExtensionUpdateInstallFailure, WebExtensionUpdateRollback)
+        case failed(WebExtensionPixelExtension, WebExtensionUpdateInstallFailure)
     }
 
     private(set) var events: [Event] = []
@@ -30,7 +30,7 @@ final class WebExtensionUpdatePixelFiringMock: WebExtensionPixelFiring {
     func fire(_ event: WebExtensionPixelEvent) {
         switch event {
         case .updateApplied(let value): events.append(.applied(value))
-        case .updateInstallFailed(let value, let outcome, let rollback): events.append(.failed(value, outcome, rollback))
+        case .updateInstallFailed(let value, let outcome): events.append(.failed(value, outcome))
         default: break
         }
     }

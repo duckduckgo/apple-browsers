@@ -19,13 +19,7 @@
                 "key": "outcome",
                 "type": "string",
                 "description": "The bounded installation failure reason",
-                "enum": ["invalid_package", "storage_failure", "load_failure", "unload_failure", "rollback_failure"]
-            },
-            {
-                "key": "rollback",
-                "type": "string",
-                "description": "Whether restoring the previous extension after the failure succeeded, failed, or was unnecessary",
-                "enum": ["success", "failure", "not_needed"]
+                "enum": ["invalid_package", "storage_failure", "load_failure"]
             },
             "channel"
         ]

@@ -152,7 +152,7 @@ final class ChromeWebStoreUpdateInstallerTests: XCTestCase {
         manager = makeManager(pixels: pixels)
         _ = try await pending.store(makeUpdate(version: "2.0"))
         var enabled = true
-        let transactionRoot = extensionsDirectory.appendingPathComponent(".update-transactions")
+        let transactionRoot = extensionsDirectory.appendingPathComponent(installationID).appendingPathComponent(InstalledWebExtension.packagesDirectoryName)
         let owner = makeInstaller(isEnabled: {
             if FileManager.default.fileExists(atPath: transactionRoot.path) { enabled = false }
             return enabled
@@ -174,9 +174,9 @@ final class ChromeWebStoreUpdateInstallerTests: XCTestCase {
         _ = try await pending.store(makeUpdate(version: "2.0"))
         let proxy = StartupPendingStoreProxy(base: pending)
         proxy.onCopy = { _ = try await self.pending.store(self.makeUpdate(version: "3.0")) }
-        let owner = makeInstaller(store: proxy)
+        makeInstaller(store: proxy)
 
-        _ = await owner.runOnce()
+        await manager.loadInstalledExtensions()
 
         XCTAssertEqual(installationStore.installedExtensions.first?.version, "2.0")
         XCTAssertEqual(manager.context(for: installationID)?.webExtension.version, "2.0")
@@ -185,7 +185,7 @@ final class ChromeWebStoreUpdateInstallerTests: XCTestCase {
         XCTAssertEqual(pixels.events, [.applied(.other)], "The later session download is not applied or reported yet")
     }
 
-    func testNewestPackageReplacesDisabledCandidateWhileKeepingTheWorkingPredecessor() async throws {
+    func testNewestPackageReplacesDisabledCandidateWithoutRestoringAnOlderVersion() async throws {
         let pixels = WebExtensionUpdatePixelFiringMock()
         manager = makeManager(pixels: pixels)
         _ = try await manager.applyVerifiedUpdate(makeUpdate(version: "2.0", permissions: ["storage"]), replacing: original, isEligible: { true })
@@ -199,14 +199,11 @@ final class ChromeWebStoreUpdateInstallerTests: XCTestCase {
         XCTAssertEqual(installed.version, "3.0")
         XCTAssertTrue(installed.isDisabled)
         XCTAssertNil(manager.context(for: installationID))
-        let transactions = WebExtensionUpdateTransactionStore(extensionsDirectory: extensionsDirectory)
-        let journals = try await transactions.journals()
-        let predecessor = try JSONDecoder().decode(InstalledWebExtension.self, from: XCTUnwrap(journals.first).previousMetadata)
-        XCTAssertEqual(predecessor.version, "1.0")
-        XCTAssertEqual(pixels.events, [.applied(.other)], "Preparing a newer disabled package is not a failed-update rollback")
+        XCTAssertEqual(pixels.events, [.applied(.other)])
+
     }
 
-    func testOfferOlderThanDisabledCandidateCannotTriggerPredecessorRestoration() async throws {
+    func testOfferOlderThanDisabledCandidateDoesNotChangeTheSelection() async throws {
         _ = try await manager.applyVerifiedUpdate(makeUpdate(version: "2.0", permissions: ["storage"]), replacing: original, isEligible: { true })
         _ = try await pending.store(makeUpdate(version: "1.5"))
         let owner = makeInstaller()
@@ -215,10 +212,7 @@ final class ChromeWebStoreUpdateInstallerTests: XCTestCase {
 
         XCTAssertEqual(installationStore.installedExtensions.first?.version, "2.0")
         XCTAssertEqual(installationStore.installedExtensions.first?.isDisabled, true)
-        let transactions = WebExtensionUpdateTransactionStore(extensionsDirectory: extensionsDirectory)
-        let journals = try await transactions.journals()
-        XCTAssertEqual(journals.first?.phase, .committed)
-        XCTAssertEqual(journals.first?.version, "2.0")
+
     }
 
     func testPackageAcceptedAfterUninstallIsPrunedWithoutStartingAnInstallation() async throws {
@@ -236,52 +230,6 @@ final class ChromeWebStoreUpdateInstallerTests: XCTestCase {
         XCTAssertTrue(installationStore.installedExtensions.isEmpty)
         let remaining = await pending.pendingUpdate(for: storeID)
         XCTAssertNil(remaining)
-    }
-
-    func testKnownRecoveryFailurePreservesConsentAndBackupWhileUnrelatedExtensionLoads() async throws {
-        let transactions = WebExtensionUpdateTransactionStore(extensionsDirectory: extensionsDirectory)
-        let update = try makeUpdate(version: "2.0")
-        let staged = try await transactions.stage(update, installationID: installationID, previousVersion: original.version,
-                                                  previousMetadata: JSONEncoder().encode(original))
-        try await transactions.replace(staged)
-        let fileManager = FailingStartupRecoveryFileManager()
-        let pixels = WebExtensionUpdatePixelFiringMock()
-        manager = makeManager(fileManager: fileManager, pixels: pixels)
-        let unrelatedID = UUID().uuidString
-        try writePackage(version: "1.0", at: extensionsDirectory.appendingPathComponent(unrelatedID))
-        installationStore.add(.init(uniqueIdentifier: unrelatedID, filename: unrelatedID, name: "Unrelated", version: "1.0"))
-        try permissionStore.save(WebExtensionPermissionSettings(), for: unrelatedID)
-        _ = makeInstaller()
-
-        await manager.loadInstalledExtensions()
-
-        XCTAssertNotNil(installationStore.installedExtension(withUniqueIdentifier: installationID))
-        XCTAssertNotNil(try permissionStore.settings(for: installationID))
-        XCTAssertNil(manager.context(for: installationID))
-        XCTAssertNotNil(manager.context(for: unrelatedID))
-        let backup = extensionsDirectory.appendingPathComponent(".update-transactions").appendingPathComponent(staged.transactionID.uuidString).appendingPathComponent("previous")
-        XCTAssertTrue(FileManager.default.fileExists(atPath: backup.path))
-        XCTAssertEqual(pixels.events, [.failed(.other, .storageFailure, .failure)])
-    }
-
-    func testCleanupOnlyFailureDuringSupersessionDefersTheValidPackageWithoutBlockingThePredecessor() async throws {
-        let pixels = WebExtensionUpdatePixelFiringMock()
-        manager = makeManager(fileManager: FailingStartupCleanupFileManager(), pixels: pixels)
-        _ = try await manager.applyVerifiedUpdate(makeUpdate(version: "2.0", permissions: ["storage"]), replacing: original, isEligible: { true })
-        _ = try await pending.store(makeUpdate(version: "3.0", permissions: ["storage"]))
-        pixels.reset()
-        let owner = makeInstaller()
-
-        _ = await owner.runOnce()
-
-        let remaining = await pending.pendingUpdate(for: storeID)
-        XCTAssertEqual(remaining?.version, "3.0")
-        XCTAssertEqual(installationStore.installedExtensions.first?.version, "1.0")
-        XCTAssertEqual(installationStore.installedExtensions.first?.isDisabled, true)
-        try await manager.enableExtension(identifier: installationID)
-        XCTAssertEqual(manager.context(for: installationID)?.webExtension.version, "1.0")
-        XCTAssertNotNil(try permissionStore.settings(for: installationID))
-        XCTAssertTrue(pixels.events.isEmpty, "Residual cleanup ownership is a deferral, not an installation or rollback failure")
     }
 
     private func makeManager(fileManager: FileManager = .default, pixels: WebExtensionPixelFiring = NoOpWebExtensionPixelFiring()) -> WebExtensionManager {
@@ -342,20 +290,6 @@ private final class StartupPendingStoreProxy: ChromeWebStorePendingUpdateStoring
     func removeInstallationCopy(_ update: ChromeWebStoreVerifiedUpdate) async throws { try await base.removeInstallationCopy(update) }
     func cleanupAbandonedInstallationCopies() async throws { try await base.cleanupAbandonedInstallationCopies() }
     func setUpdateStoredHandler(_ handler: (@Sendable (ChromeWebStoreVerifiedUpdate) -> Void)?) async { await base.setUpdateStoredHandler(handler) }
-}
-
-private final class FailingStartupRecoveryFileManager: FileManager, @unchecked Sendable {
-    override func moveItem(at sourceURL: URL, to destinationURL: URL) throws {
-        if sourceURL.lastPathComponent == "previous" { throw CocoaError(.fileWriteNoPermission) }
-        try super.moveItem(at: sourceURL, to: destinationURL)
-    }
-}
-
-private final class FailingStartupCleanupFileManager: FileManager, @unchecked Sendable {
-    override func removeItem(at url: URL) throws {
-        if url.deletingLastPathComponent().lastPathComponent == ".update-transactions" { throw CocoaError(.fileWriteNoPermission) }
-        try super.removeItem(at: url)
-    }
 }
 
 @available(macOS 15.4, iOS 18.4, *)

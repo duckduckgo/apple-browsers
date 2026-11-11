@@ -202,6 +202,9 @@ public final class ChromeWebStoreService: ChromeWebStoreManaging {
     }
 
     private func configureStartupInstaller(manager: WebExtensionManager) {
+        for installed in manager.installationStore.installedExtensions {
+            _ = clearUpdateVersionOverride(for: installed, consumedIdentifier: installed.consumedVersionOverrideIdentifier)
+        }
         guard let startupInstaller else { return }
         manager.startupUpdateInstaller = startupInstaller
         startupInstaller.versionOverride = { [weak self] installed in

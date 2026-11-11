@@ -96,7 +96,7 @@ public enum WebExtensionPixelEvent {
     case updateVerified(extension: WebExtensionPixelExtension)
     /// The replacement is committed, either loaded with existing approval or installed disabled without executing it.
     case updateApplied(extension: WebExtensionPixelExtension)
-    case updateInstallFailed(extension: WebExtensionPixelExtension, outcome: WebExtensionUpdateInstallFailure, rollback: WebExtensionUpdateRollback)
+    case updateInstallFailed(extension: WebExtensionPixelExtension, outcome: WebExtensionUpdateInstallFailure)
     /// A fresh install; updates aren't reported.
     case installed(extension: WebExtensionPixelExtension)
     case installError(extension: WebExtensionPixelExtension, error: Error)

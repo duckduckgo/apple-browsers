@@ -24,14 +24,6 @@ public enum WebExtensionUpdateInstallFailure: String, CaseIterable, Sendable {
     case invalidPackage = "invalid_package"
     case storageFailure = "storage_failure"
     case loadFailure = "load_failure"
-    case unloadFailure = "unload_failure"
-    case rollbackFailure = "rollback_failure"
-}
-
-/// Whether restoring the previous package after an update failure was needed and succeeded.
-public enum WebExtensionUpdateRollback: String, CaseIterable, Sendable {
-    case success, failure
-    case notNeeded = "not_needed"
 }
 
 /// Applies only the packages already pending at startup. Downloads accepted later wait for the next launch.
@@ -43,10 +35,9 @@ final class ChromeWebStoreUpdateInstaller {
     private let isEnabled: () -> Bool
     private let isCatalogExtension: (String) -> Bool
     private var initialization: Task<Void, Never>?
-    private var startupTask: Task<Set<String>, Never>?
+    private var startupTask: Task<Void, Never>?
     private var startupSnapshot: [ChromeWebStoreVerifiedUpdate] = []
     private var didRunStartup = false
-    private var recoveryFailures: Set<String> = []
 
     private(set) var isSnapshotReady = false
     var onSnapshotReady: (() -> Void)?
@@ -80,7 +71,7 @@ final class ChromeWebStoreUpdateInstaller {
             for update in startupSnapshot { await prune(update) }
         } catch {
             if !Task.isCancelled, !WebExtensionManager.isUpdateInstallationDeferral(error) {
-                manager?.reportUpdateInstallationFailure(.storageFailure, rollback: .notNeeded, storeIdentity: nil)
+                manager?.reportUpdateInstallationFailure(.storageFailure, storeIdentity: nil)
             }
             Logger.webExtensions.error("Extension update installation: startup snapshot failed=\(error.localizedDescription)")
         }
@@ -88,40 +79,27 @@ final class ChromeWebStoreUpdateInstaller {
         onSnapshotReady?()
     }
 
-    func runOnce() async -> Set<String> {
-        if didRunStartup { return await startupTask?.value ?? recoveryFailures }
+    func runOnce() async {
+        if didRunStartup { await startupTask?.value; return }
         didRunStartup = true
-        let task = Task { [weak self] in await self?.performStartup() ?? [] }
+        let task = Task { [weak self] in
+            guard let self else { return }
+            await self.performStartup()
+        }
         startupTask = task
-        recoveryFailures = await task.value
+        await task.value
         startupTask = nil
-        return recoveryFailures
     }
 
-    private func performStartup() async -> Set<String> {
+    private func performStartup() async {
         await initialization?.value
-        guard let manager else { return [] }
-        let failures: Set<String>
-        do {
-            failures = try await manager.recoverExtensionUpdates(isAllowed: { [weak manager] identifier in
-                guard let manager else { return false }
-                return !manager.installationStore.installedExtensions.contains {
-                    $0.storeIdentity == .init(store: .chromeWebStore, id: identifier) && manager.isRemotelyDisabled(identifier: $0.uniqueIdentifier)
-                }
-            })
-        } catch {
-            // An unreadable journal cannot identify its installation. Preserve all CWS records and consent this launch.
-            failures = Set(manager.installationStore.installedExtensions.filter { $0.storeIdentity?.store == .chromeWebStore }.map(\.uniqueIdentifier))
-            Logger.webExtensions.error("Extension update installation: startup recovery failed=\(error.localizedDescription)")
-        }
-        manager.blockLoadingAfterUpdateRecoveryFailure(failures)
+        guard let manager else { return }
+        await manager.cleanupUnselectedUpdatePackages()
         for update in startupSnapshot {
             guard !Task.isCancelled, isEnabled() else { break }
-            guard let installed = matchingInstallation(update), !failures.contains(installed.uniqueIdentifier),
-                  manager.context(for: installed.uniqueIdentifier) == nil else { continue }
+            guard let installed = matchingInstallation(update), manager.context(for: installed.uniqueIdentifier) == nil else { continue }
             await applyAtStartup(update, installed: installed)
         }
-        return failures
     }
 
     private func applyAtStartup(_ source: ChromeWebStoreVerifiedUpdate, installed: InstalledWebExtension) async {
@@ -135,7 +113,7 @@ final class ChromeWebStoreUpdateInstaller {
             try? await pendingUpdates.removeInstallationCopy(copy)
         } catch {
             if !Task.isCancelled, !WebExtensionManager.isUpdateInstallationDeferral(error) {
-                manager?.reportUpdateInstallationFailure(.storageFailure, rollback: .notNeeded, storeIdentity: .init(store: .chromeWebStore, id: source.extensionID))
+                manager?.reportUpdateInstallationFailure(.storageFailure, storeIdentity: .init(store: .chromeWebStore, id: source.extensionID))
             }
             Logger.webExtensions.error("Extension update installation: \(source.extensionID, privacy: .public) startup copy failed=\(error.localizedDescription)")
         }
@@ -147,14 +125,11 @@ final class ChromeWebStoreUpdateInstaller {
             try Task.checkCancellation()
             guard canApply(source), matchingInstallation(source) == installed,
                   manager.context(for: installed.uniqueIdentifier) == nil else { return }
-            // Validate against the disabled candidate before restoring its older working predecessor.
             guard isVersionEligible(copy.version, installed: installed) else { return }
             let override = versionOverride(installed)
-            let incumbent = try await manager.prepareRetainedExtensionUpdateForReplacement(installed, offeredVersion: copy.version,
-                                                                                           reportedInstalledVersion: override?.reportedVersion)
             try Task.checkCancellation()
             guard canApply(source) else { return }
-            let outcome = try await manager.applyVerifiedUpdate(copy, replacing: incumbent, reportedInstalledVersion: override?.reportedVersion,
+            let outcome = try await manager.applyVerifiedUpdate(copy, replacing: installed, reportedInstalledVersion: override?.reportedVersion,
                                                                 versionOverrideIdentifier: override?.identifier,
                                                                 isEligible: { [weak self] in self?.canApply(source) == true })
             try? await pendingUpdates.remove(source)

@@ -562,7 +562,7 @@ final class ChromeWebStoreServiceTests: XCTestCase {
         XCTAssertNil(relaunched.updateCheckVersionOverride(forInstallationIdentifier: "replacement"))
     }
 
-    func testOverrideSetAfterADisabledSameVersionCommitSurvivesRetainedJournalRecovery() async throws {
+    func testOverrideSetAfterASameVersionCommitSurvivesConsumedOverrideReconciliation() async throws {
         let manager = try makeManager()
         let fixture = try ChromeWebStoreFixture(manifest: ["manifest_version": 3, "name": "Reinstall fixture", "version": "1.0", "permissions": ["storage"]])
         let identifier = UUID().uuidString
@@ -587,9 +587,8 @@ final class ChromeWebStoreServiceTests: XCTestCase {
         let rearmed = try persistedOverrideIdentifier(for: fixture.identifier)
         XCTAssertNotEqual(rearmed, consumed)
 
-        let failures = try await manager.recoverExtensionUpdates(isAllowed: { _ in true })
-
-        XCTAssertTrue(failures.isEmpty)
+        let relaunched = scheduledService(manager, keyValueStore: keyValueStore) { _, _ in .init(outcome: .noUpdate, retryNotBefore: nil) }
+        XCTAssertEqual(relaunched.updateCheckVersionOverride(forInstallationIdentifier: identifier), "0.0.0.1")
         XCTAssertEqual(service.updateCheckVersionOverride(forInstallationIdentifier: identifier), "0.0.0.1")
         XCTAssertEqual(try persistedOverrideIdentifier(for: fixture.identifier), rearmed)
         XCTAssertTrue(manager.didCommitStoreUpdate(try XCTUnwrap(installationStore.installedExtensions.first), nil))

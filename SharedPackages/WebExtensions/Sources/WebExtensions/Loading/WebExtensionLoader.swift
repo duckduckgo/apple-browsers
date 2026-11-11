@@ -76,19 +76,22 @@ public final class WebExtensionLoader: WebExtensionLoading {
     /// Writes the permissions third-party extensions lose to the API compatibility log.
     private let compatibilityReporter = WebExtensionAPICompatibilityReporter()
     private let permissionController: WebExtensionPermissionController?
+    private let installationStore: InstalledWebExtensionStoring?
     private let baseURLProvider: @MainActor (String, WKWebExtension) -> URL?
     public weak var delegate: WebExtensionLoadingDelegate?
 
     public init(storageProvider: WebExtensionStorageProviding,
                 isInspectable: Bool = false,
                 permissionController: WebExtensionPermissionController? = nil,
-                baseURLProvider: @escaping @MainActor (String, WKWebExtension) -> URL? = { _, _ in nil }) {
+                baseURLProvider: @escaping @MainActor (String, WKWebExtension) -> URL? = { _, _ in nil },
+                installationStore: InstalledWebExtensionStoring? = nil) {
         // The loader creates every extension context, so its `errors` are
         // safe before any of them exists.
         WebExtensionErrorsSwizzling.install()
         self.storageProvider = storageProvider
         self.isInspectable = isInspectable
         self.permissionController = permissionController
+        self.installationStore = installationStore
         self.baseURLProvider = baseURLProvider
     }
 
@@ -102,12 +105,13 @@ public final class WebExtensionLoader: WebExtensionLoading {
     @discardableResult
     public func loadWebExtension(identifier: String, into controller: WKWebExtensionController,
                                  beforeActivation: @MainActor (WKWebExtension) throws -> Void) async throws -> WebExtensionLoadResult {
+        let resourceIdentifier = installationStore?.installedExtension(withUniqueIdentifier: identifier)?.resourceIdentifier ?? identifier
         // Check if extension is already loaded (idempotent operation)
         if let existingContext = controller.extensionContexts.first(where: { $0.uniqueIdentifier == identifier }) {
             try beforeActivation(existingContext.webExtension)
             Logger.webExtensions.debug("✓ Extension '\(identifier)' already loaded, skipping")
 
-            guard let extensionURL = storageProvider.resolveInstalledExtension(identifier: identifier) else {
+            guard let extensionURL = storageProvider.resolveInstalledExtension(identifier: resourceIdentifier) else {
                 throw WebExtensionLoaderError.extensionNotFound(identifier: identifier)
             }
 
@@ -119,7 +123,7 @@ public final class WebExtensionLoader: WebExtensionLoading {
             )
         }
 
-        guard let extensionURL = storageProvider.resolveInstalledExtension(identifier: identifier) else {
+        guard let extensionURL = storageProvider.resolveInstalledExtension(identifier: resourceIdentifier) else {
             throw WebExtensionLoaderError.extensionNotFound(identifier: identifier)
         }
 
@@ -129,7 +133,7 @@ public final class WebExtensionLoader: WebExtensionLoading {
         // rewrites a copy of the others, leaving the installation untouched.
         let loadableURL = backgroundPagePatcher.loadableExtensionURL(
             for: extensionURL,
-            installFolder: storageProvider.extensionsDirectory.appendingPathComponent(identifier))
+            installFolder: storageProvider.extensionsDirectory.appendingPathComponent(resourceIdentifier))
 
         let webExtension = try await WKWebExtension.makeCopyingErrors(
             at: loadableURL

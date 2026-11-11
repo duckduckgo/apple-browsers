@@ -292,6 +292,90 @@ final class TokenRecoveryCoordinatorTests: XCTestCase {
         XCTAssertEqual(pixelHandler.handledPixels, [.backupRestoreFailed(.missingToken, .temporary, URLError(.timedOut))])
     }
 
+    // MARK: - Unrecoverable reports
+
+    func testWhenBackupRestoreIsDeferredThenReportIsDeferred() async {
+        let client = MockOAuthClient()
+        client.restoreFromBackupResponse = .failure(URLError(.timedOut))
+        let strategy = BackupTokenRecovery(oAuthClient: client, pixelHandler: pixelHandler, retryInterval: .minutes(5), now: { Date() })
+        let coordinator = TokenRecoveryCoordinator(invalidTokenStrategies: [], missingTokenStrategies: [strategy])
+
+        _ = await coordinator.recover(missingTokenContext)
+        let report = await coordinator.recover(missingTokenContext)
+
+        XCTAssertEqual(report.result.outcome, .deferred)
+        XCTAssertEqual(client.restoreFromBackupCalls.count, 1)
+    }
+
+    func testWhenBackupRestoreIsDeferredThenReportIsNotUnrecoverable() async {
+        let client = MockOAuthClient()
+        client.restoreFromBackupResponse = .failure(URLError(.timedOut))
+        let strategy = BackupTokenRecovery(oAuthClient: client, pixelHandler: pixelHandler, retryInterval: .minutes(5), now: { Date() })
+        let coordinator = TokenRecoveryCoordinator(invalidTokenStrategies: [], missingTokenStrategies: [strategy])
+
+        _ = await coordinator.recover(missingTokenContext)
+        let report = await coordinator.recover(missingTokenContext)
+
+        XCTAssertFalse(report.isUnrecoverable)
+    }
+
+    func testWhenNoStrategyAppliesThenReportIsUnrecoverable() async {
+        let coordinator = TokenRecoveryCoordinator(invalidTokenStrategies: [StubStrategy(.notApplicable)], missingTokenStrategies: [])
+
+        let report = await coordinator.recover(invalidTokenContext)
+
+        XCTAssertTrue(report.isUnrecoverable)
+    }
+
+    func testWhenThereAreNoStrategiesThenReportIsUnrecoverable() async {
+        let coordinator = TokenRecoveryCoordinator(invalidTokenStrategies: [], missingTokenStrategies: [])
+
+        let report = await coordinator.recover(missingTokenContext)
+
+        XCTAssertTrue(report.isUnrecoverable)
+    }
+
+    func testWhenEveryFailureIsPermanentThenReportIsUnrecoverable() async {
+        let coordinator = TokenRecoveryCoordinator(invalidTokenStrategies: [StubStrategy(.failed(TokenBackupError.expired)),
+                                                                            StubStrategy(.notApplicable, method: .appStore)],
+                                                   missingTokenStrategies: [])
+
+        let report = await coordinator.recover(invalidTokenContext)
+
+        XCTAssertTrue(report.isUnrecoverable)
+    }
+
+    func testWhenAnyFailureIsTemporaryThenReportIsNotUnrecoverable() async {
+        let coordinator = TokenRecoveryCoordinator(invalidTokenStrategies: [StubStrategy(.failed(TokenBackupError.expired)),
+                                                                            StubStrategy(.failed(URLError(.timedOut)), method: .appStore)],
+                                                   missingTokenStrategies: [])
+
+        let report = await coordinator.recover(invalidTokenContext)
+
+        XCTAssertFalse(report.isUnrecoverable)
+    }
+
+    func testWhenOneStrategyDefersAndAnotherFailsPermanentlyThenReportIsNotUnrecoverable() async {
+        let coordinator = TokenRecoveryCoordinator(invalidTokenStrategies: [StubStrategy(.deferred),
+                                                                            StubStrategy(.failed(TokenBackupError.expired), method: .appStore)],
+                                                   missingTokenStrategies: [])
+
+        let report = await coordinator.recover(invalidTokenContext)
+
+        XCTAssertEqual(report.result.outcome, .failed)
+        XCTAssertFalse(report.isUnrecoverable)
+    }
+
+    func testWhenRecoveredOrSessionChangedThenReportIsNotUnrecoverable() async {
+        let recovered = await TokenRecoveryCoordinator(invalidTokenStrategies: [StubStrategy(.recovered)], missingTokenStrategies: [])
+            .recover(invalidTokenContext)
+        let sessionChanged = await TokenRecoveryCoordinator(invalidTokenStrategies: [StubStrategy(.sessionChanged)], missingTokenStrategies: [])
+            .recover(invalidTokenContext)
+
+        XCTAssertFalse(recovered.isUnrecoverable)
+        XCTAssertFalse(sessionChanged.isUnrecoverable)
+    }
+
     // MARK: - Backup restore failure reason
 
     func testBackupRestoreFailureReason_classifiesTheRestoreErrors() {
@@ -329,7 +413,7 @@ final class TokenRecoveryCoordinatorTests: XCTestCase {
 
         _ = await strategy.recover(missingTokenContext)
         let skipped = await strategy.recover(missingTokenContext)
-        XCTAssertEqual(skipped.outcome, .notApplicable)
+        XCTAssertEqual(skipped.outcome, .deferred)
         XCTAssertEqual(client.restoreFromBackupCalls.count, 1)
 
         clock.now = clock.now.addingTimeInterval(.minutes(6))

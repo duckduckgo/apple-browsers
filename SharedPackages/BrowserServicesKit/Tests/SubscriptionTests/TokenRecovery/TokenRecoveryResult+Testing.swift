@@ -25,6 +25,7 @@ extension TokenRecoveryResult {
     enum Outcome: Equatable {
         case recovered
         case notApplicable
+        case deferred
         case sessionChanged
         case failed
     }
@@ -34,6 +35,7 @@ extension TokenRecoveryResult {
         switch self {
         case .recovered: .recovered
         case .notApplicable: .notApplicable
+        case .deferred: .deferred
         case .sessionChanged: .sessionChanged
         case .failed: .failed
         }

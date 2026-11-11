@@ -532,40 +532,34 @@ final class AIChatBrowserToolsBridgeTests: XCTestCase {
         XCTAssertEqual(renewed, fixture.success)
     }
 
-    func testDisabledFlagsRejectAlwaysAndNeverWithoutWritingOrListing() async {
-        for decision in ["always", "never"] {
-            let states: [[FeatureFlag]] = [[.aiChatBrowserTools], [.aiChatBrowserToolListOpenTabs]]
-            for enabled in states {
-                let fixture = makeFixture()
-                fixture.flags.enabledFeatureFlags = enabled
-                let reply = fixture.handler.respondToClientToolPermission(
-                    params: ["callId": "call", "requestId": "unmatched", "decision": decision], source: fixture.script)
-                XCTAssertEqual(try? JSONEncoder().encode(reply), Data("{}".utf8))
-                let result = await fixture.invoke()
-                XCTAssertEqual(result, .failure(callId: "call", error: .unavailable))
-                XCTAssertEqual(fixture.service.permissions.state(forToolNamed: "listOpenTabs"), .ask)
-                XCTAssertEqual(fixture.listings, 0)
-                XCTAssertTrue(fixture.webView.permissionPrompts.isEmpty)
-            }
+    func testDisabledFlagsRejectInvocationWithoutWritingOrListing() async {
+        let states: [[FeatureFlag]] = [[.aiChatBrowserTools], [.aiChatBrowserToolListOpenTabs]]
+        for enabled in states {
+            let fixture = makeFixture(enabledFlags: enabled)
+            let result = await fixture.invoke()
+            XCTAssertEqual(result, .failure(callId: "call", error: .unavailable))
+            XCTAssertEqual(fixture.service.permissions.state(forToolNamed: "listOpenTabs"), .ask)
+            XCTAssertEqual(fixture.listings, 0)
+            XCTAssertTrue(fixture.webView.permissionPrompts.isEmpty)
         }
     }
 
-    func testMalformedAndUnmatchedResponsesAcknowledgeWithoutWritingAndAutoListingStillWorks() async {
+    func testAskToolWithoutStoredDecisionIsCancelledWithoutExecuting() async {
         let fixture = makeFixture()
-        let malformed: [[String: Any]] = [[:], ["callId": "call", "requestId": 1, "decision": "always"],
-                                          ["callId": "other", "requestId": "unmatched", "decision": "always"],
-                                          ["callId": "call", "requestId": "unmatched", "decision": "never"]]
-        for response in malformed {
-            let reply = fixture.handler.respondToClientToolPermission(params: response, source: fixture.script)
-            XCTAssertEqual(try? JSONEncoder().encode(reply), Data("{}".utf8))
-            XCTAssertEqual(fixture.service.permissions.state(forToolNamed: "listOpenTabs"), .ask)
-            XCTAssertEqual(fixture.listings, 0)
+        let tool = BrowserToolsBridgeAskTool()
+        let authorization = await fixture.service.clientToolPermissions.authorize(callID: "call", tool: tool, prompter: fixture.script)
+        switch authorization {
+        case .refused(let error):
+            XCTAssertEqual(error, .cancelled)
+        case .granted(let performExecution):
+            XCTFail("A tool requiring a native prompt must be cancelled")
+            _ = await performExecution {
+                await tool.execute(arguments: [:], context: BrowserToolCallContext(ownerTabID: fixture.owner.uid, isBurner: false))
+            }
         }
-        let result = await fixture.invoke()
-        XCTAssertEqual(result, fixture.success)
-        XCTAssertEqual(fixture.listings, 1)
+        XCTAssertEqual(tool.executions, 0)
+        XCTAssertEqual(fixture.service.permissions.state(forToolNamed: tool.name), .ask)
         XCTAssertTrue(fixture.webView.permissionPrompts.isEmpty)
-        XCTAssertEqual(fixture.service.permissions.state(forToolNamed: "listOpenTabs"), .ask)
     }
 
     func testOwnerRemovalCancelsGrantedListingWithoutPersistingPermission() async throws {
@@ -707,22 +701,18 @@ final class AIChatBrowserToolsBridgeTests: XCTestCase {
         await fulfillment(of: [drained], timeout: 2)
         XCTAssertEqual(fixture.webView.metadataPayloads.count, deliveredCount)
     }
+}
 
-    func testPermissionPushRequiresBrokerAndTrustedLiveDocument() throws {
-        let fixture = makeFixture()
-        let prompt = try ClientToolPermissionRequested(requestId: "request", callId: "call", message: "Allow?", choices: [.allow])
-        let oversized = try ClientToolPermissionRequested(
-            requestId: "large", callId: "call", message: String(repeating: "\u{0000}", count: 4096), choices: [.allow])
-        XCTAssertFalse(ClientToolPayloadLimits.fits(oversized, within: ClientToolPayloadLimits.permissionBytes))
-        XCTAssertFalse(fixture.script.pushClientToolPermissionRequested(oversized))
-        fixture.script.broker = nil
-        XCTAssertFalse(fixture.script.pushClientToolPermissionRequested(prompt))
-        fixture.script.broker = fixture.broker
-        fixture.webView.documentURL = URL(string: "https://duckduckgo.com/")
-        XCTAssertFalse(fixture.script.pushClientToolPermissionRequested(prompt))
-        fixture.webView.documentURL = URL(string: "https://duck.ai/chat")
-        fixture.script.browserToolsDocumentProcessDidTerminate()
-        XCTAssertFalse(fixture.script.pushClientToolPermissionRequested(prompt))
+@MainActor
+private final class BrowserToolsBridgeAskTool: BrowserTool {
+    let name = "readTabContent"
+    let permissionMode: BrowserToolPermissionMode = .ask
+    let inputSchema: JSONValue = ["type": "object", "properties": [:]]
+    private(set) var executions = 0
+
+    func execute(arguments: JSONValue?, context: BrowserToolCallContext) async -> BrowserToolResult {
+        executions += 1
+        return .success([:])
     }
 }
 
@@ -781,7 +771,7 @@ final class BrowserToolsBridgeFixture {
 
     func authorizeListing() async throws -> ClientToolPermissionAuthorization {
         let tool = try XCTUnwrap(service.catalog.tool(for: .listOpenTabs))
-        return await service.clientToolPermissions.authorize(callID: "call", tool: tool, source: script)
+        return await service.clientToolPermissions.authorize(callID: "call", tool: tool, prompter: script)
     }
 
     func invoke() async -> ExecuteClientToolResponse {

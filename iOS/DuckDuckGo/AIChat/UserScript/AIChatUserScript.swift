@@ -363,11 +363,6 @@ final class AIChatUserScript: NSObject, Subfeature {
                 let source = self.flatMap { $0.isBrowserToolsMessage(message) ? $0 : nil }
                 return await handler.executeClientTool(params: params, source: source)
             }
-        case .respondToClientToolPermission:
-            return { @MainActor [weak self] params, message in
-                guard let self else { return RespondToClientToolPermissionResponse() }
-                return self.handler.respondToClientToolPermission(params: params, source: self.isBrowserToolsMessage(message) ? self : nil)
-            }
         case .responseState:
             return handler.getResponseState
         case .getAIChatNativeConfigValues:
@@ -870,7 +865,7 @@ extension AIChatUserScript: AIChatMetricReportingHandling {
     }
 }
 
-extension AIChatUserScript: ClientToolPermissionPushing {
+extension AIChatUserScript: ClientToolPermissionPrompting {
     @MainActor
     func bindBrowserTools(to service: AIChatBrowserToolsService, owner: Tab, makeScope: @escaping @MainActor () -> BrowserToolScope?) {
         detachBrowserTools()
@@ -905,28 +900,19 @@ extension AIChatUserScript: ClientToolPermissionPushing {
     }
 
     @MainActor
-    var browserToolsAvailable: Bool {
-        browserToolsService?.canPushPermission(from: self) == true
-    }
-
-    @MainActor
     func invokeBrowserTool(_ request: ExecuteClientToolRequest) async -> ExecuteClientToolResponse {
         guard let browserToolsService else { return .failure(callId: request.callId, error: .unavailable) }
         return await browserToolsService.invoke(request, from: self)
     }
 
+    /// No native prompt yet: a tool without a stored Always/Never decision is cancelled.
     @MainActor
-    func respondToBrowserToolPermission(_ request: RespondToClientToolPermissionRequest) {
-        browserToolsService?.respond(request, from: self)
+    func presentClientToolPermissionPrompt(_ prompt: ClientToolPermissionPrompt) -> Bool {
+        false
     }
 
     @MainActor
-    func pushClientToolPermissionRequested(_ prompt: ClientToolPermissionRequested) -> Bool {
-        guard browserToolsAvailable, let broker, let webView,
-              ClientToolPayloadLimits.fits(prompt, within: ClientToolPayloadLimits.permissionBytes) else { return false }
-        broker.push(method: AIChatUserScriptMessages.clientToolPermissionRequested.rawValue, params: prompt, for: self, into: webView)
-        return true
-    }
+    func withdrawClientToolPermissionPrompt(requestID: String) {}
 
     @MainActor
     func pushClientToolsChanged(_ data: ClientToolsChangedData) -> Bool {

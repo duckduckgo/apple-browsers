@@ -63,11 +63,11 @@ final class AIChatBrowserToolsServiceTests: XCTestCase {
         let context = BrowserToolCallContext(ownerTabID: scope.ownerTabID, ownerWindowToken: scope.token,
                                              isBurner: false)
         let token = service.beginClearing(.all)
-        let blocked = await service.invoker.invokeClientTool(try request(), context: context, permissionPusher: nil)
+        let blocked = await service.invoker.invokeClientTool(try request(), context: context, permissionPrompter: nil)
         XCTAssertEqual(blocked, .failure(callId: "call", error: .unavailable))
         XCTAssertEqual(fixture.listings, 0)
         service.endClearing(token)
-        let fresh = await service.invoker.invokeClientTool(try request(), context: context, permissionPusher: nil)
+        let fresh = await service.invoker.invokeClientTool(try request(), context: context, permissionPrompter: nil)
         XCTAssertEqual(fresh, fixture.success)
         XCTAssertEqual(service.permissions.state(forToolNamed: "listOpenTabs"), .allow)
     }
@@ -90,7 +90,7 @@ final class AIChatBrowserToolsServiceTests: XCTestCase {
             otherScopeCreations = 0
             let unknownContext = BrowserToolCallContext(ownerTabID: fixture.owner.uid, ownerWindowToken: UUID().uuidString, isBurner: false)
 
-            let rejected = await fixture.service.invoker.invokeClientTool(try request(), context: unknownContext, permissionPusher: nil)
+            let rejected = await fixture.service.invoker.invokeClientTool(try request(), context: unknownContext, permissionPrompter: nil)
 
             XCTAssertEqual(rejected, .failure(callId: "call", error: .unavailable))
             XCTAssertEqual(otherScopeCreations, 0)
@@ -115,7 +115,7 @@ final class AIChatBrowserToolsServiceTests: XCTestCase {
         fixture.script.browserToolsDocumentDidCommit()
         scopeCreations = 0
 
-        let rejected = await fixture.service.invoker.invokeClientTool(try request(), context: staleContext, permissionPusher: nil)
+        let rejected = await fixture.service.invoker.invokeClientTool(try request(), context: staleContext, permissionPrompter: nil)
 
         XCTAssertEqual(rejected, .failure(callId: "call", error: .unavailable))
         XCTAssertEqual(scopeCreations, 0)
@@ -171,17 +171,17 @@ final class AIChatBrowserToolsServiceTests: XCTestCase {
         let context = BrowserToolCallContext(ownerTabID: "owner", isBurner: false)
         for name in ["switchToTab", "searchHistory", "readTabContent", "findInPage", "highlightInPage", "unknown", "featureEnabled"] {
             XCTAssertNil(service.catalog.tool(named: name))
-            let result = await service.invoker.invokeClientTool(try request(name: name), context: context, permissionPusher: nil)
+            let result = await service.invoker.invokeClientTool(try request(name: name), context: context, permissionPrompter: nil)
             XCTAssertEqual(result, .failure(callId: "call", error: .unavailable))
         }
         let otherVersion = try ClientToolCapability(name: "listOpenTabs", version: 2)
         XCTAssertNil(service.catalog.tool(for: otherVersion))
-        let versionResult = await service.invoker.invokeClientTool(try request(version: 2), context: context, permissionPusher: nil)
+        let versionResult = await service.invoker.invokeClientTool(try request(version: 2), context: context, permissionPrompter: nil)
         XCTAssertEqual(versionResult, .failure(callId: "call", error: .unavailable))
         let disabledStates: [[FeatureFlag]] = [[], [.aiChatBrowserTools], [.aiChatBrowserToolListOpenTabs]]
         for state in disabledStates {
             flags.enabledFeatureFlags = state
-            let result = await service.invoker.invokeClientTool(try request(), context: context, permissionPusher: nil)
+            let result = await service.invoker.invokeClientTool(try request(), context: context, permissionPrompter: nil)
             XCTAssertEqual(result, .failure(callId: "call", error: .unavailable))
         }
     }
@@ -196,7 +196,7 @@ final class AIChatBrowserToolsServiceTests: XCTestCase {
                                                permissionStorage: storage.keyedStoring(), capabilities: [.listOpenTabs])
         service.permissions.setState(.allow, forToolNamed: "listOpenTabs")
         let context = BrowserToolCallContext(ownerTabID: "owner", isBurner: false)
-        let result = await service.invoker.invokeClientTool(try request(), context: context, permissionPusher: nil)
+        let result = await service.invoker.invokeClientTool(try request(), context: context, permissionPrompter: nil)
         XCTAssertEqual(result, .failure(callId: "call", error: .unavailable))
     }
 
@@ -215,16 +215,16 @@ final class AIChatBrowserToolsServiceTests: XCTestCase {
         let context = BrowserToolCallContext(ownerTabID: owner.uid, ownerWindowToken: scope.token,
                                              isBurner: false)
         service.permissions.setState(.deny, forToolNamed: "listOpenTabs")
-        let allowed = await service.invoker.invokeClientTool(try request(), context: context, permissionPusher: nil)
+        let allowed = await service.invoker.invokeClientTool(try request(), context: context, permissionPrompter: nil)
         let expected: JSONValue = ["tabs": [["tabId": "owner", "title": "Owner", "url": "https://example.com",
                                              "isCurrentTab": true, "isAttachable": true]]]
         XCTAssertEqual(allowed, .success(callId: "call", value: expected))
         XCTAssertEqual(service.permissions.state(forToolNamed: "listOpenTabs"), .deny)
         available = false
-        let unavailable = await service.invoker.invokeClientTool(try request(), context: context, permissionPusher: nil)
+        let unavailable = await service.invoker.invokeClientTool(try request(), context: context, permissionPrompter: nil)
         XCTAssertEqual(unavailable, .failure(callId: "call", error: .unavailable))
         available = true
-        let malformed = await service.invoker.invokeClientTool(try request(input: ["other": true]), context: context, permissionPusher: nil)
+        let malformed = await service.invoker.invokeClientTool(try request(input: ["other": true]), context: context, permissionPrompter: nil)
         XCTAssertEqual(malformed, .failure(callId: "call", error: .invalidArguments))
     }
 

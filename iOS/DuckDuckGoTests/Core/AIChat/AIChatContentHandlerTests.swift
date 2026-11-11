@@ -1221,11 +1221,6 @@ final class MockAIChatUserScriptHandling: AIChatUserScriptHandling {
         return await source?.invokeBrowserTool(request) ?? .failure(callId: request.callId, error: .unavailable)
     }
 
-    @MainActor
-    func respondToClientToolPermission(params: Any, source: AIChatUserScript?) -> RespondToClientToolPermissionResponse {
-        .init()
-    }
-
     var displayMode: AIChatDisplayMode?
     var isFireModeProvider: (() -> Bool)?
     var focusChatInputHandler: (@MainActor () -> Void)?

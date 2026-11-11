@@ -1009,7 +1009,9 @@ extension DefaultOmniBarViewController {
     }
 
     private func refreshAttachButton() {
-        omniBarView.aiChatAttachmentMenu = attachmentController?.makeMenu()
+        omniBarView.aiChatAttachmentMenu = menuFiringShownPixel(attachmentController?.makeMenu()) { [weak self] in
+            self?.attachmentController?.reportMenuShown()
+        }
         omniBarView.isAIChatAttachmentButtonVisible = attachmentController?.isAttachButtonVisible ?? false
     }
 

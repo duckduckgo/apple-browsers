@@ -39,6 +39,8 @@ protocol AIChatTabChatHeaderViewDelegate: AnyObject {
 
 final class AIChatTabChatHeaderView: UIView {
 
+    static var preferredHeight: CGFloat { Constants.headerHeight }
+
     enum Layout {
         /// Close button, and a Plus menu that starts chats in this tab or opens new tabs.
         case standard
@@ -134,9 +136,9 @@ final class AIChatTabChatHeaderView: UIView {
         action: #selector(chatListTapped)
     )
 
-    lazy var closeButtonPill = AIChatHeaderGlassPill(cornerRadius: Constants.buttonSize / 2)
-    lazy var chatListButtonPill = AIChatHeaderGlassPill(cornerRadius: Constants.buttonSize / 2)
-    private lazy var rightPairPill = AIChatHeaderGlassPill(cornerRadius: Constants.buttonSize / 2)
+    lazy var closeButtonPill = AIChatHeaderGlassPill(cornerRadius: Constants.buttonSize / 2, usesFloatingAIChrome: usesFloatingAIChrome)
+    lazy var chatListButtonPill = AIChatHeaderGlassPill(cornerRadius: Constants.buttonSize / 2, usesFloatingAIChrome: usesFloatingAIChrome)
+    private lazy var rightPairPill = AIChatHeaderGlassPill(cornerRadius: Constants.buttonSize / 2, usesFloatingAIChrome: usesFloatingAIChrome)
 
     private var glassPills: [AIChatHeaderGlassPill] { [closeButtonPill, chatListButtonPill, rightPairPill] }
 
@@ -415,9 +417,14 @@ final class AIChatTabChatHeaderView: UIView {
         return stack
     }()
 
-    init(isFireModeEnabled: Bool, shouldShowImageGeneration: Bool, layout: Layout = .standard) {
+    private let usesFloatingAIChrome: Bool
+    private let leadingSafeAreaFill = UIView()
+    private let trailingSafeAreaFill = UIView()
+
+    init(isFireModeEnabled: Bool, shouldShowImageGeneration: Bool, usesFloatingAIChrome: Bool = false, layout: Layout = .standard) {
         self.isFireModeEnabled = isFireModeEnabled
         self.shouldShowImageGeneration = shouldShowImageGeneration
+        self.usesFloatingAIChrome = usesFloatingAIChrome
         self.layout = layout
         super.init(frame: .zero)
         setupUI()
@@ -426,6 +433,7 @@ final class AIChatTabChatHeaderView: UIView {
     override init(frame: CGRect) {
         self.isFireModeEnabled = false
         self.shouldShowImageGeneration = false
+        self.usesFloatingAIChrome = false
         self.layout = .standard
         super.init(frame: frame)
         setupUI()
@@ -503,9 +511,20 @@ final class AIChatTabChatHeaderView: UIView {
     /// header reads as one surface with the voice background; restore standard canvas chrome when `nil`.
     private func applyVoiceSessionAppearance(_ backgroundColor: UIColor?) {
         let active = backgroundColor != nil
-        self.backgroundColor = backgroundColor ?? UIColor(designSystemColor: .surfaceCanvas)
+        if #available(iOS 26, *), usesFloatingAIChrome, !active {
+            self.backgroundColor = .clear
+        } else {
+            self.backgroundColor = backgroundColor ?? UIColor(designSystemColor: .surfaceCanvas)
+        }
+        let safeAreaColor = backgroundColor ?? UIColor(singleUseColor: .duckAIWebViewBackground)
+        leadingSafeAreaFill.backgroundColor = safeAreaColor
+        trailingSafeAreaFill.backgroundColor = safeAreaColor
         overrideUserInterfaceStyle = active ? .dark : .unspecified
-        bottomSeparator.isHidden = active
+        if #available(iOS 26, *), usesFloatingAIChrome {
+            bottomSeparator.isHidden = true
+        } else {
+            bottomSeparator.isHidden = active
+        }
     }
 
     private lazy var bottomSeparator: UIView = {
@@ -516,6 +535,22 @@ final class AIChatTabChatHeaderView: UIView {
     }()
 
     private func setupUI() {
+        if #available(iOS 26, *), usesFloatingAIChrome {
+            for fill in [leadingSafeAreaFill, trailingSafeAreaFill] {
+                fill.translatesAutoresizingMaskIntoConstraints = false
+                addSubview(fill)
+            }
+            NSLayoutConstraint.activate([
+                leadingSafeAreaFill.leadingAnchor.constraint(equalTo: leadingAnchor),
+                leadingSafeAreaFill.trailingAnchor.constraint(equalTo: safeAreaLayoutGuide.leadingAnchor),
+                leadingSafeAreaFill.topAnchor.constraint(equalTo: topAnchor),
+                leadingSafeAreaFill.bottomAnchor.constraint(equalTo: bottomAnchor),
+                trailingSafeAreaFill.leadingAnchor.constraint(equalTo: safeAreaLayoutGuide.trailingAnchor),
+                trailingSafeAreaFill.trailingAnchor.constraint(equalTo: trailingAnchor),
+                trailingSafeAreaFill.topAnchor.constraint(equalTo: topAnchor),
+                trailingSafeAreaFill.bottomAnchor.constraint(equalTo: bottomAnchor),
+            ])
+        }
         addSubview(leftStack)
         addSubview(rightStack)
         addSubview(titleHolder)
@@ -542,10 +577,10 @@ final class AIChatTabChatHeaderView: UIView {
         NSLayoutConstraint.activate([
             heightAnchor.constraint(equalToConstant: Constants.headerHeight),
 
-            leftStack.leadingAnchor.constraint(equalTo: leadingAnchor, constant: Constants.horizontalPadding),
+            leftStack.leadingAnchor.constraint(equalTo: usesFloatingAIChrome ? safeAreaLayoutGuide.leadingAnchor : leadingAnchor, constant: Constants.horizontalPadding),
             leftStack.centerYAnchor.constraint(equalTo: centerYAnchor),
 
-            rightStack.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -Constants.horizontalPadding),
+            rightStack.trailingAnchor.constraint(equalTo: usesFloatingAIChrome ? safeAreaLayoutGuide.trailingAnchor : trailingAnchor, constant: -Constants.horizontalPadding),
             rightStack.centerYAnchor.constraint(equalTo: centerYAnchor),
 
             titleHolder.centerXAnchor.constraint(equalTo: centerXAnchor),
@@ -684,5 +719,16 @@ private final class SiblingTouchGuard: UIGestureRecognizer {
             control.cancelTracking(with: event)
             return
         }
+    }
+
+    // Must leave `.possible` when the touch ends; otherwise UIKit keeps the gesture graph blocked and the whole app stops responding.
+    override func touchesEnded(_ touches: Set<UITouch>, with event: UIEvent) {
+        super.touchesEnded(touches, with: event)
+        state = .failed
+    }
+
+    override func touchesCancelled(_ touches: Set<UITouch>, with event: UIEvent) {
+        super.touchesCancelled(touches, with: event)
+        state = .failed
     }
 }

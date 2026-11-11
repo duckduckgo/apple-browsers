@@ -35,15 +35,19 @@ public struct WebExtensionPermissionRequest {
     public let matchPatterns: Set<WKWebExtension.MatchPattern>
     public let urls: Set<URL>
     public let appPermissions: Set<WebExtensionAppPermission>
+    /// The manifest's required permissions, including the ones WebKit doesn't support. Set on installation; listed, never granted.
+    public let manifestPermissions: Set<WebExtensionManifestPermission>
 
     public init(permissions: Set<WKWebExtension.Permission> = [],
                 matchPatterns: Set<WKWebExtension.MatchPattern> = [],
                 urls: Set<URL> = [],
-                appPermissions: Set<WebExtensionAppPermission> = []) {
+                appPermissions: Set<WebExtensionAppPermission> = [],
+                manifestPermissions: Set<WebExtensionManifestPermission> = []) {
         self.permissions = permissions
         self.matchPatterns = matchPatterns
         self.urls = urls
         self.appPermissions = appPermissions
+        self.manifestPermissions = manifestPermissions
     }
 
     var asksWebKit: Bool {
@@ -145,12 +149,15 @@ public final class WebExtensionPermissionController {
                 lastSavedSettings[identifier] = settings
             } else {
                 // WebKit leaves app permissions out of `requestedPermissions`, so the manifest says which are required.
-                let request = WebExtensionPermissionRequest(permissions: context.webExtension.requestedPermissions,
-                                                            matchPatterns: context.webExtension.allRequestedMatchPatterns,
+                let webExtension = context.webExtension
+                let request = WebExtensionPermissionRequest(permissions: webExtension.requestedPermissions,
+                                                            matchPatterns: webExtension.allRequestedMatchPatterns,
                                                             appPermissions: Set(WebExtensionAppPermission.allCases.filter {
-                                                                context.webExtension.requiresPermission($0.rawValue)
-                                                            }))
-                let result = await prompter.confirmInstallation(of: context.webExtension, permissions: request)
+                                                                webExtension.requiresPermission($0.rawValue)
+                                                            }),
+                                                            manifestPermissions: Set(webExtension.requiredPermissionNames.compactMap(WebExtensionManifestPermission.init(rawValue:))))
+
+                let result = await prompter.confirmInstallation(of: webExtension, permissions: request)
                 guard case .granted(let privateDataAccess) = result, contexts[identifier] === context else {
                     throw PermissionError.installationDenied
                 }

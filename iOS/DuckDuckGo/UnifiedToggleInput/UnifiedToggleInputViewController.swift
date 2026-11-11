@@ -46,6 +46,7 @@ protocol UnifiedToggleInputViewControllerDelegate: AnyObject {
     func unifiedToggleInputVCDidTapReturnKey(_ vc: UnifiedToggleInputViewController)
     func unifiedToggleInputVCDidShowModelPicker(_ vc: UnifiedToggleInputViewController)
     func unifiedToggleInputVCDidShowReasoningPicker(_ vc: UnifiedToggleInputViewController)
+    func unifiedToggleInputVCDidShowAttachMenu(_ vc: UnifiedToggleInputViewController)
     func unifiedToggleInputVC(_ vc: UnifiedToggleInputViewController, didTapFooterPrimaryAction id: UTIFooterItem.ID)
     func unifiedToggleInputVC(_ vc: UnifiedToggleInputViewController, didDismissFooter id: UTIFooterItem.ID)
     func unifiedToggleInputVC(_ vc: UnifiedToggleInputViewController, didChangeFooterVisibility ids: [UTIFooterItem.ID])
@@ -67,7 +68,8 @@ final class UnifiedToggleInputViewController: UIViewController {
     private lazy var inputBarView = UnifiedToggleInputView(handler: handler,
                                                           isToggleEnabled: isToggleEnabled,
                                                           placesAttachmentsAboveInput: placesAttachmentsAboveInput,
-                                                          usesCompactAttachmentLayout: usesCompactAttachmentLayout)
+                                                          usesCompactAttachmentLayout: usesCompactAttachmentLayout,
+                                                          usesFloatingUI: usesFloatingUI)
 
     /// Edges of the visible input card, for aligning content sitting around the bar.
     func inputCardFrame(in view: UIView) -> CGRect {
@@ -102,14 +104,17 @@ final class UnifiedToggleInputViewController: UIViewController {
     private let placesAttachmentsAboveInput: Bool
 
     private let usesCompactAttachmentLayout: Bool
+    private let usesFloatingUI: Bool
 
     init(isToggleEnabled: Bool,
          isFireTab: Bool = false,
          placesAttachmentsAboveInput: Bool = false,
-         usesCompactAttachmentLayout: Bool = false) {
+         usesCompactAttachmentLayout: Bool = false,
+         usesFloatingUI: Bool = false) {
         self.isToggleEnabled = isToggleEnabled
         self.placesAttachmentsAboveInput = placesAttachmentsAboveInput
         self.usesCompactAttachmentLayout = usesCompactAttachmentLayout
+        self.usesFloatingUI = usesFloatingUI
         self.handler = UnifiedToggleInputHandler(isVoiceSearchEnabled: false,
                                                  isToggleEnabled: isToggleEnabled,
                                                  isFireTab: isFireTab)
@@ -142,6 +147,15 @@ final class UnifiedToggleInputViewController: UIViewController {
 
     func refreshPlaceholderForCurrentMode() {
         inputBarView.refreshPlaceholderForCurrentMode()
+    }
+
+    var placeholderState: AIChatPlaceholderState {
+        AIChatPlaceholderState(hasSubmittedPrompt: handler.hasSubmittedPrompt,
+                               isImageGenerationSelected: handler.isImageGenerationSelected)
+    }
+
+    func crossfadePlaceholder(to state: AIChatPlaceholderState) {
+        inputBarView.crossfadePlaceholder(to: state)
     }
 
     var isInputExpanded: Bool {
@@ -652,6 +666,10 @@ extension UnifiedToggleInputViewController: UnifiedToggleInputViewDelegate {
 
     func unifiedToggleInputViewDidShowReasoningPicker(_ view: UnifiedToggleInputView) {
         delegate?.unifiedToggleInputVCDidShowReasoningPicker(self)
+    }
+
+    func unifiedToggleInputViewDidShowAttachMenu(_ view: UnifiedToggleInputView) {
+        delegate?.unifiedToggleInputVCDidShowAttachMenu(self)
     }
 }
 

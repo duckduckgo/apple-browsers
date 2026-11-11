@@ -141,6 +141,9 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
     /// Store identities available before a successful first load creates the installation record.
     var installingStoreIdentities: [String: WebExtensionStoreIdentity] = [:]
 
+    /// Tasks that keep background pages with open native messaging ports loaded, by extension identifier.
+    var nativePortKeepAliveTasks: [String: NativePortKeepAlive] = [:]
+
     /// See `WebExtensionUnloadGuard`. Settable only so tests can inject a controlled clock.
     var unloadGuard: WebExtensionUnloadGuard
 
@@ -586,7 +589,7 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
             let loadResult = try await loader.loadWebExtension(identifier: identifier, into: controller)
             unloadGuard.recordLoad(of: identifier)
 
-            let permissions = context(for: identifier)?.webExtension.requiredPermissionNames
+            let webExtension = context(for: identifier)?.webExtension
             let installedExtension = InstalledWebExtension(
                 uniqueIdentifier: identifier,
                 filename: loadResult.filename,
@@ -594,7 +597,8 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
                 version: loadResult.version,
                 embeddedType: embeddedType,
                 storeIdentity: storeIdentity,
-                permissions: permissions
+                permissions: webExtension?.requiredPermissionNames,
+                matchPatterns: webExtension?.allRequestedMatchPatterns.map(\.string)
             )
 
             installationStore.add(installedExtension)
@@ -1201,7 +1205,7 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
     }
 
     @MainActor
-    private func backgroundWebView(in context: WKWebExtensionContext) -> WKWebView? {
+    func backgroundWebView(in context: WKWebExtensionContext) -> WKWebView? {
         guard context.responds(to: Selector.backgroundWebView) else { return nil }
         return context.value(forKey: NSStringFromSelector(Selector.backgroundWebView)) as? WKWebView
     }
@@ -1458,6 +1462,12 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
         // Records saved before permissions were stored fall back to the loaded extension.
         installationStore.installedExtension(withUniqueIdentifier: identifier)?.permissions
             ?? context(for: identifier)?.webExtension.requiredPermissionNames
+            ?? []
+    }
+
+    public func extensionMatchPatterns(for identifier: String) -> [String] {
+        installationStore.installedExtension(withUniqueIdentifier: identifier)?.matchPatterns
+            ?? context(for: identifier)?.webExtension.allRequestedMatchPatterns.map(\.string)
             ?? []
     }
 

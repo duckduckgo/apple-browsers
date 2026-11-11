@@ -18,7 +18,7 @@
 
 import AIChat
 import Bookmarks
-import CoreData
+import SharedTestUtilities
 import XCTest
 @testable import DuckDuckGo_Privacy_Browser
 
@@ -114,7 +114,7 @@ final class BookmarkTabBrowserToolTests: XCTestCase {
         let (tool, context, _) = makeTool(manager: manager, extraTabURLs: [otherURL])
 
         async let first = tool.execute(arguments: ["folder": ["Trips"]], context: context)
-        async let second = tool.execute(arguments: ["tabId": .string(tabs[1].uuid), "folder": ["Trips"]], context: context)
+        async let second = tool.execute(arguments: ["tabId": JSONValue.string(tabs[1].uuid), "folder": ["Trips"]], context: context)
         _ = await (first, second)
         try await waitUntil { manager.getBookmark(forUrl: otherURL)?.parentFolderUUID != nil }
 

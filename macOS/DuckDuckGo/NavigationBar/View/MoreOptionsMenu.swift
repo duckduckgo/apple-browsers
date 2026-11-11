@@ -538,7 +538,7 @@ final class MoreOptionsMenu: NSMenu, NSMenuDelegate {
         case .none, .available:
             return false
         case .firstPrompt:
-            style = .row
+            style = .row(title: updateController.updateBannerRowTitle)
         case .secondPrompt:
             style = .card
         }

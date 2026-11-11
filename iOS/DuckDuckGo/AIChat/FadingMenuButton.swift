@@ -36,6 +36,9 @@ final class FadingMenuButton: UIButton {
     /// so a caller opening a new tab can cover the button here.
     var menuWillFadeOut: () -> Void = {}
 
+    /// Called once a fading menu has finished closing, when UIKit shows the button's glass again.
+    var menuDidFadeOut: () -> Void = {}
+
     override func contextMenuInteraction(_ interaction: UIContextMenuInteraction,
                                          previewForDismissingMenuWithConfiguration configuration: UIContextMenuConfiguration) -> UITargetedPreview? {
         dismissalTarget
@@ -59,7 +62,10 @@ final class FadingMenuButton: UIButton {
                                          willEndFor configuration: UIContextMenuConfiguration,
                                          animator: (any UIContextMenuInteractionAnimating)?) {
         super.contextMenuInteraction(interaction, willEndFor: configuration, animator: animator)
-        if fadesMenuOnDismissal() { menuWillFadeOut() } else { menuWillCloseInPlace() }
+        guard fadesMenuOnDismissal() else { return menuWillCloseInPlace() }
+        menuWillFadeOut()
+        guard let animator else { return menuDidFadeOut() }
+        animator.addCompletion { [weak self] in self?.menuDidFadeOut() }
     }
 
     /// The button itself, so the menu shrinks back into it, or none, so it fades out.

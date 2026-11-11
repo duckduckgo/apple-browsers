@@ -203,6 +203,7 @@ final class AIChatTabChatHeaderView: UIView {
         // A new tab opening over the page means the Plus menu fades instead of morphing back.
         button.fadesMenuOnDismissal = { [weak self] in self?.newTabOpening?.isOpeningNewTab == true }
         button.menuWillFadeOut = { [weak self] in self?.coverRightPairWithStandIn() }
+        button.menuDidFadeOut = { [weak self] in self?.takeMenuFadeOutFinished()?() }
         button.menuWillOpen = { [weak self] in self?.delegate?.aiChatTabChatHeaderPlusMenuWillOpen() }
         button.menuWillCloseInPlace = { [weak self] in self?.delegate?.aiChatTabChatHeaderPlusMenuWillCloseInPlace() }
         button.menu = makeNewChatPlusMenu()
@@ -713,6 +714,14 @@ final class AIChatTabChatHeaderView: UIView {
     /// When the Plus menu closes into a new tab, UIKit fades the button's glass back in (~0.5 s) and
     /// nothing in its API skips that, so the pill looks blurry on the growing tab. A fresh, menu-free copy
     /// covers the real pill until the new tab has opened. See `NewTabOpeningObserving`.
+    /// Told by the Plus button once UIKit has shown its glass again after a fading menu.
+    private var menuFadeOutFinished: (() -> Void)?
+
+    private func takeMenuFadeOutFinished() -> (() -> Void)? {
+        defer { menuFadeOutFinished = nil }
+        return menuFadeOutFinished
+    }
+
     private func coverRightPairWithStandIn() {
         let standIn = makeRightPairStandIn()
         let pillAlpha = rightPairPill.alpha
@@ -732,8 +741,15 @@ final class AIChatTabChatHeaderView: UIView {
             standIn?.removeFromSuperview()
             self?.rightPairPill.alpha = pillAlpha
         }
-        guard let newTabOpening else { return restorePill() }
-        newTabOpening.afterNewTabOpens(restorePill)
+        // UIKit hides the real button until its menu animation ends, which can be after the new tab is in,
+        // so the stand-in stays until both have happened.
+        var pendingEvents = newTabOpening == nil ? 1 : 2
+        let eventHappened = {
+            pendingEvents -= 1
+            if pendingEvents == 0 { restorePill() }
+        }
+        menuFadeOutFinished = eventHappened
+        newTabOpening?.afterNewTabOpens(eventHappened)
     }
 
     private func makeRightPairStandIn() -> AIChatHeaderGlassPill {

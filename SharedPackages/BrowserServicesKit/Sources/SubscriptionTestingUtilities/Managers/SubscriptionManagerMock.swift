@@ -52,7 +52,12 @@ public final class SubscriptionManagerMock: SubscriptionManager {
     }
 
     public var resultSubscription: Result<DuckDuckGoSubscription, Error>?
+    /// When true, `getSubscriptionFrom(lastTransactionJWSRepresentation:)` returns nil: the account has no subscription.
+    public var getSubscriptionFromReturnsNil = false
     public func getSubscriptionFrom(lastTransactionJWSRepresentation: String) async throws -> DuckDuckGoSubscription? {
+        if getSubscriptionFromReturnsNil {
+            return nil
+        }
         switch resultSubscription {
         case .success(let success):
             return success
@@ -178,8 +183,9 @@ public final class SubscriptionManagerMock: SubscriptionManager {
         resultTokenContainer = nil
     }
 
+    public private(set) var clearSubscriptionCacheCallCount = 0
     public func clearSubscriptionCache() {
-
+        clearSubscriptionCacheCallCount += 1
     }
 
     public var ingestSubscriptionCalled: Bool = false

@@ -49,6 +49,35 @@ final class AppStoreRestoreFlowTests: XCTestCase {
         super.tearDown()
     }
 
+    // MARK: - restoreSubscriptionAfterExpiredRefreshToken Tests
+
+    func testWhenRestoringAfterExpiredRefreshTokenFailsTemporarilyThenTheSubscriptionCacheIsKept() async {
+        storePurchaseManagerMock.mostRecentTransactionResult = "lastTransactionJWS"
+        subscriptionManagerMock.resultSubscription = .failure(URLError(.timedOut))
+
+        try? await sut.restoreSubscriptionAfterExpiredRefreshToken()
+
+        XCTAssertEqual(subscriptionManagerMock.clearSubscriptionCacheCallCount, 0)
+    }
+
+    func testWhenRestoringAfterExpiredRefreshTokenSucceedsThenTheNewSubscriptionIsNotCleared() async throws {
+        storePurchaseManagerMock.mostRecentTransactionResult = "lastTransactionJWS"
+        subscriptionManagerMock.resultSubscription = .success(SubscriptionMockFactory.appleSubscription)
+
+        try await sut.restoreSubscriptionAfterExpiredRefreshToken()
+
+        XCTAssertEqual(subscriptionManagerMock.clearSubscriptionCacheCallCount, 0)
+    }
+
+    func testWhenRestoringAfterExpiredRefreshTokenFindsNoSubscriptionThenTheCacheIsCleared() async throws {
+        storePurchaseManagerMock.mostRecentTransactionResult = "lastTransactionJWS"
+        subscriptionManagerMock.getSubscriptionFromReturnsNil = true
+
+        try await sut.restoreSubscriptionAfterExpiredRefreshToken()
+
+        XCTAssertEqual(subscriptionManagerMock.clearSubscriptionCacheCallCount, 1)
+    }
+
     // MARK: - restoreAccountFromPastPurchase Tests
 
     func test_restoreAccountFromPastPurchase_withNoTransaction_returnsMissingAccountOrTransactionsError() async {

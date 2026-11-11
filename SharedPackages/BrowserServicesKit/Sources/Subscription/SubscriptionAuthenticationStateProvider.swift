@@ -19,5 +19,7 @@
 import Foundation
 
 public protocol SubscriptionAuthenticationStateProvider {
+    /// Whether the user is signed in. Set on sign-in and cleared only when the session is certainly over: an explicit sign-out,
+    /// an unknown account, or a token nothing can recover. A missing or unreadable token alone doesn't change it.
     var isUserAuthenticated: Bool { get }
 }

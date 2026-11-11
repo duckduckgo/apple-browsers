@@ -319,6 +319,7 @@ public final class DefaultSubscriptionManager: SubscriptionManager {
             storePurchaseManager: storePurchaseManager,
             subscriptionEndpointService: subscriptionEndpointService
         )
+        reconcileAuthenticationStateIfNeeded()
         if initForPurchase {
             switch currentEnvironment.purchasePlatform {
             case .appStore:
@@ -643,13 +644,25 @@ public final class DefaultSubscriptionManager: SubscriptionManager {
 
     // MARK: - Authentication state
 
-    public var isUserAuthenticated: Bool {
-        do {
-            let tokenContainer = try oAuthClient.currentTokenContainer()
-            return tokenContainer != nil
-        } catch {
-            return cachedIsUserAuthenticated
+    /// Once per install, marks the user as signed in when a token is stored. Retried at the next launch while the token can't be read.
+    private func reconcileAuthenticationStateIfNeeded() {
+        guard !userDefaults.isUserAuthenticatedReconciled else { return }
+        switch localTokenSnapshot() {
+        case .present:
+            if !userDefaults.isUserAuthenticated {
+                Logger.subscriptionTokensManagement.log("A token is stored, marking the user as signed in")
+                userDefaults.isUserAuthenticated = true
+            }
+        case .missing:
+            break
+        case .readError:
+            return
         }
+        userDefaults.isUserAuthenticatedReconciled = true
+    }
+
+    public var isUserAuthenticated: Bool {
+        userDefaults.isUserAuthenticated
     }
 
     public var userEmail: String? {
@@ -669,10 +682,6 @@ public final class DefaultSubscriptionManager: SubscriptionManager {
         } catch {
             return .readError
         }
-    }
-
-    var cachedIsUserAuthenticated: Bool {
-        userDefaults.isUserAuthenticated
     }
 
     private func updateCachedIsUserAuthenticated(_ newValue: Bool, userInitiated: Bool = false) {
@@ -1022,7 +1031,6 @@ public final class DefaultSubscriptionManager: SubscriptionManager {
 
     public func removeLocalAccount() throws {
         Logger.subscriptionTokensManagement.log("Removing local account")
-            updateCachedIsUserAuthenticated(false)
         try oAuthClient.removeLocalAccount(includingBackup: false)
     }
 
@@ -1126,6 +1134,12 @@ extension DefaultSubscriptionManager: SubscriptionTokenProvider {
 }
 
 fileprivate extension UserDefaults {
+
+    private static let isUserAuthenticatedReconciledKey = "com.duckduckgo.subscription.isUserAuthenticatedReconciled"
+    var isUserAuthenticatedReconciled: Bool {
+        get { bool(forKey: Self.isUserAuthenticatedReconciledKey) }
+        set { set(newValue, forKey: Self.isUserAuthenticatedReconciledKey) }
+    }
 
     var cachedHasAppStoreProductsAvailable: Bool? {
         get { object(forKey: DefaultSubscriptionManager.hasAppStoreProductsAvailableKey) as? Bool }

@@ -5142,7 +5142,7 @@ extension TabViewController: UserContentControllerDelegate {
                             handler: self.duckAiFireModeStorageHandler)
         }
         aiChatContentHandler.setup(with: userScripts.aiChatUserScript, webView: webView, displayMode: .fullTab)
-        if let browserToolsService, browserToolsService.isEnabled, let browserToolScopeFactory,
+        if let browserToolsService, let browserToolScopeFactory,
            let webView, webView.configuration.userContentController === userContentController {
             userScripts.aiChatUserScript.bindBrowserTools(to: browserToolsService, owner: tabModel, makeScope: browserToolScopeFactory)
         }

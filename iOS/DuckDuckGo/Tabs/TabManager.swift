@@ -501,12 +501,10 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
                                                               sitePermissionsDependenciesProvider: { [weak self] in
                                                                   self?.sitePermissionsDependencies
                                                               })
-        if browserToolsService.isEnabled {
-            controller.browserToolsService = browserToolsService
-            controller.browserToolScopeFactory = { [weak self, weak tab] in
-                guard let self, let tab else { return nil }
-                return self.makeBrowserToolScope(for: tab)
-            }
+        controller.browserToolsService = browserToolsService
+        controller.browserToolScopeFactory = { [weak self, weak tab] in
+            guard let self, let tab else { return nil }
+            return self.makeBrowserToolScope(for: tab)
         }
         controller.tabAttachmentSource = makeTabAttachmentSource(for: tab)
         controller.applyInheritedAttribution(inheritedAttribution)
@@ -657,13 +655,11 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
                                                               sitePermissionsDependenciesProvider: { [weak self] in
                                                                   self?.sitePermissionsDependencies
                                                               })
-        if browserToolsService.isEnabled {
-            controller.browserToolsService = browserToolsService
-            let owner = controller.tabModel
-            controller.browserToolScopeFactory = { [weak self, weak owner] in
-                guard let self, let owner else { return nil }
-                return self.makeBrowserToolScope(for: owner)
-            }
+        controller.browserToolsService = browserToolsService
+        let owner = controller.tabModel
+        controller.browserToolScopeFactory = { [weak self, weak owner] in
+            guard let self, let owner else { return nil }
+            return self.makeBrowserToolScope(for: owner)
         }
         controller.tabAttachmentSource = makeTabAttachmentSource(for: controller.tabModel)
         controller.attachWebView(configuration: configCopy,

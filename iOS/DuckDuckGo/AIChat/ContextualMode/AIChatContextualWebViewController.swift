@@ -597,7 +597,7 @@ extension AIChatContextualWebViewController: UserContentControllerDelegate {
     func configureContentHandler(with userScript: AIChatUserScript) {
         aiChatContentHandler.setup(with: userScript, webView: webView, displayMode: .contextual)
         browserToolsScript = nil
-        if let browserToolsService, browserToolsService.isEnabled, let browserToolsOwner, let browserToolScopeFactory {
+        if let browserToolsService, let browserToolsOwner, let browserToolScopeFactory {
             browserToolsScript = userScript
             userScript.bindBrowserTools(to: browserToolsService, owner: browserToolsOwner, makeScope: browserToolScopeFactory)
         }

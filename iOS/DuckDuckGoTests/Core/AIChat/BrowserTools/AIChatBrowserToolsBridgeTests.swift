@@ -92,6 +92,33 @@ final class AIChatBrowserToolsBridgeTests: XCTestCase {
         }
     }
 
+    func testInitiallyDisabledParentCanEnableForFullAndContextualChatWithoutReplacingSource() async throws {
+        for contextual in [false, true] {
+            let fixture = makeFixture(enabledFlags: [.aiChatBrowserToolListOpenTabs])
+            let source = fixture.script
+            source.setDisplayMode(contextual ? .contextual : .fullTab)
+            await publish([.aiChatBrowserToolListOpenTabs], in: fixture)
+            XCTAssertNil(fixture.service.configuration(for: source))
+            let unavailable = await fixture.invoke()
+            XCTAssertEqual(unavailable, .failure(callId: "call", error: .unavailable))
+            XCTAssertTrue(fixture.webView.configurationPayloads.isEmpty)
+            XCTAssertTrue(fixture.webView.permissionPrompts.isEmpty)
+            XCTAssertEqual(fixture.listings, 0)
+
+            await publish([.aiChatBrowserTools, .aiChatBrowserToolListOpenTabs], in: fixture)
+            XCTAssertEqual(fixture.webView.configurationPayloads.count, 1)
+            let payload = try XCTUnwrap(fixture.webView.configurationPayloads.first)
+            let expected: [String: Any] = ["clientTools": ["protocolVersion": 1,
+                                                        "capabilities": [["name": "listOpenTabs", "version": 1]]]]
+            XCTAssertEqual(payload as NSDictionary, expected as NSDictionary)
+            XCTAssertEqual(fixture.service.configuration(for: source)?.capabilities, [.listOpenTabs])
+            let allowed = await fixture.invoke()
+            XCTAssertEqual(allowed, fixture.success)
+            XCTAssertEqual(fixture.listings, 1)
+            XCTAssertTrue(fixture.webView.permissionPrompts.isEmpty)
+        }
+    }
+
     func testConfigurationUpdatesRejectUntrustedMissingAndHomepageDocuments() async {
         for url in [nil, URL(string: "https://untrusted.example/chat"), URL(string: "https://duckduckgo.com/")] {
             let fixture = makeFixture()

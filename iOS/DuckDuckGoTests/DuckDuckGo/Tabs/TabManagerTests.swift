@@ -70,6 +70,25 @@ final class TabManagerTests: XCTestCase {
         XCTAssertNil(controller.aiChatContextualSheetCoordinator.browserToolScopeFactory)
     }
 
+    func testControllerCreatedWithParentFlagDisabledReceivesServiceThatEnablesWithoutReplacement() throws {
+        let fixture = BrowserToolsBridgeFixture(enabledFlags: [.aiChatBrowserToolListOpenTabs])
+        defer { fixture.cleanUp() }
+        let model = TabsModel(tabs: [fixture.owner], desktop: false)
+        let manager = try makeManager(model, featureFlagger: fixture.flags)
+        let controller = try XCTUnwrap(manager.current(createIfNeeded: true))
+        defer { controller.prepareForDataClearing() }
+        XCTAssertTrue(controller.browserToolsService === manager.browserToolsService)
+        XCTAssertEqual(controller.browserToolScopeFactory?()?.ownerTabID, fixture.owner.uid)
+        fixture.script.bindBrowserTools(to: manager.browserToolsService, owner: fixture.owner,
+                                       makeScope: try XCTUnwrap(controller.browserToolScopeFactory))
+        XCTAssertNil(manager.browserToolsService.configuration(for: fixture.script))
+
+        fixture.flags.enabledFeatureFlags = [.aiChatBrowserTools, .aiChatBrowserToolListOpenTabs]
+        fixture.flags.triggerUpdate()
+        XCTAssertTrue(manager.current(createIfNeeded: true) === controller)
+        XCTAssertEqual(manager.browserToolsService.configuration(for: fixture.script)?.capabilities, [.listOpenTabs])
+    }
+
     override func tearDown() {
         UserDefaults.app.removeObject(forKey: FireModeCapability.isFireModeEnabledKey)
         UserDefaults.app.removeObject(forKey: UserDefaultsWrapper<Bool>.Key.faviconTabsCacheNeedsCleanup.rawValue)

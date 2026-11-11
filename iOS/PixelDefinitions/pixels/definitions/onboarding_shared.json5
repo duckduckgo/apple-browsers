@@ -22,7 +22,8 @@
             "onboardingDaysSinceInstall",
             "onboardingSource",
             "onboardingFlow",
-            "onboardingFlowVariant"
+            "onboardingVariantSearchExperience",
+            "onboardingVariantDownloadReason"
         ]
     },
     "m_ios_onboarding_welcome": {

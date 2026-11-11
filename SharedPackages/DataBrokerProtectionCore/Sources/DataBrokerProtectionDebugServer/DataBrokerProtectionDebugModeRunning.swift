@@ -1,5 +1,5 @@
 //
-//  DataBrokerProtectionDebugControl.swift
+//  DataBrokerProtectionDebugModeRunning.swift
 //
 //  Copyright © 2026 DuckDuckGo. All rights reserved.
 //
@@ -21,15 +21,15 @@ import DDGError
 import Foundation
 
 /// Calls return without waiting for the work, so callers poll `run(id:)`. Nothing is saved to the PIR database.
-public protocol DataBrokerProtectionDebugControlling: AnyObject {
-    func startScan(_ request: DebugScanRequest) throws -> DebugRun
-    func run(id: String) -> DebugRun?
-    func startOptOut(runId: String, resultId: String) throws -> DebugRun
-    func checkForEmailConfirmation(runId: String) throws -> DebugRun
-    func continueOptOut(runId: String, resultId: String) throws -> DebugRun
+public protocol DataBrokerProtectionDebugModeRunning: AnyObject {
+    func startScan(_ request: DebugModeScanRequest) throws -> DebugModeRun
+    func run(id: String) -> DebugModeRun?
+    func startOptOut(runId: String, resultId: String) throws -> DebugModeRun
+    func checkForEmailConfirmation(runId: String) throws -> DebugModeRun
+    func continueOptOut(runId: String, resultId: String) throws -> DebugModeRun
 }
 
-public enum DataBrokerProtectionDebugControlError: DDGError {
+public enum DebugModeRunError: DDGError {
     case invalidRequest(String)
     case brokerNotFound(String)
     case runNotFound(String)
@@ -37,7 +37,7 @@ public enum DataBrokerProtectionDebugControlError: DDGError {
     case busy(runId: String)
     case notAwaitingEmailConfirmation(resultId: String)
 
-    public static var errorDomain: String { "com.duckduckgo.pir.debug-control" }
+    public static var errorDomain: String { "com.duckduckgo.pir.debug-mode-run" }
 
     public var errorCode: Int {
         switch self {
@@ -68,7 +68,7 @@ public enum DataBrokerProtectionDebugControlError: DDGError {
     }
 }
 
-public struct DebugScanRequest {
+public struct DebugModeScanRequest {
     public enum Broker: Equatable {
         /// A stored broker's url or name.
         case stored(String)
@@ -87,7 +87,7 @@ public struct DebugScanRequest {
 
     public init(body: Data?) throws {
         guard let body, let object = try? JSONSerialization.jsonObject(with: body) as? [String: Any] else {
-            throw DataBrokerProtectionDebugControlError.invalidRequest("body must be a JSON object")
+            throw DebugModeRunError.invalidRequest("body must be a JSON object")
         }
 
         switch object["broker"] {
@@ -96,26 +96,26 @@ public struct DebugScanRequest {
         case let json as [String: Any]:
             broker = .json(try JSONSerialization.data(withJSONObject: json))
         default:
-            throw DataBrokerProtectionDebugControlError.invalidRequest("'broker' must be a stored broker's url or name, or broker JSON")
+            throw DebugModeRunError.invalidRequest("'broker' must be a stored broker's url or name, or broker JSON")
         }
 
         guard let profileObject = object["profile"] as? [String: Any],
               let profileData = try? JSONSerialization.data(withJSONObject: profileObject),
               let profile = try? JSONDecoder().decode(DataBrokerProtectionProfile.self, from: profileData) else {
-            throw DataBrokerProtectionDebugControlError.invalidRequest("'profile' must be a PIR profile with names, addresses, phones and birthYear")
+            throw DebugModeRunError.invalidRequest("'profile' must be a PIR profile with names, addresses, phones and birthYear")
         }
         func hasText(_ value: String) -> Bool {
             !value.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
         }
         guard !profile.names.isEmpty, profile.names.allSatisfy({ hasText($0.firstName) && hasText($0.lastName) }) else {
-            throw DataBrokerProtectionDebugControlError.invalidRequest("'profile' needs at least one name, each with a first and last name")
+            throw DebugModeRunError.invalidRequest("'profile' needs at least one name, each with a first and last name")
         }
         guard !profile.addresses.isEmpty, profile.addresses.allSatisfy({ hasText($0.city) && hasText($0.state) }) else {
-            throw DataBrokerProtectionDebugControlError.invalidRequest("'profile' needs at least one address, each with a city and state")
+            throw DebugModeRunError.invalidRequest("'profile' needs at least one address, each with a city and state")
         }
         let currentYear = Calendar.current.component(.year, from: Date())
         guard (1900...currentYear).contains(profile.birthYear) else {
-            throw DataBrokerProtectionDebugControlError.invalidRequest("'profile' birthYear must be between 1900 and \(currentYear)")
+            throw DebugModeRunError.invalidRequest("'profile' birthYear must be between 1900 and \(currentYear)")
         }
         self.profile = profile
 
@@ -123,7 +123,7 @@ public struct DebugScanRequest {
     }
 }
 
-public enum DebugRunAction: Equatable {
+public enum DebugModeRunAction: Equatable {
     case optOut(runId: String, resultId: String)
     case continueOptOut(runId: String, resultId: String)
     case checkForEmailConfirmation(runId: String)
@@ -144,7 +144,7 @@ public enum DebugRunAction: Equatable {
     }
 }
 
-public struct DebugRun: Encodable {
+public struct DebugModeRun: Encodable {
     public enum Activity: String, Encodable {
         case scan
         case optOut

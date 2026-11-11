@@ -606,7 +606,7 @@ extension DataBrokerProtectionAgentManager: DataBrokerProtectionAgentDebugComman
             let debugModeRunner = try DebugModeRunner(authenticationManager: authenticationManager, featureFlagger: jobDependencies.featureFlagger)
             let server = DataBrokerProtectionDebugHTTPServer(provider: self,
                                                              logReader: DataBrokerProtectionOSLogReader(),
-                                                             controller: DebugModeRunController(runner: debugModeRunner))
+                                                             runManager: DebugModeRunManager(runner: debugModeRunner))
             try server.start()
             debugServer = server
             return true

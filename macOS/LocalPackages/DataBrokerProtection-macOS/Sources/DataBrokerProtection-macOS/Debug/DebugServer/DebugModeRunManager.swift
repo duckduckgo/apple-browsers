@@ -1,5 +1,5 @@
 //
-//  DebugModeRunController.swift
+//  DebugModeRunManager.swift
 //
 //  Copyright © 2026 DuckDuckGo. All rights reserved.
 //
@@ -21,7 +21,7 @@ import DataBrokerProtectionDebugServer
 import Foundation
 import os.log
 
-final class DebugModeRunController: DataBrokerProtectionDebugControlling, @unchecked Sendable {
+final class DebugModeRunManager: DataBrokerProtectionDebugModeRunning, @unchecked Sendable {
 
     /// Queries that differ only by middle name share a stable ID, so results are told apart by query position.
     private struct RunResult {
@@ -30,7 +30,7 @@ final class DebugModeRunController: DataBrokerProtectionDebugControlling, @unche
     }
 
     private struct OptOut {
-        var status: DebugRun.OptOutStatus
+        var status: DebugModeRun.OptOutStatus
         var error: String?
     }
 
@@ -40,11 +40,11 @@ final class DebugModeRunController: DataBrokerProtectionDebugControlling, @unche
         let broker: DataBroker
         let queries: [BrokerProfileQueryData]
         let hidesWebView: Bool
-        var activity: DebugRun.Activity?
+        var activity: DebugModeRun.Activity?
         var scanErrors: [String] = []
         var results: [RunResult] = []
         var optOuts: [String: OptOut] = [:]
-        var events: [DebugRun.Event] = []
+        var events: [DebugModeRun.Event] = []
     }
 
     private let runner: DebugModeRunner
@@ -62,9 +62,9 @@ final class DebugModeRunController: DataBrokerProtectionDebugControlling, @unche
         }
     }
 
-    // MARK: - DataBrokerProtectionDebugControlling
+    // MARK: - DataBrokerProtectionDebugModeRunning
 
-    func startScan(_ request: DebugScanRequest) throws -> DebugRun {
+    func startScan(_ request: DebugModeScanRequest) throws -> DebugModeRun {
         let broker = try resolveBroker(request.broker)
         let queries = runner.brokerProfileQueryData(for: broker, profile: request.profile)
         let runId = UUID().uuidString.lowercased()
@@ -88,11 +88,11 @@ final class DebugModeRunController: DataBrokerProtectionDebugControlling, @unche
         return run
     }
 
-    func run(id: String) -> DebugRun? {
+    func run(id: String) -> DebugModeRun? {
         locked { runs[id].map(snapshot(of:)) }
     }
 
-    func startOptOut(runId: String, resultId: String) throws -> DebugRun {
+    func startOptOut(runId: String, resultId: String) throws -> DebugModeRun {
         let (run, (scanResult, showWebView)) = try beginActivity(.optOut, runId: runId) { state in
             let result = try Self.result(resultId, in: state)
             state.optOuts[resultId] = OptOut(status: .running)
@@ -105,7 +105,7 @@ final class DebugModeRunController: DataBrokerProtectionDebugControlling, @unche
         return run
     }
 
-    func checkForEmailConfirmation(runId: String) throws -> DebugRun {
+    func checkForEmailConfirmation(runId: String) throws -> DebugModeRun {
         let (run, _) = try beginActivity(.emailConfirmationCheck, runId: runId) { _ in }
 
         launch(runId) {
@@ -118,11 +118,11 @@ final class DebugModeRunController: DataBrokerProtectionDebugControlling, @unche
         return run
     }
 
-    func continueOptOut(runId: String, resultId: String) throws -> DebugRun {
+    func continueOptOut(runId: String, resultId: String) throws -> DebugModeRun {
         let (run, (scanResult, confirmationURL, showWebView)) = try beginActivity(.continueOptOut, runId: runId) { state in
             let result = try Self.result(resultId, in: state)
             guard let url = runner.confirmationURL(for: result) else {
-                throw DataBrokerProtectionDebugControlError.notAwaitingEmailConfirmation(resultId: resultId)
+                throw DebugModeRunError.notAwaitingEmailConfirmation(resultId: resultId)
             }
             state.optOuts[resultId] = OptOut(status: .running)
             return (result, url, !state.hidesWebView)
@@ -202,7 +202,7 @@ final class DebugModeRunController: DataBrokerProtectionDebugControlling, @unche
 
     // MARK: - Brokers
 
-    private func resolveBroker(_ broker: DebugScanRequest.Broker) throws -> DataBroker {
+    private func resolveBroker(_ broker: DebugModeScanRequest.Broker) throws -> DataBroker {
         switch broker {
         case .json(let json):
             return try decodeBroker(json)
@@ -212,7 +212,7 @@ final class DebugModeRunController: DataBrokerProtectionDebugControlling, @unche
                     || $0.broker.name.caseInsensitiveCompare(identifier) == .orderedSame
             }
             guard let stored else {
-                throw DataBrokerProtectionDebugControlError.brokerNotFound(identifier)
+                throw DebugModeRunError.brokerNotFound(identifier)
             }
             return stored.broker
         }
@@ -222,7 +222,7 @@ final class DebugModeRunController: DataBrokerProtectionDebugControlling, @unche
         do {
             return try JSONDecoder().decode(DataBroker.self, from: json)
         } catch {
-            throw DataBrokerProtectionDebugControlError.invalidRequest("broker JSON doesn't decode: \(error)")
+            throw DebugModeRunError.invalidRequest("broker JSON doesn't decode: \(error)")
         }
     }
 
@@ -237,17 +237,17 @@ final class DebugModeRunController: DataBrokerProtectionDebugControlling, @unche
     /// Call with the lock held.
     private func claim(_ runId: String) throws {
         if let activeRunId {
-            throw DataBrokerProtectionDebugControlError.busy(runId: activeRunId)
+            throw DebugModeRunError.busy(runId: activeRunId)
         }
         activeRunId = runId
     }
 
-    private func beginActivity<T>(_ activity: DebugRun.Activity,
+    private func beginActivity<T>(_ activity: DebugModeRun.Activity,
                                   runId: String,
-                                  prepare: (inout RunState) throws -> T) throws -> (DebugRun, T) {
+                                  prepare: (inout RunState) throws -> T) throws -> (DebugModeRun, T) {
         try locked {
             guard var state = runs[runId] else {
-                throw DataBrokerProtectionDebugControlError.runNotFound(runId)
+                throw DebugModeRunError.runNotFound(runId)
             }
             try claim(runId)
             let prepared: T
@@ -281,7 +281,7 @@ final class DebugModeRunController: DataBrokerProtectionDebugControlling, @unche
         }
     }
 
-    private func setOptOutStatus(_ status: DebugRun.OptOutStatus, resultId: String, runId: String) {
+    private func setOptOutStatus(_ status: DebugModeRun.OptOutStatus, resultId: String, runId: String) {
         update(runId) { $0.optOuts[resultId] = OptOut(status: status) }
     }
 
@@ -290,7 +290,7 @@ final class DebugModeRunController: DataBrokerProtectionDebugControlling, @unche
     }
 
     private func addEvent(_ runId: String, kind: DebugEventKind, profileQuery: String, summary: String, details: String) {
-        let event = DebugRun.Event(timestamp: Date(), kind: kind.rawValue, profileQuery: profileQuery, summary: summary, details: details)
+        let event = DebugModeRun.Event(timestamp: Date(), kind: kind.rawValue, profileQuery: profileQuery, summary: summary, details: details)
         update(runId) { $0.events.append(event) }
     }
 
@@ -305,13 +305,13 @@ final class DebugModeRunController: DataBrokerProtectionDebugControlling, @unche
 
     private static func result(_ resultId: String, in state: RunState) throws -> DebugScanResult {
         guard let result = state.results.first(where: { Self.resultId(for: $0) == resultId }) else {
-            throw DataBrokerProtectionDebugControlError.resultNotFound(resultId)
+            throw DebugModeRunError.resultNotFound(resultId)
         }
         return result.scanResult
     }
 
-    private func snapshot(of state: RunState) -> DebugRun {
-        DebugRun(id: state.id,
+    private func snapshot(of state: RunState) -> DebugModeRun {
+        DebugModeRun(id: state.id,
                  createdAt: state.createdAt,
                  broker: .init(name: state.broker.name, url: state.broker.url),
                  profileQueries: state.queries.map { DebugModeRunner.profileQueryText(for: $0.profileQuery) },
@@ -321,7 +321,7 @@ final class DebugModeRunController: DataBrokerProtectionDebugControlling, @unche
                      let id = Self.resultId(for: runResult)
                      let result = runResult.scanResult
                      let profile = result.extractedProfile
-                     return DebugRun.Result(id: id,
+                     return DebugModeRun.Result(id: id,
                                             profileQuery: DebugModeRunner.profileQueryText(for: result.profileQuery),
                                             name: profile.name ?? profile.fullName,
                                             age: profile.age,

@@ -1,5 +1,5 @@
 //
-//  DataBrokerProtectionDebugControlTests.swift
+//  DebugModeRunRequestTests.swift
 //
 //  Copyright © 2026 DuckDuckGo. All rights reserved.
 //
@@ -20,12 +20,12 @@ import XCTest
 import DataBrokerProtectionCore
 import DataBrokerProtectionDebugServer
 
-final class DataBrokerProtectionDebugControlTests: XCTestCase {
+final class DebugModeRunRequestTests: XCTestCase {
 
     private let profileJSON = #"{"names":[{"firstName":"Test","lastName":"Person"}],"addresses":[{"city":"Test City","state":"CA"}],"phones":[],"birthYear":1980}"#
 
     func testScanRequestWithStoredBroker() throws {
-        let request = try DebugScanRequest(body: Data(#"{"broker":"fakebroker.com","profile":\#(profileJSON)}"#.utf8))
+        let request = try DebugModeScanRequest(body: Data(#"{"broker":"fakebroker.com","profile":\#(profileJSON)}"#.utf8))
 
         XCTAssertEqual(request.broker, .stored("fakebroker.com"))
         XCTAssertEqual(request.profile.names.first?.firstName, "Test")
@@ -33,7 +33,7 @@ final class DataBrokerProtectionDebugControlTests: XCTestCase {
     }
 
     func testScanRequestWithInlineBrokerJSON() throws {
-        let request = try DebugScanRequest(body: Data(#"{"broker":{"name":"Fake"},"profile":\#(profileJSON),"hidesWebView":false}"#.utf8))
+        let request = try DebugModeScanRequest(body: Data(#"{"broker":{"name":"Fake"},"profile":\#(profileJSON),"hidesWebView":false}"#.utf8))
 
         guard case .json(let json) = request.broker else {
             return XCTFail("Expected inline broker JSON")
@@ -52,8 +52,8 @@ final class DataBrokerProtectionDebugControlTests: XCTestCase {
         ]
 
         for body in bodies {
-            XCTAssertThrowsError(try DebugScanRequest(body: Data(body.utf8)), body) { error in
-                guard case .invalidRequest = error as? DataBrokerProtectionDebugControlError else {
+            XCTAssertThrowsError(try DebugModeScanRequest(body: Data(body.utf8)), body) { error in
+                guard case .invalidRequest = error as? DebugModeRunError else {
                     return XCTFail("Expected invalidRequest for \(body), got \(error)")
                 }
             }
@@ -61,10 +61,10 @@ final class DataBrokerProtectionDebugControlTests: XCTestCase {
     }
 
     func testRunActionPaths() {
-        XCTAssertEqual(DebugRunAction(path: "run1/optouts/12-34"), .optOut(runId: "run1", resultId: "12-34"))
-        XCTAssertEqual(DebugRunAction(path: "run1/optouts/12-34/continue"), .continueOptOut(runId: "run1", resultId: "12-34"))
-        XCTAssertEqual(DebugRunAction(path: "run1/email-confirmation/check/"), .checkForEmailConfirmation(runId: "run1"))
-        XCTAssertNil(DebugRunAction(path: "run1"))
-        XCTAssertNil(DebugRunAction(path: "run1/optouts/12-34/cancel"))
+        XCTAssertEqual(DebugModeRunAction(path: "run1/optouts/12-34"), .optOut(runId: "run1", resultId: "12-34"))
+        XCTAssertEqual(DebugModeRunAction(path: "run1/optouts/12-34/continue"), .continueOptOut(runId: "run1", resultId: "12-34"))
+        XCTAssertEqual(DebugModeRunAction(path: "run1/email-confirmation/check/"), .checkForEmailConfirmation(runId: "run1"))
+        XCTAssertNil(DebugModeRunAction(path: "run1"))
+        XCTAssertNil(DebugModeRunAction(path: "run1/optouts/12-34/cancel"))
     }
 }

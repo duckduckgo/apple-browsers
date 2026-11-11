@@ -34,7 +34,7 @@ public final class DataBrokerProtectionDebugHTTPServer {
     private let server: DebugHTTPServer
     private let readService: DataBrokerProtectionDebugReadService
     private let logReader: DebugLogReading?
-    private let controller: DataBrokerProtectionDebugControlling?
+    private let runManager: DataBrokerProtectionDebugModeRunning?
     private let logger = Logger(subsystem: "com.duckduckgo.dbp", category: "DebugHTTPServer")
 
     public var isRunning: Bool {
@@ -53,11 +53,11 @@ public final class DataBrokerProtectionDebugHTTPServer {
 
     public init(provider: DataBrokerProtectionDebugReadProviding,
                 logReader: DebugLogReading? = nil,
-                controller: DataBrokerProtectionDebugControlling? = nil,
+                runManager: DataBrokerProtectionDebugModeRunning? = nil,
                 port: UInt16 = defaultPort) {
         self.port = port
         self.logReader = logReader
-        self.controller = controller
+        self.runManager = runManager
         self.server = DebugHTTPServer(port: port, loopbackOnly: true)
         self.readService = DataBrokerProtectionDebugReadService(provider: provider)
     }
@@ -77,7 +77,7 @@ public final class DataBrokerProtectionDebugHTTPServer {
         let service = UncheckedSendable(readService)
         let logReader = logReader.map(UncheckedSendable.init)
         let hasLogReader = logReader != nil
-        let hasController = controller != nil
+        let hasRunManager = runManager != nil
 
         server.addRoute("/api", method: .GET) { _ in
             let service = service.value
@@ -85,8 +85,8 @@ public final class DataBrokerProtectionDebugHTTPServer {
             if hasLogReader {
                 endpoints.append(Self.logsEndpointDescription)
             }
-            if hasController {
-                endpoints.append(contentsOf: Self.controlEndpointDescriptions)
+            if hasRunManager {
+                endpoints.append(contentsOf: Self.debugModeEndpointDescriptions)
             }
             return try Self.json(try service.apiResponse(endpoints: endpoints))
         }
@@ -124,25 +124,25 @@ public final class DataBrokerProtectionDebugHTTPServer {
             return try Self.json(detail)
         }
 
-        if let controller {
-            registerControlRoutes(controller: UncheckedSendable(controller))
+        if let runManager {
+            registerDebugModeRoutes(runManager: UncheckedSendable(runManager))
         }
     }
 
-    private func registerControlRoutes(controller: UncheckedSendable<DataBrokerProtectionDebugControlling>) {
+    private func registerDebugModeRoutes(runManager: UncheckedSendable<DataBrokerProtectionDebugModeRunning>) {
         server.addRoute("/api/debug/scans", method: .POST) { request in
             if Self.isFromWebPage(request) {
                 return Self.webPageRejection
             }
-            return try Self.controlResponse {
-                try controller.value.startScan(try DebugScanRequest(body: request.body))
+            return try Self.debugModeResponse {
+                try runManager.value.startScan(try DebugModeScanRequest(body: request.body))
             }
         }
 
         server.addPrefixRoute("/api/debug/runs/", method: .GET) { request in
             let runId = String(request.path.dropFirst("/api/debug/runs/".count))
                 .trimmingCharacters(in: CharacterSet(charactersIn: "/"))
-            guard let run = controller.value.run(id: runId) else {
+            guard let run = runManager.value.run(id: runId) else {
                 return .text("Run not found: \(runId)", status: .notFound)
             }
             return try Self.json(run)
@@ -152,17 +152,17 @@ public final class DataBrokerProtectionDebugHTTPServer {
             if Self.isFromWebPage(request) {
                 return Self.webPageRejection
             }
-            guard let action = DebugRunAction(path: String(request.path.dropFirst("/api/debug/runs/".count))) else {
+            guard let action = DebugModeRunAction(path: String(request.path.dropFirst("/api/debug/runs/".count))) else {
                 return .text("Unknown run action: \(request.path)", status: .notFound)
             }
-            return try Self.controlResponse {
+            return try Self.debugModeResponse {
                 switch action {
                 case .optOut(let runId, let resultId):
-                    return try controller.value.startOptOut(runId: runId, resultId: resultId)
+                    return try runManager.value.startOptOut(runId: runId, resultId: resultId)
                 case .continueOptOut(let runId, let resultId):
-                    return try controller.value.continueOptOut(runId: runId, resultId: resultId)
+                    return try runManager.value.continueOptOut(runId: runId, resultId: resultId)
                 case .checkForEmailConfirmation(let runId):
-                    return try controller.value.checkForEmailConfirmation(runId: runId)
+                    return try runManager.value.checkForEmailConfirmation(runId: runId)
                 }
             }
         }
@@ -175,10 +175,10 @@ public final class DataBrokerProtectionDebugHTTPServer {
 
     private static let webPageRejection = HTTPResponse.text("Requests from web pages are not accepted", status: .forbidden)
 
-    private static func controlResponse(_ start: () throws -> DebugRun) throws -> HTTPResponse {
+    private static func debugModeResponse(_ start: () throws -> DebugModeRun) throws -> HTTPResponse {
         do {
             return try json(try start(), status: .accepted)
-        } catch let error as DataBrokerProtectionDebugControlError {
+        } catch let error as DebugModeRunError {
             let status: HTTPStatusCode
             switch error {
             case .invalidRequest:
@@ -196,7 +196,7 @@ public final class DataBrokerProtectionDebugHTTPServer {
         path: "/api/logs?since={iso8601}&category={category}&limit={n}",
         description: "Unified-log tail for PIR execution detail. 'since' tails new lines; 'category' filters by category; 'limit' defaults to \(DataBrokerProtectionDebugReadService.defaultLimit) and is capped at \(DataBrokerProtectionDebugReadService.maximumLimit).")
 
-    private static let controlEndpointDescriptions: [DebugAPIResponse.Endpoint] = [
+    private static let debugModeEndpointDescriptions: [DebugAPIResponse.Endpoint] = [
         .init(path: "POST /api/debug/scans",
               description: "Starts a debug mode scan. Body: {\"broker\": stored broker url or name, or broker JSON, \"profile\": same shape as -pirProfileJSON, \"hidesWebView\": true}. hidesWebView defaults to true and applies to the whole run. The configured job timeouts always apply. Nothing is saved to the PIR database. Returns the run; one activity runs at a time."),
         .init(path: "/api/debug/runs/{runId}",

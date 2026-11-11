@@ -944,7 +944,7 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
         button.image = button.isMouseOver ? browserToolPermissionCloseIcon : icon
         button.toolTip = title
         button.setAccessibilityTitle(title)
-        guard button.isHidden || browserToolPermissionButtonWidth?.constant == 0 else {
+        guard button.isHidden || button.alphaValue == 0 || browserToolPermissionButtonWidth?.constant == 0 else {
             styleBrowserToolPermissionButton(button, filled: true)
             shown(button)
             return

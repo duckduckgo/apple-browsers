@@ -526,8 +526,10 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
             reportedIsFreeTrial = isFreeTrial
             recorder.events.append("transactionCompleted")
         }
+        let webView = MockURLWebView(url: URL(string: "https://duckduckgo.com/subscriptions")!)
+        let message = WKScriptMessage.mock(name: "subscriptionSelected", body: "", webView: webView)
 
-        _ = await sut.subscriptionSelected(params: ["id": "yearly"], original: subscriptionSelectedMessage())
+        _ = await sut.subscriptionSelected(params: ["id": "yearly"], original: message)
 
         XCTAssertEqual(recorder.events, ["transactionCompleted", "attribution"])
         XCTAssertEqual(reportedIsFreeTrial, true)
@@ -541,16 +543,12 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
         let sut = makeFeature(notificationCenter: MockUNUserNotificationCenter(), appStorePurchaseFlow: purchaseFlow)
         var didReportTransaction = false
         sut.onAppStoreTransactionCompleted = { _ in didReportTransaction = true }
+        let webView = MockURLWebView(url: URL(string: "https://duckduckgo.com/subscriptions")!)
+        let message = WKScriptMessage.mock(name: "subscriptionSelected", body: "", webView: webView)
 
-        _ = await sut.subscriptionSelected(params: ["id": "yearly"], original: subscriptionSelectedMessage())
+        _ = await sut.subscriptionSelected(params: ["id": "yearly"], original: message)
 
         XCTAssertFalse(didReportTransaction)
-    }
-
-    @MainActor
-    private func subscriptionSelectedMessage() -> WKScriptMessage {
-        let webView = MockURLWebView(url: URL(string: "https://duckduckgo.com/subscriptions")!)
-        return WKScriptMessage.mock(name: "subscriptionSelected", body: "", webView: webView)
     }
 
     func testWhenMappingPurchaseWideEventOriginsThenOnlyCoarseEntryPointsAreReturned() {

@@ -39,7 +39,7 @@ final class DuckAISwipeNewChatHandler: NSObject, UIGestureRecognizerDelegate {
 
     private weak var webView: WKWebView?
     private weak var hostView: UIView?
-    private let isFeatureEnabled: () -> Bool
+    private let feature: DuckAISwipeNewChatFeatureProviding
     private let chromeState: () -> DuckAISwipeNewChatChromeState?
     private let onStartNewChat: () -> Void
 
@@ -67,12 +67,12 @@ final class DuckAISwipeNewChatHandler: NSObject, UIGestureRecognizerDelegate {
     init(webView: WKWebView,
          hostView: UIView,
          isFireTab: Bool,
-         isFeatureEnabled: @escaping () -> Bool,
+         feature: DuckAISwipeNewChatFeatureProviding,
          chromeState: @escaping () -> DuckAISwipeNewChatChromeState?,
          onStartNewChat: @escaping () -> Void) {
         self.webView = webView
         self.hostView = hostView
-        self.isFeatureEnabled = isFeatureEnabled
+        self.feature = feature
         self.chromeState = chromeState
         self.onStartNewChat = onStartNewChat
         indicator = DuckAISwipeNewChatIndicatorView(isFireTab: isFireTab)
@@ -124,8 +124,7 @@ final class DuckAISwipeNewChatHandler: NSObject, UIGestureRecognizerDelegate {
 
     private func eligibility() -> (eligibility: DuckAISwipeNewChat.Eligibility, chrome: DuckAISwipeNewChatChromeState)? {
         guard let panStart, let chrome = chromeState() else { return nil }
-        let eligibility = DuckAISwipeNewChat.Eligibility(isFeatureEnabled: isFeatureEnabled(),
-                                                         isPhone: UIDevice.current.userInterfaceIdiom == .phone,
+        let eligibility = DuckAISwipeNewChat.Eligibility(isFeatureAvailable: feature.isAvailable,
                                                          hasChat: webView?.url?.duckAIChatID != nil,
                                                          isGenerating: chrome.isGenerating,
                                                          isVoiceSessionActive: chrome.isVoiceSessionActive,
@@ -337,14 +336,14 @@ final class DuckAISwipeNewChatHandler: NSObject, UIGestureRecognizerDelegate {
     /// The first finger down asks the page whether the chat is at its bottom straight away, before the chat scrolls
     /// with the finger; by the time the pan begins it has already moved. Never mid-commit, so the fade and timeout stay valid.
     func gestureRecognizer(_ gestureRecognizer: UIGestureRecognizer, shouldReceive touch: UITouch) -> Bool {
-        guard pan.numberOfTouches == 0, isFeatureEnabled(), commitState == .idle, webView != nil else { return true }
+        guard pan.numberOfTouches == 0, feature.isAvailable, commitState == .idle, webView != nil else { return true }
         generation += 1
         apply(pull.handle(.touchedDown))
         return true
     }
 
     func gestureRecognizerShouldBegin(_ gestureRecognizer: UIGestureRecognizer) -> Bool {
-        isFeatureEnabled() && commitState == .idle
+        feature.isAvailable && commitState == .idle
     }
 
     func gestureRecognizer(_ gestureRecognizer: UIGestureRecognizer,

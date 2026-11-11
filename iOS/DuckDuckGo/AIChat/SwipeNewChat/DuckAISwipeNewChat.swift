@@ -41,8 +41,8 @@ enum DuckAISwipeNewChat {
 
     /// What decides, when a pan begins, whether it may start a new chat.
     struct Eligibility: Equatable {
-        var isFeatureEnabled: Bool
-        var isPhone: Bool
+        /// The flag and the device, from `DuckAISwipeNewChatFeature`.
+        var isFeatureAvailable: Bool
         var hasChat: Bool
         var isGenerating: Bool
         var isVoiceSessionActive: Bool
@@ -53,8 +53,7 @@ enum DuckAISwipeNewChat {
         var bottomInsetMinY: CGFloat
 
         var isEligible: Bool {
-            isFeatureEnabled
-            && isPhone
+            isFeatureAvailable
             && hasChat
             && !isGenerating
             && !isVoiceSessionActive

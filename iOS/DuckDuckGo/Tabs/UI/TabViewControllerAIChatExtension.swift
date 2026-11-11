@@ -193,7 +193,7 @@ extension TabViewController {
             webView: webView,
             hostView: view,
             isFireTab: tabModel.fireTab,
-            isFeatureEnabled: { [featureFlagger] in featureFlagger.isFeatureOn(.aiChatSwipeUpNewChat) },
+            feature: DuckAISwipeNewChatFeature(featureFlagger: featureFlagger),
             chromeState: { [weak self] in
                 guard let self else { return nil }
                 return self.delegate?.duckAISwipeNewChatChromeState(for: self)

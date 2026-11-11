@@ -371,8 +371,7 @@ struct DuckAISwipeNewChatTests {
 
     // MARK: - Eligibility
 
-    private static let eligible = Eligibility(isFeatureEnabled: true,
-                                              isPhone: true,
+    private static let eligible = Eligibility(isFeatureAvailable: true,
                                               hasChat: true,
                                               isGenerating: false,
                                               isVoiceSessionActive: false,
@@ -391,8 +390,7 @@ struct DuckAISwipeNewChatTests {
     @Test("Each blocking state makes the pan ineligible",
           .timeLimit(.minutes(1)),
           arguments: [
-            ("flag off", \Eligibility.isFeatureEnabled, false),
-            ("not a phone", \Eligibility.isPhone, false),
+            ("feature unavailable", \Eligibility.isFeatureAvailable, false),
             ("no chat ID", \Eligibility.hasChat, false),
             ("generating", \Eligibility.isGenerating, true),
             ("voice session", \Eligibility.isVoiceSessionActive, true),
@@ -418,5 +416,28 @@ struct DuckAISwipeNewChatTests {
         var eligibility = Self.eligible
         eligibility.startY = eligibility.bottomInsetMinY
         #expect(!eligibility.isEligible)
+    }
+}
+
+@Suite("Duck.ai swipe up for a new chat: availability")
+struct DuckAISwipeNewChatFeatureTests {
+
+    private enum IPhone: DevicePlatformProviding { static let isIphone = true }
+    private enum IPad: DevicePlatformProviding { static let isIphone = false }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Available only on iPhone with the flag on",
+          .timeLimit(.minutes(1)),
+          arguments: [
+            (true, true, true),
+            (true, false, false),
+            (false, true, false),
+            (false, false, false)
+          ])
+    func availability(isIphone: Bool, isFlagOn: Bool, expected: Bool) {
+        let flagger = MockFeatureFlagger(enabledFeatureFlags: isFlagOn ? [.aiChatSwipeUpNewChat] : [])
+        let feature = DuckAISwipeNewChatFeature(featureFlagger: flagger,
+                                                devicePlatform: isIphone ? IPhone.self : IPad.self)
+        #expect(feature.isAvailable == expected)
     }
 }

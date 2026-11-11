@@ -1308,6 +1308,70 @@ final class DefaultOmniBarViewLongPressPreviewTests: XCTestCase {
     }
 }
 
+@available(iOS 16.0, *)
+final class BrowserChromeButtonMenuPreviewTests: XCTestCase {
+
+    func testWhenContainerProviderIsAbsentThenBothPreviewsUseSystemDefault() {
+        assertSystemPreviews(for: BrowserChromeButton(.toolbar))
+    }
+
+    func testWhenContainerProviderReturnsNilThenBothPreviewsUseSystemDefault() {
+        let button = BrowserChromeButton(.toolbar)
+        button.menuPreviewContainer = { nil }
+
+        assertSystemPreviews(for: button)
+    }
+
+    func testWhenContainerIsAttachedThenPreviewsShareAnchorAndCleanupKeepsButtonInPlace() throws {
+        let window = UIWindow(frame: CGRect(x: 0, y: 0, width: 390, height: 800))
+        let container = UIView(frame: CGRect(x: 20, y: 100, width: 300, height: 80))
+        let button = BrowserChromeButton(.toolbar)
+        button.frame = CGRect(x: 16, y: 12, width: 44, height: 44)
+        window.addSubview(container)
+        container.addSubview(button)
+        window.makeKeyAndVisible()
+        defer { window.isHidden = true }
+        button.menuPreviewContainer = { [weak container] in container }
+        let interaction = UIContextMenuInteraction(delegate: button)
+        let configuration = UIContextMenuConfiguration(identifier: nil, previewProvider: nil, actionProvider: nil)
+        let identifier = "preview" as NSString
+
+        let highlight = try XCTUnwrap(button.contextMenuInteraction(
+            interaction, configuration: configuration, highlightPreviewForItemWithIdentifier: identifier))
+        let dismissal = try XCTUnwrap(button.contextMenuInteraction(
+            interaction, configuration: configuration, dismissalPreviewForItemWithIdentifier: identifier))
+
+        XCTAssertFalse(highlight.view === button)
+        XCTAssertTrue(highlight.view === dismissal.view)
+        XCTAssertTrue(highlight.view.superview === container)
+        XCTAssertEqual(highlight.view.frame, container.convert(button.bounds, from: button))
+        XCTAssertTrue(button.superview === container)
+        XCTAssertFalse(button.isHidden)
+
+        button.menuPreviewContainer = nil
+        XCTAssertNil(highlight.view.superview)
+        XCTAssertEqual(container.subviews, [button])
+
+        button.menuPreviewContainer = { [weak container] in container }
+        let nextPreview = try XCTUnwrap(button.contextMenuInteraction(
+            interaction, configuration: configuration, highlightPreviewForItemWithIdentifier: identifier))
+        button.removeFromSuperview()
+        XCTAssertNil(nextPreview.view.superview)
+        XCTAssertTrue(container.subviews.isEmpty)
+    }
+
+    private func assertSystemPreviews(for button: BrowserChromeButton, file: StaticString = #filePath, line: UInt = #line) {
+        let interaction = UIContextMenuInteraction(delegate: button)
+        let configuration = UIContextMenuConfiguration(identifier: nil, previewProvider: nil, actionProvider: nil)
+        let identifier = "preview" as NSString
+
+        XCTAssertNil(button.contextMenuInteraction(
+            interaction, configuration: configuration, highlightPreviewForItemWithIdentifier: identifier), file: file, line: line)
+        XCTAssertNil(button.contextMenuInteraction(
+            interaction, configuration: configuration, dismissalPreviewForItemWithIdentifier: identifier), file: file, line: line)
+    }
+}
+
 final class DefaultOmniBarViewMinimalChromeTests: XCTestCase {
 
     private func makeBarView(isFloatingUIEnabled: Bool) -> DefaultOmniBarView {

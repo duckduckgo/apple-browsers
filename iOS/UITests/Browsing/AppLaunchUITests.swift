@@ -23,12 +23,164 @@ import UITestingSupport
 final class AppLaunchUITests: UITestCase {
 
     func testAppLaunchesIntoBrowser() {
-        let searchEntry = app.descendants(matching: .any)["searchEntry"]
+        let searchEntry = app.searchEntry
 
         XCTAssertTrue(
             searchEntry.waitForExistence(timeout: UITestTimeouts.navigation),
             "Browser UI did not appear after launch."
         )
+    }
+
+    func testRegularToolbarReadyWithoutKeyboard() {
+        assertToolbarActionAfterDismissal(floating: false, editing: false)
+    }
+
+    func testRegularAddressEditingDismissesKeyboard() {
+        assertToolbarActionAfterDismissal(floating: false, editing: true)
+    }
+
+    func testFloatingToolbarReadyWithoutKeyboard() {
+        assertToolbarActionAfterDismissal(floating: true, editing: false)
+    }
+
+    func testFloatingAddressEditingDismissesKeyboard() {
+        assertToolbarActionAfterDismissal(floating: true, editing: true)
+    }
+
+    func testRegularContextMenusKeepBrowserControlsVisible() {
+        assertContextMenusKeepBrowserControlsVisible(floating: false)
+    }
+
+    func testFloatingContextMenusKeepBrowserControlsVisible() {
+        assertContextMenusKeepBrowserControlsVisible(floating: true)
+    }
+
+    private func assertContextMenusKeepBrowserControlsVisible(floating: Bool, file: StaticString = #filePath, line: UInt = #line) {
+        app.terminate()
+        for index in app.launchArguments.indices where ["-ff.floatingUIiOS26", "-ff.floatingUIiOS27"].contains(app.launchArguments[index]) {
+            app.launchArguments[index + 1] = String(floating)
+        }
+        app.launchArguments += ["-ff.fireMode", "true", "-ff.fireButtonRefinements", "true", "-ff.slideToDelete", "false"]
+        app.launchEnvironment["UITEST_DISABLE_ANIMATIONS"] = "1"
+        app.launch()
+        app.dismissAddressBarEditing(file: file, line: line)
+
+        let tabs = app.buttons["Browser.Toolbar.Button.TabSwitcher"]
+        let fire = app.buttons["Browser.Toolbar.Button.Fire"]
+        let newTab = app.buttons["Browser.NewTabMenu.NewTab"]
+        var expectedTabs = 1
+        for loadedPage in [false, true] {
+            XCTContext.runActivity(named: loadedPage ? "Context menus on a loaded page" : "Context menus on a new tab") { _ in
+                if loadedPage {
+                    app.openURL("https://privacy-test-pages.site", expecting: "Privacy Test Pages", file: file, line: line)
+                    fire.tapWhenHittable(in: app, file: file, line: line)
+                    let close = app.buttons["Fire.Confirmation.Button.Close"]
+                    close.tapWhenHittable(in: app, file: file, line: line)
+                    XCTAssertTrue(close.waitForNonExistence(timeout: UITestTimeouts.navigation), file: file, line: line)
+                    app.assertPageContains("Privacy Test Pages", file: file, line: line)
+                }
+
+                XCTAssertTrue(tabs.waitForHittableInAppWindow(in: app, timeout: UITestTimeouts.navigation), file: file, line: line)
+                tabs.press(forDuration: 1)
+                XCTAssertTrue(newTab.waitForExistence(timeout: UITestTimeouts.navigation), file: file, line: line)
+                attachContextMenuState(loadedPage: loadedPage, checkpoint: "open menu")
+                app.browserWindow.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.25)).tap()
+                XCTAssertTrue(newTab.waitForNonExistence(timeout: UITestTimeouts.navigation), file: file, line: line)
+                XCTAssertTrue(tabs.waitForHittableInAppWindow(in: app, timeout: UITestTimeouts.navigation), file: file, line: line)
+                XCTAssertTrue(fire.waitForHittableInAppWindow(in: app, timeout: UITestTimeouts.navigation), file: file, line: line)
+                attachContextMenuState(loadedPage: loadedPage, checkpoint: "cancelled")
+                app.openTabSwitcher(file: file, line: line)
+                app.assertTabCount(expectedTabs, file: file, line: line)
+                let originalTab = app.tabCell(at: expectedTabs - 1)
+                app.buttons["TabSwitcher.Button.Done"].tapWhenHittable(in: app, file: file, line: line)
+
+                tabs.press(forDuration: 1)
+                newTab.tapWhenHittable(in: app, file: file, line: line)
+                XCTAssertTrue(newTab.waitForNonExistence(timeout: UITestTimeouts.navigation), file: file, line: line)
+                app.dismissAddressBarEditing(file: file, line: line)
+                XCTAssertTrue(tabs.waitForHittableInAppWindow(in: app, timeout: UITestTimeouts.navigation), file: file, line: line)
+                XCTAssertTrue(fire.waitForHittableInAppWindow(in: app, timeout: UITestTimeouts.navigation), file: file, line: line)
+                attachContextMenuState(loadedPage: loadedPage, checkpoint: "created tab")
+                expectedTabs += 1
+                app.openTabSwitcher(file: file, line: line)
+                app.assertTabCount(expectedTabs, file: file, line: line)
+                XCTAssertTrue(originalTab.exists, "Creating a tab removed an existing tab.", file: file, line: line)
+                if loadedPage {
+                    originalTab.buttons["TabSwitcher.Tab.Open"].tapWhenHittable(in: app, file: file, line: line)
+                    app.assertPageContains("Privacy Test Pages", file: file, line: line)
+                } else {
+                    app.buttons["TabSwitcher.Button.Done"].tapWhenHittable(in: app, file: file, line: line)
+                }
+            }
+        }
+    }
+
+    private func attachContextMenuState(loadedPage: Bool, checkpoint: String) {
+        let attachment = XCTAttachment(screenshot: app.screenshot())
+        attachment.name = "Context menu \(loadedPage ? "loaded page" : "new tab") — \(checkpoint)"
+        attachment.lifetime = .keepAlways
+        add(attachment)
+    }
+
+    func testReadinessRejectsMissingAndDisabledControlsWithoutTapping() {
+        app.dismissAddressBarEditing()
+        let missing = app.buttons["Readiness.Test.Missing"]
+        XCTAssertFalse(missing.waitForHittableInAppWindow(in: app, timeout: 0.3))
+
+        let tabSwitcher = app.buttons["Browser.Toolbar.Button.TabSwitcher"]
+        XCTAssertTrue(tabSwitcher.waitForHittableInAppWindow(in: app, timeout: UITestTimeouts.elementExistence))
+        XCTAssertFalse(app.buttons["TabSwitcher.Button.Done"].exists, "A readiness wait must not tap its target.")
+        app.openTabSwitcher()
+        app.assertTabCount(1)
+        let edit = app.buttons["TabSwitcher.Button.Edit"]
+        XCTAssertTrue(edit.exists)
+        XCTAssertFalse(edit.isEnabled, "Editing must be disabled for the single empty tab.")
+        XCTAssertFalse(edit.waitForHittableInAppWindow(in: app, timeout: 0.3))
+        XCTAssertTrue(app.buttons["TabSwitcher.Button.Done"].exists)
+        app.assertTabCount(1)
+    }
+
+    func testReadinessInPortraitAndLandscape() {
+        defer { XCUIDevice.shared.orientation = .portrait }
+        for orientation in [UIDeviceOrientation.portrait, .landscapeLeft] {
+            XCUIDevice.shared.orientation = orientation
+            app.dismissAddressBarEditing()
+            let tabSwitcher = app.buttons["Browser.Toolbar.Button.TabSwitcher"]
+            XCTAssertTrue(tabSwitcher.waitForHittableInAppWindow(in: app, timeout: UITestTimeouts.elementExistence))
+            XCTAssertEqual(app.windows.matching(identifier: "Browser.Window.Main").count, 1)
+            let applicationFrame = app.frame
+            let windowFrame = app.browserWindow.frame
+            let attachment = XCTAttachment(string: "orientation=\(orientation.rawValue)\napplicationFrame=\(applicationFrame)\nselectedWindowFrame=\(windowFrame)")
+            attachment.name = "Readiness application and window geometry"
+            attachment.lifetime = .keepAlways
+            add(attachment)
+            tabSwitcher.tapWhenHittable(in: app)
+            app.assertTabCount(1)
+            app.buttons["TabSwitcher.Button.Done"].tapWhenHittable(in: app)
+        }
+    }
+
+    private func assertToolbarActionAfterDismissal(floating: Bool, editing: Bool, file: StaticString = #filePath, line: UInt = #line) {
+        app.terminate()
+        for index in app.launchArguments.indices where ["-ff.floatingUIiOS26", "-ff.floatingUIiOS27"].contains(app.launchArguments[index]) {
+            app.launchArguments[index + 1] = String(floating)
+        }
+        app.launch()
+        XCTAssertTrue(app.searchEntry.waitForExistence(timeout: UITestTimeouts.navigation), file: file, line: line)
+        if editing {
+            app.searchEntry.tapWhenHittable(in: app, file: file, line: line)
+            XCTAssertTrue(app.keyboards.firstMatch.waitForExistence(timeout: UITestTimeouts.elementExistence), file: file, line: line)
+        } else {
+            XCTAssertFalse(app.keyboards.firstMatch.exists, file: file, line: line)
+        }
+
+        app.dismissAddressBarEditing(file: file, line: line)
+        XCTAssertFalse(app.keyboards.firstMatch.exists, file: file, line: line)
+        app.buttons["Browser.Toolbar.Button.TabSwitcher"].tapWhenHittable(in: app, file: file, line: line)
+        XCTAssertTrue(
+            app.buttons["TabSwitcher.Button.Done"].waitForExistence(timeout: UITestTimeouts.elementExistence),
+            "Tab switcher did not open after address editing dismissal.", file: file, line: line)
+        app.assertTabCount(1, file: file, line: line)
     }
 
     func testSlideToDeleteRequiresCompletedDrag() {
@@ -175,26 +327,38 @@ final class AppLaunchUITests: UITestCase {
     }
 
     func testAutoClearOnRelaunchShowsNewTabInTabSwitcher() {
+        func enableFloatingToolbarFlags() {
+            for flag in ["-ff.floatingUIiOS26", "-ff.floatingUIiOS27"] {
+                let indices = app.launchArguments.indices.filter { app.launchArguments[$0] == flag }
+                XCTAssertEqual(indices.count, 1, "Expected one launch value for \(flag).")
+                if let index = indices.first {
+                    app.launchArguments[index + 1] = "true"
+                }
+            }
+        }
+
         app.terminate()
         app.launchArguments += [
             "-ff.fireMode", "true",
-            "-ff.floatingUIiOS26", "true",
-            "-ff.floatingUIiOS27", "true",
             // The launch keyboard covers the tab switcher button, so the tap would race it.
             "-ff.alwaysShowKeyboardOnNewTabPage", "false",
             "-com.duckduckgo.app.autoClearActionKey", "3",
             "-com.duckduckgo.app.autoClearTimingKey", "0",
         ]
+        enableFloatingToolbarFlags()
         app.launch()
         XCTAssertTrue(app.descendants(matching: .any)["searchEntry"].waitForExistence(timeout: UITestTimeouts.navigation))
 
         app.terminate()
         app.launchArguments.removeAll { $0 == "-clearAllDefaults" }
+        enableFloatingToolbarFlags()
         app.launch()
 
-        let tabSwitcher = app.descendants(matching: .any)["Browser.Toolbar.Button.TabSwitcher"]
-        XCTAssertTrue(tabSwitcher.waitForExistence(timeout: UITestTimeouts.navigation))
-        tabSwitcher.tap()
+        let tabSwitcherButton = app.buttons["Browser.Toolbar.Button.TabSwitcher"]
+        XCTAssertTrue(
+            tabSwitcherButton.waitForHittableInAppWindow(in: app, timeout: UITestTimeouts.navigation),
+            "Tab switcher button did not become ready after automatic tab clearing.")
+        app.openTabSwitcher()
 
         let screenshot = XCTAttachment(screenshot: app.screenshot())
         screenshot.name = "Tab switcher after automatic tab clearing"

@@ -367,9 +367,6 @@ public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
     /// Enables Duck.ai query experiment with tracker-blocking demo during onboarding
     case onboardingDuckAIQueryTrackersDemoExperiment
 
-    /// Enables the omnibar onboarding for AI Chat
-    case omnibarOnboarding
-
     /// Enables the omnibar tools (customize, search toggle, image upload) for AI Chat
     case omnibarTools
 

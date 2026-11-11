@@ -238,9 +238,6 @@ public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/1/137249556945/project/72649045549333/task/1211654922002904
     case aiChatOmnibarTools
 
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1212710873113687
-    case aiChatOmnibarOnboarding
-
     /// https://app.asana.com/1/137249556945/project/1204006570077678/task/1215385527516382?focus=true
     case aiChatOnboardingToggleAffectsNtpAndDdg
 
@@ -907,8 +904,6 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(defaultValue: .enabled, source: .remoteReleasable(DuckAiChatHistorySubfeature.featureEnabled), category: .duckAI)
         case .aiChatOmnibarTools:
             Config(source: .remoteReleasable(AIChatSubfeature.omnibarTools), category: .duckAI)
-        case .aiChatOmnibarOnboarding:
-            Config(defaultValue: .enabled, source: .remoteReleasable(AIChatSubfeature.omnibarOnboarding), category: .duckAI)
         case .aiChatOnboardingToggleAffectsNtpAndDdg:
             Config(defaultValue: .enabled, source: .remoteReleasable(AIChatSubfeature.onboardingToggleAffectsNtpAndDdg), category: .duckAI)
         case .osSupportForceUnsupportedMessage:

@@ -84,6 +84,8 @@ final class UpdatesDebugMenu: NSMenu {
                     .targetting(self)
                 NSMenuItem(title: "Reset metadata server URL", action: #selector(resetMetadataServerURL))
                     .targetting(self)
+                NSMenuItem(title: "Check for Updates Now", action: #selector(checkForUpdatesNow))
+                    .targetting(self)
                 metadataServerMenuItem
                 NSMenuItem.separator()
                 #endif
@@ -244,7 +246,7 @@ final class UpdatesDebugMenu: NSMenu {
         Open http://localhost:8765/ to edit release metadata, choose presets, and apply the offered scenario.
         The app provides its actual version/build as the preset baseline; these values are not editable on the web page.
         Use the existing Debug prompt-clock controls to test timing.
-        Applying a scenario changes the server response. Set the same metadata URL again to request a fresh app check.
+        After applying a scenario, choose Debug → Updates → Check for Updates Now to request a fresh app check.
 
         This server supplies metadata only. It never installs, launches, or updates an app.
         The normal update button continues opening Apple App Store.
@@ -299,6 +301,10 @@ final class UpdatesDebugMenu: NSMenu {
         debugSettings.appStoreMetadataBaseURL = nil
         Application.appDelegate.updateController?.checkForUpdateSkippingRollout()
         updateMetadataServerMenuItem()
+    }
+
+    @objc private func checkForUpdatesNow() {
+        Application.appDelegate.updateController?.checkForUpdateSkippingRollout()
     }
 
     private func updateMetadataServerMenuItem() {
@@ -737,7 +743,7 @@ private enum AppStoreTestingResources {
     Debug > Feature Flag Overrides > Updates. Choose Debug > Updates > Set metadata
     server URL… and enter the printed URL. Turn off Force Update Available and
     select Debug > Updates > Prompt Stage > Force Prompt Stage > Automatic.
-    After applying a scenario, set the same URL again to request a fresh check.
+    After applying a scenario, choose Debug > Updates > Check for Updates Now.
     Use the existing Debug prompt-clock controls to exercise timing.
 
     For HTTPS, pass --cert and --key for an already trusted certificate. No
@@ -774,7 +780,7 @@ private enum AppStoreTestingResources {
     fieldset{border:0;padding:0;margin:0}fieldset:disabled{opacity:.4}@media(max-width:700px){.grid{grid-template-columns:1fr}}
     </style>
     <div class="tag">LOCAL TEST TOOL</div><h1>App Store update lab</h1>
-    <p>Choose what the CDN offers. Apply a scenario, then relaunch the test app to fetch it.</p>
+    <p>Choose what the CDN offers. Apply a scenario, then choose Debug → Updates → Check for Updates Now in the test app.</p>
     <div class="card"><h2>Connect your Debug app</h2>
     <p class="hint">Choose Debug → Updates → Set metadata server URL… and enter:</p><pre id="connection"></pre>
     <p class="hint">Turn off “Force Update Available” and select “Automatic” for the forced prompt stage.
@@ -846,7 +852,7 @@ private enum AppStoreTestingResources {
     $('editor').onsubmit=async event=>{event.preventDefault();try{
       const metadata={latest_appstore_version:read('latest')};if($('rolling').checked)metadata.available_appstore_version=read('available');
       show(await api('/api/scenario',{metadata}));
-      status('Applied. Relaunch the test app and watch for its metadata request.');
+      status('Applied. Choose Debug → Updates → Check for Updates Now, then watch for the metadata request.');
     }catch(error){status(error.message,true);}};
     $('reset').onclick=async()=>{try{show(await api('/api/reset',{}),true);status('Initial scenario restored.');}catch(error){status(error.message,true);}};
     api('/api/state').then(data=>show(data,true)).catch(error=>status(error.message,true));

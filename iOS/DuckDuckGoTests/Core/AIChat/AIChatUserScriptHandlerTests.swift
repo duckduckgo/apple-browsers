@@ -434,6 +434,22 @@ class AIChatUserScriptHandlerTests: XCTestCase {
         XCTAssertEqual(spacerShowing, true)
     }
 
+    func testIsAtBottomWhenAScrollStopsShortButTheEndIsAboveTheInset() async throws {
+        let (webView, window) = await makeChatScrollFixture(height: 800)
+        defer { window.isHidden = true }
+        DuckAIChatScrollInsetStyler.apply(UIEdgeInsets(top: 0, left: 0, bottom: 40, right: 0), to: webView)
+        let spare = try await webView.callAsyncJavaScript("""
+        await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(() => requestAnimationFrame(resolve))));
+        const chat = document.getElementById('chat');
+        const spare = window.__ddgNativeScrollInsets.spacer.getBoundingClientRect().height - 40;
+        chat.scrollTop = chat.scrollHeight - chat.clientHeight - spare / 2;
+        return spare;
+        """, arguments: [:], in: nil, contentWorld: .page)
+        XCTAssertGreaterThan(try XCTUnwrap(spare as? Double), 8)
+        let stoppedShort = try await isAtBottom(webView)
+        XCTAssertEqual(stoppedShort, true)
+    }
+
     func testConversationAtItsEndStaysThereWhenTheSpacerGrows() async throws {
         let (webView, window) = await makeChatScrollFixture()
         defer { window.isHidden = true }

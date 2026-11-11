@@ -51,11 +51,16 @@ enum DuckAIChatScroller {
     })()
     """
 
-    /// Whether the conversation is scrolled to its end. One too short to scroll is; no conversation is not.
+    /// Whether the end of the conversation is in view above the bottom inset. One too short to scroll is; no
+    /// conversation is not. A scroll that stops short counts while the inset spacer's spare room still shows.
     static let isAtBottomExpression = """
     (() => {
         const chat = \(expression);
-        return !!chat && chat.scrollTop + chat.clientHeight >= chat.scrollHeight - 4;
+        if (!chat) return false;
+        const insets = window.__ddgNativeScrollInsets;
+        const spacer = insets?.spacer?.parentElement === chat ? insets.spacer.getBoundingClientRect().height : 0;
+        const slack = Math.max(4, spacer - (insets?.bottom ?? 0));
+        return chat.scrollTop + chat.clientHeight >= chat.scrollHeight - slack;
     })()
     """
 }

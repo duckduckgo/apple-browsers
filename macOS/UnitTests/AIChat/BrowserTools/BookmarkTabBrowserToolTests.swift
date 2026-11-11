@@ -116,9 +116,12 @@ final class BookmarkTabBrowserToolTests: XCTestCase {
         async let first = tool.execute(arguments: ["folder": ["Trips"]], context: context)
         async let second = tool.execute(arguments: ["tabId": JSONValue.string(tabs[1].uuid), "folder": ["Trips"]], context: context)
         _ = await (first, second)
-        try await waitUntil { manager.getBookmark(forUrl: otherURL)?.parentFolderUUID != nil }
+        var trips: [BaseBookmarkEntity] { manager.list?.topLevelEntities.filter { $0.title == "Trips" } ?? [] }
+        try await waitUntil {
+            let parents = [pageURL, otherURL].map { manager.getBookmark(forUrl: $0)?.parentFolderUUID }
+            return parents.allSatisfy { parent in trips.contains { $0.id == parent } }
+        }
 
-        let trips = manager.list?.topLevelEntities.filter { $0.title == "Trips" } ?? []
         XCTAssertEqual(trips.count, 1)
         XCTAssertEqual(manager.getBookmark(forUrl: pageURL)?.parentFolderUUID, trips.first?.id)
         XCTAssertEqual(manager.getBookmark(forUrl: otherURL)?.parentFolderUUID, trips.first?.id)

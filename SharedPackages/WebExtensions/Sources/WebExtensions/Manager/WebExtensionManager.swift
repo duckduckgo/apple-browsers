@@ -1876,7 +1876,7 @@ extension WebExtensionManager {
         let staged = try await stageVerifiedExtensionUpdate(update, installed: installed, versionOverrideIdentifier: versionOverrideIdentifier)
         let previousContext = context(for: identifier)
         var didUnload = false
-        var didReplace = false
+        var replacementStarted = false
         var attemptedCandidateLoad = false
         var candidateContext: WKWebExtensionContext?
         var failureOutcome: WebExtensionUpdateInstallFailure = .invalidPackage
@@ -1899,7 +1899,7 @@ extension WebExtensionManager {
                 unregisterHandlers(for: identifier)
             }
             // The actor journals before moving the incumbent; even a failed second rename must be rolled back.
-            didReplace = true
+            replacementStarted = true
             failureOutcome = .storageFailure
             try await extensionUpdateTransactions.replace(staged)
             try checkEligibility()
@@ -1938,7 +1938,7 @@ extension WebExtensionManager {
             let rollback: WebExtensionUpdateRollback
             do {
                 rollback = try await restorePreviousExtensionUpdate(installed, staged: staged, generation: generation,
-                                                                    candidateContext: failedContext, shouldReload: didUnload && didReplace)
+                                                                    candidateContext: failedContext, shouldReload: didUnload && replacementStarted)
             } catch {
                 let outcome: WebExtensionUpdateInstallFailure = Self.isUpdateInstallationDeferral(installationError) ? .rollbackFailure : failureOutcome
                 reportUpdateInstallationFailureIfNeeded(error, outcome: outcome, rollback: .failure, storeIdentity: installed.storeIdentity)
@@ -2210,9 +2210,9 @@ extension WebExtensionManager {
             pixelFiring.fire(.updateApplied(extension: pixelExtension(for: recovered.storeIdentity)))
             Logger.webExtensions.info("Extension update installation: \(journal.extensionID, privacy: .public) recovered committed package")
         }
-        let enabledRegistryCommitted = allowed && recovered.version == journal.version && !recovered.isDisabled
-        if registryAcknowledged, overrideCleared,
-           journal.phase != .committed || !allowed || !journal.retainsPrevious || enabledRegistryCommitted {
+        let recoveredCandidateIsEnabled = allowed && recovered.version == journal.version && !recovered.isDisabled
+        let shouldRetainPredecessor = journal.phase == .committed && allowed && journal.retainsPrevious && !recoveredCandidateIsEnabled
+        if registryAcknowledged, overrideCleared, !shouldRetainPredecessor {
             await extensionUpdateTransactions.cleanup(journal.transactionID)
             retainedUpdateIdentifiers.remove(journal.installationID)
         }
@@ -2336,7 +2336,9 @@ extension WebExtensionManager {
                                               ownedContext: WKWebExtensionContext? = nil) async throws {
         guard let generation else { return }
         let current = installationStore.installedExtension(withUniqueIdentifier: identifier)
-        guard extensionUpdateGenerations[identifier] != generation || (installed != nil && current != installed) else { return }
+        let generationMatches = extensionUpdateGenerations[identifier] == generation
+        let installationMatches = installed == nil || current == installed
+        if generationMatches && installationMatches { return }
         if let ownedContext, context(for: identifier) === ownedContext {
             await unloadGuard.awaitSettled(ownedContext)
             if context(for: identifier) === ownedContext {

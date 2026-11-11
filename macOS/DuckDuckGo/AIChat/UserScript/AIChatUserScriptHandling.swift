@@ -173,6 +173,10 @@ protocol AIChatUserScriptHandling: AnyObject {
 
     /// Requested by the duckduckgo.com homepage for the chats it lists under its chat box.
     @MainActor func getAIChats(params: Any, message: UserScriptMessage) async -> Encodable?
+
+    /// Duck.ai's progress with an answer, sent while `supportsResponseStateReporting` is on. Native
+    /// rebroadcasts it as `aiChatResponseStateChanged`, carrying the source `WKWebView` as `object`.
+    @MainActor func getResponseState(params: Any, message: UserScriptMessage) async -> Encodable?
 }
 
 final class AIChatUserScriptHandler: AIChatUserScriptHandling {
@@ -1041,6 +1045,17 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
         return nil
     }
 
+    // MARK: - Response State
+
+    @MainActor
+    func getResponseState(params: Any, message: UserScriptMessage) async -> Encodable? {
+        guard let status: AIChatStatus = DecodableHelper.decode(from: params) else { return nil }
+        notificationCenter.post(name: .aiChatResponseStateChanged,
+                                object: message.messageWebView,
+                                userInfo: [AIChatNotificationUserInfoKey.responseStatus: status.status])
+        return nil
+    }
+
     @MainActor
     func voiceChatStartFailed(params: Any, message: UserScriptMessage) async -> Encodable? {
         // No-op when the feature flag is off — FE should never reach here in that case
@@ -1362,7 +1377,7 @@ extension AIChatUserScriptHandler {
             ownerWindowToken: AIChatTabPickerSource.windowToken(forCollection: ownerCollection),
             isBurner: ownerCollection.isBurner
         )
-        let response = await browserTools.invoker.invokeClientTool(request, context: context, permissionPrompter: permissionPrompter)
+        let response = await browserTools.invoke(request, context: context, permissionPrompter: permissionPrompter)
         return response.limitedToResultBytes()
     }
 

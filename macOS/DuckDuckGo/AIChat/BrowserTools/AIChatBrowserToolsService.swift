@@ -36,6 +36,8 @@ final class AIChatBrowserToolsService {
 
     private let configuration: AIChatBrowserToolsConfiguration
     private let windowControllersManager: WindowControllersManagerProtocol
+    private let activitySubject = PassthroughSubject<AIChatBrowserToolActivity, Never>()
+    private var reportedCalls: [String: ReportedCall] = [:]
     private let pushers = NSHashTable<AnyObject>.weakObjects()
     private var lastClientToolsConfiguration: ClientToolsConfiguration?
     private var featureFlagChanges: AnyCancellable?
@@ -97,6 +99,65 @@ final class AIChatBrowserToolsService {
         return configuration
     }
 
+    // MARK: - Calls
+
+    /// What Duck.ai does in the browser, call by call, for whoever wants to show it. Fire Windows report nothing.
+    var activity: AnyPublisher<AIChatBrowserToolActivity, Never> {
+        activitySubject.eraseToAnyPublisher()
+    }
+
+    /// Runs a call through the invoker, reporting to `activity` when it starts, waits on the user and ends.
+    func invoke(_ request: ExecuteClientToolRequest,
+                context: BrowserToolCallContext,
+                permissionPrompter: (any ClientToolPermissionPrompting)?) async -> ExecuteClientToolResponse {
+        guard !context.isBurner else {
+            return await invoker.invokeClientTool(request, context: context, permissionPrompter: permissionPrompter)
+        }
+        let call = ReportedCall(name: request.capability.name,
+                                subject: subject(ofToolNamed: request.capability.name, arguments: request.input, context: context))
+        reportedCalls[request.callId] = call
+        report(call, callID: request.callId, phase: .started)
+        let response = await invoker.invokeClientTool(request, context: context, permissionPrompter: permissionPrompter)
+        reportedCalls[request.callId] = nil
+        if case .success = response {
+            report(call, callID: request.callId, phase: .finished(succeeded: true))
+        } else {
+            report(call, callID: request.callId, phase: .finished(succeeded: false))
+        }
+        return response
+    }
+
+    /// Called once a permission prompt for `callID` is on screen.
+    func permissionWasRequested(forCallID callID: String) {
+        guard let call = reportedCalls[callID] else { return }
+        report(call, callID: callID, phase: .awaitingPermission)
+    }
+
+    private func report(_ call: ReportedCall, callID: String, phase: AIChatBrowserToolActivity.Phase) {
+        activitySubject.send(AIChatBrowserToolActivity(callID: callID, toolName: call.name, subject: call.subject, phase: phase))
+    }
+
+    /// Tools that act on the chat's own page when no tab is named.
+    private static let pageToolNames: Set<String> = ["readTabContent", "findInPage", "highlightInPage"]
+
+    /// What a call is about: the words searched for, or the title of the tab it acts on.
+    private func subject(ofToolNamed name: String, arguments: JSONValue?, context: BrowserToolCallContext) -> String? {
+        if let query = arguments?["query"]?.stringValue?.trimmingCharacters(in: .whitespacesAndNewlines), !query.isEmpty {
+            return query
+        }
+        let namedTabID = arguments?["tabId"]?.stringValue?.trimmingCharacters(in: .whitespaces)
+        guard let tabID = namedTabID.flatMap({ $0.isEmpty ? nil : $0 }) ?? (Self.pageToolNames.contains(name) ? context.ownerTabID : nil),
+              let token = context.ownerWindowToken,
+              let collection = AIChatTabPickerSource.tabCollectionViewModel(forWindowToken: token, in: windowControllersManager) else {
+            return nil
+        }
+        let tabs = (collection.pinnedTabsCollection?.tabs ?? []) + collection.tabCollection.tabs
+        guard let tab = tabs.first(where: { $0.uuid == tabID }), case .url(let url, _, _) = tab.content, !url.isDuckAIURL else {
+            return nil
+        }
+        return tab.title ?? url.host
+    }
+
     // MARK: - Pushes
 
     /// Live chats that can receive native→FE pushes. Held weakly; a chat unregisters by going away.
@@ -129,6 +190,29 @@ final class AIChatBrowserToolsService {
     private var livePushers: [AIChatBrowserToolsPushing] {
         pushers.allObjects.compactMap { $0 as? AIChatBrowserToolsPushing }
     }
+}
+
+/// One step of a browser tool call Duck.ai made.
+struct AIChatBrowserToolActivity: Equatable {
+
+    enum Phase: Equatable {
+        case started
+        /// The user's OK was asked for in the chat.
+        case awaitingPermission
+        case finished(succeeded: Bool)
+    }
+
+    let callID: String
+    let toolName: String
+    /// The words searched for, or the title of the tab acted on, when there is one.
+    let subject: String?
+    let phase: Phase
+}
+
+/// A call reported to `activity`, kept until it ends.
+private struct ReportedCall {
+    let name: String
+    let subject: String?
 }
 
 /// A chat surface that native can push browser-tools events to.

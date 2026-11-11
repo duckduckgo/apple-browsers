@@ -21,6 +21,7 @@ import Foundation
 public extension NSNotification.Name {
     static let aiChatUserDidSubmitPrompt: NSNotification.Name = Notification.Name(rawValue: "com.duckduckgo.aiChat.userDidSubmitPrompt")
     static let aiChatResponseReceived: NSNotification.Name = Notification.Name(rawValue: "com.duckduckgo.aiChat.responseReceived")
+    static let aiChatResponseStateChanged: NSNotification.Name = Notification.Name(rawValue: "com.duckduckgo.aiChat.responseStateChanged")
     static let aiChatVoiceSessionStarted: NSNotification.Name = Notification.Name(rawValue: "com.duckduckgo.aiChat.voiceSessionStarted")
     static let aiChatVoiceSessionEnded: NSNotification.Name = Notification.Name(rawValue: "com.duckduckgo.aiChat.voiceSessionEnded")
     static let aiChatVoiceModeOpened: NSNotification.Name = Notification.Name(rawValue: "com.duckduckgo.aiChat.voiceModeOpened")
@@ -37,4 +38,6 @@ public extension NSNotification.Name {
 public enum AIChatNotificationUserInfoKey {
     /// Hex background colour (`#RRGGBB`) carried by `aiChatVoiceModeOpened`.
     public static let voiceModeBackgroundColor = "backgroundColor"
+    /// `AIChatStatusValue` carried by `aiChatResponseStateChanged`.
+    public static let responseStatus = "status"
 }

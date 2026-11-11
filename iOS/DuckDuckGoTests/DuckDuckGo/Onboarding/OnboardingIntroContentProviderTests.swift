@@ -1144,7 +1144,7 @@ struct OnboardingIntroContentProviderTests {
         }
 
         @Test(
-            "Check download reason options map each row to its reason, icon and label",
+            "Check download reason options map each tile to its reason and label",
             arguments: [OnboardingFlowType.default, .duckAI] as [OnboardingFlowType]
         )
         func checkDownloadReasonOptions(flow: OnboardingFlowType) {
@@ -1155,30 +1155,30 @@ struct OnboardingIntroContentProviderTests {
             let result = sut.downloadReasonContent
 
             // THEN
-            #expect(result.options == Self.expectedStandardOptions)
+            #expect(result.layout == .grid)
+            #expect(result.options == Self.expectedGridOptions)
         }
 
         @available(iOS 16, macOS 13, *)
         @Test(
-            "The VPN option is listed last only when the VPN download reason is available",
+            "When the VPN download reason is available the list with VPN last is shown, otherwise the grid",
             .timeLimit(.minutes(1)),
             arguments: [true, false]
         )
-        func vpnOptionFollowsAvailability(isVPNDownloadReasonAvailable: Bool) {
+        func layoutAndOptionsFollowVPNAvailability(isVPNDownloadReasonAvailable: Bool) {
             // GIVEN
             let sut = OnboardingIntroContentProvider(
                 flowType: .default,
                 featureFlagger: MockFeatureFlagger(),
                 isVPNDownloadReasonAvailable: { isVPNDownloadReasonAvailable }
             )
-            let vpnOption = OnboardingDownloadReasonContent.Option(reason: .vpn, icon: .vpn, title: UserText.Onboarding.DownloadReason.vpn)
 
             // WHEN
             let result = sut.downloadReasonContent
 
             // THEN
-            let expectedOptions = isVPNDownloadReasonAvailable ? Self.expectedStandardOptions + [vpnOption] : Self.expectedStandardOptions
-            #expect(result.options == expectedOptions)
+            #expect(result.layout == (isVPNDownloadReasonAvailable ? .list : .grid))
+            #expect(result.options == (isVPNDownloadReasonAvailable ? Self.expectedListOptions : Self.expectedGridOptions))
         }
 
         @available(iOS 16, macOS 13, *)
@@ -1200,11 +1200,19 @@ struct OnboardingIntroContentProviderTests {
             #expect(sut.downloadReasonContent.options.last?.reason == .vpn)
         }
 
-        private static let expectedStandardOptions: [OnboardingDownloadReasonContent.Option] = [
-            .init(reason: .browserPrivately, icon: .search, title: UserText.Onboarding.DownloadReason.browsePrivately),
-            .init(reason: .privateAIChat, icon: .aiChat, title: UserText.Onboarding.DownloadReason.chatWithAI),
-            .init(reason: .blockAds, icon: .adsBlocked, title: UserText.Onboarding.DownloadReason.blockAds),
-            .init(reason: .noAI, icon: .block, title: UserText.Onboarding.DownloadReason.removeAI)
+        private static let expectedGridOptions: [OnboardingDownloadReasonContent.Option] = [
+            .init(reason: .browserPrivately, asset: .animation(.search), title: UserText.Onboarding.DownloadReason.browsePrivately),
+            .init(reason: .privateAIChat, asset: .animation(.duckAIChat), title: UserText.Onboarding.DownloadReason.chatWithAI),
+            .init(reason: .noAI, asset: .animation(.noAI), title: UserText.Onboarding.DownloadReason.removeAI),
+            .init(reason: .blockAds, asset: .animation(.imageSweep), title: UserText.Onboarding.DownloadReason.blockAds)
+        ]
+
+        private static let expectedListOptions: [OnboardingDownloadReasonContent.Option] = [
+            .init(reason: .browserPrivately, asset: .icon(.search), title: UserText.Onboarding.DownloadReason.List.browsePrivately),
+            .init(reason: .privateAIChat, asset: .icon(.aiChat), title: UserText.Onboarding.DownloadReason.List.chatWithAI),
+            .init(reason: .blockAds, asset: .icon(.adsBlocked), title: UserText.Onboarding.DownloadReason.List.blockAds),
+            .init(reason: .noAI, asset: .icon(.block), title: UserText.Onboarding.DownloadReason.List.removeAI),
+            .init(reason: .vpn, asset: .icon(.vpn), title: UserText.Onboarding.DownloadReason.vpn)
         ]
 
     }

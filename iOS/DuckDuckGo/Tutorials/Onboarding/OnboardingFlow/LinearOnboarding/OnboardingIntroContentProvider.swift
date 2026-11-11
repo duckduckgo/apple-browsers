@@ -153,6 +153,22 @@ extension OnboardingIntroContentProvider {
 // MARK: - Content Provider + Download Reason (Set things up your way)
 
 struct OnboardingDownloadReasonContent: Equatable {
+    enum Layout {
+        /// Two-column tiles with animated pictograms.
+        case grid
+        /// Radio rows with static icons. VPN experiment treatment only.
+        case list
+    }
+
+    /// Lottie pictograms in `OnboardingAnimations.xcassets/Pictograms`. Data assets get no
+    /// generated symbol, so the raw value is the dataset name passed to `DotLottieFile.asset(named:)`.
+    enum Animation: String {
+        case search
+        case duckAIChat = "duckai-chat"
+        case noAI = "no-ai"
+        case imageSweep = "image-sweep"
+    }
+
     enum Icon {
         case search
         case aiChat
@@ -161,15 +177,22 @@ struct OnboardingDownloadReasonContent: Equatable {
         case vpn
     }
 
-    /// A selectable reason row.
+    /// What a reason shows next to its title: an animation in the grid, an icon in the list.
+    enum Asset: Hashable {
+        case animation(Animation)
+        case icon(Icon)
+    }
+
+    /// A selectable reason.
     struct Option: Hashable {
         let reason: OnboardingDownloadReason
-        let icon: Icon
+        let asset: Asset
         let title: String
     }
 
     let title: String
     let message: String
+    let layout: Layout
     let options: [Option]
     let primaryCTA: String
     let daxAnimation: DaxAnimation
@@ -178,24 +201,37 @@ struct OnboardingDownloadReasonContent: Equatable {
 extension OnboardingIntroContentProvider {
 
     /// Content for the Download Reason Screen.
+    ///
+    /// The VPN experiment's treatment cohort gets the list with the VPN reason; everyone else gets the grid.
     var downloadReasonContent: OnboardingDownloadReasonContent {
-        var options: [OnboardingDownloadReasonContent.Option] = [
-            .init(reason: .browserPrivately, icon: .search, title: UserText.Onboarding.DownloadReason.browsePrivately),
-            .init(reason: .privateAIChat, icon: .aiChat, title: UserText.Onboarding.DownloadReason.chatWithAI),
-            .init(reason: .blockAds, icon: .adsBlocked, title: UserText.Onboarding.DownloadReason.blockAds),
-            .init(reason: .noAI, icon: .block, title: UserText.Onboarding.DownloadReason.removeAI)
-        ]
-        if isVPNDownloadReasonAvailable() {
-            options.append(.init(reason: .vpn, icon: .vpn, title: UserText.Onboarding.DownloadReason.vpn))
-        }
-
+        let isVPNDownloadReasonAvailable = isVPNDownloadReasonAvailable()
         return OnboardingDownloadReasonContent(
             title: UserText.Onboarding.DownloadReason.title,
             message: UserText.Onboarding.DownloadReason.message,
-            options: options,
+            layout: isVPNDownloadReasonAvailable ? .list : .grid,
+            options: isVPNDownloadReasonAvailable ? listOptions : gridOptions,
             primaryCTA: UserText.Onboarding.DownloadReason.cta,
             daxAnimation: .wingBottom
         )
+    }
+
+    private var gridOptions: [OnboardingDownloadReasonContent.Option] {
+        [
+            .init(reason: .browserPrivately, asset: .animation(.search), title: UserText.Onboarding.DownloadReason.browsePrivately),
+            .init(reason: .privateAIChat, asset: .animation(.duckAIChat), title: UserText.Onboarding.DownloadReason.chatWithAI),
+            .init(reason: .noAI, asset: .animation(.noAI), title: UserText.Onboarding.DownloadReason.removeAI),
+            .init(reason: .blockAds, asset: .animation(.imageSweep), title: UserText.Onboarding.DownloadReason.blockAds)
+        ]
+    }
+
+    private var listOptions: [OnboardingDownloadReasonContent.Option] {
+        [
+            .init(reason: .browserPrivately, asset: .icon(.search), title: UserText.Onboarding.DownloadReason.List.browsePrivately),
+            .init(reason: .privateAIChat, asset: .icon(.aiChat), title: UserText.Onboarding.DownloadReason.List.chatWithAI),
+            .init(reason: .blockAds, asset: .icon(.adsBlocked), title: UserText.Onboarding.DownloadReason.List.blockAds),
+            .init(reason: .noAI, asset: .icon(.block), title: UserText.Onboarding.DownloadReason.List.removeAI),
+            .init(reason: .vpn, asset: .icon(.vpn), title: UserText.Onboarding.DownloadReason.vpn)
+        ]
     }
 
 }

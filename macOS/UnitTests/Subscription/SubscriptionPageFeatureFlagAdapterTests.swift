@@ -42,24 +42,9 @@ struct SubscriptionPageFeatureFlagAdapterTests {
         if isEnabled {
             mockFlagger.enabledFeatureFlags = [appFlag]
         }
-        let buildType = ApplicationBuildTypeMock()
-        buildType.isSparkleBuild = true
-        let adapter = SubscriptionPageFeatureFlagAdapter(featureFlagger: mockFlagger, buildType: buildType)
+        let adapter = SubscriptionPageFeatureFlagAdapter(featureFlagger: mockFlagger)
 
         #expect(adapter.isEnabled(subscriptionFlag) == isEnabled)
-    }
-
-    @available(macOS 13, *)
-    @Test("Alternate Stripe payment flow is enabled only for Sparkle builds", .timeLimit(.minutes(1)), arguments: [true, false])
-    func alternateStripePaymentFlowRequiresSparkleBuild(isSparkleBuild: Bool) {
-        let mockFlagger = MockFeatureFlagger()
-        mockFlagger.enabledFeatureFlags = [.supportsAlternateStripePaymentFlow]
-        let buildType = ApplicationBuildTypeMock()
-        buildType.isSparkleBuild = isSparkleBuild
-
-        let adapter = SubscriptionPageFeatureFlagAdapter(featureFlagger: mockFlagger, buildType: buildType)
-
-        #expect(adapter.isEnabled(.supportsAlternateStripePaymentFlow) == isSparkleBuild)
     }
 
     @Test("All flags respond independently")

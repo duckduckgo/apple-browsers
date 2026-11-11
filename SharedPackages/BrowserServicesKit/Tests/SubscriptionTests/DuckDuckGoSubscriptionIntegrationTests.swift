@@ -63,6 +63,7 @@ final class DuckDuckGoSubscriptionIntegrationTests: XCTestCase {
                                                            userDefaults: userDefaults,
                                                            subscriptionEndpointService: subscriptionEndpointService,
                                                            subscriptionEnvironment: subscriptionEnvironment,
+                                                           process: .browser,
                                                            pixelHandler: MockPixelHandler())
 
         appStoreRestoreFlow = DefaultAppStoreRestoreFlow(subscriptionManager: subscriptionManager,

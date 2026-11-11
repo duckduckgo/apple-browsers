@@ -36,7 +36,7 @@ extension DefaultSubscriptionManager {
                             featureFlagger: FeatureFlagger? = nil,
                             userDefaults: UserDefaults,
                             pixelHandlingSource: SubscriptionPixelHandler.Source,
-                            source: KeychainErrorSource) {
+                            process: SubscriptionProcess) {
 
         let pixelHandler: SubscriptionPixelHandling = SubscriptionPixelHandler(source: pixelHandlingSource, pixelKit: PixelKit.shared)
         let keychainManager = KeychainManager(attributes: SubscriptionTokenKeychainStorage.defaultAttributes(keychainType: keychainType), pixelHandler: pixelHandler)
@@ -46,7 +46,7 @@ extension DefaultSubscriptionManager {
                                                               userDefaults: userDefaults) { accessType, error in
             PixelKit.fire(SubscriptionErrorPixel.subscriptionKeychainAccessError(accessType: accessType,
                                                                              accessError: error,
-                                                                             source: source,
+                                                                             source: KeychainErrorSource(process),
                                                                              authVersion: KeychainErrorAuthVersion.v2),
                           frequency: .legacyDailyAndCount)
         }
@@ -121,6 +121,7 @@ extension DefaultSubscriptionManager {
                   userDefaults: userDefaults,
                   subscriptionEndpointService: subscriptionEndpointService,
                   subscriptionEnvironment: environment,
+                  process: process,
                   pixelHandler: pixelHandler,
                   isInternalUserEnabled: isInternalUserEnabled,
                   authV2TokenRefreshInstrumentation: authV2RefreshInstrumentation)
@@ -131,5 +132,15 @@ private struct StaticWideEventFeatureFlagProvider: WideEventFeatureFlagProviding
     func isEnabled(_ flag: WideEventFeatureFlag) -> Bool {
         // There are no flags defined currently, but please replace this with a switch statement when a new flag is added.
         return true
+    }
+}
+
+private extension KeychainErrorSource {
+    init(_ process: SubscriptionProcess) {
+        switch process {
+        case .browser: self = .browser
+        case .vpn: self = .vpn
+        case .pir: self = .pir
+        }
     }
 }

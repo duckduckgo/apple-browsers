@@ -60,6 +60,7 @@ extension SubscriptionManagerTests {
             userDefaults: userDefaults,
             subscriptionEndpointService: mockSubscriptionEndpointService,
             subscriptionEnvironment: stagingEnvironment,
+            process: .browser,
             pixelHandler: MockPixelHandler()
         )
 

@@ -100,16 +100,10 @@ final class TabTests: XCTestCase {
     @available(macOS 15.4, *)
     @MainActor
     func testWhenExtensionOriginCaseChangesThenRegisteredOriginIsUsed() async throws {
-        let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString, isDirectory: true)
-        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
-        defer { try? FileManager.default.removeItem(at: directory) }
-        try #"{"manifest_version":3,"name":"Navigation Test","version":"1.0"}"#
-            .write(to: directory.appendingPathComponent("manifest.json"), atomically: true, encoding: .utf8)
-        for page in ["intro.html", "tutorial.html"] {
-            let title = page == "intro.html" ? "Intro" : "Tutorial"
-            try "<html><body>\(title)</body></html>".write(to: directory.appendingPathComponent(page), atomically: true, encoding: .utf8)
-        }
-        let webExtension = try await WKWebExtension(resourceBaseURL: directory)
+        let webExtension = try await makeWebExtension(name: "Navigation Test", pages: [
+            "intro.html": "<html><body>Intro</body></html>",
+            "tutorial.html": "<html><body>Tutorial</body></html>"
+        ])
         let controller = WKWebExtensionController(configuration: .nonPersistent())
         let foreignContext = WKWebExtensionContext(for: webExtension)
         foreignContext.baseURL = URL(string: "webkit-extension://foreign-extension/")!
@@ -316,6 +310,20 @@ final class TabTests: XCTestCase {
 
     @available(macOS 15.4, *)
     @MainActor
+    func testWhenExtensionUpdatesTabURLThenContentMatchesURLType() async throws {
+        let context = WKWebExtensionContext(for: try await makeWebExtension(name: "Tab Update Test"))
+        tab = Tab(content: .none, webViewConfiguration: schemeHandler.webViewConfiguration())
+
+        let extensionURL = URL(string: "webkit-extension://example/app/app.html#/page/ready")!
+        try await tab.loadURL(extensionURL, for: context)
+        XCTAssertEqual(tab.content, .webExtensionUrl(extensionURL))
+
+        try await tab.loadURL(urls.url1, for: context)
+        XCTAssertEqual(tab.content, .url(urls.url1, source: .ui))
+    }
+
+    @available(macOS 15.4, *)
+    @MainActor
     func testWhenExtensionSubframeNavigatesThenOwningTabStaysUnchanged() async {
         tab = Tab(content: .none, webViewConfiguration: schemeHandler.webViewConfiguration())
         let frame = WKFrameInfo.mock(for: tab.webView, isMain: false)
@@ -348,12 +356,7 @@ final class TabTests: XCTestCase {
     @available(macOS 15.4, *)
     @MainActor
     func testUnsupportedExtensionAPIsReturnErrorsWithoutTrapping() async throws {
-        let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString, isDirectory: true)
-        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
-        defer { try? FileManager.default.removeItem(at: directory) }
-        try #"{"manifest_version":3,"name":"Unsupported API Test","version":"1.0"}"#
-            .write(to: directory.appendingPathComponent("manifest.json"), atomically: true, encoding: .utf8)
-        let context = WKWebExtensionContext(for: try await WKWebExtension(resourceBaseURL: directory))
+        let context = WKWebExtensionContext(for: try await makeWebExtension(name: "Unsupported API Test"))
         tab = Tab(content: .none, webViewConfiguration: schemeHandler.webViewConfiguration())
         let calls: [String: () async throws -> Void] = [
             "tabs.setZoom": { try await self.tab.setZoomFactor(2, for: context) },
@@ -391,13 +394,7 @@ final class TabTests: XCTestCase {
     @available(macOS 15.4, *)
     @MainActor
     func testWhenExtensionRequestsSnapshotThenExtensionPageIsCaptured() async throws {
-        let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString, isDirectory: true)
-        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
-        defer { try? FileManager.default.removeItem(at: directory) }
-        try #"{"manifest_version":3,"name":"Snapshot Test","version":"1.0"}"#
-            .write(to: directory.appendingPathComponent("manifest.json"), atomically: true, encoding: .utf8)
-        let webExtension = try await WKWebExtension(resourceBaseURL: directory)
-        let context = WKWebExtensionContext(for: webExtension)
+        let context = WKWebExtensionContext(for: try await makeWebExtension(name: "Snapshot Test"))
 
         tab = Tab(content: .none, webViewConfiguration: schemeHandler.webViewConfiguration())
         let pageTab = Tab(content: .none, webViewConfiguration: schemeHandler.webViewConfiguration())
@@ -420,6 +417,21 @@ final class TabTests: XCTestCase {
         XCTAssertEqual(image.size.width, 32)
         XCTAssertEqual(image.size.height, 24)
         withExtendedLifetime((pageTab, window)) {}
+    }
+
+    /// Pages stay on disk until teardown, so tests can load them.
+    @available(macOS 15.4, *)
+    @MainActor
+    private func makeWebExtension(name: String, pages: [String: String] = [:]) async throws -> WKWebExtension {
+        let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString, isDirectory: true)
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        addTeardownBlock { try? FileManager.default.removeItem(at: directory) }
+        try #"{"manifest_version":3,"name":"\#(name)","version":"1.0"}"#
+            .write(to: directory.appendingPathComponent("manifest.json"), atomically: true, encoding: .utf8)
+        for (page, html) in pages {
+            try html.write(to: directory.appendingPathComponent(page), atomically: true, encoding: .utf8)
+        }
+        return try await WKWebExtension(resourceBaseURL: directory)
     }
 
     // MARK: - Equality

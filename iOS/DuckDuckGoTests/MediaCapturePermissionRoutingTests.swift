@@ -526,9 +526,6 @@ final class TabViewControllerMediaCapturePermissionRoutingTests: XCTestCase {
     func testBridgeRejectsUntrustedFrameOriginsWithoutPrompting() async {
         let untrustedOrigins = [
             URL(string: "http://top-level.example")!,
-            URL(string: "https://subdomain.top-level.example")!,
-            URL(string: "https://top-level.example:444")!,
-            URL(string: "https://cross-site.example")!,
             URL(string: "about:blank")!
         ]
 
@@ -546,6 +543,42 @@ final class TabViewControllerMediaCapturePermissionRoutingTests: XCTestCase {
 
             XCTAssertEqual(decision, .deny, "origin: \(originURL)")
             XCTAssertFalse(didPrompt, "origin: \(originURL)")
+        }
+    }
+
+    func testCrossOriginSubframeIsPromptedForTopLevelSiteAndItsPreapprovalIsConsumed() async {
+        let crossOrigins = [
+            URL(string: "https://subdomain.top-level.example")!,
+            URL(string: "https://top-level.example:444")!,
+            URL(string: "https://cross-site.example")!
+        ]
+
+        for originURL in crossOrigins {
+            let sut = makeSUT()
+            var receivedPrompt: SitePermissionPrompt?
+            sut.sitePermissionsPromptHandlerOverride = { prompt, completion in
+                receivedPrompt = prompt
+                completion(.allowOnce)
+            }
+
+            let decision = await requestPermissionThroughBridge(on: sut,
+                                                                originURL: originURL,
+                                                                captureType: .camera)
+
+            XCTAssertEqual(decision, .allow, "origin: \(originURL)")
+            XCTAssertEqual(receivedPrompt?.site.host, "top-level.example", "origin: \(originURL)")
+            // WebKit reports the top-level origin to the delegate and the requester in the frame.
+            let frame = WKFrameInfo.mock(isMainFrame: false,
+                                         securityOrigin: MockWKSecurityOrigin.new(url: originURL),
+                                         webView: sut.webView,
+                                         request: URLRequest(url: originURL))
+            var webKitDecision: WKPermissionDecision?
+            sut.webView(sut.webView,
+                        requestMediaCapturePermissionFor: MockWKSecurityOrigin.new(url: URL(string: "https://top-level.example")!),
+                        initiatedByFrame: frame,
+                        type: .camera,
+                        decisionHandler: { webKitDecision = $0 })
+            XCTAssertEqual(webKitDecision, .grant, "origin: \(originURL)")
         }
     }
 

@@ -21,6 +21,11 @@
     const rejectPromise = Promise.reject.bind(Promise);
     const callThen = Function.prototype.call.bind(Promise.prototype.then);
     const NativeDOMException = DOMException;
+    const resolvePromise = Promise.resolve.bind(Promise);
+    const permissions = navigator.permissions;
+    const queryPermission = permissions?.query?.bind(permissions);
+    const permissionState = globalThis.PermissionStatus &&
+        apply(getOwnPropertyDescriptor, Object, [PermissionStatus.prototype, "state"])?.get;
     const mediaDevices = navigator.mediaDevices;
     const prototype = mediaDevices && apply(getPrototypeOf, Object, [mediaDevices]);
     const descriptor = prototype && apply(getOwnPropertyDescriptor, Object, [prototype, "getUserMedia"]);
@@ -180,6 +185,17 @@
         }
     };
     apply(defineProperty, Object, [globalThis, inheritedPolicyProperty, { value: policyAllows }]);
+    // A cross-origin frame can't read its iframe's allow attribute, but WebKit's Permissions API
+    // reports "denied" for a feature the embedding pages didn't delegate to it.
+    const delegationAllows = (feature) => {
+        try {
+            return callThen(queryPermission({ name: feature }),
+                status => apply(permissionState, status, []) !== "denied",
+                () => false);
+        } catch (_) {
+            return resolvePromise(false);
+        }
+    };
     let nextRequestID = 0;
 
     const permissionDenied = () => new NativeDOMException("Permission denied", "NotAllowedError");
@@ -206,22 +222,22 @@
             return apply(nativeGetUserMedia, this, [capturedConstraints]);
         }
 
+        const isCrossOrigin = !isSameOriginAsTopLevel;
         // Send ineligible requests too: Swift checks rollback before denying custom-flow requests.
         const isEligibleContext = this === mediaDevices && hasNonOpaqueOrigin && (isDuckAIHost || (isSecureContext &&
             !isSyntheticDocument &&
-            (!video || policyAllows("camera")) &&
-            (!audio || policyAllows("microphone"))));
+            (isCrossOrigin || ((!video || policyAllows("camera")) &&
+                (!audio || policyAllows("microphone"))))));
 
         nextRequestID += 1;
+        const requestID = `${nonce}:${nextRequestID}`;
+        const post = isEligible => postMessage({ capability, requestID, isEligible, video, audio });
         let bridgePromise;
         try {
-            bridgePromise = postMessage({
-                capability,
-                requestID: `${nonce}:${nextRequestID}`,
-                isEligible: isEligibleContext,
-                video,
-                audio
-            });
+            bridgePromise = !isEligibleContext || !isCrossOrigin || isDuckAIHost
+                ? post(isEligibleContext)
+                : callThen(callThen(delegationAllows(video ? "camera" : "microphone"),
+                    allowed => allowed && (!video || !audio || delegationAllows("microphone"))), post);
         } catch (_) {
             return rejectPromise(permissionDenied());
         }

@@ -46,6 +46,7 @@ final class SitePermissionsXCUITests: XCTestCase {
         server["/t/:pixelName"] = { _ in .accepted }
         server["/geolocation-frame"] = { _ in .ok(.html(Self.geolocationFrameHTML)) }
         frameServer["/geolocation-frame"] = { _ in .ok(.html(Self.geolocationFrameHTML)) }
+        frameServer["/camera-frame"] = { _ in .ok(.html(Self.cameraFrameHTML)) }
         try frameServer.start(0, forceIPv4: true, priority: .userInitiated)
         let framePort = try frameServer.port()
         server["/iframe-same-origin"] = { _ in
@@ -59,6 +60,12 @@ final class SitePermissionsXCUITests: XCTestCase {
         server["/camera-frame"] = { _ in .ok(.html(Self.cameraFrameHTML)) }
         server["/iframe-camera"] = { _ in .ok(.html(Self.iframeHTML(src: "/camera-frame", allow: "camera"))) }
         server["/iframe-camera-blocked"] = { _ in .ok(.html(Self.iframeHTML(src: "/camera-frame", allow: "camera 'none'"))) }
+        server["/iframe-camera-cross-origin"] = { _ in
+            .ok(.html(Self.iframeHTML(src: "http://127.0.0.1:\(framePort)/camera-frame", allow: "camera")))
+        }
+        server["/iframe-camera-cross-origin-not-delegated"] = { _ in
+            .ok(.html(Self.iframeHTML(src: "http://127.0.0.1:\(framePort)/camera-frame")))
+        }
         try server.start(0, forceIPv4: true, priority: .userInitiated)
         port = try server.port()
     }
@@ -734,6 +741,23 @@ final class SitePermissionsXCUITests: XCTestCase {
         tap(element("SitePermissions.Dialog.AllowOnce"))
         answerSystemAlert(for: "camera", allow: true)
         assertResult("Frame result: success video=1")
+    }
+
+    func testWhenCrossOriginIframeIsDelegatedCameraThenSiteDialogPrecedesSystemPromptAndFrameGetsVideo() {
+        launchApp()
+        openPermissionPage(path: "/iframe-camera-cross-origin")
+        assertResult("Frame result: ready")
+        tap(app.webViews.buttons["Frame camera"])
+        assertSiteDialog(permission: "camera")
+        tap(element("SitePermissions.Dialog.AllowOnce"))
+        answerSystemAlert(for: "camera", allow: true)
+        assertResult("Frame result: success video=1")
+    }
+
+    func testWhenCrossOriginIframeIsNotDelegatedCameraThenItIsDeniedWithoutSiteOrSystemPrompt() {
+        assertIframeIsDeniedWithoutSiteOrSystemPrompt(path: "/iframe-camera-cross-origin-not-delegated",
+                                                      button: "Frame camera",
+                                                      result: "Frame result: NotAllowedError")
     }
 
     func testWhenIframeAllowAttributeBlocksCameraThenItIsDeniedWithoutSiteOrSystemPrompt() {

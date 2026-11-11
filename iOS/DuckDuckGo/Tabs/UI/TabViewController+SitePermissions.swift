@@ -1072,7 +1072,8 @@ extension TabViewController {
         sitePermissionsState.mediaCapturePreapprovals.removeAll { staleRequestIDs.contains($0.requestID) }
 
         let trustedOrigin = SitePermissionSecurityOrigin(frame.securityOrigin)
-        guard trustedOrigin == SitePermissionSecurityOrigin(origin),
+        // WebKit passes the top-level origin here; the requesting frame's origin is frame.securityOrigin.
+        guard isSameOriginAsCommittedMainFrame(SitePermissionSecurityOrigin(origin)),
               let index = sitePermissionsState.mediaCapturePreapprovals.firstIndex(where: {
                   $0.permissionTypes == permissionTypes
                       && $0.origin == trustedOrigin
@@ -1296,7 +1297,9 @@ extension TabViewController: MediaCaptureUserScriptDelegate {
         pruneExpiredMediaCapturePreapprovals()
         guard webView === self.webView,
               !isLinkPreview,
-              isSameOriginAsCommittedMainFrame(origin),
+              // Cross-origin frames may ask too: WebKit enforces iframe delegation before capture,
+              // and the prompt and saved decision belong to the top-level site.
+              origin.isPotentiallyTrustworthy,
               sitePermissionsState.committedMediaPolicyBlocks.isDisjoint(with: permissionTypes),
               sitePermissionsState.pendingBridgeRequests[requestID] == nil,
               !sitePermissionsState.handledBridgeRequestIDs.contains(requestID),

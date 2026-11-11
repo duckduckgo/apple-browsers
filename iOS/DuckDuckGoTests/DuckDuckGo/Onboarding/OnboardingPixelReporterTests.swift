@@ -1282,7 +1282,7 @@ final class OnboardingPixelReporterTests: XCTestCase {
         XCTAssertEqual(sharedPixelHandlerMock.eventsFired, [.timeLimit(.days), .timeLimit(.appOpens)])
         XCTAssertEqual(sharedPixelHandlerMock.receivedSource, .duckAICustomProductPage)
         XCTAssertEqual(sharedPixelHandlerMock.receivedFlow, .duckAI)
-        XCTAssertEqual(sharedPixelHandlerMock.receivedVariant, .duckAISearch)
+        XCTAssertEqual(sharedPixelHandlerMock.receivedVariants?.searchExperience, .duckAISearch)
         XCTAssertTrue(pixelKitMock.actualFireCalls.isEmpty)
         XCTAssertTrue(MockExperimentPixelFiring.firedMetrics.isEmpty)
     }

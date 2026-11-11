@@ -37,7 +37,6 @@ import PixelKit
 
 class AutocompleteViewController: UIHostingController<AutocompleteView> {
 
-    private static let debounceDelayMS = 100
     private static let session = URLSession(configuration: .ephemeral)
 
     var selectedSuggestion: Suggestion?
@@ -140,7 +139,7 @@ class AutocompleteViewController: UIHostingController<AutocompleteView> {
         view.backgroundColor = UIColor(designSystemColor: .background)
 
         queryDebounceCancellable = $query
-            .debounce(for: .milliseconds(Self.debounceDelayMS), scheduler: RunLoop.main)
+            .debounceSuggestions(using: featureFlagger, scheduler: RunLoop.main)
             .sink { [weak self] query in
                 self?.requestSuggestions(query: query)
             }

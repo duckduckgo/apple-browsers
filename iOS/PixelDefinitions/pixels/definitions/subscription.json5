@@ -1120,6 +1120,49 @@
             }
         ]
     },
+    // Subscription Withdrawal
+    "subscription_withdrawal_withdraw_click": {
+        "description": "Fired when the user taps 'Withdraw from Contract' in Subscription Settings, shown to eligible international Stripe subscribers.",
+        "owners": ["hanyutang-sandra"],
+        "triggers": ["user_interaction"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": ["appVersion", "pixelSource"]
+    },
+    "subscription_withdrawal_dialog_shown": {
+        "description": "Fired when the withdrawal confirmation dialog is presented, which happens when the user taps 'Withdraw from Contract'.",
+        "owners": ["hanyutang-sandra"],
+        "triggers": ["user_interaction"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": ["appVersion", "pixelSource"]
+    },
+    "subscription_withdrawal_confirm_click": {
+        "description": "Fired when the user taps 'Confirm Withdrawal' in the withdrawal confirmation dialog, which sends the withdrawal request.",
+        "owners": ["hanyutang-sandra"],
+        "triggers": ["user_interaction"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": ["appVersion", "pixelSource"]
+    },
+    "subscription_withdrawal_keep_click": {
+        "description": "Fired when the user taps 'Keep Subscription' in the withdrawal confirmation dialog, which dismisses it without withdrawing.",
+        "owners": ["hanyutang-sandra"],
+        "triggers": ["user_interaction"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": ["appVersion", "pixelSource"]
+    },
+    "subscription_withdrawal_failure": {
+        "description": "Fired when the withdrawal request fails: an HTTP 409 because the subscription is no longer eligible (the withdrawal option is hidden), or any other HTTP 4xx/5xx or network error (the user sees the withdrawal error alert). A success response that cannot be decoded still completes the withdrawal and does not fire this pixel.",
+        "owners": ["hanyutang-sandra"],
+        "triggers": ["exception"],
+        "suffixes": ["first_daily_count", "platform", "form_factor"],
+        "parameters": ["appVersion", "pixelSource", "errorDomain", "errorCode", "underlyingErrorDomain", "underlyingErrorCode"]
+    },
+    "subscription_withdrawal_eligibility_failure": {
+        "description": "Fired when fetching withdrawal eligibility fails, such as a network error, an HTTP 4xx/5xx response or a response that cannot be decoded, so the 'Withdraw from Contract' row is not shown.",
+        "owners": ["hanyutang-sandra"],
+        "triggers": ["exception"],
+        "suffixes": ["first_daily_count", "platform", "form_factor"],
+        "parameters": ["appVersion", "pixelSource", "errorDomain", "errorCode", "underlyingErrorDomain", "underlyingErrorCode"]
+    },
     "m_privacy-pro_app-settings_partner-benefits_click": {
         "description": "Fires when the user taps 'Subscriber Offers' in the DuckDuckGo Subscription section of Settings, which opens the Partnerships Hub. The name says 'partner-benefits' because it is shared verbatim with Android and Windows, and predates the label being renamed to 'Subscriber Offers'.",
         "owners": ["bwaresiak", "jozsef-vesza"],

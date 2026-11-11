@@ -779,6 +779,12 @@ public enum PrivacyProSubfeature: String, Equatable, PrivacySubfeature {
 
     /// Gates the cancellation flow shown from "Cancel Subscription" in Subscription Settings.
     case subscriptionCancellationFlow
+
+    /// Gates "Withdraw from Contract" in Subscription Settings, letting international Stripe subscribers withdraw for a full refund.
+    case stripeInternationalSubscriptionWithdrawal
+
+    /// iOS onboarding experiment that adds VPN as a download reason.
+    case onboardingVPNDownloadReasonExperiment
 }
 
 public enum DuckPlayerSubfeature: String, PrivacySubfeature {

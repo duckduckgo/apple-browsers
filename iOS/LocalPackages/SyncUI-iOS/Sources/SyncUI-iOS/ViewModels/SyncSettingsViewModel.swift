@@ -141,7 +141,6 @@ public class SyncSettingsViewModel: ObservableObject {
     public enum SyncSetupPixelEvent: Equatable {
         case backUpThisDeviceTapped
         case signupConfirmedTapped
-        case signupAbandoned
         case recoverSyncedDataTapped
         case recoveryConfirmedTapped
         case anotherDevicePromptShown

@@ -30,7 +30,6 @@ final class SearchBookmarksBrowserTool: BrowserTool {
     /// Matches `AIChatBrowserToolsSubfeature.searchBookmarks`, which is how the catalog gates it.
     let name = "searchBookmarks"
     let permissionMode = BrowserToolPermissionMode.ask
-    let permissionReason = "It will see the titles, addresses and folders of your bookmarks."
 
     let inputSchema: JSONValue = [
         "type": "object",

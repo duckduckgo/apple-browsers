@@ -33,6 +33,7 @@ enum PermissionType: Hashable {
         case notification
         case external = "external_"
         case autoplayPolicy = "autoplay_policy"
+        case browserTool = "browser_tool_"
     }
 
     case camera
@@ -42,6 +43,8 @@ enum PermissionType: Hashable {
     case notification
     case externalScheme(scheme: String)
     case autoplayPolicy
+    /// A Duck.ai browser tool, kept under Duck.ai's own site whichever page or chat asks.
+    case browserTool(name: String)
 
     var rawValue: String {
         switch self {
@@ -52,6 +55,7 @@ enum PermissionType: Hashable {
         case .notification: return Constants.notification.rawValue
         case .autoplayPolicy: return Constants.autoplayPolicy.rawValue
         case .externalScheme(scheme: let scheme): return Constants.external.rawValue + scheme
+        case .browserTool(name: let name): return Constants.browserTool.rawValue + name
         }
     }
 
@@ -70,6 +74,12 @@ enum PermissionType: Hashable {
                 self = .externalScheme(scheme: scheme)
                 return
             }
+            if rawValue.hasPrefix(Constants.browserTool.rawValue) {
+                let name = rawValue.dropping(prefix: Constants.browserTool.rawValue)
+                guard !name.isEmpty else { return nil }
+                self = .browserTool(name: name)
+                return
+            }
             return nil
         }
     }
@@ -79,8 +89,9 @@ extension PermissionType {
 
     /// Duck.ai's native voice flow overrides microphone decisions at read time, so permission
     /// editors hide that row while the override is active. The saved decision is kept for rollback.
+    /// Duck.ai browser tool choices aren't listed with website permissions.
     func isUserEditable(forDomain domain: String, nativeVoiceFlowEnabled: Bool) -> Bool {
-        !(self == .microphone && domain == URL.duckAi.host && nativeVoiceFlowEnabled)
+        !isBrowserTool && !(self == .microphone && domain == URL.duckAi.host && nativeVoiceFlowEnabled)
     }
 
     func isUserEditable(forDomain domain: String, featureFlagger: FeatureFlagger) -> Bool {
@@ -93,14 +104,14 @@ extension PermissionType {
 
     var canPersistGrantedDecision: Bool {
         switch self {
-        case .camera, .microphone, .externalScheme, .popups, .geolocation, .notification, .autoplayPolicy:
+        case .camera, .microphone, .externalScheme, .popups, .geolocation, .notification, .autoplayPolicy, .browserTool:
             return true
         }
     }
 
     var canPersistDeniedDecision: Bool {
         switch self {
-        case .camera, .microphone, .geolocation, .externalScheme, .notification, .autoplayPolicy:
+        case .camera, .microphone, .geolocation, .externalScheme, .notification, .autoplayPolicy, .browserTool:
             return true
         case .popups:
             return false
@@ -118,6 +129,13 @@ extension PermissionType {
 
     var isExternalScheme: Bool {
         if case .externalScheme = self {
+            return true
+        }
+        return false
+    }
+
+    var isBrowserTool: Bool {
+        if case .browserTool = self {
             return true
         }
         return false
@@ -147,6 +165,8 @@ extension PermissionType {
             return DesignSystemImages.Glyphs.Size16.openIn
         case .autoplayPolicy:
             return DesignSystemImages.Glyphs.Size16.permissionAutoplay
+        case .browserTool:
+            return DesignSystemImages.Glyphs.Size16.aiChat
         }
     }
 
@@ -159,7 +179,7 @@ extension PermissionType {
             return DesignSystemImages.Glyphs.Size16.permissionMicrophoneSolid
         case .geolocation:
             return DesignSystemImages.Glyphs.Size16.permissionsLocationSolid
-        case .notification, .popups, .externalScheme, .autoplayPolicy:
+        case .notification, .popups, .externalScheme, .autoplayPolicy, .browserTool:
             return nil
         }
     }
@@ -169,7 +189,7 @@ extension PermissionType {
         switch self {
         case .camera, .microphone, .geolocation, .notification:
             return true
-        case .popups, .externalScheme, .autoplayPolicy:
+        case .popups, .externalScheme, .autoplayPolicy, .browserTool:
             return false
         }
     }
@@ -186,7 +206,7 @@ extension PermissionType {
         switch self {
         case .geolocation, .notification:
             return true
-        case .camera, .microphone, .popups, .externalScheme, .autoplayPolicy:
+        case .camera, .microphone, .popups, .externalScheme, .autoplayPolicy, .browserTool:
             return false
         }
     }

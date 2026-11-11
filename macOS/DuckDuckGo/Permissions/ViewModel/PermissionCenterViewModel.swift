@@ -548,7 +548,9 @@ final class PermissionCenterViewModel: ObservableObject {
         }
 
         // Also include persisted permissions that aren't in usedPermissions
-        for permissionType in permissionManager.persistedPermissionTypes(forDomain: domain) where !removedPermissions.contains(permissionType) {
+        // Duck.ai browser tool choices are managed apart from the site's own permissions.
+        for permissionType in permissionManager.persistedPermissionTypes(forDomain: domain)
+        where !removedPermissions.contains(permissionType) && !permissionType.isBrowserTool {
             addPermission(permissionType, toExternal: &externalSchemePermissions, toOther: &otherPermissions)
         }
 

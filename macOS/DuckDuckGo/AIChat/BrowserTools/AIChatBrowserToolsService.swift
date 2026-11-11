@@ -21,7 +21,6 @@ import Combine
 import FeatureFlags_macOS
 import Foundation
 import History
-import Persistence
 import PrivacyConfig
 import WebKit
 
@@ -33,6 +32,7 @@ final class AIChatBrowserToolsService {
     let invoker: BrowserToolInvoker
     let permissions: BrowserToolPermissionStoring
     let clientToolPermissions: ClientToolPermissionCoordinator
+    let permissionPrompts: BrowserToolPermissionPromptPresenter
 
     private let configuration: AIChatBrowserToolsConfiguration
     private let windowControllersManager: WindowControllersManagerProtocol
@@ -48,20 +48,24 @@ final class AIChatBrowserToolsService {
          windowControllersManager: WindowControllersManagerProtocol,
          historyCoordinator: HistoryCoordinating,
          bookmarkManager: BookmarkManager,
-         permissionStorage: any KeyedStoring<BrowserToolPermissionStorageKeys> = UserDefaults.standard.keyedStoring(),
+         permissionManager: PermissionManagerProtocol,
          tools: [any BrowserTool]? = nil) {
-        let configuration = AIChatBrowserToolsConfiguration(featureFlagger: featureFlagger)
-        let catalog = BrowserToolCatalog(tools: tools ?? Self.defaultTools(windowControllersManager: windowControllersManager,
-                                                                           historyCoordinator: historyCoordinator,
-                                                                           bookmarkManager: bookmarkManager),
-                                         configuration: configuration)
-        let permissions = BrowserToolPermissionStore(storage: permissionStorage)
+        let tools = tools ?? Self.defaultTools(windowControllersManager: windowControllersManager,
+                                               historyCoordinator: historyCoordinator,
+                                               bookmarkManager: bookmarkManager)
+        let configuration = AIChatBrowserToolsConfiguration(featureFlagger: featureFlagger,
+                                                            askToolNames: Set(tools.filter { $0.permissionMode == .ask }.map(\.name)))
+        let catalog = BrowserToolCatalog(tools: tools, configuration: configuration)
+        let permissions = BrowserToolSitePermissions(permissionManager: permissionManager)
         let clientToolPermissions = ClientToolPermissionCoordinator(permissions: permissions)
         self.configuration = configuration
         self.windowControllersManager = windowControllersManager
         self.catalog = catalog
         self.permissions = permissions
         self.clientToolPermissions = clientToolPermissions
+        self.permissionPrompts = BrowserToolPermissionPromptPresenter(windowControllersManager: windowControllersManager) { prompt, decision, prompter in
+            clientToolPermissions.respond(to: prompt, decision: decision, from: prompter)
+        }
         self.invoker = BrowserToolInvoker(catalog: catalog,
                                           clientToolPermissions: clientToolPermissions)
         self.lastClientToolsConfiguration = Self.clientToolsConfiguration(for: catalog)
@@ -170,9 +174,11 @@ struct ClientToolsChangedData: Encodable, Equatable {
 final class AIChatBrowserToolsConfiguration: BrowserToolsConfiguration {
 
     private let featureFlagger: FeatureFlagger
+    private let askToolNames: Set<String>
 
-    init(featureFlagger: FeatureFlagger) {
+    init(featureFlagger: FeatureFlagger, askToolNames: Set<String>) {
         self.featureFlagger = featureFlagger
+        self.askToolNames = askToolNames
     }
 
     var isEnabled: Bool {
@@ -183,6 +189,8 @@ final class AIChatBrowserToolsConfiguration: BrowserToolsConfiguration {
         guard isEnabled,
               let subfeature = AIChatBrowserToolsSubfeature(rawValue: name),
               let flag = Self.featureFlag(for: subfeature) else { return false }
+        // The native prompt is the browser's three-choice permission prompt; without it a tool that asks can't run.
+        if askToolNames.contains(name), !featureFlagger.isFeatureOn(.websitePermissionsPrompts) { return false }
         return featureFlagger.isFeatureOn(flag)
     }
 

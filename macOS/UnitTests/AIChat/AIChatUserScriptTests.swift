@@ -328,6 +328,7 @@ final class AIChatUserScriptTests: XCTestCase {
     @MainActor private func browserToolsFlags() -> MockFeatureFlagger {
         MockFeatureFlagger(featuresStub: [
             FeatureFlag.aiChatBrowserTools.rawValue: true,
+            FeatureFlag.websitePermissionsPrompts.rawValue: true,
             FeatureFlag.aiChatBrowserToolListOpenTabs.rawValue: true,
             FeatureFlag.aiChatBrowserToolSearchHistory.rawValue: false,
             FeatureFlag.aiChatBrowserToolSwitchToTab.rawValue: false,
@@ -343,12 +344,21 @@ final class AIChatUserScriptTests: XCTestCase {
         ])
     }
 
+    @MainActor func testWhenThePermissionPromptsFlagIsOffThenToolsThatAskAreNotAdvertised() {
+        let flags = browserToolsFlags()
+        flags.featuresStub[FeatureFlag.websitePermissionsPrompts.rawValue] = false
+
+        let service = makeBrowserToolsService(featureFlagger: flags)
+
+        XCTAssertNil(service.clientToolsConfiguration)
+    }
+
     @MainActor private func makeBrowserToolsService(featureFlagger: MockFeatureFlagger? = nil) -> AIChatBrowserToolsService {
         AIChatBrowserToolsService(featureFlagger: featureFlagger ?? browserToolsFlags(),
                                  windowControllersManager: WindowControllersManagerMock(),
                                  historyCoordinator: HistoryCoordinatingMock(),
                                  bookmarkManager: MockBookmarkManager(),
-                                 permissionStorage: MockKeyValueStore().keyedStoring())
+                                 permissionManager: PermissionManagerMock())
     }
 
     @MainActor private func settleFeatureFlagUpdate() async {

@@ -276,14 +276,16 @@ final class AIChatUserScript: NSObject, Subfeature {
 
 extension AIChatUserScript: ClientToolPermissionPrompting {
 
-    /// No native prompt yet: a tool without a stored Always/Never decision is cancelled.
+    /// Asks from the Duck.ai button of the chat's owner tab's window.
     @MainActor
     func presentClientToolPermissionPrompt(_ prompt: ClientToolPermissionPrompt) -> Bool {
-        false
+        browserTools?.permissionPrompts.present(prompt, chatWebView: webView, prompter: self) ?? false
     }
 
     @MainActor
-    func withdrawClientToolPermissionPrompt(requestID: String) {}
+    func withdrawClientToolPermissionPrompt(requestID: String) {
+        browserTools?.permissionPrompts.withdraw(requestID: requestID)
+    }
 
     /// The chat document is gone (navigated, reloaded or closed), so its pending calls finish as
     /// `cancelled`. Hiding the sidebar keeps the document, so it does not come here.

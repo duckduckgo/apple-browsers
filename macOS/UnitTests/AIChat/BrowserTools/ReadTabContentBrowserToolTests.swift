@@ -136,7 +136,6 @@ final class ReadTabContentBrowserToolTests: XCTestCase {
 
         XCTAssertEqual(tool.name, "readTabContent")
         XCTAssertEqual(tool.permissionMode, .ask)
-        XCTAssertEqual(tool.permissionReason, "Duck.ai wants to read this tab's content.")
     }
 
     // MARK: -

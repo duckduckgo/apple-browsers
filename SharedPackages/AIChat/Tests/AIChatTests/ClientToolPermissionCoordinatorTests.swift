@@ -284,6 +284,18 @@ struct ClientToolPermissionCoordinatorTests {
     }
 
     @available(iOS 16, macOS 13, *)
+    @Test(.timeLimit(.minutes(1)), arguments: zip([JSONValue.object([:]), ["tabId": "owner"], ["tabId": "other"]], [false, false, true]))
+    func promptSaysWhetherTheCallTargetsAnotherTab(input: JSONValue, targetsOtherTab: Bool) async throws {
+        let harness = ClientToolTestHarness()
+        let request = try harness.request(input: input)
+        let task = Task { await harness.invoker.invokeClientTool(request, context: harness.context, permissionPrompter: harness.source) }
+        await harness.source.waitForPrompts(1)
+        #expect(harness.source.prompts[0].targetsOtherTab == targetsOtherTab)
+        harness.answer(harness.source.prompts[0], decision: .dismiss)
+        _ = await task.value
+    }
+
+    @available(iOS 16, macOS 13, *)
     @Test(.timeLimit(.minutes(1)))
     func prompterCanCancelReentrantlyWhilePresenting() async throws {
         let harness = ClientToolTestHarness()

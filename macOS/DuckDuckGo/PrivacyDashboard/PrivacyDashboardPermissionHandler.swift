@@ -74,12 +74,14 @@ extension PermissionType {
             return self.rawValue
         case .externalScheme:
             return "externalScheme"
+        case .browserTool:
+            return "browserTool"
         }
     }
 
     var jsTitle: String {
         switch self {
-        case .camera, .microphone, .geolocation, .popups, .notification, .autoplayPolicy:
+        case .camera, .microphone, .geolocation, .popups, .notification, .autoplayPolicy, .browserTool:
             return self.localizedDescription
         case .externalScheme:
             return String(format: UserText.permissionExternalSchemeOpenFormat, self.localizedDescription)

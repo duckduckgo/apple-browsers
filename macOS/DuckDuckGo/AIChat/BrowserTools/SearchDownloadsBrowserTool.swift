@@ -32,7 +32,6 @@ final class SearchDownloadsBrowserTool: BrowserTool {
     /// Matches `AIChatBrowserToolsSubfeature.searchDownloads`, which is how the catalog gates it.
     let name = "searchDownloads"
     let permissionMode = BrowserToolPermissionMode.ask
-    let permissionReason = "It will see the names and source addresses of files you've downloaded."
 
     let inputSchema: JSONValue = [
         "type": "object",

@@ -416,7 +416,7 @@ final class BrowserToolsDebugViewController: NSViewController {
             button.decision = decision
             return button
         }
-        let reason = service.catalog.enabledTools.first { $0.name == prompt.toolName }?.permissionReason ?? prompt.toolName
+        let reason = BrowserToolPermissionPromptText.title(toolName: prompt.toolName, targetsOtherTab: prompt.targetsOtherTab)
         let entry = appendToLog(summary: "⇠ permission prompt  \(reason)",
                                 detail: "{\"requestID\": \"\(prompt.requestID)\", \"callID\": \"\(prompt.callID)\", \"tool\": \"\(prompt.toolName)\"}",
                                 accessories: buttons, highlighted: true)

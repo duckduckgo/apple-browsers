@@ -28,9 +28,6 @@ public protocol BrowserTool: AnyObject {
     /// `auto` never prompts; `ask` is subject to a stored Always/Never decision.
     var permissionMode: BrowserToolPermissionMode { get }
 
-    /// Shown to the user when an `ask` tool needs consent. Not localized, mirroring Windows.
-    var permissionReason: String { get }
-
     var inputSchema: JSONValue { get }
 
     /// Runs the tool. Callers go through the invoker so gating runs first, but a tool still
@@ -43,7 +40,6 @@ public protocol BrowserTool: AnyObject {
 }
 
 public extension BrowserTool {
-    var permissionReason: String { "Duck.ai wants to use a browser tool." }
     func clientToolResult(from value: JSONValue) -> BrowserToolResult { .success(value) }
 }
 

@@ -646,7 +646,7 @@ public final class DefaultSubscriptionManager: SubscriptionManager {
 
     /// Once per install, marks the user as signed in when a token is stored. Retried at the next launch while the token can't be read.
     private func reconcileAuthenticationStateIfNeeded() {
-        guard !userDefaults.isUserAuthenticatedReconciled else { return }
+        guard process == .browser, !userDefaults.isUserAuthenticatedReconciled else { return }
         switch localTokenSnapshot() {
         case .present:
             if !userDefaults.isUserAuthenticated {
@@ -685,6 +685,8 @@ public final class DefaultSubscriptionManager: SubscriptionManager {
     }
 
     private func updateCachedIsUserAuthenticated(_ newValue: Bool, userInitiated: Bool = false) {
+        // Only the browser owns the shared flag: other processes never sign in or out on its behalf
+        guard process == .browser else { return }
         let currentCachedIsAuthenticated = self.userDefaults.isUserAuthenticated
         self.userDefaults.isUserAuthenticated = newValue
 
@@ -751,8 +753,18 @@ public final class DefaultSubscriptionManager: SubscriptionManager {
                     return current
                 }
                 throw SubscriptionManagerError.noTokenAvailable
-            case .unrecoverable, .unavailable, nil:
+            case .unrecoverable, .unavailable:
                 throw SubscriptionManagerError.noTokenAvailable
+            case nil:
+                // A token was stored meanwhile, or the keychain can't be read: neither means the token is gone
+                switch localTokenSnapshot() {
+                case .present(let stored):
+                    return stored
+                case .readError:
+                    throw SubscriptionManagerError.errorRetrievingTokenContainer(error: nil)
+                case .missing:
+                    throw SubscriptionManagerError.noTokenAvailable
+                }
             }
         } catch let tokenRequestError {
             // Any other failure: report it, then handle the server rejections
@@ -792,9 +804,9 @@ public final class DefaultSubscriptionManager: SubscriptionManager {
                     updateCachedIsUserAuthenticated(true)
                     return stored
                 }
-                pixelHandler.handle(pixel: .invalidRefreshToken)
                 // Only the browser recovers or signs out: other processes keep the token and stop
                 guard process == .browser else {
+                    pixelHandler.handle(pixel: .invalidRefreshToken)
                     Logger.subscriptionTokensManagement.log("Refresh rejected in a \(String(describing: self.process), privacy: .public) process, keeping the token")
                     authV2TokenRefreshInstrumentation?.completeInvalidTokenRecovery(outcome: .notAttempted,
                                                                                     method: nil,
@@ -810,6 +822,10 @@ public final class DefaultSubscriptionManager: SubscriptionManager {
                 let recoveryOutcome = await attemptRecovery(trigger: .invalidToken,
                                                             deadPrimary: tokenBeforeAttempt.tokenContainer,
                                                             report: &recoveryReport)
+                // A deferred recovery belongs to an episode already reported
+                if case .deferred = recoveryReport?.result {} else {
+                    pixelHandler.handle(pixel: .invalidRefreshToken)
+                }
                 switch recoveryOutcome {
                 case .recovered(let recoveredTokenContainer):
                     updateCachedUserEntitlements(recoveredTokenContainer.decodedAccessToken.subscriptionEntitlements)
@@ -948,8 +964,8 @@ public final class DefaultSubscriptionManager: SubscriptionManager {
             guard let report else { return .unavailable }
             switch report.result {
             case .recovered:
-                // The recovery reported success but left no usable token
-                return .unrecoverable(error)
+                // Success with no usable token is unrecoverable, but a token that can't be read may still be there
+                return (error as? SubscriptionManagerError) == .noTokenAvailable ? .unrecoverable(error) : .pending(error)
             case .deferred:
                 return .pending(nil)
             case .notApplicable, .failed, .sessionChanged:
@@ -1025,6 +1041,11 @@ public final class DefaultSubscriptionManager: SubscriptionManager {
             updateCachedUserEntitlements(restored.decodedAccessToken.subscriptionEntitlements)
             updateCachedIsUserAuthenticated(true)
         case .unrecoverable:
+            // A session started while the restore ran is kept
+            guard localTokenSnapshot() == .missing else {
+                Logger.subscriptionTokensManagement.log("A token was stored during the restore, keeping that session")
+                return .sessionChanged
+            }
             Logger.subscriptionTokensManagement.log("The missing token can't be recovered, signing out")
             await clearSession(notifyUI: true, userInitiated: false, revokeOnServer: false, removingBackup: false)
         case .pending, .sessionChanged, .unavailable:
@@ -1150,8 +1171,10 @@ public final class DefaultSubscriptionManager: SubscriptionManager {
                 updateCachedIsUserAuthenticated(false, userInitiated: userInitiated)
         } else {
             // skipping cached setter for avoiding notification
-            userDefaults.isUserAuthenticated = false
-            userDefaults.userEntitlements = []
+            if process == .browser {
+                userDefaults.isUserAuthenticated = false
+                userDefaults.userEntitlements = []
+            }
         }
     }
 

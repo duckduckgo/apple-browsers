@@ -30,6 +30,7 @@ final class SubscriptionManagerAuthenticationStateTests: XCTestCase {
     private var userDefaults: UserDefaults!
     private var cachingService: SubscriptionCachingServiceMock!
     private var restoreFlow: AppStoreRestoreFlowMock!
+    private var pixelHandler: RecordingPixelHandler!
     private var signInNotifications = 0
     private var signOutNotifications = 0
     private var entitlementNotifications = 0
@@ -41,6 +42,7 @@ final class SubscriptionManagerAuthenticationStateTests: XCTestCase {
         userDefaults = UserDefaults(suiteName: "com.duckduckgo.subscriptionAuthenticationStateTests.\(UUID().uuidString)")!
         cachingService = SubscriptionCachingServiceMock()
         restoreFlow = AppStoreRestoreFlowMock()
+        pixelHandler = RecordingPixelHandler()
         signInNotifications = 0
         signOutNotifications = 0
         entitlementNotifications = 0
@@ -221,6 +223,8 @@ final class SubscriptionManagerAuthenticationStateTests: XCTestCase {
     }
 
     func testWhenNoCoordinatorAndTokenIsMissingThenEntitlementsAreKept() async {
+        // The browser process signed the user in; the VPN process only reads the shared flag
+        userDefaults.set(true, forKey: Self.isUserAuthenticatedKey)
         let manager = await makeSignedInManager(process: .vpn)
         let entitlements = manager.cachedUserEntitlements
         loseToken()
@@ -244,6 +248,65 @@ final class SubscriptionManagerAuthenticationStateTests: XCTestCase {
 
         XCTAssertFalse(manager.isUserAuthenticated)
         XCTAssertEqual(signInNotifications, signInsBefore)
+    }
+
+    func testWhenUserSignsInDuringAnUnrecoverableRestoreThenTheNewSessionIsKept() async {
+        let manager = await makeSignedInManager()
+        loseToken()
+        let newToken = OAuthTokensFactory.makeValidTokenContainer()
+        manager.tokenRecoveryCoordinator = TokenRecoveryCoordinator(invalidTokenStrategies: [], missingTokenStrategies: [ClosureStrategy { [oAuthClient] _ in
+            oAuthClient?.internalCurrentTokenContainer = newToken
+            return .failed(TokenBackupError.expired)
+        }])
+
+        let result = try? await manager.getTokenContainer(policy: .localValid)
+
+        XCTAssertEqual(result, newToken)
+        XCTAssertEqual(oAuthClient.internalCurrentTokenContainer, newToken)
+        XCTAssertTrue(manager.isUserAuthenticated)
+        XCTAssertEqual(signOutNotifications, 0)
+    }
+
+    func testWhenTokenCantBeReadRightAfterARestoreThenUserStaysSignedIn() async {
+        let manager = await makeSignedInManager()
+        loseToken()
+        manager.tokenRecoveryCoordinator = TokenRecoveryCoordinator(invalidTokenStrategies: [], missingTokenStrategies: [ClosureStrategy { [oAuthClient] _ in
+            oAuthClient?.currentTokenContainerError = NSError(domain: NSOSStatusErrorDomain, code: Int(errSecInteractionNotAllowed))
+            return .recovered
+        }])
+
+        await assertThrowsRetrievalFailure { try await manager.getTokenContainer(policy: .localValid) }
+
+        XCTAssertTrue(manager.isUserAuthenticated)
+        XCTAssertEqual(signOutNotifications, 0)
+        XCTAssertEqual(oAuthClient.removeLocalAccountCallCount, 0)
+    }
+
+    func testWhenATokenIsStoredWhileTheMissingOneIsReadThenTheStoredTokenIsReturned() async throws {
+        let manager = await makeSignedInManager()
+        loseToken()
+        installCoordinator(on: manager, backup: nil, appStoreError: nil)
+        let storedMeanwhile = OAuthTokensFactory.makeValidTokenContainer()
+        oAuthClient.onGetTokens = { [oAuthClient] in
+            oAuthClient?.internalCurrentTokenContainer = storedMeanwhile
+        }
+
+        let result = try await manager.getTokenContainer(policy: .localValid)
+
+        XCTAssertEqual(result, storedMeanwhile)
+        XCTAssertTrue(manager.isUserAuthenticated)
+    }
+
+    func testWhenRejectedRefreshRecoveryIsPendingThenTheInvalidTokenPixelFiresOncePerEpisode() async {
+        let manager = await makeSignedInManager()
+        oAuthClient.getTokensResponse = .failure(OAuthClientError.invalidTokenRequest(.reused))
+        installCoordinator(on: manager, backup: .failure(URLError(.timedOut)), appStoreError: URLError(.timedOut))
+
+        await assertThrowsRetrievalFailure { try await manager.getTokenContainer(policy: .localValid) }
+        await assertThrowsRetrievalFailure { try await manager.getTokenContainer(policy: .localValid) }
+
+        XCTAssertEqual(pixelHandler.handledPixels.filter { $0 == .invalidRefreshToken }.count, 1)
+        XCTAssertEqual(oAuthClient.restoreFromBackupCalls.count, 1)
     }
 
     // MARK: - Foreground restore
@@ -324,7 +387,7 @@ final class SubscriptionManagerAuthenticationStateTests: XCTestCase {
                                    subscriptionCachingService: cachingService,
                                    subscriptionEnvironment: SubscriptionEnvironment(serviceEnvironment: .production, purchasePlatform: .appStore),
                                    process: process,
-                                   pixelHandler: RecordingPixelHandler(),
+                                   pixelHandler: pixelHandler,
                                    initForPurchase: false)
     }
 }
@@ -347,5 +410,19 @@ private final class SigningOutStrategy: TokenRecoveryStrategy {
     func recover(_ context: TokenRecoveryContext) async -> TokenRecoveryResult {
         await manager?.signOut(notifyUI: true, userInitiated: true)
         return .sessionChanged
+    }
+}
+
+/// Runs a closure as its recovery.
+private struct ClosureStrategy: TokenRecoveryStrategy {
+    let method: TokenRecoveryMethod = .backup
+    let block: (TokenRecoveryContext) async -> TokenRecoveryResult
+
+    init(_ block: @escaping (TokenRecoveryContext) async -> TokenRecoveryResult) {
+        self.block = block
+    }
+
+    func recover(_ context: TokenRecoveryContext) async -> TokenRecoveryResult {
+        await block(context)
     }
 }

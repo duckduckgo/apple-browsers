@@ -94,14 +94,26 @@ final class SubscriptionManagerProcessTests: XCTestCase {
         XCTAssertNotNil(automaticSignOutPixel())
     }
 
-    func testWhenVPNProcessSignsOutExplicitlyThenUserIsSignedOut() async {
+    func testWhenVPNProcessSignsOutExplicitlyThenTokenIsRemovedAndTheSharedFlagIsUntouched() async {
         let manager = makeManager(process: .vpn)
 
         await manager.signOut(notifyUI: true, userInitiated: false)
 
         XCTAssertEqual(oAuthClient.logoutCallCount, 1)
         XCTAssertNil(oAuthClient.internalCurrentTokenContainer)
+        XCTAssertTrue(userDefaults.bool(forKey: Self.isUserAuthenticatedKey))
+    }
+
+    func testWhenVPNProcessGetsATokenThenTheSharedFlagIsUntouched() async throws {
+        userDefaults.set(false, forKey: Self.isUserAuthenticatedKey)
+        let token = try XCTUnwrap(oAuthClient.internalCurrentTokenContainer)
+        oAuthClient.getTokensResponse = .success(token)
+        let manager = makeManager(process: .vpn)
+
+        _ = try await manager.getTokenContainer(policy: .localValid)
+
         XCTAssertFalse(userDefaults.bool(forKey: Self.isUserAuthenticatedKey))
+        XCTAssertFalse(userDefaults.bool(forKey: "com.duckduckgo.subscription.isUserAuthenticatedReconciled"))
     }
 
     // MARK: - Helpers

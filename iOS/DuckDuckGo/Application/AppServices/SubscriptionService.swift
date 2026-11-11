@@ -29,6 +29,7 @@ final class SubscriptionService {
 
     let subscriptionFeatureAvailability: DefaultSubscriptionFeatureAvailability
     private let subscriptionManager = AppDependencyProvider.shared.subscriptionManager
+    private let tokenRefreshTask: SubscriptionTokenRefreshTask
     private var cancellables: Set<AnyCancellable> = []
 
     init(application: UIApplication = UIApplication.shared,
@@ -39,6 +40,11 @@ final class SubscriptionService {
                     purchasePlatform: .appStore,
                     featureFlagProvider: SubscriptionPageFeatureFlagAdapter(featureFlagger: featureFlagger)
                 )
+        let keepAlive = SubscriptionTokenKeepAlive(tokenProvider: subscriptionManager,
+                                                   isEnabled: { featureFlagger.isFeatureOn(.authBackgroundTokenRefresh) })
+        tokenRefreshTask = SubscriptionTokenRefreshTask(keepAlive: keepAlive)
+        tokenRefreshTask.register()
+
         Task {
             await subscriptionManager.loadInitialData()
         }
@@ -47,8 +53,9 @@ final class SubscriptionService {
     // MARK: - Resume
 
     func resume() {
-        Task { [subscriptionManager] in
+        Task { [subscriptionManager, tokenRefreshTask] in
             await subscriptionManager.restoreMissingTokenIfPossible()
+            await tokenRefreshTask.refreshAndSchedule().value
         }
     }
 }

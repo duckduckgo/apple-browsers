@@ -674,7 +674,7 @@ struct OnboardingDownloadReasonExperimentMetric {
 
     private func fire(metric: Name) {
         experimentPixelFiring.fireExperimentPixel(
-            for: iOSBrowserConfigSubfeature.onboardingFlowByDownloadReasonExperiment.rawValue,
+            for: PrivacyProSubfeature.onboardingVPNDownloadReasonExperiment.rawValue,
             metric: metric.rawValue,
             conversionWindowDays: Self.conversionWindowD0,
             value: ""

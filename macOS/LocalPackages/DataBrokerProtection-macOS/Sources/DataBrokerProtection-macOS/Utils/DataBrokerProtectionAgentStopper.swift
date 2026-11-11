@@ -60,8 +60,8 @@ struct DefaultDataBrokerProtectionAgentStopper: DataBrokerProtectionAgentStopper
     ///
     /// Prerequisites are satisified if either:
     /// 1. The user is an active freemium user
-    /// 2. The user has a subscription with valid entitlements
-    /// When no token can be read, the agent isn't stopped.
+    /// 2. The user is signed in and has a subscription with valid entitlements
+    /// A signed-out user who isn't on freemium stops the agent. When no token can be read, the agent isn't stopped.
     public func validateRunPrerequisitesAndStopAgentIfNecessary() async {
 
         do {
@@ -78,6 +78,12 @@ struct DefaultDataBrokerProtectionAgentStopper: DataBrokerProtectionAgentStopper
                 return
             }
 
+            guard await authenticationManager.isUserAuthenticated else {
+                Logger.dataBrokerProtection.log("Prerequisites are invalid: signed out and not on freemium")
+                stopAgent()
+                return
+            }
+
             stopAgentBasedOnEntitlementCheckResult(await authenticationManager.entitlementStatus())
 
         } catch {
@@ -91,6 +97,11 @@ struct DefaultDataBrokerProtectionAgentStopper: DataBrokerProtectionAgentStopper
                                  interval: interval) { result in
             Task {
                 if await satisfiesFreemiumPrerequisites() { return }
+                guard await authenticationManager.isUserAuthenticated else {
+                    Logger.dataBrokerProtection.log("Signed out and not on freemium, stopping the agent")
+                    stopAgent()
+                    return
+                }
                 stopAgentBasedOnEntitlementCheckResult(result)
             }
         }

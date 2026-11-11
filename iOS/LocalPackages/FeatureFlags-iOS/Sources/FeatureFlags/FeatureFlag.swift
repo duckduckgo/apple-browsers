@@ -579,6 +579,9 @@ public enum FeatureFlag: String {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1218934499511209?focus=true
     case duckAINativeTermsOfService
 
+    /// https://app.asana.com/1/137249556945/project/1201011656765697/task/1220450331739162?focus=true
+    case duckAITermsOfServiceRecordRestore
+
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1215359554019438?focus=true
     case floatingUIiOS26
 
@@ -902,6 +905,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(defaultValue: .internalOnly, source: .remoteReleasable(AIChatSubfeature.usageWarnings))
         case .duckAINativeTermsOfService:
             Config(defaultValue: .internalOnly, source: .remoteReleasable(AIChatSubfeature.nativeTermsOfService))
+        case .duckAITermsOfServiceRecordRestore:
+            Config(defaultValue: .enabled, source: .remoteReleasable(AIChatSubfeature.termsOfServiceRecordRestore))
         case .attributedMetrics:
             Config(defaultValue: .enabled, source: .remoteReleasable(AttributedMetricsSubfeature.featureEnabled))
         case .onboardingDuckAIFlow:

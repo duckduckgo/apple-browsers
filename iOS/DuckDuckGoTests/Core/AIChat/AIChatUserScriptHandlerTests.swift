@@ -2025,6 +2025,114 @@ extension AIChatUserScriptHandlerTests {
     }
 }
 
+// MARK: - Terms of Service record restore Tests
+
+extension AIChatUserScriptHandlerTests {
+
+    private var termsOfServiceEntryKey: String { DuckAiNativeStorageConsent.termsOfServiceEntryKey }
+
+    @MainActor
+    private func loadPage() {
+        _ = aiChatUserScriptHandler.getAIChatNativeConfigValues(params: [], message: MockUserScriptMessage(name: "test", body: [:]))
+    }
+
+    @MainActor
+    func testWhenAcceptedUserLoadsAPageWithoutAWebRecordThenTheRecordIsRestored() throws {
+        mockFeatureFlagger.enabledFeatureFlags = [.duckAITermsOfServiceRecordRestore]
+        mockUserDefaults.set(true, forKey: "aichat.hasAcceptedTermsAndConditions")
+        let webStorage = DuckAiNativeMemoryStorageHandler()
+        aiChatUserScriptHandler = makeAIChatUserScriptHandler(isNativeStorageBridgeAvailable: true,
+                                                              termsOfServiceWebRecordSource: webStorage)
+
+        loadPage()
+
+        XCTAssertEqual(try webStorage.getEntry(key: termsOfServiceEntryKey) as? String, "true")
+    }
+
+    /// An acceptance made in a Fire tab lives only in the Fire store; Fire tabs read this record through from normal storage.
+    @MainActor
+    func testWhenRecordIsRestoredThenAFireStoreReadingThroughSeesTheAcceptance() throws {
+        mockFeatureFlagger.enabledFeatureFlags = [.duckAITermsOfServiceRecordRestore]
+        mockUserDefaults.set(true, forKey: "aichat.hasAcceptedTermsAndConditions")
+        let normalStorage = DuckAiNativeMemoryStorageHandler()
+        let fireStorage = DuckAiNativeMemoryStorageHandler(seedSource: normalStorage)
+        aiChatUserScriptHandler = makeAIChatUserScriptHandler(isNativeStorageBridgeAvailable: true,
+                                                              termsOfServiceWebRecordSource: normalStorage)
+        aiChatUserScriptHandler.isFireModeProvider = { true }
+
+        loadPage()
+
+        XCTAssertEqual(try fireStorage.getAllEntries()[termsOfServiceEntryKey] as? String, "true")
+    }
+
+    @MainActor
+    func testWhenRestoreFlagIsOffThenTheMissingRecordStaysMissing() throws {
+        mockUserDefaults.set(true, forKey: "aichat.hasAcceptedTermsAndConditions")
+        let webStorage = DuckAiNativeMemoryStorageHandler()
+        aiChatUserScriptHandler = makeAIChatUserScriptHandler(isNativeStorageBridgeAvailable: true,
+                                                              termsOfServiceWebRecordSource: webStorage)
+
+        loadPage()
+
+        XCTAssertNil(try webStorage.getEntry(key: termsOfServiceEntryKey))
+    }
+
+    @MainActor
+    func testWhenUserHasNotAcceptedThenNoRecordIsWritten() throws {
+        mockFeatureFlagger.enabledFeatureFlags = [.duckAITermsOfServiceRecordRestore]
+        let webStorage = DuckAiNativeMemoryStorageHandler()
+        aiChatUserScriptHandler = makeAIChatUserScriptHandler(isNativeStorageBridgeAvailable: true,
+                                                              termsOfServiceWebRecordSource: webStorage)
+
+        loadPage()
+
+        XCTAssertNil(try webStorage.getEntry(key: termsOfServiceEntryKey))
+    }
+
+    /// Without the bridge the page reads WebView localStorage, which native can't reach.
+    @MainActor
+    func testWhenPageHasNoNativeStorageBridgeThenNoRecordIsWritten() throws {
+        mockFeatureFlagger.enabledFeatureFlags = [.duckAITermsOfServiceRecordRestore]
+        mockUserDefaults.set(true, forKey: "aichat.hasAcceptedTermsAndConditions")
+        let webStorage = DuckAiNativeMemoryStorageHandler()
+        aiChatUserScriptHandler = makeAIChatUserScriptHandler(isNativeStorageBridgeAvailable: false,
+                                                              termsOfServiceWebRecordSource: webStorage)
+
+        loadPage()
+
+        XCTAssertNil(try webStorage.getEntry(key: termsOfServiceEntryKey))
+    }
+
+    /// A web record the app didn't write is the web app's own; leave its value untouched.
+    @MainActor
+    func testWhenWebRecordAlreadyHoldsAnAcceptanceThenItIsLeftAsIs() throws {
+        mockFeatureFlagger.enabledFeatureFlags = [.duckAITermsOfServiceRecordRestore]
+        mockUserDefaults.set(true, forKey: "aichat.hasAcceptedTermsAndConditions")
+        let webStorage = DuckAiNativeMemoryStorageHandler()
+        try webStorage.putEntry(key: termsOfServiceEntryKey, value: true)
+        aiChatUserScriptHandler = makeAIChatUserScriptHandler(isNativeStorageBridgeAvailable: true,
+                                                              termsOfServiceWebRecordSource: webStorage)
+
+        loadPage()
+
+        XCTAssertEqual(try webStorage.getEntry(key: termsOfServiceEntryKey) as? Bool, true)
+    }
+
+    /// A duplicate that still happens after a restore reads "accepted", which tells the restore didn't help.
+    @MainActor
+    func testWhenRecordIsRestoredThenContextReportsTheRecordTheWebAppReads() async throws {
+        mockFeatureFlagger.enabledFeatureFlags = [.duckAITermsOfServiceRecordRestore]
+        mockUserDefaults.set(true, forKey: "aichat.hasAcceptedTermsAndConditions")
+        aiChatUserScriptHandler = makeAIChatUserScriptHandler(isNativeStorageBridgeAvailable: true,
+                                                              termsOfServiceWebRecordSource: DuckAiNativeMemoryStorageHandler())
+
+        await loadPageAndReportAcceptance()
+
+        let fireCall = try XCTUnwrap(duplicateContextFireCalls().first)
+        XCTAssertEqual(fireCall.pixel.parameters?["web_record_at_load"], "accepted")
+    }
+}
+
 // MARK: - Native Terms of Service Tests
 
 extension AIChatUserScriptHandlerTests {

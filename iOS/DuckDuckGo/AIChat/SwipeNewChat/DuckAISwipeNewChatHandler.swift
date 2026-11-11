@@ -354,7 +354,7 @@ final class DuckAISwipeNewChatHandler: NSObject, UIGestureRecognizerDelegate {
 private final class DuckAISwipeNewChatIndicatorView: UIView {
 
     private enum Metrics {
-        static let diameter: CGFloat = 32
+        static let diameter: CGFloat = 48
         static let lineWidth: CGFloat = 2.5
         static let labelSpacing: CGFloat = 6
         /// The fraction of the pull over which the indicator fades in.
@@ -383,7 +383,7 @@ private final class DuckAISwipeNewChatIndicatorView: UIView {
 
         button.translatesAutoresizingMaskIntoConstraints = false
         button.isShadowHidden = true
-        button.setIcon(DesignSystemImages.Glyphs.Size16.compose)
+        button.setIcon(DesignSystemImages.Glyphs.Size24.compose)
         button.applySubmitStyle(isActive: true, isFireTab: isFireTab, activeForeground: .white)
         circle.addSubview(button)
 
